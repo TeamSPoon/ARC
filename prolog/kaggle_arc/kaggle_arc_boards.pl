@@ -264,11 +264,12 @@ maybe_fail_over_time(_Time,Goal):- once(Goal).
 
 %grid_hint_io(MC,IO,In,Out,find_ogs):- maybe_fail_over_time(1.2,find_ogs(_,_,In,Out)).
 grid_hint_io(_MC,IO,In,Out,comp(IO,Hint)):- comp_o(IO),  proportional(In,Out,Hint).
-grid_hint_io(_MC,_IO,In,Out,ogs_11(XY)):- \+ In=@=Out, findall(loc(X,Y),ogs_11(X,Y,In,Out),XY),XY\==[].
+grid_hint_io(MC,IO,In,Out,comp(IO,maybe_ogs(MC,XY))):- \+ In=@=Out, findall(loc(X,Y),maybe_ogs(X,Y,In,Out),XY),XY\==[].
 grid_hint_io(_MC,_-o,In,Out,(=@=)):- In=@=Out.
 %grid_hint_iso(MC,IO,In,_Out,_IH,_IV,OH,OV,is_xy_columns):- once(has_xy_columns(In,_Color,OH,OV,)).
 %grid_hint_io(MC,IO,In,Out,Hint):- grid_size(In,IH,IV),grid_size(Out,OH,OV),!,grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
 
+maybe_ogs(X,Y,In,Out):- find_ogs(X,Y,In,Out)*->true;ogs_11(X,Y,In,Out).
 
 %grid_hint_iso(_MC,IO,_In,_Out,_IH,_IV,OH,OV,grid_size(IO,OH,OV)).
 grid_hint_iso(c(_BGC),_-o,_In,Out,_IH,_IV,OH,OV,has_x_columns(Y,Color)):- Area is OH*OV, Area>24, maybe_fail_over_time(1.2,has_x_columns(Out,Y,Color,_)),Y>1.

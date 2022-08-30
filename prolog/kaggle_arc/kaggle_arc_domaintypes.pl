@@ -78,6 +78,7 @@ is_bg(C):- is_bg_color(C).
 is_bgc(C):- is_bg_color(C).
 
 is_bgp(Cell):- only_color_data(Cell,C), is_bg_color(C).
+is_fgp(Cell):- only_color_data(Cell,C), is_fg_color(C).
 
 is_bg_sym_or_var(C):- attvar(C),get_attr(C,ci,fg(_)),!,fail.
 is_bg_sym_or_var(C):- (attvar(C); bg_sym(C); C==' '; C==''; C=='bg'; C == 0),!.

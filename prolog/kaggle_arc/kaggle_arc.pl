@@ -210,6 +210,7 @@ must_not_error(X):- catch(X,E,(E=='$aborted'-> throw(E);(/*arcST,*/writeq(E=X),p
 must_det_ll_failed(X):- notrace,wdmsg(failed(X))/*,arcST*/,nortrace,trace,rrtrace(X),!.
 % must_det_ll(X):- must_det_ll(X),!.
 
+rrtrace(X):- !, rtrace(X).
 rrtrace(X):- notrace,nortrace, arcST, sleep(0.5), trace, (notrace(\+ current_prolog_flag(gui_tracer,true)) -> rtrace(X); (trace,call(X))).
 
 remove_must_dets(G,GGG):- compound(G), G = must_det_ll(GG),!,expand_goal(GG,GGG),!.
@@ -407,7 +408,7 @@ arc_user(ID):- thread_self(ID).
 
 :- dynamic(arc_user_prop/3).
 
-luser_setval(N,V):- nb_setval(N,V),!.
+%luser_setval(N,V):- nb_setval(N,V),!.
 luser_setval(N,V):- arc_user(ID),luser_setval(ID,N,V),!.
 luser_setval(ID,N,V):- nb_setval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
 
@@ -619,7 +620,7 @@ make_training(TestID,VMO):-
      pre_in:_, pre_out:_,
      inC:_InC,outC:_OutC,
      removed:_,added:_, kept:_,   
-     grid_in:_,grid_out:_,
+     grid_in:_,grid_target:_,
    set(VM.mappings) =[map])), !. % pt(VM),nl.
   */
 
@@ -693,7 +694,7 @@ train_for_objects_from_pair_with_mono(Dict0,TestID,Desc,In,Out,Dict9):-
    ignore(Dict1=Dict9))),!.
 
 train_for_objects_from_1pair(Dict0,TestID,Desc,InA,OutA,Dict1):-
-  locally(set_prolog_flag(gc,false),train_for_objects_from_1pair1(Dict0,TestID,Desc,InA,OutA,Dict1)).
+  locally(set_prolog_flag(gc,true),train_for_objects_from_1pair1(Dict0,TestID,Desc,InA,OutA,Dict1)).
 
 train_for_objects_from_1pair1(Dict0,_TestID,Desc,_InA,_OutA,Dict0):- Desc = [_Trn,'o',_N1,'o',_N2], !.
 
@@ -723,9 +724,9 @@ train_for_objects_from_1pair1(Dict0,TestID,Desc,InA,OutA,Dict1):-
    into_fti(TestID*(Trn+N2)*IO2,ModeOut,Out,OutVM)]),!,
 
    %InVM.compare=OutVM, 
-   set(InVM.grid_out)=Out,
+   set(InVM.grid_target)=Out,
    %OutVM.compare=InVM, 
-   set(OutVM.grid_out)=In,
+   set(OutVM.grid_target)=In,
   maplist(must_det_ll,[
    show_pair_grid(yellow,IH,IV,OH,OV,original(InVM.id),original(OutVM.id),PairName,In,Out),!,  
   individuate_c(InVM),!,
@@ -840,7 +841,7 @@ solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut):-
     %set(InVM.training) = Training,
     set_training(Training),
     maybe_set_vm(InVM),    
-    gset(InVM.grid_out) = _,
+    gset(InVM.grid_target) = _,
     must_det_ll((
     %print(training(Training)),nl,
     %ptt(InVM),

@@ -10,19 +10,26 @@
 
 
 
+saved_group(Why,IndvS):-
+  is_why_grouped(_TestID,_Count,Why,IndvS).
+
+is_why_grouped(TestID,Count,Why,IndvS):-
+  is_why_grouped_g(TestID,Count,Why,IndvSG),
+  maplist(g2o,IndvSG,IndvS).
 
 
 save_grouped(Why,G):-
   into_group(G,GS),
   get_current_test(TestID),
   length(GS,Len),
-  my_asserta_if_new(is_why_grouped(TestID,Len,Why,GS)),
-  (mapgroup(register_obj,GS)).
+  maplist(o2g,GS,GGG),
+  my_asserta_if_new(is_why_grouped_g(TestID,Len,Why,GGG)),
+  mapgroup(register_obj,GS).
 
 
 normal_group_form(Group,Group):-!.
 
-:- dynamic(is_why_grouped/4).
+:- dynamic(is_why_grouped_g/4).
 why_grouped(Why,Group):-
   arc_test_name(TestID),
   why_grouped(TestID,Why,Group).

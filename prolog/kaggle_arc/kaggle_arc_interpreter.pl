@@ -31,9 +31,10 @@ check_args(P,Arity,An,Left,T,C,MC):-
 check_args(_P,_Arity,_An,_Left,_T,C,C).
 
 into_type(Type,G,O):- nonvar_or_ci(O),!,into_type(Type,G,M),!,M=O.
+into_type(_Type,G,O):- plain_var(G),O=G,!.
 into_type(Type,G,O):- plain_var(G),throw(var_into_type(Type,G)),O=fake(Type,G).
 into_type(+,X,X).
-into_type(oid,X,ID):- into_grid(X,G),grid_to_oid(G,ID).
+into_type(oid,X,ID):- into_oid(X,ID).
 into_type(num,X,X):- assertion(number(X)).
 into_type(dir,X,X):- assertion(nav(X,_,_)).
 into_type(grid,X,O):- into_grid(X,O).
@@ -212,8 +213,8 @@ run_dsl(VM,_Mode,nb_link(Name,Val),In,Out):- !, expand_dsl_value(VM, Mode,In,Val
 run_dsl(VM,_Mode,vm_set(Name,Val),In,Out):- !, vm_grid(VM,set_vm(Name,Val),In, Out).
 run_dsl(VM,_Mode,i(Indiv),In,Out):- !, vm_grid(VM,(individuate(Indiv,In,Objs),set_vm_grid(VM,Objs)),In,Out).
 
-run_dsl(VM,_Mode,o(_Indiv),In,In):- var(VM.grid_out),!.
-run_dsl(VM,_Mode,o(Indiv),In,Out):- !, vm_grid(VM,(individuate(Indiv,VM.grid_out,Objs),set_vm_grid(VM,Objs)),In,Out).
+run_dsl(VM,_Mode,o(_Indiv),In,In):- var(VM.grid_target),!.
+run_dsl(VM,_Mode,o(Indiv),In,Out):- !, vm_grid(VM,(individuate(Indiv,VM.grid_target,Objs),set_vm_grid(VM,Objs)),In,Out).
 run_dsl(_VM,_Mode,get_in(In),Pass,Pass):- copy_term(Pass,In),!.
 run_dsl(_VM,_Mode,set_out(Out),_In,Out):-!.
 
@@ -342,22 +343,24 @@ known_gridoid(ID,G):- known_grid(ID,G).
 known_grid(ID,GO):- (known_grid0(ID,G),deterministic(YN),true), (YN==true-> ! ; true), to_real_grid(G,GO).
 
 
-oid_to_gridoid(GID,G):- oid_to_grid(GID,G).
+oid_to_gridoid(GID,G):- current_predicate(oid_to_grid/2), oid_to_grid(GID,G).
 oid_to_gridoid(ID,G):-  atom(ID),atomic_list_concat(Term,'_',ID), Term\==[ID], !,append(GOID,[OID],Term),
   test_id_num_io(GOID,_Name,_Example,_Num,_IO),
   atom_number(OID,ONum),int2glyph(ONum,GL),
-  g2o(GL,G).
+  get_current_test(TestID),
+  g_2_o(TestID,GL,G).
 
 
 
-
+known_grid0(ID,_):- var(ID),!,fail.
 known_grid0(ID,G):- is_grid(ID),!,G=ID.
 known_grid0(OID, Grid):- atom(OID),oid_to_gridoid(OID,Grid),!.
 known_grid0(ID,_):- is_object(ID),!,fail.
 known_grid0(_,ID):- is_object(ID),!,fail.
 known_grid0(ID,G):- test_id_num_io(ID,TestID,Example,Num,IO),ExampleNum=Example+Num,!,(kaggle_arc_io(TestID,ExampleNum,IO,G),deterministic(YN),true),(YN==true-> ! ; true).
-known_grid0(ID,G):- fix_test_name(ID,Name,ExampleNum),!,(kaggle_arc_io(Name,ExampleNum,_IO,G),deterministic(YN),true), (YN==true-> ! ; true).
-known_grid0(ID,G):- is_grid_id(G,ID).
+known_grid0(ID,G):- is_grid_id(G,ID),!.
+known_grid0(ID,G):- fix_test_name(ID,Name,ExampleNum),!,
+  (kaggle_arc_io(Name,ExampleNum,_IO,G),deterministic(YN),true), (YN==true-> ! ; true).
 known_grid0(ID,G):- learned_color_inner_shape(ID,magenta,BG,G,_),get_bgc(BG).
 known_grid0(ID,G):- compound(ID),ID=(_*(Example+Num)*IO),!,fix_test_name(ID,Name,Example+Num),!,(kaggle_arc_io(Name,Example+Num,IO,G),deterministic(YN),true), (YN==true-> ! ; true).
 known_grid0(ID,G):- compound(ID),ID=(_*_),fix_test_name(ID,Name,ExampleNum),!,(kaggle_arc_io(Name,ExampleNum,_IO,G),deterministic(YN),true), (YN==true-> ! ; true).
@@ -409,8 +412,13 @@ grid_to_id(Grid,ID):- kaggle_arc_io(TestID,Example+Num,IO,Grid),!,ID = TestID*(E
 grid_to_id(Grid,ID):- known_grid0(ID,GVar),Grid=@=GVar,!.
 grid_to_id(Grid,ID):- must_be_free(ID),makeup_gridname(Grid,ID), set_grid_id(Grid,ID),!.
 
+into_oid(X,ID):- atom(X),!,X=ID.
+into_oid(X,ID):- is_grid(X),grid_to_oid(X,ID),!.
+into_oid(X,ID):- is_object(X),obj_to_oid(X,ID),!.
+into_oid(X,ID):- id_to_oid(X,ID),!.
+
 grid_to_oid(Grid,OID):- is_grid_id(Grid,OID),atom(OID),!.
-grid_to_oid(Grid,OID):- grid_to_id(Grid,ID),!,id_to_oid(ID,OID).
+grid_to_oid(Grid,OID):- grid_to_id(Grid,ID),!,(clause(id_to_oid(ID,OID),true)*-> true ; term_to_oid(ID,OID)).
 
 makeup_gridname(_Grid,GridName):- get_current_test(ID),flag(made_up_grid,F,F+1),GridName = ID*('ExampleNum'+F)*io.
 
@@ -423,14 +431,32 @@ into_obj(G,O):- no_repeats(O,known_obj0(G,O))*->true; (into_grid(G,GG),!,into_ob
   %set(VM.points)=[],!.
 
 
+:- module_transparent register_obj/1.
+%register_obj(O):- quietly((wots(S,weto(arcST)), asserta(obj_cache(TestID,O,S)))),!.
+register_obj(O):-  must_det_ll(o2g(O,_)),!.
+/*register_obj(L):- asserta(obj_cache(TestID,L,'')),
+  ignore(( false, O=obj(L),mass(O,Mass),Mass>7,format('~N'),arc_portray(O,false),nl)).
+*/
+:- dynamic(obj_cache/3).
+:- module_transparent obj_cache/2.
+
+o2g(Obj,Glyph):- var(Obj),!,g_2_o(_,Glyph,Obj).
 o2g(Obj,Glyph):-  g2o(Glyph,Obj),!.
-o2g(Obj,NewGlyph):- o_i_d(Obj,ID,Old), int2glyph(Old,Glyph), 
- (luser_getval(Glyph,O2) ->
-(O2=@=Obj->NewGlyph=Glyph; 
- ( flag(indiv,Iv,Iv+1),int2glyph(Iv,NewGlyph),
-  subst001(Obj,o_i_d(ID,Old),o_i_d(ID,Iv),NewObj),
-  luser_linkval(NewGlyph,NewObj),nop(asserta(g2o(NewGlyph,NewObj))))) ; (NewGlyph=Glyph,luser_linkval(NewGlyph,Obj))),
- my_asserta_if_new(g2o(NewGlyph,Obj)).
+o2g(Obj,NewGlyph):- var(NewGlyph),must_det_ll((o2g_f(Obj,NewGlyph))),!. 
+o2g(Obj,NewGlyph):- trace,o2g_f(Obj,NewGlyph).
+
+o2g_f(Obj,NewGlyph):- o_i_d(Obj,ID,Old), int2glyph(Old,Glyph), 
+ (g2o(Glyph,O2) ->
+       (O2=@=Obj->NewGlyph=Glyph; 
+         must_det_ll(( 
+           flag(indiv,Iv,Iv+1),
+           int2glyph(Iv,NewGlyph),!,           
+           subst001(Obj,o_i_d(ID,Old),o_i_d(ID,Iv),NewObj),
+           (number(NewGlyph)->trace;true),
+           set_glyph_to_object(NewGlyph,NewObj))))
+  ; ((number(NewGlyph)->trace;true),NewGlyph=Glyph,(number(NewGlyph)->trace;true),set_glyph_to_object(NewGlyph,Obj))),
+ set_glyph_to_object(NewGlyph,Obj).
+
 
 o2c(Obj,Glyph):- color(Obj,Glyph),!.
 
@@ -442,14 +468,19 @@ print_ncolors(G,C):- sformat(F,'~q',[G]),color_print(C,F).
 
 :- system:import(print_ncolors/2).
 
-:- dynamic(g2o/2).
+:- dynamic(g_2_o/3).
 
-g2o(G,O):- var(G),!,luser_getval(G,O),is_object(O).
-g2o(G,O):- atom(G),luser_getval(G,O),is_object(O),!.
+set_glyph_to_object(G,O):- ignore(luser_linkval(G,O)),(get_current_test(TestID),my_asserta_if_new(g_2_o(TestID,G,O))).
+
+g2o(G,O):- var(G), !, get_glyph_to_object(G,O).
 g2o(G,O):- integer(G),int2glyph(G,C),!,g2o(C,O),!.
 g2o(C,O):- compound(C), !, C= objFn(G,_), !, g2o(G,O).
-g2o(G,O):- atom(G),!,Chars=[_,_|_],atom_chars(G,Chars),!,member(C,Chars),g2o(C,O),!.
-g2o(G,O):- string(G),Chars=[_|_],atom_chars(G,Chars),!,member(C,Chars),g2o(C,O),!.
+g2o(G,O):- \+ atom(G), !, string(G),Chars=[_|_],atom_chars(G,Chars),!,chars2o(Chars,O).
+g2o(G,O):- get_glyph_to_object(G,O)*->true;(Chars=[_,_|_],atom_chars(G,Chars),chars2o(Chars,O)).
+
+get_glyph_to_object(G,O):- ((luser_getval(G,O),is_object(O))*->true;(get_current_test(TestID),g_2_o(TestID,G,O))).
+
+chars2o(Chars,O):- \+ member('_',Chars), member(C,Chars),g2o(C,O),!.
 
 
 known_object(G,O):- known_obj0(G,O).
@@ -594,6 +625,7 @@ goal_expansion(Goal,I,Out,O):-  var(I), \+ source_location(_,_),luser_getval('$g
 :- luser_linkval('$goal_expanded', []).
 expand_query(Goal, Expanded, Bindings, ExpandedBindings):- 
     % Have vars to expand and varnames are empty
+    luser_getval('$goal', WGoal), WGoal\=@=Goal, % this prevents the loop
     luser_linkval('$goal', Goal),
     quietly((Bindings\==[],prolog_load_context(variable_names,Vs), Vs ==[])), % this prevents the loop
     luser_linkval('$variable_names', Bindings),

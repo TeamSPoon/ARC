@@ -53,7 +53,7 @@ print_list_of(P1,N,O):-
   g_out( maplist(P1,O)),!.
 
 
-maybe_cache_glyphs(O):- ignore((is_group(O),maplist(o2g,O,_))).
+maybe_cache_glyphs(O):- ignore((is_group(O),mapgroup(o2g,O,_))).
 
 print_info(A):- is_grid(A),print_grid(A),!.
 print_info(A):- is_object(A), ignore(debug_indiv(A)),!.
@@ -65,14 +65,23 @@ print_info(A):- pt(A),!.
 debug_as_grid(Grid):- debug_as_grid('',Grid).
 debug_as_grid(Why,Grid):-
   v_hv(Grid,H,V),
-  loc(Grid,OH,OV),
-  object_grid(Grid,GridO),
-  subst(GridO,black,wbg,GridOO),
+  Title = debug_as_grid(Why,loc(OH,OV),size(H,V)),
   fif((H\==1;V\==1),
-    (wots(S,print_grid(H,V,debug_as_grid(Why,loc(OH,OV),size(H,V)),GridOO)),
+    (loc(Grid,OH,OV),
+     localpoints_include_bg(Grid,GridO),
+     ((IH=H,IV=V)), % (IH = 30,IV=30), 
+     subst(GridO,black,wbg,GridOO),
+     into_ngrid(GridOO,IH,IV,NGrid),
+     wots(S,print_side_by_side(print_grid(IH,IV,Title,GridOO),print_grid(IH,IV,ngrid,NGrid))),
      HH is (OH - 1) * 2, print_w_pad(HH,S))),
   fif(is_object(Grid),(format('~N~n'),underline_print(debug_indiv(Grid)))),
   format('~N'),dash_chars(15),!.
+
+into_ngrid(Points,H,V,NGrid):- 
+  neighbor_map(H,V,Points,Points,CountedPoints),!,
+  points_to_grid(H,V,CountedPoints,NGrid).
+
+  
 
 :- discontiguous debug_indiv/1. 
 
@@ -138,9 +147,11 @@ prefered_header(birth(Caps),Caps).
 prefered_header(iz(Caps),Caps).
 % I didn't really have the programming chops to take his program and give it human level reasoning until about 5 years ago
 debug_indiv(obj(A)):- \+ \+ debug_indiv_obj(A),!.
+
+
 debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
  maplist(must_det_ll,[
-  ignore((o2g(Obj,GGG), nonvar(GGG),luser_setval(GGG,Obj), nop( my_asserta_if_new(g2o(GGG,Obj))))),
+  ignore((o2g(Obj,GGG), nonvar(GGG),set_glyph_to_object(GGG,Obj))),
 %debug_indiv(Obj):- Obj = obj(A), is_list(A),  
   
   sort_obj_props(A,AS0),

@@ -130,7 +130,7 @@ is_grid_symmetricD(Grid):- flipSym_checks(flipD,Grid),(flipSym_checks(flipDH,Gri
 vm_for_grid(Grid,VM):- vm_for_grid(Grid,_,_,VM).
 vm_for_grid(Grid,ID,Out,VM):- fail,
   peek_vm(grid,VMGrid), VMGrid == Grid,!,
-  Out = VM.grid_out, ID = VM.id.
+  Out = VM.grid_target, ID = VM.id.
 vm_for_grid(Grid,IDO,Out,VM):-
   grid_to_id(Grid,ID),
   into_fti(ID,in_out,Grid,VM),
@@ -141,7 +141,7 @@ vm_for_grid(Grid,IDO,Out,VM):-
 
     ignore((IO==in,kaggle_arc_io_trn(TestID,Example+Num,out,Out),
             set(VM.id) = (TestID*(Example+Num)*IO),
-       nop(Example\==tst),set(VM.grid_out)=Out)))),
+       nop(Example\==tst),set(VM.grid_target)=Out)))),
   IDO = VM.id .
 
 
@@ -169,7 +169,7 @@ repair_symmetry(Grid):- is_grid(Grid),!,
   kaggle_arc_io_trn(TestID,Example+Num,IO,Grid),
   set_current_test(TestID),
   fif(IO==in,kaggle_arc_io_trn(TestID,Example+Num,out,Out)),
-  (Example==tst->set(VM.grid_out)=_;set(VM.grid_out)=Out),
+  (Example==tst->set(VM.grid_target)=_;set(VM.grid_target)=Out),
   %\+ is_monotrim_symmetric(Grid), is_monotrim_symmetric(Out),
   format('~N'), dash_chars,
   wdmsg(begin_test(ID)),
@@ -178,7 +178,7 @@ repair_symmetry(Grid):- is_grid(Grid),!,
   fif(is_need(TestID),wdmsg(is_need(TestID))),
   fif(is_hard(TestID),wdmsg(is_hard(TestID))),!,
   ignore(time(repair_symmetry_code(Grid,_,_))),
-  set(VM.grid_out)=_.
+  set(VM.grid_target)=_.
 
 repair_symmetry_code(Grid,RepairedResult,Code):- 
   must_det_ll((
@@ -618,7 +618,7 @@ guess_to_unbind1(Grid,Color):- !, fail, select(Row1,Grid,Rows),member(Row2,Rows)
   C1=C4,C1\==black,Color=C1.
 
 if_target(Out,Goal):- (peek_target(Out)->call(Goal);true).
-peek_target(Out):- peek_vm(grid_out,Out),is_grid(Out).
+peek_target(Out):- peek_vm(grid_target,Out),is_grid(Out).
 peek_target(Grid,Out):- peek_target(Out)->true;Grid=Out.
 contains_color(Color,Out):- unique_colors(Out,Colors),member(Color,Colors).
 

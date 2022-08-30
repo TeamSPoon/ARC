@@ -68,14 +68,6 @@ make_indiv_object_list(VM,[E|L],[O|OL]):-
 as_obj(L,Obj):- is_list(L),!,Obj = obj(L), !. % , register_obj(L).
 as_obj(O,Obj):- compound(O), O = obj(_), Obj = O. % , register_obj(L).
 
-:- module_transparent register_obj/1.
-%register_obj(O):- quietly((wots(S,weto(arcST)), asserta(obj_cache(TestID,O,S)))),!.
-register_obj(L):- notrace(o2g(L,_)).
-/*register_obj(L):- asserta(obj_cache(TestID,L,'')),
-  ignore(( false, O=obj(L),mass(O,Mass),Mass>7,format('~N'),arc_portray(O,false),nl)).
-*/
-:- dynamic(obj_cache/3).
-:- module_transparent obj_cache/2.
 
 enum_object(O):- var(O),!,no_repeats_cmp(=@=,O,enum_object0(O)).
 enum_object(O):- nop(ptt(enum_object(O))),!.
@@ -94,7 +86,6 @@ enum_object0(S):- is_unshared_saved(_,IndvS),member(S,IndvS).
 enum_object0(S):- is_grid_id(S,_).
 */
 internal_region(Obj,regionOf(Obj)).
-
 
 % @TODO
 reclumped([A,B,C,D|Rest],[A,B,C,D]):- reclumped(Rest,[A,B,C,D]),!.
@@ -156,7 +147,7 @@ make_indiv_object(VM,Overrides,LPoints,NewObj):-
 
  
 retract_object(GID,OID,_):- 
- retractall(grid_obj(GID,OID)),
+ retractall(grid_obj(GID,_,OID)),
  retractall(cindv(OID,_,_)),
  retractall(cindv(OID,_,_,_)),
  retractall(cindv(OID,_,_,_,_)).
@@ -164,13 +155,17 @@ retract_object(GID,OID,_):-
 assert_object(GID,NewObj):-
   obj_to_oid(NewObj,NOID),
   assert_object(GID,NOID,NewObj).
+
 assert_object(GID,OID,List):- 
   id_to_oid(GID,GOID),
-  pfcAdd(grid_obj(GOID,OID)),
+  o2g(List,Glyph),
+  pfcAdd(grid_obj(GOID,Glyph,OID)),
   assert_object1(OID,List).
 assert_object1(OID,obj(List)):-!,maplist(assert_object1(OID),List).
 assert_object1(OID,List):- is_list(List),!,maplist(assert_object1(OID),List).
-assert_object1(OID,Prop):- Prop=..List, AProp=..[cindv,OID|List],pfcAdd(AProp).
+assert_object1(OID,Prop):- Prop=..List, AProp=..[cindv,OID|List],
+  (\+ ground(AProp)->dumpST;true),
+  pfcAdd(AProp).
 
 make_indiv_object_no_vm(ID,GH,GV,Overrides,LPoints,Obj):- 
   globalpoints_maybe_bg(LPoints,GPoints),
@@ -178,7 +173,8 @@ make_indiv_object_no_vm(ID,GH,GV,Overrides,LPoints,Obj):-
   make_indiv_object_s(ID,GH,GV,Overrides,SPoints,Obj).
 
 
-make_indiv_object_s(_ID,GH,GV,Overrides,Points,ObjO):- 
+make_indiv_object_s(ID,GH,GV,Overrides,Points,ObjO):- 
+  test_id_num_io(ID,_TestID,_Example,_Num,IO),
   points_range(Points,LoH,LoV,HiH,HiV,_HO,_VO),
   once(member(v_hv(Width,Height),Overrides);(Width is HiH-LoH+1,Height is HiV-LoV+1)),
   %luser_getval(test_pairname,ID),
@@ -244,6 +240,7 @@ make_indiv_object_s(_ID,GH,GV,Overrides,Points,ObjO):-
     [iz(yc(CY)),iz(xc(CX))],
     [iz(row(LoV)),iz(col(LoH)),iz(tall(Height)),iz(wide(Width))],
     [%o_i_d(ID,Iv),
+     iz(g(IO))
      % globalpoints(Points),
      %agrid_size(GH,GV)
     ]],Ps),  
@@ -468,15 +465,17 @@ transfer_props_l([_|L],Functors,List,NewList):-
   transfer_props_l(L,Functors,List,NewList).
 */
 
+
 %indv_u_props(I,[localpoints(Ps),loc(X,Y),pen(Pen),v_hv(H,V),rotation(Rot)]):- loc(I,X,Y),shape(I,Ps),pen(I,Pen),v_hv(I,H,V),rotation(I,Rot),!.
-indv_u_props(I,[v_hv(H,V),cmass(C),loc(X,Y),localpoints(Ps),rotation(Rot)]):- 
-             v_hv(I,H,V), cmass(I,C),loc(I,X,Y),localpoints(I,Ps),rotation(I,Rot),!.
+indv_u_props(I,[v_hv(H,V),   cmass(C),  loc(X,Y),  localpoints(Ps),  rotation(Rot)]):- 
+                v_hv(I,H,V), cmass(I,C),loc(I,X,Y),localpoints(I,Ps),rotation(I,Rot),!.
 %indv_u_props(I,[shape(Ps),center(X,Y),pen(Pen),v_hv(H,V),rotation(Rot)]):- center(I,X,Y),shape(I,Ps),pen(I,Pen),v_hv(I,H,V),rotation(I,Rot),!.
 
 :- dynamic(is_iv_for/2).
 iv_for(L,Iv):- copy_term(L,CT,_),numbervars(CT,0,_,[attvar(bind),singletons(true)]),term_hash(CT,Fv),
- number(Fv), Iv is (Fv rem 800) + 1, (\+ is_iv_for(Iv,_) -> assert(is_iv_for(Iv,L)) ; true).
+ number(Fv), Iv is (Fv rem 800) + 1, (\+ is_iv_for(Iv,_) -> asserta_if_new(is_iv_for(Iv,L)) ; true).
 
+obj_to_oid(Obj,OID):- atom(Obj),!,OID=Obj.
 obj_to_oid(Obj,OID):- 
    indv_u_props(Obj,L),iv_for(L,Iv),
    current_gid(TOID), 
@@ -484,7 +483,7 @@ obj_to_oid(Obj,OID):-
 
 current_gid(TOID):-
    get_vm(VM), ID = VM.id,
-   term_to_oid(ID,TOID),!.
+   id_to_oid(ID,TOID),!.
 
 
 %   o_i_d(Obj,_ID,OID). %object_grid(Obj,G),grid_to_oid(G,OID).
@@ -508,16 +507,15 @@ mass(I,Count):- globalpoints(I,Points),!,length(Points,Count),!.
 mass(C-_,1):- nonvar_or_ci(C),!.
 mass(I,Count):- globalpoints(I,Points), length(Points,Count),!.
 
-cmass(I,Count):- is_grid(I),!,append(I,Cs),include(is_fg_color,Cs,Points),length(Points,Count),!.
-cmass(I,X):- var_check(I,cmass(I,X)).
-cmass([G|Grid],Points):- (is_group(Grid);(is_list(Grid),is_group(G))),!,mapgroup(cmass,[G|Grid],MPoints),sum_list(MPoints,Points).
+cmass(I,Count):- is_grid(I),!,append(I,Cs),cmass(Cs,Count),!.
+cmass(C,1):- is_fg_color(C),!.
+cmass(C,0):- (is_bg_color(C);var(C)),!.
+cmass(I,X):- var_check(I,cmass(I,X)),!.
+cmass(C-_,M):- !,cmass(C,M).
 cmass(I,X):- indv_props(I,L),member(cmass(X),L),!.
-cmass(I,XX):- is_object(I),!,must_det_ll((localpoints(I,L), length(L,X))),!,XX=X.
-%cmass(I,X):- is_object(I),!,must_det_ll((indv_props(I,L), member(cmass(X),L))).
-cmass(Points,Count):- is_list(Points),length(Points,Count),!.
-cmass(I,Count):- globalpoints(I,Points),!,length(Points,Count),!.
-cmass(C-_,1):- nonvar_or_ci(C),!.
-cmass(I,Count):- globalpoints(I,Points), length(Points,Count),!.
+cmass(I,XX):- is_object(I),!,must_det_ll((localpoints(I,L), cmass(L,X))),!,XX=X.
+cmass([G|Grid],Points):- maplist(cmass,[G|Grid],MPoints),sum_list(MPoints,Points),!.
+cmass(I,Count):- globalpoints(I,Points),cmass(Points,Count),!.
 
 
 color_mass(Color,Int):- var(Color),!,Int=13.
@@ -699,22 +697,23 @@ gp_point_corners(Obj,_Points0,Dir,CPoint):-  %sort_points(Points,SPoints),
   (points_corner_dir(Shape,Dir)*->(SPoints=[CPoint|_];last(SPoints,CPoint));fail).
    
 
-globalpoints(Grid,Points):- grid_to_oid(Grid,ID),\+ \+ cmem(ID,_,_),findall(-(C,HV),cmem(ID,HV,C),Points).
-globalpoints(ID,Points):- \+ \+ cmem(ID,_,_), findall(-(C,HV),cmem(ID,HV,C),Points).
-globalpoints(Grid,Points):- is_grid(Grid),!, grid_to_points(Grid,Points).
-globalpoints(Grid,Points):- is_group(Grid),!,mapgroup(globalpoints,Grid,MPoints),append_sets(MPoints,Points).
+%globalpoints(ID,Points):- \+ \+ cmem(ID,_,_), no_repeats(ID,cmem(ID,_,_)), findall(-(C,HV),cmem(ID,HV,C),Points).
+%globalpoints(Grid,Points):- grid_to_oid(Grid,ID),\+ \+ cmem(ID,_,_),findall(-(C,HV),cmem(ID,HV,C),Points).
+globalpoints(I,_):-  var(I),!,fail.
 globalpoints(I,X):-  (var_check(I,globalpoints(I,X)), deterministic(TF), true), (TF==true-> ! ; true).
 globalpoints([],[]):-!.
-globalpoints(G,Ps):- is_map(G),vm_to_printable(G,R),!,globalpoints(R,Ps).
 globalpoints(G,[G]):- is_cpoint(G),!.
 globalpoints(C-P,[C-P]):-!.
 globalpoints(G,G):- is_cpoints_list(G).
-globalpoints(Atom,_):- \+ compound(Atom),!,my_assertion(gp=Atom),trace_or_throw(globalpoints(Atom)).
+globalpoints(Grid,Points):- is_grid(Grid),!, grid_to_points(Grid,Points).
+globalpoints(Grid,Points):- is_group(Grid),!,mapgroup(globalpoints,Grid,MPoints),append_sets(MPoints,Points).
+globalpoints(G,Ps):- is_map(G),vm_to_printable(G,R),!,globalpoints(R,Ps).
 globalpoints(options(X),_Points):- trace_or_throw(globalpoints(options(X))).
 globalpoints(I,X):- indv_props(I,L),member(globalpoints(X),L), nop(my_assertion(is_cpoints_list(X))),!.
 globalpoints(I,G):- is_object(I),object_localpoints(I,L),is_points_list(L),loc(I,X,Y),offset_points(X,Y,L,G),!.
 %globalpoints(I,X):- localpoints(I,X),!.
 globalpoints(_,[]):-!.
+globalpoints(Atom,_):- \+ compound(Atom),!,my_assertion(gp=Atom),trace_or_throw(globalpoints(Atom)).
 globalpoints(I,X):- my_assertion(gp=I), trace_or_throw(unknown(globalpoints(I,X))).
 
 
@@ -800,7 +799,7 @@ loc(Grid,H,V):- is_grid(Grid),!,H=1,V=1.
 loc(G,X,Y):- is_group(G),!,mapgroup(loc_term,G,Offsets),sort(Offsets,[loc(X,Y)|_]). % lowest loc
 %loc(Grid,H,V):- is_grid(Grid),!,globalpoints(Grid,Points),!,points_range(Points,LoH,LoV,_,_,_,_), H is LoH, V is LoV.
 loc(I,X,Y):- is_object(I), indv_props(I,L),member(loc(X,Y),L),!.
-loc(I,X,Y):- trace,into_obj(I,O), indv_props(O,L),member(loc(X,Y),L),!.
+loc(I,X,Y):- into_obj(I,O), indv_props(O,L),member(loc(X,Y),L),!.
 %loc(NT,H,V):- trace, known_gridoid(NT,G),loc(G,H,V).
 
 
@@ -1005,7 +1004,7 @@ find_outline1(Grid):- find_outline_pred(find_outlines_fast(_),Grid).
 %find_outline_path:- clsmake, forall(find_outline_path1,true).
 %find_outline_path1:- arc_grid(Grid), dash_chars, find_outline_pred(find_outline_sols(find_outline_path),Grid).
 
-find_outlines(Grid):- find_outline_pred(find_outlines,Grid).
+find_outlines(Grid):- find_outline_pred(find_outlines3,Grid).
 %find_outline_paths(Grid):- find_outline_pred(find_outline_sols(find_outline_path),Grid).
 
 fail_over_time(Secs,Goal,Else):- notrace(catch(call_with_time_limit(Secs,Goal),time_limit_exceeded,(Else,fail))).
@@ -1013,23 +1012,23 @@ fail_over_time(Secs,Goal):- fail_over_time(Secs,Goal,true).
 
 grid_of(LO,LO,[]):- is_grid(LO),!.
 grid_of(LO,O,H):- arg(1,LO,O),arg(2,LO,H).
-find_outline_pred(Find_OUTLINE,Grid):- is_grid(Grid),!,
+find_outline_pred(P3,Grid):- is_grid(Grid),!,
    grid_to_id(Grid,ID),   
    grid_size(Grid,H,V),
    writeln(ID),
    set_current_test(ID),
-   fail_over_time(6,call(Find_OUTLINE,Grid,SOLS,LeftOver),
-     (writeln("TOO SLOWWWW"=Find_OUTLINE),
+   fail_over_time(6,call(P3,Grid,SOLS,LeftOver),
+     (writeln("TOO SLOWWWW"=P3),
       print_grid(H,V,Grid),
-      writeln("TOO SLOWWWW"=Find_OUTLINE))),
+      writeln("TOO SLOWWWW"=P3))),
    my_append(SOLS,[leftover(LeftOver)],SOLSL),
    dash_chars,
-   (SOLS==[]-> ((writeln("NOTHING FROM"=Find_OUTLINE),ignore((fail,catch((print_grid(H,V,ID,Grid),writeln("NOTTAAA"=Find_OUTLINE),!,fail),_,fail)))));
+   (SOLS==[]-> ((writeln("NOTHING FROM"=P3),ignore((fail,catch((print_grid(H,V,ID,Grid),writeln("NOTTAAA"=P3),!,fail),_,fail)))));
    member(OL,SOLSL),
    (OL=leftover(LeftOver)
     -> (nl,
-      ignore((nonvar(LeftOver),nl,write(leftover=Find_OUTLINE),print_grid(H,V,LeftOver))),
-      write('from '),write(Find_OUTLINE),print_grid(H,V,Grid))
+      ignore((nonvar(LeftOver),nl,write(leftover=P3),print_grid(H,V,LeftOver))),
+      write('from '),write(P3),print_grid(H,V,Grid))
     ;((grid_of(OL,O,Hits),once((mass(O,M))),
      nl,write(solution(Hits,M)), print_grid(H,V,O))))).
 find_outline_pred(ID):- into_grid(ID,Grid),find_outlines(Grid).
@@ -1039,7 +1038,7 @@ find_outline_pred(ID):- into_grid(ID,Grid),find_outlines(Grid).
 
 /*
 find_outline(Grid,Sol,Rest):-
-  find_outlines(Grid,Sols,Rest),!,
+  find_outlines3(Grid,Sols,Rest),!,
   member(Sol,Sols).
   */
 fix_rest(Options,Rest0,Sols0,Rest,Sols):- 
@@ -1069,8 +1068,9 @@ find_group_outlines_fix_rest(Options,G,Sols,Rest):-
   fix_rest(Options,Rest0,Sols0,Rest,Sols).
 
 
-find_outlines(Grid,Solutions,Rest):- 
-  fail_over_time(4,find_outlines([perfect],Grid,Solutions,Rest)).
+find_outlines3(Grid,Solutions,Rest):- 
+  as_localpoints(Grid,Points),
+  find_outlines([perfect],Points,Solutions,Rest).
 
 find_outlines(Options,Grid,[Sol|Solutions],Rest):-
   find_outlinez(Options,Grid,Sol,More),!,
@@ -1263,7 +1263,10 @@ guess_shape_poly(I,0,N,H,V,Colors,Points,square):- N>1,H==V,!.
 guess_shape_poly(I,0,N,H,V,Colors,Points,solid):- N > 1.
 %guess_shape(GH,GV,GridIn,LocalGrid,I,O,N,H,V,Colors,Points,polygon):- O\==0,once(H>1;V>1).
 
-guess_shape(GH,GV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,R):- N>=2,  
+guess_shape(GH,GV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,R):- N>=2, iz_symmetry(GridIn,H,V,N,R).
+
+%iz_symmetry(GridIn,H,V,N,R):- N == 2, H==1, 
+iz_symmetry(GridIn,_H,_V,_N,R):-
   (flipSym_checks(SN,GridIn)*->R=symmetry(SN);R=symmetry(none)).
 
 %guess_shape(GH,GV,GridIn,LocalGrid,I,O,N,H,V,Colors,Points,solidity(A)):- solidity(Points,A).
@@ -1272,7 +1275,7 @@ guess_shape(GH,GV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,outl2):- H>2,V>2,N>4,
   once((grid_to_gridmap(GridIn,GridON), \+ member('*',GridON), member('.',GridON))).
   
 guess_shape(GH,GV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,outline(SN)):- H>2,V>2,N>4,
-  (find_outlines(Points,Sol,Rest)->(length(Sol,SN),SN>0,length(Rest,RN))),!.
+  (find_outlines3(Points,Sol,Rest)->(length(Sol,SN),SN>0,length(Rest,RN))),!.
 
 guess_shape(GH,GV,GridIn,LocalGrid,I,_,N,H,V,[cc(Color,_)],Points,outl):- H>2,V>2, N>7,add_borders(Color,GridIn,LocalGrid).
 
@@ -1328,6 +1331,8 @@ r_p2(rot90). r_p2(flipH). r_p2(flipV). r_p2(rot180). r_p2(rot270).
 
 :- dynamic(individuated_cache/3).
 :- retractall(individuated_cache(_,_,_)).
+:- dynamic(is_why_grouped/4).
+:- retractall(is_why_grouped_g(_,_,_,_)).
 
 
 :- fixup_exports.

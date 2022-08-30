@@ -258,9 +258,12 @@ vars_to_dictation([],T,T).
 
 tio_tersify(Value,ValueT):- is_grid(Value),!,ValueT=_.
 tio_tersify(Value,Value).
-:- export(copy_qq/3).
+:- export(copy_qq_//1).
+
 copy_qq_([]) --> [].
 copy_qq_([C|Cs]) --> [C], copy_qq_(Cs).
+
+:- export(copy_qq//1).
 copy_qq(A) --> copy_qq_(Cs), {atom_codes(A, Cs)}.
 
 to_prop_name(Name=_,UName):- nonvar(Name),!,to_prop_name(Name,UName).

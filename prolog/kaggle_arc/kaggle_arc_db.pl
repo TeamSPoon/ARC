@@ -12,12 +12,12 @@
 :- dynamic(cindv/3).
 :- dynamic(cindv/4).
 :- dynamic(cindv/5).
-:- dynamic(grid_obj/2).
+:- dynamic(grid_obj/3).
 
 erase_grid(GID):- 
   %id_grid_cells(GID,Grid)
   pfc_retractall(cmem(GID,_,_)), 
-  forall(pfc_retract(grid_obj(GID,OID)), erase_obj(OID)).
+  forall(pfc_retract(grid_obj(GID,_,OID)), erase_obj(OID)).
 erase_obj(OID):-
    pfc_retractall(cindv(OID,_,_)),
    pfc_retractall(cindv(OID,_,_,_)),
@@ -35,12 +35,12 @@ assert_hvc_cell(ID,H,V,C):- hv_point(H,V,HV),pfc_assert(cmem(ID,HV,C)).
 
 
 assert_id_grid_cells(GID):- 
-  oid_to_grid(GID,Grid), assert_id_grid_cells(GID,Grid).
+  oid_to_gridoid(GID,Grid), assert_id_grid_cells(GID,Grid).
 
 assert_id_grid_cells(GID,Grid):-
  %throw(all_in_emem(assert_id_grid_cells(GID,Grid))),
    grid_size(Grid,SH,SV),
-   ((cmem(GID,_,_);grid_obj(GID,_))-> erase_grid(GID) ; true),
+   ((cmem(GID,_,_);grid_obj(GID,_,_))-> erase_grid(GID) ; true),
    retractall(is_grid_size(GID,_,_)),
    pfc_assert(is_grid_size(GID,SH,SV)),
    assert_id_grid_cells2(GID,SH,SV,Grid).

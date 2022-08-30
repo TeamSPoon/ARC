@@ -283,6 +283,8 @@ wqs(format(C,N)):- !, format(C,N).
 wqs(writef(C,N)):- !, writef(C,N).
 wqs(call(C)):- !, call(C).
 wqs(pt(C)):- !, pt(C).
+wqs(g(C)):- !, write_nbsp, bold_print(writeq(g(C))).
+wqs(io(C)):- !, write_nbsp, bold_print(writeq(io(C))).
 wqs(q(C)):- !, write_nbsp, writeq(C).
 wqs(uc(C,W)):- !, write_nbsp, color_print(C,call(underline_print(format("\t~@",[wqs(W)])))).
 wqs(cc(C,N)):- attvar(C), get_attrs(C,PC), !, wqs(ccc(PC,N)).
@@ -952,7 +954,14 @@ nobject_glyph(G,Glyph):- term_to_atom(G,A),nobject_glyph(A,Glyph).
 
 object_cglyph(G,CGlyph):- color(G,C),object_glyph(G,Glyph),wots(CGlyph,color_print(C,Glyph)).
 
-int2glyph(GN2,Glyph):- quietly((i_sym(GN2,GN),!,i_glyph(GN,Glyph))).
+int2glyph(GN2,Glyph):- quietly(int2glyph0(GN2,Glyph)),!.
+int2glyph(GN,Glyph):- GN > 255, GN2 is GN div 2, int2glyph(GN2,Glyph).
+
+int2glyph(GN2,Glyph):- trace,i_sym(GN2,GN),!,i_glyph(GN,Glyph),!.
+
+int2glyph0(GN2,Glyph):- i_sym(GN2,GN),i_glyph(GN,Glyph),atom(Glyph),!.
+int2glyph0(GN,Glyph):- GN > 255, GN2 is GN div 2, int2glyph0(GN2,Glyph).
+
 
 %user:portray(S):- (string(S);atom(S)),atom_codes(S,[27|_]),write('"'),write(S),write('"').
 
@@ -1031,11 +1040,15 @@ into_color_glyph(N,Black,BGD):- get_bg_label(BGL),BGL==N, get_bgc(Black), bg_dot
 into_color_glyph(0,Black,BGD):- get_bg_label(BGL),!, into_color_glyph(BGL,Black,BGD).
 into_color_glyph(N,FGL,FGD):- get_fg_label(FGL),FGL==N, fg_dot(FGD),!.
 
+i_glyph(N,Glyph):- notrace((i_glyph0(N,Glyph),atom(Glyph))),!.
+i_glyph(N,Glyph):- trace,i_glyph0(N,Glyph),atom(Glyph),!.
 
-i_glyph(N,Glyph):- bg_sym(BG), BG==N, !, bg_dot(Code), name(Glyph,[Code]).
-i_glyph(Code,Glyph):- integer(Code), Code> 255, !,name(Glyph,[Code]).
-i_glyph(N,Glyph):- integer(N),quietly((i_sym(N,Code),name(Glyph,[Code]))).
-i_glyph(N,Glyph):- plain_var(N),!,format(chars(Codes),'~p',[N]),last(Codes,Glyph).
+i_glyph0(N,Glyph):- bg_sym(BG), BG==N, bg_dot(Code), name(Glyph,[Code]).
+i_glyph0(Code,Glyph):- integer(Code), Code> 255, name(Glyph,[Code]).
+i_glyph0(N,Glyph):- integer(N),quietly((i_sym(N,Code),name(Glyph,[Code]))).
+i_glyph0(N,Glyph):- plain_var(N),format(chars(Codes),'~p',[N]),last(Codes,Glyph).
+i_glyph0(N,Glyph):- atom(N),atom_length(N,1),Glyph=N.
+i_glyph0(N,Glyph):- N>10, integer(N),N3 is N div 3, i_glyph0(N3,Glyph).
 %i_glyph(N,Glyph):- atom(N),atom_chars(N,Chars),last(Chars,LGlyph),upcase_atom(LGlyph,Glyph).
                                                                             
 i_sym(N2,Code):- integer(N2),!, N is N2, change_code(N,NN), i_syms(Codes),nth0(NN,Codes,Code),!.

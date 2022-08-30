@@ -21,7 +21,7 @@ last_indiv(I,R):- into_group(I,M),I\=@=M,!,predsort(sort_on(loc_term),M,O),rever
 
 fav(A,B):- nonvar_or_ci(A),nonvar_or_ci(B), cls1,mmake, asserta(fav(A,B),Ref),!, call_cleanup(arc1(A),erase(Ref)).
 
-%fav(t(d631b094),human(globalpoints,grid_out=[get(points)],maplist(arg(1)))).
+%fav(t(d631b094),human(globalpoints,grid_target=[get(points)],maplist(arg(1)))).
 fav(t('d631b094'),[human(i(lo_dots),get(objs),learn_rule)]).
 fav(t('d631b094'),[-shape_match,-rotation_match,-mask_match,-color_match,tt,training,summarize,dominant_color,count_tiles,'(4, 1)']).
 
@@ -116,10 +116,10 @@ fav(t('08ed6ac7'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mas
 fav(v('626c0bcc'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,evaluation,'(3, 1) ']).
 fav(v('639f5a19'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,evaluation,'(2, 1) ']).
 
-fav(v('6ea4a07e'),[clue(mass(in)+mass(out)=9),human(corispond_colors,invert_existence),-rotation_match,-mask_match,-color_match,+shape_match,evaluation,'(6, 2) ']).
+fav(v('6ea4a07e'),[clue(mass(in)+mass(out)=9),human(use_clues),clue(corispond_colors,invert_existence),-rotation_match,-mask_match,-color_match,+shape_match,evaluation,'(6, 2) ']).
 
 :- style_check(-singleton).
-fav(t(ff28f65a),[-shape_match,-rotation_match,-mask_match,-color_match,tt,training,count_shapes,associate_images_to_numbers,'(8, 3)']).
+fav(t(ff28f65a),[human(count_shapes,associate_images_to_numbers),-shape_match,-rotation_match,-mask_match,-color_match,tt,training,count_shapes,associate_images_to_numbers,'(8, 3)']).
 fav(t('1b60fb0c'),[
  %indiv([i_repair_mirrors]),
  %human([new_things_are_a_color,fix_image]),
@@ -608,7 +608,8 @@ fav(v('7c9b52a0'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color
 fav(t(b190f7f5),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,tt,training,separate_images,replace_pattern,image_resizing,image_expasion,color_palette,'(3, 1)']).
 fav(v('19bb5feb'),[out_grid(2,2),-shape_match,-rotation_match,-mask_match,-color_match,test,evaluation,'(3, 1) ']).
 fav(v('20818e16'),[out_grid(8,6)]).
-fav(t(e6721834),[out_grid(17,15),-shape_match,-rotation_match,-mask_match,-color_match,tt,training,pattern_moving,pattern_juxtaposition,crop,'(3, 1)']).
+fav(t(e6721834),[out_grid(17,15),-shape_match,-rotation_match,-mask_match,-color_match,tt,training,
+  pattern_moving,pattern_juxtaposition,crop,'(3, 1)']).
 fav(t(f8ff0b80),[out_grid(1,3),-shape_match,-rotation_match,-mask_match,-color_match,tt,training,summarize,separate_shapes,order_numbers,count_tiles,'(3, 1)']).
 fav(v('50aad11f'),[out_grid(4,8),-shape_match,-rotation_match,-mask_match,-color_match,evaluation,'(3, 1) ']).
 fav(v(b7cb93ac),[out_grid(4,3),-shape_match,-rotation_match,-mask_match,-color_match,evaluation,'(3, 1) ']).
@@ -1023,6 +1024,21 @@ if like in the game of TTT you can win, but not diagonlly.. place the color on t
 
 
 */
+
+task_tag_info(X):- 
+ (var(X)->task_tag(X);true),
+ findall(TestID,(task_info(TestID,Info),sub_var(X,Info)),Tests),
+  list_to_set(Tests,Set),
+  length(Set,LS),
+  dash_chars,
+  wdmsg(?- task_tag_info(X)=LS),
+  maplist(task_tag_info(X),Set),
+  wdmsg(task_tag_info(X)=LS),
+  dash_chars.
+
+task_tag_info(_X,TestID):- print_qtest(TestID),!.
+
+task_tag:- forall(task_tag(X),task_tag_info(X)).
 
  task_tag(adapt_image_to_grid).
  task_tag(algebra).

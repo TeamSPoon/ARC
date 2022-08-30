@@ -8,7 +8,7 @@
 :- set_prolog_flag_until_eof(trill_term_expansion,false).
 :- endif.
 
-grid_obj(Grid,Why,Objs):-
+grid_w_obj(Grid,Why,Objs):-
   (var(Grid)->arc_grid(Grid);true),
   ROptions = complete,
   individuate(ROptions,Grid,_IndvS),  

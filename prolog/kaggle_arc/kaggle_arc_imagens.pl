@@ -662,7 +662,7 @@ in_shape_lib(squares,LibObj):- thirty_down_2(HW), decl_one_fg_color(C),hollow_sq
 in_shape_lib(n_shape,LibObj):- n_shape(LibObj).
 
 in_shape_lib(hammer,Name):- the_hammer1(Name).
-in_shape_lib(seen,O):- g2o(_,O), localpoints(O,LP),LP\==[],length(LP,L),L>4.
+in_shape_lib(seen,O):- get_current_test(TestID),g_2_o(TestID,_,O), localpoints(O,LP),LP\==[],length(LP,L),L>4.
 
 all_rots(X,Y):- all_rotations(X,Y).
 

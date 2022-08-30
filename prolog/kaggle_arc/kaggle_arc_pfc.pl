@@ -21,6 +21,27 @@ control_arg_types1(FofN,ArgN,Pre,[A|AA],[B|BB]):-
 
 arg_n_isa(_F,_N,_ISA):- fail.
 
+save_pfc_state:-
+  %tell(pfcState),
+  forall((pfcStateTerm(F/A),current_predicate(F/A)),listing(F/A)),
+  %told.
+  !.
+
+pfcDoAll(Goal):- forall(call(Goal),true).
+
+pfcStateTerm(F/A):- pfcDatabaseTerm(F/A).
+pfcStateTerm(F/A):-
+ member((F/A),[
+     fcUndoMethod/2,
+     fcAction/2,
+     fcTmsMode/1,
+     pfcQueue/1,
+     pfcCurrentDb/1,
+     pfcHaltSignal/1,
+     pfcDebugging/0,
+     pfcSelect/1,
+     pfcSearch/1]).
+
 control_arg_type(F/_,N,_Pre,A,B):- arg_n_isa(F,N,ISA),into_type(ISA,A,B),!.
 control_arg_type(FofN,_,Pre,A,B):- control_arg_types1([FofN|Pre],A,B).
 
@@ -87,6 +108,11 @@ must_ex(X):-must(X).
 quietly_ex(X):-call(X).
 
 add(X):- pfcAdd(X).
+
+pfcAddF(P):-
+  ignore(mpred_test_why(P)),
+  forall(retract(P),true),
+  pfcAdd(P).
 
 mpred_test(call_u(X)):- nonvar(X),!,pfcCallSystem(X),pfcWhy(X).
 mpred_test(\+ call_u(X)):- nonvar(X),!, (call_u(X)-> (dmsg(warn(failed(mpred_test(\+ call_u(X))))),mpred_test_why(X)); mpred_test_why(~(X))).
@@ -554,7 +580,7 @@ pfcBtPtCombine(Head,Body,Support) :-
 pfcBtPtCombine(_,_,_) :- !.
 
 pfcGetTriggerQuick(Trigger) :-  clause(Trigger,true).
-pfcCallSystem(Trigger) :-  call(Trigger).
+pfcCallSystem(Trigger) :-  pfc_call(Trigger).
 
 % % 
 % % 
@@ -653,6 +679,8 @@ pfcRetractAll(P) :- matches_why_UU(UU), pfcRetractAll(P,UU).
 % %  pfcRetractAll(P,S) removes support S from P and checks to see if P is still supported.
 % %  If it is not, then the fact is retreactred from the database and any support
 % %  relationships it participated in removed.
+
+pfcRetractAll(Fact,S) :- control_arg_types(Fact,Fixed),!,pfcRetractAll(Fixed,S).
 pfcRetractAll(P,S) :-
   \+ \+ pfcWithdraw(P,S),
   fail.
@@ -1036,16 +1064,16 @@ cut_c:- must(nb_current('$pfc_current_choice',[CP|_WAS])),prolog_cut_to(CP).
  
 fcEvalLHS((Test->Body),Support) :-  
   !, 
-  (pfcCallSystem(Test) -> (fcEvalLHS(Body,Support))),
+  pfcDoAll(pfcCallSystem(Test) -> (fcEvalLHS(Body,Support))),
   !.
 
 fcEvalLHS((Test*->Body),Support) :-  
   !, 
-  (pfcCallSystem(Test) *-> (fcEvalLHS(Body,Support))).
+  pfcDoAll(pfcCallSystem(Test) *-> (fcEvalLHS(Body,Support))).
 
 fcEvalLHS(rhs(X),Support) :-
   !,
-  pfc_eval_rhs(X,Support),
+  pfcDoAll(pfc_eval_rhs(X,Support)),
   !.
 
 fcEvalLHS(X,Support) :-
@@ -1072,6 +1100,8 @@ pfc_eval_rhs([Head|Tail],Support) :-
   pfc_eval_rhs(Tail,Support).
 
 
+pfc_eval_rhs1(Fact,S) :- control_arg_types(Fact,Fixed),!,pfc_eval_rhs1(Fixed,S).
+
 pfc_eval_rhs1({Action},Support) :-
  % evaluable Prolog code.
  !,
@@ -1090,11 +1120,7 @@ pfc_eval_rhs1([X|Xrest],Support) :-
 
 pfc_eval_rhs1(Assertion,Support) :-
  % an assertion to be added.
- must(pfcPost1(Assertion,Support)).
-
-
-pfc_eval_rhs1(X,_) :-
-  pfcWarn("Malformed rhs of a rule: ~p",[X]).
+ (must(pfcPost1(Assertion,Support))*->true ; pfcWarn("Malformed rhs of a rule: ~p",[Assertion])).
 
 
 % % 
@@ -1138,16 +1164,49 @@ trigger_trigger1(Trigger,Body) :-
 % assigning them support from God.
 %
 
-pfc_call(F) :- var(F), !, pfc_call_var(F).
-pfc_call((A,B)) :-!, pfc_call(A),pfc_call(B).
-pfc_call((A->B)) :-!, pfc_call(A)->pfc_call(B).
+%pfc_call(F) :- var(F), !, pfc_call(F).
+pfc_call(P) :- var(P), !, pfcFact(P).
+pfc_call(P) :- \+ callable(P), throw(pfc_call(P)).
+pfc_call((!)) :-!,cut_c.
+pfc_call(true):-!.
 pfc_call((A->B;C)) :-!, pfc_call(A)->pfc_call(B);pfc_call(C).
-pfc_call((A*->B)) :-!, pfc_call(A)*->pfc_call(B).
 pfc_call((A*->B;C)) :-!, pfc_call(A)*->pfc_call(B);pfc_call(C).
+pfc_call((A->B)) :-!, pfc_call(A)->pfc_call(B).
+pfc_call((A*->B)) :-!, pfc_call(A)*->pfc_call(B).
+pfc_call((A,B)) :-!, pfc_call(A),pfc_call(B).
 pfc_call((A;B)) :-!, pfc_call(A);pfc_call(B).
 pfc_call(\+ (A)) :-!, \+ pfc_call(A).
 pfc_call((A is B)) :-!, A is B.
-pfc_call(P):- pfc_call_var(P).
+pfc_call(clause(A,B)) :-!, clause(A,B).
+pfc_call(clause(A,B,Ref)) :-!, clause(A,B,Ref).
+% we really need to check for system predicates as well.
+% this is probably not advisable due to extreme inefficiency.
+pfc_call(P) :-
+  % trigger any bc rules.
+  bt(P,Trigger),
+  pfcGetSupport(bt(P,Trigger),S),
+  % @TODO REVIEW _U
+  fcEvalLHS(Trigger,S),
+  fail.
+%pfc_call(P) :- var(P), !, pfcFact(P).
+pfc_call(P) :- predicate_property(P,imported_from(system)), !, call(P).
+pfc_call(P) :- predicate_property(P,built_in), !, call(P).
+pfc_call(P) :- \+ predicate_property(P,_), functor(P,F,A), dynamic(F/A), !, call(P).
+pfc_call(P) :- \+ predicate_property(P,number_of_clauses(_)), !, call(P).
+pfc_call(P) :- 
+  setup_call_cleanup(
+    nb_current('$pfc_current_choice',Was),
+    (prolog_current_choice(CP), push_current_choice(CP), clause(P,Condition), pfc_call(Condition)),
+    nb_setval('$pfc_current_choice',Was)).
+     
+/*
+pfc_call(P) :- 
+  clause(P,true)*-> true ; (clause(P,Condition), Condition\==true,
+     pfc_call(Condition)).
+*/
+
+% an action is undoable if there exists a method for undoing it.
+undoable(A) :- fcUndoMethod(A,_).
 
 pfc_cache_bc(P) :-
   % trigger any bc rules.
@@ -1155,27 +1214,6 @@ pfc_cache_bc(P) :-
   forall(pfcGetSupport(bt(P,Trigger),S),
   % @TODO REVIEW _U
   fcEvalLHS(Trigger,S))).
-
-
-% we really need to check for system predicates as well.
-pfc_call_var(P) :- callable(P), predicate_property(P,imported_from(system)), !, call(P).
-% this is probably not advisable due to extreme inefficiency.
-pfc_call_var(P) :-
-  % trigger any bc rules.
-  bt(P,Trigger),
-  pfcGetSupport(bt(P,Trigger),S),
-  % @TODO REVIEW _U
-  fcEvalLHS(Trigger,S),
-  fail.
-pfc_call_var(P) :- var(P), !, pfcFact(P).
-pfc_call_var(P) :- clause(P,true)*-> true ;
-  (clause(P,Condition), Condition\==true,
-     pfcCallSystem(Condition)).
-
-
-% an action is undoable if there exists a method for undoing it.
-undoable(A) :- fcUndoMethod(A,_).
-
 
 
 % % 
@@ -1416,7 +1454,7 @@ buildRule(Lhs,Rhs,Support) :-
 
 buildTrigger([],Consequent,Consequent).
 
-buildTrigger([Test|Triggers],Consequent,(Test->X)) :- is_implicitly_prolog(Test),
+buildTrigger([Test|Triggers],Consequent,(Test *-> X)) :- is_implicitly_prolog(Test),
   !,
   buildTrigger(Triggers,Consequent,X).
 
@@ -1437,7 +1475,7 @@ buildTrigger([(T1)|Triggers],Consequent,nt(T2,Test,X)) :-
   buildNtTest(T2,true,Test),
   buildTrigger(Triggers,Consequent,X).
 
-buildTrigger([{Test}|Triggers],Consequent,(Test->X)) :-
+buildTrigger([{Test}|Triggers],Consequent,(Test *-> X)) :-
   !,
   buildTrigger(Triggers,Consequent,X).
 
