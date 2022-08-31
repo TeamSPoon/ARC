@@ -658,7 +658,7 @@ fp666(T,Y):- ff666(T,X), fpad_grid(f,X,Y).
 text_to_grid(Text,GO):- text_to_grid(Text,_HH,_VV,_ObjPoints,GO).
 text_to_grid(Text,HH,VV,ObjPoints,GO):-
   ascii_to_grid(Text,G),
-  % grid_to_id(G,ID),
+  % grid_to_tid(G,ID),
   %print_grid(G),
   globalpoints(G,GPs),!,
   %print_grid(GPs),

@@ -38,15 +38,15 @@ meta_argtypes(process_test_grid(oid)).
 meta_argtypes(P) ==> {decl_pt(P)}.
 
 cmem==>cmem(_,_,_).
-cmem==>grid_obj(_,_,_).
+cmem==>gid_glyph_oid(_,_,_).
 cmem==>cindv(_,_,_).
 
-id_to_oid(T,A) :- awc,!, (clause(id_to_oid(T,A),true)*-> true ; term_to_oid(T,A)).
+tid_to_gid(T,A) :- awc,!, (clause(tid_to_gid(T,A),true)*-> true ; term_to_oid(T,A)).
 
 startAll==>((kaggle_arc_io(TestID,ExampleNum,IO,G)/(ID=TestID*ExampleNum*IO,term_to_oid(ID,GID)))
-  ==>(id_to_oid(ID,GID),oid_to_grid(GID,G),process_oid(GID))).
+  ==>(tid_to_gid(ID,GID),oid_to_grid(GID,G),process_oid(GID))).
 
-%id_to_oid(T,A) :- zwc,!, term_to_oid(T,A).
+%tid_to_gid(T,A) :- zwc,!, term_to_oid(T,A).
 
 ((startAll/get_why_uu(UU))==>why_startAll(UU)).
 
@@ -62,12 +62,15 @@ startAll2==>(process_oid(OID)/( \+ cmem(OID,_,_))==>{assert_id_grid_cells(OID)})
 (startAll3 ==>process_test(t('27a28665'))).
 ((startAll4,all_arc_test_name(ID)) ==>process_test(ID)).
 
-((individuate_test_grids(TestID),id_to_oid(TestID*_*_,OID))==> process_test_grid(OID)).
+((individuate_test_grids(TestID),tid_to_gid(TestID*_*_,OID))==> process_test_grid(OID)).
+
+
+
 
 :- dynamic(saved_training/1).
 
 (process_test(TestID) / (\+ saved_training(TestID))) ==> 
-  (individuate_test_grids(TestID),{detect_supergrid(TestID)},{save_training(TestID)},saved_training(TestID)).
+  (individuate_test_grids(TestID),saved_training(TestID),{detect_supergrid(TestID)}).
 
 :- dynamic(bc_q/1).
 :- dynamic(bc_p/1).

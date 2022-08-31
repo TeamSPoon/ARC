@@ -33,9 +33,19 @@ superinput_blob
 
 test_supergrid:- clsmake, forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_supergrid(TestID,ExampleNum,In,Out)).
 
+compile_and_save_task:- clsmake, get_current_test(TestID),compile_and_save_task(TestID).
+compile_and_save_task(TestID):-
+  all_arc_test_name(TestID),
+
+  ignore(retract(saved_training(TestID))),
+  ignore(retract(process_test(TestID))),
+  add(process_test(TestID)).
+
 detect_supergrid:- clsmake, get_current_test(TestID),detect_supergrid(TestID).
 detect_supergrid(TestID):- forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_supergrid(TestID,ExampleNum,In,Out)),
-  color_print(magenta,call(((grid_hint(TestID))))).
+  color_print(magenta,call(((grid_hint(TestID))))),
+  save_supertask(TestID).
+
 
 detect_supergrid1:- clsmake, get_current_test(TestID),detect_supergrid1(TestID).
 detect_supergrid1(TestID):- 
@@ -318,7 +328,7 @@ rinfo(obj(List0),RInfo):-
   points_to_grid(LocalPoints,Grid),mapgrid(sometimes_assume(=,BGL),Grid),
   select(shape(Shape),List,Rest2),mapgrid(sometimes_assume(=,BGL),Shape),
   Rest3 = Rest2,
-  o_i_d(Obj,_,MyID),
+  obj_to_oid(Obj,_,MyID),
   must_det_ll((remove_too_verbose(MyID,Rest3,TV00))),flatten([TV00],TV0),
   must_det_ll((include(not_too_verbose,TV0,TV1),maplist(fix_iz,TV1,TV)))]),!,
   member(MrT,[oform(Shape),ogrid(Grid)|TV]),once((MrT=..MrTL, RInfoM=..[Key|MrTL],rinfo(RInfoM,RInfo))).

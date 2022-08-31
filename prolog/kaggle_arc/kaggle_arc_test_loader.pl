@@ -28,7 +28,11 @@ load_json_files(F,Mask):-
   maplist(file_name_extension,Names,_,BaseNames),
   maplist(load_json_file(F),Names,FullNames),!.
 
-load_json_file(F, BaseName, FullName):- Testname=..[F,BaseName], 
+no_uscore(UBaseName,BaseName):- 
+  atomic_list_concat(List,'_',UBaseName),
+  atomic_list_concat(List,'-',BaseName).
+
+load_json_file(F, UBaseName, FullName):- no_uscore(UBaseName,BaseName), Testname=..[F,BaseName], 
   % dmsg(load_json_file=FullName),
   setup_call_cleanup(open(FullName,read,In),
    json:json_read(In,Term,[]),
@@ -79,6 +83,7 @@ arc_sub_path(Subdir,AbsolutePath):- muarc_tmp:arc_directory(ARC_DIR),absolute_di
 
 :- load_json_files(t,'./data/training/*.json').
 :- load_json_files(v,'./data/evaluation/*.json').
+:- load_json_files(t,'./data/1D_testset/*.json').
 %:- load_json_files(v,'./data/test/*.json').
 :- export(kaggle_arc/4).
 kaggle_arc(TName,ExampleNum,In,Out):- kaggle_arc_json(TName,ExampleNum,In,Out).

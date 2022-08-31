@@ -107,7 +107,7 @@ debug_indiv(obj(A)):- \+ is_list(A),!, pt(debug_indiv(obj(A))).
 
 /*
 debug_indiv(A):- is_point_obj(A,Color,Point),
-  o_i_d(A,Tst,Id), i_glyph(Id,Sym),
+  obj_to_oid(A,Tst,Id), i_glyph(Id,Sym),
   hv_point(H,V,Point), i_glyph(Id,Sym),
   wqnl([' % Point: ', color_print(Color,Sym), dot, color(Color), fav1(Tst), nth(Id), loc(H,V)]),!. 
 */
@@ -151,13 +151,13 @@ debug_indiv(obj(A)):- \+ \+ debug_indiv_obj(A),!.
 
 debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
  maplist(must_det_ll,[
-  ignore((o2g(Obj,GGG), nonvar(GGG),set_glyph_to_object(GGG,Obj))),
+  %ignore((o2g(Obj,GGG), nonvar(GGG),set_glyph_to_object(GGG,Obj))),
 %debug_indiv(Obj):- Obj = obj(A), is_list(A),  
   
   sort_obj_props(A,AS0),
  % will_show_grid(Obj,TF),
   TF = false,
-  o_i_d(Obj,_,MyID),
+  obj_to_oid(Obj,_,MyID),
   %o2ansi(MyID,MissGlyph),
   object_s_glyph(Obj,SGlyph),
   append(AS0,[nth(MyID)],AS),  
@@ -231,9 +231,9 @@ remove_too_verbose(MyID,List,ListO):- is_list(List),!,maplist(remove_too_verbose
 % @TODO UNCOMMENT THIS remove_too_verbose(MyID,background,S):- sformat(S,'bckgrnd',[]).
 remove_too_verbose(MyID,iz(H),HH):- remove_too_verbose(MyID,H,HH),!.
 
-remove_too_verbose(_MyID,o_i_d(_ * _ * X,Y),NTH):- NTH=..[X,Y].
-remove_too_verbose(_MyID,o_i_d(_ * _+_ * X,Y),NTH):- NTH=..[X,Y].
-remove_too_verbose(_MyID,o_i_d(_ * X,Y),NTH):- NTH=..[X,Y].
+remove_too_verbose(_MyID,obj_to_oid(_ * _ * X,Y),NTH):- NTH=..[X,Y].
+remove_too_verbose(_MyID,obj_to_oid(_ * _+_ * X,Y),NTH):- NTH=..[X,Y].
+remove_too_verbose(_MyID,obj_to_oid(_ * X,Y),NTH):- NTH=..[X,Y].
 
 remove_too_verbose(MyID,link(Touched,ID,Dir),HH):- %number(MyID),
   MyID\==0,integer(ID),alt_id(MyID,ID,Alt),o2ansi(ID,Glyph),

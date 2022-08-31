@@ -307,7 +307,7 @@ mention_touches(Obj,[link(Dir,Touched)|More],NewFObjO):- !,
   mention_touches(Obj,Dir-Touched,MidObj),
   mention_touches(MidObj,More,NewFObjO).
 mention_touches(Obj,Dir-Touched,NewObj):-
-  /*must_det_ll*/(o_i_d(Touched,_Where,Iv)),
+  /*must_det_ll*/(obj_to_oid(Touched,Iv)),
   /*must_det_ll*/(override_object(link(touches,Dir,Iv),Obj,NewObj)),!.
 */
 
@@ -317,7 +317,7 @@ find_touches_objects(Obj,_,[]):- has_prop(link(touched,_,_),Obj),!.
 find_touches_objects(Obj,[Touched|ScanNext],[BetterTouch|Engulfed]):-    
  once(touching_object(Dirs,Obj,Touched)),Dirs\==[],!,
  better_touched(Iv,Dirs,BetterTouch),
- /*must_det_ll*/(o_i_d(Touched,_Where,Iv)),
+ /*must_det_ll*/(obj_to_oid(Touched,Iv)),
  /*must_det_ll*/(find_touches_objects(Obj,ScanNext,Engulfed)),!.
 find_touches_objects(Obj,[_|ScanNext],Engulfed):- /*must_det_ll*/(find_touches_objects(Obj,ScanNext,Engulfed)),!.
 
@@ -383,12 +383,12 @@ find_engulfs_objects(Obj,_,[]):- has_prop(link(insideOf,_),Obj),!.
 find_engulfs_objects(Obj,_,[]):- has_prop(link(contains,_),Obj),!.
 find_engulfs_objects(Obj,[Touched|ScanNext],[link(insideOf,Iv)|Engulfed]):-    
  once(contained_object(Obj,Touched)),!,
- /*must_det_ll*/(o_i_d(Touched,_Where,Iv)),
+ /*must_det_ll*/(obj_to_oid(Touched,Iv)),
  /*must_det_ll*/(find_engulfs_objects(Obj,ScanNext,Engulfed)),!.
 find_engulfs_objects(Obj,_,[]):- mass(Obj,Mass),Mass<5,!.
 find_engulfs_objects(Obj,[Touched|ScanNext],[link(contains,Iv)|Engulfed]):-    
  once(contained_object(Touched,Obj)),!,
- /*must_det_ll*/(o_i_d(Touched,_Where,Iv)),
+ /*must_det_ll*/(obj_to_oid(Touched,Iv)),
  /*must_det_ll*/(find_engulfs_objects(Obj,ScanNext,Engulfed)),!.
 find_engulfs_objects(Obj,[_|ScanNext],Engulfed):- /*must_det_ll*/(find_engulfs_objects(Obj,ScanNext,Engulfed)),!.
 
@@ -428,7 +428,7 @@ find_contained(H,V,ID,[Found|Sofar],[Found|SofarInsteadM],NextScanPoints,NextSca
   %grid_size(Found,H,V),
   /*must_det_ll*/((
   % points_to_grid(H,V,ContainedPoints,Grid),
-  %once(o_i_d(Found,ID,_);grid_to_id(Grid,ID)),
+  %once(obj_to_oid(Found,ID,_);grid_to_tid(Grid,ID)),
   individuate(subshape_in_object,ContainedPoints,NewInside),
   mapgroup(mention_inside(Found),NewInside,NewInsideM))),
   ignore((length(ContainedPoints,N),N>1,quietly(print_grid(H,V,"find_contained",[Found|NewInsideM])))),
@@ -439,7 +439,7 @@ find_contained(H,V,ID,[Found|Sofar],[Found|SofarInstead],NextScanPoints,NextScan
 
 
 mention_inside(Found,NewInside,NewInsideO):-
-  o_i_d(Found,_Where,Iv),
+  obj_to_oid(Found,Iv),
   add_shape_info(link(insideOf,Iv),NewInside,NewInsideO).
 
 find_contained_points(_,[],[],[]).

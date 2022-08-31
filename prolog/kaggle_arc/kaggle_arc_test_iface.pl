@@ -30,7 +30,7 @@ menu_cmd1(_,'t','       You may fully (t)rain from examples considering all the 
 menu_cmd1(_,'T','                  or (T)rain from only understanding single pairs (not considering the test as a whole)',(cls,train_only_from_pairs)).
 menu_cmd1(i,'i','             See the (i)ndividuation of the input/outputs',(cls,!,ndividuator1)).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls,!,what_unique)).
-menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls,!,detect_supergrid)).
+menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls,!,compile_and_save_task)).
 menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(print_test)).
 menu_cmd1(_,'e','                  or (e)xamine the program leared by training',(cls,print_test,!,solve_test)).
 menu_cmd1(_,'L','                  or (L)earned program',(learned_test)).
@@ -74,7 +74,7 @@ my_menu_call(E):- locally(set_prolog_flag(gc,true),E).
 
 my_submenu_call(E):- current_predicate(_,E), \+ is_list(E),!,
   catch(ignore(locally(set_prolog_flag(gc,true),E)),E,wdmsg(E)).
-my_submenu_call(E):- get_vm(VM),!, run_dsl(VM,E,VM.grid,Out),
+my_submenu_call(E):- peek_vm(VM),!, run_dsl(VM,E,VM.grid,Out),
   set(VM.grid) = Out.
 
 read_menu_chars(_Start,_SelMax,Out):- pengine_self(_Id),!,read(Out).
@@ -152,7 +152,7 @@ do_menu_key(Key):- atom(Key),atom_length(Key,1),atom_codes(Key,Codes), format("~
 do_menu_key(_).
 
 maybe_call_code(Key):- atom_length(Key,Len),Len>2,
- catch(atom_to_term(Key,Term,Vs),_,fail),!,
+ catch(atom_to_term(Key,Term,Vs),_,fail),!, 
  locally(nb_setval('$variable_names',Vs),
    locally(nb_setval('$term',Term),
      locally(nb_setval('$user_term',Term), 
@@ -300,7 +300,7 @@ set_current_test(Name):-
 really_set_current_test(TestID):-
    luser_setval(test_name,TestID),
   (luser_getval(last_test_name,WasTestID);WasTestID=[]),
-  (WasTestID==TestID-> true ; new_current_test_info).
+  (WasTestID==TestID-> true ; new_current_test_info(WasTestID,TestID)).
 
 some_current_example_num(TrnN):- nb_current(example,TrnN),TrnN\==[],!.
 some_current_example_num(TrnN):- luser_getval(example,TrnN),TrnN\==[],!.
@@ -328,7 +328,13 @@ prev_pair:-
 trn_tst(trn,tst).
 trn_tst(tst,trn).
 
-new_current_test_info:- 
+clear_test(TestID):- is_list(TestID),!,maplist(clear_test,TestID).
+clear_test(TestID):- clear_training(TestID),
+ saveable_test_info(TestID,Info),
+ maplist(erase,Info).
+
+new_current_test_info(WasTestID,TestID):- 
+  clear_test(WasTestID),
   ignore((
   %luser_getval(test_name,TestID),
   get_current_test(TestID),
@@ -336,7 +342,24 @@ new_current_test_info:-
   luser_setval(example,tst+0),
   luser_setval(last_test_name,TestID))),
   save_last_test_name,
+  test_name_output_file(TestID,File),
+  load_file_dyn(File),
   clear_training(TestID).
+
+unload_file_dyn(File):- \+ exists_file(File), !.
+unload_file_dyn(File):- unload_file(File),!.
+unload_file_dyn_pfc(File):- 
+ open(File,read,I),
+ repeat,read_term(I,Term,[]),
+ (Term = end_of_file -> true ; pfcRemove(Term),fail).
+
+load_file_dyn(File):- \+ exists_file(File), !.
+load_file_dyn(File):- consult(File),!.
+load_file_dyn(File):- load_file_dyn_pfc(File).
+load_file_dyn_pfc(File):- 
+ open(File,read,I),
+ repeat,read_term(I,Term,[]),
+ (Term = end_of_file -> true ; pfcAdd(Term),fail).
 
 new_test_pair(PairName):-
   %nb_delete(grid_bgc),
@@ -790,6 +813,9 @@ fix_test_name(ID,Fixed,Example+Num):- test_id_num_io(ID,Tried,Example,Num,_), fi
 
 
 test_id_num_io(ID,_Name,_Example,_Num,_IO):- var(ID),!, fail.
+test_id_num_io(ID,_Name,_Example,_Num,_IO):- is_grid(ID),!, fail.
+test_id_num_io(ID,_Name,_Example,_Num,_IO):- is_list(ID), \+ maplist(nonvar,ID),!,fail.
+
 test_id_num_io([V,Name,Example,ANum,IO|_],TstName,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,fix_id(VName,TstName).
 test_id_num_io(TstName*Example+Num*IO,Name,Example,Num,IO):- !,fix_id(TstName,Name).
 test_id_num_io(TstName*(Example+Num)*IO,Name,Example,Num,IO):- !,fix_id(TstName,Name).
@@ -812,7 +838,7 @@ test_id_num_io(ID,Name,_Example,_Num,_IO):- fix_id(ID,   Name),!. %, kaggle_arc_
 fix_id(Tried,   Tried):- var(Tried),!.
 fix_id(X,_):- is_cpoint(X),!,fail.
 fix_id(X,_):- is_list(X),maplist(is_cpoint,X),!,fail.
-fix_id(o_i_d(X,_),Fixed):-  !, fix_id(X,Fixed).
+fix_id(obj_to_oid(X,_),Fixed):-  !, fix_id(X,Fixed).
 fix_id(Tried,   Tried):- kaggle_arc(Tried,_,_,_),!.
 fix_id(v(Tried),   TriedV):- !, atom_id(Tried,TriedV),!.
 fix_id(t(Tried),   TriedV):- !, atom_id(Tried,TriedV),!.

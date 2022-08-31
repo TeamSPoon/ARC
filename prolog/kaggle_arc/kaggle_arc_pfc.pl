@@ -112,7 +112,7 @@ add(X):- pfcAdd(X).
 pfcAddF(P):-
   ignore(mpred_test_why(P)),
   forall(retract(P),true),
-  pfcAdd(P).
+  pfcUnique(post, P)-> pfcAdd(P) ; pfcFwd(P).
 
 mpred_test(call_u(X)):- nonvar(X),!,pfcCallSystem(X),pfcWhy(X).
 mpred_test(\+ call_u(X)):- nonvar(X),!, (call_u(X)-> (dmsg(warn(failed(mpred_test(\+ call_u(X))))),mpred_test_why(X)); mpred_test_why(~(X))).
@@ -369,14 +369,16 @@ pfcPost1(P,S) :-
   % %  db pfcAddDbToHead(P,P2),
   % pfcRemoveOldVersion(P),
   must(pfcAddSupport(P,S)),
-  pfcUnique(post, P),
+  (pfcUnique(post, P)-> pfcPost2(P,S) ; true).
+
+pfcPost2(P,S):- 
   must(assert(P)),
   must(pfcTraceAdd(P,S)),
   !,
   must(pfcEnqueue(P,S)),
   !.
 
-pfcPost1(_,_).
+%pfcPost1(_,_).
 %pfcPost1(P,S) :-  
  %pfcWarn("pfcPost1: ~p\n (support: ~p) failed",[P,S]).
 

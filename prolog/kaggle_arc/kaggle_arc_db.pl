@@ -12,19 +12,19 @@
 :- dynamic(cindv/3).
 :- dynamic(cindv/4).
 :- dynamic(cindv/5).
-:- dynamic(grid_obj/3).
+:- dynamic(gid_glyph_oid/3).
 
 erase_grid(GID):- 
   %id_grid_cells(GID,Grid)
   pfc_retractall(cmem(GID,_,_)), 
-  forall(pfc_retract(grid_obj(GID,_,OID)), erase_obj(OID)).
+  forall(pfc_retract(gid_glyph_oid(GID,_,OID)), erase_obj(OID)).
 erase_obj(OID):-
    pfc_retractall(cindv(OID,_,_)),
    pfc_retractall(cindv(OID,_,_,_)),
    pfc_retractall(cindv(OID,_,_,_,_)).
 
 assert_id_cells(ID,Points):- maplist(assert_id_cell(ID),Points).
-assert_id_cell(ID,-(C,HV)):- pfc_assert(cmem(ID,HV,C)).
+assert_id_cell(ID,-(C,HV)):- pfc_assert(cmemo(ID,HV,C)).
 assert_hvc_cell(_,_,_,C):- plain_var(C). % free_cell(C),!.
 assert_hvc_cell(ID,H,V,C):- hv_point(H,V,HV),pfc_assert(cmem(ID,HV,C)).
 
@@ -40,7 +40,7 @@ assert_id_grid_cells(GID):-
 assert_id_grid_cells(GID,Grid):-
  %throw(all_in_emem(assert_id_grid_cells(GID,Grid))),
    grid_size(Grid,SH,SV),
-   ((cmem(GID,_,_);grid_obj(GID,_,_))-> erase_grid(GID) ; true),
+   ((cmem(GID,_,_);gid_glyph_oid(GID,_,_))-> erase_grid(GID) ; true),
    retractall(is_grid_size(GID,_,_)),
    pfc_assert(is_grid_size(GID,SH,SV)),
    assert_id_grid_cells2(GID,SH,SV,Grid).
@@ -157,7 +157,7 @@ hv_cg_value(ID,C,H,V):- (var(H);var(V)),!, hv_point(H,V,_),hv_cg_value(ID,CC,H,V
 hv_cg_value(Grid,Color,H,V):- is_grid(Grid),!,nth1(V,Grid,Row),nth1(H,Row,Color).
 hv_cg_value(O,GN,H,V):- is_map(O),O.objs\==[],!,hv_cg_value(O.objs,GN,H,V).
 hv_cg_value(O,GN,H,V):- is_map(O),!,hv_cg_value(O.grid,GN,H,V).
-hv_cg_value(O,Color-GN,H,V):- is_object(O),hv_c_value(O,Color,H,V),o_i_d(O,_Tst,GN),nonvar_or_ci(GN),!.
+hv_cg_value(O,Color-GN,H,V):- is_object(O),hv_c_value(O,Color,H,V),obj_to_oid(O,GN),nonvar_or_ci(GN),!.
 
 hv_cg_value([G|Points],CN,H,V):- quietly(( is_list(Points), is_object_or_grid(G))), 
    grid_color_and_glyph([G|Points],C,N,H,V),CN=(C-N),!.
@@ -190,7 +190,7 @@ pgt1(Obj):-
          localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(same), loc(3, 1),
          changes([]), iz(combined),
          iz(rectangle), iz(multicolored),
-         iz(polygon), o_i_d(v('0ad4ef5')*(trn+0)*in, 21),
+         iz(polygon), obj_to_oid(v('0ad4ef5')*(trn+0)*in, 21),
        %  globalpoints( [ red-point_01_01, silver-point_02_01]),
          grid_size(8, 8)]).
 
@@ -202,7 +202,7 @@ pgt2(Obj):- Obj =
          localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(same), loc(2, 1),
          changes([]), iz(combined),
          iz(rectangle), iz(multicolored),
-         iz(polygon), o_i_d(v('a1d4ef5')*(trn+0)*in, 66),
+         iz(polygon), obj_to_oid(v('a1d4ef5')*(trn+0)*in, 66),
         %  globalpoints( [ red-point_01_01, silver-point_02_01]),
          grid_size(8, 8)]).
 

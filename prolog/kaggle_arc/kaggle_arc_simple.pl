@@ -143,7 +143,7 @@ grid_part(Grid,Info):- var(Grid), get_current_test(TestID), ignore(luser_getval(
 number_obj(N,obj(List),obj([ord(N)|List])).
 /*
   Obj = obj(List),
-  loc(Obj,X,Y),o_i_d(Obj,_,MyID),
+  loc(Obj,X,Y),obj_to_oid(Obj,_,MyID),
  % atomic_list_concat([obj,X,Y],'_',Key),
   localpoints_include_bg(Obj,LocalPoints),
   points_to_grid(X,Y,LocalPoints,Grid),mapgrid(sometimes_assume(=,bg),Grid),

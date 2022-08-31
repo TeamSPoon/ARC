@@ -45,10 +45,11 @@ empty_grid_to_individual(H,V,Obj):-
          localpoints([]), v_hv(H, V), 
          rotation(same), 
          loc(1, 1),
+         obj_iv(Iv),
          %pen([fg]),
          changes([]), 
          iz(grid),
-         o_i_d(empty_grid_to_individual(H,V), Iv),
+         %obj_to_oid(empty_grid_to_individual(H,V), Iv),
          grid_size(H, V)]).
 
 
@@ -147,7 +148,7 @@ make_indiv_object(VM,Overrides,LPoints,NewObj):-
 
  
 retract_object(GID,OID,_):- 
- retractall(grid_obj(GID,_,OID)),
+ retractall(gid_glyph_oid(GID,_,OID)),
  retractall(cindv(OID,_,_)),
  retractall(cindv(OID,_,_,_)),
  retractall(cindv(OID,_,_,_,_)).
@@ -156,11 +157,13 @@ assert_object(GID,NewObj):-
   obj_to_oid(NewObj,NOID),
   assert_object(GID,NOID,NewObj).
 
-assert_object(GID,OID,List):- 
-  id_to_oid(GID,GOID),
-  o2g(List,Glyph),
-  pfcAdd(grid_obj(GOID,Glyph,OID)),
-  assert_object1(OID,List).
+assert_object(GID,OID,NewObj):- 
+  tid_to_gid(GID,GOID),
+  o2g(NewObj,Glyph),
+  retract_object(GID,OID,_),
+  pfcAdd(gid_glyph_oid(GOID,Glyph,OID)),
+  assert_object1(OID,NewObj).
+
 assert_object1(OID,obj(List)):-!,maplist(assert_object1(OID),List).
 assert_object1(OID,List):- is_list(List),!,maplist(assert_object1(OID),List).
 assert_object1(OID,Prop):- Prop=..List, AProp=..[cindv,OID|List],
@@ -239,7 +242,7 @@ make_indiv_object_s(ID,GH,GV,Overrides,Points,ObjO):-
     OShapes,
     [iz(yc(CY)),iz(xc(CX))],
     [iz(row(LoV)),iz(col(LoH)),iz(tall(Height)),iz(wide(Width))],
-    [%o_i_d(ID,Iv),
+    [%obj_to_oid(ID,Iv),
      iz(g(IO))
      % globalpoints(Points),
      %agrid_size(GH,GV)
@@ -257,7 +260,7 @@ cclump([H|T0], [CH|T]) :-
     color_c(C,H,CH).  
 cclump([], []).  color_c(1,H,H). color_c(C,H,C-H).
 
-prop_order([v_hv/2,cmass/1,loc/2,mass/1,center/2,pen/1,shape/1,localpoints/1,rotation/1,colors/1,iz/1,globalpoints/1,o_i_d/2,grid_size/2]).
+prop_order([v_hv/2,cmass/1,loc/2,mass/1,center/2,pen/1,shape/1,localpoints/1,rotation/1,colors/1,iz/1,globalpoints/1,obj_to_oid/2,grid_size/2]).
 
 
 iz_o(F,A):- member(F/A,[xc/1,yc/1,row/1,col/1,tall/1,wide/1,chromatic/1,dot/0]).
@@ -445,7 +448,7 @@ merge_2objs(VM,Bigger,NewInside,IPROPS,Combined):-
 props_not_for_merge(globalpoints(_)).
 props_not_for_merge(shape(_)).
 props_not_for_merge(localpoints(_)).
-props_not_for_merge(o_i_d(_,_)).
+props_not_for_merge(obj_to_oid(_,_)).
 props_not_for_merge(loc(_,_)).
 props_not_for_merge(v_hv(_,_)).
 props_not_for_merge(colors(_)).
@@ -473,28 +476,33 @@ indv_u_props(I,[v_hv(H,V),   cmass(C),  loc(X,Y),  localpoints(Ps),  rotation(Ro
 
 :- dynamic(is_iv_for/2).
 iv_for(L,Iv):- copy_term(L,CT,_),numbervars(CT,0,_,[attvar(bind),singletons(true)]),term_hash(CT,Fv),
- number(Fv), Iv is (Fv rem 800) + 1, (\+ is_iv_for(Iv,_) -> asserta_if_new(is_iv_for(Iv,L)) ; true).
+ number(Fv), Iv is (Fv rem 800) + 1,!. % (\+ is_iv_for(Iv,_) -> asserta_if_new(is_iv_for(Iv,L)) ; true).
+
+obj_iv(Obj,Iv):- indv_u_props(Obj,L),iv_for(L,Iv).
 
 obj_to_oid(Obj,OID):- atom(Obj),!,OID=Obj.
 obj_to_oid(Obj,OID):- 
-   indv_u_props(Obj,L),iv_for(L,Iv),
+   obj_iv(Obj,Iv),
    current_gid(TOID), 
-   atomic_list_concat([TOID,'_',Iv],OID).
+   object_glyph(Obj,Glyph),
+   int2glyph(Iv,GL),
+   atomic_list_concat([GL,'_',TOID,'_',Iv,'_',Glyph],OID).
 
 current_gid(TOID):-
    get_vm(VM), ID = VM.id,
-   id_to_oid(ID,TOID),!.
+   tid_to_gid(ID,TOID),!.
 
 
-%   o_i_d(Obj,_ID,OID). %object_grid(Obj,G),grid_to_oid(G,OID).
+%   obj_to_oid(Obj,_ID,OID). %object_grid(Obj,G),grid_to_oid(G,OID).
 
+obj_to_oid(Obj,_,MyID):- obj_to_oid(Obj,MyID).
 
-o_i_d(I,_ID,Fv):- is_grid(I),!, flag(indiv,Fv,Fv+1).
-o_i_d(I,ID,Iv):- indv_props(I,L),member(o_i_d(ID,Iv),L),!.
-o_i_d(I,_,Iv):- indv_u_props(I,L),iv_for(L,Iv),!.
-%o_i_d(I,ID,Fv):- into_obj(I,O),!,o_i_d(O,ID,Fv).
-o_i_d(I,ID,Iv):- trace_or_throw(missing(o_i_d(I,ID,Iv))).
-%o_i_d(_,ID,_Iv):- luser_getval(test_pairname,ID).
+%obj_to_oid(I,_,Iv):- is_object(I), obj_iv(I,Iv).
+%obj_to_oid(I,_ID,Fv):- is_grid(I),!, flag(indiv,Fv,Fv+1).
+%obj_to_oid(I,ID,Iv):- indv_props(I,L),member(obj_to_oid(ID,Iv),L),!.
+%obj_to_oid(I,ID,Fv):- into_obj(I,O),!,obj_to_oid(O,ID,Fv).
+%obj_to_oid(I,ID,Iv):- trace_or_throw(missing(obj_to_oid(I,ID,Iv))).
+%obj_to_oid(_,ID,_Iv):- luser_getval(test_pairname,ID).
 
 mass(I,Count):- is_grid(I),!,globalpoints(I,Points), length(Points,Count),!.
 mass(I,X):- var_check(I,mass(I,X)).
@@ -558,7 +566,7 @@ indv_props_for_noteablity(obj(L),Notes):- my_assertion(nonvar(L)),!, include(is_
 
 %is_not_prop_for_noteablity(globalpoints).
 %is_not_prop_for_noteablity(grid_size).
-%is_not_prop_for_noteablity(o_i_d).
+%is_not_prop_for_noteablity(obj_to_oid).
 
 %indv_props(G,L):- arcST,trace,into_obj(G,O),is_object(O),indv_props(O,L).
 
@@ -764,7 +772,7 @@ shape(I,X):- localpoints(I,Points),mapgroup(arg(2),Points,X).
 %globalpoints(Grid,Points):- is_object(Grid),!,globalpoints(Grid,Points).
 /*
 globalpoints(ID,Points):- \+ \+ cmem(ID,_,_), findall(-(C,HV),cmem(ID,HV,C),Points).
-globalpoints(Grid,Points):- grid_to_id(Grid,ID),findall(-(C,HV),cmem(ID,HV,C),Points).
+globalpoints(Grid,Points):- grid_to_tid(Grid,ID),findall(-(C,HV),cmem(ID,HV,C),Points).
 */
 
 %colors(Points,CC):- is_list(Points),nth0(_,Points,C-_),is_color(C), CC = [cc(C,3)],!.
@@ -854,7 +862,7 @@ rebuild_from_localpoints(Obj,WithPoints,NewObj):-
 
  (rotation(Obj,Rot),unrotate(Rot,UnRot),
   loc(Obj,X,Y),%v_hv(Obj,H,V),  
-  %o_i_d(Obj,ID,_Iv),
+  %obj_to_oid(Obj,ID,_Iv),
   %uncast_grid_to_object(Orig,Grid,NewObj),
   points_to_grid(Points,Grid),
   call(UnRot,Grid,UnRotGrid),
@@ -940,7 +948,7 @@ rebuild_from_globalpoints(Obj,GPoints,NewObj):-
   rotation(Obj,Rot),unrotate(Rot,UnRot),
   loc(Obj,X,Y),v_hv(Obj,H,V),
   deoffset_points(X,Y,GPoints,LPoints),
-  %o_i_d(Obj,ID,_Iv),
+  %obj_to_oid(Obj,ID,_Iv),
   %grid_size(Obj,GH,GV),
   points_to_grid(H,V,LPoints,Grid),
   call(UnRot,Grid,UnRotGrid),
@@ -1013,7 +1021,7 @@ fail_over_time(Secs,Goal):- fail_over_time(Secs,Goal,true).
 grid_of(LO,LO,[]):- is_grid(LO),!.
 grid_of(LO,O,H):- arg(1,LO,O),arg(2,LO,H).
 find_outline_pred(P3,Grid):- is_grid(Grid),!,
-   grid_to_id(Grid,ID),   
+   grid_to_tid(Grid,ID),   
    grid_size(Grid,H,V),
    writeln(ID),
    set_current_test(ID),

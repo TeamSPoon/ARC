@@ -132,7 +132,7 @@ vm_for_grid(Grid,ID,Out,VM):- fail,
   peek_vm(grid,VMGrid), VMGrid == Grid,!,
   Out = VM.grid_target, ID = VM.id.
 vm_for_grid(Grid,IDO,Out,VM):-
-  grid_to_id(Grid,ID),
+  grid_to_tid(Grid,ID),
   into_fti(ID,in_out,Grid,VM),
   set(VM.grid)=Grid,
   ignore((
@@ -161,7 +161,7 @@ repair_symmetry(TestID):- \+ is_grid(TestID),
    (set_current_test(TestID),repair_symmetry(Grid))))).
 
 repair_symmetry(Grid):- is_grid(Grid),!,
-  grid_to_id(Grid,ID),
+  grid_to_tid(Grid,ID),
   into_fti(ID,in_out,Grid,VM),
   set_vm(VM),
   set(VM.grid)=Grid,    
@@ -1630,7 +1630,7 @@ glean_pattern_reps(Steps,G,NewGrid):-
   add_shape_lib(pair,Pattern),
   grid_size(G,H,V),
   writeln(pattern),
-  %grid_to_id(G,ID),
+  %grid_to_tid(G,ID),
   print_grid(G),
   writeln(repired_result),
   Steps = rp(patW=PatWidth,type=Type,divW=DivW,startV=StartV,patV=PatV),
@@ -1680,7 +1680,7 @@ gen_w_pattern(Times,PatternIn,DivAPattern,Patterns):-
 
 
 /*
- %grid_to_id(G,GN), grid_size(G,H,V),
+ %grid_to_tid(G,GN), grid_size(G,H,V),
  Q2 = HVPat, Q1 = HVPat,
  Q3 = HVPat, Q4 = HVPat,
  CW = CYL,CE = CYL, CN = CXL, CS = CXL,
@@ -1693,7 +1693,7 @@ gen_w_pattern(Times,PatternIn,DivAPattern,Patterns):-
 
 
 find_and_use_pattern_gen(G,Grid9x9):- 
- %grid_to_id(G,GN), grid_size(G,H,V),
+ %grid_to_tid(G,GN), grid_size(G,H,V),
  get_vm(VM),
  gensym('CRef_',CRef),
   [[Q2,  CN, Q1],
@@ -1929,7 +1929,7 @@ show_call_tf(G):- functor(G,F,_),\+ \+ (call(G)->wdmsg(F=true);wdmsg(F=false)).
  %color,neigbours,glyph
 test_neighbor_map:- clsmake, forall(rp_test(G),show_neighbor_map(G)).
 show_neighbor_map(G):- 
- grid_to_id(G,ID),
+ grid_to_tid(G,ID),
  most_d_colors(G,C,N),!,print_side_by_side(G,N),nl,writeln(ID=C).
 
 merge_nc(A,B,B):- var(A),!.

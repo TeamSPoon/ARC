@@ -35,8 +35,8 @@ i2(ROptions,GridSpec):- clsmake,
 
 ip(GridIn,GridOut):-
   individuate_pair(GridIn,GridOut,IndvS),
-  grid_to_id(GridIn,ID1),
-  grid_to_id(GridOut,ID2),
+  grid_to_tid(GridIn,ID1),
+  grid_to_tid(GridOut,ID2),
   print_side_by_side(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
   show_ig(ip,IndvS).
 
@@ -73,7 +73,7 @@ do_ig(ROptions,Grid,IndvS):-
   dash_chars,
   print_grid(GridIn), 
   %indiv_grid_pings(GridIn),
-  grid_to_id(GridIn,ID),
+  grid_to_tid(GridIn,ID),
   dash_chars,
   format("~N~n% ?- ~q.~n~n",[igo(ROptions,ID)]),
   test_id_num_io(ID,TestID,Example,Num,IO),
@@ -544,7 +544,7 @@ individuation_reserved_options(ROptions,Reserved,Options):-
 :- luser_setval(global,individuated_cache,true).
 
 get_individuated_cache(ROptions,OID,IndvS):- nonvar(ROptions),
-  ground(OID), \+ luser_getval(individuated_cache,false), individuated_cache(ROptions,OID,IndvS),!.
+  ground(OID), \+ luser_getval(individuated_cache,false), individuated_cache(OID,ROptions,IndvS),!.
 
 get_individuated_cache(ROptions,OID,IndvS):- nonvar(ROptions),
   ground(OID), \+ luser_getval(individuated_cache,false), saved_group(individuate(OID,ROptions),IndvS),!.
@@ -615,7 +615,7 @@ individuate_two_grids_once(OID1OID2,ROptions,Grid1,Grid2,IndvS):-
 
 individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,IndvS):- 
  must_det_ll((
-  grid_to_id(Grid1,ID1), grid_to_id(Grid2,ID2),
+  grid_to_tid(Grid1,ID1), grid_to_tid(Grid2,ID2),
   localpoints_include_bg(Grid1,P1),
   localpoints_include_bg(Grid2,P2),
   individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,ID1,ID2,P1,P2,IndvS))),!.
@@ -697,15 +697,15 @@ individuate2(_VM,ROptions,OID,_GridIn,IndvS):- nonvar(OID),
   get_individuated_cache(ROptions,OID,IndvS),pt(yellow,oid_cached=OID),!.
 individuate2(VM,ROptions,OID,GridIn,IndvS):- 
   do_individuate(VM,ROptions,GridIn,IndvS),!,
-  ignore((nonvar(OID),retractall(individuated_cache(ROptions,OID,_)), 
+  ignore((nonvar(OID),retractall(individuated_cache(OID,ROptions,_)), 
           pt(yellow,oid_created=OID),
-          asserta(individuated_cache(ROptions,OID,IndvS)))),!.
+          my_asserta_if_new(individuated_cache(OID,ROptions,IndvS)))),!.
 
 
 do_individuate(VM, ROptions, GridIn,LF):-
    %fix_indivs_options(ROptionsL,ROptions),
    must_be_free(LF), into_points_grid(GridIn,_Points,Grid),
-   grid_to_id(Grid,ID), my_assertion(\+ is_grid(ID)),
+   grid_to_tid(Grid,ID), my_assertion(\+ is_grid(ID)),
    individuate7(VM,ID,ROptions,Grid,LF),!,
    maplist(assert_object(ID),LF).
   %smallest_first(IndvS,SF),
@@ -753,7 +753,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
   (is_dict(GridIn0)-> (VM = GridIn0, GridIn = GridIn0.grid) ; GridIn0 = GridIn),
   globalpoints_include_bg(GridIn,Points),
   into_grid(GridIn,Grid),
-  (var(ID)->grid_to_id(Grid,ID);true),
+  (var(ID)->grid_to_tid(Grid,ID);true),
   grid_size(Grid,H,V),
  % rb_new(HM),duplicate_term(HM,Hashmap),
 
@@ -1242,7 +1242,7 @@ is_fti_step(gather_cached).
 % =====================================================================
 gather_cached(VM):-
  nop((
-  findall(IndvS,individuated_cache(_ROptions,VM.gid,IndvS),IndvSL),
+  findall(IndvS,individuated_cache(VM.gid,_ROptions,IndvS),IndvSL),
   append(IndvSL,IndvSS),
   addObjectOverlap(VM,IndvSS))).
    
@@ -1502,7 +1502,7 @@ whole_into_obj(VM,Grid,Whole):-
   length(Points,Len),
   fif(Len>0,
     (make_indiv_object(VM,[mass(Len),v_hv(H,V),birth(whole),iz(image)],Points,Whole),raddObjects(VM,Whole),
-       save_grouped(individuate(whole,VM.gid),[Whole]),assert_shape_lib(pair,Whole))),
+       save_grouped(individuate(VM.gid,whole),[Whole]),assert_shape_lib(pair,Whole))),
   localpoints(Grid,LPoints),
   length(LPoints,CLen),fif((CLen=<144,CLen>0),    
     (make_indiv_object(VM,[birth(whole),iz(shaped)],LPoints,Whole2),raddObjects(VM,Whole2))).
@@ -1593,7 +1593,7 @@ try_shape(VM,Method,LibName,Shape):-
 
    indv_props(Shape,ShapeProps), 
    my_partition(props_not_for_merge,ShapeProps,_Exclude,Include),
-   make_indiv_object(VM,[birth(shape_lib(Method,LibName)),v_hv(SH,SV),loc(OH,OV)|Include],ObjPoints,Indiv),  %o_i_d(Shape,_,Iv), %override_object(o_i_d(VM.id,Iv),Indiv0,Indiv),  %make_indiv_object(VM,Use,Indiv),
+   make_indiv_object(VM,[birth(shape_lib(Method,LibName)),v_hv(SH,SV),loc(OH,OV)|Include],ObjPoints,Indiv),  %obj_to_oid(Shape,_,Iv), %override_object(obj_to_oid(VM.id,Iv),Indiv0,Indiv),  %make_indiv_object(VM,Use,Indiv),
    %nop(points_to_grid(RestOfPoints,set(VM.grid))),  %print_grid(Indiv),
    %raddObjects(VM,Indiv),
    nop(debug_indiv(Indiv)))).
@@ -1610,8 +1610,8 @@ use_shapelib(VM,Name,[Obj|Reserved]):-
          my_append(Intersected,Use,All),
          list_to_set(All,AllS))), AllS \== [],
          make_indiv_object(VM,[iz(override(Name))|AllS],Indiv0), 
-         o_i_d(Obj,_,Iv), 
-         override_object(o_i_d(VM.id,Iv),Indiv0,Indiv), 
+         obj_to_oid(Obj,_,Iv), 
+         override_object(obj_to_oid(VM.id,Iv),Indiv0,Indiv), 
          raddObjects(VM,Indiv),
          %make_indiv_object(VM,Use,Indiv),
          use_shapelib(VM,Name,Reserved).
@@ -2261,8 +2261,8 @@ merge_indivs_cleanup(A,B,C,A,B,C).
 %same_object(D)
 merge_a_b(A,B,AA):-
   findall(H,compare_objs1(H,A,B),How),
-  o_i_d(B,ID,Iv),
-  setq(A,o_i_d(ID,Iv),AA),
+  obj_to_oid(B,ID,Iv),
+  setq(A,obj_to_oid(ID,Iv),AA),
   object_glyph(A,GlyphA),
   object_glyph(B,GlyphB),
   ignore((How ==[]-> nop(pt(shared_object(GlyphB->GlyphA))); 

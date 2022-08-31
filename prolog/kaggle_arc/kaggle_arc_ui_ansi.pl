@@ -594,7 +594,7 @@ use_row_db :- fail.
 is_print_collapsed:- \+ nb_current(arc_portray,t), luser_getval(print_collapsed,N),N\==[].
 
 print_grid(_):- is_print_collapsed,!.
-print_grid(Grid):- use_row_db, is_grid(Grid),!, grid_to_id(Grid,ID),print_grid(ID).
+print_grid(Grid):- use_row_db, is_grid(Grid),!, grid_to_tid(Grid,TID),print_grid(TID).
 
 print_grid(Grid):-  quietly(print_grid0(Grid)),!.
 
@@ -612,7 +612,7 @@ print_grid(OH,OV,Name,Out):-
   ignore((data_type(Out,SS), toUpperC(Name,NameU),
   mesg_color(SS,TitleColor),
   format_u(TitleColor,"~w  (~w)",[NameU, SS]))))),!.
-%print_grid(H,V,Grid):- use_row_db, grid_to_id(Grid,ID),!,print_grid0(H,V,ID).
+%print_grid(H,V,Grid):- use_row_db, grid_to_tid(Grid,TID),!,print_grid0(H,V,TID).
 
 print_grid(_,_,_):- is_print_collapsed,!.
 print_grid(H,V,Grid):- ignore(quietly(print_grid0(H,V,Grid))).
@@ -941,8 +941,9 @@ grid_dot(169).
 
 print_g(H,V,C,_,_,_,_):- write_nbsp, print_g1(H,V,C),!.
 
+object_glyph(G,Glyph):- is_object(G),!,obj_iv(G,Iv), int2glyph(Iv,Glyph).
 object_glyph(G,Glyph):- is_grid(G),!,grid_dot(Dot),name(Glyph,[Dot]).
-object_glyph(G,Glyph):- is_object(G),!,o_i_d(G,_Tst,GN2), int2glyph(GN2,Glyph).
+%object_glyph(G,Glyph):- is_object(G),!,obj_to_oid(G,_Tst,GN2), int2glyph(GN2,Glyph).
 object_glyph(G,Glyph):- nobject_glyph(G,Glyph).
 
 nobject_glyph(G,Glyph):- integer(G), between(0,9,G),atom_number(Glyph,G),!.

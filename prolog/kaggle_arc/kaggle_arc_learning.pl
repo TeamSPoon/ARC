@@ -23,7 +23,8 @@ learned_test(TName):-
     maplist(print_rule(TestID),Info),
     length(Info,Len),
     ptc(orange,format('~N~n% Rules Learned: ~w~n~n',[Len])),!.
- 
+
+
 
 
 print_rule(M,ref(Ref)):- nonvar(Ref), !,
@@ -43,7 +44,6 @@ print_rule(M,(X:-Body)):- !,
     orpt(M=[X]))).
 print_rule(M,O):- \+ \+ (( orpt(M=[O]))).
 
-orpt(_=[G]):- \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N'), pt(orange,(call(format('~N~q.~n',[G])))))),!.
 orpt(G):- \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N'), pt(orange,(call(print(G)))))).
 
 save_learnt_rule(TestID,In,InKey,RuleDir,Out):-
@@ -80,7 +80,7 @@ not_for_matching(_Why,_,iz(_)):- !, fail.
 %not_for_matching(_Why,localpoints(_)).
 not_for_matching(_Why,_,link(_,_,_)).
 not_for_matching(_Why,_,birth(_)).
-not_for_matching(_Why,_,o_i_d(_,_)).
+not_for_matching(_Why,_,obj_to_oid(_,_)).
 %not_for_matching(_Why,L,shape(_)):- !, member(localpoints(_),L).
 not_for_matching(_Why,L,localpoints(XX)):- !, started_is_list(XX), member(shape(_),L).
 not_for_matching(_Why,L,globalpoints(XX)):- !, started_is_list(XX), (member(shape(_),L);member(localpoints(_),L)).
@@ -211,8 +211,8 @@ confirm_reproduction(Objs0,DebugObjs0,ExpectedOut):-
 debug_reproduction(H,V,Obj,DObj):- 
   globalpoints(Obj,Points),
   print_grid(H,V,Obj,Points),
-  o_i_d(Obj,_,ID1),
-  o_i_d(DObj,_,ID2),
+  obj_to_oid(Obj,_,ID1),
+  obj_to_oid(DObj,_,ID2),
   pt(dobj(ID1,ID2)=DObj),!.
 
 show_result(What,Solution,ExpectedOut,Errors):-
@@ -393,27 +393,29 @@ test_local_dyn(oout_associatable).
 test_local_save(individuated_cache).
 
 test_local_save(g_2_o).
-test_local_save(grid_obj).
 test_local_save(cmem).
 test_local_save(cindv).
 test_local_save(is_why_grouped_g).
 test_local_save(arc_test_property).
+test_local_save(gid_glyph_oid).
+test_local_save(oid_glyph_object).
+
 
 test_local_save(P):- test_local_dyn(P).
 
 training_info(TestID,Info):-
  sub_atom_value(TestID,TestIDA),
- findall(ref(Ref),
+ findall((Ref),
   (test_local_dyn(F),
-   (current_predicate(F/A),
+   (current_predicate(F/A),A\==0,
     ((functor(X,F,A),
       clause(X,_,Ref),once((arg(1,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA))))))),Info).
 
 saveable_test_info(TestID,Info):-
  sub_atom_value(TestID,TestIDA),
- findall(ref(Ref),
+ findall((Ref),
   (test_local_save(F),
-   (current_predicate(F/A),
+   (current_predicate(F/A),A\==0,
     ((functor(X,F,A),
       clause(X,_,Ref),once((arg(1,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA))))))),Info).
 
@@ -436,7 +438,7 @@ clear_training(TestID):-
   set_bgc(_),
   set_flag(indiv,0),
   forall(test_local_dyn(F),
-   forall(current_predicate(F/A),
+   forall((current_predicate(F/A),A\==0),
     ((functor(X,F,A),
       forall((clause(X,_,Ref),arg(1,X,E),E==TestID),
        erase(Ref)))))),
@@ -450,10 +452,26 @@ clear_training(TestID):-
 
 sub_atom_value(TestID,A):- sub_term(A,TestID),atom(A).
 
-save_training(TestID):-
-    saveable_test_info(TestID,Info),
-    maplist(print_rule(TestID),Info).
-  
+save_supertask:- get_current_test(TestID),save_supertask(TestID).
+save_supertask(TestID):-   
+   wots(S,(
+     write_intermediatre_header,
+     saveable_test_info(TestID,Info),maplist(print_ref,Info))),
+   write(S),
+   test_name_output_file(TestID,File),
+   setup_call_cleanup(open(File,write,O,[create([default]),encoding(text)]), write(O,S), close(O)).
+
+print_directive(P):- format('~N:- ~q. ~n',[P]).
+write_intermediatre_header:- 
+  print_directive(encoding(iso_latin_1)),
+  forall(  (test_local_save(F), current_predicate(F/A),A\==0,nl),
+      maplist(print_directive,[abolish(F/A),multifile(F/A),dynamic(F/A),discontiguous(F/A),public(F/A),export(F/A),module_transparent(F/A)])).
+
+print_ref(Ref):- atomic(Ref), blob(Ref,_), clause(H,B,Ref),!,print_ref((H:-B)).
+print_ref((X:-True)):- True == true,!, print_ref(X).
+print_ref(G):- \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N~q.~n',[G]))),!.
+
+test_name_output_file(TestID,File):- sub_atom_value(TestID,OID),!,atomic_list_concat(['out/',OID,'.ansi'],File).
 
 learn_rule(In,Out):-
   get_vm(VM),
@@ -846,8 +864,8 @@ compute_shared_indivs(GN,Grid,SharedIndvs):-
 grid_shared_with(TestName*ExampleNum*in,TestName*ExampleNum*out):-!.
 grid_shared_with(TestName*ExampleNum*out,TestName*ExampleNum*in):-!.
 
-get_grid_and_name(In,Grid,GN):- is_grid(In),!,grid_to_id(Grid,GN).
-get_grid_and_name(In,Grid,GN):- into_grid(In,Grid),!,grid_to_id(Grid,GN).
+get_grid_and_name(In,Grid,GN):- is_grid(In),!,grid_to_tid(Grid,GN).
+get_grid_and_name(In,Grid,GN):- into_grid(In,Grid),!,grid_to_tid(Grid,GN).
 
 ensure_unshared_indivs(In,Unshared):-
    get_grid_and_name(In,Grid,GN),

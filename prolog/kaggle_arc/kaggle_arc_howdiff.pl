@@ -232,13 +232,13 @@ uncomparable(H,F):- uncomparable2(H,F).
 uncomparable2(group,grid).
 uncomparable2(group,globalpoints).
 uncomparable2(group,grid_size).
-%uncomparable2(group,o_i_d).
+%uncomparable2(group,obj_to_oid).
 uncomparable2(group,link).
 uncomparable2(object,iz).
 uncomparable2(shape,localpoints).
 
 never_diff(iz(_)).
-never_diff(o_i_d(_,_)).
+never_diff(obj_to_oid(_,_)).
 
 make_comparable(I,I):- plain_var(I).
 make_comparable(I,I):- \+ compound(I),!.
@@ -253,7 +253,7 @@ simular([],_,_,[]):- !.
 simular(loc=Where,I,O,object_has_moved(Where)):-  
   \+ (mass(O,OC), OC < 6) ,
   \+ (colors(O,[cc(BG, _)|_]),is_black_or_bg(BG)),
-  o_i_d(I,Tst,_Id1), \+ o_i_d(O,Tst,_Id2).
+  obj_to_oid(I,_Id1), \+ obj_to_oid(O,_Id2).
 
 
 

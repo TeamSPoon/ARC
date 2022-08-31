@@ -9,6 +9,7 @@
 :- set_prolog_flag(arc_term_expansion, false).
 :- dynamic((ap/1,apv/2)).
 :- dynamic(cmem/3).
+:- dynamic(cmemo/3).
 :- dynamic(grid_nums/1).
 :- dynamic(grid_nums/2).
 
@@ -908,8 +909,8 @@ reuse_indivs_cleanup(A,B,C,A,B,C).
 %same_object(D)
 reuse_a_b(A,B,AA):-
   findall(H,compare_objs1(H,A,B),How),
-  o_i_d(B,ID,Iv),
-  setq(A,o_i_d(ID,Iv),AA),
+  obj_to_oid(B,ID,Iv),
+  setq(A,obj_to_oid(ID,Iv),AA),
   object_glyph(A,GlyphA),
   object_glyph(B,GlyphB),
   ignore((How ==[]-> nop(pt(shared_object(GlyphB->GlyphA))); 
