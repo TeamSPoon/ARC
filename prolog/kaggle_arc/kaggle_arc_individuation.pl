@@ -76,7 +76,7 @@ do_ig(ROptions,Grid,IndvS):-
   grid_to_tid(GridIn,ID),
   dash_chars,
   format("~N~n% ?- ~q.~n~n",[igo(ROptions,ID)]),
-  test_id_num_io(ID,TestID,Example,Num,IO),
+  testid_name_num_io(ID,TestID,Example,Num,IO),
   ig_test_id_num_io(ROptions,GridIn,ID,TestID,Example,Num,IO,IndvS).
 
 ig_test_id_num_io(_ROptions,GridIn,_ID,TestID,trn,Num,in,IndvS):- 
@@ -564,7 +564,7 @@ individuate(ROptions,GridIn,IndvS):- individuate1(_,ROptions,GridIn,IndvS).
 individuate1(_, ROptions,VM,LF):- is_map(VM),!, individuate1(VM, ROptions, VM.grid, LF).
 individuate1(VM,ROptions,GridIn,IndvS):- \+ is_grid(GridIn), into_grid(GridIn,Grid),!,individuate1(VM,ROptions,Grid,IndvS).
 individuate1(VM,ROptions,GridIn,IndvS):- 
-  grid_to_oid(GridIn,OID), 
+  grid_to_gid(GridIn,OID), 
   individuate2(VM,ROptions,OID,GridIn,IndvS),
   once((delistify_single_element(ROptions,NamedOpts),
         save_grouped(individuate(OID,NamedOpts),IndvS))).
@@ -599,7 +599,7 @@ doing_pair:- nb_current(doing_pair,t).
 
 individuate_two_grids(ROptions,Grid1,Grid2,IndvS):- 
   delistify_single_element(ROptions,NamedOpts),
-  grid_to_oid(Grid1,OID1), grid_to_oid(Grid2,OID2),
+  grid_to_gid(Grid1,OID1), grid_to_gid(Grid2,OID2),
   locally(nb_setval(doing_pair,t),
     individuate_two_grids_once(two(OID1,OID2),NamedOpts,Grid1,Grid2,IndvS)).
 
@@ -681,7 +681,7 @@ individuate_two_grids_now_X(OID1OID2,ROptions,Grid1,Grid2,VM1,VM2,Grid1X,Grid2X,
   set(VM2.robjs) = Objs1,
   do_individuate(VM2,ROptions,Grid2X,Objs2),!,
 
-  grid_to_oid(Grid1,OID1),grid_to_oid(Grid2,OID2),
+  grid_to_gid(Grid1,OID1),grid_to_gid(Grid2,OID2),
 
   into_fti(ID1,ROptions,Grid1X,VM1X), set(VM1X.grid_target) = Grid2, set(VM1X.robjs) = Objs2,    
   individuate2(VM1X,ROptions,OID1,Grid1X,Objs1X),!,
@@ -759,7 +759,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
 
   max_min(H,V,MaxM,_),
   max_min(25,MaxM,Max,_),
-  grid_to_oid(Grid,OID),
+  grid_to_gid(Grid,OID),
 
   listify(ROptions,OOptions),
   Area is H*V,
@@ -1128,7 +1128,7 @@ bg_shapes(Shape,VM):-
  must_det_ll((
   mapgrid(bg_shaped,VM.grid,NewGrid),
   var(OID),
-  atomic_list_concat([VM.gid,'_bg_shaped'],OID2), asserta(is_grid_id(NewGrid,OID2)),  
+  atomic_list_concat([VM.gid,'_bg_shaped'],OID2), asserta(is_grid_tid(NewGrid,OID2)),  
   get_vm(VMS),
   %map_pred(bg_shaped,FoundObjs,ReColored),
   individuate2(_,Shape,OID,NewGrid,FoundObjs),
@@ -1154,7 +1154,7 @@ fg_shaped(Cell,Cell).
 fg_shapes(Shape,VM):-
  must_det_ll((
   mapgrid(fg_shaped,VM.grid,NewGrid),
-  var(OID),%atomic_list_concat([VM.gid,'_fg_shaped'],OID), asserta(is_grid_id(NewGrid,OID)),
+  var(OID),%atomic_list_concat([VM.gid,'_fg_shaped'],OID), asserta(is_grid_tid(NewGrid,OID)),
   get_vm(VMS), 
   individuate2(_,Shape,OID,NewGrid,FoundObjs),
   set_vm(VMS),

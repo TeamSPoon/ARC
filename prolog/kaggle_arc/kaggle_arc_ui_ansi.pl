@@ -64,7 +64,7 @@ arc_portray_nt(G0, true):- is_group(G0), ptt(G0),!.
 %arc_portray_nt(G0, false):- is_group(G0), ptt(G0),!.
 arc_portray_nt(G0, false):- is_group(G0), into_list(G0,G), length(G,L),% L>1, !,
    dash_chars, 
-   once(((why_grouped(_TestID,Why,WG),fail,WG=@=G);(Why = (size=L)))),!,
+   once(((why_grouped(_TestID,Why,WG),WG=@=G,fail);(Why = (size=L)))),!,
    print_grid(Why,G),nl,
    %underline_print(writeln(Why)),
    maplist(print_info,G),
@@ -364,6 +364,7 @@ gridoid_size(G,H,V):- is_gridoid(G),!,grid_size(G,H,V).
 
 print_side_by_side(X,Y,Z):- g_out((nl,print_side_by_side0(X,Y,Z))).
 
+print_side_by_side0([],_,[]):-!.
 print_side_by_side0(C1-wqs(S1),LW,C2-wqs(S2)):- nonvar(S1),!,
   print_side_by_side0(C1,LW,C2),format('~N'),
   print_side_by_side0(wqs(S1),LW,wqs(S2)).
@@ -385,6 +386,7 @@ print_side_by_side0(C1,W0,C2):- number(W0), LW is floor(abs(W0)),
 
 is_side(RL):- nb_current(print_sbs,RL),RL\==[].
 
+print_side_by_side_lists_1st([],_,[],_):-!.
 print_side_by_side_lists_1st(L1,W1,L2,LW):-
   length(L1,N1),
   length(L2,N2),
@@ -974,7 +976,7 @@ print_gw1(N):-
   (print_g1(N);write('?')))),!,
  gws(S).
 gws(S):- write(S),!.
-%gws(S):- atom_length(S,L),(L=28->(write(L),atom_codes(S,Codes),pfc_assert(ac(S)));write(S)).
+%gws(S):- atom_length(S,L),(L=28->(write(L),atom_codes(S,Codes),arc_assert(ac(S)));write(S)).
 %print_gw1(N):- compound(N),N = C-W,!,color_print(C,W),!.
 
 mregression_test:- G = [[1,2,3],[1,2,3],[1,2,3]], print_grid(G).

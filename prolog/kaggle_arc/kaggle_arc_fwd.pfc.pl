@@ -41,12 +41,12 @@ cmem==>cmem(_,_,_).
 cmem==>gid_glyph_oid(_,_,_).
 cmem==>cindv(_,_,_).
 
-tid_to_gid(T,A) :- awc,!, (clause(tid_to_gid(T,A),true)*-> true ; term_to_oid(T,A)).
+tid_to_gids(T,A) :- awc,!, (clause(tid_to_gids(T,A),true)*-> true ; term_to_oid(T,A)).
 
 startAll==>((kaggle_arc_io(TestID,ExampleNum,IO,G)/(ID=TestID*ExampleNum*IO,term_to_oid(ID,GID)))
-  ==>(tid_to_gid(ID,GID),oid_to_grid(GID,G),process_oid(GID))).
+  ==>(tid_to_gids(ID,GID),oid_to_grid(GID,G),process_oid(GID))).
 
-%tid_to_gid(T,A) :- zwc,!, term_to_oid(T,A).
+%tid_to_gids(T,A) :- zwc,!, term_to_oid(T,A).
 
 ((startAll/get_why_uu(UU))==>why_startAll(UU)).
 
@@ -55,22 +55,22 @@ startAll ==> zwc, bwc, cwc, awc, fwc.
 
 ==> startAll.
 
-startAll2==>(process_oid(OID)/( \+ cmem(OID,_,_))==>{assert_id_grid_cells(OID)}).
+startAll2==>(process_oid(GID)/( \+ cmem(GID,_,_))==>{assert_id_grid_cells(GID)}).
 
-(process_test_grid(OID)/( \+ cmem(OID,_,_))==>{assert_id_grid_cells(OID),individuate(complete,OID,_)}).
 
 (startAll3 ==>process_test(t('27a28665'))).
 ((startAll4,all_arc_test_name(ID)) ==>process_test(ID)).
 
-((individuate_test_grids(TestID),tid_to_gid(TestID*_*_,OID))==> process_test_grid(OID)).
 
 
 
 
 :- dynamic(saved_training/1).
 
-(process_test(TestID) / (\+ saved_training(TestID))) ==> 
-  (individuate_test_grids(TestID),saved_training(TestID),{detect_supergrid(TestID)}).
+(process_test(TestID) / (\+ saved_training(TestID))) ==> (individuate_test_grids(TestID), saved_training(TestID),{compile_and_save_test(TestID)}).
+
+((individuate_test_grids(TestID),tid_to_gids(TestID*trn*in,GID))==> process_test_grid(GID)).
+process_test_grid(GID)==>{assert_id_grid_cells(GID),individuate(complete,GID,_)}.
 
 :- dynamic(bc_q/1).
 :- dynamic(bc_p/1).
@@ -201,9 +201,14 @@ a.
 
 :- mpred_notrace_exec.
 
-((cindv( Obj, localpoints, _)/(obj_to_oid(Obj,OID),globalpoints(Obj,GPS)))==> {assert_id_cells(OID,GPS)}).
+((cindv( Obj, localpoints, _)/(obj_to_oid(Obj,GID),globalpoints(Obj,GPS)))==> {assert_id_cells(GID,GPS)}).
 
-%:- forall_assert(kaggle_arc_io(TestID,ExampleNum,IO,_),some_grid_id(TestID*ExampleNum*IO)).
+
+arc_test_property(T, common(comp(o-o, area)), area(n(1, 1, d(0), a(0), r(1))))==> note(T,"output always size 1").
+arc_test_property(T, common(comp(i-o, area)), area(n(X, X, d(0), a(0), r(1))))/var(X)==> note(T,"output size always same as input").
+%arc_test_property(T, common(comp(o-o, area)), area(n(X, X, d(0), a(0), r(1))))/nonvar(X)==> note(T,"output size always same as input").
+
+%:- forall_assert(kaggle_arc_io(TestID,ExampleNum,IO,_),some_grid_tid(TestID*ExampleNum*IO)).
 :- set_prolog_flag(pfc_term_expansion,false).
 
 

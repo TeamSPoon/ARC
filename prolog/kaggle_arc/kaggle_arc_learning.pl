@@ -222,7 +222,7 @@ show_result(What,Solution,ExpectedOut,Errors):-
       (Errors==0 -> 
            arcdbg_info(green,pass(What,TestID))
          ; arcdbg_info(red,fail(What,Errors,TestID))))),
- task_info(TestID,InfoF),wqnl(fav(TestID,InfoF)),!.
+ test_info(TestID,InfoF),wqnl(fav(TestID,InfoF)),!.
 
 
 arcdbg_info(Color, Info):- banner_lines(Color), arcdbg(Info), banner_lines(Color).
@@ -840,9 +840,9 @@ name_the_pair(TestID,ExampleNum,In,Out,PairName):-
         nl,wqnl(arc1(TestID)),nl,nl,dash_chars(60,"A"),nl)),   
   GridNameIn= PairName*in,
   GridNameOut= PairName*out,
-  set_grid_id(In,GridNameIn),
-  set_grid_id(Out,GridNameOut),  
-  task_info(TestID,Info), pt(fav(TestID,Info)),nl)).
+  set_grid_tid(In,GridNameIn),
+  set_grid_tid(Out,GridNameOut),  
+  test_info(TestID,Info), pt(fav(TestID,Info)),nl)).
   
 
 
@@ -873,7 +873,7 @@ ensure_unshared_indivs(In,Unshared):-
 ensure_unshared_indivs(GN,Grid,Unshared):-
    is_unshared_saved(GN,Unshared)-> true;
    individuate(complete,Grid,Unshared),
-   pfc_assert(is_unshared_saved(GN,Unshared)).
+   arc_assert(is_unshared_saved(GN,Unshared)).
 
 ensure_shared_indivs(In,SharedIndvs):-
    get_grid_and_name(In,Grid,GN),
@@ -883,7 +883,7 @@ ensure_shared_indivs(GN,Grid,SharedIndvs):-
    grid_shared_with(GN,With),into_grid(With,OtherGrid),
    ensure_unshared_indivs(With,OtherGrid,Unshared),
    individuate(Unshared,Grid,SharedIndvs),
-   pfc_assert(is_shared_saved(GN,SharedIndvs)).
+   arc_assert(is_shared_saved(GN,SharedIndvs)).
 
 
 /*

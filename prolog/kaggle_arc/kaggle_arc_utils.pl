@@ -32,7 +32,7 @@ arc_memoized(G):-
   catch(
   (in_memo_cached(Key,C,GT,Found,AttGoals)*->(G=Found,maplist(call,AttGoals))
     ; ((call(G),copy_term(G,CG,GG)) *->asserta(in_memo_cached(Key,C,GT,CG,GG))
-                  ;pfc_assert(in_memo_cached(Key,C,GT,failed,_)))),
+                  ;arc_assert(in_memo_cached(Key,C,GT,failed,_)))),
   E, (retractall(in_memo_cached(Key,C,GT,_,_)),throw(E))),erase(Started)).
 
 set_nth1(1,[_|Row],E,[E|Row]):-!.

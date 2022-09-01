@@ -229,7 +229,7 @@ list_common_props(TestID):-
     retractall(arc_test_property(TestID,common(F),_)),
     (( findall(Data,arc_test_property(TestID,grid_fhint(F),Data-_),Commons),
       once((min_unifier(Commons,Common),nonvar(Common))))),
-      pfc_assert(arc_test_property(TestID,common(F),Common))),FComs),
+      arc_assert(arc_test_property(TestID,common(F),Common))),FComs),
   sort(FComs,SComs),
   color_print(magenta,call((format('~N % ~w: ~@.~n',[list_common_props,ptv(SComs)])))).
 

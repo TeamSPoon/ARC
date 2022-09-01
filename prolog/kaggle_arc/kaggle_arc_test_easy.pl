@@ -1027,7 +1027,7 @@ if like in the game of TTT you can win, but not diagonlly.. place the color on t
 
 task_tag_info(X):- 
  (var(X)->task_tag(X);true),
- findall(TestID,(task_info(TestID,Info),sub_var(X,Info)),Tests),
+ findall(TestID,(test_info(TestID,Info),sub_var(X,Info)),Tests),
   list_to_set(Tests,Set),
   length(Set,LS),
   dash_chars,

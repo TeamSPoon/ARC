@@ -46,7 +46,7 @@ got_result(SG,FG,Match):-
   ignore((perfect_result(CSG,CFG,WMatch), 
     ((Match\==WMatch) -> (pt(red,'ChAnGED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n\n\n\n\n\n\n\n'),sleep(0.1)); pt(green,same)))),
   retractall(tr:existing_result(CSG,CFG,_)),
-  pfc_assert(tr:existing_result(CSG,CFG,Match)),!.
+  arc_assert(tr:existing_result(CSG,CFG,Match)),!.
   
 was_result(SG,FG,WMatch):-  
   copy_term(FG,CFG),copy_term(SG,CSG),

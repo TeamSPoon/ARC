@@ -67,10 +67,12 @@ control_arg_type(FofN,_,Pre,A,B):- control_arg_types1([FofN|Pre],A,B).
    asserta(SM:'$does_use_pfc_mod'(M,CM,SM,pfc_rt)).
    %backtrace(200).
 
+/*
 :- multifile '$exported_op'/3. 
 :- dynamic '$exported_op'/3. 
 :- discontiguous '$exported_op'/3. 
 '$exported_op'(_,_,_):- fail.
+*/
 
 :- multifile '$pldoc'/4. 
 :- dynamic '$pldoc'/4. 
@@ -99,9 +101,14 @@ setof_or_nil(T,G,L):- setof(T,G,L)*->true;L=[].
 
 call_u(G):- pfcCallSystem(G).
 clause_u(H,B):- clause(H,B).
-pfc_assert(P):-  must(current_why_UU(UU)),nop(wdmsg(pfcAdd(P, UU))),!, pfcAdd(P, UU).
-pfc_retract(P):- pfcRetract(P).
-pfc_retractall(P):- pfcRetractAll(P).
+
+arc_assert(P:-True):- True==true,!,arc_assert(P).
+arc_assert(P):-  % wdmsg(arc_assert(P)), 
+  must(current_why_UU(UU)),nop(wdmsg(pfcAdd(P, UU))),!, pfcAdd(P, UU),asserta_if_new(P).
+
+pfc_retract(P):- wdmsg(pfc_retract(P)),pfcRetract(P).
+pfc_retractall(P):- wdmsg(pfc_retractall(P)),pfcRetractAll(P).
+
 :- dynamic((~)/1).
 ~(_):- fail.
 must_ex(X):-must(X).
@@ -274,7 +281,7 @@ termf_subst(Subst,F,F2):-member(F-F2,Subst)->true;F=F2.
 
 %==>(_).
 
-% ==>(G):- pfc_assert(G).
+% ==>(G):- arc_assert(G).
 
 %:- multifile ('<-')/2.
 %:- dynamic ('<-')/2.
@@ -3050,7 +3057,9 @@ get_why_uu(UU):- findall(U,current_why(U),Whys),Whys\==[],!,u_to_uu(Whys,UU).
 get_why_uu(UU):- get_source_uu(UU),!.
 
 
-get_startup_uu(UU):-u_to_uu((isRuntime,mfl4(VarNameZ,baseKB, user_input, _)),UU),varnames_load_context(VarNameZ).
+get_startup_uu(UU):-
+  prolog_load_context(module,CM),
+  u_to_uu((isRuntime,mfl4(VarNameZ,CM, user_input, _)),UU),varnames_load_context(VarNameZ).
 
 is_user_reason((_,U)):-atomic(U).
 only_is_user_reason((U1,U2)):- freeze(U2,is_user_reason((U1,U2))).
@@ -3210,7 +3219,7 @@ find_hb_mfl(H,B,_Ref,mfl4(VarNameZ,M,F,L)):- lookup_spft_match_first(H,mfl4(VarN
 find_hb_mfl(H,_B,uses_call_only(H),MFL):- !,call_only_based_mfl(H,MFL).
 
 :- fixup_exports.
-:- fixup_module_exports_into(baseKB).
+%:- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).
 
 mpred_rule_hb(C,_):- \+ compound(C),!,fail.
@@ -3219,6 +3228,12 @@ mpred_rule_hb((H<-B),H,B):- !.
 mpred_rule_hb((B==>H),H,B):- !.
 mpred_rule_hb((==>H),H,true):- !.
 mpred_rule_hb((HB1<==>HB2),(H1,H2),(B1,B2)):- !, (mpred_rule_hb((HB1==>HB2),H2,B2);mpred_rule_hb((HB2==>HB1),H1,B1)).
+
+:- module_transparent( (get_assertion_head_arg)/3).
+get_assertion_head_arg(N,P,E):-get_assertion_head_unnegated(P,PP),!,arg(N,PP,E).
+
+get_assertion_head_unnegated(P,PP):- mpred_rule_hb(P,H,_), (pfc_unnegate(H,PP)->true;H==PP). 
+replace_arg(Q,N,NEW,R):- duplicate_term(Q,R),Q=R,nb_setarg(N,R,NEW).
 
 %% if_missing_mask( +Q, ?R, ?Test) is semidet.
 %
@@ -3331,8 +3346,6 @@ is_atom_body_pfa(WAC,P,F,2,Rest):-get_assertion_head_arg(1,P,E),E==WAC,get_asser
 is_atom_body_pfa(WAC,P,F,2,Rest):-get_assertion_head_arg(2,P,E),E==WAC,get_assertion_head_arg(1,P,Rest),!.
 */
 
-:- module_transparent( (get_assertion_head_arg)/3).
-get_assertion_head_arg(N,P,E):-get_assertion_head_unnegated(P,PP),!,arg(N,PP,E).
 
 same_functors(Head1,Head2):-must_det(get_unnegated_functor(Head1,F1,A1)),must_det(get_unnegated_functor(Head2,F2,A2)),!,F1=F2,A1=A2.
 

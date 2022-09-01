@@ -42,8 +42,8 @@ arc_history1(_).
 % :- dynamic(grid_hint_pred/1). :- discontiguous(grid_hint_pred/1). :- multifile(grid_hint_pred/1).
 
 
-my_is_clause(H,B):- clause(H,B,Ref),clause(HH,BB,Ref), H+B=@=HH+BB.
-my_asserta_if_new((H:-B)):- !, (my_is_clause(H,B) -> true ; asserta(H:-B)).
+my_is_clause(H,B):- clause(H,B,Ref),clause(HH,BB,Ref), H+B=@=HH+BB,!.
+my_asserta_if_new((H:-B)):- !, (my_is_clause(H,B) -> wdmsg(my_is_clause(H,B)) ; arc_assert(H:-B)).
 my_asserta_if_new(HB):- my_asserta_if_new(HB:-true).
 
 my_assertz_if_new((H:-B)):- !, (my_is_clause(H,B) -> true ; assertz(H:-B)).
@@ -70,13 +70,14 @@ decl_pt(How,G):- nonvar(How),ground(G), !, my_assertz_if_new(decl_pt(How,G)).
 :- multifile is_fti_stepr/1.
 :- discontiguous is_fti_step/1.
 :- discontiguous is_fti_stepr/1.
-:- discontiguous ping_indiv_grid/1.
-:- multifile ping_indiv_grid/1.
+
 
 :- discontiguous is_changeable_param/1.
 :- multifile is_changeable_param/1.
 :- dynamic is_changeable_param/1.
 
+:- discontiguous ping_indiv_grid/1.
+:- multifile ping_indiv_grid/1.
 
 :- meta_predicate(fif(0,0)).
 fif(IF, THEN) :- (   call(IF) ->  call(THEN) ;   true ).
@@ -86,11 +87,12 @@ quietlyd(G):- quietly(G),!.
 
 :- strip_module(_,M,_),abolish(system:muarc_mod/1),asserta(system:muarc_mod(M)).
 
-
-'$exported_op'(_,_,_):- fail.
+/*
+:- discontiguous '$exported_op'/3. 
+*/
 :- multifile '$exported_op'/3. 
 :- dynamic '$exported_op'/3. 
-%:- discontiguous '$exported_op'/3. 
+:- assert(system:('$exported_op'(_,_,_):- fail)).
 
 '$pldoc'(_,_,_,_):- fail.
 :- multifile '$pldoc'/4. 
@@ -164,12 +166,16 @@ clsmake:- update_changed_files,!.
 :- use_module(library(pairs)).
 :- use_module(library(logicmoo_common)).
 :- use_module(library(prolog_trace)).
+:- use_module(library(prolog_clause)).
+:- use_module(library(prolog_source)).
+ %library(trace/clause) 
 %:- autoload_all.
 :- use_module(library(gvar_globals_api)).
 :- use_module(library(dictoo_lib)).
 %:- use_module(library(pfc_lib)).
 
-:- include(kaggle_arc_pfc).
+:- autoload_all.
+
 
 %:- listing((.)/3).
 %:- autoload_all.
@@ -449,6 +455,7 @@ luser_getval(ID,N,V):-
 %:- learn_shapes.
 :- ensure_loaded(kaggle_arc_utils).
 :- ensure_loaded(kaggle_arc_ui_ansi).
+:- ensure_loaded(kaggle_arc_interpreter).
 :- ensure_loaded(kaggle_arc_test_loader).
 :- ensure_loaded(kaggle_arc_domaintypes).
 :- ensure_loaded(kaggle_arc_test_iface).
@@ -461,7 +468,7 @@ luser_getval(ID,N,V):-
 :- ensure_loaded(kaggle_arc_intruder).
 :- ensure_loaded(kaggle_arc_test_cache).
 :- ensure_loaded(kaggle_arc_individuation).
-:- ensure_loaded(kaggle_arc_interpreter).
+
 :- ensure_loaded(kaggle_arc_object).
 :- ensure_loaded(kaggle_arc_boards).
 :- ensure_loaded(kaggle_arc_learning).
@@ -780,14 +787,14 @@ show_pair_code(In,Out):-
   dash_chars,dash_chars.
 
 print_testinfo(TestID):-
-  ignore(((task_info(TestID,F),forall(member(I,F),pt(task_info=I))))).
+  ignore(((test_info(TestID,F),forall(member(I,F),pt(test_info=I))))).
 
 % trials(learn). trials(clue).   
 trials(human). trials(sol).
 trials(dsl). trials(runDSL).
 trial_non_human(sol).
 
-sols_for(TaskID,Trial,TrialSol):- trials(Trial),once((Entry=..[Trial,Sol], task_info(TaskID,Sols),member(Entry,Sols))),
+sols_for(TestID,Trial,TrialSol):- trials(Trial),once((Entry=..[Trial,Sol], test_info(TestID,Sols),member(Entry,Sols))),
   append_trial(Trial,Sol,TrialSol).
 
 append_trial(Trial,Sol,TrialSol):- listify(Sol,SolL),
@@ -872,7 +879,7 @@ do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
            (Errors==0 -> 
               (banner_lines(green),arcdbg(pass(Why,TestID,ExampleNum,SolutionProgram)),banner_lines(green))
               ; (banner_lines(red), arcdbg(fail(Why,Errors,TestID,ExampleNum,SolutionProgram)),
-               task_info(TestID,InfoF),wqnl(fav(TestID*ExampleNum,InfoF)),
+               test_info(TestID,InfoF),wqnl(fav(TestID*ExampleNum,InfoF)),
                banner_lines(red)))))
        ;arcdbg(warn(unrunable(TestID,ExampleNum,SolutionProgram))))))),
     print_grid("our grid", InVM.grid),!,
@@ -909,8 +916,9 @@ reuse_indivs_cleanup(A,B,C,A,B,C).
 %same_object(D)
 reuse_a_b(A,B,AA):-
   findall(H,compare_objs1(H,A,B),How),
-  obj_to_oid(B,ID,Iv),
-  setq(A,obj_to_oid(ID,Iv),AA),
+  obj_to_oid(B,BOID),
+  obj_to_oid(A,_AOID),
+  setq(A,oid(BOID),AA),
   object_glyph(A,GlyphA),
   object_glyph(B,GlyphB),
   ignore((How ==[]-> nop(pt(shared_object(GlyphB->GlyphA))); 

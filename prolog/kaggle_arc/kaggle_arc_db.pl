@@ -24,9 +24,9 @@ erase_obj(OID):-
    pfc_retractall(cindv(OID,_,_,_,_)).
 
 assert_id_cells(ID,Points):- maplist(assert_id_cell(ID),Points).
-assert_id_cell(ID,-(C,HV)):- pfc_assert(cmemo(ID,HV,C)).
+assert_id_cell(ID,-(C,HV)):- arc_assert(cmemo(ID,HV,C)).
 assert_hvc_cell(_,_,_,C):- plain_var(C). % free_cell(C),!.
-assert_hvc_cell(ID,H,V,C):- hv_point(H,V,HV),pfc_assert(cmem(ID,HV,C)).
+assert_hvc_cell(ID,H,V,C):- hv_point(H,V,HV),arc_assert(cmem(ID,HV,C)).
 
 
 :- dynamic(is_grid_size/3).
@@ -42,13 +42,13 @@ assert_id_grid_cells(GID,Grid):-
    grid_size(Grid,SH,SV),
    ((cmem(GID,_,_);gid_glyph_oid(GID,_,_))-> erase_grid(GID) ; true),
    retractall(is_grid_size(GID,_,_)),
-   pfc_assert(is_grid_size(GID,SH,SV)),
+   arc_assert(is_grid_size(GID,SH,SV)),
    assert_id_grid_cells2(GID,SH,SV,Grid).
    
 /*
 assert_id_grid_cells2(ID,_SH,_SV,Grid):- is_grid(Grid),!,
  forall(nth1(N,Grid,Row),
-   forall(list_to_row_mem(ID,N,Row,Mem),pfc_assert(Mem))).
+   forall(list_to_row_mem(ID,N,Row,Mem),arc_assert(Mem))).
 */
 
 assert_id_grid_cells2(ID,SH,SV,Grid):-

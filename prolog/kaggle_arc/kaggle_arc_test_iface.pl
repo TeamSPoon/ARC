@@ -133,14 +133,14 @@ interact:- list_of_tests(L), length(L,SelMax),!,
    once((do_menu_key(Key))), 
    retract(wants_exit_menu),!.
 
-do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), pfc_assert(wants_exit_menu).
+do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), arc_assert(wants_exit_menu).
 do_menu_key('?'):- !, menu_options('i').
 do_menu_key('P'):- !, switch_grid_mode,print_test.
 do_menu_key('I'):- !, cls,!,ndividuator.
 do_menu_key('o'):- !, cls,!,ndividuatorO1.
 do_menu_key('O'):- !, cls,!,ndividuatorO.
 do_menu_key('G'):- !, cls,!,detect_supergrid1.
-do_menu_key(-1):- !, pfc_assert(wants_exit_menu).
+do_menu_key(-1):- !, arc_assert(wants_exit_menu).
 do_menu_key(Key):- atom_codes(Key,Codes),  do_menu_codes(Codes), !.
 do_menu_key(Sel):- atom_number(Sel,Num), number(Num), do_test_number(Num),!.
 do_menu_key(Key):- print_menu_cmd(Key),menu_cmds(_Mode,Key,_Info,Goal),!, format('~N~n'),
@@ -370,8 +370,8 @@ new_test_pair(PairName):-
   retractall(is_shared_saved(PairName,_)),
   retractall(is_unshared_saved(PairName*_,_)),
   retractall(is_unshared_saved(PairName,_)),
-  retractall(is_grid_id(PairName*_,_)),
-  retractall(is_grid_id(PairName,_)),!.
+  retractall(is_grid_tid(PairName*_,_)),
+  retractall(is_grid_tid(PairName,_)),!.
 
 human_test:- solve_test_trial(human).
 fully_test:- print_test, !, train_test, !, solve_test, !.
@@ -466,11 +466,11 @@ some_task_info(TestID,III):- fav(TestID,III).
 
 :- dynamic(task_info_cache/2).
 :- retractall(task_info_cache(_,_)).
-task_info(TestID,InfoS):- var(TestID),!,all_arc_test_name(TestID),task_info(TestID,InfoS).
-%task_info(TestID,InfoS):- \+ \+ task_info_cache(TestID,_),!,task_info_cache(TestID,InfoS).
-task_info(TestID,InfoS):- nonvar(TestID),once(fix_test_name(TestID,FTestID,_)),TestID\=@=FTestID,!,task_info(FTestID,InfoS).
-task_info(TestID,InfoS):- task_info_cache(TestID,InfoS),!.
-task_info(TestID,InfoS):- 
+test_info(TestID,InfoS):- var(TestID),!,all_arc_test_name(TestID),test_info(TestID,InfoS).
+%test_info(TestID,InfoS):- \+ \+ task_info_cache(TestID,_),!,task_info_cache(TestID,InfoS).
+test_info(TestID,InfoS):- nonvar(TestID),once(fix_test_name(TestID,FTestID,_)),TestID\=@=FTestID,!,test_info(FTestID,InfoS).
+test_info(TestID,InfoS):- task_info_cache(TestID,InfoS),!.
+test_info(TestID,InfoS):- 
  findall(Inf,
   (some_task_info(CTestID,Inf0),once((fix_test_name(CTestID,CFTestID,_),CFTestID=TestID)),
    repair_info(Inf0,Inf)),Info),
@@ -507,14 +507,14 @@ human_t(T):- human_t_set(Set),member(T,Set).
 
 %human_t_set(NamesByHardUR):- cached_tests(human_t_set,NamesByHardUR),!.
 human_t_set(NamesByHardUR):- % Name=t(_),
-  findall(Name,(task_info(Name,Sol),member(human(_),Sol)),All),
+  findall(Name,(test_info(Name,Sol),member(human(_),Sol)),All),
   list_to_set(All,NamesByHardUR).
 
 sol_t(T):- sol_t_set(Set),member(T,Set).
 sol_t(T):- human_t_set(Set),member(T,Set).
 sol_t_set(NamesByHardUR):- % Name=t(_),
   findall(Name,
-   (task_info(Name,Sol),member(C,Sol),compound(C),functor(C,F,1),atom_contains(F,sol)),All),
+   (test_info(Name,Sol),member(C,Sol),compound(C),functor(C,F,1),atom_contains(F,sol)),All),
   list_to_set(All,NamesByHardUR).
 
 
@@ -650,7 +650,7 @@ pair_dictation(TestID,ExampleNum,In,Out,DictOut):- cached_dictation(pair_dictati
 pair_dictation(TestID,ExampleNum,In,Out,DictOut):-
   do_pair_dication(In,Out,Vs),!,
   vars_to_dictation(Vs,_{},DictOut),
-  pfc_assert(cached_dictation(pair_dictation(TestID,ExampleNum,In,Out),DictOut)).
+  arc_assert(cached_dictation(pair_dictation(TestID,ExampleNum,In,Out),DictOut)).
 /*
 The IEEE floating-point standard, supported by almost all modern floating-point units, specifies that every floating 
  point arithmetic operation, including division by zero, has a well-defined result. 
@@ -789,8 +789,8 @@ is_eval(P1,Prev,P1A):- nop(is_eval(P1,Prev,P1A)),fail.
 db_u(P1L,P1,P2L,P2,In,Out):- is_eval(P1,Prev,P1A),!,db_u([Prev|P1L],P1A,P2L,P2,In,Out).
 db_u(P1L,P1,P2L,P2,In,Out):- is_eval(P2,Prev,P2A),!,db_u(P1L,P1,[Prev|P2L],P2A,In,Out).
 
-%db(P1,P2,In,In):- t_or_t(freeze_for([P2],pfc_assert(is_db(TF,P2))),is_db(TF,P2)).
-%db(P2,P1,In,In):- nonvar(Color), db_value(P1,In,TF),!,t_or_t(freeze_for([Color],pfc_assert(is_db(TF,Color))),is_db(TF,Color)).
+%db(P1,P2,In,In):- t_or_t(freeze_for([P2],arc_assert(is_db(TF,P2))),is_db(TF,P2)).
+%db(P2,P1,In,In):- nonvar(Color), db_value(P1,In,TF),!,t_or_t(freeze_for([Color],arc_assert(is_db(TF,Color))),is_db(TF,Color)).
 db(P1,P2,In,Out):- db_u([],P1,[],P2,In,Out).
 db(X,Y,I,I):- pt(db(X,Y)),pt(I).
 
@@ -809,27 +809,27 @@ kaggle_arc(v(Name), TypeI, In, Out):-
 
 fix_test_name(V,VV,_):- var(V),!,VV=V.
 fix_test_name(G,T,E):- is_grid(G),!, kaggle_arc_io(T,E,_,GO),GO=@=G.
-fix_test_name(ID,Fixed,Example+Num):- test_id_num_io(ID,Tried,Example,Num,_), fix_id(Tried,Fixed).
+fix_test_name(ID,Fixed,Example+Num):- testid_name_num_io(ID,Tried,Example,Num,_), fix_id(Tried,Fixed).
 
 
-test_id_num_io(ID,_Name,_Example,_Num,_IO):- var(ID),!, fail.
-test_id_num_io(ID,_Name,_Example,_Num,_IO):- is_grid(ID),!, fail.
-test_id_num_io(ID,_Name,_Example,_Num,_IO):- is_list(ID), \+ maplist(nonvar,ID),!,fail.
+testid_name_num_io(ID,_Name,_Example,_Num,_IO):- var(ID),!, fail.
+testid_name_num_io(ID,_Name,_Example,_Num,_IO):- is_grid(ID),!, fail.
+testid_name_num_io(ID,_Name,_Example,_Num,_IO):- is_list(ID), \+ maplist(nonvar,ID),!,fail.
 
-test_id_num_io([V,Name,Example,ANum,IO|_],TstName,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,fix_id(VName,TstName).
-test_id_num_io(TstName*Example+Num*IO,Name,Example,Num,IO):- !,fix_id(TstName,Name).
-test_id_num_io(TstName*(Example+Num)*IO,Name,Example,Num,IO):- !,fix_id(TstName,Name).
-test_id_num_io(TstName*Example+Num,Name,Example,Num,_IO):- !,fix_id(TstName,Name).
-test_id_num_io(TstName*(Example+Num),Name,Example,Num,_IO):- !,fix_id(TstName,Name).
-test_id_num_io(ID,Name,Example,Num,IO):- ID = TstName*(Example+Num)*IO,!,fix_id(TstName,Name),!.
-test_id_num_io(ID,Name,Example,Num,_IO):- ID = TstName*Example+Num,!,fix_id(TstName,Name),!.
-test_id_num_io(ID,Name,Example,Num,_IO):- ID = TstName*(Example+Num),!,fix_id(TstName,Name),!.
-test_id_num_io(ID,Name,Example,Num,IO):- atom(ID),atomic_list_concat(Term,'_',ID), Term\==[ID], 
-  test_id_num_io(Term,Name,Example,Num,IO),!.
-test_id_num_io(ID,Name,Example,Num,IO):- atom(ID),catch(atom_to_term(ID,Term,_),_,fail), Term\==ID, nonvar(Term), 
-  test_id_num_io(Term,Name,Example,Num,IO),!.
-%test_id_num_io(ID,Name,_Example,_Num,_IO):- atom(ID),!,fix_id(ID,   Name),!.
-test_id_num_io(ID,Name,_Example,_Num,_IO):- fix_id(ID,   Name),!. %, kaggle_arc_io(Name,Example+Num,IO,_).
+testid_name_num_io([V,Name,Example,ANum,IO|_],TstName,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,fix_id(VName,TstName).
+testid_name_num_io(TstName*Example+Num*IO,Name,Example,Num,IO):- !,fix_id(TstName,Name).
+testid_name_num_io(TstName*(Example+Num)*IO,Name,Example,Num,IO):- !,fix_id(TstName,Name).
+testid_name_num_io(TstName*Example+Num,Name,Example,Num,_IO):- !,fix_id(TstName,Name).
+testid_name_num_io(TstName*(Example+Num),Name,Example,Num,_IO):- !,fix_id(TstName,Name).
+testid_name_num_io(ID,Name,Example,Num,IO):- ID = TstName*(Example+Num)*IO,!,fix_id(TstName,Name),!.
+testid_name_num_io(ID,Name,Example,Num,_IO):- ID = TstName*Example+Num,!,fix_id(TstName,Name),!.
+testid_name_num_io(ID,Name,Example,Num,_IO):- ID = TstName*(Example+Num),!,fix_id(TstName,Name),!.
+testid_name_num_io(ID,Name,Example,Num,IO):- atom(ID),atomic_list_concat(Term,'_',ID), Term\==[ID], 
+  testid_name_num_io(Term,Name,Example,Num,IO),!.
+testid_name_num_io(ID,Name,Example,Num,IO):- atom(ID),catch(atom_to_term(ID,Term,_),_,fail), Term\==ID, nonvar(Term), 
+  testid_name_num_io(Term,Name,Example,Num,IO),!.
+%testid_name_num_io(ID,Name,_Example,_Num,_IO):- atom(ID),!,fix_id(ID,   Name),!.
+testid_name_num_io(ID,Name,_Example,_Num,_IO):- fix_id(ID,   Name),!. %, kaggle_arc_io(Name,Example+Num,IO,_).
 
 
 
@@ -877,7 +877,7 @@ parcCmt1(TName):-
   IHV = IH*IV, OHV = OH*OV,
   BGColor = '$VAR'('Color'),
   (IHV\==OHV -> CG = resize_grid(OH,OV,BGColor); CG = copy_grid(in)),
-  findall(III,task_info(TestID,III),InfoUF),
+  findall(III,test_info(TestID,III),InfoUF),
   flatten(InfoUF,InfoF),
   DSL = no_sol(i(complete),CG,incomplete),
   predsort(sort_univ,[DSL|InfoF],InfoFS), %44f52bb0

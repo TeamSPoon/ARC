@@ -136,7 +136,7 @@ vm_for_grid(Grid,IDO,Out,VM):-
   into_fti(ID,in_out,Grid,VM),
   set(VM.grid)=Grid,
   ignore((
-    test_id_num_io(ID,TestID,Example,Num,IO),
+    testid_name_num_io(ID,TestID,Example,Num,IO),
     set_current_test(TestID),    
 
     ignore((IO==in,kaggle_arc_io_trn(TestID,Example+Num,out,Out),
@@ -165,7 +165,7 @@ repair_symmetry(Grid):- is_grid(Grid),!,
   into_fti(ID,in_out,Grid,VM),
   set_vm(VM),
   set(VM.grid)=Grid,    
-%%  ignore(( test_id_num_io(ID,TestID,_,_,_))),
+%%  ignore(( testid_name_num_io(ID,TestID,_,_,_))),
   kaggle_arc_io_trn(TestID,Example+Num,IO,Grid),
   set_current_test(TestID),
   fif(IO==in,kaggle_arc_io_trn(TestID,Example+Num,out,Out)),
@@ -303,12 +303,12 @@ c_n_pattern:- \+ \+ (c_n_pattern_l(I,PL,Full,F),c_n_pattern_l(I,PL,Full,F)),!.
 c_n_pattern:- 
  forall(
   (between(4,15,P),length(PL,P),append_n_times(PL,8,Full)),
-  pfc_assert(c_n_pattern_l(P,PL,Full,'->->->->'))),
+  arc_assert(c_n_pattern_l(P,PL,Full,'->->->->'))),
  forall(
   (between(2,10,P),length(L,P),reverse(L,R),append(L,R,PL),append_n_times(PL,15,Full)),
-   pfc_assert(c_n_pattern_l(P,PL,Full,'<><><><>'))),
+   arc_assert(c_n_pattern_l(P,PL,Full,'<><><><>'))),
   %(between(2,10,P),length(PL,P),repeat_until_30(L,P,Full)),
-  % pfc_assert(c_n_pattern_l(P,PL,Full,'122333'))),
+  % arc_assert(c_n_pattern_l(P,PL,Full,'122333'))),
   nop(listing(c_n_pattern_l/4)).
     
 :- c_n_pattern.
@@ -327,7 +327,7 @@ c_n_reverse:-
                       append([PLL,CL,RL],Row),
                       numbervars(Row,0,_),
                       append(Row,_,RowO)))),
-        pfc_assert(c_n_reverse_l(I,C,P,RowO,PLL,CL,RL))),
+        arc_assert(c_n_reverse_l(I,C,P,RowO,PLL,CL,RL))),
                       nop(listing(c_n_reverse_l/7)).
 
 :- c_n_reverse.

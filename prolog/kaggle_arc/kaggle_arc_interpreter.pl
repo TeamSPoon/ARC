@@ -83,7 +83,7 @@ vert_pos(Class,Y):- into_singles(Class,Obj),loc(Obj,_X,Y).
 horiz_pos(Class,X):- into_singles(Class,Obj),loc(Obj,X,_Y).
 
 when_config(This,Goal):-test_config(This)-> call(Goal) ; true.
-test_config(This):- get_current_test(Name),task_info(Name,InfoL),!,contains_nonvar(This,InfoL).
+test_config(This):- get_current_test(Name),test_info(Name,InfoL),!,contains_nonvar(This,InfoL).
 
 test_cond_or(This,_That):- test_config(This),!.
 test_cond_or(This, That):- term_variables(This,[That|_]),!.
@@ -274,6 +274,8 @@ back_to_map(Was,Dict,Prev,Grid,Closure,New, Ret):-
   gset(Dict.Was) = NewPrev ,
   Ret = Dict.
 
+:- include(kaggle_arc_pfc).
+
 :- decl_pt(into_grid(+(any),-mv(grid))).
 into_grids(P,G):- no_repeats(G,quietly(cast_to_grid(P,G, _))).
 
@@ -345,7 +347,7 @@ known_grid(ID,GO):- (known_grid0(ID,G),deterministic(YN),true), (YN==true-> ! ; 
 
 oid_to_gridoid(GID,G):- current_predicate(oid_to_grid/2), oid_to_grid(GID,G).
 oid_to_gridoid(ID,G):-  atom(ID),atomic_list_concat(Term,'_',ID), Term\==[ID], !,append(GOID,[OID],Term),
-  test_id_num_io(GOID,_Name,_Example,_Num,_IO),
+  testid_name_num_io(GOID,_Name,_Example,_Num,_IO),
   ((atom(OID),atom_number(OID,ONum))->int2glyph(ONum,GL);GL=OID),
   get_current_test(TestID),
   g_2_o(TestID,GL,G).
@@ -357,8 +359,8 @@ known_grid0(ID,_):- is_list(ID),!,fail.
 known_grid0(OID, Grid):- atom(OID),oid_to_gridoid(OID,Grid),!.
 known_grid0(ID,_):- is_object(ID),!,fail.
 known_grid0(_,ID):- is_object(ID),!,fail.
-known_grid0(ID,G):-  test_id_num_io(ID,TestID,Example,Num,IO),ExampleNum=Example+Num,!,(kaggle_arc_io(TestID,ExampleNum,IO,G),deterministic(YN),true),(YN==true-> ! ; true).
-known_grid0(ID,G):- is_grid_id(G,ID),!.
+known_grid0(ID,G):-  testid_name_num_io(ID,TestID,Example,Num,IO),ExampleNum=Example+Num,!,(kaggle_arc_io(TestID,ExampleNum,IO,G),deterministic(YN),true),(YN==true-> ! ; true).
+known_grid0(ID,G):- is_grid_tid(G,ID),!.
 known_grid0(ID,G):- fix_test_name(ID,Name,ExampleNum),!,
   (kaggle_arc_io(Name,ExampleNum,_IO,G),deterministic(YN),true), (YN==true-> ! ; true).
 known_grid0(ID,G):- learned_color_inner_shape(ID,magenta,BG,G,_),get_bgc(BG).
@@ -381,15 +383,15 @@ kaggle_arc_io(Name,ExampleNum,IO,G):-
 into_gridnameA(G,TstName):- known_grid(TstName,G).
 
 
-%grid_to_tid(Grid,Name):- is_grid_id(Grid,Name)*->true; (plain_var(Name)->(luser_getval(grid_name,Name),Name\=[],grid_to_tid(Grid,Name))).
-:- dynamic(is_grid_id/2).
-set_grid_id(Grid,ID):-
+%grid_to_tid(Grid,Name):- is_grid_tid(Grid,Name)*->true; (plain_var(Name)->(luser_getval(grid_name,Name),Name\=[],grid_to_tid(Grid,Name))).
+:- dynamic(is_grid_tid/2).
+set_grid_tid(Grid,ID):-
   my_assertion((ground(ID),nonvar_or_ci(Grid))),
   my_assertion(\+ is_grid(ID)),
   luser_setval(grid_name,ID),
   ignore(( \+ into_gridnameA(Grid,ID),
   copy_term(Grid,GGrid),numbervars(GGrid,1,_),
-  asserta(is_grid_id(GGrid,ID)))).
+  asserta(is_grid_tid(GGrid,ID)))).
 
 to_assertable_grid(A,A):- ground(A),!.
 %to_assertable_grid(A,C):- copy_term(A,B),numbervars(B,0,_,[attvar(skip),singletons(true)]),B\==A,to_assertable_grid(B,C).
@@ -410,15 +412,15 @@ grid_to_tid(obj(_),_):- !,fail.
 grid_to_tid(Grid,ID):- \+ ground(Grid), to_assertable_grid(Grid,GGrid),!,grid_to_tid(GGrid,ID).
 grid_to_tid(Grid,ID):- kaggle_arc_io(TestID,Example+Num,IO,Grid),!,ID = TestID*(Example+Num)*IO.
 grid_to_tid(Grid,ID):- known_grid0(ID,GVar),Grid=@=GVar,!.
-grid_to_tid(Grid,ID):- must_be_free(ID),makeup_gridname(Grid,ID), set_grid_id(Grid,ID),!.
+grid_to_tid(Grid,ID):- must_be_free(ID),makeup_gridname(Grid,ID), set_grid_tid(Grid,ID),!.
 
 into_oid(X,ID):- atom(X),!,X=ID.
-into_oid(X,ID):- is_grid(X),grid_to_oid(X,ID),!.
+into_oid(X,ID):- is_grid(X),grid_to_gid(X,ID),!.
 into_oid(X,ID):- is_object(X),obj_to_oid(X,ID),!.
 into_oid(X,ID):- tid_to_gid(X,ID),!.
 
-grid_to_oid(Grid,OID):- is_grid_id(Grid,OID),atom(OID),!.
-grid_to_oid(Grid,OID):- grid_to_tid(Grid,ID),!,(clause(tid_to_gid(ID,OID),true)*-> true ; term_to_oid(ID,OID)).
+grid_to_gid(Grid,OID):- is_grid_tid(Grid,OID),atom(OID),!.
+grid_to_gid(Grid,OID):- grid_to_tid(Grid,ID),!,(clause(tid_to_gid(ID,OID),true)*-> true ; term_to_oid(ID,OID)).
 
 makeup_gridname(_Grid,GridName):- get_current_test(ID),flag(made_up_grid,F,F+1),GridName = ID*('ExampleNum'+F)*io.
 

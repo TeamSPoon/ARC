@@ -84,7 +84,7 @@ enum_object0(S):- why_grouped(TestID,_,IndvS),member(S,IndvS).
 enum_object0(S):- clause(in_shape_lib(_,S),Body),catch(Body,_,fail).
 enum_object0(S):- g2o(_,S).
 enum_object0(S):- is_unshared_saved(_,IndvS),member(S,IndvS).
-enum_object0(S):- is_grid_id(S,_).
+enum_object0(S):- is_grid_tid(S,_).
 */
 internal_region(Obj,regionOf(Obj)).
 
@@ -177,7 +177,7 @@ make_indiv_object_no_vm(ID,GH,GV,Overrides,LPoints,Obj):-
 
 
 make_indiv_object_s(ID,GH,GV,Overrides,Points,ObjO):- 
-  test_id_num_io(ID,_TestID,_Example,_Num,IO),
+  testid_name_num_io(ID,_TestID,_Example,_Num,IO),
   points_range(Points,LoH,LoV,HiH,HiV,_HO,_VO),
   once(member(v_hv(Width,Height),Overrides);(Width is HiH-LoH+1,Height is HiV-LoV+1)),
   %luser_getval(test_pairname,ID),
@@ -493,7 +493,7 @@ current_gid(TOID):-
    tid_to_gid(ID,TOID),!.
 
 
-%   obj_to_oid(Obj,_ID,OID). %object_grid(Obj,G),grid_to_oid(G,OID).
+%   obj_to_oid(Obj,_ID,OID). %object_grid(Obj,G),grid_to_gid(G,OID).
 
 obj_to_oid(Obj,_,MyID):- obj_to_oid(Obj,MyID).
 
@@ -706,7 +706,7 @@ gp_point_corners(Obj,_Points0,Dir,CPoint):-  %sort_points(Points,SPoints),
    
 
 %globalpoints(ID,Points):- \+ \+ cmem(ID,_,_), no_repeats(ID,cmem(ID,_,_)), findall(-(C,HV),cmem(ID,HV,C),Points).
-%globalpoints(Grid,Points):- grid_to_oid(Grid,ID),\+ \+ cmem(ID,_,_),findall(-(C,HV),cmem(ID,HV,C),Points).
+%globalpoints(Grid,Points):- grid_to_gid(Grid,ID),\+ \+ cmem(ID,_,_),findall(-(C,HV),cmem(ID,HV,C),Points).
 globalpoints(I,_):-  var(I),!,fail.
 globalpoints(I,X):-  (var_check(I,globalpoints(I,X)), deterministic(TF), true), (TF==true-> ! ; true).
 globalpoints([],[]):-!.
