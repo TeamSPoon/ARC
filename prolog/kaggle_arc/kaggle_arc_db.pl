@@ -33,14 +33,13 @@ assert_hvc_cell(ID,H,V,C):- hv_point(H,V,HV),arc_assert(cmem(ID,HV,C)).
 % Grid to_fast_workspace
 
 
-
-assert_id_grid_cells(GID):- 
-  oid_to_gridoid(GID,Grid), assert_id_grid_cells(GID,Grid).
+assert_id_grid_cells(Grid):- is_grid(Grid),grid_to_gid(Grid,GID),!,assert_id_grid_cells(GID,Grid).
+assert_id_grid_cells(GID):- oid_to_gridoid(GID,Grid), assert_id_grid_cells(GID,Grid).
 
 assert_id_grid_cells(GID,Grid):-
  %throw(all_in_emem(assert_id_grid_cells(GID,Grid))),
    grid_size(Grid,SH,SV),
-   ((cmem(GID,_,_);gid_glyph_oid(GID,_,_))-> erase_grid(GID) ; true),
+   %((cmem(GID,_,_);gid_glyph_oid(GID,_,_))-> erase_grid(GID) ; true),
    retractall(is_grid_size(GID,_,_)),
    arc_assert(is_grid_size(GID,SH,SV)),
    assert_id_grid_cells2(GID,SH,SV,Grid).
@@ -190,7 +189,7 @@ pgt1(Obj):-
          localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(same), loc(3, 1),
          changes([]), iz(combined),
          iz(rectangle), iz(multicolored),
-         iz(polygon), obj_to_oid(v('0ad4ef5')*(trn+0)*in, 21),
+         iz(polygon), %obj _to_oid(v('0ad4ef5')*(trn+0)*in, 21),
        %  globalpoints( [ red-point_01_01, silver-point_02_01]),
          grid_size(8, 8)]).
 
@@ -202,7 +201,7 @@ pgt2(Obj):- Obj =
          localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(same), loc(2, 1),
          changes([]), iz(combined),
          iz(rectangle), iz(multicolored),
-         iz(polygon), obj_to_oid(v('a1d4ef5')*(trn+0)*in, 66),
+         iz(polygon), %obj _to_oid(v('a1d4ef5')*(trn+0)*in, 66),
         %  globalpoints( [ red-point_01_01, silver-point_02_01]),
          grid_size(8, 8)]).
 

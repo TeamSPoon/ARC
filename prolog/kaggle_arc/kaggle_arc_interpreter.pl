@@ -417,10 +417,10 @@ grid_to_tid(Grid,ID):- must_be_free(ID),makeup_gridname(Grid,ID), set_grid_tid(G
 into_oid(X,ID):- atom(X),!,X=ID.
 into_oid(X,ID):- is_grid(X),grid_to_gid(X,ID),!.
 into_oid(X,ID):- is_object(X),obj_to_oid(X,ID),!.
-into_oid(X,ID):- tid_to_gid(X,ID),!.
+into_oid(X,ID):- tid_to_gids(X,ID),!.
 
 grid_to_gid(Grid,OID):- is_grid_tid(Grid,OID),atom(OID),!.
-grid_to_gid(Grid,OID):- grid_to_tid(Grid,ID),!,(clause(tid_to_gid(ID,OID),true)*-> true ; term_to_oid(ID,OID)).
+grid_to_gid(Grid,OID):- grid_to_tid(Grid,ID),!,(clause(tid_to_gids(ID,OID),true)*-> true ; term_to_oid(ID,OID)).
 
 makeup_gridname(_Grid,GridName):- get_current_test(ID),flag(made_up_grid,F,F+1),GridName = ID*('ExampleNum'+F)*io.
 
@@ -449,12 +449,8 @@ o2g(Obj,Glyph):- var(Obj),!,gid_glyph_oid(_,Glyph,OID),oid_glyph_object(OID,Glyp
 o2g(Obj,NewGlyph):- var(NewGlyph),must_det_ll((o2g_f(Obj,NewGlyph))),!. 
 o2g(Obj,NewGlyph):- trace,o2g_f(Obj,NewGlyph).
 
-o2g_f(Obj,Glyph):- object_glyph(Obj,Glyph),obj_to_oid(Obj,OID),
-  retractall(oid_glyph_object(OID,_,_)),
-  asserta_if_new(oid_glyph_object(OID,Glyph,Obj)).
-
 /*
- obj_to_oid(Obj,Old), int2glyph(Old,Glyph), 
+ obj_to _oid(Obj,Old), int2glyph(Old,Glyph), 
  (g2o(Glyph,O2) ->
        (O2=@=Obj->NewGlyph=Glyph; 
          must_det_ll(( 
@@ -478,6 +474,7 @@ print_ncolors(G,C):- sformat(F,'~q',[G]),color_print(C,F).
 :- system:import(print_ncolors/2).
 
 :- dynamic(g_2_o/3).
+g_2_o(_,_,_):- fail.
 
 %set_glyph_to_object(G,O):- ignore(luser_linkval(G,O)),(get_current_test(TestID),my_asserta_if_new(g_2_o(TestID,G,O))).
 
@@ -485,7 +482,9 @@ g2o(G,O):- var(G), !, oid_glyph_object(_,G,O).
 g2o(G,O):- integer(G),int2glyph(G,C),!,g2o(C,O),!.
 g2o(C,O):- compound(C), !, C= objFn(G,_), !, g2o(G,O).
 g2o(G,O):- \+ atom(G), !, string(G),Chars=[_|_],atom_chars(G,Chars),!,chars2o(Chars,O).
-g2o(G,O):- oid_glyph_object(_,G,O)*->true;(Chars=[_,_|_],atom_chars(G,Chars),chars2o(Chars,O)).
+g2o(G,O):- oid_to_object(G,O)-> true;(oid_glyph_object(_,G,O)*->true;(Chars=[_,_|_],atom_chars(G,Chars),chars2o(Chars,O))).
+
+
 
 %get_glyph_to_object(G,O):- ((luser_getval(G,O),is_object(O))*->true;(get_current_test(TestID),g_2_o(TestID,G,O))).
 
@@ -494,7 +493,7 @@ chars2o(Chars,O):- \+ member('_',Chars), member(C,Chars),g2o(C,O),!.
 
 known_object(G,O):- known_obj0(G,O).
 
-known_obj0(G,_):- G==[],!.
+known_obj0(G,_):- G==[],!,fail.
 known_obj0(G,E):- plain_var(G),!,enum_object(E),G=E.
 known_obj0(G,O):- is_object(G),!,G=O.
 known_obj0(obj(O),obj(O)):- !, is_list(O),!.

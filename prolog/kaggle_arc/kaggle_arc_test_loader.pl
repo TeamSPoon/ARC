@@ -86,7 +86,11 @@ arc_sub_path(Subdir,AbsolutePath):- muarc_tmp:arc_directory(ARC_DIR),absolute_di
 :- load_json_files(t,'./data/1D_testset/*.json').
 %:- load_json_files(v,'./data/test/*.json').
 :- export(kaggle_arc/4).
-kaggle_arc(TName,ExampleNum,In,Out):- kaggle_arc_json(TName,ExampleNum,In,Out).
+kaggle_arc(TName,ExampleNum,In,Out):- kaggle_arc_json(TName,ExampleNum,In,O), disallow_test_out(ExampleNum,O,Out).
+
+disallow_test_out(trn+_,OO,OO):-!.
+%disallow_test_out(tst+_, O,OO):- grid_size(O,H,V),make_grid(H,V,OO).
+disallow_test_out(_,OO,OO).
 
 
 icu('007bbfb7', x + 3 ).

@@ -146,29 +146,6 @@ make_indiv_object(VM,Overrides,LPoints,NewObj):-
     set(VM.objs)=NEW)))).
 
 
- 
-retract_object(GID,OID,_):- 
- retractall(gid_glyph_oid(GID,_,OID)),
- retractall(cindv(OID,_,_)),
- retractall(cindv(OID,_,_,_)),
- retractall(cindv(OID,_,_,_,_)).
-
-assert_object(GID,NewObj):-
-  obj_to_oid(NewObj,NOID),
-  assert_object(GID,NOID,NewObj).
-
-assert_object(GID,OID,NewObj):- 
-  tid_to_gid(GID,GOID),
-  o2g(NewObj,Glyph),
-  retract_object(GID,OID,_),
-  pfcAdd(gid_glyph_oid(GOID,Glyph,OID)),
-  assert_object1(OID,NewObj).
-
-assert_object1(OID,obj(List)):-!,maplist(assert_object1(OID),List).
-assert_object1(OID,List):- is_list(List),!,maplist(assert_object1(OID),List).
-assert_object1(OID,Prop):- Prop=..List, AProp=..[cindv,OID|List],
-  (\+ ground(AProp)->dumpST;true),
-  pfcAdd(AProp).
 
 make_indiv_object_no_vm(ID,GH,GV,Overrides,LPoints,Obj):- 
   globalpoints_maybe_bg(LPoints,GPoints),
@@ -480,22 +457,68 @@ iv_for(L,Iv):- copy_term(L,CT,_),numbervars(CT,0,_,[attvar(bind),singletons(true
 
 obj_iv(Obj,Iv):- indv_u_props(Obj,L),iv_for(L,Iv).
 
-obj_to_oid(Obj,OID):- atom(Obj),!,OID=Obj.
-obj_to_oid(Obj,OID):- 
-   obj_iv(Obj,Iv),
-   current_gid(TOID), 
-   object_glyph(Obj,Glyph),
-   int2glyph(Iv,GL),
-   atomic_list_concat([GL,'_',TOID,'_',Iv,'_',Glyph],OID).
+obj_to_oid(Obj,OID):-  atom(Obj),atom_length(Obj,L),L>5,Obj=OID,!.
+obj_to_oid(Obj,OID):- oid_glyph_object(OID,_,Obj),!.
+obj_to_oid(I,X):- var_check(I,obj_to_oid(I,X))*->!;indv_props(I,L),member(oid(X),L).
+obj_to_oid(Obj,OID):- assert_object_oid(_,Obj,_Glyph,OID),!.
 
-current_gid(TOID):-
-   get_vm(VM), ID = VM.id,
-   tid_to_gid(ID,TOID),!.
+current_gid(GID):- get_vm(VM), GID = VM.gid.
+   %tid_to_gids(ID,GID),!.
+
+oid_to_object(OID,Obj):- oid_glyph_object(OID,_,Obj).
 
 
-%   obj_to_oid(Obj,_ID,OID). %object_grid(Obj,G),grid_to_gid(G,OID).
 
 obj_to_oid(Obj,_,MyID):- obj_to_oid(Obj,MyID).
+tid_to_gid(TID,GID):- is_grid(TID),!,grid_to_gid(TID,GID).
+tid_to_gid(TID,GID):- var(TID),!,current_gid(GID).
+tid_to_gid(TID,GID):- tid_to_gids(TID,GID),!.
+
+%o2g_f(Obj,Glyph):-  atom(Obj),atom_length(Obj,1),Obj=Glyph,!.
+o2g_f(Obj,Glyph):- oid_glyph_object(_,Glyph,Obj),!.
+o2g_f(Obj,Glyph):- assert_object_oid(_,Obj,Glyph,_OID).
+
+assert_object_oid(TID,Obj,Glyph,OID):-     
+ must_det_ll((
+   tid_to_gid(TID,GID),
+   is_object(Obj),
+   obj_iv(Obj,Iv), int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
+   atomic_list_concat(['o_',Glyph,'_',GID],OID),
+   % retractall(oid_glyph_object(OID,_,_)),
+   arc_assert(oid_glyph_object(OID,Glyph,Obj)),
+   % retractall(gid_glyph_oid(GID,Glyph,_)),
+   % retractall(gid_glyph_oid(GID,_,OID)),
+   arc_assert(gid_glyph_oid(GID,Glyph,OID)),
+   assert_object2(OID,Obj))).
+
+assert_object2(OID,obj(List)):-!,maplist(assert_object2(OID),List).
+assert_object2(OID,List):- is_list(List),!,maplist(assert_object2(OID),List).
+assert_object2(OID,Prop):- Prop=..List, AProp=..[cindv,OID|List],
+  (\+ ground(AProp)->dumpST;true),
+  arc_assert(AProp).
+ 
+retract_object(GID,OID,_):- 
+ retractall(gid_glyph_oid(GID,_,OID)),
+ retractall(cindv(OID,_,_)),
+ retractall(cindv(OID,_,_,_)),
+ retractall(cindv(OID,_,_,_,_)).
+
+assert_object(GID,NewObj):-
+  obj_to_oid(NewObj,NOID),
+  assert_object(GID,NOID,NewObj).
+
+assert_object(GID,OID,NewObj):- 
+  tid_to_gid(GID,GOID),
+  o2g(NewObj,Glyph),
+  retract_object(GID,OID,_),
+  pfcAdd(gid_glyph_oid(GOID,Glyph,OID)),
+  assert_object1(OID,NewObj).
+
+assert_object1(OID,obj(List)):-!,maplist(assert_object1(OID),List).
+assert_object1(OID,List):- is_list(List),!,maplist(assert_object1(OID),List).
+assert_object1(OID,Prop):- Prop=..List, AProp=..[cindv,OID|List],
+  (\+ ground(AProp)->dumpST;true),
+  pfcAdd(AProp).
 
 %obj_to_oid(I,_,Iv):- is_object(I), obj_iv(I,Iv).
 %obj_to_oid(I,_ID,Fv):- is_grid(I),!, flag(indiv,Fv,Fv+1).
@@ -537,7 +560,7 @@ color_mass(_,0).
 %remove_color(_-P,P).
 %remove_color(LPoints,ColorlessPoints):- mapgroup(remove_color,LPoints,ColorlessPoints).
 
-decl_pt(setq(object,any,object)).
+:- decl_pt(setq(object,any,object)).
 
 setq(Orig,Todo,Result):- is_object(Orig),!,override_object(Todo,Orig,Result).
 setq(Orig,Todo,Result):- metaq(setq_1,Orig,Todo,Result).
@@ -610,17 +633,17 @@ counted_neighbours(C-HV,List,CountIn,[P|CountIn]):-
   length(Ns,I),P = I-HV.
 
 var_check(I,_):- is_grid(I),!,fail.
-var_check(I,G):- var(I),!,var_check_throw(I,G).
 var_check(I,_):- I==[],!,fail.
 var_check(I,G):- resolve_reference(I,O),I\==O,!,subst001(G,I,O,GG),GG\==G,!,call(GG).
 var_check(I,G):- var(I),!,(enum_object(I)*->G;var_check_throw(I,G)).
+%var_check(I,G):- var(I),!,var_check_throw(I,G).
 var_check_throw(I,G):- var(I),wdmsg(error(var(G))),!,arcST,wdmsg(error(var(G))),break,trace_or_throw(maybe_enum_i(I,G)),call(G).
 
 object_shapeW(I,X):- compound(I),I=obj(L),!,my_assertion(is_list(L)),!,member(iz(X),L).
 object_shapeW(I,X):- indv_props(I,L),!,member(iz(X),L).
 
 isz(I,X):- is_list(I),I=[O],!,isz(O,X).
-isz(I,X):- var_check(I,iz(I,X))*->true;(indv_props(I,L),member(iz(X),L)).
+isz(I,X):- var_check(I,isz(I,X))*->true;(indv_props(I,L),member(iz(X),L)).
 
 obj_prop_val(I,X):- var_check(I,obj_prop_val(I,X))*->true;(indv_props(I,L),member(X,L)).
 

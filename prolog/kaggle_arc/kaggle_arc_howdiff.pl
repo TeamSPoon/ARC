@@ -251,9 +251,9 @@ make_comparable(I,II):- functor(I,II,_).
 no_diff(in,out).
 simular([],_,_,[]):- !.
 simular(loc=Where,I,O,object_has_moved(Where)):-  
-  \+ (mass(O,OC), OC < 6) ,
+  \+ (cmass(O,OC), OC < 6) ,
   \+ (colors(O,[cc(BG, _)|_]),is_black_or_bg(BG)),
-  obj_to_oid(I,_Id1), \+ obj_to_oid(O,_Id2).
+  object_glyph(I,G), \+ object_glyph(O,G).
 
 
 

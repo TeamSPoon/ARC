@@ -157,11 +157,11 @@ debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
   sort_obj_props(A,AS0),
  % will_show_grid(Obj,TF),
   TF = false,
-  obj_to_oid(Obj,_,MyID),
-  %o2ansi(MyID,MissGlyph),
+  obj_to_oid(Obj,MyOID),
+  %o2ansi(MyOID,MissGlyph),
   object_s_glyph(Obj,SGlyph),
-  append(AS0,[nth(MyID)],AS),  
-  remove_too_verbose(MyID,AS,TV0), include(not_too_verbose,TV0,TV),
+  append(AS0,[nth(MyOID)],AS),  
+  remove_too_verbose(MyOID,AS,TV0), include(not_too_verbose,TV0,TV),
 
   %flatten(TV,F),predsort(longer_strings,F,[Caps|_]), 
   sort(AS,ASA),reverse(ASA,ASAR),
@@ -220,37 +220,37 @@ debug_indiv(Obj,P):- compound(P),!,compound_name_arguments(P,F,A),debug_indiv(Ob
 
 
 %alt_id(_MyID,ID,Alt):- int2glyph(ID,Alt).
-alt_id(MyID,ID,Alt):- Alt is abs(MyID-ID).
+alt_id(MyOID,ID,Alt):- Alt is abs(MyOID-ID).
 remove_too_verbose(_MyID,Var,plain_var(Var)):- plain_var(Var),!.
 remove_too_verbose(_MyID,H,''):- too_verbose(H),!.
-remove_too_verbose(MyID,List,ListO):- is_list(List),!,maplist(remove_too_verbose(MyID),List,ListO),!.
+remove_too_verbose(MyOID,List,ListO):- is_list(List),!,maplist(remove_too_verbose(MyOID),List,ListO),!.
 
-% @TODO UNCOMMENT THIS remove_too_verbose(MyID,dot,"point"):- !.
-%remove_too_verbose(MyID,line(HV),S):- sformat(S,'~w-Line',[HV]).
-%remove_too_verbose(MyID,square,S):- sformat(S,'square',[]).
-% @TODO UNCOMMENT THIS remove_too_verbose(MyID,background,S):- sformat(S,'bckgrnd',[]).
-remove_too_verbose(MyID,iz(H),HH):- remove_too_verbose(MyID,H,HH),!.
+% @TODO UNCOMMENT THIS remove_too_verbose(MyOID,dot,"point"):- !.
+%remove_too_verbose(MyOID,line(HV),S):- sformat(S,'~w-Line',[HV]).
+%remove_too_verbose(MyOID,square,S):- sformat(S,'square',[]).
+% @TODO UNCOMMENT THIS remove_too_verbose(MyOID,background,S):- sformat(S,'bckgrnd',[]).
+remove_too_verbose(MyOID,iz(H),HH):- remove_too_verbose(MyOID,H,HH),!.
 
-remove_too_verbose(_MyID,obj_to_oid(_ * _ * X,Y),NTH):- NTH=..[X,Y].
-remove_too_verbose(_MyID,obj_to_oid(_ * _+_ * X,Y),NTH):- NTH=..[X,Y].
-remove_too_verbose(_MyID,obj_to_oid(_ * X,Y),NTH):- NTH=..[X,Y].
+%remove_too_verbose(_MyID,obj_to _oid(_ * _ * X,Y),NTH):- NTH=..[X,Y].
+%remove_too_verbose(_MyID,obj_to_oid(_ * _+_ * X,Y),NTH):- NTH=..[X,Y].
+%remove_too_verbose(_MyID,obj_to _oid(_ * X,Y),NTH):- NTH=..[X,Y].
 
-remove_too_verbose(MyID,link(Touched,ID,Dir),HH):- %number(MyID),
-  MyID\==0,integer(ID),alt_id(MyID,ID,Alt),o2ansi(ID,Glyph),
+remove_too_verbose(MyOID,link(Touched,ID,Dir),HH):- %number(MyOID),
+  MyOID\==0,integer(ID),alt_id(MyOID,ID,Alt),o2ansi(ID,Glyph),
   remove_too_verbose(0,link(Touched,Alt,Dir,Glyph),HH).
-remove_too_verbose(MyID,link(Touched,ID),HH):- % number(MyID),
-  MyID\==0, integer(ID),alt_id(MyID,ID,Alt),o2ansi(ID,Glyph),
+remove_too_verbose(MyOID,link(Touched,ID),HH):- % number(MyOID),
+  MyOID\==0, integer(ID),alt_id(MyOID,ID,Alt),o2ansi(ID,Glyph),
   remove_too_verbose(0,link(Touched,Alt,Glyph),HH).
 
-remove_too_verbose(MyID,TP,HH):- compound(TP),compound_name_arguments(TP,link,[F|A]),atom(F),
-   compound_name_arguments(TPP,F,A),!,remove_too_verbose(MyID,TPP,HH).
+remove_too_verbose(MyOID,TP,HH):- compound(TP),compound_name_arguments(TP,link,[F|A]),atom(F),
+   compound_name_arguments(TPP,F,A),!,remove_too_verbose(MyOID,TPP,HH).
 
-remove_too_verbose(MyID,colors(H),HH):- !, remove_too_verbose(MyID,H,HH).
-%remove_too_verbose(MyID,loc(X,Y),loc(X,Y)).
-%remove_too_verbose(MyID,v_hv(X,Y),size(X,Y)).
+remove_too_verbose(MyOID,colors(H),HH):- !, remove_too_verbose(MyOID,H,HH).
+%remove_too_verbose(MyOID,loc(X,Y),loc(X,Y)).
+%remove_too_verbose(MyOID,v_hv(X,Y),size(X,Y)).
 remove_too_verbose(_MyID,changes([]),'').
 remove_too_verbose(_MyID,rotation(same),'').
-remove_too_verbose(MyID,L,LL):- is_list(L),!, maplist(remove_too_verbose(MyID),L,LL).
+remove_too_verbose(MyOID,L,LL):- is_list(L),!, maplist(remove_too_verbose(MyOID),L,LL).
 remove_too_verbose(_MyID,H,HH):- compound(H),arg(1,H,L), is_list(L), maybe_four_terse(L,T),H=..[F,L|Args],HH=..[F,T|Args].
 remove_too_verbose(_MyID,H,H).
 

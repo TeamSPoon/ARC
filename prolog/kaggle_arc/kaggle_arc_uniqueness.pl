@@ -23,8 +23,9 @@ save_grouped(Why,G):-
   get_current_test(TestID),
   length(GS,Len),
   maplist(o2g,GS,GGG),
-  my_asserta_if_new(is_why_grouped_g(TestID,Len,Why,GGG)),
-  mapgroup(register_obj,GS).
+  mapgroup(register_obj,GS),
+  %maplist(obj_to_oid,GS,OIDs),
+  my_asserta_if_new(is_why_grouped_g(TestID,Len,Why,GGG)).
 
 
 normal_group_form(Group,Group):-!.
@@ -292,7 +293,8 @@ length_criteria(List,N):- length(List,N).
 
 tesT_compare_objects:- compare_objects([
     obj([mass(1),shape([point_01_01]),colors([cc(yellow,1.0)]),localpoints([yellow-point_01_01]),
-      v_hv(1,1),rotation(same),loc(4,9),changes([]),iz(dots),iz(shape(dot)),iz(solid),iz(jagged(true)),center(4,9),obj_to_oid(t(af902bf9)*(tst+0)*in,37),globalpoints([yellow-point_04_09]),grid_size(10,10),iz(important)]),
+      v_hv(1,1),rotation(same),loc(4,9),changes([]),iz(dots),iz(shape(dot)),iz(solid),iz(jagged(true)),center(4,9),% obj_to_oid(t(af902bf9)*(tst+0)*in,37),globalpoints([yellow-point_04_09]),
+      grid_size(10,10),iz(important)]),
     obj([mass(1),shape([point_01_01]),colors([cc(yellow,1.0)]),localpoints([yellow-point_01_01]),v_hv(1,1),rotation(same),loc(4,6),changes([]),iz(dots),iz(shape(dot)),iz(solid),iz(jagged(true)),center(4,6),obj_to_oid(t(af902bf9)*(tst+0)*in,39),globalpoints([yellow-point_04_06]),grid_size(10,10),iz(important)]),
     obj([mass(1),shape([point_01_01]),colors([cc(yellow,1.0)]),localpoints([yellow-point_01_01]),v_hv(1,1),rotation(same),loc(1,6),changes([]),iz(dots),iz(shape(dot)),iz(solid),iz(jagged(true)),center(1,6),obj_to_oid(t(af902bf9)*(tst+0)*in,40),globalpoints([yellow-point_01_06]),grid_size(10,10),iz(important)]),
     obj([mass(1),shape([point_01_01]),colors([cc(yellow,1.0)]),localpoints([yellow-point_01_01]),v_hv(1,1),rotation(same),loc(10,5),changes([]),iz(dots),iz(shape(dot)),iz(solid),iz(jagged(true)),center(10,5),obj_to_oid(t(af902bf9)*(tst+0)*in,41),globalpoints([yellow-point_10_05]),grid_size(10,10),iz(important)]),

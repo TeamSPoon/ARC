@@ -25,11 +25,10 @@ learned_test(TName):-
     ptc(orange,format('~N~n% Rules Learned: ~w~n~n',[Len])),!.
 
 
+is_clause_ref(Ref):-  atomic(Ref), blob(Ref,_), \+ atom(Ref), clause_name(Ref,_),!.
 
-
-print_rule(M,ref(Ref)):- nonvar(Ref), !,
-  clause(H,B,Ref), 
-  print_rule(M,(H:-B)).
+print_rule(M,Ref):-is_clause_ref(Ref),!,
+  clause(H,B,Ref), print_rule(M,(H:-B)).
 
 print_rule(M,(X:-True)):- True == true,!, print_rule(M,X).
 print_rule(M,(learnt_rule(TestID,A,B,C,D):-Body)):- fail, !,
@@ -211,8 +210,8 @@ confirm_reproduction(Objs0,DebugObjs0,ExpectedOut):-
 debug_reproduction(H,V,Obj,DObj):- 
   globalpoints(Obj,Points),
   print_grid(H,V,Obj,Points),
-  obj_to_oid(Obj,_,ID1),
-  obj_to_oid(DObj,_,ID2),
+  obj_to_oid(Obj,ID1),
+  obj_to_oid(DObj,ID2),
   pt(dobj(ID1,ID2)=DObj),!.
 
 show_result(What,Solution,ExpectedOut,Errors):-
@@ -381,6 +380,7 @@ learn_rule_ee(Mode,P,Others):- forall(member(O,Others),learn_grid_local(Mode,P,O
 learn_grid_local(Mode,P,O):- P @< O, !, learn_grid_local(Mode,O,P).
 learn_grid_local(_Mode,P,O):- ignore((\+ is_grid(P),is_grid(O),assert_visually(grid_associatable(P,O)))).
 
+test_local_dyn(F,A):- setof(F/A,(test_local_dyn(F),current_predicate(F/A)),L),member(F/A,L),A\==0.
 :- dynamic(test_local_dyn/1).
 test_local_dyn(learnt_rule).
 test_local_dyn(grid_associatable).
@@ -390,8 +390,9 @@ test_local_dyn(test_solved).
 test_local_dyn(cached_dictation).
 test_local_dyn(oout_associatable).
 
+test_local_save(F,A):- setof(F/A,(test_local_save(F),current_predicate(F/A),A\==0),L),member(F/A,L).
+test_local_save(note).
 test_local_save(individuated_cache).
-
 test_local_save(g_2_o).
 test_local_save(cmem).
 test_local_save(cindv).
@@ -399,25 +400,21 @@ test_local_save(is_why_grouped_g).
 test_local_save(arc_test_property).
 test_local_save(gid_glyph_oid).
 test_local_save(oid_glyph_object).
-
-
 test_local_save(P):- test_local_dyn(P).
 
-training_info(TestID,Info):-
+training_info(TestID,InfoSet):-
  sub_atom_value(TestID,TestIDA),
- findall((Ref),
-  (test_local_dyn(F),
-   (current_predicate(F/A),A\==0,
-    ((functor(X,F,A),
-      clause(X,_,Ref),once((arg(1,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA))))))),Info).
+  findall(Ref,
+  (test_local_dyn(F,A), functor(X,F,A),
+      clause(X,_,Ref),once((arg(_,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA)))),Info),
+  list_to_set(Info,InfoSet).
 
-saveable_test_info(TestID,Info):-
+saveable_test_info(TestID,InfoSet):-
  sub_atom_value(TestID,TestIDA),
- findall((Ref),
-  (test_local_save(F),
-   (current_predicate(F/A),A\==0,
-    ((functor(X,F,A),
-      clause(X,_,Ref),once((arg(1,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA))))))),Info).
+ findall(Ref,
+  (test_local_save(F,A), functor(X,F,A),
+      clause(X,_,Ref),once((arg(_,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA)))),Info),
+ list_to_set(Info,InfoSet).
 
 
 
@@ -449,30 +446,6 @@ clear_training(TestID):-
   nop(retractall(g_2_o(_,_))),!.
  
 
-
-sub_atom_value(TestID,A):- sub_term(A,TestID),atom(A).
-
-save_supertask:- get_current_test(TestID),save_supertask(TestID).
-save_supertask(TestID):-   
-   wots(S,(
-     write_intermediatre_header,
-     saveable_test_info(TestID,Info),maplist(print_ref,Info))),
-   write(S),
-   test_name_output_file(TestID,File),
-   setup_call_cleanup(open(File,write,O,[create([default]),encoding(text)]), write(O,S), close(O)).
-
-print_directive(P):- format('~N:- ~q. ~n',[P]).
-write_intermediatre_header:- 
-  print_directive(encoding(iso_latin_1)),
-  forall(  (test_local_save(F), current_predicate(F/A),A\==0,nl),
-      maplist(print_directive,[abolish(F/A),multifile(F/A),dynamic(F/A),discontiguous(F/A),public(F/A),export(F/A),module_transparent(F/A)])).
-
-print_ref(Ref):- atomic(Ref), blob(Ref,_), clause(H,B,Ref),!,print_ref((H:-B)).
-print_ref((X:-True)):- True == true,!, print_ref(X).
-print_ref(G):- \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N~q.~n',[G]))),!.
-
-test_name_output_file(TestID,File):- sub_atom_value(TestID,OID),!,atomic_list_concat(['out/',OID,'.ansi'],File).
-
 learn_rule(In,Out):-
   get_vm(VM),
   VM.rule_dir = RuleDir,
@@ -498,7 +471,7 @@ have their own starting points that are gleaned by looking at what DSL would gen
 DSL would generate all the inputs) the thing that is learned by training is how the edits are supposed to happen in each
  of the generative DSLs (edited)
 the progression of inputs teaches the system abotu what the input's generative DSL is used for inputs (edited)
-though the progression of outputs give more information about the total task (but still give the hints about the the output's generative DSL) 
+though the progression of outputs give more information about the total test (but still give the hints about the the output's generative DSL) 
 round tripping between a grid and the generative DSL seems important.   Has anyone started a Grid-> "generative DSL" convertor ?
 oh yes even the operations such editing/transformation of the generative DSL is in the domain of yet another DSL that specifies those operations.. and in my code i even have a 3rd DSL that is specific to transformations that both the two previous DSLs are indexed against.. in order to make the things fast i assume that the three forms each transition between will be part of the final index built during training (edited)
 s the training pairs are fed in it eliminates the candidate associations

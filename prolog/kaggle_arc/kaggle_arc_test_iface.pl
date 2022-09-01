@@ -30,7 +30,7 @@ menu_cmd1(_,'t','       You may fully (t)rain from examples considering all the 
 menu_cmd1(_,'T','                  or (T)rain from only understanding single pairs (not considering the test as a whole)',(cls,train_only_from_pairs)).
 menu_cmd1(i,'i','             See the (i)ndividuation of the input/outputs',(cls,!,ndividuator1)).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls,!,what_unique)).
-menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls,!,compile_and_save_task)).
+menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls,!,compile_and_save_test)).
 menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(print_test)).
 menu_cmd1(_,'e','                  or (e)xamine the program leared by training',(cls,print_test,!,solve_test)).
 menu_cmd1(_,'L','                  or (L)earned program',(learned_test)).
@@ -339,12 +339,12 @@ new_current_test_info(WasTestID,TestID):-
   %luser_getval(test_name,TestID),
   get_current_test(TestID),
   dmsg(fav(TestID,[])),
-  luser_setval(example,tst+0),
+  %luser_setval(example,tst+0),
   luser_setval(last_test_name,TestID))),
   save_last_test_name,
   test_name_output_file(TestID,File),
-  load_file_dyn(File),
-  clear_training(TestID).
+  load_file_dyn(File).
+  %clear_training(TestID).
 
 unload_file_dyn(File):- \+ exists_file(File), !.
 unload_file_dyn(File):- unload_file(File),!.
@@ -460,22 +460,22 @@ arc_grid(IO,Grid):-
 arc_test_name(TestID):- get_current_test(TestID).
 %arc_test_name(TestID):- get_current_test(WasTestID), (TestID=WasTestID;(get_current_suite_testnames(List),member(TestID,List),WasTestID\== TestID, set_current_test(TestID))).
 
-some_task_info(TestID,III):- more_task_info(TestID,III).
-some_task_info(X,[keypad]):- key_pad_tests(X). 
-some_task_info(TestID,III):- fav(TestID,III).
+some_test_info(TestID,III):- more_test_info(TestID,III).
+some_test_info(X,[keypad]):- key_pad_tests(X). 
+some_test_info(TestID,III):- fav(TestID,III).
 
-:- dynamic(task_info_cache/2).
-:- retractall(task_info_cache(_,_)).
+:- dynamic(test_info_cache/2).
+:- retractall(test_info_cache(_,_)).
 test_info(TestID,InfoS):- var(TestID),!,all_arc_test_name(TestID),test_info(TestID,InfoS).
-%test_info(TestID,InfoS):- \+ \+ task_info_cache(TestID,_),!,task_info_cache(TestID,InfoS).
+%test_info(TestID,InfoS):- \+ \+ test_info_cache(TestID,_),!,test_info_cache(TestID,InfoS).
 test_info(TestID,InfoS):- nonvar(TestID),once(fix_test_name(TestID,FTestID,_)),TestID\=@=FTestID,!,test_info(FTestID,InfoS).
-test_info(TestID,InfoS):- task_info_cache(TestID,InfoS),!.
+test_info(TestID,InfoS):- test_info_cache(TestID,InfoS),!.
 test_info(TestID,InfoS):- 
  findall(Inf,
-  (some_task_info(CTestID,Inf0),once((fix_test_name(CTestID,CFTestID,_),CFTestID=TestID)),
+  (some_test_info(CTestID,Inf0),once((fix_test_name(CTestID,CFTestID,_),CFTestID=TestID)),
    repair_info(Inf0,Inf)),Info),
   flatten([Info],InfoFF),repair_info(InfoFF,InfoF),list_to_set(InfoF,InfoS),!,
-  asserta(task_info_cache(TestID,InfoS)),!.
+  asserta(test_info_cache(TestID,InfoS)),!.
 
 repair_info(Inf,InfO):- listify(Inf,Inf1),maplist(repair_info0,Inf1,InfO).
 repair_info0(Inf0,Inf):- is_list(Inf0),!,maplist(repair_info0,Inf0,Inf).
@@ -650,6 +650,7 @@ pair_dictation(TestID,ExampleNum,In,Out,DictOut):- cached_dictation(pair_dictati
 pair_dictation(TestID,ExampleNum,In,Out,DictOut):-
   do_pair_dication(In,Out,Vs),!,
   vars_to_dictation(Vs,_{},DictOut),
+  retractall(cached_dictation(pair_dictation(TestID,ExampleNum,_,_),_)),
   arc_assert(cached_dictation(pair_dictation(TestID,ExampleNum,In,Out),DictOut)).
 /*
 The IEEE floating-point standard, supported by almost all modern floating-point units, specifies that every floating 

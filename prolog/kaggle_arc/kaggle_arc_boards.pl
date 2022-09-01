@@ -33,19 +33,49 @@ superinput_blob
 
 test_supergrid:- clsmake, forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_supergrid(TestID,ExampleNum,In,Out)).
 
-compile_and_save_task:- clsmake, get_current_test(TestID),compile_and_save_task(TestID).
-compile_and_save_task(TestID):-
-  all_arc_test_name(TestID),
+sub_atom_value(TestID,A):- sub_term(A,TestID),atom(A).
 
-  ignore(retract(saved_training(TestID))),
-  ignore(retract(process_test(TestID))),
-  add(process_test(TestID)).
+print_directive(P):- format('~N:- ~q. ~n',[P]).
+write_intermediatre_header:- 
+  print_directive(encoding(text)),
+  forall(  (test_local_save(F,A),nl),
+      maplist(print_directive,[%abolish(F/A),
+                               multifile(F/A),dynamic(F/A),discontiguous(F/A),public(F/A),export(F/A),module_transparent(F/A)])).
+
+print_ref(Ref):- is_clause_ref(Ref), clause(H,B,Ref),!,print_ref((H:-B)).
+print_ref((X:-True)):- True == true,!, print_ref(X).
+print_ref(G):- format('~N'),write_canonical(G),format('.~n'),!.
+%print_ref(G):- \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N~@.~n',[write_canonical(G)]))),!.
+
+test_name_output_file(TestID,File):- sub_atom_value(TestID,OID),!,atomic_list_concat(['out/',OID,'.ansi'],File).
+
+
+compile_and_save_test:- clsmake, get_current_test(TestID),time(compile_and_save_test(TestID)).
+compile_and_save_test(TestID):-
+  all_arc_test_name(TestID),
+  %ignore(retract(saved_training(TestID))),
+  %ignore(retract(process_test(TestID))),
+  once((add(individuate_test_grids(TestID)),
+  %assert_id_grid_cells(GID),  
+  %add(process_test(TestID)),
+  detect_supergrid(TestID),
+  save_supertest(TestID))).
+
+save_supertest:- get_current_test(TestID),save_supertest(TestID).
+save_supertest(TestID):-   
+   saveable_test_info(TestID,Info),
+   test_name_output_file(TestID,File),
+   setup_call_cleanup(open(File,write,O,[create([default]),encoding(text)]), 
+       with_output_to(O,(
+         write_intermediatre_header,
+         maplist(print_ref,Info))),
+      close(O)), statistics.
 
 detect_supergrid:- clsmake, get_current_test(TestID),detect_supergrid(TestID).
-detect_supergrid(TestID):- forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_supergrid(TestID,ExampleNum,In,Out)),
-  color_print(magenta,call(((grid_hint(TestID))))),
-  save_supertask(TestID).
-
+detect_supergrid(TestID):- 
+  forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_supergrid(TestID,ExampleNum,In,Out)),  
+  color_print(magenta,call(((grid_hint(TestID))))).
+  
 
 detect_supergrid1:- clsmake, get_current_test(TestID),detect_supergrid1(TestID).
 detect_supergrid1(TestID):- 
@@ -59,11 +89,13 @@ color_subst([O|OSC],[I|ISC],[O-I|O2I]):-
 color_subst(_OSC,_ISC,[]):-!.
 
 detect_supergrid(TestID,ExampleNum,In,Out):- 
+  assert_id_grid_cells(In), assert_id_grid_cells(Out),
   detect_supergrid_tt(TestID,ExampleNum,In,Out,TT),  
   guess_board(TT),
   %print(TT),
   grid_hint_swap(i-o,In,Out),
   dash_chars,
+  individuate_pair(In,Out,_Objs),
   dash_chars,!.
 
 guess_board(TT):- arc_setval(TT,guess_board,t).
@@ -234,7 +266,8 @@ list_common_props(TestID):-
   color_print(magenta,call((format('~N % ~w: ~@.~n',[list_common_props,ptv(SComs)])))).
 
 
-ptv(T):- \+ \+ ((numbervars(T,0,_,[]),write_term(T,[quoted(true),portray(true),numbervars(true),singletons(true)]))).
+ptv(T):- \+ \+ ((numbervars(T,0,_,[]),write_term(T,[quoted(true),portray(true),numbervars(true),singletons(true),blobs(portray),
+  quote_non_ascii(true),brace_terms(false),ignore_ops(true)]))).
 
 min_unifier([A|List],Term):- min_unifier3(A,List,Term).
 
@@ -328,7 +361,7 @@ rinfo(obj(List0),RInfo):-
   points_to_grid(LocalPoints,Grid),mapgrid(sometimes_assume(=,BGL),Grid),
   select(shape(Shape),List,Rest2),mapgrid(sometimes_assume(=,BGL),Shape),
   Rest3 = Rest2,
-  obj_to_oid(Obj,_,MyID),
+  obj_to_oid(Obj,MyID),
   must_det_ll((remove_too_verbose(MyID,Rest3,TV00))),flatten([TV00],TV0),
   must_det_ll((include(not_too_verbose,TV0,TV1),maplist(fix_iz,TV1,TV)))]),!,
   member(MrT,[oform(Shape),ogrid(Grid)|TV]),once((MrT=..MrTL, RInfoM=..[Key|MrTL],rinfo(RInfoM,RInfo))).

@@ -619,13 +619,14 @@ guess_to_unbind1(Grid,Color):- !, fail, select(Row1,Grid,Rows),member(Row2,Rows)
 
 if_target(Out,Goal):- (peek_target(Out)->call(Goal);true).
 peek_target(Out):- peek_vm(grid_target,Out),is_grid(Out).
-peek_target(Grid,Out):- peek_target(Out)->true;Grid=Out.
+peek_target_or_else(Grid,Out):- peek_target(Out)->true;Grid=Out.
 contains_color(Color,Out):- unique_colors(Out,Colors),member(Color,Colors).
 
 guess_unbind_color(UnbindColor,Grid,RepairedResult):- 
    guess_to_unbind(Grid,UnbindColor), 
    unbind_color(UnbindColor,Grid,RepairedResult),  
-   cmass(RepairedResult,Mass),Mass>0.
+   cmass(RepairedResult,Mass),Mass>0,
+   (UnbindColor\==black->if_target(Out, \+ contains_color(UnbindColor,Out));true).
 
 blur_least(B,Mix,I,O):-
   blur_list(B,Mix,I,S),
@@ -755,7 +756,7 @@ maybe_try_something_more(Grid,RepairedResult,Did1,RepairedResultO,[Did1, now_fil
 
 
 maybe_try_something1(Grid,RepairedResult,Did):-
-  peek_target(Grid,Out), 
+  peek_target_or_else(Grid,Out), 
     best_of(Out,[],try_something(Did),Grid,RepairedResult).
 
 mprint_grid(wqs(P),RepairedResult):-!, print_grid((P),RepairedResult),!.
@@ -786,7 +787,7 @@ try_remove_color_fill_in_blanks(Grid,RepairedResultO,[Info,CodeNext]):-
   Info = guess_unbind_color(Black),
   learn_best_values(Grid,Black,guess_unbind_color(Black,Grid,RepairedResult)), 
   CodeNext = now_fill_in_blanks(_),
-  peek_target(Grid,Out),
+  peek_target_or_else(Grid,Out),
   best_of(Out,Info,CodeNext,RepairedResult,RepairedResultO),
   cmass(RepairedResultO,Mass), Mass>0.
 
