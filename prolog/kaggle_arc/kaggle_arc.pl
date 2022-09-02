@@ -679,7 +679,7 @@ train_only_from_pairs(TestID):- clear_training(TestID), train_test(TestID,train_
 train_using_io(TestID,DictIn,DictOut):- train_using_io(TestID,trn,0,DictIn,DictOut).
 train_using_io(TestID,Trn,N1,DictIn,DictOut):- 
   kaggle_arc(TestID,(Trn+N1),In,Out),!,
-  detect_supergrid(TestID,(Trn+N1),In,Out),
+  detect_pair_hints(TestID,(Trn+N1),In,Out),
   train_for_objects_from_1pair(DictIn,TestID,[Trn,'i',N1,'o',N1],In,Out,DictMid),
   N2 is N1 + 1,
   train_using_io(TestID,Trn,N2,DictMid,DictOut).

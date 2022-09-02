@@ -166,7 +166,7 @@ tersify1(gridFn(I),gridFn(I)):-!. % tersifyG(I,O).
 tersify1(Nil,[]):- Nil == [],!.
 tersify1(I,gridFn(S)):- is_grid(I), into_gridnameA(I,O),!,sformat(S,'~w',[O]).
 tersify1(I,gridFn(O)):- is_grid(I),tersifyG(I,O),!.
-tersify1(I,groupFn(O,List)):- is_group(I), mapgroup(tersify1,I,List),length(List,N), !,ignore((is_why_grouped(_,N,Why,II),I==II,!,O=Why)).
+tersify1(I,groupFn(O,List)):- is_group(I), mapgroup(tersify1,I,List),mapgroup(obj_to_oid,I,OIDs),length(List,N), !,ignore((get_current_test(TestID),is_why_grouped(TestID,N,Why,OIDs),!,O=Why)).
 tersify1(I,Q):- is_object(I),object_glyph_color(I,FC), o2g(I,O),!,wots(A,color_print(FC,call(format('"~w"',[O])))),
    mass(I,M),
    wots(S,call(write(objFn(A,M)))),atom_string(Q,S).
@@ -188,8 +188,8 @@ tersify2(I,I).
 
 tersify3(I,O):- compound(I),tersify1(I,O),!.
 tersify3(I,O):- tersify0(I,O),!.
-tersify3([H|I],O):- fail, is_list(I), !, with_output_to(string(S),display(I)),!, ((atom_length(S,N), N>170) -> 
-  (length(I,LL),tersify(H,HH),(('...'(HH,LL,'...'(N)))=O)); I=O).
+tersify3([H|I],O):- is_list(I),  with_output_to(string(S),display(I)), ((atom_length(S,N), N>170) -> 
+  (length(I,LL),tersify(H,HH),(('...'(HH,LL,'...'(N)))=O)); I=O),!.
 tersify3(I,O):- is_list(I), !, maplist(tersify3,I,O).
 tersify3(I,O):- compound(I), !, compound_name_arguments(I,F,IA), maplist(tersify,IA,OA), compound_name_arguments(O,F,OA).
 tersify3(I,I).
@@ -495,8 +495,8 @@ show_pair_diff(IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
   toUpperC(NameIn,NameInU),toUpperC(NameOut,NameOutU),
   show_pair_grid(cyan,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out),
   ((is_group(In),is_group(Out))-> once(showdiff(In,Out));
-    ignore((is_group(In),desc(wqnl(NameInU+fav(PairName)), debug_indiv(In)))),
-    ignore((is_group(Out),desc(wqnl(NameOutU+fav(PairName)), debug_indiv(Out))))),!.
+    ignore((is_group(In),desc(wqnl(NameInU+fav(PairName)),locally(nb_setval(debug_as_grid,t), debug_indiv(In))))),
+    ignore((is_group(Out),desc(wqnl(NameOutU+fav(PairName)), locally(nb_setval(debug_as_grid,t),debug_indiv(Out)))))),!.
 
 
 uses_space(C):- code_type(C,print).
@@ -945,7 +945,6 @@ print_g(H,V,C,_,_,_,_):- write_nbsp, print_g1(H,V,C),!.
 
 object_glyph(G,Glyph):- is_object(G),!,obj_iv(G,Iv), int2glyph(Iv,Glyph).
 object_glyph(G,Glyph):- is_grid(G),!,grid_dot(Dot),name(Glyph,[Dot]).
-%object_glyph(G,Glyph):- is_object(G),!,obj_to_oid(G,_Tst,GN2), int2glyph(GN2,Glyph).
 object_glyph(G,Glyph):- nobject_glyph(G,Glyph).
 
 nobject_glyph(G,Glyph):- integer(G), between(0,9,G),atom_number(Glyph,G),!.

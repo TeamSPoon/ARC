@@ -33,40 +33,19 @@ i2(ROptions,GridSpec):- clsmake,
   into_grids(GridSpec,GridIn),
   once((into_grid(GridIn,Grid),ig(ROptions,Grid))).
 
-ip(GridIn,GridOut):-
-  individuate_pair(GridIn,GridOut,IndvS),
-  grid_to_tid(GridIn,ID1),
-  grid_to_tid(GridOut,ID2),
-  print_side_by_side(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
-  show_ig(ip,IndvS).
+ip(ROptions,GridIn,GridOut):-
+  individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
+  PairName = ip,
+  show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC).
 
-ig(ROptions,Grid):-
-  do_ig(ROptions,Grid,IndvS),
-  show_ig(ROptions,IndvS).
-igo(ROptions,Grid):-
-  do_ig(ROptions,Grid,IndvS),
-  show_igo(ROptions,IndvS).
-
-show_ig(ROptions,IndvS):- 
-  my_partition(has_prop(iz(g(out))),IndvS,OutS,InS),
-  print_side_by_side(green,InS,inS(ROptions),_,OutS,outS(ROptions)),
-  largest_first(OutS,OutSS),
-  largest_first(InS,InSS),
-  dash_chars,
-  print_list_of(outSS(ROptions),OutSS),  
-  dash_chars,
-  print_list_of(inSS(ROptions),InSS),
-  dash_chars.
-
-show_igo(ROptions,IndvS):- 
-  my_partition(has_prop(iz(g(out))),IndvS,OutS,InS),
-  print_side_by_side(green,InS,inS(ROptions),_,OutS,outS(ROptions)),
-  length(IndvS,LenS),
-  dash_chars,
-  print_list_of(debug_as_grid(in),igo=LenS,InS),  
-  dash_chars,
-  print_list_of(debug_as_grid(out),igo=LenS,OutS),  
-  dash_chars.
+ig(ROptions,GridIn):-
+  do_ig(ROptions,GridIn,IndvS),
+  into_grid(GridIn,GridOut),
+  locally(nb_setval(debug_as_grid,nil),show_ig(ig,ROptions,GridIn,GridOut,IndvS)).
+igo(ROptions,GridIn):-
+  do_ig(ROptions,GridIn,IndvS),
+  into_grid(GridIn,GridOut),
+  locally(nb_setval(debug_as_grid,t),show_ig(igo,ROptions,GridIn,GridOut,IndvS)).
 
 do_ig(ROptions,Grid,IndvS):-
   into_grid(Grid, GridIn), 
@@ -79,15 +58,34 @@ do_ig(ROptions,Grid,IndvS):-
   testid_name_num_io(ID,TestID,Example,Num,IO),
   ig_test_id_num_io(ROptions,GridIn,ID,TestID,Example,Num,IO,IndvS).
 
-ig_test_id_num_io(_ROptions,GridIn,_ID,TestID,trn,Num,in,IndvS):- 
+ig_test_id_num_io(ROptions,GridIn,_ID,TestID,trn,Num,in,IndvS):- 
   In = GridIn,
   kaggle_arc_io(TestID,trn+Num,out,Out),!,
-  individuate_pair(In,Out,IndvS).
+  individuate_pair(ROptions,In,Out,IndvSI,IndvSO),
+  into_iog(IndvSI,IndvSO,IndvS).
 
 ig_test_id_num_io(ROptions,GridIn,_ID,TestID,_Example,_Num,_IO,IndvS):- 
   set_current_test(TestID),
   individuate(ROptions,GridIn,IndvS),!.
   %maplist(add_shape_lib(as_is),IndvS),  
+
+show_ig(PairName,ROptions,GridIn,GridOut,IndvC):- 
+  into_gio(IndvC,InC,OutC),
+  show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC).
+
+into_iog(InC,OutC,IndvS):- append(InC,OutC,IndvC),!,must_det_ll((IndvC=IndvS)).
+into_gio(IndvS,InS,OutS):- my_partition(has_prop(iz(g(out))),IndvS,OutC,InC),!,
+  must_det_ll((OutC=OutS,InC=InS)).
+
+show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):- 
+  grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),
+  print_side_by_side(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
+  dash_chars,
+  luser_setval(no_rdot,true),
+  grid_size(GridIn,IH,IV), grid_size(GridOut,OH,OV),
+  ((InC==OutC, InC==[]) -> pt(yellow,nothing_individuated(PairName)) ;
+    show_pair_diff_code(IH,IV,  OH, OV,individuated(ROptions,ID1),individuated(ROptions,ID2),PairName,InC,OutC)),!,
+  luser_setval(no_rdot,false).
 
 
 
@@ -596,40 +594,39 @@ first_grid1(In,Out,IO):-
 %first_grid(In,Out,IO):- first_grid_same_areas(In,Out,IO).
 first_grid1(_In,_Out,in_out).
 
-individuate_pair(In,Out,Objs):-
-  into_grid(In,InG),
-  into_grid(Out,OutG),
+individuate_pair(ROptions,In,Out,IndvSI,IndvSO):-
+  into_grid(In,InG), into_grid(Out,OutG),
   must_det_ll((first_grid(InG,OutG,IO),
-   (IO==in_out -> individuate_two_grids(IO,InG,OutG,Objs); 
-              individuate_two_grids(IO,OutG,InG,Objs)))),!.
+   (IO==in_out -> individuate_two_grids(ROptions,InG,OutG,IndvSI,IndvSO); 
+              individuate_two_grids(IO,OutG,InG,IndvSI,IndvSO)))),!.
 
 doing_pair:- nb_current(doing_pair,t).
 
-individuate_two_grids(ROptions,Grid1,Grid2,IndvS):- 
+individuate_two_grids(ROptions,Grid1,Grid2,IndvSI,IndvSO):- 
   delistify_single_element(ROptions,NamedOpts),
   grid_to_gid(Grid1,OID1), grid_to_gid(Grid2,OID2),
   locally(nb_setval(doing_pair,t),
-    individuate_two_grids_once(two(OID1,OID2),NamedOpts,Grid1,Grid2,IndvS)).
+    individuate_two_grids_once(two(OID1,OID2),NamedOpts,Grid1,Grid2,IndvSI,IndvSO)).
 
-individuate_two_grids_once(OID1OID2,ROptions,Grid1,Grid2,IndvS):- 
-  wdmsg(individuate(ROptions,OID1OID2,IndvS)),
+individuate_two_grids_once(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO):- 
+  wdmsg(individuate(ROptions,OID1OID2,IndvSI,IndvSO)),
   (saved_group(individuate(OID1OID2,ROptions),IndvS)
-    *-> true
-    ; (individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,IndvS),
-        save_grouped(individuate(OID1OID2,ROptions),IndvS))).
+    *-> into_iog(IndvS,IndvSI,IndvSO)
+    ; (individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO),
+        nop((into_gio(IndvSI,IndvSO,IndvS),save_grouped(individuate(OID1OID2,ROptions),IndvS))))).
 
 
 :- retractall(is_why_grouped(_,_,_,_)).
 
-individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,IndvS):- 
+individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO):- 
  must_det_ll((
   grid_to_tid(Grid1,ID1), grid_to_tid(Grid2,ID2),
   localpoints_include_bg(Grid1,P1),
   localpoints_include_bg(Grid2,P2),
-  individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,ID1,ID2,P1,P2,IndvS))),!.
+  individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,ID1,ID2,P1,P2,IndvSI,IndvSO))),!.
 
 
-individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,ID1,ID2,P1,P2,IndvS):- fail,
+individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,ID1,ID2,P1,P2,IndvSI,IndvSO):- fail,
   grid_size(Grid1,H1,V1), grid_size(Grid2,H2,V2), H1==H2,V1==V2,
   include(is_bgp,P1,P1XBG), 
   include(is_bgp,P2,P2XBG),
@@ -644,10 +641,10 @@ individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,ID1,ID2,P1,P2,IndvS):- f
   %points_to_grid(H1,V1,PU1,Grid1X),
   %points_to_grid(H2,V2,PU2,Grid2X),
   wdmsg(individuate_two_grids_now),
-  individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,ID1,ID2,PU1,PU2,IndvS))).
+  individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,ID1,ID2,PU1,PU2,IndvSI,IndvSO))).
 
 
-individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,ID1,ID2,P1,P2,IndvS):-
+individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,ID1,ID2,P1,P2,IndvSI,IndvSO):-
   
   grid_size(Grid1,H1,V1),  
   grid_size(Grid2,H2,V2), 
@@ -679,9 +676,9 @@ individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,ID1,ID2,P1,P2,IndvS):-
 
   (var(Grid1X)->Grid1X=Grid1;true),
   (var(Grid2X)->Grid2X=Grid2;true),
-  individuate_two_grids_now_X(OID1OID2,ROptions,Grid1,Grid2,VM1,VM2,Grid1X,Grid2X,IndvS))).
+  individuate_two_grids_now_X(OID1OID2,ROptions,Grid1,Grid2,VM1,VM2,Grid1X,Grid2X,IndvSI,IndvSO))).
 
-individuate_two_grids_now_X(OID1OID2,ROptions,Grid1,Grid2,VM1,VM2,Grid1X,Grid2X,IndvS):- 
+individuate_two_grids_now_X(OID1OID2,ROptions,Grid1,Grid2,VM1,VM2,Grid1X,Grid2X,Objs1X,Objs2X):- 
  must_det_ll((
 
   grid_to_tid(Grid1,ID1), grid_to_tid(Grid2,ID2),
@@ -700,7 +697,7 @@ individuate_two_grids_now_X(OID1OID2,ROptions,Grid1,Grid2,VM1,VM2,Grid1X,Grid2X,
   into_fti(ID2,ROptions,Grid2X,VM2X), set(VM2X.grid_target) = Grid1, set(VM2X.robjs) = Objs1X, 
   individuate2(VM2X,ROptions,OID2,Grid2X,Objs2X),!,
 
-  append(Objs1X,Objs2X,IndvS),
+  into_iog(Objs1X,Objs2X,IndvS),
   save_grouped(individuate(OID1OID2,ROptions),IndvS))).
 
 individuate2(VM,[ROptions],OID,Grid,IndvS):- !, nonvar(ROptions), individuate2(VM,ROptions,OID,Grid,IndvS).

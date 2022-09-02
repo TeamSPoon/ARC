@@ -188,10 +188,12 @@ diff_groups1(AAR,BBR,DD):-
 
 diff_groups1(A,B,disjointed(SharedT,AOnlyT,BOnlyT,AO,BO)):- 
   intersection(A,B,Shared,AOnly,BOnly),
-  tersify(Shared,SharedT),
-  tersify(AOnly,AOnlyT),
-  tersify(BOnly,BOnlyT),
+  tersify_cheap(Shared,SharedT),
+  tersify_cheap(AOnly,AOnlyT),
+  tersify_cheap(BOnly,BOnlyT),
   maplist(object_dglyph,A,AO),maplist(object_dglyph,B,BO),!.
+
+tersify_cheap(I,O):- tersify(I,O),!.
 
 unused_diff_groups0(AAR,BBR,DD):-
   %make_comparable(B0,B),
@@ -237,8 +239,14 @@ uncomparable2(group,link).
 uncomparable2(object,iz).
 uncomparable2(shape,localpoints).
 
-never_diff(iz(_)).
-never_diff(obj_to_oid(_,_)).
+never_diff(V):- var(V),!,fail.
+never_diff(iz).
+never_diff(obj_to_oid).
+never_diff(o).
+never_diff(link).
+never_diff(change).
+never_diff(birth).
+never_diff(V):- compound(V),functor(V,F,_),!,never_diff(F).
 
 make_comparable(I,I):- plain_var(I).
 make_comparable(I,I):- \+ compound(I),!.

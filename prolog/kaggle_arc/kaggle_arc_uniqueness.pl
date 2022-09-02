@@ -272,6 +272,10 @@ each_trait(Obj,Obj-S):- findall(T,each_1trait(Obj,T),L),list_to_set(L,S).
 too_unique(P):- compound(P),!,compound_name_arity(P,F,_),!,too_unique(F).
 %too_unique(obj_to_oid).
 too_unique(globalpoints).
+too_unique(o).
+too_unique(link).
+too_unique(obj_to_oid).
+too_unique(birth).
 %good_overlap(shape).
 
 good_overlap(P):- compound(P),!,compound_name_arity(P,F,_),!,good_overlap(F).

@@ -767,15 +767,14 @@ localpoints(I,X):- trace_or_throw(unknown(localpoints(I,X))).
 localpoints_include_bg(Grid,Points):- is_grid(Grid),!, grid_to_points_include_bg(Grid,Points),!.
 localpoints_include_bg(I,X):- \+ is_grid(I), localpoints(I,X),!.
 
-object_localpoints(I,XX):- object_localpoints0(I,XX),!.
-object_localpoints(I,XX):- arcST,trace,object_localpoints0(I,XX).
-object_localpoints0(I,XX):- indv_props(I,L),member(localpoints(X),L),!,
+object_localpoints(I,XX):- must_det_ll(object_localpoints0(I,XX)),!.
+object_localpoints0(I,XX):- indv_props(I,L),member(localpoints(X),L),!,must_det_ll(is_cpoints_list(X)),
      must_det_ll((rotation(I,Rot), v_hv(I,H,V), maybe_rotate_points(H,V,X,Rot,XX))),
      my_assertion(is_cpoints_list(XX)),!.
 object_localpoints0(I,XX):- indv_props(I,L),member(shape(X),L),!,
      must_det_ll((rotation(I,Rot), v_hv(I,H,V), maybe_rotate_points(H,V,X,Rot,XXX))),
      pen(I,Colors),combine_pen(XXX,Colors,Colors,XX),
-     my_assertion(is_cpoints_list(XX)),!.
+     must_det_ll(is_cpoints_list(XX)),!.
 
 
 combine_pen([],_,_,[]):-!.

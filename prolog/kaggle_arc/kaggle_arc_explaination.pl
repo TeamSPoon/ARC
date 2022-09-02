@@ -74,7 +74,8 @@ debug_as_grid(Why,Grid):-
      into_ngrid(GridOO,IH,IV,NGrid),
      wots(S,print_side_by_side(print_grid(IH,IV,Title,GridOO),print_grid(IH,IV,ngrid,NGrid))),
      HH is (OH - 1) * 2, print_w_pad(HH,S))),
-  fif(is_object(Grid),(format('~N~n'),underline_print(debug_indiv(Grid)))),
+  fif(is_object(Grid),(format('~N~n'),
+  locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Grid))))),
   format('~N'),dash_chars(15),!.
 
 into_ngrid(Points,H,V,NGrid):- 
@@ -90,9 +91,6 @@ debug_indiv(Var):- plain_var(Var),pt(debug_indiv(Var)),!.
 debug_indiv(Grid):- is_grid(Grid),!,debug_as_grid(is_grid,Grid),!.
 debug_indiv(Grid):- maplist(is_cpoint,Grid),!,debug_as_grid(is_cpoint,Grid).
 debug_indiv(Grid):- maplist(is_point,Grid),!,debug_as_grid(is_point,Grid).
-
-
-
 
 
 debug_indiv(List):- is_list(List),length(List,Len),!,
@@ -149,6 +147,7 @@ prefered_header(iz(Caps),Caps).
 debug_indiv(obj(A)):- \+ \+ debug_indiv_obj(A),!.
 
 
+debug_indiv_obj(A):- nb_current(debug_as_grid,t),debug_as_grid(A),!.
 debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
  maplist(must_det_ll,[
   %ignore((o2g(Obj,GGG), nonvar(GGG),set_glyph_to_object(GGG,Obj))),

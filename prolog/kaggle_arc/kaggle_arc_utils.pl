@@ -189,7 +189,7 @@ print_attvars(FF):-
 plain_var(V):- notrace((var(V), \+ attvar(V), \+ get_attr(V,ci,_))).
 
 my_assertion(G):- call(G),!.
-my_assertion(G):- arcST,!,trace,wdmsg(my_assertion(G)),break,!.
+my_assertion(G):- wdmsg(my_assertion(G)),writeq(goal(G)),nl,!,break.
 must_be_free(AllNew):- plain_var(AllNew),!.
 must_be_free(AllNew):- arcST,wdmsg(must_be_free(AllNew)),break,fail.
 must_be_nonvar(AllNew):- nonvar_or_ci(AllNew),!.

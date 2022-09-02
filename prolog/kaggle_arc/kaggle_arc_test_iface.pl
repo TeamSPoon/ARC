@@ -139,7 +139,7 @@ do_menu_key('P'):- !, switch_grid_mode,print_test.
 do_menu_key('I'):- !, cls,!,ndividuator.
 do_menu_key('o'):- !, cls,!,ndividuatorO1.
 do_menu_key('O'):- !, cls,!,ndividuatorO.
-do_menu_key('G'):- !, cls,!,detect_supergrid1.
+do_menu_key('G'):- !, cls,!,detect_test_hints1.
 do_menu_key(-1):- !, arc_assert(wants_exit_menu).
 do_menu_key(Key):- atom_codes(Key,Codes),  do_menu_codes(Codes), !.
 do_menu_key(Sel):- atom_number(Sel,Num), number(Num), do_test_number(Num),!.
@@ -839,7 +839,7 @@ testid_name_num_io(ID,Name,_Example,_Num,_IO):- fix_id(ID,   Name),!. %, kaggle_
 fix_id(Tried,   Tried):- var(Tried),!.
 fix_id(X,_):- is_cpoint(X),!,fail.
 fix_id(X,_):- is_list(X),maplist(is_cpoint,X),!,fail.
-fix_id(obj_to_oid(X,_),Fixed):-  !, fix_id(X,Fixed).
+fix_id(obj_to_oid(_,X),Fixed):-  !, fix_id(X,Fixed).
 fix_id(Tried,   Tried):- kaggle_arc(Tried,_,_,_),!.
 fix_id(v(Tried),   TriedV):- !, atom_id(Tried,TriedV),!.
 fix_id(t(Tried),   TriedV):- !, atom_id(Tried,TriedV),!.
