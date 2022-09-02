@@ -488,6 +488,7 @@ g2o(G,O):- oid_to_object(G,O)-> true;(oid_glyph_object(_,G,O)*->true;(Chars=[_,_
 
 %get_glyph_to_object(G,O):- ((luser_getval(G,O),is_object(O))*->true;(get_current_test(TestID),g_2_o(TestID,G,O))).
 
+chars2o(['o',C,'_'|_],O):- !, g2o(C,O).
 chars2o(Chars,O):- \+ member('_',Chars), member(C,Chars),g2o(C,O),!.
 
 

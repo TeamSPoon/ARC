@@ -15,15 +15,15 @@ saved_group(Why,IndvS):-
 
 is_why_grouped(TestID,Count,Why,IndvS):-
   is_why_grouped_g(TestID,Count,Why,IndvSG),
-  maplist(g2o,IndvSG,IndvS).
+  maplist(oid_to_object,IndvSG,IndvS).
 
 
 save_grouped(Why,G):-
   into_group(G,GS),
   get_current_test(TestID),
   length(GS,Len),
-  maplist(o2g,GS,GGG),
   mapgroup(register_obj,GS),
+  maplist(obj_to_oid,GS,GGG),
   %maplist(obj_to_oid,GS,OIDs),
   my_asserta_if_new(is_why_grouped_g(TestID,Len,Why,GGG)).
 

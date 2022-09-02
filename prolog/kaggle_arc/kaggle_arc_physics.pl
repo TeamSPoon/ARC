@@ -43,11 +43,17 @@ tips_to_rot(Grid,H,V,[rot90|RotOut],Final):- is_top_heavy(Grid), !, rot270(Grid,
 %tips_to_rot(Grid,H,V,[rot180|RotOut]):- is_top_heavy(Grid), !, rot180(Grid,Grid90), !, tips_to_rot(Grid90,H,V,RotOut).
 tips_to_rot(Grid,_H,_V,RotOut,Final):- is_left_heavy(Grid)-> (RotOut=[rot180],rot180(Grid,Final)); (RotOut=[same],Final=Grid).
 
-is_top_heavy(Grid):- split_50_v(Grid,Top,Bottem),!,color_mass(Top,TopM),color_mass(Bottem,BottemM),!,BottemM>TopM.
+is_top_heavy(Grid):- split_50_v(Grid,Top,Bottem),!,color_w_mass(Top,TopM),color_w_mass(Bottem,BottemM),!,BottemM>TopM.
 is_left_heavy(Grid0):- rot90(Grid0,Grid),is_top_heavy(Grid).
 split_50_v(Grid,Top,Bottem):- length(Grid,N),H is floor(N/2), length(Top,H),length(Bottem,H),
     my_append(Top,Rest,Grid),my_append(_Mid,Bottem,Rest).
 
+color_w_mass(Color,Int):- var(Color),!,Int=13.
+color_w_mass(Points,Count):- is_list(Points),!,maplist(color_w_mass,Points,MPoints),!,sum_list(MPoints,Count).
+color_w_mass(Color,Int):- ground(Color),color_int(Color,Int),!.
+color_w_mass(Color,Int):- number(Color),Color=Int,!.
+color_w_mass(Obj,Count):- nonvar(Obj),localpoints(Obj,Points),!,color_w_mass(Points,Count),!.
+color_w_mass(_,0).
 /*
   bottem_heavy(Grid90,RotG,Grid180).
 grav_mass(Grid,_H,_V,RotG,Grid90):- is_h_symmetric(Grid),!,bottem_heavy(Grid,RotG,Grid90).

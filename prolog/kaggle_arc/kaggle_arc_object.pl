@@ -458,8 +458,8 @@ iv_for(L,Iv):- copy_term(L,CT,_),numbervars(CT,0,_,[attvar(bind),singletons(true
 obj_iv(Obj,Iv):- indv_u_props(Obj,L),iv_for(L,Iv).
 
 obj_to_oid(Obj,OID):-  atom(Obj),atom_length(Obj,L),L>5,Obj=OID,!.
-obj_to_oid(Obj,OID):- oid_glyph_object(OID,_,Obj),!.
-obj_to_oid(I,X):- var_check(I,obj_to_oid(I,X))*->!;indv_props(I,L),member(oid(X),L).
+obj_to_oid(Obj,OID):-  oid_glyph_object(OID,_,Obj),!.
+obj_to_oid(I,X):- var_check(I,obj_to_oid(I,X))*->!;indv_props(I,L),member(obj_to_oid(X),L).
 obj_to_oid(Obj,OID):- assert_object_oid(_,Obj,_Glyph,OID),!.
 
 current_gid(GID):- get_vm(VM), GID = VM.gid.
@@ -493,8 +493,11 @@ assert_object_oid(TID,Obj,Glyph,OID):-
 
 assert_object2(OID,obj(List)):-!,maplist(assert_object2(OID),List).
 assert_object2(OID,List):- is_list(List),!,maplist(assert_object2(OID),List).
-assert_object2(OID,Prop):- Prop=..List, AProp=..[cindv,OID|List],
-  (\+ ground(AProp)->dumpST;true),
+assert_object2(OID,Prop):- Prop=..[F|List], append(Pre,[Last],List),
+  assert_object5(OID,F,Pre,Last,List).
+assert_object5(OID,F,Pre,Last,_List):- 
+  AProp=..[cindv,OID,F,Pre,Last],
+  % (\+ ground(AProp)->dumpST;true),
   arc_assert(AProp).
  
 retract_object(GID,OID,_):- 
@@ -502,7 +505,7 @@ retract_object(GID,OID,_):-
  retractall(cindv(OID,_,_)),
  retractall(cindv(OID,_,_,_)),
  retractall(cindv(OID,_,_,_,_)).
-
+/*
 assert_object(GID,NewObj):-
   obj_to_oid(NewObj,NOID),
   assert_object(GID,NOID,NewObj).
@@ -519,6 +522,8 @@ assert_object1(OID,List):- is_list(List),!,maplist(assert_object1(OID),List).
 assert_object1(OID,Prop):- Prop=..List, AProp=..[cindv,OID|List],
   (\+ ground(AProp)->dumpST;true),
   pfcAdd(AProp).
+*/
+
 
 %obj_to_oid(I,_,Iv):- is_object(I), obj_iv(I,Iv).
 %obj_to_oid(I,_ID,Fv):- is_grid(I),!, flag(indiv,Fv,Fv+1).
@@ -526,6 +531,7 @@ assert_object1(OID,Prop):- Prop=..List, AProp=..[cindv,OID|List],
 %obj_to_oid(I,ID,Fv):- into_obj(I,O),!,obj_to_oid(O,ID,Fv).
 %obj_to_oid(I,ID,Iv):- trace_or_throw(missing(obj_to_oid(I,ID,Iv))).
 %obj_to_oid(_,ID,_Iv):- luser_getval(test_pairname,ID).
+
 
 mass(I,Count):- is_grid(I),!,globalpoints(I,Points), length(Points,Count),!.
 mass(I,X):- var_check(I,mass(I,X)).
@@ -549,12 +555,7 @@ cmass([G|Grid],Points):- maplist(cmass,[G|Grid],MPoints),sum_list(MPoints,Points
 cmass(I,Count):- globalpoints(I,Points),cmass(Points,Count),!.
 
 
-color_mass(Color,Int):- var(Color),!,Int=13.
-color_mass(Points,Count):- is_list(Points),!,maplist(color_mass,Points,MPoints),!,sum_list(MPoints,Count).
-color_mass(Color,Int):- ground(Color),color_int(Color,Int),!.
-color_mass(Color,Int):- number(Color),Color=Int,!.
-color_mass(Obj,Count):- nonvar(Obj),localpoints(Obj,Points),!,color_mass(Points,Count),!.
-color_mass(_,0).
+
 
 %remove_color(C-_,point_01_01):- is_bg_color(C),!.
 %remove_color(_-P,P).
@@ -658,14 +659,16 @@ rotation(I,X):- var_check(I,rotation(I,X)).
 rotation(I,X):- indv_props(I,L),member(rotation(X),L).
 rotation(_,same).
 
+object_changes(G,X):- is_group(G),!,mapgroup(object_changes,G,Points),append_sets(Points,X).
+object_changes(I,X):- indv_props(I,L),member(changes(X),L).
+
+
 %hv_cvalue(Grid,Color,H,V):- hv_cg_value(Grid,C,H,V),!,as_cv(C,Color),!.
 %as_cv(C,Color):- plain_var(C),!,=(C,Color).
 %as_cv(C,Color):- sub_term(Color,C),nonvar_or_ci(Color),is_color(Color).
 %as_cv(C-_,Color):- as_cv(C,Color).
 %as_cv(C,Color):- integer(C),!,color_code(C,Color).
 
-object_changes(G,X):- is_group(G),!,mapgroup(object_changes,G,Points),append_sets(Points,X).
-object_changes(I,X):- indv_props(I,L),member(changes(X),L).
 
 % Is there an advantage to counting down?
 all_points_between(_Grid,_LowH,_LowV,_GH,GV,_Hi,Vi,Points,Points):- Vi>GV,!.
@@ -801,7 +804,7 @@ globalpoints(Grid,Points):- grid_to_tid(Grid,ID),findall(-(C,HV),cmem(ID,HV,C),P
 %colors(Points,CC):- is_list(Points),nth0(_,Points,C-_),is_color(C), CC = [cc(C,3)],!.
 colors(G,[cc(black,0)]):- G==[],!.
 
-colors(I,X):- is_object(I),indv_props(I,L),member(colors(X),L),!.
+colors(I,X):- indv_props(I,L),member(colors(X),L),!.
 colors(I,X):- is_map(I),into_grid(I,G),!,colors(G,X).
 colors(I,X):- is_object(I),indv_u_props(I,L),member(localpoints(LP),L),!,colors_via_pixels(LP,X).
 colors(G,BFO):- localpoints_include_bg(G,G0), colors_via_pixels(G0,BFO),!.
