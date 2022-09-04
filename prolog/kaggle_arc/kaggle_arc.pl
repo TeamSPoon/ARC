@@ -6,6 +6,12 @@
 */
 
 :- encoding(iso_latin_1).
+
+:- pack_install(logicmoo_utils).
+:- pack_install(dictoo).
+:- pack_upgrade(logicmoo_utils).
+:- pack_upgrade(dictoo).
+
 :- set_prolog_flag(arc_term_expansion, false).
 :- dynamic((ap/1,apv/2)).
 :- dynamic(cmem/3).
