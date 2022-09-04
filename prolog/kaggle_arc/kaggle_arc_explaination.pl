@@ -37,7 +37,7 @@ debug_indiv:- test_config(nodebug_indiv),!,fail.
 debug_indiv:- test_config(debug_indiv),!.
 debug_indiv:- test_config(indiv(_)),!.
 
-will_show_grid(Obj,true):- mass(Obj,Mass)-> (Mass>4, v_hv(Obj,H,V) -> (H>1,V>1)),!.
+will_show_grid(Obj,true):- amass(Obj,Mass)-> (Mass>4, v_hv(Obj,H,V) -> (H>1,V>1)),!.
 will_show_grid(_,false).
 
 
@@ -170,8 +170,8 @@ debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
 
   ignore((TF==true,dash_chars)),
   ignore(( g_out(style('font-size','75%'),wqnl([format("% ~w:\t\t~w\t",[PC,SGlyph]) | TVS ])))),
-  ignore(( TF==true, mass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
-  ignore(( fail, mass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
+  ignore(( TF==true, amass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
+  ignore(( fail, amass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
   %pt(A),
   ignore(( TF==true,dash_chars))]),!.
 
@@ -180,7 +180,7 @@ not_too_verbose(X):- X\==(''), X\==s('').
 show_st_map(Obj):-
   ignore(( 
   localpoints(Obj,Points),
-%  mass(Obj,Mass),!,Mass>4,
+%  amass(Obj,Mass),!,Mass>4,
 %  v_hv(Obj,H,V),!,H>1,V>1,
   format('~N'),
   solidness(Points,0,inf,Res),

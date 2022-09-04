@@ -127,7 +127,7 @@ the_hammer1(BlueComplex):- the_hammer(blue,BlueComplex).
 the_hammer1(RedComplex):-  the_hammer(red,RedComplex).
 
 the_hammer(Color,ColorComplex):- 
-  ColorComplex = obj([mass(6), shape([point_01_01, point_01_02, point_01_03, point_02_01, point_02_02, point_03_02]), 
+  ColorComplex = obj([amass(6), shape([point_01_01, point_01_02, point_01_03, point_02_01, point_02_02, point_03_02]), 
   colors([cc(Color, 6)]), localpoints([Color-point_01_01, Color-point_01_02, Color-point_01_03, Color-point_02_01, 
   Color-point_02_02, Color-point_03_02]), v_hv(3, 3), rotation(same), loc(2, 5), 
   changes([]), iz(rectangle), iz(hammer), 
@@ -324,7 +324,7 @@ add_shape_lib(Type,Obj):-  is_list(Obj), \+ is_grid(Obj), !, mapgroup(add_shape_
 
 add_shape_lib(Type,Obj):- add_shape_lib0(Type,Obj).
 
-add_shape_lib0(Type,Obj):- mass(Obj,Mass),!,
+add_shape_lib0(Type,Obj):- amass(Obj,Mass),!,
   %dash_chars, print_grid(Obj),
   ( Mass<3 
    -> nop(pt(too_small_for_shapelib(Type,Mass))) ; (nop(pt(add_shape_lib(Type))),assert_shape_lib(Type,Obj))), 
@@ -332,7 +332,7 @@ add_shape_lib0(Type,Obj):- mass(Obj,Mass),!,
   !.
 
 
-%assert_shape_lib(_,Obj):-  mass(Obj,Mass), Mass<4,!.
+%assert_shape_lib(_,Obj):-  amass(Obj,Mass), Mass<4,!.
 assert_shape_lib(Type,Obj):- is_list(Type),!,mapgroup(lambda_rev(assert_shape_lib3(Type,Obj)),Type).
 assert_shape_lib(Type,Obj):- assert_shape_lib3(Type,[Type],Obj).
 assert_shape_lib3(Type,InfoIn,Obj):- 

@@ -17,10 +17,14 @@ to_real_grid(G,GO):- notrace((unnumbervars(G,G1),get_bgc(BG),subst001(G1,bg,BG,G
 
 has_color(C,Cell):- only_color_data(Cell,CD), cmatch(C,CD).
 
-cmatch(C,CD):- C==CD,!.
+cmatch(C,CD):- plain_var(C),!,C=CD,!.
+cmatch(C,CD):- var(C),!,C=CD,!.
 cmatch(fg,CD):- is_fg_color(CD),!.
 cmatch(bg,CD):- is_bg_color(CD),!.
-cmatch(wbg,CD):- is_bg_color(CD),!.
+cmatch(wbg,CD):- (CD==wbc;is_bg_color(CD)),!.
+%cmatch(P,CD):- is_real_color(P),!, \+ P\==CD.
+cmatch(P,CD):- is_colorish(P),!, \+ P\=CD.
+cmatch(P,CD):- call(P,CD),!.
 
 free_bg(BGC,S,FB):- is_list(S),!,mapgrid(free_bg(BGC),S,FB).
 free_bg(_,S,FB):- plain_var(S),!,FB=S.

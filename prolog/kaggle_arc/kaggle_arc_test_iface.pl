@@ -59,7 +59,7 @@ menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd1(Mode,Key,Mesg,Goal).
 menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd9(Mode,Key,Mesg,Goal).
 
 find_tests(F):-
-   current_predicate(N),N=F/0, atom_concat(test_,_,F),\+ ( atom_codes(F,Codes),member(C,Codes),char_type(C,digit)).
+   current_predicate(N),N=F/0, atom_concat(test_,_,F), \+ ( atom_codes(F,Codes),member(C,Codes),char_type(C,digit) ).
 find_tests(F):- ping_indiv_grid(F).
 find_tests(F):- is_fti_stepr(F).
 find_tests(F):- is_fti_step(F).
@@ -652,23 +652,7 @@ pair_dictation(TestID,ExampleNum,In,Out,DictOut):-
   vars_to_dictation(Vs,_{},DictOut),
   retractall(cached_dictation(pair_dictation(TestID,ExampleNum,_,_),_)),
   arc_assert(cached_dictation(pair_dictation(TestID,ExampleNum,In,Out),DictOut)).
-/*
-The IEEE floating-point standard, supported by almost all modern floating-point units, specifies that every floating 
- point arithmetic operation, including division by zero, has a well-defined result. 
-  The standard supports signed zero, as well as infinity and NaN (not a number). 
-   There are two zeroes: +0 (positive zero) and -0 (negative zero) and this removes any ambiguity when dividing. 
-   In IEEE 754 arithmetic, a ÷ +0 is positive infinity when a is positive, negative infinity when a is negative, 
-   and NaN when a = ±0. The infinity signs change when dividing by -0 instead.
-*/
-ratio_for(Ratio,_/_=Out,In):- nonvar(Out), !, ratio_for(Ratio,Out,In).
-ratio_for(Ratio,Out,_/_=In):- nonvar(In), !, ratio_for(Ratio,Out,In).
-ratio_for(Out/In=Ratio,Out,In):- ratio_for0(Ratio,Out,In).
-ratio_for0(1.0,Out,In):- 0 is In, 0 is Out,!.
-ratio_for0(Ratio,Out,In):- 0 is In, !, Ratio is -0.0.
-ratio_for0(1,Out,In):- Out =:= In.
-ratio_for0(Ratio,Out,In):- 0 is Out, !, Ratio is +0.0.
-ratio_for0(Ratio,Out,In):- catch(Ratio is rationalize(Out/In),error(evaluation_error(_zero_divisor),_),fail),!.
-ratio_for0(Ratio,Out,In):- catch(NRatio is rationalize(In/Out),error(evaluation_error(_zero_divisor),_),fail),!, Ratio is -NRatio.
+
 
 :- quasi_quotation_syntax(dictate_sourcecode).
 :- export(dictate_sourcecode/4).
@@ -697,8 +681,8 @@ do_pair_dication(In,Out,_Vs):-
   ratio_for(RatioArea,OutArea,InArea),
   max_min(OutArea,InArea,BothMaxArea,BothMinArea),
 
-  mass(In,InMass),
-  mass(Out,OutMass),
+  amass(In,InMass),
+  amass(Out,OutMass),
   ratio_for(DeltaMass,OutMass,InMass),
 
   unique_color_count(In,InColorLen),

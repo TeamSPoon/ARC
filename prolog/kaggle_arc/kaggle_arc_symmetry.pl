@@ -23,7 +23,7 @@ is_monotrim_test0(TestID):-
   once((kaggle_arc(TestID,_,In,Out),
   grid_size(In,IH,IV),%grid_size(Out,OH,OV),
   once(((IH>4;IV>4))),
-  %cmass(In,IM),cmass(Out,OM), IM > 10, OM > 11,
+  %mass(In,IM),mass(Out,OM), IM > 10, OM > 11,
   once((is_monotrim_symmetricD(Out);is_monotrim_symmetricD(In))))).
 
 is_symgrid(TestID):-!,
@@ -529,8 +529,8 @@ mass_ok(Grid,RepairedResult):- is_grid(Grid),
  print_side_by_side(red,Grid,too_much_change(gridIn,Change),_,RepairedResult,too_much_change(repairedOut,Change)),fail.
  
 mass_ok(Grid,RepairedResult):-
-  cmass(Grid,OMass),!,
-  cmass(RepairedResult,RMass),!,  
+  mass(Grid,OMass),!,
+  mass(RepairedResult,RMass),!,  
   DMass is RMass/OMass,
   %pt(yellow,[oMass=OMass,rMass=RMass,dMass=DMass]),!,
   ((DMass>0.5,DMass<1.6)
@@ -541,8 +541,8 @@ mass_ok(Grid,RepairedResult):-
 mass_diffs(Grid,RepairedResult,Changes/Area,RMass/OMass):-
   grid_size(Grid,H,V),Area is H * V,
   count_changes(Grid,RepairedResult,0,Changes),
-  cmass(Grid,OMass),!,
-  cmass(RepairedResult,RMass).
+  mass(Grid,OMass),!,
+  mass(RepairedResult,RMass).
 
 
 grid_to_3x3_objs(VM,Ordered,Grid,NewIndiv4s,KeepNewState,RepairedResult,grid_to_2x2_objs):- 
@@ -625,7 +625,7 @@ contains_color(Color,Out):- unique_colors(Out,Colors),member(Color,Colors).
 guess_unbind_color(UnbindColor,Grid,RepairedResult):- 
    guess_to_unbind(Grid,UnbindColor), 
    unbind_color(UnbindColor,Grid,RepairedResult),  
-   cmass(RepairedResult,Mass),Mass>0,
+   mass(RepairedResult,Mass),Mass>0,
    (UnbindColor\==black->if_target(Out, \+ contains_color(UnbindColor,Out));true).
 
 blur_least(B,Mix,I,O):-
@@ -640,7 +640,7 @@ blur_list(B,Mix,I,S):-
   findall(O-pt(blur_some(B,Mix)),blur_some(B,Mix,I,O),L),
   predsort(sort_on(pointy_mass),L,S).
 
-pointy_mass(P,Mass):- is_pointy(P),!,cmass(P,Mass).
+pointy_mass(P,Mass):- is_pointy(P),!,mass(P,Mass).
 pointy_mass(T,Mass):- arg(_,T,E), compound(E), pointy_mass(E,Mass),!.
 
 blur_some(B,Mix,I,O):- (var(B)->blur_turn(B);true),(once(call(B,I,M)),I\=@=M), mapgrid(mix_cellr(Mix),I,M,O).
@@ -695,8 +695,8 @@ saliency_quality_of_change(Grid,RepairedResult,Quality):-
   grid_size(RepairedResult,RH,RV),RArea is RH * RV,
 
   count_changes(Grid,RepairedResult,0,Changes),
-  cmass(Grid,OMass),!,  
-  cmass(RepairedResult,RMass),
+  mass(Grid,OMass),!,  
+  mass(RepairedResult,RMass),
   nop(RArea == RMass -> OMass==OArea ; true),
   count_variables(RepairedResult,Blanks),
   NegBlanks is -Blanks,
@@ -789,7 +789,7 @@ try_remove_color_fill_in_blanks(Grid,RepairedResultO,[Info,CodeNext]):-
   CodeNext = now_fill_in_blanks(_),
   peek_target_or_else(Grid,Out),
   best_of(Out,Info,CodeNext,RepairedResult,RepairedResultO),
-  cmass(RepairedResultO,Mass), Mass>0.
+  mass(RepairedResultO,Mass), Mass>0.
 
   
 now_fill_in_blanks(_,RepairedResult,RepairedResultO):- ground(RepairedResult),!,RepairedResultO=RepairedResult.
@@ -1019,7 +1019,7 @@ make_symmetrical_grid(G,GridO):- make_symmetrical_grid(_,G,GridO).
 make_symmetrical_grid(Steps,G,GridO):- trim_to_rect(G,Grid1),G\==Grid1,make_symmetrical_grid(Steps,Grid1,GridO).
 make_symmetrical_grid(Steps,G,GridO):- 
   Steps = [P,pull(BGC),Flip,test_used(Test)],
-  mass(G,OrignalMass),
+  amass(G,OrignalMass),
   MaxMass is OrignalMass * 4,
   most_d_colors(G,Colors,GC),!,
   g_or_gc(G,GC,GG00),
@@ -1033,7 +1033,7 @@ make_symmetrical_grid(Steps,G,GridO):-
     uneib(Grid99,GridO),
     mapgrid(blackFree,GridO))),
     is_able_v(Test,GridO),
-    mass(GridO,NewMass),NewMass =< MaxMass.
+    amass(GridO,NewMass),NewMass =< MaxMass.
 /*
 % detect_supergrid(Grid,SGrid):- ...
 line Separated
@@ -2169,7 +2169,7 @@ dir_num(_,_,_,0).
 
 %find_center(Grid,H,V):- chew_away_at_sides(Grid,GridO,TH,TV),grid_size(GridO,H,V),X is floor(H/2),Y is floor(V/2).
 %chew_away_at_sides(Grid,Grid):-!.
-%chew_away_at_sides(Grid,GridO):- append([Top|Middle],[Btm]),mass(Top,M1),mass(Btm,M2),M1==M2,!,chew_away_at_sides(,GridO).
+%chew_away_at_sides(Grid,GridO):- append([Top|Middle],[Btm]),amass(Top,M1),amass(Btm,M2),M1==M2,!,chew_away_at_sides(,GridO).
 
 idealistic_symmetric_xy_3x3(
 [[Q2,         CN,        flipH(Q2)],

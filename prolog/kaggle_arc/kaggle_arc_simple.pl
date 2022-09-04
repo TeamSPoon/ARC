@@ -172,12 +172,12 @@ point(Grid,Color,X,Y):- is_graid(Grid,G),nth1(Y,G,R),nth1(X,R,Color).
 grid_points(Grid,Points):-  is_graid(Grid,G),globalpoints(G,Points).
 grid_point(Grid,point(X,Y,Color)):- point(Grid,Color,X,Y).
 
-grid_object(Grid,mass(1),Point):- grid_point(Grid,Point).
-grid_object(Grid,mass(2),point2(Dir,[(HV1)-(HV2)],Color)):- 
+grid_object(Grid,amass(1),Point):- grid_point(Grid,Point).
+grid_object(Grid,amass(2),point2(Dir,[(HV1)-(HV2)],Color)):- 
   globalpoints(Grid,Ps),select(Color-HV1,Ps,Pss),select(Color-HV2,Pss,_), 
   is_adjacent_point(HV1,Dir,HV2).
 
-grid_object(Grid,mass(N),object(Points,Color)):- 
+grid_object(Grid,amass(N),object(Points,Color)):- 
   is_graid(Grid,G),enum_colors(Color), \+ \+ grid_point(Grid,point(_,_,Color)),
   length(Points,N),Points = [HV1,HV2,HV3|AdjRest],
   globalpoints(G,Ps),select(Color-HV1,Ps,Pss),select(Color-HV2,Pss,Psss),select(Color-HV3,Psss,Rest), 

@@ -11,7 +11,7 @@
 
 area(Obj,Area):- v_hv(Obj,H,V), Area is H * V.
 
-density(Obj,Density):- area(Obj,Area),mass(Obj,Mass), Density is Mass/Area.
+density(Obj,Density):- area(Obj,Area),amass(Obj,Mass), Density is Mass/Area.
 
 
 into_gridoid0(obj(N),O):- enum_object(O),o2g(O,G),sformat(N," ~w ",[G]).
@@ -391,7 +391,7 @@ find_engulfs_objects(Obj,[Touched|ScanNext],[link(insideOf,Iv)|Engulfed]):-
  once(contained_object(Obj,Touched)),!,
  /*must_det_ll*/(obj_to_oid(Touched,Iv)),
  /*must_det_ll*/(find_engulfs_objects(Obj,ScanNext,Engulfed)),!.
-find_engulfs_objects(Obj,_,[]):- mass(Obj,Mass),Mass<5,!.
+find_engulfs_objects(Obj,_,[]):- amass(Obj,Mass),Mass<5,!.
 find_engulfs_objects(Obj,[Touched|ScanNext],[link(contains,Iv)|Engulfed]):-    
  once(contained_object(Touched,Obj)),!,
  /*must_det_ll*/(obj_to_oid(Touched,Iv)),

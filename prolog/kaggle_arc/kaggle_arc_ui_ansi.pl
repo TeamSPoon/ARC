@@ -168,7 +168,7 @@ tersify1(I,gridFn(S)):- is_grid(I), into_gridnameA(I,O),!,sformat(S,'~w',[O]).
 tersify1(I,gridFn(O)):- is_grid(I),tersifyG(I,O),!.
 tersify1(I,groupFn(O,List)):- is_group(I), mapgroup(tersify1,I,List),mapgroup(obj_to_oid,I,OIDs),length(List,N), !,ignore((get_current_test(TestID),is_why_grouped(TestID,N,Why,OIDs),!,O=Why)).
 tersify1(I,Q):- is_object(I),object_glyph_color(I,FC), o2g(I,O),!,wots(A,color_print(FC,call(format('"~w"',[O])))),
-   mass(I,M),
+   amass(I,M),
    wots(S,call(write(objFn(A,M)))),atom_string(Q,S).
 tersify1(I,O):- is_map(I), get_kov(objs,I,_),!, O='$VAR'('VM').
 tersify1(I,O):- is_map(I), get_kov(pairs,I,_),!, O='$VAR'('Training').
@@ -202,8 +202,8 @@ write_map(_G,Where):- write('...'),write(Where),write('...').
 ptt(_):- is_print_collapsed,!.
 ptt(G):- is_map(G), !, write_map(G,'ptt').
 ptt(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-ptt(P):- \+ \+ ((tersify(P,Q),!,pt(Q))).
-ptt(C,P):- \+ \+ ((tersify(P,Q),!,pt(C,Q))).
+ptt(P):- \+ \+ ((tersify(P,Q),!,pt(Q))),!.
+ptt(C,P):- \+ \+ ((tersify(P,Q),!,pt(C,Q))),!.
 
 pt(Color,P):- quietlyd((wots(S,ptcol(P)),!,color_print(Color,S))).
 ptcol(call(P)):- callable(P),!,call(P).
@@ -464,7 +464,7 @@ show_pair_grid(TitleColor,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
   %LW is (IH * 2 + 12),
 %  wots(U1, print_grid(IH,IV,In)),
 %  wots(U2, print_grid(OH,OV,Out)),
-  INFO = [grid_dim,mass,length,colors_count_size,colors],
+  INFO = [grid_dim,amass,length,colors_count_size,colors],
 %  print_side_by_side(U1,LW,U2),
   print_side_by_side(TitleColor,print_grid(IH,IV,In),NameInU,LW,print_grid(OH,OV,Out),NameOutU),
   print_side_by_side(

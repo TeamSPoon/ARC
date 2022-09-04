@@ -43,7 +43,7 @@ arc_history1(_).
 
 
 my_is_clause(H,B):- clause(H,B,Ref),clause(HH,BB,Ref), H+B=@=HH+BB,!.
-my_asserta_if_new((H:-B)):- !, (my_is_clause(H,B) -> wdmsg(my_is_clause(H,B)) ; arc_assert(H:-B)).
+my_asserta_if_new((H:-B)):- !, (my_is_clause(H,B) -> nop(wdmsg(my_is_clause(H,B))) ; arc_assert(H:-B)).
 my_asserta_if_new(HB):- my_asserta_if_new(HB:-true).
 
 my_assertz_if_new((H:-B)):- !, (my_is_clause(H,B) -> true ; assertz(H:-B)).

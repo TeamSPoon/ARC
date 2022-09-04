@@ -118,7 +118,7 @@ group_group(What,[Obj|In],[G1|Groups]):- indv_props(Obj,Props), member_skip_open
 group_group(_,_,[]).
 
 group_keys(iz).
-group_keys(mass).
+group_keys(amass).
 group_keys(birth).
 group_keys(color).
 %group_keys(shape).
@@ -262,7 +262,7 @@ compare_objs_how([same]).
 compare_objs_how(_).
 
 /*
-v_hv(5,5), mass(25),
+v_hv(5,5), amass(25),
 center(9,14),loc(7,12),
 colors([cc(PURPLE,21),cc(BLACK,4)]),
 localpoints
@@ -275,7 +275,7 @@ diff_2props(I,O):- comparable_2props(I,O), I \=@= O.
 
 
 % shape, 
-% v_hv, cmass
+% v_hv, mass
 % center
 
 :- discontiguous(learn_rule_in_out/4).
@@ -284,9 +284,9 @@ learn_rule_in_out(_,in_out,In,Out):- is_list(In),is_list(Out),
 
 learn_rule_in_out_sames(In,Out):- fail,
   is_list(In),is_list(Out),
-  average_or_mid(cmass,Out,MinMass),
+  average_or_mid(mass,Out,MinMass),
   member(I,In),member(O,Out),
-  cmass(O,Mass), Mass>MinMass, cmass(I,Mass),
+  mass(O,Mass), Mass>MinMass, mass(I,Mass),
   once((compare_objs_how(How), nonvar(How), compare_objs1(How,I,O))),
   pt(How),
   simplify_for_matching(lhs,I,II),
@@ -308,12 +308,12 @@ learn_rule_in_out(_,in_out,In,Out):- is_list(In),is_list(Out),
   (learn_rule_in_out_level1(In,Out), deterministic(TF), true), (TF==true -> !; true).
 
 learn_rule_in_out_level1(In,Out):- fail,
-  is_list(Out), average_or_mid(cmass,Out,MinMass),
-  member(O,Out), cmass(O,Mass), Mass>MinMass,
+  is_list(Out), average_or_mid(mass,Out,MinMass),
+  member(O,Out), mass(O,Mass), Mass>MinMass,
   indv_props(O,OL),
   once(learn_rule_iin_oout(1,In,O,OL)).
 
-learn_rule_iin_oout(_,In,O,OL):- cmass(O,Mass),
+learn_rule_iin_oout(_,In,O,OL):- mass(O,Mass),
   findall(SL-SAME-I-DL,
    (member(I,In),indv_props(I,IL),
     pred_intersection(same_2props,IL,OL,SAME,_,_IF,_OF),
@@ -326,7 +326,7 @@ learn_rule_iin_oout(_,In,O,OL):- cmass(O,Mass),
   compare_objs1(How,I,O),
   %shape(I,Shape),shape(O,Shape),
   %pen(I,Pen),pen(O,Pen),
-  cmass(I,Mass),
+  mass(I,Mass),
   simplify_for_matching(lhs,I,II),
   simplify_for_matching(rhs,O,OO),
   save_learnt_rule(test_solved(unk(How),II,OO),I,O),!.
@@ -626,8 +626,8 @@ sub_label(X, Term, OutGoal) :-
 
 never_labels_in(iz(_)).
 never_labels_in(shape(_)).
+never_labels_in(amass(1)).
 never_labels_in(mass(1)).
-never_labels_in(cmass(1)).
 never_labels_in(loc(_,_)).
 
 

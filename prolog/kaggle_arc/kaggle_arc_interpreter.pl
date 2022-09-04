@@ -437,7 +437,7 @@ into_obj(G,O):- no_repeats(O,known_obj0(G,O))*->true; (into_grid(G,GG),!,into_ob
 %register_obj(O):- quietly((wots(S,weto(arcST)), asserta(obj_cache(TestID,O,S)))),!.
 register_obj(O):-  must_det_ll(o2g(O,_)),!.
 /*register_obj(L):- asserta(obj_cache(TestID,L,'')),
-  ignore(( false, O=obj(L),mass(O,Mass),Mass>7,format('~N'),arc_portray(O,false),nl)).
+  ignore(( false, O=obj(L),amass(O,Mass),Mass>7,format('~N'),arc_portray(O,false),nl)).
 */
 :- dynamic(obj_cache/3).
 :- module_transparent obj_cache/2.

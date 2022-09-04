@@ -509,7 +509,7 @@ keep_points(While,VM):-
 is_fti_step(maybe_1_3rd_mass).
 % =====================================================================
 maybe_1_3rd_mass(VM):-
-  mass(VM.grid,Mass),
+  amass(VM.grid,Mass),
   colors(VM.grid,[cc(C,Size)|_Colors]),
   Area is VM.h * VM.v,
   Size * 3 > Area,
@@ -579,7 +579,7 @@ first_grid_same_areas(In,Out,IO):-
   unique_color_count(In,ISize), unique_color_count(Out,OSize), 
   ((OSize>ISize) -> (IO=out_in);(IO=in_out)).
 first_grid_same_areas(In,Out,IO):-
-  cmass(In,ISize), cmass(Out,OSize), 
+  mass(In,ISize), mass(Out,OSize), 
   ((OSize<ISize) -> (IO=out_in);(IO=in_out)).
 
 first_grid(_In,_Out,in_out):- \+ allow_out_in,!.
@@ -608,12 +608,19 @@ individuate_two_grids(ROptions,Grid1,Grid2,IndvSI,IndvSO):-
   locally(nb_setval(doing_pair,t),
     individuate_two_grids_once(two(OID1,OID2),NamedOpts,Grid1,Grid2,IndvSI,IndvSO)).
 
+/*
+individuate_two_grids_once(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO):- saved_group(individuate(OID1OID2,ROptions),IndvS),!,into_gio(IndvS,IndvSI,IndvSO),!.
 individuate_two_grids_once(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO):- 
-  wdmsg(individuate(ROptions,OID1OID2,IndvSI,IndvSO)),
+    individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO),
+    ignore((into_iog(IndvSI,IndvSO,IndvS),save_grouped(individuate(OID1OID2,ROptions),IndvS))).
+*/
+
+individuate_two_grids_once(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO):- 
+  %wdmsg(individuate(ROptions,OID1OID2,IndvSI,IndvSO)),
   (saved_group(individuate(OID1OID2,ROptions),IndvS)
-    *-> into_iog(IndvS,IndvSI,IndvSO)
-    ; (individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO),
-        nop((into_gio(IndvSI,IndvSO,IndvS),save_grouped(individuate(OID1OID2,ROptions),IndvS))))).
+    -> into_gio(IndvS,IndvSI,IndvSO)
+    ; ((individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO),
+         into_iog(IndvSI,IndvSO,IndvS),save_grouped(individuate(OID1OID2,ROptions),IndvS)))).
 
 
 :- retractall(is_why_grouped(_,_,_,_)).
@@ -917,7 +924,7 @@ print_vm_debug_objs(_VM):- !.
 print_vm_debug_objs(VM):- 
   Objs = VM.objs,  
   length(Objs,Count),
-  as_debug(8,(mass(Objs,Mass), length(VM.points,PC),
+  as_debug(8,(amass(Objs,Mass), length(VM.points,PC),
       maybe_four_terse(VM.program_i,Four),
       pt(t([obj/obj_mass=(Count/Mass),unprocessed_points=PC,roptions=VM.roptions,fsi=Four])))).
 
@@ -1016,7 +1023,9 @@ exceeded_objs_max_len(VM):-
   Objs = VM.objs,
   length(Objs,Count),
   Count > VM.objs_max_len,
-  wdmsg(warn(Count > VM.objs_max_len)).
+  wdmsg(warn(Count > VM.objs_max_len)),
+  dumpST(2),
+  wdmsg(throw(exeeded_object_limit(Count > VM.objs_max_len))).
   
 
 fti(VM,[F|TODO]):- once(fix_indivs_options([F|TODO],NEWTODO)),[F|TODO]\==NEWTODO,!,fti(VM,NEWTODO).
@@ -1065,7 +1074,7 @@ release_objs_lighter(Two,VM):-
   maplist(globalpoints,Smaller,Points),
   append_sets([VM.points|Points],set(VM.points)))).
 
-less_mass(Mass,Obj):- mass(Obj,M),M<Mass.
+less_mass(Mass,Obj):- amass(Obj,M),M<Mass.
 
 
 mergable_objects(VM,O1,O2):- 
@@ -1082,7 +1091,7 @@ mergable_objects_direct(O1,O2,PsA,PsB):- iz(O1,dg_line(_)), iz(O2,dg_line(_)), d
 mergable_objects_direct(O1,O2,PsA,PsB):- iz(O1,hv_line(_)), iz(O2,dg_line(_)), dir_mergeable_list(PsA,PsB,[n,s,e,w],[ne,se,sw,nw]),!.
 mergable_objects_direct(O1,O2,PsA,PsB):- iz(O1,dg_line(_)), iz(O2,hv_line(_)), dir_mergeable_list(PsA,PsB,[ne,se,sw,nw],[n,s,e,w]),!.
 %mergable_objects_direct(O1,O2,PsA,PsB):- iz(O1,hv_line(U)), iz(O2,hv_line(D)), u_d(U,D), adjacent_objs(PsA,PsB).
-mergable_objects_direct(O1,O2,PsA,PsB):- \+ iz(O1,dot), mass(O2,N),N==1,dir_mergeable_list(PsA,PsB,[n,s,e,w,ne,se,sw,nw],[]),!.
+mergable_objects_direct(O1,O2,PsA,PsB):- \+ iz(O1,dot), amass(O2,N),N==1,dir_mergeable_list(PsA,PsB,[n,s,e,w,ne,se,sw,nw],[]),!.
 mergable_objects_direct(_O1,_O2,PsA,PsB):- double_touch(PsA,PsB).
 mergable_objects_direct(_O1,_O2,PsA,PsB):- double_touch(PsB,PsA).
 double_touch(PsA,PsB):- 
@@ -1235,7 +1244,7 @@ addObjectOverlap(VM,IndvS2):-
    combine_same_globalpoints(IndvS4,IndvS5),
    length(IndvS5,Count),
    set(VM.objs)= IndvS5,
-   set(VM.objs_max_len) is Count+25.
+   set(VM.objs_max_len) is Count+3.
 
 /*
   fif(Len==1,   
@@ -1475,7 +1484,7 @@ rectangles_from_grid(_,_).
 % @TODO
 rects_of(_Obj,[]).
 
-mass_gt(N,Obj):- mass(Obj,Mass),Mass>N.
+mass_gt(N,Obj):- amass(Obj,Mass),Mass>N.
 
 % tiny grid becomes a series of points
 is_fti_step(maybe_glyphic).
@@ -1484,7 +1493,7 @@ maybe_glyphic(VM):-
   fif(is_glyphic(Points,VM.h,VM.v),one_fti(VM,glyphic)).
 
 %is_glyphic(Points,_GH,_GV):- length(Points,Len), Len < 5.
-is_glyphic(Points,_GH,_GV):- cmass(Points,Len), Len =< 16,!.
+is_glyphic(Points,_GH,_GV):- mass(Points,Len), Len =< 16,!.
 is_glyphic(Points,GH,GV):- ( GH=<5 ; GV=<5 ), length(Points,Len), Len is GH * GV.
 
 one_fti(VM,glyphic):-
@@ -1512,7 +1521,7 @@ whole_into_obj(VM,Grid,Whole):-
   localpoints_include_bg(Grid,Points),
   length(Points,Len),
   fif(Len>0,
-    (make_indiv_object(VM,[mass(Len),v_hv(H,V),birth(whole),iz(image)],Points,Whole),raddObjects(VM,Whole),
+    (make_indiv_object(VM,[amass(Len),v_hv(H,V),birth(whole),iz(image)],Points,Whole),raddObjects(VM,Whole),
        save_grouped(individuate(VM.gid,whole),[Whole]),assert_shape_lib(pair,Whole))),
   localpoints(Grid,LPoints),
   length(LPoints,CLen),fif((CLen=<144,CLen>0),    
@@ -1636,7 +1645,7 @@ one_fi(VM,retain(Option)):-
     Grid = VM.grid,
     ID = VM.id,
     globalpoints(Grid,NewGPoints), %  H> 14, V> 14,
-    freeze(W,W>5),filter_indivs(VM.objs,[mass(W)];[iz(Option)],Retained1),
+    freeze(W,W>5),filter_indivs(VM.objs,[amass(W)];[iz(Option)],Retained1),
     filter_indivs(Retained1, \+ iz(background),Retained),
     as_debug(9,print_grid(H,V,'retained'+ID,Retained)),    
     remove_global_points(Retained,NewGPoints,set(VM.points)),
@@ -2099,15 +2108,15 @@ nearby_one(_Dir_,Options,C1,C2-E,List):- allowed_dir(Options,Dir), adjacent_poin
 
 check_minsize(_,I,I):-!.
 check_minsize(_,[],[]):-!.
-check_minsize(Sz,[I|IndvS],[A,B|IndvSO]):- mass(I,2),globalpoints(I,[A,B]),!,check_minsize(Sz,IndvS,IndvSO).
-check_minsize(Sz,[I|IndvS],[A,B,C|IndvSO]):- mass(I,3),globalpoints(I,[A,B,C]),!,check_minsize(Sz,IndvS,IndvSO).
+check_minsize(Sz,[I|IndvS],[A,B|IndvSO]):- amass(I,2),globalpoints(I,[A,B]),!,check_minsize(Sz,IndvS,IndvSO).
+check_minsize(Sz,[I|IndvS],[A,B,C|IndvSO]):- amass(I,3),globalpoints(I,[A,B,C]),!,check_minsize(Sz,IndvS,IndvSO).
 check_minsize(Sz,[I|IndvS],[I|IndvSO]):- check_minsize(Sz,IndvS,IndvSO).
 
-meets_size(_,Points):- mass(Points,1).
-meets_size(_,Points):- mass(Points,2),!,fail.
-meets_size(_,Points):- mass(Points,3),!,fail.
-meets_size(_,Points):- mass(Points,4).
-meets_size(Len,Points):- mass(Points,L),!,L>=Len.
+meets_size(_,Points):- amass(Points,1).
+meets_size(_,Points):- amass(Points,2),!,fail.
+meets_size(_,Points):- amass(Points,3),!,fail.
+meets_size(_,Points):- amass(Points,4).
+meets_size(Len,Points):- amass(Points,L),!,L>=Len.
 
 remove_bgs(IndvS,IndvL,BGIndvS):- partition(is_bg_indiv,IndvS,BGIndvS,IndvL).
 
@@ -2136,7 +2145,7 @@ resize_inf(X,X).
 
 smallest_first(IndvS0,IndvO):-
   sort(IndvS0,IndvS),
-  findall((Priority+Size)-Indv,(member(Indv,IndvS),smallest_priority(Indv,Priority),mass(Indv,MSize),resize_inf(MSize,Size)),All),
+  findall((Priority+Size)-Indv,(member(Indv,IndvS),smallest_priority(Indv,Priority),amass(Indv,MSize),resize_inf(MSize,Size)),All),
   keysort(All,AllK),
   maplist(arg(2),AllK,IndvO).  
 
@@ -2144,7 +2153,7 @@ largest_first(IndvS0,IndvR):-
  sort(IndvS0,IndvS),
  %must_det_ll
  ((
-  findall((Priority+Size)-Indv,(member(Indv,IndvS),largest_priority(Indv,NPriority),cmass(Indv,Size),Priority is - NPriority),All),
+  findall((Priority+Size)-Indv,(member(Indv,IndvS),largest_priority(Indv,NPriority),mass(Indv,Size),Priority is - NPriority),All),
   keysort(All,AllK),
   maplist(arg(2),AllK,IndvO),
   reverse(IndvO,IndvR))).
