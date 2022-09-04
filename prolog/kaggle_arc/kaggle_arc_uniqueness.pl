@@ -235,7 +235,6 @@ never_noteable(colors).
 never_noteable(globalpoints).
 never_noteable(P):- compound(P),functor(P,F,_),never_noteable(F).
 
-
 is_prop_for_noteablity(P):- compound(P),functor(P,F,_),is_prop_for_noteablity(F),!.
 is_prop_for_noteablity(X):- \+ never_noteable(X),!.
 

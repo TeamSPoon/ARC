@@ -45,9 +45,12 @@ pfcStateTerm(F/A):-
 control_arg_type(F/_,N,_Pre,A,B):- arg_n_isa(F,N,ISA),into_type(ISA,A,B),!.
 control_arg_type(FofN,_,Pre,A,B):- control_arg_types1([FofN|Pre],A,B).
 
+:- set_prolog_flag(pfc_shared_module,user).
+%:- set_prolog_flag(pfc_shared_module,baseKB).
+
 :- if(( current_prolog_flag(xref,true) ;
    ('$current_source_module'(SM),'context_module'(M),'$current_typein_module'(CM),
-     asserta(baseKB:'wusing_pfc'(M,CM,SM,pfc_rt))))).
+     current_prolog_flag(pfc_shared_module,BaseKB),asserta(BaseKB:'wusing_pfc'(M,CM,SM,pfc_rt))))).
 :- endif.
 :- if(current_prolog_flag(xref,true)).
 %:- module(pfc_rt,[]).
@@ -58,12 +61,13 @@ control_arg_type(FofN,_,Pre,A,B):- control_arg_types1([FofN|Pre],A,B).
 :- endif.
 %:- pfc_lib:use_module(pfc_lib).
 :- if( \+  current_prolog_flag(xref,true)).
-:- must(retract(baseKB:'wusing_pfc'(M,CM,SM,pfc_rt))),
-   nop(wdmsg(baseKB:'chusing_pfc'(M,CM,SM,pfc_rt))),
+:- current_prolog_flag(pfc_shared_module,BaseKB),
+   must(retract(BaseKB:'wusing_pfc'(M,CM,SM,pfc_rt))),
+   nop(wdmsg(BaseKB:'chusing_pfc'(M,CM,SM,pfc_rt))),
    (M==SM -> 
-     (nop(maybe_ensure_abox(SM)),nop((M:ain(genlMt(SM,baseKB)))));
-     nop(wdmsg(baseKB:'lusing_pfc'(M,CM,SM,pfc_rt)))),
-   assert(baseKB:'$using_pfc'(M,CM,SM,pfc_rt)),
+     (nop(maybe_ensure_abox(SM)),nop((M:ain(genlMt(SM,BaseKB)))));
+     nop(wdmsg(BaseKB:'lusing_pfc'(M,CM,SM,pfc_rt)))),
+   assert(BaseKB:'$using_pfc'(M,CM,SM,pfc_rt)),
    asserta(SM:'$does_use_pfc_mod'(M,CM,SM,pfc_rt)).
    %backtrace(200).
 
@@ -2709,7 +2713,8 @@ pfc_contains_term(What,Inside):- (\+ \+ once((subst(Inside,What,foundZadooksy,Di
 % Hook To [baseKB:hook_pfc_listing/1] For Module Mpred_listing.
 % Hook Managed Predicate Listing.
 %
-baseKB:hook_pfc_listing(What):- on_x_debug(pfc_list_triggers(What)).
+:- current_prolog_flag(pfc_shared_module,BaseKB),
+ assert_if_new((BaseKB:hook_pfc_listing(What):- on_x_debug(pfc_list_triggers(What)))).
 
 :- thread_local t_l:pfc_list_triggers_disabled/0.
 % listing(L):-locally(t_l:pfc_list_triggers_disabled,listing(L)).
@@ -2894,7 +2899,7 @@ pp_db_items(Var):-
   format("~N  ~p",[Var]).
 
 
-is_hidden_pft(_,(mfl4(_VarNameZ,baseKB,_,_),ax)).
+is_hidden_pft(_,(mfl4(_VarNameZ,BaseKB,_,_),ax)):- current_prolog_flag(pfc_shared_module,BaseKB),!.
 is_hidden_pft(_,(why_marked(_),ax)).
 
 
@@ -3219,7 +3224,7 @@ find_hb_mfl(H,B,_Ref,mfl4(VarNameZ,M,F,L)):- lookup_spft_match_first(H,mfl4(VarN
 find_hb_mfl(H,_B,uses_call_only(H),MFL):- !,call_only_based_mfl(H,MFL).
 
 :- fixup_exports.
-%:- fixup_module_exports_into(baseKB).
+%:- current_prolog_flag(pfc_shared_module,BaseKB),fixup_module_exports_into(BaseKB).
 :- fixup_module_exports_into(system).
 
 mpred_rule_hb(C,_):- \+ compound(C),!,fail.
@@ -3370,7 +3375,7 @@ mpred_update_literal(P,N,Q,R):-
 update_single_valued_arg(M,M:Pred,N):-!,update_single_valued_arg(M,Pred,N).
 update_single_valued_arg(_,M:Pred,N):-!,update_single_valued_arg(M,Pred,N).
 
-update_single_valued_arg(world,P,N):- !, update_single_valued_arg(baseKB,P,N).
+update_single_valued_arg(world,P,N):- !, current_prolog_flag(pfc_shared_module,BaseKB), update_single_valued_arg(BaseKB,P,N).
 update_single_valued_arg(M,P,N):- break, \+ clause_b(mtHybrid(M)), trace, clause_b(mtHybrid(M2)),!,
    update_single_valued_arg(M2,P,N).
 

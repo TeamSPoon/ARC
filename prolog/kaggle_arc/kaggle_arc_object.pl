@@ -543,12 +543,13 @@ amass(I,XX):- is_object(I),!,must_det_ll((localpoints(I,L), length(L,X))),!,XX=X
 amass(Points,Count):- is_list(Points),length(Points,Count),!.
 amass(I,Count):- globalpoints(I,Points),!,length(Points,Count),!.
 amass(C-_,1):- nonvar_or_ci(C),!.
-amass(I,Count):- globalpoints(I,Points), length(Points,Count),!.
+%amass(I,Count):- globalpoints(I,Points), length(Points,Count),!.
 
 mass(I,Count):- is_grid(I),!,append(I,Cs),!,mass(Cs,Count),!.
 mass(C,1):- is_fg_color(C),!.
 mass(C,0):- (is_bg_color(C);var(C)),!.
 mass(I,X):- var_check(I,mass(I,X)),!.
+mass([G|Grid],Points):- (is_group(Grid);(is_list(Grid),is_group(G))),!,mapgroup(mass,[G|Grid],MPoints),sum_list(MPoints,Points).
 mass(C-_,M):- !,mass(C,M).
 mass(I,X):- indv_props(I,L),member(mass(X),L),!.
 mass(I,XX):- is_object(I),!,must_det_ll((localpoints(I,L), mass(L,X))),!,XX=X.

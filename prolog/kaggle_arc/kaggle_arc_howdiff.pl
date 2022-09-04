@@ -163,25 +163,29 @@ diff_groups(A0,B0,DD):-
   pt(diff_groups1(A2,B2)),
   diff_groups1(A2,B2,DD).
 
-select_obj_pair(AAR,BBR,PA,PB):- 
-  member(PA,AAR), get_selector(PA,PB), member(PB,BBR).
 
 select_obj_pair(AAR,BBR,PA,PB):- 
  findall(pair(L,PA,PB),
   (member(PA,AAR), obj_atoms(PA,PAP), 
    member(PB,BBR), obj_atoms(PB,PBP),
      intersection(PAP,PBP,Shared,_,_),length(Shared,L)),
-   Pairs),sort(Pairs,SPairs),last(SPairs,pair(L,PA,PB)).
+   Pairs),sort(Pairs,SPairs),last(SPairs,pair(L,PA,PB)),
+ wdmsg(pair(L,PA,PB)).
+select_obj_pair(AAR,BBR,PA,PB):- member(PA,AAR), get_selector(PA,PB), member(PB,BBR),wdmsg(selector_pair(PA,PB)).
 
-obj_atoms(PA,PAP):-nonvar(PA),obj_atoms1(PA,M),findall(E,sub_obj_atom(E,M),PAP),!.
+obj_atoms(PA,PAP):-nonvar(PA),obj_atoms1(PA,M),findall(E,(member(SE,M),sub_obj_atom(E,SE)),PAP),!.
 
-sub_obj_atom(A,M):- sub_term(E,M),ground(E),arg(1,E,A),\+ compound(A).
+sub_obj_atom(_,M):- \+ compound(M),!,fail.
+sub_obj_atom(A,M):- M = localpoints(_),!,A=M.
+sub_obj_atom(A,A).
+sub_obj_atom(A,M):- arg(1,M,A),is_list(A).
+sub_obj_atom(E,M):- sub_term(E,M),ground(E),compound(E),arg(1,E,A),\+ compound(A).
 
 obj_atoms1(PA,PAP):- is_list(PA),!,PAP=PA.
 obj_atoms1(obj(PA),PAP):- is_list(PA),!,PAP=PA.
 %obj_atoms1(obj(PA,PAP):- indv_props(PA,PAP),!.
 
-never_pair(PA,PB):- wdmsg(never_pair(PA,PB)),!,fail.
+never_pair(PA,PB):- nop(never_pair(PA,PB)),!,fail.
 
 
 diff_groups1([],[],[]):-!.
@@ -193,7 +197,7 @@ diff_groups1(AAR,BBR,DD):-
   select(PA,AAR,AA), select(PB,BBR,BB),
   diff_objects(PA,PB,DAB),
   (DAB == [] -> D = [] ;  
-     (showdiff(PA,PB), 
+     (nop(showdiff(PA,PB)),
       object_dglyph(PA,GA), object_dglyph(PB,GB),
       D = change_obj(GA,GB,DAB))),
   diff_groups1(AA,BB,D1),
