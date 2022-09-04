@@ -98,7 +98,7 @@ quietlyd(G):- quietly(G),!.
 */
 :- multifile system:'$exported_op'/3. 
 :- dynamic system:'$exported_op'/3. 
-:- catch((assert(system:('$exported_op'(_,_,_):- fail)),_,true)).
+:- catch((assert(system:('$exported_op'(_,_,_):- fail))),_,true).
 
 '$pldoc'(_,_,_,_):- fail.
 :- multifile '$pldoc'/4. 
