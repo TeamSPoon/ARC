@@ -163,14 +163,25 @@ diff_groups(A0,B0,DD):-
   diff_groups1(A2,B2,DD).
 
 
-select_obj_pair(AAR,BBR,PA,PB):- member(PA,AAR), get_selector(PA,PB), member(PB,BBR),wdmsg(selector_pair(PA,PB)).
-select_obj_pair(AAR,BBR,PA,PB):- 
+select_obj_pair(AAR,BBR,PA,PB):-
+  select_obj_pair1(AAR,BBR,PA,PB),
+  select_obj_pair2(AAR,BBR,PA2,PB2),
+  ignore((fail, ([PA,PB] == [PA2,PB2]) , wdmsg([a,PA,b,PB]))),!.
+select_obj_pair(AAR,BBR,PA,PB):-
+  select_obj_pair1(AAR,BBR,PA,PB).
+select_obj_pair(AAR,BBR,PA2,PB2):-
+  select_obj_pair2(AAR,BBR,PA2,PB2).
+
+
+select_obj_pair1(AAR,BBR,PA,PB):- 
  findall(pair(L,PA,PB),
   (member(PA,AAR), obj_atoms(PA,PAP), 
    member(PB,BBR), obj_atoms(PB,PBP),
      intersection(PAP,PBP,Shared,_,_),length(Shared,L)),
    Pairs),sort(Pairs,SPairs),last(SPairs,pair(L,PA,PB)),
  nop(wdmsg(pair(L,PA,PB))).
+
+select_obj_pair2(AAR,BBR,PA,PB):- member(PA,AAR), get_selector(PA,PB), member(PB,BBR).
 
 
 obj_atoms(PA,PAP):-nonvar(PA),obj_atoms1(PA,M),findall(E,(member(SE,M),sub_obj_atom(E,SE)),PAP),!.
@@ -261,15 +272,17 @@ uncomparable2(group,link).
 uncomparable2(object,iz).
 uncomparable2(shape,localpoints).
 
-never_diff(V):- var(V),!,fail.
-never_diff(_):- nb_current(diff_porportional,t),!,fail.
-never_diff(iz).
-never_diff(obj_to_oid).
-never_diff(o).
-never_diff(link).
-never_diff(change).
-never_diff(birth).
-never_diff(V):- compound(V),functor(V,F,_),!,never_diff(F).
+never_show_diff(V):- var(V),!,fail.
+never_show_diff(_):- nb_current(diff_porportional,t),!,fail.
+never_show_diff(o).
+never_show_diff(link).
+never_show_diff(iz(A)):- atomic(A).
+never_show_diff(obj_to_oid).
+never_show_diff(change).
+never_show_diff(birth).
+never_show_diff(V):- compound(V),functor(V,F,_),!,never_show_diff(F).
+
+never_do_diff(V):- never_show_diff(V).
 
 make_comparable(I,I):- plain_var(I).
 make_comparable(I,I):- \+ compound(I),!.
@@ -477,7 +490,7 @@ needs_indivs(I,O):- is_gridoid(I), \+ is_group(I), arcST, trace, compute_unshare
 diff_terms(I,O,D):- nonvar_or_ci(D),!,diff_terms(I,O,DD),!,D==DD.
 diff_terms(I,O,D):- maybe_number(I,N1),maybe_number(O,N2),!,proportional_size(N1,N2,D).
 diff_terms(I,O,[]):- O==I,!.
-diff_terms(I,O, [] ):- (never_diff(I);never_diff(O)),!.
+diff_terms(I,O, [] ):- (never_do_diff(I);never_do_diff(O)),!.
 diff_terms(I,O,[]):- plain_var(I),plain_var(O),!.
 diff_terms(I,O,O):- plain_var(I),!.
 diff_terms(O,I,O):- plain_var(I),!.
@@ -500,7 +513,7 @@ diff_terms(IF=IA,O,IF=D):- find_kv(O,IF,OA),!,diff_terms(IA,OA,D).
 diff_terms(I,O,D):- compound(I),compound(O),!,diff_compounds(I,O,D).
 diff_terms(I,O,diff(I->O)).
 
-diff_compounds(I,O, [] ):- (never_diff(I);never_diff(O)),!.
+diff_compounds(I,O, [] ):- (never_show_diff(I);never_show_diff(O)),!.
 diff_compounds(I,O,D):- compound_name_arguments(I,IF,IA),compound_name_arguments(O,OF,OA),
   maplist(compute_diff_or_same,IA,OA,DA),
   diff_compounds(I,IF,O,OF,DA,D).
