@@ -675,12 +675,12 @@
 
 	  code = ch.charCodeAt();
 	  if (code >= 160) {
-		char = "<pre>&#"+code+";</pre>";
-		console.log("CH0 = "+char);
-		char = "<pre>"+ch+"</pre>";
-		console.log("CH1 = "+char);
-		data.html = char;
-		return data.html;
+        char = "<pre>&#"+code+";</pre>";
+        console.log("CH0 = "+char);
+        char = "<pre>"+ch+"</pre>";
+      console.log("CH1 = "+char);
+      data.html = char;
+      return data.html;
 	  }
 
 

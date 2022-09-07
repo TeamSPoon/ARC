@@ -9,3 +9,10 @@ ls
 ls -l lib64
 git add .
 ls
+git commit -am butterfly
+git push
+ls
+butterfly.server.py
+ls butterfly/static/ -l
+git status
+git status .
