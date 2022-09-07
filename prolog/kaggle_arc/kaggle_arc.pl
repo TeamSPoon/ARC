@@ -7,9 +7,9 @@
 
 :- encoding(iso_latin_1).
 
-% :- pack_install(logicmoo_utils).
+%:- pack_install('https://github.com/logicmoo/logicmoo_utils.git').
+:- pack_upgrade(logicmoo_utils).
 % :- pack_install(dictoo).
-:- pack_upgrade('https://github.com/logicmoo/logicmoo_utils.git').
 % :- pack_upgrade(dictoo).
 
 %:- module(system).
@@ -992,4 +992,4 @@ user:portray(Grid):- current_predicate(is_group/1), \+ \+ catch(quietly(arc_port
 :- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).
 
-:- forall(find_tests(F),xlisting_web:offer_testcase(F)).
+:- forall(find_tests(F),catch(xlisting_web:offer_testcase(F),_,true)).
