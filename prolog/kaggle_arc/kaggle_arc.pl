@@ -145,6 +145,8 @@ quietlyd(G):- quietly(G),!.
 
 clsmake:- notrace((cls,!,update_changed_files,make)),!.
 
+arc_assert(P):- pfcAddF(P).
+
 :- else.  % SWISH ARC
 :- catch(noguitracer,_,true).
 
@@ -161,6 +163,7 @@ pfcFwd(P):- mpred_fwc(P).
 arc_assert(P):- pfcAdd(P).
 
 :- endif.
+
 
 %:- set_prolog_flag(verbose_load,true).  
 %:- set_prolog_flag(verbose_autoload,true).

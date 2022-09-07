@@ -866,7 +866,16 @@ _
 /
 \
 
+
+ 1 1 1 1 2  -> 2
+ 1 1 1 -> 1 \
+ 2 2  -> 2  / _
+ 1 2 3 4 5  -> _
+ 2 2 2 2 2  -> 2
+ _ _ _ _ 4  -> _
+
 */
+  
 growthchart_to_grid(GrowthChart,Color,Fill,BGrid):-
   bg_sym(BG), 
   subst_each(GrowthChart,[
@@ -886,7 +895,7 @@ learned_color_inner_shape(Name,Color,Fill,Grid,GrowthChart):-
 
 %learn_shapes:- forall(l_shape(Name,Ascii), learn_shape(Name,Ascii)).
 
-
+ 
 
 :- fixup_exports.
 
