@@ -2,11 +2,9 @@
 
 ![](http://paradoxxxzero.github.io/assets/butterfly_2.0_1.gif)
 
-
 ## Description
 
 Butterfly is a xterm compatible terminal that runs in your browser.
-
 
 ## Features
 
@@ -24,25 +22,28 @@ Butterfly is a xterm compatible terminal that runs in your browser.
 
 ## Try it
 
-``` bash
-$ pip install butterfly
+```bash
+$ pip install .
 $ pip install butterfly[themes]  # If you want to use themes
 $ pip install butterfly[systemd]  # If you want to use systemd
-$ butterfly
+$ ./butterfly.server.py --unsecure --host=0.0.0.0 --port=57575
+
+# OR 
+$ butterfly  # Thi smight open your browser if you are in X Windows
+
 ```
 
 A new tab should appear in your browser. Then type
 
-``` bash
+```bash
 $ butterfly help
 ```
 
 To get an overview of butterfly features.
 
-
 ## Run it as a server
 
-``` bash
+```bash
 $ butterfly.server.py --host=myhost --port=57575
 ```
 
@@ -62,12 +63,11 @@ You can change `sshd` to your preferred PAM profile.
 
 The first time it will ask you to generate the certificates (see: [here](http://paradoxxxzero.github.io/2014/03/21/butterfly-with-ssl-auth.html))
 
-
 ## Run it with systemd (linux)
 
 Systemd provides a way to automatically activate daemons when needed (socket activation):
 
-``` bash
+```bash
 $ cd /etc/systemd/system
 $ curl -O https://raw.githubusercontent.com/paradoxxxzero/butterfly/master/butterfly.service
 $ curl -O https://raw.githubusercontent.com/paradoxxxzero/butterfly/master/butterfly.socket
@@ -76,7 +76,6 @@ $ systemctl start butterfly.socket
 ```
 
 Don't forget to update the /etc/butterfly/butterfly.conf file with your server options (host, port, shell, ...) and to install butterfly with the [systemd] flag.
-
 
 ## Contribute
 
@@ -93,6 +92,7 @@ Client side development use [grunt](http://gruntjs.com/) and [bower](http://bowe
 ## Credits
 
 The js part is based on [term.js](https://github.com/chjj/term.js/) which is based on [jslinux](http://bellard.org/jslinux/).
+
 ## Author
 
 [Florian Mounier](http://paradoxxxzero.github.io/)
@@ -117,6 +117,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ```
 
 ## Docker
+
 There is a docker repository created for this project that is set to automatically rebuild when there is a push
 into this repository: https://registry.hub.docker.com/u/garland/butterfly/
 
@@ -124,18 +125,18 @@ into this repository: https://registry.hub.docker.com/u/garland/butterfly/
 
 Starting with login and password
 
-``` bash
+```bash
 docker run --env PASSWORD=password -d garland/butterfly --login
 ```
 
 Starting with no password
 
-``` bash
+```bash
 docker run -d -p 57575:57575 garland/butterfly
 ```
 
 Starting with a different port
 
-``` bash
+```bash
 docker run -d -p 12345:12345 garland/butterfly --port=12345
 ```
