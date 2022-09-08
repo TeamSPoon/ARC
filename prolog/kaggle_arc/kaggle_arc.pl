@@ -145,7 +145,7 @@ quietlyd(G):- quietly(G),!.
 
 clsmake:- notrace((cls,!,update_changed_files,make)),!.
 
-arc_assert(P):- pfcAddF(P).
+%arc_assert(P):- pfcAddF(P).
 
 :- else.  % SWISH ARC
 :- catch(noguitracer,_,true).

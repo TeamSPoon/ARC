@@ -274,7 +274,7 @@ back_to_map(Was,Dict,Prev,Grid,Closure,New, Ret):-
   gset(Dict.Was) = NewPrev ,
   Ret = Dict.
 
-:- if( \+ current_module(pfc_lib)).
+:- if( \+ current_predicate(mpred_test_why/1)).
 :- include(kaggle_arc_pfc).
 %:- use_module(library(pfc_lib)).
 :- endif.
