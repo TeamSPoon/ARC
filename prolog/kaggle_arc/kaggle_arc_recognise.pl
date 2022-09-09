@@ -35,7 +35,7 @@ test_ogs_m0:- clsmake, time(forall(test_ogs0(_,_,true),true)).
 
 :- dynamic(tr:existing_result/3).
 
-save_tr:- cls, 
+save_tr:- cls_z, 
  forall(tr:existing_result(X,Y,Z),
   format('~N~@.',[write_term(perfect_result(X,Y,Z),
     [quoted(true),quote_non_ascii(true),numbervars(false)])])).

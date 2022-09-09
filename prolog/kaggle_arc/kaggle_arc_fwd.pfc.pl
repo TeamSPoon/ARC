@@ -15,7 +15,7 @@
 %
 % Dec 13, 2035
 % Douglas Miles
-%  cls ; kill -9 %1 ; fg ; swipl -g "ensure_loaded(pack(logicmoo_base/t/examples/base/'sanity_abc.pfc'))."
+%  cls_z ; kill -9 %1 ; fg ; swipl -g "ensure_loaded(pack(logicmoo_base/t/examples/base/'sanity_abc.pfc'))."
 
 :-  
  locally(set_prolog_flag(access_level,system),

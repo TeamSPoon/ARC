@@ -8,7 +8,7 @@
 :- encoding(iso_latin_1).
 
 %:- pack_install('https://github.com/logicmoo/logicmoo_utils.git').
-:- pack_upgrade(logicmoo_utils).
+%:- pack_upgrade(logicmoo_utils).
 % :- pack_install(dictoo).
 % :- pack_upgrade(dictoo).
 
@@ -43,7 +43,6 @@
 :- discontiguous(individuation_macros/2).
 :- multifile(individuation_macros/2).
 
-:- multifile(goal_expansion/4).
 
 arc_history(_).
 arc_history1(_).
@@ -142,8 +141,8 @@ quietlyd(G):- quietly(G),!.
 :- set_prolog_flag(backtrace_depth,1000).
 :- catch(noguitracer,_,true).
 
-
-clsmake:- notrace((cls,!,update_changed_files,make)),!.
+clsmake:- is_detatched_thread,!.
+clsmake:- notrace((cls_z,!,update_changed_files,make)),!.
 
 %arc_assert(P):- pfcAddF(P).
 
@@ -411,7 +410,8 @@ arc_term_expansions(H:- (current_prolog_flag(arc_term_expansion, true), B)):-
 
 :- export(enable_arc_expansion/0).
 enable_arc_expansion:-
- forall(arc_term_expansions(Rule),asserta_if_new(Rule)).
+ forall(arc_term_expansions(Rule),
+   (strip_module(Rule,M,Rule0), wdmsg(asserta_if_new(Rule,M,Rule0)),asserta_if_new(Rule))).
 
 :- export(disable_arc_expansion/0).
 disable_arc_expansion:-
@@ -566,8 +566,9 @@ arc1(G,TName):-
 is_detatched_thread:- arc_webui,!.
 is_detatched_thread:- \+ (thread_self(Main) -> Main == main ; main==0),!.
 
-cls1:- is_detatched_thread,!.
-cls1:- nop(catch(cls,_,true)).
+cls_z:- is_detatched_thread,!.
+cls_z:- catch(cls,_,true).
+cls1:- nop(catch(cls_z,_,true)).
 
 list_to_rbtree_safe(I,O):- must_be_free(O), list_to_rbtree(I,M),!,M=O.
 :- dynamic(is_buggy_pair/2).
@@ -971,7 +972,7 @@ test_regressions:- make, forall((clause(mregression_test,Body),ptt(Body)),must_d
 %:- initialization(demo,main).
 %:- initialization(demo,after_load).
 :- muarc_mod(M), arc_history1((module(M))).
-:- add_history1((cls,make,demo)).
+:- add_history1((cls_z,make,demo)).
 
 %:- muarc_mod(M), M:show_tests.
 :- load_last_test_name.
@@ -1000,12 +1001,5 @@ user:portray(Grid):- current_predicate(is_group/1), \+ \+ catch(quietly(arc_port
 
 :- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).
-
-arc_find_tests(menu):- menu.
-arc_find_tests(F):- find_tests(F).
-
-:- dynamic(xlisting_whook:offer_testcase/1).
-:- multifile(xlisting_whook:offer_testcase/1).
-:- asserta_new(xlisting_whook:offer_testcase(F):- arc_find_tests(F)).
 
 

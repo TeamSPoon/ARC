@@ -12,7 +12,6 @@
 %tell(s),ignore((nl,nl,test_pairs(Name,ExampleNum,In,Out),format('~N~q.~n',[test_pairs_cache(Name,ExampleNum,In,Out)]),fail)),told.
 
 
-is_row_len(N,L):- L=[_|_],length(L,N).
 
 :- dynamic(backfill/1).
 

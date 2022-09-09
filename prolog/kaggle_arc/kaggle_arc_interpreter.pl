@@ -623,11 +623,18 @@ goal_expansion_query(Goal,Out):- compound(Goal),
    call(P1,Var),expand_goal((Exp,Goal),Out).
 
 
-:- fixup_exports.
-
-goal_expansion(Goal,I,Out,O):-  var(I), \+ source_location(_,_),luser_getval('$goal', Term),% writeq(Term=@=Goal),nl,
+goal_expansion_q(Goal,I,Out,O):-  var(I), \+ source_location(_,_),luser_getval('$goal', Term),% writeq(Term=@=Goal),nl,
   Goal=@=Term,
   (goal_expansion_query(Goal,Out)-> Goal\=@=Out),I=O.
+
+:- export(thread_httpd:http_process/4).
+:- system:import(thread_httpd:http_process/4).
+
+:- fixup_exports.
+
+:- multifile(goal_expansion/4).
+:- dynamic(goal_expansion/4).
+%goal_expansion(Goal,I,Out,O):- goal_expansion_q(Goal,I,Out,O).
 
 % ?- print_grid(gridFn(X)).
 %:- export(is_toplevel_query/2).

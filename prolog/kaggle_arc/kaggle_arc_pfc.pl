@@ -9,7 +9,7 @@
 :- set_prolog_flag(pfc_shared_module,user).
 %:- set_prolog_flag(pfc_shared_module,baseKB).
 
-control_arg_types(A,B):- control_arg_types1([],A,B),A\==B,!.
+control_arg_types(A,B):- once(control_arg_types1([],A,B)),A\==B,!.
 
 control_arg_types1(_,A,B):- \+ compound(A),!,A=B.
 control_arg_types1(_,A,B):- current_predicate(check_args/2), check_args(A,B),A\==B,!.
@@ -247,8 +247,9 @@ skip_pfc_term_expansion(Var):- var(Var),!.
 skip_pfc_term_expansion(begin_of_file).
 skip_pfc_term_expansion(end_of_file).
 
+:- export(pfc_term_expansion/2).
+:- system:import(pfc_term_expansion/2).
 pfc_term_expansion(I,O):- skip_pfc_term_expansion(I),!, I=O.
-
 pfc_term_expansion((:- table Stuff as Type), [:- pfcAdd(tabled_as(Stuff,Type)),(:- table Stuff as Type)]):- nonvar(Stuff), !, if_pfc_indicated, \+ will_table_as(Stuff, Type).
 pfc_term_expansion((:- table Stuff ), [:- pfcAdd(tabled_as(Stuff,incremental)),(:- table Stuff as incremental)]):- if_pfc_indicated, \+ will_table_as(Stuff,incremental).
 pfc_term_expansion((:- _),_):- !, fail.
