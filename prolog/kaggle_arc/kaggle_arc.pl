@@ -164,6 +164,11 @@ arc_assert(P):- pfcAdd(P).
 
 :- endif.
 
+pfcAddF(P):-  
+  forall(retract(P),true),
+  ignore(mpred_info(P)),
+  pfcUnique(post, P)-> pfcAdd(P) ; pfcFwd(P).
+
 
 %:- set_prolog_flag(verbose_load,true).  
 %:- set_prolog_flag(verbose_autoload,true).
@@ -981,10 +986,6 @@ test_regressions:- make, forall((clause(mregression_test,Body),ptt(Body)),must_d
 saved_training(TestID):- call_u('~'(saved_training(TestID))), !, fail. % explictly always assume unsaved?
 saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 
-pfcAddF(P):-  
-  forall(retract(P),true),
-  ignore(mpred_info(P)),
-  pfcUnique(post, P)-> pfcAdd(P) ; pfcFwd(P).
 
 
 :- ensure_loaded('kaggle_arc_fwd.pfc').

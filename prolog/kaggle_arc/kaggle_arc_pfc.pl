@@ -4,6 +4,8 @@
 % Douglas Miles
 
 */
+:- if( \+ current_predicate(set_fileAssertMt/1)).
+
 :- set_prolog_flag(pfc_shared_module,user).
 %:- set_prolog_flag(pfc_shared_module,baseKB).
 
@@ -3315,6 +3317,7 @@ system:term_expansion(I,S0,O,S1):- %use_pfc_term_expansion, % trace,
  prolog_load_context('term',T)->(T==I->pfc_term_expansion(I,O)->I\=@=O->S0=S1, wdmsg(I-->O)).
 
 
+:- endif.
 
 
 end_of_file.
