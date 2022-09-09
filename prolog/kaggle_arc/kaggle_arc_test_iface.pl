@@ -855,7 +855,7 @@ fix_id(Tried,   TriedV):- atom_id(Tried,TriedV),!.
 
 %DD2401ED
 atom_id(NonAtom,TriedV):- \+ atom(NonAtom),!,string(NonAtom),atom_string(Tried,NonAtom),atom_id(Tried,TriedV).
-atom_id(Tried,TriedV):- atom_concat(Atom,'.json',Tried),!,atom_id(Atom,TriedV).
+atom_id(Tried,TriedV):- atom_concat(Atom,'.json',Tried),atom_id(Atom,TriedV),!.
 atom_id(Tried,t(Tried)):- kaggle_arc(t(Tried),_,_,_),!.
 atom_id(Tried,v(Tried)):- kaggle_arc(v(Tried),_,_,_),!.
 atom_id(Atom,TriedV):- downcase_atom(Atom,Tried),Atom\==Tried,atom_id(Tried,TriedV).
