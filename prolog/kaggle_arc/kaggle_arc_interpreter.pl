@@ -348,7 +348,7 @@ known_gridoid(ID,G):- known_grid(ID,G).
 known_grid(ID,GO):- (known_grid0(ID,G),deterministic(YN),true), (YN==true-> ! ; true), to_real_grid(G,GO).
 
 
-oid_to_gridoid(GID,G):- current_predicate(oid_to_grid/2), oid_to_grid(GID,G).
+oid_to_gridoid(GID,G):- current_predicate(oid_to_grid/2), call(call,oid_to_grid,GID,G).
 oid_to_gridoid(ID,G):-  atom(ID),atomic_list_concat(Term,'_',ID), Term\==[ID], !,append(GOID,[OID],Term),
   testid_name_num_io(GOID,_Name,_Example,_Num,_IO),
   ((atom(OID),atom_number(OID,ONum))->int2glyph(ONum,GL);GL=OID),
@@ -514,7 +514,7 @@ into_group(G, G, _):- plain_var(G),!, throw(var_into_group(G)),
    (why_grouped(_Why, G)*->true; 
      ((arc_grid_pair(In,Out),individuate_pair(complete,In,Out,InC,OutC),append(InC,OutC,Objs)),
       (why_grouped(_Why, G)*->true; G=Objs))).
-into_group(P,G,(group_to_and_from_vm(VM))):- is_vm(P),G=VM.objs,!.
+into_group(VM,G,(group_to_and_from_vm(VM))):- is_vm(VM),G=VM.objs,is_group(G),!.
 into_group(G,I, into_grid):- is_grid(G),!,compute_shared_indivs(G,I).
 into_group(P,G, into_obj):- is_object(P),!,G=[P].
 into_group(G,G,(=)) :- G==[],!.

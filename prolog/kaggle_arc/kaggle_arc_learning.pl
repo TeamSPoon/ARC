@@ -592,6 +592,7 @@ fitness(_,_,0.01):- !.
 
 was_once(_,_).
 
+
 upcase_atom_var(Num,VAR):- ignore((upcase_atom_var0(Num,Name),VAR='$VAR'(Name))),!.
 upcase_atom_var(Num,'$VAR'(Num)):-!.
 upcase_atom_var(_,_).

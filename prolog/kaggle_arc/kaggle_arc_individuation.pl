@@ -173,8 +173,8 @@ individuation_macros(subshape_both(HV,CM),
    %merge_shapes(Z,Z), % merge lines into square
    merge_shapes(hv_line(_),hv_line(_)),
    merge_shapes(dg_line(_),dg_line(_)),
-   point_corners,
-   alone_dots,
+   %point_corners,
+   %alone_dots,
    %connects(X,X)
    end_of_macro]):- hv_vh(HV,VH),du_vh(U,VH),du_ud(U,D).
 
@@ -1184,7 +1184,7 @@ fg_shapes(Shape,VM):-
 
 %recolor_object(_,Var,Var):- var(Var),!.
 %recolor_object([],Old,Old):-!.
-recolor_object(Grid,Old,New):-  \+ maplist(is_cpoint,Grid), globalpoints_include_bg(Grid,Recolors), maplist(is_cpoint,Grid), !,
+recolor_object(Grid,Old,New):-  \+ is_cpoints_list(Grid), globalpoints_include_bg(Grid,Recolors), is_cpoints_list(Grid), !,
   recolor_object(Recolors,Old,New).
 
 recolor_object(Recolors,Old,New):- 
@@ -1305,6 +1305,8 @@ is_fti_step(maybe_alone_dots).
 
 is_sa(Points,C-P2):-  \+ (is_adjacent_point(P2,Dir,P3), Dir\==c, member(C-P3,Points), \+ is_diag(Dir)),!.
 
+using_alone_dots(_).
+
 maybe_alone_dots(VM):-
   \+ exceeded_objs_max_len(VM),
   fif(VM.points \== [],
@@ -1312,11 +1314,11 @@ maybe_alone_dots(VM):-
     length(SAPs,Len),
     fif((VM.objs_max_len>=Len),
     (set(VM.points)=Keep,
-     maplist(make_point_object(VM,[birth(alone_dots),iz(shaped)]),SAPs,IndvList),
-     nop(raddObjects(VM,IndvList)))))),!.
+     using_alone_dots((maplist(make_point_object(VM,[birth(alone_dots),iz(shaped)]),SAPs,IndvList),
+     nop(raddObjects(VM,IndvList)))))))),!.
 maybe_alone_dots(_).
   
-alone_dots(VM):-  maybe_alone_dots(VM),!.
+alone_dots(VM):-  using_alone_dots(maybe_alone_dots(VM)),!.
 alone_dots(_):-!.
 
 % =====================================================================
@@ -1334,12 +1336,12 @@ is_fti_step(lo_dots).
 
 lo_dots(VM):-  
   ( VM.h=<5 ; VM.v=<5 ; (VM.points \=[], length(VM.points,Len), (Len =< VM.h ; Len =< VM.v  ))),!,
-  maplist(make_point_object(VM,[birth(lo_dots),iz(dot),iz(shaped)]),VM.points,IndvList),
-  raddObjects(VM,IndvList),
+  using_alone_dots((maplist(make_point_object(VM,[birth(lo_dots),iz(dot),iz(shaped)]),VM.points,IndvList),
+  raddObjects(VM,IndvList))),
   set(VM.points) =[],!.
 lo_dots(VM):-  
-  maplist(make_point_object(VM,[birth(lo_dots),iz(dot)]),VM.points,IndvList),
-  raddObjects(VM,IndvList),
+  using_alone_dots((maplist(make_point_object(VM,[birth(lo_dots),iz(dot)]),VM.points,IndvList),
+  raddObjects(VM,IndvList))),
   set(VM.points) =[],!.
 
 
@@ -1501,9 +1503,8 @@ one_fti(VM,glyphic):-
   one_fti(VM,whole),
   localpoints_include_bg(VM.grid_o,Points),length(Points,LenBG),
   (LenBG=<25->UPoints=Points;include(is_fgp,Points,UPoints)),
-  maplist(make_point_object(VM,[birth(glyphic),iz(shaped)]),UPoints,IndvList),
-  raddObjects(VM,IndvList),  
-  save_grouped(individuate(VM.gid,glyphic),IndvList))).
+  using_alone_dots((maplist(make_point_object(VM,[birth(glyphic),iz(shaped)]),UPoints,IndvList), raddObjects(VM,IndvList),
+  save_grouped(individuate(VM.gid,glyphic),IndvList))))).
 
 %make_point_object(VM,_Opts,Point,Indv):-
 %    member(Point=Indv, VM.allocated_points),!.

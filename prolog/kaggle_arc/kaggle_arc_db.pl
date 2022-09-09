@@ -137,13 +137,16 @@ from_gridoid(Points,C,N,H,V,G):- nth1(N,Points,G),hv_c_value(G,C,H,V).
 %hv_c_value(O,_Color,_H,_V):- is_object(O), iz(O,combined), !, fail.
 hv_c_value(O,_Color,_H,_V):-  plain_var(O),!,fail.
 hv_c_value([],_Color,_H,_V):-  !,fail.
+hv_c_value(diff(_-> New),C,H,V):-!,hv_c_value(New,C,H,V).
+hv_c_value(diff(_),_C,_H,_V):-!, fail.
+hv_c_value(O,C,_H,_V):- is_colorish(O),!,C=O.
 hv_c_value(O,GN,H,V):- is_map(O),O.objs\==[],!,hv_c_value(O.objs,GN,H,V).
 hv_c_value(O,GN,H,V):- is_map(O),!,hv_c_value(O.grid,GN,H,V).
 
 hv_c_value(ID,C,H,V):- (var(H);var(V)),!,arcST,trace, hv_point(H,V,_),hv_c_value(ID,CC,H,V),CC=C.
 hv_c_value(O,Color,H,V):- is_object(O),!,globalpoints(O,Ps),hv_c_value(Ps,Color,H,V).
 hv_c_value(O,Color,H,V):- is_grid(O),!,nth1(V,O,Row),nth1(H,Row,Color),!.
-hv_c_value(O,Color,H,V):- is_list(O), maplist(is_cpoint,  O),!,hv_point(H,V,Point),member(Color-Point,O).
+hv_c_value(O,Color,H,V):- is_list(O), is_cpoints_list(  O),!,hv_point(H,V,Point),member(Color-Point,O).
 hv_c_value(O,FGL   ,H,V):- is_list(O), maplist(is_nc_point,O),!,hv_point(H,V,Point),member(Point,O),get_fg_label(FGL).
 hv_c_value(O,Color,H,V):- is_cpoint(O),!,O=(Color-Point),hv_point(H,V,Point),!.
 hv_c_value(O,FGL   ,H,V):- is_nc_point(O),!,O=Point,hv_point(H,V,Point),!,get_fg_label(FGL).

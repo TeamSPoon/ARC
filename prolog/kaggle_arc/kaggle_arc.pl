@@ -121,7 +121,7 @@ quietlyd(G):- quietly(G),!.
 
   :- SL  is 2_147_483_648*8*4, set_prolog_flag(stack_limit, SL ).
   :- (getenv('DISPLAY',_) -> true ; setenv('DISPLAY','10.0.0.122:0.0')).
-  :- unsetenv('DISPLAY').
+  %:- unsetenv('DISPLAY').
 %  :- (getenv('DISPLAY',_) -> guitracer ; true).
 %  :- noguitracer.
   :- set_prolog_flag(toplevel_print_anon,false).
@@ -209,6 +209,7 @@ check_len(_).
 :- meta_predicate(must_not_error(0)).
 %:- meta_predicate(must_det_l(0)).
 
+:- no_xdbg_flags.
 
 %must_det_ll(G):- !, call(G).
 %must_det_ll(X):- !,must_not_error(X).
@@ -557,6 +558,10 @@ arc1(G,TName):-
     run_arc_io(TestID,ExampleNum)),'$aborted',true)))))).
 
 
+is_detatched_thread:- arc_webui,!.
+is_detatched_thread:- \+ (thread_self(Main) -> Main == main ; main==0),!.
+
+cls1:- is_detatched_thread,!.
 cls1:- nop(catch(cls,_,true)).
 
 list_to_rbtree_safe(I,O):- must_be_free(O), list_to_rbtree(I,M),!,M=O.
@@ -976,13 +981,13 @@ test_regressions:- make, forall((clause(mregression_test,Body),ptt(Body)),must_d
 saved_training(TestID):- call_u('~'(saved_training(TestID))), !, fail. % explictly always assume unsaved?
 saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 
-pfcAddF(P):-
-  ignore(mpred_test_why(P)),
+pfcAddF(P):-  
   forall(retract(P),true),
+  ignore(mpred_info(P)),
   pfcUnique(post, P)-> pfcAdd(P) ; pfcFwd(P).
 
 
-:- baseKB:ensure_loaded('kaggle_arc_fwd.pfc').
+:- ensure_loaded('kaggle_arc_fwd.pfc').
 %:- set_prolog_flag(arc_term_expansion, false).
 
 %:- if(prolog_load_context(reload,false)).
@@ -995,4 +1000,11 @@ user:portray(Grid):- current_predicate(is_group/1), \+ \+ catch(quietly(arc_port
 :- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).
 
-:- forall(find_tests(F),catch(xlisting_web:offer_testcase(F),_,true)).
+arc_find_tests(menu):- menu.
+arc_find_tests(F):- find_tests(F).
+
+:- dynamic(xlisting_whook:offer_testcase/1).
+:- multifile(xlisting_whook:offer_testcase/1).
+:- asserta_new(xlisting_whook:offer_testcase(F):- arc_find_tests(F)).
+
+

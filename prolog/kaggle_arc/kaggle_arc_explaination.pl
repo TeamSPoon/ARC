@@ -62,8 +62,17 @@ print_info(A):- is_group(A),maybe_cache_glyphs(A),debug_indiv(A),!.
 print_info([]):-!.
 print_info(A):- pt(A),!.
 
+print_info_1(G):- print_info(G).
+
+print_info_l(GridS):- maplist(print_info_1,GridS).
+
 debug_as_grid(Grid):- debug_as_grid('',Grid).
-debug_as_grid(Why,Grid):-
+
+debug_as_grid(Why,R):- atom(R), atom_contains(R,'_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
+  resolve_reference(R,Var), R\==Var, \+ plain_var(Var),!, 
+  write(' '), writeq(R), write(' /* '), debug_as_grid(Why,Var), write(' */ ').
+%debug_as_grid(Why,R):- resolve_reference(R,Var)-> R\==Var, write(' ( '), writeq(R),write(' , '),debug_as_grid(Why,Var),write(' )'),!.
+debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
   v_hv(Grid,H,V),
   Title = debug_as_grid(Why,loc(OH,OV),size(H,V)),
   fif((H\==1;V\==1),
@@ -78,6 +87,10 @@ debug_as_grid(Why,Grid):-
   locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Grid))))),
   format('~N'),dash_chars(15),!.
 
+debug_as_grid(  I,   A):- is_1gridoid(A), !, subst(A,'black','wbg',AA), print_grid(I,AA).
+debug_as_grid( '',Grid):- !, print_tree_no_nl(Grid).
+debug_as_grid(Why,Grid):- print_tree_no_nl(debug_as_grid(Why,Grid)).
+
 into_ngrid(Points,H,V,NGrid):- 
   neighbor_map(H,V,Points,Points,CountedPoints),!,
   points_to_grid(H,V,CountedPoints,NGrid).
@@ -89,7 +102,7 @@ into_ngrid(Points,H,V,NGrid):-
 debug_indiv(_):- is_print_collapsed,!.
 debug_indiv(Var):- plain_var(Var),pt(debug_indiv(Var)),!.
 debug_indiv(Grid):- is_grid(Grid),!,debug_as_grid(is_grid,Grid),!.
-debug_indiv(Grid):- maplist(is_cpoint,Grid),!,debug_as_grid(is_cpoint,Grid).
+debug_indiv(Grid):- is_cpoints_list(Grid),!,debug_as_grid(is_cpoint,Grid).
 debug_indiv(Grid):- maplist(is_point,Grid),!,debug_as_grid(is_point,Grid).
 
 
@@ -169,7 +182,7 @@ debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
   sort_obj_props(TV,TVS),
 
   ignore((TF==true,dash_chars)),
-  ignore(( g_out(style('font-size','75%'),wqnl([format("% ~w:\t\t~w\t",[PC,SGlyph]) | TVS ])))),
+  ignore(( g_out_style(style('font-size','75%'),wqnl([format("% ~w:\t\t~w\t",[PC,SGlyph]) | TVS ])))),
   ignore(( TF==true, amass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
   ignore(( fail, amass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
   %pt(A),
@@ -262,15 +275,14 @@ too_verbose(grid).
 %too_verbose(link).
 too_verbose(grid_size).
 too_verbose(rotated_grid).
-too_verbose(wide).
-too_verbose(tall).
-too_verbose(col).
-too_verbose(row).
-too_verbose(xc).
-too_verbose(yc).
+%too_verbose(wide). too_verbose(tall).
+too_verbose(locX).
+too_verbose(locY).
+too_verbose(cenX).
+too_verbose(cenY).
 
 debug_indiv(_,_,X,_):- too_verbose(X),!.
-debug_indiv(Obj,_,F,[A]):- maplist(is_cpoint,A),!,
+debug_indiv(Obj,_,F,[A]):- is_cpoints_list(A),!,
   v_hv(Obj,H,V), wqnl(F), 
   loc(Obj,OH,OV),
   EH is OH+H-1,

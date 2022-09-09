@@ -208,7 +208,8 @@ make_indiv_object_s(ID,GH,GV,Overrides,Points,ObjO):-
   cclumped(Colorz,PenColors),
 
   append(
-  [ [ v_hv(Width,Height), amass(Len), center(CX,CY), 
+  [ [ v_hv(Width,Height), amass(Len), 
+     %center(CX,CY), 
      shape(ColorlessPoints),
      loc(LoH,LoV), colors(CC), 
      localpoints(FinalLocalPoints),
@@ -217,9 +218,10 @@ make_indiv_object_s(ID,GH,GV,Overrides,Points,ObjO):-
      mass(FgLen)],     
     %width(Width), height(Height), area(Area), %missing(Empty),
     [changes([])], % [grid(LocalGrid)],    
-    OShapes,
-    [iz(yc(CY)),iz(xc(CX))],
-    [iz(row(LoV)),iz(col(LoH)),iz(tall(Height)),iz(wide(Width))],
+     OShapes,
+    [iz(cenY(CY)),iz(cenX(CX))],
+    [iz(locY(LoV)),iz(locX(LoH)), % iz(tall(Height)),iz(wide(Width)),
+     iz(sizeY(Height)),iz(sizeX(Width))],
     [%obj_to_oid(ID,Iv),
      iz(g(IO))
      % globalpoints(Points),
@@ -238,10 +240,12 @@ cclump([H|T0], [CH|T]) :-
     color_c(C,H,CH).  
 cclump([], []).  color_c(1,H,H). color_c(C,H,C-H).
 
-prop_order([v_hv/2,mass/1,loc/2,amass/1,center/2,pen/1,shape/1,localpoints/1,rotation/1,colors/1,iz/1,globalpoints/1,obj_to_oid/2,grid_size/2]).
+prop_order([v_hv/2,mass/1,loc/2,amass/1,
+  %center/2,
+  pen/1,shape/1,localpoints/1,rotation/1,colors/1,iz/1,globalpoints/1,obj_to_oid/2,grid_size/2]).
 
 
-iz_o(F,A):- member(F/A,[xc/1,yc/1,row/1,col/1,tall/1,wide/1,chromatic/1,dot/0]).
+iz_o(F,A):- member(F/A,[cenX/1,cenY/1,locY/1,locX/1,tall/1,wide/1,chromatic/1,dot/0]).
 iz_o(F,A):- clause(guess_shape(_GH,_GV,_GridIn,_LocalGrid,_I,_Empty,_N,_H,_V,_CC,_Points,Term),_),nonvar(Term),functor(Term,F,A).
 iz_o(poly(F),A):- clause(guess_shape_poly(_I,_Empty,_N,_H,_V,_CC,_Points,Term),_),nonvar(Term),functor(Term,F,A).
 
@@ -859,7 +863,7 @@ center_term(Obj,loc(H,V)):- center(Obj,H,V).
 :- decl_pt(prop_h,hw_rat(is_object_or_grid,size)).
 hw_rat(Obj,HV):- v_hv(Obj,OH,OV), HV is rationalize(OH/OV).
 
-center(I,X,Y):- indv_props(I,L),member(center(X,Y),L),!.
+center(I,X,Y):- indv_props(I,L),member(iz(cenX(X)),L),member(iz(cenY(Y)),L),!.
 %center(Obj,CX,CY):- v_hv(Obj,H,V), loc(Obj,X,Y),CX is X + floor(H/2),CY is Y + floor(V/2).
 
 
@@ -946,7 +950,7 @@ rebuild_from_localpoints(Obj,WithPoints,NewObj):-
 */
 blur_p2(P2,Obj,NewObj):-  
   into_obj(Obj,X),
-  center(X,XCH,XCV),
+  %center(X,XCH,XCV),
   
   call(P2,X,Y),!,
   globalpoints(X,XGP),
@@ -956,7 +960,7 @@ blur_p2(P2,Obj,NewObj):-
   v_hv(Y,YH,YV),
   grid_size(X,XGH,XGV),
   grid_size(Y,YGH,YGV),
-  center(Y,YCH,YCV),
+  % center(Y,YCH,YCV),
   loc(X,XX,XY),
   loc(Y,YX,YY))),
   print_grid(XGH,XGV,XGP),
@@ -1276,7 +1280,7 @@ object_to_nm_points(Obj,NPoints):-
 
 
 guess_shape(GH,GV,GridIn,LocalGrid,I,E,N,1,GV,Colors,Points,column).
-guess_shape(GH,GV,GridIn,LocalGrid,I,E,N,GH,1,Colors,Points,row).
+guess_shape(GH,GV,GridIn,LocalGrid,I,E,N,GH,1,Colors,Points,locY).
 
 guess_shape(GH,GV,GridIn,LocalGrid,I,Empty,N,H,V,[cc(Black,_)],Points,bgc):- is_bg_color(Black).
 %guess_shape(GH,GV,GridIn,LocalGrid,I,0,N,H,V,Colors,Points,view_sq):- H == V.%guess_shape(GH,GV,GridIn,LocalGrid,I,I,N,H,V,Colors,Points,rectangle):- H>1, V>1.
@@ -1330,7 +1334,7 @@ flipSym_checks(Rot90,GridIn):-
 symmetric_types(Grid,QQ):- findall(Q,(r_p(Q),flipSym_checks(Q,Grid)),QQ).
 
 :- meta_predicate(flipSym(-,+)).
-flipSym( full,Grid):- flipSym(flipH,Grid),flipSym(flipV,Grid), flipSym(rot90,Grid), !.
+flipSym(  full,Grid):- flipSym(flipH,Grid),flipSym(flipV,Grid), flipSym(rot90,Grid), !.
 flipSym(sym_hv,Grid):- flipSym(flipH,Grid),flipSym(flipV,Grid).
 flipSym(Rot90,Grid):- var(Rot90),!,r_p(Rot90),flipSym(Rot90,Grid).
 flipSym(Rot90,Grid):-  full \== Rot90,sym_hv \== Rot90, transform_list(Rot90,Grid,LocalGridM),Grid=@=LocalGridM.

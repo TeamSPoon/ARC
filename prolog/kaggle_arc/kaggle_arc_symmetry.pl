@@ -193,7 +193,7 @@ repair_symmetry_code(Grid,RepairedResult,Code):-
       (fif(GridS\==[],print_grid(test_RepairedResult,GridS)),
        fif(Orig\==Grid,print_side_by_side(green,Orig,orig(ID),_,Grid,altered(ID))),
        print_side_by_side(green,Orig,gridIn(ID),_,RepairedResult,repairedResult(ID)),
-       maplist(print_info,GridS),
+       print_info_l(GridS),
        Errors = _,
        fif(is_grid(Out),
         (count_changes(Out,RepairedResult,0,Errors),

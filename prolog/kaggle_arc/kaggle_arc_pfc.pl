@@ -126,9 +126,17 @@ mpred_test(call_u(X)):- nonvar(X),!,pfcCallSystem(X),pfcWhy(X).
 mpred_test(\+ call_u(X)):- nonvar(X),!, (call_u(X)-> (dmsg(warn(failed(mpred_test(\+ call_u(X))))),mpred_test_why(X)); mpred_test_why(~(X))).
 mpred_test(X):- (mpred_test_why(X) *-> true ; mpred_test_why(~(X))).
 
+mpred_info(X):-
+ ignore((
+  forall(mpred_test_why(X),true),
+  forall(mpred_child_info(top,X),true))).
+
+mpred_child_info(From,P):- wdmsg(decendant(From,P)), pfcChildren(P,L), maplist(mpred_child_info(P),L).
+
 mpred_why(X):- mpred_test_why(X).
 
-mpred_test_why(X):- pfcCallSystem(X)*->pfcTF1(X);pfcTF1(X).
+mpred_test_why(X):- 
+  pfcCallSystem(X)*->pfcTF1(X);pfcTF1(X).
 
 mpred_literal(X):- pfcLiteral(X).
 mpred_positive_literal(X):- pfcPositiveLiteral(X).
@@ -233,7 +241,13 @@ react_tabling(Stuff,_):- dynamic(Stuff).
 if_pfc_indicated :- source_location(F,_),(sub_string(F, _, _, _, '.pfc')->true;lmconf:is_treated_like_pfc_file(F)),!.
 if_pfc_indicated :- prolog_load_context(module, M),lmconf:is_pfc_module(M),!.
 
-pfc_term_expansion((:- table Stuff as Type), [:- pfcAdd(tabled_as(Stuff,Type)),(:- table Stuff as Type)]):- !, if_pfc_indicated, \+ will_table_as(Stuff, Type).
+skip_pfc_term_expansion(Var):- var(Var),!.
+skip_pfc_term_expansion(begin_of_file).
+skip_pfc_term_expansion(end_of_file).
+
+pfc_term_expansion(I,O):- skip_pfc_term_expansion(I),!, I=O.
+
+pfc_term_expansion((:- table Stuff as Type), [:- pfcAdd(tabled_as(Stuff,Type)),(:- table Stuff as Type)]):- nonvar(Stuff), !, if_pfc_indicated, \+ will_table_as(Stuff, Type).
 pfc_term_expansion((:- table Stuff ), [:- pfcAdd(tabled_as(Stuff,incremental)),(:- table Stuff as incremental)]):- if_pfc_indicated, \+ will_table_as(Stuff,incremental).
 pfc_term_expansion((:- _),_):- !, fail.
 pfc_term_expansion((P==>Q),(:- pfcAdd((P==>Q)))).
@@ -245,14 +259,9 @@ pfc_term_expansion((==>P),(:- pfcAdd(P))).
 pfc_term_expansion(I,I):- I == end_of_file,!.
 pfc_term_expansion( P ,(:- pfcAdd(P))):- if_pfc_indicated.
 
-use_pfc_term_expansion:- current_prolog_flag(pfc_term_expansion,false),!,fail.
+%use_pfc_term_expansion:- current_prolog_flag(pfc_term_expansion,false),!,fail.
 % maybe switch to prolog_load_context(file,...)?
-use_pfc_term_expansion:- source_location(File,_), atom_concat(_,'.pfc.pl',File).
-
-%:- multifile('term_expansion'/2).
-system:term_expansion(I,S0,O,S1):- use_pfc_term_expansion, % trace,
- prolog_load_context('term',T)->(T==I->pfc_term_expansion(I,O)->I\=@=O->S0=S1, wdmsg(I-->O)).
-
+%use_pfc_term_expansion:- source_location(File,_), atom_concat(_,'.pfc.pl',File).
 
 term_subst(P,O):- term_subst(clause,P,O),!.
 
@@ -301,9 +310,9 @@ termf_subst(Subst,F,F2):-member(F-F2,Subst)->true;F=F2.
 %:- multifile ('==>')/2.
 %:- dynamic ('::::')/2.
 %:- dynamic '<==>'/2.
-:- dynamic 'pt'/2.
-:- dynamic 'nt'/3.
-:- dynamic 'bt'/2.
+:- dynamic '$pt$'/2.
+:- dynamic '$nt$'/3.
+:- dynamic '$bt$'/2.
 :- dynamic fcUndoMethod/2.
 :- dynamic fcAction/2.
 :- dynamic fcTmsMode/1.
@@ -316,7 +325,7 @@ termf_subst(Subst,F,F2):-member(F-F2,Subst)->true;F=F2.
 
 :- thread_local(t_l:pfcSearchTL/1).
 
-:- dynamic spft/3.
+:- dynamic '$spft$'/3.
 
 % % % initialization of global assertons 
 
@@ -556,29 +565,29 @@ pfcHalt(Format,Args) :-
 % %  predicates for manipulating triggers
 % % 
 
-pfcAddTrigger(pt(Trigger,Body),Support) :-
+pfcAddTrigger('$pt$'(Trigger,Body),Support) :-
   !,
   pfcTraceMsg('      Adding positive trigger ~p~n',
-		[pt(Trigger,Body)]),
-  pfcAssert(pt(Trigger,Body),Support),
-  copy_term(pt(Trigger,Body),Tcopy),
+		['$pt$'(Trigger,Body)]),
+  pfcAssert('$pt$'(Trigger,Body),Support),
+  copy_term('$pt$'(Trigger,Body),Tcopy),
   pfc_call(Trigger),
   with_current_why(Trigger,fcEvalLHS(Body,(Trigger,Tcopy))),
   fail.
 
 
-pfcAddTrigger(nt(Trigger,Test,Body),Support) :-
+pfcAddTrigger('$nt$'(Trigger,Test,Body),Support) :-
   !,
   pfcTraceMsg('      Adding negative trigger: ~p~n       test: ~p~n       body: ~p~n',
 		[Trigger,Test,Body]),
   copy_term(Trigger,TriggerCopy),
-  pfcAssert(nt(TriggerCopy,Test,Body),Support),
+  pfcAssert('$nt$'(TriggerCopy,Test,Body),Support),
   \+ pfc_call(Test),
-  with_current_why(\+ pfc_call(Test), fcEvalLHS(Body,((\+Trigger),nt(TriggerCopy,Test,Body)))).
+  with_current_why(\+ pfc_call(Test), fcEvalLHS(Body,((\+Trigger),'$nt$'(TriggerCopy,Test,Body)))).
 
-pfcAddTrigger(bt(Trigger,Body),Support) :-
+pfcAddTrigger('$bt$'(Trigger,Body),Support) :-
   !,
-  pfcAssert(bt(Trigger,Body),Support),
+  pfcAssert('$bt$'(Trigger,Body),Support),
   pfcBtPtCombine(Trigger,Body,Support).
 
 pfcAddTrigger(X,_Support) :-
@@ -586,14 +595,14 @@ pfcAddTrigger(X,_Support) :-
 
 
 pfcBtPtCombine(Head,Body,Support) :- 
-  % %  a backward trigger (bt) was just added with head and Body and support Support
-  % %  find any pt's with unifying heads and add the instantied bt body.
-  pfcGetTriggerQuick(pt(Head,_PtBody)),
+  % %  a backward trigger ('$bt$') was just added with head and Body and support Support
+  % %  find any '$pt$''s with unifying heads and add the instantied '$bt$' body.
+  pfcGetTriggerQuick('$pt$'(Head,_PtBody)),
   fcEvalLHS(Body,Support),
   fail.
 pfcBtPtCombine(_,_,_) :- !.
 
-pfcGetTriggerQuick(Trigger) :-  clause(Trigger,true).
+pfcGetTriggerQuick(Trigger) :-  clause(Trigger,true)*->true;pfc_call(Trigger).
 pfcCallSystem(Trigger) :-  pfc_call(Trigger).
 
 % % 
@@ -793,20 +802,20 @@ fcUndo(pfcAction(A)) :-
   !,
   pfcRemActionTrace(pfcAction(A)).
 
-fcUndo(pt(/*Key,*/Head,Body)) :-  
+fcUndo('$pt$'(/*Key,*/Head,Body)) :-  
   % undo a positive trigger.
   %
   !,
-  (retract(pt(/*Key,*/Head,Body))
-    -> unFc(pt(Head,Body))
-     ; pfcWarn("Trigger not found to retract: ~p",[pt(Head,Body)])).
+  (retract('$pt$'(/*Key,*/Head,Body))
+    -> unFc('$pt$'(Head,Body))
+     ; pfcWarn("Trigger not found to retract: ~p",['$pt$'(Head,Body)])).
 
-fcUndo(nt(Head,Condition,Body)) :-  
+fcUndo('$nt$'(Head,Condition,Body)) :-  
   % undo a negative trigger.
   !,
-  (retract(nt(Head,Condition,Body))
-    -> unFc(nt(Head,Condition,Body))
-     ; pfcWarn("Trigger not found to retract: ~p",[nt(Head,Condition,Body)])).
+  (retract('$nt$'(Head,Condition,Body))
+    -> unFc('$nt$'(Head,Condition,Body))
+     ; pfcWarn("Trigger not found to retract: ~p",['$nt$'(Head,Condition,Body)])).
 
 fcUndo(Fact) :-
   % undo a random fact, printing out the trace, if relevant.
@@ -836,9 +845,9 @@ unFc1(F) :-
 pfcUnFcCheckTriggers(F) :-
   pfcType(F,fact(_)),
   copy_term(F,Fcopy),
-  pfcCallSystem(nt(Fcopy,Condition,Action)),
+  pfcCallSystem('$nt$'(Fcopy,Condition,Action)),
   (\+ pfcCallSystem(Condition)),
-  fcEvalLHS(Action,((\+F),nt(F,Condition,Action))),
+  fcEvalLHS(Action,((\+F),'$nt$'(F,Condition,Action))),
   fail.
 pfcUnFcCheckTriggers(_).
 
@@ -957,7 +966,7 @@ pfcFwd(Fact) :- is_list(List)->maplist(pfcFwd1,List);pfcFwd1(Fact).
 
 
 pfcFwd1(Fact) :-
-  fc_rule_check(Fact),
+  (fc_rule_check(Fact)*->true;true),
   copy_term(Fact,F),
   % check positive triggers
   ignore(fcpt(Fact,F)),
@@ -996,24 +1005,24 @@ fc_rule_check(_).
 
 
 fcpt(Fact,F) :- 
-  pfcGetTriggerQuick(pt(F,Body)),
+  pfcGetTriggerQuick('$pt$'(F,Body)),
   pfcTraceMsg('      Found positive trigger: ~p~n       body: ~p~n',
 		[F,Body]),
-  pfcGetSupport(pt(F,Body),Support), %wdmsg(pfcGetSupport(pt(F,Body),Support)),
-  with_current_why(Support,with_current_why(Fact,fcEvalLHS(Body,(Fact,pt(F,Body))))),
+  pfcGetSupport('$pt$'(F,Body),Support), %wdmsg(pfcGetSupport('$pt$'(F,Body),Support)),
+  with_current_why(Support,with_current_why(Fact,fcEvalLHS(Body,(Fact,'$pt$'(F,Body))))),
   fail.
 
 %fcpt(Fact,F) :- 
-%  pfcGetTriggerQuick(pt(presently(F),Body)),
-%  fcEvalLHS(Body,(presently(Fact),pt(presently(F),Body))),
+%  pfcGetTriggerQuick('$pt$'(presently(F),Body)),
+%  fcEvalLHS(Body,(presently(Fact),'$pt$'(presently(F),Body))),
 %  fail.
 
 fcpt(_,_).
 
 fcnt(_Fact,F) :-
-  spft(X,_,nt(F,Condition,Body)),
+  pfc_spft(X,_,'$nt$'(F,Condition,Body)),
   pfcCallSystem(Condition),
-  pfcRem_S(X,(_,nt(F,Condition,Body))),
+  pfcRem_S(X,(_,'$nt$'(F,Condition,Body))),
   fail.
 fcnt(_,_).
 
@@ -1034,7 +1043,7 @@ pfcRem_S(P,S) :-
 % %  pfcDefineBcRule(+Head,+Body,+ParentRule) 
 %
 % defines a backward
-% chaining rule and adds the corresponding bt triggers to the database.
+% chaining rule and adds the corresponding '$bt$' triggers to the database.
 %
 
 pfcDefineBcRule(Head,_Body,ParentRule) :-
@@ -1050,7 +1059,7 @@ pfcDefineBcRule(Head,Body,ParentRule) :-
   current_why_U(USER), % @TODO REVIEW _U
   pfcForEach(pfc_nf(Body,Lhs),
           (buildTrigger(Lhs,rhs(Rhs),Trigger),
-           pfcAdd(bt(Head,Trigger),(ParentRuleCopy,USER)))).
+           pfcAdd('$bt$'(Head,Trigger),(ParentRuleCopy,USER)))).
 get_bc_clause(Head,(HeadC:- BodyC)):- get_bc_clause(Head,HeadC,BodyC).
 
 get_bc_clause(HeadIn, ~HeadC, Body):- compound(HeadIn), HeadIn = ~Head,!,
@@ -1161,13 +1170,13 @@ trigger_trigger(_,_,_).
 %  !,
 %  copy_term(Trigger,TriggerCopy),
 %  pfc_call(Trigger),
-%  fcEvalLHS(Body,(presently(Trigger),pt(presently(TriggerCopy),Body))),
+%  fcEvalLHS(Body,(presently(Trigger),'$pt$'(presently(TriggerCopy),Body))),
 %  fail.
 
 trigger_trigger1(Trigger,Body) :-
   copy_term(Trigger,TriggerCopy),
   pfc_call(Trigger),
-  with_current_why(Trigger,fcEvalLHS(Body,(Trigger,pt(TriggerCopy,Body)))),
+  with_current_why(Trigger,fcEvalLHS(Body,(Trigger,'$pt$'(TriggerCopy,Body)))),
   fail.
 
 
@@ -1197,8 +1206,8 @@ pfc_call(clause(A,B,Ref)) :-!, clause(A,B,Ref).
 % this is probably not advisable due to extreme inefficiency.
 pfc_call(P) :-
   % trigger any bc rules.
-  bt(P,Trigger),
-  pfcGetSupport(bt(P,Trigger),S),
+  '$bt$'(P,Trigger),
+  pfcGetSupport('$bt$'(P,Trigger),S),
   % @TODO REVIEW _U
   fcEvalLHS(Trigger,S),
   fail.
@@ -1224,8 +1233,8 @@ undoable(A) :- fcUndoMethod(A,_).
 
 pfc_cache_bc(P) :-
   % trigger any bc rules.
-  forall(bt(P,Trigger),
-  forall(pfcGetSupport(bt(P,Trigger),S),
+  forall('$bt$'(P,Trigger),
+  forall(pfcGetSupport('$bt$'(P,Trigger),S),
   % @TODO REVIEW _U
   fcEvalLHS(Trigger,S))).
 
@@ -1472,18 +1481,18 @@ buildTrigger([Test|Triggers],Consequent,(Test *-> X)) :- is_implicitly_prolog(Te
   !,
   buildTrigger(Triggers,Consequent,X).
 
-buildTrigger([V|Triggers],Consequent,pt(V,X)) :-
+buildTrigger([V|Triggers],Consequent,'$pt$'(V,X)) :-
   var(V),
   !, 
   buildTrigger(Triggers,Consequent,X).
 
-buildTrigger([(T1/Test)|Triggers],Consequent,nt(T2,Test2,X)) :-
+buildTrigger([(T1/Test)|Triggers],Consequent,'$nt$'(T2,Test2,X)) :-
   pfc_unnegate(T1,T2),
   !, 
   buildNtTest(T2,Test,Test2),
   buildTrigger(Triggers,Consequent,X).
 
-buildTrigger([(T1)|Triggers],Consequent,nt(T2,Test,X)) :-
+buildTrigger([(T1)|Triggers],Consequent,'$nt$'(T2,Test,X)) :-
   pfc_unnegate(T1,T2),
   !,
   buildNtTest(T2,true,Test),
@@ -1493,7 +1502,7 @@ buildTrigger([{Test}|Triggers],Consequent,(Test *-> X)) :-
   !,
   buildTrigger(Triggers,Consequent,X).
 
-buildTrigger([T/Test|Triggers],Consequent,pt(T,X)) :-
+buildTrigger([T/Test|Triggers],Consequent,'$pt$'(T,X)) :-
   !, 
   buildTest(Test,Test2),
   buildTrigger([{Test2}|Triggers],Consequent,X).
@@ -1503,14 +1512,14 @@ buildTrigger([T/Test|Triggers],Consequent,pt(T,X)) :-
 %  !,
 %  buildTrigger(Triggers,Consequent,X).
 
-buildTrigger([T|Triggers],Consequent,pt(T,X)) :-
+buildTrigger([T|Triggers],Consequent,'$pt$'(T,X)) :-
   !, 
   buildTrigger(Triggers,Consequent,X).
 
 % % 
 % %  buildNtTest(+,+,-).
 % % 
-% %  builds the test used in a negative trigger (nt/3).  This test is a
+% %  builds the test used in a negative trigger ('$nt$'/3).  This test is a
 % %  conjunction of the check than no matching facts are in the db and any
 % %  additional test specified in the rule attached to this ~ term.
 % % 
@@ -1544,10 +1553,10 @@ pfcType( '==>'(X),Type):- !, pfcType(X,Type), pfcWarn(pfcType( '==>'(X), Type)).
 pfcType(('<==>'(_,_)),Type):- !, Type=rule(<==>).
 pfcType(('<-'(_,_)),Type):- !, Type=rule(bwc).
 pfcType((':-'(_,_)),Type):- !, Type=rule(cwc).
-pfcType(pt(_,_,_),Type):- !, Type=trigger.
-pfcType(pt(_,_),Type):- !, Type=trigger.
-pfcType(nt(_,_,_),Type):- !,  Type=trigger.
-pfcType(bt(_,_),Type):- !,  Type=trigger.
+pfcType('$pt$'(_,_,_),Type):- !, Type=trigger.
+pfcType('$pt$'(_,_),Type):- !, Type=trigger.
+pfcType('$nt$'(_,_,_),Type):- !,  Type=trigger.
+pfcType('$bt$'(_,_),Type):- !,  Type=trigger.
 pfcType(pfcAction(_),Type):- !, Type=action.
 pfcType((('::::'(_,X))),Type):- !, pfcType(X,Type).
 pfcType(_,fact(_FT)):-
@@ -1624,10 +1633,10 @@ pfcConjoin(C1,C2,(C1,C2)).
 % pfcDatabaseTerm(P/A) is true iff P/A is something that pfc adds to
 % the database and should not be present in an empty pfc database
 
-pfcDatabaseTerm(spft/3).
-pfcDatabaseTerm(pt/2).
-pfcDatabaseTerm(bt/2).
-pfcDatabaseTerm(nt/3).
+pfcDatabaseTerm('$spft$'/3).
+pfcDatabaseTerm('$pt$'/2).
+pfcDatabaseTerm('$bt$'/2).
+pfcDatabaseTerm('$nt$'/3).
 pfcDatabaseTerm('==>'/2).
 pfcDatabaseTerm('<==>'/2).
 pfcDatabaseTerm('<-'/2).
@@ -1636,9 +1645,9 @@ pfcDatabaseTerm(pfcQueue/1).
 % removes all forward chaining rules and justifications from db.
 
 pfcReset :-
-  clause(spft(P,F,Trigger),true),
+  pfc_spft(P,F,Trigger),
   pfcRetractOrWarn(P),
-  pfcRetractOrWarn(spft(P,F,Trigger)),
+  pfcRetractOrWarn('$spft$'(P,F,Trigger)),
   fail.
 pfcReset :-
   (pfcDatabaseItem(T)*->
@@ -1752,9 +1761,9 @@ pfcGetTrigger(Trigger):- pfc_call(Trigger).
 % Pretty Print Triggers.
 %
 pfcPrintTriggers :-
-     print_db_items("Positive triggers", pt(_,_)),
-     print_db_items("Negative triggers", nt(_,_,_)),
-     print_db_items("Goal triggers",bt(_,_)).
+     print_db_items("Positive triggers", '$pt$'(_,_)),
+     print_db_items("Negative triggers", '$nt$'(_,_,_)),
+     print_db_items("Goal triggers",'$bt$'(_,_)).
 
 pp_triggers:-pfcPrintTriggers.
 %= 	 	 
@@ -1813,10 +1822,10 @@ pfcTraceAdd(P) :-
   % this is here for upward compat. - should go away eventually.
   pfcTraceAdd(P,(o,o)).
 
-pfcTraceAdd(pt(_,_),_) :-
+pfcTraceAdd('$pt$'(_,_),_) :-
   % hack for now - never trace triggers.
   !.
-pfcTraceAdd(nt(_,_),_) :-
+pfcTraceAdd('$nt$'(_,_),_) :-
   % hack for now - never trace triggers.
   !.
 
@@ -1846,10 +1855,10 @@ pfcTraceBreak(P,_S) :-
     break)
    ; true.
 
-pfcTraceRem(pt(_,_)) :-
+pfcTraceRem('$pt$'(_,_)) :-
   % hack for now - never trace triggers.
   !.
-pfcTraceRem(nt(_,_)) :-
+pfcTraceRem('$nt$'(_,_)) :-
   % hack for now - never trace triggers.
   !.
 
@@ -2100,21 +2109,22 @@ matterialize_support_term(SS,SS).
 
 % %  pfcAddSupport(+Fact,+Support)
 
-pfcAddSupport(P,(Fact,Trigger)) :- assert(spft(P,Fact,Trigger)).
+pfcAddSupport(P,(Fact,Trigger)) :- assert('$spft$'(P,Fact,Trigger)).
 
-pfcGetSupport(P,(Fact,Trigger)) :- pfcCallSystem(spft(P,Fact,Trigger)).
+pfcGetSupport(P,(Fact,Trigger)) :- pfc_spft(P,Fact,Trigger).
 
+pfc_spft(P,F,T) :- pfcCallSystem('$spft$'(P,F,T)).
 
 % There are three of these to try to efficiently handle the cases
 % where some of the arguments are not bound but at least one is.
 
 pfcRemOneSupport(P,(Fact,Trigger)) :-
   must(callable(P);callable(Fact);callable(Trigger)),
-  pfcRetractOrWarn(spft(P,Fact,Trigger)).
+  pfcRetractOrWarn('$spft$'(P,Fact,Trigger)).
 
 pfcRemOneSupportOrQuietlyFail(P,(Fact,Trigger)) :-
   must(callable(P);callable(Fact);callable(Trigger)),
-  pfcRetractOrQuietlyFail(spft(P,Fact,Trigger)).
+  pfcRetractOrQuietlyFail('$spft$'(P,Fact,Trigger)).
 
 
 pfc_collect_supports(Tripples) :-
@@ -2123,7 +2133,9 @@ pfc_collect_supports(Tripples) :-
 pfc_collect_supports([]).
 
 pfc_support_relation((P,F,T)) :-
-  spft(P,F,T).
+  pfc_spft(P,F,T).
+
+
 
 pfc_make_supports((P,S1,S2)) :- 
   pfcAddSupport(P,(S1,S2)),
@@ -2134,9 +2146,9 @@ pfc_make_supports((P,S1,S2)) :-
 % % 
 % %  Arg1 is a trigger.  Key is the best term to index it on.
 
-pfcTriggerKey(pt(Key,_),Key).
-pfcTriggerKey(pt(Key,_,_),Key).
-pfcTriggerKey(nt(Key,_,_),Key).
+pfcTriggerKey('$pt$'(Key,_),Key).
+pfcTriggerKey('$pt$'(Key,_,_),Key).
+pfcTriggerKey('$nt$'(Key,_,_),Key).
 pfcTriggerKey(Key,Key).
 
 
@@ -2285,8 +2297,8 @@ pfcShowSingleJust(JustNo,StepNo,[P|T]):-!,
   pfcShowSingleJust(JustNo,StepNo,P),
   pfcShowSingleJust(JustNo,StepNo,T).
 
-pfcShowSingleJust(JustNo,StepNo,pt(P,Body)):- !, 
-  pfcShowSingleJust1(JustNo,StepNo,pt(P)),  
+pfcShowSingleJust(JustNo,StepNo,'$pt$'(P,Body)):- !, 
+  pfcShowSingleJust1(JustNo,StepNo,'$pt$'(P)),  
   pfcShowSingleJust(JustNo,StepNo,Body).
 
 pfcShowSingleJust(JustNo,StepNo,C):- 
@@ -2303,7 +2315,7 @@ unwrap_litr(C,CCC+VS):- copy_term(C,CC,VS),
   numbervars(CC+VS,0,_),
   unwrap_litr0(CC,CCC),!.
 unwrap_litr0(call(C),CC):-unwrap_litr0(C,CC).
-unwrap_litr0(pt(C),CC):-unwrap_litr0(C,CC).
+unwrap_litr0('$pt$'(C),CC):-unwrap_litr0(C,CC).
 unwrap_litr0(body(C),CC):-unwrap_litr0(C,CC).
 unwrap_litr0(head(C),CC):-unwrap_litr0(C,CC).
 unwrap_litr0(C,C).
@@ -2525,12 +2537,12 @@ pp_item(MM,(H:-B)):- B ==true,pp_item(MM,H).
 pp_item(MM,H):- flag(show_asserions_offered,X,X+1),find_and_call(get_print_mode(html)), ( \+ \+ if_defined(pp_item_html(MM,H))),!.
 
 
-pp_item(MM,spft(W0,U,ax)):- W = (_KB:W0),!,pp_item(MM,U:W).
-pp_item(MM,spft(W0,F,U)):- W = (_KB:W0),atom(U),!,    fmt('~N%~n',[]),pp_item(MM,U:W), fmt('rule: ~p~n~n', [F]),!.
-pp_item(MM,spft(W0,F,U)):- W = (_KB:W0),         !,   fmt('~w~nd:       ~p~nformat:    ~p~n', [MM,W,F]),pp_item(MM,U).
-pp_item(MM,nt(Trigger0,Test,Body)) :- Trigger = (_KB:Trigger0), !, fmt('~w n-trigger: ~p~ntest: ~p~nbody: ~p~n', [MM,Trigger,Test,Body]).
-pp_item(MM,pt(F0,Body)):- F = (_KB:F0),             !,fmt('~w p-trigger:~n', [MM]), pp_item('',(F:-Body)).
-pp_item(MM,bt(F0,Body)):- F = (_KB:F0),             !,fmt('~w b-trigger:~n', [MM]), pp_item('',(F:-Body)).
+pp_item(MM,'$spft$'(W0,U,ax)):- W = (_KB:W0),!,pp_item(MM,U:W).
+pp_item(MM,'$spft$'(W0,F,U)):- W = (_KB:W0),atom(U),!,    fmt('~N%~n',[]),pp_item(MM,U:W), fmt('rule: ~p~n~n', [F]),!.
+pp_item(MM,'$spft$'(W0,F,U)):- W = (_KB:W0),         !,   fmt('~w~nd:       ~p~nformat:    ~p~n', [MM,W,F]),pp_item(MM,U).
+pp_item(MM,'$nt$'(Trigger0,Test,Body)) :- Trigger = (_KB:Trigger0), !, fmt('~w n-trigger: ~p~ntest: ~p~nbody: ~p~n', [MM,Trigger,Test,Body]).
+pp_item(MM,'$pt$'(F0,Body)):- F = (_KB:F0),             !,fmt('~w p-trigger:~n', [MM]), pp_item('',(F:-Body)).
+pp_item(MM,'$bt$'(F0,Body)):- F = (_KB:F0),             !,fmt('~w b-trigger:~n', [MM]), pp_item('',(F:-Body)).
 
 
 pp_item(MM,U:W):- !,format(string(S),'~w  ~w:',[MM,U]),!, pp_item(S,W).
@@ -2791,11 +2803,11 @@ print_db_items_and_neg(Title,Fact,What):-print_db_items(Title,~(Fact),What).
 %
 % Managed Predicate list triggers  Secondary Helper.
 %
-pfc_list_triggers_1(~(What)):-var(What),!.
-pfc_list_triggers_1(~(_What)):-!.
 pfc_list_triggers_1(What):-var(What),!.
+pfc_list_triggers_1(~(What)):- var(What),!.
+pfc_list_triggers_1(~(_What)):-!.
 pfc_list_triggers_1(What):- 
-   print_db_items('Supports User',spft_precanonical(P,mfl4(VarNameZ,_,_,_),ax),spft(P,mfl4(VarNameZ,_,_,_),ax),What),
+   print_db_items('Supports User',spft_precanonical(P,mfl4(VarNameZ,_,_,_),ax),'$spft$'(P,mfl4(VarNameZ,_,_,_),ax),What),
    print_db_items('Forward Facts',(nesc(F)),F,What),
    print_db_items('Forward Rules',(_==>_),What),
  ignore((What\= ~(_),safe_functor(What,IWhat,_),
@@ -2804,12 +2816,12 @@ pfc_list_triggers_1(What):-
    print_db_items_and_neg('Subclass Of',genls(IWhat,_),IWhat),
    print_db_items_and_neg('Subclasses: ',genls(_,IWhat),IWhat))),
    forall(suggest_m(M),print_db_items('PFC Watches', pfc_prop(M,_,_,_),What)),
-   print_db_items('Triggers Negative', nt(_,_,_,_),What),
-   print_db_items('Triggers Goal',bt(_,_,_),What),
-   print_db_items('Triggers Positive',pt(_,_,_),What),
+   print_db_items('Triggers Negative', '$nt$'(_,_,_,_),What),
+   print_db_items('Triggers Goal','$bt$'(_,_,_),What),
+   print_db_items('Triggers Positive','$pt$'(_,_,_),What),
    print_db_items('Bidirectional Rules',(_<==>_),What), 
-   dif(A,B),print_db_items('Supports Deduced',spft_precanonical(P,A,B),spft(P,A,B),What),
-   dif(G,ax),print_db_items('Supports Nonuser',spft_precanonical(P,G,G),spft(P,G,G),What),
+   dif(A,B),print_db_items('Supports Deduced',spft_precanonical(P,A,B),'$spft$'(P,A,B),What),
+   dif(G,ax),print_db_items('Supports Nonuser',spft_precanonical(P,G,G),'$spft$'(P,G,G),What),
    print_db_items('Backchaining Rules',(_<-_),What),
    % print_db_items('Edits',is_disabled_clause(_),What),
    print_db_items('Edits',is_edited_clause(_,_,_),What),
@@ -2945,9 +2957,9 @@ pp_db_rules(MM):-
 
 
 pp_db_triggers(MM):- 
- pp_mask("Positive trigger",MM,pt(_,_)),
- pp_mask("Negative trigger",MM,nt(_,_,_)),
- pp_mask("Goal trigger",MM,bt(_,_)),!.
+ pp_mask("Positive trigger",MM,'$pt$'(_,_)),
+ pp_mask("Negative trigger",MM,'$nt$'(_,_,_)),
+ pp_mask("Goal trigger",MM,'$bt$'(_,_)),!.
 
 pp_db_supports(MM):-
   % temporary hack.
@@ -3295,6 +3307,12 @@ which_missing_argnum(Q,N):- compound(Q),\+ compound_name_arity(Q,_,0),
 which_missing_argnum(_,_,1,_):-!,fail.
 which_missing_argnum(Q,_F,A,N):- between(A,1,N),get_assertion_head_arg(N,Q,Was),is_ftNonvar(Was).
 
+
+:- multifile(system:term_expansion/4).
+system:term_expansion(I,S0,O,S1):- %use_pfc_term_expansion, % trace,
+ ( \+ current_prolog_flag(pfc_term_expansion,false),
+  ( \+ \+ (source_location(File,_), atom_concat(_,'.pfc.pl',File)) ; current_prolog_flag(pfc_term_expansion,true))) ->
+ prolog_load_context('term',T)->(T==I->pfc_term_expansion(I,O)->I\=@=O->S0=S1, wdmsg(I-->O)).
 
 
 

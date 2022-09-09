@@ -1,6 +1,7 @@
 
 :- module(muarc,[do_forgotten_exports/0,do_forgotten_exports/1]).
 
+:- module_transparenmt(do_forgotten_exports/1).
 do_forgotten_exports(M):-  
   MP= (M:P),
   forall((
@@ -8,8 +9,9 @@ do_forgotten_exports(M):-
  \+ predicate_property(MP,imported_from(_)),
  \+ predicate_property(MP,exported),
     functor(P,F,A)),
-    export(M:F/A)).
+    (export(M:F/A), '@'(import(M:F/A),system), true)).
 
+:- module_transparenmt(do_forgotten_exports/0).
 do_forgotten_exports:- 
    strip_module(_,M,_), 
    wdmsg(do_forgotten_exports(M)), 

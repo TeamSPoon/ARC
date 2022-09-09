@@ -9,6 +9,7 @@
 :- endif.
 :- use_module(library(pengines)).
 
+test_menu :- with_http(menu).
 menu :- write_menu('i').
 write_menu(Mode):-
   get_current_test(TestID),!,
@@ -24,6 +25,8 @@ print_menu_cmd(Key):- ignore((menu_cmd1(_,Key,Info,Goal),print_menu_cmd(Key,Info
 print_menu_cmd(_Key,Info,Goal):- format('~N '),print_menu_cmd1(Info,Goal).
 print_menu_cmd9(_Key,Info,Goal):- format(' '),print_menu_cmd1(Info,Goal).
 
+:- use_module(library(xlisting/xlisting_web)).
+:- use_module(library(xlisting/xlisting_web_server)).
 print_menu_cmd1(Info,Goal):- if_arc_webui(write_cmd_link(Info,Goal)),!.
 print_menu_cmd1(Info,_Goal):- format('~w',[Info]).
 
@@ -266,15 +269,15 @@ test_suite_name(key_pad_tests). test_suite_name(alphabetical_v). test_suite_name
 test_suite_name(test_names_by_hard). 
 test_suite_name(test_names_by_fav_rev). test_suite_name(test_names_by_hard_rev).
 
-:- dynamic(cached_tests/2).
-%:- retractall(cached_tests(_,_)).
+:- dynamic(muarc_tmp:cached_tests/2).
+%:- retractall(muarc_tmp:cached_tests(_,_)).
 :- luser_setval(global,test_order,sol_t).
 get_current_suite_testnames(Set):-
   luser_getval(test_order,X),
   current_suite_testnames(X,Set).
 
-current_suite_testnames(X,Set):- cached_tests(X,Set),!.  
-current_suite_testnames(X,Set):- findall(ID,call(X,ID),List), my_list_to_set_variant(List,Set),!,asserta(cached_tests(X,Set)).
+current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),!.  
+current_suite_testnames(X,Set):- findall(ID,call(X,ID),List), my_list_to_set_variant(List,Set),!,asserta(muarc_tmp:cached_tests(X,Set)).
 
 previous_test:-  get_current_test(TestID), get_previous_test(TestID,NextID), set_current_test(NextID).
 next_test:- get_current_test(TestID), notrace((get_next_test(TestID,NextID), set_current_test(NextID))),!.
@@ -355,9 +358,13 @@ new_current_test_info(WasTestID,TestID):-
   %luser_setval(example,tst+0),
   luser_setval(last_test_name,TestID))),
   save_last_test_name,
+  load_test_id_dyn(TestID).
+  %clear_training(TestID).
+
+load_test_id_dyn(TestID):- 
   test_name_output_file(TestID,File),
   load_file_dyn(File).
-  %clear_training(TestID).
+
 
 unload_file_dyn(File):- \+ exists_file(File), !.
 unload_file_dyn(File):- unload_file(File),!.
@@ -478,18 +485,18 @@ some_test_info(TestID,III):- more_test_info(TestID,III).
 some_test_info(X,[keypad]):- key_pad_tests(X). 
 some_test_info(TestID,III):- fav(TestID,III).
 
-:- dynamic(test_info_cache/2).
-:- retractall(test_info_cache(_,_)).
+:- dynamic(muarc_tmp:test_info_cache/2).
+:- retractall(muarc_tmp:test_info_cache(_,_)).
 test_info(TestID,InfoS):- var(TestID),!,all_arc_test_name(TestID),test_info(TestID,InfoS).
-%test_info(TestID,InfoS):- \+ \+ test_info_cache(TestID,_),!,test_info_cache(TestID,InfoS).
+%test_info(TestID,InfoS):- \+ \+ muarc_tmp:test_info_cache(TestID,_),!,muarc_tmp:test_info_cache(TestID,InfoS).
 test_info(TestID,InfoS):- nonvar(TestID),once(fix_test_name(TestID,FTestID,_)),TestID\=@=FTestID,!,test_info(FTestID,InfoS).
-test_info(TestID,InfoS):- test_info_cache(TestID,InfoS),!.
+test_info(TestID,InfoS):- muarc_tmp:test_info_cache(TestID,InfoS),!.
 test_info(TestID,InfoS):- 
  findall(Inf,
   (some_test_info(CTestID,Inf0),once((fix_test_name(CTestID,CFTestID,_),CFTestID=TestID)),
    repair_info(Inf0,Inf)),Info),
   flatten([Info],InfoFF),repair_info(InfoFF,InfoF),list_to_set(InfoF,InfoS),!,
-  asserta(test_info_cache(TestID,InfoS)),!.
+  asserta(muarc_tmp:test_info_cache(TestID,InfoS)),!.
 
 repair_info(Inf,InfO):- listify(Inf,Inf1),maplist(repair_info0,Inf1,InfO).
 repair_info0(Inf0,Inf):- is_list(Inf0),!,maplist(repair_info0,Inf0,Inf).
@@ -519,7 +526,7 @@ alphabetical_t(Set):- findall(t(Name),all_arc_test_name(t(Name)),List),sort(List
 
 human_t(T):- human_t_set(Set),member(T,Set).
 
-%human_t_set(NamesByHardUR):- cached_tests(human_t_set,NamesByHardUR),!.
+%human_t_set(NamesByHardUR):- muarc_tmp:cached_tests(human_t_set,NamesByHardUR),!.
 human_t_set(NamesByHardUR):- % Name=t(_),
   findall(Name,(test_info(Name,Sol),member(human(_),Sol)),All),
   list_to_set(All,NamesByHardUR).
@@ -681,6 +688,7 @@ dictate_sourcecode(Content, _Vars, OutterVars, TP):-
               maplist(print_prop_val,Vs))),
     !, TP = source_buffer(Sourcecode, Vs).
 
+
 do_pair_dication(In,Out,_Vs):-   
  run_source_code(['In'=In, 'Out'=Out], _Vs,
 {|dictate_sourcecode||
@@ -836,7 +844,7 @@ testid_name_num_io(ID,Name,_Example,_Num,_IO):- fix_id(ID,   Name),!. %, kaggle_
 
 fix_id(Tried,   Tried):- var(Tried),!.
 fix_id(X,_):- is_cpoint(X),!,fail.
-fix_id(X,_):- is_list(X),maplist(is_cpoint,X),!,fail.
+fix_id(X,_):- is_cpoints_list(X),!,fail.
 fix_id(obj_to_oid(_,X),Fixed):-  !, fix_id(X,Fixed).
 fix_id(Tried,   Tried):- kaggle_arc(Tried,_,_,_),!.
 fix_id(v(Tried),   TriedV):- !, atom_id(Tried,TriedV),!.

@@ -88,29 +88,36 @@ generalize_term(I,O):- generalize(I,O).
 generalize_once(I,O):- plain_var(O), !, freeze(O,once(generalize(I,O))).
 generalize_once(I,O):- generalize(I,O).
 %generalize(I,O):- plain_var(I), !, freeze(I, generalize(I,O)).
+
 generalize(I,O):- plain_var(I), !, (O=I ; O = _).
 generalize(I,O):- ( \+ compound(I) ), !, (O=I ; O = _).
 %generalize(I,O):- ( \+ compound(I) ),!, generalize_atomic(I, O).
 generalize([A|B],[AA|BB]):- !, generalize(A,AA),generalize_cons(B,BB).
 generalize(_-P,_-P):-!.
-generalize(I,O):- compound(I),!,
-  compound_name_arguments(I,F,IA),
-  generalize_list(IA,OA),
-  compound_name_arguments(O,F,OA).
+generalize(I,O):- compound_not_list(I),!,generalize_compound(I,O). 
 generalize(_,_).
 
+compound_not_list(I):- compound(I), !, \+ is_list(I).
+
+generalize_compound(I,O):- 
+  functor(I,F,A),functor(O,F,A),
+  compound_name_arguments(I,F,IA),
+  compound_name_arguments(O,F,OA),!,
+  generalize_arglist(IA,OA).
+
+generalize_arg(I,O):- compound_not_list(I),!,generalize_compound(I,O).
 generalize_arg(I,O):- O=I ; O = _.
 
-generalize_list([],[]). 
-generalize_list([I],[O]):- !, generalize_arg(I,O).
-generalize_list([A,B],[AA,BB]):- !, generalize_arg(A,AA),generalize_arg(B,BB).
-generalize_list([A,B,C],[AA,BB,CC]):- !, generalize_arg(A,AA), generalize_arg(B,BB),generalize_arg(C,CC).
-generalize_list([A,B,C,D],[AA,BB,CC,DD]):- !, generalize_arg(A,AA), generalize_arg(B,BB),generalize_arg(C,CC),generalize_arg(D,DD).
-generalize_list([A|B],[AA|BB]):- generalize_arg(A,AA),generalize_list(B,BB).
+generalize_arglist([],[]). 
+generalize_arglist([I],[O]):- !, generalize_arg(I,O).
+generalize_arglist([A,B],[AA,BB]):- !, generalize_arg(A,AA),generalize_arg(B,BB).
+generalize_arglist([A,B,C],[AA,BB,CC]):- !, generalize_arg(A,AA), generalize_arg(B,BB),generalize_arg(C,CC).
+generalize_arglist([A,B,C,D],[AA,BB,CC,DD]):- !, generalize_arg(A,AA), generalize_arg(B,BB),generalize_arg(C,CC),generalize_arg(D,DD).
+generalize_arglist([A|B],[AA|BB]):- generalize_arg(A,AA),generalize_arglist(B,BB).
 
 generalize_cons(I,O):- plain_var(I), !, (O=[];O=_).
 generalize_cons([],O):- !, (O=[];O=_).
-generalize_cons([A|B],[AA|BB]):- !, generalize(A,AA),generalize_list(B,BB).
+generalize_cons([A|B],[AA|BB]):- !, generalize(A,AA),generalize_cons(B,BB).
 
 
 combine_diffs([],D,D):-!.
@@ -215,10 +222,11 @@ diff_groups1(AAR,BBR,DD):-
   diff_objects(PA,PB,DAB),
   (DAB == [] -> D = [] ;  
      (nop(showdiff(PA,PB)),
-      object_dglyph(PA,GA), object_dglyph(PB,GB),
+      object_dglyphH(PA,GA), 
+      object_dglyphH(PB,GB),
       D = change_obj(GA,GB,DAB))),
   diff_groups1(AA,BB,D1),
-  combine_diffs(D1, nc( D) , DD),!.
+  combine_diffs(D1, D , DD),!.
 diff_groups1(A,B,disjointed(SharedT,AOnlyT,BOnlyT,AO,BO)):- 
   intersection(A,B,Shared,AOnly,BOnly),
   tersify_cheap(Shared,SharedT),
@@ -227,6 +235,10 @@ diff_groups1(A,B,disjointed(SharedT,AOnlyT,BOnlyT,AO,BO)):-
   maplist(object_dglyph,A,AO),maplist(object_dglyph,B,BO),!.
 
 tersify_cheap(I,O):- tersify(I,O),!.
+
+
+object_dglyphH(PA,mass(GA,Mass)):- obj_to_oid(PA,GA),mass(PA,Mass),!.
+object_dglyphH(PA,GA):- object_dglyph(PA,GA).
 
 unused_diff_groups0(AAR,BBR,DD):-
   %make_comparable(B0,B),
@@ -277,6 +289,7 @@ never_show_diff(_):- nb_current(diff_porportional,t),!,fail.
 never_show_diff(o).
 never_show_diff(link).
 never_show_diff(iz(A)):- atomic(A).
+never_show_diff(iz(g(_))).
 never_show_diff(obj_to_oid).
 never_show_diff(change).
 never_show_diff(birth).
@@ -507,8 +520,10 @@ diff_terms(obj(I),obj(O),OUT):- !, diff_objects(I,O,OUT).
 diff_terms([IH,IV],[OH,OV],D):- maplist(number,[IH,IV,OH,OV]),!,maplist(diff_numbers,[IH,IV],[OH,OV],D).
 diff_terms(I,O, (diff_lists=@= D)):- non_grid_list(I),non_grid_list(O),!,diff_lists(I,O,D).
 diff_terms(I,O,D):- is_map(I),!,findall(D1,(get_kov(K, I, V),diff_terms(K=V,O,D1)),D).
+
 diff_terms(Grid,Other,OUT):- needs_indivs(Grid,I),!,diff_terms(I,Other,OUT).
 diff_terms(Other,Grid,OUT):- needs_indivs(Grid,I),!,diff_terms(Other,I,OUT).
+
 diff_terms(IF=IA,O,IF=D):- find_kv(O,IF,OA),!,diff_terms(IA,OA,D).
 diff_terms(I,O,D):- compound(I),compound(O),!,diff_compounds(I,O,D).
 diff_terms(I,O,diff(I->O)).

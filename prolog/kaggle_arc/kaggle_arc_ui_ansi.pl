@@ -68,7 +68,7 @@ arc_portray_nt(G0, false):- is_group(G0), into_list(G0,G), length(G,L),% L>1, !,
    once(((why_grouped(_TestID,Why,WG),WG=@=G,fail);(Why = (size=L)))),!,
    print_grid(Why,G),nl,
    %underline_print(writeln(Why)),
-   maplist(print_info,G),
+   print_info_l(G),
    dash_chars.
 
 
@@ -213,7 +213,7 @@ ptc(Color,Call):- pt(Color,call(Call)).
 
 pt(_):- is_print_collapsed,!.
 pt(_):- format('~N'), fail.
-pt(P):- var(P),!,pt(var(P)).
+pt(P):- var(P),!,pt(var_pt(P)),dumpST,break.
 pt(P):- atomic(P),atom_contains(P,'~'),!,format(P).
 pt(G):- is_map(G), !, write_map(G,'pt').
 pt(S):- term_is_ansi(S), !, write_keeping_ansi(S).
@@ -222,14 +222,17 @@ pt(P):- \+ \+ (( pt_guess_pretty(P,GP),ptw(GP))).
 %ptw(P):- quietlyd(print_tree_nl(P)),!.
 ptw(G):- is_map(G), !, write_map(G,'ptw').
 ptw(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-ptw(P):- quietlyd(print_tree_nl(P)),!.
+ptw(P):- quietlyd(print_tree_no_nl(P)),!.
 %ptw(P):- quietlyd(write_term(P,[blobs(portray),quoted(true),quote_non_ascii(false), portray_goal(print_ansi_tree),portray(true)])),!.
 
 pt_guess_pretty(P,O):- \+ nb_current(in_pt_guess_pretty,t), locally(nb_setval(in_pt_guess_pretty,t),pt_guess_pretty_1(P,O)).
 pt_guess_pretty(O,O).
 
+upcase_atom_var_l(IntL,NameL):- upcase_atom_var(IntL,NameL).
+upcase_atom_var_l(IntL,NameL):- is_list(IntL),!,maplist(upcase_atom_var_l,IntL,NameL).
+
 pt_guess_pretty_1(P,O):- copy_term(P,O,_),
-  ignore((sub_term(Body,O), compound(Body), Body=was_once(InSet,InVars),maplist(upcase_atom_var,InSet,InVars))),
+  ignore((sub_term(Body,O), compound(Body), Body=was_once(InSet,InVars),upcase_atom_var_l(InSet,InVars))),
   ignore(pretty1(O)),ignore(pretty_two(O)),ignore(pretty_three(O)),ignore(pretty_final(O)),!,
   ((term_singletons(O,SS),numbervars(SS,999999999999,_,[attvar(skip),singletons(true)]))).
 
@@ -238,24 +241,55 @@ pt_guess_pretty_1(P,O):- copy_term(P,O,_),
 :- module_transparent(pretty_clauses:pp_hook/3).
 pretty_clauses:pp_hook(_,Tab,S):- is_vm(S),!,prefix_spaces(Tab),!,write('..VM..').
 pretty_clauses:pp_hook(_,Tab,S):- term_is_ansi(S), !,prefix_spaces(Tab), write_keeping_ansi(S).
-pretty_clauses:pp_hook(_,_  ,G):- current_predicate(is_group/1),pp_hook_g(G).
+pretty_clauses:pp_hook(FS,_  ,G):- current_predicate(is_group/1),locally(b_setval(pp_parent,FS),print_with_pad(pp_hook_g(G))),!.
+
+pp_parent(PP):- nb_current(pp_parent,PP).
 
 lock_doing(Lock,G,Goal):- 
  (nb_current(Lock,Was);Was=[]), !, 
   \+ ((member(E,Was),E==G)),
   locally(nb_setval(Lock,[G|Was]),Goal).
 
-pp_hook_g(G):- lock_doing(in_pp_hook_g,G,pp_hook_g1(G)).
+pp_hook_g(G):- \+ plain_var(G), lock_doing(in_pp_hook_g,G,pp_hook_g1(G)).
 
-pp_hook_g1(G):-  is_grid(G),!, fail,ptt(G), !.
+
+p_c_o(P,[A|LIST]):-
+  write(P),write('( '),debug_as_grid(A),maplist(p_c_a,LIST),write(' )').
+p_c_a(A):- write(',\n'),debug_as_grid(A).
+
+
+mass_gt1(O1):- into_obj(O1,O2),mass(O2,M),!,M>1.
+
+pp_hook_g1(G):-  is_grid(G), 
+% \+ (sub_term(E,G),compound(E),E='$VAR'(_)), 
+  catch((wots(S,print_grid(G)),strip_vspace(S,SS),ptc(orange,(format('"  ~w  "',[SS])))),_,fail).
+pp_hook_g1(G):-  pp_hook_g2(G),!.
+% pp_hook_g1(G):-  is_grid(G),!, fail,ptt(G), !.
 pp_hook_g1(G):-  is_object(G),pt(G), !.
 pp_hook_g1(G):-  is_group(G),ptt(G), !.
 pp_hook_g1(G):-  is_map(G),write('map'),!.
+
+/*
+pp_hook_g1(T):- 
+ nb_current('$portraying',Was)
+   ->  ((member(E,Was), T==E) -> ptv2(T) ; locally(b_setval('$portraying',[T|Was]),ptv0(T))) 
+   ; locally(b_setval('$portraying',[T]),ptv0(T)).
+*/
+
 %pp_hook_g(G):- compound(G),ptt(G),!.
 %pp_hook_g(G):- ptt(G),!.
-pp_hook_g1(G):-  is_grid(G), 
-% \+ (sub_term(E,G),compound(E),E='$VAR'(_)), 
-  catch((wots(S,print_grid(G)),strip_vspace(S,SS),ptc(orange,(format('"~w"',[SS])))),_,fail).
+
+pp_hook_g2(R):-  plain_var(R), !, fail.
+pp_hook_g2(R):- atom(R), atom_contains(R,'_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
+  resolve_reference(R,Var), R\==Var, \+ plain_var(Var),!, 
+  write(' '), writeq(R), write(' /* '), debug_as_grid(Var), write(' */ ').
+pp_hook_g2(G):-  is_gridoid(G),debug_as_grid(G), !.
+%pp_hook_g2(G):-  is_colorish(G), color_print(G,call(writeq(G))),!.
+% change_obj
+%pp_hook_g2(T):-  T = change_obj( O1, O2, Diff), p_c_o('change_obj',[O1,O2,Diff]),!.
+%pp_hook_g2(T):-  T = diff(A -> B), (is_gridoid(A);is_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
+pp_hook_g2(T):-  T = showdiff( O1, O2), !, showdiff(O1, O2).
+
 
 strip_vspace(S,Stripped):- string_concat(' ',SS,S),!,strip_vspace(SS,Stripped).
 strip_vspace(S,Stripped):- string_concat(SS,' ',S),!,strip_vspace(SS,Stripped).
@@ -268,7 +302,7 @@ strip_vspace(S,S).
 
 print_ansi_tree(S,_):- term_is_ansi(S), !, write_keeping_ansi(S).
 print_ansi_tree(P,_):- catch(arc_portray(P),_,fail),!.
-print_ansi_tree(P,_OL):- catch(print_tree_nl(P),_,fail),!.
+print_ansi_tree(P,_OL):- catch(print_tree_no_nl(P),_,fail),!.
 
 wqs(G):- is_map(G), !, write_map(G,'wqs').
 wqs(X):- is_grid(X), !, print_grid(X).
@@ -540,6 +574,14 @@ find_longest_len([S|SS],N,L):- print_length(S,N2),max_min(N,N2,NM,_),
 
 print_grid_ss(G):- print_grid_ss(_,_,G).
 
+:- meta_predicate( print_with_pad(0)).
+:- export( print_with_pad/1).
+print_with_pad(Goal):- 
+  (line_position(current_output,O);O=0),!, 
+  O1 is O+1,
+  wots(S,Goal),
+  print_w_pad(O1,S).
+
 print_w_pad(Pad,S):- atomics_to_string(L,'\n',S)-> maplist(print_w_pad0(Pad),L).
 print_w_pad0(Pad,S):- format('~N'),dash_chars(Pad,' '), write(S).
 
@@ -661,8 +703,7 @@ print_grid1(SH,SV,EH,EV,Grid):- is_object(Grid),
 print_grid1(SH,SV,EH,EV,Grid):-
  nl_if_not_side_by_side,
  %backtrace(10),
- (line_position(current_output,O);O=0),!,
- O1 is O+1,
+ (line_position(current_output,O);O=0),!, O1 is O+1,
  print_grid_pad(O1,SH,SV,EH,EV,Grid), 
  nl_if_not_side_by_side,format('~N').
 
@@ -707,11 +748,12 @@ gg_out2(G):-
   sformat(SO,'<pre style="overflow-x: visible;"><font size="+0">~w</font></pre>',[S]),
   w_out(SO).
 
-g_out(C,G):- wots(S0,g_out(G)),correct_nbsp(S0,S),
- mbfy(color_print_webui(C,S)).
+g_out_style(C,G):- wots(S0,g_out(G)),correct_nbsp(S0,S),
+ mbfy(color_print(C,S)).
 
+%mbfy(G):- in_pp(ansi),!,call(G).
+%mbfy(G):- in_pp(http),!,call(G).
 mbfy(G):- in_pp(bfly),!,bfly_html_goal(G).
-mbfy(G):- in_pp(http),!,call(G).
 mbfy(G):- !,call(G).
 
 correct_nbsp(S0,S):- replace_in_string([" &nbsp;"="&nbsp;","&nbsp; "="&nbsp;"],S0,S).

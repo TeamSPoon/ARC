@@ -141,7 +141,7 @@ detect_supergrid_tt(TestID,ExampleNum,In0,Out0,TT):-
   dmsg(detect_all_training_hints(TestID,ExampleNum)),
     print_side_by_side(cyan,NI,CI,_,NO,CO),
   pt(O2I),
-    print_side_by_side(cyan,In0,test_in(ExampleNum),_,Out0,test_out(ExampleNum)),
+    print_side_by_side(cyan,In0,task_in(ExampleNum),_,Out0,task_out(ExampleNum)),
   
   %show_patterns(In),show_patterns(Out),
   true])))),
@@ -264,7 +264,7 @@ list_common_props_so_far(TestID):-
   sort(FComs,SComs),  
   print_test(TestID),
   wots(SS,maplist(ptv1,SComs)),
-  color_print(magenta,call((format('~N % ~w: ~s.~n',[list_common_props,SS])))),
+  call((format('~N % ~w: ~s.~n',[list_common_props,SS]))),
   !.
 
 ptv1(T):- format('~N'),(ground(T) -> color_print(cyan,call(bold_print(print_tree(T)))) ; color_print(magenta,call(print_tree(T)))).
@@ -286,8 +286,34 @@ compute_test_oo_hints(TestID):-
      (N2 is N+1, (kaggle_arc_io(TestID,(trn+N2),out,Out2)->true;kaggle_arc_io(TestID,(trn+0),out,Out2)),
       forall(grid_hint_recolor(o-o,Out1,Out2,Hint),add_hint(TestID,Hint,N)))),!.
 
-ptv(T):- \+ \+ ((numbervars(T,0,_,[]),write_term(T,[quoted(true),portray(true),numbervars(true),singletons(true),blobs(portray),
+%ptv(T):- print_tree_no_nl(T),!.
+ptv(T):-
+  locally(b_setval('$portraying',[]), 
+   \+ \+  ((numbervars(T,0,_,[attvars(skip),singletons(true)]), must_det_ll((ptv(T,_)))))).
+
+
+ptv(T,_):- var(T),!, ptv2(T).
+ptv(T,_):- \+ compound(T), !, ptv2(T).
+ptv(T,_):- is_object(T),!,  debug_as_grid(T),!.
+%ptv(T,_):- T = showdiff( O1, O2), !, showdiff(O1, O2).
+%ptv(T,_):- T = change_obj( O1, O2, Diffs), !, showdiff(O1, O2), writeq(Diffs),!.
+ptv(T,_):- print_tree_no_nl(T),!.
+ptv(T,_):- 
+ nb_current('$portraying',Was)
+   ->  ((member(E,Was), T==E) -> ptv2(T) ; locally(b_setval('$portraying',[T|Was]),ptv0(T))) 
+   ; locally(b_setval('$portraying',[T]),ptv0(T)).
+
+ptv0(T):-
+  \+ \+ ((prolog_pretty_print_term(T,[quoted(true),portray(true),
+  portray_goal(ptv),numbervars(true),singletons(true),blobs(portray),
   quote_non_ascii(true),brace_terms(false),ignore_ops(true)]))).
+
+ptv2(T):- print_tree_no_nl(T),!.
+ptv2(T):- 
+  \+ \+ ((numbervars(T,0,_,[]),prolog_pretty_print_term(T,[quoted(true),portray(true),
+  numbervars(true),singletons(true),blobs(portray),
+  quote_non_ascii(true),brace_terms(false),ignore_ops(true)]))).
+
 
 min_unifier([A|List],Term):- min_unifier3(A,List,Term).
 
@@ -322,7 +348,7 @@ min_list_unifier([_|B],[_],[_|B]):-!.
 
 grid_hint_swap(IO,In,Out):-
  ((findall(Data,(grid_hint_swap_io(IO,In,Out,Hint),hint_data(Hint,Data)),Hints),
- color_print(magenta,call((format('~N % ~w: ~@.~n',[IO,call(ptv,Hints)])))))).
+ call((format('~N % ~w: ~@.~n',[IO,call(ptv,Hints)]))))).
 
 grid_hint_swap_io(IO,In,Out,Hint):-  grid_hint_recolor(IO,In,Out,Hint).
 grid_hint_swap_io(I-O,In,Out,rev(Hint)):- grid_hint_recolor(O-I,Out,In,Hint).
