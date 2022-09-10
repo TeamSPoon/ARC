@@ -83,7 +83,7 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
   dash_chars,
   luser_setval(no_rdot,true),
   grid_size(GridIn,IH,IV), grid_size(GridOut,OH,OV),
-  ((InC==OutC, InC==[]) -> pt(yellow,nothing_individuated(PairName)) ;
+  ((InC==OutC, InC==[]) -> ppt(yellow,nothing_individuated(PairName)) ;
     show_pair_diff_code(IH,IV,  OH, OV,individuated(ROptions,ID1),individuated(ROptions,ID2),PairName,InC,OutC)),!,
   luser_setval(no_rdot,false).
 
@@ -260,7 +260,7 @@ individuation_macros(do_ending, [
   find_touches,    
   find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
   find_contained, % mark any "completely contained points"
-  combine_same_globalpoints, % make sure any objects are perfectly the same part of the image are combined 
+  combine_same_globalpoints, % make sure any objects are perfectly the sameR part of the image are combined 
   %label_sizes,
   %combine_objects,
   end_of_macro]).
@@ -382,7 +382,7 @@ individuation_macros(standard, [
    +max_learn_objects(hv_line(_),ThreeO),
    +max_learn_objects(dg_line(_),ThreeO),
     %nsew,
-    %+recalc_sizes, % blobs of any shape that are the same color  
+    %+recalc_sizes, % blobs of any shape that are the sameR color  
     % @TODO DISABLED FOR TESTS   colormass_subshapes, % subdivide the color masses .. for example a square with a dot on it
     subshape_main, % macro for sharing code with "subshape_in_object"
     connects(jumps(X),jumps(X)), % connected jumps    
@@ -509,7 +509,7 @@ keep_points(While,VM):-
 is_fti_step(maybe_1_3rd_mass).
 % =====================================================================
 maybe_1_3rd_mass(VM):-
-  amass(VM.grid,Mass),
+  mass(VM.grid,Mass),
   colors(VM.grid,[cc(C,Size)|_Colors]),
   Area is VM.h * VM.v,
   Size * 3 > Area,
@@ -536,7 +536,7 @@ individuation_reserved_options(ROptions,Reserved,Options):-
    %subst(Options0,defaults,DefaultOptions,Options),
    %(Options0==Options -> my_append(Options,DefaultOptions,NewOptions) ; (Options=NewOptions)),!,
    ignore((ROptions \= Options,is_list(ROptions), sub_var(complete,ROptions),
-      (pt(blue,fix_indivs_options(ro=ROptions,r=Reserved,o=Options))))).
+      (ppt(blue,fix_indivs_options(ro=ROptions,r=Reserved,o=Options))))).
 
 
 %individuate_second_pass(Grid,IndvS):- individuate([second_pass],Grid,IndvS).
@@ -709,12 +709,12 @@ individuate_two_grids_now_X(OID1OID2,ROptions,Grid1,Grid2,VM1,VM2,Grid1X,Grid2X,
 
 individuate2(VM,[ROptions],OID,Grid,IndvS):- !, nonvar(ROptions), individuate2(VM,ROptions,OID,Grid,IndvS).
 individuate2(_VM,ROptions,OID,_GridIn,IndvS):- nonvar(OID), 
-  get_individuated_cache(ROptions,OID,IndvS),length(IndvS,Len),pt(yellow,oid_cached(ROptions,OID,len(Len))),!.
+  get_individuated_cache(ROptions,OID,IndvS),length(IndvS,Len),ppt(yellow,oid_cached(ROptions,OID,len(Len))),!.
 individuate2(VM,ROptions,OID,GridIn,IndvS):- 
   do_individuate(VM,ROptions,GridIn,IndvS),!,
   length(IndvS,Len),
   ignore((nonvar(OID),retractall(individuated_cache(OID,ROptions,_)), 
-          pt(yellow,oid_created(ROptions,OID,len(Len))),
+          ppt(yellow,oid_created(ROptions,OID,len(Len))),
           my_asserta_if_new(individuated_cache(OID,ROptions,IndvS)))),!.
 
 
@@ -759,7 +759,7 @@ individuate7(VM,ID,ROptions,GridIn,IndvS):-
 into_fti(ID,ROptions,GridIn0,VM):-
   must_det_ll((
   ignore((ROptions \= Options,is_list(ROptions), sub_var(complete,ROptions),
-    (pt(blue,fix_indivs_options(ro=ROptions,r=Reserved,o=Options))))),
+    (ppt(blue,fix_indivs_options(ro=ROptions,r=Reserved,o=Options))))),
   statistics(cputime,X),Timeleft is X+30,
   fix_indivs_options(ROptions,Options),
   %rtrace,
@@ -777,13 +777,13 @@ into_fti(ID,ROptions,GridIn0,VM):-
 
   listify(ROptions,OOptions),
   Area is H*V,
- % pt(yellow,ig(ROptions,ID)=into_fti(H,V)),
+ % ppt(yellow,ig(ROptions,ID)=into_fti(H,V)),
   ArgVM = vm{
    % parent VM
    %training:_,
      %compare:_, 
    grid_target:_,  last_key:_,  
-   % Options and TODO List (are actually same things)
+   % Options and TODO List (are actually sameR things)
    program_i:Options, options:OOptions, roptions:ROptions, %todo_prev:[],
    % how much time is left before we turn on debugger
    timeleft:Timeleft, objs_max_len:Max, objs_min_mass:_, objs_max_mass:_,
@@ -815,7 +815,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
     true)),
    %b_set_dict(objs,VM,[]),
    %set(VM.current_i) = VM
-   pt(yellow,ig(ROptions,ID)=(H,V)),
+   ppt(yellow,ig(ROptions,ID)=(H,V)),
    !.
 
 
@@ -915,7 +915,7 @@ run_fti(VM,[F|TODO]):-
   show_vm_changes(VM,F, must_det_ll(fti(VM,[F|TODO]))),!,
   must_det_ll(get_kov(program_i,VM,Code)),!,    
   ([F|TODO]=@=Code -> 
-    (% pt(blue,fti=[F|TODO]), pt(blue,code=Code), 
+    (% ppt(blue,fti=[F|TODO]), ppt(blue,code=Code), 
      set(VM.program_i) = TODO, 
        run_fti(VM,TODO)) ; run_fti(VM)),!.
 
@@ -926,7 +926,7 @@ print_vm_debug_objs(VM):-
   length(Objs,Count),
   as_debug(8,(amass(Objs,Mass), length(VM.points,PC),
       maybe_four_terse(VM.program_i,Four),
-      pt(t([obj/obj_mass=(Count/Mass),unprocessed_points=PC,roptions=VM.roptions,fsi=Four])))).
+      ppt(t([obj/obj_mass=(Count/Mass),unprocessed_points=PC,roptions=VM.roptions,fsi=Four])))).
 
 
 maybe_four_terse(L,F=..N):- length(L,N),N>4,!,length(F,4),append(F,_,L),!.
@@ -969,7 +969,7 @@ fti(VM,[Routine|set(VM.program_i)]):-  fail,
    length(VM.objs,Count),
    Count>Max,!,fail.
 
-fti(VM,[when(G,D)|TODO]):- ((call_expanded(VM,G),!,pt(using_when(G,D)))->R=D;R=call(nop(pt(skipped(G,D))))),
+fti(VM,[when(G,D)|TODO]):- ((call_expanded(VM,G),!,ppt(using_when(G,D)))->R=D;R=call(nop(ppt(skipped(G,D))))),
   set(VM.program_i) = [R|TODO].
 
 fti(VM,[call(G)|TODO]):-   set(VM.program_i) = TODO, !, my_submenu_call(call_expanded(VM,G)).
@@ -1091,7 +1091,7 @@ mergable_objects_direct(O1,O2,PsA,PsB):- iz(O1,dg_line(_)), iz(O2,dg_line(_)), d
 mergable_objects_direct(O1,O2,PsA,PsB):- iz(O1,hv_line(_)), iz(O2,dg_line(_)), dir_mergeable_list(PsA,PsB,[n,s,e,w],[ne,se,sw,nw]),!.
 mergable_objects_direct(O1,O2,PsA,PsB):- iz(O1,dg_line(_)), iz(O2,hv_line(_)), dir_mergeable_list(PsA,PsB,[ne,se,sw,nw],[n,s,e,w]),!.
 %mergable_objects_direct(O1,O2,PsA,PsB):- iz(O1,hv_line(U)), iz(O2,hv_line(D)), u_d(U,D), adjacent_objs(PsA,PsB).
-mergable_objects_direct(O1,O2,PsA,PsB):- \+ iz(O1,dot), amass(O2,N),N==1,dir_mergeable_list(PsA,PsB,[n,s,e,w,ne,se,sw,nw],[]),!.
+mergable_objects_direct(O1,O2,PsA,PsB):- \+ iz(O1,dot), mass(O2,N),N==1,dir_mergeable_list(PsA,PsB,[n,s,e,w,ne,se,sw,nw],[]),!.
 mergable_objects_direct(_O1,_O2,PsA,PsB):- double_touch(PsA,PsB).
 mergable_objects_direct(_O1,_O2,PsA,PsB):- double_touch(PsB,PsA).
 double_touch(PsA,PsB):- 
@@ -1113,7 +1113,7 @@ one_fti(VM,'rows'):-
   maplist_n(1,row_to_indiv(VM), VM.grid_o).
 
 row_to_indiv(VM,N,Row):-
-  same([Row],Rot90),
+  sameR([Row],Rot90),
   localpoints_include_bg(Rot90,LPoints),
   offset_points(1,N,LPoints,GPoints),
   %grid_to_individual([Row],Obj0),  
@@ -1133,8 +1133,8 @@ column_to_indiv(VM,N,Row):-
   offset_points(N,1,LPoints,GPoints),
   %grid_to_individual([Row],Obj0),  
   % a column is a row that was prematurely rotated 270 degrees
-  make_indiv_object(VM,[/*iz(hv_line(v)),rotated(same),*/
-    birth(columns),iz(image),iz(grouped(i_columns)),loc(N,1),rotation(same),v_hv(1,VM.v),grid_size(VM.h,VM.v)],GPoints,Obj),
+  make_indiv_object(VM,[/*iz(hv_line(v)),rotated(sameR),*/
+    birth(columns),iz(image),iz(grouped(i_columns)),loc(N,1),rotation(sameR),v_hv(1,VM.v),grid_size(VM.h,VM.v)],GPoints,Obj),
   raddObjects(VM,Obj).
   
 % =====================================================================
@@ -1190,7 +1190,7 @@ recolor_object(Grid,Old,New):-  \+ is_cpoints_list(Grid), globalpoints_include_b
 recolor_object(Recolors,Old,New):- 
   globalpoints_include_bg(Old,GPoints),
   maplist(recolor_point(Recolors),GPoints,NewGPoints),  
-  rebuild_from_globalpoints(Old,NewGPoints,New),!.
+  must_det_ll(rebuild_from_globalpoints(Old,NewGPoints,New)),!.
 
 recolor_point(Recolors,_-Point,C-Point):- my_assertion(member(C-Point,Recolors)),member(C-Point,Recolors).
 
@@ -1301,7 +1301,7 @@ sa_point(C-P2,Points):- select_always(C-P2,Points,Points0),
 is_fti_step(alone_dots).
 is_fti_step(maybe_alone_dots).
 % =====================================================================
-% alone_dots that have no adjacent points of the same color (could be gathered first)
+% alone_dots that have no adjacent points of the sameR color (could be gathered first)
 
 is_sa(Points,C-P2):-  \+ (is_adjacent_point(P2,Dir,P3), Dir\==c, member(C-P3,Points), \+ is_diag(Dir)),!.
 
@@ -1332,7 +1332,7 @@ maybe_lo_dots(_):-!.
 % =====================================================================
 is_fti_step(lo_dots).
 % =====================================================================
-% lo_dots may have adjacent points of the same color (because we are in 'lo_dots' mode)
+% lo_dots may have adjacent points of the sameR color (because we are in 'lo_dots' mode)
 
 lo_dots(VM):-  
   ( VM.h=<5 ; VM.v=<5 ; (VM.points \=[], length(VM.points,Len), (Len =< VM.h ; Len =< VM.v  ))),!,
@@ -1569,7 +1569,7 @@ one_fti(VM,shape_lib(Method,LibName)):-
 
 try_shapelib(VM,Method,LibName,Reserved):-   
   length(Reserved,RL),
-  ignore((RL>30,pt(shape_lib_direct(LibName)=RL))),
+  ignore((RL>30,ppt(shape_lib_direct(LibName)=RL))),
   %smallest_first
   %largest_first(Reserved,ReservedSL),
   %debug_indiv(Reserved),
@@ -1582,7 +1582,7 @@ use_shapelib(VM,Method,LibName,[Shape|ReservedSL]):- !,
   (try_shape(VM,Method,LibName,Shape)-> use_shapelib(VM,Method,LibName,[Shape|ReservedSL]) ; use_shapelib(VM,Method,LibName,ReservedSL)).
 
 try_shape(VM,Method,LibName,Shape):-     
-   %ignore((length(RestReserved,RL),1 is RL mod 7, pt(searchLib(LibName)=RL))),
+   %ignore((length(RestReserved,RL),1 is RL mod 7, ppt(searchLib(LibName)=RL))),
    % Points\==[],
    %\+ color(Shape,black),
    object_grid(Shape,OGrid),
@@ -1813,7 +1813,7 @@ addGPoints(VM,Obj):- assume_vm(VM),!,globalpoints(Obj,List),
 is_fti_stepr(remove_from_image(_Data)).
 remove_from_image(VM,Data):-    
     must_det_ll((remove_global_points(Data,VM.points,Points),
-    pt(Points),
+    ppt(Points),
     set(VM.points) = Points)),!.
    
 
@@ -2286,8 +2286,8 @@ merge_a_b(A,B,AA):-
   setq(A,oid(OID),AA),
   object_glyph(A,GlyphA),
   object_glyph(B,GlyphB),
-  ignore((How ==[]-> nop(pt(shared_object(GlyphB->GlyphA))); 
-    (pt(same_object(GlyphA,GlyphB,How))))).
+  ignore((How ==[]-> nop(ppt(shared_object(GlyphB->GlyphA))); 
+    (ppt(same_object(GlyphA,GlyphB,How))))).
 
 
 

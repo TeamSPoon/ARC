@@ -140,7 +140,7 @@ detect_supergrid_tt(TestID,ExampleNum,In0,Out0,TT):-
   dash_chars,
   dmsg(detect_all_training_hints(TestID,ExampleNum)),
     print_side_by_side(cyan,NI,CI,_,NO,CO),
-  pt(O2I),
+  ppt(O2I),
     print_side_by_side(cyan,In0,task_in(ExampleNum),_,Out0,task_out(ExampleNum)),
   
   %show_patterns(In),show_patterns(Out),
@@ -469,7 +469,7 @@ has_xy_columns(In,Color,X,Y,BorderNumsX,BorderNumsY):-
 has_xy_chunks(In,Color,Chunks):-
   has_xy_columns(In,Color,X,Y,BorderNumsX,BorderNumsY),
   make_grid(X,Y,Chunks),
-  %pt(slicing(BorderNumsX,BorderNumsY,onto(X,Y))),
+  %ppt(slicing(BorderNumsX,BorderNumsY,onto(X,Y))),
   gather_chunks(Color,In,Chunks,1,1,X,Y,BorderNumsX,BorderNumsY).
 
 grid_x_y_area(In,X,Y,Color,Cells):- 
@@ -487,7 +487,7 @@ gather_chunks(Color,In,Chunks,X,Y,GX,GY,BorderNumsX,BorderNumsY):-
   EX1 is EX - 1,
   EY1 is EY - 1,
   clip(SX1,SY1,EX1,EY1,In,Clip),
-  % print_grid((X,Y),Clip), pt(clipped(SX,SY,EX,EY,into(X,Y))),
+  % print_grid((X,Y),Clip), ppt(clipped(SX,SY,EX,EY,into(X,Y))),
   % once(Clip = [_,[_,Cell|_]|_];Clip = [[Cell|_]|_]),  
   once(((Clip = [_,[_,C|_]|_];Clip = [[C|_]|_];(member(CR,Clip),member(C,CR))),C\==Color,C\==black,Cell=C);Cell=Clip),
   (GX =< X -> (Yi is Y + 1, Xi is 1) ; (Xi is X+1, Yi is Y)),

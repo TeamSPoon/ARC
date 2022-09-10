@@ -69,7 +69,7 @@ term_to_oid(v(A)*(B+C)*D,Atom):- maplist(atomic,[A,B,C,D]),atomic_list_concat([v
 term_to_oid(t(A)*(B+C)*D,Atom):- maplist(atomic,[A,B,C,D]),atomic_list_concat([t,A,B,C,D],'_',Atom),!.
 term_to_oid(T,A):- (compound(T)->term_to_atom(T,A);(atom(T)->T=A;term_to_atom(T,A))).
 
-point_to_hvc(Point, H,V,_):- atomic(Point),!, hv_point(H,V,Point),!.
+point_to_hvc(Point,  H,V,wfg):- atomic(Point),!, hv_point(H,V,Point),!.
 point_to_hvc(C-Point,H,V,C):- must(nonvar(Point)),must(hv_point(H,V,Point)),!.
 %point_ to_hvc(H,V,_,H,V).
 %point_ to_hvc(Inf,Inf,offset_ranges(_,_,_,_)).
@@ -192,7 +192,7 @@ pgt1(Obj):-
          shape( [ point_01_01, point_02_01]),
          colors( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
-         localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(same), loc(3, 1),
+         localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(sameR), loc(3, 1),
          changes([]), iz(combined),
          iz(rectangle), iz(multicolored),
          iz(polygon), %obj _to_oid(v('0ad4ef5')*(trn+0)*in, 21),
@@ -204,7 +204,7 @@ pgt2(Obj):- Obj =
          shape( [ point_01_01, point_02_01]),
          colors( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
-         localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(same), loc(2, 1),
+         localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(sameR), loc(2, 1),
          changes([]), iz(combined),
          iz(rectangle), iz(multicolored),
          iz(polygon), %obj _to_oid(v('a1d4ef5')*(trn+0)*in, 66),

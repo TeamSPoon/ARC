@@ -82,8 +82,8 @@ assert_obj_global_points==>
 
 
 arc_test_property(T, common(comp(o-o, area)), area(n(1, 1, d(0), a(0), r(1))))==> arc_note(T,"output always size 1").
-arc_test_property(T, common(comp(i-o, area)), area(n(X, X, d(0), a(0), r(1))))/var(X)==> arc_note(T,"output size always same as input").
-%arc_test_property(T, common(comp(o-o, area)), area(n(X, X, d(0), a(0), r(1))))/nonvar(X)==> arc_note(T,"output size always same as input").
+arc_test_property(T, common(comp(i-o, area)), area(n(X, X, d(0), a(0), r(1))))/var(X)==> arc_note(T,"output size always sameR as input").
+%arc_test_property(T, common(comp(o-o, area)), area(n(X, X, d(0), a(0), r(1))))/nonvar(X)==> arc_note(T,"output size always sameR as input").
 
 %:- forall_assert(kaggle_arc_io(TestID,ExampleNum,IO,_),some_grid_tid(TestID*ExampleNum*IO)).
 :- set_prolog_flag(pfc_term_expansion,false).
@@ -93,4 +93,4 @@ arc_test_property(T, common(comp(i-o, area)), area(n(X, X, d(0), a(0), r(1))))/v
 
 :- add_history((make,pfcAddF(startAll4))).
 
-:- module(system).
+%:- module(system).

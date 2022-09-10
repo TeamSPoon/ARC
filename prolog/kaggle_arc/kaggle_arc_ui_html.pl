@@ -143,16 +143,25 @@ swish_arc(Request):-
 %arcproc_left(Request):- xlisting_web:handler_logicmoo_cyclone(Request),!.
 arcproc_left(Request):- 
   intern_request_data(Request),
-  ((format('Content-type: text/html~n~n',[]),
-    format('<!DOCTYPE html>~@<pre>~@</pre></body></html>~n~n',[begin_arc_html,ignore(handler_logicmoo_left)]),
-   flush_output_safe)),!.
+  format('Content-type: text/html~n~n<!DOCTYPE html>',[]),
+  flush_output_safe,
+  with_http((inline_html_format([
+    begin_arc_html,
+    handler_logicmoo_left,
+    ensure_colapsable_script,
+    write_end_html]))).
 
 %arcproc_right(Request):- swish_arc(Request),!.
 arcproc_right(Request):- 
   intern_request_data(Request),
-  ((format('Content-type: text/html~n~n',[]),
-    format('<!DOCTYPE html>~@<pre>~@</pre></body></html>~n~n',[begin_arc_html,ignore(handler_logicmoo_right)]),
-  flush_output_safe)),!.
+  format('Content-type: text/html~n~n<!DOCTYPE html>',[]),
+  flush_output_safe,
+  with_http((inline_html_format([
+    begin_arc_html,
+    handler_logicmoo_right,
+    ensure_colapsable_script,
+    write_end_html]))).
+
 
 
 :- initialization arc_http_server.
@@ -168,25 +177,31 @@ arc_find_tests(F):- find_tests(F).
 xlisting_whook:offer_testcase(F):- arc_find_tests(F).
 
 
-set_test_param:- show_call(get_param_req_or_session(task,Task)), show_call(atom_id(Task,ID)), dmsg(Task->ID), show_call(set_current_test(ID)),!.
+set_test_param:- 
+  ignore((get_param_sess(task,Task),
+  atom_id(Task,ID), dmsg(Task->ID), ID\=='', show_call(set_current_test(ID)))),!.
 
-handler_logicmoo_right:- get_http_current_request(Request),print_tree(Request),with_http(offer_testcases).
+handler_logicmoo_right:-   inline_html_format([
+   ignore((get_http_current_request(Request))),write('<pre>'),
+   print_tree(Request),offer_testcases,show_http_session,
+   write('</pre>')]).
 handler_logicmoo_arc:- inline_html_format([call(handler_logicmoo_left)]).
 handler_logicmoo_left:- 
- ignore((
    inline_html_format( 
-   [ '<pre>',
-   ignore(arc_nav_menu),   
+   [ `<pre>`,
+   ignore(arc_nav_menu),
+   ignore(show_console_info),
    ignore(set_test_param),
    ignore(call_current_arc_cmd),
-   ignore(show_http_session),
-   '</pre>',
-   ignore(ensure_colapsable_script)]))), 
+   show_http_session,
+    `</pre>`]), 
   !.
 
 arc_nav_menu:- 
   write_cmd_link(prev_test),
   write_cmd_link(next_test),!.
+show_console_info:-
+  in_pp(PP),ppt(in_pp(PP)),!.
 call_current_arc_cmd:-
    current_arc_cmd(Prolog),        
    dmsg(cmd=Prolog),
@@ -195,7 +210,7 @@ call_current_arc_cmd:-
    weto(Prolog).
 
 current_arc_cmd(Prolog):- get_param_req(cmd,Call), url_decode_term(Call,Prolog).
-current_arc_cmd(Prolog):- Prolog=print_test.
+current_arc_cmd(Prolog):- Prolog=ndividuatorO. % ndividuator1
 
 arc_html(`
 <script language="javascript">

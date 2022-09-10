@@ -10,7 +10,7 @@
 
 showdiff(A,B):- is_group(A), is_group(B), showdiff_groups(A,B),!.
 showdiff(A,B):- is_object(A), is_object(B), showdiff_objects(A,B),!.
-showdiff(A,B):- must(diff_terms(A,B,D)) -> D\==[],!,writeln('SOME DIFFERNCE'),pt(D).
+showdiff(A,B):- must(diff_terms(A,B,D)) -> D\==[],!,writeln('SOME DIFFERNCE'),ppt(D).
 showdiff(_,_):- writeln('NO DIFFERNCE').
 
 
@@ -77,20 +77,29 @@ get_selector_n2([N1]):- top(Top), between(4,Top,N1).
 %generalize(CI,CO):- callable(CI),functor(CI,F,A),functor(CO,F,A).
 
 generalize_atomic(I,I).
-generalize_atomic(I,O):- number(I),!, freeze(O, number(O)).
+generalize_atomic(I,O):- atomic_type(P1), call(P1,I),!, freeze(O, call(P1,O)).
 generalize_atomic(I,O):- atom(I),!, freeze(O, atom(O)).
-generalize_atomic(I,O):- string(I),!, freeze(O, string(O)).
 
-generalize_term(I,O):- \+ compound(I),!, I = O.
-generalize_term(iz(I),iz(O)):-!,generalize_term(I,O).
-generalize_term(I,O):- generalize(I,O).
+number_or_ratio(NR):- (number(NR);rational(NR)),!.
+atomic_type(number_or_ratio).
+atomic_type(string).
+atomic_type(is_fg_color). atomic_type(is_bg_color).
+atomic_type(is_nc_point). atomic_type(is_cpoint).
+atomic_type(is_color).
+atomic_type(atom).
+atomic_type(is_list).
+
+generalize_term(I,O):- nonvar(O),!,generalize_term(I,OO),O=OO.
+generalize_term(I,O):- compound_not_list(I), !, generalize_compound(I,O),nonvar(O).
+generalize_term(I,O):- \+ compound(I),!, generalize_atomic(I,O).
+generalize_term([H|T],O):- !, generalize_cons([H|T],O).
 
 generalize_once(I,O):- plain_var(O), !, freeze(O,once(generalize(I,O))).
 generalize_once(I,O):- generalize(I,O).
 %generalize(I,O):- plain_var(I), !, freeze(I, generalize(I,O)).
 
 generalize(I,O):- plain_var(I), !, (O=I ; O = _).
-generalize(I,O):- ( \+ compound(I) ), !, (O=I ; O = _).
+%generalize(I,O):- ( \+ compound(I) ), !, (O=I ; O = _).
 %generalize(I,O):- ( \+ compound(I) ),!, generalize_atomic(I, O).
 generalize([A|B],[AA|BB]):- !, generalize(A,AA),generalize_cons(B,BB).
 generalize(_-P,_-P):-!.
@@ -99,21 +108,52 @@ generalize(_,_).
 
 compound_not_list(I):- compound(I), !, \+ is_list(I).
 
-generalize_compound(I,O):- 
+generalize_compound(iz(I),iz(O)):-!,generalize_term(I,O), nonvar(O).
+generalize_compound(I,O):- term_variables(I,Vs), 
   functor(I,F,A),functor(O,F,A),
   compound_name_arguments(I,F,IA),
   compound_name_arguments(O,F,OA),!,
-  generalize_arglist(IA,OA).
+  generalize_arglist(IA,OA),
+  term_variables(O,VsO), length(Vs,IL),length(VsO,OL), OL =< IL+1.
 
-generalize_arg(I,O):- compound_not_list(I),!,generalize_compound(I,O).
+generalize_arg(I,O):- compound_not_list(I),!,(generalize_compound(I,O);I=_).
 generalize_arg(I,O):- O=I ; O = _.
 
 generalize_arglist([],[]). 
 generalize_arglist([I],[O]):- !, generalize_arg(I,O).
 generalize_arglist([A,B],[AA,BB]):- !, generalize_arg(A,AA),generalize_arg(B,BB).
-generalize_arglist([A,B,C],[AA,BB,CC]):- !, generalize_arg(A,AA), generalize_arg(B,BB),generalize_arg(C,CC).
-generalize_arglist([A,B,C,D],[AA,BB,CC,DD]):- !, generalize_arg(A,AA), generalize_arg(B,BB),generalize_arg(C,CC),generalize_arg(D,DD).
-generalize_arglist([A|B],[AA|BB]):- generalize_arg(A,AA),generalize_arglist(B,BB).
+
+generalize_arglist(List,Loose):- findall(E,generalize_arglist3(List,E),Pos),
+  sort_looseness(Pos,Gens),!,member(Loose,Gens).
+
+%sort_looseness(Pos,Pos):-!.
+sort_looseness(Pos,Gens):- predsort(using_compare(var_count),Pos,Gens).
+
+sub_term_or_e(E,List):- is_list(List),!,member(EE,List),sub_term_or_e(E,EE).
+sub_term_or_e(E,List):- sub_term(E,List).
+
+count_of(A,P1, NEG):- nonvar(NEG), NEG = -N, !, count_of(A,P1,NN), N is -NN.
+count_of(A,P1,N):- findall(E,(sub_term_or_e(E,A),call(P1,E)),L),length(L,N).
+count_sum_of(A,P2,N):- findall(EN,(sub_term_or_e(E,A),call(P2,E,EN)),L),sum_list(L,N).
+
+var_count(Term,N):- compound_not_list(Term),compound_name_arguments(Term,_,List),!,var_count(List,N).
+var_count(Term,N):- var(Term),!,N = term(Term,Term,Term).
+var_count(Term,N):- \+ is_list(Term), N = Term,!.
+var_count(Term,N):- 
+ count_of(Term,is_colorish,-NCC), count_of(Term,atom,-AC), count_of(Term,compound,-CC),
+ count_of(Term,number_or_point,-NC), count_of(Term,ground,-GC), count_of(Term,var,VC),
+ include(plain_var,Term,AVM),length(AVM,FA),
+ term_variables(Term,Vs),length(Vs,VsL),
+ copy_term(Term,GTerm,_), numbervars(GTerm,0,_,[attvars(bind),singletons(true)]), 
+ N = (FA+NCC+AC+VsL+NC+VC+GC+CC+GTerm).
+
+number_or_point(O):- number(O).
+number_or_point(O):- is_nc_point(O).
+
+generalize_arglist3([A,B,C],[AA,BB,CC]):- generalize_arg(A,AA), generalize_arg(B,BB),generalize_arg(C,CC).
+generalize_arglist3([A,B,C,D],[AA,BB,CC,DD]):- generalize_arg(A,AA), generalize_arg(B,BB),generalize_arg(C,CC),generalize_arg(D,DD).
+generalize_arglist3([A|B],[AA|BB]):- generalize_arg(A,AA),generalize_arglist(B,BB).
+generalize_arglist3(L1,L2):- length(L1,N),length(L2,N).
 
 generalize_cons(I,O):- plain_var(I), !, (O=[];O=_).
 generalize_cons([],O):- !, (O=[];O=_).
@@ -131,7 +171,7 @@ combine_diffs(D1,D2,L12):- listify(D1,L1),listify(D2,L2),!,my_append(L1,L2,L12).
 
 showdiff_groups(AG,BG):- not_list(AG),into_list(AG,AGL),!,showdiff_groups(AGL,BG).
 showdiff_groups(AG,BG):- not_list(BG),into_list(BG,BGL),!,showdiff_groups(AG,BGL).
-showdiff_groups(AG,BG):- once((proportional_how(AG,BG,DD), pt(cyan,proportional(DD)),
+showdiff_groups(AG,BG):- once((proportional_how(AG,BG,DD), ppt(cyan,proportional(DD)),
   maplist(showdiff_objects,AG,BG))),fail.
   
 showdiff_groups(AG,BG):-
@@ -143,12 +183,12 @@ showdiff_groups(AG,BG):-
        compare_objs1([turned,+loc]),
        compare_objs1([turned,-loc]),
        compare_objs1([moved]),
-       compare_objs1([same])],
+       compare_objs1([sameR])],
                   A4,B4),  
   ((AG==A4, fail) -> true ; length(A4,LenA),ignore((LenA>0,dash_chars)),print_list_of(inputUniqs=LenA,A4), dash_chars),
   ((BG==B4, fail) -> true ; length(B4,LenB),print_list_of(outputUniqs=LenB,B4), dash_chars),
   diff_groups(A4,B4,Diff),
-  pt(Diff),
+  ppt(Diff),
   !.
 
 showdiff_groups(A,B,[],A,B):-!.
@@ -157,7 +197,7 @@ showdiff_groups(A,B,[H|T],AAR,BBR):- !,
   showdiff_groups(A1,B1,T,AAR,BBR).
 showdiff_groups(A,B,Pred,AAR,BBR):- 
   pred_intersection(Pred,A,B,IntersectA,IntersectB,AAR,BBR),
-  ignore((IntersectA\==[], maplist(showdiff_objects(Pred),IntersectA,IntersectB))).
+  ignore((IntersectA\==[], maplist(showdiff_objects_vis(Pred),IntersectA,IntersectB))).
 
 
 diff_groups2(AAR,BBR,proportional(DD,Diffs)):- proportional(AAR,BBR,DD), maplist(diff_objects,AAR,BBR,Diffs).
@@ -173,11 +213,12 @@ diff_groups(A0,B0,DD):-
 select_obj_pair(AAR,BBR,PA,PB):-
   select_obj_pair1(AAR,BBR,PA,PB),
   select_obj_pair2(AAR,BBR,PA2,PB2),
-  ignore((fail, ([PA,PB] == [PA2,PB2]) , wdmsg([a,PA,b,PB]))),!.
-select_obj_pair(AAR,BBR,PA,PB):-
-  select_obj_pair1(AAR,BBR,PA,PB).
+  [PA,PB] == [PA2,PB2],
+  ignore((fail, wdmsg([a,PA,b,PB]))),!.
 select_obj_pair(AAR,BBR,PA2,PB2):-
   select_obj_pair2(AAR,BBR,PA2,PB2).
+select_obj_pair(AAR,BBR,PA,PB):-
+  select_obj_pair1(AAR,BBR,PA,PB).
 
 
 select_obj_pair1(AAR,BBR,PA,PB):- 
@@ -237,7 +278,7 @@ diff_groups1(A,B,disjointed(SharedT,AOnlyT,BOnlyT,AO,BO)):-
 tersify_cheap(I,O):- tersify(I,O),!.
 
 
-object_dglyphH(PA,mass(GA,Mass)):- obj_to_oid(PA,GA),mass(PA,Mass),!.
+object_dglyphH(PA,mass_pen(GA,Mass,Pen)):- obj_to_oid(PA,GA),mass(PA,Mass),pen(PA,Pen),!.
 object_dglyphH(PA,GA):- object_dglyph(PA,GA).
 
 unused_diff_groups0(AAR,BBR,DD):-
@@ -318,7 +359,8 @@ maye_sort(L,S):- is_list(L),\+ is_grid(L), !,sort(L,S).
 maye_sort(S,S).
 obj_make_comparable(I,_):- plain_var(I),!,fail.
 obj_make_comparable(obj(I),O):- maplist(obj_make_comparable_e,I,O).
-obj_make_comparable(I,O):- is_list(I),sort_obj_props(I,II),maplist(obj_make_comparable_e,II,O).
+obj_make_comparable(I,O):- is_list(I),maplist(obj_make_comparable_e,I,M),sort_obj_props(M,O),
+ nop(ppt(sort_obj_props(O))).
 obj_make_comparable(I,O):- into_obj(I,M),obj_make_comparable(M,O).
 %obj_make_comparable_e(I,O):- is_list(I),sort(I,O).
 %obj_make_comparable_e(Comp,F):- compound(Comp),functor(Comp,F,_),f_uncomparable_e(F).
@@ -385,7 +427,7 @@ combine_duplicates1(IndvSO,IndvSO).
 overlap_same_obj_no_diff(I,O):- !, globalpoints(I,II),globalpoints(O,OO),!,pred_intersection((=@=),II,OO,_,_,[],[]),!.
 overlap_same_obj_no_diff(I,O):- compare_objs1(perfect,I,O). %diff_objects(I,O,Diff),Diff==[]. 
 
-overlap_same_obj(I,O):- compare_objs1(same,I,O).
+overlap_same_obj(I,O):- compare_objs1(sameR,I,O).
 
 %fti(VM,[combine_objects|set(VM.program_i)]):- combine_objects(VM),!.
 is_fti_step(combine_objects).
@@ -416,16 +458,24 @@ combine_same_globalpoints(IndvS,IndvSO):-
 combine_same_globalpoints(IndvSO,IndvSO).
 
 %overlap_same_obj_no_diff(I,O):- compare_objs1(perfect,I,O). %diff_objects(I,O,Diff),Diff==[]. 
-%overlap_same_obj(I,O):- compare_objs1(same,I,O).
+%overlap_same_obj(I,O):- compare_objs1(sameR,I,O).
 
 showdiff_objects(A,B):- into_obj(A,A1),into_obj(B,B1), !, showdiff_objects(sameness,A1,B1),!.
+
+showdiff_objects_vis(N,O1,O2):- showdiff_objects(vis(N),O1,O2).
+
 showdiff_objects(N,O1,O2):- diff_objects(O1,O2,Diffs), showdiff_objects(N,O1,O2,Diffs).
 showdiff_objects(N,O1,O2,[]):- print_list_of(N,[O1,O2]),!.
+
 showdiff_objects(N,O1,O2,Diffs):- 
+  dash_chars,dash_chars,
+  print_list_of(debug_as_grid,showdiff_objects(N),[O1,O2]),
+  dash_chars,dash_chars,
   print_list_of(diffs,Diffs),
-  print_list_of(N,[O1,O2]),
+  dash_chars,dash_chars,
   findall(E,compare_objs1(E,O1,O2),L),
-  pt(compare_objs1=L), dash_chars.
+  ppt(compare_objs1(showdiff_objects)=L), 
+  dash_chars,dash_chars.
 
 
 compare_objs1(How,I,O):- is_list(I), is_list(O), compare_objprops(How,I,O).
@@ -443,7 +493,7 @@ compare_objs1( X,I,O,SL,UI,UO):- \+ \+  prop_of(X,_), !, prop_of(X,E),e1_member(
 compare_objs1(perfect,I,O,SL,UI,UO):- forall(prop_of(_,E), compare_objs1(E,I,O,SL,UI,UO)).
 compare_objs1(perfect,I,O,SL,UI,UO):-  e1_member(globalpoints(_),SL).
 
-sprop(same).
+sprop(sameR).
 sprop(moved).
 sprop(turned).
 sprop(X):- prop_of(X,_).
@@ -452,12 +502,12 @@ sprop(perfect).
 
 %sprop(perfect).
 
-sprop_of(same,visually).
-sprop_of(same,size).
-sprop_of(same,shape).
-sprop_of(same,colors).
+sprop_of(sameR,visually).
+sprop_of(sameR,size).
+sprop_of(sameR,shape).
+sprop_of(sameR,colors).
 
-sprop_of(moved,same).
+sprop_of(moved,sameR).
 sprop_of(moved,loc).
 
 sprop_of(turned,rotate).
@@ -484,7 +534,7 @@ changed_by(v_hv,copy).
 %compute_diff_objs2(I,IIR,O,OOR,[]):-  diff_terms(IIR,OOR,[]),
 
 
-  %pt(remove_sames(II,OO)),
+  %ppt(remove_sames(II,OO)),
 %  select(C,IIR,IIR2),compound(C),generalize(C,M),select(M,OOR,OOR2),
   %trace,diff_terms(IIR,OOR,OUT),!.
   
@@ -495,6 +545,8 @@ changed_by(v_hv,copy).
 */
 
 needs_indivs(I,_):- is_object(I),!,fail.
+needs_indivs(globalpoints(O),O):- !.
+needs_indivs(I,O):- is_gridoid(I), \+ is_group(I),!, globalpoints_maybe_bg(I,O),!,I\==O.
 %needs_indivs(I,O):- is_grid(I),_unshared_indivs(I,O),!.
 needs_indivs(I,O):- is_gridoid(I), \+ is_group(I), arcST, trace, compute_unshared_indivs(I,O),!.
 
@@ -503,6 +555,7 @@ needs_indivs(I,O):- is_gridoid(I), \+ is_group(I), arcST, trace, compute_unshare
 diff_terms(I,O,D):- nonvar_or_ci(D),!,diff_terms(I,O,DD),!,D==DD.
 diff_terms(I,O,D):- maybe_number(I,N1),maybe_number(O,N2),!,proportional_size(N1,N2,D).
 diff_terms(I,O,[]):- O==I,!.
+diff_terms(IF=IA,O,IF=D):- find_kval(O,IF,OA),!,diff_terms(IA,OA,D).
 diff_terms(I,O, [] ):- (never_do_diff(I);never_do_diff(O)),!.
 diff_terms(I,O,[]):- plain_var(I),plain_var(O),!.
 diff_terms(I,O,O):- plain_var(I),!.
@@ -510,6 +563,9 @@ diff_terms(O,I,O):- plain_var(I),!.
 diff_terms(I,O,[]):- O=@=I,!.
 diff_terms(I,O,O):- I==[],!.
 diff_terms(I,O,I):- O==[],!.
+
+diff_terms(shape(I),shape(O),[]):- !,sort(I,II),sort(O,OO),II=@=OO,!.
+diff_terms(shape(I),shape(O),shape(diff(I->O))):-!.
 %diff_terms(I,O, (O \== I)):- O=@=I,!.
 diff_terms(group_o(I),group_o(O),group_o(DD)):- !, must_det_ll(diff_groups(I,O,DD)).
 diff_terms(I,O,DD):-  is_group(I), is_group(O), !, must_det_ll(diff_groups(I,O,DD)).
@@ -518,51 +574,103 @@ diff_terms(O,I,[]):- no_diff(I,O),!.
 % diff_terms(I,O,DD):-  is_group(I),is_group(O), !,  include_fav_points(I,II), include_fav_points(O,OO), diff_groups(I,O,DD).
 diff_terms(obj(I),obj(O),OUT):- !, diff_objects(I,O,OUT).
 diff_terms([IH,IV],[OH,OV],D):- maplist(number,[IH,IV,OH,OV]),!,maplist(diff_numbers,[IH,IV],[OH,OV],D).
-diff_terms(I,O, (diff_lists=@= D)):- non_grid_list(I),non_grid_list(O),!,diff_lists(I,O,D).
+diff_terms(I,O, D):- non_grid_list(I),non_grid_list(O),!,diff_lists(I,O,D).
 diff_terms(I,O,D):- is_map(I),!,findall(D1,(get_kov(K, I, V),diff_terms(K=V,O,D1)),D).
+
 
 diff_terms(Grid,Other,OUT):- needs_indivs(Grid,I),!,diff_terms(I,Other,OUT).
 diff_terms(Other,Grid,OUT):- needs_indivs(Grid,I),!,diff_terms(Other,I,OUT).
-
-diff_terms(IF=IA,O,IF=D):- find_kv(O,IF,OA),!,diff_terms(IA,OA,D).
 diff_terms(I,O,D):- compound(I),compound(O),!,diff_compounds(I,O,D).
 diff_terms(I,O,diff(I->O)).
 
 diff_compounds(I,O, [] ):- (never_show_diff(I);never_show_diff(O)),!.
+
 diff_compounds(I,O,D):- compound_name_arguments(I,IF,IA),compound_name_arguments(O,OF,OA),
   maplist(compute_diff_or_same,IA,OA,DA),
   diff_compounds(I,IF,O,OF,DA,D).
 
+diff_compounds( I, F,_O, F, DA, D):- I=@=DA, D=[].
 diff_compounds(_I, F,_O, F, DA, D):- !, compound_name_arguments(D,F,DA).
 diff_compounds(I,_IF,O,_OF,_DA, diff(I->O)).
 
 
-compute_diff_or_same(I,O,IO):- diff_terms(I,O,D),
-  maybe_show_diff(I,O,D,IO).
+compute_diff_or_same(I,O,IO):- 
+  diff_terms(I,O,D),
+  maybe_no_diff(I,O,D,IO).
 
-maybe_show_diff(_,O,[],O):-!.
-maybe_show_diff(_,_,D,D).
+maybe_no_diff(I,_,[],I):-!.
+maybe_no_diff(_,_,D,D).
+
+is_object_props(O):- is_list(O),member(E,O),compound(E),shape(_)=E,!.
+diff_lists(AA,BB,D):- AA=@=BB,!,D=[].
+diff_lists(AA,BB,diff(AA->BB)):- sort(AA,A),sort(BB,B), A=@=B,!.
+diff_lists(I,O,D1D):- is_kv_list(I),is_kv_list(O),!,kv_list_diff(_Sytle,I,O,D1D).
+diff_lists(I,O,D1D):- is_object_props(I),is_object_props(O),!,object_props_diff(_Sytle,I,O,D1D).
+diff_lists(AA,BB,D):- must_det_ll((non_grid_list(AA), non_grid_list(BB), =(AA,A),=(BB,B), length(A,AL), length(B,BL))),
+ must_det_ll((AL>BL,fail) -> list_diff_recurse(B,A,D) ; list_diff_recurse(A,B,D)).
+
+select_two_0(I,O,CI,CO,II,OO):- select_two_any(I,O,CI,CO,II,OO), CO==CI.
+select_two_0(I,O,CI,CO,II,OO):- select_two_any(I,O,CI,CO,II,OO), CO=@=CI.
+select_two_1(I,O,CI,CO,II,OO):- select(CI,I,II), compound_not_list(CI), generalize_compound(CI,CO), \+ plain_var(CO), select(CO,O,OO),be_comparable(CI,CO).
+select_two_1(I,O,CI,CO,II,OO):- select(CI,I,II), generalize_term(CI,CO), \+ plain_var(CO), select(CO,O,OO),be_comparable(CI,CO).
+select_two_2(I,O,CI,CO,II,OO):- select(CI,I,II), generalize_term(CI,CO),  select(CO,O,OO), be_comparable(CI,CO).
+select_two_3(I,O,CI,CO,II,OO):- select_two_any(I,O,CI,CO,II,OO), be_comparable(CI,CO),!.
+select_two_any(I,O,CI,CO,II,OO):- select(CI,I,II), select(CO,O,OO).
+
+is_kv_list([C|_]):- compound(C),functor(C,(-),2).
+select_two(I,O,CI,CO,II,OO):- select_two_0(I,O,CI,CO,II,OO),!.
+select_two(I,O,CI,CO,II,OO):- select_two_1(I,O,CI,CO,II,OO),!.
+select_two(I,O,CI,CO,II,OO):- select_two_1(O,I,CO,CI,OO,II),!.
+select_two(I,O,CI,CO,II,OO):- select_two_2(I,O,CI,CO,II,OO).
+select_two(I,O,CI,CO,II,OO):- select_two_2(O,I,CO,CI,OO,II),!.
+select_two(I,O,CI,CO,II,OO):- select_two_3(I,O,CI,CO,II,OO).
+select_two(I,O,CI,CO,II,OO):- select_two_3(O,I,CO,CI,OO,II),!.
+
+be_comparable(CI,CO):- data_type(CI,TI),data_type(CO,TO),TI==TO,!.
+be_comparable(CI,CO):- compound(CI),compound(CO),!,functor(CI,F,A),functor(CO,F,A).
+
+is_nil(Nil):- Nil == [].
+
+list_diff_recurse_nil(I,O,[]):- I==O,!.
+list_diff_recurse_nil(I,O,[]):- I=@=O,!.
+list_diff_recurse_nil(Nil,O,diff(Nil->O)):- is_nil(Nil),!.
+list_diff_recurse_nil(O,Nil,diff(O->Nil)):- is_nil(Nil),!.
+
+list_diff_recurse(I,O,D1D):- list_diff_recurse_nil(I,O,D1D),!.
+list_diff_recurse(I,O,D1D):- select_two(I,O,CI,CO,II,OO),!,diff_terms(CI,CO,D1),!,
+       list_diff_recurse(II,OO,D),!, combine_diffs(D1,D,D1D),!.
+list_diff_recurse([CI|II],[CO|OO],D1D):- must_det_ll(diff_terms(CI,CO,D1)),!,
+       list_diff_recurse(II,OO,D),!, combine_diffs(D1,D,D1D),!.
+
+%kv_list_diff(Style,I,O,D1D):- select_two_0(I,O,CI,CO,II,OO),!,kv_list_diff(Style,II,OO,D1D).
+
+select_two_kv(key,I,O,CI,CO,II,OO):- CI=C-_,CO=C-_, select_two_any(I,O,CI,CO,II,OO).
+select_two_kv(value,I,O,CI,CO,II,OO):- CI=_-P1,CO=_-P1, select_two_any(I,O,CI,CO,II,OO).
+
+select_two_props(_Style,I,O,CI,CO,II,OO):- select_two_any(I,O,CI,CO,II,OO),compound(I),functor(I,F,A),functor(O,F,A).
+object_props_diff(_Sytle,I,O,D1D):- list_diff_recurse_nil(I,O,D1D),!.
+object_props_diff(Style,I,O,D1D):- select_two_any(I,O,CI,CO,II,OO),CI=@=CO,!,object_props_diff(Style,II,OO,D1D).
+object_props_diff(Style,I,O,D1D):- select_two_any(I,O,CI,CO,II,OO),CI=CO,!,object_props_diff(Style,II,OO,D1D).
+object_props_diff(Style,I,O,D1D):- select_two_props(Style,I,O,CI,CO,II,OO),diff_terms(CI,CO,D1),!,
+       object_props_diff(Style,II,OO,D),!, combine_diffs(D1,D,D1D),!.
+object_props_diff(Style,[CI|II],[CO|OO],D1D):- must_det_ll(diff_terms(CI,CO,D1)),!,
+       object_props_diff(Style,II,OO,D),!, combine_diffs(D1,D,D1D),!.
 
 
-diff_lists(AA,BB,D):- must_det_ll((non_grid_list(AA), non_grid_list(BB), sort(AA,A),sort(BB,B), length(A,AL), length(B,BL))),
- must_det_ll(AL>BL -> list_diff_recurse(B,A,D) ; list_diff_recurse(A,B,D)).
+kv_list_diff(_Sytle,I,O,D1D):- list_diff_recurse_nil(I,O,D1D),!.
+kv_list_diff(Style,I,O,D1D):- select_two_any(I,O,CI,CO,II,OO),CI=@=CO,!,kv_list_diff(Style,II,OO,D1D).
+kv_list_diff(Style,I,O,D1D):- select_two_any(I,O,CI,CO,II,OO),CI=CO,!,kv_list_diff(Style,II,OO,D1D).
+kv_list_diff(Style,I,O,D1D):- select_two_kv(Style,I,O,CI,CO,II,OO),diff_terms(CI,CO,D1),!,
+       kv_list_diff(Style,II,OO,D),!, combine_diffs(D1,D,D1D),!.
+kv_list_diff(Style,[CI|II],[CO|OO],D1D):- must_det_ll(diff_terms(CI,CO,D1)),!,
+       kv_list_diff(Style,II,OO,D),!, combine_diffs(D1,D,D1D),!.
 
-list_diff_recurse(I,O,[]):- I==O,!.
-list_diff_recurse(I,O,[]):- I=@=O,!.
-list_diff_recurse([],O,diff([]->O)):-!.
-list_diff_recurse(O,[],diff(O->[])):-!.
-list_diff_recurse(I,O,D1D):- select(CI,I,II),generalize_term(CI,CO),select(CO,O,OO), diff_terms(CI,CO,D1),  
-       list_diff_recurse(II,OO,D), combine_diffs(D1,D,D1D),!.
-list_diff_recurse(I,O,D1D):- select(CI,O,II),generalize_term(CI,CO),select(CO,I,OO), diff_terms(CI,CO,D1),  
-       list_diff_recurse(II,OO,D), combine_diffs(D1,D,D1D),!.
-list_diff_recurse([CE|I],[CE2|O],D1D):- diff_terms(CE,CE2,D1), list_diff_recurse(I,O,D),combine_diffs(D1,D,D1D),!.
-
-find_kv(OF=OA,OF,OA):- !.
-find_kv(List,OF,OA):- is_list(List),member(E,List),nonvar_or_ci(E),find_kv(E,OF,OA).
-find_kv(Dict,OF,OA):- is_map(Dict),get_kov(OF,Dict,OA).
-find_kv(O,OF,OA):- compound(O),compound_name_arguments(O,OF,[OA]).
-find_kv(obj(O),OF,OA):- !, find_kv(O,OF,OA).
-find_kv(O,OF,OA):- compound(O),compound_name_arguments(O,OF,OA).
+find_kval(OF=OA,OF,OA):- !.
+find_kval(List,OF,OA):- is_list(List),member(E,List),nonvar_or_ci(E),find_kval(E,OF,OA).
+find_kval(Dict,OF,OA):- is_map(Dict),get_kov(OF,Dict,OA).
+find_kval(O,OF,OA):- compound(O),compound_name_arguments(O,OF,[OA]).
+find_kval(obj(O),OF,OA):- !, find_kval(O,OF,OA).
+find_kval(O,OF,OA):- compound(O),compound_name_arguments(O,OF,OA).
 
 
 must_intersect_all(Indv,Points,NextScanPoints):-
@@ -676,7 +784,7 @@ on_x_log_and_fail(G):- catch(G,E,(wdmsg(red((E -> G))),trace,G,fail)).
 %proportional(N1,N2,N):- is_grid(N1),is_grid(N2),!,proportional_grids(N1,N2,N).
 
 maybe_number(N,N):- \+ compound(N),!,number(N).
-maybe_number(M,N):- extract_vals(M,[N|_]),!,number(N),!.
+maybe_number(M,N):- extract_vals(M,Vals),!,last(Vals,N),number(N),!.
 
 into_vals(V1,V2,Vals):- extract_vals(V1,VV1),extract_vals(V2,VV2),append(VV1,VV2,Vs),sort(Vs,Vals).
 
@@ -686,7 +794,7 @@ extract_vals(M,Vals):- maybe_extract_values(M,Vals),!.
 extract_vals(M,N):- M=..[_,A],maybe_extract_values(A,N).
 extract_vals(V2,[V2]).
 
-maybe_extract_values(Color,Values):- compound(Color), Color=..[DF,vals(Values)|_],!,diff_f(DF),is_list(Values),!.
+maybe_extract_values(Color,Values):- must_be_free(Values), compound(Color), Color=..[DF,vals(Values)|_],diff_f(DF),!,is_list(Values),!.
 maybe_extract_value(Color,Value):- maybe_extract_values(Color,Values),!,member(Value,Values).
 
 proportional_size(N1,N2,P):- unused_proportion(N1,N2,P),!.
@@ -716,10 +824,11 @@ proportional_lists(L1,L2,OUT):- is_group(L1),is_group(L2),must_det_ll(diff_group
 proportional_lists(L1,L2,OUT):- 
  must_det_ll((
   length(L1,N1),length(L2,N2), proportional_size(N1,N2,N),
-  intersection(L1,L2,Shared,IOnlyC,OOnlyC), diff_lists(IOnlyC,OOnlyC,Diff),
+  intersection(L1,L2,Shared,IOnlyC,OOnlyC), 
   maplist(length,[L1,L2,IOnlyC,Shared,OOnlyC],Lens),
   into_vals(L1,L2,Vals),
   list_to_set(Shared,SharedS),
+  diff_lists(IOnlyC,OOnlyC,Diff),
   OUT=..[lst,vals(Vals),len(N),s(SharedS),dif(Diff),l(IOnlyC),r(OOnlyC)|Lens])),!.
 
 proportional_lists(L1,L2,p(L1,L2)):-!.

@@ -43,7 +43,7 @@ empty_grid_to_individual(H,V,Obj):-
          shape([]),
          colors([]),
          localpoints([]), v_hv(H, V), 
-         rotation(same), 
+         rotation(sameR), 
          loc(1, 1),
          obj_iv(Iv),
          %pen([fg]),
@@ -95,6 +95,9 @@ reclumped([A,B|Rest],[A,B]):- reclumped(Rest,[A,B]),!.
 reclumped(Rest,Seq):- append(Seq,_,Rest),!.
 reclumped(PenColors,PenColors).
 
+
+maybe_include_bg(Points,FgPoints):- fg_points(Points,FgPoints),FgPoints\==[],!.
+maybe_include_bg(Points,Points).
 fg_points(Points,FgPoints):- include(is_fg_point,Points,FgPoints).
 is_fg_point(CPoint):- \+ (only_color_data(CPoint,Color),is_bg_color(Color)).
 
@@ -200,7 +203,7 @@ make_indiv_object_s(ID,GH,GV,Overrides,Points,ObjO):-
     must_det_ll((tips_to_rot(LPoints,GH,GV,RotOut,Final),localpoints(Final,FinalLocalPoints)))),
   delistify_single_element(RotOut,RotO),
   */
-  RotO=same, FinalLocalPoints = LPoints,
+  RotO=sameR, FinalLocalPoints = LPoints,
 
 
   % colors 
@@ -260,7 +263,7 @@ ignore_xf(G):- ignore(notrace(catch(G,_,fail))).
 
 %guess_pretty2(O):- mortvar((copy_term(O,C),pretty1(O),O=@=C)).
 
-show_objs_as_code(O):- var(O),!,pt(var(O)),!.
+show_objs_as_code(O):- var(O),!,ppt(var(O)),!.
 show_objs_as_code(Grid):- is_grid(Grid),!.
 
 show_objs_as_code(Objs):- is_list(Objs),!,
@@ -663,7 +666,7 @@ resolve_reference(R,Var):- nonvar(R),R\=obj(_),known_gridoid(R,Var),!.
 rotation(G,X):- is_group(G),!,mapgroup(rotation,G,Points),append_sets(Points,X).
 rotation(I,X):- var_check(I,rotation(I,X)).
 rotation(I,X):- indv_props(I,L),member(rotation(X),L).
-rotation(_,same).
+rotation(_,sameR).
 
 object_changes(G,X):- is_group(G),!,mapgroup(object_changes,G,Points),append_sets(Points,X).
 object_changes(I,X):- indv_props(I,L),member(changes(X),L).
@@ -722,7 +725,7 @@ grid_to_points_include_bg(Grid,Points):- grid_size(Grid,HH,HV),!,all_points_betw
 grid_to_points(Grid,HH,HV,Points):-  trace_or_throw(all_points_between),
   findall(C-Point,(between(1,HV,V),between(1,HH,H),
     once((hv_cg_value(Grid,C2,H,V),
-          %pt(hv_cg_value(C2,H,V)),
+          %ppt(hv_cg_value(C2,H,V)),
           is_spec_fg_color(C2,C),
           hv_point(H,V,Point)))),Points),!.
 */
@@ -792,7 +795,7 @@ combine_pen([P1|L],[Color|Colors],Reset,[Color-P1|XX]):- is_color(Color),!,
   combine_pen(L,Colors,Reset,XX).
   
 
-maybe_rotate_points(_,_,X,same,XX):- !,X=XX.
+maybe_rotate_points(_,_,X,sameR,XX):- !,X=XX.
 maybe_rotate_points(H,V,X,Rot,XX):- points_to_grid(H,V,X,Grid),call_rot(Rot,Grid,Grid90),localpoints(Grid90,XX).
 
 shape(G,X):- is_group(G),!,mapgroup(shape,G,Points),append_sets(Points,X).

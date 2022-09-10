@@ -518,7 +518,7 @@ test_names_by_fav_rev(Name):- test_names_ord_favs(AllS),reverse(AllS,AllR),membe
 
 :- dynamic(ord_favs/1).
 test_names_ord_favs(FavListS):- ord_favs(FavListS),!.
-test_names_ord_favs(FavListS):- pt(recreating(test_names_ord_favs)), findall(Name,fav(Name),FavList),list_to_set(FavList,FavListS),  asserta(ord_favs(FavListS)).
+test_names_ord_favs(FavListS):- ppt(recreating(test_names_ord_favs)), findall(Name,fav(Name),FavList),list_to_set(FavList,FavListS),  asserta(ord_favs(FavListS)).
 
 alphabetical_v(Set):- findall(v(Name),all_arc_test_name(v(Name)),List),sort(List,Set).
 alphabetical_t(Set):- findall(t(Name),all_arc_test_name(t(Name)),List),sort(List,Set).
@@ -564,7 +564,7 @@ write_ansi_file(F):- call(F,Set),
 
 :- dynamic(ord_hard/1).
 test_names_ord_hard(NamesByHard):- ord_hard(NamesByHard),!.
-test_names_ord_hard(NamesByHard):- pt(recreating(test_names_ord_hard)),findall(Hard-Name,(all_arc_test_name(Name),hardness_of_name(Name,Hard)),All),
+test_names_ord_hard(NamesByHard):- ppt(recreating(test_names_ord_hard)),findall(Hard-Name,(all_arc_test_name(Name),hardness_of_name(Name,Hard)),All),
   keysort(All,AllK),  maplist(arg(2),AllK,NamesByHardU),!,
   list_to_set(NamesByHardU,NamesByHard), 
   asserta(ord_hard(NamesByHard)).
@@ -656,9 +656,9 @@ test_hints_5(TestID,Trn,N,DictIn,DictOut):-
 print_test_hints(TestID):- 
   hardness_of_name(TestID,Hard),!,
   write('/*'),
-  pt(hard=Hard),
+  ppt(hard=Hard),
   %make_training_hints(TestID,print_test{},DictOut),
-  %pt(all=DictOut),
+  %ppt(all=DictOut),
   writeln('*/').
 
 
@@ -750,13 +750,16 @@ macro(one_obj, must_det_ll(len(objs)=1)).
 
 test_p2(P2):- clsmake,
   append_termlist(P2,[N1,'$VAR'('Result')],N2), 
-  time(forall(into_gridoid(N1,G1),     
+  time(forall(into_grids(N1,G1),     
      forall((set_current_test(G1),call(P2,G1,G2)),
-       once(ignore((print_side_by_side(red,G1,N1,_LW,G2,?-N2),dash_chars)))))).
+       once(ignore((grid_arg(G2,GR,Rest),print_side_by_side(red,G1,N1-Rest,_LW,GR,(?-(N2))),dash_chars)))))).
+
+grid_arg(G2,G2,[]):- is_grid(G2),!.
+grid_arg(GRest,GR,GRest):- arg(N,GRest,GR), is_grid(GR),!,setarg(N,GRest,grid),!.
 
 %:- style_check(-singleton).
 %whole(I,O):- is_group(I),length(I,1),I=O,!.
-%whole(I,O):- print_grid(I),pt(I),into_obj(I,O).
+%whole(I,O):- print_grid(I),ppt(I),into_obj(I,O).
 one_obj(I,I):- is_group(I),length(I,1),!.
 one_obj(I,I):- is_group(I),!.
 one_obj(I,I).
@@ -799,7 +802,7 @@ db_u(P1L,P1,P2L,P2,In,Out):- is_eval(P2,Prev,P2A),!,db_u(P1L,P1,[Prev|P2L],P2A,I
 %db(P1,P2,In,In):- t_or_t(freeze_for([P2],arc_assert(is_db(TF,P2))),is_db(TF,P2)).
 %db(P2,P1,In,In):- nonvar(Color), db_value(P1,In,TF),!,t_or_t(freeze_for([Color],arc_assert(is_db(TF,Color))),is_db(TF,Color)).
 db(P1,P2,In,Out):- db_u([],P1,[],P2,In,Out).
-db(X,Y,I,I):- pt(db(X,Y)),pt(I).
+db(X,Y,I,I):- ppt(db(X,Y)),ppt(I).
 
 
 

@@ -44,7 +44,7 @@ got_result(SG,FG,Match):-
   copy_term(FG,CFG),copy_term(SG,CSG),
   numbervars(CSG+CFG,999,_,[attvar(bind)]),
   ignore((perfect_result(CSG,CFG,WMatch), 
-    ((Match\==WMatch) -> (pt(red,'ChAnGED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n\n\n\n\n\n\n\n'),sleep(0.1)); pt(green,same)))),
+    ((Match\==WMatch) -> (ppt(red,'ChAnGED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n\n\n\n\n\n\n\n'),sleep(0.1)); ppt(green,sameR)))),
   retractall(tr:existing_result(CSG,CFG,_)),
   arc_assert(tr:existing_result(CSG,CFG,Match)),!.
   
@@ -71,7 +71,7 @@ test_ogs2(H,V,Match):-
   got_result(CSG,CFG,Match),
   Match==true.
 
-% should still be the same
+% should still be the sameR
 test_ogs1(H,V,Match):-
   Run = once(( print_side_by_side(FG,SG),nop(ptt(tf=T)))),
   wqln("searching..."),
@@ -93,7 +93,7 @@ never_fg(Trig,Var):- freeze(Trig, \+ is_fg_color(Var)).
 never_fg(Var):- freeze(Var, \+ is_fg_color(Var)).
 
 
-% should still be the same
+% should still be the sameR
 test_ogs0(H,V,Match):-
   Run = once(( print_side_by_side(FG,SG),print(test_ogs0(H,V,TMatch)),nop(ptt(tf=T)))),
   wqln("searching..."),
@@ -336,10 +336,6 @@ grid_numbervars(GridIn,GridO):-
  must_det_ll((grid_label_bg(p,GridIn,GridO),grid_label_fg(p,GridO))).
 
 
-cant_be_color(Y):- get_attr(Y,dif,_),!.
-cant_be_color(Y):- get_attr(Y,cc,_),!.
-cant_be_color(C,E):- attvar(C), get_attr(C,dif,XX),!, sub_term(E,XX),is_color(E).
-
 
 
 
@@ -382,7 +378,7 @@ maybe_into_grid(I,O):- \+ is_grid(I), into_grid(I,O), I \=@=O,!.
 %constrain_grid_f(Grid2,Trig,GridO):- constrain_grid(f,Trig,Grid2,GridO),!.
 %constrain_grid_s(Grid2,Trig,GridO):- constrain_grid(s,Trig,Grid2,GridO),!.
 constrain_grid(CT,Trig,Obj,GridO):- maybe_into_grid(Obj,Grid),!,constrain_grid(CT,Trig,Grid,GridO),!.
-constrain_grid(CT,_Trig,Grid,GridO):- CT==same,!,Grid=GridO.
+constrain_grid(CT,_Trig,Grid,GridO):- CT==sameR,!,Grid=GridO.
 constrain_grid(CT,_Trig,Grid,GridO):- CT==copy,!,copy_term(Grid,GridO).
 
 

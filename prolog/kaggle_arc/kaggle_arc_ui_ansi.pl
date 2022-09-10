@@ -203,23 +203,25 @@ write_map(_G,Where):- write('...'),write(Where),write('...').
 ptt(_):- is_print_collapsed,!.
 ptt(G):- is_map(G), !, write_map(G,'ptt').
 ptt(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-ptt(P):- \+ \+ ((tersify(P,Q),!,pt(Q))),!.
-ptt(C,P):- \+ \+ ((tersify(P,Q),!,pt(C,Q))),!.
+ptt(P):- \+ \+ ((tersify(P,Q),!,ppt(Q))),!.
+ptt(C,P):- \+ \+ ((tersify(P,Q),!,ppt(C,Q))),!.
 
-pt(Color,P):- quietlyd((wots(S,ptcol(P)),!,color_print(Color,S))).
+ppt(Color,P):- quietlyd((wots(S,ptcol(P)),!,color_print(Color,S))).
 ptcol(call(P)):- callable(P),!,call(P).
-ptcol(P):- pt(P).
-ptc(Color,Call):- pt(Color,call(Call)).
+ptcol(P):- ppt(P).
+ptc(Color,Call):- ppt(Color,call(Call)).
 
-pt(_):- is_print_collapsed,!.
-pt(_):- format('~N'), fail.
-pt(P):- var(P),!,pt(var_pt(P)),dumpST,break.
-pt(P):- atomic(P),atom_contains(P,'~'),!,format(P).
-pt(G):- is_map(G), !, write_map(G,'pt').
-pt(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-pt(P):- \+ \+ (( pt_guess_pretty(P,GP),ptw(GP))).
-%pt(P):-!,writeq(P).
+ppt(_):- is_print_collapsed,!.
+ppt(P):- format('~N'), ppt_no_nl(P),!.
+
+ppt_no_nl(P):- var(P),!,ppt(var_pt(P)),nop((dumpST,break)).
+ppt_no_nl(P):- atomic(P),atom_contains(P,'~'),!,format(P).
+ppt_no_nl(G):- is_map(G), !, write_map(G,'ppt').
+ppt_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+ppt_no_nl(P):- \+ \+ (( pt_guess_pretty(P,GP),ptw(GP))).
+%ppt(P):-!,writeq(P).
 %ptw(P):- quietlyd(print_tree_nl(P)),!.
+ptw(P):- var(P),!,ptw(var_ptw(P)),nop((dumpST,break)).
 ptw(G):- is_map(G), !, write_map(G,'ptw').
 ptw(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 ptw(P):- quietlyd(print_tree_no_nl(P)),!.
@@ -253,10 +255,6 @@ lock_doing(Lock,G,Goal):-
 pp_hook_g(G):- \+ plain_var(G), lock_doing(in_pp_hook_g,G,pp_hook_g1(G)).
 
 
-p_c_o(P,[A|LIST]):-
-  write(P),write('( '),debug_as_grid(A),maplist(p_c_a,LIST),write(' )').
-p_c_a(A):- write(',\n'),debug_as_grid(A).
-
 
 mass_gt1(O1):- into_obj(O1,O2),mass(O2,M),!,M>1.
 
@@ -265,8 +263,8 @@ pp_hook_g1(G):-  is_grid(G),
   catch((wots(S,print_grid(G)),strip_vspace(S,SS),ptc(orange,(format('"  ~w  "',[SS])))),_,fail).
 pp_hook_g1(G):-  pp_hook_g2(G),!.
 % pp_hook_g1(G):-  is_grid(G),!, fail,ptt(G), !.
-pp_hook_g1(G):-  is_object(G),pt(G), !.
-pp_hook_g1(G):-  is_group(G),ptt(G), !.
+pp_hook_g1(G):-  is_object(G),ppt_no_nl(G), !.
+pp_hook_g1(G):-  is_group(G),ppt_no_nl(G), !.
 pp_hook_g1(G):-  is_map(G),write('map'),!.
 
 /*
@@ -280,11 +278,13 @@ pp_hook_g1(T):-
 %pp_hook_g(G):- ptt(G),!.
 
 pp_hook_g2(R):-  plain_var(R), !, fail.
-pp_hook_g2(R):- atom(R), atom_contains(R,'_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
+pp_hook_g2(G):-  is_real_color(G), color_print(G,call(writeq(G))),!.
+pp_hook_g2(G):-  is_colorish(G), data_type(G,T), writeq(T=G),!.
+pp_hook_g2(R):- atom(R), atom_contains(R,'o_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
   resolve_reference(R,Var), R\==Var, \+ plain_var(Var),!, 
   write(' '), writeq(R), write(' /* '), debug_as_grid(Var), write(' */ ').
 pp_hook_g2(G):-  is_gridoid(G),debug_as_grid(G), !.
-%pp_hook_g2(G):-  is_colorish(G), color_print(G,call(writeq(G))),!.
+pp_hook_g2(G):-  is_points_list(G),debug_as_grid(G), !.
 % change_obj
 %pp_hook_g2(T):-  T = change_obj( O1, O2, Diff), p_c_o('change_obj',[O1,O2,Diff]),!.
 %pp_hook_g2(T):-  T = diff(A -> B), (is_gridoid(A);is_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
@@ -317,7 +317,7 @@ wqs([H|T]):- !, wqs(H),need_nl(H,T), wqs(T).
 wqs(format(C,N)):- !, format(C,N).
 wqs(writef(C,N)):- !, writef(C,N).
 wqs(call(C)):- !, call(C).
-wqs(pt(C)):- !, pt(C).
+wqs(ppt(C)):- !, ppt(C).
 wqs(g(C)):- !, write_nbsp, bold_print(writeq(g(C))).
 wqs(io(C)):- !, write_nbsp, bold_print(writeq(io(C))).
 wqs(q(C)):- !, write_nbsp, writeq(C).
@@ -610,7 +610,7 @@ print_equals(colors,XY):-print_equals(cc,XY).
 print_equals(Name,X=Y):- !, print_equals(Name=X,Y).
 %print_equals(Name,[H|L]):- !, maplist(print_equals(Name),[H|L]).
 print_equals(Name,Val):- is_list(Val),forall(nth0(N,Val,E),print_equals(Name:N,E)).
-print_equals(Name,Val):- pt(Name=Val).
+print_equals(Name,Val):- ppt(Name=Val).
 
 commawrite(S):- write(','),write(S).
 
@@ -673,7 +673,7 @@ print_grid0(H,V,D):- is_map(D),ignore(H = D.h),ignore(V = D.v),
   vm_to_printable(D,R),D\==R,!,print_grid0(H,V,R).
 
 print_grid0(H,V,Grid):- \+ callable(Grid),!,write('not grid: '),
-  GG= nc_print_grid(H,V,Grid), pt(GG),!,nop(trace_or_throw(GG)).
+  GG= nc_print_grid(H,V,Grid), ppt(GG),!,nop(trace_or_throw(GG)).
 
 
 print_grid0(H,V,SIndvOut):- compound(SIndvOut),SIndvOut=(G-GP), \+ is_nc_point(GP),!, 
