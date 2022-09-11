@@ -971,9 +971,23 @@ blur_p2(P2,Obj,NewObj):-
 
 pct(G):- call(G), ptt(G).
 
-rebuild_from_globalpoints(Obj,NewObj):-
-  globalpoints_include_bg(Obj,GPoints),
-  rebuild_from_localpoints(Obj,GPoints,NewObj).
+%rebuild_from_glob alpoints(Obj,NewObj):-
+%  globalpoints_in clude_bg(Obj,GPoints),
+%  rebuild_from_l ocalpoints(Obj,GPoints,NewObj).
+
+rebuild_from_globalpoints(Obj,GPoints,NewObj):-
+ must_det_ll((
+  
+  indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
+  peek_vm(VM),
+  
+  %print_attvars(before=Obj),
+  remObjects(VM,Obj),
+  make_indiv_object(VM,PropsRetained,GPoints,NewObj),
+  %print_attvars(propsRetained=PropsRetained),
+  %print_attvars(after=NewObj),
+    verify_object(NewObj))),
+ !.
 
 rebuild_from_globalpoints(Obj,GPoints,NewObj):-
   rotation(Obj,Rot),unrotate(Rot,UnRot),
