@@ -65,13 +65,13 @@ get_color_at_point(Grid,Point,C):- hv_point(H,V,Point), get_color_at(H,V,Grid,C)
 :- dynamic(tid_to_gids/2).
 tid_to_gids(TID,GID) :- awc,!, (clause(tid_to_gids(TID,GID),true)*-> true ; term_to_oid(TID,GID)).
 
-find_test_gids(TestID,Type,GID) :- awc,!, test_grids(TestID,Type,Grid), grid_to_gid(Grid,GID).
+find_test_gids(TestID,Type,GID) :- awc,!, find_test_grids(TestID,Type,Grid), grid_to_gid(Grid,GID).
 
-test_grids(TestID,visible,Grid):- test_grids(TestID,Grid).
-test_grids(TestID,train,Grid):- kaggle_arc_io(TestID,trn,_,Grid).
-test_grids(TestID,test_input,Grid):- kaggle_arc_io(TestID,tst,in,Grid).
-test_grids(TestID,train_input,Grid):- kaggle_arc_io(TestID,trn,in,Grid).
-test_grids(TestID,train_output,Grid):- kaggle_arc_io(TestID,trn,out,Grid).
+find_test_grids(TestID,visible,Grid):- test_grids(TestID,Grid).
+find_test_grids(TestID,train,Grid):- kaggle_arc_io(TestID,trn,_,Grid).
+find_test_grids(TestID,test_input,Grid):- kaggle_arc_io(TestID,tst,in,Grid).
+find_test_grids(TestID,train_input,Grid):- kaggle_arc_io(TestID,trn,in,Grid).
+find_test_grids(TestID,train_output,Grid):- kaggle_arc_io(TestID,trn,out,Grid).
 
 term_to_oid(v(A)*(B+C)*D,Atom):- maplist(atomic,[A,B,C,D]),atomic_list_concat([v,A,B,C,D],'_',Atom),!.
 term_to_oid(t(A)*(B+C)*D,Atom):- maplist(atomic,[A,B,C,D]),atomic_list_concat([t,A,B,C,D],'_',Atom),!.

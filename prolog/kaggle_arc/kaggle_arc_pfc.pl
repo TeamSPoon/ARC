@@ -114,6 +114,7 @@ setof_or_nil(T,G,L):- setof(T,G,L)*->true;L=[].
 call_u(G):- pfcCallSystem(G).
 clause_u(H,B):- clause(H,B).
 
+mpred_ain(P):- arc_assert(P).
 arc_assert(P:-True):- True==true,!,arc_assert(P).
 arc_assert(P):-  % wdmsg(arc_assert(P)), 
   must(current_why_UU(UU)),nop(wdmsg(pfcAdd(P, UU))),!, pfcAdd(P, UU),asserta_if_new(P).
@@ -133,15 +134,35 @@ mpred_test(call_u(X)):- nonvar(X),!,pfcCallSystem(X),pfcWhy(X).
 mpred_test(\+ call_u(X)):- nonvar(X),!, (call_u(X)-> (dmsg(warn(failed(mpred_test(\+ call_u(X))))),mpred_test_why(X)); mpred_test_why(~(X))).
 mpred_test(X):- (mpred_test_why(X) *-> true ; mpred_test_why(~(X))).
 
+:- thread_local t_l:shown_child/1.
+:- thread_local t_l:shown_dep/2.
+
+pfc_info(X):- mpred_info(X).
 mpred_info(X):-
  retractall(t_l:shown_child(_)),
+ retractall(t_l:shown_dep(_,_)),
  ignore((
   forall(mpred_test_why(X),true),
-  forall(mpred_child_info(top,X),true))).
+  forall(mpred_child_info(X),true))).
 
-mpred_child_info(_From,P):- t_l:shown_child(Q),P=@=Q,!.
-mpred_child_info(From,P):- asserta(t_l:shown_child(P)),
-  wdmsg(decendant(From,P)), pfcChildren(P,L), maplist(mpred_child_info(P),L).
+mpred_child_info(P):- 
+  retractall(t_l:shown_child(_)),
+  show_child_info(P),!,
+  printLine.
+
+show_child_info(P):- 
+  pfcChildren(P,L),
+  show_child_info(P,L),!.
+
+show_child_info(P,_):- t_l:shown_child(Q),P=@=Q,!.
+show_child_info(P,_):- asserta(t_l:shown_child(P)),fail.
+show_child_info(_,[]):-!.
+show_child_info(P,L):- list_to_set(L,S),
+  format("~N~nChildren for ",[]),  
+  ansi_format([fg(green)],'~@',[ppt(P)]),
+  format(" :~n",[]),
+  forall((member(D,S), \+ t_l:shown_dep(P,D)),(asserta(t_l:shown_dep(P,D)),ansi_format([fg(yellow)],'~N ~@. ~n',[ppt(D)]))),
+  maplist(show_child_info,S).
 
 mpred_why(X):- mpred_test_why(X).
 
@@ -578,7 +599,7 @@ pfcHalt(Format,Args) :-
 
 pfcAddTrigger('$pt$'(Trigger,Body),Support) :-
   !,
-  pfcTraceMsg('      Adding positive trigger ~p~n',
+  pfcTraceMsg('      Adding positive trigger(+) ~p~n',
 		['$pt$'(Trigger,Body)]),
   pfcAssert('$pt$'(Trigger,Body),Support),
   copy_term('$pt$'(Trigger,Body),Tcopy),
@@ -589,7 +610,7 @@ pfcAddTrigger('$pt$'(Trigger,Body),Support) :-
 
 pfcAddTrigger('$nt$'(Trigger,Test,Body),Support) :-
   !,
-  pfcTraceMsg('      Adding negative trigger: ~p~n       test: ~p~n       body: ~p~n',
+  pfcTraceMsg('      Adding negative trigger(-): ~p~n       test: ~p~n       body: ~p~n',
 		[Trigger,Test,Body]),
   copy_term(Trigger,TriggerCopy),
   pfcAssert('$nt$'(TriggerCopy,Test,Body),Support),
@@ -602,12 +623,12 @@ pfcAddTrigger('$bt$'(Trigger,Body),Support) :-
   pfcBtPtCombine(Trigger,Body,Support).
 
 pfcAddTrigger(X,_Support) :-
-  pfcWarn("Unrecognized trigger to pfcAddtrigger: ~p",[X]).
+  pfcWarn("Unrecognized trigger(?) to pfcAddtrigger: ~p",[X]).
 
 
 pfcBtPtCombine(Head,Body,Support) :- 
-  % %  a backward trigger ('$bt$') was just added with head and Body and support Support
-  % %  find any '$pt$''s with unifying heads and add the instantied '$bt$' body.
+  % %  a backward trigger(?) ('$bt$') was just added with head and Body and support Support
+  % %  find any '$pt$'(s) with unifying heads and add the instantied '$bt$' body.
   pfcGetTriggerQuick('$pt$'(Head,_PtBody)),
   fcEvalLHS(Body,Support),
   fail.
@@ -650,10 +671,10 @@ pfcRetractType(rule(_),X) :-
   % %  db  
   pfcAddDbToHead(X,X2) ->  retract(X2) ; retract(X).
 
-pfcRetractType(trigger,X) :- 
+pfcRetractType(trigger(Pos),X) :- 
   retract(X)
     -> unFc(X)
-     ; pfcWarn("Trigger not found to retract: ~p",[X]).
+     ; pfcWarn("Trigger(~p) not found to retract: ~p",[Pos,X]).
 
 pfcRetractType(action,X) :- pfcRemActionTrace(X).
   
@@ -673,8 +694,8 @@ pfcAddType(fact(Type),X) :-
 pfcAddType(rule(Type),X) :- 
   pfcUnique(rule(Type),X), 
   assert(X),!.
-pfcAddType(trigger,X) :- 
-  pfcUnique(trigger,X) -> assert(X) ; 
+pfcAddType(trigger(Pos),X) :- 
+  pfcUnique(trigger(Pos),X) -> assert(X) ; 
    (pfcWarn(not_pfcUnique(X)),assert(X)).
    
 pfcAddType(action,_Action) :- !.
@@ -814,7 +835,7 @@ fcUndo(pfcAction(A)) :-
   pfcRemActionTrace(pfcAction(A)).
 
 fcUndo('$pt$'(/*Key,*/Head,Body)) :-  
-  % undo a positive trigger.
+  % undo a positive trigger(+).
   %
   !,
   (retract('$pt$'(/*Key,*/Head,Body))
@@ -822,7 +843,7 @@ fcUndo('$pt$'(/*Key,*/Head,Body)) :-
      ; pfcWarn("Trigger not found to retract: ~p",['$pt$'(Head,Body)])).
 
 fcUndo('$nt$'(Head,Condition,Body)) :-  
-  % undo a negative trigger.
+  % undo a negative trigger(-).
   !,
   (retract('$nt$'(Head,Condition,Body))
     -> unFc('$nt$'(Head,Condition,Body))
@@ -864,7 +885,7 @@ pfcUnFcCheckTriggers(_).
 
 pfcRetractDependantRelations(Fact) :-
   pfcType(Fact,Type),
-  (Type=trigger -> pfcRemOneSupport(P,(_,Fact))
+  (Type=trigger(_Pos) -> pfcRemOneSupport(P,(_,Fact))
                 ; pfcRemOneSupportOrQuietlyFail(P,(Fact,_))),
   removeIfUnsupported(P),
   fail.
@@ -1017,7 +1038,7 @@ fc_rule_check(_).
 
 fcpt(Fact,F) :- 
   pfcGetTriggerQuick('$pt$'(F,Body)),
-  pfcTraceMsg('      Found positive trigger: ~p~n       body: ~p~n',
+  pfcTraceMsg('      Found positive trigger(+): ~p~n       body: ~p~n',
 		[F,Body]),
   pfcGetSupport('$pt$'(F,Body),Support), %wdmsg(pfcGetSupport('$pt$'(F,Body),Support)),
   with_current_why(Support,with_current_why(Fact,fcEvalLHS(Body,(Fact,'$pt$'(F,Body))))),
@@ -1111,7 +1132,7 @@ fcEvalLHS(rhs(X),Support) :-
   !.
 
 fcEvalLHS(X,Support) :-
-  pfcType(X,trigger),
+  pfcType(X,trigger(_Pos)),
   !,
   pfcAddTrigger(X,Support),
   !.
@@ -1216,7 +1237,7 @@ pfc_call(clause(A,B,Ref)) :-!, clause(A,B,Ref).
 % we really need to check for system predicates as well.
 % this is probably not advisable due to extreme inefficiency.
 pfc_call(P) :-
-  % trigger any bc rules.
+  % trigger(?) any bc rules.
   '$bt$'(P,Trigger),
   pfcGetSupport('$bt$'(P,Trigger),S),
   % @TODO REVIEW _U
@@ -1243,7 +1264,7 @@ pfc_call(P) :-
 undoable(A) :- fcUndoMethod(A,_).
 
 pfc_cache_bc(P) :-
-  % trigger any bc rules.
+  % trigger(?) any bc rules.
   forall('$bt$'(P,Trigger),
   forall(pfcGetSupport('$bt$'(P,Trigger),S),
   % @TODO REVIEW _U
@@ -1530,7 +1551,7 @@ buildTrigger([T|Triggers],Consequent,'$pt$'(T,X)) :-
 % % 
 % %  buildNtTest(+,+,-).
 % % 
-% %  builds the test used in a negative trigger ('$nt$'/3).  This test is a
+% %  builds the test used in a negative trigger(-) ('$nt$'/3).  This test is a
 % %  conjunction of the check than no matching facts are in the db and any
 % %  additional test specified in the rule attached to this ~ term.
 % % 
@@ -1564,10 +1585,10 @@ pfcType( '==>'(X),Type):- !, pfcType(X,Type), pfcWarn(pfcType( '==>'(X), Type)).
 pfcType(('<==>'(_,_)),Type):- !, Type=rule(<==>).
 pfcType(('<-'(_,_)),Type):- !, Type=rule(bwc).
 pfcType((':-'(_,_)),Type):- !, Type=rule(cwc).
-pfcType('$pt$'(_,_,_),Type):- !, Type=trigger.
-pfcType('$pt$'(_,_),Type):- !, Type=trigger.
-pfcType('$nt$'(_,_,_),Type):- !,  Type=trigger.
-pfcType('$bt$'(_,_),Type):- !,  Type=trigger.
+pfcType('$pt$'(_,_,_),Type):- !, Type=trigger(+).
+pfcType('$pt$'(_,_),Type):- !, Type=trigger(+).
+pfcType('$nt$'(_,_,_),Type):- !,  Type=trigger(-).
+pfcType('$bt$'(_,_),Type):- !,  Type=trigger(?).
 pfcType(pfcAction(_),Type):- !, Type=action.
 pfcType((('::::'(_,X))),Type):- !, pfcType(X,Type).
 pfcType(_,fact(_FT)):-
@@ -2078,7 +2099,7 @@ pfcChild(P,Q) :-
 
 pfcChild(P,Q) :-
   pfcGetSupport(Q,(_,Trig)),
-  pfcType(Trig,trigger),
+  pfcType(Trig,trigger(_Pos)),
   pfcChild(P,Trig).
 
 pfcChildren(P,L) :- bagof_or_nil(C,pfcChild(P,C),L).
@@ -2259,10 +2280,10 @@ pfcShowJustifications(P,Js) :-
   reset_shown_justs,
   %color_line(yellow,1),
   format("~N~nJustifications for ",[]),
-  ansi_format([fg(green)],'~p',[P]),
+  ansi_format([fg(green)],'~@',[ppt(P)]),
   format(" :~n",[]),
-
-  pfcShowJustification1(Js,1),!.
+  pfcShowJustification1(Js,1),!,
+  printLine.
 
 pfcShowJustification1([],_):-!.
 pfcShowJustification1([J|Js],N) :- !,
@@ -2332,7 +2353,6 @@ unwrap_litr0(head(C),CC):-unwrap_litr0(C,CC).
 unwrap_litr0(C,C).
 
 :- thread_local t_l:shown_why/1.
-:- thread_local t_l:shown_child/1.
 
 pfcShowSingleJust1(_,_,MFL):- is_mfl(MFL),!.
 pfcShowSingleJust1(JustNo,StepNo,C):- unwrap_litr(C,CC),!,pfcShowSingleJust4(JustNo,StepNo,C,CC).
@@ -2552,9 +2572,9 @@ pp_item(MM,H):- flag(show_asserions_offered,X,X+1),find_and_call(get_print_mode(
 pp_item(MM,'$spft$'(W0,U,ax)):- W = (_KB:W0),!,pp_item(MM,U:W).
 pp_item(MM,'$spft$'(W0,F,U)):- W = (_KB:W0),atom(U),!,    fmt('~N%~n',[]),pp_item(MM,U:W), fmt('rule: ~p~n~n', [F]),!.
 pp_item(MM,'$spft$'(W0,F,U)):- W = (_KB:W0),         !,   fmt('~w~nd:       ~p~nformat:    ~p~n', [MM,W,F]),pp_item(MM,U).
-pp_item(MM,'$nt$'(Trigger0,Test,Body)) :- Trigger = (_KB:Trigger0), !, fmt('~w n-trigger: ~p~ntest: ~p~nbody: ~p~n', [MM,Trigger,Test,Body]).
-pp_item(MM,'$pt$'(F0,Body)):- F = (_KB:F0),             !,fmt('~w p-trigger:~n', [MM]), pp_item('',(F:-Body)).
-pp_item(MM,'$bt$'(F0,Body)):- F = (_KB:F0),             !,fmt('~w b-trigger:~n', [MM]), pp_item('',(F:-Body)).
+pp_item(MM,'$nt$'(Trigger0,Test,Body)) :- Trigger = (_KB:Trigger0), !, fmt('~w n-trigger(-): ~p~ntest: ~p~nbody: ~p~n', [MM,Trigger,Test,Body]).
+pp_item(MM,'$pt$'(F0,Body)):- F = (_KB:F0),             !,fmt('~w p-trigger(+):~n', [MM]), pp_item('',(F:-Body)).
+pp_item(MM,'$bt$'(F0,Body)):- F = (_KB:F0),             !,fmt('~w b-trigger(?):~n', [MM]), pp_item('',(F:-Body)).
 
 
 pp_item(MM,U:W):- !,format(string(S),'~w  ~w:',[MM,U]),!, pp_item(S,W).
@@ -2969,9 +2989,9 @@ pp_db_rules(MM):-
 
 
 pp_db_triggers(MM):- 
- pp_mask("Positive trigger",MM,'$pt$'(_,_)),
- pp_mask("Negative trigger",MM,'$nt$'(_,_,_)),
- pp_mask("Goal trigger",MM,'$bt$'(_,_)),!.
+ pp_mask("Positive trigger(+)",MM,'$pt$'(_,_)),
+ pp_mask("Negative trigger(-)",MM,'$nt$'(_,_,_)),
+ pp_mask("Goal trigger(?)",MM,'$bt$'(_,_)),!.
 
 pp_db_supports(MM):-
   % temporary hack.

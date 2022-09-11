@@ -184,7 +184,8 @@ make_indiv_object_s(ID,GH,GV,Overrides,GPoints,ObjO):-
   make_grid(Width,Height,Grid),
   add_global_points(LPoints,Grid,Grid),
 
-  grav_roll(Grid,RotG,RotShape), localpoints(RotShape,LShape),
+  grav_roll(Grid,RotG,RotShape),
+  globalpoints_maybe_bg(RotShape,RShape),include(ground,RShape,LShape),
   grid_size(RotShape,SH,SV),
   % colors 
   maplist(arg(2),LShape,ColorlessPoints), maplist(arg(1),LShape,Colorz),

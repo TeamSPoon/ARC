@@ -74,8 +74,13 @@ show_ig(PairName,ROptions,GridIn,GridOut,IndvC):-
   show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC).
 
 into_iog(InC,OutC,IndvS):- append(InC,OutC,IndvC),!,must_det_ll((IndvC=IndvS)).
-into_gio(IndvS,InS,OutS):- my_partition(has_prop(iz(g(out))),IndvS,OutC,InC),!,
-  must_det_ll((OutC=OutS,InC=InS)).
+into_gio(IndvS,InSO,OutSO):- 
+  include(has_prop(iz(g(out))),IndvS,OutC),
+  include(has_prop(iz(g(in))),IndvS,InC),
+  include(has_prop(iz(g(io))),IndvS,IOC),
+  append_sets([IOC,OutC],OutS),
+  append_sets([IOC,InC],InS),
+  must_det_ll((OutSO=OutS,InSO=InS)).
 
 show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):- 
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),

@@ -371,9 +371,13 @@ c_proportional(I,O,R):- proportional(I,O,R).
 %grid_hint_io(MC,IO,In,Out,find_ogs):- maybe_fail_over_time(1.2,find_ogs(_,_,In,Out)).
 grid_hint_io(_MC,IO,In,Out,comp(IO,Hint)):- comp_o(IO),  c_proportional(In,Out,Hint).
 
-grid_hint_io(MC,IO,In,Out,(=@=(MC,IO))):- In=@=Out.
-grid_hint_io(MC,IO,In,Out,Hint):- grid_size(In,IH,IV),grid_size(Out,OH,OV),!,grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
-grid_hint_io(MC,IO,In,Out,comp(IO,maybe_ogs(MC,R,list(Len,XY)))):- member(R,[strict,loose]), \+ In=@=Out, findall(loc(X,Y),maybe_ogs(R,X,Y,In,Out),XY),XY\==[],length(XY,Len),!.
+grid_hint_io(MC,IO,In,Out,Hint):- grid_size(In,IH,IV),grid_size(Out,OH,OV),grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
+
+grid_hint_io(MC,IO,In,Out,(=@=(MC,IO))):- In=@=Out, !.
+grid_hint_io(MC,IO,In,Out,Hint):- % \+ In=@=Out,
+  Hint = comp(IO,maybe_________________________ogs(MC,R,list(Len,XY))),
+  member(R,[strict,loose]), 
+  findall(loc(X,Y),maybe_ogs(R,X,Y,In,Out),XY),XY\==[],length(XY,Len),!.
 %grid_hint_iso(MC,IO,In,_Out,_IH,_IV,OH,OV,is_xy_columns):- once(has_xy_columns(In,_Color,OH,OV,)).
 
 maybe_ogs(R,X,Y,In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
@@ -383,7 +387,7 @@ maybe_ogs(R,X,Y,In,Out):- find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R=
 grid_hint_iso(cbg(_BGC),_-o,_In,Out,_IH,_IV,OH,OV,has_x_columns(Y,Color)):- Area is OH*OV, Area>24, maybe_fail_over_time(10.2,has_x_columns(Out,Y,Color,_)),Y>1.
 grid_hint_iso(cbg(_BGC),_-o,_In,Out,_IH,_IV,OH,OV,has_y_rows(Y,Color)):- Area is OH*OV, Area>24, maybe_fail_over_time(10.2,has_y_rows(Out,Y,Color,_)),Y>1.
 
-grid_hint_iso(cbg(BGC),IO,Out,In,GH,GV,GH,GV,Hint):- mapgrid(remove_color_if_same(BGC),Out,In,NewIn),
+grid_hint_iso(cbg(BGC),IO,Out,In,GH,GV,GH,GV,comp(IO,Hint)):- mapgrid(remove_color_if_same(BGC),Out,In,NewIn),
    mass(NewIn,Mass), unique_colors(In,Colors),unique_colors(NewIn,LeftOver), LeftOver\==Colors,
    (Mass==0 -> Hint=containsAll(IO) ;  Hint=containsAllExceptFor(IO,LeftOver)). 
 
