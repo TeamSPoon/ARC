@@ -1142,29 +1142,38 @@ is_fti_step(bg_shapes).
 % =====================================================================
 bg_shapes(Shape,VM):-
  must_det_ll((
-  mapgrid(bg_shaped,VM.grid,NewGrid),
-  var(OID),
+  Orig = VM.grid,
+  mapgrid(bg_shaped,Orig,NewGrid),
+  must_be_free(OID),
   atomic_list_concat([VM.gid,'_bg_shaped'],OID2), asserta(is_grid_tid(NewGrid,OID2)),  
   get_vm(VMS),
   %map_pred(bg_shaped,FoundObjs,ReColored),
   individuate2(_,Shape,OID,NewGrid,FoundObjs),
   set_vm(VMS),
-  globalpoints_include_bg(VM.grid_o,Recolors),
-  maplist(recolor_object(Recolors),FoundObjs,ReColored),
+  %globalpoints_include_bg(VM.grid_o,Recolors),
+  maplist(recolor_object(Orig),FoundObjs,ReColored),
   remCPoints(VM,ReColored),
   remGPoints(VM,ReColored),
   addInvObjects(VM,ReColored))),!.
 
-bg_shaped(Cell,NewCell):- is_bg_color(Cell),!,nop(decl_many_fg_colors(NewCell)),NewCell=wbg.
-bg_shaped(Cell,NewCell):- is_fg_color(Cell),!,nop(decl_many_fg_colors(_NewCell)),NewCell=wfg.
-bg_shaped(Cell,Cell).
+bg_shaped(Cell,NewCell):- is_bg_color(Cell),!,nop(decl_many_fg_colors(NewCell)),NewCell=wfg.
+%bg_shaped(Cell,NewCell):- is_fg_color(Cell),!,nop(decl_many_fg_colors(_NewCell)),NewCell=wfg.
+bg_shaped(_,_).
 
+recolor_object(Recolors,Old,New):- 
+  %globalpoints_include_bg(Grid,Recolors),
+  globalpoints_include_bg(Old,GPoints),
+  maplist(recolor_point(Recolors),GPoints,NewGPoints),  
+  must_det_ll(rebuild_from_globalpoints(Old,NewGPoints,New)),!.
+
+recolor_point(Recolors,_-Point,C-Point):- 
+  must_det_l((hv_point(H,V,Point), hv_c_value(Recolors,C,H,V))).
 
 % =====================================================================
 is_fti_step(fg_shapes).
 % =====================================================================
 %fg_shaped(Cell,Cell):- is_bg_color(Cell),!.
-fg_shaped(Cell,fg):- is_fg_color(Cell),!.
+fg_shaped(Cell,wfg):- is_fg_color(Cell),!.
 fg_shaped(Cell,Cell).
 %fg_shaped(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
 
@@ -1182,17 +1191,6 @@ fg_shapes(Shape,VM):-
   addInvObjects(VM,ReColored))),!.
 
 
-%recolor_object(_,Var,Var):- var(Var),!.
-%recolor_object([],Old,Old):-!.
-recolor_object(Grid,Old,New):-  \+ is_cpoints_list(Grid), globalpoints_include_bg(Grid,Recolors), is_cpoints_list(Grid), !,
-  recolor_object(Recolors,Old,New).
-
-recolor_object(Recolors,Old,New):- 
-  globalpoints_include_bg(Old,GPoints),
-  maplist(recolor_point(Recolors),GPoints,NewGPoints),  
-  must_det_ll(rebuild_from_globalpoints(Old,NewGPoints,New)),!.
-
-recolor_point(Recolors,_-Point,C-Point):- my_assertion(member(C-Point,Recolors)),member(C-Point,Recolors).
 
 % =====================================================================
 is_fti_step(after_subtract).

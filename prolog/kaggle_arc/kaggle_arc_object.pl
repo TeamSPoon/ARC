@@ -95,9 +95,6 @@ reclumped([A,B|Rest],[A,B]):- reclumped(Rest,[A,B]),!.
 reclumped(Rest,Seq):- append(Seq,_,Rest),!.
 reclumped(PenColors,PenColors).
 
-
-maybe_include_bg(Points,FgPoints):- fg_points(Points,FgPoints),FgPoints\==[],!.
-maybe_include_bg(Points,Points).
 fg_points(Points,FgPoints):- include(is_fg_point,Points,FgPoints).
 is_fg_point(CPoint):- \+ (only_color_data(CPoint,Color),is_bg_color(Color)).
 
