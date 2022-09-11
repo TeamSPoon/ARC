@@ -95,6 +95,9 @@ reclumped([A,B|Rest],[A,B]):- reclumped(Rest,[A,B]),!.
 reclumped(Rest,Seq):- append(Seq,_,Rest),!.
 reclumped(PenColors,PenColors).
 
+
+maybe_include_bg(Points,FgPoints):- fg_points(Points,FgPoints),FgPoints\==[],!.
+maybe_include_bg(Points,Points).
 fg_points(Points,FgPoints):- include(is_fg_point,Points,FgPoints).
 is_fg_point(CPoint):- \+ (only_color_data(CPoint,Color),is_bg_color(Color)).
 
@@ -120,11 +123,12 @@ make_point_object(VM,Overrides,C-Point,Obj):-
   must_det_ll(make_indiv_object(VM,Overrides,[C-Point],Obj)).
 
 globalpoints_maybe_bg([],[]):-!.
-globalpoints_maybe_bg(ScaledGrid,GPoints):- is_points_list(ScaledGrid),!,ScaledGrid=GPoints.
+globalpoints_maybe_bg(ScaledGrid,GPoints):- is_cpoints_list(ScaledGrid),!,maybe_include_bg(ScaledGrid,GPoints).
 globalpoints_maybe_bg(ScaledGrid,Points):- once(globalpoints(ScaledGrid,Points)),Points\==[],!.
 globalpoints_maybe_bg(ScaledGrid,GPoints):- globalpoints_include_bg(ScaledGrid,GPoints),!.
+
+globalpoints_include_bg(ScaledGrid,GPoints):- is_cpoints_list(ScaledGrid),!,ScaledGrid=GPoints.
 globalpoints_include_bg([],[]):-!.
-globalpoints_include_bg(ScaledGrid,GPoints):- is_points_list(ScaledGrid),!,ScaledGrid=GPoints.
 globalpoints_include_bg(ScaledGrid,GPoints):- loc(ScaledGrid,OH,OV),
   localpoints_include_bg(ScaledGrid,Points),!,offset_points(OH,OV,Points,GPoints).
 
@@ -315,14 +319,15 @@ obj_to_program(Obj,Program,VM):-
 object_pen(Obj,pen(Color)):- color(Obj,Color),!.
 object_pen(Obj,Pen):- color(Obj,Pen),!.
 
-prop_of(size,v_hv(_,_)).
 prop_of(amass,amass(_)).
 prop_of(amass,mass(_)).
-prop_of(shape,shape(_)).
 prop_of(colors,colors(_)).
 prop_of(visually,localpoints(_)).
-prop_of(rotation,rotation(_)).
+prop_of(size,v_hv(_,_)).
 prop_of(loc,loc(_,_)).
+prop_of(rotation,rotation(_)).
+prop_of(visually,pen(_)).
+prop_of(shape,shape(_)).
 
 
 sort_obj_props(obj(L),obj(LO)):- !, sort_obj_props(L,LO).
@@ -1012,8 +1017,8 @@ rebuild_from_globalpoints(Obj,GPoints,NewObj):-
 is_point_or_colored(birth(_)):-!,fail.
 is_point_or_colored(Prop):- sub_term(CP,Prop),(is_color(CP);is_nc_point(CP)),!.
 is_point_or_colored(Prop):-
- member(Prop,[colors(_),amass(_),mass(_),shape(_),pen(_),
-              iz(multicolored(_)),iz(chromatic(_)),iz(monochrome),
+ member(Prop,[colors(_),amass(_),mass(_),shape(_),rotation(_),roll_shape(_),pen(_),
+              iz(multicolored(_)),iz(chromatic(_)),iz(symmetry(_)),iz(shape(_)),iz(monochrome),
               globalpoints(_),localpoints(_)]),!.
 
 
