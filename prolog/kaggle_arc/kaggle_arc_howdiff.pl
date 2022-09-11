@@ -552,6 +552,7 @@ needs_indivs(I,O):- is_gridoid(I), \+ is_group(I), arcST, trace, compute_unshare
 
 %diff_terms(IPs,OPs,Difs2):- diff_terms(IPs,OPs,Difs2).
 
+diff_terms(I,O,[]):- O=@=I,!.
 diff_terms(I,O,D):- nonvar_or_ci(D),!,diff_terms(I,O,DD),!,D==DD.
 diff_terms(I,O,D):- maybe_number(I,N1),maybe_number(O,N2),!,proportional_size(N1,N2,D).
 diff_terms(I,O,[]):- O==I,!.
@@ -637,6 +638,8 @@ list_diff_recurse_nil(Nil,O,diff(Nil->O)):- is_nil(Nil),!.
 list_diff_recurse_nil(O,Nil,diff(O->Nil)):- is_nil(Nil),!.
 
 list_diff_recurse(I,O,D1D):- list_diff_recurse_nil(I,O,D1D),!.
+
+list_diff_recurse(I,O,D1D):- is_object_props(I),is_object_props(O),!,object_props_diff(_Sytle,I,O,D1D).
 list_diff_recurse(I,O,D1D):- select_two(I,O,CI,CO,II,OO),!,diff_terms(CI,CO,D1),!,
        list_diff_recurse(II,OO,D),!, combine_diffs(D1,D,D1D),!.
 list_diff_recurse([CI|II],[CO|OO],D1D):- must_det_ll(diff_terms(CI,CO,D1)),!,

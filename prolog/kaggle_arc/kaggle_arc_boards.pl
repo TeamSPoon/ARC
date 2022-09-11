@@ -354,7 +354,7 @@ grid_hint_swap_io(IO,In,Out,Hint):-  grid_hint_recolor(IO,In,Out,Hint).
 grid_hint_swap_io(I-O,In,Out,rev(Hint)):- grid_hint_recolor(O-I,Out,In,Hint).
 
 grid_hint_recolor(IO,In,Out,mono(Hint)):-  
- once((into_monochrome(In,In0),into_monochrome(Out,Out0))),
+ once((into_monogrid(In,In0),into_monogrid(Out,Out0))),
   In\==In0,Out\==Out0,
   grid_hint_io(monochrome,IO,In0,Out0,Hint), 
   \+ grid_hint_recolor1(IO,In,Out,_Hint).

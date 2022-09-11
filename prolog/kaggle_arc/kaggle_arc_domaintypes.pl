@@ -113,6 +113,7 @@ is_spec_fg_color(C,CO):- is_fg_color(C),!,is_spec_color(C,CO).
 
 mv_color_name(C,W):- attvar(C),into_color_name_always(C,V),C\==V,color_name(V,W).
 
+into_color_name_always(Grid,Grid):- !.
 into_color_name_always(Grid,Grid):- ground(Grid),!.
 into_color_name_always(Grid,GridI):- is_grid(Grid), !, mapgrid(into_color_name_always,Grid,GridI),!.
 into_color_name_always(Grid,GridI):- compound(Grid), !, map_pred(into_color_name_always,Grid,GridI),!.

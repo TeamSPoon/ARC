@@ -411,11 +411,13 @@ arc_term_expansions(H:- (current_prolog_flag(arc_term_expansion, true), B)):-
 :- export(enable_arc_expansion/0).
 enable_arc_expansion:-
  forall(arc_term_expansions(Rule),
-   (strip_module(Rule,M,Rule0), wdmsg(asserta_if_new(Rule,M,Rule0)),asserta_if_new(Rule))).
+   (strip_module(Rule,M,Rule0), wdmsg(asserta_if_new(Rule,M,Rule0)),asserta_if_new(Rule))),
+ set_prolog_flag(arc_term_expansion, true).
 
 :- export(disable_arc_expansion/0).
 disable_arc_expansion:-
- forall(arc_term_expansions(Rule),forall(retract(Rule),true)).
+ forall(arc_term_expansions(Rule),forall(retract(Rule),true)),
+ set_prolog_flag(arc_term_expansion, false).
 
 
 /*
@@ -477,7 +479,6 @@ luser_getval(ID,N,V):-
 :- dynamic(mregression_test/0).
 
 :- enable_arc_expansion.
-:- set_prolog_flag(arc_term_expansion, true).
 
 %:- set_prolog_flag(verbose_load,true).  
 %:- set_prolog_flag(verbose_autoload,true).
@@ -991,7 +992,7 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 
 :- set_prolog_flag(arc_term_expansion, true).
 :- ensure_loaded('kaggle_arc_fwd.pfc').
-:- set_prolog_flag(arc_term_expansion, false).
+%:- set_prolog_flag(arc_term_expansion, false).
 
 %:- if(prolog_load_context(reload,false)).
 %:- fixup_module_exports_into_from(system,muarc).

@@ -12,19 +12,26 @@
 control_arg_types(A,B):- once(control_arg_types1([],A,B)),A\==B,!.
 
 control_arg_types1(_,A,B):- \+ compound(A),!,A=B.
-control_arg_types1(_,A,B):- current_predicate(check_args/2), check_args(A,B),A\==B,!.
+control_arg_types1(_,A,B):- (current_predicate(check_args/2)->check_args(A,B)->A\=@=B),!.
 control_arg_types1(Pre,A,B):- 
  compound_name_arguments(A,F,AA),
  length(AA,N),
- control_arg_types1(F/N,1,Pre,AA,BB),
+ do_control_arg_types1(F/N,1,Pre,AA,BB),
  compound_name_arguments(B,F,BB).
 
-control_arg_types1(_FofN,_ArgNp1,_Pre,[],[]):-!.
-control_arg_types1(FofN,ArgN,Pre,[A|AA],[B|BB]):- 
-  control_arg_type(FofN,ArgN,Pre,A,B), ArgNp1 is ArgN+1,
-  control_arg_types1(FofN,ArgNp1,Pre,AA,BB).
+do_control_arg_types1(_FofN,_ArgNp1,_Pre,[],[]):-!.
+do_control_arg_types1(FofN,ArgN,Pre,[A|AA],[B|BB]):- 
+  do_control_1arg_type(FofN,ArgN,Pre,A,B), 
+  ArgNp1 is ArgN+1,
+  do_control_arg_types1(FofN,ArgNp1,Pre,AA,BB).
+
+do_control_1arg_type(_FN,_N,_Pre,A,B):- var(A),!,B=A.
+do_control_1arg_type(F/_, N,_Pre,A,B):- arg_n_isa(F,N,ISA),into_type(ISA,A,B),!.
+do_control_1arg_type(FofN,_,Pre,A,B):- control_arg_types1([FofN|Pre],A,B).
+
 
 arg_n_isa(_F,_N,_ISA):- fail.
+arg_n_isa(F,N,ISA):- clause_b(argIsa(F,N,ISA)).
 
 save_pfc_state:-
   %tell(pfcState),
@@ -47,8 +54,6 @@ pfcStateTerm(F/A):-
      pfcSelect/1,
      pfcSearch/1]).
 
-control_arg_type(F/_,N,_Pre,A,B):- arg_n_isa(F,N,ISA),into_type(ISA,A,B),!.
-control_arg_type(FofN,_,Pre,A,B):- control_arg_types1([FofN|Pre],A,B).
 
 
 :- if(( current_prolog_flag(xref,true) ;
@@ -129,11 +134,14 @@ mpred_test(\+ call_u(X)):- nonvar(X),!, (call_u(X)-> (dmsg(warn(failed(mpred_tes
 mpred_test(X):- (mpred_test_why(X) *-> true ; mpred_test_why(~(X))).
 
 mpred_info(X):-
+ retractall(t_l:shown_child(_)),
  ignore((
   forall(mpred_test_why(X),true),
   forall(mpred_child_info(top,X),true))).
 
-mpred_child_info(From,P):- wdmsg(decendant(From,P)), pfcChildren(P,L), maplist(mpred_child_info(P),L).
+mpred_child_info(_From,P):- t_l:shown_child(Q),P=@=Q,!.
+mpred_child_info(From,P):- asserta(t_l:shown_child(P)),
+  wdmsg(decendant(From,P)), pfcChildren(P,L), maplist(mpred_child_info(P),L).
 
 mpred_why(X):- mpred_test_why(X).
 
@@ -1301,7 +1309,7 @@ pfc_nf1(P,[P]) :-
 
 % % % shouln't we have something to catch the rest as errors?
 pfc_nf1(Term,[Term]) :-
-  pfcWarn("pfc_nf doesn't know how to normalize ~p",[Term]).
+  pfcWarn("pfc_nf doesn't know how to normalize ~p (accepting though)",[Term]).
 
 
 % %  pfc_nf1_negation(P,NF) is true if NF is the normal form of \+P.
@@ -2324,6 +2332,7 @@ unwrap_litr0(head(C),CC):-unwrap_litr0(C,CC).
 unwrap_litr0(C,C).
 
 :- thread_local t_l:shown_why/1.
+:- thread_local t_l:shown_child/1.
 
 pfcShowSingleJust1(_,_,MFL):- is_mfl(MFL),!.
 pfcShowSingleJust1(JustNo,StepNo,C):- unwrap_litr(C,CC),!,pfcShowSingleJust4(JustNo,StepNo,C,CC).

@@ -1143,7 +1143,7 @@ is_fti_step(bg_shapes).
 bg_shapes(Shape,VM):-
  must_det_ll((
   Orig = VM.grid,
-  mapgrid(bg_shaped,Orig,NewGrid),
+  into_monogrid(Orig,NewGrid),
   must_be_free(OID),
   atomic_list_concat([VM.gid,'_bg_shaped'],OID2), asserta(is_grid_tid(NewGrid,OID2)),  
   get_vm(VMS),
@@ -1156,9 +1156,11 @@ bg_shapes(Shape,VM):-
   remGPoints(VM,ReColored),
   addInvObjects(VM,ReColored))),!.
 
-bg_shaped(Cell,NewCell):- is_bg_color(Cell),!,nop(decl_many_fg_colors(NewCell)),NewCell=wfg.
-%bg_shaped(Cell,NewCell):- is_fg_color(Cell),!,nop(decl_many_fg_colors(_NewCell)),NewCell=wfg.
-bg_shaped(_,_).
+into_monogrid(Orig,NewGrid):-mapgrid(bg_shaped,Orig,NewGrid).
+bg_shaped(Cell,NewCell):- is_bg_color(Cell),!,nop(decl_many_bg_colors(NewCell)),NewCell=wbg.
+bg_shaped(Cell,NewCell):- is_fg_color(Cell),!,nop(decl_many_fg_colors(_NewCell)),NewCell=wfg.
+bg_shaped(Cell,bg):- plain_var(Cell),!.
+bg_shaped(Cell,Cell).
 
 recolor_object(Recolors,Old,New):- 
   %globalpoints_include_bg(Grid,Recolors),

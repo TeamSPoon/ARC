@@ -38,6 +38,8 @@ arc_memoized(G):-
 set_nth1(1,[_|Row],E,[E|Row]):-!.
 set_nth1(N,[W|Row],E,[W|RowMod]):- Nm1 is N-1, set_nth1(Nm1,Row,E,RowMod).
 
+findall_count(T,G,N):- findall(T,G,L),list_to_set(L,S),length(S,N).
+
 make_list_inited(0,_,[]):-!.
 make_list_inited(1,E,[E]):-!.
 make_list_inited(N,E,[E|List]):- Nm1 is N -1,make_list_inited(Nm1,E,List).
