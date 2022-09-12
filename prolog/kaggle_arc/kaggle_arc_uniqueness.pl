@@ -271,7 +271,7 @@ each_trait(Obj,Obj-S):- findall(T,each_1trait(Obj,T),L),list_to_set(L,S).
 too_unique(P):- compound(P),!,compound_name_arity(P,F,_),!,too_unique(F).
 %too_unique(obj_to_oid).
 too_unique(globalpoints).
-too_unique(o).
+%too_unique(o).
 too_unique(link).
 too_unique(obj_to_oid).
 too_unique(birth).
@@ -283,7 +283,7 @@ good_overlap(rotation).
 
 too_non_unique(P):- compound(P),!,compound_name_arity(P,F,_),!,too_non_unique(F).
 too_non_unique(grid_size).
-too_non_unique(birth).
+%too_non_unique(birth).
 too_non_unique(grid).
 too_non_unique(changes).
 

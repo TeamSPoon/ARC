@@ -253,12 +253,19 @@ make_indiv_object_s(ID,GH,GV,Overrides,GPoints,ObjO):-
 
 top(7).
 
-cclumped(Items, Counts) :- cclump(Items, Counts).
-cclump([H|T0], [CH|T]) :-
+%fix_clump([_-C],[1-C]).
+
+fix_clump(Cs,CsO):- append([A|Mid],[A],Cs),append([A|Mid],[],CsM),!,fix_clump(CsM,CsO).
+fix_clump(Cs,CsO):- append([CsM,CsM,CsM,CsM,CsM],Cs),!,fix_clump(CsM,CsO).
+fix_clump(Cs,CsO):- append([CsM,CsM,CsM],Cs),!,fix_clump(CsM,CsO).
+fix_clump(Cs,CsO):- append([CsM,CsM],Cs),!,fix_clump(CsM,CsO).
+fix_clump(Cs,Cs).
+
+cclumped(Items, CountsO) :- cclump(Items, Counts),fix_clump(Counts,CountsO).
+cclump([H|T0], [C-H|T]) :-
     lists:ccount(T0, H, T1, 1, C),
-    cclump(T1, T),
-    color_c(C,H,CH).  
-cclump([], []).  color_c(1,H,H). color_c(C,H,C-H).
+    cclump(T1, T). 
+cclump([], []).  color_c(C,H,C-H).
 
 prop_order([v_hv/2,mass/1,loc/2,amass/1,
   %center/2,
@@ -477,8 +484,8 @@ transfer_props_l([_|L],Functors,List,NewList):-
 
 
 %indv_u_props(I,[localpoints(Ps),loc(X,Y),pen(Pen),v_hv(H,V),rotation(Rot)]):- loc(I,X,Y),shape(I,Ps),pen(I,Pen),v_hv(I,H,V),rotation(I,Rot),!.
-indv_u_props(I,[ shape(C),  loc(X,Y),  pen(Ps),  rotation(Rot)]):- 
-                 shape(I,C),loc(I,X,Y),pen(I,Ps),rotation(I,Rot),!.
+indv_u_props(I,[ shape(C),  loc(X,Y),  pen(Ps),  rotation(Rot)]):-  shape(I,C),loc(I,X,Y),pen(I,Ps),rotation(I,Rot),!.
+%indv_u_props(I,[ shape(C),  center(X,Y),  pen(Ps),  rotation(Rot)]):- shape(I,C),center(I,X,Y),pen(I,Ps),rotation(I,Rot),!.
 %indv_u_props(I,[shape(Ps),center(X,Y),pen(Pen),v_hv(H,V),rotation(Rot)]):- center(I,X,Y),shape(I,Ps),pen(I,Pen),v_hv(I,H,V),rotation(I,Rot),!.
 
 :- dynamic(is_iv_for/2).
@@ -894,6 +901,7 @@ center_term(Obj,loc(H,V)):- center(Obj,H,V).
 :- decl_pt(prop_h,hw_rat(is_object_or_grid,size)).
 hw_rat(Obj,HV):- v_hv(Obj,OH,OV), HV is rationalize(OH/OV).
 
+center(I,X,Y):- indv_props(I,L),member(center(X,Y),L),!.
 center(I,X,Y):- indv_props(I,L),member(iz(cenX(X)),L),member(iz(cenY(Y)),L),!.
 %center(Obj,CX,CY):- v_hv(Obj,H,V), loc(Obj,X,Y),CX is X + floor(H/2),CY is Y + floor(V/2).
 
@@ -1309,7 +1317,7 @@ object_to_nm_points(Obj,NPoints):-
 guess_shape(GH,GV,GridIn,LocalGrid,I,E,N,1,GV,Colors,Points,column).
 guess_shape(GH,GV,GridIn,LocalGrid,I,E,N,GH,1,Colors,Points,locY).
 
-guess_shape(GH,GV,GridIn,LocalGrid,I,Empty,N,H,V,[cc(Black,_)],Points,bgc):- is_bg_color(Black).
+guess_shape(GH,GV,GridIn,LocalGrid,I,Empty,N,H,V,[cc(Black,_)|_],Points,iz(bfc(FGB))):- ((is_bg_color(Black);Black==wbg)->FGB=bg;FGB=fg).
 %guess_shape(GH,GV,GridIn,LocalGrid,I,0,N,H,V,Colors,Points,view_sq):- H == V.%guess_shape(GH,GV,GridIn,LocalGrid,I,I,N,H,V,Colors,Points,rectangle):- H>1, V>1.
 guess_shape(GH,GV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,chromatic(Len)):- maplist(arg(1),Colors,Colorz),include(is_fg_color,Colorz,FGC),length(FGC,Len).
 guess_shape(GH,GV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,monochrome):- Colors=[_],length(Colors,Len).

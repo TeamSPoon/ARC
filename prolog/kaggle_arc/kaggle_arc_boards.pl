@@ -378,10 +378,16 @@ grid_hint_io(MC,IO,In,Out,Hint):- % \+ In=@=Out,
   Hint = comp(IO,maybe_________________________ogs(MC,R,list(Len,XY))),
   member(R,[strict,loose]), 
   findall(loc(X,Y),maybe_ogs(R,X,Y,In,Out),XY),XY\==[],length(XY,Len),!.
+grid_hint_io(MC,IO,Trim,Out,Hint):- % \+ In=@=Out,
+  Hint = comp(IO,trim__________ogs(MC,R,list(Len,XY))),
+  trim_to_rect(Trim,In),!,Trim\=In,maybe_ogs(_,OX,OY,Trim,In),  
+  member(R,[strict,loose]), 
+  findall(loc(XX,YY),(maybe_ogs(R,X,Y,In,Out),XX is X+OX, YY is Y+OY),XY), XY\==[], length(XY,Len),!.
 %grid_hint_iso(MC,IO,In,_Out,_IH,_IV,OH,OV,is_xy_columns):- once(has_xy_columns(In,_Color,OH,OV,)).
 
 maybe_ogs(R,X,Y,In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
-maybe_ogs(R,X,Y,In,Out):- find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R=loose).
+maybe_ogs(R,X,Y,In,Out):-  find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R=loose).
+
 
 %grid_hint_iso(_MC,IO,_In,_Out,_IH,_IV,OH,OV,grid_size(IO,OH,OV)).
 grid_hint_iso(cbg(_BGC),_-o,_In,Out,_IH,_IV,OH,OV,has_x_columns(Y,Color)):- Area is OH*OV, Area>24, maybe_fail_over_time(10.2,has_x_columns(Out,Y,Color,_)),Y>1.

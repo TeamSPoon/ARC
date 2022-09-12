@@ -77,10 +77,12 @@ into_iog(InC,OutC,IndvS):- append(InC,OutC,IndvC),!,must_det_ll((IndvC=IndvS)).
 into_gio(IndvS,InSO,OutSO):- 
   include(has_prop(iz(g(out))),IndvS,OutC),
   include(has_prop(iz(g(in))),IndvS,InC),
-  include(has_prop(iz(g(io))),IndvS,IOC),
+  include(not_io,IndvS,IOC),
   append_sets([IOC,OutC],OutS),
   append_sets([IOC,InC],InS),
   must_det_ll((OutSO=OutS,InSO=InS)).
+
+not_io(O):- \+ has_prop(iz(g(out)),O), \+ has_prop(iz(g(in)),O).
 
 show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):- 
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),
@@ -192,6 +194,17 @@ du_ud(u,d).
 
 individuation_macros(jumps,
   [ %progress, 
+
+
+
+
+
+
+
+
+
+
+
     jumps(hv_line(h)), % multicolored lines
     jumps(hv_line(v)),
     jumps(dg_line(d)), % multicolored diagonals
@@ -288,7 +301,7 @@ individuation_macros(complete, ListO):- test_config(indiv(ListO))-> true;
 
   
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
-individuator(i_by_color,[force_by_color, by_color(1,wbg), by_color(1,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
+%individuator(i_by_color,[force_by_color, by_color(1,wbg), by_color(1,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
 individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots, do_ending]).
 individuator(i_nsew,[subshape_both(h,nsew), maybe_lo_dots, do_ending]).
 individuator(i_repair_mirrors,[repair_in_vm(find_symmetry_code)]).
@@ -644,8 +657,8 @@ individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,ID1,ID2,P1,P2,IndvSI,Ind
   include(is_bgp,P2,P2XBG),
   intersection(P1XBG,P2XBG,S12XBG,U1XBG,U2XBG),
   S12XBG\==[],
-  include(is_fgp,P1,P1X),
-  include(is_fgp,P2,P2X),
+  mostly_fgp(P1,P1X),
+  mostly_fgp(P2,P2X),
   append(P1X,U1XBG,PU1),
   append(P2X,U2XBG,PU2),
   (PU1\==P1;PU2\==P2),!,
@@ -666,8 +679,8 @@ individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,ID1,ID2,P1,P2,IndvSI,Ind
 
   fif(fail,
   fif((H1==H2,V1==V2),((
-      include(is_fgp,P1,P1X),
-      include(is_fgp,P2,P2X),
+      mostly_fgp(P1,P1X),
+      mostly_fgp(P2,P2X),
       intersection(P1X,P2X,Same,U1,U2),
       wdmsg(intersection(P1X,P2X,Same,U1,U2)),
 
@@ -1310,7 +1323,9 @@ is_fti_step(maybe_alone_dots).
 
 is_sa(Points,C-P2):-  \+ (is_adjacent_point(P2,Dir,P3), Dir\==c, member(C-P3,Points), \+ is_diag(Dir)),!.
 
-using_alone_dots(_).
+contains_alone_dots(Grid):- nonvar(Grid), globalpoints_maybe_bg(Grid,Points),include(is_sa(Points),Points,SAs),SAs\==[].
+using_alone_dots(VM, _):- \+ contains_alone_dots(VM.grid_o), \+ contains_alone_dots(VM.grid_target),!.
+using_alone_dots(_,Goal):- once(Goal).
 
 maybe_alone_dots(VM):-
   \+ exceeded_objs_max_len(VM),
@@ -1319,11 +1334,11 @@ maybe_alone_dots(VM):-
     length(SAPs,Len),
     fif((VM.objs_max_len>=Len),
     (set(VM.points)=Keep,
-     using_alone_dots((maplist(make_point_object(VM,[birth(alone_dots),iz(shaped)]),SAPs,IndvList),
+     using_alone_dots(VM,(maplist(make_point_object(VM,[birth(alone_dots),iz(shaped)]),SAPs,IndvList),
      nop(raddObjects(VM,IndvList)))))))),!.
 maybe_alone_dots(_).
   
-alone_dots(VM):-  using_alone_dots(maybe_alone_dots(VM)),!.
+alone_dots(VM):-  using_alone_dots(VM,maybe_alone_dots(VM)),!.
 alone_dots(_):-!.
 
 % =====================================================================
@@ -1331,24 +1346,28 @@ is_fti_step(maybe_lo_dots).
 % =====================================================================
 maybe_lo_dots(VM):-
   %current_as_one(VM),
-  length(VM.points,Len), (VM.h>=Len ; VM.v>=Len), lo_dots(VM).
+  %length(VM.points,Len), (VM.h>=Len ; VM.v>=Len), 
+  lo_dots(VM).
 maybe_lo_dots(_):-!.
 
 % =====================================================================
 is_fti_step(lo_dots).
 % =====================================================================
 % lo_dots may have adjacent points of the sameR color (because we are in 'lo_dots' mode)
+mostly_fgp(Points,LO_POINTS):- length(Points,Len), Len =< 49,!, Points=LO_POINTS.
+mostly_fgp(Points,FG_POINTS):- my_partition(is_fgp,Points,FG_POINTS,_),!.
 
 lo_dots(VM):-  
-  ( VM.h=<5 ; VM.v=<5 ; (VM.points \=[], length(VM.points,Len), (Len =< VM.h ; Len =< VM.v  ))),!,
-  using_alone_dots((maplist(make_point_object(VM,[birth(lo_dots),iz(dot),iz(shaped)]),VM.points,IndvList),
+  mostly_fgp(VM.points,LO_POINTS),
+  ( VM.h=<5 ; VM.v=<5 ; (LO_POINTS \=[], length(LO_POINTS,Len), (Len =< VM.h ; Len =< VM.v  ))),!,  
+  using_alone_dots(VM,(maplist(make_point_object(VM,[birth(lo_dots),iz(dot),iz(shaped)]),LO_POINTS,IndvList),
   raddObjects(VM,IndvList))),
   set(VM.points) =[],!.
 lo_dots(VM):-  
-  using_alone_dots((maplist(make_point_object(VM,[birth(lo_dots),iz(dot)]),VM.points,IndvList),
+  mostly_fgp(VM.points,LO_POINTS),
+  using_alone_dots(VM,(maplist(make_point_object(VM,[birth(lo_dots),iz(dot)]),LO_POINTS,IndvList),
   raddObjects(VM,IndvList))),
   set(VM.points) =[],!.
-
 
 
 /*
@@ -1507,8 +1526,8 @@ one_fti(VM,glyphic):-
  must_det_ll((
   one_fti(VM,whole),
   localpoints_include_bg(VM.grid_o,Points),length(Points,LenBG),
-  (LenBG=<25->UPoints=Points;include(is_fgp,Points,UPoints)),
-  using_alone_dots((maplist(make_point_object(VM,[birth(glyphic),iz(shaped)]),UPoints,IndvList), raddObjects(VM,IndvList),
+  (LenBG=<25->UPoints=Points;mostly_fgp(Points,UPoints)),!,
+  using_alone_dots(VM,(maplist(make_point_object(VM,[birth(glyphic),iz(shaped)]),UPoints,IndvList), raddObjects(VM,IndvList),
   save_grouped(individuate(VM.gid,glyphic),IndvList))))).
 
 %make_point_object(VM,_Opts,Point,Indv):-
