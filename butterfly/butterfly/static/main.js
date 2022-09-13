@@ -675,12 +675,7 @@
 
 	  code = ch.charCodeAt();
 	  if (code >= 160) {
-        char = "<pre>&#"+code+";</pre>";
-        console.log("CH0 = "+char);
-        char = "<pre>"+ch+"</pre>";
-      console.log("CH1 = "+char);
-      data.html = char;
-      return data.html;
+      return ch;
 	  }
 
 
@@ -1621,14 +1616,14 @@
 		return dr;
 	};
 
-    Terminal.prototype.writeln = function(data) {
-	  if(true) {
-		//  return this.write(data + "\r\n");
-	  }
-      this.write1(data);
-	  this.write2("\r\n");
-	  return this.dirtyRefresh();
-    };
+  Terminal.prototype.writeln = function(data) {
+  if(true) {
+  //  return this.write(data + "\r\n");
+  }
+    this.write1(data);
+  this.write2("\r\n");
+  return this.dirtyRefresh();
+  };
 
 	var buffer = "";
 	var tx = false;
