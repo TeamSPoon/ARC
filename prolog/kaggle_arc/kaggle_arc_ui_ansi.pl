@@ -353,7 +353,7 @@ dash_chars(H,_):- H < 1,!.
 dash_chars(H,C):-forall(between(0,H,_),bformatc(C)).
 
 dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc('¯¯¯ ').
-dash_uborder_no_nl_1:-  line_position(current_output,W),bformatc(W),!, bformatc('¯¯¯ ').
+dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('¯¯¯ ').
 dash_uborder_no_nl_1:- bformatc('¯¯¯ ').
 dash_uborder_no_nl(1):- !, dash_uborder_no_nl_1.
 dash_uborder_no_nl(Width):- WidthM1 is Width-1, bformatc(' ¯'),dash_chars(WidthM1,'¯¯'),!.
@@ -361,7 +361,7 @@ dash_uborder_no_nl(Width):- WidthM1 is Width-1, bformatc(' ¯'),dash_chars(WidthM
 
 
 dash_border_no_nl_1:-  line_position(current_output,0),!, bformatc(' ___ ').
-dash_border_no_nl_1:-  line_position(current_output,W),bformatc(W),!, bformatc('___ ').
+dash_border_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('___ ').
 dash_border_no_nl_1:- bformatc(' ___ ').
 dash_border_no_nl(1):- !,dash_border_no_nl_1.
 dash_border_no_nl(Width):- WidthM1 is Width-1, bformatc(' _'),dash_chars(WidthM1,'__').
@@ -420,16 +420,26 @@ print_side_by_side0(C1,W0,C2):- number(W0), W0 < 0, LW is -W0, !, print_side_by_
 print_side_by_side0(C1,W0,C2):- number(W0), LW is floor(abs(W0)),
   locally(nb_setval(print_sbs,left),into_ss_string(C1,ss(W1,L1))),
   locally(nb_setval(print_sbs,right),into_ss_string(C2,ss(_,L2))),!,
-  print_side_by_side_lists_1st(L1,W1,L2,LW).
+  with_style("font-size:100%",print_side_by_side_lists_1st(L1,W1,L2,LW)).
 
 is_side(RL):- nb_current(print_sbs,RL),RL\==[].
 
-print_side_by_side_lists_1st([],_,[],_):-!.
-print_side_by_side_lists_1st(L1,W1,L2,LW):-
+
+maybe_exend_len(L1,L2,NL1,L2):-
   length(L1,N1),
   length(L2,N2),
-  N2>N1,!,
-  print_side_by_side_lists_1st(L2,W1,L1,LW).
+  N2>N1, 
+  Needs is ((N2-N1)+1),
+  wots(S,write('\n')),
+  make_list(S,Needs,AppendL1),
+  append(L1,AppendL1,NL1),!.
+
+maybe_exend_len(L1,L2,L2,L1):- length(L1,N1), length(L2,N2), N2 > N1, !.
+
+
+print_side_by_side_lists_1st([],_,[],_):-!.
+
+print_side_by_side_lists_1st(L1,W1,L2,LW):- maybe_exend_len(L1,L2,NL1,NL2),!, print_side_by_side_lists_1st(NL1,W1,NL2,LW).
 
 print_side_by_side_lists_1st([E1,E2|L1],W1,L2,LW):- !,
   wots(S,(write(E2),write('\t '),dash_chars(W1,' ' ))),
@@ -446,7 +456,7 @@ print_side_by_side_lists(Pre,[E1|L1],W1,[E2|L2],W2):-!,
   print_side_by_side_lists(Pre,L1,W1,L2,W2).
   
 print_side_by_side_lists(_Pre,[],W1,[],W2):- !, nop(write_padding([],W1,[],W2)),!.
-  
+
 print_side_by_side_lists(Pre,[E1|L1],W1,[],W2):- !,
   write_padding(E1,W1,[],W2),
   print_side_by_side_lists(Pre,L1,W1,[],W2).
@@ -733,15 +743,15 @@ arc_webui:- toplevel_pp(bfly),!.
 arc_webui:- is_webui,!.
 
 g_out(G):- is_side(_),!,call(G).
-g_out(G):- in_pp(http),!,color_print_webui(teal,call(G)).
 g_out(G):- \+ arc_webui,!,format('~N'),call(G),format('~N').
 g_out(G):- nb_current(in_g_out,t),!,format('~N'),call(G),format('~N').
-g_out(G):- in_pp(bfly),!,bfly_html_goal(G).
-g_out(G):- in_pp(http),!,call(G).
 g_out(G):- locally(nb_setval(in_g_out,t), gg_out(G)).
 
-gg_out(G):- \+ toplevel_pp(bfly),!,gg_out2(G).
-gg_out(G):- bfly_html_goal(gg_out2(G)).
+gg_out(G):- in_pp(bfly),!,bfly_html_goal(with_pp(http,G)).
+gg_out(G):- with_style('',call(G)).
+%gg_out(G):- call(G).
+%gg_out(G):- \+ toplevel_pp(bfly),!,gg_out2(G).
+%gg_out(G):- bfly_html_goal(gg_out2(G)).
 
 gg_out2(G):-
   wots(S0,call(G)),correct_nbsp(S0,S), !,
@@ -762,7 +772,8 @@ ansi_format_real(Ansi,Format,Args):- \+ arc_webui,!,ansi_format(Ansi,Format,Args
 ansi_format_real(Ansi,Format,Args):- sformat(S,Format,Args),!,color_print_webui(Ansi,S).
 
 color_print_webui(C,G):- mbfy(cpwui(C,G)).
-  
+
+
 cpwui(_,G):- G==' ',!,write_nbsp.
 cpwui(C,G):- mv_peek_color(C,W),cpwui(W,G).
 cpwui(C,G):- is_bg_sym_or_var(C),!,cpwui(wbg,G).
@@ -779,13 +790,31 @@ cpwui(italic,G):- !, cpwui(style('font-style','italic'),G).
 cpwui(bg(C),G):- !, cpwui(style('background-color',C),G).
 cpwui(hbg(C),G):- !, cpwui([bg(C),style('filter','brightness(150%)')],G).
 cpwui(hfg(C),G):- !, cpwui([C,style('brightness','200%')],G).
-cpwui(fg(C),G):- !, cpwui(C,G).
 cpwui(style(C),G):- !, format('<font style="~w">~@</font>',[C,bformatc(G)]).
 cpwui(style(N,V),G):- !, format('<font style="~w: ~w;">~@</font>',[N,V,bformatc(G)]).
-cpwui(color(C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
-cpwui(black,G):- cpwui(style('opacity: 0.5;'),G).
+cpwui(C,G):- C==black,!, cpwui(style('opacity: 0.5;'),G).
 cpwui(C,G):- C==wbg,!,cpwui([black,black],G).
-cpwui(C,G):- format('<font color="~w" style="font-weight: bold;">~@</font>',[C,bformatc(G)]),!.
+
+cpwui(fg(C),G):- !, format('<font color="~w" style="font-weight: bold;">~@</font>',[C,bformatc(G)]),!.
+cpwui(color(C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
+cpwui(C,G):- integer(C),arc_acolor(C,CC),CC\==C,!,cpwui(CC,G).
+cpwui(C,G):- is_html_color(C),!, format('<font color="~w">~@</font>',[C,bformatc(G)]).
+%cpwui((C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
+cpwui(C,G):- format('<font> style="~w" ~@</font>',[C,bformatc(G)]),!.
+
+is_html_color(A):- \+ atom(A),!,fail.
+is_html_color(teal).
+is_html_color(C):- is_real_color(C),!.
+is_html_color(A):- atom_concat('#',_,A),!.
+/*
+cpwui(fg(C),G):- !, cpwui(color(C),G).
+cpwui(color(C),G):- !, cpwui(style('color',C),G)
+% style="font-weight: bold;.
+cpwui(color(C),G):- format('<font color="~w">~@</font>',[C,bformatc(G)]),!.
+cpwui(C,G):- format('<span style="~w">~@</span>',[C,bformatc(G)]),!.
+*/
+
+
 
 bformatc(call(G)):- !, wots(S,call(G)), bformats(S).
 bformatc(G):- string(G),!,bformats(G).
@@ -802,22 +831,31 @@ map_html_entities(Code,S):- Code>32, name(S,[Code]),!.
 
 bformatw(G):- g_out(bformat(G)).
 
+with_style(S,G):-
+ (arc_webui -> 
+   setup_call_cleanup(format('<span style="~w">',[S]),G,write('</span>')) 
+    ; G).
+
+print_grid_html(Grid):-print_grid_html(_SH,_SV,_EH,_EV,Grid).
+print_grid_html(Name,Grid):-print_grid(_OH,_OV,Name,Grid).
 print_grid_html(SH,SV,EH,EV,Grid):-
- g_out(must_det_ll((
+ % CSS = 'line-height: .5; font-stretch: ultra-extended;',
+ CSS = 'line-height: 1.2; font-stretch: ultra-extended; font-size:288px background-color: reset;',
+ g_out(must_det_ll(( 
   format('~N'), 
   ((plain_var(EH) ; plain_var(EV))->grid_size(Grid,EH,EV);true),
   Width is EH-SH, 
   (Width==0 -> DBW = 1 ; DBW is Width+1),
-  once((dash_border_no_nl(DBW))),
+  once((with_style(CSS,dash_border_no_nl(DBW)))),
   bg_sym(BGC),
   forall(between(SV,EV,V),
-   ((format('~N['),nop(format('<font style="background-color: reset; line-height: .5; font-stretch: ultra-extended;">')),
+   with_style(CSS,((format('~N['),(format('<span style="~w">',[CSS])),
      forall(between(SH,EH,H),
      ignore((((hv_cg_value(Grid,CG,H,V);/*grid_cpoint(Grid,CG-_,H,V);*/CG=BGC)->
-        (once(print_gw1(CG))))))),write('&nbsp;]'),nop(write('</font>'))))),
+        (once(print_gw1(CG))))))),write('&nbsp;]'),(write('</span>')))))),
   %print_g(H,V,C,LoH,LoV,HiH,HiV)
   format('~N'),!,
-  once((dash_uborder_no_nl(DBW)))))).
+  once(with_style(CSS,dash_uborder_no_nl(DBW)))))),!.
 
 grid_colors(GridI,WGrid):-
    must_det_ll((
@@ -880,7 +918,7 @@ block_colors([('#3a5a3a'),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c0
 named_colors([(black),(blue),(red),(green),(yellow),(silver),(purple),(orange),(cyan),(brown),wbg,fg,'#444455']).
 named_colors([ (lack),(blue),(red),(green),(yellow),(silver),(purple),(orange),(cyan),(brown),bg,wfg]).
 named_colors([(lack),(blue),(red),(green),(yellow),(silver),(magenta),(orange),(cyan),(brown)]).
-named_colors([(lack),(blue),(red),(green),(yellow),(grey),(pink),(orange),(cyan),(maroon)]).
+named_colors([(lack),(blue),(red),(green),(yellow),(grey),(pink),(orange),(teal),(maroon)]).
 
 % silver(rgb(123,123,123)).
 silver('#7b7b7b').
@@ -889,6 +927,7 @@ silver('#9a9a9a').
 
 unnegate_color(C,Neg):- number(C),C<0,C is -Neg,!.
 unnegate_color(CI,C):- compound(CI),CI= '-'(C),!.
+
 arc_acolor(C,[underline,Color]):- unnegate_color(C,Neg),arc_acolor(Neg,Color).
 arc_acolor(C,fg(Color)):- integer(C),block_colors(L),length(L,UpTo),between(0,UpTo,C),nth0(C,L,Color),!.
 arc_acolor(A,fg(Color)):- atom(A),color_int(A,C),integer(C),block_colors(L),length(L,UpTo),between(0,UpTo,C),nth0(C,L,Color),!.

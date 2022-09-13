@@ -602,37 +602,44 @@ needs_indivs(I,O):- is_gridoid(I), \+ is_group(I), arcST, trace, compute_unshare
 
 %diff_terms(IPs,OPs,Difs2):- diff_terms(IPs,OPs,Difs2).
 
-diff_terms(I,O,[]):- O=@=I,!.
-diff_terms(I,O,D):- nonvar_or_ci(D),!,diff_terms(I,O,DD),!,D==DD.
-diff_terms(I,O,D):- maybe_number(I,N1),maybe_number(O,N2),!,proportional_size(N1,N2,D).
-diff_terms(I,O,[]):- O==I,!.
-diff_terms(IF=IA,O,IF=D):- find_kval(O,IF,OA),!,diff_terms(IA,OA,D).
-%diff_terms(I,O, [] ):- (never_do_diff(I);never_do_diff(O)),!.
-diff_terms(I,O,[]):- plain_var(I),plain_var(O),!.
-diff_terms(I,O,O):- plain_var(I),!.
-diff_terms(O,I,O):- plain_var(I),!.
-diff_terms(I,O,[]):- O=@=I,!.
-diff_terms(I,O,O):- I==[],!.
-diff_terms(I,O,I):- O==[],!.
-
-diff_terms(shape(I),shape(O),[]):- !,sort(I,II),sort(O,OO),II=@=OO,!.
-diff_terms(shape(I),shape(O),shape(diff(I->O))):-!.
-%diff_terms(I,O, (O \== I)):- O=@=I,!.
-diff_terms(group_o(I),group_o(O),group_o(DD)):- !, must_det_ll(diff_groups(I,O,DD)).
-diff_terms(I,O,DD):-  is_group(I), is_group(O), !, must_det_ll(diff_groups(I,O,DD)).
-diff_terms(I,O,[]):- no_diff(I,O),!.
-diff_terms(O,I,[]):- no_diff(I,O),!.
-% diff_terms(I,O,DD):-  is_group(I),is_group(O), !,  include_fav_points(I,II), include_fav_points(O,OO), diff_groups(I,O,DD).
-diff_terms(obj(I),obj(O),OUT):- !, diff_objects(I,O,OUT).
-diff_terms([IH,IV],[OH,OV],D):- maplist(number,[IH,IV,OH,OV]),!,maplist(diff_numbers,[IH,IV],[OH,OV],D).
-diff_terms(I,O, D):- non_grid_list(I),non_grid_list(O),!,diff_lists(I,O,D).
-diff_terms(I,O,D):- is_map(I),!,findall(D1,(get_kov(K, I, V),diff_terms(K=V,O,D1)),D).
-
-
-diff_terms(Grid,Other,OUT):- needs_indivs(Grid,I),!,diff_terms(I,Other,OUT).
-diff_terms(Other,Grid,OUT):- needs_indivs(Grid,I),!,diff_terms(Other,I,OUT).
-diff_terms(I,O,D):- compound(I),compound(O),!,diff_compounds(I,O,D).
+diff_terms(I,O,D):- diff_termz(I,O,D),!.
 diff_terms(I,O,diff(I->O)).
+
+diff_termz(I,O,D):- nonvar_or_ci(D),!,diff_terms(I,O,DD),D=DD.
+diff_termz(I,O,[]):- O=@=I,!.
+diff_termz(I,O,[]):- O==I,!.
+diff_termz(I,O,[]):- plain_var(I),plain_var(O),!.
+diff_termz(I,O,O):- plain_var(I),!.
+diff_termz(O,I,O):- plain_var(I),!.
+diff_termz(I,O,D):- maybe_number(I,N1),maybe_number(O,N2),!,proportional_size(N1,N2,D).
+diff_termz(I,O,O):- I==[],!.
+diff_termz(I,O,I):- O==[],!.
+
+diff_termz([IH,IV],[OH,OV],D):- maplist(number,[IH,IV,OH,OV]),!,maplist(diff_numbers,[IH,IV],[OH,OV],D).
+
+%diff_termz(I,O, [] ):- (never_do_diff(I);never_do_diff(O)),!.
+diff_termz(shape(I),shape(O),[]):- !,sort(I,II),sort(O,OO),II=@=OO,!.
+diff_termz(shape(I),shape(O),shape(diff(I->O))):-!.
+%diff_termz(I,O, (O \== I)):- O=@=I,!.
+diff_termz(group_o(I),group_o(O),group_o(DD)):- !, must_det_ll(diff_groups(I,O,DD)).
+diff_termz(I,O,DD):-  is_group(I), is_group(O), !, must_det_ll(diff_groups(I,O,DD)).
+diff_termz(I,O,[]):- no_diff(I,O),!.
+diff_termz(O,I,[]):- no_diff(I,O),!.
+% diff_termz(I,O,DD):-  is_group(I),is_group(O), !,  include_fav_points(I,II), include_fav_points(O,OO), diff_groups(I,O,DD).
+
+%diff_termz(obj(I),obj(O),OUT):- !, diff_objects(I,O,OUT).
+
+diff_termz(I,O, D):- non_grid_list(I),non_grid_list(O),!,diff_lists(I,O,D).
+
+diff_termz(I,O,D):- is_map(I),!,findall(D1,(get_kov(K, I, V),diff_terms(K=V,O,D1)),D).
+diff_termz(IF=IA,O,IF=D):- find_kval(O,IF,OA),!,diff_terms(IA,OA,D).
+
+
+diff_termz(Grid,Other,OUT):- needs_indivs(Grid,I),!,diff_termz(I,Other,OUT).
+diff_termz(Other,Grid,OUT):- needs_indivs(Grid,I),!,diff_termz(Other,I,OUT).
+diff_termz(I,O,D):- compound(I),compound(O),!,diff_compounds(I,O,D).
+
+
 
 diff_compounds(I,O, [] ):- (never_show_diff(I);never_show_diff(O)),!.
 

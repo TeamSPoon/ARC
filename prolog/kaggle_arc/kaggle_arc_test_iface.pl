@@ -223,7 +223,7 @@ ip(I,O):- ip(complete,I,O).
 
 ndividuator1:- get_current_test(TestID),set_flag(indiv,0),with_test_pairs1(TestID,In,Out,ip(In,Out)).
 ndividuator:- get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,ip(In,Out)).
-ndividuatorO1:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,In,igo(In)).
+ndividuatorO1:- get_current_test(TestID),set_flag(indiv,0),with_test_grids1(TestID,In,igo(In)).
 ndividuatorO:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,In,igo(In)).
 
 test_grids(TestID,G):- ignore(get_current_test(TestID)), kaggle_arc_io(TestID,ExampleNum,IO,G), ((ExampleNum*IO) \= ((tst+_)*out)).
@@ -283,7 +283,7 @@ previous_test:-  get_current_test(TestID), get_previous_test(TestID,NextID), set
 next_test:- get_current_test(TestID), notrace((get_next_test(TestID,NextID), set_current_test(NextID))),!.
 is_valid_testname(TestID):- kaggle_arc(TestID,_,_,_).
 
-get_current_test(TestID):- luser_getval(test_name,TestID),is_valid_testname(TestID),!.
+get_current_test(TestID):- luser_getval(task,TestID),is_valid_testname(TestID),!.
 get_current_test(TestID):- get_next_test(TestID,_),!.
 get_current_test(v(fe9372f3)).
 
@@ -296,12 +296,12 @@ prev_in_list(TestID,List,PrevID):-  once(append(_,[PrevID,TestID|_],List); last(
 :- export(load_last_test_name/0).
 system:load_last_test_name:- 
   muarc:arc_settings_filename(Filename),
-  notrace((exists_file(Filename),setup_call_cleanup(open(Filename,read,O),ignore((read_term(O,TestID,[]),luser_setval(test_name,TestID))),close(O)))),!.
+  notrace((exists_file(Filename),setup_call_cleanup(open(Filename,read,O),ignore((read_term(O,TestID,[]),luser_setval(task,TestID))),close(O)))),!.
 system:load_last_test_name:- set_current_test(v(fe9372f3)).
 
 system:save_last_test_name:- notrace(catch(save_last_test_name_now,_,true)),!.
 system:save_last_test_name_now:- muarc:arc_settings_filename(Filename),
-  ignore(notrace((luser_getval(test_name,TestID), tell(Filename),format('~n~q.~n',[TestID]),told))).
+  ignore(notrace((luser_getval(task,TestID), tell(Filename),format('~n~q.~n',[TestID]),told))).
 
 muarc:arc_settings_filename(Filename):- muarc:arc_settings_filename1(File), 
   (exists_file(File) -> (Filename=File) ; absolute_file_name(File,Filename,[access(append),file_errors(fail),expand(true)])).
@@ -314,7 +314,7 @@ set_current_test(Name):-
   ignore((fix_id(Name,TestID),is_valid_testname(TestID),really_set_current_test(TestID))).
 
 really_set_current_test(TestID):-
-   luser_setval(test_name,TestID),
+   luser_setval(task,TestID),
   (luser_getval(last_test_name,WasTestID);WasTestID=[]),
   (WasTestID==TestID-> true ; new_current_test_info(WasTestID,TestID)).
 
@@ -352,7 +352,7 @@ clear_test(TestID):- clear_training(TestID),
 new_current_test_info(WasTestID,TestID):- 
   clear_test(WasTestID),
   ignore((
-  %luser_getval(test_name,TestID),
+  %luser_getval(task,TestID),
   get_current_test(TestID),
   dmsg(fav(TestID,[])),
   %luser_setval(example,tst+0),
@@ -873,7 +873,7 @@ print_eval0:- arc(v('009d5c81')).
 
 
 parc1:- parc1(6300*3). 
-parc1(OS):- clsmake,   luser_setval(test_name,[]),
+parc1(OS):- clsmake,   luser_setval(task,[]),
    open(tt,write,O,[encoding(text)]), parc0(OS), with_output_to(O,parc0(OS)), close(O).
 parc0(OS):-
  locally(set_prolog_flag(gc,true),forall(parc11(OS,_),true)).

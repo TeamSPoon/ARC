@@ -185,8 +185,8 @@ test_grid_hint(TestID):- compute_and_show_test_hints(TestID).
 
 
 hint_functor(cg(IO,Hint),cg(IO,F)):- !, hint_functor(Hint,F).
-%hint_functor(comp(i-o,Hint),F):- !, hint_functor(Hint,F).
-hint_functor(comp(IO,Hint),comp(IO,F)):- hint_functor(Hint,F).
+%hint_functor(comp(MC,i-o,Hint),F):- !, hint_functor(Hint,F).
+hint_functor(comp(MC,IO,Hint),comp(MC,IO,F)):- hint_functor(Hint,F).
 hint_functor(rev(Hint),rev(F)):- !, hint_functor(Hint,F).
 hint_functor(mono(Hint),mono(F)):- !, hint_functor(Hint,F).
 hint_functor(vis_hv_term(Hint),(F)):- !, hint_functor(Hint,F).
@@ -194,7 +194,7 @@ hint_functor(Hint,F):- functor(Hint,F,_).
 
 
 hint_data(cg(_IO,Hint),F):- !, hint_data(Hint,F).
-hint_data(comp(_IO,Hint),F):- !, hint_data(Hint,F).
+hint_data(comp(_MC,_IO,Hint),F):- !, hint_data(Hint,F).
 hint_data(rev(Hint),F):- !, hint_data(Hint,F).
 hint_data(vis_hv_term(Hint),(F)):- !, hint_data(Hint,F).
 hint_data(mono(Hint),(F)):- !, hint_data(Hint,F).
@@ -369,17 +369,17 @@ maybe_fail_over_time(_Time,Goal):- once(Goal).
 
 c_proportional(I,O,R):- proportional(I,O,R).
 %grid_hint_io(MC,IO,In,Out,find_ogs):- maybe_fail_over_time(1.2,find_ogs(_,_,In,Out)).
-grid_hint_io(_MC,IO,In,Out,comp(IO,Hint)):- comp_o(IO),  c_proportional(In,Out,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- comp_o(IO),  c_proportional(In,Out,Hint).
 
-grid_hint_io(MC,IO,In,Out,Hint):- grid_size(In,IH,IV),grid_size(Out,OH,OV),grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- grid_size(In,IH,IV),grid_size(Out,OH,OV),grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
 
 grid_hint_io(MC,IO,In,Out,(=@=(MC,IO))):- In=@=Out, !.
 grid_hint_io(MC,IO,In,Out,Hint):- % \+ In=@=Out,
-  Hint = comp(IO,maybe_________________________ogs(MC,R,list(Len,XY))),
+  Hint = comp(MC,IO,maybe_________________________ogs(MC,R,list(Len,XY))),
   member(R,[strict,loose]), 
   findall(loc(X,Y),maybe_ogs(R,X,Y,In,Out),XY),XY\==[],length(XY,Len),!.
 grid_hint_io(MC,IO,Trim,Out,Hint):- % \+ In=@=Out,
-  Hint = comp(IO,trim__________ogs(MC,R,list(Len,XY))),
+  Hint = comp(MC,IO,trim__________ogs(MC,R,list(Len,XY))),
   trim_to_rect(Trim,In),!,Trim\=In,maybe_ogs(_,OX,OY,Trim,In),  
   member(R,[strict,loose]), 
   findall(loc(XX,YY),(maybe_ogs(R,X,Y,In,Out),XX is X+OX, YY is Y+OY),XY), XY\==[], length(XY,Len),!.
@@ -393,13 +393,13 @@ maybe_ogs(R,X,Y,In,Out):-  find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R
 grid_hint_iso(cbg(_BGC),_-o,_In,Out,_IH,_IV,OH,OV,has_x_columns(Y,Color)):- Area is OH*OV, Area>24, maybe_fail_over_time(10.2,has_x_columns(Out,Y,Color,_)),Y>1.
 grid_hint_iso(cbg(_BGC),_-o,_In,Out,_IH,_IV,OH,OV,has_y_rows(Y,Color)):- Area is OH*OV, Area>24, maybe_fail_over_time(10.2,has_y_rows(Out,Y,Color,_)),Y>1.
 
-grid_hint_iso(cbg(BGC),IO,Out,In,GH,GV,GH,GV,comp(IO,Hint)):- mapgrid(remove_color_if_same(BGC),Out,In,NewIn),
+grid_hint_iso(cbg(BGC),IO,Out,In,GH,GV,GH,GV,Hint):- mapgrid(remove_color_if_same(BGC),Out,In,NewIn),
    mass(NewIn,Mass), unique_colors(In,Colors),unique_colors(NewIn,LeftOver), LeftOver\==Colors,
    (Mass==0 -> Hint=containsAll(IO) ;  Hint=containsAllExceptFor(IO,LeftOver)). 
 
 % NewIn\=@=In,print_grid('leftover',NewIn).
 %grid_hint_iso(cbg(BGC),IO,In,Out,_IH,_IV,_OH,_OV,cg(IO,Hint)):- comp_o(IO), grid_color_hint(In,Out,Hint).
-%grid_hint_iso(_,IO,_In,_Out,IH,IV,  OH,OV,comp(IO,size_r(H,V))):- comp_o(IO), V is rationalize(IV/OV), H is rationalize(IH/OH).
+%grid_hint_iso(_,IO,_In,_Out,IH,IV,  OH,OV,comp(MC,IO,size_r(H,V))):- comp_o(IO), V is rationalize(IV/OV), H is rationalize(IH/OH).
 %grid_hint_iso(cbg(_BGC),IO,In,Out,_IH,_IV,_OH,_OV,cg(IO,mass_r(Mass))):- comp_o(IO), mass(In,IMass),mass(Out,OMass), IMass\==0,Mass is rationalize(OMass/IMass),Mass\==1.
 /*
 grid_hint_iso(cbg(_BGC),i-o,Out,_,_IH,_IV,_OH,_OV,rev(RInfo)):- 

@@ -23,7 +23,7 @@ igo:- fav_i(X),igo(X). igo(GridIn):- igo(complete,GridIn).
 
 :- arc_history1(ig).
 
-fav_i(X):- clsmake, luser_getval(test_name,X),X\==[].
+fav_i(X):- clsmake, luser_getval(task,X),X\==[].
 fav_i(t('00d62c1b')).
 fav_i(X):- fav(X).
 fav_i(_).
@@ -301,7 +301,7 @@ individuation_macros(complete, ListO):- test_config(indiv(ListO))-> true;
 
   
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
-%individuator(i_by_color,[force_by_color, by_color(1,wbg), by_color(1,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
+individuator(i_by_color,[by_color(3), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
 individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots, do_ending]).
 individuator(i_nsew,[subshape_both(h,nsew), maybe_lo_dots, do_ending]).
 individuator(i_repair_mirrors,[repair_in_vm(find_symmetry_code)]).
@@ -1345,7 +1345,7 @@ alone_dots(_):-!.
 is_fti_step(maybe_lo_dots).
 % =====================================================================
 maybe_lo_dots(VM):-
-  %current_as_one(VM),
+  current_as_one(VM),
   %length(VM.points,Len), (VM.h>=Len ; VM.v>=Len), 
   lo_dots(VM).
 maybe_lo_dots(_):-!.
@@ -1583,6 +1583,10 @@ one_fti(VM,by_color(Min,C)):-
    make_indiv_object(VM,[birth(by_color),iz(image),iz(shaped)],ThisGroup,ColorObj),
    raddObjects(VM,ColorObj)))).
 
+one_fti(VM,by_color(Min)):- 
+  findall(by_color(Min,Color),enum_fg_colors(Color),TodoByColors),
+  run_fti(VM,TodoByColors).
+
 
 one_fti(VM,shape_lib(LibName)):-
   one_fti(VM,shape_lib(regular,LibName)).
@@ -1713,9 +1717,11 @@ leftover_as_one(VM):-
 is_fti_step(current_as_one).
 % =====================================================================
 current_as_one(VM):-
-   ignore((VM.points\==[],
-   make_indiv_object(VM,[iz(combined),birth(leftover_as_one)],VM.points,LeftOverObj), verify_object(LeftOverObj),
-   raddObjects(VM,LeftOverObj))).
+ Points = VM.points,
+   ignore((Points\==[],
+   make_indiv_object(VM,[iz(combined),birth(leftover_as_one)],Points,LeftOverObj), verify_object(LeftOverObj),
+   raddObjects(VM,LeftOverObj),
+   set(VM.points) = Points)).
    
 
 ignore_rest(VM):- VM.points=[].

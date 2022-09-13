@@ -452,19 +452,20 @@ vm_obj(VM,O):- member(O,VM.objs).
 
 :- export(is_grid/1).
 % is_grid(G):- nonvar(G), \+ \+  quietly(fast_is_grid(G)).
-is_grid(G):- nonvar(G), \+ \+  quietly(slow_is_grid(G)).
+is_grid(G):- nonvar(G), \+ \+  quietly(is_grid_of(is_grid_cell,G)).
 
 fast_is_grid([[C|H]|R]):- is_list(H), is_list(R), \+ is_list(C), !, is_grid_cell(C).
 
-slow_is_grid([[C|H]|R]):- 
-  is_grid_cell(C),is_list(H),is_list(R),
+is_grid_of(P1,[[C|H]|R]):- 
+  call(P1,C),is_list(H),is_list(R),
   length([C|H],L),!,
-  maplist(is_grid_cell,H),!,
+  maplist(P1,H),!,
   maplist(is_row_len(L),R).
 is_row_len(N,L):- is_list(L),length(L,N).
 
 %is_object(H):- is_list(H),is_cpoints_list(H).
 is_grid_cell(C):- var(C),!.
+is_grid_cell(C):- number(C),C<13.
 is_grid_cell(C):- is_colorish(C),!.
 is_grid_cell(att(_,_)):-!.
 is_grid_cell(cell(_)):-!.
