@@ -55,6 +55,7 @@ print_list_of(P1,N,O):-
 
 maybe_cache_glyphs(O):- ignore((is_group(O),mapgroup(o2g,O,_))).
 
+print_info(R):- is_object_props(R),!,print_info(obj(R)).
 print_info(A):- is_grid(A),print_grid(A),!.
 print_info(A):- is_object(A), ignore(debug_indiv(A)),!.
 print_info(A):- is_group(A),maybe_cache_glyphs(A),debug_indiv(A),!.
@@ -67,7 +68,7 @@ print_info_1(G):- print_info(G).
 print_info_l(GridS):- maplist(print_info_1,GridS).
 
 debug_as_grid(Grid):- debug_as_grid('',Grid).
-
+debug_as_grid(Why,R):- is_object_props(R),!,debug_as_grid(Why,obj(R)).
 debug_as_grid(Why,R):- atom(R), atom_contains(R,'_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
   resolve_reference(R,Var), R\==Var, \+ plain_var(Var),!, 
   write(' '), writeq(R), write(' /* '), debug_as_grid(Why,Var), write(' */ ').
@@ -100,6 +101,7 @@ into_ngrid(Points,H,V,NGrid):-
 :- discontiguous debug_indiv/1. 
 
 debug_indiv(_):- is_print_collapsed,!.
+debug_indiv(R):- is_object_props(R),!,debug_indiv(obj(R)).
 debug_indiv(_):- format('~N'),fail.
 debug_indiv(Var):- plain_var(Var),ppt(debug_indiv(Var)),!.
 debug_indiv(Grid):- is_grid(Grid),!,debug_as_grid(is_grid,Grid),!.

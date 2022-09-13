@@ -233,7 +233,7 @@ show_console_info:-
 
 call_current_arc_cmd:- 
   call_current_arc_cmd(cmd),
-  call_current_arc_cmd(fcmd).
+ call_current_arc_cmd(fcmd).
 
 call_current_arc_cmd(Var):-
    current_arc_cmd(Var,Prolog),        
@@ -254,11 +254,13 @@ current_arc_cmd(tcmd,Prolog):- get_uvalue(tcmd,Prolog,ndividuatorO1).
 current_arc_cmd(fcmd,Prolog):- get_uvalue(fcmd,Prolog,statistics).
 %current_arc_cmd(fcmd,Prolog):- (\+ current_arc_cmd(cmd,menu) -> get_uvalue(fcmd,Prolog,menu) ; get_uvalue(fcmd,Prolog,edit1term)).
 
+/*
 :- if(exists_source(library(logicmoo_webui))).
 :- set_prolog_flag(no_sandbox,true).
 :- use_module(library(logicmoo_webui)).
 :- webui_start_swish_and_clio.
 :- endif.
+*/
 
 :- fixup_exports.
 

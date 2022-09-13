@@ -790,7 +790,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
  % rb_new(HM),duplicate_term(HM,Hashmap),
 
   max_min(H,V,MaxM,_),
-  max_min(25,MaxM,Max,_),
+  max_min(42,MaxM,Max,_),
   grid_to_gid(Grid,OID),
 
   listify(ROptions,OOptions),
@@ -1526,7 +1526,7 @@ one_fti(VM,glyphic):-
  must_det_ll((
   one_fti(VM,whole),
   localpoints_include_bg(VM.grid_o,Points),length(Points,LenBG),
-  (LenBG=<25->UPoints=Points;mostly_fgp(Points,UPoints)),!,
+  (LenBG=<42->UPoints=Points;mostly_fgp(Points,UPoints)),!,
   using_alone_dots(VM,(maplist(make_point_object(VM,[birth(glyphic),iz(shaped)]),UPoints,IndvList), raddObjects(VM,IndvList),
   save_grouped(individuate(VM.gid,glyphic),IndvList))))).
 

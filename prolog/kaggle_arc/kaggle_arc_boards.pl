@@ -358,7 +358,6 @@ grid_hint_recolor(IO,In,Out,mono(Hint)):-
   In\==In0,Out\==Out0,
   grid_hint_io(monochrome,IO,In0,Out0,Hint), 
   \+ grid_hint_recolor1(IO,In,Out,_Hint).
-
 grid_hint_recolor(IO,In,Out,Hint):- grid_hint_recolor1(IO,In,Out,Hint).
 
 grid_hint_recolor1(IO,In,Out,Hint):-  grid_hint_io(cbg(black),IO,In,Out,Hint).
@@ -366,6 +365,40 @@ grid_hint_recolor1(IO,In,Out,Hint):-  grid_hint_io(cbg(black),IO,In,Out,Hint).
 %maybe_fail_over_time(Time,Goal):- fail_over_time(Time,Goal).
 maybe_fail_over_time(_Time,Goal):- once(Goal).
 
+/*
+reduce_op(Grid,blur(flipD),Left):- flipD(Grid,GridR), GridR==Grid,!,keep_flipD(Grid,Left).
+*/
+%reduce_op(Grid,blur(A,flipV),Left):- length(Grid,L),LS is floor(L/2),length(Left,LS),reverse(Left,Right), RS is L-LS, 
+%  (RS==LS->  (append(Left,Right,Grid),A=[]) ; (append(Left,[E|Right],Grid),A=[E])).
+reduce_op(Grid,left_right(Left),A):- length(Grid,L),LS is floor(L/2),between(1,LS,LR),LRR is LS-LR,length(Left,LRR),reverse(Left,Right), 
+   append([Left,A,Right],Grid).
+reduce_op(Grid,copy(N1,N2),GridR):- length(Grid,L),nth1(N1,Grid,A,GridR),between(N1,L,N2),N2>N1, nth1(N2,Grid,B),A==B.
+
+xform_op(Grid,rot90,GridR):- fail, rot90(Grid,GridR).
+
+keep_flipD(I,O):- grid_size(I,H,V),make_grid(V,H,O),
+  forall(between(1,H,X),
+    forall(between(1,V,Y),
+      (X>=Y,get_color_at(X,Y,I,C),
+       nb_set_local_point(Y,X,C,O)))).
+
+:- decl_pt(prop_h,reduce_grid_y(is_grid,loc)).
+%:- decl_pt(prop_h,reduce_grid_y(is_grid,list,grid)).
+reduce_grid_y(Grid,reduced(OP,GridR)):- reduce_grid_y(Grid,OP,GridR).
+reduce_grid_y(Grid,OP,GridR):- reduce_grid_y(Grid,[Grid],OP,GridR).
+%reduce_grid_y(Grid,Reduced):- append(Left,[A,B|Right],Grid), A=B,append(Left,[A|Right],GridM),reduce_grid(Grid,Reduced).
+reduce_grid_y(NR,_,[],NR):-!.
+reduce_grid_y(Grid,NBC,[OP|More],Reduced):- reduce_op(Grid,OP,GridR),  Grid\==GridR, \+ (member(E,NBC), E==GridR), !, reduce_grid_y(GridR,[GridR|NBC],More,Reduced).
+reduce_grid_y(Grid,NBC,[OP|More],Reduced):-  xform_op(Grid,OP,GridR),  Grid\==GridR, \+ (member(E,NBC), E==GridR), !, reduce_grid_y(GridR,[GridR|NBC],More,Reduced).
+reduce_grid_y(Grid,_,[],Grid).
+
+:- decl_pt(prop_h,reduce_grid_x(is_grid,loc)).
+%:- decl_pt(prop_h,reduce_grid_x(is_grid,list,grid)).
+reduce_grid_x(Grid,reduced(OP,GridR)):- reduce_grid_x(Grid,OP,GridR).
+reduce_grid_x(Grid,Opers,Result):- rot90(Grid,GridR), !, reduce_grid_y(GridR,Opers,Result).
+
+
+%reduce_grid_y(Grid,res(Opers,Result)):- reduce_grid_y(Grid,Opers,res(Opers,Result)),!.
 
 c_proportional(I,O,R):- proportional(I,O,R).
 %grid_hint_io(MC,IO,In,Out,find_ogs):- maybe_fail_over_time(1.2,find_ogs(_,_,In,Out)).
@@ -374,19 +407,23 @@ grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- comp_o(IO),  c_proportional(In,Out
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- grid_size(In,IH,IV),grid_size(Out,OH,OV),grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
 
 grid_hint_io(MC,IO,In,Out,(=@=(MC,IO))):- In=@=Out, !.
-grid_hint_io(MC,IO,In,Out,Hint):- % \+ In=@=Out,
-  Hint = comp(MC,IO,maybe_________________________ogs(MC,R,list(Len,XY))),
-  member(R,[strict,loose]), 
-  findall(loc(X,Y),maybe_ogs(R,X,Y,In,Out),XY),XY\==[],length(XY,Len),!.
-grid_hint_io(MC,IO,Trim,Out,Hint):- % \+ In=@=Out,
-  Hint = comp(MC,IO,trim__________ogs(MC,R,list(Len,XY))),
-  trim_to_rect(Trim,In),!,Trim\=In,maybe_ogs(_,OX,OY,Trim,In),  
-  member(R,[strict,loose]), 
-  findall(loc(XX,YY),(maybe_ogs(R,X,Y,In,Out),XX is X+OX, YY is Y+OY),XY), XY\==[], length(XY,Len),!.
-%grid_hint_iso(MC,IO,In,_Out,_IH,_IV,OH,OV,is_xy_columns):- once(has_xy_columns(In,_Color,OH,OV,)).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- grid_hint_io_ogs(In,Out,Hint).
+
+
+grid_hint_io_ogs(In,Out,mayb_ogs(R,XY)):-  all_ogs(  0,0,R,In,Out,XY).
+grid_hint_io_ogs(II,Out,trim_ogs(R,XY)):-  
+   trim_to_rect(II,In),!, II\=In, maybe_ogs(_,OX,OY,II,In),
+   all_ogs(OX,OY,R,In,Out,XY).
+
+all_ogs(OX,OY,R,In,Out,list(Len,XY)):- 
+  member(R,[strict,loose]), findall(loc(XX,YY),(maybe_ogs(R,X,Y,In,Out),XX is X+OX, YY is Y+OY),XY), XY\==[], length(XY,Len),!.
 
 maybe_ogs(R,X,Y,In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
 maybe_ogs(R,X,Y,In,Out):-  find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R=loose).
+
+
+  %grid_hint_iso(MC,IO,In,_Out,_IH,_IV,OH,OV,is_xy_columns):- once(has_xy_columns(In,_Color,OH,OV,)).
+
 
 
 %grid_hint_iso(_MC,IO,_In,_Out,_IH,_IV,OH,OV,grid_size(IO,OH,OV)).

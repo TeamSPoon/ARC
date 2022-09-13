@@ -919,7 +919,8 @@ ratio_for0(Ratio,Out,In):- catch(Ratio is rationalize(Out/In),error(evaluation_e
 ratio_for0(Ratio,Out,In):- catch(NRatio is rationalize(In/Out),error(evaluation_error(_Zero_divisor),_),fail),!, Ratio is -NRatio.
 
 :- decl_pt(prop_h,each_object(is_grid, list)).
-each_object(Grid,ListO):- 
+each_object(_Grid,[]):-!.
+each_object(Grid,ListO):-
  print_collapsed(100,individuate(complete,Grid,List)),!,
  simplify_objs(List,ListO).
 
