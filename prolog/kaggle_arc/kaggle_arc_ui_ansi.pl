@@ -206,7 +206,7 @@ ptt(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 ptt(P):- \+ \+ ((tersify(P,Q),!,ppt(Q))),!.
 ptt(C,P):- \+ \+ ((tersify(P,Q),!,ppt(C,Q))),!.
 
-ppt(Color,P):- quietlyd((wots(S,ptcol(P)),!,color_print(Color,S))).
+ppt(Color,P):- ignore((quietlyd((wots(S,ptcol(P)),!,color_print(Color,S))))).
 ptcol(call(P)):- callable(P),!,call(P).
 ptcol(P):- ppt(P).
 ptc(Color,Call):- ppt(Color,call(Call)).

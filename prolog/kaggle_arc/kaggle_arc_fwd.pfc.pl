@@ -17,6 +17,8 @@
 % Douglas Miles
 %  cls_z ; kill -9 %1 ; fg ; swipl -g "ensure_loaded(pack(logicmoo_base/t/examples/base/'sanity_abc.pfc'))."
 
+%:- include(library(pfc_syntax)).
+
 :-  
  locally(set_prolog_flag(access_level,system),
 ((op(200,fy,'-'),op(300,fx,'-'),
@@ -34,12 +36,13 @@
  op(300,fx,'-'),
  op(1199,fx,('==>'))))).
 
+
+
 %:- def_pfc_operators.
 %:- module(system).
 
 %:- expects_dialect(pfc).
 forall_assert(G,P):- forall(G,arc_assert(P)).
-%:- include(library(pfc_syntax)).
 :- set_prolog_flag(pfc_term_expansion,true).
 
 meta_argtypes(find_test_gids(testID,grid_type,gid)).
@@ -62,7 +65,7 @@ startAll_1==>((kaggle_arc_io(TestID,ExampleNum,IO,G)/((ID=(TestID*ExampleNum*IO)
 %tid_to_gids(T,A) :- zwc,!, term_to_oid(T,A).
 startAll ==> startAll_1.
 
-%:- include('kaggle_arc_fwd_sanity.pfc.pl').
+:- include('kaggle_arc_fwd_sanity.pfc.pl').
 
 
 startAll_2==>(process_oid(GID)/( \+ cmem(GID,_,_))==>{assert_id_grid_cells(GID)}).

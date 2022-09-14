@@ -294,7 +294,7 @@ sub_individuation_macro(S,Some):-
 %individuation_macros(complete, [parallel,done]).
 
 individuation_macros(complete, ListO):- test_config(indiv(ListO))-> true;
-%individuation_macros(complete, ListO):-  \+ test_config(indiv(_)),!, %reset_points, %inside_objs(force_by_color,subshape_both), %TODO %
+%individuation_macros(complete, ListO):-  \+ test_config(indiv(_)),!, %reset_points, %sub_individuate(force_by_color,subshape_both), %TODO %
   findall(save_as_objects(From),individuator(From,_),ListM),
   append(ListM,[/*gather_cached*/],ListO).
 %use_individuator(Some):- individuator(Some,_).
@@ -309,7 +309,11 @@ individuator(i_maybe_glypic,[maybe_glyphic]). %:- \+ doing_pair.
 %individuator(i_maybe_glypic,[whole]):- doing_pair.
 individuator(i_columns,[when(get(h)=<7,columns),do_ending]). %:- \+ doing_pair.
 individuator(i_rows,[when(get(v)=<7,rows),do_ending]). %:- \+ doing_pair.
-individuator(i_mono_nsew,[bg_shapes([subshape_both(h,nsew)])]).
+individuator(i_mono_nsew,
+ [sub_individuate(
+    bg_shapes([subshape_both(h,nsew)]),
+   ([save_as_objects(force_by_color),save_as_objects(i_colormass)])),do_ending]).
+
 %individuator(i_bg_nsew,[bg_shapes(subshape_both(h,nsew))]).
 %individuator(i_mono_colormass,[fg_shapes([subshape_both(v,colormass)])]).
 %individuator(i_fgbg,[by_color(1,bg), by_color(1,fg),do_ending]).
@@ -440,11 +444,11 @@ preserve_vm(VM,Goal):-
     maplist(arc_setval(VM),DPairs)),
   set_vm(VM).
 
- 
+/*
 % =====================================================================
-is_fti_step(inside_objs).
+is_fti_step(sub_individuate).
 % =====================================================================
-inside_objs(From,Next,VM):-
+sub_individuate(From,Next,VM):-
   OldObjs = VM.objs,
   ignore(fti(VM,From)),
   NewObjs = VM.objs,
@@ -457,6 +461,27 @@ inside_objs(From,Next,VM):-
     print_grid(Next,Grid),
     preserve_vm(VM,individuate7(_,ID2,Next,Grid,WasInside)),
     raddObjects(VM,WasInside))),!.
+*/
+
+% =====================================================================
+is_fti_step(sub_individuate).
+% =====================================================================
+sub_individuate(From,Next,VM):-
+  OldObjs = VM.objs,
+  ignore(fti(VM,From)),
+  NewObjs = VM.objs,
+  intersection(NewObjs,OldObjs,_,OnlyNew,_),
+  preserve_vm(VM,maplist(individuate_complete(VM.gid,Next),OnlyNew,WasInside)),
+  maplist(addObjects(VM),WasInside),
+  set_vm(VM).
+
+individuate_complete(GID,Next,OnlyNew,WasInside):-
+   object_grid(OnlyNew,Grid),
+   object_glyph(OnlyNew,Glyph),
+   loc(OnlyNew,X,Y),
+   atomic_list_concat([GID,'_',Glyph,'_sub'],NewGID), 
+   with_global_offset(X,Y,
+    individuate7(_,NewGID,Next,Grid,WasInside)).
 
 
 % =====================================================================
@@ -754,7 +779,10 @@ do_individuate(VM, ROptions, GridIn,LF):- must_be_free(LF),
 % tiny grid becomes a series of points
 %individuate(GH,GV,ID,ROptions,_Grid,Points,IndvS):- \+ is_list(ROptions), is_glyphic(Points,GH,GV), individuate_glyphic(GH,GV,ID,Points,IndvS),!.
 %individuate(GH,GV,ID,whole,_Grid,Points,IndvS):-  individuate_whole(GH,GV,ID,Points,IndvS),!.
-individuate7(VM,ID,ROptions,GridIn,IndvS):-      
+
+individuate7(VM,ID,ROptions,GridIn,IndvS):-
+  individuate8(VM,ID,ROptions,GridIn,IndvS).
+individuate8(VM,ID,ROptions,GridIn,IndvS):-
  must_det_ll((
       (var(VM) -> into_fti(ID,ROptions,GridIn,VM) ; true),
       %VM.points = Points,
@@ -763,7 +791,7 @@ individuate7(VM,ID,ROptions,GridIn,IndvS):-
       %ensure_fti(GH,GV,ID,Grid,[],Reserved,NewOptions,Points,VM),   
       set_vm(VM),
       %individuals_raw(VM,GH,GV,ID,NewOptions,Reserved,Points,Grid,IndvSRaw),
-      run_fti(VM), 
+      run_fti(VM,ROptions), 
       IndvSRaw = VM.objs,
   %as_debug(9,ptt((individuate=IndvSRaw))),
       make_indiv_object_list(VM,IndvSRaw,IndvS1),
@@ -1708,8 +1736,10 @@ objs_into(Opts,VM):-
 is_fti_step(leftover_as_one).
 % =====================================================================
 leftover_as_one(VM):-
-   ignore((VM.points\==[],
-   make_indiv_object(VM,[iz(combined),birth(leftover_as_one)],VM.points,LeftOverObj), verify_object(LeftOverObj),
+   Points = VM.points,
+   ignore((Points\==[],
+   wdmsg(leftover_as_one=Points),
+   make_indiv_object(VM,[iz(combined),birth(leftover_as_one)],Points,LeftOverObj), verify_object(LeftOverObj),
    raddObjects(VM,LeftOverObj))),
    VM.points=[].
 
@@ -1719,7 +1749,8 @@ is_fti_step(current_as_one).
 current_as_one(VM):-
  Points = VM.points,
    ignore((Points\==[],
-   make_indiv_object(VM,[iz(combined),birth(leftover_as_one)],Points,LeftOverObj), verify_object(LeftOverObj),
+   wdmsg(current_as_one=Points),
+   make_indiv_object(VM,[iz(combined),birth(current_as_one)],Points,LeftOverObj), verify_object(LeftOverObj),
    raddObjects(VM,LeftOverObj),
    set(VM.points) = Points)).
    
