@@ -37,6 +37,50 @@
 :- use_module(library(xlisting/xlisting_web)).
 :- endif.
 
+:- meta_predicate(noisey_debug(0)).
+noisey_debug(Goal):- collapsible_section(debug,Goal).
+
+:- meta_predicate(noisey_debug(0)).
+collapsible_section(Goal):- collapsible_section(object,Goal).
+
+:- meta_predicate(trim_newlines(0)).
+trim_newlines(Goal):- wots(S,Goal),trim_leading_trailing_whitespace(S,SS),write(SS).
+trim_leading_trailing_whitespace(In,Out):-
+  split_string(In, ", ", "\s\t\n",List), 
+  atomics_to_string(List,' ',Out).
+
+:- meta_predicate(collapsible_section(+,+,+,0)).
+collapsible_section(Type,Header,_StartCollapsed,Goal):-
+  setup_call_cleanup(format('~N!mu~w!~@|~n',[Type,trim_newlines(ptt(Header))]),
+                     Goal, 
+                     format('  ¡mu~w¡~n',[Type])).
+
+:- meta_predicate(collapsible_section(+,0)).
+collapsible_section(Type,Goal):-
+  invent_header(Goal,Header),
+  collapsible_section(Type,Header,true,Goal).
+
+:- meta_predicate(invent_header(+,-)).
+invent_header(Term,Header):- \+ compound(Term),!, Header = goal(Term).
+invent_header(Term,Header):- compound_name_arity(Term,F,_),
+  (( \+ dumb_functor(Term)) -> (maybe_ia(Term,E),Header=g(F,E));
+     (header_arg(Term,E),invent_header(E,Header))).
+header_arg(Term,E):- sub_term(E,Term), E\=@=Term, compound(E), \+ is_list(E).
+maybe_ia(Term,DT):- header_arg(Term,E), !, \+ dumb_functor(E), data_type(E,DT),!.
+maybe_ia(_Term,args).
+
+dumb_functor(Term):- is_list(Term),!, \+ is_grid(Term).
+dumb_functor(Term):- predicate_property(Term,meta_predicate(_)),!.
+dumb_functor(Term):- compound_name_arity(Term,F,_),upcase_atom(F,UC),!,downcase_atom(F,UC).
+
+test_collapsible_section:- 
+  collapsible_section(info,
+    forall(nth0(N,[a,b,c,d],E),writeln(N=E))).
+     
+     
+
+
+
 :- multifile user:file_search_path/2.
 
 %user:file_search_path(document_root,	'/srv/htdocs').

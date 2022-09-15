@@ -463,6 +463,8 @@ sub_individuate(From,Next,VM):-
     raddObjects(VM,WasInside))),!.
 */
 
+
+
 % =====================================================================
 is_fti_step(sub_individuate).
 % =====================================================================
@@ -649,7 +651,7 @@ individuate_two_grids(ROptions,Grid1,Grid2,IndvSI,IndvSO):-
   delistify_single_element(ROptions,NamedOpts),
   grid_to_gid(Grid1,OID1), grid_to_gid(Grid2,OID2),
   locally(nb_setval(doing_pair,t),
-    individuate_two_grids_once(two(OID1,OID2),NamedOpts,Grid1,Grid2,IndvSI,IndvSO)).
+    collapsible_section(individuate_two_grids_once(two(OID1,OID2),NamedOpts,Grid1,Grid2,IndvSI,IndvSO))).
 
 /*
 individuate_two_grids_once(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO):- saved_group(individuate(OID1OID2,ROptions),IndvS),!,into_gio(IndvS,IndvSI,IndvSO),!.

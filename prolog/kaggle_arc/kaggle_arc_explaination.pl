@@ -44,14 +44,16 @@ will_show_grid(_,false).
 
   
 
-print_list_of(N,O):- print_list_of(print_info,N,O).
-print_list_of(_,_,[]):-!.
-print_list_of(P1,N,O):-
- (N\=[] -> ppt(N); true),
-  maybe_cache_glyphs(O),
-  %save_grouped(print_list_of(N),O),
-  g_out( maplist(P1,O)),!.
+print_list_of(Title,O):- print_list_of(print_info,Title,O).
 
+:- meta_predicate(print_list_of(1,+,+)).
+print_list_of(_,Title,[]):- ppt(no_data(Title)),!.
+print_list_of(P1,Title,O):-
+ collapsible_section(Title,
+ ((Title\=[] -> ppt(Title); true),
+  maybe_cache_glyphs(O),
+  %save_grouped(print_list_of(Title),O),
+  g_out( maplist(P1,O)))),!.
 
 maybe_cache_glyphs(O):- ignore((is_group(O),mapgroup(o2g,O,_))).
 

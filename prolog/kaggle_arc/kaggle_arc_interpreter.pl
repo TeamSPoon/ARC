@@ -134,7 +134,7 @@ set_vm_grid(VM,In):- var(In),!, In = VM.grid .
 set_vm_grid(VM,In):- is_grid(In), !, set_vm_grid_now(VM,In).
 set_vm_grid(VM,In):- into_grid(In,Grid), set_vm_grid_now(VM,Grid),!.
 set_vm_grid(VM,In):- is_map(In), map_to_grid(_Was,In,Obj,_Grid,_Closure), Obj\=@=In, !, set_vm_grid(VM,Obj).
-set_vm_grid(VM,In):- set_vm_grid_now(VM,In).
+set_vm_grid(VM,In):- collapsible_section(debug,set_vm_grid_now(VM,In)).
 
 set_vm_grid_now(VM,Grid):- VM.grid=@=Grid,!.
 set_vm_grid_now(VM,Grp):- 

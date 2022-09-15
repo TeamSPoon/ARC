@@ -555,7 +555,6 @@ arc1(TName):- arc1(true,TName).
 %arc1(G,TName):- arc2(G,TName,(_+0)).
 
 
-
 arc1(G,TName):-
  set_current_test(TName),
  fix_test_name(TName,TestID,_UExampleNum), 
@@ -747,7 +746,8 @@ train_for_objects_from_1pair(Dict0,TestID,Desc,InA,OutA,Dict1):-
 train_for_objects_from_1pair1(Dict0,_TestID,Desc,_InA,_OutA,Dict0):- Desc = [_Trn,'o',_N1,'o',_N2], !.
 
 train_for_objects_from_1pair1(Dict0,TestID,Desc,InA,OutA,Dict1):-
- maplist(must_det_ll,[
+ collapsible_section(debug,train_for_objects_from_1pair1,true,
+(maplist(must_det_ll,[
  Desc = [Trn,IsIO1,N1,IsIO2,N2], 
  which_io(IsIO1,IO1),
  which_io(IsIO2,IO2),
@@ -811,7 +811,7 @@ train_for_objects_from_1pair1(Dict0,TestID,Desc,InA,OutA,Dict1):-
             train_io_from_hint(TestID,Trn+N1,InVM))),
 
   dash_chars,dash_chars,dash_chars,dash_chars,
-  print_testinfo(TestID)]).
+  print_testinfo(TestID)]))).
 
 show_pair_diff_code(IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
   show_pair_diff(IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out),
@@ -978,6 +978,7 @@ test_regressions:- make, forall((clause(mregression_test,Body),ptt(Body)),must_d
 %:- initialization(demo,after_load).
 :- muarc_mod(M), arc_history1((module(M))).
 :- add_history1((cls_z,make,demo)).
+:- add_history1((demo)).
 
 %:- muarc_mod(M), M:show_tests.
 :- load_last_test_name.
@@ -1005,10 +1006,11 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 %:- fixup_module_exports_now.  
 user:portray(Grid):- current_predicate(is_group/1), \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!.
 
+%:- ignore(check_dot_spacing).
+bfly_starup:- print_test, menu, nop((next_test,previous_test)),demo.
+
 :- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).
 
-%:- ignore(check_dot_spacing).
-:- print_test.
-:- menu.
-:- next_test,previous_test,demo.
+
+

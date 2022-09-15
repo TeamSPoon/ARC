@@ -47,3 +47,6 @@ butterfly.server.py
 cd ../prolog/kaggle_arc/
 git checkout .
 git diff
+git commit -am "removed unneeded startup swizzling"
+git push
+swipl

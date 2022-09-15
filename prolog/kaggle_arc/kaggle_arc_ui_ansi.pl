@@ -246,7 +246,8 @@ pt_guess_pretty_1(P,O):- copy_term(P,O,_),
 :- module_transparent(pretty_clauses:pp_hook/3).
 pretty_clauses:pp_hook(_,Tab,S):- is_vm(S),!,prefix_spaces(Tab),!,write('..VM..').
 pretty_clauses:pp_hook(_,Tab,S):- term_is_ansi(S), !,prefix_spaces(Tab), write_keeping_ansi(S).
-pretty_clauses:pp_hook(FS,_  ,G):- fail, current_predicate(is_group/1),locally(b_setval(pp_parent,FS),print_with_pad(pp_hook_g(G))),!.
+pretty_clauses:pp_hook(FS,_  ,G):- 
+  current_predicate(is_group/1),locally(b_setval(pp_parent,FS),print_with_pad(pp_hook_g(G))),!.
 
 pp_parent(PP):- nb_current(pp_parent,PP).
 
@@ -261,14 +262,26 @@ pp_hook_g(G):- \+ plain_var(G), lock_doing(in_pp_hook_g,G,pp_hook_g1(G)).
 
 mass_gt1(O1):- into_obj(O1,O2),mass(O2,M),!,M>1.
 
-pp_hook_g1(G):-  is_grid(G), 
-% \+ (sub_term(E,G),compound(E),E='$VAR'(_)), 
-  catch((wots(S,print_grid(G)),strip_vspace(S,SS),ptc(orange,(format('"  ~w  "',[SS])))),_,fail).
-pp_hook_g1(G):-  pp_hook_g2(G),!.
-% pp_hook_g1(G):-  is_grid(G),!, fail,ptt(G), !.
-pp_hook_g1(G):-  is_object(G),ppt_no_nl(G), !.
-pp_hook_g1(G):-  is_group(G),ppt_no_nl(G), !.
-pp_hook_g1(G):-  is_map(G),write('map'),!.
+% Pretty printing 
+pp_hook_g1(O):-  plain_var(O), !, fail.
+pp_hook_g1(O):-  attvar(O), !, fail.
+pp_hook_g1(O):-  is_real_color(O), color_print(O,call(writeq(O))),!.
+pp_hook_g1(O):-  is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
+pp_hook_g1(O):-  is_grid(O), 
+% \+ (sub_term(E,O),compound(E),E='$VAR'(_)), 
+  catch((wots(S,print_grid(O)),strip_vspace(S,SS),ptc(orange,(format('"  ~w  "',[SS])))),_,fail).
+pp_hook_g1(O):- atom(O), atom_contains(O,'o_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
+  resolve_reference(O,Var), O\==Var, \+ plain_var(Var),!, 
+  write(' '), writeq(O), write(' /* '), debug_as_grid(Var), write(' */ ').
+pp_hook_g1(O):-  is_object(O),ppt_no_nl(O), !.
+pp_hook_g1(O):-  is_group(O),ppt_no_nl(O), !.
+pp_hook_g1(O):-  is_map(O),write('map'),!.
+pp_hook_g1(O):-  is_gridoid(O),debug_as_grid(O), !.
+pp_hook_g1(O):-  is_points_list(O),debug_as_grid(O), !.
+%pp_hook_g1(O):-  O = change_obj( O1, O2, Diff), p_c_o('change_obj',[O1,O2,Diff]),!.
+%pp_hook_g1(O):-  O = diff(A -> B), (is_gridoid(A);is_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
+pp_hook_g1(O):-  O = showdiff( O1, O2), !, showdiff(O1, O2).
+
 
 /*
 pp_hook_g1(T):- 
@@ -279,19 +292,6 @@ pp_hook_g1(T):-
 
 %pp_hook_g(G):- compound(G),ptt(G),!.
 %pp_hook_g(G):- ptt(G),!.
-
-pp_hook_g2(R):-  plain_var(R), !, fail.
-pp_hook_g2(G):-  is_real_color(G), color_print(G,call(writeq(G))),!.
-pp_hook_g2(G):-  is_colorish(G), data_type(G,T), writeq(T=G),!.
-pp_hook_g2(R):- atom(R), atom_contains(R,'o_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
-  resolve_reference(R,Var), R\==Var, \+ plain_var(Var),!, 
-  write(' '), writeq(R), write(' /* '), debug_as_grid(Var), write(' */ ').
-pp_hook_g2(G):-  is_gridoid(G),debug_as_grid(G), !.
-pp_hook_g2(G):-  is_points_list(G),debug_as_grid(G), !.
-% change_obj
-%pp_hook_g2(T):-  T = change_obj( O1, O2, Diff), p_c_o('change_obj',[O1,O2,Diff]),!.
-%pp_hook_g2(T):-  T = diff(A -> B), (is_gridoid(A);is_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
-pp_hook_g2(T):-  T = showdiff( O1, O2), !, showdiff(O1, O2).
 
 
 strip_vspace(S,Stripped):- string_concat(' ',SS,S),!,strip_vspace(SS,Stripped).
