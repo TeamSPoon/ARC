@@ -1,3 +1,5 @@
+su - nomicmu
+su - nobody
 rm -rf bf37
 pip install pip
 pip install .
@@ -9,8 +11,11 @@ ls butterfly/static/ -l
 git status .
 git status
 git push
+git diff
+git commit -am "removed unneeded startup swizzling"
 git commit -am "Removed SWISH code"
 git commit -am butterfly
+git checkout .
 git add .
 find -name "main*js"
 cd ../prolog/kaggle_arc/'
@@ -27,6 +32,8 @@ butterfly.server.py --unsecure --host=0.0.0.0 --port=57575
 butterfly.server.py  --unsecure --host=0.0.0.09
 butterfly.server.py  --unsecure --host=0.0.0.0
 butterfly.server.py  --unsecure 
+butterfly.server.py  --port=7771 --unsecure --i-hereby-declare-i-dont-want-any-security-whatsoever --cmd="/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/Kaggle_arch.sh"
+butterfly.server.py  --port=7771 --unsecure --i-hereby-declare-i-dont-want-any-security-whatsoever --cmd="/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/Kaggle_arch.sh
 ./butterfly.server.py --host=logicmoo.org --generate-user-pkcs=arc
 ./butterfly.server.py  --host=10.0.0.233 --port=17771 --unsecure --cmd="ls -1"
 ./butterfly.server.py  --host=10.0.0.233 --port=17771 --unsecure --cmd="/bin/bash" --login
@@ -44,15 +51,3 @@ butterfly.server.py --help
 ./butterfly.server.py --generate-certs --host=10.0.0.233 --generate-user-pkcs=arc
 ./butterfly.server.py --generate-certs --host=10.0.0.233
 butterfly.server.py 
-cd ../prolog/kaggle_arc/
-git checkout .
-git diff
-git commit -am "removed unneeded startup swizzling"
-git push
-swipl
-butterfly.server.py  --port=7771 --unsecure --i-hereby-declare-i-dont-want-any-security-whatsoever --cmd="/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/Kaggle_arch.sh
-butterfly.server.py  --port=7771 --unsecure --i-hereby-declare-i-dont-want-any-security-whatsoever --cmd="/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/Kaggle_arch.sh"
-su - nobody
-su - nomicmu
-butterfly.server.py  --port=7771 --unsecure --i-hereby-declare-i-dont-want-any-security-whatsoever --cmd="/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/Kaggle_arch.sh"
-cd ../prolog/kaggle_arc/
