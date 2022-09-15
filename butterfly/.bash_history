@@ -52,3 +52,7 @@ git push
 swipl
 butterfly.server.py  --port=7771 --unsecure --i-hereby-declare-i-dont-want-any-security-whatsoever --cmd="/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/Kaggle_arch.sh
 butterfly.server.py  --port=7771 --unsecure --i-hereby-declare-i-dont-want-any-security-whatsoever --cmd="/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/Kaggle_arch.sh"
+su - nobody
+su - nomicmu
+butterfly.server.py  --port=7771 --unsecure --i-hereby-declare-i-dont-want-any-security-whatsoever --cmd="/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/Kaggle_arch.sh"
+cd ../prolog/kaggle_arc/
