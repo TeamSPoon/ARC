@@ -1,3 +1,4 @@
+:- encoding(iso_latin_1).
 /*
   this is part of (H)MUARC  https://logicmoo.org/xwiki/bin/view/Main/ARC/
 
@@ -117,6 +118,7 @@ same_globalpoints_ps_obj(S1,O2):- globalpoints_include_bg(O2,S2),!,S1=@=S2.
 ensure_indiv_object(VM,IPoints,Obj):- 
   ((compound(IPoints), IPoints = obj(_)) -> (IPoints = Obj, nop(addObjects(VM,Obj)));
    (my_partition(is_cpoint,IPoints,Points,Overrides),
+    wdmsg(po(Points,Overrides)),
     make_indiv_object(VM,Overrides,Points,Obj))).
 
 make_point_object(VM,Overrides,C-Point,Obj):- 
@@ -132,7 +134,16 @@ globalpoints_include_bg([],[]):-!.
 globalpoints_include_bg(ScaledGrid,GPoints):- loc(ScaledGrid,OH,OV),
   localpoints_include_bg(ScaledGrid,Points),!,offset_points(OH,OV,Points,GPoints).
 
-make_indiv_object(VM,Overrides,OPoints,NewObj):-
+with_global_offset(X,Y,Goal):-
+ nb_current(global_offset,loc(OX,OY)),
+ NX is X+OX-1, NY is Y+OY-1, 
+  locally(nb_setval(global_offset,loc(NX,NY)),Goal).
+  
+fix_global_ofsset(Points,PointsO):- nb_current(global_offset,loc(X,Y)),!, offset_points(X,Y,Points,PointsO).
+fix_global_ofsset(GOPoints,OPoints):- GOPoints=OPoints,!.
+
+make_indiv_object(VM,Overrides,GOPoints,NewObj):-
+ fix_global_ofsset(GOPoints,OPoints),
  must_det_ll((
   globalpoints_maybe_bg(OPoints,GPoints),
   sort_points(GPoints,Points),
@@ -140,7 +151,7 @@ make_indiv_object(VM,Overrides,OPoints,NewObj):-
   Orig = _,!,
   must_det_ll(((select(Orig,Objs,Rest),same_globalpoints_ps_obj(Points,Orig))
     -> must_det_ll((override_object(Overrides,Orig,NewObj), ROBJS = Rest))
-    ; must_det_ll((make_indiv_object_s(VM.id,VM.h,VM.v,Overrides,Points,NewObj), ROBJS = Objs)))),!,
+    ; must_det_ll((make_indiv_object_s(VM.gid,VM.h,VM.v,Overrides,Points,NewObj), ROBJS = Objs)))),!,
 
   fif(NewObj\=@=Orig,
    (fif(is_object(Orig),
@@ -159,8 +170,8 @@ make_indiv_object_no_vm(ID,GH,GV,Overrides,OPoints,Obj):-
   make_indiv_object_s(ID,GH,GV,Overrides,SPoints,Obj).
 
 
-make_indiv_object_s(ID,GH,GV,Overrides,GPoints,ObjO):- 
-  testid_name_num_io(ID,_TestID,_Example,_Num,IO),
+make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):- 
+  testid_name_num_io(GID,_TestID,_Example,_Num,IO),
   points_range(GPoints,LoH,LoV,HiH,HiV,_HO,_VO),
   once(member(v_hv(Width,Height),Overrides);(Width is HiH-LoH+1,Height is HiV-LoV+1)),
   %luser_getval(test_pairname,ID),
@@ -244,6 +255,7 @@ make_indiv_object_s(ID,GH,GV,Overrides,GPoints,ObjO):-
      iz(sizeY(Height)),iz(sizeX(Width))],
     [%obj_to_oid(ID,Iv),
      iz(g(IO)),
+     iz(gid(GID)),
      globalpoints(GPoints)
      %agrid_size(GH,GV)
     ]],Ps),  
@@ -951,40 +963,40 @@ rebuild_from_localpoints(Obj,WithPoints,NewObj):-
 
    _____________________
   |                     |
-  |       ® ® ® ® ®     |
-  |       ® ® ® ® ®     |
-  |           ®     ® ® |
-  |           ®     ® ® |
-  |           ® ® ® ® ® |
-  |           ®     ® ® |
-  |           ®     ® ® |
-  |       ® ® ® ® ®     |
-  |       ® ® ® ® ®     |
-   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+  |       R R R R R     |
+  |       R R R R R     |
+  |           R     R R |
+  |           R     R R |
+  |           R R R R R |
+  |           R     R R |
+  |           R     R R |
+  |       R R R R R     |
+  |       R R R R R     |
+   ---------------------
    _____________________
   |                     |
   |                     |
   |                     |
-  | ® ®           ® ®   |
-  | ® ®           ® ®   |
-  | ® ® ® ® ® ® ® ® ®   |
-  | ® ®     ®     ® ®   |
-  | ® ®     ®     ® ®   |
-  |     ® ® ® ® ®       |
-  |     ® ® ® ® ®       |
-   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+  | R R           R R   |
+  | R R           R R   |
+  | R R R R R R R R R   |
+  | R R     R     R R   |
+  | R R     R     R R   |
+  |     R R R R R       |
+  |     R R R R R       |
+   ---------------------
    _____________________
   |                     |
-  |       ® ® ® ® ®     |
-  |       ® ® ® ® ®     |
-  | ® ®       ®   ® ® ® |
-  | ® ®       ®   ® ® ® |
-  | ® ® ® ® ® ® ® ® ® ® |
-  | ® ®     ® ®   ® ® ® |
-  | ® ®     ® ®   ® ® ® |
-  |     ® ® ® ® ® ®     |
-  |     ® ® ® ® ® ®     |
-   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+  |       R R R R R     |
+  |       R R R R R     |
+  | R R       R   R R R |
+  | R R       R   R R R |
+  | R R R R R R R R R R |
+  | R R     R R   R R R |
+  | R R     R R   R R R |
+  |     R R R R R R     |
+  |     R R R R R R     |
+   ---------------------
 
 */
 blur_p2(P2,Obj,NewObj):-  

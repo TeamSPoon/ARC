@@ -9,7 +9,7 @@
 % =swipl kaggle_arc.pl=
 % =:- start_arc_server.=
 %
-% Then navigate to http://localhost:1777 in your browser
+% Then navigate to http://localhost:17666 in your browser
 
 /*
 :- module(kaggle_arc_ui_html,
@@ -36,6 +36,55 @@
 :- if(current_module(logicmoo_arc)).
 :- use_module(library(xlisting/xlisting_web)).
 :- endif.
+
+
+:- meta_predicate(noisey_debug(0)).
+noisey_debug(Goal):- collapsible_section(debug,Goal).
+
+:- meta_predicate(collapsible_section(0)).
+collapsible_section(Goal):- collapsible_section(object,Goal).
+
+:- meta_predicate(collapsible_section(+,0)).
+collapsible_section(Type,Goal):-
+  invent_header(Goal,Title),
+  collapsible_section(Type,Title,true,Goal).
+
+
+:- meta_predicate(collapsible_section(+,+,+,0)).
+collapsible_section(Type,Title,_StartCollapsed,Goal):-
+  (nb_current('$collapsible_section',Was);Was=[]),
+  length(Was,Depth),
+  setup_call_cleanup(format('~N~@!mu~w! ~@ |~n',[dash_chars(Depth,' '), Type, trim_newlines(ptt(Title))]),
+                     locally(b_setval('$collapsible_section',[Type|Was]),Goal), 
+                     format('~N~@¡mu~w¡~n',[dash_chars(Depth,' '), Type])).
+
+
+:- meta_predicate(trim_newlines(0)).
+trim_newlines(Goal):- wots(S,Goal),trim_leading_trailing_whitespace(S,SS),write(SS).
+trim_leading_trailing_whitespace(In,Out):-
+  split_string(In, ", ", "\s\t\n",List), 
+  atomics_to_string(List,' ',Out).
+
+:- meta_predicate(invent_header(+,-)).
+invent_header(Term,Title):- \+ compound(Term),!, Title = goal(Term).
+invent_header(Term,Title):- compound_name_arity(Term,F,_),
+  (( \+ dumb_functor(Term)) -> (maybe_ia(Term,E),Title=g(F,E));
+     (header_arg(Term,E),invent_header(E,Title))).
+header_arg(Term,E):- sub_term(E,Term), E\=@=Term, compound(E), \+ is_list(E).
+maybe_ia(Term,DT):- header_arg(Term,E), !, \+ dumb_functor(E), data_type(E,DT),!.
+maybe_ia(_Term,args).
+
+dumb_functor(Term):- is_list(Term),!, \+ is_grid(Term).
+dumb_functor(Term):- predicate_property(Term,meta_predicate(_)),!.
+dumb_functor(Term):- compound_name_arity(Term,F,_),upcase_atom(F,UC),!,downcase_atom(F,UC).
+
+test_collapsible_section:- 
+  collapsible_section(info,
+    forall(nth0(N,[a,b,c,d],E),writeln(N=E))).
+     
+     
+
+
 
 :- multifile user:file_search_path/2.
 
@@ -67,7 +116,7 @@ user:file_search_path(arc,  AbsolutePath):- arc_sub_path('.',AbsolutePath).
 %   client at a time since echo will block the thread)
 %:- http_handler(('/swish/arc/'), http_reply_from_files(arc, []), [prefix]).
 % * root(echo) indicates we're matching the echo path on the URL e.g.
-%   localhost:1777/echo of the server
+%   localhost:17666/echo of the server
 % * We create a closure using =http_upgrade_to_websocket=
 % * The option =spawn= is used to spawn a thread to handle each new
 %   request (not strictly necessary, but otherwise we can only handle one
@@ -90,7 +139,7 @@ stop_arc_server :-
 stop_arc_server(Port) :-
     http_stop_server(Port, []).
 
-default_port(1777).
+default_port(17666).
 
 %! web_socket_echo(+WebSocket) is nondet.
 % This predicate is used to read in a message via websockets and echo it
@@ -113,8 +162,8 @@ get_response_echo(Message, Response) :-
   get_time(Time),
   Response = _{message:Message.message, time: Time}.
 
-arc_http_server:- thread_property(ID,status(running)),ID=='http@1777',!.
-arc_http_server:- http_server(http_dispatch, [port(1777)]),
+arc_http_server:- thread_property(ID,status(running)),ID=='http@17666',!.
+arc_http_server:- http_server(http_dispatch, [port(17666)]),
 
  thread_pool_create(compute, 3,
                       [ local(20000), global(100000), trail(50000),

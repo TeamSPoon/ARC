@@ -219,7 +219,8 @@ showdiff_groups(A,B,[H|T],AAR,BBR):- !,
   showdiff_groups(A1,B1,T,AAR,BBR).
 showdiff_groups(A,B,Pred,AAR,BBR):- 
   pred_intersection(Pred,A,B,IntersectA,IntersectB,AAR,BBR),
-  ignore((IntersectA\==[], maplist(showdiff_objects_vis(Pred),IntersectA,IntersectB))).
+  collapsible_section(info,"Object Differences",true,
+   ignore((IntersectA\==[], maplist(showdiff_objects_vis(Pred),IntersectA,IntersectB)))).
 
 
 diff_groups2(AAR,BBR,proportional(DD,Diffs)):- proportional(AAR,BBR,DD), maplist(diff_objects,AAR,BBR,Diffs).
@@ -512,7 +513,9 @@ showdiff_objects(A,B):- into_obj(A,A1),into_obj(B,B1), !, showdiff_objects(samen
 showdiff_objects_vis(N,O1,O2):- showdiff_objects(vis(N),O1,O2).
 
 showdiff_objects(N,O1,O2):- diff_objects(O1,O2,Diffs,Sames), 
-  showdiff_objects(N,O1,O2,Diffs),print_list_of(print_sames,sames(N),Sames),dash_chars,dash_chars.
+  showdiff_objects(N,O1,O2,Diffs),
+  noisey_debug(print_list_of(print_sames,sames(N),Sames)),
+  dash_chars,dash_chars.
 
 print_sames(N):- write('\t'), writeq(N),nl.
 
@@ -905,8 +908,8 @@ The IEEE floating-point standard, supported by almost all modern floating-point 
  point arithmetic operation, including division by zero, has a well-defined result. 
   The standard supports signed zero, as well as infinity and NaN (not a number). 
    There are two zeroes: +0 (positive zero) and -0 (negative zero) and this removes any ambiguity when dividing. 
-   In IEEE 754 arithmetic, a ÷ +0 is positive infinity when a is positive, negative infinity when a is negative, 
-   and NaN when a = ±0. The infinity signs change when dividing by -0 instead.
+   In IEEE 754 arithmetic, a div +0 is positive infinity when a is positive, negative infinity when a is negative, 
+   and NaN when a = +/-0. The infinity signs change when dividing by -0 instead.
 */
 ratio_for(Ratio,_/_=Out,In):- nonvar(Out), !, ratio_for(Ratio,Out,In).
 ratio_for(Ratio,Out,_/_=In):- nonvar(In), !, ratio_for(Ratio,Out,In).
