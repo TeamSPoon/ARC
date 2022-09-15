@@ -9,7 +9,7 @@
 % =swipl kaggle_arc.pl=
 % =:- start_arc_server.=
 %
-% Then navigate to http://localhost:1777 in your browser
+% Then navigate to http://localhost:17666 in your browser
 
 /*
 :- module(kaggle_arc_ui_html,
@@ -116,7 +116,7 @@ user:file_search_path(arc,  AbsolutePath):- arc_sub_path('.',AbsolutePath).
 %   client at a time since echo will block the thread)
 %:- http_handler(('/swish/arc/'), http_reply_from_files(arc, []), [prefix]).
 % * root(echo) indicates we're matching the echo path on the URL e.g.
-%   localhost:1777/echo of the server
+%   localhost:17666/echo of the server
 % * We create a closure using =http_upgrade_to_websocket=
 % * The option =spawn= is used to spawn a thread to handle each new
 %   request (not strictly necessary, but otherwise we can only handle one
@@ -139,7 +139,7 @@ stop_arc_server :-
 stop_arc_server(Port) :-
     http_stop_server(Port, []).
 
-default_port(1777).
+default_port(17666).
 
 %! web_socket_echo(+WebSocket) is nondet.
 % This predicate is used to read in a message via websockets and echo it
@@ -162,8 +162,8 @@ get_response_echo(Message, Response) :-
   get_time(Time),
   Response = _{message:Message.message, time: Time}.
 
-arc_http_server:- thread_property(ID,status(running)),ID=='http@1777',!.
-arc_http_server:- http_server(http_dispatch, [port(1777)]),
+arc_http_server:- thread_property(ID,status(running)),ID=='http@17666',!.
+arc_http_server:- http_server(http_dispatch, [port(17666)]),
 
  thread_pool_create(compute, 3,
                       [ local(20000), global(100000), trail(50000),
