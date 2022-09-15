@@ -290,12 +290,14 @@
       if (placeholder == null) {
         placeholder = false;
       }
-	  chint = c.charCodeAt();
-	  if(chint > 160) {
-		//  c = "&#"+chint+";"
-    	  console.log("chint="+c);
-	  }
-      newChar = this.cloneAttr(this.curAttr, c);	  
+	    chint = c.charCodeAt();
+	    if(chint > 160) {
+        c = "&#"+chint+";"
+        // c = "<span style='width: 13px;'>"+c+"</span>"
+        newChar = this.cloneAttr(this.curAttr, c);	  
+      } else {
+        newChar = this.cloneAttr(this.curAttr, c);	  
+      }
       newChar.placeholder = placeholder;
       if (this.insertMode) {
 		  this.checkUndefined(newChar);
@@ -445,10 +447,10 @@
             if (ch === 2047) {
               return data.push(0);
             }
-			if (ch > 160) {				
-			   console.log("PUSH = &#"+ch+";");
-			   return data.push("&#"+ch+";");
-			}
+            if (ch > 160) {				
+              //console.log("PUSH = &#"+ch+";");
+              //return data.push("&#"+ch+";");
+            }
             if (ch < 127) {
               return data.push(ch);
             } else {
@@ -672,11 +674,6 @@
       if (data.html) {
         return data.html;
       }
-
-	  code = ch.charCodeAt();
-	  if (code >= 160) {
-      return ch;
-	  }
 
 
       if (!this.equalAttr(data, attr)) {
