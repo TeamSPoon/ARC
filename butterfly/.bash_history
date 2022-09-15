@@ -45,3 +45,5 @@ butterfly.server.py --help
 ./butterfly.server.py --generate-certs --host=10.0.0.233
 butterfly.server.py 
 cd ../prolog/kaggle_arc/
+git checkout .
+git diff

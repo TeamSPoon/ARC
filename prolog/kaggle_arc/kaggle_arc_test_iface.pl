@@ -277,7 +277,8 @@ get_current_suite_testnames(Set):-
   current_suite_testnames(X,Set).
 
 current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),!.  
-current_suite_testnames(X,Set):- findall(ID,call(X,ID),List), my_list_to_set_variant(List,Set),!,asserta(muarc_tmp:cached_tests(X,Set)).
+current_suite_testnames(X,Set):-  ppt(recreating(X)),
+  findall(ID,call(X,ID),List), my_list_to_set_variant(List,Set),!,asserta(muarc_tmp:cached_tests(X,Set)).
 
 previous_test:-  get_current_test(TestID), get_previous_test(TestID,NextID), set_current_test(NextID).
 next_test:- get_current_test(TestID), notrace((get_next_test(TestID,NextID), set_current_test(NextID))),!.
@@ -487,7 +488,7 @@ some_test_info(TestID,III):- fav(TestID,III).
 
 :- dynamic(muarc_tmp:test_info_cache/2).
 :- retractall(muarc_tmp:test_info_cache(_,_)).
-test_info(TestID,InfoS):- var(TestID),!,all_arc_test_name(TestID),test_info(TestID,InfoS).
+test_info(TestID,InfoS):- var(TestID),!, ppt(recreating(test_info)),all_arc_test_name(TestID),test_info(TestID,InfoS).
 %test_info(TestID,InfoS):- \+ \+ muarc_tmp:test_info_cache(TestID,_),!,muarc_tmp:test_info_cache(TestID,InfoS).
 test_info(TestID,InfoS):- nonvar(TestID),once(fix_test_name(TestID,FTestID,_)),TestID\=@=FTestID,!,test_info(FTestID,InfoS).
 test_info(TestID,InfoS):- muarc_tmp:test_info_cache(TestID,InfoS),!.
@@ -518,7 +519,11 @@ test_names_by_fav_rev(Name):- test_names_ord_favs(AllS),reverse(AllS,AllR),membe
 
 :- dynamic(ord_favs/1).
 test_names_ord_favs(FavListS):- ord_favs(FavListS),!.
-test_names_ord_favs(FavListS):- ppt(recreating(test_names_ord_favs)), findall(Name,fav(Name),FavList),list_to_set(FavList,FavListS),  asserta(ord_favs(FavListS)).
+test_names_ord_favs(FavListS):- 
+  ppt(recreating(test_names_ord_favs)), 
+  findall(Name,fav(Name),FavList),list_to_set(FavList,FavListS),
+  ppt(done_recreating(ascending_hard)),  
+  asserta(ord_favs(FavListS)).
 
 alphabetical_v(Set):- findall(v(Name),all_arc_test_name(v(Name)),List),sort(List,Set).
 alphabetical_t(Set):- findall(t(Name),all_arc_test_name(t(Name)),List),sort(List,Set).
@@ -564,7 +569,9 @@ write_ansi_file(F):- call(F,Set),
 
 :- dynamic(ord_hard/1).
 test_names_ord_hard(NamesByHard):- ord_hard(NamesByHard),!.
-test_names_ord_hard(NamesByHard):- ppt(recreating(test_names_ord_hard)),findall(Hard-Name,(all_arc_test_name(Name),hardness_of_name(Name,Hard)),All),
+test_names_ord_hard(NamesByHard):- 
+  ppt(recreating(test_names_ord_hard)),
+  findall(Hard-Name,(all_arc_test_name(Name),hardness_of_name(Name,Hard)),All),
   keysort(All,AllK),  maplist(arg(2),AllK,NamesByHardU),!,
   list_to_set(NamesByHardU,NamesByHard), 
   asserta(ord_hard(NamesByHard)).
@@ -573,6 +580,7 @@ test_names_ord_hard(NamesByHard):- ppt(recreating(test_names_ord_hard)),findall(
 :- retractall(ord_favs(_)),retractall(ord_hard(_)).
 
 ascending_hard:-
+  ppt(recreating(ascending_hard)),
   tell('arc_ascending.pl'),
   forall(test_names_by_hard(TestID),
     forall(kaggle_arc(TestID,ExampleNum,In,Out),format('~q.~n',[kaggle_arc_ord(TestID,ExampleNum,In,Out)]))),

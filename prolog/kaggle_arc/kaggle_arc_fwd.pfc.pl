@@ -36,6 +36,7 @@
  op(300,fx,'-'),
  op(1199,fx,('==>'))))).
 
+end_of_file.
 
 
 %:- def_pfc_operators.

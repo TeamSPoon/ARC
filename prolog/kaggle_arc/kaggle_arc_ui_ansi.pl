@@ -209,10 +209,12 @@ ptt(C,P):- \+ \+ ((tersify(P,Q),!,ppt(C,Q))),!.
 ppt(Color,P):- ignore((quietlyd((wots(S,ptcol(P)),!,color_print(Color,S))))).
 ptcol(call(P)):- callable(P),!,call(P).
 ptcol(P):- ppt(P).
+
 ptc(Color,Call):- ppt(Color,call(Call)).
 
+
 ppt(_):- is_print_collapsed,!.
-ppt(P):- format('~N'), ppt_no_nl(P),!.
+ppt(P):- format('~N'), ppt_no_nl(P),!,format('~N').
 
 ppt_no_nl(P):- var(P),!,ppt(var_pt(P)),nop((dumpST,break)).
 ppt_no_nl(P):- atomic(P),atom_contains(P,'~'),!,format(P).
@@ -221,6 +223,7 @@ ppt_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 ppt_no_nl(P):- \+ \+ (( pt_guess_pretty(P,GP),ptw(GP))).
 %ppt(P):-!,writeq(P).
 %ptw(P):- quietlyd(print_tree_nl(P)),!.
+ptw(_):- format('~N'),fail.
 ptw(P):- var(P),!,ptw(var_ptw(P)),nop((dumpST,break)).
 ptw(G):- is_map(G), !, write_map(G,'ptw').
 ptw(S):- term_is_ansi(S), !, write_keeping_ansi(S).
@@ -768,8 +771,22 @@ mbfy(G):- !,call(G).
 
 correct_nbsp(S0,S):- replace_in_string([" &nbsp;"="&nbsp;","&nbsp; "="&nbsp;"],S0,S).
 
-ansi_format_real(Ansi,Format,Args):- \+ arc_webui,!,ansi_format(Ansi,Format,Args).
-ansi_format_real(Ansi,Format,Args):- sformat(S,Format,Args),!,color_print_webui(Ansi,S).
+ansi_format_real(Ansi,Format,Args):- arc_webui,!,sformat(S,Format,Args),!,color_print_webui(Ansi,S).
+%ansi_format_real(Ansi,Format,Args):- ansicall(Ansi,format(Format,Args)),!.
+ansi_format_real(Ansi,Format,Args):- 
+ Text = utf8,
+ ignore(catch(set_stream(current_output,encoding(Text)),_,true)),
+ ignore(catch(set_stream(user_output,encoding(Text)),_,true)),
+ ignore(catch(set_stream(current_output,tty(true)),_,true)),
+    ansi_format(Ansi,Format,Args).
+
+/*
+subst_entity(S,SS):- string(S),atom_chars(S,Codes),subst_entity1(Codes,CS),sformat(SS,'~s',[CS]).
+subst_entity1([],[]):-!.
+subst_entity1(['\\','u',A,B,C,D|Codes],[S|SS]):- into_entity(A,B,C,D,S), subst_entity1(Codes,SS).
+subst_entity1([C|Codes],[S|SS]):- subst_entity1(Codes,SS).
+into_entity(A,B,C,D,S):- atom_codes('\u0Aaa',C)
+*/
 
 color_print_webui(C,G):- mbfy(cpwui(C,G)).
 
@@ -1179,29 +1196,34 @@ code_not_bfly(Code):- between(170,inf,Code).
 
 save_codes(Max):- 
  %stream_property(File,file_no(1)),
- with_output_to(codes(CCC),
- ((forall((between(0,Max,Code),
-     code_type(Code,graph),  
+ locally(set_prolog_flag(encoding,iso_latin_1),
+  ((with_output_to(codes(CCC),
+ ((  forall((
+     between(160,Max,Code),     
+     %code_type(Code,graph),  
   \+ code_type(Code,white),
   \+ between(688,1000,Code),
   \+ between(1350,4600,Code),
   \+ between(4650,5000,Code),
   \+ between(5850,11500,Code),
   \+ between(42560,42600,Code),
+  %%check_dot_spacing(Code),
   %(42600 > Code),
   
-  \+ resrv_dot(Code)
+  \+ resrv_dot(Code)   
    % ignore((0 is Code mod 50, format(File,'\n\n~d:',[Code]), put_code(File,Code))),
   ),put_code(Code))))),  
-  assertz(iss:i_syms(CCC)).
+  assertz(iss:i_syms(CCC))))).
 
 save_codes:- save_codes(42600).
 
-check_dot_spacing(CCC):- color_print(red, call(format('~n~w = |~s|',[CCC,[CCC,32,CCC,32,CCC,32,CCC,32,CCC,32]]))).
+check_dot_spacing(CCC):- 
+ locally(set_prolog_flag(encoding,utf8),format(user_error,'~@', 
+  [ignore((color_print(red, call(format('~n~w = |~s|',[CCC,[CCC,32,CCC,32,CCC,32,CCC,32,CCC,32]])))))])).
+
 check_dot_spacing:- iss:i_syms(CCC),maplist(check_dot_spacing,CCC),!.
 
 :- ignore(save_codes).
-%:- ignore(check_dot_spacing).
 
 /*
 get_glyph(Point,Glyph):-  

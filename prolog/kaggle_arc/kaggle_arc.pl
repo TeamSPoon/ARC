@@ -7,6 +7,11 @@
 
 :- encoding(iso_latin_1).
 
+:- set_prolog_flag(encoding,iso_latin_1).
+:- set_prolog_flag(stream_type_check,false).
+
+
+
 %:- pack_install('https://github.com/logicmoo/logicmoo_utils.git').
 %:- pack_upgrade(logicmoo_utils).
 % :- pack_install(dictoo).
@@ -68,7 +73,6 @@ decl_sf(G):- ground(G), !, my_assertz_if_new(decl_sf(G)).
 :- dynamic(decl_pt/1).
 decl_pt(G):- ground(G), !, my_assertz_if_new(decl_pt(plain,G)).
 decl_pt(How,G):- nonvar(How),ground(G), !, my_assertz_if_new(decl_pt(How,G)).
-:- set_prolog_flag(encoding,iso_latin_1).
 :- set_prolog_flag(color_term,true).
 :- set_stream(current_output, tty(true)).
 :- stream_property(S,file_no(2)), set_stream(S,tty(true)).
@@ -1004,4 +1008,7 @@ user:portray(Grid):- current_predicate(is_group/1), \+ \+ catch(quietly(arc_port
 :- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).
 
-
+%:- ignore(check_dot_spacing).
+:- print_test.
+:- menu.
+:- next_test,previous_test,demo.
