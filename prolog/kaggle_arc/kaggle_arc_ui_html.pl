@@ -40,25 +40,26 @@
 :- meta_predicate(noisey_debug(0)).
 noisey_debug(Goal):- collapsible_section(debug,Goal).
 
-:- meta_predicate(noisey_debug(0)).
+:- meta_predicate(collapsible_section(0)).
 collapsible_section(Goal):- collapsible_section(object,Goal).
+
+:- meta_predicate(collapsible_section(+,0)).
+collapsible_section(Type,Goal):-
+  invent_header(Goal,Header),
+  collapsible_section(Type,Header,true,Goal).
+
+:- meta_predicate(collapsible_section(+,+,+,0)).
+collapsible_section(Type,Header,_StartCollapsed,Goal):-
+  setup_call_cleanup(format('~N!mu~w! ~@ |~n',[Type, trim_newlines(ptt(Header))]),
+                     Goal, 
+                     format('  ¡mu~w¡~n',[Type])).
+
 
 :- meta_predicate(trim_newlines(0)).
 trim_newlines(Goal):- wots(S,Goal),trim_leading_trailing_whitespace(S,SS),write(SS).
 trim_leading_trailing_whitespace(In,Out):-
   split_string(In, ", ", "\s\t\n",List), 
   atomics_to_string(List,' ',Out).
-
-:- meta_predicate(collapsible_section(+,+,+,0)).
-collapsible_section(Type,Header,_StartCollapsed,Goal):-
-  setup_call_cleanup(format('~N!mu~w!~@|~n',[Type,trim_newlines(ptt(Header))]),
-                     Goal, 
-                     format('  ¡mu~w¡~n',[Type])).
-
-:- meta_predicate(collapsible_section(+,0)).
-collapsible_section(Type,Goal):-
-  invent_header(Goal,Header),
-  collapsible_section(Type,Header,true,Goal).
 
 :- meta_predicate(invent_header(+,-)).
 invent_header(Term,Header):- \+ compound(Term),!, Header = goal(Term).

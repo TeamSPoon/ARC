@@ -562,7 +562,7 @@ alphabetical_v:- clsmake, write_ansi_file(alphabetical_v).
 
 write_ansi_file(F):- call(F,Set),
   atom_concat(F,'.vt100',FN),
-  setup_call_cleanup(open(FN,write,O,[create([default]),encoding(iso_latin_1)]),
+  setup_call_cleanup(open(FN,write,O,[create([default]),encoding(utf8)]),
   forall(member(T,Set), 
     (wots(S,print_test(T)), write(O,S),write(S))),close(O)).
 

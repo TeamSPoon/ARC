@@ -1,3 +1,4 @@
+:- encoding(iso_latin_1).
 /*
   this is part of (H)MUARC  https://logicmoo.org/xwiki/bin/view/Main/ARC/
 
@@ -962,40 +963,40 @@ rebuild_from_localpoints(Obj,WithPoints,NewObj):-
 
    _____________________
   |                     |
-  |       ® ® ® ® ®     |
-  |       ® ® ® ® ®     |
-  |           ®     ® ® |
-  |           ®     ® ® |
-  |           ® ® ® ® ® |
-  |           ®     ® ® |
-  |           ®     ® ® |
-  |       ® ® ® ® ®     |
-  |       ® ® ® ® ®     |
-   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+  |       R R R R R     |
+  |       R R R R R     |
+  |           R     R R |
+  |           R     R R |
+  |           R R R R R |
+  |           R     R R |
+  |           R     R R |
+  |       R R R R R     |
+  |       R R R R R     |
+   ---------------------
    _____________________
   |                     |
   |                     |
   |                     |
-  | ® ®           ® ®   |
-  | ® ®           ® ®   |
-  | ® ® ® ® ® ® ® ® ®   |
-  | ® ®     ®     ® ®   |
-  | ® ®     ®     ® ®   |
-  |     ® ® ® ® ®       |
-  |     ® ® ® ® ®       |
-   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+  | R R           R R   |
+  | R R           R R   |
+  | R R R R R R R R R   |
+  | R R     R     R R   |
+  | R R     R     R R   |
+  |     R R R R R       |
+  |     R R R R R       |
+   ---------------------
    _____________________
   |                     |
-  |       ® ® ® ® ®     |
-  |       ® ® ® ® ®     |
-  | ® ®       ®   ® ® ® |
-  | ® ®       ®   ® ® ® |
-  | ® ® ® ® ® ® ® ® ® ® |
-  | ® ®     ® ®   ® ® ® |
-  | ® ®     ® ®   ® ® ® |
-  |     ® ® ® ® ® ®     |
-  |     ® ® ® ® ® ®     |
-   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+  |       R R R R R     |
+  |       R R R R R     |
+  | R R       R   R R R |
+  | R R       R   R R R |
+  | R R R R R R R R R R |
+  | R R     R R   R R R |
+  | R R     R R   R R R |
+  |     R R R R R R     |
+  |     R R R R R R     |
+   ---------------------
 
 */
 blur_p2(P2,Obj,NewObj):-  
