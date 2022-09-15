@@ -103,8 +103,29 @@
   src: url("fonts/SourceCodePro-Black.otf") format("woff");
   font-weight: 900; }
 
+  @font-face {
+    font-family: 'Ampersand';
+    src: local('Courier');
+    unicode-range: U+26;
+}
+
+@font-face {
+  font-family: 'Ampersand';
+  src: local('Courier');
+  unicode-range: U+26;
+}
+
+
+        /*'MingLiU', 'WenQuanYi Bitmap Song CJK', 
+                   'PMingLiU' 'SimSun', 'SimHei',
+                   'WenQuanYi Unibit','' , ,
+                   'SourceCodePro', SimSun, 
+                   'Sarasa Gothic' STXihei
+                    "Microsoft YaHei New", "Microsoft Yahei" ;*/
 body {
-  font-family: "SourceCodePro";
+  white-space: nowrap;
+  /*font-family: ;*/
+  font-family: 'Noto Sans Mono CJK', "SourceCodePro", sans-serif;
   font-size: 1em;
   line-height: 1.13; }
 

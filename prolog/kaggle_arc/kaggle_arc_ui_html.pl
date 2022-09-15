@@ -37,6 +37,7 @@
 :- use_module(library(xlisting/xlisting_web)).
 :- endif.
 
+
 :- meta_predicate(noisey_debug(0)).
 noisey_debug(Goal):- collapsible_section(debug,Goal).
 
@@ -45,14 +46,17 @@ collapsible_section(Goal):- collapsible_section(object,Goal).
 
 :- meta_predicate(collapsible_section(+,0)).
 collapsible_section(Type,Goal):-
-  invent_header(Goal,Header),
-  collapsible_section(Type,Header,true,Goal).
+  invent_header(Goal,Title),
+  collapsible_section(Type,Title,true,Goal).
+
 
 :- meta_predicate(collapsible_section(+,+,+,0)).
-collapsible_section(Type,Header,_StartCollapsed,Goal):-
-  setup_call_cleanup(format('~N!mu~w! ~@ |~n',[Type, trim_newlines(ptt(Header))]),
-                     Goal, 
-                     format('  ¡mu~w¡~n',[Type])).
+collapsible_section(Type,Title,_StartCollapsed,Goal):-
+  (nb_current('$collapsible_section',Was);Was=[]),
+  length(Was,Depth),
+  setup_call_cleanup(format('~N~@!mu~w! ~@ |~n',[dash_chars(Depth,' '), Type, trim_newlines(ptt(Title))]),
+                     locally(b_setval('$collapsible_section',[Type|Was]),Goal), 
+                     format('~N~@¡mu~w¡~n',[dash_chars(Depth,' '), Type])).
 
 
 :- meta_predicate(trim_newlines(0)).
@@ -62,10 +66,10 @@ trim_leading_trailing_whitespace(In,Out):-
   atomics_to_string(List,' ',Out).
 
 :- meta_predicate(invent_header(+,-)).
-invent_header(Term,Header):- \+ compound(Term),!, Header = goal(Term).
-invent_header(Term,Header):- compound_name_arity(Term,F,_),
-  (( \+ dumb_functor(Term)) -> (maybe_ia(Term,E),Header=g(F,E));
-     (header_arg(Term,E),invent_header(E,Header))).
+invent_header(Term,Title):- \+ compound(Term),!, Title = goal(Term).
+invent_header(Term,Title):- compound_name_arity(Term,F,_),
+  (( \+ dumb_functor(Term)) -> (maybe_ia(Term,E),Title=g(F,E));
+     (header_arg(Term,E),invent_header(E,Title))).
 header_arg(Term,E):- sub_term(E,Term), E\=@=Term, compound(E), \+ is_list(E).
 maybe_ia(Term,DT):- header_arg(Term,E), !, \+ dumb_functor(E), data_type(E,DT),!.
 maybe_ia(_Term,args).

@@ -219,7 +219,8 @@ showdiff_groups(A,B,[H|T],AAR,BBR):- !,
   showdiff_groups(A1,B1,T,AAR,BBR).
 showdiff_groups(A,B,Pred,AAR,BBR):- 
   pred_intersection(Pred,A,B,IntersectA,IntersectB,AAR,BBR),
-  ignore((IntersectA\==[], maplist(showdiff_objects_vis(Pred),IntersectA,IntersectB))).
+  collapsible_section(info,"Object Differences",true,
+   ignore((IntersectA\==[], maplist(showdiff_objects_vis(Pred),IntersectA,IntersectB)))).
 
 
 diff_groups2(AAR,BBR,proportional(DD,Diffs)):- proportional(AAR,BBR,DD), maplist(diff_objects,AAR,BBR,Diffs).
