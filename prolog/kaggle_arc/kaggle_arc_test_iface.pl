@@ -272,7 +272,7 @@ test_suite_name(test_names_by_fav_rev). test_suite_name(test_names_by_hard_rev).
 
 :- dynamic(muarc_tmp:cached_tests/2).
 %:- retractall(muarc_tmp:cached_tests(_,_)).
-:- luser_setval(global,test_order,sol_t).
+:- luser_defval(test_order,sol_t).
 get_current_suite_testnames(Set):-
   luser_getval(test_order,X),
   current_suite_testnames(X,Set).

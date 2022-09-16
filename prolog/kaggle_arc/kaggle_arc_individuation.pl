@@ -590,7 +590,7 @@ individuation_reserved_options(ROptions,Reserved,Options):-
 
 :- dynamic(individuated_cache/3).
 :- retractall(individuated_cache(_,_,_)).
-:- luser_setval(global,individuated_cache,true).
+:- luser_defval(individuated_cache,true).
 
 get_individuated_cache(ROptions,OID,IndvS):- nonvar(ROptions),
   ground(OID), \+ luser_getval(individuated_cache,false), individuated_cache(OID,ROptions,IndvS),!.
@@ -2085,7 +2085,7 @@ shape_min_points(_VM,Shape,MinShapeO):-shape_min_points0(Shape,MinShapeO).
 shape_min_points0(_,[_,_|_]).
 %  shape_min_points(VM,_,_).
 
-:- luser_setval(global,color_mode,monochrome).
+:- luser_defval(color_mode,monochrome).
 
 ok_color_with(C1,C1).
 /*

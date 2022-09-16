@@ -458,9 +458,12 @@ arc_user(TID, ID):- suggest_arc_user(ID), TID\=ID,!.
 luser_setval(N,V):- arc_user(ID),luser_setval(ID,N,V),!.
 luser_setval(ID,N,V):- nb_setval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
 
+luser_defval(N,V):- luser_setval(global,N,V).
+
 luser_linkval(N,V):- arc_user(ID),luser_linkval(ID,N,V),!.
 luser_linkval(ID,N,V):- nb_linkval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
 
+luser_getval(N,V):- if_arc_webui(((get_param_req_or_session(N,V), V\=='',V\==""))).
 luser_getval(N,V):- arc_user(ID),luser_getval(ID,N,V),!.
 %luser_getval(ID,N,V):- thread_self(ID),nb_current(N,V),!.
 %luser_getval(ID,N,V):- !, ((arc_user_prop(ID,N,V);nb_current(N,V))*->true;arc_user_prop(global,N,V)).
@@ -468,13 +471,12 @@ luser_getval(ID,N,V):- !,
  (nb_current(N,Val)*->Val=V;
   (arc_user_prop(ID,N,V)*->true;arc_user_prop(global,N,V))).
 
-luser_getval_or_default(N,V,Default):- if_arc_webui(((get_param_req_or_session(N,V), V\=='',V\=="")->true;V=Default)).
 /*
 luser_getval(ID,N,V):- 
  (arc_user_prop(ID,N,V)*->true;
   (nb_current(N,V))*->true;arc_user_prop(global,N,V)).
 */
-:- luser_setval(global,example,trn+0).
+:- luser_defval(example,trn+0).
 
 %c:- forall(clause(fav(A,B),true),arc_history1((fav(A,B)))).
 :- arc_history1(fav2).

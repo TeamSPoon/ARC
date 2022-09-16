@@ -304,9 +304,9 @@ invoke_arc_cmd(Prolog):-
    asserta_new(xlisting_whook:offer_testcase(Prolog)), !,
    catch(weto(Prolog),E,wdmsg(E)),!.
 
-:- luser_setval(global,cmd,print_test).
-:- luser_setval(global,tc_cmd,ndividuatorO1).
-:- luser_setval(global,footer_cmd,statistics).
+:- luser_defval(cmd,print_test).
+:- luser_defval(tc_cmd,ndividuatorO1).
+:- luser_defval(footer_cmd,statistics).
 
 current_arc_cmd(Prolog):- current_arc_cmd(cmd,Prolog).
 current_arc_cmd(cmd,Prolog):- luser_getval(cmd,Prolog).
