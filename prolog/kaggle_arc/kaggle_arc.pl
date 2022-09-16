@@ -116,8 +116,6 @@ quietlyd(G):- quietly(G),!.
 :- dynamic '$autoload'/3.
 
 
-:- current_prolog_flag(argv,C),wdmsg(current_prolog_flag(argv,C)),!.
-
 % COMMAND LINE ARC
 :- if(\+ current_module(logicmoo_arc)).
   :- set_prolog_flag(access_level,system).
@@ -249,6 +247,9 @@ rrtrace(X):- notrace,nortrace, arcST, sleep(0.5), trace, (notrace(\+ current_pro
 
 remove_must_dets(G,GGG):- compound(G), G = must_det_ll(GG),!,expand_goal(GG,GGG),!.
 remove_must_dets(G,GGG):- compound(G), G = must_det_l(GG),!,expand_goal(GG,GGG),!.
+
+:- current_prolog_flag(argv,C),wdmsg(current_prolog_flag(argv,C)),!.
+
 
 % goal_expansion(must_det_l(G),I,must_det_ll(G),O):- nonvar(I),source_location(_,_), nonvar(G),I=O.
 

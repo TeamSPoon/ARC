@@ -298,6 +298,8 @@
         c = "&lt;";
       } else if (c == ">") {
         c = "&gt;";
+      } else if (c == "®") {
+        c = "@";
       } else if (chint == 32) {
         c = "&nbsp;"
       } else if (chint > 160) {

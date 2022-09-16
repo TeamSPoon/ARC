@@ -16,10 +16,12 @@ cd $ARC_DIR
 rm -rf out
 git checkout out
 
+export BCMD="cd ${ARC_DIR} ; pwd ;  swipl ./kaggle_arc.pl -t bfly_starup -- ${@}"
+
 if id -u "norights" >/dev/null 2>&1; then
- sudo -u norights bash -l -c "cd ${ARC_DIR} ; pwd ;  swipl ./kaggle_arc.pl -t bfly_starup"  || stty sane
+ sudo -u norights bash -l -c "${BCMD}" || stty sane
 else
- bash -l -c "cd ${ARC_DIR} ; pwd ;  swipl ./kaggle_arc.pl -t 'user:bfly_startup' -- ${*}"  || stty sane
+ bash -l -c "${BCMD}" || stty sane
 fi
 
 if [[ $# -gt 0 ]] ; then
