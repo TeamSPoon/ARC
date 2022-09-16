@@ -55,3 +55,6 @@ git status .
 git checkout ext.js
 git checkout butterfly/static/ext.js
 git checkout butterfly/static/main.js
+git commit -am "Faked the monospaced fixwidth fonts now"
+git push
+cd ..
