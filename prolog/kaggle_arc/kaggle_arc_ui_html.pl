@@ -260,14 +260,14 @@ arc_find_tests(F):- find_tests(F).
 xlisting_whook:offer_testcase(F):- arc_find_tests(F).
 
 handler_logicmoo_right:-   
- inline_html_format([
+ if_arc_webui(inline_html_format([
    ignore((get_http_current_request(Request))),write('<pre>'),
    print_tree(Request),offer_testcases,show_http_session,
-   write('</pre>')]).
+   write('</pre>')])).
 
-handler_logicmoo_arc:- inline_html_format([call(handler_logicmoo_left)]).
+handler_logicmoo_arc:- if_arc_webui(inline_html_format([call(handler_logicmoo_left)])).
 handler_logicmoo_left:- 
-   inline_html_format( 
+   if_arc_webui(inline_html_format( 
    [ `<pre>`,
    ignore(arc_nav_menu),
    flush_output,
@@ -279,20 +279,20 @@ handler_logicmoo_left:-
    flush_output,
    invoke_arc_cmd(edit1term),
    show_http_session,
-    `</pre>`]), 
+    `</pre>`])), 
   !.
 
 arc_nav_menu:- 
-  current_arc_cmd(tcmd,Prolog),
-  write_cmd_link((prev_test,Prolog)),
-  write_cmd_link((next_test,Prolog)),
-  write_cmd_link((Prolog)),!.
+  current_arc_cmd(tc_cmd,Prolog),
+  print_menu_cmd1((prev_test,Prolog)),
+  print_menu_cmd1((next_test,Prolog)),
+  print_menu_cmd1((Prolog)),!.
 show_console_info:-
   in_pp(PP),ppt(in_pp(PP)),!.
 
 call_current_arc_cmd:- 
   call_current_arc_cmd(cmd),
- call_current_arc_cmd(fcmd).
+ call_current_arc_cmd(footer_cmd).
 
 call_current_arc_cmd(Var):-
    current_arc_cmd(Var,Prolog),        
@@ -304,14 +304,15 @@ invoke_arc_cmd(Prolog):-
    asserta_new(xlisting_whook:offer_testcase(Prolog)), !,
    catch(weto(Prolog),E,wdmsg(E)),!.
 
-get_uvalue(N,V,Default):- ((get_param_req_or_session(N,V), V\=='',V\=="")->true;V=Default).
+:- luser_setval(global,cmd,print_test).
+:- luser_setval(global,tc_cmd,ndividuatorO1).
+:- luser_setval(global,footer_cmd,statistics).
 
 current_arc_cmd(Prolog):- current_arc_cmd(cmd,Prolog).
-
-current_arc_cmd(cmd,Prolog):- get_uvalue(cmd,Prolog,print_test).
-current_arc_cmd(tcmd,Prolog):- get_uvalue(tcmd,Prolog,ndividuatorO1).
-current_arc_cmd(fcmd,Prolog):- get_uvalue(fcmd,Prolog,statistics).
-%current_arc_cmd(fcmd,Prolog):- (\+ current_arc_cmd(cmd,menu) -> get_uvalue(fcmd,Prolog,menu) ; get_uvalue(fcmd,Prolog,edit1term)).
+current_arc_cmd(cmd,Prolog):- luser_getval(cmd,Prolog).
+current_arc_cmd(tc_cmd,Prolog):- luser_getval(tc_cmd,Prolog).
+current_arc_cmd(footer_cmd,Prolog):- luser_getval(footer_cmd,Prolog).
+%current_arc_cmd(footer_cmd,Prolog):- (\+ current_arc_cmd(cmd,menu) -> luser_getval(footer_cmd,Prolog,menu) ; luser_getval(footer_cmd,Prolog,edit1term)).
 
 /*
 :- if(exists_source(library(logicmoo_webui))).

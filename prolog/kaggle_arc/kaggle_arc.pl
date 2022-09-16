@@ -467,6 +467,8 @@ luser_getval(N,V):- arc_user(ID),luser_getval(ID,N,V),!.
 luser_getval(ID,N,V):- !,
  (nb_current(N,Val)*->Val=V;
   (arc_user_prop(ID,N,V)*->true;arc_user_prop(global,N,V))).
+
+luser_getval_or_default(N,V,Default):- if_arc_webui(((get_param_req_or_session(N,V), V\=='',V\=="")->true;V=Default)).
 /*
 luser_getval(ID,N,V):- 
  (arc_user_prop(ID,N,V)*->true;

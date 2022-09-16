@@ -6,17 +6,14 @@ echo ARC_DIR=$ARC_DIR
 
 if [[ $# -gt 0 ]] ; then
    fuser -n tcp -k 17666
-   fuser -n tcp -k 17666
 fi
 
-export LM_ARC_BASE=$1
-echo LM_ARC_BASE=$LM_ARC_BASE
 
 cd $ARC_DIR
 rm -rf out
 git checkout out
 
-export BCMD="cd ${ARC_DIR} ; pwd ;  swipl ./kaggle_arc.pl -t bfly_starup -- ${@}"
+export BCMD="cd ${ARC_DIR} ; pwd ;  swipl ./kaggle_arc.pl -- ${@}"
 
 if id -u "norights" >/dev/null 2>&1; then
  sudo -u norights bash -l -c "${BCMD}" || stty sane
