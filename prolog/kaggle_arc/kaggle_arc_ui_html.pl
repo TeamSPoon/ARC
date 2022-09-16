@@ -201,7 +201,7 @@ no_web_dbg:-
 
 %:- no_web_dbg.
 
-begin_arc_html(Request):- notrace(with_http(begin_arc_html0(Request))).
+begin_arc_html(Request):- notrace(with_webui(begin_arc_html0(Request))).
 begin_arc_html0(Request):-
   ignore((current_output(Out),
   set_stream(Out,buffer(false)))),
@@ -214,13 +214,13 @@ begin_arc_html0(Request):-
   %ignore(set_test_param),
   ignore((member(search(List),Request),member(task=Task,List),  
   atom_id(Task,ID), dmsg(Task->ID), set_current_test(ID))),
-  ignore(intern_request_data(Request)),
-  ignore(write_begin_html('ARC Solver')),
+  ignore(if_arc_webui(intern_request_data(Request))),
+  ignore(if_arc_webui(write_begin_html('ARC Solver'))),
   nop(ensure_readable_html).
 
 set_test_param:-
-  ignore((get_param_sess(task,Task), Task\=='',  Task\=="",
-  atom_id(Task,ID), dmsg(Task->ID), set_current_test(ID))),!.
+  ignore((if_arc_webui((get_param_sess(task,Task), Task\=='',  Task\=="",
+  atom_id(Task,ID), dmsg(Task->ID), set_current_test(ID))))),!.
 
 
 swish_arc(Request):-   
@@ -232,7 +232,7 @@ arcproc_left(Request):-
   %no_web_dbg,
   notrace((begin_arc_html(Request),
   flush_output,
-  with_http((inline_html_format([
+  with_webui((inline_html_format([
     ignore(handler_logicmoo_left),
     ignore(ensure_colapsable_script),
     ignore(write_end_html)]))))),!.
@@ -240,13 +240,13 @@ arcproc_left(Request):-
 %arcproc_left(Request):- swish_arc(Request),!.
 arcproc_left(Request):- 
   notrace((begin_arc_html(Request),
-  with_http((inline_html_format([
+  with_webui((inline_html_format([
     handler_logicmoo_right,
     ensure_colapsable_script,
     write_end_html]))))).
 
 
-
+with_webui(Goal):- ignore(if_arc_webui(with_http(Goal))).
 %:- initialization arc_http_server.
 
 

@@ -931,13 +931,13 @@ ratio_for0(Ratio,Out,In):- catch(Ratio is rationalize(Out/In),error(evaluation_e
 ratio_for0(Ratio,Out,In):- catch(NRatio is rationalize(In/Out),error(evaluation_error(_Zero_divisor),_),fail),!, Ratio is -NRatio.
 
 :- decl_pt(prop_h,each_object(is_grid, list)).
-each_object(_Grid,[]):-!.
-each_object(Grid,ListO):-
- print_collapsed(100,individuate(complete,Grid,List)),!,
- simplify_objs(List,ListO).
+
+%each_object(_Grid,[]):-!.
+each_object(Grid,ListO):- arc_memoized(individuate(complete,Grid,List)),!, simplify_objs(List,ListO).
+%each_object(Grid,ListO):- print_collapsed(100,memoized(individuate(complete,Grid,List))),!, simplify_objs(List,ListO).
 
 simplify_objs(I,O):-is_list(I),!,maplist(simplify_objs,I,O).
-simplify_objs(obj(I),obj(O)):-!,simplify_objs(I,M),include(compound,M,M1),sort(M1,M2),reverse(M2,M3),M3=O.
+simplify_objs(obj(I),obj(O)):-!,simplify_objs(I,M),include(compound,M,M1),sort_obj_props(M1,M2),M2=O.
 %simplify_objs(iz(g(_)),iz(g(_))).
 %simplify_objs(Comp,F):- compound(Comp),functor(Comp,F,_),uncomparable(group,Comp),!.
 simplify_objs(F,F).

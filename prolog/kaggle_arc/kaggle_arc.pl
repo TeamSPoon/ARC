@@ -443,7 +443,7 @@ doit(set(E.v)):- that.
 arc_user(main):-!.
 %arc_user(ID):- thread_self(TID),arc_user(TID, ID).
 
-suggest_arc_user(ID):- catch((xlisting_web:find_http_session(ID)),_,fail),!.
+suggest_arc_user(ID):- catch((if_arc_webui(xlisting_web:find_http_session(ID))),_,fail),!.
 suggest_arc_user(ID):- catch((pengine:pengine_user(ID)),_,fail),!.
 suggest_arc_user(ID):- catch((http_session:session_data(_,username(ID))),_,fail),!.
 
@@ -462,6 +462,10 @@ luser_defval(N,V):- luser_setval(global,N,V).
 
 luser_linkval(N,V):- arc_user(ID),luser_linkval(ID,N,V),!.
 luser_linkval(ID,N,V):- nb_linkval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
+
+:- meta_predicate(if_arc_webui(-)).
+if_arc_webui(_):- \+ arc_webui,!,fail.
+if_arc_webui(Goal):- arc_webui,!,g_out(call(Goal)).
 
 luser_getval(N,V):- if_arc_webui(((get_param_req_or_session(N,V), V\=='',V\==""))).
 luser_getval(N,V):- arc_user(ID),luser_getval(ID,N,V),!.

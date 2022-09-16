@@ -745,10 +745,11 @@ w_out(S):- is_webui,!,correct_nbsp(S,SO),our_pengine_output(SO),!.
 w_out(S):- format('~N'),write(S).
 %w_out(SO):- pengines:pengine_output('</pre>'),pengines:pengine_output(SO),pengines:pengine_output('<pre class="console">'),!.
 
-arc_webui:- in_pp(http),!.
-arc_webui:- toplevel_pp(swish),!.
-arc_webui:- toplevel_pp(bfly),!.
-arc_webui:- is_webui,!.
+arc_webui:- notrace(arc_webui0).
+arc_webui0:- in_pp(http),!.
+arc_webui0:- toplevel_pp(swish),!.
+arc_webui0:- toplevel_pp(bfly),!.
+arc_webui0:- is_webui,!.
 
 g_out(G):- is_side(_),!,call(G).
 g_out(G):- \+ arc_webui,!,format('~N'),call(G),format('~N').

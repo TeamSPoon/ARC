@@ -9,7 +9,7 @@
 :- endif.
 :- use_module(library(pengines)).
 
-test_menu :- with_http(menu).
+test_menu :- with_webui(menu).
 menu :- write_menu('i').
 write_menu(Mode):-
   get_current_test(TestID),!,
@@ -29,9 +29,6 @@ print_menu_cmd1(Goal):-  if_arc_webui(write_cmd_link(Goal)),!.
 print_menu_cmd1(Info,Goal):- if_arc_webui(write_cmd_link(Info,Goal)),!.
 print_menu_cmd1(Info,_Goal):- format('~w',[Info]).
 
-
-:- meta_predicate(if_arc_webui(-)).
-if_arc_webui(Goal):- arc_webui,!,g_out(call(Goal)).
 
 :- multifile(menu_cmd1/4).
 :- multifile(menu_cmd9/4).
