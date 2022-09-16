@@ -790,6 +790,12 @@ not_very_different_t(difference(0)). not_very_different_t(ratio(1)). not_very_di
 proportional_types(list,A,B,D):- !, proportional_lists(A,B,D).
 proportional_types(_How,A,B,D):- proportional(A,B,D).
 
+proportional_type_list([],[],[],[]):-!.
+proportional_type_list([L|Lst],[N1|NewLst1],[N2|NewLst2],[O|OutL]):- 
+   proportional_types(L,N1,N2,O),!, 
+   proportional_type_list(Lst,NewLst1,NewLst2,OutL).
+
+
 maybe_label_colors(G,L):- is_grid(G),!,mapgrid(color_name,G,L),!,G\==L.
 
 non_grid_list(X):- is_list(X), \+ is_grid(X).
@@ -822,13 +828,16 @@ proportional(B,A,C):- maybe_extract_values(B,BB), compound(A), \+ maybe_extract_
 proportional(G1,G2,Out):- unused_proportion(G1,G2,Out),!.
 %proportional(E1,E2,E1):- E1=@=E2,!.
 proportional(Obj1,Obj2,Out):- 
-  decl_pt(prop_h,P1P2), P1P2=..[P2,P1|Lst],
+  decl_pt(prop_h,P1P2), 
+  P1P2=..[P2,P1|Lst],
+  once((
   once((once((on_x_log_and_fail(call(P1,Obj1)),
               on_x_log_and_fail(call(P1,Obj2)))),
   length(Lst,Len), length(NewLst1,Len),length(NewLst2,Len),
   once((on_x_log_and_fail(apply(P2,[Obj1|NewLst1])),
-        on_x_log_and_fail(apply(P2,[Obj2|NewLst2])))))), 
-  maplist(proportional_types,Lst,NewLst1,NewLst2,OutL), Out =.. [P2|OutL].
+        on_x_log_and_fail(apply(P2,[Obj2|NewLst2])))))),
+  proportional_type_list(Lst,NewLst1,NewLst2,OutL))), 
+  Out =.. [P2|OutL].
 
 proportional(L1,L2,_List):- is_grid(L1),is_grid(L2),!,fail.
 proportional(N1,N2,N):- compound(N1),compound_name_arguments(N1,F,A1),compound_name_arguments(N2,F,A2),

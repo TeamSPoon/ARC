@@ -25,8 +25,6 @@ print_menu_cmd(Key):- ignore((menu_cmd1(_,Key,Info,Goal),print_menu_cmd(Key,Info
 print_menu_cmd(_Key,Info,Goal):- format('~N '),print_menu_cmd1(Info,Goal).
 print_menu_cmd9(_Key,Info,Goal):- format(' '),print_menu_cmd1(Info,Goal).
 
-:- use_module(library(xlisting/xlisting_web)).
-:- use_module(library(xlisting/xlisting_web_server)).
 print_menu_cmd1(Info,Goal):- if_arc_webui(write_cmd_link(Info,Goal)),!.
 print_menu_cmd1(Info,_Goal):- format('~w',[Info]).
 

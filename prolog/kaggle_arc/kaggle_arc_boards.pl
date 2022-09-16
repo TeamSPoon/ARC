@@ -60,16 +60,17 @@ compile_and_save_test(TestID):-
   arc_assert(saved_training(TestID)),
   arc_assert(process_test(TestID)),
   detect_all_training_hints(TestID),  
-  %individuate_pairs_from_hints(TestID),
+  individuate_pairs_from_hints(TestID),
   %train_test(TestID,train_using_io),  
   save_supertest(TestID))).
 
 individuate_pairs_from_hints(TestID):- 
   arc_assert(individuate_test_grids(TestID)),
-  forall(kaggle_arc(TestID,ExampleNum,In,Out),
-   individuate_pair_here(TestID,ExampleNum,In,Out)).
+  forall(kaggle_arc(TestID,ExampleNum,In,Out), 
+    individuate_pair_here(TestID,ExampleNum,In,Out)).
 
 individuate_pair_here(TestID,Trn+N1,In,Out):-
+  Trn == trn, % no peeking
   ip(complete,In,Out),
   nop(train_for_objects_from_1pair(_{},TestID,[Trn,'i',N1,'o',N1],In,Out,_DictMid)).
 

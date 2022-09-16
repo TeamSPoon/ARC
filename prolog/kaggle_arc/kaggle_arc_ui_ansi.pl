@@ -278,10 +278,15 @@ pp_hook_g1(O):-  is_group(O),ppt_no_nl(O), !.
 pp_hook_g1(O):-  is_map(O),write('map'),!.
 pp_hook_g1(O):-  is_gridoid(O),debug_as_grid(O), !.
 pp_hook_g1(O):-  is_points_list(O),debug_as_grid(O), !.
-pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff), collapsible_section(object,[O1, O2],ppt(O)).
+pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  with_tagged('h5',collapsible_section(object,[O1, O2],ppt(O))).
 %pp_hook_g1(O):-  O = diff(A -> B), (is_gridoid(A);is_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
 pp_hook_g1(O):-  O = showdiff( O1, O2), !, showdiff(O1, O2).
 
+with_tagged(Tag,Goal):-
+  setup_call_cleanup(
+    bfly_html_goal(format('<~w>',[Tag])),
+    Goal,
+    bfly_html_goal(format('</~w>',[Tag]))).
 
 /*
 pp_hook_g1(T):- 
@@ -786,9 +791,10 @@ as_html_encoded(Goal):-
 
 set_stream_encoding(Text):- 
  %set_prolog_flag(encoding,Text),
+ notrace((
  ignore(catch(set_stream(current_output,encoding(Text)),_,true)),
  ignore(catch(set_stream(user_output,encoding(Text)),_,true)),
- ignore(catch(set_stream(current_output,tty(true)),_,true)),!.
+ ignore(catch(set_stream(current_output,tty(true)),_,true)))),!.
 
 /*
 subst_entity(S,SS):- string(S),atom_chars(S,Codes),subst_entity1(Codes,CS),sformat(SS,'~s',[CS]).
@@ -1278,4 +1284,5 @@ get_glyph(Point,Glyph):-
 12271 = |? ? ? ? ? |
 
 */
+
 

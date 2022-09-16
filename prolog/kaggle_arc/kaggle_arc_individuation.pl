@@ -478,6 +478,7 @@ sub_individuate(From,Next,VM):-
   set_vm(VM).
 
 individuate_complete(GID,Next,OnlyNew,WasInside):-
+  
    object_grid(OnlyNew,Grid),
    object_glyph(OnlyNew,Glyph),
    loc(OnlyNew,X,Y),

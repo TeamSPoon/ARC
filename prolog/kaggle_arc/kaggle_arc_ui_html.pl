@@ -33,10 +33,13 @@
 :- use_module(library(http/http_files)).
 :- use_module(library(http/websocket)).
 
+/*
 :- if(current_module(logicmoo_arc)).
 :- use_module(library(xlisting/xlisting_web)).
+:- use_module(library(xlisting/xlisting_web)).
+:- use_module(library(xlisting/xlisting_web_server)).
 :- endif.
-
+*/
 
 :- meta_predicate(noisey_debug(0)).
 noisey_debug(Goal):- collapsible_section(debug,Goal).
@@ -62,8 +65,8 @@ collapsible_section(Type,Title,_StartCollapsed,Goal):-
   (nb_current('$collapsible_section',Was);Was=[]),
   length(Was,Depth),
   setup_call_cleanup(format('~N~@!mu~w! ~@ |~n',[dash_chars(Depth,' '), Type, print_title(Title)]),
-                     locally(b_setval('$collapsible_section',[Type|Was]),Goal), 
-                     format('~N~@¡mu~w¡~n',[dash_chars(Depth,' '), Type])).
+                     locally(b_setval('$collapsible_section',[Type|Was]),wots(S,Goal)), 
+                     format('~N~w~@¡mu~w¡~n',[S,dash_chars(Depth,' '), Type])).
 
 
 :- meta_predicate(trim_newlines(0)).
@@ -215,7 +218,7 @@ begin_arc_html0(Request):-
   ignore(write_begin_html('ARC Solver')),
   nop(ensure_readable_html).
 
-set_test_param:- 
+set_test_param:-
   ignore((get_param_sess(task,Task), Task\=='',  Task\=="",
   atom_id(Task,ID), dmsg(Task->ID), set_current_test(ID))),!.
 
@@ -244,7 +247,7 @@ arcproc_left(Request):-
 
 
 
-:- initialization arc_http_server.
+%:- initialization arc_http_server.
 
 
 

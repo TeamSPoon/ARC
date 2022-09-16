@@ -116,6 +116,8 @@ quietlyd(G):- quietly(G),!.
 :- dynamic '$autoload'/3.
 
 
+:- current_prolog_flag(argv,C),wdmsg(current_prolog_flag(argv,C)),!.
+
 % COMMAND LINE ARC
 :- if(\+ current_module(logicmoo_arc)).
   :- set_prolog_flag(access_level,system).
@@ -437,15 +439,16 @@ doit(set(E.v)):- that.
 :- style_check(+singleton).
 */
 
-arc_user(ID):- thread_self(TID),arc_user(TID, ID).
+arc_user(main):-!.
+%arc_user(ID):- thread_self(TID),arc_user(TID, ID).
 
 suggest_arc_user(ID):- catch((xlisting_web:find_http_session(ID)),_,fail),!.
 suggest_arc_user(ID):- catch((pengine:pengine_user(ID)),_,fail),!.
 suggest_arc_user(ID):- catch((http_session:session_data(_,username(ID))),_,fail),!.
 
+arc_user(TID, ID):- \+ arc_webui,!,TID=ID,!.
 arc_user(TID, ID):- catch((http_session:session_data(TID,username(ID))),_,fail),!.
 arc_user(TID, ID):- suggest_arc_user(ID), TID\=ID,!.
-arc_user(TID, ID):- TID=ID,!.
 
 
 :- dynamic(arc_user_prop/3).
