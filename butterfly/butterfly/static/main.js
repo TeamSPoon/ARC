@@ -290,14 +290,26 @@
       if (placeholder == null) {
         placeholder = false;
       }
-	    chint = c.charCodeAt();
-	    if(chint > 160) {
-        c = "&#"+chint+";"
-        // c = "<span style='width: 13px;'>"+c+"</span>"
-        newChar = this.cloneAttr(this.curAttr, c);	  
+
+      chint = c.charCodeAt();
+      if (c == "&") {
+        c = "&amp;";
+      } else if (c == "<") {
+        c = "&lt;";
+      } else if (c == ">") {
+        c = "&gt;";
+      } else if (chint == 32) {
+        c = "&nbsp;"
+      } else if (chint > 160) {
+        c = "&#" + chint + ";"
       } else {
-        newChar = this.cloneAttr(this.curAttr, c);	  
-      }
+        c = '' + c;
+      }      
+      
+      attr= "display:inline-block; width: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 13ch;"
+      
+      c = '<span style="'+attr+'">' + c + '</span>';
+
       newChar.placeholder = placeholder;
       if (this.insertMode) {
 		  this.checkUndefined(newChar);
