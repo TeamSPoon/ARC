@@ -1751,7 +1751,7 @@ is_fti_step(current_as_one).
 current_as_one(VM):-
  Points = VM.points,
    ignore((Points\==[],
-   wdmsg(current_as_one=Points),
+   set_html_stream_encoding, wdmsg(current_as_one=Points),
    make_indiv_object(VM,[iz(combined),birth(current_as_one)],Points,LeftOverObj), verify_object(LeftOverObj),
    raddObjects(VM,LeftOverObj),
    set(VM.points) = Points)).

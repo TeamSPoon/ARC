@@ -58,3 +58,4 @@ git checkout butterfly/static/main.js
 git commit -am "Faked the monospaced fixwidth fonts now"
 git push
 cd ..
+git diff .

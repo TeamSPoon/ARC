@@ -49,12 +49,19 @@ collapsible_section(Type,Goal):-
   invent_header(Goal,Title),
   collapsible_section(Type,Title,true,Goal).
 
+print_title(Var):- (var(Var);Var==[]),!.
+print_title([L|List]):- is_list(List), !, print_title(L),write(' '),print_title(List).
+print_title(Title):- trim_newlines(ptt(Title)).
+
+:- meta_predicate(collapsible_section(+,+,0)).
+collapsible_section(Type,Title,Goal):-
+  collapsible_section(Type,Title,true,Goal).
 
 :- meta_predicate(collapsible_section(+,+,+,0)).
 collapsible_section(Type,Title,_StartCollapsed,Goal):-
   (nb_current('$collapsible_section',Was);Was=[]),
   length(Was,Depth),
-  setup_call_cleanup(format('~N~@!mu~w! ~@ |~n',[dash_chars(Depth,' '), Type, trim_newlines(ptt(Title))]),
+  setup_call_cleanup(format('~N~@!mu~w! ~@ |~n',[dash_chars(Depth,' '), Type, print_title(Title)]),
                      locally(b_setval('$collapsible_section',[Type|Was]),Goal), 
                      format('~N~@¡mu~w¡~n',[dash_chars(Depth,' '), Type])).
 

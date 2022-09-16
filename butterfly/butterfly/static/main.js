@@ -304,13 +304,11 @@
         c = "&#" + chint + ";"
       } else {
         c = '' + c;
-      }      
+      }
       
-      attr= "display:inline-block; width: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 13ch;"
-      
-      c = '<span style="'+attr+'">' + c + '</span>';
+      c = '<span class="mc-10">' + c + '</span>';
       newChar = this.cloneAttr(this.curAttr, c);
-      
+
       newChar.placeholder = placeholder;
       if (this.insertMode) {
 		  this.checkUndefined(newChar);

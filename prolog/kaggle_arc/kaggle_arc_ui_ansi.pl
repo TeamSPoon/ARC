@@ -278,7 +278,7 @@ pp_hook_g1(O):-  is_group(O),ppt_no_nl(O), !.
 pp_hook_g1(O):-  is_map(O),write('map'),!.
 pp_hook_g1(O):-  is_gridoid(O),debug_as_grid(O), !.
 pp_hook_g1(O):-  is_points_list(O),debug_as_grid(O), !.
-%pp_hook_g1(O):-  O = change_obj( O1, O2, Diff), p_c_o('change_obj',[O1,O2,Diff]),!.
+pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff), collapsible_section(object,[O1, O2],ppt(O)).
 %pp_hook_g1(O):-  O = diff(A -> B), (is_gridoid(A);is_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
 pp_hook_g1(O):-  O = showdiff( O1, O2), !, showdiff(O1, O2).
 
@@ -773,12 +773,22 @@ correct_nbsp(S0,S):- replace_in_string([" &nbsp;"="&nbsp;","&nbsp; "="&nbsp;"],S
 
 ansi_format_real(Ansi,Format,Args):- arc_webui,!,sformat(S,Format,Args),!,color_print_webui(Ansi,S).
 %ansi_format_real(Ansi,Format,Args):- ansicall(Ansi,format(Format,Args)),!.
-ansi_format_real(Ansi,Format,Args):- 
- Text = utf8,
+ansi_format_real(Ansi,Format,Args):- set_html_stream_encoding,ansi_format(Ansi,Format,Args).
+
+set_html_stream_encoding:- set_stream_encoding(utf8).
+
+as_html_encoded(Goal):- 
+ stream_property(current_output,encoding(Was)),
+ setup_call_cleanup(
+   set_stream_encoding(utf8),
+   Goal,
+   set_stream_encoding(Was)).
+
+set_stream_encoding(Text):- 
+ %set_prolog_flag(encoding,Text),
  ignore(catch(set_stream(current_output,encoding(Text)),_,true)),
  ignore(catch(set_stream(user_output,encoding(Text)),_,true)),
- ignore(catch(set_stream(current_output,tty(true)),_,true)),
-    ansi_format(Ansi,Format,Args).
+ ignore(catch(set_stream(current_output,tty(true)),_,true)),!.
 
 /*
 subst_entity(S,SS):- string(S),atom_chars(S,Codes),subst_entity1(Codes,CS),sformat(SS,'~s',[CS]).
@@ -1209,11 +1219,14 @@ save_codes(Max):-
   \+ between(42560,42600,Code),
   %%check_dot_spacing(Code),
   %(42600 > Code),
-  
-  \+ resrv_dot(Code)   
+   % is_html_ifiable(Code),
+  \+ resrv_dot(Code)
+   
    % ignore((0 is Code mod 50, format(File,'\n\n~d:',[Code]), put_code(File,Code))),
   ),put_code(Code))))),  
   assertz(iss:i_syms(CCC))))).
+
+is_html_ifiable(Code):- sformat(S,'~@',[as_html_encoded(put_code(Code))]), atom_length(S,1).
 
 save_codes:- save_codes(42600).
 
