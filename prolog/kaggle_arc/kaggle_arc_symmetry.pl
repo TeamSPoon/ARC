@@ -532,7 +532,7 @@ mass_ok(Grid,RepairedResult):-
   mass(Grid,OMass),!,
   mass(RepairedResult,RMass),!,  
   DMass is RMass/OMass,
-  %ppt(yellow,[oMass=OMass,rMass=RMass,dMass=DMass]),!,
+  %pp(yellow,[oMass=OMass,rMass=RMass,dMass=DMass]),!,
   ((DMass>0.5,DMass<1.6)
    -> true ; 
    (fail,DMass<1.63,print_side_by_side(red,Grid,too_much_change(gridIn,dMass=DMass),_,RepairedResult,too_much_change(repairedOut)),fail)).
@@ -630,14 +630,14 @@ guess_unbind_color(UnbindColor,Grid,RepairedResult):-
 
 blur_least(B,Mix,I,O):-
   blur_list(B,Mix,I,S),
-  S=[O-ppt(blur_some(B,Mix))|_].
+  S=[O-pp(blur_some(B,Mix))|_].
 
 /*
 ?- into_grid(t('1b60fb0c')*_*_,I),blur_list(B,Mix,I,O),maplist(print_side_by_side(I),O).
 
 */
 blur_list(B,Mix,I,S):-
-  findall(O-ppt(blur_some(B,Mix)),blur_some(B,Mix,I,O),L),
+  findall(O-pp(blur_some(B,Mix)),blur_some(B,Mix,I,O),L),
   predsort(sort_on(pointy_mass),L,S).
 
 pointy_mass(P,Mass):- is_pointy(P),!,mass(P,Mass).
@@ -1360,8 +1360,8 @@ repair_patterned_images(VM,Ordered,Objects,Grids,CorrectObjects,KeepNewState,Rep
   prefect_result(VM,H,V,Ordered,Grids,RepairedResult,ColorAdvice),
   %print_grid(_,_,repairedResult,RepairedResult),
   localpoints_include_bg(RepairedResult,LPoints),
-%  ppt(RepairedResult),
-  %ppt(LPoints),
+%  pp(RepairedResult),
+  %pp(LPoints),
  %together(( localpoints_include_bg(RepairedResult,LPoints),hv_c_value(LPoints,C,1,2))),
  % together((maplist(set_local_points(LPoints),Grids,CorrectGrids),
  %           maplist(check_my_local_points(LPoints),CorrectGrids),
@@ -1392,7 +1392,7 @@ replace_diffs(LPoints,Obj,NewObj):-
   intersection(LP,Points,_Same,LPOnly,LPointOnly),
   ((LPOnly ==[], LPointOnly ==[]) -> NewObjM = Obj ;
   (
-   % ppt(LPOnly), ppt(LPointOnly),
+   % pp(LPOnly), pp(LPointOnly),
   rebuild_from_localpoints(Obj,Points,NewObjM))))),
   override_object(repaired(pattern),NewObjM,NewObj),
     %mprint_grid(NewObj),
@@ -1635,8 +1635,8 @@ glean_pattern_reps(Steps,G,NewGrid):-
   print_grid(G),
   writeln(repired_result),
   Steps = rp(patW=PatWidth,type=Type,divW=DivW,startV=StartV,patV=PatV),
-  ppt(Steps),
-  %ppt(Grid9x9),
+  pp(Steps),
+  %pp(Grid9x9),
   print_grid(Pattern),!,
   ignore(((Div\==[]),print_grid([Div]))),!,
   StartH=0,
@@ -1771,7 +1771,7 @@ most_d_colors(Grid,ColorO,GridNM):-
   %trace,
   get_fill_points(Grid,Points,GridNM),
   uneib(Points,FPoints),
-  % grid_size(GridNM,H,V), ppt(fillPoints(H,V) = FPoints),
+  % grid_size(GridNM,H,V), pp(fillPoints(H,V) = FPoints),
   sort(FPoints,NPSS),
   %trace,
   % (N2-C)-P1

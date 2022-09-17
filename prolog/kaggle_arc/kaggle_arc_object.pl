@@ -72,7 +72,7 @@ as_obj(O,Obj):- compound(O), O = obj(_), Obj = O. % , register_obj(L).
 
 
 enum_object(O):- var(O),!,no_repeats_cmp(=@=,O,enum_object0(O)).
-enum_object(O):- nop(ptt(enum_object(O))),!.
+enum_object(O):- nop(ppt(enum_object(O))),!.
 
 enum_object0(Obj):- % listing(obj_cache/2),
       get_current_test(TestID), obj_cache(TestID,O,_S),as_obj(O,Obj).
@@ -231,6 +231,10 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
   %maybe_include_bg(FinalLocalPoints,LPoints),
   %FinalLocalPoints = LPoints,
 
+  iv_for([ shape(ColorlessPoints),  loc(LoH,LoV),  pen(PenColors),  rotation(RotG)],Iv),
+  int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
+  % atomic_list_concat(['o_',Glyph,'_',GID],OID),
+
   append(
   [ [    
      shape(ColorlessPoints),
@@ -256,6 +260,8 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
     [%obj_to_oid(ID,Iv),
      iz(g(IO)),
      iz(gid(GID)),
+    % iz(oid(OID)),
+     glyph(Glyph),
      globalpoints(GPoints)
      %agrid_size(GH,GV)
     ]],Ps),  
@@ -267,13 +273,15 @@ top(7).
 
 %fix_clump([_-C],[1-C]).
 
-fix_clump(Cs,CsO):- append([A|Mid],[A],Cs),append([A|Mid],[],CsM),!,fix_clump(CsM,CsO).
-fix_clump(Cs,CsO):- append([CsM,CsM,CsM,CsM,CsM],Cs),!,fix_clump(CsM,CsO).
+%fix_clump(Cs,CsO):- append([A,B|Mid],[A,B],Cs),append([A|Mid],[],CsM),!,fix_clump(CsM,CsO).
+%fix_clump(Cs,CsO):- append([A|Mid],[A],Cs),append([A|Mid],[],CsM),!,fix_clump(CsM,CsO).
+%fix_clump(Cs,CsO):- append([CsM,CsM,CsM,CsM,CsM],Cs),!,fix_clump(CsM,CsO).
+fix_clump([],O):- !, O =[],!.
 fix_clump(Cs,CsO):- append([CsM,CsM,CsM],Cs),!,fix_clump(CsM,CsO).
 fix_clump(Cs,CsO):- append([CsM,CsM],Cs),!,fix_clump(CsM,CsO).
 fix_clump(Cs,Cs).
 
-cclumped(Items, CountsO) :- cclump(Items, Counts),fix_clump(Counts,CountsO).
+cclumped(Items, CountsO) :- cclump(Items, Counts),!,fix_clump(Counts,CountsO),!.
 cclump([H|T0], [C-H|T]) :-
     lists:ccount(T0, H, T1, 1, C),
     cclump(T1, T). 
@@ -299,7 +307,7 @@ ignore_xf(G):- ignore(notrace(catch(G,_,fail))).
 
 %guess_pretty2(O):- mortvar((copy_term(O,C),pretty1(O),O=@=C)).
 
-show_objs_as_code(O):- var(O),!,ppt(var(O)),!.
+show_objs_as_code(O):- var(O),!,pp(var(O)),!.
 show_objs_as_code(Grid):- is_grid(Grid),!.
 
 show_objs_as_code(Objs):- is_list(Objs),!,
@@ -308,7 +316,7 @@ show_objs_as_code(Objs):- is_list(Objs),!,
   flatten(List,LList),
   pretty1(LList),
   guess_prettyf(LList),
-  ptt(LList).
+  ppt(LList).
 
 show_objs_as_code(VM):-
   Objs = VM.objs,
@@ -769,7 +777,7 @@ grid_to_points_include_bg(Grid,Points):- grid_size(Grid,HH,HV),!,all_points_betw
 grid_to_points(Grid,HH,HV,Points):-  trace_or_throw(all_points_between),
   findall(C-Point,(between(1,HV,V),between(1,HH,H),
     once((hv_cg_value(Grid,C2,H,V),
-          %ppt(hv_cg_value(C2,H,V)),
+          %pp(hv_cg_value(C2,H,V)),
           is_spec_fg_color(C2,C),
           hv_point(H,V,Point)))),Points),!.
 */
@@ -854,8 +862,9 @@ globalpoints(Grid,Points):- grid_to_tid(Grid,ID),findall(-(C,HV),cmem(ID,HV,C),P
 */
 
 %colors(Points,CC):- is_list(Points),nth0(_,Points,C-_),is_color(C), CC = [cc(C,3)],!.
-colors(G,[cc(black,0)]):- G==[],!.
 
+colors(I,X):- nonvar(X),!,colors(I,XX),!,X=XX.
+colors(G,[cc(black,0)]):- G==[],!.
 colors(I,X):- indv_props(I,L),member(colors(X),L),!.
 colors(I,X):- is_map(I),into_grid(I,G),!,colors(G,X).
 colors(I,X):- is_object(I),indv_u_props(I,L),member(localpoints(LP),L),!,colors_via_pixels(LP,X).
@@ -1020,7 +1029,7 @@ blur_p2(P2,Obj,NewObj):-
   must_det_ll(rebuild_from_globalpoints(Obj,XYGP,NewObj)).
 :- style_check(+singleton).
 
-pct(G):- call(G), ptt(G).
+pct(G):- call(G), ppt(G).
 
 %rebuild_from_glob alpoints(Obj,NewObj):-
 %  globalpoints_in clude_bg(Obj,GPoints),
@@ -1032,11 +1041,11 @@ rebuild_from_globalpoints(Obj,GPoints,NewObj):-
   indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
   peek_vm(VM),
   
-  %print_attvars(before=Obj),
+  %ppa(before=Obj),
   remObjects(VM,Obj),
   make_indiv_object(VM,PropsRetained,GPoints,NewObj),
-  %print_attvars(propsRetained=PropsRetained),
-  %print_attvars(after=NewObj),
+  %ppa(propsRetained=PropsRetained),
+  %ppa(after=NewObj),
     verify_object(NewObj))),
  !.
 

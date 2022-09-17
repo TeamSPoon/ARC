@@ -10,7 +10,7 @@
 
 showdiff(A,B):- is_group(A), is_group(B), showdiff_groups(A,B),!.
 showdiff(A,B):- is_object(A), is_object(B), showdiff_objects(A,B),!.
-showdiff(A,B):- must(diff_terms(A,B,D)) -> D\==[],!,writeln('SOME DIFFERNCE'),ppt(D).
+showdiff(A,B):- must(diff_terms(A,B,D)) -> D\==[],!,writeln('SOME DIFFERNCE'),pp(D).
 showdiff(_,_):- writeln('NO DIFFERNCE').
 
 
@@ -192,7 +192,7 @@ final_alignment(_,_,AA,BB,AA,BB):-!.
 
 showdiff_groups(AG,BG):- not_list(AG),into_list(AG,AGL),!,showdiff_groups(AGL,BG).
 showdiff_groups(AG,BG):- not_list(BG),into_list(BG,BGL),!,showdiff_groups(AG,BGL).
-showdiff_groups(AG,BG):- once((proportional_how(AG,BG,DD), ppt(cyan,proportional(DD)),
+showdiff_groups(AG,BG):- once((proportional_how(AG,BG,DD), pp(cyan,proportional(DD)),
   maplist(showdiff_objects,AG,BG))),fail.
   
 showdiff_groups(AG,BG):-
@@ -210,7 +210,7 @@ showdiff_groups(AG,BG):-
   ((AG==A4, fail) -> true ; length(A4,LenA),ignore((LenA>0,dash_chars)),print_list_of(inputUniqs=LenA,A4), dash_chars),
   ((BG==B4, fail) -> true ; length(B4,LenB),print_list_of(outputUniqs=LenB,B4), dash_chars),
   diff_groups(A4,B4,Diff),
-  ppt(Diff),
+  pp(Diff),
   !.
 
 showdiff_groups(A,B,[],A,B):-!.
@@ -407,7 +407,7 @@ maye_sort(S,S).
 obj_make_comparable(I,_):- plain_var(I),!,fail.
 obj_make_comparable(obj(I),O):- !, obj_make_comparable(I,O).
 obj_make_comparable(I,O):- is_list(I),maplist(obj_make_comparable_e,I,M),sort_obj_props(M,O),
- nop(ppt(sort_obj_props(O))).
+ nop(pp(sort_obj_props(O))).
 obj_make_comparable(I,O):- into_obj(I,M),obj_make_comparable(M,O).
 %obj_make_comparable_e(I,O):- is_list(I),sort(I,O).
 %obj_make_comparable_e(Comp,F):- compound(Comp),functor(Comp,F,_),f_uncomparable_e(F).
@@ -527,7 +527,7 @@ showdiff_objects(N,O1,O2,Diffs):-
   print_list_of(diffs,Diffs),
   dash_chars,dash_chars,
   findall(E,compare_objs1(E,O1,O2),L),
-  ppt(compare_objs1(showdiff_objects)=L), 
+  pp(compare_objs1(showdiff_objects)=L), 
   dash_chars,dash_chars.
 
 compare_objs1(_,I,O):- I==O,!,fail.
@@ -587,7 +587,7 @@ changed_by(v_hv,copy).
 %compute_diff_objs2(I,IIR,O,OOR,[]):-  diff_terms(IIR,OOR,[]),
 
 
-  %ppt(remove_sames(II,OO)),
+  %pp(remove_sames(II,OO)),
 %  select(C,IIR,IIR2),compound(C),generalize(C,M),select(M,OOR,OOR2),
   %trace,diff_terms(IIR,OOR,OUT),!.
   

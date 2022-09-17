@@ -54,19 +54,27 @@ collapsible_section(Type,Goal):-
 
 print_title(Var):- (var(Var);Var==[]),!.
 print_title([L|List]):- is_list(List), !, print_title(L),write(' '),print_title(List).
-print_title(Title):- trim_newlines(ptt(Title)).
+print_title(Title):- trim_newlines(ppt(Title)).
 
 :- meta_predicate(collapsible_section(+,+,0)).
 collapsible_section(Type,Title,Goal):-
-  collapsible_section(Type,Title,true,Goal).
+  collapsible_section(Type,Title,false,Goal).
 
 :- meta_predicate(collapsible_section(+,+,+,0)).
-collapsible_section(Type,Title,_StartCollapsed,Goal):-
+/*
+collapsible_section(Type,Title,true,Goal):-
   (nb_current('$collapsible_section',Was);Was=[]),
   length(Was,Depth),
   setup_call_cleanup(format('~N~@!mu~w! ~@ |~n',[dash_chars(Depth,' '), Type, print_title(Title)]),
                      locally(b_setval('$collapsible_section',[Type|Was]),wots(S,Goal)), 
                      format('~N~w~@¡mu~w¡~n',[S,dash_chars(Depth,' '), Type])).
+*/
+collapsible_section(Type,Title,_,Goal):-
+  (nb_current('$collapsible_section',Was);Was=[]),
+  length(Was,Depth),
+  setup_call_cleanup(format('~N~@!mu~w! ~@ |~n',[dash_chars(Depth,' '), Type, print_title(Title)]),
+                     locally(b_setval('$collapsible_section',[Type|Was]),Goal), 
+                     format('~N~@¡mu~w¡~n',[dash_chars(Depth,' '), Type])).
 
 
 :- meta_predicate(trim_newlines(0)).
@@ -288,7 +296,7 @@ arc_nav_menu:-
   print_menu_cmd1((next_test,Prolog)),
   print_menu_cmd1((Prolog)),!.
 show_console_info:-
-  in_pp(PP),ppt(in_pp(PP)),!.
+  in_pp(PP),pp(in_pp(PP)),!.
 
 call_current_arc_cmd:- 
   call_current_arc_cmd(cmd),

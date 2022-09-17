@@ -22,24 +22,37 @@ print_collapsed0(_,G):- wots(S,G),write(S).
 
 tersify(I,O):- tracing,!,I=O.
 %tersify(I,O):- term_variables(I,Vs), \+ ( member(V,Vs), attvar(V)),!,I=O.
-tersify(I,O):- quietly((tersify2(I,M),tersify3(M,O))).
+tersify(I,O):- quietly((tersify2(I,M),tersify3(M,O))),!.
 
 %srw_arc(I,O):- is_grid(I),!, wots(O,(write('"'),print_grid(I),write('"'))).
-%srw_arc(I,O):- compound(I),!, wots(O,(write(ptt(I)))).
+%srw_arc(I,O):- compound(I),!, wots(O,(write(ppt(I)))).
 /*
 srw_arc(I,O):- is_grid(I),!, wots(O,(write('"'),print_grid(I),write('"'))).
 */
 srw_arc(I,O):- is_map(I),!, O='..vvmm..'.
 srw_arc(I,O):- is_grid(I),!, O='..grid..'.
+/*
+srw_arc(List,O):- current_prolog_flag(dmsg_len,Three),
+  is_list(List),length(List,L),L>Three,
+   append([A,B,C],[F|_],List),F \='...'(_), !, 
+  simplify_goal_printed([A,B,C,'....'(L>Three)],O).
+*/
 %srw_arc(gridFn(_),gridFn):-!.
 %srw_arc(I,O):- is_points_list(I), length(I,N),N>10,!,O='..points..'(N),!.
 %srw_arc(I,O):- is_list(I), length(I,N),N>10,!,O='..points..'(N),!.
-srw_arc(I,O):- tersify(I,O),I\==O,!.
+srw_arc(I,O):- tersify(I,O),!,I\==O,!.
 
 :- multifile(dumpst_hook:simple_rewrite/2).
 :- dynamic(dumpst_hook:simple_rewrite/2).
 
-%dumpst_hook:simple_rewrite(I,O):- compound(I), srw_arc(I,O), I\=@=O.
+dumpst_hook:simple_rewrite(I,O):- 
+  current_predicate(bfly_startup/0),
+  current_predicate(is_group/1), 
+  \+ nb_current(arc_can_portray,nil),
+  b_setval(arc_can_portray,nil),
+  locally(b_setval(arc_can_portray,nil),once((compound(I), lock_doing(srw_arc,I,srw_arc(I,O))))), I\==O, I\=@=O, !, \+ I=O,
+  b_setval(arc_can_portray,t).
+
 
 
 portray_terse:- true,!.
@@ -60,9 +73,9 @@ arc_portray(G, TF):- catch(arc_portray_nt(G, TF),_,fail),!.
 
 arc_portray_nt(G,false):- is_grid(G), print_grid(G),!.
 
-arc_portray_nt(G0, _):- is_list(G0), length(G0,L),L>3, ptt(G0),!.
-arc_portray_nt(G0, true):- is_group(G0), ptt(G0),!.
-%arc_portray_nt(G0, false):- is_group(G0), ptt(G0),!.
+arc_portray_nt(G0, _):- is_list(G0), length(G0,L),L>3, ppt(G0),!.
+arc_portray_nt(G0, true):- is_group(G0), ppt(G0),!.
+%arc_portray_nt(G0, false):- is_group(G0), ppt(G0),!.
 arc_portray_nt(G0, false):- is_group(G0), into_list(G0,G), length(G,L),% L>1, !,
    dash_chars, 
    once(((why_grouped(_TestID,Why,WG),WG=@=G,fail);(Why = (size=L)))),!,
@@ -72,7 +85,7 @@ arc_portray_nt(G0, false):- is_group(G0), into_list(G0,G), length(G,L),% L>1, !,
    dash_chars.
 
 
-arc_portray_nt(G,_False):- is_object(G), wots(S,ptt(G)), debug_as_grid(S,G).
+arc_portray_nt(G,_False):- is_object(G), wots(S,ppt(G)), debug_as_grid(S,G).
   %object_grid(G,OG), 
   %neighbor_map(OG,NG), !,
   %print_grid(object_grid,NG),nl,
@@ -81,8 +94,8 @@ arc_portray_nt(G,_False):- is_object(G), wots(S,ptt(G)), debug_as_grid(S,G).
 arc_portray_nt(G,false):- via_print_grid(G),!, grid_size(G,H,V),!,H>0,V>0, print_grid(H,V,G).
 
 % Portray In tracer
-arc_portray_nt(G,true):- is_object(G),underline_print((ptt(G))).
-arc_portray_nt(G,true):- via_print_grid(G),write_nbsp,underline_print((ptt(G))),write_nbsp.
+arc_portray_nt(G,true):- is_object(G),underline_print((ppt(G))).
+arc_portray_nt(G,true):- via_print_grid(G),write_nbsp,underline_print((ppt(G))),write_nbsp.
 arc_portray_nt(G,true):- tersify(G,O),write_nbsp,writeq(O),write_nbsp.
 
 
@@ -200,28 +213,28 @@ write_map(G,Where):- is_dict(G), !, write('...Dict_'),write(Where),write('...').
 write_map(G,Where):- is_map(G), !, write('...Map_'),write(Where),write('...').
 write_map(_G,Where):- write('...'),write(Where),write('...').
 
-ptt(_):- is_print_collapsed,!.
-ptt(G):- is_map(G), !, write_map(G,'ptt').
-ptt(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-ptt(P):- \+ \+ ((tersify(P,Q),!,ppt(Q))),!.
-ptt(C,P):- \+ \+ ((tersify(P,Q),!,ppt(C,Q))),!.
-
-ppt(Color,P):- ignore((quietlyd((wots(S,ptcol(P)),!,color_print(Color,S))))).
-ptcol(call(P)):- callable(P),!,call(P).
-ptcol(P):- ppt(P).
-
-ptc(Color,Call):- ppt(Color,call(Call)).
-
-
 ppt(_):- is_print_collapsed,!.
-ppt(P):- format('~N'), ppt_no_nl(P),!,format('~N').
+ppt(G):- is_map(G), !, write_map(G,'ppt').
+ppt(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+ppt(P):- \+ \+ ((tersify(P,Q),!,pp(Q))),!.
+ppt(C,P):- \+ \+ ((tersify(P,Q),!,pp(C,Q))),!.
 
-ppt_no_nl(P):- var(P),!,ppt(var_pt(P)),nop((dumpST,break)).
-ppt_no_nl(P):- atomic(P),atom_contains(P,'~'),!,format(P).
-ppt_no_nl(G):- is_map(G), !, write_map(G,'ppt').
-ppt_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-ppt_no_nl(P):- \+ \+ (( pt_guess_pretty(P,GP),ptw(GP))).
-%ppt(P):-!,writeq(P).
+pp(Color,P):- ignore((quietlyd((wots(S,ptcol(P)),!,color_print(Color,S))))).
+ptcol(call(P)):- callable(P),!,call(P).
+ptcol(P):- pp(P).
+
+ptc(Color,Call):- pp(Color,call(Call)).
+
+
+pp(_):- is_print_collapsed,!.
+pp(P):- format('~N'), pp_no_nl(P),!,format('~N').
+
+pp_no_nl(P):- var(P),!,pp(var_pt(P)),nop((dumpST,break)).
+pp_no_nl(P):- atomic(P),atom_contains(P,'~'),!,format(P).
+pp_no_nl(G):- is_map(G), !, write_map(G,'pp').
+pp_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+pp_no_nl(P):- \+ \+ (( pt_guess_pretty(P,GP),ptw(GP))).
+%pp(P):-!,writeq(P).
 %ptw(P):- quietlyd(print_tree_nl(P)),!.
 ptw(_):- format('~N'),fail.
 ptw(P):- var(P),!,ptw(var_ptw(P)),nop((dumpST,break)).
@@ -247,16 +260,18 @@ pt_guess_pretty_1(P,O):- copy_term(P,O,_),
 pretty_clauses:pp_hook(_,Tab,S):- is_vm(S),!,prefix_spaces(Tab),!,write('..VM..').
 pretty_clauses:pp_hook(_,Tab,S):- term_is_ansi(S), !,prefix_spaces(Tab), write_keeping_ansi(S).
 pretty_clauses:pp_hook(FS,_  ,G):- 
-  current_predicate(is_group/1),locally(b_setval(pp_parent,FS),print_with_pad(pp_hook_g(G))),!.
+  current_predicate(is_group/1),
+   locally(b_setval(pp_parent,FS),print_with_pad(pp_hook_g(G))),!.
 
-pp_parent(PP):- nb_current(pp_parent,PP).
+pp_parent(PP):- nb_current(pp_parent,PP),!.
+pp_parent([]):-!.
 
 lock_doing(Lock,G,Goal):- 
  (nb_current(Lock,Was);Was=[]), !, 
   \+ ((member(E,Was),E==G)),
   locally(nb_setval(Lock,[G|Was]),Goal).
 
-pp_hook_g(G):- \+ plain_var(G), lock_doing(in_pp_hook_g,G,pp_hook_g1(G)).
+pp_hook_g(G):- \+ plain_var(G), \+ nb_current(arc_can_portray,nil), lock_doing(in_pp_hook_g,G,pp_hook_g1(G)).
 
 
 
@@ -273,12 +288,12 @@ pp_hook_g1(O):-  is_grid(O),
 pp_hook_g1(O):- atom(O), atom_contains(O,'o_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
   resolve_reference(O,Var), O\==Var, \+ plain_var(Var),!, 
   write(' '), writeq(O), write(' /* '), debug_as_grid(Var), write(' */ ').
-pp_hook_g1(O):-  is_object(O),ppt_no_nl(O), !.
-pp_hook_g1(O):-  is_group(O),ppt_no_nl(O), !.
+pp_hook_g1(O):-  is_object(O),pp_no_nl(O), !.
+pp_hook_g1(O):-  is_group(O),pp_no_nl(O), !.
 pp_hook_g1(O):-  is_map(O),write('map'),!.
 pp_hook_g1(O):-  is_gridoid(O),debug_as_grid(O), !.
 pp_hook_g1(O):-  is_points_list(O),debug_as_grid(O), !.
-pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  with_tagged('h5',collapsible_section(object,[O1, O2],ppt(O))).
+pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  with_tagged('h5',collapsible_section(object,[O1, O2],pp(O))).
 %pp_hook_g1(O):-  O = diff(A -> B), (is_gridoid(A);is_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
 pp_hook_g1(O):-  O = showdiff( O1, O2), !, showdiff(O1, O2).
 
@@ -295,8 +310,8 @@ pp_hook_g1(T):-
    ; locally(b_setval('$portraying',[T]),ptv0(T)).
 */
 
-%pp_hook_g(G):- compound(G),ptt(G),!.
-%pp_hook_g(G):- ptt(G),!.
+%pp_hook_g(G):- compound(G),ppt(G),!.
+%pp_hook_g(G):- ppt(G),!.
 
 
 strip_vspace(S,Stripped):- string_concat(' ',SS,S),!,strip_vspace(SS,Stripped).
@@ -325,7 +340,7 @@ wqs([H|T]):- !, wqs(H),need_nl(H,T), wqs(T).
 wqs(format(C,N)):- !, format(C,N).
 wqs(writef(C,N)):- !, writef(C,N).
 wqs(call(C)):- !, call(C).
-wqs(ppt(C)):- !, ppt(C).
+wqs(pp(C)):- !, pp(C).
 wqs(g(C)):- !, write_nbsp, bold_print(writeq(g(C))).
 wqs(io(C)):- !, write_nbsp, bold_print(writeq(io(C))).
 wqs(q(C)):- !, write_nbsp, writeq(C).
@@ -628,7 +643,7 @@ print_equals(colors,XY):-print_equals(cc,XY).
 print_equals(Name,X=Y):- !, print_equals(Name=X,Y).
 %print_equals(Name,[H|L]):- !, maplist(print_equals(Name),[H|L]).
 print_equals(Name,Val):- is_list(Val),forall(nth0(N,Val,E),print_equals(Name:N,E)).
-print_equals(Name,Val):- ppt(Name=Val).
+print_equals(Name,Val):- pp(Name=Val).
 
 commawrite(S):- write(','),write(S).
 
@@ -691,7 +706,7 @@ print_grid0(H,V,D):- is_map(D),ignore(H = D.h),ignore(V = D.v),
   vm_to_printable(D,R),D\==R,!,print_grid0(H,V,R).
 
 print_grid0(H,V,Grid):- \+ callable(Grid),!,write('not grid: '),
-  GG= nc_print_grid(H,V,Grid), ppt(GG),!,nop(trace_or_throw(GG)).
+  GG= nc_print_grid(H,V,Grid), pp(GG),!,nop(trace_or_throw(GG)).
 
 
 print_grid0(H,V,SIndvOut):- compound(SIndvOut),SIndvOut=(G-GP), \+ is_nc_point(GP),!, 
@@ -783,12 +798,20 @@ ansi_format_real(Ansi,Format,Args):- set_html_stream_encoding,ansi_format(Ansi,F
 
 set_html_stream_encoding:- set_stream_encoding(utf8).
 
-as_html_encoded(Goal):- 
+as_html_encoded(Goal):- with_enc(utf8,Goal).
+
+with_enc(Enc,Goal):-
  stream_property(current_output,encoding(Was)),
+ setup_call_cleanup(current_prolog_flag(encoding,EncWas),
+ (( ignore(catch(set_prolog_flag(encoding,Enc),_,true)),
+    current_prolog_flag(encoding,EncNew),
+     locally(set_prolog_flag(encoding,EncNew),
  setup_call_cleanup(
-   set_stream_encoding(utf8),
+       set_stream_encoding(Enc),
    Goal,
-   set_stream_encoding(Was)).
+       set_stream_encoding(Was))))),
+       set_prolog_flag(encoding,EncWas)).
+      
 
 set_stream_encoding(Text):- 
  %set_prolog_flag(encoding,Text),
@@ -927,7 +950,7 @@ print_grid_ansi(SH,SV,EH,EV,GridI):-
      (( \+ ground(GridI));sub_var(wbg,GridI);sub_var(bg,GridI);sub_var(wfg,GridI);sub_var(fg,GridI)),
       grid_colors(GridI,CGrid),
       (nb_current(print_sbs,left)-> (nl,nl, write(left), write(=)) ; true),
-     print_attvars(CGrid))).
+     ppa(CGrid))).
 
  /*
          "#000000",  # 0: black

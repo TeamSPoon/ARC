@@ -237,7 +237,7 @@ must_det_ll(X):-
   strip_module(X,M,P),functor(P,F,A),setup_call_cleanup(nop(trace(M:F/A,+fail)),(must_not_error(X)*->true;must_det_ll_failed(X)),
     nop(trace(M:F/A,-fail))).
 
-must_not_error(X):- catch(X,E,(E=='$aborted'-> throw(E);(/*arcST,*/writeq(E=X),ppt(rrtrace=X),rrtrace(X)))).
+must_not_error(X):- catch(X,E,(E=='$aborted'-> throw(E);(/*arcST,*/writeq(E=X),pp(rrtrace=X),rrtrace(X)))).
 
 must_det_ll_failed(X):- notrace,wdmsg(failed(X))/*,arcST*/,nortrace,trace,rrtrace(X),!.
 % must_det_ll(X):- must_det_ll(X),!.
@@ -680,7 +680,7 @@ make_training(TestID,VMO):-
      inC:_InC,outC:_OutC,
      removed:_,added:_, kept:_,   
      grid_in:_,grid_target:_,
-   set(VM.mappings) =[map])), !. % ppt(VM),nl.
+   set(VM.mappings) =[map])), !. % pp(VM),nl.
   */
 
 
@@ -768,10 +768,10 @@ train_for_objects_from_1pair1(Dict0,TestID,Desc,InA,OutA,Dict1):-
  atom_concat(IO1,N1,ION1),
  atom_concat(IO2,N2,ION2),
  atomic_list_concat([ION1,ION2],'_',ExampleNum),
- ppt([train_for_objects_from_1pair1=ExampleNum,left=ION1,right=ION2]),
+ pp([train_for_objects_from_1pair1=ExampleNum,left=ION1,right=ION2]),
  garbage_collect,
   Dict0=Dict1,
-   format('~N dict= '), ppt(Dict0),
+   format('~N dict= '), pp(Dict0),
 
    %get_map_pairs(Dict0,_Type,Pairs),
    %list_to_rbtree_safe(Pairs,InVM),
@@ -808,14 +808,14 @@ train_for_objects_from_1pair1(Dict0,TestID,Desc,InA,OutA,Dict1):-
   show_pair_grid(cyan,IH,IV,OH,OV,original(InVM.id),original(OutVM.id),PairName,In,Out),!,
   max_min(IH,OH,IOH,_), max_min(IV,OV,IOV,_),
   luser_setval(no_rdot,true),
-  ((Removed==Added, Removed==[]) -> ppt(yellow,nothing_removed_added(PairName)) ;
+  ((Removed==Added, Removed==[]) -> pp(yellow,nothing_removed_added(PairName)) ;
     show_pair_diff_code(IOH,IOV,IOH,IOV,removed(PairName),added(PairName),PairName,Removed,Added)),
-  ((RetainedIn==RetainedOut, RetainedIn==[]) -> ppt(yellow,nothing_retained(PairName)) ;
+  ((RetainedIn==RetainedOut, RetainedIn==[]) -> pp(yellow,nothing_retained(PairName)) ;
     show_pair_diff_code(IH,IV,   OH, OV,retained(ION1),retained(ION2),PairName,RetainedIn,RetainedOut)),
-  ((InC==OutC, InC==[]) -> ppt(yellow,nothing_individuated(PairName)) ;
-    show_pair_diff_code(IH,IV,   OH, OV,individuated(ION1),individuated(ION2),PairName,InC,OutC)),!, 
+  ((InC==OutC, InC==[]) -> pp(yellow,nothing_individuated(PairName)) ;
+    show_pair_diff_code(IH,IV,   OH, OV,individuated1(ION1),individuated1(ION2),PairName,InC,OutC)),!, 
   luser_setval(no_rdot,false),
-   % ppt(OutC=InC),
+   % pp(OutC=InC),
 
    ignore(( learn_rule_o(ModeIn,InVM,OutVM))),
 
@@ -831,7 +831,7 @@ show_pair_diff_code(IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
   nop(show_pair_code(In,Out)),!.
 
 show_pair_code(In,Out):- 
-  ppt(purple,show_objs_as_code),
+  pp(purple,show_objs_as_code),
   dash_chars,
   show_objs_as_code(In),
   dash_chars,
@@ -839,7 +839,7 @@ show_pair_code(In,Out):-
   dash_chars,dash_chars.
 
 print_testinfo(TestID):-
-  ignore(((test_info(TestID,F),forall(member(I,F),ppt(test_info=I))))).
+  ignore(((test_info(TestID,F),forall(member(I,F),pp(test_info=I))))).
 
 % trials(learn). trials(clue).   
 trials(human). trials(sol).
@@ -904,7 +904,7 @@ solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut):-
     gset(InVM.grid_target) = _,
     must_det_ll((
     %print(training(Training)),nl,
-    %ptt(InVM),
+    %ppt(InVM),
     dash_chars, dash_chars,    
     %print_testinfo(TestID),
     do_sols_for(Trial,"Taking Test",InVM,TestID,ExampleNum))).
@@ -912,12 +912,12 @@ solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut):-
     % find indiviuation one each side that creates the sameR number of changes
     
 do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
- must_det_ll(( ptt("BEGIN!!!"+Why+TestID*ExampleNum), 
+ must_det_ll(( ppt("BEGIN!!!"+Why+TestID*ExampleNum), 
     kaggle_arc_io(TestID,ExampleNum,out,ExpectedOut),
     forall(sols_for(TestID,Trial,SolutionProgram),
      ignore(((
-      once((ppt(cyan,trial=Trial),
-       ptt(cyan,run_dsl(TestID*ExampleNum,Trial,SolutionProgram)),!,
+      once((pp(cyan,trial=Trial),
+       ppt(cyan,run_dsl(TestID*ExampleNum,Trial,SolutionProgram)),!,
        (time((
               maybe_set_vm(InVM),
               kaggle_arc_io(TestID,ExampleNum,in,TestIn),
@@ -936,7 +936,7 @@ do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
        ;arcdbg(warn(unrunable(TestID,ExampleNum,SolutionProgram))))))),
     print_grid("our grid", InVM.grid),!,
     print_list_of("our objs",InVM.objs),
-    ptt("END!!!"+Why+TestID+ExampleNum))),!.
+    ppt("END!!!"+Why+TestID+ExampleNum))),!.
    
 
 
@@ -973,10 +973,10 @@ reuse_a_b(A,B,AA):-
   setq(A,oid(BOID),AA),
   object_glyph(A,GlyphA),
   object_glyph(B,GlyphB),
-  ignore((How ==[]-> nop(ppt(shared_object(GlyphB->GlyphA))); 
-    (ppt(same_object(GlyphA,GlyphB,How))))).
+  ignore((How ==[]-> nop(pp(shared_object(GlyphB->GlyphA))); 
+    (pp(same_object(GlyphA,GlyphB,How))))).
 
-test_regressions:- make, forall((clause(mregression_test,Body),ptt(Body)),must_det_ll(Body)).
+test_regressions:- make, forall((clause(mregression_test,Body),ppt(Body)),must_det_ll(Body)).
 :- arc_history1(test_regressions).
 
 :- dynamic(muarc_2_mods/2).
@@ -1016,10 +1016,12 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 %:- endif.
 
 %:- fixup_module_exports_now.  
-user:portray(Grid):- current_predicate(is_group/1), \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!.
+user:portray(Grid):- 
+   \+ nb_current(arc_can_portray,nil),
+   current_predicate(bfly_startup/0), \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!.
 
 %:- ignore(check_dot_spacing).
-bfly_starup:- print_test, menu, nop((next_test,previous_test)),demo.
+bfly_startup:- print_test, menu, nop((next_test,previous_test)),demo.
 
 :- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).

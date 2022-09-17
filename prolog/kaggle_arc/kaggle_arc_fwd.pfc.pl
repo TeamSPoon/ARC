@@ -38,6 +38,8 @@
 
 end_of_file.
 
+/*
+
 
 %:- def_pfc_operators.
 %:- module(system).
@@ -115,3 +117,5 @@ arc_test_property(T, common(comp(i-o, area)), area(n(X, X, d(0), a(0), r(1))))/v
 :- add_history((pfcAddF(startAll_3))).
 
 %:- module(system).
+
+*/

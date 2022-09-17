@@ -412,7 +412,7 @@ find_engulfs([Obj|ScanNext],OtherObjects,[NewObj|ScanRest]):-
   /*must_det_ll*/(find_engulfs(ScanNext,OtherObjects,ScanRest)).
 
 find_engulfs_objects(_,[],[]).
-find_engulfs_objects(Obj,_,[]):- has_prop(link(insideOf,_),Obj),!.
+%find_engulfs_objects(Obj,_,[]):- has_prop(link(insideOf,_),Obj),!.
 find_engulfs_objects(Obj,_,[]):- has_prop(link(contains,_),Obj),!.
 find_engulfs_objects(Obj,[Touched|ScanNext],[link(insideOf,Iv)|Engulfed]):-    
  once(contained_object(Obj,Touched)),!,
@@ -426,10 +426,9 @@ find_engulfs_objects(Obj,[Touched|ScanNext],[link(contains,Iv)|Engulfed]):-
 find_engulfs_objects(Obj,[_|ScanNext],Engulfed):- /*must_det_ll*/(find_engulfs_objects(Obj,ScanNext,Engulfed)),!.
 
 
-contained_object(O2,O1):-   
+contained_object(O2,O1):-
   O1 \== O2,
-  \+ has_prop(birth(glyphic),O2),
-  \+ has_prop(birth(glyphic),O1),
+  % \+ has_prop(birth(glyphic),O2), %\+ has_prop(birth(glyphic),O1),
   loc(O1,LowH1,LowV1),loc(O2,LowH2,LowV2), 
   LowH2 > LowH1, LowV2 > LowV1,
   v_hv(O1,H1,V1),v_hv(O2,H2,V2), 
@@ -455,7 +454,7 @@ find_contained(VM):-
 find_contained(_H,_V,_ID,Sofar,Sofar,[],[]).
 find_contained(_H,_V,_ID,[],[],NextScanPoints,NextScanPoints).
 find_contained(H,V,ID,[Found|Sofar],[Found|SofarInsteadM],NextScanPoints,NextScanPointsInstead):-
-  isz(Found,outline(_)),
+ must(nop(isz(Found,outline(_)))),
   once(find_contained_points(Found,NextScanPoints,ScanPointsInstead,ContainedPoints)),
   ContainedPoints\==[],
   %grid_size(Found,H,V),

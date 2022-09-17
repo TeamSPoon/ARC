@@ -275,7 +275,7 @@ get_current_suite_testnames(Set):-
   current_suite_testnames(X,Set).
 
 current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),!.  
-current_suite_testnames(X,Set):-  ppt(recreating(X)),
+current_suite_testnames(X,Set):-  pp(recreating(X)),
   findall(ID,call(X,ID),List), my_list_to_set_variant(List,Set),!,asserta(muarc_tmp:cached_tests(X,Set)).
 
 previous_test:-  get_current_test(TestID), get_previous_test(TestID,NextID), set_current_test(NextID).
@@ -486,7 +486,7 @@ some_test_info(TestID,III):- fav(TestID,III).
 
 :- dynamic(muarc_tmp:test_info_cache/2).
 :- retractall(muarc_tmp:test_info_cache(_,_)).
-test_info(TestID,InfoS):- var(TestID),!, ppt(recreating(test_info)),all_arc_test_name(TestID),test_info(TestID,InfoS).
+test_info(TestID,InfoS):- var(TestID),!, pp(recreating(test_info)),all_arc_test_name(TestID),test_info(TestID,InfoS).
 %test_info(TestID,InfoS):- \+ \+ muarc_tmp:test_info_cache(TestID,_),!,muarc_tmp:test_info_cache(TestID,InfoS).
 test_info(TestID,InfoS):- nonvar(TestID),once(fix_test_name(TestID,FTestID,_)),TestID\=@=FTestID,!,test_info(FTestID,InfoS).
 test_info(TestID,InfoS):- muarc_tmp:test_info_cache(TestID,InfoS),!.
@@ -518,9 +518,9 @@ test_names_by_fav_rev(Name):- test_names_ord_favs(AllS),reverse(AllS,AllR),membe
 :- dynamic(ord_favs/1).
 test_names_ord_favs(FavListS):- ord_favs(FavListS),!.
 test_names_ord_favs(FavListS):- 
-  ppt(recreating(test_names_ord_favs)), 
+  pp(recreating(test_names_ord_favs)), 
   findall(Name,fav(Name),FavList),list_to_set(FavList,FavListS),
-  ppt(done_recreating(ascending_hard)),  
+  pp(done_recreating(ascending_hard)),  
   asserta(ord_favs(FavListS)).
 
 alphabetical_v(Set):- findall(v(Name),all_arc_test_name(v(Name)),List),sort(List,Set).
@@ -568,7 +568,7 @@ write_ansi_file(F):- call(F,Set),
 :- dynamic(ord_hard/1).
 test_names_ord_hard(NamesByHard):- ord_hard(NamesByHard),!.
 test_names_ord_hard(NamesByHard):- 
-  ppt(recreating(test_names_ord_hard)),
+  pp(recreating(test_names_ord_hard)),
   findall(Hard-Name,(all_arc_test_name(Name),hardness_of_name(Name,Hard)),All),
   keysort(All,AllK),  maplist(arg(2),AllK,NamesByHardU),!,
   list_to_set(NamesByHardU,NamesByHard), 
@@ -578,7 +578,7 @@ test_names_ord_hard(NamesByHard):-
 :- retractall(ord_favs(_)),retractall(ord_hard(_)).
 
 ascending_hard:-
-  ppt(recreating(ascending_hard)),
+  pp(recreating(ascending_hard)),
   tell('arc_ascending.pl'),
   forall(test_names_by_hard(TestID),
     forall(kaggle_arc(TestID,ExampleNum,In,Out),format('~q.~n',[kaggle_arc_ord(TestID,ExampleNum,In,Out)]))),
@@ -662,9 +662,9 @@ test_hints_5(TestID,Trn,N,DictIn,DictOut):-
 print_test_hints(TestID):- 
   hardness_of_name(TestID,Hard),!,
   write('/*'),
-  ppt(hard=Hard),
+  pp(hard=Hard),
   %make_training_hints(TestID,print_test{},DictOut),
-  %ppt(all=DictOut),
+  %pp(all=DictOut),
   writeln('*/').
 
 
@@ -765,7 +765,7 @@ grid_arg(GRest,GR,GRest):- arg(N,GRest,GR), is_grid(GR),!,setarg(N,GRest,grid),!
 
 %:- style_check(-singleton).
 %whole(I,O):- is_group(I),length(I,1),I=O,!.
-%whole(I,O):- print_grid(I),ppt(I),into_obj(I,O).
+%whole(I,O):- print_grid(I),pp(I),into_obj(I,O).
 one_obj(I,I):- is_group(I),length(I,1),!.
 one_obj(I,I):- is_group(I),!.
 one_obj(I,I).
@@ -808,7 +808,7 @@ db_u(P1L,P1,P2L,P2,In,Out):- is_eval(P2,Prev,P2A),!,db_u(P1L,P1,[Prev|P2L],P2A,I
 %db(P1,P2,In,In):- t_or_t(freeze_for([P2],arc_assert(is_db(TF,P2))),is_db(TF,P2)).
 %db(P2,P1,In,In):- nonvar(Color), db_value(P1,In,TF),!,t_or_t(freeze_for([Color],arc_assert(is_db(TF,Color))),is_db(TF,Color)).
 db(P1,P2,In,Out):- db_u([],P1,[],P2,In,Out).
-db(X,Y,I,I):- ppt(db(X,Y)),ppt(I).
+db(X,Y,I,I):- pp(db(X,Y)),pp(I).
 
 
 
