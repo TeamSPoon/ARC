@@ -282,6 +282,8 @@
     };
 
     Terminal.prototype.equalAttr = function(a, b) {
+      if(a===undefined) return false;
+      if(b===undefined) return false;
       return a.bg === b.bg && a.fg === b.fg && a.bold === b.bold && a.underline === b.underline && a.blink === b.blink && a.inverse === b.inverse && a.invisible === b.invisible && a.italic === b.italic && a.faint === b.faint && a.crossed === b.crossed;
     };
 

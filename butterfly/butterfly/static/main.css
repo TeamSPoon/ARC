@@ -130,12 +130,14 @@
 body {
   font-family:  "SourceCodePro",'Noto Sans Mono CJK', sans-serif;
   font-size: 1em;
-  display:inline-block;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
   line-height: 1.13; }
 
 span.mc-10 {
     width: 10px; 
+    display:inline-block; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
     max-width: 13ch;
 }
   

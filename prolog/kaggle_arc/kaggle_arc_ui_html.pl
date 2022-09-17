@@ -33,13 +33,6 @@
 :- use_module(library(http/http_files)).
 :- use_module(library(http/websocket)).
 
-/*
-:- if(current_module(logicmoo_arc)).
-:- use_module(library(xlisting/xlisting_web)).
-:- use_module(library(xlisting/xlisting_web)).
-:- use_module(library(xlisting/xlisting_web_server)).
-:- endif.
-*/
 
 :- meta_predicate(noisey_debug(0)).
 noisey_debug(Goal):- collapsible_section(debug,Goal).
@@ -69,13 +62,20 @@ collapsible_section(Type,Title,true,Goal):-
                      locally(b_setval('$collapsible_section',[Type|Was]),wots(S,Goal)), 
                      format('~N~w~@¡mu~w¡~n',[S,dash_chars(Depth,' '), Type])).
 */
-collapsible_section(Type,Title,_,Goal):-
-  (nb_current('$collapsible_section',Was);Was=[]),
-  length(Was,Depth),
-  setup_call_cleanup(format('~N~@!mu~w! ~@ |~n',[dash_chars(Depth,' '), Type, print_title(Title)]),
-                     locally(b_setval('$collapsible_section',[Type|Was]),Goal), 
-                     format('~N~@¡mu~w¡~n',[dash_chars(Depth,' '), Type])).
+collapsible_section(Tag,Title,_,Goal):-
+  once(nb_current('$collapsible_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),
+  setup_call_cleanup(format('~N~w!mu~w! ~@ |~n',[Ident, Tag, print_title(Title)]),
+                     locally(b_setval('$collapsible_section',[c(Tag)|Was]),tabbed_print_im(Depth+2,Goal)), 
+                     format('~N~w¡mu~w¡ ',[Ident, Tag])).
 
+with_tagged(Tag,Goal):- 
+  once(nb_current('$collapsible_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),
+  setup_call_cleanup(
+    bfly_html_goal(format('~w<~w> ~N',[Ident,Tag])),
+    locally(b_setval('$collapsible_section',[h(Tag)|Was]),tabbed_print_im(Depth+2,(Goal))),
+    bfly_html_goal(format('~w</~w> ',[Ident,Tag]))).
+
+tabbed_print_im(Tab,Goal):- Tab2 is Tab, tabbed_print(Tab2,Goal).
 
 :- meta_predicate(trim_newlines(0)).
 trim_newlines(Goal):- wots(S,Goal),trim_leading_trailing_whitespace(S,SS),write(SS).
@@ -147,7 +147,11 @@ user:file_search_path(arc,  AbsolutePath):- arc_sub_path('.',AbsolutePath).
 
 start_arc_server :-
     default_port(Port),
-    start_arc_server(Port).
+    start_arc_server(Port),
+    use_module(library(xlisting/xlisting_web)),
+    use_module(library(xlisting/xlisting_web_server)),
+    arc_http_server.
+
 start_arc_server(Port) :-
     http_server(http_dispatch, [port(Port)]).
 
@@ -200,6 +204,11 @@ arc_http_server:- http_server(http_dispatch, [port(17666)]),
 %:- http_handler('/favicon.ico', http_reply_file('favicon.ico', []), []).
 
 %http:location(images,	root(images), []).
+
+webui_tests:-
+  test_print_tree,
+  bfly_tests.
+
 
 no_web_dbg:-
   unsetenv('DISPLAY'),

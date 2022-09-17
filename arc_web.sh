@@ -15,7 +15,7 @@ do
  cd $LM_ARC_BASE/butterfly
  pip install --force-reinstall .
  cd $LM_ARC_BASE
- export BFLYCMD="$LM_ARC_BASE/prolog/kaggle_arc/Kaggle_arc.sh -t user:bfly_startup ${@} LM_ARC_BASE=$LM_ARC_BASE"
+ export BFLYCMD="$LM_ARC_BASE/prolog/kaggle_arc/Kaggle_arc.sh -t user:bfly_startup -- ${@} LM_ARC_BASE=$LM_ARC_BASE"
  butterfly.server.py --port=7771 --unsecure --i-hereby-declare-i-dont-want-any-security-whatsoever --cmd="${BFLYCMD}" --force-unicode-width
 done
 stty sane

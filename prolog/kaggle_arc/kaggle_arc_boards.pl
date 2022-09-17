@@ -383,20 +383,24 @@ keep_flipD(I,O):- grid_size(I,H,V),make_grid(V,H,O),
       (X>=Y,get_color_at(X,Y,I,C),
        nb_set_local_point(Y,X,C,O)))).
 
-:- decl_pt(prop_h,reduce_grid_y(is_grid,loc)).
-%:- decl_pt(prop_h,reduce_grid_y(is_grid,list,grid)).
+
+
+:- decl_pt(reduce_grid_y(is_grid,loc)).
 reduce_grid_y(Grid,reduced(OP,GridR)):- reduce_grid_y(Grid,OP,GridR).
+:- decl_pt(reduce_grid_y(is_grid,list,grid)).
 reduce_grid_y(Grid,OP,GridR):- reduce_grid_y(Grid,[Grid],OP,GridR).
 %reduce_grid_y(Grid,Reduced):- append(Left,[A,B|Right],Grid), A=B,append(Left,[A|Right],GridM),reduce_grid(Grid,Reduced).
 reduce_grid_y(NR,_,[],NR):-!.
 reduce_grid_y(Grid,NBC,[OP|More],Reduced):- reduce_op(Grid,OP,GridR),  Grid\==GridR, \+ (member(E,NBC), E==GridR), !, reduce_grid_y(GridR,[GridR|NBC],More,Reduced).
 reduce_grid_y(Grid,NBC,[OP|More],Reduced):-  xform_op(Grid,OP,GridR),  Grid\==GridR, \+ (member(E,NBC), E==GridR), !, reduce_grid_y(GridR,[GridR|NBC],More,Reduced).
 reduce_grid_y(Grid,_,[],Grid).
-
-:- decl_pt(prop_h,reduce_grid_x(is_grid,loc)).
-%:- decl_pt(prop_h,reduce_grid_x(is_grid,list,grid)).
+:- decl_pt(reduce_grid_x(is_grid,loc)).
 reduce_grid_x(Grid,reduced(OP,GridR)):- reduce_grid_x(Grid,OP,GridR).
+:- decl_pt(reduce_grid_x(is_grid,list,grid)).
 reduce_grid_x(Grid,Opers,Result):- rot90(Grid,GridR), !, reduce_grid_y(GridR,Opers,Result).
+
+:- decl_pt(prop_h,reduce_grid_xy(is_grid,loc)).
+reduce_grid_xy(Grid,rxy(X,Y)):- reduce_grid_x(Grid,X),reduce_grid_y(Grid,Y).
 
 
 %reduce_grid_y(Grid,res(Opers,Result)):- reduce_grid_y(Grid,Opers,res(Opers,Result)),!.

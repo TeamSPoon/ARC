@@ -293,15 +293,10 @@ pp_hook_g1(O):-  is_group(O),pp_no_nl(O), !.
 pp_hook_g1(O):-  is_map(O),write('map'),!.
 pp_hook_g1(O):-  is_gridoid(O),debug_as_grid(O), !.
 pp_hook_g1(O):-  is_points_list(O),debug_as_grid(O), !.
-pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  with_tagged('h5',collapsible_section(object,[O1, O2],pp(O))).
+%pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  with_tagged('h5',collapsible_section(object,[O1, O2],pp(O))).
+pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  collapsible_section(object,[O1, O2],with_tagged('h5',pp(O))).
 %pp_hook_g1(O):-  O = diff(A -> B), (is_gridoid(A);is_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
 pp_hook_g1(O):-  O = showdiff( O1, O2), !, showdiff(O1, O2).
-
-with_tagged(Tag,Goal):-
-  setup_call_cleanup(
-    bfly_html_goal(format('<~w>',[Tag])),
-    Goal,
-    bfly_html_goal(format('</~w>',[Tag]))).
 
 /*
 pp_hook_g1(T):- 
@@ -373,7 +368,7 @@ dash_chars:- dash_chars(40),!.
 dash_chars(H):- integer(H), dash_border(H).
 dash_chars(S):- format('~N'),dash_chars(60,S),format('~N').
 dash_chars(H,_):- H < 1,!.
-dash_chars(H,C):-forall(between(0,H,_),bformatc(C)).
+dash_chars(H,C):- forall(between(0,H,_),bformatc(C)).
 
 dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc('¯¯¯ ').
 dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('¯¯¯ ').
@@ -386,8 +381,8 @@ dash_uborder_no_nl(Width):- WidthM1 is Width-1, bformatc(' ¯'),dash_chars(WidthM
 dash_border_no_nl_1:-  line_position(current_output,0),!, bformatc(' ___ ').
 dash_border_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('___ ').
 dash_border_no_nl_1:- bformatc(' ___ ').
-dash_border_no_nl(1):- !,dash_border_no_nl_1.
-dash_border_no_nl(Width):- WidthM1 is Width-1, bformatc(' _'),dash_chars(WidthM1,'__').
+dash_border_no_nl(1):- format('~N'),!,dash_border_no_nl_1.
+dash_border_no_nl(Width):- format('~N'), WidthM1 is Width-1, bformatc(' _'),dash_chars(WidthM1,'__').
 
 dash_border(Width):- !, dash_border_no_nl(Width),nl,!.
 dash_uborder(Width):- format('~N'), WidthM1 is Width-1, bformatc(' ¯'),dash_chars(WidthM1,'¯¯'),nl.
@@ -1221,12 +1216,12 @@ i_glyph0(N,Glyph):- atom(N),atom_length(N,1),Glyph=N.
 i_glyph0(N,Glyph):- N>10, integer(N),N3 is N div 3, i_glyph0(N3,Glyph).
 %i_glyph(N,Glyph):- atom(N),atom_chars(N,Chars),last(Chars,LGlyph),upcase_atom(LGlyph,Glyph).
                                                                             
-i_sym(N2,Code):- integer(N2),!, N is N2, change_code(N,NN), iss:i_syms(Codes),nth0(NN,Codes,Code),!.
+i_sym(N2,Code):- integer(N2),!, N is N2+160, change_code(N,NN), iss:i_syms(Codes),nth0(NN,Codes,Code),!.
 i_sym(N2,Code):- atom(N2),name(N2,[C|_]),!,i_sym(C,Code).
 i_sym(N,Code):- plain_var(N), Code = 63.
 %change_code(N,M):- M is N * 100,!.
 %change_code(N,M):- N>10, M is (N * 10 ),!.
-change_code(N,N). % M is N+212.
+change_code(N,M):- M is N.
 
 
 print_g1(_,_, E):- print_g1(E),!. 

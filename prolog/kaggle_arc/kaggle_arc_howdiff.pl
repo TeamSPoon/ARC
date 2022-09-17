@@ -168,23 +168,28 @@ combine_diffs(D,D,D):-!.
 combine_diffs(D1,D2,L12):- listify(D1,L1),listify(D2,L2),!,append(L1,L2,L12).
 
 
-maybe_reorder_pair(A2,B2,A3,B3):- is_group(A2),is_group(B2),
+maybe_reorder_pair(A2,B2,A3,B3):- 
+  (A2\==[];B2\==[]),
+  is_group(A2),is_group(B2),
   once(final_alignment(A2,B2,A2,B2,A3,B3)),(A2\==A3;B2\==B3),!.
 
 final_alignment(_AR,_BR,[],[],[],[]):-!.
+
 final_alignment(AR,BR,AAR,BBR,[PA|G1],[PB|G2]):-
   select_obj_pair_1_3(AAR,BBR,PA,PB),
   select(PA,AAR,AA), select(PB,BBR,BB),
   final_alignment(AR,BR,AA,BB,G1,G2).
 %final_alignment([],[],AA,BB,AA,BB):-!.
-final_alignment(AAR,BR,[],BBR,[PA|G1],[PB|G2]):-
-  select_obj_pair_1_3(AAR,BBR,PA,PB),  
-  select(PA,AAR,AA), select(PB,BBR,BB),!,
-  final_alignment(AA,BR,[],BB,G1,G2).
-final_alignment(AR,BBR,AAR,[],[PA|G1],[PB|G2]):- 
-  select_obj_pair_1_3(AAR,BBR,PA,PB),
+final_alignment(AR,BR,[],BBR,[PA|G1],[PB|G2]):-
+  select_obj_pair_1_3(AR,BBR,PA,PB),  
   select(PA,AR,AA), select(PB,BBR,BB),!,
+  final_alignment(AA,BR,[],BB,G1,G2).
+
+final_alignment(AR,BR,AAR,[],[PA|G1],[PB|G2]):- 
+  select_obj_pair_1_3(AAR,BR,PA,PB),
+  select(PA,AR,AA), select(PB,BR,BB),!,
   final_alignment(AR,BB,AA,[],G1,G2).
+
 final_alignment(_,_,AA,BB,AA,BB):-!.
 
 
@@ -198,29 +203,29 @@ showdiff_groups(AG,BG):- once((proportional_how(AG,BG,DD), pp(cyan,proportional(
 showdiff_groups(AG,BG):-
   maplist(obj_grp_comparable,AG,A1),
   maplist(obj_grp_comparable,BG,B1),
-  
-  showdiff_groups(A1,B1,
+  showdiff_groups5(A1,B1,
       [compare_objs1([perfect]),
        compare_objs1([turned,+loc]),
        compare_objs1([turned,-loc]),
        compare_objs1([moved]),
        compare_objs1([sameR])],
                   A3,B3),  
+
   final_alignment(A1,B1,A3,B3,A4,B4),
-  ((AG==A4, fail) -> true ; length(A4,LenA),ignore((LenA>0,dash_chars)),print_list_of(inputUniqs=LenA,A4), dash_chars),
-  ((BG==B4, fail) -> true ; length(B4,LenB),print_list_of(outputUniqs=LenB,B4), dash_chars),
+  ((AG==A4, fail) -> true ; length(A3,LenA3),length(A4,LenA4),ignore((LenA4>0,dash_chars)),print_list_of(inputUniqs=LenA3/LenA4,A4), dash_chars),
+  ((BG==B4, fail) -> true ; length(B3,LenB3),length(B4,LenB4),print_list_of(outputUniqs=LenB3/LenB4,B4), dash_chars),
   diff_groups(A4,B4,Diff),
   pp(Diff),
   !.
 
-showdiff_groups(A,B,[],A,B):-!.
-showdiff_groups(A,B,[H|T],AAR,BBR):- !,
-  showdiff_groups(A,B,H,A1,B1),
-  showdiff_groups(A1,B1,T,AAR,BBR).
-showdiff_groups(A,B,Pred,AAR,BBR):- 
+showdiff_groups5(A,B,[],A,B):-!.
+showdiff_groups5(A,B,[H|T],AAR,BBR):- !,
+  showdiff_groups5(A,B,H,A1,B1),
+  showdiff_groups5(A1,B1,T,AAR,BBR).
+showdiff_groups5(A,B,Pred,AAR,BBR):- 
   pred_intersection(Pred,A,B,IntersectA,IntersectB,AAR,BBR),
-  collapsible_section(info,"Object Differences",true,
-   ignore((IntersectA\==[], maplist(showdiff_objects_vis(Pred),IntersectA,IntersectB)))).
+  ignore((IntersectA\==[], collapsible_section(info,"Object Differences",true,
+   maplist(showdiff_objects_vis(Pred),IntersectA,IntersectB)))).
 
 
 diff_groups2(AAR,BBR,proportional(DD,Diffs)):- proportional(AAR,BBR,DD), maplist(diff_objects,AAR,BBR,Diffs).
@@ -300,32 +305,51 @@ never_pair(PA,PB):- never_pair_r(PB,PA),!.
 never_pair_r(PA,PB):- member(pen([_-black]),PA),member(pen([_,_|_]),PB).
 
 
-diff_groups1([],[],[]):-!.
-diff_groups1([],B,right_over(BO)):- maplist(object_dglyphH,B,BO).
-diff_groups1(B,[],left_over(BO)):- maplist(object_dglyphH,B,BO).
-diff_groups1(AAR,BBR,DD):-
+diff_groups1(AAR,BBR,DD):- maybe_reorder_pair(AAR,BBR,AAR2,BBR2),!,  diff_groups1a(AAR2,BBR2,DD).
+diff_groups1(AAR,BBR,DD):- diff_groups1a(AAR,BBR,DD).
+
+diff_groups1a([],[],[]):-!.
+diff_groups1a([],B,right_over(BO)):- maplist(object_dglyphH,B,BO).
+diff_groups1a(B,[],left_over(BO)):- maplist(object_dglyphH,B,BO).
+diff_groups1a([PA|AA],[PB|BB],DD):-
+  diff_objects(PA,PB,DAB,Same),
+  (DAB == [] -> D = [] ;  
+     ((showdiff(PA,PB)),
+      object_dglyphH(PA,GA), 
+      object_dglyphH(PB,GB),
+      D = change_obj(GA,GB,Same,DAB))),  
+  diff_groups1a(AA,BB,D1),
+  combine_diffs(D1, D , DD),!.
+/*
+
+diff_groups1a(AAR,BBR,DD):-
   select_obj_pair_1_3(AAR,BBR,PA,PB),
-  select(PA,AAR,AA), select(PB,BBR,BB),
   diff_objects(PA,PB,DAB,Same),
   (DAB == [] -> D = [] ;  
      (nop(showdiff(PA,PB)),
       object_dglyphH(PA,GA), 
       object_dglyphH(PB,GB),
       D = change_obj(GA,GB,Same,DAB))),
-  diff_groups1(AA,BB,D1),
+  select(PA,AAR,AA), select(PB,BBR,BB),
+  diff_groups1a(AA,BB,D1),
   combine_diffs(D1, D , DD),!.
+*/
 
-diff_groups1(A,B,disjointed(SharedT,AOnlyT,BOnlyT,AO,BO)):- 
+diff_groups1a(A,B,disjointed(SharedT,AOnlyT,BOnlyT)):- 
   intersection(A,B,Shared,AOnly,BOnly),
   tersify_cheap(Shared,SharedT),
   tersify_cheap(AOnly,AOnlyT),
-  tersify_cheap(BOnly,BOnlyT),
-  maplist(object_dglyph,A,AO),maplist(object_dglyph,B,BO),!.
+  tersify_cheap(BOnly,BOnlyT).
 
 tersify_cheap(I,O):- tersify(I,O),!.
 
 
-object_dglyphH(PA,mass_pen(GA,Mass,Pen)):- obj_to_oid(PA,GA),mass(PA,Mass),pen(PA,Pen),!.
+object_dglyphH(PA,objFn(GA,loc(X,Y),ROT,Pen,ShapeID)):- 
+  obj_to_oid(PA,GA),% mass(PA,Mass),
+  shape(PA,Shape),pen(PA,Pen),loc(PA,X,Y), rotation(PA,ROT),
+  shape_id(Shape,ShapeID).
+ 
+
 object_dglyphH(PA,GA):- object_dglyph(PA,GA).
 
 unused_diff_groups0(AAR,BBR,DD):-
@@ -425,13 +449,14 @@ f_uncomparable_e(grid_size).
 :- style_check(-singleton).
 
 diff_objects(I,O,DiffsS):-  diff_objects(I,O,DiffsS,_Intersect).
-diff_objects(I,O,DiffsS,Intersect):-  
+diff_objects(I,O,DiffsS,Intersect):-    
   obj_make_comparable(I,II), obj_make_comparable(O,OO),!,
   intersection(II,OO,Intersect,IIR,OOR),!,
   findall(Diff, 
     (member(P,IIR),
       once((generalize(P,Q), member(Q,OOR))),
-      once(diff_terms(P,Q,Diff))),Diffs),flatten([Diffs],DiffsF),list_to_set(DiffsF,DiffsS).
+      once(diff_terms(P,Q,Diff))),Diffs),
+   flatten([Diffs],DiffsF),list_to_set(DiffsF,DiffsS).
 
   %(simular(Diffs,obj(I),obj(O),Sameness) ->  OUT = same_object(Sameness) ; OUT = props_diff(obj(I),obj(O),Diffs)).
 
@@ -514,7 +539,7 @@ showdiff_objects_vis(N,O1,O2):- showdiff_objects(vis(N),O1,O2).
 
 showdiff_objects(N,O1,O2):- diff_objects(O1,O2,Diffs,Sames), 
   showdiff_objects(N,O1,O2,Diffs),
-  noisey_debug(print_list_of(print_sames,sames(N),Sames)),
+  nop(noisey_debug(print_list_of(print_sames,sames(N),Sames))),
   dash_chars,dash_chars.
 
 print_sames(N):- write('\t'), writeq(N),nl.
@@ -522,7 +547,10 @@ print_sames(N):- write('\t'), writeq(N),nl.
 showdiff_objects(N,O1,O2,[]):- print_list_of(N,[O1,O2]),!.
 showdiff_objects(N,O1,O2,Diffs):- 
   dash_chars,dash_chars,
-  print_list_of(debug_as_grid,showdiff_objects(N),[O1,O2]),
+  print_side_by_side(silver,O1,diff(left),_,O2,diff(right)),print_list_of(debug_indiv,showdiff_objects(N),[O1,O2]),
+  %print_list_of(debug_as_grid,showdiff_objects(N),[O1,O2]),
+  
+  
   dash_chars,dash_chars,
   print_list_of(diffs,Diffs),
   dash_chars,dash_chars,
@@ -787,7 +815,7 @@ not_very_different(amass(A)):- !, not_very_different_t(A).
 not_very_different_t(difference(0)). not_very_different_t(ratio(1)). not_very_different_t(moved(0)).
 
 
-proportional_types(list,A,B,D):- !, proportional_lists(A,B,D).
+proportional_types(set,A,B,D):- !, proportional_lists(A,B,D).
 proportional_types(_How,A,B,D):- proportional(A,B,D).
 
 proportional_type_list([],[],[],[]):-!.
@@ -930,7 +958,7 @@ ratio_for0(Ratio,Out,_In):- 0 is Out, !, Ratio is +0.0.
 ratio_for0(Ratio,Out,In):- catch(Ratio is rationalize(Out/In),error(evaluation_error(_Zero_divisor),_),fail),!.
 ratio_for0(Ratio,Out,In):- catch(NRatio is rationalize(In/Out),error(evaluation_error(_Zero_divisor),_),fail),!, Ratio is -NRatio.
 
-:- decl_pt(prop_h,each_object(is_grid, list)).
+:- decl_pt(prop_h,each_object(is_grid, set)).
 
 %each_object(_Grid,[]):-!.
 each_object(Grid,ListO):- arc_memoized(individuate(complete,Grid,List)),!, simplify_objs(List,ListO).
@@ -944,14 +972,14 @@ simplify_objs(F,F).
 
 prefer_grid(G):- is_object_or_grid(G).
 
-:- decl_pt(prop_h,unique_colors(prefer_grid, list)).
+:- decl_pt(prop_h,unique_colors(prefer_grid, set)).
 :- decl_pt(prop_h,mass(is_object_or_grid,number)).
 
 :- decl_pt(prop_h,center_term(is_object,loc)).
 :- decl_pt(prop_h,loc_term(is_object,loc)).
 
-:- decl_pt(prop_h,has_y_rows(is_grid,colcount,color,list(rownums))).
-:- decl_pt(prop_h,has_x_columns(is_grid,rowcount,color,list(colnums))).
+:- decl_pt(prop_h,has_y_rows(is_grid,colcount,color,set(rownums))).
+:- decl_pt(prop_h,has_x_columns(is_grid,rowcount,color,set(colnums))).
 
 
 :- fixup_exports.

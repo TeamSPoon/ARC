@@ -277,7 +277,7 @@ individuation_macros(altro, [
 individuation_macros(do_ending, [
   find_touches,    
   find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
-  find_contained, % mark any "completely contained points"
+  % find_contained, % mark any "completely contained points"
   combine_same_globalpoints, % make sure any objects are perfectly the sameR part of the image are combined 
   %label_sizes,
   %combine_objects,
@@ -297,7 +297,7 @@ individuation_macros(complete, ListO):- test_config(indiv(ListO))-> true;
 %individuation_macros(complete, ListO):-  \+ test_config(indiv(_)),!, %reset_points, %sub_individuate(force_by_color,subshape_both), %TODO %
   findall(save_as_objects(From),individuator(From,_),ListM),
   append(ListM,[/*gather_cached*/
-    pointless([[sub_indiv([save_as_objects(force_by_color),save_as_objects(i_colormass)])],do_ending])],ListO).
+    pointless([sub_indiv([save_as_objects(force_by_color),save_as_objects(i_colormass),save_as_objects(i_nsew)]),do_ending])],ListO).
 %use_individuator(Some):- individuator(Some,_).
 
   
@@ -310,7 +310,9 @@ individuator(i_maybe_glypic,[maybe_glyphic]). %:- \+ doing_pair.
 %individuator(i_maybe_glypic,[whole]):- doing_pair.
 individuator(i_columns,[when(get(h)=<7,columns),do_ending]). %:- \+ doing_pair.
 individuator(i_rows,[when(get(v)=<7,rows),do_ending]). %:- \+ doing_pair.
-individuator(i_mono_nsew,[bg_shapes([subshape_both(h,nsew)])]).
+
+individuator(i_mono,[save_as_objects(bg_shapes([subshape_both(h,nsew)])),
+                          save_as_objects(bg_shapes([subshape_both(v,colormass)]))]).
 /*
 individuator(i_mono_nsew,
  [sub_individuate(
@@ -1306,14 +1308,11 @@ label_name_by_size(VM,IndvS0,Name):-
      must_det_ll((
       override_object([o(Name,sf(Len),nil),o(Name,lf(Len),nil)],IndvS0,IndvS1),
       label_sizes(Name,IndvS1,IndvLS,IndvSL),
-      %dash_chars,
-      %(( Name == i_mono_nsew ; Name == i_by_color) -> DebugThis = full ; luser_getval(debug,DebugThis)->true; DebugThis=true),
       (( Name == i_nsew ) -> DebugThis = full ; luser_getval(debug,DebugThis)->true; DebugThis=true),
       ( DebugThis\==false -> Feedback = debug_as_grid(Title) ; Feedback = print_info),
-      ignore((DebugThis\==false, print_grid(VM.h,VM.v,Title,IndvSL))),
-      ignore((DebugThis==full, print_list_of(pp,Title,IndvLS))),
-      % ignore((DebugThis==full, print_list_of(Feedback,Title,IndvLS))),
-      dash_chars,
+      nop(ignore((DebugThis\==false, print_grid(VM.h,VM.v,Title,IndvSL)))),
+      nop(ignore((DebugThis==full, print_list_of(pp,Title,IndvLS)))),
+      %dash_chars,
       addObjectOverlap(VM,IndvSL)))))),!.
 
 saved_named_objs(VM):-

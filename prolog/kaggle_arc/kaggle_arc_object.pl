@@ -508,6 +508,14 @@ indv_u_props(I,[ shape(C),  loc(X,Y),  pen(Ps),  rotation(Rot)]):-  shape(I,C),l
 %indv_u_props(I,[ shape(C),  center(X,Y),  pen(Ps),  rotation(Rot)]):- shape(I,C),center(I,X,Y),pen(I,Ps),rotation(I,Rot),!.
 %indv_u_props(I,[shape(Ps),center(X,Y),pen(Pen),v_hv(H,V),rotation(Rot)]):- center(I,X,Y),shape(I,Ps),pen(I,Pen),v_hv(I,H,V),rotation(I,Rot),!.
 
+:- dynamic(is_shape_id_for/2).
+is_shape_id_for([],sid_0).
+is_shape_id_for([point_01_01],sid_1).
+shape_id(Shape,ShapeID):- is_shape_id_for(Shape,ShapeID),!.
+shape_id(Shape,ShapeID):- term_hash(Shape,Hash), atomic_list_concat(['s',Hash],ShapeID), asserta(is_shape_id_for(Shape,ShapeID)).
+
+% eqq
+
 :- dynamic(is_iv_for/2).
 iv_for(L,Iv):- copy_term(L,CT,_),numbervars(CT,0,_,[attvar(bind),singletons(true)]),term_hash(CT,Fv),
  number(Fv), Iv is (Fv rem 800) + 1,!. % (\+ is_iv_for(Iv,_) -> asserta_if_new(is_iv_for(Iv,L)) ; true).
@@ -555,7 +563,10 @@ assert_object2(OID,Prop):- Prop=..[F|List], append(Pre,[Last],List),
 assert_object5(OID,F,Pre,Last,_List):- 
   AProp=..[cindv,OID,F,Pre,Last],
   % (\+ ground(AProp)->dumpST;true),
-  arc_assert(AProp).
+  arc_assert1(AProp).
+
+arc_assert1(A):- assertz_if_new(A),!.
+arc_assert1(A):- arc_assert(A).
  
 retract_object(GID,OID,_):- 
  retractall(gid_glyph_oid(GID,_,OID)),
