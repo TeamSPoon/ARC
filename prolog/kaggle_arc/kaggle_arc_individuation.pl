@@ -1078,7 +1078,7 @@ exceeded_objs_max_len(VM):-
   length(Objs,Count),
   Count > VM.objs_max_len,
   wdmsg(warn(Count > VM.objs_max_len)),
-  dumpST(2),
+  %dumpST(2),
   wdmsg(throw(exeeded_object_limit(Count > VM.objs_max_len))).
   
 
@@ -1164,7 +1164,9 @@ dir_mergeable_list(Ps1,Ps2,DirsOK,DirsNotOK):-
 mergable_dir(Ps1,Ps2,Dir):- member(C-P1,Ps1), member(C-P2,Ps2), is_adjacent_point(P1,Dir,P2),!.
 
 one_fti(VM,'rows'):-
-  maplist_n(1,row_to_indiv(VM), VM.grid_o).
+ Grid = VM.grid_o,
+ (\+ ground(Grid) -> true ;
+  maplist_n(1,row_to_indiv(VM), Grid)).
 
 row_to_indiv(VM,N,Row):-
   sameR([Row],Rot90),
@@ -1178,8 +1180,10 @@ row_to_indiv(VM,N,Row):-
   raddObjects(VM,Obj).
 
 one_fti(VM,'columns'):-
-  rot90(VM.grid_o,Grid90),
-  maplist_n(1,column_to_indiv(VM), Grid90).
+ Grid = VM.grid_o,
+ (\+ ground(Grid) -> true ;
+  rot90(Grid,Grid90),
+  maplist_n(1,column_to_indiv(VM), Grid90)).
 
 column_to_indiv(VM,N,Row):-  
   rot270([Row],Rot270),
