@@ -9,7 +9,7 @@
 :- endif.
 
 
-
+% make_grid(3,4)
 
 into_pipe(Grid,Grid):- !. % into_group
 into_pipe(Grid,Solution):- into_grid(Grid,Solution).

@@ -296,7 +296,8 @@ sub_individuation_macro(S,Some):-
 individuation_macros(complete, ListO):- test_config(indiv(ListO))-> true;
 %individuation_macros(complete, ListO):-  \+ test_config(indiv(_)),!, %reset_points, %sub_individuate(force_by_color,subshape_both), %TODO %
   findall(save_as_objects(From),individuator(From,_),ListM),
-  append(ListM,[/*gather_cached*/],ListO).
+  append(ListM,[/*gather_cached*/
+    pointless([[sub_indiv([save_as_objects(force_by_color),save_as_objects(i_colormass)])],do_ending])],ListO).
 %use_individuator(Some):- individuator(Some,_).
 
   
@@ -309,10 +310,14 @@ individuator(i_maybe_glypic,[maybe_glyphic]). %:- \+ doing_pair.
 %individuator(i_maybe_glypic,[whole]):- doing_pair.
 individuator(i_columns,[when(get(h)=<7,columns),do_ending]). %:- \+ doing_pair.
 individuator(i_rows,[when(get(v)=<7,rows),do_ending]). %:- \+ doing_pair.
+individuator(i_mono_nsew,[bg_shapes([subshape_both(h,nsew)])]).
+/*
 individuator(i_mono_nsew,
  [sub_individuate(
     bg_shapes([subshape_both(h,nsew)]),
    ([save_as_objects(force_by_color),save_as_objects(i_colormass)])),do_ending]).
+*/
+%individuator(i_subobjs,[sub_indiv([save_as_objects(force_by_color),save_as_objects(i_colormass)])]).
 
 %individuator(i_bg_nsew,[bg_shapes(subshape_both(h,nsew))]).
 %individuator(i_mono_colormass,[fg_shapes([subshape_both(v,colormass)])]).
@@ -462,29 +467,40 @@ sub_individuate(From,SubProgram,VM):-
     preserve_vm(VM,individuate7(_,ID2,SubProgram,Grid,WasInside)),
     raddObjects(VM,WasInside))),!.
 */
+pointless(Res,VM):-
+  set(VM.points) = [],
+  run_fti(VM,Res).
 
+is_fti_step(sub_indiv).
+sub_indiv(SubProgram,VM):-
+  OnlyNew = VM.objs,  
+  maplist(individuate_object(VM,VM.gid,SubProgram),OnlyNew,WasInside),
+  maplist(addObjects(VM),WasInside).
 
+individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
+ must_det_ll((
+   object_grid(OnlyNew,OGrid),
+   mapgrid(if_plain_then(black),OGrid,Grid),
+   object_glyph(OnlyNew,Glyph),
+   loc(OnlyNew,X,Y),
+   atomic_list_concat([GID,'_',Glyph,'_sub'],NewGID),
+   asserta(is_grid_tid(Grid,NewGID)),
+   set_vm(VM),!,
+   with_global_offset(X,Y,
+    individuate7(_,NewGID,SubProgram,Grid,WasInside)),!,
+   set_vm(VM))).
 
 % =====================================================================
 is_fti_step(sub_individuate).
 % =====================================================================
 sub_individuate(From,SubProgram,VM):-
   OldObjs = VM.objs,
-  ignore(fti(VM,From)),
+  ignore(run_fti(VM,From)),
   NewObjs = VM.objs,
   intersection(NewObjs,OldObjs,_,OnlyNew,_),
-  preserve_vm(VM,maplist(individuate_complete(VM.gid,SubProgram),OnlyNew,WasInside)),
+    preserve_vm(VM,maplist(individuate_object(VM, VM.gid,SubProgram),OnlyNew,WasInside)),
   maplist(addObjects(VM),WasInside),
   set_vm(VM).
-
-individuate_complete(GID,SubProgram,OnlyNew,WasInside):-
-  
-   object_grid(OnlyNew,Grid),
-   object_glyph(OnlyNew,Glyph),
-   loc(OnlyNew,X,Y),
-   atomic_list_concat([GID,'_',Glyph,'_sub'],NewGID), 
-   with_global_offset(X,Y,
-    individuate7(_,NewGID,SubProgram,Grid,WasInside)).
 
 
 % =====================================================================
@@ -1275,13 +1291,15 @@ is_fti_step(save_as_objects).
 % =====================================================================
 save_as_objects(Name,VM):-
   %Objs = VM.objs,!,
- Title = save_as_objects(Name),
  must_det_ll((
   Grid = VM.grid,
   %notrace(catch(call_with_depth_limit(individuate1(_,Name,VM.grid_o,IndvS0),20_000,R),E,(wdmsg(E)))),
   individuate1(_,Name,Grid,IndvS0),
-  % NewObjs = VM.objs,!,
-  %intersection(Objs,NewObjs,_Same,_Removed,IndvS0),
+  %maplist(override_object(iz(bp(Name))),IndvS0,IndvS1),
+  label_name_by_size(VM,IndvS0,Name))),!.
+
+label_name_by_size(VM,IndvS0,Name):- 
+  Title = save_as_objects(Name),
   fif((true;number(_R)),
    (length(IndvS0,Len),
     fif(Len>0,
@@ -1289,12 +1307,29 @@ save_as_objects(Name,VM):-
       override_object([o(Name,sf(Len),nil),o(Name,lf(Len),nil)],IndvS0,IndvS1),
       label_sizes(Name,IndvS1,IndvLS,IndvSL),
       %dash_chars,
-      ( luser_getval(debug,full) -> Feedback = debug_as_grid(Title) ; Feedback = print_info),
-      grid_size(Grid,H,V),
-      print_grid(H,V,Title,IndvSL),
-      print_list_of(Feedback,Title,IndvLS),
+      %(( Name == i_mono_nsew ; Name == i_by_color) -> DebugThis = full ; luser_getval(debug,DebugThis)->true; DebugThis=true),
+      (( Name == i_nsew ) -> DebugThis = full ; luser_getval(debug,DebugThis)->true; DebugThis=true),
+      ( DebugThis\==false -> Feedback = debug_as_grid(Title) ; Feedback = print_info),
+      ignore((DebugThis\==false, print_grid(VM.h,VM.v,Title,IndvSL))),
+      ignore((DebugThis==full, print_list_of(pp,Title,IndvLS))),
+      % ignore((DebugThis==full, print_list_of(Feedback,Title,IndvLS))),
       dash_chars,
-      addObjectOverlap(VM,IndvSL)))))))).
+      addObjectOverlap(VM,IndvSL)))))),!.
+
+saved_named_objs(VM):-
+  Objs = VM.objs,
+  %Grid = VM.grid,
+  findall(Name,feature_props(Name,Objs),Names),
+  list_to_set(Names,Props),
+  maplist(objs_with_feat(Objs),Props,Group),
+  maplist(label_name_by_size(VM),Group,Props).
+
+feature_props(Name,Objs):-
+  sub_term(E,Objs), ground(E), E = birth(_), E = Name.
+
+
+objs_with_feat(Objs,Name,Matches):-
+  include(has_prop(Name),Objs,Matches).
 
 addObjectOverlap(VM,IndvS2):- 
    append(IndvS2,VM.objs,IndvS3),
