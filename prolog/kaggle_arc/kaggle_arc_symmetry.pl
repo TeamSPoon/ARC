@@ -1909,14 +1909,14 @@ blackFree(E):- ignore(black=E).
 g_or_gc(_,G,G).
 %g_or_gc(G,_,G).
 
-flipSome1(Rot,X,Y):- flipSome(Rot,X,Y),X\=@=Y.
-flipSome1(sameR,X,X).
 
-flipSome(rot90,X,Y):- rot90(X,Y).
-flipSome(flipV,X,Y):-  flipV(X,Y).
-flipSome(rot270,X,Y):-  rot270(X,Y).
-flipSome(rot180,X,Y):- rot180(X,Y).
-flipSome(flipH,X,Y):-  flipH(X,Y).
+flipSome2(rot90,X,Y):- rot90(X,Y).
+flipSome2(rot180,X,Y):- rot180(X,Y).
+flipSome2(rot270,X,Y):-  rot270(X,Y).
+flipSome2(flipV,X,Y):-  flipV(X,Y).
+flipSome2(flipH,X,Y):-  flipH(X,Y).
+
+flipSome(R,X,Y):- flipSome2(R,X,Y).
 flipSome(flipD,X,Y):-  flipD(X,Y).
 flipSome(flipDHV,X,Y):-  flipDHV(X,Y).
 

@@ -234,13 +234,14 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
   iv_for([ shape(ColorlessPoints),  loc(LoH,LoV),  pen(PenColors),  rotation(RotG)],Iv),
   int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
   % atomic_list_concat(['o_',Glyph,'_',GID],OID),
-
+  shape_id(ColorlessPoints,ShapeID),
   append(
   [ [    
      shape(ColorlessPoints),
      pen(PenColors),
      rotation(RotG),
      center(CX,CY),
+     iz(sid(ShapeID)),
      
      
      s_hv(SH,SV),

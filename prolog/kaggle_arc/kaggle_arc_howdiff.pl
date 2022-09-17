@@ -211,7 +211,7 @@ showdiff_groups(AG,BG):-
        compare_objs1([sameR])],
                   A3,B3),  
 
-  final_alignment(A1,B1,A3,B3,A4,B4),
+  final_alignment([],[],A3,B3,A4,B4),
   ((AG==A4, fail) -> true ; length(A3,LenA3),length(A4,LenA4),ignore((LenA4>0,dash_chars)),print_list_of(inputUniqs=LenA3/LenA4,A4), dash_chars),
   ((BG==B4, fail) -> true ; length(B3,LenB3),length(B4,LenB4),print_list_of(outputUniqs=LenB3/LenB4,B4), dash_chars),
   diff_groups(A4,B4,Diff),
@@ -311,17 +311,6 @@ diff_groups1(AAR,BBR,DD):- diff_groups1a(AAR,BBR,DD).
 diff_groups1a([],[],[]):-!.
 diff_groups1a([],B,right_over(BO)):- maplist(object_dglyphH,B,BO).
 diff_groups1a(B,[],left_over(BO)):- maplist(object_dglyphH,B,BO).
-diff_groups1a([PA|AA],[PB|BB],DD):-
-  diff_objects(PA,PB,DAB,Same),
-  (DAB == [] -> D = [] ;  
-     ((showdiff(PA,PB)),
-      object_dglyphH(PA,GA), 
-      object_dglyphH(PB,GB),
-      D = change_obj(GA,GB,Same,DAB))),  
-  diff_groups1a(AA,BB,D1),
-  combine_diffs(D1, D , DD),!.
-/*
-
 diff_groups1a(AAR,BBR,DD):-
   select_obj_pair_1_3(AAR,BBR,PA,PB),
   diff_objects(PA,PB,DAB,Same),
@@ -333,8 +322,17 @@ diff_groups1a(AAR,BBR,DD):-
   select(PA,AAR,AA), select(PB,BBR,BB),
   diff_groups1a(AA,BB,D1),
   combine_diffs(D1, D , DD),!.
+/*
+diff_groups1a([PA|AA],[PB|BB],DD):-
+  diff_objects(PA,PB,DAB,Same),
+  (DAB == [] -> D = [] ;  
+     ((showdiff(PA,PB)),
+      object_dglyphH(PA,GA), 
+      object_dglyphH(PB,GB),
+      D = change_obj(GA,GB,Same,DAB))),  
+  diff_groups1a(AA,BB,D1),
+  combine_diffs(D1, D , DD),!.
 */
-
 diff_groups1a(A,B,disjointed(SharedT,AOnlyT,BOnlyT)):- 
   intersection(A,B,Shared,AOnly,BOnly),
   tersify_cheap(Shared,SharedT),

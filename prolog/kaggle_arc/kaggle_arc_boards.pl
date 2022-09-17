@@ -371,11 +371,15 @@ reduce_op(Grid,blur(flipD),Left):- flipD(Grid,GridR), GridR==Grid,!,keep_flipD(G
 */
 %reduce_op(Grid,blur(A,flipV),Left):- length(Grid,L),LS is floor(L/2),length(Left,LS),reverse(Left,Right), RS is L-LS, 
 %  (RS==LS->  (append(Left,Right,Grid),A=[]) ; (append(Left,[E|Right],Grid),A=[E])).
+reduce_op(G,M,O):- maybe_into_grid(G,GG),!,reduce_op(GG,M,O).
 reduce_op(Grid,left_right(Left),A):- length(Grid,L),LS is floor(L/2),between(1,LS,LR),LRR is LS-LR,length(Left,LRR),reverse(Left,Right), 
    append([Left,A,Right],Grid).
-reduce_op(Grid,copy(N1,N2),GridR):- length(Grid,L),nth1(N1,Grid,A,GridR),between(N1,L,N2),N2>N1, nth1(N2,Grid,B),A==B.
+reduce_op(Grid,copy_row(N1,N2),GridR):- once((length(Grid,L),nth1(N1,Grid,A,GridR),between(N1,L,N2),N2>N1, nth1(N2,Grid,B),A=@=B)).
 
-xform_op(Grid,rot90,GridR):- fail, rot90(Grid,GridR).
+left_right(Left,G,GOO):- reverse(Left,Right),append([Left,G,Right],GO),mapgrid(=,GO,GOO).
+copy_row(N1,N2,G,GOO):- nth1(N1,G,Row),N12 is N2-1,length(Left,N12),append(Left,Right,G),append(Left,[Row|Right],GO),mapgrid(=,GO,GOO).
+
+xform_op(Grid,rot270,GridR):- rot90(Grid,GridR).
 
 keep_flipD(I,O):- grid_size(I,H,V),make_grid(V,H,O),
   forall(between(1,H,X),
@@ -385,25 +389,36 @@ keep_flipD(I,O):- grid_size(I,H,V),make_grid(V,H,O),
 
 
 
-:- decl_pt(reduce_grid_y(is_grid,loc)).
-reduce_grid_y(Grid,reduced(OP,GridR)):- reduce_grid_y(Grid,OP,GridR).
-:- decl_pt(reduce_grid_y(is_grid,list,grid)).
-reduce_grid_y(Grid,OP,GridR):- reduce_grid_y(Grid,[Grid],OP,GridR).
-%reduce_grid_y(Grid,Reduced):- append(Left,[A,B|Right],Grid), A=B,append(Left,[A|Right],GridM),reduce_grid(Grid,Reduced).
-reduce_grid_y(NR,_,[],NR):-!.
-reduce_grid_y(Grid,NBC,[OP|More],Reduced):- reduce_op(Grid,OP,GridR),  Grid\==GridR, \+ (member(E,NBC), E==GridR), !, reduce_grid_y(GridR,[GridR|NBC],More,Reduced).
-reduce_grid_y(Grid,NBC,[OP|More],Reduced):-  xform_op(Grid,OP,GridR),  Grid\==GridR, \+ (member(E,NBC), E==GridR), !, reduce_grid_y(GridR,[GridR|NBC],More,Reduced).
-reduce_grid_y(Grid,_,[],Grid).
-:- decl_pt(reduce_grid_x(is_grid,loc)).
-reduce_grid_x(Grid,reduced(OP,GridR)):- reduce_grid_x(Grid,OP,GridR).
-:- decl_pt(reduce_grid_x(is_grid,list,grid)).
-reduce_grid_x(Grid,Opers,Result):- rot90(Grid,GridR), !, reduce_grid_y(GridR,Opers,Result).
+:- decl_pt(reduce_grid(is_grid,loc)).
 
-:- decl_pt(prop_h,reduce_grid_xy(is_grid,loc)).
-reduce_grid_xy(Grid,rxy(X,Y)):- reduce_grid_x(Grid,X),reduce_grid_y(Grid,Y).
+unreduce_grid(G,OP,GO):- is_list(OP),!,reverse(OP,ROP),unreduce_grid0(G,ROP,GO).
+unreduce_grid(G,OP,GO):- call(OP,G,GO).
+unreduce_grid0(G,[OP|List],GO):- !, unreduce_grid(G,OP,M),unreduce_grid0(M,List,GO).
+unreduce_grid0(G,[],G):-!.
+
+reduce_grid(G,O):- maybe_into_grid(G,GG),!,reduce_grid(GG,O).
+reduce_grid(Grid,reduced(OP,GridR)):- reduce_grid(Grid,OP,GridR).
+:- decl_pt(reduce_grid(is_grid,list,grid)).
+reduce_grid(Grid,OP,GridR):- reduce_grid(Grid,[Grid],OP,GridR).
+%reduce_grid(Grid,Reduced):- append(Left,[A,B|Right],Grid), A=B,append(Left,[A|Right],GridM),reduce_grid(Grid,Reduced).
+
+reduce_grid(Grid,NBC,OP,GridR):- reduce_grid_op(Grid,NBC,OP,GridR),!.
+reduce_grid(Grid,_,[],Grid).
+
+reduce_grid_op(Grid,NBC,OP,GridR):- reduce_grid_op1(Grid,NBC,OP,GridR).
+reduce_grid_op(Grid,NBC,[OP|More],Reduced):-  xform_op(Grid,OP,GridR),Grid\==GridR, \+ (member(E,NBC), E==GridR), !, 
+    reduce_grid_op(GridR,[GridR|NBC],More,Reduced).
+
+reduce_grid_op1(Grid,NBC,[OP|More],Reduced):- reduce_op(Grid,OP,GridR),  Grid\==GridR, \+ (member(E,NBC), E==GridR),
+    reduce_grid(GridR,[GridR|NBC],More,Reduced),!.
+%reduce_grid_op(NR,_,[],NR):-!.
 
 
-%reduce_grid_y(Grid,res(Opers,Result)):- reduce_grid_y(Grid,Opers,res(Opers,Result)),!.
+test_reduce_grid:- test_p2(reduce_grid).
+
+
+
+%reduce_grid(Grid,res(Opers,Result)):- reduce_grid(Grid,Opers,res(Opers,Result)),!.
 
 c_proportional(I,O,R):- proportional(I,O,R).
 %grid_hint_io(MC,IO,In,Out,find_ogs):- maybe_fail_over_time(1.2,find_ogs(_,_,In,Out)).

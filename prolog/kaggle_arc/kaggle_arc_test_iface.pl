@@ -11,10 +11,15 @@
 
 test_menu :- with_webui(menu).
 menu :- write_menu('i').
+
 write_menu(Mode):-
   get_current_test(TestID),!,
   print_single_test(TestID),!,
-  format('~N\n    With selected test: ~q ~n~n',[TestID]),
+  write_menu_opts(Mode).
+
+write_menu_opts(Mode):-
+  get_current_test(TestID),(luser_getval(example,Example);Example=_),!,
+  format('~N\n    With selected test: ~q ~q ~n~n',[TestID,example(Example)]),
   menu_options(Mode).
 
 menu_options(Mode):- 
@@ -145,7 +150,7 @@ interact:- list_of_tests(L), length(L,SelMax),!,
    retract(wants_exit_menu),!.
 
 do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), arc_assert(wants_exit_menu).
-do_menu_key('?'):- !, menu_options('i').
+do_menu_key('?'):- !, write_menu_opts('i').
 do_menu_key('P'):- !, switch_grid_mode,print_test.
 do_menu_key('I'):- !, cls_z,!,ndividuator.
 do_menu_key('o'):- !, cls_z,!,ndividuatorO1.
@@ -197,7 +202,9 @@ do_menu_codes([27,91,67]):- !, cls_z,  next_test, print_test.
 do_menu_codes([27,91,53,126]):- !, prev_suite.
 % page down
 do_menu_codes([27,91,54,126]):- !, next_suite.
+% up arrow
 do_menu_codes([27,91,65]):- !, prev_pair.
+% down arrow
 do_menu_codes([27,91,66]):- !, next_pair.
 
 interactive_test(X):- set_current_test(X), print_test(X), interactive_test_menu.
@@ -317,8 +324,8 @@ really_set_current_test(TestID):-
   (luser_getval(last_test_name,WasTestID);WasTestID=[]),
   (WasTestID==TestID-> true ; new_current_test_info(WasTestID,TestID)).
 
-some_current_example_num(TrnN):- nb_current(example,TrnN),TrnN\==[],!.
-some_current_example_num(TrnN):- luser_getval(example,TrnN),TrnN\==[],!.
+some_current_example_num(TrnN):- nb_current(example,TrnN),ground(TrnN),TrnN\==[],!.
+some_current_example_num(TrnN):- luser_getval(example,TrnN),ground(TrnN),TrnN\==[],!.
 some_current_example_num(trn+1).
 
 next_pair:- 
@@ -414,6 +421,7 @@ print_test:- notrace((get_current_test(TestID),print_test(TestID))).
 print_test(TName):- 
   arc_user(USER),
   fix_test_name(TName,TestID,ExampleNum1),
+  luser_setval(example,ExampleNum1),
    cmt_border,format('%~w % ?- ~q. ~n',[USER,print_test(TName)]),cmt_border,
    ignore(print_test_hints(TestID)),
    format('~N% '),dash_chars,
