@@ -279,7 +279,7 @@ aligned_rows_u(_,[]):-!.
 aligned_rows_u([E|L],[E|R]):- aligned_rows_u(L,R).
 
 no_symmetry_yet(Row):- maplist(plain_var,Row),!. % no data yet
-no_symmetry_yet(Row):- maplist(=(_),Row),!. % all sameR element
+no_symmetry_yet(Row):- maplist(=(_),Row),!. % all equal element
 
 sort_row_by_num_colors(G,G0):-
    maplist(row_color_changes,G,C),keysort(C,KS),reverse(KS,Now),

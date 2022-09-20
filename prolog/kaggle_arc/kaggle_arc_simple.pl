@@ -8,6 +8,10 @@
 :- set_prolog_flag_until_eof(trill_term_expansion,false).
 :- endif.
 
+
+possible_programs(v(rot180)).
+
+
 grid_w_obj(Grid,Why,Objs):-
   (var(Grid)->arc_grid(Grid);true),
   ROptions = complete,

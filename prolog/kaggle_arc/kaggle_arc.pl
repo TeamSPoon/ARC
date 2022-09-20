@@ -11,6 +11,7 @@
 :- set_prolog_flag(stream_type_check,false).
 
 
+catch_log(G):- ignore(catch(notrace(G),E,wdmsg(E=G))),!.
 
 %:- pack_install('https://github.com/logicmoo/logicmoo_utils.git').
 %:- pack_upgrade(logicmoo_utils).
@@ -911,7 +912,7 @@ solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut):-
     %print_testinfo(TestID),
     do_sols_for(Trial,"Taking Test",InVM,TestID,ExampleNum))).
 
-    % find indiviuation one each side that creates the sameR number of changes
+    % find indiviuation one each side that creates the equal number of changes
     
 do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
  must_det_ll(( ppt("BEGIN!!!"+Why+TestID*ExampleNum), 
@@ -1010,7 +1011,9 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 
 
 :- set_prolog_flag(arc_term_expansion, true).
-:- ensure_loaded('kaggle_arc_fwd.pfc').
+
+%:- ensure_loaded('kaggle_arc_fwd.pfc').
+
 %:- set_prolog_flag(arc_term_expansion, false).
 
 %:- if(prolog_load_context(reload,false)).
@@ -1022,11 +1025,16 @@ user:portray(Grid):-
    \+ nb_current(arc_can_portray,nil),
    current_predicate(bfly_startup/0), \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!.
 
+
 %:- ignore(check_dot_spacing).
-bfly_startup:- 
-   start_arc_server,
-   webui_tests,
-   print_test, menu, nop((next_test,previous_test)),demo.
+bfly_startup1:- 
+   catch_log(start_arc_server),
+   catch_log(webui_tests),
+   catch_log(print_test),
+   catch_log(menu),
+   nop((next_test,previous_test)).
+
+bfly_startup:- catch_log(bfly_startup1).
 
 :- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).

@@ -278,7 +278,7 @@ individuation_macros(do_ending, [
   find_touches,    
   find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
   % find_contained, % mark any "completely contained points"
-  combine_same_globalpoints, % make sure any objects are perfectly the sameR part of the image are combined 
+  combine_same_globalpoints, % make sure any objects are perfectly the equal part of the image are combined 
   %label_sizes,
   %combine_objects,
   end_of_macro]).
@@ -411,7 +411,7 @@ individuation_macros(standard, [
    +max_learn_objects(hv_line(_),ThreeO),
    +max_learn_objects(dg_line(_),ThreeO),
     %nsew,
-    %+recalc_sizes, % blobs of any shape that are the sameR color  
+    %+recalc_sizes, % blobs of any shape that are the equal color  
     % @TODO DISABLED FOR TESTS   colormass_subshapes, % subdivide the color masses .. for example a square with a dot on it
     subshape_main, % macro for sharing code with "subshape_in_object"
     connects(jumps(X),jumps(X)), % connected jumps    
@@ -855,7 +855,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
    %training:_,
      %compare:_, 
    grid_target:_,  last_key:_,  
-   % Options and TODO List (are actually sameR things)
+   % Options and TODO List (are actually equal things)
    program_i:Options, options:OOptions, roptions:ROptions, %todo_prev:[],
    % how much time is left before we turn on debugger
    timeleft:Timeleft, objs_max_len:Max, objs_min_mass:_, objs_max_mass:_,
@@ -1393,7 +1393,7 @@ sa_point(C-P2,Points):- select_always(C-P2,Points,Points0),
 is_fti_step(alone_dots).
 is_fti_step(maybe_alone_dots).
 % =====================================================================
-% alone_dots that have no adjacent points of the sameR color (could be gathered first)
+% alone_dots that have no adjacent points of the equal color (could be gathered first)
 
 is_sa(Points,C-P2):-  \+ (is_adjacent_point(P2,Dir,P3), Dir\==c, member(C-P3,Points), \+ is_diag(Dir)),!.
 
@@ -1427,7 +1427,7 @@ maybe_lo_dots(_):-!.
 % =====================================================================
 is_fti_step(lo_dots).
 % =====================================================================
-% lo_dots may have adjacent points of the sameR color (because we are in 'lo_dots' mode)
+% lo_dots may have adjacent points of the equal color (because we are in 'lo_dots' mode)
 mostly_fgp(Points,LO_POINTS):- length(Points,Len), Len =< 49,!, Points=LO_POINTS.
 mostly_fgp(Points,FG_POINTS):- my_partition(is_fgp,Points,FG_POINTS,_),!.
 

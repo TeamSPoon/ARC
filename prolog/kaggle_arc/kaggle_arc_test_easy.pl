@@ -994,8 +994,8 @@ if not i look to see if the input grid can be recognised on the output
 
 f35d900a
 
-the input has a small number of localcolorlesspointlist .. the sameR number on each image
-two localcolorlesspointlist are the sameR color, oh there are two pairs of localcolorlesspointlist
+the input has a small number of localcolorlesspointlist .. the equal number on each image
+two localcolorlesspointlist are the equal color, oh there are two pairs of localcolorlesspointlist
 there is a grey dashed box made up from the localcolorlesspointlist
 no two grey dots can touch though
 the grey dots seem to originate from the four localcolorlesspointlist

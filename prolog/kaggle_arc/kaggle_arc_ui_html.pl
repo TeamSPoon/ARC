@@ -146,10 +146,7 @@ user:file_search_path(arc,  AbsolutePath):- arc_sub_path('.',AbsolutePath).
                 [spawn([])]).
 
 start_arc_server :-
-    default_port(Port),
-    start_arc_server(Port),
-    use_module(library(xlisting/xlisting_web)),
-    use_module(library(xlisting/xlisting_web_server)),
+    catch_log((default_port(Port),start_arc_server(Port))),
     arc_http_server.
 
 start_arc_server(Port) :-
@@ -185,8 +182,12 @@ get_response_echo(Message, Response) :-
   Response = _{message:Message.message, time: Time}.
 
 arc_http_server:- thread_property(ID,status(running)),ID=='http@17666',!.
-arc_http_server:- http_server(http_dispatch, [port(17666)]),
+arc_http_server:- 
+  use_module(library(xlisting/xlisting_web)),
+  use_module(library(xlisting/xlisting_web_server)),
+  catch_log((http_server(http_dispatch, [port(17666)]))), arc_http_server2.
 
+arc_http_server2:- 
  thread_pool_create(compute, 3,
                       [ local(20000), global(100000), trail(50000),
                         backlog(5)
@@ -315,6 +316,62 @@ call_current_arc_cmd(Var):-
    current_arc_cmd(Var,Prolog),        
    dmsg(Var=Prolog),invoke_arc_cmd(Prolog).
 
+   
+arc_script_header:- 
+  use_module(library(xlisting/xlisting_web)),
+  use_module(library(xlisting/xlisting_web_server)),
+  inline_html_format(
+  write('<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="Prolog XListing for Logicmoo Code">
+	<meta name="author" content="logicmoo@gmail.com">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<link rel="stylesheet" type="text/css" href="/swish/css/menu.css">
+	<link rel="stylesheet" type="text/css" href="/swish/css/cliopatria.css">
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script type="text/javascript">window.name="lm_xref"; </script>  
+	<script data-main="/swish/js/swish" src="https://logicmoo.org/node_modules/requirejs/require.js"></script>
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
+	<script type="text/javascript" src="https://logicmoo.org/www/yui/2.7.0/build/utilities/utilities.js"></script>
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <script type="text/javascript" src="/swish/lm_xref/pixmapx/popupmenu/scripts/Popup-plugin.js"></script>
+	<link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/popupmenu/styles/Popup-plugin.css">
+  <script type="text/javascript" src="/swish/lm_xref/pixmapx/selected/js/social.selection.js"></script>
+	<link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/selected/css/social.selection.css">
+	<script type="text/javascript" src="/swish/js/cliopatria.js"></script>
+	<link rel="stylesheet" type="text/css" href="/swish/css/butterfly_term.css">
+	<link rel="stylesheet" type="text/css" href="/swish/css/term.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/json2html/2.1.0/json2html.min.js"></script>')).
+
+
+arc_script_header2:- 
+  inline_html_format(write('<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script> <!-- necessary for the "draggable" ui  -->
+<script src="/swish/lm_xref/pixmapx/popupmenu/scripts/Popup-plugin.js"></script>
+<script src="/swish/lm_xref/pixmapx/popupmenu/scripts/Example.js"></script>
+
+<link rel="shortcut icon" href="/static/images/favicon.png?">
+<link rel="stylesheet" type="text/css" href="/swish/css/menu.css">
+<link rel="stylesheet" type="text/css" href="/swish/css/cliopatria.css">
+<script type="text/javascript" src="/swish/js/cliopatria.js"></script>
+<link type="text/css" rel="stylesheet" href="/swish/css/term.css">
+<link type="text/css" rel="stylesheet" href="/swish/css/butterfly_term.css">
+
+<link rel="stylesheet" type="text/css" href="/www/yui/2.7.0/build/autocomplete/assets/skins/sam/autocomplete.css">
+<script type="text/javascript" src="/www/yui/2.7.0/build/utilities/utilities.js"></script>
+<script type="text/javascript" src="/www/yui/2.7.0/build/datasource/datasource.js"></script>
+<script type="text/javascript" src="/www/yui/2.7.0/build/autocomplete/autocomplete.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
+<script src="/swish/lm_xref/pixmapx/selected/js/social.selection.js"></script>
+<link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/selected/css/social.selection.css">
+<link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/selected/css/example.css">
+<link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/popupmenu/styles/Popup-plugin.css">
+<link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/popupmenu/styles/Example.css">
+<!--Use either font-awesome icons or Google icons with these links. Other icons could also be used if preferred-->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.4.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<script data-main="/swish/js/swish" src="/node_modules/requirejs/require.js"></script>')).
 
 invoke_arc_cmd(Prolog):-
    nonvar(Prolog),

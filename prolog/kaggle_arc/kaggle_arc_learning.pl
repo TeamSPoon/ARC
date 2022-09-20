@@ -258,7 +258,7 @@ compare_objs_how([perfect]).
 compare_objs_how([turned,+loc]).
 compare_objs_how([turned,-loc]).
 compare_objs_how([moved]).
-compare_objs_how([sameR]).
+compare_objs_how([sameO]).
 compare_objs_how(_).
 
 /*
@@ -322,7 +322,7 @@ learn_rule_iin_oout(_,In,O,OL):- mass(O,Mass),
   sort(SLIDL,SSLIDL),
   reverse(SSLIDL,RSLIDL),
   member(SL-SAME-I-DL,RSLIDL),
-  pp([SL+DL, sameR = SAME, in=I,out=OL]),  
+  pp([SL+DL, equal = SAME, in=I,out=OL]),  
   compare_objs1(How,I,O),
   %shape(I,Shape),shape(O,Shape),
   %pen(I,Pen),pen(O,Pen),

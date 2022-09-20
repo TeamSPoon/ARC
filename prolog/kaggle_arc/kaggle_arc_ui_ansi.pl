@@ -216,6 +216,7 @@ write_map(_G,Where):- write('...'),write(Where),write('...').
 ppt(_):- is_print_collapsed,!.
 ppt(G):- is_map(G), !, write_map(G,'ppt').
 ppt(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+ppt(P):- compound(P),wqs1(P),!.
 ppt(P):- \+ \+ ((tersify(P,Q),!,pp(Q))),!.
 ppt(C,P):- \+ \+ ((tersify(P,Q),!,pp(C,Q))),!.
 
@@ -280,6 +281,8 @@ mass_gt1(O1):- into_obj(O1,O2),mass(O2,M),!,M>1.
 % Pretty printing 
 pp_hook_g1(O):-  plain_var(O), !, fail.
 pp_hook_g1(O):-  attvar(O), !, fail.
+
+pp_hook_g1(O):- compound(O),wqs1(O),!.
 pp_hook_g1(O):-  is_real_color(O), color_print(O,call(writeq(O))),!.
 pp_hook_g1(O):-  is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
 pp_hook_g1(O):-  is_grid(O), 
@@ -294,6 +297,10 @@ pp_hook_g1(O):-  is_map(O),write('map'),!.
 pp_hook_g1(O):-  is_gridoid(O),debug_as_grid(O), !.
 pp_hook_g1(O):-  is_points_list(O),debug_as_grid(O), !.
 %pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  with_tagged('h5',collapsible_section(object,[O1, O2],pp(O))).
+
+
+pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),!, collapsible_section(object,showdiff_objects(O1,O2)),!.
+
 pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  collapsible_section(object,[O1, O2],with_tagged('h5',pp(O))).
 %pp_hook_g1(O):-  O = diff(A -> B), (is_gridoid(A);is_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
 pp_hook_g1(O):-  O = showdiff( O1, O2), !, showdiff(O1, O2).
@@ -332,25 +339,30 @@ wqs(X):- plain_var(X), !, wqs(plain_var(X)). wqs(nl):- !, nl. wqs(''):-!. wqs([]
 wqs([skip(_)|T]):- !,wqs(T).
 %wqs([H|T]):- compound(H),!, writeq(H), wqs(T).
 wqs([H|T]):- !, wqs(H),need_nl(H,T), wqs(T).
-wqs(format(C,N)):- !, format(C,N).
-wqs(writef(C,N)):- !, writef(C,N).
+wqs(C):- compound(C),wqs1(C),!.
 wqs(call(C)):- !, call(C).
-wqs(pp(C)):- !, pp(C).
-wqs(g(C)):- !, write_nbsp, bold_print(writeq(g(C))).
-wqs(io(C)):- !, write_nbsp, bold_print(writeq(io(C))).
-wqs(q(C)):- !, write_nbsp, writeq(C).
-wqs(uc(C,W)):- !, write_nbsp, color_print(C,call(underline_print(format("\t~@",[wqs(W)])))).
-wqs(cc(C,N)):- attvar(C), get_attrs(C,PC), !, wqs(ccc(PC,N)).
-wqs(cc(C,N)):- var(C), sformat(PC,"~p",[C]), !, wqs(ccc(PC,N)).
-wqs(cc(C,N)):- !, write(' cc('),color_print(C,C),write(','), writeq(N), write(')').
-wqs(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
-wqs(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
 wqs(C):- is_color(C),!,wqs(color_print(C,C)).
 
 wqs(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 wqs(X):- \+ compound(X),!, write_nbsp, write(X).
 wqs(S):- term_contains_ansi(S), !,write_nbsp, write_keeping_ansi(S).
 wqs(X):- write_nbsp, writeq(X).
+
+
+wqs1(format(C,N)):- !, format(C,N).
+wqs1(writef(C,N)):- !, writef(C,N).
+wqs1(pp(C)):- !, write('pp('),pp(C),write(')').
+wqs1(ppt(C)):- !, write('ppt('),ppt(C),write(')').
+wqs1(g(C)):- !, write_nbsp, bold_print(writeq(g(C))).
+wqs1(io(C)):- !, write_nbsp, bold_print(writeq(io(C))).
+wqs1(q(C)):- !, write_nbsp, writeq(C).
+wqs1(uc(C,W)):- !, write_nbsp, color_print(C,call(underline_print(format("\t~@",[wqs(W)])))).
+wqs1(cc(C,N)):- attvar(C), get_attrs(C,PC), !, wqs(ccc(PC,N)).
+wqs1(cc(C,N)):- var(C), sformat(PC,"~p",[C]), !, wqs(ccc(PC,N)).
+wqs1(cc(C,N)):- !, write(' cc('),color_print(C,C),write(','), writeq(N), write(')').
+wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
+wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
+
 
 write_nbsp:- arc_webui,!,write('&nbsp;').
 write_nbsp:- write(' ').

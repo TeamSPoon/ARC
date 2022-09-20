@@ -431,7 +431,10 @@ print_test(TName):-
        once(in_out_name(ExampleNum1,NameIn,NameOut)),
          as_d_grid(In,In1),as_d_grid(Out,Out1),
        format('~Ngridcase(~q,"\n~@").~n~n~n',[TestID*ExampleNum1,
-         print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut)]),
+            ((print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut),
+                           nl,
+                           ignore(show_reduced_io(In1,Out1))))
+           ]),
        nop((grid_hint_swap(i-o,In1,Out1))))))),format('~N'),
        write('%= '), parcCmt(TestID),!.
 
