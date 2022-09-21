@@ -943,7 +943,7 @@ parc(ExampleNum,OS):- clsmake,   luser_setval(task,[]),
 parcf:- parcf((tst+_),_).
 parcf(ExampleNum,OS):- make,   luser_setval(task,[]),
  locally(set_prolog_flag(color_term,false),
- setup_call_cleanup( open('tt.vt100',write,O,[encoding(text)]), 
+ setup_call_cleanup( open('test_cache.vt100',write,O,[encoding(text)]), 
    with_output_to(O,
     ((set_prolog_flag(color_term,true),
       set_stream(O, tty(true)),
@@ -952,7 +952,7 @@ parcf(ExampleNum,OS):- make,   luser_setval(task,[]),
 parctt:- parctt((tst+_),6300*3).
 parctt(ExampleNum,OS):- make,   luser_setval(task,[]),
   locally(set_prolog_flag(color_term,false),
-   setup_call_cleanup( open('tt',write,O,[encoding(utf8)]), 
+   setup_call_cleanup( open('kaggle_arc_test_cache.new',write,O,[encoding(utf8)]), 
    with_output_to(O,
     ((set_stream(O, tty(false)),
       parc1(ExampleNum,OS)))), close(O))).
