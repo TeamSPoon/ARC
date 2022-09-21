@@ -56,6 +56,7 @@ save_learnt_rule(RuleIn,InGoal,OutGoal):-
   Assert = (NewRuleIn:-was_once(InSet,InVars)), 
   assert_visually(Assert),!.    
 
+has_prop(P,Props):- is_list(Props),!,member(Q,Props), (Q=@=P -> true ; ( \+ Q \= P)).
 has_prop(P,Obj):- indv_props(Obj,Props),!,member(Q,Props), (Q=@=P -> true ; ( \+ Q \= P)).
 
 
@@ -80,7 +81,7 @@ not_for_matching(_Why,_,iz(_)):- !, fail.
 not_for_matching(_Why,_,link(_,_,_)).
 not_for_matching(_Why,_,birth(_)).
 not_for_matching(_Why,_,obj_to_oid(_,_)).
-%not_for_matching(_Why,L,shape(_)):- !, member(localpoints(_),L).
+%not_for_matching(_Why,L,form(_)):- !, member(localpoints(_),L).
 not_for_matching(_Why,L,localpoints(XX)):- !, started_is_list(XX), member(shape(_),L).
 not_for_matching(_Why,L,globalpoints(XX)):- !, started_is_list(XX), (member(shape(_),L);member(localpoints(_),L)).
 
@@ -141,7 +142,7 @@ train_io_from_hint(TestID,ExampleNum,InVM):-
   ignore((          
     kaggle_arc_io(TestID,ExampleNum,out,ExpectedOut),
     kaggle_arc_io(TestID,ExampleNum,in,InGrid),
-   (var(InVM) -> into_fti(TestID*ExampleNum*in,in_out,InGrid,InVM) ; true),
+   (var(InVM) -> into_fti(TestID>ExampleNum*in,in_out,InGrid,InVM) ; true),
     gset(InVM.grid) = InGrid,
     gset(InVM.grid_target) = ExpectedOut,
     do_sols_for(_All,"Do Training",InVM,TestID,ExampleNum))),
@@ -152,7 +153,7 @@ confirm_train_io_from_hint(TestID,ExampleNum):-
   ignore((          
    %kaggle_arc_io(TestID,ExampleNum,out,ExpectedOut),
     kaggle_arc_io(TestID,ExampleNum,in,InGrid),
-   (var(InVM) -> into_fti(TestID*ExampleNum*in,in_out,InGrid,InVM) ; true),
+   (var(InVM) -> into_fti(TestID>ExampleNum*in,in_out,InGrid,InVM) ; true),
     gset(InVM.grid) = InGrid,
    % gset(InVM.grid_target) = ExpectedOut,
     do_sols_for(_All,"Confirm Trained",InVM,TestID,ExampleNum))).
@@ -274,7 +275,7 @@ same_2props(I,O):- comparable_2props(I,O), I  =@= O.
 diff_2props(I,O):- comparable_2props(I,O), I \=@= O.
 
 
-% shape, 
+% form, 
 % v_hv, mass
 % center
 
@@ -803,7 +804,7 @@ name_the_pair(TestID,Type,Num,In,Out,PairName):-
   name_the_pair(TestID,Type+Num,In,Out,PairName).
 
 name_the_pair(TestID,ExampleNum,In,Out,PairName):- 
-  PairName= TestID*ExampleNum,
+  PairName= (TestID>ExampleNum),
   get_current_test(CName),
   new_test_pair(PairName),
   /*must_det_ll*/((
@@ -835,8 +836,8 @@ compute_shared_indivs(GN,Grid,SharedIndvs):-
    compute_unshared_indivs(With,OtherGrid,Unshared),
    individuate(Unshared,Grid,SharedIndvs).
 
-grid_shared_with(TestName*ExampleNum*in,TestName*ExampleNum*out):-!.
-grid_shared_with(TestName*ExampleNum*out,TestName*ExampleNum*in):-!.
+grid_shared_with(TestName>ExampleNum*in,TestName>ExampleNum*out):-!.
+grid_shared_with(TestName>ExampleNum*out,TestName>ExampleNum*in):-!.
 
 get_grid_and_name(In,Grid,GN):- is_grid(In),!,grid_to_tid(Grid,GN).
 get_grid_and_name(In,Grid,GN):- into_grid(In,Grid),!,grid_to_tid(Grid,GN).

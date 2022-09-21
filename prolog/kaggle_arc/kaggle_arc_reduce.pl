@@ -33,8 +33,11 @@ reorder_cbody(Rev,Left,Right):- (call(Rev) -> (Left,Right); (Right,Left)).
 
 %same_reduction(O,O):-!.
 
-same_reduction(OPA,OPB):- functor(OPA,F,N),functor(OPB,F,N),arg(1,OPA,E),
-  (atomic(E)->arg(1,OPB,E);true).
+same_reduction(OPA,OPB):- var(OPA), \+ attvar(OPA),!,freeze(OPA,same_reduction(OPA,OPB)).
+same_reduction([A|OPA],[B|OPB]):- !, same_reduction(A,B),same_reduction(OPA,OPB).
+same_reduction(A,B):- \+ compound(A), !, freeze(B,A=B).
+same_reduction(OPA,OPB):- functor(OPA,F,N),functor(OPB,F,N),arg(1,OPA,A),arg(1,OPB,B),!,same_reduction(A,B).
+
   /*(length(E,L),length(EB,L),arg(1,OPB,EB))),!.*/
 
 combin_pair_op(OPA,OPB,OP):- (OPA=OPB->OP=OPA;OP=op(OPA,OPB)).
@@ -100,12 +103,9 @@ copy_row(N1,N2,G,GOO):- nth1(N1,G,Row),N12 is N2-1,length(Left,N12), append(Left
 mat_grid(A+B,AA+BB):-!, mat_grid(A,AA),mat_grid(B,BB).
 mat_grid(GO,GOO):- mapgrid(=,GO,GOO).
 
-into_grid_io(A,A):-!.
-/*
 into_grid_io(A+B,AA+BB):- !, into_grid_io(A,AA),!,into_grid_io(B,BB).
 into_grid_io(A,B):-A=[],!,B=[].
 into_grid_io(A,B):- into_grid(A,B).
-*/
 
 maybe_into_grid_io(A,B):- into_grid_io(A,B),!,A\=@=B.
 
@@ -135,9 +135,9 @@ reduce_grid_pair1(A+B,[g(ok)|ROPA],AR+BR):-
 
 reduce_grid_pair1(A+B,ROP,AAO+BBO):-
   reduce_grid_pass(1,A+B,[A+B],OP,AR+BR), 
-  ungrav_rot(AR,UnRotGA,AA),
-  ungrav_rot(BR,UnRotGB,BB),
-  reduce_grid_pair2(ROP,OP,UnRotGA+UnRotGB,AR+BR,AA+BB,AAO+BBO).
+  grav_rot(BR,UnRot,BB),
+  call(UnRot,AR,AA),
+  reduce_grid_pair2(ROP,OP,UnRot+UnRot,AR+BR,AA+BB,AAO+BBO).
 
 %reduce_grid_pair2(ROP,OP,UnRotGA+UnRotGB,AR+BR,AA+BB,AAO+BBO):- 
 reduce_grid_pair2(ROP,OP,UnRotGA+UnRotGB,AR+BR,AA+BB,AAO+BBO):- 

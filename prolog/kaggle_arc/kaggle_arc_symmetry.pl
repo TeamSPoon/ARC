@@ -31,7 +31,7 @@ is_symgrid(TestID):-!,
       once((fix_test_name(T,TestID,_),
       must(kaggle_arc_io_trn(TestID,_,in,G)),
       nonvar_or_ci(G))).
-%is_symgrid(t('3631a71a')*_*out).
+%is_symgrid(t('3631a71a')>_*out).
 
 is_symgrid(t('29ec7d0e')).
 is_symgrid(t('1b60fb0c')).
@@ -52,20 +52,20 @@ is_symgrid(t(a740d043)).
 is_symgrid(t(ff805c23)).
 is_symgrid(t(eb281b96)).
 is_symgrid(t('007bbfb7')).
-is_symgrid(t(c444b776)*_*out).
+is_symgrid(t(c444b776)>_*out).
 
-is_symgrid(t('3631a71a')*_*in).
-is_symgrid(t('83302e8f')*_*in).
+is_symgrid(t('3631a71a')>_*in).
+is_symgrid(t('83302e8f')>_*in).
 is_symgrid(v('8a371977')). % Weird
 is_symgrid('6f8cd79b').
 is_symgrid('695367ec').
 is_symgrid('7447852a').
 is_symgrid('c3202e5a').
 is_symgrid('5a5a2103').
-is_symgrid(t('9ecd008a')*(tst+0)*in).
-is_symgrid(v(de493100)*_*in).
-is_symgrid(v(f9d67f8b)*_*in).
-is_symgrid(v(f9d67f8b)*_*out).
+is_symgrid(t('9ecd008a')>(tst+0)*in).
+is_symgrid(v(de493100)>_*in).
+is_symgrid(v(f9d67f8b)>_*in).
+is_symgrid(v(f9d67f8b)>_*out).
 is_symgrid(t('4938f0c2')).
 is_symgrid(t('4c5c2cf0')).
 is_symgrid(t(b8825c91)). 
@@ -78,21 +78,21 @@ is_symgrid(t('9d9215db')).
 
 %is_symgrid(N):- arc_grid(N).
 
-is_hard(t('3631a71a')*(trn+0)*in).
-is_hard(t('47c1f68c')*(tst+0)*in).
-is_hard(t('4c5c2cf0')*_*in).
-is_hard(t('9d9215db')*_*in).
-is_hard(t('4938f0c2')*_*in).
+is_hard(t('3631a71a')>(trn+0)*in).
+is_hard(t('47c1f68c')>(tst+0)*in).
+is_hard(t('4c5c2cf0')>_*in).
+is_hard(t('9d9215db')>_*in).
+is_hard(t('4938f0c2')>_*in).
 
-is_need(t('4c5c2cf0')*_*out).
-is_need(t('4938f0c2')*_*out).
-is_need(t('9d9215db')*_*out).
+is_need(t('4c5c2cf0')>_*out).
+is_need(t('4938f0c2')>_*out).
+is_need(t('9d9215db')>_*out).
 
-% is_bad(t('9d9215db')*_*in).
+% is_bad(t('9d9215db')>_*in).
 
 
 rp_test0(X):- X = [[black,black,black,black,black,black,black,black,black,yellow,black,black,black,black,black,black,black,black,black],[black,black,black,black,black,orange,black,black,black,yellow,black,black,black,black,black,orange,black,black,black],[black,black,black,red,black,black,black,black,black,yellow,black,black,black,red,black,black,black,black,black],[black,black,red,black,black,black,black,black,black,yellow,black,black,red,black,black,black,black,black,black],[black,green,black,black,black,green,black,black,black,yellow,black,green,black,black,black,green,black,black,black],[black,black,black,black,black,black,black,black,black,yellow,black,black,black,black,black,black,black,black,black],[black,black,black,cyan,orange,black,black,black,black,yellow,black,black,black,cyan,orange,black,black,black,black],[black,black,black,black,cyan,black,black,green,black,yellow,black,black,black,black,cyan,black,black,green,black],[black,orange,black,black,black,black,black,black,black,yellow,black,orange,black,black,black,black,black,black,black],[yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow],[black,black,black,black,black,black,black,black,black,yellow,black,black,black,black,black,black,black,black,black],[black,black,black,black,black,orange,black,black,black,yellow,black,black,black,black,black,orange,black,black,black],[black,black,black,red,black,black,black,black,black,yellow,black,black,black,red,black,black,black,black,black],[black,black,red,black,black,black,black,black,black,yellow,black,black,red,black,black,black,black,black,black],[black,green,black,black,black,green,black,black,black,yellow,black,green,black,black,black,green,black,black,black],[black,black,black,black,black,black,black,black,black,yellow,black,black,black,black,black,black,black,black,black],[black,black,black,cyan,orange,black,black,black,black,yellow,black,black,black,cyan,orange,black,black,black,black],[black,black,black,black,cyan,black,black,green,black,yellow,black,black,black,black,cyan,black,black,green,black],[black,orange,black,black,black,black,black,black,black,yellow,black,orange,black,black,black,black,black,black,black]].
-rp_test0(G):- into_grid(t(c444b776)*(trn+0)*out,G).
+rp_test0(G):- into_grid(t(c444b776)>(trn+0)*out,G).
 rp_test0(G):- arc_grid(G).
 
 rp_test(G):- findall(X,rp_test1(X),L),list_to_set(L,S),!,length(S,N),dmsg(rp_test=len(N)),member(G,S).
@@ -140,7 +140,7 @@ vm_for_grid(Grid,IDO,Out,VM):-
     set_current_test(TestID),    
 
     ignore((IO==in,kaggle_arc_io_trn(TestID,Example+Num,out,Out),
-            set(VM.id) = (TestID*(Example+Num)*IO),
+            set(VM.id) = (TestID>(Example+Num)*IO),
        nop(Example\==tst),set(VM.grid_target)=Out)))),
   IDO = VM.id .
 
@@ -186,7 +186,7 @@ repair_symmetry_code(Grid,RepairedResult,Code):-
   %vm_for_grid(Grid,IDO,Out,_VM),
   ignore((kaggle_arc_io_trn(TestID,ExampleNum,in,Grid),
           kaggle_arc_io_trn(TestID,ExampleNum,out,Out))),
-  ID = TestID*ExampleNum*in,
+  ID = (TestID>ExampleNum*in),
   wdmsg(begun_repair_symmetry(ID)))),!,
   (test_symmetry_code(Grid,GridS,RepairedResult,Code)
      *-> 
@@ -405,7 +405,7 @@ nop((
 
 %rotation(obj(L),G):- member(rotation(G),L).
 % Hedra's t('47c1f68c')
-% v(be03b35f)*(trn+2),
+% v(be03b35f)>(trn+2),
 %detect_grid(Grid,E):- 
 /*
 find_mid_slice(Grid,H,V,LB,Left,Mid,RB):-
@@ -626,14 +626,14 @@ guess_unbind_color(UnbindColor,Grid,RepairedResult):-
    guess_to_unbind(Grid,UnbindColor), 
    unbind_color(UnbindColor,Grid,RepairedResult),  
    mass(RepairedResult,Mass),Mass>0,
-   (UnbindColor\==black->if_target(Out, \+ contains_color(UnbindColor,Out));true).
+   (UnbindColor\==black-> if_target(Out, \+ contains_color(UnbindColor,Out));true).
 
 blur_least(B,Mix,I,O):-
   blur_list(B,Mix,I,S),
   S=[O-pp(blur_some(B,Mix))|_].
 
 /*
-?- into_grid(t('1b60fb0c')*_*_,I),blur_list(B,Mix,I,O),maplist(print_side_by_side(I),O).
+?- into_grid(t('1b60fb0c')>_*_,I),blur_list(B,Mix,I,O),maplist(print_side_by_side(I),O).
 
 */
 blur_list(B,Mix,I,S):-

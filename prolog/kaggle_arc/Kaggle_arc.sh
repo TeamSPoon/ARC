@@ -10,8 +10,8 @@ fi
 
 
 cd $ARC_DIR
-rm -rf out
-git checkout out
+# rm -rf out
+# git checkout out
 
 export BCMD="cd ${ARC_DIR} ; pwd ;  swipl -l kaggle_arc.pl ${@}"
 

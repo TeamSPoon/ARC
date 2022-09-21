@@ -60,7 +60,7 @@ compile_and_save_test(TestID):-
   arc_assert(saved_training(TestID)),
   arc_assert(process_test(TestID)),
   detect_all_training_hints(TestID),  
-  individuate_pairs_from_hints(TestID),
+  nop(individuate_pairs_from_hints(TestID)),
   %train_test(TestID,train_using_io),  
   save_supertest(TestID))).
 
@@ -74,10 +74,16 @@ individuate_pair_here(TestID,Trn+N1,In,Out):-
   ip(complete,In,Out),  
   nop(train_for_objects_from_1pair(_{},TestID,[Trn,'i',N1,'o',N1],In,Out,_DictMid)).
 
-show_reduced_io(GridIn,GridOut):- 
-  reduce_grid(GridIn+GridOut,IOps,II+OO),!,
-  must_det_ll(print_side_by_side(green,II,reduceIn(IOps),_,OO,reduceOut)), !. 
 
+show_reduced_io(_):-!.
+show_reduced_io(I+O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
+show_reduced_io(I+O):- reduce_grid(I+O,IOps,II+OO),IOps\==[],must_det_ll(print_side_by_side(green,II,reduceIn(IOps),_,OO,reduceOut)),!.
+show_reduced_io(_).
+
+maybe_easy(A,AR,ROPA):- reduce_grid_pass(1,A+A,[A+A],ROPA,AR+AR).
+maybe_easy(I,II,Code):- maybe_try_something1(I,II,Code),!.
+maybe_easy(I,I,==):- !.
+    
 
 save_supertest:- get_current_test(TestID),save_supertest(TestID).
 save_supertest(TestID):-   
@@ -93,7 +99,9 @@ save_supertest(TestID):-
 
 detect_all_training_hints:- clsmake, get_current_test(TestID),detect_all_training_hints(TestID).
 detect_all_training_hints(TestID):- 
-  training_only_exmaples(ExampleNum), forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_pair_hints(TestID,ExampleNum,In,Out)),
+  training_only_exmaples(ExampleNum), 
+  dmsg(detect_all_training_hints(TestID>ExampleNum)),
+  forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_pair_hints(TestID,ExampleNum,In,Out)),
   color_print(magenta,call(((compute_and_show_test_hints(TestID))))).
 training_only_exmaples(ExampleNum):- ignore(ExampleNum=(trn+_)).
 detect_test_hints1:- clsmake, get_current_test(TestID),detect_test_hints1(TestID).
@@ -122,7 +130,7 @@ detect_supergrid_tt(TestID,ExampleNum,In0,Out0,TT):-
   dash_chars, dash_chars,
   dmsg(detect_supergrid_tt(TestID,ExampleNum)),
   print_side_by_side(cyan,In0,task_in(ExampleNum),_,Out0,task_out(ExampleNum)),
-  show_reduced_io(In0,Out0),
+  show_reduced_io(In0+Out0),
   show_recolor(TestID,ExampleNum,In0,Out0,TT)))),!.
 
 
@@ -134,7 +142,7 @@ show_recolor(TestID,ExampleNum,In0,Out0,TT):-
   %gset(TT.z_contains_out)=in(HIO,VIO),
   %gset(TT.z_contains_in)=out(HOI,VOI),
 
-  dmsg(detect_all_training_hints(TestID,ExampleNum)),
+
   % grid_size(In0,IH,IV), 
   grid_size(Out0,OH,OV), % max_min(OV,IV,V,_),max_min(OH,IH,H,_),
   into_bicolor(In0,In), into_bicolor(Out0,OOut),

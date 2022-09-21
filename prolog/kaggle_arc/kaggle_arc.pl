@@ -237,12 +237,13 @@ must_det_ll(once(A)):- !, once(must_det_ll(A)).
 must_det_ll(X):- 
   strip_module(X,M,P),functor(P,F,A),setup_call_cleanup(nop(trace(M:F/A,+fail)),(must_not_error(X)*->true;must_det_ll_failed(X)),
     nop(trace(M:F/A,-fail))).
-
-must_not_error(X):- catch(X,E,(E=='$aborted'-> throw(E);(/*arcST,*/writeq(E=X),pp(rrtrace=X),rrtrace(X)))).
+  
+must_not_error(X):- catch(X,E,((E=='$aborted';nb_current(cant_rrtrace,t))-> throw(E);(/*arcST,*/writeq(E=X),pp(rrtrace=X),rrtrace(X)))).
 
 must_det_ll_failed(X):- notrace,wdmsg(failed(X))/*,arcST*/,nortrace,trace,rrtrace(X),!.
 % must_det_ll(X):- must_det_ll(X),!.
 
+rrtrace(X):- nb_current(cant_rrtrace,t),!,nop((wdmsg(cant_rrtrace(X)))),!,fail.
 rrtrace(X):- !, rtrace(X).
 rrtrace(X):- notrace,nortrace, arcST, sleep(0.5), trace, (notrace(\+ current_prolog_flag(gui_tracer,true)) -> rtrace(X); (trace,call(X))).
 
@@ -545,7 +546,7 @@ arc3:- clsmake, arc1(v('009d5c81')).
 arc4:- clsmake, arc1(t('25d487eb')).
 arc5:- clsmake, arc1(v('1d398264')).
 
-fav3:- clsmake, arc1(t('3631a71a')*(_+_)),!.
+fav3:- clsmake, arc1(t('3631a71a')>(_+_)),!.
 fav:- clsmake,forall(fav11,true).
 favr:- clsmake,forall(fav22,true).
 fav1:- clsmake, test_names_by_hard_rev(X), whole_test(X).
@@ -589,11 +590,11 @@ cls1:- nop(catch(cls_z,_,true)).
 
 list_to_rbtree_safe(I,O):- must_be_free(O), list_to_rbtree(I,M),!,M=O.
 :- dynamic(is_buggy_pair/2).
-%is_buggy_pair(v(fd096ab6)*(trn+0), "BUG: System Crash").
-%is_buggy_pair(t('3631a71a')*(tst+0),"segv").
-%is_buggy_pair(t('27a28665')*(tst+2), "BUG: Re-Searcher gets stuck!").
+%is_buggy_pair(v(fd096ab6)>(trn+0), "BUG: System Crash").
+%is_buggy_pair(t('3631a71a')>(tst+0),"segv").
+%is_buggy_pair(t('27a28665')>(tst+2), "BUG: Re-Searcher gets stuck!").
 
-run_arc_io(TestID,ExampleNum):- Pair = TestID*ExampleNum, is_buggy_pair(Pair,Why),!,format("~N1 % Skipping ~q because: ~w ~n~n",[Pair,Why]).
+run_arc_io(TestID,ExampleNum):- Pair = (TestID>ExampleNum), is_buggy_pair(Pair,Why),!,format("~N1 % Skipping ~q because: ~w ~n~n",[Pair,Why]).
 run_arc_io(TestID,ExampleNum):- 
   time(train_test(TestID)),
   time(solve_test(TestID,ExampleNum)).
@@ -783,8 +784,8 @@ train_for_objects_from_1pair1(Dict0,TestID,Desc,InA,OutA,Dict1):-
  	 grid_size(In,IH,IV), grid_size(Out,OH,OV),
 	 ignore((IH+IV \== OH+OV , writeln(io(size(IH,IV)->size(OH,OV))))),
    
-   into_fti(TestID*(Trn+N1)*IO1,ModeIn,In,InVM),!,
-   into_fti(TestID*(Trn+N2)*IO2,ModeOut,Out,OutVM)]),!,
+   into_fti(TestID>(Trn+N1)*IO1,ModeIn,In,InVM),!,
+   into_fti(TestID>(Trn+N2)*IO2,ModeOut,Out,OutVM)]),!,
 
    %InVM.compare=OutVM, 
    set(InVM.grid_target)=Out,
@@ -886,19 +887,21 @@ solve_test_trial(Trial,TestID,ExampleNum):-
 solve_test(TestID,ExampleNum,TestIn,ExpectedOut):-
   forall(trial_non_human(Trial),solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut)).
 
+  
 solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut):-
    must_det_ll((    
     name_the_pair(TestID,ExampleNum,TestIn,ExpectedOut,PairName))),
-   must_det_ll((    
+   must_det_ll((       
     grid_size(TestIn,IH,IV), grid_size(ExpectedOut,OH,OV),
     ignore((IH+IV \== OH+OV , writeln(io(size(IH,IV)->size(OH,OV))))),
     print_testinfo(TestID))), 
    must_det_ll((
+   try_easy_io(TestID>ExampleNum,TestIn,ExpectedOut),
     dash_chars, dash_chars,
     show_pair_grid(green,IH,IV,OH,OV,'Test TestIn','Solution ExpectedOut (Not computed by us)',PairName,TestIn,ExpectedOut),!,  
     get_training(Training))),
     flag(indiv,_,0),    
-    into_fti(TestID*ExampleNum*in,in,TestIn,InVM),!,
+    into_fti(TestID>ExampleNum*in,in,TestIn,InVM),!,
     set(InVM.objs) = [],
     %set(InVM.points) = [],
     %set(InVM.training) = Training,
@@ -915,12 +918,12 @@ solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut):-
     % find indiviuation one each side that creates the equal number of changes
     
 do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
- must_det_ll(( ppt("BEGIN!!!"+Why+TestID*ExampleNum), 
+ must_det_ll(( ppt("BEGIN!!!"+Why+TestID>ExampleNum), 
     kaggle_arc_io(TestID,ExampleNum,out,ExpectedOut),
     forall(sols_for(TestID,Trial,SolutionProgram),
      ignore(((
       once((pp(cyan,trial=Trial),
-       ppt(cyan,run_dsl(TestID*ExampleNum,Trial,SolutionProgram)),!,
+       ppt(cyan,run_dsl(TestID>ExampleNum,Trial,SolutionProgram)),!,
        (time((
               maybe_set_vm(InVM),
               kaggle_arc_io(TestID,ExampleNum,in,TestIn),
@@ -934,7 +937,7 @@ do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
            (Errors==0 -> 
               (banner_lines(green),arcdbg(pass(Why,TestID,ExampleNum,SolutionProgram)),banner_lines(green))
               ; (banner_lines(red), arcdbg(fail(Why,Errors,TestID,ExampleNum,SolutionProgram)),
-               test_info(TestID,InfoF),wqnl(fav(TestID*ExampleNum,InfoF)),
+               test_info(TestID,InfoF),wqnl(fav(TestID>ExampleNum,InfoF)),
                banner_lines(red)))))
        ;arcdbg(warn(unrunable(TestID,ExampleNum,SolutionProgram))))))),
     print_grid("our grid", InVM.grid),!,
@@ -1021,7 +1024,7 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 %:- endif.
 
 %:- fixup_module_exports_now.  
-user:portray(Grid):- 
+user:portray(Grid):-
    \+ nb_current(arc_can_portray,nil),
    current_predicate(bfly_startup/0), \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!.
 
@@ -1035,6 +1038,9 @@ bfly_startup1:-
    nop((next_test,previous_test)).
 
 bfly_startup:- catch_log(bfly_startup1).
+
+:- nb_setval(arc_can_portray,t).
+:- \+ nb_current(arc_can_portray,nil).
 
 :- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).

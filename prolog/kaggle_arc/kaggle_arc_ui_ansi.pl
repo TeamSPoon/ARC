@@ -46,9 +46,9 @@ srw_arc(I,O):- tersify(I,O),!,I\==O,!.
 :- dynamic(dumpst_hook:simple_rewrite/2).
 
 dumpst_hook:simple_rewrite(I,O):- 
+  \+ nb_current(arc_can_portray,nil),
   current_predicate(bfly_startup/0),
   current_predicate(is_group/1), 
-  \+ nb_current(arc_can_portray,nil),
   b_setval(arc_can_portray,nil),
   locally(b_setval(arc_can_portray,nil),once((compound(I), lock_doing(srw_arc,I,srw_arc(I,O))))), I\==O, I\=@=O, !, \+ I=O,
   b_setval(arc_can_portray,t).
@@ -146,7 +146,7 @@ arc_portray(G):- compound(G), \+ \+ catch(((tracing->arc_portray(G,true);arc_por
 
   
 
-via_print_grid(G):- is_points_list(G),!,fail,grid_size(G,H,V),number(H),number(V),H>1,V>1.
+via_print_grid(G):- is_points_list(G). %,!,fail,grid_size(G,H,V),number(H),number(V),H>1,V>1.
 via_print_grid(G):- is_grid(G).
 via_print_grid(G):- is_object(G).
 via_print_grid(G):- is_group(G).
@@ -272,7 +272,8 @@ lock_doing(Lock,G,Goal):-
   \+ ((member(E,Was),E==G)),
   locally(nb_setval(Lock,[G|Was]),Goal).
 
-pp_hook_g(G):- \+ plain_var(G), \+ nb_current(arc_can_portray,nil), lock_doing(in_pp_hook_g,G,pp_hook_g1(G)).
+pp_hook_g(G):- \+ plain_var(G), \+ nb_current(arc_can_portray,nil),
+  lock_doing(in_pp_hook_g,G,pp_hook_g1(G)).
 
 
 
@@ -280,9 +281,10 @@ mass_gt1(O1):- into_obj(O1,O2),mass(O2,M),!,M>1.
 
 % Pretty printing 
 pp_hook_g1(O):-  plain_var(O), !, fail.
-pp_hook_g1(O):-  attvar(O), !, fail.
+pp_hook_g1(O):-  attvar(O), !, is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
 
-pp_hook_g1(O):- compound(O),wqs1(O),!.
+pp_hook_g1(shape(O)):-  is_points_list(O), write('shape('),debug_as_grid(O),write(')').
+pp_hook_g1(O):-  is_points_list(O),debug_as_grid(O), !.
 pp_hook_g1(O):-  is_real_color(O), color_print(O,call(writeq(O))),!.
 pp_hook_g1(O):-  is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
 pp_hook_g1(O):-  is_grid(O), 
@@ -293,17 +295,18 @@ pp_hook_g1(O):- atom(O), atom_contains(O,'o_'), pp_parent([LF|_]), \+ (LF==lf;LF
   write(' '), writeq(O), write(' /* '), debug_as_grid(Var), write(' */ ').
 pp_hook_g1(O):-  is_object(O),pp_no_nl(O), !.
 pp_hook_g1(O):-  is_group(O),pp_no_nl(O), !.
+
+%pp_hook_g1(change_obj(N,O1,O2,Sames,Diffs)):-  showdiff_objects5(N,O1,O2,Sames,Diffs),!.
+
+
 pp_hook_g1(O):-  is_map(O),write('map'),!.
 pp_hook_g1(O):-  is_gridoid(O),debug_as_grid(O), !.
-pp_hook_g1(O):-  is_points_list(O),debug_as_grid(O), !.
 %pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  with_tagged('h5',collapsible_section(object,[O1, O2],pp(O))).
-
-
-pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),!, collapsible_section(object,showdiff_objects(O1,O2)),!.
-
-pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  collapsible_section(object,[O1, O2],with_tagged('h5',pp(O))).
+%pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff), collapsible_section(object,showdiff_objects(O1,O2)),!.
+%pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  collapsible_section(object,[O1, O2],with_tagged('h5',pp(O))).
 %pp_hook_g1(O):-  O = diff(A -> B), (is_gridoid(A);is_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
 pp_hook_g1(O):-  O = showdiff( O1, O2), !, showdiff(O1, O2).
+pp_hook_g1(O):- compound(O),wqs1(O),!.
 
 /*
 pp_hook_g1(T):- 

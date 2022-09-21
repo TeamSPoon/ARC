@@ -231,14 +231,14 @@ begin_arc_html0(Request):-
   format('<!DOCTYPE html>',[]),
   %ignore(set_test_param),
   ignore((member(search(List),Request),member(task=Task,List),  
-  atom_id(Task,ID), dmsg(Task->ID), set_current_test(ID))),
+  atom_id(Task,ID), dmsg(Task-> ID), set_current_test(ID))),
   ignore(if_arc_webui(intern_request_data(Request))),
   ignore(if_arc_webui(write_begin_html('ARC Solver'))),
   nop(ensure_readable_html).
 
 set_test_param:-
   ignore((if_arc_webui((get_param_sess(task,Task), Task\=='',  Task\=="",
-  atom_id(Task,ID), dmsg(Task->ID), set_current_test(ID))))),!.
+  atom_id(Task,ID), dmsg(Task-> ID), set_current_test(ID))))),!.
 
 
 swish_arc(Request):-   

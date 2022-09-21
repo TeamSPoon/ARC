@@ -43,7 +43,7 @@ menu_cmd1(i,'i','             See the (i)ndividuation of the input/outputs',(cls
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z,!,what_unique)).
 menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z,!,compile_and_save_test)).
 menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(print_test)).
-menu_cmd1(_,'e','                  or (e)xamine the program leared by training',(cls_z,print_test,!,solve_test)).
+menu_cmd1(_,'e','                  or (e)xamine the program leared by training',(cls_z,print_test,!,learned_test,solve_easy)).
 menu_cmd1(_,'L','                  or (L)earned program',(learned_test)).
 menu_cmd1(_,'s','              Try to (s)olve based on training',(cls_z,print_test,!,solve_test)).
 menu_cmd1(_,'S','                  or (S)olve confirming it works on training pairs',(cls_z,print_test,!,solve_test_training_too)).
@@ -244,7 +244,7 @@ with_test_pairs1(TestID,In,Out,P):-
   ignore(luser_getval(example,ExampleNum)),
   forall(kaggle_arc(TestID,ExampleNum,In,Out), my_menu_call(P)).
 
-bad:- ig([complete],v(aa4ec2a5)*(trn+0)*in).
+bad:- ig([complete],v(aa4ec2a5)>(trn+0)*in).
 
 
 restart_suite:- 
@@ -335,7 +335,7 @@ next_pair:-
   trn_tst(Trn,Tst),
   (kaggle_arc(TestID,Trn+N2,_,_)-> ExampleNum=Trn+N2 ; ExampleNum=Tst+0),
   nb_setval(example,ExampleNum),
-  print_single_test(TestID*ExampleNum),!.
+  print_single_test(TestID>ExampleNum),!.
 
 prev_pair:- 
   get_current_test(TestID),
@@ -344,7 +344,7 @@ prev_pair:-
   trn_tst(Trn,Tst),
   (kaggle_arc(TestID,Trn+N2,_,_)-> ExampleNum=Trn+N2 ; ExampleNum=Tst+0),
   nb_setval(example,ExampleNum),
-  print_single_test(TestID*ExampleNum),!.
+  print_single_test(TestID>ExampleNum),!.
 
 
 trn_tst(trn,tst).
@@ -430,10 +430,10 @@ print_test(TName):-
       ignore((
        once(in_out_name(ExampleNum1,NameIn,NameOut)),
          as_d_grid(In,In1),as_d_grid(Out,Out1),
-       format('~Ngridcase(~q,"\n~@").~n~n~n',[TestID*ExampleNum1,
+       format('~Ngridcase(~q,"\n~@").~n~n~n',[TestID>ExampleNum1,
             ((print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut),
                            nl,
-                           ignore(show_reduced_io(In1,Out1))))
+                           ignore(show_reduced_io(In1+Out1))))
            ]),
        nop((grid_hint_swap(i-o,In1,Out1))))))),format('~N'),
        write('%= '), parcCmt(TestID),!.
@@ -455,7 +455,7 @@ print_qtest(TestID):-
       ignore((
        as_d_grid(In,In1),as_d_grid(Out,Out1),
        once(in_out_name(ExampleNum,NameIn,NameOut)),
-       format('~Ntestcase(~q,"\n~@").~n~n~n',[TestID*ExampleNum,print_side_by_side(cyan,In1,NameIn,_LW,Out1,NameOut+TestID)])))),
+       format('~Ntestcase(~q,"\n~@").~n~n~n',[TestID>ExampleNum,print_side_by_side(cyan,In1,NameIn,_LW,Out1,NameOut+TestID)])))),
        write('%= '), parcCmt(TestID).
 
 print_single_test(TName):-
@@ -495,9 +495,13 @@ some_test_info(TestID,III):- more_test_info(TestID,III).
 some_test_info(X,[keypad]):- key_pad_tests(X). 
 some_test_info(TestID,III):- fav(TestID,III).
 
+matches(InfoS,InfoM):- member(InfoS,InfoM).
+
+
 :- dynamic(muarc_tmp:test_info_cache/2).
 :- retractall(muarc_tmp:test_info_cache(_,_)).
-test_info(TestID,InfoS):- var(TestID),!, pp(recreating(test_info)),all_arc_test_name(TestID),test_info(TestID,InfoS).
+test_info(TestID,InfoS):- var(TestID),var(InfoS),!, pp(recreating(test_info)),all_arc_test_name(TestID),test_info(TestID,InfoS).
+test_info(TestID,InfoS):- var(TestID),nonvar(InfoS),!,term_variables(InfoS,Vs),no_repeats(Vs,(test_info(TestID,InfoM),matches(InfoS,InfoM))).
 %test_info(TestID,InfoS):- \+ \+ muarc_tmp:test_info_cache(TestID,_),!,muarc_tmp:test_info_cache(TestID,InfoS).
 test_info(TestID,InfoS):- nonvar(TestID),once(fix_test_name(TestID,FTestID,_)),TestID\=@=FTestID,!,test_info(FTestID,InfoS).
 test_info(TestID,InfoS):- muarc_tmp:test_info_cache(TestID,InfoS),!.
@@ -829,9 +833,9 @@ copy_grid(Name,_,G):- get_training(VM),get_kov(Name,VM,G).
 % ExampleNum is tst or trn
 /*
 kaggle_arc(t(Name), TypeI, In, Out):- 
- nth_fact(kaggle_arc_train(Name, ExampleNum, In, Out), This), once((nth_fact(kaggle_arc_train(Name, ExampleNum, _, _), Start), I is This - Start, TypeI=ExampleNum->I)).
+ nth_fact(kaggle_arc_train(Name, ExampleNum, In, Out), This), once((nth_fact(kaggle_arc_train(Name, ExampleNum, _, _), Start), I is This - Start, TypeI=ExampleNum-*I)).
 kaggle_arc(v(Name), TypeI, In, Out):- 
- member(ExampleNum, [trn, tst]), nth_fact(kaggle_arc_eval(Name, ExampleNum, In, Out), This), once((nth_fact(kaggle_arc_eval(Name, ExampleNum, _, _), Start), I is This - Start, TypeI=ExampleNum->I)).
+ member(ExampleNum, [trn, tst]), nth_fact(kaggle_arc_eval(Name, ExampleNum, In, Out), This), once((nth_fact(kaggle_arc_eval(Name, ExampleNum, _, _), Start), I is This - Start, TypeI=ExampleNum-*I)).
 */
 
 fix_test_name(V,VV,_):- var(V),!,VV=V.
@@ -843,16 +847,18 @@ testid_name_num_io(ID,_Name,_Example,_Num,_IO):- var(ID),!, fail.
 testid_name_num_io(ID,_Name,_Example,_Num,_IO):- is_grid(ID),!, fail.
 testid_name_num_io(ID,_Name,_Example,_Num,_IO):- is_list(ID), \+ maplist(nonvar,ID),!,fail.
 
-testid_name_num_io([V,Name,Example,ANum,IO|_],TstName,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,fix_id(VName,TstName).
-testid_name_num_io(TstName*Example+Num*IO,Name,Example,Num,IO):- !,fix_id(TstName,Name).
-testid_name_num_io(TstName*(Example+Num)*IO,Name,Example,Num,IO):- !,fix_id(TstName,Name).
-testid_name_num_io(TstName*Example+Num,Name,Example,Num,_IO):- !,fix_id(TstName,Name).
-testid_name_num_io(TstName*(Example+Num),Name,Example,Num,_IO):- !,fix_id(TstName,Name).
-testid_name_num_io(ID,Name,Example,Num,IO):- ID = TstName*(Example+Num)*IO,!,fix_id(TstName,Name),!.
-testid_name_num_io(ID,Name,Example,Num,_IO):- ID = TstName*Example+Num,!,fix_id(TstName,Name),!.
-testid_name_num_io(ID,Name,Example,Num,_IO):- ID = TstName*(Example+Num),!,fix_id(TstName,Name),!.
+testid_name_num_io([V,Name,Example,ANum,IO|_],TestID,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,fix_id(VName,TestID).
+testid_name_num_io(TestID>Example+Num*IO,Name,Example,Num,IO):- !,fix_id(TestID,Name).
+testid_name_num_io(TestID>(Example+Num)*IO,Name,Example,Num,IO):- !,fix_id(TestID,Name).
+testid_name_num_io(TestID>Example+Num,Name,Example,Num,_IO):- !,fix_id(TestID,Name).
+testid_name_num_io(TestID>(Example+Num),Name,Example,Num,_IO):- !,fix_id(TestID,Name).
+testid_name_num_io(ID,Name,Example,Num,IO):- ID = (TestID>((Example+Num)*IO)),!,fix_id(TestID,Name),!.
+testid_name_num_io(ID,Name,Example,Num,IO):- ID = ((TestID>(Example+Num))*IO),!,fix_id(TestID,Name),!.
+testid_name_num_io(ID,Name,Example,Num,IO):- ID = (TestID>(Example+Num)*IO),!,fix_id(TestID,Name),!.
+testid_name_num_io(ID,Name,Example,Num,_IO):- ID = ((TestID>Example)+Num),!,fix_id(TestID,Name),!.
+testid_name_num_io(ID,Name,Example,Num,_IO):- ID = (TestID>Example+Num),!,fix_id(TestID,Name),!.
 
-testid_name_num_io(V,TstName,Example,Num,IO):- atom(V), atom_concat(VV,'.json',V),!,testid_name_num_io(VV,TstName,Example,Num,IO).
+testid_name_num_io(V,TestID,Example,Num,IO):- atom(V), atom_concat(VV,'.json',V),!,testid_name_num_io(VV,TestID,Example,Num,IO).
 testid_name_num_io(ID,Name,Example,Num,IO):- atom(ID),atomic_list_concat(Term,'_',ID), Term\==[ID], 
   testid_name_num_io(Term,Name,Example,Num,IO),!.
 testid_name_num_io(ID,Name,Example,Num,IO):- atom(ID),catch(atom_to_term(ID,Term,_),_,fail), Term\==ID, nonvar(Term), 
@@ -931,7 +937,7 @@ parc11(OS,TName):- fail,
   %V is OV-IV,
   H is IH,
   maplist(color_sym(OS),Out,O),
-  format('~Ntestcase(~q,"\n~@").~n',[TestID*ExampleNum,
+  format('~Ntestcase(~q,"\n~@").~n',[TestID>ExampleNum,
     print_side_by_side(call((print_grid(IH,IV,I),
       write(' '),forall(between(IV,OV,_),(write('\n '),dash_chars(H,'  '))))),call(print_grid(O)))]).
 

@@ -42,6 +42,7 @@ ig(ROptions,GridIn):-
   do_ig(ROptions,GridIn,IndvS),
   into_grid(GridIn,GridOut),
   locally(nb_setval(debug_as_grid,nil),show_ig(ig,ROptions,GridIn,GridOut,IndvS)).
+
 igo(ROptions,GridIn):-
   do_ig(ROptions,GridIn,IndvS),
   into_grid(GridIn,GridOut),
@@ -88,11 +89,12 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),
   print_side_by_side(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
   dash_chars,
-  luser_setval(no_rdot,true),
-  grid_size(GridIn,IH,IV), grid_size(GridOut,OH,OV),
-  ((InC==OutC, InC==[]) -> pp(yellow,nothing_individuated(PairName)) ;
-    show_pair_diff_code(IH,IV,  OH, OV,individuated(ROptions,ID1),individuated(ROptions,ID2),PairName,InC,OutC)),!,
-  luser_setval(no_rdot,false).
+  setup_call_cleanup(
+    luser_setval(no_rdot,true),
+    (grid_size(GridIn,IH,IV), grid_size(GridOut,OH,OV),
+    ((InC==OutC, InC==[]) -> pp(yellow,nothing_individuated(PairName)) ;
+      show_pair_diff_code(IH,IV,  OH, OV,individuated(ROptions,ID1),individuated(ROptions,ID2),PairName,InC,OutC)),!),
+    luser_setval(no_rdot,false)).
 
 
 
@@ -604,7 +606,7 @@ individuation_reserved_options(ROptions,Reserved,Options):-
 
 
 %individuate_second_pass(Grid,IndvS):- individuate([second_pass],Grid,IndvS).
-%?- i(v(e41c6fd3)*(trn+0)*in).
+%?- i(v(e41c6fd3)>(trn+0)*in).
 
 :- multifile(prolog:make_hook/2).
 :- dynamic(prolog:make_hook/2).
@@ -645,7 +647,7 @@ allow_out_in :- fail.
 
 first_grid_same_areas(In,Out,IO):-
   unique_color_count(In,ISize), unique_color_count(Out,OSize), 
-  ((OSize>ISize) -> (IO=out_in);(IO=in_out)).
+  ((OSize> ISize) -> (IO=out_in);(IO=in_out)).
 first_grid_same_areas(In,Out,IO):-
   mass(In,ISize), mass(Out,OSize), 
   ((OSize<ISize) -> (IO=out_in);(IO=in_out)).
@@ -1575,7 +1577,7 @@ rectangles_from_grid(Grid,VM):-
   print_side_by_side(C,NewGrid,'grid',_,RowsInvolvedClipped,clipped(Width,N)),
   mapgrid(only_color_data,RowsInvolvedClipped,Textureless),
   localpoints(Textureless,NewObjPoints),!,
-  ignore((NewObjPoints\==[],make_indiv_object(VM,[birth(rectangles),iz(shape(rectangle))],NewObjPoints,_Obj))),
+  ignore((NewObjPoints\==[],make_indiv_object(VM,[birth(rectangles),iz(poly(rectangle))],NewObjPoints,_Obj))),
   ignore((NewGrid\==[], print_grid(newGrid, NewGrid),!, rectangles_from_grid(NewGrid,VM))),
   !.
 rectangles_from_grid(_,_).
@@ -2135,7 +2137,7 @@ ok_color_with(C1,C1).
 ok_color_with(C1,C2):- my_assertion(is_color(C1)), 
   (plain_var(C2)->freeze(C2,ok_color_with(C1,C2));
     (luser_getval(color_mode,monochrome) -> 
-     (is_fg_color(C1)->is_fg_color(C2);is_bg_color(C2)) 
+     (is_fg_color(C1)-> is_fg_color(C2);is_bg_color(C2)) 
      ; (\+ (C1 \= C2)))).
 */
 
