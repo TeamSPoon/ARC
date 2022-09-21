@@ -767,7 +767,7 @@ mprint_grid(O):- arcST,trace,print_grid(O),!.
 
 best_of(Grid,Info,P2Did,In,RepairedResult):-
   AnswerFormat = mprint_grid(wqs([Quality,Info,P2Did]),RepairedResult),
-  findall(AnswerFormat, 
+  findall(AnswerFormat,
     (call(P2Did,In,RepairedResult), 
       saliency_quality_of_change(Grid,RepairedResult,Quality)), Trials),
   sort(Trials,STrials),
@@ -1797,7 +1797,8 @@ get_fill_points(In,UNFP,GridO):-
  localpoints(GridO,NPS),  
  %print(NPS),nl,
  include(p1_or(is_point_type('~'),is_fill_point(NPS)),NPS,FillPoints),
- include(is_point_type('wbg'),NPS,NotFillPoints),
+ %%include(is_point_type('wbg'),NPS,NotFillPoints),
+ include(is_point_type('wbgzzzzz'),NPS,NotFillPoints),
  subtract(FillPoints,NotFillPoints,RFillPoints),
   %my_partition(is_point_type('.'),NFP,OuterEdges,NonFillPointNonOuterEdges),
  uneib(RFillPoints,UNFP).
@@ -2045,131 +2046,280 @@ nei_map(H,V,C,P1,Points,N):-
 only_neib_data(NC,NC):- \+ compound(NC),!.
 only_neib_data(C-_,NC):- only_neib_data(C,NC).
 
-map_neib1(C,DirsE,Edge,DirsC,DirsD,N):- map_neib(C,DirsE,Edge,DirsC,DirsD,NSM,PS),map_ns(NSM,NS), ((PS=='+')-> N=PS; N=NS).
+map_neib1(C,DirsE,Edge,DirsC,DirsD,N):- 
+  append([DirsC,DirsD],AllDirs),
+  subtract(AllDirs,DirsE,EAllDirs),
+  subtract([n,s,e,w,ne,sw,se,nw],EAllDirs,Missing),!,
+  map_neibw9(EAllDirs,Missing,C,DirsE,Edge,DirsC,DirsD,NSM,PS),!,map_ns(NSM,NS), ((fail,PS=='+')-> N=PS; N=NS),!.
 
-map_ns('j','+').
+%map_ns('j','+').
 map_ns(NS,NS).
 
-map_neib(C,[O],E,[],[],NS,PS):- map_neib(C,[],E,[],[O],NS,PS),!.
-map_neib(_,_,_,[],[],0,0).
-map_neib(_,_,_,[n,s,e,w],[_,_,_],'+','7').
 
-map_neib(_,_,_,[n,s,e,w],[_,_,_],'*','7').
+%
 
-%map_neib(_,[ne,sw,se,nw],[],_,_,'~','~').
-%map_neib(_,[n,s,e,w],_,_,_,'~','~').
+map_neib([w,sw,se],_,'\\').
+map_neib([e,sw,se],_,'y').
+map_neib([w,ne],_,'/').
+map_neib([e,nw],_,'\\').
 
-map_neib(_,_,c,[n],[],'!','2').
-map_neib(_,_,c,[s],[],'!','2').
-map_neib(_,_,c,[e],[],'=','2').
-map_neib(_,_,c,[w],[],'=','2').
+map_neib([n,s,e,w],_,'#').
+map_neib([n,e],_,'+').
+map_neib([n,w],_,'+').
+map_neib([s,e],_,'+').
+map_neib([s,w],_,'+').
+map_neib([n],_,'|').
+map_neib([s],_,'|').
+map_neib([e],_,'-').
+map_neib([w],_,'-').
 
-map_neib(_,_,_,[n],[],'|','2').
-map_neib(_,_,_,[s],[],'|','2').
-map_neib(_,_,_,[e],[],'-','2').
-map_neib(_,_,_,[w],[],'-','2').
+map_neib([n,s],_,'|').
+map_neib([e,w],_,'-').
 
-map_neib(_,_,_,[n,s],_,'|','.').
-map_neib(_,_,_,[e,w],_,'-','.').
-map_neib(_,_,_,[n,e],[],'C','+').
-map_neib(_,_,_,[n,w],[],'C','+').
-map_neib(_,_,_,[s,e],[],'C','+').
-map_neib(_,_,_,[s,w],[],'C','+').
-map_neib(_,_,_,[_,_,_,_],[_,_,_],'C','+').
-map_neib(_,_,_,[_,_,_],[],'T','+').
-map_neib(_,_,_,[_,_,_],[_],'t','+').
+map_neib([n,e,ne,nw],_,'\\').
+map_neib([n,w,ne,nw],_,'/').
 
-map_neib(_,_,_,[s,e,w],[sw,se],'-','.').
-map_neib(_,_,_,[n,e,w],[ne,nw],'-','.').
-map_neib(_,_,_,[n,s,w],[sw,nw],'|','.').
-map_neib(_,_,_,[n,s,e],[ne,se],'|','.').
-map_neib(_,_,_,[s,e,w],[ne,sw,se,nw],'-','.').
-map_neib(_,_,_,[n,e,w],[ne,sw,se,nw],'-','.').
-map_neib(_,_,_,[n,s,w],[ne,sw,se,nw],'|','.').
-map_neib(_,_,_,[n,s,e],[ne,sw,se,nw],'|','.').
+map_neib([s,e,sw,se],_,'/').
+map_neib([s,w,sw,se],_,'\\').
 
-map_neib(_,_,_,[n,s,w],_,'|','.').
-map_neib(_,_,_,[n,s,e],_,'|','.').
+map_neib([nw],_,'\\').
+map_neib([se],_,'\\').
+map_neib([ne],_,'/').
+map_neib([sw],_,'/').
 
-map_neib(_,_,_,[s,e,w],_,'-','.').
-map_neib(_,_,_,[n,e,w],_,'-','.').
+map_neib([s,nw],_,'\\').
+map_neib([n,se],_,'\\').
+map_neib([s,ne],_,'/').
+map_neib([n,sw],_,'/').
+
+map_neib([w,nw],_,'-').
+map_neib([e,se],_,'-').
+map_neib([e,ne],_,'-').
+map_neib([w,sw],_,'-').
+
+/*
+map_neib([n,nw],_,'\\').
+map_neib([s,se],_,'\\').
+map_neib([n,ne],_,'/').
+map_neib([s,sw],_,'/').
+*/
 
 
-map_neib(_,_,_,[n,s,e,w],[ne,sw,se,nw],'~','~').
-map_neib(_,_,_,[_,_,_,_],[],'+','+').
+map_neib([sw,se],_,'^').
+map_neib([ne,nw],_,'v').
+map_neib([sw,nw],_,'>').
+map_neib([ne,se],_,'<').
+map_neib([s,sw,se],_,'^').
+map_neib([n,ne,nw],_,'v').
+map_neib([w,sw,nw],_,'>').
+map_neib([e,ne,se],_,'<').
+
+map_neib([s,e,se],_,'+').
+map_neib([s,w,sw],_,'+').
+
+map_neib([n,e,ne],_,'+').
+map_neib([n,w,nw],_,'+').
+
+map_neib([n,s,sw,se],_,'^').
+map_neib([e,w,sw,nw],_,'>').
+map_neib([e,w,ne,se],_,'<').
+map_neib([s,ne,sw],_,'/').
+map_neib([s,nw,se],_,'\\').
+map_neib([s,ne],_,'/').
+map_neib([s,nw],_,'\\').
+map_neib(_,[sw,se],'-').
+map_neib(_,[s,sw],'-').
+map_neib(_,[s,se],'-').
+
+map_neib(_,[n,ne],'-').
+map_neib(_,[n,nw],'-').
+
+map_neib(_,[ne],'\\').
+map_neib(_,[nw],'/').
+map_neib(_,[se],'/').
+map_neib(_,[sw],'\\').
+map_neib(_,[n],'v').
+map_neib(_,[w],'>').
+map_neib(_,[e],'<').
+map_neib(_,[s],'^').
+
+
+
+map_neib(_,[s,sw,se],'-').
+map_neib(_,[n,ne,nw],'-').
+map_neib(_,[e,ne,se],'|').
+map_neib(_,[w,sw,nw],'|').
+
+
+map_neib([e,w|_],_,'-').
+
+map_neib(_,[e,w,ne,se],'|').
+map_neib(_,[e,w,sw,nw],'|').
+map_neib(_,[n,s,sw,se],'-').
+map_neib(_,[n,s,ne,nw],'-').
+map_neib(_,[D],'~'):- is_diag(D),!.
+map_neib(_,[D],'*'):- \+ is_diag(D),!.
+
+map_neib([_,nw],_,'\\').
+map_neib([_,se],_,'\\').
+map_neib([_,ne],_,'/').
+map_neib([_,sw],_,'/').
+
+
+map_neibw9(Has,Not,_,_,_,_,_,S,S):-map_neib(Has,Not,S).
+map_neibw9(_EAll,_Missing,_C,_O,_E,[_,_,_],[],'%','%').
+map_neibw9(_EAll,_Missing,_,_,_,[],[],0,0).
+map_neibw9(_EAll,_Missing,_,_,_,[],[_,_,_,_],'X','X').
+map_neibw9(_EAll,_Missing,_,_,_,[],[_,_,_],'X','X').
+map_neibw9(_,[],_,_,_,_,_,'~','~').
+map_neibw9(_EAll,_Missing,_,_,_,_,[ne,nw],'V','v').
+map_neibw9(EAllDirs,Missing,C,DirsE,Edge,DirsC,DirsD,NSM,PS):- map_neibw(EAllDirs,Missing,C,DirsE,Edge,DirsC,DirsD,NSM,PS).
+map_neibw9(EAll,Missing,C,[O],E,[],[],NS,PS):- map_neibw(EAll,Missing,C,[],E,[],[O],NS,PS),!.
+
+map_neibw(_EAll,[n,s,e,w,sw,se,nw],_,_,_,_,_,'/','/').
+map_neibw(_EAll,[n,s,e,w,ne,se,nw],_,_,_,_,_,'/','/').
+map_neibw(_EAll,[n,s,e,w,ne,sw,nw],_,_,_,_,_,'\\','\\').
+map_neibw(_EAll,[n,s,e,w,ne,sw,se],_,_,_,_,_,'\\','\\').
+map_neibw(_EAll,[w,ne,sw,se,nw],_,_,_,_,_,'|','.').
+map_neibw(_EAll,[e,ne,sw,se,nw],_,_,_,_,_,'|','.').
+map_neibw(_EAll,[w,sw,nw],_,_,_,_,_,'|','.').
+map_neibw(_EAll,[e,ne,se],_,_,_,_,_,'|','.').
+
+map_neibw(_EAll,[s,w,sw],_,_,_,_,_,'+','.').
+
+
+map_neibw(_EAll,[n,ne,sw,se,nw],_,_,_,_,_,'-','.').
+map_neibw(_EAll,[s,ne,sw,se,nw],_,_,_,_,_,'-','.').
+map_neibw(_EAll,[ne,se],_,_,_,_,_,'|','.').
+map_neibw(_EAll,[sw,nw],_,_,_,_,_,'|','.').
+map_neibw(_EAll,[ne,nw],_,_,_,_,_,'-','.').
+map_neibw(_EAll,[sw,se],_,_,_,_,_,'-','.').
+map_neibw(_EAll,[_,_,_],_,_,_,_,_,'+','.').
+
+map_neibw(_EAll,_Missing,_,_,_,[n,s,e,w],[_,_,_],'+','7').
+
+map_neibw(_EAll,_Missing,_,_,_,[n,s,e,w],[_,_,_],'*','7').
+
+%map_neibw(_EAll,_Missing,_,[ne,sw,se,nw],[],_,_,'~','~').
+%map_neibw(_EAll,_Missing,_,[n,s,e,w],_,_,_,'~','~').
+
+
+map_neibw(_EAll,_Missing,_,_,c,[n],[],'!','2').
+map_neibw(_EAll,_Missing,_,_,c,[s],[],'!','2').
+map_neibw(_EAll,_Missing,_,_,c,[e],[],'=','2').
+map_neibw(_EAll,_Missing,_,_,c,[w],[],'=','2').
+
+map_neibw(_EAll,_Missing,_,_,_,[n],[],'|','2').
+map_neibw(_EAll,_Missing,_,_,_,[s],[],'|','2').
+map_neibw(_EAll,_Missing,_,_,_,[e],[],'-','2').
+map_neibw(_EAll,_Missing,_,_,_,[w],[],'-','2').
+
+map_neibw(_EAll,_Missing,_,_,_,[n,s],_,'|','.').
+map_neibw(_EAll,_Missing,_,_,_,[e,w],_,'-','.').
+map_neibw(_EAll,_Missing,_,_,_,[n,e],[],'C','+').
+map_neibw(_EAll,_Missing,_,_,_,[n,w],[],'C','+').
+map_neibw(_EAll,_Missing,_,_,_,[s,e],[],'C','+').
+map_neibw(_EAll,_Missing,_,_,_,[s,w],[],'C','+').
+map_neibw(_EAll,_Missing,_,_,_,[_,_,_,_],[_,_,_],'C','+').
+map_neibw(_EAll,_Missing,_,_,_,[_,_,_],[],'T','+').
+map_neibw(_EAll,_Missing,_,_,_,[_,_,_],[_],'+','+').
+
+map_neibw(_EAll,_Missing,_,_,_,_,NonNil,'+','.'):- NonNil\==[],!.
+
+
+map_neibw(_EAll,_Missing,_,_,_,[s,e,w],[sw,se],'-','.').
+map_neibw(_EAll,_Missing,_,_,_,[n,e,w],[ne,nw],'-','.').
+map_neibw(_EAll,_Missing,_,_,_,[n,s,w],[sw,nw],'tz','.').
+map_neibw(_EAll,_Missing,_,_,_,[n,s,e],[ne,se],'yz','.').
+map_neibw(_EAll,_Missing,_,_,_,[s,e,w],[ne,sw,se,nw],'-','.').
+map_neibw(_EAll,_Missing,_,_,_,[n,e,w],[ne,sw,se,nw],'-','.').
+map_neibw(_EAll,_Missing,_,_,_,[n,s,w],[ne,sw,se,nw],'|','.').
+map_neibw(_EAll,_Missing,_,_,_,[n,s,e],[ne,sw,se,nw],'|','.').
+
+map_neibw(_EAll,_Missing,_,_,_,[n,s,w],_,'|','.').
+map_neibw(_EAll,_Missing,_,_,_,[n,s,e],_,'|','.').
+
+map_neibw(_EAll,_Missing,_,_,_,[s,e,w],_,'-','.').
+map_neibw(_EAll,_Missing,_,_,_,[n,e,w],_,'-','.').
+
+
+map_neibw(_EAll,_Missing,_,_,_,[n,s,e,w],[ne,sw,se,nw],'~','~').
 % is_diag(ne). is_diag(sw). is_diag(se). is_diag(nw).
-map_neib(_,_,_,[],[ne,nw],'V','v').
-map_neib(_,_,_,_,[ne,nw],'v','v').
-map_neib(_,_,_,[],[se,nw],'\\','v').
-map_neib(_,_,_,_,[se,nw],'\\','v').
+%map_neibw(_EAll,_Missing,_,_,_,[],[ne,nw],'V','v').
+map_neibw(_EAll,_Missing,_,_,_,[],[se,nw],'\\','v').
+map_neibw(_EAll,_Missing,_,_,_,_,[se,nw],'\\','v').
 
-map_neib(_,_,_,[],[_,se,nw],'\\','v').
-%map_neib(_,_,_,_,[_,se,nw],'\\','v').
+map_neibw(_EAll,_Missing,_,_,_,[],[_,se,nw],'\\','v').
+%map_neibw(_EAll,_Missing,_,_,_,_,[_,se,nw],'\\','v').
 
-map_neib(_,_,_,[],[ne,sw],'/','v').
-map_neib(_,_,_,_,[ne,sw],'/','v').
+map_neibw(_EAll,_Missing,_,_,_,[],[ne,sw],'/','r').
+map_neibw(_EAll,_Missing,_,_,_,_,[ne,sw],'/','v').
 
-map_neib(_,_,_,[],[ne,sw,_],'/','v').
-%map_neib(_,_,_,_,[ne,sw,_],'/','v').
-
-map_neib(_,_,_,[],[ne,se],'<','v').
-map_neib(_,_,_,_,[ne,se],'<','v').
-map_neib(_,_,_,[],[sw,nw],'>','v').
-map_neib(_,_,_,_,[sw,nw],'>','v').
-map_neib(_,_,_,[],[se,sw],'^','v').
-map_neib(_,_,_,_,[se,sw],'^','v').
-map_neib(_,_,_,[],[_,_,_],'Y','v').
-map_neib(_,_,_,_,[_,_,_],'y','v').
+map_neibw(_EAll,_Missing,_,_,_,[],[ne,sw,_],'/','v').
+%map_neibw(_EAll,_Missing,_,_,_,_,[ne,sw,_],'/','v').
 
 
-map_neib(_,_,_,[_,_,_],[_,_,_,_],7,'X').
-map_neib(_,_,_,[],[_,_,_,_],'X','X').
 
-%map_neib(_,_,c,[],[_],'x','v').
-
-map_neib(_,_,_,[],[ne],'/','v').
-map_neib(_,_,_,[],[nw],'\\','v').
-map_neib(_,_,_,[],[se],'\\','v').
-map_neib(_,_,_,[],[sw],'/','v').
-
-map_neib(_,_,_,[e],[ne,se],'2','X').
-map_neib(_,_,_,[w],[sw,nw],'2','X').
-map_neib(_,_,_,[n],[ne,nw],'2','X').
-map_neib(_,_,_,[s],[se,sw],'2','X').
-
-map_neib(_,_,_,[n,e],[ne],'C','+').
-map_neib(_,_,_,[n,w],[nw],'C','+').
-map_neib(_,_,_,[s,e],[se],'C','+').
-map_neib(_,_,_,[s,w],[sw],'C','+').
-
-map_neib(_,_,_,[n,e],[sw],'j','j').
-map_neib(_,_,_,[n,w],[se],'j','j').
-map_neib(_,_,_,[s,e],[nw],'j','j').
-map_neib(_,_,_,[s,w],[ne],'j','j').
-
-map_neib(_,_,_,[n,e],[sw],'J','j').
-map_neib(_,_,_,[n,w],[se],'J','j').
-map_neib(_,_,_,[s,e],[nw],'J','j').
-map_neib(_,_,_,[s,w],[ne],'J','j').
+map_neibw(_EAll,_Missing,_,_,_,[],[ne,se],'<','v'). 
+map_neibw(_EAll,_Missing,_,_,_,_,[ne,se],'<','v').
+map_neibw(_EAll,_Missing,_,_,_,[],[sw,nw],'>','v').
+map_neibw(_EAll,_Missing,_,_,_,_,[sw,nw],'>','v').
+map_neibw(_EAll,_Missing,_,_,_,[],[se,sw],'^','v').
+map_neibw(_EAll,_Missing,_,_,_,_,[se,sw],'^','v').
+map_neibw(_EAll,_Missing,_,_,_,[],[_,_,_],'Y','v').
+map_neibw(_EAll,_Missing,_,_,_,_,[_,_,_],'y','v').
 
 
-map_neib(_,_,_,[_,_,_,_],[_],5,'.').
-map_neib(_,_,_,[_],[_,_,_,_],'X','X').
-map_neib(_,_,_,[_],[_,_,_,_],4,'X').
-map_neib(_,_,_,[_],[],2,'*').
-map_neib(_,_,_,[],[_],1,'*').
-%map_neib(_,_,_,NonNil1,NonNil2,'a','.'):- NonNil1\==[],NonNil2\==[],!.
-map_neib(_,_,_,_,NonNil,'A','.'):- NonNil\==[],!.
-map_neib(_,_,_,NonNil,_,'%','.'):- NonNil\==[],!.
-map_neib(_,_,_,_,_,'.','.').
+map_neibw(_EAll,_Missing,_,_,_,[_,_,_],[_,_,_,_],7,'X').
+map_neibw(_EAll,_Missing,_,_,_,[],[_,_,_,_],'X','X').
 
+%map_neibw(_EAll,_Missing,_,_,c,[],[_],'x','v').
+
+map_neibw(_EAll,_Missing,_,_,_,[],[ne],'/','v').
+map_neibw(_EAll,_Missing,_,_,_,[],[nw],'\\','v').
+map_neibw(_EAll,_Missing,_,_,_,[],[se],'\\','v').
+map_neibw(_EAll,_Missing,_,_,_,[],[sw],'/','v').
+
+map_neibw(_EAll,_Missing,_,_,_,[e],[ne,se],'2','X').
+map_neibw(_EAll,_Missing,_,_,_,[w],[sw,nw],'2','X').
+map_neibw(_EAll,_Missing,_,_,_,[n],[ne,nw],'2','X').
+map_neibw(_EAll,_Missing,_,_,_,[s],[se,sw],'2','X').
+
+map_neibw(_EAll,_Missing,_,_,_,[n,e],[ne],'C','+').
+map_neibw(_EAll,_Missing,_,_,_,[n,w],[nw],'C','+').
+map_neibw(_EAll,_Missing,_,_,_,[s,e],[se],'C','+').
+map_neibw(_EAll,_Missing,_,_,_,[s,w],[sw],'C','+').
+
+map_neibw(_EAll,_Missing,_,_,_,[n,e],[sw],'j','j').
+map_neibw(_EAll,_Missing,_,_,_,[n,w],[se],'j','j').
+map_neibw(_EAll,_Missing,_,_,_,[s,e],[nw],'j','j').
+map_neibw(_EAll,_Missing,_,_,_,[s,w],[ne],'j','j').
+
+map_neibw(_EAll,_Missing,_,_,_,[n,e],[sw],'J','j').
+map_neibw(_EAll,_Missing,_,_,_,[n,w],[se],'J','j').
+map_neibw(_EAll,_Missing,_,_,_,[s,e],[nw],'J','j').
+map_neibw(_EAll,_Missing,_,_,_,[s,w],[ne],'J','j').
+
+
+map_neibw(_EAll,_Missing,_,_,_,[_,_,_,_],[_],5,'.').
+map_neibw(_EAll,_Missing,_,_,_,[_],[_,_,_,_],'X','X').
+map_neibw(_EAll,_Missing,_,_,_,[_],[_,_,_,_],4,'X').
+map_neibw(_EAll,_Missing,_,_,_,[_],[],2,'*').
+map_neibw(_EAll,_Missing,_,_,_,[],[_],1,'*').
+%map_neibw(_EAll,_Missing,_,_,_,NonNil1,NonNil2,'a','.'):- NonNil1\==[],NonNil2\==[],!.
+map_neibw(_EAll,_Missing,_,_,_,_,NonNil,'A','.'):- NonNil\==[],!.
+map_neibw(_EAll,_Missing,_,_,_,NonNil,_,'%','.'):- NonNil\==[],!.
+map_neibw(_EAll,_Missing,_,_,_,_,_,'.','.').
+
+sometimes_bg(V):- var(V),!,fail.
+sometimes_bg(zzzzzblack).
 
 dir_num(_,_,c,0).
 dir_num(C,C,Diag,1):- is_diag(Diag),!.
-dir_num(_,black,Diag,0):- is_diag(Diag),!.
+dir_num(_,Black,Diag,0):- sometimes_bg(Black),is_diag(Diag),!.
 dir_num(_,_,Diag,0):- is_diag(Diag),!.
 dir_num(C,C,_,2).
-dir_num(_,black,_,0).
+dir_num(_,Black,_,0):- sometimes_bg(Black).
 dir_num(_,_,_,0).
 
 %find_center(Grid,H,V):- chew_away_at_sides(Grid,GridO,TH,TV),grid_size(GridO,H,V),X is floor(H/2),Y is floor(V/2).

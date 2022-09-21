@@ -158,11 +158,11 @@ do_menu_key('O'):- !, cls_z,!,ndividuatorO.
 do_menu_key('G'):- !, cls_z,!,detect_test_hints1.
 do_menu_key(-1):- !, arc_assert(wants_exit_menu).
 do_menu_key(Key):- atom_codes(Key,Codes),  do_menu_codes(Codes), !.
+do_menu_key(Key):- atom_string(Name,Key), fix_id(Name,TestID),set_current_test(TestID),!,print_test.
 do_menu_key(Sel):- atom_number(Sel,Num), number(Num), do_test_number(Num),!.
 do_menu_key(Key):- print_menu_cmd(Key),menu_cmds(_Mode,Key,_Info,Goal),!, format('~N~n'),
   dmsg(calling(Goal)),!, ignore(once((catch(my_menu_call(Goal),'$aborted',fail)*->true;(fail,trace,arcST,rrtrace(Goal))))),!,
    read_pending_codes(user_input,_Ignored,[]),!.
-
 do_menu_key(Key):- maybe_call_code(Key),!.
 do_menu_key(Key):- atom(Key),atom_length(Key,1),atom_codes(Key,Codes), format("~N % Menu: didn't understand: '~w' ~q ~n",[Key,Codes]),once(mmake).
 do_menu_key(_).
@@ -254,31 +254,33 @@ restart_suite:-
 prev_suite:- once((get_current_test(TestID),get_current_suite_testnames([First|_]))),TestID\==First,!,restart_suite.
 prev_suite:- 
    findall(SN,test_suite_name(SN),List),
-   luser_getval(test_order,X),
+   luser_getval(test_suite_name,X),
    prev_in_list(X,List,N),
-   luser_setval(test_order,N),!,
+   luser_setval(test_suite_name,N),!,
    wdmsg(switched(X-->N)),
    restart_suite.
 next_suite:- 
    findall(SN,test_suite_name(SN),List),
-   luser_getval(test_order,X),
+   luser_getval(test_suite_name,X),
    next_in_list(X,List,N),
-   luser_setval(test_order,N),!,
+   luser_setval(test_suite_name,N),!,
    wdmsg(switched(X-->N)),
    restart_suite.
 
+%test_suite_name(arc_easy_test).
 test_suite_name(human_t).
 test_suite_name(sol_t).
 test_suite_name(hard_t). test_suite_name(test_names_by_fav). 
 test_suite_name(key_pad_tests). test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
 test_suite_name(test_names_by_hard). 
 test_suite_name(test_names_by_fav_rev). test_suite_name(test_names_by_hard_rev).
+test_suite_name(all_arc_test_name).
 
 :- dynamic(muarc_tmp:cached_tests/2).
 %:- retractall(muarc_tmp:cached_tests(_,_)).
-:- luser_defval(test_order,sol_t).
+:- test_suite_name(Name)->luser_defval(test_suite_name,Name).
 get_current_suite_testnames(Set):-
-  luser_getval(test_order,X),
+  luser_getval(test_suite_name,X),
   current_suite_testnames(X,Set).
 
 current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),!.  
@@ -326,7 +328,7 @@ really_set_current_test(TestID):-
 
 some_current_example_num(TrnN):- nb_current(example,TrnN),ground(TrnN),TrnN\==[],!.
 some_current_example_num(TrnN):- luser_getval(example,TrnN),ground(TrnN),TrnN\==[],!.
-some_current_example_num(trn+1).
+some_current_example_num(trn+0).
 
 next_pair:- 
   get_current_test(TestID),
@@ -442,11 +444,23 @@ next_grid_mode(dots,dashes):-!.
 next_grid_mode(_,dots).
 switch_grid_mode:- (luser_getval('$grid_mode',Dots);Dots=dots),next_grid_mode(Dots,Dashes),luser_setval('$grid_mode',Dashes).
 as_d_grid(In,In):- \+ luser_getval('$grid_mode',dashes),!.
-as_d_grid(In,In1):- must_det_ll((subst001(In,black,wbg,In0), most_d_colors(In0,_CI,In1))),!.
+as_d_grid(In,In1):- as_ngrid(In,In1).
+as_ngrid(In,In1):- must_det_ll((change_bg_fg(In, _BG, _FG,In0), most_d_colors(In0,_CI,In1))),!.
+
+change_bg_fg(In,BG,FG,Mid):- 
+   black=BG,
+   must_det_ll((available_fg_colors(Avails),
+   unique_colors(In,Colors),subtract(Avails,Colors,CanUse),
+   ((fail,last(CanUse,FG))->true;FG=wbg),subst001(In,BG,FG,Mid))),!.
+
+available_fg_colors(Avails):- findall(Color,enum_fg_colors(Color),Avails).
 
 %print_test(TName):- !, parcCmt(TName).
 print_qtest:- get_current_test(TestID),print_qtest(TestID).
 
+print_single_test:- get_current_test(TestID),print_single_test(TestID).
+
+print_qtest(TestID):- \+ luser_getval('$grid_mode',dots),!,print_test(TestID).
 print_qtest(TestID):- !, print_single_test(TestID),!.
 print_qtest(TestID):-
     dash_chars,nl,nl,nl,dash_chars,
@@ -473,6 +487,8 @@ in_out_name(X,'Input'(X),'Output'(X)).
 
 
 all_arc_test_name(TestID):- kaggle_arc(TestID,trn+0,_,_).
+
+all_suite_test_name(TestID):- get_current_suite_testnames(Set),!,member(TestID,Set).
 
 arc_pair_id(TestID,ExampleNum):- 
   arc_test_name(TestID),
@@ -894,13 +910,6 @@ print_trainer0:- arc(t('25d487eb')).
 print_eval0:- arc(v('009d5c81')).
 
 
-
-parc1:- parc1(6300*3). 
-parc1(OS):- clsmake,   luser_setval(task,[]),
-   open(tt,write,O,[encoding(text)]), parc0(OS), with_output_to(O,parc0(OS)), close(O).
-parc0(OS):-
- locally(set_prolog_flag(gc,true),forall(parc11(OS,_),true)).
-
 parcCmt(TName):- 
   fix_test_name(TName,TestID,_),
   %color_print(magenta,call(((grid_hint(TestID))))),
@@ -922,26 +931,47 @@ parcCmt1(TName):-
   format('~q.~n',[P]))).
 
 
+parc:- parc1((trn+1),6300*3).
+parc(ExampleNum,OS):- clsmake,   luser_setval(task,[]),
+ locally(set_prolog_flag(color_term,true),
+   setup_call_cleanup(tell(user),
+    ((set_prolog_flag(color_term,true),
+      set_stream(current_output, tty(true)),
+      parc1(ExampleNum,OS))),
+      told)).
 
+parcf:- parcf((tst+_),_).
+parcf(ExampleNum,OS):- make,   luser_setval(task,[]),
+ locally(set_prolog_flag(color_term,false),
+ setup_call_cleanup( open('tt.vt100',write,O,[encoding(text)]), 
+   with_output_to(O,
+    ((set_prolog_flag(color_term,true),
+      set_stream(O, tty(true)),
+      parc1(ExampleNum,OS)))), close(O))).
 
-parc11(_OS,_):-
-  forall(test_names_by_hard(TName),    print_test(TName)).
+parctt:- parctt((tst+_),6300*3).
+parctt(ExampleNum,OS):- make,   luser_setval(task,[]),
+  locally(set_prolog_flag(color_term,false),
+   setup_call_cleanup( open('tt',write,O,[encoding(utf8)]), 
+   with_output_to(O,
+    ((set_stream(O, tty(false)),
+      parc1(ExampleNum,OS)))), close(O))).
 
+parc1(ExampleNum,OS):-
+ locally(set_prolog_flag(gc,true),forall(parc11(ExampleNum,OS,_),true)).
 
-parc11(OS,TName):- fail,    
-  fix_test_name(TName,TestID,ExampleNum),   
-  kaggle_arc(TestID,ExampleNum,In,Out),
-  maplist(color_sym(OS),In,I),
-  grid_size(In,IH,IV),
-  grid_size(Out,_OH,OV),
-  %V is OV-IV,
-  H is IH,
-  maplist(color_sym(OS),Out,O),
-  format('~Ntestcase(~q,"\n~@").~n',[TestID>ExampleNum,
-    print_side_by_side(call((print_grid(IH,IV,I),
-      write(' '),forall(between(IV,OV,_),(write('\n '),dash_chars(H,'  '))))),call(print_grid(O)))]).
+parc11(ExampleNum,OS,TName):-     
+ fix_test_name(TName,TestID,ExampleNum),   
+ forall(kaggle_arc(TestID,ExampleNum,In,Out),
+  must_det_ll((
+  mapgrid(color_sym(OS),In,I),
+  mapgrid(color_sym(OS),Out,O),
+  format('~Ntestcase(~q,"\n',[TestID>ExampleNum]),
+    print_side_by_side(I,O), format('").\n'),
+  ignore((write('%= '), parcCmt(TestID),nl,nl))))).
 
 %color_sym(OS,[(black='°'),(blue='©'),(red='®'),(green=''),(yellow),(silver='O'),(purple),(orange='o'),(cyan= 248	ø ),(brown)]).
+color_sym(OS,C,C):- var(OS),!.
 color_sym(OS,C,Sym):- is_list(C),maplist(color_sym(OS),C,Sym),!.
 color_sym(_,black,' ').
 color_sym(OS,C,Sym):- color_sym(OS,4,C,Sym).

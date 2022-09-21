@@ -87,8 +87,8 @@ rot_mass(Grid,OMass):- into_grid(Grid,LP0),
  must_det_ll(( 
   mapgrid(color_mass_int,LP0,LP),
   length(C,Len),map_row_size(10,Len,LP,Mass),
-   (is_top_heavy(LP)->Bonus is -16;Bonus is 16),
-   (is_left_heavy(LP)->Bonus2 is 1 ;Bonus2 is -1),
+   (is_top_heavy(LP)->Bonus is -1; Bonus is 1),
+   (is_left_heavy(LP)->Bonus2 is 16 ;Bonus2 is -16),
    OMass is Mass*Bonus*Bonus2)).
 
 map_row_size(_,Len,[],Len):-!.
@@ -120,7 +120,7 @@ tips_to_rot(Grid,H,V,[rot90|RotOut],Final):- is_top_heavy(Grid), !, rot270(Grid,
 tips_to_rot(Grid,_H,_V,RotOut,Final):- is_left_heavy(Grid)-> (RotOut=[rot180],rot180(Grid,Final)); (RotOut=[sameR],Final=Grid).
 
 is_top_heavy(Grid):- split_50_v(Grid,Top,Bottem),!,rot_mass(Top,TopM),rot_mass(Bottem,BottemM),!,BottemM>TopM.
-is_left_heavy(Grid0):- rot90(Grid0,Grid),!,is_top_heavy(Grid).
+is_left_heavy(Grid0):- rot270(Grid0,Grid),!,is_top_heavy(Grid).
 split_50_v(Grid,Top,Bottem):- length(Grid,N),H is floor(N/2), length(Top,H),length(Bottem,H),
     my_append(Top,Rest,Grid),my_append(_Mid,Bottem,Rest).
 

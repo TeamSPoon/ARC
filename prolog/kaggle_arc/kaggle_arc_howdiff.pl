@@ -206,8 +206,8 @@ showdiff_groups(AG,BG):-
   ignore((LenA3>0,dash_chars, print_list_of( inputUniqs=LenA3/LenA4,A3))),
   ignore((LenB3>0,dash_chars, print_list_of(outputUniqs=LenB3/LenB4,B3))),
   dash_chars,
-  diff_groups1a(A4,B4,A3,B3,Diffs),
-  maplist(showdiff_objects,Diffs),
+  diff_groups1a(A3,B3,A4,B4,Diffs),
+  print_list_of(showdiff_objects,showdiff_objects,Diffs),
   dash_chars,
   !.
 
@@ -572,7 +572,7 @@ showdiff_objects5(Why,OO1,OO2,Sames,Diffs):-
   dash_chars,dash_chars,
   object_grid_to_str(O1,Str1,T1),
   object_grid_to_str(O2,Str2,T2),
-  ppt('SHOWDIFF_OBJS'=Why),
+  ppt(Why),
   ((global_grid(O1,OG1),global_grid(O2,OG2),print_side_by_side(teal,OG1,global_grid(T1),_,OG2,diff(T2)))-> true;
    (print_side_by_side(yellow,O1,no_global_grid(T1),_,O2,diff(T2)))),
   ignore((into_ngrid(O1,NO1),into_ngrid(O2,NO2), print_side_by_side(silver,NO1,ngrid(T1),_,NO2,ngrid(T2)))),

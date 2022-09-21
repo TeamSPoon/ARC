@@ -380,7 +380,7 @@ object_pen(Obj,pen(Color)):- color(Obj,Color),!.
 object_pen(Obj,Pen):- color(Obj,Pen),!.
 
 prop_of(amass,amass(_)).
-prop_of(colors,colors(_)).
+prop_of(colors,pen(_)).
 
 prop_of(visually,localpoints(_)).
 prop_of(loc,loc(_,_)).

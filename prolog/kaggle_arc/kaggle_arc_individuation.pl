@@ -88,6 +88,8 @@ not_io(O):- \+ has_prop(iz(g(out)),O), \+ has_prop(iz(g(in)),O).
 show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):- 
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),
   print_side_by_side(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
+  as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1),
+  print_side_by_side(green,GridIn1,ngridIn(ID1),_,GridOut1,ngridOut(ID2)),
   dash_chars,
   setup_call_cleanup(
     luser_setval(no_rdot,true),
