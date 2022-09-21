@@ -392,6 +392,11 @@ dash_uborder_no_nl(1):- !, dash_uborder_no_nl_1.
 dash_uborder_no_nl(Width):- WidthM1 is Width-1, bformatc(' ¯'),dash_chars(WidthM1,'¯¯'),!.
 %dash_uborder_no_nl(Width):- WidthM1 is Width-1, write(' _'),dash_chars(WidthM1,'__').
 
+dash_uborder(Width):- format('~N'),dash_uborder_no_nl(Width),nl.
+
+uborder('-','--'):- stream_property(current_output,encoding(uft8)),!.
+uborder('¯','¯¯'):- !. %stream_property(current_output,encoding(text)).
+%uborder('-','--').
 
 dash_border_no_nl_1:-  line_position(current_output,0),!, bformatc(' ___ ').
 dash_border_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('___ ').
@@ -400,8 +405,6 @@ dash_border_no_nl(1):- format('~N'),!,dash_border_no_nl_1.
 dash_border_no_nl(Width):- format('~N'), WidthM1 is Width-1, bformatc(' _'),dash_chars(WidthM1,'__').
 
 dash_border(Width):- !, dash_border_no_nl(Width),nl,!.
-dash_uborder(Width):- format('~N'), WidthM1 is Width-1, bformatc(' ¯'),dash_chars(WidthM1,'¯¯'),nl.
-%dash_uborder(Width):- format('~N'), WidthM1 is Width-1, write(' _'),dash_chars(WidthM1,'__'),nl.
 
 functor_test_color(pass,green).
 functor_test_color(fail,red).
@@ -980,17 +983,19 @@ print_grid_ansi(SH,SV,EH,EV,GridI):-
 %print_rows(List):- maplist(print_g,List),nl.
 %block_colors([(black),(blue),(red),(green),(yellow),'#c0c0c0',(magenta),'#ff8c00',(cyan),'#8b4513']).
 %block_colors([(black),(blue),(red),(green),(yellow),Silver,('#966cb8'),'#ff8c00',(cyan),'#8b4513']):- silver(Silver),!.
-block_colors([('#3a5a3a'),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan),'#8b4513','#2a2a2a','magenta','#444455']):- silver(Silver),!.
-%block_colors([(black),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan),'#8b4513','#2a2a2a','#3a5a3a']):- silver(Silver),!.
-named_colors([(black),(blue),(red),(green),(yellow),(silver),(purple),(orange),(cyan),(brown),wbg,fg,'#444455']).
-named_colors([ (lack),(blue),(red),(green),(yellow),(silver),(purple),(orange),(cyan),(brown),bg,wfg]).
+block_colors([('#3a5a3a'),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan),'#8b4513','#2a2a2a','#f47c7c',FG]):- fg_cut(FG), silver(Silver),!.
+%block_colors([(black),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan),'#8b4513','#2a2a2a', 9379b4 '#3a5a3a']):- silver(Silver),!.
+named_colors([(black),(blue),(red),(green),(yellow),(silver),(purple),(orange),(cyan),(brown),wbg,fg,FG]):- fg_cut(FG).
+named_colors([ (lack),(blue),(red),(green),(yellow),(Silver),(purple),(orange),(cyan),(brown),bg,wfg]):- silver(Silver).
 named_colors([(lack),(blue),(red),(green),(yellow),(silver),(magenta),(orange),(cyan),(brown)]).
 named_colors([(lack),(blue),(red),(green),(yellow),(grey),(pink),(orange),(teal),(maroon)]).
 
+fg_cut('#b399d4').
 % silver(rgb(123,123,123)).
+silver('#9a9a9a').
 silver('#7b7b7b').
 silver('#c0c0c0').
-silver('#9a9a9a').
+
 
 unnegate_color(C,Neg):- number(C),C<0,C is -Neg,!.
 unnegate_color(CI,C):- compound(CI),CI= '-'(C),!.
