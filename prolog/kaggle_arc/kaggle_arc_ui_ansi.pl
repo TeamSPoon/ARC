@@ -385,16 +385,18 @@ dash_chars(S):- format('~N'),dash_chars(60,S),format('~N').
 dash_chars(H,_):- H < 1,!.
 dash_chars(H,C):- forall(between(0,H,_),bformatc(C)).
 
-dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc('¯¯¯ ').
-dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('¯¯¯ ').
-dash_uborder_no_nl_1:- bformatc('¯¯¯ ').
+%dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc('¯¯¯ ').
+%dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('¯¯¯ ').
+%dash_uborder_no_nl_1:- bformatc('¯¯¯ ').
+dash_uborder_no_nl_1:- uborder(Short,Long),!, bformatc(Short),bformatc(Long),bformat(' ').
 dash_uborder_no_nl(1):- !, dash_uborder_no_nl_1.
-dash_uborder_no_nl(Width):- WidthM1 is Width-1, bformatc(' ¯'),dash_chars(WidthM1,'¯¯'),!.
-%dash_uborder_no_nl(Width):- WidthM1 is Width-1, write(' _'),dash_chars(WidthM1,'__').
+dash_uborder_no_nl(Width):- WidthM1 is Width-1, uborder(Short,Long),
+  write(' '), write(Short),dash_chars(WidthM1,Long),!.
+%dash_uborder_no_nl(Width):- WidthM1 is Width-1, bformatc(' '), bformat('¯'),dash_chars(WidthM1,'¯¯'),!.
 
 dash_uborder(Width):- format('~N'),dash_uborder_no_nl(Width),nl.
 
-uborder('-','--'):- stream_property(current_output,encoding(uft8)),!.
+uborder('-','--'):- stream_property(current_output,encoding(utf8)),!.
 uborder('¯','¯¯'):- !. %stream_property(current_output,encoding(text)).
 %uborder('-','--').
 
@@ -460,6 +462,37 @@ print_side_by_side0(C1,W0,C2):- number(W0), LW is floor(abs(W0)),
 
 is_side(RL):- nb_current(print_sbs,RL),RL\==[].
 
+extend_len(Need,S,New):- 
+ must_det_ll((
+  split_string(S, "", "\s\t\n", [SS]),
+  atom_length(SS,Spaces),Makeup is Need -Spaces, 
+  (Makeup<1 -> New=S ;  (make_spaces(Makeup,S), string_concat(S,SS,New))))).
+   
+make_spaces(Spaces,S):-
+ wots(S,(bformatc('>'),forall(between(2,Spaces,_),bformatc(' ')),bformatc('>'))),!.
+
+
+maybe_exend_len(L1,L2,Lst1,L2):- \+ is_list(L1),
+  into_ss_string(L1,ss(_,Lst1)), !.
+maybe_exend_len(L1,L2,L1,Lst2):- \+ is_list(L2),
+  into_ss_string(L2,ss(_,Lst2)), !.
+
+maybe_exend_len(L1,L2,L2L,L1):- length(L1,N1),length(L2,N2), N2 > N1, !,append(['Swapped2'],L2,L2L).
+
+maybe_exend_len(L1,L2,NL1,L2):-
+  length(L1,N1),
+  length(L2,N2),
+  N2>N1, 
+ must_det_ll((
+  nth1(1,L1,E1), atom_length(E1,Spaces1),
+  nth1(2,L1,E2), atom_length(E2,Spaces2),
+  max_min(Spaces1,Spaces2,Spaces,_Min),
+  make_spaces(Spaces,S),
+  Needs is N2-N1, make_list(S,Needs,AppendL1), 
+  append(L1,AppendL1,NL0),
+  maplist(extend_len(Spaces),NL0,NL1))),!.
+
+maybe_exend_len(L1,L2,L2L,L1):- length(L1,N1),length(L2,N2), N2 > N1, !,append(['Swapped'],L2,L2L).
 
 maybe_exend_len(L1,L2,NL1,L2):-
   length(L1,N1),
@@ -470,12 +503,14 @@ maybe_exend_len(L1,L2,NL1,L2):-
   make_list(S,Needs,AppendL1),
   append(L1,AppendL1,NL1),!.
 
+
 maybe_exend_len(L1,L2,L2,L1):- length(L1,N1), length(L2,N2), N2 > N1, !.
 
 
 print_side_by_side_lists_1st([],_,[],_):-!.
 
-print_side_by_side_lists_1st(L1,W1,L2,LW):- maybe_exend_len(L1,L2,NL1,NL2),!, print_side_by_side_lists_1st(NL1,W1,NL2,LW).
+print_side_by_side_lists_1st(L1,W1,L2,LW):- maybe_exend_len(L1,L2,NL1,NL2),!, 
+  print_side_by_side_lists_1st(NL1,W1,NL2,LW).
 
 print_side_by_side_lists_1st([E1,E2|L1],W1,L2,LW):- !,
   wots(S,(write(E2),write('\t '),dash_chars(W1,' ' ))),
