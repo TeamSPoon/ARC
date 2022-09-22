@@ -462,22 +462,26 @@ print_side_by_side0(C1,W0,C2):- number(W0), LW is floor(abs(W0)),
 
 is_side(RL):- nb_current(print_sbs,RL),RL\==[].
 
+trim_rs(S,SS):- member(WS, ["\s","\t","\n","\r"," "]), string_concat(Left,WS,S),
+  trim_rs(Left,SS),!.
+trim_rs(SS,SS).
+  
 extend_len(Need,S,New):- 
  must_det_ll((
-  split_string(S, "", "\s\t\n", [SS]),
+  trim_rs(S,SS),
   atom_length(SS,Spaces),Makeup is Need -Spaces, 
-  (Makeup<1 -> New=S ;  (make_spaces(Makeup,S), string_concat(S,SS,New))))).
+  ( Makeup<1 -> New=SS ;  (make_spaces(Makeup,Pre), atomics_to_string([SS,Pre,'\n'],New))))).
    
 make_spaces(Spaces,S):-
- wots(S,(bformatc('>'),forall(between(2,Spaces,_),bformatc(' ')),bformatc('>'))),!.
+ wots(S,(bformatc(' '),forall(between(2,Spaces,_),bformatc(' ')),bformatc(' '))),!.
 
 
-maybe_exend_len(L1,L2,Lst1,L2):- \+ is_list(L1),
+maybe_exend_len(L1,L2,Lst1,L2):-  (is_grid(L1) ; \+ is_list(L1)),
   into_ss_string(L1,ss(_,Lst1)), !.
-maybe_exend_len(L1,L2,L1,Lst2):- \+ is_list(L2),
+maybe_exend_len(L1,L2,L1,Lst2):-  (is_grid(L2) ; \+ is_list(L2)),
   into_ss_string(L2,ss(_,Lst2)), !.
 
-maybe_exend_len(L1,L2,L2L,L1):- length(L1,N1),length(L2,N2), N2 > N1, !,append(['Swapped2'],L2,L2L).
+%maybe_exend_len(L1,L2,L2L,L1):- length(L1,N1),length(L2,N2), N2 > N1, !,append(['Swapped2'],L2,L2L).
 
 maybe_exend_len(L1,L2,NL1,L2):-
   length(L1,N1),
