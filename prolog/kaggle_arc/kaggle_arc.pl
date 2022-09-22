@@ -1039,8 +1039,9 @@ bfly_startup1:-
 
 bfly_startup:- catch_log(bfly_startup1).
 
+:- nb_setval(arc_can_portray,nil).
 :- nb_setval(arc_can_portray,t).
-:- \+ nb_current(arc_can_portray,nil).
+%:- \+ nb_current(arc_can_portray,nil).
 
 :- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).

@@ -125,11 +125,11 @@ make_point_object(VM,Overrides,C-Point,Obj):-
   must_det_ll(make_indiv_object(VM,Overrides,[C-Point],Obj)).
 
 globalpoints_maybe_bg([],[]):-!.
-globalpoints_maybe_bg(ScaledGrid,GPoints):- is_cpoints_list(ScaledGrid),!,maybe_include_bg(ScaledGrid,GPoints).
+globalpoints_maybe_bg(ScaledGrid,GPoints):- is_points_list(ScaledGrid),!,maybe_include_bg(ScaledGrid,GPoints).
 globalpoints_maybe_bg(ScaledGrid,Points):- once(globalpoints(ScaledGrid,Points)),Points\==[],!.
 globalpoints_maybe_bg(ScaledGrid,GPoints):- globalpoints_include_bg(ScaledGrid,GPoints),!.
 
-globalpoints_include_bg(ScaledGrid,GPoints):- is_cpoints_list(ScaledGrid),!,ScaledGrid=GPoints.
+globalpoints_include_bg(ScaledGrid,GPoints):- is_points_list(ScaledGrid),!,ScaledGrid=GPoints.
 globalpoints_include_bg([],[]):-!.
 globalpoints_include_bg(ScaledGrid,GPoints):- loc(ScaledGrid,OH,OV),
   localpoints_include_bg(ScaledGrid,Points),!,offset_points(OH,OV,Points,GPoints).
@@ -823,12 +823,12 @@ gp_point_corners(Obj,_Points0,Dir,CPoint):-  %sort_points(Points,SPoints),
 %globalpoints(ID,Points):- \+ \+ cmem(ID,_,_), no_repeats(ID,cmem(ID,_,_)), findall(-(C,HV),cmem(ID,HV,C),Points).
 %globalpoints(Grid,Points):- grid_to_gid(Grid,ID),\+ \+ cmem(ID,_,_),findall(-(C,HV),cmem(ID,HV,C),Points).
 globalpoints(I,_):-  var(I),!,fail.
+globalpoints(Grid,Points):- is_grid(Grid),!, grid_to_points(Grid,Points).
 globalpoints(I,X):-  (var_check(I,globalpoints(I,X)), deterministic(TF), true), (TF==true-> ! ; true).
 globalpoints([],[]):-!.
 globalpoints(G,[G]):- is_cpoint(G),!.
 globalpoints(C-P,[C-P]):-!.
 globalpoints(G,G):- is_cpoints_list(G).
-globalpoints(Grid,Points):- is_grid(Grid),!, grid_to_points(Grid,Points).
 globalpoints(Grid,Points):- is_group(Grid),!,mapgroup(globalpoints,Grid,MPoints),append_sets(MPoints,Points).
 globalpoints(G,Ps):- is_map(G),vm_to_printable(G,R),!,globalpoints(R,Ps).
 globalpoints(options(X),_Points):- trace_or_throw(globalpoints(options(X))).

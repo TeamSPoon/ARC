@@ -253,19 +253,20 @@ sub_obj_atom(E,M):- sub_term(E,M),E\==M,compound(E),once((arg(_,E,A), atomic(A))
 select_obj_pair_2(AAR,BBR,PA,PB,Why):- 
  AAR\==[],
  BBR\==[],
- pair(L,PA,PB,Why) = Pair,
- findall(Pair,
+ prop_atoms(H/O,Best,PA,PB) = Why,
+ findall(Why,
   (member(PA,AAR), 
    member(PB,BBR), 
      must_det_ll((
    % maybe_allow_pair(PA,PB), allow_pair(PA,PB),
      obj_atoms(PA,PAP), 
      obj_atoms(PB,PBP),
-     intersection(PAP,PBP,Why,_,_),
-     length(Why,L)))),
+     intersection(PAP,PBP,Joins,_,Other),
+     length(Joins,H),length(Other,O)))),
    Pairs), 
  
- sort(Pairs,SPairs),reverse(SPairs,RPairs),!,member(Pair,RPairs), nop(wdmsg(Pair)).
+ sort(Pairs,SPairs),reverse(SPairs,RPairs),!,last(RPairs,pair(Best,_,_,_)),
+   member(Why,RPairs).
 
 select_obj_pair_1(AAR,BBR,PA,PB,Why):- fail,
  member(PA,AAR), get_selector(PA,PB), 
@@ -353,7 +354,7 @@ diff_groups1a(OA,OB,[PA|AA],[PB|BB],DD):-
   diff_groups1a(OA,OB,AA,BB,D1),
   combine_diffs(D1, D , DD),!.
 */
-diff_groups1a(_OA,_OB,A,B,disjointed(SharedT,AOnlyT,BOnlyT)):- 
+diff_groups1a(_OA,_OB,A,B,[disjointed(SharedT,AOnlyT,BOnlyT)]):- 
   intersection(A,B,Shared,AOnly,BOnly),
   tersify_cheap(Shared,SharedT),
   tersify_cheap(AOnly,AOnlyT),

@@ -320,7 +320,7 @@ call_current_arc_cmd(Var):-
 arc_script_header:- 
   use_module(library(xlisting/xlisting_web)),
   use_module(library(xlisting/xlisting_web_server)),
-  inline_html_format(
+  if_arc_webui(inline_html_format(
   write('<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="description" content="Prolog XListing for Logicmoo Code">
 	<meta name="author" content="logicmoo@gmail.com">
@@ -342,11 +342,11 @@ arc_script_header:-
 	<script type="text/javascript" src="/swish/js/cliopatria.js"></script>
 	<link rel="stylesheet" type="text/css" href="/swish/css/butterfly_term.css">
 	<link rel="stylesheet" type="text/css" href="/swish/css/term.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/json2html/2.1.0/json2html.min.js"></script>')).
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/json2html/2.1.0/json2html.min.js"></script>'))).
 
 
 arc_script_header2:- 
-  inline_html_format(write('<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+  if_arc_webui(inline_html_format(write('<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script> <!-- necessary for the "draggable" ui  -->
 <script src="/swish/lm_xref/pixmapx/popupmenu/scripts/Popup-plugin.js"></script>
 <script src="/swish/lm_xref/pixmapx/popupmenu/scripts/Example.js"></script>
@@ -371,7 +371,7 @@ arc_script_header2:-
 <!--Use either font-awesome icons or Google icons with these links. Other icons could also be used if preferred-->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.4.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-<script data-main="/swish/js/swish" src="/node_modules/requirejs/require.js"></script>')).
+<script data-main="/swish/js/swish" src="/node_modules/requirejs/require.js"></script>'))).
 
 invoke_arc_cmd(Prolog):-
    nonvar(Prolog),

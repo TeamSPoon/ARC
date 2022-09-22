@@ -300,9 +300,13 @@ sub_individuation_macro(S,Some):-
 individuation_macros(complete, ListO):- test_config(indiv(ListO))-> true;
 %individuation_macros(complete, ListO):-  \+ test_config(indiv(_)),!, %reset_points, %sub_individuate(force_by_color,subshape_both), %TODO %
   findall(save_as_objects(From),individuator(From,_),ListM),
-  append(ListM,[/*gather_cached*/
-    pointless([sub_indiv([save_as_objects(force_by_color),save_as_objects(i_colormass),save_as_objects(i_nsew)]),do_ending])],ListO).
+  append([
+   [gather_texture],
+   ListM,
+   [pointless([sub_indiv([save_as_objects(force_by_color),save_as_objects(i_colormass),save_as_objects(i_nsew)])])],
+   [do_ending]],ListO).
 %use_individuator(Some):- individuator(Some,_).
+
 
   
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
@@ -455,6 +459,38 @@ preserve_vm(VM,Goal):-
     maplist(arc_setval(VM),DPairs)),
   set_vm(VM).
 
+
+remove_texture(Cell,C-Point):- color_texture_point_data(Cell,C,_Texure,Point).
+is_texture(List,Cell):- color_texture_point_data(Cell,_C,Texture,_Point),member(T,List),Texture==T,!.
+is_fti_step(gather_texture).
+gather_texture(VM):-
+ must_det_ll((
+    Grid = VM.grid,
+    as_ngrid(Grid,GMap),!,
+    grid_size(Grid,H,V),
+    grid_to_points(GMap,H,V,TPoints),
+    my_partition(is_fgp,TPoints,FGPoints,BGPoints),
+    
+    my_partition(is_texture([0]),FGPoints,Zeros,Rest),
+    my_partition(is_texture(['V','<','^','v','>']),Rest,Shooters,NFGPoints),
+    append(BGPoints,NFGPoints,NPoints),
+    maplist(remove_texture,NPoints,CPoints),!,
+    points_to_grid(H,V,CPoints,NewGrid0),!,
+    mapgrid(assign_plain_var_with(wbg),NewGrid0,NewGrid),
+    set(VM.points_o)=CPoints,
+    set(VM.grid)=NewGrid,
+    as_ngrid(NewGrid,NewGMap),!,
+    print_side_by_side(green,GMap,nGrid(1),_,NewGMap,nGrid(2)),
+    maplist(make_textured_point_object(VM,[birth(texture)]),Zeros,_),
+    maplist(make_textured_point_object(VM,[birth(texture)]),Shooters,_))),!.
+
+
+make_textured_point_object(VM,Overrides,Cell,Indv):-
+   color_texture_point_data(Cell,C,Texture,Point),
+   make_point_object(VM,[iz(dot),iz(shaped),texture(Texture)|Overrides],(C-Point),Indv).
+
+%most_d_colors
+
 /*
 % =====================================================================
 is_fti_step(sub_individuate).
@@ -486,7 +522,7 @@ sub_indiv(SubProgram,VM):-
 individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
  must_det_ll((
    object_grid(OnlyNew,OGrid),
-   mapgrid(if_plain_then(black),OGrid,Grid),
+   mapgrid(assign_plain_var_with(black),OGrid,Grid),
    object_glyph(OnlyNew,Glyph),
    loc(OnlyNew,X,Y),
    atomic_list_concat([GID,'_',Glyph,'_sub'],NewGID),

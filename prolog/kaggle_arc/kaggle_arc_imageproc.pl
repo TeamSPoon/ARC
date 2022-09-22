@@ -44,12 +44,12 @@ no_black(BF,BF).
 %pixel_colors(GH,CC):- (is_group(GH);is_object(GH)),!,globalpoints(GH,GP),pixel_colors0(GP,CC).
 pixel_colors(GH,CC):- quietly(pixel_colors0(GH,CC)).
 
-if_plain_then(T,V,T):- plain_var(V). 
-if_plain_then(_,V,V).
+assign_plain_var_with(T,V,T):- plain_var(V). 
+assign_plain_var_with(_,V,V).
 
 pixel_colors0(GH,CC):- 
   term_singletons(GH,TS),
-  maplist(if_plain_then(wbg),TS,TS),
+  maplist(assign_plain_var_with(wbg),TS,TS),
   pixel_colors1(GH,CC).
 
 pixel_colors1(GH,CC):- is_grid(GH),!,mapgrid(only_color_data_or(wbg),GH,Cs),append(Cs,CC).
@@ -555,7 +555,7 @@ grid_size_term(I,size(X,Y)):- grid_size(I,X,Y),!.
 
 %grid_size(Points,H,V):- is_map(Points),!,Points.grid_size=grid_size(H,V).
 grid_size(NIL,1,1):- NIL==[],!.
-grid_size(I,X,Y):- is_object(I),indv_props(I,L),(member(iz(grid_sz(X,Y)),L);member(v_hv(X,Y),L)),!.
+grid_size(I,X,Y):- is_object(I),indv_props(I,L),(member(grid_size(X,Y),L);member(iz(grid_sz(X,Y)),L);member(v_hv(X,Y),L)),!.
 grid_size(Points,H,V):- is_points_list(Points),!,points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V),!.
 grid_size(ID,H,V):- is_grid_size(ID,H,V),!.
 grid_size(G,H,V):- is_graid(G,GG),!, grid_size(GG,H,V).

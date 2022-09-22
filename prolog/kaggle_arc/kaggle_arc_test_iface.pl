@@ -42,7 +42,7 @@ menu_cmd1(_,'T','                  or (T)rain from only understanding single pai
 menu_cmd1(i,'i','             See the (i)ndividuation of the input/outputs',(cls_z,!,ndividuator1)).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z,!,what_unique)).
 menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z,!,compile_and_save_test)).
-menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(print_test)).
+menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(make,print_test)).
 menu_cmd1(_,'e','                  or (e)xamine the program leared by training',(cls_z,print_test,!,learned_test,solve_easy)).
 menu_cmd1(_,'L','                  or (L)earned program',(learned_test)).
 menu_cmd1(_,'s','              Try to (s)olve based on training',(cls_z,print_test,!,solve_test)).
@@ -447,6 +447,7 @@ as_d_grid(In,In):- \+ luser_getval('$grid_mode',dashes),!.
 as_d_grid(In,In1):- as_ngrid(In,In1).
 as_ngrid(In,In1):- must_det_ll((change_bg_fg(In, _BG, _FG,In0), most_d_colors(In0,_CI,In1))),!.
 
+%change_bg_fg(In,_BG,_FG,In):-!.
 change_bg_fg(In,BG,FG,Mid):- 
    black=BG,
    must_det_ll((available_fg_colors(Avails),

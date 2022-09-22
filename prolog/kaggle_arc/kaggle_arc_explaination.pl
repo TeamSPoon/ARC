@@ -200,8 +200,9 @@ debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
   remove_too_verbose(MyOID,AS,TV0), include(not_too_verbose,TV0,TV),
 
   %flatten(TV,F),predsort(longer_strings,F,[Caps|_]), 
-  sort(AS,ASA),reverse(ASA,ASAR),
-  once((prefered_header(P,Caps),member(P,ASAR),ground(Caps))),
+  sort(TV,ASA),reverse(ASA,ASAR),
+  append(ASAR,AS,ASFROM),
+  once((prefered_header(P,Caps),member(P,ASFROM),ground(Caps))),
   toPropercase(Caps,PC),
   sort_obj_props(TV,TVS),
 
@@ -294,6 +295,8 @@ too_verbose(P):- compound(P),compound_name_arity(P,F,_),!,too_verbose(F).
 too_verbose(globalpoints).
 too_verbose(monochrome).
 too_verbose(shape).
+too_verbose(gid).
+too_verbose(grid_sz).
 too_verbose(localpoints).
 too_verbose(grid).
 %too_verbose(link).
