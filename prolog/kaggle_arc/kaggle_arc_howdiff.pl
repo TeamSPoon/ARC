@@ -343,17 +343,17 @@ diff_groups1a(OA,OB,AAR,BBR,DD):-
   select(PA,AAR,AA), select(PB,BBR,BB),
   diff_groups1a(OA,OB,AA,BB,D1),
   combine_diffs(D1, D , DD),!.
-/*
+
 diff_groups1a(OA,OB,[PA|AA],[PB|BB],DD):-
   diff_objects(PA,PB,DAB,Same),
   (DAB == [] -> D = [] ;  
-     ((showdiff(PA,PB)),
+     (%(showdiff(PA,PB)),
       object_dglyphH(PA,GA), 
       object_dglyphH(PB,GB),
-      D = change_obj(GA,GB,Same,DAB))),  
+      D = change_obj(list_ordered,GA,GB,Same,DAB))),  
   diff_groups1a(OA,OB,AA,BB,D1),
   combine_diffs(D1, D , DD),!.
-*/
+
 diff_groups1a(_OA,_OB,A,B,[disjointed(SharedT,AOnlyT,BOnlyT)]):- 
   intersection(A,B,Shared,AOnly,BOnly),
   tersify_cheap(Shared,SharedT),
@@ -1002,7 +1002,7 @@ ratio_for0(Ratio,Out,_In):- 0 is Out, !, Ratio is +0.0.
 ratio_for0(Ratio,Out,In):- catch(Ratio is rationalize(Out/In),error(evaluation_error(_Zero_divisor),_),fail),!.
 ratio_for0(Ratio,Out,In):- catch(NRatio is rationalize(In/Out),error(evaluation_error(_Zero_divisor),_),fail),!, Ratio is -NRatio.
 
-:- decl_pt(prop_g,each_object(is_grid, set)).
+%:- decl_pt(prop_g,each_object(is_grid, set)).
 
 %each_object(_Grid,[]):-!.
 each_object(Grid,ListO):- arc_memoized(individuate(complete,Grid,List)),!, simplify_objs(List,ListO).

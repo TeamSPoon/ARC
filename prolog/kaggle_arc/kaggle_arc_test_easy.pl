@@ -92,11 +92,11 @@ fav(t('5582e5ca'),[grid_size_same,human([compute_max_color(_134548),cls_with(_13
 fav(t('6f8cd79b'),[grid_size_same,human([add_borders(cyan)]),-rotation_match,-mask_match,-color_match,+shape_match,tt,training,ex_nihilo,contouring,'(4, 1)']).
 fav(t('dae9d2b5'),[human([cut_in_half,overlay_all,set_all_fg(magenta)])]).
 fav(t('d6ad076f'),[human([find_smaller,shoot_at_other,wide_beam])]).
-fav(t('d511f180'),[human([swap_colors(cyan,grey)])]).
+fav(t('d511f180'),[human([swap_colors(cyan,silver)])]).
 fav(t('ae4f1146'),[learn([call(set_bgc(cyan))]),human([largest_indiv,trim_to_rect,set_bg(cyan)])]).
 fav(t('a79310a0'),[human([gravity(1,s),swap_colors(cyan,red)])]).
 fav(t('a48eeaf7'),[human([largest_indiv(I),tiny_individuals(Is),gravity_to(Is,I)])]).
-fav(t('97999447'),[human([find_ones,until_edges([copy_right(grey),copy_right(sameR)])])]).
+fav(t('97999447'),[human([find_ones,until_edges([copy_right(silver),copy_right(sameR)])])]).
 fav(t('8be77c9e'),[human([grow([[sameR],[flipV]])])]).
 fav(t('7f4411dc'),[human([shave_away_1s])]).
 fav(t('7b6016b9'),[human([fillFromBorder(green),subst_color(black,red)])]).
@@ -212,7 +212,7 @@ fav(t('8d510a79'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+colo
 
 fav(v(d304284e),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,evaluation,'(2, 1) ']).
 
-fav(t(d0f5fe59),[out_grid(4,4),human(color(largest,Color),ray(Color-point_01_01,count),trim_to_rect),-shape_match,-rotation_match,-mask_match,+color_match,tt,training,separate_shapes,pairwise_analogy,count_shapes,associate_images_to_numbers,'(3, 1)']).
+fav(t(d0f5fe59),[out_grid(4,4),non_human(color(largest,Color),ray(Color-point_01_01,count),trim_to_rect),-shape_match,-rotation_match,-mask_match,+color_match,tt,training,separate_shapes,pairwise_analogy,count_shapes,associate_images_to_numbers,'(3, 1)']).
 
 fav(t('7b6016b9'),[grid_size_same,human([fillFromBorder(green),subst_color(black,red)]),-rotation_match,-mask_match,-color_match,+shape_match,tt,training,loop_filling,color_guessing,background_filling,'(3, 1)']).
 fav(t('1cf80156'),[out_grid(4,4),human([trim_to_rect]),-shape_match,-rotation_match,-mask_match,+color_match,tt,training,crop,'(3, 1)']).
@@ -224,7 +224,7 @@ fav(t('7f4411dc'),[grid_size_same,human([shave_away_1s]),-rotation_match,-mask_m
 fav(t('3c9b0459'),[grid_size_same,human([rot180]),-rotation_match,+shape_match,+mask_match,+color_match,tt,training,image_rotation,'(4, 1)']).
 fav(t('44d8ac46'),[grid_size_same,human([find_individuals([hollow,boxes,inside([rectangle])],_138006),indiv_fill_color(_138006,red)]),-rotation_match,-mask_match,-color_match,+shape_match,tt,training,rectangle_guessing,loop_filling,'(4, 1)']).
 fav(t(ae4f1146),[learn([call(set_bgc(cyan))]),human([largest_indiv,trim_to_rect,set_bg(cyan)]),-shape_match,-rotation_match,-mask_match,-color_match,tt,training,separate_images,crop,count_tiles,'(4, 1)']).
-fav(t('97999447'),[grid_size_same,human([find_ones,until_edges([copy_right(grey),copy_right(sameR)])]),-rotation_match,-mask_match,-color_match,+shape_match,tt,training,pattern_expansion,draw_line_from_point,'(3, 1)']).
+fav(t('97999447'),[grid_size_same,human([find_ones,until_edges([copy_right(silver),copy_right(sameR)])]),-rotation_match,-mask_match,-color_match,+shape_match,tt,training,pattern_expansion,draw_line_from_point,'(3, 1)']).
 fav(t('6cf79266'),[grid_size_same,learn([find(nines),remove_them]),human(reverse_learned),-rotation_match,-mask_match,-color_match,+shape_match,+'Errors',tt,training,rectangle_guessing,recoloring,'https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021','(3, 1)']).
 fav(t('810b9b61'),[grid_size_same,human([(iz(_140032,rectangle),iz(_140032,hollow),iz(_140032,thick1),iz(_140032,noexit)-->color(_140032,green))]),-rotation_match,-color_match,+shape_match,+mask_match,tt,training,recoloring,detect_closed_curves,'(3, 1)']).
 
@@ -236,7 +236,7 @@ fav(t('9d9215db'),[grid_size_same,human([overlay_each_pattern]),-rotation_match,
 fav(v(e41c6fd3),[grid_size_same,human([forall((iz(_141760,outl),color(_141760,cyan),vert_pos(_141760,_141780)),(iz(_141790,outl),vert_pos(_141790,_141780)))]),-rotation_match,-mask_match,+shape_match,+color_match,evaluation,'(3, 1) ']).
 fav(v('1d398264'),[grid_size_same,human([(iz(_140032,keypad),iz(_140032,multicolor),centerof(_140032,_140052)-->sunburst(_140052))]),-rotation_match,-mask_match,+shape_match,+color_match,test,evaluation,'(3, 2) ']).
 fav(v(e9bb6954),[grid_size_same,e('box of nine draw outward, if you hit a drawn line blacken it'),human([(iz(_142198,keypad),iz(_142198,monocolor),centerof(_142198,_142218)-->starburst(_142218))]),-rotation_match,-mask_match,-color_match,+shape_match,evaluation,'(4, 1) ']).
-fav(t(d511f180),[grid_size_same,human([swap_colors(cyan,grey)]),-rotation_match,-color_match,+shape_match,+mask_match,+'Errors',training,'https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021#760920',associate_colors_to_colors,'(3, 1)']).
+fav(t(d511f180),[grid_size_same,human([swap_colors(cyan,silver)]),-rotation_match,-color_match,+shape_match,+mask_match,+'Errors',training,'https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021#760920',associate_colors_to_colors,'(3, 1)']).
 fav(t('73251a56'),[grid_size_same,learn([learn_mapping_stateful]),human([apply_mapping_stateful]),-rotation_match,-mask_match,-color_match,+shape_match,tt,training,image_filling,diagonal_symmetry,'(3, 1)']).
 fav(t(f76d97a5),[grid_size_same,was__lmDSL([compute_max_color(_134548),compute_next_color(_134558),remove_color(_134548),subst_color(_134558,_134548)]),-rotation_match,-mask_match,-color_match,+shape_match,tt,training,take_negative,recoloring,associate_colors_to_colors,'(3, 1)']).
 fav(t(ce22a75a),[grid_size_same,hint(grow_blue),-rotation_match,-mask_match,-color_match,+shape_match,tt,training,replace_pattern,'(2, 1)']).
@@ -1030,10 +1030,10 @@ f35d900a
 
 the input has a small number of localcolorlesspointlist .. the equal number on each image
 two localcolorlesspointlist are the equal color, oh there are two pairs of localcolorlesspointlist
-there is a grey dashed box made up from the localcolorlesspointlist
-no two grey dots can touch though
-the grey dots seem to originate from the four localcolorlesspointlist
-teh grey has to come out at least once.. after than if they are going to become two they skip
+there is a silver dashed box made up from the localcolorlesspointlist
+no two silver dots can touch though
+the silver dots seem to originate from the four localcolorlesspointlist
+teh silver has to come out at least once.. after than if they are going to become two they skip
 arround each color point there is a box of the oposting color
 
 

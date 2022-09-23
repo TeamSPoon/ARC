@@ -9,7 +9,7 @@
 % =swipl kaggle_arc.pl=
 % =:- start_arc_server.=
 %
-% Then navigate to http://localhost:17666 in your browser
+% Then navigate to http://localhost:1766 in your browser
 
 /*
 :- module(kaggle_arc_ui_html,
@@ -94,7 +94,7 @@ maybe_ia(_Term,args).
 
 dumb_functor(Term):- is_list(Term),!, \+ is_grid(Term).
 dumb_functor(Term):- predicate_property(Term,meta_predicate(_)),!.
-dumb_functor(Term):- compound_name_arity(Term,F,_),upcase_atom(F,UC),!,downcase_atom(F,UC).
+dumb_functor(Term):- compound_name_arity(Term,F,_),atom(F),upcase_atom(F,UC),!,downcase_atom(F,UC).
 
 test_collapsible_section:- 
   collapsible_section(info,
@@ -121,7 +121,7 @@ user:file_search_path(arc,  AbsolutePath):- arc_sub_path('.',AbsolutePath).
 :- http_handler('/swish/muarc/arcproc_right', arcproc_right, [prefix]).
 :- http_handler('/swish/muarc/arcproc_left', arcproc_left, [prefix]).
 :- http_handler('/swish/muarc/swish_config.json', swish_reply_config_root,[priority(200)]).
-
+:- http_handler('/', swish_arc_root, [prefix]).
 
 % http_handler docs: http://www.swi-prolog.org/pldoc/man?predicate=http_handler/3
 % =http_handler(+Path, :Closure, +Options)=
@@ -134,7 +134,7 @@ user:file_search_path(arc,  AbsolutePath):- arc_sub_path('.',AbsolutePath).
 %   client at a time since echo will block the thread)
 %:- http_handler(('/swish/arc/'), http_reply_from_files(arc, []), [prefix]).
 % * root(echo) indicates we're matching the echo path on the URL e.g.
-%   localhost:17666/echo of the server
+%   localhost:1766/echo of the server
 % * We create a closure using =http_upgrade_to_websocket=
 % * The option =spawn= is used to spawn a thread to handle each new
 %   request (not strictly necessary, but otherwise we can only handle one
@@ -158,7 +158,7 @@ stop_arc_server :-
 stop_arc_server(Port) :-
     http_stop_server(Port, []).
 
-default_port(17666).
+default_port(1766).
 
 %! web_socket_echo(+WebSocket) is nondet.
 % This predicate is used to read in a message via websockets and echo it
@@ -181,11 +181,11 @@ get_response_echo(Message, Response) :-
   get_time(Time),
   Response = _{message:Message.message, time: Time}.
 
-arc_http_server:- thread_property(ID,status(running)),ID=='http@17666',!.
+arc_http_server:- thread_property(ID,status(running)),ID=='http@1766',!.
 arc_http_server:- 
   use_module(library(xlisting/xlisting_web)),
   use_module(library(xlisting/xlisting_web_server)),
-  catch_log((http_server(http_dispatch, [port(17666)]))), arc_http_server2.
+  catch_log((http_server(http_dispatch, [port(1766)]))), arc_http_server2.
 
 arc_http_server2:- 
  thread_pool_create(compute, 3,
@@ -244,6 +244,10 @@ set_test_param:-
 swish_arc(Request):-   
   muarc_tmp:arc_directory(ARC_DIR),
   http_reply_from_files(ARC_DIR, [], Request).
+
+swish_arc_root(Request):-   
+  arc_sub_path('.',DEMO),
+  http_reply_from_files(DEMO, [], Request).
 
 %arcproc_left(Request):- xlisting_web:handler_logicmoo_cyclone(Request),!.
 arcproc_left(Request):-  
@@ -388,13 +392,6 @@ current_arc_cmd(tc_cmd,Prolog):- luser_getval(tc_cmd,Prolog).
 current_arc_cmd(footer_cmd,Prolog):- luser_getval(footer_cmd,Prolog).
 %current_arc_cmd(footer_cmd,Prolog):- (\+ current_arc_cmd(cmd,menu) -> luser_getval(footer_cmd,Prolog,menu) ; luser_getval(footer_cmd,Prolog,edit1term)).
 
-/*
-:- if(exists_source(library(logicmoo_webui))).
-:- set_prolog_flag(no_sandbox,true).
-:- use_module(library(logicmoo_webui)).
-:- webui_start_swish_and_clio.
-:- endif.
-*/
 
 :- fixup_exports.
 

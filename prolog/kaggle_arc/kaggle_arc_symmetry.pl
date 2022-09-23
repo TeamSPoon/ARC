@@ -1949,25 +1949,25 @@ e_int2glyph(5,'-').
 e_int2glyph(9,'+').
 e_int2glyph(6,'c').
 
- code=63 ?  code=183 · code=176 ° code=186 º 170 ª
+ code=63 ?  code=183 ï¿½ code=176 ï¿½ code=186 ï¿½ 170 ï¿½
 bg_dot(32).
- 169	© 248	ø 216	Ø  215 ×  174	® 
+ 169	ï¿½ 248	ï¿½ 216	ï¿½  215 ï¿½  174	ï¿½ 
 *//*
-e_int2glyph(1,'©').
-e_int2glyph(2,'·').
-e_int2glyph(3,'º').
-e_int2glyph(4,'ª').
+e_int2glyph(1,'ï¿½').
+e_int2glyph(2,'ï¿½').
+e_int2glyph(3,'ï¿½').
+e_int2glyph(4,'ï¿½').
 e_int2glyph(6,'X').
-e_int2glyph(7,'Ø').
-e_int2glyph(8,'©').
-e_int2glyph(9,'®').
+e_int2glyph(7,'ï¿½').
+e_int2glyph(8,'ï¿½').
+e_int2glyph(9,'ï¿½').
 e_int2glyph(10,'~').
 e_int2glyph(11,'.').
 e_int2glyph(12,',').
-%e_int2glyph(5,'ø').
-%e_int2glyph(5,'°').
-%e_int2glyph(5,'®').
-%e_int2glyph(,'ø').
+%e_int2glyph(5,'ï¿½').
+%e_int2glyph(5,'ï¿½').
+%e_int2glyph(5,'ï¿½').
+%e_int2glyph(,'ï¿½').
 e_int2glyph(N,G):- N>9, M is N+ 140,int2glyph(M,G).*/
 e_int2glyph(B,G):- atom_number(G,B).
 
@@ -2048,9 +2048,9 @@ only_neib_data(C-_,NC):- only_neib_data(C,NC).
 
 map_neib1(C,DirsE,Edge,DirsC,DirsD,N):- 
   append([DirsC,DirsD],AllDirs),
-  subtract(AllDirs,DirsE,EAllDirs),
-  subtract([n,s,e,w,ne,sw,se,nw],EAllDirs,Missing),!,
-  map_neibw9(EAllDirs,Missing,C,DirsE,Edge,DirsC,DirsD,NSM,PS),!,map_ns(NSM,NS), ((fail,PS=='+')-> N=PS; N=NS),!.
+  subtract(AllDirs,DirsE,Has),
+  subtract([n,s,e,w,ne,sw,se,nw],Has,Not),!,
+  map_neibw9(Has,Not,C,DirsE,Edge,DirsC,DirsD,NSM,PS),!,map_ns(NSM,NS), ((fail,PS=='+')-> N=PS; N=NS),!.
 
 %map_ns('j','+').
 map_ns(NS,NS).
@@ -2187,11 +2187,6 @@ map_neib(Has,Not,R):-
   forall(member(C,CHas),member(C,Has)),
   forall(member(C,CNot),member(C,Not)),!.
 
-map_neib2(Has,Not,R):-
-  map_neib_u2(CHas,CNot,R),
-  forall(member(C,CHas),member(C,Has)),
-  forall(member(C,CNot),member(C,Not)),!.
-  
 map_neib_u([ne,sw],[n,s,e,w],'/').
 map_neib_u([nw,se],[n,s,e,w],'\\').
 
@@ -2224,18 +2219,37 @@ map_neib_u([n,e],[nw,sw,se,ne],'\\').
 map_neib_u([s,w],[nw,sw,se,ne],'\\').
 
 
-map_neib_u2([never],[],'R').
+map_neib2(Has,Not,R):-
+  map_neib_u2(CHas,CNot,R),
+  forall(member(C,CHas),member(C,Has)),
+  forall(member(C,CNot),member(C,Not)),!.
+  
+map_neib_u2([n,s,e,w],[],'~').
 
-map_neibw9(EAllDirs,Missing,C,DirsE,[Edge],DirsC,DirsD,NSM,PS):-!,map_neibw9(EAllDirs,Missing,C,DirsE,Edge,DirsC,DirsD,NSM,PS).
+
+map_neibw9(_,_,_,_,_,[],[],0,0):-!.
+%map_neibw9(Has,_Not,C,DirsE,_,DirsC,DirsD,'0','0'):-  length(Has,L),L=1.
+map_neibw9(Has,Not,_,_,_,_,_,S,S):- length(Has,L),L=<2, map_neib(Has,Not,S).
+map_neibw9(Has,Not,_,_,_,_,_,S,S):- length(Has,L),L=5, map_neib(Has,Not,S), member(S,['-','|']).
+map_neibw9(Has,Not,_,_,_,_,_,S,S):- length(Has,L),L=4, member(S,['X','<','v','^','>']), map_neib(Has,Not,S).
+map_neibw9(Has,Not,_,_,_,_,_,S,S):- length(Has,L),L=3, member(S,['+','<','v','^','>']),map_neib(Has,Not,S).
+map_neibw9(Has,Not,_,_,_,_,_,S,S):- length(Has,L),L=3, map_neib(Has,Not,S),!.
+map_neibw9(Has,Not,_,_,_,_,_,S,S):- length(Has,L),L=6,  %member(S,['+','-','|']),
+    map_neib(Has,Not,S).
+map_neibw9(_Has,_Not,_,_,_,[],[_],0,0):-!.
+map_neibw9(_Has,_Not,_,_,_,[_],[],0,0):-!.
 map_neibw9(Has,Not,_,_,_,_,_,S,S):-map_neib2(Has,Not,S).
-map_neibw9(Has,Not,_,_,_,_,_,S,S):-map_neib(Has,Not,S).
-map_neibw9(_EAll,_Missing,_C,_O,_E,[_,_,_],[],'%','%').
+map_neibw9(Has,_Not,_,_,_,_,_,'~','~'):-  length(Has,L),L>6.
+map_neibw9(Has,Not,C,DirsE,[Edge],DirsC,DirsD,NSM,PS):-!,map_neibw9(Has,Not,C,DirsE,Edge,DirsC,DirsD,NSM,PS).
+%map_neibw9(Has,Not,_,_,_,_,_,S,S):-map_neib(Has,Not,S).
+%map_neibw9(_EAll,_Missing,_C,_O,_E,[_,_,_],[],'%','%').
 %map_neibw9(_,[],_,_,_,_,_,'~','~').
-map_neibw9(_EAll,_Missing,_,_,_,_,[ne,nw],'V','v').
-%map_neibw9(EAllDirs,Missing,C,DirsE,Edge,DirsC,DirsD,NSM,PS):- map_neibw(EAllDirs,Missing,C,DirsE,Edge,DirsC,DirsD,NSM,PS).
-%map_neibw9(EAll,Missing,C,[O],E,[],[],NS,PS):- map_neibw(EAll,Missing,C,[],E,[],[O],NS,PS),!.
-map_neibw9(EAllDirs,Missing,C,DirsE,_,DirsC,DirsD,NSM,PS):- !, length(EAllDirs,NSM),PS=NSM.
-%map_neibw9(EAllDirs,Missing,C,DirsE,_,DirsC,DirsD,NSM,PS):- length(EAllDirs,N), NSM is N+1,PS=NSM.
+%map_neibw9(_EAll,_Missing,_,_,_,_,[ne,nw],'V','v').
+%map_neibw9(Has,_Not,C,DirsE,Edge,DirsC,DirsD,NSM,PS):- map_neibw(Has,_Not,C,DirsE,Edge,DirsC,DirsD,NSM,PS).
+%map_neibw9(EAll,_Not,C,[O],E,[],[],NS,PS):- map_neibw(EAll,_Not,C,[],E,[],[O],NS,PS),!.
+map_neibw9(Has,Not,_,_,_,_,_,S,S):- length(Has,L),L=4, map_neib(Has,Not,S),!.
+map_neibw9(Has,_Not,_C,_,_,_,_,NSM,PS):- !, length(Has,NSM),PS=NSM.
+%map_neibw9(Has,_Not,C,DirsE,_,DirsC,DirsD,NSM,PS):- length(Has,N), NSM is N+1,PS=NSM.
 
 map_neibw(_EAll,[n,s,e,w,sw,se,nw],_,_,_,_,_,'/','/').
 map_neibw(_EAll,[n,s,e,w,ne,se,nw],_,_,_,_,_,'/','/').

@@ -1,0 +1,32 @@
+
+in_mc_10(G):- is_side(_),!,call(G).
+in_mc_10(Goal):- ansi_ansi,!,call(Goal).
+in_mc_10(Goal):- nb_current(in_mc_10,t),!,call(Goal).
+in_mc_10(Goal):- 
+  wots(S,locally(nb_setval(in_mc_10,t),Goal)),
+  mc10_print(S).
+
+mc10_print(G):- atom_contains(G,'<span '),!,write(G).
+mc10_print(SS):- sformat(S,'~w',[SS]),!,atom_chars(S,Chars),maplist(mc10_put,Chars).
+
+mc10_put(' '):- !,mc10_char('&nbsp;').
+mc10_put('&'):- !,mc10_char('&amp;').
+mc10_put('\t'):- !,mc10_char('&#9;').
+mc10_put('\n'):- !,write('<br/>'),!.
+mc10_put('\r'):- !.
+mc10_put('<'):- !,mc10_char('&lt;').
+mc10_put('>'):- !,mc10_char('&gt;').
+mc10_put('®'):- !,mc10_char('&amp;').
+mc10_put(Char):- atom_codes(Char,[C]),C<32,mc10_code(C).
+mc10_put(Char):- atom_codes(Char,[C]),C>160,mc10_code(C).
+mc10_put(C):- mc10_char(C).
+
+
+
+
+mc10_code(C):- format('<span class="mc-10">&#~d;</span>',[C]).
+mc10_char(Char):- format('<span class="mc-10">~w</span>',[Char]).
+
+
+%color_sym(OS,[(black='°'),(blue='©'),(red='®'),(green=''),(yellow),(silver='O'),(purple),(orange='o'),(cyan= 248	ø ),(brown)]).
+

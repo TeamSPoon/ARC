@@ -405,7 +405,7 @@ human_test:- solve_test_trial(human).
 fully_test:- print_test, !, train_test, !, solve_test, !.
 run_next_test:- notrace(next_test), fully_test.
 
-info(_).
+info(Info):- nonvar(Info),wdmsg(Info).
 system:demo:- make, interactive_test_menu.
 :- export(demo/0).
 rat:- info("Run all tests"), run_all_tests.

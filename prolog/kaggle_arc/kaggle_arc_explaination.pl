@@ -48,6 +48,7 @@ print_list_of(Title,O):- print_list_of(print_info,Title,O).
 
 :- meta_predicate(print_list_of(1,+,+)).
 print_list_of(_,Title,[]):- pp(no_data(Title)),!.
+print_list_of(P1,Title,O):- \+ is_list(O),!,print_list_of(P1,Title,[O]).
 print_list_of(P1,Title,O):-
  length(O,Len),
  collapsible_section(info,Title,maybe,

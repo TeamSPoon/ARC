@@ -10,8 +10,11 @@
 :- set_prolog_flag(encoding,iso_latin_1).
 :- set_prolog_flag(stream_type_check,false).
 
+:- dynamic('$messages':to_list/2).
+:- multifile('$messages':to_list/2).
+:- asserta(('$messages':to_list(In, List) :- ((is_list(In)-> List = In ; List = [In])),!)).
 
-catch_log(G):- ignore(catch(notrace(G),E,wdmsg(E=G))),!.
+catch_log(G):- format('~N'),ignore(catch(notrace(G),E,wdmsg(E=G))),format('~N').
 
 %:- pack_install('https://github.com/logicmoo/logicmoo_utils.git').
 %:- pack_upgrade(logicmoo_utils).
@@ -199,6 +202,20 @@ pfcAddF(P):-
 :- system:use_module(library(gvar_globals_api)).
 :- system:use_module(library(dictoo_lib)).
 
+:- current_prolog_flag(argv,C),wdmsg(current_prolog_flag(argv,C)),!.
+
+:- set_prolog_flag(no_sandbox,true).
+
+
+logicmoo_webui:-
+  system:use_module(library(xlisting/xlisting_web)),
+  system:use_module(library(xlisting/xlisting_web_server)),
+   exists_source(library(logicmoo_webui)), use_module(library(logicmoo_webui)), catch_log(call(call,webui_start_swish_and_clio)).
+logicmoo_webui.
+
+:- (current_prolog_flag(argv,C),(member('--',C)->catch_log(logicmoo_webui) ; true)).
+
+
 %:- autoload_all.
 
 
@@ -249,8 +266,6 @@ rrtrace(X):- notrace,nortrace, arcST, sleep(0.5), trace, (notrace(\+ current_pro
 
 remove_must_dets(G,GGG):- compound(G), G = must_det_ll(GG),!,expand_goal(GG,GGG),!.
 remove_must_dets(G,GGG):- compound(G), G = must_det_l(GG),!,expand_goal(GG,GGG),!.
-
-:- current_prolog_flag(argv,C),wdmsg(current_prolog_flag(argv,C)),!.
 
 
 % goal_expansion(must_det_l(G),I,must_det_ll(G),O):- nonvar(I),source_location(_,_), nonvar(G),I=O.
@@ -466,8 +481,9 @@ luser_linkval(N,V):- arc_user(ID),luser_linkval(ID,N,V),!.
 luser_linkval(ID,N,V):- nb_linkval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
 
 :- meta_predicate(if_arc_webui(-)).
-if_arc_webui(_):- \+ arc_webui,!,fail.
 if_arc_webui(Goal):- arc_webui,!,g_out(call(Goal)).
+if_arc_webui(_):- \+ arc_webui,!,fail.
+
 
 luser_getval(N,V):- if_arc_webui(((get_param_req_or_session(N,V), V\=='',V\==""))).
 luser_getval(N,V):- arc_user(ID),luser_getval(ID,N,V),!.
@@ -995,8 +1011,6 @@ test_regressions:- make, forall((clause(mregression_test,Body),ppt(Body)),must_d
 %:- initialization(demo,main).
 %:- initialization(demo,after_load).
 :- muarc_mod(M), arc_history1((module(M))).
-:- add_history1((cls_z,make,demo)).
-:- add_history1((demo)).
 
 %:- muarc_mod(M), M:show_tests.
 :- load_last_test_name.
@@ -1030,14 +1044,12 @@ user:portray(Grid):-
 
 
 %:- ignore(check_dot_spacing).
-bfly_startup1:- 
-   catch_log(start_arc_server),
-   catch_log(webui_tests),
-   catch_log(print_test),
-   catch_log(menu),
-   nop((next_test,previous_test)).
 
-bfly_startup:- catch_log(bfly_startup1).
+:- add_history((bfly,bfly_startup)).
+:- add_history((ansi,bfly_startup)).
+:- add_history1((cls_z,make,demo)).
+:- add_history1((demo)).
+
 
 :- nb_setval(arc_can_portray,nil).
 :- nb_setval(arc_can_portray,t).
@@ -1045,6 +1057,15 @@ bfly_startup:- catch_log(bfly_startup1).
 
 :- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).
+
+:- (current_prolog_flag(argv,C),(member('--',C)->catch_log(start_arc_server) ; true)).
+
+bfly_startup:- 
+   catch_log(webui_tests),
+   catch_log(print_test),
+   catch_log(menu),
+   %with_pp(bfly,catch_log(menu)),
+   nop((next_test,previous_test)),!.
 
 
 

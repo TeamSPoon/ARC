@@ -303,9 +303,7 @@ compute_next_color(Color1,Grid,Grid):- colors_count_no_black(Grid,[_,cc(Color1,_
 
 subst_color(Color1,Color2,Grid,NewGrid):- 
   quietly((
-   color_code(Color1,Num1),
-   color_code(Color2,Num2),
-   subst001(Grid,Num1,Num2,NewGrid))).
+   subst001(Grid,Color1,Color2,NewGrid))).
 
 equal_color(Color,Color).
 
@@ -334,9 +332,11 @@ remove_color0(Color,Grid,NewGrid):-
 
 
 blank_color(Color1,Grid,NewGrid):- get_bgc(Cell), subst_color(Color1,Cell,Grid,NewGrid).
-swap_colors(Color1,Color2,Grid,NewGrid):- subst_color(Color1,Swap1,Grid,MGrid),
-                                          subst_color(Color2,Color1,MGrid,NewGrid),
-                                          color_code(Color2,Swap1).
+swap_colors(Color1,Color2,Grid,GridO):- subst001(Grid,Color1,Var1,Grid1),
+                                        subst001(Grid1,Color2,Var2,GridO),
+                                        Var1 = Color2,
+                                        Var2 = Color1.
+                                          
 
 
 do_set_all_fg_colors(Color,I,O):- \+ compound(I),is_fg_color(I),O=Color.
