@@ -367,7 +367,7 @@ wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
 wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
 
 
-%write_nbsp:- arc_webui,!,write(' ').
+write_nbsp:- arc_webui,!,write('&nbsp;').
 write_nbsp:- write(' ').
 
 is_breaker(P):- compound(P),functor(P,_,A), A>=3.
@@ -389,12 +389,12 @@ dash_chars(H,C):- forall(between(0,H,_),bformatc(C)).
 %dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('¯¯¯ ').
 %dash_uborder_no_nl_1:- bformatc('¯¯¯ ').
 dash_uborder_no_nl_1:- uborder(Short,Long),!, bformatc(Short),bformatc(Long),bformat(' ').
-dash_uborder_no_nl(1):- !, dash_uborder_no_nl_1.
-dash_uborder_no_nl(Width):- WidthM1 is Width-1, uborder(Short,Long),
+dash_uborder_no_nl(1):- !,write(' '), dash_uborder_no_nl_1.
+dash_uborder_no_nl(Width):- WidthM1 is Width-1, uborder(Short,Long),write(' '),
   write(' '), write(Short),dash_chars(WidthM1,Long),!.
 %dash_uborder_no_nl(Width):- WidthM1 is Width-1, bformatc(' '), bformat('¯'),dash_chars(WidthM1,'¯¯'),!.
 
-dash_uborder(Width):- format('~N'),dash_uborder_no_nl(Width),nl.
+dash_uborder(Width):- dash_uborder_no_nl(Width),!.
 
 uborder('-','--'):- stream_property(current_output,encoding(utf8)),!.
 uborder('¯','¯¯'):- !. %stream_property(current_output,encoding(text)).
@@ -403,10 +403,10 @@ uborder('¯','¯¯'):- !. %stream_property(current_output,encoding(text)).
 dash_border_no_nl_1:-  line_position(current_output,0),!, bformatc(' ___ ').
 dash_border_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('___ ').
 dash_border_no_nl_1:- bformatc(' ___ ').
-dash_border_no_nl(1):- format('~N'),!,dash_border_no_nl_1.
-dash_border_no_nl(Width):- format('~N'), WidthM1 is Width-1, bformatc(' _'),dash_chars(WidthM1,'__').
+dash_border_no_nl(1):- write('  '),!,dash_border_no_nl_1.
+dash_border_no_nl(Width):- WidthM1 is Width-1, bformatc('  _'),dash_chars(WidthM1,'__'), bformat(' ').
 
-dash_border(Width):- !, dash_border_no_nl(Width),nl,!.
+dash_border(Width):- !, dash_border_no_nl(Width),!.
 
 functor_test_color(pass,green).
 functor_test_color(fail,red).
@@ -428,6 +428,7 @@ banner_lines(Color):- format('~N'),
   color_print(Color,'=============================================================='),nl,
   color_print(Color,'--------------------------------------------------------------'),nl.
 
+print_side_by_side(C1,C2):- print_side_by_side(C1,_LW,C2), !.
 
 gridoid_size(G,30,30):- \+ compound(G),!.
 gridoid_size(print_grid(H,V,_),H,V):- nonvar(H),nonvar(V),!.
@@ -437,8 +438,7 @@ gridoid_size(print_grid0(H,V,_,_),H,V):- nonvar(H),nonvar(V),!.
 gridoid_size(G,H,V):- compound_name_arity(G,print_grid,A),arg(A,G,GG),gridoid_size(GG,H,V).
 gridoid_size(G,H,V):- is_gridoid(G),!,grid_size(G,H,V).
 
-print_side_by_side(C1,C2):- print_side_by_side(C1,_LW,C2), !.
-print_side_by_side(X,Y,Z):- with_monospace(print_side_by_side0(X,Y,Z)).
+print_side_by_side(X,Y,Z):- g_out((nl,print_side_by_side0(X,Y,Z))).
 
 print_side_by_side0([],_,[]):-!.
 print_side_by_side0(C1-wqs(S1),LW,C2-wqs(S2)):- nonvar(S1),!,
@@ -449,8 +449,18 @@ print_side_by_side0(C1-A,LW,C2-B):- nonvar(A),!,
   print_side_by_side0(A,LW2,B),
   ignore(max_min(LW1,LW2,LW,_)).
 
+print_side_by_side0(L1,LW,L2):- maybe_exend_len(L1,L2,NL1,NL2),!, 
+  %writeq(NL1),nl, writeq(NL2),nl,
+  print_side_by_side0(NL1,LW,NL2).
+
+print_side_by_side0([E1|C1],LW,C2):-  var(LW), \+ is_grid([E1|C1]),atom_length(E1,LW),
+  LW2 is LW, print_side_by_side0([E1|C1],LW2,C2).  
+print_side_by_side0(C1,W0,C2):-
+  print_side_by_side_lists_1st(C1,W0,C2,W0).
+/*
 print_side_by_side0(C1,LW,C2):- var(LW), gridoid_size(C1,H1,V1),gridoid_size(C2,H2,V2),!,    
     ((V2 > V1) -> LW is -(H2 * 2 + 12) ; LW is (H1 * 2 + 12)),!, print_side_by_side0(C1,LW,C2).
+
 print_side_by_side0(C1,LW,C2):-  var(LW), LW=30,print_side_by_side0(C1,LW,C2),!.
 
 print_side_by_side0(C1,W0,C2):- number(W0), W0 < 0, LW is -W0, !, print_side_by_side0(C2,LW,C1).
@@ -459,38 +469,43 @@ print_side_by_side0(C1,W0,C2):- number(W0), LW is floor(abs(W0)),
   locally(nb_setval(print_sbs,left),into_ss_string(C1,ss(W1,L1))),
   locally(nb_setval(print_sbs,right),into_ss_string(C2,ss(_,L2))),!,
   with_style("font-size:100%",print_side_by_side_lists_1st(L1,W1,L2,LW)).
+*/
 
 is_side(RL):- nb_current(print_sbs,RL),RL\==[].
 
-trim_rs(S,SS):- S==[], !, SS=''.
-trim_rs(S,SS):- member(WS, ["\s","\t","\n","\r"," "]), string_concat(Left,WS,S),
+trim_rs(S,SS):- member(WS, ["\s","\t","\n","\r"]), string_concat(Left,WS,S),
   trim_rs(Left,SS),!.
 trim_rs(SS,SS).
+
+trim_lrs(S,SSS):- trim_ls(S,SS),trim_rs(SS,SSS),!.
+
+trim_ls(S,SS):- member(WS, ["\s","\t","\n","\r"]), string_concat(WS,Left,S),
+  trim_ls(Left,SS),!.
+trim_ls(SS,SS).
   
 extend_len(Need,S,New):- 
  must_det_ll((
-  trim_rs(S,SS),
+  trim_lrs(S,SS),
   atom_length(SS,Spaces),Makeup is Need -Spaces, 
-  ( Makeup<1 -> New=SS ;  (make_spaces(Makeup,Pre), atomics_to_string([SS,Pre,'\n'],New))))).
+  ( Makeup<1 -> New=SS ;  (nop(make_spaces(Makeup,_Pre)), atomics_to_string([SS,'    '],New))))).
    
 make_spaces(Spaces,S):-
- wots(S,(bformatc(' '),forall(between(2,Spaces,_),bformatc(' ')),bformatc(' '))),!.
+ wots(S,forall(between(1,Spaces,_),bformatc(' '))),!.
 
 
-maybe_exend_len(L1,L2,Lst1,L2):-  (is_grid(L1) ; \+ is_list(L1)),
-  into_ss_string(L1,ss(_,Lst1)), !.
-maybe_exend_len(L1,L2,L1,Lst2):-  (is_grid(L2) ; \+ is_list(L2)),
-  into_ss_string(L2,ss(_,Lst2)), !.
-
+maybe_exend_len(L1,L2,Lst1,L2):- (is_grid(L1) ; \+ is_list(L1)),
+  locally(nb_setval(print_sbs,left),into_ss_string(L1,ss(_,Lst1))),!.
+maybe_exend_len(L1,L2,L1,Lst2):-(is_grid(L2) ; \+ is_list(L2)),
+  locally(nb_setval(print_sbs,right),into_ss_string(L2,ss(_,Lst2))),!.
 %maybe_exend_len(L1,L2,L2L,L1):- length(L1,N1),length(L2,N2), N2 > N1, !,append(['Swapped2'],L2,L2L).
-
 maybe_exend_len(L1,L2,NL1,L2):-
   length(L1,N1),
   length(L2,N2),
   N2>N1, 
  must_det_ll((
   nth1(1,L1,E1), atom_length(E1,Spaces1),
-  nth1(2,L1,E2), atom_length(E2,Spaces2),
+  nth1(2,L1,E2), atom_length(E2,Spaces0),
+  Spaces2 is Spaces0,
   max_min(Spaces1,Spaces2,Spaces,_Min),
   make_spaces(Spaces,S),
   Needs is N2-N1, make_list(S,Needs,AppendL1), 
@@ -511,21 +526,40 @@ maybe_exend_len(L1,L2,NL1,L2):-
 
 maybe_exend_len(L1,L2,L2,L1):- length(L1,N1), length(L2,N2), N2 > N1, !.
 
-
-print_side_by_side_lists_1st([],_,[],_):-!.
+%seek_to_w(W1):- repeat,write(' '),line_position(user_output,LP),LP>W1. % write(' '),write('\t').
+seek_to_w(W1):-line_position(user_output,LP),Seek is W1-LP, (Seek>0 ->dash_chars(Seek,' ');true).
 
 print_side_by_side_lists_1st(L1,W1,L2,LW):- maybe_exend_len(L1,L2,NL1,NL2),!, 
   print_side_by_side_lists_1st(NL1,W1,NL2,LW).
 
-print_side_by_side_lists_1st([E1,E2|L1],W1,L2,LW):- !,
-  wots(S,(write(E2),write('\t '),dash_chars(W1,' ' ))),
-  atom_length(S,Pre),
-  print_side_by_side_lists(Pre,[E1,E2|L1],W1,L2,LW).
+print_side_by_side_lists_1st([],_,[],_):-!.
+
+print_side_by_side_lists_1st([E1|L1],W1,[],LW):- !,
+  extend_len(W1,E1,New),format('~N  ~s',[New]),
+  print_side_by_side_lists_1st(L1,W1,[],LW).
+
+print_side_by_side_lists_1st([E1|L1],W1,[E2|L2],LW):- !,
+  extend_len(W1,E1,New),format('~N  ~s',[New]),
+  seek_to_w(LW), trim_lrs(E2,E2S),format('~s',[E2S]),
+  print_side_by_side_lists_1st(L1,W1,L2,LW).
+
+print_side_by_side_lists_1st([],W1,[E2|L2],LW):- !,
+  format('~N'),
+  seek_to_w(LW), trim_lrs(E2,E2S),format('~s',[E2S]),
+  print_side_by_side_lists_1st([],W1,L2,LW).
+
+/*
+print_side_by_side_lists_1st([],W1,[E2|L2],LW):- !,
+  %nl,write(print_side_by_side_lists_1st), 
+  write_padding([],W1,E2,W2),
+  %seek_to_w(LW), trim_lrs(E2,E2S),format('~s~n',[E2S]),
+  print_side_by_side_lists_1st([],W1,L2,LW).
 
 print_side_by_side_lists_1st([E2|L1],W1,L2,LW):- !,
   wots(S,(write(E2),write('\t '),dash_chars(W1,' ' ))),
   atom_length(S,Pre),
   print_side_by_side_lists(Pre,[E2|L1],W1,L2,LW).
+
 
 print_side_by_side_lists(Pre,[E1|L1],W1,[E2|L2],W2):-!,
   write_padding(E1,W1,E2,W2), 
@@ -540,7 +574,7 @@ print_side_by_side_lists(Pre,[E1|L1],W1,[],W2):- !,
 print_side_by_side_lists(Pre,[],W1,[E2|L2],W2):-
   with_output_to(atom(S),dash_chars(Pre,' ')), write_padding(S,W1,E2,W2),
   print_side_by_side_lists(Pre,[],W1,L2,W2).
-
+*/
 desc(A,B):- wots(S1,A),wots(S2,B),format('~N~n'),dash_chars,write(S1),format('~N'),write(S2),format('~N').
 
 write_padding(E1,_W1,E2,LW):- %write_nbsp,
@@ -627,6 +661,7 @@ uses_space(C):- code_type(C,print).
 
 into_ss_string(C, ss(1,["var_into_ss_string"])):- var(C),!.
 into_ss_string(C,_):- plain_var(C),!,throw(var_into_ss_string(C)).
+into_ss_string(G,SS):- is_grid(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 %into_ss_string(A-B,ss(LenAB,ABL)):- into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)), append(LA,LB,ABL), max_min(LenA,LenB,LenAB,_).
 into_ss_string(print_grid(G),SS):- into_ss_string(print_grid_ss(G),SS).
 into_ss_string(print_grid(X,Y,G),SS):- into_ss_string(print_grid_ss(X,Y,G),SS).
@@ -658,7 +693,8 @@ find_longest_len([],L,L).
 find_longest_len([S|SS],N,L):- print_length(S,N2),max_min(N,N2,NM,_),
   find_longest_len(SS,NM,L).
 
-print_grid_ss(G):- print_grid_ss(_,_,G).
+print_grid_ss(G):- wots(S,print_grid_ss(_,_,G)),
+  trim_lrs(S,SS),write(' '),write(SS).
 
 :- meta_predicate( print_with_pad(0)).
 :- export( print_with_pad/1).
@@ -669,7 +705,7 @@ print_with_pad(Goal):-
   print_w_pad(O1,S).
 
 print_w_pad(Pad,S):- atomics_to_string(L,'\n',S)-> maplist(print_w_pad0(Pad),L).
-print_w_pad0(Pad,S):- format('~N'),dash_chars(Pad,' '), write(S).
+print_w_pad0(Pad,S):- format('~N '),dash_chars(Pad,' '), write(S).
 
 print_equals(_,N,V):- \+ compound(V),wqnl(N=V).
 print_equals(Grid,N,Ps):- is_object(Ps),grid_size(Grid,H,V),print_grid(H,V,N,Ps),!.
@@ -910,7 +946,7 @@ cpwui(color(C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
 cpwui(C,G):- integer(C),arc_acolor(C,CC),CC\==C,!,cpwui(CC,G).
 cpwui(C,G):- is_html_color(C),!, format('<font color="~w">~@</font>',[C,bformatc(G)]).
 %cpwui((C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
-cpwui(C,G):- format('<font style="~w">~@</font>',[C,bformatc(G)]),!.
+cpwui(C,G):- format('<font> style="~w" ~@</font>',[C,bformatc(G)]),!.
 
 is_html_color(A):- \+ atom(A),!,fail.
 is_html_color(teal).
@@ -924,37 +960,34 @@ cpwui(color(C),G):- format('<font color="~w">~@</font>',[C,bformatc(G)]),!.
 cpwui(C,G):- format('<span style="~w">~@</span>',[C,bformatc(G)]),!.
 */
 
-bformatc(G):- atom_contains(G,'<span '),!,write(G).
+
+
 bformatc(call(G)):- !, wots(S,call(G)), bformats(S).
 bformatc(G):- string(G),!,bformats(G).
 bformatc(G):- atom(G),!,bformats(G).
 bformatc(G):- wots(S,write(G)), bformats(S).
+bformats(S):- \+ in_pp(bfly),!,write(S).
+bformats(S):- atom_codes(S,Cs), maplist(map_html_entities,Cs,CsO),atomic_list_concat(CsO,W),!,bformatw(W).
 
-bformats(S):- \+ arc_webui,!,write(S).
-bformats(S):- atom_codes(S,Cs), maplist(map_html_entities,Cs,CsO),atomic_list_concat(CsO,W),!,write(W).
-
-map_html_entities(62,'&gt;'). map_html_entities(60,'&lt;'). map_html_entities(38,'&amp;'). map_html_entities(32,'&nbsp;').
 map_html_entities(Code,S):- Code == 124,!,sformat(S, '&#~w;',[Code]).
-map_html_entities(Code,S):- Code>160, !, sformat(S, '&#~w;',[Code]).
-map_html_entities(Code,S):- Code>32, !, name(S,[Code]),!.
-map_html_entities(Code,S):- sformat(S, '&#~w;',[Code]),!.
-map_html_entities(Code,S):- name(S,[Code]),!.
+map_html_entities(Code,S):- Code>255, !, sformat(S, '&#~w;',[Code]).
+map_html_entities(Code,S):- Code>127, !, sformat(S, '&#~w;',[Code]).
+map_html_entities(62,'&gt;'). map_html_entities(60,'&lt;'). map_html_entities(38,'&amp;'). map_html_entities(32,'&nbsp;').
+map_html_entities(Code,S):- Code>32, name(S,[Code]),!.
 
+bformatw(G):- g_out(bformat(G)).
 
 with_style(S,G):-
  (arc_webui -> 
    setup_call_cleanup(format('<span style="~w">',[S]),G,write('</span>')) 
-    ; call(G)).
+    ; G).
 
-print_grid_html(Grid):- print_grid_html(_SH,_SV,_EH,_EV,Grid).
-print_grid_html(Name,Grid):- with_monospace(print_grid(_OH,_OV,Name,Grid)).
-print_grid_html(SH,SV,EH,EV,Grid):-  with_monospace(print_grid_ansi(SH,SV,EH,EV,Grid)).
-%print_grid_html(SH,SV,EH,EV,Grid):-  bfly_html_goal(in_mc_10(print_grid_ansi(SH,SV,EH,EV,Grid))).
-
-print_grid_html_old(SH,SV,EH,EV,Grid):- 
+print_grid_html(Grid):-print_grid_html(_SH,_SV,_EH,_EV,Grid).
+print_grid_html(Name,Grid):-print_grid(_OH,_OV,Name,Grid).
+print_grid_html(SH,SV,EH,EV,Grid):-
  % CSS = 'line-height: .5; font-stretch: ultra-extended;',
  CSS = 'line-height: 1.2; font-stretch: ultra-extended; font-size:288px background-color: reset;',
- gg_out(must_det_ll(( 
+ g_out(must_det_ll(( 
   format('~N'), 
   ((plain_var(EH) ; plain_var(EV))->grid_size(Grid,EH,EV);true),
   Width is EH-SH, 
@@ -985,15 +1018,16 @@ grid_colors(GridI,WGrid):-
 
 print_grid_ansi(SH,SV,EH,EV,GridI):-
  must_det_ll((
-  format('~N'),
-  ignore(SH=1),ignore(SV=1),
+  format('~N'), 
   %maybe_grid_numbervars(GridI,Grid),
   GridI=Grid,
   ((plain_var(EH) ; plain_var(EV))->grid_size(Grid,EH,EV);true),
   Width is EH-SH, 
   (Width==0 -> DBW = 1 ; DBW is Width+1),
+  
   once((dash_border_no_nl(DBW))),
   bg_sym(BGC),
+  format('~N'),
   forall(between(SV,EV,V),
    ((format('~N|'),
      forall(between(SH,EH,H),

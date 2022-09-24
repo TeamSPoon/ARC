@@ -16,7 +16,6 @@ mc10_put('\n'):- !,write('<br/>'),!.
 mc10_put('\r'):- !.
 mc10_put('<'):- !,mc10_char('&lt;').
 mc10_put('>'):- !,mc10_char('&gt;').
-mc10_put('®'):- !,mc10_char('&amp;').
 mc10_put(Char):- atom_codes(Char,[C]),C<32,mc10_code(C).
 mc10_put(Char):- atom_codes(Char,[C]),C>160,mc10_code(C).
 mc10_put(C):- mc10_char(C).
