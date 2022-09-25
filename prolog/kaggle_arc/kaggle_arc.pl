@@ -464,7 +464,7 @@ suggest_arc_user(ID):- catch((if_arc_webui(xlisting_web:find_http_session(ID))),
 suggest_arc_user(ID):- catch((pengine:pengine_user(ID)),_,fail),!.
 suggest_arc_user(ID):- catch((http_session:session_data(_,username(ID))),_,fail),!.
 
-arc_webui:- notrace(arc_webui0).
+arc_webui:- \+ tracing, notrace(arc_webui0).
 arc_webui0:- in_pp(http),!.
 arc_webui0:- toplevel_pp(swish),!.
 arc_webui0:- in_pp(swish),!,fail.

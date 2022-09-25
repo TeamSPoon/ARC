@@ -93,11 +93,13 @@ my_submenu_call(G):- current_predicate(_,G), \+ is_list(G),!,
 my_submenu_call0(E):- peek_vm(VM),!, ui_menu_call(run_dsl(VM,E,VM.grid,Out)),
   set(VM.grid) = Out.
 
+read_menu_chars(_Start,_SelMax,Out):- in_pp(PP), PP\==ansi, !, wdmsg(read_menu_chars(PP)),read(Out).
 read_menu_chars(_Start,_SelMax,Out):- pengine_self(_Id),!,read(Out).
 read_menu_chars(Start,SelMax,Out):-
   get_single_key_code(Codes), atom_codes(Key,Codes),
   append_num_code(Start,SelMax,Key,Out).
 
+get_single_key_code(CCodes):- in_pp(PP), PP\==ansi, !, wdmsg(get_single_key_code(PP)),sleep(5),read(CCodes).
 get_single_key_code(CCodes):- get_single_char(C), 
   (  C== -1 -> (CCodes=`Q`) ; (read_pending_codes(user_input,Codes, []), [C|Codes]=CCodes)).
 

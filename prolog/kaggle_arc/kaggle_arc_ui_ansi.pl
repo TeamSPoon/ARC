@@ -367,7 +367,6 @@ wqs1(cc(C,N)):- !, write(' cc('),color_print(C,C),write(','), writeq(N), write('
 wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
 wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
 
-
 probably_nl :- arc_webui,!,write('<br/>').
 probably_nl :- format('~N').
 %write_nbsp:- arc_webui,!,write('&nbsp;').
@@ -806,7 +805,7 @@ print_grid_pad(O1,SH,SV,EH,EV,Grid):-
   wots(S,print_grid2(SH,SV,EH,EV,GridI)),
   print_w_pad(O1,S),!.
 
-print_grid2(SH,SV,EH,EV,GridI):- arc_webui,!, print_grid_html(SH,SV,EH,EV,GridI),nl.
+print_grid2(SH,SV,EH,EV,GridI):- \+ in_pp(bfly), \+ in_pp(ansi), arc_webui,!, print_grid_html(SH,SV,EH,EV,GridI),nl.
 print_grid2(SH,SV,EH,EV,GridI):- ignore(print_grid_ansi(SH,SV,EH,EV,GridI)).
 print_grid_ss(H,V,G):- must_det_ll(print_grid0(H,V,G)).
 
