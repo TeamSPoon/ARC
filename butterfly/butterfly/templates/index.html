@@ -13,13 +13,11 @@
     <title>LOGICMOO Butterfly</title>
     <link href="{{ static_url('main.css') }}" rel="stylesheet" id="style">
 		<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
-		<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script> <!-- necessary for the "draggable" ui  -->
-        
+		<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script> <!-- necessary for the "draggable" ui  -->        
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
 		<!--Use either font-awesome icons or Google icons with these links. Other icons could also be used if preferred-->
 		<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   </head>
-
   <body spellcheck="false"
         data-force-unicode-width="{{ 'yes' if options.force_unicode_width else 'no' }}"
         data-root-path="{{ options.uri_root_path }}"
@@ -54,10 +52,8 @@
     <div id="input-view" class="hidden"></div>
     <div id="popup" class="hidden"></div>
     <!-- script src="{{ static_url('html-sanitizer.js') }}"></script -->
-    <script src="{{ static_url('main.%sjs' % (
-                 '' if options.unminified else 'min.')) }}"></script>
-    <script src="{{ static_url('ext.%sjs' % (
-                 '' if options.unminified else 'min.')) }}"></script>
+    <script src="/static/main.min.js"></script>
+    <script src="/static/ext.min.js"></script>
     <script src="{{ reverse_url('LocalJsStatic') }}"></script>
 	<pre>
 	<div id="app"></div>

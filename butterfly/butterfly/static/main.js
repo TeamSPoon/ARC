@@ -299,47 +299,50 @@
       if (placeholder == null) {
         placeholder = false;
       }
-
-      chint = c.charCodeAt();
-      if (!this.isHtmlMode) {
-        if (c == "&") {
-          c = "&amp;";
-        } else if (c == "<") {
-          c = "&lt;";
-        } else if (c == ">") {
-          c = "&gt;";
-          /* }else if (c == "®") {
-            c = "@";*/
-        } else if (chint == 32) {
-          //  c = "&nbsp;"
-          c = '' + c;
-        } else if (chint >= 160 || chint <32) {
-          c = "&#" + chint + ";";
-        } else {
-          c = '' + c;
-        }
-        if (this.isMonospace) {
-          if (c.indexOf("<span ") == -1) {
-            c = '<span class="mc-10">' + c + '</span>';
-          }
-        }
-        /*
-        if (this.htmlBuffer.length > 0) {
-          c = this.htmlBuffer + c;
-          this.htmlBuffer = "";
-        }*/
-        newChar = this.cloneAttr(this.curAttr, c);
-        //newChar.html = c;
+      if (c == '\0HTML') {
+        c = this.htmlBuffer;
+        this.htmlBuffer = "";
+        newChar = this.cloneAttr(this.curAttr);
+        newChar.html = c;
+        newChar.placeholder = false;
+        this.screen[this.y + this.shift].chars[this.x] = newChar;
+        return this.screen[this.y + this.shift].dirty = true;
       } else {
-        if (c == '\0') {
-          c = this.htmlBuffer;
-          this.htmlBuffer = "";
-          newChar = this.cloneAttr(this.curAttr, c);
-          newChar.html = c;
-        } else {
+        chint = c.charCodeAt();
+        if (this.isHtmlMode) {
           this.htmlBuffer += c;
-          debugger;
           return;
+
+        } else {
+          if (c == "&") {
+            c = "&amp;";
+          } else if (c == "<") {
+            c = "&lt;";
+          } else if (c == ">") {
+            c = "&gt;";
+            /* }else if (c == "®") {
+              c = "@";*/
+          } else if (chint == 32) {
+            //  c = "&nbsp;"
+            c = '' + c;
+          } else if (chint >= 160 || chint < 32) {
+            c = "&#" + chint + ";";
+          } else {
+            c = '' + c;
+          }
+          if (this.isMonospace) {
+            if (c.indexOf("<span ") == -1) {
+              c = '<span class="mc-10">' + c + '</span>';
+            }
+          }
+          if (this.htmlBuffer.length > 0) {
+            c = this.htmlBuffer + c;
+            this.htmlBuffer = "";
+            newChar.html = c;
+            newChar = this.cloneAttr(this.curAttr, c);
+          } else {
+            newChar = this.cloneAttr(this.curAttr, c);
+          }
         }
       }
 
@@ -949,6 +952,8 @@
                 }
                 // jarj = jarj + "\n";
               }
+              //results.push(jarj);
+              //continue;
             } else {
               div.style['white-space'] = "pre";
             }
@@ -1126,7 +1131,7 @@
         ch = data.charAt(i);
 
         const dataRest = data.substring(i);
-        const dataPrev = data.substring(0,i);
+        const dataPrev = data.substring(0, i);
 
         if (this.isHtmlMode) {
           if (ch == "\x1b") {
@@ -1419,31 +1424,32 @@
               this.params.push(this.currentParam);
               const v = this.params[0];
               const v2 = this.params[1];
-
-              if (v2.indexOf("+Monospace") > -1) {
-                this.isMonospace = true;
-              } else if (v2.indexOf("-Monospace") > -1) {
-                this.isMonospace = false;
-              } else if (v2.indexOf("+HtmlMode") > -1) {
-                this.maybeEscapingHtmlMode = false;
-                if (this.htmlBuffer.length > 0) {
-                  console.warn("Should have empty buffer! not: " + htmlBuffer);
-                  debugger;
-                  this.putChar('\0');
-                }
-                this.isHtmlMode = true;
-              } else if (v2.indexOf("-HtmlMode") > -1) {
-                this.maybeEscapingHtmlMode = false;
-                if (this.isHtmlMode) {
+              if (v2) {
+                if (v2.indexOf("+Monospace") > -1) {
+                  this.isMonospace = true;
+                } else if (v2.indexOf("-Monospace") > -1) {
+                  this.isMonospace = false;
+                } else if (v2.indexOf("+HtmlMode") > -1) { 
+                  this.maybeEscapingHtmlMode = false;
                   if (this.htmlBuffer.length > 0) {
-                    console.log("HTML OUT:" + this.htmlBuffer);
-                    this.putChar('\0');
-                    this.isHtmlMode = false;
-                  } else {
-                    this.isHtmlMode = false;
-                    var dataState = dataPrev + "<HERE>" + dataRest;
-                    //debugger;
-                    if(false) console.debug("Should have bufered something: " + dataState);
+                    console.warn("Should have empty buffer! not: " + this.htmlBuffer);
+                    debugger;
+                    this.putChar('\0HTML');
+                  }
+                  this.isHtmlMode = true;
+                } else if (v2.indexOf("-HtmlMode") > -1) {
+                  this.maybeEscapingHtmlMode = false;
+                  if (this.isHtmlMode) {
+                    if (this.htmlBuffer.length > 0) {
+                      console.log("HTML OUT:" + this.htmlBuffer);
+                      this.putChar('\0HTML');
+                      this.isHtmlMode = false;
+                    } else {
+                      this.isHtmlMode = false;
+                      var dataState = dataPrev + "<HERE>" + dataRest;
+                      //debugger;
+                      if (false) console.debug("Should have bufered something: " + dataState);
+                    }
                   }
                 }
               }
@@ -1648,31 +1654,25 @@
                   }
                   switch (type) {
                     case "HTML":
-                      safe = content;
-                      lastWasHTML = true;
-                      ty = false; //this.y;
-                      tx = false; //this.x;
-                      /*
-                      safe = html_sanitize(content, function(l) {
-                                  return l;
-                                });
-                      */
-                      var wasValidHTML = isValidHTML(safe);
-                      if (wasValidHTML != true) {
-                        console.log("!wasValidHTML=" + safe);
-                        wasValidHTML = true;
+                      if (this.htmlBuffer.length > 0) {
+                        console.log("HTML CLR BUFFER:" + this.htmlBuffer);
+                        this.putChar('\0HTML');
                       }
-                      if (wasValidHTML != true || safe.charAt(safe.length - 1) != ">") {
-                        // safe = "<pre class=\"inline-html\">" + safe + "</pre>";
+                      console.log("HTML OUTPUT:" + content);
+                      if (true) {
+                        this.htmlBuffer = content;
+                        if (this.htmlBuffer.length > 0) {
+                          console.log("HTML OUT:" + this.htmlBuffer);
+                          this.putChar('\0HTML');
+                        }
+                        break;
                       }
                       attr = this.cloneAttr(this.curAttr);
-                      attr.html = safe;
+                      attr.html = content;
+                      attr.placeholder = false;
                       this.checkUndefined(attr);
                       this.screen[this.y + this.shift].chars[this.x] = attr;
                       this.resetLine(this.screen[this.y + this.shift]);
-                      this.nextLine();
-                      // ty = this.y;
-                      //tx = this.x;
                       break;
                     case "IMAGE":
                       content = encodeURI(content);

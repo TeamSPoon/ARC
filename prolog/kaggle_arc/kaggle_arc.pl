@@ -1072,7 +1072,7 @@ user:portray(Grid):-
 
 bfly_startup:-    
    asserta(was_inline_to_bfly),inline_to_bfly_html,
-   % bfly,
+    bfly,
     catch_log(webui_tests),
    catch_log(print_test),
    catch_log(menu),

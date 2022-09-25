@@ -370,13 +370,13 @@ wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
 
 probably_nl :- arc_webui,!,write('<br/>').
 probably_nl :- format('~N').
-write_nbsp:- arc_webui,!,write('&nbsp;').
+%write_nbsp:- arc_webui,!,write('&nbsp;').
 write_nbsp:- write(' ').
 
 is_breaker(P):- compound(P),functor(P,_,A), A>=3.
 need_nl(_,_):- arc_webui,!.
-need_nl(H,[P|_]):- \+ is_breaker(H),is_breaker(P),line_position(user_output,L1),L1>80,nl,bformatc('\t\t').
-need_nl(_,_):- line_position(user_output,L1),L1>160,nl,bformatc('\t\t').
+need_nl(H,[P|_]):- \+ is_breaker(H),is_breaker(P),line_position(user_output,L1),L1>80,nl,bformatc1('\t\t').
+need_nl(_,_):- line_position(user_output,L1),L1>160,nl,bformatc1('\t\t').
 need_nl(_,_).
 wqln(X):- wqnl(X).
 wqnl(X):- is_list(X),!,g_out(wqs(X)).
@@ -386,16 +386,16 @@ dash_chars:- dash_chars(40),!.
 dash_chars(H):- integer(H), dash_border(H).
 dash_chars(S):- probably_nl,dash_chars(60,S),probably_nl.
 dash_chars(H,_):- H < 1,!.
-dash_chars(H,C):- forall(between(0,H,_),bformatc(C)).
+dash_chars(H,C):- forall(between(0,H,_),bformatc1(C)).
 
-%dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc('¯¯¯ ').
-%dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('¯¯¯ ').
-%dash_uborder_no_nl_1:- bformatc('¯¯¯ ').
-dash_uborder_no_nl_1:- uborder(Short,Long),!, bformatc(Short),bformatc(Long),bformat(' ').
+%dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc1('¯¯¯ ').
+%dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc1('¯¯¯ ').
+%dash_uborder_no_nl_1:- bformatc1('¯¯¯ ').
+dash_uborder_no_nl_1:- uborder(Short,Long),!, bformatc1(Short),bformatc1(Long),write_nbsp.
 dash_uborder_no_nl(1):- !, dash_uborder_no_nl_1.
 dash_uborder_no_nl(Width):- WidthM1 is Width-1, uborder(Short,Long),
   write(' '), write(Short),dash_chars(WidthM1,Long),!.
-%dash_uborder_no_nl(Width):- WidthM1 is Width-1, bformatc(' '), bformat('¯'),dash_chars(WidthM1,'¯¯'),!.
+%dash_uborder_no_nl(Width):- WidthM1 is Width-1, write_nbsp, bformat('¯'),dash_chars(WidthM1,'¯¯'),!.
 
 dash_uborder(Width):- probably_nl,dash_uborder_no_nl(Width),nl.
 
@@ -403,11 +403,11 @@ uborder('-','--'):- stream_property(current_output,encoding(utf8)),!.
 uborder('¯','¯¯'):- !. %stream_property(current_output,encoding(text)).
 %uborder('-','--').
 
-dash_border_no_nl_1:-  line_position(current_output,0),!, bformatc(' ___ ').
-dash_border_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('___ ').
-dash_border_no_nl_1:- bformatc(' ___ ').
+dash_border_no_nl_1:-  line_position(current_output,0),!, bformatc1(' ___ ').
+dash_border_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc1('___ ').
+dash_border_no_nl_1:- bformatc1(' ___ ').
 dash_border_no_nl(1):- probably_nl,!,dash_border_no_nl_1.
-dash_border_no_nl(Width):- probably_nl, WidthM1 is Width-1, bformatc(' _'),dash_chars(WidthM1,'__').
+dash_border_no_nl(Width):- probably_nl, WidthM1 is Width-1, bformatc1(' _'),dash_chars(WidthM1,'__').
 
 dash_border(Width):- !, dash_border_no_nl(Width),nl,!.
 
@@ -476,7 +476,7 @@ extend_len(Need,S,New):-
   ( Makeup<1 -> New=SS ;  (make_spaces(Makeup,Pre), atomics_to_string([SS,Pre,'\n'],New))))).
    
 make_spaces(Spaces,S):-
- wots(S,(bformatc(' '),forall(between(2,Spaces,_),bformatc(' ')),bformatc(' '))),!.
+ wots(S,(write_nbsp,forall(between(2,Spaces,_),write_nbsp),write_nbsp)),!.
 
 
 maybe_exend_len(L1,L2,Lst1,L2):-  (is_grid(L1) ; \+ is_list(L1)),
@@ -922,15 +922,20 @@ cpwui(C,G):- format('<span style="~w">~@</span>',[C,bformatc(G)]),!.
 */
 
 
-
-bformatc(call(G)):- !, wots(S,call(G)), bformats(S).
+bformatc(G):- var(G),!,bformatc(vaR(G)).
+bformatc(call(G)):- !, wots(S,call(G)), bformatc(S).
 bformatc(G):- string(G),!,bformats(G).
 bformatc(G):- atom(G),!,bformats(G).
+bformatc(G):- is_list(G), catch(text_to_string(G,S),_,fail),G\==S,!,bformatc(S).
 bformatc(G):- wots(S,write(G)), bformats(S).
-bformats(S):- \+ arc_webui,!,write(S).
-bformats(S):- atom_codes(S,Cs), maplist(map_html_entities_mono,Cs,CsO),atomic_list_concat(CsO,W),!,bformatw(W).
 
-map_html_entities_mono(I,O):- map_html_entities(I,M),sformat(O,'<span class="mc-10">~w<span>',[M]).
+bformats(S):- atom_contains(S,'<'),!,write(S).
+bformats(S):- bformatc1(S).
+
+bformatc1(S):- \+ arc_webui,!,write(S).
+bformatc1(S):- atom_codes(S,Cs), maplist(map_html_entities_mono,Cs,CsO),atomic_list_concat(CsO,W),!,bformatw(W).
+
+map_html_entities_mono(I,O):- map_html_entities(I,O).
 
 map_html_entities(Code,S):- Code == 124,!,sformat(S, '&#~w;',[Code]).
 map_html_entities(Code,S):- Code>255, !, sformat(S, '&#~w;',[Code]).
@@ -945,13 +950,16 @@ with_style(S,G):-
    setup_call_cleanup(format('<span style="~w">',[S]),G,write('</span>')) 
     ; call(G)).
 
+html_echo(G)--> [G].
 
 :- use_module(library(dcg/high_order)).
 
 print_grid_html:- arc_grid(Grid),print_grid_html(Grid).
-print_grid_html(Grid):-print_grid_html(_SH,_SV,_EH,_EV,Grid).
-print_grid_html(Name,Grid):-print_grid(_OH,_OV,Name,Grid).
-print_grid_html(SH,SV,EH,EV,Grid):- bg_sym(BGC),
+print_grid_html(Grid):-print_grid_html(_SH,_SV,_EH,_EV,Grid),!.
+print_grid_html(Name,Grid):-print_grid(_OH,_OV,Name,Grid),!.
+
+print_grid_html(SH,SV,EH,EV,Grid):- print_grid_http(SH,SV,EH,EV,Grid),!.
+print_grid_http(SH,SV,EH,EV,Grid):- bg_sym(BGC),
 (plain_var(EH) ->grid_size(Grid,EH,_) ; true),ignore(SH=1),
   (plain_var(EV) ->grid_size(Grid,_,EV) ; true),ignore(SV=1),
    output_html(table([ class([table, 'table-striped']), 
@@ -961,7 +969,7 @@ print_grid_html(SH,SV,EH,EV,Grid):- bg_sym(BGC),
              \ foreach(between(SV,EV,V),
                       html(tr([ \ foreach((between(SH,EH,H),once(hv_cg_value(Grid,CG,H,V);CG=BGC), 
                          wots(Cell,print_g1(color_print_webui,CG))),
-                                     html(td(style('text-align:center; width:11px;'), \[Cell] ))) ])))
+                                     html(td([class('mc-10'),style('text-align:center; width:11px;')], \ html_echo(Cell) ))) ])))
            ])),!.
 
 print_grid_html_old(SH,SV,EH,EV,Grid):-
@@ -1173,7 +1181,8 @@ bg_dot(32).
 %fg_dot(C):- luser_getval(fg_dot,C),integer(C),!.
 %fg_dot(_):- luser_getval(no_rdot,true),luser_setval(no_rdot,false)-> break , fail.
 fg_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.
-fg_dot(174).
+fg_dot(64).
+%fg_dot(174).
 cant_be_dot(183).
 grid_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.
 grid_dot(169).
@@ -1207,6 +1216,8 @@ int2glyph0(GN,Glyph):- GN > 255, GN2 is GN div 2, int2glyph0(GN2,Glyph).
 %user:portray(S):- (string(S);atom(S)),atom_codes(S,[27|_]),write('"'),write(S),write('"').
 
 %print_gw1(C):- plain_var(C), write('  '),!.
+
+print_gw1(N):- print_gw1(color_print_ele,N),!.
 
 print_gw1(P2,N):- 
 
