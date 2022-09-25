@@ -6,9 +6,8 @@
 */
 
 :- encoding(iso_latin_1).
-:- set_stream(current_output,encoding(utf8)).
 
-:- set_prolog_flag(encoding,utf8).
+:- set_prolog_flag(encoding,iso_latin_1).
 :- set_prolog_flag(stream_type_check,false).
 
 :- dynamic('$messages':to_list/2).
@@ -464,6 +463,13 @@ arc_user(main):-!.
 suggest_arc_user(ID):- catch((if_arc_webui(xlisting_web:find_http_session(ID))),_,fail),!.
 suggest_arc_user(ID):- catch((pengine:pengine_user(ID)),_,fail),!.
 suggest_arc_user(ID):- catch((http_session:session_data(_,username(ID))),_,fail),!.
+
+arc_webui:- notrace(arc_webui0).
+arc_webui0:- in_pp(http),!.
+arc_webui0:- toplevel_pp(swish),!.
+arc_webui0:- in_pp(swish),!,fail.
+arc_webui0:- toplevel_pp(bfly),!.
+arc_webui0:- is_webui,!.
 
 arc_user(TID, ID):- \+ arc_webui,!,TID=ID,!.
 arc_user(TID, ID):- catch((http_session:session_data(TID,username(ID))),_,fail),!.
@@ -1060,11 +1066,14 @@ user:portray(Grid):-
 :- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).
 
+:- set_stream(current_output,encoding(utf8)).
+
 :- (current_prolog_flag(argv,C),(member('--',C)->catch_log(start_arc_server) ; true)).
 
-bfly_startup:- 
-   %bfly,
-   catch_log(webui_tests),
+bfly_startup:-    
+   asserta(was_inline_to_bfly),inline_to_bfly_html,
+   % bfly,
+    catch_log(webui_tests),
    catch_log(print_test),
    catch_log(menu),
    %with_pp(bfly,catch_log(menu)),
@@ -1078,5 +1087,6 @@ ansi_startup:-
    catch_log(menu),
    %with_pp(bfly,catch_log(menu)),
    nop((next_test,previous_test)),!.
+
 
 

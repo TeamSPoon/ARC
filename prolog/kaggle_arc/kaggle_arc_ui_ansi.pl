@@ -8,6 +8,7 @@
 :- if(current_module(trill)).
 :- set_prolog_flag_until_eof(trill_term_expansion,false).
 :- endif.
+:- autoload(library(http/html_write),[html/3,print_html/1]).
 
 wno(G):-
  locally(b_setval(print_collapsed,10), G).
@@ -121,9 +122,9 @@ swap_kv([],[]).
 
 
 arc_portray_pair(Ps,K,Val,TF):- 
- format('~N'),
+ probably_nl,
  arc_portray_1_pair(Ps,K,Val,TF),
- format('~N').
+ probably_nl.
 
 arc_portray_1_pair(_Ps,call,Val,_TF):- !, call(Val).
 arc_portray_1_pair(Ps,K,Val,TF):- 
@@ -228,7 +229,7 @@ ptc(Color,Call):- pp(Color,call(Call)).
 
 
 pp(_):- is_print_collapsed,!.
-pp(P):- format('~N'), pp_no_nl(P),!,format('~N').
+pp(P):- probably_nl, pp_no_nl(P),!,probably_nl.
 
 pp_no_nl(P):- var(P),!,pp(var_pt(P)),nop((dumpST,break)).
 pp_no_nl(P):- atomic(P),atom_contains(P,'~'),!,format(P).
@@ -237,7 +238,7 @@ pp_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 pp_no_nl(P):- \+ \+ (( pt_guess_pretty(P,GP),ptw(GP))).
 %pp(P):-!,writeq(P).
 %ptw(P):- quietlyd(print_tree_nl(P)),!.
-ptw(_):- format('~N'),fail.
+ptw(_):- probably_nl,fail.
 ptw(P):- var(P),!,ptw(var_ptw(P)),nop((dumpST,break)).
 ptw(G):- is_map(G), !, write_map(G,'ptw').
 ptw(S):- term_is_ansi(S), !, write_keeping_ansi(S).
@@ -367,6 +368,8 @@ wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
 wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
 
 
+probably_nl :- arc_webui,!,write('<br/>').
+probably_nl :- format('~N').
 write_nbsp:- arc_webui,!,write('&nbsp;').
 write_nbsp:- write(' ').
 
@@ -377,11 +380,11 @@ need_nl(_,_):- line_position(user_output,L1),L1>160,nl,bformatc('\t\t').
 need_nl(_,_).
 wqln(X):- wqnl(X).
 wqnl(X):- is_list(X),!,g_out(wqs(X)).
-wqnl(X):- format('~N~q~N',[X]).
+wqnl(X):- probably_nl,format('~q',[X]),probably_nl.
 
 dash_chars:- dash_chars(40),!.
 dash_chars(H):- integer(H), dash_border(H).
-dash_chars(S):- format('~N'),dash_chars(60,S),format('~N').
+dash_chars(S):- probably_nl,dash_chars(60,S),probably_nl.
 dash_chars(H,_):- H < 1,!.
 dash_chars(H,C):- forall(between(0,H,_),bformatc(C)).
 
@@ -394,7 +397,7 @@ dash_uborder_no_nl(Width):- WidthM1 is Width-1, uborder(Short,Long),
   write(' '), write(Short),dash_chars(WidthM1,Long),!.
 %dash_uborder_no_nl(Width):- WidthM1 is Width-1, bformatc(' '), bformat('¯'),dash_chars(WidthM1,'¯¯'),!.
 
-dash_uborder(Width):- format('~N'),dash_uborder_no_nl(Width),nl.
+dash_uborder(Width):- probably_nl,dash_uborder_no_nl(Width),nl.
 
 uborder('-','--'):- stream_property(current_output,encoding(utf8)),!.
 uborder('¯','¯¯'):- !. %stream_property(current_output,encoding(text)).
@@ -403,8 +406,8 @@ uborder('¯','¯¯'):- !. %stream_property(current_output,encoding(text)).
 dash_border_no_nl_1:-  line_position(current_output,0),!, bformatc(' ___ ').
 dash_border_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('___ ').
 dash_border_no_nl_1:- bformatc(' ___ ').
-dash_border_no_nl(1):- format('~N'),!,dash_border_no_nl_1.
-dash_border_no_nl(Width):- format('~N'), WidthM1 is Width-1, bformatc(' _'),dash_chars(WidthM1,'__').
+dash_border_no_nl(1):- probably_nl,!,dash_border_no_nl_1.
+dash_border_no_nl(Width):- probably_nl, WidthM1 is Width-1, bformatc(' _'),dash_chars(WidthM1,'__').
 
 dash_border(Width):- !, dash_border_no_nl(Width),nl,!.
 
@@ -414,14 +417,14 @@ functor_test_color(warn,yellow).
 
 arcdbg(G):- is_map(G), !, write_map(G,'arcdbg').
 arcdbg(G):- compound(G), compound_name_arity(G,F,_),functor_test_color(F,C),
-  wots(S,print(G)),color_print(C,S),!,format('~N').
+  wots(S,print(G)),color_print(C,S),!,probably_nl.
 arcdbg(G):- wdmsg(G).
 
 
 %user:portray(Grid):- ((\+ tracing, is_group(Grid),print_grid(Grid))).
 %user:portray(Grid):- quietlyd((is_object(Grid),print_grid(Grid))).
 
-banner_lines(Color):- format('~N'),
+banner_lines(Color):- probably_nl,
   color_print(Color,'--------------------------------------------------------------'),nl,
   color_print(Color,'=============================================================='),nl,
   color_print(Color,'--------------------------------------------------------------'),nl,
@@ -442,10 +445,10 @@ print_side_by_side(X,Y,Z):- g_out((nl,print_side_by_side0(X,Y,Z))).
 
 print_side_by_side0([],_,[]):-!.
 print_side_by_side0(C1-wqs(S1),LW,C2-wqs(S2)):- nonvar(S1),!,
-  print_side_by_side0(C1,LW,C2),format('~N'),
+  print_side_by_side0(C1,LW,C2),probably_nl,
   print_side_by_side0(wqs(S1),LW,wqs(S2)).
 print_side_by_side0(C1-A,LW,C2-B):- nonvar(A),!,
-  print_side_by_side0(C1,LW1,C2),format('~N'),
+  print_side_by_side0(C1,LW1,C2),probably_nl,
   print_side_by_side0(A,LW2,B),
   ignore(max_min(LW1,LW2,LW,_)).
 
@@ -540,12 +543,12 @@ print_side_by_side_lists(Pre,[],W1,[E2|L2],W2):-
   with_output_to(atom(S),dash_chars(Pre,' ')), write_padding(S,W1,E2,W2),
   print_side_by_side_lists(Pre,[],W1,L2,W2).
 
-desc(A,B):- wots(S1,A),wots(S2,B),format('~N~n'),dash_chars,write(S1),format('~N'),write(S2),format('~N').
+desc(A,B):- wots(S1,A),wots(S2,B),probably_nl,format('~n'),dash_chars,write(S1),probably_nl,write(S2),probably_nl.
 
 write_padding(E1,_W1,E2,LW):- %write_nbsp,
     W1 = LW,
-   format('~N'),as_str(E1,S1), as_str(E2,S2), 
-   write(S1), pre_s2(W1,S2), format('~N').
+   probably_nl,as_str(E1,S1), as_str(E2,S2), 
+   write(S1), pre_s2(W1,S2), probably_nl.
 
 pre_s2(_,S2):- atom_contains(S2,'_'), write('    '),write(S2).
 pre_s2(_,S2):- atom_contains(S2,'¯'), write('    '),write(S2).
@@ -603,7 +606,7 @@ print_side_by_side(TitleColor,G1,N1,LW,G2,N2):-
 
 print_side_by_side4d(TitleColor,S1,F1,N1,W0,S2,F2,N2):- number(W0), W0 < 0, LW is -W0, !, print_side_by_side4d(TitleColor,S2,F2,N2,LW,S1,F1,N1).
 print_side_by_side4d(TitleColor,S1,F1,N1,_LW,S2,F2,N2):- 
-   format('~N',[]), write('\t'),format_u(TitleColor,F1,[N1,S1]),write('\t\t'),format_u(TitleColor,F2,[N2,S2]),write('\n'),!.
+   probably_nl, write('\t'),format_u(TitleColor,F1,[N1,S1]),write('\t\t'),format_u(TitleColor,F2,[N2,S2]),write('\n'),!.
 
 toUpperC(A,AU):- A==[],!,AU='  []  '.
 toUpperC(A,AU):- string(A),!,AU=A.
@@ -668,7 +671,7 @@ print_with_pad(Goal):-
   print_w_pad(O1,S).
 
 print_w_pad(Pad,S):- atomics_to_string(L,'\n',S)-> maplist(print_w_pad0(Pad),L).
-print_w_pad0(Pad,S):- format('~N'),dash_chars(Pad,' '), write(S).
+print_w_pad0(Pad,S):- probably_nl,dash_chars(Pad,' '), write(S).
 
 print_equals(_,N,V):- \+ compound(V),wqnl(N=V).
 print_equals(Grid,N,Ps):- is_object(Ps),grid_size(Grid,H,V),print_grid(H,V,N,Ps),!.
@@ -741,7 +744,7 @@ format_u(TitleColor,Format,Args):- quietlyd( ignore((underline_print(color_print
 print_grid(_,_,_,_):- is_print_collapsed,!.
 print_grid(OH,OV,Name,Out):- 
  quietly((
-  ignore((print_grid0(OH,OV,Out))),!,format('~N  '),
+  ignore((print_grid0(OH,OV,Out))),!,probably_nl,format('  '),
   ignore((data_type(Out,SS), toUpperC(Name,NameU),
   mesg_color(SS,TitleColor),
   format_u(TitleColor,"~w  (~w)",[NameU, SS]))))),!.
@@ -779,7 +782,7 @@ print_grid(SH,SV,EH,EV,Grid):- quietlyd(print_grid0(SH,SV,EH,EV,Grid)),!.
 print_grid0(_SH,_SV,_EH,_EV,Grid):- \+ is_printable_gridoid(Grid), !, writeln(\+ is_printable_gridoid(Grid)).
 
 print_grid0(SH,SV,EH,EV,Grid):-  
-  \+ \+ print_grid1(SH,SV,EH,EV,Grid),!,format('~N').
+  \+ \+ print_grid1(SH,SV,EH,EV,Grid),!,probably_nl.
 
 
 print_grid1(SH,SV,EH,EV,Grid):- is_object(Grid),
@@ -790,9 +793,9 @@ print_grid1(SH,SV,EH,EV,Grid):-
  %backtrace(10),
  (line_position(current_output,O);O=0),!, O1 is O+1,
  print_grid_pad(O1,SH,SV,EH,EV,Grid), 
- nl_if_not_side_by_side,format('~N').
+ nl_if_not_side_by_side,probably_nl.
 
-nl_if_not_side_by_side:- ignore(( \+ in_side_by_side, format('~N'))).
+nl_if_not_side_by_side:- ignore(( \+ in_side_by_side, probably_nl)).
 
 in_side_by_side:- current_output(Out), \+ stream_property(Out,alias(user_output)).
 
@@ -809,22 +812,16 @@ print_grid_ss(H,V,G):- must_det_ll(print_grid0(H,V,G)).
 
 w_out(S):- toplevel_pp(bfly),!,correct_nbsp(S,SO),our_pengine_output(SO),!.
 w_out(S):- is_webui,!,correct_nbsp(S,SO),our_pengine_output(SO),!.
-w_out(S):- format('~N'),write(S).
+w_out(S):- probably_nl,write(S).
 %w_out(SO):- pengines:pengine_output('</pre>'),pengines:pengine_output(SO),pengines:pengine_output('<pre class="console">'),!.
 
-arc_webui:- notrace(arc_webui0).
-arc_webui0:- in_pp(http),!.
-arc_webui0:- toplevel_pp(swish),!.
-arc_webui0:- toplevel_pp(bfly),!.
-arc_webui0:- is_webui,!.
-
 g_out(G):- is_side(_),!,call(G).
-g_out(G):- \+ arc_webui,!,format('~N'),call(G),format('~N').
-g_out(G):- nb_current(in_g_out,t),!,format('~N'),call(G),format('~N').
+g_out(G):- \+ arc_webui,!,probably_nl,call(G),probably_nl.
+g_out(G):- nb_current(in_g_out,t),!,probably_nl,call(G),probably_nl.
 g_out(G):- locally(nb_setval(in_g_out,t), gg_out(G)).
 
 gg_out(G):- in_pp(bfly),!,bfly_html_goal(G).
-gg_out(G):- with_style('',call(G)).
+gg_out(G):- call(G).
 %gg_out(G):- call(G).
 %gg_out(G):- \+ toplevel_pp(bfly),!,gg_out2(G).
 %gg_out(G):- bfly_html_goal(gg_out2(G)).
@@ -910,7 +907,7 @@ cpwui(color(C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
 cpwui(C,G):- integer(C),arc_acolor(C,CC),CC\==C,!,cpwui(CC,G).
 cpwui(C,G):- is_html_color(C),!, format('<font color="~w">~@</font>',[C,bformatc(G)]).
 %cpwui((C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
-cpwui(C,G):- format('<font> style="~w" ~@</font>',[C,bformatc(G)]),!.
+cpwui(C,G):- format('<font style="~w">~@</font>',[C,bformatc(G)]),!.
 
 is_html_color(A):- \+ atom(A),!,fail.
 is_html_color(teal).
@@ -930,8 +927,10 @@ bformatc(call(G)):- !, wots(S,call(G)), bformats(S).
 bformatc(G):- string(G),!,bformats(G).
 bformatc(G):- atom(G),!,bformats(G).
 bformatc(G):- wots(S,write(G)), bformats(S).
-bformats(S):- \+ in_pp(bfly),!,write(S).
-bformats(S):- atom_codes(S,Cs), maplist(map_html_entities,Cs,CsO),atomic_list_concat(CsO,W),!,bformatw(W).
+bformats(S):- \+ arc_webui,!,write(S).
+bformats(S):- atom_codes(S,Cs), maplist(map_html_entities_mono,Cs,CsO),atomic_list_concat(CsO,W),!,bformatw(W).
+
+map_html_entities_mono(I,O):- map_html_entities(I,M),sformat(O,'<span class="mc-10">~w<span>',[M]).
 
 map_html_entities(Code,S):- Code == 124,!,sformat(S, '&#~w;',[Code]).
 map_html_entities(Code,S):- Code>255, !, sformat(S, '&#~w;',[Code]).
@@ -944,27 +943,45 @@ bformatw(G):- g_out(bformat(G)).
 with_style(S,G):-
  (arc_webui -> 
    setup_call_cleanup(format('<span style="~w">',[S]),G,write('</span>')) 
-    ; G).
+    ; call(G)).
 
+
+:- use_module(library(dcg/high_order)).
+
+print_grid_html:- arc_grid(Grid),print_grid_html(Grid).
 print_grid_html(Grid):-print_grid_html(_SH,_SV,_EH,_EV,Grid).
 print_grid_html(Name,Grid):-print_grid(_OH,_OV,Name,Grid).
-print_grid_html(SH,SV,EH,EV,Grid):-
+print_grid_html(SH,SV,EH,EV,Grid):- bg_sym(BGC),
+(plain_var(EH) ->grid_size(Grid,EH,_) ; true),ignore(SH=1),
+  (plain_var(EV) ->grid_size(Grid,_,EV) ; true),ignore(SV=1),
+   output_html(table([ class([table, 'table-striped']), 
+             style('width:auto; margin-left:2em')
+           ],
+           [ tr(th(colspan(EH), ['Table for ', 'This'])),
+             \ foreach(between(SV,EV,V),
+                      html(tr([ \ foreach((between(SH,EH,H),once(hv_cg_value(Grid,CG,H,V);CG=BGC), 
+                         wots(Cell,print_g1(color_print_webui,CG))),
+                                     html(td(style('text-align:center; width:11px;'), \[Cell] ))) ])))
+           ])),!.
+
+print_grid_html_old(SH,SV,EH,EV,Grid):-
  % CSS = 'line-height: .5; font-stretch: ultra-extended;',
- CSS = 'line-height: 1.2; font-stretch: ultra-extended; font-size:288px background-color: reset;',
+ %CSS = 'line-height: 1.2; font-stretch: ultra-extended; font-size:288px background-color: reset;',
+ CSS = 'white-space: pre;',
  g_out(must_det_ll(( 
-  format('~N'), 
+  probably_nl, 
   ((plain_var(EH) ; plain_var(EV))->grid_size(Grid,EH,EV);true),
   Width is EH-SH, 
   (Width==0 -> DBW = 1 ; DBW is Width+1),
   once((with_style(CSS,dash_border_no_nl(DBW)))),
   bg_sym(BGC),
   forall(between(SV,EV,V),
-   with_style(CSS,((format('~N['),(format('<span style="~w">',[CSS])),
+   with_style(CSS,((probably_nl,format('['),(format('<span style="~w">',[CSS])),
      forall(between(SH,EH,H),
      ignore((((hv_cg_value(Grid,CG,H,V);/*grid_cpoint(Grid,CG-_,H,V);*/CG=BGC)->
         (once(print_gw1(CG))))))),write('&nbsp;]'),(write('</span>')))))),
   %print_g(H,V,C,LoH,LoV,HiH,HiV)
-  format('~N'),!,
+  probably_nl,!,
   once(with_style(CSS,dash_uborder_no_nl(DBW)))))),!.
 
 grid_colors(GridI,WGrid):-
@@ -982,7 +999,7 @@ grid_colors(GridI,WGrid):-
 
 print_grid_ansi(SH,SV,EH,EV,GridI):-
  must_det_ll((
-  format('~N'), 
+  probably_nl, 
   %maybe_grid_numbervars(GridI,Grid),
   GridI=Grid,
   ((plain_var(EH) ; plain_var(EV))->grid_size(Grid,EH,EV);true),
@@ -991,13 +1008,13 @@ print_grid_ansi(SH,SV,EH,EV,GridI):-
   once((dash_border_no_nl(DBW))),
   bg_sym(BGC),
   forall(between(SV,EV,V),
-   ((format('~N|'),
+   ((probably_nl,format('|'),
      forall(between(SH,EH,H),
       ignore((
        (((hv_cg_value(Grid,CG,H,V);hv_c_value(Grid,CG,H,V);/*grid_cpoint(Grid,CG-_,H,V);*/CG=BGC))->
         (once(print_gw1(CG);write('??')));write('?f'))))),
      write(' |')))),
-  format('~N'),!,
+  probably_nl,!,
   once((dash_uborder_no_nl(DBW))))), 
   nop((    
      (( \+ ground(GridI));sub_var(wbg,GridI);sub_var(bg,GridI);sub_var(wfg,GridI);sub_var(fg,GridI)),
@@ -1163,8 +1180,7 @@ grid_dot(169).
 
 %print_g(H,V,C0,_,_,_,_):- cant_be_color(C0),cant_be_color(C0,C),!,  ansi_format_arc([bold,fg('#ff8c00')],'~@',[(write('c'),user:print_g1(H,V,C))]).
 %print_g(H,V,C0,_,_,_,_):- plain_var(C0),print_g1(H,V,C-'?'),!.
-
-print_g(H,V,C,_,_,_,_):- write_nbsp, print_g1(H,V,C),!.
+%print_g(H,V,C,_,_,_,_):- write_nbsp, print_g1(P2,H,V,C),!.
 
 object_glyph(G,Glyph):- is_object(G),!,obj_iv(G,Iv), int2glyph(Iv,Glyph).
 object_glyph(G,Glyph):- is_grid(G),!,grid_dot(Dot),name(Glyph,[Dot]).
@@ -1192,43 +1208,46 @@ int2glyph0(GN,Glyph):- GN > 255, GN2 is GN div 2, int2glyph0(GN2,Glyph).
 
 %print_gw1(C):- plain_var(C), write('  '),!.
 
-print_gw1(N):- 
+print_gw1(P2,N):- 
 
- wots(S,(((get_bgc(BG),is_color(BG), once((BG\==black-> color_print(BG,'.');write_nbsp);write(',')));write_nbsp),!,
-  (print_g1(N);write('?')))),!,
+ wots(S,(((get_bgc(BG),is_color(BG), once((BG\==black-> call(P2,BG,'.');write_nbsp);write(',')));write_nbsp),!,
+  (print_g1(P2,N);write('?')))),!,
  gws(S).
 gws(S):- write(S),!.
 %gws(S):- atom_length(S,L),(L=28->(write(L),atom_codes(S,Codes),arc_assert(ac(S)));write(S)).
 %print_gw1(N):- compound(N),N = C-W,!,color_print(C,W),!.
 
-mregression_test:- G = [[1,2,3],[1,2,3],[1,2,3]], print_grid(G).
-mregression_test:- G = [[1,2,3],[1,_,3],[1,2,3]], print_grid(G).
-mregression_test:- G = [[A,2,3],[_,2,_],[A,2,3]], print_grid(G).
-mregression_test:- G = [['$VAR'(1),2,3],[_,2,'$VAR'(3)],[_,2,'$VAR'('Good')],['$VAR'(1),2,3]], print_grid(G).
+%mregression_test:- mregression_test(print_grid).
+mregression_test:- mregression_test(print_grid_html(_,_,_,_)).
 
-mregression_test:- print_grid([[_,_-green]]).
+mregression_test(P1):- G = [[1,2,3],[1,2,3],[1,2,3]], call(P1,G).
+mregression_test(P1):- G = [[1,2,3],[1,_,3],[1,2,3]], call(P1,G).
+mregression_test(P1):- G = [[A,2,3],[_,2,_],[A,2,3]], call(P1,G).
+mregression_test(P1):- G = [['$VAR'(1),2,3],[_,2,'$VAR'(3)],[_,2,'$VAR'('Good')],['$VAR'(1),2,3]], call(P1,G).
 
-mregression_test:- print_grid([[_17910,_17922-green,_17934-green,_17946-green,_17952,_17964-green,_17970,_17982-cyan,_17994-cyan,_18000,_18012-cyan,_18024-cyan,_18036-cyan,_18048-cyan,_18054,_18066-cyan,_18078-cyan,_18084,_18096-green,_18102,_18114-green,_18126-green,_18138-green,_18144],[_17712-green,_17718,7-green,_17736,5-green,_17754,3-cyan,_17772,5-cyan,_17790,_17796,_17802,_17808,_17814,_17820,5-cyan,_17838,3-cyan,_17856,5-green,_17874,7-green,_17892,_17904-green],[_17436-green,7-green,7-green,7-green,8-green,5-green,3-cyan,5-cyan,4-cyan,_17538,3-cyan,6-cyan,6-cyan,3-cyan,_17592,4-cyan,5-cyan,3-cyan,5-green,8-green,7-green,7-green,7-green,_17700-green],[_17220-green,_17226,7-green,_17244,6-green,4-green,_17274,_17280,_17286,2-cyan,_17304,8-cyan,8-cyan,_17334,2-cyan,_17352,_17358,_17364,4-green,6-green,_17394,7-green,_17412,_17424-green],[_16998,5-green,8-green,6-green,_17040,_17046,1-cyan,_17064,3-cyan,_17082,_17088,5-cyan,5-cyan,_17118,_17124,3-cyan,_17142,1-cyan,_17160,_17166,6-green,8-green,5-green,_17208],[_16764-green,_16770,5-green,4-green,_16800,
+mregression_test(P1):- call(P1,[[_,_-green]]).
+
+mregression_test(P1):- call(P1,[[_17910,_17922-green,_17934-green,_17946-green,_17952,_17964-green,_17970,_17982-cyan,_17994-cyan,_18000,_18012-cyan,_18024-cyan,_18036-cyan,_18048-cyan,_18054,_18066-cyan,_18078-cyan,_18084,_18096-green,_18102,_18114-green,_18126-green,_18138-green,_18144],[_17712-green,_17718,7-green,_17736,5-green,_17754,3-cyan,_17772,5-cyan,_17790,_17796,_17802,_17808,_17814,_17820,5-cyan,_17838,3-cyan,_17856,5-green,_17874,7-green,_17892,_17904-green],[_17436-green,7-green,7-green,7-green,8-green,5-green,3-cyan,5-cyan,4-cyan,_17538,3-cyan,6-cyan,6-cyan,3-cyan,_17592,4-cyan,5-cyan,3-cyan,5-green,8-green,7-green,7-green,7-green,_17700-green],[_17220-green,_17226,7-green,_17244,6-green,4-green,_17274,_17280,_17286,2-cyan,_17304,8-cyan,8-cyan,_17334,2-cyan,_17352,_17358,_17364,4-green,6-green,_17394,7-green,_17412,_17424-green],[_16998,5-green,8-green,6-green,_17040,_17046,1-cyan,_17064,3-cyan,_17082,_17088,5-cyan,5-cyan,_17118,_17124,3-cyan,_17142,1-cyan,_17160,_17166,6-green,8-green,5-green,_17208],[_16764-green,_16770,5-green,4-green,_16800,
  1-green,2-cyan,_16830,3-cyan,4-cyan,2-cyan,_16872,_16878,2-cyan,4-cyan,3-cyan,_16920,2-cyan,1-green,_16950,4-green,5-green,_16980,_16992-green],[_16494,3-cyan,3-cyan,_16524,1-cyan,2-cyan,4-purple,6-purple,5-purple,6-purple,7-purple,7-purple,7-purple,7-purple,6-purple,5-purple,6-purple,4-purple,2-cyan,1-cyan,_16722,3-cyan,3-cyan,_16752],[_16272-cyan,_16278,5-cyan,_16296,_16302,_16308,6-purple,6-purple,_16338,7-purple,9-purple,10-purple,10-purple,9-purple,7-purple,_16416,6-purple,6-purple,_16446,_16452,_16458,5-cyan,_16476,_16488-cyan],[_16032-cyan,5-cyan,4-cyan,_16062,3-cyan,3-cyan,5-purple,_16104,_16110,6-purple,_16128,9-purple,9-purple,_16158,6-purple,_16176,_16182,5-purple,3-cyan,3-cyan,_16224,4-cyan,5-cyan,_16260-cyan],[_15786,_15792,_15798,2-cyan,_15816,4-cyan,6-purple,7-purple,6-purple,8-purple,9-purple,10-purple,10-purple,9-purple,8-purple,6-purple,7-purple,6-purple,4-cyan,_15990,2-cyan,_16008,_16014,_16020],[_15552-cyan,_15558,3-cyan,_15576,_15582,2-cyan,4-purple,5-purple,_15624,5-purple,7-purple,7-purple,8-purple,10-purple,9-purple,_15702,9-purple,7-purple,2-cyan,_15744,_15750,3-cyan,_15768,_15780-cyan],[_15300-cyan,_15306,6-cyan,8-cyan,5-cyan,_15348,4-blue,7-blue,7-blue,7-blue,4-blue,_15414,_15420,8-purple,10-purple,9-purple,10-purple,7-purple,_15486,5-cyan,8-cyan,6-cyan,_15528,_15540-cyan],[_15048-cyan,_15054,6-cyan,8-cyan,5-cyan,_15096,7-blue,11-blue,11-blue,11-blue,7-blue,_15162,_15168,8-purple,10-purple,9-purple,10-purple,7-purple,_15234,5-cyan,8-cyan,6-cyan,_15276,_15288-cyan],[_14802-cyan,_14808,3-cyan,_14826,_14832,2-cyan,7-blue,11-blue,11-blue,11-blue,7-blue,4-purple,8-purple,10-purple,9-purple,_14958,9-purple,7-purple,2-cyan,_15000,_15006,3-cyan,_15024,_15036-cyan],[_14556,_14562,_14568,2-cyan,_14586,4-cyan,7-blue,11-blue,11-blue,11-blue,7-blue,7-purple,10-purple,9-purple,8-purple,6-purple,7-purple,6-purple,4-cyan,_14760,2-cyan,_14778,_14784,_14790],[_14304-cyan,5-cyan,4-cyan,_14334,3-cyan,3-cyan,4-blue,7-blue,7-blue,7-blue,4-blue,8-purple,9-purple,_14448,6-purple,_14466,_14472,5-purple,3-cyan,3-cyan,_14514,4-cyan,5-cyan,_14550-cyan],[_14076-cyan,_14082,5-cyan,_14100,_14106,_14112,4-purple,5-purple,_14142,5-purple,8-purple,10-purple,10-purple,9-purple,7-purple,_14220,6-purple,6-purple,_14250,_14256,_14262,5-cyan,_14280,_14292-cyan],[_13806,3-cyan,3-cyan,_13836,1-cyan,2-cyan,4-purple,6-purple,5-purple,6-purple,7-purple,7-purple,7-purple,7-purple,6-purple,5-purple,6-purple,4-purple,2-cyan,1-cyan,_14034,3-cyan,3-cyan,_14064],[_13572-green,_13578,5-green,4-green,_13608,
  1-green,2-cyan,_13638,3-cyan,4-cyan,2-cyan,_13680,_13686,2-cyan,4-cyan,3-cyan,_13728,2-cyan,
  1-green,_13758,4-green,5-green,_13788,_13800-green],[_13350,5-green,8-green,6-green,_13392,_13398,-1-cyan,_13416,3-cyan,_13434,_13440,5-cyan,5-cyan,_13470,_13476,3-cyan,_13494,1-cyan,_13512,_13518,
  6-green,8-green,5-green,_13560],[_13140-green,_13146,7-green,_13164,6-green,4-green,_13194,_13200,_13206,2-cyan,_13224,8-cyan,8-cyan,_13254,2-cyan,_13272,_13278,_13284,4-green,6-green,_13314,7-green,_13332,_13344-green],[_12864-green,7-green,7-green,7-green,8-green,5-green,3-cyan,5-cyan,4-cyan,_12966,3-cyan,6-cyan,6-cyan,3-cyan,_13020,4-cyan,5-cyan,3-cyan,5-green,8-green,7-green,7-green,7-green,_13128-green],[_12660-green,_12666,7-green,_12684,5-green,_12702,3-cyan,_12720,5-cyan,_12738,_12744,_12750,_12756,_12762,_12768,5-cyan,_12786,3-cyan,_12804,5-green,_12822,7-green,_12840,_12852-green],[_12414,_12426-green,_12438-green,_12450-green,_12456,_12468-green,_12474,_12486-cyan,_12498-cyan,_12504,_12516-cyan,_12528-cyan,_12540-cyan,_12552-cyan,_12558,_12570-cyan,_12582-cyan,_12588,_12600-green,_12606,_12618-green,_12630-green,_12642-green,_12648]]).
 %print_g1(C):- compound_var(C,N),underline_print(print_g1(N)),!.
 
-
-print_g1(C):- mv_peek_color(C,V),C\==V,!,print_g1(V).
-print_g1(C):- plain_var(C), write_nbsp,!, nop(( nobject_glyph(C,G),underline_print(print_g1(G-G)))),!.
-print_g1(C):- C == black,!, write_nbsp.
-print_g1(C-CC):- C == black,CC == black,!,write_nbsp,!.
-print_g1(N):- is_grid(N),color_print_ele(magenta,'G'),!.
-print_g1(C):- is_bg_color(C),get_bgc(BG),\+ attvar(C),!,color_print_ele(bg(BG),' '),!.
-print_g1(N-C):- plain_var(N),print_g1(C).
-print_g1(C-N):- plain_var(N),print_g1(C).
-print_g1(N-C):- integer(N),is_color(C),!,e_int2glyph(N,G),color_print_ele(C,G).
-print_g1(C-N):- integer(N),is_color(C),!,e_int2glyph(N,G),color_print_ele(C,G).
-print_g1(C):- compound_var(C,N),nobject_glyph(N,G),underline_print(print_g1(G-G)),!.
-print_g1(N):- \+ compound(N), \+ is_colorish(N), print_g1(N-N).
-print_g1(N):- into_color_glyph(N,C,Code),as_name(Code,S), color_print_ele(C,S),!.
+print_g1(CG):- print_g1(color_print_ele,CG).
+print_g1(P2,C):- mv_peek_color(C,V),C\==V,!,print_g1(P2,V).
+print_g1(P2,C):- plain_var(C), write_nbsp,!, nop(( nobject_glyph(C,G),underline_print(print_g1(P2,G-G)))),!.
+print_g1(_ ,C):- C == black,!, write_nbsp.
+print_g1(_ ,C-CC):- C == black,CC == black,!,write_nbsp,!.
+print_g1(P2,N):- is_grid(N),call(P2,magenta,'G'),!.
+print_g1(P2,C):- is_bg_color(C),get_bgc(BG),\+ attvar(C),!,call(P2,bg(BG),' '),!.
+print_g1(P2,N-C):- plain_var(N),print_g1(P2,C).
+print_g1(P2,C-N):- plain_var(N),print_g1(P2,C).
+print_g1(P2,N-C):- integer(N),is_color(C),!,e_int2glyph(N,G),call(P2,C,G).
+print_g1(P2,C-N):- integer(N),is_color(C),!,e_int2glyph(N,G),call(P2,C,G).
+print_g1(P2,C):- compound_var(C,N),nobject_glyph(N,G),underline_print(print_g1(P2,G-G)),!.
+print_g1(P2,N):- \+ compound(N), \+ is_colorish(N), print_g1(P2,N-N).
+print_g1(P2,N):- into_color_glyph(N,C,Code),as_name(Code,S), call(P2,C,S),!.
 
 color_print_ele(C,G):- arc_webui,!,color_print_webui(C,G),!.
 color_print_ele(C,G):- color_print(C,G),!.
@@ -1284,7 +1303,7 @@ i_sym(N,Code):- plain_var(N), Code = 63.
 change_code(N,M):- M is N.
 
 
-print_g1(_,_, E):- print_g1(E),!. 
+print_g1(P2,_,_, E):- print_g1(P2,E),!. 
 %print_g1(_,_,C):- trace, write(C).
 
 code_not_bfly(Code):- between(170,inf,Code).

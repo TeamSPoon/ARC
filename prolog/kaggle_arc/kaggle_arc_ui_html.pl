@@ -351,9 +351,10 @@ arc_script_header:-
 :- dynamic(was_inline_to_bfly/0).
 
 inline_to_bfly:- was_inline_to_bfly,!.
-inline_to_bfly:- 
- asserta(was_inline_to_bfly),
-(inline_html_format(
+inline_to_bfly:- asserta(was_inline_to_bfly),inline_to_bfly_html.
+
+inline_to_bfly_html:- 
+with_htmode(format('~s',[
 `<link rel="stylesheet" type="text/css" href="/swish/css/menu.css">
 <link rel="stylesheet" type="text/css" href="/swish/css/cliopatria.css">
 <script src="https://unpkg.com/gojs@2.2.15/release/go.js"></script>
@@ -377,7 +378,7 @@ inline_to_bfly:-
 <link rel="stylesheet" type="text/css" href="/swish/css/term.css">
 <script data-main="/swish/js/swish" src="https://logicmoo.org/node_modules/requirejs/require.js"></script>
 
-`)).
+`])).
 
 
 arc_script_header2:- 
