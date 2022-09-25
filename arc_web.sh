@@ -8,6 +8,7 @@ export PIDFILE=$LM_ARC_BASE/arc_web.pid
 cd $LM_ARC_BASE
 
 fuser -n tcp -k 7771
+fuser -n tcp -k 7771
 while [ true ]
 do
  stty sane

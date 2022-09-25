@@ -13,6 +13,9 @@ cd $ARC_DIR
 # rm -rf out
 # git checkout out
 
+mkdir -p data
+chmod 777 data
+
 export BCMD="cd ${ARC_DIR} ; pwd ;  swipl -l kaggle_arc.pl ${@}"
 
 echo BCMD=$BCMD
