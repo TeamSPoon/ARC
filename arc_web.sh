@@ -9,6 +9,7 @@ cd $LM_ARC_BASE
 
 fuser -n tcp -k 7771
 fuser -n tcp -k 7771
+fuser -n tcp -k 1766
 while [ true ]
 do
  stty sane

@@ -6,8 +6,9 @@
 */
 
 :- encoding(iso_latin_1).
+:- set_stream(current_output,encoding(utf8)).
 
-:- set_prolog_flag(encoding,iso_latin_1).
+:- set_prolog_flag(encoding,utf8).
 :- set_prolog_flag(stream_type_check,false).
 
 :- dynamic('$messages':to_list/2).
@@ -1045,8 +1046,9 @@ user:portray(Grid):-
 
 %:- ignore(check_dot_spacing).
 
-:- add_history((bfly,bfly_startup)).
-:- add_history((ansi,bfly_startup)).
+:- add_history((webui_tests)).
+:- add_history((bfly_test(a1))).
+:- add_history((bfly_tests)).
 :- add_history1((cls_z,make,demo)).
 :- add_history1((demo)).
 
@@ -1061,11 +1063,20 @@ user:portray(Grid):-
 :- (current_prolog_flag(argv,C),(member('--',C)->catch_log(start_arc_server) ; true)).
 
 bfly_startup:- 
+   %bfly,
    catch_log(webui_tests),
    catch_log(print_test),
    catch_log(menu),
    %with_pp(bfly,catch_log(menu)),
    nop((next_test,previous_test)),!.
 
+
+ansi_startup:- 
+   ansi,
+   catch_log(webui_tests),
+   catch_log(print_test),
+   catch_log(menu),
+   %with_pp(bfly,catch_log(menu)),
+   nop((next_test,previous_test)),!.
 
 

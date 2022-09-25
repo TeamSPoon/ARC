@@ -326,27 +326,58 @@ arc_script_header:-
   use_module(library(xlisting/xlisting_web_server)),
   if_arc_webui(inline_html_format(
   write('<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta name="description" content="Prolog XListing for Logicmoo Code">
-	<meta name="author" content="logicmoo@gmail.com">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-	<link rel="stylesheet" type="text/css" href="/swish/css/menu.css">
-	<link rel="stylesheet" type="text/css" href="/swish/css/cliopatria.css">
-	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-	<script type="text/javascript">window.name="lm_xref"; </script>  
-	<script data-main="/swish/js/swish" src="https://logicmoo.org/node_modules/requirejs/require.js"></script>
-	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
-	<script type="text/javascript" src="https://logicmoo.org/www/yui/2.7.0/build/utilities/utilities.js"></script>
-	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-	<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-  <script type="text/javascript" src="/swish/lm_xref/pixmapx/popupmenu/scripts/Popup-plugin.js"></script>
-	<link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/popupmenu/styles/Popup-plugin.css">
-  <script type="text/javascript" src="/swish/lm_xref/pixmapx/selected/js/social.selection.js"></script>
-	<link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/selected/css/social.selection.css">
-	<script type="text/javascript" src="/swish/js/cliopatria.js"></script>
-	<link rel="stylesheet" type="text/css" href="/swish/css/butterfly_term.css">
-	<link rel="stylesheet" type="text/css" href="/swish/css/term.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/json2html/2.1.0/json2html.min.js"></script>'))).
+<meta name="description" content="Prolog XListing for Logicmoo Code">
+<meta name="author" content="logicmoo@gmail.com">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" type="text/css" href="/swish/css/menu.css">
+<link rel="stylesheet" type="text/css" href="/swish/css/cliopatria.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript">window.name="lm_xref"; </script>  
+<script data-main="/swish/js/swish" src="https://logicmoo.org/node_modules/requirejs/require.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
+<script type="text/javascript" src="https://logicmoo.org/www/yui/2.7.0/build/utilities/utilities.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<script type="text/javascript" src="/swish/lm_xref/pixmapx/popupmenu/scripts/Popup-plugin.js"></script>
+<link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/popupmenu/styles/Popup-plugin.css">
+<script type="text/javascript" src="/swish/lm_xref/pixmapx/selected/js/social.selection.js"></script>
+<link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/selected/css/social.selection.css">
+<script type="text/javascript" src="/swish/js/cliopatria.js"></script>
+<link rel="stylesheet" type="text/css" href="/swish/css/butterfly_term.css">
+<link rel="stylesheet" type="text/css" href="/swish/css/term.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/json2html/2.1.0/json2html.min.js"></script>'))).
+
+:- dynamic(was_inline_to_bfly/0).
+
+inline_to_bfly:- was_inline_to_bfly,!.
+inline_to_bfly:- 
+ asserta(was_inline_to_bfly),
+(inline_html_format(
+`<link rel="stylesheet" type="text/css" href="/swish/css/menu.css">
+<link rel="stylesheet" type="text/css" href="/swish/css/cliopatria.css">
+<script src="https://unpkg.com/gojs@2.2.15/release/go.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript">window.name="lm_xref"; </script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
+
+<script type="text/javascript" src="/www/yui/2.7.0/build/utilities/utilities.js"></script>
+<script type="text/javascript" src="/www/yui/2.7.0/build/datasource/datasource.js"></script>
+<script type="text/javascript" src="/www/yui/2.7.0/build/autocomplete/autocomplete.js"></script>
+
+<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<script type="text/javascript" src="/swish/lm_xref/pixmapx/popupmenu/scripts/Popup-plugin.js"></script>
+<link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/popupmenu/styles/Popup-plugin.css">
+<script type="text/javascript" src="/swish/lm_xref/pixmapx/selected/js/social.selection.js"></script>
+<link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/selected/css/social.selection.css">
+<script type="text/javascript" src="/swish/js/cliopatria.js"></script>
+<link rel="stylesheet" type="text/css" href="/swish/css/butterfly_term.css">
+<link rel="stylesheet" type="text/css" href="/swish/css/term.css">
+<script data-main="/swish/js/swish" src="https://logicmoo.org/node_modules/requirejs/require.js"></script>
+
+`)).
 
 
 arc_script_header2:- 
@@ -366,6 +397,7 @@ arc_script_header2:-
 <script type="text/javascript" src="/www/yui/2.7.0/build/utilities/utilities.js"></script>
 <script type="text/javascript" src="/www/yui/2.7.0/build/datasource/datasource.js"></script>
 <script type="text/javascript" src="/www/yui/2.7.0/build/autocomplete/autocomplete.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
 <script src="/swish/lm_xref/pixmapx/selected/js/social.selection.js"></script>
 <link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/selected/css/social.selection.css">
@@ -373,7 +405,6 @@ arc_script_header2:-
 <link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/popupmenu/styles/Popup-plugin.css">
 <link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/popupmenu/styles/Example.css">
 <!--Use either font-awesome icons or Google icons with these links. Other icons could also be used if preferred-->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.4.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 <script data-main="/swish/js/swish" src="/node_modules/requirejs/require.js"></script>'))).
 

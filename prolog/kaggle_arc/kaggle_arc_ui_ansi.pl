@@ -823,7 +823,7 @@ g_out(G):- \+ arc_webui,!,format('~N'),call(G),format('~N').
 g_out(G):- nb_current(in_g_out,t),!,format('~N'),call(G),format('~N').
 g_out(G):- locally(nb_setval(in_g_out,t), gg_out(G)).
 
-gg_out(G):- in_pp(bfly),!,bfly_html_goal(with_pp(http,G)).
+gg_out(G):- in_pp(bfly),!,bfly_html_goal(G).
 gg_out(G):- with_style('',call(G)).
 %gg_out(G):- call(G).
 %gg_out(G):- \+ toplevel_pp(bfly),!,gg_out2(G).
@@ -844,9 +844,10 @@ mbfy(G):- !,call(G).
 
 correct_nbsp(S0,S):- replace_in_string([" &nbsp;"="&nbsp;","&nbsp; "="&nbsp;"],S0,S).
 
-ansi_format_real(Ansi,Format,Args):- arc_webui,!,sformat(S,Format,Args),!,color_print_webui(Ansi,S).
+%ansi_format_real(Ansi,Format,Args):- arc_webui,!,sformat(S,Format,Args),!,color_print_webui(Ansi,S).
 %ansi_format_real(Ansi,Format,Args):- ansicall(Ansi,format(Format,Args)),!.
-ansi_format_real(Ansi,Format,Args):- set_html_stream_encoding,ansi_format(Ansi,Format,Args).
+ansi_format_real(Ansi,Format,Args):- ansi_format(Ansi,Format,Args).
+
 
 set_html_stream_encoding:- set_stream_encoding(utf8).
 
