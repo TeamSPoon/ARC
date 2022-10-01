@@ -219,6 +219,7 @@ no_web_dbg:-
 
 %:- no_web_dbg.
 
+begin_arc_html(Request):- var(Request),!, current_predicate(get_http_current_request/1),call(call,get_http_current_request,Request),!,begin_arc_html(Request).
 begin_arc_html(Request):- notrace(with_webui(begin_arc_html0(Request))).
 begin_arc_html0(Request):-
   ignore((current_output(Out),
@@ -232,12 +233,12 @@ begin_arc_html0(Request):-
   %ignore(set_test_param),
   ignore((member(search(List),Request),member(task=Task,List),  
   atom_id(Task,ID), dmsg(Task-> ID), set_current_test(ID))),
-  ignore(if_arc_webui(intern_request_data(Request))),
-  ignore(if_arc_webui(write_begin_html('ARC Solver'))),
+  ignore(when_arc_webui(intern_request_data(Request))),
+  ignore(when_arc_webui(write_begin_html('ARC Solver'))),
   nop(ensure_readable_html).
 
 set_test_param:-
-  ignore((if_arc_webui((get_param_sess(task,Task), Task\=='',  Task\=="",
+  ignore((when_arc_webui((get_param_sess(task,Task), Task\=='',  Task\=="",
   atom_id(Task,ID), dmsg(Task-> ID), set_current_test(ID))))),!.
 
 
@@ -252,27 +253,22 @@ swish_arc_root(Request):-
 %arcproc_left(Request):- xlisting_web:handler_logicmoo_cyclone(Request),!.
 arcproc_left(Request):-  
   %no_web_dbg,
-  notrace((begin_arc_html(Request),
+ with_pp(http, notrace((begin_arc_html(Request),
   flush_output,
-  with_webui((inline_html_format([
+  ((arc_html_format([
     ignore(handler_logicmoo_left),
     ignore(ensure_colapsable_script),
-    ignore(write_end_html)]))))),!.
+    ignore(write_end_html)])))))),!.
 
 %arcproc_left(Request):- swish_arc(Request),!.
 arcproc_left(Request):- 
-  notrace((begin_arc_html(Request),
-  with_webui((inline_html_format([
+ with_pp(http,  notrace((begin_arc_html(Request),
+  ((arc_html_format([
     handler_logicmoo_right,
     ensure_colapsable_script,
-    write_end_html]))))).
+    write_end_html])))))).
 
-
-with_webui(Goal):- ignore(if_arc_webui(with_http(Goal))).
-%:- initialization arc_http_server.
-
-
-
+arc_html_format(TextAndGoal):- call(call,inline_html_format(TextAndGoal)).
 
 % arc_find_tests(menu):- ignore(menu).
 arc_find_tests(F):- find_tests(F).
@@ -282,14 +278,14 @@ arc_find_tests(F):- find_tests(F).
 xlisting_whook:offer_testcase(F):- arc_find_tests(F).
 
 handler_logicmoo_right:-   
- if_arc_webui(inline_html_format([
+ when_arc_webui(arc_html_format([
    ignore((get_http_current_request(Request))),write('<pre>'),
    print_tree(Request),offer_testcases,show_http_session,
    write('</pre>')])).
 
-handler_logicmoo_arc:- if_arc_webui(inline_html_format([call(handler_logicmoo_left)])).
+handler_logicmoo_arc:- when_arc_webui(arc_html_format([call(handler_logicmoo_left)])).
 handler_logicmoo_left:- 
-   if_arc_webui(inline_html_format( 
+   when_arc_webui(arc_html_format( 
    [ `<pre>`,
    ignore(arc_nav_menu),
    flush_output,
@@ -324,8 +320,10 @@ call_current_arc_cmd(Var):-
 arc_script_header:- 
   use_module(library(xlisting/xlisting_web)),
   use_module(library(xlisting/xlisting_web_server)),
-  if_arc_webui(inline_html_format(
-  write('<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  arc_script_header_pt2.
+
+arc_script_header_pt2:- 
+  arc_html_format('<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Prolog XListing for Logicmoo Code">
 <meta name="author" content="logicmoo@gmail.com">
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -346,15 +344,16 @@ arc_script_header:-
 <script type="text/javascript" src="/swish/js/cliopatria.js"></script>
 <link rel="stylesheet" type="text/css" href="/swish/css/butterfly_term.css">
 <link rel="stylesheet" type="text/css" href="/swish/css/term.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/json2html/2.1.0/json2html.min.js"></script>'))).
+<script src="https://cdnjs.cloudflare.com/ajax/libs/json2html/2.1.0/json2html.min.js"></script>').
 
 :- dynamic(was_inline_to_bfly/0).
 
 inline_to_bfly:- was_inline_to_bfly,!.
 inline_to_bfly:- asserta(was_inline_to_bfly),inline_to_bfly_html.
 
+inline_to_bfly_html:- toplevel_pp(swish),!.
 inline_to_bfly_html:- 
-with_htmode(format('~s',[
+bfly_html_goal(format('~s',[
 `<link rel="stylesheet" type="text/css" href="/swish/css/menu.css">
 <link rel="stylesheet" type="text/css" href="/swish/css/cliopatria.css">
 <script src="https://unpkg.com/gojs@2.2.15/release/go.js"></script>
@@ -382,7 +381,7 @@ with_htmode(format('~s',[
 
 
 arc_script_header2:- 
-  if_arc_webui(inline_html_format(write('<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+  (arc_html_format(write('<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script> <!-- necessary for the "draggable" ui  -->
 <script src="/swish/lm_xref/pixmapx/popupmenu/scripts/Popup-plugin.js"></script>
 <script src="/swish/lm_xref/pixmapx/popupmenu/scripts/Example.js"></script>
@@ -423,6 +422,15 @@ current_arc_cmd(cmd,Prolog):- luser_getval(cmd,Prolog).
 current_arc_cmd(tc_cmd,Prolog):- luser_getval(tc_cmd,Prolog).
 current_arc_cmd(footer_cmd,Prolog):- luser_getval(footer_cmd,Prolog).
 %current_arc_cmd(footer_cmd,Prolog):- (\+ current_arc_cmd(cmd,menu) -> luser_getval(footer_cmd,Prolog,menu) ; luser_getval(footer_cmd,Prolog,edit1term)).
+
+
+%muarc:test_arcui
+
+ % our_pengine_output(`<script src="https://unpkg.com/gojs/release/go-debug.js"></script>`).
+
+
+:- include(kaggle_arc_ui_html_go1).
+:- include(kaggle_arc_ui_html_go2).
 
 
 :- fixup_exports.

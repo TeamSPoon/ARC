@@ -367,7 +367,7 @@ wqs1(cc(C,N)):- !, write(' cc('),color_print(C,C),write(','), writeq(N), write('
 wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
 wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
 
-probably_nl :- arc_webui,!,write('<br/>').
+%probably_nl :- arc_webui,!,write('<br/>').
 probably_nl :- format('~N').
 %write_nbsp:- arc_webui,!,write('&nbsp;').
 write_nbsp:- write(' ').
@@ -464,6 +464,7 @@ print_side_by_side0(C1,W0,C2):- number(W0), LW is floor(abs(W0)),
 
 is_side(RL):- nb_current(print_sbs,RL),RL\==[].
 
+trim_rs([],[]):-!.
 trim_rs(S,SS):- member(WS, ["\s","\t","\n","\r"," "]), string_concat(Left,WS,S),
   trim_rs(Left,SS),!.
 trim_rs(SS,SS).
@@ -472,7 +473,7 @@ extend_len(Need,S,New):-
  must_det_ll((
   trim_rs(S,SS),
   atom_length(SS,Spaces),Makeup is Need -Spaces, 
-  ( Makeup<1 -> New=SS ;  (make_spaces(Makeup,Pre), atomics_to_string([SS,Pre,'\n'],New))))).
+  ( Makeup<1 -> New=SS ;  (make_spaces(Makeup,Pre), (SS==[] -> SSS='' ; SSS=SS), atomics_to_string([SSS,Pre,'\n'],New))))).
    
 make_spaces(Spaces,S):-
  wots(S,(write_nbsp,forall(between(2,Spaces,_),write_nbsp),write_nbsp)),!.
@@ -805,6 +806,8 @@ print_grid_pad(O1,SH,SV,EH,EV,Grid):-
   wots(S,print_grid2(SH,SV,EH,EV,GridI)),
   print_w_pad(O1,S),!.
 
+
+print_grid2(SH,SV,EH,EV,GridI):- bfly_html_pre(print_grid_ansi(SH,SV,EH,EV,GridI)),!.
 print_grid2(SH,SV,EH,EV,GridI):- \+ in_pp(bfly), \+ in_pp(ansi), arc_webui,!, print_grid_html(SH,SV,EH,EV,GridI),nl.
 print_grid2(SH,SV,EH,EV,GridI):- ignore(print_grid_ansi(SH,SV,EH,EV,GridI)).
 print_grid_ss(H,V,G):- must_det_ll(print_grid0(H,V,G)).
@@ -814,12 +817,14 @@ w_out(S):- is_webui,!,correct_nbsp(S,SO),our_pengine_output(SO),!.
 w_out(S):- probably_nl,write(S).
 %w_out(SO):- pengines:pengine_output('</pre>'),pengines:pengine_output(SO),pengines:pengine_output('<pre class="console">'),!.
 
+:- meta_predicate(g_out(0)).
+:- export(g_out/1).
 g_out(G):- is_side(_),!,call(G).
 g_out(G):- \+ arc_webui,!,probably_nl,call(G),probably_nl.
 g_out(G):- nb_current(in_g_out,t),!,probably_nl,call(G),probably_nl.
 g_out(G):- locally(nb_setval(in_g_out,t), gg_out(G)).
 
-gg_out(G):- in_pp(bfly),!,bfly_html_goal(G).
+gg_out(G):- \+ toplevel_pp(ansi),!,bfly_html_goal(G).
 gg_out(G):- call(G).
 %gg_out(G):- call(G).
 %gg_out(G):- \+ toplevel_pp(bfly),!,gg_out2(G).
@@ -838,6 +843,7 @@ g_out_style(C,G):- wots(S0,g_out(G)),correct_nbsp(S0,S),
 mbfy(G):- in_pp(bfly),!,bfly_html_goal(G).
 mbfy(G):- !,call(G).
 
+correct_nbsp(S,S):-!.
 correct_nbsp(S0,S):- replace_in_string([" &nbsp;"="&nbsp;","&nbsp; "="&nbsp;"],S0,S).
 
 %ansi_format_real(Ansi,Format,Args):- arc_webui,!,sformat(S,Format,Args),!,color_print_webui(Ansi,S).
@@ -896,17 +902,19 @@ cpwui(italic,G):- !, cpwui(style('font-style','italic'),G).
 cpwui(bg(C),G):- !, cpwui(style('background-color',C),G).
 cpwui(hbg(C),G):- !, cpwui([bg(C),style('filter','brightness(150%)')],G).
 cpwui(hfg(C),G):- !, cpwui([C,style('brightness','200%')],G).
-cpwui(style(C),G):- !, format('<font style="~w">~@</font>',[C,bformatc(G)]).
-cpwui(style(N,V),G):- !, format('<font style="~w: ~w;">~@</font>',[N,V,bformatc(G)]).
+cpwui(style(C),G):- !, format('<font style="~w">~@</font>',[C,bformatc_or_at(G)]).
+cpwui(style(N,V),G):- !, format('<font style="~w: ~w;">~@</font>',[N,V,bformatc_or_at(G)]).
 cpwui(C,G):- C==black,!, cpwui(style('opacity: 0.5;'),G).
 cpwui(C,G):- C==wbg,!,cpwui([black,black],G).
 
-cpwui(fg(C),G):- !, format('<font color="~w" style="font-weight: bold;">~@</font>',[C,bformatc(G)]),!.
-cpwui(color(C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
+cpwui(fg(C),G):- !, format('<font color="~w" style="font-weight: bold;">~@</font>',[C,bformatc_or_at(G)]),!.
+cpwui(color(C),G):- !, format('<font color="~w">~@</font>',[C,bformatc_or_at(G)]).
 cpwui(C,G):- integer(C),arc_acolor(C,CC),CC\==C,!,cpwui(CC,G).
-cpwui(C,G):- is_html_color(C),!, format('<font color="~w">~@</font>',[C,bformatc(G)]).
+cpwui(C,G):- is_html_color(C),!, format('<font color="~w">~@</font>',[C,bformatc_or_at(G)]).
 %cpwui((C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
-cpwui(C,G):- format('<font style="~w">~@</font>',[C,bformatc(G)]),!.
+cpwui(C,G):- format('<font style="~w">~@</font>',[C,bformatc_or_at(G)]),!.
+
+bformatc_or_at(C):- wots(S,bformatc(C)), ( (S=="";atom_contains(S,"><")) -> write('@') ; write(S)).
 
 is_html_color(A):- \+ atom(A),!,fail.
 is_html_color(teal).
@@ -932,15 +940,20 @@ bformats(S):- atom_contains(S,'<'),!,write(S).
 bformats(S):- bformatc1(S).
 
 bformatc1(S):- \+ arc_webui,!,write(S).
+bformatc1(S):- write(S),!.
 bformatc1(S):- atom_codes(S,Cs), maplist(map_html_entities_mono,Cs,CsO),atomic_list_concat(CsO,W),!,bformatw(W).
 
+%map_html_entities_mono(I,O):- atom_codes(O,I),!.
 map_html_entities_mono(I,O):- map_html_entities(I,O).
 
+map_html_entities(Code,S):- Code>160, !, sformat(S, '&#~w;',[Code]).
+map_html_entities(Code,S):- Code<33, !, sformat(S, '&#~w;',[Code]).
+/*
 map_html_entities(Code,S):- Code == 124,!,sformat(S, '&#~w;',[Code]).
 map_html_entities(Code,S):- Code>255, !, sformat(S, '&#~w;',[Code]).
-map_html_entities(Code,S):- Code>127, !, sformat(S, '&#~w;',[Code]).
 map_html_entities(62,'&gt;'). map_html_entities(60,'&lt;'). map_html_entities(38,'&amp;'). map_html_entities(32,'&nbsp;').
-map_html_entities(Code,S):- Code>32, name(S,[Code]),!.
+*/
+map_html_entities(Code,S):- name(S,[Code]),!.
 
 bformatw(G):- g_out(bformat(G)).
 
@@ -951,7 +964,10 @@ with_style(S,G):-
 
 html_echo(G)--> [G].
 
-:- use_module(library(dcg/high_order)).
+mforeach(Generator, Rule) -->
+    foreach(Generator, Rule, []).
+
+:- use_module(library(dcg/high_order),[foreach // 3]).
 
 print_grid_html:- arc_grid(Grid),print_grid_html(Grid).
 print_grid_html(Grid):-print_grid_html(_SH,_SV,_EH,_EV,Grid),!.
@@ -959,17 +975,20 @@ print_grid_html(Name,Grid):-print_grid(_OH,_OV,Name,Grid),!.
 
 print_grid_html(SH,SV,EH,EV,Grid):- print_grid_http(SH,SV,EH,EV,Grid),!.
 print_grid_http(SH,SV,EH,EV,Grid):- bg_sym(BGC),
+
+ arc_html_format(`<code>tbody td:nth-of-type(odd){ background:rgba(255,255,136,0.5); }</code>`),
+
 (plain_var(EH) ->grid_size(Grid,EH,_) ; true),ignore(SH=1),
   (plain_var(EV) ->grid_size(Grid,_,EV) ; true),ignore(SV=1),
    output_html(table([ class([table, 'table-striped']), 
-             style('width:auto; margin-left:2em')
-           ],
+             style('width:auto; margin-left:2em') ],
            [ tr(th(colspan(EH), ['Table for ', 'This'])),
-             \ foreach(between(SV,EV,V),
-                      html(tr([ \ foreach((between(SH,EH,H),once(hv_cg_value(Grid,CG,H,V);CG=BGC), 
-                         wots(Cell,print_g1(color_print_webui,CG))),
-                                     html(td([class('mc-10'),style('text-align:center; width:11px;')], \ html_echo(Cell) ))) ])))
+             \ mforeach(between(SV,EV,V),
+                      html(tr([ \ mforeach((between(SH,EH,H),once(hv_cg_value(Grid,CG,H,V);CG=BGC), 
+                         wots(Cell,(print_g1(cpwui,CG)))),
+                                     html(td([class('mc-10'),style('text-align:center; width:11px;')], html_echo(Cell) ))) ])))
            ])),!.
+
 
 print_grid_html_old(SH,SV,EH,EV,Grid):-
  % CSS = 'line-height: .5; font-stretch: ultra-extended;',

@@ -93,13 +93,15 @@ my_submenu_call(G):- current_predicate(_,G), \+ is_list(G),!,
 my_submenu_call0(E):- peek_vm(VM),!, ui_menu_call(run_dsl(VM,E,VM.grid,Out)),
   set(VM.grid) = Out.
 
-read_menu_chars(_Start,_SelMax,Out):- in_pp(PP), PP\==ansi, !, wdmsg(read_menu_chars(PP)),read(Out).
+key_read_borked(PP):- in_pp(PP), PP\==ansi,PP\==bfly.
+
+read_menu_chars(_Start,_SelMax,Out):- key_read_borked(PP),!, wdmsg(read_menu_chars(PP)),once((\+ toplevel_pp(http),read(Out))).
 read_menu_chars(_Start,_SelMax,Out):- pengine_self(_Id),!,read(Out).
 read_menu_chars(Start,SelMax,Out):-
   get_single_key_code(Codes), atom_codes(Key,Codes),
   append_num_code(Start,SelMax,Key,Out).
 
-get_single_key_code(CCodes):- in_pp(PP), PP\==ansi, !, wdmsg(get_single_key_code(PP)),sleep(5),read(CCodes).
+get_single_key_code(CCodes):- key_read_borked(PP),!, wdmsg(get_single_key_code(PP)),sleep(5),once((\+ toplevel_pp(http),read(CCodes))).
 get_single_key_code(CCodes):- get_single_char(C), 
   (  C== -1 -> (CCodes=`Q`) ; (read_pending_codes(user_input,Codes, []), [C|Codes]=CCodes)).
 
@@ -145,8 +147,7 @@ switch_test(TestID):- wqnl(['Swithing to test: ',TestID]),set_current_test(TestI
 interact:- list_of_tests(L), length(L,SelMax),!,
   repeat, format('~N Your menu(?) selection: '), 
   %get_single_char(Code), wdmsg(code=Code), char_code(Key,Code),  put_char(Key), 
-   % with_tty_raw
-   (once(read_menu_chars('',SelMax,Key))),
+   with_tty_raw(once(read_menu_chars('',SelMax,Key))),
     writeq(Key),
    once((do_menu_key(Key))), 
    retract(wants_exit_menu),!.

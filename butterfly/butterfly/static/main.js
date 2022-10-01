@@ -202,6 +202,7 @@
       this.inComposition = false;
 
       this.isMonospace = false;
+      this.isPreMode = false;
       this.isHtmlMode = false;
       this.maybeEscapingHtmlMode = false;
       this.htmlBuffer = "";
@@ -294,6 +295,33 @@
       return a.bg === b.bg && a.fg === b.fg && a.bold === b.bold && a.underline === b.underline && a.blink === b.blink && a.inverse === b.inverse && a.invisible === b.invisible && a.italic === b.italic && a.faint === b.faint && a.crossed === b.crossed;
     };
 
+    Terminal.prototype.intoEntity = function (c) {
+      const chint = c.charCodeAt();
+      if (c == "&") {
+        c = "&amp;";
+      } else if (c == "<") {
+        c = "&lt;";
+      } else if (c == ">") {
+        c = "&gt;";
+      } else if (c == "®") {
+        c = "&reg;"
+      } else if (c == '"') {
+        c = "&quot;";
+      } else if (c == '"') {
+        c = "&quot;";
+      } else if (c == "'") {
+        c = "&apos;";
+      } else if (chint == 32) {
+        c = "&nbsp;"
+        //c = '' + c;
+      } else if (chint >= 160 || chint < 32) {
+        c = "&#" + chint + ";";
+      } else {
+        c = '' + c;
+      }
+      return c;
+    }
+
     Terminal.prototype.putChar = function (c, placeholder) {
       var newChar, chint;
       if (placeholder == null) {
@@ -302,50 +330,49 @@
       if (c == '\0HTML') {
         c = this.htmlBuffer;
         this.htmlBuffer = "";
+        if (c.split(" ").join("").length==0) return;
         newChar = this.cloneAttr(this.curAttr);
         newChar.html = c;
         newChar.placeholder = false;
-        this.screen[this.y + this.shift].chars[this.x] = newChar;
-        return this.screen[this.y + this.shift].dirty = true;
-      } else {
-        chint = c.charCodeAt();
-        if (this.isHtmlMode) {
-          this.htmlBuffer += c;
-          return;
-
+        var needNextLine = true;
+        if (c.split('\n').join(" \n") !== c) {
+          this.nextLine();
+          needNextLine = false;
+        }
+        if (this.insertMode || true) {
+          this.screen[this.y + this.shift].chars.splice(this.x, 0, newChar);
+          this.screen[this.y + this.shift].chars.pop();
         } else {
-          if (c == "&") {
-            c = "&amp;";
-          } else if (c == "<") {
-            c = "&lt;";
-          } else if (c == ">") {
-            c = "&gt;";
-            /* }else if (c == "®") {
-              c = "@";*/
-          } else if (chint == 32) {
-            //  c = "&nbsp;"
-            c = '' + c;
-          } else if (chint >= 160 || chint < 32) {
-            c = "&#" + chint + ";";
-          } else {
-            c = '' + c;
-          }
-          if (this.isMonospace) {
-            if (c.indexOf("<span ") == -1) {
-              c = '<span class="mc-10">' + c + '</span>';
-            }
-          }
-          if (this.htmlBuffer.length > 0) {
-            c = this.htmlBuffer + c;
-            this.htmlBuffer = "";
-            newChar.html = c;
-            newChar = this.cloneAttr(this.curAttr, c);
-          } else {
-            newChar = this.cloneAttr(this.curAttr, c);
-          }
+          this.screen[this.y + this.shift].chars[this.x] = newChar;
+        }
+        if (needNextLine || c.split('<pre>').join("") !== c) {
+          this.nextLine();
+        }
+        this.screen[this.y + this.shift].dirty = true;
+        return false;
+      }
+      if (this.isHtmlMode) {
+        this.htmlBuffer += c;
+        return;
+      }
+
+      if (this.htmlBuffer.length > 0) {
+        putChar('\0HTML');
+      }
+
+      chint = c.charCodeAt();
+      if (c.len == 1) {
+        if (chint > 160) {
+          c = "&#" + chint + ";";
+        }
+      }
+      if (this.isMonospace) {
+        if (c.indexOf("<span ") == -1) {
+          c = '<span class="mc-10">' + c + '</span>';
         }
       }
 
+      newChar = this.cloneAttr(this.curAttr, c);
       newChar.placeholder = placeholder;
       if (this.insertMode) {
         this.checkUndefined(newChar);
@@ -951,7 +978,9 @@
                   div.classList.add('extended');
                 }
                 // jarj = jarj + "\n";
+
               }
+              blankLines = 0;
               //results.push(jarj);
               //continue;
             } else {
@@ -1143,6 +1172,14 @@
           }
         }
 
+        var ii = data.indexOf(";HTML"); 
+        var ii2 = data.indexOf("\a"); 
+        {
+          if (ii2<2) {
+            debugger;
+            
+          }
+        }
         switch (this.state) {
           case State.normal:
             switch (ch) {
@@ -1429,11 +1466,11 @@
                   this.isMonospace = true;
                 } else if (v2.indexOf("-Monospace") > -1) {
                   this.isMonospace = false;
-                } else if (v2.indexOf("+HtmlMode") > -1) { 
+                } else if (v2.indexOf("+HtmlMode") > -1) {
                   this.maybeEscapingHtmlMode = false;
                   if (this.htmlBuffer.length > 0) {
                     console.warn("Should have empty buffer! not: " + this.htmlBuffer);
-                    debugger;
+                    // debugger;
                     this.putChar('\0HTML');
                   }
                   this.isHtmlMode = true;
@@ -1654,11 +1691,18 @@
                   }
                   switch (type) {
                     case "HTML":
+
                       if (this.htmlBuffer.length > 0) {
-                        console.log("HTML CLR BUFFER:" + this.htmlBuffer);
-                        this.putChar('\0HTML');
+                        console.log("HTML BUFFER PRESENT:" + this.htmlBuffer);
+                        // this.putChar('\0HTML');
+                        content = this.htmlBuffer + content;
+                      }
+                      
+                      if (content.indexOf("<") == -1 && content.indexOf("&") == -1 && content.indexOf("\n") > -1) {
+                        content = '<pre>' + content + "</pre>";
                       }
                       console.log("HTML OUTPUT:" + content);
+                      debugger;
                       if (true) {
                         this.htmlBuffer = content;
                         if (this.htmlBuffer.length > 0) {
@@ -1697,6 +1741,7 @@
                       data = data.slice(0, i + 1) + content + data.slice(i + 1);
                       break;
                     default:
+                      debugger;
                       console.error("Unknown type " + type + " for DECUDK");
                   }
                   break;
@@ -1789,7 +1834,8 @@
     };
 
     Terminal.prototype.writeln = function (data) {
-      this.write2(data + "\r\n");
+      this.write2(data);
+      this.nextLine();
       return this.dirtyRefresh();
     };
 

@@ -9,6 +9,7 @@
 
 :- set_prolog_flag(encoding,iso_latin_1).
 :- set_prolog_flag(stream_type_check,false).
+:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(load_arc_webui,true);true).
 
 :- dynamic('$messages':to_list/2).
 :- multifile('$messages':to_list/2).
@@ -207,13 +208,21 @@ pfcAddF(P):-
 :- set_prolog_flag(no_sandbox,true).
 
 
+:- if(current_prolog_flag(load_arc_webui,true)).
+with_webui(Goal):- ignore(call(Goal)),!.
+:- endif.
+with_webui(Goal):- ignore(when_arc_webui(with_http(Goal))).
+%:- initialization arc_http_server.
+
 logicmoo_webui:-
   system:use_module(library(xlisting/xlisting_web)),
   system:use_module(library(xlisting/xlisting_web_server)),
-   exists_source(library(logicmoo_webui)), use_module(library(logicmoo_webui)), catch_log(call(call,webui_start_swish_and_clio)).
+   exists_source(library(logicmoo_webui)), use_module(library(logicmoo_webui)), 
+   catch_log(dmsg((?-webui_start_swish_and_clio))),
+   nop(catch_log(call(call,webui_start_swish_and_clio))).
 logicmoo_webui.
 
-:- (current_prolog_flag(argv,C),(member('--',C)->catch_log(logicmoo_webui) ; true)).
+:- (current_prolog_flag(load_arc_webui,true)->catch_log(logicmoo_webui) ; true).
 
 
 %:- autoload_all.
@@ -464,11 +473,12 @@ suggest_arc_user(ID):- catch((if_arc_webui(xlisting_web:find_http_session(ID))),
 suggest_arc_user(ID):- catch((pengine:pengine_user(ID)),_,fail),!.
 suggest_arc_user(ID):- catch((http_session:session_data(_,username(ID))),_,fail),!.
 
-arc_webui:- \+ tracing, notrace(arc_webui0).
+arc_webui:-  notrace(arc_webui0).
+arc_webui0:- toplevel_pp(http),!.
 arc_webui0:- in_pp(http),!.
 arc_webui0:- toplevel_pp(swish),!.
 arc_webui0:- in_pp(swish),!,fail.
-arc_webui0:- toplevel_pp(bfly),!.
+arc_webui0:- in_pp(bfly),!.
 arc_webui0:- is_webui,!.
 
 arc_user(TID, ID):- \+ arc_webui,!,TID=ID,!.
@@ -490,6 +500,11 @@ luser_linkval(ID,N,V):- nb_linkval(N,V),retractall(arc_user_prop(ID,N,_)),assert
 :- meta_predicate(if_arc_webui(-)).
 if_arc_webui(Goal):- arc_webui,!,g_out(call(Goal)).
 if_arc_webui(_):- \+ arc_webui,!,fail.
+
+:- meta_predicate(when_arc_webui(-)).
+when_arc_webui(G):- toplevel_pp(http),call(G),!.
+when_arc_webui(G):- toplevel_pp(swish),call(G),!.
+when_arc_webui(G):- ignore(if_arc_webui(G)).
 
 
 luser_getval(N,V):- if_arc_webui(((get_param_req_or_session(N,V), V\=='',V\==""))).
@@ -1052,10 +1067,14 @@ user:portray(Grid):-
 
 %:- ignore(check_dot_spacing).
 
+   
+:- add_history((print_test)).
 :- add_history((webui_tests)).
 :- add_history((bfly_test(a1))).
 :- add_history((bfly_tests)).
-:- add_history1((cls_z,make,demo)).
+:- add_history((test_pp)).
+:- add_history((bfly_startup)).
+%:- add_history1((cls_z,make,demo)).
 :- add_history1((demo)).
 
 
@@ -1068,12 +1087,12 @@ user:portray(Grid):-
 
 :- set_stream(current_output,encoding(utf8)).
 
-:- (current_prolog_flag(argv,C),(member('--',C)->catch_log(start_arc_server) ; true)).
+:- current_prolog_flag(load_arc_webui,true) -> catch_log(start_arc_server) ; true.
 
 bfly_startup:-    
    asserta(was_inline_to_bfly),inline_to_bfly_html,
-    bfly,
-    catch_log(webui_tests),
+ %  bfly,
+   catch_log(webui_tests),
    catch_log(print_test),
    catch_log(menu),
    %with_pp(bfly,catch_log(menu)),

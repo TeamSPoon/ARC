@@ -397,10 +397,11 @@ grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- comp_o(IO),  c_proportional(In,Out
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- grid_size(In,IH,IV),grid_size(Out,OH,OV),grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
 
 grid_hint_io(MC,IO,In,Out,(=@=(MC,IO))):- In=@=Out, !.
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- grid_hint_io_ogs(In,Out,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,c(MC,IO,Hint))):- grid_hint_io_ogs(In,Out,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,rev(MC,IO,Hint))):- grid_hint_io_ogs(Out,In,Hint).
 
 
-grid_hint_io_ogs(In,Out,mayb_ogs(R,XY)):-  all_ogs(  0,0,R,In,Out,XY).
+grid_hint_io_ogs(In,Out,mayb_ogs(R,XY)):-  all_ogs(  0,0,R,In,Out,XY),XY\==[].
 grid_hint_io_ogs(II,Out,trim_ogs(R,XY)):-  
    trim_to_rect(II,In),!, II\=In, maybe_ogs(_,OX,OY,II,In),
    all_ogs(OX,OY,R,In,Out,XY).

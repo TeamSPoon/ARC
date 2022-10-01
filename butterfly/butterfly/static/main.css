@@ -132,6 +132,9 @@ body {
   font-size: 1em;
   line-height: 1.13; }
 
+ p {    display: inline; overflow: hidden; white-space: nowrap;} 
+
+
 span.mc-10 {
     width: 10px; 
     display:inline-block; 
