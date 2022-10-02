@@ -586,6 +586,7 @@
               button = 3;
               break;
             case "wheel":
+              if(ev.deltaY<0) {this.scrollLock = true;}
               button = ev.deltaY < 0 ? 64 : 65;
           }
           shift = ev.shiftKey ? 4 : 0;
@@ -685,6 +686,14 @@
       })(this));
       return addEventListener("wheel", (function (_this) {
         return function (ev) {
+
+          if (ev.deltaY < 0)
+          {
+           console.log('scrolling up');
+           //document.getElementById('status').textContent= 'scrolling up';
+           this.scrollLock = true;
+          }
+
           if (_this.mouseEvents) {
             if (_this.x10Mouse) {
               return;
@@ -918,9 +927,12 @@
 
           jarj = jarj.split("LESS-THAN").join("<").split("GREATER-THAN").join(">").split("AMPER-SAND").join("&").split("QUO-TE").join("\"");
           if (jarj.split("&lt;").join("<") != jarj) {
-            var jarj2 = jarj.split("&lt;").join("<").split("&gt;").join(">");
+            var jarj2 = jarj.split("&lt;").join("<").split("&gt;").join(">")
+            //jarj2 = jarj.split("&nbsp;").join(" ");
             console.log("fixing line2Dom=" + jarj);
             jarj = jarj2
+          } else {
+            //  jarj = jarj.split(" ").join("&nbsp;");
           }
 
           // Skip blank lines if their are too many 
@@ -998,13 +1010,23 @@
                 || //something other than spans 
                 jarj.split("</span>").join("").split("<span ").join("").
                   indexOf('<') > -1) {
-                div = document.createElement('pre');
+
+                //div = document.createElement('pre');
                 div.classList.add("was-div-line");
+                cutNewline = false;
+                //if(false) 
+                {while (jarj.charCodeAt(jarj.length - 1) <= 32) {
+                  if(jarj.charCodeAt(jarj.length - 1) <= 12) cutNewline = true;
+                  jarj = jarj.substring(0, jarj.length - 1);
+                }}
+
                 if (line.extra) {
                   div.classList.add('extended');
                 }
                 // jarj = jarj + "\n";
-
+                if(cutNewline) {
+                  jarj="<br/>"+jarj;
+                }
               }
               blankLines = 0;
               //results.push(jarj);
@@ -1199,8 +1221,8 @@
         }
 
         {
-          var ii = data.indexOf(";HTML");
-          var ii2 = data.indexOf("\a");
+          var ii = data.indexOf(";HTML|");
+          var ii2 = data.indexOf("\x07");
           if (ii < 2 && ii > -1) {
             if (ii2 > 10 || ii2 < 1) {
               debugger;
@@ -1427,10 +1449,15 @@
               case "\x07":
                 this.state = State.normal;
                 break;
+              case "\u001b":
+                this.state = State.normal;
+                i--;
+                continue;
               default:
                 this.state = State.normal;
                 console.log("Unknown ESC control:", ch);
                 i--;
+                continue;
               // debugger;
             }
             break;

@@ -132,7 +132,8 @@ body {
   font-size: 1em;
   line-height: 1.13; }
 
- p {    display: inline; overflow: hidden; white-space: nowrap;} 
+  p {    display: inline; overflow: hidden; white-space: nowrap;} 
+  pre.was-div-line {  display:inline-block;  overflow: hidden; white-space: pre-wrap; } 
 
 
 span.mc-10 {
