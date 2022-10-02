@@ -123,6 +123,8 @@
   });
 
   cancel = function (ev) {
+    if(!ev) return false;
+    
     if (ev.preventDefault) {
       ev.preventDefault();
     }
@@ -590,7 +592,7 @@
               break;
             case "wheel":
               if (ev.deltaY < 0) {
-                this.setScrollLock(true);
+                ///setScrollLock(true);
               }
               button = ev.deltaY < 0 ? 64 : 65;
           }
@@ -695,7 +697,7 @@
           if (ev.deltaY < 0) {
             console.log('scrolling up');
             //document.getElementById('status').textContent= 'scrolling up';
-            this.setScrollLock(true);
+            // setScrollLock(true);
           }
 
           if (_this.mouseEvents) {
@@ -1225,17 +1227,6 @@
             continue;
           }
         }
-
-        {
-          var ii = data.indexOf(";HTML|");
-          var ii2 = data.indexOf("\x07");
-          if (ii < 2 && ii > -1) {
-            if (ii2 > 10 || ii2 < 1) {
-              debugger;
-            }
-          }
-        }
-
 
         switch (this.state) {
           case State.normal:
@@ -1945,10 +1936,10 @@
 
 
     Terminal.prototype.setScrollLock = function (tf) {
-      if (tf!== this.scrollLock){
+      if (tf !== this.scrollLock) {
         this.keyDown(145);
       }
-    }
+    };
 
     Terminal.prototype.updateScrollLock = function () {
       if (this.body) {
@@ -1958,9 +1949,8 @@
           this.body.classList.remove('locked');
         }
       }
-    }
+    };
 
-    keyDown
 
     Terminal.prototype.compositionUpdate = function (ev) {
       ev.preventDefault();
@@ -2005,8 +1995,8 @@
         this.finishComposition();
       }
       if (ev.keyCode === 229) {
-        ev.preventDefault();
-        ev.stopPropagation();
+          ev.preventDefault();
+          ev.stopPropagation();
         setTimeout((function (_this) {
           return function () {
             var char, e, val;
@@ -2072,7 +2062,7 @@
             key = "\x1b[Z";
             break;
           }
-          key = "\t";
+          key = "\t"; 
           break;
         case 13:
           key = "\r";
@@ -2198,7 +2188,11 @@
           break;
         case 145:
           this.scrollLock = !this.scrollLock;
-          this.updateScrollLock();
+          if (this.scrollLock) {
+            this.body.classList.add('locked');
+          } else {
+            this.body.classList.remove('locked');
+          }
           return cancel(ev);
         default:
           if (ev.ctrlKey) {
@@ -2292,7 +2286,7 @@
       }
       key = String.fromCharCode(key);
       this.showCursor();
-      this.scrollLock = false;
+      // this.scrollLock = false;
       this.send(key);
       return false;
     };

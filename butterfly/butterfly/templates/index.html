@@ -22,9 +22,12 @@
         data-force-unicode-width="{{ 'yes' if options.force_unicode_width else 'no' }}"
         data-root-path="{{ options.uri_root_path }}"
         data-session-token={{ session }}>
+        <div id="mouse_iframer_div" style="display:none;">
+          <iframe id="mouse_iframer" height="300px" width="100%" title="Iframe Example"
+           name="mouse_iframer" src="about:blank"></iframe> </div>
 
-   <div id="hidden_swish_app" style="display:none; visibility:hidden">
-     <div id="swish_app">
+        <div id="hidden_swish_app" style="display:none; visibility:hidden">
+          <div id="swish_app">
 		<header class="navbar navbar-default">
 			<div class="container pull-left">
 				<div class="navbar-header">
