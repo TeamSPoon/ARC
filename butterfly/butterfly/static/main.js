@@ -285,7 +285,8 @@
         italic: a.italic,
         faint: a.faint,
         crossed: a.crossed,
-        placeholder: false
+        placeholder: false,
+        html: false
       };
     };
 
@@ -330,12 +331,20 @@
       if (c == '\0HTML') {
         c = this.htmlBuffer;
         this.htmlBuffer = "";
-        if (c.split(" ").join("").length==0) return;
-        newChar = this.cloneAttr(this.curAttr);
-        newChar.html = c;
-        newChar.placeholder = false;
-        var needNextLine = true;
-        if (c.split('\n').join(" \n") !== c) {
+        var needNextLine = false;
+        // contains only whitepace or contains no tags
+        if (c.split(" ").join("").length == 0 || (c.split('<').join("") == c)) {
+          newChar = this.cloneAttr(this.curAttr, c);
+          newChar.placeholder = false;
+          needNextLine = false;
+        } else {
+          newChar = this.cloneAttr(this.curAttr);
+          newChar.html = content.split("<").join("LESS-THAN").split(">").join("GREATER-THAN").split("&").join("AMPER-SAND").split("\"").join("QUO-TE");
+          console.log("set H")
+          newChar.placeholder = false;
+        }
+        // contains newlines
+        if (needNextLine && c.split('\n').join("") !== c) {
           this.nextLine();
           needNextLine = false;
         }
@@ -345,14 +354,15 @@
         } else {
           this.screen[this.y + this.shift].chars[this.x] = newChar;
         }
-        if (needNextLine || c.split('<pre>').join("") !== c) {
+        if (needNextLine && c.split('<pre>').join("") !== c) {
           this.nextLine();
+          needNextLine = false;
         }
         this.screen[this.y + this.shift].dirty = true;
         return false;
       }
       if (this.isHtmlMode) {
-        this.htmlBuffer += c;
+        this.htmlBuffer += c.split("<").join("LESS-THAN").split(">").join("GREATER-THAN").split("&").join("AMPER-SAND").split("\"").join("QUO-TE");
         return;
       }
 
@@ -417,7 +427,8 @@
         italic: false,
         faint: false,
         crossed: false,
-        placeholder: false
+        placeholder: false,
+        html: false
       };
       this.curAttr = this.cloneAttr(this.defAttr);
       this.params = [];
@@ -750,7 +761,6 @@
         return data.html;
       }
 
-
       if (!this.equalAttr(data, attr)) {
         if (!this.equalAttr(attr, this.defAttr)) {
           char += "</span>";
@@ -795,10 +805,11 @@
 
           code = ch.charCodeAt();
           if (code >= 160) {
-            char += "&#" + code + ";"
-            console.log("CH2 = " + char + ";");
+            //char += "&#" + code + ";"
+            //console.log("CH2 = " + char);
           } else if (ch == " ") {
-            char += "&nbsp;";
+            // char += "&nbsp;";
+             char += " ";
           } else if (ch <= " ") {
             char += "&#" + code + ";"
           } else if (!(this.forceWidth || this.isCJK(ch))) {
@@ -834,17 +845,25 @@
       }
       results = [];
       for (x = k = 0, ref = this.cols; 0 <= ref ? k <= ref : k >= ref; x = 0 <= ref ? ++k : --k) {
+        var needPush = true;
         if (x !== this.cols) {
           var cx = line.chars[x];
           this.checkUndefined(cx);
           var cxm1 = line.chars[x - 1];
+          if (cx.html) {
+            results.push(cx.html);
+            needPush = false;
+          }
           // this.checkUndefined(cxm1);
           var sameX = (x === cursorX);
           var v = this.charToDom(cx, cxm1, sameX);
+
           if (("" + v) == ("undefined")) {
-            //  this.checkUndefined(v);
+            this.checkUndefined(v);
           } else {
-            results.push(v);
+            if (v !== null || v !== " ") {
+              if (needPush) results.push(v);
+            }
           }
         } else {
           eol = '';
@@ -896,6 +915,10 @@
           this.checkUndefined(arj);
 
           var jarj = arj.join('');
+         
+          jarj = jarj.split("LESS-THAN").join("<").split("GREATER-THAN").join(">").split("AMPER-SAND").join("&").split("QUO-TE").join("\"");
+          console.log("line2Dom=" + jarj);
+          jarj = jarj.split("&lt;").join("<").split("&gt;").join(">");
 
           // Skip blank lines if their are too many 
           if (jarj.split("&nbsp;").join('').split(" ").join('').
@@ -1172,14 +1195,17 @@
           }
         }
 
-        var ii = data.indexOf(";HTML"); 
-        var ii2 = data.indexOf("\a"); 
         {
-          if (ii2<2) {
-            debugger;
-            
+          var ii = data.indexOf(";HTML");
+          var ii2 = data.indexOf("\a");
+          if (ii < 2 && ii > -1) {
+            if (ii2 > 10 || ii2 < 1) {
+              debugger;
+            }
           }
         }
+
+
         switch (this.state) {
           case State.normal:
             switch (ch) {
@@ -1393,9 +1419,16 @@
                 this.applicationKeypad = false;
                 this.state = State.normal;
                 break;
+              case "\\":
+                break;
+              case "\x07":
+                this.state = State.normal;
+                break;
               default:
                 this.state = State.normal;
                 console.log("Unknown ESC control:", ch);
+                i--;
+              // debugger;
             }
             break;
           case State.charset:
@@ -1697,13 +1730,12 @@
                         // this.putChar('\0HTML');
                         content = this.htmlBuffer + content;
                       }
-                      
+
                       if (content.indexOf("<") == -1 && content.indexOf("&") == -1 && content.indexOf("\n") > -1) {
-                        content = '<pre>' + content + "</pre>";
+                        // content = '<pre>' + content + "</pre>";
                       }
                       console.log("HTML OUTPUT:" + content);
-                      debugger;
-                      if (true) {
+                      if (false) {
                         this.htmlBuffer = content;
                         if (this.htmlBuffer.length > 0) {
                           console.log("HTML OUT:" + this.htmlBuffer);
@@ -1712,7 +1744,8 @@
                         break;
                       }
                       attr = this.cloneAttr(this.curAttr);
-                      attr.html = content;
+                      attr.html = content.split("<").join("LESS-THAN").split(">").join("GREATER-THAN").split("&").join("AMPER-SAND").split("\"").join("QUO-TE");
+                      //attr.ch = null;
                       attr.placeholder = false;
                       this.checkUndefined(attr);
                       this.screen[this.y + this.shift].chars[this.x] = attr;
@@ -1728,7 +1761,9 @@
                         b64 = content;
                       }
                       attr = this.cloneAttr(this.curAttr);
-                      attr.html = "<img class=\"inline-image\" src=\"data:" + mime + ";base64," + b64 + "\" />";
+                      var ahtml = "<img class=\"inline-image\" src=\"data:" + mime + ";base64," + b64 + "\" />";
+                      attr.html = ahtml.split("<").join("LESS-THAN").split(">").join("GREATER-THAN").split("&").join("AMPER-SAND").split("\"").join("QUO-TE");
+                      //attr.ch = null;
                       this.checkUndefined(attr);
                       this.screen[this.y + this.shift].chars[this.x] = attr;
                       this.resetLine(this.screen[this.y + this.shift]);
