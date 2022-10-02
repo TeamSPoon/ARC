@@ -809,7 +809,7 @@
             //console.log("CH2 = " + char);
           } else if (ch == " ") {
             // char += "&nbsp;";
-             char += " ";
+            char += " ";
           } else if (ch <= " ") {
             char += "&#" + code + ";"
           } else if (!(this.forceWidth || this.isCJK(ch))) {
@@ -915,10 +915,13 @@
           this.checkUndefined(arj);
 
           var jarj = arj.join('');
-         
+
           jarj = jarj.split("LESS-THAN").join("<").split("GREATER-THAN").join(">").split("AMPER-SAND").join("&").split("QUO-TE").join("\"");
-          console.log("line2Dom=" + jarj);
-          jarj = jarj.split("&lt;").join("<").split("&gt;").join(">");
+          if (jarj.split("&lt;").join("<") != jarj) {
+            var jarj2 = jarj.split("&lt;").join("<").split("&gt;").join(">");
+            console.log("fixing line2Dom=" + jarj);
+            jarj = jarj2
+          }
 
           // Skip blank lines if their are too many 
           if (jarj.split("&nbsp;").join('').split(" ").join('').
