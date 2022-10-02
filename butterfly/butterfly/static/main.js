@@ -241,6 +241,8 @@
         };
       })(this), true);
       this.initmouse();
+
+      this.initMouseTracking();
       addEventListener('load', (function (_this) {
         return function () {
           return _this.resize();
@@ -408,6 +410,7 @@
       this.applicationKeypad = false;
       this.applicationCursor = false;
       this.originMode = false;
+
       this.autowrap = true;
       this.horizontalWrap = false;
       this.normal = null;
@@ -586,7 +589,9 @@
               button = 3;
               break;
             case "wheel":
-              if(ev.deltaY<0) {this.scrollLock = true;}
+              if (ev.deltaY < 0) {
+                this.setScrollLock(true);
+              }
               button = ev.deltaY < 0 ? 64 : 65;
           }
           shift = ev.shiftKey ? 4 : 0;
@@ -687,11 +692,10 @@
       return addEventListener("wheel", (function (_this) {
         return function (ev) {
 
-          if (ev.deltaY < 0)
-          {
-           console.log('scrolling up');
-           //document.getElementById('status').textContent= 'scrolling up';
-           this.scrollLock = true;
+          if (ev.deltaY < 0) {
+            console.log('scrolling up');
+            //document.getElementById('status').textContent= 'scrolling up';
+            this.setScrollLock(true);
           }
 
           if (_this.mouseEvents) {
@@ -1015,17 +1019,19 @@
                 div.classList.add("was-div-line");
                 cutNewline = false;
                 //if(false) 
-                {while (jarj.charCodeAt(jarj.length - 1) <= 32) {
-                  if(jarj.charCodeAt(jarj.length - 1) <= 12) cutNewline = true;
-                  jarj = jarj.substring(0, jarj.length - 1);
-                }}
+                {
+                  while (jarj.charCodeAt(jarj.length - 1) <= 32) {
+                    if (jarj.charCodeAt(jarj.length - 1) <= 12) cutNewline = true;
+                    jarj = jarj.substring(0, jarj.length - 1);
+                  }
+                }
 
                 if (line.extra) {
                   div.classList.add('extended');
                 }
                 // jarj = jarj + "\n";
-                if(cutNewline) {
-                  jarj="<br/>"+jarj;
+                if (cutNewline) {
+                  jarj = "<br/>" + jarj;
                 }
               }
               blankLines = 0;
@@ -1937,6 +1943,25 @@
       return false;
     };
 
+
+    Terminal.prototype.setScrollLock = function (tf) {
+      if (tf!== this.scrollLock){
+        this.keyDown(145);
+      }
+    }
+
+    Terminal.prototype.updateScrollLock = function () {
+      if (this.body) {
+        if (this.scrollLock) {
+          this.body.classList.add('locked');
+        } else {
+          this.body.classList.remove('locked');
+        }
+      }
+    }
+
+    keyDown
+
     Terminal.prototype.compositionUpdate = function (ev) {
       ev.preventDefault();
       ev.stopPropagation();
@@ -2173,11 +2198,7 @@
           break;
         case 145:
           this.scrollLock = !this.scrollLock;
-          if (this.scrollLock) {
-            this.body.classList.add('locked');
-          } else {
-            this.body.classList.remove('locked');
-          }
+          this.updateScrollLock();
           return cancel(ev);
         default:
           if (ev.ctrlKey) {
