@@ -61,9 +61,11 @@
       }
       return console.log("WebSocket open end", arguments);
     };
+
     error = function () {
       return console.error("WebSocket error", arguments);
     };
+
     close = function () {
       console.log("WebSocket closed", arguments);
       if (quit) {
@@ -76,6 +78,8 @@
       if ((new Date()).getTime() - openTs > 60 * 1000) {
         return window.open('', '_self').close();
       }
+      window.location.reload()
+
     };
     reopenOnClose = function () {
       return setTimeout(function () {
@@ -123,8 +127,8 @@
   });
 
   cancel = function (ev) {
-    if(!ev) return false;
-    
+    if (!ev) return false;
+
     if (ev.preventDefault) {
       ev.preventDefault();
     }
@@ -864,13 +868,14 @@
         if (x !== this.cols) {
           var cx = line.chars[x];
           this.checkUndefined(cx);
-          var cxm1 = line.chars[x - 1];
           if (cx.html) {
             results.push(cx.html);
             needPush = false;
+            continue;
           }
           // this.checkUndefined(cxm1);
           var sameX = (x === cursorX);
+          var cxm1 = line.chars[x - 1];
           var v = this.charToDom(cx, cxm1, sameX);
 
           if (("" + v) == ("undefined")) {
@@ -922,6 +927,7 @@
       var blankLines = 0;
       for (y = k = 0, len = ref.length; k < len; y = ++k) {
         line = ref[y];
+        var weirdDiv = false;
         this.checkUndefined(line);
         if (line.dirty || force) {
           active = y === this.y + this.shift && !this.cursorHidden;
@@ -933,9 +939,9 @@
 
           jarj = jarj.split("LESS-THAN").join("<").split("GREATER-THAN").join(">").split("AMPER-SAND").join("&").split("QUO-TE").join("\"");
           if (jarj.split("&lt;").join("<") != jarj) {
-            var jarj2 = jarj.split("&lt;").join("<").split("&gt;").join(">")
+            var jarj2 = jarj.split("&lt;").join("<").split("&gt;").join(">").split("&amp;").join("&");
             //jarj2 = jarj.split("&nbsp;").join(" ");
-            console.log("fixing line2Dom=" + jarj);
+            //console.log("fixing line2Dom=" + jarj);
             jarj = jarj2
           } else {
             //  jarj = jarj.split(" ").join("&nbsp;");
@@ -1004,9 +1010,11 @@
           div.classList.add('line');
           if (active) {
             div.classList.add('active');
+            weirdDiv = true;
           }
           if (line.extra) {
             div.classList.add('extended');
+            weirdDiv = true;
           }
 
           //sometimes convert into valilla html
@@ -1017,7 +1025,7 @@
                 jarj.split("</span>").join("").split("<span ").join("").
                   indexOf('<') > -1) {
 
-                //div = document.createElement('pre');
+                // div = document.createElement('pre');
                 div.classList.add("was-div-line");
                 cutNewline = false;
                 //if(false) 
@@ -1036,15 +1044,30 @@
                   jarj = "<br/>" + jarj;
                 }
               }
-              blankLines = 0;
+              blankLines = 1;
               //results.push(jarj);
               //continue;
             } else {
+              jarj = jarj.split("<pre>").join('').split("</pre>").join('');
               div.style['white-space'] = "pre";
+              weirdDiv = true;
             }
           }
-
           div.innerHTML = jarj;
+          if (!weirdDiv && false) {
+            jarj2 = jarj.trim();
+            if (jarj2.indexOf("<") == 0 || (jarj2.lastIndexOf("  >") == length - 3) || true) {
+              var childNodes = div.childNodes;
+              var len = childNodes.length
+              if (len == 1 && childNodes[0].nodeType == 1 && false) {
+                for (var i = 0; i < len; i++) {
+                  results.push(childNodes[i]);
+                }
+                continue;
+              }
+            }
+            ///div = document.createElement(jarj);
+          }
           this.checkUndefined(div.innerHTML);
 
           if (active) {
@@ -1078,11 +1101,28 @@
           this.term.replaceChild(line, this.term.childNodes[r + y]);
         } else {
           frag = frag || document.createDocumentFragment('fragment');
-          frag.appendChild(line);
+          if (true) {
+            try {
+              frag.appendChild(line);
+              this.emit('change', line);
+            } catch {
+              frag.innerHTML = (frag.innerHTML + line);
+            }
+          } else {
+            frag.appendChild(line);
+            this.emit('change', line);
+          }
         }
-        this.emit('change', line);
       }
-      frag && this.term.appendChild(frag);
+      if (true) {
+        try {
+          frag && this.term.appendChild(frag);
+        } catch {
+          this.term.innerHTML = (this.term.innerHTML + frag);
+        }
+      } else {
+        frag && this.term.appendChild(frag);
+      }
       this.shift = 0;
       return this.screen = this.screen.slice(-this.rows);
     };
@@ -1995,8 +2035,8 @@
         this.finishComposition();
       }
       if (ev.keyCode === 229) {
-          ev.preventDefault();
-          ev.stopPropagation();
+        ev.preventDefault();
+        ev.stopPropagation();
         setTimeout((function (_this) {
           return function () {
             var char, e, val;
@@ -2062,7 +2102,7 @@
             key = "\x1b[Z";
             break;
           }
-          key = "\t"; 
+          key = "\t";
           break;
         case 13:
           key = "\r";

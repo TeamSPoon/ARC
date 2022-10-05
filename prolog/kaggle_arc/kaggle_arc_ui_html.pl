@@ -268,7 +268,7 @@ arcproc_left(Request):-
     ensure_colapsable_script,
     write_end_html])))))).
 
-arc_html_format(TextAndGoal):- call(call,inline_html_format(TextAndGoal)).
+arc_html_format(TextAndGoal):- bfly_in_out(call(call,inline_html_format(TextAndGoal))).
 
 % arc_find_tests(menu):- ignore(menu).
 arc_find_tests(F):- find_tests(F).
@@ -352,9 +352,9 @@ arc_script_header_pt2:-
 inline_to_bfly:- was_inline_to_bfly,!.
 inline_to_bfly:- asserta(was_inline_to_bfly),inline_to_bfly_html.
 
-inline_to_bfly_html:- toplevel_pp(swish),!.
-inline_to_bfly_html:- 
- bfly_html_goal(format('~s',[
+inline_to_bfly_html:- toplevel_pp(swish),!,ensure_colapsable_styles.
+inline_to_bfly_html:- ensure_colapsable_styles,
+ arc_html_format(
 `<link rel="stylesheet" type="text/css" href="/swish/css/menu.css">
 <link rel="stylesheet" type="text/css" href="/swish/css/cliopatria.css">
 <script src="https://unpkg.com/gojs@2.2.15/release/go.js"></script>
@@ -375,14 +375,16 @@ inline_to_bfly_html:-
 <link rel="stylesheet" type="text/css" href="/swish/lm_xref/pixmapx/selected/css/social.selection.css">
 <script type="text/javascript" src="/swish/js/cliopatria.js"></script>
 <link rel="stylesheet" type="text/css" href="/swish/css/butterfly_term.css">
+<script type="text/javascript" href="/swish/js/butterfly_term.js"></script>
+<script type="text/javascript" href="/swish/js/butterfly_term.js"></script>
 <link rel="stylesheet" type="text/css" href="/swish/css/term.css">
 <script data-main="/swish/js/swish" src="https://logicmoo.org/node_modules/requirejs/require.js"></script>
 
-`])).
+`).
 
 
 arc_script_header2:- 
-  (arc_html_format(write('<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+  arc_html_format((('<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script> <!-- necessary for the "draggable" ui  -->
 <script src="/swish/lm_xref/pixmapx/popupmenu/scripts/Popup-plugin.js"></script>
 <script src="/swish/lm_xref/pixmapx/popupmenu/scripts/Example.js"></script>

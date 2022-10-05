@@ -80,7 +80,8 @@ fav(t('25d487eb'),[grid_size_same,human([rocketship]),-rotation_match,-mask_matc
 fav(v('762cd429'),[grid_size_same,human(i([shape_lib(filled_squares),delete_rest,shrink_all_to_size(1),tighten_grid_arround_objects])),-rotation_match,-mask_match,+shape_match,+color_match,evaluation,'(3, 1) ']).
 
 %fav(t('6e82a1ae'),[human([rocketship])]).
-fav(v('e41c6fd3'),[human([forall(((iz(X,outl),color(X,cyan),vert_pos(X,Vert))),(iz(Y,outl),vert_pos(Y,Vert)))])]).
+fav(v('e41c6fd3'),[human([forall(((iz(X,outl),color(X,cyan),vert_pos(X,Vert))),
+                                                                               (iz(Y,outl),vert_pos(Y,Vert)))])]).
 fav(t('25d487eb'),[human([rocketship])]).
 fav(t(c444b776),[detect_grid]).
 fav(v('94133066'),[human([largest_indiv,trim_to_rect,rot90,flipV])]).
@@ -233,7 +234,7 @@ fav(v('4b6b68e5'),[grid_size_same,nthDSL(2,[gather_object(_145350,_145352,(iz(_1
 
 fav(t(d6ad076f),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,tt,training,draw_line_from_point,connect_the_dots,bridges,'(3, 1)']).
 fav(t('9d9215db'),[grid_size_same,human([overlay_each_pattern]),-rotation_match,-mask_match,+shape_match,+color_match,tt,training,pattern_rotation,pattern_reflection,pattern_expansion,'(3, 1)']).
-fav(v(e41c6fd3),[grid_size_same,human([forall((iz(_141760,outl),color(_141760,cyan),vert_pos(_141760,_141780)),(iz(_141790,outl),vert_pos(_141790,_141780)))]),-rotation_match,-mask_match,+shape_match,+color_match,evaluation,'(3, 1) ']).
+fav(v(e41c6fd3),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,evaluation,'(3, 1) ']).
 fav(v('1d398264'),[grid_size_same,human([(iz(_140032,keypad),iz(_140032,multicolor),centerof(_140032,_140052)-->sunburst(_140052))]),-rotation_match,-mask_match,+shape_match,+color_match,test,evaluation,'(3, 2) ']).
 fav(v(e9bb6954),[grid_size_same,e('box of nine draw outward, if you hit a drawn line blacken it'),human([(iz(_142198,keypad),iz(_142198,monocolor),centerof(_142198,_142218)-->starburst(_142218))]),-rotation_match,-mask_match,-color_match,+shape_match,evaluation,'(4, 1) ']).
 fav(t(d511f180),[grid_size_same,human([swap_colors(cyan,silver)]),-rotation_match,-color_match,+shape_match,+mask_match,+'Errors',training,'https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021#760920',associate_colors_to_colors,'(3, 1)']).

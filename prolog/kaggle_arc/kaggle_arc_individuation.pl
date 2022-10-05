@@ -1017,6 +1017,7 @@ run_fti(VM):-
   must_det_ll(run_fti(VM,Code)).
 
 run_fti(_,[]):- !.
+run_fti(_,_):- arc_option(no_individuator), !.
 run_fti(VM,NotAList):- \+ is_list( NotAList),!, run_fti(VM,[NotAList]).
 run_fti(VM,[Step|Program]):- is_list(Step),flatten([Step|Program],StepProgram),!,run_fti(VM,StepProgram).
 run_fti(_,[Done|TODO]):- my_assertion(nonvar(Done)), ( \+ done \= Done ), !, wdmsg(done_run_fti([Done|TODO])),set_vm(program_i,[done]),!.

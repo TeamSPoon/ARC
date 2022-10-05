@@ -14,7 +14,7 @@ menu :- write_menu('i').
 
 write_menu(Mode):-
   get_current_test(TestID),!,
-  print_single_test(TestID),!,
+  print_single_pair(TestID),!,
   write_menu_opts(Mode).
 
 write_menu_opts(Mode):-
@@ -51,13 +51,13 @@ menu_cmd1(_,'h','                  or (h)uman proposed solution',(human_test)).
 menu_cmd1(_,'r','               Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and (s)olve !',(cls_z,fully_test)).
 menu_cmd1(_,'a','                  or (a)dvance to the next test and (r)un it',(cls_z,!,run_next_test)).
 menu_cmd1(_,'n','               Go to (n)ext test (skipping this one)',(next_test,print_qtest)).
-menu_cmd1(_,'N','                  or (N)ext suite',(next_suite)).
 menu_cmd1(_,'b','                  or (b)ack to previous test.',(previous_test,print_qtest)).
 menu_cmd1(_,'f','                  or (f)orce a favorite test.',(enter_test)).
 menu_cmd1(_,'~','                  or (PageUp) to begining of suite',(prev_suite)).
+menu_cmd1(_,'N','                  or (N)ext suite',(next_suite)).
 menu_cmd1(i,'R','             Menu to (R)un all tests noninteractively',(run_all_tests,menu)).
 menu_cmd1(_,'l','                  or (l)ist special tests to run,',(show_tests)).
-menu_cmd1(r,'i','             Re-enter(i)nteractve mode.',(interactive_test_menu)).
+menu_cmd1(r,'i','             Re-enter(i)nteractve mode.',(interact)).
 
 menu_cmd9(_,'m','recomple this progra(m),',(make,menu)).
 menu_cmd9(_,'c','(c)lear the scrollback buffer,',(cls_z)).
@@ -74,17 +74,17 @@ find_tests(F):-
     \+ ( atom_codes(F,Codes),member(C,Codes),char_type(C,digit) ).
 
 find_g_tests(F):- ping_indiv_grid(F).
-find_g_tests(F):- is_fti_stepr(F).
-find_g_tests(F):- is_fti_step(F).
+%find_g_tests(F):- is_fti_stepr(F).
+%find_g_tests(F):- is_fti_step(F).
 find_g_tests(F):- find_tests(F).
 
 list_of_tests(S):- findall(F,find_g_tests(F),L),sort(L,S).
 
-show_tests:- make, list_of_tests(L),forall(nth10(N,L,E),format('~N~w: ~@  ',[N,print_menu_cmd1(E,E)])),nl.
+show_tests:- update_changed_files, list_of_tests(L),forall(nth10(N,L,E),format('~N~@',[print_menu_cmd1(N:E,E)])),nl.
 
   % ignore((read_line_to_string(user_input,Sel),atom_number(Sel,Num))),
 
-ui_menu_call(G):- if_arc_webui(catch(ignore(G),E,wdmsg(E)))->true;catch(ignore(G),E,wdmsg(E)).
+ui_menu_call(G):- if_arc_webui(catch(ignore(must_not_error(G)),E,wdmsg(E)))->true;catch(ignore(must_not_error(G)),E,wdmsg(E)).
   
 my_menu_call(E):- locally(set_prolog_flag(gc,true),ui_menu_call(E)).
 
@@ -95,9 +95,28 @@ my_submenu_call0(E):- peek_vm(VM),!, ui_menu_call(run_dsl(VM,E,VM.grid,Out)),
 
 key_read_borked(PP):- in_pp(PP), PP\==ansi,PP\==bfly.
 
-read_menu_chars(_Start,_SelMax,Out):- key_read_borked(PP),!, wdmsg(read_menu_chars(PP)),once((\+ toplevel_pp(http),read(Out))).
+:- dynamic(mu_tmp:asserted_queued_cmd/2).
+read_queued_cmd(Out):- retract(mu_tmp:asserted_queued_cmd(Out,_Why)),!.
+read_queued_cmd(Out):- mu_tmp:asserted_queued_cmd(Out,Why),!,ignore(retract(mu_tmp:asserted_queued_cmd(Out,Why))),!.
+
+
+
 read_menu_chars(_Start,_SelMax,Out):- pengine_self(_Id),!,read(Out).
-read_menu_chars(Start,SelMax,Out):-
+read_menu_chars(Start,SelMax,Out):- repeat,    
+   read_menu_chars0(Start,SelMax,Out).
+
+has_pending_input:- wait_for_input([user_input], In, 0.01), In\==[].
+
+read_menu_chars0(_Start,_SelMax, Out):- read_queued_cmd(Out),!.
+read_menu_chars0(_Start,_SelMax, Out):- key_read_borked(PP),!, wdmsg(read_menu_chars(PP)),once((\+ toplevel_pp(http),read(Out))).
+read_menu_chars0(_Start,_SelMax,_Out):- \+ has_pending_input,format('~N Your menu(?) selection: '),fail.
+read_menu_chars0( Start, SelMax, Out):- read_menu_chars1( Start, SelMax,Out),!.
+%read_menu_chars0( Start, SelMax, Out):- wait_for_input([user_input], In, 0.3), In \== [],!,read_menu_chars1( Start, SelMax,Out).
+
+read_menu_chars1( Start, SelMax,Out):- fail,
+  read_pending_codes(user_input, Codes, []),
+  atom_codes(Key,Codes), append_num_code(Start,SelMax,Key,Out).
+read_menu_chars1(Start,SelMax,Out):-
   get_single_key_code(Codes), atom_codes(Key,Codes),
   append_num_code(Start,SelMax,Key,Out).
 
@@ -144,7 +163,13 @@ switch_test(TestID):- wqnl(['Swithing to test: ',TestID]),set_current_test(TestI
 
 
 :- dynamic(wants_exit_menu/0).
-interact:- list_of_tests(L), length(L,SelMax),!,interact(SelMax).
+/*interact:- 
+ ((
+  repeat, write_menu('i'), 
+   catch((interact),'$aborted',fail))),!.
+*/
+interact:-
+  list_of_tests(L), length(L,SelMax),!,write_menu('i'),interact(SelMax).
 /*interact:- list_of_tests(L), length(L,SelMax),!,
   repeat, 
     i_key(SelMax,Key),
@@ -153,35 +178,40 @@ interact:- list_of_tests(L), length(L,SelMax),!,interact(SelMax).
    retract(wants_exit_menu),!.
 */
 
-interact(_SelMax):- retract(wants_exit_menu),!.
-interact(SelMax):- i_key(SelMax,Key),
+interact(SelMax):- catch(interact0(SelMax),'$aborted',interact(SelMax)).
+interact0(_SelMax):- retract(wants_exit_menu),!.
+interact0(SelMax):- i_key(SelMax,Key),
     writeq(Key),
-    ignore((do_menu_key(Key))),interact(SelMax).
+    ignore((do_menu_key(Key))),interact0(SelMax).
 
 i_key(SelMax,Key):-
-  format('~N Your menu(?) selection: '), 
   %get_single_char(Code), wdmsg(code=Code), char_code(Key,Code),  put_char(Key), 
    (once(read_menu_chars('',SelMax,Key))),!.
 
 
+do_menu_key(-1):- !, arc_assert(wants_exit_menu). 
 do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), arc_assert(wants_exit_menu).
 do_menu_key('?'):- !, write_menu_opts('i').
 do_menu_key('P'):- !, switch_grid_mode,print_test.
 do_menu_key('I'):- !, cls_z,!,ndividuator.
 do_menu_key('o'):- !, cls_z,!,ndividuatorO1.
 do_menu_key('O'):- !, cls_z,!,ndividuatorO.
+do_menu_key( ''):- !, fail.
 do_menu_key('G'):- !, cls_z,!,detect_test_hints1.
-do_menu_key(-1):- !, arc_assert(wants_exit_menu).
-do_menu_key(Key):- atom_codes(Key,Codes),  do_menu_codes(Codes), !.
-do_menu_key(Key):- atom_string(Name,Key), fix_id(Name,TestID),set_current_test(TestID),!,print_test.
-do_menu_key(Sel):- atom_number(Sel,Num), number(Num), do_test_number(Num),!.
+do_menu_key(Num):- number(Num),!, do_test_number(Num),!.
+do_menu_key(Key):- atom(Key), atom_codes(Key,Codes),  do_menu_codes(Codes), !.
+do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num), number(Num), do_test_number(Num),!.
 do_menu_key(Key):- print_menu_cmd(Key),menu_cmds(_Mode,Key,_Info,Goal),!, format('~N~n'),
-  dmsg(calling(Goal)),!, ignore(once((catch(my_menu_call(Goal),'$aborted',fail)*->true;(fail,trace,arcST,rrtrace(Goal))))),!,
+  pp(calling(Goal)),!, ignore(once((catch(my_menu_call(Goal),'$aborted',fail)*->true;(fail,trace,arcST,rrtrace(Goal))))),!,
    read_pending_codes(user_input,_Ignored,[]),!.
 do_menu_key(Key):- maybe_call_code(Key),!.
 do_menu_key(Key):- atom(Key),atom_length(Key,1),atom_codes(Key,Codes), format("~N % Menu: didn't understand: '~w' ~q ~n",[Key,Codes]),once(mmake).
+do_menu_key(Key):- \+ atom(Key), catch(text_to_string(Key,Str),_,fail),Key\==Str,catch(atom_string(Atom,Str),_,fail),do_menu_key(Atom).
+do_menu_key(Key):- fix_id(Key,TestID),set_current_test(TestID),!,print_test.
 do_menu_key(_).
 
+maybe_call_code(Key):- \+ atom(Key), !, 
+ catch(text_to_string(Key,Str),_,fail),Key\==Str,catch(atom_string(Atom,Str),_,fail),maybe_call_code(Atom).
 maybe_call_code(Key):- atom_length(Key,Len),Len>2,
  catch(atom_to_term(Key,Term,Vs),_,fail),!, 
  locally(nb_setval('$variable_names',Vs),
@@ -197,7 +227,20 @@ call_dsl:- repeat, write("\nYour DSL Goal: "), read_line_to_string(user_input,Se
 nth10(X,Y,Z):- var(X),!,nth0(N,Y,Z), X is N + 10 .
 nth10(X,Y,Z):- N is X -10, nth0(N,Y,Z).
 
-do_test_number(Num):- list_of_tests(L), nth10(Num,L,E),!, cls_z, get_current_grid(G), set_flag(indiv,0), my_submenu_call(ig(E,G)),!.
+do_test_number(Num):- list_of_tests(L), 
+  wdmsg(do_test_number(Num)),nth10(Num,L,E),!,do_test_pred(E).
+
+do_test_pred(E):- 
+  get_current_grid(G),
+  set_flag(indiv,0), 
+  wdmsg(do_test_pred(E)),
+  my_submenu_call(no_bfly(maybe_test(E,G))),!.
+
+maybe_test(E,_):- \+ missing_arity(E,0), !, call(E).
+maybe_test(E,G):- \+ missing_arity(E,1), call(E,G),!.
+maybe_test(E,G):- ig(E,G).
+
+
 
 get_current_grid(G):- get_current_test(T),kaggle_arc_io(T,_,_,G).
 
@@ -222,11 +265,8 @@ do_menu_codes([27,91,65]):- !, prev_pair.
 % down arrow
 do_menu_codes([27,91,66]):- !, next_pair.
 
-interactive_test(X):- set_current_test(X), print_test(X), interactive_test_menu.
-interactive_test_menu:- 
- ((
-  repeat, write_menu('i'), 
-   catch((interact),'$aborted',fail))),!.
+interactive_test(X):- set_current_test(X), print_test(X), interact.
+
 run_all_tests:- 
   repeat,
    run_next_test,
@@ -352,7 +392,7 @@ next_pair:-
   trn_tst(Trn,Tst),
   (kaggle_arc(TestID,Trn+N2,_,_)-> ExampleNum=Trn+N2 ; ExampleNum=Tst+0),
   nb_setval(example,ExampleNum),
-  print_single_test(TestID>ExampleNum),!.
+  print_single_pair(TestID>ExampleNum),!.
 
 prev_pair:- 
   get_current_test(TestID),
@@ -361,7 +401,7 @@ prev_pair:-
   trn_tst(Trn,Tst),
   (kaggle_arc(TestID,Trn+N2,_,_)-> ExampleNum=Trn+N2 ; ExampleNum=Tst+0),
   nb_setval(example,ExampleNum),
-  print_single_test(TestID>ExampleNum),!.
+  print_single_pair(TestID>ExampleNum),!.
 
 
 trn_tst(trn,tst).
@@ -377,7 +417,7 @@ new_current_test_info(WasTestID,TestID):-
   ignore((
   %luser_getval(task,TestID),
   get_current_test(TestID),
-  dmsg(fav(TestID,[])),
+  pp(fav(TestID,[])),
   %luser_setval(example,tst+0),
   luser_setval(last_test_name,TestID))),
   save_last_test_name,
@@ -421,7 +461,7 @@ fully_test:- print_test, !, train_test, !, solve_test, !.
 run_next_test:- notrace(next_test), fully_test.
 
 info(Info):- nonvar(Info),wdmsg(Info).
-system:demo:- update_changed_files,!, interactive_test_menu.
+system:demo:- update_changed_files,!,interact.
 :- export(demo/0).
 rat:- info("Run all tests"), run_all_tests.
 noninteractive_test(X):- time(ignore(forall(arc1(true,X),true))).
@@ -474,10 +514,11 @@ available_fg_colors(Avails):- findall(Color,enum_fg_colors(Color),Avails).
 %print_test(TName):- !, parcCmt(TName).
 print_qtest:- get_current_test(TestID),print_qtest(TestID).
 
-print_single_test:- get_current_test(TestID),print_single_test(TestID).
+print_single_pair:- get_current_test(TestID),print_single_pair(TestID).
 
+:- luser_defval('$grid_mode',dots).
 print_qtest(TestID):- \+ luser_getval('$grid_mode',dots),!,print_test(TestID).
-print_qtest(TestID):- !, print_single_test(TestID),!.
+print_qtest(TestID):- !, print_single_pair(TestID),!.
 print_qtest(TestID):-
     dash_chars,nl,nl,nl,dash_chars,
      ignore(luser_getval(example,ExampleNum)),
@@ -488,7 +529,7 @@ print_qtest(TestID):-
        format('~Ntestcase(~q,"\n~@").~n~n~n',[TestID>ExampleNum,print_side_by_side(cyan,In1,NameIn,_LW,Out1,NameOut+TestID)])))),
        write('%= '), parcCmt(TestID).
 
-print_single_test(TName):-
+print_single_pair(TName):-
   fix_test_name(TName,TestID,ExampleNum),
   ignore(luser_getval(example,ExampleNum)),
   kaggle_arc(TestID,ExampleNum,In,Out),

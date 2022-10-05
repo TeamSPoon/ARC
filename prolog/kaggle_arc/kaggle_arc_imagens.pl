@@ -500,7 +500,7 @@ clear_shape_lib:- findall(Name,in_shape_lib(Name,_Obj),Gallery),
 
 % ===========================================================
 show_shape(Shape):- is_grid(Shape),!,
- dash_chars, writeln(grid_based_shape), print_grid(Shape).
+  print_grid(grid_based_shape,Shape).
 
 show_shape(Shape):- ground(Shape),!,  
   ignore(print_info(Shape)),

@@ -468,7 +468,7 @@ nb_set_nth1(N,[_|Row],C):- Nm1 is N -1, nb_set_nth1(Nm1,Row,C).
 
   
 :- decl_pt(prop_o,grid_edges(is_grid,grid)).
-grid_edges(In,Edges):-
+grid_edges(In,Edges):- 
   into_grid(In,Grid),
   get_edges(Grid,Top,Bottem,Left,Right),
   % append([Top,Bottem,Left,Right],List), rectify(List,Rect), 

@@ -214,15 +214,19 @@ with_webui(Goal):- ignore(call(Goal)),!.
 with_webui(Goal):- ignore(when_arc_webui(with_http(Goal))).
 %:- initialization arc_http_server.
 
-logicmoo_webui:-
+ld_logicmoo_webui:-
+   exists_source(library(logicmoo_webui)), use_module(library(logicmoo_webui)), 
   system:use_module(library(xlisting/xlisting_web)),
   system:use_module(library(xlisting/xlisting_web_server)),
-   exists_source(library(logicmoo_webui)), use_module(library(logicmoo_webui)), 
-   catch_log(dmsg((?-webui_start_swish_and_clio))),
-   (catch_log(call(call,webui_start_swish_and_clio))).
-logicmoo_webui.
+  catch_log(dmsg((?-webui_start_swish_and_clio))).
+ld_logicmoo_webui.
 
-:- (current_prolog_flag(load_arc_webui,true)->catch_log(logicmoo_webui) ; true).
+logicmoo_webui:- ld_logicmoo_webui,catch_log(webui_start_swish_and_clio).
+
+:- ld_logicmoo_webui.
+:- (current_prolog_flag(load_arc_webui,true)->catch_log(ld_logicmoo_webui) ; true).
+
+    
 
 
 %:- autoload_all.
@@ -509,6 +513,19 @@ when_arc_webui(G):- toplevel_pp(http),call(G),!.
 when_arc_webui(G):- toplevel_pp(swish),call(G),!.
 when_arc_webui(G):- ignore(if_arc_webui(G)).
 
+arc_option(grid_size_only):- !.
+arc_option(extreme_cache):- !.
+%arc_option(grid_size_only):- !,fail.
+arc_option(P):- \+ luser_getval(P,f).
+
+:- luser_defval(no_individuator, f).
+
+with_luser(N,V,Goal):-
+  luser_getval(N,OV),
+  setup_call_cleanup(
+    luser_setval(N,V),
+    Goal,
+    luser_getval(N,OV)).
 
 luser_getval(N,V):- if_arc_webui(((current_predicate(get_param_req_or_session/2),get_param_req_or_session(N,V), V\=='',V\==""))).
 luser_getval(N,V):- arc_user(ID),luser_getval(ID,N,V),!.
@@ -1090,9 +1107,13 @@ user:portray(Grid):-
 
 :- set_stream(current_output,encoding(utf8)).
 
+:- (current_prolog_flag(load_arc_webui,true)->catch_log(logicmoo_webui) ; true).
 :- current_prolog_flag(load_arc_webui,true) -> catch_log(start_arc_server) ; true.
 
-bfly_startup:-    
+:- set_long_message_server('https://logicmoo.org:17771').
+
+bfly_startup:-
+   set_toplevel_pp(bfly),
    asserta(was_inline_to_bfly),inline_to_bfly_html,
    bfly,
    catch_log(webui_tests),

@@ -23,15 +23,17 @@ solve_easy(Name):-
 
 try_something_easy(rot180).
 try_something_easy(=).
-try_something_easy(run_dsl(E)):- test_info(_,human(E)).
+try_something_easy(run_dsl(E)):- fail, test_info(_,human(E)).
 
 maybe_try_something_easy(I,M,P2):-  try_something_easy(P2), call(P2,I,M).
 maybe_try_something_easy(I,M,Did):- fail_over_time(4,try_something(Did,I,M),fail),!.
 
 try_easy_io(Name,I,O):-
  ignore((
-  Template = try_something(W,Did,I,M),
-  findall(Template,(maybe_try_something_easy(I,M,Did),count_changes(M,O,1,W),(W==1->!;true)),List),
+  Template = try_something(W,Did,I,M,SS),
+  findall(Template,
+    (wots(SS,weto(maybe_try_something_easy(I,M,Did))),count_changes(M,O,1,W),(W==1->!;true)),
+     List),
   sort(List,[Template|_]),
   %ignore((call(P2,I,II),call(P2,O,OO),
   %reduce_grid(GridIn+GridOut,IOps,II+OO),!,

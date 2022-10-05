@@ -227,6 +227,9 @@ ptcol(P):- pp(P).
 
 ptc(Color,Call):- pp(Color,call(Call)).
 
+wqln(X):- wqnl(X).
+wqnl(X):- is_list(X),!,g_out(wqs(X)).
+wqnl(X):- probably_nl,format('~q',[X]),probably_nl.
 
 pp(_):- is_print_collapsed,!.
 pp(P):- probably_nl, pp_no_nl(P),!,probably_nl.
@@ -274,33 +277,41 @@ lock_doing(Lock,G,Goal):-
   locally(nb_setval(Lock,[G|Was]),Goal).
 
 pp_hook_g(G):- \+ plain_var(G), \+ nb_current(arc_can_portray,nil),
-  lock_doing(in_pp_hook_g,G,pp_hook_g1(G)).
+  lock_doing(in_pp_hook_g,G,pp_hook_g0(G)).
 
-
+pp_hook_g0(_):- in_pp(bfly),!,fail.
+pp_hook_g0(G):- wots(S,in_bfly(f,pp_hook_g1(G))),write(S).
 
 mass_gt1(O1):- into_obj(O1,O2),mass(O2,M),!,M>1.
 
-% Pretty printing 
+% Pretty printing
+
+as_grid_string(O,S):- wots(S,debug_as_grid(O)).
+as_pre_string(O,S):- wots(S,debug_as_grid(O)).
+
 pp_hook_g1(O):-  plain_var(O), !, fail.
 pp_hook_g1(O):-  attvar(O), !, is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
 
-pp_hook_g1(shape(O)):-  is_points_list(O), write('shape('),debug_as_grid(O),write(')').
-pp_hook_g1(O):-  is_points_list(O),debug_as_grid(O), !.
+pp_hook_g1(shape(O)):-  is_points_list(O), as_grid_string(O,S), print(shape(S)),!.
+pp_hook_g1(O):-  is_points_list(O),as_grid_string(O,S),print(S),!.
 pp_hook_g1(O):-  is_real_color(O), color_print(O,call(writeq(O))),!.
 pp_hook_g1(O):-  is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
 pp_hook_g1(O):-  is_grid(O), 
 % \+ (sub_term(E,O),compound(E),E='$VAR'(_)), 
   catch((wots(S,print_grid(O)),strip_vspace(S,SS),ptc(orange,(format('"  ~w  "',[SS])))),_,fail).
+
+pp_hook_g1(_):-  \+ in_pp(ansi),!, fail.
+
 pp_hook_g1(O):- atom(O), atom_contains(O,'o_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
   resolve_reference(O,Var), O\==Var, \+ plain_var(Var),!, 
   write(' '), writeq(O), write(' /* '), debug_as_grid(Var), write(' */ ').
+
 pp_hook_g1(O):-  is_object(O),pp_no_nl(O), !.
 pp_hook_g1(O):-  is_group(O),pp_no_nl(O), !.
 
 %pp_hook_g1(change_obj(N,O1,O2,Sames,Diffs)):-  showdiff_objects5(N,O1,O2,Sames,Diffs),!.
 
-
-pp_hook_g1(O):-  is_map(O),write('map'),!.
+pp_hook_g1(O):-  is_map(O),data_type(O,DT), writeq('..map.'(DT)),!.
 pp_hook_g1(O):-  is_gridoid(O),debug_as_grid(O), !.
 %pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  with_tagged('h5',collapsible_section(object,[O1, O2],pp(O))).
 %pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff), collapsible_section(object,showdiff_objects(O1,O2)),!.
@@ -334,36 +345,38 @@ print_ansi_tree(P,_):- catch(arc_portray(P),_,fail),!.
 print_ansi_tree(P,_OL):- catch(print_tree_no_nl(P),_,fail),!.
 
 wqs(G):- is_map(G), !, write_map(G,'wqs').
+wqs(X):- plain_var(X), !, wqs(plain_var(X)). 
+wqs(X):- attvar(X), !, wqs(attvar(X)). 
+wqs(nl):- !, nl. wqs(''):-!. wqs([]):-!.
 wqs(X):- is_grid(X), !, print_grid(X).
 wqs(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 wqs(X):- is_object(X), !, show_shape(X).
-wqs(X):- plain_var(X), !, wqs(plain_var(X)). wqs(nl):- !, nl. wqs(''):-!. wqs([]):-!.
 %wqs([H1,H2|T]):- string(H1),string(H2),!, write(H1),write_nbsp, wqs([H2|T]).
 %wqs([H1|T]):- string(H1),!, write(H1), wqs(T).
 wqs([skip(_)|T]):- !,wqs(T).
 %wqs([H|T]):- compound(H),!, writeq(H), wqs(T).
 wqs([H|T]):- !, wqs(H),need_nl(H,T), wqs(T).
-wqs(C):- compound(C),wqs1(C),!.
 wqs(call(C)):- !, call(C).
 wqs(C):- is_color(C),!,wqs(color_print(C,C)).
-
 wqs(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 wqs(X):- \+ compound(X),!, write_nbsp, write(X).
+wqs(C):- compound(C),wqs1(C),!.
 wqs(S):- term_contains_ansi(S), !,write_nbsp, write_keeping_ansi(S).
-wqs(X):- write_nbsp, writeq(X).
+wqs(X):- write_nbsp,writeq(X).
 
 
 wqs1(format(C,N)):- !, format(C,N).
 wqs1(writef(C,N)):- !, writef(C,N).
-wqs1(pp(C)):- !, write('pp('),pp(C),write(')').
-wqs1(ppt(C)):- !, write('ppt('),ppt(C),write(')').
-wqs1(g(C)):- !, write_nbsp, bold_print(writeq(g(C))).
-wqs1(io(C)):- !, write_nbsp, bold_print(writeq(io(C))).
-wqs1(q(C)):- !, write_nbsp, writeq(C).
+wqs1(pp(C)):- \+ string(C), wots(S,pp(C)),wqs(pp(S)).
+wqs1(ppt(C)):- \+ string(C), wots(S,ppt(C)),wqs(ppt(S)).
+wqs1(g(C)):-  \+ string(C), wots(S,bold_print(wqs(C))),wqs(g(S)).
+wqs1(io(C)):-  \+ string(C),wots(S,bold_print(wqs(C))),wqs(io(S)).
+wqs1(q(C)):-  \+ string(C),wots(S,writeq(C)),wqs(q(S)).
+
 wqs1(uc(C,W)):- !, write_nbsp, color_print(C,call(underline_print(format("\t~@",[wqs(W)])))).
-wqs1(cc(C,N)):- attvar(C), get_attrs(C,PC), !, wqs(ccc(PC,N)).
-wqs1(cc(C,N)):- var(C), sformat(PC,"~p",[C]), !, wqs(ccc(PC,N)).
-wqs1(cc(C,N)):- !, write(' cc('),color_print(C,C),write(','), writeq(N), write(')').
+wqs1(cc(C,N)):- N\==0,attvar(C), get_attrs(C,PC), !, wqs(ccc(PC,N)).
+wqs1(cc(C,N)):- N\==0,var(C), sformat(PC,"~p",[C]), !, wqs(ccc(PC,N)).
+wqs1(cc(C,N)):- \+ string(C), wots(S,color_print(C,C)), wqs(cc(S,N)).
 wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
 wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
 
@@ -377,9 +390,6 @@ need_nl(_,_):- arc_webui,!.
 need_nl(H,[P|_]):- \+ is_breaker(H),is_breaker(P),line_position(user_output,L1),L1>80,nl,bformatc1('\t\t').
 need_nl(_,_):- line_position(user_output,L1),L1>160,nl,bformatc1('\t\t').
 need_nl(_,_).
-wqln(X):- wqnl(X).
-wqnl(X):- is_list(X),!,g_out(wqs(X)).
-wqnl(X):- probably_nl,format('~q',[X]),probably_nl.
 
 dash_chars:- dash_chars(40),!.
 dash_chars(H):- integer(H), dash_border(H).
@@ -443,7 +453,7 @@ gridoid_size(G,H,V):- is_gridoid(G),!,grid_size(G,H,V).
 print_side_by_side(X,Y,Z):- g_out((nl,print_side_by_side0(X,Y,Z))).
 
 print_side_by_side0([],_,[]):-!.
-print_side_by_side0(C1-wqs(S1),LW,C2-wqs(S2)):- nonvar(S1),!,
+print_side_by_side0(C1-call(wqs(S1)),LW,C2-call(wqs(S2))):- nonvar(S1),!,
   print_side_by_side0(C1,LW,C2),probably_nl,
   print_side_by_side0(wqs(S1),LW,wqs(S2)).
 print_side_by_side0(C1-A,LW,C2-B):- nonvar(A),!,
@@ -806,10 +816,12 @@ print_grid_pad(O1,SH,SV,EH,EV,Grid):-
   wots(S,print_grid2(SH,SV,EH,EV,GridI)),
   print_w_pad(O1,S),!.
 
-
-print_grid2(SH,SV,EH,EV,GridI):- bfly_html_pre(print_grid_ansi(SH,SV,EH,EV,GridI)),!.
+print_grid2(SH,SV,EH,EV,GridI):- in_pp(ansi),!,ignore(print_grid_ansi(SH,SV,EH,EV,GridI)).
+print_grid2(SH,SV,EH,EV,GridI):- in_pp(bfly),!,az_ansi(ignore(print_grid_ansi(SH,SV,EH,EV,GridI))).
 print_grid2(SH,SV,EH,EV,GridI):- \+ in_pp(bfly), \+ in_pp(ansi), arc_webui,!, print_grid_html(SH,SV,EH,EV,GridI),nl.
+print_grid2(SH,SV,EH,EV,GridI):- !, bfly_html_pre(print_grid_ansi(SH,SV,EH,EV,GridI)).
 print_grid2(SH,SV,EH,EV,GridI):- ignore(print_grid_ansi(SH,SV,EH,EV,GridI)).
+
 print_grid_ss(H,V,G):- must_det_ll(print_grid0(H,V,G)).
 
 w_out(S):- toplevel_pp(bfly),!,correct_nbsp(S,SO),our_pengine_output(SO),!.
@@ -914,7 +926,7 @@ cpwui(C,G):- is_html_color(C),!, format('<font color="~w">~@</font>',[C,bformatc
 %cpwui((C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
 cpwui(C,G):- format('<font style="~w">~@</font>',[C,bformatc_or_at(G)]),!.
 
-bformatc_or_at(C):- wots(S,bformatc(C)), ( (S=="";atom_contains(S,"><")) -> write('@') ; write(S)).
+bformatc_or_at(C):- wots(S,bformatc(C)), ( (S=="";(fail,atom_contains(S,"><"))) -> write('@') ; write(S)).
 
 is_html_color(A):- \+ atom(A),!,fail.
 is_html_color(teal).
@@ -974,10 +986,9 @@ print_grid_html(Grid):-print_grid_html(_SH,_SV,_EH,_EV,Grid),!.
 print_grid_html(Name,Grid):-print_grid(_OH,_OV,Name,Grid),!.
 
 print_grid_html(SH,SV,EH,EV,Grid):- print_grid_http(SH,SV,EH,EV,Grid),!.
+
 print_grid_http(SH,SV,EH,EV,Grid):- bg_sym(BGC),
-
  arc_html_format(`<code>tbody td:nth-of-type(odd){ background:rgba(255,255,136,0.5); }</code>`),
-
 (plain_var(EH) ->grid_size(Grid,EH,_) ; true),ignore(SH=1),
   (plain_var(EV) ->grid_size(Grid,_,EV) ; true),ignore(SV=1),
    output_html(table([ class([table, 'table-striped']), 

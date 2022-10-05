@@ -56,10 +56,12 @@ compile_and_save_test(TestID):-
   %ignore(retract(saved_training(TestID))),
   %ignore(retract(process_test(TestID))),
  once((
+ ignore(( 
+  \+ arc_option(extreme_cache),
   retractall(arc_test_property(TestID,_,_)),
   test_name_output_file(TestID,File),
   unload_file(File),
-  (exists_file(File)->delete_file(File);true),
+  (exists_file(File)->delete_file(File);true))),
   arc_assert(saved_training(TestID)),
   arc_assert(process_test(TestID)),
   detect_all_training_hints(TestID),
@@ -380,6 +382,7 @@ grid_hint_recolor(IO,In,Out,Hint):- grid_hint_recolor1(IO,In,Out,Hint).
 
 grid_hint_recolor1(IO,In,Out,Hint):-  grid_hint_io(cbg(black),IO,In,Out,Hint).
 
+
 %maybe_fail_over_time(Time,Goal):- fail_over_time(Time,Goal).
 maybe_fail_over_time(_Time,Goal):- once(Goal).
 
@@ -397,7 +400,7 @@ c_proportional(I,O,R):- proportional(I,O,R).
 %grid_hint_io(MC,IO,In,Out,find_ogs):- maybe_fail_over_time(1.2,find_ogs(_,_,In,Out)).
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- comp_o(IO),  c_proportional(In,Out,Hint).
 
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- grid_size(In,IH,IV),grid_size(Out,OH,OV),grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):-  \+ arc_option(grid_size_only), grid_size(In,IH,IV),grid_size(Out,OH,OV),grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
 
 grid_hint_io(MC,IO,In,Out,(=@=(MC,IO))):- In=@=Out, !.
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,c(MC,IO,Hint))):- grid_hint_io_ogs(In,Out,Hint).
@@ -540,6 +543,7 @@ gather_chunks(Color,In,Chunks,X,Y,GX,GY,BorderNumsX,BorderNumsY):-
 
 has_x_columns(In,X,Color,BorderNums):- rot90(In,In90), !, has_y_rows(In90,X,Color,BorderNums).
 
+has_y_rows(_In,_Y,_Color,_BorderNums):- arc_option(grid_size_only), !,fail.
 has_y_rows(In,Y,Color,BorderNums):- plain_var(Color), unique_colors(In,Colors),reverse(Colors,ColorsR),!,
   member(Color,ColorsR),is_color(Color), 
   has_y_rows(In,Y,Color,BorderNums).

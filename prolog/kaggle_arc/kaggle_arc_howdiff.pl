@@ -567,7 +567,13 @@ showdiff_objects(change_obj(N,O1,O2,Sames,Diffs)):-
  showdiff_objects5(N,O1,O2,Sames,Diffs),!.
 showdiff_objects(XY):- pp(showdiff_objects(XY)),!.
 
-showdiff_objects5(Why,OO1,OO2,Sames,Diffs):- 
+showdiff_objects5(Why,OO1,OO2,Sames,Diffs):-
+  wots(SS,showdiff_objects_now(Why,OO1,OO2,Sames,Diffs)),
+  format('~N'), wots(S,add_long_web_message(SS)),
+  format('~N'),!,bfly_in_out(write_expandable3(false,S,bfly_in_out(write(SS)))),format('~N').
+
+
+showdiff_objects_now(Why,OO1,OO2,Sames,Diffs):- 
  must_det_ll((
   into_obj(OO1,O1),into_obj(OO2,O2),
   dash_chars,dash_chars,
@@ -1005,7 +1011,7 @@ ratio_for0(Ratio,Out,In):- catch(NRatio is rationalize(In/Out),error(evaluation_
 :- decl_pt(prop_g,each_object(is_grid, set)).
 
 %each_object(_Grid,[]):-!.
-each_object(Grid,ListO):- arc_memoized(individuate(complete,Grid,List)),!, simplify_objs(List,ListO).
+each_object(Grid,ListO):- \+ arc_option(grid_size_only), arc_memoized(individuate(complete,Grid,List)),!, simplify_objs(List,ListO).
 %each_object(Grid,ListO):- print_collapsed(100,memoized(individuate(complete,Grid,List))),!, simplify_objs(List,ListO).
 
 simplify_objs(I,O):-is_list(I),!,maplist(simplify_objs,I,O).
