@@ -122,7 +122,7 @@ swap_kv([],[]).
 
 
 arc_portray_pair(Ps,K,Val,TF):- 
- probably_nl,
+ nl_if_needed,
  arc_portray_1_pair(Ps,K,Val,TF),
  probably_nl.
 
@@ -229,24 +229,33 @@ ptc(Color,Call):- pp(Color,call(Call)).
 
 wqln(X):- wqnl(X).
 wqnl(X):- is_list(X),!,g_out(wqs(X)).
-wqnl(X):- probably_nl,format('~q',[X]),probably_nl.
+wqnl(X):- nl_if_needed,format('~q',[X]),probably_nl.
 
 pp(_):- is_print_collapsed,!.
-pp(P):- probably_nl, pp_no_nl(P),!,probably_nl.
+pp(P):- nl_if_needed, 
+ az_ansi(pp_no_nl(P)),!,probably_nl.
 
 pp_no_nl(P):- var(P),!,pp(var_pt(P)),nop((dumpST,break)).
-pp_no_nl(P):- atomic(P),atom_contains(P,'~'),!,format(P).
+pp_no_nl(P):- atom(P),atom_contains(P,'~'),!,format(P).
 pp_no_nl(G):- is_map(G), !, write_map(G,'pp').
-pp_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+%pp_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 pp_no_nl(P):- \+ \+ (( pt_guess_pretty(P,GP),ptw(GP))).
 %pp(P):-!,writeq(P).
-%ptw(P):- quietlyd(print_tree_nl(P)),!.
-ptw(_):- probably_nl,fail.
+%ptw(P):- quietlyd(p_p_t_nl(P)),!.
+%ptw(_):- nl_if_needed,fail.
 ptw(P):- var(P),!,ptw(var_ptw(P)),nop((dumpST,break)).
 ptw(G):- is_map(G), !, write_map(G,'ptw').
 ptw(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-ptw(P):- quietlyd(print_tree_no_nl(P)),!.
+ptw(P):- quietlyd(p_p_t_no_nl(P)),!.
 %ptw(P):- quietlyd(write_term(P,[blobs(portray),quoted(true),quote_non_ascii(false), portray_goal(print_ansi_tree),portray(true)])),!.
+print_ansi_tree(S,_):- term_is_ansi(S), !, write_keeping_ansi(S).
+print_ansi_tree(P,_):- catch(arc_portray(P),_,fail),!.
+print_ansi_tree(P,_OL):- catch(p_p_t_no_nl(P),_,fail),!.
+
+p_p_t_no_nl(T):- \+ is_string_output, line_position(current_output,N),  N<2, !, print_tree_no_nl(T).
+p_p_t_no_nl(T):- az_ansi(print_tree_no_nl(T)).
+%p_p_t_nl(T):- az_ansi(print_tree_nl(T)).
+%p_p_t(T):- az_ansi(print_tree(T)).
 
 pt_guess_pretty(P,O):- \+ nb_current(in_pt_guess_pretty,t), locally(nb_setval(in_pt_guess_pretty,t),pt_guess_pretty_1(P,O)).
 pt_guess_pretty(O,O).
@@ -340,9 +349,6 @@ strip_vspace(S,Stripped):- string_concat(SS,'\t',S),!,strip_vspace(SS,Stripped).
 %strip_vspace(S,Stripped):- split_string(S, "", "\t\r\n", [Stripped]).
 strip_vspace(S,S).
 
-print_ansi_tree(S,_):- term_is_ansi(S), !, write_keeping_ansi(S).
-print_ansi_tree(P,_):- catch(arc_portray(P),_,fail),!.
-print_ansi_tree(P,_OL):- catch(print_tree_no_nl(P),_,fail),!.
 
 wqs(G):- is_map(G), !, write_map(G,'wqs').
 wqs(X):- plain_var(X), !, wqs(plain_var(X)). 
@@ -381,6 +387,7 @@ wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
 wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
 
 %probably_nl :- arc_webui,!,write('<br/>').
+nl_if_needed :- format('~N').
 probably_nl :- format('~N').
 %write_nbsp:- arc_webui,!,write('&nbsp;').
 write_nbsp:- write(' ').
@@ -393,7 +400,7 @@ need_nl(_,_).
 
 dash_chars:- dash_chars(40),!.
 dash_chars(H):- integer(H), dash_border(H).
-dash_chars(S):- probably_nl,dash_chars(60,S),probably_nl.
+dash_chars(S):- nl_if_needed,dash_chars(60,S),probably_nl.
 dash_chars(H,_):- H < 1,!.
 dash_chars(H,C):- forall(between(0,H,_),bformatc1(C)).
 
@@ -406,7 +413,7 @@ dash_uborder_no_nl(Width):- WidthM1 is Width-1, uborder(Short,Long),
   write(' '), write(Short),dash_chars(WidthM1,Long),!.
 %dash_uborder_no_nl(Width):- WidthM1 is Width-1, write_nbsp, bformat('¯'),dash_chars(WidthM1,'¯¯'),!.
 
-dash_uborder(Width):- probably_nl,dash_uborder_no_nl(Width),nl.
+dash_uborder(Width):- nl_if_needed,dash_uborder_no_nl(Width),nl.
 
 uborder('-','--'):- stream_property(current_output,encoding(utf8)),!.
 uborder('¯','¯¯'):- !. %stream_property(current_output,encoding(text)).
@@ -415,8 +422,8 @@ uborder('¯','¯¯'):- !. %stream_property(current_output,encoding(text)).
 dash_border_no_nl_1:-  line_position(current_output,0),!, bformatc1(' ___ ').
 dash_border_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc1('___ ').
 dash_border_no_nl_1:- bformatc1(' ___ ').
-dash_border_no_nl(1):- probably_nl,!,dash_border_no_nl_1.
-dash_border_no_nl(Width):- probably_nl, WidthM1 is Width-1, bformatc1(' _'),dash_chars(WidthM1,'__').
+dash_border_no_nl(1):- nl_if_needed,!,dash_border_no_nl_1.
+dash_border_no_nl(Width):- nl_if_needed, WidthM1 is Width-1, bformatc1(' _'),dash_chars(WidthM1,'__').
 
 dash_border(Width):- !, dash_border_no_nl(Width),nl,!.
 
@@ -433,7 +440,7 @@ arcdbg(G):- wdmsg(G).
 %user:portray(Grid):- ((\+ tracing, is_group(Grid),print_grid(Grid))).
 %user:portray(Grid):- quietlyd((is_object(Grid),print_grid(Grid))).
 
-banner_lines(Color):- probably_nl,
+banner_lines(Color):- nl_if_needed,
   color_print(Color,'--------------------------------------------------------------'),nl,
   color_print(Color,'=============================================================='),nl,
   color_print(Color,'--------------------------------------------------------------'),nl,
@@ -454,10 +461,10 @@ print_side_by_side(X,Y,Z):- g_out((nl,print_side_by_side0(X,Y,Z))).
 
 print_side_by_side0([],_,[]):-!.
 print_side_by_side0(C1-call(wqs(S1)),LW,C2-call(wqs(S2))):- nonvar(S1),!,
-  print_side_by_side0(C1,LW,C2),probably_nl,
+  print_side_by_side0(C1,LW,C2),nl_if_needed,
   print_side_by_side0(wqs(S1),LW,wqs(S2)).
 print_side_by_side0(C1-A,LW,C2-B):- nonvar(A),!,
-  print_side_by_side0(C1,LW1,C2),probably_nl,
+  print_side_by_side0(C1,LW1,C2),nl_if_needed,
   print_side_by_side0(A,LW2,B),
   ignore(max_min(LW1,LW2,LW,_)).
 
@@ -553,11 +560,11 @@ print_side_by_side_lists(Pre,[],W1,[E2|L2],W2):-
   with_output_to(atom(S),dash_chars(Pre,' ')), write_padding(S,W1,E2,W2),
   print_side_by_side_lists(Pre,[],W1,L2,W2).
 
-desc(A,B):- wots(S1,A),wots(S2,B),probably_nl,format('~n'),dash_chars,write(S1),probably_nl,write(S2),probably_nl.
+desc(A,B):- wots(S1,A),wots(S2,B),nl_if_needed,format('~n'),dash_chars,write(S1),nl_if_needed,write(S2),probably_nl.
 
 write_padding(E1,_W1,E2,LW):- %write_nbsp,
     W1 = LW,
-   probably_nl,as_str(E1,S1), as_str(E2,S2), 
+   nl_if_needed,as_str(E1,S1), as_str(E2,S2), 
    write(S1), pre_s2(W1,S2), probably_nl.
 
 pre_s2(_,S2):- atom_contains(S2,'_'), write('    '),write(S2).
@@ -616,7 +623,7 @@ print_side_by_side(TitleColor,G1,N1,LW,G2,N2):-
 
 print_side_by_side4d(TitleColor,S1,F1,N1,W0,S2,F2,N2):- number(W0), W0 < 0, LW is -W0, !, print_side_by_side4d(TitleColor,S2,F2,N2,LW,S1,F1,N1).
 print_side_by_side4d(TitleColor,S1,F1,N1,_LW,S2,F2,N2):- 
-   probably_nl, write('\t'),format_u(TitleColor,F1,[N1,S1]),write('\t\t'),format_u(TitleColor,F2,[N2,S2]),write('\n'),!.
+   nl_if_needed, write('\t'),format_u(TitleColor,F1,[N1,S1]),write('\t\t'),format_u(TitleColor,F2,[N2,S2]),write('\n'),!.
 
 toUpperC(A,AU):- A==[],!,AU='  []  '.
 toUpperC(A,AU):- string(A),!,AU=A.
@@ -681,7 +688,7 @@ print_with_pad(Goal):-
   print_w_pad(O1,S).
 
 print_w_pad(Pad,S):- atomics_to_string(L,'\n',S)-> maplist(print_w_pad0(Pad),L).
-print_w_pad0(Pad,S):- probably_nl,dash_chars(Pad,' '), write(S).
+print_w_pad0(Pad,S):- nl_if_needed,dash_chars(Pad,' '), write(S).
 
 print_equals(_,N,V):- \+ compound(V),wqnl(N=V).
 print_equals(Grid,N,Ps):- is_object(Ps),grid_size(Grid,H,V),print_grid(H,V,N,Ps),!.
@@ -754,7 +761,7 @@ format_u(TitleColor,Format,Args):- quietlyd( ignore((underline_print(color_print
 print_grid(_,_,_,_):- is_print_collapsed,!.
 print_grid(OH,OV,Name,Out):- 
  quietly((
-  ignore((print_grid0(OH,OV,Out))),!,probably_nl,format('  '),
+  ignore((print_grid0(OH,OV,Out))),!,nl_if_needed,format('  '),
   ignore((data_type(Out,SS), toUpperC(Name,NameU),
   mesg_color(SS,TitleColor),
   format_u(TitleColor,"~w  (~w)",[NameU, SS]))))),!.
@@ -826,14 +833,14 @@ print_grid_ss(H,V,G):- must_det_ll(print_grid0(H,V,G)).
 
 w_out(S):- toplevel_pp(bfly),!,correct_nbsp(S,SO),our_pengine_output(SO),!.
 w_out(S):- is_webui,!,correct_nbsp(S,SO),our_pengine_output(SO),!.
-w_out(S):- probably_nl,write(S).
+w_out(S):- nl_if_needed,write(S).
 %w_out(SO):- pengines:pengine_output('</pre>'),pengines:pengine_output(SO),pengines:pengine_output('<pre class="console">'),!.
 
 :- meta_predicate(g_out(0)).
 :- export(g_out/1).
 g_out(G):- is_side(_),!,call(G).
-g_out(G):- \+ arc_webui,!,probably_nl,call(G),probably_nl.
-g_out(G):- nb_current(in_g_out,t),!,probably_nl,call(G),probably_nl.
+g_out(G):- \+ arc_webui,!,nl_if_needed,call(G),probably_nl.
+g_out(G):- nb_current(in_g_out,t),!,nl_if_needed,call(G),probably_nl.
 g_out(G):- locally(nb_setval(in_g_out,t), gg_out(G)).
 
 gg_out(G):- \+ toplevel_pp(ansi),!,bfly_html_goal(G).
@@ -1006,19 +1013,19 @@ print_grid_html_old(SH,SV,EH,EV,Grid):-
  %CSS = 'line-height: 1.2; font-stretch: ultra-extended; font-size:288px background-color: reset;',
  CSS = 'white-space: pre;',
  g_out(must_det_ll(( 
-  probably_nl, 
+  nl_if_needed, 
   ((plain_var(EH) ; plain_var(EV))->grid_size(Grid,EH,EV);true),
   Width is EH-SH, 
   (Width==0 -> DBW = 1 ; DBW is Width+1),
   once((with_style(CSS,dash_border_no_nl(DBW)))),
   bg_sym(BGC),
   forall(between(SV,EV,V),
-   with_style(CSS,((probably_nl,format('['),(format('<span style="~w">',[CSS])),
+   with_style(CSS,((nl_if_needed,format('['),(format('<span style="~w">',[CSS])),
      forall(between(SH,EH,H),
      ignore((((hv_cg_value(Grid,CG,H,V);/*grid_cpoint(Grid,CG-_,H,V);*/CG=BGC)->
         (once(print_gw1(CG))))))),write('&nbsp;]'),(write('</span>')))))),
   %print_g(H,V,C,LoH,LoV,HiH,HiV)
-  probably_nl,!,
+  nl_if_needed,!,
   once(with_style(CSS,dash_uborder_no_nl(DBW)))))),!.
 
 grid_colors(GridI,WGrid):-
@@ -1036,7 +1043,7 @@ grid_colors(GridI,WGrid):-
 
 print_grid_ansi(SH,SV,EH,EV,GridI):-
  must_det_ll((
-  probably_nl, 
+  nl_if_needed, 
   %maybe_grid_numbervars(GridI,Grid),
   GridI=Grid,
   ((plain_var(EH) ; plain_var(EV))->grid_size(Grid,EH,EV);true),
@@ -1045,13 +1052,13 @@ print_grid_ansi(SH,SV,EH,EV,GridI):-
   once((dash_border_no_nl(DBW))),
   bg_sym(BGC),
   forall(between(SV,EV,V),
-   ((probably_nl,format('|'),
+   ((nl_if_needed,format('|'),
      forall(between(SH,EH,H),
       ignore((
        (((hv_cg_value(Grid,CG,H,V);hv_c_value(Grid,CG,H,V);/*grid_cpoint(Grid,CG-_,H,V);*/CG=BGC))->
         (once(print_gw1(CG);write('??')));write('?f'))))),
      write(' |')))),
-  probably_nl,!,
+  nl_if_needed,!,
   once((dash_uborder_no_nl(DBW))))), 
   nop((    
      (( \+ ground(GridI));sub_var(wbg,GridI);sub_var(bg,GridI);sub_var(wfg,GridI);sub_var(fg,GridI)),

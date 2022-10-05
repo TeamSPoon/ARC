@@ -122,7 +122,7 @@ report_unique(Dict):-
   maplist_e(tersify,Group,GroupO),
   maplist_e(tersify,Obj,ObjO),
   %(Obj\==[] -> ignore(print_grid(Obj)) ; true),
-  format('~N'), print_tree_nl(what_unique(ObjO=[ActualCount/ActualGroupSize-Trait],sharedWith=SharedWithO,
+  format('~N'), pp(what_unique(ObjO=[ActualCount/ActualGroupSize-Trait],sharedWith=SharedWithO,
   setL/listL=SetL/ListL,others=HTraitSetO,how=How,
   groupSizeMask=GroupSizeMask,group:GroupO,countMask=CountMask,otherL=OtherL)))).
 

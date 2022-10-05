@@ -287,7 +287,7 @@ list_common_props_so_far(TestID):-
   call((format('~N % ~w: ~s.~n',[list_common_props,SS]))),
   !.
 
-ptv1(T):- format('~N'),(ground(T) -> color_print(cyan,call(bold_print(print_tree(T)))) ; color_print(magenta,call(print_tree(T)))).
+ptv1(T):- format('~N'),(ground(T) -> color_print(cyan,call(bold_print(pp(T)))) ; color_print(magenta,call(pp(T)))).
 
 
 compute_all_test_hints(TestID):- 
@@ -306,7 +306,7 @@ compute_test_oo_hints(TestID):-
      (N2 is N+1, (kaggle_arc_io(TestID,(trn+N2),out,Out2)->true;kaggle_arc_io(TestID,(trn+0),out,Out2)),
       forall(grid_hint_recolor(o-o,Out1,Out2,Hint),add_hint(TestID,Hint,N)))),!.
 
-%ptv(T):- print_tree_no_nl(T),!.
+%ptv(T):- p_p_t_no_nl(T),!.
 ptv(T):-
   locally(b_setval('$portraying',[]), 
    \+ \+  ((numbervars(T,0,_,[attvars(skip),singletons(true)]), must_det_ll((ptv(T,_)))))).
@@ -317,7 +317,7 @@ ptv(T,_):- \+ compound(T), !, ptv2(T).
 ptv(T,_):- is_object(T),!,  debug_as_grid(T),!.
 %ptv(T,_):- T = showdiff( O1, O2), !, showdiff(O1, O2).
 %ptv(T,_):- T = change_obj( O1, O2, Diffs), !, showdiff(O1, O2), writeq(Diffs),!.
-ptv(T,_):- print_tree_no_nl(T),!.
+ptv(T,_):- pp(T),!.
 ptv(T,_):- 
  nb_current('$portraying',Was)
    ->  ((member(E,Was), T==E) -> ptv2(T) ; locally(b_setval('$portraying',[T|Was]),ptv0(T))) 
@@ -328,7 +328,7 @@ ptv0(T):-
   portray_goal(ptv),numbervars(true),singletons(true),blobs(portray),
   quote_non_ascii(true),brace_terms(false),ignore_ops(true)]))).
 
-ptv2(T):- print_tree_no_nl(T),!.
+ptv2(T):- p_p_t_no_nl(T),!.
 ptv2(T):- 
   \+ \+ ((numbervars(T,0,_,[]),prolog_pretty_print_term(T,[quoted(true),portray(true),
   numbervars(true),singletons(true),blobs(portray),

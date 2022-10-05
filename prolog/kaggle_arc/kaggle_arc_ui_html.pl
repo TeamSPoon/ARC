@@ -280,7 +280,7 @@ xlisting_whook:offer_testcase(F):- arc_find_tests(F).
 handler_logicmoo_right:-   
  when_arc_webui(arc_html_format([
    ignore((get_http_current_request(Request))),write('<pre>'),
-   print_tree(Request),offer_testcases,show_http_session,
+   pp(Request),offer_testcases,show_http_session,
    write('</pre>')])).
 
 handler_logicmoo_arc:- when_arc_webui(arc_html_format([call(handler_logicmoo_left)])).

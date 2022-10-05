@@ -927,159 +927,159 @@
       var blankLines = 0;
       for (y = k = 0, len = ref.length; k < len; y = ++k) {
         line = ref[y];
+        if (!line.dirty && !force) {
+          results.push(void 0);
+          continue;
+        }
+        active = y === this.y + this.shift && !this.cursorHidden;
         var weirdDiv = false;
-        this.checkUndefined(line);
-        if (line.dirty || force) {
-          active = y === this.y + this.shift && !this.cursorHidden;
+        var arj = (this.lineToDom(y, line, active));
+        this.checkUndefined(arj);
 
-          var arj = (this.lineToDom(y, line, active));
-          this.checkUndefined(arj);
+        var jarj = arj.join('');
 
-          var jarj = arj.join('');
+        jarj = jarj.split("LESS-THAN").join("<").split("GREATER-THAN").join(">").split("AMPER-SAND").join("&").split("QUO-TE").join("\"");
+        if (jarj.split("&lt;").join("<") != jarj) {
+          var jarj2 = jarj.split("&lt;").join("<").split("&gt;").join(">").split("&amp;").join("&");
+          //jarj2 = jarj.split("&nbsp;").join(" ");
+          //console.log("fixing line2Dom=" + jarj);
+          jarj = jarj2
+        } else {
+          //  jarj = jarj.split(" ").join("&nbsp;");
+        }
 
-          jarj = jarj.split("LESS-THAN").join("<").split("GREATER-THAN").join(">").split("AMPER-SAND").join("&").split("QUO-TE").join("\"");
-          if (jarj.split("&lt;").join("<") != jarj) {
-            var jarj2 = jarj.split("&lt;").join("<").split("&gt;").join(">").split("&amp;").join("&");
-            //jarj2 = jarj.split("&nbsp;").join(" ");
-            //console.log("fixing line2Dom=" + jarj);
-            jarj = jarj2
-          } else {
-            //  jarj = jarj.split(" ").join("&nbsp;");
+        // Skip blank lines if their are too many 
+        if (jarj.split("&nbsp;").join('').split(" ").join('').
+          split("&#32;").join('').split('<pre>').join('').
+          split('</pre>').join('').split("&#160;").join('').
+          split("&#10;").join('').split("&#13;").join('').
+          split("\n").join('').split("\r").
+          join('').length == 0) {
+          blankLines++;
+          if (blankLines > 1) {
+            if (blankLines == 4) console.log("skip blankLines>2");
+            //results.push(void 0);
+            continue;
           }
+        }
 
-          // Skip blank lines if their are too many 
-          if (jarj.split("&nbsp;").join('').split(" ").join('').
-            split("&#32;").join('').split('<pre>').join('').
-            split('</pre>').join('').split("&#160;").join('').
-            split("&#10;").join('').split("&#13;").join('').
-            split("\n").join('').split("\r").
-            join('').length == 0) {
-            blankLines++;
-            if (blankLines > 1) {
-              if (blankLines == 4) console.log("skip blankLines>2");
-              //results.push(void 0);
+
+
+        // skip ammount of spaces crazy 
+        const tenSp = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+        const sixtyTwoSP = tenSp + tenSp + tenSp + tenSp + tenSp + tenSp + '&nbsp;&nbsp;&nbsp;&nbsp;'
+        jarj = jarj.split(sixtyTwoSP).join(" " + tenSp);
+        jarj = jarj.split(sixtyTwoSP).join(tenSp + " ");
+
+        jarj = jarj.split(";HTML|").join("");
+
+        // trim ends ?
+        if (false) {
+          while (jarj.endsWith('&nbsp')) {
+            jarj = jarj.substring(0, jarj.length - 6);
+          }
+          while (jarj.endsWith(' ')) {
+            jarj = jarj.substring(0, jarj.length - 1);
+          }
+          while (jarj.endsWith('<br/>')) {
+            jarj = jarj.substring(0, jarj.length - 5);
+          }
+        }
+
+
+        /*
+        var twentyFour = tenSp + tenSp + '&nbsp;&nbsp;' + '&nbsp;&nbsp;'
+        leftOver = jarj.
+        split("&#10;").join('<br/>').
+        var end = " </span>";
+        while (leftOver.endsWith(end)) {
+          leftOver = leftOver.substring(0, leftOver.length - end.length) + "</span>";
+        }
+        if (leftOver.split("</span>").join("").indexOf("<pre") > -1) {
+          console.log("DIV=" + leftOver);
+          debugger;
+        }
+        var leftOver = jarj.
+          split("&#13;&#10;").join('<br/>').
+          split("\r\n").join('<br/>').
+          split("&#10;").join('<br/>').
+          split("\n").join('<br/>').
+          split("&#13;").join('<br/>').
+          split("\r").join('<br/>');
+
+        */
+
+        div = document.createElement('div');
+        div.classList.add('line');
+        if (active) {
+          div.classList.add('active');
+          weirdDiv = true;
+        }
+        if (line.extra) {
+          div.classList.add('extended');
+          weirdDiv = true;
+        }
+
+        //sometimes convert into valilla html
+        if (!active) {
+          if (jarj.indexOf("<pre") == -1) {
+            if (jarj.indexOf('pl-fun') > -1
+              || //something other than spans 
+              jarj.split("</span>").join("").split("<span ").join("").
+                indexOf('<') > -1) {
+
+              // div = document.createElement('pre');
+              div.classList.add("was-div-line");
+              cutNewline = false;
+              //if(false) 
+              {
+                while (jarj.charCodeAt(jarj.length - 1) <= 32) {
+                  if (jarj.charCodeAt(jarj.length - 1) <= 12) cutNewline = true;
+                  jarj = jarj.substring(0, jarj.length - 1);
+                }
+              }
+
+              if (line.extra) {
+                div.classList.add('extended');
+              }
+              // jarj = jarj + "\n";
+              if (cutNewline) {
+                jarj = "<br/>" + jarj;
+              }
+            }
+            blankLines = 1;
+            //results.push(jarj);
+            //continue;
+          } else {
+            jarj = jarj.split("<pre>").join('').split("</pre>").join('');
+            div.style['white-space'] = "pre";
+            weirdDiv = true;
+          }
+        }
+        div.innerHTML = jarj;
+        if (!weirdDiv && false) {
+          jarj2 = jarj.trim();
+          if (jarj2.indexOf("<") == 0 || (jarj2.lastIndexOf("  >") == length - 3) || true) {
+            var childNodes = div.childNodes;
+            var len = childNodes.length
+            if (len == 1 && childNodes[0].nodeType == 1 && false) {
+              for (var i = 0; i < len; i++) {
+                results.push(childNodes[i]);
+              }
               continue;
             }
           }
-
-
-
-          // skip ammount of spaces crazy 
-          const tenSp = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-          const sixtyTwoSP = tenSp + tenSp + tenSp + tenSp + tenSp + tenSp + '&nbsp;&nbsp;&nbsp;&nbsp;'
-          jarj = jarj.split(sixtyTwoSP).join(" " + tenSp);
-          jarj = jarj.split(sixtyTwoSP).join(tenSp + " ");
-
-          // trim ends ?
-          if (false) {
-            while (jarj.endsWith('&nbsp')) {
-              jarj = jarj.substring(0, jarj.length - 6);
-            }
-            while (jarj.endsWith(' ')) {
-              jarj = jarj.substring(0, jarj.length - 1);
-            }
-            while (jarj.endsWith('<br/>')) {
-              jarj = jarj.substring(0, jarj.length - 5);
-            }
-          }
-
-
-          /*
-          var twentyFour = tenSp + tenSp + '&nbsp;&nbsp;' + '&nbsp;&nbsp;'
-          leftOver = jarj.
-          split("&#10;").join('<br/>').
-          var end = " </span>";
-          while (leftOver.endsWith(end)) {
-            leftOver = leftOver.substring(0, leftOver.length - end.length) + "</span>";
-          }
-          if (leftOver.split("</span>").join("").indexOf("<pre") > -1) {
-            console.log("DIV=" + leftOver);
-            debugger;
-          }
-          var leftOver = jarj.
-            split("&#13;&#10;").join('<br/>').
-            split("\r\n").join('<br/>').
-            split("&#10;").join('<br/>').
-            split("\n").join('<br/>').
-            split("&#13;").join('<br/>').
-            split("\r").join('<br/>');
-
-          */
-
-          div = document.createElement('div');
-          div.classList.add('line');
-          if (active) {
-            div.classList.add('active');
-            weirdDiv = true;
-          }
-          if (line.extra) {
-            div.classList.add('extended');
-            weirdDiv = true;
-          }
-
-          //sometimes convert into valilla html
-          if (!active) {
-            if (jarj.indexOf("<pre") == -1) {
-              if (jarj.indexOf('pl-fun') > -1
-                || //something other than spans 
-                jarj.split("</span>").join("").split("<span ").join("").
-                  indexOf('<') > -1) {
-
-                // div = document.createElement('pre');
-                div.classList.add("was-div-line");
-                cutNewline = false;
-                //if(false) 
-                {
-                  while (jarj.charCodeAt(jarj.length - 1) <= 32) {
-                    if (jarj.charCodeAt(jarj.length - 1) <= 12) cutNewline = true;
-                    jarj = jarj.substring(0, jarj.length - 1);
-                  }
-                }
-
-                if (line.extra) {
-                  div.classList.add('extended');
-                }
-                // jarj = jarj + "\n";
-                if (cutNewline) {
-                  jarj = "<br/>" + jarj;
-                }
-              }
-              blankLines = 1;
-              //results.push(jarj);
-              //continue;
-            } else {
-              jarj = jarj.split("<pre>").join('').split("</pre>").join('');
-              div.style['white-space'] = "pre";
-              weirdDiv = true;
-            }
-          }
-          div.innerHTML = jarj;
-          if (!weirdDiv && false) {
-            jarj2 = jarj.trim();
-            if (jarj2.indexOf("<") == 0 || (jarj2.lastIndexOf("  >") == length - 3) || true) {
-              var childNodes = div.childNodes;
-              var len = childNodes.length
-              if (len == 1 && childNodes[0].nodeType == 1 && false) {
-                for (var i = 0; i < len; i++) {
-                  results.push(childNodes[i]);
-                }
-                continue;
-              }
-            }
-            ///div = document.createElement(jarj);
-          }
-          this.checkUndefined(div.innerHTML);
-
-          if (active) {
-            this.active = div;
-            this.cursor = div.querySelectorAll('.cursor')[0];
-          }
-          this.checkUndefined(div.innerHTML);
-          blankLines = 0;
-          results.push(div);
-        } else {
-          results.push(void 0);
+          ///div = document.createElement(jarj);
         }
+        this.checkUndefined(div.innerHTML);
+
+        if (active) {
+          this.active = div;
+          this.cursor = div.querySelectorAll('.cursor')[0];
+        }
+        this.checkUndefined(div.innerHTML);
+        blankLines = 0;
+        results.push(div);
       }
       return results;
     };
@@ -1098,7 +1098,12 @@
         this.screen[y].dirty = false;
 
         if (y < this.rows && y < this.term.childElementCount) {
-          this.term.replaceChild(line, this.term.childNodes[r + y]);
+          var line0 = line;
+          if (line0 instanceof HTMLElement) {
+            this.term.replaceChild(line, this.term.childNodes[r + y]);
+          } else {
+            debugger;
+          }
         } else {
           frag = frag || document.createDocumentFragment('fragment');
           if (true) {
@@ -1114,11 +1119,12 @@
           }
         }
       }
+      const thisterm = this.term;
       if (true) {
         try {
-          frag && this.term.appendChild(frag);
+          frag && thisterm.appendChild(frag);
         } catch {
-          this.term.innerHTML = (this.term.innerHTML + frag);
+          thisterm.innerHTML = (this.term.innerHTML + frag);
         }
       } else {
         frag && this.term.appendChild(frag);

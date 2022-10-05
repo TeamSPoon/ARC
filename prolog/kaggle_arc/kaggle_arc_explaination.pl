@@ -109,8 +109,8 @@ debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
   format('~N'),dash_chars(15),!.
 
 debug_as_grid(  I,   A):- is_1gridoid(A), !, subst(A,'black','wbg',AA), print_grid(I,AA).
-debug_as_grid( '',Grid):- !, print_tree_no_nl(Grid).
-debug_as_grid(Why,Grid):- print_tree_no_nl(debug_as_grid(Why,Grid)).
+debug_as_grid( '',Grid):- !, pp(Grid).
+debug_as_grid(Why,Grid):- pp(debug_as_grid(Why,Grid)).
 
 into_ngrid(Points,NGrid):-  v_hv(Points,H,V),into_ngrid(Points,H,V,NGrid).
 into_ngrid(Obj,H,V,NGrid):-
