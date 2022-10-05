@@ -288,7 +288,11 @@ list_common_props_so_far(TestID):-
   !.
 
 ptv1(T):- is_list(T), !, maplist(ptv1,T).
-ptv1(T):- format('~N'),(ground(T) -> color_print(cyan,call(bold_print(pp(T)))) ; color_print(magenta,call(pp(T)))).
+ptv1(T):- format('~N'),(has_spec_value(T) -> color_print(cyan,call(bold_print(pp(T)))) ; color_print(magenta,call(pp(T)))).
+
+has_spec_value(T):- ground(T),!.
+has_spec_value(T):- sub_term(E,T),number(E),!.
+has_spec_value(T):- sub_term(E1,T),atomic(E1),sub_term(E2,T),atomic(E2),E1\==E2.
 
 
 compute_all_test_hints(TestID):- 
