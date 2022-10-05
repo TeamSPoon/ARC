@@ -306,13 +306,16 @@ restart_suite:-
    get_current_suite_testnames([First|_]),
    set_current_test(First),!.
 
-prev_suite:- once((get_current_test(TestID),get_current_suite_testnames([First|_]))),TestID\==First,!,restart_suite.
+prev_suite:- once((get_current_test(TestID),get_current_suite_testnames([First|Lst]))),
+   luser_getval(test_suite_name,N),
+   length([First|Lst],Len), wdmsg(test_suite(N,Len)),TestID\==First,!,restart_suite.
 prev_suite:- 
    findall(SN,test_suite_name(SN),List),
    luser_getval(test_suite_name,X),
    prev_in_list(X,List,N),
    luser_setval(test_suite_name,N),!,
    wdmsg(switched(X-->N)),
+   get_current_suite_testnames(Lst),length(Lst,Len), wdmsg(test_suite(N,Len)),
    restart_suite.
 next_suite:- 
    findall(SN,test_suite_name(SN),List),
@@ -320,9 +323,20 @@ next_suite:-
    next_in_list(X,List,N),
    luser_setval(test_suite_name,N),!,
    wdmsg(switched(X-->N)),
+   get_current_suite_testnames(Lst),length(Lst,Len), wdmsg(test_suite(N,Len)),
    restart_suite.
 
 %test_suite_name(arc_easy_test).
+:- multifile(dir_test_suite_name/1).
+:- dynamic(dir_test_suite_name/1).
+test_suite_name(dbigham_train_core).
+test_suite_name(dbigham_eval_pass).
+test_suite_name(TS):- dir_test_suite_name(TS).
+test_suite_name(icecuber_pass).
+test_suite_name(icecuber_fail).
+test_suite_name(dbigham_train_pass).
+test_suite_name(dbigham_personal).
+
 test_suite_name(human_t).
 test_suite_name(sol_t).
 test_suite_name(hard_t). test_suite_name(test_names_by_fav). 
@@ -338,9 +352,13 @@ get_current_suite_testnames(Set):-
   luser_getval(test_suite_name,X),
   current_suite_testnames(X,Set).
 
-current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),!.  
-current_suite_testnames(X,Set):-  pp(recreating(X)),
-  findall(ID,call(X,ID),List), my_list_to_set_variant(List,Set),!,asserta(muarc_tmp:cached_tests(X,Set)).
+current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),Set\==[],!.  
+current_suite_testnames(X,Set):-  pp(recreating(X)), findall(ID,test_suite_info(X,ID),List),List\==[],
+  my_list_to_set_variant(List,Set),!,asserta(muarc_tmp:cached_tests(X,Set)).
+
+test_suite_info(SuiteX,TestID):- var(SuiteX),!,test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
+test_suite_info(SuiteX,TestID):- current_predicate(SuiteX/1), call(SuiteX,TestID).
+test_suite_info(SuiteX,TestID):- test_info(TestID,Sol), \+ \+ (member(E,Sol), (E=test_suite([SuiteX]);E==SuiteX)).
 
 previous_test:-  get_current_test(TestID), get_previous_test(TestID,NextID), set_current_test(NextID).
 next_test:- get_current_test(TestID), notrace((get_next_test(TestID,NextID), set_current_test(NextID))),!.
@@ -567,6 +585,8 @@ arc_test_name(TestID):- get_current_test(TestID).
 some_test_info(TestID,III):- more_test_info(TestID,III).
 some_test_info(X,[keypad]):- key_pad_tests(X). 
 some_test_info(TestID,III):- fav(TestID,III).
+some_test_info(TestID,test_suite([III])):- icu(Name,PF),atom_id_e(Name,TestID), (PF == -1 -> III= icecuber_fail;III= icecuber_pass).
+some_test_info(TestID,III):- some_test_info_prop(TestID,III).
 
 matches(InfoS,InfoM):- member(InfoS,InfoM).
 
@@ -955,10 +975,11 @@ fix_id(Tried,   TriedV):- atom_id(Tried,TriedV),!.
 %DD2401ED
 atom_id(NonAtom,TriedV):- \+ atom(NonAtom),!,string(NonAtom),atom_string(Tried,NonAtom),atom_id(Tried,TriedV).
 atom_id(Tried,TriedV):- atom_concat(Atom,'.json',Tried),atom_id(Atom,TriedV),!.
-atom_id(Tried,t(Tried)):- kaggle_arc(t(Tried),_,_,_),!.
-atom_id(Tried,v(Tried)):- kaggle_arc(v(Tried),_,_,_),!.
+atom_id(Atom,TriedV):- atom_id_e(Atom,TriedV).
 atom_id(Atom,TriedV):- downcase_atom(Atom,Tried),Atom\==Tried,atom_id(Tried,TriedV).
 %fix_id(Tried,Fixed):- !, fail,compound(Tried),!,arg(_,Tried,E),nonvar_or_ci(E),fix_id(E,Fixed),!.
+atom_id_e(Tried,t(Tried)):- kaggle_arc(t(Tried),_,_,_),!.
+atom_id_e(Tried,v(Tried)):- kaggle_arc(v(Tried),_,_,_),!.
 
 
 

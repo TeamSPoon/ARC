@@ -592,13 +592,17 @@ showdiff_objects_now(Why,OO1,OO2,Sames,Diffs):-
  % print_list_of(debug_as_grid,showdiff_objects_n(Why),[O1,O2]),  
   findall(E,compare_objs1(E,O1,O2),L), pp(compare_objs1(showdiff_objects)=L),  
   dash_chars,dash_chars,
-  noisey_debug(print_list_of(print_sames,sames,Sames)),
+  az_ansi(noisey_debug(print_list_of(print_sames,sames,Sames))),
   include(fun_diff,Diffs,FunDiffs),
   print_list_of(print_diffs,diffs,FunDiffs),
   dash_chars,dash_chars)).
 
-print_sames(N):- format('\t'), pp_no_nl(N).
-print_diffs(N):- format('\t'), pp_no_nl(N).
+print_sames(N):- is_list(N),!, maplist(print_sames,N).
+print_sames(N):- format('\t'), print_tree_no_nl(N),probably_nl.
+print_diffs(N):- is_list(N),!, maplist(print_diffs,N).
+print_diffs(N):- format('\t'), print_tree_no_nl(N),probably_nl.
+print_hints(N):- is_list(N),!, maplist(print_hints,N).
+print_hints(N):- format('\t'), pp_no_nl(N),probably_nl.
 
 excl_diff(C):- var(C),!,fail.
 excl_diff(diff(A->_)):- !, excl_diff(Ap).
@@ -905,7 +909,7 @@ proportional(B,A,C):- maybe_extract_values(B,BB), compound(A), \+ maybe_extract_
 
 proportional(G1,G2,Out):- unused_proportion(G1,G2,Out),!.
 %proportional(E1,E2,E1):- E1=@=E2,!.
-proportional(Obj1,Obj2,Out):- 
+proportional(Obj2,Obj1,Out):- 
   (decl_pt(prop_g,P1P2);decl_pt(prop_o,P1P2)), 
   P1P2=..[P2,P1|Lst],
   once((
@@ -946,8 +950,11 @@ maybe_extract_values(Color,Values):- must_be_free(Values), compound(Color), Colo
 maybe_extract_value(Color,Value):- maybe_extract_values(Color,Values),!,member(Value,Values).
 
 proportional_size(N1,N2,P):- unused_proportion(N1,N2,P),!.
-proportional_size(M1,M2, num(vals([M1,M2]),+N,r(R))):- maybe_number(M1,N1),maybe_number(M2,N2), N is N2-N1, 
-  (ratio_for(R,N1,N2)-> true ; catch(R is rationalize(N1/N2),_,true)).
+proportional_size(M1,M2, num(vals([N1,N2]),+N,r([R-xy,R2-x,R3-y]))):- maybe_number(M1,N1),maybe_number(M2,N2), N is N2-N1, 
+  (ratio_for0(R,N1,N2)-> true ; catch(R is rationalize(N1/N2),_,true)),
+  N1p1 is N1+1, N2p1 is N2+1,
+  (ratio_for0(R3,N1,N2p1)-> true ; catch(R is rationalize(N1/(N2p1)),_,true)),
+  (ratio_for0(R2,N1p1,N2)-> true ; catch(R is rationalize((N1p1)/N2),_,true)).
 
 
 diff_f(lst).
@@ -1002,9 +1009,9 @@ ratio_for(Ratio,_/_=Out,In):- nonvar(Out), !, ratio_for(Ratio,Out,In).
 ratio_for(Ratio,Out,_/_=In):- nonvar(In), !, ratio_for(Ratio,Out,In).
 ratio_for(Out/In=Ratio,Out,In):- ratio_for0(Ratio,Out,In).
 ratio_for0(1.0,Out,In):- 0 is In, 0 is Out,!.
-ratio_for0(Ratio,_Out,In):- 0 is In, !, Ratio is -0.0.
 ratio_for0(1,Out,In):- Out =:= In.
 ratio_for0(Ratio,Out,_In):- 0 is Out, !, Ratio is +0.0.
+ratio_for0(Ratio,_Out,In):- 0 is In, !, Ratio is -0.0.
 ratio_for0(Ratio,Out,In):- catch(Ratio is rationalize(Out/In),error(evaluation_error(_Zero_divisor),_),fail),!.
 ratio_for0(Ratio,Out,In):- catch(NRatio is rationalize(In/Out),error(evaluation_error(_Zero_divisor),_),fail),!, Ratio is -NRatio.
 

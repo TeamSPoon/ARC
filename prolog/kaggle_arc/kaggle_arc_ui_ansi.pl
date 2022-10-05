@@ -252,9 +252,10 @@ ptw(P):- var(P),!,ptw(var_ptw(P)),nop((dumpST,break)).
 ptw(G):- is_map(G), !, write_map(G,'ptw').
 ptw(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 ptw(P):- p_p_t_no_nl(P),!.
+
 %ptw(P):- quietlyd(write_term(P,[blobs(portray),quoted(true),quote_non_ascii(false), portray_goal(print_ansi_tree),portray(true)])),!.
 print_ansi_tree(S,_):- term_is_ansi(S), !, write_keeping_ansi(S).
-print_ansi_tree(P,_):- catch(\(P),_,fail),!.
+print_ansi_tree(P,_):- catch(arc_portray(P),_,fail),!.
 print_ansi_tree(P,_OL):- catch(p_p_t_no_nl(P),_,fail),!.
 
 %p_p_t_nl(T):- az_ansi(print_tree_nl(T)).
@@ -1194,9 +1195,9 @@ color_int(C,C).
 
 
 :- export(grid_color_code/2).
-grid_color_code(C,C):- var(C).
-grid_color_code(C-W,CC-W):- color_code(C,CC).
-grid_color_code(C,CC):- color_code(C,CC).
+grid_color_code(C,C):- var(C),!.
+grid_color_code(C-W,CC-W):- color_code(C,CC),!.
+grid_color_code(C,CC):- color_code(C,CC),!.
 %grid_color_code(C,CC):- is_grid_color(black-_),!,color_code(C,CC).
 %grid_color_code(C,CC):- color_int(C,CC).
 

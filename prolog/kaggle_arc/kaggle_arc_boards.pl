@@ -369,8 +369,9 @@ min_list_unifier([_|B],[_],[_|B]):-!.
 %min_unifier(A,B,C):- is_list(B), is_list(A), length(B,L), length(A,L), length(C,L).
 
 grid_hint_swap(IO,In,Out):-
- ((findall(Data,(grid_hint_swap_io(IO,In,Out,Hint),hint_data(Hint,Data)),Hints),
- call((format('~N%% ~w: ~@.~n',[IO,ptv(Hints)]))))).
+ findall(Data,(grid_hint_swap_io(IO,In,Out,Hint),hint_data(Hint,Data)),Hints),
+ format('~N%% ~w: ',[IO]),!,print_hints(Hints).
+ 
 
 grid_hint_swap_io(IO,In,Out,Hint):-  grid_hint_recolor(IO,In,Out,Hint).
 grid_hint_swap_io(I-O,In,Out,rev(Hint)):- grid_hint_recolor(O-I,Out,In,Hint).
