@@ -232,8 +232,13 @@ wqnl(X):- is_list(X),!,g_out(wqs(X)).
 wqnl(X):- nl_if_needed,format('~q',[X]),probably_nl.
 
 pp(_):- is_print_collapsed,!.
-pp(P):- nl_if_needed, 
- az_ansi(pp_no_nl(P)),!,probably_nl.
+pp(T):- is_toplevel_printing(T), !, nl_if_needed, pp_no_nl(P),!,probably_nl.
+pp(P):- nl_if_needed, az_ansi(pp_no_nl(P)),!,probably_nl.
+
+p_p_t_no_nl(T):- is_toplevel_printing(T), !, print_tree_no_nl(T).
+p_p_t_no_nl(T):- az_ansi(print_tree_no_nl(T)).
+
+is_toplevel_printing(_):- \+ is_string_output, line_position(current_output,N),  N<2.
 
 pp_no_nl(P):- var(P),!,pp(var_pt(P)),nop((dumpST,break)).
 pp_no_nl(P):- atom(P),atom_contains(P,'~'),!,format(P).
@@ -252,8 +257,6 @@ print_ansi_tree(S,_):- term_is_ansi(S), !, write_keeping_ansi(S).
 print_ansi_tree(P,_):- catch(arc_portray(P),_,fail),!.
 print_ansi_tree(P,_OL):- catch(p_p_t_no_nl(P),_,fail),!.
 
-p_p_t_no_nl(T):- \+ is_string_output, line_position(current_output,N),  N<2, !, print_tree_no_nl(T).
-p_p_t_no_nl(T):- az_ansi(print_tree_no_nl(T)).
 %p_p_t_nl(T):- az_ansi(print_tree_nl(T)).
 %p_p_t(T):- az_ansi(print_tree(T)).
 
