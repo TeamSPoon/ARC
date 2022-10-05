@@ -947,8 +947,7 @@ maybe_extract_value(Color,Value):- maybe_extract_values(Color,Values),!,member(V
 
 proportional_size(N1,N2,P):- unused_proportion(N1,N2,P),!.
 proportional_size(M1,M2, num(vals([M1,M2]),+N,r(R))):- maybe_number(M1,N1),maybe_number(M2,N2), N is N2-N1, 
-  %ratio_for(R,N1,N2). % 
-  catch(R is rationalize(N1/N2),_,true).
+  (ratio_for(R,N1,N2)-> true ; catch(R is rationalize(N1/N2),_,true)).
 
 
 diff_f(lst).

@@ -284,9 +284,10 @@ list_common_props_so_far(TestID):-
   sort(FComs,SComs),  
   print_test(TestID),
   %wots(SS,maplist(ptv1,SComs)),
-  call((format('~N % ~w:: ~s.~n',[list_common_props,maplist(ptv1,SComs)]))),
+  call((format('~N % ~w:: ~@.~n',[list_common_props,ptv1(SComs)]))),
   !.
 
+ptv1(T):- is_list(T), !, maplist(ptv1,T).
 ptv1(T):- format('~N'),(ground(T) -> color_print(cyan,call(bold_print(pp(T)))) ; color_print(magenta,call(pp(T)))).
 
 
@@ -307,7 +308,7 @@ compute_test_oo_hints(TestID):-
       forall(grid_hint_recolor(o-o,Out1,Out2,Hint),add_hint(TestID,Hint,N)))),!.
 
 %ptv(T):- p_p_t_no_nl(T),!.
-ptv(T):- is_list(T), !, maplist(ptv,T).
+ptv(T):- is_list(T), !, print_tree_no_nl(T).
 ptv(T):-
   locally(b_setval('$portraying',[]), 
    \+ \+  ((numbervars(T,0,_,[attvars(skip),singletons(true)]), must_det_ll((ptv(T,_)))))).
@@ -318,7 +319,7 @@ ptv(T,_):- \+ compound(T), !, ptv2(T).
 ptv(T,_):- is_object(T),!,  debug_as_grid(T),!.
 %ptv(T,_):- T = showdiff( O1, O2), !, showdiff(O1, O2).
 %ptv(T,_):- T = change_obj( O1, O2, Diffs), !, showdiff(O1, O2), writeq(Diffs),!.
-ptv(T,_):- pp(T),!.
+%ptv(T,_):- pp(T),!.
 ptv(T,_):- 
  nb_current('$portraying',Was)
    ->  ((member(E,Was), T==E) -> ptv2(T) ; locally(b_setval('$portraying',[T|Was]),ptv0(T))) 
