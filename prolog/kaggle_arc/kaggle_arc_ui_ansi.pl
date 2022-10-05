@@ -227,18 +227,18 @@ ptcol(P):- pp(P).
 
 ptc(Color,Call):- pp(Color,call(Call)).
 
-wqln(X):- wqnl(X).
-wqnl(X):- is_list(X),!,g_out(wqs(X)).
-wqnl(X):- nl_if_needed,format('~q',[X]),probably_nl.
+wqln(Term):- wqnl(Term).
+wqnl(Term):- is_list(Term),!,g_out(wqs(Term)).
+wqnl(Term):- nl_if_needed,format('~q',[Term]),probably_nl.
 
 pp(_):- is_print_collapsed,!.
-pp(T):- is_toplevel_printing(T), !, nl_if_needed, pp_no_nl(P),!,probably_nl.
-pp(P):- nl_if_needed, az_ansi(pp_no_nl(P)),!,probably_nl.
+pp(Term):- is_toplevel_printing(Term), !, nl_if_needed, pp_no_nl(Term),!,probably_nl.
+pp(Term):- nl_if_needed, az_ansi(pp_no_nl(Term)),!,probably_nl.
 
-p_p_t_no_nl(T):- is_toplevel_printing(T), !, print_tree_no_nl(T).
-p_p_t_no_nl(T):- az_ansi(print_tree_no_nl(T)).
+%p_p_t_no_nl(Term):- is_toplevel_printing(Term), !, print_tree_no_nl(Term).
+p_p_t_no_nl(Term):- az_ansi(print_tree_no_nl(Term)).
 
-is_toplevel_printing(_):- \+ is_string_output, line_position(current_output,N),  N<2.
+is_toplevel_printing(_):- \+ is_string_output, line_position(current_output,N),  N<5.
 
 pp_no_nl(P):- var(P),!,pp(var_pt(P)),nop((dumpST,break)).
 pp_no_nl(P):- atom(P),atom_contains(P,'~'),!,format(P).
@@ -251,7 +251,7 @@ pp_no_nl(P):- \+ \+ (( pt_guess_pretty(P,GP),ptw(GP))).
 ptw(P):- var(P),!,ptw(var_ptw(P)),nop((dumpST,break)).
 ptw(G):- is_map(G), !, write_map(G,'ptw').
 ptw(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-ptw(P):- quietlyd(p_p_t_no_nl(P)),!.
+ptw(P):- p_p_t_no_nl(P),!.
 %ptw(P):- quietlyd(write_term(P,[blobs(portray),quoted(true),quote_non_ascii(false), portray_goal(print_ansi_tree),portray(true)])),!.
 print_ansi_tree(S,_):- term_is_ansi(S), !, write_keeping_ansi(S).
 print_ansi_tree(P,_):- catch(arc_portray(P),_,fail),!.

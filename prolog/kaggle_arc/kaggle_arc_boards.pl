@@ -283,8 +283,8 @@ list_common_props_so_far(TestID):-
       arc_assert(arc_test_property(TestID,common(F),Common))),FComs),
   sort(FComs,SComs),  
   print_test(TestID),
-  wots(SS,maplist(ptv1,SComs)),
-  call((format('~N % ~w: ~s.~n',[list_common_props,SS]))),
+  %wots(SS,maplist(ptv1,SComs)),
+  call((format('~N % ~w:: ~s.~n',[list_common_props,maplist(ptv1,SComs)]))),
   !.
 
 ptv1(T):- format('~N'),(ground(T) -> color_print(cyan,call(bold_print(pp(T)))) ; color_print(magenta,call(pp(T)))).
@@ -307,6 +307,7 @@ compute_test_oo_hints(TestID):-
       forall(grid_hint_recolor(o-o,Out1,Out2,Hint),add_hint(TestID,Hint,N)))),!.
 
 %ptv(T):- p_p_t_no_nl(T),!.
+ptv(T):- is_list(T), !, maplist(ptv,T).
 ptv(T):-
   locally(b_setval('$portraying',[]), 
    \+ \+  ((numbervars(T,0,_,[attvars(skip),singletons(true)]), must_det_ll((ptv(T,_)))))).
@@ -368,7 +369,7 @@ min_list_unifier([_|B],[_],[_|B]):-!.
 
 grid_hint_swap(IO,In,Out):-
  ((findall(Data,(grid_hint_swap_io(IO,In,Out,Hint),hint_data(Hint,Data)),Hints),
- call((format('~N % ~w: ~@.~n',[IO,call(ptv,Hints)]))))).
+ call((format('~N%% ~w: ~@.~n',[IO,ptv(Hints)]))))).
 
 grid_hint_swap_io(IO,In,Out,Hint):-  grid_hint_recolor(IO,In,Out,Hint).
 grid_hint_swap_io(I-O,In,Out,rev(Hint)):- grid_hint_recolor(O-I,Out,In,Hint).
