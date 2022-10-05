@@ -199,15 +199,16 @@ do_menu_key('O'):- !, cls_z,!,ndividuatorO.
 do_menu_key( ''):- !, fail.
 do_menu_key('G'):- !, cls_z,!,detect_test_hints1.
 do_menu_key(Num):- number(Num),!, do_test_number(Num),!.
+do_menu_key(Key):- atom(Key),atom_codes(Key,Codes),once(Codes=[27|_];Codes=[_]),format("~N % Menu: '~w' ~q ~n",[Key,Codes]),once(mmake),fail.
 do_menu_key(Key):- atom(Key), atom_codes(Key,Codes),  do_menu_codes(Codes), !.
 do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num), number(Num), do_test_number(Num),!.
 do_menu_key(Key):- print_menu_cmd(Key),menu_cmds(_Mode,Key,_Info,Goal),!, format('~N~n'),
   pp(calling(Goal)),!, ignore(once((catch(my_menu_call(Goal),'$aborted',fail)*->true;(fail,trace,arcST,rrtrace(Goal))))),!,
    read_pending_codes(user_input,_Ignored,[]),!.
 do_menu_key(Key):- maybe_call_code(Key),!.
-do_menu_key(Key):- atom(Key),atom_length(Key,1),atom_codes(Key,Codes), format("~N % Menu: didn't understand: '~w' ~q ~n",[Key,Codes]),once(mmake).
 do_menu_key(Key):- \+ atom(Key), catch(text_to_string(Key,Str),_,fail),Key\==Str,catch(atom_string(Atom,Str),_,fail),do_menu_key(Atom).
 do_menu_key(Key):- fix_id(Key,TestID),set_current_test(TestID),!,print_test.
+do_menu_key(Key):- atom(Key),atom_codes(Key,Codes),(Codes=[27|_];Codes=[_]),format("~N % Menu did understand '~w' ~q ~n",[Key,Codes]),once(mmake).
 do_menu_key(_).
 
 maybe_call_code(Key):- \+ atom(Key), !, 
@@ -244,6 +245,12 @@ maybe_test(E,G):- ig(E,G).
 
 get_current_grid(G):- get_current_test(T),kaggle_arc_io(T,_,_,G).
 
+% del
+do_menu_codes([27,91,51,126]):- !, random_test.
+% end
+do_menu_codes([27,91,52,126]):- !, restart_suite.
+% home
+do_menu_codes([27,91,49,126]):- !, report_suite.
 % crl left arrow
 do_menu_codes([27,79,68]):- !, previous_test, print_test.
 % ctrl right arrow
@@ -301,21 +308,36 @@ with_test_pairs1(TestID,In,Out,P):-
 
 bad:- ig([complete],v(aa4ec2a5)>(trn+0)*in).
 
+report_suite:- luser_getval(test_suite_name,SuiteX),
+  ((muarc_tmp:cached_tests(SuiteX,Set),length(Set,Len)) -> true ; Len = ?),
+  wdmsg(test_suite(SuiteX,Len)).
+
+suite_set(SuiteX,Set):- luser_getval(test_suite_name,SuiteX), muarc_tmp:cached_tests(SuiteX,Set),!.
+suite_set(SuiteX,Set):- luser_getval(test_suite_name,SuiteX), get_current_suite_testnames(Set),!.
+
+reverse_suite:-
+   ignore((
+   suite_set(SuiteX,Set),
+   get_current_test(First),
+   Set = [First|_], reverse(Set,NewSet),
+   retractall(muarc_tmp:cached_tests(SuiteX,_)),
+   asserta_new(muarc_tmp:cached_tests(SuiteX,NewSet)),!,
+   get_current_suite_testnames([NewFirst|_]),print_qtest(NewFirst))).
 
 restart_suite:- 
-   get_current_suite_testnames([First|_]),
-   set_current_test(First),!.
+   reverse_suite,
+   get_current_suite_testnames([NewFirst|_]),
+   set_current_test(NewFirst),!,
+   report_suite.
 
-prev_suite:- once((get_current_test(TestID),get_current_suite_testnames([First|Lst]))),
-   luser_getval(test_suite_name,N),
-   length([First|Lst],Len), wdmsg(test_suite(N,Len)),TestID\==First,!,restart_suite.
+prev_suite:- once((get_current_test(TestID),get_current_suite_testnames([First|_]))),
+   report_suite,TestID\==First,!,restart_suite.
 prev_suite:- 
    findall(SN,test_suite_name(SN),List),
    luser_getval(test_suite_name,X),
    prev_in_list(X,List,N),
    luser_setval(test_suite_name,N),!,
    wdmsg(switched(X-->N)),
-   get_current_suite_testnames(Lst),length(Lst,Len), wdmsg(test_suite(N,Len)),
    restart_suite.
 next_suite:- 
    findall(SN,test_suite_name(SN),List),
@@ -323,7 +345,6 @@ next_suite:-
    next_in_list(X,List,N),
    luser_setval(test_suite_name,N),!,
    wdmsg(switched(X-->N)),
-   get_current_suite_testnames(Lst),length(Lst,Len), wdmsg(test_suite(N,Len)),
    restart_suite.
 
 %test_suite_name(arc_easy_test).
@@ -353,8 +374,11 @@ get_current_suite_testnames(Set):-
   current_suite_testnames(X,Set).
 
 current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),Set\==[],!.  
-current_suite_testnames(X,Set):-  pp(recreating(X)), findall(ID,test_suite_info(X,ID),List),List\==[],
-  my_list_to_set_variant(List,Set),!,asserta(muarc_tmp:cached_tests(X,Set)).
+current_suite_testnames(X,Set):-  pp(recreating(X)), 
+ findall(ID,test_suite_info(X,ID),List),List\==[],
+   
+  my_list_to_set_variant(List,Set), pp(sorting(X)), sort_by_hard(Set,NamesByHardUR), 
+  !,asserta(muarc_tmp:cached_tests(X,NamesByHardUR)).
 
 test_suite_info(SuiteX,TestID):- var(SuiteX),!,test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
 test_suite_info(SuiteX,TestID):- current_predicate(SuiteX/1), call(SuiteX,TestID).
@@ -362,11 +386,16 @@ test_suite_info(SuiteX,TestID):- test_info(TestID,Sol), \+ \+ (member(E,Sol), (E
 
 previous_test:-  get_current_test(TestID), get_previous_test(TestID,NextID), set_current_test(NextID).
 next_test:- get_current_test(TestID), notrace((get_next_test(TestID,NextID), set_current_test(NextID))),!.
+random_test:- notrace((get_random_test(NextID), set_current_test(NextID), print_qtest(NextID))),!.
 is_valid_testname(TestID):- kaggle_arc(TestID,_,_,_).
 
 get_current_test(TestID):- luser_getval(task,TestID),is_valid_testname(TestID),!.
 get_current_test(TestID):- get_next_test(TestID,_),!.
 get_current_test(v(fe9372f3)).
+
+get_random_test(ID):-
+ get_current_test(TestID),get_next_test(TestID,NextID),
+ get_current_suite_testnames(List),random_member(ID,List),ID\==TestID, ID\==NextID,!.
 
 get_next_test(TestID,NextID):- get_current_suite_testnames(List), next_in_list(TestID,List,NextID).
 get_previous_test(TestID,PrevID):-  get_current_suite_testnames(List), prev_in_list(TestID,List,PrevID).
@@ -654,7 +683,11 @@ sol_t_set(NamesByHardUR):- % Name=t(_),
 hard_t(T):- hard_t_set(Set),member(T,Set).
 
 hard_t_set(NamesByHardUR):- Name=t(_),
-  findall(Name,all_arc_test_name(Name),List),sort(List,Sorted),
+  findall(Name,all_arc_test_name(Name),List),sort_by_hard(List,NamesByHardUR).
+
+
+sort_by_hard(List,NamesByHardUR):- 
+  sort(List,Sorted),
   findall(Hard-Name,(member(Name,Sorted),hardness_of_name(Name,Hard)),All),
   keysort(All,AllK),  maplist(arg(2),AllK,NamesByHardU),!,
   reverse(NamesByHardU,NamesByHardUR).
