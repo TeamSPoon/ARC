@@ -60,13 +60,13 @@ collapsible_section(Type,Title,true,Goal):-
   length(Was,Depth),
   setup_call_cleanup(format('~N~@!mu~w! ~@ |~n',[dash_chars(Depth,' '), Type, print_title(Title)]),
                      locally(b_setval('$collapsible_section',[Type|Was]),wots(S,Goal)), 
-                     format('~N~w~@¡mu~w¡~n',[S,dash_chars(Depth,' '), Type])).
+                     format('~N~w~@\u00A1mu~w\u00A1~n',[S,dash_chars(Depth,' '), Type])).
 */
 collapsible_section(Tag,Title,_,Goal):-
   once(nb_current('$collapsible_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),
   setup_call_cleanup(format('~N~w!mu~w! ~@ |~n',[Ident, Tag, print_title(Title)]),
                      locally(b_setval('$collapsible_section',[c(Tag)|Was]),tabbed_print_im(Depth+2,Goal)), 
-                     format('~N~w¡mu~w¡ ',[Ident, Tag])).
+                     format('~N~w\u00A1mu~w\u00A1 ',[Ident, Tag])).
 
 with_tagged(Tag,Goal):- 
   once(nb_current('$collapsible_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),

@@ -152,8 +152,7 @@ object_glyph_color(Obj,FC):- once(colors(Obj,[cc(FC0,_)|_]);FC0=fg),
 
 object_s_glyph(Obj,SGlyph):- 
   object_glyph(Obj,Glyph), 
-  colors(Obj,Colors),
-  maplist(arg(1),Colors,NColors),
+  unique_colors(Obj,NColors),
   object_glyph_color(Obj,FC),
   wots(SGlyph,
    (

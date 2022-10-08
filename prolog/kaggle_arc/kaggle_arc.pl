@@ -507,6 +507,7 @@ luser_linkval(N,V):- arc_user(ID),luser_linkval(ID,N,V),!.
 luser_linkval(ID,N,V):- nb_linkval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
 
 :- meta_predicate(if_arc_webui(-)).
+if_arc_webui(Goal):- !, fail,Goal.
 if_arc_webui(Goal):- arc_webui,!,g_out(call(Goal)).
 if_arc_webui(_):- \+ arc_webui,!,fail.
 

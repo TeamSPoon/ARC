@@ -6,9 +6,26 @@ My attempt at:
 
 https://github.com/fchollet/ARC
 
+## Percentage of Tasks Passing
+
+* Training tasks: 148 / 400 (37%)\
+  ![Percentage of Training Tasks Passing](TrainingTasksProgressBar.png?raw=true)
+  * Implemented: 74
+  * Passing via generalization: 74
+* Evaluation tasks: 56 / 400 (14%)\
+  ![Percentage of Evaluation Tasks Passing](EvaluationTasksProgressBar.png?raw=true)
+
+## Progress over Time
+
+![Graph of Progress](Progress.png?raw=true)
+
+## Comparison with Kaggle Competitors
+
+![Comparison with Kaggle Competitors](ComparisonWithKaggleCompetitors.png?raw=true)
+
 ## Tasks Implemented
 
-### Core ARC Training Tasks (72)
+### Core ARC Training Tasks (74)
 
 * [0ca9ddb6](TaskNotes/0ca9ddb6/notes.md)
 * [3c9b0459](TaskNotes/3c9b0459/notes.md)
@@ -82,6 +99,8 @@ https://github.com/fchollet/ARC
 * [b8825c91](TaskNotes/b8825c91/notes.md)
 * [d13f3404](TaskNotes/d13f3404/notes.md)
 * [feca6190](TaskNotes/feca6190/notes.md)
+* [4938f0c2](TaskNotes/4938f0c2/notes.md)
+* [8eb1be9a](TaskNotes/8eb1be9a/notes.md)
 
 ### Personally Created Training Tasks (15)
 

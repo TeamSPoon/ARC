@@ -66,10 +66,10 @@ only_color_data_or(Alt,Cell,Color):- only_color_data(Cell,Color)->true;Color=Alt
 
 %sub_term(G,GH), is_grid(G),!,flatten(G,GF),include(is_grid_color,GF,GL),maplist(color_name,GL,CC).
 %pixel_colors(G,GL):- findall(Name,(sub_term(CP,G),compound(CP),CP=(C-_),color_name(C,Name)),GL).
+is_real_color_or_var(C):- var(C)->true;(is_real_color(C),C\==fg,C\==wfg,C\==wbg,C\==bg).
 
-unique_colors(G,SUC):- colors(G,GF),quietly(maplist(arg(1),GF,UC)),sort(UC,SUC).
+unique_colors(G,SUCO):- colors(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_color_or_var,UC,SUCO))).
 unique_color_count(G,Len):- unique_colors(G,UC),length(UC,Len).
-colors_count_size(G,UC):- colors(G,GS),length(GS,UC).
 
 into_cc(SK,BFO):- maplist(into_cc1,SK,BFO).
 into_cc1(N-C,cc(Nm,CN)):- CN is N,!,color_name(C,Nm).

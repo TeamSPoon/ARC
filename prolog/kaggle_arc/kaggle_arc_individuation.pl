@@ -121,7 +121,7 @@ maybe_multivar(_).
 :- dynamic(is_unshared_saved/2).
 :- dynamic(is_shared_saved/2).
 
-the_big_three_oh(30).
+the_big_three_oh(12).
 
 
 
@@ -312,8 +312,8 @@ individuation_macros(complete, ListO):- test_config(indiv(ListO))-> true;
   
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
 individuator(i_by_color,[by_color(3), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
-individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots, do_ending]).
 individuator(i_nsew,[subshape_both(h,nsew), maybe_lo_dots, do_ending]).
+individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots, do_ending]).
 individuator(i_repair_mirrors,[repair_in_vm(find_symmetry_code)]).
 individuator(i_maybe_glypic,[maybe_glyphic]). %:- \+ doing_pair.
 %individuator(i_maybe_glypic,[whole]):- doing_pair.
@@ -886,7 +886,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
  % rb_new(HM),duplicate_term(HM,Hashmap),
 
   max_min(H,V,MaxM,_),
-  max_min(42,MaxM,Max,_),
+  max_min(12,MaxM,Max,_),
   grid_to_gid(Grid,OID),
 
   listify(ROptions,OOptions),
@@ -1476,12 +1476,13 @@ mostly_fgp(Points,FG_POINTS):- my_partition(is_fgp,Points,FG_POINTS,_),!.
 
 lo_dots(VM):-  
   mostly_fgp(VM.points,LO_POINTS),
-  ( VM.h=<5 ; VM.v=<5 ; (LO_POINTS \=[], length(LO_POINTS,Len), (Len =< VM.h ; Len =< VM.v  ))),!,  
+  ( VM.h=<5 ; VM.v=<5 ; (LO_POINTS \=[], length(LO_POINTS,Len), Len<12, (Len =< VM.h ; Len =< VM.v  ))),!,  
   using_alone_dots(VM,(maplist(make_point_object(VM,[birth(lo_dots),iz(dot),iz(shaped)]),LO_POINTS,IndvList),
   raddObjects(VM,IndvList))),
   set(VM.points) =[],!.
 lo_dots(VM):-  
   mostly_fgp(VM.points,LO_POINTS),
+   length(LO_POINTS,Len), Len<12,
   using_alone_dots(VM,(maplist(make_point_object(VM,[birth(lo_dots),iz(dot)]),LO_POINTS,IndvList),
   raddObjects(VM,IndvList))),
   set(VM.points) =[],!.
@@ -1536,6 +1537,7 @@ find_mergeable(VM,Found,[_|ScanPoints],Engulfed):-
 % =====================================================================
 is_fti_step(rectangles).
 % =====================================================================
+rectangles(_VM):- !.
 rectangles(VM):- 
   Grid = VM.grid,
   Objs = VM.objs,

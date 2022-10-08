@@ -9,6 +9,7 @@
 :- endif.
 
 /*
+
 my_len(X,Y):- var(X),!,length(X,Y).
 my_len(X,Y):- is_list(X),!,length(X,Y).
 my_len(X,Y):- functor([_|_],F,A),functor(X,F,A),!,length(X,Y).

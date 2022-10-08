@@ -53,8 +53,8 @@ menu_cmd1(_,'S','                  or (S)olve confirming it works on training pa
 menu_cmd1(_,'h','                  or (h)uman proposed solution',(human_test)).
 menu_cmd1(_,'r','               Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and (s)olve !',(cls_z,fully_test)).
 menu_cmd1(_,'a','                  or (a)dvance to the next test and (r)un it',(cls_z,!,run_next_test)).
-menu_cmd1(_,'n','               Go to (n)ext test (skipping this one)',(next_test,print_qtest)).
-menu_cmd1(_,'b','                  or (b)ack to previous test.',(previous_test,print_qtest)).
+menu_cmd1(_,'n','               Go to (n)ext test (skipping this one)',(next_test,report_suite)).
+menu_cmd1(_,'b','                  or (b)ack to previous test.',(previous_test,report_suite)).
 menu_cmd1(_,'f','                  or (f)orce a favorite test.',(enter_test)).
 menu_cmd1(_,'~','                  or (PageUp) to begining of suite',(prev_suite)).
 menu_cmd1(_,'N','                  or (N)ext suite',(next_suite)).
@@ -199,6 +199,9 @@ i_key(SelMax,Key):-
   %get_single_char(Code), wdmsg(code=Code), char_code(Key,Code),  put_char(Key), 
    (once(read_menu_chars('',SelMax,Key))),!.
 
+menu_goal(Goal):- 
+  pp(calling(Goal)),!, ignore(once((catch(my_menu_call(Goal),'$aborted',fail)*->true;(fail,trace,arcST,rrtrace(Goal))))),!,
+   read_pending_codes(user_input,_Ignored,[]),!.
 
 do_menu_key(-1):- !, arc_assert(wants_exit_menu). 
 do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), arc_assert(wants_exit_menu).
@@ -209,13 +212,17 @@ do_menu_key('o'):- !, cls_z,!,ndividuatorO1.
 do_menu_key('O'):- !, cls_z,!,ndividuatorO.
 do_menu_key( ''):- !, fail.
 do_menu_key('G'):- !, cls_z,!,detect_test_hints1.
+
+do_menu_key('d'):- !, dump_suite.
+
 do_menu_key(Num):- number(Num),!, do_test_number(Num),!.
-do_menu_key(Key):- atom(Key),atom_codes(Key,Codes),once(Codes=[27|_];Codes=[_]),format("~N % Menu: '~w' ~q ~n",[Key,Codes]),once(mmake),fail.
-do_menu_key(Key):- atom(Key), atom_codes(Key,Codes),  do_menu_codes(Codes), !.
-do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num), number(Num), do_test_number(Num),!.
-do_menu_key(Key):- print_menu_cmd(Key),menu_cmds(_Mode,Key,_Info,Goal),!, format('~N~n'),
-  pp(calling(Goal)),!, ignore(once((catch(my_menu_call(Goal),'$aborted',fail)*->true;(fail,trace,arcST,rrtrace(Goal))))),!,
-   read_pending_codes(user_input,_Ignored,[]),!.
+do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num),  number(Num), do_test_number(Num),!.
+
+do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), menu_goal(Body).
+do_menu_key(Key):- print_menu_cmd(Key),menu_cmds(_Mode,Key,_Info,Goal),!, format('~N~n'), menu_goal(Goal).
+
+do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), once(Codes=[27|_];Codes=[_]),format("~N % Menu: '~w' ~q ~n",[Key,Codes]),fail.
+
 do_menu_key(Key):- maybe_call_code(Key),!.
 do_menu_key(Key):- \+ atom(Key), catch(text_to_string(Key,Str),_,fail),Key\==Str,catch(atom_string(Atom,Str),_,fail),do_menu_key(Atom).
 do_menu_key(Key):- fix_id(Key,TestID),set_current_test(TestID),!,print_test.
@@ -257,13 +264,15 @@ maybe_test(E,G):- ig(E,G).
 get_current_grid(G):- get_current_test(T),kaggle_arc_io(T,_,_,G).
 
 % home
-do_menu_codes([27,91,49,126]):- !, reverse_test, restart_suite.
-% insert
-do_menu_codes([27,91,50,126]):- !, report_suite.
-% delete
-do_menu_codes([27,91,51,126]):- !, randomize_suite, restart_suite.
+do_menu_codes([27,91,49,126]):- !, sort_suite, restart_suite, print_qtest.
 % end
-do_menu_codes([27,91,52,126]):- !, restart_suite.
+do_menu_codes([27,91,52,126]):- !, reverse_suite, restart_suite, print_qtest.
+% insert
+do_menu_codes([27,91,50,126]):- !, report_suites, print_qtest.
+% delete
+do_menu_codes([27,91,51,126]):- !, randomize_suite, print_qtest.
+
+
 % crl left arrow
 do_menu_codes([27,79,68]):- !, previous_test, print_test.
 % ctrl right arrow
@@ -321,39 +330,54 @@ with_test_pairs1(TestID,In,Out,P):-
 
 bad:- ig([complete],v(aa4ec2a5)>(trn+0)*in).
 
-report_suite:- luser_getval(test_suite_name,SuiteX),
-  ((muarc_tmp:cached_tests(SuiteX,Set),length(Set,Len)) -> true ; Len = ?),
-  wdmsg(test_suite(SuiteX,Len)).
+report_suites:- luser_getval(test_suite_name,SuiteXC),
+ forall(test_suite_name(SuiteX),(nl,ignore((SuiteXC==SuiteX,write('\n--->>>>'))),report_suite(SuiteX))).
 
-suite_set(SuiteX,Set):- luser_getval(test_suite_name,SuiteX), muarc_tmp:cached_tests(SuiteX,Set),!.
-suite_set(SuiteX,Set):- luser_getval(test_suite_name,SuiteX), get_current_suite_testnames(Set),!.
+report_suite:- luser_getval(test_suite_name,SuiteX), write('\n--->>>>'),report_suite(SuiteX).
+
+report_suite(SuiteX):- 
+  ((muarc_tmp:cached_tests(SuiteX,Set),length(Set,Len)) -> true ; Len = ?),
+  bold_print(underline_print(color_print(yellow,test_suite(SuiteX,Len)))).
+
+
+
+dump_suite1:-   
+   get_current_suite_testnames(Set),
+   forall(member(S,Set),print_qtest(S)).
+
+dump_suite:-   
+   get_current_suite_testnames(Set),
+   forall(member(S,Set),print_test(S)).
+
+
+sort_suite:-   
+   luser_getval(test_suite_name,SuiteX), get_by_hard(SuiteX,ByHard),
+   retractall(muarc_tmp:cached_tests(SuiteX,_)),
+   asserta_new(muarc_tmp:cached_tests(SuiteX,ByHard)).
 
 reverse_suite:-   
-   suite_set(SuiteX,Set),
-   get_by_hard(SuiteX,ByHard), reverse(ByHard,RevByHard),
-  ((Set == RevByHard ; Set == ByHard) -> reverse(Set,NewSet) ; NewSet = ByHard),
-   ignore((get_current_test(First), Set = [First|_], 
+   luser_getval(test_suite_name,SuiteX), get_by_hard(SuiteX,ByHard), reverse(ByHard,NewSet),
    retractall(muarc_tmp:cached_tests(SuiteX,_)),
-   asserta_new(muarc_tmp:cached_tests(SuiteX,NewSet)),!,
-   get_current_suite_testnames([NewFirst|_]),print_qtest(NewFirst))).
+   asserta_new(muarc_tmp:cached_tests(SuiteX,NewSet)).
+
+
+restart_suite:- 
+   get_current_suite_testnames([NewFirst|_]),
+   set_current_test(NewFirst),!,
+   report_suite,
+   print_qtest(NewFirst).
 
 randomize_suite:-
-  suite_set(SuiteX,Set),
-  get_by_hard(SuiteX,ByHard), 
-  reverse(ByHard,RevByHard),
+  luser_getval(test_suite_name,SuiteX), muarc_tmp:cached_tests(SuiteX,Set),
+  get_by_hard(SuiteX,ByHard), reverse(ByHard,RevByHard),
   ignore((
   ((Set == RevByHard ; Set == ByHard), random_permutation(Set,NewSet),   
    retractall(muarc_tmp:cached_tests(SuiteX,_)),
    asserta_new(muarc_tmp:cached_tests(SuiteX,NewSet))))),
   next_test.
+ 
+%prev_suite:- once((get_current_test(TestID),get_current_suite_testnames([First|_]))), report_suite,TestID\==First,!,restart_suite.
 
-restart_suite:- 
-   get_current_suite_testnames([NewFirst|_]),
-   set_current_test(NewFirst),!,
-   report_suite.
-
-prev_suite:- once((get_current_test(TestID),get_current_suite_testnames([First|_]))),
-   report_suite,TestID\==First,!,restart_suite.
 prev_suite:- 
    findall(SN,test_suite_name(SN),List),
    luser_getval(test_suite_name,X),
@@ -361,6 +385,7 @@ prev_suite:-
    luser_setval(test_suite_name,N),!,
    wdmsg(switched(X-->N)),
    restart_suite.
+
 next_suite:- 
    findall(SN,test_suite_name(SN),List),
    luser_getval(test_suite_name,X),
@@ -383,25 +408,29 @@ test_suite_name(dbigham_personal).
 test_suite_name(human_t).
 test_suite_name(sol_t).
 test_suite_name(hard_t). test_suite_name(test_names_by_fav). 
-test_suite_name(key_pad_tests). test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
+test_suite_name(key_pad_tests). % test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
 test_suite_name(test_names_by_hard). 
-test_suite_name(test_names_by_fav_rev). test_suite_name(test_names_by_hard_rev).
+%test_suite_name(test_names_by_fav_rev). test_suite_name(test_names_by_hard_rev).
 test_suite_name(all_arc_test_name).
 
 :- dynamic(muarc_tmp:cached_tests/2).
 %:- retractall(muarc_tmp:cached_tests(_,_)).
 :- test_suite_name(Name)->luser_defval(test_suite_name,Name).
-get_current_suite_testnames(Set):-
-  luser_getval(test_suite_name,X),
-  current_suite_testnames(X,Set).
+
+%current_suite_testnames(SuiteX,Set):- luser_getval(test_suite_name,SuiteX), get_current_suite_testnames(Set),!.
+%suite_set(SuiteX,Set):- luser_getval(test_suite_name,SuiteX), muarc_tmp:cached_tests(SuiteX,Set),!.
+
+get_current_suite_testnames(Set):- luser_getval(test_suite_name,X), current_suite_testnames(X,Set).
 
 current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),Set\==[],!.  
 current_suite_testnames(X,ByHard):- get_by_hard(X,ByHard),!,asserta(muarc_tmp:cached_tests(X,ByHard)).
 
 get_by_hard(X,ByHard):- muarc_tmp:cached_tests_hard(X,ByHard),!.
-get_by_hard(X,ByHard):-  pp(recreating(X)),  
+get_by_hard(X,ByHard):- 
+  pp(recreating(X)),  
   findall(ID,test_suite_info(X,ID),List),List\==[],   
-  my_list_to_set_variant(List,Set), pp(sorting(X)), 
+  my_list_to_set_variant(List,Set),
+   pp(sorting(X)), !,
     sort_by_hard(Set,ByHard), !,
     asserta(muarc_tmp:cached_tests_hard(X,ByHard)).
 
@@ -590,7 +619,7 @@ print_single_pair:- get_current_test(TestID),print_single_pair(TestID).
 
 :- luser_defval('$grid_mode',dots).
 print_qtest(TestID):- \+ luser_getval('$grid_mode',dots),!,print_test(TestID).
-print_qtest(TestID):- !, print_single_pair(TestID),!.
+print_qtest(TestID):- !, print_single_pair(TestID),report_suite,!.
 print_qtest(TestID):-
     dash_chars,nl,nl,nl,dash_chars,
      ignore(luser_getval(example,ExampleNum)),
@@ -682,7 +711,7 @@ test_names_ord_favs(FavListS):- ord_favs(FavListS),!.
 test_names_ord_favs(FavListS):- 
   pp(recreating(test_names_ord_favs)), 
   findall(Name,fav(Name),FavList),list_to_set(FavList,FavListS),
-  pp(done_recreating(ascending_hard)),  
+  pp(done_recreating(test_names_ord_favs)),  
   asserta(ord_favs(FavListS)).
 
 alphabetical_v(Set):- findall(v(Name),all_arc_test_name(v(Name)),List),sort(List,Set).
@@ -711,11 +740,11 @@ hard_t_set(NamesByHardUR):- Name=t(_),
   findall(Name,all_arc_test_name(Name),List),sort_by_hard(List,NamesByHardUR).
 
 
-sort_by_hard(List,NamesByHardUR):- 
-  sort(List,Sorted),
-  findall(Hard-Name,(member(Name,Sorted),hardness_of_name(Name,Hard)),All),
-  keysort(All,AllK),  maplist(arg(2),AllK,NamesByHardU),!,
-  reverse(NamesByHardU,NamesByHardUR).
+
+sort_by_hard(List,NamesByHard):- 
+  sort(List,Sorted), test_names_by_hard(NamesByHardU),
+  findall(Hard-Name,(member(Name,Sorted),nth0(Hard,NamesByHardU,Name)),All),
+  keysort(All,AllK),  maplist(arg(2),AllK,NamesByHard),!.
 
 hard_t:- cls_z, hard_t(NamesByHardUR),
   forall(member(Name,NamesByHardUR),print_test(Name)).
@@ -741,7 +770,7 @@ test_names_ord_hard(NamesByHard):-
   asserta(ord_hard(NamesByHard)).
 
 %:- use_module(library(pfc_lib)).
-:- retractall(ord_favs(_)),retractall(ord_hard(_)).
+%:- retractall(ord_favs(_)),retractall(ord_hard(_)).
 
 ascending_hard:-
   pp(recreating(ascending_hard)),
@@ -753,16 +782,31 @@ ascending_hard:-
 
 :- style_check(-singleton).
 negate_number(N,NN):- NN is - N.
+
+
+pair_cost(TestID,Cost):- kaggle_arc(TestID,(trn+_),I,O),
+ unique_colors(I,IC),grid_size(I,IH,IV),
+ unique_colors(I,OC),grid_size(O,OH,OV),
+ intersection(IO,OC,S,LO,RO),
+ maplist(length,[S,LO,RO],[SN,LON,RON]),
+ Cost is (IH+OH)*(IV+OV)*(LON+1)*(RON+1).
+
+hardness_of_name(TestID,Sum):-
+  kaggle_arc(TestID,(trn+0),_,_),
+ findall(Cost,pair_cost(TestID,Cost),List),sumlist(List,Sum).
+
 hardness_of_name(TestID,Hard):-
+ %kaggle_arc(TestID,(trn+0),_,_),
  %ExampleNum=tst+_,
  ExampleNum=_,
  findall(_,kaggle_arc(TestID,(trn+_),_,_),Trns),
- length(Trns,TrnsL),
+ length(Trns,TrnsL),!,
  %extra_tio_name(TestID,TIO),
   findall(PHard,
   (kaggle_arc(TestID,ExampleNum,In,Out),
    pair_dictation(TestID,ExampleNum,In,Out,T),
    maplist(negate_number,[T.in_specific_colors_len,T.out_specific_colors_len],[InOnlyC,OutOnlyC]),
+   % TrnsLL is 0, %TrnsL
    PHard = (TrnsL+ T.shared_colors_len + OutOnlyC + InOnlyC + T.ratio_area+ T.delta_density)),
     %(catch(Code,_,rrtrace(Code)))),
   All),
@@ -861,6 +905,8 @@ dictate_sourcecode(Content, _Vars, OutterVars, TP):-
     !, TP = source_buffer(Sourcecode, Vs).
 
 
+do_pair_dication(_In,_Out,_{}).
+do_pair_dication(_In,_Out, []):- trace, ! ,fail.
 do_pair_dication(In,Out,_Vs):-   
  run_source_code(['In'=In, 'Out'=Out], _Vs,
 {|dictate_sourcecode||
@@ -1106,7 +1152,7 @@ parc11(ExampleNum,OS,TName):-
     print_side_by_side(I,O), format('").\n'),
   ignore((write('%= '), parcCmt(TestID),nl,nl))))).
 
-%color_sym(OS,[(black='°'),(blue='©'),(red='®'),(green=''),(yellow),(silver='O'),(purple),(orange='o'),(cyan= 248	ø ),(brown)]).
+%color_sym(OS,[(black='ï¿½'),(blue='ï¿½'),(red='ï¿½'),(green=''),(yellow),(silver='O'),(purple),(orange='o'),(cyan= 248	ï¿½ ),(brown)]).
 color_sym(OS,C,C):- var(OS),!.
 color_sym(OS,C,Sym):- is_list(C),maplist(color_sym(OS),C,Sym),!.
 color_sym(_,black,' ').

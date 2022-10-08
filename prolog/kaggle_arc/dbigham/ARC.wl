@@ -565,6 +565,10 @@ ARCSceneObject::usage = "ARCSceneObject  "
 
 SingleUniqueValueQ::usage = "SingleUniqueValueQ  "
 
+ARCProgressGraph::usage = "ARCProgressGraph  "
+
+ARCComparisonWithKaggleCompetitors::usage = "ARCComparisonWithKaggleCompetitors  "
+
 Begin["`Private`"]
 
 Utility`Reload`SetupReloadFunction["Daniel`ARC`"];
@@ -606,6 +610,7 @@ ProcessLog = EntityLink`Logging`ProcessLog;
 EntityRepository = EntityLink`EntityRepository;
 EntityRepositorySet = EntityLink`EntityRepositorySet;
 EchoTiming2 = Utility`EchoTiming2;
+ReapList = Utility`ReapList;
 
 (* For the purposes of using LogScope. *)
 initializeEntityRepository[] :=
@@ -2032,7 +2037,7 @@ $properties = <|
         "Type2" -> "PositionDimensionValue"
     |>,
     "PrimarySizeDimension" -> <|
-        "Type" -> "Integer",
+        "Type" -> "SizeDimension",
         "Type2" -> "SizeDimension"
     |>,
     "AspectRatio" -> <|
@@ -4588,7 +4593,27 @@ ARCFindRules[examplesIn_List, opts:OptionsPattern[]] :=
         ];
         
         If [TrueQ[OptionValue["SettleForOneExamplePerRule"]],
-            If [!TrueQ[workingRulesFound[]] && $MinimumExamplesPerRule > 1,
+            (* TODO: I wonder if instead of having a second pass, we should allow
+                     single-example rules in general, and just make sure we're
+                     scoring them appropriately such that they get dropped appropriately
+                     without needing to take a big performance penalty re-doing things.
+                     The penalty is substantially worse with cases like 6e02f1e3
+                     which currently require trying single-example mode even when
+                     we have found a working rule set. *)
+            If [And[
+                    $MinimumExamplesPerRule > 1,
+                    Or[
+                        !TrueQ[foundRulesQ = workingRulesFound[]](*,
+                        (* e.g. 6e02f1e3 *)
+                        Replace[
+                            (existingRulesScore = ARCRuleSetScore[res["Rules"]]) < -2.5,
+                            True :> (
+                                (*Echo["HERE" -> $file -> existingRulesScore];*)
+                                True
+                            )
+                        ]*)
+                    ]
+                ],
                 (* Try again, this time allowing rules to be formed with only 1 example.
                    e.g. 0d3d703e *)
                 Block[{$MinimumExamplesPerRule = 1},
@@ -4596,17 +4621,32 @@ ARCFindRules[examplesIn_List, opts:OptionsPattern[]] :=
                         ARCLogScope["ARCFindRules:OneExamplePerRule"]@
                         ARCFindRules[
                             examples,
-                            "CheckForImputation" -> False,
-                            "CheckForPatternFill" -> False,
+                            "CheckForImputation" -> !TrueQ[foundRulesQ],
+                            "CheckForPatternFill" -> !TrueQ[foundRulesQ],
                             opts
                         ];
-                    foundRulesQ = MatchQ[res2, KeyValuePattern["Rules" -> _List]];
-                    If [foundRulesQ, res = res2];
+                    foundRules2Q = MatchQ[res2, KeyValuePattern["Rules" -> _List]];
+                    If [foundRules2Q,
+                        If [And[
+                                TrueQ[ARCWorkingQ[examples, res2]],
+                                Or[
+                                    !TrueQ[workingRulesFound[]],
+                                    (* e.g. 6e02f1e3 *)
+                                    (newRulesScore = ARCRuleSetScore[res2["Rules"]]) - existingRulesScore > 0.05
+                                ]
+                            ],
+                            (*Echo["HERE2" -> $file -> {existingRulesScore, newRulesScore, newRulesScore - existingRulesScore}];*)
+                            foundRulesQ = True;
+                            res = res2
+                        ]
+                    ]
                 ]
             ]
         ];
         
         ReturnIfFailure[res];
+        
+        (*ARCRuleSetScore[res["Rules"]];*)
         
         If [!AssociationQ[res],
             res = <||>
@@ -5974,6 +6014,9 @@ ARCApplyRules[sceneIn_ARCScene, rulesIn_Association] :=
                     Missing[]
                 ];
             
+            (* TODO: If the rules subdivide the input scene into multiple sub-scenes, then
+                     resolving InputScene values within the "Rules" key is probably not
+                     appropriate here, so perhaps we should avoid that key-value here. *)
             rules =
                 ReturnIfFailure@
                 ResolveValues[
@@ -5984,6 +6027,8 @@ ARCApplyRules[sceneIn_ARCScene, rulesIn_Association] :=
                     "Activate" -> True
                 ];
         ];
+        
+        (*ARCEcho2[rules];*)
         
         ruleList = rules["Rules"];
         
@@ -6006,6 +6051,8 @@ ARCApplyRules[sceneIn_ARCScene, rulesIn_Association] :=
             outputHeight = ToIntegerIfNoDecimal[rules["Height"]]
         ];
         
+        (*Echo[{outputWidth, outputHeight}];*)
+        
         Switch[
             ruleList,
             KeyValuePattern[{"Type" -> "PatternFill"}],
@@ -6014,7 +6061,7 @@ ARCApplyRules[sceneIn_ARCScene, rulesIn_Association] :=
                     ARCApplyPatternFill[
                         ConstantArray[
                             0,
-                            {outputWidth, outputHeight}
+                            {outputHeight, outputWidth}
                         ],
                         Append[
                             ruleList,
@@ -9455,19 +9502,31 @@ ARCFindPropertyToInferValues[propertyPath_List, objectsIn_List, values_List, opt
         
         (* What properties of these objects, if we use multiplication, appear to be usable
            to infer these values? *)
-        matchingPropertiesUsingMultiplication = Select[
-            transposedObjects,
-            And[
-                AllTrue[values, NumberQ],
-                AllTrue[#, NumberQ],
-                Length[values] === Length[#],
-                FreeQ[#, 0 | 0., {1}],
-                And[
-                    SingleUniqueValueQ[factors = values / #],
-                    !MatchQ[factors[[1]], 1 | 1.]
+        (* Disallow color to be treated as an integer here since that doesn't make semantic
+           sense. We should probably also disallow addition above, but will avoid changing
+           that as of Oct 5 2022 since it could in theory break things making use of it.
+           (But long term we should probably disallow that too) Ideally we'd use $properties
+           to check if "Type" is "Integer", but that might break things so will hold off
+           for the moment.
+           e.g. aabf363d gets "Color" -> Inactive[Times][ObjectValue["InputObject", "Color"], 2] *)
+        matchingPropertiesUsingMultiplication =
+            If [Last[propertyPath] =!= "Color",
+                Select[
+                    transposedObjects,
+                    And[
+                        AllTrue[values, NumberQ],
+                        AllTrue[#, NumberQ],
+                        Length[values] === Length[#],
+                        FreeQ[#, 0 | 0., {1}],
+                        And[
+                            SingleUniqueValueQ[factors = values / #],
+                            !MatchQ[factors[[1]], 1 | 1.]
+                        ]
+                    ] &
                 ]
-            ] &
-        ];
+                ,
+                <||>
+            ];
         
         matchingProperties =
             ARCPruneMatchingPropertiesForRelativePositions[
@@ -11436,9 +11495,16 @@ ARCTransformScore[transformIn_] :=
                 _ -> Alternatives[
                     _ObjectValue,
                     _ClassValue,
-                    Inactive[Plus][_ObjectValue, _]
+                    (* Instead of Plus | Times, should we just say _? *)
+                    Inactive[Plus | Times][_ObjectValue, _]
                 ]
             ] :> (
+                If [MatchQ[assoc, KeyValuePattern[_ -> Inactive[Times][___]]],
+                    (* As of Oct 5 2022, we've only ever found one parse that makes use
+                       of Times, and already we have one unwanted parse making use of
+                       it (6e02f1e3), so we'll downscore it. *)
+                    score -= 0.5
+                ];
                 KeyValueMap[
                     Function[{key, rhs},
                         Replace[
@@ -11469,7 +11535,11 @@ ARCTransformScore[transformIn_] :=
                                 0,
                             $properties[key, "Type2"] === $properties[objectValueProperty, "Type2"],
                                 -0.5,
-                            StringEndsQ[objectValueProperty, "Count"],
+                            And[
+                                (* Since we could have something like Inactive[First]["Colors"]. *)
+                                StringQ[objectValueProperty],
+                                StringEndsQ[objectValueProperty, "Count"]
+                            ],
                                 (* If the property is a count property, then although it doesn't
                                    match the type of property we're trying to infer, a count is a
                                    pretty generic thing, so it feels a bit more plausible that
@@ -11477,7 +11547,9 @@ ARCTransformScore[transformIn_] :=
                                    e.g. d0f5fe59 *)
                                 -0.75,
                             True,
-                                -1
+                                (* We are inferring a property using the value of another property
+                                   where the types don't match. This in general is not good/likely. *)
+                                -1.1
                         ];
                         If [And[
                                 AssociationQ[objectValueCondition],
@@ -11486,8 +11558,9 @@ ARCTransformScore[transformIn_] :=
                             (* If we can use a component to infer something, that seems
                                better in general because it's more contextual.
                                ARCChooseBestTransform-20220827-APSTJD
-                               e.g. referenceable-components *)
-                            score += 0.7
+                               e.g. referenceable-components
+                               Example of an unwanted parse: 6e02f1e3 *)
+                            score += 0.5
                         ];
                     ],
                     Select[assoc, !FreeQ[#, _ObjectValue | _ClassValue] &]
@@ -13508,6 +13581,22 @@ ARCTaskLog[] :=
             "CodeLength" -> 25526,
             "NewGeneralizedSuccesses" -> {},
             "NewEvaluationSuccesses" -> {}
+        |>,
+        <|
+            "ExampleImplemented" -> "4938f0c2",
+            "Timestamp" -> DateObject[{2022, 10, 4}],
+            "ImplementationTime" -> Quantity[0, "Hours"],
+            "CodeLength" -> 25527,
+            "NewGeneralizedSuccesses" -> {},
+            "NewEvaluationSuccesses" -> {}
+        |>,
+        <|
+            "ExampleImplemented" -> "8eb1be9a",
+            "Timestamp" -> DateObject[{2022, 10, 7}],
+            "ImplementationTime" -> Quantity[1, "Hours"],
+            "CodeLength" -> 25682,
+            "NewGeneralizedSuccesses" -> {},
+            "NewEvaluationSuccesses" -> {}
         |>
     }
 
@@ -13822,7 +13911,10 @@ ARCImplementedTasksMarkdown[] :=
             implementedPersonallyCreatedTrainingTasks,
             arcTrainingTasksPassingDueToGeneralization,
             arcEvaluationTasksPassingDueToGeneralization,
-            value
+            value,
+            trainingTasksImplementedCount,
+            trainingPercentage,
+            evaluationPercentage
         },
         
         taskLog = ARCTaskLog[];
@@ -13859,10 +13951,10 @@ ARCImplementedTasksMarkdown[] :=
         Echo[
             Rule[
                 Row[{
-                    value = Length[implementedARCTrainingTasks] + Length[arcTrainingTasksPassingDueToGeneralization],
+                    trainingTasksImplementedCount = Length[implementedARCTrainingTasks] + Length[arcTrainingTasksPassingDueToGeneralization],
                     " (",
                     Quantity[
-                        N[value / 400 * 100],
+                        trainingPercentage = ToIntegerIfNoDecimal[Round[trainingTasksImplementedCount / 400 * 100, 0.1]],
                         "Percent"
                     ],
                     ")"
@@ -13877,16 +13969,51 @@ ARCImplementedTasksMarkdown[] :=
                 value = Length[arcEvaluationTasksPassingDueToGeneralization],
                 " (",
                 Quantity[
-                    N[value / 400 * 100],
+                    evaluationPercentage = ToIntegerIfNoDecimal[Round[value / 400 * 100, 0.1]],
                     "Percent"
                 ],
                 ")"
             }]
         ];
         
+        Export[
+            FileNameJoin[{$arcDirectory, "TrainingTasksProgressBar.png"}],
+            ProgressIndicator[trainingPercentage / 100],
+            "PNG"
+        ];
+        
+        Export[
+            FileNameJoin[{$arcDirectory, "EvaluationTasksProgressBar.png"}],
+            ProgressIndicator[evaluationPercentage / 100],
+            "PNG"
+        ];
+        
+        Export[
+            FileNameJoin[{$arcDirectory, "ComparisonWithKaggleCompetitors.png"}],
+            ARCComparisonWithKaggleCompetitors[evaluationPercentage],
+            "PNG"
+        ];
+        
         StringRiffle[
             Flatten@
             {
+                "## Percentage of Tasks Passing",
+                "",
+                "* Training tasks: " <> ToString[trainingTasksImplementedCount] <> " / 400 (" <> ToString[trainingPercentage] <> "%)\\",
+                "  ![Percentage of Training Tasks Passing](TrainingTasksProgressBar.png?raw=true)",
+                "  * Implemented: " <> ToString[Length[implementedARCTrainingTasks]],
+                "  * Passing via generalization: " <> ToString[Length[arcTrainingTasksPassingDueToGeneralization]],
+                "* Evaluation tasks: " <> ToString[Length[arcEvaluationTasksPassingDueToGeneralization]] <> " / 400 (" <> ToString[evaluationPercentage] <> "%)\\",
+                "  ![Percentage of Evaluation Tasks Passing](EvaluationTasksProgressBar.png?raw=true)",
+                "",
+                "## Progress over Time",
+                "",
+                "![Graph of Progress](Progress.png?raw=true)",
+                "",
+                "## Comparison with Kaggle Competitors",
+                "",
+                "![Comparison with Kaggle Competitors](ComparisonWithKaggleCompetitors.png?raw=true)",
+                "",
                 "## Tasks Implemented",
                 "",
                 "### Core ARC Training Tasks (" <> ToString[Length[implementedARCTrainingTasks]] <> ")",
@@ -17117,26 +17244,59 @@ ARCScoreRuleSets[ruleSets_List] :=
 *)
 Clear[ARCRuleSetScore];
 ARCRuleSetScore[ruleSet_List] :=
-    Module[{pattern, conclusion},
-        Total[
+    Module[{pattern, conclusion, score},
+        
+        score = Total[
             Function[{rule},
-                If [MatchQ[rule, _Rule],
-                    pattern = rule[[1]];
-                    conclusion = ARCRemoveExtendedMetadataFromConclusion[rule[[2]]];
-                    SqrtButKeepSign@
-                    Plus[
-                        SquareButKeepSign@
-                        ReturnIfFailure@
-                        ARCConditionsScore[pattern],
-                        SquareButKeepSign@
-                        ReturnIfFailure@
-                        ARCTransformScore[conclusion]
-                    ]
-                    ,
-                    -(ARCExpressionComplexity[rule] ^ 2)
+                (*EchoIndented[rule];*)
+                Which[
+                    MatchQ[rule, {Repeated[KeyValuePattern["Rules" -> _]]}],
+                        (* For example, a set of rules for a grid subdivision, where we
+                           have a different set of rules for each grid cell. *)
+                        Total[ARCRuleSetScore /@ rule],
+                    MatchQ[rule, _Rule],
+                        pattern = rule[[1]];
+                        conclusion = ARCRemoveExtendedMetadataFromConclusion[rule[[2]]];
+                        SqrtButKeepSign@
+                        Plus[
+                            SquareButKeepSign@
+                            ReturnIfFailure@
+                            ARCConditionsScore[pattern],
+                            SquareButKeepSign@
+                            ReturnIfFailure@
+                            ARCTransformScore[conclusion],
+                            SquareButKeepSign@
+                            If [rule[[2, "ExampleCount"]] === 1,
+                                (* If a rule is used in only one examle, it implies there is
+                                a very high risk that it is nonsense, especially if it was
+                                used just once in that example. *)
+                                If [rule[[2, "UseCount"]] === 1,
+                                    -1.5
+                                    ,
+                                    -1
+                                ]
+                                ,
+                                0
+                            ]
+                        ],
+                    True,
+                        -(ARCExpressionComplexity[rule] ^ 2)
                 ]
             ] /@ ruleSet
-        ]
+        ];
+        
+        (* If all rules are used in just one example, it implies that no general set of rules
+           were found, but rather we only produced a "rule" to map from an input
+           to its precise output image. *)
+        If [MatchQ[ruleSet, {Repeated[Rule[_, KeyValuePattern["ExampleCount" -> 1]]]}],
+            If [MatchQ[ruleSet, {Repeated[Rule[_, KeyValuePattern["UseCount" -> 1]]]}],
+                score -= 10
+                ,
+                score -= 8
+            ]
+        ];
+        
+        score
     ]
 
 ARCRuleSetScore[rules_Association] :=
@@ -19081,15 +19241,21 @@ ARCObjectImageShape[image_ARCScene, colors : _List | Automatic : Automatic, mono
 *)
 Clear[ARCRemoveExtendedMetadataFromConclusion];
 ARCRemoveExtendedMetadataFromConclusion[conclusion_Association] :=
-    KeyDrop[
+    Replace[
         conclusion,
-        {
-            "Examples",
-            "ExampleCount",
-            "UseCount",
-            "InputObjects",
-            "RotationNormalization"
-        }
+        assoc: KeyValuePattern["ExampleCount" -> _] :> (
+            KeyDrop[
+                assoc,
+                {
+                    "Examples",
+                    "ExampleCount",
+                    "UseCount",
+                    "InputObjects",
+                    "RotationNormalization"
+                }
+            ]
+        ),
+        {0, Infinity}
     ]
 
 (*!
@@ -19152,8 +19318,15 @@ ARCHollowCount[image_List] :=
 Clear[ARCUpdateReadme];
 ARCUpdateReadme[] :=
     Module[{},
+        
+        Export[
+            FileNameJoin[{$arcDirectory, "Progress.png"}],
+            ARCProgressGraph[],
+            "PNG"
+        ];
+        
         StringReplaceInFiles[
-            "## Tasks Implemented" ~~ ___ -> ReturnIfFailure[ARCImplementedTasksMarkdown[]],
+            "## Percentage of Tasks Passing" ~~ ___ -> ReturnIfFailure[ARCImplementedTasksMarkdown[]],
             {FileNameJoin[{FileNameDrop[FindFile["ARC`"], -1], "README.md"}]}
         ];
     ]
@@ -25080,16 +25253,22 @@ ARCCheckForRepeatingPattern[examples_List, OptionsPattern[]] :=
             examples,
             Function[{example},
                 And[
+                    (* Disabled these conditions since they aren't compatible with examples like
+                       8eb1be9a. *)
                     (* The input image is not large. (width <= 8 and height <= 8) *)
-                    ImageWidth[example["Input"]] <= 8,
-                    ImageHeight[example["Input"]] <= 8,
+                    (*ImageWidth[example["Input"]] <= 8,
+                    ImageHeight[example["Input"]] <= 8,*)
                     (* It should be the case that either/both the output width is at least
                        1.5x the input width or the output height is at least 1.5x the
                        input width, since the input is just a pattern that is being applied
                        a number of times. *)
-                    Or[
+                    (*Or[
                         ImageWidth[example["Output"]] >= ImageWidth[example["Input"]] * 1.5,
                         ImageHeight[example["Output"]] >= ImageHeight[example["Input"]] * 1.5
+                    ],*)
+                    Or[
+                        ImageWidth[example["Output"]] >= ImageWidth[example["Input"]],
+                        ImageHeight[example["Output"]] >= ImageHeight[example["Input"]]
                     ],
                     (* The colors used in the input and output are the same. *)
                     index++;
@@ -25204,7 +25383,16 @@ ARCCheckForRepeatingPattern[examples_List, OptionsPattern[]] :=
     ]
 
 ARCCheckForRepeatingPattern[ARCScene[patternImageIn_], ARCScene[image_]] :=
-    Module[{patternImage = patternImageIn, subImagePositions, firstDerivative, firstDerivatives, trajectory, rule},
+    Module[
+        {
+            patternImage = patternImageIn,
+            subImagePositions,
+            firstDerivative,
+            firstDerivatives,
+            trajectory,
+            rule,
+            originalRule
+        },
         
         (* Crop the pattern if there are outer portions that are purely the background
            color. *)
@@ -25287,6 +25475,8 @@ ARCCheckForRepeatingPattern[ARCScene[patternImageIn_], ARCScene[image_]] :=
         
         firstDerivatives = DeleteDuplicates[firstDerivative];
         
+        (*Echo[firstDerivatives];*)
+        
         (* Have we found a constant first derivative along the sequence of positions? *)
         If [Length[firstDerivatives] === 1,
             trajectory = First[firstDerivatives]
@@ -25295,7 +25485,7 @@ ARCCheckForRepeatingPattern[ARCScene[patternImageIn_], ARCScene[image_]] :=
         ];
         
         (* A candidate rule to consider. *)
-        rule = <|
+        rule = originalRule = <|
             "Type" -> "PatternFill",
             "Pattern" -> ARCScene[patternImage],
             "StartY" -> First[subImagePositions][[1]],
@@ -25314,7 +25504,7 @@ ARCCheckForRepeatingPattern[ARCScene[patternImageIn_], ARCScene[image_]] :=
         
         output = ReturnIfFailure[ARCApplyPatternFill[output, rule]];
         
-        (*ARCEcho2[ARCScene[output]];**)
+        (*ARCEcho2[ARCScene[output]];*)
         
         If [output === image,
             rule
@@ -25325,6 +25515,21 @@ ARCCheckForRepeatingPattern[ARCScene[patternImageIn_], ARCScene[image_]] :=
             trajectory = trajectory * -1;
             rule["TrajectoryY"] = trajectory[[1]];
             rule["TrajectoryX"] = trajectory[[2]];
+            (*ARCEcho2[rule];*)
+            output = ConstantArray[
+                $nonImageColor,
+                {ImageHeight[image], ImageWidth[image]}
+            ];
+            output = ReturnIfFailure[ARCApplyPatternFill[output, rule]];
+            (*ARCEcho2[ARCScene[output]];*)
+        ];
+        
+        If [output === image,
+            rule
+            ,
+            (* If the rule didn't work, check if we need to apply it in both directions. *)
+            rule = originalRule;
+            rule["Bidirectional"] = True;
             (*ARCEcho2[rule];*)
             output = ConstantArray[
                 $nonImageColor,
@@ -25362,7 +25567,8 @@ ARCApplyPatternFill[imageIn_List, patternFill_Association] :=
         {
             image = imageIn,
             trajectory = {patternFill["TrajectoryY"], patternFill["TrajectoryX"]},
-            position = {patternFill["StartY"], patternFill["StartX"]},
+            startPosition = {patternFill["StartY"], patternFill["StartX"]},
+            position,
             scene,
             patternObject
         },
@@ -25395,21 +25601,30 @@ ARCApplyPatternFill[imageIn_List, patternFill_Association] :=
             "Height" -> ImageHeight[patternFill["Pattern"]]
         |>;
         
-        While[
-            ARCOverlapQ[
-                patternObject = Sett[
-                    patternObject,
-                    {
-                        "Position" -> position,
-                        "Y" -> position[[1]],
-                        "X" -> position[[2]]
-                    }
+        Function[{directionModifier},
+            trajectory *= directionModifier;
+            position = startPosition;
+            While[
+                ARCOverlapQ[
+                    patternObject = Sett[
+                        patternObject,
+                        {
+                            "Position" -> position,
+                            "Y" -> position[[1]],
+                            "X" -> position[[2]]
+                        }
+                    ],
+                    scene
                 ],
-                scene
-            ],
-            image = ARCDrawSubImage[image, patternObject];
-            position += trajectory
-        ];
+                image = ARCDrawSubImage[image, patternObject];
+                position += trajectory
+            ]
+        ] /@
+            If [TrueQ[patternFill["Bidirectional"]],
+                {1, -1}
+                ,
+                {1}
+            ];
         
         image
     ]
@@ -25519,6 +25734,100 @@ ARCSceneObject[image_ARCScene, background_, objects_] :=
 Clear[SingleUniqueValueQ];
 SingleUniqueValueQ[list_List] :=
     MatchQ[list, {Repeated[value_]}]
+
+(*!
+    \function ARCProgressGraph
+    
+    \calltable
+        ARCProgressGraph[] '' Produces a graph showing progress over time on getting tasks passing.
+    
+    \maintainer danielb
+*)
+Clear[ARCProgressGraph];
+ARCProgressGraph[] :=
+    Module[
+        {
+            taskLog,
+            min,
+            max,
+            tasksComplete,
+            dataForTotals = {},
+            dataForGeneralization = {}
+        },
+    
+        taskLog = ARCTaskLog[];
+        
+        min = Min[DeleteMissing[taskLog[[All, "Timestamp"]]]];
+        max = Max[DeleteMissing[taskLog[[All, "Timestamp"]]]];
+        
+        Function[{date},
+            tasksComplete = Select[
+                DeleteCases[taskLog, KeyValuePattern["PersonalExample" -> True]],
+                Or[
+                    MissingQ[#["Timestamp"]],
+                    #["Timestamp"] <= date
+                ] &
+            ];
+            AppendTo[
+                dataForTotals,
+                date -> Length[tasksComplete] + Length[Flatten[DeleteCases[tasksComplete[[All, "NewEvaluationSuccesses"]], _Missing | _Integer]]]
+            ];
+            AppendTo[
+                dataForGeneralization,
+                date -> Length[Cases[tasksComplete, KeyValuePattern["GeneralizedSuccess" -> True]]] + Length[Flatten[DeleteCases[tasksComplete[[All, "NewEvaluationSuccesses"]], _Missing | _Integer]]]
+            ];
+        ] /@ DateRange[min, max];
+        
+        DateListPlot[
+            {List @@@ dataForTotals, List @@@ dataForGeneralization},
+            PlotLabel -> "Tasks Passing",
+            PlotLabels -> {"Tasks passing", "Tasks passing via generalization"},
+            ImageSize -> 700
+        ]
+    ]
+
+(*!
+    \function ARCComparisonWithKaggleCompetitors
+    
+    \calltable
+        ARCComparisonWithKaggleCompetitors[] '' Produces a graph to show current pass rates relative to Kaggle 2020 competitors.
+    
+    \maintainer danielb
+*)
+Clear[ARCComparisonWithKaggleCompetitors];
+ARCComparisonWithKaggleCompetitors[evaluationPercentage_] :=
+    Module[{kaggleRankings},
+        
+        kaggleRankings = {
+            "1. icecuber" -> 0.794,
+            "2. Alejandro & Roderic & Yuji" -> 0.813,
+            "3. Vlad & Ilia" -> 0.813,
+            "4. After all, probing is...?" -> 0.813,
+            "5. alijs" -> 0.823,
+            "6. Zoltan" -> 0.823,
+            "7. Alvor" -> 0.833,
+            Style["Me", Red] -> (1 - (evaluationPercentage / 100)),
+            "8. -" -> 0.862,
+            "9. Deep magicians" -> 0.862,
+            "10. Puzzlemaster" -> 0.862,
+            "11. hhiraguchi" -> 0.892,
+            "12. Bac Nguyen" -> 0.892,
+            "13. [ods.ai] Aganov" -> 0.901,
+            "14. Anton Chikin" -> 0.911,
+            "15. pigzz" -> 0.921
+        };
+        
+        kaggleRankings = Function[{item},
+            ReplacePart[item, 2 -> 1 - item[[2]]]
+        ] /@ kaggleRankings;
+        
+        ListPlot[
+            Association @@ Reverse[kaggleRankings],
+            PlotRange -> {0, 0.21},
+            ImageSize -> 600,
+            PlotLabel -> Row[{"Comparison with Kaggle 2020 Competitors\n", Style["(Using evaluation pass rate as proxy)", FontSize -> 10]}]
+        ]
+    ]
 
 End[]
 

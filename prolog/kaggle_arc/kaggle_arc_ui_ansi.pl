@@ -414,19 +414,19 @@ dash_chars(S):- nl_if_needed,dash_chars(60,S),probably_nl.
 dash_chars(H,_):- H < 1,!.
 dash_chars(H,C):- forall(between(0,H,_),bformatc1(C)).
 
-%dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc1('��� ').
-%dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc1('��� ').
-%dash_uborder_no_nl_1:- bformatc1('��� ').
+%dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc1('\u00AF\u00AF\u00AF ').
+%dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc1('\u00AF\u00AF\u00AF ').
+%dash_uborder_no_nl_1:- bformatc1('\u00AF\u00AF\u00AF ').
 dash_uborder_no_nl_1:- uborder(Short,Long),!, bformatc1(Short),bformatc1(Long),write_nbsp.
 dash_uborder_no_nl(1):- !, dash_uborder_no_nl_1.
 dash_uborder_no_nl(Width):- WidthM1 is Width-1, uborder(Short,Long),
   write(' '), write(Short),dash_chars(WidthM1,Long),!.
-%dash_uborder_no_nl(Width):- WidthM1 is Width-1, write_nbsp, bformat('�'),dash_chars(WidthM1,'��'),!.
+%dash_uborder_no_nl(Width):- WidthM1 is Width-1, write_nbsp, bformat('\u00AF'),dash_chars(WidthM1,'\u00AF\u00AF'),!.
 
 dash_uborder(Width):- nl_if_needed,dash_uborder_no_nl(Width),nl.
 
 uborder('-','--'):- stream_property(current_output,encoding(utf8)),!.
-uborder('�','��'):- !. %stream_property(current_output,encoding(text)).
+uborder('\u00AF','\u00AF\u00AF'):- !. %stream_property(current_output,encoding(text)).
 %uborder('-','--').
 
 dash_border_no_nl_1:-  line_position(current_output,0),!, bformatc1(' ___ ').
@@ -578,7 +578,7 @@ write_padding(E1,_W1,E2,LW):- %write_nbsp,
    write(S1), pre_s2(W1,S2), probably_nl.
 
 pre_s2(_,S2):- atom_contains(S2,'_'), write('    '),write(S2).
-pre_s2(_,S2):- atom_contains(S2,'�'), write('    '),write(S2).
+pre_s2(_,S2):- atom_contains(S2,'\u00AF'), write('    '),write(S2).
 pre_s2(_,S2):- atom_contains(S2,'|'), write('   '),write(S2).
 pre_s2(W1,S2):- line_position(user_output,L1), Pad1 is W1 - L1, (dash_chars(Pad1, ' ')),write('  '),write(S2).
 
@@ -617,7 +617,7 @@ show_pair_grid(TitleColor,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
   %LW is (IH * 2 + 12),
 %  wots(U1, print_grid(IH,IV,In)),
 %  wots(U2, print_grid(OH,OV,Out)),
-  INFO = [grid_dim,amass,length,colors_count_size,colors],
+  INFO = [grid_dim,amass,length,unique_color_count,colors],
 %  print_side_by_side(U1,LW,U2),
   print_side_by_side(TitleColor,print_grid(IH,IV,In),NameInU,LW,print_grid(OH,OV,Out),NameOutU),
   print_side_by_side(
@@ -1216,14 +1216,14 @@ color_code(C,W):- color_name(C,W).
 special_dot(Code):- var_dot(Code);bg_dot(Code);fg_dot(Code);grid_dot(Code);cant_be_dot(Code).
 
 resrv_dot(Code):-  code_type(Code,white);code_type(Code,punct);code_type(Code,quote); 
- member(Code,`?.�����```);special_dot(Code).
+ member(Code,`?.\u00AF\u00AF\u00AF\u00AF\u00AF```);special_dot(Code).
 
 
 
 var_dot(63).
-/* code=63 ?  code=183 � code=176 � code=186 � 170 �   */
+/* code=63 ?  code=183 \u00AF code=176 \u00AF code=186 \u00AF 170 \u00AF   */
 bg_dot(32).
-/* 169	� 248	� 216	�  215 �  174	�   */
+/* 169	\u00AF 248	\u00AF 216	\u00AF  215 \u00AF  174	\u00AF   */
 %fg_dot(C):- luser_getval(fg_dot,C),integer(C),!.
 %fg_dot(_):- luser_getval(no_rdot,true),luser_setval(no_rdot,false)-> break , fail.
 fg_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.

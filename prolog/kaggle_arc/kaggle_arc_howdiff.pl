@@ -945,6 +945,9 @@ grid_props(Obj1,[toStr(S)|ListO]):- % \+ arc_option(grid_size_only),
 
 
 
+
+
+
 proportional_or_same(G1,G2,Out):- unused_proportion(G1,G2,Out),!.
 proportional_or_same(A1,A2,A1):- A1==A2,!.
 proportional_or_same(L1,L2,LR):- proportional(L1,L2,LR).
@@ -988,20 +991,22 @@ diff_numbers(I,O,diff(+(D))):- D is I -O.
 is_vset(Colors):- sort(Colors,ColorsS),!,Colors=ColorsS.
 is_lset(Colors):- list_to_set(Colors,ColorsS),!,Colors=ColorsS.
 
-
 proportional_lists(L1,L2,L1):- unused_proportion(L1,L2,_Out).
 %proportional_lists(L1,L2,OUT):- is_vset(L1),is_vset(L2),!,proportional_sets(L1,L2,OUT).
 proportional_lists(L1,L2,Out):- maybe_extract_value(L1,V),V\==L2,!,proportional_lists(V,L2,Out).
 proportional_lists(L1,L2,Out):- maybe_extract_value(L2,V),V\==L1,!,proportional_lists(L1,V,Out).
 proportional_lists(L1,L2,OUT):- is_group(L1),is_group(L2),must_det_ll(diff_groups(L1,L2,OUT)),!.
 
-proportional_lists(L1,L2,OUT):- 
+proportional_lists(L1,L2,OUT):- fail, sort(L1,S1),sort(L2,S2),S2=@=S1,!,length(L1,N),
+ OUT = lst(vals([L1,L2]),len(N),ld(L1)).
+
+proportional_lists(L1,L2,OUT):- fail,
  must_det_ll((
   length(L1,N1),length(L2,N2), proportional_size(N1,N2,N),
   into_vals(L1,L2,Vals),
   diff_lists(L1,L2,Diffs),
   OUT = lst(vals(Vals),len(N),ld(Diffs)))),!.
-/*
+
 proportional_lists(L1,L2,OUT):- 
  must_det_ll((
   length(L1,N1),length(L2,N2), proportional_size(N1,N2,N),
@@ -1014,7 +1019,7 @@ proportional_lists(L1,L2,OUT):-
    len(N),s(SharedS),
     % l(IOnlyC),r(OOnlyC),
     d(Diff)|Lens])),!.
-*/
+
 proportional_lists(L1,L2,p(L1,L2)):-!.
 
 map_overlap(P,L1,L2,[R|R13]):- select(E1,L1,R1),select(E2,L2,R2),call(P,E1,E2,R),map_overlap(P,R1,R2,R13),!.
@@ -1060,8 +1065,8 @@ simplify_objs(F,F).
 
 prefer_grid(G):- is_object_or_grid(G).
 
-:- decl_pt(prop_g,unique_colors(prefer_grid, set)).
 :- decl_pt(prop_g,mass(is_object_or_grid,number)).
+:- decl_pt(prop_g,unique_colors(prefer_grid, set)).
 
 :- decl_pt(prop_g,center_term(is_object,loc)).
 :- decl_pt(prop_g,loc_term(is_object,loc)).
