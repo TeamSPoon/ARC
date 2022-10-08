@@ -9,6 +9,9 @@
 :- endif.
 :- use_module(library(pengines)).
 
+:- dynamic(muarc_tmp:cached_tests/2).
+:- dynamic(muarc_tmp:cached_tests_hard/2).
+
 test_menu :- with_webui(menu).
 menu :- write_menu('i').
 
@@ -60,7 +63,7 @@ menu_cmd1(_,'l','                  or (l)ist special tests to run,',(show_tests)
 menu_cmd1(r,'i','             Re-enter(i)nteractve mode.',(interact)).
 
 menu_cmd9(_,'m','recomple this progra(m),',(make,menu)).
-menu_cmd9(_,'c','(c)lear the scrollback buffer,',(cls_z)).
+menu_cmd9(_,'c','(c)lear the scrollback buffer,',(cls)).
 menu_cmd9(_,'C','(C)all DSL,',(call_dsl)).
 menu_cmd9(_,'Q','(Q)uit Menu,',true).
 menu_cmd9(_,'X','e(X)it to shell,',halt(4)). 
@@ -146,6 +149,14 @@ append_num_code(Start,_SelMax,Key,Sel):- atom_concat(Start,Key,Sel).
 
 clsR:- !. % once(cls_z).
 
+
+/*
+[[1,0,0,0,0]]->[[0,1,0,0,0]]
+[[0,1,0,0,0]]->[[0,0,1,0,0]]   
+[[0,0,1,0,0]]->[[0,0,0,1,0]]
+
+[[0,0,0,1,0]]->[[0,0,0,0,1]]
+*/
 
 enter_test:- repeat, write("\nYour favorite: "), read_line_to_string(user_input,Sel),enter_test(Sel),!.
 
@@ -245,12 +256,14 @@ maybe_test(E,G):- ig(E,G).
 
 get_current_grid(G):- get_current_test(T),kaggle_arc_io(T,_,_,G).
 
-% del
-do_menu_codes([27,91,51,126]):- !, random_test.
+% home
+do_menu_codes([27,91,49,126]):- !, reverse_test, restart_suite.
+% insert
+do_menu_codes([27,91,50,126]):- !, report_suite.
+% delete
+do_menu_codes([27,91,51,126]):- !, randomize_suite, restart_suite.
 % end
 do_menu_codes([27,91,52,126]):- !, restart_suite.
-% home
-do_menu_codes([27,91,49,126]):- !, report_suite.
 % crl left arrow
 do_menu_codes([27,79,68]):- !, previous_test, print_test.
 % ctrl right arrow
@@ -315,17 +328,26 @@ report_suite:- luser_getval(test_suite_name,SuiteX),
 suite_set(SuiteX,Set):- luser_getval(test_suite_name,SuiteX), muarc_tmp:cached_tests(SuiteX,Set),!.
 suite_set(SuiteX,Set):- luser_getval(test_suite_name,SuiteX), get_current_suite_testnames(Set),!.
 
-reverse_suite:-
-   ignore((
+reverse_suite:-   
    suite_set(SuiteX,Set),
-   get_current_test(First),
-   Set = [First|_], reverse(Set,NewSet),
+   get_by_hard(SuiteX,ByHard), reverse(ByHard,RevByHard),
+  ((Set == RevByHard ; Set == ByHard) -> reverse(Set,NewSet) ; NewSet = ByHard),
+   ignore((get_current_test(First), Set = [First|_], 
    retractall(muarc_tmp:cached_tests(SuiteX,_)),
    asserta_new(muarc_tmp:cached_tests(SuiteX,NewSet)),!,
    get_current_suite_testnames([NewFirst|_]),print_qtest(NewFirst))).
 
+randomize_suite:-
+  suite_set(SuiteX,Set),
+  get_by_hard(SuiteX,ByHard), 
+  reverse(ByHard,RevByHard),
+  ignore((
+  ((Set == RevByHard ; Set == ByHard), random_permutation(Set,NewSet),   
+   retractall(muarc_tmp:cached_tests(SuiteX,_)),
+   asserta_new(muarc_tmp:cached_tests(SuiteX,NewSet))))),
+  next_test.
+
 restart_suite:- 
-   reverse_suite,
    get_current_suite_testnames([NewFirst|_]),
    set_current_test(NewFirst),!,
    report_suite.
@@ -374,11 +396,14 @@ get_current_suite_testnames(Set):-
   current_suite_testnames(X,Set).
 
 current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),Set\==[],!.  
-current_suite_testnames(X,Set):-  pp(recreating(X)), 
- findall(ID,test_suite_info(X,ID),List),List\==[],
-   
-  my_list_to_set_variant(List,Set), pp(sorting(X)), sort_by_hard(Set,NamesByHardUR), 
-  !,asserta(muarc_tmp:cached_tests(X,NamesByHardUR)).
+current_suite_testnames(X,ByHard):- get_by_hard(X,ByHard),!,asserta(muarc_tmp:cached_tests(X,ByHard)).
+
+get_by_hard(X,ByHard):- muarc_tmp:cached_tests_hard(X,ByHard),!.
+get_by_hard(X,ByHard):-  pp(recreating(X)),  
+  findall(ID,test_suite_info(X,ID),List),List\==[],   
+  my_list_to_set_variant(List,Set), pp(sorting(X)), 
+    sort_by_hard(Set,ByHard), !,
+    asserta(muarc_tmp:cached_tests_hard(X,ByHard)).
 
 test_suite_info(SuiteX,TestID):- var(SuiteX),!,test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
 test_suite_info(SuiteX,TestID):- current_predicate(SuiteX/1), call(SuiteX,TestID).

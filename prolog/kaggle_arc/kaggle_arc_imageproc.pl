@@ -77,25 +77,29 @@ into_cc1(N-C,cc(Nm,CN)):- CN is N,!,color_name(C,Nm).
 colors_count_black_first(G,BF):- colors(G,SK),black_first(SK,BF).
 colors_count_no_black(G,BF):- colors(G,SK),no_black(SK,BF).
 
+/*
 :- decl_pt(prop_g,all_colors_count(is_object_or_grid, list)).
 all_colors_count(G,CC):- 
   pixel_colors(G,All), 
   findall(Nm-C,(enum_colors_test(C),occurs:count((sub_term(Sub, All), \+ \+ cmatch(C,Sub)), Nm)),BF),
   into_cc(BF,CC),!.
+*/
 
-:- decl_pt(prop_g,some_colors_count(is_object_or_grid, list)).
-some_colors_count(G,CC):- 
+:- decl_pt(prop_g,colors(is_object_or_grid, list)).
+/*some_colors_count(G,CC):- 
   pixel_colors(G,All), 
-  findall(Nm-C,(enum_colors_test(C),occurs:count((sub_term(Sub, All), \+ \+ cmatch(C,Sub)), Nm),Nm\==0),BF),
+  findall(Nm-C,(enum_colors_test(C),occurs:count((sub_term(Sub, All), \+ \+ cmatch(C,Sub)), Nm), 
+    once(Nm\==0 ; (atom(C), C\==is_colorish, C\==var, \+ is_real_color(C)))),BF),
   into_cc(BF,CC),!.
+*/
 
 enum_colors_test(C):- no_repeats(C,enum_colors_test0(C)).
-enum_colors_test0(C):- get_bgc(C).
-enum_colors_test0(C):- C=black, \+ enum_fg_colors(C).
-enum_colors_test0(C):- enum_fg_colors(C), C \== wbg, C\== '#444455'.
 enum_colors_test0(fg).
 enum_colors_test0(bg).
 enum_colors_test0(is_colorish).
+enum_colors_test0(C):- get_bgc(C).
+enum_colors_test0(C):- C=black, \+ enum_fg_colors(C).
+enum_colors_test0(C):- enum_fg_colors(C), C \== wbg, C\== '#444455'.
 enum_colors_test0(var).
 
 

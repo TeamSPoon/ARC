@@ -767,6 +767,10 @@
       return ("\u4e00" <= ch && ch <= "\u9fff") || ("\u3040" <= ch && ch <= "\u30ff") || ("\u31f0" <= ch && ch <= "\u31ff") || ("\u3190" <= ch && ch <= "\u319f") || ("\u3301" <= ch && ch <= "\u3356") || ("\uac00" <= ch && ch <= "\ud7ff") || ("\u3000" <= ch && ch <= "\u303f") || ("\uff00" <= ch && ch <= "\uff60") || ("\uffe0" <= ch && ch <= "\uffe6");
     };
 
+    Terminal.prototype.collapseBetween = function (node1, node2) { 
+      /**/
+    }
+
     Terminal.prototype.charToDom = function (data, attr, cursor) {
       var ch, char, code, classes, ref, styles;
       attr = attr || this.cloneAttr(this.defAttr);
@@ -964,15 +968,22 @@
         }
 
 
+        // 
+        // begin testcase 
+        // 
+
+        
+        
+
 
         // skip ammount of spaces crazy 
         const tenSp = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
         const sixtyTwoSP = tenSp + tenSp + tenSp + tenSp + tenSp + tenSp + '&nbsp;&nbsp;&nbsp;&nbsp;'
-        jarj = jarj.split(sixtyTwoSP).join(" " + tenSp);
+      /*  jarj = jarj.split(sixtyTwoSP).join(" " + tenSp);
         jarj = jarj.split(sixtyTwoSP).join(tenSp + " ");
 
         jarj = jarj.split(";HTML|").join("");
-
+*/
         // trim ends ?
         if (false) {
           while (jarj.endsWith('&nbsp')) {

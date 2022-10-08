@@ -76,6 +76,7 @@ most_unique(symmetry,VM):-
   set(VM.solution)= Obj.
 
 
+
   
 
 what_unique:- get_current_test(TestID),what_unique(TestID).
@@ -257,6 +258,7 @@ found_in_o(Trait,List,L):-
  findall(Obj,(member(Obj-Traits,List),sub_term(E,Traits),nonvar(E), \+ \+ (Trait =@= E)),L).
 
 
+
 %each_1trait(Obj,self(Obj)).
 each_1trait(Var,T):- var(Var),!, enum_object(Var),each_1trait(Var,T).
 each_1trait(obj(L),T):- !, each_1trait(L,T).
@@ -268,6 +270,7 @@ each_1trait(T,T):- \+ too_verbose(T).
 each_trait(Obj,Obj-S):- findall(T,each_1trait(Obj,T),L),list_to_set(L,S).
 
 
+
 too_unique(P):- compound(P),!,compound_name_arity(P,F,_),!,too_unique(F).
 %too_unique(obj_to_oid).
 too_unique(globalpoints).
@@ -275,6 +278,7 @@ too_unique(globalpoints).
 too_unique(link).
 too_unique(obj_to_oid).
 too_unique(birth).
+
 %good_overlap(shape).
 
 good_overlap(P):- compound(P),!,compound_name_arity(P,F,_),!,good_overlap(F).
@@ -286,6 +290,7 @@ too_non_unique(grid_size).
 %too_non_unique(birth).
 too_non_unique(grid).
 too_non_unique(changes).
+too
 
 %too_non_unique(amass).
 
@@ -293,6 +298,7 @@ length_criteria(List,P):- compound(P), P=..[F,n,L],C=..[F,I,L],length(List,I),!,
 length_criteria(List,P):- compound(P), P=..[F,L], C=..[F,I,L],length(List,I),!,call(C).
 length_criteria(List,P):- compound(P), length(List,I), !, call(call,P,I).
 length_criteria(List,N):- length(List,N).
+
 
 tesT_compare_objects:- compare_objects([
     obj([amass(1),shape([point_01_01]),colors([cc(yellow,1.0)]),localpoints([yellow-point_01_01]),

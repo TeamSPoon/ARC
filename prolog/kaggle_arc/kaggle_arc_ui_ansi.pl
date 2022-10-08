@@ -60,6 +60,7 @@ portray_terse:- true,!.
 
 :- discontiguous arc_portray/2. 
 
+arc_portray(S,_):- term_is_ansi(S), !, write_keeping_ansi(S).
 arc_portray(Map,TF):- get_map_pairs(Map,Type,Pairs),!, arc_portray_pairs(Type,TF,Pairs). 
 
 arc_portray_t(G, _):- is_map(G), !, write_map(G,'arc_portray_t').
@@ -241,6 +242,7 @@ p_p_t_no_nl(Term):- az_ansi(print_tree_no_nl(Term)).
 is_toplevel_printing(_):- \+ is_string_output, line_position(current_output,N),  N<2, fail.
 
 pp_no_nl(P):- var(P),!,pp(var_pt(P)),nop((dumpST,break)).
+pp_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 pp_no_nl(P):- atom(P),atom_contains(P,'~'),!,format(P).
 pp_no_nl(G):- is_map(G), !, write_map(G,'pp').
 %pp_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
@@ -289,9 +291,12 @@ lock_doing(Lock,G,Goal):-
   \+ ((member(E,Was),E==G)),
   locally(nb_setval(Lock,[G|Was]),Goal).
 
+pp_hook_g(S):- term_contains_ansi(S), !, write_nbsp, pp_hook_g0(S).
+pp_hook_g(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 pp_hook_g(G):- \+ plain_var(G), \+ nb_current(arc_can_portray,nil),
   lock_doing(in_pp_hook_g,G,pp_hook_g0(G)).
 
+pp_hook_g0(S):- term_is_ansi(S), !, write_nbsp, write_keeping_ansi(S).
 pp_hook_g0(_):- in_pp(bfly),!,fail.
 pp_hook_g0(G):- wots(S,in_bfly(f,pp_hook_g1(G))),write(S).
 
@@ -304,6 +309,7 @@ as_pre_string(O,S):- wots(S,debug_as_grid(O)).
 
 pp_hook_g1(O):-  plain_var(O), !, fail.
 pp_hook_g1(O):-  attvar(O), !, is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
+pp_hook_g1(S):- term_is_ansi(S), !, write_nbsp, write_keeping_ansi(S).
 
 pp_hook_g1(shape(O)):-  is_points_list(O), as_grid_string(O,S), print(shape(S)),!.
 pp_hook_g1(O):-  is_points_list(O),as_grid_string(O,S),print(S),!.
@@ -368,10 +374,9 @@ wqs([skip(_)|T]):- !,wqs(T).
 wqs([H|T]):- !, wqs(H),need_nl(H,T), wqs(T).
 wqs(call(C)):- !, call(C).
 wqs(C):- is_color(C),!,wqs(color_print(C,C)).
-wqs(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 wqs(X):- \+ compound(X),!, write_nbsp, write(X).
 wqs(C):- compound(C),wqs1(C),!.
-wqs(S):- term_contains_ansi(S), !,write_nbsp, write_keeping_ansi(S).
+%wqs(S):- term_contains_ansi(S), !, write_nbsp, write_keeping_ansi(S).
 wqs(X):- write_nbsp,writeq(X).
 
 
@@ -389,6 +394,7 @@ wqs1(cc(C,N)):- N\==0,var(C), sformat(PC,"~p",[C]), !, wqs(ccc(PC,N)).
 wqs1(cc(C,N)):- \+ string(C), wots(S,color_print(C,C)), wqs(cc(S,N)).
 wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
 wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
+wqs1(S):- term_contains_ansi(S), !, write_nbsp, print(S).
 
 %probably_nl :- arc_webui,!,write('<br/>').
 nl_if_needed :- format('~N').
@@ -408,19 +414,19 @@ dash_chars(S):- nl_if_needed,dash_chars(60,S),probably_nl.
 dash_chars(H,_):- H < 1,!.
 dash_chars(H,C):- forall(between(0,H,_),bformatc1(C)).
 
-%dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc1('¯¯¯ ').
-%dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc1('¯¯¯ ').
-%dash_uborder_no_nl_1:- bformatc1('¯¯¯ ').
+%dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc1('ï¿½ï¿½ï¿½ ').
+%dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc1('ï¿½ï¿½ï¿½ ').
+%dash_uborder_no_nl_1:- bformatc1('ï¿½ï¿½ï¿½ ').
 dash_uborder_no_nl_1:- uborder(Short,Long),!, bformatc1(Short),bformatc1(Long),write_nbsp.
 dash_uborder_no_nl(1):- !, dash_uborder_no_nl_1.
 dash_uborder_no_nl(Width):- WidthM1 is Width-1, uborder(Short,Long),
   write(' '), write(Short),dash_chars(WidthM1,Long),!.
-%dash_uborder_no_nl(Width):- WidthM1 is Width-1, write_nbsp, bformat('¯'),dash_chars(WidthM1,'¯¯'),!.
+%dash_uborder_no_nl(Width):- WidthM1 is Width-1, write_nbsp, bformat('ï¿½'),dash_chars(WidthM1,'ï¿½ï¿½'),!.
 
 dash_uborder(Width):- nl_if_needed,dash_uborder_no_nl(Width),nl.
 
 uborder('-','--'):- stream_property(current_output,encoding(utf8)),!.
-uborder('¯','¯¯'):- !. %stream_property(current_output,encoding(text)).
+uborder('ï¿½','ï¿½ï¿½'):- !. %stream_property(current_output,encoding(text)).
 %uborder('-','--').
 
 dash_border_no_nl_1:-  line_position(current_output,0),!, bformatc1(' ___ ').
@@ -572,7 +578,7 @@ write_padding(E1,_W1,E2,LW):- %write_nbsp,
    write(S1), pre_s2(W1,S2), probably_nl.
 
 pre_s2(_,S2):- atom_contains(S2,'_'), write('    '),write(S2).
-pre_s2(_,S2):- atom_contains(S2,'¯'), write('    '),write(S2).
+pre_s2(_,S2):- atom_contains(S2,'ï¿½'), write('    '),write(S2).
 pre_s2(_,S2):- atom_contains(S2,'|'), write('   '),write(S2).
 pre_s2(W1,S2):- line_position(user_output,L1), Pad1 is W1 - L1, (dash_chars(Pad1, ' ')),write('  '),write(S2).
 
@@ -1210,14 +1216,14 @@ color_code(C,W):- color_name(C,W).
 special_dot(Code):- var_dot(Code);bg_dot(Code);fg_dot(Code);grid_dot(Code);cant_be_dot(Code).
 
 resrv_dot(Code):-  code_type(Code,white);code_type(Code,punct);code_type(Code,quote); 
- member(Code,`?.¨«¬­°```);special_dot(Code).
+ member(Code,`?.ï¿½ï¿½ï¿½ï¿½ï¿½```);special_dot(Code).
 
 
 
 var_dot(63).
-/* code=63 ?  code=183 · code=176 ° code=186 º 170 ª   */
+/* code=63 ?  code=183 ï¿½ code=176 ï¿½ code=186 ï¿½ 170 ï¿½   */
 bg_dot(32).
-/* 169	© 248	ø 216	Ø  215 ×  174	®   */
+/* 169	ï¿½ 248	ï¿½ 216	ï¿½  215 ï¿½  174	ï¿½   */
 %fg_dot(C):- luser_getval(fg_dot,C),integer(C),!.
 %fg_dot(_):- luser_getval(no_rdot,true),luser_setval(no_rdot,false)-> break , fail.
 fg_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.

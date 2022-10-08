@@ -687,7 +687,8 @@ needs_indivs(I,O):- is_gridoid(I), \+ is_group(I), arcST, trace, compute_unshare
 %diff_terms(IPs,OPs,Difs2):- diff_terms(IPs,OPs,Difs2).
 
 diff_terms(I,O,D):- diff_termz(I,O,D),!.
-diff_terms(I,O,diff(I->O)).
+%diff_terms(I,O,O):- is_real_color(I),is_real_color(O). % diff_tracked(I->O)
+diff_terms(I,O,dift(I->O)).
 
 diff_termz(I,O,D):- nonvar_or_ci(D),!,diff_terms(I,O,DD),D=DD.
 diff_termz(I,O,[]):- O=@=I,!.
@@ -909,7 +910,13 @@ proportional(B,A,C):- maybe_extract_values(B,BB), compound(A), \+ maybe_extract_
 
 proportional(G1,G2,Out):- unused_proportion(G1,G2,Out),!.
 %proportional(E1,E2,E1):- E1=@=E2,!.
-proportional(Obj2,Obj1,Out):- 
+
+proportional(Obj1,Obj2,Out):- compound(Obj1), compound(Obj2),  
+  is_grid(Obj1),!,once((grid_props(Obj1,Out1), 
+  grid_props(Obj2,Out2))),
+  proportional(grid_props(Out1),grid_props(Out2),Out).
+
+proportional(Obj2,Obj1,Out):- is_object(Obj1),!,
   (decl_pt(prop_g,P1P2);decl_pt(prop_o,P1P2)), 
   P1P2=..[P2,P1|Lst],
   once((
@@ -925,6 +932,18 @@ proportional(L1,L2,_List):- is_grid(L1),is_grid(L2),!,fail.
 proportional(N1,N2,N):- compound(N1),compound_name_arguments(N1,F,A1),compound_name_arguments(N2,F,A2),
   maplist(proportional_or_same,A1,A2,AR),compound_name_arguments(N,F,AR).
 proportional(L1,L2,Diff):- locally(nb_setval(diff_porportional,t),diff_terms(L1,L2,Diff)),!.
+
+
+grid_props(Obj1,[toStr(S)|ListO]):- % \+ arc_option(grid_size_only), 
+ %to_assertable_grid(Obj1,AG),data_type(Obj1,DT),
+ wots(S,print_grid(Obj1)),
+ findall(Prop, (((decl_pt(prop_g,P1P2);decl_pt(prop_o,P1P2)), 
+  P1P2=..[P2,P1|Lst], once((on_x_log_and_fail(call(P1,Obj1)))),
+    length(Lst,Len), length(NewLst1,Len), 
+    once((on_x_log_and_fail(apply(P2,[Obj1|NewLst1])))),
+   Prop =.. [P2|NewLst1])), ListO).
+
+
 
 proportional_or_same(G1,G2,Out):- unused_proportion(G1,G2,Out),!.
 proportional_or_same(A1,A2,A1):- A1==A2,!.
@@ -950,11 +969,10 @@ maybe_extract_values(Color,Values):- must_be_free(Values), compound(Color), Colo
 maybe_extract_value(Color,Value):- maybe_extract_values(Color,Values),!,member(Value,Values).
 
 proportional_size(N1,N2,P):- unused_proportion(N1,N2,P),!.
-proportional_size(M1,M2, num(vals([N1,N2]),+N,r([R-xy,R2-x,R3-y]))):- maybe_number(M1,N1),maybe_number(M2,N2), N is N2-N1, 
-  (ratio_for0(R,N1,N2)-> true ; catch(R is rationalize(N1/N2),_,true)),
-  N1p1 is N1+1, N2p1 is N2+1,
-  (ratio_for0(R3,N1,N2p1)-> true ; catch(R is rationalize(N1/(N2p1)),_,true)),
-  (ratio_for0(R2,N1p1,N2)-> true ; catch(R is rationalize((N1p1)/N2),_,true)).
+proportional_size(M1,M2, num(vals(Vals),+N,ratio(R))):-
+ maybe_number(M1,N1),maybe_number(M2,N2), N is N2-N1, 
+ into_vals(M1,M2,Vals),
+ (calc_ratio(R,N1,N2)-> true ; catch(R is rationalize(N1/N2),_,true)).
 
 
 diff_f(lst).
@@ -976,6 +994,14 @@ proportional_lists(L1,L2,L1):- unused_proportion(L1,L2,_Out).
 proportional_lists(L1,L2,Out):- maybe_extract_value(L1,V),V\==L2,!,proportional_lists(V,L2,Out).
 proportional_lists(L1,L2,Out):- maybe_extract_value(L2,V),V\==L1,!,proportional_lists(L1,V,Out).
 proportional_lists(L1,L2,OUT):- is_group(L1),is_group(L2),must_det_ll(diff_groups(L1,L2,OUT)),!.
+
+proportional_lists(L1,L2,OUT):- 
+ must_det_ll((
+  length(L1,N1),length(L2,N2), proportional_size(N1,N2,N),
+  into_vals(L1,L2,Vals),
+  diff_lists(L1,L2,Diffs),
+  OUT = lst(vals(Vals),len(N),ld(Diffs)))),!.
+/*
 proportional_lists(L1,L2,OUT):- 
  must_det_ll((
   length(L1,N1),length(L2,N2), proportional_size(N1,N2,N),
@@ -984,8 +1010,11 @@ proportional_lists(L1,L2,OUT):-
   into_vals(L1,L2,Vals),
   list_to_set(Shared,SharedS),
   diff_lists(IOnlyC,OOnlyC,Diff),
-  OUT=..[lst,vals(Vals),len(N),s(SharedS),dif(Diff),l(IOnlyC),r(OOnlyC)|Lens])),!.
-
+  OUT=..[lst, vals(Vals),
+   len(N),s(SharedS),
+    % l(IOnlyC),r(OOnlyC),
+    d(Diff)|Lens])),!.
+*/
 proportional_lists(L1,L2,p(L1,L2)):-!.
 
 map_overlap(P,L1,L2,[R|R13]):- select(E1,L1,R1),select(E2,L2,R2),call(P,E1,E2,R),map_overlap(P,R1,R2,R13),!.
@@ -1007,18 +1036,20 @@ The IEEE floating-point standard, supported by almost all modern floating-point 
 */
 ratio_for(Ratio,_/_=Out,In):- nonvar(Out), !, ratio_for(Ratio,Out,In).
 ratio_for(Ratio,Out,_/_=In):- nonvar(In), !, ratio_for(Ratio,Out,In).
-ratio_for(Out/In=Ratio,Out,In):- ratio_for0(Ratio,Out,In).
-ratio_for0(1.0,Out,In):- 0 is In, 0 is Out,!.
-ratio_for0(1,Out,In):- Out =:= In.
-ratio_for0(Ratio,Out,_In):- 0 is Out, !, Ratio is +0.0.
-ratio_for0(Ratio,_Out,In):- 0 is In, !, Ratio is -0.0.
-ratio_for0(Ratio,Out,In):- catch(Ratio is rationalize(Out/In),error(evaluation_error(_Zero_divisor),_),fail),!.
-ratio_for0(Ratio,Out,In):- catch(NRatio is rationalize(In/Out),error(evaluation_error(_Zero_divisor),_),fail),!, Ratio is -NRatio.
+ratio_for(Out/In=Ratio,Out,In):- calc_ratio(Ratio,Out,In).
+calc_ratio(1.0,Out,In):- 0 is In, 0 is Out,!.
+calc_ratio(1,Out,In):- Out =:= In.
+calc_ratio(Ratio,Out,_In):- 0 is Out, !, Ratio is +0.0.
+calc_ratio(Ratio,_Out,In):- 0 is In, !, Ratio is -0.0.
+calc_ratio(Ratio,Out,In):- catch(Ratio is rationalize(Out/In),error(evaluation_error(_Zero_divisor),_),fail),!.
+calc_ratio(Ratio,Out,In):- catch(NRatio is rationalize(In/Out),error(evaluation_error(_Zero_divisor),_),fail),!, Ratio is -NRatio.
 
 :- decl_pt(prop_g,each_object(is_grid, set)).
 
 %each_object(_Grid,[]):-!.
-each_object(Grid,ListO):- \+ arc_option(grid_size_only), arc_memoized(individuate(complete,Grid,List)),!, simplify_objs(List,ListO).
+each_object(Grid,ListO):- \+ arc_option(grid_size_only), 
+  arc_memoized(individuate(complete,Grid,List)),!, 
+  simplify_objs(List,ListO).
 %each_object(Grid,ListO):- print_collapsed(100,memoized(individuate(complete,Grid,List))),!, simplify_objs(List,ListO).
 
 simplify_objs(I,O):-is_list(I),!,maplist(simplify_objs,I,O).

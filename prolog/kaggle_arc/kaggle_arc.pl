@@ -40,6 +40,7 @@ catch_log(G):- format('~N'),ignore(catch(notrace(G),E,wdmsg(E=G))),format('~N').
 :- dynamic(user:portray/1).
 :- discontiguous(user:portray/1).
 
+
 :- dynamic(kaggle_arc/4).
 :- discontiguous(kaggle_arc/4).
 :- multifile(kaggle_arc/4).
@@ -102,6 +103,7 @@ fif(IF, THEN) :- (   call(IF) ->  call(THEN) ;   true ).
 quietlyd(G):- quietly(G),!.
 
 :- strip_module(_,M,_),abolish(system:muarc_mod/1),asserta(system:muarc_mod(M)).
+
 
 /*
 :- discontiguous '$exported_op'/3. 

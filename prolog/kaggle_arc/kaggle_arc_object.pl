@@ -898,7 +898,16 @@ colors(I,X):- is_map(I),into_grid(I,G),!,colors(G,X).
 colors(I,X):- is_object(I),indv_u_props(I,L),member(localpoints(LP),L),!,colors_via_pixels(LP,X).
 colors(G,BFO):- localpoints_include_bg(G,G0), colors_via_pixels(G0,BFO),!.
 colors(G,BFO):- colors_via_pixels(G,BFO),!.
-colors_via_pixels(G,BFO):- quietly((pixel_colors(G,GF),count_sets(GF,_,SK),into_cc(SK,BFO))).
+
+
+colors_via_pixels(G,CC):- 
+  pixel_colors(G,All), 
+  findall(Nm-C,(enum_colors_test(C),occurs:count((sub_term(Sub, All), \+ \+ cmatch(C,Sub)), Nm), 
+    once(Nm\==0 ; (atom(C), C\==is_colorish, C\==var, \+ is_real_color(C)))),BF),
+  keysort(BF,KS),reverse(KS,SK),
+  into_cc(SK,CC),!.
+
+%colors_via_pixels(G,BFO):- quietly((pixel_colors(G,GF),count_sets(GF,_,SK),into_cc(SK,BFO))).
 
 count_sets(GF,GS,SK):-
   list_to_set(GF,GS),

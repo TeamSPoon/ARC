@@ -98,7 +98,7 @@ save_supertest(TestID):-
        with_output_to(O,(
          write_intermediatre_header,
          maplist(print_ref,Info))),
-      close(O)), statistics.
+      close(O)), nop(statistics).
 
 
 
@@ -268,7 +268,7 @@ compute_and_show_test_hints(TestID):- format('~N'),
 compute_and_show_test_hints(TestID):- format('~N'),
   compute_all_test_hints(TestID),
   ignore(list_common_props_so_far(TestID)),!,
-  listing(arc_test_property(TestID,_,_)),
+  %listing(arc_test_property(TestID,_,_)),
   listing(io_xform(TestID,_,_)),
   %ignore(list_common_props(TestID)),!,
   format('~N').
@@ -419,11 +419,15 @@ io_r(IO,io_r(IO)).
 
 grid_hint_io_ogs(In,Out,find_ogs(R,XY)):-  all_ogs(R,In,Out,XY),XY\==[].
 
-all_ogs(R,In,Out,notrim(list(Len,XY))):- OX=OY, OX is 0,
-  member(R,[strict,loose]), findall(loc(XX,YY),(maybe_ogs(R,X,Y,In,Out),XX is X+OX, YY is Y+OY),XY), XY\==[], length(XY,Len),!.
+all_ogs(R,In,Out,[ogsn(notrim,R)|XY]):-
+%all_ogs(R,In,Out,notrim(list(Len,XY))):- 
+  OX=OY, OX is 0,
+  member(R,[strict,loose]), findall(loc(XX,YY),(maybe_ogs(R,X,Y,In,Out),XX is X+OX, YY is Y+OY),XY), XY\==[].
 
-all_ogs(R,II,Out,trim(list(Len,XY))):- trim_to_rect(II,In),!, II\=In, maybe_ogs(_,OX,OY,II,In),
-  member(R,[strict,loose]), findall(loc(XX,YY),(maybe_ogs(R,X,Y,In,Out),XX is X+OX, YY is Y+OY),XY), XY\==[], length(XY,Len),!.
+all_ogs(R,In,Out,[ogsn(trim,R)|XY]):-
+%all_ogs(R,II,Out,trim(list(Len,XY))):- 
+  trim_to_rect(II,In),!, II\=In, maybe_ogs(_,OX,OY,II,In),
+  member(R,[strict,loose]), findall(loc(XX,YY),(maybe_ogs(R,X,Y,In,Out),XX is X+OX, YY is Y+OY),XY), XY\==[].
 
 maybe_ogs(R,X,Y,In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
 maybe_ogs(R,X,Y,In,Out):-  find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R=loose).
@@ -601,3 +605,9 @@ illegal_column_data(In,Color,BorderNums):-
 
 
 %globalpoints(grid,points)
+
+  /*
+
+but once i started over leveling and building software for the military that no one was able to understand 
+
+  */
