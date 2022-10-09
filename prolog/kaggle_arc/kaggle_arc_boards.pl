@@ -605,9 +605,3 @@ illegal_column_data(In,Color,BorderNums):-
 
 
 %globalpoints(grid,points)
-
-  /*
-
-but once i started over leveling and building software for the military that no one was able to understand 
-
-  */

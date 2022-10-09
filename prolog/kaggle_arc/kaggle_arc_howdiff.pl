@@ -688,7 +688,7 @@ needs_indivs(I,O):- is_gridoid(I), \+ is_group(I), arcST, trace, compute_unshare
 
 diff_terms(I,O,D):- diff_termz(I,O,D),!.
 %diff_terms(I,O,O):- is_real_color(I),is_real_color(O). % diff_tracked(I->O)
-diff_terms(I,O,dift(I->O)).
+diff_terms(I,O,diff(I->O)).
 
 diff_termz(I,O,D):- nonvar_or_ci(D),!,diff_terms(I,O,DD),D=DD.
 diff_termz(I,O,[]):- O=@=I,!.
@@ -991,22 +991,12 @@ diff_numbers(I,O,diff(+(D))):- D is I -O.
 is_vset(Colors):- sort(Colors,ColorsS),!,Colors=ColorsS.
 is_lset(Colors):- list_to_set(Colors,ColorsS),!,Colors=ColorsS.
 
+
 proportional_lists(L1,L2,L1):- unused_proportion(L1,L2,_Out).
 %proportional_lists(L1,L2,OUT):- is_vset(L1),is_vset(L2),!,proportional_sets(L1,L2,OUT).
 proportional_lists(L1,L2,Out):- maybe_extract_value(L1,V),V\==L2,!,proportional_lists(V,L2,Out).
 proportional_lists(L1,L2,Out):- maybe_extract_value(L2,V),V\==L1,!,proportional_lists(L1,V,Out).
 proportional_lists(L1,L2,OUT):- is_group(L1),is_group(L2),must_det_ll(diff_groups(L1,L2,OUT)),!.
-
-proportional_lists(L1,L2,OUT):- fail, sort(L1,S1),sort(L2,S2),S2=@=S1,!,length(L1,N),
- OUT = lst(vals([L1,L2]),len(N),ld(L1)).
-
-proportional_lists(L1,L2,OUT):- fail,
- must_det_ll((
-  length(L1,N1),length(L2,N2), proportional_size(N1,N2,N),
-  into_vals(L1,L2,Vals),
-  diff_lists(L1,L2,Diffs),
-  OUT = lst(vals(Vals),len(N),ld(Diffs)))),!.
-
 proportional_lists(L1,L2,OUT):- 
  must_det_ll((
   length(L1,N1),length(L2,N2), proportional_size(N1,N2,N),
@@ -1015,10 +1005,7 @@ proportional_lists(L1,L2,OUT):-
   into_vals(L1,L2,Vals),
   list_to_set(Shared,SharedS),
   diff_lists(IOnlyC,OOnlyC,Diff),
-  OUT=..[lst, vals(Vals),
-   len(N),s(SharedS),
-    % l(IOnlyC),r(OOnlyC),
-    d(Diff)|Lens])),!.
+  OUT=..[lst,vals(Vals),len(N),s(SharedS),dif(Diff),l(IOnlyC),r(OOnlyC)|Lens])),!.
 
 proportional_lists(L1,L2,p(L1,L2)):-!.
 
@@ -1052,9 +1039,7 @@ calc_ratio(Ratio,Out,In):- catch(NRatio is rationalize(In/Out),error(evaluation_
 :- decl_pt(prop_g,each_object(is_grid, set)).
 
 %each_object(_Grid,[]):-!.
-each_object(Grid,ListO):- \+ arc_option(grid_size_only), 
-  arc_memoized(individuate(complete,Grid,List)),!, 
-  simplify_objs(List,ListO).
+each_object(Grid,ListO):- \+ arc_option(grid_size_only), arc_memoized(individuate(complete,Grid,List)),!, simplify_objs(List,ListO).
 %each_object(Grid,ListO):- print_collapsed(100,memoized(individuate(complete,Grid,List))),!, simplify_objs(List,ListO).
 
 simplify_objs(I,O):-is_list(I),!,maplist(simplify_objs,I,O).

@@ -569,6 +569,18 @@ ARCProgressGraph::usage = "ARCProgressGraph  "
 
 ARCComparisonWithKaggleCompetitors::usage = "ARCComparisonWithKaggleCompetitors  "
 
+ARCNoNegativeChangesQ::usage = "ARCNoNegativeChangesQ  "
+
+ARCImageDifferencePositions::usage = "ARCImageDifferencePositions  "
+
+ARCFlattenRepeatedPatternSets::usage = "ARCFlattenRepeatedPatternSets  "
+
+ARCFindLinearModel::usage = "ARCFindLinearModel  "
+
+ARCCheckForWrappedRepeatedPattern::usage = "ARCCheckForWrappedRepeatedPattern  "
+
+ARCSubImageMatchQ::usage = "ARCSubImageMatchQ  "
+
 Begin["`Private`"]
 
 Utility`Reload`SetupReloadFunction["Daniel`ARC`"];
@@ -2628,33 +2640,85 @@ ARCIndent[failure_Failure] := failure
 ARCIndent[expr_, opts:OptionsPattern[]] :=
     Module[{temporaryAssociationSymbol, expr2},
         Indent3[
-            expr2 = Replace2[
+            expr2 =
+            Replace2[
+            Replace2[
+            Replace2[
+            Replace2[
+            Replace2[
                 expr,
                 temporaryAssociationSymbol,
-                {
-                    assoc:temporaryAssociationSymbol[a___, "Colors" -> value: _List | _Except | _Alternatives, b___] /; !FreeQ[value, _Integer] :> (
-                        <|
-                            a,
-                            "Colors" -> Replace[
-                                value,
-                                color_Integer :> $integerToColor[color],
-                                {0, Infinity}
-                            ],
-                            b
-                        |>
-                    ),
-                    assoc:temporaryAssociationSymbol[a___, "Color" -> value: _Integer | _Except | _Alternatives, b___] /; !FreeQ[value, _Integer] :> (
-                        <|
-                            a,
-                            "Color" -> Replace[
-                                value,
-                                color_Integer :> $integerToColor[color],
-                                {0, Infinity}
-                            ],
-                            b
-                        |>
-                    )
-                },
+                assoc:temporaryAssociationSymbol[a___, "Colors" -> value: _List | _Except | _Alternatives, b___] /; !FreeQ[value, _Integer] :> (
+                    <|
+                        a,
+                        "Colors" -> Replace[
+                            value,
+                            color_Integer :> $integerToColor[color],
+                            {0, Infinity}
+                        ],
+                        b
+                    |>
+                ),
+                {0, Infinity},
+                Heads -> True
+            ],
+                temporaryAssociationSymbol,
+                assoc:temporaryAssociationSymbol[a___, "Color" -> value_Integer | _Except | _Alternatives, b___] /; !FreeQ[value, _Integer] :> (
+                    <|
+                        a,
+                        "Color" -> Replace[
+                            value,
+                            color_Integer :> $integerToColor[color],
+                            {0, Infinity}
+                        ],
+                        b
+                    |>
+                ),
+                {0, Infinity},
+                Heads -> True
+            ],
+                temporaryAssociationSymbol,
+                assoc:temporaryAssociationSymbol[a___, "Background" -> value_Integer, b___] :> (
+                    <|
+                        a,
+                        "Background" -> Replace[
+                            value,
+                            color_Integer :> $integerToColor[color],
+                            {0, Infinity}
+                        ],
+                        b
+                    |>
+                ),
+                {0, Infinity},
+                Heads -> True
+            ],
+                temporaryAssociationSymbol,
+                assoc:temporaryAssociationSymbol[a___, "MostUsedColor" -> value_Integer, b___] :> (
+                    <|
+                        a,
+                        "MostUsedColor" -> Replace[
+                            value,
+                            color_Integer :> $integerToColor[color],
+                            {0, Infinity}
+                        ],
+                        b
+                    |>
+                ),
+                {0, Infinity},
+                Heads -> True
+            ],
+                temporaryAssociationSymbol,
+                assoc:temporaryAssociationSymbol[a___, "SecondMostUsedColor" -> value_Integer, b___] :> (
+                    <|
+                        a,
+                        "SecondMostUsedColor" -> Replace[
+                            value,
+                            color_Integer :> $integerToColor[color],
+                            {0, Infinity}
+                        ],
+                        b
+                    |>
+                ),
                 {0, Infinity},
                 Heads -> True
             ]
@@ -8999,6 +9063,14 @@ ARCGeneralizeConclusionValueNonRecursive[propertyPath_List, propertyAttributes: 
     ]
 
 ARCGeneralizeConclusionValueNonRecursive[property_String, values_List, examples_List] :=
+    ARCGeneralizeConclusionValueNonRecursive[
+        property,
+        values,
+        None,
+        examples
+    ]
+
+ARCGeneralizeConclusionValueNonRecursive[property_String, values_List, inputObjects: _List | None, examples_List] :=
     Replace[
         ARCGeneralizeConclusionValueNonRecursive[
             {property},
@@ -9007,6 +9079,11 @@ ARCGeneralizeConclusionValueNonRecursive[property_String, values_List, examples_
                 Function[{propertyValue, index},
                     <|
                         "Value" -> propertyValue,
+                        If [ListQ[inputObjects],
+                            "Input" -> inputObjects[[First[index]]]
+                            ,
+                            Nothing
+                        ],
                         "Example" -> First[index]
                     |>
                 ],
@@ -9430,7 +9507,9 @@ ARCFindPropertyToInferValues[propertyPath_List, objectsIn_List, values_List, opt
             values2,
             objects = objectsIn,
             matchingPropertiesUsingAddition,
-            matchingPropertiesUsingMultiplication
+            matchingPropertiesUsingMultiplication,
+            numberQ,
+            linearModel
         },
         
         (* If any of the items aren't actually associations but lists/groups of associations,
@@ -9483,66 +9562,9 @@ ARCFindPropertyToInferValues[propertyPath_List, objectsIn_List, values_List, opt
                 ]
         ];
         
-        (* What properties of these objects, if we use addition, appear to be usable
-           to infer these values? *)
-        matchingPropertiesUsingAddition = Select[
-            transposedObjects,
-            And[
-                AllTrue[values, NumberQ],
-                AllTrue[#, NumberQ],
-                (* TODO: Why do we need this condition? Shouldn't the lengths of these things
-                         always be the same. e.g. relative-components *)
-                Length[values] === Length[#],
-                And[
-                    SingleUniqueValueQ[differences = values - #],
-                    !MatchQ[differences[[1]], 0 | 0.]
-                ]
-            ] &
-        ];
-        
-        (* What properties of these objects, if we use multiplication, appear to be usable
-           to infer these values? *)
-        (* Disallow color to be treated as an integer here since that doesn't make semantic
-           sense. We should probably also disallow addition above, but will avoid changing
-           that as of Oct 5 2022 since it could in theory break things making use of it.
-           (But long term we should probably disallow that too) Ideally we'd use $properties
-           to check if "Type" is "Integer", but that might break things so will hold off
-           for the moment.
-           e.g. aabf363d gets "Color" -> Inactive[Times][ObjectValue["InputObject", "Color"], 2] *)
-        matchingPropertiesUsingMultiplication =
-            If [Last[propertyPath] =!= "Color",
-                Select[
-                    transposedObjects,
-                    And[
-                        AllTrue[values, NumberQ],
-                        AllTrue[#, NumberQ],
-                        Length[values] === Length[#],
-                        FreeQ[#, 0 | 0., {1}],
-                        And[
-                            SingleUniqueValueQ[factors = values / #],
-                            !MatchQ[factors[[1]], 1 | 1.]
-                        ]
-                    ] &
-                ]
-                ,
-                <||>
-            ];
-        
         matchingProperties =
             ARCPruneMatchingPropertiesForRelativePositions[
                 matchingProperties,
-                OptionValue["RelativePosition"]
-            ];
-        
-        matchingPropertiesUsingAddition =
-            ARCPruneMatchingPropertiesForRelativePositions[
-                matchingPropertiesUsingAddition,
-                OptionValue["RelativePosition"]
-            ];
-        
-        matchingPropertiesUsingMultiplication =
-            ARCPruneMatchingPropertiesForRelativePositions[
-                matchingPropertiesUsingMultiplication,
                 OptionValue["RelativePosition"]
             ];
         
@@ -9551,7 +9573,32 @@ ARCFindPropertyToInferValues[propertyPath_List, objectsIn_List, values_List, opt
                 (* TODO: What to do if there are multiple properties that could
                          be used? *)
                 First[Keys[matchingProperties]],
-            Length[matchingPropertiesUsingAddition] > 0,
+            
+            (* Addition? *)
+            And[
+                numberQ = AllTrue[values, NumberQ],
+                (* What properties of these objects, if we use addition, appear to be usable
+                   to infer these values? *)
+                matchingPropertiesUsingAddition = Select[
+                    transposedObjects,
+                    And[
+                        AllTrue[#, NumberQ],
+                        (* TODO: Why do we need this condition? Shouldn't the lengths of these things
+                                 always be the same. e.g. relative-components *)
+                        Length[values] === Length[#],
+                        And[
+                            SingleUniqueValueQ[differences = values - #],
+                            !MatchQ[differences[[1]], 0 | 0.]
+                        ]
+                    ] &
+                ];
+                matchingPropertiesUsingAddition =
+                    ARCPruneMatchingPropertiesForRelativePositions[
+                        matchingPropertiesUsingAddition,
+                        OptionValue["RelativePosition"]
+                    ];
+                Length[matchingPropertiesUsingAddition] > 0
+            ],
                 (* NOTE: As of Aug 18 2022, this function is called with one referenceable object
                          after another, and the first one that has a suitable property results in
                          that property being used. Related to that is that when we form the list
@@ -9587,7 +9634,43 @@ ARCFindPropertyToInferValues[propertyPath_List, objectsIn_List, values_List, opt
                         ]
                     ]
                 ],
-            Length[matchingPropertiesUsingMultiplication] > 0,
+            
+            (* Multiplication? *)
+            And[
+                numberQ,
+                (* What properties of these objects, if we use multiplication, appear to be usable
+                   to infer these values? *)
+                (* Disallow color to be treated as an integer here since that doesn't make semantic
+                   sense. We should probably also disallow addition above, but will avoid changing
+                   that as of Oct 5 2022 since it could in theory break things making use of it.
+                   (But long term we should probably disallow that too) Ideally we'd use $properties
+                   to check if "Type" is "Integer", but that might break things so will hold off
+                   for the moment.
+                   e.g. aabf363d gets "Color" -> Inactive[Times][ObjectValue["InputObject", "Color"], 2] *)
+                matchingPropertiesUsingMultiplication =
+                    If [Last[propertyPath] =!= "Color",
+                        Select[
+                            transposedObjects,
+                            And[
+                                AllTrue[#, NumberQ],
+                                Length[values] === Length[#],
+                                FreeQ[#, 0 | 0., {1}],
+                                And[
+                                    SingleUniqueValueQ[factors = values / #],
+                                    !MatchQ[factors[[1]], 1 | 1.]
+                                ]
+                            ] &
+                        ]
+                        ,
+                        <||>
+                    ];
+                matchingPropertiesUsingMultiplication =
+                    ARCPruneMatchingPropertiesForRelativePositions[
+                        matchingPropertiesUsingMultiplication,
+                        OptionValue["RelativePosition"]
+                    ];
+                Length[matchingPropertiesUsingMultiplication] > 0
+            ],
                 (* TODO: What to do if there are multiple properties that could
                          be used? *)
                 With[{property = First[Keys[matchingPropertiesUsingMultiplication]]},
@@ -9611,6 +9694,19 @@ ARCFindPropertyToInferValues[propertyPath_List, objectsIn_List, values_List, opt
                         ]
                     ]
                 ],
+            
+            (* Linear model? *)
+            And[
+                numberQ,
+                Last[propertyPath] =!= "Color",
+                linearModel = ARCFindLinearModel[values, transposedObjects];
+                AssociationQ[linearModel]
+            ],
+                Inactive[Plus][
+                    Inactive[Times][ObjectValue[TODO, linearModel["Property"]], linearModel["Slope"]],
+                    linearModel["Offset"]
+                ],
+            
             True,
                 (* Also check if there are any properties that have list values containing
                    a single item, where our value is the single value. For example, if we
@@ -13595,6 +13691,22 @@ ARCTaskLog[] :=
             "Timestamp" -> DateObject[{2022, 10, 7}],
             "ImplementationTime" -> Quantity[1, "Hours"],
             "CodeLength" -> 25682,
+            "NewGeneralizedSuccesses" -> {},
+            "NewEvaluationSuccesses" -> {}
+        |>,
+        <|
+            "ExampleImplemented" -> "eb281b96",
+            "Timestamp" -> DateObject[{2022, 10, 8}],
+            "ImplementationTime" -> Quantity[3.5, "Hours"],
+            "CodeLength" -> 26358,
+            "NewGeneralizedSuccesses" -> {},
+            "NewEvaluationSuccesses" -> {"42a15761"}
+        |>,
+        <|
+            "ExampleImplemented" -> "91413438",
+            "Timestamp" -> DateObject[{2022, 10, 8}],
+            "ImplementationTime" -> Quantity[2.5, "Hours"],
+            "CodeLength" -> 26628,
             "NewGeneralizedSuccesses" -> {},
             "NewEvaluationSuccesses" -> {}
         |>
@@ -20768,7 +20880,8 @@ Options[ARCImageShapes] =
     "IncludeBaseShape" -> True,             (*< Should we include the base image shape that hasn't had any transforms applied? *)
     "IncludeNoopTransforms" -> False,       (*< Should we include image transforms that result in the image not changing? e.g. A horizontal flip for an image that has vertical line symmetry. *)
     "Monochrome" -> Automatic,              (*< The monochrome image if known. *)
-    "Colors" -> Automatic                   (*< The colors used by the image. *)
+    "Colors" -> Automatic,                  (*< The colors used by the image. *)
+    "ToMonochrome" -> Automatic             (*< Should the shapes be monocrhome? By default, if an image uses a single color, we make its shape monochrome. *)
 };
 ARCImageShapes[image_List, opts:OptionsPattern[]] :=
     Module[{colors, imageShape},
@@ -20779,7 +20892,10 @@ ARCImageShapes[image_List, opts:OptionsPattern[]] :=
         ];
         
         imageShape =
-            If [Length[colors] === 1,
+            If [Replace[
+                    OptionValue["ToMonochrome"],
+                    Automatic :> Length[colors] === 1
+                ],
                 Replace[
                     OptionValue["Monochrome"],
                     Automatic -> ARCToMonochrome[image, $nonImageColor]
@@ -24563,7 +24679,7 @@ ARCSubImage[image_List, y1In_Integer, x1In_Integer, y2In_Integer, x2In_Integer] 
             Echo[res];
             Echo[{yShift, xShift}];*)
             
-            If [And[y1 =!= y2, x1 =!= x2],
+            If [Or[y1 =!= y2, x1 =!= x2],
                 res[[
                     y1 + yShift ;; y2 + yShift,
                     x1 + xShift ;; x2 + xShift
@@ -25242,7 +25358,6 @@ ARCCheckForRepeatingPattern[examples_List, OptionsPattern[]] :=
             inputColorCounts,
             outputColorCounts,
             index,
-            rule,
             semiParsedExamples = OptionValue["SemiParsedExamples"]
         },
         
@@ -25325,12 +25440,38 @@ ARCCheckForRepeatingPattern[examples_List, OptionsPattern[]] :=
             examples
         ];
         
+        If [MatchQ[rules, {__List}],
+            (* We don't have a single list of rules but multiple possible rules for
+               each example, so flatten the rule sets and also ensure we can find
+               a common transformation where applicable. *)
+            rules = ARCFlattenRepeatedPatternSets[rules];
+            If [MatchQ[rules, {__}],
+                (* For now we'll just choose the first working rule set we can find. *)
+                rules = First[rules];
+                rules = Replace[
+                    rules,
+                    (* Get rid of the Pattern images since they are not needed in the final
+                       rules and would cause the below code that tries to ensure we have
+                       consistent rules from working. *)
+                    assoc: KeyValuePattern["Pattern" -> _ARCScene] :> (
+                        KeyDrop[assoc, "Pattern"]
+                    ),
+                    {0, Infinity}
+                ]
+                ,
+                Return[False, Module]
+            ]
+        ];
+        
         (*ARCEcho2[rules];*)
         
         (* If all inputs found the same rule, then return it. *)
         If [SingleUniqueValueQ[rules],
             Return[
-                rules[[1]],
+                Replace[
+                    rules[[1]],
+                    assoc: KeyValuePattern["Wrapped" -> False] :> KeyDrop[assoc, "Wrapped"]
+                ],
                 Module
             ]
         ];
@@ -25355,43 +25496,184 @@ ARCCheckForRepeatingPattern[examples_List, OptionsPattern[]] :=
         
         (*ARCEcho2[examples2];*)
         
-        rule = <||>;
+        If [MatchQ[rules, {KeyValuePattern["List" -> _]..}],
+            ruleSets = rules[[All, "List"]];
+            ,
+            ruleSets = List /@ rules
+        ];
         
-        (* Try to produce dynamic expressions for propety values that aren't constant. *)
-        Function[{property},
-            If [SingleUniqueValueQ[rules[[All, property]]],
-                (* This property has a predictable constant value. *)
-                rule[property] = rules[[1, property]]
-                ,
-                (* This propety's value varies, so we'll try to produce a dynamic expression
-                   that can be used to compute its value. *)
-                (*Echo[property -> rules[[All, property]]];*)
-                rule[property] = Replace[
-                    ARCGeneralizeConclusionValueNonRecursive[
-                        property,
-                        rules[[All, property]],
-                        semiParsedExamples
-                    ],
-                    _Missing :> Return[False, Module]
+        (*EchoIndented[ruleSets];*)
+        
+        (* Try to produce dynamic expressions for property values that aren't constant. *)
+        rules = Function[{i},
+            theseRules = ruleSets[[All, i]];
+            (*ARCEcho[theseRules];*)
+            With[{wrappedValues = theseRules[[All, "Wrapped"]]},
+                If [Or @@ wrappedValues,
+                    If [Not[And @@ wrappedValues],
+                        (* Some are "Wrapped" -> True but others are "Wrapped" -> False. In this
+                           case we'll set all of them to "Wrapped" -> True, since an example
+                           that doesn't wrap due to being linear might have wrapped if it
+                           had a higher count. *)
+                        theseRules[[All, "Wrapped"]] = True;
+                    ]
+                    ,
+                    theseRules = KeyDrop[theseRules, "Wrapped"]
                 ]
-            ]
-        ] /@ DeleteDuplicates[Flatten[Keys[rules]]];
+            ];
+            (*ARCEcho[theseRules];*)
+            thisRule = <||>;
+            Function[{property},
+                If [SingleUniqueValueQ[theseRules[[All, property]]],
+                    (* This property has a predictable constant value. *)
+                    thisRule[property] = theseRules[[1, property]]
+                    ,
+                    (* This propety's value varies, so we'll try to produce a dynamic expression
+                       that can be used to compute its value. *)
+                    (*ARCEcho[property -> theseRules[[All, property]]];*)
+                    thisRule[property] = Replace[
+                        ARCGeneralizeConclusionValueNonRecursive[
+                            property,
+                            theseRules[[All, property]],
+                            semiParsedExamples
+                        ],
+                        _Missing :> Return[False, Module]
+                    ]
+                ]
+            ] /@ DeleteDuplicates[Flatten[Keys[theseRules]]];
+            thisRule
+        ] /@ Range[Length[ruleSets[[1]]]];
         
-        (*ARCEcho2[rule];*)
+        rules =
+            If [Length[rules] === 1,
+                <|
+                    "Type" -> "PatternFill",
+                    rules[[1]]
+                |>
+                ,
+                <|
+                    "Type" -> "PatternFill",
+                    "List" -> rules
+                |>
+            ];
         
-        rule
+        (*ARCEcho2[rules];*)
+        
+        rules
     ]
 
-ARCCheckForRepeatingPattern[ARCScene[patternImageIn_], ARCScene[image_]] :=
+ARCCheckForRepeatingPattern[ARCScene[patternImage_], ARCScene[image_]] :=
+    Module[{initialResult, nonBackgroundPixelsInOutput, ruleSubsetsThatCoverOutput},
+        
+        (* Check for a simple PatternFill. *)
+        Replace[
+            initialResult = ARCCheckForRepeatingPattern["Helper", ARCScene[patternImage], ARCScene[image]],
+            False | KeyValuePattern["Type" -> "PatternFill"] :> Return[initialResult, Module]
+        ];
+        
+        (*ARCEcho2[res];*)
+        
+        (* We found a partial PatternFill, so we now check to see whether any transforms
+           of the pattern image can find additional PatternFills. e.g. eb281b96 *)
+        
+        (* Determine the list of transforms of the image that have a shape with the same
+           dimensions. *)
+        possibleTransforms = GroupBy[
+            Select[
+                ARCImageShapes[initialResult["Rule", "Pattern"], "ToMonochrome" -> False],
+                And[
+                    ImageWidth[#["Image"]] === ImageWidth[patternImage],
+                    ImageHeight[#["Image"]] === ImageHeight[patternImage],
+                    #[["Image", 1]] =!= patternImage
+                ] &
+            ],
+            Function[#["Image"]] -> Function[#["Transform"]]
+        ];
+        
+        (* For each transform of the pattern image, check for repeating patterns. *)
+        transformResults = DeleteCases[
+            KeyValueMap[
+                Function[{transformedImage, transforms},
+                    Replace[
+                        ARCCheckForRepeatingPattern[
+                            "Helper",
+                            transformedImage,
+                            ARCScene[image]
+                        ],
+                        res_Association :> Append[
+                            res,
+                            "Transforms" -> transforms
+                        ]
+                    ]
+                ],
+                possibleTransforms
+            ],
+            False
+        ];
+        
+        If [transformResults =!= {},
+            (* One or more image transforms has a candidate pattern fill, so we'll check
+               whether any combinations of pattern fills can produce the entire output
+               image. *)
+            
+            (* Which pixels need to get set in the output image which aren't the background
+               color? *)
+            nonBackgroundPixelsInOutput =
+                Sort@
+                ARCImageDifferencePositions[
+                    ConstantArray[$nonImageColor, {ImageHeight[image], ImageWidth[image]}],
+                    image
+                ];
+            
+            ruleSubsetsThatCoverOutput = Select[
+                Subsets[
+                    Prepend[
+                        transformResults,
+                        initialResult
+                    ],
+                    {2, Infinity}
+                ],
+                SameQ[
+                    DeleteDuplicates[Sort[Join @@ #[[All, "Improvements"]]]],
+                    nonBackgroundPixelsInOutput
+                ] &
+            ];
+            
+            (* Produce the list of candidate multi-pattern rules. *)
+            Function[{ruleSubset},
+                <|
+                    "Type" -> "PatternFill",
+                    "List" -> Function[{rule},
+                        Join[
+                            KeyDrop[rule["Rule"], "Type"],
+                            If [!MissingQ[rule["Transforms"]],
+                                <|"Transforms" -> rule["Transforms"]|>
+                                ,
+                                <||>
+                            ]
+                        ]
+                    ] /@ ruleSubset
+                |>
+            ] /@ ruleSubsetsThatCoverOutput
+        ]
+    ]
+
+ARCCheckForRepeatingPattern["Helper", ARCScene[patternImageIn_], ARCScene[image_]] :=
     Module[
         {
             patternImage = patternImageIn,
             subImagePositions,
             firstDerivative,
             firstDerivatives,
+            wrappingAnalysis,
             trajectory,
-            rule,
-            originalRule
+            rule1,
+            rule2,
+            rule3,
+            output1,
+            output2,
+            output3,
+            improvements
         },
         
         (* Crop the pattern if there are outer portions that are purely the background
@@ -25451,7 +25733,7 @@ ARCCheckForRepeatingPattern[ARCScene[patternImageIn_], ARCScene[image_]] :=
             {} | {_} :> Return[False, Module]
         ];
         
-        (*Echo[subImagePositions];*)
+        (*ARCEcho[subImagePositions];*)
         
         (* If one of the ends of the sequence starts at an X or Y value of one, favor that
            as the start. e.g. feca6190 *)
@@ -25473,75 +25755,144 @@ ARCCheckForRepeatingPattern[ARCScene[patternImageIn_], ARCScene[image_]] :=
             pair[[2]] - pair[[1]]
         ] /@ Partition[subImagePositions, 2, 1];
         
+        (*Echo[Counts[firstDerivative]];*)
+        
         firstDerivatives = DeleteDuplicates[firstDerivative];
         
         (*Echo[firstDerivatives];*)
+        
+        emptyImage = ConstantArray[$nonImageColor, {ImageHeight[image], ImageWidth[image]}];
+        
+        wrappingAnalysis =
+            ARCCheckForWrappedRepeatedPattern[
+                subImagePositions,
+                ImageWidth[patternImage],
+                ImageHeight[patternImage],
+                ImageWidth[image],
+                ImageHeight[image],
+                "PatternImage" -> patternImage,
+                "OutputImage" -> image
+            ];
         
         (* Have we found a constant first derivative along the sequence of positions? *)
         If [Length[firstDerivatives] === 1,
             trajectory = First[firstDerivatives]
             ,
-            Return[False, Module]
+            If [!TrueQ[wrappingAnalysis["Wrapped"]],
+                Return[False, Module]
+                ,
+                trajectory = wrappingAnalysis["PrimaryTrajectory"]
+            ]
         ];
         
         (* A candidate rule to consider. *)
-        rule = originalRule = <|
+        rule1 = <|
             "Type" -> "PatternFill",
             "Pattern" -> ARCScene[patternImage],
             "StartY" -> First[subImagePositions][[1]],
             "StartX" -> First[subImagePositions][[2]],
             "TrajectoryY" -> trajectory[[1]],
-            "TrajectoryX" -> trajectory[[2]]
+            "TrajectoryX" -> trajectory[[2]],
+            If [AssociationQ[wrappingAnalysis],
+                <|
+                    KeyTake[wrappingAnalysis, {"Wrapped"}],
+                    If [!TrueQ[wrappingAnalysis["FullLinear"]],
+                        "Count" -> wrappingAnalysis["Count"]
+                        ,
+                        Nothing
+                    ]
+                |>
+                ,
+                Nothing
+            ]
         |>;
         
-        (*ARCEcho2[rule];*)
+        (*ARCEcho2[rule1];*)
         
         (* Try applying the rule to see if it produces the full image. *)
-        output = ConstantArray[
-            $nonImageColor,
-            {ImageHeight[image], ImageWidth[image]}
+        output1 = ReturnIfFailure[
+            ARCApplyPatternFill[
+                emptyImage,
+                rule1
+            ]
         ];
         
-        output = ReturnIfFailure[ARCApplyPatternFill[output, rule]];
+        (*ARCEcho2[ARCScene[output1]];*)
         
-        (*ARCEcho2[ARCScene[output]];*)
-        
-        If [output === image,
-            rule
+        If [output1 === image,
+            (* Found a rule that produces the desired output image. *)
+            Return[rule1, Module]
             ,
             (* If the rule didn't work, check if it works in the opposite direction. *)
-            rule["StartY"] = Last[subImagePositions][[1]];
-            rule["StartX"] = Last[subImagePositions][[2]];
+            rule2 = rule1;
+            rule2["StartY"] = Last[subImagePositions][[1]];
+            rule2["StartX"] = Last[subImagePositions][[2]];
             trajectory = trajectory * -1;
-            rule["TrajectoryY"] = trajectory[[1]];
-            rule["TrajectoryX"] = trajectory[[2]];
-            (*ARCEcho2[rule];*)
-            output = ConstantArray[
-                $nonImageColor,
-                {ImageHeight[image], ImageWidth[image]}
-            ];
-            output = ReturnIfFailure[ARCApplyPatternFill[output, rule]];
+            rule2["TrajectoryY"] = trajectory[[1]];
+            rule2["TrajectoryX"] = trajectory[[2]];
+            (*ARCEcho2[rule2];*)
+            output2 = ReturnIfFailure[ARCApplyPatternFill[emptyImage, rule2]];
             (*ARCEcho2[ARCScene[output]];*)
         ];
         
-        If [output === image,
-            rule
+        If [output2 === image,
+            (* Found a rule that produces the desired output image. *)
+            Return[rule2, Module]
             ,
             (* If the rule didn't work, check if we need to apply it in both directions. *)
-            rule = originalRule;
-            rule["Bidirectional"] = True;
+            rule3 = rule1;
+            rule3["Bidirectional"] = True;
             (*ARCEcho2[rule];*)
-            output = ConstantArray[
-                $nonImageColor,
-                {ImageHeight[image], ImageWidth[image]}
-            ];
-            output = ReturnIfFailure[ARCApplyPatternFill[output, rule]];
+            output3 = ReturnIfFailure[ARCApplyPatternFill[emptyImage, rule3]];
             (*ARCEcho2[ARCScene[output]];*)
-            If [output === image,
-                rule
+            If [output3 === image,
+                (* Found a rule that produces the desired output image. *)
+                Return[rule3, Module]
                 ,
-                False
-            ]
+                (* Neither applying the pattern fill forwards, nor backwards, nor in both
+                   directions produced the desired output. We now check to see whether any
+                   of those produced a net positive change to the output, and if so, we
+                   return the pattern fill that produced the most positive change with metadata
+                   to specify which pixels got improved. *)
+                Replace[
+                    SortBy[
+                        Select[
+                            {
+                                <|
+                                    "Rule" -> rule1,
+                                    "Improvements" -> (improvements = ARCNoNegativeChangesQ[emptyImage, output1, image]),
+                                    "ImprovementCount" -> Length[improvements],
+                                    "Index" -> 1
+                                |>,
+                                <|
+                                    "Rule" -> rule2,
+                                    "Improvements" -> (improvements = ARCNoNegativeChangesQ[emptyImage, output2, image]),
+                                    "ImprovementCount" -> Length[improvements],
+                                    "Index" -> 2
+                                |>,
+                                <|
+                                    "Rule" -> rule3,
+                                    "Improvements" -> (improvements = ARCNoNegativeChangesQ[emptyImage, output3, image]),
+                                    "ImprovementCount" -> Length[improvements],
+                                    "Index" -> 3
+                                |>
+                            },
+                            Function[
+                                And[
+                                    #["Improvements"] =!= False,
+                                    Length[#["Improvements"]] > 0
+                                ]
+                            ]
+                        ],
+                        {-#["ImprovementCount"], #["Index"]} &
+                    ],
+                    {best_, ___} :> Return[
+                        Return[KeyDrop[best, "Index"], Module]
+                    ]
+                ]
+            ];
+            
+            False
         ]
     ]
 
@@ -25562,7 +25913,45 @@ ARCCheckForRepeatingPattern[ARCScene[patternImageIn_], ARCScene[image_]] :=
     \maintainer danielb
 *)
 Clear[ARCApplyPatternFill];
-ARCApplyPatternFill[imageIn_List, patternFill_Association] :=
+
+(* A list of pattern fills. *)
+ARCApplyPatternFill[imageIn_List, patternFill: KeyValuePattern["List" -> _]] :=
+    Module[{image = imageIn},
+        
+        (* Apply each of the sub-pattern fills to the image. *)
+        Function[{subPatternFill},
+            image =
+                ReturnIfFailure@
+                ARCApplyPatternFill[image, subPatternFill]
+        ] /@
+            Function[{subPatternFill},
+                Replace[
+                    Join[
+                        KeyDrop[patternFill, "List"],
+                        subPatternFill
+                    ],
+                    assoc: KeyValuePattern["Transform" -> transform_] :> (
+                        (* This pattern fill involves first applying a transform to the
+                           primary pattern image. *)
+                        KeyDrop[
+                            Sett[
+                                assoc,
+                                "Pattern" -> ARCApplyImageTransforms[
+                                    patternFill["Pattern"],
+                                    transform
+                                ]
+                            ],
+                            "Transform"
+                        ]
+                    )
+                ]
+            ] /@ patternFill["List"];
+        
+        image
+    ]
+
+(* Apply a single pattern fill to the image. *)
+ARCApplyPatternFill[imageIn_List, patternFill: KeyValuePattern[{"TrajectoryY" -> _, "TrajectoryX" -> _}]] :=
     Module[
         {
             image = imageIn,
@@ -25570,7 +25959,8 @@ ARCApplyPatternFill[imageIn_List, patternFill_Association] :=
             startPosition = {patternFill["StartY"], patternFill["StartX"]},
             position,
             scene,
-            patternObject
+            patternObject,
+            count
         },
         
         If [Or[
@@ -25601,23 +25991,45 @@ ARCApplyPatternFill[imageIn_List, patternFill_Association] :=
             "Height" -> ImageHeight[patternFill["Pattern"]]
         |>;
         
+        count = 0;
         Function[{directionModifier},
             trajectory *= directionModifier;
             position = startPosition;
             While[
-                ARCOverlapQ[
-                    patternObject = Sett[
-                        patternObject,
-                        {
-                            "Position" -> position,
-                            "Y" -> position[[1]],
-                            "X" -> position[[2]]
-                        }
+                And[
+                    Or[
+                        !IntegerQ[patternFill["Count"]],
+                        count < patternFill["Count"]
                     ],
-                    scene
+                    ARCOverlapQ[
+                        patternObject = Sett[
+                            patternObject,
+                            {
+                                "Position" -> position,
+                                "Y" -> position[[1]],
+                                "X" -> position[[2]]
+                            }
+                        ],
+                        scene
+                    ]
                 ],
+                ++count;
                 image = ARCDrawSubImage[image, patternObject];
-                position += trajectory
+                position += trajectory;
+                patternObject["Position"] = position;
+                
+                If [And[
+                        TrueQ[patternFill["Wrapped"]],
+                        !ObjectWithinQ[patternObject, scene]
+                    ],
+                    If [trajectory[[1]] === 0,
+                        position[[1]] += patternObject["Height"];
+                        position[[2]] = 1
+                        ,
+                        position[[1]] = 1;
+                        position[[2]] += patternObject["Width"]
+                    ]
+                ]
             ]
         ] /@
             If [TrueQ[patternFill["Bidirectional"]],
@@ -25827,6 +26239,442 @@ ARCComparisonWithKaggleCompetitors[evaluationPercentage_] :=
             ImageSize -> 600,
             PlotLabel -> Row[{"Comparison with Kaggle 2020 Competitors\n", Style["(Using evaluation pass rate as proxy)", FontSize -> 10]}]
         ]
+    ]
+
+(*!
+    \function ARCNoNegativeChangesQ
+    
+    \calltable
+        ARCNoNegativeChangesQ[image1, image2, targetImage] '' Returns False if any changes from `image1` to `image2` are regressions wrt `targetImage`. Otherwise, returns the list of positions that improved.
+    
+    Examples:
+    
+    ARCNoNegativeChangesQ[{{1, 1}}, {{1, 2}}, {{2, 2}}] === {{1, 2}}
+    
+    Unit tests:
+    
+    RunUnitTests[Daniel`ARC`ARCNoNegativeChangesQ]
+    
+    \maintainer danielb
+*)
+Clear[ARCNoNegativeChangesQ];
+ARCNoNegativeChangesQ[image1_, image2_, targetImage_] :=
+    Module[{tranposedImages},
+        
+        tranposedImages =
+            Transpose[
+                {image1, image2, targetImage},
+                {3, 1, 2}
+            ];
+        
+        improvedPositions = ReapList[
+            reapTag,
+            MapIndexed[
+                Function[{pixelSet, position},
+                    Replace[
+                        Or[
+                            (* The pixel didn't change from `image1` to `image2`. *)
+                            pixelSet[[1]] === pixelSet[[2]],
+                            (* The pixel changed, but it is now the desired pixel value, of
+                               `targetImage`. *)
+                            Replace[
+                                pixelSet[[2]] === pixelSet[[3]],
+                                True :> (
+                                    Sow[position, reapTag];
+                                    True
+                                )
+                            ]
+                        ],
+                        False :> Return[False, Module]
+                    ]
+                ],
+                tranposedImages,
+                {2}
+            ]
+        ]
+    ]
+
+(*!
+    \function ARCImageDifferencePositions
+    
+    \calltable
+        ARCImageDifferencePositions[image1, image2] '' Given two images of the same size, returns the list of positions at which they differ.
+    
+    Examples:
+    
+    ARCImageDifferencePositions[{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}] === {{1, 1}, {1, 2}, {2, 1}, {2, 2}}
+    
+    Unit tests:
+    
+    RunUnitTests[Daniel`ARC`ARCImageDifferencePositions]
+    
+    \maintainer danielb
+*)
+Clear[ARCImageDifferencePositions];
+ARCImageDifferencePositions[image1_List, image2_List] :=
+    Module[{tranposedImages},
+        
+        tranposedImages =
+            Transpose[
+                {image1, image2},
+                {3, 1, 2}
+            ];
+        
+        ReapList[
+            reapTag,
+            MapIndexed[
+                Function[{pixelSet, position},
+                    If [pixelSet[[1]] =!= pixelSet[[2]],
+                        Sow[position, reapTag]
+                    ]
+                ],
+                tranposedImages,
+                {2}
+            ]
+        ]
+    ]
+
+(*!
+    \function ARCFlattenRepeatedPatternSets
+    
+    \calltable
+        ARCFlattenRepeatedPatternSets[repeatedPatternSets] '' Given a list of lists of PatternFill rules for a list of examples, flattens them to lists of PatternFill rules that can be considered further.
+    
+    Examples:
+    
+    See function notebook
+    
+    Unit tests:
+    
+    RunUnitTests[Daniel`ARC`ARCFlattenRepeatedPatternSets]
+    
+    \maintainer danielb
+*)
+Clear[ARCFlattenRepeatedPatternSets];
+ARCFlattenRepeatedPatternSets[repeatedPatternSets_List] :=
+    Module[{rulesForExample1, otherRules},
+        
+        rulesForExample1 = repeatedPatternSets[[1]];
+        
+        Function[{ruleForExample1In},
+            
+            ruleForExample1 = ruleForExample1In;
+            
+            otherRules = Function[{rulesForOtherExample},
+                SelectFirst[
+                    rulesForOtherExample,
+                    Function[{ruleForOtherExample},
+                        And[
+                            (* The number of pattern fills for this rule is the same for
+                               the number of pattern fills that we're considering for
+                               example 1. *)
+                            Length[ruleForExample1["List"]] === Length[ruleForOtherExample["List"]],
+                            (* All corresponding rules either have no transforms, or a list of
+                               transforms. *)
+                            And @@ (
+                                Function[{i},
+                                    SameQ[
+                                        Head[ruleForExample1[["List", i, "Transforms"]]],
+                                        Head[ruleForOtherExample[["List", i, "Transforms"]]]
+                                    ]
+                                ] /@ Range[Length[ruleForExample1["List"]]]
+                            )
+                        ]
+                    ]
+                ]
+            ] /@ Rest[repeatedPatternSets];
+            
+            Block[{},
+                If [FreeQ[otherRules, _Missing, {1}],
+                    Function[{i},
+                        If [ListQ[ruleForExample1[["List", i, "Transforms"]]],
+                            commonTransforms = Intersection @@ (
+                                Prepend[
+                                    otherRules[[All, "List", i, "Transforms"]],
+                                    ruleForExample1[["List", i, "Transforms"]]
+                                ]
+                            );
+                            If [commonTransforms === {},
+                                (* No common transforms. *)
+                                Return[Nothing, Block]
+                                ,
+                                (* Choose the best common transform. *)
+                                transform = First[
+                                    Sort[
+                                        commonTransforms,
+                                        Function[
+                                            Replace[
+                                                #["Type"],
+                                                {
+                                                    "Rotation" -> 2,
+                                                    "Flip" -> 1,
+                                                    _ :> 3
+                                                }
+                                            ]
+                                        ]
+                                    ]
+                                ];
+                                ruleForExample1[["List", i]] = Sett[
+                                    KeyDrop[ruleForExample1[["List", i]], "Transforms"],
+                                    "Transform" -> transform
+                                ];
+                                otherRules[[All, "List", i]] = Function[{otherRule},
+                                    Sett[otherRule, "Transform" -> transform]
+                                ] /@ KeyDrop[otherRules[[All, "List", i]], "Transforms"];
+                            ]
+                        ]
+                    ] /@ Range[Length[ruleForExample1["List"]]];
+                    {
+                        ruleForExample1,
+                        Sequence @@ otherRules
+                    }
+                    ,
+                    Nothing
+                ]
+            ]
+            
+        ] /@ rulesForExample1
+    ]
+
+(*!
+    \function ARCFindLinearModel
+    
+    \calltable
+        ARCFindLinearModel[values, transposedObjects] '' Tries to find a linear model to explain the given values using the property values in the given transposed objects.
+    
+    Examples:
+    
+    ARCFindLinearModel[
+        {3, 5, 7},
+        <|"a" -> {1, 2, 3}, "b" -> {9, 9, 9}, "c" -> {"a", "b", "c"}|>
+    ]
+    
+    ===
+    
+    <|"Property" -> "a", "Slope" -> 2, "Offset" -> 1|>
+    
+    Unit tests:
+    
+    RunUnitTests[Daniel`ARC`ARCFindLinearModel]
+    
+    \maintainer danielb
+*)
+Clear[ARCFindLinearModel];
+ARCFindLinearModel[values_List, transposedObjectsIn_Association] :=
+    Module[{transposedObjects, model},
+        
+        (* Select only properties with numeric values. *)
+        transposedObjects = Select[
+            transposedObjectsIn,
+            AllTrue[#, NumericQ] &
+        ];
+        
+        KeyValueMap[
+            Function[{property, propertyValues},
+                model = Quiet[
+                    LinearModelFit[Transpose[{propertyValues, values}], x, x]
+                ];
+                If [Round[Total[Abs[model["FitResiduals"]]], 0.000001] == 0.,
+                    (* For now we'll use the first linear model we can find, but we will probably
+                       need to enhance this to return all possible models and then choose the
+                       model that is the most likely. *)
+                    Replace[
+                        model,
+                        FittedModel[{"Linear", parameters_, ___}, ___] :> (
+                            Return[
+                                <|
+                                    "Property" -> property,
+                                    "Slope" ->
+                                        ToIntegerIfNoDecimal @ Round[parameters[[2]], 0.000001],
+                                    "Offset" ->
+                                        ToIntegerIfNoDecimal @ Round[parameters[[1]], 0.000001]
+                                |>,
+                                Module
+                            ]
+                        )
+                    ]
+                ]
+            ],
+            transposedObjects
+        ];
+        
+        None
+    ]
+
+(*!
+    \function ARCCheckForWrappedRepeatedPattern
+    
+    \calltable
+        ARCCheckForWrappedRepeatedPattern[imagePositions, patternWidth, patternHeight, sceneWidth, sceneHeight] '' Checks to see if a pattern has been repeated in a wrapping fashion.
+    
+    Examples:
+    
+    ARCCheckForWrappedRepeatedPattern[{{1, 1}, {1, 4}, {1, 7}, {1, 10}, {4, 1}}, 3, 3, 12, 12]
+    
+    ===
+    
+    True
+    
+    Unit tests:
+    
+    RunUnitTests[Daniel`ARC`ARCCheckForWrappedRepeatedPattern]
+    
+    \maintainer danielb
+*)
+Clear[ARCCheckForWrappedRepeatedPattern];
+Options[ARCCheckForWrappedRepeatedPattern] =
+{
+    "PatternImage" -> Missing[],        (*< The pattern image. *)
+    "OutputImage" -> Missing[]          (*< The output image. *)
+};
+ARCCheckForWrappedRepeatedPattern[imagePositions_List, patternWidth_, patternHeight_, sceneWidth_, sceneHeight_, OptionsPattern[]] :=
+    Module[{firstDerivative, firstDerivativeCounts, primaryTrajectory, wrappedQ = False},
+        
+        If [Length[imagePositions] <= 1,
+            Return[False, Module]
+        ];
+        
+        (* Calculate the "first derivative" along the sequence of positions found. *)
+        firstDerivative = Function[{pair},
+            pair[[2]] - pair[[1]]
+        ] /@ Partition[imagePositions, 2, 1];
+        
+        firstDerivativeCounts = Counts[firstDerivative];
+        
+        If [Length[firstDerivativeCounts] > 2,
+            Return[False, Module]
+        ];
+        
+        primaryTrajectory = Normal[Reverse[Sort[firstDerivativeCounts]]][[1, 1]];
+        
+        If [!MatchQ[primaryTrajectory, {0, _} | {_, 0}],
+            Return[False, Module]
+        ];
+        
+        position = imagePositions[[1]];
+        
+        sceneObject = <|"Position" -> {1, 1}, "Width" -> sceneWidth, "Height" -> sceneHeight|>;
+        object = <|"Width" -> patternWidth, "Height" -> patternHeight|>;
+        
+        Function[{i},
+            If [position =!= imagePositions[[i]],
+                Return[False, Module]
+            ];
+            position += primaryTrajectory;
+            object["Position"] = position;
+            If [i =!= Length[imagePositions] && !ObjectWithinQ[object, sceneObject],
+                wrappedQ = True;
+                If [primaryTrajectory[[1]] === 0,
+                    position[[1]] += patternHeight;
+                    position[[2]] = 1
+                    ,
+                    position[[1]] = 1;
+                    position[[2]] += patternWidth
+                ]
+            ];
+        ] /@ Range[Length[imagePositions]];
+        
+        (*Echo[imagePositions];*)
+        
+        count = Length[imagePositions];
+        
+        <|
+            "Linear" -> True,
+            "PrimaryTrajectory" -> primaryTrajectory,
+            "Wrapped" -> wrappedQ,
+            If [!wrappedQ,
+                (* Whether it might be the case that we should interpret the repeated pattern as
+                being a full/infinite linear pattern, rather than partial / of finite count. *)
+                "FullLinear" ->
+                    Or[
+                        !ObjectWithinQ[
+                            Sett[
+                                object,
+                                "Position" -> imagePositions[[-1]] + (primaryTrajectory / Total[primaryTrajectory])
+                            ],
+                            sceneObject
+                        ],
+                        And[
+                            ListQ[OptionValue["OutputImage"]],
+                            ListQ[OptionValue["PatternImage"]],
+                            With[
+                                {
+                                    nextPosition = imagePositions[[-1]] + primaryTrajectory
+                                },
+                                Replace[
+                                    ARCSubImageMatchQ[
+                                        OptionValue["OutputImage"],
+                                        nextPosition[[1]],
+                                        nextPosition[[2]],
+                                        nextPosition[[1]] + ImageHeight[OptionValue["PatternImage"]] - 1,
+                                        nextPosition[[2]] + ImageWidth[OptionValue["PatternImage"]] - 1,
+                                        OptionValue["PatternImage"],
+                                        "IgnoreBackgroundPixelsOfSubImage" -> True
+                                    ],
+                                    True :> (
+                                        (* Add one to the number of images we matched. *)
+                                        count++;
+                                        True
+                                    )
+                                ]
+                            ]
+                        ]
+                    ]
+                ,
+                Nothing
+            ],
+            "Count" -> count
+        |>
+    ]
+
+(*!
+    \function ARCSubImageMatchQ
+    
+    \calltable
+        ARCSubImageMatchQ[image, y1, x1, y2, x2, subImage] '' Returns True if the given bounds within `image` match the given `subImage`. If the bounds extend outside of the `image`, we are optimistic about what is outside the bounds matching.
+    
+    Examples:
+    
+    ARCSubImageMatchQ[{{1, 2}, {4, 5}}, 1, 2, 2, 3, {{2, 3}, {5, 6}}] === True
+    
+    Unit tests:
+    
+    RunUnitTests[Daniel`ARC`ARCSubImageMatchQ]
+    
+    \maintainer danielb
+*)
+Clear[ARCSubImageMatchQ];
+Options[ARCSubImageMatchQ] =
+{
+    "IgnoreBackgroundPixelsOfSubImage" -> False     (*< Should we skip/ignore pixels in `subImage` that are the $nonImageColor? *)
+};
+ARCSubImageMatchQ[image_List, y1_Integer, x1_Integer, y2_Integer, x2_Integer, subImage_List, OptionsPattern[]] :=
+    Module[{ignoreBackgroundPixelsOfSubImage = OptionValue["IgnoreBackgroundPixelsOfSubImage"]},
+        And @@ (
+            Function[{pixelColors},
+                Or[
+                    SameQ @@ pixelColors,
+                    (* This pixel in the pattern image is the background color, so we don't
+                       need to check for whether it is a match or not. *)
+                    And[
+                        ignoreBackgroundPixelsOfSubImage,
+                        pixelColors[[2]] === $nonImageColor
+                    ],
+                    (* This region is outside of the `image`, so we'll consider it a match. *)
+                    pixelColors[[1]] === $outOfBoundsColor
+                ]
+            ] /@
+                Flatten[
+                    Transpose[
+                        {
+                            ARCSubImage[image, y1, x1, y2, x2],
+                            subImage
+                        },
+                        {3, 1, 2}
+                    ],
+                    1
+                ]
+        )
     ]
 
 End[]

@@ -147,12 +147,13 @@ debug_indiv(A):- is_point_obj(A,Color,Point),
   hv_point(H,V,Point), i_glyph(Id,Sym),
   wqnl([' % Point: ', color_print(Color,Sym), dot, color(Color), fav1(Tst), nth(Id), loc(H,V)]),!. 
 */
-object_glyph_color(Obj,FC):- once(colors(Obj,[cc(FC0,_)|_]);FC0=fg),
+object_glyph_color(Obj,FC):- once((unique_colors(Obj,CL),member(FC0,CL),is_real_color(FC0));FC0=wfg),
   (FC0==black_n -> FC= wbg ; FC = FC0).
 
 object_s_glyph(Obj,SGlyph):- 
   object_glyph(Obj,Glyph), 
   unique_colors(Obj,NColors),
+  % writeq(NColors),
   object_glyph_color(Obj,FC),
   wots(SGlyph,
    (

@@ -19,7 +19,7 @@ has_color(C,Cell):- only_color_data(Cell,CD), cmatch(C,CD).
 
 cmatch(C,CD):- plain_var(C),!,C=CD,!.
 cmatch(C,CD):- var(C),!,C=CD,!.
-cmatch(fg,CD):- !, is_fg_color(CD),!.
+cmatch(fg,CD):- !, CD\==wbg, is_fg_color(CD),!.
 cmatch(bg,CD):- !, is_bg_color(CD),!.
 cmatch(wbg,CD):- !, (CD==wbc;is_bg_color(CD)),!.
 %cmatch(P,CD):- is_real_color(P),!, \+ P\==CD.

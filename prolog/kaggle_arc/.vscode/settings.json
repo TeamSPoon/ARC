@@ -1,5 +1,3 @@
 {
-    "git.ignoreLimitWarning": true,
-    "editor.tabCompletion": "on",
-    "diffEditor.codeLens": true
+    "git.ignoreLimitWarning": true
 }

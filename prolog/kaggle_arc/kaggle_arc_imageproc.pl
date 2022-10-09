@@ -66,7 +66,8 @@ only_color_data_or(Alt,Cell,Color):- only_color_data(Cell,Color)->true;Color=Alt
 
 %sub_term(G,GH), is_grid(G),!,flatten(G,GF),include(is_grid_color,GF,GL),maplist(color_name,GL,CC).
 %pixel_colors(G,GL):- findall(Name,(sub_term(CP,G),compound(CP),CP=(C-_),color_name(C,Name)),GL).
-is_real_color_or_var(C):- var(C)->true;(is_real_color(C),C\==fg,C\==wfg,C\==wbg,C\==bg).
+is_real_color_or_var(C):- C\==fg,C\==wfg,C\==wbg,C\==bg,C\==bg,C\==is_colorish_var,C\==plain_var,
+ (var(C)->true;is_real_color(C)).
 
 unique_colors(G,SUCO):- colors(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_color_or_var,UC,SUCO))).
 unique_color_count(G,Len):- unique_colors(G,UC),length(UC,Len).
@@ -77,30 +78,28 @@ into_cc1(N-C,cc(Nm,CN)):- CN is N,!,color_name(C,Nm).
 colors_count_black_first(G,BF):- colors(G,SK),black_first(SK,BF).
 colors_count_no_black(G,BF):- colors(G,SK),no_black(SK,BF).
 
-/*
 :- decl_pt(prop_g,all_colors_count(is_object_or_grid, list)).
 all_colors_count(G,CC):- 
   pixel_colors(G,All), 
   findall(Nm-C,(enum_colors_test(C),occurs:count((sub_term(Sub, All), \+ \+ cmatch(C,Sub)), Nm)),BF),
   into_cc(BF,CC),!.
-*/
 
-:- decl_pt(prop_g,colors(is_object_or_grid, list)).
-/*some_colors_count(G,CC):- 
+:- decl_pt(prop_g,some_colors_count(is_object_or_grid, list)).
+some_colors_count(G,CC):- 
   pixel_colors(G,All), 
-  findall(Nm-C,(enum_colors_test(C),occurs:count((sub_term(Sub, All), \+ \+ cmatch(C,Sub)), Nm), 
-    once(Nm\==0 ; (atom(C), C\==is_colorish, C\==var, \+ is_real_color(C)))),BF),
+  findall(Nm-C,(enum_colors_test(C),occurs:count((sub_term(Sub, All), \+ \+ cmatch(C,Sub)), Nm),Nm\==0),BF),
   into_cc(BF,CC),!.
-*/
 
 enum_colors_test(C):- no_repeats(C,enum_colors_test0(C)).
-enum_colors_test0(fg).
-enum_colors_test0(bg).
-enum_colors_test0(is_colorish).
 enum_colors_test0(C):- get_bgc(C).
 enum_colors_test0(C):- C=black, \+ enum_fg_colors(C).
 enum_colors_test0(C):- enum_fg_colors(C), C \== wbg, C\== '#444455'.
-enum_colors_test0(var).
+enum_colors_test0(fg).
+enum_colors_test0(bg).
+enum_colors_test0(is_colorish_var).
+enum_colors_test0(plain_var).
+
+is_colorish_var(V):- var(V),is_colorish(V).
 
 
 num_objects(G,NO):- compute_shared_indivs(G,GS),length(GS,NO).

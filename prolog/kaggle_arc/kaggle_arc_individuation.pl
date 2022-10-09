@@ -121,7 +121,7 @@ maybe_multivar(_).
 :- dynamic(is_unshared_saved/2).
 :- dynamic(is_shared_saved/2).
 
-the_big_three_oh(12).
+the_big_three_oh(30).
 
 
 
@@ -464,6 +464,7 @@ preserve_vm(VM,Goal):-
 remove_texture(Cell,C-Point):- color_texture_point_data(Cell,C,_Texure,Point).
 is_texture(List,Cell):- color_texture_point_data(Cell,_C,Texture,_Point),member(T,List),Texture==T,!.
 is_fti_step(gather_texture).
+gather_texture(_VM):-!.
 gather_texture(VM):-
  must_det_ll((
     Grid = VM.grid,
@@ -1591,6 +1592,19 @@ row_in_grid(C,L,LeftN,SecondRow,RightN,TexturedGrid):-
   (nonvar(C) -> (Ca==C, Cb==C) ; (Ca == Cb, Cb=C, C \== wbg, C \== wfg)),  
   length(LeftS,LeftN), length(RightS,RightN).
 
+
+rectangles_from_grid(Grid,VM):- fail,
+  append(Top,[M1,M2|Bottem],Grid),
+  dif(L1,L2),
+  dif(R1,L2),R2=L2,
+  append([LL,[L1,L2],T,[R2,R1],_],M1),  
+  maplist(=(L2),T),
+  length(LL,NL),
+  length(LL2,NL),
+  %L1\==L2,R1\==R2,
+  append([LL2,[_,L2],T,[R2,_],_],M2).
+  
+
 rectangles_from_grid(Grid,VM):-
   texture_grid(Grid,TexturedGrid),
   mapgrid(maybe_subst_grid_type,TexturedGrid,Retextured),!,
@@ -1645,7 +1659,7 @@ one_fti(VM,glyphic):-
  must_det_ll((
   one_fti(VM,whole),
   localpoints_include_bg(VM.grid_o,Points),length(Points,LenBG),
-  (LenBG=<42->UPoints=Points;mostly_fgp(Points,UPoints)),!,
+  (LenBG=<15->UPoints=Points;mostly_fgp(Points,UPoints)),!,
   using_alone_dots(VM,(maplist(make_point_object(VM,[birth(glyphic),iz(shaped)]),UPoints,IndvList), raddObjects(VM,IndvList),
   save_grouped(individuate(VM.gid,glyphic),IndvList))))).
 

@@ -159,6 +159,8 @@
   window.consoleSuspend = false;
   window.consoleSuspendTimer = false;
 
+  
+
   Terminal = (function () {
     Terminal.hooks = {};
 

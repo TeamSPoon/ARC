@@ -53,8 +53,8 @@ menu_cmd1(_,'S','                  or (S)olve confirming it works on training pa
 menu_cmd1(_,'h','                  or (h)uman proposed solution',(human_test)).
 menu_cmd1(_,'r','               Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and (s)olve !',(cls_z,fully_test)).
 menu_cmd1(_,'a','                  or (a)dvance to the next test and (r)un it',(cls_z,!,run_next_test)).
-menu_cmd1(_,'n','               Go to (n)ext test (skipping this one)',(next_test,report_suite)).
-menu_cmd1(_,'b','                  or (b)ack to previous test.',(previous_test,report_suite)).
+menu_cmd1(_,'n','               Go to (n)ext test (skipping this one)',(next_test,report_suite,print_qtest)).
+menu_cmd1(_,'b','                  or (b)ack to previous test.',(previous_test,report_suite,print_qtest)).
 menu_cmd1(_,'f','                  or (f)orce a favorite test.',(enter_test)).
 menu_cmd1(_,'~','                  or (PageUp) to begining of suite',(prev_suite)).
 menu_cmd1(_,'N','                  or (N)ext suite',(next_suite)).
@@ -150,14 +150,6 @@ append_num_code(Start,_SelMax,Key,Sel):- atom_concat(Start,Key,Sel).
 clsR:- !. % once(cls_z).
 
 
-/*
-[[1,0,0,0,0]]->[[0,1,0,0,0]]
-[[0,1,0,0,0]]->[[0,0,1,0,0]]   
-[[0,0,1,0,0]]->[[0,0,0,1,0]]
-
-[[0,0,0,1,0]]->[[0,0,0,0,1]]
-*/
-
 enter_test:- repeat, write("\nYour favorite: "), read_line_to_string(user_input,Sel),enter_test(Sel),!.
 
 enter_test(""):- wqnl("resuming menu"), menu,!.
@@ -216,7 +208,7 @@ do_menu_key('G'):- !, cls_z,!,detect_test_hints1.
 do_menu_key('d'):- !, dump_suite.
 
 do_menu_key(Num):- number(Num),!, do_test_number(Num),!.
-do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num),  number(Num), do_test_number(Num),!.
+do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num), number(Num), do_test_number(Num),!.
 
 do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), menu_goal(Body).
 do_menu_key(Key):- print_menu_cmd(Key),menu_cmds(_Mode,Key,_Info,Goal),!, format('~N~n'), menu_goal(Goal).
@@ -355,7 +347,7 @@ sort_suite:-
    retractall(muarc_tmp:cached_tests(SuiteX,_)),
    asserta_new(muarc_tmp:cached_tests(SuiteX,ByHard)).
 
-reverse_suite:-   
+reverse_suite:-
    luser_getval(test_suite_name,SuiteX), get_by_hard(SuiteX,ByHard), reverse(ByHard,NewSet),
    retractall(muarc_tmp:cached_tests(SuiteX,_)),
    asserta_new(muarc_tmp:cached_tests(SuiteX,NewSet)).
@@ -385,7 +377,6 @@ prev_suite:-
    luser_setval(test_suite_name,N),!,
    wdmsg(switched(X-->N)),
    restart_suite.
-
 next_suite:- 
    findall(SN,test_suite_name(SN),List),
    luser_getval(test_suite_name,X),
@@ -408,23 +399,24 @@ test_suite_name(dbigham_personal).
 test_suite_name(human_t).
 test_suite_name(sol_t).
 test_suite_name(hard_t). test_suite_name(test_names_by_fav). 
-test_suite_name(key_pad_tests). % test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
+test_suite_name(key_pad_tests). test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
 test_suite_name(test_names_by_hard). 
-%test_suite_name(test_names_by_fav_rev). test_suite_name(test_names_by_hard_rev).
+test_suite_name(test_names_by_fav_rev). test_suite_name(test_names_by_hard_rev).
 test_suite_name(all_arc_test_name).
 
 :- dynamic(muarc_tmp:cached_tests/2).
 %:- retractall(muarc_tmp:cached_tests(_,_)).
 :- test_suite_name(Name)->luser_defval(test_suite_name,Name).
-
-%current_suite_testnames(SuiteX,Set):- luser_getval(test_suite_name,SuiteX), get_current_suite_testnames(Set),!.
-%suite_set(SuiteX,Set):- luser_getval(test_suite_name,SuiteX), muarc_tmp:cached_tests(SuiteX,Set),!.
-
-get_current_suite_testnames(Set):- luser_getval(test_suite_name,X), current_suite_testnames(X,Set).
+get_current_suite_testnames(Set):-
+  luser_getval(test_suite_name,X),
+  current_suite_testnames(X,Set).
 
 current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),Set\==[],!.  
-current_suite_testnames(X,ByHard):- get_by_hard(X,ByHard),!,asserta(muarc_tmp:cached_tests(X,ByHard)).
-
+current_suite_testnames(X,Set):-  pp(recreating(X)), 
+ findall(ID,test_suite_info(X,ID),List),List\==[],
+   
+  my_list_to_set_variant(List,Set), pp(sorting(X)), sort_by_hard(Set,NamesByHardUR), 
+  !,asserta(muarc_tmp:cached_tests(X,NamesByHardUR)).
 get_by_hard(X,ByHard):- muarc_tmp:cached_tests_hard(X,ByHard),!.
 get_by_hard(X,ByHard):- 
   pp(recreating(X)),  
@@ -619,7 +611,7 @@ print_single_pair:- get_current_test(TestID),print_single_pair(TestID).
 
 :- luser_defval('$grid_mode',dots).
 print_qtest(TestID):- \+ luser_getval('$grid_mode',dots),!,print_test(TestID).
-print_qtest(TestID):- !, print_single_pair(TestID),report_suite,!.
+print_qtest(TestID):- !, print_single_pair(TestID),!.
 print_qtest(TestID):-
     dash_chars,nl,nl,nl,dash_chars,
      ignore(luser_getval(example,ExampleNum)),
@@ -740,11 +732,11 @@ hard_t_set(NamesByHardUR):- Name=t(_),
   findall(Name,all_arc_test_name(Name),List),sort_by_hard(List,NamesByHardUR).
 
 
-
-sort_by_hard(List,NamesByHard):- 
-  sort(List,Sorted), test_names_by_hard(NamesByHardU),
-  findall(Hard-Name,(member(Name,Sorted),nth0(Hard,NamesByHardU,Name)),All),
-  keysort(All,AllK),  maplist(arg(2),AllK,NamesByHard),!.
+sort_by_hard(List,NamesByHardUR):- 
+  sort(List,Sorted),
+  findall(Hard-Name,(member(Name,Sorted),hardness_of_name(Name,Hard)),All),
+  keysort(All,AllK),  maplist(arg(2),AllK,NamesByHardU),!,
+  reverse(NamesByHardU,NamesByHardUR).
 
 hard_t:- cls_z, hard_t(NamesByHardUR),
   forall(member(Name,NamesByHardUR),print_test(Name)).
@@ -793,20 +785,18 @@ pair_cost(TestID,Cost):- kaggle_arc(TestID,(trn+_),I,O),
 
 hardness_of_name(TestID,Sum):-
   kaggle_arc(TestID,(trn+0),_,_),
- findall(Cost,pair_cost(TestID,Cost),List),sumlist(List,Sum).
+ findall(Cost,pair_cost(TestID,Cost),List),sumlist(List,Sum),!.
 
 hardness_of_name(TestID,Hard):-
- %kaggle_arc(TestID,(trn+0),_,_),
  %ExampleNum=tst+_,
  ExampleNum=_,
  findall(_,kaggle_arc(TestID,(trn+_),_,_),Trns),
- length(Trns,TrnsL),!,
+ length(Trns,TrnsL),
  %extra_tio_name(TestID,TIO),
   findall(PHard,
   (kaggle_arc(TestID,ExampleNum,In,Out),
    pair_dictation(TestID,ExampleNum,In,Out,T),
    maplist(negate_number,[T.in_specific_colors_len,T.out_specific_colors_len],[InOnlyC,OutOnlyC]),
-   % TrnsLL is 0, %TrnsL
    PHard = (TrnsL+ T.shared_colors_len + OutOnlyC + InOnlyC + T.ratio_area+ T.delta_density)),
     %(catch(Code,_,rrtrace(Code)))),
   All),
@@ -905,8 +895,6 @@ dictate_sourcecode(Content, _Vars, OutterVars, TP):-
     !, TP = source_buffer(Sourcecode, Vs).
 
 
-do_pair_dication(_In,_Out,_{}).
-do_pair_dication(_In,_Out, []):- trace, ! ,fail.
 do_pair_dication(In,Out,_Vs):-   
  run_source_code(['In'=In, 'Out'=Out], _Vs,
 {|dictate_sourcecode||
@@ -1152,7 +1140,7 @@ parc11(ExampleNum,OS,TName):-
     print_side_by_side(I,O), format('").\n'),
   ignore((write('%= '), parcCmt(TestID),nl,nl))))).
 
-%color_sym(OS,[(black='ï¿½'),(blue='ï¿½'),(red='ï¿½'),(green=''),(yellow),(silver='O'),(purple),(orange='o'),(cyan= 248	ï¿½ ),(brown)]).
+%color_sym(OS,[(black='°'),(blue='©'),(red='®'),(green=''),(yellow),(silver='O'),(purple),(orange='o'),(cyan= 248	ø ),(brown)]).
 color_sym(OS,C,C):- var(OS),!.
 color_sym(OS,C,Sym):- is_list(C),maplist(color_sym(OS),C,Sym),!.
 color_sym(_,black,' ').
