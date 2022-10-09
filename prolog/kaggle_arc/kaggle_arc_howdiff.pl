@@ -911,12 +911,14 @@ proportional(B,A,C):- maybe_extract_values(B,BB), compound(A), \+ maybe_extract_
 proportional(G1,G2,Out):- unused_proportion(G1,G2,Out),!.
 %proportional(E1,E2,E1):- E1=@=E2,!.
 
+/*
 proportional(Obj1,Obj2,Out):- compound(Obj1), compound(Obj2),  
   is_grid(Obj1),!,once((grid_props(Obj1,Out1), 
   grid_props(Obj2,Out2))),
   proportional(grid_props(Out1),grid_props(Out2),Out).
+*/
 
-proportional(Obj2,Obj1,Out):- is_object(Obj1),!,
+proportional(Obj2,Obj1,Out):- % is_object(Obj1),!,
   (decl_pt(prop_g,P1P2);decl_pt(prop_o,P1P2)), 
   P1P2=..[P2,P1|Lst],
   once((
