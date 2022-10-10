@@ -108,7 +108,7 @@ read_menu_chars(_Start,_SelMax,Out):- pengine_self(_Id),!,read(Out).
 read_menu_chars(Start,SelMax,Out):- repeat,    
    read_menu_chars0(Start,SelMax,Out).
 
-has_pending_input:- wait_for_input([user_input], In, 0.01), In\==[].
+has_pending_input:- catch_nolog(wait_for_input([user_input], In, 0.01)), In\==[].
 
 read_menu_chars0(_Start,_SelMax, Out):- read_queued_cmd(Out),!.
 read_menu_chars0(_Start,_SelMax, Out):- key_read_borked(PP),!, wdmsg(read_menu_chars(PP)),once((\+ toplevel_pp(http),read(Out))).
@@ -292,7 +292,7 @@ run_all_tests:-
   repeat,
    run_next_test,
    write_menu('r'),
-   wait_for_input([user_input],F,2),
+   catch_nolog(wait_for_input([user_input],F,2)),
    F \== [], !,
    interact,!.
 

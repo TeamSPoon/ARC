@@ -16,7 +16,8 @@
 :- multifile('$messages':to_list/2).
 :- asserta(('$messages':to_list(In, List) :- ((is_list(In)-> List = In ; List = [In])),!)).
 
-catch_log(G):- format('~N'),ignore(catch(notrace(G),E,wdmsg(E=G))),format('~N').
+catch_log(G):- ignore(catch(notrace(G),E,wdmsg(E=G))).
+catch_nolog(G):- ignore(catch(notrace(G),E,nop(wdmsg(E=G)))).
 
 %:- pack_install('https://github.com/logicmoo/logicmoo_utils.git').
 :- pack_install(logicmoo_utils,[
@@ -1111,7 +1112,7 @@ user:portray(Grid):-
 :- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).
 
-:- set_stream(current_output,encoding(utf8)).
+:- catch_log(set_stream(current_output,encoding(utf8))).
 
 :- (current_prolog_flag(load_arc_webui,true)->catch_log(logicmoo_webui) ; true).
 :- current_prolog_flag(load_arc_webui,true) -> catch_log(start_arc_server) ; true.
