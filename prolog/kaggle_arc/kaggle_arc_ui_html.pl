@@ -353,7 +353,7 @@ inline_to_bfly:- was_inline_to_bfly,!.
 inline_to_bfly:- asserta(was_inline_to_bfly),inline_to_bfly_html.
 
 inline_to_bfly_html:- toplevel_pp(swish),!,ensure_colapsable_styles.
-inline_to_bfly_html:- ensure_colapsable_styles,
+inline_to_bfly_html:- catch_log(ensure_colapsable_styles),
  arc_html_format(
 `<link rel="stylesheet" type="text/css" href="/swish/css/menu.css">
 <link rel="stylesheet" type="text/css" href="/swish/css/cliopatria.css">

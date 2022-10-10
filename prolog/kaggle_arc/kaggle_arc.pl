@@ -10,6 +10,7 @@
 :- set_prolog_flag(encoding,iso_latin_1).
 :- set_prolog_flag(stream_type_check,false).
 :- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(load_arc_webui,true);true).
+:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_webui,true);true).
 
 :- dynamic('$messages':to_list/2).
 :- multifile('$messages':to_list/2).
@@ -20,9 +21,9 @@ catch_log(G):- format('~N'),ignore(catch(notrace(G),E,wdmsg(E=G))),format('~N').
 %:- pack_install('https://github.com/logicmoo/logicmoo_utils.git').
 :- pack_install(logicmoo_utils,[
   %url('https://github.com/logicmoo/logicmoo_utils.git'),
-  %interactive(false),
+  interactive(false),
   upgrade(true),git(true)]).
-%:- pack_upgrade(logicmoo_utils).
+:- pack_upgrade(logicmoo_utils).
 % :- pack_install(dictoo).
 % :- pack_upgrade(dictoo).
 
@@ -212,21 +213,20 @@ pfcAddF(P):-
 :- set_prolog_flag(no_sandbox,true).
 
 
-:- if(current_prolog_flag(load_arc_webui,true)).
-with_webui(Goal):- ignore(call(Goal)),!.
-:- endif.
+with_webui(_Goal):- \+ current_prolog_flag(use_arc_webui,true),!.
 with_webui(Goal):- ignore(when_arc_webui(with_http(Goal))).
 %:- initialization arc_http_server.
+
+:- exists_source(library(xlisting/xlisting_web)) -> system:use_module(library(xlisting/xlisting_web)) ; true.
 
 ld_logicmoo_webui:-
    exists_source(library(logicmoo_webui)), use_module(library(logicmoo_webui)), 
   system:use_module(library(xlisting/xlisting_web)),
-  system:use_module(library(xlisting/xlisting_web_cm)),
   system:use_module(library(xlisting/xlisting_web_server)),
   catch_log(dmsg((?-webui_start_swish_and_clio))).
 ld_logicmoo_webui.
 
-logicmoo_webui:- ld_logicmoo_webui,catch_log(webui_start_swish_and_clio).
+logicmoo_webui:- ld_logicmoo_webui,catch_log(call(call,webui_start_swish_and_clio)).
 
 :- ld_logicmoo_webui.
 :- (current_prolog_flag(load_arc_webui,true)->catch_log(ld_logicmoo_webui) ; true).
