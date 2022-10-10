@@ -18,6 +18,7 @@
 catch_log(G):- format('~N'),ignore(catch(notrace(G),E,wdmsg(E=G))),format('~N').
 
 %:- pack_install('https://github.com/logicmoo/logicmoo_utils.git').
+:- pack_install(logicmoo_utils,[url('https://github.com/logicmoo/logicmoo_utils.git'),upgrade(true),git(true),interactive(false)]).
 %:- pack_upgrade(logicmoo_utils).
 % :- pack_install(dictoo).
 % :- pack_upgrade(dictoo).
