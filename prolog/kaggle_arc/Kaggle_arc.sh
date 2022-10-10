@@ -17,13 +17,6 @@ cd $ARC_DIR
 mkdir -p data
 chmod -R 777 data
 
-swipl -g "pack_install(dictoo)" -t halt
-swipl -g "pack_upgrade(dictoo)" -t halt
-swipl -g "pack_install(logicmoo_utils)" -t halt
-swipl -g "pack_upgrade(logicmoo_utils)" -t halt
-swipl -g "pack_install(logicmoo_webui)" -t halt
-swipl -g "pack_upgrade(logicmoo_webui)" -t halt
-
 export BCMD="cd ${ARC_DIR} ; pwd ;  swipl -l kaggle_arc.pl ${@}"
 
 echo BCMD=$BCMD
