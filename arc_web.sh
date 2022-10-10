@@ -7,12 +7,15 @@ export LM_ARC_BASE=$(dirname $SCRIPT)
 export PIDFILE=$LM_ARC_BASE/arc_web.pid
 cd $LM_ARC_BASE
 
+swipl -g "pack_install(predicate_streams)" -t halt
+swipl -g "pack_upgrade(predicate_streams)" -t halt
 swipl -g "pack_install(dictoo)" -t halt
 swipl -g "pack_upgrade(dictoo)" -t halt
 swipl -g "pack_install(logicmoo_utils)" -t halt
 swipl -g "pack_upgrade(logicmoo_utils)" -t halt
 swipl -g "pack_install(logicmoo_webui)" -t halt
 swipl -g "pack_upgrade(logicmoo_webui)" -t halt
+ls ~/.local/share/swi-prolog/pack -l
 
 fuser -n tcp -k 7771
 fuser -n tcp -k 7771
