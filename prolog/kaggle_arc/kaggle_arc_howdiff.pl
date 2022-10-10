@@ -598,9 +598,9 @@ showdiff_objects_now(Why,OO1,OO2,Sames,Diffs):-
   dash_chars,dash_chars)).
 
 print_sames(N):- is_list(N),!, maplist(print_sames,N).
-print_sames(N):- format('\t'), print_tree_no_nl(N),probably_nl.
+print_sames(N):- format('\t'), pp_no_nl(N),probably_nl.
 print_diffs(N):- is_list(N),!, maplist(print_diffs,N).
-print_diffs(N):- format('\t'), print_tree_no_nl(N),probably_nl.
+print_diffs(N):- format('\t'), pp_no_nl(N),probably_nl.
 print_hints(N):- is_list(N),!, maplist(print_hints,N).
 print_hints(N):- format('\t'), pp_no_nl(N),probably_nl.
 
@@ -691,15 +691,16 @@ diff_terms(I,O,D):- diff_termz(I,O,D),!.
 diff_terms(I,O,diff(I->O)).
 
 diff_termz(I,O,D):- nonvar_or_ci(D),!,diff_terms(I,O,DD),D=DD.
-diff_termz(I,O,[]):- O=@=I,!.
-diff_termz(I,O,[]):- O==I,!.
 diff_termz(I,O,[]):- plain_var(I),plain_var(O),!.
 diff_termz(I,O,O):- plain_var(I),!.
 diff_termz(O,I,O):- plain_var(I),!.
 diff_termz(I,O,D):- maybe_number(I,N1),maybe_number(O,N2),!,proportional_size(N1,N2,D).
+/*
+diff_termz(I,O,[]):- O=@=I,!.
+diff_termz(I,O,[]):- O==I,!.
 diff_termz(I,O,O):- I==[],!.
 diff_termz(I,O,I):- O==[],!.
-
+*/
 diff_termz([IH,IV],[OH,OV],D):- maplist(number,[IH,IV,OH,OV]),!,maplist(diff_numbers,[IH,IV],[OH,OV],D).
 
 %diff_termz(I,O, [] ):- (never_do_diff(I);never_do_diff(O)),!.
@@ -708,13 +709,14 @@ diff_termz(shape(I),shape(O),shape(diff(I->O))):-!.
 %diff_termz(I,O, (O \== I)):- O=@=I,!.
 diff_termz(group_o(I),group_o(O),group_o(DD)):- !, must_det_ll(diff_groups(I,O,DD)).
 diff_termz(I,O,DD):-  is_group(I), is_group(O), !, must_det_ll(diff_groups(I,O,DD)).
+diff_termz(I,O, D):- non_grid_list(I),non_grid_list(O),!,diff_lists(I,O,D).
 diff_termz(I,O,[]):- no_diff(I,O),!.
 diff_termz(O,I,[]):- no_diff(I,O),!.
+
 % diff_termz(I,O,DD):-  is_group(I),is_group(O), !,  include_fav_points(I,II), include_fav_points(O,OO), diff_groups(I,O,DD).
 
 %diff_termz(obj(I),obj(O),OUT):- !, diff_objects(I,O,OUT).
 
-diff_termz(I,O, D):- non_grid_list(I),non_grid_list(O),!,diff_lists(I,O,D).
 
 diff_termz(I,O,D):- is_map(I),!,findall(D1,(get_kov(K, I, V),diff_terms(K=V,O,D1)),D).
 diff_termz(IF=IA,O,IF=D):- find_kval(O,IF,OA),!,diff_terms(IA,OA,D).
@@ -726,7 +728,7 @@ diff_termz(I,O,D):- compound(I),compound(O),!,diff_compounds(I,O,D).
 
 
 
-diff_compounds(I,O, [] ):- (never_show_diff(I);never_show_diff(O)),!.
+diff_compounds(I,O, [] ):- fail, (never_show_diff(I);never_show_diff(O)),!.
 
 diff_compounds(I,O,D):- compound_name_arguments(I,IF,IA),compound_name_arguments(O,OF,OA),
   maplist(compute_diff_or_same,IA,OA,DA),
@@ -737,6 +739,7 @@ diff_compounds(_I, F,_O, F, DA, D):- !, compound_name_arguments(D,F,DA).
 diff_compounds(I,_IF,O,_OF,_DA, diff(I->O)).
 
 
+compute_diff_or_same(I,O,D):- maybe_number(I,N1),maybe_number(O,N2),!,proportional_size(N1,N2,D).
 compute_diff_or_same(I,O,IO):- 
   diff_terms(I,O,D),
   maybe_no_diff(I,O,D,IO).
@@ -891,7 +894,7 @@ unused_proportion1(Obj1,_Obj2,Obj1):- var(Obj1),!.
 unused_proportion1(_Obj1,Obj2,Obj2):- var(Obj2),!.
 
 
-proportional(Obj1,Obj2,Obj3):- unused_proportion1(Obj1,Obj2,Obj3),!.
+%proportional(Obj1,Obj2,Obj3):- unused_proportion1(Obj1,Obj2,Obj3),!.
 proportional(A2,B2,List):- maybe_reorder_pair(A2,B2,A3,B3), !, proportional(A3,B3,List).
 proportional(L1,L2,List):- non_grid_list(L1),non_grid_list(L2),!,must_det_ll(proportional_lists(L1,L2,List)).
 proportional(size(H1,V1),size(H2,V2),size(H,V)):- proportional_size(H1,H2,H),proportional_size(V1,V2,V).
@@ -1007,7 +1010,7 @@ proportional_lists(L1,L2,OUT):-
   into_vals(L1,L2,Vals),
   list_to_set(Shared,SharedS),
   diff_lists(IOnlyC,OOnlyC,Diff),
-  OUT=..[lst,vals(Vals),len(N),s(SharedS),dif(Diff),l(IOnlyC),r(OOnlyC)|Lens])),!.
+  OUT=..[lst,vals(Vals),len(N),s(SharedS),d(Diff),l(IOnlyC),r(OOnlyC)|Lens])),!.
 
 proportional_lists(L1,L2,p(L1,L2)):-!.
 
@@ -1054,6 +1057,7 @@ prefer_grid(G):- is_object_or_grid(G).
 
 :- decl_pt(prop_g,mass(is_object_or_grid,number)).
 :- decl_pt(prop_g,unique_colors(prefer_grid, set)).
+%% :- decl_pt(prop_g,colors(prefer_grid, set)).
 
 :- decl_pt(prop_g,center_term(is_object,loc)).
 :- decl_pt(prop_g,loc_term(is_object,loc)).

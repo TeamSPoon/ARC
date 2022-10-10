@@ -654,7 +654,7 @@ ascii_to_grid(Text,G):-
  ascii_to_growthchart(Text,GrowthChart),
  growthchart_to_grid(GrowthChart,6,5,G).
 
-:- luser_defval(find_rule,regular).
+:- luser_default(find_rule,regular).
 % ?- h666(X),text_to_grid(X,G).
 text_to_grid(Text,GO):- text_to_grid(Text,_HH,_VV,_ObjPoints,GO).
 text_to_grid(Text,HH,VV,ObjPoints,GO):-

@@ -499,7 +499,7 @@ arc_user(TID, ID):- suggest_arc_user(ID), TID\=ID,!.
 luser_setval(N,V):- arc_user(ID),luser_setval(ID,N,V),!.
 luser_setval(ID,N,V):- nb_setval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
 
-luser_defval(N,V):- luser_setval(global,N,V).
+luser_default(N,V):- luser_setval(global,N,V).
 
 luser_linkval(N,V):- arc_user(ID),luser_linkval(ID,N,V),!.
 luser_linkval(ID,N,V):- nb_linkval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
@@ -514,12 +514,12 @@ when_arc_webui(G):- toplevel_pp(http),call(G),!.
 when_arc_webui(G):- toplevel_pp(swish),call(G),!.
 when_arc_webui(G):- ignore(if_arc_webui(G)).
 
-arc_option(grid_size_only):- !.
-arc_option(extreme_cache):- !.
+:- luser_default(grid_size_only,f).
+:- luser_default(extreme_cache,t).
 %arc_option(grid_size_only):- !,fail.
-arc_option(P):- \+ luser_getval(P,f).
+arc_option(P):- luser_getval(P,t).
 
-:- luser_defval(no_individuator, f).
+:- luser_default(no_individuator, f).
 
 with_luser(N,V,Goal):-
   luser_getval(N,OV),
@@ -541,7 +541,7 @@ luser_getval(ID,N,V):-
  (arc_user_prop(ID,N,V)*->true;
   (nb_current(N,V))*->true;arc_user_prop(global,N,V)).
 */
-:- luser_defval(example,trn+0).
+:- luser_default(example,trn+0).
 
 %c:- forall(clause(fav(A,B),true),arc_history1((fav(A,B)))).
 :- arc_history1(fav2).

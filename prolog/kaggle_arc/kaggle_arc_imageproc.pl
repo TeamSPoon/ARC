@@ -78,6 +78,7 @@ into_cc1(N-C,cc(Nm,CN)):- CN is N,!,color_name(C,Nm).
 colors_count_black_first(G,BF):- colors(G,SK),black_first(SK,BF).
 colors_count_no_black(G,BF):- colors(G,SK),no_black(SK,BF).
 
+/*
 :- decl_pt(prop_g,all_colors_count(is_object_or_grid, list)).
 all_colors_count(G,CC):- 
   pixel_colors(G,All), 
@@ -89,6 +90,7 @@ some_colors_count(G,CC):-
   pixel_colors(G,All), 
   findall(Nm-C,(enum_colors_test(C),occurs:count((sub_term(Sub, All), \+ \+ cmatch(C,Sub)), Nm),Nm\==0),BF),
   into_cc(BF,CC),!.
+*/
 
 enum_colors_test(C):- no_repeats(C,enum_colors_test0(C)).
 enum_colors_test0(C):- get_bgc(C).

@@ -57,6 +57,8 @@ print_list_of(P1,Title,O):-
   %save_grouped(print_list_of(Title),O),
   g_out( maplist(P1,O))))),!.
 
+
+
 maybe_cache_glyphs(O):- ignore((is_group(O),mapgroup(o2g,O,_))).
 
 print_info(R):- is_object_props(R),!,print_info(obj(R)).
@@ -89,6 +91,7 @@ debug_as_grid(Why,R):- is_object_props(R),!,debug_as_grid(Why,obj(R)).
 debug_as_grid(Why,R):- atom(R), atom_contains(R,'_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
   resolve_reference(R,Var), R\==Var, \+ plain_var(Var),!, 
   write(' '), writeq(R), write(' /* '), debug_as_grid(Why,Var), write(' */ ').
+
 %debug_as_grid(Why,R):- resolve_reference(R,Var)-> R\==Var, write(' ( '), writeq(R),write(' , '),debug_as_grid(Why,Var),write(' )'),!.
 debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
   v_hv(Grid,H,V),
@@ -181,8 +184,16 @@ prefered_header(birth(Caps),PCaps):-prefered(PCaps),freeze(Caps,(nonvar(Caps),Ca
 prefered_header(Caps,PCaps):-prefered(PCaps),freeze(Caps,(nonvar(Caps),Caps = PCaps)).
 prefered_header(birth(Caps),Caps).
 prefered_header(iz(Caps),Caps).
+
 % I didn't really have the programming chops to take his program and give it human level reasoning until about 5 years ago
-debug_indiv(obj(A)):- \+ \+ debug_indiv_obj(A),!.
+debug_indiv(obj(A)):- 
+  wots_vs(SS,\+ \+ debug_indiv_obj(A)),!,
+  write(SS).
+
+
+
+
+choose_header(ASFROM,Caps):- once((prefered_header(P,Caps),member(P,ASFROM),P\==grid_sz(_,_),ground(Caps))).
 
 
 debug_indiv_obj(A):- nb_current(debug_as_grid,t),debug_as_grid(A),!.
@@ -203,12 +214,13 @@ debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
   %flatten(TV,F),predsort(longer_strings,F,[Caps|_]), 
   sort(TV,ASA),reverse(ASA,ASAR),
   append(ASAR,AS,ASFROM),
-  once((prefered_header(P,Caps),member(P,ASFROM),ground(Caps))),
+  choose_header(ASFROM,Caps),  
   toPropercase(Caps,PC),
   sort_obj_props(TV,TVS),
 
   ignore((TF==true,dash_chars)),
-  ignore(( g_out_style(style('font-size','75%'),wqnl([format("% ~w:\t\t~w\t",[PC,SGlyph]) | TVS ])))),
+  sformat(SF,"% ~w:\t\t~w\t",[PC,SGlyph]),
+  ignore(( g_out_style(style('font-size','75%'),(write(SF), pp_no_nl(TVS))))),
   ignore(( TF==true, amass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
   ignore(( fail, amass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
   %pp(A),
@@ -230,7 +242,7 @@ show_st_map(Obj):-
 debug_indiv(obj(A)):- \+is_list(A),!, append(A,[],A),debug_indiv(obj(A)),!.
 debug_indiv(obj(A)):- is_list(A),!, 
   dash_chars,  
-  maplist(debug_indiv(obj(A)),A),
+  maplist(debug_indiv_2(obj(A)),A),
   dash_chars,!.
 
 debug_indiv([]):- !.
@@ -254,7 +266,7 @@ debug_indiv(Other):-
   pp(Other),
   dash_chars,!.
 
-debug_indiv(Obj,P):- compound(P),!,compound_name_arguments(P,F,A),debug_indiv(Obj,P,F,A),!.
+debug_indiv_2(Obj,P):- compound(P),!,compound_name_arguments(P,F,A),debug_indiv(Obj,P,F,A),!.
 
 
 %alt_id(_MyID,ID,Alt):- int2glyph(ID,Alt).

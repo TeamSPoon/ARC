@@ -123,7 +123,7 @@ color_subst(_OSC,_ISC,[]):-!.
 detect_pair_hints(TestID,ExampleNum,In,Out):- 
   assert_id_grid_cells(In), assert_id_grid_cells(Out),
   detect_supergrid_tt(TestID,ExampleNum,In,Out,TT),  
-  guess_board(TT),
+  % guess_board(TT),
   %print(TT),
   grid_hint_swap(i-o,In,Out),
   dash_chars,!.
@@ -136,9 +136,42 @@ detect_supergrid_tt(TestID,ExampleNum,In0,Out0,TT):-
   dmsg(detect_supergrid_tt(TestID,ExampleNum)),
   print_side_by_side(cyan,In0,task_in(ExampleNum),_,Out0,task_out(ExampleNum)),
   show_reduced_io(In0+Out0),
-  show_recolor(TestID,ExampleNum,In0,Out0,TT)))),!.
+  nop((show_recolor(TestID,ExampleNum,In0,Out0,TT)))))),!,
+ TT = _{} .
+
+show_recolor(TestID,ExampleNum,In0,Out0,TT):- 
+  must_det_ll(((
+  %show_patterns(In),show_patterns(Out),
+  
+  %gset(TT.z_contains_out)=in(HIO,VIO),
+  %gset(TT.z_contains_in)=out(HOI,VOI),
 
 
+  % grid_size(In0,IH,IV), 
+  grid_size(Out0,OH,OV), % max_min(OV,IV,V,_),max_min(OH,IH,H,_),
+  into_bicolor(In0,In), into_bicolor(Out0,Out),
+
+  /*
+  pair_dictation(TestID,ExampleNum,In0,Out0,T), T.in = In0, T.out = Out0,
+  ((OV==1,OH==1) -> (O2I=[]) ; (T.in_specific_colors = ISC, T.out_specific_colors = OSC,    color_subst(OSC,ISC,O2I))),
+  subst_1L(O2I,OOut,Out), %subst_1L(O2I,Out0,OutF),
+  get_map_pairs(T,_,Pairs),
+  list_to_rbtree_safe(Pairs,TT),!,
+
+  arc_setval(TT,rhs_color_remap, O2I),
+
+  show_colorfull_idioms(In0), show_colorfull_idioms(Out0),
+*/
+  (most_d_colors(Out,CO,NO),arc_setval(TT,out_d_colors,CO),arc_setval(TT,out_map,NO)),  
+  (most_d_colors(In,CI,NI),  arc_setval(TT,in_d_colors,CI), arc_setval(TT,in_map,NI)),
+  %fif(find_ogs(HOI,VOI,In0,OutF),arc_setval(TT,z_in_contains_out,(HOI,VOI))),
+  %fif(find_ogs(HIO,VIO,OutF,In0),arc_setval(TT,z_out_contains_in,(HIO,VIO))),
+  %@TODO record in the out_in _may_ hold the in_out 
+  print_side_by_side(cyan,NI,CI,_,NO,CO),
+  get_map_pairs(TT,_,List),pp(List)))),!.
+
+
+/*
 
 show_recolor(TestID,ExampleNum,In0,Out0,TT):- 
   must_det_ll(((
@@ -169,7 +202,7 @@ show_recolor(TestID,ExampleNum,In0,Out0,TT):-
   %@TODO record in the out_in _may_ hold the in_out 
   print_side_by_side(cyan,NI,CI,_,NO,CO),
   get_map_pairs(TT,_,List),pp(List)))),!.
-
+*/
 
 arc_test_property(g,b,d):-fail.
 
@@ -340,25 +373,33 @@ ptv2(T):-
   numbervars(true),singletons(true),blobs(portray),
   quote_non_ascii(true),brace_terms(false),ignore_ops(true)]))).
 
+must_min_unifier(A,B,D):- must_det_ll(min_unifier_e(A,B,D)).
+min_unifier_e(A,B,C):- min_unifier(A,B,C),!.
+min_unifier_e(A,B,C):- maybe_extract_values(B,BB), compound(A), \+ maybe_extract_values(A,_), c_proportional(A,BB,AABB),must_min_unifier(AABB,B,C),!.
+min_unifier_e(B,A,C):- maybe_extract_values(B,BB), compound(A), \+ maybe_extract_values(A,_), c_proportional(A,BB,AABB),must_min_unifier(AABB,B,C),!.
+min_unifier_e(_,_,_).
 
 min_unifier([A|List],Term):- min_unifier3(A,List,Term).
 
 min_unifier3(A,List,A):- maplist('=@='(A),List),!.
-min_unifier3(A,[B|List],O):- min_unifier(A,B,C), min_unifier3(C,List,O).
+min_unifier3(A,[B|List],O):- must_min_unifier(A,B,C), min_unifier3(C,List,O).
 
 min_unifier(A,B,C):- A=@=B,!,C=A.
 min_unifier(_,B,B):- plain_var(B),!.
 min_unifier(A,_,A):- plain_var(A),!.
+/*
+min_unifier(A,B,A):- plain_var(B),!.
+min_unifier(A,B,B):- plain_var(A),!.
+*/
 
 min_unifier(A,B,AA):- is_list(A),is_list(B),!,min_list_unifier(A,B,AA), ignore((length(A,AL),length(B,AL),length(AA,AL))).
 min_unifier(A,B,AA):- is_cons(A),is_cons(B),!,min_list_unifier(A,B,AA).
 
+min_unifier(A,B,D):- number(A),number(B),!,c_proportional(A,B,D).
+
 %min_unifier(A,B,C):- is_list(A),sort(A,AA),A\==AA,!,min_unifier(B,AA,C).
 min_unifier(A,B,R):- compound(A),compound(B),compound_name_arguments(A,F,AA),compound_name_arguments(B,F,BB),!,
- maplist(min_unifier,AA,BB,RR),compound_name_arguments(R,F,RR).
-
-min_unifier(A,B,C):- maybe_extract_values(B,BB), compound(A), \+ maybe_extract_values(A,_), c_proportional(A,BB,AABB),min_unifier(AABB,B,C),!.
-min_unifier(B,A,C):- maybe_extract_values(B,BB), compound(A), \+ maybe_extract_values(A,_), c_proportional(A,BB,AABB),min_unifier(AABB,B,C),!.
+ maplist(must_min_unifier,AA,BB,RR),compound_name_arguments(R,F,RR).
 
 min_unifier(A,B,_):- (\+ compound(A);\+ compound(B)),!.
 min_unifier(A,B,R):- relax_hint(A,R),\+ (B \= R),!.

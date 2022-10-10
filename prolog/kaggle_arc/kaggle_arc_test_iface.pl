@@ -406,7 +406,7 @@ test_suite_name(all_arc_test_name).
 
 :- dynamic(muarc_tmp:cached_tests/2).
 %:- retractall(muarc_tmp:cached_tests(_,_)).
-:- test_suite_name(Name)->luser_defval(test_suite_name,Name).
+:- test_suite_name(Name)->luser_default(test_suite_name,Name).
 get_current_suite_testnames(Set):-
   luser_getval(test_suite_name,X),
   current_suite_testnames(X,Set).
@@ -609,7 +609,7 @@ print_qtest:- get_current_test(TestID),print_qtest(TestID).
 
 print_single_pair:- get_current_test(TestID),print_single_pair(TestID).
 
-:- luser_defval('$grid_mode',dots).
+:- luser_default('$grid_mode',dots).
 print_qtest(TestID):- \+ luser_getval('$grid_mode',dots),!,print_test(TestID).
 print_qtest(TestID):- !, print_single_pair(TestID),!.
 print_qtest(TestID):-
@@ -786,7 +786,7 @@ pair_cost(TestID,Cost):- kaggle_arc(TestID,(trn+_),I,O),
 hardness_of_name(TestID,Sum):-
   kaggle_arc(TestID,(trn+0),_,_),
  findall(Cost,pair_cost(TestID,Cost),List),sumlist(List,Sum),!.
-
+/*
 hardness_of_name(TestID,Hard):-
  %ExampleNum=tst+_,
  ExampleNum=_,
@@ -801,7 +801,7 @@ hardness_of_name(TestID,Hard):-
     %(catch(Code,_,rrtrace(Code)))),
   All),
  sort(All,AllK),last(AllK,Hard).
-
+*/
 :- style_check(-singleton).
 
 
