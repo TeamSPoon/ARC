@@ -46,7 +46,7 @@ print_rule(M,O):- \+ \+ (( orpt(M=[O]))).
 orpt(G):- \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N'), pp(orange,(call(print(G)))))).
 
 save_learnt_rule(TestID,In,InKey,RuleDir,Out):-
-  nop_now(save_learnt_rule(learnt_rule(TestID,In,InKey,RuleDir,Out))).
+  if_learn_ok(save_learnt_rule(learnt_rule(TestID,In,InKey,RuleDir,Out))).
 
 save_learnt_rule(RuleIn):- save_learnt_rule(RuleIn,RuleIn,RuleIn).
 save_learnt_rule(RuleIn,InGoal,OutGoal):-  
@@ -184,8 +184,8 @@ learn_rule_o(Mode,InVM,OutVM):- % is_map(InVM),is_map(OutVM),!,
   training_info(TestID,Info),
   length(Info,Len),
   ptc(orange,format('~N~n% Rules so far for ~w: ~w~n~n',[TestID,Len])),!,
-  nop_now(confirm_reproduction(InObjs,InObjs0,InGrid)),!,
-  nop_now(confirm_reproduction(OutObjs,OutObjs0,OutGrid)),!,
+  if_learn_ok(confirm_reproduction(InObjs,InObjs0,InGrid)),!,
+  if_learn_ok(confirm_reproduction(OutObjs,OutObjs0,OutGrid)),!,
   confirm_learned(InGrid,OutGrid),!,
   nop(show_proof(InGrid,OutGrid))]),!.
 
@@ -429,7 +429,7 @@ assert_visually2(H,B):- copy_term((H:-B),(HH:-BB)),clause(HH,BB,Ref), clause(RH,
 assert_visually2(H,B):- copy_term((H),(HH)),clause(HH,_,Ref), clause(RH,_,Ref),(H)=@=(RH) ,!,pp(cyan,known(H:-B)).
 assert_visually2(H,B):- functor(H,F,_), my_asserta_if_new(test_local_dyn(F)), print_rule(F,(H:-B)), my_asserta_if_new((H:-B)).
 
-nop_now(_).
+if_learn_ok(G):- call(G).
 
 clear_training(TestID):-  
   %retractall(individuated_cache(_,_,_)),

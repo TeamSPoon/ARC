@@ -20,7 +20,7 @@ do
 
  cd $LM_ARC_BASE
  export BFLYCMD="$LM_ARC_BASE/prolog/kaggle_arc/Kaggle_arc.sh -g user:bfly_startup ${@} -- LM_ARC_BASE=$LM_ARC_BASE"
- butterfly.server.py --port=7771 --unsecure --i-hereby-declare-i-dont-want-any-security-whatsoever --cmd="${BFLYCMD}" --force-unicode-width || stty sane
+ butterfly.server.py --port=7771 --host='0.0.0.0' --unsecure --i-hereby-declare-i-dont-want-any-security-whatsoever --cmd="${BFLYCMD}" --force-unicode-width || stty sane
 done
 stty sane
 

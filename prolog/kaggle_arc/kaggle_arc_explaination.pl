@@ -188,9 +188,8 @@ prefered_header(iz(Caps),Caps).
 % I didn't really have the programming chops to take his program and give it human level reasoning until about 5 years ago
 debug_indiv(obj(A)):- 
   wots_vs(SS,\+ \+ debug_indiv_obj(A)),!,
+  %writeq(SS),
   write(SS).
-
-
 
 
 choose_header(ASFROM,Caps):- once((prefered_header(P,Caps),member(P,ASFROM),P\==grid_sz(_,_),ground(Caps))).
@@ -220,7 +219,7 @@ debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
 
   ignore((TF==true,dash_chars)),
   sformat(SF,"% ~w:\t\t~w\t",[PC,SGlyph]),
-  ignore(( g_out_style(style('font-size','75%'),(write(SF), pp_no_nl(TVS))))),
+  ignore(( g_out_style(style('font-size','75%'),(write(SF), wqs(TVS))))),
   ignore(( TF==true, amass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
   ignore(( fail, amass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
   %pp(A),

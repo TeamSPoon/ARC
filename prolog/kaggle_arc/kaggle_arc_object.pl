@@ -299,7 +299,7 @@ fix_clump(Cs,CsO):- append([CsM,CsM],Cs),!,fix_clump(CsM,CsO).
 fix_clump(Cs,Cs).
 
 cclumped(Items, CountsO) :- cclump(Items, Counts),!,fix_clump(Counts,CountsO),!.
-cclump([H|T0], [C-H|T]) :-
+cclump([H|T0], [cc(H,C)|T]) :-
     lists:ccount(T0, H, T1, 1, C),
     cclump(T1, T). 
 cclump([], []).  color_c(C,H,C-H).
@@ -346,7 +346,7 @@ obj_to_program(Obj,Program,VM):-
   (isz(Obj,hv_line(_));isz(Obj,dg_line(_));v_hv(Obj,1,_);v_hv(Obj,_,1)),!,
   Program = 
   [loc(Obj,X,Y),v_hv(Obj,H,V),
-   object_pen(Obj,Pen),
+   pen(Obj,Pen),
    draw_seg(Pen,X,Y,H,V,VM)].
 
 add_grid_at_offset(X,Y,Grid,VM):- !,
@@ -376,8 +376,8 @@ obj_to_program(Obj,Program,VM):-
    addGPoints(VM,Ps)].
 
 
-object_pen(Obj,pen(Color)):- color(Obj,Color),!.
-object_pen(Obj,Pen):- color(Obj,Pen),!.
+%object_pen(Obj,pen([cc(Color,1)])):- color(Obj,Color),!.
+%object_pen(Obj,[cc(Color,1)]):- color(Obj,Color),!.
 
 prop_of(amass,amass(_)).
 prop_of(colors,pen(_)).
@@ -866,12 +866,13 @@ object_localpoints0(I,L,XX):-  member(shape(X),L),!,
 
 
 combine_pen([],_,_,[]):-!.
-combine_pen([P1|L],PenColor,Reset,[PenColor-P1|XX]):- is_color(PenColor),!,
-  combine_pen(L,PenColor,Reset,XX).
+combine_pen([P1|L],C,Reset,[C-P1|XX]):- is_color(C),!,
+  combine_pen(L,C,Reset,XX).
 
 combine_pen(X,[],Reset,XX):-!,combine_pen(X,Reset,Reset,XX).
-combine_pen(L,[N-PenColor|PenColors],Reset,XX):- number(N), make_list(PenColor,N,List),append(List,PenColors,ListPenColors),combine_pen(L,ListPenColors,Reset,XX).
-combine_pen([P1|L],[PenColor|PenColors],Reset,[PenColor-P1|XX]):- is_color(PenColor),!,
+combine_pen(L,[cc(C,N)|PenColors],Reset,XX):- number(N), make_list(C,N,List),append(List,PenColors,ListPenColors),
+  combine_pen(L,ListPenColors,Reset,XX).
+combine_pen([P1|L],[C|PenColors],Reset,[C-P1|XX]):- is_color(C),!,
   combine_pen(L,PenColors,Reset,XX).
   
 

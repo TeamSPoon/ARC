@@ -359,6 +359,8 @@ strip_vspace(S,Stripped):- string_concat('\n',SS,S),!,strip_vspace(SS,Stripped).
 strip_vspace(S,Stripped):- string_concat(SS,'\n',S),!,strip_vspace(SS,Stripped).
 strip_vspace(S,Stripped):- string_concat('\t',SS,S),!,strip_vspace(SS,Stripped).
 strip_vspace(S,Stripped):- string_concat(SS,'\t',S),!,strip_vspace(SS,Stripped).
+
+strip_vspace(S,Stripped):- replace_in_string([" \n"="\n","(   "="(  ","(\n"="( "],S,S2),S2\==S,!,strip_vspace(S2,Stripped).
 %strip_vspace(S,Stripped):- split_string(S, "", "\t\r\n", [Stripped]).
 strip_vspace(S,S).
 
@@ -386,11 +388,12 @@ wqs(X):- write_nbsp,writeq(X).
 
 as_arg_str(C,S):- wots_vs(S,print(C)).
 
-arg_string(S):- string(S).
-arg_string(S):- term_contains_ansi(S).
+arg_string(S):- string(S),!.
+arg_string(S):- term_contains_ansi(S),!.
 
 wqs1(format(C,N)):- !, format(C,N).
 wqs1(writef(C,N)):- !, writef(C,N).
+wqs1(S):- term_contains_ansi(S), !, write_nbsp, print(S).
 wqs1(pp(C)):- \+ arg_string(C), wots_vs(S,pp(C)),wqs(pp(S)).
 wqs1(pen(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(penz(S)).
 wqs1(colors(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(colorsz(S)).
@@ -405,7 +408,6 @@ wqs1(cc(C,N)):- N\==0,var(C), sformat(PC,"~p",[C]), !, wqs(ccc(PC,N)).
 wqs1(cc(C,N)):- \+ arg_string(C), wots(S,color_print(C,C)), wqs(cc(S,N)).
 wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
 wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
-wqs1(S):- term_contains_ansi(S), !, write_nbsp, print(S).
 
 %probably_nl :- arc_webui,!,write('<br/>').
 nl_if_needed :- format('~N').

@@ -593,7 +593,7 @@ showdiff_objects_now(Why,OO1,OO2,Sames,Diffs):-
   findall(E,compare_objs1(E,O1,O2),L), pp(compare_objs1(showdiff_objects)=L),  
   dash_chars,dash_chars,
   az_ansi(noisey_debug(print_list_of(print_sames,sames,Sames))),
-  include(fun_diff,Diffs,FunDiffs),
+  include(leftover_diffs,Diffs,FunDiffs),
   print_list_of(print_diffs,diffs,FunDiffs),
   dash_chars,dash_chars)).
 
@@ -609,7 +609,7 @@ excl_diff(diff(A->_)):- !, excl_diff(Ap).
 excl_diff(C):- compound(C),!, compound_name_arity(C,F,_),!,excl_diff(F).
 excl_diff(localpoints).
 excl_diff(shape).
-fun_diff(P):- \+ excl_diff(P).
+leftover_diffs(P):- \+ excl_diff(P).
 
 compare_objs1(_,I,O):- I==O,!,fail.
 compare_objs1(How,I,O):- is_list(I), is_list(O), compare_objprops(How,I,O).
