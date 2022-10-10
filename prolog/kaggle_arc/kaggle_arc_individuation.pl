@@ -1593,8 +1593,8 @@ row_in_grid(C,L,LeftN,SecondRow,RightN,TexturedGrid):-
   length(LeftS,LeftN), length(RightS,RightN).
 
 
-rectangles_from_grid(Grid,VM):- fail,
-  append(Top,[M1,M2|Bottem],Grid),
+rectangles_from_grid(Grid,_VM):- fail,
+  append(_Top,[M1,M2|_Bottem],Grid),
   dif(L1,L2),
   dif(R1,L2),R2=L2,
   append([LL,[L1,L2],T,[R2,R1],_],M1),  

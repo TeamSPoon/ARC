@@ -1057,7 +1057,7 @@ prefer_grid(G):- is_object_or_grid(G).
 
 :- decl_pt(prop_g,mass(is_object_or_grid,number)).
 :- decl_pt(prop_g,unique_colors(prefer_grid, set)).
-%% :- decl_pt(prop_g,colors(prefer_grid, set)).
+% % :- decl_pt(prop_g,colors(prefer_grid, set)).
 
 :- decl_pt(prop_g,center_term(is_object,loc)).
 :- decl_pt(prop_g,loc_term(is_object,loc)).

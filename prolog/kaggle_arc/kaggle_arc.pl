@@ -18,7 +18,10 @@
 catch_log(G):- format('~N'),ignore(catch(notrace(G),E,wdmsg(E=G))),format('~N').
 
 %:- pack_install('https://github.com/logicmoo/logicmoo_utils.git').
-:- pack_install(logicmoo_utils,[url('https://github.com/logicmoo/logicmoo_utils.git'),upgrade(true),git(true),interactive(false)]).
+:- pack_install(logicmoo_utils,[
+  %url('https://github.com/logicmoo/logicmoo_utils.git'),
+  %interactive(false),
+  upgrade(true),git(true)]).
 %:- pack_upgrade(logicmoo_utils).
 % :- pack_install(dictoo).
 % :- pack_upgrade(dictoo).
@@ -218,6 +221,7 @@ with_webui(Goal):- ignore(when_arc_webui(with_http(Goal))).
 ld_logicmoo_webui:-
    exists_source(library(logicmoo_webui)), use_module(library(logicmoo_webui)), 
   system:use_module(library(xlisting/xlisting_web)),
+  system:use_module(library(xlisting/xlisting_web_cm)),
   system:use_module(library(xlisting/xlisting_web_server)),
   catch_log(dmsg((?-webui_start_swish_and_clio))).
 ld_logicmoo_webui.
@@ -1112,12 +1116,13 @@ user:portray(Grid):-
 :- (current_prolog_flag(load_arc_webui,true)->catch_log(logicmoo_webui) ; true).
 :- current_prolog_flag(load_arc_webui,true) -> catch_log(start_arc_server) ; true.
 
-:- set_long_message_server('https://logicmoo.org:17771').
+:- catch_log(set_long_message_server('https://logicmoo.org:17771')).
 
 bfly_startup:-
    set_toplevel_pp(bfly),
    asserta(was_inline_to_bfly),inline_to_bfly_html,
    bfly,
+   ansi,
    catch_log(webui_tests),
    catch_log(print_test),
    catch_log(menu),

@@ -124,7 +124,7 @@ detect_pair_hints(TestID,ExampleNum,In,Out):-
   assert_id_grid_cells(In), assert_id_grid_cells(Out),
   detect_supergrid_tt(TestID,ExampleNum,In,Out,TT),  
   % guess_board(TT),
-  %print(TT),
+  print(TT),
   grid_hint_swap(i-o,In,Out),
   dash_chars,!.
 
@@ -139,7 +139,7 @@ detect_supergrid_tt(TestID,ExampleNum,In0,Out0,TT):-
   nop((show_recolor(TestID,ExampleNum,In0,Out0,TT)))))),!,
  TT = _{} .
 
-show_recolor(TestID,ExampleNum,In0,Out0,TT):- 
+show_recolor(_TestID,_ExampleNum,In0,Out0,TT):- 
   must_det_ll(((
   %show_patterns(In),show_patterns(Out),
   
@@ -148,7 +148,7 @@ show_recolor(TestID,ExampleNum,In0,Out0,TT):-
 
 
   % grid_size(In0,IH,IV), 
-  grid_size(Out0,OH,OV), % max_min(OV,IV,V,_),max_min(OH,IH,H,_),
+  %grid_size(Out0,OH,OV), % max_min(OV,IV,V,_),max_min(OH,IH,H,_),
   into_bicolor(In0,In), into_bicolor(Out0,Out),
 
   /*
