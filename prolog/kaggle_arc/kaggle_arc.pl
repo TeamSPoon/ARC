@@ -16,17 +16,19 @@
 :- multifile('$messages':to_list/2).
 :- asserta(('$messages':to_list(In, List) :- ((is_list(In)-> List = In ; List = [In])),!)).
 
-catch_log(G):- ignore(catch(notrace(G),E,wdmsg(E=G))).
+catch_log(G):- ignore(catch(notrace(G),E,writeln(E=G))).
 catch_nolog(G):- ignore(catch(notrace(G),E,nop(wdmsg(E=G)))).
 
 %:- pack_install('https://github.com/logicmoo/logicmoo_utils.git').
-:- pack_install(logicmoo_utils,[
+:- catch_log(pack_install(logicmoo_utils,[
   %url('https://github.com/logicmoo/logicmoo_utils.git'),
   interactive(false),
-  upgrade(true),git(true)]).
-:- pack_upgrade(logicmoo_utils).
+  upgrade(true),git(true)])).
+:- catch_log(pack_upgrade(logicmoo_utils)).
 % :- pack_install(dictoo).
 % :- pack_upgrade(dictoo).
+
+
 
 %:- module(system).
 

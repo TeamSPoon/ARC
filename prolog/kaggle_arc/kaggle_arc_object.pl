@@ -566,10 +566,9 @@ assert_object_oid(TID,Obj,Glyph,OID):-
    is_object(Obj),
    obj_iv(Obj,Iv), int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
    atomic_list_concat(['o_',Glyph,'_',GID],OID),
-   % retractall(oid_glyph_object(OID,_,_)),
+   retractall(oid_glyph_object(OID,_,_)),
    arc_assert(oid_glyph_object(OID,Glyph,Obj)),
-   % retractall(gid_glyph_oid(GID,Glyph,_)),
-   % retractall(gid_glyph_oid(GID,_,OID)),
+   retractall(gid_glyph_oid(GID,Glyph,_)), retractall(gid_glyph_oid(GID,_,OID)),
    arc_assert(gid_glyph_oid(GID,Glyph,OID)),
    assert_object2(OID,Obj))).
 

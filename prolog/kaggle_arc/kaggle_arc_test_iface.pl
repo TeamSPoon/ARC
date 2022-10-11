@@ -611,6 +611,7 @@ print_single_pair:- get_current_test(TestID),print_single_pair(TestID).
 
 :- luser_default('$grid_mode',dots).
 print_qtest(TestID):- \+ luser_getval('$grid_mode',dots),!,print_test(TestID).
+print_qtest(TestID):- \+ luser_getval('$grid_mode',dashes),!,print_test(TestID).
 print_qtest(TestID):- !, print_single_pair(TestID),!.
 print_qtest(TestID):-
     dash_chars,nl,nl,nl,dash_chars,

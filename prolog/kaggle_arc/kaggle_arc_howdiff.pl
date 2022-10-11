@@ -688,6 +688,8 @@ needs_indivs(I,O):- is_gridoid(I), \+ is_group(I), arcST, trace, compute_unshare
 
 diff_terms(I,O,D):- diff_termz(I,O,D),!.
 %diff_terms(I,O,O):- is_real_color(I),is_real_color(O). % diff_tracked(I->O)
+diff_terms(I,O,I):- atom(I), I=@=O.
+diff_terms(I,O,same(I)):- I=@=O.
 diff_terms(I,O,diff(I->O)).
 
 diff_termz(I,O,D):- nonvar_or_ci(D),!,diff_terms(I,O,DD),D=DD.
@@ -1041,7 +1043,7 @@ calc_ratio(Ratio,_Out,In):- 0 is In, !, Ratio is -0.0.
 calc_ratio(Ratio,Out,In):- catch(Ratio is rationalize(Out/In),error(evaluation_error(_Zero_divisor),_),fail),!.
 calc_ratio(Ratio,Out,In):- catch(NRatio is rationalize(In/Out),error(evaluation_error(_Zero_divisor),_),fail),!, Ratio is -NRatio.
 
-:- decl_pt(prop_g,each_object(is_grid, set)).
+%:- decl_pt(prop_g,each_object(is_grid, set)).
 
 %each_object(_Grid,[]):-!.
 each_object(Grid,ListO):- \+ arc_option(grid_size_only), arc_memoized(individuate(complete,Grid,List)),!, simplify_objs(List,ListO).

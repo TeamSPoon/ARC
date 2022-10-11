@@ -312,6 +312,7 @@ pp_hook_g1(O):-  attvar(O), !, is_colorish(O), data_type(O,DT), writeq('...'(DT)
 pp_hook_g1(S):- term_is_ansi(S), !, write_nbsp, write_keeping_ansi(S).
 
 pp_hook_g1(shape(O)):- !, is_points_list(O), as_grid_string(O,S), print(shape(S)),!.
+pp_hook_g1(vals(O)):- !, writeq(vals(O)),!.
 pp_hook_g1(localpoints(O)):- !, is_points_list(O), as_grid_string(O,S), print(localpoints(S)),!.
 pp_hook_g1(C):- compound(C), compound_name_arguments(C,F,[O]),is_points_list(O), length(O,N),N>2, as_grid_string(O,S), compound_name_arguments(CO,F,[S]), print(CO),!.
 
@@ -396,6 +397,7 @@ wqs1(writef(C,N)):- !, writef(C,N).
 wqs1(S):- term_contains_ansi(S), !, write_nbsp, print(S).
 wqs1(pp(C)):- \+ arg_string(C), wots_vs(S,pp(C)),wqs(pp(S)).
 wqs1(pen(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(penz(S)).
+wqs1(vals(C)):- writeq(vals(C)),!.
 wqs1(colors(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(colorsz(S)).
 wqs1(ppt(C)):- \+ arg_string(C), wots_vs(S,ppt(C)),wqs(ppt(S)).
 wqs1(g(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs(C))),wqs(g(S)).
