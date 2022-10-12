@@ -712,8 +712,8 @@ learn_best_values(VarsIn,VarsOut,Goal):- assert(remember_learning(VarsIn,VarsOut
 reinforce_best_values(ID,Code):- 
   get_current_test(TestID),
   Data = remember_learning(_VarsIn,_VarsOut,_Goal),
-  forall(Data,assert_test_property(TestID,reinforce_best_values,Data)),
-  forall(Data,assert_test_property(TestID,code,Code)),
+  forall(Data,assert_test_property(TestID,rbv,reinforce_best_values,Data)),
+  forall(Data,assert_test_property(TestID,rbv,code,Code)),
   wdmsg(reinforce_best_values(ID,Code)).
 
 test_symmetry_code(Grid,[],RepairedResult,Code):- 

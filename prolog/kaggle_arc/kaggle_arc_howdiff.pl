@@ -112,18 +112,19 @@ generalize_compound(I,O):- term_variables(I,Vs),
   generalize_arglist(IA,OA),
   term_variables(O,VsO), length(Vs,IL),length(VsO,OL), OL =< IL+1.
 
-generalize_arg(I,O):- compound_not_list(I),!,(generalize_compound(I,O);I=_).
-generalize_arg(I,O):- O=I ; O = _.
+%generalize_arg(I,_):- compound_not_list(I), I=..[F|Args],diff_f(F),!.
+%generalize_arg(I,O):- compound_not_list(I),!,(generalize_compound(I,O);I=_).
+generalize_arg(I,O):- generalize_term(O,I).
 
-generalize_arglist([],[]). 
+generalize_arglist([],[]):-!. 
 generalize_arglist([I],[O]):- !, generalize_arg(I,O).
-generalize_arglist([A,B],[AA,BB]):- !, generalize_arg(A,AA),generalize_arg(B,BB).
-
-generalize_arglist(List,Loose):- findall(E,generalize_arglist3(List,E),Pos),
+%generalize_arglist([A,B,C],[AA,BB,CC]):- !, generalize_arg(A,AA),generalize_arg(B,BB),generalize_arg(C,CC).
+generalize_arglist(List,Loose):- 
+ findall(E,generalize_arglist2(List,E),Pos),
   sort_looseness(Pos,Gens),!,member(Loose,Gens).
 
 %sort_looseness(Pos,Pos):-!.
-sort_looseness(Pos,Gens):- predsort(using_compare(var_count),Pos,Gens).
+sort_looseness(Pos,Gens):- predsort(using_compare(var_count),Pos,Gens),!.
 
 sub_term_or_e(E,List):- is_list(List),!,member(EE,List),sub_term_or_e(E,EE).
 sub_term_or_e(E,List):- sub_term(E,List).
@@ -132,6 +133,7 @@ count_of(A,P1, NEG):- nonvar(NEG), NEG = -N, !, count_of(A,P1,NN), N is -NN.
 count_of(A,P1,N):- findall(E,(sub_term_or_e(E,A),call(P1,E)),L),length(L,N).
 count_sum_of(A,P2,N):- findall(EN,(sub_term_or_e(E,A),call(P2,E,EN)),L),sum_list(L,N).
 
+var_count(Term,N):- term_variables(Term,Vs),length(Vs,N),!.
 var_count(Term,N):- compound_not_list(Term),compound_name_arguments(Term,_,List),!,var_count(List,N).
 var_count(Term,N):- var(Term),!,N = term(Term,Term,Term).
 var_count(Term,N):- \+ is_list(Term), N = Term,!.
@@ -146,10 +148,12 @@ var_count(Term,N):-
 number_or_point(O):- number(O).
 number_or_point(O):- is_nc_point(O).
 
+generalize_arglist2([A,B],[AA,BB]):- generalize_arg(A,AA),generalize_arg(B,BB).
+generalize_arglist2(I,O):- generalize_arglist3(I,O).
+
 generalize_arglist3([A,B,C],[AA,BB,CC]):- generalize_arg(A,AA), generalize_arg(B,BB),generalize_arg(C,CC).
-generalize_arglist3([A,B,C,D],[AA,BB,CC,DD]):- generalize_arg(A,AA), generalize_arg(B,BB),generalize_arg(C,CC),generalize_arg(D,DD).
-generalize_arglist3([A|B],[AA|BB]):- generalize_arg(A,AA),generalize_arglist(B,BB).
-generalize_arglist3(L1,L2):- length(L1,N),length(L2,N).
+generalize_arglist3([A,B,C,D|E],[AA,BB,CC,DD|EE]):- generalize_arg(A,AA), generalize_arg(B,BB),generalize_arg(C,CC),generalize_arg(D,DD),generalize_arglist(E,EE).
+%generalize_arglist3(L1,L2):- length(L1,N),length(L2,N).
 
 generalize_cons(I,O):- plain_var(I), !, (O=[];O=_).
 generalize_cons([],O):- !, (O=[];O=_).
@@ -916,12 +920,6 @@ proportional(B,A,C):- maybe_extract_values(B,BB), compound(A), \+ maybe_extract_
 proportional(G1,G2,Out):- unused_proportion(G1,G2,Out),!.
 %proportional(E1,E2,E1):- E1=@=E2,!.
 
-/*
-proportional(Obj1,Obj2,Out):- compound(Obj1), compound(Obj2),  
-  is_grid(Obj1),!,once((grid_props(Obj1,Out1), 
-  grid_props(Obj2,Out2))),
-  proportional(grid_props(Out1),grid_props(Out2),Out).
-*/
 
 proportional(Obj2,Obj1,Out):- % is_object(Obj1),!,
   (decl_pt(prop_g,P1P2);decl_pt(prop_o,P1P2)), 
@@ -935,20 +933,29 @@ proportional(Obj2,Obj1,Out):- % is_object(Obj1),!,
   proportional_type_list(Lst,NewLst1,NewLst2,OutL))), 
   Out =.. [P2|OutL].
 
+proportional(Obj1,Obj2,Out):- compound(Obj1), compound(Obj2),  fail,
+  is_grid(Obj1),is_grid(Obj2),
+  once((grid_props(Obj1,Out1), grid_props(Obj2,Out2))),
+  proportional_lists(Out1,Out2,Out),!.
+
 proportional(L1,L2,_List):- is_grid(L1),is_grid(L2),!,fail.
 proportional(N1,N2,N):- compound(N1),compound_name_arguments(N1,F,A1),compound_name_arguments(N2,F,A2),
   maplist(proportional_or_same,A1,A2,AR),compound_name_arguments(N,F,AR).
 proportional(L1,L2,Diff):- locally(nb_setval(diff_porportional,t),diff_terms(L1,L2,Diff)),!.
 
 
-grid_props(Obj1,[toStr(S)|ListO]):- % \+ arc_option(grid_size_only), 
+grid_props(Obj1,OOO):- % \+ arc_option(grid_size_only), 
  %to_assertable_grid(Obj1,AG),data_type(Obj1,DT),
  wots(S,print_grid(Obj1)),
  findall(Prop, (((decl_pt(prop_g,P1P2);decl_pt(prop_o,P1P2)), 
   P1P2=..[P2,P1|Lst], once((on_x_log_and_fail(call(P1,Obj1)))),
     length(Lst,Len), length(NewLst1,Len), 
     once((on_x_log_and_fail(apply(P2,[Obj1|NewLst1])))),
-   Prop =.. [P2|NewLst1])), ListO).
+   Prop =.. [P2|NewLst1])), ListO),
+   %OOO = [toStr(S)|ListO],
+   OOO = ListO,
+   !.
+
 
 
 
@@ -1007,12 +1014,20 @@ proportional_lists(L1,L2,OUT):- is_group(L1),is_group(L2),must_det_ll(diff_group
 proportional_lists(L1,L2,OUT):- 
  must_det_ll((
   length(L1,N1),length(L2,N2), proportional_size(N1,N2,N),
+  into_vals(L1,L2,Vals), diff_lists(L1,L2,Diff),
+  OUT=..[lst,vals(Vals),len(N),(Diff)])),!.
+
+/*
+proportional_lists(L1,L2,OUT):- 
+ must_det_ll((
+  length(L1,N1),length(L2,N2), proportional_size(N1,N2,N),
   intersection(L1,L2,Shared,IOnlyC,OOnlyC), 
   maplist(length,[L1,L2,IOnlyC,Shared,OOnlyC],Lens),
   into_vals(L1,L2,Vals),
   list_to_set(Shared,SharedS),
   diff_lists(IOnlyC,OOnlyC,Diff),
-  OUT=..[lst,vals(Vals),len(N),s(SharedS),d(Diff),l(IOnlyC),r(OOnlyC)|Lens])),!.
+  OUT=..[lst,vals(Vals),len(N),d(Diff),lsr(IOnlyC,SharedS,OOnlyC)|Lens])),!.
+*/
 
 proportional_lists(L1,L2,p(L1,L2)):-!.
 
@@ -1059,13 +1074,16 @@ prefer_grid(G):- is_object_or_grid(G).
 
 :- decl_pt(prop_g,mass(is_object_or_grid,number)).
 :- decl_pt(prop_g,unique_colors(prefer_grid, set)).
-% % :- decl_pt(prop_g,colors(prefer_grid, set)).
+:- decl_pt(prop_g,has_y_rows(is_grid,colcount,color,set(rownums))).
+:- decl_pt(prop_g,has_x_columns(is_grid,rowcount,color,set(colnums))).
+:- decl_pt(prop_g,x_columns(is_grid,set)).
+:- decl_pt(prop_g,y_rows(is_grid,set)).
+%:- decl_pt(prop_g,colors(prefer_grid, set)).
 
 :- decl_pt(prop_g,center_term(is_object,loc)).
 :- decl_pt(prop_g,loc_term(is_object,loc)).
 
-:- decl_pt(prop_g,has_y_rows(is_grid,colcount,color,set(rownums))).
-:- decl_pt(prop_g,has_x_columns(is_grid,rowcount,color,set(colnums))).
+
 
 
 :- fixup_exports.

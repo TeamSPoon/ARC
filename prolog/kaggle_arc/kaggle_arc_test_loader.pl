@@ -120,8 +120,8 @@ arc_sub_path(Subdir,AbsolutePath):- muarc_tmp:arc_directory(ARC_DIR),absolute_di
 
 :- load_json_files(t,'./data/training/*.json').
 :- load_json_files(v,'./data/evaluation/*.json').
-:- load_json_files(v,'./data/test_100/*.json').
-:- load_json_files(t,'./data/test_nar_10x10/*.json').
+%:- load_json_files(v,'./data/test_100/*.json').
+%:- load_json_files(t,'./data/test_nar_10x10/*.json').
 :- load_json_files(t,'./data/1D_testset/*.json').
 :- load_json_files(t,'./dbigham/Data/MyTrainingData/*.json').
 
@@ -537,8 +537,7 @@ icu('ff28f65a', -1 ).
 icu('ff805c23', -1 ).
 
 %Personally Created Training Tasks (15)
-dbigham_personal(E):- 
-tasks_split(E,'
+suite_tag(dbigham_personal,'
 jnohuorzh-easier
 ihiz27k2n
 jnohuorzh
@@ -557,8 +556,8 @@ surface-pixel-count
 ').
 
 % Core ARC Training Tasks (72)
-dbigham_train_core(E):- 
-tasks_split(E,'
+
+suite_tag(dbigham_train_core,'
 0ca9ddb6
 3c9b0459
 1caeab9d
@@ -635,8 +634,7 @@ feca6190
 
 % Training Tasks (74)
 % The following ARC training tasks started passing after some different task was implemented.
-dbigham_train_pass(E):- 
-tasks_split(E,'
+suite_tag(dbigham_train_pass,'
 ea32f347
 5521c0d9
 6c434453
@@ -716,8 +714,7 @@ c3f564a4
 % Evaluation Tasks (56)
 % The following ARC evaluation tasks are passing. My intention is to not analyzed or implemented evaluation examples specifically, 
 % but I have implemented a few accidentally.
-dbigham_eval_pass(E):- 
-tasks_split(E,'
+suite_tag(dbigham_eval_pass,'
 84f2aca1
 66e6c45b
 f45f5ca7

@@ -352,6 +352,9 @@ known_grid(ID,GO):- (known_grid0(ID,G),deterministic(YN),true), (YN==true-> ! ; 
 
 
 oid_to_gridoid(GID,G):- current_predicate(gid_to_grid/2), call(call,gid_to_grid,GID,G).
+oid_to_gridoid(ID,G):- atom(ID),
+  testid_name_num_io(ID,Name,Example,Num,IO),
+  kaggle_arc_io(Name,Example+Num,IO,G),!.
 oid_to_gridoid(ID,G):-  atom(ID),atomic_list_concat(Term,'_',ID), Term\==[ID], !,append(GOID,[OID],Term),
   testid_name_num_io(GOID,_Name,_Example,_Num,_IO),
   ((atom(OID),atom_number(OID,ONum))-> int2glyph(ONum,GL);GL=OID),

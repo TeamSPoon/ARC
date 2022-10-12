@@ -669,7 +669,7 @@ show_pair_diff(IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
 
 uses_space(C):- code_type(C,print).
 
-into_ss_string(C, ss(1,["var_into_ss_string"])):- var(C),!.
+into_ss_string(C, X):- var(C),!, must_det_ll(X=ss(1,["var_into_ss_string","2","3"])).
 into_ss_string(C,_):- plain_var(C),!,throw(var_into_ss_string(C)).
 %into_ss_string(A-B,ss(LenAB,ABL)):- into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)), append(LA,LB,ABL), max_min(LenA,LenB,LenAB,_).
 into_ss_string(print_grid(G),SS):- into_ss_string(print_grid_ss(G),SS).
@@ -1242,8 +1242,8 @@ bg_dot(32).
 %fg_dot(C):- luser_getval(fg_dot,C),integer(C),!.
 %fg_dot(_):- luser_getval(no_rdot,true),luser_setval(no_rdot,false)-> break , fail.
 fg_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.
-fg_dot(64).
-%fg_dot(174).
+%fg_dot(64).
+fg_dot(174).
 cant_be_dot(183).
 grid_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.
 grid_dot(169).

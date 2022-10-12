@@ -85,10 +85,51 @@ into_gio(IndvS,InSO,OutSO):-
 
 not_io(O):- \+ has_prop(iz(g(out)),O), \+ has_prop(iz(g(in)),O).
 
+xfer_1zero(In,Out):-
+ ignore((
+ color_texture_point_data(In,C1,T1,_),
+ color_texture_point_data(Out,C2,T2,_), 
+ C1==C2, merge_texture(T1,T2,TO), 
+ nb_setarg(1,In,TO),nb_setarg(1,Out,TO))).
+
+xfer_1zero_ss(In,Out):-
+ ignore((
+ color_texture_point_data(In,C1,T1,_),
+ color_texture_point_data(Out,C2,T2,_), 
+ C1==C2,
+ merge_texture(T1,T2,TO), 
+ nb_setarg(1,In,TO),nb_setarg(1,Out,TO))).
+
+merge_texture(X,Y,O):- merge_texture1(X,Y,O),Y\=='~',!.
+merge_texture(X,Y,O):- merge_texture1(Y,X,O),X\=='~',!.
+%merge_texture(X,_,X).
+merge_texture1(0,_,0).
+merge_texture1('<',_,'<').
+merge_texture1('>',_,'>').
+merge_texture1('V',_,'V').
+merge_texture1('A',_,'A').
+%merge_texture1('-',_,'-').
+
+xfer_zeros(In,Out):- 
+  is_grid(In),is_grid(Out),grid_size(In,H,V),  grid_size(Out,H,V),!,
+  forall(between(1,H,Hi),forall(between(1,V,Vi),
+     (hv_c_value(In,ZV1,Hi,Vi),hv_c_value(Out,ZV2,Hi,Vi),xfer_1zero_ss(ZV1,ZV2)))).
+
+xfer_zeros(In,Out):- 
+ ignore((
+ is_grid(In),is_grid(Out),
+ ignore((
+  grid_size(In,H1,V1),  grid_size(Out,H2,V2),
+  max_min(H1,H2,_,H), max_min(V1,V2,_,V),
+  forall(between(1,H,Hi),forall(between(1,V,Vi),
+     (hv_c_value(In,ZV1,Hi,Vi),hv_c_value(Out,ZV2,Hi,Vi),xfer_1zero(ZV1,ZV2)))))))),!.
+
+
 show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):- 
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),
   print_side_by_side(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
   as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1),
+  xfer_zeros(GridIn1,GridOut1),
   print_side_by_side(green,GridIn1,ngridIn(ID1),_,GridOut1,ngridOut(ID2)),
   dash_chars,
   setup_call_cleanup(
@@ -98,7 +139,8 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
       show_pair_diff_code(IH,IV,  OH, OV,individuated(ROptions,ID1),individuated(ROptions,ID2),PairName,InC,OutC)),!),
     luser_setval(no_rdot,false)).
 
-
+input_objects_first(TestID):-
+  arc_test_property(TestID,common,rev(comp(cbg('black'),o-i,containsAll)),containsAll(o-i)).
 
 % =========================================================
 
@@ -464,7 +506,7 @@ preserve_vm(VM,Goal):-
 remove_texture(Cell,C-Point):- color_texture_point_data(Cell,C,_Texure,Point).
 is_texture(List,Cell):- color_texture_point_data(Cell,_C,Texture,_Point),member(T,List),Texture==T,!.
 is_fti_step(gather_texture).
-gather_texture(_VM):-!.
+%gather_texture(_VM):-!.
 gather_texture(VM):-
  must_det_ll((
     Grid = VM.grid,
@@ -474,7 +516,7 @@ gather_texture(VM):-
     my_partition(is_fgp,TPoints,FGPoints,BGPoints),
     
     my_partition(is_texture([0]),FGPoints,Zeros,Rest),
-    my_partition(is_texture(['V','<','^','v','>']),Rest,Shooters,NFGPoints),
+    my_partition(is_texture([/*'V','<','^','v','>'*/]),Rest,Shooters,NFGPoints),
     append(BGPoints,NFGPoints,NPoints),
     maplist(remove_texture,NPoints,CPoints),!,
     points_to_grid(H,V,CPoints,NewGrid0),!,

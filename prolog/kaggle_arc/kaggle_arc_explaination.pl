@@ -225,6 +225,8 @@ debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
   %pp(A),
   ignore(( TF==true,dash_chars))]),!.
 
+
+
 not_too_verbose(X):- X\==(''), X\==s('').
 
 show_st_map(Obj):-

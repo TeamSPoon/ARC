@@ -11,7 +11,7 @@ fi
 
 
 cd $ARC_DIR
-# rm -rf out
+rm -rf out/?*.ansi
 # git checkout out
 
 mkdir -p data

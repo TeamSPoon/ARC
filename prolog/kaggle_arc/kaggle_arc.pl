@@ -53,9 +53,9 @@ catch_nolog(G):- ignore(catch(notrace(G),E,nop(wdmsg(E=G)))).
 :- multifile(kaggle_arc/4).
 :- export(kaggle_arc/4).
 
-:- dynamic(arc_test_property/3).
-:- discontiguous(arc_test_property/3).
-:- multifile(arc_test_property/3).
+:- dynamic(arc_test_property/4).
+:- discontiguous(arc_test_property/4).
+:- multifile(arc_test_property/4).
 
 :- dynamic(individuation_macros/2).
 :- discontiguous(individuation_macros/2).
@@ -550,6 +550,9 @@ luser_getval(ID,N,V):-
   (nb_current(N,V))*->true;arc_user_prop(global,N,V)).
 */
 :- luser_default(example,trn+0).
+
+
+:- luser_default(no_diags,t).
 
 %c:- forall(clause(fav(A,B),true),arc_history1((fav(A,B)))).
 :- arc_history1(fav2).
@@ -1089,7 +1092,7 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 %:- endif.
 
 %:- fixup_module_exports_now.  
-user:portray(Grid):-
+user:portray(Grid):- fail,
    \+ nb_current(arc_can_portray,nil),
    current_predicate(bfly_startup/0), \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!.
 

@@ -282,9 +282,14 @@ subtypes(C,S):- subClassOf(S,C).
 
 allow_dir_list(nsew,[n,s,e,w]). %s,e,n,w 
 %allow_dir_list(rectangles,[s,e]). 
+
+allow_dir_list(colormass,[n,s,e,w]):- arc_option(no_diags),!.
+
 allow_dir_list(colormass,[n,s,e,w,nw,ne,se,sw]). 
 allow_dir_list(diamonds,[nw,sw,se,ne]).
 allow_dir_list(colormass,[n,s,e,w,nw,sw,se,ne]).
+
+allow_dir_list(all,[n,s,e,w]):- arc_option(no_diags),!.
 allow_dir_list(all,   [nw,sw,se,ne,n,w,s,e]).
 allow_dir_list(hv_line(h),[e,w]).
 allow_dir_list(hv_line(v),[n,s]).

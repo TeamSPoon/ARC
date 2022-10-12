@@ -430,6 +430,7 @@ test_suite_info(SuiteX,TestID):- var(SuiteX),!,test_suite_name(SuiteX),test_suit
 test_suite_info(SuiteX,TestID):- current_predicate(SuiteX/1), call(SuiteX,TestID).
 test_suite_info(SuiteX,TestID):- test_info(TestID,Sol), \+ \+ (member(E,Sol), (E=test_suite([SuiteX]);E==SuiteX)).
 
+
 previous_test:-  get_current_test(TestID), get_previous_test(TestID,NextID), set_current_test(NextID).
 next_test:- get_current_test(TestID), notrace((get_next_test(TestID,NextID), set_current_test(NextID))),!.
 random_test:- notrace((get_random_test(NextID), set_current_test(NextID), print_qtest(NextID))),!.
@@ -580,6 +581,7 @@ print_test(TName):-
       ignore((
        once(in_out_name(ExampleNum1,NameIn,NameOut)),
          as_d_grid(In,In1),as_d_grid(Out,Out1),
+         xfer_zeros(In1,Out1),
        format('~Ngridcase(~q,"\n~@").~n~n~n',[TestID>ExampleNum1,
             ((print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut),
                            nl,
@@ -663,6 +665,7 @@ some_test_info(X,[keypad]):- key_pad_tests(X).
 some_test_info(TestID,III):- fav(TestID,III).
 some_test_info(TestID,test_suite([III])):- icu(Name,PF),atom_id_e(Name,TestID), (PF == -1 -> III= icecuber_fail;III= icecuber_pass).
 some_test_info(TestID,III):- some_test_info_prop(TestID,III).
+some_test_info(TestID,test_suite([SuiteX])):- suite_tag(SuiteX,List),tasks_split(TestID,List).
 
 matches(InfoS,InfoM):- member(InfoS,InfoM).
 

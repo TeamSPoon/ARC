@@ -221,7 +221,11 @@ show_result(What,Solution,ExpectedOut,Errors):-
    print_side_by_side(blue,Solution,What,_,ExpectedOut,"Expected"),
       (Errors==0 -> 
            arcdbg_info(green,pass(What,TestID))
-         ; arcdbg_info(red,fail(What,Errors,TestID))))),
+         ; (arcdbg_info(red,fail(What,Errors,TestID)),
+            pp(s=Solution),
+            pp(e=ExpectedOut), trace)
+            
+           ))),
  test_info(TestID,InfoF),wqnl(fav(TestID,InfoF)),!.
 
 
