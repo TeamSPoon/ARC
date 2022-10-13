@@ -165,8 +165,8 @@ learn_rule_o(in_in,_InVM,_OutVM):- !.
 learn_rule_o(Mode,InVM,OutVM):- % is_map(InVM),is_map(OutVM),!,
  in_out = Mode,
  maplist(must_det_ll,[
-  InGrid = InVM.grid, InObjs0 = InVM.objs,  
-  OutGrid = OutVM.grid, OutObjs0 = OutVM.objs,
+  InGrid = InVM.grid_o, InObjs0 = InVM.objs,  
+  OutGrid = OutVM.grid_o, OutObjs0 = OutVM.objs,
   ignore(InVM.grid_target = OutGrid),
   maplist(simplify_for_matching(lhs),InObjs0,InObjs),
   %maplist(simplify_for_matching,OutObjs0,OutObjs),
@@ -223,7 +223,7 @@ show_result(What,Solution,ExpectedOut,Errors):-
            arcdbg_info(green,pass(What,TestID))
          ; (arcdbg_info(red,fail(What,Errors,TestID)),
             pp(s=Solution),
-            pp(e=ExpectedOut), trace)
+            pp(e=ExpectedOut))
             
            ))),
  test_info(TestID,InfoF),wqnl(fav(TestID,InfoF)),!.

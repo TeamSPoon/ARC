@@ -23,6 +23,7 @@ last_indiv(I,R):- into_group(I,M),I\=@=M,!,predsort(sort_on(loc_term),M,O),rever
 
 fav(A,B):- nonvar_or_ci(A),nonvar_or_ci(B), cls1,mmake, asserta(fav(A,B),Ref),!, call_cleanup(arc1(A),erase(Ref)).
 
+fav(t('40853293'),[indiv(by_color(2))]).
 %fav(t(d631b094),human(globalpoints,grid_target=[get(points)],maplist(arg(1)))).
 fav(t('d631b094'),[human(i(lo_dots),get(objs),learn_rule)]).
 fav(t('d631b094'),[-shape_match,-rotation_match,-mask_match,-color_match,tt,training,summarize,dominant_color,count_tiles,'(4, 1)']).

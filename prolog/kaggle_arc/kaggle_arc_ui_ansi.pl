@@ -1242,8 +1242,8 @@ bg_dot(32).
 %fg_dot(C):- luser_getval(fg_dot,C),integer(C),!.
 %fg_dot(_):- luser_getval(no_rdot,true),luser_setval(no_rdot,false)-> break , fail.
 fg_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.
-%fg_dot(64).
-fg_dot(174).
+fg_dot(64).
+%fg_dot(174).
 cant_be_dot(183).
 grid_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.
 grid_dot(169).

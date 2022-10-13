@@ -353,7 +353,7 @@ individuation_macros(complete, ListO):- test_config(indiv(ListO))-> true;
 
   
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
-individuator(i_by_color,[by_color(3), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
+individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
 individuator(i_nsew,[subshape_both(h,nsew), maybe_lo_dots, do_ending]).
 individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots, do_ending]).
 individuator(i_repair_mirrors,[repair_in_vm(find_symmetry_code)]).
