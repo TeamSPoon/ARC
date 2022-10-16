@@ -263,11 +263,11 @@ check_len(_).
 must_det_ll(X):- conjuncts_to_list(X,List),List\=[_],!,maplist(must_det_ll,List).
 must_det_ll(must_det_ll(X)):- !, must_det_ll(X).
 %must_det_ll((X,Y,Z)):- !, (must_det_ll(X)->must_det_ll(Y)->must_det_ll(Z)).
-must_det_ll((X,Y)):- !, (must_det_ll(X),must_det_ll(Y)).
 %must_det_ll((X,Y)):- !, (must_det_ll(X)->must_det_ll(Y)).
 must_det_ll(fif(X,Y)):- !, fif(must_not_error(X),must_det_ll(Y)).
-must_det_ll((A->X;Y)):- !,(must_not_error(A)->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((A*->X;Y)):- !,(must_not_error(A)*->must_det_ll(X);must_det_ll(Y)).
+must_det_ll((X,Y)):- !, (must_det_ll(X),must_det_ll(Y)).
+must_det_ll((A->X;Y)):- !,(must_not_error(A)->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((X;Y)):- !, ((must_not_error(X);must_not_error(Y))->true;must_det_ll_failed(X;Y)).
 must_det_ll(\+ (X)):- !, (\+ must_not_error(X) -> true ; must_det_ll_failed(\+ X)).
 %must_det_ll((M:Y)):- nonvar(M), !, M:must_det_ll(Y).
@@ -778,7 +778,7 @@ train_test(TestID,P2):-
   my_time(call(P2,TestID,Dictation,DictOut)),
   set_training(DictOut),!.
 
-my_time(Goal):- !,call(Goal).
+%my_time(Goal):- !,call(Goal).
 my_time(Goal):- statistics:time(Goal).
 
 train_using_oo_ii_io(TestID,DictIn,DictOut):- 
@@ -935,7 +935,7 @@ appended_trial(human,[learn_rule]).
 solve_test:- forall(trial_non_human(Trial),solve_test_trial(Trial)).
 
 solve_test_trial(Trial):- mmake,
- my_menu_call((get_current_test(TestID), catch(solve_test_trial(Trial,TestID,(tst+_)),E,wdmsg(E=solve_test_trial(Trial,TestID,(tst+_)))))),!.
+ my_time((my_menu_call((get_current_test(TestID), catch(solve_test_trial(Trial,TestID,(tst+_)),E,wdmsg(E=solve_test_trial(Trial,TestID,(tst+_)))))))),!.
 
 solve_test_training_too:- 
  solve_test,
@@ -995,7 +995,7 @@ do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
      ignore(((
       once((pp(cyan,trial=Trial),
        ppt(cyan,run_dsl(TestID>ExampleNum,Trial,SolutionProgram)),!,
-       (time((
+       (my_time((
               maybe_set_vm(InVM),
               kaggle_arc_io(TestID,ExampleNum,in,TestIn),
               gset(InVM.grid) = TestIn,

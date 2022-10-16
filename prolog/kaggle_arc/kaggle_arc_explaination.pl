@@ -86,7 +86,7 @@ object_grid_to_str(Grid,Str,Title):-
   HH is (OH - 1) * 2, wots(Str,(print_w_pad(HH,GSS))).
 
 
-debug_as_grid(Grid):- debug_as_grid('',Grid).
+debug_as_grid(Grid):- debug_as_grid('',Grid),!.
 debug_as_grid(Why,R):- is_object_props(R),!,debug_as_grid(Why,obj(R)).
 debug_as_grid(Why,R):- atom(R), atom_contains(R,'_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
   resolve_reference(R,Var), R\==Var, \+ plain_var(Var),!, 
@@ -94,22 +94,24 @@ debug_as_grid(Why,R):- atom(R), atom_contains(R,'_'), pp_parent([LF|_]), \+ (LF=
 
 %debug_as_grid(Why,R):- resolve_reference(R,Var)-> R\==Var, write(' ( '), writeq(R),write(' , '),debug_as_grid(Why,Var),write(' )'),!.
 debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
+  must_det_ll((
   v_hv(Grid,H,V),
   object_glyph(Grid,Glyph),
   Title = debug_as_grid(Why,loc(OH,OV),size(H,V)),
   fif((H\==1;V\==1),
     (loc(Grid,OH,OV),
      localpoints_include_bg(Grid,GridO),
-     ((IH=H,IV=V)), % (IH = 30,IV=30), 
+     ignore(IH=H),ignore(IV=V), 
+     ignore(IH = 30),ignore(IV=30), 
      subst(GridO,black,wbg,GridOO),
      into_ngrid(GridOO,IH,IV,NGrid),
-
      wots(GS,print_grid(IH,IV,Title,GridOO)),replace_in_string(['®'=Glyph],GS,GSS),
      wots(S,print_side_by_side(GSS,print_grid(IH,IV,ngrid,NGrid))),
      HH is (OH - 1) * 2, print_w_pad(HH,S))),
-  fif(is_object(Grid),(format('~N~n'),
-  locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Grid))))),
-  format('~N'),dash_chars(15),!.
+  fif(is_object(Grid),
+    (format('~N~n'),
+     locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Grid))))),
+     format('~N'),dash_chars(15))),!.
 
 debug_as_grid(  I,   A):- is_1gridoid(A), !, subst(A,'black','wbg',AA), print_grid(I,AA).
 debug_as_grid( '',Grid):- !, pp(Grid).

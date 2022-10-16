@@ -536,7 +536,12 @@ indv_u_props(I,[ shape(C),  loc(X,Y),  pen(Ps),  rotation(Rot)]):-  shape(I,C),l
 
 :- dynamic(is_shape_id_for/2).
 is_shape_id_for([],sid_0).
-is_shape_id_for([point_01_01],sid_1).
+is_shape_id_for([point_01_01],sid_01).
+is_shape_id_for([point_01_01,point_01_02],sid_20).
+is_shape_id_for([point_01_01,point_02_01],sid_02).
+is_shape_id_for([point_01_01,point_02_01,point_01_02,point_02_02],sid_22).
+is_shape_id_for([point_01_01,point_02_01,point_03_01],sid_03).
+is_shape_id_for([point_01_01,point_02_01,point_03_01,point_04_01],sid_04).
 shape_id(Shape,ShapeID):- is_shape_id_for(Shape,ShapeID),!.
 shape_id(Shape,ShapeID):- term_hash(Shape,Hash), atomic_list_concat(['s',Hash],ShapeID), asserta(is_shape_id_for(Shape,ShapeID)).
 

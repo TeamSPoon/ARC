@@ -302,6 +302,24 @@ indiv_show_pairs(Peers,_Shown,List,Indv):-
   dash_chars,
   (best_mates(Indv,List,Mate)->showdiff_arg1(Peers,Indv,List,Mate);debug_as_grid(Indv)).
 
+
+dg(I1):-  print_grid(I1),!, print_info(I1).
+dg(I1):- debug_as_grid(I1) -> true ; (print_grid(I1), print_info(I1)).
+printing_diff(I1,O1):- dg(I1),!, dg(O1),!.
+printing_diff(O1,O2):- 
+  object_grid_to_str(O1,Str1,T1),
+  object_grid_to_str(O2,Str2,T2),
+  ((global_grid(O1,OG1),global_grid(O2,OG2),print_side_by_side(teal,OG1,global_grid(T1),_,OG2,diff(T2)))-> true;
+   (print_side_by_side(yellow,O1,no_global_grid(T1),_,O2,diff(T2)))),
+  ignore((into_ngrid(O1,NO1),into_ngrid(O2,NO2), print_side_by_side(silver,NO1,ngrid(T1),_,NO2,ngrid(T2)))),
+  dash_chars,
+  writeln(Str1), 
+  debug_indiv(O1),
+  writeln(Str2),
+  debug_indiv(O2),!.
+
+
+
 showdiff_arg1(Peers1,Obj1,Peers2,Obj2):- 
  must_det_ll((
   findall(Peer,(nop(has_prop(o(X,Y,_),Obj1)),member(Peer,Peers1),has_prop(o(X,Y,_),Peer),Peer\==Obj1),Peers11),
@@ -309,14 +327,13 @@ showdiff_arg1(Peers1,Obj1,Peers2,Obj2):-
   objs_to_io(Obj1,Obj2,I1,O1),
   ((Obj1==I1) -> (PeersI = Peers11,PeersO = Peers22) ; (PeersI = Peers22,PeersO = Peers11)),
 
-  %print_side_by_side(I1,_,O1), print_info(I1),print_info(O1),
-  debug_as_grid(I1), debug_as_grid(O1),!,
+  %link_prop_types(loc,I1,O1,_LOCS),
+  printing_diff(I1,O1),
   indv_props(I1,S1),indv_props(O1,S2),
   indv_u_props(I1,IU),indv_u_props(O1,OU),
   remove_giz(S1,T1),remove_giz(S2,T2),
-  intersection(T1,T2,Sames,IA,OA),
-  object_props_diff(IA,OA,Diffs), listify(Diffs,DiffL),print_nl(DiffL),    
-  maplist(refunctor,Sames,NewSames),
+  intersection(T1,T2,Sames,IA,OA),maplist(refunctor,Sames,NewSames),
+  object_props_diff(IA,OA,Diffs), listify(Diffs,DiffL),maplist(print_nl,DiffL),      
   undiff(IA,OA,IZ,OZ),
   subst_2L(Sames,NewSames, T1+ T2+IU +OU,
                           _U1+_U2+IU2+OU2),
@@ -328,6 +345,17 @@ showdiff_arg1(Peers1,Obj1,Peers2,Obj2):-
   SETS = RHSSet+LHSSet,
   save_learnt_rule(test_solved(i_o,obj(NewSames,LHSSet,IZ),obj(NewSames,RHSSet,OZ)),1+2+3+4+5+6+SETS,SETS))),!.
 
+
+link_prop_types(Loc,O1,O2,Ps):-
+  findall(P,(prop_type(Loc,P), has_prop(O1,P),has_prop(O2,P)),Ps).
+
+prop_type(loc,loc(_,_)).
+prop_type(loc,center(_,_)).
+prop_type(loc,iz(locX(_))).
+prop_type(loc,iz(cenY(_))).
+prop_type(loc,iz(locY(_))).
+prop_type(loc,iz(cenY(_))).
+
 undiff(I,O,(MI,IZ),(MO,OZ)):- select_two_props(_Style,I,O,CI,CO,II,OO),two_ok(CI,CO),manage_diff(CI,CO,MI,MO),undiff(II,OO,IZ,OZ).
 undiff(IA,OA,IA,OA).
 remove_giz(L,O):- include(not_giz,L,O),!.
@@ -336,10 +364,18 @@ not_giz(_).
 
 manage_diff(CI,CO,convert(CI,CO,How),accept(How)).
 
+refunctor_args([A],[O]):- compound(A),!,refunctor(A,O).
+refunctor_args([_],[_]):- !.
+refunctor_args([H|T],[H|TT]):- refunctor_args(T,TT).
+refunctor(O,O):- \+ compound(O),!.
 refunctor(iz(C),iz(O)):-!, refunctor(C,O).
 refunctor(pen([cc(Silver,_)]),pen([cc(Silver,_)])).
 refunctor(edge(NSWE,_),edge(NSWE,_)).
-refunctor(C,O):- functor(C,F,A),functor(O,F,A).
+refunctor(o(NS,WE,_),o(NS,WE,_)).
+refunctor([H|T],[HH|TT]):- refunctor(H,HH),refunctor(T,TT).
+refunctor(C,O):- is_list(C),!,maplist(refunctor,C,O).
+refunctor(C,O):- compound_name_arguments(C,F,A),!,refunctor_args(A,B),compound_name_arguments(O,F,B).
+
 objs_to_io(O2,O1,O1,O2):- (has_prop(giz(g(in)),O1);has_prop(giz(g(out)),O2)),!.
 objs_to_io(O1,O2,O1,O2).
 
@@ -642,21 +678,13 @@ showdiff_objects5(Why,OO1,OO2,Sames,Diffs):- in_pp(bfly),!,
   format('~N'),!,bfly_in_out(write_expandable3(false,S,bfly_in_out(write(SS)))),format('~N').
 showdiff_objects5(Why,OO1,OO2,Sames,Diffs):- showdiff_objects_now(Why,OO1,OO2,Sames,Diffs).
 
+
 showdiff_objects_now(Why,OO1,OO2,Sames,Diffs):- 
  must_det_ll((
   into_obj(OO1,O1),into_obj(OO2,O2),
   dash_chars,dash_chars,
-  object_grid_to_str(O1,Str1,T1),
-  object_grid_to_str(O2,Str2,T2),
   ppt(Why),
-  ((global_grid(O1,OG1),global_grid(O2,OG2),print_side_by_side(teal,OG1,global_grid(T1),_,OG2,diff(T2)))-> true;
-   (print_side_by_side(yellow,O1,no_global_grid(T1),_,O2,diff(T2)))),
-  ignore((into_ngrid(O1,NO1),into_ngrid(O2,NO2), print_side_by_side(silver,NO1,ngrid(T1),_,NO2,ngrid(T2)))),
-  dash_chars,
-  writeln(Str1), 
-  debug_indiv(O1),
-  writeln(Str2),
-  debug_indiv(O2),
+  printing_diff(O1,O2),
   %print_list_of(debug_indiv,showdiff_objects_n(Why),[O1,O2]), 
  % print_list_of(debug_as_grid,showdiff_objects_n(Why),[O1,O2]),  
   findall(E,compare_objs1(E,O1,O2),L), pp(compare_objs1(showdiff_objects)=L),  

@@ -34,9 +34,9 @@ i2(ROptions,GridSpec):- clsmake,
   once((into_grid(GridIn,Grid),ig(ROptions,Grid))).
 
 ip(ROptions,GridIn,GridOut):-
-  individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
+  my_time((individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
   PairName = ip,
-  show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC).
+  show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC))).
 
 ig(ROptions,GridIn):-
   do_ig(ROptions,GridIn,IndvS),
@@ -62,12 +62,12 @@ do_ig(ROptions,Grid,IndvS):-
 ig_test_id_num_io(ROptions,GridIn,_ID,TestID,trn,Num,in,IndvS):- 
   In = GridIn,
   kaggle_arc_io(TestID,trn+Num,out,Out),!,
-  individuate_pair(ROptions,In,Out,IndvSI,IndvSO),
-  into_iog(IndvSI,IndvSO,IndvS).
+  my_time((individuate_pair(ROptions,In,Out,IndvSI,IndvSO),
+  into_iog(IndvSI,IndvSO,IndvS))).
 
 ig_test_id_num_io(ROptions,GridIn,_ID,TestID,_Example,_Num,_IO,IndvS):- 
   set_current_test(TestID),
-  individuate(ROptions,GridIn,IndvS),!.
+  my_time(individuate(ROptions,GridIn,IndvS)),!.
   %maplist(add_shape_lib(as_is),IndvS),  
 
 show_ig(PairName,ROptions,GridIn,GridOut,IndvC):- 
@@ -83,7 +83,10 @@ into_gio(IndvS,InSO,OutSO):-
   append_sets([IOC,InC],InS),
   must_det_ll((OutSO=OutS,InSO=InS)).
 
-not_io(O):- \+ has_prop(iz(g(out)),O), \+ has_prop(giz(g(in)),O).
+not_io(O):- \+ has_prop(giz(g(out)),O), \+ has_prop(giz(g(in)),O).
+
+% comp(cbg(black),i-o,size)=size(num(vals([_846946,_846952]),+ -3,ratio(2)),num(vals([_846978,_846984]),+ -3,ratio(2)))
+
 
 xfer_1zero(In,Out):-
  ignore((
@@ -371,7 +374,7 @@ sub_individuation_macro(S,Some):-
 individuation_macros(complete, ListO):- im_complete(ListO).
 
 
-im_complete(ListO):- test_config(indiv(ListO)),!.
+im_complete(save_as_objects(complete,ListO)):- test_config(indiv(ListO)),!.
 %im_complete(ListO):- ListO=[n_w,all_lines,diamonds,do_ending].
 
 im_complete(ListO):-
@@ -401,10 +404,10 @@ individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots, do_ending])
 individuator(i_repair_mirrors,[repair_in_vm(find_symmetry_code)]).
 individuator(i_maybe_glypic,[maybe_glyphic]). %:- \+ doing_pair.
 %individuator(i_maybe_glypic,[whole]):- doing_pair.
-
-*/
 individuator(i_mono,[save_as_objects(bg_shapes([subshape_both(h,nsew)])),
                           save_as_objects(bg_shapes([subshape_both(v,colormass)]))]).
+
+*/
 /*
 individuator(i_mono_nsew,
  [sub_individuate(

@@ -1341,6 +1341,8 @@ print_g1(P2,C):- compound_var(C,N),nobject_glyph(N,G),underline_print(print_g1(P
 print_g1(P2,N):- \+ compound(N), \+ is_colorish(N), print_g1(P2,N-N).
 print_g1(P2,N):- into_color_glyph(N,C,Code),as_name(Code,S), call(P2,C,S),!.
 
+
+color_print_ele(C,G):- atom(G),atom_concat('o_',S,G),atom_chars(S,[AC|_]),atom_chars(GS,[AC]),!,color_print_ele(C,GS).
 color_print_ele(C,G):- arc_webui,!,color_print_webui(C,G),!.
 color_print_ele(C,G):- color_print(C,G),!.
 

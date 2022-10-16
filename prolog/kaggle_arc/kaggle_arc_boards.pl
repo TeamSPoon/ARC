@@ -527,13 +527,11 @@ keep_flipD(I,O):- grid_size(I,H,V),make_grid(V,H,O),
 c_proportional(I,O,R):- proportional(I,O,R).
 %grid_hint_io(MC,IO,In,Out,find_ogs):- maybe_fail_over_time(1.2,find_ogs(_,_,In,Out)).
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- (IO \== o-i),  /*comp_o(IO), */ c_proportional(In,Out,Hint).
-
+grid_hint_io(MC,IO,In,Out,(=@=(MC,IO))):- In=@=Out, !.
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs(Hint))):- all_ogs(In,Out,Hint).
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):-  \+ arc_option(grid_size_only), grid_size(In,IH,IV),grid_size(Out,OH,OV),
   grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
-
-grid_hint_io(MC,IO,In,Out,(=@=(MC,IO))):- In=@=Out, !.
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,to_from(InO,OutO))):- disguise_grid(In,InO),disguise_grid(Out,OutO).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs(Hint))):- all_ogs(In,Out,Hint).
 %grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs_rev(Hint))):- all_ogs(Out,In,Hint).
 
 disguise_grid(I,O):- maplist(disguise_row,I,M),O=..[grid|M].
@@ -554,6 +552,7 @@ maybe_ogs(R,X,Y,In,Out):- maybe_ogs_mono(R,X,Y,In,Out), \+ maybe_ogs_color(_,X,Y
 
 maybe_ogs_color(R,X,Y,In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
 maybe_ogs_color(R,X,Y,In,Out):-  ogs_11(X,Y,In,Out),(find_ogs(X,Y,In,Out)->R=strict;R=loose).
+
 maybe_ogs_mono(color_ord(R),X,Y,In,Out):- once((into_color_ord(In,InM),into_color_ord(Out,OutM))), In\==InM,Out\==OutM, maybe_ogs_color(R,X,Y,InM,OutM).
 maybe_ogs_mono(mono(R),X,Y,In,Out):- once((into_monogrid(In,InM),into_monogrid(Out,OutM))), !, In\==InM,Out\==OutM, maybe_ogs_color(R,X,Y,InM,OutM).
 

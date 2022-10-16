@@ -15,22 +15,22 @@
 :- multifile in_shape_lib/2.
 :- dynamic in_shape_lib/2.
 
-test_ogs:- clsmake, mmake, time(forall(test_ogs(_,_,_),true)).
-test_ogs_l:- clsmake, mmake, locally(b_setval(find_rule,loose),time(forall(test_ogs(_,_,_),true))).
-test_ogs_s:- clsmake, mmake, locally(b_setval(find_rule,strict),time(forall(test_ogs(_,_,_),true))).
+test_ogs:- clsmake, mmake, my_time(forall(test_ogs(_,_,_),true)).
+test_ogs_l:- clsmake, mmake, locally(b_setval(find_rule,loose),my_time(forall(test_ogs(_,_,_),true))).
+test_ogs_s:- clsmake, mmake, locally(b_setval(find_rule,strict),my_time(forall(test_ogs(_,_,_),true))).
 
 :- arc_history1(test_ogs).
 :- arc_history1(test_ogs0).
 
-test_ogs0:- clsmake, time(forall(test_ogs0(_,_,_),true)).
-test_ogs1:- clsmake, time(forall(test_ogs1(_,_,_),true)).
-test_ogs2:- clsmake, time(forall(test_ogs2(_,_,_),true)).
+test_ogs0:- clsmake, my_time(forall(test_ogs0(_,_,_),true)).
+test_ogs1:- clsmake, my_time(forall(test_ogs1(_,_,_),true)).
+test_ogs2:- clsmake, my_time(forall(test_ogs2(_,_,_),true)).
 
 :- arc_history1(test_ogs_m).
 :- arc_history1(test_ogs_m0).
 
-test_ogs_m:- clsmake, time(forall(test_ogs(_,_,true),true)).
-test_ogs_m0:- clsmake, time(forall(test_ogs0(_,_,true),true)).
+test_ogs_m:- clsmake, my_time(forall(test_ogs(_,_,true),true)).
+test_ogs_m0:- clsmake, my_time(forall(test_ogs0(_,_,true),true)).
 
 
 :- dynamic(tr:existing_result/3).

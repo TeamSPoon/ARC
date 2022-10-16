@@ -87,7 +87,9 @@ show_tests:- update_changed_files, list_of_tests(L),forall(nth10(N,L,E),format('
 
   % ignore((read_line_to_string(user_input,Sel),atom_number(Sel,Num))),
 
-ui_menu_call(G):- if_arc_webui(catch(ignore(must_not_error(G)),E,wdmsg(E)))->true;catch(ignore(must_not_error(G)),E,wdmsg(E)).
+ui_menu_call(G):- if_arc_webui(catch(ignore(must_not_error(G)),E,wdmsg(E)))
+  ->true
+  ; catch(ignore(must_not_error(G)),E,wdmsg(E)).
   
 my_menu_call(E):- locally(set_prolog_flag(gc,true),ui_menu_call(E)).
 
@@ -558,7 +560,7 @@ info(Info):- nonvar(Info),wdmsg(Info).
 system:demo:- reverse_suite,update_changed_files,!,interact.
 :- export(demo/0).
 rat:- info("Run all tests"), run_all_tests.
-noninteractive_test(X):- time(ignore(forall(arc1(true,X),true))).
+noninteractive_test(X):- my_time(ignore(forall(arc1(true,X),true))).
 
 
 cmt_border:- format('~N% '), dash_chars(120,"="), !, nl.
@@ -960,7 +962,7 @@ macro(one_obj, must_det_ll(len(objs)=1)).
 
 test_p2(P2):- clsmake,
   append_termlist(P2,[N1,'$VAR'('Result')],N2), 
-  time(forall(into_grids(N1,G1),     
+  my_time(forall(into_grids(N1,G1),     
      forall((set_current_test(G1),call(P2,G1,G2)),
        once(ignore((grid_arg(G2,GR,Rest),print_side_by_side(red,G1,N1-Rest,_LW,GR,(?-(N2))),dash_chars)))))).
 
