@@ -84,9 +84,44 @@ individuate_pair_here(TestID,Trn+N1,In,Out):-
 
 
 show_reduced_io(_):-!.
-show_reduced_io(I+O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
-show_reduced_io(I+O):- reduce_grid(I+O,IOps,II+OO),IOps\==[],must_det_ll(print_side_by_side(green,II,reduceIn(IOps),_,OO,reduceOut)),!.
+%show_reduced_io(I+O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
+show_reduced_io(I+O):-  
+  reduce_grids_io(I+O,IOps,II+OO),!,
+  must_det_ll(print_side_by_side(green,II,reduceIn(IOps),_,OO,reduceOut)),!.
 show_reduced_io(_).
+
+reduce_grids_io(I+O,OPS,III+OOO):- area(I,IArea),area(O,OArea),reduce_grids_io(I+O,IArea+OArea,OPS,III+OOO).
+
+interesting_ops(OPS):- OPS==[],!,fail.
+interesting_ops(OPS):- OPS=[unrotate(_)|More],!,interesting_ops(More).
+interesting_ops(_).
+
+reduce_grids_io(I+O,_IArea_OArea,[io(OPS)],II+OO):- reduce_grid(I+O,OPS,II+OO), interesting_ops(OPS).
+
+reduce_grids_io(I+O,IArea+OArea,[i(OPS)],II+O):- IArea>OArea, reduce_grid(I+I,OPS,II+II), interesting_ops(OPS).
+
+reduce_grids_io(I+O,IArea+OArea,[io(OPS)],II+OO):- IArea==OArea, reduce_grid(I+O,OPS,II+OO), interesting_ops(OPS).
+
+reduce_grids_io(I+O,_IArea_OArea,[i(OPS)],II+O):- reduce_grid(I+I,OPS,II+II), interesting_ops(OPS).
+
+%reduce_grids_io(I+O,IArea+OArea,[o(OPS)],I+OO):- IArea<OArea, reduce_grid(O+O,OPS,OO+OO), interesting_ops(OPS).
+/*
+reduce_grids_io(I+O,_IArea_OArea,OPS,III+OOO):- 
+  reduce_grid(I+I,II_Ops,II+II),
+  reduce_grid(O+O,OO_Ops,OO+OO),
+  reduce_grid(II+OO,IO_Ops,III+OOO),
+  (interesting_ops(IO_Ops) ; interesting_ops(OO_Ops) ; interesting_ops(II_Ops)),
+  [i(II_Ops),o(OO_Ops),io(IO_Ops)] = OPS,
+  !.
+reduce_grids_io(I+O,_IArea_OArea,OPS,III+OOO):- 
+  reduce_grid(I+O,IO_Ops,II+OO),
+  reduce_grid(II+II,II_Ops,III+III),
+  reduce_grid(OO+OO,OO_Ops,OOO+OOO),
+  (interesting_ops(IO_Ops) ; interesting_ops(OO_Ops) ; interesting_ops(II_Ops)),
+  OPS = [io(IO_Ops)+i(II_Ops)+o(OO_Ops)],
+  !.
+*/
+
 
 maybe_easy(A,AR,ROPA):- reduce_grid_pass(1,A+A,[A+A],ROPA,AR+AR).
 maybe_easy(I,II,Code):- maybe_try_something1(I,II,Code),!.
@@ -126,9 +161,10 @@ color_subst(_OSC,_ISC,[]):-!.
 
 detect_pair_hints(TestID,ExampleNum,In,Out):- 
   assert_id_grid_cells(In), assert_id_grid_cells(Out),
-  detect_supergrid_tt(TestID,ExampleNum,In,Out,TT),  
+  detect_supergrid_tt(TestID,ExampleNum,In,Out,_TT),  
   % guess_board(TT),
   %print(TT),
+  %ignore(show_reduced_io(In+Out)),
   grid_hint_swap(i-o,In,Out),
   dash_chars,!.
 

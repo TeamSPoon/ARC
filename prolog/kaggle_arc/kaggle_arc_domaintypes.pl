@@ -281,6 +281,11 @@ subtypes(C,S):- subClassOf(S,C).
 %allow_dir_list(squire,[s,e,w]).
 
 allow_dir_list(nsew,[n,s,e,w]). %s,e,n,w 
+
+allow_dir_list(nsew_5,[n,s,e,w]). %s,e,n,w 
+
+allow_dir_list(s_e,[s,e]). %s,e,n,w 
+allow_dir_list(n_w,[n,w]). %s,e,n,w 
 %allow_dir_list(rectangles,[s,e]). 
 
 allow_dir_list(colormass,[n,s,e,w]):- arc_option(no_diags),!.
@@ -359,8 +364,6 @@ subClassOf([monochrome,contiguous,hv_line(v)],v_symmetric).
 subClassOf(hv_line(h),v_symmetric).
 subClassOf([monochrome,contiguous,hv_line(h)],h_symmetric).
 
-meets_indiv_criteria(_Info,[C-P1,C-P2]):- is_adjacent_point(P1,_Dir,P2),!,fail.
-meets_indiv_criteria(_Info,_Points):- !.
 
 data_type(O,T):- nonvar(T),data_type(O,C),T=C,!.
 
@@ -381,10 +384,15 @@ data_type(O,color(bg,_,_)):- is_bg_color(O),!.
 data_type(O,color(fg,_,_)):- is_fg_color(O),!.
 data_type(O,color(_,_,_)):- is_colorish(O),!.
 data_type(O,blob(Type)):- blob(O,Type),Type\==text,!.
-data_type(O,atomic(O)):- atomic(O),!.
+data_type(O,atom):- atom(O),!.
+data_type(O,atomic):- atomic(O),!.
 data_type(O,unk(O)):-!.
 
+data_typec(num(vals([N|_]),_,_),Type):- nonvar(N),!,data_type(N,Type).
+data_typec(lst(vals([N|_]),_,_),Type):- nonvar(N),!,data_type(N,Type).
 data_typec(O,object):- is_object(O),!.
+data_typec(iz(O),iz(T)):- !, data_type(O,T).
+data_typec(diff(_->O),T):- nonvar(O),!, data_type(O,T).
 data_typec(O,dict(L)):- is_map(O),get_kov(objs,O,Value),!,data_type(Value,L).
 data_typec(O,group(N)):- is_group(O),into_list(O,L),!,length(L,N).
 data_typec(Out,grid(H,V)):- is_grid(Out),!,grid_size(Out,H,V).

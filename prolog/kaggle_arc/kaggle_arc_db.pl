@@ -145,6 +145,7 @@ cant_use(G):- is_object(G), has_prop(G,iz(bfc(bg))),!.
 
 %hv_c_value(O,_Color,_H,_V):- is_object(O), iz(O,combined), !, fail.
 hv_c_value(O,_Color,_H,_V):-  plain_var(O),!,fail.
+hv_c_value(O,_Color,_H,_V):-  is_ftVar(O),!,fail.
 hv_c_value(In,C,H,V):- compound(In),In=in(O),!,hv_c_value(O,C,H,V).
 hv_c_value(O,Color,H,V):- is_grid(O),!,nth1(V,O,Row),nth1(H,Row,Color),!.
 hv_c_value([],_Color,_H,_V):-  !,fail.

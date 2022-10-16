@@ -70,22 +70,23 @@ learn_about_group(In):-
 not_for_matching(_Why,_,Var):- var(Var),!,fail.
 not_for_matching(_Why,_,C):- notrace((sub_term(E,C), compound(E))), E= '$VAR'(_),!,fail.
 not_for_matching(_Why,_,iz(combined)).
+not_for_matching(_Why,_,giz(_)).
 not_for_matching(_Why,_,iz(colormass)).
 not_for_matching(_Why,_,iz(nsew)).
 not_for_matching(_Why,_,iz(image)).
 not_for_matching(_Why,_,iz(monochrome)).
 not_for_matching(_Why,_,iz(C)):- atom(C),!,fail.
-not_for_matching(_Why,_,iz(C)):- sub_term(E,C), number(E),E\==1.
+%not_for_matching(_Why,_,iz(C)):- sub_term(E,C), number(E),E\==1.
 not_for_matching(_Why,_,iz(_)):- !, fail.
 %not_for_matching(_Why,localpoints(_)).
-not_for_matching(_Why,_,link(_,_,_)).
+%not_for_matching(_Why,_,link(_,_,_)).
 not_for_matching(_Why,_,birth(_)).
 not_for_matching(_Why,_,obj_to_oid(_,_)).
 %not_for_matching(_Why,L,form(_)):- !, member(localpoints(_),L).
 not_for_matching(_Why,L,localpoints(XX)):- !, started_is_list(XX), member(shape(_),L).
 not_for_matching(_Why,L,globalpoints(XX)):- !, started_is_list(XX), (member(shape(_),L);member(localpoints(_),L)).
 
-not_for_matching(_Why,_,center(H,V)):- (H\==1,V\==1,H\==2,V\==2,H\==3,V\==3).
+%not_for_matching(_Why,_,center(H,V)):- (H\==1,V\==1,H\==2,V\==2,H\==3,V\==3).
 %not_for_matching(_Why,_,loc(H,V)):- (H\==1;V\==1).
 %not_for_matching(_Why,_,M):- too_unique(M),!.
 %not_for_matching(_Why,_,M):- too_non_unique(M),!.
@@ -193,20 +194,22 @@ learn_rule_i_o(Mode,In,Out):-
   forall(learn_rule_in_out(1,Mode,In,Out),true).
 
 is_reproduction_obj(O):- \+ is_object(O),!.
-is_reproduction_obj(O):-  iz(O,shaped),!.
+is_reproduction_obj(O):-  \+ iz(O,hidden).
 
 reproduction_objs(O,Os):- include(is_reproduction_obj,O,Os).
 
 confirm_reproduction(Objs0,DebugObjs0,ExpectedOut):-    
+ must_det_ll((
   grid_size(ExpectedOut,H,V),
+  grid_size(DebugObjs0,DH,DV),
   reproduction_objs(Objs,Objs0), 
   reproduction_objs(DebugObjs0,DebugObjs),
   length(Objs0,Len0),
   length(Objs,Len),
   globalpoints(Objs,OGPoints),
-  points_to_grid(H,V,OGPoints,Solution),
+  call((points_to_grid(H,V,OGPoints,Solution)->true;points_to_grid(DH,DV,OGPoints,Solution))),
   show_result("Our Reproduction"=Len0/Len, Solution,ExpectedOut,Errors),
-  (Errors==0 -> true; maplist(debug_reproduction(H,V),Objs,DebugObjs)).
+  (Errors==0 -> true; maplist(debug_reproduction(H,V),Objs,DebugObjs)))).
 
 debug_reproduction(H,V,Obj,DObj):- 
   globalpoints(Obj,Points),
@@ -294,9 +297,12 @@ learn_rule_in_out_sames(In,Out):- fail,
   mass(O,Mass), Mass>MinMass, mass(I,Mass),
   once((compare_objs_how(How), nonvar(How), compare_objs1(How,I,O))),
   pp(How),
+  learn_rule_in_out_objects(How,I,O).
+
+learn_rule_in_out_objects(How,I,O):-   
   simplify_for_matching(lhs,I,II),
   simplify_for_matching(rhs,O,OO),
-  save_learnt_rule(test_solved(How,II,OO),I,O),!.
+  save_learnt_rule(test_solved(How,II,OO),I+O,I+O),!.
 
 average_or_mid(_P2,_Out,2):-!.
 average_or_mid(P2,Out,MinMass):- is_list(Out),!,
@@ -429,7 +435,7 @@ assert_visually( H  ):- unnumbervars(H,HH),assert_visually1(HH,true).
 assert_visually1(H,B):- get_current_test(TestID), arg(1,H,W),W\==TestID,!, H=..[F|Args],GG=..[F,TestID|Args],assert_visually2(GG,B).
 assert_visually1(H,B):- assert_visually2(H,B).
 
-assert_visually2(H,B):- copy_term((H:-B),(HH:-BB)),clause(HH,BB,Ref), clause(RH,RB,Ref),(H:-B)=@=(RH:-RB) ,!,nop(pp(cyan,known_exact(H:-B))).
+assert_visually2(H,B):- copy_term((H:-B),(HH:-BB)),clause(HH,BB,Ref), clause(RH,RB,Ref),(H:-B)=@=(RH:-RB) ,!,(pp(cyan,known_exact(H:-B))).
 assert_visually2(H,B):- copy_term((H),(HH)),clause(HH,_,Ref), clause(RH,_,Ref),(H)=@=(RH) ,!,pp(cyan,known(H:-B)).
 assert_visually2(H,B):- functor(H,F,_), my_asserta_if_new(test_local_dyn(F)), print_rule(F,(H:-B)), my_asserta_if_new((H:-B)).
 
@@ -656,7 +662,7 @@ maybe_unbind_label(G):- is_color(G).
 %maybe_unbind_label(G):- downcase_atom(G,D),\+ upcase_atom(G,D).
 
 subst_rvars([],[],A,A):-!. 
-subst_rvars([F|FF],[R|RR],S,D):- debug_var(F,R),subst_rvars_1(F,R,S,M), subst_rvars(FF,RR,M,D).
+subst_rvars([F|FF],[R|RR],S,D):- ignore(debug_var(F,R)),subst_rvars_1(F,R,S,M), subst_rvars(FF,RR,M,D).
 
 map_find_onto_replace(Var,Var):-var(Var),!.
 map_find_onto_replace('$VAR'(X),'$VAR'(X)):-!.

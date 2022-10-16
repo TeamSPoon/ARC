@@ -95,6 +95,23 @@ what_unique(TestID,CountMask,GroupSizeMask):-
   what_unique_dict(TestID,Dict),
   report_unique(Dict).
 
+get_peers(Obj,Peers):- 
+  get_current_test(TestID),select_group(TestID,Group,_How), select(Obj,Group,Peers).
+
+peerless_props(O1,Peers,PeerlessProps):-
+ must_det_ll(( indv_props(O1,Props),
+               (var(Peers)->get_peers(O1,Peers);true),
+               (select(O1,Peers,PeersU)->true;PeersU=Peers),
+  include(is_peerless_prop(PeersU),Props,PeerlessProps))).
+
+not_peerless_props(O1,Peers,PeerlessProps):-
+ must_det_ll(( indv_props(O1,Props),
+               (var(Peers)->get_peers(O1,Peers);true),
+               (select(O1,Peers,PeersU)->true;PeersU=Peers),
+  include(not_peerless_prop(PeersU),Props,PeerlessProps))).
+
+is_peerless_prop(Peers,Prop):- \+ sub_var(Prop,Peers).
+not_peerless_prop(Peers,Prop):- sub_var(Prop,Peers).
 
 what_unique_obj:- get_current_test(TestID),what_unique_obj(TestID,_,_).
 what_unique_obj(TestID,Obj,Group):- 

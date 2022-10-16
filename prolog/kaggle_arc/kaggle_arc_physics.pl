@@ -11,6 +11,9 @@
 
 area(Obj,Area):- v_hv(Obj,H,V), Area is H * V.
 
+area_or_len(Obj,Area):- is_points_list(Obj),!,length(Obj,Area).
+area_or_len(Obj,Area):- v_hv(Obj,H,V), Area is H * V.
+
 density(Obj,Density):- area(Obj,Area),amass(Obj,Mass), Density is Mass/Area.
 
 
@@ -369,6 +372,8 @@ touching_object(How,Dirs,O2,O1):- O1\==O2,
   call(How,Ps2,Ps1,Dirs),!.
 
 dir_touching(Ps1,Ps2,Dir):- member(_-P1,Ps1), is_adjacent_point(P1,Dir,P2),  member(_-P2,Ps2).
+
+
 
 % ==============================================
 % SEES

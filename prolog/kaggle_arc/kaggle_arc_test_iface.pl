@@ -555,7 +555,7 @@ fully_test:- print_test, !, train_test, !, solve_test, !.
 run_next_test:- notrace(next_test), fully_test.
 
 info(Info):- nonvar(Info),wdmsg(Info).
-system:demo:- update_changed_files,!,interact.
+system:demo:- reverse_suite,update_changed_files,!,interact.
 :- export(demo/0).
 rat:- info("Run all tests"), run_all_tests.
 noninteractive_test(X):- time(ignore(forall(arc1(true,X),true))).

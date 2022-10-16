@@ -23,6 +23,7 @@ echo BCMD=$BCMD
 sleep 2
 
 if id -u "norights" >/dev/null 2>&1; then
+ sudo -u norights bash -l -c "git config --global --add safe.directory /opt/logicmoo_workspace/packs_sys/logicmoo_utils" || stty sane
  sudo -u norights bash -l -c "${BCMD}" || stty sane
 else
  bash -l -c "${BCMD}" || stty sane

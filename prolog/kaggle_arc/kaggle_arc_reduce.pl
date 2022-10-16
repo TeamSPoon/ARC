@@ -67,13 +67,13 @@ reduce_op1(PassNo,A+B,OP,AA+BB):-
 % reduce_op1_1(_,Grid,copy_row(N1,N3),GridR):- fail, append(Left,[RowA,G,RowB|Right],Grid),RowA=@=RowB,length([_,_|Left],N1),append(Left,[RowA,G|Right],GridR),N3 is N1+2,!.
 reduce_op1_1(_,Grid,copy_row(N1,N2),GridR):-  \+ too_small_reduce(Grid,2),
   append(Left,[RowA,RowB|Right],Grid),RowA=@=RowB,length([_,_|Left],N1),append(Left,[RowA|Right],GridR),N2 is N1+1,!.
-reduce_op1_1(_,Grid,left_right(Left,Reduced),GridR):- \+ too_small_reduce(Grid,3),
+reduce_op1_1(_,Grid,left_right(Left,Reduced),GridR):- fail, \+ too_small_reduce(Grid,3),
    length(Grid,L), nth1(1,Grid,A), nth1(L,Grid,B), A=@=B,
    LS is floor(L/2),
    between(1,LS,LR),LRR is LS-LR,LRR>0, length(Left,LRR),reverse(Left,Right), 
    append([Left,GridR,Right],Grid),
    reduce_grid(Left+Left,Reduced).
-reduce_op1_1(_,Grid,remove_row(Row),GridR):- 
+reduce_op1_1(_,Grid,remove_row(Row),GridR):- fail, 
   \+ too_small_reduce(Grid,3),
   nth1(Row,Grid,Same,GridR),maplist(==(black),Same),!.
 

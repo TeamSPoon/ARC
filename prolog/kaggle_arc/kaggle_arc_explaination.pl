@@ -55,9 +55,9 @@ print_list_of(P1,Title,O):-
  (((Title\=[] -> pp(Title=Len); pp(P1=Len)),
   maybe_cache_glyphs(O),
   %save_grouped(print_list_of(Title),O),
-  g_out( maplist(P1,O))))),!.
+  g_out( maplist(ignore_call(P1),O))))),!.
 
-
+ignore_call(P1,A):- ignore(call(P1,A)).
 
 maybe_cache_glyphs(O):- ignore((is_group(O),mapgroup(o2g,O,_))).
 
@@ -192,7 +192,12 @@ debug_indiv(obj(A)):-
   write(SS).
 
 
-choose_header(ASFROM,Caps):- once((prefered_header(P,Caps),member(P,ASFROM),P\==grid_sz(_,_),ground(Caps))).
+choose_header(ASFROM,Caps):- once((prefered_header(P,Caps),member(P,ASFROM),\+ skip_header(Caps),ground(Caps))).
+
+skip_header(X):- compound(X).
+skip_header(grid_sz(_,_)).
+skip_header(sizeX(_)).
+skip_header(sizeY(_)).
 
 
 debug_indiv_obj(A):- nb_current(debug_as_grid,t),debug_as_grid(A),!.
@@ -201,7 +206,7 @@ debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
   %ignore((o2g(Obj,GGG), nonvar(GGG),set_glyph_to_object(GGG,Obj))),
 %debug_indiv(Obj):- Obj = obj(A), is_list(A),  
   
-  sort_obj_props(A,AS0),
+  =(A,AS0),
  % will_show_grid(Obj,TF),
   TF = false,
   obj_to_oid(Obj,MyOID),
@@ -211,11 +216,11 @@ debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
   remove_too_verbose(MyOID,AS,TV0), include(not_too_verbose,TV0,TV),
 
   %flatten(TV,F),predsort(longer_strings,F,[Caps|_]), 
-  sort(TV,ASA),reverse(ASA,ASAR),
+  =(TV,ASA),reverse(ASA,ASAR),
   append(ASAR,AS,ASFROM),
   choose_header(ASFROM,Caps),  
   toPropercase(Caps,PC),
-  sort_obj_props(TV,TVS),
+  sort(TV,TVS),
 
   ignore((TF==true,dash_chars)),
   sformat(SF,"% ~w:\t\t~w\t",[PC,SGlyph]),
@@ -313,6 +318,7 @@ too_verbose(globalpoints).
 too_verbose(monochrome).
 too_verbose(shape).
 too_verbose(gid).
+too_verbose(giz).
 too_verbose(grid_sz).
 too_verbose(localpoints).
 too_verbose(grid).
