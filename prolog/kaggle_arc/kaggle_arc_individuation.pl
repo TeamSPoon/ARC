@@ -390,18 +390,18 @@ im_complete(ListO):-
 
   
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
-individuator(i_columns,[when(get(h)=<5,columns)]). %:- \+ doing_pair.
-individuator(i_rows,[when(get(v)=<5,rows)]). %:- \+ doing_pair.
-individuator(i_n_w,[n_w,all_lines,diamonds]).
 individuator(i_maybe_glypic,[maybe_glyphic]).
-individuator(i_repair_mirrors,[repair_in_vm(find_symmetry_code)]).
-individuator(i_mono_colormass,[fg_shapes([subshape_both(v,colormass)])]).
+%individuator(i_columns,[when(get(h)=<5,columns)]). %:- \+ doing_pair.
+%individuator(i_rows,[when(get(v)=<5,rows)]). %:- \+ doing_pair.
+individuator(i_n_w,[n_w,all_lines,do_ending]).
+individuator(i_mono_n_w,[fg_shapes(i_n_w)]).
+%individuator(i_repair_mirrors,[repair_in_vm(find_symmetry_code)]).
+%individuator(i_mono_colormass,[fg_shapes([subshape_both(v,[n_w,all_lines,diamonds])])]).
 % individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
 
 /*
 individuator(i_nsew,[subshape_both(h,nsew), maybe_lo_dots, do_ending]).
 individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots, do_ending]).
-individuator(i_repair_mirrors,[repair_in_vm(find_symmetry_code)]).
 individuator(i_maybe_glypic,[maybe_glyphic]). %:- \+ doing_pair.
 %individuator(i_maybe_glypic,[whole]):- doing_pair.
 individuator(i_mono,[save_as_objects(bg_shapes([subshape_both(h,nsew)])),
@@ -438,7 +438,7 @@ individuator(i_mono_nsew,
   %do_ending,
   %complete_broken_lines,
   %complete_occluded,
-find_symmetry_code(VM,Grid,RepairedResult,Code):- fail,
+find_symmetry_code(VM,Grid,RepairedResult,Code):- % fail,
   find_symmetry_code1(VM,Grid,RepairedResult,Code),!.
 
 find_symmetry_code1(VM,Grid,RepairedResult,Code):- 
@@ -641,7 +641,9 @@ label_sizes(VM):-
  label_sizes(VM.roptions,VM.objs,_SF,LF),
  set(VM.objs)=LF.
 
-label_sizes(GType,Objs,SF,LF):- 
+is_bg_object(Obj):- has_prop(pen(  [cc('black',_)]),Obj).
+
+label_sizes(GType,Objs,SF,LF):-    
    length(Objs,Len),
    smallest_first(Objs,SF),
    largest_first(SF,LF), 
@@ -652,8 +654,8 @@ label_sizes(GType,Objs,SF,LF):-
 set_zorder(GType,ZType,IndvS):- set_zorder(GType,ZType,0,IndvS).
 set_zorder(_GType,_ZType,_,[]):-!.
 set_zorder(GType,ZType,N,[L|IndvS]):-  
-  get_setarg_p1(nb_setarg,I,L,P1), compound(I), I=.. [o,GType,ZType|_],
-   call(P1,o(GType,ZType,N)),
+  get_setarg_p1(nb_setarg,I,L,P1), compound(I), I=.. [o,ZType,_,GType], 
+   call(P1,o(ZType,N,GType)),
    N2 is N+1,!,
    set_zorder(GType,ZType,N2,IndvS).
 set_zorder(GType,ZType,N,[_|IndvS]):-
@@ -744,7 +746,7 @@ prolog:make_hook(before, Some):- Some \==[], retractall(individuated_cache(_,_,_
 :- luser_default(individuated_cache,true).
 
 
-:- luser_default(individuated_cache,false).
+:- luser_default(individuated_cache,true).
 
 get_individuated_cache(ROptions,OID,IndvS):- nonvar(ROptions),
   ground(OID), \+ luser_getval(individuated_cache,false), individuated_cache(OID,ROptions,IndvS),!.
@@ -1329,7 +1331,7 @@ row_to_indiv(VM,N,Row):-
   % a column is a row that was prematurely rotated 270 degrees
   make_indiv_object(VM,[iz(image),
      birth(rows),iz(grouped(i_rows)),
-     loc(1,N),v_hv(VM.h,1),grid_size(VM.h,VM.v)],GPoints,Obj),
+     loc(1,N),v_hv(VM.h,1),giz(grid_sz(VM.h,VM.v))],GPoints,Obj),
   raddObjects(VM,Obj).
 
 one_fti(VM,'columns'):-
@@ -1345,7 +1347,7 @@ column_to_indiv(VM,N,Row):-
   %grid_to_individual([Row],Obj0),  
   % a column is a row that was prematurely rotated 270 degrees
   make_indiv_object(VM,[/*iz(hv_line(v)),rotated(sameR),*/
-    birth(columns),iz(image),iz(grouped(i_columns)),loc(N,1),rotation(sameR),v_hv(1,VM.v),grid_size(VM.h,VM.v)],GPoints,Obj),
+    birth(columns),iz(image),iz(grouped(i_columns)),loc(N,1),rotation(sameR),v_hv(1,VM.v),giz(grid_sz(VM.h,VM.v))],GPoints,Obj),
   raddObjects(VM,Obj).
   
 % =====================================================================
@@ -1441,7 +1443,7 @@ label_name_by_size(VM,IndvS0,Name):-
    (length(IndvS0,Len),
     fif(Len>0,
      must_det_ll((
-      override_object([o(Name,sf(Len),nil),o(Name,lf(Len),nil)],IndvS0,IndvS1),
+      override_object([o(sf(Len),nil,Name),o(lf(Len),nil,Name)],IndvS0,IndvS1),
       label_sizes(Name,IndvS1,IndvLS,IndvSL),
       (( Name == i_nsew ) -> DebugThis = full ; luser_getval(debug,DebugThis)->true; DebugThis=true),
       ( DebugThis\==false -> Feedback = debug_as_grid(Title) ; Feedback = print_info),
@@ -1739,6 +1741,7 @@ mass_gt(N,Obj):- amass(Obj,Mass),Mass>N.
 % tiny grid becomes a series of points
 is_fti_step(maybe_glyphic).
 maybe_glyphic(VM):-
+  one_fti(VM,whole),
   Points = VM.points,
   fif(is_glyphic(Points,VM.h,VM.v),one_fti(VM,glyphic)).
 
@@ -1944,8 +1947,8 @@ recompute_points(VM):-
     LeftOver\==[],
     points_to_grid(VM.h,VM.v,LeftOver,NewGrid),
     mapgrid(add_missing,NewGrid,NNewGrid),
-    as_ngrid(NNewGrid,NGrid),
-    print_side_by_side(green,NGrid,'recompute_points',_,VM.objs,'objects'),
+    nop((as_ngrid(NNewGrid,NGrid),
+    print_side_by_side(green,NGrid,'recompute_points',_,VM.objs,'objects'))),
     
     gset(VM.points)= LeftOver,
     gset(VM.grid)= NewGrid)).

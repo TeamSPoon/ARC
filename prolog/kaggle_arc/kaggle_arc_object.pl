@@ -191,10 +191,6 @@ zero_one_more(_-C,iz(edge(C,touch))):- C\==c.
 zero_one_more(_,[]).
 
 
-lpoints_to_norm(Width,Height,LPoints,IOps,LPointsNorm):- 
-   points_to_grid(Width,Height,LPoints,LGrid), grid_to_norm(LGrid,IOps,LPointsNorm).
-grid_to_norm(LGrid,IOps,LPointsNorm):- reduce_grid(LGrid+LGrid,IOps,LPointsNorm+_).
-
 :- style_check(+singleton).
 make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):- 
  must_det_ll((
@@ -256,7 +252,7 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
 
   int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
   % atomic_list_concat(['o_',Glyph,'_',GID],OID),
-  grid_to_norm(Grid,IOps,LPointsNorm),
+ % grid_to_norm(Grid,IOps,LPointsNorm),
   append(
   [ [    
      shape(ColorlessPoints),
@@ -271,13 +267,13 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
      v_hv(Width,Height),
      mass(Len),     
      colors(CC),        
-    % localpoints(LPoints),
+     localpoints(LPoints),
      amass(Len)],     
     [iz(cenY(CY)),iz(cenX(CX))],  
     %width(Width), height(Height), area(Area), %missing(Empty),
     [changes([])], % [grid(LocalGrid)],    
      OShapeNames,
-    [norm(LPointsNorm),norm_ops(IOps)],
+    %[norm(LPointsNorm),norm_ops(IOps)],
     % [iz(locY(LoV)),iz(locX(LoH))], % iz(tall(Height)),iz(wide(Width)),
     [iz(sizeY(Height)),iz(sizeX(Width))],
     [%obj_to_oid(ID,Iv),
@@ -290,6 +286,9 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
      giz(grid_sz(GH,GV)),
      []]],Ps0),  
   include('\\=='([]),Ps0,Ps),
+
+  make_localpoints(ColorlessPoints,RotG,SH,SV,PenColors,XX), assertion((XX == LPoints)),
+
   with_objprops(override,Overrides,Ps,OUT1),
   sort_obj_props(OUT1,OUT),!,as_obj(OUT,Obj),verify_object(Obj),!,
  must_det_ll((ObjO = Obj)))).
@@ -536,12 +535,15 @@ indv_u_props(I,[ shape(C),  loc(X,Y),  pen(Ps),  rotation(Rot)]):-  shape(I,C),l
 
 :- dynamic(is_shape_id_for/2).
 is_shape_id_for([],sid_0).
-is_shape_id_for([point_01_01],sid_01).
-is_shape_id_for([point_01_01,point_01_02],sid_20).
-is_shape_id_for([point_01_01,point_02_01],sid_02).
+is_shape_id_for([point_01_01],sid_11).
+is_shape_id_for([point_01_01,point_02_01],sid_12).
+is_shape_id_for([point_01_01,point_02_01,point_03_01],sid_13).
+is_shape_id_for([point_01_01,point_02_01,point_03_01,point_04_01],sid_14).
+
+
+is_shape_id_for([point_01_01,point_01_02],sid_21).
 is_shape_id_for([point_01_01,point_02_01,point_01_02,point_02_02],sid_22).
-is_shape_id_for([point_01_01,point_02_01,point_03_01],sid_03).
-is_shape_id_for([point_01_01,point_02_01,point_03_01,point_04_01],sid_04).
+
 shape_id(Shape,ShapeID):- is_shape_id_for(Shape,ShapeID),!.
 shape_id(Shape,ShapeID):- term_hash(Shape,Hash), atomic_list_concat(['s',Hash],ShapeID), asserta(is_shape_id_for(Shape,ShapeID)).
 
@@ -877,9 +879,15 @@ object_localpoints(I,XX):- must_be_free(XX),
 object_localpoints0(_,L,X):- member(localpoints(X),L),is_list(X),!.
 object_localpoints0(I,L,X):- member(globalpoints(XX),L),is_list(XX),loc(I,LoH,LoV),!,deoffset_points(LoH,LoV,XX,X).
 object_localpoints0(I,_L,XX):-  
- must_det_11((shape(I,X), rotation(I,Rot), s_hv(I,H,V), maybe_unrotate_points(H,V,X,Rot,XXX),
-     pen(I,PenColors),combine_pen(XXX,PenColors,PenColors,XX))),!.
+ must_det_11((shape(I,X), rotation(I,Rot), s_hv(I,H,V), pen(I,PenColors),
+   make_localpoints(X,Rot,H,V,PenColors,XX))).
 
+make_localpoints(X,Rot,H,V,PenColors,XX):- 
+     maybe_unrotate_points(H,V,X,Rot,XXX),
+     combine_pen(XXX,PenColors,PenColors,XX),!.
+
+maybe_unrotate_points(_,_,X,sameR,XX):- must_be_free(XX),!,X=XX.
+maybe_unrotate_points(H,V,X,Rot,XX):- points_to_grid(H,V,X,Grid),!,unrotate(Rot,Grid,Grid90),localpoints_include_bg(Grid90,XX).
 
 combine_pen([],_,_,[]):-!.
 
@@ -894,9 +902,6 @@ combine_pen(L,[cc(C,N)|PenColors],Reset,XX):- number(N), make_list(C,N,List),app
 combine_pen([P1|L],[C|PenColors],Reset,[C-P1|XX]):- is_color(C),!,
   combine_pen(L,PenColors,Reset,XX).
   
-
-maybe_unrotate_points(_,_,X,sameR,XX):- must_be_free(XX),!,X=XX.
-maybe_unrotate_points(H,V,X,Rot,XX):- points_to_grid(H,V,X,Grid),unrotate(Rot,Grid,Grid90),localpoints_include_bg(Grid90,XX).
 
 shape(I,X):- is_object(I), indv_props(I,L),member(shape(X),L).
 shape(G,X):- is_group(G),!,mapgroup(shape,G,Points),append_sets(Points,X).
@@ -942,11 +947,13 @@ get_instance_method(Obj,Compound,F):- is_object(Obj), compound(Compound),compoun
 
 pen(I,C):- indv_props(I,L),member(pen(C),L),!.
 
+odd_failure(G):- call(G),!.
+odd_failure(G):- wdmsg(odd_failure(G)),!,fail.
 
 object_grid(I,G):- is_grid(I),!,G=I.
 object_grid(Group,List):- is_group(Group),!,override_group(object_grid(Group,List)),!.
 object_grid(I,G):- indv_props(I,L),member(grid(G),L),!.
-object_grid(I,G):- localpoints(I,LP),v_hv(I,H,V),points_to_grid(H,V,LP,G),!.
+object_grid(I,G):- odd_failure((localpoints(I,LP),v_hv(I,H,V),points_to_grid(H,V,LP,G))),!.
 
 global_grid(I,G):- \+ is_object(I),into_grid(I,G),!.
 global_grid(I,G):- must_det_ll((call((grid_size(I,H,V),globalpoints_maybe_bg(I,LP),points_to_grid(H,V,LP,G))))),!.
@@ -1119,7 +1126,7 @@ rebuild_from_globalpoints(Obj,GPoints,NewObj):-
 is_point_or_colored(birth(_)):-!,fail.
 is_point_or_colored(Prop):- sub_term(CP,Prop),(is_color(CP);is_nc_point(CP)),!.
 is_point_or_colored(Prop):-
- member(Prop,[colors(_),amass(_),mass(_),shape(_),rotation(_),roll_shape(_),pen(_),
+ member(Prop,[colors(_),amass(_),mass(_),shape(_),rotation(_),roll_shape(_),pen(_),norm(_),norm_ops(_),
               iz(multicolored(_)),iz(chromatic(_)),iz(symmetry(_)),iz(shape(_)),iz(monochrome),
               globalpoints(_),localpoints(_)]),!.
 
@@ -1404,7 +1411,9 @@ object_to_nm_points(Obj,NPoints):-
 
 
 guess_shape(GH,GV,GridIn,LocalGrid,I,E,N,1,GV,Colors,Points,column).
-guess_shape(GH,GV,GridIn,LocalGrid,I,E,N,GH,1,Colors,Points,locY).
+guess_shape(GH,GV,GridIn,LocalGrid,I,E,N,GH,1,Colors,Points,row).
+guess_shape(GH,GV,I,0,N,N,1,Colors,Points,hv_line(h)):- N > 1.
+guess_shape(GH,GV,I,0,N,1,N,Colors,Points,hv_line(v)):- N > 1.
 
 guess_shape(GH,GV,GridIn,LocalGrid,I,Empty,N,H,V,[cc(Black,_)|Rest],Points, bfc(FGB)):-  Rest == [], ((is_bg_color(Black);Black==wbg)->FGB=bg;FGB=fg).
 %guess_shape(GH,GV,GridIn,LocalGrid,I,Empty,N,H,V,[cc(Black,_)|Rest],Points, fbc(FGB)):- Rest == [], ((is_fg_color(Black);Black==wfg)->FGB=fg;FGB=bg).
@@ -1413,8 +1422,6 @@ guess_shape(GH,GV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,chromatic(Len)):- map
 guess_shape(GH,GV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,monochrome):- Colors=[_],length(Colors,Len).
 guess_shape(GH,GV,GridIn,LocalGrid,I,0,9,3,3,Colors,Points,keypad).
 
-guess_shape(GH,GV,I,0,N,N,1,Colors,Points,hv_line(h)):- N > 1.
-guess_shape(GH,GV,I,0,N,1,N,Colors,Points,hv_line(v)):- N > 1.
 
 
 guess_shape(GH,GV,GridIn,LocalGrid,I,E,N,H,V,Colors,Points,poly(Keypad)):- 

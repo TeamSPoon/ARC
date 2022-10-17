@@ -86,11 +86,23 @@ object_grid_to_str(Grid,Str,Title):-
   HH is (OH - 1) * 2, wots(Str,(print_w_pad(HH,GSS))).
 
 
+
 debug_as_grid(Grid):- debug_as_grid('',Grid),!.
+
+:- discontiguous debug_as_grid/2.
 debug_as_grid(Why,R):- is_object_props(R),!,debug_as_grid(Why,obj(R)).
 debug_as_grid(Why,R):- atom(R), atom_contains(R,'_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
   resolve_reference(R,Var), R\==Var, \+ plain_var(Var),!, 
   write(' '), writeq(R), write(' /* '), debug_as_grid(Why,Var), write(' */ ').
+
+/*
+     localpoints_include_bg(Grid,GridO),
+*/
+debugged_object_grid(Grid,GridO):- object_grid(Grid,GridO).
+%debugged_object_grid(Grid,GridO):- global_grid(Grid,GridO).
+debugged_object_grid(Grid,GridOO):- 
+  localpoints_include_bg(Grid,GridO),  
+  subst(GridO,black,wbg,GridOO).
 
 %debug_as_grid(Why,R):- resolve_reference(R,Var)-> R\==Var, write(' ( '), writeq(R),write(' , '),debug_as_grid(Why,Var),write(' )'),!.
 debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
@@ -98,16 +110,18 @@ debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
   v_hv(Grid,H,V),
   object_glyph(Grid,Glyph),
   Title = debug_as_grid(Why,loc(OH,OV),size(H,V)),
-  fif((H\==1;V\==1),
-    (loc(Grid,OH,OV),
+  fif((H\==1;V\==1;true),
+    must_det_ll((
+     loc(Grid,OH,OV),     
      localpoints_include_bg(Grid,GridO),
-     ignore(IH=H),ignore(IV=V), 
-     ignore(IH = 30),ignore(IV=30), 
-     subst(GridO,black,wbg,GridOO),
-     into_ngrid(GridOO,IH,IV,NGrid),
-     wots(GS,print_grid(IH,IV,Title,GridOO)),replace_in_string(['®'=Glyph],GS,GSS),
+     subst(GridO,black,wbg,PrintGrid),    
+     copy_term(PrintGrid,PrintGridC),
+     into_ngrid(PrintGridC,NGrid),
+     nop((s_hv(Grid,SX,SY),max_min(H,SX,IH,_),max_min(V,SY,IV,_))),
+     ignore(IV=V),ignore(IH=H),
+     wots(GS,print_grid(IH,IV,Title,PrintGrid)),replace_in_string(['®'=Glyph,'@'=Glyph],GS,GSS),
      wots(S,print_side_by_side(GSS,print_grid(IH,IV,ngrid,NGrid))),
-     HH is (OH - 1) * 2, print_w_pad(HH,S))),
+     HH is (OH - 1) * 2, print_w_pad(HH,S)))),
   fif(is_object(Grid),
     (format('~N~n'),
      locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Grid))))),
@@ -178,9 +192,9 @@ prefered(hv_line(_)).
 prefered(dg_line(_)).
 prefered_header(cc(Caps,_),Caps):- freeze(Caps,wbg == Caps).
 prefered_header(cc(Caps,_),Caps):- freeze(Caps,black == Caps).
-prefered_header(o(Caps,_,_),Caps):- freeze(Caps,i_bg_shapes == Caps).
-prefered_header(o(Caps,sf(_),0),Caps):- freeze(Caps,atom(Caps)).
-prefered_header(o(Caps,lf(_),0),Caps):- freeze(Caps,atom(Caps)).
+prefered_header(o(_,_,Caps),Caps):- freeze(Caps,i_bg_shapes == Caps).
+prefered_header(s(lf(_),0,Caps),Caps):- freeze(Caps,atom(Caps)).
+prefered_header(o(lf(_),0,Caps),Caps):- freeze(Caps,atom(Caps)).
 prefered_header(birth(Caps),PCaps):-prefered(PCaps),freeze(Caps,(nonvar(Caps),Caps = PCaps)).
 %prefered_header(iz(Caps),PCaps):-prefered(PCaps),freeze(Caps,Caps == PCaps).
 prefered_header(Caps,PCaps):-prefered(PCaps),freeze(Caps,(nonvar(Caps),Caps = PCaps)).

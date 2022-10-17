@@ -187,7 +187,8 @@ interact(SelMax):- catch(interact0(SelMax),'$aborted',interact(SelMax)).
 interact0(_SelMax):- retract(wants_exit_menu),!.
 interact0(SelMax):- i_key(SelMax,Key),
     writeq(Key),
-    ignore((do_menu_key(Key))),interact0(SelMax).
+    locally(nb_setval(menu_key,Key),ignore((do_menu_key(Key)))),
+    interact0(SelMax).
 
 i_key(SelMax,Key):-
   %get_single_char(Code), wdmsg(code=Code), char_code(Key,Code),  put_char(Key), 

@@ -187,8 +187,12 @@ learn_rule_o(Mode,InVM,OutVM):- % is_map(InVM),is_map(OutVM),!,
   ptc(orange,format('~N~n% Rules so far for ~w: ~w~n~n',[TestID,Len])),!,
   if_learn_ok(confirm_reproduction(InObjs,InObjs0,InGrid)),!,
   if_learn_ok(confirm_reproduction(OutObjs,OutObjs0,OutGrid)),!,
+
+
+
   confirm_learned(InGrid,OutGrid),!,
   nop(show_proof(InGrid,OutGrid))]),!.
+
 
 learn_rule_i_o(Mode,In,Out):- 
   forall(learn_rule_in_out(1,Mode,In,Out),true).
@@ -286,6 +290,18 @@ diff_2props(I,O):- comparable_2props(I,O), I \=@= O.
 % v_hv, mass
 % center
 
+
+% symmetrical object
+% non-symmetrical
+% object with exact mass
+% object with most mass
+% object with least mass
+% distinctive color
+% square object
+% rectangular object
+% hollow object
+% solid object
+
 :- discontiguous(learn_rule_in_out/4).
 learn_rule_in_out(_,in_out,In,Out):- is_list(In),is_list(Out),
   (learn_rule_in_out_sames(In,Out), deterministic(TF), true), (TF==true -> !; true).
@@ -294,7 +310,8 @@ learn_rule_in_out_sames(In,Out):- fail,
   is_list(In),is_list(Out),
   average_or_mid(mass,Out,MinMass),
   member(I,In),member(O,Out),
-  mass(O,Mass), Mass>MinMass, mass(I,Mass),
+  mass(O,Mass), Mass>MinMass,
+  mass(I,Mass),
   once((compare_objs_how(How), nonvar(How), compare_objs1(How,I,O))),
   pp(How),
   learn_rule_in_out_objects(How,I,O).

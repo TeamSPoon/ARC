@@ -761,7 +761,8 @@ make_training(TestID,VMO):-
 
 %show_arc_pair_progress(TestID,ExampleNum,In,Out):- show_arc_pair_progress_sol(TestID,ExampleNum,In,Out),!.
 train_test:- notrace(get_current_test(TestID)), once(train_test(TestID)).
-train_test(TestID):- clear_training(TestID),
+train_test(TestID):- 
+  clear_training(TestID),
   compile_and_save_test(TestID),
   train_test(TestID,train_using_oo_ii_io).
 train_test(TestID,P2):-   

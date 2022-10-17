@@ -109,6 +109,11 @@ into_grid_io(A,B):- into_grid(A,B).
 
 maybe_into_grid_io(A,B):- into_grid_io(A,B),!,A\=@=B.
 
+lpoints_to_norm(Width,Height,LPoints,IOps,LPointsNorm):- 
+   points_to_grid(Width,Height,LPoints,LGrid), grid_to_norm(LGrid,IOps,LPointsNorm).
+grid_to_norm(LGrid,IOps,LPointsNorm):- reduce_grid(LGrid+LGrid,IOps,LPointsNorm+_).
+
+
 :- decl_pt(reduce_grid(grid,infoR)).
 reduce_grid(G,O):- maybe_into_grid_io(G,GG),!,reduce_grid(GG,O).
 reduce_grid(Grid,gridOpFn(GridR,OP)):- reduce_grid(Grid,OP,GridR),OP\==[],!.
