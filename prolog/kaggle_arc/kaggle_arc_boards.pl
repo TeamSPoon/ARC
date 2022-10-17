@@ -529,7 +529,7 @@ not_reversed(IO):- (IO \== o-i).
 c_proportional(I,O,R):- proportional(I,O,R).
 %grid_hint_io(MC,IO,In,Out,find_ogs):- maybe_fail_over_time(1.2,find_ogs(_,_,In,Out)).
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs(Hint))):- all_ogs(In,Out,Hint).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):-  \+ arc_option(grid_size_only), grid_size(In,IH,IV),grid_size(Out,OH,OV), grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,rev_ogs(Hint))):-  not_reversed(IO), all_ogs(Out,In,Hint).
 %grid_hint_io(MC,IO,In,Out,comp(MC,IO,to_from(InO,OutO))):- disguise_grid(In,InO),disguise_grid(Out,OutO).
 
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,value('=@='))):- not_reversed(IO), In=@=Out.
@@ -537,37 +537,48 @@ grid_hint_io(MC,IO,In,Out,comp(MC,IO,reduce_grid(H,V,II))):- not_reversed(IO), o
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,grav_rot(H,V,II))):- not_reversed(IO),  once((grav_rot(In,_,II),grav_rot(Out,_,OO))),   II=@=OO,grid_size(II,H,V).
 grid_hint_io(MC,IO,In,Out,     comp(MC,IO,Hint)):- not_reversed(IO), c_proportional(In,Out,Hint).
 %grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs_rev(Hint))):- all_ogs(Out,In,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):-  \+ arc_option(grid_size_only), grid_size(In,IH,IV),grid_size(Out,OH,OV), grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
 
 disguise_grid(I,O):- maplist(disguise_row,I,M),O=..[grid|M].
 disguise_row(I,O):- O=..[row|I].
 
 all_ogs(In,Out,XY):- %member(R,[strict,loose]),
-   all_ogs1(In,Out,XY1),all_ogs2(In,Out,XY2),all_ogs3(In,Out,XY3),append_sets([XY1,XY2,XY3],XY), nop(XY\==[]).
+  once(( all_ogs1(In,Out,XY1),all_ogs2(In,Out,XY2),all_ogs3(In,Out,XY3),append_sets([XY1,XY2, XY3],XY))), nop(XY\==[]).
    
 
 %grid_to_so(_II,Obj,In,_NotStrict):- Obj=keypad, In=[[X,X,X],[X,X,X],[X,X,X]].
 
-ensure_how(How):- var(How),!,member(How,[colormass,fg_shapes(colormass),nsew,fg_shapes(nsew),alone_dots]).
+ensure_how(How):- var(How),!,member(How,[nsew,fg_shapes(nsew),colormass,fg_shapes(colormass),force_by_color,alone_dots]).
 ensure_how(_How).
+
+grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,_,Obj),List),list_to_set(List,Objs).
+grid_to_obj(Grid,Obj):- grid_to_objs(Grid,Objs),member(Obj,Objs).
 
 grid_to_objs(Grid,How,Objs):- (nonvar(Grid)->true;test_grids(_,Grid)), ensure_how(How), individuate(How,Grid,Objs).
 grid_to_obj(Grid,How,Obj):- grid_to_objs(Grid,How,Objs),member(Obj,Objs).
-grid_to_so(Grid,grid(Named,In),In,_NotStrict):- grid_to_obj(Grid,Named,Obj),object_grid(Obj,In).
-grid_to_so(_Grid,Obj,In,_NotStrict):- Obj=keypad(Count),
+
+grid_get_value(Grid,smallest_object,Object):- grid_to_objs(Grid,Objs),smallest_first(Objs,[Object|_]).
+grid_get_value(Grid, largest_object,Object):- grid_to_objs(Grid,Objs),largest_first(Objs,[Object|_]).
+grid_get_value(Grid,object_count,Count):- grid_to_objs(Grid,Objs),length(Objs,Count).
+
+grid_to_so(Grid,nth1Of(Nth1,Named,H,V),In,_NotStrict):- grid_to_objs(Grid,Named,Objs),nth1(Nth1,Objs,Obj),object_grid(Obj,In),grid_size(In,H,V).
+grid_to_so(_Grid,Named,In,_NotStrict):- Named=keypad(Color,Counts),
   In=[[_X1,_X2,_X3],[_X4,_X5,_X6],[_X7,_X8,_X9]],
-  flatten(In,Flat),maplist(count_N(Flat,Count),Flat).
+  flatten(In,Flat),maplist(count_N(Color,Flat,Counts),Flat).
 
-count_N(Flat,Count,Var):- freeze(Var,count_N(Flat,Count)).
+count_N(Color,Flat,Count,Var):- freeze(Var,count_C(Color,Flat,Count)).
+count_C(Color,Flat,S+D):- member(Color,Flat),!,my_partition(=(Color),Flat,Sames,Diffs),length(Sames,S),length(Diffs,D).
 
-count_N(Flat,S+D):- member(Var,Flat),!,my_partition(=(Var),Flat,Sames,Diffs),length(Sames,S),length(Diffs,D).
 
  
 % grid_to_obj(Grid,[colormass,fg_shapes(colormass)],Obj),print_side_by_side(Grid,Obj).
 
-all_ogs3(II,Out,XY):-
-  grid_to_so(II,Obj,In,R),
-  findall(notrim(Obj,R)-loc(XX,YY),maybe_ogs(R,XX,YY,In,Out),XY),nop(XY\==[]).
-
+all_ogs3(Grid,Out,XY):-
+  findall(notrim(Obj,R)-loc(XX,YY),(grid_to_so(Grid,Obj,In,R),maybe_ogs_color(R,XX,YY,In,Out)),XY).
+/*
+all_ogs3(Grid,Out,XY):-
+  findall(notrim(Obj,R)-loc(XX,YY),((grid_to_so(Grid,Obj,In,R);grid_to_so(Out,Obj,In,R)),maybe_ogs_color(R,XX,YY,In,Out)),XY).
+*/
 
 all_ogs1(II,Out,XY):-
   once((trim_to_rect(II,In), II\=In, (once(ogs_11(OX,OY,In,II);(OX=OY,OX=1))))),

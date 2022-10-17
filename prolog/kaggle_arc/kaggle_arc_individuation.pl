@@ -912,13 +912,16 @@ individuate_two_grids_now_X(OID1OID2,ROptions,Grid1,Grid2,VM1,VM2,Grid1X,Grid2X,
 
 individuate2(VM,[ROptions],OID,Grid,IndvS):- !, nonvar(ROptions), individuate2(VM,ROptions,OID,Grid,IndvS).
 individuate2(_VM,ROptions,OID,_GridIn,IndvS):- nonvar(OID), 
-  get_individuated_cache(ROptions,OID,IndvS),length(IndvS,Len),pp(yellow,oid_cached(ROptions,OID,len(Len))),!.
+  get_individuated_cache(ROptions,OID,IndvS),length(IndvS,Len),pp(yellow,oid_cached(ROptions,OID,len(Len),'$VAR'(Len))),!.
 individuate2(VM,ROptions,OID,GridIn,IndvS):- 
   do_individuate(VM,ROptions,GridIn,IndvS),!,
   length(IndvS,Len),
   ignore((nonvar(OID),retractall(individuated_cache(OID,ROptions,_)), 
-          pp(yellow,oid_created(ROptions,OID,len(Len))),
+          pp(yellow,oid_created(ROptions,OID,len(Len),'$VAR'(Len))),
           my_asserta_if_new(individuated_cache(OID,ROptions,IndvS)))),!.
+
+oid_created(ROptions,OID,len(_Len),IndvS):- saved_group(individuate(OID,ROptions),IndvS).
+oid_cached(ROptions,OID,len(_Len),IndvS):- saved_group(individuate(OID,ROptions),IndvS).
 
 
 into_points_grid(GridIn,Points,Grid):-

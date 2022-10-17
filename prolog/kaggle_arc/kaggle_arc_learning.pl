@@ -301,6 +301,32 @@ diff_2props(I,O):- comparable_2props(I,O), I \=@= O.
 % rectangular object
 % hollow object
 % solid object
+% object count
+/*
+ test_tag(count_different_colors).
+ test_tag(count_hor_lines).
+ test_tag(count_patterns).
+ test_tag(count_shapes).
+ test_tag(count_tiles).
+ test_tag(count_ver_lines).
+  test_tag(associate_color_to_bools).
+ test_tag(associate_colors_to_bools).
+ test_tag(associate_colors_to_colors).
+ test_tag(associate_colors_to_images).
+ test_tag(associate_colors_to_numbers).
+ test_tag(associate_colors_to_patterns).
+ test_tag(associate_colors_to_ranks).
+ test_tag(associate_colors_to_shapes).
+ test_tag(associate_images_to_bools).
+ test_tag(associate_images_to_colors).
+ test_tag(associate_images_to_images).
+ test_tag(associate_images_to_numbers).
+ test_tag(associate_images_to_patterns).
+
+ test_tag(associate_patterns_to_colors).
+ test_tag(associate_patterns_to_patterns).
+*/
+
 
 :- discontiguous(learn_rule_in_out/4).
 learn_rule_in_out(_,in_out,In,Out):- is_list(In),is_list(Out),
