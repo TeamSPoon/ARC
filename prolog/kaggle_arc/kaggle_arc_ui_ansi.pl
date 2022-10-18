@@ -1382,10 +1382,10 @@ i_glyph(N,Glyph):- notrace((i_glyph0(N,Glyph),atom(Glyph))),!.
 i_glyph(N,Glyph):- trace,i_glyph0(N,Glyph),atom(Glyph),!.
 
 i_glyph0(N,Glyph):- bg_sym(BG), BG==N, bg_dot(Code), name(Glyph,[Code]).
+i_glyph0(N,Glyph):- atom(N),!,(name(N,[_,_,Code|_])->name(Glyph,[Code]);N=Glyph).
 i_glyph0(Code,Glyph):- integer(Code), Code> 255, name(Glyph,[Code]).
 i_glyph0(N,Glyph):- integer(N),quietly((i_sym(N,Code),name(Glyph,[Code]))).
 i_glyph0(N,Glyph):- plain_var(N),format(chars(Codes),'~p',[N]),last(Codes,Glyph).
-i_glyph0(N,Glyph):- atom(N),atom_length(N,1),Glyph=N.
 i_glyph0(N,Glyph):- N>10, integer(N),N3 is N div 3, i_glyph0(N3,Glyph).
 %i_glyph(N,Glyph):- atom(N),atom_chars(N,Chars),last(Chars,LGlyph),upcase_atom(LGlyph,Glyph).
                                                                             

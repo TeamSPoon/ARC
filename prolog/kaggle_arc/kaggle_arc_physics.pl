@@ -58,9 +58,11 @@ color_mass_int(Cell,0):- is_bg_color(Cell),!.
 %color_mass_int(Cell,N):- color_int(Cell,N),!.
 color_mass_int(_,0).
 
+%grid_mass_ints(Grid,[[1]]):- Grid=@=[[_]],!. 
 grid_mass_ints(Grid,GridIII):- unique_colors(Grid,CC),include(is_fg_color,CC,FG),mapgrid(normal_w(FG),Grid,GridIII),!.
 
-grav_rot(Grid,RotG,Rotated):- 
+grav_rot(Grid,sameR,Grid):- \+ \+ Grid=[[_]],!.
+grav_rot(Grid,RotG,Rotated):-
   must_det_ll((into_grid(Grid,GridII),
    grid_mass_ints(GridII,GridIII),
    best_grav_rot(GridIII,RotG,_),

@@ -492,6 +492,7 @@ aggregates(link(_,_,_)).
 aggregates(link(_,_)).
 aggregates(insideOf(_)).
 
+
 merge_objs(_VM,Bigger,[],_IPROPS,Bigger):-!.
 merge_objs(VM,Bigger,[New|Inside],IPROPS,Combined):- 
   merge_2objs(VM,Bigger,New,IPROPS,NewBigger),

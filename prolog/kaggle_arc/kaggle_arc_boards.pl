@@ -528,10 +528,11 @@ not_reversed(IO):- (IO \== o-i).
 
 c_proportional(I,O,R):- proportional(I,O,R).
 %grid_hint_io(MC,IO,In,Out,find_ogs):- maybe_fail_over_time(1.2,find_ogs(_,_,In,Out)).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs(Hint))):- all_ogs(In,Out,Hint).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,rev_ogs(Hint))):-  not_reversed(IO), all_ogs(Out,In,Hint).
 %grid_hint_io(MC,IO,In,Out,comp(MC,IO,to_from(InO,OutO))):- disguise_grid(In,InO),disguise_grid(Out,OutO).
 
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs(Hint))):- all_ogs(In,Out,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs3(Hint))):-  all_ogs3(In,Out,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,rev_ogs3(Hint))):-  all_ogs3(Out,In,Hint).
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,value('=@='))):- not_reversed(IO), In=@=Out.
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,reduce_grid(H,V,II))):- not_reversed(IO), once((grid_to_norm(In,_,II),grid_to_norm(Out,_,OO))),II=@=OO,grid_size(II,H,V).
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,grav_rot(H,V,II))):- not_reversed(IO),  once((grav_rot(In,_,II),grav_rot(Out,_,OO))),   II=@=OO,grid_size(II,H,V).
@@ -543,7 +544,7 @@ disguise_grid(I,O):- maplist(disguise_row,I,M),O=..[grid|M].
 disguise_row(I,O):- O=..[row|I].
 
 all_ogs(In,Out,XY):- %member(R,[strict,loose]),
-  once(( all_ogs1(In,Out,XY1),all_ogs2(In,Out,XY2),all_ogs3(In,Out,XY3),append_sets([XY1,XY2, XY3],XY))), nop(XY\==[]).
+  once(( all_ogs1(In,Out,XY1),all_ogs2(In,Out,XY2),append_sets([XY1,XY2],XY))), nop(XY\==[]).
    
 
 %grid_to_so(_II,Obj,In,_NotStrict):- Obj=keypad, In=[[X,X,X],[X,X,X],[X,X,X]].
@@ -551,20 +552,80 @@ all_ogs(In,Out,XY):- %member(R,[strict,loose]),
 ensure_how(How):- var(How),!,member(How,[nsew,fg_shapes(nsew),colormass,fg_shapes(colormass),force_by_color,alone_dots]).
 ensure_how(_How).
 
-grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,_,Obj),List),list_to_set(List,Objs).
+
+%grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,_,Obj),List),list_to_set(List,Objs).
+grid_to_objs(Grid,Objs):- ensure_grid(Grid),individuate(complete,Grid,Objs).
+grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),individuate(How,Grid,Objs).
+%grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,complete,Obj),List),list_to_set(List,Objs).
+%grid_to_obj(Grid,Obj):- grid_to_objs(Grid,Objs),member(Obj,Objs).
+
+%grid_to_objs(Grid,How,Objs):- (nonvar(Grid)->true;test_grids(_,Grid)), ensure_how(How), individuate(How,Grid,Objs).
+
+% one way to match or find an outlier is compressing things in sets minus one object.. the set that is second to the largest tells you what single object os the most differnt 
+
+grid_to_obj_other(VM,Grid,O):- other_grid(Grid,Grid2), grid_to_obj_other_grid(VM,Grid,Grid2,O).
+grid_to_obj_other_grid(VM,Grid,Grid2,O):- grid_to_objs(Grid2,Objs),grid_to_obj_other_objs(VM,Grid,Objs,O).
+grid_to_obj_other_objs(VM,Grid,Objs,O):- 
+  member(Obj,Objs),object_grid(Obj,In),
+  maybe_ogs_color(R,OH,OV,In,Grid), 
+  once((localpoints_include_bg(Obj,OPoints),offset_points(OH,OV,OPoints,GOPoints), 
+  %indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
+  (nonvar(VM)->true;grid_vm(Grid,VM)),
+  make_indiv_object(VM,[],GOPoints,O))).
+
+grid_to_obj(Grid,O):- var(Grid),!,ensure_grid(Grid),grid_to_obj(Grid,O).
+grid_to_obj(Grid,O):- grid_to_obj_other(_VM,Grid,O).
 grid_to_obj(Grid,Obj):- grid_to_objs(Grid,Objs),member(Obj,Objs).
 
-grid_to_objs(Grid,How,Objs):- (nonvar(Grid)->true;test_grids(_,Grid)), ensure_how(How), individuate(How,Grid,Objs).
-grid_to_obj(Grid,How,Obj):- grid_to_objs(Grid,How,Objs),member(Obj,Objs).
+grid_vm(Grid,VM):- grid_to_gid(Grid,GID),((nb_current(GID,VM),is_vm(VM))-> true;
+  (grid_to_tid(Grid,ID1),into_fti(ID1,[complete],Grid,VM), other_grid(Grid,Grid2), set(VM.grid_target) = Grid2, nb_setval(GID,VM))).
 
-grid_get_value(Grid,smallest_object,Object):- grid_to_objs(Grid,Objs),smallest_first(Objs,[Object|_]).
-grid_get_value(Grid, largest_object,Object):- grid_to_objs(Grid,Objs),largest_first(Objs,[Object|_]).
+
+other_grid(Grid,Grid2):- 
+  must_det_ll(once((kaggle_arc_io(TestID,Example,IO,Grid),
+  in_to_out(IO,OI),
+  kaggle_arc_io(TestID,Example,OI,Grid2)))).
+
+in_to_out(in,out).
+in_to_out(out,in).
+
+select_n(_,0,[]).
+select_n(List,1,[E]):- member(E,List).
+select_n(List,N,[E|Set]):- select(E,List,More),Nminus1 is N - 1,select_n(More,Nminus1,Set).
+
+/*
+grid_to_obj(Grid,How,Obj):- grid_to_objs(Grid,How,Objs),member(Obj,Objs).
+grid_to_obj(Grid,How,Obj):- grid_to_obj2(Grid,How,Obj).
+
+grid_to_obj2(Grid,How,Obj):- grid_to_objs(Grid,How,Objs),select(Obj1,Objs,Rest),select(Obj2,Rest,_),area_lte(Obj1,Obj2),
+  peek_vm(VM),merge_2objs(VM,Obj1,Obj2,[],Obj).
+grid_to_obj2(Grid,How,Obj):- grid_to_obj3(Grid,How,Obj).
+
+grid_to_obj3(Grid,How,Obj):- grid_to_objs(Grid,How,Objs),select(Obj1,Objs,Rest),select(Obj2,Rest,Rest2),area_lte(Obj1,Obj2),
+  select(Obj3,Rest2,_Rest),area_lte(Obj2,Obj3),peek_vm(VM),
+  merge_2objs(VM,Obj1,Obj2,[],Obj12),merge_2objs(VM,Obj12,Obj3,[],Obj).
+grid_to_obj3(Grid,How,Obj):- grid_to_obj4(Grid,How,Obj).
+
+grid_to_obj4(Grid,How,Obj):- grid_to_objs(Grid,How,Objs),select(Obj1,Objs,Rest),select(Obj2,Rest,Rest2),area_lte(Obj1,Obj2),
+  select(Obj3,Rest2,Rest3),area_lte(Obj2,Obj3),select(Obj4,Rest3,_),area_lte(Obj3,Obj4),
+  peek_vm(VM),merge_2objs(VM,Obj1,Obj2,[],Obj12),merge_2objs(VM,Obj12,Obj3,[],Obj123),merge_2objs(VM,Obj123,Obj4,[],Obj).
+
+area_lte(Obj2,Obj3):- area(Obj2,A2),area(Obj3,A3),A2=<A3.
+*/
+
+o_first(L,O):- member(O,L),O\==[],!.
+grid_get_value(Grid,smallest_object,O):- grid_to_objs(Grid,Objs),smallest_first(Objs,SF),!,o_first(SF,O).
+grid_get_value(Grid, largest_object,O):- grid_to_objs(Grid,Objs),largest_first(Objs,SF),!,o_first(SF,O).
 grid_get_value(Grid,object_count,Count):- grid_to_objs(Grid,Objs),length(Objs,Count).
 
-grid_to_so(Grid,nth1Of(Nth1,Named,H,V),In,_NotStrict):- grid_to_objs(Grid,Named,Objs),nth1(Nth1,Objs,Obj),object_grid(Obj,In),grid_size(In,H,V).
+grid_to_so(Grid,nth1Of(Nth1,Named,H,V,In),In,_NotStrict):- grid_to_objs(Grid,Named,Objs),nth1(Nth1,Objs,Obj),object_grid(Obj,In),grid_size(In,H,V).
 grid_to_so(_Grid,Named,In,_NotStrict):- Named=keypad(Color,Counts),
   In=[[_X1,_X2,_X3],[_X4,_X5,_X6],[_X7,_X8,_X9]],
   flatten(In,Flat),maplist(count_N(Color,Flat,Counts),Flat).
+
+grid_to_so(Grid,_Out,l(Obj),In,R):- grid_to_so(Grid,Obj,In,R).
+grid_to_so(_Grid,Out,o(Obj),In,R):- grid_to_so(Out,Obj,In,R).
+
 
 count_N(Color,Flat,Count,Var):- freeze(Var,count_C(Color,Flat,Count)).
 count_C(Color,Flat,S+D):- member(Color,Flat),!,my_partition(=(Color),Flat,Sames,Diffs),length(Sames,S),length(Diffs,D).
@@ -574,7 +635,7 @@ count_C(Color,Flat,S+D):- member(Color,Flat),!,my_partition(=(Color),Flat,Sames,
 % grid_to_obj(Grid,[colormass,fg_shapes(colormass)],Obj),print_side_by_side(Grid,Obj).
 
 all_ogs3(Grid,Out,XY):-
-  findall(notrim(Obj,R)-loc(XX,YY),(grid_to_so(Grid,Obj,In,R),maybe_ogs_color(R,XX,YY,In,Out)),XY).
+  findall(notrim(Obj,R)-loc(XX,YY),(grid_to_so(Grid,Out,Obj,In,R),maybe_ogs_color(R,XX,YY,In,Out)),XY).
 /*
 all_ogs3(Grid,Out,XY):-
   findall(notrim(Obj,R)-loc(XX,YY),((grid_to_so(Grid,Obj,In,R);grid_to_so(Out,Obj,In,R)),maybe_ogs_color(R,XX,YY,In,Out)),XY).
@@ -588,13 +649,13 @@ all_ogs2(In,Out,XY):- findall(notrim(whole,R)-loc(XX,YY),maybe_ogs(R,XX,YY,In,Ou
 
 %maybe_ogs(R,X,Y,In,Out):-  find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R=loose).
 maybe_ogs(R,X,Y,In,Out):- maybe_ogs_color(R,X,Y,In,Out).
-maybe_ogs(R,X,Y,In,Out):- maybe_ogs_mono(R,X,Y,In,Out), \+ maybe_ogs_color(_,X,Y,In,Out).
+maybe_ogs(R,X,Y,In,Out):- fail, maybe_ogs_mono(R,X,Y,In,Out), \+ maybe_ogs_color(_,X,Y,In,Out).
 
 maybe_ogs_color(R,X,Y,In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
 maybe_ogs_color(R,X,Y,In,Out):- ogs_11(X,Y,In,Out),(find_ogs(X,Y,In,Out)->R=strict;R=loose).
 
 maybe_ogs_mono(color_ord(R),X,Y,In,Out):- once((into_color_ord(In,InM),into_color_ord(Out,OutM))), In\==InM,Out\==OutM, maybe_ogs_color(R,X,Y,InM,OutM).
-maybe_ogs_mono(mono(R),X,Y,In,Out):- once((into_monogrid(In,InM),into_monogrid(Out,OutM))), !, In\==InM,Out\==OutM, maybe_ogs_color(R,X,Y,InM,OutM).
+maybe_ogs_mono(mono(R),X,Y,In,Out):-       once((into_monogrid(In,InM),into_monogrid(Out,OutM))), !, In\==InM,Out\==OutM, maybe_ogs_color(R,X,Y,InM,OutM).
 
   %grid_hint_iso(MC,IO,In,_Out,_IH,_IV,OH,OV,is_xy_columns):- once(has_xy_columns(In,_Color,OH,OV,)).
 

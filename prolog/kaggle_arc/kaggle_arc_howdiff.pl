@@ -307,8 +307,8 @@ printing_diff(O1,O2):-
   object_grid_to_str(O1,Str1,T1),
   object_grid_to_str(O2,Str2,T2),
 
-  ((global_grid(O1,OG1),global_grid(O2,OG2),print_side_by_side(teal,OG1,global_grid(T1),_,OG2,diff(T2)))-> true;
-   (print_side_by_side(yellow,O1,no_global_grid(T1),_,O2,diff(T2)))),
+  ((global_grid(O1,OG1),global_grid(O2,OG2),print_side_by_side(teal,OG1,diff(global_grid(T1)),_,OG2,diff(global_grid(T2))))-> true;
+   (print_side_by_side(yellow,O1,no_global_grid(diff(T1)),_,O2,no_global_grid(diff(T2))))),
 
   ignore((into_ngrid(O1,NO1),into_ngrid(O2,NO2), print_side_by_side(silver,NO1,ngrid(T1),_,NO2,ngrid(T2)))),
   nop(writeln(Str1)), 

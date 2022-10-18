@@ -349,6 +349,7 @@ pad_sides(Fill,Row):- my_append([_|Fill],[_],Row).
 pad_sides(P1,Fill,Row):- call(P1,C1),call(P1,C2),my_append([C1|Fill],[C2],Row).
 pad_sides(C1,Fill,C2,Row):- my_append([C1|Fill],[C2],Row).
 
+ensure_grid(Grid):- var(Grid),!, arc_grid(_,Grid).
 ensure_grid(Grid):- is_grid(Grid),!.
 ensure_grid(Grid):- between(1,30,H),between(1,30,V),make_grid(H,V,Grid).
 

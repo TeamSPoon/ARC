@@ -648,14 +648,14 @@ all_suite_test_name(TestID):- get_current_suite_testnames(Set),!,member(TestID,S
 
 arc_pair_id(TestID,ExampleNum):- 
   arc_test_name(TestID),
-  ignore((luser_getval(example,Example+NumE), Example\==tst , ExampleNum=Example+NumE)),
+ % ignore((luser_getval(example,Example+NumE), Example\==tst , ExampleNum=Example+NumE)),
   kaggle_arc_io(TestID,ExampleNum,in,_).
 
 arc_grid_pair(In,Out):- 
  ((var(In),var(Out))-> arc_pair_id(TestID,ExampleNum); true),
   kaggle_arc(TestID,ExampleNum,In,Out).
 
-arc_grid(Grid):- arc_grid(in,Grid).
+arc_grid(Grid):- arc_grid(_In,Grid).
 arc_grid(IO,Grid):-
   arc_pair_id(TestID,ExampleNum),
   kaggle_arc_io(TestID,ExampleNum,IO,Grid).

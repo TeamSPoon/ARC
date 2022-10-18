@@ -208,7 +208,8 @@ debug_indiv(obj(A)):-
   write(SS).
 
 
-choose_header(ASFROM,Caps):- once((prefered_header(P,Caps),member(P,ASFROM),\+ skip_header(Caps),ground(Caps))).
+choose_header(ASFROM,Caps):- once((prefered_header(P,Caps),member(P,ASFROM),\+ skip_header(Caps),ground(Caps))),!.
+choose_header(ASFROM,Caps):- once((prefered_header(P,CapsO),member(P,ASFROM),term_to_atom(CapsO,Caps))).
 
 skip_header(X):- compound(X).
 skip_header(grid_sz(_,_)).
