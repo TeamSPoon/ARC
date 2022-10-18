@@ -52,6 +52,8 @@ test_name_output_file(TestID,File):- sub_atom_value(TestID,OID),!,atomic_list_co
 clsbake:- nop(clsmake).
 
 compile_and_save_test:- clsbake, get_current_test(TestID),time(compile_and_save_test(TestID)).
+
+
 compile_and_save_test(TestID):-
   all_arc_test_name(TestID),
   %ignore(retract(saved_training(TestID))),
@@ -70,7 +72,18 @@ compile_and_save_test(TestID):-
   detect_all_training_hints(TestID),
   nop(individuate_pairs_from_hints(TestID)),
   %train_test(TestID,train_using_io),  
+  test_deduce_shapes,
   save_supertest(TestID))).
+
+test_deduce_shapes:- 
+  forall(grid_to_obj(Grid,O),nop(ignore(once((global_grid(O,OO),print_side_by_side(Grid,OO),writeq(O)))))),
+  get_current_test(TestID),
+  findall(O,hybrid_shape(TestID,O),List),
+  predsort(sort_on(shape_size),List,Set),
+  forall(member(O,Set),(grid_to_norm(O,Ops,N),print_side_by_side(O,N),writeln(Ops))).
+
+
+shape_size(G,H+V+VsC+Cs):- grid_size(G,H,V),term_variables(G,Vs),length(Vs,VsC),colors(G,Cs).
 
 individuate_pairs_from_hints(TestID):- 
   arc_assert(individuate_test_grids(TestID)),
@@ -555,20 +568,26 @@ ensure_how(_How).
 
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,_,Obj),List),list_to_set(List,Objs).
 grid_to_objs(Grid,Objs):- ensure_grid(Grid),individuate(complete,Grid,Objs).
-grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),individuate(How,Grid,Objs).
+grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(How),individuate(How,Grid,Objs).
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,complete,Obj),List),list_to_set(List,Objs).
 %grid_to_obj(Grid,Obj):- grid_to_objs(Grid,Objs),member(Obj,Objs).
 
 %grid_to_objs(Grid,How,Objs):- (nonvar(Grid)->true;test_grids(_,Grid)), ensure_how(How), individuate(How,Grid,Objs).
 
+:- dynamic(hybrid_shape/2).
 % one way to match or find an outlier is compressing things in sets minus one object.. the set that is second to the largest tells you what single object os the most differnt 
+objs_shapes(Objs,In):- get_current_test(TestID),objs_shapes(TestID,Objs,In).
+
+objs_shapes(TestID, Objs,In):- member(Obj,Objs),object_grid(Obj,In),assert_if_new(hybrid_shape(TestID,In)),fail.
+objs_shapes(TestID,_Objs,In):- hybrid_shape(TestID,In).
+
 
 grid_to_obj_other(VM,Grid,O):- other_grid(Grid,Grid2), grid_to_obj_other_grid(VM,Grid,Grid2,O).
 grid_to_obj_other_grid(VM,Grid,Grid2,O):- grid_to_objs(Grid2,Objs),grid_to_obj_other_objs(VM,Grid,Objs,O).
 grid_to_obj_other_objs(VM,Grid,Objs,O):- 
-  member(Obj,Objs),object_grid(Obj,In),
+  objs_shapes(Objs,In),
   maybe_ogs_color(R,OH,OV,In,Grid), 
-  once((localpoints_include_bg(Obj,OPoints),offset_points(OH,OV,OPoints,GOPoints), 
+  once((localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints), 
   %indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
   (nonvar(VM)->true;grid_vm(Grid,VM)),
   make_indiv_object(VM,[],GOPoints,O))).
@@ -582,8 +601,9 @@ grid_vm(Grid,VM):- grid_to_gid(Grid,GID),((nb_current(GID,VM),is_vm(VM))-> true;
 
 
 other_grid(Grid,Grid2):- 
-  must_det_ll(once((kaggle_arc_io(TestID,Example,IO,Grid),
+  (once((kaggle_arc_io(TestID,Example,IO,Grid),
   in_to_out(IO,OI),
+  Example \= tst+_, 
   kaggle_arc_io(TestID,Example,OI,Grid2)))).
 
 in_to_out(in,out).
@@ -618,8 +638,10 @@ grid_get_value(Grid,smallest_object,O):- grid_to_objs(Grid,Objs),smallest_first(
 grid_get_value(Grid, largest_object,O):- grid_to_objs(Grid,Objs),largest_first(Objs,SF),!,o_first(SF,O).
 grid_get_value(Grid,object_count,Count):- grid_to_objs(Grid,Objs),length(Objs,Count).
 
-grid_to_so(Grid,nth1Of(Nth1,Named,H,V,In),In,_NotStrict):- grid_to_objs(Grid,Named,Objs),nth1(Nth1,Objs,Obj),object_grid(Obj,In),grid_size(In,H,V).
-grid_to_so(_Grid,Named,In,_NotStrict):- Named=keypad(Color,Counts),
+grid_to_so(Grid,nth1Of(Nth1,Named,H,V,In),In,_NotStrict):- 
+  grid_to_objs(Grid,Named,Objs),nth1(Nth1,Objs,Obj),object_grid(Obj,In),grid_size(In,H,V).
+grid_to_so(_Grid,Named,In,_NotStrict):- fail,
+  Named=keypad(Color,Counts),
   In=[[_X1,_X2,_X3],[_X4,_X5,_X6],[_X7,_X8,_X9]],
   flatten(In,Flat),maplist(count_N(Color,Flat,Counts),Flat).
 

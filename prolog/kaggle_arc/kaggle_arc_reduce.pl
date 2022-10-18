@@ -82,13 +82,17 @@ reduce_op1_1(_,Grid,remove_row(Row),GridR):- fail,
 %reduce_1pair_op(PassNo,G,M,O):- maybe_into_grid_io(G,GG),!,reduce_1pair_op(PassNo,GG,M,O).
 reduce_1pair_op(PassNo,Grid, Op,GridR):- reduce_op1(PassNo,Grid,Op,GridR).
 %reduce_1pair_op(PassNo,GridL,as_rot(RotG,UnRotG,Op),GridRR):- grav_rot(GridL,RotG,Grid), unrotate(RotG,UnRotG), reduce_op1(PassNo,Grid,Op,GridR),call(UnRotG,GridR,GridRR).
-reduce_1pair_op(PassNo,A+B,as_rot(Rot90,Rot270,Op),AA+BB):- 
+reduce_1pair_op(PassNo,A+B,OOO,AA+BB):- 
   rot_pair(Rot90,Rot270),
   call(Rot90,A,AL),call(Rot90,B,BL),  
   (A\==AL;B\==BL),
   reduce_op1(PassNo,AL+BL,Op,AR+BR),
-  call(Rot270,AR,AA),call(Rot270,BR,BB).
+  call(Rot270,AR,AA),call(Rot270,BR,BB),
+  xfr_write_op(as_rot(Rot90,Rot270,Op),OOO).
 
+
+xfr_write_op(as_rot(Rot90,Rot270,Op),r_c(Op)):- Rot90==rot90,Rot270==rot270,!.
+xfr_write_op(OOO,OOO).
   
 %reduce_1pair_op(PassNo,GridL,as_rot(rot270,rot90,Op),GridRR):- rot90(GridL,Grid),reduce_op1(PassNo,Grid,Op,GridR),rot270(GridR,GridRR).
 rot_pair(rot90,rot270).

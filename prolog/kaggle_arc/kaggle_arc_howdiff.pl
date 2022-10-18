@@ -336,7 +336,8 @@ showdiff_arg1(Peers1,Obj1,Peers2,Obj2):-
   %link_prop_types(loc,I1,O1,_LOCS),
   printing_diff(I1,O1),
   indv_props(I1,S1),indv_props(O1,S2),
-
+  what_unique(TestID,I1),
+  %what_unique(TestID,O1),
   fif(nb_current(menu_key,'u'),
   (remove_giz(S1,T1),remove_giz(S2,T2),
   indv_u_props(I1,IU),indv_u_props(O1,OU),

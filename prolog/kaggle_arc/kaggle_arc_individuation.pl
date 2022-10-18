@@ -381,6 +381,7 @@ im_complete(ListO):-
 %individuation_macros(complete, ListO):-  \+ test_config(indiv(_)),!, %reset_points, %sub_individuate(force_by_color,subshape_both), %TODO %
   findall(save_as_objects(From),individuator(From,_),ListM),
   append([
+   %find_grids,
    %[gather_texture],
    ListM,  
    %[pointless([sub_indiv([save_as_objects(force_by_color),save_as_objects(i_colormass),save_as_objects(i_nsew)])])],
@@ -394,6 +395,7 @@ individuator(i_maybe_glypic,[maybe_glyphic]).
 %individuator(i_columns,[when(get(h)=<5,columns)]). %:- \+ doing_pair.
 %individuator(i_rows,[when(get(v)=<5,rows)]). %:- \+ doing_pair.
 individuator(i_n_w,[n_w,all_lines,do_ending]).
+individuator(i_subtractions,[fg_subtractions(fg_shapes(i_n_w))]).
 individuator(i_mono_n_w,[fg_shapes(i_n_w)]).
 %individuator(i_repair_mirrors,[repair_in_vm(find_symmetry_code)]).
 %individuator(i_mono_colormass,[fg_shapes([subshape_both(v,[n_w,all_lines,diamonds])])]).
@@ -577,6 +579,25 @@ make_textured_point_object(VM,Overrides,Cell,Indv):-
    color_texture_point_data(Cell,C,Texture,Point),
    make_point_object(VM,[iz(dot),iz(shaped),texture(Texture)|Overrides],(C-Point),Indv).
 
+
+/*
+find_grids(VM):-
+ 
+  Grid=VM.grid,
+  two_rows(Grid,S1,R1,R2).
+
+two_rows(Grid,S1,R1,R2):-
+  nth1(R1,Grid,[S1|Row1]),nonvar(S1),
+  nth1(R2,Grid,Row2),
+  R2>R1+1,
+  [S1|Row1]==Row2,
+  maplist(==(S1),Row1).
+*/  
+  
+  
+  
+
+
 %most_d_colors
 
 /*
@@ -632,6 +653,14 @@ sub_individuate(From,SubProgram,VM):-
   maplist(addObjects(VM),WasInside),
   set_vm(VM).
 
+% =====================================================================
+is_fti_step(grid_to_obj_other).
+% =====================================================================
+
+grid_to_obj_other(VM):- 
+  Grid= VM.grid_o,
+  forall(grid_to_obj_other(Grid,VM,_O),true).
+
 
 % =====================================================================
 is_fti_step(label_sizes).
@@ -644,14 +673,15 @@ label_sizes(VM):-
 is_bg_object(Obj):- has_prop(pen(  [cc('black',_)]),Obj).
 
 label_sizes(GType,Objs,SF,LF):-    
-   length(Objs,Len),
    smallest_first(Objs,SF),
+   length(SF,SFLen),
    largest_first(SF,LF), 
-   set_zorder(GType,sf(Len),SF),
-   set_zorder(GType,lf(Len),LF),
+   set_zorder(GType,sf(SFLen),SF),
+   length(LF,LFLen),
+   set_zorder(GType,lf(LFLen),LF),
    !.
 
-set_zorder(GType,ZType,IndvS):- set_zorder(GType,ZType,0,IndvS).
+set_zorder(GType,ZType,IndvS):- set_zorder(GType,ZType,1,IndvS).
 set_zorder(_GType,_ZType,_,[]):-!.
 set_zorder(GType,ZType,N,[L|IndvS]):-  
   get_setarg_p1(nb_setarg,I,L,P1), compound(I), I=.. [o,ZType,_,GType], 
@@ -1390,15 +1420,19 @@ recolor_point(Recolors,_-Point,C-Point):-
 % =====================================================================
 is_fti_step(fg_shapes).
 % =====================================================================
-%fg_shaped(Cell,Cell):- is_bg_color(Cell),!.
-fg_shaped(Cell,wfg):- is_fg_color(Cell),!.
-fg_shaped(Cell,Cell).
+fg_shaped( BGCs,Cell,Cell):- member(C,BGCs),Cell==C,!.
+fg_shaped(_BGCs,Cell,wfg):- is_fg_color(Cell),!.
+fg_shaped(_BGCs,Cell,Cell).
 %fg_shaped(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
 
 fg_shapes(Shape,VM):-
  must_det_ll((
-  mapgrid(fg_shaped,VM.grid,NewGrid),
-  var(OID),%atomic_list_concat([VM.gid,'_fg_shaped'],OID), asserta(is_grid_tid(NewGrid,OID)),
+  Grid = VM.grid,
+  colors_across(Grid,Silvers),
+  BGCs = [black,wbg,bg|Silvers],
+  mapgrid(fg_shaped(BGCs),Grid,NewGrid),
+  var(OID),
+  atomic_list_concat([VM.gid,'_fg_shaped'],OID), asserta(is_grid_tid(NewGrid,OID)),
   get_vm(VMS), 
   individuate2(_,Shape,OID,NewGrid,FoundObjs),
   set_vm(VMS),
@@ -1407,6 +1441,45 @@ fg_shapes(Shape,VM):-
   remCPoints(VM,ReColored),
   remGPoints(VM,ReColored),
   addInvObjects(VM,ReColored))),!.
+
+colors_across(Grid,Silvers):-
+  findall(C,color2_across(Grid,C),Silvers).
+color2_across(Grid,C):- rot90(Grid,Grid90), color1_across(Grid90,C).
+color2_across(Grid,C):- color1_across(Grid,C).
+color1_across(Grid,C):- enum_fg_colors(C),two_rows(Grid,C,_,_).
+
+two_rows(Grid,S1,R1,R2):-
+  nth1(R1,Grid,[S1|Row1]),nonvar(S1),
+  maplist(==(S1),Row1),
+  nth1(R2,Grid,Row2),
+  R2>R1+1,
+  [S1|Row1]==Row2.
+  
+
+% =====================================================================
+is_fti_step(fg_subtractions).
+% =====================================================================
+%fg_subtractiond(Cell,Cell):- is_bg_color(Cell),!.
+fg_subtractiond(This,Target,black):- This=Target,!.
+fg_subtractiond(Cell,_,Cell).
+%fg_subtractiond(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
+
+fg_subtractions(Subtraction,VM):-
+ ignore((
+ Grid = VM.grid_o,
+ other_grid(Grid,Target), is_grid(Target),!,grid_size(Target,H,V),!,VM.h==H,VM.v==V,
+ must_det_ll((
+  mapgrid(fg_subtractiond,Grid,Target,NewGrid),
+  var(OID),atomic_list_concat([VM.gid,'_fg_subtractiond'],OID), asserta(is_grid_tid(NewGrid,OID)),
+  get_vm(VMS), 
+  individuate2(_,Subtraction,OID,NewGrid,FoundObjs),
+  print_grid(fg_subtractions,FoundObjs),
+  set_vm(VMS),
+  globalpoints_include_bg(VM.grid_o,Recolors),
+  maplist(recolor_object(Recolors),FoundObjs,ReColored),
+  remCPoints(VM,ReColored),
+  remGPoints(VM,ReColored),
+  addInvObjects(VM,ReColored))))),!.
 
 
 

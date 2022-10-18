@@ -15,8 +15,9 @@ saved_group(Why,IndvS):-
 
 is_why_grouped(TestID,Count,Why,IndvS):-
   is_why_grouped_g(TestID,Count,Why,IndvSG),
-  maplist(oid_to_object,IndvSG,IndvS).
+  maplist(must_oid_to_object,IndvSG,IndvS).
 
+must_oid_to_object(ID,O):- must_det_ll(oid_to_object(ID,O)).
 
 save_grouped(Why,G):-
   into_group(G,GS),
@@ -48,14 +49,17 @@ select_group(TestID,Group,How):- select_group0(TestID,Group,How).
 select_group0(TestID,Group,How):-
   ((is_why_grouped(TestID,_,How1,Group1), % dif(Group1,Group2), 
     is_why_grouped(TestID,_,How2,Group2),
+    Group1\==[], Group2\==[],
     Group1\==Group2,
     once((sub_term(E,How1),sub_var(E,How2))),
     %length(Group1,G1), length(Group2,G2), G1>G2,
   once((sub_term(E,How1),sub_var(E,How2))),
   %member(M1,Group1),member(M2,Group2),M1=M2,
   my_append(Group1,Group2,GroupJ), sort(GroupJ,Group),
-  How = [How1,How2]))  *-> true ; is_why_grouped(TestID,_,How,Group).
-select_group0(TestID,Group,obj_cache):- findall(O,obj_cache(TestID,O,_),GroupJ),sort(GroupJ,Group).
+  How = [How1,How2])) 
+    *-> true ; is_why_grouped(TestID,_,How,Group).
+
+select_group0(TestID,Group,obj_cache):- findall(O,obj_cache(TestID,O,_),GroupJ), GroupJ\==[], sort(GroupJ,Group).
 
 :- arc_history(test_what_unique).
 test_what_unique:- get_current_test(TestID), what_unique(TestID,n=0,n>10).
@@ -86,7 +90,7 @@ what_unique(TestID):- get_vm(VM),
    explain_uniqueness(VM2.objs).
 
 what_unique(TestID,Dict):- is_map(Dict),!,what_unique_dict(TestID,Dict).
-what_unique(TestID,Obj):- get_current_test(TestID),select_group(TestID,Group,_How), member(Obj,Group), what_unique(TestID,Obj,Group).
+what_unique(TestID,Obj):- get_current_test(TestID),select_group(TestID,Group,_How), member(Obj,Group), must_det_ll(what_unique(TestID,Obj,Group)).
 what_unique(TestID,Obj,Group):- (is_group(Group);is_object(Obj)),!,what_unique_obj(TestID,Obj,Group).
 what_unique(TestID,CountMask,GroupSizeMask):-
   get_new_uniq_dict(Dict),
