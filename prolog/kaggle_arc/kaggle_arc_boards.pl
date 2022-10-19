@@ -80,10 +80,12 @@ test_deduce_shapes:-
   get_current_test(TestID),
   findall(O,hybrid_shape(TestID,O),List),
   predsort(sort_on(shape_size),List,Set),
-  forall(member(O,Set),(grid_to_norm(O,Ops,N),print_side_by_side(O,N),writeln(Ops))).
+  print_side_by_side(Set),
+  nop(forall(member(O,Set),(grid_to_norm(O,Ops,N),print_side_by_side(O,N),writeln(Ops)))).
 
 
-shape_size(G,H+V+VsC+Cs):- grid_size(G,H,V),term_variables(G,Vs),length(Vs,VsC),colors(G,Cs).
+shape_size(G,H+V+VsC+Cs):- grid_size(G,H,V),term_variables_len(G,VsC),colors(G,Cs).
+term_variables_len(G,VsC):- term_variables(G,Vs),length(Vs,VsC).
 
 individuate_pairs_from_hints(TestID):- 
   arc_assert(individuate_test_grids(TestID)),
@@ -566,6 +568,81 @@ ensure_how(How):- var(How),!,member(How,[nsew,fg_shapes(nsew),colormass,fg_shape
 ensure_how(_How).
 
 
+solves_all_pairs(TestID,P2):- !,
+   easy_solve_by(TestID,P2),
+   kaggle_arc(TestID,tst+0,EI,EO), 
+   call(P2,EI,EM),EM=@=EO,!.
+
+solves_all_pairs(TestID,P2):-
+   easy_solve_by(TestID,P2),
+   findall(call(P2,In,Out),kaggle_arc(TestID,_,In,Out),AllTrue),   
+   nop(maplist(call,AllTrue)),
+   kaggle_arc(TestID,trn+0,TI,TO),
+   try_p2(P2,TI,TO), 
+   kaggle_arc(TestID,tst+0,EI,EO), 
+   try_p2(P2,EI,EO).
+/*
+solves_all_pairs(TestID,P,P2S):- kaggle_arc(TestID,tst+0,_,_), 
+ findall(P2,(easy_solve_by(TestID,P2),
+   findall(try_p2(P2,In,Out),
+     kaggle_arc(TestID,_,In,Out),AllTrue),maplist(call,AllTrue)),[P|P2S]).
+*/
+
+test_easy:- clsmake, forall_count(all_arc_test_name(TestID),test_easy(TestID)).
+
+forall_count(P,Q):-
+  setup_call_cleanup(flag('$fac_t',W,0),
+    setup_call_cleanup(flag('$fac_p',W2,0),
+      forall((P,flag('$fac_t',X,X+1)),
+        ignore(once((Q,flag('$fac_p',Y,Y+1))))),
+      flag('$fac_p',EP,W2)),
+    flag('$fac_t',ET,W)),
+  wdmsg(EP/ET=forall_count(P,Q)).
+        
+
+test_easy(TestID):- 
+  solves_all_pairs(TestID,P2), dash_chars, dmsg(P2), print_test(TestID), dmsg(P2), dash_chars.
+
+
+try_p2(P2,In,Out):- call(P2,In,Mid),Out=@=Mid,!.
+%try_p2(P2,In,Out):- call(P2,In,Out),!.
+%try_p2(P2,In,Out):- call(P2,In,Out),!.
+
+easy_solve_by(TestID,flip_Once(_)):- user:arc_test_property(TestID,common,comp(cbg('black'),i-o,grav_rot),_).
+easy_solve_by(_TestID,P2):- easy1(P2).
+
+easy1(increase_size_by_mass).
+easy1(shrink_grid).
+easy1(X):- easy_sol(X).
+easy1(swap_two_colors(_,_)).
+easy1(grow_4). % 3af2c5a8
+easy1(grow_2). % 963e52fc
+easy1(crop_by(_)).
+easy1(blur(flipV)).
+easy1(double_size).
+easy1(increase_size(4)).
+easy1(flip_Once(_)).
+easy1(two_ops(trim_to_rect,_)). %f25fbde4
+
+% ac0a08a4
+increase_size_by_mass(In,Out):- mass(In,Mass),increase_size(Mass,In,Out).
+
+two_ops(P1,P2,I,O):- once((call(P1,I,M),I\==M)),
+  easy1(P2),P2\=two_ops(_,_),call(P2,M,O).
+
+
+crop_by(HH/H,In,Out):- grid_size(In,H,V),between(1,H,HH),HH<H,clip(1,1,HH,V,In,Out).
+
+grow_4(In,Out):- flipV(In,FlipV),append(In,FlipV,Left),
+   flipH(Left,Right),append_left(Left,Right,Out).
+grow_2(In,Out):- append_left(In,In,Out).
+
+swap_two_colors(Blue,CurrentColor,In,Out):- 
+  enum_fg_colors(Blue),enum_fg_colors(CurrentColor),CurrentColor\==Blue,
+  swap_colors(Blue,CurrentColor,In,Out).
+
+shrink_grid(I,O):- grid_to_norm(I,_,O),!.
+
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,_,Obj),List),list_to_set(List,Objs).
 grid_to_objs(Grid,Objs):- ensure_grid(Grid),individuate(complete,Grid,Objs).
 grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(How),individuate(How,Grid,Objs).
@@ -576,10 +653,10 @@ grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(How),individuate(How,
 
 :- dynamic(hybrid_shape/2).
 % one way to match or find an outlier is compressing things in sets minus one object.. the set that is second to the largest tells you what single object os the most differnt 
-objs_shapes(Objs,In):- get_current_test(TestID),objs_shapes(TestID,Objs,In).
+objs_shapes(Objs,In):- get_current_test(TestID),test_shapes(TestID,Objs,In).
 
-objs_shapes(TestID, Objs,In):- member(Obj,Objs),object_grid(Obj,In),assert_if_new(hybrid_shape(TestID,In)),fail.
-objs_shapes(TestID,_Objs,In):- hybrid_shape(TestID,In).
+test_shapes(TestID, Objs,In):- member(Obj,Objs),object_grid(Obj,In),assert_if_new(hybrid_shape(TestID,In)),fail.
+test_shapes(TestID,_Objs,In):- hybrid_shape(TestID,In).
 
 
 grid_to_obj_other(VM,Grid,O):- other_grid(Grid,Grid2), grid_to_obj_other_grid(VM,Grid,Grid2,O).

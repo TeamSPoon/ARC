@@ -169,6 +169,15 @@ mapgrid(P2,Grid,GridN):- call(P2,Grid,GridN),!.
 mapgrid(P1,Grid):- is_list(Grid),!,maplist(mapgrid(P1),Grid).
 mapgrid(P1,Grid):- call(P1,Grid),!.
 
+
+maplist_ignore(_3,H,I,J):- (H==[];I==[],J==[]),!,(ignore(H=[]),ignore(I=[]),ignore(J=[])).
+maplist_ignore(P3,H,I,J):- \+ is_list(H),!, ignore(call(P3,H,I,J)).
+maplist_ignore(P3,[H|Grid],[I|GridN],[J|GridO]):- maplist_ignore(P3,H,I,J), !,maplist_ignore(P3,Grid,GridN,GridO).
+
+maplist_ignore(_2,H,I):- (H==[];I==[]),!,(ignore(H=[]),ignore(I=[])).
+maplist_ignore(P2,H,I):- \+ is_list(H),!, ignore(call(P2,H,I)).
+maplist_ignore(P2,[H|Grid],[I|GridN]):- maplist_ignore(P2,H,I), !,maplist_ignore(P2,Grid,GridN).
+
 subst_1L([],Term,Term):-!.
 subst_1L([X-Y|List], Term, NewTerm ) :-
   subst0011(X, Y, Term, MTerm ),

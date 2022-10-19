@@ -44,6 +44,12 @@ catch_nolog(G):- ignore(catch(notrace(G),E,nop(wdmsg(E=G)))).
 :- dynamic(fav/2).
 :- export(fav/2).
 
+
+:- multifile(easy_sol/1).
+:- discontiguous(easy_sol/1).
+:- dynamic(easy_sol/1).
+:- export(easy_sol/1).
+
 :- multifile(user:portray/1).
 :- dynamic(user:portray/1).
 :- discontiguous(user:portray/1).

@@ -248,7 +248,7 @@ do_test_pred(E):-
   get_current_grid(G),
   set_flag(indiv,0), 
   wdmsg(do_test_pred(E)),
-  my_submenu_call(no_bfly(maybe_test(E,G))),!.
+  my_time(my_submenu_call(no_bfly(maybe_test(E,G)))),!.
 
 maybe_test(E,_):- \+ missing_arity(E,0), !, call(E).
 maybe_test(E,G):- \+ missing_arity(E,1), call(E,G),!.

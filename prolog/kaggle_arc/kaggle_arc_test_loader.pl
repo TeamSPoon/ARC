@@ -630,6 +630,14 @@ d5d6de2d
 b8825c91
 d13f3404
 feca6190
+4938f0c2
+8eb1be9a
+eb281b96
+91413438
+a5f85a15
+97999447
+6d75e8bb
+63613498
 ').
 
 % Training Tasks (74)
@@ -708,7 +716,13 @@ dc0a314f
 0dfd9992
 484b58aa
 c3f564a4
+d10ecb37
 2dc579da
+b8cdaf2b
+1190e5a7
+3aa6fb7a
+60b61512
+3618c87e
 ').
 
 % Evaluation Tasks (56)
@@ -769,5 +783,8 @@ e95e3d8e
 d56f2372
 903d1b4a
 981571dc
+42a15761
+770cc55f
 e5790162
-27a77e38').
+27a77e38
+').

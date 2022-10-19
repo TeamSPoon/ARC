@@ -1127,3 +1127,35 @@ Test[
     ,
     TestID -> "ARCWorkingQ-20221008-0YPYXH"
 ]
+
+Test[
+    Daniel`ARC`ARCWorkingQ["a5f85a15"]
+    ,
+    True
+    ,
+    TestID -> "ARCWorkingQ-20221011-CUKMIE"
+]
+
+Test[
+    Daniel`ARC`ARCWorkingQ["97999447"]
+    ,
+    True
+    ,
+    TestID -> "ARCWorkingQ-20221013-CLE0T4"
+]
+
+Test[
+    Daniel`ARC`ARCWorkingQ["6d75e8bb"]
+    ,
+    True
+    ,
+    TestID -> "ARCWorkingQ-20221014-MYRHAE"
+]
+
+Test[
+    Daniel`ARC`ARCWorkingQ["63613498"]
+    ,
+    True
+    ,
+    TestID -> "ARCWorkingQ-20221017-JGK58D"
+]

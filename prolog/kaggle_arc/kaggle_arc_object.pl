@@ -217,8 +217,10 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
 
   make_grid(Width,Height,Grid),
   add_global_points(LPoints,Grid,Grid),
+  once(member(grid(LocalGrid),Overrides);LocalGrid=Grid),
 
-  once(member(grid(LocalGrid),Overrides);make_grid(Width,Height,LocalGrid)),
+
+  get_current_test(TestID), assert_if_new(hybrid_shape(TestID,LocalGrid)),
 
   % calc center
   must_det_ll(once(

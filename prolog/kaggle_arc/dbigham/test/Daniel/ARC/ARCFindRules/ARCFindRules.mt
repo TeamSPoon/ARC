@@ -3608,3 +3608,54 @@ Test[
     ,
     TestID -> "ARCFindRules-20221008-K3GJ6I"
 ]
+
+Test[
+    Daniel`ARC`ARCSimplifyRules[
+        Daniel`ARC`ARCFindRules[Daniel`ARC`ARCParseFile[file = "a5f85a15"]["Train"]]
+    ]
+    ,
+    {
+        <||> -> <|
+            "Shape" -> <|
+                "Name" -> "Line",
+                "Angle" -> 135,
+                "Fill" -> {Daniel`ARC`ObjectValue[<|"X" -> 1|>, "Color"], 4}
+            |>
+        |>
+    }
+    ,
+    TestID -> "ARCFindRules-20221011-N2JMIN"
+]
+
+Test[
+    Daniel`ARC`ARCSimplifyRules[
+        Daniel`ARC`ARCFindRules[Daniel`ARC`ARCParseFile[file = "6d75e8bb"]["Train"]]
+    ]
+    ,
+    {<||> -> <|"Transform" -> <|"Type" -> "ColorMapping", "Mapping" -> {{-1, 2}}|>|>}
+    ,
+    TestID -> "ARCFindRules-20221014-RVMNV8"
+]
+
+Test[
+    Daniel`ARC`ARCSimplifyRules[
+        Daniel`ARC`ARCFindRules[Daniel`ARC`ARCParseFile[file = "63613498"]["Train"]]
+    ]
+    ,
+    <|
+        "FormMultiColorCompositeObjects" -> False,
+        "Rules" -> {
+            <|
+                "MonochromeImage" -> Daniel`ARC`ObjectValue[
+                    <|"Within" -> Daniel`ARC`Object[<|"Colors" -> {5}|>]|>,
+                    "MonochromeImage"
+                ],
+                "Except" -> <|"Within" -> Daniel`ARC`Object[<|"Colors" -> {5}|>]|>
+            |> -> <|
+                "Color" -> 5
+            |>
+        }
+    |>
+    ,
+    TestID -> "ARCFindRules-20221017-QK38XC"
+]

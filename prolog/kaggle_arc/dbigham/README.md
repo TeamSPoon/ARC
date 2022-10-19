@@ -8,24 +8,20 @@ https://github.com/fchollet/ARC
 
 ## Percentage of Tasks Passing
 
-* Training tasks: 150 / 400 (37.5%)\
+* Training tasks: 160 / 400 (40%)\
   ![Percentage of Training Tasks Passing](TrainingTasksProgressBar.png?raw=true)
-  * Implemented: 76
-  * Passing via generalization: 74
-* Evaluation tasks: 57 / 400 (14.2%)\
+  * Implemented: 80
+  * Passing via generalization: 80
+* Evaluation tasks: 58 / 400 (14.5%)\
   ![Percentage of Evaluation Tasks Passing](EvaluationTasksProgressBar.png?raw=true)
 
 ## Progress over Time
 
 ![Graph of Progress](Progress.png?raw=true)
 
-## Comparison with Kaggle Competitors
-
-![Comparison with Kaggle Competitors](ComparisonWithKaggleCompetitors.png?raw=true)
-
 ## Tasks Implemented
 
-### Core ARC Training Tasks (76)
+### Core ARC Training Tasks (80)
 
 * [0ca9ddb6](TaskNotes/0ca9ddb6/notes.md)
 * [3c9b0459](TaskNotes/3c9b0459/notes.md)
@@ -52,12 +48,12 @@ https://github.com/fchollet/ARC
 * [1f876c06](TaskNotes/1f876c06/notes.md)
 * [22eb0ac0](TaskNotes/22eb0ac0/notes.md)
 * [746b3537](TaskNotes/746b3537/notes.md)
-* [6f8cd79b](TaskNotes/6F8CD79B/notes.md)
-* [72ca375d](TaskNotes/72CA375D/notes.md)
-* [a79310a0](TaskNotes/A79310A0/notes.md)
+* [6f8cd79b](TaskNotes/6f8cd79b/notes.md)
+* [72ca375d](TaskNotes/72ca375d/notes.md)
+* [a79310a0](TaskNotes/a79310a0/notes.md)
 * [40853293](TaskNotes/40853293/notes.md)
 * [95990924](TaskNotes/95990924/notes.md)
-* [be94b721](TaskNotes/BE94B721/notes.md)
+* [be94b721](TaskNotes/be94b721/notes.md)
 * [ed36ccf7](TaskNotes/ed36ccf7/notes.md)
 * [a740d043](TaskNotes/a740d043/notes.md)
 * [b9b7f026](TaskNotes/b9b7f026/notes.md)
@@ -103,6 +99,10 @@ https://github.com/fchollet/ARC
 * [8eb1be9a](TaskNotes/8eb1be9a/notes.md)
 * [eb281b96](TaskNotes/eb281b96/notes.md)
 * [91413438](TaskNotes/91413438/notes.md)
+* [a5f85a15](TaskNotes/a5f85a15/notes.md)
+* [97999447](TaskNotes/97999447/notes.md)
+* [6d75e8bb](TaskNotes/6d75e8bb/notes.md)
+* [63613498](TaskNotes/63613498/notes.md)
 
 ### Personally Created Training Tasks (15)
 
@@ -124,7 +124,7 @@ https://github.com/fchollet/ARC
 
 ## Tasks Passing via Generalization
 
-### Training Tasks (74)
+### Training Tasks (80)
 
 The following ARC training tasks started passing after some different task was implemented.
 
@@ -201,9 +201,15 @@ The following ARC training tasks started passing after some different task was i
 * [0dfd9992](TaskNotes/0dfd9992/notes.md)
 * [484b58aa](TaskNotes/484b58aa/notes.md)
 * [c3f564a4](TaskNotes/c3f564a4/notes.md)
+* d10ecb37
 * [2dc579da](TaskNotes/2dc579da/notes.md)
+* [b8cdaf2b](TaskNotes/b8cdaf2b/notes.md)
+* [1190e5a7](TaskNotes/1190e5a7/notes.md)
+* [3aa6fb7a](TaskNotes/3aa6fb7a/notes.md)
+* [60b61512](TaskNotes/60b61512/notes.md)
+* 3618c87e
 
-### Evaluation Tasks (57)
+### Evaluation Tasks (58)
 
 The following ARC evaluation tasks are passing. My intention is to not analyzed or implemented evaluation examples specifically, but I have implemented a few accidentally.
 
@@ -213,7 +219,7 @@ The following ARC evaluation tasks are passing. My intention is to not analyzed 
 * [fc754716](TaskNotes/fc754716/notes.md)
 * [e21a174a](TaskNotes/e21a174a/notes.md)
 * [070dd51e](TaskNotes/070dd51e/notes.md)
-* [1a2e2828](TaskNotes/1A2E2828/notes.md)
+* [1a2e2828](TaskNotes/1a2e2828/notes.md)
 * [64a7c07e](TaskNotes/64a7c07e/notes.md)
 * [ae58858e](TaskNotes/ae58858e/notes.md)
 * [37d3e8b2](TaskNotes/37d3e8b2/notes.md)
@@ -262,5 +268,6 @@ The following ARC evaluation tasks are passing. My intention is to not analyzed 
 * [903d1b4a](TaskNotes/903d1b4a/notes.md)
 * [981571dc](TaskNotes/981571dc/notes.md)
 * [42a15761](TaskNotes/42a15761/notes.md)
+* [770cc55f](TaskNotes/770cc55f/notes.md)
 * [e5790162](TaskNotes/e5790162/notes.md)
 * [27a77e38](TaskNotes/27a77e38/notes.md)

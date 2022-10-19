@@ -181,12 +181,21 @@ trim_to_square(G0,G9):- get_bgc(BG),
   trim_unused_vert_square(_,G1,Grid90):- rot90(G1,Grid90).
 
 
+trim_v_repeats(G0,G9):- \+ is_list(G0),into_grid(G0,G1),!,trim_v_repeats(G1,G9).
+trim_v_repeats(G0,G9):- append(L,[R1,R2|R],G0),R1==R2,append(L,[R1|R],G5),!,trim_v_repeats(G5,G9).
+trim_v_repeats(G0,G0).
+
+trim_h_repeats(G0,G9):- \+ is_list(G0),into_grid(G0,G1),!,trim_h_repeats(G1,G9).
+trim_h_repeats(G0,G9):- rot90(G0,G5),trim_v_repeats(G5,G8),rot270(G8,G9).
+
+easy_sol(trim_blank_lines).
+trim_blank_lines(G0,G9):- into_grid(G0,G8), get_bgc(BG), remove_color(BG,G8,G9).
  
-trim_to_rect(G0,G9):- into_grid(G0,G),trim_grid_to_rect(G,G9).
-trim_grid_to_rect(G,G9):-
- get_bgc(BG),
- trim_unused_vert(BG,G,G1),rot90(G1,G2),trim_unused_vert(BG,G2,G3),rot270(G3,G8),
- remove_color(BG,G8,G9).
+easy_sol(trim_hv_repeats).
+trim_hv_repeats(G0,G9):- trim_v_repeats(G0,G1),rot90(G1,G5),trim_v_repeats(G5,G8),rot270(G8,G9).
+
+easy_sol(trim_to_rect).
+trim_to_rect(G0,G8):- into_grid(G0,G),trim_unused_vert(BG,G,G1),rot90(G1,G2),trim_unused_vert(BG,G2,G3),rot270(G3,G8).
 
   trim_unused_vert(_,[],[]):-!.
   trim_unused_vert(BG,[Row|Grid],GridO):- maplist(is_bg_or_var(BG),Row),!,trim_unused_vert(BG,Grid,GridO).

@@ -1417,13 +1417,15 @@ save_codes(Max):-
   \+ between(42560,42600,Code),
   %%check_dot_spacing(Code),
   %(42600 > Code),
-   is_single_char_ifiable(Code),
+   is_single_char_ifiable_quiet(Code),
   \+ resrv_dot(Code)
    
    % ignore((0 is Code mod 50, format(File,'\n\n~d:',[Code]), put_code(File,Code))),
   ),put_code(Code))))),
   sort(CCC,CCCO),
   assertz(iss:i_syms(CCCO))))).
+
+is_single_char_ifiable_quiet(Code):- with_output_to(string(S),put(Code)),sformat(SS,'~q',[S]),!, atom_length(SS,3),!.
 
 is_single_char_ifiable(Code):- with_output_to(string(S),put(Code)),sformat(SS,'~q',[S]),!,is_single_char_ifiable(Code,SS).
 is_single_char_ifiable(_,SS):- atom_length(SS,3),!.
@@ -1433,7 +1435,6 @@ test_is_single_char_ifiable:-
  retract(iss:i_syms(CCC)), 
  include(is_single_char_ifiable,CCC,CCCO),
  assert(iss:i_syms(CCCO)).
-
 
 is_html_ifiable(Code):- sformat(S,'~@',[as_html_encoded(put_code(Code))]), atom_length(S,1),!.
 is_html_ifiable(Code):- format('~@',[as_html_encoded(put_code(Code))]),!,fail.

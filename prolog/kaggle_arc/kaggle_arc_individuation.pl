@@ -266,17 +266,6 @@ du_ud(u,d).
 
 individuation_macros(jumps,
   [ %progress, 
-
-
-
-
-
-
-
-
-
-
-
     jumps(hv_line(h)), % multicolored lines
     jumps(hv_line(v)),
     jumps(dg_line(d)), % multicolored diagonals
@@ -391,11 +380,12 @@ im_complete(ListO):-
 
   
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
+individuator(i_hybrid_shapes,[find_hybrid_shapes]).
 individuator(i_maybe_glypic,[maybe_glyphic]).
 %individuator(i_columns,[when(get(h)=<5,columns)]). %:- \+ doing_pair.
 %individuator(i_rows,[when(get(v)=<5,rows)]). %:- \+ doing_pair.
 individuator(i_n_w,[n_w,all_lines,do_ending]).
-individuator(i_subtractions,[fg_subtractions(fg_shapes(i_n_w))]).
+individuator(i_subtractions,[fg_subtractions([save_as_objects(i_mono_n_w),save_as_objects(i_n_w)])]).
 individuator(i_mono_n_w,[fg_shapes(i_n_w)]).
 %individuator(i_repair_mirrors,[repair_in_vm(find_symmetry_code)]).
 %individuator(i_mono_colormass,[fg_shapes([subshape_both(v,[n_w,all_lines,diamonds])])]).
@@ -661,6 +651,40 @@ grid_to_obj_other(VM):-
   Grid= VM.grid_o,
   forall(grid_to_obj_other(Grid,VM,_O),true).
 
+% =====================================================================
+is_fti_step(find_hybrid_shapes).
+% =====================================================================
+find_hybrid_shapes(VM):-
+ ignore((
+  get_current_test(TestID),
+  findall(O,hybrid_shape(TestID,O),List),
+  List\==[],
+  length(List,HL),!,
+  print_grid(hybrid_shape(HL,TestID,VM.gid),VM.grid),!,
+  maplist(release_bg,List,FGList),
+  % maplist(=,List,FGList),
+  predsort(sort_on(term_variables_len),FGList,Set),
+  maplist(print_grid,Set),!,
+ nop(( hybrid_shape_from(Set,VM))))).
+
+
+release_bg(List,FGList):- is_list(List),!,maplist(release_bg,List,FGList).
+release_bg(Point,_):- is_bg_color(Point),!.
+release_bg(Point,Point).
+
+hybrid_shape_from(Set,VM):-
+  Grid = VM.grid,
+  member(In,Set),
+  In\=[[_]],
+  maybe_ogs_color(R,OH,OV,In,Grid), 
+  localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints), 
+  %indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
+  make_indiv_object(VM,[],GOPoints,_Colored),
+  remCPoints(VM,GOPoints),
+  remGPoints(VM,GOPoints),
+  hybrid_shape_from(Set,VM).
+hybrid_shape_from(_,_).
+
 
 % =====================================================================
 is_fti_step(label_sizes).
@@ -799,11 +823,12 @@ individuate(ROptions,GridIn,IndvS):- individuate1(_,ROptions,GridIn,IndvS).
 individuate1(_, ROptions,VM,LF):- is_map(VM),!, individuate1(VM, ROptions, VM.grid, LF).
 individuate1(VM,ROptions,GridIn,IndvS):- \+ is_grid(GridIn), into_grid(GridIn,Grid),!,individuate1(VM,ROptions,Grid,IndvS).
 individuate1(VM,ROptions,GridIn,IndvS):- 
-  grid_to_gid(GridIn,OID), 
+  must_grid_to_gid(GridIn,OID), !,
   individuate2(VM,ROptions,OID,GridIn,IndvS),
   once((delistify_single_element(ROptions,NamedOpts),
         save_grouped(individuate(OID,NamedOpts),IndvS))).
 
+must_grid_to_gid(GridIn,OID):- must_det_ll(grid_to_gid(GridIn,OID)).
 
 allow_out_in :- fail.
 
@@ -836,7 +861,7 @@ doing_pair:- nb_current(doing_pair,t).
 
 individuate_two_grids(ROptions,Grid1,Grid2,IndvSI,IndvSO):- 
   delistify_single_element(ROptions,NamedOpts),
-  grid_to_gid(Grid1,OID1), grid_to_gid(Grid2,OID2),
+  must_grid_to_gid(Grid1,OID1), must_grid_to_gid(Grid2,OID2),
   locally(nb_setval(doing_pair,t),
     collapsible_section(individuate_two_grids_once(two(OID1,OID2),NamedOpts,Grid1,Grid2,IndvSI,IndvSO))).
 
@@ -929,7 +954,7 @@ individuate_two_grids_now_X(OID1OID2,ROptions,Grid1,Grid2,VM1,VM2,Grid1X,Grid2X,
   set(VM2.robjs) = Objs1,
   do_individuate(VM2,ROptions,Grid2X,Objs2),!,
 
-  grid_to_gid(Grid1,OID1),grid_to_gid(Grid2,OID2),
+  must_grid_to_gid(Grid1,OID1),must_grid_to_gid(Grid2,OID2),
 
   into_fti(ID1,ROptions,Grid1X,VM1X), set(VM1X.grid_target) = Grid2, set(VM1X.robjs) = Objs2,    
   individuate2(VM1X,ROptions,OID1,Grid1X,Objs1X),!,
@@ -940,15 +965,16 @@ individuate_two_grids_now_X(OID1OID2,ROptions,Grid1,Grid2,VM1,VM2,Grid1X,Grid2X,
   into_iog(Objs1X,Objs2X,IndvS),
   save_grouped(individuate(OID1OID2,ROptions),IndvS))).
 
-individuate2(VM,[ROptions],OID,Grid,IndvS):- !, nonvar(ROptions), individuate2(VM,ROptions,OID,Grid,IndvS).
+individuate2(VM,[ROptions],OID,Grid,IndvS):- nonvar(ROptions), !, individuate2(VM,ROptions,OID,Grid,IndvS).
 individuate2(_VM,ROptions,OID,_GridIn,IndvS):- nonvar(OID), 
-  get_individuated_cache(ROptions,OID,IndvS),length(IndvS,Len),pp(yellow,oid_cached(ROptions,OID,len(Len),'$VAR'(Len))),!.
-individuate2(VM,ROptions,OID,GridIn,IndvS):- 
+  get_individuated_cache(ROptions,OID,IndvS),!,
+  length(IndvS,Len),pp(yellow,oid_cached(ROptions,OID,len(Len),'$VAR'(Len))),!.
+individuate2(VM,ROptions,OID,GridIn,IndvS):-
   do_individuate(VM,ROptions,GridIn,IndvS),!,
-  length(IndvS,Len),
-  ignore((nonvar(OID),retractall(individuated_cache(OID,ROptions,_)), 
-          pp(yellow,oid_created(ROptions,OID,len(Len),'$VAR'(Len))),
-          my_asserta_if_new(individuated_cache(OID,ROptions,IndvS)))),!.
+  fif(nonvar(OID),
+   (retractall(individuated_cache(OID,ROptions,_)), 
+    length(IndvS,Len),pp(yellow,oid_created(ROptions,OID,len(Len),'$VAR'(Len))),
+    my_asserta_if_new(individuated_cache(OID,ROptions,IndvS)))),!.
 
 oid_created(ROptions,OID,len(_Len),IndvS):- saved_group(individuate(OID,ROptions),IndvS).
 oid_cached(ROptions,OID,len(_Len),IndvS):- saved_group(individuate(OID,ROptions),IndvS).
@@ -1012,7 +1038,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
 
   max_min(H,V,MaxM,_),
   max_min(12,MaxM,Max,_),
-  grid_to_gid(Grid,OID),
+  must_grid_to_gid(Grid,OID),
 
   listify(ROptions,OOptions),
   Area is H*V,
@@ -1426,8 +1452,13 @@ fg_shaped(_BGCs,Cell,Cell).
 %fg_shaped(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
 
 fg_shapes(Shape,VM):-
+ ignore((
+ VMGID = VM.gid,
+ \+ atom_contains(VMGID,'_fg_shaped'),
+
  must_det_ll((
   Grid = VM.grid,
+
   colors_across(Grid,Silvers),
   BGCs = [black,wbg,bg|Silvers],
   mapgrid(fg_shaped(BGCs),Grid,NewGrid),
@@ -1440,7 +1471,7 @@ fg_shapes(Shape,VM):-
   maplist(recolor_object(Recolors),FoundObjs,ReColored),
   remCPoints(VM,ReColored),
   remGPoints(VM,ReColored),
-  addInvObjects(VM,ReColored))),!.
+  addInvObjects(VM,ReColored))))),!.
 
 colors_across(Grid,Silvers):-
   findall(C,color2_across(Grid,C),Silvers).
@@ -1461,22 +1492,31 @@ is_fti_step(fg_subtractions).
 % =====================================================================
 %fg_subtractiond(Cell,Cell):- is_bg_color(Cell),!.
 fg_subtractiond(This,Target,black):- This=Target,!.
-fg_subtractiond(Cell,_,Cell).
+fg_subtractiond(Cell,_,Cell):- ignore(Cell=black).
 %fg_subtractiond(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
 
 fg_subtractions(Subtraction,VM):-
  ignore((
+ VMGID = VM.gid,
+ \+ atom_contains(VMGID,'_fg_subtractiond'),
  Grid = VM.grid_o,
- other_grid(Grid,Target), is_grid(Target),!,grid_size(Target,H,V),!,VM.h==H,VM.v==V,
+ other_grid(Grid,Target), 
+ is_grid(Target),!,
+ grid_size(Target,H,V),!,VM.h==H,VM.v==V,
+ maplist_ignore(fg_subtractiond,Grid,Target,NewGrid),mass(NewGrid,M),mass(Grid,M2),!,
+ M>4,M2\==M,Grid\==Target,NewGrid\==Grid,
+
+ %(M==0->maplist_ignore(fg_subtractiond,Target,Grid,NewGrid); MNewGrid=NewGrid),
  must_det_ll((
-  mapgrid(fg_subtractiond,Grid,Target,NewGrid),
-  var(OID),atomic_list_concat([VM.gid,'_fg_subtractiond'],OID), asserta(is_grid_tid(NewGrid,OID)),
+  var(OID),atomic_list_concat([VMGID,'_fg_subtractiond'],OID), asserta(is_grid_tid(NewGrid,OID)),
   get_vm(VMS), 
-  individuate2(_,Subtraction,OID,NewGrid,FoundObjs),
-  print_grid(fg_subtractions,FoundObjs),
+  %individuate2(_,Subtraction,OID,NewGrid,FoundObjs),
+  individuate(Subtraction,NewGrid,FoundObjs),
   set_vm(VMS),
-  globalpoints_include_bg(VM.grid_o,Recolors),
-  maplist(recolor_object(Recolors),FoundObjs,ReColored),
+  ReColored = FoundObjs,
+  %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
+  print_grid(fg_subtractions(OID),NewGrid),
+  print_side_by_side(ReColored),
   remCPoints(VM,ReColored),
   remGPoints(VM,ReColored),
   addInvObjects(VM,ReColored))))),!.
