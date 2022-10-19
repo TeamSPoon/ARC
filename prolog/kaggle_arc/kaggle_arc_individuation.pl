@@ -363,7 +363,7 @@ sub_individuation_macro(S,Some):-
 individuation_macros(complete, ListO):- im_complete(ListO).
 
 
-im_complete(save_as_objects(complete,ListO)):- test_config(indiv(ListO)),!.
+im_complete(ListO):- test_config(indiv(ListO)),!.
 %im_complete(ListO):- ListO=[n_w,all_lines,diamonds,do_ending].
 
 im_complete(ListO):-
@@ -385,8 +385,8 @@ individuator(i_maybe_glypic,[maybe_glyphic]).
 %individuator(i_columns,[when(get(h)=<5,columns)]). %:- \+ doing_pair.
 %individuator(i_rows,[when(get(v)=<5,rows)]). %:- \+ doing_pair.
 individuator(i_n_w,[n_w,all_lines,do_ending]).
-individuator(i_subtractions,[fg_subtractions([save_as_objects(i_mono_n_w),save_as_objects(i_n_w)])]).
-individuator(i_mono_n_w,[fg_shapes(i_n_w)]).
+individuator(i_subtractions,[fg_subtractions([save_as_objects(i_mono),save_as_objects(i_n_w)])]).
+individuator(i_mono,[fg_shapes(i_n_w)]).
 %individuator(i_repair_mirrors,[repair_in_vm(find_symmetry_code)]).
 %individuator(i_mono_colormass,[fg_shapes([subshape_both(v,[n_w,all_lines,diamonds])])]).
 % individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).

@@ -613,22 +613,26 @@ easy_solve_by(_TestID,P2):- easy1(P2).
 
 easy1(increase_size_by_mass).
 easy1(shrink_grid).
-easy1(X):- easy_sol(X).
-easy1(swap_two_colors(_,_)).
-easy1(grow_4). % 3af2c5a8
-easy1(grow_2). % 963e52fc
-easy1(crop_by(_)).
-easy1(blur(flipV)).
-easy1(double_size).
-easy1(increase_size(4)).
-easy1(flip_Once(_)).
+easy1(X):- easy2(X).
 easy1(two_ops(trim_to_rect,_)). %f25fbde4
+easy1(two_ops(two_ops(trim_to_rect,flip_Once(_)),_)).
+
+easy2(X):- easy_sol(X).
+easy2(flip_Once(_)).
+easy2(swap_two_colors(_,_)).
+easy2(grow_4). % 3af2c5a8
+easy2(grow_2). % 963e52fc
+easy2(crop_by(_)).
+easy2(blur(flipV)).
+easy2(double_size).
+easy2(increase_size(4)).
+
 
 % ac0a08a4
 increase_size_by_mass(In,Out):- mass(In,Mass),increase_size(Mass,In,Out).
 
 two_ops(P1,P2,I,O):- once((call(P1,I,M),I\==M)),
-  easy1(P2),P2\=two_ops(_,_),call(P2,M,O).
+  easy2(P2),P2\=two_ops(_,_),call(P2,M,O),M\==O.
 
 
 crop_by(HH/H,In,Out):- grid_size(In,H,V),between(1,H,HH),HH<H,clip(1,1,HH,V,In,Out).
