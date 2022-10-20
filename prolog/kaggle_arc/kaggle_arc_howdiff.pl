@@ -253,7 +253,10 @@ obj_plist(PA,PAP):- is_list(PA),!,PAP=PA.
 obj_plist(obj(PA),PAP):- is_list(PA),!,PAP=PA.
 %obj_plist(obj(PA,PAP):- indv_props(PA,PAP),!.
 
-sub_obj_atom(M,M):- var(M),!,fail.
+avoid_matching(o(_,_,i_maybe_glypic)).
+
+sub_obj_atom(_,M):- var(M),!,fail.
+sub_obj_atom(_,M):- avoid_matching(M),!,fail.
 %sub_obj_atom(M,M):- attvar(M),!.
 %sub_obj_atom(A,A).
 sub_obj_atom(M,M):- \+ compound(M),!.
@@ -333,23 +336,28 @@ showdiff_arg1(Peers1,Obj1,Peers2,Obj2):-
   objs_to_io(Obj1,Obj2,I1,O1),
   printing_diff(I1,O1),
   ((Obj1==I1) -> (PeersI = Peers11,PeersO = Peers22) ; (PeersI = Peers22,PeersO = Peers11)),
-
+  
   indv_props(I1,T1),indv_props(O1,T2),
+  remove_giz(T1,S1),remove_giz(T2,S2),
+  intersection(S1,S2,Sames,IA,OA),
+  pp(sames=Sames),
+  object_props_diff(IA,OA,Diffs),
+  pp(diffs=Diffs),
+  forall(uniq_prop(PeersI,I1,Prop),pp(uniq=Prop)),
   %link_prop_types(loc,I1,O1,_LOCS),
-  fif(
-      (\+ (member(P,T1),skip_object(P)), \+ (member(P,T2),skip_object(P))),
-   ((
-  %indv_props(I1,S1),indv_props(O1,S2),
-  get_current_test(TestID), 
-  ignore(what_unique(TestID,I1)),
-  %what_unique(TestID,O1),
-  forall(uniq_prop(PeersI,I1,Prop),writeln(Prop)),
-  fif(nb_current(menu_key,'u'),
-    forall(uniq_prop(PeersI,I1,Prop),
-      add_prop_rule(Prop,I1,O1)))))))).
+  fif( (\+ (member(P,T1),skip_object(P)), 
+        \+ (member(P,T2),skip_object(P))),
+   ((get_current_test(TestID), 
+      ignore(what_unique(TestID,I1)),
+      %what_unique(TestID,O1),
+     forall(uniq_prop(PeersI,I1,Prop),writeln(Prop)),
+      fif(nb_current(menu_key,'u'),
+        forall(uniq_prop(PeersI,I1,Prop),
+          add_prop_rule(Prop,I1,O1)))))))).
 
 uniq_prop(PeersI,obj(Props),P):-  
   member(P,Props),
+    \+ skip_uniq(P),
     once(uniq(P) ; ( \+ skip_prop(P), \+ sub_var(P,PeersI))).
 
 skip_object(pen([cc(black,_)])).
@@ -359,7 +367,9 @@ uniq(o(lf(N),N,_)). % Indicates Smallest
 
 skip_prop(P):- \+  not_giz(P).
 skip_prop(P):- prop_type(loc,P).
-skip_prop(o(_,nil,_)).
+
+skip_uniq(o(_,nil,_)).
+skip_uniq(o(_,_,maybe_glyphic)).
 
 add_prop_rule(Prop,_,_):- skip_prop(Prop),!.
 add_prop_rule(Prop,I1,O1):-

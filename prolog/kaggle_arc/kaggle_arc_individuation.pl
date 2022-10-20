@@ -686,7 +686,7 @@ hybrid_shape_from(Set,VM):-
  Grid = VM.grid,
  member(In,Set),
  maybe_ogs_color(R,OH,OV,In,Grid),
- wdmsg(maybe_ogs_color(R,OH,OV,In,Grid)),
+ %wdmsg(maybe_ogs_color(R,OH,OV,In,Grid)),
  localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints), 
  length(VM.points,PL),
  remGPoints(VM,GOPoints),

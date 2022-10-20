@@ -368,6 +368,9 @@ strip_vspace(S,S).
 
 print_nl(P):- format('~N~t'),pp_msg_color(P,C), ansicall(C,pp_no_nl(P)),nl_if_needed.
 
+color_write(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+color_write(P):- pp_msg_color(P,C), ansicall(C,write(P)).
+
 pp_msg_color(P,C):- compound(P),pc_msg_color(P,C),!.
 pp_msg_color(P,C):- must_det_ll(mesg_color(P,C)).
 pc_msg_color(iz(P),C):- pp_msg_color(P,C).
@@ -378,18 +381,24 @@ pc_msg_color(diff(P),C):- pp_msg_color(P,C).
 wots_vs(SS,G):- wots(S,G),strip_vspace(S,SS).
 
 
+wqs_l([]).
+wqs_l([H|T]):- wqs(H), write_nbsp, wqs_l(T).
+
+
 wqs(P):- pp_msg_color(P,C), ansicall(C,wqs0(P)),!.
 
 wqs0(X):- plain_var(X), !, wqs(plain_var(X)). 
 wqs0(G):- is_map(G), !, write_map(G,'wqs').
-wqs0(X):- attvar(X), !, wqs(attvar(X)). 
+wqs0(X):- attvar(X), !, wqs(attvar(X)).
+wqs0([H|T]):- is_list(T), string(H), !, wqs_l([H|T]).
 wqs0([H|T]):- is_list(T), !, wqs(H),need_nl(H,T), wqs(T).
 wqs0(nl):- !, nl. wqs0(''):-!. wqs0([]):-!.
 wqs0(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 wqs0(X):- is_object(X), tersify1(X,Q), X\==Q,!, wqs(Q).
 wqs0(X):- is_object(X), show_shape(X),!.
 wqs0(X):- is_grid(X), !, print_grid(X).
-wqs0(X):- string(X), !, catch(format(X),_,write(X)).
+wqs0(X):- string(X), atom_contains(X,'~'), catch((sformat(S,X,[]),color_write(S)),_,fail),!.
+wqs0(X):- string(X), !, color_write(X).
 %wqs([H1,H2|T]):- string(H1),string(H2),!, write(H1),write_nbsp, wqs([H2|T]).
 %wqs([H1|T]):- string(H1),!, write(H1), wqs(T).
 wqs0([skip(_)|T]):- !,wqs(T).
@@ -407,8 +416,12 @@ as_arg_str(C,S):- wots_vs(S,print(C)).
 arg_string(S):- string(S),!.
 arg_string(S):- term_contains_ansi(S),!.
 
-wqs1(format(C,N)):- !, format(C,N).
+wqs1(C):- \+ compound(C),!,wqs0(C).
+wqs1(format(C,N)):- catch((sformat(S,C,N),color_write(S)),_,fail),!.
 wqs1(writef(C,N)):- !, writef(C,N).
+wqs1(q(C)):-  \+ arg_string(C),wots(S,writeq(C)),color_write(S).
+wqs1(g(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs(C))),wqs(g(S)).
+wqs1(b(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs(C))),color_write(S).
 wqs1(norm(C)):- writeq(norm(C)),!.
 wqs1(S):- term_contains_ansi(S), !, write_nbsp, print(S).
 wqs1(pp(C)):- \+ arg_string(C), wots_vs(S,pp(C)),wqs(pp(S)).
@@ -416,9 +429,7 @@ wqs1(pp(C)):- \+ arg_string(C), wots_vs(S,pp(C)),wqs(pp(S)).
 wqs1(vals(C)):- writeq(vals(C)),!.
 %wqs1(colors(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(colorsz(S)).
 wqs1(ppt(C)):- \+ arg_string(C), wots_vs(S,ppt(C)),wqs(ppt(S)).
-wqs1(g(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs(C))),wqs(g(S)).
 wqs1(io(C)):-  \+ arg_string(C),wots_vs(S,bold_print(wqs(C))),wqs(io(S)).
-wqs1(q(C)):-  \+ arg_string(C),wots(S,writeq(C)),wqs(q(S)).
 
 wqs1(uc(C,W)):- !, write_nbsp, color_print(C,call(underline_print(format("\t~@",[wqs(W)])))).
 wqs1(cc(C,N)):- is_color(C),!,color_print(C,call(writeq(cc(C,N)))).
@@ -1397,6 +1408,7 @@ into_color_glyph(N,C,DOT):- is_spec_fg_color(N,C),fg_dot(DOT).
 into_color_glyph(N,C,DOT):- is_fg_color(N),N=C,fg_dot(DOT).
 into_color_glyph(N,C,DOT):- is_bg_color(N),C=N,bg_dot(DOT).
 into_color_glyph(N,C,DOT):- cant_be_color(N,C),cant_be_dot(DOT).
+into_color_glyph(Obj,C,G):- color(Obj,C),object_glyph(Obj,G),!.
 into_color_glyph(N,C,Code):- compound(N),N=(C-G),is_color(C),Code=G.
 into_color_glyph(N,C,Code):- compound(N),N=(G-C),is_color(C),Code=G.
 into_color_glyph(CTerm,Color,Code):- compound(CTerm),into_color_glyph_ez(CTerm,Color,Code),nonvar_or_ci(Code),!.
@@ -1409,11 +1421,12 @@ i_glyph(N,Glyph):- notrace((i_glyph0(N,Glyph),atom(Glyph))),!.
 i_glyph(N,Glyph):- trace,i_glyph0(N,Glyph),atom(Glyph),!.
 
 i_glyph0(N,Glyph):- bg_sym(BG), BG==N, bg_dot(Code), name(Glyph,[Code]).
-i_glyph0(N,Glyph):- atom(N),!,(name(N,[_,_,Code|_])->name(Glyph,[Code]);N=Glyph).
+i_glyph0(N,Glyph):- atom(N),name(N,[_111,95,Code|_])->name(Glyph,[Code]),!.
+i_glyph0(N,Glyph):- atom(N),name(N,[Code])->name(Glyph,[Code]),!.
 i_glyph0(Code,Glyph):- integer(Code), Code> 255, name(Glyph,[Code]).
 i_glyph0(N,Glyph):- integer(N),quietly((i_sym(N,Code),name(Glyph,[Code]))).
 i_glyph0(N,Glyph):- plain_var(N),format(chars(Codes),'~p',[N]),last(Codes,Glyph).
-i_glyph0(N,Glyph):- N>10, integer(N),N3 is N div 3, i_glyph0(N3,Glyph).
+i_glyph0(N,Glyph):- number(N), N>10, integer(N),N3 is N div 3, i_glyph0(N3,Glyph).
 %i_glyph(N,Glyph):- atom(N),atom_chars(N,Chars),last(Chars,LGlyph),upcase_atom(LGlyph,Glyph).
                                                                             
 i_sym(N2,Code):- integer(N2),!, N is N2+160, change_code(N,NN), iss:i_syms(Codes),nth0(NN,Codes,Code),!.

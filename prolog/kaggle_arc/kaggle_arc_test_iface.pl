@@ -29,7 +29,7 @@ write_menu_opts(Mode):-
 menu_options(Mode):-   
   forall(menu_cmd1(Mode,Key,Info,Goal),print_menu_cmd(Key,Info,Goal)),
   forall(menu_cmd9(Mode,Key,Info,Goal),print_menu_cmd9(Key,Info,Goal)),
-  show_pair_mode,
+  % show_pair_mode,
   !.
 print_menu_cmd(Key):- ignore((menu_cmd1(_,Key,Info,Goal),print_menu_cmd(Key,Info,Goal))).
 print_menu_cmd(_Key,Info,Goal):- format('~N '),print_menu_cmd1(Info,Goal).
@@ -44,14 +44,16 @@ print_menu_cmd1(Info,_Goal):- format('~w',[Info]).
 :- multifile(menu_cmd9/4).
 menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z,!,print_test,train_test)).
 menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),
-      sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
+  sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
 menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(cls_z,!,ndividuatorO)).
 menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the input/outputs',(cls_z,!,ndividuator)).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z,!,what_unique)).
 menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z,!,compile_and_save_test)).
 menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changed_files,print_test)).
-menu_cmd1(_,'e','                  or (e)xamine the program leared by training',(cls_z,print_test,!,learned_test,solve_easy)).
+menu_cmd1(_,'E','                  or (E)xamine the program leared by training',(cls_z,print_test,!,learned_test,solve_easy)).
 menu_cmd1(_,'L','                  or (L)earned program',(learned_test)).
+menu_cmd1(_,'e',S,(Cmd)):- get_test_cmd(Cmd),
+      sformat(S,"                  or (e)xecute .................. '~@'",[bold_print(color_print(cyan,Cmd))]).
 menu_cmd1(_,'s','              Try to (s)olve based on training',(cls_z,print_test,!,solve_test)).
 menu_cmd1(_,'S','                  or (S)olve confirming it works on training pairs',(cls_z,print_test,!,solve_test_training_too)).
 menu_cmd1(_,'h','                  or (h)uman proposed solution',(human_test)).
@@ -118,7 +120,7 @@ has_pending_input:- catch_nolog(wait_for_input([user_input], In, 0.01)), In\==[]
 
 read_menu_chars0(_Start,_SelMax, Out):- read_queued_cmd(Out),!.
 read_menu_chars0(_Start,_SelMax, Out):- key_read_borked(PP),!, wdmsg(read_menu_chars(PP)),once((\+ toplevel_pp(http),read(Out))).
-read_menu_chars0(_Start,_SelMax,_Out):- \+ has_pending_input,format('~N Your menu(?) selection: '),fail.
+read_menu_chars0(_Start,_SelMax,_Out):- \+ has_pending_input,show_pair_mode,format('~N Your menu(?) selection: '),fail.
 read_menu_chars0( Start, SelMax, Out):- read_menu_chars1( Start, SelMax,Out),!.
 %read_menu_chars0( Start, SelMax, Out):- wait_for_input([user_input], In, 0.3), In \== [],!,read_menu_chars1( Start, SelMax,Out).
 
@@ -248,12 +250,12 @@ nth10(X,Y,Z):- var(X),!,nth0(N,Y,Z), X is N + 10 .
 nth10(X,Y,Z):- N is X -10, nth0(N,Y,Z).
 
 do_test_number(Num):- list_of_tests(L), 
-  wdmsg(do_test_number(Num)),nth10(Num,L,E),!,do_test_pred(E).
+  wdmsg(do_test_number(Num)),nth10(Num,L,E),!,set_test_cmd(E),do_test_pred(E).
 
 do_test_pred(E):- 
   get_current_grid(G),
   set_flag(indiv,0), 
-  wdmsg(do_test_pred(E)),
+  wdmsg(do_test_pred(E)),  
   my_time(my_submenu_call(no_bfly(maybe_test(E,G)))),!.
 
 maybe_test(E,_):- \+ missing_arity(E,0), !, call(E).
@@ -311,8 +313,12 @@ rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 
 ip(I,O):- ip(complete,I,O).
 
-ndividuator:- get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,ip(In,Out)).
+ndividuator:-
+ show_test_pairs,
+ get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,ip(In,Out)).
 ndividuatorO:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,In,igo(In)).
+
+show_test_pairs:- with_test_pairs(TestID,In,Out,print_side_by_side(green,In,in(show_test_pairs(TestID)),_,Out,out(show_test_pairs(TestID)))).
 
 % Training modes
 next_pair_mode(single_pair,whole_test).
@@ -328,7 +334,10 @@ get_pair_mode(Mode):- nonvar(Mode),get_pair_mode(TMode),!,TMode==Mode.
 get_pair_mode(Mode):- once(luser_getval('$pair_mode',Mode);next_pair_mode(Mode,_)).
 with_pair_mode(Mode,Goal):- get_pair_mode(OldMode), trusted_redo_call_cleanup( set_pair_mode(Mode), Goal, set_pair_mode(OldMode)). 
 switch_pair_mode:- get_pair_mode(Mode),next_pair_mode(Mode,NextMode),!,set_pair_mode(NextMode),show_pair_mode.
-show_pair_mode:- get_pair_mode(Mode), wqnl(["~N~tTraining Pair mode set to: ",Mode]).
+show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), wqnl(["~N~t............ (e)xecute: ", b(q(Cmd)), "with pair mode set to: ",b(Mode)]).
+
+set_test_cmd(Mode):- luser_setval('cmd',Mode).
+get_test_cmd(Mode):- luser_getval('cmd',Mode).
 
 % Hides solution grid from code
 kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,G), ((ExampleNum*IO) \= ((tst+_)*out)).
@@ -496,7 +505,9 @@ muarc:arc_settings_filename1('/tmp/.arc_current_test').
 
 
 set_current_test(Name):-  
-  ignore((fix_id(Name,TestID),is_valid_testname(TestID),really_set_current_test(TestID))).
+  ignore((testid_name_num_io(Name,TestID,Example,NumE,_IO),
+    ignore((is_valid_testname(TestID),really_set_current_test(TestID))),
+    ignore((nonvar(Example),luser_setval(example,Example+NumE))))).
 
 really_set_current_test(TestID):-
    luser_setval(task,TestID),
@@ -992,11 +1003,24 @@ sort_univ(R,A,B):- compare(R,A,B).
 
 macro(one_obj, must_det_ll(len(objs)=1)).
 
-test_p2(P2):- clsmake,
+test_p2(_):- clsmake,fail.
+test_p2(P2):- 
+  (get_pair_mode(single_pair);get_pair_mode(whole_test)),!,
+  append_termlist(P2,[N1,'$VAR'('Result')],N2), 
+  put_attr(G2,expect_p2,Expected),
+  my_time((forall_count(test_pairs(_,G1,Expected),     
+     forall((set_current_test(G1),call(P2,G1,G2)),
+       ((grid_to_gid(G1,N1),
+       once(ignore((grid_arg(G2,GR,Rest),print_side_by_side(red,G1,N1-Rest,_LW,GR,(?-(N2))),
+         show_sf_same(test_p2(P2),G2,Expected),dash_chars)))))),EP,ET),
+     wdmsg(forall_count(EP/ET)))),!.
+
+test_p2(P2):-
   append_termlist(P2,[N1,'$VAR'('Result')],N2), 
   my_time(forall(into_grids(N1,G1),     
      forall((set_current_test(G1),call(P2,G1,G2)),
        once(ignore((grid_arg(G2,GR,Rest),print_side_by_side(red,G1,N1-Rest,_LW,GR,(?-(N2))),dash_chars)))))).
+
 
 grid_arg(G2,G2,[]):- is_grid(G2),!.
 grid_arg(GRest,GR,GRest):- arg(N,GRest,GR), is_grid(GR),!,setarg(N,GRest,grid),!.
@@ -1067,7 +1091,9 @@ fix_test_name(ID,Fixed,Example+Num):- testid_name_num_io(ID,Tried,Example,Num,_)
 
 
 testid_name_num_io(ID,_Name,_Example,_Num,_IO):- var(ID),!, fail.
+testid_name_num_io(X,TestID,E,N,IO):- is_grid(X),!,kaggle_arc_io(TestID,E+N,IO,G),G=@=X.
 testid_name_num_io(ID,_Name,_Example,_Num,_IO):- is_grid(ID),!, fail.
+
 testid_name_num_io(ID,_Name,_Example,_Num,_IO):- is_list(ID), \+ maplist(nonvar,ID),!,fail.
 
 testid_name_num_io([V,Name,Example,ANum,IO|_],TestID,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,fix_id(VName,TestID).
@@ -1096,6 +1122,7 @@ testid_name_num_io(ID,Name,_Example,_Num,_IO):- fix_id(ID,   Name),!. %, kaggle_
 fix_id(Tried,   Tried):- var(Tried),!.
 fix_id(X,_):- is_cpoint(X),!,fail.
 fix_id(X,_):- is_cpoints_list(X),!,fail.
+fix_id(X,TestID):- is_grid(X),kaggle_arc_io(TestID,_,_,G),G=@=X.
 fix_id(obj_to_oid(_,X),Fixed):-  !, fix_id(X,Fixed).
 fix_id(Tried,   Tried):- kaggle_arc(Tried,_,_,_),!.
 fix_id(v(Tried),   TriedV):- !, atom_id(Tried,TriedV),!.

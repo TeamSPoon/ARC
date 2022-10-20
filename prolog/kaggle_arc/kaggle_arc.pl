@@ -1123,6 +1123,7 @@ user:portray(Grid):- fail,
 
 :- nb_setval(arc_can_portray,nil).
 :- nb_setval(arc_can_portray,t).
+
 %:- \+ nb_current(arc_can_portray,nil).
 
 :- fixup_module_exports_into(baseKB).
@@ -1139,12 +1140,12 @@ bfly_startup:-
    set_toplevel_pp(bfly),
    asserta(was_inline_to_bfly),inline_to_bfly_html,
    bfly,
-   ansi,
    catch_log(webui_tests),
    catch_log(print_test),
    catch_log(menu),
    %with_pp(bfly,catch_log(menu)),
-   nop((next_test,previous_test)),!.
+   nop((next_test,previous_test)),!,
+   ansi.
 
 
 ansi_startup:- 
@@ -1155,5 +1156,6 @@ ansi_startup:-
    %with_pp(bfly,catch_log(menu)),
    nop((next_test,previous_test)),!.
 
+:- luser_setval(cmd,test_easy_solve_by).
 
 

@@ -631,6 +631,9 @@ guess_unbind_color(UnbindColor,Grid,RepairedResult):-
    mass(RepairedResult,Mass),Mass>0,
    (UnbindColor\==black-> if_target(Out, \+ contains_color(UnbindColor,Out));true).
 
+test_blur_least:-
+  test_p2(blur_least(_,_)).
+
 blur_least(B,Mix,I,O):-
   blur_list(B,Mix,I,S),
   S=[O-pp(blur_some(B,Mix))|_].
@@ -725,6 +728,9 @@ test_symmetry_code(Grid,Grids,RepairedResult,Code):-
   grid_to_3x3_objs(_VM,[],Grid,Grids,_Keep,RepairedResult,Code).
 %test_symmetry_code(Grid,Grids):- repair_symmetry(Grid,Grids).
 
+test_repair_symmetry_p_two:-
+  test_p2(repair_symmetry).
+
 repair_symmetry(G,GR):-
  find_and_use_pattern_gen(G,GR),!.
  
@@ -781,6 +787,9 @@ best_of(Grid,Info,P2Did,In,RepairedResult):-
   nop(maplist(call,STrials)),
   last(STrials,AnswerFormat).
 
+
+test_try_something:- test_p2(try_something(_Did)).
+
 try_something(Did,Grid,RepairedResult):- 
   try_remove_color_fill_in_blanks(Grid,RepairedResult,Did).
 
@@ -795,7 +804,7 @@ try_remove_color_fill_in_blanks(Grid,RepairedResultO,[Info,CodeNext]):-
   CodeNext = now_fill_in_blanks(_),
   peek_target_or_else(Grid,Out),
   best_of(Out,Info,CodeNext,RepairedResult,RepairedResultO),
-  mass(RepairedResultO,Mass), Mass>0.
+  mass(RepairedResultO,Mass), Mass>0, !.
 
   
 now_fill_in_blanks(_,RepairedResult,RepairedResultO):- ground(RepairedResult),!,RepairedResultO=RepairedResult.
@@ -1024,6 +1033,7 @@ make_symmetrical_grid(G,GridO):- make_symmetrical_grid(_,G,GridO).
 
 make_symmetrical_grid(Steps,G,GridO):- trim_to_rect(G,Grid1),G\==Grid1,make_symmetrical_grid(Steps,Grid1,GridO).
 make_symmetrical_grid(Steps,G,GridO):- 
+ must_not_error((
   Steps = [P,pull(BGC),Flip,test_used(Test)],
   amass(G,OrignalMass),
   MaxMass is OrignalMass * 4,
@@ -1039,7 +1049,7 @@ make_symmetrical_grid(Steps,G,GridO):-
     uneib(Grid99,GridO),
     mapgrid(blackFree,GridO))),
     is_able_v(Test,GridO),
-    amass(GridO,NewMass),NewMass =< MaxMass.
+    amass(GridO,NewMass),NewMass =< MaxMass)).
 /*
 % detect_supergrid(Grid,SGrid):- ...
 line Separated
@@ -1839,7 +1849,10 @@ nr_make_symmetrical_grid(Steps,G,GridO):-
   
 ping_indiv_grid(show_make_symmetrical).
 
-test_make_symmetrical:-  clsmake, forall(rp_test(G),ignore(show_make_symmetrical(G))). 
+test_make_symmetrical_sanity_tests:-  clsmake, forall(rp_test(G),ignore(show_make_symmetrical(G))). 
+
+test_make_symmetrical:-  clsmake, forall(test_grids(_,G),ignore(show_make_symmetrical(G))). 
+
 show_make_symmetrical(G):-
   set_current_test(G),
   dash_chars,
@@ -1847,7 +1860,7 @@ show_make_symmetrical(G):-
   ShowHow = wqs(uc(green,Steps)),
   findall(GridO-ShowHow,nr_make_symmetrical_grid(Steps,G,GridO),List),
   list_to_set(List,Set),
-  print_side_by_side([G,G|Set]).
+  print_side_by_side([G|Set]).
 
 /*
 */
