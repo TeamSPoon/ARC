@@ -389,7 +389,7 @@ wqs(P):- pp_msg_color(P,C), ansicall(C,wqs0(P)),!.
 
 wqs0(X):- plain_var(X), !, wqs(plain_var(X)). 
 wqs0(G):- is_map(G), !, write_map(G,'wqs').
-wqs0(X):- attvar(X), !, wqs(attvar(X)).
+wqs0(X):- attvar(X), !, wqs(attvar(X)). 
 wqs0([H|T]):- is_list(T), string(H), !, wqs_l([H|T]).
 wqs0([H|T]):- is_list(T), !, wqs(H),need_nl(H,T), wqs(T).
 wqs0(nl):- !, nl. wqs0(''):-!. wqs0([]):-!.
@@ -735,7 +735,6 @@ into_ss_string(uc(W),SS):- !,wots(SS,format_u(yellow,"\t~@",[wqs(W)])).
 into_ss_string(uc(C,W),SS):- !,wots(SS,color_print(C,call(underline_print(format("\t~@",[wqs(W)]))))).
 into_ss_string(call(C),SS):- wots(S,catch(C,E,true)), 
   (((nonvar_or_ci(E),notrace,break,rrtrace(C))->throw(E);true)), into_ss_string(S,SS).
-
 into_ss_string(A+B,SS):-!,into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)), append(LA,LB,ABL), max_min(LenA,LenB,LenAB,_),
   ss(LenAB,ABL)=SS.
 
@@ -1337,6 +1336,7 @@ int2glyph0(GN,Glyph):- GN > 255, GN2 is GN div 2, int2glyph0(GN2,Glyph).
 print_gw1(N):- print_gw1(color_print_ele,N),!.
 
 print_gw1(P2,N):- 
+
  wots(S,(((get_bgc(BG),is_color(BG), once((BG\==black-> call(P2,BG,'.');write_nbsp);write(',')));write_nbsp),!,
   (print_g1(P2,N);write('?')))),!, gws(S).
 

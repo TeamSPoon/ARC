@@ -344,7 +344,6 @@ individuation_macros(do_ending, [
   find_touches,  
   find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
   find_sees,
-  find_overlap,
   % find_contained_points, % mark any "completely contained points"
   combine_same_globalpoints, % make sure any objects are perfectly the equal part of the image are combined 
   %label_sizes,
@@ -364,7 +363,7 @@ sub_individuation_macro(S,Some):-
 individuation_macros(complete, ListO):- im_complete(ListO).
 
 
-im_complete(ListO):- test_config(indiv(ListO)),!.
+im_complete(save_as_objects(complete,ListO)):- test_config(indiv(ListO)),!.
 %im_complete(ListO):- ListO=[n_w,all_lines,diamonds,do_ending].
 
 im_complete(ListO):-
@@ -383,14 +382,12 @@ im_complete(ListO):-
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
 individuator(i_hybrid_shapes,[find_hybrid_shapes]).
 individuator(i_maybe_glypic,[maybe_glyphic]).
+%individuator(i_columns,[when(get(h)=<5,columns)]). %:- \+ doing_pair.
+%individuator(i_rows,[when(get(v)=<5,rows)]). %:- \+ doing_pair.
 individuator(i_n_w,[n_w,all_lines,do_ending]).
-individuator(i_subtractions,[fg_subtractions([save_as_objects(i_mono_fg),save_as_objects(i_n_w)])]).
-individuator(i_mono_fg,[fg_shapes(i_n_w)]).
-individuator(i_bg_mono,[bg_shapes(i_n_w)]).
-
-%individuator(i_columns,[when(get(h)=<5,all_columns),some_columns]). %:- \+ doing_pair.
-%individuator(i_rows,[when(get(h)=<5,all_rows),some_rows]). %:- \+ doing_pair.
-%aindividuator(i_repair_mirrors,[maybe_repair_in_vm(find_symmetry_code)]).
+individuator(i_subtractions,[fg_subtractions([save_as_objects(i_mono_n_w),save_as_objects(i_n_w)])]).
+individuator(i_mono_n_w,[fg_shapes(i_n_w)]).
+%individuator(i_repair_mirrors,[repair_in_vm(find_symmetry_code)]).
 %individuator(i_mono_colormass,[fg_shapes([subshape_both(v,[n_w,all_lines,diamonds])])]).
 % individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
 
@@ -659,24 +656,16 @@ is_fti_step(find_hybrid_shapes).
 % =====================================================================
 find_hybrid_shapes(VM):-
  ignore((
-  Grid = VM.grid,
-  mass(Grid,GMass),
   get_current_test(TestID),
-  findall(In,
-    ( hybrid_shape(TestID,In),
-      In\=[[_]],In\=Grid,
-      mass(In,Mass),  
-      Mass<GMass,
-      amass(In,AMass),
-      AMass==9),List),
+  findall(O,hybrid_shape(TestID,O),List),
   List\==[],
   length(List,HL),!,
   print_grid(hybrid_shape(HL,TestID,VM.gid),VM.grid),!,
   maplist(release_bg,List,FGList),
   % maplist(=,List,FGList),
   predsort(sort_on(term_variables_len),FGList,Set),
-  print_side_by_side(Set),!,
-  ignore((hybrid_shape_from(Set,VM))))).
+  maplist(print_grid,Set),!,
+ nop(( hybrid_shape_from(Set,VM))))).
 
 
 release_bg(List,FGList):- is_list(List),!,maplist(release_bg,List,FGList).
@@ -684,29 +673,17 @@ release_bg(Point,_):- is_bg_color(Point),!.
 release_bg(Point,Point).
 
 hybrid_shape_from(Set,VM):-
- Grid = VM.grid,
- member(In,Set),
- maybe_ogs_color(R,OH,OV,In,Grid),
- %wdmsg(maybe_ogs_color(R,OH,OV,In,Grid)),
- localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints), 
- length(VM.points,PL),
- remGPoints(VM,GOPoints),
- length(VM.points,PLNew),
- PLNew\==PL,!,
- 
- must_det_ll((
-  
+  Grid = VM.grid,
+  member(In,Set),
+  In\=[[_]],
+  maybe_ogs_color(R,OH,OV,In,Grid), 
+  localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints), 
   %indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
-  make_indiv_object(VM,[],GOPoints,Obj),
-  dash_chars,
-  %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
-  %OffsetGrid = In,
-  Info=maybe_ogs_color(R,OH,OV),
-  print_side_by_side(Grid-Info,[Obj]-Info), % trace,
-  %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  trace,  
-  %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
+  make_indiv_object(VM,[],GOPoints,_Colored),
   remCPoints(VM,GOPoints),
-  ignore(hybrid_shape_from(Set,VM)))).
+  remGPoints(VM,GOPoints),
+  hybrid_shape_from(Set,VM).
+hybrid_shape_from(_,_).
 
 
 % =====================================================================
@@ -717,9 +694,9 @@ label_sizes(VM):-
  label_sizes(VM.roptions,VM.objs,_SF,LF),
  set(VM.objs)=LF.
 
-is_bg_object(Obj):- has_prop(pen([cc('black',_)]),Obj).
+is_bg_object(Obj):- has_prop(pen(  [cc('black',_)]),Obj).
 
-label_sizes(GType,Objs,SF,LF):-  
+label_sizes(GType,Objs,SF,LF):-    
    smallest_first(Objs,SF),
    length(SF,SFLen),
    largest_first(SF,LF), 
@@ -1400,20 +1377,10 @@ dir_mergeable_list(Ps1,Ps2,DirsOK,DirsNotOK):-
 
 mergable_dir(Ps1,Ps2,Dir):- member(C-P1,Ps1), member(C-P2,Ps2), is_adjacent_point(P1,Dir,P2),!.
 
-one_fti(VM,'all_rows'):-
+one_fti(VM,'rows'):-
  Grid = VM.grid_o,
  (\+ ground(Grid) -> true ;
   maplist_n(1,row_to_indiv(VM), Grid)).
-
-one_fti(VM,'some_rows'):-
- Grid = VM.grid_o,
- (\+ ground(Grid) -> true ;
-  forall( solid_row_number(Grid,_Color,N,C2), row_to_indiv(VM,N,C2))).
-
-solid_row_number(Grid,C,N,C2):- 
-      append(Prev,[C1,C2,C3|_],[[z,e,r,o]|Grid]),
-           once(maplist(=(C),C2)), \+ is_bg_color(C), \+ maplist(=(C),C1), \+ maplist(=(C),C3),
-           length([_|Prev],N).
 
 row_to_indiv(VM,N,Row):-
   sameR([Row],Rot90),
@@ -1426,17 +1393,11 @@ row_to_indiv(VM,N,Row):-
      loc(1,N),v_hv(VM.h,1),giz(grid_sz(VM.h,VM.v))],GPoints,Obj),
   raddObjects(VM,Obj).
 
-one_fti(VM,'all_columns'):-
+one_fti(VM,'columns'):-
  Grid = VM.grid_o,
  (\+ ground(Grid) -> true ;
   rot90(Grid,Grid90),
   maplist_n(1,column_to_indiv(VM), Grid90)).
-
-one_fti(VM,'some_columns'):-
- Grid = VM.grid_o,
- (\+ ground(Grid) -> true ;
-  rot90(Grid,Grid90),
-  forall( solid_row_number(Grid90,_Color,N,C2), column_to_indiv(VM,N,C2))).
 
 column_to_indiv(VM,N,Row):-  
   rot270([Row],Rot270),

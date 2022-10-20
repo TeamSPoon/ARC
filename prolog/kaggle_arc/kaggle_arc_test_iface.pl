@@ -22,11 +22,10 @@ write_menu(Mode):-
 
 write_menu_opts(Mode):-
   get_current_test(TestID),(luser_getval(example,Example);Example=_),!,
-
   format('~N\n    With selected test: ~q ~q ~n~n',[TestID,example(Example)]),
   menu_options(Mode).
 
-menu_options(Mode):-   
+menu_options(Mode):- 
   forall(menu_cmd1(Mode,Key,Info,Goal),print_menu_cmd(Key,Info,Goal)),
   forall(menu_cmd9(Mode,Key,Info,Goal),print_menu_cmd9(Key,Info,Goal)),
   % show_pair_mode,
@@ -231,7 +230,6 @@ do_menu_key(Key):- fix_id(Key,TestID),set_current_test(TestID),!,print_test.
 do_menu_key(Key):- atom(Key),atom_codes(Key,Codes),(Codes=[27|_];Codes=[_]),format("~N % Menu did understand '~w' ~q ~n",[Key,Codes]),once(mmake).
 do_menu_key(_).
 
-
 maybe_call_code(Key):- \+ atom(Key), !, 
  catch(text_to_string(Key,Str),_,fail),Key\==Str,catch(atom_string(Atom,Str),_,fail),maybe_call_code(Atom).
 maybe_call_code(Key):- atom_length(Key,Len),Len>2,
@@ -255,7 +253,7 @@ do_test_number(Num):- list_of_tests(L),
 do_test_pred(E):- 
   get_current_grid(G),
   set_flag(indiv,0), 
-  wdmsg(do_test_pred(E)),  
+  wdmsg(do_test_pred(E)),
   my_time(my_submenu_call(no_bfly(maybe_test(E,G)))),!.
 
 maybe_test(E,_):- \+ missing_arity(E,0), !, call(E).
@@ -643,7 +641,6 @@ print_test(TName):-
 next_grid_mode(dots,dashes):-!.
 next_grid_mode(_,dots).
 switch_grid_mode:- (luser_getval('$grid_mode',Dots);Dots=dots),next_grid_mode(Dots,Dashes),luser_setval('$grid_mode',Dashes).
-
 as_d_grid(In,In):- \+ luser_getval('$grid_mode',dashes),!.
 as_d_grid(In,In1):- as_ngrid(In,In1).
 as_ngrid(In,In1):- must_det_ll((change_bg_fg(In, _BG, _FG,In0), most_d_colors(In0,_CI,In1))),!.
@@ -1027,7 +1024,6 @@ test_p2(P2):-
      forall((set_current_test(G1),call(P2,G1,G2)),
        once(ignore((grid_arg(G2,GR,Rest),print_side_by_side(red,G1,N1-Rest,_LW,GR,(?-(N2))),dash_chars)))))).
 
-
 grid_arg(G2,G2,[]):- is_grid(G2),!.
 grid_arg(GRest,GR,GRest):- arg(N,GRest,GR), is_grid(GR),!,setarg(N,GRest,grid),!.
 
@@ -1099,7 +1095,6 @@ fix_test_name(ID,Fixed,Example+Num):- testid_name_num_io(ID,Tried,Example,Num,_)
 testid_name_num_io(ID,_Name,_Example,_Num,_IO):- var(ID),!, fail.
 testid_name_num_io(X,TestID,E,N,IO):- is_grid(X),!,kaggle_arc_io(TestID,E+N,IO,G),G=@=X.
 testid_name_num_io(ID,_Name,_Example,_Num,_IO):- is_grid(ID),!, fail.
-
 testid_name_num_io(ID,_Name,_Example,_Num,_IO):- is_list(ID), \+ maplist(nonvar,ID),!,fail.
 
 testid_name_num_io([V,Name,Example,ANum,IO|_],TestID,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,fix_id(VName,TestID).

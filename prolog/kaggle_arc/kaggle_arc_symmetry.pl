@@ -152,7 +152,7 @@ repair_symmetry0:-
   is_symgrid(TestID), 
   %arc_test_name(TestID),
   ignore(repair_symmetry(TestID))).
-
+  
 repair_symmetry(TestID):- \+ is_grid(TestID), 
  fix_id(TestID,TTestID), TTestID \== TestID, repair_symmetry(TestID).
 repair_symmetry(TestID):- \+ is_grid(TestID),
@@ -215,7 +215,7 @@ repair_symmetry_code(Grid,RepairedResult,Code):-
    ((var(Out)->Out=[[_]];true),
      print_side_by_side(red,Orig,gridIn(ID),_,Out,out(ID)),
      arcdbg_info(red,none_found(symmetry_code(ID))),!,fail)).
-
+   
 
 test_symmetry_code(G,Grids,GR,Code):-
   test_symmetry_code0(G,Grids,GR,Code),!.
