@@ -282,9 +282,9 @@ show_found2(HO,VO,H,V,Info,F):-
   constrain_grid(f,_TrigF,OF,FF),!,
   print_grid(H,V,Info,FF),!.
 
-test_grid_hint:- clsbake, forall(all_arc_test_name(TestID),test_grid_hint(TestID)).
+test_grid_hint:- clsbake, forall(arc_test_name(TestID),test_grid_hint(TestID)).
 
-save_grid_hints:-  forall(all_arc_test_name(TestID),test_grid_hint(TestID)),
+save_grid_hints:-  forall(arc_test_name(TestID),test_grid_hint(TestID)),
   listing(arc_test_property/3).
 
 %test_grid_hint:- get_current_test(TestID),test_grid_hint(TestID).
@@ -482,10 +482,10 @@ min_unifier(A,B,A):- plain_var(B),!.
 min_unifier(A,B,B):- plain_var(A),!.
 */
 
-min_unifier(A,B,AA):- is_list(A),is_list(B),!,min_list_unifier(A,B,AA), ignore((length(A,AL),length(B,AL),length(AA,AL))).
-min_unifier(A,B,AA):- is_cons(A),is_cons(B),!,min_list_unifier(A,B,AA).
-
 min_unifier(A,B,D):- number(A),number(B),!,c_proportional(A,B,D).
+min_unifier(A,B,AA):- is_grid(A),is_grid(B),!,min_grid_unifier(A,B,AA),!.
+min_unifier(A,B,AA):- is_list(A),is_list(B),!,min_list_unifier(A,B,AA),ignore((length(A,AL),length(B,AL),length(AA,AL))).
+min_unifier(A,B,AA):- is_cons(A),is_cons(B),!,min_list_unifier(A,B,AA),!.
 %min_unifier(A,B,C):- is_list(A),sort(A,AA),A\==AA,!,min_unifier(B,AA,C).
 min_unifier(A,B,R):- compound(A),compound(B),
  compound_name_arguments(A,F,AA),compound_name_arguments(B,F,BB),!,
@@ -495,8 +495,13 @@ min_unifier(A,B,_):- (\+ compound(A);\+ compound(B)),!.
 
 is_cons(A):- compound(A),A=[_|_].
 
-min_list_unifier(A,B,AA):- is_list(A),is_list(B),sort(A,AA),sort(B,BB),BB=@=AA,!.
-min_list_unifier(A,B,[E1|C]):- is_list(A),is_list(B),select(E1,A,AA),select(E2,B,BB), nop(( \+ is_color(E1), \+ is_color(E2))), E1=@=E2,!,min_list_unifier(AA,BB,C).
+
+min_grid_unifier(A,B,[E1|C]):- select(E1,A,AA),select(E2,B,BB), E1=@=E2 ,!,min_list_unifier(AA,BB,C).
+min_grid_unifier(A,B,[E |C]):- select(E1,A,AA),select(E2,B,BB),min_unifier(E1,E2,E),!,min_list_unifier(AA,BB,C).
+min_grid_unifier(_,_,_).
+
+min_list_unifier(A,B,AA):- is_list(A),is_list(B), \+ (is_grid(A),is_grid(B)), sort(A,AA),sort(B,BB),BB=@=AA,!.
+min_list_unifier(A,B,[E1|C]):- select(E1,A,AA),select(E2,B,BB), E1=@=E2 ,!,min_list_unifier(AA,BB,C).
 min_list_unifier(A,B,[EC|C]):- is_list(A),is_list(B),select_two(A,B,E1,E2,AA,BB), min_unifier(E1,E2,EC) ,!,min_list_unifier(AA,BB,C).
 min_list_unifier([E1|AA],[E2|BB],[EC|C]):- min_unifier(E1,E2,EC) ,!,min_unifier(AA,BB,C).
 min_list_unifier([_|A],[_|B],[_|C]):- !,min_list_unifier(A,B,C).
@@ -567,6 +572,28 @@ all_ogs(In,Out,XY):- %member(R,[strict,loose]),
 ensure_how(How):- var(How),!,member(How,[nsew,fg_shapes(nsew),colormass,fg_shapes(colormass),force_by_color,alone_dots]).
 ensure_how(_How).
 
+forall_count(P,Q):-
+  forall_count(P,Q,EP,ET),
+  wdmsg(EP/ET=forall_count(P,Q)).
+
+forall_count(P,Q,EP,ET):-
+  setup_call_cleanup(flag('$fac_t',W,0),
+    setup_call_cleanup(flag('$fac_p',W2,0),
+      forall((P,flag('$fac_t',X,X+1)),
+        ignore(once((Q,flag('$fac_p',Y,Y+1))))),
+      flag('$fac_p',EP,W2)),
+    flag('$fac_t',ET,W)).
+
+
+/*
+solves_all_pairs(TestID,P,P2S):- kaggle_arc(TestID,tst+0,_,_), 
+ findall(P2,(easy_solve_by(TestID,P2),
+   findall(try_p2(P2,In,Out),
+     kaggle_arc(TestID,_,In,Out),AllTrue),maplist(call,AllTrue)),[P|P2S]).
+*/
+test_easy:- clsmake, forall_count(arc_test_name(TestID),test_easy(TestID)).
+test_easy(TestID):- 
+  solves_all_pairs(TestID,P2), dash_chars, dmsg(P2), print_test(TestID), dmsg(P2), dash_chars.
 
 solves_all_pairs(TestID,P2):- !,
    easy_solve_by(TestID,P2),
@@ -581,66 +608,110 @@ solves_all_pairs(TestID,P2):-
    try_p2(P2,TI,TO), 
    kaggle_arc(TestID,tst+0,EI,EO), 
    try_p2(P2,EI,EO).
-/*
-solves_all_pairs(TestID,P,P2S):- kaggle_arc(TestID,tst+0,_,_), 
- findall(P2,(easy_solve_by(TestID,P2),
-   findall(try_p2(P2,In,Out),
-     kaggle_arc(TestID,_,In,Out),AllTrue),maplist(call,AllTrue)),[P|P2S]).
-*/
 
-test_easy:- clsmake, forall_count(all_arc_test_name(TestID),test_easy(TestID)).
-
-forall_count(P,Q):-
-  setup_call_cleanup(flag('$fac_t',W,0),
-    setup_call_cleanup(flag('$fac_p',W2,0),
-      forall((P,flag('$fac_t',X,X+1)),
-        ignore(once((Q,flag('$fac_p',Y,Y+1))))),
-      flag('$fac_p',EP,W2)),
-    flag('$fac_t',ET,W)),
-  wdmsg(EP/ET=forall_count(P,Q)).
         
+test_easy_solve_by:- clsmake, fail.
+test_easy_solve_by:- get_pair_mode(entire_suite),!,forall_count(all_arc_test_name(TestID),test_example_grid(TestID)).
+%test_easy_solve_by:- test_p2(test_easy_solve_pair).
+%test_easy_solve_by:- test_p2(simple_todolist(_)).
+test_easy_solve_by:- test_p2(simple_todolist(_)).
 
-test_easy(TestID):- 
-  solves_all_pairs(TestID,P2), dash_chars, dmsg(P2), print_test(TestID), dmsg(P2), dash_chars.
+:- luser_default(cmd,test_easy_solve_by). 
+
+test_easy_solve_pair(I,O):- set_current_test(I),
+ (kaggle_arc(TestID,ExampleNum,I,O) *-> test_easy_solve_test_pair(TestID,ExampleNum,I,O) ; 
+   (test_example_grid(I),test_example_grid(O))).
+
+test_easy_solve_test_pair(TestID,ExampleNum,I,O):- var(TestID),get_current_test(TestID),
+   ignore((luser_getval(example,ExampleNum))),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
+test_easy_solve_test_pair(TestID,ExampleNum,I,O):- 
+   ignore((nonvar(TestID), set_current_test(TestID))),
+   findall(P2, (easy_solve_by(TestID,P2),call(P2,I,EM),(var(O)->true;EM=@=O)),P2S),!, 
+   (P2S\==[] -> wqs([TestID>ExampleNum,passed,using,q(P2S)]) ; (nop(wqs([TestID>ExampleNum,failed])),!,fail)).
+
+test_example_grid(I):- var(I),!.
+test_example_grid(I):- kaggle_arc(TestID,ExampleNum,I,O),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
+test_example_grid(O):- kaggle_arc(TestID,ExampleNum,_,O),!,test_easy_solve_test_pair(TestID,ExampleNum,O,_).
+test_example_grid(T):- is_valid_testname(T),set_current_test(T),!,kaggle_arc(T,ExampleNum,I,O),test_easy_solve_test_pair(T,ExampleNum,I,O).
+test_example_grid(G):- set_current_test(G),!,get_current_test(TestID),test_easy_solve_test_pair(TestID,_ExampleNum,G,_).
+
+easy_solve_by(TestID,flip_Once(_)):- user:arc_test_property(TestID,common,comp(cbg('black'),i-o,grav_rot),_).
+easy_solve_by(_TestID,P2):- easy_p2(P2).
 
 
 try_p2(P2,In,Out):- call(P2,In,Mid),Out=@=Mid,!.
 %try_p2(P2,In,Out):- call(P2,In,Out),!.
 %try_p2(P2,In,Out):- call(P2,In,Out),!.
 
-easy_solve_by(TestID,flip_Once(_)):- user:arc_test_property(TestID,common,comp(cbg('black'),i-o,grav_rot),_).
-easy_solve_by(_TestID,P2):- easy1(P2).
 
-easy1(increase_size_by_mass).
-easy1(shrink_grid).
-easy1(X):- easy_sol(X).
-easy1(swap_two_colors(_,_)).
-easy1(grow_4). % 3af2c5a8
-easy1(grow_2). % 963e52fc
-easy1(crop_by(_)).
-easy1(blur(flipV)).
-easy1(double_size).
-easy1(increase_size(4)).
-easy1(flip_Once(_)).
-easy1(two_ops(trim_to_rect,_)). %f25fbde4
+%easy1(flip_Once(_)).
+easy_p2(simple_todolist(_)).
+%easy1(two_ops(repair_in_vm(repair_repeats(black)),get(repaired))).
+
+expect_p2:attr_unify_hook(_,_).
+
+simple_todolist(List,I,OO):-
+  ignore(get_attr(OO,expect_p2,O)),
+  simple_todolist(0,[],[],List,I,O,OO).
+
+simple_todolist(N,SolSoFar,DoneSoFar,Plan,I,O,OO):- !,
+ ((fits_grid(O,I),N>0) 
+-> (Plan=DoneSoFar,OO=I) 
+;(findall(h_g(H1,I1),(easy0(N,H1),call(H1, I,I1),\+ member(I1,SolSoFar)), H1G),
+  predsort(using_compare(arg(2)),H1G,H1GSS),sort(H1GSS,H1GS),
+  maplist(arg(2),H1GS,SOFAR),append(SolSoFar,SOFAR,NewSOFAR),
+  member(h_g(H1,I1),H1GS),
+  Next is N+1,
+  simple_todolist(Next,NewSOFAR,[H1|DoneSoFar],Plan,I1,O,OO))).
+
+/*
+simple_todolist(SolSoFar,List,I,O,OO):-
+  findall(h_g(H1,I1),(easy0(H1),call(H1, I,I1),\+ member(I1,SolSoFar)), H1G),
+  predsort(using_compare(arg(2)),H1G,H1GSS),sort(H1GSS,H1GS),
+  maplist(arg(2),H1GS,SOFAR),
+  member(h_g(H1,I1),H1GS),
+  ((findall(h_g(H2,I2),(easy2(H2),H1\==H2,call(H2,I1,I2),\+ member(I2,SOFAR)),H2G),
+    predsort(using_compare(arg(2)),H2G,H2GSS),sort(H2GSS,H2GS),
+    member(h_g(H2,I2),H2GS),
+  ((fits_grid(O,I2),[H1,H2]=List,I2=OO))) 
+  ;((fits_grid(O,I1),[H1]=List,I1=OO)))
+  ,!,
+  nop(print_side_by_side(green,I,simple(List),_,OO,simple(List))),!.
+*/
+
+fits_grid(O,_):- var(O),!.
+fits_grid(O,I1):-O=@=I1.
+
+easy0(_,=).
+%easy0(trim_to_rect).
+%easy0(X):- easy_sol(X).
+%easy0(shrink_grid).
+easy0(0,trim_blank_lines).
+easy0(1,trim_hv_repeats).
+%easy_sol(trim_blank_lines).
+
+%easy2(=).
+easy0(2,flip_Once(_)).
+
+easy0(3,swap_two_colors(_,_)).
+
+easy0(4,increase_size_by_grid_mass). %ac0a08a4
+easy0(4,grow_4). % 3af2c5a8
+easy0(4,grow_2). % 963e52fc
+easy0(4,crop_by(_)).
+easy0(4,blur(flipV)).
+easy0(4,double_size).
+easy0(4,increase_size(4)).
+
+
+
 
 % ac0a08a4
-increase_size_by_mass(In,Out):- mass(In,Mass),increase_size(Mass,In,Out).
-
-two_ops(P1,P2,I,O):- once((call(P1,I,M),I\==M)),
-  easy1(P2),P2\=two_ops(_,_),call(P2,M,O).
-
-
+increase_size_by_grid_mass(In,Out):- mass(In,Mass),increase_size(Mass,In,Out).
 crop_by(HH/H,In,Out):- grid_size(In,H,V),between(1,H,HH),HH<H,clip(1,1,HH,V,In,Out).
-
-grow_4(In,Out):- flipV(In,FlipV),append(In,FlipV,Left),
-   flipH(Left,Right),append_left(Left,Right,Out).
+grow_4(In,Out):- flipV(In,FlipV),append(In,FlipV,Left),flipH(Left,Right),append_left(Left,Right,Out).
 grow_2(In,Out):- append_left(In,In,Out).
-
-swap_two_colors(Blue,CurrentColor,In,Out):- 
-  enum_fg_colors(Blue),enum_fg_colors(CurrentColor),CurrentColor\==Blue,
-  swap_colors(Blue,CurrentColor,In,Out).
-
+swap_two_colors(Blue,CurrentColor,In,Out):- enum_fg_colors(Blue),enum_fg_colors(CurrentColor),CurrentColor\==Blue, swap_colors(Blue,CurrentColor,In,Out).
 shrink_grid(I,O):- grid_to_norm(I,_,O),!.
 
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,_,Obj),List),list_to_set(List,Objs).
@@ -655,9 +726,14 @@ grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(How),individuate(How,
 % one way to match or find an outlier is compressing things in sets minus one object.. the set that is second to the largest tells you what single object os the most differnt 
 objs_shapes(Objs,In):- get_current_test(TestID),test_shapes(TestID,Objs,In).
 
-test_shapes(TestID, Objs,In):- member(Obj,Objs),object_grid(Obj,In),assert_if_new(hybrid_shape(TestID,In)),fail.
+test_shapes(TestID, Objs,In):- member(Obj,Objs),object_grid(Obj,In), 
+  assert_if_new_safe(hybrid_shape(TestID,In)),fail.
 test_shapes(TestID,_Objs,In):- hybrid_shape(TestID,In).
 
+assert_if_new_safe(hybrid_shape(TestID,In)):-
+  ((In == [['yellow'],['yellow']]) -> break ; true),
+  assert_if_new(hybrid_shape(TestID,In)).
+ 
 
 grid_to_obj_other(VM,Grid,O):- other_grid(Grid,Grid2), grid_to_obj_other_grid(VM,Grid,Grid2,O).
 grid_to_obj_other_grid(VM,Grid,Grid2,O):- grid_to_objs(Grid2,Objs),grid_to_obj_other_objs(VM,Grid,Objs,O).

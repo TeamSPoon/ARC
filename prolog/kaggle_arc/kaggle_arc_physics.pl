@@ -368,7 +368,7 @@ find_touches(VM):-
 touching_object(How,Dirs,O2,O1):- O1\==O2,
 
   has_prop(o(Y,LC,_),O1), has_prop(o(Y,LC,_),O2),
-  has_prop(iz(shaped),O1), has_prop(iz(shaped),O2),
+  is_physical_object(O1), is_physical_object(O2),
   %\+ has_prop(birth(glyphic),O2), %\+ has_prop(birth(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
   call(How,Ps2,Ps1,Dirs),!.
@@ -388,7 +388,7 @@ find_sees(VM):-
   gset(VM.objs) = NewObjs.
 
 seeing_object(How,Dirs,O2,O1):- O1\==O2,
-  has_prop(iz(shaped),O1), has_prop(iz(shaped),O2),
+  is_physical_object(O1), is_physical_object(O2),
   %\+ has_prop(birth(glyphic),O2), %\+ has_prop(birth(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
   call(How,Ps2,Ps1,Dirs),!.
@@ -398,6 +398,24 @@ dir_seeing(Ps1,Ps2,Dir):- member(_-P1,Ps1), is_adjacent_point(P1,Dir,P2), \+ mem
     
 seeing_dir_soon(P1,_Dir,Ps2):- member(_-P1,Ps2),!.
 seeing_dir_soon(P1,Dir,Ps2):- is_adjacent_point(P1,Dir,P2), seeing_dir_soon(P2,Dir,Ps2).
+
+is_physical_object(O):- has_prop(iz(shape),O).
+
+% ==============================================
+% OVERLAPS
+% ==============================================
+%ft i(VM,[find_overlaps|set(VM.program_i)]):- %cullObjectsOutsideOfRanges(VM), %  find_overlaps(How,VM).
+is_fti_step(find_overlaps).
+
+find_overlaps(VM):-
+  /*must_det_ll*/((Objs = VM.objs, pred_find_links(overlap,Objs,NewObjs))),
+  gset(VM.objs) = NewObjs.
+
+overlap(overlaping,O2,O1):- O1\==O2,
+  is_physical_object(O1), is_physical_object(O2),
+  %\+ has_prop(birth(glyphic),O2), %\+ has_prop(birth(glyphic),O1),
+  globalpoints(O1,Ps1), globalpoints(O2,Ps2),
+  \+ \+ (member(P,Ps1), member(P,Ps2)),!.
 
 
 % ==============================================
