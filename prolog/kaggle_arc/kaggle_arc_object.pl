@@ -867,7 +867,7 @@ localpoints(Grid,Points):- is_group(Grid),!,mapgroup(localpoints,Grid,MPoints),a
 localpoints(G,G):- is_points_list(G).
 localpoints(Grid,Points):- is_list(Grid),!,maplist(localpoints,Grid,MPoints),append_sets(MPoints,Points).
 %localpoints(Atom,_):- \+ compound(Atom),!,trace_or_throw(localpoints(Atom)).
-localpoints(I,X):- trace_or_throw(unknown(localpoints(I,X))).
+localpoints(I,X):- trace,trace_or_throw(unknown(localpoints(I,X))).
 
   %localpoints(I,X):- into_grid(I,G),!,grid_size(G,H,V),grid_to_points(G,H,V,X).
 

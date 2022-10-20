@@ -10,7 +10,7 @@
 :- set_prolog_flag(encoding,iso_latin_1).
 :- set_prolog_flag(stream_type_check,false).
 :- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(load_arc_webui,true);true).
-:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_webui,true);true).
+:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_webui,true);set_prolog_flag(use_arc_webui,false)).
 
 :- dynamic('$messages':to_list/2).
 :- multifile('$messages':to_list/2).
@@ -496,6 +496,8 @@ suggest_arc_user(ID):- catch((pengine:pengine_user(ID)),_,fail),!.
 suggest_arc_user(ID):- catch((http_session:session_data(_,username(ID))),_,fail),!.
 
 arc_webui:-  notrace(arc_webui0).
+
+arc_webui0:- current_prolog_flag(use_arc_webui,false),!,fail.
 arc_webui0:- toplevel_pp(http),!.
 arc_webui0:- in_pp(http),!.
 arc_webui0:- toplevel_pp(swish),!.
@@ -1136,12 +1138,12 @@ bfly_startup:-
    set_toplevel_pp(bfly),
    asserta(was_inline_to_bfly),inline_to_bfly_html,
    bfly,
-   ansi,
    catch_log(webui_tests),
    catch_log(print_test),
    catch_log(menu),
    %with_pp(bfly,catch_log(menu)),
-   nop((next_test,previous_test)),!.
+   nop((next_test,previous_test)),!,
+   ansi.
 
 
 ansi_startup:- 
@@ -1152,5 +1154,6 @@ ansi_startup:-
    %with_pp(bfly,catch_log(menu)),
    nop((next_test,previous_test)),!.
 
+:- luser_setval(cmd,test_easy_solve_by).
 
 

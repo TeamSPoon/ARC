@@ -84,10 +84,10 @@ most_unique(symmetry,VM):-
 
 what_unique:- get_current_test(TestID),what_unique(TestID).
 
-what_unique(TestID):- get_vm(VM),
-   fif((VM.id \= (TestID * _ * _)), ndividuator1),
-   get_vm(VM2),
-   explain_uniqueness(VM2.objs).
+what_unique(TestID):- 
+   get_vm(VM),
+   ((VM.id \= (TestID > _ * _)), ndividuator),
+   get_vm(VM2), explain_uniqueness(VM2.objs).
 
 what_unique(TestID,Dict):- is_map(Dict),!,what_unique_dict(TestID,Dict).
 what_unique(TestID,Obj):- get_current_test(TestID),select_group(TestID,Group,_How), member(Obj,Group), must_det_ll(what_unique(TestID,Obj,Group)).
