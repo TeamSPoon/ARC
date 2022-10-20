@@ -253,7 +253,7 @@ obj_plist(PA,PAP):- is_list(PA),!,PAP=PA.
 obj_plist(obj(PA),PAP):- is_list(PA),!,PAP=PA.
 %obj_plist(obj(PA,PAP):- indv_props(PA,PAP),!.
 
-sub_obj_atom(M,M):- var(M),!,fail.
+sub_obj_atom(_,M):- var(M),!,fail.
 %sub_obj_atom(M,M):- attvar(M),!.
 %sub_obj_atom(A,A).
 sub_obj_atom(M,M):- \+ compound(M),!.
@@ -318,13 +318,13 @@ printing_diff(O1,O2):-
 
 
 indiv_show_pairs_input(_Peers,_Shown,_List,Indv):- nb_current(menu_key,'o'),!, dg(Indv).
-indiv_show_pairs_input(_Peers,_Shown,_List,Indv):- get_current_test(TestID), print_info(Indv), what_unique(TestID,Indv).
+indiv_show_pairs_input(_Peers,_Shown,_List,Indv):- get_current_test(TestID), print_info(Indv), ignore(what_unique(TestID,Indv)).
 
 indiv_show_pairs_output(_Peers,_Shown,_List,Indv):- nb_current(menu_key,'o'),!, dg(Indv).
 %indiv_show_pairs_output(_Peers,_Shown,_List,Indv):- has_prop(pen([cc('black',_)]),Indv),!, dash_chars, nop(debug_as_grid(Indv)).
 indiv_show_pairs_output(Peers,_Shown,List,Indv):-
   dash_chars,
-  (best_mates(Indv,List,Mate)->showdiff_arg1(Peers,Indv,List,Mate);debug_as_grid(Indv)).
+  (best_mates(Indv,List,Mate)->showdiff_arg1(Peers,Indv,List,Mate);dg(Indv)).
 
 showdiff_arg1(Peers1,Obj1,Peers2,Obj2):- 
  must_det_ll((
@@ -359,15 +359,6 @@ showdiff_arg1(Peers1,Obj1,Peers2,Obj2):-
 
 undiff(I,O,(MI,IZ),(MO,OZ)):- select_two_props(_Style,I,O,CI,CO,II,OO),two_ok(CI,CO),manage_diff(CI,CO,MI,MO),undiff(II,OO,IZ,OZ).
 undiff(IA,OA,IA,OA).
-remove_giz(L,O):- include(not_giz,L,O),!.
-not_giz(giz(_)):-!,fail.
-not_giz(merged(_)):-!,fail.
-not_giz(birth(_)):-!,fail.
-not_giz(changes(_)):-!,fail.
-not_giz(P):- prop_type(_,P),!.
-not_giz(iz(_)):-!.
-
-not_giz(_):-!,fail.
 
 manage_diff(CI,CO,convert(CI,CO,How),accept(How)).
 
@@ -431,6 +422,15 @@ prop_color(C,C).
 %prop_of(visual_impact,globalpoints(_)).
 usefull_compare(P):- compound(P),functor(P,F,_),!,usefull_compare(F).
 usefull_compare(P):- changed_by(P,_).
+
+remove_giz(L,O):- include(not_giz,L,M),list_to_set(M,O).
+not_giz(giz(_)):-!,fail.
+not_giz(merged(_)):-!,fail.
+not_giz(birth(_)):-!,fail.
+not_giz(changes(_)):-!,fail.
+not_giz(P):- prop_type(_,P),!.
+not_giz(iz(_)):-!.
+not_giz(_):-!,fail.
 
 prop_type(loc,loc(_,_)).
 prop_type(loc,center(_,_)).
