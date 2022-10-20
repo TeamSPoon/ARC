@@ -10,7 +10,7 @@
 :- set_prolog_flag(encoding,iso_latin_1).
 :- set_prolog_flag(stream_type_check,false).
 :- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(load_arc_webui,true);true).
-:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_webui,true);true).
+:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_webui,true);set_prolog_flag(use_arc_webui,false)).
 
 :- dynamic('$messages':to_list/2).
 :- multifile('$messages':to_list/2).
@@ -495,7 +495,10 @@ suggest_arc_user(ID):- catch((if_arc_webui(xlisting_web:find_http_session(ID))),
 suggest_arc_user(ID):- catch((pengine:pengine_user(ID)),_,fail),!.
 suggest_arc_user(ID):- catch((http_session:session_data(_,username(ID))),_,fail),!.
 
+
 arc_webui:-  notrace(arc_webui0).
+
+arc_webui0:- current_prolog_flag(use_arc_webui,false),!,fail.
 arc_webui0:- toplevel_pp(http),!.
 arc_webui0:- in_pp(http),!.
 arc_webui0:- toplevel_pp(swish),!.

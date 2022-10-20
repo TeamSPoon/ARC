@@ -22,12 +22,14 @@ write_menu(Mode):-
 
 write_menu_opts(Mode):-
   get_current_test(TestID),(luser_getval(example,Example);Example=_),!,
+
   format('~N\n    With selected test: ~q ~q ~n~n',[TestID,example(Example)]),
   menu_options(Mode).
 
-menu_options(Mode):- 
+menu_options(Mode):-   
   forall(menu_cmd1(Mode,Key,Info,Goal),print_menu_cmd(Key,Info,Goal)),
   forall(menu_cmd9(Mode,Key,Info,Goal),print_menu_cmd9(Key,Info,Goal)),
+  show_pair_mode,
   !.
 print_menu_cmd(Key):- ignore((menu_cmd1(_,Key,Info,Goal),print_menu_cmd(Key,Info,Goal))).
 print_menu_cmd(_Key,Info,Goal):- format('~N '),print_menu_cmd1(Info,Goal).
@@ -40,9 +42,11 @@ print_menu_cmd1(Info,_Goal):- format('~w',[Info]).
 
 :- multifile(menu_cmd1/4).
 :- multifile(menu_cmd9/4).
-menu_cmd1(_,'t','       You may fully (t)rain from examples considering all the test pairs (this is the default)',(cls_z,!,print_test,train_test)).
-menu_cmd1(_,'T','                  or (T)rain from only understanding single pairs (not considering the test as a whole)',(cls_z,train_only_from_pairs)).
-menu_cmd1(i,'i','             See the (i)ndividuation of the input/outputs',(cls_z,!,ndividuator1)).
+menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z,!,print_test,train_test)).
+menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),
+      sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
+menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(cls_z,!,ndividuatorO)).
+menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the input/outputs',(cls_z,!,ndividuator)).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z,!,what_unique)).
 menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z,!,compile_and_save_test)).
 menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changed_files,print_test)).
@@ -201,20 +205,21 @@ menu_goal(Goal):-
 do_menu_key(-1):- !, arc_assert(wants_exit_menu). 
 do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), arc_assert(wants_exit_menu).
 do_menu_key('?'):- !, write_menu_opts('i').
+do_menu_key('M'):- !, do_menu_key('T').
 do_menu_key('P'):- !, switch_grid_mode,print_test.
-do_menu_key('I'):- !, cls_z,!,ndividuator.
-do_menu_key('o'):- !, cls_z,!,ndividuatorO1.
-do_menu_key('O'):- !, cls_z,!,ndividuatorO.
 do_menu_key( ''):- !, fail.
-do_menu_key('G'):- !, cls_z,!,detect_test_hints1.
 
 do_menu_key('d'):- !, dump_suite.
 
 do_menu_key(Num):- number(Num),!, do_test_number(Num),!.
-do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num), number(Num), do_test_number(Num),!.
+do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num), number(Num), !, do_test_number(Num),!.
+do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), !, menu_goal(Body).
+do_menu_key(Key):- atom(Key), menu_cmds(_,Key,_,Body), !, menu_goal(Body).
 
-do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), menu_goal(Body).
-do_menu_key(Key):- print_menu_cmd(Key),menu_cmds(_Mode,Key,_Info,Goal),!, format('~N~n'), menu_goal(Goal).
+do_menu_key(Key):- atom(Key), atom_length(Key,1), \+ menu_cmd1(_,Key,_,_),
+   char_type(Key,to_upper(LowerKey)),LowerKey\==Key, \+ \+ menu_cmd1(_,LowerKey,_,_),
+   format('~N~n'), get_pair_mode(Mode), alt_pair_mode(Mode,Alt), !,
+     with_pair_mode(Alt,do_menu_key(LowerKey)).
 
 do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), once(Codes=[27|_];Codes=[_]),format("~N % Menu: '~w' ~q ~n",[Key,Codes]),fail.
 
@@ -223,6 +228,7 @@ do_menu_key(Key):- \+ atom(Key), catch(text_to_string(Key,Str),_,fail),Key\==Str
 do_menu_key(Key):- fix_id(Key,TestID),set_current_test(TestID),!,print_test.
 do_menu_key(Key):- atom(Key),atom_codes(Key,Codes),(Codes=[27|_];Codes=[_]),format("~N % Menu did understand '~w' ~q ~n",[Key,Codes]),once(mmake).
 do_menu_key(_).
+
 
 maybe_call_code(Key):- \+ atom(Key), !, 
  catch(text_to_string(Key,Str),_,fail),Key\==Str,catch(atom_string(Atom,Str),_,fail),maybe_call_code(Atom).
@@ -305,23 +311,42 @@ rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 
 ip(I,O):- ip(complete,I,O).
 
-ndividuator1:- get_current_test(TestID),set_flag(indiv,0),with_test_pairs1(TestID,In,Out,ip(In,Out)).
 ndividuator:- get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,ip(In,Out)).
-ndividuatorO1:- get_current_test(TestID),set_flag(indiv,0),with_test_grids1(TestID,In,igo(In)).
 ndividuatorO:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,In,igo(In)).
 
-test_grids(TestID,G):- ignore(get_current_test(TestID)), kaggle_arc_io(TestID,ExampleNum,IO,G), ((ExampleNum*IO) \= ((tst+_)*out)).
+% Training modes
+next_pair_mode(single_pair,whole_test).
+next_pair_mode(whole_test,entire_suite).
+next_pair_mode(entire_suite,single_pair).
+
+alt_pair_mode(single_pair,whole_test).
+alt_pair_mode(whole_test,single_pair).
+alt_pair_mode(entire_suite,whole_test).
+
+set_pair_mode(Mode):- luser_setval('$pair_mode',Mode).
+get_pair_mode(Mode):- nonvar(Mode),get_pair_mode(TMode),!,TMode==Mode.
+get_pair_mode(Mode):- once(luser_getval('$pair_mode',Mode);next_pair_mode(Mode,_)).
+with_pair_mode(Mode,Goal):- get_pair_mode(OldMode), trusted_redo_call_cleanup( set_pair_mode(Mode), Goal, set_pair_mode(OldMode)). 
+switch_pair_mode:- get_pair_mode(Mode),next_pair_mode(Mode,NextMode),!,set_pair_mode(NextMode),show_pair_mode.
+show_pair_mode:- get_pair_mode(Mode), wqnl(["~N~tTraining Pair mode set to: ",Mode]).
+
+% Hides solution grid from code
+kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,G), ((ExampleNum*IO) \= ((tst+_)*out)).
+
+test_grids(TestID,G):- get_pair_mode(entire_suite), kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
+test_grids(TestID,G):- get_pair_mode(whole_test), ignore(get_current_test(TestID)), kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
+test_grids(TestID,G):- ignore(get_current_test(TestID)), ignore(luser_getval(example,ExampleNum)), kaggle_arc_io_safe(TestID,ExampleNum,_IO,G).
 with_test_grids(TestID,G,P):- forall(test_grids(TestID,G),my_menu_call(P)).
-with_test_grids1(TestID,G,P):- ignore(luser_getval(example,ExampleNum)),
-  forall((kaggle_arc_io(TestID,ExampleNum,IO,G),((ExampleNum*IO) \= ((tst+_)*out))),
-  my_menu_call(P)).
 
-test_pairs(TestID,In,Out):- ignore(get_current_test(TestID)), kaggle_arc(TestID,_,In,Out).
 
-with_test_pairs(TestID,In,Out,P):- forall(test_pairs(TestID,In,Out),my_menu_call(P)).
-with_test_pairs1(TestID,In,Out,P):- 
-  ignore(luser_getval(example,ExampleNum)),
-  forall(kaggle_arc(TestID,ExampleNum,In,Out), my_menu_call(P)).
+% Hides solution grid from code
+kaggle_arc_safe(TestID,ExampleNum,I,O):- kaggle_arc(TestID,ExampleNum,I,OO), (((ExampleNum+_) \= ((tst+_)))->O=OO ; true).
+
+test_pairs(TestID,I,O):- get_pair_mode(entire_suite), kaggle_arc_safe(TestID,_ExampleNum,I,O).
+test_pairs(TestID,I,O):- get_pair_mode(whole_test), ignore(get_current_test(TestID)), kaggle_arc_safe(TestID,_ExampleNum,I,O).
+test_pairs(TestID,I,O):- ignore(get_current_test(TestID)), ignore(luser_getval(example,ExampleNum)), kaggle_arc_safe(TestID,ExampleNum,I,O).
+with_test_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call(P)).
+
 
 bad:- ig([complete],v(aa4ec2a5)>(trn+0)*in).
 
@@ -489,6 +514,7 @@ next_pair:-
   trn_tst(Trn,Tst),
   (kaggle_arc(TestID,Trn+N2,_,_)-> ExampleNum=Trn+N2 ; ExampleNum=Tst+0),
   nb_setval(example,ExampleNum),
+  set_pair_mode(single_pair),
   print_single_pair(TestID>ExampleNum),!.
 
 prev_pair:- 
@@ -498,6 +524,7 @@ prev_pair:-
   trn_tst(Trn,Tst),
   (kaggle_arc(TestID,Trn+N2,_,_)-> ExampleNum=Trn+N2 ; ExampleNum=Tst+0),
   nb_setval(example,ExampleNum),
+  set_pair_mode(single_pair),
   print_single_pair(TestID>ExampleNum),!.
 
 
@@ -572,6 +599,9 @@ test_id_border(TestID):-
 
 
 print_test:- notrace((get_current_test(TestID),print_test(TestID))).
+print_whole_test:- notrace((get_current_test(TestID),print_whole_test(TestID))).
+
+print_whole_test(TName):- with_pair_mode(whole_test,print_test(TName)).
 print_test(TName):- 
   arc_user(USER),
   fix_test_name(TName,TestID,ExampleNum1),
@@ -596,6 +626,7 @@ print_test(TName):-
 next_grid_mode(dots,dashes):-!.
 next_grid_mode(_,dots).
 switch_grid_mode:- (luser_getval('$grid_mode',Dots);Dots=dots),next_grid_mode(Dots,Dashes),luser_setval('$grid_mode',Dashes).
+
 as_d_grid(In,In):- \+ luser_getval('$grid_mode',dashes),!.
 as_d_grid(In,In1):- as_ngrid(In,In1).
 as_ngrid(In,In1):- must_det_ll((change_bg_fg(In, _BG, _FG,In0), most_d_colors(In0,_CI,In1))),!.

@@ -318,56 +318,71 @@ printing_diff(O1,O2):-
 
 
 indiv_show_pairs_input(_Peers,_Shown,_List,Indv):- nb_current(menu_key,'o'),!, dg(Indv).
-indiv_show_pairs_input(_Peers,_Shown,_List,Indv):- get_current_test(TestID), print_info(Indv), what_unique(TestID,Indv).
+indiv_show_pairs_input(_Peers,_Shown,_List,Indv):- get_current_test(TestID), print_info(Indv), ignore(what_unique(TestID,Indv)).
 
 indiv_show_pairs_output(_Peers,_Shown,_List,Indv):- nb_current(menu_key,'o'),!, dg(Indv).
 %indiv_show_pairs_output(_Peers,_Shown,_List,Indv):- has_prop(pen([cc('black',_)]),Indv),!, dash_chars, nop(debug_as_grid(Indv)).
 indiv_show_pairs_output(Peers,_Shown,List,Indv):-
   dash_chars,
-  (best_mates(Indv,List,Mate)->showdiff_arg1(Peers,Indv,List,Mate);debug_as_grid(Indv)).
+  (best_mates(Indv,List,Mate)->showdiff_arg1(Peers,Indv,List,Mate);dg(Indv)).
 
 showdiff_arg1(Peers1,Obj1,Peers2,Obj2):- 
  must_det_ll((
   findall(Peer,(nop(has_prop(o(X,Y,_),Obj1)),member(Peer,Peers1),has_prop(o(X,Y,_),Peer),Peer\==Obj1),Peers11),
   findall(Peer,(nop(has_prop(o(X,Y,_),Obj2)),member(Peer,Peers2),has_prop(o(X,Y,_),Peer),Peer\==Obj2),Peers22),
   objs_to_io(Obj1,Obj2,I1,O1),
+  printing_diff(I1,O1),
   ((Obj1==I1) -> (PeersI = Peers11,PeersO = Peers22) ; (PeersI = Peers22,PeersO = Peers11)),
 
+  indv_props(I1,T1),indv_props(O1,T2),
   %link_prop_types(loc,I1,O1,_LOCS),
-  printing_diff(I1,O1),
-  indv_props(I1,S1),indv_props(O1,S2),
-  get_current_test(TestID), ignore(what_unique(TestID,I1)),
+  fif(
+      (\+ (member(P,T1),skip_object(P)), \+ (member(P,T2),skip_object(P))),
+   ((
+  %indv_props(I1,S1),indv_props(O1,S2),
+  get_current_test(TestID), 
+  ignore(what_unique(TestID,I1)),
   %what_unique(TestID,O1),
- fif(nb_current(menu_key,'u'),
- (remove_giz(S1,T1),remove_giz(S2,T2),
-  indv_u_props(I1,IU),indv_u_props(O1,OU),
-  intersection(T1,T2,Sames,IA,OA),maplist(refunctor,Sames,NewSames),
-  object_props_diff(IA,OA,Diffs), listify(Diffs,DiffL),maplist(print_nl,DiffL),      
-  undiff(IA,OA,IZ,OZ),
-  subst_2L(Sames,NewSames, T1+ T2+IU +OU,
-                          _U1+_U2+IU2+OU2),
-  try_omember(PeersI,T1,TT1),
-  flatten_sets([IU2,TT1],LHSSet),
-  flatten_sets([OU2],RHSSet),
+  forall(uniq_prop(PeersI,I1,Prop),writeln(Prop)),
+  fif(nb_current(menu_key,'u'),
+    forall(uniq_prop(PeersI,I1,Prop),
+      add_prop_rule(Prop,I1,O1)))))))).
+
+uniq_prop(PeersI,obj(Props),P):-  
+  member(P,Props),
+    once(uniq(P) ; ( \+ skip_prop(P), \+ sub_var(P,PeersI))).
+
+skip_object(pen([cc(black,_)])).
+
+uniq(o(lf(_),1,_)). % Indicates Biggest
+uniq(o(lf(N),N,_)). % Indicates Smallest 
+
+skip_prop(P):- \+  not_giz(P).
+skip_prop(P):- prop_type(loc,P).
+skip_prop(o(_,nil,_)).
+
+add_prop_rule(Prop,_,_):- skip_prop(Prop),!.
+add_prop_rule(Prop,I1,O1):-
+  %(remove_giz(S1,T1),remove_giz(S2,T2),
+  indv_u_props(I1,T1),indv_u_props(O1,T2),
+  intersection(T1,T2,Sames,_IA,_OA),maplist(refunctor,Sames,NewSames),
+  subst_2L(Sames,NewSames, T1+ T2+Prop,U1+ U2+UProp),
+  undiff(U1,U2,UU1,UU2),
+  %append(U1,Rest1,UU1),
+  %append(U2,Rest2,UU2),
+  %object_props_diff(IA,OA,Diffs), listify(Diffs,DiffL),maplist(print_nl,DiffL),      
+  
+  %try_omember(PeersI,T1,TT1),
   %peerless_props(O1,PeersO,Props2),
   %print([x=[in_i(S1),in_o(Props1),out_i(S2),out_o(Props2)]]),
-  SETS = RHSSet+LHSSet,
-  save_learnt_rule(test_solved(i_o,obj(NewSames,LHSSet,IZ),obj(NewSames,RHSSet,OZ)),1+2+3+4+5+6+SETS,SETS))))),!.
+  SETS = 1+2+3+4+5+6+UU1+UU2+Prop,
+  save_learnt_rule(test_solved(i_o,UProp,UU1,UU2),SETS,SETS),!.
 
 
 
 
 undiff(I,O,(MI,IZ),(MO,OZ)):- select_two_props(_Style,I,O,CI,CO,II,OO),two_ok(CI,CO),manage_diff(CI,CO,MI,MO),undiff(II,OO,IZ,OZ).
 undiff(IA,OA,IA,OA).
-remove_giz(L,O):- include(not_giz,L,O),!.
-not_giz(giz(_)):-!,fail.
-not_giz(merged(_)):-!,fail.
-not_giz(birth(_)):-!,fail.
-not_giz(changes(_)):-!,fail.
-not_giz(P):- prop_type(_,P),!.
-not_giz(iz(_)):-!.
-
-not_giz(_):-!,fail.
 
 manage_diff(CI,CO,convert(CI,CO,How),accept(How)).
 
@@ -431,6 +446,15 @@ prop_color(C,C).
 %prop_of(visual_impact,globalpoints(_)).
 usefull_compare(P):- compound(P),functor(P,F,_),!,usefull_compare(F).
 usefull_compare(P):- changed_by(P,_).
+
+remove_giz(L,O):- include(not_giz,L,M),list_to_set(M,O).
+not_giz(giz(_)):-!,fail.
+not_giz(merged(_)):-!,fail.
+not_giz(birth(_)):-!,fail.
+not_giz(changes(_)):-!,fail.
+not_giz(P):- prop_type(_,P),!.
+not_giz(iz(_)):-!.
+not_giz(_):-!,fail.
 
 prop_type(loc,loc(_,_)).
 prop_type(loc,center(_,_)).

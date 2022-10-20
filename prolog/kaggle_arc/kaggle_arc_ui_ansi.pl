@@ -380,19 +380,20 @@ wots_vs(SS,G):- wots(S,G),strip_vspace(S,SS).
 
 wqs(P):- pp_msg_color(P,C), ansicall(C,wqs0(P)),!.
 
-wqs0(G):- is_map(G), !, write_map(G,'wqs').
 wqs0(X):- plain_var(X), !, wqs(plain_var(X)). 
+wqs0(G):- is_map(G), !, write_map(G,'wqs').
 wqs0(X):- attvar(X), !, wqs(attvar(X)). 
+wqs0([H|T]):- is_list(T), !, wqs(H),need_nl(H,T), wqs(T).
 wqs0(nl):- !, nl. wqs0(''):-!. wqs0([]):-!.
 wqs0(S):- term_is_ansi(S), !, write_keeping_ansi(S).
 wqs0(X):- is_object(X), tersify1(X,Q), X\==Q,!, wqs(Q).
 wqs0(X):- is_object(X), show_shape(X),!.
 wqs0(X):- is_grid(X), !, print_grid(X).
+wqs0(X):- string(X), !, catch(format(X),_,write(X)).
 %wqs([H1,H2|T]):- string(H1),string(H2),!, write(H1),write_nbsp, wqs([H2|T]).
 %wqs([H1|T]):- string(H1),!, write(H1), wqs(T).
 wqs0([skip(_)|T]):- !,wqs(T).
 %wqs([H|T]):- compound(H),!, writeq(H), wqs(T).
-wqs0([H|T]):- !, wqs(H),need_nl(H,T), wqs(T).
 
 wqs0(call(C)):- !, call(C).
 wqs0(C):- is_color(C),!,wqs(color_print(C,C)).
@@ -492,7 +493,29 @@ banner_lines(Color):- nl_if_needed,
   color_print(Color,'=============================================================='),nl,
   color_print(Color,'--------------------------------------------------------------'),nl.
 
-print_side_by_side(C1,C2):- print_side_by_side(C1,_LW,C2), !.
+print_ss(A):- grid_footer(A,G,W),!,must_det_ll(print_grid(W,G)).
+print_ss(A):- must_det_ll(( format('~N'), into_ss_string(A,SS),!,
+  SS = ss(_,Lst), 
+  forall(member(S,Lst),writeln(S)),format('~N'))).
+
+print_side_by_side([]):-!.
+print_side_by_side([A,B|Rest]):- \+ g_smaller_than(A,B),!,print_side_by_side(A,B),format('~N'),!,print_side_by_side(Rest).
+print_side_by_side([A|Rest]):- print_ss(A), print_side_by_side(Rest).
+
+print_side_by_side(A,B):- g_smaller_than(A,B),!, print_ss(A),print_ss(B).
+print_side_by_side(A-WQS1,B-WQS2):- !, print_side_by_side(red,A,WQS1,_,B,WQS2),format('~N').
+print_side_by_side(A,B):- format('~N'),print_side_by_side(A,_,B),format('~N').
+
+grid_footer(G,_,_):- \+ compound(G),!,fail.
+grid_footer((GG-wqs(GF)),GG,GF):- nonvar(GF),!.
+grid_footer((GG-GF),GG,GF):- is_gridoid(GG), !.
+grid_footer(print_grid(GF,GG),GG,GF).
+grid_footer(print_grid(_,_,GF,GG),GG,GF).
+
+
+g_smaller_than(A,B):- grid_footer(A,AA,_),!,g_smaller_than(AA,B).
+g_smaller_than(B,A):- grid_footer(A,AA,_),!,g_smaller_than(B,AA).
+g_smaller_than(A,B):- is_gridoid(A),is_gridoid(A),!, v_hv(A,_,AV),v_hv(B,_,BV), BV>AV.
 
 gridoid_size(G,30,30):- \+ compound(G),!.
 gridoid_size(print_grid(H,V,_),H,V):- nonvar(H),nonvar(V),!.
@@ -580,6 +603,9 @@ print_side_by_side_lists_1st([],_,[],_):-!.
 
 print_side_by_side_lists_1st(L1,W1,L2,LW):- maybe_exend_len(L1,L2,NL1,NL2),!, 
   print_side_by_side_lists_1st(NL1,W1,NL2,LW).
+
+
+print_side_by_side_lists_1st(L1,W1,L2,LW):- is_grid(L1),!,into_ss_string(L1,ss(_,S1)),print_side_by_side_lists_1st(S1,W1,L2,LW).
 
 print_side_by_side_lists_1st([E1,E2|L1],W1,L2,LW):- !,
   wots(S,(write(E2),write('\t '),dash_chars(W1,' ' ))),
@@ -691,7 +717,6 @@ uses_space(C):- code_type(C,print).
 
 into_ss_string(C, X):- var(C),!, must_det_ll(X=ss(1,["var_into_ss_string","2","3"])).
 into_ss_string(C,_):- plain_var(C),!,throw(var_into_ss_string(C)).
-%into_ss_string(A-B,ss(LenAB,ABL)):- into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)), append(LA,LB,ABL), max_min(LenA,LenB,LenAB,_).
 into_ss_string(print_grid(G),SS):- into_ss_string(print_grid_ss(G),SS).
 into_ss_string(print_grid(X,Y,G),SS):- into_ss_string(print_grid_ss(X,Y,G),SS).
 into_ss_string(print_grid0(G),SS):- wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
@@ -702,13 +727,15 @@ into_ss_string(uc(W),SS):- !,wots(SS,format_u(yellow,"\t~@",[wqs(W)])).
 into_ss_string(uc(C,W),SS):- !,wots(SS,color_print(C,call(underline_print(format("\t~@",[wqs(W)]))))).
 into_ss_string(call(C),SS):- wots(S,catch(C,E,true)), 
   (((nonvar_or_ci(E),notrace,break,rrtrace(C))->throw(E);true)), into_ss_string(S,SS).
+
 into_ss_string(A+B,SS):-!,into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)), append(LA,LB,ABL), max_min(LenA,LenB,LenAB,_),
   ss(LenAB,ABL)=SS.
-into_ss_string(A-B,SS):-!,into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)), append(LA,LB,ABL), max_min(LenA,LenB,LenAB,_),
+
+into_ss_string(A-B,SS):-!,into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)), append(LA,[""|LB],ABL), max_min(LenA,LenB,LenAB,_),
   ss(LenAB,ABL)=SS.
 
-into_ss_string(G,SS):- is_gridoid(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(G,SS):- is_grid(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
+into_ss_string(G,SS):- is_gridoid(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(G,SS):- is_object(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(G,SS):- is_points_list(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(G,SS):- is_group(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
@@ -825,7 +852,7 @@ print_grid0(H,V,D):- is_map(D),ignore(H = D.h),ignore(V = D.v),
 print_grid0(H,V,Grid):- \+ callable(Grid),!,write('not grid: '),
   GG= nc_print_grid(H,V,Grid), pp(GG),!,nop(trace_or_throw(GG)).
 
-
+print_grid0(H,V,G):- compound(G), G=(GG-PP),is_grid(GG),!,print_grid(H,V,PP,GG).
 print_grid0(H,V,SIndvOut):- compound(SIndvOut),SIndvOut=(G-GP), \+ is_nc_point(GP),!, 
   with_glyph_index(G,with_color_index(GP,print_grid0(H,V,G))),!.
 print_grid0(H,V,Grid):- is_points_list(Grid), points_to_grid(H,V,Grid,PGrid),!,print_grid0(H,V,PGrid).

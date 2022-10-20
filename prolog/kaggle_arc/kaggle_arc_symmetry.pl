@@ -567,9 +567,12 @@ is_fti_step(maybe_repair_in_vm).
 maybe_repair_in_vm(P4,VM):-
  ignore(( 
   maybe_set_vm(VM),
+  VM.can_repair == true,
   VM.h >= 14, VM.v >= 14,
   Grid=VM.grid,
-  VM.can_repair == true,
+  mass(Grid,GridMass),
+  Area is VM.h * VM.v,  
+  GridMass/Area > 0.39,
   enum_colors(Color), column_or_row(Grid,Color),
   repair_in_vm(P4,VM))).
 
@@ -717,7 +720,7 @@ reinforce_best_values(ID,Code):-
   wdmsg(reinforce_best_values(ID,Code)).
 
 test_symmetry_code(Grid,[],RepairedResult,Code):- 
-  repair_repeats(_VM,Grid,RepairedResult,Code).
+  repair_repeats(_UC,_VM,Grid,RepairedResult,Code).
 test_symmetry_code(Grid,Grids,RepairedResult,Code):- 
   grid_to_3x3_objs(_VM,[],Grid,Grids,_Keep,RepairedResult,Code).
 %test_symmetry_code(Grid,Grids):- repair_symmetry(Grid,Grids).
@@ -725,19 +728,22 @@ test_symmetry_code(Grid,Grids,RepairedResult,Code):-
 repair_symmetry(G,GR):-
  find_and_use_pattern_gen(G,GR),!.
  
-repair_repeats(VM,Grid,RepairedResult,Code):-
+repair_repeats(UC,VM,Grid,RepairedResult,Code):-
   colors(Grid,[cc(HC,Count)|_]),!,
-  repair_repeats0(VM,Grid,RepairedResult,Code), Grid\=@=RepairedResult,
+  repair_repeats0(UC,VM,Grid,RepairedResult,Code), Grid\=@=RepairedResult,
   nop((colors(RepairedResult,ListCounts),
   (member(cc(HC,NewCount),ListCounts)-> NewCount =< Count ; true))).
 
-repair_repeats0(_VM,Grid,RepairedResult,Did):-
-  maybe_try_something(Grid,RepairedResult,Did).
+repair_repeats0(UC,_VM,Grid,RepairedResult,Did):-
+  maybe_try_something(Grid,RepairedResult,Did),
+  (atom(UC)->sub_var(UC,Did);true).
 
-repair_repeats0(_VM,Grid,RepairedResult,[blur_least(_,fg)]):-
-  \+ is_trim_symmetric(Grid),
+repair_repeats0(UC,_VM,Grid0,RepairedResult,[blur_least(_,fg)]):-
+  \+ is_trim_symmetric(Grid0),
+ (is_color(UC)->unbind_color(UC,Grid0,Grid);Grid=Grid0),
   blur_least(_,fg,Grid,RepairedResult),
   nop(is_trim_symmetricD(RepairedResult)).
+  
 
 
 maybe_try_something(Grid,RepairedResultO,Did):- maybe_try_something0(Grid,RepairedResultO,Did).
@@ -1845,13 +1851,6 @@ show_make_symmetrical(G):-
 
 /*
 */
-print_side_by_side([]):-!.
-print_side_by_side([A,B|Rest]):- !,print_side_by_side2(A,B),!,print_side_by_side(Rest).
-print_side_by_side([A]):- print_side_by_side2(A,A).
-
-print_side_by_side2(A-N1,B-N2):- !, print_side_by_side2(A,B),write(N1-N2).
-print_side_by_side2(A,B):- format('~N'),print_side_by_side(A,_,B).
-
 % by rotating the image 90 degrees.. filling in .. and again 2 more times
 is_able_v(Flip,Top):- var(Flip),!,verify_symmetry(Flip,Top).
 is_able_v(Flip,Top):- call(Flip,Top,TopR), TopR=Top.

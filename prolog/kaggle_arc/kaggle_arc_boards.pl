@@ -282,9 +282,9 @@ show_found2(HO,VO,H,V,Info,F):-
   constrain_grid(f,_TrigF,OF,FF),!,
   print_grid(H,V,Info,FF),!.
 
-test_grid_hint:- clsbake, forall(all_arc_test_name(TestID),test_grid_hint(TestID)).
+test_grid_hint:- clsbake, forall(arc_test_name(TestID),test_grid_hint(TestID)).
 
-save_grid_hints:-  forall(all_arc_test_name(TestID),test_grid_hint(TestID)),
+save_grid_hints:-  forall(arc_test_name(TestID),test_grid_hint(TestID)),
   listing(arc_test_property/3).
 
 %test_grid_hint:- get_current_test(TestID),test_grid_hint(TestID).
@@ -482,10 +482,10 @@ min_unifier(A,B,A):- plain_var(B),!.
 min_unifier(A,B,B):- plain_var(A),!.
 */
 
-min_unifier(A,B,AA):- is_list(A),is_list(B),!,min_list_unifier(A,B,AA), ignore((length(A,AL),length(B,AL),length(AA,AL))).
-min_unifier(A,B,AA):- is_cons(A),is_cons(B),!,min_list_unifier(A,B,AA).
-
 min_unifier(A,B,D):- number(A),number(B),!,c_proportional(A,B,D).
+min_unifier(A,B,AA):- is_grid(A),is_grid(B),!,min_grid_unifier(A,B,AA),!.
+min_unifier(A,B,AA):- is_list(A),is_list(B),!,min_list_unifier(A,B,AA),ignore((length(A,AL),length(B,AL),length(AA,AL))).
+min_unifier(A,B,AA):- is_cons(A),is_cons(B),!,min_list_unifier(A,B,AA),!.
 %min_unifier(A,B,C):- is_list(A),sort(A,AA),A\==AA,!,min_unifier(B,AA,C).
 min_unifier(A,B,R):- compound(A),compound(B),
  compound_name_arguments(A,F,AA),compound_name_arguments(B,F,BB),!,
@@ -495,8 +495,13 @@ min_unifier(A,B,_):- (\+ compound(A);\+ compound(B)),!.
 
 is_cons(A):- compound(A),A=[_|_].
 
-min_list_unifier(A,B,AA):- is_list(A),is_list(B),sort(A,AA),sort(B,BB),BB=@=AA,!.
-min_list_unifier(A,B,[E1|C]):- is_list(A),is_list(B),select(E1,A,AA),select(E2,B,BB), nop(( \+ is_color(E1), \+ is_color(E2))), E1=@=E2,!,min_list_unifier(AA,BB,C).
+
+min_grid_unifier(A,B,[E1|C]):- select(E1,A,AA),select(E2,B,BB), E1=@=E2 ,!,min_list_unifier(AA,BB,C).
+min_grid_unifier(A,B,[E |C]):- select(E1,A,AA),select(E2,B,BB),min_unifier(E1,E2,E),!,min_list_unifier(AA,BB,C).
+min_grid_unifier(_,_,_).
+
+min_list_unifier(A,B,AA):- is_list(A),is_list(B), \+ (is_grid(A),is_grid(B)), sort(A,AA),sort(B,BB),BB=@=AA,!.
+min_list_unifier(A,B,[E1|C]):- select(E1,A,AA),select(E2,B,BB), E1=@=E2 ,!,min_list_unifier(AA,BB,C).
 min_list_unifier(A,B,[EC|C]):- is_list(A),is_list(B),select_two(A,B,E1,E2,AA,BB), min_unifier(E1,E2,EC) ,!,min_list_unifier(AA,BB,C).
 min_list_unifier([E1|AA],[E2|BB],[EC|C]):- min_unifier(E1,E2,EC) ,!,min_unifier(AA,BB,C).
 min_list_unifier([_|A],[_|B],[_|C]):- !,min_list_unifier(A,B,C).
@@ -567,6 +572,19 @@ all_ogs(In,Out,XY):- %member(R,[strict,loose]),
 ensure_how(How):- var(How),!,member(How,[nsew,fg_shapes(nsew),colormass,fg_shapes(colormass),force_by_color,alone_dots]).
 ensure_how(_How).
 
+forall_count(P,Q):-
+  setup_call_cleanup(flag('$fac_t',W,0),
+    setup_call_cleanup(flag('$fac_p',W2,0),
+      forall((P,flag('$fac_t',X,X+1)),
+        ignore(once((Q,flag('$fac_p',Y,Y+1))))),
+      flag('$fac_p',EP,W2)),
+    flag('$fac_t',ET,W)),
+  wdmsg(EP/ET=forall_count(P,Q)).
+
+
+test_easy:- clsmake, forall_count(arc_test_name(TestID),test_easy(TestID)).
+test_easy(TestID):- 
+  solves_all_pairs(TestID,P2), dash_chars, dmsg(P2), print_test(TestID), dmsg(P2), dash_chars.
 
 solves_all_pairs(TestID,P2):- !,
    easy_solve_by(TestID,P2),
@@ -581,6 +599,8 @@ solves_all_pairs(TestID,P2):-
    try_p2(P2,TI,TO), 
    kaggle_arc(TestID,tst+0,EI,EO), 
    try_p2(P2,EI,EO).
+
+
 /*
 solves_all_pairs(TestID,P,P2S):- kaggle_arc(TestID,tst+0,_,_), 
  findall(P2,(easy_solve_by(TestID,P2),
@@ -588,20 +608,16 @@ solves_all_pairs(TestID,P,P2S):- kaggle_arc(TestID,tst+0,_,_),
      kaggle_arc(TestID,_,In,Out),AllTrue),maplist(call,AllTrue)),[P|P2S]).
 */
 
-test_easy:- clsmake, forall_count(all_arc_test_name(TestID),test_easy(TestID)).
+test_each_example_pair:- clsmake, forall_count(test_pairs(TestID,I,O),test_each_example_pair(TestID,I,O)).
+test_each_example_pair(TestID,I,O):- 
+    kaggle_arc(TestID,ExampleNum,I,O),
+    findall(P2, (easy_solve_by(TestID,P2),call(P2,I,EM),EM=@=O),P2S),
+    (P2S\==[] -> wqs([TestID,ExampleNum,passed,using,q(P2S)]) ; (wqs([TestID,ExampleNum,failed]),!,fail)).
 
-forall_count(P,Q):-
-  setup_call_cleanup(flag('$fac_t',W,0),
-    setup_call_cleanup(flag('$fac_p',W2,0),
-      forall((P,flag('$fac_t',X,X+1)),
-        ignore(once((Q,flag('$fac_p',Y,Y+1))))),
-      flag('$fac_p',EP,W2)),
-    flag('$fac_t',ET,W)),
-  wdmsg(EP/ET=forall_count(P,Q)).
-        
 
-test_easy(TestID):- 
-  solves_all_pairs(TestID,P2), dash_chars, dmsg(P2), print_test(TestID), dmsg(P2), dash_chars.
+
+
+
 
 
 try_p2(P2,In,Out):- call(P2,In,Mid),Out=@=Mid,!.
@@ -611,11 +627,12 @@ try_p2(P2,In,Out):- call(P2,In,Mid),Out=@=Mid,!.
 easy_solve_by(TestID,flip_Once(_)):- user:arc_test_property(TestID,common,comp(cbg('black'),i-o,grav_rot),_).
 easy_solve_by(_TestID,P2):- easy1(P2).
 
-easy1(increase_size_by_mass).
+easy1(increase_size_by_grid_mass). %ac0a08a4
 easy1(shrink_grid).
 easy1(X):- easy2(X).
 easy1(two_ops(trim_to_rect,_)). %f25fbde4
 easy1(two_ops(two_ops(trim_to_rect,flip_Once(_)),_)).
+%easy1(two_ops(repair_in_vm(repair_repeats(black)),get(repaired))).
 
 easy2(X):- easy_sol(X).
 easy2(flip_Once(_)).
@@ -629,7 +646,7 @@ easy2(increase_size(4)).
 
 
 % ac0a08a4
-increase_size_by_mass(In,Out):- mass(In,Mass),increase_size(Mass,In,Out).
+increase_size_by_grid_mass(In,Out):- mass(In,Mass),increase_size(Mass,In,Out).
 
 two_ops(P1,P2,I,O):- once((call(P1,I,M),I\==M)),
   easy2(P2),P2\=two_ops(_,_),call(P2,M,O),M\==O.
