@@ -145,14 +145,14 @@ vm_for_grid(Grid,IDO,Out,VM):-
   IDO = VM.id .
 
 
-test_repair_symmetry:- clsmake, forall(repair_symmetry0,true).
+test_repair_symmetry_ALL:- clsmake, forall(repair_symmetry0,true).
 :- arc_history(test_repair_symmetry).
 repair_symmetry0:- 
  forall(
   is_symgrid(TestID), 
   %arc_test_name(TestID),
   ignore(repair_symmetry(TestID))).
-  
+
 repair_symmetry(TestID):- \+ is_grid(TestID), 
  fix_id(TestID,TTestID), TTestID \== TestID, repair_symmetry(TestID).
 repair_symmetry(TestID):- \+ is_grid(TestID),
@@ -179,6 +179,12 @@ repair_symmetry(Grid):- is_grid(Grid),!,
   fif(is_hard(TestID),wdmsg(is_hard(TestID))),!,
   ignore(time(repair_symmetry_code(Grid,_,_))),
   set(VM.grid_target)=_.
+
+
+test_repair_symmetry:-
+  test_p2(repair_symmetry(_Did)).
+
+repair_symmetry(Code,G,GR):- repair_symmetry_code(G,GR,Code),!.
 
 repair_symmetry_code(Grid,RepairedResult,Code):- 
   must_det_ll((
@@ -209,7 +215,24 @@ repair_symmetry_code(Grid,RepairedResult,Code):-
    ((var(Out)->Out=[[_]];true),
      print_side_by_side(red,Orig,gridIn(ID),_,Out,out(ID)),
      arcdbg_info(red,none_found(symmetry_code(ID))),!,fail)).
-   
+
+
+test_symmetry_code(G,Grids,GR,Code):-
+  test_symmetry_code0(G,Grids,GR,Code),!.
+
+test_symmetry_code0(G,[],GR,Code):- 
+  repair_repeats(_UC,_VM,G,GR,Code).
+
+test_symmetry_code0(G,[],GR,Code):- 
+  try_something(Code,G,GR).
+
+test_symmetry_code0(G,[],GR,find_and_use_pattern_gen):- 
+  find_and_use_pattern_gen(G,GR).
+
+test_symmetry_code0(G,Grids,GR,Code):- 
+  grid_to_3x3_objs(_VM,[],G,Grids,_Keep,GR,Code).
+
+
 changed_grid(In,Out,_):- In=@=Out,!.
 changed_grid(Out,In,Vis):- (var(Out);Out==black),!,make_visible(In,Vis).
 changed_grid(In,Out,Vis):- (var(Out);Out==black),!,make_visible(In,Vis).
@@ -218,7 +241,7 @@ changed_grid(In,_,Vis):- make_visible(In,Vis).
 
 make_visible(In,Vis):- is_real_color(In),In\==black,!,Vis=In.
 make_visible(In,Vis):- is_bg_color(In),!,Vis='.'-'#801110'.
-make_visible(In,Vis):- is_fg_color(In),!,Vis='x'-'#F0fff0'.
+make_visible(In,Vis):- is_fg_color(In),!,Vis='x'-'#f0fff0'.
 make_visible(_In,'?'-'#1077f1').
 
 crop(X,Y,G,GO):- make_grid(X,Y,GO),maplist_until(aligned_rows_u,G,GO).
@@ -722,17 +745,7 @@ reinforce_best_values(ID,Code):-
   forall(Data,assert_test_property(TestID,rbv,code,Code)),
   wdmsg(reinforce_best_values(ID,Code)).
 
-test_symmetry_code(Grid,[],RepairedResult,Code):- 
-  repair_repeats(_UC,_VM,Grid,RepairedResult,Code).
-test_symmetry_code(Grid,Grids,RepairedResult,Code):- 
-  grid_to_3x3_objs(_VM,[],Grid,Grids,_Keep,RepairedResult,Code).
-%test_symmetry_code(Grid,Grids):- repair_symmetry(Grid,Grids).
 
-test_repair_symmetry_p_two:-
-  test_p2(repair_symmetry).
-
-repair_symmetry(G,GR):-
- find_and_use_pattern_gen(G,GR),!.
  
 repair_repeats(UC,VM,Grid,RepairedResult,Code):-
   colors(Grid,[cc(HC,Count)|_]),!,

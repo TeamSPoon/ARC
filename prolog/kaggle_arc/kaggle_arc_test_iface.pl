@@ -313,10 +313,14 @@ rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 
 ip(I,O):- ip(complete,I,O).
 
-ndividuator:-
+
+ndividuator:- 
+ never_entire_suite,
  show_test_pairs,
  get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,ip(In,Out)).
-ndividuatorO:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,In,igo(In)).
+
+
+ndividuatorO:- never_entire_suite,get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,In,igo(In)).
 
 show_test_pairs:- with_test_pairs(TestID,In,Out,print_side_by_side(green,In,in(show_test_pairs(TestID)),_,Out,out(show_test_pairs(TestID)))).
 
@@ -334,7 +338,9 @@ get_pair_mode(Mode):- nonvar(Mode),get_pair_mode(TMode),!,TMode==Mode.
 get_pair_mode(Mode):- once(luser_getval('$pair_mode',Mode);next_pair_mode(Mode,_)).
 with_pair_mode(Mode,Goal):- get_pair_mode(OldMode), trusted_redo_call_cleanup( set_pair_mode(Mode), Goal, set_pair_mode(OldMode)). 
 switch_pair_mode:- get_pair_mode(Mode),next_pair_mode(Mode,NextMode),!,set_pair_mode(NextMode),show_pair_mode.
-show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), wqnl(["~N~t............ (e)xecute: ", b(q(Cmd)), "with pair mode set to: ",b(Mode)]).
+show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), wqnl(["~N~t............ (e)xecute: ", b(q(Cmd)), "with pair mode set to: ",b(q(Mode))]).
+skip_entire_suite:- never_entire_suite,!,fail.
+never_entire_suite:- ignore((get_pair_mode(entire_suite),set_pair_mode(whole_test))).
 
 set_test_cmd(Mode):- luser_setval('cmd',Mode).
 get_test_cmd(Mode):- luser_getval('cmd',Mode).

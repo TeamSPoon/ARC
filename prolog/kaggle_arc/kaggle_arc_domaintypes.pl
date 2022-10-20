@@ -131,7 +131,10 @@ is_spec_color(V,C):- into_color_name_always(V,C),!,atom(C),!,C\==fg,C\==wfg,C\==
 
 is_color(CO):- attvar(CO),!,get_attr(CO,ci,_).
 is_color(CO):- is_real_color(CO).
+
+is_real_color(C):- atom(C),atom_concat('#',_,C),!.
 is_real_color(C):- atom(C),named_colors(L),member(C,L),!.
+
 get_real_fg_color(C):- named_colors(L),member(C,L),is_fg_color(C).
 
 decl_one_fg_color(Color):- put_attr(Color,ci,fg(Color)).

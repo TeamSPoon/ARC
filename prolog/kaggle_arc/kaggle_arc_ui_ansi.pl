@@ -615,9 +615,6 @@ print_side_by_side_lists_1st([],_,[],_):-!.
 print_side_by_side_lists_1st(L1,W1,L2,LW):- maybe_exend_len(L1,L2,NL1,NL2),!, 
   print_side_by_side_lists_1st(NL1,W1,NL2,LW).
 
-
-print_side_by_side_lists_1st(L1,W1,L2,LW):- is_grid(L1),!,into_ss_string(L1,ss(_,S1)),print_side_by_side_lists_1st(S1,W1,L2,LW).
-
 print_side_by_side_lists_1st([E1,E2|L1],W1,L2,LW):- !,
   wots(S,(write(E2),write('\t '),dash_chars(W1,' ' ))),
   atom_length(S,Pre),
@@ -1174,6 +1171,7 @@ named_colors([ (lack),(blue),(red),(green),(yellow),(Silver),(purple),(orange),(
 named_colors([(lack),(blue),(red),(green),(yellow),(silver),(magenta),(orange),(cyan),(brown)]).
 named_colors([(lack),(blue),(red),(green),(yellow),(grey),(pink),(orange),(teal),(maroon)]).
 
+% '#1077f1'
 fg_cut('#b399d4').
 % silver(rgb(123,123,123)).
 silver('#9a9a9a').
@@ -1339,10 +1337,9 @@ int2glyph0(GN,Glyph):- GN > 255, GN2 is GN div 2, int2glyph0(GN2,Glyph).
 print_gw1(N):- print_gw1(color_print_ele,N),!.
 
 print_gw1(P2,N):- 
-
  wots(S,(((get_bgc(BG),is_color(BG), once((BG\==black-> call(P2,BG,'.');write_nbsp);write(',')));write_nbsp),!,
-  (print_g1(P2,N);write('?')))),!,
- gws(S).
+  (print_g1(P2,N);write('?')))),!, gws(S).
+
 gws(S):- write(S),!.
 %gws(S):- atom_length(S,L),(L=28->(write(L),atom_codes(S,Codes),arc_assert(ac(S)));write(S)).
 %print_gw1(N):- compound(N),N = C-W,!,color_print(C,W),!.
@@ -1365,6 +1362,7 @@ mregression_test(P1):- call(P1,[[_17910,_17922-green,_17934-green,_17946-green,_
 %print_g1(C):- compound_var(C,N),underline_print(print_g1(N)),!.
 
 print_g1(CG):- print_g1(color_print_ele,CG).
+print_g1(P2,C):- C == ((+) - wbg),!,call(P2,wbg,(+)).
 print_g1(P2,C):- mv_peek_color(C,V),C\==V,!,print_g1(P2,V).
 print_g1(P2,C):- plain_var(C), write_nbsp,!, nop(( nobject_glyph(C,G),underline_print(print_g1(P2,G-G)))),!.
 print_g1(_ ,C):- C == black,!, write_nbsp.
@@ -1408,7 +1406,7 @@ into_color_glyph(N,C,DOT):- is_spec_fg_color(N,C),fg_dot(DOT).
 into_color_glyph(N,C,DOT):- is_fg_color(N),N=C,fg_dot(DOT).
 into_color_glyph(N,C,DOT):- is_bg_color(N),C=N,bg_dot(DOT).
 into_color_glyph(N,C,DOT):- cant_be_color(N,C),cant_be_dot(DOT).
-into_color_glyph(Obj,C,G):- color(Obj,C),object_glyph(Obj,G),!.
+into_color_glyph(Obj,C,G):- is_object(Obj),color(Obj,C),object_glyph(Obj,G),!.
 into_color_glyph(N,C,Code):- compound(N),N=(C-G),is_color(C),Code=G.
 into_color_glyph(N,C,Code):- compound(N),N=(G-C),is_color(C),Code=G.
 into_color_glyph(CTerm,Color,Code):- compound(CTerm),into_color_glyph_ez(CTerm,Color,Code),nonvar_or_ci(Code),!.

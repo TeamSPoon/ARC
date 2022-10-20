@@ -344,6 +344,7 @@ individuation_macros(do_ending, [
   find_touches,  
   find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
   find_sees,
+  find_overlap,
   % find_contained_points, % mark any "completely contained points"
   combine_same_globalpoints, % make sure any objects are perfectly the equal part of the image are combined 
   %label_sizes,
@@ -387,8 +388,8 @@ individuator(i_subtractions,[fg_subtractions([save_as_objects(i_mono_fg),save_as
 individuator(i_mono_fg,[fg_shapes(i_n_w)]).
 individuator(i_bg_mono,[bg_shapes(i_n_w)]).
 
-individuator(i_columns,[when(get(h)=<5,all_columns),some_columns]). %:- \+ doing_pair.
-individuator(i_rows,[when(get(h)=<5,all_rows),some_rows]). %:- \+ doing_pair.
+%individuator(i_columns,[when(get(h)=<5,all_columns),some_columns]). %:- \+ doing_pair.
+%individuator(i_rows,[when(get(h)=<5,all_rows),some_rows]). %:- \+ doing_pair.
 %aindividuator(i_repair_mirrors,[maybe_repair_in_vm(find_symmetry_code)]).
 %individuator(i_mono_colormass,[fg_shapes([subshape_both(v,[n_w,all_lines,diamonds])])]).
 % individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
