@@ -674,10 +674,9 @@ find_hybrid_shapes(VM):-
   print_grid(hybrid_shape(HL,TestID,VM.gid),VM.grid),!,
   maplist(release_bg,List,FGList),
   % maplist(=,List,FGList),
-  predsort(sort_on(term_variables_len),FGList,Set),
+  predsort(sort_on(hybrid_order),FGList,Set),
   print_side_by_side(Set),!,
   call(ignore((hybrid_shape_from(Set,VM)))))).
-
 
 release_bg(List,FGList):- is_list(List),!,maplist(release_bg,List,FGList).
 release_bg(Point,_):- is_bg_color(Point),!.
@@ -704,6 +703,25 @@ hybrid_shape_from(Set,VM):-
   remCPoints(VM,GOPoints),
   remGPoints(VM,Intersection),
   ignore(hybrid_shape_from(Set,VM)))).
+
+
+use_hybrid_grid(In):- In\=[[_]], mass(In,Mass),Mass>2.
+
+hybrid_order(Grid,Len+NArea):- term_variables_len(Grid,Len),area(Grid,Area),NArea is -Area.
+
+%shape_size(G,H+V+VsC+Cs):- grid_size(G,H,V),term_variables_len(G,VsC),colors(G,Cs).
+term_variables_len(G,VsC):- term_variables(G,Vs),length(Vs,VsC).
+:- dynamic(hybrid_shape/2).
+
+learn_hybrid_shape(ReColored):- is_grid(ReColored),!,
+   ignore((use_hybrid_grid(ReColored), get_current_test(TestID),assert_if_new(hybrid_shape(TestID,ReColored)))).
+learn_hybrid_shape(ReColored):- is_list(ReColored),!,maplist(learn_hybrid_shape,ReColored).
+learn_hybrid_shape(ReColored):- object_grid(ReColored,Grid), learn_hybrid_shape(Grid).
+
+get_hybrid_set(Set):-
+  get_current_test(TestID),
+  findall(O,hybrid_shape(TestID,O),List),
+  predsort(sort_on(hybrid_order),List,Set).
 
 
 % =====================================================================
@@ -1513,14 +1531,11 @@ fg_shapes(Shape,VM):-
   set_vm(VMS),
   globalpoints_include_bg(VM.grid_o,Recolors),
   maplist(recolor_object(Recolors),FoundObjs,ReColored),
-  learn_obj_grids(ReColored),
+  learn_hybrid_shape(ReColored),
   remCPoints(VM,ReColored),
   remGPoints(VM,ReColored),
   addInvObjects(VM,ReColored))))),!.
 
-learn_obj_grids(ReColored):- is_grid(ReColored),!,get_current_test(TestID),assert_if_new_safe(hybrid_shape(TestID,ReColored)).
-learn_obj_grids(ReColored):- is_list(ReColored),!,maplist(learn_obj_grids,ReColored).
-learn_obj_grids(ReColored):- object_grid(ReColored,Grid), learn_obj_grids(Grid).
 
 
 colors_across(Grid,Silvers):-

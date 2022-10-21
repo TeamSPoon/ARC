@@ -75,17 +75,14 @@ compile_and_save_test(TestID):-
   test_deduce_shapes,
   save_supertest(TestID))).
 
+
+
 test_deduce_shapes:- 
   forall(grid_to_obj(Grid,O),nop(ignore(once((global_grid(O,OO),print_side_by_side(Grid,OO),writeq(O)))))),
-  get_current_test(TestID),
-  findall(O,hybrid_shape(TestID,O),List),
-  predsort(sort_on(shape_size),List,Set),
+  get_hybrid_set(Set),
   print_side_by_side(Set),
   nop(forall(member(O,Set),(grid_to_norm(O,Ops,N),print_side_by_side(O,N),writeln(Ops)))).
 
-
-shape_size(G,H+V+VsC+Cs):- grid_size(G,H,V),term_variables_len(G,VsC),colors(G,Cs).
-term_variables_len(G,VsC):- term_variables(G,Vs),length(Vs,VsC).
 
 individuate_pairs_from_hints(TestID):- 
   arc_assert(individuate_test_grids(TestID)),
@@ -722,17 +719,11 @@ grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(How),individuate(How,
 
 %grid_to_objs(Grid,How,Objs):- (nonvar(Grid)->true;test_grids(_,Grid)), ensure_how(How), individuate(How,Grid,Objs).
 
-:- dynamic(hybrid_shape/2).
 % one way to match or find an outlier is compressing things in sets minus one object.. the set that is second to the largest tells you what single object os the most differnt 
 objs_shapes(Objs,In):- get_current_test(TestID),test_shapes(TestID,Objs,In).
 
-test_shapes(TestID, Objs,In):- member(Obj,Objs),object_grid(Obj,In), 
-  assert_if_new_safe(hybrid_shape(TestID,In)),fail.
-test_shapes(TestID,_Objs,In):- hybrid_shape(TestID,In).
-
-assert_if_new_safe(hybrid_shape(TestID,In)):-
-  ((In == [['yellow'],['yellow']]) -> break ; true),
-  assert_if_new(hybrid_shape(TestID,In)).
+test_shapes(TestID, Objs,In):- member(Obj,Objs),object_grid(Obj,In), learn_hybrid_shape(In),fail.
+test_shapes(TestID,_Objs,In):- hybrid_shape(TestID,In),use_hybrid_grid(In).
  
 
 grid_to_obj_other(VM,Grid,O):- other_grid(Grid,Grid2), grid_to_obj_other_grid(VM,Grid,Grid2,O).

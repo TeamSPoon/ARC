@@ -222,7 +222,7 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
 
   ignore((member(iz(shaped),Overrides),
       % \+ member(iz(image),Overrides),
-     get_current_test(TestID), assert_if_new_safe(hybrid_shape(TestID,LocalGrid)))),
+     learn_hybrid_shape(LocalGrid))),
 
   % calc center
   must_det_ll(once(
