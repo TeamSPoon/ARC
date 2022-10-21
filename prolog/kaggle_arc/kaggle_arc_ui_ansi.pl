@@ -734,7 +734,7 @@ into_ss_string(ss(Len,L),ss(Len,L)):-!.
 into_ss_string(uc(W),SS):- !,wots(SS,format_u(yellow,"\t~@",[wqs(W)])).
 into_ss_string(uc(C,W),SS):- !,wots(SS,color_print(C,call(underline_print(format("\t~@",[wqs(W)]))))).
 into_ss_string(call(C),SS):- wots(S,catch(C,E,true)), 
-  (((nonvar_or_ci(E),notrace,break,rrtrace(C))->throw(E);true)), into_ss_string(S,SS).
+  (((nonvar_or_ci(E),notrace,bt,break,rrtrace(C))->throw(E);true)), into_ss_string(S,SS).
 into_ss_string(A+B,SS):-!,into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)), append(LA,LB,ABL), max_min(LenA,LenB,LenAB,_),
   ss(LenAB,ABL)=SS.
 
@@ -748,6 +748,7 @@ into_ss_string(G,SS):- is_points_list(G),!,wots(S,print_grid_ss(G)),!,into_ss_st
 into_ss_string(G,SS):- is_group(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(L,ss(Len,L)):- is_list(L), find_longest_len(L,Len),!.
 into_ss_string(S,SS):- string(S), !, atomics_to_string(L,'\n',S),!,into_ss_string(L,SS).
+into_ss_string(G,SS):- into_grid(G,GR),is_grid(GR),!,wots(S,print_grid_ss(GR)),!,into_ss_string(S,SS).
 into_ss_string(C,SS):-       wots(S,catch(C,E,true)), 
   (((nonvar_or_ci(E),notrace,break,rrtrace(C))->throw(E);true)), into_ss_string(S,SS).
 

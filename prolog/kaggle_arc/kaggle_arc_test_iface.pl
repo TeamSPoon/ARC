@@ -311,16 +311,16 @@ rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 
 ip(I,O):- ip(complete,I,O).
 
+%show_test_pairs,
+ndividuator:- never_entire_suite, show_test_pairs, get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,ip(In,Out)).
+%ndividuatorO:- never_entire_suite,get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,(igo(In),igo(Out)).
+ndividuatorO:- never_entire_suite,show_test_grids, get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,Grid,(igo(Grid))).
 
-ndividuator:- 
- never_entire_suite,
- show_test_pairs,
- get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,ip(In,Out)).
+
+show_test_pairs:- get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,print_side_by_side(green,In,in(show_test_pairs(TestID)),_,Out,out(show_test_pairs(TestID)))).
+show_test_grids:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,Grid,print_grid(show_test_grids(TestID),Grid)).
 
 
-ndividuatorO:- never_entire_suite,get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,In,igo(In)).
-
-show_test_pairs:- with_test_pairs(TestID,In,Out,print_side_by_side(green,In,in(show_test_pairs(TestID)),_,Out,out(show_test_pairs(TestID)))).
 
 % Training modes
 next_pair_mode(single_pair,whole_test).
@@ -344,20 +344,20 @@ set_test_cmd(Mode):- luser_setval('cmd',Mode).
 get_test_cmd(Mode):- luser_getval('cmd',Mode).
 
 % Hides solution grid from code
-kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,G), ((ExampleNum*IO) \= ((tst+_)*out)).
+kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,G), (((ExampleNum*IO) \= ((tst+_)*out))).
 
-test_grids(TestID,G):- get_pair_mode(entire_suite), kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
-test_grids(TestID,G):- get_pair_mode(whole_test), ignore(get_current_test(TestID)), kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
-test_grids(TestID,G):- ignore(get_current_test(TestID)), ignore(luser_getval(example,ExampleNum)), kaggle_arc_io_safe(TestID,ExampleNum,_IO,G).
+test_grids(TestID,G):- get_pair_mode(entire_suite), !, kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
+test_grids(TestID,G):- get_pair_mode(whole_test), !, ignore(get_current_test(TestID)), kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
+test_grids(TestID,G):- ignore(get_current_test(TestID)), ignore(luser_getval(example,ExampleNum)), kaggle_arc_io(TestID,ExampleNum,_IO,G).
 with_test_grids(TestID,G,P):- forall(test_grids(TestID,G),my_menu_call(P)).
 
 
 % Hides solution grid from code
-kaggle_arc_safe(TestID,ExampleNum,I,O):- kaggle_arc(TestID,ExampleNum,I,OO), (((ExampleNum+_) \= ((tst+_)))->O=OO ; true).
+kaggle_arc_safe(TestID,ExampleNum,I,O):- kaggle_arc(TestID,ExampleNum,I,OO), ((((ExampleNum+_) \= ((tst+_)))->O=OO ; true)).
 
-test_pairs(TestID,I,O):- get_pair_mode(entire_suite), kaggle_arc_safe(TestID,_ExampleNum,I,O).
-test_pairs(TestID,I,O):- get_pair_mode(whole_test), ignore(get_current_test(TestID)), kaggle_arc_safe(TestID,_ExampleNum,I,O).
-test_pairs(TestID,I,O):- ignore(get_current_test(TestID)), ignore(luser_getval(example,ExampleNum)), kaggle_arc_safe(TestID,ExampleNum,I,O).
+test_pairs(TestID,I,O):- get_pair_mode(entire_suite), !, kaggle_arc_safe(TestID,_ExampleNum,I,O).
+test_pairs(TestID,I,O):- get_pair_mode(whole_test), !, ignore(get_current_test(TestID)), kaggle_arc_safe(TestID,_ExampleNum,I,O).
+test_pairs(TestID,I,O):- ignore(get_current_test(TestID)), ignore(luser_getval(example,ExampleNum)), kaggle_arc(TestID,ExampleNum,I,O).
 with_test_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call(P)).
 
 

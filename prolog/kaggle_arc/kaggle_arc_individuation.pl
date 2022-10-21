@@ -369,12 +369,13 @@ im_complete(save_as_objects(complete,ListO)):- test_config(indiv(ListO)),!.
 
 im_complete(ListO):-
 %individuation_macros(complete, ListO):-  \+ test_config(indiv(_)),!, %reset_points, %sub_individuate(force_by_color,subshape_both), %TODO %
-  findall(save_as_objects(From),individuator(From,_),ListM),
+  findall(drops_as_objects(From),individuator(From,_),ListM),
   append([
    %find_grids,
-   [i_columns,i_rows],
+   %[i_columns,i_rows],
    %[gather_texture],
    ListM,  
+   [find_hybrid_shapes],
    %[pointless([sub_indiv([save_as_objects(force_by_color),save_as_objects(i_colormass),save_as_objects(i_nsew)])])],
    [do_ending]],ListO).
 %use_individuator(Some):- individuator(Some,_).
@@ -384,10 +385,10 @@ individuation_macros(i_rows,[when(get(h)=<5,all_rows),when(get(v)>5,some_rows)])
   
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
 individuator(i_maybe_glypic,[maybe_glyphic]).
-individuator(i_n_w,[n_w,all_lines,do_ending]).
+individuator(i_n_w,[n_w,diamonds,all_lines,colormass,do_ending]).
 individuator(i_subtractions,[fg_subtractions([save_as_objects(i_mono_n_w),save_as_objects(i_n_w)])]).
 individuator(i_mono_n_w,[fg_shapes(i_n_w)]).
-individuator(i_hybrid_shapes,[find_hybrid_shapes]).
+%individuator(i_hybrid_shapes,[find_hybrid_shapes]).
 %individuator(i_repair_mirrors,[maybe_repair_in_vm(find_symmetry_code)]).
 %individuator(i_mono_colormass,[fg_shapes([subshape_both(v,[n_w,all_lines,diamonds])])]).
 % individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
@@ -675,7 +676,7 @@ find_hybrid_shapes(VM):-
   % maplist(=,List,FGList),
   predsort(sort_on(term_variables_len),FGList,Set),
   print_side_by_side(Set),!,
-  nop(ignore((hybrid_shape_from(Set,VM)))))).
+  call(ignore((hybrid_shape_from(Set,VM)))))).
 
 
 release_bg(List,FGList):- is_list(List),!,maplist(release_bg,List,FGList).
@@ -687,14 +688,10 @@ hybrid_shape_from(Set,VM):-
   member(In,Set),
   maybe_ogs_color(R,OH,OV,In,Grid), 
  %wdmsg(maybe_ogs_color(R,OH,OV,In,Grid)),
-  localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints), 
- length(VM.points,PL),
- remGPoints(VM,GOPoints),
- length(VM.points,PLNew),
- PLNew\==PL,!,
- 
- must_det_ll((
-  
+  localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints),
+  intersection(VM.points,GOPoints,Intersection),
+ Intersection\==[],!,
+  must_det_ll((
   %indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
   make_indiv_object(VM,[],GOPoints,Obj),
   dash_chars,
@@ -705,6 +702,7 @@ hybrid_shape_from(Set,VM):-
   %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  trace,  
   %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
   remCPoints(VM,GOPoints),
+  remGPoints(VM,Intersection),
   ignore(hybrid_shape_from(Set,VM)))).
 
 
@@ -1592,6 +1590,17 @@ after_subtract(Shape,VM):-
   set(VM.grid)=OldGrid)),
   !.
 
+% =====================================================================
+is_fti_step(drops_as_objects).
+% =====================================================================
+drops_as_objects(Name,VM):-
+  %Objs = VM.objs,!,
+ must_det_ll((
+  Grid = VM.grid,
+  %notrace(catch(call_with_depth_limit(individuate1(_,Name,VM.grid_o,IndvS0),20_000,R),E,(wdmsg(E)))),
+  individuate1(_,Name,Grid,_IndvS0)
+  %maplist(override_object(iz(bp(Name))),IndvS0,IndvS1),
+  )),!.
 
 % =====================================================================
 is_fti_step(save_as_objects).
