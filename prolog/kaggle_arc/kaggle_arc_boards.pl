@@ -722,8 +722,8 @@ grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(How),individuate(How,
 % one way to match or find an outlier is compressing things in sets minus one object.. the set that is second to the largest tells you what single object os the most differnt 
 objs_shapes(Objs,In):- get_current_test(TestID),test_shapes(TestID,Objs,In).
 
-test_shapes(TestID, Objs,In):- member(Obj,Objs),object_grid(Obj,In), learn_hybrid_shape(In),fail.
-test_shapes(TestID,_Objs,In):- hybrid_shape(TestID,In),use_hybrid_grid(In).
+test_shapes(_TestID, Objs,In):- member(Obj,Objs),object_grid(Obj,In), learn_hybrid_shape(In),fail.
+test_shapes(_TestID,_Objs,In):- get_hybrid_set(Set),!,member(In,Set).
  
 
 grid_to_obj_other(VM,Grid,O):- other_grid(Grid,Grid2), grid_to_obj_other_grid(VM,Grid,Grid2,O).
@@ -801,7 +801,7 @@ count_C(Color,Flat,S+D):- member(Color,Flat),!,my_partition(=(Color),Flat,Sames,
 % grid_to_obj(Grid,[colormass,fg_shapes(colormass)],Obj),print_side_by_side(Grid,Obj).
 
 all_ogs3(Grid,Out,XY):-
-  findall(notrim(Obj,R)-loc(XX,YY),(grid_to_so(Grid,Out,Obj,In,R),maybe_ogs_color(R,XX,YY,In,Out)),XY).
+  findall(ogs(notrim,Obj,R,loc(XX,YY)),(grid_to_so(Grid,Out,Obj,In,R),maybe_ogs_color(R,XX,YY,In,Out)),XY).
 /*
 all_ogs3(Grid,Out,XY):-
   findall(notrim(Obj,R)-loc(XX,YY),((grid_to_so(Grid,Obj,In,R);grid_to_so(Out,Obj,In,R)),maybe_ogs_color(R,XX,YY,In,Out)),XY).
@@ -809,9 +809,9 @@ all_ogs3(Grid,Out,XY):-
 
 all_ogs1(II,Out,XY):-
   once((trim_to_rect(II,In), II\=In, (once(ogs_11(OX,OY,In,II);(OX=OY,OX=1))))),
-  findall(trim(whole,R)-loc(XX,YY),(maybe_ogs(R,X,Y,In,Out),XX is X-OX+1, YY is Y-OY+1),XY), nop(XY\==[]).
+  findall(ogs(trim,whole,R,loc(XX,YY)),(maybe_ogs(R,X,Y,In,Out),XX is X-OX+1, YY is Y-OY+1),XY), nop(XY\==[]).
 
-all_ogs2(In,Out,XY):- findall(notrim(whole,R)-loc(XX,YY),maybe_ogs(R,XX,YY,In,Out),XY),nop(XY\==[]).
+all_ogs2(In,Out,XY):- findall(ogs(notrim,whole,R,loc(XX,YY)),maybe_ogs(R,XX,YY,In,Out),XY),nop(XY\==[]).
 
 %maybe_ogs(R,X,Y,In,Out):-  find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R=loose).
 maybe_ogs(R,X,Y,In,Out):- maybe_ogs_color(R,X,Y,In,Out).

@@ -718,11 +718,21 @@ learn_hybrid_shape(ReColored):- is_grid(ReColored),!,
 learn_hybrid_shape(ReColored):- is_list(ReColored),!,maplist(learn_hybrid_shape,ReColored).
 learn_hybrid_shape(ReColored):- object_grid(ReColored,Grid), learn_hybrid_shape(Grid).
 
-get_hybrid_set(Set):-
+get_hybrid_set(SetR):-
   get_current_test(TestID),
   findall(O,hybrid_shape(TestID,O),List),
-  predsort(sort_on(hybrid_order),List,Set).
+  sort(List,SList),
+  predsort(sort_on(hybrid_order),SList,Set),
+  h_all_rots(Set,SetR).
 
+h_all_rots(Set,SetR):- findall(E,(member(G,Set),each_rot(G,E)),L),list_to_set(L,SetR).
+
+each_rot(G,G).
+each_rot(G,R):- rot90(G,R).
+each_rot(G,R):- rot180(G,R).
+each_rot(G,R):- rot270(G,R).
+each_rot(G,R):- flipH(G,R).
+each_rot(G,R):- flipV(G,R).
 
 % =====================================================================
 is_fti_step(label_sizes).
