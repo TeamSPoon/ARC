@@ -220,7 +220,9 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
   once(member(grid(LocalGrid),Overrides);LocalGrid=Grid),
 
 
-  get_current_test(TestID), assert_if_new(hybrid_shape(TestID,LocalGrid)),
+  ignore((member(iz(shaped),Overrides),
+      % \+ member(iz(image),Overrides),
+     get_current_test(TestID), assert_if_new_safe(hybrid_shape(TestID,LocalGrid)))),
 
   % calc center
   must_det_ll(once(

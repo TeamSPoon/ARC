@@ -372,22 +372,22 @@ im_complete(ListO):-
   findall(save_as_objects(From),individuator(From,_),ListM),
   append([
    %find_grids,
+   [i_columns,i_rows],
    %[gather_texture],
    ListM,  
    %[pointless([sub_indiv([save_as_objects(force_by_color),save_as_objects(i_colormass),save_as_objects(i_nsew)])])],
    [do_ending]],ListO).
 %use_individuator(Some):- individuator(Some,_).
 
-
+individuation_macros(i_columns,[when(get(h)=<5,all_columns),when(get(h)>5,some_columns)]). %:- \+ doing_pair.
+individuation_macros(i_rows,[when(get(h)=<5,all_rows),when(get(v)>5,some_rows)]). %:- \+ doing_pair.
   
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
-individuator(i_hybrid_shapes,[find_hybrid_shapes]).
 individuator(i_maybe_glypic,[maybe_glyphic]).
-%individuator(i_columns,[when(get(h)=<5,all_columns),some_columns]). %:- \+ doing_pair.
-%individuator(i_rows,[when(get(h)=<5,all_rows),some_rows]). %:- \+ doing_pair.
 individuator(i_n_w,[n_w,all_lines,do_ending]).
 individuator(i_subtractions,[fg_subtractions([save_as_objects(i_mono_n_w),save_as_objects(i_n_w)])]).
 individuator(i_mono_n_w,[fg_shapes(i_n_w)]).
+individuator(i_hybrid_shapes,[find_hybrid_shapes]).
 %individuator(i_repair_mirrors,[maybe_repair_in_vm(find_symmetry_code)]).
 %individuator(i_mono_colormass,[fg_shapes([subshape_both(v,[n_w,all_lines,diamonds])])]).
 % individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
@@ -657,8 +657,17 @@ is_fti_step(find_hybrid_shapes).
 % =====================================================================
 find_hybrid_shapes(VM):-
  ignore((
+  Grid = VM.grid,
+  mass(Grid,GMass),
   get_current_test(TestID),
-  findall(O,hybrid_shape(TestID,O),List),
+  findall(In,
+    ( hybrid_shape(TestID,In),
+      In\=[[_]],In\=Grid,
+      mass(In,Mass),  
+      Mass<GMass,
+      Mass>2,
+      amass(In,AMass),
+      nop(AMass==9)),List),
   List\==[],
   length(List,HL),!,
   print_grid(hybrid_shape(HL,TestID,VM.gid),VM.grid),!,
@@ -666,7 +675,7 @@ find_hybrid_shapes(VM):-
   % maplist(=,List,FGList),
   predsort(sort_on(term_variables_len),FGList,Set),
   print_side_by_side(Set),!,
- nop(( hybrid_shape_from(Set,VM))))).
+  nop(ignore((hybrid_shape_from(Set,VM)))))).
 
 
 release_bg(List,FGList):- is_list(List),!,maplist(release_bg,List,FGList).
@@ -1043,8 +1052,8 @@ into_fti(ID,ROptions,GridIn0,VM):-
   %rtrace,
    %rtrace,
   (is_dict(GridIn0)-> (VM = GridIn0, GridIn = GridIn0.grid) ; GridIn0 = GridIn),
-  globalpoints_include_bg(GridIn,Points),
   into_grid(GridIn,Grid),
+  globalpoints_include_bg(GridIn,Points),
   (var(ID)->grid_to_tid(Grid,ID);true),
   grid_size(Grid,H,V),
  % rb_new(HM),duplicate_term(HM,Hashmap),
@@ -1393,49 +1402,57 @@ mergable_dir(Ps1,Ps2,Dir):- member(C-P1,Ps1), member(C-P2,Ps2), is_adjacent_poin
 one_fti(VM,'all_rows'):-
  Grid = VM.grid_o,
  (\+ ground(Grid) -> true ;
-  maplist_n(1,row_to_indiv(VM), Grid)).
+  maplist_n(1,row_to_indiv(VM,'all_rows'), Grid)).
 
 one_fti(VM,'some_rows'):-
  Grid = VM.grid_o,
  (\+ ground(Grid) -> true ;
-  forall( solid_row_number(Grid,_Color,N,C2), row_to_indiv(VM,N,C2))).
+  forall( solid_row_number(Grid,_Color,N,C2), row_to_indiv(VM,'some_rows',N,C2))).
 
-solid_row_number(Grid,C,N,C2):- 
-      append(Prev,[C1,C2,C3|_],[[z,e,r,o]|Grid]),
-           once(maplist(=(C),C2)), \+ is_bg_color(C), \+ maplist(=(C),C1), \+ maplist(=(C),C3),
-           length([_|Prev],N).
+solid_row_number(Grid,C,N,Row):- 
+    grid_size(Grid,_H,V),
+    %make_list(black,H,BlankRow),
+    nth1(N,Grid,Row),    
+    maplist(=(C),Row),
+    \+ is_bg_color(C),
+    \+ \+ (
+    ( N == 1 -> \+ (nth1(2,Grid,Row2),maplist(=(C),Row2)) ; 
+    ( N == V -> ( N1 is N - 1, \+ (nth1(N1,Grid,Row1),maplist(=(C),Row1))) ;
+    ( N1 is N - 1, \+ (nth1(N1,Grid,Row1),maplist(=(C),Row1)) , N2 is N + 1, \+ (nth1(N2,Grid,Row2),maplist(=(C),Row2)))))),    
+    \+ (delete(Grid,Row,Rest), member(Row2, Rest), append(_,[C,C|_],Row2)).
 
-row_to_indiv(VM,N,Row):-
+row_to_indiv(VM,Birth,N,Row):-
   sameR([Row],Rot90),
   localpoints_include_bg(Rot90,LPoints),
   offset_points(1,N,LPoints,GPoints),
   %grid_to_individual([Row],Obj0),  
   % a column is a row that was prematurely rotated 270 degrees
-  make_indiv_object(VM,[iz(image),
-     birth(rows),iz(grouped(i_rows)),
-     loc(1,N),v_hv(VM.h,1),giz(grid_sz(VM.h,VM.v))],GPoints,Obj),
+  make_indiv_object(VM,[iz(image), birth(Birth), iz(grouped(Birth)),
+     loc(1,N),
+     v_hv(VM.h,1),
+     giz(grid_sz(VM.h,VM.v))],GPoints,Obj),
   raddObjects(VM,Obj).
 
 one_fti(VM,'all_columns'):-
  Grid = VM.grid_o,
  (\+ ground(Grid) -> true ;
   rot90(Grid,Grid90),
-  maplist_n(1,column_to_indiv(VM), Grid90)).
+  maplist_n(1,column_to_indiv(VM,'all_columns'), Grid90)).
 
 one_fti(VM,'some_columns'):-
  Grid = VM.grid_o,
  (\+ ground(Grid) -> true ;
   rot90(Grid,Grid90),
-  forall( solid_row_number(Grid90,_Color,N,C2), column_to_indiv(VM,N,C2))).
+  forall( solid_row_number(Grid90,_Color,N,C2), column_to_indiv(VM,'some_columns',N,C2))).
 
-column_to_indiv(VM,N,Row):-  
+column_to_indiv(VM,Birth,N,Row):-  
   rot270([Row],Rot270),
   localpoints_include_bg(Rot270,LPoints),
   offset_points(N,1,LPoints,GPoints),
   %grid_to_individual([Row],Obj0),  
   % a column is a row that was prematurely rotated 270 degrees
   make_indiv_object(VM,[/*iz(hv_line(v)),rotated(sameR),*/
-    birth(columns),iz(image),iz(grouped(i_columns)),loc(N,1),rotation(sameR),v_hv(1,VM.v),giz(grid_sz(VM.h,VM.v))],GPoints,Obj),
+    birth(Birth),iz(image),iz(grouped(Birth)),loc(N,1),rotation(sameR),v_hv(1,VM.v),giz(grid_sz(VM.h,VM.v))],GPoints,Obj),
   raddObjects(VM,Obj).
   
 % =====================================================================
@@ -1498,9 +1515,15 @@ fg_shapes(Shape,VM):-
   set_vm(VMS),
   globalpoints_include_bg(VM.grid_o,Recolors),
   maplist(recolor_object(Recolors),FoundObjs,ReColored),
+  learn_obj_grids(ReColored),
   remCPoints(VM,ReColored),
   remGPoints(VM,ReColored),
   addInvObjects(VM,ReColored))))),!.
+
+learn_obj_grids(ReColored):- is_grid(ReColored),!,get_current_test(TestID),assert_if_new_safe(hybrid_shape(TestID,ReColored)).
+learn_obj_grids(ReColored):- is_list(ReColored),!,maplist(learn_obj_grids,ReColored).
+learn_obj_grids(ReColored):- object_grid(ReColored,Grid), learn_obj_grids(Grid).
+
 
 colors_across(Grid,Silvers):-
   findall(C,color2_across(Grid,C),Silvers).
@@ -1919,8 +1942,10 @@ whole_into_obj(VM,Grid,Whole):-
   grid_size(Grid,H,V),
   localpoints_include_bg(Grid,Points),
   length(Points,Len),
+  grid_props(Grid,Props0),
+  delete(Props0,sometimes_grid_edges(_),Props),
   fif(Len>0,
-    (make_indiv_object(VM,[amass(Len),v_hv(H,V),birth(whole),iz(image)],Points,Whole),raddObjects(VM,Whole),
+    (make_indiv_object(VM,[amass(Len),v_hv(H,V),birth(whole),iz(image)|Props],Points,Whole),raddObjects(VM,Whole),
        save_grouped(individuate(VM.gid,whole),[Whole]),assert_shape_lib(pair,Whole))),
   localpoints(Grid,LPoints),
   length(LPoints,CLen),fif((CLen=<144,CLen>0),    

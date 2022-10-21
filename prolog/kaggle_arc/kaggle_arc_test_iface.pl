@@ -556,7 +556,7 @@ new_current_test_info(WasTestID,TestID):-
   ignore((
   %luser_getval(task,TestID),
   get_current_test(TestID),
-  pp(fav(TestID,[])),
+  %pp(fav(TestID,[])),
   %luser_setval(example,tst+0),
   luser_setval(last_test_name,TestID))),
   save_last_test_name,

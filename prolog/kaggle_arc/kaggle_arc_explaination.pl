@@ -131,12 +131,6 @@ debug_as_grid(  I,   A):- is_1gridoid(A), !, subst(A,'black','wbg',AA), print_gr
 debug_as_grid( '',Grid):- !, pp(Grid).
 debug_as_grid(Why,Grid):- pp(debug_as_grid(Why,Grid)).
 
-into_ngrid(Points,NGrid):-  v_hv(Points,H,V),into_ngrid(Points,H,V,NGrid).
-into_ngrid(Obj,H,V,NGrid):-
-  localpoints_include_bg(Obj,Points),
-  neighbor_map(H,V,Points,Points,CountedPoints),!,
-  points_to_grid(H,V,CountedPoints,NGrid).
-
   
 
 :- discontiguous debug_indiv/1. 
