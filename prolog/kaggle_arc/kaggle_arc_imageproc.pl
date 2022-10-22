@@ -182,7 +182,7 @@ trim_to_square(G0,G9):- get_bgc(BG),
 
 
 trim_v_repeats(G0,G9):- \+ is_list(G0),into_grid(G0,G1),!,trim_v_repeats(G1,G9).
-trim_v_repeats(G0,G9):- append(L,[R1,R2|R],G0),R1==R2,append(L,[R1|R],G5),!,trim_v_repeats(G5,G9).
+trim_v_repeats(G0,G9):- append(L,[R1,R2|R],G0),R1=@=R2,append(L,[R1|R],G5),!,trim_v_repeats(G5,G9).
 trim_v_repeats(G0,G0).
 
 trim_h_repeats(G0,G9):- \+ is_list(G0),into_grid(G0,G1),!,trim_h_repeats(G1,G9).
@@ -371,7 +371,10 @@ set_all_bg_colors(Color,Grid,NewGrid):- map_pred(do_set_all_bg_colors(Color),Gri
 
 %do_set_all_fg_colors(Color,CPoint,NewCPoint):- is_cpoint(CPoint),CPoint=C-Point,hv_point(_,_,Point),is_fg_color(C),NewCPoint=Color-Point.
 
-blur(Op,G0,GG):- into_grid(G0,G),call(Op,G,GGG),replace_local_points(GGG,black,G,GG).
+blur(Op,G0,GG):- into_grid(G0,G),call(Op,G,GGG),replace_local_points(GGG,black,G,GG),is_a_change(G,GGG).
+
+is_a_change(G,GG):- G=@=GG,!,fail.
+is_a_change(_,_):-!.
 
 backfill_vars(GridO):- clause(backfill(GridO),true).
 

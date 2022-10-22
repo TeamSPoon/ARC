@@ -162,7 +162,7 @@ detect_all_training_hints(TestID):-
 training_only_exmaples(ExampleNum):- ignore(ExampleNum=(trn+_)).
 detect_test_hints1:- clsbake, get_current_test(TestID),detect_test_hints1(TestID).
 detect_test_hints1(TestID):- 
- ignore(luser_getval(example,ExampleNum)), training_only_exmaples(ExampleNum),
+ some_current_example_num(ExampleNum), training_only_exmaples(ExampleNum),
  forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_pair_hints(TestID,ExampleNum,In,Out)).
   
 
@@ -607,24 +607,33 @@ solves_all_pairs(TestID,P2):-
    try_p2(P2,EI,EO).
 
         
-test_easy_solve_by:- clsmake, fail.
-test_easy_solve_by:- get_pair_mode(entire_suite),!,forall_count(all_arc_test_name(TestID),test_example_grid(TestID)).
+%test_easy_solve_by:- clsmake, fail.
+/*
+test_easy_solve_by:- get_pair_mode(single_pair),!,
+  get_current_test(TestID),some_current_example_num(ExampleNum),
+  forall_count(kaggle_arc(TestID,ExampleNum,I,O),test_easy_solve_test_pair(TestID,ExampleNum,I,O)).
+*/
+test_easy_solve_by:- get_pair_mode(entire_suite),clsmake,!,forall_count(all_arc_test_name(TestID),test_example_grid(TestID)).
 %test_easy_solve_by:- test_p2(test_easy_solve_pair).
 %test_easy_solve_by:- test_p2(simple_todolist(_)).
-test_easy_solve_by:- test_p2(simple_todolist(_)).
+test_easy_solve_by:- test_p2(test_easy_solve_pair).
 
 :- luser_default(cmd,test_easy_solve_by). 
 
-test_easy_solve_pair(I,O):- set_current_test(I),
+test_easy_solve_pair(I,O):- %set_current_test(I),
  (kaggle_arc(TestID,ExampleNum,I,O) *-> test_easy_solve_test_pair(TestID,ExampleNum,I,O) ; 
    (test_example_grid(I),test_example_grid(O))).
 
 test_easy_solve_test_pair(TestID,ExampleNum,I,O):- var(TestID),get_current_test(TestID),
-   ignore((luser_getval(example,ExampleNum))),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
+   some_current_example_num(ExampleNum),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
 test_easy_solve_test_pair(TestID,ExampleNum,I,O):- 
    ignore((nonvar(TestID), set_current_test(TestID))),
-   findall(P2, (easy_solve_by(TestID,P2),call(P2,I,EM),(var(O)->true;EM=@=O)),P2S),!, 
-   (P2S\==[] -> wqs([TestID>ExampleNum,passed,using,q(P2S)]) ; (nop(wqs([TestID>ExampleNum,failed])),!,fail)).
+   ignore(kaggle_arc(TestID,ExampleNum,I,O)),
+   put_attr(EM,expect_p2,O),
+   (CALL=  ?-(test_easy_solve_test_pair(TestID,ExampleNum,'$VAR'('I'),'$VAR'('O')))),
+   findall(P2,(easy_solve_by(TestID,P2),call(P2,I,EM),EM=O),P2S),!,
+   nl_if_needed,
+   (P2S\==[] -> wqs(["Passed: ",CALL,"using",q(P2S)]) ; ( \+ get_pair_mode(entire_suite),wqs(["failed: ",b(q(CALL))]),!,fail)).
 
 test_example_grid(I):- var(I),!.
 test_example_grid(I):- kaggle_arc(TestID,ExampleNum,I,O),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
@@ -634,32 +643,74 @@ test_example_grid(G):- set_current_test(G),!,get_current_test(TestID),test_easy_
 
 easy_solve_by(TestID,flip_Once(_)):- user:arc_test_property(TestID,common,comp(cbg('black'),i-o,grav_rot),_).
 easy_solve_by(_TestID,P2):- easy_p2(P2).
+%easy_p2(flip_Once(_)).
 
+easy_p2(simple_todolist(_)).
+easy_p2(P2):- easy0(_,P2).
+%easy_p2(two_ops(repair_in_vm(repair_repeats(black)),get(repaired))).
 
 try_p2(P2,In,Out):- call(P2,In,Mid),Out=@=Mid,!.
 %try_p2(P2,In,Out):- call(P2,In,Out),!.
 %try_p2(P2,In,Out):- call(P2,In,Out),!.
 
-
-%easy1(flip_Once(_)).
-easy_p2(simple_todolist(_)).
-%easy1(two_ops(repair_in_vm(repair_repeats(black)),get(repaired))).
-
 expect_p2:attr_unify_hook(_,_).
 
+do_simple_todolist([],IO,IO):-!.
+do_simple_todolist([H|T],I,O):- !, do_simple_todolist(H,I,M),do_simple_todolist(T,M,O).
+do_simple_todolist(P2,I,O):- call(P2,I,O).
+
+
+%easy0(trim_to_rect).
+%easy0(X):- easy_sol(X).
+%easy0(_,=).
+easy0(0,trim_hv_repeats).
+easy0(1,trim_blank_lines).
+easy0(2,flip_Once(_)).
+easy0(3,swap_two_colors(_,_)).
+easy0(4,blur(flipV)).
+easy0(5,increase_size_by_grid_mass). %ac0a08a4
+easy0(5,increase_size_by_color_count). %ac0a08a4
+easy0(5,grow_4). % 3af2c5a8
+easy0(5,grow_2). % 963e52fc
+easy0(5,double_size).
+easy0(5,increase_size(4)).
+easy0(5,crop_by(_)).
+
+%simple_todolist(List,I,OO):- is_list(List),!, do_simple_todolist(List,I,OO).
 simple_todolist(List,I,OO):-
   ignore(get_attr(OO,expect_p2,O)),
-  simple_todolist(0,[],[],List,I,O,OO).
+  easy0(_,P2),call(P2,I,M),fits_grid(O,M),must_det_ll((List = [P2],M=OO)),!.
+simple_todolist(List,I,OO):-
+  ignore(get_attr(OO,expect_p2,O)),
+  guess_simple_todolist(0,[],[],List,I,O,OO),!.
 
-simple_todolist(N,SolSoFar,DoneSoFar,Plan,I,O,OO):- !,
+/*
+guess_simple_todolist(N,SolSoFar,DoneSoFar,Plan,I,O,OO):- !,
  ((fits_grid(O,I),N>0) 
 -> (Plan=DoneSoFar,OO=I) 
-;(findall(h_g(H1,I1),(easy0(N,H1),call(H1, I,I1),\+ member(I1,SolSoFar)), H1G),
+;(findall(h_g(H1,I1),(easy0(N,H1),call(H1, I,I1), (H1=='=' -> true ; (is_a_change(I,I1), \+ member(I1,SolSoFar)))), H1G),
   predsort(using_compare(arg(2)),H1G,H1GSS),sort(H1GSS,H1GS),
   maplist(arg(2),H1GS,SOFAR),append(SolSoFar,SOFAR,NewSOFAR),
   member(h_g(H1,I1),H1GS),
   Next is N+1,
-  simple_todolist(Next,NewSOFAR,[H1|DoneSoFar],Plan,I1,O,OO))).
+  guess_simple_todolist(Next,NewSOFAR,[H1|DoneSoFar],Plan,I1,O,OO))).
+*/
+guess_simple_todolist(N,_,_,_,_,_,_):- N> 5,!,fail.
+guess_simple_todolist(N,_Failed,IPlan,Plan,I,O,OO):- N\==0, fits_grid(O,I),!,OO=I,reverse(IPlan,Plan).
+/*
+guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):- Next is N+1,
+  findall(h_g(H1,I1),(easy0(N,H1),call(H1, I,I1), (H1=='='-> true ; nop((is_a_change(I,I1), \+ member(h_g(_,I1),Failed))))), H1G),
+  predsort(using_compare(arg(2)),H1G,H1GS),
+  select(h_g(H1,I1),H1GS,Rest),
+  %append(Rest,Failed,NewFailed), 
+  Rest=NewFailed, 
+  guess_simple_todolist(Next,NewFailed,[H1|Planned],Plan,I1,O,OO).
+*/
+guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):- Next is N+1,
+  easy0(N,H1), call(H1, I,I1), is_a_change(I,I1), guess_simple_todolist(Next,Failed,[H1|Planned],Plan,I1,O,OO).
+
+guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):-
+  Next is N+1, guess_simple_todolist(Next,Failed,Planned,Plan,I,O,OO).
 
 /*
 simple_todolist(SolSoFar,List,I,O,OO):-
@@ -679,32 +730,13 @@ simple_todolist(SolSoFar,List,I,O,OO):-
 fits_grid(O,_):- var(O),!.
 fits_grid(O,I1):-O=@=I1.
 
-easy0(_,=).
-%easy0(trim_to_rect).
-%easy0(X):- easy_sol(X).
-%easy0(shrink_grid).
-easy0(0,trim_blank_lines).
-easy0(1,trim_hv_repeats).
-%easy_sol(trim_blank_lines).
-
-%easy2(=).
-easy0(2,flip_Once(_)).
-
-easy0(3,swap_two_colors(_,_)).
-
-easy0(4,increase_size_by_grid_mass). %ac0a08a4
-easy0(4,grow_4). % 3af2c5a8
-easy0(4,grow_2). % 963e52fc
-easy0(4,crop_by(_)).
-easy0(4,blur(flipV)).
-easy0(4,double_size).
-easy0(4,increase_size(4)).
-
-
 
 
 % ac0a08a4
 increase_size_by_grid_mass(In,Out):- mass(In,Mass),increase_size(Mass,In,Out).
+%b91ae062
+increase_size_by_color_count(In,Out):- fg_color_count(In,Size),increase_size(Size,In,Out).
+
 crop_by(HH/H,In,Out):- grid_size(In,H,V),between(1,H,HH),HH<H,clip(1,1,HH,V,In,Out).
 grow_4(In,Out):- flipV(In,FlipV),append(In,FlipV,Left),flipH(Left,Right),append_left(Left,Right,Out).
 grow_2(In,Out):- append_left(In,In,Out).

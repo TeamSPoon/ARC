@@ -753,11 +753,16 @@ label_sizes(GType,Objs,SF,LF):-
    set_zorder(GType,lf(LFLen),LF),
    !.
 
+  
+
+%has_order(O,P1, Code ):- 
+% Code = ((
 set_zorder(GType,ZType,IndvS):- set_zorder(GType,ZType,1,IndvS).
 set_zorder(_GType,_ZType,_,[]):-!.
-set_zorder(GType,ZType,N,[L|IndvS]):-  
-  get_setarg_p1(nb_setarg,I,L,P1), compound(I), I=.. [o,ZType,_,GType], 
-   call(P1,o(ZType,N,GType)),
+set_zorder(GType,ZType,N,[L|IndvS]):-  O = o, P1 = compound,
+  get_setarg_p1(nb_setarg,I,L,P1), call(P1,I), I=.. [O,ZType,_,GType], 
+    II=..[O,ZType,N,GType],
+   call(P1,II),
    N2 is N+1,!,
    set_zorder(GType,ZType,N2,IndvS).
 set_zorder(GType,ZType,N,[_|IndvS]):-

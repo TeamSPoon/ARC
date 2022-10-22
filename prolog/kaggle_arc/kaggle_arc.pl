@@ -550,7 +550,7 @@ luser_getval(N,V):- arc_user(ID),luser_getval(ID,N,V),!.
 %luser_getval(ID,N,V):- thread_self(ID),nb_current(N,V),!.
 %luser_getval(ID,N,V):- !, ((arc_user_prop(ID,N,V);nb_current(N,V))*->true;arc_user_prop(global,N,V)).
 luser_getval(ID,N,V):- !,
- (nb_current(N,Val)*->Val=V;
+ ((nb_current(N,Val),Val\==[])*->Val=V;
   (arc_user_prop(ID,N,V)*->true;arc_user_prop(global,N,V))).
 
 /*

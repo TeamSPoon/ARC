@@ -21,7 +21,7 @@ write_menu(Mode):-
   write_menu_opts(Mode).
 
 write_menu_opts(Mode):-
-  get_current_test(TestID),(luser_getval(example,Example);Example=_),!,
+  get_current_test(TestID),some_current_example_num(Example),!,
   format('~N\n    With selected test: ~q ~q ~n~n',[TestID,example(Example)]),
   menu_options(Mode).
 
@@ -336,7 +336,10 @@ get_pair_mode(Mode):- nonvar(Mode),get_pair_mode(TMode),!,TMode==Mode.
 get_pair_mode(Mode):- once(luser_getval('$pair_mode',Mode);next_pair_mode(Mode,_)).
 with_pair_mode(Mode,Goal):- get_pair_mode(OldMode), trusted_redo_call_cleanup( set_pair_mode(Mode), Goal, set_pair_mode(OldMode)). 
 switch_pair_mode:- get_pair_mode(Mode),next_pair_mode(Mode,NextMode),!,set_pair_mode(NextMode),show_pair_mode.
-show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), wqnl(["~N~t............ (e)xecute: ", b(q(Cmd)), "with pair mode set to: ",b(q(Mode))]).
+show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), 
+  get_current_test(TestID),some_current_example_num(Example),!,
+  wqnl(["~N~t............ (e)xecute: ", b(q(Cmd)), "with pair mode set to: ",b(q(Mode)),
+  " With selected test: ",b(q(TestID)),b(q(example(Example)))]).
 skip_entire_suite:- never_entire_suite,!,fail.
 never_entire_suite:- ignore((get_pair_mode(entire_suite),set_pair_mode(whole_test))).
 
@@ -348,7 +351,7 @@ kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,
 
 test_grids(TestID,G):- get_pair_mode(entire_suite), !, kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
 test_grids(TestID,G):- get_pair_mode(whole_test), !, ignore(get_current_test(TestID)), kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
-test_grids(TestID,G):- ignore(get_current_test(TestID)), ignore(luser_getval(example,ExampleNum)), kaggle_arc_io(TestID,ExampleNum,_IO,G).
+test_grids(TestID,G):- ignore(get_current_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc_io(TestID,ExampleNum,_IO,G).
 with_test_grids(TestID,G,P):- forall(test_grids(TestID,G),my_menu_call(P)).
 
 
@@ -357,7 +360,7 @@ kaggle_arc_safe(TestID,ExampleNum,I,O):- kaggle_arc(TestID,ExampleNum,I,OO), (((
 
 test_pairs(TestID,I,O):- get_pair_mode(entire_suite), !, kaggle_arc_safe(TestID,_ExampleNum,I,O).
 test_pairs(TestID,I,O):- get_pair_mode(whole_test), !, ignore(get_current_test(TestID)), kaggle_arc_safe(TestID,_ExampleNum,I,O).
-test_pairs(TestID,I,O):- ignore(get_current_test(TestID)), ignore(luser_getval(example,ExampleNum)), kaggle_arc(TestID,ExampleNum,I,O).
+test_pairs(TestID,I,O):- ignore(get_current_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc(TestID,ExampleNum,I,O).
 with_test_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call(P)).
 
 
@@ -518,13 +521,18 @@ really_set_current_test(TestID):-
   (luser_getval(last_test_name,WasTestID);WasTestID=[]),
   (WasTestID==TestID-> true ; new_current_test_info(WasTestID,TestID)).
 
+some_current_example_num(_):- get_pair_mode(whole_test), !.
+some_current_example_num(_):- get_pair_mode(entire_suite), !.
 some_current_example_num(TrnN):- nb_current(example,TrnN),ground(TrnN),TrnN\==[],!.
 some_current_example_num(TrnN):- luser_getval(example,TrnN),ground(TrnN),TrnN\==[],!.
-some_current_example_num(trn+0).
+some_current_example_num(TrnN):- TrnN = trn+0, luser_setval(example,TrnN).
+
+first_current_example_num(TrnN):- some_current_example_num(TrnN),ground(TrnN),TrnN\==[],!.
+first_current_example_num(TrnN):- TrnN = trn+0.
 
 next_pair:- 
   get_current_test(TestID),
-  some_current_example_num(Trn+N),
+  first_current_example_num(Trn+N),
   N2 is N+1,
   trn_tst(Trn,Tst),
   (kaggle_arc(TestID,Trn+N2,_,_)-> ExampleNum=Trn+N2 ; ExampleNum=Tst+0),
@@ -534,7 +542,7 @@ next_pair:-
 
 prev_pair:- 
   get_current_test(TestID),
-  some_current_example_num(Trn+N),
+  first_current_example_num(Trn+N),
   N2 is N-1,
   trn_tst(Trn,Tst),
   (kaggle_arc(TestID,Trn+N2,_,_)-> ExampleNum=Trn+N2 ; ExampleNum=Tst+0),
@@ -620,7 +628,7 @@ print_whole_test(TName):- with_pair_mode(whole_test,print_test(TName)).
 print_test(TName):- 
   arc_user(USER),
   fix_test_name(TName,TestID,ExampleNum1),
-  luser_setval(example,ExampleNum1),
+  %luser_setval(example,ExampleNum1),
    cmt_border,format('%~w % ?- ~q. ~n',[USER,print_test(TName)]),cmt_border,
    ignore(print_test_hints(TestID)),
    format('~N% '),dash_chars,
@@ -665,7 +673,7 @@ print_qtest(TestID):- \+ luser_getval('$grid_mode',dashes),!,print_test(TestID).
 print_qtest(TestID):- !, print_single_pair(TestID),!.
 print_qtest(TestID):-
     dash_chars,nl,nl,nl,dash_chars,
-     ignore(luser_getval(example,ExampleNum)),
+     some_current_example_num(ExampleNum),
      forall(kaggle_arc(TestID,ExampleNum,In,Out),
       ignore((
        as_d_grid(In,In1),as_d_grid(Out,Out1),
@@ -675,7 +683,7 @@ print_qtest(TestID):-
 
 print_single_pair(TName):-
   fix_test_name(TName,TestID,ExampleNum),
-  ignore(luser_getval(example,ExampleNum)),
+  first_current_example_num(ExampleNum),
   kaggle_arc(TestID,ExampleNum,In,Out),
   once(in_out_name(ExampleNum,NameIn,NameOut)),
   as_d_grid(In,In1),as_d_grid(Out,Out1),
