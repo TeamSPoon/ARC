@@ -15,22 +15,22 @@
 :- multifile in_shape_lib/2.
 :- dynamic in_shape_lib/2.
 
-test_ogs:- clsmake, mmake, time(forall(test_ogs(_,_,_),true)).
-test_ogs_l:- clsmake, mmake, locally(b_setval(find_rule,loose),time(forall(test_ogs(_,_,_),true))).
-test_ogs_s:- clsmake, mmake, locally(b_setval(find_rule,strict),time(forall(test_ogs(_,_,_),true))).
+test_ogs:- clsmake, mmake, my_time(forall(test_ogs(_,_,_),true)).
+test_ogs_l:- clsmake, mmake, locally(b_setval(find_rule,loose),my_time(forall(test_ogs(_,_,_),true))).
+test_ogs_s:- clsmake, mmake, locally(b_setval(find_rule,strict),my_time(forall(test_ogs(_,_,_),true))).
 
 :- arc_history1(test_ogs).
 :- arc_history1(test_ogs0).
 
-test_ogs0:- clsmake, time(forall(test_ogs0(_,_,_),true)).
-test_ogs1:- clsmake, time(forall(test_ogs1(_,_,_),true)).
-test_ogs2:- clsmake, time(forall(test_ogs2(_,_,_),true)).
+test_ogs0:- clsmake, my_time(forall(test_ogs0(_,_,_),true)).
+test_ogs1:- clsmake, my_time(forall(test_ogs1(_,_,_),true)).
+test_ogs2:- clsmake, my_time(forall(test_ogs2(_,_,_),true)).
 
 :- arc_history1(test_ogs_m).
 :- arc_history1(test_ogs_m0).
 
-test_ogs_m:- clsmake, time(forall(test_ogs(_,_,true),true)).
-test_ogs_m0:- clsmake, time(forall(test_ogs0(_,_,true),true)).
+test_ogs_m:- clsmake, my_time(forall(test_ogs(_,_,true),true)).
+test_ogs_m0:- clsmake, my_time(forall(test_ogs0(_,_,true),true)).
 
 
 :- dynamic(tr:existing_result/3).
@@ -44,7 +44,7 @@ got_result(SG,FG,Match):-
   copy_term(FG,CFG),copy_term(SG,CSG),
   numbervars(CSG+CFG,999,_,[attvar(bind)]),
   ignore((perfect_result(CSG,CFG,WMatch), 
-    ((Match\==WMatch) -> (ppt(red,'ChAnGED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n\n\n\n\n\n\n\n'),sleep(0.1)); ppt(green,sameR)))),
+    ((Match\==WMatch) -> (pp(red,'ChAnGED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n\n\n\n\n\n\n\n'),sleep(0.1)); pp(green,sameR)))),
   retractall(tr:existing_result(CSG,CFG,_)),
   arc_assert(tr:existing_result(CSG,CFG,Match)),!.
   
@@ -73,7 +73,7 @@ test_ogs2(H,V,Match):-
 
 % should still be the sameR
 test_ogs1(H,V,Match):-
-  Run = once(( print_side_by_side(FG,SG),nop(ptt(tf=T)))),
+  Run = once(( print_side_by_side(FG,SG),nop(ppt(tf=T)))),
   wqln("searching..."),
     ff666(T,UFG),      ss666(T,USG),
   copy_term(UFG,FG), copy_term(USG,SG),
@@ -95,7 +95,7 @@ never_fg(Var):- freeze(Var, \+ is_fg_color(Var)).
 
 % should still be the sameR
 test_ogs0(H,V,Match):-
-  Run = once(( print_side_by_side(FG,SG),print(test_ogs0(H,V,TMatch)),nop(ptt(tf=T)))),
+  Run = once(( print_side_by_side(FG,SG),print(test_ogs0(H,V,TMatch)),nop(ppt(tf=T)))),
   wqln("searching..."),
     ff666(T,UFG),      ss666(T,USG),
   copy_term(UFG,FG), copy_term(USG,SG),
@@ -118,7 +118,7 @@ test_ogs0(H,V,Match):-
 
 
 test_ogs(H,V,Match):- 
-  Run = once(( print_side_by_side(FG,XSG),print_attvars(FG),print_attvars(XSG),nop(ptt(tf=T)))),
+  Run = once(( print_side_by_side(FG,XSG),ppa(FG),ppa(XSG),nop(ppt(tf=T)))),
   wqln("searching..."),
     ff666(_,FG),
     ss666(T,SG),
@@ -191,11 +191,11 @@ show_m_pair(_TF,S,H,V,F,G):-
   offset_grid(H2,V2,F,OF),
   constrain_grid(f,_TrigF,OF,FF),!, 
   print_grid("find",FF),
-  print_attvars(FF),
+  ppa(FF),
   dash_chars(60,' '),ignore(call(S)),nl,
   constrain_grid(s,_TrigG,G,CG),!,
   print_grid("find on",CG)]),!,
-  print_attvars(CG).
+  ppa(CG).
 
 
 print_fgrid(GH,GV,F):- ((\+ \+ ((constrain_grid(f,_Trig,F,_FG),print_grid(GH,GV,F),nl)))),!.
@@ -587,7 +587,7 @@ S="
  _________",
  into_g666(S,G1),Same=_,once(subst001(G1,blue,Same,G)).
 
-h666(_Ham,G):- into_grid(v(aa4ec2a5)*(tst+0)*in,G).
+h666(_Ham,G):- into_grid(v(aa4ec2a5)>(tst+0)*in,G).
 
 
 h666(_Ham,
@@ -654,7 +654,7 @@ ascii_to_grid(Text,G):-
  ascii_to_growthchart(Text,GrowthChart),
  growthchart_to_grid(GrowthChart,6,5,G).
 
-:- luser_setval(global,find_rule,regular).
+:- luser_default(find_rule,regular).
 % ?- h666(X),text_to_grid(X,G).
 text_to_grid(Text,GO):- text_to_grid(Text,_HH,_VV,_ObjPoints,GO).
 text_to_grid(Text,HH,VV,ObjPoints,GO):-

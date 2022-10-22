@@ -31,7 +31,7 @@ is_symgrid(TestID):-!,
       once((fix_test_name(T,TestID,_),
       must(kaggle_arc_io_trn(TestID,_,in,G)),
       nonvar_or_ci(G))).
-%is_symgrid(t('3631a71a')*_*out).
+%is_symgrid(t('3631a71a')>_*out).
 
 is_symgrid(t('29ec7d0e')).
 is_symgrid(t('1b60fb0c')).
@@ -52,20 +52,20 @@ is_symgrid(t(a740d043)).
 is_symgrid(t(ff805c23)).
 is_symgrid(t(eb281b96)).
 is_symgrid(t('007bbfb7')).
-is_symgrid(t(c444b776)*_*out).
+is_symgrid(t(c444b776)>_*out).
 
-is_symgrid(t('3631a71a')*_*in).
-is_symgrid(t('83302e8f')*_*in).
+is_symgrid(t('3631a71a')>_*in).
+is_symgrid(t('83302e8f')>_*in).
 is_symgrid(v('8a371977')). % Weird
 is_symgrid('6f8cd79b').
 is_symgrid('695367ec').
 is_symgrid('7447852a').
 is_symgrid('c3202e5a').
 is_symgrid('5a5a2103').
-is_symgrid(t('9ecd008a')*(tst+0)*in).
-is_symgrid(v(de493100)*_*in).
-is_symgrid(v(f9d67f8b)*_*in).
-is_symgrid(v(f9d67f8b)*_*out).
+is_symgrid(t('9ecd008a')>(tst+0)*in).
+is_symgrid(v(de493100)>_*in).
+is_symgrid(v(f9d67f8b)>_*in).
+is_symgrid(v(f9d67f8b)>_*out).
 is_symgrid(t('4938f0c2')).
 is_symgrid(t('4c5c2cf0')).
 is_symgrid(t(b8825c91)). 
@@ -78,21 +78,21 @@ is_symgrid(t('9d9215db')).
 
 %is_symgrid(N):- arc_grid(N).
 
-is_hard(t('3631a71a')*(trn+0)*in).
-is_hard(t('47c1f68c')*(tst+0)*in).
-is_hard(t('4c5c2cf0')*_*in).
-is_hard(t('9d9215db')*_*in).
-is_hard(t('4938f0c2')*_*in).
+is_hard(t('3631a71a')>(trn+0)*in).
+is_hard(t('47c1f68c')>(tst+0)*in).
+is_hard(t('4c5c2cf0')>_*in).
+is_hard(t('9d9215db')>_*in).
+is_hard(t('4938f0c2')>_*in).
 
-is_need(t('4c5c2cf0')*_*out).
-is_need(t('4938f0c2')*_*out).
-is_need(t('9d9215db')*_*out).
+is_need(t('4c5c2cf0')>_*out).
+is_need(t('4938f0c2')>_*out).
+is_need(t('9d9215db')>_*out).
 
-% is_bad(t('9d9215db')*_*in).
+% is_bad(t('9d9215db')>_*in).
 
 
 rp_test0(X):- X = [[black,black,black,black,black,black,black,black,black,yellow,black,black,black,black,black,black,black,black,black],[black,black,black,black,black,orange,black,black,black,yellow,black,black,black,black,black,orange,black,black,black],[black,black,black,red,black,black,black,black,black,yellow,black,black,black,red,black,black,black,black,black],[black,black,red,black,black,black,black,black,black,yellow,black,black,red,black,black,black,black,black,black],[black,green,black,black,black,green,black,black,black,yellow,black,green,black,black,black,green,black,black,black],[black,black,black,black,black,black,black,black,black,yellow,black,black,black,black,black,black,black,black,black],[black,black,black,cyan,orange,black,black,black,black,yellow,black,black,black,cyan,orange,black,black,black,black],[black,black,black,black,cyan,black,black,green,black,yellow,black,black,black,black,cyan,black,black,green,black],[black,orange,black,black,black,black,black,black,black,yellow,black,orange,black,black,black,black,black,black,black],[yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow,yellow],[black,black,black,black,black,black,black,black,black,yellow,black,black,black,black,black,black,black,black,black],[black,black,black,black,black,orange,black,black,black,yellow,black,black,black,black,black,orange,black,black,black],[black,black,black,red,black,black,black,black,black,yellow,black,black,black,red,black,black,black,black,black],[black,black,red,black,black,black,black,black,black,yellow,black,black,red,black,black,black,black,black,black],[black,green,black,black,black,green,black,black,black,yellow,black,green,black,black,black,green,black,black,black],[black,black,black,black,black,black,black,black,black,yellow,black,black,black,black,black,black,black,black,black],[black,black,black,cyan,orange,black,black,black,black,yellow,black,black,black,cyan,orange,black,black,black,black],[black,black,black,black,cyan,black,black,green,black,yellow,black,black,black,black,cyan,black,black,green,black],[black,orange,black,black,black,black,black,black,black,yellow,black,orange,black,black,black,black,black,black,black]].
-rp_test0(G):- into_grid(t(c444b776)*(trn+0)*out,G).
+rp_test0(G):- into_grid(t(c444b776)>(trn+0)*out,G).
 rp_test0(G):- arc_grid(G).
 
 rp_test(G):- findall(X,rp_test1(X),L),list_to_set(L,S),!,length(S,N),dmsg(rp_test=len(N)),member(G,S).
@@ -140,12 +140,12 @@ vm_for_grid(Grid,IDO,Out,VM):-
     set_current_test(TestID),    
 
     ignore((IO==in,kaggle_arc_io_trn(TestID,Example+Num,out,Out),
-            set(VM.id) = (TestID*(Example+Num)*IO),
+            set(VM.id) = (TestID>(Example+Num)*IO),
        nop(Example\==tst),set(VM.grid_target)=Out)))),
   IDO = VM.id .
 
 
-test_repair_symmetry:- clsmake, forall(repair_symmetry0,true).
+test_repair_symmetry_ALL:- clsmake, forall(repair_symmetry0,true).
 :- arc_history(test_repair_symmetry).
 repair_symmetry0:- 
  forall(
@@ -180,13 +180,19 @@ repair_symmetry(Grid):- is_grid(Grid),!,
   ignore(time(repair_symmetry_code(Grid,_,_))),
   set(VM.grid_target)=_.
 
+
+test_repair_symmetry:-
+  test_p2(repair_symmetry(_Did)).
+
+repair_symmetry(Code,G,GR):- repair_symmetry_code(G,GR,Code),!.
+
 repair_symmetry_code(Grid,RepairedResult,Code):- 
   must_det_ll((
   duplicate_term(Grid,Orig),
   %vm_for_grid(Grid,IDO,Out,_VM),
   ignore((kaggle_arc_io_trn(TestID,ExampleNum,in,Grid),
           kaggle_arc_io_trn(TestID,ExampleNum,out,Out))),
-  ID = TestID*ExampleNum*in,
+  ID = (TestID>ExampleNum*in),
   wdmsg(begun_repair_symmetry(ID)))),!,
   (test_symmetry_code(Grid,GridS,RepairedResult,Code)
      *-> 
@@ -210,6 +216,23 @@ repair_symmetry_code(Grid,RepairedResult,Code):-
      print_side_by_side(red,Orig,gridIn(ID),_,Out,out(ID)),
      arcdbg_info(red,none_found(symmetry_code(ID))),!,fail)).
    
+
+test_symmetry_code(G,Grids,GR,Code):-
+  test_symmetry_code0(G,Grids,GR,Code),!.
+
+test_symmetry_code0(G,[],GR,Code):- 
+  repair_repeats(_UC,_VM,G,GR,Code).
+
+test_symmetry_code0(G,[],GR,Code):- 
+  try_something(Code,G,GR).
+
+test_symmetry_code0(G,[],GR,find_and_use_pattern_gen):- 
+  find_and_use_pattern_gen(G,GR).
+
+test_symmetry_code0(G,Grids,GR,Code):- 
+  grid_to_3x3_objs(_VM,[],G,Grids,_Keep,GR,Code).
+
+
 changed_grid(In,Out,_):- In=@=Out,!.
 changed_grid(Out,In,Vis):- (var(Out);Out==black),!,make_visible(In,Vis).
 changed_grid(In,Out,Vis):- (var(Out);Out==black),!,make_visible(In,Vis).
@@ -218,7 +241,7 @@ changed_grid(In,_,Vis):- make_visible(In,Vis).
 
 make_visible(In,Vis):- is_real_color(In),In\==black,!,Vis=In.
 make_visible(In,Vis):- is_bg_color(In),!,Vis='.'-'#801110'.
-make_visible(In,Vis):- is_fg_color(In),!,Vis='x'-'#F0fff0'.
+make_visible(In,Vis):- is_fg_color(In),!,Vis='x'-'#f0fff0'.
 make_visible(_In,'?'-'#1077f1').
 
 crop(X,Y,G,GO):- make_grid(X,Y,GO),maplist_until(aligned_rows_u,G,GO).
@@ -279,7 +302,7 @@ aligned_rows_u(_,[]):-!.
 aligned_rows_u([E|L],[E|R]):- aligned_rows_u(L,R).
 
 no_symmetry_yet(Row):- maplist(plain_var,Row),!. % no data yet
-no_symmetry_yet(Row):- maplist(=(_),Row),!. % all sameR element
+no_symmetry_yet(Row):- maplist(=(_),Row),!. % all equal element
 
 sort_row_by_num_colors(G,G0):-
    maplist(row_color_changes,G,C),keysort(C,KS),reverse(KS,Now),
@@ -405,7 +428,7 @@ nop((
 
 %rotation(obj(L),G):- member(rotation(G),L).
 % Hedra's t('47c1f68c')
-% v(be03b35f)*(trn+2),
+% v(be03b35f)>(trn+2),
 %detect_grid(Grid,E):- 
 /*
 find_mid_slice(Grid,H,V,LB,Left,Mid,RB):-
@@ -532,7 +555,7 @@ mass_ok(Grid,RepairedResult):-
   mass(Grid,OMass),!,
   mass(RepairedResult,RMass),!,  
   DMass is RMass/OMass,
-  %ppt(yellow,[oMass=OMass,rMass=RMass,dMass=DMass]),!,
+  %pp(yellow,[oMass=OMass,rMass=RMass,dMass=DMass]),!,
   ((DMass>0.5,DMass<1.6)
    -> true ; 
    (fail,DMass<1.63,print_side_by_side(red,Grid,too_much_change(gridIn,dMass=DMass),_,RepairedResult,too_much_change(repairedOut)),fail)).
@@ -567,9 +590,12 @@ is_fti_step(maybe_repair_in_vm).
 maybe_repair_in_vm(P4,VM):-
  ignore(( 
   maybe_set_vm(VM),
+  VM.can_repair == true,
   VM.h >= 14, VM.v >= 14,
   Grid=VM.grid,
-  VM.can_repair == true,
+  mass(Grid,GridMass),
+  Area is VM.h * VM.v,  
+  GridMass/Area > 0.39,
   enum_colors(Color), column_or_row(Grid,Color),
   repair_in_vm(P4,VM))).
 
@@ -626,18 +652,21 @@ guess_unbind_color(UnbindColor,Grid,RepairedResult):-
    guess_to_unbind(Grid,UnbindColor), 
    unbind_color(UnbindColor,Grid,RepairedResult),  
    mass(RepairedResult,Mass),Mass>0,
-   (UnbindColor\==black->if_target(Out, \+ contains_color(UnbindColor,Out));true).
+   (UnbindColor\==black-> if_target(Out, \+ contains_color(UnbindColor,Out));true).
+
+test_blur_least:-
+  test_p2(blur_least(_,_)).
 
 blur_least(B,Mix,I,O):-
   blur_list(B,Mix,I,S),
-  S=[O-ppt(blur_some(B,Mix))|_].
+  S=[O-pp(blur_some(B,Mix))|_].
 
 /*
-?- into_grid(t('1b60fb0c')*_*_,I),blur_list(B,Mix,I,O),maplist(print_side_by_side(I),O).
+?- into_grid(t('1b60fb0c')>_*_,I),blur_list(B,Mix,I,O),maplist(print_side_by_side(I),O).
 
 */
 blur_list(B,Mix,I,S):-
-  findall(O-ppt(blur_some(B,Mix)),blur_some(B,Mix,I,O),L),
+  findall(O-pp(blur_some(B,Mix)),blur_some(B,Mix,I,O),L),
   predsort(sort_on(pointy_mass),L,S).
 
 pointy_mass(P,Mass):- is_pointy(P),!,mass(P,Mass).
@@ -712,32 +741,28 @@ learn_best_values(VarsIn,VarsOut,Goal):- assert(remember_learning(VarsIn,VarsOut
 reinforce_best_values(ID,Code):- 
   get_current_test(TestID),
   Data = remember_learning(_VarsIn,_VarsOut,_Goal),
-  forall(Data,assert_test_property(TestID,reinforce_best_values,Data)),
-  forall(Data,assert_test_property(TestID,code,Code)),
+  forall(Data,assert_test_property(TestID,rbv,reinforce_best_values,Data)),
+  forall(Data,assert_test_property(TestID,rbv,code,Code)),
   wdmsg(reinforce_best_values(ID,Code)).
 
-test_symmetry_code(Grid,[],RepairedResult,Code):- 
-  repair_repeats(_VM,Grid,RepairedResult,Code).
-test_symmetry_code(Grid,Grids,RepairedResult,Code):- 
-  grid_to_3x3_objs(_VM,[],Grid,Grids,_Keep,RepairedResult,Code).
-%test_symmetry_code(Grid,Grids):- repair_symmetry(Grid,Grids).
 
-repair_symmetry(G,GR):-
- find_and_use_pattern_gen(G,GR),!.
  
-repair_repeats(VM,Grid,RepairedResult,Code):-
+repair_repeats(UC,VM,Grid,RepairedResult,Code):-
   colors(Grid,[cc(HC,Count)|_]),!,
-  repair_repeats0(VM,Grid,RepairedResult,Code), Grid\=@=RepairedResult,
+  repair_repeats0(UC,VM,Grid,RepairedResult,Code), Grid\=@=RepairedResult,
   nop((colors(RepairedResult,ListCounts),
   (member(cc(HC,NewCount),ListCounts)-> NewCount =< Count ; true))).
 
-repair_repeats0(_VM,Grid,RepairedResult,Did):-
-  maybe_try_something(Grid,RepairedResult,Did).
+repair_repeats0(UC,_VM,Grid,RepairedResult,Did):-
+  maybe_try_something(Grid,RepairedResult,Did),
+  (atom(UC)->sub_var(UC,Did);true).
 
-repair_repeats0(_VM,Grid,RepairedResult,[blur_least(_,fg)]):-
-  \+ is_trim_symmetric(Grid),
+repair_repeats0(UC,_VM,Grid0,RepairedResult,[blur_least(_,fg)]):-
+  \+ is_trim_symmetric(Grid0),
+ (is_color(UC)->unbind_color(UC,Grid0,Grid);Grid=Grid0),
   blur_least(_,fg,Grid,RepairedResult),
   nop(is_trim_symmetricD(RepairedResult)).
+  
 
 
 maybe_try_something(Grid,RepairedResultO,Did):- maybe_try_something0(Grid,RepairedResultO,Did).
@@ -767,13 +792,16 @@ mprint_grid(O):- arcST,trace,print_grid(O),!.
 
 best_of(Grid,Info,P2Did,In,RepairedResult):-
   AnswerFormat = mprint_grid(wqs([Quality,Info,P2Did]),RepairedResult),
-  findall(AnswerFormat, 
+  findall(AnswerFormat,
     (call(P2Did,In,RepairedResult), 
       saliency_quality_of_change(Grid,RepairedResult,Quality)), Trials),
   sort(Trials,STrials),
   format('~N'),dash_chars,
   nop(maplist(call,STrials)),
   last(STrials,AnswerFormat).
+
+
+test_try_something:- test_p2(try_something(_Did)).
 
 try_something(Did,Grid,RepairedResult):- 
   try_remove_color_fill_in_blanks(Grid,RepairedResult,Did).
@@ -789,7 +817,7 @@ try_remove_color_fill_in_blanks(Grid,RepairedResultO,[Info,CodeNext]):-
   CodeNext = now_fill_in_blanks(_),
   peek_target_or_else(Grid,Out),
   best_of(Out,Info,CodeNext,RepairedResult,RepairedResultO),
-  mass(RepairedResultO,Mass), Mass>0.
+  mass(RepairedResultO,Mass), Mass>0, !.
 
   
 now_fill_in_blanks(_,RepairedResult,RepairedResultO):- ground(RepairedResult),!,RepairedResultO=RepairedResult.
@@ -1018,6 +1046,7 @@ make_symmetrical_grid(G,GridO):- make_symmetrical_grid(_,G,GridO).
 
 make_symmetrical_grid(Steps,G,GridO):- trim_to_rect(G,Grid1),G\==Grid1,make_symmetrical_grid(Steps,Grid1,GridO).
 make_symmetrical_grid(Steps,G,GridO):- 
+ must_not_error((
   Steps = [P,pull(BGC),Flip,test_used(Test)],
   amass(G,OrignalMass),
   MaxMass is OrignalMass * 4,
@@ -1033,7 +1062,7 @@ make_symmetrical_grid(Steps,G,GridO):-
     uneib(Grid99,GridO),
     mapgrid(blackFree,GridO))),
     is_able_v(Test,GridO),
-    amass(GridO,NewMass),NewMass =< MaxMass.
+    amass(GridO,NewMass),NewMass =< MaxMass)).
 /*
 % detect_supergrid(Grid,SGrid):- ...
 line Separated
@@ -1360,8 +1389,8 @@ repair_patterned_images(VM,Ordered,Objects,Grids,CorrectObjects,KeepNewState,Rep
   prefect_result(VM,H,V,Ordered,Grids,RepairedResult,ColorAdvice),
   %print_grid(_,_,repairedResult,RepairedResult),
   localpoints_include_bg(RepairedResult,LPoints),
-%  ppt(RepairedResult),
-  %ppt(LPoints),
+%  pp(RepairedResult),
+  %pp(LPoints),
  %together(( localpoints_include_bg(RepairedResult,LPoints),hv_c_value(LPoints,C,1,2))),
  % together((maplist(set_local_points(LPoints),Grids,CorrectGrids),
  %           maplist(check_my_local_points(LPoints),CorrectGrids),
@@ -1392,7 +1421,7 @@ replace_diffs(LPoints,Obj,NewObj):-
   intersection(LP,Points,_Same,LPOnly,LPointOnly),
   ((LPOnly ==[], LPointOnly ==[]) -> NewObjM = Obj ;
   (
-   % ppt(LPOnly), ppt(LPointOnly),
+   % pp(LPOnly), pp(LPointOnly),
   rebuild_from_localpoints(Obj,Points,NewObjM))))),
   override_object(repaired(pattern),NewObjM,NewObj),
     %mprint_grid(NewObj),
@@ -1635,8 +1664,8 @@ glean_pattern_reps(Steps,G,NewGrid):-
   print_grid(G),
   writeln(repired_result),
   Steps = rp(patW=PatWidth,type=Type,divW=DivW,startV=StartV,patV=PatV),
-  ppt(Steps),
-  %ppt(Grid9x9),
+  pp(Steps),
+  %pp(Grid9x9),
   print_grid(Pattern),!,
   ignore(((Div\==[]),print_grid([Div]))),!,
   StartH=0,
@@ -1759,72 +1788,6 @@ nb_set_nth1_oob(N,[_|Row],C):- Nm1 is N -1, nb_set_nth1_oob(Nm1,Row,C).
 nb_set_chv(C,H,V,Grid):- nth1(V,Grid,Row),nb_set_nth1_oob(H,Row,C).
 grid_hvc_value(H,V,C,Grid):-  nth1(V,Grid,Row),nth1(H,Row,C).
 
-
-guess_bgc(Grid,BGC):- most_d_colors(Grid,[BGC|_],_).
-
-/*
-6=corners
-9=edges
-D=fill_area
-*/
-most_d_colors(Grid,ColorO,GridNM):-
-  %trace,
-  get_fill_points(Grid,Points,GridNM),
-  uneib(Points,FPoints),
-  % grid_size(GridNM,H,V), ppt(fillPoints(H,V) = FPoints),
-  sort(FPoints,NPSS),
-  %trace,
-  % (N2-C)-P1
-  maplist(arg(1),NPSS,Colors),
-  clumped(Colors,CColors),
-  maplist(arg(2),CColors,Set),
-  (Set==[]->ColorO=[black];ColorO=Set),!.
-
-ping_indiv_grid(show_neighbor_map).
-
-
-get_fill_points2(Grid,FillPoints):-
-  findall(C-Point,would_fill(Grid,C,Point),FillPoints).
-
-%:- set_prolog_flag(occurs_check,error).
-
-  
-get_fill_points(In,UNFP,GridO):-
- %grid_size(Grid,H,V),
- subst001(In,black,wbg,Grid),
- %print(In=Grid),
- neighbor_map(Grid,GridO), 
- localpoints(GridO,NPS),  
- %print(NPS),nl,
- include(p1_or(is_point_type('~'),is_fill_point(NPS)),NPS,FillPoints),
- include(is_point_type('wbg'),NPS,NotFillPoints),
- subtract(FillPoints,NotFillPoints,RFillPoints),
-  %my_partition(is_point_type('.'),NFP,OuterEdges,NonFillPointNonOuterEdges),
- uneib(RFillPoints,UNFP).
-/*
-  once(get_fill_points2(Grid,FillPoints2)),
-  append([FillPoints2,UNFP],TheFilPoints),
-  neighbor_map(H,V,UNFP,UNFP,BUNFP),
-  append([FillPoints,BUNFP],FGridO),
-  points_to_grid(H,V,FGridO,RGridO),!.
-*/
-recolor_points(G,Color,Ps):- map_pred(is_color_into(Color),G,Ps).
-   
-is_color_into(Color,B,Color):- is_color(B).
-  
-is_fill_point(GridO,Type-Color-Point):- is_fill_point(GridO,Type,Color,Point),!.
-is_fill_point(GridO,Type,C,P1):- is_adjacent_point(P1,Dir,P2),select('~'-C-P2,GridO,Rest),
-  reverse_nav(Dir,Rev),is_adjacent_point(P1,Rev,PRev),member(Type-C2-PRev,Rest),C2\==C.
-is_fill_point(_GridO,5,_C,_P1).
-is_fill_point(GridO,Type,C,P1):- 
-  findall(P2,(is_adjacent_point(P1,_Dir,P2),member(Type-C-P2,GridO)),IdentGuys),
-  length(IdentGuys,N),N=4,!.
-is_fill_point(GridO,_,C,P1):- would_fill(GridO,C,P1).
- 
-is_sedge('.').
- 
-p1_or(P1A,P1B,X):- call(P1A,X)->true;call(P1B,X).
-is_point_type(T,V):- ground(V),ground(T), sub_var(T,V).
  
 
 nr_make_symmetrical_grid(Steps,G,GridO):- 
@@ -1832,7 +1795,10 @@ nr_make_symmetrical_grid(Steps,G,GridO):-
   
 ping_indiv_grid(show_make_symmetrical).
 
-test_make_symmetrical:-  clsmake, forall(rp_test(G),ignore(show_make_symmetrical(G))). 
+test_make_symmetrical_sanity_tests:-  clsmake, forall(rp_test(G),ignore(show_make_symmetrical(G))). 
+
+test_make_symmetrical:-  clsmake, forall(test_grids(_,G),ignore(show_make_symmetrical(G))). 
+
 show_make_symmetrical(G):-
   set_current_test(G),
   dash_chars,
@@ -1840,17 +1806,10 @@ show_make_symmetrical(G):-
   ShowHow = wqs(uc(green,Steps)),
   findall(GridO-ShowHow,nr_make_symmetrical_grid(Steps,G,GridO),List),
   list_to_set(List,Set),
-  print_side_by_side([G,G|Set]).
+  print_side_by_side([G|Set]).
 
 /*
 */
-print_side_by_side([]):-!.
-print_side_by_side([A,B|Rest]):- !,print_side_by_side2(A,B),!,print_side_by_side(Rest).
-print_side_by_side([A]):- print_side_by_side2(A,A).
-
-print_side_by_side2(A-N1,B-N2):- !, print_side_by_side2(A,B),write(N1-N2).
-print_side_by_side2(A,B):- format('~N'),print_side_by_side(A,_,B).
-
 % by rotating the image 90 degrees.. filling in .. and again 2 more times
 is_able_v(Flip,Top):- var(Flip),!,verify_symmetry(Flip,Top).
 is_able_v(Flip,Top):- call(Flip,Top,TopR), TopR=Top.
@@ -1909,268 +1868,16 @@ blackFree(E):- ignore(black=E).
 g_or_gc(_,G,G).
 %g_or_gc(G,_,G).
 
-flipSome1(Rot,X,Y):- flipSome(Rot,X,Y),X\=@=Y.
-flipSome1(sameR,X,X).
 
-flipSome(rot90,X,Y):- rot90(X,Y).
-flipSome(flipV,X,Y):-  flipV(X,Y).
-flipSome(rot270,X,Y):-  rot270(X,Y).
-flipSome(rot180,X,Y):- rot180(X,Y).
-flipSome(flipH,X,Y):-  flipH(X,Y).
+flipSome2(rot90,X,Y):- rot90(X,Y).
+flipSome2(rot180,X,Y):- rot180(X,Y).
+flipSome2(rot270,X,Y):-  rot270(X,Y).
+flipSome2(flipV,X,Y):-  flipV(X,Y).
+flipSome2(flipH,X,Y):-  flipH(X,Y).
+
+flipSome(R,X,Y):- flipSome2(R,X,Y).
 flipSome(flipD,X,Y):-  flipD(X,Y).
 flipSome(flipDHV,X,Y):-  flipDHV(X,Y).
-
-
-% (N2-C)-P1
-uneib(S,FB):- is_list(S),!,mapgrid(uneib,S,FB).
-uneib(S,FB):- \+ compound(S),!,FB=S.
-uneib(U-P1,E-P1):- hv_point(_,_,P1),!,uneib(U,E).
-uneib(U-Black,Black):- \+ compound(U),!.
-uneib(X,X).
-
-
-
-show_call_tf(G):- functor(G,F,_),\+ \+ (call(G)->wdmsg(F=true);wdmsg(F=false)).
-
- %color,neigbours,glyph
-test_neighbor_map:- clsmake, forall(rp_test(G),show_neighbor_map(G)).
-show_neighbor_map(G):- 
- grid_to_tid(G,ID),
- most_d_colors(G,C,N),!,print_side_by_side(G,N),nl,writeln(ID=C).
-
-merge_nc(A,B,B):- var(A),!.
-merge_nc(A,B,A):- var(B),!.
-merge_nc(A,B,G-A):- e_int2glyph(B,G),!.
-
-/*
-e_int2glyph(7,'X').
-e_int2glyph(5,'-').
-e_int2glyph(9,'+').
-e_int2glyph(6,'c').
-
- code=63 ?  code=183 · code=176 ° code=186 º 170 ª
-bg_dot(32).
- 169	© 248	ø 216	Ø  215 ×  174	® 
-*//*
-e_int2glyph(1,'©').
-e_int2glyph(2,'·').
-e_int2glyph(3,'º').
-e_int2glyph(4,'ª').
-e_int2glyph(6,'X').
-e_int2glyph(7,'Ø').
-e_int2glyph(8,'©').
-e_int2glyph(9,'®').
-e_int2glyph(10,'~').
-e_int2glyph(11,'.').
-e_int2glyph(12,',').
-%e_int2glyph(5,'ø').
-%e_int2glyph(5,'°').
-%e_int2glyph(5,'®').
-%e_int2glyph(,'ø').
-e_int2glyph(N,G):- N>9, M is N+ 140,int2glyph(M,G).*/
-e_int2glyph(B,G):- atom_number(G,B).
-
-
-was_adjacent(LPS,SOP,_-P1):- is_adjacent_point(P1,_,P2),member(_-P2,SOP),member(CCC-P1,LPS),member(CCC-P2,LPS),!.
-
-cull_rest(Rest,GridS,GridO):- is_list(GridS),!,maplist(cull_rest(Rest),GridS,GridO).
-cull_rest(Rest,GridS,0):- number(GridS),member(GridS,Rest),!.
-cull_rest(_Rest,GridS,GridS).
-
-at_least_4([A,B,C,D|_],[A,B,C,D]):-!.
-at_least_4(Grid4,Grid4).
-
-%edge_of_grid(_,_,_,_):- !, fail.
-%edge_of_grid(H,V,_,_):- (H=<15 ; V=<15),!,fail.
-edge_of_grid(_,_,_,1,n).
-edge_of_grid(_,_,1,_,w).
-edge_of_grid(H,_,H,_,e).
-edge_of_grid(_,V,_,V,s).
-edge_of_grid(_,_,_,_,c).
-
-neighbor_map(Grid,GridO):-
-  globalpoints_maybe_bg(Grid,Points),
-  grid_size(Grid,H,V),
-  neighbor_map(H,V,Points,Points,CountedPoints),!,
-  points_to_grid(H,V,CountedPoints,GridO).
-
-neighbor_map(_,_,[],_,[]):-!.
-neighbor_map(H,V,[NC-P1|Ps],Points,[(N-C)-P1|Ps2]):-
-  only_color_data(NC,C),  
-  nei_map(H,V,C,P1,Points,N),
-  neighbor_map(H,V,Ps,Points,Ps2).
-
-only_color_data(C,_):- var(C),!,fail.
-only_color_data(C,C):- is_color(C),!.
-only_color_data(NC,NC):- \+ compound(NC),!,fail.
-only_color_data(OC,C):- sub_term(C,OC),is_colorish(C),!.
-only_color_data(C-P,C):- is_nc_point(P),!.
-%only_color_data(_-O,C):- only_color_data(O,C).
-
-only_point_data(NC,NC):- \+ compound(NC),!.
-only_point_data(_-C,NC):- only_point_data(C,NC).
-
-
-is_adjacent_point_m2(P1,Dir,P2):- is_adjacent_point(P1,Dir,P2).
-is_adjacent_point_m2(P1,Dir,P2):- is_adjacent_point(P1,Dir,P3),is_adjacent_point(P3,Dir,P2).
-
-would_fill(In,C,P1):-
-  localpoints_include_bg(In,Points),
-  member(C-P1,Points),
-  findall(Dir,(n_s_e_w(Dir),is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),dif_color(C,CD),CD\==black),DirsE),
-  findall(Dir,(is_diag(Dir),is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),dif_color(C,CD),CD\==black),DirsF),
-  findall(Dir,(n_s_e_w(Dir),once((is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),==(C,CD),C\==black))),DirsC),
-  findall(Dir,(is_diag(Dir),once((is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),==(C,CD),C\==black))),DirsD),
-  once(would_fill_color(DirsC,DirsD,DirsE,DirsF)).
-
-would_fill_color([_,_,_,_],_,_,_).
-would_fill_color(_,[_,_,_,_],_,_).
-would_fill_color(_,_,[_,_,_,_],_).
-would_fill_color(_,_,_,[_,_,_,_]).
-would_fill_color(A,_,C,_):- append([A,C],Len),length(Len,L),L>3.
-%would_fill_color(A,B,C,D):- append([B,D],Len),length(Len,L),L>3.
-would_fill_color(A,B,C,D):- append([A,B,C,D],Len),length(Len,L),L>7.
-
-
-
-nei_map(H,V,C,P1,Points,N):- 
- findall(Dir,(n_s_e_w(Dir),once((is_adjacent_point_m2(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),==(C,CD)))),DirsC),
- findall(Dir,(is_diag(Dir),once((is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),==(C,CD)))),DirsD),
- findall(Dir,(is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),dif_color(C,CD)),DirsE),
- hv_point(X,Y,P1), 
- edge_of_grid(H,V,X,Y,Edge),
- map_neib1(C,DirsE,Edge,DirsC,DirsD,N).
-
-
-only_neib_data(NC,NC):- \+ compound(NC),!.
-only_neib_data(C-_,NC):- only_neib_data(C,NC).
-
-map_neib1(C,DirsE,Edge,DirsC,DirsD,N):- map_neib(C,DirsE,Edge,DirsC,DirsD,NSM,PS),map_ns(NSM,NS), ((PS=='+')-> N=PS; N=NS).
-
-map_ns('j','+').
-map_ns(NS,NS).
-
-map_neib(C,[O],E,[],[],NS,PS):- map_neib(C,[],E,[],[O],NS,PS),!.
-map_neib(_,_,_,[],[],0,0).
-map_neib(_,_,_,[n,s,e,w],[_,_,_],'+','7').
-
-map_neib(_,_,_,[n,s,e,w],[_,_,_],'*','7').
-
-%map_neib(_,[ne,sw,se,nw],[],_,_,'~','~').
-%map_neib(_,[n,s,e,w],_,_,_,'~','~').
-
-map_neib(_,_,c,[n],[],'!','2').
-map_neib(_,_,c,[s],[],'!','2').
-map_neib(_,_,c,[e],[],'=','2').
-map_neib(_,_,c,[w],[],'=','2').
-
-map_neib(_,_,_,[n],[],'|','2').
-map_neib(_,_,_,[s],[],'|','2').
-map_neib(_,_,_,[e],[],'-','2').
-map_neib(_,_,_,[w],[],'-','2').
-
-map_neib(_,_,_,[n,s],_,'|','.').
-map_neib(_,_,_,[e,w],_,'-','.').
-map_neib(_,_,_,[n,e],[],'C','+').
-map_neib(_,_,_,[n,w],[],'C','+').
-map_neib(_,_,_,[s,e],[],'C','+').
-map_neib(_,_,_,[s,w],[],'C','+').
-map_neib(_,_,_,[_,_,_,_],[_,_,_],'C','+').
-map_neib(_,_,_,[_,_,_],[],'T','+').
-map_neib(_,_,_,[_,_,_],[_],'t','+').
-
-map_neib(_,_,_,[s,e,w],[sw,se],'-','.').
-map_neib(_,_,_,[n,e,w],[ne,nw],'-','.').
-map_neib(_,_,_,[n,s,w],[sw,nw],'|','.').
-map_neib(_,_,_,[n,s,e],[ne,se],'|','.').
-map_neib(_,_,_,[s,e,w],[ne,sw,se,nw],'-','.').
-map_neib(_,_,_,[n,e,w],[ne,sw,se,nw],'-','.').
-map_neib(_,_,_,[n,s,w],[ne,sw,se,nw],'|','.').
-map_neib(_,_,_,[n,s,e],[ne,sw,se,nw],'|','.').
-
-map_neib(_,_,_,[n,s,w],_,'|','.').
-map_neib(_,_,_,[n,s,e],_,'|','.').
-
-map_neib(_,_,_,[s,e,w],_,'-','.').
-map_neib(_,_,_,[n,e,w],_,'-','.').
-
-
-map_neib(_,_,_,[n,s,e,w],[ne,sw,se,nw],'~','~').
-map_neib(_,_,_,[_,_,_,_],[],'+','+').
-% is_diag(ne). is_diag(sw). is_diag(se). is_diag(nw).
-map_neib(_,_,_,[],[ne,nw],'V','v').
-map_neib(_,_,_,_,[ne,nw],'v','v').
-map_neib(_,_,_,[],[se,nw],'\\','v').
-map_neib(_,_,_,_,[se,nw],'\\','v').
-
-map_neib(_,_,_,[],[_,se,nw],'\\','v').
-%map_neib(_,_,_,_,[_,se,nw],'\\','v').
-
-map_neib(_,_,_,[],[ne,sw],'/','v').
-map_neib(_,_,_,_,[ne,sw],'/','v').
-
-map_neib(_,_,_,[],[ne,sw,_],'/','v').
-%map_neib(_,_,_,_,[ne,sw,_],'/','v').
-
-map_neib(_,_,_,[],[ne,se],'<','v').
-map_neib(_,_,_,_,[ne,se],'<','v').
-map_neib(_,_,_,[],[sw,nw],'>','v').
-map_neib(_,_,_,_,[sw,nw],'>','v').
-map_neib(_,_,_,[],[se,sw],'^','v').
-map_neib(_,_,_,_,[se,sw],'^','v').
-map_neib(_,_,_,[],[_,_,_],'Y','v').
-map_neib(_,_,_,_,[_,_,_],'y','v').
-
-
-map_neib(_,_,_,[_,_,_],[_,_,_,_],7,'X').
-map_neib(_,_,_,[],[_,_,_,_],'X','X').
-
-%map_neib(_,_,c,[],[_],'x','v').
-
-map_neib(_,_,_,[],[ne],'/','v').
-map_neib(_,_,_,[],[nw],'\\','v').
-map_neib(_,_,_,[],[se],'\\','v').
-map_neib(_,_,_,[],[sw],'/','v').
-
-map_neib(_,_,_,[e],[ne,se],'2','X').
-map_neib(_,_,_,[w],[sw,nw],'2','X').
-map_neib(_,_,_,[n],[ne,nw],'2','X').
-map_neib(_,_,_,[s],[se,sw],'2','X').
-
-map_neib(_,_,_,[n,e],[ne],'C','+').
-map_neib(_,_,_,[n,w],[nw],'C','+').
-map_neib(_,_,_,[s,e],[se],'C','+').
-map_neib(_,_,_,[s,w],[sw],'C','+').
-
-map_neib(_,_,_,[n,e],[sw],'j','j').
-map_neib(_,_,_,[n,w],[se],'j','j').
-map_neib(_,_,_,[s,e],[nw],'j','j').
-map_neib(_,_,_,[s,w],[ne],'j','j').
-
-map_neib(_,_,_,[n,e],[sw],'J','j').
-map_neib(_,_,_,[n,w],[se],'J','j').
-map_neib(_,_,_,[s,e],[nw],'J','j').
-map_neib(_,_,_,[s,w],[ne],'J','j').
-
-
-map_neib(_,_,_,[_,_,_,_],[_],5,'.').
-map_neib(_,_,_,[_],[_,_,_,_],'X','X').
-map_neib(_,_,_,[_],[_,_,_,_],4,'X').
-map_neib(_,_,_,[_],[],2,'*').
-map_neib(_,_,_,[],[_],1,'*').
-%map_neib(_,_,_,NonNil1,NonNil2,'a','.'):- NonNil1\==[],NonNil2\==[],!.
-map_neib(_,_,_,_,NonNil,'A','.'):- NonNil\==[],!.
-map_neib(_,_,_,NonNil,_,'%','.'):- NonNil\==[],!.
-map_neib(_,_,_,_,_,'.','.').
-
-
-dir_num(_,_,c,0).
-dir_num(C,C,Diag,1):- is_diag(Diag),!.
-dir_num(_,black,Diag,0):- is_diag(Diag),!.
-dir_num(_,_,Diag,0):- is_diag(Diag),!.
-dir_num(C,C,_,2).
-dir_num(_,black,_,0).
-dir_num(_,_,_,0).
 
 %find_center(Grid,H,V):- chew_away_at_sides(Grid,GridO,TH,TV),grid_size(GridO,H,V),X is floor(H/2),Y is floor(V/2).
 %chew_away_at_sides(Grid,Grid):-!.

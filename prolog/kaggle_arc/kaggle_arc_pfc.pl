@@ -159,9 +159,9 @@ show_child_info(P,_):- asserta(t_l:shown_child(P)),fail.
 show_child_info(_,[]):-!.
 show_child_info(P,L):- list_to_set(L,S),
   format("~N~nChildren for ",[]),  
-  ansi_format([fg(green)],'~@',[ppt(P)]),
+  ansi_format([fg(green)],'~@',[pp(P)]),
   format(" :~n",[]),
-  forall((member(D,S), \+ t_l:shown_dep(P,D)),(asserta(t_l:shown_dep(P,D)),ansi_format([fg(yellow)],'~N ~@. ~n',[ppt(D)]))),
+  forall((member(D,S), \+ t_l:shown_dep(P,D)),(asserta(t_l:shown_dep(P,D)),ansi_format([fg(yellow)],'~N ~@. ~n',[pp(D)]))),
   maplist(show_child_info,S).
 
 mpred_why(X):- mpred_test_why(X).
@@ -2280,7 +2280,7 @@ pfcShowJustifications(P,Js) :-
   reset_shown_justs,
   %color_line(yellow,1),
   format("~N~nJustifications for ",[]),
-  ansi_format([fg(green)],'~@',[ppt(P)]),
+  ansi_format([fg(green)],'~@',[pp(P)]),
   format(" :~n",[]),
   pfcShowJustification1(Js,1),!,
   printLine.
@@ -2340,7 +2340,7 @@ fmt_cl(P):- \+ \+ (pretty_numbervars(P,PP),numbervars(PP,126,_,[attvar(skip),sin
 fmt_cl(S,_):- term_is_ansi(S), !, write_keeping_ansi(S).
 fmt_cl(G,_):- is_grid(G),write('"'),user:print_grid(G),write('"'),!.
 % fmt_cl(P,_):- catch(arc_portray(P),_,fail),!.
-fmt_cl(P,_):- is_list(P),catch(print_tree_nl(P),_,fail),!.
+fmt_cl(P,_):- is_list(P),catch(p_p_t_no_nl(P),_,fail),!.
 %ptg(PP,Opts):- is_list(PP),select(portray_goal(ptg),Opts,Never),write_term(PP,Never). 
 
 unwrap_litr(C,CCC+VS):- copy_term(C,CC,VS),
@@ -3344,7 +3344,7 @@ which_missing_argnum(Q,_F,A,N):- between(A,1,N),get_assertion_head_arg(N,Q,Was),
 system:term_expansion(I,S0,O,S1):- %use_pfc_term_expansion, % trace,
  ( \+ current_prolog_flag(pfc_term_expansion,false),
   ( \+ \+ (source_location(File,_), atom_concat(_,'.pfc.pl',File)) ; current_prolog_flag(pfc_term_expansion,true))) ->
- prolog_load_context('term',T)->(T==I->pfc_term_expansion(I,O)->I\=@=O->S0=S1, wdmsg(I-->O)).
+ prolog_load_context('term',T)->(T==I->pfc_term_expansion(I,O)-> I\=@=O->S0=S1, wdmsg(I-->O)).
 
 
 :- endif.

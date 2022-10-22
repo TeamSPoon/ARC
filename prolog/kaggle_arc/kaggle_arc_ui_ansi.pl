@@ -8,6 +8,7 @@
 :- if(current_module(trill)).
 :- set_prolog_flag_until_eof(trill_term_expansion,false).
 :- endif.
+:- autoload(library(http/html_write),[html/3,print_html/1]).
 
 wno(G):-
  locally(b_setval(print_collapsed,10), G).
@@ -22,30 +23,44 @@ print_collapsed0(_,G):- wots(S,G),write(S).
 
 tersify(I,O):- tracing,!,I=O.
 %tersify(I,O):- term_variables(I,Vs), \+ ( member(V,Vs), attvar(V)),!,I=O.
-tersify(I,O):- quietly((tersify2(I,M),tersify3(M,O))).
+tersify(I,O):- quietly((tersify2(I,M),tersify3(M,O))),!.
 
 %srw_arc(I,O):- is_grid(I),!, wots(O,(write('"'),print_grid(I),write('"'))).
-%srw_arc(I,O):- compound(I),!, wots(O,(write(ptt(I)))).
+%srw_arc(I,O):- compound(I),!, wots(O,(write(ppt(I)))).
 /*
 srw_arc(I,O):- is_grid(I),!, wots(O,(write('"'),print_grid(I),write('"'))).
 */
 srw_arc(I,O):- is_map(I),!, O='..vvmm..'.
 srw_arc(I,O):- is_grid(I),!, O='..grid..'.
+/*
+srw_arc(List,O):- current_prolog_flag(dmsg_len,Three),
+  is_list(List),length(List,L),L>Three,
+   append([A,B,C],[F|_],List),F \='...'(_), !, 
+  simplify_goal_printed([A,B,C,'....'(L>Three)],O).
+*/
 %srw_arc(gridFn(_),gridFn):-!.
 %srw_arc(I,O):- is_points_list(I), length(I,N),N>10,!,O='..points..'(N),!.
 %srw_arc(I,O):- is_list(I), length(I,N),N>10,!,O='..points..'(N),!.
-srw_arc(I,O):- tersify(I,O),I\==O,!.
+srw_arc(I,O):- tersify(I,O),!,I\==O,!.
 
 :- multifile(dumpst_hook:simple_rewrite/2).
 :- dynamic(dumpst_hook:simple_rewrite/2).
 
-%dumpst_hook:simple_rewrite(I,O):- compound(I), srw_arc(I,O), I\=@=O.
+dumpst_hook:simple_rewrite(I,O):- 
+  \+ nb_current(arc_can_portray,nil),
+  current_predicate(bfly_startup/0),
+  current_predicate(is_group/1), 
+  b_setval(arc_can_portray,nil),
+  locally(b_setval(arc_can_portray,nil),once((compound(I), lock_doing(srw_arc,I,srw_arc(I,O))))), I\==O, I\=@=O, !, \+ I=O,
+  b_setval(arc_can_portray,t).
+
 
 
 portray_terse:- true,!.
 
 :- discontiguous arc_portray/2. 
 
+arc_portray(S,_):- term_is_ansi(S), !, write_keeping_ansi(S).
 arc_portray(Map,TF):- get_map_pairs(Map,Type,Pairs),!, arc_portray_pairs(Type,TF,Pairs). 
 
 arc_portray_t(G, _):- is_map(G), !, write_map(G,'arc_portray_t').
@@ -60,9 +75,9 @@ arc_portray(G, TF):- catch(arc_portray_nt(G, TF),_,fail),!.
 
 arc_portray_nt(G,false):- is_grid(G), print_grid(G),!.
 
-arc_portray_nt(G0, _):- is_list(G0), length(G0,L),L>3, ptt(G0),!.
-arc_portray_nt(G0, true):- is_group(G0), ptt(G0),!.
-%arc_portray_nt(G0, false):- is_group(G0), ptt(G0),!.
+arc_portray_nt(G0, _):- is_list(G0), length(G0,L),L>3, ppt(G0),!.
+arc_portray_nt(G0, true):- is_group(G0), ppt(G0),!.
+%arc_portray_nt(G0, false):- is_group(G0), ppt(G0),!.
 arc_portray_nt(G0, false):- is_group(G0), into_list(G0,G), length(G,L),% L>1, !,
    dash_chars, 
    once(((why_grouped(_TestID,Why,WG),WG=@=G,fail);(Why = (size=L)))),!,
@@ -72,7 +87,7 @@ arc_portray_nt(G0, false):- is_group(G0), into_list(G0,G), length(G,L),% L>1, !,
    dash_chars.
 
 
-arc_portray_nt(G,_False):- is_object(G), wots(S,ptt(G)), debug_as_grid(S,G).
+arc_portray_nt(G,_False):- is_object(G), wots(S,ppt(G)), debug_as_grid(S,G).
   %object_grid(G,OG), 
   %neighbor_map(OG,NG), !,
   %print_grid(object_grid,NG),nl,
@@ -81,8 +96,8 @@ arc_portray_nt(G,_False):- is_object(G), wots(S,ptt(G)), debug_as_grid(S,G).
 arc_portray_nt(G,false):- via_print_grid(G),!, grid_size(G,H,V),!,H>0,V>0, print_grid(H,V,G).
 
 % Portray In tracer
-arc_portray_nt(G,true):- is_object(G),underline_print((ptt(G))).
-arc_portray_nt(G,true):- via_print_grid(G),write_nbsp,underline_print((ptt(G))),write_nbsp.
+arc_portray_nt(G,true):- is_object(G),underline_print((ppt(G))).
+arc_portray_nt(G,true):- via_print_grid(G),write_nbsp,underline_print((ppt(G))),write_nbsp.
 arc_portray_nt(G,true):- tersify(G,O),write_nbsp,writeq(O),write_nbsp.
 
 
@@ -108,9 +123,9 @@ swap_kv([],[]).
 
 
 arc_portray_pair(Ps,K,Val,TF):- 
- format('~N'),
+ nl_if_needed,
  arc_portray_1_pair(Ps,K,Val,TF),
- format('~N').
+ probably_nl.
 
 arc_portray_1_pair(_Ps,call,Val,_TF):- !, call(Val).
 arc_portray_1_pair(Ps,K,Val,TF):- 
@@ -133,7 +148,7 @@ arc_portray(G):- compound(G), \+ \+ catch(((tracing->arc_portray(G,true);arc_por
 
   
 
-via_print_grid(G):- is_points_list(G),!,fail,grid_size(G,H,V),number(H),number(V),H>1,V>1.
+via_print_grid(G):- is_points_list(G). %,!,fail,grid_size(G,H,V),number(H),number(V),H>1,V>1.
 via_print_grid(G):- is_grid(G).
 via_print_grid(G):- is_object(G).
 via_print_grid(G):- is_group(G).
@@ -200,35 +215,53 @@ write_map(G,Where):- is_dict(G), !, write('...Dict_'),write(Where),write('...').
 write_map(G,Where):- is_map(G), !, write('...Map_'),write(Where),write('...').
 write_map(_G,Where):- write('...'),write(Where),write('...').
 
-ptt(_):- is_print_collapsed,!.
-ptt(G):- is_map(G), !, write_map(G,'ptt').
-ptt(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-ptt(P):- \+ \+ ((tersify(P,Q),!,ppt(Q))),!.
-ptt(C,P):- \+ \+ ((tersify(P,Q),!,ppt(C,Q))),!.
-
-ppt(Color,P):- ignore((quietlyd((wots(S,ptcol(P)),!,color_print(Color,S))))).
-ptcol(call(P)):- callable(P),!,call(P).
-ptcol(P):- ppt(P).
-
-ptc(Color,Call):- ppt(Color,call(Call)).
-
-
 ppt(_):- is_print_collapsed,!.
-ppt(P):- format('~N'), ppt_no_nl(P),!,format('~N').
+ppt(G):- is_map(G), !, write_map(G,'ppt').
+ppt(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+ppt(P):- compound(P),wqs1(P),!.
+ppt(P):- \+ \+ ((tersify(P,Q),!,pp(Q))),!.
+ppt(C,P):- \+ \+ ((tersify(P,Q),!,pp(C,Q))),!.
 
-ppt_no_nl(P):- var(P),!,ppt(var_pt(P)),nop((dumpST,break)).
-ppt_no_nl(P):- atomic(P),atom_contains(P,'~'),!,format(P).
-ppt_no_nl(G):- is_map(G), !, write_map(G,'ppt').
-ppt_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-ppt_no_nl(P):- \+ \+ (( pt_guess_pretty(P,GP),ptw(GP))).
-%ppt(P):-!,writeq(P).
-%ptw(P):- quietlyd(print_tree_nl(P)),!.
-ptw(_):- format('~N'),fail.
+pp(Color,P):- ignore((quietlyd((wots(S,ptcol(P)),!,color_print(Color,S))))).
+ptcol(call(P)):- callable(P),!,call(P).
+ptcol(P):- pp(P).
+
+ptc(Color,Call):- pp(Color,call(Call)).
+
+wqln(Term):- wqnl(Term).
+wqnl(Term):- is_list(Term),!,g_out(wqs(Term)).
+wqnl(Term):- nl_if_needed,format('~q',[Term]),probably_nl.
+
+pp(_):- is_print_collapsed,!.
+%pp(Term):- is_toplevel_printing(Term), !, nl_if_needed, pp_no_nl(Term),!,probably_nl.
+pp(Term):- nl_if_needed, az_ansi(pp_no_nl(Term)),!,probably_nl.
+
+%p_p_t_no_nl(Term):- is_toplevel_printing(Term), !, print_tree_no_nl(Term).
+p_p_t_no_nl(Term):- az_ansi(print_tree_no_nl(Term)).
+
+is_toplevel_printing(_):- \+ is_string_output, line_position(current_output,N),  N<2, fail.
+
+pp_no_nl(P):- var(P),!,pp(var_pt(P)),nop((dumpST,break)).
+pp_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+pp_no_nl(P):- atom(P),atom_contains(P,'~'),!,format(P).
+pp_no_nl(G):- is_map(G), !, write_map(G,'pp').
+%pp_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+pp_no_nl(P):- \+ \+ (( pt_guess_pretty(P,GP),ptw(GP))).
+%pp(P):-!,writeq(P).
+%ptw(P):- quietlyd(p_p_t_nl(P)),!.
+%ptw(_):- nl_if_needed,fail.
 ptw(P):- var(P),!,ptw(var_ptw(P)),nop((dumpST,break)).
 ptw(G):- is_map(G), !, write_map(G,'ptw').
 ptw(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-ptw(P):- quietlyd(print_tree_no_nl(P)),!.
+ptw(P):- p_p_t_no_nl(P),!.
+
 %ptw(P):- quietlyd(write_term(P,[blobs(portray),quoted(true),quote_non_ascii(false), portray_goal(print_ansi_tree),portray(true)])),!.
+print_ansi_tree(S,_):- term_is_ansi(S), !, write_keeping_ansi(S).
+print_ansi_tree(P,_):- catch(arc_portray(P),_,fail),!.
+print_ansi_tree(P,_OL):- catch(p_p_t_no_nl(P),_,fail),!.
+
+%p_p_t_nl(T):- az_ansi(print_tree_nl(T)).
+%p_p_t(T):- az_ansi(print_tree(T)).
 
 pt_guess_pretty(P,O):- \+ nb_current(in_pt_guess_pretty,t), locally(nb_setval(in_pt_guess_pretty,t),pt_guess_pretty_1(P,O)).
 pt_guess_pretty(O,O).
@@ -247,41 +280,68 @@ pt_guess_pretty_1(P,O):- copy_term(P,O,_),
 pretty_clauses:pp_hook(_,Tab,S):- is_vm(S),!,prefix_spaces(Tab),!,write('..VM..').
 pretty_clauses:pp_hook(_,Tab,S):- term_is_ansi(S), !,prefix_spaces(Tab), write_keeping_ansi(S).
 pretty_clauses:pp_hook(FS,_  ,G):- 
-  current_predicate(is_group/1),locally(b_setval(pp_parent,FS),print_with_pad(pp_hook_g(G))),!.
+  current_predicate(is_group/1),
+   locally(b_setval(pp_parent,FS),print_with_pad(pp_hook_g(G))),!.
 
-pp_parent(PP):- nb_current(pp_parent,PP).
+pp_parent(PP):- nb_current(pp_parent,PP),!.
+pp_parent([]):-!.
 
 lock_doing(Lock,G,Goal):- 
  (nb_current(Lock,Was);Was=[]), !, 
   \+ ((member(E,Was),E==G)),
   locally(nb_setval(Lock,[G|Was]),Goal).
 
-pp_hook_g(G):- \+ plain_var(G), lock_doing(in_pp_hook_g,G,pp_hook_g1(G)).
+pp_hook_g(S):- term_contains_ansi(S), !, write_nbsp, pp_hook_g0(S).
+pp_hook_g(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+pp_hook_g(G):- \+ plain_var(G), \+ nb_current(arc_can_portray,nil),
+  lock_doing(in_pp_hook_g,G,pp_hook_g0(G)).
 
-
+pp_hook_g0(S):- term_is_ansi(S), !, write_nbsp, write_keeping_ansi(S).
+pp_hook_g0(_):- in_pp(bfly),!,fail.
+pp_hook_g0(G):- wots(S,in_bfly(f,pp_hook_g1(G))),write(S).
 
 mass_gt1(O1):- into_obj(O1,O2),mass(O2,M),!,M>1.
 
-% Pretty printing 
+% Pretty printing
+
+as_grid_string(O,SSS):- wots_vs(S,debug_as_grid(O)), sformat(SSS,'{  ~w}',[S]).
+as_pre_string(O,SS):- wots(S,debug_as_grid(O)), strip_vspace(S,SS).
+
 pp_hook_g1(O):-  plain_var(O), !, fail.
-pp_hook_g1(O):-  attvar(O), !, fail.
+pp_hook_g1(O):-  attvar(O), !, is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
+pp_hook_g1(S):- term_is_ansi(S), !, write_nbsp, write_keeping_ansi(S).
+
+pp_hook_g1(shape(O)):- !, is_points_list(O), as_grid_string(O,S), print(shape(S)),!.
+pp_hook_g1(vals(O)):- !, writeq(vals(O)),!.
+pp_hook_g1(localpoints(O)):- !, is_points_list(O), as_grid_string(O,S), print(localpoints(S)),!.
+pp_hook_g1(C):- compound(C), compound_name_arguments(C,F,[O]),is_points_list(O), length(O,N),N>2, as_grid_string(O,S), compound_name_arguments(CO,F,[S]), print(CO),!.
+
+pp_hook_g1(O):-  is_points_list(O),as_grid_string(O,S),print(S),!.
 pp_hook_g1(O):-  is_real_color(O), color_print(O,call(writeq(O))),!.
 pp_hook_g1(O):-  is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
 pp_hook_g1(O):-  is_grid(O), 
 % \+ (sub_term(E,O),compound(E),E='$VAR'(_)), 
   catch((wots(S,print_grid(O)),strip_vspace(S,SS),ptc(orange,(format('"  ~w  "',[SS])))),_,fail).
+
+pp_hook_g1(_):-  \+ in_pp(ansi),!, fail.
+
 pp_hook_g1(O):- atom(O), atom_contains(O,'o_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
   resolve_reference(O,Var), O\==Var, \+ plain_var(Var),!, 
   write(' '), writeq(O), write(' /* '), debug_as_grid(Var), write(' */ ').
-pp_hook_g1(O):-  is_object(O),ppt_no_nl(O), !.
-pp_hook_g1(O):-  is_group(O),ppt_no_nl(O), !.
-pp_hook_g1(O):-  is_map(O),write('map'),!.
+
+pp_hook_g1(O):-  is_object(O),pp_no_nl(O), !.
+pp_hook_g1(O):-  is_group(O),pp_no_nl(O), !.
+
+%pp_hook_g1(change_obj(N,O1,O2,Sames,Diffs)):-  showdiff_objects5(N,O1,O2,Sames,Diffs),!.
+
+pp_hook_g1(O):-  is_map(O),data_type(O,DT), writeq('..map.'(DT)),!.
 pp_hook_g1(O):-  is_gridoid(O),debug_as_grid(O), !.
-pp_hook_g1(O):-  is_points_list(O),debug_as_grid(O), !.
-%pp_hook_g1(O):-  O = change_obj( O1, O2, Diff), p_c_o('change_obj',[O1,O2,Diff]),!.
+%pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  with_tagged('h5',collapsible_section(object,[O1, O2],pp(O))).
+%pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff), collapsible_section(object,showdiff_objects(O1,O2)),!.
+%pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  collapsible_section(object,[O1, O2],with_tagged('h5',pp(O))).
 %pp_hook_g1(O):-  O = diff(A -> B), (is_gridoid(A);is_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
 pp_hook_g1(O):-  O = showdiff( O1, O2), !, showdiff(O1, O2).
-
+pp_hook_g1(O):- compound(O),wqs1(O),!.
 
 /*
 pp_hook_g1(T):- 
@@ -290,8 +350,8 @@ pp_hook_g1(T):-
    ; locally(b_setval('$portraying',[T]),ptv0(T)).
 */
 
-%pp_hook_g(G):- compound(G),ptt(G),!.
-%pp_hook_g(G):- ptt(G),!.
+%pp_hook_g(G):- compound(G),ppt(G),!.
+%pp_hook_g(G):- ppt(G),!.
 
 
 strip_vspace(S,Stripped):- string_concat(' ',SS,S),!,strip_vspace(SS,Stripped).
@@ -300,78 +360,129 @@ strip_vspace(S,Stripped):- string_concat('\n',SS,S),!,strip_vspace(SS,Stripped).
 strip_vspace(S,Stripped):- string_concat(SS,'\n',S),!,strip_vspace(SS,Stripped).
 strip_vspace(S,Stripped):- string_concat('\t',SS,S),!,strip_vspace(SS,Stripped).
 strip_vspace(S,Stripped):- string_concat(SS,'\t',S),!,strip_vspace(SS,Stripped).
+
+strip_vspace(S,Stripped):- replace_in_string([" \n"="\n","(   "="(  ","(\n"="( "],S,S2),S2\==S,!,strip_vspace(S2,Stripped).
 %strip_vspace(S,Stripped):- split_string(S, "", "\t\r\n", [Stripped]).
 strip_vspace(S,S).
 
-print_ansi_tree(S,_):- term_is_ansi(S), !, write_keeping_ansi(S).
-print_ansi_tree(P,_):- catch(arc_portray(P),_,fail),!.
-print_ansi_tree(P,_OL):- catch(print_tree_no_nl(P),_,fail),!.
 
-wqs(G):- is_map(G), !, write_map(G,'wqs').
-wqs(X):- is_grid(X), !, print_grid(X).
-wqs(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-wqs(X):- is_object(X), !, show_shape(X).
-wqs(X):- plain_var(X), !, wqs(plain_var(X)). wqs(nl):- !, nl. wqs(''):-!. wqs([]):-!.
+print_nl(P):- format('~N~t'),pp_msg_color(P,C), ansicall(C,pp_no_nl(P)),nl_if_needed.
+
+color_write(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+color_write(P):- pp_msg_color(P,C), ansicall(C,write(P)).
+
+pp_msg_color(P,C):- compound(P),pc_msg_color(P,C),!.
+pp_msg_color(P,C):- must_det_ll(mesg_color(P,C)).
+pc_msg_color(iz(P),C):- pp_msg_color(P,C).
+pc_msg_color((_->P),C):- pp_msg_color(P,C).
+pc_msg_color([P|_],C):- pp_msg_color(P,C).
+pc_msg_color(diff(P),C):- pp_msg_color(P,C).
+
+wots_vs(SS,G):- wots(S,G),strip_vspace(S,SS).
+
+
+wqs_l([]).
+wqs_l([H|T]):- wqs(H), write_nbsp, wqs_l(T).
+
+
+wqs(P):- pp_msg_color(P,C), ansicall(C,wqs0(P)),!.
+
+wqs0(X):- plain_var(X), !, wqs(plain_var(X)). 
+wqs0(G):- is_map(G), !, write_map(G,'wqs').
+wqs0(X):- attvar(X), !, wqs(attvar(X)). 
+wqs0([H|T]):- is_list(T), string(H), !, wqs_l([H|T]).
+wqs0([H|T]):- is_list(T), !, wqs(H),need_nl(H,T), wqs(T).
+wqs0(nl):- !, nl. wqs0(''):-!. wqs0([]):-!.
+wqs0(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+wqs0(X):- is_object(X), tersify1(X,Q), X\==Q,!, wqs(Q).
+wqs0(X):- is_object(X), show_shape(X),!.
+wqs0(X):- is_grid(X), !, print_grid(X).
+wqs0(X):- string(X), atom_contains(X,'~'), catch((sformat(S,X,[]),color_write(S)),_,fail),!.
+wqs0(X):- string(X), !, color_write(X).
 %wqs([H1,H2|T]):- string(H1),string(H2),!, write(H1),write_nbsp, wqs([H2|T]).
 %wqs([H1|T]):- string(H1),!, write(H1), wqs(T).
-wqs([skip(_)|T]):- !,wqs(T).
+wqs0([skip(_)|T]):- !,wqs(T).
 %wqs([H|T]):- compound(H),!, writeq(H), wqs(T).
-wqs([H|T]):- !, wqs(H),need_nl(H,T), wqs(T).
-wqs(format(C,N)):- !, format(C,N).
-wqs(writef(C,N)):- !, writef(C,N).
-wqs(call(C)):- !, call(C).
-wqs(ppt(C)):- !, ppt(C).
-wqs(g(C)):- !, write_nbsp, bold_print(writeq(g(C))).
-wqs(io(C)):- !, write_nbsp, bold_print(writeq(io(C))).
-wqs(q(C)):- !, write_nbsp, writeq(C).
-wqs(uc(C,W)):- !, write_nbsp, color_print(C,call(underline_print(format("\t~@",[wqs(W)])))).
-wqs(cc(C,N)):- attvar(C), get_attrs(C,PC), !, wqs(ccc(PC,N)).
-wqs(cc(C,N)):- var(C), sformat(PC,"~p",[C]), !, wqs(ccc(PC,N)).
-wqs(cc(C,N)):- !, write(' cc('),color_print(C,C),write(','), writeq(N), write(')').
-wqs(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
-wqs(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
-wqs(C):- is_color(C),!,wqs(color_print(C,C)).
 
-wqs(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-wqs(X):- \+ compound(X),!, write_nbsp, write(X).
-wqs(S):- term_contains_ansi(S), !,write_nbsp, write_keeping_ansi(S).
-wqs(X):- write_nbsp, writeq(X).
+wqs0(call(C)):- !, call(C).
+wqs0(C):- is_color(C),!,wqs(color_print(C,C)).
+wqs0(X):- \+ compound(X),!, write_nbsp, write(X).
+wqs0(C):- compound(C),wqs1(C),!.
+%wqs(S):- term_contains_ansi(S), !, write_nbsp, write_keeping_ansi(S).
+wqs0(X):- write_nbsp,writeq(X).
 
-write_nbsp:- arc_webui,!,write('&nbsp;').
+as_arg_str(C,S):- wots_vs(S,print(C)).
+
+arg_string(S):- string(S),!.
+arg_string(S):- term_contains_ansi(S),!.
+
+wqs1(C):- \+ compound(C),!,wqs0(C).
+wqs1(format(C,N)):- catch((sformat(S,C,N),color_write(S)),_,fail),!.
+wqs1(writef(C,N)):- !, writef(C,N).
+wqs1(q(C)):-  \+ arg_string(C),wots(S,writeq(C)),color_write(S).
+wqs1(g(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs(C))),wqs(g(S)).
+wqs1(b(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs(C))),color_write(S).
+wqs1(norm(C)):- writeq(norm(C)),!.
+wqs1(S):- term_contains_ansi(S), !, write_nbsp, print(S).
+wqs1(pp(C)):- \+ arg_string(C), wots_vs(S,pp(C)),wqs(pp(S)).
+%wqs1(pen(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(penz(S)).
+wqs1(vals(C)):- writeq(vals(C)),!.
+%wqs1(colors(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(colorsz(S)).
+wqs1(ppt(C)):- \+ arg_string(C), wots_vs(S,ppt(C)),wqs(ppt(S)).
+wqs1(io(C)):-  \+ arg_string(C),wots_vs(S,bold_print(wqs(C))),wqs(io(S)).
+
+wqs1(uc(C,W)):- !, write_nbsp, color_print(C,call(underline_print(format("\t~@",[wqs(W)])))).
+wqs1(cc(C,N)):- is_color(C),!,color_print(C,call(writeq(cc(C,N)))).
+wqs1(-(C,N)):- is_color(C),!,color_print(C,call(writeq(C))), write('-'), wqs(N).
+wqs1(cc(C,N)):- N\==0,attvar(C), get_attrs(C,PC), !, wqs(ccc(PC,N)).
+wqs1(cc(C,N)):- N\==0,var(C), sformat(PC,"~p",[C]), !, wqs(ccc(PC,N)).
+wqs1(cc(C,N)):- \+ arg_string(C), wots(S,color_print(C,C)), wqs(cc(S,N)).
+wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
+wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
+wqs1(X):- compound(X), compound_name_arguments(X,_,[Arg]),is_gridoid(Arg),area_or_len(Arg,Area),Area<5,writeq(X),!.
+wqs1(X):- compound(X), compound_name_arguments(X,F,[Arg]),is_gridoid(Arg),
+  writeq(F),write('(`\n'),!,print_grid(Arg),write('`)').
+
+%probably_nl :- arc_webui,!,write('<br/>').
+nl_if_needed :- format('~N').
+probably_nl :- format('~N').
+%write_nbsp:- arc_webui,!,write('&nbsp;').
 write_nbsp:- write(' ').
 
 is_breaker(P):- compound(P),functor(P,_,A), A>=3.
 need_nl(_,_):- arc_webui,!.
-need_nl(H,[P|_]):- \+ is_breaker(H),is_breaker(P),line_position(user_output,L1),L1>80,nl,bformatc('\t\t').
-need_nl(_,_):- line_position(user_output,L1),L1>160,nl,bformatc('\t\t').
+need_nl(H,[P|_]):- \+ is_breaker(H),is_breaker(P),line_position(user_output,L1),L1>80,nl,bformatc1('\t\t').
+need_nl(_,_):- line_position(user_output,L1),L1>160,nl,bformatc1('\t\t').
 need_nl(_,_).
-wqln(X):- wqnl(X).
-wqnl(X):- is_list(X),!,g_out(wqs(X)).
-wqnl(X):- format('~N~q~N',[X]).
 
 dash_chars:- dash_chars(40),!.
 dash_chars(H):- integer(H), dash_border(H).
-dash_chars(S):- format('~N'),dash_chars(60,S),format('~N').
+dash_chars(S):- nl_if_needed,dash_chars(60,S),probably_nl.
 dash_chars(H,_):- H < 1,!.
-dash_chars(H,C):-forall(between(0,H,_),bformatc(C)).
+dash_chars(H,C):- forall(between(0,H,_),bformatc1(C)).
 
-dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc('¯¯¯ ').
-dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('¯¯¯ ').
-dash_uborder_no_nl_1:- bformatc('¯¯¯ ').
+%dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc1('\u00AF\u00AF\u00AF ').
+%dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc1('\u00AF\u00AF\u00AF ').
+%dash_uborder_no_nl_1:- bformatc1('\u00AF\u00AF\u00AF ').
+dash_uborder_no_nl_1:- uborder(Short,Long),!, bformatc1(Short),bformatc1(Long),write_nbsp.
 dash_uborder_no_nl(1):- !, dash_uborder_no_nl_1.
-dash_uborder_no_nl(Width):- WidthM1 is Width-1, bformatc(' ¯'),dash_chars(WidthM1,'¯¯'),!.
-%dash_uborder_no_nl(Width):- WidthM1 is Width-1, write(' _'),dash_chars(WidthM1,'__').
+dash_uborder_no_nl(Width):- WidthM1 is Width-1, uborder(Short,Long),
+  write(' '), write(Short),dash_chars(WidthM1,Long),!.
+%dash_uborder_no_nl(Width):- WidthM1 is Width-1, write_nbsp, bformat('\u00AF'),dash_chars(WidthM1,'\u00AF\u00AF'),!.
 
+dash_uborder(Width):- nl_if_needed,dash_uborder_no_nl(Width),nl.
 
-dash_border_no_nl_1:-  line_position(current_output,0),!, bformatc(' ___ ').
-dash_border_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc('___ ').
-dash_border_no_nl_1:- bformatc(' ___ ').
-dash_border_no_nl(1):- !,dash_border_no_nl_1.
-dash_border_no_nl(Width):- WidthM1 is Width-1, bformatc(' _'),dash_chars(WidthM1,'__').
+uborder('-','--'):- stream_property(current_output,encoding(utf8)),!.
+uborder('\u00AF','\u00AF\u00AF'):- !. %stream_property(current_output,encoding(text)).
+%uborder('-','--').
+
+dash_border_no_nl_1:-  line_position(current_output,0),!, bformatc1(' ___ ').
+dash_border_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc1('___ ').
+dash_border_no_nl_1:- bformatc1(' ___ ').
+dash_border_no_nl(1):- nl_if_needed,!,dash_border_no_nl_1.
+dash_border_no_nl(Width):- nl_if_needed, WidthM1 is Width-1, bformatc1(' _'),dash_chars(WidthM1,'__').
 
 dash_border(Width):- !, dash_border_no_nl(Width),nl,!.
-dash_uborder(Width):- format('~N'), WidthM1 is Width-1, bformatc(' ¯'),dash_chars(WidthM1,'¯¯'),nl.
-%dash_uborder(Width):- format('~N'), WidthM1 is Width-1, write(' _'),dash_chars(WidthM1,'__'),nl.
 
 functor_test_color(pass,green).
 functor_test_color(fail,red).
@@ -379,21 +490,43 @@ functor_test_color(warn,yellow).
 
 arcdbg(G):- is_map(G), !, write_map(G,'arcdbg').
 arcdbg(G):- compound(G), compound_name_arity(G,F,_),functor_test_color(F,C),
-  wots(S,print(G)),color_print(C,S),!,format('~N').
+  wots(S,print(G)),color_print(C,S),!,probably_nl.
 arcdbg(G):- wdmsg(G).
 
 
 %user:portray(Grid):- ((\+ tracing, is_group(Grid),print_grid(Grid))).
 %user:portray(Grid):- quietlyd((is_object(Grid),print_grid(Grid))).
 
-banner_lines(Color):- format('~N'),
+banner_lines(Color):- nl_if_needed,
   color_print(Color,'--------------------------------------------------------------'),nl,
   color_print(Color,'=============================================================='),nl,
   color_print(Color,'--------------------------------------------------------------'),nl,
   color_print(Color,'=============================================================='),nl,
   color_print(Color,'--------------------------------------------------------------'),nl.
 
-print_side_by_side(C1,C2):- print_side_by_side(C1,_LW,C2), !.
+print_ss(A):- grid_footer(A,G,W),!,must_det_ll(print_grid(W,G)).
+print_ss(A):- must_det_ll(( format('~N'), into_ss_string(A,SS),!,
+  SS = ss(_,Lst), 
+  forall(member(S,Lst),writeln(S)),format('~N'))).
+
+print_side_by_side([]):-!.
+print_side_by_side([A,B|Rest]):- \+ g_smaller_than(A,B),!,print_side_by_side(A,B),format('~N'),!,print_side_by_side(Rest).
+print_side_by_side([A|Rest]):- print_ss(A), print_side_by_side(Rest).
+
+print_side_by_side(A,B):- g_smaller_than(A,B),!, print_ss(A),print_ss(B).
+print_side_by_side(A-WQS1,B-WQS2):- !, print_side_by_side(red,A,WQS1,_,B,WQS2),format('~N').
+print_side_by_side(A,B):- format('~N'),print_side_by_side(A,_,B),format('~N').
+
+grid_footer(G,_,_):- \+ compound(G),!,fail.
+grid_footer((GG-wqs(GF)),GG,GF):- nonvar(GF),!.
+grid_footer((GG-GF),GG,GF):- is_gridoid(GG), !.
+grid_footer(print_grid(GF,GG),GG,GF).
+grid_footer(print_grid(_,_,GF,GG),GG,GF).
+
+
+g_smaller_than(A,B):- grid_footer(A,AA,_),!,g_smaller_than(AA,B).
+g_smaller_than(B,A):- grid_footer(A,AA,_),!,g_smaller_than(B,AA).
+g_smaller_than(A,B):- is_gridoid(A),is_gridoid(A),!, v_hv(A,_,AV),v_hv(B,_,BV), BV>AV.
 
 gridoid_size(G,30,30):- \+ compound(G),!.
 gridoid_size(print_grid(H,V,_),H,V):- nonvar(H),nonvar(V),!.
@@ -406,11 +539,11 @@ gridoid_size(G,H,V):- is_gridoid(G),!,grid_size(G,H,V).
 print_side_by_side(X,Y,Z):- g_out((nl,print_side_by_side0(X,Y,Z))).
 
 print_side_by_side0([],_,[]):-!.
-print_side_by_side0(C1-wqs(S1),LW,C2-wqs(S2)):- nonvar(S1),!,
-  print_side_by_side0(C1,LW,C2),format('~N'),
+print_side_by_side0(C1-call(wqs(S1)),LW,C2-call(wqs(S2))):- nonvar(S1),!,
+  print_side_by_side0(C1,LW,C2),nl_if_needed,
   print_side_by_side0(wqs(S1),LW,wqs(S2)).
 print_side_by_side0(C1-A,LW,C2-B):- nonvar(A),!,
-  print_side_by_side0(C1,LW1,C2),format('~N'),
+  print_side_by_side0(C1,LW1,C2),nl_if_needed,
   print_side_by_side0(A,LW2,B),
   ignore(max_min(LW1,LW2,LW,_)).
 
@@ -427,6 +560,42 @@ print_side_by_side0(C1,W0,C2):- number(W0), LW is floor(abs(W0)),
 
 is_side(RL):- nb_current(print_sbs,RL),RL\==[].
 
+trim_rs([],[]):-!.
+trim_rs(S,SS):- member(WS, ["\s","\t","\n","\r"," "]), string_concat(Left,WS,S),
+  trim_rs(Left,SS),!.
+trim_rs(SS,SS).
+  
+extend_len(Need,S,New):- 
+ must_det_ll((
+  trim_rs(S,SS),
+  atom_length(SS,Spaces),Makeup is Need -Spaces, 
+  ( Makeup<1 -> New=SS ;  (make_spaces(Makeup,Pre), (SS==[] -> SSS='' ; SSS=SS), atomics_to_string([SSS,Pre,'\n'],New))))).
+   
+make_spaces(Spaces,S):-
+ wots(S,(write_nbsp,forall(between(2,Spaces,_),write_nbsp),write_nbsp)),!.
+
+
+maybe_exend_len(L1,L2,Lst1,L2):-  (is_grid(L1) ; \+ is_list(L1)),
+  into_ss_string(L1,ss(_,Lst1)), !.
+maybe_exend_len(L1,L2,L1,Lst2):-  (is_grid(L2) ; \+ is_list(L2)),
+  into_ss_string(L2,ss(_,Lst2)), !.
+
+%maybe_exend_len(L1,L2,L2L,L1):- length(L1,N1),length(L2,N2), N2 > N1, !,append(['Swapped2'],L2,L2L).
+
+maybe_exend_len(L1,L2,NL1,L2):-
+  length(L1,N1),
+  length(L2,N2),
+  N2>N1, 
+ must_det_ll((
+  nth1(1,L1,E1), atom_length(E1,Spaces1),
+  nth1(2,L1,E2), atom_length(E2,Spaces2),
+  max_min(Spaces1,Spaces2,Spaces,_Min),
+  make_spaces(Spaces,S),
+  Needs is N2-N1, make_list(S,Needs,AppendL1), 
+  append(L1,AppendL1,NL0),
+  maplist(extend_len(Spaces),NL0,NL1))),!.
+
+maybe_exend_len(L1,L2,L2L,L1):- length(L1,N1),length(L2,N2), N2 > N1, !,append(['Swapped'],L2,L2L).
 
 maybe_exend_len(L1,L2,NL1,L2):-
   length(L1,N1),
@@ -437,12 +606,14 @@ maybe_exend_len(L1,L2,NL1,L2):-
   make_list(S,Needs,AppendL1),
   append(L1,AppendL1,NL1),!.
 
+
 maybe_exend_len(L1,L2,L2,L1):- length(L1,N1), length(L2,N2), N2 > N1, !.
 
 
 print_side_by_side_lists_1st([],_,[],_):-!.
 
-print_side_by_side_lists_1st(L1,W1,L2,LW):- maybe_exend_len(L1,L2,NL1,NL2),!, print_side_by_side_lists_1st(NL1,W1,NL2,LW).
+print_side_by_side_lists_1st(L1,W1,L2,LW):- maybe_exend_len(L1,L2,NL1,NL2),!, 
+  print_side_by_side_lists_1st(NL1,W1,NL2,LW).
 
 print_side_by_side_lists_1st([E1,E2|L1],W1,L2,LW):- !,
   wots(S,(write(E2),write('\t '),dash_chars(W1,' ' ))),
@@ -468,15 +639,15 @@ print_side_by_side_lists(Pre,[],W1,[E2|L2],W2):-
   with_output_to(atom(S),dash_chars(Pre,' ')), write_padding(S,W1,E2,W2),
   print_side_by_side_lists(Pre,[],W1,L2,W2).
 
-desc(A,B):- wots(S1,A),wots(S2,B),format('~N~n'),dash_chars,write(S1),format('~N'),write(S2),format('~N').
+desc(A,B):- wots(S1,A),wots(S2,B),nl_if_needed,format('~n'),dash_chars,write(S1),nl_if_needed,write(S2),probably_nl.
 
 write_padding(E1,_W1,E2,LW):- %write_nbsp,
     W1 = LW,
-   format('~N'),as_str(E1,S1), as_str(E2,S2), 
-   write(S1), pre_s2(W1,S2), format('~N').
+   nl_if_needed,as_str(E1,S1), as_str(E2,S2), 
+   write(S1), pre_s2(W1,S2), probably_nl.
 
 pre_s2(_,S2):- atom_contains(S2,'_'), write('    '),write(S2).
-pre_s2(_,S2):- atom_contains(S2,'¯'), write('    '),write(S2).
+pre_s2(_,S2):- atom_contains(S2,'\u00AF'), write('    '),write(S2).
 pre_s2(_,S2):- atom_contains(S2,'|'), write('   '),write(S2).
 pre_s2(W1,S2):- line_position(user_output,L1), Pad1 is W1 - L1, (dash_chars(Pad1, ' ')),write('  '),write(S2).
 
@@ -515,7 +686,7 @@ show_pair_grid(TitleColor,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
   %LW is (IH * 2 + 12),
 %  wots(U1, print_grid(IH,IV,In)),
 %  wots(U2, print_grid(OH,OV,Out)),
-  INFO = [grid_dim,amass,length,colors_count_size,colors],
+  INFO = [grid_dim,amass,length,unique_color_count,colors],
 %  print_side_by_side(U1,LW,U2),
   print_side_by_side(TitleColor,print_grid(IH,IV,In),NameInU,LW,print_grid(OH,OV,Out),NameOutU),
   print_side_by_side(
@@ -531,7 +702,7 @@ print_side_by_side(TitleColor,G1,N1,LW,G2,N2):-
 
 print_side_by_side4d(TitleColor,S1,F1,N1,W0,S2,F2,N2):- number(W0), W0 < 0, LW is -W0, !, print_side_by_side4d(TitleColor,S2,F2,N2,LW,S1,F1,N1).
 print_side_by_side4d(TitleColor,S1,F1,N1,_LW,S2,F2,N2):- 
-   format('~N',[]), write('\t'),format_u(TitleColor,F1,[N1,S1]),write('\t\t'),format_u(TitleColor,F2,[N2,S2]),write('\n'),!.
+   nl_if_needed, write('\t'),format_u(TitleColor,F1,[N1,S1]),write('\t\t'),format_u(TitleColor,F2,[N2,S2]),write('\n'),!.
 
 toUpperC(A,AU):- A==[],!,AU='  []  '.
 toUpperC(A,AU):- string(A),!,AU=A.
@@ -552,9 +723,8 @@ show_pair_diff(IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
 
 uses_space(C):- code_type(C,print).
 
-into_ss_string(C, ss(1,["var_into_ss_string"])):- var(C),!.
+into_ss_string(C, X):- var(C),!, must_det_ll(X=ss(1,["var_into_ss_string","2","3"])).
 into_ss_string(C,_):- plain_var(C),!,throw(var_into_ss_string(C)).
-%into_ss_string(A-B,ss(LenAB,ABL)):- into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)), append(LA,LB,ABL), max_min(LenA,LenB,LenAB,_).
 into_ss_string(print_grid(G),SS):- into_ss_string(print_grid_ss(G),SS).
 into_ss_string(print_grid(X,Y,G),SS):- into_ss_string(print_grid_ss(X,Y,G),SS).
 into_ss_string(print_grid0(G),SS):- wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
@@ -564,19 +734,21 @@ into_ss_string(ss(Len,L),ss(Len,L)):-!.
 into_ss_string(uc(W),SS):- !,wots(SS,format_u(yellow,"\t~@",[wqs(W)])).
 into_ss_string(uc(C,W),SS):- !,wots(SS,color_print(C,call(underline_print(format("\t~@",[wqs(W)]))))).
 into_ss_string(call(C),SS):- wots(S,catch(C,E,true)), 
-  (((nonvar_or_ci(E),notrace,break,rrtrace(C))->throw(E);true)), into_ss_string(S,SS).
+  (((nonvar_or_ci(E),notrace,bt,break,rrtrace(C))->throw(E);true)), into_ss_string(S,SS).
 into_ss_string(A+B,SS):-!,into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)), append(LA,LB,ABL), max_min(LenA,LenB,LenAB,_),
   ss(LenAB,ABL)=SS.
-into_ss_string(A-B,SS):-!,into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)), append(LA,LB,ABL), max_min(LenA,LenB,LenAB,_),
+
+into_ss_string(A-B,SS):-!,into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)), append(LA,[""|LB],ABL), max_min(LenA,LenB,LenAB,_),
   ss(LenAB,ABL)=SS.
 
-into_ss_string(G,SS):- is_gridoid(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(G,SS):- is_grid(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
+into_ss_string(G,SS):- is_gridoid(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(G,SS):- is_object(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(G,SS):- is_points_list(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(G,SS):- is_group(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(L,ss(Len,L)):- is_list(L), find_longest_len(L,Len),!.
 into_ss_string(S,SS):- string(S), !, atomics_to_string(L,'\n',S),!,into_ss_string(L,SS).
+into_ss_string(G,SS):- into_grid(G,GR),is_grid(GR),!,wots(S,print_grid_ss(GR)),!,into_ss_string(S,SS).
 into_ss_string(C,SS):-       wots(S,catch(C,E,true)), 
   (((nonvar_or_ci(E),notrace,break,rrtrace(C))->throw(E);true)), into_ss_string(S,SS).
 
@@ -596,7 +768,7 @@ print_with_pad(Goal):-
   print_w_pad(O1,S).
 
 print_w_pad(Pad,S):- atomics_to_string(L,'\n',S)-> maplist(print_w_pad0(Pad),L).
-print_w_pad0(Pad,S):- format('~N'),dash_chars(Pad,' '), write(S).
+print_w_pad0(Pad,S):- nl_if_needed,dash_chars(Pad,' '), write(S).
 
 print_equals(_,N,V):- \+ compound(V),wqnl(N=V).
 print_equals(Grid,N,Ps):- is_object(Ps),grid_size(Grid,H,V),print_grid(H,V,N,Ps),!.
@@ -623,7 +795,7 @@ print_equals(colors,XY):-print_equals(cc,XY).
 print_equals(Name,X=Y):- !, print_equals(Name=X,Y).
 %print_equals(Name,[H|L]):- !, maplist(print_equals(Name),[H|L]).
 print_equals(Name,Val):- is_list(Val),forall(nth0(N,Val,E),print_equals(Name:N,E)).
-print_equals(Name,Val):- ppt(Name=Val).
+print_equals(Name,Val):- pp(Name=Val).
 
 commawrite(S):- write(','),write(S).
 
@@ -669,7 +841,7 @@ format_u(TitleColor,Format,Args):- quietlyd( ignore((underline_print(color_print
 print_grid(_,_,_,_):- is_print_collapsed,!.
 print_grid(OH,OV,Name,Out):- 
  quietly((
-  ignore((print_grid0(OH,OV,Out))),!,format('~N  '),
+  ignore((print_grid0(OH,OV,Out))),!,nl_if_needed,format('  '),
   ignore((data_type(Out,SS), toUpperC(Name,NameU),
   mesg_color(SS,TitleColor),
   format_u(TitleColor,"~w  (~w)",[NameU, SS]))))),!.
@@ -686,9 +858,9 @@ print_grid0(H,V,D):- is_map(D),ignore(H = D.h),ignore(V = D.v),
   vm_to_printable(D,R),D\==R,!,print_grid0(H,V,R).
 
 print_grid0(H,V,Grid):- \+ callable(Grid),!,write('not grid: '),
-  GG= nc_print_grid(H,V,Grid), ppt(GG),!,nop(trace_or_throw(GG)).
+  GG= nc_print_grid(H,V,Grid), pp(GG),!,nop(trace_or_throw(GG)).
 
-
+print_grid0(H,V,G):- compound(G), G=(GG-PP),is_grid(GG),!,print_grid(H,V,PP,GG).
 print_grid0(H,V,SIndvOut):- compound(SIndvOut),SIndvOut=(G-GP), \+ is_nc_point(GP),!, 
   with_glyph_index(G,with_color_index(GP,print_grid0(H,V,G))),!.
 print_grid0(H,V,Grid):- is_points_list(Grid), points_to_grid(H,V,Grid,PGrid),!,print_grid0(H,V,PGrid).
@@ -707,7 +879,7 @@ print_grid(SH,SV,EH,EV,Grid):- quietlyd(print_grid0(SH,SV,EH,EV,Grid)),!.
 print_grid0(_SH,_SV,_EH,_EV,Grid):- \+ is_printable_gridoid(Grid), !, writeln(\+ is_printable_gridoid(Grid)).
 
 print_grid0(SH,SV,EH,EV,Grid):-  
-  \+ \+ print_grid1(SH,SV,EH,EV,Grid),!,format('~N').
+  \+ \+ print_grid1(SH,SV,EH,EV,Grid),!,probably_nl.
 
 
 print_grid1(SH,SV,EH,EV,Grid):- is_object(Grid),
@@ -718,9 +890,9 @@ print_grid1(SH,SV,EH,EV,Grid):-
  %backtrace(10),
  (line_position(current_output,O);O=0),!, O1 is O+1,
  print_grid_pad(O1,SH,SV,EH,EV,Grid), 
- nl_if_not_side_by_side,format('~N').
+ nl_if_not_side_by_side,probably_nl.
 
-nl_if_not_side_by_side:- ignore(( \+ in_side_by_side, format('~N'))).
+nl_if_not_side_by_side:- ignore(( \+ in_side_by_side, probably_nl)).
 
 in_side_by_side:- current_output(Out), \+ stream_property(Out,alias(user_output)).
 
@@ -731,27 +903,28 @@ print_grid_pad(O1,SH,SV,EH,EV,Grid):-
   wots(S,print_grid2(SH,SV,EH,EV,GridI)),
   print_w_pad(O1,S),!.
 
-print_grid2(SH,SV,EH,EV,GridI):- arc_webui,!, print_grid_html(SH,SV,EH,EV,GridI),nl.
+print_grid2(SH,SV,EH,EV,GridI):- in_pp(ansi),!,ignore(print_grid_ansi(SH,SV,EH,EV,GridI)).
+print_grid2(SH,SV,EH,EV,GridI):- in_pp(bfly),!,az_ansi(ignore(print_grid_ansi(SH,SV,EH,EV,GridI))).
+print_grid2(SH,SV,EH,EV,GridI):- \+ in_pp(bfly), \+ in_pp(ansi), arc_webui,!, print_grid_html(SH,SV,EH,EV,GridI),nl.
+print_grid2(SH,SV,EH,EV,GridI):- !, bfly_html_pre(print_grid_ansi(SH,SV,EH,EV,GridI)).
 print_grid2(SH,SV,EH,EV,GridI):- ignore(print_grid_ansi(SH,SV,EH,EV,GridI)).
+
 print_grid_ss(H,V,G):- must_det_ll(print_grid0(H,V,G)).
 
 w_out(S):- toplevel_pp(bfly),!,correct_nbsp(S,SO),our_pengine_output(SO),!.
 w_out(S):- is_webui,!,correct_nbsp(S,SO),our_pengine_output(SO),!.
-w_out(S):- format('~N'),write(S).
+w_out(S):- nl_if_needed,write(S).
 %w_out(SO):- pengines:pengine_output('</pre>'),pengines:pengine_output(SO),pengines:pengine_output('<pre class="console">'),!.
 
-arc_webui:- in_pp(http),!.
-arc_webui:- toplevel_pp(swish),!.
-arc_webui:- toplevel_pp(bfly),!.
-arc_webui:- is_webui,!.
-
+:- meta_predicate(g_out(0)).
+:- export(g_out/1).
 g_out(G):- is_side(_),!,call(G).
-g_out(G):- \+ arc_webui,!,format('~N'),call(G),format('~N').
-g_out(G):- nb_current(in_g_out,t),!,format('~N'),call(G),format('~N').
+g_out(G):- \+ arc_webui,!,nl_if_needed,call(G),probably_nl.
+g_out(G):- nb_current(in_g_out,t),!,nl_if_needed,call(G),probably_nl.
 g_out(G):- locally(nb_setval(in_g_out,t), gg_out(G)).
 
-gg_out(G):- in_pp(bfly),!,bfly_html_goal(with_pp(http,G)).
-gg_out(G):- with_style('',call(G)).
+gg_out(G):- \+ toplevel_pp(ansi),!,bfly_html_goal(G).
+gg_out(G):- call(G).
 %gg_out(G):- call(G).
 %gg_out(G):- \+ toplevel_pp(bfly),!,gg_out2(G).
 %gg_out(G):- bfly_html_goal(gg_out2(G)).
@@ -769,16 +942,37 @@ g_out_style(C,G):- wots(S0,g_out(G)),correct_nbsp(S0,S),
 mbfy(G):- in_pp(bfly),!,bfly_html_goal(G).
 mbfy(G):- !,call(G).
 
+correct_nbsp(S,S):-!.
 correct_nbsp(S0,S):- replace_in_string([" &nbsp;"="&nbsp;","&nbsp; "="&nbsp;"],S0,S).
 
-ansi_format_real(Ansi,Format,Args):- arc_webui,!,sformat(S,Format,Args),!,color_print_webui(Ansi,S).
+%ansi_format_real(Ansi,Format,Args):- arc_webui,!,sformat(S,Format,Args),!,color_print_webui(Ansi,S).
 %ansi_format_real(Ansi,Format,Args):- ansicall(Ansi,format(Format,Args)),!.
-ansi_format_real(Ansi,Format,Args):- 
- Text = utf8,
+ansi_format_real(Ansi,Format,Args):- ansi_format(Ansi,Format,Args).
+
+
+set_html_stream_encoding:- set_stream_encoding(utf8).
+
+as_html_encoded(Goal):- with_enc(utf8,Goal).
+
+with_enc(Enc,Goal):-
+ stream_property(current_output,encoding(Was)),
+ setup_call_cleanup(current_prolog_flag(encoding,EncWas),
+ (( ignore(catch(set_prolog_flag(encoding,Enc),_,true)),
+    current_prolog_flag(encoding,EncNew),
+     locally(set_prolog_flag(encoding,EncNew),
+ setup_call_cleanup(
+       set_stream_encoding(Enc),
+   Goal,
+       set_stream_encoding(Was))))),
+       set_prolog_flag(encoding,EncWas)).
+      
+
+set_stream_encoding(Text):- 
+ %set_prolog_flag(encoding,Text),
+ notrace((
  ignore(catch(set_stream(current_output,encoding(Text)),_,true)),
  ignore(catch(set_stream(user_output,encoding(Text)),_,true)),
- ignore(catch(set_stream(current_output,tty(true)),_,true)),
-    ansi_format(Ansi,Format,Args).
+ ignore(catch(set_stream(current_output,tty(true)),_,true)))),!.
 
 /*
 subst_entity(S,SS):- string(S),atom_chars(S,Codes),subst_entity1(Codes,CS),sformat(SS,'~s',[CS]).
@@ -807,17 +1001,19 @@ cpwui(italic,G):- !, cpwui(style('font-style','italic'),G).
 cpwui(bg(C),G):- !, cpwui(style('background-color',C),G).
 cpwui(hbg(C),G):- !, cpwui([bg(C),style('filter','brightness(150%)')],G).
 cpwui(hfg(C),G):- !, cpwui([C,style('brightness','200%')],G).
-cpwui(style(C),G):- !, format('<font style="~w">~@</font>',[C,bformatc(G)]).
-cpwui(style(N,V),G):- !, format('<font style="~w: ~w;">~@</font>',[N,V,bformatc(G)]).
+cpwui(style(C),G):- !, format('<font style="~w">~@</font>',[C,bformatc_or_at(G)]).
+cpwui(style(N,V),G):- !, format('<font style="~w: ~w;">~@</font>',[N,V,bformatc_or_at(G)]).
 cpwui(C,G):- C==black,!, cpwui(style('opacity: 0.5;'),G).
 cpwui(C,G):- C==wbg,!,cpwui([black,black],G).
 
-cpwui(fg(C),G):- !, format('<font color="~w" style="font-weight: bold;">~@</font>',[C,bformatc(G)]),!.
-cpwui(color(C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
+cpwui(fg(C),G):- !, format('<font color="~w" style="font-weight: bold;">~@</font>',[C,bformatc_or_at(G)]),!.
+cpwui(color(C),G):- !, format('<font color="~w">~@</font>',[C,bformatc_or_at(G)]).
 cpwui(C,G):- integer(C),arc_acolor(C,CC),CC\==C,!,cpwui(CC,G).
-cpwui(C,G):- is_html_color(C),!, format('<font color="~w">~@</font>',[C,bformatc(G)]).
+cpwui(C,G):- is_html_color(C),!, format('<font color="~w">~@</font>',[C,bformatc_or_at(G)]).
 %cpwui((C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
-cpwui(C,G):- format('<font> style="~w" ~@</font>',[C,bformatc(G)]),!.
+cpwui(C,G):- format('<font style="~w">~@</font>',[C,bformatc_or_at(G)]),!.
+
+bformatc_or_at(C):- wots(S,bformatc(C)), ( (S=="";(fail,atom_contains(S,"><"))) -> write('@') ; write(S)).
 
 is_html_color(A):- \+ atom(A),!,fail.
 is_html_color(teal).
@@ -832,46 +1028,84 @@ cpwui(C,G):- format('<span style="~w">~@</span>',[C,bformatc(G)]),!.
 */
 
 
-
-bformatc(call(G)):- !, wots(S,call(G)), bformats(S).
+bformatc(G):- var(G),!,bformatc(vaR(G)).
+bformatc(call(G)):- !, wots(S,call(G)), bformatc(S).
 bformatc(G):- string(G),!,bformats(G).
 bformatc(G):- atom(G),!,bformats(G).
+bformatc(G):- is_list(G), catch(text_to_string(G,S),_,fail),G\==S,!,bformatc(S).
 bformatc(G):- wots(S,write(G)), bformats(S).
-bformats(S):- \+ in_pp(bfly),!,write(S).
-bformats(S):- atom_codes(S,Cs), maplist(map_html_entities,Cs,CsO),atomic_list_concat(CsO,W),!,bformatw(W).
 
+bformats(S):- atom_contains(S,'<'),!,write(S).
+bformats(S):- bformatc1(S).
+
+bformatc1(S):- \+ arc_webui,!,write(S).
+bformatc1(S):- write(S),!.
+bformatc1(S):- atom_codes(S,Cs), maplist(map_html_entities_mono,Cs,CsO),atomic_list_concat(CsO,W),!,bformatw(W).
+
+%map_html_entities_mono(I,O):- atom_codes(O,I),!.
+map_html_entities_mono(I,O):- map_html_entities(I,O).
+
+map_html_entities(Code,S):- Code>160, !, sformat(S, '&#~w;',[Code]).
+map_html_entities(Code,S):- Code<33, !, sformat(S, '&#~w;',[Code]).
+/*
 map_html_entities(Code,S):- Code == 124,!,sformat(S, '&#~w;',[Code]).
 map_html_entities(Code,S):- Code>255, !, sformat(S, '&#~w;',[Code]).
-map_html_entities(Code,S):- Code>127, !, sformat(S, '&#~w;',[Code]).
 map_html_entities(62,'&gt;'). map_html_entities(60,'&lt;'). map_html_entities(38,'&amp;'). map_html_entities(32,'&nbsp;').
-map_html_entities(Code,S):- Code>32, name(S,[Code]),!.
+*/
+map_html_entities(Code,S):- name(S,[Code]),!.
 
 bformatw(G):- g_out(bformat(G)).
 
 with_style(S,G):-
  (arc_webui -> 
    setup_call_cleanup(format('<span style="~w">',[S]),G,write('</span>')) 
-    ; G).
+    ; call(G)).
 
-print_grid_html(Grid):-print_grid_html(_SH,_SV,_EH,_EV,Grid).
-print_grid_html(Name,Grid):-print_grid(_OH,_OV,Name,Grid).
-print_grid_html(SH,SV,EH,EV,Grid):-
+html_echo(G)--> [G].
+
+mforeach(Generator, Rule) -->
+    foreach(Generator, Rule, []).
+
+:- use_module(library(dcg/high_order),[foreach // 3]).
+
+print_grid_html:- arc_grid(Grid),print_grid_html(Grid).
+print_grid_html(Grid):-print_grid_html(_SH,_SV,_EH,_EV,Grid),!.
+print_grid_html(Name,Grid):-print_grid(_OH,_OV,Name,Grid),!.
+
+print_grid_html(SH,SV,EH,EV,Grid):- print_grid_http(SH,SV,EH,EV,Grid),!.
+
+print_grid_http(SH,SV,EH,EV,Grid):- bg_sym(BGC),
+ arc_html_format(`<code>tbody td:nth-of-type(odd){ background:rgba(255,255,136,0.5); }</code>`),
+(plain_var(EH) ->grid_size(Grid,EH,_) ; true),ignore(SH=1),
+  (plain_var(EV) ->grid_size(Grid,_,EV) ; true),ignore(SV=1),
+   output_html(table([ class([table, 'table-striped']), 
+             style('width:auto; margin-left:2em') ],
+           [ tr(th(colspan(EH), ['Table for ', 'This'])),
+             \ mforeach(between(SV,EV,V),
+                      html(tr([ \ mforeach((between(SH,EH,H),once(hv_cg_value(Grid,CG,H,V);CG=BGC), 
+                         wots(Cell,(print_g1(cpwui,CG)))),
+                                     html(td([class('mc-10'),style('text-align:center; width:11px;')], html_echo(Cell) ))) ])))
+           ])),!.
+
+
+print_grid_html_old(SH,SV,EH,EV,Grid):-
  % CSS = 'line-height: .5; font-stretch: ultra-extended;',
- CSS = 'line-height: 1.2; font-stretch: ultra-extended; font-size:288px background-color: reset;',
+ %CSS = 'line-height: 1.2; font-stretch: ultra-extended; font-size:288px background-color: reset;',
+ CSS = 'white-space: pre;',
  g_out(must_det_ll(( 
-  format('~N'), 
+  nl_if_needed, 
   ((plain_var(EH) ; plain_var(EV))->grid_size(Grid,EH,EV);true),
   Width is EH-SH, 
   (Width==0 -> DBW = 1 ; DBW is Width+1),
   once((with_style(CSS,dash_border_no_nl(DBW)))),
   bg_sym(BGC),
   forall(between(SV,EV,V),
-   with_style(CSS,((format('~N['),(format('<span style="~w">',[CSS])),
+   with_style(CSS,((nl_if_needed,format('['),(format('<span style="~w">',[CSS])),
      forall(between(SH,EH,H),
      ignore((((hv_cg_value(Grid,CG,H,V);/*grid_cpoint(Grid,CG-_,H,V);*/CG=BGC)->
         (once(print_gw1(CG))))))),write('&nbsp;]'),(write('</span>')))))),
   %print_g(H,V,C,LoH,LoV,HiH,HiV)
-  format('~N'),!,
+  nl_if_needed,!,
   once(with_style(CSS,dash_uborder_no_nl(DBW)))))),!.
 
 grid_colors(GridI,WGrid):-
@@ -889,7 +1123,7 @@ grid_colors(GridI,WGrid):-
 
 print_grid_ansi(SH,SV,EH,EV,GridI):-
  must_det_ll((
-  format('~N'), 
+  nl_if_needed, 
   %maybe_grid_numbervars(GridI,Grid),
   GridI=Grid,
   ((plain_var(EH) ; plain_var(EV))->grid_size(Grid,EH,EV);true),
@@ -898,19 +1132,19 @@ print_grid_ansi(SH,SV,EH,EV,GridI):-
   once((dash_border_no_nl(DBW))),
   bg_sym(BGC),
   forall(between(SV,EV,V),
-   ((format('~N|'),
+   ((nl_if_needed,format('|'),
      forall(between(SH,EH,H),
       ignore((
        (((hv_cg_value(Grid,CG,H,V);hv_c_value(Grid,CG,H,V);/*grid_cpoint(Grid,CG-_,H,V);*/CG=BGC))->
         (once(print_gw1(CG);write('??')));write('?f'))))),
      write(' |')))),
-  format('~N'),!,
+  nl_if_needed,!,
   once((dash_uborder_no_nl(DBW))))), 
   nop((    
      (( \+ ground(GridI));sub_var(wbg,GridI);sub_var(bg,GridI);sub_var(wfg,GridI);sub_var(fg,GridI)),
       grid_colors(GridI,CGrid),
       (nb_current(print_sbs,left)-> (nl,nl, write(left), write(=)) ; true),
-     print_attvars(CGrid))).
+     ppa(CGrid))).
 
  /*
          "#000000",  # 0: black
@@ -930,17 +1164,20 @@ print_grid_ansi(SH,SV,EH,EV,GridI):-
 %print_rows(List):- maplist(print_g,List),nl.
 %block_colors([(black),(blue),(red),(green),(yellow),'#c0c0c0',(magenta),'#ff8c00',(cyan),'#8b4513']).
 %block_colors([(black),(blue),(red),(green),(yellow),Silver,('#966cb8'),'#ff8c00',(cyan),'#8b4513']):- silver(Silver),!.
-block_colors([('#3a5a3a'),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan),'#8b4513','#2a2a2a','magenta','#444455']):- silver(Silver),!.
-%block_colors([(black),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan),'#8b4513','#2a2a2a','#3a5a3a']):- silver(Silver),!.
-named_colors([(black),(blue),(red),(green),(yellow),(silver),(purple),(orange),(cyan),(brown),wbg,fg,'#444455']).
-named_colors([ (lack),(blue),(red),(green),(yellow),(silver),(purple),(orange),(cyan),(brown),bg,wfg]).
+block_colors([('#3a5a3a'),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan),'#8b4513','#2a2a2a','#f47c7c',FG]):- fg_cut(FG), silver(Silver),!.
+%block_colors([(black),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan),'#8b4513','#2a2a2a', 9379b4 '#3a5a3a']):- silver(Silver),!.
+named_colors([(black),(blue),(red),(green),(yellow),(silver),(purple),(orange),(cyan),(brown),wbg,fg,FG]):- fg_cut(FG).
+named_colors([ (lack),(blue),(red),(green),(yellow),(Silver),(purple),(orange),(cyan),(brown),bg,wfg]):- silver(Silver).
 named_colors([(lack),(blue),(red),(green),(yellow),(silver),(magenta),(orange),(cyan),(brown)]).
 named_colors([(lack),(blue),(red),(green),(yellow),(grey),(pink),(orange),(teal),(maroon)]).
 
+% '#1077f1'
+fg_cut('#b399d4').
 % silver(rgb(123,123,123)).
+silver('#9a9a9a').
 silver('#7b7b7b').
 silver('#c0c0c0').
-silver('#9a9a9a').
+
 
 unnegate_color(C,Neg):- number(C),C<0,C is -Neg,!.
 unnegate_color(CI,C):- compound(CI),CI= '-'(C),!.
@@ -1035,9 +1272,9 @@ color_int(C,C).
 
 
 :- export(grid_color_code/2).
-grid_color_code(C,C):- var(C).
-grid_color_code(C-W,CC-W):- color_code(C,CC).
-grid_color_code(C,CC):- color_code(C,CC).
+grid_color_code(C,C):- var(C),!.
+grid_color_code(C-W,CC-W):- color_code(C,CC),!.
+grid_color_code(C,CC):- color_code(C,CC),!.
 %grid_color_code(C,CC):- is_grid_color(black-_),!,color_code(C,CC).
 %grid_color_code(C,CC):- color_int(C,CC).
 
@@ -1050,26 +1287,26 @@ color_code(C,W):- color_name(C,W).
 special_dot(Code):- var_dot(Code);bg_dot(Code);fg_dot(Code);grid_dot(Code);cant_be_dot(Code).
 
 resrv_dot(Code):-  code_type(Code,white);code_type(Code,punct);code_type(Code,quote); 
- member(Code,`?.¨«¬­°```);special_dot(Code).
+ member(Code,`?.\u00AF\u00AF\u00AF\u00AF\u00AF```);special_dot(Code).
 
 
 
 var_dot(63).
-/* code=63 ?  code=183 · code=176 ° code=186 º 170 ª   */
+/* code=63 ?  code=183 \u00AF code=176 \u00AF code=186 \u00AF 170 \u00AF   */
 bg_dot(32).
-/* 169	© 248	ø 216	Ø  215 ×  174	®   */
+/* 169	\u00AF 248	\u00AF 216	\u00AF  215 \u00AF  174	\u00AF   */
 %fg_dot(C):- luser_getval(fg_dot,C),integer(C),!.
 %fg_dot(_):- luser_getval(no_rdot,true),luser_setval(no_rdot,false)-> break , fail.
 fg_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.
-fg_dot(174).
+fg_dot(64).
+%fg_dot(174).
 cant_be_dot(183).
 grid_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.
 grid_dot(169).
 
 %print_g(H,V,C0,_,_,_,_):- cant_be_color(C0),cant_be_color(C0,C),!,  ansi_format_arc([bold,fg('#ff8c00')],'~@',[(write('c'),user:print_g1(H,V,C))]).
 %print_g(H,V,C0,_,_,_,_):- plain_var(C0),print_g1(H,V,C-'?'),!.
-
-print_g(H,V,C,_,_,_,_):- write_nbsp, print_g1(H,V,C),!.
+%print_g(H,V,C,_,_,_,_):- write_nbsp, print_g1(P2,H,V,C),!.
 
 object_glyph(G,Glyph):- is_object(G),!,obj_iv(G,Iv), int2glyph(Iv,Glyph).
 object_glyph(G,Glyph):- is_grid(G),!,grid_dot(Dot),name(Glyph,[Dot]).
@@ -1097,44 +1334,52 @@ int2glyph0(GN,Glyph):- GN > 255, GN2 is GN div 2, int2glyph0(GN2,Glyph).
 
 %print_gw1(C):- plain_var(C), write('  '),!.
 
-print_gw1(N):- 
+print_gw1(N):- print_gw1(color_print_ele,N),!.
 
- wots(S,(((get_bgc(BG),is_color(BG), once((BG\==black-> color_print(BG,'.');write_nbsp);write(',')));write_nbsp),!,
-  (print_g1(N);write('?')))),!,
- gws(S).
+print_gw1(P2,N):- 
+
+ wots(S,(((get_bgc(BG),is_color(BG), once((BG\==black-> call(P2,BG,'.');write_nbsp);write(',')));write_nbsp),!,
+  (print_g1(P2,N);write('?')))),!, gws(S).
+
 gws(S):- write(S),!.
 %gws(S):- atom_length(S,L),(L=28->(write(L),atom_codes(S,Codes),arc_assert(ac(S)));write(S)).
 %print_gw1(N):- compound(N),N = C-W,!,color_print(C,W),!.
 
-mregression_test:- G = [[1,2,3],[1,2,3],[1,2,3]], print_grid(G).
-mregression_test:- G = [[1,2,3],[1,_,3],[1,2,3]], print_grid(G).
-mregression_test:- G = [[A,2,3],[_,2,_],[A,2,3]], print_grid(G).
-mregression_test:- G = [['$VAR'(1),2,3],[_,2,'$VAR'(3)],[_,2,'$VAR'('Good')],['$VAR'(1),2,3]], print_grid(G).
+%mregression_test:- mregression_test(print_grid).
+mregression_test:- mregression_test(print_grid_html(_,_,_,_)).
 
-mregression_test:- print_grid([[_,_-green]]).
+mregression_test(P1):- G = [[1,2,3],[1,2,3],[1,2,3]], call(P1,G).
+mregression_test(P1):- G = [[1,2,3],[1,_,3],[1,2,3]], call(P1,G).
+mregression_test(P1):- G = [[A,2,3],[_,2,_],[A,2,3]], call(P1,G).
+mregression_test(P1):- G = [['$VAR'(1),2,3],[_,2,'$VAR'(3)],[_,2,'$VAR'('Good')],['$VAR'(1),2,3]], call(P1,G).
 
-mregression_test:- print_grid([[_17910,_17922-green,_17934-green,_17946-green,_17952,_17964-green,_17970,_17982-cyan,_17994-cyan,_18000,_18012-cyan,_18024-cyan,_18036-cyan,_18048-cyan,_18054,_18066-cyan,_18078-cyan,_18084,_18096-green,_18102,_18114-green,_18126-green,_18138-green,_18144],[_17712-green,_17718,7-green,_17736,5-green,_17754,3-cyan,_17772,5-cyan,_17790,_17796,_17802,_17808,_17814,_17820,5-cyan,_17838,3-cyan,_17856,5-green,_17874,7-green,_17892,_17904-green],[_17436-green,7-green,7-green,7-green,8-green,5-green,3-cyan,5-cyan,4-cyan,_17538,3-cyan,6-cyan,6-cyan,3-cyan,_17592,4-cyan,5-cyan,3-cyan,5-green,8-green,7-green,7-green,7-green,_17700-green],[_17220-green,_17226,7-green,_17244,6-green,4-green,_17274,_17280,_17286,2-cyan,_17304,8-cyan,8-cyan,_17334,2-cyan,_17352,_17358,_17364,4-green,6-green,_17394,7-green,_17412,_17424-green],[_16998,5-green,8-green,6-green,_17040,_17046,1-cyan,_17064,3-cyan,_17082,_17088,5-cyan,5-cyan,_17118,_17124,3-cyan,_17142,1-cyan,_17160,_17166,6-green,8-green,5-green,_17208],[_16764-green,_16770,5-green,4-green,_16800,
+mregression_test(P1):- call(P1,[[_,_-green]]).
+
+mregression_test(P1):- call(P1,[[_17910,_17922-green,_17934-green,_17946-green,_17952,_17964-green,_17970,_17982-cyan,_17994-cyan,_18000,_18012-cyan,_18024-cyan,_18036-cyan,_18048-cyan,_18054,_18066-cyan,_18078-cyan,_18084,_18096-green,_18102,_18114-green,_18126-green,_18138-green,_18144],[_17712-green,_17718,7-green,_17736,5-green,_17754,3-cyan,_17772,5-cyan,_17790,_17796,_17802,_17808,_17814,_17820,5-cyan,_17838,3-cyan,_17856,5-green,_17874,7-green,_17892,_17904-green],[_17436-green,7-green,7-green,7-green,8-green,5-green,3-cyan,5-cyan,4-cyan,_17538,3-cyan,6-cyan,6-cyan,3-cyan,_17592,4-cyan,5-cyan,3-cyan,5-green,8-green,7-green,7-green,7-green,_17700-green],[_17220-green,_17226,7-green,_17244,6-green,4-green,_17274,_17280,_17286,2-cyan,_17304,8-cyan,8-cyan,_17334,2-cyan,_17352,_17358,_17364,4-green,6-green,_17394,7-green,_17412,_17424-green],[_16998,5-green,8-green,6-green,_17040,_17046,1-cyan,_17064,3-cyan,_17082,_17088,5-cyan,5-cyan,_17118,_17124,3-cyan,_17142,1-cyan,_17160,_17166,6-green,8-green,5-green,_17208],[_16764-green,_16770,5-green,4-green,_16800,
  1-green,2-cyan,_16830,3-cyan,4-cyan,2-cyan,_16872,_16878,2-cyan,4-cyan,3-cyan,_16920,2-cyan,1-green,_16950,4-green,5-green,_16980,_16992-green],[_16494,3-cyan,3-cyan,_16524,1-cyan,2-cyan,4-purple,6-purple,5-purple,6-purple,7-purple,7-purple,7-purple,7-purple,6-purple,5-purple,6-purple,4-purple,2-cyan,1-cyan,_16722,3-cyan,3-cyan,_16752],[_16272-cyan,_16278,5-cyan,_16296,_16302,_16308,6-purple,6-purple,_16338,7-purple,9-purple,10-purple,10-purple,9-purple,7-purple,_16416,6-purple,6-purple,_16446,_16452,_16458,5-cyan,_16476,_16488-cyan],[_16032-cyan,5-cyan,4-cyan,_16062,3-cyan,3-cyan,5-purple,_16104,_16110,6-purple,_16128,9-purple,9-purple,_16158,6-purple,_16176,_16182,5-purple,3-cyan,3-cyan,_16224,4-cyan,5-cyan,_16260-cyan],[_15786,_15792,_15798,2-cyan,_15816,4-cyan,6-purple,7-purple,6-purple,8-purple,9-purple,10-purple,10-purple,9-purple,8-purple,6-purple,7-purple,6-purple,4-cyan,_15990,2-cyan,_16008,_16014,_16020],[_15552-cyan,_15558,3-cyan,_15576,_15582,2-cyan,4-purple,5-purple,_15624,5-purple,7-purple,7-purple,8-purple,10-purple,9-purple,_15702,9-purple,7-purple,2-cyan,_15744,_15750,3-cyan,_15768,_15780-cyan],[_15300-cyan,_15306,6-cyan,8-cyan,5-cyan,_15348,4-blue,7-blue,7-blue,7-blue,4-blue,_15414,_15420,8-purple,10-purple,9-purple,10-purple,7-purple,_15486,5-cyan,8-cyan,6-cyan,_15528,_15540-cyan],[_15048-cyan,_15054,6-cyan,8-cyan,5-cyan,_15096,7-blue,11-blue,11-blue,11-blue,7-blue,_15162,_15168,8-purple,10-purple,9-purple,10-purple,7-purple,_15234,5-cyan,8-cyan,6-cyan,_15276,_15288-cyan],[_14802-cyan,_14808,3-cyan,_14826,_14832,2-cyan,7-blue,11-blue,11-blue,11-blue,7-blue,4-purple,8-purple,10-purple,9-purple,_14958,9-purple,7-purple,2-cyan,_15000,_15006,3-cyan,_15024,_15036-cyan],[_14556,_14562,_14568,2-cyan,_14586,4-cyan,7-blue,11-blue,11-blue,11-blue,7-blue,7-purple,10-purple,9-purple,8-purple,6-purple,7-purple,6-purple,4-cyan,_14760,2-cyan,_14778,_14784,_14790],[_14304-cyan,5-cyan,4-cyan,_14334,3-cyan,3-cyan,4-blue,7-blue,7-blue,7-blue,4-blue,8-purple,9-purple,_14448,6-purple,_14466,_14472,5-purple,3-cyan,3-cyan,_14514,4-cyan,5-cyan,_14550-cyan],[_14076-cyan,_14082,5-cyan,_14100,_14106,_14112,4-purple,5-purple,_14142,5-purple,8-purple,10-purple,10-purple,9-purple,7-purple,_14220,6-purple,6-purple,_14250,_14256,_14262,5-cyan,_14280,_14292-cyan],[_13806,3-cyan,3-cyan,_13836,1-cyan,2-cyan,4-purple,6-purple,5-purple,6-purple,7-purple,7-purple,7-purple,7-purple,6-purple,5-purple,6-purple,4-purple,2-cyan,1-cyan,_14034,3-cyan,3-cyan,_14064],[_13572-green,_13578,5-green,4-green,_13608,
  1-green,2-cyan,_13638,3-cyan,4-cyan,2-cyan,_13680,_13686,2-cyan,4-cyan,3-cyan,_13728,2-cyan,
  1-green,_13758,4-green,5-green,_13788,_13800-green],[_13350,5-green,8-green,6-green,_13392,_13398,-1-cyan,_13416,3-cyan,_13434,_13440,5-cyan,5-cyan,_13470,_13476,3-cyan,_13494,1-cyan,_13512,_13518,
  6-green,8-green,5-green,_13560],[_13140-green,_13146,7-green,_13164,6-green,4-green,_13194,_13200,_13206,2-cyan,_13224,8-cyan,8-cyan,_13254,2-cyan,_13272,_13278,_13284,4-green,6-green,_13314,7-green,_13332,_13344-green],[_12864-green,7-green,7-green,7-green,8-green,5-green,3-cyan,5-cyan,4-cyan,_12966,3-cyan,6-cyan,6-cyan,3-cyan,_13020,4-cyan,5-cyan,3-cyan,5-green,8-green,7-green,7-green,7-green,_13128-green],[_12660-green,_12666,7-green,_12684,5-green,_12702,3-cyan,_12720,5-cyan,_12738,_12744,_12750,_12756,_12762,_12768,5-cyan,_12786,3-cyan,_12804,5-green,_12822,7-green,_12840,_12852-green],[_12414,_12426-green,_12438-green,_12450-green,_12456,_12468-green,_12474,_12486-cyan,_12498-cyan,_12504,_12516-cyan,_12528-cyan,_12540-cyan,_12552-cyan,_12558,_12570-cyan,_12582-cyan,_12588,_12600-green,_12606,_12618-green,_12630-green,_12642-green,_12648]]).
 %print_g1(C):- compound_var(C,N),underline_print(print_g1(N)),!.
 
+print_g1(CG):- print_g1(color_print_ele,CG).
+print_g1(P2,C):- C == ((+) - wbg),!,call(P2,wbg,(+)).
+print_g1(P2,C):- mv_peek_color(C,V),C\==V,!,print_g1(P2,V).
+print_g1(P2,C):- plain_var(C), write_nbsp,!, nop(( nobject_glyph(C,G),underline_print(print_g1(P2,G-G)))),!.
+print_g1(_ ,C):- C == black,!, write_nbsp.
+print_g1(_ ,C-CC):- C == black,CC == black,!,write_nbsp,!.
+print_g1(P2,N):- is_grid(N),call(P2,magenta,'G'),!.
+print_g1(P2,C):- is_bg_color(C),get_bgc(BG),\+ attvar(C),!,call(P2,bg(BG),' '),!.
+print_g1(P2,N-C):- plain_var(N),print_g1(P2,C).
+print_g1(P2,C-N):- plain_var(N),print_g1(P2,C).
+print_g1(P2,N-C):- integer(N),is_color(C),!,e_int2glyph(N,G),call(P2,C,G).
+print_g1(P2,C-N):- integer(N),is_color(C),!,e_int2glyph(N,G),call(P2,C,G).
+print_g1(P2,C):- compound_var(C,N),nobject_glyph(N,G),underline_print(print_g1(P2,G-G)),!.
+print_g1(P2,N):- \+ compound(N), \+ is_colorish(N), print_g1(P2,N-N).
+print_g1(P2,N):- into_color_glyph(N,C,Code),as_name(Code,S), call(P2,C,S),!.
 
-print_g1(C):- mv_peek_color(C,V),C\==V,!,print_g1(V).
-print_g1(C):- plain_var(C), write_nbsp,!, nop(( nobject_glyph(C,G),underline_print(print_g1(G-G)))),!.
-print_g1(C):- C == black,!, write_nbsp.
-print_g1(C-CC):- C == black,CC == black,!,write_nbsp,!.
-print_g1(N):- is_grid(N),color_print_ele(magenta,'G'),!.
-print_g1(C):- is_bg_color(C),get_bgc(BG),\+ attvar(C),!,color_print_ele(bg(BG),' '),!.
-print_g1(N-C):- plain_var(N),print_g1(C).
-print_g1(C-N):- plain_var(N),print_g1(C).
-print_g1(N-C):- integer(N),is_color(C),!,e_int2glyph(N,G),color_print_ele(C,G).
-print_g1(C-N):- integer(N),is_color(C),!,e_int2glyph(N,G),color_print_ele(C,G).
-print_g1(C):- compound_var(C,N),nobject_glyph(N,G),underline_print(print_g1(G-G)),!.
-print_g1(N):- \+ compound(N), \+ is_colorish(N), print_g1(N-N).
-print_g1(N):- into_color_glyph(N,C,Code),as_name(Code,S), color_print_ele(C,S),!.
 
+color_print_ele(C,G):- atom(G),atom_concat('o_',S,G),atom_chars(S,[AC|_]),atom_chars(GS,[AC]),!,color_print_ele(C,GS).
 color_print_ele(C,G):- arc_webui,!,color_print_webui(C,G),!.
 color_print_ele(C,G):- color_print(C,G),!.
 
@@ -1162,6 +1407,7 @@ into_color_glyph(N,C,DOT):- is_spec_fg_color(N,C),fg_dot(DOT).
 into_color_glyph(N,C,DOT):- is_fg_color(N),N=C,fg_dot(DOT).
 into_color_glyph(N,C,DOT):- is_bg_color(N),C=N,bg_dot(DOT).
 into_color_glyph(N,C,DOT):- cant_be_color(N,C),cant_be_dot(DOT).
+into_color_glyph(Obj,C,G):- is_object(Obj),color(Obj,C),object_glyph(Obj,G),!.
 into_color_glyph(N,C,Code):- compound(N),N=(C-G),is_color(C),Code=G.
 into_color_glyph(N,C,Code):- compound(N),N=(G-C),is_color(C),Code=G.
 into_color_glyph(CTerm,Color,Code):- compound(CTerm),into_color_glyph_ez(CTerm,Color,Code),nonvar_or_ci(Code),!.
@@ -1174,22 +1420,23 @@ i_glyph(N,Glyph):- notrace((i_glyph0(N,Glyph),atom(Glyph))),!.
 i_glyph(N,Glyph):- trace,i_glyph0(N,Glyph),atom(Glyph),!.
 
 i_glyph0(N,Glyph):- bg_sym(BG), BG==N, bg_dot(Code), name(Glyph,[Code]).
+i_glyph0(N,Glyph):- atom(N),name(N,[_111,95,Code|_])->name(Glyph,[Code]),!.
+i_glyph0(N,Glyph):- atom(N),name(N,[Code])->name(Glyph,[Code]),!.
 i_glyph0(Code,Glyph):- integer(Code), Code> 255, name(Glyph,[Code]).
 i_glyph0(N,Glyph):- integer(N),quietly((i_sym(N,Code),name(Glyph,[Code]))).
 i_glyph0(N,Glyph):- plain_var(N),format(chars(Codes),'~p',[N]),last(Codes,Glyph).
-i_glyph0(N,Glyph):- atom(N),atom_length(N,1),Glyph=N.
-i_glyph0(N,Glyph):- N>10, integer(N),N3 is N div 3, i_glyph0(N3,Glyph).
+i_glyph0(N,Glyph):- number(N), N>10, integer(N),N3 is N div 3, i_glyph0(N3,Glyph).
 %i_glyph(N,Glyph):- atom(N),atom_chars(N,Chars),last(Chars,LGlyph),upcase_atom(LGlyph,Glyph).
                                                                             
-i_sym(N2,Code):- integer(N2),!, N is N2, change_code(N,NN), iss:i_syms(Codes),nth0(NN,Codes,Code),!.
+i_sym(N2,Code):- integer(N2),!, N is N2+160, change_code(N,NN), iss:i_syms(Codes),nth0(NN,Codes,Code),!.
 i_sym(N2,Code):- atom(N2),name(N2,[C|_]),!,i_sym(C,Code).
 i_sym(N,Code):- plain_var(N), Code = 63.
 %change_code(N,M):- M is N * 100,!.
 %change_code(N,M):- N>10, M is (N * 10 ),!.
-change_code(N,N). % M is N+212.
+change_code(N,M):- M is N.
 
 
-print_g1(_,_, E):- print_g1(E),!. 
+print_g1(P2,_,_, E):- print_g1(P2,E),!. 
 %print_g1(_,_,C):- trace, write(C).
 
 code_not_bfly(Code):- between(170,inf,Code).
@@ -1209,11 +1456,27 @@ save_codes(Max):-
   \+ between(42560,42600,Code),
   %%check_dot_spacing(Code),
   %(42600 > Code),
-  
-  \+ resrv_dot(Code)   
+   is_single_char_ifiable_quiet(Code),
+  \+ resrv_dot(Code)
+   
    % ignore((0 is Code mod 50, format(File,'\n\n~d:',[Code]), put_code(File,Code))),
-  ),put_code(Code))))),  
-  assertz(iss:i_syms(CCC))))).
+  ),put_code(Code))))),
+  sort(CCC,CCCO),
+  assertz(iss:i_syms(CCCO))))).
+
+is_single_char_ifiable_quiet(Code):- with_output_to(string(S),put(Code)),sformat(SS,'~q',[S]),!, atom_length(SS,3),!.
+
+is_single_char_ifiable(Code):- with_output_to(string(S),put(Code)),sformat(SS,'~q',[S]),!,is_single_char_ifiable(Code,SS).
+is_single_char_ifiable(_,SS):- atom_length(SS,3),!.
+is_single_char_ifiable(C,SS):- writeln(user_error,C=SS),!,fail.
+
+test_is_single_char_ifiable:-
+ retract(iss:i_syms(CCC)), 
+ include(is_single_char_ifiable,CCC,CCCO),
+ assert(iss:i_syms(CCCO)).
+
+is_html_ifiable(Code):- sformat(S,'~@',[as_html_encoded(put_code(Code))]), atom_length(S,1),!.
+is_html_ifiable(Code):- format('~@',[as_html_encoded(put_code(Code))]),!,fail.
 
 save_codes:- save_codes(42600).
 
@@ -1223,6 +1486,7 @@ check_dot_spacing(CCC):-
 
 check_dot_spacing:- iss:i_syms(CCC),maplist(check_dot_spacing,CCC),!.
 
+:- retractall(iss:i_syms(_)).
 :- ignore(save_codes).
 
 /*
@@ -1265,4 +1529,5 @@ get_glyph(Point,Glyph):-
 12271 = |? ? ? ? ? |
 
 */
+
 

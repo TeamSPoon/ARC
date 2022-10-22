@@ -51,3 +51,11 @@ butterfly.server.py --help
 ./butterfly.server.py --generate-certs --host=10.0.0.233 --generate-user-pkcs=arc
 ./butterfly.server.py --generate-certs --host=10.0.0.233
 butterfly.server.py 
+git status .
+git checkout ext.js
+git checkout butterfly/static/ext.js
+git checkout butterfly/static/main.js
+git commit -am "Faked the monospaced fixwidth fonts now"
+git push
+cd ..
+git diff .

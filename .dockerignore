@@ -1,0 +1,8 @@
+./
+.
+./*
+!./prolog/kaggle_arc/
+!./butterfly/
+# !./secret_data/
+!./tutorial_code/
+!./arc_web/

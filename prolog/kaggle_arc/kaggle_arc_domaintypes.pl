@@ -19,9 +19,9 @@ has_color(C,Cell):- only_color_data(Cell,CD), cmatch(C,CD).
 
 cmatch(C,CD):- plain_var(C),!,C=CD,!.
 cmatch(C,CD):- var(C),!,C=CD,!.
-cmatch(fg,CD):- is_fg_color(CD),!.
-cmatch(bg,CD):- is_bg_color(CD),!.
-cmatch(wbg,CD):- (CD==wbc;is_bg_color(CD)),!.
+cmatch(fg,CD):- !, CD\==wbg, is_fg_color(CD),!.
+cmatch(bg,CD):- !, is_bg_color(CD),!.
+cmatch(wbg,CD):- !, (CD==wbc;is_bg_color(CD)),!.
 %cmatch(P,CD):- is_real_color(P),!, \+ P\==CD.
 cmatch(P,CD):- is_colorish(P),!, \+ P\=CD.
 cmatch(P,CD):- call(P,CD),!.
@@ -34,11 +34,11 @@ free_bg(_,X,X).
 
 unfree_bg(BGC,S,FB):- is_list(S),!,mapgrid(unfree_bg(BGC),S,FB).
 unfree_bg(_,S,BGW):- var(S),!,((get_attr(S,ci,free(BGW)))->true;S=BGW).
-unfree_bg(BGC,A-B,AABB):- unfree_bg(BGC,A,B,AABB),!.
+unfree_bg(BGC,A/**/-B,AABB):- unfree_bg(BGC,A,B,AABB),!.
 unfree_bg(_,X,X).
 
 unfree_bg(_,S,T,FB):- plain_var(S),plain_var(T),!,FB=T.
-unfree_bg(BGC,A,B,AA-BB):- unfree_bg(BGC,A,AA),unfree_bg(BGC,B,BB).
+unfree_bg(BGC,A,B,AA/**/-BB):- unfree_bg(BGC,A,AA),unfree_bg(BGC,B,BB).
 
 get_bg_label(wbg).
 get_fg_label(fg).
@@ -100,6 +100,8 @@ same_colors(_Trig,C1I,_C1O):- \+ is_spec_fg_color(C1I,_),!.
 same_colors(_Trig,C1I,C1O):- nonvar(C1O),!,C1I=C1O.
 same_colors(Trig,C1I,C1O):- constrain_type(C1O,same_colors(Trig,C1I,C1O)).
 
+color_texture_point_data(Cell,C,Texture,Point):- only_color_data(Cell,C),only_neib_data(Cell,Texture),!,only_point_data(Cell,Point).
+
 %set_as_fg(V,fg(N)):- atomic(N), put_attr(V,ci,fg(N)),!,atom_concat(fg,N,Lookup),luser_linkval(Lookup,V).
 %set_as_fg(V,Sym):- put_attr(V,ci,Sym).
 attach_fg_ci(CO,_C):- nonvar(CO),!.
@@ -129,7 +131,10 @@ is_spec_color(V,C):- into_color_name_always(V,C),!,atom(C),!,C\==fg,C\==wfg,C\==
 
 is_color(CO):- attvar(CO),!,get_attr(CO,ci,_).
 is_color(CO):- is_real_color(CO).
+
+is_real_color(C):- atom(C),atom_concat('#',_,C),!.
 is_real_color(C):- atom(C),named_colors(L),member(C,L),!.
+get_real_fg_color(C):- named_colors(L),member(C,L),is_fg_color(C).
 
 decl_one_fg_color(Color):- put_attr(Color,ci,fg(Color)).
 decl_many_fg_colors(X):- put_attr(X,ci,fg(X)),multivar:multivar(X).
@@ -173,7 +178,7 @@ is_grid_color(C):- plain_var(C),!,fail.
 % makes grid colors an integer.. 
 %is_grid_color(C):- !,integer(C).
 % we are using atoms currently
-is_grid_color(C-_):- !, is_color(C).
+is_grid_color(C/**/-_):- !, is_color(C).
 is_grid_color(C):- is_color(C).
 
 is_color_dat(C):- atomic(C),color_code(C,W),!,C==W.
@@ -279,10 +284,20 @@ subtypes(C,S):- subClassOf(S,C).
 %allow_dir_list(squire,[s,e,w]).
 
 allow_dir_list(nsew,[n,s,e,w]). %s,e,n,w 
+
+allow_dir_list(nsew_5,[n,s,e,w]). %s,e,n,w 
+
+allow_dir_list(s_e,[s,e]). %s,e,n,w 
+allow_dir_list(n_w,[n,w]). %s,e,n,w 
 %allow_dir_list(rectangles,[s,e]). 
+
+allow_dir_list(colormass,[n,s,e,w]):- arc_option(no_diags),!.
+
 allow_dir_list(colormass,[n,s,e,w,nw,ne,se,sw]). 
 allow_dir_list(diamonds,[nw,sw,se,ne]).
 allow_dir_list(colormass,[n,s,e,w,nw,sw,se,ne]).
+
+allow_dir_list(all,[n,s,e,w]):- arc_option(no_diags),!.
 allow_dir_list(all,   [nw,sw,se,ne,n,w,s,e]).
 allow_dir_list(hv_line(h),[e,w]).
 allow_dir_list(hv_line(v),[n,s]).
@@ -352,7 +367,6 @@ subClassOf([monochrome,contiguous,hv_line(v)],v_symmetric).
 subClassOf(hv_line(h),v_symmetric).
 subClassOf([monochrome,contiguous,hv_line(h)],h_symmetric).
 
-meets_indiv_criteria(_,_).
 
 data_type(O,T):- nonvar(T),data_type(O,C),T=C,!.
 
@@ -373,10 +387,15 @@ data_type(O,color(bg,_,_)):- is_bg_color(O),!.
 data_type(O,color(fg,_,_)):- is_fg_color(O),!.
 data_type(O,color(_,_,_)):- is_colorish(O),!.
 data_type(O,blob(Type)):- blob(O,Type),Type\==text,!.
-data_type(O,atomic(O)):- atomic(O),!.
+data_type(O,atom):- atom(O),!.
+data_type(O,atomic):- atomic(O),!.
 data_type(O,unk(O)):-!.
 
+data_typec(num(vals([N|_]),_,_),Type):- nonvar(N),!,data_type(N,Type).
+data_typec(lst(vals([N|_]),_,_),Type):- nonvar(N),!,data_type(N,Type).
 data_typec(O,object):- is_object(O),!.
+data_typec(iz(O),iz(T)):- !, data_type(O,T).
+data_typec(diff(_->O),T):- nonvar(O),!, data_type(O,T).
 data_typec(O,dict(L)):- is_map(O),get_kov(objs,O,Value),!,data_type(Value,L).
 data_typec(O,group(N)):- is_group(O),into_list(O,L),!,length(L,N).
 data_typec(Out,grid(H,V)):- is_grid(Out),!,grid_size(Out,H,V).
@@ -391,7 +410,8 @@ is_point(P):- var(P),!,fail.
 is_point(P):- is_nc_point(P),!.
 is_point(P):- is_cpoint(P).
 
-is_points_list(P):- var(P),!,fail.
+
+is_points_list(P):- \+ is_list(P),!,fail.
 is_points_list([G|L]):- is_point(G),!,(L==[];is_points_list(L)),!.
 
 is_cpoints_list(P):- var(P),!,fail.
@@ -411,10 +431,18 @@ is_not_cpoint(I):- \+ is_cpoint(I).
 
 is_not_gpoint(I):- \+ is_gpoint(I).
 
+is_not_tpoint(I):- \+ is_tpoint(I).
+
+
+is_tpoint(C):- \+ compound(C),!,fail.
+is_tpoint(T/**/-P):- is_t(T),!,is_point(P).
+
+is_t(T):- atom(T), atom_length(T,1).
 
 is_cpoint(C):- \+ compound(C),!,fail.
-%is_cpoint(C-P):- (nonvar_or_ci(C);cant_be_color(C)),!,is_nc_point(P).
-is_cpoint(_-P):- is_nc_point(P).
+%is_cpoint(C/**/-P):- (nonvar_or_ci(C);cant_be_color(C)),!,is_nc_point(P).
+is_cpoint(T/**/-P):- is_t(T),!,is_cpoint(P).
+is_cpoint(_/**/-P):- is_nc_point(P).
 
 %is_list_of_gt0(P1,List):- is_list(List),maplist(P1,List).
 
@@ -423,7 +451,7 @@ is_cpoint(_-P):- is_nc_point(P).
 is_nc_point(P):- nonvar(P),hv_point(_,_,P).
 
 is_gpoint(G):- plain_var(G),!,fail.
-is_gpoint(_-G):-!,is_gpoint(G).
+is_gpoint(_/**/-G):-!,is_gpoint(G).
 is_gpoint(G):- hv_point(H,_,G),!,nonvar_or_ci(H),my_assertion(number(H)).
 
 % Grid-oids
@@ -493,9 +521,9 @@ is_object_or_grid(Obj):- is_object(Obj).
 
 is_pointy(O):- is_object_or_grid(O);is_group(O);is_points_list(O).
 
-is_point_obj(O,Color,Point):- nonvar_or_ci(O),O= Color-Point,!.
+is_point_obj(O,Color,Point):- nonvar_or_ci(O),O= Color/**/-Point,!.
 is_point_obj(O,Color,Point):- is_object(O),v_hv(O,H,V), !, hv(H,V)==hv(1,1),
-  globalpoints(O,[Color-Point]),!.
+  globalpoints(O,[Color/**/-Point]),!.
 
 
 %free_cell(0).
