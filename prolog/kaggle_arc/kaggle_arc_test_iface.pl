@@ -312,9 +312,9 @@ rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 ip(I,O):- ip(complete,I,O).
 
 %show_test_pairs,
-ndividuator:- never_entire_suite, show_test_pairs, get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,ip(In,Out)).
+ndividuator:- never_entire_suite, nop(show_test_pairs), get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,ip(In,Out)).
 %ndividuatorO:- never_entire_suite,get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,(igo(In),igo(Out)).
-ndividuatorO:- never_entire_suite,show_test_grids, get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,Grid,(igo(Grid))).
+ndividuatorO:- never_entire_suite,nop(show_test_grids), get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,Grid,(igo(Grid))).
 
 
 show_test_pairs:- get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,print_side_by_side(green,In,in(show_test_pairs(TestID)),_,Out,out(show_test_pairs(TestID)))).

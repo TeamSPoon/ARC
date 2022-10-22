@@ -664,7 +664,10 @@ do_simple_todolist(P2,I,O):- call(P2,I,O).
 %easy0(X):- easy_sol(X).
 %easy0(_,=).
 easy0(0,trim_hv_repeats).
+
 easy0(1,trim_blank_lines).
+easy0(1,gravity(_,_)).
+
 easy0(2,flip_Once(_)).
 easy0(3,swap_two_colors(_,_)).
 easy0(4,blur(flipV)).
@@ -695,7 +698,7 @@ guess_simple_todolist(N,SolSoFar,DoneSoFar,Plan,I,O,OO):- !,
   Next is N+1,
   guess_simple_todolist(Next,NewSOFAR,[H1|DoneSoFar],Plan,I1,O,OO))).
 */
-guess_simple_todolist(N,_,_,_,_,_,_):- N> 5,!,fail.
+guess_simple_todolist(N,_,_,_,_,_,_):- N> 10,!,fail.
 guess_simple_todolist(N,_Failed,IPlan,Plan,I,O,OO):- N\==0, fits_grid(O,I),!,OO=I,reverse(IPlan,Plan).
 /*
 guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):- Next is N+1,
@@ -706,11 +709,11 @@ guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):- Next is N+1,
   Rest=NewFailed, 
   guess_simple_todolist(Next,NewFailed,[H1|Planned],Plan,I1,O,OO).
 */
-guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):- Next is N+1,
-  easy0(N,H1), call(H1, I,I1), is_a_change(I,I1), guess_simple_todolist(Next,Failed,[H1|Planned],Plan,I1,O,OO).
-
 guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):-
   Next is N+1, guess_simple_todolist(Next,Failed,Planned,Plan,I,O,OO).
+
+guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):- Next is N+1,
+  easy0(N,H1), call(H1, I,I1), is_a_change(I,I1), guess_simple_todolist(Next,Failed,[H1|Planned],Plan,I1,O,OO).
 
 /*
 simple_todolist(SolSoFar,List,I,O,OO):-
