@@ -550,7 +550,7 @@ luser_getval(N,V):- arc_user(ID),luser_getval(ID,N,V),!.
 %luser_getval(ID,N,V):- thread_self(ID),nb_current(N,V),!.
 %luser_getval(ID,N,V):- !, ((arc_user_prop(ID,N,V);nb_current(N,V))*->true;arc_user_prop(global,N,V)).
 luser_getval(ID,N,V):- !,
- (nb_current(N,Val)*->Val=V;
+ ((nb_current(N,Val),Val\==[])*->Val=V;
   (arc_user_prop(ID,N,V)*->true;arc_user_prop(global,N,V))).
 
 /*
@@ -1102,9 +1102,9 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 %:- endif.
 
 %:- fixup_module_exports_now.  
-user:portray(Grid):- fail,
+user:portray(Grid):- %fail,
    \+ nb_current(arc_can_portray,nil),
-   current_predicate(bfly_startup/0), \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!.
+   current_predicate(bfly_startup/0), \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!, flush_output.
 
 
 %:- ignore(check_dot_spacing).
@@ -1122,6 +1122,8 @@ user:portray(Grid):- fail,
 
 :- nb_setval(arc_can_portray,nil).
 :- nb_setval(arc_can_portray,t).
+:- nb_setval(arc_can_expand_query,nil).
+:- nb_setval(arc_can_expand_query,t).
 %:- \+ nb_current(arc_can_portray,nil).
 
 :- fixup_module_exports_into(baseKB).

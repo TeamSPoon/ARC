@@ -257,7 +257,11 @@ obj_plist(PA,PAP):- is_list(PA),!,PAP=PA.
 obj_plist(obj(PA),PAP):- is_list(PA),!,PAP=PA.
 %obj_plist(obj(PA,PAP):- indv_props(PA,PAP),!.
 
+never_matom(localpoints(_)).
+never_matom(shape(_)).
+never_matom(globalpoints(_)).
 sub_obj_atom(_,M):- var(M),!,fail.
+sub_obj_atom(_,M):- never_matom(M),!,fail.
 %sub_obj_atom(M,M):- attvar(M),!.
 %sub_obj_atom(A,A).
 sub_obj_atom(M,M):- \+ compound(M),!.
@@ -265,12 +269,12 @@ sub_obj_atom(M,M).
 %sub_obj_atom(A,M):- M = localpoints(_),!,A=M.
 %sub_obj_atom(iz(A),iz(A)):-!. % sub_obj_atom(A,M).
 sub_obj_atom(A,M):- M=..[F,List],is_list(List),!,member(E,List),A=..[F,E].
-sub_obj_atom(E,M):- sub_term(E,M),E\==M,compound(E),once((arg(_,E,A), atomic(A))).
+sub_obj_atom(E,M):- sub_term(E,M),E\==M,compound(E),once((arg(_,E,A), number(A))).
 
 select_obj_pair_2(AAR,BBR,PA,PB,(J/O)):- 
  AAR\==[],
  BBR\==[],
- ord(J/O,PA,PB) = Why,
+ ord(NJ/O+JO+Joins,PA,PB) = Why,
  findall(Why,
   (member(PA,AAR), 
    member(PB,BBR), 
@@ -278,10 +282,14 @@ select_obj_pair_2(AAR,BBR,PA,PB,(J/O)):-
    % maybe_allow_pair(PA,PB), allow_pair(PA,PB),
      obj_atoms(PA,PAP), 
      obj_atoms(PB,PBP),
-     intersection(PAP,PBP,Joins,_,Other),
-     length(Joins,J),length(Other,O)))),
+     intersection(PAP,PBP,Joins,OtherA,OtherB),     
+     flatten([OtherA,OtherB],Other),
+     length(Joins,J),length(Other,O),
+     NJ is -J,
+     JO is - rationalize(J/(O+1))))),
    Pairs), 
- sort(Pairs,SPairs),reverse(SPairs,RPairs),!,
+ sort(Pairs,RPairs),!,
+ %maplist(writeln,Pairs),
  %last(RPairs,prop_atoms(Best,_,_,_)),
  % Best = pair(PA,PB,_),
    member(Why,RPairs).

@@ -16,7 +16,7 @@ solve_easy:- get_current_test(Name),solve_easy(Name).
 
 solve_easy(Name):- 
   fix_test_name(Name,TestID,ExampleNum),
-  ignore(luser_getval(example,ExampleNum)),
+  some_current_example_num(ExampleNum),
   forall(kaggle_arc(TestID,ExampleNum,In,Out),try_easy_io(TestID>ExampleNum,In,Out)),
   ((ExampleNum\=tst+_)-> 
     forall(kaggle_arc(TestID,tst+N,In,Out),try_easy_io(TestID>tst+N,In,Out))).
@@ -164,7 +164,7 @@ propset_indivs(PropsSet,OtherProps,IndvS,Why,Grp):-
 haz_prop(P,O):- has_prop(P,O).
 
 :- export(grid_part/2).
-grid_part(Grid,Info):- var(Grid), get_current_test(TestID), ignore(luser_getval(example,ExampleNum)),!,
+grid_part(Grid,Info):- var(Grid), get_current_test(TestID), some_current_example_num(ExampleNum),!,
   kaggle_arc_io(TestID,ExampleNum,_,Grid),
   grid_part(Grid,Info).
 

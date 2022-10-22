@@ -370,14 +370,15 @@ im_complete(save_as_objects(complete,ListO)):- test_config(indiv(ListO)),!.
 im_complete(ListO):-
 %individuation_macros(complete, ListO):-  \+ test_config(indiv(_)),!, %reset_points, %sub_individuate(force_by_color,subshape_both), %TODO %
   findall(drops_as_objects(From),individuator(From,_),ListM),
+  findall(save_as_objects(From),individuator(From,_),ListS),
   append([
    %find_grids,
    %[i_columns,i_rows],
    %[gather_texture],
-   ListM,  
-   [find_hybrid_shapes],
+   ListM,ListS,
+   [save_as_objects(find_hybrid_shapes),find_hybrid_shapes],
    %[pointless([sub_indiv([save_as_objects(force_by_color),save_as_objects(i_colormass),save_as_objects(i_nsew)])])],
-   [do_ending]],ListO).
+   [do_ending,only_perportional_mass]],ListO).
 %use_individuator(Some):- individuator(Some,_).
 
 individuation_macros(i_columns,[when(get(h)=<5,all_columns),when(get(h)>5,some_columns)]). %:- \+ doing_pair.
@@ -654,6 +655,23 @@ grid_to_obj_other(VM):-
   forall(grid_to_obj_other(Grid,VM,_O),true).
 
 % =====================================================================
+is_fti_step(only_perportional_mass).
+% =====================================================================
+
+only_perportional_mass(VM):- 
+  Grid= VM.grid_o,
+  mass(Grid,GMass),
+  Objs = VM.objs,
+  findall(O,(member(O,Objs),mass(O,OMass),kept_ideal_obj(VM,GMass,Objs,OMass,O)),Keep),
+  gset(VM.objs) = Keep.
+
+kept_ideal_obj(VM,GMass,Objs,OMass,O):- OMass==GMass,!,fail.
+kept_ideal_obj(VM,GMass,Objs,0,O):- !,fail.
+kept_ideal_obj(VM,GMass,Objs,OMass,O):- 0 is GMass rem OMass,!.
+kept_ideal_obj(VM,GMass,Objs,OMass,O):- has_prop(iz(image),O), \+ has_prop(iz(shape),O),!,fail.
+kept_ideal_obj(VM,GMass,Objs,OMass,O).
+
+% =====================================================================
 is_fti_step(find_hybrid_shapes).
 % =====================================================================
 find_hybrid_shapes(VM):-
@@ -671,11 +689,11 @@ find_hybrid_shapes(VM):-
       nop(AMass==9)),List),
   List\==[],
   length(List,HL),!,
-  print_grid(hybrid_shape(HL,TestID,VM.gid),VM.grid),!,
+  as_debug(9,(print_grid(hybrid_shape(HL,TestID,VM.gid),VM.grid))),!,
   maplist(release_bg,List,FGList),
   % maplist(=,List,FGList),
   predsort(sort_on(hybrid_order),FGList,Set),
-  print_side_by_side(Set),!,
+  as_debug(9,(print_side_by_side(Set))),!,
   call(ignore((hybrid_shape_from(Set,VM)))))).
 
 release_bg(List,FGList):- is_list(List),!,maplist(release_bg,List,FGList).
@@ -693,11 +711,10 @@ hybrid_shape_from(Set,VM):-
   must_det_ll((
   %indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
   make_indiv_object(VM,[],GOPoints,Obj),
-  dash_chars,
+  
   %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
   %OffsetGrid = In,
-  Info=maybe_ogs_color(R,OH,OV),
-  print_side_by_side(Grid-Info,[Obj]-Info), % trace,
+  as_debug(9,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_side_by_side(Grid-Info,[Obj]-Info)))), % trace,
   %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  trace,  
   %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
   remCPoints(VM,GOPoints),
@@ -753,11 +770,16 @@ label_sizes(GType,Objs,SF,LF):-
    set_zorder(GType,lf(LFLen),LF),
    !.
 
+  
+
+%has_order(O,P1, Code ):- 
+% Code = ((
 set_zorder(GType,ZType,IndvS):- set_zorder(GType,ZType,1,IndvS).
 set_zorder(_GType,_ZType,_,[]):-!.
-set_zorder(GType,ZType,N,[L|IndvS]):-  
-  get_setarg_p1(nb_setarg,I,L,P1), compound(I), I=.. [o,ZType,_,GType], 
-   call(P1,o(ZType,N,GType)),
+set_zorder(GType,ZType,N,[L|IndvS]):-  O = o, P1 = compound,
+  get_setarg_p1(nb_setarg,I,L,P1), call(P1,I), I=.. [O,ZType,_,GType], 
+    II=..[O,ZType,N,GType],
+   call(P1,II),
    N2 is N+1,!,
    set_zorder(GType,ZType,N2,IndvS).
 set_zorder(GType,ZType,N,[_|IndvS]):-

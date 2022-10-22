@@ -1436,14 +1436,16 @@ sort_on(C,R,A,B):- (A==B-> R= (=) ; must_det_ll((call(C,A,AA),call(C,B,BB),!,com
 
 using_compare(C,R,A,B):- (A==B-> R=(=) ; must_det_ll((call(C,A,AA),call(C,B,BB),!,compare(R,AA,BB)))).
 
-colored_pixel_count(A,Count):- is_points_list(A),fg_color_count(A,Count),!.
-colored_pixel_count(G,Count):- is_grid(G), fg_color_count(G,Count),!.
-colored_pixel_count(A,Count):- is_object(A),localpoints(A,G), fg_color_count(G,Count),!.
+colored_pixel_count(A,Count):- is_points_list(A),fg_pixel_count(A,Count),!.
+colored_pixel_count(G,Count):- is_grid(G), fg_pixel_count(G,Count),!.
+colored_pixel_count(A,Count):- is_object(A),localpoints(A,G), fg_pixel_count(G,Count),!.
 colored_pixel_count(A,Count):- is_list(A),!,maplist(colored_pixel_count,A,Summe),sum_list(Summe,Count),!.
 colored_pixel_count(A,1):- atomic(A),is_fg_color(A),!.
 colored_pixel_count(_,0).
 
-fg_color_count(G,AA):- must_not_error((findall(E,(sub_term(E,G),\+ plain_var(E),is_fg_color(E)),L),length(L,AA))).
+fg_color_count(In,Size):- unique_colors(In,CC),include(is_fg_color,CC,FG),length(FG,Size).
+
+fg_pixel_count(G,AA):- must_not_error((findall(E,(sub_term(E,G),\+ plain_var(E),is_fg_color(E)),L),length(L,AA))).
 
 /*
 4-Way Symmetry
