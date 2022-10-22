@@ -345,6 +345,8 @@ never_entire_suite:- ignore((get_pair_mode(entire_suite),set_pair_mode(whole_tes
 
 set_test_cmd(Mode):- luser_setval('cmd',Mode).
 get_test_cmd(Mode):- luser_getval('cmd',Mode).
+%set_pair_cmd(Mode):- luser_setval('tc_cmd',Mode).
+%get_pair_cmd(Mode):- luser_getval('tc_cmd',Mode).
 
 % Hides solution grid from code
 kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,G), (((ExampleNum*IO) \= ((tst+_)*out))).
@@ -527,7 +529,7 @@ some_current_example_num(TrnN):- nb_current(example,TrnN),ground(TrnN),TrnN\==[]
 some_current_example_num(TrnN):- luser_getval(example,TrnN),ground(TrnN),TrnN\==[],!.
 some_current_example_num(TrnN):- TrnN = trn+0, luser_setval(example,TrnN).
 
-first_current_example_num(TrnN):- some_current_example_num(TrnN),ground(TrnN),TrnN\==[],!.
+first_current_example_num(TrnN):- some_current_example_num(TrnN),ground(TrnN),TrnN\==[],get_current_test(TestID),kaggle_arc(TestID,TrnN,_,_),!.
 first_current_example_num(TrnN):- TrnN = trn+0.
 
 next_pair:- 
@@ -668,8 +670,9 @@ print_qtest:- get_current_test(TestID),print_qtest(TestID).
 print_single_pair:- get_current_test(TestID),print_single_pair(TestID).
 
 :- luser_default('$grid_mode',dots).
-print_qtest(TestID):- \+ luser_getval('$grid_mode',dots),!,print_test(TestID).
-print_qtest(TestID):- \+ luser_getval('$grid_mode',dashes),!,print_test(TestID).
+%print_qtest(TestID):- \+ luser_getval('$grid_mode',dots),!,print_test(TestID).
+%print_qtest(TestID):- \+ luser_getval('$grid_mode',dashes),!,print_test(TestID).
+print_qtest(TestID):- \+ get_pair_mode(single_pair), !, print_test(TestID),!.
 print_qtest(TestID):- !, print_single_pair(TestID),!.
 print_qtest(TestID):-
     dash_chars,nl,nl,nl,dash_chars,

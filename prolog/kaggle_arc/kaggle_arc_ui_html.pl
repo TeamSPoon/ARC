@@ -421,9 +421,9 @@ invoke_arc_cmd(Prolog):-
 :- luser_default(footer_cmd,statistics).
 
 current_arc_cmd(Prolog):- current_arc_cmd(cmd,Prolog).
-current_arc_cmd(cmd,Prolog):- luser_getval(cmd,Prolog).
-current_arc_cmd(tc_cmd,Prolog):- luser_getval(tc_cmd,Prolog).
-current_arc_cmd(footer_cmd,Prolog):- luser_getval(footer_cmd,Prolog).
+%current_arc_cmd(cmd,Prolog):- luser_getval(cmd,Prolog).
+%current_arc_cmd(tc_cmd,Prolog):- luser_getval(tc_cmd,Prolog).
+current_arc_cmd(V,Prolog):- luser_getval(V,Prolog).
 %current_arc_cmd(footer_cmd,Prolog):- (\+ current_arc_cmd(cmd,menu) -> luser_getval(footer_cmd,Prolog,menu) ; luser_getval(footer_cmd,Prolog,edit1term)).
 
 

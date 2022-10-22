@@ -662,14 +662,16 @@ only_perportional_mass(VM):-
   Grid= VM.grid_o,
   mass(Grid,GMass),
   Objs = VM.objs,
-  findall(O,(member(O,Objs),mass(O,OMass),kept_ideal_obj(VM,GMass,Objs,OMass,O)),Keep),
+  findall(O,(member(O,Objs),mass(O,OMass),(kept_ideal_obj(VM,GMass,Objs,OMass,O)->true;(print_grid(removing,O),fail))),Keep),
   gset(VM.objs) = Keep.
 
-kept_ideal_obj(VM,GMass,Objs,OMass,O):- OMass==GMass,!,fail.
+:- style_check(-singleton).
+kept_ideal_obj(VM,GMass,Objs,OMass,O):- OMass=:=GMass,!,fail.
 kept_ideal_obj(VM,GMass,Objs,0,O):- !,fail.
 kept_ideal_obj(VM,GMass,Objs,OMass,O):- 0 is GMass rem OMass,!.
 kept_ideal_obj(VM,GMass,Objs,OMass,O):- has_prop(iz(image),O), \+ has_prop(iz(shape),O),!,fail.
 kept_ideal_obj(VM,GMass,Objs,OMass,O).
+:- style_check(+singleton).
 
 % =====================================================================
 is_fti_step(find_hybrid_shapes).
@@ -693,7 +695,7 @@ find_hybrid_shapes(VM):-
   maplist(release_bg,List,FGList),
   % maplist(=,List,FGList),
   predsort(sort_on(hybrid_order),FGList,Set),
-  as_debug(9,(print_side_by_side(Set))),!,
+  as_debug(1,(print_side_by_side(Set))),!,
   call(ignore((hybrid_shape_from(Set,VM)))))).
 
 release_bg(List,FGList):- is_list(List),!,maplist(release_bg,List,FGList).
@@ -714,7 +716,7 @@ hybrid_shape_from(Set,VM):-
   
   %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
   %OffsetGrid = In,
-  as_debug(9,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_side_by_side(Grid-Info,[Obj]-Info)))), % trace,
+  as_debug(1,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_side_by_side(Grid-Info,[Obj]-Info)))), % trace,
   %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  trace,  
   %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
   remCPoints(VM,GOPoints),
@@ -722,7 +724,7 @@ hybrid_shape_from(Set,VM):-
   ignore(hybrid_shape_from(Set,VM)))).
 
 
-use_hybrid_grid(In):- In\=[[_]], mass(In,Mass),Mass>2.
+use_hybrid_grid(In):- In\=[[_]], mass(In,Mass),Mass>2,area(In,AMass),AMass < Mass*2.
 
 hybrid_order(Grid,Len+NArea):- term_variables_len(Grid,Len),area(Grid,Area),NArea is -Area.
 
@@ -2001,11 +2003,11 @@ whole_into_obj(VM,Grid,Whole):-
   grid_props(Grid,Props0),
   delete(Props0,sometimes_grid_edges(_),Props),
   fif(Len>0,
-    (make_indiv_object(VM,[amass(Len),v_hv(H,V),birth(whole),iz(image)|Props],Points,Whole),raddObjects(VM,Whole),
+    (make_indiv_object(VM,[amass(Len),v_hv(H,V),birth(whole),loc(1,1),iz(image)|Props],Points,Whole),raddObjects(VM,Whole),
        save_grouped(individuate(VM.gid,whole),[Whole]),assert_shape_lib(pair,Whole))),
   localpoints(Grid,LPoints),
   length(LPoints,CLen),fif((CLen=<144,CLen>0),    
-    (make_indiv_object(VM,[birth(whole),iz(shaped)],LPoints,Whole2),raddObjects(VM,Whole2))).
+    (make_indiv_object(VM,[birth(whole),iz(shaped),loc(1,1)],LPoints,Whole2),raddObjects(VM,Whole2))).
 
 
 % =====================================================================
