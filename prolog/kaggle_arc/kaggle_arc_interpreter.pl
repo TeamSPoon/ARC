@@ -629,10 +629,11 @@ goal_expansion_query(Goal,Out):- compound(Goal),
    get_setarg_p1(setarg,I,Goal,P1), compound(I), arc_expand_arg(I,Var,Exp),
    call(P1,Var),expand_goal((Exp,Goal),Out).
 
+is_goal_query(Goal):- 
+  \+ source_location(_,_),luser_getval('$goal', Term), !, % writeq(Term=@=Goal),nl,
+  Goal=@=Term.
 
-goal_expansion_q(Goal,I,Out,O):-  var(I), \+ source_location(_,_),luser_getval('$goal', Term),% writeq(Term=@=Goal),nl,
-  Goal=@=Term,
-  (goal_expansion_query(Goal,Out)-> Goal\=@=Out),I=O.
+goal_expansion_q(Goal,I,Out,O):- var(I), is_goal_query(Goal), (goal_expansion_query(Goal,Out)-> Goal\=@=Out),I=O.
 
 :- export(thread_httpd:http_process/4).
 :- system:import(thread_httpd:http_process/4).
@@ -641,7 +642,10 @@ goal_expansion_q(Goal,I,Out,O):-  var(I), \+ source_location(_,_),luser_getval('
 
 :- multifile(goal_expansion/4).
 :- dynamic(goal_expansion/4).
-%goal_expansion(Goal,I,Out,O):- goal_expansion_q(Goal,I,Out,O).
+goal_expansion(Goal,I,Out,O):- 
+   nb_current(arc_can_expand_query,t),
+   \+ current_prolog_flag(arc_term_expansion,false),   
+   goal_expansion_q(Goal,I,Out,O).
 
 % ?- print_grid(gridFn(X)).
 %:- export(is_toplevel_query/2).
@@ -649,7 +653,8 @@ goal_expansion_q(Goal,I,Out,O):-  var(I), \+ source_location(_,_),luser_getval('
 :- luser_linkval('$goal', []).
 %:- b_setval('$goal_expanded', []).
 :- luser_linkval('$goal_expanded', []).
-expand_query(Goal, Expanded, Bindings, ExpandedBindings):- current_predicate(luser_linkval/2),
+expand_query(Goal, Expanded, Bindings, ExpandedBindings):- 
+  current_predicate(luser_linkval/2),
     % Have vars to expand and varnames are empty
     luser_getval('$goal', WGoal), WGoal\=@=Goal, % this prevents the loop
     luser_linkval('$goal', Goal),
