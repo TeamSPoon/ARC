@@ -655,6 +655,173 @@ grid_to_obj_other(VM):-
   forall(grid_to_obj_other(Grid,VM,_O),true).
 
 % =====================================================================
+is_fti_step(i_pbox).
+% =====================================================================
+
+
+pbox :-  pbox(t('0b148d64')).
+pbox :-  pbox(t('05f2a901')).
+pbox :-  pbox(t('09629e4f')).
+pbox :-  pbox(t('06df4c85')).
+pbox :-  pbox(t('60b61512')).
+pbox :-  pbox(_).
+pbox(TestID):- 
+  update_changed_files,
+  %set_current_test(TestID), 
+  forall(kaggle_arc(TestID,What,I,O),ignore(pbox_pair(TestID,What,I,O))).
+
+is_bg_color_or_var(C):- is_bg_color(C) ; \+ is_fg_color(C).
+is_fg_color_or_var(C):- is_fg_color(C) ; \+ is_bg_color(C).
+
+test_pbox:- test_p2(pbox_pair(_TestID,_What)).
+
+pbox_pair(TestID,What,I,O):- pbox_grid(TestID,What,in,I,_); pbox_grid(TestID,What,out,O,_).
+
+pbox_grid(TestID,What,IO,G,_):-
+  into_grid((TestID>What*IO),G), 
+  duplicate_term(G,GG),
+  set_current_test(TestID),
+  i(i_pbox,GG,Objs),
+  (Objs ==[] -> G=OO; Objs=OO ),
+  print_side_by_side(blue,G,(?-pbox(TestID>What*IO)),_,print_grid(OO),(TestID>What*IO)),!,
+  maplist(obj_global_grid,Objs,OGG),
+  print_side_by_side(OGG),!.
+obj_global_grid(X,G):- global_grid(X,Grid),subst(Grid,black,wbg,G).
+
+not_in_eq(Set,V):- \+ (member(VV,Set),VV == V).
+
+dif_fg(X,Y):- nop((freeze(X,freeze(Y,((is_fg_color(X);is_fg_color(Y))->dif(X,Y)))))).
+
+is_compass(A):- atom(A),member(A,[n,s,e,w]).
+a_portion_colors(IA,Compass,Vars,BG,FG):- 
+  my_partition(is_compass,IA,Compass,Colors),
+  my_partition(is_bg_color,Colors,BG,VFG),my_partition(is_fg_color,VFG,FG,Vars).
+
+different_enough(L_S,Inside,Border):- L_S = s_l,!,fail,
+  a_portion_colors(Inside,InsideC,InsideV,InsideBG,InsideFG),
+  a_portion_colors(Border,BorderC,BorderV,BorderBG,BorderFG),
+  maplist(sort,[BorderC,BorderV,BorderBG,BorderFG,InsideC,InsideV,InsideBG,InsideFG],
+               [SBorderC,SBorderV,SBorderBG,SBorderFG,SInsideC,SInsideV,SInsideBG,SInsideFG]),
+  different_enough_color_i_lists(L_S,Inside,Border,SBorderC,SBorderV,SBorderBG,SBorderFG,
+                                               SInsideC,SInsideV,SInsideBG,SInsideFG),!.
+
+different_enough(L_S,Inside,Border):-
+  a_portion_colors(Inside,InsideC,InsideV,InsideBG,InsideFG),
+  a_portion_colors(Border,BorderC,BorderV,BorderBG,BorderFG),
+  maplist(sort,[BorderC,BorderV,BorderBG,BorderFG,InsideC,InsideV,InsideBG,InsideFG],
+               [SBorderC,SBorderV,SBorderBG,SBorderFG,SInsideC,SInsideV,SInsideBG,SInsideFG]),
+  different_enough_color_i_lists(L_S,Inside,Border,SBorderC,SBorderV,SBorderBG,SBorderFG,
+                                               SInsideC,SInsideV,SInsideBG,SInsideFG),!.
+  %\+ not_different_enough_ii(BorderV,BorderBG,BorderFG,InsideV,InsideBG,InsideFG).
+
+
+different_enough_color_i_lists(_,_,_,[],[],[],[],[],[],[],[]):-!,fail.
+different_enough_color_i_lists(L_S,Inside,Border,BorderC,BorderV,BorderBG,BorderFG,InsideC,InsideV,InsideBG,InsideFG):-
+  nop(dmsg(different_enough_color_i_lists(L_S,Inside,Border,BorderC,BorderV,BorderBG,BorderFG,InsideC,InsideV,InsideBG,InsideFG))),
+  %L_S = bg,
+  different_enough_color_lists(L_S,BorderC,BorderV,BorderBG,BorderFG,
+                               InsideC,InsideV,InsideBG,InsideFG).
+%        different_enough_c(BorderV,BorderBG,BorderFG,   InsideV,InsideBG,InsideFG):-!.
+
+different_enough_color_lists(l_s,   [N,W],_,        [_],        [],    
+                                    _,   [],        [_],       [_]):- w_in_90(N,W). % 0b148d64
+/*
+different_enough_color_lists(_,  _,_,      [_],      [],    
+                              _,_,      [_],      []):- !,fail.
+
+different_enough_color_lists(_,  _,_,       _,       [],    
+                                 _,_,       _,       []):- !,fail.
+
+
+different_enough_color_lists(_,   _,_,        [],          [],    _,_,       _,     _):-!,fail.
+different_enough_color_lists(_,   _,_,        [],          [SC],      _,_,         [],    InsideFG):- InsideFG==[SC],!,fail.
+different_enough_color_lists(_,   _,_,        [_],         [],    _,InsideV,       _,     InsideFG):-  InsideV\==[];InsideFG==[_]. 
+
+%different_enough_color_lists(_,_,        [_],        [],    _,[],       [_],     [_]). 
+different_enough_color_lists(_,   [_,_,_],_,        [_],        [],    _,[],       [_],     [_,_|_]). % 0b148d64
+different_enough_color_lists(_,   _,_,        _,         [_],    _,[],       [_],     []).
+*/
+/*
+%different_enough_color_lists( _,        [],          [_],      _,          _,        _).
+%different_enough_ii(BorderV,BorderBG,BorderFG,InsideV,InsideBG,InsideFG).
+%not_different_enough_ii(_BorderV,_BorderBG,_BorderFG,_InsideV,_InsideBG,_InsideFG):- fail.
+*/
+add_top_bot(Top,T,[T|In],B,Bot,TInB):-
+  length(T,H),
+  length(B,H),
+  length(Top,H),
+  length(Bot,H),
+  append(Mid,[B],In),
+  append([Top,T|Mid],[B,Bot],TInB).
+
+make_squarish(H,V,In,NewSearch,Inside,Border):-
+ must_det_ll((
+  make_grid(H,V,In),
+  add_top_bot_left_right(Top,T,In,B,Bot,LLeft,LL,RR,RRight,NewSearch),
+  maplist(dif_fg,Top,T),
+  maplist(dif_fg,Bot,B),!,
+  %print_grid(tinb,TInB),ptv(tinb=TInB),
+  maplist(dif_fg,LL,LLeft),
+  maplist(dif_fg,RRight,RR),
+  term_variables(NewSearch,FNewSearch), term_variables(In,Inside),
+  include(not_in_eq(Inside),FNewSearch,Border))),!.
+
+add_top_bot_left_right(Top,T,In,B,Bot,LLeft,LL,RR,RRight,NewSearch):-  
+  add_top_bot(Top,T,In,B,Bot,TInB),
+  rot90(TInB,TInB90),  
+  add_top_bot(Left,L,TInB90,R,Right,Find),
+  rot270(Find,NewSearch),  
+  append([_|LL],[_],L),
+  append([_|LLeft],[_],Left),
+  append([_|RR],[_],R),
+  append([_|RRight],[_],Right),!.
+
+
+i_pbox(VM):- !,
+   GH = VM.h, GV = VM.v,
+   findall(size(H,V),(between(2,GH,H),between(2,GV,V)),Sizes),
+   predsort(sort_on(neg_h_v_area),Sizes,SizesS),
+   reverse(SizesS,SizesR),
+   i_pbox(VM,l_s,SizesS),
+   i_pbox(VM,s_l,SizesR).
+
+neg_h_v_area(size(H,V),NArea):- NArea is H * - V.
+
+i_pbox(_VM,_L_S,[]):-!.
+i_pbox(VM,L_S,[size(H,V)|Sizes]):-
+  Grid= VM.grid,
+  %fpad_grid(s,var,Grid,XSG),
+  add_top_bot_left_right(Top,_T,Grid,_B,Bot,LLeft,_LL,_RR,RRight,XSG),
+  maplist(=(n),Top),
+  maplist(=(s),Bot),
+  maplist(=(w),LLeft),
+  maplist(=(e),RRight),
+  make_squarish(H,V,In,Find,Inside,Border),
+  % print_grid(in,In),ptv(in=In), print_grid(ns,Find),ptv(ns=Find), print_grid(s,XSG),ptv(s=XSG),
+  ogs_11(OH,OV,Find,XSG),
+  different_enough(L_S,Inside,Border),
+  %pp(ogs_1(OH,OV,Inside,Border,Find)),   
+  localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints),
+  intersection(VM.points,GOPoints,Intersection),
+ Intersection\==[],!,
+  must_det_ll((
+  %indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
+  make_indiv_object(VM,[],GOPoints,_Obj),
+  %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
+  %OffsetGrid = In,
+  %as_debug(1,((dash_chars,Info=ogs_1(OH,OV), print_side_by_side(Grid-Info,[Obj]-Info)))), % trace,
+  %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  trace,  
+  %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
+  remCPoints(VM,GOPoints),
+  remGPoints(VM,Intersection),
+  i_pbox(VM,L_S,[size(H,V)|Sizes]))).  
+i_pbox(VM,L_S,[_|Sizes]):-
+ i_pbox(VM,L_S,Sizes).
+
+
+  
+
+% =====================================================================
 is_fti_step(only_perportional_mass).
 % =====================================================================
 
@@ -871,8 +1038,7 @@ individuation_reserved_options(ROptions,Reserved,Options):-
 prolog:make_hook(before, Some):- Some \==[], retractall(individuated_cache(_,_,_)), fail.
 :- luser_default(individuated_cache,true).
 
-
-:- luser_default(individuated_cache,true).
+:- luser_setval(individuated_cache,false).
 
 get_individuated_cache(ROptions,OID,IndvS):- nonvar(ROptions),
   ground(OID), \+ luser_getval(individuated_cache,false), individuated_cache(OID,ROptions,IndvS),!.

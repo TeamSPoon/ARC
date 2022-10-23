@@ -1102,7 +1102,8 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 %:- endif.
 
 %:- fixup_module_exports_now.  
-user:portray(Grid):- %fail,
+user:portray(Grid):- %fail, 
+    \+ tracing,
    \+ nb_current(arc_can_portray,nil),
    current_predicate(bfly_startup/0), \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!, flush_output.
 
@@ -1157,5 +1158,6 @@ ansi_startup:-
    nop((next_test,previous_test)),!.
 
 :- luser_setval(cmd,test_easy_solve_by).
+:- luser_setval(individuated_cache,true).
 
 

@@ -519,6 +519,9 @@ print_side_by_side(A,B):- format('~N'),print_side_by_side(A,_,B),format('~N').
 
 grid_footer(G,_,_):- \+ compound(G),!,fail.
 grid_footer((GG-wqs(GF)),GG,GF):- nonvar(GF),!.
+grid_footer((GF-GG),[[]],GF):- GG==[], !.
+grid_footer((GG-GF),[[]],GF):- GG==[], !.
+grid_footer((GF-GG),GG,GF):- is_gridoid(GG), !.
 grid_footer((GG-GF),GG,GF):- is_gridoid(GG), !.
 grid_footer(print_grid(GF,GG),GG,GF).
 grid_footer(print_grid(_,_,GF,GG),GG,GF).
@@ -831,6 +834,8 @@ print_grid(Grid):- use_row_db, is_grid(Grid),!, grid_to_tid(Grid,TID),print_grid
 
 print_grid(Grid):-  quietly(print_grid0(Grid)),!.
 
+print_grid(Str,Grid):- Grid==[],!, pp(Str).
+print_grid(Str,Grid):- Grid==[[]],!, pp(Str).
 print_grid(Str,Grid):-  ignore((print_grid(_,_,Str,Grid))),!.
 print_grid0(Grid):-  ignore(print_grid0(_,_,Grid)),!.
 
@@ -1454,7 +1459,9 @@ save_codes(Max):-
   \+ between(4650,5000,Code),
   \+ between(5850,11500,Code),
   \+ between(42560,42600,Code),
-  %%check_dot_spacing(Code),
+  \+ between(4602,4609,Code),
+  % Code \== 4605 ,
+  % % check_dot_spacing(Code),
   %(42600 > Code),
    is_single_char_ifiable_quiet(Code),
   \+ resrv_dot(Code)

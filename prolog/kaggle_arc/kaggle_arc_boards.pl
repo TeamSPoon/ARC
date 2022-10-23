@@ -422,10 +422,22 @@ compute_test_ii_hints(TestID):-
 
 
 %ptv(T):- p_p_t_no_nl(T),!.
-ptv(T):- is_list(T), !, print_tree_no_nl(T).
+ptv(T):- 
+  copy_term(T,CT,Goals),Goals\==[],!,
+  \+ \+ 
+ ((numbervars(CT+Goals,10,_,[attvar(bind),singletons(true)]),
+  ptv(CT), write('\n/*\n'),ptv(Goals),write('\n*/'))).
+/*ptv(T):- copy_term(FF,FA,GF), GF \==[],
+  numbervars(FA+GF,0,_,[attvar(bind),singletons(true)]),
+  sort(GF,GS),write(' '),
+  locally(b_setval(arc_can_portray,nil),
+      ptv(FA)),format('~N'),
+  ignore((GS\==[], format('\t'),ppawt(attvars=GS),nl)),nl,!.
+*/
+ptv(T):- is_list(T), !, print_tree_no_nl(T),write(' ').
 ptv(T):-
   locally(b_setval('$portraying',[]), 
-   \+ \+  ((numbervars(T,0,_,[attvars(skip),singletons(true)]), must_det_ll((ptv(T,_)))))).
+   \+ \+  ((numbervars(T,0,_,[attvars(skip),singletons(true)]), must_det_ll((ptv(T,_)))))),write(' ').
 
 
 ptv(T,_):- var(T),!, ptv2(T).
@@ -652,7 +664,7 @@ grid_to_so(_Grid,Out,o(Obj),In,R):- grid_to_so(Out,Obj,In,R).
 
 
 count_N(Color,Flat,Count,Var):- freeze(Var,count_C(Color,Flat,Count)).
-count_C(Color,Flat,S+D):- member(Color,Flat),!,my_partition(=(Color),Flat,Sames,Diffs),length(Sames,S),length(Diffs,D).
+count_C(Color,Flat,S+D):- member(Color,Flat),nonvar(Color),!,my_partition(cmatch(Color),Flat,Sames,Diffs),length(Sames,S),length(Diffs,D).
 
 
  

@@ -160,7 +160,7 @@ point_minus_point(A,B,H,V,C,Old,Grid,Grid):-  nth1(V,Grid,Row),nb_set_nth1(H,Row
 h666(_,G):- fail,ff666(_,G0),
   flipV(G0,GV),
   flipH(G0,GH),
-  my_append([GH,GV],G1),
+  append([GH,GV],G1),
   fpad_grid(f,var,G1,G). 
 
 %f666(Ham,G0):-  clause(f666(Ham,F),true),into_g666(F,G),must_det_ll(all_rotations(G,G0)).
@@ -239,10 +239,10 @@ ogs_1(Hi,Vi,Find,Search):-
   H is Hi - 1, V is Vi - 1,  
   length(LPad,H),
   length(VPad,V),!,
-  my_append(VPad,[LPadAndRow|Next],Search),
+  append(VPad,[LPadAndRow|Next],Search),
   Find = [R1|FGrid],
-  my_append(R1,_,Rho),
-  my_append(LPad,Rho,LPadAndRow),
+  append(R1,_,Rho),
+  append(LPad,Rho,LPadAndRow),
   ogs_pt2(H,FGrid,Next),!.
 
 
@@ -255,21 +255,21 @@ ogs_11(H,V,FindI,Search):-
   V is Vi + 1.
 
 ogs_2(H,V,MH,MV,[R1|FGrid],Search):-  
-  my_append(R1,_,Rho),!,
-  my_append(VPad,[LPadAndRow|Next],Search),
+  append(R1,_,Rho),!,
+  append(VPad,[LPadAndRow|Next],Search),
   length(VPad,V),
   %between(0,MV,V),
   ((V>MV) -> (!, fail) ; true),
   between(0,MH,H),
   once((length(LPad,H),
-  my_append(LPad,Rho,LPadAndRow),
+  append(LPad,Rho,LPadAndRow),
   once((ogs_pt2(H,FGrid,Next),
         length(VPad,V))))).
 
 ogs_pt2(_,[],_):-!.
 ogs_pt2(H,[Row|FindRows],[S|Search]):-
-  length(LPad2,H),my_append(LPad2,Row,LPadRow2),
-  my_append(LPadRow2,_,S),!,
+  length(LPad2,H),append(LPad2,Row,LPadRow2),
+  append(LPadRow2,_,S),!,
   ogs_pt2(H,FindRows,Search),!.
 
 
@@ -368,7 +368,7 @@ fpad_grid(_CT,P1,Grid,Grid2):-
   length(T,H2),maplist(P1,T),
   length(B,H2),maplist(P1,B),
   maplist(pad_sides(P1),Grid,FillRows),
-  my_append([T|FillRows],[B],Grid2).
+  append([T|FillRows],[B],Grid2).
 
 
 maybe_into_grid(I,O):- \+ is_grid(I), into_grid(I,O), I \=@=O,!.
@@ -712,7 +712,7 @@ insert_col_row_pad_open(H0,V0,G,GUU):-
    insert_row_pad_open(V0,GU,GUU).
 
 insert_col_pad_open(V0,GU,GUU):-  rot90(GU,GR), insert_row_pad_open(V0,GR,GRU), rot270(GRU,GUU).
-insert_row_pad_open(V0,GU,GridU):- functor(P,v,V0),P=..[v|L],my_append(L,GU,LGU), my_append(LGU,_,GridU).
+insert_row_pad_open(V0,GU,GridU):- functor(P,v,V0),P=..[v|L],append(L,GU,LGU), append(LGU,_,GridU).
 
 
 h666(colors,
@@ -902,7 +902,7 @@ fix_v_range(GridIn,1,HiV,H,V,VV,GridO):-
 
 fix_v_range(GridIn,LowV,HiV,H,V,VV,GridO):- HiV==V,!, 
   make_row(Row,H),
-  my_append(GridIn,[Row],Grid2),
+  append(GridIn,[Row],Grid2),
   HiV2 is HiV+1,
   fix_v_range(Grid2,LowV,HiV2,H,V,V2,GridO),
   VV is V2+1.
