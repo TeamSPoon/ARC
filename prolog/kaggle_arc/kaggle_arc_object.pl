@@ -5,9 +5,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 :- multifile(decl_pt/1).
 :- discontiguous(decl_pt/1).
@@ -257,38 +255,39 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
   int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
   % atomic_list_concat(['o_',Glyph,'_',GID],OID),
  % grid_to_norm(Grid,IOps,LPointsNorm),
-  append(
-  [ [    
-     shape(ColorlessPoints),
-     loc(LoH,LoV),
-     pen(PenColors),
-     rotation(RotG),
-
-     center(CX,CY),
-     iz(sid(ShapeID)),
-         
-     s_hv(SH,SV),
-     v_hv(Width,Height),
-     mass(Len),     
-     colors(CC),        
-     localpoints(LPoints),
-     amass(Len)],     
-    [iz(cenY(CY)),iz(cenX(CX))],  
+  flatten(
+  [ 
+    shape(ColorlessPoints),
+    loc(LoH,LoV),
+    pen(PenColors),
+    rotation(RotG),
+    
+    center(CX,CY),
+    iz(sid(ShapeID)),
+    
+    s_hv(SH,SV),
+    v_hv(Width,Height),
+    mass(Len),     
+    colors(CC),        
+    localpoints(LPoints),
+    amass(Len),
+    
+    iz(cenY(CY)),iz(cenX(CX)),  
     %width(Width), height(Height), area(Area), %missing(Empty),
-    [changes([])], % [grid(LocalGrid)],    
-     OShapeNames,
+    changes([]), % [grid(LocalGrid)],    
+    OShapeNames,
     %[norm(LPointsNorm),norm_ops(IOps)],
     % [iz(locY(LoV)),iz(locX(LoH))], % iz(tall(Height)),iz(wide(Width)),
-    [iz(sizeY(Height)),iz(sizeX(Width))],
-    [%obj_to_oid(ID,Iv),
-     giz(g(IO)),
-     giz(gid(GID))],
-     EdgeS,
+    iz(sizeY(Height)),iz(sizeX(Width)),
+    %obj_to_oid(ID,Iv),
+    giz(g(IO)),
+    giz(gid(GID)),
+    EdgeS,
     % iz(oid(OID)),
-     [giz(glyph(Glyph)),
-    % globalpoints(GPoints),
-     giz(grid_sz(GH,GV)),
-     []]],Ps0),  
+    giz(glyph(Glyph)),
+    globalpoints(GPoints),
+    giz(grid_sz(GH,GV)),
+    []],Ps0),  
   include('\\=='([]),Ps0,Ps),
 
   make_localpoints(ColorlessPoints,RotG,SH,SV,PenColors,XX), assertion((XX == LPoints)),
@@ -653,10 +652,11 @@ acmass(C-_,1):- nonvar_or_ci(C),!.
 omass(I,X):- indv_props(I,L),member(mass(X),L),!.
 omass(I,XX):- is_object(I),!,must_det_ll((localpoints(I,L), mass(L,X))),!,XX=X.
 
+mass(I,X):- indv_props(I,L),member(mass(X),L),!.
+mass(C,0):- (is_bg_color(C);var(C);C==[]),!.
 mass(I,XX) :- is_object(I), omass(I,X) ,!, (X<2 -> acmass(I,XX) ; XX = X).
 mass(I,Count):- is_grid(I),!,append(I,Cs),!,mass(Cs,Count),!.
 mass(C,1):- is_fg_color(C),!.
-mass(C,0):- (is_bg_color(C);var(C)),!.
 mass(I,X):- var_check(I,mass(I,X)),!.
 mass([G|Grid],Points):- (is_group(Grid);(is_list(Grid),is_group(G))),!,mapgroup(mass,[G|Grid],MPoints),sum_list(MPoints,Points).
 mass(C-_,M):- !,mass(C,M).
@@ -923,7 +923,7 @@ globalpoints(Grid,Points):- grid_to_tid(Grid,ID),findall(-(C,HV),cmem(ID,HV,C),P
 %colors(Points,CC):- is_list(Points),nth0(_,Points,C-_),is_color(C), CC = [cc(C,3)],!.
 
 colors(I,X):- nonvar(X),!,colors(I,XX),!,X=XX.
-colors(G,[cc(black,0)]):- G==[],!.
+colors(G,[cc(Black,0)]):-  G==[],!,get_black(Black).
 colors(I,X):- indv_props(I,L),member(colors(X),L),!.
 colors(I,X):- is_map(I),into_grid(I,G),!,colors(G,X).
 colors(I,X):- is_object(I),indv_u_props(I,L),member(localpoints(LP),L),!,colors_via_pixels(LP,X).

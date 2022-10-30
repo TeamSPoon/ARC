@@ -4,12 +4,10 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 
-relax_color_arg(black,bg):-!.
+relax_color_arg(Black,bg):- is_black(Black),!.
 relax_color_arg(E,fg):- is_color(E),!.
 
 to_real_grid(G,GO):- notrace((unnumbervars(G,G1),get_bgc(BG),subst001(G1,bg,BG,GO))),!. % ,ignore([[BG|_]|_]=GO).
@@ -54,6 +52,7 @@ dif_color(_,_).
 % =============================
 % Color types
 % =============================
+is_fg_color(C):- C==black, get_black(Black),!,Black\==black.
 is_fg_color(C):- is_bg_color(C),!,fail.
 is_fg_color(C):- attvar(C),!,get_attr(C,ci,fg(_)).
 is_fg_color(C):- is_color(C),!.
@@ -66,9 +65,11 @@ is_bg_color(C):- get_bgc(BG),C==BG,!.
 
 is_black_or_bg(BG):- is_black(BG)-> true; is_bg_color(BG).
 %is_black_or_bg(0).
-is_black(C):- C==black.
-get_black(black).
+is_black(C):- get_black(B),C==B.
+get_black(B):- get_bgco(B),!.
+get_black(B):- luser_getval(black,B).
 %get_black(0).
+:- luser_default(user_black,black).
 
 :- use_module(library(logicmoo/util_bb_frame)).
 set_fg_vars(Vars):-
@@ -130,11 +131,15 @@ into_color_name_always(Grid,Grid).
 is_spec_color(V,C):- into_color_name_always(V,C),!,atom(C),!,C\==fg,C\==wfg,C\==wbg,C\==bg.
 
 is_color(CO):- attvar(CO),!,get_attr(CO,ci,_).
+is_color(CO):- is_unreal_color(CO).
 is_color(CO):- is_real_color(CO).
 
+
+is_unreal_color(C):- (C==fg; C==wfg; C==wbg ; C==bg ; C==is_colorish_var ; C==plain_var),!.
 is_real_color(C):- atom(C),atom_concat('#',_,C),!.
-is_real_color(C):- atom(C),named_colors(L),member(C,L),!.
+is_real_color(C):- atom(C),named_colors(L),member(C,L),!, \+ is_unreal_color(C).
 get_real_fg_color(C):- named_colors(L),member(C,L),is_fg_color(C).
+is_real_fg_color(C):- C\== is_colorish_var, is_real_color(C),is_fg_color(C).
 
 decl_one_fg_color(Color):- put_attr(Color,ci,fg(Color)).
 decl_many_fg_colors(X):- put_attr(X,ci,fg(X)),multivar:multivar(X).

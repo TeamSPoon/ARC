@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 :- use_module(library(lists)).
 :- discontiguous(glean_patterns_hook/3).
@@ -111,7 +109,7 @@ into_bicolor(Grid,Mono):- colors_count_black_first(Grid,CC), into_bicolor(CC,Gri
 
 into_bicolor([_],Grid,Grid):- !.
 into_bicolor([_,_],Grid,Grid):- !.
-into_bicolor([cc(black,0),cc(BG,N),cc(_,N2)|_Rest],Grid,Mono):- N2\==N, subst(Grid,BG,bg,FixBG), mapgrid(into_fg_bg,FixBG,Mono).
+into_bicolor([cc(Black,0),cc(BG,N),cc(_,N2)|_Rest],Grid,Mono):- is_black(Black), N2\==N, subst(Grid,BG,bg,FixBG), mapgrid(into_fg_bg,FixBG,Mono).
 into_bicolor(_,Grid,Mono):- mapgrid(into_fg_bg,Grid,Mono).
 
 is_monotrim_symmetric(Grid):- trim_to_rect(Grid,Rect),!,is_mono_symmetric(Rect).
@@ -234,12 +232,12 @@ test_symmetry_code0(G,Grids,GR,Code):-
 
 
 changed_grid(In,Out,_):- In=@=Out,!.
-changed_grid(Out,In,Vis):- (var(Out);Out==black),!,make_visible(In,Vis).
-changed_grid(In,Out,Vis):- (var(Out);Out==black),!,make_visible(In,Vis).
+changed_grid(Out,In,Vis):- get_black(Black),(var(Out);Out==Black),!,make_visible(In,Vis).
+changed_grid(In,Out,Vis):- get_black(Black),(var(Out);Out==Black),!,make_visible(In,Vis).
 changed_grid(In,_,Vis):- make_visible(In,Vis).
 
 
-make_visible(In,Vis):- is_real_color(In),In\==black,!,Vis=In.
+make_visible(In,Vis):- is_real_color(In),get_black(Black),In\==Black,!,Vis=In.
 make_visible(In,Vis):- is_bg_color(In),!,Vis='.'-'#801110'.
 make_visible(In,Vis):- is_fg_color(In),!,Vis='x'-'#f0fff0'.
 make_visible(_In,'?'-'#1077f1').
@@ -279,7 +277,7 @@ aligned_rows([E1,E2|L],[E1,E2|R]):-
  allowed([E1,E2|L]),
  allowed([E1,E2|R]).
 
-allowed([E1,E2|R]):- \+ all_one_color(black,[E1,E2|R]).
+allowed([E1,E2|R]):- get_black(Black), \+ all_one_color(Black,[E1,E2|R]).
 
 
 all_one_color(_Black,R):- \+ \+ R =[],!.
@@ -631,17 +629,18 @@ repair_in_vm(P4,VM):-
 column_or_row(Grid,Color):- member(Row,Grid), maplist(==(Color),Row). 
 column_or_row(Grid,Color):- rot90(Grid,Grid0),!,member(Row,Grid0), maplist(==(Color),Row). 
 
-guess_to_unbind(Grid,Color):- guess_to_unbind1(Grid,Color), 
-  (Color\==black -> ( \+ column_or_row(Grid,Color),if_target(Out, \+ contains_color(Color,Out))) ; true).
+guess_to_unbind(Grid,Color):- guess_to_unbind1(Grid,Color), get_black(Black),
+  (Color\==Black -> ( \+ column_or_row(Grid,Color),if_target(Out, \+ contains_color(Color,Out))) ; true).
   
 %guess_to_unbind1(_Grid,Color):- Color = brown.
 guess_to_unbind1(Grid,Color):- colors_count_black_first(Grid,Colors),Colors\==[], !,member(cc(Color,N),Colors),N>0.
-guess_to_unbind1(_Grid,Color):- Color = black.
+guess_to_unbind1(_Grid,Color):- get_black(Black), Color = Black.
 guess_to_unbind1(_Grid,Color):- Color = blue.
 guess_to_unbind1(Grid,Color):- !, fail, select(Row1,Grid,Rows),member(Row2,Rows),
   append(_,[C1,C2],Row1),C1==C2,
   append(_,[C3,C4],Row2),C3==C4,
-  C1=C4,C1\==black,Color=C1.
+  get_black(Black),
+  C1=C4,C1\==Black,Color=C1.
 
 if_target(Out,Goal):- (peek_target(Out)->call(Goal);true).
 peek_target(Out):- peek_vm(grid_target,Out),is_grid(Out).
@@ -652,7 +651,8 @@ guess_unbind_color(UnbindColor,Grid,RepairedResult):-
    guess_to_unbind(Grid,UnbindColor), 
    unbind_color(UnbindColor,Grid,RepairedResult),  
    mass(RepairedResult,Mass),Mass>0,
-   (UnbindColor\==black-> if_target(Out, \+ contains_color(UnbindColor,Out));true).
+   get_black(Black),
+   (UnbindColor\==Black-> if_target(Out, \+ contains_color(UnbindColor,Out));true).
 
 test_blur_least:-
   test_p2(blur_least(_,_)).
@@ -677,7 +677,7 @@ blur_some(B,Mix,I,O):- (var(B)->blur_turn(B);true),(once(call(B,I,M)),I\=@=M), m
 blur_turn(rot90). blur_turn(rot270). 
 blur_turn(flipV). blur_turn(flipH). blur_turn(rot180). 
 blur_turn(flipDHV). blur_turn(flipD). blur_turn(flipDV). blur_turn(flipDH).
-blur_mix(fg). blur_mix(bg). blur_mix(not_color(black)). 
+blur_mix(fg). blur_mix(bg). blur_mix(not_color(Black)):- get_black(Black).
 
 cv(FG,OC):- once(FG==fg;OC==fg;FG==bg;OC==bg),!.
 cv(FG,OC):- FG=OC,!.
@@ -1101,9 +1101,10 @@ append_nth1([H|T], N2, L, [H|R]) :-
     N2 is N+1.
 
 gph(GH,_GV,Steps,G,GG):- 
+ get_black(Black),
   numlist(3,GH,Row),
   D = [Row],
-  dif(Same,black),
+  dif(Same,Black),
   make_list(Same,GH,ColorLine),
   maplist(dif(ColorLine),[E1,E2,E3,E4]),
   append([L,[E1,ColorLine,E2],Stuff1,[E3,ColorLine,E4],Stuff2,Start],G), % member(E,Stuff1),member(E,Stuff2),
@@ -1115,8 +1116,9 @@ gph(GH,_GV,Steps,G,GG):-
 
 gph(GH,_GV,Steps,G,GG):- 
   numlist(2,GH,Row),
+  get_black(Black),
   D = [Row],
-  dif(Same,black),
+  dif(Same,Black),
   make_list(Same,GH,ColorLine),
   maplist(dif(ColorLine),[E1,E2,E3,E4]),
   append([L,[E1,ColorLine,ColorLine,E2],Stuff1,[E3,ColorLine,ColorLine,E4],Stuff2,Start],G), % member(E,Stuff1),member(E,Stuff2),
@@ -1173,7 +1175,7 @@ gph(GH,GV,Steps,G,GG):- fail,
   %length(RL,V),!,
   show_patterns4(GH,GV,Steps,RL,Start,GG).
 
-bg_last(Same):- (dif(Same,black);Same=black).
+bg_last(Same):- get_black(Black), (dif(Same,Black);Same=Black).
 
 show_patterns4(GH,GV,Steps,L,G,GG):- 
   grid_size(G,GH,GV),
@@ -1865,7 +1867,7 @@ suggest_i(_V,Max,Min,Min,I):-
   
  
 
-blackFree(E):- ignore(black=E).
+blackFree(E):- get_black(Black),ignore(Black=E).
 
 g_or_gc(_,G,G).
 %g_or_gc(G,_,G).

@@ -4,20 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
-
-:- discontiguous make_shape/2.
-:- dynamic make_shape/2.
-:- discontiguous decl_sf/1.
-
-:- multifile is_fti_step/1.
-:- discontiguous is_fti_step/1.
-
-:- discontiguous in_shape_lib/2.
-:- multifile in_shape_lib/2.
-:- dynamic in_shape_lib/2.
+:- include(kaggle_arc_header).
 
 
 do_gp([],Pixels,Pixels):- !.
@@ -218,11 +205,11 @@ into_monochrome(VM):- Grid = VM.grid,
   set(VM.grid) = NewGrid,  
   print_side_by_side(silver,Grid,into,_,NewGrid,monochrome).
 
-into_monochrome(NoBlack,Mono):- 
+into_monochrome(NoBlack,Mono):-  get_black(Black),
   colors_count_black_first(NoBlack,CCBF), 
-    CCBF=[cc(black,0),cc(BGC,_)|_],!, 
+    CCBF=[cc(Black,0),cc(BGC,_)|_],!, 
   into_monochrome(fg,BGC,NoBlack,Mono).
-into_monochrome(Color,Mono):- into_monochrome(fg,black,Color,Mono).
+into_monochrome(Color,Mono):- get_black(Black),into_monochrome(fg,Black,Color,Mono).
 
 
 into_monochrome(FG,BG,Color,Mono):- into_monochrome(from_monochrome4(FG,BG),Color,Mono).

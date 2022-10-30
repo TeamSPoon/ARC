@@ -5,11 +5,7 @@
   unless permission or license is granted (contact at business@logicmoo.org)
 */
 
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
-
-
+:- include(kaggle_arc_header).
 
 
 solve_easy:- get_current_test(Name),solve_easy(Name).

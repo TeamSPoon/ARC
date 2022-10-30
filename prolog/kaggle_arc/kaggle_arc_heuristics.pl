@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 :- multifile learn_shapelib/7.
 :- multifile individuals_from_pair/9.
@@ -18,9 +16,9 @@ recalc_sizes(VM,[After|TODO]):-
    recalc_sizes(VM),
    nop((set(VM.program_i) = [After,recalc_sizes|TODO])).
 /*
-   Ë amass(3) cc(blue,3.0) v_hv(1,3) loc(2,1) pen([]) birth(ifti3(nsew)) iz(symmetry(sym_hv)) center(2,2) layer(in) nth(21)
+   ï¿½ amass(3) cc(blue,3.0) v_hv(1,3) loc(2,1) pen([]) birth(ifti3(nsew)) iz(symmetry(sym_hv)) center(2,2) layer(in) nth(21)
 %amass(3) cc(cyan,3.0) v_hv(1,3) loc(1,1) pen([]) birth(ifti3(nsew)) iz(symmetry(sym_hv)) center(1,2) layer(in) nth(22)
-%  Iz(Non Diag):         Ê amass(3) cc(green,3.0) v_hv(1,3) loc(3,1) pen([]) birth(ifti3(nsew)) iz(nsew) iz(rectangulator) iz(symmetry(sym_hv)) center(3,2) layer(in) nth(20)
+%  Iz(Non Diag):         ï¿½ amass(3) cc(green,3.0) v_hv(1,3) loc(3,1) pen([]) birth(ifti3(nsew)) iz(nsew) iz(rectangulator) iz(symmetry(sym_hv)) center(3,2) layer(in) nth(20)
 
 */
 
@@ -224,7 +222,8 @@ one_is_zero(IMass,OMass):-
 
 remove_colors([],Out,Out):-!.
 remove_colors([C|IPLs],In,Out):- 
- subst001(In,C,black,Mid),
+ get_black(Black),
+ subst001(In,C,Black,Mid),
  remove_colors(IPLs,Mid,Out).
 
 

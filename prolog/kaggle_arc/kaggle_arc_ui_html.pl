@@ -18,9 +18,7 @@
   ]
 ).
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 :- use_module(library(thread_pool)).
 :- use_module(library(http/thread_httpd)).
@@ -241,6 +239,7 @@ set_test_param:-
   ignore((when_arc_webui((get_param_sess(task,Task), Task\=='',  Task\=="",
   atom_id(Task,ID), dmsg(Task-> ID), set_current_test(ID))))),!.
 
+:- http_handler('/swish', http_redirect(moved, '/swish/'), []).
 
 swish_arc(Request):-   
   muarc_tmp:arc_directory(ARC_DIR),
@@ -248,7 +247,10 @@ swish_arc(Request):-
 
 swish_arc_root(Request):-   
   arc_sub_path('.',DEMO),
-  http_reply_from_files(DEMO, [], Request).
+  http_reply_from_files(DEMO, [], Request),!.
+swish_arc_root(Request):- 
+  Options = [],
+  swish_page:swish_reply2(Options, Request),!.
 
 %arcproc_left(Request):- xlisting_web:handler_logicmoo_cyclone(Request),!.
 arcproc_left(Request):-  

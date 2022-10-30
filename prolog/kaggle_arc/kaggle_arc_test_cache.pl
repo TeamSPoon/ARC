@@ -6761,7 +6761,7 @@ testcase(t(caa06a1f)>tst+0,"
   | + x ~ + x ~ + x ~ + x ~ e e e e e e |     | x ~ + x ~ + x ~ + x ~ + x ~ + x ~ + |
   | x ~ + x ~ + x ~ + x ~ + e e e e e e |     | ~ + x ~ + x ~ + x ~ + x ~ + x ~ + x |
   | e e e e e e e e e e e e e e e e e e |     | x ~ + x ~ + x ~ + x ~ + x ~ + x ~ + |
-  | e e e e e e e e e e e e e e e e e e |     | ~ + x ~ + x ~ + x ~ + x ~ + x ~ + x |
+  |p e e e e e e e e e e e e e e e e e e |     | ~ + x ~ + x ~ + x ~ + x ~ + x ~ + x |
   | e e e e e e e e e e e e e e e e e e |     | x ~ + x ~ + x ~ + x ~ + x ~ + x ~ + |
   | e e e e e e e e e e e e e e e e e e |     | ~ + x ~ + x ~ + x ~ + x ~ + x ~ + x |
   | e e e e e e e e e e e e e e e e e e |     | x ~ + x ~ + x ~ + x ~ + x ~ + x ~ + |

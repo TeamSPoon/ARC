@@ -4,9 +4,8 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+
+:- include(kaggle_arc_header).
 
 % =========================================================
 % TESTING FOR INDIVIDUATIONS
@@ -45,8 +44,8 @@ ig(ROptions,GridIn):-
 
 igo(ROptions,GridIn):-
   do_ig(ROptions,GridIn,IndvS),
-  into_grid(GridIn,GridOut),
-  locally(nb_setval(debug_as_grid,t),show_ig(igo,ROptions,GridIn,GridOut,IndvS)).
+  into_grid(GridIn,Grid),
+  locally(nb_setval(debug_as_grid,t),show_ig(igo,ROptions,GridIn,Grid,IndvS)).
 
 do_ig(ROptions,Grid,IndvS):-
   into_grid(Grid, GridIn), 
@@ -142,8 +141,8 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
       show_pair_diff_code(IH,IV,  OH, OV,individuated(ROptions,ID1),individuated(ROptions,ID2),PairName,InC,OutC)),!),
     luser_setval(no_rdot,false)).
 
-input_objects_first(TestID):-
-  arc_test_property(TestID,common,rev(comp(cbg('black'),o-i,containsAll)),containsAll(o-i)).
+input_objects_first(TestID):- get_black(Black),
+  arc_test_property(TestID,common,rev(comp(cbg(Black),o-i,containsAll)),containsAll(o-i)).
 
 % =========================================================
 
@@ -358,27 +357,37 @@ sub_individuation_macro(S,Some):-
   append([[reset_points],From],Some).
 
 
+include_black(_VM):- set_bgc(wbg).
+
 % 1204
 %individuation_macros(complete, [parallel,done]).
 
-individuation_macros(complete, ListO):- im_complete(ListO).
+individuation_macros(complete, ListO):- im_complete(ListO),
+   pp(im_complete(ListO)),!.
 
 
-im_complete(save_as_objects(complete,ListO)):- test_config(indiv(ListO)),!.
+im_complete(ListO):- test_config(indiv(ListO)),!.
 %im_complete(ListO):- ListO=[n_w,all_lines,diamonds,do_ending].
 
 im_complete(ListO):-
 %individuation_macros(complete, ListO):-  \+ test_config(indiv(_)),!, %reset_points, %sub_individuate(force_by_color,subshape_both), %TODO %
-  findall(drops_as_objects(From),individuator(From,_),ListM),
+  %findall(drops_as_objects(From),(individuator(From,_)),ListM),
   findall(save_as_objects(From),individuator(From,_),ListS),
-  append([
+  flatten([ 
+   %save_as_objects
+   save_as_objects(i_pbox),
+   ListS,
    %find_grids,
    %[i_columns,i_rows],
    %[gather_texture],
-   ListM,ListS,
-   [save_as_objects(find_hybrid_shapes),find_hybrid_shapes],
+   %ListM,ListS,
+   save_as_objects(find_hybrid_shapes),
+   find_hybrid_shapes,
+   gather_cached,
    %[pointless([sub_indiv([save_as_objects(force_by_color),save_as_objects(i_colormass),save_as_objects(i_nsew)])])],
-   [do_ending,only_perportional_mass]],ListO).
+   do_ending,
+   %only_proportional_mass,
+   []],ListO).
 %use_individuator(Some):- individuator(Some,_).
 
 individuation_macros(i_columns,[when(get(h)=<5,all_columns),when(get(h)>5,some_columns)]). %:- \+ doing_pair.
@@ -386,12 +395,16 @@ individuation_macros(i_rows,[when(get(h)=<5,all_rows),when(get(v)>5,some_rows)])
   
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
 individuator(i_maybe_glypic,[maybe_glyphic]).
-individuator(i_n_w,[n_w,diamonds,all_lines,colormass,do_ending]).
-individuator(i_subtractions,[fg_subtractions([save_as_objects(i_mono_n_w),save_as_objects(i_n_w)])]).
-individuator(i_mono_n_w,[fg_shapes(i_n_w)]).
+individuator(i_mono_nsew,[fg_shapes(i_nsew)]).
+individuator(i_pbox,[pbox_vm]).
+individuator(i_mono_colormass,[fg_shapes([subshape_both(v,[n_w,all_lines,diamonds])])]).
+individuator(i_nsew,[n_w,diamonds,all_lines,colormass,do_ending]).
+individuator(i_subtractions,[fg_subtractions([save_as_objects(i_mono_nsew),save_as_objects(i_nsew)])]).
+/*
+
+*/
 %individuator(i_hybrid_shapes,[find_hybrid_shapes]).
 %individuator(i_repair_mirrors,[maybe_repair_in_vm(find_symmetry_code)]).
-%individuator(i_mono_colormass,[fg_shapes([subshape_both(v,[n_w,all_lines,diamonds])])]).
 % individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
 
 /*
@@ -435,6 +448,7 @@ individuator(i_mono_nsew,
   %complete_occluded,
 find_symmetry_code(VM,Grid,RepairedResult,Code):- % fail,
   find_symmetry_code1(VM,Grid,RepairedResult,Code),!.
+
 
 find_symmetry_code1(VM,Grid,RepairedResult,Code):- 
    % \+ is_grid(VM.grid_target),
@@ -624,7 +638,7 @@ sub_indiv(SubProgram,VM):-
 individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
  must_det_ll((
    object_grid(OnlyNew,OGrid),
-   mapgrid(assign_plain_var_with(black),OGrid,Grid),
+   get_black(Black),mapgrid(assign_plain_var_with(Black),OGrid,Grid),
    object_glyph(OnlyNew,Glyph),
    loc(OnlyNew,X,Y),
    atomic_list_concat([GID,'_',Glyph,'_sub'],NewGID),
@@ -655,177 +669,14 @@ grid_to_obj_other(VM):-
   forall(grid_to_obj_other(Grid,VM,_O),true).
 
 % =====================================================================
-is_fti_step(i_pbox).
+:- include(kaggle_arc_individuation_pbox).
 % =====================================================================
 
-
-pbox :-  pbox(t('0b148d64')).
-pbox :-  pbox(t('05f2a901')).
-pbox :-  pbox(t('09629e4f')).
-pbox :-  pbox(t('06df4c85')).
-pbox :-  pbox(t('60b61512')).
-pbox :-  pbox(_).
-pbox(TestID):- 
-  update_changed_files,
-  %set_current_test(TestID), 
-  forall(kaggle_arc(TestID,What,I,O),ignore(pbox_pair(TestID,What,I,O))).
-
-is_bg_color_or_var(C):- is_bg_color(C) ; \+ is_fg_color(C).
-is_fg_color_or_var(C):- is_fg_color(C) ; \+ is_bg_color(C).
-
-test_pbox:- test_p2(pbox_pair(_TestID,_What)).
-
-pbox_pair(TestID,What,I,O):- pbox_grid(TestID,What,in,I,_); pbox_grid(TestID,What,out,O,_).
-
-pbox_grid(TestID,What,IO,G,_):-
-  into_grid((TestID>What*IO),G), 
-  duplicate_term(G,GG),
-  set_current_test(TestID),
-  i(i_pbox,GG,Objs),
-  (Objs ==[] -> G=OO; Objs=OO ),
-  print_side_by_side(blue,G,(?-pbox(TestID>What*IO)),_,print_grid(OO),(TestID>What*IO)),!,
-  maplist(obj_global_grid,Objs,OGG),
-  print_side_by_side(OGG),!.
-obj_global_grid(X,G):- global_grid(X,Grid),subst(Grid,black,wbg,G).
-
-not_in_eq(Set,V):- \+ (member(VV,Set),VV == V).
-
-dif_fg(X,Y):- nop((freeze(X,freeze(Y,((is_fg_color(X);is_fg_color(Y))->dif(X,Y)))))).
-
-is_compass(A):- atom(A),member(A,[n,s,e,w]).
-a_portion_colors(IA,Compass,Vars,BG,FG):- 
-  my_partition(is_compass,IA,Compass,Colors),
-  my_partition(is_bg_color,Colors,BG,VFG),my_partition(is_fg_color,VFG,FG,Vars).
-
-different_enough(L_S,Inside,Border):- L_S = s_l,!,fail,
-  a_portion_colors(Inside,InsideC,InsideV,InsideBG,InsideFG),
-  a_portion_colors(Border,BorderC,BorderV,BorderBG,BorderFG),
-  maplist(sort,[BorderC,BorderV,BorderBG,BorderFG,InsideC,InsideV,InsideBG,InsideFG],
-               [SBorderC,SBorderV,SBorderBG,SBorderFG,SInsideC,SInsideV,SInsideBG,SInsideFG]),
-  different_enough_color_i_lists(L_S,Inside,Border,SBorderC,SBorderV,SBorderBG,SBorderFG,
-                                               SInsideC,SInsideV,SInsideBG,SInsideFG),!.
-
-different_enough(L_S,Inside,Border):-
-  a_portion_colors(Inside,InsideC,InsideV,InsideBG,InsideFG),
-  a_portion_colors(Border,BorderC,BorderV,BorderBG,BorderFG),
-  maplist(sort,[BorderC,BorderV,BorderBG,BorderFG,InsideC,InsideV,InsideBG,InsideFG],
-               [SBorderC,SBorderV,SBorderBG,SBorderFG,SInsideC,SInsideV,SInsideBG,SInsideFG]),
-  different_enough_color_i_lists(L_S,Inside,Border,SBorderC,SBorderV,SBorderBG,SBorderFG,
-                                               SInsideC,SInsideV,SInsideBG,SInsideFG),!.
-  %\+ not_different_enough_ii(BorderV,BorderBG,BorderFG,InsideV,InsideBG,InsideFG).
-
-
-different_enough_color_i_lists(_,_,_,[],[],[],[],[],[],[],[]):-!,fail.
-different_enough_color_i_lists(L_S,Inside,Border,BorderC,BorderV,BorderBG,BorderFG,InsideC,InsideV,InsideBG,InsideFG):-
-  nop(dmsg(different_enough_color_i_lists(L_S,Inside,Border,BorderC,BorderV,BorderBG,BorderFG,InsideC,InsideV,InsideBG,InsideFG))),
-  %L_S = bg,
-  different_enough_color_lists(L_S,BorderC,BorderV,BorderBG,BorderFG,
-                               InsideC,InsideV,InsideBG,InsideFG).
-%        different_enough_c(BorderV,BorderBG,BorderFG,   InsideV,InsideBG,InsideFG):-!.
-
-different_enough_color_lists(l_s,   [N,W],_,        [_],        [],    
-                                    _,   [],        [_],       [_]):- w_in_90(N,W). % 0b148d64
-/*
-different_enough_color_lists(_,  _,_,      [_],      [],    
-                              _,_,      [_],      []):- !,fail.
-
-different_enough_color_lists(_,  _,_,       _,       [],    
-                                 _,_,       _,       []):- !,fail.
-
-
-different_enough_color_lists(_,   _,_,        [],          [],    _,_,       _,     _):-!,fail.
-different_enough_color_lists(_,   _,_,        [],          [SC],      _,_,         [],    InsideFG):- InsideFG==[SC],!,fail.
-different_enough_color_lists(_,   _,_,        [_],         [],    _,InsideV,       _,     InsideFG):-  InsideV\==[];InsideFG==[_]. 
-
-%different_enough_color_lists(_,_,        [_],        [],    _,[],       [_],     [_]). 
-different_enough_color_lists(_,   [_,_,_],_,        [_],        [],    _,[],       [_],     [_,_|_]). % 0b148d64
-different_enough_color_lists(_,   _,_,        _,         [_],    _,[],       [_],     []).
-*/
-/*
-%different_enough_color_lists( _,        [],          [_],      _,          _,        _).
-%different_enough_ii(BorderV,BorderBG,BorderFG,InsideV,InsideBG,InsideFG).
-%not_different_enough_ii(_BorderV,_BorderBG,_BorderFG,_InsideV,_InsideBG,_InsideFG):- fail.
-*/
-add_top_bot(Top,T,[T|In],B,Bot,TInB):-
-  length(T,H),
-  length(B,H),
-  length(Top,H),
-  length(Bot,H),
-  append(Mid,[B],In),
-  append([Top,T|Mid],[B,Bot],TInB).
-
-make_squarish(H,V,In,NewSearch,Inside,Border):-
- must_det_ll((
-  make_grid(H,V,In),
-  add_top_bot_left_right(Top,T,In,B,Bot,LLeft,LL,RR,RRight,NewSearch),
-  maplist(dif_fg,Top,T),
-  maplist(dif_fg,Bot,B),!,
-  %print_grid(tinb,TInB),ptv(tinb=TInB),
-  maplist(dif_fg,LL,LLeft),
-  maplist(dif_fg,RRight,RR),
-  term_variables(NewSearch,FNewSearch), term_variables(In,Inside),
-  include(not_in_eq(Inside),FNewSearch,Border))),!.
-
-add_top_bot_left_right(Top,T,In,B,Bot,LLeft,LL,RR,RRight,NewSearch):-  
-  add_top_bot(Top,T,In,B,Bot,TInB),
-  rot90(TInB,TInB90),  
-  add_top_bot(Left,L,TInB90,R,Right,Find),
-  rot270(Find,NewSearch),  
-  append([_|LL],[_],L),
-  append([_|LLeft],[_],Left),
-  append([_|RR],[_],R),
-  append([_|RRight],[_],Right),!.
-
-
-i_pbox(VM):- !,
-   GH = VM.h, GV = VM.v,
-   findall(size(H,V),(between(2,GH,H),between(2,GV,V)),Sizes),
-   predsort(sort_on(neg_h_v_area),Sizes,SizesS),
-   reverse(SizesS,SizesR),
-   i_pbox(VM,l_s,SizesS),
-   i_pbox(VM,s_l,SizesR).
-
-neg_h_v_area(size(H,V),NArea):- NArea is H * - V.
-
-i_pbox(_VM,_L_S,[]):-!.
-i_pbox(VM,L_S,[size(H,V)|Sizes]):-
-  Grid= VM.grid,
-  %fpad_grid(s,var,Grid,XSG),
-  add_top_bot_left_right(Top,_T,Grid,_B,Bot,LLeft,_LL,_RR,RRight,XSG),
-  maplist(=(n),Top),
-  maplist(=(s),Bot),
-  maplist(=(w),LLeft),
-  maplist(=(e),RRight),
-  make_squarish(H,V,In,Find,Inside,Border),
-  % print_grid(in,In),ptv(in=In), print_grid(ns,Find),ptv(ns=Find), print_grid(s,XSG),ptv(s=XSG),
-  ogs_11(OH,OV,Find,XSG),
-  different_enough(L_S,Inside,Border),
-  %pp(ogs_1(OH,OV,Inside,Border,Find)),   
-  localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints),
-  intersection(VM.points,GOPoints,Intersection),
- Intersection\==[],!,
-  must_det_ll((
-  %indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
-  make_indiv_object(VM,[],GOPoints,_Obj),
-  %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
-  %OffsetGrid = In,
-  %as_debug(1,((dash_chars,Info=ogs_1(OH,OV), print_side_by_side(Grid-Info,[Obj]-Info)))), % trace,
-  %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  trace,  
-  %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
-  remCPoints(VM,GOPoints),
-  remGPoints(VM,Intersection),
-  i_pbox(VM,L_S,[size(H,V)|Sizes]))).  
-i_pbox(VM,L_S,[_|Sizes]):-
- i_pbox(VM,L_S,Sizes).
-
-
-  
-
 % =====================================================================
-is_fti_step(only_perportional_mass).
+is_fti_step(only_proportional_mass).
 % =====================================================================
 
-only_perportional_mass(VM):- 
+only_proportional_mass(VM):- 
   Grid= VM.grid_o,
   mass(Grid,GMass),
   Objs = VM.objs,
@@ -928,7 +779,7 @@ label_sizes(VM):-
  label_sizes(VM.roptions,VM.objs,_SF,LF),
  set(VM.objs)=LF.
 
-is_bg_object(Obj):- has_prop(pen(  [cc('black',_)]),Obj).
+is_bg_object(Obj):- get_black(Black),has_prop(pen(  [cc(Black,_)]),Obj).
 
 label_sizes(GType,Objs,SF,LF):-    
    smallest_first(Objs,SF),
@@ -1206,7 +1057,7 @@ individuate_two_grids_now_X(OID1OID2,ROptions,Grid1,Grid2,VM1,VM2,Grid1X,Grid2X,
 individuate2(VM,[ROptions],OID,Grid,IndvS):- nonvar(ROptions), !, individuate2(VM,ROptions,OID,Grid,IndvS).
 individuate2(_VM,ROptions,OID,_GridIn,IndvS):- nonvar(OID), 
   get_individuated_cache(ROptions,OID,IndvS),!,
-  length(IndvS,Len),pp(yellow,oid_cached(ROptions,OID,len(Len),'$VAR'(Len))),!.
+  nop((length(IndvS,Len),pp(yellow,oid_cached(ROptions,OID,len(Len),'$VAR'(Len))))),!.
 individuate2(VM,ROptions,OID,GridIn,IndvS):-
   do_individuate(VM,ROptions,GridIn,IndvS),!,
   fif(nonvar(OID),
@@ -1722,7 +1573,7 @@ fg_shapes(Shape,VM):-
   Grid = VM.grid,
 
   colors_across(Grid,Silvers),
-  BGCs = [black,wbg,bg|Silvers],
+  BGCs = get_black(Black),[Black,wbg,bg|Silvers],
   mapgrid(fg_shaped(BGCs),Grid,NewGrid),
   var(OID),
   atomic_list_concat([VM.gid,'_fg_shaped'],OID), asserta(is_grid_tid(NewGrid,OID)),
@@ -1756,8 +1607,8 @@ two_rows(Grid,S1,R1,R2):-
 is_fti_step(fg_subtractions).
 % =====================================================================
 %fg_subtractiond(Cell,Cell):- is_bg_color(Cell),!.
-fg_subtractiond(This,Target,black):- This=Target,!.
-fg_subtractiond(Cell,_,Cell):- ignore(Cell=black).
+fg_subtractiond(This,Target,Black):- This=Target,!,get_black(Black).
+fg_subtractiond(Cell,_,Cell):- get_black(Black),ignore(Cell=Black).
 %fg_subtractiond(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
 
 fg_subtractions(Subtraction,VM):-
@@ -2044,7 +1895,7 @@ maybe_wbg(V,wbg):- var(V),!.
 maybe_wbg(X,X).
 
 unbind_list(L,O):- length(L,N),length(O,N),!.
-texture_grid(In,In2):- must_det_ll((subst001(In,black,wbg,Retextured), most_d_colors(Retextured,_CI,In2))).
+texture_grid(In,In2):- get_black(Black),must_det_ll((subst001(In,Black,wbg,Retextured), most_d_colors(Retextured,_CI,In2))).
 
 row_not_isnt(LeftN,RightN,C,Row,NewSubRow,NewRow):-
   length(Left,LeftN), length(Right,RightN),

@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 
 % make_grid(3,4)
@@ -80,7 +78,7 @@ object_grid_to_str(Grid,Str,Title):-
   loc(Grid,OH,OV),
   localpoints_include_bg(Grid,GridO),
   ((IH=H,IV=V)), % (IH = 30,IV=30), 
-  subst(GridO,black,wbg,GridOO),
+  get_black(Black),subst001(GridO,Black,wbg,GridOO),
   wots(GS,(print_grid(IH,IV,GridOO))),
   replace_in_string(['®'=Glyph],GS,GSS),  
   HH is (OH - 1) * 2, wots(Str,(print_w_pad(HH,GSS))).
@@ -102,7 +100,7 @@ debugged_object_grid(Grid,GridO):- object_grid(Grid,GridO).
 %debugged_object_grid(Grid,GridO):- global_grid(Grid,GridO).
 debugged_object_grid(Grid,GridOO):- 
   localpoints_include_bg(Grid,GridO),  
-  subst(GridO,black,wbg,GridOO).
+  get_black(Black),subst001(GridO,Black,wbg,GridOO).
 
 %debug_as_grid(Why,R):- resolve_reference(R,Var)-> R\==Var, write(' ( '), writeq(R),write(' , '),debug_as_grid(Why,Var),write(' )'),!.
 debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
@@ -114,7 +112,8 @@ debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
     must_det_ll((
      loc(Grid,OH,OV),     
      localpoints_include_bg(Grid,GridO),
-     subst(GridO,black,wbg,PrintGrid),    
+     get_black(Black),
+     subst001(GridO,Black,wbg,PrintGrid),    
      copy_term(PrintGrid,PrintGridC),
      into_ngrid(PrintGridC,NGrid),
      nop((s_hv(Grid,SX,SY),max_min(H,SX,IH,_),max_min(V,SY,IV,_))),
@@ -127,7 +126,7 @@ debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
      locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Grid))))),
      format('~N'),dash_chars(15))),!.
 
-debug_as_grid(  I,   A):- is_1gridoid(A), !, subst(A,'black','wbg',AA), print_grid(I,AA).
+debug_as_grid(  I,   A):- is_1gridoid(A), !, get_black(Black), subst001(A,Black,'wbg',AA), print_grid(I,AA).
 debug_as_grid( '',Grid):- !, pp(Grid).
 debug_as_grid(Why,Grid):- pp(debug_as_grid(Why,Grid)).
 

@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 :- discontiguous h666/2. 
 :- discontiguous f666/2. 
@@ -79,11 +77,12 @@ test_ogs1(H,V,Match):-
   copy_term(UFG,FG), copy_term(USG,SG),
 
   XSG = SG,
+  get_black(Black),
   once((constrain_grid(f,CheckType,FG,XFG))),
   
   once((grid_detect_bg(SG,Background), maplist(never_fg,Background))),
 
-  ((ogs_11(H,V,XFG,XSG),CheckType=black) *-> Match=true; Match=false),
+  ((ogs_11(H,V,XFG,XSG),CheckType=Black) *-> Match=true; Match=false),
 
   (Match==true->show_match(H,V,Run,XFG,FG);show_mismatch(XFG,Run,FG)),
   ignore(got_result(SG,FG,Match)),
@@ -101,11 +100,11 @@ test_ogs0(H,V,Match):-
   copy_term(UFG,FG), copy_term(USG,SG),
 
   ground(UFG),
-
+  get_black(Black),
   once((constrain_grid(f,CheckType,FG,XFG), nop(constrain_grid(s,CheckType,SG,XSG)))),
   once((grid_detect_bg(XSG,Background), maplist(never_fg,Background))),
   
-  ((ogs_11(H,V,XFG,XSG),CheckType=black) *-> TMatch=true; TMatch=false),
+  ((ogs_11(H,V,XFG,XSG),CheckType=Black) *-> TMatch=true; TMatch=false),
 
   was_result(SG,FG,WMatch), 
   (WMatch\==TMatch ; TMatch == Match),
@@ -214,7 +213,8 @@ find_ogs_c(Rul,H,V,FG,SG):-
   %constrain_grid(f,CheckType,FG,_XFG2),
   locally(nb_setval(find_rule,Rul),
     once((constrain_grid(f,CheckType,FG,XFG), constrain_grid(s,CheckType,SG,XSG)))),
-  ogs_1(H,V,XFG,XSG),CheckType=black.
+  get_black(Black),
+  ogs_1(H,V,XFG,XSG),CheckType=Black.
 /*
 
 find_ogs(H,V,FG,SG):-
@@ -608,7 +608,7 @@ trans_to_color('B','blue').
 trans_to_color('G','green').
 trans_to_color('O','orange').
 trans_to_color('®','blue').
-trans_to_color(' ','black').
+trans_to_color(' ',Black):- get_black(Black).
 
 f666(_Color,
 [[4,5,1],

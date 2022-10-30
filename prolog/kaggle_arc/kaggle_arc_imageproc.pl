@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 :- ensure_loaded(kaggle_arc_symmetry).
 %tell(s),ignore((nl,nl,test_pairs(Name,ExampleNum,In,Out),format('~N~q.~n',[test_pairs_cache(Name,ExampleNum,In,Out)]),fail)),told.
@@ -33,12 +31,12 @@ grid_dim(G,v_hv(H,V)):- grid_size(G,H,V).
 props_of_points(E,Ns):- findall(obj(Ps),member(obj(Ps),E),Ns).
 
 
-black_first(SK,[cc(Z,CN)|BF]):- Z=black, select(cc(Z,CN),SK,BF),!.
-black_first(BF,[cc(Z,0)|BF]):- Z=black.
+black_first(SK,[cc(Z,CN)|BF]):- get_black(Black),Z=Black, select(cc(Z,CN),SK,BF),!.
+black_first(BF,[cc(Z,0)|BF]):- get_black(Black),Z=Black.
 
-no_black(SK,BF):-select(cc(Z,_),SK,BF),is_black(Z),!.
-no_black(SK,BF):-select(Z,SK,BF),is_black(Z),!.
-no_black(BF,BF).
+include_cc(P1,SK,FG):- select(cc(Z,_),SK,BF), \+ call(P1,Z),include_cc(P1,BF,FG).
+include_cc(_,BF,BF).
+no_black(SK,FG):- include_cc(is_real_fg_color,SK,FG).
 
 
 %pixel_colors(GH,CC):- (is_group(GH);is_object(GH)),!,globalpoints(GH,GP),pixel_colors0(GP,CC).
@@ -66,8 +64,7 @@ only_color_data_or(Alt,Cell,Color):- only_color_data(Cell,Color)->true;Color=Alt
 
 %sub_term(G,GH), is_grid(G),!,flatten(G,GF),include(is_grid_color,GF,GL),maplist(color_name,GL,CC).
 %pixel_colors(G,GL):- findall(Name,(sub_term(CP,G),compound(CP),CP=(C-_),color_name(C,Name)),GL).
-is_real_color_or_var(C):- C\==fg,C\==wfg,C\==wbg,C\==bg,C\==bg,C\==is_colorish_var,C\==plain_var,
- (var(C)->true;is_real_color(C)).
+is_real_color_or_var(C):- (var(C)->true;is_real_color(C)).
 
 unique_colors(G,SUCO):- colors(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_color_or_var,UC,SUCO))).
 unique_color_count(G,Len):- unique_colors(G,UC),length(UC,Len).
@@ -76,7 +73,11 @@ into_cc(SK,BFO):- maplist(into_cc1,SK,BFO).
 into_cc1(N-C,cc(Nm,CN)):- CN is N,!,color_name(C,Nm).
 
 colors_count_black_first(G,BF):- colors(G,SK),black_first(SK,BF).
-colors_count_no_black(G,BF):- colors(G,SK),no_black(SK,BF).
+
+colors_count_fg(G,FG):- colors(G,SK), include_cc(is_real_fg_color,SK,FG),!.
+colors_count_no_black(G,BF):- colors(G,SK),no_black(SK,BF),!.
+
+
 
 /*
 :- decl_pt(prop_g,all_colors_count(is_object_or_grid, list)).
@@ -94,7 +95,7 @@ some_colors_count(G,CC):-
 
 enum_colors_test(C):- no_repeats(C,enum_colors_test0(C)).
 enum_colors_test0(C):- get_bgc(C).
-enum_colors_test0(C):- C=black, \+ enum_fg_colors(C).
+enum_colors_test0(C):- get_black(Black),C=Black, \+ enum_fg_colors(C).
 enum_colors_test0(C):- enum_fg_colors(C), C \== wbg, C\== '#444455'.
 enum_colors_test0(fg).
 enum_colors_test0(bg).
@@ -312,8 +313,8 @@ learn_mapping_stateful(In,Out):- get_bgc(BG),
 apply_mapping_stateful(Grid,G):- into_grid(G,Grid),unbind_color(0,Grid,GridO),ignore(backfill_vars(GridO)).
 
 
-compute_max_color(Color1,Grid,Grid):- colors_count_no_black(Grid,[cc(Color1,_)|_]).
-compute_next_color(Color1,Grid,Grid):- colors_count_no_black(Grid,[_,cc(Color1,_)|_]).
+compute_max_color(Color1,Grid,Grid):- colors_count_fg(Grid,[cc(Color1,_)|_]).
+compute_next_color(Color1,Grid,Grid):- colors_count_fg(Grid,[_,cc(Color1,_)|_]).
 
 subst_color(Color1,Color2,Grid,NewGrid):- 
   quietly((
@@ -371,7 +372,7 @@ set_all_bg_colors(Color,Grid,NewGrid):- map_pred(do_set_all_bg_colors(Color),Gri
 
 %do_set_all_fg_colors(Color,CPoint,NewCPoint):- is_cpoint(CPoint),CPoint=C-Point,hv_point(_,_,Point),is_fg_color(C),NewCPoint=Color-Point.
 
-blur(Op,G0,GG):- into_grid(G0,G),call(Op,G,GGG),replace_local_points(GGG,black,G,GG),is_a_change(G,GGG).
+blur(Op,G0,GG):- into_grid(G0,G),call(Op,G,GGG),get_black(Black),replace_local_points(GGG,Black,G,GG),is_a_change(G,GGG).
 
 is_a_change(G,GG):- G=@=GG,!,fail.
 is_a_change(_,_):-!.
@@ -448,7 +449,7 @@ fillFromBorder(Color,In,Out):-
  uncast(In,UnCast,GridO,Out).
 
 likely_bg(Grid,BGC):- colors_count_black_first(Grid,CCBF), 
-    (CCBF=[cc(black,0),cc(BGC,_)|_]-> true ; CCBF=[cc(BGC,_)|_]).
+    get_black(Black),(CCBF=[cc(Black,0),cc(BGC,_)|_]-> true ; CCBF=[cc(BGC,_)|_]).
 
 fill_from_point(IIn,H,V,FillColor):-
   hv_c_value(IIn,Color,H,V),

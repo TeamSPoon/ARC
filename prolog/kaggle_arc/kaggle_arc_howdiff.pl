@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 showdiff(A,B):- is_group(A), is_group(B), showdiff_groups(A,B),!.
 showdiff(A,B):- is_object(A), is_object(B), showdiff_objects(A,B),!.
@@ -481,7 +479,7 @@ allow_pair(PA,PB):-  \+ never_pair(PA,PB).
 never_pair(PA,PB):- PA=@=PB.
 never_pair(PA,PB):- never_pair_r(PA,PB),!.
 never_pair(PA,PB):- never_pair_r(PB,PA),!.
-never_pair_r(PA,PB):- has_prop(pen([_-black]),PA),has_prop(pen([_,_|_]),PB).
+never_pair_r(PA,PB):- get_black(Black),has_prop(pen([_-Black]),PA),has_prop(pen([_,_|_]),PB).
 %never_pair_r(PA,PB):- has_prop(chromatic(0),PA), \+ has_prop(chromatic(0),PB).
 
 

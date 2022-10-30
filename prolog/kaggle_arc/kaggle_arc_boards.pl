@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 :- use_module(library(nb_set)).
 :- use_module(library(lists)).
@@ -30,6 +28,7 @@ superinput_swashica
 superinput_starts_at_input_loc
 superinput_blob
 */
+:- dynamic(kaggle_arc/4).
 
 test_supergrid:- clsbake, forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_pair_hints(TestID,ExampleNum,In,Out)).
 
@@ -66,14 +65,15 @@ compile_and_save_test(TestID):-
       unload_file(File),
       (exists_file(File)->delete_file(File);true))),
 
-  compute_all_test_hints(TestID),
-  arc_assert(saved_training(TestID)),
-  arc_assert(process_test(TestID)),
-  detect_all_training_hints(TestID),
-  nop(individuate_pairs_from_hints(TestID)),
-  %train_test(TestID,train_using_io),  
-  test_deduce_shapes,
-  save_supertest(TestID))).
+  locally(nb_setval(individuated_cache,true),
+     ((compute_all_test_hints(TestID)),
+      arc_assert(saved_training(TestID)),
+      arc_assert(process_test(TestID)),
+      detect_all_training_hints(TestID),
+      nop(individuate_pairs_from_hints(TestID)),
+      %train_test(TestID,train_using_io),  
+      test_deduce_shapes,
+      save_supertest(TestID))))).
 
 
 
@@ -387,7 +387,17 @@ has_spec_value(T):- sub_term(E,T),number(E),!.
 has_spec_value(T):- sub_term(E1,T),atomic(E1),sub_term(E2,T),atomic(E2),E1\==E2.
 
 
+in_smaller_than_out(TestID):- forall(kaggle_arc(TestID,trn+_,I,O), op_op(v_area,I,O,(<))).
+
+op_op(P2a,I,O,P2b):- call(P2a,I,II),call(P2a,O,OO),call(P2b,II,OO),!.
+
+v_area(I,Size):- v_hv(I,IH,IV), Size is IH * IV.
+
 %compute_all_test_hints(TestID):- arc_test_property(TestID,gh(1),PP,_),sub_var(i-i,PP),!.
+compute_all_test_hints(TestID):- in_smaller_than_out(TestID),!,
+  compute_test_ii_hints(TestID),
+  compute_test_oo_hints(TestID),
+  compute_test_io_hints(TestID),!.
 compute_all_test_hints(TestID):-   
   compute_test_oo_hints(TestID),
   compute_test_ii_hints(TestID),
@@ -472,10 +482,10 @@ min_unifier_e(A,B,C):- min_unifier(A,B,C),nonvar(C),!.
 %min_unifier_e(B,A,C):- compound(B),maybe_extract_values(B,BB), \+ maybe_extract_values(A,_), c_proportional(A,BB,AABB),must_min_unifier(AABB,B,C),!.
 min_unifier_e(_,_,_).
 
-some_min_unifier([A|List],Term):- min_unifier3(A,List,Term).
+some_min_unifier([A|List],Term):- some_min_unifier_3(A,List,Term).
 
-min_unifier3(A,List,A):- maplist('=@='(A),List),!.
-min_unifier3(A,[B|List],O):- must_min_unifier(A,B,C), min_unifier3(C,List,O).
+some_min_unifier_3(A,List,A):- maplist('=@='(A),List),!.
+some_min_unifier_3(A,[B|List],O):- must_min_unifier(A,B,C), some_min_unifier_3(C,List,O).
 
 is_a_min_unifier(A,B,C):- B==strict,A==loose,!,C=A.
 is_a_min_unifier(A,_,C):- A==fg,B\==bg,B\==wbg,!,C=A.
@@ -505,17 +515,24 @@ min_unifier(A,B,_):- (\+ compound(A);\+ compound(B)),!.
 is_cons(A):- compound(A),A=[_|_].
 
 
-min_grid_unifier(A,B,[E1|C]):- select(E1,A,AA),select(E2,B,BB), E1=@=E2 ,!,min_list_unifier(AA,BB,C).
-min_grid_unifier(A,B,[E |C]):- select(E1,A,AA),select(E2,B,BB),min_unifier(E1,E2,E),!,min_list_unifier(AA,BB,C).
+min_grid_unifier(A,B,_):- (\+ is_list(A) ; \+ is_list(B)),!.
+min_grid_unifier(A,B,[E1|C]):- select(E1,A,AA),select(E2,B,BB), E1=@=E2 ,!,min_grid_unifier(AA,BB,C).
+min_grid_unifier(A,B,[E |C]):- select(E1,A,AA),select(E2,B,BB),min_unifier(E1,E2,E),!,min_grid_unifier(AA,BB,C).
 min_grid_unifier(_,_,_).
 
-min_list_unifier(A,B,AA):- is_list(A),is_list(B), \+ (is_grid(A),is_grid(B)), sort(A,AA),sort(B,BB),BB=@=AA,!.
-min_list_unifier(A,B,[E1|C]):- select(E1,A,AA),select(E2,B,BB), E1=@=E2 ,!,min_list_unifier(AA,BB,C).
+
+min_list_unifier(A,B,A):- A=@=B,!.
+min_list_unifier(A,B,_):- \+ compound(A);\+ compound(B),!.
+min_list_unifier(A,B,AA):- is_list(A),is_list(B), sort(A,AA),sort(B,BB),BB=@=AA,!.
 min_list_unifier(A,B,[EC|C]):- is_list(A),is_list(B),select_two(A,B,E1,E2,AA,BB), min_unifier(E1,E2,EC) ,!,min_list_unifier(AA,BB,C).
-min_list_unifier([E1|AA],[E2|BB],[EC|C]):- min_unifier(E1,E2,EC) ,!,min_unifier(AA,BB,C).
-min_list_unifier([_|A],[_|B],[_|C]):- !,min_list_unifier(A,B,C).
-min_list_unifier([_],[_|B],[_|B]):-!.
-min_list_unifier([_|B],[_],[_|B]):-!.
+min_list_unifier(A,_,_):- (\+ is_list(A), \+ is_cons(A)),!.
+min_list_unifier(_,A,_):- (\+ is_list(A), \+ is_cons(A)),!.
+min_list_unifier(A,B,_):- (\+ is_list(A) ; \+ is_list(B)),!.
+%min_list_unifier([E1|AA],[E2|BB],[EC|C]):- min_unifier(E1,E2,EC) ,!,min_unifier(AA,BB,C).
+min_list_unifier(A,B,[E1|C]):- nonvar(A),nonvar(B), select(E1,A,AA),nonvar(E1),select(E2,B,BB),nonvar(E2), E1=@=E2 ,!,min_list_unifier(AA,BB,C).
+%min_list_unifier([_|A],[_|B],[_|C]):- !,min_list_unifier(A,B,C).
+%min_list_unifier([_],[_|B],[_|B]):-!.
+%min_list_unifier([_|B],[_],[_|B]):-!.
 min_list_unifier(_,_,_):-!.
 %min_unifier(A,B,C):- is_list(B), is_list(A), length(B,L), length(A,L), length(C,L).
 
@@ -537,7 +554,7 @@ grid_hint_recolor(IO,In,Out,mono(Hint)):-  fail,
 
 grid_hint_recolor(IO,In,Out,Hint):- grid_hint_recolor1(IO,In,Out,Hint).
 
-grid_hint_recolor1(IO,In,Out,Hint):-  grid_hint_io(cbg(black),IO,In,Out,Hint).
+grid_hint_recolor1(IO,In,Out,Hint):- get_black(Black), grid_hint_io(cbg(Black),IO,In,Out,Hint).
 
 
 %maybe_fail_over_time(Time,Goal):- fail_over_time(Time,Goal).
@@ -578,7 +595,11 @@ all_ogs(In,Out,XY):- %member(R,[strict,loose]),
 
 %grid_to_so(_II,Obj,In,_NotStrict):- Obj=keypad, In=[[X,X,X],[X,X,X],[X,X,X]].
 
-ensure_how(How):- var(How),!,member(How,[nsew,fg_shapes(nsew),colormass,fg_shapes(colormass),force_by_color,alone_dots]).
+%ensure_how(How):- var(How),!,member(How,[whole,fg_shapes(nsew)]).
+%ensure_how(How):- var(How),!,member(How,[whole,i_pbox]).
+ensure_how(How):- var(How),!,member(How,[whole]).
+%ensure_how(How):- var(How),!,member(How,[whole,i_pbox,fg_shapes(nsew)]).
+%ensure_how(How):- var(How),!,member(How,[nsew,fg_shapes(nsew),colormass,fg_shapes(colormass),force_by_color,alone_dots]).
 ensure_how(_How).
 
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,_,Obj),List),list_to_set(List,Objs).
@@ -652,7 +673,7 @@ grid_get_value(Grid,smallest_object,O):- grid_to_objs(Grid,Objs),smallest_first(
 grid_get_value(Grid, largest_object,O):- grid_to_objs(Grid,Objs),largest_first(Objs,SF),!,o_first(SF,O).
 grid_get_value(Grid,object_count,Count):- grid_to_objs(Grid,Objs),length(Objs,Count).
 
-grid_to_so(Grid,nth1Of(Nth1,Named,H,V,In),In,_NotStrict):- 
+grid_to_so(Grid,nth1Of(Nth1,Named,H,V,In),In,_NotStrict):- fail,
   grid_to_objs(Grid,Named,Objs),nth1(Nth1,Objs,Obj),object_grid(Obj,In),grid_size(In,H,V).
 grid_to_so(_Grid,Named,In,_NotStrict):- fail,
   Named=keypad(Color,Counts),
@@ -808,7 +829,8 @@ gather_chunks(Color,In,Chunks,X,Y,GX,GY,BorderNumsX,BorderNumsY):-
   clip(SX1,SY1,EX1,EY1,In,Clip),
   % print_grid((X,Y),Clip), pp(clipped(SX,SY,EX,EY,into(X,Y))),
   % once(Clip = [_,[_,Cell|_]|_];Clip = [[Cell|_]|_]),  
-  once(((Clip = [_,[_,C|_]|_];Clip = [[C|_]|_];(member(CR,Clip),member(C,CR))),C\==Color,C\==black,Cell=C);Cell=Clip),
+  get_black(Black),
+  once(((Clip = [_,[_,C|_]|_];Clip = [[C|_]|_];(member(CR,Clip),member(C,CR))),C\==Color,C\==Black,Cell=C);Cell=Clip),
   (GX =< X -> (Yi is Y + 1, Xi is 1) ; (Xi is X+1, Yi is Y)),
   gather_chunks(Color,In,Chunks,Xi,Yi,GX,GY,BorderNumsX,BorderNumsY).
 
@@ -869,5 +891,5 @@ illegal_column_data(In,Color,BorderNums):-
 
 
 
-
+:- include(kaggle_arc_footer).
 %globalpoints(grid,points)

@@ -33,40 +33,8 @@ catch_nolog(G):- ignore(catch(notrace(G),E,nop(wdmsg(E=G)))).
 %:- module(system).
 
 :- set_prolog_flag(arc_term_expansion, false).
-:- dynamic((ap/1,apv/2)).
-:- dynamic(cmem/3).
-:- dynamic(cmemo/3).
-:- dynamic(grid_nums/1).
-:- dynamic(grid_nums/2).
 
-:- multifile(fav/2).
-:- discontiguous(fav/2).
-:- dynamic(fav/2).
-:- export(fav/2).
-
-
-:- multifile(easy_sol/1).
-:- discontiguous(easy_sol/1).
-:- dynamic(easy_sol/1).
-:- export(easy_sol/1).
-
-:- multifile(user:portray/1).
-:- dynamic(user:portray/1).
-:- discontiguous(user:portray/1).
-
-:- dynamic(kaggle_arc/4).
-:- discontiguous(kaggle_arc/4).
-:- multifile(kaggle_arc/4).
-:- export(kaggle_arc/4).
-
-:- dynamic(arc_test_property/4).
-:- discontiguous(arc_test_property/4).
-:- multifile(arc_test_property/4).
-
-:- dynamic(individuation_macros/2).
-:- discontiguous(individuation_macros/2).
-:- multifile(individuation_macros/2).
-
+:- include(kaggle_arc_header).
 
 arc_history(_).
 arc_history1(_).
@@ -94,20 +62,12 @@ decl_pt(G):- ground(G), !, my_assertz_if_new(decl_pt(plain,G)).
 decl_pt(How,G):- nonvar(How),ground(G), !, my_assertz_if_new(decl_pt(How,G)).
 :- set_prolog_flag(color_term,true).
 :- set_stream(current_output, tty(true)).
+:- set_stream(user_output, tty(true)).
+:- set_stream(user_error, tty(true)).
+:- set_stream(user_output, newline(dos)).
+
 :- stream_property(S,file_no(2)), set_stream(S,tty(true)).
 :- stream_property(S,file_no(1)), set_stream(S,tty(true)).
-:- multifile is_fti_step/1.
-:- multifile is_fti_stepr/1.
-:- discontiguous is_fti_step/1.
-:- discontiguous is_fti_stepr/1.
-
-
-:- discontiguous is_changeable_param/1.
-:- multifile is_changeable_param/1.
-:- dynamic is_changeable_param/1.
-
-:- discontiguous ping_indiv_grid/1.
-:- multifile ping_indiv_grid/1.
 
 :- meta_predicate(fif(0,0)).
 fif(IF, THEN) :- (   call(IF) ->  call(THEN) ;   true ).
@@ -195,27 +155,7 @@ pfcAddF(P):-
 %:- set_prolog_flag(verbose_load,true).  
 %:- set_prolog_flag(verbose_autoload,true).
 
-:- system:use_module(library(quasi_quotations)).
-:- system:use_module(library(hashtable)).
-:- system:use_module(library(gensym)).
-:- system:use_module(library(sort)).
-:- system:use_module(library(writef)).
-:- system:use_module(library(rbtrees)).
-:- system:use_module(library(dicts)).
-:- system:use_module(library(edinburgh)).
-%:- system:use_module(library(lists)).
-:- system:use_module(library(statistics)).
-:- system:use_module(library(nb_set)).
-:- system:use_module(library(assoc)).
-:- system:use_module(library(pairs)).
-:- system:use_module(library(logicmoo_common)).
-:- system:use_module(library(prolog_trace)).
-:- system:use_module(library(prolog_clause)).
-:- system:use_module(library(prolog_source)).
- %library(trace/clause) 
-%:- autoload_all.
-:- system:use_module(library(gvar_globals_api)).
-:- system:use_module(library(dictoo_lib)).
+
 
 :- current_prolog_flag(argv,C),wdmsg(current_prolog_flag(argv,C)),!.
 
@@ -272,6 +212,8 @@ must_det_ll(must_det_ll(X)):- !, must_det_ll(X).
 %must_det_ll((X,Y)):- !, (must_det_ll(X)->must_det_ll(Y)).
 must_det_ll(fif(X,Y)):- !, fif(must_not_error(X),must_det_ll(Y)).
 must_det_ll((A*->X;Y)):- !,(must_not_error(A)*->must_det_ll(X);must_det_ll(Y)).
+must_det_ll((X,!)):- !, (must_det_ll(X),!).
+must_det_ll((X,!,Y)):- !, (must_det_ll(X),!,must_det_ll(Y)).
 must_det_ll((X,Y)):- !, (must_det_ll(X),must_det_ll(Y)).
 must_det_ll((A->X;Y)):- !,(must_not_error(A)->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((X;Y)):- !, ((must_not_error(X);must_not_error(Y))->true;must_det_ll_failed(X;Y)).
@@ -286,6 +228,7 @@ must_det_ll(X):-
 must_not_error(X):- catch(X,E,((E=='$aborted';nb_current(cant_rrtrace,t))-> throw(E);(/*arcST,*/writeq(E=X),pp(etrace=X),
   rrtrace(visible_rtrace([-all,+exception]),X)))).
 
+%must_det_ll_failed(X):- predicate_property(X,number_of_clauses(1)),clause(X,(A,B,C,Body)), (B\==!),!,must_det_ll(A),must_det_ll((B,C,Body)).
 must_det_ll_failed(X):- notrace,wdmsg(failed(X))/*,arcST*/,nortrace,trace,visible_rtrace([-all,+fail,+exception],X).
 % must_det_ll(X):- must_det_ll(X),!.
 
@@ -488,8 +431,8 @@ doit(set(E.v)):- that.
 :- style_check(+singleton).
 */
 
-arc_user(main):-!.
-%arc_user(ID):- thread_self(TID),arc_user(TID, ID).
+%arc_user(main):- !.
+arc_user(ID):- thread_self(TID),arc_user(TID, ID).
 
 suggest_arc_user(ID):- catch((if_arc_webui(xlisting_web:find_http_session(ID))),_,fail),!.
 suggest_arc_user(ID):- catch((pengine:pengine_user(ID)),_,fail),!.
@@ -522,9 +465,10 @@ luser_linkval(N,V):- arc_user(ID),luser_linkval(ID,N,V),!.
 luser_linkval(ID,N,V):- nb_linkval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
 
 :- meta_predicate(if_arc_webui(-)).
-if_arc_webui(Goal):- !, fail,Goal.
-if_arc_webui(Goal):- arc_webui,!,g_out(call(Goal)).
+%if_arc_webui(Goal):- !, fail,Goal.
 if_arc_webui(_):- \+ arc_webui,!,fail.
+if_arc_webui(Goal):- arc_webui,!,g_out(call(Goal)).
+
 
 :- meta_predicate(when_arc_webui(-)).
 when_arc_webui(G):- toplevel_pp(http),call(G),!.
@@ -575,40 +519,7 @@ luser_getval(ID,N,V):-
 :- multifile(mregression_test/0).
 :- dynamic(mregression_test/0).
 
-:- enable_arc_expansion.
-
-%:- set_prolog_flag(verbose_load,true).  
-%:- set_prolog_flag(verbose_autoload,true).
-
-%:- learn_shapes.
-:- ensure_loaded(kaggle_arc_utils).
-:- ensure_loaded(kaggle_arc_ui_ansi).
-:- ensure_loaded(kaggle_arc_interpreter).
-:- ensure_loaded(kaggle_arc_test_loader).
-:- ensure_loaded(kaggle_arc_domaintypes).
-:- ensure_loaded(kaggle_arc_test_iface).
-:- ensure_loaded(kaggle_arc_explaination).
-:- ensure_loaded(kaggle_arc_howdiff).
-:- ensure_loaded(kaggle_arc_imageproc).
-:- ensure_loaded(kaggle_arc_physics).
-:- ensure_loaded(kaggle_arc_db).
-:- ensure_loaded(kaggle_arc_heuristics).
-:- ensure_loaded(kaggle_arc_intruder).
-:- ensure_loaded(kaggle_arc_test_cache).
-:- ensure_loaded(kaggle_arc_individuation).
-
-:- ensure_loaded(kaggle_arc_object).
-:- ensure_loaded(kaggle_arc_boards).
-:- ensure_loaded(kaggle_arc_learning).
-:- ensure_loaded(kaggle_arc_imagens).
-:- ensure_loaded(kaggle_arc_recognise).
-:- ensure_loaded(kaggle_arc_uniqueness).
-:- ensure_loaded(kaggle_arc_ui_html).
-:- ensure_loaded(kaggle_arc_test_easy).
-:- ensure_loaded(kaggle_arc_test_old).
-:- set_prolog_flag(verbose_load,false).
-:- set_prolog_flag(verbose_autoload,false).
-
+:- include(kaggle_arc_footer).
 
 %:- forall((fav(_,P),flatten([P],Flat),member(E,Flat)), assert_if_new(fav_trait(E))).
 
@@ -1102,7 +1013,8 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 %:- endif.
 
 %:- fixup_module_exports_now.  
-user:portray(Grid):- %fail, 
+user:portray(Grid):- fail, 
+   current_prolog_flag(debug,false),
     \+ tracing,
    \+ nb_current(arc_can_portray,nil),
    current_predicate(bfly_startup/0), \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!, flush_output.

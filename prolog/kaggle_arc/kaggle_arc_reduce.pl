@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 :- use_module(library(nb_set)).
 :- use_module(library(lists)).
@@ -75,7 +73,8 @@ reduce_op1_1(_,Grid,left_right(Left,Reduced),GridR):- fail, \+ too_small_reduce(
    reduce_grid(Left+Left,Reduced).
 reduce_op1_1(_,Grid,remove_row(Row),GridR):- fail, 
   \+ too_small_reduce(Grid,3),
-  nth1(Row,Grid,Same,GridR),maplist(==(black),Same),!.
+  get_black(Black),
+  nth1(Row,Grid,Same,GridR),maplist(==(Black),Same),!.
 
 %reduce_1pair_op(PassNo,Grid,RotR,GridR):- grav_rot(Grid,RotG,GridR), unrotate(RotG,RotR).
 

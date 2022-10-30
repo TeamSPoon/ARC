@@ -8,11 +8,11 @@ https://github.com/fchollet/ARC
 
 ## Percentage of Tasks Passing
 
-* Training tasks: 160 / 400 (40%)\
+* Training tasks: 165 / 400 (41.2%)
   ![Percentage of Training Tasks Passing](TrainingTasksProgressBar.png?raw=true)
-  * Implemented: 80
-  * Passing via generalization: 80
-* Evaluation tasks: 58 / 400 (14.5%)\
+  * Implemented: 82
+  * Passing via generalization: 83
+* Evaluation tasks: 57 / 400 (14.2%)
   ![Percentage of Evaluation Tasks Passing](EvaluationTasksProgressBar.png?raw=true)
 
 ## Progress over Time
@@ -21,7 +21,7 @@ https://github.com/fchollet/ARC
 
 ## Tasks Implemented
 
-### Core ARC Training Tasks (80)
+### Core ARC Training Tasks (82)
 
 * [0ca9ddb6](TaskNotes/0ca9ddb6/notes.md)
 * [3c9b0459](TaskNotes/3c9b0459/notes.md)
@@ -103,6 +103,8 @@ https://github.com/fchollet/ARC
 * [97999447](TaskNotes/97999447/notes.md)
 * [6d75e8bb](TaskNotes/6d75e8bb/notes.md)
 * [63613498](TaskNotes/63613498/notes.md)
+* [29c11459](TaskNotes/29c11459/notes.md)
+* [b6afb2da](TaskNotes/b6afb2da/notes.md)
 
 ### Personally Created Training Tasks (15)
 
@@ -124,7 +126,7 @@ https://github.com/fchollet/ARC
 
 ## Tasks Passing via Generalization
 
-### Training Tasks (80)
+### Training Tasks (83)
 
 The following ARC training tasks started passing after some different task was implemented.
 
@@ -208,8 +210,11 @@ The following ARC training tasks started passing after some different task was i
 * [3aa6fb7a](TaskNotes/3aa6fb7a/notes.md)
 * [60b61512](TaskNotes/60b61512/notes.md)
 * 3618c87e
+* [8d510a79](TaskNotes/8d510a79/notes.md)
+* [9565186b](TaskNotes/9565186b/notes.md)
+* [af902bf9](TaskNotes/af902bf9/notes.md)
 
-### Evaluation Tasks (58)
+### Evaluation Tasks (57)
 
 The following ARC evaluation tasks are passing. My intention is to not analyzed or implemented evaluation examples specifically, but I have implemented a few accidentally.
 
@@ -268,6 +273,5 @@ The following ARC evaluation tasks are passing. My intention is to not analyzed 
 * [903d1b4a](TaskNotes/903d1b4a/notes.md)
 * [981571dc](TaskNotes/981571dc/notes.md)
 * [42a15761](TaskNotes/42a15761/notes.md)
-* [770cc55f](TaskNotes/770cc55f/notes.md)
 * [e5790162](TaskNotes/e5790162/notes.md)
 * [27a77e38](TaskNotes/27a77e38/notes.md)

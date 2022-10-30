@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 into_ngrid(Points,NGrid):-  v_hv(Points,H,V),into_ngrid(Points,H,V,NGrid).
 into_ngrid(Obj,H,V,NGrid):-
@@ -24,6 +22,7 @@ D=fill_area
 */
 most_d_colors(Grid,ColorO,GridNM):-
   %trace,
+ 
   get_fill_points(Grid,Points,GridNM),
   uneib(Points,FPoints),
   % grid_size(GridNM,H,V), pp(fillPoints(H,V) = FPoints),
@@ -33,7 +32,8 @@ most_d_colors(Grid,ColorO,GridNM):-
   maplist(arg(1),NPSS,Colors),
   clumped(Colors,CColors),
   maplist(arg(2),CColors,Set),
-  (Set==[]->ColorO=[black];ColorO=Set),!.
+  get_black(Black),
+  (Set==[]->ColorO=[Black];ColorO=Set),!.
 
 ping_indiv_grid(show_neighbor_map).
 
@@ -45,8 +45,9 @@ get_fill_points2(Grid,FillPoints):-
 
   
 get_fill_points(In,UNFP,GridO):-
+ must_det_ll((
  %grid_size(Grid,H,V),
- subst001(In,black,wbg,Grid),
+ get_black(Black),subst001(In,Black,wbg,Grid),
  %print(In=Grid),
  neighbor_map(Grid,GridO), 
  localpoints(GridO,NPS),  
@@ -56,7 +57,7 @@ get_fill_points(In,UNFP,GridO):-
  include(is_point_type('wbgzzzzz'),NPS,NotFillPoints),
  subtract(FillPoints,NotFillPoints,RFillPoints),
   %my_partition(is_point_type('.'),NFP,OuterEdges,NonFillPointNonOuterEdges),
- uneib(RFillPoints,UNFP).
+ uneib(RFillPoints,UNFP))).
 /*
   once(get_fill_points2(Grid,FillPoints2)),
   append([FillPoints2,UNFP],TheFilPoints),
@@ -153,10 +154,11 @@ edge_of_grid(_,V,_,V,s).
 edge_of_grid(_,_,_,_,c).
 
 neighbor_map(Grid,GridO):-
+ must_det_ll((
   globalpoints_maybe_bg(Grid,Points),
   grid_size(Grid,H,V),
   neighbor_map(H,V,Points,Points,CountedPoints),!,
-  points_to_grid(H,V,CountedPoints,GridO).
+  points_to_grid(H,V,CountedPoints,GridO))).
 
 neighbor_map(_,_,[],_,[]):-!.
 neighbor_map(H,V,[NC-P1|Ps],Points,[(N-C)-P1|Ps2]):-
@@ -165,6 +167,7 @@ neighbor_map(H,V,[NC-P1|Ps],Points,[(N-C)-P1|Ps2]):-
   neighbor_map(H,V,Ps,Points,Ps2).
 
 only_color_data(C,_):- var(C),!,fail.
+only_color_data(C,C):- is_unreal_color(C),!.
 only_color_data(C,C):- is_color(C),!.
 only_color_data(NC,NC):- \+ compound(NC),!,fail.
 only_color_data(OC,C):- sub_term(C,OC),is_colorish(C),!.

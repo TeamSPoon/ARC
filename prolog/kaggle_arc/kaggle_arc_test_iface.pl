@@ -4,9 +4,8 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
+
 :- use_module(library(pengines)).
 
 :- dynamic(muarc_tmp:cached_tests/2).
@@ -81,12 +80,13 @@ find_tests(F):-
    current_predicate(N),N=F/0, (atom_concat(test_,_,F); atom_concat(_,'_test',F)),
     \+ ( atom_codes(F,Codes),member(C,Codes),char_type(C,digit) ).
 
+find_f_tests(F):- quick_test_menu(F).
 find_g_tests(F):- ping_indiv_grid(F).
 %find_g_tests(F):- is_fti_stepr(F).
 %find_g_tests(F):- is_fti_step(F).
 find_g_tests(F):- find_tests(F).
 
-list_of_tests(S):- findall(F,find_g_tests(F),L),sort(L,S).
+list_of_tests(S):- findall(F,find_f_tests(F),L1),findall(F,find_g_tests(F),L),sort(L,L2),append(L1,L2,L12),list_to_set(L12,S).
 
 show_tests:- update_changed_files, list_of_tests(L),forall(nth10(N,L,E),format('~N~@',[print_menu_cmd1(N:E,E)])),nl.
 
@@ -165,6 +165,7 @@ enter_test(Sel):-
    catch(read_term_from_atom(Sel,Name,[module(user),double_quotes(string),variable_names(Vs),singletons(Singles)]),_,
         (wqnl(['failed to read: ',Sel]),fail)),
         maplist(ignore,Vs),maplist(ignore,Singles),
+        Name\==Sel,
        (fix_test_name(Name,TestID,_) -> true ; (wqnl(['could not read a test from: ',Sel,nl,'try again']),fail)),
        switch_test(TestID).
        
@@ -381,11 +382,13 @@ report_suite(SuiteX):-
 
 dump_suite1:-   
    get_current_suite_testnames(Set),
+   set_pair_mode(single_pair),
    forall(member(S,Set),print_qtest(S)).
 
 dump_suite:-   
    get_current_suite_testnames(Set),
-   forall(member(S,Set),print_test(S)).
+   set_pair_mode(whole_test),
+   forall(member(S,Set),print_qtest(S)).
 
 
 sort_suite:-   
@@ -434,21 +437,26 @@ next_suite:-
 %test_suite_name(arc_easy_test).
 :- multifile(dir_test_suite_name/1).
 :- dynamic(dir_test_suite_name/1).
-test_suite_name(dbigham_train_core).
-test_suite_name(dbigham_eval_pass).
-test_suite_name(TS):- dir_test_suite_name(TS).
-test_suite_name(icecuber_pass).
-test_suite_name(icecuber_fail).
-test_suite_name(dbigham_train_pass).
-test_suite_name(dbigham_personal).
 
+dont_sort_by_hard(test_names_by_fav). dont_sort_by_hard(all_arc_test_name).
+
+test_suite_name(test_names_by_fav). 
 test_suite_name(human_t).
 test_suite_name(sol_t).
-test_suite_name(hard_t). test_suite_name(test_names_by_fav). 
-test_suite_name(key_pad_tests). test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
+test_suite_name(hard_t).
+test_suite_name(key_pad_tests). % test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
 test_suite_name(test_names_by_hard). 
-test_suite_name(test_names_by_fav_rev). test_suite_name(test_names_by_hard_rev).
+%test_suite_name(test_names_by_fav_rev). 
+%test_suite_name(test_names_by_hard_rev).
 test_suite_name(all_arc_test_name).
+test_suite_name(icecuber_pass).
+test_suite_name(icecuber_fail).
+test_suite_name(dbigham_train_core).
+test_suite_name(dbigham_eval_pass).
+test_suite_name(dbigham_train_pass).
+test_suite_name(dbigham_personal).
+test_suite_name(TS):- dir_test_suite_name(TS).
+
 
 :- dynamic(muarc_tmp:cached_tests/2).
 %:- retractall(muarc_tmp:cached_tests(_,_)).
@@ -463,14 +471,19 @@ current_suite_testnames(X,Set):-  pp(recreating(X)),
    
   my_list_to_set_variant(List,Set), pp(sorting(X)), sort_by_hard(Set,NamesByHardUR), 
   !,asserta(muarc_tmp:cached_tests(X,NamesByHardUR)).
+
 get_by_hard(X,ByHard):- muarc_tmp:cached_tests_hard(X,ByHard),!.
 get_by_hard(X,ByHard):- 
   pp(recreating(X)),  
   findall(ID,test_suite_info(X,ID),List),List\==[],   
   my_list_to_set_variant(List,Set),
-   pp(sorting(X)), !,
-    sort_by_hard(Set,ByHard), !,
-    asserta(muarc_tmp:cached_tests_hard(X,ByHard)).
+  likely_sort(X,Set,ByHard),
+  asserta(muarc_tmp:cached_tests_hard(X,ByHard)).
+
+
+likely_sort(X,Set,Set):- dont_sort_by_hard(X),!,pp(dont_sort_by_hard(X)).
+likely_sort(X,Set,ByHard):-  pp(sorting(X)), !, sort_by_hard(Set,ByHard), !.
+    
 
 test_suite_info(SuiteX,TestID):- var(SuiteX),!,test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
 test_suite_info(SuiteX,TestID):- current_predicate(SuiteX/1), call(SuiteX,TestID).
@@ -657,7 +670,7 @@ as_ngrid(In,In1):- must_det_ll((change_bg_fg(In, _BG, _FG,In0), most_d_colors(In
 
 %change_bg_fg(In,_BG,_FG,In):-!.
 change_bg_fg(In,BG,FG,Mid):- 
-   black=BG,
+   get_black(Black),Black=BG,
    must_det_ll((available_fg_colors(Avails),
    unique_colors(In,Colors),subtract(Avails,Colors,CanUse),
    ((fail,last(CanUse,FG))->true;FG=wbg),subst001(In,BG,FG,Mid))),!.
@@ -728,15 +741,19 @@ some_test_info(TestID,test_suite([SuiteX])):- suite_tag(SuiteX,List),tasks_split
 
 matches(InfoS,InfoM):- member(InfoS,InfoM).
 
-
+:- abolish(muarc_tmp:test_info_cache,2).
 :- dynamic(muarc_tmp:test_info_cache/2).
-:- retractall(muarc_tmp:test_info_cache(_,_)).
-test_info(TestID,InfoS):- var(TestID),var(InfoS),!, pp(recreating(test_info)),all_arc_test_name(TestID),test_info(TestID,InfoS).
+
+ensure_test_info:- muarc_tmp:test_info_cache(_,_)-> true ; ( pp(recreating(test_info)),forall(all_arc_test_name(TestID),test_info(TestID,_))).
+test_info(TestID,InfoS):- nonvar(TestID),once(fix_test_name(TestID,FTestID,_)),TestID\=@=FTestID,!,test_info(FTestID,InfoS).
+test_info(TestID,InfoS):- var(TestID),var(InfoS), ensure_test_info,!, muarc_tmp:test_info_cache(TestID,InfoS).
 test_info(TestID,InfoS):- var(TestID),nonvar(InfoS),!,term_variables(InfoS,Vs),no_repeats(Vs,(test_info(TestID,InfoM),matches(InfoS,InfoM))).
 %test_info(TestID,InfoS):- \+ \+ muarc_tmp:test_info_cache(TestID,_),!,muarc_tmp:test_info_cache(TestID,InfoS).
-test_info(TestID,InfoS):- nonvar(TestID),once(fix_test_name(TestID,FTestID,_)),TestID\=@=FTestID,!,test_info(FTestID,InfoS).
-test_info(TestID,InfoS):- muarc_tmp:test_info_cache(TestID,InfoS),!.
-test_info(TestID,InfoS):- 
+test_info(TestID,InfoS):- nonvar(TestID),muarc_tmp:test_info_cache(TestID,InfoM),!,matches(InfoS,InfoM).
+test_info(TestID,InfoS):- muarc_tmp:test_info_cache(TestID,InfoS)*->true;test_info_recache(TestID,InfoS).
+
+test_info_recache(TestID,InfoS):- 
+ forall(retract(muarc_tmp:test_info_cache(TestID,_)),true),
  findall(Inf,
   (some_test_info(CTestID,Inf0),once((fix_test_name(CTestID,CFTestID,_),CFTestID=TestID)),
    repair_info(Inf0,Inf)),Info),
@@ -1036,7 +1053,8 @@ test_p2(P2):-
        once(ignore((grid_arg(G2,GR,Rest),print_side_by_side(red,G1,N1-Rest,_LW,GR,(?-(N2))),dash_chars)))))).
 
 grid_arg(G2,G2,[]):- is_grid(G2),!.
-grid_arg(GRest,GR,GRest):- arg(N,GRest,GR), is_grid(GR),!,setarg(N,GRest,grid),!.
+grid_arg(GRest,GR,GRest):- compound(GRest),arg(N,GRest,GR), is_grid(GR),!,setarg(N,GRest,grid),!.
+grid_arg(GRest,GR,expect_p2):- get_attr(GRest,expect_p2,GR).
 
 %:- style_check(-singleton).
 %whole(I,O):- is_group(I),length(I,1),I=O,!.
@@ -1220,7 +1238,7 @@ parc11(ExampleNum,OS,TName):-
 %color_sym(OS,[(black='°'),(blue='©'),(red='®'),(green=''),(yellow),(silver='O'),(purple),(orange='o'),(cyan= 248	ø ),(brown)]).
 color_sym(OS,C,C):- var(OS),!.
 color_sym(OS,C,Sym):- is_list(C),maplist(color_sym(OS),C,Sym),!.
-color_sym(_,black,' ').
+color_sym(_,Black,' '):- get_black(B),Black=B.
 color_sym(OS,C,Sym):- color_sym(OS,4,C,Sym).
 color_sym(_,_,C,Sym):- enum_colors(C),color_int(C,I),nth1(I,`ose=xt~+*zk>`,S),name(Sym,[S]).
 %color_sym(P*T,_,C,Sym):- enum_colors(C),color_int(C,I),S is P+I*T,name(Sym,[S]).

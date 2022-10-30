@@ -5,9 +5,9 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+
+:- include(kaggle_arc_header).
+
 :- autoload(library(http/html_write),[html/3,print_html/1]).
 
 wno(G):-
@@ -1008,7 +1008,7 @@ cpwui(hbg(C),G):- !, cpwui([bg(C),style('filter','brightness(150%)')],G).
 cpwui(hfg(C),G):- !, cpwui([C,style('brightness','200%')],G).
 cpwui(style(C),G):- !, format('<font style="~w">~@</font>',[C,bformatc_or_at(G)]).
 cpwui(style(N,V),G):- !, format('<font style="~w: ~w;">~@</font>',[N,V,bformatc_or_at(G)]).
-cpwui(C,G):- C==black,!, cpwui(style('opacity: 0.5;'),G).
+cpwui(C,G):- get_black(Black),C==Black,!, cpwui(style('opacity: 0.5;'),G).
 cpwui(C,G):- C==wbg,!,cpwui([black,black],G).
 
 cpwui(fg(C),G):- !, format('<font color="~w" style="font-weight: bold;">~@</font>',[C,bformatc_or_at(G)]),!.
@@ -1341,9 +1341,8 @@ int2glyph0(GN,Glyph):- GN > 255, GN2 is GN div 2, int2glyph0(GN2,Glyph).
 
 print_gw1(N):- print_gw1(color_print_ele,N),!.
 
-print_gw1(P2,N):- 
-
- wots(S,(((get_bgc(BG),is_color(BG), once((BG\==black-> call(P2,BG,'.');write_nbsp);write(',')));write_nbsp),!,
+print_gw1(P2,N):-  
+ wots(S,(((get_bgc(BG),is_color(BG), once(( ( \+ is_black(BG))-> call(P2,BG,'.');write_nbsp);write(',')));write_nbsp),!,
   (print_g1(P2,N);write('?')))),!, gws(S).
 
 gws(S):- write(S),!.
@@ -1371,8 +1370,8 @@ print_g1(CG):- print_g1(color_print_ele,CG).
 print_g1(P2,C):- C == ((+) - wbg),!,call(P2,wbg,(+)).
 print_g1(P2,C):- mv_peek_color(C,V),C\==V,!,print_g1(P2,V).
 print_g1(P2,C):- plain_var(C), write_nbsp,!, nop(( nobject_glyph(C,G),underline_print(print_g1(P2,G-G)))),!.
-print_g1(_ ,C):- C == black,!, write_nbsp.
-print_g1(_ ,C-CC):- C == black,CC == black,!,write_nbsp,!.
+print_g1(_ ,C):- get_black(Black),C == Black,!, write_nbsp.
+print_g1(_ ,C-CC):- get_black(Black), C == Black,CC == Black,!,write_nbsp,!.
 print_g1(P2,N):- is_grid(N),call(P2,magenta,'G'),!.
 print_g1(P2,C):- is_bg_color(C),get_bgc(BG),\+ attvar(C),!,call(P2,bg(BG),' '),!.
 print_g1(P2,N-C):- plain_var(N),print_g1(P2,C).
