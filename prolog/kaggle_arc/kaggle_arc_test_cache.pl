@@ -1016,6 +1016,7 @@ testcase(t('239be575')>tst+1,"
 %= fav(t('239be575'),[no_sol(i(complete),resize_grid(1,1,Color),incomplete),out_grid([1,1]),-[shape_match],-[rotation_match],-[mask_match],-[color_match],tt,training,detect_connectedness,associate_images_to_bools,'(6, 2)']).
 
 
+
 testcase(t('23b5c85d')>tst+0,"
 
    _____________________________________       _______

@@ -65,11 +65,8 @@ is_bg_color(C):- get_bgc(BG),C==BG,!.
 
 is_black_or_bg(BG):- is_black(BG)-> true; is_bg_color(BG).
 %is_black_or_bg(0).
-is_black(C):- get_black(B),C==B.
-get_black(B):- get_bgco(B),!.
-get_black(B):- luser_getval(black,B).
-%get_black(0).
-:- luser_default(user_black,black).
+is_black(C):- get_black(B),!,C==B.
+
 
 :- use_module(library(logicmoo/util_bb_frame)).
 set_fg_vars(Vars):-
@@ -192,8 +189,20 @@ is_color_dat(C):- atomic(C),color_code(C,W),!,C==W.
 :- export(set_bgc/1).
 :- nb_delete(grid_bgc).
 set_bgc(C):- atom(C),color_code(C,N),C\==N,!,set_bgc(N).
-set_bgc(C):- plain_var(C),nb_delete(grid_bgc).
+set_bgc(C):- plain_var(C),nb_delete(grid_bgc),fail.
 set_bgc(C):- luser_setval(grid_bgc,C),!.
+
+
+
+
+
+
+
+
+get_black(B):- get_bgco(B),!.
+get_black(B):- luser_getval(user_black,B).
+%get_black(0).
+:- luser_default(user_black,black).
 get_bgco(X):- luser_getval(grid_bgc,X),X\==[],is_color_dat(X),!.
 :- set_bgc(black).
 
@@ -416,13 +425,12 @@ is_point(P):- is_nc_point(P),!.
 is_point(P):- is_cpoint(P).
 
 
-is_points_list(P):- \+ is_list(P),!,fail.
-is_points_list([G|L]):- is_point(G),!,(L==[];is_points_list(L)),!.
+is_points_list(P):- is_list(P),P\==[],maplist(is_point,P).
 
-is_cpoints_list(P):- var(P),!,fail.
+is_cpoints_list(P):- is_list(P),P\==[],maplist(is_cpoint,P).
 %is_cpoints_list(P):- P==[],!.
 %is_cpoints_list(List):- is_list(List),!,is_cpoints_list(List).
-is_cpoints_list([G|L]):- is_cpoint(G),!,(L==[];is_cpoints_list(L)),!.
+%is_cpoints_list([G|L]):- is_cpoint(G),!,(L==[];is_cpoints_list(L)),!.
 
 enum_colors(OtherColor):- named_colors(Colors),!,member(OtherColor,Colors).
 enum_fg_colors(FG):- enum_colors(FG), is_fg_color(FG), \+ is_bg_color(FG), FG\==fg.

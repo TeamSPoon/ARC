@@ -246,7 +246,7 @@ i_pbox(VM,L_S,[size(H,V)|Sizes]):-
    maplist(=(N),Top), maplist(=(S),Bot), maplist(=(W),LLeft), maplist(=(E),RRight))),   
    i_pbox_detect(L_S,H,V,XSG,NSEW,In,OH,OV),
 
-  %pp(ogs_1(OH,OV,Inside,Border,Find)),   
+  %progress(ogs_1(OH,OV,Inside,Border,Find)),   
   once((localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints))),
   % \+ existingObject(VM,GOPoints),
   intersection(VM.points,GOPoints,Intersection), Intersection\==[],!,

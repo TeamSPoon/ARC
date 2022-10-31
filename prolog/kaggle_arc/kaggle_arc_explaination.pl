@@ -184,7 +184,7 @@ prefered(alone_dots).
 prefered(hv_line(_)).
 prefered(dg_line(_)).
 prefered_header(cc(Caps,_),Caps):- freeze(Caps,wbg == Caps).
-prefered_header(cc(Caps,_),Caps):- freeze(Caps,black == Caps).
+prefered_header(cc(Caps,_),Caps):- get_black(Black),freeze(Caps,Black == Caps).
 prefered_header(o(_,_,Caps),Caps):- freeze(Caps,i_bg_shapes == Caps).
 prefered_header(s(lf(_),0,Caps),Caps):- freeze(Caps,atom(Caps)).
 prefered_header(o(lf(_),0,Caps),Caps):- freeze(Caps,atom(Caps)).

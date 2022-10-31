@@ -485,7 +485,7 @@ nb_set_nth1(1,Row,C):- !, (Row==[]->true; nb_setarg(1,Row,C)).
 nb_set_nth1(N,[_|Row],C):- Nm1 is N -1, nb_set_nth1(Nm1,Row,C).
 
   
-:- decl_pt(prop_o,grid_edges(is_grid,grid)).
+%:- decl_pt(prop_o,grid_edges(is_grid,grid)).
 grid_edges(In,Edges):- 
   into_grid(In,Grid),
   get_edges(Grid,Top,Bottem,Left,Right),
