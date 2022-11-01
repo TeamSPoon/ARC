@@ -553,17 +553,24 @@ grid_hint_swap(IO,In,Out):-
 
 
 grid_hint_swap_io(IO,In,Out,Hint):-  grid_hint_recolor(IO,In,Out,Hint).
-grid_hint_swap_io(I-O,In,Out,rev(Hint)):- I\==O, grid_hint_recolor(O-I,Out,In,Hint).
+grid_hint_swap_io(I-O,In,Out,rev(Hint)):- I\==O, grid_hint_recolor(O-I,Out,In,Hint),
+ Hint \= mono(comp(_,o-i,value(=@=))).
 
-grid_hint_recolor(IO,In,Out,mono(Hint)):-  fail,
+grid_hint_recolor(IO,In,Out,Hint):- get_black(Black), grid_hint_io(cbg(Black),IO,In,Out,Hint).
+grid_hint_recolor(IO,In,Out,mono(Hint)):- % fail,
+ once((into_monogrid(In,InM),into_monogrid(Out,OutM))),
+  (In\==InM;Out\==OutM),grid_hint_io(cbg(wbg),IO,InM,OutM,Hint).
+grid_hint_recolor(IO,In,Out,color_ord(Hint)):- fail,
+ once((into_color_ord(In,InM),into_color_ord(Out,OutM))),
+  (In\==InM;Out\==OutM),grid_hint_io(cbg(bg),IO,InM,OutM,Hint).
+/*
+grid_hint_recolor(IO,In,Out,mono(Hint)):- % fail,
  once((into_monogrid(In,InM),into_monogrid(Out,OutM))),
   In\==InM,Out\==OutM,
-  grid_hint_io(monochrome,IO,InM,OutM,Hint), 
+  grid_hint_io(cbg(wbg),IO,InM,OutM,Hint), 
   \+ grid_hint_recolor1(IO,In,Out,_Hint).
+*/
 
-grid_hint_recolor(IO,In,Out,Hint):- grid_hint_recolor1(IO,In,Out,Hint).
-
-grid_hint_recolor1(IO,In,Out,Hint):-  grid_hint_io(cbg(black),IO,In,Out,Hint).
 
 
 %maybe_fail_over_time(Time,Goal):- fail_over_time(Time,Goal).
