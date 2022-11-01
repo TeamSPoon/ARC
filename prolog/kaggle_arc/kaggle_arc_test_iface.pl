@@ -656,7 +656,7 @@ print_test(TName):-
        format('~Ngridcase(~q,"\n~@").~n~n~n',[TestID>ExampleNum1,
             ((print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut),
                            nl,
-                           ignore(show_reduced_io(In1+Out1))))
+                           ignore(show_reduced_io_rarely(In1+Out1))))
            ]),
        nop((grid_hint_swap(i-o,In1,Out1))))))),format('~N'),
        write('%= '), parcCmt(TestID),!.

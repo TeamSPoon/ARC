@@ -72,11 +72,12 @@ compile_and_save_test(TestID):-
       detect_all_training_hints(TestID),
       nop(individuate_pairs_from_hints(TestID)),
       %train_test(TestID,train_using_io),  
-      test_deduce_shapes,
+      %test_deduce_shapes,
       save_supertest(TestID))))).
 
 
 
+%test_deduce_shapes:- !.
 test_deduce_shapes:- 
   forall(grid_to_obj(Grid,O),nop(ignore(once((global_grid(O,OO),print_side_by_side(Grid,OO),writeq(O)))))),
   get_hybrid_set(Set),
@@ -95,8 +96,10 @@ individuate_pair_here(TestID,Trn+N1,In,Out):-
   nop(train_for_objects_from_1pair(_{},TestID,[Trn,'i',N1,'o',N1],In,Out,_DictMid)).
 
 
-show_reduced_io(_):-!.
-%show_reduced_io(I+O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
+show_reduced_io_rarely(_):-!.
+show_reduced_io_rarely(IO):- show_reduced_io(IO).
+
+% show_reduced_io(I+O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
 show_reduced_io(I+O):-  
   reduce_grids_io(I+O,IOps,II+OO),!,
   must_det_ll(print_side_by_side(green,II,reduceIn(IOps),_,OO,reduceOut)),!.
@@ -171,23 +174,24 @@ color_subst([O|OSC],[I|ISC],[O-I|O2I]):-
   color_subst(OSC,ISC,O2I).
 color_subst(_OSC,_ISC,[]):-!.
 
-detect_pair_hints(TestID,ExampleNum,In,Out):- 
+detect_pair_hints(TestID,ExampleNum,In,Out):-  
+  dmsg(detect_pair_hints(TestID,ExampleNum)),
   assert_id_grid_cells(In), assert_id_grid_cells(Out),
-  detect_supergrid_tt(TestID,ExampleNum,In,Out,_TT),  
+  detect_supergrid_tt_pair(TestID,ExampleNum,In,Out,_TT),
   % guess_board(TT),
   %print(TT),
-  %ignore(show_reduced_io(In+Out)),
-  grid_hint_swap(i-o,In,Out),
+  %ignore(show_reduced_io(In+Out)),  
   dash_chars,!.
 
 guess_board(TT):- arc_setval(TT,guess_board,t).
 
-detect_supergrid_tt(TestID,ExampleNum,In0,Out0,TT):-
+detect_supergrid_tt_pair(TestID,ExampleNum,In0,Out0,TT):-
  must_det_ll(((
   dash_chars, dash_chars,
-  dmsg(detect_supergrid_tt(TestID,ExampleNum)),
+  dmsg(detect_supergrid_tt_pair(TestID,ExampleNum)),
   print_side_by_side(cyan,In0,task_in(ExampleNum),_,Out0,task_out(ExampleNum)),  
   show_reduced_io(In0+Out0),
+  grid_hint_swap(i-o,In0,Out0),
   nop((show_recolor(TestID,ExampleNum,In0,Out0,TT)))))),!,
  TT = _{} .
 
@@ -285,7 +289,7 @@ save_grid_hints:-  forall(arc_test_name(TestID),test_grid_hint(TestID)),
   listing(arc_test_property/3).
 
 %test_grid_hint:- get_current_test(TestID),test_grid_hint(TestID).
-test_grid_hint(TestID):- compute_and_show_test_hints(TestID).
+test_grid_hint(TestID):- compute_and_show_test_hints(TestID),!.
 
 
 
@@ -310,7 +314,7 @@ relax_hint(G,G):- (\+ compound(G)) -> !; true.
 relax_hint(rev(G),rev(GG)):- !, relax_hint(G,GG).
 relax_hint(mono(G),mono(GG)):- !, relax_hint(G,GG).
 relax_hint(cg(W,G),cg(W,GG)):- !, relax_hint(G,GG).
-relax_hint(G,GG):- duplicate_term(G,GG),arg(N,G,E),relax_arg(E,EE),nb_setarg(N,GG,EE).
+relax_hint(G,GG):- duplicate_term(G,GG),arg(N,G,E),relax_arg(E,Hint),nb_setarg(N,GG,Hint).
 %relax_hint(G,GG):- functor(G,F,A),functor(GG,F,A).
 
 relax_arg(E,C):- is_color(E),!,relax_color_arg(E,C).
@@ -376,9 +380,15 @@ ptv1(Color,T):- is_list(T), !, maplist(ptv1(Color),T).
 ptv1(_Color,_=T):- T==[],!.
 %ptv1(_Color,_=T):- compound(T), T = each_object(_),!.
 ptv1(_Color,_=T):- compound(T),compound_name_arguments(T,_,[A]),A==[],!.
-ptv1(C1+C2,T):- !, format('~N'),wots(S,writeq(T)),
+
+ptv1(C1C2,T):- needs_bold(T),!,bold_print(ptv11(C1C2,T)),!.
+ptv1(C1C2,T):- ptv11(C1C2,T),!.
+
+needs_bold(C):- compound(C),sub_term(E,C),compound(E),functor(E,ogs,_).
+
+ptv11(C1+C2,T):- !, format('~N'),wots(S,writeq(T)),
   (has_spec_value(T) -> color_print(C1,call(bold_print(write(S)))) ; color_print(C2,call(write(S)))).
-ptv1(Color,T):- format('~N'),(has_spec_value(T) -> color_print(cyan,call(bold_print(print_tree(T)))) ; color_print(Color,call(print_tree(T)))).
+ptv11(Color,T):- format('~N'),(has_spec_value(T) -> color_print(cyan,call(bold_print(print_tree(T)))) ; color_print(Color,call(print_tree(T)))).
 
 has_spec_value(T):- ground(T),!.
 has_spec_value(V):- var(V),!,fail.
@@ -409,10 +419,10 @@ compute_test_io_hints(TestID):-
     kaggle_arc(TestID,(trn+N),In,Out), 
      maybe_compute_test_io_hints(i-o,TestID,N,In,Out)).
 
-%maybe_compute_test_io_hints(_,TestID,N,_,_):- arc_test_property(TestID,_,_-N),!.
-maybe_compute_test_io_hints(IO,TestID,N,In,Out):-
-    ignore(add_xform_maybe(In,Out)),
-      forall(grid_hint_swap_io(IO,In,Out,Hint),add_hint(TestID,Hint,N)).
+    %maybe_compute_test_io_hints(_,TestID,N,_,_):- arc_test_property(TestID,_,_-N),!.
+    maybe_compute_test_io_hints(IO,TestID,N,In,Out):-
+        ignore(add_xform_maybe(In,Out)),
+          forall(grid_hint_swap_io(IO,In,Out,Hint),add_hint(TestID,Hint,N)).
 
 compute_test_oo_hints(TestID):- 
   forall(
@@ -544,17 +554,24 @@ grid_hint_swap(IO,In,Out):-
 
 
 grid_hint_swap_io(IO,In,Out,Hint):-  grid_hint_recolor(IO,In,Out,Hint).
-grid_hint_swap_io(I-O,In,Out,rev(Hint)):- I\==O, grid_hint_recolor(O-I,Out,In,Hint).
+grid_hint_swap_io(I-O,In,Out,rev(Hint)):- I\==O, grid_hint_recolor(O-I,Out,In,Hint),
+ Hint \= mono(comp(_,o-i,value(=@=))).
 
-grid_hint_recolor(IO,In,Out,mono(Hint)):-  fail,
+grid_hint_recolor(IO,In,Out,Hint):- get_black(Black), grid_hint_io(cbg(Black),IO,In,Out,Hint).
+grid_hint_recolor(IO,In,Out,mono(Hint)):- % fail,
+ once((into_monogrid(In,InM),into_monogrid(Out,OutM))),
+  (In\==InM;Out\==OutM),grid_hint_io(cbg(wbg),IO,InM,OutM,Hint).
+grid_hint_recolor(IO,In,Out,color_ord(Hint)):- fail,
+ once((into_color_ord(In,InM),into_color_ord(Out,OutM))),
+  (In\==InM;Out\==OutM),grid_hint_io(cbg(bg),IO,InM,OutM,Hint).
+/*
+grid_hint_recolor(IO,In,Out,mono(Hint)):- % fail,
  once((into_monogrid(In,InM),into_monogrid(Out,OutM))),
   In\==InM,Out\==OutM,
-  grid_hint_io(monochrome,IO,InM,OutM,Hint), 
+  grid_hint_io(cbg(wbg),IO,InM,OutM,Hint), 
   \+ grid_hint_recolor1(IO,In,Out,_Hint).
+*/
 
-grid_hint_recolor(IO,In,Out,Hint):- grid_hint_recolor1(IO,In,Out,Hint).
-
-grid_hint_recolor1(IO,In,Out,Hint):- get_black(Black), grid_hint_io(cbg(Black),IO,In,Out,Hint).
 
 
 %maybe_fail_over_time(Time,Goal):- fail_over_time(Time,Goal).
@@ -576,22 +593,25 @@ c_proportional(I,O,R):- proportional(I,O,R).
 %grid_hint_io(MC,IO,In,Out,find_ogs):- maybe_fail_over_time(1.2,find_ogs(_,_,In,Out)).
 %grid_hint_io(MC,IO,In,Out,comp(MC,IO,to_from(InO,OutO))):- disguise_grid(In,InO),disguise_grid(Out,OutO).
 
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs(Hint))):- all_ogs(In,Out,Hint).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs3(Hint))):-  all_ogs3(In,Out,Hint).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,rev_ogs3(Hint))):-  all_ogs3(Out,In,Hint).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,value('=@='))):- not_reversed(IO), In=@=Out.
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,reduce_grid(H,V,II))):- not_reversed(IO), once((grid_to_norm(In,_,II),grid_to_norm(Out,_,OO))),II=@=OO,grid_size(II,H,V).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,grav_rot(H,V,II))):- not_reversed(IO),  once((grav_rot(In,_,II),grav_rot(Out,_,OO))),   II=@=OO,grid_size(II,H,V).
-grid_hint_io(MC,IO,In,Out,     comp(MC,IO,Hint)):- not_reversed(IO), c_proportional(In,Out,Hint).
-%grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs_rev(Hint))):- all_ogs(Out,In,Hint).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):-  \+ arc_option(grid_size_only), grid_size(In,IH,IV),grid_size(Out,OH,OV), grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- grid_hint_io_1(MC,IO,In,Out,Hint).
+%grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- not_reversed(IO), c_proportional(In,Out,Hint).
+
+grid_hint_io_not_rev(In,Out,grav_rot(H,V,II)):- once((grav_rot(In,_,II),grav_rot(Out,_,OO))),II=@=OO,grid_size(II,H,V).
+grid_hint_io_not_rev(In,Out,reduce_grid(H,V,II)):- once((grid_to_norm(In,_,II),grid_to_norm(Out,_,OO))),II=@=OO,grid_size(II,H,V).
+
+grid_hint_io_1(_MC,_IO,In,Out,value('=@=')):- In=@=Out,!.
+grid_hint_io_1(_MC,IO,In,Out,V):- not_reversed(IO), (In=@=Out-> value('=@=')=V ; grid_hint_io_not_rev(In,Out,V)).
+grid_hint_io_1(_MC,_IO,In,Out,ogs_1_2(Hint)):- all_ogs_1_2(In,Out,Hint), Hint\==[],pp(Hint).
+grid_hint_io_1(_MC,_IO,In,Out,rev_ogs_1_2(Hint)):- all_ogs_1_2(Out,In,Hint).
+grid_hint_io_1(_MC,_IO,In,Out,ogs3(Hint)):- fail, all_ogs3(In,Out,Hint).
+%grid_hint_io_1(_MC,IO,In,Out,comp(MC,IO,ogs_rev(Hint))):- all_ogs_1_2(Out,In,Hint).
+
+grid_hint_io_1( MC,IO,In,Out,Hint):-  \+ arc_option(grid_size_only), grid_size(In,IH,IV),grid_size(Out,OH,OV), 
+  grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
+
 
 disguise_grid(I,O):- maplist(disguise_row,I,M),O=..[grid|M].
 disguise_row(I,O):- O=..[row|I].
-
-all_ogs(In,Out,XY):- %member(R,[strict,loose]),
-  once(( all_ogs1(In,Out,XY1),all_ogs2(In,Out,XY2),append_sets([XY1,XY2],XY))), nop(XY\==[]).
-   
 
 %grid_to_so(_II,Obj,In,_NotStrict):- Obj=keypad, In=[[X,X,X],[X,X,X],[X,X,X]].
 
@@ -691,28 +711,37 @@ count_C(Color,Flat,S+D):- member(Color,Flat),nonvar(Color),!,my_partition(cmatch
  
 % grid_to_obj(Grid,[colormass,fg_shapes(colormass)],Obj),print_side_by_side(Grid,Obj).
 
+trim_for_offset_1_1(II,In,OX,OY):- 
+  trim_to_rect(II,In), !, II\=@=In,
+  % print_side_by_side(II,In),
+  once(ogs_11(OX,OY,In,II);(OX=OY,OX=1)).
+
+all_ogs1(II,Out,XY):-
+  trim_for_offset_1_1(II,In,OX,OY),
+  findall(ogs(trim,whole,R,loc(XX,YY)),(maybe_ogs(R,X,Y,In,Out),XX is X-OX+1, YY is Y-OY+1),XY), nop(XY\==[]).
+
+all_ogs2(In,Out,XY):- findall(ogs(notrim,whole,R,loc(XX,YY)),maybe_ogs(R,XX,YY,In,Out),XY),nop(XY\==[]).
+
+all_ogs_1_2(In,Out,XY):- %member(R,[strict,loose]),
+  all_ogs1(In,Out,XY1),
+  all_ogs2(In,Out,XY2),append_sets([XY1,XY2],XY), nop(XY\==[]).
+   
 all_ogs3(Grid,Out,XY):-
-  findall(ogs(notrim,Obj,R,loc(XX,YY)),(grid_to_so(Grid,Out,Obj,In,R),maybe_ogs_color(R,XX,YY,In,Out)),XY).
+  findall(ogs(notrim,Obj,R,loc(XX,YY)),(grid_to_so(Grid,Out,Obj,In,R),maybe_ogs(R,XX,YY,In,Out)),XY).
 /*
 all_ogs3(Grid,Out,XY):-
   findall(notrim(Obj,R)-loc(XX,YY),((grid_to_so(Grid,Obj,In,R);grid_to_so(Out,Obj,In,R)),maybe_ogs_color(R,XX,YY,In,Out)),XY).
 */
 
-all_ogs1(II,Out,XY):-
-  once((trim_to_rect(II,In), II\=In, (once(ogs_11(OX,OY,In,II);(OX=OY,OX=1))))),
-  findall(ogs(trim,whole,R,loc(XX,YY)),(maybe_ogs(R,X,Y,In,Out),XX is X-OX+1, YY is Y-OY+1),XY), nop(XY\==[]).
-
-all_ogs2(In,Out,XY):- findall(ogs(notrim,whole,R,loc(XX,YY)),maybe_ogs(R,XX,YY,In,Out),XY),nop(XY\==[]).
-
 %maybe_ogs(R,X,Y,In,Out):-  find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R=loose).
-maybe_ogs(R,X,Y,In,Out):- maybe_ogs_color(R,X,Y,In,Out).
-maybe_ogs(R,X,Y,In,Out):- fail, maybe_ogs_mono(R,X,Y,In,Out), \+ maybe_ogs_color(_,X,Y,In,Out).
+maybe_ogs(rot(sameR,R),X,Y,In,Out):- maybe_ogs_color(R,X,Y,In,Out).
+maybe_ogs(rot(P2,R),X,Y,In,Out):- rotP2(P2),call(P2,In,IIN),In\==IIN,maybe_ogs_color(R,X,Y,In,Out).
 
 maybe_ogs_color(R,X,Y,In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
 maybe_ogs_color(R,X,Y,In,Out):- ogs_11(X,Y,In,Out),(find_ogs(X,Y,In,Out)->R=strict;R=loose).
 
-maybe_ogs_mono(color_ord(R),X,Y,In,Out):- once((into_color_ord(In,InM),into_color_ord(Out,OutM))), In\==InM,Out\==OutM, maybe_ogs_color(R,X,Y,InM,OutM).
-maybe_ogs_mono(mono(R),X,Y,In,Out):-       once((into_monogrid(In,InM),into_monogrid(Out,OutM))), !, In\==InM,Out\==OutM, maybe_ogs_color(R,X,Y,InM,OutM).
+%maybe_ogs_mono(color_ord(R),X,Y,In,Out):- once((into_color_ord(In,InM),into_color_ord(Out,OutM))), In\==InM,Out\==OutM, maybe_ogs_color(R,X,Y,InM,OutM).
+%maybe_ogs_mono(into_monogrid(R),X,Y,In,Out):-       once((into_monogrid(In,InM),into_monogrid(Out,OutM))), !, In\==InM,Out\==OutM, maybe_ogs_color(R,X,Y,InM,OutM).
 
   %grid_hint_iso(MC,IO,In,_Out,_IH,_IV,OH,OV,is_xy_columns):- once(has_xy_columns(In,_Color,OH,OV,)).
 

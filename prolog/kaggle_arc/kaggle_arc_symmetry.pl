@@ -629,6 +629,7 @@ repair_in_vm(P4,VM):-
 column_or_row(Grid,Color):- member(Row,Grid), maplist(==(Color),Row). 
 column_or_row(Grid,Color):- rot90(Grid,Grid0),!,member(Row,Grid0), maplist(==(Color),Row). 
 
+guess_to_unbind(Grid,Color):- nonvar(Color),!,nop(must_det_ll(sub_var(Color,Grid))).
 guess_to_unbind(Grid,Color):- guess_to_unbind1(Grid,Color), get_black(Black),
   (Color\==Black -> ( \+ column_or_row(Grid,Color),if_target(Out, \+ contains_color(Color,Out))) ; true).
   
@@ -649,6 +650,7 @@ contains_color(Color,Out):- unique_colors(Out,Colors),member(Color,Colors).
 
 guess_unbind_color(UnbindColor,Grid,RepairedResult):- 
    guess_to_unbind(Grid,UnbindColor), 
+   dmsg(unbind_color(UnbindColor)),
    unbind_color(UnbindColor,Grid,RepairedResult),  
    mass(RepairedResult,Mass),Mass>0,
    get_black(Black),
@@ -737,6 +739,7 @@ saliency_quality_of_change(Grid,RepairedResult,Quality):-
 count_variables(RepairedResult,Blanks):- append(RepairedResult,Flat),include(plain_var,Flat,Vars),length(Vars,Blanks).
 
 :- thread_local(remember_learning/3).
+learn_best_values(_VarsIn,VarsOut,_Goal):- ground(VarsOut),!. %,call(Goal).
 learn_best_values(VarsIn,VarsOut,Goal):- assert(remember_learning(VarsIn,VarsOut,Goal),Cl), undo(erase(Cl)), call(Goal).
 reinforce_best_values(ID,Code):- 
   get_current_test(TestID),
@@ -812,21 +815,28 @@ try_something(blur_least(B,Mix),Grid,RepairedResult):-
   is_trim_symmetric(RepairedResult).
 
 try_remove_color_fill_in_blanks(Grid,RepairedResultO,[Info,CodeNext]):- 
-  Info = guess_unbind_color(Black),
-  learn_best_values(Grid,Black,guess_unbind_color(Black,Grid,RepairedResult)), 
+  Info = guess_unbind_color(UnbindColor),
+  wdmsg(Info),
+  learn_best_values(Grid,UnbindColor,guess_unbind_color(UnbindColor,Grid,RepairedResult)), 
+  (var(RepairedResult)->unbind_color(UnbindColor,Grid,RepairedResult);true),
   CodeNext = now_fill_in_blanks(_),
   peek_target_or_else(Grid,Out),
+  %print_ss(g-Grid),
+  %writeq(rr-RepairedResult),
+  %best_of(Out,Info,CodeNext,RepairedResult,RepairedResultO),
   best_of(Out,Info,CodeNext,RepairedResult,RepairedResultO),
+  
   mass(RepairedResultO,Mass), Mass>0, !.
 
   
 now_fill_in_blanks(_,RepairedResult,RepairedResultO):- ground(RepairedResult),!,RepairedResultO=RepairedResult.
 now_fill_in_blanks(P2,RepairedResult,RepairedResultO):-   
   copy_term(RepairedResult,UnRepairedResult),
+
   select_p2_rot(P2,RepairedResult,Orig),
-  once(fill_in_blanks(P2,Orig,900,RepairedResult)),
+  once(fill_in_blanks(P2,Orig,90,RepairedResult)),
   RepairedResult \== UnRepairedResult,
-  RepairedResultO = RepairedResult.
+  RepairedResultO = RepairedResult,!.
 
 select_p2_rot(P2,RepairedResult,Orig):- rot_orig(P2,RepairedResult,Orig).
 select_p2_rot(P2,RepairedResult,Orig):- fail,
@@ -860,21 +870,13 @@ rotP2(rot90).
 rotP2(rot180).
 rotP2(rot270).
 
+
 fill_in_blanks(_P2,_Orig,_Limit,RepairedResult):- ground(RepairedResult),!.
-fill_in_blanks(_P2,Orig,Limit,RepairedResult):- Limit>800, Orig \=@= RepairedResult, 
-  Orig = RepairedResult,!,
+fill_in_blanks(_P2,Orig,Limit,RepairedResult):- Orig \=@= RepairedResult, Orig = RepairedResult,!,
   Limit2 is Limit-1,!,
   fill_in_blanks1(Orig,Limit2,RepairedResult).
-
-fill_in_blanks(P2,Orig,Limit,RepairedResult):-  Limit>870, G=RepairedResult,
-  arg(_,v([],[_],[_,_],[_,_,_]),L),arg(_,v([],[_],[_,_],[_,_,_]),R),append([L,GG,R],G),
-  G\==GG,
-  flipV(GG,FGG),
-  GG\=@=FGG,
-  GG=FGG,!, \+ maplist(single_color,GG),
-  fill_in_blanks(P2,Orig,Limit,RepairedResult).
-
-fill_in_blanks(P2,Orig,Limit,RepairedResult):-  Limit>850,
+/*
+fill_in_blanks(P2,Orig,Limit,RepairedResult):-  Limit>85,
   length(Repair,2),
   append([_,Repair,Right],RepairedResult), \+ (ground(Repair)), \+ maplist(plain_var,Repair),
   append([_,From,FRight],Orig), \+ maplist(plain_var,Orig),
@@ -882,18 +884,41 @@ fill_in_blanks(P2,Orig,Limit,RepairedResult):-  Limit>850,
   only_for_debug(copy_term(Repair,Repairing)),
   From=Repair, \+ maplist(single_color,From),
   maplist_until1(=,FRight,Right),
-  only_for_debug((nl,writeq(Repairing-->Repair),nl,nl)),
+  only_for_debug((nl,writeq(Repairing --> Repair),nl,nl)),
   Limit2 is Limit-1,!,
   fill_in_blanks(P2,Orig,Limit2,RepairedResult).
 
-fill_in_blanks(P2,Orig,Limit,RepairedResult):- Limit>0,
+fill_in_blanks(P2,Orig,Limit,RepairedResult):-  Limit>87, G=RepairedResult,
+  arg(_,v([],[_],[_,_],[_,_,_]),L),arg(_,v([],[_],[_,_],[_,_,_]),R),append([L,GG,R],G),
+  G\==GG,
+  flipV(GG,FGG),
+  GG\=@=FGG,
+  GG=FGG,!, \+ maplist(single_color,GG),
+  Limit2 is Limit-1,!,
+  fill_in_blanks(P2,Orig,Limit2,RepairedResult).
+fill_in_blanks(P2,Orig,Limit,RepairedResult):- 
+   member(L, RepairedResult),
+   is_list(L),
+   \+ ground(L),
+   \+ \+ (member(E,L), nonvar(E)),
+   copy_term(L,LL),
+   member(L, Orig),
+   L\=@=LL,
+  Limit2 is Limit-1,!,
+  fill_in_blanks(P2,Orig,Limit2,RepairedResult).  
+*/
+fill_in_blanks(P2,Orig,Limit,RepairedResult):- Limit>0, 
   Limit2 is Limit-1,
   fill_in_blanks1(Orig,Limit2,RepairedResult),
   rotP_L(P2_List),next_in_list(P2,P2_List,NextP2), 
   call(NextP2,RepairedResult,RepairedResult2),
   call(NextP2,Orig,Orig2), \+ maplist(single_color,Orig2),
   fill_in_blanks(NextP2,Orig2,Limit2,RepairedResult2).
+
+%fill_in_blanks(P2,Orig,Limit,RepairedResult):- X is random(4), fill_in_blanks_r(X,P2,Orig,Limit,RepairedResult),!.
 fill_in_blanks(_P2,_Orig,_Limit,_).
+
+
 
 single_color(List):- is_list(List), \+ \+ (member(C,List), \+ is_list(C)), !,maplist(=(C),List),!.
 single_color(List):- is_list(List), \+ \+ (member(C,List), is_list(C)), !,maplist(single_color,C),!.
@@ -903,19 +928,23 @@ single_color(C,V):- plain_var(V),!,C=V.
 single_color(C,V):- attvar(V), !, \+ V \=  C.
 single_color(C,C). 
 
-fill_in_blanks1(_Orig,_Limit,RepairedResult):- ground(RepairedResult),!.
-fill_in_blanks1(Orig,Limit,RepairedResult):-  Limit>0,
-  select(Repair,Orig,RestOrig),
-  From\=@=Repair, 
-  member(From,RepairedResult),
-  copy_term(Repair,Repairing),
-  From=Repair, \+ single_color(From),
-  only_for_debug((nl,writeq(Repairing-->Repair),nl,nl)),
+needs_member(From,RepairedResult):- member(From,RepairedResult), is_list(From), \+ ground(From), \+ single_color(From).
+needs_member(From,RepairedResult):- member(From,RepairedResult), is_list(From), \+ ground(From).
+
+
+
+fill_in_blanks1(Orig,Limit,RepairedResult):-  \+  ground(RepairedResult), must_det_ll(is_grid(RepairedResult)),Limit>0,  
+  needs_member(From,RepairedResult),
+  select(Repair,Orig,RestOrig), From\=@=Repair, 
+  only_for_debug(copy_term(From,Repairing)),
+  From=Repair,
+  only_for_debug((nl,writeq(Repairing --> From),nl,nl)),
   Limit2 is Limit-1,!,
   fill_in_blanks1(RestOrig,Limit2,RepairedResult).
 fill_in_blanks1(_Orig,_Limit,_RepairedResult).
 
-only_for_debug(_).
+only_for_debug(_):-!.
+only_for_debug(G):- call(G).
 
 is_fti_step(fourway).
 fourway(VM):-  

@@ -498,7 +498,7 @@ is_grid(G):- nonvar(G), \+ \+  quietly(is_grid_of(is_grid_cell,G)).
 fast_is_grid([[C|H]|R]):- is_list(H), is_list(R), \+ is_list(C), !, is_grid_cell(C).
 
 is_grid_of(P1,[[C|H]|R]):- 
-  call(P1,C),is_list(H),is_list(R),
+  call(P1,C),!,is_list(H),is_list(R),
   length([C|H],L),!,
   maplist(P1,H),!,
   maplist(is_row_len(L),R).

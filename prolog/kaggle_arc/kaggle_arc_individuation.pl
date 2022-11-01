@@ -402,6 +402,7 @@ individuator(i_colormass,[colormass]).
 %individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots, do_ending]).
 
 individuator(i_subtractions,[fg_subtractions([save_as_obj_group(i_mono_nsew),save_as_obj_group(i_nsew)])]).
+%individuator(i_abtractions,[fg_abtractions([save_as_obj_group(i_mono_nsew),save_as_obj_group(i_nsew)])]).
 individuator(i_nsew,[n_w,diamonds,all_lines,colormass,do_ending]).
 individuator(i_mono_nsew,[fg_shapes(i_nsew)]).
 individuator(i_mono_colormass,[fg_shapes([subshape_both(v,[n_w,all_lines,diamonds])])]).
@@ -903,7 +904,7 @@ get_individuated_cache(ROptions,OID,IndvS):- nonvar(ROptions),
   ground(OID), \+ luser_getval(individuated_cache,false), individuated_cache(OID,ROptions,IndvS),!.
 
 get_individuated_cache(ROptions,OID,IndvS):- nonvar(ROptions),
-  ground(OID), \+ luser_getval(individuated_cache,false), saved_group(individuate(OID,ROptions),IndvS),!.
+  ground(OID), \+ luser_getval(individuated_cache,false), saved_group(individuate(ROptions,OID),IndvS),!.
 
 individuate(VM):- individuate1(VM,VM.roptions,VM.grid,InC),set(VM.objs)=InC,!.
 individuate_c(VM):- individuate1(VM,complete,VM.grid,InC),set(VM.objs)=InC,!.
@@ -923,7 +924,7 @@ individuate1(VM,ROptions,GridIn,IndvS):-
   must_grid_to_gid(GridIn,OID), !,
   individuate2(VM,ROptions,OID,GridIn,IndvS),
   once((delistify_single_element(ROptions,NamedOpts),
-        save_grouped(individuate(OID,NamedOpts),IndvS))).
+        save_grouped(individuate(NamedOpts,OID),IndvS))).
 
 must_grid_to_gid(GridIn,OID):- must_det_ll(grid_to_gid(GridIn,OID)).
 
@@ -963,18 +964,18 @@ individuate_two_grids(ROptions,Grid1,Grid2,IndvSI,IndvSO):-
     collapsible_section(individuate_two_grids_once(two(OID1,OID2),NamedOpts,Grid1,Grid2,IndvSI,IndvSO))).
 
 /*
-individuate_two_grids_once(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO):- saved_group(individuate(OID1OID2,ROptions),IndvS),!,into_gio(IndvS,IndvSI,IndvSO),!.
+individuate_two_grids_once(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO):- saved_group(individuate(ROptions,OID1OID2),IndvS),!,into_gio(IndvS,IndvSI,IndvSO),!.
 individuate_two_grids_once(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO):- 
     individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO),
-    ignore((into_iog(IndvSI,IndvSO,IndvS),save_grouped(individuate(OID1OID2,ROptions),IndvS))).
+    ignore((into_iog(IndvSI,IndvSO,IndvS),save_grouped(individuate(ROptions,OID1OID2),IndvS))).
 */
 
 individuate_two_grids_once(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO):- 
   %wdmsg(individuate(ROptions,OID1OID2,IndvSI,IndvSO)),
-  (saved_group(individuate(OID1OID2,ROptions),IndvS)
+  (saved_group(individuate(ROptions,OID1OID2),IndvS)
     -> into_gio(IndvS,IndvSI,IndvSO)
     ; ((individuate_two_grids_now(OID1OID2,ROptions,Grid1,Grid2,IndvSI,IndvSO),
-         into_iog(IndvSI,IndvSO,IndvS),save_grouped(individuate(OID1OID2,ROptions),IndvS)))).
+         into_iog(IndvSI,IndvSO,IndvS),save_grouped(individuate(ROptions,OID1OID2),IndvS)))).
 
 
 :- retractall(is_why_grouped(_,_,_,_)).
@@ -1060,21 +1061,28 @@ individuate_two_grids_now_X(OID1OID2,ROptions,Grid1,Grid2,VM1,VM2,Grid1X,Grid2X,
   individuate2(VM2X,ROptions,OID2,Grid2X,Objs2X),!,
 
   into_iog(Objs1X,Objs2X,IndvS),
-  save_grouped(individuate(OID1OID2,ROptions),IndvS))).
+  save_grouped(individuate(ROptions,OID1OID2),IndvS))).
 
 individuate2(VM,[ROptions],OID,Grid,IndvS):- nonvar(ROptions), !, individuate2(VM,ROptions,OID,Grid,IndvS).
+
+
 individuate2(_VM,ROptions,OID,_GridIn,IndvS):- nonvar(OID), 
   get_individuated_cache(ROptions,OID,IndvS),!,
-  nop((length(IndvS,Len),progress(yellow,oid_cached(ROptions,OID,len(Len),'$VAR'(Len))))),!.
+  length(IndvS,Len),ignore((Len>0,pp(yellow,oid_cached(ROptions,OID,len(Len),'$VAR'(Len))))),
+  !.
 individuate2(VM,ROptions,OID,GridIn,IndvS):-
   do_individuate(VM,ROptions,GridIn,IndvS),!,
   fif(nonvar(OID),
    (retractall(individuated_cache(OID,ROptions,_)), 
-    length(IndvS,Len),progress(progress(yellow,oid_created(ROptions,OID,len(Len),'$VAR'(Len)))),
+    length(IndvS,Len),ignore((Len>0,atom(ROptions),pp(yellow,oid_created(ROptions,OID,len(Len),'$VAR'(Len))))),
     my_asserta_if_new(individuated_cache(OID,ROptions,IndvS)))),!.
 
-oid_created(ROptions,OID,len(_Len),IndvS):- saved_group(individuate(OID,ROptions),IndvS).
-oid_cached(ROptions,OID,len(_Len),IndvS):- saved_group(individuate(OID,ROptions),IndvS).
+oid_created(ROptions,OID,Len,IndvS):- oid_cached(ROptions,OID,Len,IndvS).
+
+oid_cached(ROptions,G,len(Len),IndvS):- must_grid_to_gid(G,OID), saved_group(individuate(ROptions,OID),IndvS),check_len(Len,IndvS).
+oid_cached(ROptions,G,len(Len),IndvS):- into_grid(G,OID), individuate(ROptions,OID,IndvS),check_len(Len,IndvS).
+check_len(Len,IndvS):- \+ \+ ((is_list(IndvS),number(Len),length(IndvS,LenS),LenS>=Len)),!.
+
 
 
 into_points_grid(GridIn,Points,Grid):-
@@ -1611,13 +1619,32 @@ two_rows(Grid,S1,R1,R2):-
   R2>R1+1,
   [S1|Row1]==Row2.
   
-
+/*
+Options[ARCParseScene] =
+{
+    "FormMultiColorCompositeObjects" -> True,               (*< Whether connected single-color objects should be combined to form multi-color composite objects. If set to Automatic, the OtherScene option will be used to help make more informed decisions. *)
+    "SingleObject" -> False,                                (*< Should all non-background pixels be treated as part of a single object, even if they are non-contiguous? *)
+    "OtherScene" -> Null,                                   (*< A parse of the scene this scene corresponds to. For example, if `scene` is an input scene, then OtherScene would be the output scene, and vice versa. If provided, we can use OtherScene to resolve some ambiguities about whether to chunk objects into composite objects. An association of the form <|"WithoutMultiColorCompositeObjects" -> ..., "WithMultiColorCompositeObjects" -> ...|> should be passed. *)
+    "SingleColorObjects" -> Automatic,                      (*< If the single color objects have already been determined, they can be passed in to save time. *)
+    "InferPropertiesThatRequireFullObjectList" -> True,     (*< Rank and RankInverse properties require that we have the full object list. If False, we won't infer those properties. *)
+    "FindOcclusions" -> True,                               (*< Whether we should consider possible occlusions when interpreting the scene. *)
+    "NotableSubImages" -> Automatic,                        (*< The list of images which are considered notable sub-images. If we find objects that contain these as sub-images, we should consider splitting that object up so that the sub-image is its own object. *)
+    "ExampleIndex" -> Missing["NotSpecified"],              (*< Given a list of example inputs/outputs, what example number is this scene? *)
+    "InputOrOutput" -> Missing["NotSpecified"],             (*< Is this an input scene or an output scene? *)
+    "SubdivideInput" -> False,                              (*< If {rowCount, columnCount} is passed in, we subdivide the input into a grid of objects and then try to find rules. e.g. 2dee498d *)
+    "Background" -> Automatic,                              (*< The background color of scenes. *)
+    "FollowDiagonals" -> Automatic,                         (*< Should diagonally adjacent pixels form a single object? *)
+    "CheckForGridsAndDividers" -> True                      (*< If we see things that look like grids/dividers, should we treat the specially, such as segmenting them into their own objects? *)
+};
+*/
 % =====================================================================
 is_fti_step(fg_subtractions).
 % =====================================================================
 %fg_subtractiond(Cell,Cell):- is_bg_color(Cell),!.
-fg_subtractiond(This,Target,Black):- This=Target,!,get_black(Black).
-fg_subtractiond(Cell,_,Cell):- get_black(Black),ignore(Cell=Black).
+fg_subtractiond(This,Target,Black):- \+ This \= Target,!,get_black(Black).
+fg_subtractiond(This,_,Black):-  get_black(Black), \+ This \= Black,!.
+%fg_subtractiond(This,Target,This):- get_black(Black), \+ Target \= Black,!.
+fg_subtractiond(This,_,This).
 %fg_subtractiond(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
 
 fg_subtractions(Subtraction,VM):-
@@ -1641,6 +1668,41 @@ fg_subtractions(Subtraction,VM):-
   ReColored = FoundObjs,
   %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
   print_grid(fg_subtractions(OID),NewGrid),
+  print_side_by_side(ReColored),
+  remCPoints(VM,ReColored),
+  remGPoints(VM,ReColored),
+  addInvObjects(VM,ReColored))))),!.
+
+
+% =====================================================================
+is_fti_step(fg_abtractions).
+% =====================================================================
+%fg_abtractiond(Cell,Cell):- is_bg_color(Cell),!.
+fg_abtractiond(This,Target,This):- get_black(Black), \+ Target \= Black,!.
+fg_abtractiond(_,_,Black):- get_black(Black).
+%fg_abtractiond(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
+
+fg_abtractions(Subtraction,VM):-
+ ignore((
+ VMGID = VM.gid,
+ \+ atom_contains(VMGID,'_fg_abtractiond'),
+ Grid = VM.grid_o,
+ other_grid(Grid,Target), 
+ is_grid(Target),!,
+ grid_size(Target,H,V),!,VM.h==H,VM.v==V,
+ maplist_ignore(fg_abtractiond,Grid,Target,NewGrid),mass(NewGrid,M),mass(Grid,M2),!,
+ M>4,M2\==M,Grid\==Target,NewGrid\==Grid,
+
+ %(M==0->maplist_ignore(fg_abtractiond,Target,Grid,NewGrid); MNewGrid=NewGrid),
+ must_det_ll((
+  var(OID),atomic_list_concat([VMGID,'_fg_abtractiond'],OID), asserta(is_grid_tid(NewGrid,OID)),
+  get_vm(VMS), 
+  %individuate2(_,Subtraction,OID,NewGrid,FoundObjs),
+  individuate(Subtraction,NewGrid,FoundObjs),
+  set_vm(VMS),
+  ReColored = FoundObjs,
+  %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
+  print_grid(fg_abtractions(OID),NewGrid),
   print_side_by_side(ReColored),
   remCPoints(VM,ReColored),
   remGPoints(VM,ReColored),
@@ -2010,7 +2072,7 @@ one_fti(VM,glyphic):-
   length(UPoints,ULen),!,
   ignore(( ULen=<15,
   using_alone_dots(VM,(maplist(make_point_object(VM,[birth(glyphic),iz(shaped)]),UPoints,IndvList), raddObjects(VM,IndvList),
-  save_grouped(individuate(VM.gid,glyphic),IndvList))))))).
+  save_grouped(individuate(glyphic,VM.gid),IndvList))))))).
 
 %make_point_object(VM,_Opts,Point,Indv):-
 %    member(Point=Indv, VM.allocated_points),!.
@@ -2031,7 +2093,7 @@ whole_into_obj(VM,Grid,Whole):-
   delete(Props0,sometimes_grid_edges(_),Props),
   fif(Len>0,
     (make_indiv_object(VM,[amass(Len),v_hv(H,V),birth(whole),loc(1,1),iz(image)|Props],Points,Whole),raddObjects(VM,Whole),
-       save_grouped(individuate(VM.gid,whole),[Whole]),assert_shape_lib(pair,Whole))),
+       save_grouped(individuate(whole,VM.gid),[Whole]),assert_shape_lib(pair,Whole))),
   localpoints(Grid,LPoints),
   length(LPoints,CLen),fif((CLen=<144,CLen>0),    
     (make_indiv_object(VM,[birth(whole),iz(shaped),loc(1,1)],LPoints,Whole2),raddObjects(VM,Whole2))).

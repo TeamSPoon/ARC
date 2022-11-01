@@ -31,6 +31,7 @@ solves_all_pairs(TestID,P,P2S):- kaggle_arc(TestID,tst+0,_,_),
    findall(try_p2(P2,In,Out),
      kaggle_arc(TestID,_,In,Out),AllTrue),maplist(call,AllTrue)),[P|P2S]).
 */
+/*
 test_easy:- clsmake, forall_count(arc_test_name(TestID),test_easy(TestID)).
 test_easy(TestID):- 
   solves_all_pairs(TestID,P2), dash_chars, dmsg(P2), print_test(TestID), dmsg(P2), dash_chars.
@@ -48,7 +49,7 @@ solves_all_pairs(TestID,P2):-
    try_p2(P2,TI,TO), 
    kaggle_arc(TestID,tst+0,EI,EO), 
    try_p2(P2,EI,EO).
-
+*/
         
 %test_easy_solve_by:- clsmake, fail.
 /*
@@ -88,6 +89,7 @@ easy_solve_by(TestID,flip_Once(_)):- get_black(Black),user:arc_test_property(Tes
 easy_solve_by(_TestID,P2):- easy_p2(P2).
 %easy_p2(flip_Once(_)).
 
+easy_p2(now_remove_color_fill_in_blanks(_Code)).
 easy_p2(simple_todolist([trim_blank_lines,grow_2])).
 easy_p2(simple_todolist(_)).
 easy_p2(P2):- easy0(_,P2).
@@ -104,11 +106,12 @@ do_simple_todolist([H|T],I,O):- !, do_simple_todolist(H,I,M),do_simple_todolist(
 do_simple_todolist(P2,I,O):- call(P2,I,O).
 
 
+
 if_hint(_).
-%easy0(trim_to_rect).
 %easy0(X):- easy_sol(X).
 %easy0(_,=).
 easy0(0,trim_hv_repeats).
+easy0(0,trim_to_rect).
 
 easy0(1,trim_blank_lines).
 easy0(1,gravity(s,1)):- if_hint(mass(i)==mass(o)).
@@ -120,6 +123,7 @@ easy0(5,increase_size_by_grid_mass). %ac0a08a4
 easy0(5,increase_size_by_color_count). %ac0a08a4
 easy0(5,grow_4):- if_hint(mass(i)*4==mass(o)).% 3af2c5a8
 easy0(5,grow_2). % 963e52fc
+easy0(5,grow_flip_2). % 963e52fc
 easy0(5,double_size).
 easy0(5,increase_size(N)):- if_hint(mass(i)*N==mass(o)), ignore(N=4).
 easy0(5,crop_by(_)).
@@ -186,10 +190,19 @@ increase_size_by_grid_mass(In,Out):- mass(In,Mass),increase_size(Mass,In,Out).
 increase_size_by_color_count(In,Out):- fg_color_count(In,Size),increase_size(Size,In,Out).
 
 blur_flipV(I,O):- duplicate_term(I,II), blur(flipV,II,O).
+blur_flipV(I,O):- duplicate_term(I,II), blur(flipV,II,O).
+
+
+
+%now_remove_color_fill_in_blanks([guess_unbind_color(black),P2],Grid,RepairedResultO):-
+%  now_fill_in_blanks(P2,Grid,RepairedResultO).
+now_remove_color_fill_in_blanks(Code,Grid,RepairedResultO):-
+ Code = [guess_unbind_color(black),_], try_remove_color_fill_in_blanks(Grid,RepairedResultO,Code).
 
 crop_by(HH/H,In,Out):- grid_size(In,H,V),between(1,H,HH),HH<H,clip(1,1,HH,V,In,Out).
 grow_4(In,Out):- flipV(In,FlipV),append(In,FlipV,Left),flipH(Left,Right),append_left(Left,Right,Out).
 grow_2(In,Out):- append_left(In,In,Out).
+grow_flip_2(In,Out):- flipH(In,FlipH),append_left(In,FlipH,Out).
 swap_two_colors(Blue,CurrentColor,In,Out):- enum_fg_colors(Blue),enum_fg_colors(CurrentColor),CurrentColor\==Blue, swap_colors(Blue,CurrentColor,In,Out).
 shrink_grid(I,O):- grid_to_norm(I,_,O),!.
 

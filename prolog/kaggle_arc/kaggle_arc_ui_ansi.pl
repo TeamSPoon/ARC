@@ -504,27 +504,34 @@ banner_lines(Color):- nl_if_needed,
   color_print(Color,'=============================================================='),nl,
   color_print(Color,'--------------------------------------------------------------'),nl.
 
-print_ss(A):- grid_footer(A,G,W),!,must_det_ll(print_grid(W,G)).
+print_ss(A):- ( \+ compound(A) ; \+ (sub_term(E,A), is_gridoid(E))),!, wdmsg(print_ss(A)).
+print_ss(A):- grid_footer(A,G,W),is_gridoid(G),!,must_det_ll(print_grid(W,G)).
 print_ss(A):- must_det_ll(( format('~N'), into_ss_string(A,SS),!,
   SS = ss(_,Lst), 
   forall(member(S,Lst),writeln(S)),format('~N'))).
 
 print_side_by_side([]):-!.
 print_side_by_side([A,B|Rest]):- \+ g_smaller_than(A,B),!,print_side_by_side(A,B),format('~N'),!,print_side_by_side(Rest).
-print_side_by_side([A|Rest]):- print_ss(A), print_side_by_side(Rest).
+print_side_by_side([A|Rest]):- print_ss(A), print_side_by_side(Rest),!.
 
-print_side_by_side(A,B):- g_smaller_than(A,B),!, print_ss(A),print_ss(B).
-print_side_by_side(A-WQS1,B-WQS2):- !, print_side_by_side(red,A,WQS1,_,B,WQS2),format('~N').
+
+g_nonvar(A,AA):- nonvar(A);nonvar(AA).
+
+%print_side_by_side(A-WQS1,B-WQS2):- g_nonvar(A,WQS1),g_nonvar(B,WQS2),!, print_side_by_side(red,A,WQS1,_,B,WQS2),!,format('~N').
+print_side_by_side(A,B):- g_smaller_than(A,B),!, print_ss(A),print_ss(B),!.
 print_side_by_side(A,B):- format('~N'),print_side_by_side(A,_,B),format('~N').
 
 grid_footer(G,_,_):- \+ compound(G),!,fail.
-grid_footer((GG-wqs(GF)),GG,GF):- nonvar(GF),!.
-grid_footer((GF-GG),[[]],GF):- GG==[], !.
-grid_footer((GG-GF),[[]],GF):- GG==[], !.
-grid_footer((GF-GG),GG,GF):- is_gridoid(GG), !.
-grid_footer((GG-GF),GG,GF):- is_gridoid(GG), !.
 grid_footer(print_grid(GF,GG),GG,GF).
 grid_footer(print_grid(_,_,GF,GG),GG,GF).
+grid_footer((GF-GG),[[]],GF):- GG==[], !.
+grid_footer((GG-GF),[[]],GF):- GG==[], !.
+grid_footer((GF-GG),GG,GF):- is_grid(GG), !.
+grid_footer((GG-GF),GG,GF):- is_grid(GG), !.
+grid_footer((GG-wqs(GF)),GG,GF):- nonvar(GF),!.
+grid_footer((GF-GG),GG,GF):- \+ is_gridoid(GF), !.
+grid_footer((GG-GF),GG,GF):- \+ is_gridoid(GF), !.
+grid_footer((GG-GF),GG,GF).
 
 
 g_smaller_than(A,B):- grid_footer(A,AA,_),!,g_smaller_than(AA,B).
@@ -539,7 +546,7 @@ gridoid_size(print_grid0(H,V,_,_),H,V):- nonvar(H),nonvar(V),!.
 gridoid_size(G,H,V):- compound_name_arity(G,print_grid,A),arg(A,G,GG),gridoid_size(GG,H,V).
 gridoid_size(G,H,V):- is_gridoid(G),!,grid_size(G,H,V).
 
-print_side_by_side(X,Y,Z):- g_out((nl,print_side_by_side0(X,Y,Z))).
+print_side_by_side(X,Y,Z):- g_out((nl,print_side_by_side0(X,Y,Z))),!.
 
 print_side_by_side0([],_,[]):-!.
 print_side_by_side0(C1-call(wqs(S1)),LW,C2-call(wqs(S2))):- nonvar(S1),!,
