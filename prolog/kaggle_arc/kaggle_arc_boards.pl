@@ -77,7 +77,6 @@ compile_and_save_test(TestID):-
 
 
 
-%test_deduce_shapes:- !.
 test_deduce_shapes:- 
   forall(grid_to_obj(Grid,O),nop(ignore(once((global_grid(O,OO),print_side_by_side(Grid,OO),writeq(O)))))),
   get_hybrid_set(Set),
@@ -289,7 +288,7 @@ save_grid_hints:-  forall(arc_test_name(TestID),test_grid_hint(TestID)),
   listing(arc_test_property/3).
 
 %test_grid_hint:- get_current_test(TestID),test_grid_hint(TestID).
-test_grid_hint(TestID):- compute_and_show_test_hints(TestID).
+test_grid_hint(TestID):- compute_and_show_test_hints(TestID),!.
 
 
 
@@ -314,7 +313,7 @@ relax_hint(G,G):- (\+ compound(G)) -> !; true.
 relax_hint(rev(G),rev(GG)):- !, relax_hint(G,GG).
 relax_hint(mono(G),mono(GG)):- !, relax_hint(G,GG).
 relax_hint(cg(W,G),cg(W,GG)):- !, relax_hint(G,GG).
-relax_hint(G,GG):- duplicate_term(G,GG),arg(N,G,E),relax_arg(E,EE),nb_setarg(N,GG,EE).
+relax_hint(G,GG):- duplicate_term(G,GG),arg(N,G,E),relax_arg(E,Hint),nb_setarg(N,GG,Hint).
 %relax_hint(G,GG):- functor(G,F,A),functor(GG,F,A).
 
 relax_arg(E,C):- is_color(E),!,relax_color_arg(E,C).
@@ -442,10 +441,22 @@ compute_test_ii_hints(TestID):-
 
 
 %ptv(T):- p_p_t_no_nl(T),!.
-ptv(T):- is_list(T), !, print_tree_no_nl(T).
+ptv(T):- 
+  copy_term(T,CT,Goals),Goals\==[],!,
+  \+ \+ 
+ ((numbervars(CT+Goals,10,_,[attvar(bind),singletons(true)]),
+  ptv(CT), write('\n/*\n'),ptv(Goals),write('\n*/'))).
+/*ptv(T):- copy_term(FF,FA,GF), GF \==[],
+  numbervars(FA+GF,0,_,[attvar(bind),singletons(true)]),
+  sort(GF,GS),write(' '),
+  locally(b_setval(arc_can_portray,nil),
+      ptv(FA)),format('~N'),
+  ignore((GS\==[], format('\t'),ppawt(attvars=GS),nl)),nl,!.
+*/
+ptv(T):- is_list(T), !, print_tree_no_nl(T),write(' ').
 ptv(T):-
   locally(b_setval('$portraying',[]), 
-   \+ \+  ((numbervars(T,0,_,[attvars(skip),singletons(true)]), must_det_ll((ptv(T,_)))))).
+   \+ \+  ((numbervars(T,0,_,[attvars(skip),singletons(true)]), must_det_ll((ptv(T,_)))))),write(' ').
 
 
 ptv(T,_):- var(T),!, ptv2(T).
@@ -480,10 +491,10 @@ min_unifier_e(A,B,C):- min_unifier(A,B,C),nonvar(C),!.
 %min_unifier_e(B,A,C):- compound(B),maybe_extract_values(B,BB), \+ maybe_extract_values(A,_), c_proportional(A,BB,AABB),must_min_unifier(AABB,B,C),!.
 min_unifier_e(_,_,_).
 
-some_min_unifier([A|List],Term):- min_unifier3(A,List,Term).
+some_min_unifier([A|List],Term):- some_min_unifier_3(A,List,Term).
 
-min_unifier3(A,List,A):- maplist('=@='(A),List),!.
-min_unifier3(A,[B|List],O):- must_min_unifier(A,B,C), min_unifier3(C,List,O).
+some_min_unifier_3(A,List,A):- maplist('=@='(A),List),!.
+some_min_unifier_3(A,[B|List],O):- must_min_unifier(A,B,C), some_min_unifier_3(C,List,O).
 
 is_a_min_unifier(A,B,C):- B==strict,A==loose,!,C=A.
 is_a_min_unifier(A,_,C):- A==fg,B\==bg,B\==wbg,!,C=A.
@@ -580,16 +591,13 @@ grid_hint_io(MC,IO,In,Out,comp(MC,IO,rev_ogs3(Hint))):-  all_ogs3(Out,In,Hint).
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,value('=@='))):- not_reversed(IO), In=@=Out.
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,reduce_grid(H,V,II))):- not_reversed(IO), once((grid_to_norm(In,_,II),grid_to_norm(Out,_,OO))),II=@=OO,grid_size(II,H,V).
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,grav_rot(H,V,II))):- not_reversed(IO),  once((grav_rot(In,_,II),grav_rot(Out,_,OO))),   II=@=OO,grid_size(II,H,V).
-grid_hint_io(MC,IO,In,Out,     comp(MC,IO,Hint)):- not_reversed(IO), c_proportional(In,Out,Hint).
+%grid_hint_io(MC,IO,In,Out,     comp(MC,IO,Hint)):- not_reversed(IO), c_proportional(In,Out,Hint).
 %grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs_rev(Hint))):- all_ogs(Out,In,Hint).
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):-  \+ arc_option(grid_size_only), grid_size(In,IH,IV),grid_size(Out,OH,OV), grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
 
 disguise_grid(I,O):- maplist(disguise_row,I,M),O=..[grid|M].
 disguise_row(I,O):- O=..[row|I].
 
-all_ogs(In,Out,XY):- %member(R,[strict,loose]),
-  once(( all_ogs1(In,Out,XY1),all_ogs2(In,Out,XY2),append_sets([XY1,XY2],XY))), nop(XY\==[]).
-   
 
 %grid_to_so(_II,Obj,In,_NotStrict):- Obj=keypad, In=[[X,X,X],[X,X,X],[X,X,X]].
 
@@ -671,7 +679,7 @@ grid_get_value(Grid,smallest_object,O):- grid_to_objs(Grid,Objs),smallest_first(
 grid_get_value(Grid, largest_object,O):- grid_to_objs(Grid,Objs),largest_first(Objs,SF),!,o_first(SF,O).
 grid_get_value(Grid,object_count,Count):- grid_to_objs(Grid,Objs),length(Objs,Count).
 
-grid_to_so(Grid,nth1Of(Nth1,Named,H,V,In),In,_NotStrict):- 
+grid_to_so(Grid,nth1Of(Nth1,Named,H,V),In,_NotStrict):- 
   grid_to_objs(Grid,Named,Objs),nth1(Nth1,Objs,Obj),object_grid(Obj,In),grid_size(In,H,V).
 grid_to_so(_Grid,Named,In,_NotStrict):- fail,
   Named=keypad(Color,Counts),
@@ -683,11 +691,26 @@ grid_to_so(_Grid,Out,o(Obj),In,R):- grid_to_so(Out,Obj,In,R).
 
 
 count_N(Color,Flat,Count,Var):- freeze(Var,count_C(Color,Flat,Count)).
-count_C(Color,Flat,S+D):- member(Color,Flat),!,my_partition(=(Color),Flat,Sames,Diffs),length(Sames,S),length(Diffs,D).
+count_C(Color,Flat,S+D):- member(Color,Flat),nonvar(Color),!,my_partition(cmatch(Color),Flat,Sames,Diffs),length(Sames,S),length(Diffs,D).
 
 
  
 % grid_to_obj(Grid,[colormass,fg_shapes(colormass)],Obj),print_side_by_side(Grid,Obj).
+
+trim_for_offset_1_1(II,In,OX,OY):- 
+  trim_to_rect(II,In), !, II\=@=In,
+  % print_side_by_side(II,In),
+  once(ogs_11(OX,OY,In,II);(OX=OY,OX=1)).
+
+all_ogs1(II,Out,XY):-
+  trim_for_offset_1_1(II,In,OX,OY),
+  findall(ogs(trim,whole,R,loc(XX,YY)),(maybe_ogs(R,X,Y,In,Out),XX is X-OX+1, YY is Y-OY+1),XY), nop(XY\==[]).
+
+all_ogs2(In,Out,XY):- findall(ogs(notrim,whole,R,loc(XX,YY)),maybe_ogs(R,XX,YY,In,Out),XY),nop(XY\==[]).
+
+all_ogs(In,Out,XY):- %member(R,[strict,loose]),
+  all_ogs1(In,Out,XY1),
+  all_ogs2(In,Out,XY2),append_sets([XY1,XY2],XY), nop(XY\==[]).
 
 all_ogs3(Grid,Out,XY):-
   findall(ogs(notrim,Obj,R,loc(XX,YY)),(grid_to_so(Grid,Out,Obj,In,R),maybe_ogs_color(R,XX,YY,In,Out)),XY).
@@ -696,15 +719,10 @@ all_ogs3(Grid,Out,XY):-
   findall(notrim(Obj,R)-loc(XX,YY),((grid_to_so(Grid,Obj,In,R);grid_to_so(Out,Obj,In,R)),maybe_ogs_color(R,XX,YY,In,Out)),XY).
 */
 
-all_ogs1(II,Out,XY):-
-  once((trim_to_rect(II,In), II\=In, (once(ogs_11(OX,OY,In,II);(OX=OY,OX=1))))),
-  findall(ogs(trim,whole,R,loc(XX,YY)),(maybe_ogs(R,X,Y,In,Out),XX is X-OX+1, YY is Y-OY+1),XY), nop(XY\==[]).
-
-all_ogs2(In,Out,XY):- findall(ogs(notrim,whole,R,loc(XX,YY)),maybe_ogs(R,XX,YY,In,Out),XY),nop(XY\==[]).
-
 %maybe_ogs(R,X,Y,In,Out):-  find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R=loose).
 maybe_ogs(R,X,Y,In,Out):- maybe_ogs_color(R,X,Y,In,Out).
 maybe_ogs(R,X,Y,In,Out):- fail, maybe_ogs_mono(R,X,Y,In,Out), \+ maybe_ogs_color(_,X,Y,In,Out).
+maybe_ogs(rot(P2,R),X,Y,In,Out):- rotP2(P2),call(P2,In,IIN),In\==IIN,maybe_ogs_color(R,X,Y,In,Out).
 
 maybe_ogs_color(R,X,Y,In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
 maybe_ogs_color(R,X,Y,In,Out):- ogs_11(X,Y,In,Out),(find_ogs(X,Y,In,Out)->R=strict;R=loose).
@@ -827,7 +845,8 @@ gather_chunks(Color,In,Chunks,X,Y,GX,GY,BorderNumsX,BorderNumsY):-
   clip(SX1,SY1,EX1,EY1,In,Clip),
   % print_grid((X,Y),Clip), pp(clipped(SX,SY,EX,EY,into(X,Y))),
   % once(Clip = [_,[_,Cell|_]|_];Clip = [[Cell|_]|_]),  
-  once(((Clip = [_,[_,C|_]|_];Clip = [[C|_]|_];(member(CR,Clip),member(C,CR))),C\==Color,C\==black,Cell=C);Cell=Clip),
+  get_black(Black),
+  once(((Clip = [_,[_,C|_]|_];Clip = [[C|_]|_];(member(CR,Clip),member(C,CR))),C\==Color,C\==Black,Cell=C);Cell=Clip),
   (GX =< X -> (Yi is Y + 1, Xi is 1) ; (Xi is X+1, Yi is Y)),
   gather_chunks(Color,In,Chunks,Xi,Yi,GX,GY,BorderNumsX,BorderNumsY).
 
