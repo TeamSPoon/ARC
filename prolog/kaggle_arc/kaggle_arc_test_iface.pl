@@ -588,7 +588,7 @@ new_current_test_info(WasTestID,TestID):-
 
 load_test_id_dyn(TestID):- 
   test_name_output_file(TestID,File),
-  load_file_dyn(File).
+  nop(load_file_dyn(File)).
 
 
 unload_file_dyn(File):- \+ exists_file(File), !.
@@ -612,10 +612,12 @@ new_test_pair(PairName):-
   luser_setval(test_pairname,PairName),
   luser_linkval(pair_rules, [rules]),
   retractall(is_shared_saved(PairName*_,_)),
+  retractall(is_shared_saved(PairName>_,_)),
   retractall(is_shared_saved(PairName,_)),
   retractall(is_unshared_saved(PairName*_,_)),
   retractall(is_unshared_saved(PairName,_)),
   retractall(is_grid_tid(PairName*_,_)),
+  retractall(is_grid_tid(PairName>_,_)),
   retractall(is_grid_tid(PairName,_)),!.
 
 human_test:- solve_test_trial(human).

@@ -6,6 +6,82 @@
 */
 :- include(kaggle_arc_header).
 
+kaggle_arc_pred(M,P):-  predicate_property(M:P,file(F)), \+ \+ atom_contains(F,'arc_'),
+  \+ predicate_property(M:P,imported_from(_)).
+  
+
+kaggle_arc_pred_types(M,P):-kaggle_arc_pred(M,P),copy_term(P,PP),narrow_argtypes(M,P),P\=@=PP.
+
+
+narrow_argtypes(M,P):- var(P),!,kaggle_arc_pred(M,P),narrow_argtypes(M,P).
+narrow_argtypes(_,P):- ground(P); \+ compound(P),!.
+narrow_argtypes(M,P):- term_variables(P,Vars), narrow_argtypes_until(10,M,P,Vars), !.
+
+:- nb_setval(learned_decls,[]).
+
+test_learn_decls:-
+ findall(P,kaggle_arc_pred_types(_,P),List),
+ once(nb_current(learned_decls,Was);Was=[]),
+ (Was==List-> ! ; (maplist(pp,List),nb_setval(learn_decls,List))).
+
+maybe_learn_decl(P):- ignore((compound(P), functor(P,F,A),functor(PP,F,A),P\==PP,decl_pt(P))).
+
+/*narrow_argtypes_until(Depth,M,(A,B),Vars):- !,
+  narrow_argtypes_until(Depth,M,A,Vars),
+  narrow_argtypes_until(Depth,M,B,Vars).*/
+%narrow_argtypes_until(Depth,M,P,Vars):- copy_term(P,PP), is_decl_pt(_,P),PP\=@=P,!,ignore(narrow_argtypes_until(Depth,M,P,Vars)).
+narrow_argtypes_until(Depth,M,P,Vars):- (Depth<0; ground(P) ; ground(Vars); \+ compound(P); skip_mod(M)),!, 
+  ignore((Depth<10,maybe_learn_decl(P))).
+narrow_argtypes_until(Depth,M,P,Vars):- copy_term(P,PP), 
+  narrow_using(_Whatevah,Depth,M,P,Vars),PP\=@=P,!,
+  ignore(narrow_argtypes_until(Depth,M,P,Vars)),maybe_learn_decl(P).
+narrow_argtypes_until(_Depth,_M,_P,_Vars).
+
+skip_mod(M):- M\==user,!.
+is_type_ch(F,1):- atom(F), atom_concat('is_',Rest,F), \+ atom_contains(Rest,'_').
+
+narrow_using(S,Depth,M,P,Vars):- var(S), 
+  findall(S,(clause(narrow_using(S,_,_,_,_),_),atom(S)),List),List\==[],!,
+  member(S,List),narrow_using(S,Depth,M,P,Vars).
+
+narrow_using(decls,_,_M,P,_Vars):- ignore(is_decl_pt(_,P)).
+
+narrow_using(names,_Depth,_M,P,_Vars):- compound(P),compound_name_arguments(P,F,[Type]),is_type_ch(F,1),Type=F,!.
+ 
+narrow_using(metapreds,Depth,M,P,Vars):- 
+ ignore((  
+  predicate_property(M:P,meta_predicate(MP)),
+  compound_name_arguments(MP,_,MArgs),
+  compound_name_arguments(P,_,PArgs),
+  Depth2 is Depth-1,
+  maplist(maybe_label_args(Depth2,Vars,M),MArgs,PArgs))).
+
+
+narrow_using(clauses,Depth,M,P,Vars):-  compound(P), \+ ground(P),
+ functor(P,F,A), functor(PP,F,A),
+ predicate_property(M:PP,number_of_rules(N)),N>0,!,
+  ignore((
+
+ clause(M:PP,BodyC),
+ compound(BodyC),
+ \+ \+ ((sub_term(BC,BodyC),compound(BC),is_decl_pt(_,BC))),
+ once((
+ 
+ compound_name_arguments(PP,_,NVArgs), 
+ include(nonvar,NVArgs,Args),
+ length(Args,L),length(Vs,L),
+ subst_2L(Args,Vs,PP+BodyC,SPP+SBodyC),
+ P = SPP,
+ nop(pp((clause(M:PP,BodyC), (SPP:-SBodyC)))))),
+ Depth2 is Depth-1,
+ ignore(narrow_argtypes_until(Depth2,M,SBodyC,Vars)))).
+
+
+maybe_label_args(_Depth,_Vars,_M,(+),_).
+maybe_label_args(_Depth,_Vars,_M,(-),_).
+maybe_label_args(_Depth,_Vars,_M,(?),_).
+maybe_label_args( Depth, Vars, M, _,P):- ignore(narrow_argtypes_until(Depth,M,P,Vars)).
+
 
 relax_color_arg(Black,bg):- is_black(Black),!.
 relax_color_arg(E,fg):- is_color(E),!.
@@ -197,21 +273,25 @@ set_bgc(C):- luser_setval(grid_bgc,C),!.
 
 
 
-
+:- decl_pt(get_black(is_color)).
 
 get_black(B):- get_bgco(B),!.
 get_black(B):- luser_getval(user_black,B).
 %get_black(0).
 :- luser_default(user_black,black).
+
+:- decl_pt(get_bgco(is_color)).
 get_bgco(X):- luser_getval(grid_bgc,X),X\==[],is_color_dat(X),!.
 :- set_bgc(black).
 
+:- decl_pt(get_bgc(is_color)).
 get_bgc(X):- get_bgco(X),!.
 get_bgc(X):- get_black(X).
 
 
 is_color_no_bgc(X):- \+ is_bg_color(X), is_color(X).
 
+:- decl_pt(is_bg_or_var(is_color,is_color)).
 is_bg_or_var(_,X):- free_cell(X),!.
 is_bg_or_var(BG,X):- X==BG.
 

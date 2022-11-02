@@ -20,6 +20,7 @@ guess_bgc(Grid,BGC):- most_d_colors(Grid,[BGC|_],_).
 9=edges
 D=fill_area
 */
+:- decl_pt(most_d_colors(grid,color,grid)).
 most_d_colors(Grid,ColorO,GridNM):-
   %trace,
  

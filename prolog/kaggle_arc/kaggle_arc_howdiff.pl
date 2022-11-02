@@ -1108,8 +1108,8 @@ proportional(G1,G2,Out):- unused_proportion(G1,G2,Out),!.
 %proportional(E1,E2,E1):- E1=@=E2,!.
 
 
-proportional(Obj2,Obj1,Out):- % is_object(Obj1),!,
-  (decl_pt(prop_g,P1P2);decl_pt(prop_o,P1P2)), 
+proportional(Obj2,Obj1,Out):- 
+  (is_object(Obj1) -> enum_obj_props(P1P2) ; enum_grid_props(P1P2)),
   P1P2=..[P2,P1|Lst],
   once((
   once((once((on_x_log_and_fail(call(P1,Obj1)),
@@ -1135,7 +1135,8 @@ proportional(L1,L2,Diff):- locally(nb_setval(diff_porportional,t),diff2_terms(L1
 grid_props(Obj1,OOO):- % \+ arc_option(grid_size_only), 
  %to_assertable_grid(Obj1,AG),data_type(Obj1,DT),
  % wots(S,print_grid(Obj1)),
- findall(Prop, (((decl_pt(prop_g,P1P2);decl_pt(prop_o,P1P2)), 
+ findall(Prop, ((
+  enum_grid_props(P1P2),
   P1P2=..[P2,P1|Lst], once((on_x_log_and_fail(call(P1,Obj1)))),
     length(Lst,Len), length(NewLst1,Len), 
     once((on_x_log_and_fail(apply(P2,[Obj1|NewLst1])))),
@@ -1144,7 +1145,8 @@ grid_props(Obj1,OOO):- % \+ arc_option(grid_size_only),
    OOO = ListO,
    !.
 
-
+enum_grid_props(P1P2):- no_repeats(P1P2,(is_decl_pt(prop_g,P1P2))).
+enum_obj_props(P1P2):- no_repeats(P1P2,(is_decl_pt(prop_o,P1P2))).
 
 
 
@@ -1275,9 +1277,10 @@ prefer_grid(G):- is_object_or_grid(G).
 :- decl_pt(prop_g,y_rows(is_grid,set)).
 :- decl_pt(prop_g,colors(prefer_grid, set)).
 
-:- decl_pt(prop_g,center_term(is_object,loc)).
-:- decl_pt(prop_g,loc_term(is_object,loc)).
+:- decl_pt(prop_o,center_term(is_object,loc)).
+:- decl_pt(prop_o,loc_term(is_object,loc)).
 
+:- assertz_if_new((is_decl_pt(prop_o, P):- is_decl_pt(prop_g, P))).
 
 
 

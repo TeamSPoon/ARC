@@ -89,7 +89,8 @@ easy_solve_by(TestID,flip_Once(_)):- get_black(Black),user:arc_test_property(Tes
 easy_solve_by(_TestID,P2):- easy_p2(P2).
 %easy_p2(flip_Once(_)).
 
-easy_p2(now_remove_color_fill_in_blanks(_Code)).
+easy_p2(blur_rot90).
+%easy_p2(now_remove_color_fill_in_blanks(_Code)).
 easy_p2(simple_todolist([trim_blank_lines,grow_2])).
 easy_p2(simple_todolist(_)).
 easy_p2(P2):- easy0(_,P2).
@@ -189,7 +190,7 @@ increase_size_by_grid_mass(In,Out):- mass(In,Mass),increase_size(Mass,In,Out).
 %b91ae062
 increase_size_by_color_count(In,Out):- fg_color_count(In,Size),increase_size(Size,In,Out).
 
-blur_flipV(I,O):- duplicate_term(I,II), blur(flipV,II,O).
+blur_rot90(I,O):- duplicate_term(I,II), unbind_color(red,II,M), blur(rot90,M,O).
 blur_flipV(I,O):- duplicate_term(I,II), blur(flipV,II,O).
 
 
@@ -197,7 +198,10 @@ blur_flipV(I,O):- duplicate_term(I,II), blur(flipV,II,O).
 %now_remove_color_fill_in_blanks([guess_unbind_color(black),P2],Grid,RepairedResultO):-
 %  now_fill_in_blanks(P2,Grid,RepairedResultO).
 now_remove_color_fill_in_blanks(Code,Grid,RepairedResultO):-
- Code = [guess_unbind_color(black),_], try_remove_color_fill_in_blanks(Grid,RepairedResultO,Code).
+ Code = [guess_unbind_color(red),_], try_remove_color_fill_in_blanks(Grid,RepairedResultO,Code).
+
+now_remove_color_fill_in_blanks(Code,Grid,RepairedResultO):-
+ Code = [blur_rot90], blur_rot90(Grid,RepairedResultO).
 
 crop_by(HH/H,In,Out):- grid_size(In,H,V),between(1,H,HH),HH<H,clip(1,1,HH,V,In,Out).
 grow_4(In,Out):- flipV(In,FlipV),append(In,FlipV,Left),flipH(Left,Right),append_left(Left,Right,Out).

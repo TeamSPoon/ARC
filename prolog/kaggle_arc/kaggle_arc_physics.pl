@@ -113,6 +113,12 @@ call_rot([H|T],I,O):- !,
   call_rot(T,M,O).
 call_rot(T,I,O):- call(T,I,O).
 
+call_rot_c([],I,I):- !.
+call_rot_c([H|T],I,O):- !,
+  call_rot(H,I,M),I\=@=M,
+  call_rot_c(T,M,O).
+call_rot_c(T,I,O):- call(T,I,O),I\=@=O.
+
 grav_mass(Grid,sameR):- iz(Grid,hv_symmetric),!.
 grav_mass(Grid,RotOut):- v_hv(Grid,H,V), !, tips_to_rot(Grid,H,V,RotOut,_).
 
@@ -147,7 +153,7 @@ gravity_1_n_0([Row1,Row2|Grid],GridNew):- nth1(Col,Row1,E1),nth1(Col,Row2,E2),
   gravity_1_n_0([Row1Mod,Row2Mod|Grid],GridNew).
 gravity_1_n_0([Row1|Grid],[Row1|GridNew]):- gravity_1_n_0(Grid,GridNew).
 
-
+:- decl_pt(any_xform(p2,prefer_grid,prefer_grid)).
 any_xform(Rot90,Any,NewAny):- 
   cast_to_grid(Any,RealGrid,UnconvertClosure),!,
   grid_xform(Rot90,RealGrid,NewRealGrid),

@@ -144,8 +144,7 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
       show_pair_diff_code(IH,IV,  OH, OV,individuated(ROptions,ID1),individuated(ROptions,ID2),PairName,InC,OutC)),!),
     luser_setval(no_rdot,false)).
 
-input_objects_first(TestID):- get_black(Black),
-  arc_test_property(TestID,common,rev(comp(cbg(Black),o-i,containsAll)),containsAll(o-i)).
+
 
 % =========================================================
 
@@ -647,7 +646,7 @@ individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
    object_glyph(OnlyNew,Glyph),
    loc(OnlyNew,X,Y),
    atomic_list_concat([GID,'_',Glyph,'_sub'],NewGID),
-   asserta(is_grid_tid(Grid,NewGID)),
+   assert_grid_gid(Grid,NewGID),
    set_vm(VM),!,
    with_global_offset(X,Y,
     individuate7(_,NewGID,SubProgram,Grid,WasInside)),!,
@@ -1546,7 +1545,7 @@ bg_shapes(Shape,VM):-
   Orig = VM.grid,
   into_monogrid(Orig,NewGrid),
   must_be_free(OID),
-  atomic_list_concat([VM.gid,'_bg_shaped'],OID2), asserta(is_grid_tid(NewGrid,OID2)),  
+  atomic_list_concat([VM.gid,'_bg_shaped'],OID2), assert_grid_gid(NewGrid,OID2),  
   get_vm(VMS),
   %map_pred(bg_shaped,FoundObjs,ReColored),
   individuate2(_,Shape,OID,NewGrid,FoundObjs),
@@ -1593,7 +1592,7 @@ fg_shapes(Shape,VM):-
   BGCs = [Black,wbg,bg|Silvers],
   mapgrid(fg_shaped(BGCs),Grid,NewGrid),
   var(OID),
-  atomic_list_concat([VM.gid,'_fg_shaped'],OID), asserta(is_grid_tid(NewGrid,OID)),
+  atomic_list_concat([VM.gid,'_fg_shaped'],OID), assert_grid_gid(NewGrid,OID),
   get_vm(VMS), 
   individuate2(_,Shape,OID,NewGrid,FoundObjs),
   set_vm(VMS),
@@ -1660,7 +1659,7 @@ fg_subtractions(Subtraction,VM):-
 
  %(M==0->maplist_ignore(fg_subtractiond,Target,Grid,NewGrid); MNewGrid=NewGrid),
  must_det_ll((
-  var(OID),atomic_list_concat([VMGID,'_fg_subtractiond'],OID), asserta(is_grid_tid(NewGrid,OID)),
+  var(OID),atomic_list_concat([VMGID,'_fg_subtractiond'],OID), assert_grid_gid(NewGrid,OID),
   get_vm(VMS), 
   %individuate2(_,Subtraction,OID,NewGrid,FoundObjs),
   individuate(Subtraction,NewGrid,FoundObjs),
@@ -1695,7 +1694,7 @@ fg_abtractions(Subtraction,VM):-
 
  %(M==0->maplist_ignore(fg_abtractiond,Target,Grid,NewGrid); MNewGrid=NewGrid),
  must_det_ll((
-  var(OID),atomic_list_concat([VMGID,'_fg_abtractiond'],OID), asserta(is_grid_tid(NewGrid,OID)),
+  var(OID),atomic_list_concat([VMGID,'_fg_abtractiond'],OID), assert_grid_gid(NewGrid,OID),
   get_vm(VMS), 
   %individuate2(_,Subtraction,OID,NewGrid,FoundObjs),
   individuate(Subtraction,NewGrid,FoundObjs),

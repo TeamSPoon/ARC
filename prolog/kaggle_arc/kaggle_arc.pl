@@ -51,15 +51,19 @@ my_assertz_if_new(HB):- my_assertz_if_new(HB:-true).
 :- multifile(decl_sf/1).
 :- discontiguous(decl_sf/1).
 :- dynamic(decl_sf/1).
-decl_sf(G):- ground(G), !, my_assertz_if_new(decl_sf(G)).
+:- dynamic(is_decl_sf/1).
+decl_sf(G):- ground(G), !, my_assertz_if_new(is_decl_sf(G)).
 :- multifile(decl_pt/2).
 :- discontiguous(decl_pt/2).
-:- dynamic(decl_pt/2).
+%:- dynamic(decl_pt/2).
 :- multifile(decl_pt/1).
 :- discontiguous(decl_pt/1).
-:- dynamic(decl_pt/1).
-decl_pt(G):- ground(G), !, my_assertz_if_new(decl_pt(plain,G)).
-decl_pt(How,G):- nonvar(How),ground(G), !, my_assertz_if_new(decl_pt(How,G)).
+%:- dynamic(decl_pt/1).
+
+:- dynamic(is_decl_pt/2).
+
+decl_pt(G):- ground(G), !, my_assertz_if_new(is_decl_pt(plain,G)).
+decl_pt(How,G):- nonvar(How),nonvar(G), !, my_assertz_if_new(is_decl_pt(How,G)).
 :- set_prolog_flag(color_term,true).
 :- set_stream(current_output, tty(true)).
 :- set_stream(user_output, tty(true)).
@@ -1072,5 +1076,5 @@ ansi_startup:-
 
 :- luser_setval(cmd,test_easy_solve_by).
 :- luser_setval(individuated_cache,true).
-
+:- gen_gids.
 

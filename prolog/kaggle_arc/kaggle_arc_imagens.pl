@@ -201,18 +201,20 @@ searchable(Shape,Searchable):- object_grid(Shape,Grid), constrain_grid(f,_CheckT
 is_fti_step(into_monochrome).
 % =====================================================================
 into_monochrome(VM):- Grid = VM.grid,
-  into_monochrome(Grid,NewGrid),!,
+  into_monochrome2(Grid,NewGrid),!,
   set(VM.grid) = NewGrid,  
   print_side_by_side(silver,Grid,into,_,NewGrid,monochrome).
 
-into_monochrome(NoBlack,Mono):-  get_black(Black),
+into_monochrome(Color,Mono):- called_gid('_mono', into_monochrome2, Color,Mono),!.
+
+into_monochrome2(NoBlack,Mono):-  get_black(Black),
   colors_count_black_first(NoBlack,CCBF), 
     CCBF=[cc(Black,0),cc(BGC,_)|_],!, 
-  into_monochrome(fg,BGC,NoBlack,Mono).
-into_monochrome(Color,Mono):- get_black(Black),into_monochrome(fg,Black,Color,Mono).
+  into_monochrome4(fg,BGC,NoBlack,Mono).
+into_monochrome2(Color,Mono):- get_black(Black),into_monochrome4(fg,Black,Color,Mono).
 
 
-into_monochrome(FG,BG,Color,Mono):- into_monochrome(from_monochrome4(FG,BG),Color,Mono).
+into_monochrome4(FG,BG,Color,Mono):- into_monochrome3(from_monochrome4(FG,BG),Color,Mono).
 
 
 from_monochrome4(_FG,_BG,Color,Mono):- is_bg_color(Color), decl_bg_color(Mono),!,cv(Mono,Color).
@@ -223,17 +225,20 @@ from_monochrome4(FG,_BG,Color,Mono):- is_fg_color(Color), apply_recolor(FG,Color
 apply_recolor(Izer,Color,Mono):- 
   (is_color(Izer)->copy_term(Izer,Mono);( \+ missing_arity(Izer,2) -> call(Izer,Color,Mono); ( \+ missing_arity(Izer,1) -> call(Izer,Mono)))).
 
-into_monochrome(MonoP2,Color,Mono):- is_color(Color),call(MonoP2,Color,Mono),!.
-into_monochrome(_MonoP2,Color,Mono):- is_bg_color(Color), decl_bg_color(Mono),!, cv(Mono,Color).
-into_monochrome(_MonoP2,Color,Mono):- is_fg_color(Color), decl_many_fg_colors(Mono),!, cv(Mono,Color).
-into_monochrome(_MonoP2,Color,Mono):- \+ compound(Color), Mono=Color.
-into_monochrome(MonoP2,Color,Mono):- is_group(Color),!,mapgroup(into_monochrome(MonoP2),Color,Mono).
-into_monochrome(MonoP2,Color,Mono):- is_grid(Color),!,mapgrid(cell_into_monochrome(MonoP2),Color,Mono).
-into_monochrome(MonoP2,Color,Mono):- is_list(Color),!,maplist(into_monochrome(MonoP2),Color,Mono).
-into_monochrome(MonoP2,I,O):- compound(I), !, compound_name_arguments(I,F,IA), 
-  maplist(into_monochrome(MonoP2),IA,OA), compound_name_arguments(O,F,OA).
-into_monochrome(_MonoP2,I,I).
-cell_into_monochrome(MonoP2,I,O):- into_monochrome(MonoP2,I,O).
+
+into_monochrome3(MonoP2,Color,Mono):- into_mono3(MonoP2,Color,Mono).
+
+into_mono3(MonoP2,Color,Mono):- is_color(Color),call(MonoP2,Color,Mono),!.
+into_mono3(_MonoP2,Color,Mono):- is_bg_color(Color), decl_bg_color(Mono),!, cv(Mono,Color).
+into_mono3(_MonoP2,Color,Mono):- is_fg_color(Color), decl_many_fg_colors(Mono),!, cv(Mono,Color).
+into_mono3(_MonoP2,Color,Mono):- \+ compound(Color), Mono=Color.
+into_mono3(MonoP2,Color,Mono):- is_group(Color),!,mapgroup(into_mono3(MonoP2),Color,Mono).
+into_mono3(MonoP2,Color,Mono):- is_grid(Color),!,mapgrid(cell_into_monochrome(MonoP2),Color,Mono).
+into_mono3(MonoP2,Color,Mono):- is_list(Color),!,maplist(into_mono3(MonoP2),Color,Mono).
+into_mono3(MonoP2,I,O):- compound(I), !, compound_name_arguments(I,F,IA), 
+  maplist(into_mono3(MonoP2),IA,OA), compound_name_arguments(O,F,OA).
+into_mono3(_MonoP2,I,I).
+cell_into_monochrome(MonoP2,I,O):- into_mono3(MonoP2,I,O).
 
 /*
 into_monochrome(FGC,BGC,Color,Mono):- is_points_list(Color),!,maplist(points_into_monochrome(FGC,BGC),Color,Mono).
@@ -336,13 +341,14 @@ pad_sides(Fill,Row):- my_append([_|Fill],[_],Row).
 pad_sides(P1,Fill,Row):- call(P1,C1),call(P1,C2),my_append([C1|Fill],[C2],Row).
 pad_sides(C1,Fill,C2,Row):- my_append([C1|Fill],[C2],Row).
 
+:- decl_pt(ensure_grid(prefer_grid)).
 ensure_grid(Grid):- var(Grid),!, arc_grid(_,Grid).
 ensure_grid(Grid):- is_grid(Grid),!.
 ensure_grid(Grid):- between(1,30,H),between(1,30,V),make_grid(H,V,Grid).
 
 
-decl_pt(P):- var(P), clause(decl_sf(Q),true), append_term(Q,+,P).
-decl_sf(Q):- var(Q), clause(decl_pt(P),true), P=..L, my_append(MI,[+],L), Q=..MI.
+is_decl_pt(P):- var(P), clause(is_decl_sf(Q),true), append_term(Q,+,P).
+is_decl_sf(Q):- var(Q), clause(is_decl_pt(P),true), P=..L, my_append(MI,[+],L), Q=..MI.
 
 enum_make_shape(P):- var(P),!,decl_sf(Q),functor(Q,F,A),functor(P,F,A), \+ \+ check_args(Q,P).
 enum_make_shape(P):- compound(P),!,functor(P,F,A),functor(Q,F,A),decl_sf(Q), \+ \+ check_args(Q,P).

@@ -196,7 +196,13 @@ easy_sol(trim_hv_repeats).
 trim_hv_repeats(G0,G9):- trim_v_repeats(G0,G1),rot90(G1,G5),trim_v_repeats(G5,G8),rot270(G8,G9).
 
 easy_sol(trim_to_rect).
-trim_to_rect(G0,G8):- into_grid(G0,G),trim_unused_vert(BG,G,G1),rot90(G1,G2),trim_unused_vert(BG,G2,G3),rot270(G3,G8).
+
+% into_grid(v_d304284e_trn_1_in,X),trim_to_rect2(X,Y),print_side_by_side([X,Y]).
+% into_grid(v_d304284e_trn_1_in,X),trim_to_rect(X,Y),print_side_by_side([X,Y]).
+
+trim_to_rect(Color,MGrid):- trim_to_rect2(Color,MGrid).
+%trim_to_rect(Color,MGrid):- called_gid('_trim_to_rect',trim_to_rect2,Color,MGrid).
+trim_to_rect2(G0,G8):- into_grid(G0,G),get_bgc(BG),trim_unused_vert(BG,G,G1),rot90(G1,G2),trim_unused_vert(BG,G2,G3),rot270(G3,G8).
 
   trim_unused_vert(_,[],[]):-!.
   trim_unused_vert(BG,[Row|Grid],GridO):- maplist(is_bg_or_var(BG),Row),!,trim_unused_vert(BG,Grid,GridO).
@@ -485,7 +491,7 @@ nb_set_nth1(1,Row,C):- !, (Row==[]->true; nb_setarg(1,Row,C)).
 nb_set_nth1(N,[_|Row],C):- Nm1 is N -1, nb_set_nth1(Nm1,Row,C).
 
   
-%:- decl_pt(prop_o,grid_edges(is_grid,grid)).
+%:- decl_pt(prop_g,grid_edges(is_grid,grid)).
 grid_edges(In,Edges):- 
   into_grid(In,Grid),
   get_edges(Grid,Top,Bottem,Left,Right),
@@ -571,6 +577,7 @@ close_color(green,cyan).
 
 grid_size_term(I,size(X,Y)):- grid_size(I,X,Y),!.
 
+:- decl_pt(grid_size(prefer_grid,_,_)).
 %grid_size(Points,H,V):- is_map(Points),!,Points.grid_size=grid_size(H,V).
 grid_size(NIL,1,1):- NIL==[],!.
 grid_size(I,X,Y):- is_object(I),indv_props(I,L),(member(grid_size(X,Y),L);member(giz(grid_sz(X,Y)),L);member(v_hv(X,Y),L)),!.

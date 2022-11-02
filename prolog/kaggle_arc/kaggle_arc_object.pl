@@ -670,7 +670,7 @@ mass(I,Count):- globalpoints(I,Points),mass(Points,Count),!.
 %remove_color(_-P,P).
 %remove_color(LPoints,ColorlessPoints):- mapgroup(remove_color,LPoints,ColorlessPoints).
 
-:- decl_pt(setq(object,any,object)).
+:- decl_pt(setq(object,prop,object)).
 
 setq(Orig,Todo,Result):- is_object(Orig),!,override_object(Todo,Orig,Result).
 setq(Orig,Todo,Result):- metaq(setq_1,Orig,Todo,Result).
@@ -690,7 +690,7 @@ metaq_1(P3,Did,Old,New,Orig,Saved):- compound(Orig),Orig=Old, call(P3,Old,New,Sa
 enum_group(S):- is_unshared_saved(_,S).
 
 
-
+:- decl_pt(helper,indv_props(is_object,+)).
 %indv_props(Obj,L):- compound(Obj), arg(1,Obj,L), is_list(L),!.
 indv_props(C,LL):- \+ compound(C),!,nonvar(C),g2o(C,I),indv_props(I,LL).
 indv_props(C,LL):- C=obj(L),!,(is_list(L)->LL=L ; (copy_term(L,LL),append(LL,[],LL))),!.
@@ -952,6 +952,7 @@ get_instance_method(Obj,Compound,F):- is_object(Obj), compound(Compound),compoun
 
 pen(I,C):- indv_props(I,L),member(pen(C),L),!.
 
+
 odd_failure(G):- call(G),!.
 odd_failure(G):- wdmsg(odd_failure(G)),!,fail.
 
@@ -1002,7 +1003,6 @@ hw_rat(Obj,HV):- v_hv(Obj,OH,OV), HV is rationalize(OH/OV).
 center(I,X,Y):- indv_props(I,L),member(center(X,Y),L),!.
 center(I,X,Y):- indv_props(I,L),member(iz(cenX(X)),L),member(iz(cenY(Y)),L),!.
 %center(Obj,CX,CY):- v_hv(Obj,H,V), loc(Obj,X,Y),CX is X + floor(H/2),CY is Y + floor(V/2).
-
 
 
 object_color(HV,C):- color(HV,C).
