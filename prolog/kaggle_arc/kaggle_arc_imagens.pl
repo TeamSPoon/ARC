@@ -350,8 +350,8 @@ ensure_grid(Grid):- between(1,30,H),between(1,30,V),make_grid(H,V,Grid).
 is_decl_pt(P):- var(P), clause(is_decl_sf(Q),true), append_term(Q,+,P).
 is_decl_sf(Q):- var(Q), clause(is_decl_pt(P),true), P=..L, my_append(MI,[+],L), Q=..MI.
 
-enum_make_shape(P):- var(P),!,decl_sf(Q),functor(Q,F,A),functor(P,F,A), \+ \+ check_args(Q,P).
-enum_make_shape(P):- compound(P),!,functor(P,F,A),functor(Q,F,A),decl_sf(Q), \+ \+ check_args(Q,P).
+enum_make_shape(P):- var(P),!,is_decl_sf(Q),functor(Q,F,A),functor(P,F,A), \+ \+ check_args(Q,P).
+enum_make_shape(P):- compound(P),!,functor(P,F,A),functor(Q,F,A),is_decl_sf(Q), \+ \+ check_args(Q,P).
 
 likely_fgc(Var):- var(Var),!,get_fgc(Var).
 likely_fgc(_).
@@ -462,10 +462,7 @@ solid_square(C,HW,Grid):-
   restructure(FillRows,Grid).
 
 
-decl_sf(hollow_square(fg_color,bg_color,size)).
-
-
-
+:- decl_sf(hollow_square(fg_color,bg_color,size)).
 
 hollow_square(C,HW,D):- get_bgc(BG),!,hollow_square(C,BG,HW,D).
 hollow_square(C,BG,HW,D):-
