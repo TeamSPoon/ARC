@@ -130,7 +130,9 @@ ungrav_rot(G,UnRotG,GG):- grav_rot(G,RotG,GG),(G==GG->UnRotG=sameR;unrotate(RotG
 
 %reduce_grid(A+B,ROP,AA+BB):- reduce_grid(A+A,ROP,AA+AA),reduce_grid(B+B,ROP,BB+BB),!.
 reduce_grid(A+B,OP,AAO+BBO):- reduce_grid_pair(A+B,ROP,AAO+BBO),reverse(ROP,OP),!.
-reduce_grid(A+B,[],A+B).
+reduce_grid(A+B,[],A+B):-!.
+reduce_grid(G,OP,AAO):- G\=(_+_), into_grid(G,Grid),!,A=Grid,B=A,
+   reduce_grid_pair(A+B,ROP,AAO+_BBO),reverse(ROP,OP),!.
 
 reduce_grid_pair1(A+B,[g(perfect)|ROPA],AR+BR):-
   once((reduce_grid_pass(1,A+A,[A+A],ROPA,AR+AR),

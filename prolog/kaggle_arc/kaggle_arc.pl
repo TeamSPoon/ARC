@@ -69,7 +69,7 @@ decl_pt(How,G):- must_det_ll((nonvar(How),nonvar(G), !, my_assertz_if_new(is_dec
 :- set_stream(current_output, tty(true)).
 :- set_stream(user_output, tty(true)).
 :- set_stream(user_error, tty(true)).
-:- set_stream(user_output, newline(dos)).
+%:- set_stream(user_output, newline(unix)).
 
 :- stream_property(S,file_no(2)), set_stream(S,tty(true)).
 :- stream_property(S,file_no(1)), set_stream(S,tty(true)).

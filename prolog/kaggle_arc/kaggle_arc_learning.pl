@@ -482,20 +482,7 @@ assert_visually2(H,B):- functor(H,F,_), my_asserta_if_new(test_local_dyn(F)), pr
 
 if_learn_ok(G):- call(G).
 
-clear_training(TestID):-  
-  %retractall(individuated_cache(_,_,_)),
-  set_bgc(_),
-  set_flag(indiv,0),
-  forall(test_local_dyn(F),
-   forall((current_predicate(F/A),A\==0),
-    ((functor(X,F,A),
-      forall((clause(X,_,Ref),arg(1,X,E),E==TestID),
-       erase(Ref)))))),
-  nb_delete(grid_bgc),
-  luser_linkval(test_rules, [rules]),
-  wno((clear_shape_lib(test), clear_shape_lib(noise), 
-   retractall(grid_nums(_,_)), retractall(grid_nums(_)))),
-  nop(retractall(g_2_o(_,_))),!.
+
  
 
 learn_rule(In,Out):-
@@ -868,7 +855,7 @@ name_the_pair(TestID,ExampleNum,In,Out,PairName):-
   GridNameOut= PairName*out,
   set_grid_tid(In,GridNameIn),
   set_grid_tid(Out,GridNameOut),  
-  test_info(TestID,Info), pp(fav(TestID,Info)),nl)).
+  test_info(TestID,Info), pp(fav(TestID,Info)=ExampleNum),nl)).
   
 
 

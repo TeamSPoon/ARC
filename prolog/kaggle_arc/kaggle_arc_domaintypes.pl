@@ -35,7 +35,7 @@ do_learn_decls:- nb_setval(learned_decls,[]), do_learn_decls_one_pass.
 do_learn_decls_one_pass:- 
  once(nb_current(learned_decls,Was);Was=[]),
  findall(P,(kaggle_arc_pred_types(_,P), ignore(( \+ (member(E,Was),E==P),pp(:-decl_pt(P))))),List),
- (Was==List-> ! ; (nb_setval(learned_decls,List),do_learn_decls_one_pass)).
+ (Was==List-> ! ; (nb_setval(learned_decls,List),nop(do_learn_decls_one_pass))).
 
 learnable_pt(P):- 
  compound(P), functor(P,F,A),current_predicate(F/A), 
@@ -69,29 +69,31 @@ ded_argtypes_until(Depth,M,\+ (A),Vars):-!, ded_argtypes_until(Depth,M,A,Vars).
 ded_argtypes_until(Depth,M,must_det_ll(A),Vars):-!, ded_argtypes_until(Depth,M,A,Vars).
 
 ded_argtypes_until(Depth,M,P,Vars):- copy_term(P,PP), ded_using(_Whateva,Depth,M,P,Vars),PP\=@=P,!,
-  ignore(ded_argtypes_until(Depth,M,P,Vars)),maybe_learn_decl(P).
+  nop(ded_argtypes_until(Depth,M,P,Vars)),maybe_learn_decl(P).
 ded_argtypes_until(_Depth,_M,_P,_Vars).
 
 
 ded_using(_,_,_M,P,_Vars):- is_decl_pt(_,P),!.
-ded_using(clauses,Depth,M,P,Vars):- Depth>0,  compound(P), \+ ground(P), P\= run_fti(_,_),
- functor(P,F,A), functor(PP,F,A),functor(SPP,F,A),
+ded_using(clauses,Depth,M,P,Vars):- Depth>0,  compound(P), \+ ground(P), P\= run_fti(_,_), 
+ functor(P,F,A), functor(PP,F,A), \+ is_decl_pt(_,PP), copy_term(Vars,VarsC),
  predicate_property(M:PP,number_of_rules(N)),N>0,!,
   clause(M:PP,BodyC),
   compound(BodyC),
-  \+ \+ ((sub_term(BC,BodyC),compound(BC),\+ \+ is_decl_pt(_,BC))),
+  ((sub_term(BC,BodyC),compound(BC),\+ \+ is_decl_pt(_,BC))),Vars\=@=VarsC,!.
+/*
+functor(SPP,F,A),
   ignore((
     once(( 
-      should_replace_args((PP,BodyC),NVArgs),
+      arg_to_argtypes((PP,BodyC),NVArgs),
       include(nonvar,NVArgs,Args),
       length(Args,L),length(Vs,L),
       subst_2L(Args,Vs,PP+BodyC,SPP+SBodyC),
       compound_name_arguments(SPP,_,SPPArgs),  
-      nop(pp(((SPP:-SBodyC)))),
+      (pp(((SPP:-SBodyC)))),
       Depth2 is Depth-1,      
       ignore(ded_argtypes_until(Depth2,M,SBodyC,Vars)),
       maplist(var,SPPArgs),  P = SPP)))).
-
+*/
 ded_using(metapreds,Depth,M,P,Vars):- Depth<10,
   predicate_property(M:P,meta_predicate(MP)),
  ignore((  
@@ -106,18 +108,18 @@ maybe_label_args(_Depth,_Vars,_M,(-),_).
 maybe_label_args(_Depth,_Vars,_M,(?),_).
 maybe_label_args( Depth, Vars, M, _,P):- ignore(ded_argtypes_until(Depth,M,P,Vars)).
 
-should_replace_args(P,[]):- \+ compound(P),!.
-should_replace_args(P,Args):- 
+arg_to_argtypes(P,[]):- \+ compound(P),!.
+arg_to_argtypes(P,Args):- 
   predicate_property(P,meta_predicate(MP)),
   compound_name_arguments(MP,_,MArgs),
   compound_name_arguments(P,_,PArgs),
   maplist(should_replace_arg,MArgs,PArgs,Vars),append(Vars,Args).
-should_replace_args(PP,NVArgs):- compound_name_arguments(PP,_,NVArgs).
+arg_to_argtypes(PP,NVArgs):- compound_name_arguments(PP,_,NVArgs).
 
 should_replace_arg((+),A,[A]).
 should_replace_arg((-),A,[A]).
 should_replace_arg((?),A,[A]).
-should_replace_arg(_,A,Args):- should_replace_args(A,Args),!.
+should_replace_arg(_,A,Args):- arg_to_argtypes(A,Args),!.
 
 %decl_pt(_):- fail.
 

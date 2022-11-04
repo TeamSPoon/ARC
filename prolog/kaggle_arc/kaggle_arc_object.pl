@@ -805,15 +805,15 @@ all_points_between_include_bg(Grid,LowH,LowV,GH,GV,Hi,Vi,Points,PointsO):-
 
 color_spec_or_fail_include_bg(Grid,C,Hi,Vi):-
   hv_c_value(Grid,C2,Hi,Vi),
-  (is_spec_color(C2,C);(atomic(C2),C=C2);(attvar(C2),C=C2);(var(C2),fail,C=C2)).
+  (is_spec_color(C2,C);(atomic(C2),C=C2);(compound(C2),C=C2);(attvar(C2),C=C2);(var(C2),fail,C=C2)).
 
 color_spec_or_fail_include_bg_more(Grid,C,Hi,Vi):- 
   get_bgc(BGC),
   hv_c_value_or(Grid,C2,Hi,Vi,BGC),
-  (is_spec_color(C2,C);(atomic(C2),C=C2);(attvar(C2),C=C2);(var(C2),C=BGC)).
+  (is_spec_color(C2,C);(atomic(C2),C=C2);(compound(C2),C=C2);(attvar(C2),C=C2);(var(C2),C=BGC)).
   
 grid_cpoint(Grid,C-Point,Hi,Vi):- hv_c_value(Grid,C2,Hi,Vi),
- (is_spec_color(C2,C);(atomic(C2),C=C2);(attvar(C2),C=C2);(var(C2),C=C2)),
+ (is_spec_color(C2,C);(atomic(C2),C=C2);(compound(C2),C=C2);(attvar(C2),C=C2);(var(C2),C=C2)),
   hv_point(Hi,Vi,Point).
 
 grid_to_points(Grid,Points):- grid_size(Grid,HH,HV),!, grid_to_points(Grid,HH,HV,Points).

@@ -48,6 +48,7 @@ menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the inp
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z,!,what_unique)).
 menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z,!,compile_and_save_test)).
 menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changed_files,print_test)).
+menu_cmd1(_,'w','                  or (w)rite the test info',(update_changed_files,print_testinfo_extended)).
 menu_cmd1(_,'E','                  or (E)xamine the program leared by training',(cls_z,print_test,!,learned_test,solve_easy)).
 menu_cmd1(_,'L','                  or (L)earned program',(learned_test)).
 menu_cmd1(_,'e',S,(Cmd)):- get_test_cmd(Cmd),
@@ -324,9 +325,10 @@ show_test_grids:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(Tes
 
 
 % Training modes
-next_pair_mode(single_pair,whole_test).
-next_pair_mode(whole_test,entire_suite).
-next_pair_mode(entire_suite,single_pair).
+next_pair_mode(whole_test,single_pair).
+next_pair_mode(single_pair,entire_suite).
+%next_pair_mode(single_pair,entire_suite).
+next_pair_mode(entire_suite,whole_test).
 
 alt_pair_mode(single_pair,whole_test).
 alt_pair_mode(whole_test,single_pair).
@@ -355,7 +357,7 @@ kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,
 test_grids(TestID,G):- get_pair_mode(entire_suite), !, kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
 test_grids(TestID,G):- get_pair_mode(whole_test), !, ignore(get_current_test(TestID)), kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
 test_grids(TestID,G):- ignore(get_current_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc_io(TestID,ExampleNum,_IO,G).
-with_test_grids(TestID,G,P):- forall(test_grids(TestID,G),my_menu_call(P)).
+with_test_grids(TestID,G,P):- forall(test_grids(TestID,G),my_menu_call((continue_test(TestID),P))).
 
 
 % Hides solution grid from code
@@ -364,7 +366,14 @@ kaggle_arc_safe(TestID,ExampleNum,I,O):- kaggle_arc(TestID,ExampleNum,I,OO), (((
 test_pairs(TestID,I,O):- get_pair_mode(entire_suite), !, kaggle_arc_safe(TestID,_ExampleNum,I,O).
 test_pairs(TestID,I,O):- get_pair_mode(whole_test), !, ignore(get_current_test(TestID)), kaggle_arc_safe(TestID,_ExampleNum,I,O).
 test_pairs(TestID,I,O):- ignore(get_current_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc(TestID,ExampleNum,I,O).
-with_test_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call(P)).
+
+
+test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(entire_suite), !, kaggle_arc_safe(TestID,ExampleNum,I,O).
+test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(whole_test), !, ignore(get_current_test(TestID)), kaggle_arc_safe(TestID,ExampleNum,I,O).
+test_pairs(TestID,ExampleNum,I,O):- ignore(get_current_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc(TestID,ExampleNum,I,O).
+
+with_test_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call((continue_test(TestID),P))).
+with_test_pairs(TestID,ExampleNum,I,O,P):- forall(test_pairs(TestID,ExampleNum,I,O),my_menu_call((continue_test(TestID),P))).
 
 
 bad:- ig([complete],v(aa4ec2a5)>(trn+0)*in).
@@ -493,7 +502,7 @@ test_suite_info(SuiteX,TestID):- test_info(TestID,Sol), \+ \+ (member(E,Sol), (E
 previous_test:-  get_current_test(TestID), get_previous_test(TestID,NextID), set_current_test(NextID).
 next_test:- get_current_test(TestID), notrace((get_next_test(TestID,NextID), set_current_test(NextID))),!.
 random_test:- notrace((get_random_test(NextID), set_current_test(NextID), print_qtest(NextID))),!.
-is_valid_testname(TestID):- kaggle_arc(TestID,_,_,_).
+is_valid_testname(TestID):- nonvar(TestID), kaggle_arc(TestID,_,_,_).
 
 get_current_test(TestID):- luser_getval(task,TestID),is_valid_testname(TestID),!.
 get_current_test(TestID):- get_next_test(TestID,_),!.
@@ -532,9 +541,10 @@ set_current_test(Name):-
     ignore((nonvar(Example),luser_setval(example,Example+NumE))))).
 
 really_set_current_test(TestID):-
-   luser_setval(task,TestID),
-  (luser_getval(last_test_name,WasTestID);WasTestID=[]),
-  (WasTestID==TestID-> true ; new_current_test_info(WasTestID,TestID)).
+  once(luser_getval(task,WTestID);WTestID=[]),
+  ignore((WTestID\==TestID,luser_setval(task,TestID))),
+  once(luser_getval(last_test_name,WasTestID);WasTestID=[]),
+  ignore((WasTestID\==TestID, new_current_test_info(WasTestID,TestID))).
 
 some_current_example_num(_):- get_pair_mode(whole_test), !.
 some_current_example_num(_):- get_pair_mode(entire_suite), !.
@@ -569,13 +579,10 @@ prev_pair:-
 trn_tst(trn,tst).
 trn_tst(tst,trn).
 
-clear_test(TestID):- is_list(TestID),!,maplist(clear_test,TestID).
-clear_test(TestID):- clear_training(TestID),
- saveable_test_info(TestID,Info),
- maplist(erase,Info).
 
-new_current_test_info(WasTestID,TestID):- 
-  clear_test(WasTestID),
+new_current_test_info(WasTestID,TestID):-   
+  luser_setval(next_test_name,TestID),
+  forall(on_leaving_test(WasTestID),true),
   ignore((
   %luser_getval(task,TestID),
   get_current_test(TestID),
@@ -583,28 +590,148 @@ new_current_test_info(WasTestID,TestID):-
   %luser_setval(example,tst+0),
   luser_setval(last_test_name,TestID))),
   save_last_test_name,
-  load_test_id_dyn(TestID).
+  luser_setval(prev_test_name,WasTestID),
+  forall(on_entering_test(TestID),true).
+  
   %clear_training(TestID).
 
-load_test_id_dyn(TestID):- 
-  test_name_output_file(TestID,File),
-  nop(load_file_dyn(File)).
+needs_dot_extention(File,DotExt,NewName):- \+ atom_concat(_,DotExt,File), atom_concat(File,DotExt,NewName).
 
 
-unload_file_dyn(File):- \+ exists_file(File), !.
-unload_file_dyn(File):- unload_file(File),!.
-unload_file_dyn_pfc(File):- 
- open(File,read,I),
- repeat,read_term(I,Term,[]),
- (Term = end_of_file -> true ; pfcRemove(Term),fail).
-
+load_file_dyn(File):- needs_dot_extention(File,'.pl',NewName),!,load_file_dyn(NewName).
 load_file_dyn(File):- \+ exists_file(File), !.
+load_file_dyn(File):- load_file_dyn_pfc(File),!.
 load_file_dyn(File):- consult(File),!.
-load_file_dyn(File):- load_file_dyn_pfc(File).
 load_file_dyn_pfc(File):- 
  open(File,read,I),
  repeat,read_term(I,Term,[]),
  (Term = end_of_file -> true ; pfcAdd(Term),fail).
+
+clear_tee:- shell('cat /dev/null > tee.ansi').
+:- luser_default(prev_test_name,'.').
+:- luser_default(next_test_name,'.').
+
+test_html_file('.','.'):-!.
+test_html_file(TestID,This):- string(TestID),This=TestID,!.
+test_html_file(TestID,This):- sub_atom_value(TestID,HashID),sformat(This,'~w.html',[HashID]).
+write_tee_link(W,TestID):- 
+ test_html_file(TestID,This),
+ format('<p/> <a href="~w">~w ~w</a> ',[This,W,This]).
+
+write_test_links:- get_current_test(TestID), write_test_links(TestID).
+write_test_links(TestID):- format('~N'),
+  ((luser_getval(prev_test_name,PrevID),PrevID\==TestID,PrevID\=='.')->true;get_previous_test(TestID,PrevID)),
+  ((luser_getval(next_test_name,NextID),NextID\==TestID,NextID\=='.')->true;get_next_test(TestID,NextID)),
+  write_tee_link('Prev',PrevID),write_tee_link('This',TestID),write_tee_link('Next',NextID),
+  format('~N').
+
+continue_test(TestID):- ignore(( is_valid_testname(TestID), set_current_test(TestID))).
+
+on_entering_test(TestID):- 
+ must_det_ll((
+  clear_tee,
+  write_test_links(TestID),
+  clear_test(TestID),
+  test_name_output_file(TestID,File),
+  atom_concat(File,'.pl',PLFile),
+  load_file_dyn(PLFile))).
+
+
+
+on_leaving_test(TestID):-     
+ must_det_ll((
+  save_supertest(TestID),
+  test_name_output_file(TestID,File),
+  atom_concat(File,'.pl',PLFile),
+  unload_file_dyn(PLFile),
+  clear_test(TestID),
+  write_test_links(TestID),  
+  shell_format('cat tee.ansi > ~w',[File]),
+  shell_format('cat ~w |  ansi2html -a -W -u  > ~w.html',[File,File]),
+  test_html_file(TestID,This),
+  shell_format('cat ~w.html > out/kaggle_arc_html/~w',[File,This]),
+  clear_tee)).
+
+begin_tee:- get_current_test(TestID),on_entering_test(TestID),at_halt(exit_tee).
+
+exit_tee:- get_current_test(TestID),on_leaving_test(TestID).
+
+shell_format(F,A):- sformat(S,F,A), shell(S).
+
+save_supertest:- get_current_test(TestID),save_supertest(TestID).
+save_supertest(TestID):-     
+   test_name_output_file(TestID,File),
+   save_supertest(TestID,File).
+save_supertest(TestID,File):- needs_dot_extention(File,'.pl',NewName),!,save_supertest(TestID,NewName).
+save_supertest(TestID,File):-
+ saveable_test_info(TestID,Info),
+   setup_call_cleanup(open(File,write,O,[create([default]),encoding(text)]), 
+       with_output_to(O,(
+         write_intermediatre_header,
+         maplist(print_ref,Info))),
+      close(O)), 
+   nop(statistics).
+
+test_name_output_file(TestID,File):- sub_atom_value(TestID,OID),!,atomic_list_concat(['out/',OID,'.ansi'],File).
+
+
+
+clear_test(TestID):- is_list(TestID),!,maplist(clear_test,TestID).
+clear_test(TestID):- 
+   clear_training(TestID),
+   saveable_test_info(TestID,Info),
+   erase_refs(Info).
+
+erase_refs(Info):- maplist(erase,Info).
+
+unload_file_dyn(File):- needs_dot_extention(File,'.pl',NewName),!,unload_file_dyn(NewName).
+unload_file_dyn(File):- \+ exists_file(File), !.
+unload_file_dyn(File):- unload_file_dyn_pfc(File), unload_file(File),!.
+unload_file_dyn_pfc(File):-  
+ open(File,read,I),
+ repeat,read_term(I,Term,[]),
+ (Term = end_of_file -> true ; pfcRemove(Term),fail).
+
+/*
+clear_test_training(TestID):- 
+ must_det_ll((
+     ignore(( 
+      \+ arc_option(extreme_cache),
+      
+      test_name_output_file(TestID,File),
+      needs_dot_extention(File,'.pl',NewName),
+      unload_file(File),
+      (exists_file(File)->delete_file(File);true))),
+*/
+ 
+clear_training(TestID):-  
+  %retractall(individuated_cache(_,_,_)),
+  set_bgc(_),
+  set_flag(indiv,0),
+  retractall(arc_test_property(TestID,_,_,_)),
+  training_info(TestID,InfoSet), erase_refs(InfoSet),
+  forall(test_local_dyn(F),
+   forall((current_predicate(F/A),A\==0),
+    ((functor(X,F,A),
+      forall((clause(X,_,Ref),arg(1,X,E),E==TestID),
+       erase(Ref)))))),
+  nb_delete(grid_bgc),
+  luser_linkval(test_rules, [rules]),
+  wno((clear_shape_lib(test), clear_shape_lib(noise), 
+   retractall(grid_nums(_,_)), retractall(grid_nums(_)))),
+  nop(retractall(g_2_o(_,_))),!,
+  retractall(arc_test_property(TestID,_,_,_)).
+
+
+
+
+
+
+
+
+
+
+
 
 new_test_pair(PairName):-
   %nb_delete(grid_bgc),
@@ -625,7 +752,9 @@ fully_test:- print_test, !, train_test, !, solve_test, !.
 run_next_test:- notrace(next_test), fully_test.
 
 info(Info):- nonvar(Info),wdmsg(Info).
-system:demo:- reverse_suite,update_changed_files,!,interact.
+system:demo:- reverse_suite,update_changed_files,!,clear_tee,
+  begin_tee,interact.
+
 :- export(demo/0).
 rat:- info("Run all tests"), run_all_tests.
 noninteractive_test(X):- my_time(ignore(forall(arc1(true,X),true))).

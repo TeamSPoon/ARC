@@ -32,7 +32,7 @@ superinput_blob
 
 test_supergrid:- clsbake, forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_pair_hints(TestID,ExampleNum,In,Out)).
 
-sub_atom_value(TestID,A):- sub_term(A,TestID),atom(A).
+sub_atom_value(TestID,A):- sub_term(A,TestID),(atom(A);string(A)).
 
 print_directive(P):- format('~N:- ~q. ~n',[P]).
 write_intermediatre_header:- 
@@ -46,10 +46,10 @@ print_ref((X:-True)):- True == true,!, print_ref(X).
 print_ref(G):- format('~N'),write_canonical(G),format('.~n'),!.
 %print_ref(G):- \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N~@.~n',[write_canonical(G)]))),!.
 
-test_name_output_file(TestID,File):- sub_atom_value(TestID,OID),!,atomic_list_concat(['out/',OID,'.ansi'],File).
 
 clsbake:- nop(clsmake).
 
+compile_and_save_test:- get_pair_mode(entire_suite),!,clsbake, forall_count(all_arc_test_name(TestID),time(compile_and_save_test(TestID))).
 compile_and_save_test:- clsbake, get_current_test(TestID),time(compile_and_save_test(TestID)).
 
 gen_gids:- wdmsg(start(gen_gids)),forall(all_arc_test_name(TestID),gen_gids(TestID)),wdmsg(end(gen_gids)).
@@ -68,14 +68,6 @@ compile_and_save_test(Mask):-
   %ignore(retract(saved_training(TestID))),
   %ignore(retract(process_test(TestID))),
 
- must_det_ll((
-     ignore(( 
-      \+ arc_option(extreme_cache),
-      retractall(arc_test_property(TestID,_,_,_)),
-      test_name_output_file(TestID,File),
-      unload_file(File),
-      (exists_file(File)->delete_file(File);true))),
-
   locally(nb_setval(individuated_cache,true),
      ((
       gen_gids(TestID),
@@ -86,7 +78,7 @@ compile_and_save_test(Mask):-
       nop(individuate_pairs_from_hints(TestID)),
       %train_test(TestID,train_using_io),  
       %test_deduce_shapes,
-      save_supertest(TestID))))).
+      save_supertest(TestID))).
 
 
 
@@ -109,19 +101,37 @@ individuate_pair_here(TestID,Trn+N1,In,Out):-
 
 
 show_reduced_io_rarely(_):-!.
-show_reduced_io_rarely(IO):- show_reduced_io(IO).
+show_reduced_io_rarely(IO):- forall(show_reduced_io(IO),true).
+
+print_testinfo_extended:- 
+  get_current_test(TestID),print_testinfo_extended(TestID).
+
+print_testinfo_extended(TestID):- print_testinfo(TestID),
+  with_test_pairs(TestID,ExampleNum,I,O,
+    (print_side_by_side(green,I,orig_in(TestID,ExampleNum),_,O,orig_out(TestID,ExampleNum)),
+     forall(show_reduced_io(I+O),true))).
 
 %show_reduced_io(I+O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
-show_reduced_io(I+O):-  
-  reduce_grids_io(I+O,IOps,II+OO),!,
-  must_det_ll(print_side_by_side(green,II,reduceIn(IOps),_,OO,reduceOut)),!.
+show_reduced_io(I+O):-  once(reduce_grids_io(I+O,IOps,II+OO)),
+  fif(II+OO\=@=I+O,must_det_ll(print_side_by_side(green,II,reduceIn(IOps),_,OO,reduceOut))).
+show_reduced_io(I+O):- show_call_rot_io(op_grid_to_norm,I,O).
+show_reduced_io(I+O):- show_call_rot_io(mapgridish(remove_color_if_same(black),I+O),I,O).
 show_reduced_io(_).
 
+op_grid_to_norm(I,OUT):- Op=[_|_],reduce_grid(I,Op,OO),OUT=(OO-w(Op)).
+%op_grid_to_norm([],I,I).
 
-show_call_rot_io(P2,I,O):- 
-  must_det_ll((call_rot(P2,I,III),call_rot(P2,O,OOO),
-  grid_to_gid(I,GID),
-  print_side_by_side(green,III,in(GID,P2),_,OOO,out(P2)))),!.
+mapgridish(P3,I+O,In,Out):- In==I-> mapgrid(P3,O,I,Out) ; mapgrid(P3,I,O,Out).
+
+show_call_rot_io(P2,I,O):-   
+ must_det_ll((grid_to_gid(I,GIDI),grid_to_gid(O,GIDO),
+  copy_term(P2,P22),
+  call_for_i(P2,I,III,S1),
+  once((call_for_i(P2,O,OOO,S2);call_for_i(P22,O,OOO,S2);(O=OOO,tersify(P22,S2)))))),  
+  fif(((III+OOO)\=@=(I+O)), print_side_by_side(green,III,[S1,in,GIDI],_,OOO,[S2,out,GIDO])),!.
+
+call_for_i(P2,I,III,S1):- once(call_rot(P2,I,II)),(grid_footer(II,III,F)-> tersify(s(F,P2),S1) ; (III=II,tersify(P2,S1))),!.
+call_for_i(P2,I,III,S1):- III=I, tersify(P2,S1),!.
 
 reduce_grids_io(I+O,OPS,III+OOO):- area(I,IArea),area(O,OArea),reduce_grids_io(I+O,IArea+OArea,OPS,III+OOO).
 
@@ -129,13 +139,12 @@ interesting_ops(OPS):- OPS==[],!,fail.
 interesting_ops(OPS):- OPS=[unrotate(_)|More],!,interesting_ops(More).
 interesting_ops(_).
 
-reduce_grids_io(I+O,_IArea_OArea,[io(OPS)],II+OO):- reduce_grid(I+O,OPS,II+OO), interesting_ops(OPS).
-
-reduce_grids_io(I+O,IArea+OArea,[i(OPS)],II+O):- IArea>OArea, reduce_grid(I+I,OPS,II+II), interesting_ops(OPS).
-
-reduce_grids_io(I+O,IArea+OArea,[io(OPS)],II+OO):- IArea==OArea, reduce_grid(I+O,OPS,II+OO), interesting_ops(OPS).
-
-reduce_grids_io(I+O,_IArea_OArea,[i(OPS)],II+O):- reduce_grid(I+I,OPS,II+II), interesting_ops(OPS).
+reduce_grids_io(I+O,_IArea_OArea,[io(OPS)],II+OO):- reduce_grid(I+O,OPS,II+OO), interesting_ops(OPS),!.
+reduce_grids_io(I+O,_IArea_OArea,[oi(OPS)],II+OO):- reduce_grid(O+I,OPS,OO+II), interesting_ops(OPS),!.
+%reduce_grids_io(I+O,IArea+OArea,[i(OPS)],II+O):- IArea>OArea, reduce_grid(I+I,OPS,II+_), interesting_ops(OPS).
+%reduce_grids_io(I+O,IArea+OArea,[o(OPS)],I+OO):- IArea>OArea, reduce_grid(O+O,OPS,OO+_), interesting_ops(OPS).
+%reduce_grids_io(I+O,_IArea_OArea,[io(OPS)],II+OO):- reduce_grid(I+O,OPS,II+OO), interesting_ops(OPS).
+%reduce_grids_io(I+O,_IArea_OArea,[i(OPS)],II+O):- reduce_grid(I+I,OPS,II+_), interesting_ops(OPS).
 
 %reduce_grids_io(I+O,IArea+OArea,[o(OPS)],I+OO):- IArea<OArea, reduce_grid(O+O,OPS,OO+OO), interesting_ops(OPS).
 /*
@@ -161,17 +170,6 @@ maybe_easy(I,II,Code):- maybe_try_something1(I,II,Code),!.
 maybe_easy(I,I,==):- !.
     
 
-save_supertest:- get_current_test(TestID),save_supertest(TestID).
-save_supertest(TestID):-   
-   saveable_test_info(TestID,Info),
-   catch_log(((
-   test_name_output_file(TestID,File),
-   setup_call_cleanup(open(File,write,O,[create([default]),encoding(text)]), 
-       with_output_to(O,(
-         write_intermediatre_header,
-         maplist(print_ref,Info))),
-      close(O))))), nop(statistics).
-
 
 
 detect_all_training_hints:- clsbake, get_current_test(TestID),detect_all_training_hints(TestID).
@@ -193,6 +191,7 @@ color_subst([O|OSC],[I|ISC],[O-I|O2I]):-
 color_subst(_OSC,_ISC,[]):-!.
 
 detect_pair_hints(TestID,ExampleNum,In,Out):- 
+  continue_test(TestID),
   dmsg(detect_pair_hints(TestID,ExampleNum)),
   assert_id_grid_cells(In), assert_id_grid_cells(Out),
   detect_supergrid_tt_pair(TestID,ExampleNum,In,Out,_TT),  
@@ -205,15 +204,17 @@ detect_pair_hints(TestID,ExampleNum,In,Out):-
 guess_board(TT):- arc_setval(TT,guess_board,t).
 
 detect_supergrid_tt_pair(TestID,ExampleNum,In0,Out0,TT):-
+ continue_test(TestID),
  must_det_ll(((
   dash_chars, dash_chars,
   dmsg(detect_supergrid_tt_pair(TestID,ExampleNum)),
   print_side_by_side(cyan,In0,task_in(ExampleNum),_,Out0,task_out(ExampleNum)),  
-  show_reduced_io(In0+Out0),
+  forall(show_reduced_io(In0+Out0),true),
   nop((show_recolor(TestID,ExampleNum,In0,Out0,TT)))))),!,
  TT = _{} .
 
-show_recolor(_TestID,_ExampleNum,In0,Out0,TT):- 
+show_recolor(TestID,_ExampleNum,In0,Out0,TT):- 
+  continue_test(TestID),
   must_det_ll(((
   %show_patterns(In),show_patterns(Out),
   
@@ -373,6 +374,7 @@ compute_and_show_test_hints(TestID):- format('~N'),
   list_common_props(TestID).
 */
 compute_and_show_test_hints(TestID):- format('~N'),
+  continue_test(TestID),
   compute_all_test_hints(TestID),
   ignore(list_common_props_so_far(TestID)),!,
   %listing(arc_test_property(TestID,_,_)),
@@ -773,7 +775,7 @@ all_ogs1(II,Out,XY):-
 all_ogs2(In,Out,XY):- findall(ogs(notrim,whole,R,loc2D(XX,YY)),maybe_ogs(R,XX,YY,In,Out),XY),!.
 
 all_ogs3(Grid,Out,XY):-
-  findall(ogs(notrim,Named,R,loc2D(XX,YY)),(grid_to_so(Grid,Named,In),maybe_ogs(R,XX,YY,In,Out)),XY).
+  findall(ogs(notrim,Named,R,loc2D(XX,YY)),(fail,grid_to_so(Grid,Named,In),maybe_ogs(R,XX,YY,In,Out)),XY).
 
 all_ogs(In,Out,Set):- %member(R,[strict,loose]),
   all_ogs1(In,Out,XY1),
