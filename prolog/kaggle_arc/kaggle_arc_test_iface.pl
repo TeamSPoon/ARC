@@ -339,9 +339,10 @@ get_pair_mode(Mode):- nonvar(Mode),get_pair_mode(TMode),!,TMode==Mode.
 get_pair_mode(Mode):- once(luser_getval('$pair_mode',Mode);next_pair_mode(Mode,_)).
 with_pair_mode(Mode,Goal):- get_pair_mode(OldMode), trusted_redo_call_cleanup( set_pair_mode(Mode), Goal, set_pair_mode(OldMode)). 
 switch_pair_mode:- get_pair_mode(Mode),next_pair_mode(Mode,NextMode),!,set_pair_mode(NextMode),show_pair_mode.
-show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), 
+show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), luser_getval(test_suite_name,Suite),
   get_current_test(TestID),some_current_example_num(Example),!,
   wqnl(["~N~t............ (e)xecute: ", b(q(Cmd)), "with pair mode set to: ",b(q(Mode)),
+  "suite: ",b(q(Suite)),
   " With selected test: ",b(q(TestID)),b(q(example(Example)))]).
 skip_entire_suite:- never_entire_suite,!,fail.
 never_entire_suite:- ignore((get_pair_mode(entire_suite),set_pair_mode(whole_test))).
@@ -597,16 +598,21 @@ new_current_test_info(WasTestID,TestID):-
 
 needs_dot_extention(File,DotExt,NewName):- \+ atom_concat(_,DotExt,File), atom_concat(File,DotExt,NewName).
 
+call_file_goal(S,encoding(Enc)):- set_stream(S,encoding(Enc)),!.
+call_file_goal(_,Goal):- call(Goal),!.
 
 load_file_dyn(File):- needs_dot_extention(File,'.pl',NewName),!,load_file_dyn(NewName).
 load_file_dyn(File):- \+ exists_file(File), !.
 load_file_dyn(File):- load_file_dyn_pfc(File),!.
-load_file_dyn(File):- consult(File),!.
+%load_file_dyn(File):- consult(File),!.
 load_file_dyn_pfc(File):- 
  open(File,read,I),
  repeat,read_term(I,Term,[]),
- (Term = end_of_file -> true ; pfcAdd(Term),fail).
-
+ (Term = end_of_file -> ! ; (must_det_ll(load_file_term(I,Term)),fail)).
+load_file_term(S,(:- Goal)):- !, call_file_goal(S,Goal).
+load_file_term(_,Term):- assertz_new(Term),!.
+%load_file_term(Term):- arc_assert(Term),!.
+%load_file_term(Term):- pfcAdd(Term).
 clear_tee:- shell('cat /dev/null > tee.ansi').
 :- luser_default(prev_test_name,'.').
 :- luser_default(next_test_name,'.').
@@ -641,15 +647,10 @@ on_entering_test(TestID):-
 on_leaving_test(TestID):-     
  must_det_ll((
   save_supertest(TestID),
-  test_name_output_file(TestID,File),
-  atom_concat(File,'.pl',PLFile),
-  unload_file_dyn(PLFile),
   clear_test(TestID),
   write_test_links(TestID),  
-  shell_format('cat tee.ansi > ~w',[File]),
-  shell_format('cat ~w |  ansi2html -a -W -u  > ~w.html',[File,File]),
   test_html_file(TestID,This),
-  shell_format('cat ~w.html > out/kaggle_arc_html/~w',[File,This]),
+  shell_format('cat tee.ansi |  ansi2html -a -W -u  > out/kaggle_arc_html/~w',[This]),
   clear_tee)).
 
 begin_tee:- get_current_test(TestID),on_entering_test(TestID),at_halt(exit_tee).
@@ -680,9 +681,15 @@ clear_test(TestID):- is_list(TestID),!,maplist(clear_test,TestID).
 clear_test(TestID):- 
    clear_training(TestID),
    saveable_test_info(TestID,Info),
-   erase_refs(Info).
+   erase_refs(Info),
+   unload_test_file(TestID).
 
 erase_refs(Info):- maplist(erase,Info).
+
+unload_test_file(TestID):-
+   test_name_output_file(TestID,File),
+   atom_concat(File,'.pl',PLFile),
+   unload_file_dyn(PLFile).
 
 unload_file_dyn(File):- needs_dot_extention(File,'.pl',NewName),!,unload_file_dyn(NewName).
 unload_file_dyn(File):- \+ exists_file(File), !.
@@ -690,7 +697,11 @@ unload_file_dyn(File):- unload_file_dyn_pfc(File), unload_file(File),!.
 unload_file_dyn_pfc(File):-  
  open(File,read,I),
  repeat,read_term(I,Term,[]),
- (Term = end_of_file -> true ; pfcRemove(Term),fail).
+ (Term = end_of_file -> ! ; (must_det_ll(unload_file_term(I,Term)),fail)).
+
+unload_file_term(S,(:- Goal)):- !, call_file_goal(S,Goal).
+unload_file_term(_,Term):- forall(retract(Term),true),!.
+%unload_file_term(Term):- pfcRemove(Term).
 
 /*
 clear_test_training(TestID):- 
