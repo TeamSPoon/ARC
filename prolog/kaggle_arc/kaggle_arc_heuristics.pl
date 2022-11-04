@@ -16,9 +16,9 @@ recalc_sizes(VM,[After|TODO]):-
    recalc_sizes(VM),
    nop((set(VM.program_i) = [After,recalc_sizes|TODO])).
 /*
-   � amass(3) cc(blue,3.0) v_hv(1,3) loc(2,1) pen([]) birth(ifti3(nsew)) iz(symmetry(sym_hv)) center(2,2) layer(in) nth(21)
-%amass(3) cc(cyan,3.0) v_hv(1,3) loc(1,1) pen([]) birth(ifti3(nsew)) iz(symmetry(sym_hv)) center(1,2) layer(in) nth(22)
-%  Iz(Non Diag):         � amass(3) cc(green,3.0) v_hv(1,3) loc(3,1) pen([]) birth(ifti3(nsew)) iz(nsew) iz(rectangulator) iz(symmetry(sym_hv)) center(3,2) layer(in) nth(20)
+   � amass(3) cc(blue,3.0) v_hv(1,3) loc2D(2,1) pen([]) birth(ifti3(nsew)) iz(symmetry(sym_hv)) center(2,2) layer(in) nth(21)
+%amass(3) cc(cyan,3.0) v_hv(1,3) loc2D(1,1) pen([]) birth(ifti3(nsew)) iz(symmetry(sym_hv)) center(1,2) layer(in) nth(22)
+%  Iz(Non Diag):         � amass(3) cc(green,3.0) v_hv(1,3) loc2D(3,1) pen([]) birth(ifti3(nsew)) iz(nsew) iz(rectangulator) iz(symmetry(sym_hv)) center(3,2) layer(in) nth(20)
 
 */
 
@@ -154,7 +154,7 @@ individuals_from_pair_colors(PairName,In,Out,IH,IV,OH,OV,
   individu ate([],options([solid(rectangle),defaults]),ImO,NewImO), 
   add_shape_lib(pair,NewImO),
   show_pair_no_i(IH,IV,OH,OV,'Filter noise',PairName,ImO,OmI),
-  add_comparitor(-size),
+  add_comparitor(-size2D),
   show_pair_no_i(IH,IV,OH,OV,'Filter noise',PairName,RestOfInObjs,OmI),
   add_shape_lib(in,RestOfInObjs),
   add_action(show_pair_no_i),

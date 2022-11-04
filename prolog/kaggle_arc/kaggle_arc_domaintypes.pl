@@ -6,84 +6,170 @@
 */
 :- include(kaggle_arc_header).
 
-kaggle_arc_pred(M,P):-  predicate_property(M:P,file(F)), \+ \+ atom_contains(F,'arc_'),
-  \+ predicate_property(M:P,imported_from(_)).
+kaggle_arc_pred(M,P):- 
+  predicate_property(M:P,file(F)), 
+  \+ \+ atom_contains(F,'arc_'),
+  \+ predicate_property(M:P,imported_from(_)),
+  \+ atom_contains(F,'_pfc'),
+  \+ atom_contains(F,'_afc'),
+  \+ atom_contains(F,'_ui_'),
+  true.
+  
   
 
-kaggle_arc_pred_types(M,P):-kaggle_arc_pred(M,P),copy_term(P,PP),narrow_argtypes(M,P),P\=@=PP.
+kaggle_arc_pred_types(M,P):-
+  findall(M:P,kaggle_arc_pred(M,P),L),
+  member(M:P,L),
+  copy_term(P,PP),once(ded_argtypes(M,P)),P\=@=PP.
 
 
-narrow_argtypes(M,P):- var(P),!,kaggle_arc_pred(M,P),narrow_argtypes(M,P).
-narrow_argtypes(_,P):- ground(P); \+ compound(P),!.
-narrow_argtypes(M,P):- term_variables(P,Vars), narrow_argtypes_until(10,M,P,Vars), !.
+ded_argtypes(M,P):- var(P),!,kaggle_arc_pred(M,P),ded_argtypes(M,P).
+ded_argtypes(_,P):- ground(P); \+ compound(P),!.
+ded_argtypes(M,P):- term_variables(P,Vars), ded_argtypes_until(10,M,P,Vars), !.
 
-:- nb_setval(learned_decls,[]).
 
-test_learn_decls:-
- findall(P,kaggle_arc_pred_types(_,P),List),
+test_learn_decls:- do_learn_decls.
+
+do_learn_decls:- nb_setval(learned_decls,[]), do_learn_decls_one_pass.
+
+do_learn_decls_one_pass:- 
  once(nb_current(learned_decls,Was);Was=[]),
- (Was==List-> ! ; (maplist(pp,List),nb_setval(learn_decls,List))).
+ findall(P,(kaggle_arc_pred_types(_,P), ignore(( \+ (member(E,Was),E==P),pp(:-decl_pt(P))))),List),
+ (Was==List-> ! ; (nb_setval(learned_decls,List),do_learn_decls_one_pass)).
 
-maybe_learn_decl(P):- ignore((compound(P), functor(P,F,A),functor(PP,F,A),P\==PP,decl_pt(P))).
+learnable_pt(P):- 
+ compound(P), functor(P,F,A),current_predicate(F/A), 
+  upcase_atom(F,UC), \+ downcase_atom(F,UC).
 
-/*narrow_argtypes_until(Depth,M,(A,B),Vars):- !,
-  narrow_argtypes_until(Depth,M,A,Vars),
-  narrow_argtypes_until(Depth,M,B,Vars).*/
-%narrow_argtypes_until(Depth,M,P,Vars):- copy_term(P,PP), is_decl_pt(_,P),PP\=@=P,!,ignore(narrow_argtypes_until(Depth,M,P,Vars)).
-narrow_argtypes_until(Depth,M,P,Vars):- (Depth<0; ground(P) ; ground(Vars); \+ compound(P); skip_mod(M)),!, 
-  ignore((Depth<10,maybe_learn_decl(P))).
-narrow_argtypes_until(Depth,M,P,Vars):- copy_term(P,PP), 
-  narrow_using(_Whatevah,Depth,M,P,Vars),PP\=@=P,!,
-  ignore(narrow_argtypes_until(Depth,M,P,Vars)),maybe_learn_decl(P).
-narrow_argtypes_until(_Depth,_M,_P,_Vars).
+maybe_learn_decl(P):- ignore(( learnable_pt(P), 
+  functor(P,F,A), functor(PP,F,A),P\=@=PP, 
+   \+ \+ (clause(is_decl_pt(_,PP),true), P=@=PP ), 
+   fail, pp('?-'(decl_pt(P))),decl_pt(P))).
 
 skip_mod(M):- M\==user,!.
-is_type_ch(F,1):- atom(F), atom_concat('is_',Rest,F), \+ atom_contains(Rest,'_').
+is_type_ch(F,1,Rest):- atom(F), atom_concat('is_',Rest,F), \+ atom_contains(Rest,'_').
 
-narrow_using(S,Depth,M,P,Vars):- var(S), 
-  findall(S,(clause(narrow_using(S,_,_,_,_),_),atom(S)),List),List\==[],!,
-  member(S,List),narrow_using(S,Depth,M,P,Vars).
+is_decl_pt(helper,P):- compound(P),\+ \+ clause(is_decl_pt(_,P),true),
+  compound_name_arguments(P,F,[Type]),is_type_ch(F,1,T),T=Type.
 
-narrow_using(decls,_,_M,P,_Vars):- ignore(is_decl_pt(_,P)).
 
-narrow_using(names,_Depth,_M,P,_Vars):- compound(P),compound_name_arguments(P,F,[Type]),is_type_ch(F,1),Type=F,!.
- 
-narrow_using(metapreds,Depth,M,P,Vars):- 
- ignore((  
+/*ded_argtypes_until(Depth,M,(A,B),Vars):- !,
+  ded_argtypes_until(Depth,M,A,Vars),
+  ded_argtypes_until(Depth,M,B,Vars).*/
+%ded_argtypes_until(Depth,M,P,Vars):- copy_term(P,PP), is_decl_pt(_,P),PP\=@=P,!,ignore(ded_argtypes_until(Depth,M,P,Vars)).
+ded_argtypes_until(Depth,M,P,Vars):- (Depth<0; ground(P) ; ground(Vars); \+ compound(P); skip_mod(M)),!, 
+  ignore((Depth<10,maybe_learn_decl(P))).
+ded_argtypes_until(Depth,M,forall(A,B),Vars):-!, ded_argtypes_until(Depth,M,A,Vars), ded_argtypes_until(Depth,M,B,Vars). 
+ded_argtypes_until(Depth,M,(A,B),Vars):-!, ded_argtypes_until(Depth,M,A,Vars), ded_argtypes_until(Depth,M,B,Vars). 
+ded_argtypes_until(Depth,M,(A;B),Vars):-!, ded_argtypes_until(Depth,M,A,Vars), ded_argtypes_until(Depth,M,B,Vars).
+ded_argtypes_until(Depth,M,(A->B),Vars):-!, ded_argtypes_until(Depth,M,A,Vars), ded_argtypes_until(Depth,M,B,Vars).
+ded_argtypes_until(Depth,M,(A*->B),Vars):-!, ded_argtypes_until(Depth,M,A,Vars), ded_argtypes_until(Depth,M,B,Vars).
+ded_argtypes_until(Depth,M,call(A),Vars):-!, ded_argtypes_until(Depth,M,A,Vars).
+ded_argtypes_until(Depth,M,\+ (A),Vars):-!, ded_argtypes_until(Depth,M,A,Vars).
+ded_argtypes_until(Depth,M,must_det_ll(A),Vars):-!, ded_argtypes_until(Depth,M,A,Vars).
+
+ded_argtypes_until(Depth,M,P,Vars):- copy_term(P,PP), ded_using(_Whateva,Depth,M,P,Vars),PP\=@=P,!,
+  ignore(ded_argtypes_until(Depth,M,P,Vars)),maybe_learn_decl(P).
+ded_argtypes_until(_Depth,_M,_P,_Vars).
+
+
+ded_using(_,_,_M,P,_Vars):- is_decl_pt(_,P),!.
+ded_using(clauses,Depth,M,P,Vars):- Depth>0,  compound(P), \+ ground(P), P\= run_fti(_,_),
+ functor(P,F,A), functor(PP,F,A),functor(SPP,F,A),
+ predicate_property(M:PP,number_of_rules(N)),N>0,!,
+  clause(M:PP,BodyC),
+  compound(BodyC),
+  \+ \+ ((sub_term(BC,BodyC),compound(BC),\+ \+ is_decl_pt(_,BC))),
+  ignore((
+    once(( 
+      should_replace_args((PP,BodyC),NVArgs),
+      include(nonvar,NVArgs,Args),
+      length(Args,L),length(Vs,L),
+      subst_2L(Args,Vs,PP+BodyC,SPP+SBodyC),
+      compound_name_arguments(SPP,_,SPPArgs),  
+      nop(pp(((SPP:-SBodyC)))),
+      Depth2 is Depth-1,      
+      ignore(ded_argtypes_until(Depth2,M,SBodyC,Vars)),
+      maplist(var,SPPArgs),  P = SPP)))).
+
+ded_using(metapreds,Depth,M,P,Vars):- Depth<10,
   predicate_property(M:P,meta_predicate(MP)),
+ ignore((  
   compound_name_arguments(MP,_,MArgs),
   compound_name_arguments(P,_,PArgs),
   Depth2 is Depth-1,
   maplist(maybe_label_args(Depth2,Vars,M),MArgs,PArgs))).
 
 
-narrow_using(clauses,Depth,M,P,Vars):-  compound(P), \+ ground(P),
- functor(P,F,A), functor(PP,F,A),
- predicate_property(M:PP,number_of_rules(N)),N>0,!,
-  ignore((
-
- clause(M:PP,BodyC),
- compound(BodyC),
- \+ \+ ((sub_term(BC,BodyC),compound(BC),is_decl_pt(_,BC))),
- once((
- 
- compound_name_arguments(PP,_,NVArgs), 
- include(nonvar,NVArgs,Args),
- length(Args,L),length(Vs,L),
- subst_2L(Args,Vs,PP+BodyC,SPP+SBodyC),
- P = SPP,
- nop(pp((clause(M:PP,BodyC), (SPP:-SBodyC)))))),
- Depth2 is Depth-1,
- ignore(narrow_argtypes_until(Depth2,M,SBodyC,Vars)))).
-
-
 maybe_label_args(_Depth,_Vars,_M,(+),_).
 maybe_label_args(_Depth,_Vars,_M,(-),_).
 maybe_label_args(_Depth,_Vars,_M,(?),_).
-maybe_label_args( Depth, Vars, M, _,P):- ignore(narrow_argtypes_until(Depth,M,P,Vars)).
+maybe_label_args( Depth, Vars, M, _,P):- ignore(ded_argtypes_until(Depth,M,P,Vars)).
+
+should_replace_args(P,[]):- \+ compound(P),!.
+should_replace_args(P,Args):- 
+  predicate_property(P,meta_predicate(MP)),
+  compound_name_arguments(MP,_,MArgs),
+  compound_name_arguments(P,_,PArgs),
+  maplist(should_replace_arg,MArgs,PArgs,Vars),append(Vars,Args).
+should_replace_args(PP,NVArgs):- compound_name_arguments(PP,_,NVArgs).
+
+should_replace_arg((+),A,[A]).
+should_replace_arg((-),A,[A]).
+should_replace_arg((?),A,[A]).
+should_replace_arg(_,A,Args):- should_replace_args(A,Args),!.
+
+%decl_pt(_):- fail.
+
+check_args(P,MC):- functor(P,F,A),functor(T,F,A),functor(C,F,A),is_decl_pt(_,T),check_args(P,1,A,A,T,C,MC),!.
+check_args(P,P):- !. 
+
+check_args(P,Arity,Arity,1,T,C,MC):- fail,
+ call(C), arg(An,T,ArgType),arg(An,C,Result),
+ MC = t,
+ arg(An,P,Return),into_type(ArgType,Result,Return).
+
+check_args(P,Arity,An,2,T,C,MC):- fail,
+ arg(An,P,ArgIn),arg(An,T,ArgType),arg(An,C,CallArg),
+ is_group(ArgIn), ArgType = object,!,
+ arg(Arity,P,Result),arg(Arity,C,Return),
+ findall(Return,(member(CallArg,ArgIn),check_args(P,Arity,Arity,1,T,C,MC)),Result).
+
+check_args(P,Arity,An,Left,T,C,MC):-  
+ arg(An,P,ArgIn),arg(An,T,ArgType),arg(An,C,CallArg),into_type(ArgType,ArgIn,CallArg),
+ AnM1 is An+1,LeftP1 is Left-1, check_args(P,Arity,AnM1,LeftP1,T,C,MC),!.
+check_args(_P,_Arity,_An,_Left,_T,C,C).
+
+is_type_call(P1,Term):- var(P1),!,throw(is_type_call(P1,Term)).
+is_type_call(list,Term):- is_list(Term),!.
+is_type_call(P1,Term):- current_predicate(P1/1),!,on_x_log_and_fail(call(P1,Term)),!.
+is_type_call( F,Term):- atom(F),atom_concat('is_',F,P1),current_predicate(P1/1),on_x_log_and_fail(call(P1,Term)),!.
+
+into_type(Type,G,O):- is_type_call(Type,G),!,G=O.
+into_type(Type,G,O):- nonvar_or_ci(O),!,into_type(Type,G,M),!,M=O.
+into_type(_Type,G,O):- plain_var(G),O=G,!.
+into_type(Type,G,O):- plain_var(G),throw(var_into_type(Type,G)),O=fake(Type,G).
+into_type(+,X,X).
+into_type(oid,X,ID):- into_oid(X,ID).
+into_type(num,X,X):- assertion(number(X)).
+into_type(dir,X,X):- assertion(nav(X,_,_)).
+into_type(grid,X,O):- into_grid(X,O).
+into_type(object,X,O):- is_object(X)-> X=O ; into_obj(X,O).
+into_type(group,X,O):- into_group(X,O).
 
 
-relax_color_arg(Black,bg):- is_black(Black),!.
+
+
+
+
+
+
+
+
+
+
+relax_color_arg(C,C):- var(C),!.
+relax_color_arg(C,bg):- is_bgp(C).
 relax_color_arg(E,fg):- is_color(E),!.
 
 to_real_grid(G,GO):- notrace((unnumbervars(G,G1),get_bgc(BG),subst001(G1,bg,BG,GO))),!. % ,ignore([[BG|_]|_]=GO).
@@ -141,6 +227,8 @@ is_bg_color(C):- get_bgc(BG),C==BG,!.
 
 is_black_or_bg(BG):- is_black(BG)-> true; is_bg_color(BG).
 %is_black_or_bg(0).
+
+:- decl_pt(helper,is_black(color)). 
 is_black(C):- get_black(B),!,C==B.
 
 
@@ -253,7 +341,7 @@ is_colorish(C):- fg_sym(FG),FG==C,!.
 %is_colorish(C):- compound(C),!,arg(1,C,A),nonvar(A),is_colorish(A).
 
 is_grid_color(C):- plain_var(C),!,fail.
-% makes grid colors an integer.. 
+% makes grid color-s an integer.. 
 %is_grid_color(C):- !,integer(C).
 % we are using atoms currently
 is_grid_color(C/**/-_):- !, is_color(C).
@@ -273,18 +361,17 @@ set_bgc(C):- luser_setval(grid_bgc,C),!.
 
 
 
-:- decl_pt(get_black(is_color)).
-
+:- decl_pt(get_black(color)).
 get_black(B):- get_bgco(B),!.
 get_black(B):- luser_getval(user_black,B).
 %get_black(0).
 :- luser_default(user_black,black).
 
-:- decl_pt(get_bgco(is_color)).
+:- decl_pt(get_bgco(color)).
 get_bgco(X):- luser_getval(grid_bgc,X),X\==[],is_color_dat(X),!.
 :- set_bgc(black).
 
-:- decl_pt(get_bgc(is_color)).
+:- decl_pt(get_bgc(color)).
 get_bgc(X):- get_bgco(X),!.
 get_bgc(X):- get_black(X).
 
@@ -674,7 +761,7 @@ ap(diagonal_line). ap(horizontal_line). ap(vertical_line). ap(open_edge). ap(con
 
 ap(rotated45). ap(resizes). ap(diamond).
 apv(square(len)). apv(round(h,w)). apv(triangle). apv(rectangular(h,w)). apv(polygon(sides)).
-apv(shape(num)).  apv(facing(dir)). apv(min(n)). apv(max(n)).  apv(v_hv(h,w)). apv(loc(h,w)). 
+apv(shape(num)).  apv(facing(dir)). apv(min(n)). apv(max(n)).  apv(v_hv(h,w)). apv(loc2D(h,w)). 
 apv(scale(n)).  apv(ext_key(k)). apv(io_bud(k)). apv(linked_bud(k)).
 
 apv(points_old([])).

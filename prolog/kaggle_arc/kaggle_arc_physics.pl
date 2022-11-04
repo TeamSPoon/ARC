@@ -315,7 +315,7 @@ move_dir_object(N,D,I,M):- move_scale_dir_object(1,1,N,D,I,M).
 
 move_scale_dir_object(X,Y,N,D,I,M):- is_object(I),!,
  /*must_det_ll*/((
-  loc(I,OX,OY),
+  loc2D(I,OX,OY),
   move_dir(N,OX,OY,D,X,Y,NX,NY),
   (NY<1 -> M=I ; move_object(NX,NY,I,M)))).
 move_scale_dir_object(N,D,L,LM):- is_group(L),!,mapgroup(move_scale_dir_object(N,D),L,LM).
@@ -326,7 +326,7 @@ move_object(NX,NY,I,M):- is_object(I),!,
   (NY<1 -> M=I ;
   ( localpoints(I,LPoints),
     offset_points(NX,NY,LPoints,GPoints),
-    setq(I,[globalpoints(GPoints),loc(NX,NY)],M))))).
+    setq(I,[globalpoints(GPoints),loc2D(NX,NY)],M))))).
 move_object(H,V,L,LM):- is_group(L),!,mapgroup(move_object(H,V),L,LM).
 move_object(H,V,I,O):- into_group(I,M),M\=@=I,!,move_object(H,V,M,O).
 
@@ -529,7 +529,7 @@ find_engulfs_objects(Obj,[_|ScanNext],Engulfed):- /*must_det_ll*/(find_engulfs_o
 contained_object(O2,O1):-
   O1 \== O2,
   % \+ has_prop(birth(glyphic),O2), %\+ has_prop(birth(glyphic),O1),
-  loc(O1,LowH1,LowV1),loc(O2,LowH2,LowV2), 
+  loc2D(O1,LowH1,LowV1),loc2D(O2,LowH2,LowV2), 
   LowH2 > LowH1, LowV2 > LowV1,
   v_hv(O1,H1,V1),v_hv(O2,H2,V2), 
   H1> H2, V1> V2,
@@ -588,7 +588,7 @@ object_surrounds_point(Obj,_-Point):- point_in_obj_view(Point,Obj),
 
 point_in_obj_view(Next,Obj):- 
   hv_point(H,V,Next),
-  loc(Obj,X,Y),!,
+  loc2D(Obj,X,Y),!,
   VV is V-Y, VV>=0,
   HH is H - X, HH>=0,
   v_hv(Obj,XX,YY),!,

@@ -85,7 +85,7 @@ not_for_matching(_Why,L,localpoints(XX)):- !, started_is_list(XX), member(shape(
 not_for_matching(_Why,L,globalpoints(XX)):- !, started_is_list(XX), (member(shape(_),L);member(localpoints(_),L)).
 
 %not_for_matching(_Why,_,center(H,V)):- (H\==1,V\==1,H\==2,V\==2,H\==3,V\==3).
-%not_for_matching(_Why,_,loc(H,V)):- (H\==1;V\==1).
+%not_for_matching(_Why,_,loc2D(H,V)):- (H\==1;V\==1).
 %not_for_matching(_Why,_,M):- too_unique(M),!.
 %not_for_matching(_Why,_,M):- too_non_unique(M),!.
 
@@ -265,15 +265,15 @@ learn_rule_in_out(Depth,Mode,In,Out):- is_list(In), is_list(Out),
 %learn_rule_in_out(Depth,out_out,I,O):- !, ignore(( is_grid(O), save_learnt_rule(oout_associatable(I,O)))).
 
 compare_objs_how([perfect]).
-compare_objs_how([turned,+loc]).
-compare_objs_how([turned,-loc]).
+compare_objs_how([turned,+loc2D]).
+compare_objs_how([turned,-loc2D]).
 compare_objs_how([moved]).
 compare_objs_how([sameO]).
 compare_objs_how(_).
 
 /*
 v_hv(5,5), amass(25),
-center(9,14),loc(7,12),
+center(9,14),loc2D(7,12),
 colors([cc(PURPLE,21),cc(BLACK,4)]),
 localpoints
 */
@@ -681,7 +681,7 @@ never_labels_in(iz(_)).
 never_labels_in(shape(_)).
 never_labels_in(amass(1)).
 never_labels_in(mass(1)).
-never_labels_in(loc(_,_)).
+never_labels_in(loc2D(_,_)).
 
 
 never_unbind_label(G):- var(G),!.
@@ -758,7 +758,7 @@ find_by_shape(Grid,Find,Founds):-
 
    grid_to_points(F1,GH,GV,Points),
    pp(Points),
-   make_indiv_object(VM,[iz(find_by_shape),F1,loc(H,V),alt_grid_size(GH,GV)],Points,F2)),
+   make_indiv_object(VM,[iz(find_by_shape),F1,loc2D(H,V),alt_grid_size(GH,GV)],Points,F2)),
  findall(F2,Prog,Matches),
  align_founds(Matches,Founds).
 

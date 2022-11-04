@@ -14,13 +14,13 @@ is_fti_step(pbox_vm).
 pbox_vm(VM):- !,
    %GH is round(VM.h*2/3), GV is round(VM.v*2/3),
    GH is round(VM.h - 1), GV is round(VM.v - 1),
-   findall(size(H,V),(between(1,GH,H),between(1,GV,V),H=V),SizesSquare),
-   findall(size(H,V),(between(1,GH,H),between(1,GV,V),H\=V),SizesRect),
+   findall(size2D(H,V),(between(1,GH,H),between(1,GV,V),H=V),SizesSquare),
+   findall(size2D(H,V),(between(1,GH,H),between(1,GV,V),H\=V),SizesRect),
    predsort(sort_on(neg_h_v_area),SizesSquare,SizesSquareS),
    predsort(sort_on(neg_h_v_area),SizesRect,SizesRectS),
    reverse(SizesSquareS,SizesSquareR),
    reverse(SizesRectS,SizesRectR),
-  % list_to_set([size(3,3),size(2,2)|SizesSquareS],Sizes_L_S),
+  % list_to_set([size2D(3,3),size2D(2,2)|SizesSquareS],Sizes_L_S),
    append(SizesSquareS,SizesRectS,Sizes),
    predsort(sort_on(neg_h_v_area),Sizes,Sizes_L_S),
    reverse(Sizes_L_S,Sizes_S_L),
@@ -84,8 +84,8 @@ i_pbox(GG,Objs):- ((i(i_pbox,GG,OO),maybe_subdiv(OO,Objs))).
 maybe_subdiv([OO],Objs):- object_grid(OO,G),i(i_pbox,G,Objs),!.
 maybe_subdiv(Objs,Objs).
 
-obj_global_grid(X,G-wqs(DSC)):- get_black(Black), global_grid(X,Grid),subst(Grid,Black,wbg,G), v_hv(X,VH,VV), loc(X,OH,OV),!,
-  DSC =[loc(OH,OV),v_hv(VH,VV)].
+obj_global_grid(X,G-wqs(DSC)):- get_black(Black), global_grid(X,Grid),subst(Grid,Black,wbg,G), v_hv(X,VH,VV), loc2D(X,OH,OV),!,
+  DSC =[loc2D(OH,OV),v_hv(VH,VV)].
 
 not_in_eq(Set,V):- \+ (member(VV,Set),VV == V).
 
@@ -201,7 +201,7 @@ add_top_bot_left_right(Top,T,In,B,Bot,LLeft,LL,RR,RRight,NewSearch):-
   append([_|RRight],[_],Right))),!.
 
 
-neg_h_v_area(size(H,V),NArea):- NArea is H * (- V).
+neg_h_v_area(size2D(H,V),NArea):- NArea is H * (- V).
 
 
 i_pbox_detect(L_S,H,V,XSG,NSEW,In,OH,OV):- 
@@ -233,7 +233,7 @@ i_pbox_detect(L_S,H,V,XSG,[n,s,e,w],In,OH,OV):-
 */
 
 i_pbox(_VM,_L_S,[]):-!.
-i_pbox(VM,L_S,[size(H,V)|Sizes]):-
+i_pbox(VM,L_S,[size2D(H,V)|Sizes]):-
   once((
    GridO= VM.grid,  
    duplicate_term(GridO,GridI),
@@ -260,7 +260,7 @@ i_pbox(VM,L_S,[size(H,V)|Sizes]):-
   %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
   remCPoints(VM,GOPoints), % =GOPoints,
   remGPoints(VM,Intersection),
-  i_pbox(VM,L_S,[size(H,V)|Sizes]))). 
+  i_pbox(VM,L_S,[size2D(H,V)|Sizes]))). 
 
 i_pbox(VM,L_S,[_|Sizes]):-
  i_pbox(VM,L_S,Sizes).

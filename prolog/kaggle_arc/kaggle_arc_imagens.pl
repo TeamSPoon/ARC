@@ -116,7 +116,7 @@ the_hammer1(RedComplex):-  the_hammer(red,RedComplex).
 the_hammer(Color,ColorComplex):- 
   ColorComplex = obj([amass(6), shape([point_01_01, point_01_02, point_01_03, point_02_01, point_02_02, point_03_02]), 
   colors([cc(Color, 6)]), localpoints([Color-point_01_01, Color-point_01_02, Color-point_01_03, Color-point_02_01, 
-  Color-point_02_02, Color-point_03_02]), v_hv(3, 3), rotation(sameR), loc(2, 5), 
+  Color-point_02_02, Color-point_03_02]), v_hv(3, 3), rotation(sameR), loc2D(2, 5), 
   changes([]), iz(rectangle), iz(hammer), 
   globalpoints([Color-point_02_05, Color-point_02_06, Color-point_02_07, Color-point_03_05, Color-point_03_06, Color-point_04_06]), 
   grid_size(10, 10)]).
@@ -442,7 +442,7 @@ make_row_n_times(H,V,C,L,R,[Row|Rest]):- plus(M,1,V),
   make_row_n_times(H,M,C,L,R,Rest).
 
 
-:- decl_sf(box_grid_n_times(size,fg_color,grid)).
+:- decl_sf(box_grid_n_times(size2D,fg_color,grid)).
 box_grid_n_times(0,_C,Grid,D):- Grid=D,!.
 box_grid_n_times(N,C,Grid,D):- !,
   make_shape(box_grid(C,Grid),G), plus(M,1,N),
@@ -451,7 +451,7 @@ box_grid_n_times(N,C,Grid,D):- !,
 restructure(X,Y):- is_list(X),!,maplist(restructure,X,Y).
 restructure(X,X).
 
-:- decl_sf(solid_square(fg_color,size)).
+:- decl_sf(solid_square(fg_color,size2D)).
 solid_square(C,HW,Grid):-  
   likely_fgc(C), 
   between(1,30,HW),
@@ -462,7 +462,7 @@ solid_square(C,HW,Grid):-
   restructure(FillRows,Grid).
 
 
-:- decl_sf(hollow_square(fg_color,bg_color,size)).
+:- decl_sf(hollow_square(fg_color,bg_color,size2D)).
 
 hollow_square(C,HW,D):- get_bgc(BG),!,hollow_square(C,BG,HW,D).
 hollow_square(C,BG,HW,D):-
@@ -562,7 +562,7 @@ shapelib_opts(Name,Opts):- findall(Opt,is_shapelib_opt(Name,Opt),Opts).
 
 
 % ===========================================================
-% Stretches a grid to double its size
+% Stretches a grid to double its size2D
 :- decl_sf(double_size(grid)).
 % ===========================================================
 double_size(Grid,Double):- is_grid(Grid),!,
@@ -577,7 +577,7 @@ double_rows([],[]):-!.
 double_rows([D|DRows90],[D,D|DRows90D]):- double_rows(DRows90,DRows90D).
 
 % ===========================================================
-% Stretches a grid to increase its size
+% Stretches a grid to increase its size2D
 :- decl_sf(increase_size(size_int,grid)).
 % ===========================================================
 increase_size(N,Grid,Double):- is_grid(Grid),!,
@@ -592,7 +592,7 @@ increase_rows(_,[],[]):-!.
 increase_rows(N,[D|DRows90],O):- make_list_inited(N,D,DD),increase_rows(N,DRows90,DRows90D),my_append(DD,DRows90D,O).
 
 % ===========================================================
-% Stretches a grid border to increase its size
+% Stretches a grid border to increase its size2D
 :- decl_sf(increase_border(size_int,grid)).
 % ===========================================================
 increase_border(N,Grid,Double):- is_grid(Grid),!,

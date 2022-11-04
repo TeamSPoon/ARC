@@ -755,8 +755,8 @@ input_expands_into_output(TestID):-
   ensure_arc_test_properties(TestID), 
   get_black(Black),
   arc_test_property(TestID,common,comp(cbg(Black),i-o,ogs),ogs(List)),
-  \+ \+ (select(ogs(trim,whole,strict,loc(_,_)),List,Rest),
-         member(ogs(trim,whole,strict,loc(_,_)),Rest)),!.
+  \+ \+ (select(ogs(trim,whole,strict,loc2D(_,_)),List,Rest),
+         member(ogs(trim,whole,strict,loc2D(_,_)),Rest)),!.
 
  
 % grid_to_obj(Grid,[colormass,fg_shapes(colormass)],Obj),print_side_by_side(Grid,Obj).
@@ -767,13 +767,13 @@ trim_for_offset_1_1(II,In,OX,OY):-
   once(ogs_11(OX,OY,In,II);(OX=OY,OX=1)).
 
 all_ogs1(II,Out,XY):-
-  findall(ogs(trim,whole,R,loc(XX,YY)),
+  findall(ogs(trim,whole,R,loc2D(XX,YY)),
      (trim_for_offset_1_1(II,In,OX,OY),maybe_ogs(R,X,Y,In,Out),XX is X-OX+1, YY is Y-OY+1),XY),!.
 
-all_ogs2(In,Out,XY):- findall(ogs(notrim,whole,R,loc(XX,YY)),maybe_ogs(R,XX,YY,In,Out),XY),!.
+all_ogs2(In,Out,XY):- findall(ogs(notrim,whole,R,loc2D(XX,YY)),maybe_ogs(R,XX,YY,In,Out),XY),!.
 
 all_ogs3(Grid,Out,XY):-
-  findall(ogs(notrim,Named,R,loc(XX,YY)),(grid_to_so(Grid,Named,In),maybe_ogs(R,XX,YY,In,Out)),XY).
+  findall(ogs(notrim,Named,R,loc2D(XX,YY)),(grid_to_so(Grid,Named,In),maybe_ogs(R,XX,YY,In,Out)),XY).
 
 all_ogs(In,Out,Set):- %member(R,[strict,loose]),
   all_ogs1(In,Out,XY1),
@@ -845,7 +845,7 @@ rinfo(obj(List0),RInfo):-
   atomic_list_concat([obj,N],'_',Key),
   Obj = obj(List0),
   localpoints_include_bg(Obj,LocalPoints),
-  %loc(Obj,X,Y),
+  %loc2D(Obj,X,Y),
   get_bg_label(BGL),
   points_to_grid(LocalPoints,Grid),mapgrid(sometimes_assume(=,BGL),Grid),
   select(shape(Shape),List,Rest2),mapgrid(sometimes_assume(=,BGL),Shape),

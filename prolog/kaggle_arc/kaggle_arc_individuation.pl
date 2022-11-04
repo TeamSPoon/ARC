@@ -84,7 +84,7 @@ into_gio(IndvS,InSO,OutSO):-
 
 not_io(O):- \+ has_prop(giz(g(out)),O), \+ has_prop(giz(g(in)),O).
 
-% comp(cbg(black),i-o,size)=size(num(vals([_846946,_846952]),+ -3,ratio(2)),num(vals([_846978,_846984]),+ -3,ratio(2)))
+% comp(cbg(black),i-o,size2D)=size2D(num(vals([_846946,_846952]),+ -3,ratio(2)),num(vals([_846978,_846984]),+ -3,ratio(2)))
 
 
 xfer_1zero(In,Out):-
@@ -365,7 +365,7 @@ include_black(_VM):- set_bgc(wbg).
 %individuation_macros(complete, [parallel,done]).
 
 individuation_macros(complete, ListO):- im_complete(ListO),
-   progress(im_complete(ListO)),!.
+   pp(im_complete(ListO)),!.
 
 
 im_complete(ListO):- test_config(indiv(ListO)),!.
@@ -644,7 +644,7 @@ individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
    object_grid(OnlyNew,OGrid),
    get_black(Black),mapgrid(assign_plain_var_with(Black),OGrid,Grid),
    object_glyph(OnlyNew,Glyph),
-   loc(OnlyNew,X,Y),
+   loc2D(OnlyNew,X,Y),
    atomic_list_concat([GID,'_',Glyph,'_sub'],NewGID),
    assert_grid_gid(Grid,NewGID),
    set_vm(VM),!,
@@ -1510,7 +1510,7 @@ row_to_indiv(VM,Birth,N,Row):-
   %grid_to_individual([Row],Obj0),  
   % a column is a row that was prematurely rotated 270 degrees
   make_indiv_object(VM,[iz(image), birth(Birth), iz(grouped(Birth)),
-     loc(1,N),
+     loc2D(1,N),
      v_hv(VM.h,1),
      giz(grid_sz(VM.h,VM.v))],GPoints,Obj),
   raddObjects(VM,Obj).
@@ -1534,7 +1534,7 @@ column_to_indiv(VM,Birth,N,Row):-
   %grid_to_individual([Row],Obj0),  
   % a column is a row that was prematurely rotated 270 degrees
   make_indiv_object(VM,[/*iz(hv_line(v)),rotated(sameR),*/
-    birth(Birth),iz(image),iz(grouped(Birth)),loc(N,1),rotation(sameR),v_hv(1,VM.v),giz(grid_sz(VM.h,VM.v))],GPoints,Obj),
+    birth(Birth),iz(image),iz(grouped(Birth)),loc2D(N,1),rotation(sameR),v_hv(1,VM.v),giz(grid_sz(VM.h,VM.v))],GPoints,Obj),
   raddObjects(VM,Obj).
   
 % =====================================================================
@@ -2091,11 +2091,11 @@ whole_into_obj(VM,Grid,Whole):-
   grid_props(Grid,Props0),
   delete(Props0,sometimes_grid_edges(_),Props),
   fif(Len>0,
-    (make_indiv_object(VM,[amass(Len),v_hv(H,V),birth(whole),loc(1,1),iz(image)|Props],Points,Whole),raddObjects(VM,Whole),
+    (make_indiv_object(VM,[amass(Len),v_hv(H,V),birth(whole),loc2D(1,1),iz(image)|Props],Points,Whole),raddObjects(VM,Whole),
        save_grouped(individuate(whole,VM.gid),[Whole]),assert_shape_lib(pair,Whole))),
   localpoints(Grid,LPoints),
   length(LPoints,CLen),fif((CLen=<144,CLen>0),    
-    (make_indiv_object(VM,[birth(whole),iz(shaped),loc(1,1)],LPoints,Whole2),raddObjects(VM,Whole2))).
+    (make_indiv_object(VM,[birth(whole),iz(shaped),loc2D(1,1)],LPoints,Whole2),raddObjects(VM,Whole2))).
 
 
 % =====================================================================
@@ -2188,7 +2188,7 @@ try_shape(VM,Method,LibName,Shape):-
 
    indv_props(Shape,ShapeProps), 
    my_partition(props_not_for_merge,ShapeProps,_Exclude,Include),
-   make_indiv_object(VM,[birth(shape_lib(Method,LibName)),v_hv(SH,SV),loc(OH,OV)|Include],ObjPoints,Indiv),  %obj_to_oid(Shape,_,Iv), %override_object(obj_to_oid(VM.id,Iv),Indiv0,Indiv),  %make_indiv_object(VM,Use,Indiv),
+   make_indiv_object(VM,[birth(shape_lib(Method,LibName)),v_hv(SH,SV),loc2D(OH,OV)|Include],ObjPoints,Indiv),  %obj_to_oid(Shape,_,Iv), %override_object(obj_to_oid(VM.id,Iv),Indiv0,Indiv),  %make_indiv_object(VM,Use,Indiv),
    %nop(points_to_grid(RestOfPoints,set(VM.grid))),  %print_grid(Indiv),
    %raddObjects(VM,Indiv),
    nop(debug_indiv(Indiv)))).

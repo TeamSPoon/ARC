@@ -80,7 +80,7 @@ arc_portray_nt(G0, true):- is_group(G0), ppt(G0),!.
 %arc_portray_nt(G0, false):- is_group(G0), ppt(G0),!.
 arc_portray_nt(G0, false):- is_group(G0), into_list(G0,G), length(G,L),% L>1, !,
    dash_chars, 
-   once(((why_grouped(_TestID,Why,WG),WG=@=G,fail);(Why = (size=L)))),!,
+   once(((why_grouped(_TestID,Why,WG),WG=@=G,fail);(Why = (size2D=L)))),!,
    print_grid(Why,G),nl,
    %underline_print(writeln(Why)),
    print_info_l(G),
@@ -566,7 +566,7 @@ print_side_by_side0(C1,W0,C2):- number(W0), W0 < 0, LW is -W0, !, print_side_by_
 print_side_by_side0(C1,W0,C2):- number(W0), LW is floor(abs(W0)),
   locally(nb_setval(print_sbs,left),into_ss_string(C1,ss(W1,L1))),
   locally(nb_setval(print_sbs,right),into_ss_string(C2,ss(_,L2))),!,
-  with_style("font-size:100%",print_side_by_side_lists_1st(L1,W1,L2,LW)).
+  with_style("font-size2D:100%",print_side_by_side_lists_1st(L1,W1,L2,LW)).
 
 is_side(RL):- nb_current(print_sbs,RL),RL\==[].
 
@@ -943,7 +943,7 @@ gg_out(G):- call(G).
 
 gg_out2(G):-
   wots(S0,call(G)),correct_nbsp(S0,S), !,
-  sformat(SO,'<pre style="overflow-x: visible;"><font size="+0">~w</font></pre>',[S]),
+  sformat(SO,'<pre style="overflow-x: visible;"><font size2D="+0">~w</font></pre>',[S]),
   w_out(SO).
 
 g_out_style(C,G):- wots(S0,g_out(G)),correct_nbsp(S0,S),
@@ -1102,7 +1102,7 @@ print_grid_http(SH,SV,EH,EV,Grid):- bg_sym(BGC),
 
 print_grid_html_old(SH,SV,EH,EV,Grid):-
  % CSS = 'line-height: .5; font-stretch: ultra-extended;',
- %CSS = 'line-height: 1.2; font-stretch: ultra-extended; font-size:288px background-color: reset;',
+ %CSS = 'line-height: 1.2; font-stretch: ultra-extended; font-size2D:288px background-color: reset;',
  CSS = 'white-space: pre;',
  g_out(must_det_ll(( 
   nl_if_needed, 

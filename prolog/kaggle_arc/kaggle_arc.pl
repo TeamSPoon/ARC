@@ -56,11 +56,12 @@ decl_sf(G):- must_det_ll((nonvar(G), !, my_assertz_if_new(is_decl_sf(G)))).
 %:- multifile(decl_pt/2).
 %:- discontiguous(decl_pt/2).
 %:- dynamic(decl_pt/2).
-:- multifile(decl_pt/1).
-:- discontiguous(decl_pt/1).
+%:- multifile(decl_pt/1).
+%:- discontiguous(decl_pt/1).
 %:- dynamic(decl_pt/1).
-
 :- dynamic(is_decl_pt/2).
+:- discontiguous(is_decl_pt/2).
+:- multifile(is_decl_pt/2).
 
 decl_pt(G):- must_det_ll((nonvar(G), !, my_assertz_if_new(is_decl_pt(plain,G)))).
 decl_pt(How,G):- must_det_ll((nonvar(How),nonvar(G), !, my_assertz_if_new(is_decl_pt(How,G)))).
@@ -778,7 +779,7 @@ train_for_objects_from_1pair1(Dict0,TestID,Desc,InA,OutA,Dict1):-
    into_grid(InA,In), into_grid(OutA,Out),!,
    name_the_pair(TestID,ExampleNum,In,Out,PairName),
  	 grid_size(In,IH,IV), grid_size(Out,OH,OV),
-	 ignore((IH+IV \== OH+OV , writeln(io(size(IH,IV)->size(OH,OV))))),
+	 ignore((IH+IV \== OH+OV , writeln(io(size2D(IH,IV)->size2D(OH,OV))))),
    
    into_fti(TestID>(Trn+N1)*IO1,ModeIn,In,InVM),!,
    into_fti(TestID>(Trn+N2)*IO2,ModeOut,Out,OutVM)]),!,
@@ -839,7 +840,7 @@ show_pair_code(In,Out):-
   dash_chars,dash_chars.
 
 print_testinfo(TestID):-
-  ignore(((test_info(TestID,F),forall(member(I,F),pp(test_info=I))))).
+  forall(test_info(TestID,F),forall(member(I,F),pp(test_info=I))).
 
 % trials(learn). trials(clue).   
 trials(human). trials(sol).
@@ -889,7 +890,7 @@ solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut):-
     name_the_pair(TestID,ExampleNum,TestIn,ExpectedOut,PairName))),
    must_det_ll((       
     grid_size(TestIn,IH,IV), grid_size(ExpectedOut,OH,OV),
-    ignore((IH+IV \== OH+OV , writeln(io(size(IH,IV)->size(OH,OV))))),
+    ignore((IH+IV \== OH+OV , writeln(io(size2D(IH,IV)->size2D(OH,OV))))),
     print_testinfo(TestID))), 
    must_det_ll((
    try_easy_io(TestID>ExampleNum,TestIn,ExpectedOut),

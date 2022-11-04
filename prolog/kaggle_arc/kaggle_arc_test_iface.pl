@@ -741,6 +741,7 @@ some_test_info(TestID,test_suite([III])):- icu(Name,PF),atom_id_e(Name,TestID), 
 some_test_info(TestID,III):- some_test_info_prop(TestID,III).
 some_test_info(TestID,test_suite([SuiteX])):- suite_tag(SuiteX,List),tasks_split(TestID,List).
 
+matches(InfoS,InfoS):-!.
 matches(InfoS,InfoM):- member(InfoS,InfoM).
 
 :- abolish(muarc_tmp:test_info_cache,2).
@@ -748,10 +749,12 @@ matches(InfoS,InfoM):- member(InfoS,InfoM).
 
 ensure_test_info:- muarc_tmp:test_info_cache(_,_)-> true ; ( pp(recreating(test_info)),forall(all_arc_test_name(TestID),test_info(TestID,_))).
 test_info(TestID,InfoS):- nonvar(TestID),once(fix_test_name(TestID,FTestID,_)),TestID\=@=FTestID,!,test_info(FTestID,InfoS).
+
 test_info(TestID,InfoS):- var(TestID),var(InfoS), ensure_test_info,!, muarc_tmp:test_info_cache(TestID,InfoS).
-test_info(TestID,InfoS):- var(TestID),nonvar(InfoS),!,term_variables(InfoS,Vs),no_repeats(Vs,(test_info(TestID,InfoM),matches(InfoS,InfoM))).
+test_info(TestID,InfoS):- var(TestID),nonvar(InfoS),!,all_arc_test_name(TestID),term_variables(InfoS,Vs),no_repeats(Vs,(test_info(TestID,InfoM),matches(InfoS,InfoM))).
 %test_info(TestID,InfoS):- \+ \+ muarc_tmp:test_info_cache(TestID,_),!,muarc_tmp:test_info_cache(TestID,InfoS).
-test_info(TestID,InfoS):- nonvar(TestID),muarc_tmp:test_info_cache(TestID,InfoM),!,matches(InfoS,InfoM).
+test_info(TestID,InfoS):- nonvar(TestID),nonvar(InfoS),muarc_tmp:test_info_cache(TestID,InfoM),!,matches(InfoS,InfoM).
+
 test_info(TestID,InfoS):- muarc_tmp:test_info_cache(TestID,InfoS)*->true;test_info_recache(TestID,InfoS).
 
 test_info_recache(TestID,InfoS):- 

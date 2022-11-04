@@ -201,7 +201,7 @@ pgt1(Obj):-
          shape( [ point_01_01, point_02_01]),
          colors( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
-         localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(sameR), loc(3, 1),
+         localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(sameR), loc2D(3, 1),
          changes([]), iz(combined),
          iz(rectangle), iz(multicolored),
          iz(polygon), %obj _to_oid(v('0ad4ef5')>(trn+0)*in, 21),
@@ -213,7 +213,7 @@ pgt2(Obj):- Obj =
          shape( [ point_01_01, point_02_01]),
          colors( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
-         localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(sameR), loc(2, 1),
+         localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(sameR), loc2D(2, 1),
          changes([]), iz(combined),
          iz(rectangle), iz(multicolored),
          iz(polygon), %obj _to_oid(v('a1d4ef5')>(trn+0)*in, 66),
@@ -286,7 +286,7 @@ replace_local_point_color(Point,NewC,OldC,G,GO):- is_list(G),!, maplist(replace_
 replace_local_point_color(Point,NewC,OldC,G,GO):- is_object(G), !,
     localpoints(G,Points),     
     replace_in_points(Point,NewC,OldC,Points,RPoints),
-    %loc(G,OH,OV),offset_point(OH,OV,Point,LPoint),shape(G,NCPoints), maplist(replace_in_points(Point,NewC,OldC),NCPoints,RNCPoints),,shape(RNCPoints)
+    %loc2D(G,OH,OV),offset_point(OH,OV,Point,LPoint),shape(G,NCPoints), maplist(replace_in_points(Point,NewC,OldC),NCPoints,RNCPoints),,shape(RNCPoints)
     setq(G,localpoints(RPoints),GO).
 replace_local_point_color(Point,NewC,OldC,G,GO):- trace_or_throw(unknown_target_type(replace_local_point_color(Point,NewC,OldC,G,GO))).
 

@@ -261,7 +261,7 @@ fav(t('44f52bb0'),[human(i(whole),first_object_bool(h_symmetric),learn_rule)]).
 /*
   Grid = [[1,1,1,1]]
   The Drawer does 
-  Draw Grid = loc(1,1),line_hv(h), pen(1), amass(4)
+  Draw Grid = loc2D(1,1),line_hv(h), pen(1), amass(4)
   
   % Grid<->Drawer   Drawer<->Grid
   
@@ -271,7 +271,7 @@ fav(t('44f52bb0'),[human(i(whole),first_object_bool(h_symmetric),learn_rule)]).
   
   Slover = [- pen(1), + pen(2)]
   
-  DrawGrid = loc(1,1),line_hv(h), pen(2), amass(5)
+  DrawGrid = loc2D(1,1),line_hv(h), pen(2), amass(5)
   Grid = [[2,2,2,2,2]]
 */
 /*

@@ -74,8 +74,8 @@ print_info_l(GridS):- maplist(print_info_1,GridS).
 object_grid_to_str(Grid,Str,Title):- 
   v_hv(Grid,H,V), 
   object_glyph(Grid,Glyph),
-  Title = object_grid(loc(OH,OV),size(H,V)),
-  loc(Grid,OH,OV),
+  Title = object_grid(loc2D(OH,OV),size2D(H,V)),
+  loc2D(Grid,OH,OV),
   localpoints_include_bg(Grid,GridO),
   ((IH=H,IV=V)), % (IH = 30,IV=30), 
   get_black(Black),subst001(GridO,Black,wbg,GridOO),
@@ -107,10 +107,10 @@ debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
   must_det_ll((
   v_hv(Grid,H,V),
   object_glyph(Grid,Glyph),
-  Title = debug_as_grid(Why,loc(OH,OV),size(H,V)),
+  Title = debug_as_grid(Why,loc2D(OH,OV),size2D(H,V)),
   fif((H\==1;V\==1;true),
     must_det_ll((
-     loc(Grid,OH,OV),     
+     loc2D(Grid,OH,OV),     
      localpoints_include_bg(Grid,GridO),
      get_black(Black),
      subst001(GridO,Black,wbg,PrintGrid),    
@@ -157,7 +157,7 @@ debug_indiv(obj(A)):- \+ is_list(A),!, pp(debug_indiv(obj(A))).
 debug_indiv(A):- is_point_obj(A,Color,Point),
   obj_to_oid(A,Tst,Id), i_glyph(Id,Sym),
   hv_point(H,V,Point), i_glyph(Id,Sym),
-  wqnl([' % Point: ', color_print(Color,Sym), dot, color(Color), fav1(Tst), nth(Id), loc(H,V)]),!. 
+  wqnl([' % Point: ', color_print(Color,Sym), dot, color(Color), fav1(Tst), nth(Id), loc2D(H,V)]),!. 
 */
 object_glyph_color(Obj,FC):- once((unique_colors(Obj,CL),member(FC0,CL),is_real_color(FC0));FC0=wfg),
   (FC0==black_n -> FC= wbg ; FC = FC0).
@@ -234,7 +234,7 @@ debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
 
   ignore((TF==true,dash_chars)),
   sformat(SF,"% ~w:\t\t~w\t",[PC,SGlyph]),
-  ignore(( g_out_style(style('font-size','75%'),(write(SF), wqs(TVS))))),
+  ignore(( g_out_style(style('font-size2D','75%'),(write(SF), wqs(TVS))))),
   ignore(( TF==true, amass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
   ignore(( fail, amass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
   %pp(A),
@@ -315,8 +315,8 @@ remove_too_verbose(MyOID,TP,OO):- compound(TP),compound_name_arguments(TP,link,[
 
 
 remove_too_verbose(MyOID,colors(H),HH):- !, remove_too_verbose(MyOID,H,HH).
-%remove_too_verbose(MyOID,loc(X,Y),loc(X,Y)).
-%remove_too_verbose(MyOID,v_hv(X,Y),size(X,Y)).
+%remove_too_verbose(MyOID,loc2D(X,Y),loc2D(X,Y)).
+%remove_too_verbose(MyOID,v_hv(X,Y),size2D(X,Y)).
 remove_too_verbose(_MyID,changes([]),'').
 remove_too_verbose(_MyID,rotation(sameR),'').
 remove_too_verbose(MyOID,L,LL):- is_list(L),!, maplist(remove_too_verbose(MyOID),L,LL).
@@ -344,7 +344,7 @@ too_verbose(cenY).
 debug_indiv(_,_,X,_):- too_verbose(X),!.
 debug_indiv(Obj,_,F,[A]):- is_cpoints_list(A),!,
   v_hv(Obj,H,V), wqnl(F), 
-  loc(Obj,OH,OV),
+  loc2D(Obj,OH,OV),
   EH is OH+H-1,
   EV is OV+V-1,
   object_glyph(Obj,Glyph),

@@ -6,39 +6,6 @@
 */
 :- include(kaggle_arc_header).
 
-
-decl_pt(_):- fail.
-
-check_args(P,MC):- functor(P,F,A),functor(T,F,A),functor(C,F,A),decl_pt(_,T),check_args(P,1,A,A,T,C,MC),!.
-check_args(P,P):- !. 
-
-check_args(P,Arity,Arity,1,T,C,MC):- fail,
- call(C), arg(An,T,ArgType),arg(An,C,Result),
- MC = t,
- arg(An,P,Return),into_type(ArgType,Result,Return).
-
-check_args(P,Arity,An,2,T,C,MC):- fail,
- arg(An,P,ArgIn),arg(An,T,ArgType),arg(An,C,CallArg),
- is_group(ArgIn), ArgType = object,!,
- arg(Arity,P,Result),arg(Arity,C,Return),
- findall(Return,(member(CallArg,ArgIn),check_args(P,Arity,Arity,1,T,C,MC)),Result).
-
-check_args(P,Arity,An,Left,T,C,MC):-  
- arg(An,P,ArgIn),arg(An,T,ArgType),arg(An,C,CallArg),into_type(ArgType,ArgIn,CallArg),
- AnM1 is An+1,LeftP1 is Left-1, check_args(P,Arity,AnM1,LeftP1,T,C,MC),!.
-check_args(_P,_Arity,_An,_Left,_T,C,C).
-
-into_type(Type,G,O):- nonvar_or_ci(O),!,into_type(Type,G,M),!,M=O.
-into_type(_Type,G,O):- plain_var(G),O=G,!.
-into_type(Type,G,O):- plain_var(G),throw(var_into_type(Type,G)),O=fake(Type,G).
-into_type(+,X,X).
-into_type(oid,X,ID):- into_oid(X,ID).
-into_type(num,X,X):- assertion(number(X)).
-into_type(dir,X,X):- assertion(nav(X,_,_)).
-into_type(grid,X,O):- into_grid(X,O).
-into_type(object,X,O):- is_object(X)-> X=O ; into_obj(X,O).
-into_type(group,X,O):- into_group(X,O).
-
 pass_thru_workflow(G):- var(G),!.
 pass_thru_workflow([]).
 pass_thru_workflow([options(V)]):- nonvar(V).
@@ -77,8 +44,8 @@ into_singles(Group,Obj):- is_group(Group),!,member(Obj,Group).
 into_singles(Class,Obj):- (iz(Obj,Class),deterministic(YN)), (YN==true->!;true).
 into_singles(Obj,Obj).
 
-vert_pos(Class,Y):- into_singles(Class,Obj),loc(Obj,_X,Y).
-horiz_pos(Class,X):- into_singles(Class,Obj),loc(Obj,X,_Y).
+vert_pos(Class,Y):- into_singles(Class,Obj),loc2D(Obj,_X,Y).
+horiz_pos(Class,X):- into_singles(Class,Obj),loc2D(Obj,X,_Y).
 
 when_config(This,Goal):-test_config(This)-> call(Goal) ; true.
 test_config(This):- once(test_info(_,_)), get_current_test(Name),test_info(Name,InfoL),!,contains_nonvar(This,InfoL).
@@ -236,7 +203,7 @@ run_dsl(VM,enforce,color(Obj,Color),In,Out):-!,
  color(Obj,ColorWas),subst_color(ColorWas,Color,In,Out),
     override_object_io(VM,color(Color),Obj,In,Out).
 
-run_dsl(VM,enforce,vert_pos(Obj,New),In,Out):-!, loc(Obj,X,_Old), override_object_io(VM,loc(X,New),Obj,In,Out).
+run_dsl(VM,enforce,vert_pos(Obj,New),In,Out):-!, loc2D(Obj,X,_Old), override_object_io(VM,loc2D(X,New),Obj,In,Out).
 
 run_dsl(VM,Mode,Prog,In,Out):- \+ missing_arity(Prog,2), !, 
   vm_grid(VM, run_dsl_call_io(VM,Mode,Prog,In,Out), In, Out).

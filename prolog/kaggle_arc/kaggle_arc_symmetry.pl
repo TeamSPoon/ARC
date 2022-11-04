@@ -361,10 +361,10 @@ quaderants_and_center_rays(Grid9x9,QuadsO,CenterO,RaysO):-
    flipH(Q1,Q1R), flipV(Q3,Q3R), rot180(Q4,Q4R),
    gensym('CRef_',CRef),
    CommonQ = [iz(quadrant),iz(pattern(CRef))],
-   Quads = [obj([grid(Q2),rot(sameR),loc(CRef,-1,-1)|CommonQ]),
-             obj([grid(Q1R),rot(flipH),loc(CRef,1,-1)|CommonQ]),
-             obj([grid(Q3R),rot(flipV),loc(CRef,-1,1)|CommonQ]),
-             obj([grid(Q4R),rot(rot180),loc(CRef,1,1)|CommonQ])],
+   Quads = [obj([grid(Q2),rot(sameR),loc2D(CRef,-1,-1)|CommonQ]),
+             obj([grid(Q1R),rot(flipH),loc2D(CRef,1,-1)|CommonQ]),
+             obj([grid(Q3R),rot(flipV),loc2D(CRef,-1,1)|CommonQ]),
+             obj([grid(Q4R),rot(rot180),loc2D(CRef,1,1)|CommonQ])],
    get_center_rays(CRef,Grid9x9,Center,Rays),
    maplist(filter_empty_grids,[Quads,Center,Rays],[QuadsO,CenterO,RaysO]).
 
@@ -376,11 +376,11 @@ get_center_rays(CRef,Grid9x9,Center,Rays):-
    rot180(CW,CWR), rot270(CN,CNR), rot90(CS,CSR),
    CommonR = [iz(divider(CRef)),iz(ray(CRef))],
    
-   Rays  = [obj([grid(CE),rot(sameR),   loc(CRef,1,0)|CommonR]),
-             obj([grid(CWR),rot(rot180),loc(CRef,-1,0)|CommonR]),
-             obj([grid(CSR),rot(rot90), loc(CRef,0,1)|CommonR]),
-             obj([grid(CNR),rot(rot270),loc(CRef,0,-1)|CommonR])],
-   Center =  [obj([grid(CC),rot(sameR),loc(CRef,0,0)|iz(center(CRef))])],!.
+   Rays  = [obj([grid(CE),rot(sameR),   loc2D(CRef,1,0)|CommonR]),
+             obj([grid(CWR),rot(rot180),loc2D(CRef,-1,0)|CommonR]),
+             obj([grid(CSR),rot(rot90), loc2D(CRef,0,1)|CommonR]),
+             obj([grid(CNR),rot(rot270),loc2D(CRef,0,-1)|CommonR])],
+   Center =  [obj([grid(CC),rot(sameR),loc2D(CRef,0,0)|iz(center(CRef))])],!.
 
 
 filter_empty_grids(List,ListO):- include(obj_has_form,List,ListO).
@@ -405,7 +405,7 @@ clip_quadrant(CRef,SXC,SXC,EXC,EYC,VM,SXQ4,SYQ4,EXQ4,EYQ4,G,Same,OBJL):-
      iz(pattern(CRef,SXC,SXC,EXC,EYC)),
      rotation(Same),
      v_hv(Width,Height),
-     loc(SXQ4,SYQ4),
+     loc2D(SXQ4,SYQ4),
      globalpoints(GPoints),
      center_info(CRef,SXC,SXC,EXC,EYC) /*,
      grid(LikeQ4)*/ ],LGPoints,OBJL).
@@ -1378,9 +1378,9 @@ rows_will_align([Row1|Rest1],B):- is_list(B),!, B=[Row2|Rest2],
 rows_will_align(A,B):- A=B,!.
 
 max_hv(Objects,H,V):- 
-  findall(size(H,V),(member(O,Objects),v_hv(O,H,V)),Sizes),
+  findall(size2D(H,V),(member(O,Objects),v_hv(O,H,V)),Sizes),
   sort(Sizes,SizesS),
-  reverse(SizesS,[size(H,V)|_]),!.
+  reverse(SizesS,[size2D(H,V)|_]),!.
 
 makes_prefect_result(_VM,H,V,ColorAdvice,Grids,RepairedResult):-  
   maplist(unbind_color(ColorAdvice),Grids,UGrids),
@@ -1393,7 +1393,7 @@ prefect_result(VM,H,V,_Ordered,Grids,RepairedResult,ColorAdvice):-
   maplist(print_grid(makes_prefect_result(ColorAdvice)),[RepairedResult|Grids]).
 /*
   last(Grids,Last),
-  loc(Last,X,Y),
+  loc2D(Last,X,Y),
   
   maplist(object_grid,Grids,OGrids),% maplist(print_grid(grid_to_3x3_objs),OGrids),
   maplist(free_bg(ColorAdvice),OGrids,FOGrids),

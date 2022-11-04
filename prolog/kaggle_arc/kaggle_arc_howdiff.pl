@@ -71,7 +71,7 @@ get_selector_n2([N1]):- top(Top), between(4,Top,N1).
 %generalize(CI,CO):- callable(CI),functor(CI,F,A),functor(CO,F,A).
 
 generalize_atomic(I,I).
-generalize_atomic(I,O):- atomic_type(P1), call(P1,I),!, freeze(O, call(P1,O)).
+generalize_atomic(I,O):- atomic_type(P1), is_type_call(P1,I),!, freeze(O, is_type_call(P1,O)).
 generalize_atomic(I,O):- atom(I),!, freeze(O, atom(O)).
 
 number_or_ratio(NR):- (number(NR);rational(NR)),!.
@@ -135,7 +135,7 @@ sub_term_or_e(E,List):- is_list(List),!,member(EE,List),sub_term_or_e(E,EE).
 sub_term_or_e(E,List):- sub_term(E,List).
 
 count_of(A,P1, NEG):- nonvar(NEG), NEG = -N, !, count_of(A,P1,NN), N is -NN.
-count_of(A,P1,N):- findall(E,(sub_term_or_e(E,A),call(P1,E)),L),length(L,N).
+count_of(A,P1,N):- findall(E,(sub_term_or_e(E,A),is_type_call(P1,E)),L),length(L,N).
 count_sum_of(A,P2,N):- findall(EN,(sub_term_or_e(E,A),call(P2,E,EN)),L),sum_list(L,N).
 
 var_count(Term,N):- term_variables(Term,Vs),length(Vs,N),!.
@@ -163,7 +163,6 @@ generalize_arglist3([A,B,C,D|E],[AA,BB,CC,DD|EE]):- generalize_arg(A,AA), genera
 generalize_cons(I,O):- plain_var(I), !, (O=[];O=_).
 generalize_cons([],O):- !, (O=[];O=_).
 generalize_cons([A|B],[AA|BB]):- !, generalize(A,AA),generalize_cons(B,BB).
-
 
 combine_diffs([],D,D):-!.
 combine_diffs(D,[],D):-!.
@@ -343,7 +342,7 @@ showdiff_arg1(Peers1,Obj1,Peers2,Obj2):-
   objs_to_io(Obj1,Obj2,I1,O1),
   ((Obj1==I1) -> (PeersI = Peers11,PeersO = Peers22) ; (PeersI = Peers22,PeersO = Peers11)),
 
-  %link_prop_types(loc,I1,O1,_LOCS),
+  %link_prop_types(loc2D,I1,O1,_LOCS),
   printing_diff(I1,O1),
   indv_props(I1,S1),indv_props(O1,S2),
   get_current_test(TestID), ignore(what_unique(TestID,I1)),
@@ -397,8 +396,8 @@ best_mates(PA,BBR,PB):- select_obj_pair_2([PA],BBR,PA,PB,_Why).
 
 
 compare_objs_mask([perfect]).
-compare_objs_mask([turned,+loc]).
-compare_objs_mask([turned,-loc]).
+compare_objs_mask([turned,+loc2D]).
+compare_objs_mask([turned,-loc2D]).
 compare_objs_mask([moved]).
 %compare_objs_mask([sameO]).
 
@@ -420,7 +419,7 @@ maybe_good_prop(A,A):- maybe_good_prop1(A).
 maybe_good_prop(o(How,_,_),o(How,_,_)).
 
 maybe_good_prop1(v_hv(_,_)).
-maybe_good_prop1(loc(_,_)).
+maybe_good_prop1(loc2D(_,_)).
 maybe_good_prop1(iz(poly(_))).
 maybe_good_prop1(birth(_)).
 maybe_good_prop1(iz(locY(_))).
@@ -442,12 +441,12 @@ not_giz(P):- prop_type(_,P),!.
 not_giz(iz(_)):-!.
 not_giz(_):-!,fail.
 
-prop_type(loc,loc(_,_)).
-prop_type(loc,center(_,_)).
-prop_type(loc,iz(locX(_))).
-prop_type(loc,iz(cenX(_))).
-prop_type(loc,iz(locY(_))).
-prop_type(loc,iz(cenY(_))).
+prop_type(loc2D,loc2D(_,_)).
+prop_type(loc2D,center(_,_)).
+prop_type(loc2D,iz(locX(_))).
+prop_type(loc2D,iz(cenX(_))).
+prop_type(loc2D,iz(locY(_))).
+prop_type(loc2D,iz(cenY(_))).
 prop_type(scale,s_hv(_,_)).
 prop_type(scale,v_hv(_,_)).
 prop_type(scale,iz(sizeX(_))).
@@ -460,7 +459,7 @@ prop_type(repaint,colors(_)).
 prop_type(_,edge(_,_)).
 
 changed_by(shape,reshape).
-changed_by(loc,move).
+changed_by(loc2D,move).
 changed_by(amass,grow).
 changed_by(localpoints,reshape_and_recolor).
 changed_by(rotation,rotate).
@@ -520,9 +519,9 @@ diff_groups1a(_OA,_OB,A,B,[disjointed(SharedT,AOnlyT,BOnlyT)]):-
 tersify_cheap(I,O):- tersify(I,O),!.
 
 
-object_dglyphH(PA,objFn(GA,loc(X,Y),ROT,Pen,ShapeID)):- 
+object_dglyphH(PA,objFn(GA,loc2D(X,Y),ROT,Pen,ShapeID)):- 
   obj_to_oid(PA,GA),% mass(PA,Mass),
-  shape(PA,Shape),pen(PA,Pen),loc(PA,X,Y), rotation(PA,ROT),
+  shape(PA,Shape),pen(PA,Pen),loc2D(PA,X,Y), rotation(PA,ROT),
   shape_id(Shape,ShapeID).
  
 
@@ -595,7 +594,7 @@ make_comparable(I,II):- functor(I,II,_).
 
 no_diff(in,out).
 simular([],_,_,[]):- !.
-simular(loc=Where,I,O,object_has_moved(Where)):-  
+simular(loc2D=Where,I,O,object_has_moved(Where)):-  
   \+ (mass(O,OC), OC < 6) ,
   \+ (colors(O,[cc(BG, _)|_]),is_black_or_bg(BG)),
   object_glyph(I,G), \+ object_glyph(O,G).
@@ -786,12 +785,12 @@ sprop(perfect).
 %sprop(perfect).
 
 sprop_of(sameO,visually).
-sprop_of(sameO,size).
+sprop_of(sameO,size2D).
 sprop_of(sameO,shape).
 sprop_of(sameO,colors).
 
 sprop_of(moved,sameO).
-sprop_of(moved,loc).
+sprop_of(moved,loc2D).
 
 sprop_of(turned,rotate).
 
@@ -1051,15 +1050,15 @@ my_permutation(BG,BGL):- permutation(BG,BGL).
 proportionate(_Nvm,[],[],_).
 proportionate(NVM,[HV1|List1],[HV2|List2],N):-
    proportional(HV1,HV2,N),
-   nop(call(NVM, N)),
+   nop(is_type_call(NVM, N)),
    proportionate(NVM,List1,List2,N).
 
 not_very_simular(X):- \+ not_very_different(X).
 
-not_very_different(vis_hv_term(size(A,B))):- !, not_very_different_t(A),not_very_different_t(B).
+not_very_different(vis_hv_term(size2D(A,B))):- !, not_very_different_t(A),not_very_different_t(B).
 not_very_different(vis_hv_term(area(A))):-   !, not_very_different_t(A).
-not_very_different(loc_term(loc(A,B))):-  !, not_very_different_t(A),not_very_different_t(B).
-not_very_different(center_term(loc(A,B))):-  !, not_very_different_t(A),not_very_different_t(B).
+not_very_different(loc_term(loc2D(A,B))):-  !, not_very_different_t(A),not_very_different_t(B).
+not_very_different(center_term(loc2D(A,B))):-  !, not_very_different_t(A),not_very_different_t(B).
 
 not_very_different(mass(A)):- !, not_very_different_t(A).
 not_very_different(amass(A)):- !, not_very_different_t(A).
@@ -1090,10 +1089,10 @@ unused_proportion1(_Obj1,Obj2,Obj2):- var(Obj2),!.
 %proportional(Obj1,Obj2,Obj3):- unused_proportion1(Obj1,Obj2,Obj3),!.
 proportional(A2,B2,List):- maybe_reorder_pair(A2,B2,A3,B3), !, proportional(A3,B3,List).
 proportional(L1,L2,List):- non_grid_list(L1),non_grid_list(L2),!,must_det_ll(proportional_lists(L1,L2,List)).
-proportional(size(H1,V1),size(H2,V2),size(H,V)):- proportional_size(H1,H2,H),proportional_size(V1,V2,V).
-proportional(size(V1,H1),size(H2,V2),size_inv(H,V)):- proportional_size(H1,H2,H),proportional_size(V1,V2,V).
-proportional(size(H1,V1),size(H2,V2),area(HV)):- !, HV1 is H1*V1, HV2 is H2*V2, proportional_size(HV1,HV2,HV).
-proportional(loc(H1,V1),loc(H2,V2),loc(H,V)):- !, proportional_loc(H1,H2,H),proportional_loc(V1,V2,V).
+proportional(size2D(H1,V1),size2D(H2,V2),size2D(H,V)):- proportional_size(H1,H2,H),proportional_size(V1,V2,V).
+proportional(size2D(V1,H1),size2D(H2,V2),size_inv(H,V)):- proportional_size(H1,H2,H),proportional_size(V1,V2,V).
+proportional(size2D(H1,V1),size2D(H2,V2),area(HV)):- !, HV1 is H1*V1, HV2 is H2*V2, proportional_size(HV1,HV2,HV).
+proportional(loc2D(H1,V1),loc2D(H2,V2),loc2D(H,V)):- !, proportional_loc(H1,H2,H),proportional_loc(V1,V2,V).
 proportional(colors(H1),colors(H2),color_changes(H)):- !, proportional_lists(H1,H2,H).
 %proportional(cc(N1,C),cc(N2,C),cc(H,C)):- !, proportional_size(N1,N2,H).
 proportional(N1,N2,N):- number(N1),number(N2),!,proportional_size(N1,N2,N).
@@ -1112,8 +1111,8 @@ proportional(Obj2,Obj1,Out):-
   (is_object(Obj1) -> enum_obj_props(P1P2) ; enum_grid_props(P1P2)),
   P1P2=..[P2,P1|Lst],
   once((
-  once((once((on_x_log_and_fail(call(P1,Obj1)),
-              on_x_log_and_fail(call(P1,Obj2)))),
+  once((once(((is_type_call(P1,Obj1)),
+              on_x_log_and_fail(is_type_call(P1,Obj2)))),
   length(Lst,Len), length(NewLst1,Len),length(NewLst2,Len),
   once((on_x_log_and_fail(apply(P2,[Obj1|NewLst1])),
         on_x_log_and_fail(apply(P2,[Obj2|NewLst2])))))),
@@ -1137,7 +1136,7 @@ grid_props(Obj1,OOO):- % \+ arc_option(grid_size_only),
  % wots(S,print_grid(Obj1)),
  findall(Prop, ((
   enum_grid_props(P1P2),
-  P1P2=..[P2,P1|Lst], once((on_x_log_and_fail(call(P1,Obj1)))),
+  P1P2=..[P2,P1|Lst], once((on_x_log_and_fail(is_type_call(P1,Obj1)))),
     length(Lst,Len), length(NewLst1,Len), 
     once((on_x_log_and_fail(apply(P2,[Obj1|NewLst1])))),
    Prop =.. [P2|NewLst1])), ListO),
@@ -1269,16 +1268,16 @@ simplify_objs_e(X,X).
 
 prefer_grid(G):- is_object_or_grid(G).
 
-:- decl_pt(prop_g,mass(is_object_or_grid,number)).
+:- decl_pt(prop_g,mass(prefer_grid,number)).
 :- decl_pt(prop_g,unique_colors(prefer_grid, set)).
-:- decl_pt(prop_g,has_y_rows(is_grid,colcount,color,set(rownums))).
-:- decl_pt(prop_g,has_x_columns(is_grid,rowcount,color,set(colnums))).
-:- decl_pt(prop_g,x_columns(is_grid,set)).
-:- decl_pt(prop_g,y_rows(is_grid,set)).
+:- decl_pt(prop_g,has_y_rows(grid,colcount,color,set(rownums))).
+:- decl_pt(prop_g,has_x_columns(grid,rowcount,color,set(colnums))).
+:- decl_pt(prop_g,x_columns(grid,set)).
+:- decl_pt(prop_g,y_rows(grid,set)).
 :- decl_pt(prop_g,colors(prefer_grid, set)).
 
-:- decl_pt(prop_o,center_term(is_object,loc)).
-:- decl_pt(prop_o,loc_term(is_object,loc)).
+:- decl_pt(prop_o,center_term(object,loc2D)).
+:- decl_pt(prop_o,loc_term(object,loc2D)).
 
 :- assertz_if_new((is_decl_pt(prop_o, P):- is_decl_pt(prop_g, P))).
 

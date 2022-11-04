@@ -114,8 +114,8 @@ relax_prop(S1,R1):- R1 = S1.
 relax_prop1(S1,R1):- relax_prop2(S1,R1)*->true;generalize(S1,R1).
 
 relax_prop2(o(X,Y,_),o(X,Y,_)).
-relax_prop2(loc(X,_),loc(X,_)).
-relax_prop2(loc(_,Y),loc(_,Y)).
+relax_prop2(loc2D(X,_),loc2D(X,_)).
+relax_prop2(loc2D(_,Y),loc2D(_,Y)).
 
 
 simplify_props(IndvS,[R1|Props],SPropsF):- never_group_on(R1), !,simplify_props(IndvS,Props,SPropsF).
@@ -173,7 +173,7 @@ grid_part(Grid,Info):- var(Grid), get_current_test(TestID), some_current_example
 number_obj(N,obj(List),obj([ord(N)|List])).
 /*
   Obj = obj(List),
-  loc(Obj,X,Y),obj_to_oid(Obj,_,MyID),
+  loc2D(Obj,X,Y),obj_to_oid(Obj,_,MyID),
  % atomic_list_concat([obj,X,Y],'_',Key),
   localpoints_include_bg(Obj,LocalPoints),
   points_to_grid(X,Y,LocalPoints,Grid),mapgrid(sometimes_assume(=,bg),Grid),
