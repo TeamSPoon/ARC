@@ -11,6 +11,8 @@
 %:- learn_shapes.
 :- ensure_loaded(kaggle_arc_utils).
 :- ensure_loaded(kaggle_arc_ui_ansi).
+:- ensure_loaded(kaggle_arc_deepening).
+:- ensure_loaded(kaggle_arc_typecheck).
 :- ensure_loaded(kaggle_arc_interpreter).
 :- ensure_loaded(kaggle_arc_test_loader).
 :- ensure_loaded(kaggle_arc_domaintypes).
@@ -24,6 +26,7 @@
 :- ensure_loaded(kaggle_arc_intruder).
 :- ensure_loaded(kaggle_arc_test_cache).
 :- ensure_loaded(kaggle_arc_individuation).
+
 
 :- ensure_loaded(kaggle_arc_object).
 :- ensure_loaded(kaggle_arc_boards).

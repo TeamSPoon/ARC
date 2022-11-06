@@ -1,0 +1,2424 @@
+xterm: no process found
+
+Script done on 2022-11-06 12:58:20-08:00 [COMMAND_EXIT_CODE="0"]
+Script started on 2022-11-06 12:58:21-08:00 [COMMAND="TYPESCRIPT=1 ./Kaggle_arc.sh " TERM="xterm" TTY="/dev/pts/5" COLUMNS="231" LINES="67"]
+ARC_DIR=/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+BCMD=cd /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc ; pwd ; swipl -l kaggle_arc.pl
+/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+[32m% Contacting server at https://www.swi-prolog.org/pack/query ...[0m[32m ok
+[0m[32m% Pack `logicmoo_utils' is already installed @3.0.3
+[0m[32m% Running "git fetch" in '/home/norights/.local/share/swi-prolog/pack/logicmoo_utils'
+[0m[1;31mERROR: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:27:
+ERROR:    error: cannot open '.git/FETCH_HEAD': Permission denied
+[0merror(process_error(git([fetch]),exit(255)),_418)=pack_upgrade(logicmoo_utils)
+% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% ?- fixup_module_exports_into_from(system,locally_each). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_strings). 
+% ?- fixup_module_exports_into_from(system,rtrace). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,loop_check). 
+% ?- fixup_module_exports_into_from(system,xlisting_console). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,hook_database). 
+% ?- fixup_module_exports_into_from(system,no_repeats). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filesystem). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_terms). 
+% ?- fixup_module_exports_into_from(system,util_varnames). 
+% ?- fixup_module_exports_into_from(system,subclause_expansion). 
+% ?- fixup_module_exports_into_from(system,clause_attvars). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filestreams). 
+% ?- fixup_module_exports_into_from(system,call_reorder). 
+% ?- fixup_module_exports_into_from(system,nb_set_term). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(baseKB,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,dcg_meta). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_bb_frame). 
+% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% init_phase(after_load).
+% ?- fixup_module_exports_into_from(system,gapi). 
+% ?- fixup_module_exports_into_from(system,gvlib). 
+% ?- fixup_module_exports_into_from(system,attvar_serializer). 
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:165 
+%~ current_prolog_flag(argv,[])
+print_request([]).
+print_request([H|T]) :-
+    H=..[Name, Value],
+    format(user_error, '<tr><td>~w<td>~w~n', [Name, Value]),
+    print_request(T).
+
+ensure_colapsable_script :-
+    once_per_request(pformat_write('\n<script>\nvar coll = document.getElementsByClassName("collapsible");\nvar i;\n\nfor (i = 0; i < coll.length; i++) {\n  coll[i].addEventListener("click", function(e) {\n    this.classList.toggle("active");\n    e.preventDefault();\n    var content = this.nextElementSibling;\n    if (content.style.maxHeight){\n      content.style.maxHeight = null;\n    } else {\n      content.style.maxHeight = content.scrollHeight + "px";\n    }     \n  });\n}\n</script> ')).
+
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web). 
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+[32m% autoloading prolog_autoload:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading pldoc_files:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:append/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m[32m% autoloading sgml_write:list_to_assoc/2 from /usr/lib/swi-prolog/library/assoc.pl
+[0m% ?- fixup_module_exports_into_from(system,web_long_message). 
+% ?- fixup_module_exports_into_from(system,shrdlurn_eval). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web_server). 
+% ?- fixup_module_exports_into_from(system,xlisting_web_server). 
+[32m% autoloading random:must_be/2 from /usr/lib/swi-prolog/library/error.pl
+[0m[32m% autoloading random:nth0/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m%~ ?-webui_start_swish_and_clio.
+%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_886496),Setter_Term_expansion) ,
+%~      (Compound:-_886496)=D848588_d848590 ,
+%~      D848588_d848590\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D848588_d848590-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_961528:-_961530),_961520,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_829666) ,
+%~      compound(_829674) ,
+%~      term_expansion_setter((_829674:-_829676),_829668) ,
+%~      (_829674:-_829676)=_829726 ,
+%~      _829726\==_829668 ,
+%~      _829666=_829670 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_829726-->_829668))),nl)))
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_530,_534) ,
+%~     _530\==_534 ,
+%~     _532=_536 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_530-->_534))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ call_in_thread('user:wdmsg(call_in_thread)',user,wdmsg(call_in_thread))
+%~ call_in_thread.
+%~ call_in_thread
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/007bbfb7.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/00d62c1b.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/017c7c7b.json',
+%~   ....(400>99)])
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_test_loader.pl:119 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00576224.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/009d5c81.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00dbd492.json',
+%~   ....(400>99)])
+%~ load_json_files('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/1D_testset/*.json',[])
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/0uduqqj6f.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/178fcbfb-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64-relative-right-side.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/4938f0c2-easy.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/flow.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-dynamic-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ihiz27k2n.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/middle.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/mind-the-gap.json',  '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/n1hczotml.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/rcpwrfki1.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/referenceable-components.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/surface-pixel-count.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/vyaguzeoi.json'])
+% ?- fixup_module_exports_into_from(system,user). 
+program=[ grid_size(In,InH,InV), 
+          grid_size(Out,OutH,OutV), 
+          InArea is InH*InV, 
+          OutArea is OutH*OutV, 
+          ratio_for(RatioArea,OutArea,InArea), 
+          max_min(OutArea,InArea,BothMaxArea,BothMinArea), 
+          amass(In,InMass), 
+          amass(Out,OutMass), 
+          ratio_for(DeltaMass,OutMass,InMass), 
+          unique_color_count(In,InColorLen), 
+          unique_color_count(Out,OutColorLen), 
+          ratio_for(RatioColorLen,OutColorLen,InColorLen), 
+          unique_colors(In,InColors), 
+          unique_colors(Out,OutColors), 
+          intersection( InColors, 
+            OutColors, SharedColors,InSpecificColors, 
+            OutSpecificColors), 
+          append( [InSpecificColors,SharedColors,OutSpecificColors], 
+            Include_Append_AllColors), 
+          nop(dont_include(Include_Append_AllColors)), 
+          sort(Include_Append_AllColors,AllColors), 
+          maplist( length, 
+            [ InColors, OutColors,SharedColors, 
+                 InSpecificColors, OutSpecificColors, AllColors], 
+            [ InColorsLen, OutColorsLen,SharedColorsLen, 
+                     InSpecificColorsLen, OutSpecificColorsLen, AllColorsLen]), 
+          ratio_for(RescaleH,OutH,InH), 
+          ratio_for(RescaleV,OutV,InV), 
+          ratio_for(InDensity,InMass,InArea), 
+          ratio_for(OutDensity,OutMass,OutArea), 
+          ratio_for(DeltaDensity,OutDensity,InDensity), 
+          max_min(OutH,OutV,OutMaxHV,Min_OutMaxHV), 
+          max_min(InH,InV,InMaxHV,Min_MaxHV), 
+          OutMaxHVArea is OutMaxHV*OutMaxHV, 
+          InMaxHVArea is InMaxHV*InMaxHV, 
+          ratio_for(RatioMaxHVArea,OutMaxHVArea,InMaxHVArea), 
+          max_min(InMaxHVArea,OutMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin), 
+          ratio_for(RatioBothMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin)]
+		in=In
+		in_h=InH
+		in_v=InV
+		out=Out
+		out_h=OutH
+		out_v=OutV
+		in_area=InArea
+		out_area=OutArea
+		ratio_area=RatioArea
+		both_max_area=BothMaxArea
+		both_min_area=BothMinArea
+		in_mass=InMass
+		out_mass=OutMass
+		delta_mass=DeltaMass
+		in_color_len=InColorLen
+		out_color_len=OutColorLen
+		ratio_color_len=RatioColorLen
+		in_colors=InColors
+		out_colors=OutColors
+		shared_colors=SharedColors
+		in_specific_colors=InSpecificColors
+		out_specific_colors=OutSpecificColors
+		all_colors=AllColors
+		in_colors_len=InColorsLen
+		out_colors_len=OutColorsLen
+		shared_colors_len=SharedColorsLen
+		in_specific_colors_len=InSpecificColorsLen
+		out_specific_colors_len=OutSpecificColorsLen
+		all_colors_len=AllColorsLen
+		rescale_h=RescaleH
+		rescale_v=RescaleV
+		in_density=InDensity
+		out_density=OutDensity
+		delta_density=DeltaDensity
+		out_max_hv=OutMaxHV
+		in_max_hv=InMaxHV
+		out_max_hv_area=OutMaxHVArea
+		in_max_hv_area=InMaxHVArea
+		ratio_max_hv_area=RatioMaxHVArea
+		both_max_hv_area_max=BothMaxHVAreaMax
+		both_max_hv_area_min=BothMaxHVAreaMin
+		ratio_both_max_hv_area=RatioBothMaxHVArea
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,multivar). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+[31mWarning: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_boards.pl:668:
+Warning:    Singleton variables: [R]
+[0m%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_285136),Setter_Term_expansion) ,
+%~      (Compound:-_285136)=D247228_d247230 ,
+%~      D247228_d247230\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D247228_d247230-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_457964:-_457966),_457956,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_226240) ,
+%~      compound(_226248) ,
+%~      term_expansion_setter((_226248:-_226250),_226242) ,
+%~      (_226248:-_226250)=_226300 ,
+%~      _226300\==_226242 ,
+%~      _226240=_226244 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_226300-->_226242))),nl)))
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_514444,_514448) ,
+%~     _514444\==_514448 ,
+%~     _514446=_514450 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_514444-->_514448))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(baseKB,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ start(gen_gids)
+%~ end(gen_gids)
+% init_why(before_boot,after('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl')).
+108 ?- make.
+[1mtrue.[0m
+
+109 ?- autoik[13G[K[12G[K;p[14G[13G[K[12G[Kl;o[14G[K[13G[K[13Go[14Ga[15Gda,,[18G[K[17G[K[17Gble[20G[19G[K[18G[K[17G[K[16G[K_a[18Gll/[20G[K.
+[1mtrue.[0m
+
+110 ?- t[8G[Kmakes.
+Correct to: "make"? yes
+[1mtrue.[0m
+
+111 ?- predicate_pro[21Gperty*[26G[K[25G[K[24G[K[23G[K[22G[K[21G[K[20G[K[19G[K[18G[K[17G[K[16G[K[15G[K[14G[K[13G[K[12G[K[11G[K[10G[K[9G[K[8G[K^D
+xterm: no process found
+
+Script done on 2022-11-06 12:59:28-08:00 [COMMAND_EXIT_CODE="0"]
+Script started on 2022-11-06 12:59:29-08:00 [COMMAND="TYPESCRIPT=1 ./Kaggle_arc.sh " TERM="xterm" TTY="/dev/pts/5" COLUMNS="231" LINES="67"]
+ARC_DIR=/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+BCMD=cd /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc ; pwd ; swipl -l kaggle_arc.pl
+/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+[32m% Contacting server at https://www.swi-prolog.org/pack/query ...[0m[32m ok
+[0m[32m% Pack `logicmoo_utils' is already installed @3.0.3
+[0m[32m% Running "git fetch" in '/home/norights/.local/share/swi-prolog/pack/logicmoo_utils'
+[0m[1;31mERROR: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:27:
+ERROR:    error: cannot open '.git/FETCH_HEAD': Permission denied
+[0merror(process_error(git([fetch]),exit(255)),_418)=pack_upgrade(logicmoo_utils)
+% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% ?- fixup_module_exports_into_from(system,locally_each). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_strings). 
+% ?- fixup_module_exports_into_from(system,rtrace). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,loop_check). 
+% ?- fixup_module_exports_into_from(system,xlisting_console). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,hook_database). 
+% ?- fixup_module_exports_into_from(system,no_repeats). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filesystem). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_terms). 
+% ?- fixup_module_exports_into_from(system,util_varnames). 
+% ?- fixup_module_exports_into_from(system,subclause_expansion). 
+% ?- fixup_module_exports_into_from(system,clause_attvars). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filestreams). 
+% ?- fixup_module_exports_into_from(system,call_reorder). 
+% ?- fixup_module_exports_into_from(system,nb_set_term). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(baseKB,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,dcg_meta). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_bb_frame). 
+% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% init_phase(after_load).
+% ?- fixup_module_exports_into_from(system,gapi). 
+% ?- fixup_module_exports_into_from(system,gvlib). 
+% ?- fixup_module_exports_into_from(system,attvar_serializer). 
+%~ current_prolog_flag(argv,[])
+print_request([]).
+print_request([H|T]) :-
+    H=..[Name, Value],
+    format(user_error, '<tr><td>~w<td>~w~n', [Name, Value]),
+    print_request(T).
+
+ensure_colapsable_script :-
+    once_per_request(pformat_write('\n<script>\nvar coll = document.getElementsByClassName("collapsible");\nvar i;\n\nfor (i = 0; i < coll.length; i++) {\n  coll[i].addEventListener("click", function(e) {\n    this.classList.toggle("active");\n    e.preventDefault();\n    var content = this.nextElementSibling;\n    if (content.style.maxHeight){\n      content.style.maxHeight = null;\n    } else {\n      content.style.maxHeight = content.scrollHeight + "px";\n    }     \n  });\n}\n</script> ')).
+
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web). 
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+[32m% autoloading prolog_autoload:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading pldoc_files:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:append/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m[32m% autoloading sgml_write:list_to_assoc/2 from /usr/lib/swi-prolog/library/assoc.pl
+[0m% ?- fixup_module_exports_into_from(system,web_long_message). 
+% ?- fixup_module_exports_into_from(system,shrdlurn_eval). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web_server). 
+% ?- fixup_module_exports_into_from(system,xlisting_web_server). 
+[32m% autoloading random:must_be/2 from /usr/lib/swi-prolog/library/error.pl
+[0m[32m% autoloading random:nth0/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m%~ ?-webui_start_swish_and_clio.
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_footer.pl:6 
+%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_886678),Setter_Term_expansion) ,
+%~      (Compound:-_886678)=D848770_d848772 ,
+%~      D848770_d848772\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D848770_d848772-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_961710:-_961712),_961702,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_829514) ,
+%~      compound(_829522) ,
+%~      term_expansion_setter((_829522:-_829524),_829516) ,
+%~      (_829522:-_829524)=_829574 ,
+%~      _829574\==_829516 ,
+%~      _829514=_829518 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_829574-->_829516))),nl)))
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_530,_534) ,
+%~     _530\==_534 ,
+%~     _532=_536 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_530-->_534))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ call_in_thread('user:wdmsg(call_in_thread)',user,wdmsg(call_in_thread))
+%~ call_in_thread.
+%~ call_in_thread
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/007bbfb7.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/00d62c1b.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/017c7c7b.json',
+%~   ....(400>99)])
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_test_loader.pl:119 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00576224.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/009d5c81.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00dbd492.json',
+%~   ....(400>99)])
+%~ load_json_files('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/1D_testset/*.json',[])
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/0uduqqj6f.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/178fcbfb-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64-relative-right-side.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/4938f0c2-easy.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/flow.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-dynamic-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ihiz27k2n.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/middle.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/mind-the-gap.json',  '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/n1hczotml.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/rcpwrfki1.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/referenceable-components.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/surface-pixel-count.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/vyaguzeoi.json'])
+% ?- fixup_module_exports_into_from(system,user). 
+program=[ grid_size(In,InH,InV), 
+          grid_size(Out,OutH,OutV), 
+          InArea is InH*InV, 
+          OutArea is OutH*OutV, 
+          ratio_for(RatioArea,OutArea,InArea), 
+          max_min(OutArea,InArea,BothMaxArea,BothMinArea), 
+          amass(In,InMass), 
+          amass(Out,OutMass), 
+          ratio_for(DeltaMass,OutMass,InMass), 
+          unique_color_count(In,InColorLen), 
+          unique_color_count(Out,OutColorLen), 
+          ratio_for(RatioColorLen,OutColorLen,InColorLen), 
+          unique_colors(In,InColors), 
+          unique_colors(Out,OutColors), 
+          intersection( InColors, 
+            OutColors, SharedColors,InSpecificColors, 
+            OutSpecificColors), 
+          append( [InSpecificColors,SharedColors,OutSpecificColors], 
+            Include_Append_AllColors), 
+          nop(dont_include(Include_Append_AllColors)), 
+          sort(Include_Append_AllColors,AllColors), 
+          maplist( length, 
+            [ InColors, OutColors,SharedColors, 
+                 InSpecificColors, OutSpecificColors, AllColors], 
+            [ InColorsLen, OutColorsLen,SharedColorsLen, 
+                     InSpecificColorsLen, OutSpecificColorsLen, AllColorsLen]), 
+          ratio_for(RescaleH,OutH,InH), 
+          ratio_for(RescaleV,OutV,InV), 
+          ratio_for(InDensity,InMass,InArea), 
+          ratio_for(OutDensity,OutMass,OutArea), 
+          ratio_for(DeltaDensity,OutDensity,InDensity), 
+          max_min(OutH,OutV,OutMaxHV,Min_OutMaxHV), 
+          max_min(InH,InV,InMaxHV,Min_MaxHV), 
+          OutMaxHVArea is OutMaxHV*OutMaxHV, 
+          InMaxHVArea is InMaxHV*InMaxHV, 
+          ratio_for(RatioMaxHVArea,OutMaxHVArea,InMaxHVArea), 
+          max_min(InMaxHVArea,OutMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin), 
+          ratio_for(RatioBothMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin)]
+		in=In
+		in_h=InH
+		in_v=InV
+		out=Out
+		out_h=OutH
+		out_v=OutV
+		in_area=InArea
+		out_area=OutArea
+		ratio_area=RatioArea
+		both_max_area=BothMaxArea
+		both_min_area=BothMinArea
+		in_mass=InMass
+		out_mass=OutMass
+		delta_mass=DeltaMass
+		in_color_len=InColorLen
+		out_color_len=OutColorLen
+		ratio_color_len=RatioColorLen
+		in_colors=InColors
+		out_colors=OutColors
+		shared_colors=SharedColors
+		in_specific_colors=InSpecificColors
+		out_specific_colors=OutSpecificColors
+		all_colors=AllColors
+		in_colors_len=InColorsLen
+		out_colors_len=OutColorsLen
+		shared_colors_len=SharedColorsLen
+		in_specific_colors_len=InSpecificColorsLen
+		out_specific_colors_len=OutSpecificColorsLen
+		all_colors_len=AllColorsLen
+		rescale_h=RescaleH
+		rescale_v=RescaleV
+		in_density=InDensity
+		out_density=OutDensity
+		delta_density=DeltaDensity
+		out_max_hv=OutMaxHV
+		in_max_hv=InMaxHV
+		out_max_hv_area=OutMaxHVArea
+		in_max_hv_area=InMaxHVArea
+		ratio_max_hv_area=RatioMaxHVArea
+		both_max_hv_area_max=BothMaxHVAreaMax
+		both_max_hv_area_min=BothMaxHVAreaMin
+		ratio_both_max_hv_area=RatioBothMaxHVArea
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,multivar). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+[31mWarning: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_boards.pl:668:
+Warning:    Singleton variables: [R]
+[0m%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_285136),Setter_Term_expansion) ,
+%~      (Compound:-_285136)=D247228_d247230 ,
+%~      D247228_d247230\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D247228_d247230-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_457964:-_457966),_457956,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_226240) ,
+%~      compound(_226248) ,
+%~      term_expansion_setter((_226248:-_226250),_226242) ,
+%~      (_226248:-_226250)=_226300 ,
+%~      _226300\==_226242 ,
+%~      _226240=_226244 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_226300-->_226242))),nl)))
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_footer.pl:6 
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_514444,_514448) ,
+%~     _514444\==_514448 ,
+%~     _514446=_514450 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_514444-->_514448))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(baseKB,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:1081 
+%~ start(gen_gids)
+%~ end(gen_gids)
+% init_why(before_boot,after('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl')).
+108 ?- [8Gdemo.[8Gbfly_startup.[8Gtest_pp.[K[8G[5@bfly_tests.[K[17G(a1).[8Gwebui_tests.[K[8Gprint_test.[K[8Gmakes.[K[8Gautoload_all.[20G[K[19G[K[18G[K[17G[K[16G[K[15G[K[14G[K[13G[K[12G[K[11G[K[10G[K[9G[K[8G[Kpredi[13Gcate_pro[21Gperty(^C
+Action (h for help) ? exit (status 4)
+xterm: no process found
+
+Script done on 2022-11-06 13:01:24-08:00 [COMMAND_EXIT_CODE="0"]
+Script started on 2022-11-06 13:01:30-08:00 [COMMAND="TYPESCRIPT=1 ./Kaggle_arc.sh " TERM="xterm" TTY="/dev/pts/5" COLUMNS="231" LINES="67"]
+ARC_DIR=/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+BCMD=cd /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc ; pwd ; swipl -l kaggle_arc.pl
+/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+[32m% Contacting server at https://www.swi-prolog.org/pack/query ...[0m[32m ok
+[0m[32m% Pack `logicmoo_utils' is already installed @3.0.3
+[0m[32m% Running "git fetch" in '/home/norights/.local/share/swi-prolog/pack/logicmoo_utils'
+[0m[1;31mERROR: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:27:
+ERROR:    error: cannot open '.git/FETCH_HEAD': Permission denied
+[0merror(process_error(git([fetch]),exit(255)),_418)=pack_upgrade(logicmoo_utils)
+% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% ?- fixup_module_exports_into_from(system,locally_each). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_strings). 
+% ?- fixup_module_exports_into_from(system,rtrace). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,loop_check). 
+% ?- fixup_module_exports_into_from(system,xlisting_console). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,hook_database). 
+% ?- fixup_module_exports_into_from(system,no_repeats). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filesystem). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_terms). 
+% ?- fixup_module_exports_into_from(system,util_varnames). 
+% ?- fixup_module_exports_into_from(system,subclause_expansion). 
+% ?- fixup_module_exports_into_from(system,clause_attvars). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filestreams). 
+% ?- fixup_module_exports_into_from(system,call_reorder). 
+% ?- fixup_module_exports_into_from(system,nb_set_term). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(baseKB,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,dcg_meta). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_bb_frame). 
+% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% init_phase(after_load).
+% ?- fixup_module_exports_into_from(system,gapi). 
+% ?- fixup_module_exports_into_from(system,gvlib). 
+% ?- fixup_module_exports_into_from(system,attvar_serializer). 
+%~ current_prolog_flag(argv,[])
+print_request([]).
+print_request([H|T]) :-
+    H=..[Name, Value],
+    format(user_error, '<tr><td>~w<td>~w~n', [Name, Value]),
+    print_request(T).
+
+ensure_colapsable_script :-
+    once_per_request(pformat_write('\n<script>\nvar coll = document.getElementsByClassName("collapsible");\nvar i;\n\nfor (i = 0; i < coll.length; i++) {\n  coll[i].addEventListener("click", function(e) {\n    this.classList.toggle("active");\n    e.preventDefault();\n    var content = this.nextElementSibling;\n    if (content.style.maxHeight){\n      content.style.maxHeight = null;\n    } else {\n      content.style.maxHeight = content.scrollHeight + "px";\n    }     \n  });\n}\n</script> ')).
+
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web). 
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+[32m% autoloading prolog_autoload:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading pldoc_files:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:append/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m[32m% autoloading sgml_write:list_to_assoc/2 from /usr/lib/swi-prolog/library/assoc.pl
+[0m% ?- fixup_module_exports_into_from(system,web_long_message). 
+% ?- fixup_module_exports_into_from(system,shrdlurn_eval). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web_server). 
+% ?- fixup_module_exports_into_from(system,xlisting_web_server). 
+[32m% autoloading random:must_be/2 from /usr/lib/swi-prolog/library/error.pl
+[0m[32m% autoloading random:nth0/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m%~ ?-webui_start_swish_and_clio.
+%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_886344),Setter_Term_expansion) ,
+%~      (Compound:-_886344)=D848436_d848438 ,
+%~      D848436_d848438\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D848436_d848438-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_961376:-_961378),_961368,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_829514) ,
+%~      compound(_829522) ,
+%~      term_expansion_setter((_829522:-_829524),_829516) ,
+%~      (_829522:-_829524)=_829574 ,
+%~      _829574\==_829516 ,
+%~      _829514=_829518 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_829574-->_829516))),nl)))
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_530,_534) ,
+%~     _530\==_534 ,
+%~     _532=_536 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_530-->_534))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ call_in_thread('user:wdmsg(call_in_thread)',user,wdmsg(call_in_thread))
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_pfc.pl:209 
+%~ call_in_thread.
+%~ call_in_thread
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_test_loader.pl:118 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/007bbfb7.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/00d62c1b.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/017c7c7b.json',
+%~   ....(400>99)])
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00576224.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/009d5c81.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00dbd492.json',
+%~   ....(400>99)])
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_test_loader.pl:122 
+%~ load_json_files('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/1D_testset/*.json',[])
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/0uduqqj6f.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/178fcbfb-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64-relative-right-side.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/4938f0c2-easy.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/flow.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-dynamic-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ihiz27k2n.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/middle.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/mind-the-gap.json',  '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/n1hczotml.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/rcpwrfki1.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/referenceable-components.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/surface-pixel-count.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/vyaguzeoi.json'])
+% ?- fixup_module_exports_into_from(system,user). 
+program=[ grid_size(In,InH,InV), 
+          grid_size(Out,OutH,OutV), 
+          InArea is InH*InV, 
+          OutArea is OutH*OutV, 
+          ratio_for(RatioArea,OutArea,InArea), 
+          max_min(OutArea,InArea,BothMaxArea,BothMinArea), 
+          amass(In,InMass), 
+          amass(Out,OutMass), 
+          ratio_for(DeltaMass,OutMass,InMass), 
+          unique_color_count(In,InColorLen), 
+          unique_color_count(Out,OutColorLen), 
+          ratio_for(RatioColorLen,OutColorLen,InColorLen), 
+          unique_colors(In,InColors), 
+          unique_colors(Out,OutColors), 
+          intersection( InColors, 
+            OutColors, SharedColors,InSpecificColors, 
+            OutSpecificColors), 
+          append( [InSpecificColors,SharedColors,OutSpecificColors], 
+            Include_Append_AllColors), 
+          nop(dont_include(Include_Append_AllColors)), 
+          sort(Include_Append_AllColors,AllColors), 
+          maplist( length, 
+            [ InColors, OutColors,SharedColors, 
+                 InSpecificColors, OutSpecificColors, AllColors], 
+            [ InColorsLen, OutColorsLen,SharedColorsLen, 
+                     InSpecificColorsLen, OutSpecificColorsLen, AllColorsLen]), 
+          ratio_for(RescaleH,OutH,InH), 
+          ratio_for(RescaleV,OutV,InV), 
+          ratio_for(InDensity,InMass,InArea), 
+          ratio_for(OutDensity,OutMass,OutArea), 
+          ratio_for(DeltaDensity,OutDensity,InDensity), 
+          max_min(OutH,OutV,OutMaxHV,Min_OutMaxHV), 
+          max_min(InH,InV,InMaxHV,Min_MaxHV), 
+          OutMaxHVArea is OutMaxHV*OutMaxHV, 
+          InMaxHVArea is InMaxHV*InMaxHV, 
+          ratio_for(RatioMaxHVArea,OutMaxHVArea,InMaxHVArea), 
+          max_min(InMaxHVArea,OutMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin), 
+          ratio_for(RatioBothMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin)]
+		in=In
+		in_h=InH
+		in_v=InV
+		out=Out
+		out_h=OutH
+		out_v=OutV
+		in_area=InArea
+		out_area=OutArea
+		ratio_area=RatioArea
+		both_max_area=BothMaxArea
+		both_min_area=BothMinArea
+		in_mass=InMass
+		out_mass=OutMass
+		delta_mass=DeltaMass
+		in_color_len=InColorLen
+		out_color_len=OutColorLen
+		ratio_color_len=RatioColorLen
+		in_colors=InColors
+		out_colors=OutColors
+		shared_colors=SharedColors
+		in_specific_colors=InSpecificColors
+		out_specific_colors=OutSpecificColors
+		all_colors=AllColors
+		in_colors_len=InColorsLen
+		out_colors_len=OutColorsLen
+		shared_colors_len=SharedColorsLen
+		in_specific_colors_len=InSpecificColorsLen
+		out_specific_colors_len=OutSpecificColorsLen
+		all_colors_len=AllColorsLen
+		rescale_h=RescaleH
+		rescale_v=RescaleV
+		in_density=InDensity
+		out_density=OutDensity
+		delta_density=DeltaDensity
+		out_max_hv=OutMaxHV
+		in_max_hv=InMaxHV
+		out_max_hv_area=OutMaxHVArea
+		in_max_hv_area=InMaxHVArea
+		ratio_max_hv_area=RatioMaxHVArea
+		both_max_hv_area_max=BothMaxHVAreaMax
+		both_max_hv_area_min=BothMaxHVAreaMin
+		ratio_both_max_hv_area=RatioBothMaxHVArea
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,multivar). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+[31mWarning: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_boards.pl:668:
+Warning:    Singleton variables: [R]
+[0m%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_285136),Setter_Term_expansion) ,
+%~      (Compound:-_285136)=D247228_d247230 ,
+%~      D247228_d247230\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D247228_d247230-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_457964:-_457966),_457956,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_226240) ,
+%~      compound(_226248) ,
+%~      term_expansion_setter((_226248:-_226250),_226242) ,
+%~      (_226248:-_226250)=_226300 ,
+%~      _226300\==_226242 ,
+%~      _226240=_226244 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_226300-->_226242))),nl)))
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_514444,_514448) ,
+%~     _514444\==_514448 ,
+%~     _514446=_514450 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_514444-->_514448))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(baseKB,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:1081 
+%~ start(gen_gids)
+%~ end(gen_gids)
+% init_why(before_boot,after('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl')).
+108 ?- predicate_property(rdf11:[33G'[34G'''[34G$'[35Ge'[36Gx'[37Gp'[38Go'[39G[39Gr'[40Gt'[41Ge'[42Gd'[43G_'[44Go'[45Gp''/3[49G)[26G[50G[49G[K[48G[K[47G[K(_,_,_,[53G[K[53G)[47G[54G,OO[57G)[26G[58G.
+OO = interpreted [1m;[0m
+OO = visible [1m;[0m
+OO = static [1m;[0m
+OO = (discontiguous) [1m;[0m
+OO = notrace [1m;[0m
+OO = last_modified_generation(0) [1m;[0m
+OO = defined [1m;[0m
+OO = size(120).
+
+109 ?- ;;[9G[K[8G[K[8Gpredicate_property(rdf11:'$exported_op'(_,_,_),OO).[45G[P'[44G[P'[43G[P'[42G[P'[41G[P'[40G[P'[39G[P'[38G[P'[37G[P'[36G[P'[35G[P'[34G[P'[34G[1@l'[35G[1@i'[36G[1@s'[37G[1@t'[38G[1@i'[39G[1@n'[40G[1@g''(_,_,_)[47G[P)[46G[P)[45G[P)[44G[P)
+OO = interpreted [1m;[0m
+OO = visible [1m;[0m
+OO = static [1m;[0m
+OO = imported_from(prolog_listing) [1m;[0m
+OO = transparent [1m;[0m
+OO = (meta_predicate listing(:)) [1m;[0m
+OO = file('/usr/lib/swi-prolog/library/listing.pl') [1m;[0m
+OO = line_count(190) [1m;[0m
+OO = number_of_clauses(1) [1m;[0m
+OO = number_of_rules(1) [1m;[0m
+OO = last_modified_generation(21333) [1m;[0m
+OO = defined [1m;[0m
+OO = size(336).
+
+110 ?- ;;;;
+|    [6Gpredicate_property(rdf11:'listing'(_),OO).[6G[K[6G[6Gmake.
+[1;31mERROR: Unknown procedure: (;)/0
+ERROR:     However, there are definitions for:
+ERROR:         (;)/2
+[0m[1;31mfalse.[0m
+
+111 ?- make.
+[31mWarning: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_ui_html.pl:445:
+Warning:    Goal (directive) failed: user:(predicate_property(rdf11:'$exported_op'(_30534,_30556,_30578),discontiguous),\+predicate_property(rdf11:'$exported_op'(_30770,_30792,_30814),number_of_clauses(_30836)),abolish(phil:'$exported_op',3))
+[0m[31mWarning: lemur:'$exported_op'/3 is declared as discontiguous, but has no clauses
+[0m[1mtrue.[0m
+
+112 ?- 
+|    ^D
+xterm: no process found
+
+Script done on 2022-11-06 13:06:41-08:00 [COMMAND_EXIT_CODE="0"]
+Script started on 2022-11-06 13:06:42-08:00 [COMMAND="TYPESCRIPT=1 ./Kaggle_arc.sh " TERM="xterm" TTY="/dev/pts/5" COLUMNS="231" LINES="67"]
+ARC_DIR=/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+BCMD=cd /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc ; pwd ; swipl -l kaggle_arc.pl
+/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+[32m% Contacting server at https://www.swi-prolog.org/pack/query ...[0m[32m ok
+[0m[32m% Pack `logicmoo_utils' is already installed @3.0.3
+[0m[32m% Running "git fetch" in '/home/norights/.local/share/swi-prolog/pack/logicmoo_utils'
+[0m[1;31mERROR: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:27:
+ERROR:    error: cannot open '.git/FETCH_HEAD': Permission denied
+[0merror(process_error(git([fetch]),exit(255)),_418)=pack_upgrade(logicmoo_utils)
+% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% ?- fixup_module_exports_into_from(system,locally_each). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_strings). 
+% ?- fixup_module_exports_into_from(system,rtrace). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,loop_check). 
+% ?- fixup_module_exports_into_from(system,xlisting_console). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,hook_database). 
+% ?- fixup_module_exports_into_from(system,no_repeats). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filesystem). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_terms). 
+% ?- fixup_module_exports_into_from(system,util_varnames). 
+% ?- fixup_module_exports_into_from(system,subclause_expansion). 
+% ?- fixup_module_exports_into_from(system,clause_attvars). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filestreams). 
+% ?- fixup_module_exports_into_from(system,call_reorder). 
+% ?- fixup_module_exports_into_from(system,nb_set_term). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(baseKB,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,dcg_meta). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_bb_frame). 
+% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% init_phase(after_load).
+% ?- fixup_module_exports_into_from(system,gapi). 
+% ?- fixup_module_exports_into_from(system,gvlib). 
+% ?- fixup_module_exports_into_from(system,attvar_serializer). 
+%~ current_prolog_flag(argv,[])
+print_request([]).
+print_request([H|T]) :-
+    H=..[Name, Value],
+    format(user_error, '<tr><td>~w<td>~w~n', [Name, Value]),
+    print_request(T).
+
+ensure_colapsable_script :-
+    once_per_request(pformat_write('\n<script>\nvar coll = document.getElementsByClassName("collapsible");\nvar i;\n\nfor (i = 0; i < coll.length; i++) {\n  coll[i].addEventListener("click", function(e) {\n    this.classList.toggle("active");\n    e.preventDefault();\n    var content = this.nextElementSibling;\n    if (content.style.maxHeight){\n      content.style.maxHeight = null;\n    } else {\n      content.style.maxHeight = content.scrollHeight + "px";\n    }     \n  });\n}\n</script> ')).
+
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web). 
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+[32m% autoloading prolog_autoload:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading pldoc_files:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:append/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m[32m% autoloading sgml_write:list_to_assoc/2 from /usr/lib/swi-prolog/library/assoc.pl
+[0m% ?- fixup_module_exports_into_from(system,web_long_message). 
+% ?- fixup_module_exports_into_from(system,shrdlurn_eval). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web_server). 
+% ?- fixup_module_exports_into_from(system,xlisting_web_server). 
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:185 
+[32m% autoloading random:must_be/2 from /usr/lib/swi-prolog/library/error.pl
+[0m[32m% autoloading random:nth0/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m%~ ?-webui_start_swish_and_clio.
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_footer.pl:6 
+%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_887012),Setter_Term_expansion) ,
+%~      (Compound:-_887012)=D849104_d849106 ,
+%~      D849104_d849106\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D849104_d849106-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_962044:-_962046),_962036,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_829848) ,
+%~      compound(_829856) ,
+%~      term_expansion_setter((_829856:-_829858),_829850) ,
+%~      (_829856:-_829858)=_829908 ,
+%~      _829908\==_829850 ,
+%~      _829848=_829852 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_829908-->_829850))),nl)))
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_530,_534) ,
+%~     _530\==_534 ,
+%~     _532=_536 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_530-->_534))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ call_in_thread('user:wdmsg(call_in_thread)',user,wdmsg(call_in_thread))
+%~ call_in_thread.
+%~ call_in_thread
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_test_loader.pl:118 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/007bbfb7.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/00d62c1b.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/017c7c7b.json',
+%~   ....(400>99)])
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00576224.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/009d5c81.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00dbd492.json',
+%~   ....(400>99)])
+%~ load_json_files('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/1D_testset/*.json',[])
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/0uduqqj6f.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/178fcbfb-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64-relative-right-side.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/4938f0c2-easy.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/flow.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-dynamic-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ihiz27k2n.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/middle.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/mind-the-gap.json',  '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/n1hczotml.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/rcpwrfki1.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/referenceable-components.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/surface-pixel-count.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/vyaguzeoi.json'])
+% ?- fixup_module_exports_into_from(system,user). 
+program=[ grid_size(In,InH,InV), 
+          grid_size(Out,OutH,OutV), 
+          InArea is InH*InV, 
+          OutArea is OutH*OutV, 
+          ratio_for(RatioArea,OutArea,InArea), 
+          max_min(OutArea,InArea,BothMaxArea,BothMinArea), 
+          amass(In,InMass), 
+          amass(Out,OutMass), 
+          ratio_for(DeltaMass,OutMass,InMass), 
+          unique_color_count(In,InColorLen), 
+          unique_color_count(Out,OutColorLen), 
+          ratio_for(RatioColorLen,OutColorLen,InColorLen), 
+          unique_colors(In,InColors), 
+          unique_colors(Out,OutColors), 
+          intersection( InColors, 
+            OutColors, SharedColors,InSpecificColors, 
+            OutSpecificColors), 
+          append( [InSpecificColors,SharedColors,OutSpecificColors], 
+            Include_Append_AllColors), 
+          nop(dont_include(Include_Append_AllColors)), 
+          sort(Include_Append_AllColors,AllColors), 
+          maplist( length, 
+            [ InColors, OutColors,SharedColors, 
+                 InSpecificColors, OutSpecificColors, AllColors], 
+            [ InColorsLen, OutColorsLen,SharedColorsLen, 
+                     InSpecificColorsLen, OutSpecificColorsLen, AllColorsLen]), 
+          ratio_for(RescaleH,OutH,InH), 
+          ratio_for(RescaleV,OutV,InV), 
+          ratio_for(InDensity,InMass,InArea), 
+          ratio_for(OutDensity,OutMass,OutArea), 
+          ratio_for(DeltaDensity,OutDensity,InDensity), 
+          max_min(OutH,OutV,OutMaxHV,Min_OutMaxHV), 
+          max_min(InH,InV,InMaxHV,Min_MaxHV), 
+          OutMaxHVArea is OutMaxHV*OutMaxHV, 
+          InMaxHVArea is InMaxHV*InMaxHV, 
+          ratio_for(RatioMaxHVArea,OutMaxHVArea,InMaxHVArea), 
+          max_min(InMaxHVArea,OutMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin), 
+          ratio_for(RatioBothMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin)]
+		in=In
+		in_h=InH
+		in_v=InV
+		out=Out
+		out_h=OutH
+		out_v=OutV
+		in_area=InArea
+		out_area=OutArea
+		ratio_area=RatioArea
+		both_max_area=BothMaxArea
+		both_min_area=BothMinArea
+		in_mass=InMass
+		out_mass=OutMass
+		delta_mass=DeltaMass
+		in_color_len=InColorLen
+		out_color_len=OutColorLen
+		ratio_color_len=RatioColorLen
+		in_colors=InColors
+		out_colors=OutColors
+		shared_colors=SharedColors
+		in_specific_colors=InSpecificColors
+		out_specific_colors=OutSpecificColors
+		all_colors=AllColors
+		in_colors_len=InColorsLen
+		out_colors_len=OutColorsLen
+		shared_colors_len=SharedColorsLen
+		in_specific_colors_len=InSpecificColorsLen
+		out_specific_colors_len=OutSpecificColorsLen
+		all_colors_len=AllColorsLen
+		rescale_h=RescaleH
+		rescale_v=RescaleV
+		in_density=InDensity
+		out_density=OutDensity
+		delta_density=DeltaDensity
+		out_max_hv=OutMaxHV
+		in_max_hv=InMaxHV
+		out_max_hv_area=OutMaxHVArea
+		in_max_hv_area=InMaxHVArea
+		ratio_max_hv_area=RatioMaxHVArea
+		both_max_hv_area_max=BothMaxHVAreaMax
+		both_max_hv_area_min=BothMaxHVAreaMin
+		ratio_both_max_hv_area=RatioBothMaxHVArea
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,multivar). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+[31mWarning: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_boards.pl:668:
+Warning:    Singleton variables: [R]
+[0m%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_footer.pl:6 
+%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_285470),Setter_Term_expansion) ,
+%~      (Compound:-_285470)=D247562_d247564 ,
+%~      D247562_d247564\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D247562_d247564-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_458298:-_458300),_458290,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_226240) ,
+%~      compound(_226248) ,
+%~      term_expansion_setter((_226248:-_226250),_226242) ,
+%~      (_226248:-_226250)=_226300 ,
+%~      _226300\==_226242 ,
+%~      _226240=_226244 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_226300-->_226242))),nl)))
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_514778,_514782) ,
+%~     _514778\==_514782 ,
+%~     _514780=_514784 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_514778-->_514782))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(baseKB,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ start(gen_gids)
+%~ end(gen_gids)
+% init_why(before_boot,after('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl')).
+108 ?- ^C
+Action (h for help) ? exit (status 4)
+xterm: no process found
+
+Script done on 2022-11-06 13:07:31-08:00 [COMMAND_EXIT_CODE="0"]
+Script started on 2022-11-06 13:07:32-08:00 [COMMAND="TYPESCRIPT=1 ./Kaggle_arc.sh " TERM="xterm" TTY="/dev/pts/5" COLUMNS="231" LINES="67"]
+ARC_DIR=/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+BCMD=cd /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc ; pwd ; swipl -l kaggle_arc.pl
+/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+[32m% Contacting server at https://www.swi-prolog.org/pack/query ...[0m[32m ok
+[0m[32m% Pack `logicmoo_utils' is already installed @3.0.3
+[0m% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% ?- fixup_module_exports_into_from(system,locally_each). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_strings). 
+% ?- fixup_module_exports_into_from(system,rtrace). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,loop_check). 
+% ?- fixup_module_exports_into_from(system,xlisting_console). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,hook_database). 
+% ?- fixup_module_exports_into_from(system,no_repeats). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filesystem). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_terms). 
+% ?- fixup_module_exports_into_from(system,util_varnames). 
+% ?- fixup_module_exports_into_from(system,subclause_expansion). 
+% ?- fixup_module_exports_into_from(system,clause_attvars). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filestreams). 
+% ?- fixup_module_exports_into_from(system,call_reorder). 
+% ?- fixup_module_exports_into_from(system,nb_set_term). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(baseKB,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,dcg_meta). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_bb_frame). 
+% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% init_phase(after_load).
+% ?- fixup_module_exports_into_from(system,gapi). 
+% ?- fixup_module_exports_into_from(system,gvlib). 
+% ?- fixup_module_exports_into_from(system,attvar_serializer). 
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:165 
+%~ current_prolog_flag(argv,[])
+print_request([]).
+print_request([H|T]) :-
+    H=..[Name, Value],
+    format(user_error, '<tr><td>~w<td>~w~n', [Name, Value]),
+    print_request(T).
+
+ensure_colapsable_script :-
+    once_per_request(pformat_write('\n<script>\nvar coll = document.getElementsByClassName("collapsible");\nvar i;\n\nfor (i = 0; i < coll.length; i++) {\n  coll[i].addEventListener("click", function(e) {\n    this.classList.toggle("active");\n    e.preventDefault();\n    var content = this.nextElementSibling;\n    if (content.style.maxHeight){\n      content.style.maxHeight = null;\n    } else {\n      content.style.maxHeight = content.scrollHeight + "px";\n    }     \n  });\n}\n</script> ')).
+
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web). 
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+[32m% autoloading prolog_autoload:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading pldoc_files:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading git:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:append/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m[32m% autoloading sgml_write:list_to_assoc/2 from /usr/lib/swi-prolog/library/assoc.pl
+[0m% ?- fixup_module_exports_into_from(system,web_long_message). 
+% ?- fixup_module_exports_into_from(system,shrdlurn_eval). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web_server). 
+% ?- fixup_module_exports_into_from(system,xlisting_web_server). 
+[32m% autoloading random:must_be/2 from /usr/lib/swi-prolog/library/error.pl
+[0m[32m% autoloading random:nth0/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m%~ ?-webui_start_swish_and_clio.
+%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_902768),Setter_Term_expansion) ,
+%~      (Compound:-_902768)=D864860_d864862 ,
+%~      D864860_d864862\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D864860_d864862-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_977800:-_977802),_977792,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_845938) ,
+%~      compound(_845946) ,
+%~      term_expansion_setter((_845946:-_845948),_845940) ,
+%~      (_845946:-_845948)=_845998 ,
+%~      _845998\==_845940 ,
+%~      _845938=_845942 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_845998-->_845940))),nl)))
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_footer.pl:6 
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_530,_534) ,
+%~     _530\==_534 ,
+%~     _532=_536 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_530-->_534))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ call_in_thread('user:wdmsg(call_in_thread)',user,wdmsg(call_in_thread))
+%~ call_in_thread.
+%~ call_in_thread
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/007bbfb7.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/00d62c1b.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/017c7c7b.json',
+%~   ....(400>99)])
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00576224.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/009d5c81.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00dbd492.json',
+%~   ....(400>99)])
+%~ load_json_files('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/1D_testset/*.json',[])
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/0uduqqj6f.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/178fcbfb-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64-relative-right-side.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/4938f0c2-easy.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/flow.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-dynamic-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ihiz27k2n.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/middle.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/mind-the-gap.json',  '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/n1hczotml.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/rcpwrfki1.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/referenceable-components.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/surface-pixel-count.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/vyaguzeoi.json'])
+% ?- fixup_module_exports_into_from(system,user). 
+program=[ grid_size(In,InH,InV), 
+          grid_size(Out,OutH,OutV), 
+          InArea is InH*InV, 
+          OutArea is OutH*OutV, 
+          ratio_for(RatioArea,OutArea,InArea), 
+          max_min(OutArea,InArea,BothMaxArea,BothMinArea), 
+          amass(In,InMass), 
+          amass(Out,OutMass), 
+          ratio_for(DeltaMass,OutMass,InMass), 
+          unique_color_count(In,InColorLen), 
+          unique_color_count(Out,OutColorLen), 
+          ratio_for(RatioColorLen,OutColorLen,InColorLen), 
+          unique_colors(In,InColors), 
+          unique_colors(Out,OutColors), 
+          intersection( InColors, 
+            OutColors, SharedColors,InSpecificColors, 
+            OutSpecificColors), 
+          append( [InSpecificColors,SharedColors,OutSpecificColors], 
+            Include_Append_AllColors), 
+          nop(dont_include(Include_Append_AllColors)), 
+          sort(Include_Append_AllColors,AllColors), 
+          maplist( length, 
+            [ InColors, OutColors,SharedColors, 
+                 InSpecificColors, OutSpecificColors, AllColors], 
+            [ InColorsLen, OutColorsLen,SharedColorsLen, 
+                     InSpecificColorsLen, OutSpecificColorsLen, AllColorsLen]), 
+          ratio_for(RescaleH,OutH,InH), 
+          ratio_for(RescaleV,OutV,InV), 
+          ratio_for(InDensity,InMass,InArea), 
+          ratio_for(OutDensity,OutMass,OutArea), 
+          ratio_for(DeltaDensity,OutDensity,InDensity), 
+          max_min(OutH,OutV,OutMaxHV,Min_OutMaxHV), 
+          max_min(InH,InV,InMaxHV,Min_MaxHV), 
+          OutMaxHVArea is OutMaxHV*OutMaxHV, 
+          InMaxHVArea is InMaxHV*InMaxHV, 
+          ratio_for(RatioMaxHVArea,OutMaxHVArea,InMaxHVArea), 
+          max_min(InMaxHVArea,OutMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin), 
+          ratio_for(RatioBothMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin)]
+		in=In
+		in_h=InH
+		in_v=InV
+		out=Out
+		out_h=OutH
+		out_v=OutV
+		in_area=InArea
+		out_area=OutArea
+		ratio_area=RatioArea
+		both_max_area=BothMaxArea
+		both_min_area=BothMinArea
+		in_mass=InMass
+		out_mass=OutMass
+		delta_mass=DeltaMass
+		in_color_len=InColorLen
+		out_color_len=OutColorLen
+		ratio_color_len=RatioColorLen
+		in_colors=InColors
+		out_colors=OutColors
+		shared_colors=SharedColors
+		in_specific_colors=InSpecificColors
+		out_specific_colors=OutSpecificColors
+		all_colors=AllColors
+		in_colors_len=InColorsLen
+		out_colors_len=OutColorsLen
+		shared_colors_len=SharedColorsLen
+		in_specific_colors_len=InSpecificColorsLen
+		out_specific_colors_len=OutSpecificColorsLen
+		all_colors_len=AllColorsLen
+		rescale_h=RescaleH
+		rescale_v=RescaleV
+		in_density=InDensity
+		out_density=OutDensity
+		delta_density=DeltaDensity
+		out_max_hv=OutMaxHV
+		in_max_hv=InMaxHV
+		out_max_hv_area=OutMaxHVArea
+		in_max_hv_area=InMaxHVArea
+		ratio_max_hv_area=RatioMaxHVArea
+		both_max_hv_area_max=BothMaxHVAreaMax
+		both_max_hv_area_min=BothMaxHVAreaMin
+		ratio_both_max_hv_area=RatioBothMaxHVArea
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,multivar). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+[31mWarning: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_boards.pl:668:
+Warning:    Singleton variables: [R]
+[0m%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_285136),Setter_Term_expansion) ,
+%~      (Compound:-_285136)=D247228_d247230 ,
+%~      D247228_d247230\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D247228_d247230-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_457964:-_457966),_457956,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_226240) ,
+%~      compound(_226248) ,
+%~      term_expansion_setter((_226248:-_226250),_226242) ,
+%~      (_226248:-_226250)=_226300 ,
+%~      _226300\==_226242 ,
+%~      _226240=_226244 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_226300-->_226242))),nl)))
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_514444,_514448) ,
+%~     _514444\==_514448 ,
+%~     _514446=_514450 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_514444-->_514448))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(baseKB,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:1081 
+%~ start(gen_gids)
+%~ end(gen_gids)
+% init_why(before_boot,after('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl')).
+108 ?- ^D
+xterm: no process found
+
+Script done on 2022-11-06 13:08:00-08:00 [COMMAND_EXIT_CODE="0"]
+Script started on 2022-11-06 13:08:01-08:00 [COMMAND="TYPESCRIPT=1 ./Kaggle_arc.sh " TERM="xterm" TTY="/dev/pts/5" COLUMNS="231" LINES="67"]
+ARC_DIR=/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+BCMD=cd /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc ; pwd ; swipl -l kaggle_arc.pl
+/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+[32m% Contacting server at https://www.swi-prolog.org/pack/query ...[0m[32m ok
+[0m[32m% Pack `logicmoo_utils' is already installed @3.0.3
+[0m[32m% Running "git fetch" in '/home/norights/.local/share/swi-prolog/pack/logicmoo_utils'
+[0m[1;31mERROR: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:27:
+ERROR:    error: cannot open '.git/FETCH_HEAD': Permission denied
+[0m[1;31mERROR: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:27:
+ERROR:    Process "git([fetch])": exit status: 255
+[0m[31mWarning: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:27:
+Warning:    Goal (directive) failed: user:(pack_upgrade(logicmoo_utils),!)
+[0m% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% ?- fixup_module_exports_into_from(system,locally_each). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_strings). 
+% ?- fixup_module_exports_into_from(system,rtrace). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,loop_check). 
+% ?- fixup_module_exports_into_from(system,xlisting_console). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,hook_database). 
+% ?- fixup_module_exports_into_from(system,no_repeats). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filesystem). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_terms). 
+% ?- fixup_module_exports_into_from(system,util_varnames). 
+% ?- fixup_module_exports_into_from(system,subclause_expansion). 
+% ?- fixup_module_exports_into_from(system,clause_attvars). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filestreams). 
+% ?- fixup_module_exports_into_from(system,call_reorder). 
+% ?- fixup_module_exports_into_from(system,nb_set_term). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(baseKB,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,dcg_meta). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_bb_frame). 
+% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% init_phase(after_load).
+% ?- fixup_module_exports_into_from(system,gapi). 
+% ?- fixup_module_exports_into_from(system,gvlib). 
+% ?- fixup_module_exports_into_from(system,attvar_serializer). 
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:165 
+%~ current_prolog_flag(argv,[])
+print_request([]).
+print_request([H|T]) :-
+    H=..[Name, Value],
+    format(user_error, '<tr><td>~w<td>~w~n', [Name, Value]),
+    print_request(T).
+
+ensure_colapsable_script :-
+    once_per_request(pformat_write('\n<script>\nvar coll = document.getElementsByClassName("collapsible");\nvar i;\n\nfor (i = 0; i < coll.length; i++) {\n  coll[i].addEventListener("click", function(e) {\n    this.classList.toggle("active");\n    e.preventDefault();\n    var content = this.nextElementSibling;\n    if (content.style.maxHeight){\n      content.style.maxHeight = null;\n    } else {\n      content.style.maxHeight = content.scrollHeight + "px";\n    }     \n  });\n}\n</script> ')).
+
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web). 
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+[32m% autoloading prolog_autoload:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading pldoc_files:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:append/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m[32m% autoloading sgml_write:list_to_assoc/2 from /usr/lib/swi-prolog/library/assoc.pl
+[0m% ?- fixup_module_exports_into_from(system,web_long_message). 
+% ?- fixup_module_exports_into_from(system,shrdlurn_eval). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web_server). 
+% ?- fixup_module_exports_into_from(system,xlisting_web_server). 
+[32m% autoloading random:must_be/2 from /usr/lib/swi-prolog/library/error.pl
+[0m[32m% autoloading random:nth0/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m%~ ?-webui_start_swish_and_clio.
+%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_886344),Setter_Term_expansion) ,
+%~      (Compound:-_886344)=D848436_d848438 ,
+%~      D848436_d848438\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D848436_d848438-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_961376:-_961378),_961368,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_829514) ,
+%~      compound(_829522) ,
+%~      term_expansion_setter((_829522:-_829524),_829516) ,
+%~      (_829522:-_829524)=_829574 ,
+%~      _829574\==_829516 ,
+%~      _829514=_829518 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_829574-->_829516))),nl)))
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_530,_534) ,
+%~     _530\==_534 ,
+%~     _532=_536 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_530-->_534))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ call_in_thread('user:wdmsg(call_in_thread)',user,wdmsg(call_in_thread))
+%~ call_in_thread.
+%~ call_in_thread
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/007bbfb7.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/00d62c1b.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/017c7c7b.json',
+%~   ....(400>99)])
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_test_loader.pl:119 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00576224.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/009d5c81.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00dbd492.json',
+%~   ....(400>99)])
+%~ load_json_files('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/1D_testset/*.json',[])
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_test_loader.pl:123 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/0uduqqj6f.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/178fcbfb-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64-relative-right-side.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/4938f0c2-easy.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/flow.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-dynamic-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ihiz27k2n.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/middle.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/mind-the-gap.json',  '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/n1hczotml.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/rcpwrfki1.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/referenceable-components.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/surface-pixel-count.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/vyaguzeoi.json'])
+% ?- fixup_module_exports_into_from(system,user). 
+program=[ grid_size(In,InH,InV), 
+          grid_size(Out,OutH,OutV), 
+          InArea is InH*InV, 
+          OutArea is OutH*OutV, 
+          ratio_for(RatioArea,OutArea,InArea), 
+          max_min(OutArea,InArea,BothMaxArea,BothMinArea), 
+          amass(In,InMass), 
+          amass(Out,OutMass), 
+          ratio_for(DeltaMass,OutMass,InMass), 
+          unique_color_count(In,InColorLen), 
+          unique_color_count(Out,OutColorLen), 
+          ratio_for(RatioColorLen,OutColorLen,InColorLen), 
+          unique_colors(In,InColors), 
+          unique_colors(Out,OutColors), 
+          intersection( InColors, 
+            OutColors, SharedColors,InSpecificColors, 
+            OutSpecificColors), 
+          append( [InSpecificColors,SharedColors,OutSpecificColors], 
+            Include_Append_AllColors), 
+          nop(dont_include(Include_Append_AllColors)), 
+          sort(Include_Append_AllColors,AllColors), 
+          maplist( length, 
+            [ InColors, OutColors,SharedColors, 
+                 InSpecificColors, OutSpecificColors, AllColors], 
+            [ InColorsLen, OutColorsLen,SharedColorsLen, 
+                     InSpecificColorsLen, OutSpecificColorsLen, AllColorsLen]), 
+          ratio_for(RescaleH,OutH,InH), 
+          ratio_for(RescaleV,OutV,InV), 
+          ratio_for(InDensity,InMass,InArea), 
+          ratio_for(OutDensity,OutMass,OutArea), 
+          ratio_for(DeltaDensity,OutDensity,InDensity), 
+          max_min(OutH,OutV,OutMaxHV,Min_OutMaxHV), 
+          max_min(InH,InV,InMaxHV,Min_MaxHV), 
+          OutMaxHVArea is OutMaxHV*OutMaxHV, 
+          InMaxHVArea is InMaxHV*InMaxHV, 
+          ratio_for(RatioMaxHVArea,OutMaxHVArea,InMaxHVArea), 
+          max_min(InMaxHVArea,OutMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin), 
+          ratio_for(RatioBothMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin)]
+		in=In
+		in_h=InH
+		in_v=InV
+		out=Out
+		out_h=OutH
+		out_v=OutV
+		in_area=InArea
+		out_area=OutArea
+		ratio_area=RatioArea
+		both_max_area=BothMaxArea
+		both_min_area=BothMinArea
+		in_mass=InMass
+		out_mass=OutMass
+		delta_mass=DeltaMass
+		in_color_len=InColorLen
+		out_color_len=OutColorLen
+		ratio_color_len=RatioColorLen
+		in_colors=InColors
+		out_colors=OutColors
+		shared_colors=SharedColors
+		in_specific_colors=InSpecificColors
+		out_specific_colors=OutSpecificColors
+		all_colors=AllColors
+		in_colors_len=InColorsLen
+		out_colors_len=OutColorsLen
+		shared_colors_len=SharedColorsLen
+		in_specific_colors_len=InSpecificColorsLen
+		out_specific_colors_len=OutSpecificColorsLen
+		all_colors_len=AllColorsLen
+		rescale_h=RescaleH
+		rescale_v=RescaleV
+		in_density=InDensity
+		out_density=OutDensity
+		delta_density=DeltaDensity
+		out_max_hv=OutMaxHV
+		in_max_hv=InMaxHV
+		out_max_hv_area=OutMaxHVArea
+		in_max_hv_area=InMaxHVArea
+		ratio_max_hv_area=RatioMaxHVArea
+		both_max_hv_area_max=BothMaxHVAreaMax
+		both_max_hv_area_min=BothMaxHVAreaMin
+		ratio_both_max_hv_area=RatioBothMaxHVArea
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,multivar). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+[31mWarning: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_boards.pl:668:
+Warning:    Singleton variables: [R]
+[0m%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_footer.pl:6 
+%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_285470),Setter_Term_expansion) ,
+%~      (Compound:-_285470)=D247562_d247564 ,
+%~      D247562_d247564\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D247562_d247564-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_458298:-_458300),_458290,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_226240) ,
+%~      compound(_226248) ,
+%~      term_expansion_setter((_226248:-_226250),_226242) ,
+%~      (_226248:-_226250)=_226300 ,
+%~      _226300\==_226242 ,
+%~      _226240=_226244 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_226300-->_226242))),nl)))
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_514778,_514782) ,
+%~     _514778\==_514782 ,
+%~     _514780=_514784 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_514778-->_514782))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(baseKB,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:1081 
+%~ start(gen_gids)
+%~ end(gen_gids)
+% init_why(before_boot,after('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl')).
+108 ?- ^C
+Action (h for help) ? exit (status 4)
+xterm: no process found
+
+Script done on 2022-11-06 13:08:20-08:00 [COMMAND_EXIT_CODE="0"]
+Script started on 2022-11-06 13:09:08-08:00 [COMMAND="TYPESCRIPT=1 ./Kaggle_arc.sh " TERM="xterm" TTY="/dev/pts/5" COLUMNS="231" LINES="67"]
+ARC_DIR=/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+BCMD=cd /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc ; pwd ; swipl -l kaggle_arc.pl
+/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+[32m% Contacting server at https://www.swi-prolog.org/pack/query ...[0m[32m ok
+[0m[32m% Pack `logicmoo_utils' is already installed @3.0.3
+[0m[32m% Running "git fetch" in '/home/norights/.local/share/swi-prolog/pack/logicmoo_utils'
+[0m[32m% Package "logicmoo_utils" is up-to-date
+[0m% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% ?- fixup_module_exports_into_from(system,locally_each). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_strings). 
+% ?- fixup_module_exports_into_from(system,rtrace). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,loop_check). 
+% ?- fixup_module_exports_into_from(system,xlisting_console). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,hook_database). 
+% ?- fixup_module_exports_into_from(system,no_repeats). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filesystem). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_terms). 
+% ?- fixup_module_exports_into_from(system,util_varnames). 
+% ?- fixup_module_exports_into_from(system,subclause_expansion). 
+% ?- fixup_module_exports_into_from(system,clause_attvars). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filestreams). 
+% ?- fixup_module_exports_into_from(system,call_reorder). 
+% ?- fixup_module_exports_into_from(system,nb_set_term). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(baseKB,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,dcg_meta). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_bb_frame). 
+% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% init_phase(after_load).
+% ?- fixup_module_exports_into_from(system,gapi). 
+% ?- fixup_module_exports_into_from(system,gvlib). 
+% ?- fixup_module_exports_into_from(system,attvar_serializer). 
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:165 
+%~ current_prolog_flag(argv,[])
+print_request([]).
+print_request([H|T]) :-
+    H=..[Name, Value],
+    format(user_error, '<tr><td>~w<td>~w~n', [Name, Value]),
+    print_request(T).
+
+ensure_colapsable_script :-
+    once_per_request(pformat_write('\n<script>\nvar coll = document.getElementsByClassName("collapsible");\nvar i;\n\nfor (i = 0; i < coll.length; i++) {\n  coll[i].addEventListener("click", function(e) {\n    this.classList.toggle("active");\n    e.preventDefault();\n    var content = this.nextElementSibling;\n    if (content.style.maxHeight){\n      content.style.maxHeight = null;\n    } else {\n      content.style.maxHeight = content.scrollHeight + "px";\n    }     \n  });\n}\n</script> ')).
+
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web). 
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+[32m% autoloading prolog_autoload:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading pldoc_files:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:append/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m[32m% autoloading sgml_write:list_to_assoc/2 from /usr/lib/swi-prolog/library/assoc.pl
+[0m% ?- fixup_module_exports_into_from(system,web_long_message). 
+% ?- fixup_module_exports_into_from(system,shrdlurn_eval). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web_server). 
+% ?- fixup_module_exports_into_from(system,xlisting_web_server). 
+[32m% autoloading random:must_be/2 from /usr/lib/swi-prolog/library/error.pl
+[0m[32m% autoloading random:nth0/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m%~ ?-webui_start_swish_and_clio.
+%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_886344),Setter_Term_expansion) ,
+%~      (Compound:-_886344)=D848436_d848438 ,
+%~      D848436_d848438\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D848436_d848438-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_961376:-_961378),_961368,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_829514) ,
+%~      compound(_829522) ,
+%~      term_expansion_setter((_829522:-_829524),_829516) ,
+%~      (_829522:-_829524)=_829574 ,
+%~      _829574\==_829516 ,
+%~      _829514=_829518 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_829574-->_829516))),nl)))
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_530,_534) ,
+%~     _530\==_534 ,
+%~     _532=_536 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_530-->_534))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ call_in_thread('user:wdmsg(call_in_thread)',user,wdmsg(call_in_thread))
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_pfc.pl:209 
+%~ call_in_thread.
+%~ call_in_thread
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/007bbfb7.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/00d62c1b.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/017c7c7b.json',
+%~   ....(400>99)])
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_test_loader.pl:119 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00576224.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/009d5c81.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00dbd492.json',
+%~   ....(400>99)])
+%~ load_json_files('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/1D_testset/*.json',[])
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/0uduqqj6f.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/178fcbfb-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64-relative-right-side.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/4938f0c2-easy.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/flow.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-dynamic-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ihiz27k2n.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/middle.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/mind-the-gap.json',  '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/n1hczotml.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/rcpwrfki1.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/referenceable-components.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/surface-pixel-count.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/vyaguzeoi.json'])
+% ?- fixup_module_exports_into_from(system,user). 
+program=[ grid_size(In,InH,InV), 
+          grid_size(Out,OutH,OutV), 
+          InArea is InH*InV, 
+          OutArea is OutH*OutV, 
+          ratio_for(RatioArea,OutArea,InArea), 
+          max_min(OutArea,InArea,BothMaxArea,BothMinArea), 
+          amass(In,InMass), 
+          amass(Out,OutMass), 
+          ratio_for(DeltaMass,OutMass,InMass), 
+          unique_color_count(In,InColorLen), 
+          unique_color_count(Out,OutColorLen), 
+          ratio_for(RatioColorLen,OutColorLen,InColorLen), 
+          unique_colors(In,InColors), 
+          unique_colors(Out,OutColors), 
+          intersection( InColors, 
+            OutColors, SharedColors,InSpecificColors, 
+            OutSpecificColors), 
+          append( [InSpecificColors,SharedColors,OutSpecificColors], 
+            Include_Append_AllColors), 
+          nop(dont_include(Include_Append_AllColors)), 
+          sort(Include_Append_AllColors,AllColors), 
+          maplist( length, 
+            [ InColors, OutColors,SharedColors, 
+                 InSpecificColors, OutSpecificColors, AllColors], 
+            [ InColorsLen, OutColorsLen,SharedColorsLen, 
+                     InSpecificColorsLen, OutSpecificColorsLen, AllColorsLen]), 
+          ratio_for(RescaleH,OutH,InH), 
+          ratio_for(RescaleV,OutV,InV), 
+          ratio_for(InDensity,InMass,InArea), 
+          ratio_for(OutDensity,OutMass,OutArea), 
+          ratio_for(DeltaDensity,OutDensity,InDensity), 
+          max_min(OutH,OutV,OutMaxHV,Min_OutMaxHV), 
+          max_min(InH,InV,InMaxHV,Min_MaxHV), 
+          OutMaxHVArea is OutMaxHV*OutMaxHV, 
+          InMaxHVArea is InMaxHV*InMaxHV, 
+          ratio_for(RatioMaxHVArea,OutMaxHVArea,InMaxHVArea), 
+          max_min(InMaxHVArea,OutMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin), 
+          ratio_for(RatioBothMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin)]
+		in=In
+		in_h=InH
+		in_v=InV
+		out=Out
+		out_h=OutH
+		out_v=OutV
+		in_area=InArea
+		out_area=OutArea
+		ratio_area=RatioArea
+		both_max_area=BothMaxArea
+		both_min_area=BothMinArea
+		in_mass=InMass
+		out_mass=OutMass
+		delta_mass=DeltaMass
+		in_color_len=InColorLen
+		out_color_len=OutColorLen
+		ratio_color_len=RatioColorLen
+		in_colors=InColors
+		out_colors=OutColors
+		shared_colors=SharedColors
+		in_specific_colors=InSpecificColors
+		out_specific_colors=OutSpecificColors
+		all_colors=AllColors
+		in_colors_len=InColorsLen
+		out_colors_len=OutColorsLen
+		shared_colors_len=SharedColorsLen
+		in_specific_colors_len=InSpecificColorsLen
+		out_specific_colors_len=OutSpecificColorsLen
+		all_colors_len=AllColorsLen
+		rescale_h=RescaleH
+		rescale_v=RescaleV
+		in_density=InDensity
+		out_density=OutDensity
+		delta_density=DeltaDensity
+		out_max_hv=OutMaxHV
+		in_max_hv=InMaxHV
+		out_max_hv_area=OutMaxHVArea
+		in_max_hv_area=InMaxHVArea
+		ratio_max_hv_area=RatioMaxHVArea
+		both_max_hv_area_max=BothMaxHVAreaMax
+		both_max_hv_area_min=BothMaxHVAreaMin
+		ratio_both_max_hv_area=RatioBothMaxHVArea
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,multivar). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+[31mWarning: /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_boards.pl:668:
+Warning:    Singleton variables: [R]
+[0m%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_285136),Setter_Term_expansion) ,
+%~      (Compound:-_285136)=D247228_d247230 ,
+%~      D247228_d247230\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D247228_d247230-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_457964:-_457966),_457956,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_226240) ,
+%~      compound(_226248) ,
+%~      term_expansion_setter((_226248:-_226250),_226242) ,
+%~      (_226248:-_226250)=_226300 ,
+%~      _226300\==_226242 ,
+%~      _226240=_226244 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_226300-->_226242))),nl)))
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_footer.pl:6 
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_514444,_514448) ,
+%~     _514444\==_514448 ,
+%~     _514446=_514450 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_514444-->_514448))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(baseKB,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ start(gen_gids)
+%~ end(gen_gids)
+% init_why(before_boot,after('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl')).
+108 ?- 
+|    ^D
+xterm: no process found
+
+Script done on 2022-11-06 13:09:46-08:00 [COMMAND_EXIT_CODE="0"]
+Script started on 2022-11-06 13:09:46-08:00 [COMMAND="TYPESCRIPT=1 ./Kaggle_arc.sh " TERM="xterm" TTY="/dev/pts/5" COLUMNS="231" LINES="67"]
+ARC_DIR=/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+BCMD=cd /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc ; pwd ; swipl -l kaggle_arc.pl
+/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc
+[32m% Contacting server at https://www.swi-prolog.org/pack/query ...[0m[32m ok
+[0m[32m% Pack `logicmoo_utils' is already installed @3.0.3
+[0m[32m% Running "git fetch" in '/home/norights/.local/share/swi-prolog/pack/logicmoo_utils'
+[0m[32m% Package "logicmoo_utils" is up-to-date
+[0m% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% ?- fixup_module_exports_into_from(system,locally_each). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_strings). 
+% ?- fixup_module_exports_into_from(system,rtrace). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,bugger). 
+% ?- fixup_module_exports_into_from(system,loop_check). 
+% ?- fixup_module_exports_into_from(system,xlisting_console). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,call_from). 
+% ?- fixup_module_exports_into_from(system,hook_database). 
+% ?- fixup_module_exports_into_from(system,no_repeats). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filesystem). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_terms). 
+% ?- fixup_module_exports_into_from(system,util_varnames). 
+% ?- fixup_module_exports_into_from(system,subclause_expansion). 
+% ?- fixup_module_exports_into_from(system,clause_attvars). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_filestreams). 
+% ?- fixup_module_exports_into_from(system,call_reorder). 
+% ?- fixup_module_exports_into_from(system,nb_set_term). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(baseKB,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,pretty_clauses). 
+% ?- fixup_module_exports_into_from(system,dcg_meta). 
+% ?- fixup_module_exports_into_from(system,logicmoo_util_bb_frame). 
+% ?- fixup_module_exports_into_from(system,logicmoo_startup). 
+% init_phase(after_load).
+% ?- fixup_module_exports_into_from(system,gapi). 
+% ?- fixup_module_exports_into_from(system,gvlib). 
+% ?- fixup_module_exports_into_from(system,attvar_serializer). 
+%~ current_prolog_flag(argv,[])
+print_request([]).
+print_request([H|T]) :-
+    H=..[Name, Value],
+    format(user_error, '<tr><td>~w<td>~w~n', [Name, Value]),
+    print_request(T).
+
+ensure_colapsable_script :-
+    once_per_request(pformat_write('\n<script>\nvar coll = document.getElementsByClassName("collapsible");\nvar i;\n\nfor (i = 0; i < coll.length; i++) {\n  coll[i].addEventListener("click", function(e) {\n    this.classList.toggle("active");\n    e.preventDefault();\n    var content = this.nextElementSibling;\n    if (content.style.maxHeight){\n      content.style.maxHeight = null;\n    } else {\n      content.style.maxHeight = content.scrollHeight + "px";\n    }     \n  });\n}\n</script> ')).
+
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web). 
+% ?- fixup_module_exports_into_from(system,xlisting_web). 
+[32m% autoloading prolog_autoload:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading pldoc_files:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:predicate_options/3 from /usr/lib/swi-prolog/library/predicate_options
+[0m[32m% autoloading lazy_lists:append/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m[32m% autoloading sgml_write:list_to_assoc/2 from /usr/lib/swi-prolog/library/assoc.pl
+[0m% ?- fixup_module_exports_into_from(system,web_long_message). 
+% ?- fixup_module_exports_into_from(system,shrdlurn_eval). 
+% ?- fixup_module_exports_into_from(baseKB,xlisting_web_server). 
+% ?- fixup_module_exports_into_from(system,xlisting_web_server). 
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl:185 
+[32m% autoloading random:must_be/2 from /usr/lib/swi-prolog/library/error.pl
+[0m[32m% autoloading random:nth0/3 from /usr/lib/swi-prolog/library/lists.pl
+[0m%~ ?-webui_start_swish_and_clio.
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_footer.pl:6 
+%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_887012),Setter_Term_expansion) ,
+%~      (Compound:-_887012)=D849104_d849106 ,
+%~      D849104_d849106\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D849104_d849106-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_962044:-_962046),_962036,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_829848) ,
+%~      compound(_829856) ,
+%~      term_expansion_setter((_829856:-_829858),_829850) ,
+%~      (_829856:-_829858)=_829908 ,
+%~      _829908\==_829850 ,
+%~      _829848=_829852 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_829908-->_829850))),nl)))
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_530,_534) ,
+%~     _530\==_534 ,
+%~     _532=_536 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_530-->_534))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ call_in_thread('user:wdmsg(call_in_thread)',user,wdmsg(call_in_thread))
+%~ call_in_thread.
+%~ call_in_thread
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/007bbfb7.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/00d62c1b.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/training/017c7c7b.json',
+%~   ....(400>99)])
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00576224.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/009d5c81.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/evaluation/00dbd492.json',
+%~   ....(400>99)])
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_test_loader.pl:122 
+%~ load_json_files('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/1D_testset/*.json',[])
+%~ /opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_test_loader.pl:123 
+%~ load_json_files( '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/*.json', [
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/0uduqqj6f.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/178fcbfb-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/2wfys5w64-relative-right-side.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/4938f0c2-easy.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/flow.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-dynamic-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ifmyulnv8-shape.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/ihiz27k2n.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh-easier.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/jnohuorzh.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/middle.json',
+%~   '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/mind-the-gap.json',  '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/n1hczotml.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/rcpwrfki1.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/referenceable-components.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/surface-pixel-count.json', '/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/dbigham/Data/MyTrainingData/vyaguzeoi.json'])
+% ?- fixup_module_exports_into_from(system,user). 
+program=[ grid_size(In,InH,InV), 
+          grid_size(Out,OutH,OutV), 
+          InArea is InH*InV, 
+          OutArea is OutH*OutV, 
+          ratio_for(RatioArea,OutArea,InArea), 
+          max_min(OutArea,InArea,BothMaxArea,BothMinArea), 
+          amass(In,InMass), 
+          amass(Out,OutMass), 
+          ratio_for(DeltaMass,OutMass,InMass), 
+          unique_color_count(In,InColorLen), 
+          unique_color_count(Out,OutColorLen), 
+          ratio_for(RatioColorLen,OutColorLen,InColorLen), 
+          unique_colors(In,InColors), 
+          unique_colors(Out,OutColors), 
+          intersection( InColors, 
+            OutColors, SharedColors,InSpecificColors, 
+            OutSpecificColors), 
+          append( [InSpecificColors,SharedColors,OutSpecificColors], 
+            Include_Append_AllColors), 
+          nop(dont_include(Include_Append_AllColors)), 
+          sort(Include_Append_AllColors,AllColors), 
+          maplist( length, 
+            [ InColors, OutColors,SharedColors, 
+                 InSpecificColors, OutSpecificColors, AllColors], 
+            [ InColorsLen, OutColorsLen,SharedColorsLen, 
+                     InSpecificColorsLen, OutSpecificColorsLen, AllColorsLen]), 
+          ratio_for(RescaleH,OutH,InH), 
+          ratio_for(RescaleV,OutV,InV), 
+          ratio_for(InDensity,InMass,InArea), 
+          ratio_for(OutDensity,OutMass,OutArea), 
+          ratio_for(DeltaDensity,OutDensity,InDensity), 
+          max_min(OutH,OutV,OutMaxHV,Min_OutMaxHV), 
+          max_min(InH,InV,InMaxHV,Min_MaxHV), 
+          OutMaxHVArea is OutMaxHV*OutMaxHV, 
+          InMaxHVArea is InMaxHV*InMaxHV, 
+          ratio_for(RatioMaxHVArea,OutMaxHVArea,InMaxHVArea), 
+          max_min(InMaxHVArea,OutMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin), 
+          ratio_for(RatioBothMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin)]
+		in=In
+		in_h=InH
+		in_v=InV
+		out=Out
+		out_h=OutH
+		out_v=OutV
+		in_area=InArea
+		out_area=OutArea
+		ratio_area=RatioArea
+		both_max_area=BothMaxArea
+		both_min_area=BothMinArea
+		in_mass=InMass
+		out_mass=OutMass
+		delta_mass=DeltaMass
+		in_color_len=InColorLen
+		out_color_len=OutColorLen
+		ratio_color_len=RatioColorLen
+		in_colors=InColors
+		out_colors=OutColors
+		shared_colors=SharedColors
+		in_specific_colors=InSpecificColors
+		out_specific_colors=OutSpecificColors
+		all_colors=AllColors
+		in_colors_len=InColorsLen
+		out_colors_len=OutColorsLen
+		shared_colors_len=SharedColorsLen
+		in_specific_colors_len=InSpecificColorsLen
+		out_specific_colors_len=OutSpecificColorsLen
+		all_colors_len=AllColorsLen
+		rescale_h=RescaleH
+		rescale_v=RescaleV
+		in_density=InDensity
+		out_density=OutDensity
+		delta_density=DeltaDensity
+		out_max_hv=OutMaxHV
+		in_max_hv=InMaxHV
+		out_max_hv_area=OutMaxHVArea
+		in_max_hv_area=InMaxHVArea
+		ratio_max_hv_area=RatioMaxHVArea
+		both_max_hv_area_max=BothMaxHVAreaMax
+		both_max_hv_area_min=BothMaxHVAreaMin
+		ratio_both_max_hv_area=RatioBothMaxHVArea
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,multivar). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ asserta_if_new(
+%~    system : term_expansion( Compound:-Compound6,
+%~               Nonvar, Setter_Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(Nonvar) ,
+%~      compound(Compound) ,
+%~      term_expansion_setter((Compound:-_284430),Setter_Term_expansion) ,
+%~      (Compound:-_284430)=D246522_d246524 ,
+%~      D246522_d246524\==Setter_Term_expansion ,
+%~      Nonvar=Expansion ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((D246522_d246524-->Setter_Term_expansion))),nl)),
+%~    user,
+%~    system : term_expansion((_457258:-_457260),_457250,Term_expansion,Expansion) :-
+%~      current_prolog_flag(arc_term_expansion,true) ,
+%~      nonvar(_225534) ,
+%~      compound(_225542) ,
+%~      term_expansion_setter((_225542:-_225544),_225536) ,
+%~      (_225542:-_225544)=_225594 ,
+%~      _225594\==_225536 ,
+%~      _225534=_225538 ,
+%~      ! ,
+%~      nop((print(term_expansion_setter((_225594-->_225536))),nl)))
+%~ asserta_if_new( goal_expansion(Goal_expansion2,Goal_expansion1,Setter_Goal_expansion,Expansion) :-
+%~                   current_prolog_flag(arc_term_expansion,true) ,
+%~                   goal_expansion_setter(Goal_expansion2,Setter_Goal_expansion) ,
+%~                   Goal_expansion2\==Setter_Goal_expansion ,
+%~                   Goal_expansion1=Expansion ,
+%~                   ! ,
+%~                   nop((print(goal_expansion_setter((Goal_expansion2-->Setter_Goal_expansion))),nl)),
+%~   user,
+%~   goal_expansion(Goal_expansion2,Goal_expansion1,Goal_expansion,Expansion) :-
+%~     current_prolog_flag(arc_term_expansion,true) ,
+%~     goal_expansion_setter(_513738,_513742) ,
+%~     _513738\==_513742 ,
+%~     _513740=_513744 ,
+%~     ! ,
+%~     nop((print(goal_expansion_setter((_513738-->_513742))),nl)))
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+% ?- fixup_module_exports_into_from(baseKB,user). 
+% ?- fixup_module_exports_into_from(system,user). 
+%~ start(gen_gids)
+%~ end(gen_gids)
+% init_why(before_boot,after('/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc.pl')).
+108 ?- ^D
+xterm: no process found
+
+Script done on 2022-11-06 13:10:01-08:00 [COMMAND_EXIT_CODE="0"]
