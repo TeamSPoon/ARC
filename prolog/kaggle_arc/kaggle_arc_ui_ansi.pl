@@ -720,7 +720,11 @@ show_pair_grid(TitleColor,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
      call(describe_feature(In,[call(wqnl(NameInU+fav(PairName)))|INFO])),LW,
     call(describe_feature(Out,[call(wqnl(NameOutU+fav(PairName)))|INFO]))),!.
 
-print_side_by_side(C,G1,N1,G2,N2):- !, print_side_by_side(G1-wqs(call(wqs(C,N1))),G2-wqs(call(wqs(C,N2)))),!.
+add_grid_label(I,M,IM):- IM=..[-,I,M]. 
+print_side_by_side(C,G1,N1,G2,N2):- !, 
+  add_grid_label(G1,wqs(call(wqs(C,N1))), GridLabel1),
+  add_grid_label(G2,wqs(call(wqs(C,N2))), GridLabel2),
+  print_side_by_side(GridLabel1,GridLabel2).
 print_side_by_side(TitleColor,G1,N1,LW,G2,N2):- 
    g_out((nl,
    print_side_by_side0(G1,LW,G2),

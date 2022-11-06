@@ -746,7 +746,8 @@ hybrid_shape_from(Set,VM):-
   
   %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
   %OffsetGrid = In,
-  as_debug(9,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_side_by_side(Grid-Info,[Obj]-Info)))), % trace,
+  add_grid_label(Grid,Info,A), add_grid_label([Obj],Info,B),
+  as_debug(9,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_side_by_side(A,B)))), % trace,
   %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  trace,  
   %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
   remCPoints(VM,GOPoints),

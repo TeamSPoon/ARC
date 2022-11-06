@@ -8,11 +8,11 @@ https://github.com/fchollet/ARC
 
 ## Percentage of Tasks Passing
 
-* Training tasks: 165 / 400 (41.2%)
+* Training tasks: 173 / 400 (43.2%)\
   ![Percentage of Training Tasks Passing](TrainingTasksProgressBar.png?raw=true)
-  * Implemented: 82
-  * Passing via generalization: 83
-* Evaluation tasks: 57 / 400 (14.2%)
+  * Implemented: 87
+  * Passing via generalization: 86
+* Evaluation tasks: 58 / 400 (14.5%)\
   ![Percentage of Evaluation Tasks Passing](EvaluationTasksProgressBar.png?raw=true)
 
 ## Progress over Time
@@ -21,7 +21,7 @@ https://github.com/fchollet/ARC
 
 ## Tasks Implemented
 
-### Core ARC Training Tasks (82)
+### Core ARC Training Tasks (87)
 
 * [0ca9ddb6](TaskNotes/0ca9ddb6/notes.md)
 * [3c9b0459](TaskNotes/3c9b0459/notes.md)
@@ -105,6 +105,11 @@ https://github.com/fchollet/ARC
 * [63613498](TaskNotes/63613498/notes.md)
 * [29c11459](TaskNotes/29c11459/notes.md)
 * [b6afb2da](TaskNotes/b6afb2da/notes.md)
+* [963e52fc](TaskNotes/963e52fc/notes.md)
+* [d364b489](TaskNotes/d364b489/notes.md)
+* [1e0a9b12](TaskNotes/1e0a9b12/notes.md)
+* [7e0986d6](TaskNotes/7e0986d6/notes.md)
+* [868de0fa](TaskNotes/868de0fa/notes.md)
 
 ### Personally Created Training Tasks (15)
 
@@ -126,7 +131,7 @@ https://github.com/fchollet/ARC
 
 ## Tasks Passing via Generalization
 
-### Training Tasks (83)
+### Training Tasks (86)
 
 The following ARC training tasks started passing after some different task was implemented.
 
@@ -213,8 +218,11 @@ The following ARC training tasks started passing after some different task was i
 * [8d510a79](TaskNotes/8d510a79/notes.md)
 * [9565186b](TaskNotes/9565186b/notes.md)
 * [af902bf9](TaskNotes/af902bf9/notes.md)
+* [ba26e723](TaskNotes/ba26e723/notes.md)
+* [dc1df850](TaskNotes/dc1df850/notes.md)
+* [3bdb4ada](TaskNotes/3bdb4ada/notes.md)
 
-### Evaluation Tasks (57)
+### Evaluation Tasks (58)
 
 The following ARC evaluation tasks are passing. My intention is to not analyzed or implemented evaluation examples specifically, but I have implemented a few accidentally.
 
@@ -273,5 +281,6 @@ The following ARC evaluation tasks are passing. My intention is to not analyzed 
 * [903d1b4a](TaskNotes/903d1b4a/notes.md)
 * [981571dc](TaskNotes/981571dc/notes.md)
 * [42a15761](TaskNotes/42a15761/notes.md)
+* [e872b94a](TaskNotes/e872b94a/notes.md)
 * [e5790162](TaskNotes/e5790162/notes.md)
 * [27a77e38](TaskNotes/27a77e38/notes.md)

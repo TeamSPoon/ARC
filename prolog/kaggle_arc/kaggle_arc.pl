@@ -24,7 +24,7 @@ catch_nolog(G):- ignore(catch(notrace(G),E,nop(wdmsg(E=G)))).
   %url('https://github.com/logicmoo/logicmoo_utils.git'),
   interactive(false),
   upgrade(true),git(true)])).
-:- catch_log(pack_upgrade(logicmoo_utils)).
+:- pack_upgrade(logicmoo_utils),!.
 % :- pack_install(dictoo).
 % :- pack_upgrade(dictoo).
 

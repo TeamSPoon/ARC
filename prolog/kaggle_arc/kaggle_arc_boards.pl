@@ -667,7 +667,7 @@ grid_to_obj_other(VM,Grid,O):- other_grid(Grid,Grid2), grid_to_obj_other_grid(VM
 grid_to_obj_other_grid(VM,Grid,Grid2,O):- grid_to_objs(Grid2,Objs),grid_to_obj_other_objs(VM,Grid,Objs,O).
 grid_to_obj_other_objs(VM,Grid,Objs,O):- 
   objs_shapes(Objs,In),
-  maybe_ogs_color(R,OH,OV,In,Grid), 
+  maybe_ogs_color(_R,OH,OV,In,Grid), 
   once((localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints), 
   %indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
   (nonvar(VM)->true;grid_vm(Grid,VM)),

@@ -250,7 +250,8 @@ swish_arc_root(Request):-
   http_reply_from_files(DEMO, [], Request),!.
 swish_arc_root(Request):- 
   Options = [],
-  swish_page:swish_reply2(Options, Request),!.
+  call(call,swish_page:swish_reply2(Options, Request)),!.
+
 
 %arcproc_left(Request):- xlisting_web:handler_logicmoo_cyclone(Request),!.
 arcproc_left(Request):-  
@@ -433,11 +434,23 @@ current_arc_cmd(V,Prolog):- luser_getval(V,Prolog).
 
  % our_pengine_output(`<script src="https://unpkg.com/gojs/release/go-debug.js"></script>`).
 
+:-   ignore((predicate_property(phil:'$exported_op'(_,_,_),(discontiguous)),
+  \+ predicate_property(phil:'$exported_op'(_,_,_),number_of_clauses(_)),
+     abolish(phil:'$exported_op',3))),
+  ignore((predicate_property(rdf11:'$exported_op'(_,_,_),(discontiguous)),
+\+ predicate_property(rdf11:'$exported_op'(_,_,_),number_of_clauses(_)),
+  abolish(rdf11:'$exported_op',3))),
+     ignore((predicate_property(lemur:'$exported_op'(_,_,_),(discontiguous)),
+  \+ predicate_property(lemur:'$exported_op'(_,_,_),number_of_clauses(_)),
+     abolish(lemur:'$exported_op',3))).
 
 :- include(kaggle_arc_ui_html_go1).
 :- include(kaggle_arc_ui_html_go2).
+/*
 
-
+:- abolish(lemur:'$exported_op',3).
+:- abolish(rdf11:'$exported_op',3).
+*/
 :- fixup_exports.
 
 
