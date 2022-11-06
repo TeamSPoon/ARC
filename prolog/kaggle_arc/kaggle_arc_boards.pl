@@ -629,11 +629,11 @@ grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs3(Hint))):-  all_ogs3(In,Out,Hint).
 */
 %grid_hint_io(MC,IO,In,Out,comp(MC,IO,rev_ogs3(Hint))):-  all_ogs3(Out,In,Hint).
 
-%grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- not_reversed(IO), c_proportional(In,Out,Hint).
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs(Hint))):- not_reversed(IO), all_ogs(In,Out,Hint).
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs_rev(Hint))):- not_reversed(IO), all_ogs(Out,In,Hint).
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):-  \+ arc_option(grid_size_only), grid_size(In,IH,IV),grid_size(Out,OH,OV), 
   grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- not_reversed(IO), c_proportional(In,Out,Hint).
 
 disguise_grid(I,O):- maplist(disguise_row,I,M),O=..[grid|M].
 disguise_row(I,O):- O=..[row|I].

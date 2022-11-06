@@ -195,6 +195,7 @@ sameR(X,X).
 
 test_rot:- test_p2(rot270),test_p2(rot90).
 %srot90V,flipV
+%rot90(A,B):- A==[],!,B=[].
 rot90( Grid,NewAnyWUpdate):- rot180( Grid,M),rot270( M,NewAnyWUpdate).
 rot180( Grid,NewAnyWUpdate):- any_xform(grid_rot180,Grid,NewAnyWUpdate).
 rot270( Grid,NewAnyWUpdate):- any_xform(grid_rot270,Grid,NewAnyWUpdate).

@@ -621,12 +621,12 @@ calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,_,WLoH,WLoV,WHiH,WHiV,WH,WV):- !.
 grid_size_nd(L,_,_):- \+ var(L), \+ is_grid(L), !, fail.
 grid_size_nd([G|Grid],H,V):- is_list(G), length(G,H),length([G|Grid],V),!.
 grid_size_nd([C,R|Rows],H,V):- 
-   (plain_var(Rows)->between(2,32,V);!), 
+   (plain_var(Rows)->between(2,36,V);!), 
    length([C,R|Rows],V),
-   (plain_var(R)->between(1,32,H);true), 
+   (plain_var(R)->between(1,36,H);true), 
    length(R,H),
    (is_list(C)->true;(length(C,H),maplist(make_lengths(H),Rows))).
-grid_size_nd([L],H,(1)):- (plain_var(L)->between(1,32,H);true), length(L,H).
+grid_size_nd([L],H,(1)):- (plain_var(L)->between(1,36,H);true), length(L,H).
 
 
 %points_to_grid(Points,Grid):- is_grid(Points),Points=Grid,!.

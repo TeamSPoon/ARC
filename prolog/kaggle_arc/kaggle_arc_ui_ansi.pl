@@ -507,18 +507,18 @@ banner_lines(Color):- nl_if_needed,
   color_print(Color,'=============================================================='),nl,
   color_print(Color,'--------------------------------------------------------------'),nl,
   color_print(Color,'=============================================================='),nl,
-  color_print(Color,'--------------------------------------------------------------'),nl.
+  color_print(Color,'--------------------------------------------------------------'),nl,!.
 
-print_ss(A):- ( \+ compound(A) ; \+ (sub_term(E,A), is_gridoid(E))),!, wdmsg(print_ss(A)).
+print_ss(A):- ( \+ compound(A) ; \+ (sub_term(E,A), is_gridoid(E))),!, wdmsg(print_ss(A)),!.
 print_ss(A):- grid_footer(A,G,W),print_ss(G,W),!.
 print_ss(A):- must_det_ll(( format('~N'), into_ss_string(A,SS),!,
   SS = ss(_,Lst),
-  forall(member(S,Lst),writeln(S)),format('~N'))).
+  forall(member(S,Lst),writeln(S)),format('~N'))),!.
 
 print_ss(G,W):- is_gridoid(G),!,must_det_ll(print_grid(W,G)).
 
 print_side_by_side([]):-!.
-print_side_by_side([A,B|Rest]):- \+ g_smaller_than(A,B),!,print_side_by_side(A,B),format('~N'),!,print_side_by_side(Rest).
+print_side_by_side([A,B|Rest]):- \+ g_smaller_than(A,B),!,print_side_by_side(A,B),format('~N'),!,print_side_by_side(Rest),!.
 print_side_by_side([A|Rest]):- print_ss(A), print_side_by_side(Rest),!.
 
 
@@ -720,7 +720,7 @@ show_pair_grid(TitleColor,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
      call(describe_feature(In,[call(wqnl(NameInU+fav(PairName)))|INFO])),LW,
     call(describe_feature(Out,[call(wqnl(NameOutU+fav(PairName)))|INFO]))),!.
 
-print_side_by_side(C,G1,N1,G2,N2):- !, print_side_by_side(G1-wqs(call(wqs(C,N1))),G2-wqs(call(wqs(C,N2)))).
+print_side_by_side(C,G1,N1,G2,N2):- !, print_side_by_side(G1-wqs(call(wqs(C,N1))),G2-wqs(call(wqs(C,N2)))),!.
 print_side_by_side(TitleColor,G1,N1,LW,G2,N2):- 
    g_out((nl,
    print_side_by_side0(G1,LW,G2),
@@ -789,7 +789,7 @@ find_longest_len([],L,L).
 find_longest_len([S|SS],N,L):- print_length(S,N2),max_min(N,N2,NM,_),
   find_longest_len(SS,NM,L).
 
-print_grid_ss(G):- print_grid_ss(_,_,G).
+print_grid_ss(G):- print_grid_ss(_,_,G),!.
 
 :- meta_predicate( print_with_pad(0)).
 :- export( print_with_pad/1).

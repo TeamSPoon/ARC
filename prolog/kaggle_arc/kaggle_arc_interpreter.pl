@@ -474,9 +474,10 @@ g_2_o(_,_,_):- fail.
 %set_glyph_to_object(G,O):- ignore(luser_linkval(G,O)),(get_current_test(TestID),my_asserta_if_new(g_2_o(TestID,G,O))).
 
 g2o(G,O):- var(G), !, oid_glyph_object(_,G,O).
-g2o(G,O):- integer(G),int2glyph(G,C),!,g2o(C,O),!.
+g2o(G,O):- integer(G),!,int2glyph(G,C),!,g2o(C,O),!.
 g2o(C,O):- compound(C), !, compound_name_arguments(C,objFn,[G|_]), !, g2o(G,O).
 g2o(G,O):- \+ atom(G), !, string(G),Chars=[_|_],atom_chars(G,Chars),!,chars2o(Chars,O).
+g2o(G,_):- is_fg_color(G),!,fail.
 g2o(G,O):- oid_to_object(G,O)-> true;(oid_glyph_object(_,G,O)*->true;(Chars=[_,_|_],atom_chars(G,Chars),chars2o(Chars,O))).
 
 

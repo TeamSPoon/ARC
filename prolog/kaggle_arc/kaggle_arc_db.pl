@@ -80,9 +80,13 @@ point_to_hvc(C-Point,H,V,C):- must(nonvar(Point)),must(hv_point(H,V,Point)),!.
 %point_ to_hvc(H,V,_,H,V).
 %point_ to_hvc(Inf,Inf,offset_ranges(_,_,_,_)).
 
-make_grid(H,V,Grid):- max_min(H,1,HH,_), max_min(V,1,VV,_),
-   max_min(HH,32,_,HHH),max_min(VV,32,_,VVV),!,   
-   grid_size_nd(Grid,HHH,VVV),!.
+make_grid(_,0,[]):- !.
+make_grid(0,1,[[]]):-!.
+make_grid(0,N,Grid):- N>1,!, make_list([],N,Grid).
+make_grid(1,1,[[_]]):-!.
+make_grid(H,V,Grid):- between(1,40,H),between(1,40,V), (H>1;V>1), % max_min(H,0,HH,_), max_min(V,0,VV,_),
+   %max_min(HH,32,_,HHH),max_min(VV,32,_,VVV),!,   
+   grid_size_nd(Grid,H,V),!.
 
 insert_row(N,Row,Grid,NewGrid):- grid_size(Grid,H,V), insert_row(N,Row,Grid,H,V,NewGrid).
 insert_row(N,Row,Grid,H,V,NewGrid):- N<0, NewN is V + N+1,!,insert_row(NewN,Row,Grid,H,V,NewGrid).

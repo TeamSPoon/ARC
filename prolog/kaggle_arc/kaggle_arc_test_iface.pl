@@ -58,14 +58,16 @@ menu_cmd1(_,'S','                  or (S)olve confirming it works on training pa
 menu_cmd1(_,'h','                  or (h)uman proposed solution',(human_test)).
 menu_cmd1(_,'r','               Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and (s)olve !',(cls_z,fully_test)).
 menu_cmd1(_,'a','                  or (a)dvance to the next test and (r)un it',(cls_z,!,run_next_test)).
-menu_cmd1(_,'n','               Go to (n)ext test (skipping this one)',(next_test,report_suite,print_qtest)).
-menu_cmd1(_,'b','                  or (b)ack to previous test.',(previous_test,report_suite,print_qtest)).
+menu_cmd1(_,'n','                  or (n)amed test (skipping this one)',(random_test)).
+menu_cmd1(_,'b','                  or (b)oxes test.',(pbox_indivs)).
 menu_cmd1(_,'f','                  or (f)orce a favorite test.',(enter_test)).
 menu_cmd1(_,'~','                  or (PageUp) to begining of suite',(prev_suite)).
 menu_cmd1(_,'N','                  or (N)ext suite',(next_suite)).
 menu_cmd1(i,'R','             Menu to (R)un all tests noninteractively',(run_all_tests,menu)).
 menu_cmd1(_,'l','                  or (l)ist special tests to run,',(show_tests)).
 menu_cmd1(r,'i','             Re-enter(i)nteractve mode.',(interact)).
+
+% How I got into fostering was I had spent about 10k dollars at Dove Lewis Animal Hospital for a cat in heart failure.  When he passed, about 3 years ago, I decided (this time) to go to a "kill" shelter to adopt another.   While was waiting for an appointment with an adoption screener I saw a flyer that said 'all medical expenses' would be paid if i became a foster volunteer. Holly shit, that sounded good.  So I started fostering 'moms with kittens' and other cats in all stages and needs.  Sometimes cats that are under protection by court orders.  T
 
 menu_cmd9(_,'m','recomple this progra(m),',(make,menu)).
 menu_cmd9(_,'c','(c)lear the scrollback buffer,',(cls)).
@@ -285,9 +287,9 @@ do_menu_codes([27,27,91,68]):- !, previous_test, print_test.
 % alt right arrow
 do_menu_codes([27,27,91,67]):- !, next_test, print_test.
 % left arrow
-do_menu_codes([27,91,68]):- !, cls_z, previous_test, print_test.
+do_menu_codes([27,91,68]):- !, previous_test,report_suite,print_qtest.
 % right arrow
-do_menu_codes([27,91,67]):- !, cls_z,  next_test, print_test.
+do_menu_codes([27,91,67]):- !, next_test, report_suite, print_qtest.
 % page up
 do_menu_codes([27,91,53,126]):- !, prev_suite.
 % page down
@@ -325,14 +327,15 @@ show_test_grids:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(Tes
 
 
 % Training modes
-next_pair_mode(whole_test,single_pair).
-next_pair_mode(single_pair,entire_suite).
-%next_pair_mode(single_pair,entire_suite).
-next_pair_mode(entire_suite,whole_test).
+first_pair_modes(single_pair,whole_test).
 
-alt_pair_mode(single_pair,whole_test).
-alt_pair_mode(whole_test,single_pair).
-alt_pair_mode(entire_suite,whole_test).
+next_pair_mode(M1,M2):- first_pair_modes(M1,M2).
+next_pair_mode(M2,entire_suite):- first_pair_modes(_,M2).
+next_pair_mode(entire_suite,M1):- first_pair_modes(M1,_).
+
+alt_pair_mode(M1,M2):- first_pair_modes(M1,M2).
+alt_pair_mode(M2,M1):- first_pair_modes(M1,M2).
+alt_pair_mode(entire_suite,M2):- first_pair_modes(_,M2).
 
 set_pair_mode(Mode):- luser_setval('$pair_mode',Mode).
 get_pair_mode(Mode):- nonvar(Mode),get_pair_mode(TMode),!,TMode==Mode.
@@ -502,14 +505,16 @@ test_suite_info(SuiteX,TestID):- test_info(TestID,Sol), \+ \+ (member(E,Sol), (E
 
 previous_test:-  get_current_test(TestID), get_previous_test(TestID,NextID), set_current_test(NextID).
 next_test:- get_current_test(TestID), notrace((get_next_test(TestID,NextID), set_current_test(NextID))),!.
-random_test:- notrace((get_random_test(NextID), set_current_test(NextID), print_qtest(NextID))),!.
+random_test:- 
+  randomize_suite, report_suite, print_qtest.
+  %notrace((get_random_test(NextID), set_current_test(NextID), print_qtest(NextID))),!.
 is_valid_testname(TestID):- nonvar(TestID), kaggle_arc(TestID,_,_,_).
 
 get_current_test(TestID):- luser_getval(task,TestID),is_valid_testname(TestID),!.
 get_current_test(TestID):- get_next_test(TestID,_),!.
 get_current_test(v(fe9372f3)).
 
-get_random_test(ID):-
+get_random_test(ID):-  
  get_current_test(TestID),get_next_test(TestID,NextID),
  get_current_suite_testnames(List),random_member(ID,List),ID\==TestID, ID\==NextID,!.
 
@@ -599,6 +604,7 @@ new_current_test_info(WasTestID,TestID):-
 needs_dot_extention(File,DotExt,NewName):- \+ atom_concat(_,DotExt,File), atom_concat(File,DotExt,NewName).
 
 call_file_goal(S,encoding(Enc)):- set_stream(S,encoding(Enc)),!.
+call_file_goal(_, discontiguous(_)):- !.
 call_file_goal(_,Goal):- call(Goal),!.
 
 load_file_dyn(File):- needs_dot_extention(File,'.pl',NewName),!,load_file_dyn(NewName).
@@ -618,6 +624,7 @@ clear_tee:- shell('cat /dev/null > tee.ansi').
 :- luser_default(next_test_name,'.').
 
 test_html_file('.','.'):-!.
+test_html_file(Nil,'.'):- Nil == [], !.
 test_html_file(TestID,This):- string(TestID),This=TestID,!.
 test_html_file(TestID,This):- sub_atom_value(TestID,HashID),sformat(This,'~w.html',[HashID]).
 write_tee_link(W,TestID):- 
@@ -626,13 +633,14 @@ write_tee_link(W,TestID):-
 
 write_test_links:- get_current_test(TestID), write_test_links(TestID).
 write_test_links(TestID):- format('~N'),
-  ((luser_getval(prev_test_name,PrevID),PrevID\==TestID,PrevID\=='.')->true;get_previous_test(TestID,PrevID)),
-  ((luser_getval(next_test_name,NextID),NextID\==TestID,NextID\=='.')->true;get_next_test(TestID,NextID)),
-  write_tee_link('Prev',PrevID),write_tee_link('This',TestID),write_tee_link('Next',NextID),
+  ignore((((luser_getval(prev_test_name,PrevID),PrevID\==TestID,PrevID\=='.')->true;get_previous_test(TestID,PrevID)),write_tee_link('Prev',PrevID))),
+  ignore(write_tee_link('This',TestID)),
+  ignore((((luser_getval(next_test_name,NextID),NextID\==TestID,NextID\=='.')->true;get_next_test(TestID,NextID)),write_tee_link('Next',NextID))),  
   format('~N').
 
 continue_test(TestID):- ignore(( is_valid_testname(TestID), set_current_test(TestID))).
 
+on_entering_test(TestID):- is_list(TestID),!,maplist(on_entering_test,TestID).
 on_entering_test(TestID):- 
  must_det_ll((
   clear_tee,
@@ -643,14 +651,15 @@ on_entering_test(TestID):-
   load_file_dyn(PLFile))).
 
 
-
+on_leaving_test(TestID):- is_list(TestID),!,maplist(on_leaving_test,TestID).
 on_leaving_test(TestID):-     
  must_det_ll((
   save_supertest(TestID),
   clear_test(TestID),
   write_test_links(TestID),  
   test_html_file(TestID,This),
-  shell_format('cat tee.ansi |  ansi2html -a -W -u  > out/kaggle_arc_html/~w',[This]),
+  ignore((This \== [],
+  shell_format('cat tee.ansi |  ansi2html -a -W -u  > out/kaggle_arc_html/~w',[This]))),
   clear_tee)).
 
 begin_tee:- get_current_test(TestID),on_entering_test(TestID),at_halt(exit_tee).
@@ -660,7 +669,8 @@ exit_tee:- get_current_test(TestID),on_leaving_test(TestID).
 shell_format(F,A):- sformat(S,F,A), shell(S).
 
 save_supertest:- get_current_test(TestID),save_supertest(TestID).
-save_supertest(TestID):-     
+save_supertest(TestID):- is_list(TestID),maplist(save_supertest,TestID).
+save_supertest(TestID):-   
    test_name_output_file(TestID,File),
    save_supertest(TestID,File).
 save_supertest(TestID,File):- needs_dot_extention(File,'.pl',NewName),!,save_supertest(TestID,NewName).

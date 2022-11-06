@@ -370,6 +370,9 @@ individuation_macros(complete, ListO):- im_complete(ListO),
 
 im_complete(ListO):- test_config(indiv(ListO)),!.
 %im_complete(ListO):- ListO=[n_w,all_lines,diamonds,do_ending].
+im_complete(i_repair_mirrors):- get_current_test(TestID),is_symgrid(TestID),!.
+
+%im_complete(i_repair_mirrors):-!.
 
 im_complete(SetO):-
 %individuation_macros(complete, ListO):-  \+ test_config(indiv(_)),!, %reset_points, %sub_individuate(force_by_color,subshape_both), %TODO %
@@ -409,9 +412,9 @@ individuator(i_mono_colormass,[fg_shapes([subshape_both(v,[n_w,all_lines,diamond
 
 */
 %individuator(i_hybrid_shapes,[find_hybrid_shapes]).
-%individuator(i_repair_mirrors,[maybe_repair_in_vm(find_symmetry_code)]).
+individuation_macros(i_repair_mirrors,[repair_in_vm(find_symmetry_code)]).
+%individuation_macros(i_repair_repeats,[repair_in_vm(repair_repeats(Black))]):- get_black(Black).
 % individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
-
 /*
 individuator(i_nsew,[subshape_both(h,nsew), maybe_lo_dots, do_ending]).
 individuator(i_maybe_glypic,[maybe_glyphic]). %:- \+ doing_pair.
@@ -453,7 +456,10 @@ individuator(i_mono_nsew,
 find_symmetry_code(VM,Grid,RepairedResult,Code):- % fail,
   find_symmetry_code1(VM,Grid,RepairedResult,Code),!.
 
+%never_repair_grid(Grid):- is_grid_symmetricD(Grid),!.
+never_repair_grid(Grid):- get_current_test(TestID),kaggle_arc_io(TestID,_,out,G),G==Grid.
 
+find_symmetry_code1(_VM,Grid,RepairedResult,Code):-  never_repair_grid(Grid),!,fail,RepairedResult=Grid,Code=[sameR].
 find_symmetry_code1(VM,Grid,RepairedResult,Code):- 
    % \+ is_grid(VM.grid_target),
     copy_term(Grid,Orig),
@@ -1142,6 +1148,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
 
   max_min(H,V,MaxM,_),
   max_min(12,MaxM,Max,_),
+  % term_to_oid(ID,OID),
   must_grid_to_gid(Grid,OID),
 
   listify(ROptions,OOptions),
