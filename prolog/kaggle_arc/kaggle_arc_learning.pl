@@ -54,8 +54,11 @@ save_learnt_rule(RuleIn,InGoal,OutGoal):-
   Assert = (NewRuleIn:-was_once(InSet,InVars)), 
   assert_visually(Assert),!.    
 
-has_prop(P,Props):- is_list(Props),!,member(Q,Props), (Q=@=P -> true ; ( \+ Q \= P)).
-has_prop(P,Obj):- indv_props(Obj,Props),!,member(Q,Props), (Q=@=P -> true ; ( \+ Q \= P)).
+has_prop(Props,Objs):- is_list(Objs),!,forall(member(Obj,Objs),has_prop(Props,Obj)).
+has_prop(Props,Obj):- is_list(Props),!,member(Q,Props),has_prop(Q,Obj).
+has_prop(Lbl ,Obj):- atom(Lbl),!, is_labled(Lbl,Obj),!.
+has_prop(lbl(Lbl),Obj):- is_labled(Lbl,Obj).
+has_prop(Prop,Obj):- indv_props(Obj,Props),!,member(Q,Props), (Q=@=Prop -> true ; ( Q = Prop)).
 
 
 learn_group(What,Objs):- assert_visually(group_associatable(What,Objs)).
@@ -223,7 +226,7 @@ debug_reproduction(H,V,Obj,DObj):-
 show_result(What,Solution,ExpectedOut,Errors):-
  get_current_test(TestID),
  ignore((count_difs(ExpectedOut,Solution,Errors),
-   print_side_by_side(blue,Solution,What,_,ExpectedOut,"Expected"),
+   print_side_by_side(blue,Solution,What,ExpectedOut,"Expected"),
       (Errors==0 -> 
            arcdbg_info(green,pass(What,TestID))
          ; (arcdbg_info(red,fail(What,Errors,TestID)),
@@ -399,7 +402,7 @@ learn_rule_in_out(Depth,Mode,In,Out):-
   is_group(In),is_group(Out),
   length(In,IL),length(Out,OL),
   Depth2 is Depth+1, 
-  fif((IL=<7,OL=<7),
+  if_t((IL=<7,OL=<7),
    forall(member(I,In),
      forall(member(O,Out),
        learn_rule_in_out_now(Depth2,Mode,I,O)))).

@@ -129,7 +129,7 @@ test_ogs(H,V,Match):-
   was_result(SG,FG,WMatch), (WMatch\==TMatch ; TMatch == Match),
   dash_chars,
   ignore(got_result(SG,FG,TMatch)),
-   fif(SG\=@=XSG,print_side_by_side(SG,XSG)),
+   if_t(SG\=@=XSG,print_side_by_side(SG,XSG)),
   (TMatch==true->show_match(H,V,Run,XFG,FG);show_mismatch(XFG,Run,FG)),
   ignore(got_result(SG,FG,TMatch)),
   dash_chars,

@@ -151,8 +151,8 @@ make_indiv_object(VM,Overrides,GOPoints,NewObj):-
     -> must_det_ll((override_object(Overrides,Orig,NewObj), ROBJS = Rest))
     ; must_det_ll((make_indiv_object_s(VM.gid,VM.h,VM.v,Overrides,Points,NewObj), ROBJS = Objs)))),!,
 
-  fif(NewObj\=@=Orig,
-   (fif(is_object(Orig),
+  if_t(NewObj\=@=Orig,
+   (if_t(is_object(Orig),
       nop((obj_to_oid(Orig,OOID),
        retract_object(VM.gid,OOID,Orig),
        print_grid(remove_prev(OOID),Orig)))),
@@ -494,6 +494,9 @@ aggregates(birth(_)).
 aggregates(link(_,_,_)).
 aggregates(link(_,_)).
 aggregates(insideOf(_)).
+
+is_bg_object(Obj):- get_black(Black),has_prop(pen(  [cc(Black,_)]),Obj).
+
 
 
 merge_objs(_VM,Bigger,[],_IPROPS,Bigger):-!.
@@ -952,9 +955,6 @@ get_instance_method(Obj,Compound,F):- is_object(Obj), compound(Compound),compoun
 
 pen(I,C):- indv_props(I,L),member(pen(C),L),!.
 
-
-odd_failure(G):- call(G),!.
-odd_failure(G):- wdmsg(odd_failure(G)),!,fail.
 
 object_grid(I,G):- is_grid(I),!,G=I.
 object_grid(Group,List):- is_group(Group),!,override_group(object_grid(Group,List)),!.

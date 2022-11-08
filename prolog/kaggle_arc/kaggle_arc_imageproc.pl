@@ -440,13 +440,13 @@ fillFromBorder(FillColor,In,Out):- is_grid(In),!,
   grid_size(In,H,V),
   forall(between(1,H,Hi),
     forall(between(1,V,Vi),
-         ( fif((hv_c_value(IIn,Color,Hi,1),Color==BG),
+         ( if_t((hv_c_value(IIn,Color,Hi,1),Color==BG),
              fill_from_point(IIn,Hi,1,FillColor)),
-           fif((hv_c_value(IIn,Color,Hi,V),Color==BG),
+           if_t((hv_c_value(IIn,Color,Hi,V),Color==BG),
              fill_from_point(IIn,Hi,V,FillColor)),
-           fif((hv_c_value(IIn,Color,1,Vi),Color==BG),
+           if_t((hv_c_value(IIn,Color,1,Vi),Color==BG),
              fill_from_point(IIn,1,Vi,FillColor)),
-           fif((hv_c_value(IIn,Color,H,Vi),Color==BG),
+           if_t((hv_c_value(IIn,Color,H,Vi),Color==BG),
              fill_from_point(IIn,H,Vi,FillColor))))),
    dref_grid(IIn,Out).
 fillFromBorder(Color,In,Out):-
@@ -581,14 +581,13 @@ grid_size_term(I,size2D(X,Y)):- grid_size(I,X,Y),!.
 %grid_size(Points,H,V):- is_map(Points),!,Points.grid_size=grid_size(H,V).
 grid_size(NIL,1,1):- NIL==[],!.
 grid_size(I,X,Y):- is_object(I),indv_props(I,L),(member(grid_size(X,Y),L);member(giz(grid_sz(X,Y)),L);member(v_hv(X,Y),L)),!.
+grid_size(G,H,V):- quietly(is_object(G)), !, v_hv(G,H,V).
 grid_size(Points,H,V):- is_points_list(Points),!,points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V),!.
 grid_size(ID,H,V):- is_grid_size(ID,H,V),!.
-grid_size(G,H,V):- is_graid(G,GG),!, grid_size(GG,H,V).
+%grid_size(G,H,V):- is_graid(G,GG),!, grid_size(GG,H,V).
 grid_size(G,H,V):- is_map(G),H = G.h,V = G.v,!,grid_size_nd(G,H,V),!.
 grid_size(G,H,V):- is_grid(G),!,grid_size_nd(G,H,V),!.
 grid_size(G,X,Y):- is_group(G),!,mapgroup(grid_size_term,G,Offsets),sort(Offsets,HighToLow),last(HighToLow,size2D(X,Y)).
-%grid_size(Points,H,V):- points_range(Points,LoH,LoV,HiH,HiV,_,_), H is HiH-LoH+1, V is HiV-LoV+1.
-%grid_size(G,H,V):- quietly(is_object(G)), !, v_hv(G,H,V).
 %grid_size([G|G],H,V):- is_list(G), length(G,H),length([G|G],V),!.
 grid_size(Points,H,V):- pmember(grid_size(H,V),Points),ground(H-V),!.
 %grid_size([G|G],H,V):- is_list(G),is_list(G), grid_size_nd([G|G],H,V),!.

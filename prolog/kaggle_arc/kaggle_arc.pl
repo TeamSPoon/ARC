@@ -74,8 +74,8 @@ decl_pt(How,G):- must_det_ll((nonvar(How),nonvar(G), !, my_assertz_if_new(is_dec
 :- stream_property(S,file_no(2)), set_stream(S,tty(true)).
 :- stream_property(S,file_no(1)), set_stream(S,tty(true)).
 
-:- meta_predicate(fif(0,0)).
-fif(IF, THEN) :- (   call(IF) ->  call(THEN) ;   true ).
+:- meta_predicate(if_t(0,0)).
+if_t(IF, THEN) :- (   call(IF) ->  call(THEN) ;   true ).
 :- meta_predicate(quietlyd(0)).
 :- export(quietlyd/1).
 quietlyd(G):- quietly(G),!.
@@ -220,7 +220,7 @@ must_det_ll(X):- conjuncts_to_list(X,List),List\=[_],!,maplist(must_det_ll,List)
 must_det_ll(must_det_ll(X)):- !, must_det_ll(X).
 %must_det_ll((X,Y,Z)):- !, (must_det_ll(X)->must_det_ll(Y)->must_det_ll(Z)).
 %must_det_ll((X,Y)):- !, (must_det_ll(X)->must_det_ll(Y)).
-must_det_ll(fif(X,Y)):- !, fif(must_not_error(X),must_det_ll(Y)).
+must_det_ll(if_t(X,Y)):- !, if_t(must_not_error(X),must_det_ll(Y)).
 must_det_ll((A*->X;Y)):- !,(must_not_error(A)*->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((A->X;Y)):- !,(must_not_error(A)->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((X;Y)):- !, ((must_not_error(X);must_not_error(Y))->true;must_det_ll_failed(X;Y)).
@@ -234,6 +234,12 @@ must_det_ll(X):-
   
 must_not_error(X):- catch(X,E,((E=='$aborted';nb_current(cant_rrtrace,t))-> throw(E);(/*arcST,*/writeq(E=X),pp(etrace=X),
   rrtrace(visible_rtrace([-all,+exception]),X)))).
+
+
+odd_failure(G):- call(G),!.
+odd_failure(G):- wdmsg(odd_failure(G)),fail.
+odd_failure(G):- rrtrace(G).
+
 
 %must_det_ll_failed(X):- predicate_property(X,number_of_clauses(1)),clause(X,(A,B,C,Body)), (B\==!),!,must_det_ll(A),must_det_ll((B,C,Body)).
 must_det_ll_failed(X):- notrace,wdmsg(failed(X))/*,arcST*/,nortrace,trace,visible_rtrace([-all,+fail,+exception],X).
@@ -582,7 +588,7 @@ is_detatched_thread:- arc_webui,!.
 is_detatched_thread:- \+ (thread_self(Main) -> Main == main ; main==0),!.
 
 cls_z:- is_detatched_thread,!.
-cls_z:- catch(cls,_,true).
+cls_z:- catch(cls,_,true),clear_tee,clear_test_html.
 cls1:- nop(catch(cls_z,_,true)).
 
 list_to_rbtree_safe(I,O):- must_be_free(O), list_to_rbtree(I,M),!,M=O.
@@ -626,14 +632,14 @@ set_vm_obj(Prop,Or,Value):- set_vm(Prop,Value),ignore(set_vm_obj1(Prop,Or,Value)
 set_vm_obj1(Prop,Or,Value):- is_grid(Value),!,
   localpoints_include_bg(Value,IndvPoints),
   grid_size(Value,H,V),
-  fif(IndvPoints\==[],
+  if_t(IndvPoints\==[],
     (get_vm(VM),
           make_indiv_object(VM,[iz(Prop),v_hv(H,V),birth(set_vm(Prop))|Or],IndvPoints,_Obj),
           %addObjects(VM,Obj),
           print_grid(H,V,Prop,Value))),!.
 
 set_vm_obj1(Prop,Or,IndvPoints):- is_points_list(IndvPoints),!,
-  fif(IndvPoints\==[],
+  if_t(IndvPoints\==[],
     (get_vm(VM),          
       make_indiv_object(VM,[iz(Prop),birth(set_vm(Prop))|Or],IndvPoints,_Obj),
       %addObjects(VM,Obj),

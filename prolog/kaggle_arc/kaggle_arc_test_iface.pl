@@ -45,6 +45,7 @@ menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),
   sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
 menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(cls_z,!,ndividuatorO)).
 menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the input/outputs',(cls_z,!,ndividuator)).
+menu_cmd1(_,'b','                  or (B)oxes test.',(pbox_indivs)).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z,!,what_unique)).
 menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z,!,compile_and_save_test)).
 menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changed_files,print_test)).
@@ -58,8 +59,8 @@ menu_cmd1(_,'S','                  or (S)olve confirming it works on training pa
 menu_cmd1(_,'h','                  or (h)uman proposed solution',(human_test)).
 menu_cmd1(_,'r','               Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and (s)olve !',(cls_z,fully_test)).
 menu_cmd1(_,'a','                  or (a)dvance to the next test and (r)un it',(cls_z,!,run_next_test)).
-menu_cmd1(_,'n','                  or (n)amed test (skipping this one)',(random_test)).
-menu_cmd1(_,'b','                  or (b)oxes test.',(pbox_indivs)).
+menu_cmd1(_,'n','                  or (n)amed test (skipping this one)',(random_test,report_test)).
+menu_cmd1(_,'n','                  or (b)ack to previous test',(previous_test,report_test)).
 menu_cmd1(_,'f','                  or (f)orce a favorite test.',(enter_test)).
 menu_cmd1(_,'~','                  or (PageUp) to begining of suite',(prev_suite)).
 menu_cmd1(_,'N','                  or (N)ext suite',(next_suite)).
@@ -74,7 +75,7 @@ menu_cmd9(_,'c','(c)lear the scrollback buffer,',(cls)).
 menu_cmd9(_,'C','(C)all DSL,',(call_dsl)).
 menu_cmd9(_,'Q','(Q)uit Menu,',true).
 menu_cmd9(_,'X','e(X)it to shell,',halt(4)). 
-menu_cmd9(_,'B','or (B)reak to interpreter.',(break)).
+menu_cmd9(_,'D','or (D)ebug/reak to interpreter.',(break)).
 
 menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd1(Mode,Key,Mesg,Goal).
 menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd9(Mode,Key,Mesg,Goal).
@@ -505,10 +506,11 @@ test_suite_info(SuiteX,TestID):- test_info(TestID,Sol), \+ \+ (member(E,Sol), (E
 
 previous_test:-  get_current_test(TestID), get_previous_test(TestID,NextID), set_current_test(NextID).
 next_test:- get_current_test(TestID), notrace((get_next_test(TestID,NextID), set_current_test(NextID))),!.
-random_test:- 
-  randomize_suite, report_suite, print_qtest.
+random_test:-  randomize_suite, report_test.
   %notrace((get_random_test(NextID), set_current_test(NextID), print_qtest(NextID))),!.
 is_valid_testname(TestID):- nonvar(TestID), kaggle_arc(TestID,_,_,_).
+
+report_test:- report_suite, print_qtest.
 
 get_current_test(TestID):- luser_getval(task,TestID),is_valid_testname(TestID),!.
 get_current_test(TestID):- get_next_test(TestID,_),!.
@@ -620,6 +622,12 @@ load_file_term(_,Term):- assertz_new(Term),!.
 %load_file_term(Term):- arc_assert(Term),!.
 %load_file_term(Term):- pfcAdd(Term).
 clear_tee:- shell('cat /dev/null > tee.ansi').
+
+clear_test_html :- 
+  get_current_test(TestID),
+  test_html_file(TestID,This),
+  ignore((This \== [],
+  shell_format('cat /dev/null |  ansi2html -a -W -u -m  > out/kaggle_arc_html/~w',[This]))).
 :- luser_default(prev_test_name,'.').
 :- luser_default(next_test_name,'.').
 
@@ -659,7 +667,7 @@ on_leaving_test(TestID):-
   write_test_links(TestID),  
   test_html_file(TestID,This),
   ignore((This \== [],
-  shell_format('cat tee.ansi |  ansi2html -a -W -u  > out/kaggle_arc_html/~w',[This]))),
+  shell_format('cat tee.ansi |  ansi2html -a -W -u -m  >> out/kaggle_arc_html/~w',[This]))),
   clear_tee)).
 
 begin_tee:- get_current_test(TestID),on_entering_test(TestID),at_halt(exit_tee).

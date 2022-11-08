@@ -167,15 +167,15 @@ repair_symmetry(Grid):- is_grid(Grid),!,
 %%  ignore(( testid_name_num_io(ID,TestID,_,_,_))),
   kaggle_arc_io_trn(TestID,Example+Num,IO,Grid),
   set_current_test(TestID),
-  fif(IO==in,kaggle_arc_io_trn(TestID,Example+Num,out,Out)),
+  if_t(IO==in,kaggle_arc_io_trn(TestID,Example+Num,out,Out)),
   (Example==tst->set(VM.grid_target)=_;set(VM.grid_target)=Out),
   %\+ is_monotrim_symmetric(Grid), is_monotrim_symmetric(Out),
   format('~N'), dash_chars,
   wdmsg(begin_test(ID)),
   print_side_by_side(Grid,Out),
   %\+ is_hard(TestID), \+ is_need(TestID),    
-  fif(is_need(TestID),wdmsg(is_need(TestID))),
-  fif(is_hard(TestID),wdmsg(is_hard(TestID))),!,
+  if_t(is_need(TestID),wdmsg(is_need(TestID))),
+  if_t(is_hard(TestID),wdmsg(is_hard(TestID))),!,
   ignore(time(repair_symmetry_code(Grid,_,_))),
   set(VM.grid_target)=_.
 
@@ -195,21 +195,21 @@ repair_symmetry_code(Grid,RepairedResult,Code):-
   wdmsg(begun_repair_symmetry(ID)))),!,
   (test_symmetry_code(Grid,GridS,RepairedResult,Code)
      *-> 
-      (fif(GridS\==[],print_grid(test_RepairedResult,GridS)),
-       fif(Orig\==Grid,print_side_by_side(green,Orig,orig(ID),_,Grid,altered(ID))),
+      (if_t(GridS\==[],print_grid(test_RepairedResult,GridS)),
+       if_t(Orig\==Grid,print_side_by_side(green,Orig,orig(ID),_,Grid,altered(ID))),
        print_side_by_side(green,Orig,gridIn(ID),_,RepairedResult,repairedResult(ID)),
        print_info_l(GridS),
        Errors = _,
-       fif(is_grid(Out),
+       if_t(is_grid(Out),
         (count_changes(Out,RepairedResult,0,Errors),
-         fif(Errors\==0,
+         if_t(Errors\==0,
            ((mapgrid(changed_grid,Out,RepairedResult,Problem)-> true ; Problem = RepairedResult),
             print_side_by_side(yellow,Problem,unexpected_repairedResult(ID,Errors),_,Out,expected(ID)),
            arcdbg_info(yellow,mismatched(symmetry_code(ID,Code))))),
-         fif(Errors==0,
+         if_t(Errors==0,
          (arcdbg_info(green,success(symmetry_code(ID,Code))),
           reinforce_best_values(ID,Code))))),
-       fif(var(Errors),  arcdbg_info(blue,unable_to_verify(symmetry_code(ID,Code)))))
+       if_t(var(Errors),  arcdbg_info(blue,unable_to_verify(symmetry_code(ID,Code)))))
    ;
    ((var(Out)->Out=[[_]];true),
      print_side_by_side(red,Orig,gridIn(ID),_,Out,out(ID)),
@@ -622,7 +622,7 @@ repair_in_vm(P4,VM):-
   %(Grid\=@=RepairedResult -> (set(VM.points) = []) ; true),
   addProgramStep(VM,[repair_in_vm(P4)|Steps])]),
   set(VM.neededChanged)=NeededChanged,
-  fif(NeededChanged\==[], 
+  if_t(NeededChanged\==[], 
          (make_indiv_object(VM,[iz(neededChanged),iz(invisible),iz(shaped)],NeededChanged,ColorObj),!,
             set(VM.can_repair) = false,
             addInvObjects(VM,ColorObj))))),!.
@@ -809,9 +809,9 @@ guess_pre_repair_steps(CodeFirst,Grid,RepairedResultO,RepairedResult):-
    wdmsg(CodeFirst),
    mass(RepairedResult,Mass),Mass>0,
    get_black(Black),
-   fif(UnbindColor\==Black, 
+   if_t(UnbindColor\==Black, 
        ( if_target(Out, \+ contains_color(UnbindColor,Out)),
-         fif(is_grid(RepairedResultO), \+ contains_color(RepairedResultO,RepairedResult)))),
+         if_t(is_grid(RepairedResultO), \+ contains_color(RepairedResultO,RepairedResult)))),
    
    ignore(((UnbindColor==purple;UnbindColor==silver),peek_vm(VM), wdmsg(UnbindColor=v(VM.id,VM.gid,VM.roptions,VM.roptions)))),!.
 
@@ -836,7 +836,7 @@ guess_to_unbind1(Grid,Color):-
   ignore((var(FinalColors) -> kaggle_arc(_,trn+_,Grid,FinalColors) ; true)),
   colors(Grid,Colors),Colors\==[], % reverse(Colors,ColorsR),
   member(cc(Color,N),Colors),N>0, Color \== black, is_real_color(Color), Color \== black,
-  fif(nonvar(FinalColors), ( \+ contains_color(Color,FinalColors))), 
+  if_t(nonvar(FinalColors), ( \+ contains_color(Color,FinalColors))), 
   if_target(Out, ( v_area(Out,SizeOut),v_area(Grid,SizeIn),(SizeIn>SizeOut -> N is SizeOut ; true))),
   \+ column_or_row(Grid,Color).
 guess_to_unbind1(_Grid,Color):- Color = black.

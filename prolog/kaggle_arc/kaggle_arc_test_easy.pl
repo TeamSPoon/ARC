@@ -317,24 +317,24 @@ last_indiv(I,R):- into_group(I,M),I\=@=M,!,predsort(sort_on(loc_term),M,O),rever
 
 fav(A,B):- nonvar_or_ci(A),nonvar_or_ci(B), cls1,mmake, asserta(fav(A,B),Ref),!, call_cleanup(arc1(A),erase(Ref)).
 
-fav(t('484b58aa'),[indiv(i_repair_mirrors)]).
-fav(t('0dfd9992'),[indiv(i_repair_mirrors)]).
-fav(v('af22c60d'),[indiv(i_repair_mirrors)]).
-fav(v('903d1b4a'),[indiv(i_repair_mirrors)]).
-fav(v('e66aafb8'),[indiv(i_repair_mirrors)]).
-fav(v('4aab4007'),[indiv(i_repair_mirrors)]).
-fav(v('1e97544e'),[indiv(i_repair_mirrors)]).
-fav(t('b8825c91'),[indiv(i_repair_mirrors)]).
-fav(v('47996f11'),[indiv(i_repair_mirrors)]).
-fav(v('981571dc'),[indiv(i_repair_mirrors)]).
-fav(v('929ab4e9'),[indiv(i_repair_mirrors)]).
-fav(t('ff805c23'),[indiv(i_repair_mirrors),human(repair_in_vm(repair_fourway),get(changed),trim_to_rect)]). fav(t('ff805c23'),[-shape_match,-rotation_match,-mask_match,-color_match,tt,training,pattern_expansion,pattern_completion,crop,'(3, 1)']). %fav(t('ff805c23'),[human(repair_in_vm(repair_repeats(blue)),get(changed),trim_to_rect)]).
-fav(TestID,[indiv(i_repair_mirrors)]):- is_symgrid(TestID).
-fav(t('3631a71a'),[indiv(i_repair_mirrors)]).   fav(t('3631a71a'),[human(repair_in_vm(repair_fourway),get(repaired))]). fav(t('3631a71a'),[-rotation_match,-mask_match,-color_match,+shape_match,tt,training,pattern_rotation,pattern_expansion,image_filling,'(4, 1)']).
-fav(t('29ec7d0e'),[indiv(i_repair_mirrors),human(repair_in_vm(repair_repeats(Black)),get(repaired))]):- get_black(Black). fav(t('29ec7d0e'),[-rotation_match,-mask_match,-color_match,+shape_match,tt,training,pattern_repetition,pattern_expansion,image_filling,detect_grid,'(4, 1)']).
-fav(v('de493100'),[indiv(i_repair_mirrors)]). fav(v(de493100),[out_grid(8,6),-shape_match,-rotation_match,-mask_match,-color_match,evaluation,'(4, 1) ']).
-fav(t('9ecd008a'),[indiv(i_repair_mirrors), human([indiv_is_one_hole,fix_image,selected_indiv,trim_to_rect])]).
-fav(t('73251a56'),[indiv(i_repair_mirrors),learn([learn_mapping_stateful]),human([apply_mapping_stateful])]).
+fav(t('484b58aa'),[indiv(i_repair_patterns)]).
+fav(t('0dfd9992'),[indiv(i_repair_patterns)]).
+fav(v('af22c60d'),[indiv(i_repair_patterns)]).
+fav(v('903d1b4a'),[indiv(i_repair_patterns)]).
+fav(v('e66aafb8'),[indiv(i_repair_patterns)]).
+fav(v('4aab4007'),[indiv(i_repair_patterns)]).
+fav(v('1e97544e'),[indiv(i_repair_patterns)]).
+fav(t('b8825c91'),[indiv(i_repair_patterns)]).
+fav(v('47996f11'),[indiv(i_repair_patterns)]).
+fav(v('981571dc'),[indiv(i_repair_patterns)]).
+fav(v('929ab4e9'),[indiv(i_repair_patterns)]).
+fav(t('ff805c23'),[indiv(i_repair_patterns),human(repair_in_vm(repair_fourway),get(changed),trim_to_rect)]). fav(t('ff805c23'),[-shape_match,-rotation_match,-mask_match,-color_match,tt,training,pattern_expansion,pattern_completion,crop,'(3, 1)']). %fav(t('ff805c23'),[human(repair_in_vm(repair_repeats(blue)),get(changed),trim_to_rect)]).
+fav(TestID,[indiv(i_repair_patterns)]):- is_symgrid(TestID).
+fav(t('3631a71a'),[indiv(i_repair_patterns)]).   fav(t('3631a71a'),[human(repair_in_vm(repair_fourway),get(repaired))]). fav(t('3631a71a'),[-rotation_match,-mask_match,-color_match,+shape_match,tt,training,pattern_rotation,pattern_expansion,image_filling,'(4, 1)']).
+fav(t('29ec7d0e'),[indiv(i_repair_patterns),human(repair_in_vm(repair_repeats(Black)),get(repaired))]):- get_black(Black). fav(t('29ec7d0e'),[-rotation_match,-mask_match,-color_match,+shape_match,tt,training,pattern_repetition,pattern_expansion,image_filling,detect_grid,'(4, 1)']).
+fav(v('de493100'),[indiv(i_repair_patterns)]). fav(v(de493100),[out_grid(8,6),-shape_match,-rotation_match,-mask_match,-color_match,evaluation,'(4, 1) ']).
+fav(t('9ecd008a'),[indiv(i_repair_patterns), human([indiv_is_one_hole,fix_image,selected_indiv,trim_to_rect])]).
+fav(t('73251a56'),[indiv(i_repair_patterns),learn([learn_mapping_stateful]),human([apply_mapping_stateful])]).
 
 
 fav(t('9aec4887'),[indiv(color_blind),todo_sol([find_individuals([hollow,inside([rectangle])],I),rest_indivdual(Is),put_inside(Is,I),
@@ -490,7 +490,7 @@ fav(t('ed36ccf7'),[clue(amass(in)=:=amass(out)),human(rot270),-rotation_match,-m
 :- style_check(-singleton).
 fav(t(ff28f65a),[human(count_shapes,associate_images_to_numbers),-shape_match,-rotation_match,-mask_match,-color_match,tt,training,count_shapes,associate_images_to_numbers,'(8, 3)']).
 fav(t('1b60fb0c'),[
- %indiv([i_repair_mirrors]),
+ %indiv([i_repair_patterns]),
  %human([new_things_are_a_color,fix_image]),
  skip_human(
    in_out(In,Out),

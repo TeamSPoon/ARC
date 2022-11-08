@@ -212,12 +212,13 @@ showdiff_groups(AG,BG):-
   length(A3,LenA3),length(A4,LenA4),
   length(B3,LenB3),length(B4,LenB4),
   Shown = shown([]),
-  smallest_first(AG,SFA),
-  print_grid(inputUniqs,SFA),
+  
   ignore((LenA3>0,dash_chars, print_list_of(indiv_show_pairs_input(AG,Shown,BG), inputUniqs=LenA3/LenA4,A3))),
-  smallest_first(BG,SFB),
-  print_grid(outputUniqs,SFB),
+  smallest_first(AG,SFA),print_grid(inputUniqs,SFA),
+
+    
   ignore((LenB3>0,dash_chars, print_list_of(indiv_show_pairs_output(BG,Shown,AG),outputUniqs=LenB3/LenB4,B3))),
+  smallest_first(BG,SFB),print_grid(outputUniqs,SFB),
   dash_chars,
   ignore((diff_groups1(A4,B4,Diffs),
  % print_list_of(showdiff_objects,showdiff_objects,Diffs),
@@ -347,7 +348,7 @@ showdiff_arg1(Peers1,Obj1,Peers2,Obj2):-
   indv_props(I1,S1),indv_props(O1,S2),
   get_current_test(TestID), ignore(what_unique(TestID,I1)),
   %what_unique(TestID,O1),
- fif(nb_current(menu_key,'u'),
+ if_t(nb_current(menu_key,'u'),
  (remove_giz(S1,T1),remove_giz(S2,T2),
   indv_u_props(I1,IU),indv_u_props(O1,OU),
   intersection(T1,T2,Sames,IA,OA),maplist(refunctor,Sames,NewSames),

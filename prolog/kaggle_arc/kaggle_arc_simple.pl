@@ -133,11 +133,11 @@ simplify_props(_,A,A).
 pregroup1(iz(shaped)).
 pregroup1(iz(image)).
 pregroup1(iz(chromatic(N))):- between(1,10,N).
-pregroup1(o(How,lf(_),_)):- dif(How,i_repair_mirrors).
+pregroup1(o(How,lf(_),_)):- dif(How,i_repair_patterns).
 
 
 never_uprop(localpoints(_)).
-never_group_on(o(I,_,_)):- I == i_repair_mirrors.
+never_group_on(o(I,_,_)):- I == i_repair_patterns.
 never_group_on(P):- never_uprop(P).
 
 regroups(IndvS,[Why1,Why2],[Obj|Grp]):-
@@ -190,7 +190,8 @@ number_obj(N,obj(List),obj([ord(N)|List])).
 %grid(Type,ConstructorData,[rot270]),CacheOfCalls).
 
 %is_graid(TestID>ExampleNum*IO,TestID,ExampleNum,IO).
-is_graid((TestID>ExampleNum*IO),G):- kaggle_arc_io(TestID,ExampleNum,IO,G).
+
+is_graid((TestID > (ExampleNum*IO)),G):- kaggle_arc_io(TestID,ExampleNum,IO,G).
 
 :- export(is_graid/2).
 %grid_aid(ID,TestID>ExampleNum*IO):- is_graid(Grid,TestID,ExampleNum,IO),format(ID,).

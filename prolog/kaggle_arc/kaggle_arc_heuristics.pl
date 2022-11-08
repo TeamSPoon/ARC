@@ -27,7 +27,7 @@ recalc_sizes(VM):- is_map(VM),
    computeMassIndex(VM,Sizes),
    computeMinMass(VM,Sizes,Count,Min),
    computeMaxMass(VM,Sizes,Count,Max),
-   fif(
+   if_t(
      (VM.objs_min_mass \== Min ; VM.objs_max_mass \== Max),
       pp(yellow,decide_min_max_size(Sizes,Max,Min))),
 

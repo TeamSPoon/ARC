@@ -112,10 +112,11 @@ print_testinfo_extended(TestID):- print_testinfo(TestID),
      forall(show_reduced_io(I+O),true))).
 
 %show_reduced_io(I+O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
-show_reduced_io(I+O):-  once(reduce_grids_io(I+O,IOps,II+OO)),
-  fif(II+OO\=@=I+O,must_det_ll(print_side_by_side(green,II,reduceIn(IOps),_,OO,reduceOut))).
-show_reduced_io(I+O):- show_call_rot_io(op_grid_to_norm,I,O).
-show_reduced_io(I+O):- show_call_rot_io(mapgridish(remove_color_if_same(black),I+O),I,O).
+show_reduced_io(I+O):-  
+ once((once(reduce_grids_io(I+O,IOps,II+OO)),
+  if_t(II+OO\=@=I+O,must_det_ll(print_side_by_side(green,II,reduceIn(IOps),_,OO,reduceOut))))).
+show_reduced_io(I+O):- once(show_call_rot_io(op_grid_to_norm,I,O)).
+show_reduced_io(I+O):- once(show_call_rot_io(mapgridish(remove_color_if_same(black),I+O),I,O)).
 show_reduced_io(_).
 
 op_grid_to_norm(I,OUT):- Op=[_|_],reduce_grid(I,Op,OO),OUT=(OO-w(Op)).
@@ -128,7 +129,7 @@ show_call_rot_io(P2,I,O):-
   copy_term(P2,P22),
   call_for_i(P2,I,III,S1),
   once((call_for_i(P2,O,OOO,S2);call_for_i(P22,O,OOO,S2);(O=OOO,tersify(P22,S2)))))),  
-  fif(((III+OOO)\=@=(I+O)), print_side_by_side(green,III,[S1,in,GIDI],_,OOO,[S2,out,GIDO])),!.
+  if_t(((III+OOO)\=@=(I+O)), print_side_by_side(green,III,[S1,in,GIDI],_,OOO,[S2,out,GIDO])),!.
 
 call_for_i(P2,I,III,S1):- once(call_rot(P2,I,II)),(grid_footer(II,III,F)-> tersify(s(F,P2),S1) ; (III=II,tersify(P2,S1))),!.
 call_for_i(P2,I,III,S1):- III=I, tersify(P2,S1),!.
@@ -239,8 +240,8 @@ show_recolor(TestID,_ExampleNum,In0,Out0,TT):-
 */
   (most_d_colors(Out,CO,NO),arc_setval(TT,out_d_colors,CO),arc_setval(TT,out_map,NO)),  
   (most_d_colors(In,CI,NI),  arc_setval(TT,in_d_colors,CI), arc_setval(TT,in_map,NI)),
-  %fif(find_ogs(HOI,VOI,In0,OutF),arc_setval(TT,z_in_contains_out,(HOI,VOI))),
-  %fif(find_ogs(HIO,VIO,OutF,In0),arc_setval(TT,z_out_contains_in,(HIO,VIO))),
+  %if_t(find_ogs(HOI,VOI,In0,OutF),arc_setval(TT,z_in_contains_out,(HOI,VOI))),
+  %if_t(find_ogs(HIO,VIO,OutF,In0),arc_setval(TT,z_out_contains_in,(HIO,VIO))),
   %@TODO record in the out_in _may_ hold the in_out 
   print_side_by_side(cyan,NI,CI,_,NO,CO),
   get_map_pairs(TT,_,List),pp(List)))),!.
@@ -272,8 +273,8 @@ show_recolor(TestID,ExampleNum,In0,Out0,TT):-
 
   (most_d_colors(Out,CO,NO),arc_setval(TT,out_d_colors,CO),arc_setval(TT,out_map,NO)),  
   (most_d_colors(In,CI,NI),  arc_setval(TT,in_d_colors,CI), arc_setval(TT,in_map,NI)),
-  %fif(find_ogs(HOI,VOI,In0,OutF),arc_setval(TT,z_in_contains_out,(HOI,VOI))),
-  %fif(find_ogs(HIO,VIO,OutF,In0),arc_setval(TT,z_out_contains_in,(HIO,VIO))),
+  %if_t(find_ogs(HOI,VOI,In0,OutF),arc_setval(TT,z_in_contains_out,(HOI,VOI))),
+  %if_t(find_ogs(HIO,VIO,OutF,In0),arc_setval(TT,z_out_contains_in,(HIO,VIO))),
   %@TODO record in the out_in _may_ hold the in_out 
   print_side_by_side(cyan,NI,CI,_,NO,CO),
   get_map_pairs(TT,_,List),pp(List)))),!.
