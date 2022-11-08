@@ -391,6 +391,21 @@ is_compass(A):- atom(A),member(A,[n,s,e,w]).
 black_and(Colors,C):- select(C,Colors,Rest),Rest==[black],!.
 
 
+found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,_Center,Center,Find,Cents,Inside,_IBorder,IBorder,_CentS,CentS,_IBorderS,IBorderS,  OBJ,WHY):- 
+ % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
+  maplist(=(C),IBorderS),
+  %\+ maplist(=(I),IBorderS),
+  %if_t(maplist(=(B),OBorderS),(C\==B;C==black)),
+  if_t(nonvar(C),CentS\==[C]),
+  CentS=[_|_],
+  if_t(nonvar(C),not_whole_row_or_col(C,Center)),
+  %(),
+  %if_t(C\==black, \+ member(C,CentS)),
+  %nonvar(C),CentS\==[C],CentS=[_|_],
+  OBJ=Center,
+  WHY = solidInnerBorderI_O(CentS,C).
+
+
 found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- 
  % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
   maplist(=(C),IBorderS),
@@ -404,6 +419,9 @@ found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBor
   %nonvar(C),CentS\==[C],CentS=[_|_],
   (C==black -> OBJ=Center; OBJ=In),
   WHY = solidInnerBorder0(CentS,C).
+
+
+
 
 
 found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- 
