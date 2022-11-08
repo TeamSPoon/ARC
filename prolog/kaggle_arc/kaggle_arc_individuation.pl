@@ -1731,7 +1731,7 @@ saved_named_objs(VM):-
   label_objs(ObjsG,Objs),
   gset(VM.objs) = Objs,
   object_labels(Objs,LblFeat),
-  NewLbls=[alone_dots,nsew|LblFeat],
+  NewLbls=LblFeat,
   pp(saved_named_objs = NewLbls),
   %$trace,
   maplist(objs_with_feat(Objs),NewLbls,Group),
@@ -1741,7 +1741,7 @@ label_objs(Objs,LF):-
  must_det_ll((
  into_group(Objs,Group),
  object_labels(Group,LblSets),
- NewLbls=[alone_dots,nsew|LblSets],
+ NewLbls=LblSets,
  pp(lblSets=NewLbls),
  %$trace,
  add_labels(NewLbls,Group,LF))).

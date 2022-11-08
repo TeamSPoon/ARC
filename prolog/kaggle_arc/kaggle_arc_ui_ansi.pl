@@ -60,7 +60,7 @@ portray_terse:- true,!.
 
 :- discontiguous arc_portray/2. 
 
-arc_portray(S,_):- term_is_ansi(S), !, write_keeping_ansi(S).
+arc_portray(S,_):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 arc_portray(Map,TF):- get_map_pairs(Map,Type,Pairs),!, arc_portray_pairs(Type,TF,Pairs). 
 
 arc_portray_t(G, _):- is_map(G), !, write_map(G,'arc_portray_t').
@@ -220,7 +220,7 @@ write_map(_G,Where):- write('...'),write(Where),write('...').
 
 ppt(_):- is_print_collapsed,!.
 ppt(G):- is_map(G), !, write_map(G,'ppt').
-ppt(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+ppt(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 ppt(P):- compound(P),wqs1(P),!.
 ppt(P):- \+ \+ ((tersify(P,Q),!,pp(Q))),!.
 ppt(C,P):- \+ \+ ((tersify(P,Q),!,pp(C,Q))),!.
@@ -245,21 +245,21 @@ p_p_t_no_nl(Term):- az_ansi(print_tree_no_nl(Term)).
 is_toplevel_printing(_):- \+ is_string_output, line_position(current_output,N),  N<2, fail.
 
 pp_no_nl(P):- var(P),!,pp(var_pt(P)),nop((dumpST,break)).
-pp_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+pp_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 pp_no_nl(P):- atom(P),atom_contains(P,'~'),!,format(P).
 pp_no_nl(G):- is_map(G), !, write_map(G,'pp').
-%pp_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+%pp_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 pp_no_nl(P):- \+ \+ (( pt_guess_pretty(P,GP),ptw(GP))).
 %pp(P):-!,writeq(P).
 %ptw(P):- quietlyd(p_p_t_nl(P)),!.
 %ptw(_):- nl_if_needed,fail.
 ptw(P):- var(P),!,ptw(var_ptw(P)),nop((dumpST,break)).
 ptw(G):- is_map(G), !, write_map(G,'ptw').
-ptw(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+ptw(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 ptw(P):- p_p_t_no_nl(P),!.
 
 %ptw(P):- quietlyd(write_term(P,[blobs(portray),quoted(true),quote_non_ascii(false), portray_goal(print_ansi_tree),portray(true)])),!.
-print_ansi_tree(S,_):- term_is_ansi(S), !, write_keeping_ansi(S).
+print_ansi_tree(S,_):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 print_ansi_tree(P,_):- catch(arc_portray(P),_,fail),!.
 print_ansi_tree(P,_OL):- catch(p_p_t_no_nl(P),_,fail),!.
 
@@ -281,7 +281,7 @@ pt_guess_pretty_1(P,O):- copy_term(P,O,_),
 :- multifile(pretty_clauses:pp_hook/3).
 :- module_transparent(pretty_clauses:pp_hook/3).
 pretty_clauses:pp_hook(_,Tab,S):- is_vm(S),!,prefix_spaces(Tab),!,write('..VM..').
-pretty_clauses:pp_hook(_,Tab,S):- term_is_ansi(S), !,prefix_spaces(Tab), write_keeping_ansi(S).
+pretty_clauses:pp_hook(_,Tab,S):- term_is_ansi(S), !,prefix_spaces(Tab), write_keeping_ansi_mb(S).
 pretty_clauses:pp_hook(FS,_  ,G):- 
   current_predicate(is_group/1),
    locally(b_setval(pp_parent,FS),print_with_pad(pp_hook_g(G))),!.
@@ -295,11 +295,11 @@ lock_doing(Lock,G,Goal):-
   locally(nb_setval(Lock,[G|Was]),Goal).
 
 pp_hook_g(S):- term_contains_ansi(S), !, write_nbsp, pp_hook_g0(S).
-pp_hook_g(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+pp_hook_g(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 pp_hook_g(G):- \+ plain_var(G), \+ nb_current(arc_can_portray,nil),
   lock_doing(in_pp_hook_g,G,pp_hook_g0(G)).
 
-pp_hook_g0(S):- term_is_ansi(S), !, write_nbsp, write_keeping_ansi(S).
+pp_hook_g0(S):- term_is_ansi(S), !, write_nbsp, write_keeping_ansi_mb(S).
 pp_hook_g0(_):- in_pp(bfly),!,fail.
 pp_hook_g0(G):- wots(S,in_bfly(f,pp_hook_g1(G))),write(S).
 
@@ -312,7 +312,7 @@ as_pre_string(O,SS):- wots(S,debug_as_grid(O)), strip_vspace(S,SS).
 
 pp_hook_g1(O):-  plain_var(O), !, fail.
 pp_hook_g1(O):-  attvar(O), !, is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
-pp_hook_g1(S):- term_is_ansi(S), !, write_nbsp, write_keeping_ansi(S).
+pp_hook_g1(S):- term_is_ansi(S), !, write_nbsp, write_keeping_ansi_mb(S).
 
 pp_hook_g1(shape(O)):- !, is_points_list(O), as_grid_string(O,S), print(shape(S)),!.
 pp_hook_g1(vals(O)):- !, writeq(vals(O)),!.
@@ -369,10 +369,16 @@ strip_vspace(S,Stripped):- replace_in_string([" \n"="\n","(   "="(  ","(\n"="( "
 strip_vspace(S,S).
 
 
-print_nl(P):- format('~N~t'),pp_msg_color(P,C), ansicall(C,pp_no_nl(P)),nl_if_needed.
+print_nl(P):- format('~N~t'),pp_msg_color(P,C), ansicall(C,is_maybe_bold(P,pp_no_nl(P))),nl_if_needed.
 
-color_write(S):- term_is_ansi(S), !, write_keeping_ansi(S).
-color_write(P):- pp_msg_color(P,C), ansicall(C,write(P)).
+color_write(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
+color_write(P):- pp_msg_color(P,C), ansicall(C,is_maybe_bold(P,write(P))).
+
+write_keeping_ansi_mb(P):- is_maybe_bold(P,write_keeping_ansi(P)).
+is_maybe_bold(P):- sformat(S,'~w',[P]),atom_contains(S,'o(').
+
+is_maybe_bold(P,G):- is_maybe_bold(P),!, underline_print(bold_print(G)).
+is_maybe_bold(_P,G):- call(G).
 
 pp_msg_color(P,C):- compound(P),pc_msg_color(P,C),!.
 pp_msg_color(P,C):- must_det_ll(mesg_color(P,C)).
@@ -388,7 +394,7 @@ wqs_l([]).
 wqs_l([H|T]):- wqs(H), write_nbsp, wqs_l(T).
 
 
-wqs(P):- pp_msg_color(P,C), ansicall(C,wqs0(P)),!.
+wqs(P):- pp_msg_color(P,C), ansicall(C,is_maybe_bold(P,wqs0(P))),!.
 wqs(C,P):- ansicall(C,wqs0(P)),!.
 
 wqs0(X):- plain_var(X), !, wqs(plain_var(X)). 
@@ -398,7 +404,7 @@ wqs0(X):- attvar(X), !, wqs(attvar(X)).
 wqs0([H|T]):- is_list(T), string(H), !, wqs_l([H|T]).
 wqs0([H|T]):- is_list(T), !, wqs(H),need_nl(H,T), wqs(T).
 wqs0(nl):- !, nl. wqs0(''):-!. wqs0([]):-!.
-wqs0(S):- term_is_ansi(S), !, write_keeping_ansi(S).
+wqs0(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 wqs0(X):- is_object(X), tersify1(X,Q), X\==Q,!, wqs(Q).
 wqs0(X):- is_object(X), show_shape(X),!.
 wqs0(X):- is_grid(X), !, print_grid(X).
@@ -413,7 +419,7 @@ wqs0(call(C)):- !, call(C).
 wqs0(C):- is_color(C),!,wqs(color_print(C,C)).
 wqs0(X):- \+ compound(X),!, write_nbsp, write(X).
 wqs0(C):- compound(C),wqs1(C),!.
-%wqs(S):- term_contains_ansi(S), !, write_nbsp, write_keeping_ansi(S).
+%wqs(S):- term_contains_ansi(S), !, write_nbsp, write_keeping_ansi_mb(S).
 wqs0(X):- write_nbsp,writeq(X).
 
 as_arg_str(C,S):- wots_vs(S,print(C)).
