@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[    107983,       2646]
+NotebookDataLength[    107985,       2646]
 NotebookOptionsPosition[     91702,       2304]
-NotebookOutlinePosition[     97312,       2442]
-CellTagsIndexPosition[     97269,       2439]
+NotebookOutlinePosition[     97314,       2442]
+CellTagsIndexPosition[     97271,       2439]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -2304,7 +2304,7 @@ Cell[BoxData[
 },
 Evaluator->"Local",
 WindowSize->{958, 980},
-WindowMargins->{{-7, Automatic}, {Automatic, 0}},
+WindowMargins->{{953., Automatic}, {Automatic, 0}},
 Visible->True,
 DockedCells->{
   Cell[

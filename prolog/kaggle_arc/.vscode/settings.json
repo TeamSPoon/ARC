@@ -7,5 +7,7 @@
         "other": "on",
         "comments": true,
         "strings": "off"
-    }
+    },
+    "prolog.executablePath": "C:/Program Files/swipl/bin/swipl.exe",
+    "prolog.linter.enableMsgInOutput": true
 }

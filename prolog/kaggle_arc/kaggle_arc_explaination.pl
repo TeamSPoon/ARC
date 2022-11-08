@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 
 % make_grid(3,4)
@@ -76,11 +74,11 @@ print_info_l(GridS):- maplist(print_info_1,GridS).
 object_grid_to_str(Grid,Str,Title):- 
   v_hv(Grid,H,V), 
   object_glyph(Grid,Glyph),
-  Title = object_grid(loc(OH,OV),size(H,V)),
-  loc(Grid,OH,OV),
+  Title = object_grid(loc2D(OH,OV),size2D(H,V)),
+  loc2D(Grid,OH,OV),
   localpoints_include_bg(Grid,GridO),
   ((IH=H,IV=V)), % (IH = 30,IV=30), 
-  subst(GridO,black,wbg,GridOO),
+  get_black(Black),subst001(GridO,Black,wbg,GridOO),
   wots(GS,(print_grid(IH,IV,GridOO))),
   replace_in_string(['®'=Glyph],GS,GSS),  
   HH is (OH - 1) * 2, wots(Str,(print_w_pad(HH,GSS))).
@@ -102,19 +100,20 @@ debugged_object_grid(Grid,GridO):- object_grid(Grid,GridO).
 %debugged_object_grid(Grid,GridO):- global_grid(Grid,GridO).
 debugged_object_grid(Grid,GridOO):- 
   localpoints_include_bg(Grid,GridO),  
-  subst(GridO,black,wbg,GridOO).
+  get_black(Black),subst001(GridO,Black,wbg,GridOO).
 
 %debug_as_grid(Why,R):- resolve_reference(R,Var)-> R\==Var, write(' ( '), writeq(R),write(' , '),debug_as_grid(Why,Var),write(' )'),!.
 debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
   must_det_ll((
   v_hv(Grid,H,V),
   object_glyph(Grid,Glyph),
-  Title = debug_as_grid(Why,loc(OH,OV),size(H,V)),
-  fif((H\==1;V\==1;true),
+  Title = debug_as_grid(Why,loc2D(OH,OV),size2D(H,V)),
+  if_t((H\==1;V\==1;true),
     must_det_ll((
-     loc(Grid,OH,OV),     
+     loc2D(Grid,OH,OV),     
      localpoints_include_bg(Grid,GridO),
-     subst(GridO,black,wbg,PrintGrid),    
+     get_black(Black),
+     subst001(GridO,Black,wbg,PrintGrid),    
      copy_term(PrintGrid,PrintGridC),
      into_ngrid(PrintGridC,NGrid),
      nop((s_hv(Grid,SX,SY),max_min(H,SX,IH,_),max_min(V,SY,IV,_))),
@@ -122,12 +121,12 @@ debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
      wots(GS,print_grid(IH,IV,Title,PrintGrid)),replace_in_string(['®'=Glyph,'@'=Glyph],GS,GSS),
      wots(S,print_side_by_side(GSS,print_grid(IH,IV,ngrid,NGrid))),
      HH is (OH - 1) * 2, print_w_pad(HH,S)))),
-  fif(is_object(Grid),
+  if_t(is_object(Grid),
     (format('~N~n'),
      locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Grid))))),
      format('~N'),dash_chars(15))),!.
 
-debug_as_grid(  I,   A):- is_1gridoid(A), !, subst(A,'black','wbg',AA), print_grid(I,AA).
+debug_as_grid(  I,   A):- is_1gridoid(A), !, get_black(Black), subst001(A,Black,'wbg',AA), print_grid(I,AA).
 debug_as_grid( '',Grid):- !, pp(Grid).
 debug_as_grid(Why,Grid):- pp(debug_as_grid(Why,Grid)).
 
@@ -158,7 +157,7 @@ debug_indiv(obj(A)):- \+ is_list(A),!, pp(debug_indiv(obj(A))).
 debug_indiv(A):- is_point_obj(A,Color,Point),
   obj_to_oid(A,Tst,Id), i_glyph(Id,Sym),
   hv_point(H,V,Point), i_glyph(Id,Sym),
-  wqnl([' % Point: ', color_print(Color,Sym), dot, color(Color), fav1(Tst), nth(Id), loc(H,V)]),!. 
+  wqnl([' % Point: ', color_print(Color,Sym), dot, color(Color), fav1(Tst), nth(Id), loc2D(H,V)]),!. 
 */
 object_glyph_color(Obj,FC):- once((unique_colors(Obj,CL),member(FC0,CL),is_real_color(FC0));FC0=wfg),
   (FC0==black_n -> FC= wbg ; FC = FC0).
@@ -185,7 +184,7 @@ prefered(alone_dots).
 prefered(hv_line(_)).
 prefered(dg_line(_)).
 prefered_header(cc(Caps,_),Caps):- freeze(Caps,wbg == Caps).
-prefered_header(cc(Caps,_),Caps):- freeze(Caps,black == Caps).
+prefered_header(cc(Caps,_),Caps):- get_black(Black),freeze(Caps,Black == Caps).
 prefered_header(o(_,_,Caps),Caps):- freeze(Caps,i_bg_shapes == Caps).
 prefered_header(s(lf(_),0,Caps),Caps):- freeze(Caps,atom(Caps)).
 prefered_header(o(lf(_),0,Caps),Caps):- freeze(Caps,atom(Caps)).
@@ -235,7 +234,7 @@ debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
 
   ignore((TF==true,dash_chars)),
   sformat(SF,"% ~w:\t\t~w\t",[PC,SGlyph]),
-  ignore(( g_out_style(style('font-size','75%'),(write(SF), wqs(TVS))))),
+  ignore(( g_out_style(style('font-size2D','75%'),(write(SF), wqs(TVS))))),
   ignore(( TF==true, amass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
   ignore(( fail, amass(Obj,Mass),!,Mass>4, v_hv(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
   %pp(A),
@@ -316,8 +315,8 @@ remove_too_verbose(MyOID,TP,OO):- compound(TP),compound_name_arguments(TP,link,[
 
 
 remove_too_verbose(MyOID,colors(H),HH):- !, remove_too_verbose(MyOID,H,HH).
-%remove_too_verbose(MyOID,loc(X,Y),loc(X,Y)).
-%remove_too_verbose(MyOID,v_hv(X,Y),size(X,Y)).
+%remove_too_verbose(MyOID,loc2D(X,Y),loc2D(X,Y)).
+%remove_too_verbose(MyOID,v_hv(X,Y),size2D(X,Y)).
 remove_too_verbose(_MyID,changes([]),'').
 remove_too_verbose(_MyID,rotation(sameR),'').
 remove_too_verbose(MyOID,L,LL):- is_list(L),!, maplist(remove_too_verbose(MyOID),L,LL).
@@ -345,7 +344,7 @@ too_verbose(cenY).
 debug_indiv(_,_,X,_):- too_verbose(X),!.
 debug_indiv(Obj,_,F,[A]):- is_cpoints_list(A),!,
   v_hv(Obj,H,V), wqnl(F), 
-  loc(Obj,OH,OV),
+  loc2D(Obj,OH,OV),
   EH is OH+H-1,
   EV is OV+V-1,
   object_glyph(Obj,Glyph),
@@ -371,4 +370,5 @@ debug_indiv(_,P,_,_):- pp(P).
 
 
 :- fixup_exports.
+
 

@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 :- use_module(library(nb_set)).
 :- use_module(library(lists)).
@@ -75,7 +73,8 @@ reduce_op1_1(_,Grid,left_right(Left,Reduced),GridR):- fail, \+ too_small_reduce(
    reduce_grid(Left+Left,Reduced).
 reduce_op1_1(_,Grid,remove_row(Row),GridR):- fail, 
   \+ too_small_reduce(Grid,3),
-  nth1(Row,Grid,Same,GridR),maplist(==(black),Same),!.
+  get_black(Black),
+  nth1(Row,Grid,Same,GridR),maplist(==(Black),Same),!.
 
 %reduce_1pair_op(PassNo,Grid,RotR,GridR):- grav_rot(Grid,RotG,GridR), unrotate(RotG,RotR).
 
@@ -131,7 +130,9 @@ ungrav_rot(G,UnRotG,GG):- grav_rot(G,RotG,GG),(G==GG->UnRotG=sameR;unrotate(RotG
 
 %reduce_grid(A+B,ROP,AA+BB):- reduce_grid(A+A,ROP,AA+AA),reduce_grid(B+B,ROP,BB+BB),!.
 reduce_grid(A+B,OP,AAO+BBO):- reduce_grid_pair(A+B,ROP,AAO+BBO),reverse(ROP,OP),!.
-reduce_grid(A+B,[],A+B).
+reduce_grid(A+B,[],A+B):-!.
+reduce_grid(G,OP,AAO):- G\=(_+_), into_grid(G,Grid),!,A=Grid,B=A,
+   reduce_grid_pair(A+B,ROP,AAO+_BBO),reverse(ROP,OP),!.
 
 reduce_grid_pair1(A+B,[g(perfect)|ROPA],AR+BR):-
   once((reduce_grid_pass(1,A+A,[A+A],ROPA,AR+AR),

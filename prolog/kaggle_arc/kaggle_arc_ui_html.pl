@@ -18,9 +18,7 @@
   ]
 ).
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 :- use_module(library(thread_pool)).
 :- use_module(library(http/thread_httpd)).
@@ -241,6 +239,7 @@ set_test_param:-
   ignore((when_arc_webui((get_param_sess(task,Task), Task\=='',  Task\=="",
   atom_id(Task,ID), dmsg(Task-> ID), set_current_test(ID))))),!.
 
+:- http_handler('/swish', http_redirect(moved, '/swish/'), []).
 
 swish_arc(Request):-   
   muarc_tmp:arc_directory(ARC_DIR),
@@ -248,7 +247,11 @@ swish_arc(Request):-
 
 swish_arc_root(Request):-   
   arc_sub_path('.',DEMO),
-  http_reply_from_files(DEMO, [], Request).
+  http_reply_from_files(DEMO, [], Request),!.
+swish_arc_root(Request):- 
+  Options = [],
+  call(call,swish_page:swish_reply2(Options, Request)),!.
+
 
 %arcproc_left(Request):- xlisting_web:handler_logicmoo_cyclone(Request),!.
 arcproc_left(Request):-  
@@ -421,9 +424,9 @@ invoke_arc_cmd(Prolog):-
 :- luser_default(footer_cmd,statistics).
 
 current_arc_cmd(Prolog):- current_arc_cmd(cmd,Prolog).
-current_arc_cmd(cmd,Prolog):- luser_getval(cmd,Prolog).
-current_arc_cmd(tc_cmd,Prolog):- luser_getval(tc_cmd,Prolog).
-current_arc_cmd(footer_cmd,Prolog):- luser_getval(footer_cmd,Prolog).
+%current_arc_cmd(cmd,Prolog):- luser_getval(cmd,Prolog).
+%current_arc_cmd(tc_cmd,Prolog):- luser_getval(tc_cmd,Prolog).
+current_arc_cmd(V,Prolog):- luser_getval(V,Prolog).
 %current_arc_cmd(footer_cmd,Prolog):- (\+ current_arc_cmd(cmd,menu) -> luser_getval(footer_cmd,Prolog,menu) ; luser_getval(footer_cmd,Prolog,edit1term)).
 
 
@@ -431,11 +434,23 @@ current_arc_cmd(footer_cmd,Prolog):- luser_getval(footer_cmd,Prolog).
 
  % our_pengine_output(`<script src="https://unpkg.com/gojs/release/go-debug.js"></script>`).
 
+:-   ignore((predicate_property(phil:'$exported_op'(_,_,_),(discontiguous)),
+  \+ predicate_property(phil:'$exported_op'(_,_,_),number_of_clauses(_)),
+     abolish(phil:'$exported_op',3))),
+  ignore((predicate_property(rdf11:'$exported_op'(_,_,_),(discontiguous)),
+\+ predicate_property(rdf11:'$exported_op'(_,_,_),number_of_clauses(_)),
+  abolish(rdf11:'$exported_op',3))),
+     ignore((predicate_property(lemur:'$exported_op'(_,_,_),(discontiguous)),
+  \+ predicate_property(lemur:'$exported_op'(_,_,_),number_of_clauses(_)),
+     abolish(lemur:'$exported_op',3))).
 
 :- include(kaggle_arc_ui_html_go1).
 :- include(kaggle_arc_ui_html_go2).
+/*
 
-
+:- abolish(lemur:'$exported_op',3).
+:- abolish(rdf11:'$exported_op',3).
+*/
 :- fixup_exports.
 
 

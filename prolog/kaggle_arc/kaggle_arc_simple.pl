@@ -5,11 +5,7 @@
   unless permission or license is granted (contact at business@logicmoo.org)
 */
 
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
-
-
+:- include(kaggle_arc_header).
 
 
 solve_easy:- get_current_test(Name),solve_easy(Name).
@@ -118,8 +114,8 @@ relax_prop(S1,R1):- R1 = S1.
 relax_prop1(S1,R1):- relax_prop2(S1,R1)*->true;generalize(S1,R1).
 
 relax_prop2(o(X,Y,_),o(X,Y,_)).
-relax_prop2(loc(X,_),loc(X,_)).
-relax_prop2(loc(_,Y),loc(_,Y)).
+relax_prop2(loc2D(X,_),loc2D(X,_)).
+relax_prop2(loc2D(_,Y),loc2D(_,Y)).
 
 
 simplify_props(IndvS,[R1|Props],SPropsF):- never_group_on(R1), !,simplify_props(IndvS,Props,SPropsF).
@@ -137,11 +133,11 @@ simplify_props(_,A,A).
 pregroup1(iz(shaped)).
 pregroup1(iz(image)).
 pregroup1(iz(chromatic(N))):- between(1,10,N).
-pregroup1(o(How,lf(_),_)):- dif(How,i_repair_mirrors).
+pregroup1(o(How,lf(_),_)):- dif(How,i_repair_patterns).
 
 
 never_uprop(localpoints(_)).
-never_group_on(o(I,_,_)):- I == i_repair_mirrors.
+never_group_on(o(I,_,_)):- I == i_repair_patterns.
 never_group_on(P):- never_uprop(P).
 
 regroups(IndvS,[Why1,Why2],[Obj|Grp]):-
@@ -177,7 +173,7 @@ grid_part(Grid,Info):- var(Grid), get_current_test(TestID), some_current_example
 number_obj(N,obj(List),obj([ord(N)|List])).
 /*
   Obj = obj(List),
-  loc(Obj,X,Y),obj_to_oid(Obj,_,MyID),
+  loc2D(Obj,X,Y),obj_to_oid(Obj,_,MyID),
  % atomic_list_concat([obj,X,Y],'_',Key),
   localpoints_include_bg(Obj,LocalPoints),
   points_to_grid(X,Y,LocalPoints,Grid),mapgrid(sometimes_assume(=,bg),Grid),
@@ -194,7 +190,8 @@ number_obj(N,obj(List),obj([ord(N)|List])).
 %grid(Type,ConstructorData,[rot270]),CacheOfCalls).
 
 %is_graid(TestID>ExampleNum*IO,TestID,ExampleNum,IO).
-is_graid((TestID>ExampleNum*IO),G):- kaggle_arc_io(TestID,ExampleNum,IO,G).
+
+is_graid((TestID > (ExampleNum*IO)),G):- kaggle_arc_io(TestID,ExampleNum,IO,G).
 
 :- export(is_graid/2).
 %grid_aid(ID,TestID>ExampleNum*IO):- is_graid(Grid,TestID,ExampleNum,IO),format(ID,).

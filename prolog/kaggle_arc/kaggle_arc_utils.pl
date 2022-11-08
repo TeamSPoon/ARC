@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 /*
 my_len(X,Y):- var(X),!,length(X,Y).
@@ -183,8 +181,9 @@ subst_1L([X-Y|List], Term, NewTerm ) :-
   subst0011(X, Y, Term, MTerm ),
   subst_1L(List, MTerm, NewTerm ).
 
-subst_2L([F|FF],[R|RR],I,O):- subst0011(F,R,I,M),subst_2L(FF,RR,M,O).
 subst_2L([],_,I,I).
+subst_2L([F|FF],[R|RR],I,O):- subst0011(F,R,I,M),subst_2L(FF,RR,M,O).
+
 
 subst001(I,F,R,O):- subst0011(F,R,I,O),!.
 

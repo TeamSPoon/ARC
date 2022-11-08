@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 into_ngrid(Points,NGrid):-  v_hv(Points,H,V),into_ngrid(Points,H,V,NGrid).
 into_ngrid(Obj,H,V,NGrid):-
@@ -22,8 +20,10 @@ guess_bgc(Grid,BGC):- most_d_colors(Grid,[BGC|_],_).
 9=edges
 D=fill_area
 */
+:- decl_pt(most_d_colors(grid,color,grid)).
 most_d_colors(Grid,ColorO,GridNM):-
   %trace,
+ 
   get_fill_points(Grid,Points,GridNM),
   uneib(Points,FPoints),
   % grid_size(GridNM,H,V), pp(fillPoints(H,V) = FPoints),
@@ -33,7 +33,8 @@ most_d_colors(Grid,ColorO,GridNM):-
   maplist(arg(1),NPSS,Colors),
   clumped(Colors,CColors),
   maplist(arg(2),CColors,Set),
-  (Set==[]->ColorO=[black];ColorO=Set),!.
+  get_black(Black),
+  (Set==[]->ColorO=[Black];ColorO=Set),!.
 
 ping_indiv_grid(show_neighbor_map).
 
@@ -45,8 +46,9 @@ get_fill_points2(Grid,FillPoints):-
 
   
 get_fill_points(In,UNFP,GridO):-
+ must_det_ll((
  %grid_size(Grid,H,V),
- subst001(In,black,wbg,Grid),
+ get_black(Black),subst001(In,Black,wbg,Grid),
  %print(In=Grid),
  neighbor_map(Grid,GridO), 
  localpoints(GridO,NPS),  
@@ -56,7 +58,7 @@ get_fill_points(In,UNFP,GridO):-
  include(is_point_type('wbgzzzzz'),NPS,NotFillPoints),
  subtract(FillPoints,NotFillPoints,RFillPoints),
   %my_partition(is_point_type('.'),NFP,OuterEdges,NonFillPointNonOuterEdges),
- uneib(RFillPoints,UNFP).
+ uneib(RFillPoints,UNFP))).
 /*
   once(get_fill_points2(Grid,FillPoints2)),
   append([FillPoints2,UNFP],TheFilPoints),
@@ -153,10 +155,11 @@ edge_of_grid(_,V,_,V,s).
 edge_of_grid(_,_,_,_,c).
 
 neighbor_map(Grid,GridO):-
+ must_det_ll((
   globalpoints_maybe_bg(Grid,Points),
   grid_size(Grid,H,V),
   neighbor_map(H,V,Points,Points,CountedPoints),!,
-  points_to_grid(H,V,CountedPoints,GridO).
+  points_to_grid(H,V,CountedPoints,GridO))).
 
 neighbor_map(_,_,[],_,[]):-!.
 neighbor_map(H,V,[NC-P1|Ps],Points,[(N-C)-P1|Ps2]):-
@@ -165,6 +168,7 @@ neighbor_map(H,V,[NC-P1|Ps],Points,[(N-C)-P1|Ps2]):-
   neighbor_map(H,V,Ps,Points,Ps2).
 
 only_color_data(C,_):- var(C),!,fail.
+only_color_data(C,C):- is_unreal_color(C),!.
 only_color_data(C,C):- is_color(C),!.
 only_color_data(NC,NC):- \+ compound(NC),!,fail.
 only_color_data(OC,C):- sub_term(C,OC),is_colorish(C),!.
@@ -180,11 +184,12 @@ is_adjacent_point_m2(P1,Dir,P2):- is_adjacent_point(P1,Dir,P3),is_adjacent_point
 
 would_fill(In,C,P1):-
   localpoints_include_bg(In,Points),
+  get_black(Black),
   member(C-P1,Points),
-  findall(Dir,(n_s_e_w(Dir),is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),dif_color(C,CD),CD\==black),DirsE),
-  findall(Dir,(is_diag(Dir),is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),dif_color(C,CD),CD\==black),DirsF),
-  findall(Dir,(n_s_e_w(Dir),once((is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),==(C,CD),C\==black))),DirsC),
-  findall(Dir,(is_diag(Dir),once((is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),==(C,CD),C\==black))),DirsD),
+  findall(Dir,(n_s_e_w(Dir),is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),dif_color(C,CD),CD\==Black),DirsE),
+  findall(Dir,(is_diag(Dir),is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),dif_color(C,CD),CD\==Black),DirsF),
+  findall(Dir,(n_s_e_w(Dir),once((is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),==(C,CD),C\==Black))),DirsC),
+  findall(Dir,(is_diag(Dir),once((is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),==(C,CD),C\==Black))),DirsD),
   once(would_fill_color(DirsC,DirsD,DirsE,DirsF)).
 
 would_fill_color([_,_,_,_],_,_,_).

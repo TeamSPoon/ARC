@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 
 
@@ -56,8 +54,11 @@ save_learnt_rule(RuleIn,InGoal,OutGoal):-
   Assert = (NewRuleIn:-was_once(InSet,InVars)), 
   assert_visually(Assert),!.    
 
-has_prop(P,Props):- is_list(Props),!,member(Q,Props), (Q=@=P -> true ; ( \+ Q \= P)).
-has_prop(P,Obj):- indv_props(Obj,Props),!,member(Q,Props), (Q=@=P -> true ; ( \+ Q \= P)).
+has_prop(Props,Objs):- is_list(Objs),!,forall(member(Obj,Objs),has_prop(Props,Obj)).
+has_prop(Props,Obj):- is_list(Props),!,member(Q,Props),has_prop(Q,Obj).
+has_prop(Lbl ,Obj):- atom(Lbl),!, is_labled(Lbl,Obj),!.
+has_prop(lbl(Lbl),Obj):- is_labled(Lbl,Obj).
+has_prop(Prop,Obj):- indv_props(Obj,Props),!,member(Q,Props), (Q=@=Prop -> true ; ( Q = Prop)).
 
 
 learn_group(What,Objs):- assert_visually(group_associatable(What,Objs)).
@@ -87,7 +88,7 @@ not_for_matching(_Why,L,localpoints(XX)):- !, started_is_list(XX), member(shape(
 not_for_matching(_Why,L,globalpoints(XX)):- !, started_is_list(XX), (member(shape(_),L);member(localpoints(_),L)).
 
 %not_for_matching(_Why,_,center(H,V)):- (H\==1,V\==1,H\==2,V\==2,H\==3,V\==3).
-%not_for_matching(_Why,_,loc(H,V)):- (H\==1;V\==1).
+%not_for_matching(_Why,_,loc2D(H,V)):- (H\==1;V\==1).
 %not_for_matching(_Why,_,M):- too_unique(M),!.
 %not_for_matching(_Why,_,M):- too_non_unique(M),!.
 
@@ -225,7 +226,7 @@ debug_reproduction(H,V,Obj,DObj):-
 show_result(What,Solution,ExpectedOut,Errors):-
  get_current_test(TestID),
  ignore((count_difs(ExpectedOut,Solution,Errors),
-   print_side_by_side(blue,Solution,What,_,ExpectedOut,"Expected"),
+   print_side_by_side(blue,Solution,What,ExpectedOut,"Expected"),
       (Errors==0 -> 
            arcdbg_info(green,pass(What,TestID))
          ; (arcdbg_info(red,fail(What,Errors,TestID)),
@@ -267,15 +268,15 @@ learn_rule_in_out(Depth,Mode,In,Out):- is_list(In), is_list(Out),
 %learn_rule_in_out(Depth,out_out,I,O):- !, ignore(( is_grid(O), save_learnt_rule(oout_associatable(I,O)))).
 
 compare_objs_how([perfect]).
-compare_objs_how([turned,+loc]).
-compare_objs_how([turned,-loc]).
+compare_objs_how([turned,+loc2D]).
+compare_objs_how([turned,-loc2D]).
 compare_objs_how([moved]).
 compare_objs_how([sameO]).
 compare_objs_how(_).
 
 /*
 v_hv(5,5), amass(25),
-center(9,14),loc(7,12),
+center(9,14),loc2D(7,12),
 colors([cc(PURPLE,21),cc(BLACK,4)]),
 localpoints
 */
@@ -401,7 +402,7 @@ learn_rule_in_out(Depth,Mode,In,Out):-
   is_group(In),is_group(Out),
   length(In,IL),length(Out,OL),
   Depth2 is Depth+1, 
-  fif((IL=<7,OL=<7),
+  if_t((IL=<7,OL=<7),
    forall(member(I,In),
      forall(member(O,Out),
        learn_rule_in_out_now(Depth2,Mode,I,O)))).
@@ -484,20 +485,7 @@ assert_visually2(H,B):- functor(H,F,_), my_asserta_if_new(test_local_dyn(F)), pr
 
 if_learn_ok(G):- call(G).
 
-clear_training(TestID):-  
-  %retractall(individuated_cache(_,_,_)),
-  set_bgc(_),
-  set_flag(indiv,0),
-  forall(test_local_dyn(F),
-   forall((current_predicate(F/A),A\==0),
-    ((functor(X,F,A),
-      forall((clause(X,_,Ref),arg(1,X,E),E==TestID),
-       erase(Ref)))))),
-  nb_delete(grid_bgc),
-  luser_linkval(test_rules, [rules]),
-  wno((clear_shape_lib(test), clear_shape_lib(noise), 
-   retractall(grid_nums(_,_)), retractall(grid_nums(_)))),
-  nop(retractall(g_2_o(_,_))),!.
+
  
 
 learn_rule(In,Out):-
@@ -683,7 +671,7 @@ never_labels_in(iz(_)).
 never_labels_in(shape(_)).
 never_labels_in(amass(1)).
 never_labels_in(mass(1)).
-never_labels_in(loc(_,_)).
+never_labels_in(loc2D(_,_)).
 
 
 never_unbind_label(G):- var(G),!.
@@ -760,7 +748,7 @@ find_by_shape(Grid,Find,Founds):-
 
    grid_to_points(F1,GH,GV,Points),
    pp(Points),
-   make_indiv_object(VM,[iz(find_by_shape),F1,loc(H,V),alt_grid_size(GH,GV)],Points,F2)),
+   make_indiv_object(VM,[iz(find_by_shape),F1,loc2D(H,V),alt_grid_size(GH,GV)],Points,F2)),
  findall(F2,Prog,Matches),
  align_founds(Matches,Founds).
 
@@ -870,7 +858,7 @@ name_the_pair(TestID,ExampleNum,In,Out,PairName):-
   GridNameOut= PairName*out,
   set_grid_tid(In,GridNameIn),
   set_grid_tid(Out,GridNameOut),  
-  test_info(TestID,Info), pp(fav(TestID,Info)),nl)).
+  test_info(TestID,Info), pp(fav(TestID,Info)=ExampleNum),nl)).
   
 
 

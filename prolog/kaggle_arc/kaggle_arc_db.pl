@@ -4,9 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- if(current_module(trill)).
-:- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
+:- include(kaggle_arc_header).
 
 %:- dynamic(row_mem/34).
 :- dynamic(cindv/3).
@@ -82,9 +80,13 @@ point_to_hvc(C-Point,H,V,C):- must(nonvar(Point)),must(hv_point(H,V,Point)),!.
 %point_ to_hvc(H,V,_,H,V).
 %point_ to_hvc(Inf,Inf,offset_ranges(_,_,_,_)).
 
-make_grid(H,V,Grid):- max_min(H,1,HH,_), max_min(V,1,VV,_),
-   max_min(HH,32,_,HHH),max_min(VV,32,_,VVV),!,   
-   grid_size_nd(Grid,HHH,VVV),!.
+make_grid(_,0,[]):- !.
+make_grid(0,1,[[]]):-!.
+make_grid(0,N,Grid):- N>1,!, make_list([],N,Grid).
+make_grid(1,1,[[_]]):-!.
+make_grid(H,V,Grid):- between(1,40,H),between(1,40,V), (H>1;V>1), % max_min(H,0,HH,_), max_min(V,0,VV,_),
+   %max_min(HH,32,_,HHH),max_min(VV,32,_,VVV),!,   
+   grid_size_nd(Grid,H,V),!.
 
 insert_row(N,Row,Grid,NewGrid):- grid_size(Grid,H,V), insert_row(N,Row,Grid,H,V,NewGrid).
 insert_row(N,Row,Grid,H,V,NewGrid):- N<0, NewN is V + N+1,!,insert_row(NewN,Row,Grid,H,V,NewGrid).
@@ -203,7 +205,7 @@ pgt1(Obj):-
          shape( [ point_01_01, point_02_01]),
          colors( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
-         localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(sameR), loc(3, 1),
+         localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(sameR), loc2D(3, 1),
          changes([]), iz(combined),
          iz(rectangle), iz(multicolored),
          iz(polygon), %obj _to_oid(v('0ad4ef5')>(trn+0)*in, 21),
@@ -215,7 +217,7 @@ pgt2(Obj):- Obj =
          shape( [ point_01_01, point_02_01]),
          colors( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
-         localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(sameR), loc(2, 1),
+         localpoints( [ red-point_01_01, silver-point_02_01]), v_hv(3, 1), rotation(sameR), loc2D(2, 1),
          changes([]), iz(combined),
          iz(rectangle), iz(multicolored),
          iz(polygon), %obj _to_oid(v('a1d4ef5')>(trn+0)*in, 66),
@@ -288,7 +290,7 @@ replace_local_point_color(Point,NewC,OldC,G,GO):- is_list(G),!, maplist(replace_
 replace_local_point_color(Point,NewC,OldC,G,GO):- is_object(G), !,
     localpoints(G,Points),     
     replace_in_points(Point,NewC,OldC,Points,RPoints),
-    %loc(G,OH,OV),offset_point(OH,OV,Point,LPoint),shape(G,NCPoints), maplist(replace_in_points(Point,NewC,OldC),NCPoints,RNCPoints),,shape(RNCPoints)
+    %loc2D(G,OH,OV),offset_point(OH,OV,Point,LPoint),shape(G,NCPoints), maplist(replace_in_points(Point,NewC,OldC),NCPoints,RNCPoints),,shape(RNCPoints)
     setq(G,localpoints(RPoints),GO).
 replace_local_point_color(Point,NewC,OldC,G,GO):- trace_or_throw(unknown_target_type(replace_local_point_color(Point,NewC,OldC,G,GO))).
 
