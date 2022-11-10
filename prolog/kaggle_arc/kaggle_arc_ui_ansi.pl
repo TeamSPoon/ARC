@@ -375,7 +375,7 @@ color_write(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 color_write(P):- pp_msg_color(P,C), ansicall(C,is_maybe_bold(P,write(P))).
 
 write_keeping_ansi_mb(P):- is_maybe_bold(P,write_keeping_ansi(P)).
-is_maybe_bold(P):- sformat(S,'~w',[P]),atom_contains(S,'o(').
+is_maybe_bold(P):- sformat(S,'~w',[P]),atom_contains(S,'stOF').
 
 is_maybe_bold(P,G):- is_maybe_bold(P),!, underline_print(bold_print(G)).
 is_maybe_bold(_P,G):- call(G).
@@ -434,6 +434,7 @@ wqs1(q(C)):-  \+ arg_string(C),wots(S,writeq(C)),color_write(S).
 wqs1(g(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs(C))),wqs(g(S)).
 wqs1(b(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs(C))),color_write(S).
 wqs1(norm(C)):- writeq(norm(C)),!.
+wqs1(C):- is_wqs(C),!,wots_vs(S,call(C)),wqs((S)).
 wqs1(S):- term_contains_ansi(S), !, write_nbsp, print(S).
 wqs1(pp(C)):- \+ arg_string(C), wots_vs(S,pp(C)),wqs(pp(S)).
 %wqs1(pen(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(penz(S)).
@@ -535,6 +536,25 @@ print_side_by_side(A,B):- (unsized_grid(A);unsized_grid(B)),!, print_ss(A),print
 print_side_by_side(A,B):- g_smaller_than(A,B),!, print_ss(A),print_ss(B),!.
 print_side_by_side(A,B):-  print_ss(A),print_ss(B),!.
 %print_side_by_side(A,B):- format('~N'),print_side_by_side(A,_,B),format('~N').
+add_grid_label(I,M,IM):- IM=..[-,I,M]. 
+print_side_by_side(C,G1,N1,G2,N2):- !, 
+  add_grid_label(G1,wqs(call(wqs(C,N1))), GridLabel1),
+  add_grid_label(G2,wqs(call(wqs(C,N2))), GridLabel2),
+  print_side_by_side(GridLabel1,GridLabel2).
+
+print_side_by_side(X,Y,Z):- g_out((nl,print_side_by_side0(X,Y,Z))),!.
+
+
+print_side_by_side(TitleColor,G1,N1,LW,G2,N2):- 
+   g_out((nl,
+   print_side_by_side0(G1,LW,G2),
+   data_type(G1,S1), data_type(G2,S2),
+   print_side_by_side4d(TitleColor,S1," ~w   (~w)",N1,LW,S2," ~w  (~w)", N2))).
+
+print_side_by_side4d(TitleColor,S1,F1,N1,W0,S2,F2,N2):- number(W0), W0 < 0, LW is -W0, !, print_side_by_side4d(TitleColor,S2,F2,N2,LW,S1,F1,N1).
+print_side_by_side4d(TitleColor,S1,F1,N1,_LW,S2,F2,N2):- 
+   nl_if_needed, write('\t'),format_u(TitleColor,F1,[N1,S1]),write('\t\t'),format_u(TitleColor,F2,[N2,S2]),write('\n'),!.
+
 
 unsized_grid(A):- grid_footer(A,Grid,_Text), !, \+ is_gridoid(Grid),!.
 unsized_grid(A):- \+ is_gridoid(A),!.
@@ -565,8 +585,6 @@ gridoid_size(print_grid0(H,V,_),H,V):- nonvar(H),nonvar(V),!.
 gridoid_size(print_grid0(H,V,_,_),H,V):- nonvar(H),nonvar(V),!.
 gridoid_size(G,H,V):- compound_name_arity(G,print_grid,A),arg(A,G,GG),gridoid_size(GG,H,V).
 gridoid_size(G,H,V):- is_gridoid(G),!,grid_size(G,H,V).
-
-print_side_by_side(X,Y,Z):- g_out((nl,print_side_by_side0(X,Y,Z))),!.
 
 print_side_by_side0([],_,[]):-!.
 print_side_by_side0(A,_,B):- (unsized_grid(A);unsized_grid(B)),!, print_ss(A),print_ss(B),!.
@@ -726,20 +744,6 @@ show_pair_grid(TitleColor,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
      call(describe_feature(In,[call(wqnl(NameInU+fav(PairName)))|INFO])),LW,
     call(describe_feature(Out,[call(wqnl(NameOutU+fav(PairName)))|INFO]))),!.
 
-add_grid_label(I,M,IM):- IM=..[-,I,M]. 
-print_side_by_side(C,G1,N1,G2,N2):- !, 
-  add_grid_label(G1,wqs(call(wqs(C,N1))), GridLabel1),
-  add_grid_label(G2,wqs(call(wqs(C,N2))), GridLabel2),
-  print_side_by_side(GridLabel1,GridLabel2).
-print_side_by_side(TitleColor,G1,N1,LW,G2,N2):- 
-   g_out((nl,
-   print_side_by_side0(G1,LW,G2),
-   data_type(G1,S1), data_type(G2,S2),
-   print_side_by_side4d(TitleColor,S1," ~w   (~w)",N1,LW,S2," ~w  (~w)", N2))).
-
-print_side_by_side4d(TitleColor,S1,F1,N1,W0,S2,F2,N2):- number(W0), W0 < 0, LW is -W0, !, print_side_by_side4d(TitleColor,S2,F2,N2,LW,S1,F1,N1).
-print_side_by_side4d(TitleColor,S1,F1,N1,_LW,S2,F2,N2):- 
-   nl_if_needed, write('\t'),format_u(TitleColor,F1,[N1,S1]),write('\t\t'),format_u(TitleColor,F2,[N2,S2]),write('\n'),!.
 
 toUpperC(A,AU):- A==[],!,AU='  []  '.
 toUpperC(A,AU):- string(A),!,AU=A.
