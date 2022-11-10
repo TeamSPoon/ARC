@@ -419,7 +419,7 @@ maybe_good_prop(pen([Color1|_]),pen([_,Color2|_])):- prop_color(Color1,Color2).
 maybe_good_prop(A,A):- maybe_good_prop1(A).
 maybe_good_prop(o(How,_,_),o(How,_,_)).
 
-maybe_good_prop1(v_hv(_,_)).
+maybe_good_prop1(vis2D(_,_)).
 maybe_good_prop1(loc2D(_,_)).
 maybe_good_prop1(iz(poly(_))).
 maybe_good_prop1(birth(_)).
@@ -443,13 +443,13 @@ not_giz(iz(_)):-!.
 not_giz(_):-!,fail.
 
 prop_type(loc2D,loc2D(_,_)).
-prop_type(loc2D,center(_,_)).
+prop_type(loc2D,center2D(_,_)).
 prop_type(loc2D,iz(locX(_))).
 prop_type(loc2D,iz(cenX(_))).
 prop_type(loc2D,iz(locY(_))).
 prop_type(loc2D,iz(cenY(_))).
-prop_type(scale,s_hv(_,_)).
-prop_type(scale,v_hv(_,_)).
+prop_type(scale,shape2D(_,_)).
+prop_type(scale,vis2D(_,_)).
 prop_type(scale,iz(sizeX(_))).
 prop_type(scale,iz(sizeY(_))).
 prop_type(order,o(_Peers,_Ord,_Type)).
@@ -465,7 +465,7 @@ changed_by(amass,grow).
 changed_by(localpoints,reshape_and_recolor).
 changed_by(rotation,rotate).
 changed_by(colors,repaint).
-changed_by(v_hv,copy).
+changed_by(vis2D,copy).
 
 link_prop_types(Loc,O1,O2,Ps):-
   findall(P,(prop_type(Loc,P), has_prop(O1,P),has_prop(O2,P)),Ps).

@@ -59,7 +59,6 @@ is_symgrid(v('8a371977')). % Weird
 is_symgrid('6f8cd79b').
 is_symgrid('695367ec').
 is_symgrid('7447852a').
-is_symgrid('c3202e5a').
 is_symgrid('5a5a2103').
 is_symgrid(t('9ecd008a')>(tst+0)*in).
 is_symgrid(v(de493100)>_*in).
@@ -74,6 +73,7 @@ is_symgrid(t('9d9215db')).
 %is_symgrid(X):- is_need(X).
 %is_symgrid(X):- is_hard(X).
 
+is_tttgrid('c3202e5a').
 
 %is_symgrid(N):- arc_grid(N).
 
@@ -381,7 +381,7 @@ get_center_rays(CRef,Grid9x9,Center,Rays):-
              obj([grid(CWR),rot(rot180),loc2D(CRef,-1,0)|CommonR]),
              obj([grid(CSR),rot(rot90), loc2D(CRef,0,1)|CommonR]),
              obj([grid(CNR),rot(rot270),loc2D(CRef,0,-1)|CommonR])],
-   Center =  [obj([grid(CC),rot(sameR),loc2D(CRef,0,0)|iz(center(CRef))])],!.
+   Center =  [obj([grid(CC),rot(sameR),loc2D(CRef,0,0)|iz(center2D(CRef))])],!.
 
 
 filter_empty_grids(List,ListO):- include(obj_has_form,List,ListO).
@@ -405,7 +405,7 @@ clip_quadrant(CRef,SXC,SXC,EXC,EYC,VM,SXQ4,SYQ4,EXQ4,EYQ4,G,Same,OBJL):-
     [iz(quadrant(CRef,Same)),
      iz(pattern(CRef,SXC,SXC,EXC,EYC)),
      rotation(Same),
-     v_hv(Width,Height),
+     vis2D(Width,Height),
      loc2D(SXQ4,SYQ4),
      globalpoints(GPoints),
      center_info(CRef,SXC,SXC,EXC,EYC) /*,
@@ -1414,7 +1414,7 @@ rows_will_align([Row1|Rest1],B):- is_list(B),!, B=[Row2|Rest2],
 rows_will_align(A,B):- A=B,!.
 
 max_hv(Objects,H,V):- 
-  findall(size2D(H,V),(member(O,Objects),v_hv(O,H,V)),Sizes),
+  findall(size2D(H,V),(member(O,Objects),vis2D(O,H,V)),Sizes),
   sort(Sizes,SizesS),
   reverse(SizesS,[size2D(H,V)|_]),!.
 
@@ -1482,7 +1482,7 @@ member_color(Ordered,ColorAdvice):- member(Obj,Ordered),color(Obj,ColorAdvice).
 
 replace_diffs(LPoints,Obj,NewObj):- 
  must_not_error((
-  v_hv(Obj,H,V),
+  vis2D(Obj,H,V),
   my_partition(point_between(1,1,H,V),LPoints,Points,_),
   localpoints(Obj,LP),
   intersection(LP,Points,_Same,LPOnly,LPointOnly),

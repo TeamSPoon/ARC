@@ -54,7 +54,7 @@ testcase(t('017c7c7b')>tst+0,"
   | s s s |     | o o o |
   |   s   |     |   o   |
   |   s   |     |   o   |
-  | s s s |                        ------- 
+  | s s s |      ------- 
   |   s   |                     
   |   s   |                     
    -------                      

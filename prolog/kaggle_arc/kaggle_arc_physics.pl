@@ -7,10 +7,10 @@
 :- include(kaggle_arc_header).
 
 
-area(Obj,Area):- v_hv(Obj,H,V), Area is H * V.
+area(Obj,Area):- vis2D(Obj,H,V), Area is H * V.
 
 area_or_len(Obj,Area):- is_points_list(Obj),!,length(Obj,Area).
-area_or_len(Obj,Area):- v_hv(Obj,H,V), Area is H * V.
+area_or_len(Obj,Area):- vis2D(Obj,H,V), Area is H * V.
 
 density(Obj,Density):- area(Obj,Area),amass(Obj,Mass), Density is Mass/Area.
 
@@ -120,7 +120,7 @@ call_rot_c([H|T],I,O):- !,
 call_rot_c(T,I,O):- call(T,I,O),I\=@=O.
 
 grav_mass(Grid,sameR):- iz(Grid,hv_symmetric),!.
-grav_mass(Grid,RotOut):- v_hv(Grid,H,V), !, tips_to_rot(Grid,H,V,RotOut,_).
+grav_mass(Grid,RotOut):- vis2D(Grid,H,V), !, tips_to_rot(Grid,H,V,RotOut,_).
 
 % make things bottem heavy
 tips_to_rot(Grid,H,V,[rot270|RotOut],Final):- H<V, !, rot90(Grid,Grid90),!,trace,tips_to_rot(Grid90,V,H,RotOut,Final).
@@ -308,7 +308,7 @@ move_rightof_itself(I,M):- move_dir_itself(1,e,I,M).
 
 :- decl_pt(move_dir_itself(int,dir,object,+)).
 %move_dir_itself(N,D,I,M):- check_args(move_dir_itself(N,D,I,M),MaybeCut),(MaybeCut==t->!;true).
-move_dir_itself(N,D,I,M):- is_object(I),v_hv(I,SX,SY), move_scale_dir_object(SX,SY,N,D,I,M).
+move_dir_itself(N,D,I,M):- is_object(I),vis2D(I,SX,SY), move_scale_dir_object(SX,SY,N,D,I,M).
 move_dir_itself(N,D,L,LM):- is_group(L),!,mapgroup(move_dir_itself(N,D),L,LM).
 move_dir_itself(N,D,I,O):- into_group(I,M),M\=@=I,!,move_dir_itself(N,D,M,O).
 
@@ -532,7 +532,7 @@ contained_object(O2,O1):-
   % \+ has_prop(birth(glyphic),O2), %\+ has_prop(birth(glyphic),O1),
   loc2D(O1,LowH1,LowV1),loc2D(O2,LowH2,LowV2), 
   LowH2 > LowH1, LowV2 > LowV1,
-  v_hv(O1,H1,V1),v_hv(O2,H2,V2), 
+  vis2D(O1,H1,V1),vis2D(O2,H2,V2), 
   H1> H2, V1> V2,
   HighH1 is LowH1+H1, HighV1 is LowV1+V1,
   HighH2 is LowH2+H2, HighV2 is LowV2+V2,
@@ -592,7 +592,7 @@ point_in_obj_view(Next,Obj):-
   loc2D(Obj,X,Y),!,
   VV is V-Y, VV>=0,
   HH is H - X, HH>=0,
-  v_hv(Obj,XX,YY),!,
+  vis2D(Obj,XX,YY),!,
   VV<YY, HH<XX.
 
 scan_to_colider1(_Obj,Next,_Dir,_ObjPoints,[]):- hv_point(H,V,Next), (\+ between(1,32,H); \+ between(1,32,V)),!.

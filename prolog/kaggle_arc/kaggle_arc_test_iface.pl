@@ -45,7 +45,7 @@ menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),
   sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
 menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(cls_z,!,ndividuatorO)).
 menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the input/outputs',(cls_z,!,ndividuator)).
-menu_cmd1(_,'b','                  or (B)oxes test.',(pbox_indivs)).
+menu_cmd1(_,'B','                  or (B)oxes test.',(pbox_indivs)).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z,!,what_unique)).
 menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z,!,compile_and_save_test)).
 menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changed_files,print_test)).
@@ -60,7 +60,7 @@ menu_cmd1(_,'h','                  or (h)uman proposed solution',(human_test)).
 menu_cmd1(_,'r','               Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and (s)olve !',(cls_z,fully_test)).
 menu_cmd1(_,'a','                  or (a)dvance to the next test and (r)un it',(cls_z,!,run_next_test)).
 menu_cmd1(_,'n','                  or (n)amed test (skipping this one)',(random_test,report_test)).
-menu_cmd1(_,'n','                  or (b)ack to previous test',(previous_test,report_test)).
+menu_cmd1(_,'b','                  or (b)ack to previous test',(previous_test,report_test)).
 menu_cmd1(_,'f','                  or (f)orce a favorite test.',(enter_test)).
 menu_cmd1(_,'~','                  or (PageUp) to begining of suite',(prev_suite)).
 menu_cmd1(_,'N','                  or (N)ext suite',(next_suite)).

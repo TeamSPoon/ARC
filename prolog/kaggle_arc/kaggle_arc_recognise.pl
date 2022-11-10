@@ -138,7 +138,7 @@ test_ogs(H,V,Match):-
 
 % get_prolog_backtrace(3,StackFrames,[]), nth0(2, StackFrames, SFrame) , prolog_stack_frame_property(SFrame, location(File:Line)),
 
-grid_minus_grid(B,A,OI):- v_hv(B,BH,BV),v_hv(A,AH,AV),(BH\==AH;BV\==AV),!,OI=B.
+grid_minus_grid(B,A,OI):- vis2D(B,BH,BV),vis2D(A,AH,AV),(BH\==AH;BV\==AV),!,OI=B.
 grid_minus_grid(B,A,OI):- remove_global_points(A,B,OI),!.
 %grid_minus_grid(B,A,OI):- is_list(B),maplist(grid_minus_grid,B,A,OI).
 %grid_minus_grid(B,A,C):- ignore(grid_minus_grid0(B,A,C)).
@@ -247,8 +247,8 @@ ogs_1(Hi,Vi,Find,Search):-
 
 
 ogs_11(H,V,FindI,Search):-
-  v_hv(Search,SH,SV),
-  v_hv(FindI,FH,FV),
+  vis2D(Search,SH,SV),
+  vis2D(FindI,FH,FV),
   MH is SH - FH,MV is SV - FV,
   ogs_2(Hi,Vi,MH,MV,FindI,Search),
   H is Hi + 1,
@@ -346,7 +346,7 @@ offset_grid(H2,V2,FF,OF):-
   rot270(FF2,OF),!.
 
 offset_v_grid(V2,FF,OF):-  
-  v_hv(FF,GW,_), 
+  vis2D(FF,GW,_), 
   offset_v_grid_row(GW,V2,FF,OF).
 
 offset_v_grid_row(_,V2,FF,FF):- V2<0,!.
@@ -357,14 +357,14 @@ offset_v_grid_row(GW,V2,FF,[Row|OF]):- V1 is V2-1,
 
 
 %pad_with_contraints_3(GridO,TODO):-
-%  v_hv(GridO,HH,VV),
+%  vis2D(GridO,HH,VV),
 %  pad_with_contraints_3(GridO,HH,VV,TODO),!.
 fpad_grid(CT,Before,After):-  
   get_bg_label(BGL),
   fpad_grid(CT,=(BGL),Before,After).
 fpad_grid(CT,P1,O,GridO):- is_object(O),!,object_grid(O,GridIn),!,fpad_grid(CT,P1,GridIn,GridO).
 fpad_grid(_CT,P1,Grid,Grid2):-
-  v_hv(Grid,H,_), H2 is H +2,
+  vis2D(Grid,H,_), H2 is H +2,
   length(T,H2),maplist(P1,T),
   length(B,H2),maplist(P1,B),
   maplist(pad_sides(P1),Grid,FillRows),
@@ -430,7 +430,7 @@ release_bg0(_CT,_Trig,C,C).
 %constrain_grid_now(CT,Trig,GridIn, GridO):- GridIn= GridO,!.
 
 constrain_grid_now(CT,Trig,GridIn, GridO):-
-  v_hv(GridIn,H,V), make_grid(H,V, GridO),
+  vis2D(GridIn,H,V), make_grid(H,V, GridO),
   maybe_constrain_fg(Trig,GridIn),
   constrain_grid_now(CT,Trig,GridIn,H,V,H,V,GridO),!.
 

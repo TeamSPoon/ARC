@@ -634,7 +634,7 @@ set_vm_obj1(Prop,Or,Value):- is_grid(Value),!,
   grid_size(Value,H,V),
   if_t(IndvPoints\==[],
     (get_vm(VM),
-          make_indiv_object(VM,[iz(Prop),v_hv(H,V),birth(set_vm(Prop))|Or],IndvPoints,_Obj),
+          make_indiv_object(VM,[iz(Prop),vis2D(H,V),birth(set_vm(Prop))|Or],IndvPoints,_Obj),
           %addObjects(VM,Obj),
           print_grid(H,V,Prop,Value))),!.
 

@@ -133,7 +133,7 @@ simplify_props(_,A,A).
 pregroup1(iz(shaped)).
 pregroup1(iz(image)).
 pregroup1(iz(chromatic(N))):- between(1,10,N).
-pregroup1(o(How,lf(_),_)):- dif(How,i_repair_patterns).
+pregroup1(o(sf(_),_,How)):- dif(How,i_repair_patterns).
 
 
 never_uprop(localpoints(_)).

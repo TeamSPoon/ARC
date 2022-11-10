@@ -422,7 +422,7 @@ in_smaller_than_out(TestID):- forall(kaggle_arc(TestID,trn+_,I,O), op_op(v_area,
 
 op_op(P2a,I,O,P2b):- call(P2a,I,II),call(P2a,O,OO),call(P2b,II,OO),!.
 
-v_area(I,Size):- v_hv(I,IH,IV), Size is IH * IV.
+v_area(I,Size):- vis2D(I,IH,IV), Size is IH * IV.
 
 %compute_all_test_hints(TestID):- arc_test_property(TestID,gh(1),PP,_),sub_var(i-i,PP),!.
 compute_all_test_hints(TestID):- in_smaller_than_out(TestID),!,
@@ -736,7 +736,7 @@ ideal_rank(Named,[Obj],Obj,Named):-!.
 ideal_rank(Named,_Objs,Obj,Prop):- obj_prop_val(Obj,Prop),sub_var(Named,Prop),!.
 ideal_rank(_Named,_Objs,Obj,Prop):- obj_prop_val(Obj,Prop),ideal_prop(Prop),!.
 ideal_rank(Named,Objs,Obj,nth1(Nth1,Named)):- nth1(Nth1,Objs,Obj),!.
-ideal_prop(o(Sz,1,_)):- Sz\=lf(1).
+ideal_prop(o(Sz,1,_)):- Sz\=sf(1).
 
 %grid_to_so(Grid,_Out,l(Obj),In,R):- grid_to_so(Grid,Obj,In,R).
 %grid_to_so(_Grid,Out,o(Obj),In,R):- grid_to_so(Out,Obj,In,R).

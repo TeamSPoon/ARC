@@ -54,12 +54,6 @@ save_learnt_rule(RuleIn,InGoal,OutGoal):-
   Assert = (NewRuleIn:-was_once(InSet,InVars)), 
   assert_visually(Assert),!.    
 
-has_prop(Props,Objs):- is_list(Objs),!,forall(member(Obj,Objs),has_prop(Props,Obj)).
-has_prop(Props,Obj):- is_list(Props),!,member(Q,Props),has_prop(Q,Obj).
-has_prop(Lbl ,Obj):- atom(Lbl),!, is_labled(Lbl,Obj),!.
-has_prop(lbl(Lbl),Obj):- is_labled(Lbl,Obj).
-has_prop(Prop,Obj):- indv_props(Obj,Props),!,member(Q,Props), (Q=@=Prop -> true ; ( Q = Prop)).
-
 
 learn_group(What,Objs):- assert_visually(group_associatable(What,Objs)).
 
@@ -87,7 +81,7 @@ not_for_matching(_Why,_,obj_to_oid(_,_)).
 not_for_matching(_Why,L,localpoints(XX)):- !, started_is_list(XX), member(shape(_),L).
 not_for_matching(_Why,L,globalpoints(XX)):- !, started_is_list(XX), (member(shape(_),L);member(localpoints(_),L)).
 
-%not_for_matching(_Why,_,center(H,V)):- (H\==1,V\==1,H\==2,V\==2,H\==3,V\==3).
+%not_for_matching(_Why,_,center2D(H,V)):- (H\==1,V\==1,H\==2,V\==2,H\==3,V\==3).
 %not_for_matching(_Why,_,loc2D(H,V)):- (H\==1;V\==1).
 %not_for_matching(_Why,_,M):- too_unique(M),!.
 %not_for_matching(_Why,_,M):- too_non_unique(M),!.
@@ -275,8 +269,8 @@ compare_objs_how([sameO]).
 compare_objs_how(_).
 
 /*
-v_hv(5,5), amass(25),
-center(9,14),loc2D(7,12),
+vis2D(5,5), amass(25),
+center2D(9,14),loc2D(7,12),
 colors([cc(PURPLE,21),cc(BLACK,4)]),
 localpoints
 */
@@ -288,8 +282,8 @@ diff_2props(I,O):- comparable_2props(I,O), I \=@= O.
 
 
 % form, 
-% v_hv, mass
-% center
+% vis2D, mass
+% center2D
 
 
 % symmetrical object
@@ -739,7 +733,7 @@ subtractGrid(Out,In,Alien):- plain_var(In),!,remove_global_points(Alien,Out,In).
 find_by_shape(Grid,_Find,_Founds):- Grid==[],!,fail.
 find_by_shape(Grid,Find,Founds):- 
  get_vm(VM),
- v_hv(Find,GH,GV),
+ vis2D(Find,GH,GV),
  decolorize(Find,F), 
  Prog = 
   (all_rotations(F,F1),

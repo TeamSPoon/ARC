@@ -6,7 +6,7 @@
 */
 :- include(kaggle_arc_header).
 
-into_ngrid(Points,NGrid):-  v_hv(Points,H,V),into_ngrid(Points,H,V,NGrid).
+into_ngrid(Points,NGrid):-  vis2D(Points,H,V),into_ngrid(Points,H,V,NGrid).
 into_ngrid(Obj,H,V,NGrid):-
   localpoints_include_bg(Obj,Points),
   neighbor_map(H,V,Points,Points,CountedPoints),!,

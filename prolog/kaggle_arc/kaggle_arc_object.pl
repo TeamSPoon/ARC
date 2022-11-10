@@ -41,7 +41,7 @@ empty_grid_to_individual(H,V,Obj):-
   Obj = obj( [ amass(0),
          shape([]),
          colors([]),
-         localpoints([]), v_hv(H, V), 
+         localpoints([]), vis2D(H, V), 
          rotation(sameR), 
          loc2D(1, 1),
          obj_iv(Iv),
@@ -194,7 +194,7 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
  must_det_ll((
   testid_name_num_io(GID,_TestID,_Example,_Num,IO),
   points_range(GPoints,LoH,LoV,HiH,HiV,_HO,_VO),
-  once(member(v_hv(Width,Height),Overrides);(Width is HiH-LoH+1,Height is HiV-LoV+1)),
+  once(member(vis2D(Width,Height),Overrides);(Width is HiH-LoH+1,Height is HiV-LoV+1)),
   %luser_getval(test_pairname,ID),
   Area is Width * Height,
   my_assertion(is_list([overrides|Overrides])),
@@ -222,7 +222,7 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
       % \+ member(iz(image),Overrides),
      learn_hybrid_shape(LocalGrid))),
 
-  % calc center
+  % calc center2D
   must_det_ll(once(
    ((member(UFgPoints,[GPoints]),
     ((CX is LoH + floor(Width/2),CY is LoV + floor(Height/2), hv_point(CX,CY,Point), member(_-Point,UFgPoints));
@@ -262,11 +262,11 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
     pen(PenColors),
     rotation(RotG),
     
-    center(CX,CY),
+    center2D(CX,CY),
     iz(sid(ShapeID)),
     
-    s_hv(SH,SV),
-    v_hv(Width,Height),
+    shape2D(SH,SV),
+    vis2D(Width,Height),
     mass(Len),     
     colors(CC),        
     localpoints(LPoints),
@@ -314,8 +314,8 @@ cclump([H|T0], [cc(H,C)|T]) :-
     cclump(T1, T). 
 cclump([], []).  color_c(C,H,C-H).
 
-prop_order([v_hv/2,mass/1,loc2D/2,amass/1,
-  %center/2,
+prop_order([vis2D/2,mass/1,loc2D/2,amass/1,
+  %center2D/2,
   pen/1,shape/1,localpoints/1,rotation/1,colors/1,iz/1,globalpoints/1,obj_to_oid/2,grid_size/2]).
 
 
@@ -353,9 +353,9 @@ draw_seg(Pen,X,Y,H,V,VM):- nop(doing(draw_seg(Pen,X,Y,H,V,VM))).
 
 
 obj_to_program(Obj,Program,VM):- 
-  (isz(Obj,hv_line(_));isz(Obj,dg_line(_));v_hv(Obj,1,_);v_hv(Obj,_,1)),!,
+  (isz(Obj,hv_line(_));isz(Obj,dg_line(_));vis2D(Obj,1,_);vis2D(Obj,_,1)),!,
   Program = 
-  [loc2D(Obj,X,Y),v_hv(Obj,H,V),
+  [loc2D(Obj,X,Y),vis2D(Obj,H,V),
    pen(Obj,Pen),
    draw_seg(Pen,X,Y,H,V,VM)].
 
@@ -395,10 +395,10 @@ prop_of(colors,pen(_)).
 prop_of(visually,localpoints(_)).
 prop_of(loc2D,loc2D(_,_)).
 
-prop_of(size2D,v_hv(_,_)).
+prop_of(size2D,vis2D(_,_)).
 prop_of(amass,mass(_)).
 
-prop_of(loc2D,center(_,_)).
+prop_of(loc2D,center2D(_,_)).
 prop_of(rotation,rotation(_)).
 prop_of(visually,pen(_)).
 prop_of(shape,shape(_)).
@@ -516,7 +516,7 @@ props_not_for_merge(shape(_)).
 props_not_for_merge(localpoints(_)).
 props_not_for_merge(obj_to_oid(_,_)).
 props_not_for_merge(loc2D(_,_)).
-props_not_for_merge(v_hv(_,_)).
+props_not_for_merge(vis2D(_,_)).
 props_not_for_merge(colors(_)).
 props_not_for_merge(grid_size(_,_)).
 
@@ -535,10 +535,10 @@ transfer_props_l([_|L],Functors,List,NewList):-
 */
 
 
-%indv_u_props(I,[localpoints(Ps),loc2D(X,Y),pen(Pen),v_hv(H,V),rotation(Rot)]):- loc2D(I,X,Y),shape(I,Ps),pen(I,Pen),v_hv(I,H,V),rotation(I,Rot),!.
+%indv_u_props(I,[localpoints(Ps),loc2D(X,Y),pen(Pen),vis2D(H,V),rotation(Rot)]):- loc2D(I,X,Y),shape(I,Ps),pen(I,Pen),vis2D(I,H,V),rotation(I,Rot),!.
 indv_u_props(I,[ shape(C),  loc2D(X,Y),  pen(Ps),  rotation(Rot)]):-  shape(I,C),loc2D(I,X,Y),pen(I,Ps),rotation(I,Rot),!.
-%indv_u_props(I,[ shape(C),  center(X,Y),  pen(Ps),  rotation(Rot)]):- shape(I,C),center(I,X,Y),pen(I,Ps),rotation(I,Rot),!.
-%indv_u_props(I,[shape(Ps),center(X,Y),pen(Pen),v_hv(H,V),rotation(Rot)]):- center(I,X,Y),shape(I,Ps),pen(I,Pen),v_hv(I,H,V),rotation(I,Rot),!.
+%indv_u_props(I,[ shape(C),  center2D(X,Y),  pen(Ps),  rotation(Rot)]):- shape(I,C),center2D(I,X,Y),pen(I,Ps),rotation(I,Rot),!.
+%indv_u_props(I,[shape(Ps),center2D(X,Y),pen(Pen),vis2D(H,V),rotation(Rot)]):- center2D(I,X,Y),shape(I,Ps),pen(I,Pen),vis2D(I,H,V),rotation(I,Rot),!.
 
 :- dynamic(is_shape_id_for/2).
 is_shape_id_for([],sid_0).
@@ -887,7 +887,7 @@ object_localpoints(I,XX):- must_be_free(XX),
 object_localpoints0(_,L,X):- member(localpoints(X),L),is_list(X),!.
 object_localpoints0(I,L,X):- member(globalpoints(XX),L),is_list(XX),loc2D(I,LoH,LoV),!,deoffset_points(LoH,LoV,XX,X).
 object_localpoints0(I,_L,XX):-  
- must_det_11((shape(I,X), rotation(I,Rot), s_hv(I,H,V), pen(I,PenColors),
+ must_det_11((shape(I,X), rotation(I,Rot), shape2D(I,H,V), pen(I,PenColors),
    make_localpoints(X,Rot,H,V,PenColors,XX))).
 
 make_localpoints(X,Rot,H,V,PenColors,XX):- 
@@ -959,7 +959,7 @@ pen(I,C):- indv_props(I,L),member(pen(C),L),!.
 object_grid(I,G):- is_grid(I),!,G=I.
 object_grid(Group,List):- is_group(Group),!,override_group(object_grid(Group,List)),!.
 object_grid(I,G):- indv_props(I,L),member(grid(G),L),!.
-object_grid(I,G):- odd_failure((localpoints(I,LP),v_hv(I,H,V),points_to_grid(H,V,LP,G))),!.
+object_grid(I,G):- odd_failure((localpoints(I,LP),vis2D(I,H,V),points_to_grid(H,V,LP,G))),!.
 
 global_grid(I,G):- \+ is_object(I),into_grid(I,G),!.
 global_grid(I,G):- must_det_ll((call((grid_size(I,H,V),globalpoints_maybe_bg(I,LP),points_to_grid(H,V,LP,G))))),!.
@@ -978,31 +978,31 @@ loc2D(I,X,Y):- into_obj(I,O), indv_props(O,L),member(loc2D(X,Y),L),!.
 
 :- decl_pt(prop_g,vis_hv_term(is_object_or_grid,size2D)).
 
-vis_hv_term(I,size2D(X,Y)):- v_hv(I,X,Y),!.
+vis_hv_term(I,size2D(X,Y)):- vis2D(I,X,Y),!.
 
-v_hv(Grid,H,V):- is_grid(Grid),!,grid_size(Grid,H,V).
-v_hv(Grid,H,V):- is_grid(Grid),!,globalpoints(Grid,Points),!,points_range(Points,LoH,LoV,HiH,HiV,_,_), H is HiH-LoH+1, V is HiV-LoV+1.
-v_hv(I,X,Y):- indv_props(I,L),member(v_hv(X,Y),L),!.
-v_hv(G,X,Y):- is_group(G),!,mapgroup(vis_hv_term,G,Offsets),sort(Offsets,HighToLow),last(HighToLow,size2D(X,Y)).
-v_hv(Points,H,V):- points_range(Points,LoH,LoV,HiH,HiV,_,_), H is HiH-LoH+1, V is HiV-LoV+1.
-v_hv(NT,H,V):-  known_gridoid(NT,G),G\==NT, v_hv(G,H,V).
+vis2D(Grid,H,V):- is_grid(Grid),!,grid_size(Grid,H,V).
+vis2D(Grid,H,V):- is_grid(Grid),!,globalpoints(Grid,Points),!,points_range(Points,LoH,LoV,HiH,HiV,_,_), H is HiH-LoH+1, V is HiV-LoV+1.
+vis2D(I,X,Y):- indv_props(I,L),member(vis2D(X,Y),L),!.
+vis2D(G,X,Y):- is_group(G),!,mapgroup(vis_hv_term,G,Offsets),sort(Offsets,HighToLow),last(HighToLow,size2D(X,Y)).
+vis2D(Points,H,V):- points_range(Points,LoH,LoV,HiH,HiV,_,_), H is HiH-LoH+1, V is HiV-LoV+1.
+vis2D(NT,H,V):-  known_gridoid(NT,G),G\==NT, vis2D(G,H,V).
 
-s_hv(I,X,Y):- indv_props(I,L),member(s_hv(X,Y),L),!.
-s_hv(Grid,H,V):- is_grid(Grid),!,grav_roll(Grid,_RotG,RotShape),grid_size(RotShape,H,V).
-s_hv(NT,H,V):-  into_gridoid(NT,G),G\==NT, s_hv(G,H,V).
+shape2D(I,X,Y):- indv_props(I,L),member(shape2D(X,Y),L),!.
+shape2D(Grid,H,V):- is_grid(Grid),!,grav_roll(Grid,_RotG,RotShape),grid_size(RotShape,H,V).
+shape2D(NT,H,V):-  into_gridoid(NT,G),G\==NT, shape2D(G,H,V).
 
-%v_hv(Obj,size2D(H,V)):- v_hv(Obj,H,V).
+%vis2D(Obj,size2D(H,V)):- vis2D(Obj,H,V).
 %loc2D(Obj,loc2D(H,V)):- loc2D(Obj,H,V).
 
 center_term(Obj,loc2D(1,1)):- is_grid(Obj),!.
-center_term(Obj,loc2D(H,V)):- center(Obj,H,V).
+center_term(Obj,loc2D(H,V)):- center2D(Obj,H,V).
 
 :- decl_pt(prop_g,hw_rat(is_object_or_grid,size2D)).
-hw_rat(Obj,HV):- v_hv(Obj,OH,OV), HV is rationalize(OH/OV).
+hw_rat(Obj,HV):- vis2D(Obj,OH,OV), HV is rationalize(OH/OV).
 
-center(I,X,Y):- indv_props(I,L),member(center(X,Y),L),!.
-center(I,X,Y):- indv_props(I,L),member(iz(cenX(X)),L),member(iz(cenY(Y)),L),!.
-%center(Obj,CX,CY):- v_hv(Obj,H,V), loc2D(Obj,X,Y),CX is X + floor(H/2),CY is Y + floor(V/2).
+center2D(I,X,Y):- indv_props(I,L),member(center2D(X,Y),L),!.
+center2D(I,X,Y):- indv_props(I,L),member(iz(cenX(X)),L),member(iz(cenY(Y)),L),!.
+%center2D(Obj,CX,CY):- vis2D(Obj,H,V), loc2D(Obj,X,Y),CX is X + floor(H/2),CY is Y + floor(V/2).
 
 
 object_color(HV,C):- color(HV,C).
@@ -1029,7 +1029,7 @@ rebuild_from_localpoints(Obj,WithPoints,NewObj):-
   (Points=@=PrevPoints -> (NewObj=Obj) ;
 
  (rotation(Obj,Rot),unrotate(Rot,UnRot),
-  loc2D(Obj,X,Y),%v_hv(Obj,H,V),  
+  loc2D(Obj,X,Y),%vis2D(Obj,H,V),  
   %obj_to_oid(Obj,ID,_Iv),
   %uncast_grid_to_object(Orig,Grid,NewObj),
   points_to_grid(Points,Grid),
@@ -1087,17 +1087,17 @@ rebuild_from_localpoints(Obj,WithPoints,NewObj):-
 */
 blur_p2(P2,Obj,NewObj):-  
   into_obj(Obj,X),
-  %center(X,XCH,XCV),
+  %center2D(X,XCH,XCV),
   
   call(P2,X,Y),!,
   globalpoints(X,XGP),
   globalpoints(Y,YGP),
   pct((
-  v_hv(X,XH,XV),
-  v_hv(Y,YH,YV),
+  vis2D(X,XH,XV),
+  vis2D(Y,YH,YV),
   grid_size(X,XGH,XGV),
   grid_size(Y,YGH,YGV),
-  % center(Y,YCH,YCV),
+  % center2D(Y,YCH,YCV),
   loc2D(X,XX,XY),
   loc2D(Y,YX,YY))),
   print_grid(XGH,XGV,XGP),
@@ -1391,7 +1391,7 @@ find_outline_path2(C,L,Grid,sol(ResultO,[]),LeftOverO):-
 
 
 object_to_nm_grid(Obj,SSP):-
-  v_hv(Obj,H,V),
+  vis2D(Obj,H,V),
   localpoints(Obj,LPoints),
   points_to_grid(H,V,LPoints,GridIn),
   grid_to_gridmap(GridIn,SSP),

@@ -116,7 +116,7 @@ the_hammer1(RedComplex):-  the_hammer(red,RedComplex).
 the_hammer(Color,ColorComplex):- 
   ColorComplex = obj([amass(6), shape([point_01_01, point_01_02, point_01_03, point_02_01, point_02_02, point_03_02]), 
   colors([cc(Color, 6)]), localpoints([Color-point_01_01, Color-point_01_02, Color-point_01_03, Color-point_02_01, 
-  Color-point_02_02, Color-point_03_02]), v_hv(3, 3), rotation(sameR), loc2D(2, 5), 
+  Color-point_02_02, Color-point_03_02]), vis2D(3, 3), rotation(sameR), loc2D(2, 5), 
   changes([]), iz(rectangle), iz(hammer), 
   globalpoints([Color-point_02_05, Color-point_02_06, Color-point_02_07, Color-point_03_05, Color-point_03_06, Color-point_04_06]), 
   grid_size(10, 10)]).
@@ -164,7 +164,7 @@ into_lib_object2(ShapeProps,ScaledGrid,LibObj):-
   %grid_colors(ScaledGrid,CGPoints),
   %ppa(grid_colors(ScaledGrid,SPoints)),
   globalpoints_maybe_bg(ScaledGrid,SPoints)))),
-  G = make_indiv_object_no_vm(into_lib_object2,H,V,[iz(into_lib_object),grid(ScaledGrid),v_hv(H,V)|ShapeProps],SPoints,LibObj),
+  G = make_indiv_object_no_vm(into_lib_object2,H,V,[iz(into_lib_object),grid(ScaledGrid),vis2D(H,V)|ShapeProps],SPoints,LibObj),
   catch(G,E,(arcST,wdmsg(E=G),trace,G)).
 
 % todo temp
@@ -505,7 +505,7 @@ show_shape(Shape):-
 
 
 print_shape_0(Shape):-
-  v_hv(Shape,H,V),
+  vis2D(Shape,H,V),
   localpoints(Shape,Points),
   
   numbervars(Points,0,_,[attvar(bind)]),

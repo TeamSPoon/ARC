@@ -556,7 +556,7 @@ grid_footer((GG-GF),GG,GF).
 
 g_smaller_than(A,B):- grid_footer(A,AA,_),!,g_smaller_than(AA,B).
 g_smaller_than(B,A):- grid_footer(A,AA,_),!,g_smaller_than(B,AA).
-g_smaller_than(A,B):- is_gridoid(A),is_gridoid(A),!, v_hv(A,_,AV),v_hv(B,_,BV), BV>AV.
+g_smaller_than(A,B):- is_gridoid(A),is_gridoid(A),!, vis2D(A,_,AV),vis2D(B,_,BV), BV>AV.
 
 gridoid_size(G,30,30):- \+ compound(G),!.
 gridoid_size(print_grid(H,V,_),H,V):- nonvar(H),nonvar(V),!.

@@ -122,7 +122,7 @@ set_vm_grid_now(VM,Obj):- is_object(Obj), !,
   gset(VM.objs)=[Obj],
   object_grid(Obj,Grid),
   gset(VM.grid)=Grid,
-  v_hv(Grid,H,V), gset(VM.h)=H, gset(VM.v)=V, 
+  vis2D(Grid,H,V), gset(VM.h)=H, gset(VM.v)=V, 
   gset(VM.points_o) = VM.points,
   localpoints_include_bg(Obj, Points),
   gset(VM.points)=Points .

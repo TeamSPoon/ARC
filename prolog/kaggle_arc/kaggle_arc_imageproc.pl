@@ -24,7 +24,7 @@ set_on_grid(OH,OV,Grid,C-Point):- nonvar_or_ci(C),
   nb_set_grid_color(Grid,I,HH,VV).
 
 
-grid_dim(G,v_hv(H,V)):- grid_size(G,H,V).
+grid_dim(G,vis2D(H,V)):- grid_size(G,H,V).
 %grid_size(O,offset_ranges(_,_,_,_,H,V)):- is_grid(O),grid_size(O,H,V).
 %grid_size(P,S):- grid_size(P,S).
 
@@ -557,7 +557,7 @@ get_dir_color(Grid,H,V,Dir,C):- move_dir(1,H,V,Dir,1,1,NX,NY), hv_c_value(Grid,C
 % Random Non Blk Eles
 first_color(Grid1,C1):- sub_term(C1,Grid1),is_color(C1), \+ is_bg_color(C1).
 
-% Grid v_hv/resize
+% Grid vis2D/resize
 make_lengths(N,L):- length(L,N).
 
 get_inf(30).
@@ -570,7 +570,7 @@ points_range(Points,LoH,LoV,HiH,HiV,H,V):- get_neg_inf(NInf), get_inf(Inf),
 
 points_range2(Points,offset_ranges(LoH,LoV,HiH,HiV,H,V)):- get_inf(Inf),  get_neg_inf(NInf),
   calc_range(Inf,Inf,NInf,NInf,NInf,NInf,Points,LoH,LoV,HiH,HiV,H,V).
-% v_hv(Points,v_hv(H,V)):- points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V).
+% vis2D(Points,vis2D(H,V)):- points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V).
 
 close_color(brown,orange).
 close_color(green,cyan).
@@ -580,8 +580,8 @@ grid_size_term(I,size2D(X,Y)):- grid_size(I,X,Y),!.
 :- decl_pt(grid_size(prefer_grid,_,_)).
 %grid_size(Points,H,V):- is_map(Points),!,Points.grid_size=grid_size(H,V).
 grid_size(NIL,1,1):- NIL==[],!.
-grid_size(I,X,Y):- is_object(I),indv_props(I,L),(member(grid_size(X,Y),L);member(giz(grid_sz(X,Y)),L);member(v_hv(X,Y),L)),!.
-grid_size(G,H,V):- quietly(is_object(G)), !, v_hv(G,H,V).
+grid_size(I,X,Y):- is_object(I),indv_props(I,L),(member(grid_size(X,Y),L);member(giz(grid_sz(X,Y)),L);member(vis2D(X,Y),L)),!.
+grid_size(G,H,V):- quietly(is_object(G)), !, vis2D(G,H,V).
 grid_size(Points,H,V):- is_points_list(Points),!,points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V),!.
 grid_size(ID,H,V):- is_grid_size(ID,H,V),!.
 %grid_size(G,H,V):- is_graid(G,GG),!, grid_size(GG,H,V).
@@ -600,7 +600,7 @@ grid_size(_,30,30).
 calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,Var,WLoH,WLoV,WHiH,WHiV,WH,WV):- plain_var(Var),!.
 calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,grid_size(IH,IV),WLoH,WLoV,WHiH,WHiV,H,V):- !,
   max_min(WV,IV,V,_),max_min(WH,IH,H,_).
-%calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,v_hv(IH,IV),WLoH,WLoV,WHiH,WHiV,H,V):- !,
+%calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,vis2D(IH,IV),WLoH,WLoV,WHiH,WHiV,H,V):- !,
 %  max_min(WV,IV,V,_),max_min(WH,IH,H,_).
 calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,[E|L],LoH,LoV,HiH,HiV,H,V):- !,
   calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,E,MLoH,MLoV,MHiH,MHiV,MH,MV),

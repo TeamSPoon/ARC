@@ -543,7 +543,7 @@ is_object_or_grid(Obj):- is_object(Obj).
 is_pointy(O):- is_object_or_grid(O);is_group(O);is_points_list(O).
 
 is_point_obj(O,Color,Point):- nonvar_or_ci(O),O= Color/**/-Point,!.
-is_point_obj(O,Color,Point):- is_object(O),v_hv(O,H,V), !, hv(H,V)==hv(1,1),
+is_point_obj(O,Color,Point):- is_object(O),vis2D(O,H,V), !, hv(H,V)==hv(1,1),
   globalpoints(O,[Color/**/-Point]),!.
 
 
@@ -602,7 +602,7 @@ ap(diagonal_line). ap(horizontal_line). ap(vertical_line). ap(open_edge). ap(con
 
 ap(rotated45). ap(resizes). ap(diamond).
 apv(square(len)). apv(round(h,w)). apv(triangle). apv(rectangular(h,w)). apv(polygon(sides)).
-apv(shape(num)).  apv(facing(dir)). apv(min(n)). apv(max(n)).  apv(v_hv(h,w)). apv(loc2D(h,w)). 
+apv(shape(num)).  apv(facing(dir)). apv(min(n)). apv(max(n)).  apv(vis2D(h,w)). apv(loc2D(h,w)). 
 apv(scale(n)).  apv(ext_key(k)). apv(io_bud(k)). apv(linked_bud(k)).
 
 apv(points_old([])).
