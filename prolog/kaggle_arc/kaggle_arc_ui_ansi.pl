@@ -451,7 +451,7 @@ wqs1(cc(C,N)):- \+ arg_string(C), wots(S,color_print(C,C)), wqs(cc(S,N)).
 wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
 wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
 wqs1(X):- compound(X), compound_name_arguments(X,_,[Arg]),is_gridoid(Arg),area_or_len(Arg,Area),Area<5,writeq(X),!.
-%wqs1(C):- callable(C), is_wqs(C),wots_vs(S,catch(C,_,fail)),write((S)).
+% wqs1(C):- callable(C), is_wqs(C),wots_vs(S,catch(C,_,fail)),write((S)).
 wqs1(X):- compound(X), compound_name_arguments(X,F,[Arg]),is_gridoid(Arg),
   writeq(F),write('(`\n'),!,print_grid(Arg),write('`)').
 
@@ -517,7 +517,7 @@ banner_lines(Color):- nl_if_needed,
   color_print(Color,'--------------------------------------------------------------'),nl,!.
 
 print_ss(A):- ( \+ compound(A) ; \+ (sub_term(E,A), is_gridoid(E))),!, wdmsg(print_ss(A)),!.
-print_ss(A):- grid_footer(A,G,W),print_ss(G,W),!.
+print_ss(A):- wdmsg(print_ss), grid_footer(A,G,W),print_ss(G,W),!.
 print_ss(A):- must_det_ll(( format('~N'), into_ss_string(A,SS),!,
   SS = ss(_,Lst),
   forall(member(S,Lst),writeln(S)),format('~N'))),!.
@@ -588,7 +588,6 @@ print_side_by_side6(TitleColor,G1,N1,LW,G2,N2):-
 print_side_by_side4d(TitleColor,S1,F1,N1,W0,S2,F2,N2):- number(W0), W0 < 0, LW is -W0, !, print_side_by_side4d(TitleColor,S2,F2,N2,LW,S1,F1,N1).
 print_side_by_side4d(TitleColor,S1,F1,N1,_LW,S2,F2,N2):- 
    nl_if_needed, write('\t'),format_u(TitleColor,F1,[N1,S1]),write('\t\t'),format_u(TitleColor,F2,[N2,S2]),write('\n'),!.
-
 
 unsized_grid(A):- grid_footer(A,Grid,_Text), !, \+ is_gridoid(Grid),!.
 unsized_grid(A):- \+ is_gridoid(A),!.

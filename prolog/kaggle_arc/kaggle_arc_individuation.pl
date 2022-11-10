@@ -348,7 +348,7 @@ individuation_macros(do_ending, [
   find_overlap,
   % find_contained_points, % mark any "completely contained points"
   combine_same_globalpoints, % make sure any objects are perfectly the equal part of the image are combined   
-  saved_named_objs,
+  %saved_named_objs,
   %combine_objects,
   end_of_macro]).
 
@@ -1045,7 +1045,8 @@ individuate2(_VM,ROptions,OID,_GridIn,IndvS):- nonvar(OID),
   length(IndvS,Len),ignore((Len>0,pp(yellow,oid_cached(ROptions,OID,len(Len),'$VAR'(Len))))),
   !.
 individuate2(VM,ROptions,OID,GridIn,IndvS):-
-  do_individuate(VM,ROptions,GridIn,IndvS),!,
+  do_individuate(VM,ROptions,GridIn,LF),!,
+  prior_objs(LF,IndvS),
   if_t(nonvar(OID),
    (retractall(individuated_cache(OID,ROptions,_)), 
     length(IndvS,Len),ignore((Len>0,atom(ROptions),pp(yellow,oid_created(ROptions,OID,len(Len),'$VAR'(Len))))),
@@ -1064,9 +1065,9 @@ into_points_grid(GridIn,Points,Grid):-
    globalpoints_include_bg(GridIn,Points),
    into_grid(GridIn,Grid),!.
 
-do_individuate(VM, ROptions, GridIn,IndvS):- must_be_free(IndvS), 
+do_individuate(VM, ROptions, GridIn,LF):- must_be_free(LF), 
    into_grid(GridIn,Grid),  grid_to_tid(Grid,ID), %my_assertion(\+ is_grid(ID)),
-   individuate7(VM,ID,ROptions,Grid,LF),!,prior_objs(LF,IndvS).
+   individuate7(VM,ID,ROptions,Grid,LF),!.
    %nop((tid_to_gid(ID,GID), maplist(assert_object_oid(GID),LF,_Glyphs,_OIDs))).
   %smallest_first(amass,IndvS,SF),
   %largest_first(mass,SF,LF),
@@ -1723,7 +1724,7 @@ is_fti_step(prior_objs_vm).
 prior_objs_vm(VM):- saved_named_objs(VM).
 
 % =====================================================================
-is_fti_step(save_as_obj_group).
+is_fti_step(saved_named_objs).
 % =====================================================================
 saved_named_objs(VM):-
  must_det_ll((
@@ -1742,48 +1743,64 @@ prior_objs(Objs,LF):-
  into_group(Objs,Group),
  object_priors(Group,NewLbls),
  sort(NewLbls,LblSets),
- nop(pp(lblSets=LblSets)),
+ pp(groupPriors=LblSets),
  %$trace,
  add_priors(LblSets,Group,LF))).
 
 
+% =====================================================================
+is_fti_step(save_as_obj_group).
+% =====================================================================
 save_as_obj_group(Name,VM):-
   %Objs = VM.objs,!,
  must_det_ll((
   Grid = VM.grid,
   %notrace(catch(call_with_depth_limit(individuate1(_,Name,VM.grid_o,IndvS0),20_000,R),E,(wdmsg(E)))),
-  individuate1(_,Name,Grid,IndvS0),
-  %maplist(override_object(iz(bp(Name))),IndvS0,IndvS1),
-  prior_name_by_size(VM,IndvS0,Name))),!.
+  individuate1(_,Name,Grid,IndvS0),  
+  maplist(override_object(birth(Name)),IndvS0,IndvSL),
+  addObjectOverlap(VM,IndvSL))),!.
 
-
+prior_name_by_size(_VM,[],_Name):-!.
+prior_name_by_size(VM,IndvS0,Name):-  
+  zorder_priors(Name,IndvS0,IndvSL),
+  addObjectOverlap(VM,IndvSL).
+/*
 prior_name_by_size(VM,IndvS0,Name):- 
   Title = save_as_obj_group(Name),
   if_t((true;number(_R)),
    (length(IndvS0,Len),
     if_t(Len>0,
      must_det_ll((
-      add_prior_placeholder(Name,IndvS0,IndvS1),
+      %add_prior_placeholder(Name,IndvS0,IndvS1),
+      override_object(birth(Name),IndvS0,IndvS1)
       gset(VM.objs)=IndvS1,
-      zorder_priors(Name,IndvS1,IndvSL),
+     /*
+      %zorder_priors(Name,IndvS1,IndvSL),
       gset(VM.objs)=IndvSL,
       nop((( Name == i_nsew ) -> DebugThis = full ; luser_getval(debug,DebugThis)->true; DebugThis=true)),
       nop(( DebugThis\==false -> Feedback = debug_as_grid(Title) ; Feedback = print_info)),
       nop(ignore((DebugThis\==false, print_grid(VM.h,VM.v,Title,IndvSL)))),     
       %dash_chars,
+      */
       addObjectOverlap(VM,IndvSL)))))),!.
-
-add_prior_placeholder(_,I,I):-!.
+*/
+/*
+%add_prior_placeholder(_,I,I):-!.
 add_prior_placeholder(Name,IndvS0,IndvS9):- is_list(IndvS0),!,
   length(IndvS0,Len),
   maplist(add_prior_placeholder(Len,Name),IndvS0,IndvS9).
+
+add_prior_placeholder(_Len,Name,IndvS0,IndvS9):- 
+  override_object(birth(Name),IndvS0,IndvS9),!.
+
 add_prior_placeholder(Len,Name,IndvS0,IndvS9):- 
   (has_prop(o(sf(Len),_,Name),IndvS0)-> IndvS0=IndvS9 ; 
     ((has_prop(o(sf(Was),Other,Name),IndvS0)-> delq(IndvS0,o(sf(Was),Other,Name),IndvS1) ; IndvS0=IndvS1),
      override_object(o(sf(Len),nil,Name),IndvS1,IndvS9))),!.
+*/
 
 objs_with_feat(Objs,Name,Matches):-
-  include(has_prop(Name),Objs,Matches).
+  include(is_prior_prop(Name),Objs,Matches).
 
 object_priors(X,S):- is_object(X), !, must_det_ll((indv_props(X,Ps),
   findall(I,(member(P,Ps),props_object_prior(P,I)),L),L\==[],list_to_set(L,S))).
@@ -1819,7 +1836,8 @@ first_atom_value(S,rank2(F)):- S=..[F,A,B],number(A),number(B).
 first_atom_value(S,O):- arg(1,S,E),atomic(E),E\==[],!,O=S.
 first_atom_value(S,O):- arg(2,S,E),first_atom_value(E,O).
 
-is_prior_prop(Lbl,Obj):- object_prior(Obj,L),L=Lbl.
+is_prior_prop(Lbl,Obj):- object_prior(Obj,L),L=Lbl,!.
+%is_prior_prop(Lbl,Obj):- has_prop(Lbl,Obj),!.
 object_prior(Obj,E):- object_priors(Obj,L),member(E,L).
 
 add_priors([Lbl|Sets],Objs,LF):- add_prior(Lbl,Objs,Mid),!, add_priors(Sets,Mid,LF).
@@ -1828,13 +1846,13 @@ add_priors(_,IO,IO).
 add_prior(Lbl,Objs,ObjsWithPrior):- 
   is_list(Objs),
   my_partition(is_prior_prop(Lbl),Objs,Lbld,Unlbl),  
-  add_prior_placeholder(Lbl,Lbld,RLbld),
-  zorder_priors(Lbl,RLbld,RLbldR),
+  %add_prior_placeholder(Lbl,Lbld,RLbld),
+  zorder_priors(Lbl,Lbld,RLbldR),
   append([Unlbl,RLbldR],ObjsWithPrior).  
 
-zorder_priors(GType,Group,SFO):-   
+zorder_priors(GType,Objs,SFO):-   
  must_det_ll((
-   add_prior_placeholder(GType,Group,Objs),
+   %add_prior_placeholder(GType,Group,Objs),
    smallest_first(smallest_pred(GType),Objs,SF),
    length(SF,SFLen),
    nop(SFLen < 2 -> pp(red,zorder_priors(GType,SFLen)); pp(green,zorder_priors(GType,SFLen))),

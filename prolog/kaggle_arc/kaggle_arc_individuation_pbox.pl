@@ -18,6 +18,7 @@ make_gclip_cache_0:-
 make_gclip_cache_file:- exists_file('make_gclip_cache.pl'),!.
 make_gclip_cache_file:- 
  tell('make_gclip_cache.pl'),
+
  format(':- style_check(-singletons). ~n'),
  make_gclip_cache_0,
  told.
@@ -29,7 +30,7 @@ make_gclip_cache:-
  functor(G,gclip_cache,10),
  predicate_property(G,number_of_clauses(NC)),
  wdmsg(gclip_cache = NC).
- 
+
 % =====================================================================
 is_fti_step(pbox_vm).
 % =====================================================================
@@ -66,6 +67,7 @@ shoot_lines_on_colored_row(LC,C,Grid,GridO):- maplist(shoot_lines_on_rows(LC,C),
 shoot_lines_on_rows(LC,C,Row,NewRow):- maplist(=(C),Row),!,length(Row,L),make_list(LC,L,NewRow).
 shoot_lines_on_rows(_,_,Row,Row).
 
+pbox_vm(VM):- VM.h > 20,VM.v > 20,!.
 pbox_vm(VM):- !,
    %GH is round(VM.h*2/3), GV is round(VM.v*2/3),
    GH is round(VM.h + 0), GV is round(VM.v + 0),
