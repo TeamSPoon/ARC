@@ -15,6 +15,11 @@
 :- dynamic('$messages':to_list/2).
 :- multifile('$messages':to_list/2).
 :- asserta(('$messages':to_list(In, List) :- ((is_list(In)-> List = In ; List = [In])),!)).
+%my_time(Goal):- !,call(Goal).
+
+:- use_module(library(statistics)).
+:- import(prolog_statistics:time/1).
+my_time(Goal):- time(Goal).
 
 catch_log(G):- ignore(catch(notrace(G),E,writeln(E=G))).
 catch_nolog(G):- ignore(catch(notrace(G),E,nop(wdmsg(E=G)))).
@@ -711,8 +716,6 @@ train_test(TestID,P2):-
   my_time(call(P2,TestID,Dictation,DictOut)),
   set_training(DictOut),!.
 
-%my_time(Goal):- !,call(Goal).
-my_time(Goal):- statistics:time(Goal).
 
 train_using_oo_ii_io(TestID,DictIn,DictOut):- 
   train_using_oo_ii_io(TestID,trn,0,DictIn,DictOut).

@@ -557,8 +557,6 @@ get_dir_color(Grid,H,V,Dir,C):- move_dir(1,H,V,Dir,1,1,NX,NY), hv_c_value(Grid,C
 % Random Non Blk Eles
 first_color(Grid1,C1):- sub_term(C1,Grid1),is_color(C1), \+ is_bg_color(C1).
 
-% Grid vis2D/resize
-make_lengths(N,L):- length(L,N).
 
 get_inf(30).
 get_neg_inf(X):- get_inf(Inf), X is 0-Inf.

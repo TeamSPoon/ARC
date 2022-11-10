@@ -232,17 +232,18 @@ debug_indiv_obj(A):- Obj = obj(A), is_list(A),!,
   toPropercase(Caps,PC),
   sort(TV,TVS),
   my_partition(is_o3,TVS,TVSO,TVSI),
-  predsort(sort_on(arg(2)),TVSO,TVSOS),
+  predsort(sort_on(arg(2)),TVSO,TVSOR),reverse(TVSOR,TVSOS),
   ignore((TF==true,dash_chars)),
   sformat(SF,"% ~w:\t\t~w\t",[PC,SGlyph]),
   ignore(( g_out_style(style('font-size2D','75%'),(write(SF), wqs(TVSI))))),
+  %maplist(write_indented_list('~N    '),wqs(TVSOS),
   format('~N    '),wqs(TVSOS),
   ignore(( TF==true, amass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
   ignore(( fail, amass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
   %pp(A),
   ignore(( TF==true,dash_chars))]),!.
 
-
+write_indented_list(F,WQS):- format(F),wqs(WQS).
 
 not_too_verbose(X):- X\==(''), X\==s('').
 

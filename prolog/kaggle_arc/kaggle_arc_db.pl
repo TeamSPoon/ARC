@@ -12,6 +12,28 @@
 :- dynamic(cindv/5).
 :- dynamic(gid_glyph_oid/3).
 
+neg_h_v_area(size2D(H,V),VAL):- NArea is - (H * V),  max_min(H,V,Hi,_Lo), DifHV is - abs(H-V)*Hi, VAL is NArea+DifHV.
+
+:- abolish(l_s_4sides,2).
+:- abolish(s_l_4sides,2).
+
+:- dynamic(l_s_4sides/2).
+:- dynamic(s_l_4sides/2).
+
+:- 
+   findall(size2D(HV,HV),between(1,32,HV),SizesSquareS),
+   findall(size2D(H,V),(between(1,32,H),between(1,32,V),H\=V),SizesRect),
+   predsort(sort_on(neg_h_v_area),SizesRect,SizesRectS),
+   %reverse(SizesSquareS,SizesSquareR), reverse(SizesRectS,SizesRectR),
+  % list_to_set([size2D(3,3),size2D(2,2)|SizesSquareS],Sizes_L_S),
+   append(SizesSquareS,SizesRectS,AllSizes),   
+   predsort(sort_on(neg_h_v_area),AllSizes,Sizes_L_S),
+
+   forall(member(size2D(H,V),Sizes_L_S),assertz(l_s_4sides(H,V))),
+   reverse(Sizes_L_S,Sizes_S_L),
+   forall(member(size2D(H,V),Sizes_S_L),assertz(s_l_4sides(H,V))),
+   !.
+
 erase_grid(GID):- 
   %id_grid_cells(GID,Grid)
   pfc_retractall(cmem(GID,_,_)), 
@@ -80,13 +102,27 @@ point_to_hvc(C-Point,H,V,C):- must(nonvar(Point)),must(hv_point(H,V,Point)),!.
 %point_ to_hvc(H,V,_,H,V).
 %point_ to_hvc(Inf,Inf,offset_ranges(_,_,_,_)).
 
-make_grid(_,0,[]):- !.
-make_grid(0,1,[[]]):-!.
-make_grid(0,N,Grid):- N>1,!, make_list([],N,Grid).
-make_grid(1,1,[[_]]):-!.
-make_grid(H,V,Grid):- between(1,40,H),between(1,40,V), (H>1;V>1), % max_min(H,0,HH,_), max_min(V,0,VV,_),
-   %max_min(HH,32,_,HHH),max_min(VV,32,_,VVV),!,   
-   grid_size_nd(Grid,H,V),!.
+
+make_grid(H,V,Grid):- between(1,40,H),between(1,40,V),  % max_min(H,0,HH,_), max_min(V,0,VV,_), %max_min(HH,32,_,HHH),max_min(VV,32,_,VVV),!,    
+   ensure_make_grid(H,V,G),G=Grid.
+
+ensure_make_grid(H,V,Grid):- make_grid_cache(H,V,Grid),!. 
+ensure_make_grid(H,V,Grid):- make_fresh_grid(H,V,Grid), assertz(make_grid_cache(H,V,Grid)).
+
+make_fresh_grid(1,1,[[_]]):-!.
+make_fresh_grid(_,0,[]):- !.
+make_fresh_grid(0,1,[[]]):-!.
+make_fresh_grid(0,N,Grid):- N>1,!, make_list([],N,Grid).
+make_fresh_grid(H,V,Grid):- length(Grid,V), maplist(make_lengths(H),Grid).
+
+
+% Grid vis2D/resize
+make_lengths(N,L):- length(L,N).
+
+:- dynamic(make_grid_cache/3).
+make_grid_cache:-
+ my_time((forall(s_l_4sides(GH,GV), make_grid(GH,GV,_)))).
+:- make_grid_cache.
 
 insert_row(N,Row,Grid,NewGrid):- grid_size(Grid,H,V), insert_row(N,Row,Grid,H,V,NewGrid).
 insert_row(N,Row,Grid,H,V,NewGrid):- N<0, NewN is V + N+1,!,insert_row(NewN,Row,Grid,H,V,NewGrid).

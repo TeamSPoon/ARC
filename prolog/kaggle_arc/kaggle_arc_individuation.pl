@@ -1742,7 +1742,7 @@ prior_objs(Objs,LF):-
  into_group(Objs,Group),
  object_priors(Group,NewLbls),
  sort(NewLbls,LblSets),
- pp(lblSets=LblSets),
+ nop(pp(lblSets=LblSets)),
  %$trace,
  add_priors(LblSets,Group,LF))).
 
@@ -1837,7 +1837,7 @@ zorder_priors(GType,Group,SFO):-
    add_prior_placeholder(GType,Group,Objs),
    smallest_first(smallest_pred(GType),Objs,SF),
    length(SF,SFLen),
-   (SFLen < 2 -> pp(red,zorder_priors(GType,SFLen)); pp(green,zorder_priors(GType,SFLen))),
+   nop(SFLen < 2 -> pp(red,zorder_priors(GType,SFLen)); pp(green,zorder_priors(GType,SFLen))),
    add_zorder(GType,sf(SFLen),SF,SFO))).
 
 
