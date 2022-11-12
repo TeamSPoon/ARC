@@ -939,18 +939,20 @@ do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
               run_dsl(InVM,SolutionProgram,InVM,GridOut)))*->!;GridOut=InVM.grid),
        into_pipe(GridOut,Solution)))
        *->    
-       ignore((count_difs(ExpectedOut,Solution,Errors),
-        print_side_by_side(blue,Solution,"Our Ran Solution",_,ExpectedOut,"Expected Solution"),
-           (Errors==0 -> 
-              (banner_lines(green),arcdbg(pass(Why,TestID,ExampleNum,SolutionProgram)),banner_lines(green))
-              ; (banner_lines(red), arcdbg(fail(Why,Errors,TestID,ExampleNum,SolutionProgram)),
-               test_info(TestID,InfoF),wqnl(fav(TestID>ExampleNum,InfoF)),
-               banner_lines(red)))))
+      ignore((count_difs(ExpectedOut,Solution,Errors),
+       print_side_by_side(blue,Solution,"Our Ran Solution",_,ExpectedOut,"Expected Solution"),
+          (Errors==0 -> 
+             arcdbg_info(green,pass(Why,TestID,ExampleNum,SolutionProgram))
+             ; (banner_lines(red), arcdbg(fail(Why,Errors,TestID,ExampleNum,SolutionProgram)),
+                test_info(TestID,InfoF),wqnl(fav(TestID>ExampleNum,InfoF)),
+                banner_lines(red)))))
+
+     
+
        ;arcdbg(warn(unrunable(TestID,ExampleNum,SolutionProgram))))))),
     print_grid("our grid", InVM.grid),!,
     print_list_of("our objs",InVM.objs),
     ppt("END!!!"+Why+TestID+ExampleNum))),!.
-   
 
 
 :- luser_linkval(test_rules,[rules]).

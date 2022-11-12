@@ -1215,3 +1215,35 @@ Test[
     ,
     TestID -> "ARCWorkingQ-20221105-6N7TT6"
 ]
+
+Test[
+    Daniel`ARC`ARCWorkingQ["56dc2b01"]
+    ,
+    True
+    ,
+    TestID -> "ARCWorkingQ-20221107-FX48DZ"
+]
+
+Test[
+    Daniel`ARC`ARCWorkingQ["d6ad076f"]
+    ,
+    True
+    ,
+    TestID -> "ARCWorkingQ-20221109-RY089S"
+]
+
+Test[
+    Daniel`ARC`ARCWorkingQ["f8a8fe49"]
+    ,
+    True
+    ,
+    TestID -> "ARCWorkingQ-20221109-9FDIM5"
+]
+
+Test[
+    Daniel`ARC`ARCWorkingQ["5168d44c"]
+    ,
+    True
+    ,
+    TestID -> "ARCWorkingQ-20221110-NGQGC0"
+]

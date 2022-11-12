@@ -517,7 +517,7 @@ banner_lines(Color):- nl_if_needed,
   color_print(Color,'--------------------------------------------------------------'),nl,!.
 
 print_ss(A):- ( \+ compound(A) ; \+ (sub_term(E,A), is_gridoid(E))),!, wdmsg(print_ss(A)),!.
-print_ss(A):- wdmsg(print_ss), grid_footer(A,G,W),print_ss(G,W),!.
+print_ss(A):- writeln(print_ss), grid_footer(A,G,W),print_ss(G,W),!.
 print_ss(A):- must_det_ll(( format('~N'), into_ss_string(A,SS),!,
   SS = ss(_,Lst),
   forall(member(S,Lst),writeln(S)),format('~N'))),!.
@@ -576,7 +576,7 @@ print_side_by_side(C,G1,N1,G2,N2):-
 print_side_by_side(TitleColor,G1,N1,LW,G2,N2):- 
   print_side_by_side6(TitleColor,G1,N1,LW,G2,N2).
 
-
+:- meta_predicate(print_side_by_side6(+,+,+,?,+,+)).
 print_side_by_side6(TitleColor,G1,N1,LW,G2,N2):-
    g_out((nl,
    print_side_by_side0(G1,LW,G2),
@@ -1113,7 +1113,7 @@ bformatc(G):- var(G),!,bformatc(vaR(G)).
 bformatc(call(G)):- !, wots(S,call(G)), bformatc(S).
 bformatc(G):- string(G),!,bformats(G).
 bformatc(G):- atom(G),!,bformats(G).
-bformatc(G):- is_list(G), catch(text_to_string(G,S),_,fail),G\==S,!,bformatc(S).
+bformatc(G):- is_list(G), notrace(catch(text_to_string(G,S),_,fail)),G\==S,!,bformatc(S).
 bformatc(G):- wots(S,write(G)), bformats(S).
 
 bformats(S):- atom_contains(S,'<'),!,write(S).

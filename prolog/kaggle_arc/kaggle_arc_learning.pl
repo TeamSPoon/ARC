@@ -207,6 +207,7 @@ confirm_reproduction(Objs0,DebugObjs0,ExpectedOut):-
   length(Objs,Len),
   globalpoints(Objs,OGPoints),
   call((points_to_grid(H,V,OGPoints,Solution)->true;points_to_grid(DH,DV,OGPoints,Solution))),
+  count_difs(ExpectedOut,Solution,Errors),
   show_result("Our Reproduction"=Len0/Len, Solution,ExpectedOut,Errors),
   (Errors==0 -> true; maplist(debug_reproduction(H,V),Objs,DebugObjs)))).
 
@@ -218,18 +219,25 @@ debug_reproduction(H,V,Obj,DObj):-
   pp(dobj(ID1,ID2)=DObj),!.
 
 show_result(What,Solution,ExpectedOut,Errors):-
- get_current_test(TestID),
- ignore((count_difs(ExpectedOut,Solution,Errors),
-   print_side_by_side(blue,Solution,What,ExpectedOut,"Expected"),
-      (Errors==0 -> 
-           arcdbg_info(green,pass(What,TestID))
-         ; (arcdbg_info(red,fail(What,Errors,TestID)),
-            pp(s=Solution),
-            pp(e=ExpectedOut))
-            
-           ))),
- test_info(TestID,InfoF),wqnl(fav(TestID,InfoF)),!.
+  show_sameness_or_lameness(green,red,What,Solution,ExpectedOut,Errors).
 
+show_sameness_or_lameness(Green,Red,What,OurOut,ExpectOut,Errors):- 
+   ignore(( get_current_test(TestID), test_info(TestID,InfoF))), !,
+   ignore(( (var(Errors)->count_difs(OurOut,ExpectOut,Errors);true),
+    (Errors==0 -> 
+      ColorMessage=wqs(Green,pass(What,TestID));
+      ColorMessage=wqs(Red,fail(errors(Errors),What,TestID))),
+    ColorMessage = wqs(Color,Message),    
+    banner_grids(Color,OurOut,Message,ExpectOut,fav(TestID,InfoF)))).
+
+banner_grids(Color,I,Message1,O,Message2):- 
+ ignore((
+    banner_lines(Color),
+    print_side_by_side(Color,I,Message1,_,O,Message2),
+    format('~N'),pp(Color,Message1),
+    format('~N'),pp(Color,Message2),
+    format('~N'),
+    banner_lines(Color))).
 
 arcdbg_info(Color, Info):- banner_lines(Color), arcdbg(Info), banner_lines(Color).
 

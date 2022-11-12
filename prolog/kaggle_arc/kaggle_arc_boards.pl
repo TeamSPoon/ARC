@@ -112,14 +112,22 @@ print_testinfo_extended(TestID):- print_testinfo(TestID),
      forall(show_reduced_io(I+O),true))).
 
 %show_reduced_io(I+O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
-show_reduced_io(I+O):-  
- once((once(reduce_grids_io(I+O,IOps,II+OO)),
-  if_t(II+OO\=@=I+O,must_det_ll(print_side_by_side(green,II,reduceIn(IOps),_,OO,reduceOut))))).
+show_reduced_io(I0+O):- 
+ once((
+ once(( grid_size(I0,H,V), grid_size(O,OH,OV))),
+ ((H>OH;V>OV) -> trim_to_rect(I0,I) ; I=I0),
+ IOps = [_|_],
+ once((reduce_grids_io(I+O,IOps,II+OO),
+  must_det_ll(print_side_by_side(green,II,reduceIn(IOps),_,OO,reduceOut)))))),
+ writeln(IOps),!.
+
+
 show_reduced_io(I+O):- once(show_call_rot_io(op_grid_to_norm,I,O)).
 show_reduced_io(I+O):- once(show_call_rot_io(mapgridish(remove_color_if_same(black),I+O),I,O)).
 show_reduced_io(_).
 
-op_grid_to_norm(I,OUT):- Op=[_|_],reduce_grid(I,Op,OO),OUT=(OO-w(Op)).
+op_grid_to_norm(I,OUT):- op_grid_to_norm(I,Op,OO),OUT=(OO-w(Op)).
+op_grid_to_norm(I,Op,OO):- (var(Op)->Op=[_|_];true),reduce_grid(I,Op,OO).
 %op_grid_to_norm([],I,I).
 
 mapgridish(P3,I+O,In,Out):- In==I-> mapgrid(P3,O,I,Out) ; mapgrid(P3,I,O,Out).

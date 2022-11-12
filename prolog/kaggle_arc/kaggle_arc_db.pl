@@ -113,7 +113,7 @@ make_fresh_grid(1,1,[[_]]):-!.
 make_fresh_grid(_,0,[]):- !.
 make_fresh_grid(0,1,[[]]):-!.
 make_fresh_grid(0,N,Grid):- N>1,!, make_list([],N,Grid).
-make_fresh_grid(H,V,Grid):- length(Grid,V), maplist(make_lengths(H),Grid).
+make_fresh_grid(H,V,Grid):- length(Grid,V), maplist(make_lengths(H),Grid),!.
 
 
 % Grid vis2D/resize

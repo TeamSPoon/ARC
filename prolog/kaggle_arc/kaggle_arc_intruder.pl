@@ -219,6 +219,8 @@ stuff_options(whatWithType,change_stuff_not_matching).
 stuff_options(whatWithType,add_stuff_missing).
 
 
-
 :- fixup_exports.
+
+end_of_file.
+
 

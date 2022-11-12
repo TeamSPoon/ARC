@@ -56,31 +56,49 @@ reduce_op1(PassNo,A+B,OP,AA+BB):-
   reduce_op1_1(PassNo,B,OPB,BB),is_grid(BB),
   combin_pair_op(OPA,OPB,OP).
 
+reverse_p2(P2,R,RR):- nonvar(R), !, reverse(R,R1),call(P2,R1,RR1),reverse(RR1,RR).
+reverse_p2(P2,R,RR):- nonvar(RR), !, reverse(RR,RR1),call(P2,R1,RR1),reverse(R1,R).
+reverse_p2(P2,R,RR):- call(P2,R1,RR1),reverse(RR1,RR),reverse(R1,R).
 
+
+copy_first(1,[RowA|Right],[RowA,RowB|Right]):-  RowA=@=RowB.
+copy_last(N,R,RR):- reverse_p2(copy_first(N),R,RR).
+first_second_half(Grid,GL,GR):- length(Grid,L),H is floor(L/2), length(GL,H), append(GL,GR,Grid).
 %reduce_op1_1(_,Grid,call(=),Grid):- too_small_reduce(Grid,3),!.
 
 /*reduce_op1_1(_,Grid,copy_row(N1),GridR):- number(N1),!,N2 is N1+1,
    length(Left,N2),append(Left,[RowA,RowB|Right],Grid),RowA=@=RowB,length(Left,N2),append(Left,[RowA|Right],GridR).
 */
 % reduce_op1_1(_,Grid,copy_row(N1,N3),GridR):- fail, append(Left,[RowA,G,RowB|Right],Grid),RowA=@=RowB,length([_,_|Left],N1),append(Left,[RowA,G|Right],GridR),N3 is N1+2,!.
-reduce_op1_1(_,Grid,copy_row(N1,N2),GridR):-  \+ too_small_reduce(Grid,2),
-  append(Left,[RowA,RowB|Right],Grid),RowA=@=RowB,length([_,_|Left],N1),append(Left,[RowA|Right],GridR),N2 is N1+1,!.
-reduce_op1_1(_,Grid,left_right(Left,Reduced),GridR):- fail, \+ too_small_reduce(Grid,3),
+%reduce_op1_1(_,Grid,copy_first(N),GridR):- copy_first(N,GridR,Grid).
+%reduce_op1_1(_,Grid,copy_last(N),GridR):- copy_last(N,GridR,Grid).
+
+reduce_op1_1(_,Grid,_,_):- too_small_reduce(Grid,2),!,fail.
+reduce_op1_1(_,Grid,copy_row(N1,N2),GridR):- nth1(N2,Grid,A),N2>1, between(1,N2,N1),N1<N2,nth1(N1,Grid,B,GridR), A=@=B,!.
+reduce_op1_1(_,Grid,_,_):- too_small_reduce(Grid,3),!,fail.
+reduce_op1_1(_,Grid,remove_row(Row),GridR):- get_black(Black), nth1(Row,Grid,Same,GridR),maplist(==(Black),Same),!.
+/*
+reduce_op1_1(_,Grid,left_right(Left,Reduced),GridR):- fail, 
+   length(Grid,L), nth1(N1,Grid,A), nth1(N2,Grid,B), A=@=B,
+   LS is floor(L/2),
+   between(1,LS,LR),LRR is LS-LR,LRR>0, length(Left,LRR),reverse(Left,Right), 
+   append([Left,GridR,Right],Grid),
+   reduce_grid(Left+Left,Reduced).
+
+
+reduce_op1_1(_,Grid,left_right(Left,Reduced),GridR):- fail, 
    length(Grid,L), nth1(1,Grid,A), nth1(L,Grid,B), A=@=B,
    LS is floor(L/2),
    between(1,LS,LR),LRR is LS-LR,LRR>0, length(Left,LRR),reverse(Left,Right), 
    append([Left,GridR,Right],Grid),
    reduce_grid(Left+Left,Reduced).
-reduce_op1_1(_,Grid,remove_row(Row),GridR):- fail, 
-  \+ too_small_reduce(Grid,3),
-  get_black(Black),
-  nth1(Row,Grid,Same,GridR),maplist(==(Black),Same),!.
-
+*/
 %reduce_1pair_op(PassNo,Grid,RotR,GridR):- grav_rot(Grid,RotG,GridR), unrotate(RotG,RotR).
 
 %reduce_1pair_op(PassNo,G,M,O):- maybe_into_grid_io(G,GG),!,reduce_1pair_op(PassNo,GG,M,O).
-reduce_1pair_op(PassNo,Grid, Op,GridR):- reduce_op1(PassNo,Grid,Op,GridR).
 %reduce_1pair_op(PassNo,GridL,as_rot(RotG,UnRotG,Op),GridRR):- grav_rot(GridL,RotG,Grid), unrotate(RotG,UnRotG), reduce_op1(PassNo,Grid,Op,GridR),call(UnRotG,GridR,GridRR).
+%reduce_1pair_op(_,Grids,List,GridRs):- List=[_|_],copy_rows(Grids,List,GridRs),!.
+reduce_1pair_op(PassNo,Grid, Op,GridR):- reduce_op1(PassNo,Grid,Op,GridR).
 reduce_1pair_op(PassNo,A+B,OOO,AA+BB):- 
   rot_pair(Rot90,Rot270),
   call(Rot90,A,AL),call(Rot90,B,BL),  
@@ -88,6 +106,16 @@ reduce_1pair_op(PassNo,A+B,OOO,AA+BB):-
   reduce_op1(PassNo,AL+BL,Op,AR+BR),
   call(Rot270,AR,AA),call(Rot270,BR,BB),
   xfr_write_op(as_rot(Rot90,Rot270,Op),OOO).
+
+copy_rows(Grid1+Grid2,[delete_row(N1,Color)|More],GridR1+GridR2):- 
+   nth1(N1,Grid1,A1,GridM1),maplist(=(Color),A1),
+   nth1(N1,Grid2,A2,GridM2),maplist(=(Color),A2),
+   copy_rows(GridM1+GridM2,More,GridR1+GridR2).
+copy_rows(Grid1+Grid2,[copy_row(N1,N2)|More],GridR1+GridR2):- 
+   nth1(N2,Grid1,A1),N2>1, between(1,N2,N1),N1<N2,nth1(N1,Grid1,B1,GridM1), A1=@=B1,
+   nth1(N2,Grid2,A2),                             nth1(N1,Grid2,B2,GridM2), A2=@=B2,!,
+   copy_rows(GridM1+GridM2,More,GridR1+GridR2).
+copy_rows(O,[],O).
 
 
 xfr_write_op(as_rot(Rot90,Rot270,Op),r_c(Op)):- Rot90==rot90,Rot270==rot270,!.
@@ -176,20 +204,20 @@ reduce_pair_op(PassNo,Grid,NBC,[OP|More],Reduced):-
     reduce_grid_pass(PassNo,GridR,[GridR|NBC],More,Reduced),!.
 reduce_pair_op(_,NR,_,[],NR):-!.
 
-test_reduce_grid(Grid,GridO):- reduce_grid(Grid,Ops,GridO),unreduce_grid(GridO,Ops,Unred),show_sf_same(Ops,Unred,Grid).
+test_reduce_grid(Grid,GridO):- reduce_grid(Grid,Ops,GridO),unreduce_grid(GridO,Ops,Unred),show_sf_if_lame(Ops,Unred,Grid).
 
 
   
 
 test_reduce_grid:- test_p2(test_reduce_grid).
 
-show_sf_same(Info,Solution,ExpectedOut):- 
+show_sf_if_lame(Info,Solution,ExpectedOut):- 
        count_difs(ExpectedOut,Solution,Errors),
         (Errors\==0 -> 
           (banner_lines(red),print_side_by_side(red,Solution,'Our Solution'(Errors),_,ExpectedOut,"Expected Solution"),
           pp(Info), banner_lines(red));
 
-          (banner_lines(green), pp(Info),banner_lines(green))),!. 
+          arcdbg_info(green,Info)),!. 
   
 
 

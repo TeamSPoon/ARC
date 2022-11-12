@@ -335,12 +335,13 @@ individuation_macros(altro, [
     when((len(points)=<ThreeO),alone_dots),    
     when((len(points)>ThreeO),by_color)]):- the_big_three_oh(ThreeO).
 
+individuation_macros(some_leftovers, [
+     recompute_points,
+     diamonds,
+     colormass,
+     by_color(1),by_color(0)]).
 
 individuation_macros(do_ending, [
-  recompute_points,
-  diamonds,
-  colormass,
-  by_color(1),by_color(0),
   find_edges,
   find_touches,  
   find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
@@ -348,7 +349,8 @@ individuation_macros(do_ending, [
   find_overlap,
   % find_contained_points, % mark any "completely contained points"
   combine_same_globalpoints, % make sure any objects are perfectly the equal part of the image are combined   
-  %saved_named_objs,
+  group_vm_priors,
+  grid_props,
   %combine_objects,
   end_of_macro]).
 
@@ -364,7 +366,9 @@ include_black(_VM):- set_bgc(wbg).
 % 1204
 %individuation_macros(complete, [parallel,done]).
 
-individuation_macros(complete, ListO):- im_complete(ListO),
+individuation_macros(complete, ListO):- im_complete(ListC),
+   flatten([ListC,do_ending],ListM),
+   list_to_set(ListM,ListO),
    pp(im_complete(ListO)),!.
 
 
@@ -389,9 +393,9 @@ individuation_macros(i_complete_generic, SetO):-
    %ListM,ListS,
    save_as_obj_group(find_hybrid_shapes),
    find_hybrid_shapes,
-   gather_cached,   
+   gather_cached,
    %[pointless([sub_indiv([save_as_obj_group(force_by_color),save_as_obj_group(i_colormass),save_as_obj_group(i_nsew)])])],
-   do_ending,
+   %do_ending,
 
    %only_proportional_mass,
    []],ListO),list_to_set(ListO,SetO).
@@ -402,9 +406,9 @@ individuation_macros(i_rows,[when(get(h)=<5,all_rows),when(get(v)>5,some_rows)])
 individuation_macros(i_maybe_glypic,[maybe_glyphic]).
 
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
-individuator(i_pbox,[pbox_vm]).
+individuator(i_pbox,[pbox_vm,i_colormass]).
 individuator(i_colormass,[colormass]).
-%individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots, do_ending]).
+%individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots]).
 
 individuator(i_subtractions,[fg_subtractions([save_as_obj_group(i_mono_nsew),save_as_obj_group(i_nsew)])]).
 %individuator(i_abtractions,[fg_abtractions([save_as_obj_group(i_mono_nsew),save_as_obj_group(i_nsew)])]).
@@ -419,7 +423,7 @@ individuation_macros(i_repair_patterns,[repair_in_vm(find_symmetry_code)]).
 %individuation_macros(i_repair_repeats,[repair_in_vm(repair_repeats(Black))]):- get_black(Black).
 % individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
 /*
-individuator(i_nsew,[subshape_both(h,nsew), maybe_lo_dots, do_ending]).
+individuator(i_nsew,[subshape_both(h,nsew), maybe_lo_dots]).
 individuator(i_maybe_glypic,[maybe_glyphic]). %:- \+ doing_pair.
 %individuator(i_maybe_glypic,[whole]):- doing_pair.
 individuator(i_mono,[save_as_obj_group(bg_shapes([subshape_both(h,nsew)])),
@@ -437,16 +441,16 @@ individuator(i_mono_nsew,
 %individuator(i_bg_nsew,[bg_shapes(subshape_both(h,nsew))]).
 %individuator(i_mono_colormass,[fg_shapes([subshape_both(v,colormass)])]).
 %individuator(i_fgbg,[by_color(1,bg), by_color(1,fg),do_ending]).
-%individuator(i_diamonds,[subshape_both(h,diamonds), alone_dots, maybe_lo_dots, do_ending]).
-%individuator(i_decolorize,[subshape_both(v,decolorize), maybe_lo_dots, do_ending]).
-%individuator(i_monochrome,[subshape_both(h,into_monochrome), maybe_lo_dots, do_ending]).
-%individuator(i_mono_nsew,[decolorize,subshape_both(v,nsew), maybe_lo_dots, do_ending]).
-%individuator(i_mono_mass,[into_monocnhrome,subshape_both(v,colormass), maybe_lo_dots, do_ending]).
+%individuator(i_diamonds,[subshape_both(h,diamonds), alone_dots, maybe_lo_dots]).
+%individuator(i_decolorize,[subshape_both(v,decolorize), maybe_lo_dots]).
+%individuator(i_monochrome,[subshape_both(h,into_monochrome), maybe_lo_dots]).
+%individuator(i_mono_nsew,[decolorize,subshape_both(v,nsew), maybe_lo_dots]).
+%individuator(i_mono_mass,[into_monocnhrome,subshape_both(v,colormass), maybe_lo_dots]).
 % % %%  
 %individuator(i_shapes,[subshape_both(h,std_shape_lib_lean),do_ending]).
-% % %%  individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots, do_ending]).
+% % %%  individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots]).
 %
-%individuator(i_shapelib,[subshape_both(h,shape_lib(pairs)), alone_dots, maybe_lo_dots, do_ending]).
+%individuator(i_shapelib,[subshape_both(h,shape_lib(pairs)), alone_dots, maybe_lo_dots]).
 % % %%  
 %individuator(i_repair_patterns,[fourway]).
 % % %%    individuator(i_as_is,[shape_lib(as_is)]).
@@ -867,17 +871,17 @@ individuation_reserved_options(ROptions,Reserved,Options):-
 :- multifile(prolog:make_hook/2).
 :- dynamic(prolog:make_hook/2).
 
-:- dynamic(individuated_cache/3).
-:- retractall(individuated_cache(_,_,_)).
-prolog:make_hook(before, Some):- Some \==[], retractall(individuated_cache(_,_,_)), fail.
+:- dynamic(individuated_cache/4).
+:- retractall(individuated_cache(_,_,_,_)).
+prolog:make_hook(before, Some):- Some \==[], retractall(individuated_cache(_,_,_,_)), fail.
 :- luser_default(individuated_cache,true).
 
 :- luser_setval(individuated_cache,true).
 
-get_individuated_cache(ROptions,OID,IndvS):- nonvar(ROptions),
-  ground(OID), \+ luser_getval(individuated_cache,false), individuated_cache(OID,ROptions,IndvS),!.
+get_individuated_cache(_TID,ROptions,OID,IndvS):- nonvar(ROptions),
+  ground(OID), \+ luser_getval(individuated_cache,false), individuated_cache(_,OID,ROptions,IndvS),!.
 
-get_individuated_cache(ROptions,OID,IndvS):- nonvar(ROptions),
+get_individuated_cache(_TID,ROptions,OID,IndvS):- nonvar(ROptions),
   ground(OID), \+ luser_getval(individuated_cache,false), saved_group(individuate(ROptions,OID),IndvS),!.
 
 individuate(VM):- individuate1(VM,VM.roptions,VM.grid,InC),set(VM.objs)=InC,!.
@@ -1041,16 +1045,17 @@ individuate2(VM,[ROptions],OID,Grid,IndvS):- nonvar(ROptions), !, individuate2(V
 
 
 individuate2(_VM,ROptions,OID,_GridIn,IndvS):- nonvar(OID), 
-  get_individuated_cache(ROptions,OID,IndvS),!,
+  get_individuated_cache(_TID,ROptions,OID,IndvS),!,
   length(IndvS,Len),ignore((Len>0,pp(yellow,oid_cached(ROptions,OID,len(Len),'$VAR'(Len))))),
   !.
 individuate2(VM,ROptions,OID,GridIn,IndvS):-
   do_individuate(VM,ROptions,GridIn,LF),!,
-  prior_objs(LF,IndvS),
+  grid_to_tid(GridIn,TID),
+  =(LF,IndvS),
   if_t(nonvar(OID),
-   (retractall(individuated_cache(OID,ROptions,_)), 
+   (retractall(individuated_cache(_,OID,ROptions,_)), 
     length(IndvS,Len),ignore((Len>0,atom(ROptions),pp(yellow,oid_created(ROptions,OID,len(Len),'$VAR'(Len))))),
-    my_asserta_if_new(individuated_cache(OID,ROptions,IndvS)))),!.
+    my_asserta_if_new(individuated_cache(TID,OID,ROptions,IndvS)))),!.
 
 oid_created(ROptions,OID,Len,IndvS):- oid_cached(ROptions,OID,Len,IndvS).
 
@@ -1139,7 +1144,25 @@ into_fti(ID,ROptions,GridIn0,VM):-
    allocated_points:[],
    points:Points,
    props:_,
-   can_repair:true,
+   option_repair_grid:true,
+
+     option_Background:  _, % Automatic,                         /* The background color of scenes. */
+     option_CheckForGridsAndDividers: true    ,                  /* If we see things that look like grids/dividers, should we treat the specially, such as segmenting them into their own objects? */
+     option_SubdivideInput: false,                               /* If {rowCount, columnCount} is passed in, we subdivide the input into a grid of objects and then try to find rules. e.g. 2dee498d */
+     option_Segmentation:  none           ,                      /* Can be Columns or Rows to give a hint that objects seem to be segmented the same in input/output scene pairs wrt being in single-pixel columns or rows. e.g. 1e0a9b12 */
+   %  option_ExampleIndex:  Missing[option_NotSpecifiedoption_], /* Given a list of example inputs/outputs, what example number is this scene? */
+     option_FindOcclusions:  _, % Automatic,                     /* Whether we should consider possible occlusions when interpreting the scene. */
+     option_FollowDiagonals:  _, % Automatic,                    /* Should diagonally adjacent pixels form a single object? */
+     option_FormMultiColorCompositeObjects:  _, % Automatic,     /* Whether connected single-color objects should be combined to form multi-color composite objects. If set to Automatic, the OtherScene option will be used to help make more informed decisions. */
+     option_InferPropertiesThatRequireFullObjectList:  true,     /* Rank and RankInverse properties require that we have the full object list. If False, we won't infer those properties. */
+     %option_InputOrOutput:                                      /* Is this an input scene or an output scene? */
+     option_NoMappings:  false,                                  /* If True, we will treat the inputObject as not mapping to any of the components of the output object. */
+     option_NotableSubImages: _, % Automatic,                    /* The list of images which are considered notable sub-images. If we find objects that contain these as sub-images, we should consider splitting that object up so that the sub-image is its own object. */
+     option_OtherScene:  _,                                      /* A parse of the scene this scene corresponds to. For example, if `scene` is an input scene, then OtherScene would be the output scene, and vice versa. If provided, we can use OtherScene to resolve some ambiguities about whether to chunk objects into composite objects. An association of the form <|option_WithoutMultiColorCompositeObjects:  ..., option_WithMultiColorCompositeObjects:  ...|> should be passed. */
+     option_SingleColorObjects: _, % Automatic,                  /* If the single color objects have already been determined, they can be passed in to save time. */
+     option_SingleObject: _, % Automatic,                        /* Should all non-background pixels be treated as part of a single object, even if they are non-contiguous? */
+     option_IncludeImageShapes: false,   /* Whether to include shapes of type <Type:  Image, ...|>. */
+
    changed:_,% solution:_,neededChanged
    neededChanged:_, repaired:_,
    full_grid:_, 
@@ -1595,24 +1618,253 @@ two_rows(Grid,S1,R1,R2):-
   R2>R1+1,
   [S1|Row1]==Row2.
   
-/*
-Options[ARCParseScene] =
-{
-    "FormMultiColorCompositeObjects" -> True,               (*< Whether connected single-color objects should be combined to form multi-color composite objects. If set to Automatic, the OtherScene option will be used to help make more informed decisions. *)
-    "SingleObject" -> False,                                (*< Should all non-background pixels be treated as part of a single object, even if they are non-contiguous? *)
-    "OtherScene" -> Null,                                   (*< A parse of the scene this scene corresponds to. For example, if `scene` is an input scene, then OtherScene would be the output scene, and vice versa. If provided, we can use OtherScene to resolve some ambiguities about whether to chunk objects into composite objects. An association of the form <|"WithoutMultiColorCompositeObjects" -> ..., "WithMultiColorCompositeObjects" -> ...|> should be passed. *)
-    "SingleColorObjects" -> Automatic,                      (*< If the single color objects have already been determined, they can be passed in to save time. *)
-    "InferPropertiesThatRequireFullObjectList" -> True,     (*< Rank and RankInverse properties require that we have the full object list. If False, we won't infer those properties. *)
-    "FindOcclusions" -> True,                               (*< Whether we should consider possible occlusions when interpreting the scene. *)
-    "NotableSubImages" -> Automatic,                        (*< The list of images which are considered notable sub-images. If we find objects that contain these as sub-images, we should consider splitting that object up so that the sub-image is its own object. *)
-    "ExampleIndex" -> Missing["NotSpecified"],              (*< Given a list of example inputs/outputs, what example number is this scene? *)
-    "InputOrOutput" -> Missing["NotSpecified"],             (*< Is this an input scene or an output scene? *)
-    "SubdivideInput" -> False,                              (*< If {rowCount, columnCount} is passed in, we subdivide the input into a grid of objects and then try to find rules. e.g. 2dee498d *)
-    "Background" -> Automatic,                              (*< The background color of scenes. *)
-    "FollowDiagonals" -> Automatic,                         (*< Should diagonally adjacent pixels form a single object? *)
-    "CheckForGridsAndDividers" -> True                      (*< If we see things that look like grids/dividers, should we treat the specially, such as segmenting them into their own objects? *)
-};
-*/
+
+/* Metadata about properties.
+   RuleConditionQuality:
+       A quality score of how much we should favor rule conditions that use a given property.
+       By default, we check how far down the property is in the $properties list, with the
+       top of the list being equivalent to a score of 1, and the bottom of the list being
+       a score of 0, but sometimes we want to customize this score, such as to compensate
+       for the ARCExpressionComplexity score of a property's values unfairly penalyzing
+       conditions with that property. */
+objectProperties((
+    /* As of August 3 2022 we'll order "Colors" above "Image" so that when we find object
+       references, we'll list Colors references above Image references, as they feel more
+       general / better for forming rules. e.g. 05f2a901 */
+    "Colors" = data((
+        "SyntacticType" = 'Repeated'("Color"),
+        "SemanticType" = "Color"
+    )),
+    "Color" = data((
+        "SyntacticType" = "Color",
+        "SemanticType" = "Color"
+    )),
+    "Image" = data((
+        "SyntacticType" = "Image",
+        "SemanticType" = "Image",
+        /* We'll fudge this higher than we otherwise would since the ARCExpressionComplexity
+           of values for this property tend to penalize these conditions too much. */
+        "RuleConditionQuality" = 1.2
+    )),
+    "MonochromeImage" = data((
+        "SyntacticType" = "MonochromeImage",
+        "SemanticType" = "Image",
+        /* We'll fudge this higher than we otherwise would since the ARCExpressionComplexity
+           of values for this property tend to penalize these conditions too much. */
+        "RuleConditionQuality" = 1.2
+    )),
+    /* Will exclude for now. */
+    /*"PixelPositions"*/
+    "Shape" = data((
+        "SyntacticType" = "Shape",
+        "SemanticType" = "Shape",
+        /* We'll fudge this higher than we otherwise would since the ARCExpressionComplexity
+           of values for this property tend to penalize these conditions too much. */
+        "RuleConditionQuality" = 1.2
+    )),
+    "Shapes" = data((
+        "SyntacticType" = 'Repeated'("Shape"),
+        "SemanticType" = "Shape",
+        /* We'll fudge this higher than we otherwise would since the ARCExpressionComplexity
+           of values for this property tend to penalize these conditions too much. */
+        "RuleConditionQuality" = 1.195,
+        /* In ARCFindPropertyToInferValues, don't try to break the list down into positional
+           sub-elements. */
+        "ClassList" = true
+    )),
+    "Angle" = data((
+        "SyntacticType" = "Angle",
+        "SemanticType" = "Angle"
+    )),
+    /* We'll put properties like Height above properties like Y, since properties like
+       Height and HeightRank seem better than properties like Y for producing rules. */
+    "Width" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "SizeDimensionValue"
+    )),
+    "Height" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "SizeDimensionValue"
+    )),
+    "Length" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "SizeDimensionValue"
+    )),
+    "Position" = data((
+        "SyntacticType" = "Position",
+        "SemanticType" = "Position"
+    )),
+    "VerticalLineSymmetry" = data((
+        "SyntacticType" = "Boolean",
+        "SemanticType" = "Symmetry",
+        "RuleConditionQuality" = 0.8
+    )),
+    "HorizontalLineSymmetry" = data((
+        "SyntacticType" = "Boolean",
+        "SemanticType" = "Symmetry",
+        "RuleConditionQuality" = 0.8
+    )),
+    "VerticalAndHorizontalLineSymmetry" = data((
+        "SyntacticType" = "Boolean",
+        "SemanticType" = "Symmetry",
+        "RuleConditionQuality" = 0.8
+    )),
+    "Y" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),
+    "X" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),
+    "YInverse" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),
+    "XInverse" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),
+    "Y2" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),
+    "X2" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),
+    "Y2Inverse" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),
+    "X2Inverse" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),
+    "YMiddle" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),
+    "XMiddle" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),
+    "XRelative" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),
+    "YRelative" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),
+    /*"YHalf" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),
+    "XHalf" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue",
+        "RuleConditionQuality" = 0.5
+    )),*/
+    "ZOrder" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "PositionDimensionValue"
+    )),
+    "PrimarySizeDimension" = data((
+        "SyntacticType" = "SizeDimension",
+        "SemanticType" = "SizeDimension"
+    )),
+    "AspectRatio" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "SizeDimensionRatio"
+    )),
+    "HollowCount" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "Count"
+    )),
+    "Area" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "Area"
+    )),
+    "FilledArea" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "Area"
+    )),
+    "FilledProportion" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "AreaProportion"
+    )),
+    "SurfacePixelCount" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "Count"
+    )),
+    /* The number of pixels in the scene with this color. */
+    "ColorUseCount" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "Count"
+    )),
+    "PixelPositions" = data((
+        "SyntacticType" = "Region",
+        "SemanticType" = "Region"
+    )),
+    /* Set in a rule condition when some or all of the matched objects need to first
+       be formed from a group of non-contiguous objects in the scene. Not set on input
+       objects. */
+    "Group" = data((
+        "RuleConditionQuality" = 0.5
+    )),
+    "ColorCount" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "Count",
+        /* Otherwise it will lose out to "Colors" for "6e02f1e3". */
+        "RuleConditionQuality" = 0.9
+    )),
+    "MostUsedColor" = data((
+        "SyntacticType" = "Color",
+        "SemanticType" = "Color",
+        /* Adopting this from "ColorCount", not sure if it's needing to be high like this. */
+        "RuleConditionQuality" = 0.9
+    )),
+    "SecondMostUsedColor" = data((
+        "SyntacticType" = "Color",
+        "SemanticType" = "Color",
+        /* Adopting this from "ColorCount", not sure if it's needing to be high like this. */
+        "RuleConditionQuality" = 0.9
+    )),
+    "ImageUseCount" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "Count",
+        "RuleConditionQuality" = 0.5
+    )),
+    "ShapeUseCount" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "Count",
+        "RuleConditionQuality" = 0.5
+    )),
+    "GeneralShapeUseCount" = data((
+        "SyntacticType" = "Integer",
+        "SemanticType" = "Count",
+        "RuleConditionQuality" = 0.5
+    )),
+    "GridPosition" = data((
+        "SyntacticType" = "GridPosition",
+        "SemanticType" = "Position"
+    ))
+)).
+
 % =====================================================================
 is_fti_step(fg_subtractions).
 % =====================================================================
@@ -1718,34 +1970,23 @@ drops_as_objects(Name,VM):-
 
 
 % =====================================================================
-is_fti_step(prior_objs_vm).
+is_fti_step(group_vm_priors).
 % =====================================================================
-
-prior_objs_vm(VM):- saved_named_objs(VM).
-
-% =====================================================================
-is_fti_step(saved_named_objs).
-% =====================================================================
-saved_named_objs(VM):-
+group_vm_priors(VM):-
  must_det_ll((
   ObjsG = VM.objs,
   prior_objs(ObjsG,Objs),
-  gset(VM.objs) = Objs,
-  object_priors(Objs,LblFeat),
-  NewLbls=LblFeat,
-  pp(saved_named_objs = NewLbls),
-  %$trace,
-  maplist(objs_with_feat(Objs),NewLbls,Group),
-  maplist(prior_name_by_size(VM),Group,LblFeat))).
+  gset(VM.objs) = Objs)).
 
 prior_objs(Objs,LF):- 
  must_det_ll((
- into_group(Objs,Group),
- object_priors(Group,NewLbls),
- sort(NewLbls,LblSets),
+ object_priors(Objs,Lbls),
+ sort(Lbls,LblSets),
  pp(groupPriors=LblSets),
- %$trace,
- add_priors(LblSets,Group,LF))).
+ add_priors(LblSets,Objs,LF))).
+
+%objs_with_feat(Objs,Name,Matches):-
+%  include(is_prior_prop(Name),Objs,Matches).
 
 
 % =====================================================================
@@ -1757,13 +1998,9 @@ save_as_obj_group(Name,VM):-
   Grid = VM.grid,
   %notrace(catch(call_with_depth_limit(individuate1(_,Name,VM.grid_o,IndvS0),20_000,R),E,(wdmsg(E)))),
   individuate1(_,Name,Grid,IndvS0),  
-  maplist(override_object(birth(Name)),IndvS0,IndvSL),
+  maplist(override_object(label(Name)),IndvS0,IndvSL),
   addObjectOverlap(VM,IndvSL))),!.
 
-prior_name_by_size(_VM,[],_Name):-!.
-prior_name_by_size(VM,IndvS0,Name):-  
-  zorder_priors(Name,IndvS0,IndvSL),
-  addObjectOverlap(VM,IndvSL).
 /*
 prior_name_by_size(VM,IndvS0,Name):- 
   Title = save_as_obj_group(Name),
@@ -1798,9 +2035,6 @@ add_prior_placeholder(Len,Name,IndvS0,IndvS9):-
     ((has_prop(o(sf(Was),Other,Name),IndvS0)-> delq(IndvS0,o(sf(Was),Other,Name),IndvS1) ; IndvS0=IndvS1),
      override_object(o(sf(Len),nil,Name),IndvS1,IndvS9))),!.
 */
-
-objs_with_feat(Objs,Name,Matches):-
-  include(is_prior_prop(Name),Objs,Matches).
 
 object_priors(X,S):- is_object(X), !, must_det_ll((indv_props(X,Ps),
   findall(I,(member(P,Ps),props_object_prior(P,I)),L),L\==[],list_to_set(L,S))).
@@ -1843,12 +2077,19 @@ object_prior(Obj,E):- object_priors(Obj,L),member(E,L).
 add_priors([Lbl|Sets],Objs,LF):- add_prior(Lbl,Objs,Mid),!, add_priors(Sets,Mid,LF).
 add_priors(_,IO,IO).
 
+
+
 add_prior(Lbl,Objs,ObjsWithPrior):- 
   is_list(Objs),
   my_partition(is_prior_prop(Lbl),Objs,Lbld,Unlbl),  
   %add_prior_placeholder(Lbl,Lbld,RLbld),
   zorder_priors(Lbl,Lbld,RLbldR),
   append([Unlbl,RLbldR],ObjsWithPrior).  
+
+prior_name_by_size(_VM,[],_Name):-!.
+prior_name_by_size(VM,IndvS0,Name):-  
+  zorder_priors(Name,IndvS0,IndvSL),
+  addObjectOverlap(VM,IndvSL).
 
 zorder_priors(GType,Objs,SFO):-   
  must_det_ll((
@@ -1893,23 +2134,12 @@ addObjectOverlap(VM,IndvS2):-
    set(VM.objs)= IndvS5,
    set(VM.objs_max_len) is Count+3.
 
-/*
-  if_t(Len==1,   
-   (override_object([o(Name,sf(1),0),o(Name,sf(1),0)],IndvS0,IndvS2),
-    addObjectOverlap(VM,IndvS2))),
-  if_t(Len>1,   
-      (override_object([o(Name,sf(Len),nil),o(Name,sf(Len),nil)],IndvS0,IndvS1),
-       prior_objs(Name,IndvS1,IndvS2,_LF),
-       addObjectOverlap(VM,IndvS2))).
-  %append(VM.objs,IndvSO,set(VM.objs)),
-  %maplist(addObjectOverlap(VM),IndvSO).
-*/
+
 % =====================================================================
 is_fti_step(gather_cached).
 % =====================================================================
 gather_cached(VM):-
-
-  findall(IndvS,individuated_cache(VM.gid,_ROptions,IndvS),IndvSL),
+  findall(IndvS,individuated_cache(VM.id,_,_ROptions,IndvS),IndvSL),
   append(IndvSL,IndvSS),
   addObjectOverlap(VM,IndvSS).
    

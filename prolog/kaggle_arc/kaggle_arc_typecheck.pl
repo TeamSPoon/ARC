@@ -14,8 +14,40 @@ kaggle_arc_pred(M,P):-
   \+ atom_contains(F,'_afc'),
   \+ atom_contains(F,'_ui_'),
   true.
-  
-  
+
+/*  
+any
++-- atomic ; constant
+¦   +-- number
+¦   ¦   +-- integer
+¦   ¦   ¦   +-- nonneg            % Integer >= 0 
+¦   ¦   ¦   +-- positive_integer  % Integer > 0 
+¦   ¦   ¦   +-- negative_integer  % Integer < 0
+¦   ¦   ¦   +-- between(U, L)     % Integer >= L, Integer =< U 
+¦   ¦   +-- float
+¦   ¦       +-- rational          % includes integers
+¦   ¦       +-- between(U, L)     % Float >= L, Float =< U 
+¦   +-- text
+¦   ¦   +-- atom 
+¦   ¦   ¦   +-- symbol            % with or without single quotes
+¦   ¦   ¦   +-- char              % Atom of length 1
+¦   ¦   ¦   +-- code              % Unicode point
+¦   ¦   ¦   +-- blob
+¦   ¦   ¦       +-- stream 
+¦   ¦   +-- string                % double or single quoted
+¦   +-- boolean 
++-- compound
+    +-- callable                  % Can also be functor/0 symbol
+    +-- list ; proper_list
+    ¦   +-- list_or_partial_list
+    ¦   +-- list(Type)
+    ¦   +-- chars
+    ¦   +-- codes
+    +-- tree ; graph            % Not defined as a formal type
+    ¦   +-- cyclic
+    ¦   +-- acyclic
+    +-- dict
+*/
 
 kaggle_arc_pred_types(M,P):-
   findall(M:P,kaggle_arc_pred(M,P),L),
@@ -68,18 +100,52 @@ ded_argtypes_until(Depth,M,call(A),Vars):-!, ded_argtypes_until(Depth,M,A,Vars).
 ded_argtypes_until(Depth,M,\+ (A),Vars):-!, ded_argtypes_until(Depth,M,A,Vars).
 ded_argtypes_until(Depth,M,must_det_ll(A),Vars):-!, ded_argtypes_until(Depth,M,A,Vars).
 
-ded_argtypes_until(Depth,M,P,Vars):- copy_term(P,PP), ded_using(_Whateva,Depth,M,P,Vars),PP\=@=P,!,
+ded_argtypes_until(Depth,M,P,Vars):- copy_term(P,PP), narrow_using(_Whateva,Depth,M,P,Vars),PP\=@=P,!,
   nop(ded_argtypes_until(Depth,M,P,Vars)),maybe_learn_decl(P).
 ded_argtypes_until(_Depth,_M,_P,_Vars).
 
 
-ded_using(_,_,_M,P,_Vars):- is_decl_pt(_,P),!.
-ded_using(clauses,Depth,M,P,Vars):- Depth>0,  compound(P), \+ ground(P), P\= run_fti(_,_), 
- functor(P,F,A), functor(PP,F,A), \+ is_decl_pt(_,PP), copy_term(Vars,VarsC),
+narrow_using(_,_,_M,P,_Vars):- is_decl_pt(_,P).
+narrow_using(_SS,Depth,M,(A,B),Vars):-
+  narrow_using(_,Depth,M,A,Vars),
+  narrow_using(_,Depth,M,B,Vars).
+
+narrow_using(clauses,Depth,M,P,Vars):-  compound(P), \+ ground(P),
+ functor(P,F,A), functor(PP,F,A),functor(SPP,F,A),
  predicate_property(M:PP,number_of_rules(N)),N>0,!,
   clause(M:PP,BodyC),
   compound(BodyC),
+  \+ \+ ((sub_term(BC,BodyC),compound(BC),\+ \+ is_decl_pt(_,BC))),
+  ignore((
+    once(( 
+      arg_to_argtypes((PP,BodyC),NVArgs),
+      include(nonvar,NVArgs,Args),
+      length(Args,L),length(Vs,L),
+      subst_2L(Args,Vs,PP+BodyC,SPP+SBodyC),
+      compound_name_arguments(SPP,_,SPPArgs),  
+      nop(pp((clause(M:PP,BodyC), (SPP:-SBodyC)))),
+      Depth2 is Depth-1,      
+      ignore(ded_argtypes_until(Depth2,M,SBodyC,Vars)),
+      maplist(var,SPPArgs),  P = SPP)))).
+
+narrow_using(clauses,Depth,M,P,Vars):- Depth>0,  compound(P), \+ ground(P), P\= run_fti(_,_), 
+ functor(P,F,A), functor(PP,F,A), \+ (is_decl_pt(_,PP),ground(PP)), 
+ predicate_property(M:PP,number_of_rules(N)),N>0,!,
+  clause(M:PP,BodyC),
+  compound(BodyC),
+  copy_term(Vars,VarsC),
   ((sub_term(BC,BodyC),compound(BC),\+ \+ is_decl_pt(_,BC))),Vars\=@=VarsC,!.
+
+%narrow_using(decls,_,_M,P,_Vars):- ignore((is_decl_pt(_,P))).
+
+narrow_using(metapreds,Depth,M,P,Vars):- Depth<10,
+  predicate_property(M:P,meta_predicate(MP)),
+ ignore((  
+  compound_name_arguments(MP,_,MArgs),
+  compound_name_arguments(P,_,PArgs),
+  Depth2 is Depth-1,
+  maplist(maybe_label_args(Depth2,Vars,M),MArgs,PArgs))).
+
 /*
 functor(SPP,F,A),
   ignore((
@@ -94,7 +160,7 @@ functor(SPP,F,A),
       ignore(ded_argtypes_until(Depth2,M,SBodyC,Vars)),
       maplist(var,SPPArgs),  P = SPP)))).
 */
-ded_using(metapreds,Depth,M,P,Vars):- Depth<10,
+narrow_using(metapreds,Depth,M,P,Vars):- Depth<10,
   predicate_property(M:P,meta_predicate(MP)),
  ignore((  
   compound_name_arguments(MP,_,MArgs),
@@ -108,7 +174,9 @@ maybe_label_args(_Depth,_Vars,_M,(-),_).
 maybe_label_args(_Depth,_Vars,_M,(?),_).
 maybe_label_args( Depth, Vars, M, _,P):- ignore(ded_argtypes_until(Depth,M,P,Vars)).
 
-arg_to_argtypes(P,[]):- \+ compound(P),!.
+
+arg_to_argtypes((A,B),(AA,BB)):- arg_to_argtypes(A,AA), arg_to_argtypes(B,BB).
+arg_to_argtypes(S,DT):- \+ compound(S),!,data_type(S,DT).
 arg_to_argtypes(P,Args):- 
   predicate_property(P,meta_predicate(MP)),
   compound_name_arguments(MP,_,MArgs),

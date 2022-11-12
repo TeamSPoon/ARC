@@ -378,7 +378,8 @@ set_all_bg_colors(Color,Grid,NewGrid):- map_pred(do_set_all_bg_colors(Color),Gri
 
 %do_set_all_fg_colors(Color,CPoint,NewCPoint):- is_cpoint(CPoint),CPoint=C-Point,hv_point(_,_,Point),is_fg_color(C),NewCPoint=Color-Point.
 
-blur(Op,G0,GG):- into_grid(G0,G),call(Op,G,GGG),get_black(Black),replace_local_points(GGG,Black,G,GG),is_a_change(G,GGG).
+blur(Op,G0,GG):- into_grid(G0,G),blur_or_not(Op,G,GG),is_a_change(G,GG).
+blur_or_not(Op,G0,GG):- into_grid(G0,G),call(Op,G,GGG),get_black(Black),replace_local_points(GGG,Black,G,GG).
 
 is_a_change(G,GG):- G=@=GG,!,fail.
 is_a_change(_,_):-!.
@@ -391,6 +392,11 @@ unbind_color_whole(Num1,Grid,GridO):- is_list(Grid),!,maplist(unbind_color_whole
 unbind_color_whole(Num1,Num2,_):- \+ compound(Num2),!, Num1=Num2.
 unbind_color_whole(Num1,_-Num1,_).
 
+
+unbind_color(UnbindColor,Grid,GridO):- plain_var(UnbindColor), 
+    \+ sub_var(UnbindColor,Grid),!,
+    must(guess_to_unbind(Grid,UnbindColor)), \+ plain_var(UnbindColor),
+    unbind_color(UnbindColor,Grid,GridO).
 unbind_color(Color1,Grid,GridO):- is_grid(Grid),!,grid_color_code(Color1,Num1),unbind_color0(Num1,Grid,GridO).
 unbind_color(Color1,Grid,GridO):- color_code(Color1,Num1),subst001(Grid,Num1,_,GridO).
 

@@ -552,7 +552,7 @@ surface-pixel-count
 4938f0c2-easy
 ').
 
-% Core ARC Training Tasks (72)
+% Core ARC Training Tasks (91)
 
 suite_tag(dbigham_train_core,'
 0ca9ddb6
@@ -635,9 +635,20 @@ a5f85a15
 97999447
 6d75e8bb
 63613498
+29c11459
+b6afb2da
+963e52fc
+d364b489
+1e0a9b12
+7e0986d6
+868de0fa
+56dc2b01
+d6ad076f
+f8a8fe49
+5168d44c
 ').
 
-% Training Tasks (74)
+% Training Tasks (86)
 % The following ARC training tasks started passing after some different task was implemented.
 suite_tag(dbigham_train_pass,'
 ea32f347
@@ -720,7 +731,12 @@ b8cdaf2b
 3aa6fb7a
 60b61512
 3618c87e
-').
+8d510a79
+9565186b
+af902bf9
+ba26e723
+dc1df850
+3bdb4ada').
 
 % Evaluation Tasks (56)
 % The following ARC evaluation tasks are passing. My intention is to not analyzed or implemented evaluation examples specifically, 
@@ -781,7 +797,10 @@ d56f2372
 903d1b4a
 981571dc
 42a15761
-770cc55f
+e872b94a
+2b01abd0
+817e6c09
+8ee62060
 e5790162
 27a77e38
 ').

@@ -8,11 +8,11 @@ https://github.com/fchollet/ARC
 
 ## Percentage of Tasks Passing
 
-* Training tasks: 173 / 400 (43.2%)\
+* Training tasks: 177 / 400 (44.2%)\
   ![Percentage of Training Tasks Passing](TrainingTasksProgressBar.png?raw=true)
-  * Implemented: 87
+  * Implemented: 91
   * Passing via generalization: 86
-* Evaluation tasks: 58 / 400 (14.5%)\
+* Evaluation tasks: 61 / 400 (15.2%)\
   ![Percentage of Evaluation Tasks Passing](EvaluationTasksProgressBar.png?raw=true)
 
 ## Progress over Time
@@ -21,7 +21,7 @@ https://github.com/fchollet/ARC
 
 ## Tasks Implemented
 
-### Core ARC Training Tasks (87)
+### Core ARC Training Tasks (91)
 
 * [0ca9ddb6](TaskNotes/0ca9ddb6/notes.md)
 * [3c9b0459](TaskNotes/3c9b0459/notes.md)
@@ -110,8 +110,12 @@ https://github.com/fchollet/ARC
 * [1e0a9b12](TaskNotes/1e0a9b12/notes.md)
 * [7e0986d6](TaskNotes/7e0986d6/notes.md)
 * [868de0fa](TaskNotes/868de0fa/notes.md)
+* [56dc2b01](TaskNotes/56dc2b01/notes.md)
+* [d6ad076f](TaskNotes/d6ad076f/notes.md)
+* [f8a8fe49](TaskNotes/f8a8fe49/notes.md)
+* [5168d44c](TaskNotes/5168d44c/notes.md)
 
-### Personally Created Training Tasks (15)
+### Personally Created Training Tasks (16)
 
 * [jnohuorzh-easier](TaskNotes/jnohuorzh-easier/notes.md)
 * [ihiz27k2n](TaskNotes/ihiz27k2n/notes.md)
@@ -128,6 +132,7 @@ https://github.com/fchollet/ARC
 * [middle](TaskNotes/middle/notes.md)
 * [surface-pixel-count](TaskNotes/surface-pixel-count/notes.md)
 * [4938f0c2-easy](TaskNotes/4938f0c2-easy/notes.md)
+* [56dc2b01-easier-2](TaskNotes/56dc2b01-easier-2/notes.md)
 
 ## Tasks Passing via Generalization
 
@@ -222,7 +227,7 @@ The following ARC training tasks started passing after some different task was i
 * [dc1df850](TaskNotes/dc1df850/notes.md)
 * [3bdb4ada](TaskNotes/3bdb4ada/notes.md)
 
-### Evaluation Tasks (58)
+### Evaluation Tasks (61)
 
 The following ARC evaluation tasks are passing. My intention is to not analyzed or implemented evaluation examples specifically, but I have implemented a few accidentally.
 
@@ -282,5 +287,8 @@ The following ARC evaluation tasks are passing. My intention is to not analyzed 
 * [981571dc](TaskNotes/981571dc/notes.md)
 * [42a15761](TaskNotes/42a15761/notes.md)
 * [e872b94a](TaskNotes/e872b94a/notes.md)
+* [2b01abd0](TaskNotes/2b01abd0/notes.md)
+* [817e6c09](TaskNotes/817e6c09/notes.md)
+* [8ee62060](TaskNotes/8ee62060/notes.md)
 * [e5790162](TaskNotes/e5790162/notes.md)
 * [27a77e38](TaskNotes/27a77e38/notes.md)

@@ -29,7 +29,7 @@ forall_count(P,Q,EP,ET):-
 solves_all_pairs(TestID,P,P2S):- kaggle_arc(TestID,tst+0,_,_), 
  findall(P2,(easy_solve_by(TestID,P2),
    findall(try_p2(P2,In,Out),
-     kaggle_arc(TestID,_,In,Out),AllTrue),maplist(call,AllTrue)),[P|P2S]).
+     kaggle_arc(TestID,_,In,Out),AllTrue),maplist(grid_call,AllTrue)),[P|P2S]).
 */
 /*
 test_easy:- clsmake, forall_count(arc_test_name(TestID),test_easy(TestID)).
@@ -39,27 +39,29 @@ test_easy(TestID):-
 solves_all_pairs(TestID,P2):- !,
    easy_solve_by(TestID,P2),
    kaggle_arc(TestID,tst+0,EI,EO), 
-   call(P2,EI,EM),EM=@=EO,!.
+   grid_call(P2,EI,EM),EM=@=EO,!.
 
 solves_all_pairs(TestID,P2):-
    easy_solve_by(TestID,P2),
-   findall(call(P2,In,Out),kaggle_arc(TestID,_,In,Out),AllTrue),   
-   nop(maplist(call,AllTrue)),
+   findall(grid_call(P2,In,Out),kaggle_arc(TestID,_,In,Out),AllTrue),   
+   nop(maplist(grid_call,AllTrue)),
    kaggle_arc(TestID,trn+0,TI,TO),
    try_p2(P2,TI,TO), 
    kaggle_arc(TestID,tst+0,EI,EO), 
    try_p2(P2,EI,EO).
 */
+
         
 %test_easy_solve_by:- clsmake, fail.
 /*
 test_easy_solve_by:- get_pair_mode(single_pair),!,
   get_current_test(TestID),some_current_example_num(ExampleNum),
   forall_count(kaggle_arc(TestID,ExampleNum,I,O),test_easy_solve_test_pair(TestID,ExampleNum,I,O)).
-*/
-test_easy_solve_by:- get_pair_mode(entire_suite),clsmake,!,forall_count(all_arc_test_name(TestID),test_example_grid(TestID)).
 %test_easy_solve_by:- test_p2(test_easy_solve_pair).
 %test_easy_solve_by:- test_p2(simple_todolist(_)).
+*/
+test_easy_solve_by:- get_pair_mode(entire_suite),clsmake,!,forall_count(all_arc_test_name(TestID),easy_solve_whole_test(TestID)).
+test_easy_solve_by:- get_pair_mode(whole_test),clsmake, get_current_test(TestID),!,must_det_ll(ignore(easy_solve_whole_test(TestID))).
 test_easy_solve_by:- test_p2(test_easy_solve_pair).
 
 :- luser_default(cmd,test_easy_solve_by). 
@@ -68,29 +70,41 @@ test_easy_solve_pair(I,O):- %set_current_test(I),
  (kaggle_arc(TestID,ExampleNum,I,O) *-> test_easy_solve_test_pair(TestID,ExampleNum,I,O) ; 
    (test_example_grid(I),test_example_grid(O))).
 
-test_easy_solve_test_pair(TestID,ExampleNum,I,O):- var(TestID),get_current_test(TestID),
-   some_current_example_num(ExampleNum),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
+test_easy_solve_test_pair(TestID,ExampleNum,I,O):- var(TestID),get_current_test(TestID),nonvar(TestID),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
+
+test_easy_solve_test_pair(TestID,ExampleNum,I,O):- var(ExampleNum),some_current_example_num(ExampleNum),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
 test_easy_solve_test_pair(TestID,ExampleNum,I,O):- 
    ignore((nonvar(TestID), set_current_test(TestID))),
    ignore(kaggle_arc(TestID,ExampleNum,I,O)),
    continue_test(TestID),
    put_attr(EM,expect_p2,O),
    (CALL=  ?-(test_easy_solve_test_pair(TestID,ExampleNum,'$VAR'('I'),'$VAR'('O')))),   
-   findall(P2,(easy_solve_by(TestID,P2),call(P2,I,EM),EM=O),P2S),!,
+   findall(P2,(easy_solve_by(TestID,P2),grid_call(P2,I,EM),nonvar(EM),EM=@=O),P2SI),!,
+   (P2SI\==[]->P2S=P2SI;findall(unify(P2),(easy_solve_by(TestID,P2),grid_call(P2,I,EM),nonvar(EM),EM=O),P2S)),
    nl_if_needed,
-   (P2S\==[] -> wqs(["Passed: ",CALL,"using",q(P2S)]) ; ( \+ get_pair_mode(entire_suite),wqs(["failed: ",b(q(CALL))]),!,fail)).
+   (P2S\==[] -> wqs(["Passed: ",CALL,"using\n ",call(maplist(pp(yellow),P2S))]) ; ( \+ get_pair_mode(entire_suite),wqs(["failed: ",b(q(CALL))]),!,fail)).
+
+:- meta_predicate(grid_call(+,+,-)).
+
+grid_call(P2,I,O):- call(P2,I,O).
 
 test_example_grid(I):- var(I),!.
 test_example_grid(I):- kaggle_arc(TestID,ExampleNum,I,O),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
 test_example_grid(O):- kaggle_arc(TestID,ExampleNum,_,O),!,test_easy_solve_test_pair(TestID,ExampleNum,O,_).
 test_example_grid(T):- is_valid_testname(T),set_current_test(T),!,kaggle_arc(T,ExampleNum,I,O),test_easy_solve_test_pair(T,ExampleNum,I,O).
-test_example_grid(G):- set_current_test(G),!,get_current_test(TestID),test_easy_solve_test_pair(TestID,_ExampleNum,G,_).
+test_example_grid(G):- set_current_test(G),!,get_current_test(TestID),easy_solve_whole_test(TestID).
 
-easy_solve_by(TestID,flip_Once(_)):- get_black(Black),user:arc_test_property(TestID,common,comp(cbg(Black),i-o,grav_rot),_).
+easy_solve_by(_TestID,P2):- ground(P2),!.
+easy_solve_by( TestID,P2):- nonvar(P2),!, copy_term(P2,P2T), findall(P2T,(easy_solve_by(TestID,P2T),P2\=@=P2T),List), member(P2,[P2|List]).
+easy_solve_by( TestID,flip_Once(_)):- get_black(Black),user:arc_test_property(TestID,common,comp(cbg(Black),i-o,grav_rot),_).
 easy_solve_by(_TestID,P2):- easy_p2(P2).
+%easy_solve_by( TestID,repair_and_select(_How,_M)):- is_symgrid(TestID),!.
 %easy_p2(flip_Once(_)).
 
-easy_p2(repair_and_select(_How,_M)):-!.
+%easy_p2(repair_and_select_property([unbind_color(_),now_fill_in_blanks_good],repairedResult)).
+easy_p2(repair_and_select(_How,_M)).
+easy_p2(blur_flipV_flipH).
+
 easy_p2(blur_rot90).
 %easy_p2(unbind_and_fill_in_blanks(_Code)).
 easy_p2(simple_todolist([trim_blank_lines,grow_2])).
@@ -98,20 +112,32 @@ easy_p2(simple_todolist(_)).
 easy_p2(P2):- easy0(_,P2).
 %easy_p2(two_ops(repair_in_vm(repair_repeats(black)),get(repaired))).
 
-try_p2(P2,In,Out):- call(P2,In,Mid),Out=@=Mid,!.
-%try_p2(P2,In,Out):- call(P2,In,Out),!.
-%try_p2(P2,In,Out):- call(P2,In,Out),!.
+try_p2(P2,In,Out):- grid_call(P2,In,Mid),Out=@=Mid,!.
+%try_p2(P2,In,Out):- grid_call(P2,In,Out),!.
+%try_p2(P2,In,Out):- grid_call(P2,In,Out),!.
 
 expect_p2:attr_unify_hook(_,_).
 
-do_simple_todolist([],IO,IO):-!.
+do_simple_todolist(C,I,O):- var(C),!,throw(var_do_simple_todolist(C,I,O)).
+do_simple_todolist([],I,O):- !,I=O.
 do_simple_todolist([H|T],I,O):- !, do_simple_todolist(H,I,M),do_simple_todolist(T,M,O).
-do_simple_todolist(P2,I,O):- call(P2,I,O).
+do_simple_todolist(C,I,O):- \+ callable(C),!,throw(not_callable_do_simple_todolist(C,I,O)).
+do_simple_todolist(P2,I,O):- grid_call(P2,I,O).
 
 repair_and_select(How,M,I,O):- induce_from_training(repair_and_select_property(How,M),I,O).
 repair_and_select_property(How,M,I,O):- 
- \+ is_grid_symmetricD(I), unbind_and_repair(How,I,Mid), is_grid_symmetricD(Mid), !, 
-    which_member(I,Mid,NVs), member(M-EO,NVs), EO=O.
+ %\+ is_grid_symmetricD(I), 
+    %How=[_|_],
+    unbind_and_repair(How,I,Mid), %is_grid_symmetricD(Mid), !, 
+    which_member(I,Mid,M,EO), EO=O.
+
+unbind_and_repair(Code,Grid,RepairedResultO):-
+ unbind_and_fill_in_blanks(Code,Grid,RepairedResultO).
+
+unbind_and_repair(Code,Grid,RepairedResultO):-
+ Code = [blur_rot90], blur_rot90(Grid,RepairedResultO).
+
+which_member(I,Mid,M,EO):- which_member(I,Mid,NVs), member(M-EO,NVs).
 
 which_member(Grid,RepairedResultG,Results):-
   once((localpoints_include_bg(Grid,OriginalPoints),
@@ -124,7 +150,7 @@ which_member(Grid,RepairedResultG,Results):-
   points_to_grid(H,V,NeededChanged,NeededChangedG))),
   Results = [changed-TrimChangedG,
              repairedResult-RepairedResultG,
-             changedUntimmed-ChangedG,
+             changedUntrimmed-ChangedG,
              unchanged-UnchangedG,
              neededChanged-NeededChangedG].
   
@@ -141,7 +167,7 @@ training_pp_msg_color(P2,Color):- pp_msg_color(P2,Color).
 
 induce_from_training(P2,I,O):- \+ is_grid(I),!,into_grid(I,G),induce_from_training(P2,G,O).
 %induce_from_training(P2,I,O):- nonvar(O),!,
-induce_from_training(P2,I,O):- ground_enough(P2),!,wdmsg(ground_enough(P2)),call(P2,I,O).
+induce_from_training(P2,I,O):- ground_enough(P2),!,wdmsg(ground_enough(P2)),grid_call(P2,I,O).
 induce_from_training(P2,I,O):- get_current_test(TestID), !, induce_from_training(TestID, P2,I,O).
 
 induce_from_training(TestID, P2,I,O):-  (nonvar(O) ; (kaggle_arc(TestID,Ex1,I,O),(Ex1 = trn+_))), !, induce_from_training_pair(P2,Ex1,I,O).
@@ -162,7 +188,7 @@ induce_from_training(TestID, P2,I,O):- %copy_term(P2,P22),!,
 
 induce_from_testing_pair(P2,Ex1,I,O):- 
    with_io_training_context(I,O,
-     ((call(P2,I,O), print_side_by_side_io(
+     ((grid_call(P2,I,O), print_side_by_side_io(
         induce_from_testing_pair_pass2(P2,Ex1),I,O)))),!.
 
 induce_from_training_pairs(P2,[],_TP,I,O):- !, induce_from_testing_pair(P2,tst+0,I,O).
@@ -170,24 +196,64 @@ induce_from_training_pairs(P2,TrainingPairs,TP,I,O):-
   select(sample(Ex1,II1,OO1),TrainingPairs,More), induce_from_training_pair(P2,Ex1,II1,OO1),!, 
   induce_from_training_pairs(P2,More,TP,I,O).
 
-induce_from_training_pair(P2,Ex1,II1,OO1):- 
-  print_side_by_side_io(induce_from_training(P2,Ex1),II1,OO1), 
+induce_from_training_pair(P2,Ex1,II1,OO1):-   
   with_io_training_context(II1,OO1, 
-   ((call(P2,II1,OO1), 
-    \+ \+ ignore(( call(P2,II1,OOO1),
-     print_side_by_side_io(checking_training(P2,Ex1),OO1,OOO1)))))).
-  
+   (((grid_call(P2,II1,OO1) *-> pp(induce_from_training_continue(P2,Ex1)) ;
+       ((fail, nonvar(OO1), grid_call(P2,II1,_)) -> true ; (pp(induce_from_training_fail_cont(P2,Ex1)),fail))),
+      ignore(( warn_and_fail_on_bad_p2(cyan,orange,checking_training(P2,Ex1),P2,II1,OO1)))))).
+
+warn_and_fail_on_bad_p2(Cyan,Orange,Ex1,P2,I,Expect):- 
+ \+ \+ with_io_training_context(I,Expect,   
+ ((put_attr(M,expect_p2,Expect),
+   (grid_call(P2,I,M)->OurOut=M;OurOut=I),
+   count_difs(OurOut,Expect,Errors),
+   (Errors = 0 
+     -> banner_grids(Cyan,I,pass_p2(P2,Ex1),OurOut,"MATCH") 
+     ; (banner_grids(Orange,OurOut,fail(Errors,P2,Ex1),Expect,"MISMATCH"),
+        banner_grids(red,I,fail(Errors,P2,Ex1),OurOut,"WRONG"),
+        nop(show_sameness_or_lameness(Cyan,Orange,warn_and_fail_on_bad_p2(P2,Ex1),OurOut,Expect,Errors)),!,fail))))).
+     
+
+
+  /*  
 induce_from_training_pair(P2,Ex1,II1,OO1):- 
   print_side_by_side_io(induce_from_training(P2,Ex1),II1,OO1), 
-   with_io_training_context(II1,OO1,((call(P2,II1,OO1),
-      call(P2,II1,OOO1),print_side_by_side_io(checking_training(P2,Ex1),II1,OOO1)))),!.
-      
+   with_io_training_context(II1,OO1,((grid_call(P2,II1,OO1),
+      grid_call(P2,II1,OOO1),print_side_by_side_io(checking_training(P2,Ex1),II1,OOO1)))),!.
+*/
+easy_solve_whole_test(TestID):- 
+  % once(print_test(TestID)),
+  arcdbg_info(green,"BEGIN_TEST"=TestID),!,
+  my_time(easy_solve_whole_test1(TestID)).
+easy_solve_whole_test1(TestID):- 
+  (easy_solve_training(TestID,P2)*-> 
+    (easy_solve_testing(TestID,P2)*-> arcdbg_info(green,success(TestID,P2)) ; arcdbg_info(yellow,didnt_work(TestID,P2)))
+     ; (arcdbg_info(red,failed_finding_plan_to_solve_training(TestID)),fail)),!.
+easy_solve_whole_test1(TestID):- arcdbg_info(red,failed_test(TestID)).
 
+  
+easy_solve_training(TestID,P2):- 
+   once((
+   kaggle_arc(TestID,trn+Some,TI1,TO1), 
+   easy_solve_by(TestID,P2),
+   pp(?-easy_solve_training(TestID,P2)),
+   try_p2(P2,TI1,TO1),
+   dif(Other,Some), 
+   kaggle_arc(TestID,trn+Other,TI2,TO2),
+   warn_and_fail_on_bad_p2(cyan,orange,generalness,P2,TI2,TO2))).
+
+easy_solve_testing(TestID,P2):- 
+   easy_solve_by(TestID,P2),
+   pp(?-easy_solve_whole_test(TestID,P2)),
+   kaggle_arc(TestID,tst+0,EI,EO),!,
+   warn_and_fail_on_bad_p2(green,red,final_test,P2,EI,EO),!.
+
+:- meta_predicate(with_io_training_context(+,+,0)).
 with_io_training_context(I,O,G):- (peek_vm(PrevVM), PrevVM.grid_o  =@=I),!, set(PrevVM.grid_target)=O, call(G).
 with_io_training_context(I,O,G):- (peek_vm(PrevVM), PrevVM.grid_o \=@=I),!,
  call_cleanup(with_io_training_context1(I,O,G),set_vm(PrevVM)),!.
 with_io_training_context(I,O,G):- with_io_training_context1(I,O,G).
-
+:- meta_predicate(with_io_training_context1(+,+,0)).
 with_io_training_context1(I,O,G):- 
   %get_current_test(TestID),
   %kaggle_arc(TestID,ExampleNum,I,O),
@@ -214,6 +280,7 @@ easy0(1,gravity(s,1)):- if_hint(mass(i)==mass(o)).
 easy0(2,flip_Once(_)).
 easy0(3,swap_two_colors(_,_)).
 easy0(4,blur_flipV).
+easy0(4,blur_flipV_flipH).
 easy0(5,increase_size_by_grid_mass). %ac0a08a4
 easy0(5,increase_size_by_color_count). %ac0a08a4
 easy0(5,grow_4):- if_hint(mass(i)*4==mass(o)).% 3af2c5a8
@@ -223,10 +290,15 @@ easy0(5,double_size).
 easy0(5,increase_size(N)):- if_hint(mass(i)*N==mass(o)), ignore(N=4).
 easy0(5,crop_by(_)).
 
-simple_todolist(List,I,OO):- is_list(List),!, do_simple_todolist(List,I,OO).
-simple_todolist(List,I,OO):-
-  ignore(get_attr(OO,expect_p2,O)),
-  easy0(_,P2),call(P2,I,M),fits_grid(O,M),must_det_ll((List = [P2],M=OO)),!.
+simple_todolist(List,I,OO):- nonvar(List),!, do_simple_todolist(List,I,OO).
+simple_todolist(List,I,OO):- ignore(get_attr(OO,expect_p2,O)),nonvar(O),!,simple_todolist(List,I,O).
+/*
+simple_todolist( [],I,O):- I=O,!.
+simple_todolist([P2|List],I,O):-
+  easy0(_,P2),grid_call(P2,I,M),
+  fits_grid(O,M),
+  simple_todolist(List,M,O).
+*/
 simple_todolist(List,I,OO):-
   ignore(get_attr(OO,expect_p2,O)),
   guess_simple_todolist(0,[],[],List,I,O,OO),!.
@@ -235,7 +307,7 @@ simple_todolist(List,I,OO):-
 guess_simple_todolist(N,SolSoFar,DoneSoFar,Plan,I,O,OO):- !,
  ((fits_grid(O,I),N>0) 
 -> (Plan=DoneSoFar,OO=I) 
-;(findall(h_g(H1,I1),(easy0(N,H1),call(H1, I,I1), (H1=='=' -> true ; (is_a_change(I,I1), \+ member(I1,SolSoFar)))), H1G),
+;(findall(h_g(H1,I1),(easy0(N,H1),grid_call(H1, I,I1), (H1=='=' -> true ; (is_a_change(I,I1), \+ member(I1,SolSoFar)))), H1G),
   predsort(using_compare(arg(2)),H1G,H1GSS),sort(H1GSS,H1GS),
   maplist(arg(2),H1GS,SOFAR),append(SolSoFar,SOFAR,NewSOFAR),
   member(h_g(H1,I1),H1GS),
@@ -246,7 +318,7 @@ guess_simple_todolist(N,_,_,_,_,_,_):- N> 10,!,fail.
 guess_simple_todolist(N,_Failed,IPlan,Plan,I,O,OO):- N\==0, fits_grid(O,I),!,OO=I,reverse(IPlan,Plan).
 /*
 guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):- Next is N+1,
-  findall(h_g(H1,I1),(easy0(N,H1),call(H1, I,I1), (H1=='='-> true ; nop((is_a_change(I,I1), \+ member(h_g(_,I1),Failed))))), H1G),
+  findall(h_g(H1,I1),(easy0(N,H1),grid_call(H1, I,I1), (H1=='='-> true ; nop((is_a_change(I,I1), \+ member(h_g(_,I1),Failed))))), H1G),
   predsort(using_compare(arg(2)),H1G,H1GS),
   select(h_g(H1,I1),H1GS,Rest),
   %append(Rest,Failed,NewFailed), 
@@ -257,15 +329,15 @@ guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):-
   Next is N+1, guess_simple_todolist(Next,Failed,Planned,Plan,I,O,OO).
 
 guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):- Next is N+1,
-  easy0(N,H1), call(H1, I,I1), is_a_change(I,I1), guess_simple_todolist(Next,Failed,[H1|Planned],Plan,I1,O,OO).
+  easy0(N,H1), grid_call(H1, I,I1), is_a_change(I,I1), guess_simple_todolist(Next,Failed,[H1|Planned],Plan,I1,O,OO).
 
 /*
 simple_todolist(SolSoFar,List,I,O,OO):-
-  findall(h_g(H1,I1),(easy0(H1),call(H1, I,I1),\+ member(I1,SolSoFar)), H1G),
+  findall(h_g(H1,I1),(easy0(H1),grid_call(H1, I,I1),\+ member(I1,SolSoFar)), H1G),
   predsort(using_compare(arg(2)),H1G,H1GSS),sort(H1GSS,H1GS),
   maplist(arg(2),H1GS,SOFAR),
   member(h_g(H1,I1),H1GS),
-  ((findall(h_g(H2,I2),(easy2(H2),H1\==H2,call(H2,I1,I2),\+ member(I2,SOFAR)),H2G),
+  ((findall(h_g(H2,I2),(easy2(H2),H1\==H2,grid_call(H2,I1,I2),\+ member(I2,SOFAR)),H2G),
     predsort(using_compare(arg(2)),H2G,H2GSS),sort(H2GSS,H2GS),
     member(h_g(H2,I2),H2GS),
   ((fits_grid(O,I2),[H1,H2]=List,I2=OO))) 
@@ -286,16 +358,18 @@ increase_size_by_color_count(In,Out):- fg_color_count(In,Size),increase_size(Siz
 
 blur_rot90(I,O):- duplicate_term(I,II), unbind_color(red,II,M), blur(rot90,M,O).
 blur_flipV(I,O):- duplicate_term(I,II), blur(flipV,II,O).
+blur_flipV_flipH(I,O):- 
+  do_simple_todolist([
+    into_grid,
+    duplicate_term,
+    blur_or_not(rot90),
+    blur_or_not(rot90),
+    blur_or_not(rot90)],I,O).
 
 
 
 %unbind_and_fill_in_blanks([guess_unbind_color(black),P2],Grid,RepairedResultO):-
 %  now_fill_in_blanks(P2,Grid,RepairedResultO).
-unbind_and_repair(Code,Grid,RepairedResultO):-
- unbind_and_fill_in_blanks(Code,Grid,RepairedResultO).
-
-unbind_and_repair(Code,Grid,RepairedResultO):-
- Code = [blur_rot90], blur_rot90(Grid,RepairedResultO).
 
 crop_by(HH/H,In,Out):- grid_size(In,H,V),between(1,H,HH),HH<H,clip(1,1,HH,V,In,Out).
 grow_4(In,Out):- flipV(In,FlipV),append(In,FlipV,Left),flipH(Left,Right),append_left(Left,Right,Out).
@@ -384,7 +458,7 @@ fav(t('d0f5fe59'),[indiv(colormass),human(color(largest,Color),ray(Color-point_0
   Grid = [[2,2,2,2,2]]
 */
 /*
-fav(t('44f52bb0'),[human(i(whole),call((
+fav(t('44f52bb0'),[human(i(whole),grid_call((
   get_vm(objs,[Obj|_]),(iz(Obj,h_symmetric)->set_vm(grid,[[blue]]);set_vm(grid,[[orange]])),set_vm(grid,[[orange]]))))]).
 fav(t('44f52bb0'),[lmDSL(into_monochrome,grid_to_individual(whole),one_obj,resize_grid(1,1,Color),db(largest:h_symmetric,Color)), -shape_match,-rotation_match,-mask_match,-color_match,tt,training,detect_symmetry,associate_images_to_bools,'(6, 2)']).
 */
