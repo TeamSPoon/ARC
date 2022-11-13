@@ -850,7 +850,8 @@ show_pair_code(In,Out):-
   dash_chars,dash_chars.
 
 print_testinfo(TestID):-
-  forall(test_info(TestID,F),forall(member(I,F),pp(test_info=I))).
+  forall(test_info_recache(TestID,F),pp(fav(TestID,F))).
+  %forall(test_info(TestID,F),forall(member(I,F),pp(test_info=I))).
 
 % trials(learn). trials(clue).   
 trials(human). trials(sol).

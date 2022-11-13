@@ -328,7 +328,7 @@ show_test_grids:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(Tes
 
 
 % Training modes
-first_pair_modes(single_pair,whole_test).
+first_pair_modes(whole_test,single_pair).
 
 next_pair_mode(M1,M2):- first_pair_modes(M1,M2).
 next_pair_mode(M2,entire_suite):- first_pair_modes(_,M2).
@@ -350,6 +350,8 @@ show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), luser_getval(test_suite_
   " With selected test: ",b(q(TestID)),b(q(example(Example)))]).
 skip_entire_suite:- never_entire_suite,!,fail.
 never_entire_suite:- ignore((get_pair_mode(entire_suite),set_pair_mode(whole_test))).
+
+:- first_pair_modes(M1,_),set_pair_mode(M1).
 
 set_test_cmd(Mode):- luser_setval('cmd',Mode).
 get_test_cmd(Mode):- luser_getval('cmd',Mode).
@@ -453,10 +455,11 @@ next_suite:-
 
 dont_sort_by_hard(test_names_by_fav). dont_sort_by_hard(all_arc_test_name).
 
+test_suite_name(is_symgrid).
 test_suite_name(test_names_by_fav). 
 test_suite_name(human_t).
 test_suite_name(sol_t).
-test_suite_name(hard_t).
+%test_suite_name(hard_t).
 test_suite_name(key_pad_tests). % test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
 test_suite_name(test_names_by_hard). 
 %test_suite_name(test_names_by_fav_rev). 
@@ -468,6 +471,7 @@ test_suite_name(dbigham_train_core).
 test_suite_name(dbigham_eval_pass).
 test_suite_name(dbigham_train_pass).
 test_suite_name(dbigham_personal).
+test_suite_name(dbigham_fail).
 test_suite_name(TS):- dir_test_suite_name(TS).
 
 
@@ -478,29 +482,50 @@ get_current_suite_testnames(Set):-
   luser_getval(test_suite_name,X),
   current_suite_testnames(X,Set).
 
-current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),Set\==[],!.  
-current_suite_testnames(X,Set):-  pp(recreating(X)), 
- findall(ID,test_suite_info(X,ID),List),List\==[],
-   
-  my_list_to_set_variant(List,Set), pp(sorting(X)), sort_by_hard(Set,NamesByHardUR), 
-  !,asserta(muarc_tmp:cached_tests(X,NamesByHardUR)).
-
-get_by_hard(X,ByHard):- muarc_tmp:cached_tests_hard(X,ByHard),!.
-get_by_hard(X,ByHard):- 
-  pp(recreating(X)),  
-  findall(ID,test_suite_info(X,ID),List),List\==[],   
+current_suite_testnames(X,Set):- nonvar(Set),current_suite_testnames(X,SetV),!,Set=SetV.
+current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),Set\==[],!.
+current_suite_testnames(X,Set):-  my_time((pp(creating(current_suite_testnames(X))), 
+ findall(ID,test_suite_info(X,ID),List),List\==[],   
   my_list_to_set_variant(List,Set),
+  !,asserta(muarc_tmp:cached_tests(X,Set)))).
+
+get_by_hard(X,Set):- nonvar(Set),get_by_hard(X,SetV),!,Set=SetV.
+get_by_hard(X,ByHard):- muarc_tmp:cached_tests_hard(X,ByHard),!.
+get_by_hard(X,ByHard):- my_time((pp(creating(get_by_hard(X))),  
+  current_suite_testnames(X,Set),
   likely_sort(X,Set,ByHard),
-  asserta(muarc_tmp:cached_tests_hard(X,ByHard)).
+  !,asserta(muarc_tmp:cached_tests_hard(X,ByHard)))).
 
 
 likely_sort(X,Set,Set):- dont_sort_by_hard(X),!,pp(dont_sort_by_hard(X)).
-likely_sort(X,Set,ByHard):-  pp(sorting(X)), !, sort_by_hard(Set,ByHard), !.
-    
+likely_sort(X,Set,ByHard):-  pp(sorting_suite(X)), !, sort_by_hard(Set,ByHard), !.
 
-test_suite_info(SuiteX,TestID):- var(SuiteX),!,test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
-test_suite_info(SuiteX,TestID):- current_predicate(SuiteX/1), call(SuiteX,TestID).
-test_suite_info(SuiteX,TestID):- test_info(TestID,Sol), \+ \+ (member(E,Sol), (E=test_suite([SuiteX]);E==SuiteX)).
+some_test_suite_name(SuiteX):- test_suite_name(SuiteX),
+  SuiteX\==test_names_ord_hard,
+  SuiteX\==test_names_by_hard,
+  SuiteX\==all_arc_test_name,
+  SuiteX\==test_names_by_hard_rev.
+
+test_suite_info(SuiteX,TestID):- var(SuiteX),!,some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
+test_suite_info(SuiteX,TestID):- test_suite_info_set(SuiteX,Set),!,member(TestID,Set).
+
+test_suite_info_set(SuiteX,Set):- muarc_tmp:cached_tests_hard(SuiteX,Set).
+test_suite_info_set(SuiteX,Set):- muarc_tmp:cached_tests(SuiteX,Set).
+test_suite_info_set(SuiteX,Set):- findall(TestID_C,test_suite_info_1(SuiteX,TestID_C),List),
+  list_to_set(List,Set),asserta(muarc_tmp:cached_tests(SuiteX,Set)).
+
+test_suite_info_1(SuiteX,TestID):- var(SuiteX),!,some_test_suite_name(SuiteX),test_suite_info_1(SuiteX,TestID).
+test_suite_info_1(icecuber_fail,TestID):- !, icu(Name,PF),PF == -1,atom_id_e(Name,TestID).
+test_suite_info_1(icecuber_pass,TestID):- !, icu(Name,PF),PF \== -1,atom_id_e(Name,TestID).
+test_suite_info_1(dbigham_fail,TestID):- !, all_arc_test_name(TestID),
+   \+ test_suite_info(dbigham_train_core,TestID),
+   \+ test_suite_info(dbigham_train_pass,TestID),
+   \+ test_suite_info(dbigham_eval_pass,TestID).
+test_suite_info_1(SuiteX,TestID):- suite_tag(SuiteX,List),!,tasks_split(TestID,List).
+test_suite_info_1(SuiteX,TestID):- current_predicate(SuiteX/1),!,call(call,SuiteX,TestID).
+test_suite_info_1(SuiteX,TestID):-
+   test_info_no_loop(TestID,Sol), \+ \+ (member(E,Sol), (E=test_suite([SuiteX]);E==SuiteX)).
+
 
 
 previous_test:-  get_current_test(TestID), get_previous_test(TestID,NextID), set_current_test(NextID).
@@ -892,36 +917,43 @@ arc_grid(IO,Grid):-
 arc_test_name(TestID):- get_current_test(TestID).
 %arc_test_name(TestID):- get_current_test(WasTestID), (TestID=WasTestID;(get_current_suite_testnames(List),member(TestID,List),WasTestID\== TestID, set_current_test(TestID))).
 
-some_test_info(TestID,III):- more_test_info(TestID,III).
-some_test_info(X,[keypad]):- key_pad_tests(X). 
-some_test_info(TestID,III):- fav(TestID,III).
-some_test_info(TestID,test_suite([III])):- icu(Name,PF),atom_id_e(Name,TestID), (PF == -1 -> III= icecuber_fail;III= icecuber_pass).
-some_test_info(TestID,III):- some_test_info_prop(TestID,III).
-some_test_info(TestID,test_suite([SuiteX])):- suite_tag(SuiteX,List),tasks_split(TestID,List).
-
 matches(InfoS,InfoS):-!.
 matches(InfoS,InfoM):- member(InfoS,InfoM).
 
 :- abolish(muarc_tmp:test_info_cache,2).
 :- dynamic(muarc_tmp:test_info_cache/2).
 
-ensure_test_info:- muarc_tmp:test_info_cache(_,_)-> true ; ( pp(recreating(test_info)),forall(all_arc_test_name(TestID),test_info(TestID,_))).
+%test_info_no_loop(TestID,Sol):- nonvar(TestID),test_info_recache(TestID,Sol),!.
+test_info_no_loop(TestID,Sol):- muarc_tmp:test_info_cache(TestID,Sol),!. % test_info
+%test_info_no_loop(TestID,Sol):- some_test_info(TestID,Sol).
+
+ensure_test_info:- muarc_tmp:test_info_cache(_,_)-> true ; ( pp(recreating(test_info)),
+  forall(all_arc_test_name(TestID),test_info_recache(TestID,_))).
+
+
+test_info(TestID,InfoS):- var(TestID),   var(InfoS), !, ensure_test_info,!, test_info_no_loop(TestID,InfoS).
+test_info(TestID,InfoS):- var(TestID),   nonvar(InfoS),!,all_arc_test_name(TestID),term_variables(InfoS,Vs),no_repeats(Vs,(test_info(TestID,InfoM),matches(InfoS,InfoM))).
 test_info(TestID,InfoS):- nonvar(TestID),once(fix_test_name(TestID,FTestID,_)),TestID\=@=FTestID,!,test_info(FTestID,InfoS).
+test_info(TestID,InfoS):- nonvar(TestID),nonvar(InfoS),!,test_info(TestID,InfoM),matches(InfoS,InfoM).
+test_info(TestID,InfoS):- nonvar(TestID),var(InfoS),!,test_info_no_loop(TestID,InfoS)*->true;test_info_recache(TestID,InfoS).
 
-test_info(TestID,InfoS):- var(TestID),var(InfoS), ensure_test_info,!, muarc_tmp:test_info_cache(TestID,InfoS).
-test_info(TestID,InfoS):- var(TestID),nonvar(InfoS),!,all_arc_test_name(TestID),term_variables(InfoS,Vs),no_repeats(Vs,(test_info(TestID,InfoM),matches(InfoS,InfoM))).
-%test_info(TestID,InfoS):- \+ \+ muarc_tmp:test_info_cache(TestID,_),!,muarc_tmp:test_info_cache(TestID,InfoS).
-test_info(TestID,InfoS):- nonvar(TestID),nonvar(InfoS),muarc_tmp:test_info_cache(TestID,InfoM),!,matches(InfoS,InfoM).
-
-test_info(TestID,InfoS):- muarc_tmp:test_info_cache(TestID,InfoS)*->true;test_info_recache(TestID,InfoS).
-
-test_info_recache(TestID,InfoS):- 
- forall(retract(muarc_tmp:test_info_cache(TestID,_)),true),
- findall(Inf,
-  (some_test_info(CTestID,Inf0),once((fix_test_name(CTestID,CFTestID,_),CFTestID=TestID)),
-   repair_info(Inf0,Inf)),Info),
+test_info_recache(TestID,InfoSS):-  %once((fix_test_name(CTestID,CFTestID,_),CFTestID=TestID)),
+  findall(Inf,all_test_info(TestID,Inf),Info),
   flatten([Info],InfoFF),repair_info(InfoFF,InfoF),list_to_set(InfoF,InfoS),!,
-  asserta(muarc_tmp:test_info_cache(TestID,InfoS)),!.
+  forall(retract(muarc_tmp:test_info_cache(TestID,_)),true),
+  asserta(muarc_tmp:test_info_cache(TestID,InfoS)),!,InfoS=InfoSS.
+
+some_test_info(TestID,III):- some_test_info_1(TestID,Inf0),repair_info(Inf0,III).
+some_test_info(TestID,III):- muarc_tmp:test_info_cache(TestID,III).
+
+some_test_info_1(TestID,III):- more_test_info(TestID,III).
+%some_test_info(X,[keypad]):- key_pad_tests(X). 
+some_test_info_1(TestID,III):- fav(TestID,III).
+some_test_info_1(TestID,III):- some_test_info_prop(TestID,III).
+
+all_test_info(TestID,III):- some_test_info(TestID,III).
+all_test_info(TestID,test_suite([SuiteX])):- some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
+
 
 repair_info(Inf,InfO):- listify(Inf,Inf1),maplist(repair_info0,Inf1,InfO).
 repair_info0(Inf0,Inf):- is_list(Inf0),!,maplist(repair_info0,Inf0,Inf).
@@ -944,10 +976,11 @@ test_names_by_fav_rev(Name):- test_names_ord_favs(AllS),reverse(AllS,AllR),membe
 :- dynamic(ord_favs/1).
 test_names_ord_favs(FavListS):- ord_favs(FavListS),!.
 test_names_ord_favs(FavListS):- 
+ my_time((
   pp(recreating(test_names_ord_favs)), 
   findall(Name,fav(Name),FavList),list_to_set(FavList,FavListS),
   pp(done_recreating(test_names_ord_favs)),  
-  asserta(ord_favs(FavListS)).
+  asserta(ord_favs(FavListS)))).
 
 alphabetical_v(Set):- findall(v(Name),all_arc_test_name(v(Name)),List),sort(List,Set).
 alphabetical_t(Set):- findall(t(Name),all_arc_test_name(t(Name)),List),sort(List,Set).
@@ -955,34 +988,42 @@ alphabetical_t(Set):- findall(t(Name),all_arc_test_name(t(Name)),List),sort(List
 
 human_t(T):- human_t_set(Set),member(T,Set).
 
-%human_t_set(NamesByHardUR):- muarc_tmp:cached_tests(human_t_set,NamesByHardUR),!.
+human_t_set(NamesByHardUR):- muarc_tmp:cached_tests(human_t,NamesByHardUR),!.
 human_t_set(NamesByHardUR):- % Name=t(_),
-  findall(Name,(test_info(Name,Sol),member(human(_),Sol)),All),
-  list_to_set(All,NamesByHardUR).
+  findall(Name,(all_arc_test_name(Name),some_test_info(Name,Sol),member(human(_),Sol)),All),
+  list_to_set(All,NamesByHardUR),
+  asserta(muarc_tmp:cached_tests(human_t,NamesByHardUR)).
+
 
 sol_t(T):- sol_t_set(Set),member(T,Set).
-sol_t(T):- human_t_set(Set),member(T,Set).
+%sol_t(T):- human_t_set(Set),member(T,Set).
+
+sol_t_set(NamesByHardUR):- muarc_tmp:cached_tests(sol_t,NamesByHardUR),!.
 sol_t_set(NamesByHardUR):- % Name=t(_),
   findall(Name,
-   (test_info(Name,Sol),member(C,Sol),compound(C),functor(C,F,1),atom_contains(F,sol)),All),
-  list_to_set(All,NamesByHardUR).
+   (some_test_info(Name,Sol),member(C,Sol),compound(C),functor(C,F,1),atom_contains(F,sol)),All),
+  list_to_set(All,NamesByHardUR),
+  asserta(muarc_tmp:cached_tests(sol_t,NamesByHardUR)).
 
 
-
+/*
 hard_t(T):- hard_t_set(Set),member(T,Set).
 
-hard_t_set(NamesByHardUR):- Name=t(_),
-  findall(Name,all_arc_test_name(Name),List),sort_by_hard(List,NamesByHardUR).
+hard_t_set(NamesByHardUR):- muarc_tmp:cached_tests(hard_t,NamesByHardUR),!.
+hard_t_set(NamesByHardUR):- % Name=t(_),
+  findall(Name,all_arc_test_name(Name),List),sort_by_hard(List,NamesByHardUR),
+  asserta(muarc_tmp:cached_tests(hard_t,NamesByHardUR)).
 
+hard_t:- cls_z, hard_t(NamesByHardUR),
+  forall(member(Name,NamesByHardUR),print_test(Name)).
 
+*/
 sort_by_hard(List,NamesByHardUR):- 
   sort(List,Sorted),
   findall(Hard-Name,(member(Name,Sorted),hardness_of_name(Name,Hard)),All),
   keysort(All,AllK),  maplist(arg(2),AllK,NamesByHardU),!,
   reverse(NamesByHardU,NamesByHardUR).
 
-hard_t:- cls_z, hard_t(NamesByHardUR),
-  forall(member(Name,NamesByHardUR),print_test(Name)).
 
 
 alphabetical_t:- clsmake, write_ansi_file(alphabetical_t).

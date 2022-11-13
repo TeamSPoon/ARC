@@ -106,7 +106,8 @@ show_reduced_io_rarely(IO):- forall(show_reduced_io(IO),true).
 print_testinfo_extended:- 
   get_current_test(TestID),print_testinfo_extended(TestID).
 
-print_testinfo_extended(TestID):- print_testinfo(TestID),
+print_testinfo_extended(TestID):- 
+  my_time(print_testinfo(TestID)),
   with_test_pairs(TestID,ExampleNum,I,O,
     (print_side_by_side(green,I,orig_in(TestID,ExampleNum),_,O,orig_out(TestID,ExampleNum)),
      forall(show_reduced_io(I+O),true))).

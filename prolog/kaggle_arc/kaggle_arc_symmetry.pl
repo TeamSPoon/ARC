@@ -14,6 +14,7 @@ kaggle_arc_io_trn(TestID,Example+Num,IO,Grid):-
   arg(_,v(trn,tst),Example),
   kaggle_arc_io(TestID,Example+Num,IO,Grid).
 
+
 is_monotrim_test(TestID):- findall(TestID,(is_symgrid(TestID); is_monotrim_test0(TestID)),L),list_to_set(L,S),member(TestID,S).
 
 is_monotrim_test0(TestID):- 
@@ -584,21 +585,27 @@ grid_to_3x3_objs11(VM,Ordered,Grid,NewIndiv4s,KeepNewState,RepairedResult,find_a
 maybe_set_vm(VM):- nonvar(VM),!,set_vm(VM).
 maybe_set_vm(VM):- get_vm(VM).
 
-
+% =====================================================================
 is_fti_step(maybe_repair_in_vm).
-maybe_repair_in_vm(P4,VM):-
- ignore(( 
-  maybe_set_vm(VM),
-  VM.option_repair_grid == true,
+% =====================================================================
+maybe_repair_in_vm(_P4,VM):- VM.option_repair_grid==false,!.
+maybe_repair_in_vm(P4,VM):- var(VM.option_repair_grid), !, 
+ (need_repair_grid(VM.id) -> (set(VM.option_repair_grid) = true) ; (set(VM.option_repair_grid) = false)),
+  maybe_repair_in_vm(P4,VM).
+maybe_repair_in_vm(P4,VM):- repair_in_vm(P4,VM),!.
+
+need_repair_grid(VM):- 
   VM.h >= 14, VM.v >= 14,
+  testid_name_num_io(VM.id,TestID,_Example,_Num,in),!,
+  kaggle_arc(TestID,trn+0,I,O), is_grid_symmetricD(O), !, \+ is_grid_symmetricD(I),  
   Grid=VM.grid,
   mass(Grid,GridMass),
   Area is VM.h * VM.v,  
-  GridMass/Area > 0.39,
-  enum_colors(Color), column_or_row(Grid,Color),
-  repair_in_vm(P4,VM))).
+  GridMass/Area > 0.39.
 
+% =====================================================================
 is_fti_step(repair_in_vm).
+% =====================================================================
 repair_in_vm(P4,VM):-
  ignore((
   maybe_set_vm(VM),
@@ -802,6 +809,13 @@ unbind_and_fill_in_blanks([CodeFirst,CodeNext],Grid,RepairedResultO):- !,
   must_det_ll((best_of(Out,CodeFirst,CodeNext,RepairedResult,RepairedResultO))),  
   mass(RepairedResultO,Mass), Mass>0, !.
 */
+unbind_and_fill_in_blanks([CodeFirst,CodeNext],Grid,RepairedResultOMaybeHint):- !,
+  guess_pre_repair_steps(CodeFirst,Grid,RepairedResultOMaybeHint,RepairedResult),
+  (nonvar(CodeNext)->true; (CodeNext=now_fill_in_blanks_good;CodeNext = now_fill_in_blanks(_))),
+  peek_target_or_else(Grid,Out),
+  must_det_ll((best_of(Out,CodeFirst,CodeNext,RepairedResult,RepairedResultOMaybeHint))),  
+  mass(RepairedResultOMaybeHint,Mass), Mass>0.
+
 
 unbind_and_fill_in_blanks(CodeFirstCodeNext,Grid,RepairedResultOMaybeHint):-
   unbind_and_fill_in_blanks1(CodeFirstCodeNext,Grid,RepairedResultOMaybeHint)*-> true
@@ -828,13 +842,10 @@ guess_pre_repair_steps(CodeFirst,Grid,OptionalRepairResultHint,RepairedResultMid
    wdmsg(CodeFirst).
    
 
-
 guess_to_unbind(Grid,Color):- nonvar(Color),!,nop(sub_var(Color,Grid)).
-guess_to_unbind(Grid,Color):- 
-  guess_to_unbind1(Grid,Color), get_black(Black),
-  (Color\==Black 
-   -> ( \+ column_or_row(Grid,Color), if_target(Out, \+ contains_color(Color,Out))) 
-    ; true).
+guess_to_unbind(Grid,Color):- guess_to_unbind11(Grid,Color)*->true;(!,(Color = black;guess_to_unbind12(Grid,Color))).
+guess_to_unbind(_Grid,Color):- Color = black.
+
 
 ok_used_in(ColorC,Grid,Out):- 
   colors(Grid,Colors),Colors\==[], % reverse(Colors,ColorsR),
@@ -844,8 +855,8 @@ ok_used_in(ColorC,Grid,Out):-
   \+ column_or_row(Grid,Color),
   ColorC=Color.
 
-%guess_to_unbind1(_Grid,Color):- Color = black.
-guess_to_unbind1(Grid,Color):- 
+%guess_to_unbind(_Grid,Color):- Color = black.
+guess_to_unbind11(Grid,Color):- 
   if_target(Out, FinalColors = Out),
   ignore((var(FinalColors) -> kaggle_arc(_,trn+_,Grid,FinalColors) ; true)),
   colors(Grid,Colors),Colors\==[], % reverse(Colors,ColorsR),
@@ -853,9 +864,10 @@ guess_to_unbind1(Grid,Color):-
   if_t(nonvar(FinalColors), ( \+ contains_color(Color,FinalColors))), 
   if_target(Out, ( v_area(Out,SizeOut),v_area(Grid,SizeIn),(SizeIn>SizeOut -> N is SizeOut ; true))),
   \+ column_or_row(Grid,Color).
-guess_to_unbind1(_Grid,Color):- Color = black.
+%guess_to_unbind12(_Grid,Color):- Color = blue.
+guess_to_unbind12(Grid,Color):- colors(Grid,Colors),member(cc(Color,N),Colors),N>0, Color \== black, is_real_color(Color).
 /*
-guess_to_unbind1(Grid,Color):- !, fail, select(Row1,Grid,Rows),member(Row2,Rows),
+guess_to_unbind(Grid,Color):- !, fail, select(Row1,Grid,Rows),member(Row2,Rows),
   append(_,[C1,C2],Row1),C1==C2,
   append(_,[C3,C4],Row2),C3==C4,
   get_black(Black),
@@ -869,7 +881,7 @@ now_fill_in_blanks_good(RepairedResult,RepairedResultO):- findall(P2,rotP3(P2),L
 now_fill_in_blanks_good([],RepairedResult,RepairedResult):-!.
 now_fill_in_blanks_good(_,RepairedResult,RepairedResultO):- ground(RepairedResult),!,RepairedResultO=RepairedResult.
 now_fill_in_blanks_good([P2|List],RepairedResult,RepairedResultO):- !,
-  now_fill_in_blanks(P2,RepairedResult,RepairedResultM),
+  (now_fill_in_blanks(P2,RepairedResult,RepairedResultM)->true;RepairedResult=RepairedResultM),
   now_fill_in_blanks_good(List,RepairedResultM,RepairedResultO).
 
 now_fill_in_blanks(P2,RepairedResult,RepairedResultO):- ground(RepairedResult),!,RepairedResultO=RepairedResult,ignore(P2=_).

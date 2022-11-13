@@ -517,9 +517,10 @@ banner_lines(Color):- nl_if_needed,
   color_print(Color,'--------------------------------------------------------------'),nl,!.
 
 print_ss(A):- ( \+ compound(A) ; \+ (sub_term(E,A), is_gridoid(E))),!, wdmsg(print_ss(A)),!.
-print_ss(A):- writeln(print_ss), grid_footer(A,G,W),print_ss(G,W),!.
+print_ss(A):- grid_footer(A,G,W),writeln(print_ss(W)), print_ss(G,W),!.
 print_ss(A):- must_det_ll(( format('~N'), into_ss_string(A,SS),!,
-  SS = ss(_,Lst),
+  SS = ss(L,Lst),
+  writeln(print_ss(l(L))), 
   forall(member(S,Lst),writeln(S)),format('~N'))),!.
 
 print_ss(G,W):- is_gridoid(G),!,must_det_ll(print_grid(W,G)).
@@ -589,6 +590,7 @@ print_side_by_side4d(TitleColor,S1,F1,N1,W0,S2,F2,N2):- number(W0), W0 < 0, LW i
 print_side_by_side4d(TitleColor,S1,F1,N1,_LW,S2,F2,N2):- 
    nl_if_needed, write('\t'),format_u(TitleColor,F1,[N1,S1]),write('\t\t'),format_u(TitleColor,F2,[N2,S2]),write('\n'),!.
 
+unsized_grid(A):- is_gridoid(A),!,fail.
 unsized_grid(A):- grid_footer(A,Grid,_Text), !, \+ is_gridoid(Grid),!.
 unsized_grid(A):- \+ is_gridoid(A),!.
 
@@ -620,8 +622,8 @@ gridoid_size(G,H,V):- compound_name_arity(G,print_grid,A),arg(A,G,GG),gridoid_si
 gridoid_size(G,H,V):- is_gridoid(G),!,grid_size(G,H,V).
 
 print_side_by_side0([],_,[]):-!.
-print_side_by_side0(A,_,B):- (unsized_grid(A);unsized_grid(B)),!, print_ss(A),print_ss(B),!.
-print_side_by_side0(A,_,B):- g_smaller_than(A,B),!, print_ss(A),print_ss(B),!.
+print_side_by_side0(A,_,B):- (unsized_grid(A);unsized_grid(B)),!, writeln(unsized_grid), print_ss(A),print_ss(B),!.
+print_side_by_side0(A,_,B):- g_smaller_than(A,B),!, writeln(g_smaller_than), print_ss(A),print_ss(B),!.
 /*
 print_side_by_side0(C1-call(wqs(S1)),LW,C2-call(wqs(S2))):- nonvar(S1),!,
   print_side_by_side0(C1,LW,C2),nl_if_needed,

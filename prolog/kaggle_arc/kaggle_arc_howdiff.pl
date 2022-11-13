@@ -480,7 +480,7 @@ never_pair(PA,PB):- PA=@=PB.
 never_pair(PA,PB):- never_pair_r(PA,PB),!.
 never_pair(PA,PB):- never_pair_r(PB,PA),!.
 never_pair_r(PA,PB):- get_black(Black),has_prop(pen([_-Black]),PA),has_prop(pen([_,_|_]),PB).
-%never_pair_r(PA,PB):- has_prop(chromatic(0),PA), \+ has_prop(chromatic(0),PB).
+%never_pair_r(PA,PB):- has_prop(chromatic(0,_),PA), \+ has_prop(chromatic(0,_),PB).
 
 
 diff_groups1(AAR,BBR,DD):- maybe_reorder_pair(AAR,BBR,AAR2,BBR2),!,  diff_groups1a(AAR,BBR,AAR2,BBR2,DD).

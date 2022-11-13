@@ -342,23 +342,23 @@ individuation_macros(some_leftovers, [
      by_color(1),by_color(0)]).
 
 individuation_macros(do_ending, [
-  find_edges,
-  find_touches,  
-  find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
-  find_sees,
-  find_overlap,
+  %find_edges,
   % find_contained_points, % mark any "completely contained points"
-  combine_same_globalpoints, % make sure any objects are perfectly the equal part of the image are combined   
-  group_vm_priors,
-  grid_props,
-  %combine_objects,
-  end_of_macro]).
+ combine_same_globalpoints, % make sure any objects are perfectly the equal part of the image are combined   
+ grid_props,
+ find_touches,  
+ find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
+ find_sees,
+ find_overlaps,
+ group_vm_priors,
+ %combine_objects,
+ end_of_macro]).
 
 individuation_macros(S,Some):- sub_individuation_macro(S,Some).
 
 sub_individuation_macro(S,Some):-
   individuator(S,From),
-  append([[reset_points],From],Some).
+  flatten([[reset_points],From],Some).
 
 
 include_black(_VM):- set_bgc(wbg).
@@ -369,12 +369,14 @@ include_black(_VM):- set_bgc(wbg).
 individuation_macros(complete, ListO):- im_complete(ListC),
    flatten([ListC,do_ending],ListM),
    list_to_set(ListM,ListO),
-   pp(im_complete(ListO)),!.
+   fix_indivs_options(ListO,ListOO),
+   list_to_set(ListOO,ListOOO),
+   pp(im_complete(ListOOO)),!.
 
 
-im_complete(ListO):- test_config(indiv(ListO)),!.
+%im_complete(ListO):- test_config(indiv(ListO)),\+ is_
 %im_complete(ListO):- ListO=[n_w,all_lines,diamonds,do_ending].
-im_complete([grid_props,i_repair_patterns]):- get_current_test(TestID),is_symgrid(TestID),!.
+%im_complete([i_repair_patterns]):- get_current_test(TestID),is_symgrid(TestID),!.
 im_complete(i_complete_generic).
 
 %im_complete(i_repair_patterns):-!.
@@ -383,8 +385,7 @@ individuation_macros(i_complete_generic, SetO):-
 %individuation_macros(complete, ListO):-  \+ test_config(indiv(_)),!, %reset_points, %sub_individuate(force_by_color,subshape_both), %TODO %
   %findall(drops_as_objects(From),(individuator(From,_)),ListM),
   findall(save_as_obj_group(From),individuator(From,_),ListS),
-  flatten([ 
-   grid_props,
+  flatten([    
    %save_as_obj_group
    ListS,
    %find_grids,
@@ -393,6 +394,7 @@ individuation_macros(i_complete_generic, SetO):-
    %ListM,ListS,
    save_as_obj_group(find_hybrid_shapes),
    find_hybrid_shapes,
+   %save_as_obj_group(diamonds),
    gather_cached,
    %[pointless([sub_indiv([save_as_obj_group(force_by_color),save_as_obj_group(i_colormass),save_as_obj_group(i_nsew)])])],
    %do_ending,
@@ -405,23 +407,29 @@ individuation_macros(i_columns,[when(get(h)=<5,all_columns),when(get(h)>5,some_c
 individuation_macros(i_rows,[when(get(h)=<5,all_rows),when(get(v)>5,some_rows)]). %:- \+ doing_pair.
 individuation_macros(i_maybe_glypic,[maybe_glyphic]).
 
+fast_simple :- true.
+
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
-individuator(i_pbox,[pbox_vm,i_colormass]).
 individuator(i_colormass,[colormass]).
+individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), reset_points, by_color(1,black),by_color(1,bg), by_color(1,fg),/* ,*/[]]).
+individuator(i_mono_colormass,[fg_shapes(i_colormass)]).
+individuator(i_nsew,[n_w]).
+individuator(i_mono_nsew,[fg_shapes(i_nsew)]).
+individuator(i_diags,[diamonds,all_lines,alone_dots]).
+individuator(i_subtractions,[fg_subtractions([save_as_obj_group(i_mono_nsew),save_as_obj_group(i_nsew)])]).
+
+individuator(i_pbox,[maybe_pbox_vm,i_colormass]).
+
 %individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots]).
 
-individuator(i_subtractions,[fg_subtractions([save_as_obj_group(i_mono_nsew),save_as_obj_group(i_nsew)])]).
 %individuator(i_abtractions,[fg_abtractions([save_as_obj_group(i_mono_nsew),save_as_obj_group(i_nsew)])]).
-individuator(i_nsew,[n_w,diamonds,all_lines,colormass,do_ending]).
-individuator(i_mono_nsew,[fg_shapes(i_nsew)]).
-individuator(i_mono_colormass,[fg_shapes([subshape_both(v,[n_w,all_lines,diamonds])])]).
+individuator(i_repair_patterns,[maybe_repair_in_vm(find_symmetry_code)]).
+
 /*
 
 */
 %individuator(i_hybrid_shapes,[find_hybrid_shapes]).
-individuation_macros(i_repair_patterns,[repair_in_vm(find_symmetry_code)]).
 %individuation_macros(i_repair_repeats,[repair_in_vm(repair_repeats(Black))]):- get_black(Black).
-% individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), /*by_color(1,black), by_color(1,lack),by_color(1,bg), by_color(1,fg),*/ do_ending]).
 /*
 individuator(i_nsew,[subshape_both(h,nsew), maybe_lo_dots]).
 individuator(i_maybe_glypic,[maybe_glyphic]). %:- \+ doing_pair.
@@ -802,6 +810,12 @@ fix_indivs_options(O,L):-is_list(O),maplist(fix_indivs_options,O,OL),my_append(O
 fix_indivs_options(G,[G]):- var(G),!.
 fix_indivs_options(I,O):- atom(I),individuation_macros(I,M),!,fix_indivs_options(M,O),!.
 fix_indivs_options(macro(I),[macro(O)]):- fix_indivs_options(I,O).
+%fix_indivs_options(save_as_obj_group(I),[save_as_obj_group(O)]):- fix_indivs_options(I,O).
+fix_indivs_options(fg_subtractions(I),[fg_subtractions(O)]):- fix_indivs_options(I,O).
+fix_indivs_options(fg_shapes(I),[fg_shapes(O)]):- fix_indivs_options(I,O).
+fix_indivs_options(subshape_both(V,I),[subshape_both(V,O)]):- fix_indivs_options(I,O).
+
+
 fix_indivs_options(detect(O),[detect(O)]):-!.
 fix_indivs_options(O,[detect(O)]):- is_gridoid(O),!.
 fix_indivs_options(I,O):-listify(I,O),!.
@@ -1046,7 +1060,7 @@ individuate2(VM,[ROptions],OID,Grid,IndvS):- nonvar(ROptions), !, individuate2(V
 
 individuate2(_VM,ROptions,OID,_GridIn,IndvS):- nonvar(OID), 
   get_individuated_cache(_TID,ROptions,OID,IndvS),!,
-  length(IndvS,Len),ignore((Len>0,pp(yellow,oid_cached(ROptions,OID,len(Len),'$VAR'(Len))))),
+  length(IndvS,Len),ignore((Len>=0,pp(yellow,oid_cached(ROptions,OID,len(Len),'$VAR'(Len))))),
   !.
 individuate2(VM,ROptions,OID,GridIn,IndvS):-
   do_individuate(VM,ROptions,GridIn,LF),!,
@@ -1144,8 +1158,8 @@ into_fti(ID,ROptions,GridIn0,VM):-
    allocated_points:[],
    points:Points,
    props:_,
-   option_repair_grid:true,
-
+   option_repair_grid:  _, % Automatic,  
+   option_pboxes:  _, % Automatic,  
      option_Background:  _, % Automatic,                         /* The background color of scenes. */
      option_CheckForGridsAndDividers: true    ,                  /* If we see things that look like grids/dividers, should we treat the specially, such as segmenting them into their own objects? */
      option_SubdivideInput: false,                               /* If {rowCount, columnCount} is passed in, we subdivide the input into a grid of objects and then try to find rules. e.g. 2dee498d */
@@ -1314,7 +1328,7 @@ fti(VM,_):-
   ((member(progress,VM.options); Count > VM.objs_max_len; (statistics(cputime,X), X > (VM.timeleft)))) -> 
    print_vm_debug_objs(VM),fail.
 
-fti(VM,Prog):- length(Prog,Len),Len>1, exceeded_objs_max_len(VM),!,
+fti(VM,Prog):- fail, length(Prog,Len),Len>1, exceeded_objs_max_len(VM),!,
   set(VM.objs_max_len) is VM.objs_max_len + 2000,
   set(VM.program_i)= [do_ending],!.
 
@@ -1982,7 +1996,7 @@ prior_objs(Objs,LF):-
  must_det_ll((
  object_priors(Objs,Lbls),
  sort(Lbls,LblSets),
- pp(groupPriors=LblSets),
+ print_tree(groupPriors=LblSets,[max_depth(200)]),
  add_priors(LblSets,Objs,LF))).
 
 %objs_with_feat(Objs,Name,Matches):-
@@ -2012,7 +2026,7 @@ prior_name_by_size(VM,IndvS0,Name):-
       override_object(birth(Name),IndvS0,IndvS1)
       gset(VM.objs)=IndvS1,
      /*
-      %zorder_priors(Name,IndvS1,IndvSL),
+      %rank_priors(Name,IndvS1,IndvSL),
       gset(VM.objs)=IndvSL,
       nop((( Name == i_nsew ) -> DebugThis = full ; luser_getval(debug,DebugThis)->true; DebugThis=true)),
       nop(( DebugThis\==false -> Feedback = debug_as_grid(Title) ; Feedback = print_info)),
@@ -2083,45 +2097,45 @@ add_prior(Lbl,Objs,ObjsWithPrior):-
   is_list(Objs),
   my_partition(is_prior_prop(Lbl),Objs,Lbld,Unlbl),  
   %add_prior_placeholder(Lbl,Lbld,RLbld),
-  zorder_priors(Lbl,Lbld,RLbldR),
+  rank_priors(Lbl,Lbld,RLbldR),
   append([Unlbl,RLbldR],ObjsWithPrior).  
 
 prior_name_by_size(_VM,[],_Name):-!.
 prior_name_by_size(VM,IndvS0,Name):-  
-  zorder_priors(Name,IndvS0,IndvSL),
+  rank_priors(Name,IndvS0,IndvSL),
   addObjectOverlap(VM,IndvSL).
 
-zorder_priors(GType,Objs,SFO):-   
+rank_priors(GType,Objs,SFO):-   
  must_det_ll((
    %add_prior_placeholder(GType,Group,Objs),
    smallest_first(smallest_pred(GType),Objs,SF),
    length(SF,SFLen),
-   nop(SFLen < 2 -> pp(red,zorder_priors(GType,SFLen)); pp(green,zorder_priors(GType,SFLen))),
-   add_zorder(GType,sf(SFLen),SF,SFO))).
+   nop(SFLen < 2 -> pp(red,rank_priors(GType,SFLen)); pp(green,rank_priors(GType,SFLen))),
+   add_rank(GType,sf(SFLen),SF,SFO))).
 
 
 %has_order(O,P1, Code ):- 
 % Code = ((
-add_zorder(GType,ZType,IndvS,IndvSO):- add_zorder(GType,ZType,1,IndvS,IndvSO).
-add_zorder(_GType,_ZType,_,[],[]):-!.
-add_zorder(GType,ZType,N,[L],[Obj]):-  N==1, !, set_zorder(GType,ZType,L,restOF,Obj).
-add_zorder(GType,ZType,N,[L],[Obj]):-   N>1, !, set_zorder(GType,ZType,L,lastOF,Obj).
-add_zorder(GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- N = 1, set_zorder(GType,ZType,L,firstOF,Obj), 
- N2 is N+1,!, add_zorder(GType,ZType,N2,IndvS,IndvSO).
-add_zorder(GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- % (GType = rank1(_);GType = rank2(_)),!, 
- set_zorder(GType,ZType,L,N,Obj), 
- N2 is N+1,!, add_zorder(GType,ZType,N2,IndvS,IndvSO).
-add_zorder(GType,ZType,N,[L|IndvS],  [L|IndvSO]):- 
- N2 is N+1,!, add_zorder(GType,ZType,N2,IndvS,IndvSO).
+add_rank(GType,ZType,IndvS,IndvSO):- add_rank(GType,ZType,1,IndvS,IndvSO).
+add_rank(_GType,_ZType,_,[],[]):-!.
+add_rank(GType,ZType,N,[L],[Obj]):-   N>1, !, set_rank(GType,ZType,L,lastOF,Obj).
+add_rank(GType,ZType,N,[L],[Obj]):-  N==1, !, set_rank(GType,ZType,L,bestOF,Obj).
+add_rank(GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- N = 1, set_rank(GType,ZType,L,firstOF,Obj), 
+ N2 is N+1,!, add_rank(GType,ZType,N2,IndvS,IndvSO).
+add_rank(GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- % (GType = rank1(_);GType = rank2(_)),!, 
+ set_rank(GType,ZType,L,nth(N),Obj), 
+ N2 is N+1,!, add_rank(GType,ZType,N2,IndvS,IndvSO).
+add_rank(GType,ZType,N,[L|IndvS],  [L|IndvSO]):- 
+ N2 is N+1,!, add_rank(GType,ZType,N2,IndvS,IndvSO).
 
 
-set_zorder(GType,ZType,L,N,Obj):-  O = o, 
+set_rank(GType,ZType,L,N,Obj):-  O = o, 
   get_setarg_p1(nb_setarg,I,L,P1), 
   compound(I), I=.. [O,ZType,_,GType], 
   II=..[O,ZType,N,GType],
   call(P1 ,II),!, Obj = L.
 
-set_zorder(GType,ZType,L,N,Obj):-  O = o, 
+set_rank(GType,ZType,L,N,Obj):-  O = o, 
    II=..[O,ZType,N,GType], 
    override_object([II],L,Obj),!.
 

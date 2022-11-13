@@ -111,19 +111,22 @@ debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
   if_t((H\==1;V\==1;true),
     must_det_ll((
      loc2D(Grid,OH,OV),     
-     localpoints_include_bg(Grid,GridO),
-     get_black(Black),
-     subst001(GridO,Black,wbg,PrintGrid),    
-     copy_term(PrintGrid,PrintGridC),
-     ignore((
-        O = PrintGrid, once(grid_to_norm(O,Ops,N)), O\=@=N, print_side_by_side(Ops,O,N),writeln(Ops))),
-     into_ngrid(PrintGridC,NGrid),
      nop((shape2D(Grid,SX,SY),max_min(H,SX,IH,_),max_min(V,SY,IV,_))),
      ignore(IV=V),ignore(IH=H),
+     localpoints_include_bg(Grid,GridOM),
+     points_to_grid(H,V,GridOM,GridO),
+     get_black(Black),
+     subst001(GridOM,Black,wbg,PrintGrid),    
+     copy_term(PrintGrid,PrintGridC),
+     into_ngrid(PrintGridC,NGrid),
      %wots(GS,print_grid(IH,IV,Title,PrintGridC)),replace_in_string(['®'=Glyph,'@'=Glyph],GS,GSS),
      %wots(S,print_side_by_side(GSS,print_grid(IH,IV,ngrid,NGrid))),
-     wots(S,print_grid(IH,IV,Title,NGrid)),
-     HH is (OH - 1) * 2, print_w_pad(HH,S)))),
+
+     wots(S,print_grid(IH,IV,Title,NGrid)), HH is (OH - 1) * 2, print_w_pad(HH,S),
+
+     ignore(( O = GridO, once(grid_to_norm(O,Ops,N)), O\=@=N, print_side_by_side(Ops,O,N),writeln(Ops))),
+
+     true))),
   if_t(is_object(Grid),
     (format('~N~n'),
      locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Grid))))),
@@ -149,8 +152,9 @@ debug_indiv(Grid):- maplist(is_point,Grid),!,debug_as_grid(is_point,Grid).
 debug_indiv(List):- is_list(List),length(List,Len),!,
   dash_chars,
   wqnl(debug_indiv = Len),
-  max_min(Len,40,_,Min),
-  forall(between(1,Min,N),(N=<40->(nth1(N,List,E),debug_indiv(E));wqnl(total = 40/Len))),
+  print_list_of(debug_indiv,debug_indiv_list,List),
+  %max_min(Len,40,_,Min),
+  %forall(between(1,Min,N),(N=<40->(nth1(N,List,E),debug_indiv(E));wqnl(total = 40/Len))),
   dash_chars,!.
 
 

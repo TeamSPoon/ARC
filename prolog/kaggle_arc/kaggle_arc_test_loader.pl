@@ -67,7 +67,8 @@ assert_kaggle_arc_json(Name,Type,In0,Out0):-
 assert_kaggle_arc_json_now(Name,Type,In,Out):- kaggle_arc_json(Name,Type,In,OutO),Out=OutO,!.
 assert_kaggle_arc_json_now(Name,Type,In,Out):- assert_if_new(kaggle_arc_json(Name,Type,In,Out)).
 
-add_test_info_prop(Name,A,V):- n_v_to_nv(A,V,TV),assert_if_new(some_test_info_prop(Name,TV)).
+add_test_info_prop(Name,A,[V]):- nonvar(V), !, add_test_info_prop(Name,A,V).
+add_test_info_prop(Name,A,V):- n_v_to_nv(A,[V],TV),assert_if_new(some_test_info_prop(Name,TV)).
 
 :- multifile(dir_test_suite_name/1).
 :- dynamic(dir_test_suite_name/1).

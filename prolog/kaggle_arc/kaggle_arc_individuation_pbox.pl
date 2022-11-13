@@ -32,14 +32,31 @@ make_gclip_cache:-
  wdmsg(gclip_cache = NC).
 
 % =====================================================================
-is_fti_step(pbox_vm).
-is_fti_step(pbox_vm_now).
+is_fti_step(maybe_pbox_vm).
 % =====================================================================
 %:- luser_setval(individuated_cache,false).
 
-pbox_vm(VM):- VM.h > 23,VM.v > 23,!.
-pbox_vm(VM):- pbox_vm_now(VM),!.
-pbox_vm_now(VM):- !,
+maybe_pbox_vm(VM):- VM.option_pboxes==false,!.
+maybe_pbox_vm(VM):- var(VM.option_pboxes), !, 
+ (need_pboxes(VM.grid_o) -> (set(VM.option_pboxes) = true) ; (set(VM.option_pboxes) = false)),
+  maybe_pbox_vm(VM).
+maybe_pbox_vm(VM):- pbox_vm(VM),!.
+
+
+need_pboxes(VM):- 
+  testid_name_num_io(VM.id,TestID,_Example,_Num,IO),!,
+  forall(kaggle_arc_io(TestID,trn+_,IO,G), \+ \+ (whole_row_or_col(C,G),C\==black)). 
+
+whole_row_or_col(C,Center):- member(Row,Center), maplist(=(C),Row).
+whole_row_or_col(C,Center):- Center\==[], Center\==[[]], rot90(Center,Cols),member(Col,Cols), maplist(=(C),Col).
+not_whole_row_or_col(C,Center):- \+ whole_row_or_col(C,Center).
+
+
+
+% =====================================================================
+is_fti_step(pbox_vm).
+% =====================================================================
+pbox_vm(VM):- !,
    %GH is round(VM.h*2/3), GV is round(VM.v*2/3),
    GH is round(VM.h + 0), GV is round(VM.v + 0),
    findall(size2D(H,V),(l_s_4sides(H,V),H=<GH),Sizes_L_S),
@@ -172,7 +189,7 @@ pbox_io_result(TestID,ExampleNum,IO,G,Objs):- !,
  print_side_by_side(cyan,G,(?-pbox(TestID>ExampleNum*IO)),_,print_grid(Objs),(TestID>ExampleNum*IO)),!.
 
 i_pbox(GridIn,Objs):- 
-  ROptions = pbox_vm_now,
+  ROptions = pbox_vm,
   do_ig(ROptions,GridIn,IndvS),
   into_grid(GridIn,Grid),
   locally(nb_setval(debug_as_grid,t),
@@ -276,10 +293,6 @@ not_edge(C,Find):- append([T|_],[B],Find), not_irow(C,T),  not_irow(C,B),
 nsew_edges(H,V,_,[[],[],[],[]]):- (H<3;V<3),!.
 nsew_edges(_H,_V,Find,Rows):- must_det_ll((append([T|_],[B],Find),rot90(Find,Find90),append([R|_],[L],Find90), Rows = [T,B,R,L])).
 nsew_edges_trimed(H,V,Find,Trims):- nsew_edges(H,V,Find,Rows),maplist(trim_ends,Rows,Trims).
-
-not_whole_row_or_col(C,Center):- 
-  \+ (member(Row,Center), maplist(=(C),Row)),
-  \+ (Center\==[], Center\==[[]],rot90(Center,Cols),member(Col,Cols), maplist(=(C),Col)).
 
 member_e(List,E):- nonvar(E), member(E,List),!.
 maybe_swap(C1,C2,C1,C2). maybe_swap(C1,C2,C2,C1).
@@ -421,6 +434,7 @@ is_compass(A):- atom(A),member(A,[n,s,e,w]).
 
 black_and(Colors,C):- select(C,Colors,Rest),Rest==[black],!.
 
+member1(C,N):- select(CC,N,R), C==CC, \+ (member(C2,R),C2==C).
 
 found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- 
  % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
@@ -431,9 +445,19 @@ found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBor
 
 found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- 
  % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
-  maplist(=(C),Inside), CentS=[_|_], nonvar(C),
+  maplist(=(C),Inside), nonvar(C),
   \+ member(C,OBorderS), OBJ=In,
   WHY = solidCenterIn(CentS,C).
+
+found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- 
+ % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
+  IBorderDivs = [N,S,E,W],
+  member1(C,N),member1(C,S),member1(C,E),member1(C,W),
+  \+ member(C,Cents),
+  \+ member(C,OBorder),
+  %restOfGrid(XSG,OH,OV,H,V,Rest), \+ member(C,Rest).
+  OBJ=In,
+  WHY = fourDots(CentS,C).
 
 
 found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- 
@@ -526,8 +550,8 @@ found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBor
 
 
 
-found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   _, _):-
-  maplist(==(C),Inside), maplist(=(C),OBorder),!,fail.
+found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   _, _):- fail,
+  member(C,Inside),is_real_color(C),maplist(==(C),Inside), maplist(=(C),OBorder),!,fail.
 
 found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   OBJ,WHY):- 
  % pbox_phase_check(L_S,l_s(2)),

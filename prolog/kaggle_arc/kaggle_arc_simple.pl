@@ -132,7 +132,7 @@ simplify_props(_,A,A).
 
 pregroup1(iz(shaped)).
 pregroup1(iz(image)).
-pregroup1(iz(chromatic(N))):- between(1,10,N).
+pregroup1(iz(chromatic(N,BGN))):- between(1,10,N),between(0,2,BGN).
 pregroup1(o(sf(_),_,How)):- dif(How,i_repair_patterns).
 
 

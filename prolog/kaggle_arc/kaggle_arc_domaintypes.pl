@@ -66,6 +66,8 @@ is_bg_color(BG):- var(BG),!,get_attr(BG,ci,bg(_)),!.
 is_bg_color(C):- bg_sym(BG),C==BG,!.
 is_bg_color(C):- get_bgc(BG),C==BG,!.
 
+is_real_bg_color(C):- is_bg_color(C),is_real_color(C).
+
 is_black_or_bg(BG):- is_black(BG)-> true; is_bg_color(BG).
 %is_black_or_bg(0).
 

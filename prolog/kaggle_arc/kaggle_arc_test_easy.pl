@@ -403,7 +403,7 @@ fav(v('47996f11'),[indiv(i_repair_patterns)]).
 fav(v('981571dc'),[indiv(i_repair_patterns)]).
 fav(v('929ab4e9'),[indiv(i_repair_patterns)]).
 fav(t('ff805c23'),[indiv(i_repair_patterns),human(repair_in_vm(repair_fourway),get(changed),trim_to_rect)]). fav(t('ff805c23'),[-shape_match,-rotation_match,-mask_match,-color_match,tt,training,pattern_expansion,pattern_completion,crop,'(3, 1)']). %fav(t('ff805c23'),[human(repair_in_vm(repair_repeats(blue)),get(changed),trim_to_rect)]).
-fav(TestID,[indiv(i_repair_patterns)]):- is_symgrid(TestID).
+%fav(TestID,[indiv(i_repair_patterns)]):- is_symgrid(TestID).
 fav(t('3631a71a'),[indiv(i_repair_patterns)]).   fav(t('3631a71a'),[human(repair_in_vm(repair_fourway),get(repaired))]). fav(t('3631a71a'),[-rotation_match,-mask_match,-color_match,+shape_match,tt,training,pattern_rotation,pattern_expansion,image_filling,'(4, 1)']).
 fav(t('29ec7d0e'),[indiv(i_repair_patterns),human(repair_in_vm(repair_repeats(Black)),get(repaired))]):- get_black(Black). fav(t('29ec7d0e'),[-rotation_match,-mask_match,-color_match,+shape_match,tt,training,pattern_repetition,pattern_expansion,image_filling,detect_grid,'(4, 1)']).
 fav(v('de493100'),[indiv(i_repair_patterns)]). fav(v(de493100),[out_grid(8,6),-shape_match,-rotation_match,-mask_match,-color_match,evaluation,'(4, 1) ']).
