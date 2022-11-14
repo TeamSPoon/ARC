@@ -88,8 +88,11 @@ test_deduce_shapes:-
 
 show_hybrid_set:-
   get_hybrid_set(Set),
-  %print_side_by_side(Set),
-  forall(member(O,Set),(grid_to_norm(O,Ops,N),print_side_by_side(O,N),writeln(Ops))).
+  print_side_by_side(Set),
+  nop(forall(member(O,Set),show_hybrid_shape(O))).
+
+show_hybrid_shape(O):- print_grid(O).
+show_hybrid_shape(O):- grid_to_norm(O,Ops,N),O\==N,print_side_by_side([ops(Ops)],O,N).
 
 
 individuate_pairs_from_hints(TestID):- 
@@ -218,7 +221,7 @@ detect_supergrid_tt_pair(TestID,ExampleNum,In0,Out0,TT):-
   dash_chars, dash_chars,
   dmsg(detect_supergrid_tt_pair(TestID,ExampleNum)),
   print_side_by_side(cyan,In0,task_in(ExampleNum),_,Out0,task_out(ExampleNum)),  
-  forall(show_reduced_io(In0+Out0),true),
+  %forall(show_reduced_io(In0+Out0),true),
   nop((show_recolor(TestID,ExampleNum,In0,Out0,TT)))))),!,
  TT = _{} .
 
@@ -668,7 +671,7 @@ grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(How),individuate(How,
 % one way to match or find an outlier is compressing things in sets minus one object.. the set that is second to the largest tells you what single object os the most differnt 
 objs_shapes(Objs,In):- get_current_test(TestID),test_shapes(TestID,Objs,In).
 
-test_shapes(_TestID, Objs,In):- member(Obj,Objs),object_grid(Obj,In), learn_hybrid_shape(In),fail.
+test_shapes(_TestID, Objs,In):- member(Obj,Objs),object_grid(Obj,In), once(learn_hybrid_shape(In)),fail.
 test_shapes(_TestID,_Objs,In):- get_hybrid_set(Set),!,member(In,Set).
  
 
@@ -801,9 +804,7 @@ all_ogs(In,Out,Set):- %member(R,[strict,loose]),
 
 %maybe_ogs(R,X,Y,In,Out):-  find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R=loose).
 maybe_ogs(R,X,Y,In,Out):- maybe_ogs_color(R,X,Y,In,Out).
-maybe_ogs(call_ogs(P2,R),X,Y,In,Out):- 
- no_repeats(IIN,(rot_ogs(P2),once(try_p2(P2,In,IIN)))),
- maybe_ogs_color(R,X,Y,IIN,Out).
+maybe_ogs(call_ogs(P2,R),X,Y,In,Out):-  no_repeats(IIN,(rot_ogs(P2),once(grid_call_alters(P2,In,IIN)))), maybe_ogs_color(R,X,Y,IIN,Out).
 
 rot_ogs(trim_to_rect).
 rot_ogs(P2):- rotP2(P2).
@@ -824,8 +825,10 @@ into_color_ord(G,GO):- G=GO.
 
 grid_hint_iso(cbg(BGC),IO,Out,In,GH,GV,GH,GV,Hint):- mapgrid(remove_color_if_same(BGC),Out,In,NewIn),
    mass(NewIn,Mass), unique_colors(In,Colors),unique_colors(NewIn,LeftOver), LeftOver\==Colors,
-   (Mass==0 -> Hint=containsAll(IO) ;  Hint=containsAllExceptFor(IO,LeftOver)),
-   learn_hybrid_shape(pair,LeftOver).
+   (Mass==0 -> 
+     ( Hint=containsAll(IO),learn_hybrid_shape(pair,In)) ; 
+     ( Hint=containsAllExceptFor(IO,LeftOver),learn_hybrid_shape(pair,NewIn))),!.
+  
 
 % NewIn\=@=In,print_grid('leftover',NewIn).
 %grid_hint_iso(cbg(BGC),IO,In,Out,_IH,_IV,_OH,_OV,cg(IO,Hint)):- comp_o(IO), grid_color_hint(In,Out,Hint).

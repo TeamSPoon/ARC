@@ -66,7 +66,7 @@ only_color_data_or(Alt,Cell,Color):- only_color_data(Cell,Color)->true;Color=Alt
 %pixel_colors(G,GL):- findall(Name,(sub_term(CP,G),compound(CP),CP=(C-_),color_name(C,Name)),GL).
 is_real_color_or_var(C):- (var(C)->true;is_real_color(C)).
 
-unique_colors(G,SUCO):- colors(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_color_or_var,UC,SUCO))).
+unique_colors(G,SUCOR):- colors(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_color_or_var,UC,SUCO))),reverse(SUCO,SUCOR).
 unique_color_count(G,Len):- unique_colors(G,UC),length(UC,Len).
 
 into_cc(SK,BFO):- maplist(into_cc1,SK,BFO).
@@ -128,10 +128,10 @@ append_left(Grid1,Grid2,Grid):- length(Grid1,Len),assertion(length(Grid2,Len)),m
 append_down(Grid1,Grid2,Grid):- my_append(Grid1,Grid2,Grid).
 
 grow_row([],_,[]).
-grow_row([C1    ],Grid,G1):- !, call(C1,Grid,G1).
-grow_row([C1|Row],Grid,GM):- !, call(C1,Grid,G1),grow_row(Row,Grid,GR),append_left(G1,GR,GM).
+grow_row([C1    ],Grid,G1):- !, grid_call(C1,Grid,G1).
+grow_row([C1|Row],Grid,GM):- !, grid_call(C1,Grid,G1),grow_row(Row,Grid,GR),append_left(G1,GR,GM).
 grow([],       _  ,[]).
-grow([[Self]],Grid,GridO):- !, call(Self,Grid,GridO).
+grow([[Self]],Grid,GridO):- !, grid_call(Self,Grid,GridO).
 grow([Row|Rows],Grid,G1GridO):- grow_row(Row,Grid,G1), grow(Rows,Grid,GridO),my_append(G1,GridO,G1GridO).
 
 no_run_dsl(GridO,_Self,GridO).
@@ -378,8 +378,8 @@ set_all_bg_colors(Color,Grid,NewGrid):- map_pred(do_set_all_bg_colors(Color),Gri
 
 %do_set_all_fg_colors(Color,CPoint,NewCPoint):- is_cpoint(CPoint),CPoint=C-Point,hv_point(_,_,Point),is_fg_color(C),NewCPoint=Color-Point.
 
-blur(Op,G0,GG):- into_grid(G0,G),blur_or_not(Op,G,GG),is_a_change(G,GG).
-blur_or_not(Op,G0,GG):- into_grid(G0,G),call(Op,G,GGG),get_black(Black),replace_local_points(GGG,Black,G,GG).
+blur(Op,G0,GG):- into_grid(G0,G),blur_or_not(Op,G,GG),nop(is_a_change(G,GG)).
+blur_or_not(Op,G0,GG):- into_grid(G0,G),grid_call(Op,G,GGG),get_black(Black),replace_local_points(GGG,Black,G,GG).
 
 is_a_change(G,GG):- G=@=GG,!,fail.
 is_a_change(_,_):-!.
@@ -639,10 +639,14 @@ points_to_grid(Points,Grid):- must_det_ll(grid_size(Points,H,V)), !, points_to_g
 %points_to_grid([Points|More],Grid):- is_grid(Points),grid_size(Points,H,V),duplicate_term(Points,Grid),calc_add_points(H,V,Grid,More),!.
 %points_to_grid(Points,Grid):- is_points_list(Points),!,points_to_grid(30,30,Points,Grid).
 
-points_to_grid(H,V,Points,Grid):- var(H),var(V),must_det_ll(grid_size(Points,H,V)),!,points_to_grid(H,V,Points,Grid).
-points_to_grid(H,V,Points,Grid):- odd_failure((make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
+points_to_grid(H,V,Points,Grid):- var(H),var(V),must_det_ll(grid_size(Points,H,V)),!,points_to_grid0(H,V,Points,Grid).
+points_to_grid(H,V,Points,Grid):- points_to_grid0(H,V,Points,Grid).
+
+points_to_grid0(H,V,Points,Grid):- make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points),!.
+points_to_grid0(H,V,Points,Grid):- must_det_ll((make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
 
 
+calc_add_points(OH,OV,Grid,SGrid):- must_det_ll(calc_add_points0(OH,OV,Grid,SGrid)),!.
 calc_add_points(OH,OV,Grid,SGrid):- odd_failure(calc_add_points0(OH,OV,Grid,SGrid)).
 
 calc_add_points0(_OH,_OV,_Grid,Nil):- Nil == [],!.

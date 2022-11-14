@@ -296,11 +296,11 @@ maybe_swap(C1,C2,C1,C2). maybe_swap(C1,C2,C2,C1).
 
 %list_to_set_bf([L|List],SetOL):- is_list(L),!,maplist(list_to_set_bf,[L|List],SetOL).
 list_to_set_bf(List,SetO):- list_to_set(List,Set), ( (select(B,Set,R), B==black) -> SetO=[black|R] ; SetO=Set).
-maplist_ls(P1,List):- flatten_set(List,Set),maplist(P1,Set).
-member_ls(P1,List):- flatten_set(List,Set),member(P1,Set).
-black_and(F,C):- flatten_set(F,[Black,C]), Black == black.
+maplist_ls(P1,List):- flatten_set_bf(List,Set),maplist(P1,Set).
+member_ls(P1,List):- flatten_set_bf(List,Set),member(P1,Set).
+black_and(F,C):- flatten_set_bf(F,[Black,C]), Black == black.
 member1(C,N):- select(CC,N,R), C==CC, \+ (member(C2,R),C2==C).
-flatten_set(F,S):- flatten(F,L),list_to_set_bf(L,BF),!,BF=S.
+flatten_set_bf(F,S):- flatten(F,L),list_to_set_bf(L,BF),!,BF=S.
 
 
 i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- Points==[], !, wdmsg(pointless(L_S)).
@@ -309,7 +309,7 @@ i_pbox_l(Grid,NSEW,XSG,Points,Points9,VM,L_S,[size2D(H,V)|Sizes]):-
   Which=_,
   make_search_box(H,V,Center,Inside,Find,IBorder,OBorder),
   ogs_11(FH,FV,Find,XSG),  
-  maplist(flatten_set,[Center,Inside,Find],[CenterS,InsideS,FindS]),
+  maplist(flatten_set_bf,[Center,Inside,Find],[CenterS,InsideS,FindS]),
   maplist(list_to_set_bf,IBorder,IBorderS),
   maplist(list_to_set_bf,OBorder,OBorderS),
   found_box(L_S,NSEW,FH,FV,Find,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS, OBJ,WHY),
@@ -445,7 +445,7 @@ is_compass(A):- atom(A),member_ls(A,[n,s,e,w]).
 found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY):- 
  % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
   maplist_ls(=(C),Inside), Center=[_|_], nonvar(C),
-  \+ flatten_set(IBorder,[C]),
+  \+ flatten_set_bf(IBorder,[C]),
   \+ member_ls(C,OBorder), OBJ=center,
   WHY=solidCenter(Center,C).
 
@@ -516,7 +516,7 @@ found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ
  % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
   fail,
   Inside=[C],C\==black,
-  flatten_set(OBorder,[_,_|_]),
+  flatten_set_bf(OBorder,[_,_|_]),
   \+ member_ls(black,OBorder),
   \+ member_ls(C,NSEW),
   OBJ=inside,
@@ -551,7 +551,7 @@ found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ
 
 found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY):-
   pbox_phase_check(L_S,l_s(1)),
-  flatten_set(IBorder,[C]),maplist_ls(\==(C),Inside),
+  flatten_set_bf(IBorder,[C]),maplist_ls(\==(C),Inside),
   OBJ=center,!,WHY=solidInnerBorder2(C).
 
 

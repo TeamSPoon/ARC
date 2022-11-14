@@ -353,7 +353,19 @@ printing_diff(O1,O2):-
   debug_indiv_obj(O1),
   debug_indiv_obj(O2),
   nop(writeln(Str1)), 
-  nop(writeln(Str2)))),
+  nop(writeln(Str2)),
+  D is  2,
+  if_t(nb_current(menu_key,'o'),
+   (dash_chars,
+    findall(E,compare_objs1(E,O1,O2),L), pp(compare_objs1(showdiff_objects)=L),  
+    dash_chars,
+    indv_props(O1,S1),indv_props(O2,S2),
+    intersection(S1,S2,Sames,SS1,SS2),
+    az_ansi(noisey_debug(print_list_of(print_sames,sames,Sames))),
+    proportional(SS1,SS2,lst(vals(_),len(_),PDiffs)),
+    my_partition('\\='(o(_,_,_)),PDiffs,NonFunDiffs,FunDiffs),
+    print_list_of(print_diffs(D + 1),diffs,NonFunDiffs),
+    print_list_of(print_diffs(D + 1),oDiffs2,FunDiffs))))),  
   !.
 
 indiv_show_pairs_input(_Peers,_Shown,_List,Indv):- nb_current(menu_key,'o'),!, dg(Indv).
@@ -369,16 +381,18 @@ showdiff_groups_new(AG,BG):-
  must_det_ll((
   maplist(obj_grp_atoms,AG,AGG),
   maplist(obj_grp_atoms,BG,BGG),
-   print_list_of(show_mappings(AG,AGG,BG,BGG), inputMap,AGG),
-   print_list_of(show_mappings(BG,BGG,AG,AGG),outputMap,BGG))).
+   print_list_of(show_mappings("IN -> OUT",AG,BG,BGG), inputMap,AGG),
+   print_list_of(show_mappings("OUT -> IN",BG,AG,AGG),outputMap,BGG))).
 
-show_mappings(AG,_,BG,BGG,APA):-
+show_mappings(TITLE,AG,BG,BGG,APA):-
  must_det_ll((
   dash_chars(100),nl,nl,nl,
   APA = [A,PA|_Atoms],
   find_obj_mappings2(APA,BGG,Pair),
-  dash_chars,dash_chars,
-  Pair = pair4(A,PA,B,_PB),
+  dash_chars,dash_chars,format("~N~n\t\t~w",[TITLE]),
+  Pair = pair4(A,PA,B,PB),
+  must_det_ll(A\==B),
+  nop(PA\==PB),
   %%debug_as_grid('show_mappings',A),
   showdiff_arg1(AG,A,BG,B))).
   %showdiff_objects(PA,PB),!.
@@ -794,13 +808,20 @@ showdiff_objects_now(Why,OO1,OO2,Sames,Diffs):-
   dash_chars,dash_chars,
   az_ansi(noisey_debug(print_list_of(print_sames,sames,Sames))),
   include(leftover_diffs,Diffs,FunDiffs),
-  print_list_of(print_diffs,diffs,FunDiffs),
+  do is 2,
+  print_list_of(print_diffs(D + 1),diffs,FunDiffs),
   dash_chars,dash_chars)).
 
 print_sames(N):- is_list(N),!, maplist(print_sames,N).
 print_sames(N):- format('\t'), pp_no_nl(N),probably_nl.
-print_diffs(N):- is_list(N),!, maplist(print_diffs,N).
-print_diffs(N):- format('\t'), pp_no_nl(N),probably_nl.
+
+print_diffs(D,N):- is_list(N),!, maplist(print_diffs(D + 1),N).
+print_diffs(D,diff(List1->List2)):- \+ is_points_list(List1), \+ is_points_list(List2), !,  
+     n_tabs(D-1), print_list_of(print_diffs(D + 2),uniqLeft,List1),print_list_of(print_diffs(D + 1),uniqRight,List2).
+print_diffs(D,N):- n_tabs(D), pp_no_nl(N),probably_nl.
+
+n_tabs(D):- DD is D, forall(between(1,DD,_),format('\t')).
+
 print_hints(N):- is_list(N),!, maplist(print_hints,N).
 print_hints(N):- format('\t'), pp_no_nl(N),probably_nl.
 

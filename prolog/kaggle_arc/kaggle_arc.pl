@@ -242,7 +242,7 @@ must_not_error(X):- catch(X,E,((E=='$aborted';nb_current(cant_rrtrace,t))-> thro
 
 
 odd_failure(G):- call(G),!.
-odd_failure(G):- wdmsg(odd_failure(G)),fail.
+odd_failure(G):- wdmsg(odd_failure(G)),break,fail.
 odd_failure(G):- rrtrace(G).
 
 
@@ -871,8 +871,11 @@ appended_trial(human,[learn_rule]).
 
 solve_test:- forall(trial_non_human(Trial),solve_test_trial(Trial)).
 
-solve_test_trial(Trial):- mmake,
- my_time((my_menu_call((get_current_test(TestID), catch(solve_test_trial(Trial,TestID,(tst+_)),E,wdmsg(E=solve_test_trial(Trial,TestID,(tst+_)))))))),!.
+solve_test_trial(Trial):- mmake, with_test_pairs(TestID,ExampleNum,I,O,solve_test_trial_pair(Trial,TestID,ExampleNum,I,O)).
+
+solve_test_trial_pair(Trial,TestID,ExampleNum,_I,_O):- 
+ my_time((my_menu_call((catch(solve_test_trial(Trial,TestID,ExampleNum),E,
+   wdmsg(E=solve_test_trial(Trial,TestID,(ExampleNum)))))))),!.
 
 solve_test_training_too:- 
  solve_test,

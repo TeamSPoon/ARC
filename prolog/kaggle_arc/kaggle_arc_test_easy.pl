@@ -119,7 +119,7 @@ do_simple_todolist(C,I,O):- \+ callable(C),!,throw(not_callable_do_simple_todoli
 do_simple_todolist(P2,I,O):- grid_call(P2,I,O).
 
 repair_and_select(How,M,I,O):- induce_from_training(repair_and_select_property(How,M),I,O).
-repair_and_select_property(How,M,I,O):- 
+repair_and_select_property(How,get_scene_object(M),I,O):- 
  %\+ is_grid_symmetricD(I), 
     %How=[_|_],
     unbind_and_repair(How,I,Mid), %is_grid_symmetricD(Mid), !, 

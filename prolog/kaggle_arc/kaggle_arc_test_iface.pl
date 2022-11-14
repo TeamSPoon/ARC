@@ -196,8 +196,8 @@ interact:-
 interact(SelMax):- catch(interact0(SelMax),'$aborted',interact(SelMax)).
 interact0(_SelMax):- retract(wants_exit_menu),!.
 interact0(SelMax):- i_key(SelMax,Key),
-    writeq(Key),
-    locally(nb_setval(menu_key,Key),ignore((do_menu_key(Key)))),
+    writeq(Key),flush_tee,
+    locally(nb_setval(menu_key,Key),ignore((do_menu_key(Key)))),flush_tee,
     interact0(SelMax).
 
 i_key(SelMax,Key):-
@@ -314,11 +314,13 @@ rtty:- with_tty_raw(rtty1).
 rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 
 
-ndividuator(TestID,ExampleNum,Complete,In,Out):- name_the_pair(TestID,ExampleNum,In,Out,_),ip(Complete,In,Out).
-ndividuator(TestID,ExampleNum,In,Out):- ndividuator(TestID,ExampleNum,complete,In,Out).
+ndividuator(TestID,ExampleNum,Complete,In,Out):- name_the_pair(TestID,ExampleNum,In,Out,_PairName),ip_pair(Complete,In,Out).
+ndividuator(TestID,ExampleNum,In,Out):-
+  get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
 
-ndividuatorO(TestID,ExampleNum,Complete,In,Out):- name_the_pair(TestID,ExampleNum,In,Out,_PairName), igo(Complete,In,Out).
-ndividuatorO(TestID,ExampleNum,In,Out):- ndividuatorO(TestID,ExampleNum,complete,In,Out).
+ndividuatorO(TestID,ExampleNum,Complete,In,Out):- name_the_pair(TestID,ExampleNum,In,Out,_PairName), igo_pair(Complete,In,Out).
+ndividuatorO(TestID,ExampleNum,In,Out):-
+ get_indivs_mode(Complete), ndividuatorO(TestID,ExampleNum,Complete,In,Out).
 
 %show_test_pairs,
 ndividuator:- never_entire_suite, nop(show_test_pairs), get_current_test(TestID),set_flag(indiv,0),
@@ -332,17 +334,17 @@ show_test_pairs:- get_current_test(TestID),set_flag(indiv,0),with_test_pairs(Tes
 %show_test_grids:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,Grid,print_grid(show_test_grids(TestID),Grid)).
 
 
-first_indiv_modes([complete,pbox_vm,i_repair_pattern]).
+first_indivs_modes([complete,pbox_vm,i_repair_pattern]).
 
-next_indiv_mode(M1,M2):- first_indiv_modes(List),next_in_list(M1,List,M2).
+next_indivs_mode(M1,M2):- first_indivs_modes(List),next_in_list(M1,List,M2).
 
-next_indiv_mode:- get_indiv_mode(M1),next_indiv_mode(M1,M2),set_indiv_mode(M2).
+next_indivs_mode:- get_indivs_mode(M1),next_indivs_mode(M1,M2),set_indivs_mode(M2).
 
-set_indiv_mode(Mode):- luser_setval('$indiv_mode',Mode).
-get_indiv_mode(Mode):- nonvar(Mode),get_indiv_mode(TMode),!,TMode==Mode.
-get_indiv_mode(Mode):- once(luser_getval('$indiv_mode',Mode);next_indiv_mode(Mode,_)).
+set_indivs_mode(Mode):- luser_setval('$indivs_mode',Mode).
+get_indivs_mode(Mode):- nonvar(Mode),get_indivs_mode(TMode),!,TMode==Mode.
+get_indivs_mode(Mode):- once(luser_getval('$indivs_mode',Mode);next_indivs_mode(Mode,_)).
 
-:- first_indiv_modes([M1|_]),set_indiv_mode(M1).
+:- first_indivs_modes([M1|_]),set_indivs_mode(M1).
 
 
 % Training modes
@@ -358,7 +360,7 @@ get_pair_mode(Mode):- nonvar(Mode),get_pair_mode(TMode),!,TMode==Mode.
 get_pair_mode(Mode):- once(luser_getval('$pair_mode',Mode);next_pair_mode(Mode,_)).
 with_pair_mode(Mode,Goal):- get_pair_mode(OldMode), trusted_redo_call_cleanup( set_pair_mode(Mode), Goal, set_pair_mode(OldMode)). 
 switch_pair_mode:- get_pair_mode(Mode),next_pair_mode(Mode,NextMode),!,set_pair_mode(NextMode),show_pair_mode.
-show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), luser_getval(test_suite_name,Suite), get_indiv_mode(IndivMode),
+show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), luser_getval(test_suite_name,Suite), get_indivs_mode(IndivMode),
   get_current_test(TestID),some_current_example_num(Example),!,
   wqnl(["~N~t............ (e)xecute: ", b(q(Cmd)), "with pair mode set to: ",b(q(Mode)),
   "with indivmode set to: ",b(q(IndivMode)),
@@ -631,11 +633,11 @@ trn_tst(tst,trn).
 
 
 new_current_test_info(WasTestID,TestID):-   
-  luser_setval(next_test_name,TestID),
+  luser_setval(next_test_name,TestID),  
   forall(on_leaving_test(WasTestID),true),
-  ignore((
+  (\+ get_current_test(TestID)->set_current_test(TestID);true),
+  ignore((  
   %luser_getval(task,TestID),
-  get_current_test(TestID),
   %pp(fav(TestID,[])),
   %luser_setval(example,tst+0),
   luser_setval(last_test_name,TestID))),
@@ -680,8 +682,9 @@ continue_test(TestID):- ignore(( is_valid_testname(TestID), set_current_test(Tes
 on_entering_test(TestID):- is_list(TestID),!,maplist(on_entering_test,TestID).
 on_entering_test(TestID):- 
  must_det_ll((
-  clear_tee,
+  set_current_test(TestID),
   write_test_links_file,
+  clear_tee,  
   flush_tee,
   clear_test(TestID),
   test_name_output_file(TestID,File),
@@ -693,9 +696,9 @@ on_leaving_test(TestID):- is_list(TestID),!,maplist(on_leaving_test,TestID).
 on_leaving_test(TestID):-     
  must_det_ll((
   save_supertest(TestID),
-  clear_test(TestID),
-  write_test_links_file,
+  clear_test(TestID),  
   flush_tee,
+
   clear_tee)).
 
 test_html_file_name(FN):- 
@@ -706,17 +709,15 @@ test_html_file_name(FN):-
 %worth_saving(FN):- \+ exists_file(FN),!.
 worth_saving:- test_html_file_name(FN), \+ exists_file(FN), !.
 worth_saving:- test_html_file_name(FN), size_file(FN,Size), Size < 10_000,!.
-worth_saving:- size_file('tee.ansi',Size), Size > 26_000.
+worth_saving:- size_file('tee.ansi',Size), Size > 20_000.
 
 
 begin_tee:- get_current_test(TestID),on_entering_test(TestID),at_halt(exit_tee).
-flush_tee:- worth_saving -> force_flush_tee ; true.
-force_flush_tee:- 
-  write_test_links_file,
+flush_tee:- ignore((worth_saving -> force_flush_tee ; true)).
+force_flush_tee:-   
   test_html_file_name(FN),
   ignore((FN \== [], my_shell_format('cat test_links tee.ansi test_links |  ansi2html -a -W -u -m  > ~w',[FN]))).
 clear_test_html :-
-  write_test_links_file,
   test_html_file_name(FN),
   ignore((FN \== [], my_shell_format('cat /dev/null test_links |  ansi2html -a -W -u -m  > ~w',[FN]))).
 clear_tee:- shell('cat /dev/null > tee.ansi').
@@ -725,9 +726,11 @@ exit_tee:-  get_current_test(TestID),on_leaving_test(TestID).
 write_test_links_file:- notrace((setup_call_cleanup(tell(test_links), write_test_links, told))).
 write_test_links:- get_current_test(TestID), write_test_links(TestID).
 write_test_links(TestID):- format('~N'),
-  ignore((((luser_getval(prev_test_name,PrevID),PrevID\==TestID,PrevID\=='.')->true;get_previous_test(TestID,PrevID)),write_tee_link('Prev',PrevID))),
+  ignore((get_previous_test(TestID,PrevID),write_tee_link('Prev',PrevID))),
+  ignore((((luser_getval(prev_test_name,AltPrevID),AltPrevID\==PrevID,AltPrevID\==TestID,AltPrevID\=='.'),write_tee_link('AltPrevID',AltPrevID)))),
   ignore(write_tee_link('This',TestID)),
-  ignore((((luser_getval(next_test_name,NextID),NextID\==TestID,NextID\=='.')->true;get_next_test(TestID,NextID)),write_tee_link('Next',NextID))),  
+  ignore((get_next_test(TestID,NextID),write_tee_link('Next',NextID))),
+  ignore((((luser_getval(next_test_name,AltNextID),NextID\==AltNextID,AltNextID\==TestID,AltNextID\=='.'),write_tee_link('AltNextID',AltNextID)))),  
   format('~N').
 
 

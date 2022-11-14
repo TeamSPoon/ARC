@@ -462,12 +462,6 @@ wqs1(X):- compound(X), compound_name_arguments(X,_,[Arg]),is_really_gridoid(Arg)
 wqs1(X):- compound(X), compound_name_arguments(X,F,[Arg]),is_really_gridoid(Arg),wots_vs(VS,print(Arg)),
   writeq(F),write('(`\n'),!,write(VS),write('`)').
 
-
-
-%wqs1(pen(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(penz(S)).
-/*
-*/
-
 is_really_gridoid(G):- is_gridoid(G),(is_list(G) -> ( \+ (member(E,G),non_gridoid_cell(E))); true).
 non_gridoid_cell(C):- plain_var(C),!,fail.
 non_gridoid_cell(C):- is_color(C),!.
@@ -644,7 +638,7 @@ gridoid_size(G,H,V):- compound_name_arity(G,print_grid,A),arg(A,G,GG),gridoid_si
 gridoid_size(G,H,V):- is_really_gridoid(G),!,grid_size(G,H,V).
 
 print_side_by_side0([],_,[]):-!.
-print_side_by_side0(A,_,B):- (unsized_grid(A);unsized_grid(B)),!, writeln(unsized_grid), print_ss(A),print_ss(B),!.
+%print_side_by_side0(A,_,B):- (unsized_grid(A);unsized_grid(B)),!, writeln(unsized_grid), print_ss(A),print_ss(B),!.
 print_side_by_side0(A,_,B):- g_smaller_than(A,B),!, writeln(g_smaller_than), print_ss(A),print_ss(B),!.
 /*
 print_side_by_side0(C1-call(wqs(S1)),LW,C2-call(wqs(S2))):- nonvar(S1),!,
