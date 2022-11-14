@@ -75,6 +75,20 @@ show_rules:-
  luser_getval(test_rules,TRules), maplist(pp(blue),TRules),
  !.
   
+sub_atom_value(TestID,A):- sub_term(A,TestID),(atom(A);string(A)).
+
+my_list_to_set(List, Set):- my_list_to_set(List, (=) ,Set).
+my_list_to_set_variant(List, Set):- my_list_to_set(List, (=@=) ,Set).
+my_list_to_set_cmp(List, Set):- my_list_to_set(List, (=@=) ,Set).
+
+my_list_to_set([E|List],P2, Set):- select(C,List,Rest), call(P2,E,C), !, my_list_to_set([E|Rest],P2, Set).
+my_list_to_set([E|List],P2, [E|Set]):-!, my_list_to_set(List,P2, Set).
+my_list_to_set([],_,[]).
+
+my_list_to_set_cmp([E|List],C3, Set):- select(C,List,Rest), call(C3,R,E,C), 
+   R== (=), my_list_to_set_cmp([C|Rest],C3, Set),!.
+  my_list_to_set_cmp([E|List],C3, [E|Set]):-!, my_list_to_set_cmp(List,C3, Set).
+my_list_to_set_cmp([],_,[]).
 
 
 contains_nonvar(N,Info):- sub_term(E,Info),nonvar_or_ci(E),E=N,!.

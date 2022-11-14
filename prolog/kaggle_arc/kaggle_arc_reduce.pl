@@ -73,9 +73,11 @@ first_second_half(Grid,GL,GR):- length(Grid,L),H is floor(L/2), length(GL,H), ap
 %reduce_op1_1(_,Grid,copy_first(N),GridR):- copy_first(N,GridR,Grid).
 %reduce_op1_1(_,Grid,copy_last(N),GridR):- copy_last(N,GridR,Grid).
 
-%reduce_op1_1(_,Grid,_,_):- too_small_reduce(Grid,2),!,fail.
-reduce_op1_1(_,Grid,_,_):- too_small_reduce(Grid,1),!,fail.
+%reduce_op1_1(_,Grid,_,_):- too_small_Lreduce(Grid,2),!,fail.
+reduce_op1_1(_,Grid,_,_):- length(Grid,L3),L3=<2,!,fail.
 reduce_op1_1(_,Grid,remove_row(Row),GridR):- get_black(Black), nth1(Row,Grid,Same,GridR),maplist(==(Black),Same),once(Row==1;length(Grid,Row)).
+reduce_op1_1(_,Grid,_,_):- length(Grid,L3),L3=<3,!,fail.
+%reduce_op1_1(_,Grid,_,_):- too_small_reduce(Grid,2),!,fail.
 reduce_op1_1(_,Grid,copy_row(N1,N2),GridR):- nth1(N2,Grid,A),N2>1, between(1,N2,N1),N1<N2,nth1(N1,Grid,B,GridR), A=@=B, 1 is abs(N1-N2).
 /*
 reduce_op1_1(_,Grid,left_right(Left,Reduced),GridR):- fail, 
@@ -151,7 +153,7 @@ reduce_grid(Grid,gridOpFn(GridR,OP)):- reduce_grid(Grid,OP,GridR),OP\==[],!.
 reduce_grid(Grid,Grid).
 
 %ungrav_rot(G,sameR,G):-!.
-ungrav_rot(G,sameR,G):- too_small_reduce(G,2),!.
+ungrav_rot(G,sameR,G):- too_small_reduce(G,3),!.
 ungrav_rot(G,UnRotG,GG):- grav_rot(G,RotG,GG),(G==GG->UnRotG=sameR;unrotate(RotG,UnRotG)).
 
 :- decl_pt(reduce_grid(grid,list,grid)).

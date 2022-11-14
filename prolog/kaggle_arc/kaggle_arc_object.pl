@@ -254,7 +254,7 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
 
   int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
   % atomic_list_concat(['o_',Glyph,'_',GID],OID),
- % grid_to_norm(Grid,IOps,LPointsNorm),
+  op_grid_to_norm(NormOps,Grid,NormGrid),
   flatten(
   [ 
     shape(ColorlessPoints),
@@ -270,13 +270,14 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
     mass(Len),     
     colors(CC),        
     localpoints(LPoints),
+
     amass(Len),
-    
     iz(cenY(CY)),iz(cenX(CX)),  
     %width(Width), height(Height), area(Area), %missing(Empty),
     changes([]), % [grid(LocalGrid)],    
     OShapeNames,
-    %[norm(LPointsNorm),norm_ops(IOps)],
+    
+    [norm_grid(NormGrid),norm_ops(NormOps)],
     % [iz(locY(LoV)),iz(locX(LoH))], % iz(tall(Height)),iz(wide(Width)),
     iz(sizeY(Height)),iz(sizeX(Width)),
     %obj_to_oid(ID,Iv),
@@ -1131,7 +1132,7 @@ rebuild_from_globalpoints(Obj,GPoints,NewObj):-
 is_point_or_colored(birth(_)):-!,fail.
 is_point_or_colored(Prop):- sub_term(CP,Prop),(is_color(CP);is_nc_point(CP)),!.
 is_point_or_colored(Prop):-
- member(Prop,[colors(_),amass(_),mass(_),shape(_),rotation(_),roll_shape(_),pen(_),norm(_),norm_ops(_),
+ member(Prop,[colors(_),amass(_),mass(_),shape(_),rotation(_),roll_shape(_),pen(_),norm_grid(_),norm_ops(_),
               iz(multicolored(_)),iz(chromatic(_,_)),iz(symmetry(_)),iz(shape(_)),iz(monochrome),
               globalpoints(_),localpoints(_)]),!.
 

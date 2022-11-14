@@ -384,7 +384,9 @@ individuation_macros(S,Some):- sub_individuation_macro(S,Some).
 
 sub_individuation_macro(S,Some):-
   individuator(S,From),
-  flatten([[reset_points],From],Some).
+  flatten([
+    % [reset_points],
+    From],Some).
 
 
 include_black(_VM):- set_bgc(wbg).
@@ -2041,8 +2043,8 @@ check_tid_gid2(OID,GID):-
 
 check_tid_gid3(OID,GID):- maplist(check_tid_gid4,OID,GID).
 check_tid_gid4(OID,GID):- OID=GID,!.
-check_tid_gid4(out,in):- dumpST,!.
-check_tid_gid4(in,out):- dumpST,!.
+%check_tid_gid4(out,in):- dumpST,!.
+%check_tid_gid4(in,out):- dumpST,!.
 check_tid_gid4(OID,GID):- pp(check_tid_gid4(OID,GID)).
 
 % =====================================================================

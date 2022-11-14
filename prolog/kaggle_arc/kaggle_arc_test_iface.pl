@@ -47,9 +47,9 @@ menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(cls
 menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the input/outputs',(cls_z,!,ndividuator)).
 menu_cmd1(_,'B','                  or (B)oxes test.',(pbox_indivs)).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z,!,what_unique)).
-menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z,!,compile_and_save_test)).
+menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z,!,set_pair_mode(whole_test),compile_and_save_test)).
 menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changed_files,print_test)).
-menu_cmd1(_,'w','                  or (w)rite the test info',(update_changed_files,print_testinfo_extended)).
+menu_cmd1(_,'w','                  or (w)rite the test info',(update_changed_files,set_pair_mode(whole_test), print_testinfo_extended)).
 menu_cmd1(_,'E','                  or (E)xamine the program leared by training',(cls_z,print_test,!,learned_test,solve_easy)).
 menu_cmd1(_,'L','                  or (L)earned program',(learned_test)).
 menu_cmd1(_,'e',S,(Cmd)):- get_test_cmd(Cmd),
@@ -212,6 +212,7 @@ do_menu_key(-1):- !, arc_assert(wants_exit_menu).
 do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), arc_assert(wants_exit_menu).
 do_menu_key('?'):- !, write_menu_opts('i').
 do_menu_key('M'):- !, do_menu_key('T').
+do_menu_key('W'):- !, set_pair_mode(whole_test).
 do_menu_key('P'):- !, switch_grid_mode,print_test.
 do_menu_key( ''):- !, fail.
 
@@ -288,9 +289,9 @@ do_menu_codes([27,27,91,68]):- !, previous_test, print_test.
 % alt right arrow
 do_menu_codes([27,27,91,67]):- !, next_test, print_test.
 % left arrow
-do_menu_codes([27,91,68]):- !, set_pair_mode(whole_test), previous_test,report_suite,print_qtest.
+do_menu_codes([27,91,68]):- !, previous_test, report_suite, print_qtest.
 % right arrow
-do_menu_codes([27,91,67]):- !, set_pair_mode(whole_test), next_test, report_suite, print_qtest.
+do_menu_codes([27,91,67]):- !, next_test, report_suite, print_qtest.
 % page up
 do_menu_codes([27,91,53,126]):- !, prev_suite.
 % page down
@@ -606,27 +607,27 @@ first_current_example_num(TrnN):- some_current_example_num(TrnN),ground(TrnN),Tr
 first_current_example_num(TrnN):- TrnN = trn+0.
 
 next_pair:- 
-  get_current_test(TestID),
-  first_current_example_num(Trn+N),
-  N2 is N+1,
-  trn_tst(Trn,Tst),
-  (kaggle_arc(TestID,Trn+N2,_,_)-> ExampleNum=Trn+N2 ; ExampleNum=Tst+0),
+  %get_current_test(TestID),
+  first_current_example_num(TrnN),  
+  next_pair(TrnN,ExampleNum),
   nb_setval(example,ExampleNum),
-  (ExampleNum=(tst+_)->set_pair_mode(whole_test);set_pair_mode(single_pair)),
-  print_single_pair(TestID>ExampleNum),!.
+  set_pair_mode(single_pair),%(ExampleNum=(tst+_)->set_pair_mode(whole_test);set_pair_mode(single_pair)),  
+  ((ExampleNum==trn+0)->next_test;true),
+  print_single_pair,!.
 
-training_pair_count(C):- get_current_test(TestID),findall(N2,kaggle_arc(TestID,trn+N2,_,_),List),sort(List,Sort),last(Sort,C).
+next_pair(Tst+N,Trn+0):-  pair_count(Tst,N2), N>=N2,!,trn_tst(Tst,Trn).
+next_pair(Trn+N,Trn+N2):- N2 is N+1.
+pair_count(Trn,C):- get_current_test(TestID),findall(N2,kaggle_arc(TestID,Trn+N2,_,_),List),sort(List,Sort),last(Sort,C).
+prev_pair(Tst+0,Trn+N2):- trn_tst(Tst,Trn),!,pair_count(Trn,N2).
+prev_pair(Trn+N,Trn+N2):- N2 is N-1.
 prev_pair:- 
-  get_current_test(TestID),
-  first_current_example_num(Trn+N),  
-  %trn_tst(Trn,Tst),  
-  (Trn==tst -> (training_pair_count(N2),ExampleNum=trn+N2) ; ((N2 is N-1, kaggle_arc(TestID,Trn+N2,_,_))
-    -> ExampleNum=Trn+N2 
-    ;  (Trn==tst -> (training_pair_count(N2),ExampleNum=trn+N2) ; ExampleNum=tst+0))),
+  %get_current_test(TestID),
+  first_current_example_num(TrnN),  
+  prev_pair(TrnN,ExampleNum),
   nb_setval(example,ExampleNum),
-  (ExampleNum=(tst+_)->set_pair_mode(whole_test);set_pair_mode(single_pair)),  
-  print_single_pair(TestID>ExampleNum),!.
-
+  set_pair_mode(single_pair),%(ExampleNum=(tst+_)->set_pair_mode(whole_test);set_pair_mode(single_pair)),  
+  ((TrnN==trn+0)->previous_test;true),
+  print_single_pair.
 
 trn_tst(trn,tst).
 trn_tst(tst,trn).

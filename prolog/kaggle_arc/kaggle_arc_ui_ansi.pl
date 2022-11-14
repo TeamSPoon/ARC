@@ -459,7 +459,7 @@ wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
 wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
 wqs1(X):- compound(X), compound_name_arguments(X,_,[Arg]),is_really_gridoid(Arg),area_or_len(Arg,Area),Area<5,writeq(X),!.
 % wqs1(C):- callable(C), is_wqs(C),wots_vs(S,catch(C,_,fail)),write((S)).
-wqs1(X):- compound(X), compound_name_arguments(X,F,[Arg]),is_really_gridoid(Arg),wots_vs(VS,print(Arg)),
+wqs1(X):- compound(X), compound_name_arguments(X,F,[Arg]),is_really_gridoid(Arg),wots_vs(VS,print_grid(Arg)),
   writeq(F),write('(`\n'),!,write(VS),write('`)').
 
 is_really_gridoid(G):- is_gridoid(G),(is_list(G) -> ( \+ (member(E,G),non_gridoid_cell(E))); true).
@@ -684,10 +684,11 @@ maybe_exend_len(L1,L2,L1,Lst2):-  (is_grid(L2) ; \+ is_list(L2)),
 
 %maybe_exend_len(L1,L2,L2L,L1):- length(L1,N1),length(L2,N2), N2 > N1, !,append(['Swapped2'],L2,L2L).
 
+%maybe_exend_len(L1,L2,L2,L1):- L1==[], L2\==[],!.
 maybe_exend_len(L1,L2,NL1,L2):-
   length(L1,N1),
   length(L2,N2),
-  N2>N1, 
+  N2>N1, N1>=2,
  must_det_ll((
   nth1(1,L1,E1), atom_length(E1,Spaces1),
   nth1(2,L1,E2), atom_length(E2,Spaces2),

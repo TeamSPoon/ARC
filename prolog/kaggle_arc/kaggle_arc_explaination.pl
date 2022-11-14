@@ -340,6 +340,7 @@ too_verbose(shape).
 too_verbose(grid_sz). too_verbose(grid_size). 
 too_verbose(localpoints).
 too_verbose(grid).
+too_verbose(norm_grid).
 %too_verbose(link).
 too_verbose(rotated_grid).
 %too_verbose(wide). too_verbose(tall).

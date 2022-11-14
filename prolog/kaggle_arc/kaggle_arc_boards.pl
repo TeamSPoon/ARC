@@ -32,7 +32,6 @@ superinput_blob
 
 test_supergrid:- clsbake, forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_pair_hints(TestID,ExampleNum,In,Out)).
 
-sub_atom_value(TestID,A):- sub_term(A,TestID),(atom(A);string(A)).
 
 print_directive(P):- format('~N:- ~q. ~n',[P]).
 write_intermediatre_header:- 
@@ -138,7 +137,11 @@ show_reduced_io(IO):- once(show_grid_call(mapgridish(remove_color_if_same(black)
 show_reduced_io(_).
 
 %op_grid_to_norm(I,OUT):- op_grid_to_norm(Op,I,OO),OUT=(OO-w(Op)).
-op_grid_to_norm(good(Op),I,OO):- (var(Op)->Op=[_|_];true),reduce_grid(I,Op,OO).
+
+op_grid_to_norm((Op),I,OO):- op_grid_to_norm1(Op,I,OO),!.
+op_grid_to_norm(([]),I,I).
+op_grid_to_norm1((Op),IO,IIOO):- compound(IO),IO=(I+O),op_grid_to_norm((Op),I,II),!,Op\==[],op_grid_to_norm((Op2),O,OO),!,Op=Op2,IIOO=II+OO.
+op_grid_to_norm1((Op),I,OO):- (var(Op)->Op=[_|_];true),reduce_grid(I,Op,OO).
 %op_grid_to_norm([],I,I).
 
 mapgridish(P3,I+O,In,Out):- In==I-> mapgrid(P3,O,I,Out) ; mapgrid(P3,I,O,Out).

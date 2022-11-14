@@ -12,6 +12,7 @@
 :- dynamic(cindv/5).
 :- dynamic(gid_glyph_oid/3).
 
+
 neg_h_v_area(size2D(H,V),VAL):- NArea is - (H * V),  max_min(H,V,Hi,_Lo), DifHV is - abs(H-V)*Hi, VAL is NArea+DifHV.
 
 :- abolish(l_s_4sides,2).

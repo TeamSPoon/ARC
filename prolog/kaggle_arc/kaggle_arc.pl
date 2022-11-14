@@ -19,7 +19,7 @@
 
 :- use_module(library(statistics)).
 :- import(prolog_statistics:time/1).
-my_time(Goal):- time(Goal).
+my_time(Goal):- time(Goal),flush_tee.
 
 catch_log(G):- ignore(catch(notrace(G),E,writeln(E=G))).
 catch_nolog(G):- ignore(catch(notrace(G),E,nop(wdmsg(E=G)))).
