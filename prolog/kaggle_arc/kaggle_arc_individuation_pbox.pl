@@ -29,16 +29,16 @@ make_gclip_cache:-
  consult('make_gclip_cache.pl'))),
  functor(G,gclip_cache,10),
  predicate_property(G,number_of_clauses(NC)),
- wdmsg(gclip_cache = NC).
+ wdmsg(gclip_cache=NC).
 
-% =====================================================================
+%=====================================================================
 is_fti_step(maybe_pbox_vm).
-% =====================================================================
+%=====================================================================
 %:- luser_setval(individuated_cache,false).
 
 maybe_pbox_vm(VM):- VM.option_pboxes==false,!.
 maybe_pbox_vm(VM):- var(VM.option_pboxes), !, 
- (need_pboxes(VM.grid_o) -> (set(VM.option_pboxes) = true) ; (set(VM.option_pboxes) = false)),
+ (need_pboxes(VM.grid_o) -> (set(VM.option_pboxes)=true) ; (set(VM.option_pboxes)=false)),
   maybe_pbox_vm(VM).
 maybe_pbox_vm(VM):- pbox_vm(VM),!.
 
@@ -53,15 +53,15 @@ not_whole_row_or_col(C,Center):- \+ whole_row_or_col(C,Center).
 
 
 
-% =====================================================================
+%=====================================================================
 is_fti_step(pbox_vm).
-% =====================================================================
+%=====================================================================
 pbox_vm(VM):- !,
    %GH is round(VM.h*2/3), GV is round(VM.v*2/3),
    GH is round(VM.h + 0), GV is round(VM.v + 0),
    findall(size2D(H,V),(l_s_4sides(H,V),H=<GH),Sizes_L_S),
    findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L),
-   GridI = VM.grid_o,
+   GridI=VM.grid_o,
    get_black(Black),
    mapgrid(assign_plain_var_with(Black),GridI,GridM),
    shoot_lines_on_black_grid(GridM,Grid),
@@ -70,22 +70,22 @@ pbox_vm(VM):- !,
    %list_to_set(T,TColors),list_to_set(B,BColors),list_to_set(RR,RColors),list_to_set(LL,LColors),
    %intersection(TColors,BColors,BlackAndBorderV), intersection(LColors,RColors,BlackAndBorderH),
    %writeln(blackAndBorderHV=[BlackAndBorderH,BlackAndBorderV]),   
-   maplist(=(N),Top), maplist(=(S),Bot), maplist(=(W),LLeft), maplist(=(E),RRight),
-   maplist(=(N),Top2), maplist(=(S),Bot2), maplist(=(W),LLeft2), maplist(=(E),RRight2),
-   % nth1(1,XSG,RTop),maplist(=(N),RTop), last(XSG,RBot),maplist(=(S),RBot),
+   maplist_ls(=(N),Top), maplist_ls(=(S),Bot), maplist_ls(=(W),LLeft), maplist_ls(=(E),RRight),
+   maplist_ls(=(N),Top2), maplist_ls(=(S),Bot2), maplist_ls(=(W),LLeft2), maplist_ls(=(E),RRight2),
+   % nth1(1,XSG,RTop),maplist_ls(=(N),RTop), last(XSG,RBot),maplist_ls(=(S),RBot),
    if_t( \+ (GH<4,GV<4),if_t(find_gridline_color(Grid,C),if_t(C\==black,NSEW=[C,C,C,C]))),
-   NSEW = [N,S,E,W],
-   if_t(nonvar(C),((nth1(1,XSG,RTop),maplist(=(N),RTop), last(XSG,RBot),maplist(=(S),RBot)))),
+   NSEW=[N,S,E,W],
+   if_t(nonvar(C),((nth1(1,XSG,RTop),maplist_ls(=(N),RTop), last(XSG,RBot),maplist_ls(=(S),RBot)))),
    if_t((GH<4,GV<4),NSEW=[n,s,e,w]),
    %if_t(var(N),maplist(ignore_equal(black),NSEW)),
    \+ \+ ((maplist(ignore_equal,NSEW,['N','S','E','W']),print_side_by_side(XSG-xsg,GridI-grid))),
   localpoints_include_bg(Grid,Points),!,
   begin_i_pbox_l(Grid,NSEW,XSG,Points,  Points1,VM,s_l(1),Sizes_S_L),
   begin_i_pbox_l(Grid,NSEW,XSG,Points1, Points2,VM,l_s(2),Sizes_L_S),
-  if_t(Points\==Points2,set(VM.points) = Points2),
+  if_t(Points\==Points2,set(VM.points)=Points2),
   begin_i_pbox_l(Grid,NSEW,XSG,Points,  Points3,VM,l_s(1),Sizes_L_S),
   begin_i_pbox_l(Grid,NSEW,XSG,Points3, Points9,VM,s_l(2),Sizes_S_L),
-  if_t(Points\==Points9,set(VM.points) = Points9),
+  if_t(Points\==Points9,set(VM.points)=Points9),
   !.
 
 begin_i_pbox_l(Grid,NSEW,XSG,Points5,Points9,VM,S_L,Sizes_S_L):-
@@ -103,7 +103,7 @@ both_ways(P2,I,O):- mapgrid(=,I,T), call(P2,T,M),side_ways(P2,M,O).
 
 shoot_lines_on_black_grid(Grid,Grid):-!.
 shoot_lines_on_black_grid(Grid,GridO):- find_gridline_color(Grid,C), \+ is_black(C),!,GridO=Grid.
-shoot_lines_on_black_grid(Grid,GridO):- Color = black,
+shoot_lines_on_black_grid(Grid,GridO):- Color=black,
   both_ways(shoot_lines_on_colored_row(LC,Color),Grid,GridO),
   LC=wbg.
 
@@ -145,7 +145,7 @@ pbox :-  pbox(_).
 pbox(Name):-   
   update_changed_files,
   (var(Name)-> true; testid_name_num_io(Name,TestID,Example,Num,IO)),
-  ExampleNum = Example+Num,
+  ExampleNum=Example+Num,
   (nonvar(IO) 
    -> forall(kaggle_arc_io(TestID,ExampleNum,IO,G),ignore(pbox_io(TestID,ExampleNum,IO,G))) 
     ; forall(kaggle_arc(TestID,ExampleNum,I,O),ignore(pbox_pair(TestID,ExampleNum,I,O)))).
@@ -158,8 +158,7 @@ quick_test_menu(test_pbox).
 
 
 pbox_indivs:- 
-  with_test_grids(TestID,Grid,
-    (pbox_io(TestID,_ExampleNum,_IO,Grid))).
+  with_test_pairs(TestID,ExampleNum,I,O,pbox_pair(TestID,ExampleNum,I,O)).    
 
 pbox_pair(TestID,ExampleNum,I,O):-
    wdmsg(?- test_p2(pbox_pair(TestID,ExampleNum))),
@@ -189,7 +188,7 @@ pbox_io_result(TestID,ExampleNum,IO,G,Objs):- !,
  print_side_by_side(cyan,G,(?-pbox(TestID>ExampleNum*IO)),_,print_grid(Objs),(TestID>ExampleNum*IO)),!.
 
 i_pbox(GridIn,Objs):- 
-  ROptions = pbox_vm,
+  ROptions=pbox_vm,
   do_ig(ROptions,GridIn,IndvS),
   into_grid(GridIn,Grid),
   locally(nb_setval(debug_as_grid,t),
@@ -201,12 +200,12 @@ maybe_subdiv([OO],Objs):- object_grid(OO,G),i(i_pbox,G,Objs),!.
 maybe_subdiv(Objs,Objs).
 
 obj_global_grid(X,G-wqs(DSC)):- get_black(Black), localpoints(X,Grid),subst(Grid,Black,wbg,G), vis2D(X,VH,VV), loc2D(X,OH,OV),!,
-  DSC =[loc2D(OH,OV),vis2D(VH,VV)].
+  DSC=[loc2D(OH,OV),vis2D(VH,VV)].
 obj_global_grid(X,G-wqs(DSC)):- get_black(Black), global_grid(X,Grid),subst(Grid,Black,wbg,G), vis2D(X,VH,VV), loc2D(X,OH,OV),!,
-  DSC =[loc2D(OH,OV),vis2D(VH,VV)].
+  DSC=[loc2D(OH,OV),vis2D(VH,VV)].
 
 not_in_eq(Set,V):- \+ member_eq(V, Set).
-member_eq(V,Set):- member(VV,Set),VV == V,!.
+member_eq(V,Set):- member(VV,Set),VV==V,!.
 
 no_rule(_,_).
 dif_fg(X,Y):- nop((freeze(X,freeze(Y,((is_fg_color(X);is_fg_color(Y))->dif(X,Y)))))).
@@ -214,22 +213,20 @@ dif_fg(X,Y):- nop((freeze(X,freeze(Y,((is_fg_color(X);is_fg_color(Y))->dif(X,Y))
 
 add_top_bot(Top,T,[],B,Bot,[Top]):- B=Bot,T=Top,B=T.
 add_top_bot(Top,T,[],B,Bot,[Top,Bot]):- !, B=Bot,T=Top.
-add_top_bot(Top,T,In,B,Bot,TInB):-
+add_top_bot(Top,T,Inside,B,Bot,TInB):-
  must_det_ll((  
-  last(In,B), [T|_]=In,
+  last(Inside,B), [T|_]=Inside,
   length(T,H), length(Top,H), length(Bot,H),
-  append([Top|In],[Bot],TInB))).
+  append([Top|Inside],[Bot],TInB))).
 
-make_squarish(BorderRule,In,NewSearch,Inside,OBorder):-
+make_squarish(BorderRule,Inside,NewSearch):-
  must_det_ll((
-  add_top_bot_left_right(Top,T,In,B,Bot,LLeft,LL,RR,RRight,NewSearch),
-  maplist(BorderRule,Top,T), maplist(BorderRule,Bot,B),  maplist(BorderRule,LL,LLeft), maplist(BorderRule,RRight,RR),
-  term_variables(In,Inside),
-  append([Top,Bot,LLeft,RRight],OBorder))),!.
+  add_top_bot_left_right(Top,T,Inside,B,Bot,LLeft,LL,RR,RRight,NewSearch),
+  maplist(BorderRule,Top,T), maplist(BorderRule,Bot,B),  maplist(BorderRule,LL,LLeft), maplist(BorderRule,RRight,RR))).
 
-add_top_bot_left_right(Top,T,In,B,Bot,LLeft,LL,RR,RRight,NewSearch):-
+add_top_bot_left_right(Top,T,Inside,B,Bot,LLeft,LL,RR,RRight,NewSearch):-
  must_det_ll((
-  add_top_bot(Top,T,In,B,Bot,TInB),
+  add_top_bot(Top,T,Inside,B,Bot,TInB),
   rot90(TInB,TInB90),  
   add_top_bot(Left,L,TInB90,R,Right,Find),
   rot270(Find,NewSearch),  
@@ -242,46 +239,45 @@ add_top_bot_left_right(Top,T,In,B,Bot,LLeft,LL,RR,RRight,NewSearch):-
 pbox_phase_check(A, B):- A==B.
 %pbox_phase_check(_, _).
 
-:- abolish(cached_make_search_box,11).
-:- dynamic(cached_make_search_box/11).
+:- abolish(cached_make_search_box,7).
+:- dynamic(cached_make_search_box/7).
 
-make_search_box(H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs ):- 
+make_search_box(H,V,Center,Inside,Find,IBorder,OBorder):- 
   % between(1,32,H),between(1,32,V),
   %s_l_4sides(H,V),
-  HH is H,VV is V, once(make_search_box_m1(HH,VV,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs)).
+  HH is H,VV is V, once(make_search_box_m1(HH,VV,Center,Inside,Find,IBorder,OBorder)).
 
-make_search_box_m1(H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs):- cached_make_search_box(H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs),!.
-make_search_box_m1(H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs):-
-  make_search_box_fresh(H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs),
-  asserta(cached_make_search_box(H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs)).  
+make_search_box_m1(H,V,Center,Inside,Find,IBorder,OBorder):- cached_make_search_box(H,V,Center,Inside,Find,IBorder,OBorder),!.
+make_search_box_m1(H,V,Center,Inside,Find,IBorder,OBorder):-
+  make_search_box_fresh_w_borders(H,V,Center,Inside,Find,IBorder,OBorder),  
+  asserta(cached_make_search_box(H,V,Center,Inside,Find,IBorder,OBorder)).  
 
-make_search_box_fresh(H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs):-
-  make_search_box_fresh(H,V,Center,In,Find,Cents,Inside,IBorder,OBorder),
-  nsew_edges_trimed(H,V,In,IBorderDivs),
+make_search_box_fresh_w_borders(H,V,Center,Inside,Find,IBorder,OBorder):-
+  make_search_box_fresh(H,V,Center,Inside,Find),
+  nsew_edges_trimed(H,V,Inside,IBorder),
   HH is H+1,VV is V+1,
-  nsew_edges_trimed(HH,VV,Find,OBorderDivs),!.
+  nsew_edges_trimed(HH,VV,Find,OBorder),!.
 
-make_search_box_fresh(1,1,Center,In,Find,Cents,Inside,IBorder,OBorder):- 
-  Center = [], Cents = [],  [[C]] = In,  IBorder = [C],  make_squarish(no_rule,In,  Find, Inside,OBorder).
-make_search_box_fresh(H,V,Center,In,Find,Cents,Inside,IBorder,OBorder):- 
-  (H<3;V<3),!,make_grid(H,V,In), flatten(In,IBorder), 
-  Center = In, Cents = IBorder, !,
-  make_squarish(no_rule,In,  Find, Inside,OBorder).
-make_search_box_fresh(H,V,Center,In,Find,Cents,Inside,IBorder,OBorder):-
+make_search_box_fresh(1,1,Center,Inside,Find):- 
+  Center=[], [[_]]=Inside,  make_squarish(no_rule,Inside,  Find).
+make_search_box_fresh(H,V,Center,Inside,Find):- 
+  (H<3;V<3),!,make_grid(H,V,Inside), 
+  Center=[],
+  make_squarish(no_rule,Inside, Find).
+make_search_box_fresh(H,V,Center,Inside,Find):-
      HH is H-2 ,VV is V-2, make_grid(HH,VV,Center),
-     make_squarish(no_rule,Center,  In, Cents, IBorder),
-  make_squarish(no_rule,In,  Find, Inside,OBorder).
+     make_squarish(no_rule,Center,  Inside), make_squarish(no_rule,Inside,  Find).
 
 
 /*
-i_pbox_detect(L_S,H,V,XSG,[n,s,e,w],In,OH,OV):- 
+i_pbox_detect(L_S,H,V,XSG,[n,s,e,w],Inside,OH,OV):- 
  H>=2,V>=2,
  once((
-   make_grid(H,V,In),
-   make_squarish(no_rule,In,Find,Inside,OBorder))),
-  % print_grid(in,In),ptv(in=In), print_grid(ns,Find),ptv(ns=Find), print_grid(s,XSG),ptv(s=XSG),
+   make_grid(H,V,Inside),
+   make_squarish(no_rule,Inside,Find,Inside,OBorder))),
+  % print_grid(in,Inside),ptv(in=Inside), print_grid(ns,Find),ptv(ns=Find), print_grid(s,XSG),ptv(s=XSG),
   ogs_11(OH,OV,Find,XSG),
-  \+ \+ different_enough(L_S,In,Find,Inside,OBorder).
+  \+ \+ different_enough(L_S,Inside,Find,Inside,OBorder).
 */
 trim_ends(T,TT):- append([_|TT],[_],T),!.
 trim_ends(_,[]):-!.
@@ -291,25 +287,37 @@ not_edge(C,Find):- append([T|_],[B],Find), not_irow(C,T),  not_irow(C,B),
   rot90(Find,Find90),append([R|_],[L],Find90), not_irow(C,R), not_irow(C,L).
 
 nsew_edges(H,V,_,[[],[],[],[]]):- (H<3;V<3),!.
-nsew_edges(_H,_V,Find,Rows):- must_det_ll((append([T|_],[B],Find),rot90(Find,Find90),append([R|_],[L],Find90), Rows = [T,B,R,L])).
+nsew_edges(_H,_V,Find,Rows):- must_det_ll((append([T|_],[B],Find),rot90(Find,Find90),append([R|_],[L],Find90), Rows=[T,B,R,L])).
 nsew_edges_trimed(H,V,Find,Trims):- nsew_edges(H,V,Find,Rows),maplist(trim_ends,Rows,Trims).
 
 member_e(List,E):- nonvar(E), member(E,List),!.
 maybe_swap(C1,C2,C1,C2). maybe_swap(C1,C2,C2,C1).
 
 
+%list_to_set_bf([L|List],SetOL):- is_list(L),!,maplist(list_to_set_bf,[L|List],SetOL).
+list_to_set_bf(List,SetO):- list_to_set(List,Set), ( (select(B,Set,R), B==black) -> SetO=[black|R] ; SetO=Set).
+maplist_ls(P1,List):- flatten_set(List,Set),maplist(P1,Set).
+member_ls(P1,List):- flatten_set(List,Set),member(P1,Set).
+black_and(F,C):- flatten_set(F,[Black,C]), Black == black.
+member1(C,N):- select(CC,N,R), C==CC, \+ (member(C2,R),C2==C).
+flatten_set(F,S):- flatten(F,L),list_to_set_bf(L,BF),!,BF=S.
+
+
 i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- Points==[], !, wdmsg(pointless(L_S)).
 i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,[]):- !, wdmsg(complete(L_S)).
 i_pbox_l(Grid,NSEW,XSG,Points,Points9,VM,L_S,[size2D(H,V)|Sizes]):- 
-  Which = _,
-  make_search_box(H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs),
-  ogs_11(FH,FV,Find,XSG),
-  found_box(L_S,NSEW,FH,FV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, OBJ,WHY),
-  OBJ \=@= Grid,
-  OBJ \== [],
-  (OBJ=@=Find -> (break, OH is FH-1, OV is FV-1) ;
-   (OBJ=@=Center -> (Which = center,OH is FH, OV is FV) ;  
-    (OBJ=@=In -> (Which = in,OH is FH, OV is FV) 
+  Which=_,
+  make_search_box(H,V,Center,Inside,Find,IBorder,OBorder),
+  ogs_11(FH,FV,Find,XSG),  
+  maplist(flatten_set,[Center,Inside,Find],[CenterS,InsideS,FindS]),
+  maplist(list_to_set_bf,IBorder,IBorderS),
+  maplist(list_to_set_bf,OBorder,OBorderS),
+  found_box(L_S,NSEW,FH,FV,Find,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS, OBJ,WHY),
+  OBJ \=@=Grid,
+  OBJ \==[],
+  (OBJ=@=find -> (break, OH is FH-1, OV is FV-1) ;
+   (OBJ=@=center -> (Which=center,OH is FH, OV is FV) ;  
+    (OBJ=@=inside -> (Which=in,OH is FH, OV is FV) 
      ; (break, OH is FH-0, OV is FV-0)))),
   obj_gpoints(OBJ,OH,OV,GOPoints),
   intersection(Points,GOPoints,Intersection,LeftOver,Unknown), 
@@ -325,9 +333,9 @@ i_pbox_l(Grid,NSEW,XSG,Points,Points9,VM,L_S,[size2D(H,V)|Sizes]):-
   OHM1 is OH -1,OVM1 is OV -1,
   grid_size(OBJ,HH,VV), EHP1 is OH+HH, EVP1 is OV+VV,  clip(OHM1,OVM1,EHP1,EVP1,Grid,SGrid),
   (( L_S=s_l(_),
-     OBJ =@= Center,
+     OBJ==center,
      fail,
-     iz_symmetry(SGrid,_H,_V,_N,R), R \= symmetry(none),   
+     iz_symmetry(SGrid,_H,_V,_N,R), R \=symmetry(none),   
      obj_gpoints(SGrid,OHM1,OVM1,SOPoints),
      intersection(LeftOver,SOPoints,SIntersect,LeftOver2,_),
      SIntersect\==[],
@@ -339,7 +347,7 @@ i_pbox_l(Grid,NSEW,XSG,Points,Points9,VM,L_S,[size2D(H,V)|Sizes]):-
 i_pbox_l(Grid,NSEW,XSG,Points,Points9,VM,L_S,[_|Sizes]):- i_pbox_l(Grid,NSEW,XSG,Points,Points9,VM,L_S,Sizes).
 
 existingObject(VM,GOPoints):- 
-  member(O,VM.objs),globalpoints_include_bg(O,Ps),
+  member_ls(O,VM.objs),globalpoints_include_bg(O,Ps),
   GOPoints==Ps,!.
 
 obj_gpoints(OBJ,OH,OV,GOPoints):- localpoints_include_bg(OBJ,OPoints), offset_points(OH,OV,OPoints,GOPoints).
@@ -355,61 +363,62 @@ obj_gpoints(OBJ,OH,OV,GOPoints):- localpoints_include_bg(OBJ,OPoints), offset_po
    ¯¯¯¯¯¯¯¯¯¯¯
 */
 
-p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   In, insideSolid(C)):-  fail,
+p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Inside, insideSolid(C)):-  fail,
   pbox_phase_check(L_S,s_l(1)),
-   (H>1,V>1), maplist(==(C),Inside), \+ maplist(==(C),OBorder), maplist(=(B),OBorder).
+   (H>1,V>1), maplist_ls(==(C),Inside), \+ maplist_ls(==(C),OBorder), maplist_ls(=(B),OBorder).
 
-p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   Center, unRibs(L_S,C,H,V)):- 
-   H>3,V>3, pbox_phase_check(L_S,s_l(1)),  C\==black,  not_whole_row_or_col(C,Center), \+ ((member(Row,Center),append(_,[C,C,C|_],Row))).
+p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Center, unRibs(L_S,C,H,V)):- 
+   H>3,V>3, pbox_phase_check(L_S,s_l(1)),  C\==black,  not_whole_row_or_col(C,Center), \+ ((member_ls(Row,Center),append(_,[C,C,C|_],Row))).
 
-p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   Center, ring(L_S,C,H,V)):- H>4,V>4, fail,
-   \+ \+ (member(NB,Cents), NB \= C), not_whole_row_or_col(C,Center), C==black.
+p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Center, ring(L_S,C,H,V)):- H>4,V>4, fail,
+   \+ \+ (member_ls(NB,Center), NB \=C), not_whole_row_or_col(C,Center), C==black.
 
-p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   Center, innerThang(L_S,C,H,V)):- 
-   maplist(=(C),OBorder),!, C\==black, pbox_phase_check(L_S,l_s(2)), \+ member(C,Cents).
+p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Center, innerThang(L_S,C,H,V)):- 
+   maplist_ls(=(C),OBorder),!, C\==black, pbox_phase_check(L_S,l_s(2)), \+ member_ls(C,Center).
 
-p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   Center, innerThang(C)):- 
-   maplist(=(C),OBorder),!, C\==black, \+ member(C,Cents).
 
-p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   Ans, midThang(L_S,C,H,V)):- 
+p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Center, innerThang(C)):- 
+   maplist_ls(=(C),OBorder),!, C\==black, \+ member_ls(C,Center).
+
+p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Ans, midThang(L_S,C,H,V)):- 
    pbox_phase_check(L_S,l_s(2)),   
-   \+ maplist(=(C),OBorder), 
+   \+ maplist_ls(=(C),OBorder), 
    not_whole_row_or_col(C,Center),
-   member(C,Center),
+   member_ls(C,Center),
    \+ is_black(C),  
-   (is_black(C)->  Ans = Center ; (Ans = In, not_edge(C,Find))).
+   (is_black(C)->  Ans=Center ; (Ans=Inside, not_edge(C,Find))).
 
 
-p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   In, midThang1(C)):- 
-  (pbox_phase_check(L_S,s_l(2)), \+ \+ ([B,B,B,B]=NSEW, maplist(=(C),OBorder), \+ maplist(==(C),IBorder), 
-    nop( \+ (member(Row,In), maplist(=(C),Row) )))).          
+p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Inside, midThang1(C)):- 
+  (pbox_phase_check(L_S,s_l(2)), \+ \+ ([B,B,B,B]=NSEW, maplist_ls(=(C),OBorder), \+ maplist_ls(==(C),IBorder), 
+    nop( \+ (member_ls(Row,Inside), maplist_ls(=(C),Row) )))).          
 
-p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   In, midThang2(L_S,C,H,V)):- 
+p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Inside, midThang2(L_S,C,H,V)):- 
         %  fail,
-  (pbox_phase_check(L_S,l_s(2)), \+ \+ ([n,s,e,w]=NSEW, different_enough(L_S,In,Find,Inside,OBorder))).
+  (pbox_phase_check(L_S,l_s(2)), \+ \+ ([n,s,e,w]=NSEW, different_enough(L_S,Inside,Find,Inside,OBorder))).
 
-p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   In, outerThing(BC)):-
+p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Inside, outerThing(BC)):-
   pbox_phase_check(L_S,l_s(2)),
   is_black(C), 
-  maplist(=(BC),OBorder), BC\==C,!.
+  maplist_ls(=(BC),OBorder), BC\==C,!.
 
-p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   In, outerThing2n(L_S,BC,C,H,V)):- 
+p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Inside, outerThing2n(L_S,BC,C,H,V)):- 
   pbox_phase_check(L_S,l_s(2)),
-  maplist(=(BC),OBorder), BC\==C,!.
+  maplist_ls(=(BC),OBorder), BC\==C,!.
 
-p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   Center, twang):- fail,
+p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Center, twang):- fail,
 
-    \+ \+ if_t((maplist(==(C),Inside), \+ maplist(=(C),OBorder)),
-       \+ \+ if_t(not_edge(C,Find), if_t(\+ append(_,[C,C,C|_],OBorder), nop(print_grid(ogs_in0(L_S,C,OH,OV,H,V,OBorder),In))))),
-    %if_t( \+ mass(In,0),print_grid(ogs_in(L_S,C,OH,OV,H,V),In)),
+    \+ \+ if_t((maplist_ls(==(C),Inside), \+ maplist_ls(=(C),OBorder)),
+       \+ \+ if_t(not_edge(C,Find), if_t(\+ append(_,[C,C,C|_],OBorder), nop(print_grid(ogs_in0(L_S,C,OH,OV,H,V,OBorder),Inside))))),
+    %if_t( \+ mass(Inside,0),print_grid(ogs_in(L_S,C,OH,OV,H,V),Inside)),
 
-    % ( \+ member(C,OBorder) ; C==black),
+    % ( \+ member_ls(C,OBorder) ; C==black),
 /*
-    (L_S == l_s(2) ->  \+member(C,OBorder) ; ( \+member(C,OBorder) ; C==black)),
-      if_t(L_S == l_s(2),(
-       \+ (member(Row,Center), maplist(=(C),Row)),
+    (L_S==l_s(2) ->  \+member_ls(C,OBorder) ; ( \+member_ls(C,OBorder) ; C==black)),
+      if_t(L_S==l_s(2),(
+       \+ (member_ls(Row,Center), maplist_ls(=(C),Row)),
 
-       \+ (Center\==[], Center\==[[]],rot90(Center,Cols),member(Col,Cols), maplist(=(C),Col)) )),
+       \+ (Center\==[], Center\==[[]],rot90(Center,Cols),member_ls(Col,Cols), maplist_ls(=(C),Col)) )),
 */
 
 (
@@ -417,217 +426,213 @@ p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,O
       if_t(Center\=[[_]],print_grid(inside1(L_S,C,OH,OV,H,V),Center))),
  
 
-    (  ( fail, \+ member(C, Cents)) -> print_grid(inside(L_S,C,OH,OV,H,V),Center);
-         \+ \+  if_t(Center\==In, 
-               \+ \+  if_t(not_whole_row_or_col(C,In),print_grid(found1(L_S,C,OH,OV,H,V),In)))),
-   \+ \+  if_t(( \+ member(C,OBorder), \+ maplist(=(Black),OBorder)),
-       ((print_grid(inGood(L_S,C,OH,OV,H,V),In),nop((print_grid(found2(L_S,C,OH,OV,H,V),Find))))))).
-    %if_t(maplist(==(C),Inside),print_grid(find1(L_S,C,OH,OV,H,V),Find)),
-    %maplist(=(C),Center,Cents) -> make_obj(In,solid_rect);
-    %-> make_obj(In,solid_rect);
+    (  ( fail, \+ member_ls(C, Center)) -> print_grid(inside(L_S,C,OH,OV,H,V),Center);
+         \+ \+  if_t(Center\==Inside, 
+               \+ \+  if_t(not_whole_row_or_col(C,Inside),print_grid(found1(L_S,C,OH,OV,H,V),Inside)))),
+   \+ \+  if_t(( \+ member_ls(C,OBorder), \+ maplist_ls(=(Black),OBorder)),
+       ((print_grid(inGood(L_S,C,OH,OV,H,V),Inside),nop((print_grid(found2(L_S,C,OH,OV,H,V),Find))))))).
+    %if_t(maplistmaplist(==(C),Inside),print_grid(find1(L_S,C,OH,OV,H,V),Find)),
+    %maplist_ls(=(C),Center,Center) -> make_obj(Inside,solid_rect);
+    %-> make_obj(Inside,solid_rect);
 
 
-  %  (maplist(=(C),Inside), \+ member(C,OBorder)) -> ObjG = In ;
-  %  (maplist(=(C),Inside), \+ member(C,OBorder))
+  %  (maplist_ls(=(C),Inside), \+ member_ls(C,OBorder)) -> ObjG=Inside ;
+  %  (maplist_ls(=(C),Inside), \+ member_ls(C,OBorder))
 
-is_compass(A):- atom(A),member(A,[n,s,e,w]).
+is_compass(A):- atom(A),member_ls(A,[n,s,e,w]).
 
-black_and(Colors,C):- select(C,Colors,Rest),Rest==[black],!.
 
-member1(C,N):- select(CC,N,R), C==CC, \+ (member(C2,R),C2==C).
-
-found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- 
+found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY):- 
  % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
-  maplist(=(C),Inside), CentS=[_|_], nonvar(C),
-  IBorderS\==[C],
-  \+ member(C,OBorderS), OBJ=Center,
-  WHY = solidCenter(CentS,C).
+  maplist_ls(=(C),Inside), Center=[_|_], nonvar(C),
+  \+ flatten_set(IBorder,[C]),
+  \+ member_ls(C,OBorder), OBJ=center,
+  WHY=solidCenter(Center,C).
 
-found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- 
+found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY):- 
  % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
-  maplist(=(C),Inside), nonvar(C),
-  \+ member(C,OBorderS), OBJ=In,
-  WHY = solidCenterIn(CentS,C).
+  maplist_ls(=(C),Inside), nonvar(C),
+  \+ member_ls(C,OBorder), OBJ=inside,
+  WHY=solidCenterIn(Center,C).
 
-found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- 
+found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY):- 
  % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
-  IBorderDivs = [N,S,E,W],
+  IBorder=[N,S,E,W],
   member1(C,N),member1(C,S),member1(C,E),member1(C,W),
-  \+ member(C,Cents),
-  \+ member(C,OBorder),
-  %restOfGrid(XSG,OH,OV,H,V,Rest), \+ member(C,Rest).
-  OBJ=In,
-  WHY = fourDots(CentS,C).
+  \+ member_ls(C,Center),
+  \+ member_ls(C,OBorder),
+  %restOfGrid(XSG,OH,OV,H,V,Rest), \+ member_ls(C,Rest).
+  OBJ=inside,
+  WHY=fourDots(Center,C).
 
 
-found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- 
+found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY):- 
  % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
-  InsideS==[_,_|_],
-  OBorderS==[_,_|_],
-  \+ member(black,InsideS), 
-  member(black,OBorderS), 
-  OBJ=Center,
-  WHY = solidCenter1(InsideS,OBorderS).
+  Inside==[_,_|_],
+  OBorder==[_,_|_],
+  \+ member_ls(black,Inside), 
+  member_ls(black,OBorder), 
+  OBJ=center,
+  WHY=solidCenter1(Inside,OBorder).
 
 
-found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,_Center,Center,Find,Cents,Inside,_IBorder,IBorder,IBorderDivs,OBorderDivs,_CentS,CentS,_IBorderS,IBorderS,  OBJ,WHY):- 
+found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY):- 
  % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
-  maplist(=(C),IBorderS),
-  %\+ maplist(=(I),IBorderS),
-  %if_t(maplist(=(B),OBorderS),(C\==B;C==black)),
-  if_t(nonvar(C),CentS\==[C]),
-  CentS=[_|_],
-  if_t(nonvar(C),not_whole_row_or_col(C,Center)),
+  maplist_ls(=(C),OBorder),
+  %\+ maplist_ls(=(I),IBorder),
+  %if_t(maplist_ls(=(B),OBorder),(C\==B;C==black)),
+  if_t(nonvar(C),Inside\==[C]),
+  Inside=[_|_],
+  if_t(nonvar(C),not_whole_row_or_col(C,Inside)),
   %(),
-  %if_t(C\==black, \+ member(C,CentS)),
-  %nonvar(C),CentS\==[C],CentS=[_|_],
-  OBJ=Center,
-  WHY = solidInnerBorderI_O(CentS,C).
+  %if_t(C\==black, \+ member_ls(C,Center)),
+  %nonvar(C),Center\==[C],Center=[_|_],
+  OBJ=inside,
+  WHY=solidInnerBorderI_O(Center,C).
 
 
-found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- 
+found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY):- 
  % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
-  maplist(=(C),IBorderS),
+  maplist_ls(=(C),IBorder),
   C\==black,
-  %if_t(maplist(=(B),OBorderS),(C\==B;C==black)),
-  if_t(nonvar(C),CentS\==[C]),
-  CentS=[_|_],
+  %if_t(maplist_ls(=(B),OBorder),(C\==B;C==black)),
+  if_t(nonvar(C),Center\==[C]),
+  Center=[_|_],
   if_t(nonvar(C),not_whole_row_or_col(C,Center)),
   %(),
-  %if_t(C\==black, \+ member(C,CentS)),
-  %nonvar(C),CentS\==[C],CentS=[_|_],
-  %(C==black -> OBJ=In; OBJ=In),
-  %OBJ=Center,
-  \+ member(InsideS,Black),
-  OBJ=In,
-  WHY = solidInnerBorder0(CentS,C).
+  %if_t(C\==black, \+ member_ls(C,Center)),
+  %nonvar(C),Center\==[C],Center=[_|_],
+  %(C==black -> OBJ=inside; OBJ=inside),
+  %OBJ=center,
+  \+ member_ls(Inside,Black),
+  OBJ=inside,
+  WHY=solidInnerBorder0(Center,C).
 
 
 
 
 
-found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- 
+found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY):- 
  % (pbox_phase_check(L_S,s_l(2));pbox_phase_check(L_S,l_s(1))),
   fail,
-  InsideS=[C],C\==black,
-  OBorderS = [_,_|_],
-  \+ member(black,OBorderS),
-  \+ member(C,NSEW),
-  OBJ=In,
-  WHY = dashedOuterBorder(OBorderS,C).
+  Inside=[C],C\==black,
+  flatten_set(OBorder,[_,_|_]),
+  \+ member_ls(black,OBorder),
+  \+ member_ls(C,NSEW),
+  OBJ=inside,
+  WHY=dashedOuterBorder(OBorder,C).
 
 
 
-found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- fail,
+found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY):- fail,
   pbox_phase_check(L_S,l_s(2)),
-  maplist(=(C),IBorderS),
-  if_t(maplist(=(B),OBorderS),(C\==B;C==black)),
-  if_t(nonvar(C),CentS\==[C]),
-  CentS=[_|_],
+  maplist_ls(=(C),IBorder),
+  if_t(maplist_ls(=(B),OBorder),(C\==B;C==black)),
+  if_t(nonvar(C),Center\==[C]),
+  Center=[_|_],
   if_t(C\==black,not_whole_row_or_col(C,Center)),
   %(),
-  %if_t(C\==black, \+ member(C,CentS)),
-  %nonvar(C),CentS\==[C],CentS=[_|_],
-  OBJ=Center, WHY = solidInnerBorder1(CentS,C).
+  %if_t(C\==black, \+ member_ls(C,Center)),
+  %nonvar(C),Center\==[C],Center=[_|_],
+  OBJ=center, WHY=solidInnerBorder1(Center,C).
 
 
-found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- fail,
+found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY):- fail,
   V>3,H>3,
   pbox_phase_check(L_S,l_s(1)),
-  black_and(IBorderS,C),maplist(\==(C),OBorderS),
-  (black_and(CentS,C); \+ member(C,CentS)),
-  OBJ=Center,!,WHY = solidInnerBorder2(CentS).
+  black_and(IBorder,C),maplist_ls(\==(C),OBorder),
+  (black_and(Center,C); \+ member_ls(C,Center)),
+  OBJ=center,!,WHY=solidInnerBorder2(Center).
 
-found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):- fail,
+found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY):- fail,
   pbox_phase_check(L_S,l_s(1)),
-  InsideS=[C], \+ maplist(\==(C),OBorderS),
-  OBJ=In,!,WHY = solidIn(C).
+  Inside=[C], \+ maplist_ls(\==(C),OBorder),
+  OBJ=inside,!,WHY=solidIn(C).
 
-found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY):-
+found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY):-
   pbox_phase_check(L_S,l_s(1)),
-  IBorderS=[C],maplist(\==(C),InsideS),
-  OBJ=Center,!,WHY = solidInnerBorder2(C).
+  flatten_set(IBorder,[C]),maplist_ls(\==(C),Inside),
+  OBJ=center,!,WHY=solidInnerBorder2(C).
 
 
 
-found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   _, _):- fail,
-  member(C,Inside),is_real_color(C),maplist(==(C),Inside), maplist(=(C),OBorder),!,fail.
+found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   _, _):- fail,
+  member_ls(C,Inside),is_real_color(C),maplist_ls(==(C),Inside), maplist_ls(=(C),OBorder),!,fail.
 
-found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   OBJ,WHY):- 
+found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   OBJ,WHY):- 
  % pbox_phase_check(L_S,l_s(2)),
   H>1,V>1,
-  once((list_to_set(Cents,CentS),list_to_set(Inside,InsideS),list_to_set(IBorder,IBorderS),list_to_set(OBorder, OBorderS))),
-  found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs, CentS,InsideS,IBorderS,OBorderS,  OBJ,WHY),
-  nop((MOBJ\==In -> MOBJ=OBJ ; ( (maplist(=(C),IBorder), nop((\+ member(C,Cents))) ) -> OBJ=Center ; OBJ=MOBJ))).
+  found_box_s(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,  OBJ,WHY),
+  nop((MOBJ\==Inside -> MOBJ=OBJ ; ( (maplist_ls(=(C),IBorder), nop((\+ member_ls(C,Center))) ) -> OBJ=center ; OBJ=MOBJ))).
 
 
-found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   Center, 
+found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Center, 
                        dottedBoxCenter(border1(C1,C2),NSEW,L_S,H,V)):- H>3,V>3, 
   pbox_phase_check(L_S,s_l(1)),
     ((my_partition(=(C),IBorder,C1s,C2s),length(C1s,N1),length(C2s,N2),max_min(N1,N2,Max,Min),Min==4)),!.
-%    \+ member(C,OBorder), \+ member(C,Cents))).
+%    \+ member_ls(C,OBorder), \+ member_ls(C,Center))).
 
 
-found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   In, largeInBlack(NSEW,L_S,H,V)):-  
+found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   inside, largeInBlack(NSEW,L_S,H,V)):-  
   pbox_phase_check(L_S,l_s(2)),
-  CNSEW=[B,B,B,B], B =black,
+  CNSEW=[B,B,B,B], B=black,
    \+ \+ ((NSEW=CNSEW,
-         maplist(=(B),OBorder), (member(C,IBorder), \+ is_black(C)))),!, not_whole_row_or_col(C,In).
+         maplist_ls(=(B),OBorder), (member_ls(C,IBorder), \+ is_black(C)))),!, not_whole_row_or_col(C,Inside).
 
 
-found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   In, find_pbox(L_S,C1-C2=C3-C4)):-  
+found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   inside, find_pbox(L_S,C1-C2=C3-C4)):-  
   pbox_phase_check(L_S,l_s(2)),
   H>3,V>3,
-  once((list_to_set(Find,FindS),
-  list_to_set(OBorder, OBorderS),
-  pred_intersection(==,FindS,OBorderS,Common,_,FindU,OBorderU))),
-  [Common,FindU,OBorderU] = All,
+  once((
+  %list_to_set(OBorder, OBorder),
+  pred_intersection(==,FindS,OBorder,Common,_,FindU,OBorderU))),
+  [Common,FindU,OBorderU]=All,
   ground(All),
   [Common,FindU,OBorderU]=[[_],[_],[_]].
 
 
-found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   In, find_ogs(L_S,C,NN,OBorderC)):- 
+found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   inside, find_ogs(L_S,C,NN,OBorderC)):- 
   pbox_phase_check(L_S, l_s(1)),
   H>3,V>3,
-  maplist(=(C),Inside),
-  get_edges(In,Top,Bottem,Left,Right),
+  maplist_ls(=(C),Inside),
+  get_edges(Inside,Top,Bottem,Left,Right),
   maplist(trim_ends,[Top,Bottem,Left,Right],TrimmedRows),
-  findall(E,(member(E,TrimmedRows),maplist(=(C),E)),Borders),
+  findall(E,(member_ls(E,TrimmedRows),maplist_ls(=(C),E)),Borders),
   length(Borders,NN),
-  \+ maplist(==(black),Inside),
+  \+ maplist_ls(==(black),Inside),
   list_to_set(OBorder,OBorderC).
 
 /*
 
-found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   Center, boxCenter(NSEW,L_S,H,V)):-
+found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Center, boxCenter(NSEW,L_S,H,V)):-
   pbox_phase_check(L_S,l_s(2)),
-   \+ \+ ((maplist(=(C),IBorder), \+ member(C,OBorder), \+ member(C,Cents))).
+   \+ \+ ((maplist_ls(=(C),IBorder), \+ member_ls(C,OBorder), \+ member_ls(C,Center))).
 
 */
-found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   OBJ, WHY):-
-  maplist(=(C),IBorder),!,p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   OBJ, WHY).
+found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   OBJ, WHY):-
+  maplist_ls(=(C),IBorder),!,p1_found_box(L_S,NSEW,OH,OV,C,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   OBJ, WHY).
 
-found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   In, different_enough(L_S,CNSEW)):-  
-  [n,s,e,w] = CNSEW,
+found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   inside, different_enough(L_S,CNSEW)):-  
+  [n,s,e,w]=CNSEW,
  % !, fail,    
-  \+ \+ ((CNSEW=NSEW,different_enough(L_S,In,Find,Inside,OBorder))),!,
-  if_t((member(C,OBorder),nonvar(C)),
-       not_whole_row_or_col(C,In)).
+  \+ \+ ((CNSEW=NSEW,different_enough(L_S,Inside,Find,Inside,OBorder))),!,
+  if_t((member_ls(C,OBorder),nonvar(C)),
+       not_whole_row_or_col(C,Inside)).
 
 /*
-found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,In,Find,Cents,Inside,IBorder,OBorder,IBorderDivs,OBorderDivs,   In, different_enough(NSEW)):- 
+found_box(L_S,NSEW,OH,OV,Find,XSG,H,V,Center,Inside,Find,IBorder,OBorder,   Inside, different_enough(NSEW)):- 
   %[n,s,e,w]=NSEW,
   !, fail,
-  different_enough(L_S,In,Find,Inside,OBorder).
+  different_enough(L_S,Inside,Find,Inside,OBorder).
 */
 
 
-different_enough(L_S,In,Find,Inside,OBorder):-
+different_enough(L_S,Inside,Find,Inside,OBorder):-
   a_portion_colors(Inside,InsideC,InsideV,InsideBG,InsideFG),
   a_portion_colors(OBorder, BorderC,BorderV,BorderBG,BorderFG),
   maplist(sort,[BorderC,BorderV,BorderBG,BorderFG,InsideC,InsideV,InsideBG,InsideFG],
                [SBorderC,SBorderV,SBorderBG,SBorderFG,SInsideC,SInsideV,SInsideBG,SInsideFG]),
-  different_enough_c(In,Find,L_S,SBorderC,SBorderV,SBorderBG,SBorderFG,
+  different_enough_c(Inside,Find,L_S,SBorderC,SBorderV,SBorderBG,SBorderFG,
                                                SInsideC,SInsideV,SInsideBG,SInsideFG),!.
 
 a_portion_colors(IA,Compass,Vars,BG,FG):- 

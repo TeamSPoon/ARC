@@ -29,7 +29,7 @@ forall_count(P,Q,EP,ET):-
 solves_all_pairs(TestID,P,P2S):- kaggle_arc(TestID,tst+0,_,_), 
  findall(P2,(easy_solve_by(TestID,P2),
    findall(try_p2(P2,In,Out),
-     kaggle_arc(TestID,_,In,Out),AllTrue),maplist(grid_call,AllTrue)),[P|P2S]).
+     kaggle_arc(TestID,_,In,Out),AllTrue),maplist(call,AllTrue)),[P|P2S]).
 */
 /*
 test_easy:- clsmake, forall_count(arc_test_name(TestID),test_easy(TestID)).
@@ -84,9 +84,6 @@ test_easy_solve_test_pair(TestID,ExampleNum,I,O):-
    nl_if_needed,
    (P2S\==[] -> wqs(["Passed: ",CALL,"using\n ",call(maplist(pp(yellow),P2S))]) ; ( \+ get_pair_mode(entire_suite),wqs(["failed: ",b(q(CALL))]),!,fail)).
 
-:- meta_predicate(grid_call(+,+,-)).
-
-grid_call(P2,I,O):- call(P2,I,O).
 
 test_example_grid(I):- var(I),!.
 test_example_grid(I):- kaggle_arc(TestID,ExampleNum,I,O),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
@@ -112,9 +109,6 @@ easy_p2(simple_todolist(_)).
 easy_p2(P2):- easy0(_,P2).
 %easy_p2(two_ops(repair_in_vm(repair_repeats(black)),get(repaired))).
 
-try_p2(P2,In,Out):- grid_call(P2,In,Mid),Out=@=Mid,!.
-%try_p2(P2,In,Out):- grid_call(P2,In,Out),!.
-%try_p2(P2,In,Out):- grid_call(P2,In,Out),!.
 
 expect_p2:attr_unify_hook(_,_).
 

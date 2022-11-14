@@ -590,18 +590,28 @@ is_fti_step(maybe_repair_in_vm).
 % =====================================================================
 maybe_repair_in_vm(_P4,VM):- VM.option_repair_grid==false,!.
 maybe_repair_in_vm(P4,VM):- var(VM.option_repair_grid), !, 
- (need_repair_grid(VM.id) -> (set(VM.option_repair_grid) = true) ; (set(VM.option_repair_grid) = false)),
+ (need_repair_grid(VM) 
+   -> (set(VM.option_repair_grid) = true) 
+    ; (set(VM.option_repair_grid) = false)),
   maybe_repair_in_vm(P4,VM).
 maybe_repair_in_vm(P4,VM):- repair_in_vm(P4,VM),!.
 
 need_repair_grid(VM):- 
   VM.h >= 14, VM.v >= 14,
   testid_name_num_io(VM.id,TestID,_Example,_Num,in),!,
-  kaggle_arc(TestID,trn+0,I,O), is_grid_symmetricD(O), !, \+ is_grid_symmetricD(I),  
-  Grid=VM.grid,
-  mass(Grid,GridMass),
-  Area is VM.h * VM.v,  
-  GridMass/Area > 0.39.
+  test_need_repair_grid(TestID),!.
+
+test_need_repair_grid(TestID):- 
+  kaggle_arc(TestID,trn+_,I,O), 
+  \+ is_grid_symmetricD(I), 
+  grid_size(I,IH,IV),
+  mass(I,GridMass),
+  Area is IH * IV,  
+  GridMass/Area > 0.39,!,
+  grid_size(O,OH,OV),
+  once(
+    (is_grid_symmetricD(O),IH=OH,IV=OV) 
+    ;(IH>=(OH*3),IV>=(OV*3))).
 
 % =====================================================================
 is_fti_step(repair_in_vm).

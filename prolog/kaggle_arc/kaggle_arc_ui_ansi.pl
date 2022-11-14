@@ -152,7 +152,7 @@ via_print_grid(G):- is_points_list(G). %,!,fail,grid_size(G,H,V),number(H),numbe
 via_print_grid(G):- is_grid(G).
 via_print_grid(G):- is_object(G).
 via_print_grid(G):- is_group(G).
-via_print_grid(G):- is_gridoid(G).
+via_print_grid(G):- is_really_gridoid(G).
 
 terseA(_,[],[]):- !.
 terseA(_,L,'... attrs ...'(N)):- is_list(L),length(L,N),N>10,!.
@@ -241,6 +241,8 @@ pp(Term):- nl_if_needed, az_ansi(pp_no_nl(Term)),!,probably_nl.
 
 %p_p_t_no_nl(Term):- is_toplevel_printing(Term), !, print_tree_no_nl(Term).
 p_p_t_no_nl(Term):- az_ansi(print_tree_no_nl(Term)).
+
+ppt_no_nl(P):- tersify(P,Q),!,pp_no_nl(Q).
 
 is_toplevel_printing(_):- \+ is_string_output, line_position(current_output,N),  N<2, fail.
 
@@ -338,11 +340,11 @@ pp_hook_g1(O):-  is_group(O),pp_no_nl(O), !.
 %pp_hook_g1(change_obj(N,O1,O2,Sames,Diffs)):-  showdiff_objects5(N,O1,O2,Sames,Diffs),!.
 
 pp_hook_g1(O):-  is_map(O),data_type(O,DT), writeq('..map.'(DT)),!.
-pp_hook_g1(O):-  is_gridoid(O),debug_as_grid(O), !.
+pp_hook_g1(O):-  is_really_gridoid(O),debug_as_grid(O), !.
 %pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  with_tagged('h5',collapsible_section(object,[O1, O2],pp(O))).
 %pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff), collapsible_section(object,showdiff_objects(O1,O2)),!.
 %pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  collapsible_section(object,[O1, O2],with_tagged('h5',pp(O))).
-%pp_hook_g1(O):-  O = diff(A -> B), (is_gridoid(A);is_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
+%pp_hook_g1(O):-  O = diff(A -> B), (is_really_gridoid(A);is_really_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
 pp_hook_g1(O):-  O = showdiff( O1, O2), !, showdiff(O1, O2).
 pp_hook_g1(O):- compound(O),wqs1(O),!.
 
@@ -401,9 +403,9 @@ wqs0(X):- plain_var(X), !, wqs(plain_var(X)).
 wqs0(G):- compound(G), G = call(C),callable(C),!,call(C).
 wqs0(G):- is_map(G), !, write_map(G,'wqs').
 wqs0(X):- attvar(X), !, wqs(attvar(X)). 
+wqs0(nl):- !, nl. wqs0(''):-!. wqs0([]):-!.
 wqs0([H|T]):- is_list(T), string(H), !, wqs_l([H|T]).
 wqs0([H|T]):- is_list(T), !, wqs(H),need_nl(H,T), wqs(T).
-wqs0(nl):- !, nl. wqs0(''):-!. wqs0([]):-!.
 wqs0(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 wqs0(X):- is_object(X), tersify1(X,Q), X\==Q,!, wqs(Q).
 wqs0(X):- is_object(X), show_shape(X),!.
@@ -419,8 +421,14 @@ wqs0(call(C)):- !, call(C).
 wqs0(C):- is_color(C),!,wqs(color_print(C,C)).
 wqs0(X):- \+ compound(X),!, write_nbsp, write(X).
 wqs0(C):- compound(C),wqs1(C),!.
+wqs0(C):- wqs2(C).
 %wqs(S):- term_contains_ansi(S), !, write_nbsp, write_keeping_ansi_mb(S).
-wqs0(X):- write_nbsp,writeq(X).
+
+wqs2(S):- term_contains_ansi(S), !, write_nbsp, write_keeping_ansi_mb(S).
+wqs2(X):- !, write_nbsp,writeq(X).
+wqs2(X):- write_nbsp,write_term(X,[quoted(true)]).
+
+
 
 as_arg_str(C,S):- wots_vs(S,print(C)).
 
@@ -434,10 +442,9 @@ wqs1(q(C)):-  \+ arg_string(C),wots(S,writeq(C)),color_write(S).
 wqs1(g(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs(C))),print(g(S)).
 wqs1(b(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs(C))),color_write(S).
 wqs1(norm(C)):- writeq(norm(C)),!.
-wqs1(S):- term_contains_ansi(S), !, write_nbsp, print(S).
-wqs1(pp(C)):- \+ arg_string(C), wots_vs(S,pp(C)),write((S)).
-wqs1(ppt(C)):- \+ arg_string(C), wots_vs(S,ppt(C)),write((S)).
-%wqs1(pen(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(penz(S)).
+
+wqs1(pp(C)):- \+ arg_string(C), wots_vs(S,pp_no_nl(C)),write((S)).
+wqs1(ppt(C)):- \+ arg_string(C), wots_vs(S,ppt_no_nl(C)),write((S)).
 wqs1(vals(C)):- writeq(vals(C)),!.
 %wqs1(colors(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(colorsz(S)).
 wqs1(io(C)):-  \+ arg_string(C),wots_vs(S,bold_print(wqs(C))),write(io(S)).
@@ -450,10 +457,24 @@ wqs1(cc(C,N)):- N\==0,var(C), sformat(PC,"~p",[C]), !, wqs(ccc(PC,N)).
 wqs1(cc(C,N)):- \+ arg_string(C), wots(S,color_print(C,C)), wqs(cc(S,N)).
 wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
 wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
-wqs1(X):- compound(X), compound_name_arguments(X,_,[Arg]),is_gridoid(Arg),area_or_len(Arg,Area),Area<5,writeq(X),!.
+wqs1(X):- compound(X), compound_name_arguments(X,_,[Arg]),is_really_gridoid(Arg),area_or_len(Arg,Area),Area<5,writeq(X),!.
 % wqs1(C):- callable(C), is_wqs(C),wots_vs(S,catch(C,_,fail)),write((S)).
-wqs1(X):- compound(X), compound_name_arguments(X,F,[Arg]),is_gridoid(Arg),
-  writeq(F),write('(`\n'),!,print_grid(Arg),write('`)').
+wqs1(X):- compound(X), compound_name_arguments(X,F,[Arg]),is_really_gridoid(Arg),wots_vs(VS,print(Arg)),
+  writeq(F),write('(`\n'),!,write(VS),write('`)').
+
+
+
+%wqs1(pen(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(penz(S)).
+/*
+*/
+
+is_really_gridoid(G):- is_gridoid(G),(is_list(G) -> ( \+ (member(E,G),non_gridoid_cell(E))); true).
+non_gridoid_cell(C):- plain_var(C),!,fail.
+non_gridoid_cell(C):- is_color(C),!.
+non_gridoid_cell(ord(_,_)).
+non_gridoid_cell(cc(_,_)).
+non_gridoid_cell(_-Num):- number(Num).
+
 
 %probably_nl :- arc_webui,!,write('<br/>').
 nl_if_needed :- format('~N').
@@ -462,7 +483,8 @@ probably_nl :- format('~N').
 write_nbsp:- write(' ').
 
 is_breaker(P):- compound(P),functor(P,_,A), A>=3.
-need_nl(_,_):- arc_webui,!.
+need_nl(_,_):- arc_webui,!,write_nbsp.
+%need_nl(_,_):- !,write_nbsp.
 need_nl(H,[P|_]):- \+ is_breaker(H),is_breaker(P),line_position(user_output,L1),L1>80,nl,bformatc1('\t\t').
 need_nl(_,_):- line_position(user_output,L1),L1>160,nl,bformatc1('\t\t').
 need_nl(_,_).
@@ -516,14 +538,14 @@ banner_lines(Color):- nl_if_needed,
   color_print(Color,'=============================================================='),nl,
   color_print(Color,'--------------------------------------------------------------'),nl,!.
 
-print_ss(A):- ( \+ compound(A) ; \+ (sub_term(E,A), is_gridoid(E))),!, wdmsg(print_ss(A)),!.
+print_ss(A):- ( \+ compound(A) ; \+ (sub_term(E,A), is_really_gridoid(E))),!, wdmsg(print_ss(A)),!.
 print_ss(A):- grid_footer(A,G,W),writeln(print_ss(W)), print_ss(G,W),!.
 print_ss(A):- must_det_ll(( format('~N'), into_ss_string(A,SS),!,
   SS = ss(L,Lst),
   writeln(print_ss(l(L))), 
   forall(member(S,Lst),writeln(S)),format('~N'))),!.
 
-print_ss(G,W):- is_gridoid(G),!,must_det_ll(print_grid(W,G)).
+print_ss(G,W):- is_really_gridoid(G),!,must_det_ll(print_grid(W,G)).
 
 print_side_by_side([]):-!.
 print_side_by_side([A,B|Rest]):- \+ g_smaller_than(A,B),!,print_side_by_side(A,B),format('~N'),!,print_side_by_side(Rest),!.
@@ -590,28 +612,28 @@ print_side_by_side4d(TitleColor,S1,F1,N1,W0,S2,F2,N2):- number(W0), W0 < 0, LW i
 print_side_by_side4d(TitleColor,S1,F1,N1,_LW,S2,F2,N2):- 
    nl_if_needed, write('\t'),format_u(TitleColor,F1,[N1,S1]),write('\t\t'),format_u(TitleColor,F2,[N2,S2]),write('\n'),!.
 
-unsized_grid(A):- is_gridoid(A),!,fail.
-unsized_grid(A):- grid_footer(A,Grid,_Text), !, \+ is_gridoid(Grid),!.
-unsized_grid(A):- \+ is_gridoid(A),!.
+unsized_grid(A):- is_really_gridoid(A),!,fail.
+unsized_grid(A):- grid_footer(A,Grid,_Text), !, \+ is_really_gridoid(Grid),!.
+unsized_grid(A):- \+ is_really_gridoid(A),!.
 
 grid_footer(G,_,_):- \+ compound(G),!,fail.
 grid_footer(print_grid(GF,GG),GG,GF):-!.
 grid_footer(print_grid(_,_,GF,GG),GG,GF):-!.
 grid_footer((GG-GF),GG,GF):- is_grid(GG), !.
 grid_footer((GF-GG),GG,GF):- is_grid(GG), !.
-grid_footer((GG-GF),GG,GF):- is_gridoid(GG), !.
-grid_footer((GF-GG),GG,GF):- is_gridoid(GG), !.
+grid_footer((GG-GF),GG,GF):- is_really_gridoid(GG), !.
+grid_footer((GF-GG),GG,GF):- is_really_gridoid(GG), !.
 grid_footer((GG-wqs(GF)),GG,wqs(GF)):- nonvar(GF),!.
 grid_footer((GF-GG),[['?']],GF):- GG==[], !.
 grid_footer((GG-GF),[['?']],GF):- GG==[], !.
-grid_footer((GF-GG),GG,GF):- \+ is_gridoid(GF), !.
-grid_footer((GG-GF),GG,GF):- \+ is_gridoid(GF), !.
+grid_footer((GF-GG),GG,GF):- \+ is_really_gridoid(GF), !.
+grid_footer((GG-GF),GG,GF):- \+ is_really_gridoid(GF), !.
 grid_footer((GG-GF),GG,GF).
 
 
 g_smaller_than(A,B):- grid_footer(A,AA,_),!,g_smaller_than(AA,B).
 g_smaller_than(B,A):- grid_footer(A,AA,_),!,g_smaller_than(B,AA).
-g_smaller_than(A,B):- is_gridoid(A),is_gridoid(A),!, vis2D(A,_,AV),vis2D(B,_,BV), BV>AV.
+g_smaller_than(A,B):- is_really_gridoid(A),is_really_gridoid(A),!, vis2D(A,_,AV),vis2D(B,_,BV), BV>AV.
 
 gridoid_size(G,30,30):- \+ compound(G),!.
 gridoid_size(print_grid(H,V,_),H,V):- nonvar(H),nonvar(V),!.
@@ -619,7 +641,7 @@ gridoid_size(print_grid(H,V,_,_),H,V):- nonvar(H),nonvar(V),!.
 gridoid_size(print_grid0(H,V,_),H,V):- nonvar(H),nonvar(V),!.
 gridoid_size(print_grid0(H,V,_,_),H,V):- nonvar(H),nonvar(V),!.
 gridoid_size(G,H,V):- compound_name_arity(G,print_grid,A),arg(A,G,GG),gridoid_size(GG,H,V).
-gridoid_size(G,H,V):- is_gridoid(G),!,grid_size(G,H,V).
+gridoid_size(G,H,V):- is_really_gridoid(G),!,grid_size(G,H,V).
 
 print_side_by_side0([],_,[]):-!.
 print_side_by_side0(A,_,B):- (unsized_grid(A);unsized_grid(B)),!, writeln(unsized_grid), print_ss(A),print_ss(B),!.
@@ -792,9 +814,10 @@ toUpperC(A,AU):- term_to_atom(A,AU).
 show_pair_diff(IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
   toUpperC(NameIn,NameInU),toUpperC(NameOut,NameOutU),
   show_pair_grid(cyan,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out),
-  ((is_group(In),is_group(Out))-> once(showdiff(In,Out));
-    ignore((is_group(In),desc(wqnl(NameInU+fav(PairName)),locally(nb_setval(debug_as_grid,t), debug_indiv(In))))),
-    ignore((is_group(Out),desc(wqnl(NameOutU+fav(PairName)), locally(nb_setval(debug_as_grid,t),debug_indiv(Out)))))),!.
+  locally(nb_setval(debug_as_grid,t),
+   ((is_group(In),is_group(Out))-> once(showdiff(In,Out));
+    ((ignore((is_group(In), desc(wqnl(NameInU+fav(PairName)), debug_indiv(In)))),
+      ignore((is_group(Out),desc(wqnl(NameOutU+fav(PairName)), debug_indiv(Out)))))))),!.
 
 
 uses_space(C):- code_type(C,print).
@@ -823,7 +846,7 @@ into_ss_string(A-B,SS):-!,into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(Len
   ss(LenAB,ABL)=SS.
 
 into_ss_string(G,SS):- is_grid(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
-into_ss_string(G,SS):- is_gridoid(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
+into_ss_string(G,SS):- is_really_gridoid(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(G,SS):- is_object(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(G,SS):- is_points_list(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(G,SS):- is_group(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
@@ -952,7 +975,7 @@ print_grid0(H,V,G):- is_empty_grid(G), %trace, arcST,
  make_grid(H,V,Empty),
  print_grid0(H,V,Empty),!. 
 
-print_grid0(H,V,Grid):- \+ is_gridoid(Grid), into_grid(Grid,G),!,print_grid0(H,V,G).
+print_grid0(H,V,Grid):- \+ is_really_gridoid(Grid), into_grid(Grid,G),!,print_grid0(H,V,G).
 print_grid0(H,V,Grid):- print_grid0(1,1,H,V,Grid),!.
 
 %print_grid(SH,SV,EH,EV,Grid):- nop(print_grid(SH,SV,EH,EV,Grid)),!.

@@ -197,14 +197,42 @@ final_alignment(AR,BR,AAR,[],[PA|G1],[PB|G2]):- AAR\==[],
 
 final_alignment(_,_,AA,BB,AA,BB):-!.
 
+obj_grp_atoms(A,[A,PA|Atoms]):- obj_grp_comparable(A,PA),obj_atoms(PA,Atoms).
 
+find_obj_mappings(A,BG,OO):-
+  obj_grp_atoms(A,AINFO),
+  maplist(obj_grp_atoms,BG,BBR),
+  find_obj_mappings2(AINFO,BBR,OO).
+
+find_obj_mappings2([A,PA|PAP],BBR,pair4(A,PA,B,PB)):- 
+   ord(NJ/O+JO+Joins,[PA,A],[PB,B]) = Why,
+   findall(Why,
+    (      
+     member([B,PB|PBP],BBR),
+      must_det_ll((
+     % maybe_allow_pair(PA,PB), allow_pair(PA,PB),  
+       intersection(PAP,PBP,Joins,OtherA,OtherB),     
+       flatten([OtherA,OtherB],Other),
+       length(Joins,J),length(Other,O),
+       NJ is -J,
+       JO is - rationalize(J/(O+1))))),
+     Pairs), 
+   sort(Pairs,RPairs),!,
+   %maplist(writeln,Pairs),
+   %last(RPairs,prop_atoms(Best,_,_,_)),
+   % Best = pair(PA,PB,_),
+   member(Why,RPairs).
 
 
 showdiff_groups(AG,BG):- \+ is_group(AG),into_group(AG,AGL),!,showdiff_groups(AGL,BG).
 showdiff_groups(AG,BG):- \+ is_group(BG),into_group(BG,BGL),!,showdiff_groups(AG,BGL).
 showdiff_groups(AG,BG):- not_list(AG),into_list(AG,AGL),!,showdiff_groups(AGL,BG).
 showdiff_groups(AG,BG):- not_list(BG),into_list(BG,BGL),!,showdiff_groups(AG,BGL).
+
 showdiff_groups(AG,BG):- ignore((once((proportional_how(AG,BG,DD), pp(cyan,proportional(DD)))))),fail.
+
+showdiff_groups(AG,BG):- showdiff_groups_new(AG,BG),!.   
+
 showdiff_groups(AG,BG):-
   maplist(obj_grp_comparable,AG,A3),
   maplist(obj_grp_comparable,BG,B3),
@@ -257,6 +285,8 @@ obj_plist(obj(PA),PAP):- is_list(PA),!,PAP=PA.
 
 never_matom(localpoints(_)).
 never_matom(shape(_)).
+never_matom(o(_,_,_)).
+never_matom(giz(_)).
 never_matom(globalpoints(_)).
 sub_obj_atom(_,M):- var(M),!,fail.
 sub_obj_atom(_,M):- never_matom(M),!,fail.
@@ -314,18 +344,17 @@ uniqueness_prop(mass(_)).
 dg(I1):- debug_as_grid(I1) -> true ; (print_grid(I1), print_info(I1)).
 %printing_diff(I1,O1):- dg(I1),!, dg(O1),!.
 printing_diff(O1,O2):- 
+ must_det_ll((
   object_grid_to_str(O1,Str1,T1),
   object_grid_to_str(O2,Str2,T2),
-
-  ((global_grid(O1,OG1),global_grid(O2,OG2),print_side_by_side(teal,OG1,diff(global_grid(T1)),_,OG2,diff(global_grid(T2))))-> true;
+  ((global_grid(O1,OG1),global_grid(O2,OG2),print_side_by_side(cyan,OG1,diff(global_grid(T1)),_,OG2,diff(global_grid(T2))))-> true;
    (print_side_by_side(yellow,O1,no_global_grid(diff(T1)),_,O2,no_global_grid(diff(T2))))),
-
-  ignore((into_ngrid(O1,NO1),into_ngrid(O2,NO2), print_side_by_side(silver,NO1,ngrid(T1),_,NO2,ngrid(T2)))),
+  nop(ignore((into_ngrid(O1,NO1),into_ngrid(O2,NO2), print_side_by_side(silver,NO1,ngrid(T1),_,NO2,ngrid(T2))))),
+  debug_indiv_obj(O1),
+  debug_indiv_obj(O2),
   nop(writeln(Str1)), 
-  debug_indiv(O1),
-  nop(writeln(Str2)),
-  debug_indiv(O2),!.
-
+  nop(writeln(Str2)))),
+  !.
 
 indiv_show_pairs_input(_Peers,_Shown,_List,Indv):- nb_current(menu_key,'o'),!, dg(Indv).
 indiv_show_pairs_input(_Peers,_Shown,_List,Indv):- get_current_test(TestID), print_info(Indv), ignore(what_unique(TestID,Indv)).
@@ -335,6 +364,25 @@ indiv_show_pairs_output(_Peers,_Shown,_List,Indv):- nb_current(menu_key,'o'),!, 
 indiv_show_pairs_output(Peers,_Shown,List,Indv):-
   dash_chars,
   (best_mates(Indv,List,Mate)->showdiff_arg1(Peers,Indv,List,Mate);dg(Indv)).
+
+showdiff_groups_new(AG,BG):- 
+ must_det_ll((
+  maplist(obj_grp_atoms,AG,AGG),
+  maplist(obj_grp_atoms,BG,BGG),
+   print_list_of(show_mappings(AG,AGG,BG,BGG), inputMap,AGG),
+   print_list_of(show_mappings(BG,BGG,AG,AGG),outputMap,BGG))).
+
+show_mappings(AG,_,BG,BGG,APA):-
+ must_det_ll((
+  dash_chars(100),nl,nl,nl,
+  APA = [A,PA|_Atoms],
+  find_obj_mappings2(APA,BGG,Pair),
+  dash_chars,dash_chars,
+  Pair = pair4(A,PA,B,_PB),
+  %%debug_as_grid('show_mappings',A),
+  showdiff_arg1(AG,A,BG,B))).
+  %showdiff_objects(PA,PB),!.
+
 
 showdiff_arg1(Peers1,Obj1,Peers2,Obj2):- 
  must_det_ll((
@@ -435,6 +483,7 @@ usefull_compare(P):- changed_by(P,_).
 
 remove_giz(L,O):- include(not_giz,L,M),list_to_set(M,O).
 not_giz(giz(_)):-!,fail.
+not_giz(o(_,_,_)):-!,fail.
 not_giz(merged(_)):-!,fail.
 not_giz(birth(_)):-!,fail.
 not_giz(changes(_)):-!,fail.
@@ -558,14 +607,16 @@ dislike_points1([colors([cc(BG, _)]),iz(polygon)]):- freeze(BG,is_black_or_bg(BG
 
 
 uncomparable(_,Var):- var(Var),!.
-uncomparable(group,W):- good_overlap(W),!,fail.
 uncomparable(group,W):- too_non_unique(W).
 uncomparable(group,W):- too_unique(W).
 uncomparable(H,P):- compound(P),!,functor(P,F,_),uncomparable2(H,F).
+uncomparable(group,W):- good_overlap(W),!,fail.
 uncomparable(H,F):- uncomparable2(H,F).
 
 uncomparable2(group,grid).
 uncomparable2(group,globalpoints).
+uncomparable2(group,giz).
+uncomparable2(group,o).
 %uncomparable2(group,grid_size).
 uncomparable2(group,obj_to_oid).
 %uncomparable2(group,link).
@@ -734,7 +785,7 @@ showdiff_objects5(Why,OO1,OO2,Sames,Diffs):- showdiff_objects_now(Why,OO1,OO2,Sa
 showdiff_objects_now(Why,OO1,OO2,Sames,Diffs):- 
  must_det_ll((
   into_obj(OO1,O1),into_obj(OO2,O2),
-  dash_chars,dash_chars,
+  dash_chars,nl,nl,nl,dash_chars,
   ppt(Why),
   printing_diff(O1,O2),
   %print_list_of(debug_indiv,showdiff_objects_n(Why),[O1,O2]), 

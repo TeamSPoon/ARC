@@ -25,7 +25,7 @@ into_gridoid(N,G):- no_repeats(S,(into_gridoid0(N,G),once(localpoints(G,P)),sort
    
 
 %grav_rot(Group,List):- override_group(grav_rot(Group,List)),!.
-%grav_rot(Shape,Final):- into_grid(Shape,Grid),grav_mass(Grid,RotG),!,call_rot(RotG,Shape,Final).
+%grav_rot(Shape,Final):- into_grid(Shape,Grid),grav_mass(Grid,RotG),!,grid_call(RotG,Shape,Final).
 
 
 test_grav_rot:- test_p2(test_grav_rot(_)).
@@ -106,18 +106,6 @@ map_row_size(N,Len,[Mult|Rest],Mass):- number(Mult),!,
 map_row_size(N,Len,[_|Rest],Mass):- 
    N2 is N * Len, map_row_size(N2,Len,Rest,Mass),!.
 
-
-call_rot([],I,I):- !.
-call_rot([H|T],I,O):- !,
-  call_rot(H,I,M),
-  call_rot(T,M,O).
-call_rot(T,I,O):- call(T,I,O).
-
-call_rot_c([],I,I):- !.
-call_rot_c([H|T],I,O):- !,
-  call_rot(H,I,M),I\=@=M,
-  call_rot_c(T,M,O).
-call_rot_c(T,I,O):- call(T,I,O),I\=@=O.
 
 grav_mass(Grid,sameR):- iz(Grid,hv_symmetric),!.
 grav_mass(Grid,RotOut):- vis2D(Grid,H,V), !, tips_to_rot(Grid,H,V,RotOut,_).
@@ -223,7 +211,7 @@ grid_flipD(I,O):- grid_size(I,H,V),make_grid(V,H,O),
        nb_set_local_point(Y,X,C,O)))).
 
 
-unrotate(UnRot,X,Y):- unrotate(UnRot,Rot),!,call_rot(Rot,X,Y).
+unrotate(UnRot,X,Y):- unrotate(UnRot,Rot),!,grid_call(Rot,X,Y).
 
 unrotate(rot90,rot270):-!.
 unrotate(rot270,rot90):-!.

@@ -592,8 +592,8 @@ arc1(G,TName):-
 is_detatched_thread:- arc_webui,!.
 is_detatched_thread:- \+ (thread_self(Main) -> Main == main ; main==0),!.
 
-cls_z:- is_detatched_thread,!.
-cls_z:- catch(cls,_,true),clear_tee,clear_test_html.
+cls_z:- is_detatched_thread,!,flush_tee.
+cls_z:- catch(cls,_,true), flush_tee, clear_tee, nop((clear_test_html)).
 cls1:- nop(catch(cls_z,_,true)).
 
 list_to_rbtree_safe(I,O):- must_be_free(O), list_to_rbtree(I,M),!,M=O.

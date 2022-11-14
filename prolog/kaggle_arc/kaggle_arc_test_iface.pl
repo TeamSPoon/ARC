@@ -158,7 +158,7 @@ append_num_code(Start,SelMax,Digit,Out):- atom_codes(Digit,[C|_]),char_type(C,di
 append_num_code(Start,_SelMax,Key,Sel):- atom_concat(Start,Key,Sel).
 
 
-clsR:- !. % once(cls_z).
+clsR:- flush_tee, !. % once(cls_z).
 
 
 enter_test:- repeat, write("\nYour favorite: "), read_line_to_string(user_input,Sel),enter_test(Sel),!.
@@ -314,44 +314,60 @@ rtty:- with_tty_raw(rtty1).
 rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 
 
-ip(I,O):- ip(complete,I,O).
+ndividuator(TestID,ExampleNum,Complete,In,Out):- name_the_pair(TestID,ExampleNum,In,Out,_),ip(Complete,In,Out).
+ndividuator(TestID,ExampleNum,In,Out):- ndividuator(TestID,ExampleNum,complete,In,Out).
+
+ndividuatorO(TestID,ExampleNum,Complete,In,Out):- name_the_pair(TestID,ExampleNum,In,Out,_PairName), igo(Complete,In,Out).
+ndividuatorO(TestID,ExampleNum,In,Out):- ndividuatorO(TestID,ExampleNum,complete,In,Out).
 
 %show_test_pairs,
-ndividuator:- never_entire_suite, nop(show_test_pairs), get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,ip(In,Out)).
+ndividuator:- never_entire_suite, nop(show_test_pairs), get_current_test(TestID),set_flag(indiv,0),
+ with_test_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)).
 %ndividuatorO:- never_entire_suite,get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,(igo(In),igo(Out)).
-ndividuatorO:- never_entire_suite,nop(show_test_grids), get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,Grid,(igo(Grid))).
+ndividuatorO:- never_entire_suite,nop(show_test_grids), get_current_test(TestID),set_flag(indiv,0),
+ with_test_pairs(TestID,ExampleNum,In,Out,ndividuatorO(TestID,ExampleNum,In,Out)).
 
 
-show_test_pairs:- get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,print_side_by_side(green,In,in(show_test_pairs(TestID)),_,Out,out(show_test_pairs(TestID)))).
-show_test_grids:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,Grid,print_grid(show_test_grids(TestID),Grid)).
+show_test_pairs:- get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,ExampleNum,In,Out,print_side_by_side(green,In,in(show_test_pairs(TestID>ExampleNum)),_,Out,out(show_test_pairs(TestID>ExampleNum)))).
+%show_test_grids:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,Grid,print_grid(show_test_grids(TestID),Grid)).
 
+
+first_indiv_modes([complete,pbox_vm,i_repair_pattern]).
+
+next_indiv_mode(M1,M2):- first_indiv_modes(List),next_in_list(M1,List,M2).
+
+next_indiv_mode:- get_indiv_mode(M1),next_indiv_mode(M1,M2),set_indiv_mode(M2).
+
+set_indiv_mode(Mode):- luser_setval('$indiv_mode',Mode).
+get_indiv_mode(Mode):- nonvar(Mode),get_indiv_mode(TMode),!,TMode==Mode.
+get_indiv_mode(Mode):- once(luser_getval('$indiv_mode',Mode);next_indiv_mode(Mode,_)).
+
+:- first_indiv_modes([M1|_]),set_indiv_mode(M1).
 
 
 % Training modes
-first_pair_modes(whole_test,single_pair).
+first_pair_modes([single_pair,whole_test,entire_suite]).
 
-next_pair_mode(M1,M2):- first_pair_modes(M1,M2).
-next_pair_mode(M2,entire_suite):- first_pair_modes(_,M2).
-next_pair_mode(entire_suite,M1):- first_pair_modes(M1,_).
+next_pair_mode(M1,M2):- first_pair_modes(List),next_in_list(M1,List,M2).
 
-alt_pair_mode(M1,M2):- first_pair_modes(M1,M2).
-alt_pair_mode(M2,M1):- first_pair_modes(M1,M2).
-alt_pair_mode(entire_suite,M2):- first_pair_modes(_,M2).
+alt_pair_mode(M1,M2):- first_pair_modes([M1,M2|_]),!.
+alt_pair_mode(_,M1):- first_pair_modes([M1|_]).
 
 set_pair_mode(Mode):- luser_setval('$pair_mode',Mode).
 get_pair_mode(Mode):- nonvar(Mode),get_pair_mode(TMode),!,TMode==Mode.
 get_pair_mode(Mode):- once(luser_getval('$pair_mode',Mode);next_pair_mode(Mode,_)).
 with_pair_mode(Mode,Goal):- get_pair_mode(OldMode), trusted_redo_call_cleanup( set_pair_mode(Mode), Goal, set_pair_mode(OldMode)). 
 switch_pair_mode:- get_pair_mode(Mode),next_pair_mode(Mode,NextMode),!,set_pair_mode(NextMode),show_pair_mode.
-show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), luser_getval(test_suite_name,Suite),
+show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), luser_getval(test_suite_name,Suite), get_indiv_mode(IndivMode),
   get_current_test(TestID),some_current_example_num(Example),!,
   wqnl(["~N~t............ (e)xecute: ", b(q(Cmd)), "with pair mode set to: ",b(q(Mode)),
+  "with indivmode set to: ",b(q(IndivMode)),
   "suite: ",b(q(Suite)),
-  " With selected test: ",b(q(TestID)),b(q(example(Example)))]).
+  " With selected test: ",b(q(TestID)),b(q(example(Example)))]),flush_tee.
 skip_entire_suite:- never_entire_suite,!,fail.
 never_entire_suite:- ignore((get_pair_mode(entire_suite),set_pair_mode(whole_test))).
 
-:- first_pair_modes(M1,_),set_pair_mode(M1).
+:- first_pair_modes([M1|_]),set_pair_mode(M1).
 
 set_test_cmd(Mode):- luser_setval('cmd',Mode).
 get_test_cmd(Mode):- luser_getval('cmd',Mode).
@@ -379,8 +395,8 @@ test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(entire_suite), !, kaggle_arc_s
 test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(whole_test), !, ignore(get_current_test(TestID)), kaggle_arc_safe(TestID,ExampleNum,I,O).
 test_pairs(TestID,ExampleNum,I,O):- ignore(get_current_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc(TestID,ExampleNum,I,O).
 
-with_test_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call((continue_test(TestID),P))).
-with_test_pairs(TestID,ExampleNum,I,O,P):- forall(test_pairs(TestID,ExampleNum,I,O),my_menu_call((continue_test(TestID),P))).
+%with_test_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call((continue_test(TestID),P))).
+with_test_pairs(TestID,ExampleNum,I,O,P):- forall(test_pairs(TestID,ExampleNum,I,O),my_menu_call((flush_tee,continue_test(TestID),call_cleanup(P,flush_tee)))).
 
 
 bad:- ig([complete],v(aa4ec2a5)>(trn+0)*in).
@@ -647,13 +663,6 @@ load_file_term(S,(:- Goal)):- !, call_file_goal(S,Goal).
 load_file_term(_,Term):- assertz_new(Term),!.
 %load_file_term(Term):- arc_assert(Term),!.
 %load_file_term(Term):- pfcAdd(Term).
-clear_tee:- shell('cat /dev/null > tee.ansi').
-
-clear_test_html :- 
-  get_current_test(TestID),
-  test_html_file(TestID,This),
-  ignore((This \== [],
-  my_shell_format('cat /dev/null |  ansi2html -a -W -u -m  > out/kaggle_arc_html/~w',[This]))).
 :- luser_default(prev_test_name,'.').
 :- luser_default(next_test_name,'.').
 
@@ -665,12 +674,6 @@ write_tee_link(W,TestID):-
  test_html_file(TestID,This),
  format('<p/> <a href="~w">~w ~w</a> ',[This,W,This]).
 
-write_test_links:- get_current_test(TestID), write_test_links(TestID).
-write_test_links(TestID):- format('~N'),
-  ignore((((luser_getval(prev_test_name,PrevID),PrevID\==TestID,PrevID\=='.')->true;get_previous_test(TestID,PrevID)),write_tee_link('Prev',PrevID))),
-  ignore(write_tee_link('This',TestID)),
-  ignore((((luser_getval(next_test_name,NextID),NextID\==TestID,NextID\=='.')->true;get_next_test(TestID,NextID)),write_tee_link('Next',NextID))),  
-  format('~N').
 
 continue_test(TestID):- ignore(( is_valid_testname(TestID), set_current_test(TestID))).
 
@@ -678,7 +681,8 @@ on_entering_test(TestID):- is_list(TestID),!,maplist(on_entering_test,TestID).
 on_entering_test(TestID):- 
  must_det_ll((
   clear_tee,
-  write_test_links(TestID),
+  write_test_links_file,
+  flush_tee,
   clear_test(TestID),
   test_name_output_file(TestID,File),
   atom_concat(File,'.pl',PLFile),
@@ -690,15 +694,43 @@ on_leaving_test(TestID):-
  must_det_ll((
   save_supertest(TestID),
   clear_test(TestID),
-  write_test_links(TestID),  
-  test_html_file(TestID,This),
-  ignore((This \== [],
-  my_shell_format('cat tee.ansi |  ansi2html -a -W -u -m  >> out/kaggle_arc_html/~w',[This]))),
+  write_test_links_file,
+  flush_tee,
   clear_tee)).
 
-begin_tee:- get_current_test(TestID),on_entering_test(TestID),at_halt(exit_tee).
+test_html_file_name(FN):- 
+  get_current_test(TestID),
+  test_html_file(TestID,This),
+  (This == [] -> FN = [] ; format(atom(FN),'out/kaggle_arc_html/~w',[This])).
 
-exit_tee:- get_current_test(TestID),on_leaving_test(TestID).
+%worth_saving(FN):- \+ exists_file(FN),!.
+worth_saving:- test_html_file_name(FN), \+ exists_file(FN), !.
+worth_saving:- test_html_file_name(FN), size_file(FN,Size), Size < 10_000,!.
+worth_saving:- size_file('tee.ansi',Size), Size > 26_000.
+
+
+begin_tee:- get_current_test(TestID),on_entering_test(TestID),at_halt(exit_tee).
+flush_tee:- worth_saving -> force_flush_tee ; true.
+force_flush_tee:- 
+  write_test_links_file,
+  test_html_file_name(FN),
+  ignore((FN \== [], my_shell_format('cat test_links tee.ansi test_links |  ansi2html -a -W -u -m  > ~w',[FN]))).
+clear_test_html :-
+  write_test_links_file,
+  test_html_file_name(FN),
+  ignore((FN \== [], my_shell_format('cat /dev/null test_links |  ansi2html -a -W -u -m  > ~w',[FN]))).
+clear_tee:- shell('cat /dev/null > tee.ansi').
+exit_tee:-  get_current_test(TestID),on_leaving_test(TestID).
+
+write_test_links_file:- notrace((setup_call_cleanup(tell(test_links), write_test_links, told))).
+write_test_links:- get_current_test(TestID), write_test_links(TestID).
+write_test_links(TestID):- format('~N'),
+  ignore((((luser_getval(prev_test_name,PrevID),PrevID\==TestID,PrevID\=='.')->true;get_previous_test(TestID,PrevID)),write_tee_link('Prev',PrevID))),
+  ignore(write_tee_link('This',TestID)),
+  ignore((((luser_getval(next_test_name,NextID),NextID\==TestID,NextID\=='.')->true;get_next_test(TestID,NextID)),write_tee_link('Next',NextID))),  
+  format('~N').
+
+
 
 my_shell_format(F,A):- sformat(S,F,A), shell(S).
 
@@ -888,6 +920,7 @@ print_single_pair(TestID,ExampleNum,In,Out):-
    nop((grid_hint_swap(i-o,In1,Out1))),
    format('~N'),
    ignore(show_reduced_io_rarely(In1+Out1)),
+   flush_tee,
    !.
 
 
@@ -1238,7 +1271,7 @@ sort_univ(R,A,B):- compare(R,A,B).
 
 macro(one_obj, must_det_ll(len(objs)=1)).
 
-test_p2(_):- clsmake,fail.
+test_p2(_):- flush_tee,clsmake,fail.
 test_p2(P2):- 
   (get_pair_mode(single_pair);get_pair_mode(whole_test)),!,
   append_termlist(P2,[N1,'$VAR'('Result')],N2), 

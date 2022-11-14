@@ -94,6 +94,9 @@ as_debug(_,C,G):- ignore(catch((call(C)->wots(S,G),format('~NDEBUG: ~w~N',[S]);t
 count_each([],_,[]).
 count_each([C|L],GC,[Len-C|LL]):- include(==(C),GC,Lst),length(Lst,Len),count_each(L,GC,LL).
 
+count_each_inv([],_,[]).
+count_each_inv([C|L],GC,[C-Len|LL]):- include(==(C),GC,Lst),length(Lst,Len),count_each_inv(L,GC,LL).
+
 maplist_n(N,P,[H1|T1]):-
   call(P,N,H1), N1 is N+1,
   maplist_n(N1,P,T1).
