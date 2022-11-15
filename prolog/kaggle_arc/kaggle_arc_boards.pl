@@ -701,12 +701,17 @@ grid_vm(G,VM):- into_grid(G,Grid),grid_to_gid(Grid,GID),
      set(VM.grid_target) = Grid2, 
      nb_setval(GID,VM))).
 
+with_other_grid(OtherGrid,Goal):- locally(nb_setval(other_grid,OtherGrid),Goal).
+other_grid(_,OtherGrid):- nb_current(other_grid,OtherGrid),is_grid(OtherGrid),!.
+other_grid(Grid,OtherGrid):-
+  into_grid(Grid,ThisGrid),
+  must_det_ll(is_other_grid(ThisGrid,OtherGrid)).
 
-other_grid(Grid,Grid2):- 
-  once((kaggle_arc_io(TestID,ExampleNum,IO,Grid),
+is_other_grid(ThisGrid,OtherGrid):-
+  once((kaggle_arc_io(TestID,ExampleNum,IO,ThisGrid), 
   in_to_out(IO,OI),
-  ExampleNum \= tst+_,
-  kaggle_arc_io(TestID,ExampleNum,OI,Grid2))).
+  ignore(ExampleNum \= tst+_),
+  kaggle_arc_io(TestID,ExampleNum,OI,OtherGrid))).
 
 in_to_out(in,out).
 in_to_out(out,in).

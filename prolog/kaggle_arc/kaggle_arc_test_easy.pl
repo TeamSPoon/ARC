@@ -98,7 +98,7 @@ easy_solve_by(_TestID,P2):- easy_p2(P2).
 %easy_solve_by( TestID,repair_and_select(_How,_M)):- is_symgrid(TestID),!.
 %easy_p2(flip_Once(_)).
 
-%easy_p2(repair_and_select_property([unbind_color(_),now_fill_in_blanks_good],repairedResult)).
+%easy_p2(repair_and_select_property([unbind_color(_),now_fill_in_blanks_good],repaired)).
 easy_p2(repair_and_select(_How,_M)).
 easy_p2(blur_flipV_flipH).
 
@@ -143,7 +143,7 @@ which_member(Grid,RepairedResultG,Results):-
   points_to_grid(H,V,Unchanged,UnchangedG),
   points_to_grid(H,V,NeededChanged,NeededChangedG))),
   Results = [changed-TrimChangedG,
-             repairedResult-RepairedResultG,
+             repaired-RepairedResultG,
              changedUntrimmed-ChangedG,
              unchanged-UnchangedG,
              neededChanged-NeededChangedG].
@@ -555,11 +555,56 @@ fav(t('8d5021e8'),[human_skip([grow([[rot180, flipV],[flipH, sameR],[rot180, fli
 fav(t('6150a2bd'),[clue(amass(in)=:=amass(out)),human(rot180),-rotation_match,-mask_match,+shape_match,+color_match,tt,training,image_rotation,'(2, 1)']).
 fav(t('ed36ccf7'),[clue(amass(in)=:=amass(out)),human(rot270),-rotation_match,-mask_match,+shape_match,+color_match,tt,training,image_rotation,'(4, 1)']).
 
+is_fti_step(overlay_original).
+
+overlay_original(VM):-
+  mapgrid(overlay_onto,VM.grid_o,VM.grid,set(VM.grid)).
+
+
+overlay_onto(FG,_,FG):- is_fg_color(FG),!.
+overlay_onto(_,Else,Else).
+
+with_object(Spec,Code,VM):-
+  include(has_prop(Spec),VM.objs,Matches),
+  maplist(run_code_on_object(VM,Code),Matches).
+
+run_code_on_object(VM,Code,Obj):- 
+  object_grid(Obj,Grid),
+  into_fti(_ID,Code,Grid,NewVM),
+  set(NewVM.parent_vm) = VM,
+  run_fti(NewVM).
+
+add_object(Spec,VM):- 
+  UParentVM = VM.parent_vm,
+  (var(UParentVM) -> ParentVM = VM ; ParentVM = UParentVM),
+  include(has_prop(Spec),VM.objs,Matches),
+  Unsullied = Matches,%maplist(remove_giz,Matches,Unsullied),
+  maplist(addNonVMObject(ParentVM),Unsullied).
+
+
+addNonVMObject(VM,Obj):-
+  localpoints_include_bg(Obj,Points),
+  make_indiv_object(VM,[],Points,NewObj),
+  global_grid(Obj,GGrid),mapgrid(overlay_onto,GGrid,VM.grid,set(VM.grid)),
+  indv_props(Obj,PrevProps),
+  indv_props(NewObj,BetterProps),
+  override_object(PrevProps,NewObj,NewObj2),
+  override_object(BetterProps,NewObj2,NewObj3),
+  maybe_replace_object(VM,NewObj,NewObj3).
+
+
+
+  
+
 :- style_check(-singleton).
 fav(t(ff28f65a),[human(count_shapes,associate_images_to_numbers),-shape_match,-rotation_match,-mask_match,-color_match,tt,training,count_shapes,associate_images_to_numbers,'(8, 3)']).
 fav(t('1b60fb0c'),[
  %indiv([i_repair_patterns]),
  %human([new_things_are_a_color,fix_image]),
+ %human([unbind_color(black),now_fill_in_blanks(blur(flipD)),subst_color(fg,red)]),
+ %human([blur_least(_,fg),subst_color(blue,red),overlay_original]),
+ %human([blur_least(_,fg),remember_repaired,with_object(changedUntrimmed,[subst_color(blue,red),add_object(changedUntrimmed)])]),
+ human([blur_least(_,blur_mixer),remember_repaired,with_object(changedUntrimmed,[subst_color(_,red),add_object(changedUntrimmed)])]),
  skip_human(
    in_out(In,Out),
    subtractGrid(Out,In,Alien),

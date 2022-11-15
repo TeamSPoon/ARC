@@ -241,9 +241,7 @@ must_not_error(X):- catch(X,E,((E=='$aborted';nb_current(cant_rrtrace,t))-> thro
   rrtrace(visible_rtrace([-all,+exception]),X)))).
 
 
-odd_failure(G):- call(G),!.
-odd_failure(G):- wdmsg(odd_failure(G)),break,fail.
-odd_failure(G):- rrtrace(G).
+odd_failure(G):- call(G)*->true;(wdmsg(odd_failure(G)),rrtrace(G)).
 
 
 %must_det_ll_failed(X):- predicate_property(X,number_of_clauses(1)),clause(X,(A,B,C,Body)), (B\==!),!,must_det_ll(A),must_det_ll((B,C,Body)).
@@ -593,7 +591,7 @@ is_detatched_thread:- arc_webui,!.
 is_detatched_thread:- \+ (thread_self(Main) -> Main == main ; main==0),!.
 
 cls_z:- is_detatched_thread,!,flush_tee.
-cls_z:- catch(cls,_,true), flush_tee, clear_tee, nop((clear_test_html)).
+cls_z:- catch(cls,_,true), flush_tee, nop((clear_tee,clear_test_html)).
 cls1:- nop(catch(cls_z,_,true)).
 
 list_to_rbtree_safe(I,O):- must_be_free(O), list_to_rbtree(I,M),!,M=O.

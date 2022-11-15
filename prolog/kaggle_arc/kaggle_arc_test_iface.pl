@@ -686,7 +686,7 @@ on_entering_test(TestID):-
   set_current_test(TestID),
   write_test_links_file,
   clear_tee,  
-  flush_tee,
+  %force_flush_tee,
   clear_test(TestID),
   test_name_output_file(TestID,File),
   atom_concat(File,'.pl',PLFile),
@@ -699,7 +699,6 @@ on_leaving_test(TestID):-
   save_supertest(TestID),
   clear_test(TestID),  
   flush_tee,
-
   clear_tee)).
 
 test_html_file_name(FN):- 

@@ -71,18 +71,35 @@ print_info_1(G):- print_info(G).
 
 print_info_l(GridS):- maplist(print_info_1,GridS).
 
-object_grid_to_str(Grid,Str,Title):- 
-  vis2D(Grid,H,V), 
-  object_glyph(Grid,Glyph),
-  Title = object_grid(loc2D(OH,OV),size2D(H,V)),
-  loc2D(Grid,OH,OV),
-  localpoints_include_bg(Grid,GridO),
-  ((IH=H,IV=V)), % (IH = 30,IV=30), 
+
+global_or_object_grid(O1,global+grid,Grid):-  global_grid(O1,Grid),!.
+global_or_object_grid(O1,local+grid,Grid):-  object_grid(O1,Grid),!.
+global_or_object_grid(O1,global+points,Points):- globalpoints_include_bg(O1,Points).
+global_or_object_grid(O1,local+points,Points):- localpoints_include_bg(O1,Points).
+global_or_object_grid(O1,local+self,O1).
+
+object_grid_to_str(Obj,Str,Title):- 
+ must_det_ll((
+  vis2D(Obj,H,V), 
+  object_glyph(Obj,Glyph),
+  Title = t(LG+Type,loc2D(OH,OV),loc2G(OGH,OGV),center2G(CX,CY),size2D(H,V)),
+  loc2D(Obj,OH,OV),
+  ignore(loc2G(Obj,OGH,OGV)),
+  ignore(center2G(Obj,CX,CY)),
+  
+  global_or_object_grid(Obj,LG+Type,GridO),
+  (is_grid(GridO)-> grid_size(GridO,IH,IV) 
+     ; (LG==local -> (IH=H,IV=V) ; grid_size(Obj,IH,IV))),
+
   get_black(Black),subst001(GridO,Black,wbg,GridOO),
   wots(GS,(print_grid(IH,IV,GridOO))),
-  replace_in_string(['®'=Glyph],GS,GSS),  
-  HH is (OH - 1) * 2, wots(Str,(print_w_pad(HH,GSS))).
 
+  replace_in_string(['®'=Glyph,'@'=Glyph],GS,GSS),
+
+  (LG==local
+   -> (HH is (OH - 1) * 2, wots(Str,(print_w_pad(HH,GSS))))
+    ; (Str=GSS)))).
+ 
 
 
 debug_as_grid(Grid):- debug_as_grid('',Grid),!.
@@ -179,7 +196,7 @@ object_s_glyph(Obj,SGlyph):-
 
 prefered(repaired).
 prefered(full_grid).
-prefered(invisible).
+prefered(hidden).
 prefered(neededChanged).
 prefered(changed).
 prefered(nsew).

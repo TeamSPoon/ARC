@@ -232,8 +232,9 @@ showdiff_groups(AG,BG):- not_list(BG),into_list(BG,BGL),!,showdiff_groups(AG,BGL
 showdiff_groups(AG,BG):- ignore((once((proportional_how(AG,BG,DD), pp(cyan,proportional(DD)))))),fail.
 
 showdiff_groups(AG,BG):- showdiff_groups_new(AG,BG),!.   
+showdiff_groups(AG,BG):- showdiff_groups_old(AG,BG),!.   
 
-showdiff_groups(AG,BG):-
+showdiff_groups_old(AG,BG):-
   maplist(obj_grp_comparable,AG,A3),
   maplist(obj_grp_comparable,BG,B3),
   final_alignment(AG,BG,A3,B3,A4,B4),
@@ -340,33 +341,6 @@ same_pairs(AB,pair(A,B,Y2)):- AB = pair(A,B,Y1), nb_setarg(3,AB,Y1+Y2),!.
 uniqueness_prop(symmetry(_)).
 uniqueness_prop(mass(_)).
 
-%dg(I1):-  print_grid(I1),!, print_info(I1).
-dg(I1):- debug_as_grid(I1) -> true ; (print_grid(I1), print_info(I1)).
-%printing_diff(I1,O1):- dg(I1),!, dg(O1),!.
-printing_diff(O1,O2):- 
- must_det_ll((
-  object_grid_to_str(O1,Str1,T1),
-  object_grid_to_str(O2,Str2,T2),
-  ((global_grid(O1,OG1),global_grid(O2,OG2),print_side_by_side(cyan,OG1,diff(global_grid(T1)),_,OG2,diff(global_grid(T2))))-> true;
-   (print_side_by_side(yellow,O1,no_global_grid(diff(T1)),_,O2,no_global_grid(diff(T2))))),
-  nop(ignore((into_ngrid(O1,NO1),into_ngrid(O2,NO2), print_side_by_side(silver,NO1,ngrid(T1),_,NO2,ngrid(T2))))),
-  debug_indiv_obj(O1),
-  debug_indiv_obj(O2),
-  nop(writeln(Str1)), 
-  nop(writeln(Str2)),
-  D is  2,
-  if_t(nb_current(menu_key,'o'),
-   (dash_chars,
-    findall(E,compare_objs1(E,O1,O2),L), pp(compare_objs1(showdiff_objects)=L),  
-    dash_chars,
-    indv_props(O1,S1),indv_props(O2,S2),
-    intersection(S1,S2,Sames,SS1,SS2),
-    az_ansi(noisey_debug(print_list_of(print_sames,sames,Sames))),
-    proportional(SS1,SS2,lst(vals(_),len(_),PDiffs)),
-    my_partition('\\='(o(_,_,_)),PDiffs,NonFunDiffs,FunDiffs),
-    print_list_of(print_diffs(D + 1),diffs,NonFunDiffs),
-    print_list_of(print_diffs(D + 1),oDiffs2,FunDiffs))))),  
-  !.
 
 indiv_show_pairs_input(_Peers,_Shown,_List,Indv):- nb_current(menu_key,'o'),!, dg(Indv).
 indiv_show_pairs_input(_Peers,_Shown,_List,Indv):- get_current_test(TestID), print_info(Indv), ignore(what_unique(TestID,Indv)).
@@ -375,43 +349,46 @@ indiv_show_pairs_output(_Peers,_Shown,_List,Indv):- nb_current(menu_key,'o'),!, 
 %indiv_show_pairs_output(_Peers,_Shown,_List,Indv):- has_prop(pen([cc('black',_)]),Indv),!, dash_chars, nop(debug_as_grid(Indv)).
 indiv_show_pairs_output(Peers,_Shown,List,Indv):-
   dash_chars,
-  (best_mates(Indv,List,Mate)->showdiff_arg1(Peers,Indv,List,Mate);dg(Indv)).
+  (best_mates(Indv,List,Mate)->showdiff_arg1("I<>O",Peers,Indv,List,Mate);dg(Indv)).
 
 showdiff_groups_new(AG,BG):- 
  must_det_ll((
   maplist(obj_grp_atoms,AG,AGG),
   maplist(obj_grp_atoms,BG,BGG),
    print_list_of(show_mappings("IN -> OUT",AG,BG,BGG), inputMap,AGG),
-   print_list_of(show_mappings("OUT -> IN",BG,AG,AGG),outputMap,BGG))).
+   print_list_of(show_mappings("IN <- OUT",BG,AG,AGG),outputMap,BGG))).
 
 show_mappings(TITLE,AG,BG,BGG,APA):-
  must_det_ll((
   dash_chars(100),nl,nl,nl,
   APA = [A,PA|_Atoms],
-  find_obj_mappings2(APA,BGG,Pair),
-  dash_chars,dash_chars,format("~N~n\t\t~w",[TITLE]),
+  find_obj_mappings2(APA,BGG,Pair),  
   Pair = pair4(A,PA,B,PB),
   must_det_ll(A\==B),
   nop(PA\==PB),
   %%debug_as_grid('show_mappings',A),
-  showdiff_arg1(AG,A,BG,B))).
+  (TITLE == "IN <- OUT" 
+    -> showdiff_arg1(TITLE,BG,B,AG,A)
+     ; showdiff_arg1(TITLE,AG,A,BG,B)))).
   %showdiff_objects(PA,PB),!.
 
 
-showdiff_arg1(Peers1,Obj1,Peers2,Obj2):- 
+showdiff_arg1(TITLE,Peers1,Obj1,Peers2,Obj2):- 
  must_det_ll((
-  findall(Peer,(nop(has_prop(o(X,Y,_),Obj1)),member(Peer,Peers1),has_prop(o(X,Y,_),Peer),Peer\==Obj1),Peers11),
-  findall(Peer,(nop(has_prop(o(X,Y,_),Obj2)),member(Peer,Peers2),has_prop(o(X,Y,_),Peer),Peer\==Obj2),Peers22),
+  findall(Peer,(nop(has_prop(o(X,_,Y),Obj1)),member(Peer,Peers1),has_prop(o(X,_,Y),Peer),Peer\==Obj1),Peers11),
+  findall(Peer,(nop(has_prop(o(X,_,Y),Obj2)),member(Peer,Peers2),has_prop(o(X,_,Y),Peer),Peer\==Obj2),Peers22),
   objs_to_io(Obj1,Obj2,I1,O1),
-  ((Obj1==I1) -> (PeersI = Peers11,PeersO = Peers22) ; (PeersI = Peers22,PeersO = Peers11)),
+  ((Obj1==I1) -> (PeersI = Peers11,PeersO = Peers22) ; (PeersI = Peers22,PeersO = Peers11)))),
+ must_det_ll((
+ %link_prop_types(loc2D,I1,O1,_LOCS),
+ show_pair_now(TITLE,I1,O1),
+  %what_unique(TestID,O1),
 
-  %link_prop_types(loc2D,I1,O1,_LOCS),
-  printing_diff(I1,O1),
+ if_t(nb_current(menu_key,'u'),
+ (
   indv_props(I1,S1),indv_props(O1,S2),
   get_current_test(TestID), ignore(what_unique(TestID,I1)),
-  %what_unique(TestID,O1),
- if_t(nb_current(menu_key,'u'),
- (remove_giz(S1,T1),remove_giz(S2,T2),
+  remove_giz(S1,T1),remove_giz(S2,T2),
   indv_u_props(I1,IU),indv_u_props(O1,OU),
   intersection(T1,T2,Sames,IA,OA),maplist(refunctor,Sames,NewSames),
   object_props_diff(IA,OA,Diffs), listify(Diffs,DiffL),maplist(print_nl,DiffL),      
@@ -424,9 +401,41 @@ showdiff_arg1(Peers1,Obj1,Peers2,Obj2):-
   %peerless_props(O1,PeersO,Props2),
   %print([x=[in_i(S1),in_o(Props1),out_i(S2),out_o(Props2)]]),
   SETS = RHSSet+LHSSet,
-  save_learnt_rule(test_solved(i_o,obj(NewSames,LHSSet,IZ),obj(NewSames,RHSSet,OZ)),1+2+3+4+5+6+SETS,SETS))))),!.
+  save_learnt_rule(test_solved(i_o,obj(NewSames,LHSSet,IZ),obj(NewSames,RHSSet,OZ)),1+2+3+4+5+6+SETS,SETS))))),!.  
 
 
+%dg(I1):-  print_grid(I1),!, print_info(I1).
+dg(I1):- debug_as_grid(I1) -> true ; (print_grid(I1), print_info(I1)).
+%print_object_pair(I1,O1):- dg(I1),!, dg(O1),!.
+
+show_pair_now(TITLE,OO1,OO2):-  
+ must_det_ll((
+  dash_chars,dash_chars,format("~N~n\t\t",[]),ppt(TITLE),
+  into_obj(OO1,O1),into_obj(OO2,O2),
+  object_grid_to_str(O1,Str1,T1),
+  object_grid_to_str(O2,Str2,T2),
+  print_side_by_side(yellow,Str1,T1,_,Str2,T2),  
+  format('~N~n'),
+  nop(ignore((into_ngrid(O1,NO1),into_ngrid(O2,NO2), print_side_by_side(silver,NO1,ngrid(T1),_,NO2,ngrid(T2))))),
+  debug_indiv_obj(O1),
+  debug_indiv_obj(O2),
+
+  if_t(nb_current(menu_key,'o'),
+   (dash_chars,
+    dash_chars,
+    findall(E,compare_objs1(E,O1,O2),L), pp(compare_objs1(showdiff_objects)=L),
+    indv_props(O1,S1),indv_props(O2,S2),
+    intersection(S1,S2,Sames,SS1,SS2),
+    proportional(SS1,SS2,lst(vals(_),len(_),PDiffs)),
+    show_sames_diffs_now(Sames,PDiffs))))).
+
+
+show_sames_diffs_now(Sames,PDiffs):- 
+   D is  2,
+    az_ansi(noisey_debug(print_list_of(print_sames,sames,Sames))),    
+    my_partition('\\='(o(_,_,_)),PDiffs,NonFunDiffs,FunDiffs),
+    print_list_of(print_diffs(D + 1),diffs,NonFunDiffs),
+    print_list_of(print_diffs(D + 1),oDiffs2,FunDiffs),  !.
 
 
 undiff(I,O,(MI,IZ),(MO,OZ)):- select_two_props(_Style,I,O,CI,CO,II,OO),two_ok(CI,CO),manage_diff(CI,CO,MI,MO),undiff(II,OO,IZ,OZ).
@@ -506,7 +515,7 @@ not_giz(iz(_)):-!.
 not_giz(_):-!,fail.
 
 prop_type(loc2D,loc2D(_,_)).
-prop_type(loc2D,center2D(_,_)).
+prop_type(loc2D,center2G(_,_)).
 prop_type(loc2D,iz(locX(_))).
 prop_type(loc2D,iz(cenX(_))).
 prop_type(loc2D,iz(locY(_))).
@@ -780,37 +789,20 @@ showdiff_objects(A,B):- into_obj(A,A1),into_obj(B,B1), !, showdiff_objects_n(sam
 showdiff_objects_vis(N,O1,O2):- showdiff_objects_n(vis(N),O1,O2).
 
 
-showdiff_objects_n(N,O1,O2):- 
-  diff_objects(O1,O2,Diffs,Sames), 
-  showdiff_objects5(N,O1,O2,Sames,Diffs).
-
 %showdiff_objects_n(N,O1,O2,[]):- print_list_of(N,[O1,O2]),!.
-showdiff_objects(change_obj(N,O1,O2,Sames,Diffs)):- 
- showdiff_objects5(N,O1,O2,Sames,Diffs),!.
-showdiff_objects(XY):- pp(showdiff_objects(XY)),!.
+showdiff_objects_n(N,O1,O2):-  showdiff_objects(change_obj(N,O1,O2)).
 
-showdiff_objects5(Why,OO1,OO2,Sames,Diffs):- in_pp(bfly),!,
-  wots(SS,showdiff_objects_now(Why,OO1,OO2,Sames,Diffs)),
+showdiff_objects(Info):- in_pp(bfly),!, wots(SS,showdiff_objects1(Info)),
   format('~N'), wots(S,add_long_web_message(SS)),
   format('~N'),!,bfly_in_out(write_expandable3(false,S,bfly_in_out(write(SS)))),format('~N').
-showdiff_objects5(Why,OO1,OO2,Sames,Diffs):- showdiff_objects_now(Why,OO1,OO2,Sames,Diffs).
+showdiff_objects(Info):- showdiff_objects1(Info).
 
-
-showdiff_objects_now(Why,OO1,OO2,Sames,Diffs):- 
- must_det_ll((
-  into_obj(OO1,O1),into_obj(OO2,O2),
-  dash_chars,nl,nl,nl,dash_chars,
-  ppt(Why),
-  printing_diff(O1,O2),
-  %print_list_of(debug_indiv,showdiff_objects_n(Why),[O1,O2]), 
- % print_list_of(debug_as_grid,showdiff_objects_n(Why),[O1,O2]),  
-  findall(E,compare_objs1(E,O1,O2),L), pp(compare_objs1(showdiff_objects)=L),  
-  dash_chars,dash_chars,
-  az_ansi(noisey_debug(print_list_of(print_sames,sames,Sames))),
-  include(leftover_diffs,Diffs,FunDiffs),
-  do is 2,
-  print_list_of(print_diffs(D + 1),diffs,FunDiffs),
-  dash_chars,dash_chars)).
+showdiff_objects1(change_obj(N,O1,O2,Sames,Diffs)):- 
+  show_pair_now(N,O1,O2),
+  show_sames_diffs_now(Sames,Diffs).
+showdiff_objects1(change_obj(N,O1,O2)):- 
+  show_pair_now(N,O1,O2),!.
+showdiff_objects1(XY):- pp(showdiff_objects(XY)),!.
 
 print_sames(N):- is_list(N),!, maplist(print_sames,N).
 print_sames(N):- format('\t'), pp_no_nl(N),probably_nl.

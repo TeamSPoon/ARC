@@ -81,7 +81,7 @@ not_for_matching(_Why,_,obj_to_oid(_,_)).
 not_for_matching(_Why,L,localpoints(XX)):- !, started_is_list(XX), member(shape(_),L).
 not_for_matching(_Why,L,globalpoints(XX)):- !, started_is_list(XX), (member(shape(_),L);member(localpoints(_),L)).
 
-%not_for_matching(_Why,_,center2D(H,V)):- (H\==1,V\==1,H\==2,V\==2,H\==3,V\==3).
+%not_for_matching(_Why,_,center2G(H,V)):- (H\==1,V\==1,H\==2,V\==2,H\==3,V\==3).
 %not_for_matching(_Why,_,loc2D(H,V)):- (H\==1;V\==1).
 %not_for_matching(_Why,_,M):- too_unique(M),!.
 %not_for_matching(_Why,_,M):- too_non_unique(M),!.
@@ -278,7 +278,7 @@ compare_objs_how(_).
 
 /*
 vis2D(5,5), amass(25),
-center2D(9,14),loc2D(7,12),
+center2G(9,14),loc2D(7,12),
 colors([cc(PURPLE,21),cc(BLACK,4)]),
 localpoints
 */
@@ -291,7 +291,7 @@ diff_2props(I,O):- comparable_2props(I,O), I \=@= O.
 
 % form, 
 % vis2D, mass
-% center2D
+% center2G
 
 
 % symmetrical object

@@ -378,8 +378,11 @@ set_all_bg_colors(Color,Grid,NewGrid):- map_pred(do_set_all_bg_colors(Color),Gri
 
 %do_set_all_fg_colors(Color,CPoint,NewCPoint):- is_cpoint(CPoint),CPoint=C-Point,hv_point(_,_,Point),is_fg_color(C),NewCPoint=Color-Point.
 
-blur(Op,G0,GG):- into_grid(G0,G),blur_or_not(Op,G,GG),nop(is_a_change(G,GG)).
-blur_or_not(Op,G0,GG):- into_grid(G0,G),grid_call(Op,G,GGG),get_black(Black),replace_local_points(GGG,Black,G,GG).
+blur(Op,G,GG):- blur_or_not(Op,G,GG), is_a_change(G,GG).
+blur_or_not(Op,G0,GG):- into_grid(G0,GD),duplicate_term(GD,G),grid_call(Op,G,GGG),mapgrid(replace_non_fg,GGG,G,GG).
+
+replace_non_fg(C,Black,C):- \+ is_fg_color(Black),!.
+replace_non_fg(_,C,C).
 
 is_a_change(G,GG):- G=@=GG,!,fail.
 is_a_change(_,_):-!.
@@ -642,15 +645,18 @@ points_to_grid(Points,Grid):- must_det_ll(grid_size(Points,H,V)), !, points_to_g
 points_to_grid(H,V,Points,Grid):- var(H),var(V),must_det_ll(grid_size(Points,H,V)),!,points_to_grid0(H,V,Points,Grid).
 points_to_grid(H,V,Points,Grid):- points_to_grid0(H,V,Points,Grid).
 
-points_to_grid0(H,V,Points,Grid):- make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points),!.
-points_to_grid0(H,V,Points,Grid):- must_det_ll((make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
+points_to_grid0(H,V,Points,Grid):- odd_failure((make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
+points_to_grid0(H,V,Points,Grid):- rtrace((make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
 
 
-calc_add_points(OH,OV,Grid,SGrid):- must_det_ll(calc_add_points0(OH,OV,Grid,SGrid)),!.
-calc_add_points(OH,OV,Grid,SGrid):- odd_failure(calc_add_points0(OH,OV,Grid,SGrid)).
+calc_add_points(OH,OV,Grid,SGrid):- odd_failure(calc_add_points0(OH,OV,Grid,SGrid)),!.
+calc_add_points(OH,OV,Grid,SGrid):- ftrace(calc_add_points0(OH,OV,Grid,SGrid)).
 
 calc_add_points0(_OH,_OV,_Grid,Nil):- Nil == [],!.
 calc_add_points0(OH,OV,Grid,SGrid):- is_grid(SGrid),!,globalpoints_maybe_bg(SGrid,Points),!,maplist(calc_add_points(OH,OV,Grid),Points).
+calc_add_points0(OH,OV,Grid,CPoint):- is_cpoint(CPoint),!,hv_c_value(CPoint,C,H,V),
+ !, HH is H -OH +1, VV is V - OV +1,  add_h_v_c(Grid,HH,VV,C).
+
 calc_add_points0(OH,OV,Grid,Points):- is_list(Points),!,maplist(calc_add_points(OH,OV,Grid),Points).
 calc_add_points0(OH,OV,Grid,Group):- is_group(Group),!,mapgroup(calc_add_points(OH,OV,Grid),Group).
 calc_add_points0(OH,OV,Grid,Points):- is_object(Obj),!,globalpoints_maybe_bg(Obj,Points),maplist(calc_add_points(OH,OV,Grid),Points).
@@ -666,7 +672,9 @@ calc_add_points0(OH,OV,Grid,Obj):- trace,globalpoints(Obj,Points),!,maplist(calc
 %add_h_v_c(Grid,H,V,C):- plain_var(C),!,nop(add_h_v_c(Grid,H,V,C)).
 add_h_v_c(Grid,H,V,C):-
  odd_failure(( hv_c_value(Grid,Was,H,V),
- (Was=C->true;(nth1(V,Grid,Row),nb_set_nth1(H,Row,C),!,nb_set_nth1(V,Grid,Row))))).
+ (Was=C->true;(nth1(V,Grid,Row),nb_set_nth1(H,Row,C),!,nb_set_nth1(V,Grid,Row))))),!.
+add_h_v_c(Grid,H,V,C):- nth1(V,Grid,Row),nb_set_nth1(H,Row,C),nb_set_nth1(V,Grid,Row),!.
+add_h_v_c(Grid,H,V,C):- trace,nth1(V,Grid,Row),nb_set_nth1(H,Row,C),nb_set_nth1(V,Grid,Row).
 
 copy_cells(B,A,H,HH):- call(B,H),!,call(A,HH).
 copy_cells(_,_,H,H):- \+ is_list(H),!.

@@ -74,11 +74,15 @@ first_second_half(Grid,GL,GR):- length(Grid,L),H is floor(L/2), length(GL,H), ap
 %reduce_op1_1(_,Grid,copy_last(N),GridR):- copy_last(N,GridR,Grid).
 
 %reduce_op1_1(_,Grid,_,_):- too_small_Lreduce(Grid,2),!,fail.
-reduce_op1_1(_,Grid,_,_):- length(Grid,L3),L3=<2,!,fail.
+% educe_op1_1(_,Grid,_,_):- length(Grid,L3),L3=<2,!,fail.
+reduce_op1_1(_,Grid,copy_row_ntimes(N1,2),GridR):- append(L,[A,B,C,D,E|R],Grid),A=@=B,B=@=C,C=@=D,D=@=E, append(L,[A,B,C|R],GridR),length([_|L],N1).
+reduce_op1_1(_,Grid,copy_row_ntimes(N1,2),GridR):- append(L,[A,B,C,D|R],Grid),A=@=B,B=@=C,C=@=D, append(L,[A,B|R],GridR),length([_|L],N1).
+%reduce_op1_1(_,Grid,copy_row_ntimes(N1,2),GridR):- append(L,[A,B,C|R],Grid),A=@=B,B=@=C, append(L,[A|R],GridR),length([_|L],N1).
+% reduce_op1_1(_,Grid,_,_):- length(Grid,L3),L3=<3,!,fail.
+% % %  
 reduce_op1_1(_,Grid,remove_row(Row),GridR):- get_black(Black), nth1(Row,Grid,Same,GridR),maplist(==(Black),Same),once(Row==1;length(Grid,Row)).
-reduce_op1_1(_,Grid,_,_):- length(Grid,L3),L3=<3,!,fail.
 %reduce_op1_1(_,Grid,_,_):- too_small_reduce(Grid,2),!,fail.
-reduce_op1_1(_,Grid,copy_row(N1,N2),GridR):- nth1(N2,Grid,A),N2>1, between(1,N2,N1),N1<N2,nth1(N1,Grid,B,GridR), A=@=B, 1 is abs(N1-N2).
+% % % reduce_op1_1(_,Grid,copy_row(N1,N2),GridR):- nth1(N2,Grid,A),N2>1, between(1,N2,N1),N1<N2,nth1(N1,Grid,B,GridR), A=@=B, 1 is abs(N1-N2).
 /*
 reduce_op1_1(_,Grid,left_right(Left,Reduced),GridR):- fail, 
    length(Grid,L), nth1(N1,Grid,A), nth1(N2,Grid,B), A=@=B,

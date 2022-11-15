@@ -153,15 +153,15 @@ maybe_glyph(_G,N,Code):- i_glyph(N,Code),!.
 maybe_glyph(G,_,Glyph):- is_grid(G),grid_dot(Glyph),!.
 maybe_glyph(_,N,N).
 
-object_printables(Points,Group,GroupPP):-
-  smallest_first(Points,Group0),
-  include(has_prop(z_o(_,_)),Group0,Group1), 
-  (Group1==[] -> Group = Group0 ; Group = Group1),
-  append(Group,Group0,GroupP),list_to_set(GroupP,GroupPP),!.
+is_visible(Obj):- \+ has_prop(iz(hidden),Obj).
+object_printables(Objs,GroupVis,GroupPP):-
+  smallest_first(Objs,SF),
+  my_partition(is_visible,SF,GroupVis,GroupInv),
+  append([GroupVis,GroupInv,Objs],GroupP),list_to_set(GroupP,GroupPP),!.
 
 grid_color_and_glyph(Points,C,GN,H,V):- %is_object_group(Points), 
   object_printables(Points,_,ObjList),
-  gridoid_color(Points,C,H,V),
+  gridoid_color(ObjList,C,H,V),
   gridoid_glyph(ObjList,GN,H,V),!.
 grid_color_and_glyph(Points,C,GN,H,V):- %is_object_group(Points), 
   gridoid_color(Points,C,H,V),
@@ -185,6 +185,7 @@ cant_use(G):- is_object(G), has_prop(G,iz(bfc(bg))),!.
 %hv_c_value(O,_Color,_H,_V):- is_object(O), iz(O,combined), !, fail.
 hv_c_value(O,_Color,_H,_V):-  plain_var(O),!,fail.
 hv_c_value(O,_Color,_H,_V):-  is_ftVar(O),!,fail.
+hv_c_value(O,Color,H,V):- is_cpoint(O),!,O=(Color-Point),hv_point(H,V,Point),!.
 hv_c_value(In,C,H,V):- compound(In),In=in(O),!,hv_c_value(O,C,H,V).
 hv_c_value(O,Color,H,V):- is_grid(O),!,nth1(V,O,Row),nth1(H,Row,Color),!.
 hv_c_value([],_Color,_H,_V):-  !,fail.
@@ -198,7 +199,6 @@ hv_c_value(ID,C,H,V):- (var(H);var(V)),!,arcST,trace, hv_point(H,V,_),hv_c_value
 hv_c_value(O,Color,H,V):- is_object(O),!,globalpoints(O,Ps),hv_c_value(Ps,Color,H,V).
 hv_c_value(O,Color,H,V):- is_list(O), is_cpoints_list(  O),!,hv_point(H,V,Point),member(Color-Point,O).
 hv_c_value(O,FGL   ,H,V):- is_list(O), maplist(is_nc_point,O),!,hv_point(H,V,Point),member(Point,O),get_fg_label(FGL).
-hv_c_value(O,Color,H,V):- is_cpoint(O),!,O=(Color-Point),hv_point(H,V,Point),!.
 hv_c_value(O,FGL   ,H,V):- is_nc_point(O),!,O=Point,hv_point(H,V,Point),!,get_fg_label(FGL).
 
 %hv_c_value(G,Color,H,V):- is_group(G),!,into_list(G,L),member(E,L),hv_c_value(E,Color,H,V),!.
