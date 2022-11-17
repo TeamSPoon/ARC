@@ -201,7 +201,7 @@ confirm_reproduction(Objs0,DebugObjs0,ExpectedOut):-
  must_det_ll((
   grid_size(ExpectedOut,H,V),
   grid_size(DebugObjs0,DH,DV),
-  reproduction_objs(Objs,Objs0), 
+  reproduction_objs(Objs0,Objs), 
   reproduction_objs(DebugObjs0,DebugObjs),
   length(Objs0,Len0),
   length(Objs,Len),

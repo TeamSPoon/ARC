@@ -60,8 +60,10 @@ test_easy_solve_by:- get_pair_mode(single_pair),!,
 %test_easy_solve_by:- test_p2(test_easy_solve_pair).
 %test_easy_solve_by:- test_p2(simple_todolist(_)).
 */
-test_easy_solve_by:- get_pair_mode(entire_suite),clsmake,!,forall_count(all_arc_test_name(TestID),easy_solve_whole_test(TestID)).
-test_easy_solve_by:- get_pair_mode(whole_test),clsmake, get_current_test(TestID),!,must_det_ll(ignore(easy_solve_whole_test(TestID))).
+test_easy_solve_by:- once(update_and_fail_cls),fail.
+test_easy_solve_by:- once(print_info_for_test),fail.
+test_easy_solve_by:- get_pair_mode(entire_suite),!,forall_count(all_arc_test_name(TestID),easy_solve_whole_test(TestID)).
+test_easy_solve_by:- get_pair_mode(whole_test), get_current_test(TestID),!,must_det_ll(ignore(easy_solve_whole_test(TestID))).
 test_easy_solve_by:- test_p2(test_easy_solve_pair).
 
 :- luser_default(cmd,test_easy_solve_by). 
@@ -378,6 +380,8 @@ shrink_grid(I,O):- grid_to_norm(I,_,O),!.
 :- discontiguous fav/2.
 
 :- retractall(muarc_tmp:test_info_cache/2).
+:- abolish(muarc_tmp:test_info_cache,2).
+:- dynamic(muarc_tmp:test_info_cache/2).
 
 is_fti_step(last_indiv).
 last_indiv(VM):- show_vm_changes(VM,last_indiv, last_indiv(VM.objs,set(VM.objs))).
@@ -555,7 +559,10 @@ fav(t('8d5021e8'),[human_skip([grow([[rot180, flipV],[flipH, sameR],[rot180, fli
 fav(t('6150a2bd'),[clue(amass(in)=:=amass(out)),human(rot180),-rotation_match,-mask_match,+shape_match,+color_match,tt,training,image_rotation,'(2, 1)']).
 fav(t('ed36ccf7'),[clue(amass(in)=:=amass(out)),human(rot270),-rotation_match,-mask_match,+shape_match,+color_match,tt,training,image_rotation,'(4, 1)']).
 
+
+% =====================================================================
 is_fti_step(overlay_original).
+% =====================================================================
 
 overlay_original(VM):-
   mapgrid(overlay_onto,VM.grid_o,VM.grid,set(VM.grid)).
@@ -564,17 +571,11 @@ overlay_original(VM):-
 overlay_onto(FG,_,FG):- is_fg_color(FG),!.
 overlay_onto(_,Else,Else).
 
-with_object(Spec,Code,VM):-
-  include(has_prop(Spec),VM.objs,Matches),
-  maplist(run_code_on_object(VM,Code),Matches).
-
-run_code_on_object(VM,Code,Obj):- 
-  object_grid(Obj,Grid),
-  into_fti(_ID,Code,Grid,NewVM),
-  set(NewVM.parent_vm) = VM,
-  run_fti(NewVM).
-
+% =====================================================================
+is_fti_step(add_object).
+% =====================================================================
 add_object(Spec,VM):- 
+  ensure_objects(VM),
   UParentVM = VM.parent_vm,
   (var(UParentVM) -> ParentVM = VM ; ParentVM = UParentVM),
   include(has_prop(Spec),VM.objs,Matches),
@@ -593,18 +594,40 @@ addNonVMObject(VM,Obj):-
   maybe_replace_object(VM,NewObj,NewObj3).
 
 
+% =====================================================================
+is_fti_step(with_objects).
+% =====================================================================
+with_objects(Spec,Code,VM):-
+  ensure_objects(VM),
+  include(has_prop(Spec),VM.objs,Matches),
+  maplist(run_code_on_object(VM,Code),Matches).
 
-  
+run_code_on_object(VM,Code,Obj):- 
+  ensure_objects(VM),
+  (object_call(Code,Obj,NewObj)->maybe_replace_object(VM,Obj,NewObj);true).
+/*
+  object_grid(Obj,Grid),
+  into_fti(_ID,Code,Grid,NewVM),
+  set(NewVM.parent_vm) = VM,
+  run_fti(NewVM).
+  */
 
 :- style_check(-singleton).
+
+fav(t('83302e8f'),
+ [human(i(complete),
+   with_objects(iz(poly(square)),subst_color(black,green)),
+   with_objects(iz(shaped),subst_color(black,yellow)),   
+   objects_into_grid)]).
+
 fav(t(ff28f65a),[human(count_shapes,associate_images_to_numbers),-shape_match,-rotation_match,-mask_match,-color_match,tt,training,count_shapes,associate_images_to_numbers,'(8, 3)']).
 fav(t('1b60fb0c'),[
  %indiv([i_repair_patterns]),
  %human([new_things_are_a_color,fix_image]),
  %human([unbind_color(black),now_fill_in_blanks(blur(flipD)),subst_color(fg,red)]),
  %human([blur_least(_,fg),subst_color(blue,red),overlay_original]),
- %human([blur_least(_,fg),remember_repaired,with_object(changedUntrimmed,[subst_color(blue,red),add_object(changedUntrimmed)])]),
- human([blur_least(_,blur_mixer),remember_repaired,with_object(changedUntrimmed,[subst_color(_,red),add_object(changedUntrimmed)])]),
+ %human([blur_least(_,fg),remember_repaired,with_objects(changedUntrimmed,[subst_color(blue,red),add_object(changedUntrimmed)])]),
+ human([blur_least(_,_),remember_repaired,with_objects(changedUntrimmed,[subst_color(_,red),add_object(changedUntrimmed)])]),
  skip_human(
    in_out(In,Out),
    subtractGrid(Out,In,Alien),

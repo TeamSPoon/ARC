@@ -37,28 +37,29 @@ print_menu_cmd1(Goal):-  if_arc_webui(write_cmd_link(Goal)),!.
 print_menu_cmd1(Info,Goal):- if_arc_webui(write_cmd_link(Info,Goal)),!.
 print_menu_cmd1(Info,_Goal):- format('~w',[Info]).
 
-
 :- multifile(menu_cmd1/4).
 :- multifile(menu_cmd9/4).
-menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z,!,print_test,train_test)).
+menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z_make,!,print_test,train_test)).
 menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),
   sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
-menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(cls_z,!,ndividuatorO)).
-menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the input/outputs',(cls_z,!,ndividuator)).
-menu_cmd1(_,'B','                  or (B)oxes test.',(pbox_indivs)).
-menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z,!,what_unique)).
-menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z,!,set_pair_mode(whole_test),compile_and_save_test)).
-menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changed_files,print_test)).
-menu_cmd1(_,'w','                  or (w)rite the test info',(update_changed_files,set_pair_mode(whole_test), print_testinfo_extended)).
-menu_cmd1(_,'E','                  or (E)xamine the program leared by training',(cls_z,print_test,!,learned_test,solve_easy)).
+menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(cls_z_make,!,ndividuatorO)).
+menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the input/outputs',(cls_z_make,!,ndividuator)).
+menu_cmd1(_,'B','                  or (B)oxes test.',(update_changes,pbox_indivs)).
+menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z_make,!,what_unique)).
+menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z_make,!,compile_and_save_test)).
+menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changes,print_test)).
+menu_cmd1(_,'w','                  or (w)rite the test info',(update_changes,switch_pair_mode)).
+menu_cmd1(_,'X','                  or (e)Xamine the program leared by training',(cls_z_make,print_test,!,learned_test,solve_easy)).
 menu_cmd1(_,'L','                  or (L)earned program',(learned_test)).
 menu_cmd1(_,'e',S,(Cmd)):- get_test_cmd(Cmd),
       sformat(S,"                  or (e)xecute .................. '~@'",[bold_print(color_print(cyan,Cmd))]).
-menu_cmd1(_,'s','              Try to (s)olve based on training',(cls_z,print_test,!,solve_test)).
-menu_cmd1(_,'S','                  or (S)olve confirming it works on training pairs',(cls_z,print_test,!,solve_test_training_too)).
+menu_cmd1(_,'x',S,(Cmd)):- get_test_cmd2(Cmd),
+      sformat(S,"                  or e(x)ecute .................. '~@'",[bold_print(color_print(cyan,Cmd))]).
+menu_cmd1(_,'s','              Try to (s)olve based on training',(cls_z_make,print_test,!,solve_test)).
+menu_cmd1(_,'S','                  or (S)olve confirming it works on training pairs',(cls_z_make,print_test,!,solve_test_training_too)).
 menu_cmd1(_,'h','                  or (h)uman proposed solution',(human_test)).
-menu_cmd1(_,'r','               Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and (s)olve !',(cls_z,fully_test)).
-menu_cmd1(_,'a','                  or (a)dvance to the next test and (r)un it',(cls_z,!,run_next_test)).
+menu_cmd1(_,'r','               Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and (s)olve !',(cls_z_make,fully_test)).
+menu_cmd1(_,'A','                  or (A)dvance to the next test and (r)un it',(cls_z_make,!,run_next_test)).
 menu_cmd1(_,'n','                  or (n)ext test (skipping this one)',(randomize_suite,next_test,print_single_pair)).
 menu_cmd1(_,'b','                  or (b)ack to previous test',(previous_test,print_single_pair)).
 menu_cmd1(_,'f','                  or (f)orce a favorite test.',(enter_test)).
@@ -74,8 +75,9 @@ menu_cmd9(_,'m','recomple this progra(m),',(make,menu)).
 menu_cmd9(_,'c','(c)lear the scrollback buffer,',(cls)).
 menu_cmd9(_,'C','(C)all DSL,',(call_dsl)).
 menu_cmd9(_,'Q','(Q)uit Menu,',true).
-menu_cmd9(_,'X','e(X)it to shell,',halt(4)). 
+menu_cmd9(_,'q','(q)uit to shell,',halt(4)). 
 menu_cmd9(_,'D','or (D)ebug/reak to interpreter.',(break)).
+
 
 menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd1(Mode,Key,Mesg,Goal).
 menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd9(Mode,Key,Mesg,Goal).
@@ -92,20 +94,17 @@ find_g_tests(F):- find_tests(F).
 
 list_of_tests(S):- findall(F,find_f_tests(F),L1),findall(F,find_g_tests(F),L),sort(L,L2),append(L1,L2,L12),list_to_set(L12,S).
 
-show_tests:- update_changed_files, list_of_tests(L),forall(nth10(N,L,E),format('~N~@',[print_menu_cmd1(N:E,E)])),nl.
+show_tests:- update_changes, list_of_tests(L),forall(nth10(N,L,E),format('~N~@',[print_menu_cmd1(N:E,E)])),nl.
 
   % ignore((read_line_to_string(user_input,Sel),atom_number(Sel,Num))),
 
-ui_menu_call(G):- if_arc_webui(catch(ignore(must_not_error(G)),E,wdmsg(E)))
-  ->true
-  ; catch(ignore(must_not_error(G)),E,wdmsg(E)).
+ui_menu_call(G):- ignore(catch(ignore(G),E,wdmsg(E))).
+%ui_menu_call(G):- if_arc_webui(catch(ignore((G)),E,wdmsg(E))) ->true ; catch(ignore((G)),E,wdmsg(E)).
   
 my_menu_call(E):- locally(set_prolog_flag(gc,true),ui_menu_call(E)).
 
-my_submenu_call(G):- current_predicate(_,G), \+ is_list(G),!,
-  locally(set_prolog_flag(gc,true),ui_menu_call(G)).
-my_submenu_call0(E):- peek_vm(VM),!, ui_menu_call(run_dsl(VM,E,VM.grid,Out)),
-  set(VM.grid) = Out.
+my_submenu_call(G):- current_predicate(_,G), \+ is_list(G),!, locally(set_prolog_flag(gc,true),ui_menu_call(G)),!.
+my_submenu_call0(E):- peek_vm(VM),!, ui_menu_call(run_dsl(VM,E,VM.grid,Out)), set(VM.grid) = Out.
 
 key_read_borked(PP):- in_pp(PP), PP\==ansi,PP\==bfly.
 
@@ -116,8 +115,7 @@ read_queued_cmd(Out):- mu_tmp:asserted_queued_cmd(Out,Why),!,ignore(retract(mu_t
 
 
 read_menu_chars(_Start,_SelMax,Out):- pengine_self(_Id),!,read(Out).
-read_menu_chars(Start,SelMax,Out):- repeat,    
-   read_menu_chars0(Start,SelMax,Out).
+read_menu_chars(Start,SelMax,Out):- repeat, read_menu_chars0(Start,SelMax,Out),!.
 
 has_pending_input:- catch_nolog(wait_for_input([user_input], In, 0.01)), In\==[].
 
@@ -196,7 +194,7 @@ interact:-
 interact(SelMax):- catch(interact0(SelMax),'$aborted',interact(SelMax)).
 interact0(_SelMax):- retract(wants_exit_menu),!.
 interact0(SelMax):- i_key(SelMax,Key),
-    writeq(Key),flush_tee,
+    writeq(Key),%flush_tee,
     locally(nb_setval(menu_key,Key),ignore((do_menu_key(Key)))),flush_tee,
     interact0(SelMax).
 
@@ -204,15 +202,16 @@ i_key(SelMax,Key):-
   %get_single_char(Code), wdmsg(code=Code), char_code(Key,Code),  put_char(Key), 
    (once(read_menu_chars('',SelMax,Key))),!.
 
-menu_goal(Goal):- 
-  pp(calling(Goal)),!, ignore(once((catch(my_menu_call(Goal),'$aborted',fail)*->true;(fail,trace,arcST,rrtrace(Goal))))),!,
-   read_pending_codes(user_input,_Ignored,[]),!.
+menu_goal(Goal):-  
+  read_pending_codes(user_input,_Ignored1,[]),!,
+  pp(calling(Goal)),!, ignore(once((catch(my_menu_call(Goal),'$aborted',fail)*->!;(!,fail,trace,arcST,rrtrace(Goal))))),!,
+   read_pending_codes(user_input,_Ignored2,[]),!.
 
 do_menu_key(-1):- !, arc_assert(wants_exit_menu). 
 do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), arc_assert(wants_exit_menu).
 do_menu_key('?'):- !, write_menu_opts('i').
 do_menu_key('M'):- !, do_menu_key('T').
-do_menu_key('W'):- !, set_pair_mode(whole_test).
+%do_menu_key('W'):- !, set_pair_mode(whole_test).
 do_menu_key('P'):- !, switch_grid_mode,print_test.
 do_menu_key( ''):- !, fail.
 
@@ -288,18 +287,20 @@ do_menu_codes([27,79,67]):- !, next_test, print_test.
 do_menu_codes([27,27,91,68]):- !, previous_test, print_test.
 % alt right arrow
 do_menu_codes([27,27,91,67]):- !, next_test, print_test.
-% left arrow
-do_menu_codes([27,91,68]):- !, previous_test, report_suite, print_qtest.
-% right arrow
-do_menu_codes([27,91,67]):- !, next_test, report_suite, print_qtest.
 % page up
 do_menu_codes([27,91,53,126]):- !, prev_suite.
 % page down
 do_menu_codes([27,91,54,126]):- !, next_suite.
+
 % up arrow
-do_menu_codes([27,91,65]):- !, prev_pair.
+do_menu_codes([27,91,65]):- !, set_pair_mode(single_pair), prev_pair.
 % down arrow
-do_menu_codes([27,91,66]):- !, next_pair.
+do_menu_codes([27,91,66]):- !, set_pair_mode(single_pair), next_pair.
+% left arrow
+do_menu_codes([27,91,68]):- !, set_pair_mode(whole_test), previous_test, cls_z, report_suite, print_qtest.
+% right arrow
+do_menu_codes([27,91,67]):- !, set_pair_mode(whole_test), next_test, cls_z, report_suite, print_qtest.
+
 
 interactive_test(X):- set_current_test(X), print_test(X), interact.
 
@@ -366,7 +367,7 @@ show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), luser_getval(test_suite_
   wqnl(["~N~t............ (e)xecute: ", b(q(Cmd)), "with pair mode set to: ",b(q(Mode)),
   "with indivmode set to: ",b(q(IndivMode)),
   "suite: ",b(q(Suite)),
-  " With selected test: ",b(q(TestID)),b(q(example(Example)))]),flush_tee.
+  " With selected test: ",b(q(TestID)),b(q(example(Example)))]),flush_tee_maybe.
 skip_entire_suite:- never_entire_suite,!,fail.
 never_entire_suite:- ignore((get_pair_mode(entire_suite),set_pair_mode(whole_test))).
 
@@ -374,6 +375,10 @@ never_entire_suite:- ignore((get_pair_mode(entire_suite),set_pair_mode(whole_tes
 
 set_test_cmd(Mode):- luser_setval('cmd',Mode).
 get_test_cmd(Mode):- luser_getval('cmd',Mode).
+set_test_cmd2(Mode):- luser_setval('cmd2',Mode).
+get_test_cmd2(Mode):- luser_getval('cmd2',Mode).
+
+:- set_test_cmd2(pbox_indivs).
 %set_pair_cmd(Mode):- luser_setval('tc_cmd',Mode).
 %get_pair_cmd(Mode):- luser_getval('tc_cmd',Mode).
 
@@ -399,7 +404,11 @@ test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(whole_test), !, ignore(get_cur
 test_pairs(TestID,ExampleNum,I,O):- ignore(get_current_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc(TestID,ExampleNum,I,O).
 
 %with_test_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call((continue_test(TestID),P))).
-with_test_pairs(TestID,ExampleNum,I,O,P):- forall(test_pairs(TestID,ExampleNum,I,O),my_menu_call((flush_tee,continue_test(TestID),call_cleanup(P,flush_tee)))).
+with_test_pairs(TestID,ExampleNum,I,O,P):- 
+ forall(test_pairs(TestID,ExampleNum,I,O),
+  my_menu_call((continue_test(TestID),
+    set_example_num(ExampleNum), 
+     call_cleanup(P,flush_tee)))).
 
 
 bad:- ig([complete],v(aa4ec2a5)>(trn+0)*in).
@@ -589,7 +598,7 @@ muarc:arc_settings_filename1('/tmp/.arc_current_test').
 set_current_test(Name):-  
   ignore((testid_name_num_io(Name,TestID,Example,NumE,_IO),
     ignore((is_valid_testname(TestID),really_set_current_test(TestID))),
-    ignore((nonvar(Example),luser_setval(example,Example+NumE))))).
+    ignore((nonvar(Example),set_example_num(Example+NumE))))).
 
 really_set_current_test(TestID):-
   once(luser_getval(task,WTestID);WTestID=[]),
@@ -599,9 +608,13 @@ really_set_current_test(TestID):-
 
 some_current_example_num(_):- get_pair_mode(whole_test), !.
 some_current_example_num(_):- get_pair_mode(entire_suite), !.
-some_current_example_num(TrnN):- nb_current(example,TrnN),ground(TrnN),TrnN\==[],!.
-some_current_example_num(TrnN):- luser_getval(example,TrnN),ground(TrnN),TrnN\==[],!.
-some_current_example_num(TrnN):- TrnN = trn+0, luser_setval(example,TrnN).
+some_current_example_num(TrnN):- get_example_num(TrnN),!.
+some_current_example_num(TrnN):- TrnN = trn+0, set_example_num(TrnN),!.
+some_current_example_num(TrnN):- ignore(get_example_num(TrnN)),set_example_num(TrnN),!.
+
+get_example_num(TrnN):- nb_current(example,TrnN),ground(TrnN),TrnN\==[],!.
+get_example_num(TrnN):- luser_getval(example,TrnN),ground(TrnN),TrnN\==[],!.
+set_example_num(TrnN):- luser_setval(example,TrnN).
 
 first_current_example_num(TrnN):- some_current_example_num(TrnN),ground(TrnN),TrnN\==[],get_current_test(TestID),kaggle_arc(TestID,TrnN,_,_),!.
 first_current_example_num(TrnN):- TrnN = trn+0.
@@ -610,7 +623,7 @@ next_pair:-
   %get_current_test(TestID),
   first_current_example_num(TrnN),  
   next_pair(TrnN,ExampleNum),
-  nb_setval(example,ExampleNum),
+  set_example_num(ExampleNum),
   set_pair_mode(single_pair),%(ExampleNum=(tst+_)->set_pair_mode(whole_test);set_pair_mode(single_pair)),  
   ((ExampleNum==trn+0)->next_test;true),
   print_single_pair,!.
@@ -624,7 +637,7 @@ prev_pair:-
   %get_current_test(TestID),
   first_current_example_num(TrnN),  
   prev_pair(TrnN,ExampleNum),
-  nb_setval(example,ExampleNum),
+  set_example_num(ExampleNum),
   set_pair_mode(single_pair),%(ExampleNum=(tst+_)->set_pair_mode(whole_test);set_pair_mode(single_pair)),  
   ((TrnN==trn+0)->previous_test;true),
   print_single_pair.
@@ -640,7 +653,7 @@ new_current_test_info(WasTestID,TestID):-
   ignore((  
   %luser_getval(task,TestID),
   %pp(fav(TestID,[])),
-  %luser_setval(example,tst+0),
+  %set_example_num(tst+0),
   luser_setval(last_test_name,TestID))),
   save_last_test_name,
   luser_setval(prev_test_name,WasTestID),
@@ -713,6 +726,7 @@ worth_saving:- size_file('tee.ansi',Size), Size > 20_000.
 
 
 begin_tee:- get_current_test(TestID),on_entering_test(TestID),at_halt(exit_tee).
+flush_tee_maybe.
 flush_tee:- ignore((worth_saving -> force_flush_tee ; true)).
 force_flush_tee:-   
   test_html_file_name(FN),
@@ -842,7 +856,7 @@ fully_test:- print_test, !, train_test, !, solve_test, !.
 run_next_test:- notrace(next_test), fully_test.
 
 info(Info):- nonvar(Info),wdmsg(Info).
-system:demo:- reverse_suite,update_changed_files,!,clear_tee,
+system:demo:- reverse_suite,update_changes,!,clear_tee,
   begin_tee,interact.
 
 :- export(demo/0).
@@ -865,7 +879,7 @@ print_test(TName):-
   arc_user(USER),
   fix_test_name(TName,TestID,ExampleNum1),
   continue_test(TestID),
-  %luser_setval(example,ExampleNum1),
+  %set_example_num(ExampleNum1),
    cmt_border,format('%~w % ?- ~q. ~n',[USER,print_test(TName)]),cmt_border,
    ignore(print_test_hints(TestID)),
    format('~N% '),dash_chars,
@@ -1274,8 +1288,10 @@ sort_univ(R,A,B):- compare(R,A,B).
 
 macro(one_obj, must_det_ll(len(objs)=1)).
 
-test_p2(_):- flush_tee,clsmake,fail.
-test_p2(P2):- 
+
+test_p2(_):- update_and_fail,fail.
+test_p2(P2):- (test_p2a(P2)*->flush_tee;(flush_tee,fail)).
+test_p2a(P2):- 
   (get_pair_mode(single_pair);get_pair_mode(whole_test)),!,
   append_termlist(P2,[N1,'$VAR'('Result')],N2), 
   put_attr(G2,expect_p2,Expected),
@@ -1286,7 +1302,7 @@ test_p2(P2):-
          show_sf_if_lame(test_p2(P2),G2,Expected),dash_chars)))))),EP,ET),
      wdmsg(forall_count(EP/ET)))),!.
 
-test_p2(P2):-
+test_p2a(P2):-
   append_termlist(P2,[N1,'$VAR'('Result')],N2), 
   my_time(forall(into_grids(N1,G1),     
      forall((set_current_test(G1),call(P2,G1,G2)),

@@ -104,55 +104,55 @@ quietlyd(G):- quietly(G),!.
 %:- discontiguous '$autoload'/3.
 :- dynamic '$autoload'/3.
 
+update_changes:- notrace((ignore(update_changed_files))).
+cls_z_make:- notrace((ignore(cls_z),ignore(update_and_fail))).
+clsmake:- notrace(ignore((\+ is_detatched_thread, cls_z_make))),!.
+update_and_fail:- once(update_changes),fail.
+update_and_fail_cls:- once(cls_z),update_and_fail.
 
 % COMMAND LINE ARC
 :- if(\+ current_module(logicmoo_arc)).
+
   :- set_prolog_flag(access_level,system).
-
-
-
+  
   :- SL  is 2_147_483_648*8*4, set_prolog_flag(stack_limit, SL ).
   :- (getenv('DISPLAY',_) -> true ; setenv('DISPLAY','10.0.0.122:0.0')).
   %:- unsetenv('DISPLAY').
-%  :- (getenv('DISPLAY',_) -> guitracer ; true).
-%  :- noguitracer.
+  %  :- (getenv('DISPLAY',_) -> guitracer ; true).
+  %  :- noguitracer.
   :- set_prolog_flag(toplevel_print_anon,false).
   :- set_prolog_flag(toplevel_print_factorized,true).
-
-    :- set_prolog_flag(answer_write_options, [quoted(true), portray(true), max_depth(5), attributes(dots)]).
-    :- set_prolog_flag(debugger_write_options, [quoted(true), portray(true), max_depth(5), attributes(dots)]).
-    :- set_prolog_flag(print_write_options, [quoted(true), portray(true), max_depth(50), attributes(dots)]).
-
-:- set_prolog_flag(debug_on_error,true).
-:- set_prolog_flag(report_error,true).
-:- set_prolog_flag(on_error,status).
-:- set_prolog_flag(debugger_show_context,true).
-
-:- set_prolog_flag(last_call_optimisation,false).
-%:- set_prolog_flag(trace_gc,false).
-:- set_prolog_flag(write_attributes,dots).
-:- set_prolog_flag(backtrace_depth,1000).
-:- catch(noguitracer,_,true).
-
-clsmake:- is_detatched_thread,!.
-clsmake:- notrace((cls_z,!,update_changed_files,make)),!.
+  
+  :- set_prolog_flag(answer_write_options, [quoted(true), portray(true), max_depth(5), attributes(dots)]).
+  :- set_prolog_flag(debugger_write_options, [quoted(true), portray(true), max_depth(5), attributes(dots)]).
+  :- set_prolog_flag(print_write_options, [quoted(true), portray(true), max_depth(50), attributes(dots)]).
+  
+  :- set_prolog_flag(debug_on_error,true).
+  :- set_prolog_flag(report_error,true).
+  :- set_prolog_flag(on_error,status).
+  :- set_prolog_flag(debugger_show_context,true).
+  
+  :- set_prolog_flag(last_call_optimisation,false).
+  %:- set_prolog_flag(trace_gc,false).
+  :- set_prolog_flag(write_attributes,dots).
+  :- set_prolog_flag(backtrace_depth,1000).
+  :- catch(noguitracer,_,true).
 
 %arc_assert(P):- pfcAddF(P).
 
 :- else.  % SWISH ARC
-:- catch(noguitracer,_,true).
 
-clsmake:- update_changed_files,!.
+  :- catch(noguitracer,_,true).
 
   :- if(current_module(trill)).
     :- set_prolog_flag_until_eof(trill_term_expansion,false).
     :- dynamic(muarc:ns4query/1).
   :- endif.
 
-pfcUnique(_,P):- mpred_unique_u(P).
-pfcAdd(P):- mpred_ain(P).
-pfcFwd(P):- mpred_fwc(P).
-arc_assert(P):- pfcAdd(P).
+  pfcUnique(_,P):- mpred_unique_u(P).
+  pfcAdd(P):- mpred_ain(P).
+  pfcFwd(P):- mpred_fwc(P).
+  arc_assert(P):- pfcAdd(P).
 
 :- endif.
 
@@ -639,7 +639,8 @@ set_vm_obj1(Prop,Or,Value):- is_grid(Value),!,
     (get_vm(VM),
           make_indiv_object(VM,[iz(Prop),vis2D(H,V),birth(set_vm(Prop))|Or],IndvPoints,_Obj),
           %addObjects(VM,Obj),
-          print_grid(H,V,Prop,Value))),!.
+          make_bg_visible(Value,VValue),
+          print_grid(H,V,Prop,VValue))),!.
 
 set_vm_obj1(Prop,Or,IndvPoints):- is_points_list(IndvPoints),!,
   if_t(IndvPoints\==[],
@@ -929,6 +930,9 @@ solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut):-
 do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
  must_det_ll(( ppt("BEGIN!!!"+Why+TestID>ExampleNum), 
     kaggle_arc_io(TestID,ExampleNum,out,ExpectedOut),
+    grid_size(ExpectedOut,GOH,GOV),
+    luser_setval(other_grid,ExpectedOut),
+    luser_setval(other_grid_size,size2D(GOH,GOV)),
     forall(sols_for(TestID,Trial,SolutionProgram),
      ignore(((
       once((pp(cyan,trial=Trial),
@@ -1091,5 +1095,6 @@ ansi_startup:-
 
 :- luser_setval(cmd,test_easy_solve_by).
 :- luser_setval(individuated_cache,true).
+:- luser_default(extreme_caching,true).
 :- gen_gids.
 

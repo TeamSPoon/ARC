@@ -827,7 +827,7 @@ color_spec_or_fail(Grid,C,Hi,Vi):- hv_c_value(Grid,C2,Hi,Vi),
 % Is there an advantage to counting down?
 all_points_between_include_bg(_Grid,_LowH,_LowV,_GH,GV,_Hi,Vi,Points,Points):- Vi>GV,!.
 all_points_between_include_bg(Grid,LowH,LowV,GH,GV,Hi,Vi,Points,PointsO):-
-  ((color_spec_or_fail_include_bg(Grid,C,Hi,Vi),
+  ((color_spec_or_fail_include_bg_more(Grid,C,Hi,Vi),
   hv_point(Hi,Vi,Point))
      -> PointsT = [C-Point|Points] ; PointsT = Points),
    (Hi>GH -> (H = LowH, V is Vi+1) ; (H is Hi +1, V = Vi )),!,
@@ -993,7 +993,8 @@ global_grid(I,G):- must_det_ll((call((grid_size(I,H,V),globalpoints_maybe_bg(I,L
 global_grid(I,G):- object_grid(I,G),!.
 %object_grid(I,G):- globalpoints(I,GP),into_grid(GP,G),!.
 
-other_grid_size(Grid,OtherH,OtherV):- other_grid(Grid,OtherGrid),grid_size(OtherGrid,OtherH,OtherV).
+other_grid_size(_Grid,OtherH,OtherV):- luser_getval(other_grid_size,size2D(OtherH,OtherV)),!.
+other_grid_size( Grid,OtherH,OtherV):- must_det_ll((other_grid(Grid,OtherGrid),grid_size(OtherGrid,OtherH,OtherV))).
 locG_term(I,loc2G(X,Y)):- loc2G(I,X,Y),!.
 loc2G(Grid,H,V):- is_grid(Grid),!,other_grid_size(Grid,H,V).
 loc2G(G,X,Y):- is_group(G),!,mapgroup(locG_term,G,Offsets),sort(Offsets,[loc2G(X,Y)|_]). % lowest loc2G

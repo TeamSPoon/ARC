@@ -23,7 +23,7 @@ nb_subst(_Obj,_New,_Old).
 :- thread_local(in_memo_cached/5).
 :- multifile(prolog:make_hook/2).
 :- dynamic(prolog:make_hook/2).
-prolog:make_hook(before, Some):- Some \==[], retractall(in_memo_cached(_,_,_,_,_)), fail.
+prolog:make_hook(before, Some):- Some \==[], \+ luser_getval(extreme_caching,true), retractall(in_memo_cached(_,_,_,_,_)), fail.
 %arc_memoized(G):- !, call(G).
 arc_memoized(G):-
   copy_term(G,C,GT),

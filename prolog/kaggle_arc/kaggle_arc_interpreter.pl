@@ -8,11 +8,18 @@
 
 
 :- meta_predicate(grid_call(+,+,-)).
-
-grid_call([],I,I):- !. 
-grid_call([H|T],I,O):- !, grid_call(H,I,M), grid_call(T,M,O).
+grid_call(=,I,O):- !, I=O. 
 grid_call(T,I+O,II+OO):- !, grid_call(T,I,II),grid_call(T,O,OO).
+grid_call(Nil,I,I):- Nil==[],!. 
+grid_call([H|T],I,O):- nonvar(H), !, grid_call(H,I,M), grid_call(T,M,O).
 grid_call(T,I,O):- call(T,I,O).
+
+:- meta_predicate(object_call(+,+,-)).
+object_call(=,I,O):- !, I=O. 
+object_call(T,I+O,II+OO):- !, object_call(T,I,II),object_call(T,O,OO).
+object_call(Nil,I,I):- Nil==[],!. 
+object_call([H|T],I,O):- nonvar(H), !, object_call(H,I,M), object_call(T,M,O).
+object_call(T,I,O):- call(T,I,O).
 
 :- meta_predicate(grid_call_alters(+,+,-)).
 grid_call_alters([H|T],I,O):- !, grid_call_alters(H,I,M),grid_call_alters(T,M,O).
@@ -301,7 +308,7 @@ cast_to_grid(Grid,Grid, (=) ):- is_grid(Grid),!.
 cast_to_grid(gridOpFn(Grid,OP),GridO,reduce_grid):- !, unreduce_grid(Grid,OP,GridO).
 cast_to_grid(Points,Grid,globalpoints):- is_points_list(Points), !, points_to_grid(Points,Grid),!.
 cast_to_grid(Obj,Grid, uncast_grid_to_object(Obj)):- is_object(Obj),!, object_grid(Obj,Grid),!.
-cast_to_grid(Grp,Grid, closure_grid_to_group(Grp)):- is_group(Grp), object_grid(Grp,Grid),!.
+cast_to_grid(Grp,Grid, closure_grid_to_group(Grp)):- is_group(Grp), group_to_grid(Grp,Grid),!.
 cast_to_grid(Obj,Grid, Closure):- resolve_reference(Obj,Var), Obj=@=Var, !,cast_to_grid(Var,Grid,Closure).
 cast_to_grid(Text,Grid, print_grid_to_string ):- string(Text),!,text_to_grid(Text,Grid).
 cast_to_grid(OID, Grid, (=) ):- atom(OID),oid_to_gridoid(OID,Grid),!.
@@ -326,6 +333,13 @@ recast_to_grid0(Points,Grid, throw_no_conversion(Points,grid)):- compound(Points
          (arg(1,Success,false)->nb_setarg(1,Success,true);true))))))),!,
   Success = found_points(true).
 
+
+group_to_grid(Grp,Grid):-   
+  reproduction_objs(Grp,Objs),
+  grid_size(Objs,H,V),
+  maplist(globalpoints,Objs,Points),
+  append(Points,AllPoints),
+  points_to_grid(H,V,AllPoints,Grid),!.
 
 vm_objs(O,VM):- largest_first(VM.objs,List),!, member(O,List).
 % vm_objs(O):- get_vm(VM), vm_objs(O,VM).
@@ -462,8 +476,14 @@ makeup_gridname(Grid,TID):- nonvar(TID),!,makeup_gridname(Grid,GridNameM),!,must
 makeup_gridname(Grid,TID):- get_current_test(TestID), kaggle_arc_io(TestID,Trn+Num,IO,Grid), name_num_io_id(TestID,Trn,Num,IO,TID),!.
 makeup_gridname(Grid,TID):- is_grid_tid(Grid,TID),!.
 %makeup_gridname(Grid,TID):- was_grid_gid(Grid,TID),!.
-makeup_gridname(Grid,TID):- get_current_test(TestID),flag(made_up_grid,F,F+1),name_num_io_id(TestID,'Example',F,io,TID),
-   assert_grid_tid(Grid,TID), nop(dumpST), print_grid(no_name(TestID,TID),Grid).
+makeup_gridname(Grid,TID):- get_current_test(TestID),
+  flag(made_up_grid,F,F+1),
+   get_example_num(Example+Num),
+   (ground(Example+Num)->atomic_list_concat([Example,Num,ex],'_',HH);HH= 'Example'),
+   name_num_io_id(TestID,HH,F,io,TID),
+   assert_grid_tid(Grid,TID), nop(dumpST), 
+    %nop
+    (print_grid(no_name(TestID,TID),Grid)).
 
 incomplete(X,X).
 

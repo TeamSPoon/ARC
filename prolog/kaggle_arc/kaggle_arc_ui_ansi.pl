@@ -389,7 +389,7 @@ pc_msg_color((_->P),C):- pp_msg_color(P,C).
 pc_msg_color([P|_],C):- pp_msg_color(P,C).
 pc_msg_color(diff(P),C):- pp_msg_color(P,C).
 
-wots_vs(SS,G):- wots(S,G),strip_vspace(S,SS).
+wots_vs(SSS,G):- wots(S,G),strip_vspace(S,SS), (atom_contains(SS,'\n') -> wots(SSS,(nl,write('   '),write(SS),nl));SSS=SS).
 
 
 wqs_l([]).
@@ -491,12 +491,12 @@ dash_chars(H,C):- forall(between(0,H,_),bformatc1(C)).
 
 %dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc1('\u00AF\u00AF\u00AF ').
 %dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc1('\u00AF\u00AF\u00AF ').
-%dash_uborder_no_nl_1:- bformatc1('\u00AF\u00AF\u00AF ').
+dash_uborder_no_nl_1:- bformatc1('\u00AF\u00AF\u00AF ').
 dash_uborder_no_nl_1:- uborder(Short,Long),!, bformatc1(Short),bformatc1(Long),write_nbsp.
 dash_uborder_no_nl(1):- !, dash_uborder_no_nl_1.
-dash_uborder_no_nl(Width):- WidthM1 is Width-1, uborder(Short,Long),
-  write(' '), write(Short),dash_chars(WidthM1,Long),!.
-%dash_uborder_no_nl(Width):- WidthM1 is Width-1, write_nbsp, bformat('\u00AF'),dash_chars(WidthM1,'\u00AF\u00AF'),!.
+dash_uborder_no_nl(Width):- WidthM1 is Width-1, uborder(Short,Long),write(' '), write(Short),dash_chars(WidthM1,Long),!.
+dash_uborder_no_nl(Width):- WidthM1 is Width-1, write_nbsp, bformat('\u00AF'),dash_chars(WidthM1,'\u00AF\u00AF'),!.
+dash_uborder_no_nl(Width):- nl_if_needed, WidthM1 is Width-1, bformatc1(' \u00AF'),dash_chars(WidthM1,'\u00AF\u00AF').
 
 dash_uborder(Width):- nl_if_needed,dash_uborder_no_nl(Width),nl.
 
@@ -507,7 +507,9 @@ uborder('\u00AF','\u00AF\u00AF'):- !. %stream_property(current_output,encoding(t
 dash_border_no_nl_1:-  line_position(current_output,0),!, bformatc1(' ___ ').
 dash_border_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc1('___ ').
 dash_border_no_nl_1:- bformatc1(' ___ ').
-dash_border_no_nl(1):- nl_if_needed,!,dash_border_no_nl_1.
+
+%dash_border_no_nl(Width):- write(''),dash_chars(Width,'_'),write(' '),!.
+
 dash_border_no_nl(Width):- nl_if_needed, WidthM1 is Width-1, bformatc1(' _'),dash_chars(WidthM1,'__').
 
 dash_border(Width):- !, dash_border_no_nl(Width),nl,!.
@@ -542,7 +544,10 @@ print_ss(A):- must_det_ll(( format('~N'), into_ss_string(A,SS),!,
 print_ss(G,W):- is_really_gridoid(G),!,must_det_ll(print_grid(W,G)).
 
 print_side_by_side([]):-!.
-print_side_by_side([A,B|Rest]):- \+ g_smaller_than(A,B),!,print_side_by_side(A,B),format('~N'),!,print_side_by_side(Rest),!.
+%print_side_by_side([A,B,C,D|Rest]):- wots(AB,print_side_by_side(A,B)),wots(AC,print_side_by_side(C,D)),!,print_side_by_side(AB,AC),print_side_by_side(Rest).
+%print_side_by_side([A,B,C|Rest]):- wots(AB,print_side_by_side(A,B)),wots(AC,print_grid(C)),print_side_by_side(AB,AC),!,print_side_by_side(Rest).
+print_side_by_side([A,B,C|Rest]):- wots(OS,(wots_vs(AC,print_grid(A)),write(AC),write('  '))),wots_vs(AB,print_side_by_side(B,C)),print_side_by_side(OS,AB),!,print_side_by_side(Rest).
+print_side_by_side([A,B|Rest]):- print_side_by_side(A,B),format('~N'),!,print_side_by_side(Rest),!.
 print_side_by_side([A|Rest]):- print_ss(A), print_side_by_side(Rest),!.
 
 
@@ -639,7 +644,7 @@ gridoid_size(G,H,V):- is_really_gridoid(G),!,grid_size(G,H,V).
 
 print_side_by_side0([],_,[]):-!.
 %print_side_by_side0(A,_,B):- (unsized_grid(A);unsized_grid(B)),!, writeln(unsized_grid), print_ss(A),print_ss(B),!.
-print_side_by_side0(A,_,B):- g_smaller_than(A,B),!, writeln(g_smaller_than), print_ss(A),print_ss(B),!.
+% % % print_side_by_side0(A,_,B):- g_smaller_than(A,B),!, writeln(g_smaller_than), print_ss(A),print_ss(B),!.
 /*
 print_side_by_side0(C1-call(wqs(S1)),LW,C2-call(wqs(S2))):- nonvar(S1),!,
   print_side_by_side0(C1,LW,C2),nl_if_needed,
@@ -649,7 +654,7 @@ print_side_by_side0(C1-A,LW,C2-B):- nonvar(A),!,
   print_side_by_side0(A,LW2,B),
   ignore(max_min(LW1,LW2,LW,_)).
 */
-print_side_by_side0(C1,LW,C2):- var(LW), gridoid_size(C1,H1,V1),gridoid_size(C2,H2,V2),!,    
+print_side_by_side0(C1,LW,C2):- var(LW), fail, gridoid_size(C1,H1,V1),gridoid_size(C2,H2,V2),!,    
     ((V2 > V1) -> LW is -(H2 * 2 + 12) ; LW is (H1 * 2 + 12)),!, print_side_by_side0(C1,LW,C2).
 print_side_by_side0(C1,LW,C2):-  var(LW), LW=30,print_side_by_side0(C1,LW,C2),!.
 
@@ -676,7 +681,7 @@ extend_len(Need,S,New):-
 make_spaces(Spaces,S):-
  wots(S,(write_nbsp,forall(between(2,Spaces,_),write_nbsp),write_nbsp)),!.
 
-
+maybe_exend_len(_L1,_L2,_,_):-!,fail.
 maybe_exend_len(L1,L2,Lst1,L2):-  (is_grid(L1) ; \+ is_list(L1)),
   into_ss_string(L1,ss(_,Lst1)), !.
 maybe_exend_len(L1,L2,L1,Lst2):-  (is_grid(L2) ; \+ is_list(L2)),
@@ -723,12 +728,29 @@ print_side_by_side_lists_1st([E1,E2|L1],W1,L2,LW):- !,
   atom_length(S,Pre),
   print_side_by_side_lists(Pre,[E1,E2|L1],W1,L2,LW).
 
+ /*
 print_side_by_side_lists_1st([E2|L1],W1,L2,LW):- !,
   wots(S,(write(E2),write('\t '),dash_chars(W1,' ' ))),
   atom_length(S,Pre),
   print_side_by_side_lists(Pre,[E2|L1],W1,L2,LW).
+*/
+spc_len(E2,SSS):- atom_length(E2,L),wots(SSS,forall(between(1,L,_),write(' '))).
+
+print_side_by_side_lists(Pre,[E1,A],W1,[E2,B|L2],W2):- L2 \==[],!,
+  spc_len(E1,NewE1),
+  %(E1==NewE1 -> EE1=E1 ; string_concat(' ',EE1,E1)),
+  string_concat(' ',E2,EE2),
+  write_padding(E1,W1,EE2,W2),  
+  print_side_by_side_lists(Pre,[NewE1,A],W1,[B|L2],W2).
+
+print_side_by_side_lists(Pre,[E1,A|L1],W1,[E2,B],W2):- L1 \==[],!,
+  spc_len(E2,NewE2),  
+  write_padding(E1,W1,E2,W2), 
+  print_side_by_side_lists(Pre,[A|L1],W1,[NewE2,B],W2).
+
 
 print_side_by_side_lists(Pre,[E1|L1],W1,[E2|L2],W2):-!,
+  % .... 
   write_padding(E1,W1,E2,W2), 
   print_side_by_side_lists(Pre,L1,W1,L2,W2).
   
@@ -840,6 +862,7 @@ into_ss_string(AB,SS):- grid_footer(AB,A,B),!,
 into_ss_string(A-B,SS):-!,into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)), append(LA,[""|LB],ABL), max_min(LenA,LenB,LenAB,_),
   ss(LenAB,ABL)=SS.
 
+into_ss_string(A+B,ss(Len,LAB)):- into_ss_string(A,ss(Len,LA)),into_ss_string(B,ss(_,LB)), append(LA,LB,LAB).
 into_ss_string(G,SS):- is_grid(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(G,SS):- is_really_gridoid(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
 into_ss_string(G,SS):- is_object(G),!,wots(S,print_grid_ss(G)),!,into_ss_string(S,SS).
@@ -850,6 +873,8 @@ into_ss_string(S,SS):- string(S), !, atomics_to_string(L,'\n',S),!,into_ss_strin
 into_ss_string(G,SS):- into_grid(G,GR),is_grid(GR),!,wots(S,print_grid_ss(GR)),!,into_ss_string(S,SS).
 into_ss_string(C,SS):-       wots(S,catch(C,E,true)), 
   (((nonvar_or_ci(E),notrace,break,rrtrace(C))->throw(E);true)), into_ss_string(S,SS).
+
+
 
 find_longest_len(SL,L):- find_longest_len(SL,10,L),!.
 find_longest_len([],L,L).
@@ -928,20 +953,21 @@ is_print_collapsed:- \+ nb_current(arc_portray,t), luser_getval(print_collapsed,
 print_grid(_):- is_print_collapsed,!.
 print_grid(Grid):- use_row_db, is_grid(Grid),!, grid_to_tid(Grid,TID),print_grid(TID).
 
-print_grid(Grid):-  quietly(print_grid0(Grid)),!.
+print_grid(Grid):- make_bg_visible(Grid,GGrid),  quietly(print_grid0(_,_,GGrid)),!.
 
 print_grid(Str,Grid):- Grid==[],!, pp(Str).
 print_grid(Str,Grid):- Grid==[[]],!, pp(Str).
-print_grid(Str,Grid):-  ignore((print_grid(_,_,Str,Grid))),!.
-print_grid0(Grid):-  ignore(print_grid0(_,_,Grid)),!.
+print_grid(Str,Grid):-  make_bg_visible(Grid,GGrid), ignore((print_grid(_,_,Str,GGrid))),!.
+%print_grid(Str,G):- compound(G), maybe_make_bg_visible(G,GG),!,print_grid0(H,V,GG).
+%print_grid0(Grid):-  ignore(print_grid0(_,_,Grid)),!.
 
 %print_grid0(Grid):- plain_var(Grid),!, throw(var_print_grid(Grid)).
 
 format_u(TitleColor,Format,Args):- quietlyd( ignore((underline_print(color_print(TitleColor,call(format(Format,Args))))))).
 
 print_grid(_,_,_,_):- is_print_collapsed,!.
-print_grid(OH,OV,Name,Out):- 
- quietly((
+print_grid(OH,OV,Name,Grid):- 
+ quietly(( make_bg_visible(Grid,Out),
   ignore((print_grid0(OH,OV,Out))),!,nl_if_needed,format('  '),
   ignore((data_type(Out,SS), toUpperC(Name,NameU),
   mesg_color(SS,TitleColor),
@@ -949,7 +975,7 @@ print_grid(OH,OV,Name,Out):-
 %print_grid(H,V,Grid):- use_row_db, grid_to_tid(Grid,TID),!,print_grid0(H,V,TID).
 
 print_grid(_,_,_):- is_print_collapsed,!.
-print_grid(H,V,Grid):- ignore(quietly(print_grid0(H,V,Grid))).
+print_grid(H,V,Grid):-  make_bg_visible(Grid,GGrid), ignore(quietly(print_grid0(H,V,GGrid))).
 
 print_grid0(_,_,_):- is_print_collapsed,!.
 print_grid0(H,V,G):- G==[],number(H),number(V),!,make_grid(H,V,GG),!,print_grid0(H,V,GG).
@@ -960,6 +986,7 @@ print_grid0(H,V,D):- is_map(D),ignore(H = D.h),ignore(V = D.v),
 
 print_grid0(H,V,Grid):- \+ callable(Grid),!,write('not grid: '),
   GG= nc_print_grid(H,V,Grid), pp(GG),!,nop(trace_or_throw(GG)).
+
 
 print_grid0(H,V,G):- compound(G), G=(GG-PP),is_grid(GG),!,print_grid(H,V,PP,GG).
 print_grid0(H,V,SIndvOut):- compound(SIndvOut),SIndvOut=(G-GP), \+ is_nc_point(GP),!, 
@@ -1222,7 +1249,7 @@ grid_colors(GridI,WGrid):-
          (once(nb_set_chv(CG,H,V,WGrid)))))))))).
  
 
-print_grid_ansi(SH,SV,EH,EV,GridI):-
+print_grid_ansi(SH,SV,EH,EV,GridII):- make_bg_visible(GridII,GridI),
  must_det_ll((
   nl_if_needed, 
   %maybe_grid_numbervars(GridI,Grid),
@@ -1240,7 +1267,7 @@ print_grid_ansi(SH,SV,EH,EV,GridI):-
         (once(print_gw1(CG);write('??')));write('?f'))))),
      write(' |')))),
   nl_if_needed,!,
-  once((dash_uborder_no_nl(DBW))))), 
+  once((dash_uborder_no_nl(DBW),write(''))))), 
   nop((    
      (( \+ ground(GridI));sub_var(wbg,GridI);sub_var(bg,GridI);sub_var(wfg,GridI);sub_var(fg,GridI)),
       grid_colors(GridI,CGrid),

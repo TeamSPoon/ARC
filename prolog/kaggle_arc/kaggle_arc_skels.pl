@@ -44,11 +44,25 @@ get_fill_points2(Grid,FillPoints):-
 
 %:- set_prolog_flag(occurs_check,error).
 
-  
+maybe_make_bg_visible(In,Grid):- make_bg_visible(In,Grid),!,In\=@=Grid.
+
+make_bg_visible(In,Grid):- duplicate_term(In,In0),subst001(In0,blue,'#6666FF',M),make_bg_visible_b(M,Grid).
+make_bg_visible_b(In,Grid):- is_grid(In),!,mapgrid(make_bg_visible_c,In,Grid).
+make_bg_visible_b(In,Grid):- is_list(In),!,maplist(make_bg_visible_b,In,Grid).
+make_bg_visible_b(In,Grid):- var(In),!,Grid=In.
+make_bg_visible_b(C-P,CC-P):- !, make_bg_visible_c(C,CC).
+make_bg_visible_b(In,Grid):- make_bg_visible_c(In,Grid).
+make_bg_visible_c(In,'#104010'):- plain_var(In),!.
+make_bg_visible_c(In,In):- var(In),!.
+make_bg_visible_c(In,Grid):- get_black(Black),subst001(In,Black,'#301030',Grid).
+
+
+
+
 get_fill_points(In,UNFP,GridO):-
  must_det_ll((
  %grid_size(Grid,H,V),
- get_black(Black),subst001(In,Black,wbg,Grid),
+ make_bg_visible(In,Grid),
  %print(In=Grid),
  neighbor_map(Grid,GridO), 
  localpoints(GridO,NPS),  

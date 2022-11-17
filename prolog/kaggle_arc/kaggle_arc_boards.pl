@@ -48,8 +48,9 @@ print_ref(G):- format('~N'),write_canonical(G),format('.~n'),!.
 
 clsbake:- nop(clsmake).
 
+compile_and_save_test:- update_and_fail,fail.
 compile_and_save_test:- get_pair_mode(entire_suite),!,clsbake, forall_count(all_arc_test_name(TestID),time(compile_and_save_test(TestID))).
-compile_and_save_test:- clsbake, get_current_test(TestID),time(compile_and_save_test(TestID)).
+compile_and_save_test:- get_current_test(TestID),time(compile_and_save_test(TestID)).
 
 gen_gids:- wdmsg(start(gen_gids)),forall(all_arc_test_name(TestID),gen_gids(TestID)),wdmsg(end(gen_gids)).
 gen_gids(Mask):-
@@ -108,10 +109,10 @@ individuate_pair_here(TestID,Trn+N1,In,Out):-
 show_reduced_io_rarely(_):-!.
 show_reduced_io_rarely(IO):- forall(show_reduced_io(IO),true).
 
-print_testinfo_extended:- 
-  get_current_test(TestID),print_testinfo_extended(TestID).
+print_info_for_test:- 
+  get_current_test(TestID),print_info_for_test(TestID).
 
-print_testinfo_extended(TestID):- 
+print_info_for_test(TestID):- 
   my_time(print_testinfo(TestID)),
   with_test_pairs(TestID,ExampleNum,I,O,
     (print_side_by_side(green,I,orig_in(TestID,ExampleNum),_,O,orig_out(TestID,ExampleNum)),

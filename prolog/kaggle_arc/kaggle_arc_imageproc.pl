@@ -170,16 +170,16 @@ shoot_ray(ColorTrail,Origin,Dir,Color,Fuel,Width,WidenSpeed,Skip,ColorRules,G0,G
 
 trim_to_square(G0,G9):- get_bgc(BG),
   into_grid(G0,G),
-  trim_unused_vert_square(BG,G,G1),
-  trim_unused_vert_square(BG,G1,G2),
-  trim_unused_vert_square(BG,G2,G3),
-  trim_unused_vert_square(BG,G3,G9).
+  trim_unused_vert_square_rot90(BG,G,G1),
+  trim_unused_vert_square_rot90(BG,G1,G2),
+  trim_unused_vert_square_rot90(BG,G2,G3),
+  trim_unused_vert_square_rot90(BG,G3,G9).
 
-  trim_unused_vert_square(_,[],[]).
+  trim_unused_vert_square_rot90(_,[],[]).
   %trim_unused_vert_square(_,_,GridO,GridO):-grid_size(GridO,H,W),H=W,!.
-  trim_unused_vert_square(BG,[Row|Grid],Grid90):- maplist(is_bg_or_var(BG),Row),rot90(Grid,[Col|Grid90]),
+  trim_unused_vert_square_rot90(BG,[Row|Grid],Grid90):- maplist(is_bg_or_var(BG),Row),rot90(Grid,[Col|Grid90]),
      maplist(is_bg_or_var(BG),Col).
-  trim_unused_vert_square(_,G1,Grid90):- rot90(G1,Grid90).
+  trim_unused_vert_square_rot90(_,G1,Grid90):- rot90(G1,Grid90).
 
 
 trim_v_repeats(G0,G9):- \+ is_list(G0),into_grid(G0,G1),!,trim_v_repeats(G1,G9).
@@ -329,11 +329,9 @@ subst_color(Color1,Color2,Grid,NewGrid):-
 equal_color(Color,Color).
 
 remove_color(Color,In0,Out):-
- duplicate_term(In0,In),
- copy_term(In0,In),
+ duplicate_term(In0,In),copy_term(In0,In),
  remove_color0(Color,In,Out0),!,
-  duplicate_term(Out0,Out),
-  copy_term(Out0,Out),
+ duplicate_term(Out0,Out),copy_term(Out0,Out),
  nop((print_side_by_side(silver,In,remove_color,_,Out,c(Color)))),!.
 
 
@@ -375,11 +373,12 @@ set_all_bg_colors(Color,Grid,NewGrid):- is_grid(Grid),!,mapgrid(set_all_bg_color
 set_all_bg_colors(Color,Grid,NewGrid):- is_list(Grid),!,maplist(set_all_bg_colors(Color),Grid,NewGrid).
 set_all_bg_colors(Color,Grid,NewGrid):- map_pred(do_set_all_bg_colors(Color),Grid,NewGrid).
 
+dont_duplicate_term(G,G).
 
 %do_set_all_fg_colors(Color,CPoint,NewCPoint):- is_cpoint(CPoint),CPoint=C-Point,hv_point(_,_,Point),is_fg_color(C),NewCPoint=Color-Point.
 
 blur(Op,G,GG):- blur_or_not(Op,G,GG), is_a_change(G,GG).
-blur_or_not(Op,G0,GG):- into_grid(G0,GD),duplicate_term(GD,G),grid_call(Op,G,GGG),mapgrid(replace_non_fg,GGG,G,GG).
+blur_or_not(Op,G0,GG):- into_grid(G0,GD),dont_duplicate_term(GD,G),grid_call(Op,G,GGG),mapgrid(replace_non_fg,GGG,G,GG).
 
 replace_non_fg(C,Black,C):- \+ is_fg_color(Black),!.
 replace_non_fg(_,C,C).
@@ -639,7 +638,7 @@ grid_size_nd([L],H,(1)):- (plain_var(L)->between(1,36,H);true), length(L,H).
 points_to_grid(Points,Grid):- is_grid(Points),!,must_det_ll(Grid=Points).
 points_to_grid(Points,Grid):- is_points_list(Points), !, must_det_ll(grid_size(Points,H,V)), !, points_to_grid(H,V,Points,Grid).
 points_to_grid(Points,Grid):- must_det_ll(grid_size(Points,H,V)), !, points_to_grid(H,V,Points,Grid).
-%points_to_grid([Points|More],Grid):- is_grid(Points),grid_size(Points,H,V),duplicate_term(Points,Grid),calc_add_points(H,V,Grid,More),!.
+%points_to_grid([Points|More],Grid):- is_grid(Points),grid_size(Points,H,V),dont_duplicate_term(Points,Grid),calc_add_points(H,V,Grid,More),!.
 %points_to_grid(Points,Grid):- is_points_list(Points),!,points_to_grid(30,30,Points,Grid).
 
 points_to_grid(H,V,Points,Grid):- var(H),var(V),must_det_ll(grid_size(Points,H,V)),!,points_to_grid0(H,V,Points,Grid).

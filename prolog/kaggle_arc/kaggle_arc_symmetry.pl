@@ -683,7 +683,7 @@ blur_least(B,Mix,I,O):-
 */
 blur_list(B,Mix,I,S):-
   findall(O-pp(blur_some(B,Mix)),blur_some(B,Mix,I,O),L),
-  print_side_by_side(L),
+  %print_side_by_side(L),
   predsort(sort_on(/*pointy_mass*/ change_count(I)),L,S).
 
 change_count(I,G,Changes):- arg(_,G,E), is_grid(E),!,count_changes(I,E,0,Changes).

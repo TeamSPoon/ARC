@@ -91,7 +91,7 @@ object_grid_to_str(Obj,Str,Title):-
   (is_grid(GridO)-> grid_size(GridO,IH,IV) 
      ; (LG==local -> (IH=H,IV=V) ; grid_size(Obj,IH,IV))),
 
-  get_black(Black),subst001(GridO,Black,wbg,GridOO),
+  make_bg_visible(GridO,GridOO),
   wots(GS,(print_grid(IH,IV,GridOO))),
 
   replace_in_string(['®'=Glyph,'@'=Glyph],GS,GSS),
@@ -110,14 +110,7 @@ debug_as_grid(Why,R):- atom(R), atom_contains(R,'_'), pp_parent([LF|_]), \+ (LF=
   resolve_reference(R,Var), R\==Var, \+ plain_var(Var),!, 
   write(' '), writeq(R), write(' /* '), debug_as_grid(Why,Var), write(' */ ').
 
-/*
-     localpoints_include_bg(Grid,GridO),
-*/
-debugged_object_grid(Grid,GridO):- object_grid(Grid,GridO).
-%debugged_object_grid(Grid,GridO):- global_grid(Grid,GridO).
-debugged_object_grid(Grid,GridOO):- 
-  localpoints_include_bg(Grid,GridO),  
-  get_black(Black),subst001(GridO,Black,wbg,GridOO).
+
 
 %debug_as_grid(Why,R):- resolve_reference(R,Var)-> R\==Var, write(' ( '), writeq(R),write(' , '),debug_as_grid(Why,Var),write(' )'),!.
 debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
@@ -132,8 +125,7 @@ debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
      ignore(IV=V),ignore(IH=H),
      localpoints_include_bg(Grid,GridOM),
      points_to_grid(H,V,GridOM,GridO),
-     get_black(Black),
-     subst001(GridOM,Black,wbg,PrintGrid),    
+     make_bg_visible(GridOM,PrintGrid),    
      copy_term(PrintGrid,PrintGridC),
      into_ngrid(PrintGridC,NGrid),
      %wots(GS,print_grid(IH,IV,Title,PrintGridC)),replace_in_string(['®'=Glyph,'@'=Glyph],GS,GSS),
@@ -149,7 +141,7 @@ debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
      locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Grid))))),
      format('~N'),dash_chars(15))),!.
 
-debug_as_grid(  I,   A):- is_1gridoid(A), !, get_black(Black), subst001(A,Black,'wbg',AA), print_grid(I,AA).
+debug_as_grid(  I,   A):- is_1gridoid(A), !, make_bg_visible(A,AA), print_grid(I,AA).
 debug_as_grid( '',Grid):- !, pp(Grid).
 debug_as_grid(Why,Grid):- pp(debug_as_grid(Why,Grid)).
   
@@ -240,7 +232,7 @@ is_open_list([_|T]):-!,is_open_list(T).
 debug_indiv_obj(Obj):- Obj = obj(A), nonvar(A),!,debug_indiv_obj(A).
 debug_indiv_obj(Props):- is_open_list(Props),!,must_det_ll((append(Props,[],CProps),!,debug_indiv_obj(CProps))).
 debug_indiv_obj(AS):- 
- maplist(must_det_ll,[
+ must_det_ll((
   Obj = obj(AS),
   %ignore((o2g(Obj,GGG), nonvar(GGG),set_glyph_to_object(GGG,Obj))),
  % will_show_grid(Obj,TF),
@@ -268,7 +260,7 @@ debug_indiv_obj(AS):-
   ignore(( TF==true, amass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
   ignore(( fail, amass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
   %pp(Props),
-  ignore(( TF==true,dash_chars))]),!.
+  ignore(( TF==true,dash_chars)))),!.
 
 write_indented_list(F,WQS):- format(F),wqs(WQS).
 

@@ -1154,10 +1154,10 @@ unused_proportion1(_Obj1,Obj2,Obj2):- var(Obj2),!.
 %proportional(Obj1,Obj2,Obj3):- unused_proportion1(Obj1,Obj2,Obj3),!.
 proportional(A2,B2,List):- maybe_reorder_pair(A2,B2,A3,B3), !, proportional(A3,B3,List).
 proportional(L1,L2,List):- non_grid_list(L1),non_grid_list(L2),!,must_det_ll(proportional_lists(L1,L2,List)).
-proportional(size2D(H1,V1),size2D(H2,V2),size2D(H,V)):- proportional_size(H1,H2,H),proportional_size(V1,V2,V).
-proportional(size2D(V1,H1),size2D(H2,V2),size_inv(H,V)):- proportional_size(H1,H2,H),proportional_size(V1,V2,V).
-proportional(size2D(H1,V1),size2D(H2,V2),area(HV)):- !, HV1 is H1*V1, HV2 is H2*V2, proportional_size(HV1,HV2,HV).
+proportional(size2D(H1,V1),size2D(H2,V2),HV):- proportional_size2D(H1,V1,H2,V2,HV).
 proportional(loc2D(H1,V1),loc2D(H2,V2),loc2D(H,V)):- !, proportional_loc(H1,H2,H),proportional_loc(V1,V2,V).
+proportional(loc2G(H1,V1),loc2G(H2,V2),loc2G(H,V)):- !, proportional_loc(H1,H2,H),proportional_loc(V1,V2,V).
+proportional(center2G(H1,V1),center2G(H2,V2),center2G(H,V)):- !, proportional_loc(H1,H2,H),proportional_loc(V1,V2,V).
 proportional(colors(H1),colors(H2),color_changes(H)):- !, proportional_lists(H1,H2,H).
 %proportional(cc(N1,C),cc(N2,C),cc(H,C)):- !, proportional_size(N1,N2,H).
 proportional(N1,N2,N):- number(N1),number(N2),!,proportional_size(N1,N2,N).
@@ -1239,10 +1239,30 @@ extract_vals(V2,[V2]).
 maybe_extract_values(Color,Values):- must_be_free(Values), compound(Color), Color=..[DF,vals(Values)|_],diff_f(DF),!,is_list(Values),!.
 maybe_extract_value(Color,Value):- maybe_extract_values(Color,Values),!,member(Value,Values).
 
+
+proportional_width(W1,W2,How):- W2=@=W1,!, How = (=).
+proportional_width(W1,W2,How):- W1>W2, !, proportional_width(W2,W1,IHow), How = o_i_swap(IHow).
+proportional_width(W1,W2,How):- pw5(W1,W2,0,0,N1,N2),How=ratio_of(N1,N2).
+proportional_width(W1,W2,How):- pw5(W1,W2,2,0,N1,N2),How=bordered_inner(N1,N2).
+proportional_width(W1,W2,How):- pw5(W1,W2,-1,1,N1,N2),How=ttt_outter(N1,N2).
+proportional_width(W1,W2,How):- pw5(W1,W2,1,1,N1,N2),How=gridded_outter(N1,N2).
+proportional_width(W1,W2,How):- pw5(W1,W2,2,0,N1,N2),How=bordered_outter(N1,N2).
+pw5(W1,W2,Upper,Lower,N1,N2):- N2 is (W2-Upper), N1 is (W1+Lower), 0 is N2 rem N1.
+
+
+
+proportional_size2D(H1,V1,H2,V2,size2D(How1,How2)):- proportional_width(H1,H2,How1),functor(How1,F,_), 
+                                                     proportional_width(V1,V2,How2),functor(How2,F,_),!.
+proportional_size2D(H1,V1,H2,V2,size(H,V)):- proportional_size(H1,H2,H),proportional_size(V1,V2,V).
+proportional_size2D(V1,H1,H2,V2,size_inv(H,V)):- proportional_size(H1,H2,H),proportional_size(V1,V2,V).
+proportional_size2D(H1,V1,H2,V2,area(HV)):- !, HV1 is H1*V1, HV2 is H2*V2, proportional_size(HV1,HV2,HV).
+
+
+proportional_size(M1,N2,P):- maybe_number(M1,N1),M1\==N1, !, proportional_size(N1,N2,P).
+proportional_size(N1,M2,P):- maybe_number(M2,N2),M2\==N2, !, proportional_size(N1,N2,P).
 proportional_size(N1,N2,P):- unused_proportion(N1,N2,P),!.
-proportional_size(M1,M2, num(vals(Vals),+N,ratio(R))):-
- maybe_number(M1,N1),maybe_number(M2,N2), N is N2-N1, 
- into_vals(M1,M2,Vals),
+proportional_size(N1,N2,num(vals(Vals),+N,ratio(R))):- number(N1),number(N2),!,
+  into_vals(N1,N2,Vals), N is N2-N1,
  (calc_ratio(R,N1,N2)-> true ; catch(R is rationalize(N1/N2),_,true)).
 
 
@@ -1252,6 +1272,10 @@ diff_f(num).
 
 proportional_loc(G1,G2,Out):- unused_proportion(G1,G2,Out),!.
 proportional_loc(N1,N2,moved(N1,N,N2)):- diff_numbers(N1,N2,N).
+
+
+diff_numbers(M1,N2,P):- maybe_number(M1,N1),M1\==N1, !, diff_numbers(N1,N2,P).
+diff_numbers(N1,M2,P):- maybe_number(M2,N2),M2\==N2, !, diff_numbers(N1,N2,P).
 diff_numbers(I,O,0):- I =:= O,!.
 diff_numbers(I,O,diff(-(D))):- I<O,!, D is O -I.
 diff_numbers(I,O,diff(+(D))):- D is I -O.

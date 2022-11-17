@@ -60,6 +60,7 @@ maybe_name_the_pair(In,Out,PairName):-
 
 
 do_ig(ROptions,Grid,IndvS):-
+ must_det_ll((
   into_grid(Grid, GridIn), 
   dash_chars,
   print_grid(GridIn), 
@@ -68,21 +69,23 @@ do_ig(ROptions,Grid,IndvS):-
   dash_chars,
   format("~N~n% ?- ~q.~n~n",[igo(ROptions,ID)]),
   testid_name_num_io(ID,TestID,Example,Num,IO),
-  ig_test_id_num_io(ROptions,GridIn,ID,TestID,Example,Num,IO,IndvS).
+  ig_test_id_num_io(ROptions,GridIn,ID,TestID,Example,Num,IO,IndvS))).
 
 ig_test_id_num_io(ROptions,GridIn,_ID,TestID,trn,Num,in,IndvS):- 
+ must_det_ll((
   In = GridIn,
   kaggle_arc_io(TestID,trn+Num,out,Out),!,
   my_time((maybe_name_the_pair(In,Out,_PairName),
   individuate_pair(ROptions,In,Out,IndvSI,IndvSO),
-  into_iog(IndvSI,IndvSO,IndvS))).
+  into_iog(IndvSI,IndvSO,IndvS))))).
 
 ig_test_id_num_io(ROptions,GridIn,_ID,TestID,_Example,_Num,_IO,IndvS):- 
   set_current_test(TestID),
   my_time(individuate(ROptions,GridIn,IndvS)),!.
   %maplist(add_shape_lib(as_is),IndvS),  
 
-into_iog(InC,OutC,IndvS):- append(InC,OutC,IndvC),!,must_det_ll((IndvC=IndvS)).
+into_iog(InC,OutC,IndvS):- append(InC,OutC,IndvC),!, must_det_ll(list_to_set(IndvC,IndvS)).
+
 into_gio(IndvS,InSO,OutSO):- 
   include(has_prop(giz(g(out))),IndvS,OutC),
   include(has_prop(giz(g(in))),IndvS,InC),
@@ -143,9 +146,13 @@ xfer_zeros(In,Out):-
 
 
 show_individuated_nonpair(PairName,ROptions,GridIn,Grid,InC):-
+ must_det_ll((
+  print_list_of(debug_as_grid,PairName,InC),!,
+  length(InC,Len),
+  pp(show_individuated_nonpair=Len),
   if_t(GridIn\==Grid,
     print_side_by_side(cyan,GridIn,into_grid(PairName),_,Grid,into_grid(result))),
-  print_side_by_side(green,GridIn,grid(PairName),_,InC,indvs(ROptions,PairName)).
+  print_side_by_side(green,GridIn,grid(PairName),_,InC,indvs(ROptions,PairName)))).
   
  
 flatten_set(F,S):- flatten(F,L),list_to_set(L,BF),!,BF=S.
@@ -154,6 +161,7 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):- GridIn==Gri
   into_iog(InC,OutC,IndvS),
   show_individuated_nonpair(PairName,ROptions,GridIn,GridOfIn,IndvS).
 show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):- 
+ must_det_ll((
   dash_chars,
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),
   print_side_by_side(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
@@ -168,7 +176,7 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
     ((InC==OutC, InC==[]) -> progress(yellow,nothing_individuated(PairName)) ;
        show_pair_diff_code(IH,IV,  OH, OV,individuated(ROptions,ID1),individuated(ROptions,ID2),PairName,InC,OutC)),!),
     luser_setval(no_rdot,false)),
-  dash_chars.
+  dash_chars)).
 
 
 
@@ -652,7 +660,7 @@ two_rows(Grid,S1,R1,R2):-
 */  
   
   
-  
+
 
 
 %most_d_colors
@@ -699,6 +707,40 @@ individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
    set_vm(VM))).
 
 % =====================================================================
+is_fti_step(objects_as_grid).
+% =====================================================================
+objects_as_grid(VM):-
+ must_det_ll((
+  ensure_objects(VM),    
+  Objs = VM.objs, % group_to_grid(Objs,Grid), DebugObjs = Objs, confirm_reproduction(Objs,DebugObjs,VM.grid_o),   
+  if_t(is_group(Objs),
+   (group_to_grid(Objs,Grid),
+    set(VM.grid_o)= Grid,
+    set(VM.grid)=_ )),
+  print_grid(VM))),!.
+
+
+% =====================================================================
+is_fti_step(ensure_objects).
+% =====================================================================
+ensure_objects(VM):-
+ must_det_ll((
+  if_t(\+ is_group(VM.objs),
+   individuate(complete,VM)))).
+
+% =====================================================================
+is_fti_step(objects_into_grid).
+% =====================================================================
+objects_into_grid(VM):-
+ must_det_ll((
+  ensure_objects(VM),
+  Objs = VM.objs,
+  group_to_grid(Objs,Grid),
+  %DebugObjs = Objs, confirm_reproduction(Objs,DebugObjs,VM.grid_o),
+  set(VM.grid)=Grid,
+  print_grid(VM))),!.
+
+% =====================================================================
 is_fti_step(sub_individuate).
 % =====================================================================
 sub_individuate(From,SubProgram,VM):-
@@ -720,6 +762,7 @@ grid_to_obj_other(VM):-
 
 % =====================================================================
 :- ensure_loaded(kaggle_arc_individuation_pbox).
+:- ensure_loaded(kaggle_arc_individuation_cbox).
 % =====================================================================
 
 % =====================================================================
@@ -815,6 +858,7 @@ learn_hybrid_shape(Name,ReColored):- is_object(ReColored),!,object_grid(ReColore
 learn_hybrid_shape(Name,ReColored):- into_grid(ReColored,Grid),!,learn_hybrid_shape_grid(Name,Grid).
 
 use_hybrid_grid(In):- In\=[[_]], mass(In,Mass),Mass>2, nop((area(In,AMass),AMass < Mass*2)).
+use_hybrid_grid(In):- In\=[[_]], amass(In,Mass),Mass>2, nop((area(In,AMass),AMass < Mass*2)).
 learn_hybrid_shape_grid(Name,ReColored):- \+ use_hybrid_grid(ReColored),!,ignore((ReColored\=[[_]], print_grid(error(learn_hybrid_shape_grid(Name)),ReColored))),!.
 learn_hybrid_shape_grid(Name,ReColored):- % print_grid(learn_hybrid_shape(Name),ReColored),
   get_current_test(TestID),
@@ -924,9 +968,12 @@ individuation_reserved_options(ROptions,Reserved,Options):-
 :- multifile(prolog:make_hook/2).
 :- dynamic(prolog:make_hook/2).
 
+clear_arc_caches:- luser_getval(extreme_caching,true),!.
+clear_arc_caches:- retractall(individuated_cache(_,_,_,_)).
+
 :- dynamic(individuated_cache/4).
 :- retractall(individuated_cache(_,_,_,_)).
-prolog:make_hook(before, Some):- Some \==[], retractall(individuated_cache(_,_,_,_)), fail.
+prolog:make_hook(before, Some):- Some \==[], forall(clear_arc_caches,true), fail.
 :- luser_default(individuated_cache,true).
 
 :- luser_setval(individuated_cache,true).
@@ -1124,8 +1171,9 @@ into_points_grid(GridIn,Points,Grid):-
    into_grid(GridIn,Grid),!.
 
 do_individuate(VM, ROptions, GridIn,LF):- must_be_free(LF), 
-   into_grid(GridIn,Grid),  grid_to_tid(Grid,ID), %my_assertion(\+ is_grid(ID)),
-   individuate7(VM,ID,ROptions,Grid,LF),!.
+ locally(set_prolog_flag(gc,false),
+   (into_grid(GridIn,Grid),  grid_to_tid(Grid,ID), %my_assertion(\+ is_grid(ID)),
+    individuate7(VM,ID,ROptions,Grid,LF))),!.
    %nop((tid_to_gid(ID,GID), maplist(assert_object_oid(GID),LF,_Glyphs,_OIDs))).
   %smallest_first(amass,IndvS,SF),
   %largest_first(mass,SF,LF),
@@ -1182,7 +1230,6 @@ into_fti(ID,ROptions,GridIn0,VM):-
 
   TID_GID=tid_gid(ID,OID),
   check_tid_gid(TID_GID,Grid),
-  
 
   listify(ROptions,OOptions),
   Area is H*V,
@@ -1633,9 +1680,10 @@ recolor_point(Recolors,_-Point,C-Point):-
 % =====================================================================
 is_fti_step(fg_shapes).
 % =====================================================================
-fg_shaped( BGCs,Cell,Cell):- member(C,BGCs),Cell==C,!.
+fg_shaped( BGCs,Cell,wbg):- member(C,BGCs),Cell==C,!.
 fg_shaped(_BGCs,Cell,wfg):- is_fg_color(Cell),!.
-fg_shaped(_BGCs,Cell,Cell).
+fg_shaped(_BGCs,Cell,Cell):- attvar(Cell),!.
+fg_shaped(_BGCs,Cell,bg):- plain_var(Cell),!.
 %fg_shaped(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
 
 fg_shapes(Shape,VM):-
@@ -2032,7 +2080,7 @@ drops_as_objects(Name,VM):-
 check_tid_gid(TID_GID,_Grid):- 
   %print_grid(TID_GID,Grid), 
   TID_GID=tid_gid(ID,GID),
-  check_tid_gid2(ID,GID).
+  nop(check_tid_gid2(ID,GID)).
 
 check_tid_gid2(OID,GID):- 
  must_det_ll((
@@ -2387,7 +2435,7 @@ maybe_wbg(V,wbg):- var(V),!.
 maybe_wbg(X,X).
 
 unbind_list(L,O):- length(L,N),length(O,N),!.
-texture_grid(In,In2):- get_black(Black),must_det_ll((subst001(In,Black,wbg,Retextured), most_d_colors(Retextured,_CI,In2))).
+texture_grid(In,In2):- must_det_ll((make_bg_visible(In,Retextured), most_d_colors(Retextured,_CI,In2))).
 
 row_not_isnt(LeftN,RightN,C,Row,NewSubRow,NewRow):-
   length(Left,LeftN), length(Right,RightN),
