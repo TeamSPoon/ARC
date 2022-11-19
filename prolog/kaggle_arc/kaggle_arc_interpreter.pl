@@ -284,7 +284,7 @@ back_to_map(Was,Dict,Prev,Grid,Closure,New, Ret):-
   Ret = Dict.
 
 :- if( \+ current_predicate(any_to_ace_str/2)).
-:- include(kaggle_arc_pfc).
+:- include(pfc_3_0/pfc_3_0_0).
 %:- use_module(library(pfc_lib)).
 :- endif.
 

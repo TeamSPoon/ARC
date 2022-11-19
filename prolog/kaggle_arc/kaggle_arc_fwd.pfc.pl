@@ -4,7 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- include(h_muarc_header).
+:- include(kaggle_arc_header).
 
 %%:- module(user).
 
@@ -52,18 +52,18 @@ never_all_free==>cmem(_,_,_).
 never_all_free==>gid_glyph_oid(_,_,_).
 never_all_free==>cindv(_,_,_).
 %never_all_free==>tid_to_gids(_,_).
-%never_all_free==>h_muarc_io(_,_,_,_).
+%never_all_free==>kaggle_arc_io(_,_,_,_).
 ==>awc.
 ==> startAll.
 
 
-startAll_1==>((h_muarc_io(TestID,ExampleNum,IO,G)/((ID=(TestID>ExampleNum*IO)),term_to_oid(ID,GID)))
+startAll_1==>((kaggle_arc_io(TestID,ExampleNum,IO,G)/((ID=(TestID>ExampleNum*IO)),term_to_oid(ID,GID)))
   ==>(tid_to_gids(ID,GID),gid_to_grid(GID,G))).
 
 %tid_to_gids(T,A) :- zwc,!, term_to_oid(T,A).
 startAll ==> startAll_1.
 
-:- include('h_muarc_fwd_sanity.pfc.pl').
+:- include('kaggle_arc_fwd_sanity.pfc.pl').
 
 
 startAll_2==>(process_oid(GID)/( \+ cmem(GID,_,_))==>{assert_id_grid_cells(GID)}).
@@ -103,7 +103,7 @@ arc_test_property(T, common,(comp(o-o, area)), area(n(1, 1, d(0), a(0), r(1))))=
 arc_test_property(T, common,(comp(i-o, area)), area(n(X, X, d(0), a(0), r(1))))/var(X)==> arc_note(T,"output size2D always equal as input").
 %arc_test_property(T, common,(comp(o-o, area)), area(n(X, X, d(0), a(0), r(1))))/nonvar(X)==> arc_note(T,"output size2D always equal as input").
 
-%:- forall_assert(h_muarc_io(TestID,ExampleNum,IO,_),some_grid_tid(TestID>ExampleNum*IO)).
+%:- forall_assert(kaggle_arc_io(TestID,ExampleNum,IO,_),some_grid_tid(TestID>ExampleNum*IO)).
 :- set_prolog_flag(pfc_term_expansion,false).
 
 

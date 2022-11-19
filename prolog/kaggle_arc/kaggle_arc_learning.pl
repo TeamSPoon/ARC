@@ -212,11 +212,13 @@ confirm_reproduction(Objs0,DebugObjs0,ExpectedOut):-
   (Errors==0 -> true; maplist(debug_reproduction(H,V),Objs,DebugObjs)))).
 
 debug_reproduction(H,V,Obj,DObj):- 
+ must_det_ll((
   globalpoints(Obj,Points),
-  print_grid(H,V,Obj,Points),
+  tersify(Obj,Info),
+  print_grid(H,V,Info,Points),
   obj_to_oid(Obj,ID1),
   obj_to_oid(DObj,ID2),
-  pp(dobj(ID1,ID2)=DObj),!.
+  pp(dobj(ID1,ID2)=DObj))),!.
 
 show_result(What,Solution,ExpectedOut,Errors):-
   show_sameness_or_lameness(green,red,What,Solution,ExpectedOut,Errors).

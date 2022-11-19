@@ -27,7 +27,7 @@
             if_arc_expanded/1)).
 
 
-:- include(h_muarc_header).
+:- include(kaggle_arc_header).
 
 
 
@@ -144,7 +144,7 @@ if_arc_expanded_ge(if_arc_expanded(N),if_arc_expanded(N,T)):-
 
 system:goal_expansion(G,O,GE,O):- compound(G),if_arc_expanded_ge(G,GE).
 
-:- include(h_muarc_footer).
+:- include(kaggle_arc_footer).
 
 :- fixup_exports.
 

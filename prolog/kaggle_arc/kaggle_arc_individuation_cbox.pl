@@ -5,6 +5,7 @@
   unless permission or license is granted (contact at business@logicmoo.org)
 */
 
+end_of_file.
 
 %=====================================================================
 is_fti_step(maybe_cbox_vm).
@@ -96,7 +97,7 @@ test_cbox:- test_p2(cbox_pair(_TestID,_What)).
 quick_test_menu(test_cbox).
 
 
-:- set_test_cmd2(cbox_indivs).
+:- set_test_cmd2(print_info_for_test).
 
 cbox_indivs:- 
   with_test_pairs(TestID,ExampleNum,I,O,cbox_pair(TestID,ExampleNum,I,O)).

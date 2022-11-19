@@ -536,6 +536,7 @@ sometimes_assume(P2,X,Y):- ignore(call(P2,X,Y)).
 sometimes_assume(P1,X):- ignore(call(P1,X)).
 
 count_changes(G,R,S,S):- G=@=R,!.
+count_changes(G,R,S,S):- G=R,!.
 count_changes(G,R,S,E):- (\+ is_list(G), \+ is_list(R)),!,plus(S,1,E).
 count_changes(G,R,S,E):- (\+ is_list(G) ; \+ is_list(R)),!,plus(S,10_000,E).
 count_changes([G|Grid],[R|RepairedResult],S,E):-
@@ -676,6 +677,46 @@ blur_least(B,Mix,I,O):-
 blur_least(B,Mix,I,O):-
   blur_list(B,Mix,I,S),
   S=[O-pp(blur_some(B,Mix))|_].
+
+replace_non_fg_least(C,Black,C):- \+ is_fg_color(Black),!.
+replace_non_fg_least(_,C,C).
+
+blur_or_not_least(Op,G0,GG):- 
+  into_grid(G0,GD),duplicate_term(GD,G),
+  grid_call(Op,G,GGG),
+  WHY = blur_or_not_least(Count,Op,GG,OH,OV),
+  findall(WHY, 
+    (between(1,13,IH),OH is IH-7,between(1,13,IV),OV is IV-7,
+      duplicate_term(GGG,GGGO),
+      offset_layover(GGGO,OH,OV,GGGG),
+      mapgrid(replace_non_fg_least,GGGG,G,GG),
+      change_count(G,GG,Count),
+      nop(print_grid(WHY,GG))),L),
+  predsort(sort_on(/*pointy_mass*/ change_count(G)),L,S),
+  S=[WHY|_],
+  print_grid(blur_or_not_least(Count,Op,OH,OV),GG).
+
+offset_layover(GGG,OH,OV,GGGG):-
+  push_downward(GGG,OV,GG), rot90(GG,GG90),
+  push_downward(GG90,OH,GGG90), rot270(GGG90,GGGG).
+
+push_downward(G,OV,NewTop):- OV>0,!,
+  grid_size(G,H,V),
+  make_grid(H,OV,Top),
+  append(Top,G,Grid0),
+  length(NewTop,V),
+  append(NewTop,NewBot,Grid0),!,  
+  mapgrid(==(black),NewBot),
+  mapgrid(=(black),Top).
+push_downward(G,OV,NewBot):- OV<0,!,
+  grid_size(G,H,V),
+  make_grid(H,OV,Bot),
+  append(G,Bot,Grid0),
+  length(NewBot,V),
+  append(NewTop,NewBot,Grid0),!,
+  mapgrid(==(black),NewTop),
+  mapgrid(=(black),Bot).
+push_downward(G,0,G).
 
 /*
 ?- into_grid(t('1b60fb0c')>_*_,I),blur_list(B,Mix,I,O),maplist(print_side_by_side(I),O).

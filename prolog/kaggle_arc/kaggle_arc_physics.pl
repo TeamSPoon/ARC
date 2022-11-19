@@ -173,7 +173,7 @@ apply_transformer(Name,H,V,G,O):-
   get_spatial_xformer(Name,H,V,In,Out),!,
   G=In,O=Out.
 
-get_spatial_xformer(_Name,1,1,In,In):- !.
+%get_spatial_xformer(_Name,1,1,In,In):- !.
 get_spatial_xformer(Name,H,V,In,Out):- xform_cache(Name,H,V,In,Out),!.
 get_spatial_xformer(Name,H,V,In,Out):- 
    make_grid(H,V,In),
@@ -196,6 +196,16 @@ flipD( Grid,NewAnyWUpdate):- any_xform(grid_flipD,Grid,NewAnyWUpdate).
 flipDV( Grid,NewAnyWUpdate):- any_xform(grid_flipDV,Grid,NewAnyWUpdate).
 flipDH( Grid,NewAnyWUpdate):- any_xform(grid_flipDH,Grid,NewAnyWUpdate).
 flipDHV( Grid,NewAnyWUpdate):- any_xform(grid_flipDHV,Grid,NewAnyWUpdate).
+nsew_edges( Grid,NewAnyWUpdate):- any_xform(grid_edges_fresh,Grid,NewAnyWUpdate).
+
+
+grid_edges_fresh(Find,Edges):- must_det_ll((
+  [T|_]=Find,append(_,[B],Find),
+  rot90(Find,Find90),
+  [L|_]=Find90,append(_,[R],Find90), 
+  reverse(B,RB),reverse(R,RR),
+  Edges=[T,RB,RR,L])),!.
+
 
 grid_rot90(Grid,NewAnyWUpdate):-  rot270(GridM,NewAnyWUpdate),rot180(Grid,GridM).
 grid_rot180(Grid,Rot180):- flipV(Grid,Rot90),flipH(Rot90,Rot180).

@@ -384,7 +384,7 @@ individuation_macros(do_ending, [
  find_sees,
  find_overlaps,
  group_vm_priors,
- grid_props,
+ grid_props, 
  %combine_objects,
  end_of_macro]).
 
@@ -407,7 +407,7 @@ individuation_macros(complete, ListO):- im_complete(ListC),
    list_to_set(ListM,ListO),!.
 
 
-%im_complete(ListO):- test_config(indiv(ListO)),\+ is_
+im_complete(ListO):- test_config(indiv(ListO)),!.
 %im_complete(ListO):- ListO=[n_w,all_lines,diamonds,do_ending].
 %im_complete([i_repair_patterns]):- get_current_test(TestID),is_symgrid(TestID),!.
 im_complete(i_complete_generic).
@@ -450,14 +450,15 @@ individuator(i_colormass,[colormass]).
 individuator(i_mono_colormass,[fg_shapes(i_colormass)]).
 individuator(i_nsew,[n_w]).
 individuator(i_mono_nsew,[fg_shapes(i_nsew)]).
-individuator(i_diags,[dg_line(d), dg_line(u), diamonds,all_lines,alone_dots]).
+individuator(i_diags,[colormass]).
 individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), reset_points, by_color(1,black),by_color(1,bg), by_color(1,fg),/* ,*/[]]).
-individuator(i_pbox,[maybe_pbox_vm,i_colormass]).
+individuator(i_sub_pbox,[sub_individuate(pbox_vm)]).
 individuator(i_repair_patterns,[maybe_repair_in_vm(find_symmetry_code)]).
 
 %individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots]).
 
 %individuator(i_abtractions,[fg_abtractions([save_as_obj_group(i_mono_nsew),save_as_obj_group(i_nsew)])]).
+individuation_macros(i_pbox,[maybe_pbox_vm,i_colormass]).
 
 /*
 
@@ -703,8 +704,9 @@ individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
    assert_grid_gid(Grid,NewGID),
    set_vm(VM),!,
    with_global_offset(X,Y,
-    individuate7(_,NewGID,SubProgram,Grid,WasInside)),!,
-   set_vm(VM))).
+    individuate7(_NewVM,NewGID,SubProgram,Grid,WasInside)),!,
+   set_vm(VM))),
+   addObjects(VM,WasInside).
 
 % =====================================================================
 is_fti_step(objects_as_grid).
@@ -1171,7 +1173,7 @@ into_points_grid(GridIn,Points,Grid):-
    into_grid(GridIn,Grid),!.
 
 do_individuate(VM, ROptions, GridIn,LF):- must_be_free(LF), 
- locally(set_prolog_flag(gc,false),
+ locally(set_prolog_flag(nogc,false),
    (into_grid(GridIn,Grid),  grid_to_tid(Grid,ID), %my_assertion(\+ is_grid(ID)),
     individuate7(VM,ID,ROptions,Grid,LF))),!.
    %nop((tid_to_gid(ID,GID), maplist(assert_object_oid(GID),LF,_Glyphs,_OIDs))).
@@ -3029,12 +3031,13 @@ extends(ShapeType1,VM):-
 
 one_fti(VM,Option):- 
   ( Option \== lo_dots), 
-  ignore((exceeded_objs_max_len(VM), !, set(VM.objs_max_len) is VM.objs_max_len + 2)),
+  ignore((exceeded_objs_max_len(VM), !, set(VM.objs_max_len) is VM.objs_max_len + 2)),  
   one_ifti(VM,Option),!.
 
-one_ifti(VM,_Option):- 
-   \+ exceeded_objs_max_len(VM),
-   ( Option \== lo_dots), 
+one_ifti(VM,Option):- 
+   \+ exceeded_objs_max_len(VM),!,
+   ( Option \== lo_dots),
+   is_thing_or_connection(Option),
    find_one_individual(Option,Indv,VM),
    globalpoints(Indv,IndvPoints),
    meets_indiv_criteria(VM,Option,IndvPoints),
@@ -3043,10 +3046,11 @@ one_ifti(VM,_Option):-
 
 one_ifti(_VM,Option):- is_thing_or_connection(Option),!.
 
-is_thing_or_connection(Option):-allowed_dir(Option,_Dir).
-is_thing_or_connection(connects(_,_)).
-is_thing_or_connection(merge_shapes(_,_)).
-is_thing_or_connection(jumps(_,_)).
+is_thing_or_connection(S):- no_repeats(S,is_thing_or_connection1(S)).
+is_thing_or_connection1(Option):-allowed_dir(Option,_Dir).
+is_thing_or_connection1(connects(_,_)).
+is_thing_or_connection1(merge_shapes(_,_)).
+is_thing_or_connection1(jumps(_,_)).
 
 
 find_one_individual(Option,Obj,VM):- find_one_ifti3(Option,Obj,VM),!.
@@ -3059,9 +3063,11 @@ find_one_ifti3(Option,Obj,VM):-
     copy_term(Option,OptionC),Option=ShapeType,    
     select(C1-HV1,Points,Rest0), \+ free_cell(C1), % non_free_fg(C2), % \+ is_black(C2),
     ok_color_with(C1,C2),ok_color_with(C1,C3),
-    allowed_dir(Option,Dir),adjacent_point_allowed(C2,HV1,Dir,HV2),
+    is_adjacent_point(HV1,Dir,HV2),
+    \+ \+ allowed_dir(Option,Dir),
+    adjacent_point_allowed(C2,HV1,Dir,HV2),
     select(C2-HV2,Rest0,Rest1),
-    points_allowed(VM,Option,[C1-HV1,C2-HV2]),
+    must_det_ll((points_allowed(VM,Option,[C1-HV1,C2-HV2]))),
     %ScanPoints = Rest1,
     ((adjacent_point_allowed(C3,HV2,Dir,HV3),select(C3-HV3,Rest1,ScanPoints));
      (allowed_dir(Option,Dir2),Dir2\=Dir, adjacent_point_allowed(C3,HV2,Dir2,HV3),select(C3-HV3,Rest1,ScanPoints))),    
@@ -3088,7 +3094,6 @@ point_allowed(Nil,_Shape,_Point):- \+ Nil\=[], !.
 point_allowed(VM,Shape,Point):- is_vm(VM),!,point_allowed(VM.points_o,Shape,Point).
 point_allowed(VM,ShapeL,Point):- is_list(ShapeL),member(Shape,ShapeL),point_allowed(VM,Shape,Point),!.
 point_allowed(VM,Shape,Point):- point_allowed0(VM,Shape,Point).
-
 
 point_allowed0(From,Shape,C-HV):- 
   findall(Dir, (is_adjacent_point(HV,Dir, HV2),\+ is_diag(Dir), member(C-HV2,From)),NonDiags),
@@ -3122,7 +3127,6 @@ find_one_ifti2(Option,Obj,VM):-
   raddObjects(VM,Obj),
   cycle_back_in(VM,OptionC),!.
 
-
 find_one_ifti2(Option,Obj,VM):- 
     Points = VM.points,
     %H = VM.h, V = VM.v, ID = VM.id,
@@ -3155,8 +3159,9 @@ shape_min_points(_VM,Shape,MinShapeO):-shape_min_points0(Shape,MinShapeO).
 % shape_min_points0(colormass,[_,_,_,_,_|_]):-!.
 %shape_min_points0(n_w,[_,_,_]):-!,fail.
 shape_min_points0(nsew,[_,_,_,_|_]):-!.
-%shape_min_points0(diamonds,[_,_,_,_|_]):-!.
+shape_min_points0(diamonds,[_,_,_,_|_]):-!.
 shape_min_points0(_,[_,_|_]).
+shape_min_points0(_,_).
 %  shape_min_points(VM,_,_).
 
 :- luser_default(color_mode,monochrome).

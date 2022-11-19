@@ -669,10 +669,12 @@ calc_add_points0(OH,OV,Grid,Obj):- trace,globalpoints(Obj,Points),!,maplist(calc
 %calc_add_points(_OH,_OV,_,obj(_)):-
 
 %add_h_v_c(Grid,H,V,C):- plain_var(C),!,nop(add_h_v_c(Grid,H,V,C)).
-add_h_v_c(Grid,H,V,C):-
- odd_failure(( hv_c_value(Grid,Was,H,V),
- (Was=C->true;(nth1(V,Grid,Row),nb_set_nth1(H,Row,C),!,nb_set_nth1(V,Grid,Row))))),!.
-add_h_v_c(Grid,H,V,C):- nth1(V,Grid,Row),nb_set_nth1(H,Row,C),nb_set_nth1(V,Grid,Row),!.
+add_h_v_c(Grid,H,V,C):- fail,
+ odd_failure(( 
+   hv_c_value(Grid,Was,H,V), 
+      (Was=C->true;(nth1(V,Grid,Row),nb_set_nth1(H,Row,C),nb_set_nth1(V,Grid,Row))))),!.
+
+add_h_v_c(Grid,H,V,C):- nth1(V,Grid,Row),ignore((nth1(H,Row,C))),nb_set_nth1(H,Row,C),nb_set_nth1(V,Grid,Row),!.
 add_h_v_c(Grid,H,V,C):- trace,nth1(V,Grid,Row),nb_set_nth1(H,Row,C),nb_set_nth1(V,Grid,Row).
 
 copy_cells(B,A,H,HH):- call(B,H),!,call(A,HH).

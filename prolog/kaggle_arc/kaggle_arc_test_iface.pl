@@ -378,7 +378,7 @@ get_test_cmd(Mode):- luser_getval('cmd',Mode).
 set_test_cmd2(Mode):- luser_setval('cmd2',Mode).
 get_test_cmd2(Mode):- luser_getval('cmd2',Mode).
 
-:- set_test_cmd2(pbox_indivs).
+:- set_test_cmd2(print_info_for_test).
 %set_pair_cmd(Mode):- luser_setval('tc_cmd',Mode).
 %get_pair_cmd(Mode):- luser_getval('tc_cmd',Mode).
 
@@ -590,7 +590,7 @@ system:save_last_test_name_now:- muarc:arc_settings_filename(Filename),
 
 muarc:arc_settings_filename(Filename):- muarc:arc_settings_filename1(File), 
   (exists_file(File) -> (Filename=File) ; absolute_file_name(File,Filename,[access(append),file_errors(fail),expand(true)])).
-muarc:arc_settings_filename1('current_test').
+muarc:arc_settings_filename1('muarc_tmp/current_test').
 muarc:arc_settings_filename1('~/.arc_current_test').
 muarc:arc_settings_filename1('/tmp/.arc_current_test').
 
@@ -717,27 +717,28 @@ on_leaving_test(TestID):-
 test_html_file_name(FN):- 
   get_current_test(TestID),
   test_html_file(TestID,This),
-  (This == [] -> FN = [] ; format(atom(FN),'out/kaggle_arc_html/~w',[This])).
+  (This == [] -> FN = [] ; format(atom(FN),'muarc_output/~w',[This])).
 
 %worth_saving(FN):- \+ exists_file(FN),!.
 worth_saving:- test_html_file_name(FN), \+ exists_file(FN), !.
 worth_saving:- test_html_file_name(FN), size_file(FN,Size), Size < 10_000,!.
-worth_saving:- size_file('tee.ansi',Size), Size > 20_000.
+worth_saving:- size_file('muarc_tmp/tee.ansi',Size), Size > 20_000.
 
+:- set_prolog_flag(nogc,false).
 
 begin_tee:- get_current_test(TestID),on_entering_test(TestID),at_halt(exit_tee).
 flush_tee_maybe.
 flush_tee:- ignore((worth_saving -> force_flush_tee ; true)).
 force_flush_tee:-   
   test_html_file_name(FN),
-  ignore((FN \== [], my_shell_format('cat test_links tee.ansi test_links |  ansi2html -a -W -u -m  > ~w',[FN]))).
+  ignore((FN \== [], my_shell_format('tail -2000 muarc_tmp/tee.ansi > muarc_tmp/tee1000.ansi ; cat muarc_tmp/test_links muarc_tmp/tee1000.ansi muarc_tmp/test_links | ansi2html -a -W -u -m  > ~w',[FN]))).
 clear_test_html :-
   test_html_file_name(FN),
-  ignore((FN \== [], my_shell_format('cat /dev/null test_links |  ansi2html -a -W -u -m  > ~w',[FN]))).
-clear_tee:- shell('cat /dev/null > tee.ansi').
+  ignore((FN \== [], my_shell_format('cat /dev/null muarc_tmp/test_links |  ansi2html -a -W -u -m  > ~w',[FN]))).
+clear_tee:- shell('cat /dev/null > muarc_tmp/tee.ansi').
 exit_tee:-  get_current_test(TestID),on_leaving_test(TestID).
 
-write_test_links_file:- notrace((setup_call_cleanup(tell(test_links), write_test_links, told))).
+write_test_links_file:- notrace((setup_call_cleanup(tell('muarc_tmp/test_links'), write_test_links, told))).
 write_test_links:- get_current_test(TestID), write_test_links(TestID).
 write_test_links(TestID):- format('~N'),
   ignore((get_previous_test(TestID,PrevID),write_tee_link('Prev',PrevID))),
@@ -800,7 +801,7 @@ unload_file_term(_,Term):- forall(retract(Term),true),!.
 clear_test_training(TestID):- 
  must_det_ll((
      ignore(( 
-      \+ arc_option(extreme_cache),
+      \+ arc_option(extreme_caching),
       
       test_name_output_file(TestID,File),
       needs_dot_extention(File,'.pl',NewName),
@@ -1491,7 +1492,7 @@ parc11(ExampleNum,OS,TName):-
     print_side_by_side(I,O), format('").\n'),
   ignore((write('%= '), parcCmt(TestID),nl,nl))))).
 
-%color_sym(OS,[(black='°'),(blue='©'),(red='®'),(green=''),(yellow),(silver='O'),(purple),(orange='o'),(cyan= 248	ø ),(brown)]).
+%color_sym(OS,[(black='ï¿½'),(blue='ï¿½'),(red='ï¿½'),(green=''),(yellow),(silver='O'),(purple),(orange='o'),(cyan= 248	ï¿½ ),(brown)]).
 color_sym(OS,C,C):- var(OS),!.
 color_sym(OS,C,Sym):- is_list(C),maplist(color_sym(OS),C,Sym),!.
 color_sym(_,Black,' '):- get_black(B),Black=B.
