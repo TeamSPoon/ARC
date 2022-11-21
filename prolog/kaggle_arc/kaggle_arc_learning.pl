@@ -13,7 +13,7 @@
 
 learned_test:- notrace((get_current_test(TestID),learned_test(TestID))).
 learned_test(TName):- 
-  fix_id(TName,TestID),
+  fix_test_name(TName,TestID),
    format('% ?- ~q. ~n',[learned_test(TName)]),
    %forall(clause(learnt_rule(TestID,A,B,C,D),Body),
     %print_rule(learned_test,learnt_rule(TestID,A,B,C,D):-Body)),

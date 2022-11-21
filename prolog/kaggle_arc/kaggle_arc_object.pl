@@ -920,8 +920,8 @@ object_localpoints0(I,_L,XX):-
    make_localpoints(X,Rot,H,V,PenColors,XX))).
 
 make_localpoints(X,Rot,H,V,PenColors,XX):- 
-     maybe_unrotate_points(H,V,X,Rot,XXX),
-     combine_pen(XXX,PenColors,PenColors,XX),!.
+  must_det_11((   maybe_unrotate_points(H,V,X,Rot,XXX),
+     combine_pen(XXX,PenColors,PenColors,XX) )),!.
 
 maybe_unrotate_points(_,_,X,sameR,XX):- must_be_free(XX),!,X=XX.
 maybe_unrotate_points(H,V,X,Rot,XX):- points_to_grid(H,V,X,Grid),!,unrotate(Rot,Grid,Grid90),localpoints_include_bg(Grid90,XX).
@@ -1478,11 +1478,8 @@ guess_shape_poly(I,0,N,H,V,Colors,Points,square):- N>1,H==V,!.
 guess_shape_poly(I,0,N,H,V,Colors,Points,solid):- N > 1.
 %guess_shape(GH,GV,GridIn,LocalGrid,I,O,N,H,V,Colors,Points,polygon):- O\==0,once(H>1;V>1).
 
-guess_shape(GH,GV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,R):- N>=2, iz_symmetry(GridIn,H,V,N,R).
+guess_shape(GH,GV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,R):- N>=2, iz_symmetry(GridIn,R).
 
-%iz_symmetry(GridIn,H,V,N,R):- N == 2, H==1, 
-iz_symmetry(GridIn,_H,_V,_N,R):-
-  (flipSym_checks(SN,GridIn)*->R=symmetry(SN);R=symmetry(none)).
 
 %guess_shape(GH,GV,GridIn,LocalGrid,I,O,N,H,V,Colors,Points,solidity(A)):- solidity(Points,A).
 %guess_shape(GH,GV,GridIn,LocalGrid,I,O,N,H,V,Colors,Points,Solid):- (is_jagged(Points)->Solid=jagged(true);Solid=jagged(false)).
@@ -1501,47 +1498,54 @@ guess_shape(GH,GV,GridIn,LocalGrid,I,O,N,H,V,Colors,Points,fp(NPoints)):- fail,
   %clumped(ON,COO),!,maplist(arg(1),COO,PAT).
   %points_to_grid(H,V,FGridO,RGridO).
 
+:- style_check(+singleton).
+
 flipSym_checks(Rot90,GridIn):-
   copy_term(GridIn,G,_),!,
   flipSym(Rot90,G).
 
+%iz_symmetry(GridIn,H,V,N,R):- N == 2, H==1, 
+iz_symmetry(GridIn,R):-
+  (flipSym_checks(SN,GridIn)*->R=symmetry(SN);R=symmetry(none)).
 
-
-symmetric_types(Grid,QQ):- findall(Q,(r_p(Q),flipSym_checks(Q,Grid)),QQ).
+symmetric_types(Any,QQ):- into_grid(Any,Grid), 
+  findall(Q,(rot_p(Q),flipSym_checks(Q,Grid)),QQ).
 
 :- meta_predicate(flipSym(-,+)).
-flipSym(  full,Grid):- flipSym(flipH,Grid),flipSym(flipV,Grid), flipSym(rot90,Grid), !.
+flipSym(Rot90,Grid):- \+ground(Rot90),!,rot_p_plus_full(Rot90),flipSym(Rot90,Grid).
+flipSym(  full,Grid):- flipSym(flipH,Grid),flipSym(flipV,Grid), flipSym(rot90,Grid),!.
 flipSym(sym_hv,Grid):- flipSym(flipH,Grid),flipSym(flipV,Grid).
-flipSym(Rot90,Grid):- var(Rot90),!,r_p(Rot90),flipSym(Rot90,Grid).
-flipSym(Rot90,Grid):-  full \== Rot90,sym_hv \== Rot90, transform_list(Rot90,Grid,LocalGridM),Grid=@=LocalGridM.
+flipSym(Rot90,Grid):-  full \== Rot90,sym_hv \== Rot90, grid_call_unbound_p1(rot_p2,Rot90,Grid,LocalGridM),Grid=@=LocalGridM.
 
-transform_list(Rot90,GridIn,GridOut):- var(Rot90),!,r_p2(Rot90),transform_list(Rot90,GridIn,GridOut).
-transform_list(and(A,B),GridIn,GridOut):- !, transform_list(A,GridIn,GridM), transform_list(B,GridM,GridOut).
-transform_list([A],GridIn,GridOut):- !, transform_list(A,GridIn,GridOut).
-transform_list([A|B],GridIn,GridOut):- !, transform_list(A,GridIn,GridM), transform_list(B,GridM,GridOut).
-transform_list(Call,GridIn,GridOut):- call(Call,GridIn,GridOut).
+grid_call_unbound_p1(P1,Rot90,GridIn,GridOut):- var(Rot90),!,call(P1,Rot90),grid_call_unbound_p1(P1,Rot90,GridIn,GridOut).
+grid_call_unbound_p1(P1,and(A,B),GridIn,GridOut):- !, grid_call_unbound_p1(P1,A,GridIn,GridM), grid_call_unbound_p1(P1,B,GridM,GridOut).
+grid_call_unbound_p1(P1,[A],GridIn,GridOut):- !, grid_call_unbound_p1(P1,A,GridIn,GridOut).
+grid_call_unbound_p1(P1,[A|B],GridIn,GridOut):- !, grid_call_unbound_p1(P1,A,GridIn,GridM), grid_call_unbound_p1(P1,B,GridM,GridOut).
+grid_call_unbound_p1(_P1,Call,GridIn,GridOut):- grid_call(Call,GridIn,GridOut).
 
 trim_topside_v(G,GG):- arg(_,v([],[_],[_,_]),L),arg(_,v([],[_],[_,_]),R),append([L,GG,R],G),flipSym_checks(flipV,GG),!.
 trim_topside_v(G,G).
 
-trim_outside(G,GGG):- transform_list([trim_topside_v,rot90,trim_topside_v,rot270],G,GG).
+rot_p_plus_full(full).
+rot_p_plus_full(sym_hv).
+rot_p_plus_full(P):- rot_p(P).
 
-maybe_trim_outside(G,GG):- trim_outside(G,GG),!,G\=@=GG.
+rot_p(and(maybe_trim_outside,P)):- rot_p2(P).
+rot_p(and(maybe_trim_to_rect,P)):- rot_p2(P).
+rot_p(P):- rot_p2(P).
 
-r_p(P):- r_p2(P).
-r_p(and(maybe_trim_outside,P)):- r_p2(P).
-r_p(and(maybe_trim_to_rect,P)):- r_p2(P).
+rot_p2(flipDHV). rot_p2(flipDH). rot_p2(flipDV). rot_p2(flipD). 
+rot_p2(rot90). rot_p2(flipH). rot_p2(flipV). rot_p2(rot180). rot_p2(rot270).
 
 maybe_trim_to_rect(G,GG):- trim_to_rect(G,GG),!,G\=@=GG.
+maybe_trim_outside(G,GG):- trim_outside(G,GG),!,G\=@=GG.
+trim_outside(G,GG):- grid_call([trim_topside_v,rot90,trim_topside_v,rot270],G,GG).
 
-%r_p(P):- r_p1(P).
-%r_p(and(trim_to_rect,P)):- r_p1(P).
-%r_p(and(into_bicolor,P)):- r_p2(P).
+%rot_p(P):- rot_p1(P).
+%rot_p(and(trim_to_rect,P)):- rot_p1(P).
+%rot_p(and(into_bicolor,P)):- rot_p2(P).
 
-%r_p1(and(into_monochrome,P)):- r_p2(P).
-
-r_p2(flipDHV). r_p2(flipDH). r_p2(flipDV). r_p2(flipD). 
-r_p2(rot90). r_p2(flipH). r_p2(flipV). r_p2(rot180). r_p2(rot270).
+%rot_p1(and(into_monochrome,P)):- rot_p2(P).
 
 
 :- dynamic(individuated_cache/3).

@@ -1,8 +1,16 @@
 
-
+ 
 :- discontiguous(is_changeable_param/1).
 :- multifile(is_changeable_param/1).
 :- dynamic(is_changeable_param/1).
+
+:- discontiguous(fav/1).
+:- multifile(fav/1).
+:- dynamic(fav/1).
+
+:- discontiguous(fav/2).
+:- multifile(fav/2).
+:- dynamic(fav/2).
 
 :- discontiguous(ping_indiv_grid/1).
 :- multifile(ping_indiv_grid/1).
@@ -60,6 +68,9 @@
 :- dynamic(individuation_macros/2).
 :- discontiguous(individuation_macros/2).
 :- multifile(individuation_macros/2).
+:- dynamic(individuator/2).
+:- discontiguous(individuator/2).
+:- multifile(individuator/2).
 
 :- system:use_module(library(quasi_quotations)).
 :- system:use_module(library(hashtable)).

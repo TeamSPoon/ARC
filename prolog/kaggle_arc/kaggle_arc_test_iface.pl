@@ -15,8 +15,7 @@ test_menu :- with_webui(menu).
 menu :- write_menu('i').
 
 write_menu(Mode):-
-  get_current_test(TestID),!,
-  print_single_pair(TestID),!,
+  print_single_pair,!,
   write_menu_opts(Mode).
 
 write_menu_opts(Mode):-
@@ -45,11 +44,12 @@ menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),
 menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(cls_z_make,!,ndividuatorO)).
 menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the input/outputs',(cls_z_make,!,ndividuator)).
 menu_cmd1(_,'B','                  or (B)oxes test.',(update_changes,pbox_indivs)).
+menu_cmd1(_,'R','                  or (R)epairs test.',(update_changes,repair_symmetry)).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z_make,!,what_unique)).
 menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z_make,!,compile_and_save_test)).
 menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changes,print_test)).
 menu_cmd1(_,'w','                  or (w)rite the test info',(update_changes,switch_pair_mode)).
-menu_cmd1(_,'X','                  or (e)Xamine the program leared by training',(cls_z_make,print_test,!,learned_test,solve_easy)).
+menu_cmd1(_,'X','                  or  E(X)amine the program leared by training',(cls_z_make,print_test,!,learned_test,solve_easy)).
 menu_cmd1(_,'L','                  or (L)earned program',(learned_test)).
 menu_cmd1(_,'e',S,(Cmd)):- get_test_cmd(Cmd),
       sformat(S,"                  or (e)xecute .................. '~@'",[bold_print(color_print(cyan,Cmd))]).
@@ -60,7 +60,7 @@ menu_cmd1(_,'S','                  or (S)olve confirming it works on training pa
 menu_cmd1(_,'h','                  or (h)uman proposed solution',(human_test)).
 menu_cmd1(_,'r','               Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and (s)olve !',(cls_z_make,fully_test)).
 menu_cmd1(_,'A','                  or (A)dvance to the next test and (r)un it',(cls_z_make,!,run_next_test)).
-menu_cmd1(_,'n','                  or (n)ext test (skipping this one)',(randomize_suite,next_test,print_single_pair)).
+menu_cmd1(_,'n','                  or (n)ext test (skipping this one)',(next_random_test,print_single_pair)).
 menu_cmd1(_,'b','                  or (b)ack to previous test',(previous_test,print_single_pair)).
 menu_cmd1(_,'f','                  or (f)orce a favorite test.',(enter_test)).
 menu_cmd1(_,'~','                  or (PageUp) to begining of suite',(prev_suite)).
@@ -73,10 +73,11 @@ menu_cmd1(r,'i','             Re-enter(i)nteractve mode.',(interact)).
 
 menu_cmd9(_,'m','recomple this progra(m),',(make,menu)).
 menu_cmd9(_,'c','(c)lear the scrollback buffer,',(cls)).
-menu_cmd9(_,'C','(C)all DSL,',(call_dsl)).
+menu_cmd9(_,'C','(C)lear cached test info,',(clear_training,clear_test)).
+menu_cmd9(_,'r','(r)un DSL code,',(call_dsl)).
 menu_cmd9(_,'Q','(Q)uit Menu,',true).
-menu_cmd9(_,'q','(q)uit to shell,',halt(4)). 
-menu_cmd9(_,'D','or (D)ebug/reak to interpreter.',(break)).
+menu_cmd9(_,'^q','(^q)uit to shell,',halt(4)). 
+menu_cmd9(_,'D','or (D)ebug/break to interpreter.',(break)).
 
 
 menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd1(Mode,Key,Mesg,Goal).
@@ -162,15 +163,17 @@ clsR:- flush_tee, !. % once(cls_z).
 enter_test:- repeat, write("\nYour favorite: "), read_line_to_string(user_input,Sel),enter_test(Sel),!.
 
 enter_test(""):- wqnl("resuming menu"), menu,!.
-enter_test(Sel):- atom_string(Name,Sel), fix_test_name(Name,TestID,_),switch_test(TestID),!.
+enter_test(Sel):- fix_test_name(Sel,TestID),switch_test(TestID),!.
 enter_test(Sel):- 
-   catch(read_term_from_atom(Sel,Name,[module(user),double_quotes(string),variable_names(Vs),singletons(Singles)]),_,
+   sformat(SSel,'~q',[Sel]),
+   catch(read_term_from_atom(SSel,Name,[module(user),double_quotes(string),variable_names(Vs),singletons(Singles)]),_,
         (wqnl(['failed to read: ',Sel]),fail)),
         maplist(ignore,Vs),maplist(ignore,Singles),
         Name\==Sel,
-       (fix_test_name(Name,TestID,_) -> true ; (wqnl(['could not read a test from: ',Sel,nl,'try again']),fail)),
-       switch_test(TestID).
-       
+       (fix_test_name(Name,TestID) -> true ; (wqnl(['could not read a test from: ',Sel,nl,'try again']),!,fail)),
+       enter_test(TestID).
+
+
 switch_test(TestID):- wqnl(['Swithing to test: ',TestID]),set_current_test(TestID),print_test.
 
 
@@ -210,17 +213,19 @@ menu_goal(Goal):-
 do_menu_key(-1):- !, arc_assert(wants_exit_menu). 
 do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), arc_assert(wants_exit_menu).
 do_menu_key('?'):- !, write_menu_opts('i').
-do_menu_key('M'):- !, do_menu_key('T').
+do_menu_key('M'):- !, update_changed_files, wdmsg('Recompiled').
 %do_menu_key('W'):- !, set_pair_mode(whole_test).
 do_menu_key('P'):- !, switch_grid_mode,print_test.
 do_menu_key( ''):- !, fail.
 
 do_menu_key('d'):- !, dump_suite.
 
+
 do_menu_key(Num):- number(Num),!, do_test_number(Num),!.
 do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num), number(Num), !, do_test_number(Num),!.
 do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), !, menu_goal(Body).
 do_menu_key(Key):- atom(Key), menu_cmds(_,Key,_,Body), !, menu_goal(Body).
+do_menu_key(Key):- atom(Key), atom_codes(Key,[Code]), Code<27, CCode is Code + 96, atom_codes(CKey,[94,CCode]),!,do_menu_key(CKey).
 
 do_menu_key(Key):- atom(Key), atom_length(Key,1), \+ menu_cmd1(_,Key,_,_),
    char_type(Key,to_upper(LowerKey)),LowerKey\==Key, \+ \+ menu_cmd1(_,LowerKey,_,_),
@@ -231,7 +236,7 @@ do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), once(Codes=[27|_];Codes=[_]
 
 do_menu_key(Key):- maybe_call_code(Key),!.
 do_menu_key(Key):- \+ atom(Key), catch(text_to_string(Key,Str),_,fail),Key\==Str,catch(atom_string(Atom,Str),_,fail),do_menu_key(Atom).
-do_menu_key(Key):- fix_id(Key,TestID),set_current_test(TestID),!,print_test.
+do_menu_key(Key):- true, fix_test_name(Key,TestID),set_current_test(TestID),!,print_test.
 do_menu_key(Key):- atom(Key),atom_codes(Key,Codes),(Codes=[27|_];Codes=[_]),format("~N % Menu did understand '~w' ~q ~n",[Key,Codes]),once(mmake).
 do_menu_key(_).
 
@@ -325,14 +330,18 @@ ndividuatorO(TestID,ExampleNum,In,Out):-
  get_indivs_mode(Complete), ndividuatorO(TestID,ExampleNum,Complete,In,Out).
 
 %show_test_pairs,
-ndividuator:- never_entire_suite, nop(show_test_pairs), get_current_test(TestID),set_flag(indiv,0),
+ndividuator(TestID):- ensure_test(TestID),
+ never_entire_suite, nop(show_test_pairs), set_flag(indiv,0),
  with_test_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)).
-%ndividuatorO:- never_entire_suite,get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,In,Out,(igo(In),igo(Out)).
-ndividuatorO:- never_entire_suite,nop(show_test_grids), get_current_test(TestID),set_flag(indiv,0),
+
+ndividuatorO(TestID):- ensure_test(TestID),
+ never_entire_suite,nop(show_test_grids), set_flag(indiv,0),
  with_test_pairs(TestID,ExampleNum,In,Out,ndividuatorO(TestID,ExampleNum,In,Out)).
 
 
-show_test_pairs:- get_current_test(TestID),set_flag(indiv,0),with_test_pairs(TestID,ExampleNum,In,Out,print_side_by_side(green,In,in(show_test_pairs(TestID>ExampleNum)),_,Out,out(show_test_pairs(TestID>ExampleNum)))).
+show_test_pairs(TestID):- ensure_test(TestID), set_flag(indiv,0),
+  with_test_pairs(TestID,ExampleNum,In,Out,
+   print_side_by_side(green,In,in(show_test_pairs(TestID>ExampleNum)),_,Out,out(show_test_pairs(TestID>ExampleNum)))).
 %show_test_grids:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,Grid,print_grid(show_test_grids(TestID),Grid)).
 
 
@@ -378,7 +387,6 @@ get_test_cmd(Mode):- luser_getval('cmd',Mode).
 set_test_cmd2(Mode):- luser_setval('cmd2',Mode).
 get_test_cmd2(Mode):- luser_getval('cmd2',Mode).
 
-:- set_test_cmd2(print_info_for_test).
 %set_pair_cmd(Mode):- luser_setval('tc_cmd',Mode).
 %get_pair_cmd(Mode):- luser_getval('tc_cmd',Mode).
 
@@ -386,9 +394,9 @@ get_test_cmd2(Mode):- luser_getval('cmd2',Mode).
 kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,G), (((ExampleNum*IO) \= ((tst+_)*out))).
 
 test_grids(TestID,G):- get_pair_mode(entire_suite), !, kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
-test_grids(TestID,G):- get_pair_mode(whole_test), !, ignore(get_current_test(TestID)), kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
-test_grids(TestID,G):- ignore(get_current_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc_io(TestID,ExampleNum,_IO,G).
-with_test_grids(TestID,G,P):- forall(test_grids(TestID,G),my_menu_call((continue_test(TestID),P))).
+test_grids(TestID,G):- get_pair_mode(whole_test), !, ensure_test(TestID), kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
+test_grids(TestID,G):- ensure_test(TestID), some_current_example_num(ExampleNum), kaggle_arc_io(TestID,ExampleNum,_IO,G).
+with_test_grids(TestID,G,P):- forall(test_grids(TestID,G),my_menu_call((ensure_test(TestID),P))).
 
 
 % Hides solution grid from code
@@ -400,13 +408,13 @@ test_pairs(TestID,I,O):- ignore(get_current_test(TestID)), some_current_example_
 
 
 test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(entire_suite), !, kaggle_arc_safe(TestID,ExampleNum,I,O).
-test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(whole_test), !, ignore(get_current_test(TestID)), kaggle_arc_safe(TestID,ExampleNum,I,O).
+test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(whole_test), !, ensure_test(TestID), kaggle_arc_safe(TestID,ExampleNum,I,O).
 test_pairs(TestID,ExampleNum,I,O):- ignore(get_current_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc(TestID,ExampleNum,I,O).
 
-%with_test_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call((continue_test(TestID),P))).
+%with_test_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call((ensure_test(TestID),P))).
 with_test_pairs(TestID,ExampleNum,I,O,P):- 
  forall(test_pairs(TestID,ExampleNum,I,O),
-  my_menu_call((continue_test(TestID),
+  my_menu_call((ensure_test(TestID),
     set_example_num(ExampleNum), 
      call_cleanup(P,flush_tee)))).
 
@@ -483,24 +491,24 @@ next_suite:-
 
 dont_sort_by_hard(test_names_by_fav). dont_sort_by_hard(all_arc_test_name).
 
+test_suite_name(human_t).
+test_suite_name(icecuber_fail).
 test_suite_name(is_symgrid).
 test_suite_name(test_names_by_fav). 
-test_suite_name(human_t).
 test_suite_name(sol_t).
 %test_suite_name(hard_t).
 test_suite_name(key_pad_tests). % test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
-test_suite_name(test_names_by_hard). 
 %test_suite_name(test_names_by_fav_rev). 
 %test_suite_name(test_names_by_hard_rev).
 test_suite_name(all_arc_test_name).
 test_suite_name(icecuber_pass).
-test_suite_name(icecuber_fail).
 test_suite_name(dbigham_train_core).
 test_suite_name(dbigham_eval_pass).
 test_suite_name(dbigham_train_pass).
 test_suite_name(dbigham_personal).
 test_suite_name(dbigham_fail).
 test_suite_name(TS):- dir_test_suite_name(TS).
+test_suite_name(test_names_by_hard). 
 
 
 :- dynamic(muarc_tmp:cached_tests/2).
@@ -558,8 +566,7 @@ test_suite_info_1(SuiteX,TestID):-
 
 previous_test:-  get_current_test(TestID), get_previous_test(TestID,NextID), set_current_test(NextID).
 next_test:- get_current_test(TestID), notrace((get_next_test(TestID,NextID), set_current_test(NextID))),!.
-random_test:-  randomize_suite, next_test.
-  %notrace((get_random_test(NextID), set_current_test(NextID), print_qtest(NextID))),!.
+next_random_test:-  randomize_suite, next_test.
 is_valid_testname(TestID):- nonvar(TestID), kaggle_arc(TestID,_,_,_).
 
 report_test:- report_suite, print_qtest.
@@ -608,12 +615,19 @@ really_set_current_test(TestID):-
 
 some_current_example_num(_):- get_pair_mode(whole_test), !.
 some_current_example_num(_):- get_pair_mode(entire_suite), !.
-some_current_example_num(TrnN):- get_example_num(TrnN),!.
-some_current_example_num(TrnN):- TrnN = trn+0, set_example_num(TrnN),!.
-some_current_example_num(TrnN):- ignore(get_example_num(TrnN)),set_example_num(TrnN),!.
+some_current_example_num(TrnN):- foc_current_example_num(TrnN).
+
+foc_current_example_num(TrnN):- get_example_num(TrnN),!.
+foc_current_example_num(TrnN):- TrnN = trn+0, set_example_num(TrnN),!.
+foc_current_example_num(TrnN):- ignore(get_example_num(TrnN)),set_example_num(TrnN),!.
+
+
+current_test_example(TestID,ExampleNum):- get_current_test(TestID),
+  must_det_ll(first_current_example_num(ExampleNum)).
 
 get_example_num(TrnN):- nb_current(example,TrnN),ground(TrnN),TrnN\==[],!.
 get_example_num(TrnN):- luser_getval(example,TrnN),ground(TrnN),TrnN\==[],!.
+
 set_example_num(TrnN):- luser_setval(example,TrnN).
 
 first_current_example_num(TrnN):- some_current_example_num(TrnN),ground(TrnN),TrnN\==[],get_current_test(TestID),kaggle_arc(TestID,TrnN,_,_),!.
@@ -691,7 +705,6 @@ write_tee_link(W,TestID):-
  format('<p/> <a href="~w">~w ~w</a> ',[This,W,This]).
 
 
-continue_test(TestID):- ignore(( is_valid_testname(TestID), set_current_test(TestID))).
 
 on_entering_test(TestID):- is_list(TestID),!,maplist(on_entering_test,TestID).
 on_entering_test(TestID):- 
@@ -739,8 +752,7 @@ clear_tee:- shell('cat /dev/null > muarc_tmp/tee.ansi').
 exit_tee:-  get_current_test(TestID),on_leaving_test(TestID).
 
 write_test_links_file:- notrace((setup_call_cleanup(tell('muarc_tmp/test_links'), write_test_links, told))).
-write_test_links:- get_current_test(TestID), write_test_links(TestID).
-write_test_links(TestID):- format('~N'),
+write_test_links(TestID):- ensure_test(TestID), format('~N'),
   ignore((get_previous_test(TestID,PrevID),write_tee_link('Prev',PrevID))),
   ignore((((luser_getval(prev_test_name,AltPrevID),AltPrevID\==PrevID,AltPrevID\==TestID,AltPrevID\=='.'),write_tee_link('AltPrevID',AltPrevID)))),
   ignore(write_tee_link('This',TestID)),
@@ -752,9 +764,8 @@ write_test_links(TestID):- format('~N'),
 
 my_shell_format(F,A):- sformat(S,F,A), shell(S).
 
-save_supertest:- get_current_test(TestID),save_supertest(TestID).
 save_supertest(TestID):- is_list(TestID),maplist(save_supertest,TestID).
-save_supertest(TestID):-   
+save_supertest(TestID):- ensure_test(TestID),   
    test_name_output_file(TestID,File),
    save_supertest(TestID,File).
 save_supertest(TestID,File):- needs_dot_extention(File,'.pl',NewName),!,save_supertest(TestID,NewName).
@@ -767,12 +778,11 @@ save_supertest(TestID,File):-
       close(O)), 
    nop(statistics).
 
-test_name_output_file(TestID,File):- sub_atom_value(TestID,OID),!,atomic_list_concat(['out/',OID,'.ansi'],File).
-
+test_name_output_file(TestID,File):- sub_atom_value(TestID,OID),!,atomic_list_concat(['muarc_cache/',OID,'.ansi'],File).
 
 
 clear_test(TestID):- is_list(TestID),!,maplist(clear_test,TestID).
-clear_test(TestID):- 
+clear_test(TestID):- ensure_test(TestID),
    clear_training(TestID),
    saveable_test_info(TestID,Info),
    erase_refs(Info),
@@ -808,8 +818,7 @@ clear_test_training(TestID):-
       unload_file(File),
       (exists_file(File)->delete_file(File);true))),
 */
- 
-clear_training(TestID):-  
+clear_training(TestID):- ensure_test(TestID),
   %retractall(individuated_cache(_,_,_)),
   set_bgc(_),
   set_flag(indiv,0),
@@ -826,12 +835,6 @@ clear_training(TestID):-
    retractall(grid_nums(_,_)), retractall(grid_nums(_)))),
   nop(retractall(g_2_o(_,_))),!,
   retractall(arc_test_property(TestID,_,_,_)).
-
-
-
-
-
-
 
 
 
@@ -871,15 +874,11 @@ test_id_border(TestID):-
     get_current_test(WasTestID),
     ignore((WasTestID\==TestID,set_current_test(TestID), cmt_border)).
 
+print_whole_test(Name):- fix_test_name(Name,TestID), with_pair_mode(whole_test,print_test(TestID)).
 
-print_test:- notrace((get_current_test(TestID),print_test(TestID))).
-print_whole_test:- notrace((get_current_test(TestID),print_whole_test(TestID))).
-
-print_whole_test(TName):- with_pair_mode(whole_test,print_test(TName)).
-print_test(TName):- 
-  arc_user(USER),
+print_test(TName):-
   fix_test_name(TName,TestID,ExampleNum1),
-  continue_test(TestID),
+  arc_user(USER),  
   %set_example_num(ExampleNum1),
    cmt_border,format('%~w % ?- ~q. ~n',[USER,print_test(TName)]),cmt_border,
    ignore(print_test_hints(TestID)),
@@ -911,7 +910,7 @@ print_qtest:- get_current_test(TestID),print_qtest(TestID).
 :- luser_default('$grid_mode',dots).
 %print_qtest(TestID):- \+ luser_getval('$grid_mode',dots),!,print_test(TestID).
 %print_qtest(TestID):- \+ luser_getval('$grid_mode',dashes),!,print_test(TestID).
-print_qtest(TestID):- \+ get_pair_mode(single_pair), !, print_test(TestID),!.
+print_qtest(TestID):- ensure_test(TestID), \+ get_pair_mode(single_pair), !, print_test(TestID),!.
 print_qtest(TestID):- print_single_pair(TestID),!.
 
 print_single_pair:-
@@ -921,7 +920,7 @@ print_single_pair:-
 print_single_pair(TName):-
  must_det_ll((
   fix_test_name(TName,TestID,ExampleNum),
-  continue_test(TestID),
+  ensure_test(TestID),
   ignore(first_current_example_num(ExampleNum)),
   forall(once(kaggle_arc(TestID,ExampleNum,In,Out)),
        print_single_pair(TestID,ExampleNum,In,Out)),
@@ -952,7 +951,7 @@ all_arc_test_name(TestID):- kaggle_arc(TestID,trn+0,_,_).
 all_suite_test_name(TestID):- get_current_suite_testnames(Set),!,member(TestID,Set).
 
 arc_pair_id(TestID,ExampleNum):- 
-  arc_test_name(TestID),
+  ensure_test(TestID),
  % ignore((luser_getval(example,Example+NumE), Example\==tst , ExampleNum=Example+NumE)),
   kaggle_arc_io(TestID,ExampleNum,in,_).
 
@@ -965,14 +964,22 @@ arc_grid(IO,Grid):-
   arc_pair_id(TestID,ExampleNum),
   kaggle_arc_io(TestID,ExampleNum,IO,Grid).
 
-arc_test_name(TestID):- get_current_test(TestID).
-%arc_test_name(TestID):- get_current_test(WasTestID), (TestID=WasTestID;(get_current_suite_testnames(List),member(TestID,List),WasTestID\== TestID, set_current_test(TestID))).
+ensure_test(TestID,RealTestID):- fix_test_name(TestID,RealTestID),!,ensure_test(RealTestID).
+
+ensure_test(TestID):- nonvar(TestID),!, ignore(( is_valid_testname(TestID), set_current_test(TestID))).
+ensure_test(TestID):- \+ get_pair_mode(enire_suite),!,get_current_test(TestID).
+ensure_test(TestID):- all_tests_current_first(TestID).
+
+all_tests_current_first(TestID):- get_current_test(Test),!,
+ (((TestID=Test);(all_arc_test_name(TestID),TestID\=Test);(set_current_test(Test),!,fail))).
 
 matches(InfoS,InfoS):-!.
 matches(InfoS,InfoM):- member(InfoS,InfoM).
 
 :- abolish(muarc_tmp:test_info_cache,2).
 :- dynamic(muarc_tmp:test_info_cache/2).
+
+print_testinfo(TestID):- ensure_test(TestID), forall(test_info_recache(TestID,F),pp(fav(TestID,F))).
 
 %test_info_no_loop(TestID,Sol):- nonvar(TestID),test_info_recache(TestID,Sol),!.
 test_info_no_loop(TestID,Sol):- muarc_tmp:test_info_cache(TestID,Sol),!. % test_info
@@ -1194,7 +1201,7 @@ test_hints_5(TestID,Trn,N,DictIn,DictOut):-
   (DictM = DictOut)),!.
   
 
-print_test_hints(TestID):- 
+print_test_hints(TestID):- ensure_test(TestID),
   hardness_of_name(TestID,Hard),!,
   write('/*'),
   pp(hard=Hard),
@@ -1372,58 +1379,64 @@ kaggle_arc(t(Name), TypeI, In, Out):-
 kaggle_arc(v(Name), TypeI, In, Out):- 
  member(ExampleNum, [trn, tst]), nth_fact(kaggle_arc_eval(Name, ExampleNum, In, Out), This), once((nth_fact(kaggle_arc_eval(Name, ExampleNum, _, _), Start), I is This - Start, TypeI=ExampleNum-*I)).
 */
+fix_test_name(Try, TestID):- is_valid_testname(Try),!,TestID=Try.
+fix_test_name(Try, TestID):- fix_id_1(Try,   TestID),!.
+fix_test_name(Try, TestID):- testid_name_num_io(Try,TestID,_Example,_Num,_IO).
 
-fix_test_name(V,VV,_):- var(V),!,VV=V.
 fix_test_name(G,T,E):- is_grid(G),!, kaggle_arc_io(T,E,_,GO),GO=@=G.
-fix_test_name(ID,Fixed,Example+Num):- testid_name_num_io(ID,Tried,Example,Num,_), fix_id(Tried,Fixed).
-
+fix_test_name(V,VV,_):- var(V),!,VV=V.
+fix_test_name(ID,Fixed,Example+Num):- testid_name_num_io(ID,Tried,Example,Num,_), fix_test_name(Tried,Fixed).
 
 testid_name_num_io(ID,_Name,_Example,_Num,_IO):- var(ID),!, fail.
 testid_name_num_io(X,TestID,E,N,IO):- is_grid(X),!,kaggle_arc_io(TestID,E+N,IO,G),G=@=X.
 testid_name_num_io(ID,_Name,_Example,_Num,_IO):- is_grid(ID),!, fail.
 testid_name_num_io(ID,_Name,_Example,_Num,_IO):- is_list(ID), \+ maplist(nonvar,ID),!,fail.
 
-testid_name_num_io([V,Name,Example,ANum,IO|_],TestID,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,fix_id(VName,TestID).
-testid_name_num_io(TestID>Example+Num*IO,Name,Example,Num,IO):- !,fix_id(TestID,Name).
-testid_name_num_io(TestID>(Example+Num)*IO,Name,Example,Num,IO):- !,fix_id(TestID,Name).
-testid_name_num_io(TestID>Example+Num,Name,Example,Num,_IO):- !,fix_id(TestID,Name).
-testid_name_num_io(TestID>(Example+Num),Name,Example,Num,_IO):- !,fix_id(TestID,Name).
-testid_name_num_io(ID,Name,Example,Num,IO):- ID = (TestID>((Example+Num)*IO)),!,fix_id(TestID,Name),!.
-testid_name_num_io(ID,Name,Example,Num,IO):- ID = ((TestID>(Example+Num))*IO),!,fix_id(TestID,Name),!.
-testid_name_num_io(ID,Name,Example,Num,IO):- ID = (TestID>(Example+Num)*IO),!,fix_id(TestID,Name),!.
-testid_name_num_io(ID,Name,Example,Num,_IO):- ID = ((TestID>Example)+Num),!,fix_id(TestID,Name),!.
-testid_name_num_io(ID,Name,Example,Num,_IO):- ID = (TestID>Example+Num),!,fix_id(TestID,Name),!.
+testid_name_num_io([V,Name,Example,ANum,IO|_],TestID,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,fix_id_1(VName,TestID).
+testid_name_num_io(TestID>Example+Num*IO,Name,Example,Num,IO):- !,fix_id_1(TestID,Name).
+testid_name_num_io(TestID>(Example+Num)*IO,Name,Example,Num,IO):- !,fix_id_1(TestID,Name).
+testid_name_num_io(TestID>Example+Num,Name,Example,Num,_IO):- !,fix_id_1(TestID,Name).
+testid_name_num_io(TestID>(Example+Num),Name,Example,Num,_IO):- !,fix_id_1(TestID,Name).
+testid_name_num_io(ID,Name,Example,Num,IO):- ID = (TestID>((Example+Num)*IO)),!,fix_id_1(TestID,Name),!.
+testid_name_num_io(ID,Name,Example,Num,IO):- ID = ((TestID>(Example+Num))*IO),!,fix_id_1(TestID,Name),!.
+testid_name_num_io(ID,Name,Example,Num,IO):- ID = (TestID>(Example+Num)*IO),!,fix_id_1(TestID,Name),!.
+testid_name_num_io(ID,Name,Example,Num,_IO):- ID = ((TestID>Example)+Num),!,fix_id_1(TestID,Name),!.
+testid_name_num_io(ID,Name,Example,Num,_IO):- ID = (TestID>Example+Num),!,fix_id_1(TestID,Name),!.
 
 testid_name_num_io(V,TestID,Example,Num,IO):- atom(V), atom_concat(VV,'.json',V),!,testid_name_num_io(VV,TestID,Example,Num,IO).
 testid_name_num_io(ID,Name,Example,Num,IO):- atom(ID),atomic_list_concat(Term,'_',ID), Term\==[ID], 
   testid_name_num_io(Term,Name,Example,Num,IO),!.
 testid_name_num_io(ID,Name,Example,Num,IO):- atom(ID),notrace(catch(atom_to_term(ID,Term,_),_,fail)), Term\==ID, nonvar(Term), 
   testid_name_num_io(Term,Name,Example,Num,IO),!.
-%testid_name_num_io(ID,Name,_Example,_Num,_IO):- atom(ID),!,fix_id(ID,   Name),!.
-testid_name_num_io(ID,Name,_Example,_Num,_IO):- fix_id(ID,   Name),!. %, kaggle_arc_io(Name,Example+Num,IO,_).
+%testid_name_num_io(ID,Name,_Example,_Num,_IO):- atom(ID),!,fix_id_1(ID,   Name),!.
+testid_name_num_io(ID,Name,_Example,_Num,_IO):- fix_id_1(ID,   Name),!. %, kaggle_arc_io(Name,Example+Num,IO,_).
 
 
-
-
-
-fix_id(Tried,   Tried):- var(Tried),!.
-fix_id(X,_):- is_cpoint(X),!,fail.
-fix_id(X,_):- is_cpoints_list(X),!,fail.
-fix_id(X,TestID):- is_grid(X),kaggle_arc_io(TestID,_,_,G),G=@=X.
-fix_id(obj_to_oid(_,X),Fixed):-  !, fix_id(X,Fixed).
-fix_id(Tried,   Tried):- kaggle_arc(Tried,_,_,_),!.
-fix_id(v(Tried),   TriedV):- !, atom_id(Tried,TriedV),!.
-fix_id(t(Tried),   TriedV):- !, atom_id(Tried,TriedV),!.
-fix_id(Tried,   TriedV):- atom_id(Tried,TriedV),!.
+fix_id_1(Tried,   Tried):- var(Tried),!.
+fix_id_1(X,_):- is_cpoint(X),!,fail.
+fix_id_1(X,_):- is_cpoints_list(X),!,fail.
+fix_id_1(X,TestID):- is_grid(X),kaggle_arc_io(TestID,_,_,G),G=@=X.
+fix_id_1(obj_to_oid(_,X),Fixed):-  !, fix_test_name(X,Fixed).
+fix_id_1(Tried,   Tried):- kaggle_arc(Tried,_,_,_),!.
+fix_id_1(v(Tried),   TriedV):- !, atom_id(Tried,TriedV),!.
+fix_id_1(t(Tried),   TriedV):- !, atom_id(Tried,TriedV),!.
+fix_id_1(Tried,   TriedV):- atom_id(Tried,TriedV),!.
 
 %DD2401ED
 atom_id(NonAtom,TriedV):- \+ atom(NonAtom),!,string(NonAtom),atom_string(Tried,NonAtom),atom_id(Tried,TriedV).
-atom_id(Tried,TriedV):- atom_concat(Atom,'.json',Tried),atom_id(Atom,TriedV),!.
-atom_id(Atom,TriedV):- atom_id_e(Atom,TriedV).
+atom_id(Tried,TriedV):- atom_concat(Atom,'.json',Tried),!,atom_id(Atom,TriedV),!.
+atom_id(Atom,TriedV):- atom_id_e(Atom,TriedV),!.
 atom_id(Atom,TriedV):- downcase_atom(Atom,Tried),Atom\==Tried,atom_id(Tried,TriedV).
-%fix_id(Tried,Fixed):- !, fail,compound(Tried),!,arg(_,Tried,E),nonvar_or_ci(E),fix_id(E,Fixed),!.
+%fix_test_name(Tried,Fixed):- !, fail,compound(Tried),!,arg(_,Tried,E),nonvar_or_ci(E),fix_test_name(E,Fixed),!.
 atom_id_e(Tried,t(Tried)):- kaggle_arc(t(Tried),_,_,_),!.
 atom_id_e(Tried,v(Tried)):- kaggle_arc(v(Tried),_,_,_),!.
+atom_id_e(Sel, TestID):- sformat(SSel,'~q',[Sel]),
+   catch(read_term_from_atom(SSel,Name,[module(user),double_quotes(string),variable_names(Vs),singletons(Singles)]),_,
+        (wqnl(['failed to read: ',Sel]),fail)),
+        maplist(ignore,Vs),maplist(ignore,Singles),
+        Name\==Sel,
+       (fix_test_name(Name,TestID,_) -> true ; (wqnl(['could not read a test from: ',Sel,nl,'try again']),fail)).
+
 
 
 
@@ -1433,12 +1446,12 @@ print_eval0:- arc(v('009d5c81')).
 
 
 parcCmt(TName):- 
-  fix_test_name(TName,TestID,_),
+  fix_test_name(TName,TestID),
   %color_print(magenta,call(((grid_hint(TestID))))),
   parcCmt1(TestID).
-parcCmt1(TName):-
+parcCmt1(TName):- 
   ignore((
-  fix_test_name(TName,TestID,_),
+  fix_test_name(TName,TestID),
   kaggle_arc(TestID,(trn+0),In,Out),
   grid_size(In,IH,IV), grid_size(Out,OH,OV),
   IHV = IH*IV, OHV = OH*OV,
@@ -1500,4 +1513,21 @@ color_sym(OS,C,Sym):- color_sym(OS,4,C,Sym).
 color_sym(_,_,C,Sym):- enum_colors(C),color_int(C,I),nth1(I,`ose=xt~+*zk>`,S),name(Sym,[S]).
 %color_sym(P*T,_,C,Sym):- enum_colors(C),color_int(C,I),S is P+I*T,name(Sym,[S]).
 
+
+with_current_test(P1):- get_pair_mode(enire_suite),!,forall(all_tests_current_first(TestID),call(P1,TestID)).
+with_current_test(P1):- ensure_test(TestID), call(P1,TestID).
+
+first_cmpd_goal(GG,_):- \+ compound(GG),!,fail.
+first_cmpd_goal((G,_),G).
+first_cmpd_goal(G,G).
+uses_test_id(P1):- current_predicate(M:F/N),functor(P,F,N),
+                  \+ \+ predicate_property(M:P,number_of_clauses(_)), 
+                   \+ predicate_property(M:P,imported_from(_)),                    
+                   \+ \+ (clause(M:P,GG),first_cmpd_goal(GG,G),compound(G),functor(G,GF,_),
+                          \+ \+ member(GF,[ensure_test,testid_name_num_io,fix_test_name,with_test_grids]),
+                          arg(1,P,Var1),arg(1,G,Var2),Var1==Var2),
+                   N1 is N-1, functor(P1,F,N1),
+                   \+ predicate_property(M:P1,static).
+scan_uses_test_id:- forall((uses_test_id(P1),atom(P1)),assertz_if_new(user:(P1:- with_current_test(P1)))).
+:- scan_uses_test_id.
 :- all_source_file_predicates_are_exported.

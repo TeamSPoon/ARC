@@ -103,7 +103,7 @@ point_to_hvc(C-Point,H,V,C):- must(nonvar(Point)),must(hv_point(H,V,Point)),!.
 %point_ to_hvc(H,V,_,H,V).
 %point_ to_hvc(Inf,Inf,offset_ranges(_,_,_,_)).
 
-
+make_grid(H,V,Grid):- (H<1;V<1),!,wdmsg(make_grid(H,V,Grid)),break,!,fail.
 make_grid(H,V,Grid):- between(1,40,H),between(1,40,V),  % max_min(H,0,HH,_), max_min(V,0,VV,_), %max_min(HH,32,_,HHH),max_min(VV,32,_,VVV),!,    
    ensure_make_grid(H,V,G),G=Grid.
 
@@ -123,7 +123,6 @@ make_lengths(N,L):- length(L,N).
 :- dynamic(make_grid_cache/3).
 make_grid_cache:-
  my_time((forall(s_l_4sides(GH,GV), make_grid(GH,GV,_)))).
-:- make_grid_cache.
 
 insert_row(N,Row,Grid,NewGrid):- grid_size(Grid,H,V), insert_row(N,Row,Grid,H,V,NewGrid).
 insert_row(N,Row,Grid,H,V,NewGrid):- N<0, NewN is V + N+1,!,insert_row(NewN,Row,Grid,H,V,NewGrid).

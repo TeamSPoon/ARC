@@ -9,7 +9,7 @@
 
 area(Obj,Area):- vis2D(Obj,H,V), Area is H * V.
 
-area_or_len(Obj,Area):- is_points_list(Obj),!,length(Obj,Area).
+area_or_len(Obj,Area):- is_points_list(Obj),!,length_safe(Obj,Area).
 area_or_len(Obj,Area):- vis2D(Obj,H,V), Area is H * V.
 
 density(Obj,Density):- area(Obj,Area),amass(Obj,Mass), Density is Mass/Area.
@@ -79,27 +79,31 @@ best_grav_rot_grid(Grid,RotG,Rotated):- must_be_free(Rotated),
     w(W,Rotated,RotG)=Template,
     findall(Template,(flip_Many(RotG,Grid,Rotated),rot_mass(Rotated,W)),Pos),
     sort(Pos,LPos),last(LPos,Template))).
- 
-    
+
+length_safe(L,N):- do_my_check_args(length(L,N)),length(L,N).
+
+do_my_check_args(P):- forall(my_check_args(P),true).
+my_check_args(length(_,N)):- nonvar(N),my_assertion(integer(N)).
+my_check_args(length(L,_)):- nonvar(L),my_assertion(is_list(L)).
 
 rot_mass(Grid,Mass):- 
  into_grid(Grid,LP0), !,
  LP = [C|_],
  must_det_ll(( mapgrid(color_mass_int,LP0,LP),
-    length(C,Len),map_row_size(10,Len,LP,Mass))).
+    length_safe(C,Len),map_row_size(10,Len,LP,Mass))).
 
 rot_mass(Grid,OMass):- into_grid(Grid,LP0), 
  LP = [C|_],
  must_det_ll(( 
   mapgrid(color_mass_int,LP0,LP),
-  length(C,Len),map_row_size(10,Len,LP,Mass),
+  length_safe(C,Len),map_row_size(10,Len,LP,Mass),
    (is_top_heavy(LP)->Bonus is -1; Bonus is 1),
    (is_left_heavy(LP)->Bonus2 is 16 ;Bonus2 is -16),
    OMass is Mass*Bonus*Bonus2)).
 
 map_row_size(_,Len,[],Len):-!.
 map_row_size(N,Len,[Row|Rest],Mass):- is_list(Row),!, 
-   length(Row,Len2), map_row_size(10,Len2,Row,RMass),   
+   length_safe(Row,Len2), map_row_size(10,Len2,Row,RMass),   
    N2 is N * Len,
    map_row_size(N2,Len,Rest,RRMass),
    Mass is RRMass+(RMass*N).
@@ -121,7 +125,7 @@ tips_to_rot(Grid,_H,_V,RotOut,Final):- is_left_heavy(Grid)-> (RotOut=[rot180],ro
 
 is_top_heavy(Grid):- split_50_v(Grid,Top,Bottem),!,rot_mass(Top,TopM),rot_mass(Bottem,BottemM),!,BottemM>TopM.
 is_left_heavy(Grid0):- rot270(Grid0,Grid),!,is_top_heavy(Grid).
-split_50_v(Grid,Top,Bottem):- length(Grid,N),H is floor(N/2), length(Top,H),length(Bottem,H),
+split_50_v(Grid,Top,Bottem):- length_safe(Grid,N),H is floor(N/2), length_safe(Top,H),length_safe(Bottem,H),
     my_append(Top,Rest,Grid),my_append(_Mid,Bottem,Rest).
 
 
@@ -134,8 +138,8 @@ gravity(N,D,G,GR):- var(N),!,ensure_int(N),gravity(N,D,G,GR).
 gravity(1,n,Grid,GridNew):-!,gravity_1_n_0(Grid,GridNew).
 gravity(N,n,Grid,GridNew):-!,gravity_1_n_0(Grid,GridM),(Grid\=@=GridM->(Nm1 is N-1,gravity(Nm1,n,GridM,GridNew));GridNew=GridM).
 gravity(N,s,Grid,GridNew):-!,flipV(Grid,FlipV),gravity(N,n,FlipV,GridM),flipV(GridM,GridNew).
-gravity(N,w,Grid,GridNew):-!,rot90(Grid,GridRot),gravity(N,n,GridRot,GridM),rot270(GridM,GridNew).
-gravity(N,e,Grid,GridNew):-!,rot270(Grid,GridRot),gravity(N,n,GridRot,GridM),rot90(GridM,GridNew).
+gravity(N,w,Grid,GridNew):-!,h_as_v(gravity(N,n),Grid,GridNew).
+gravity(N,e,Grid,GridNew):-!,h_as_rv(gravity(N,n),Grid,GridNew).
 
 gravity_1_n_0([],[]).
 gravity_1_n_0([Row1,Row2|Grid],GridNew):- nth1(Col,Row1,E1),nth1(Col,Row2,E2),
@@ -187,7 +191,8 @@ sameR(X,X).
 test_rot:- test_p2(rot270),test_p2(rot90).
 %srot90V,flipV
 %rot90(A,B):- A==[],!,B=[].
-rot90( Grid,NewAnyWUpdate):- rot180( Grid,M),rot270( M,NewAnyWUpdate).
+%rot90( Grid,NewAnyWUpdate):- rot180( Grid,M),rot270( M,NewAnyWUpdate).
+rot90( Grid,NewAnyWUpdate):- any_xform(grid_rot90,Grid,NewAnyWUpdate).
 rot180( Grid,NewAnyWUpdate):- any_xform(grid_rot180,Grid,NewAnyWUpdate).
 rot270( Grid,NewAnyWUpdate):- any_xform(grid_rot270,Grid,NewAnyWUpdate).
 flipH( Grid,NewAnyWUpdate):- any_xform(grid_flipH,Grid,NewAnyWUpdate).
@@ -376,7 +381,7 @@ find_touches(VM):-
 
 touching_object(How,Dirs,O2,O1):- O1\==O2,
 
-  has_prop(o(Y,LC,_),O1), has_prop(o(Y,LC,_),O2),
+  %has_prop(o(Y,LC,_),O1), has_prop(o(Y,LC,_),O2),
   is_physical_object(O1), is_physical_object(O2),
   %\+ has_prop(birth(glyphic),O2), %\+ has_prop(birth(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
@@ -408,7 +413,8 @@ dir_seeing(Ps1,Ps2,Dir):- member(_-P1,Ps1), is_adjacent_point(P1,Dir,P2), \+ mem
 seeing_dir_soon(P1,_Dir,Ps2):- member(_-P1,Ps2),!.
 seeing_dir_soon(P1,Dir,Ps2):- is_adjacent_point(P1,Dir,P2), seeing_dir_soon(P2,Dir,Ps2).
 
-is_physical_object(O):- has_prop(iz(shape),O).
+is_physical_object(O):- my_assertion(is_object(O)),has_prop(iz(shape),O),!.
+is_physical_object(O):- has_prop(mass(Mass),O),Mass>0.
 
 % ==============================================
 % OVERLAPS
@@ -431,7 +437,9 @@ overlap(overlaping,O2,O1):- O1\==O2,
 % LINKS
 % ==============================================
 
-better_sdir(S,Iv,Dirs,link(S,Iv,[-LO])):- length(Dirs,7),subtract([n,s,e,w,nw,ne,sw,se],Dirs,[LO]).
+%better_sdir(S,Iv,[],link(S,Iv,[c])).
+better_sdir(S,Iv,Dirs,link(S,Iv,Dirs)):- \+ is_list(Dirs),!.
+better_sdir(S,Iv,Dirs,link(S,Iv,[-LO])):-  length_safe(Dirs,7),subtract([n,s,e,w,nw,ne,sw,se],Dirs,[LO]).
 better_sdir(S,Iv,[n,s,e,w,nw,ne,sw,se],link(S,Iv,[c])).
 better_sdir(S,Iv,[n,s,e,w],link(S,Iv,[c])).
 better_sdir(S,Iv,[ne,se],O):- !,better_sdir(S,Iv,[e],O).
@@ -449,20 +457,22 @@ non_overlapping_object_dir(_How,Ps1,Ps2,[overlap]):- member(P1,Ps1), \+ \+ membe
 non_overlapping_object_dir(How,Ps1,Ps2,Dirs):- findall(Dir,(member(Dir,[n,s,e,w,nw,ne,sw,se]),
   once(call(How,Ps1,Ps2,Dir))),Dirs),Dirs\==[].
 
-pred_find_links(How,Objs,NewObjs):- must_det_ll((find_links(How,Objs,Objs,NewObjs))).
+pred_find_links(How,Objs,NewObjs):- 
+  must_det_ll((find_links(How,Objs,Objs,NewObjs))).
 
 link_prop(T,A):- sub_term(A,T),atom(A),!.
 
 find_links(_How,[],_,[]):-!.
-find_links(How,[Obj|ScanNext],OtherObjects,[Obj|ScanRest]):-
+find_links(How,[Obj|ScanNext],OtherObjects,[Obj|ScanRest]):- fail,
   link_prop(How,Prop),
   has_prop(link(Prop,_,_),Obj),!,
   find_links(How,ScanNext,OtherObjects,ScanRest).
 
 find_links(How,[Obj|ScanNext],OtherObjects,[NewObj|ScanRest]):-
+  must_det_ll((
   /*must_det_ll*/(find_links_objects(How,Obj,OtherObjects,DirNewSees)),
   /*must_det_ll*/(override_object(DirNewSees,Obj,NewObj)),
-  /*must_det_ll*/(find_links(How,ScanNext,OtherObjects,ScanRest)).
+  /*must_det_ll*/(find_links(How,ScanNext,OtherObjects,ScanRest)))).
 
 /*
 mention_links(Obj,[],Obj):-!.
@@ -565,7 +575,7 @@ find_contained_points(H,V,ID,[Found|Sofar],[Found|SofarInsteadM],NextScanPoints,
   %once(obj_to_oid(Found,ID,_);grid_to_tid(Grid,ID)),
   individuate(subshape_in_object,ContainedPoints,NewInside),
   mapgroup(mention_inside(Found),NewInside,NewInsideM))),
-  ignore((length(ContainedPoints,N),N>1,quietly(print_grid(H,V,"find_contained_points",[Found|NewInsideM])))),
+  ignore((length_safe(ContainedPoints,N),N>1,quietly(print_grid(H,V,"find_contained_points",[Found|NewInsideM])))),
   find_contained_points(H,V,ID,Sofar,SofarInstead,ScanPointsInstead,NextScanPointsInstead),
   my_append(NewInsideM,SofarInstead,SofarInsteadM).
 find_contained_points(H,V,ID,[Found|Sofar],[Found|SofarInstead],NextScanPoints,NextScanPointsInstead):-

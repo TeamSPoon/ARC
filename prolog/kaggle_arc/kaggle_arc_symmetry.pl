@@ -150,11 +150,13 @@ test_repair_symmetry_ALL:- clsmake, forall(repair_symmetry0,true).
 repair_symmetry0:- 
  forall(
   is_symgrid(TestID), 
-  %arc_test_name(TestID),
+  %ensure_test(TestID),
   ignore(repair_symmetry(TestID))).
-  
+
+repair_symmetry:- get_current_test(TestID),repair_symmetry(TestID).
+
 repair_symmetry(TestID):- \+ is_grid(TestID), 
- fix_id(TestID,TTestID), TTestID \== TestID, repair_symmetry(TestID).
+ fix_test_name(TestID,TTestID), TTestID \== TestID, repair_symmetry(TestID).
 repair_symmetry(TestID):- \+ is_grid(TestID),
  must_det_ll(( \+ \+ kaggle_arc_io_trn(TestID,_,_,_),
  forall(kaggle_arc_io_trn(TestID,_,in,Grid), 
@@ -198,11 +200,11 @@ repair_symmetry_code(Grid,RepairedResult,Code):-
      *-> 
       (if_t(GridS\==[],print_grid(test_RepairedResult,GridS)),
        if_t(Orig\==Grid,print_side_by_side(green,Orig,orig(ID),_,Grid,altered(ID))),
-       print_side_by_side(green,Orig,gridIn(ID),_,RepairedResult,repaired(ID)),
+       print_side_by_side(green,Orig,gridIn(ID),_,RepairedResult,repaired(ID)),       
        print_info_l(GridS),
        Errors = _,
        if_t(is_grid(Out),
-        (count_changes(Out,RepairedResult,0,Errors),
+        (count_changes(_GGGG,Out,RepairedResult,0,Errors),
          if_t(Errors\==0,
            ((mapgrid(changed_grid,Out,RepairedResult,Problem)-> true ; Problem = RepairedResult),
             print_side_by_side(yellow,Problem,unexpected_repairedResult(ID,Errors),_,Out,expected(ID)),
@@ -473,8 +475,8 @@ print_quadrants(Color,Q1,Q2,Q3,Q4):-
 trial_removal(RemovalTrials,Grid3,[E],GridO):- 
   member(E,RemovalTrials),call(E,Grid3,GridO).
 
-pad_left(N,Grid,GridO):- (N==0 -> Grid=GridO ;  (rot270(Grid,GridM), pad_bottem(N,GridM,GridN), rot90(GridN,GridO))).
-pad_right(N,Grid,GridO):-  (N==0 -> Grid=GridO ;  (rot270(Grid,GridM), pad_top(N,GridM,GridN),rot90(GridN,GridO))).
+pad_left(N,Grid,GridO):- (N==0 -> Grid=GridO ;  h_as_v(pad_top(N),Grid,GridO)).
+pad_right(N,Grid,GridO):-  (N==0 -> Grid=GridO ;  h_as_v(pad_bottem(N),Grid,GridO)). 
 pad_top(N,Grid,GridO):-  (N==0 -> Grid=GridO ;  (grid_size(Grid,H,_V),make_grid(H,N,Top),append(Top,Grid,GridO))).
 pad_bottem(N,Grid,GridO):-  (N==0 -> Grid=GridO ;  (grid_size(Grid,H,_V),make_grid(H,N,Bot),append(Grid,Bot,GridO))).
 
@@ -535,19 +537,59 @@ remObjects(_Objs,Before,After):- Before=After,!.
 sometimes_assume(P2,X,Y):- ignore(call(P2,X,Y)).
 sometimes_assume(P1,X):- ignore(call(P1,X)).
 
-count_changes(G,R,S,S):- G=@=R,!.
-count_changes(G,R,S,S):- G=R,!.
-count_changes(G,R,S,E):- (\+ is_list(G), \+ is_list(R)),!,plus(S,1,E).
-count_changes(G,R,S,E):- (\+ is_list(G) ; \+ is_list(R)),!,plus(S,10_000,E).
-count_changes([G|Grid],[R|RepairedResult],S,E):-
-  count_changes(G,R,S,Changes),
-  count_changes(Grid,RepairedResult,Changes,E),!.
-count_changes(L1,L2,S,E):- length(L1,N1),length(L2,N2), plus(S,N1,M), plus(M,N2,E),!.
-count_changes(_,_,S,E):- plus(S,1000,E).
+count_changes( GGGG,L1,L2,Bads,Bad1,Sames,Same1,Goods,Good1):- is_list(L1),is_list(L2), count_changes_list(GGGG,L1,L2,Bads,Bad1,Sames,Same1,Goods,Good1),!.
+count_changes(_GGGG,G,R,Bads,Bad1,Sames,Sames,Goods,Goods):- ( is_list(G) ;  is_list(R)),!,plus(Bads,10_000,Bad1).
+count_changes(_GGGG,G,R,Bads,Bads,Kepts,Kepts,Goods,Goods):- (  plain_var(G),plain_var(R)),!.
+
+count_changes(_CG1-_CG2,_G1-G2,_R1-R2,Bads,Bads,Sames,Sames,Goods,Goods):- is_bg_color(G2),is_bg_color(R2),!.
+
+count_changes(CG1-CG2,G1-G2,R1-R2,Bads,Bad1,Sames,Same1,Goods,Good1):- !,
+  count_changes(CG1,G1,R1,Bads,Bad0,Sames,Same0,Goods,Good0),
+  count_changes(CG2,G2,R2,Bad0,Bad1,Same0,Same1,Good0,Good1).
+
+count_changes(_GGGG,G,R,Bads,Bads,Kepts,Kepts,Goods,Goods):- (is_bg_color(G),is_bg_color(R)),!.
+count_changes(_GGGG,G,R,Bads,Bad1,Kepts,Kepts,Goods,Goods):- (is_fg_color(G),is_bg_color(R)),!,plus(Bads,1,Bad1).
+count_changes(_GGGG,G,R,Bads,Bad1,Kepts,Kepts,Goods,Goods):- (is_fg_color(G),is_fg_color(R),G\=R),!,plus(Bads,2,Bad1).
+count_changes(_GGGG,G,R,Bads,Bads,Kepts,Kepts,Goods,Good1):- (is_bg_color(G),is_fg_color(R)),!,plus(Goods,1,Good1).
+
+count_changes( GGGG,G,R,Bads,Bads,Kepts,Kept1,Goods,Goods):- G=@=R,!,plus(Kepts,1,Kept0),
+                                           (GGGG=@=G->plus(Kept0,2,Kept1);plus(Kept0,0,Kept1)).
+count_changes(_GGGG,_,_,Bads,Bad1,Kepts,Kepts,Goods,Goods):- plus(Bads,1,Bad1).
+/*
+count_changes(GGGG,G,R,Bads,Bads,Kepts,Kepts,Goods,Goods):- (is_bg_color(G),plain_var(R)),!.
+count_changes(GGGG,G,R,Bads,Bads,Kepts,Kept1,Goods,Goods):- (is_fg_color(G),plain_var(R)),!,plus(Kepts,1,Kept1).
+count_changes(GGGG,G,R,Bads,Bads,Kepts,Kepts,Goods,Good1):- (is_fg_color(G),is_fg_color(R), (\+ \+ G=R)),!,plus(Goods,1,Good1).
+count_changes(GGGG,G,R,Bads,Bads,Kepts,Kept1,Goods,Goods):- (plain_var(G),is_bg_color(R)),!,plus(Kepts,1,Kept1).
+count_changes(GGGG,G,R,Bads,Bads,Kepts,Kepts,Goods,Good1):- (plain_var(G),is_fg_color(R)),!,plus(Goods,1,Good1).
+count_changes(GGGG,G,R,Bads,Bads,Kepts,Kepts,Goods,Good1):- G=@=R,!,plus(Goods,1,Good1).
+count_changes(GGGG,G,R,Bads,Bads,Kepts,Kepts,Goods,Good1):- (plain_var(G);plain_var(R)),!,plus(Goods,1,Good1).*/
+
+count_changes_list([CG|CGG],[G|GG],[R|RR],Bad,Bad1,Same,Same1,Goods,Good1):- !,
+  count_changes(CG,G,R,Bad,Bad0,Same,Same0,Goods,Good0),!, count_changes_list(CGG,GG,RR,Bad0,Bad1,Same0,Same1,Good0,Good1).
+count_changes_list(_,L1,L2,Bad,Bad1,Same,Same,Goods,Goods):-  
+  length(L1,N1),length(L2,N2), plus(Bad,N1,M), plus(M,N2,Bad1),!.
+
+
+grid_arg(G,GG):- is_grid(G),G=GG,!.
+grid_arg(G,GG):- compound(G), ( \+ is_gridoid(G)), sub_term(GG,G), is_grid(GG),!.
+grid_arg(G,GG):- into_grid(G,GG),!.
+
+count_changes(GGGG,G,R,Bad,Same,Good):- must_det_ll((grid_arg(G,GG),grid_arg(R,RR),!,count_changes(GGGG,GG,RR,0,Bad,0,Same,0,Good))),!.
+
+count_changes(GGGG,G,R,Changes):- count_changes(GGGG,G,R,0,Changes).
+
+count_changes(_GGGG,G,R,S,S):- G=@=R,!.
+count_changes(_GGGG,G,R,S,E):- (\+ is_list(G), \+ is_list(R)),!,plus(S,1,E).
+count_changes(_GGGG,G,R,S,E):- (\+ is_list(G) ; \+ is_list(R)),!,plus(S,10_000,E).
+count_changes([CG|CGG],[G|Grid],[R|RepairedResult],S,E):-
+  count_changes(CG,G,R,S,Changes),
+  count_changes(CGG,Grid,RepairedResult,Changes,E),!.
+count_changes(_GGG,L1,L2,S,E):- length(L1,N1),length(L2,N2), plus(S,N1,M), plus(M,N2,E),!.
+count_changes(_GGG,_,_,S,E):- plus(S,1000,E).
   
 mass_ok(Grid,RepairedResult):- is_grid(Grid),
   grid_size(Grid,H,V),Area is H * V,
-  count_changes(Grid,RepairedResult,0,Changes),
+  count_changes(GGGG,Grid,RepairedResult,0,Changes),
   Change is Changes/Area,
   Change>75,!,fail,
  print_side_by_side(red,Grid,too_much_change(gridIn,Change),_,RepairedResult,too_much_change(repairedOut,Change)),fail.
@@ -564,7 +606,7 @@ mass_ok(Grid,RepairedResult):-
 
 mass_diffs(Grid,RepairedResult,Changes/Area,RMass/OMass):-
   grid_size(Grid,H,V),Area is H * V,
-  count_changes(Grid,RepairedResult,0,Changes),
+  count_changes(GGGG,Grid,RepairedResult,0,Changes),
   mass(Grid,OMass),!,
   mass(RepairedResult,RMass).
 
@@ -602,16 +644,17 @@ need_repair_grid(VM):-
   testid_name_num_io(VM.id,TestID,_Example,_Num,in),!,
   test_need_repair_grid(TestID),!.
 
+test_need_repair_grid(_):- test_config(giz([never_repair])),!,fail.
 test_need_repair_grid(TestID):- 
   kaggle_arc(TestID,trn+_,I,O), 
-  \+ is_grid_symmetricD(I), 
+  \+ is_trim_symmetricD(I), 
   grid_size(I,IH,IV),
   mass(I,GridMass),
   Area is IH * IV,  
   GridMass/Area > 0.39,!,
   grid_size(O,OH,OV),
   once(
-    (is_grid_symmetricD(O),IH=OH,IV=OV) 
+    (is_trim_symmetricD(O),IH=OH,IV=OV) 
     ;(IH>=(OH*3),IV>=(OV*3))).
 
 % =====================================================================
@@ -645,13 +688,13 @@ diff_repaired(RepairedResult,VM):-
   intersection(OriginalPoints,RepairedPoints,Unchanged,NeededChanged,ChangedPoints),  
   set_vm_obj(unchanged,[iz(image)],Unchanged),
   set_vm_obj(original,[iz(image),iz(hidden)],OriginalPoints),
-  set_vm_obj(repaired,[iz(image)],RepairedPoints),
-  set_vm_obj(neededChanged,[iz(image),iz(hidden),iz(shaped)],NeededChanged),
-  set_vm_obj(changedUntrimmed,[iz(image)],ChangedPoints),
+  set_vm_obj(repaired,[iz(image),iz(always_keep)],RepairedPoints),
+  set_vm_obj(neededChanged,[iz(image),iz(hidden),iz(shaped),iz(always_keep)],NeededChanged),
+  set_vm_obj(changedUntrimmed,[iz(image),iz(always_keep)],ChangedPoints),
   points_to_grid(VM.h,VM.v,ChangedPoints,Changed),
   trim_to_rect(Changed,TrimChangedG),
   localpoints_include_bg(TrimChangedG,TrimChangedPoints),
-  set_vm_obj(changed,[iz(image)],TrimChangedPoints))).
+  set_vm_obj(changed,[iz(image),iz(always_keep)],TrimChangedPoints))).
 
 
 column_or_row(Grid,Color):- member(Row,Grid), maplist(==(Color),Row),!. 
@@ -674,49 +717,79 @@ blur_least(B,Mix,I,O):-
   S=[O-pp(blur_some(B,Mix))|_].
 */
 
+adjacent_points(G,APs):- 
+  findall(C, (member(Row,G),append(_,[P1,P2|_],Row),is_fg_color(P1),(P1==P2-> C = 2; (is_fg_color(P2),C=1))),List1),
+  rot90(G,G90),
+  findall(C, (member(Row,G90),append(_,[P1,P2|_],Row),is_fg_color(P1),(P1==P2-> C = 2; (is_fg_color(P2),C=1))),List2),
+  append([List1,List2],List),
+  sumlist(List,APs).
+  
+
 blur_least(B,Mix,I,O):-
   blur_list(B,Mix,I,S),
   S=[O-pp(blur_some(B,Mix))|_].
 
+replace_non_fg_least(C,_,C):- is_fg_color(C),!.
 replace_non_fg_least(C,Black,C):- \+ is_fg_color(Black),!.
 replace_non_fg_least(_,C,C).
 
 blur_or_not_least(Op,G0,GG):- 
   into_grid(G0,GD),duplicate_term(GD,G),
   grid_call(Op,G,GGG),
-  WHY = blur_or_not_least(Count,Op,GG,OH,OV),
+  duplicate_term(GGG,GGGO),
+  WHY = blur_or_not_least(Score,Op,GG,OH,OV),
+  grid_size(GGGO,H2,V2),
+  HT2 is floor(H2*2),
+  VT2 is floor(V2*2),
+  %H2H is 1+floor(H2/2), V2V is 1+floor(V2/2),
+  adjacent_points(G,APs),
+  catch((
   findall(WHY, 
-    (between(1,13,IH),OH is IH-7,between(1,13,IV),OV is IV-7,
-      duplicate_term(GGG,GGGO),
+    ( ( (between(1,HT2,IH),OH is IH-H2, between(1,VT2,IV),OV is IV-V2); (OH= -5,OV= -5)),
+      
       offset_layover(GGGO,OH,OV,GGGG),
+      %count_changes(GGGG,G,GGGG,GBad,GKept1,GGood), GBad=0,
       mapgrid(replace_non_fg_least,GGGG,G,GG),
-      change_count(G,GG,Count),
-      nop(print_grid(WHY,GG))),L),
-  predsort(sort_on(/*pointy_mass*/ change_count(G)),L,S),
-  S=[WHY|_],
-  print_grid(blur_or_not_least(Count,Op,OH,OV),GG).
+      adjacent_points(GG,APG),
+      % once((into_ngrid(G,NG),into_ngrid(GG,NGG),into_ngrid(GGGG,NGGGG))), count_changes(NGGGG,NG,NGG,Bad,Kept1,Good), % Bad=0,
+       count_changes(GGGG,G,GG,Bad,Kept1,Good), Bad=0,
+
+      % Kept1>5,
+     % ((Good=0,!,throw(bad_rot));Good>0),
+      NegKept is -Kept1,
+      X is APG-(2*APs),
+      X<1,
+      Score = X + Bad + Good + NegKept,
+      nop((print_side_by_side(G,_,GG),wqs(s(Score,Op,OH,OV,good(Good),bad(Bad),kept(NegKept))))),
+      true),L),
+  predsort(sort_on(/*pointy_mass*/ arg(1)),L,S),
+  S=[WHY|_]),bad_rot,fail),
+  (print_grid(blur_or_not_least(Score,Op,OH,OV),GG)).
 
 offset_layover(GGG,OH,OV,GGGG):-
-  push_downward(GGG,OV,GG), rot90(GG,GG90),
-  push_downward(GG90,OH,GGG90), rot270(GGG90,GGGG).
+  push_downward(OV,GGG,GG), h_as_v(push_downward(OH),GG,GGGG).
 
-push_downward(G,OV,NewTop):- OV>0,!,
-  grid_size(G,H,V),
-  make_grid(H,OV,Top),
-  append(Top,G,Grid0),
-  length(NewTop,V),
-  append(NewTop,NewBot,Grid0),!,  
-  mapgrid(==(black),NewBot),
-  mapgrid(=(black),Top).
-push_downward(G,OV,NewBot):- OV<0,!,
+push_upward(OOV,G,NewBot):- OOV<0,!, OV is -OOV, push_downward(G,OV,NewBot).
+push_upward(OV,G,NewBot):- 
   grid_size(G,H,V),
   make_grid(H,OV,Bot),
   append(G,Bot,Grid0),
   length(NewBot,V),
   append(NewTop,NewBot,Grid0),!,
-  mapgrid(==(black),NewTop),
+  mapgrid(=(_Slack),NewTop),
   mapgrid(=(black),Bot).
-push_downward(G,0,G).
+push_upward(0,G,G).
+
+push_downward(OOV,G,NewBot):- OOV<0,!, OV is -OOV, push_upward(G,OV,NewBot).
+push_downward(OV,G,NewTop):- OV>0,!,
+  grid_size(G,H,V),
+  make_grid(H,OV,Top),
+  append(Top,G,Grid0),
+  length(NewTop,V),
+  append(NewTop,NewBot,Grid0),!,  
+  mapgrid(=(_Slack),NewBot),
+  mapgrid(=(black),Top).
+push_downward(0,G,G).
 
 /*
 ?- into_grid(t('1b60fb0c')>_*_,I),blur_list(B,Mix,I,O),maplist(print_side_by_side(I),O).
@@ -725,9 +798,7 @@ push_downward(G,0,G).
 blur_list(B,Mix,I,S):-
   findall(O-pp(blur_some(B,Mix)),blur_some(B,Mix,I,O),L),
   %print_side_by_side(L),
-  predsort(sort_on(/*pointy_mass*/ change_count(I)),L,S).
-
-change_count(I,G,Changes):- arg(_,G,E), is_grid(E),!,count_changes(I,E,0,Changes).
+  predsort(sort_on(/*pointy_mass*/ count_changes(GGGG,I)),L,S).
 
 
 pointy_mass(P,Mass):- is_pointy(P),!,mass(P,Mass).
@@ -794,7 +865,7 @@ saliency_quality_of_change(Grid,RepairedResult,Quality):-
   grid_size(Grid,H,V),OArea is H * V,
   grid_size(RepairedResult,RH,RV),RArea is RH * RV,
 
-  count_changes(Grid,RepairedResult,0,Changes),
+  count_changes(GGGG,Grid,RepairedResult,0,Changes),
   mass(Grid,OMass),!,  
   mass(RepairedResult,RMass),
   nop(RArea == RMass -> OMass==OArea ; true),
@@ -999,9 +1070,9 @@ rot_orig(P2,RepairedResult,Orig):- (var(P2)->rotP3(P2);true),call(P2,RepairedRes
 rotP_L(P_L):- findall(P2,rotP(P2),P_L).
 rotP(sameR).
 rotP(P2):-rotP0(P2).
+rotP(blur_least(_,fg)).
 rotP0(P2):-rotP1(P2).
 rotP0(flipD).
-%rotP0(blur_least(_,fg)).
 rotP1(P2):- rotP2(P2). %,P2\==rot90.
 rotP1(flipV).
 rotP1(flipH).
@@ -1013,14 +1084,26 @@ rotP3(blur_least(_,fg)).
 rotP3(P2):- rotP(P2).
 rotP3(flipDV). rotP3(flipDHV). rotP3(flipDH). 
 
-rr_rot(flipD,RepairedResult,RR):- flipD(RepairedResult,RR).
-rr_rot(P2,RepairedResult,RR):- rotP1(P2),once(call(P2,RepairedResult,RR)).
+no_conflicts(RepairedResult,RR):- count_changes(_,RepairedResult,RR,Conflicts,Keep,WillChange),!,Conflicts=0,Keep>0,nop(WillChange>0).
+
+rr_rot(flipD,RepairedResult,RR):- flipD(RepairedResult,RR),RR \=@= RepairedResult,no_conflicts(RepairedResult,RR).
+rr_rot(P2,RepairedResult,RR):- rotP1(P2),once(call(P2,RepairedResult,RR)),RR \=@= RepairedResult,no_conflicts(RepairedResult,RR).
 
 select_2_lines(Row1,Row2,RepairedResult):- 
   append(_,[Row1,Row2|_],RepairedResult).
 
 
 fill_in_blanks(_P2,_Orig,_Limit,RepairedResult):- ground(RepairedResult),!.
+
+%484b58aa
+fill_in_blanks(P2,Orig,Limit,RepairedResult):- Limit>790, fail,
+  %rr_rot(RepairedResult,RR), 
+  member(E,RepairedResult), \+ ground(E),
+  member(H,RepairedResult), ground(H),
+  E=H,  ground(E),!,
+  Limit2 is Limit-1,
+  fill_in_blanks(P2,Orig,Limit2,RepairedResult).
+
 fill_in_blanks(P2,Orig,Limit,RepairedResult):- Limit>890, 
   %rr_rot(RepairedResult,RR), 
   rr_rot(_P2A,RepairedResult,RR),
@@ -1031,6 +1114,7 @@ fill_in_blanks(_P2,Orig,Limit,RepairedResult):- Limit>800,
   Orig \=@= RepairedResult, Orig = RepairedResult, 
   Limit2 is Limit-1,
   fill_in_blanks1(Orig,Limit2,RepairedResult).
+
 
 
 % f9d67f8b
@@ -1219,7 +1303,7 @@ repair_2x2(Ordered,Steps,Grid,RepairedResult):-
   print_grid(trial_removal_used(RemovalTrialUsed),GridO),
   %nop(retain_vars(VM,Ordered,Grid,NewIndiv4s,KeepNewState,RepairedResult,NewSYQ2,NewEYQ2,NewSYQ4,NewEYQ4,NewSXQ2,NewEXQ2,NewSXQ4,NewEXQ4)),
 
-  set_vm_obj(full_grid,[iz(image)],GridO),
+  set_vm_obj(full_grid,[iz(image),iz(always_keep)],GridO),
   clip(NewSX,NewSY,NewEX,NewEY,GridO,RepairedResultM),
   
 
@@ -1411,7 +1495,7 @@ show_patterns4(GH,GV,Steps,L,G,GG):-
 glean_patterns3_HV(Steps,G,GG):- grid_size(G,GH,GV),gph(GH,GV,Steps,G,GG).
 
 glean_patterns2(Steps,G,GG):- glean_patterns3_HV(Steps,G,GG),!.
-glean_patterns2([rot90|Steps],G,GG):- rot90(G,G90),glean_patterns3_HV(Steps,G90,GG90),rot270(GG90,GG),!.
+glean_patterns2([rot90|Steps],G,GG):- h_as_v(glean_patterns3_HV(Steps),G,GG).
 
 glean_patterns1(Steps,G,GG):- glean_patterns2(Steps,G,GG),!.
 glean_patterns1([flipH|Steps],G,GG):- flipH(G,G90),glean_patterns2(Steps,G90,GG90),flipH(GG90,GG),!.
@@ -1419,7 +1503,7 @@ glean_patterns1([diaroll(2)|Steps],G,GG):- roll_d(2,G,G90),glean_patterns2(Steps
 
 gph(Steps,G,GG):- glean_patterns1(Steps,G,GG),!.
 gph([diaroll(1)|Steps],G,GG):- roll_d(1,G,G90),glean_patterns1(Steps,G90,GG90),roll_d(1,GG90,GG).
-gph([rot90|Steps],G,GG):- rot90(G,G90),glean_patterns1(Steps,G90,GG90),rot270(GG90,GG),!.
+gph([rot90|Steps],G,GG):- h_as_v(glean_patterns1(Steps),G,GG),!.
 gph([flipV|Steps],G,GG):- flipV(G,G90),glean_patterns1(Steps,G90,GG90),flipV(GG90,GG),!.
 gph(_GH,_GV,Steps,G,GG):- repair_2x2([],Steps,G,GG),!.
 
@@ -2028,7 +2112,7 @@ verify_symmetry((flipH,flipV),GridO):- is_able_v(flipV,GridO),is_able_v(flipH,Gr
 is_flippable_h(Flip,G):- rot90(G,R),is_able_v(Flip,R).
 make_flippable_h(Flip,G,HS):- is_flippable_h(Flip,G),HS=G.
 make_flippable_h(Flip,G,HS):- ((rot270(G,G90),make_able_v(Flip,G90,VS),rot90(VS,HS))*->true;make_flippable_h1(Flip,G,HS)).
-make_flippable_h1(Flip,G,HS):- rot90(G,G90),make_able_v(Flip,G90,VS),rot270(VS,HS).
+make_flippable_h1(Flip,G,HS):- h_as_v(make_able_v(Flip),G,HS).
 
 
 is_symmetrical(Grid):-  is_flippable_h(flipH,Grid),is_able_v(flipV,Grid).

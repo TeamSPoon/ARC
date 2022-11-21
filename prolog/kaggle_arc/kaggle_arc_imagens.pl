@@ -121,7 +121,7 @@ the_hammer(Color,ColorComplex):-
   globalpoints([Color-point_02_05, Color-point_02_06, Color-point_02_07, Color-point_03_05, Color-point_03_06, Color-point_04_06]), 
   grid_size(10, 10)]).
 
-the_hammer(blue, LibObj):- hammer2(Text), text_to_grid(Text,_H,_V,Grid,_Complex), 
+the_hammer(blue, LibObj):- hammer2(Text), must_det_ll(into_g666(Text,Grid)),
    into_lib_object([blue,hammer],Grid,LibObj).
 
 shape_info_props(Shapes,ShapeProps):- flatten([Shapes],Shapes0),maplist(shape_info_props0,Shapes0,ShapeProps).
@@ -305,19 +305,10 @@ add_shape_lib(Type,Obj):- add_shape_lib0(Type,Obj).
 add_shape_lib0(Type,Obj):- amass(Obj,Mass),!,
   %dash_chars, print_grid(Obj),
   ( Mass<3 
-   -> nop(pp(too_small_for_shapelib(Type,Mass))) ; (nop(pp(add_shape_lib(Type))),assert_shape_lib(Type,Obj))), 
+   -> nop(pp(too_small_for_shapelib(Type,Mass))) ; (nop(pp(add_shape_lib(Type))),learn_hybrid_shape(Type,Obj))), 
   %dash_chars,
   !.
 
-
-%assert_shape_lib(_,Obj):-  amass(Obj,Mass), Mass<4,!.
-assert_shape_lib(Type,Obj):- is_list(Type),!,mapgroup(lambda_rev(assert_shape_lib3(Type,Obj)),Type).
-assert_shape_lib(Type,Obj):- assert_shape_lib3(Type,[Type],Obj).
-assert_shape_lib3(Type,InfoIn,Obj):- 
-   get_training(Training),
-   once(get_current_test(TestID);TestID=Training.test_id),
-   Info = [TestID|InfoIn],
-   nop(my_asserta_if_new(in_shape_lib(Type,Info,Obj))).
 
 in_shape_lib(X,D):- (make_shape(X,R), deterministic(TF), dupe_shape(R,D)), (TF==true -> !; true).
 
@@ -551,13 +542,8 @@ shapelib_opts(Name,Opts):- findall(Opt,is_shapelib_opt(Name,Opt),Opts).
 % Stretches a grid to double its size2D
 :- decl_sf(double_size(grid)).
 % ===========================================================
-double_size(Grid,Double):- is_grid(Grid),!,
-  double_rows(Grid,DRows),
-  rot90(DRows,DRows90),
-  double_rows(DRows90,DRows90D),
-  rot270(DRows90D,Double).
-double_size(Group,Double):- is_group(Group),!,override_group(double_size(Group,Double)),!.
-double_size(Obj,Double):- into_grid(Obj,Grid),!,double_size(Grid,Double).
+
+double_size(Grid,Double):- h_and_v(double_rows,Grid,Double).
 
 double_rows([],[]):-!.
 double_rows([D|DRows90],[D,D|DRows90D]):- double_rows(DRows90,DRows90D).
@@ -566,13 +552,8 @@ double_rows([D|DRows90],[D,D|DRows90D]):- double_rows(DRows90,DRows90D).
 % Stretches a grid to increase its size2D
 :- decl_sf(increase_size(size_int,grid)).
 % ===========================================================
-increase_size(N,Grid,Double):- is_grid(Grid),!,
-  increase_rows(N,Grid,DRows),
-  rot90(DRows,DRows90),
-  increase_rows(N,DRows90,DRows90D),
-  rot270(DRows90D,Double).
-increase_size(N,Group,Double):- is_group(Group),!,override_group(increase_size(N,Group,Double)),!.
-increase_size(N,Obj,Double):- into_grid(Obj,Grid),!,increase_size(N,Grid,Double).
+increase_size(N,Grid,Double):-
+  h_and_v(increase_rows(N),Grid,Double).
 
 increase_rows(_,[],[]):-!.
 increase_rows(N,[D|DRows90],O):- make_list_inited(N,D,DD),increase_rows(N,DRows90,DRows90D),my_append(DD,DRows90D,O).
@@ -581,13 +562,8 @@ increase_rows(N,[D|DRows90],O):- make_list_inited(N,D,DD),increase_rows(N,DRows9
 % Stretches a grid border to increase its size2D
 :- decl_sf(increase_border(size_int,grid)).
 % ===========================================================
-increase_border(N,Grid,Double):- is_grid(Grid),!,
-  increase_top_and_bottem_rows(N,Grid,DRows),
-  rot90(DRows,DRows90),
-  increase_top_and_bottem_rows(N,DRows90,DRows90D),
-  rot270(DRows90D,Double),!.
-increase_border(N,Group,Double):- is_group(Group),!,override_group(increase_border(N,Group,Double)),!.
-increase_border(N,Obj,Double):- into_grid(Obj,Grid),!,increase_border(N,Grid,Double).
+increase_border(N,Grid,Double):-
+  h_and_v(increase_top_and_bottem_rows(N),Grid,Double).
 
 increase_top_and_bottem_rows(_,[],[]):-!.
 increase_top_and_bottem_rows(N,Grid,O):-

@@ -97,7 +97,7 @@ test_cbox:- test_p2(cbox_pair(_TestID,_What)).
 quick_test_menu(test_cbox).
 
 
-:- set_test_cmd2(print_info_for_test).
+:- set_test_cmd2(print_all_info_for_test).
 
 cbox_indivs:- 
   with_test_pairs(TestID,ExampleNum,I,O,cbox_pair(TestID,ExampleNum,I,O)).
@@ -176,7 +176,7 @@ i_cbox_l(Grid,NSEW,XSG,Points,Points9,VM,L_S,[size2D(H,V)|Sizes]):-
   (( L_S=s_l(_),
      OBJ==center,
      fail,
-     iz_symmetry(SGrid,_H,_V,_N,R), R \=symmetry(none),   
+     iz_symmetry(SGrid,R), R \=symmetry(none),   
      obj_gpoints(SGrid,OHM1,OVM1,SOPoints),
      intersection(LeftOver,SOPoints,SIntersect,LeftOver2,_),
      SIntersect\==[],

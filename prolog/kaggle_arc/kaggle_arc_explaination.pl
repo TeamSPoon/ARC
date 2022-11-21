@@ -172,19 +172,75 @@ debug_indiv(A):- is_point_obj(A,Color,Point),
   hv_point(H,V,Point), i_glyph(Id,Sym),
   wqnl([' % Point: ', color_print(Color,Sym), dot, color(Color), fav1(Tst), nth(Id), loc2D(H,V)]),!. 
 */
-object_glyph_color(Obj,FC):- once((unique_colors(Obj,CL),member(FC0,CL),is_real_color(FC0));FC0=wfg),
+object_glyph_one_color(Obj,FC):- once((unique_colors(Obj,CL),member(FC0,CL),is_real_color(FC0));FC0=wfg),
   (FC0==black_n -> FC= wbg ; FC = FC0).
 
-object_s_glyph(Obj,SGlyph):- 
-  object_glyph(Obj,Glyph), 
-  unique_colors(Obj,NColors),
-  % writeq(NColors),
-  object_glyph_color(Obj,FC),
-  wots(SGlyph,
-   (
-     (( \+ (member(E,NColors),E==FC))->color_print(FC,Glyph);true),
-     user:maplist(print_ncolors(Glyph),NColors))).
+to_realer_color(Var,white):- plain_var(Var),!.
+to_realer_color(C,C):- is_real_color(C),!.
+to_realer_color(C,C):- is_unreal_color(C),!.
+to_realer_color(C,N):- into_color_name_always(C,N),!.
+object_glyph_colorz(Obj,Colors):- 
+  object_glyph_one_color(Obj,FC1),
+  unique_colors(Obj,CL),
+  findall(FC,(member(FC0,CL),to_realer_color(FC0,FC)),NColors),
+  flatten_set([FC1,NColors],Colors).
 
+object_s_glyph_long(PA, CGA):- 
+ must_det_ll((
+  obj_to_oid(PA,OID),
+  object_glyph_colorz(PA,Colors),
+  print_colors_on_ss(OID,Colors,CGAO),
+  CGA=CGAO)).
+
+object_s_glyph(Obj,SGlyph):-
+ must_det_ll((
+  object_glyph(Obj,Glyph),
+  object_glyph_colorz(Obj,Colors),
+  print_colors_on_ss(Glyph,Colors,SGlyph))).
+  
+print_colors_on_ss(Glyph,[],SSGlyph):- sformat(SSGlyph,'~q',[Glyph]),!.
+print_colors_on_ss(Glyph,Colors,SGlyph):- atom_length(Glyph,N), 
+  wots(SGlyph,print_colors_on(Colors,N,Glyph)).
+
+
+print_colors_on([Color],_,Glyph):- color_print(Color,call(writeq(Glyph))),!.
+print_colors_on(Colors,L,Glyph):- length(Colors,CL), CL>L,write('\''), user:maplist(print_ncolors(Glyph),Colors), write('\''),!.
+print_colors_on(Colors,_,Glyph):- atom_chars(Glyph,Chars),write('\''),print_colors_on_s(Colors,Chars),write('\''),!.
+print_colors_on(Colors,Glyph):- write('\''), user:maplist(print_ncolors(Glyph),Colors), write('\'').
+print_colors_on_s([],G):-  format('~s',[G]).
+print_colors_on_s([C],G):- sformat(GS,'~s',[G]),color_print(C,GS).
+print_colors_on_s([C|Color],Glyph):- length([C|Color],CL),length(Glyph,GL),CLL is CL div GL,CLL>1,length(GLL,CLL),append(GLL,More,Glyph),
+  sformat(G,'~s',[GLL]),!,color_print(C,G),print_colors_on_s(Color,More).
+print_colors_on_s([C|Color],[G|Glyph]):- color_print(C,G),print_colors_on_s(Color,Glyph).
+
+
+object_s_glyph2(Obj,S):- o2g(Obj,G),real_colors(Obj,Colors),maplist(arg(1),Colors,NColors),
+  wots(S,maplist(user:print_ncolors1(G),NColors)),!.
+
+print_ncolors(G,C):- color_print(C,G).
+print_ncolors1(G,C):- sformat(F,'~w',[G]),sub_string(F,0,1,_,SS),color_print(C,SS).
+
+o2c(Obj,Glyph):- color(Obj,Glyph),!.
+
+o2ansi(I,S):- integer(I),int2glyph(I,G),!,o2ansi(G,S). 
+o2ansi(G,S):- atom(G),!,g2o(G,O),o2ansi(O,S),!.
+o2ansi(G,S):- \+ is_object(G),!,colorize_oterms(G,S).
+o2ansi(Obj,S):- object_s_glyph(Obj,S),!.
+o2ansi(Obj,S):- object_s_glyph2(Obj,S),!.
+
+colorize_oterms(O,A):- var(O),!,A=O.
+colorize_oterms(O,A):- term_contains_ansi(O),!,A=O.
+colorize_oterms(O,A):- number(O),!,wots(A,bold_print(write(O))).
+colorize_oterms(-O,-A):- !, colorize_oterms(O,A).
+colorize_oterms(+O,+A):- !, colorize_oterms(O,A).
+colorize_oterms(O,A):- is_list(O),!,maplist(colorize_oterms,O,A).
+colorize_oterms(O,A):- is_object(O),O=obj(_),object_s_glyph(O,A),!.
+colorize_oterms(O,A):- compound(O),compound_name_arguments(O,F,Args),!,maplist(colorize_oterms,Args,AArgs),compound_name_arguments(A,F,AArgs).
+colorize_oterms(O,A):- \+ atom(O),!,A=O.
+colorize_oterms(O,A):- is_color(O),!,wots(A,color_print(O,O)).
+colorize_oterms(O,A):- member(O,[n,s,e,w,c,ne,se,sw,nw]),!,wots(A,bold_print(write(O))).
+colorize_oterms(O,A):- o2ansi(O,A),!.
+colorize_oterms(O,O).
 
 prefered(repaired).
 prefered(full_grid).
@@ -228,6 +284,47 @@ skip_header(sizeY(_)).
 
 is_open_list(T):- var(T),!.
 is_open_list([_|T]):-!,is_open_list(T).
+
+is_arg_in(Only,P):- compound(P),arg(2,P,Ref),
+  once(into_obj(Ref,Obj)), \+ is_not_in(Only,Obj).
+
+object_dglyphH(PA, OUTS):- 
+  obj_to_oid(PA,GA),% mass(PA,Mass),
+  shape(PA,Shape),pen(PA,Pen),loc2D(PA,X,Y), rotation(PA,ROT),
+  shape_id(Shape,ShapeID),
+  OUT = objFn(GA,loc2D(X,Y),ROT,pen(Pen),ShapeID),
+  colorize_oterms(OUT,OT),
+  wots(SS,write(OT)),
+  OUTS = SS.
+
+object_dglyphH(PA,GA):- object_dglyph(PA,GA).
+%object_dglyph(O,G):- object_cglyph(O,G). % want this
+object_dglyph(O,D):- object_glyph(O,G), atom_concat(' ',G,D),!.
+
+show_touches(Only,Obj):- must_det_ll((into_obj(Obj,RealObj),show_touches0(Only,RealObj))).
+show_touches0(Only,Obj):- is_not_in(Only,Obj),!.
+show_touches0(Only,Obj):- Obj = obj(List), 
+ must_det_ll((
+  object_dglyphH_no_loop(Obj,SGlyph),
+  include(is_functor(link),List,TP),
+  include(is_arg_in(Only),TP,TPO),!,
+  show_touches2(SGlyph,TPO))).
+show_touches2(_,[]):-!.
+show_touches2(SGlyph,TP):-   
+  remove_too_verbose(SGlyph,TP,OO),
+  format("~N~n% ~w:\t",[SGlyph]),wqs_l(OO),format('~N').
+
+
+object_dglyphH_no_loop(PA, OUTS):- 
+ must_det_ll((
+  object_s_glyph_long(PA, CGA),
+  mass(PA,Mass),
+  shape(PA,Shape),pen(PA,Pen),loc2D(PA,X,Y), rotation(PA,ROT),
+  shape_id(Shape,ShapeID),  
+  OUT = oFn(CGA,Mass,loc2D(X,Y),ROT,pen(Pen),ShapeID),
+  wots(SS,wqs_l(OUT)),
+  OUTS = SS)).
+
 
 debug_indiv_obj(Obj):- Obj = obj(A), nonvar(A),!,debug_indiv_obj(A).
 debug_indiv_obj(Props):- is_open_list(Props),!,must_det_ll((append(Props,[],CProps),!,debug_indiv_obj(CProps))).
@@ -328,9 +425,9 @@ remove_too_verbose(MyOID,link(Touched,ID),HH):- % number(MyOID),
   remove_too_verbose(0,link(Touched,Alt,Glyph),HH).
 
 remove_too_verbose(MyOID,TP,OO):- compound(TP),compound_name_arguments(TP,link,[F|A]),atom(F),
-   compound_name_arguments(TPP,F,A),!,remove_too_verbose(MyOID,TPP,HH),
-   OO= g(HH),!.
-
+   maplist(colorize_oterms,A,AA),
+   compound_name_arguments(TPP,F,AA),!,remove_too_verbose(MyOID,TPP,HH),
+   OO= HH,!.
 
 remove_too_verbose(MyOID,colors(H),HH):- !, remove_too_verbose(MyOID,H,HH).
 %remove_too_verbose(MyOID,loc2D(X,Y),loc2D(X,Y)).

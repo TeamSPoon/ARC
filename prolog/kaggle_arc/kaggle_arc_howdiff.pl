@@ -592,13 +592,7 @@ diff_groups1a(_OA,_OB,A,B,[disjointed(SharedT,AOnlyT,BOnlyT)]):-
 tersify_cheap(I,O):- tersify(I,O),!.
 
 
-object_dglyphH(PA,objFn(GA,loc2D(X,Y),ROT,Pen,ShapeID)):- 
-  obj_to_oid(PA,GA),% mass(PA,Mass),
-  shape(PA,Shape),pen(PA,Pen),loc2D(PA,X,Y), rotation(PA,ROT),
-  shape_id(Shape,ShapeID).
- 
 
-object_dglyphH(PA,GA):- object_dglyph(PA,GA).
 
 unused_diff_groups0(AAR,BBR,DD):-
   %make_comparable(B0,B),
@@ -612,8 +606,6 @@ unused_diff_groups0(AAR,BBR,DD):-
   diff_groups1(AA,BB,D),
   combine_diffs(D1,D , DD).
 
-%object_dglyph(O,G):- object_cglyph(O,G). % want this
-object_dglyph(O,D):- object_glyph(O,G), atom_concat(' ',G,D),!.
 obj_grp_comparable(I,obj(O)):- obj_make_comparable(I,M),
   my_partition(uncomparable(group),M,_,O).
 
@@ -1364,6 +1356,8 @@ prefer_grid(G):- is_object_or_grid(G).
 :- decl_pt(prop_g,x_columns(grid,set)).
 :- decl_pt(prop_g,y_rows(grid,set)).
 :- decl_pt(prop_g,colors(prefer_grid, set)).
+:- decl_pt(prop_g,symmetric_types(prefer_grid, set)).
+
 
 :- decl_pt(prop_o,center_term(object,loc2D)).
 :- decl_pt(prop_o,loc_term(object,loc2D)).

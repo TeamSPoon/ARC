@@ -8,6 +8,7 @@
 
 
 :- meta_predicate(grid_call(+,+,-)).
+grid_call(T,I,O):- plain_var(I),var(O),!,into_grid(_,G),I=G,grid_call(T,G,O).
 grid_call(=,I,O):- !, I=O. 
 grid_call(T,I+O,II+OO):- !, grid_call(T,I,II),grid_call(T,O,OO).
 grid_call(Nil,I,I):- Nil==[],!. 
@@ -292,6 +293,7 @@ back_to_map(Was,Dict,Prev,Grid,Closure,New, Ret):-
 into_grids(P,G):- no_repeats(G,quietly(cast_to_grid(P,G, _))).
 
 :- decl_pt(into_grid(+(prefer_grid),-grid)).
+into_grid(P,G):- var(P),!,ignore(get_current_test(TestID)),test_grids(TestID,G),grid_to_tid(G,P).
 into_grid(A+B,AA+BB):- nonvar(A), !, cast_to_grid(A,AA, _),cast_to_grid(B,BB, _).
 into_grid(P,G):- cast_to_grid(P,G, _).
 
@@ -400,10 +402,10 @@ known_grid0(ID,_):- is_list(ID),!,fail.
 known_grid0(OID, Grid):- atom(OID),oid_to_gridoid(OID,Grid),!.
 known_grid0(ID,_):- is_object(ID),!,fail.
 known_grid0(_,ID):- is_object(ID),!,fail.
-known_grid0(ID,G):-  testid_name_num_io(ID,TestID,Trn,Num,IO),ExampleNum=Trn+Num,!,(kaggle_arc_io(TestID,ExampleNum,IO,G),deterministic(YN),true),(YN==true-> ! ; true).
+known_grid0(ID,G):- true,testid_name_num_io(ID,TestID,Trn,Num,IO),ExampleNum=Trn+Num,!,(kaggle_arc_io(TestID,ExampleNum,IO,G),deterministic(YN),true),(YN==true-> ! ; true).
 known_grid0(ID,G):- is_grid_tid(G,ID),!.
 known_grid0(ID,G):- was_grid_gid(G,ID),!.
-known_grid0(ID,G):- fix_test_name(ID,Name,ExampleNum),!,
+known_grid0(ID,G):- true,fix_test_name(ID,Name,ExampleNum),!,
   (kaggle_arc_io(Name,ExampleNum,_IO,G),deterministic(YN),true), (YN==true-> ! ; true).
 known_grid0(ID,G):- learned_color_inner_shape(ID,magenta,BG,G,_),get_bgc(BG).
 known_grid0(ID,G):- compound(ID),ID=(_>(Trn+Num)*IO),!,fix_test_name(ID,Name,Trn+Num),!,(kaggle_arc_io(Name,Trn+Num,IO,G),deterministic(YN),true), (YN==true-> ! ; true).
@@ -523,14 +525,6 @@ o2g(Obj,NewGlyph):- trace,o2g_f(Obj,NewGlyph).
   ; ((number(NewGlyph)->trace;true),NewGlyph=Glyph,(number(NewGlyph)->trace;true),set_glyph_to_object(NewGlyph,Obj))),
  set_glyph_to_object(NewGlyph,Obj).
 */
-
-o2c(Obj,Glyph):- color(Obj,Glyph),!.
-
-o2ansi(I,S):- integer(I),int2glyph(I,G),!,o2ansi(G,S). 
-o2ansi(G,S):- atom(G),!,g2o(G,O),o2ansi(O,S),!.
-o2ansi(Obj,S):- o2g(Obj,G),colors(Obj,Colors),maplist(arg(1),Colors,NColors),
-  wots(S,maplist(user:print_ncolors(G),NColors)).
-print_ncolors(G,C):- sformat(F,'~q',[G]),color_print(C,F).
 
 :- system:import(print_ncolors/2).
 

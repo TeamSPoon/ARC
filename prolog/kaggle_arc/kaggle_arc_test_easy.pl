@@ -32,7 +32,7 @@ solves_all_pairs(TestID,P,P2S):- kaggle_arc(TestID,tst+0,_,_),
      kaggle_arc(TestID,_,In,Out),AllTrue),maplist(call,AllTrue)),[P|P2S]).
 */
 /*
-test_easy:- clsmake, forall_count(arc_test_name(TestID),test_easy(TestID)).
+test_easy:- clsmake, forall_count(ensure_test(TestID),test_easy(TestID)).
 test_easy(TestID):- 
   solves_all_pairs(TestID,P2), dash_chars, dmsg(P2), print_test(TestID), dmsg(P2), dash_chars.
 
@@ -63,7 +63,7 @@ test_easy_solve_by:- get_pair_mode(single_pair),!,
 test_easy_solve_by:- once(update_and_fail_cls),fail.
 test_easy_solve_by:- get_pair_mode(entire_suite),!,forall_count(all_arc_test_name(TestID),easy_solve_whole_test(TestID)).
 test_easy_solve_by:- get_pair_mode(whole_test), get_current_test(TestID),!,must_det_ll(ignore(easy_solve_whole_test(TestID))).
-test_easy_solve_by:- once(print_info_for_test),fail.
+test_easy_solve_by:- once(print_all_info_for_test),fail.
 test_easy_solve_by:- test_p2(test_easy_solve_pair).
 
 :- luser_default(cmd,test_easy_solve_by). 
@@ -76,9 +76,8 @@ test_easy_solve_test_pair(TestID,ExampleNum,I,O):- var(TestID),get_current_test(
 
 test_easy_solve_test_pair(TestID,ExampleNum,I,O):- var(ExampleNum),some_current_example_num(ExampleNum),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
 test_easy_solve_test_pair(TestID,ExampleNum,I,O):- 
-   ignore((nonvar(TestID), set_current_test(TestID))),
-   ignore(kaggle_arc(TestID,ExampleNum,I,O)),
-   continue_test(TestID),
+   ensure_test(TestID),
+   ignore(kaggle_arc(TestID,ExampleNum,I,O)),   
    put_attr(EM,expect_p2,O),
    (CALL=  ?-(test_easy_solve_test_pair(TestID,ExampleNum,'$VAR'('I'),'$VAR'('O')))),   
    findall(P2,(easy_solve_by(TestID,P2),grid_call(P2,I,EM),nonvar(EM),
@@ -98,28 +97,38 @@ easy_solve_by(_TestID,P2):- ground(P2),!.
 easy_solve_by( TestID,P2):- nonvar(P2),!, copy_term(P2,P2T), findall(P2T,(easy_solve_by(TestID,P2T),P2\=@=P2T),List), member(P2,[P2|List]).
 easy_solve_by( TestID,flip_Once(_)):- get_black(Black),user:arc_test_property(TestID,common,comp(cbg(Black),i-o,grav_rot),_).
 easy_solve_by(_TestID,P2):- easy_p2(P2).
+easy_solve_by(_TestID,do_two(C1,C2)):-
+  easy0(N,C1),easy0(M,C2),C1\==C2,C1\==(=),C2\==(=),N<M.
+
 %easy_solve_by( TestID,repair_and_select(_How,_M)):- is_symgrid(TestID),!.
 %easy_p2(flip_Once(_)).
 
 %easy_p2(repair_and_select_property([unbind_color(_),now_fill_in_blanks_good],repaired)).
 easy_p2(blur(rot90_blur_flipD)).
 easy_p2(repair_and_select(_How,_M)).
-easy_p2(blur_flipV_flipH).
 easy_p2(blur_or_not_least_rot90_x4).
-easy_p2(blur_or_not_rot90_x4).
+easy_p2(blur_or_not_least_2(_,_)).
 easy_p2(blur_rot90).
 %easy_p2(unbind_and_fill_in_blanks(_Code)).
 easy_p2(simple_todolist([trim_blank_lines,grow_2])).
-easy_p2(simple_todolist(_)).
+%easy_p2(simple_todolist(_)).
 easy_p2(P2):- easy0(_,P2).
+/*
+easy_p2(do_simple_todolist(List)):- List = [C0,C1,C2,C3,C4,C5],
+  easy0(0,C0),easy0(1,C1),easy0(2,C2),easy0(3,C3),easy0(4,C4),easy0(5,C5),
+  once((nth1(M,List,'='),nth1(N,List,'='),nth1(O,List,'='),nth1(P,List,'='),M<N,O>N,P>O)).
+*/
+  
+  
+do_two(C1,C2,I,O):- do_simple_todolist([C1,C2],I,O). 
 %easy_p2(two_ops(repair_in_vm(repair_repeats(black)),get(repaired))).
 
-rot90_blur_flipD(I,O):- grid_call([rot90,blur(flipD),rot270],I,O).
+rot90_blur_flipD(I,O):- h_as_v(blur(flipD),I,O).
 
 expect_p2:attr_unify_hook(_,_).
 
 do_simple_todolist(C,I,O):- var(C),!,throw(var_do_simple_todolist(C,I,O)).
-do_simple_todolist([],I,O):- !,I=O.
+do_simple_todolist(Nil,I,O):- Nil==[], !,I=O.
 do_simple_todolist([H|T],I,O):- !, do_simple_todolist(H,I,M),do_simple_todolist(T,M,O).
 do_simple_todolist(C,I,O):- \+ callable(C),!,throw(not_callable_do_simple_todolist(C,I,O)).
 do_simple_todolist(P2,I,O):- grid_call(P2,I,O).
@@ -222,9 +231,8 @@ induce_from_training_pair(P2,Ex1,II1,OO1):-
       grid_call(P2,II1,OOO1),print_side_by_side_io(checking_training(P2,Ex1),II1,OOO1)))),!.
 */
 easy_solve_whole_test(TestID):- 
-  % once(print_test(TestID)),  
+  ensure_test(TestID),
   arcdbg_info(green,"BEGIN_TEST"=TestID),!,
-  continue_test(TestID),
   my_time(easy_solve_whole_test1(TestID)).
 easy_solve_whole_test1(TestID):- 
   (easy_solve_training(TestID,P2)*-> 
@@ -273,7 +281,7 @@ ground_enough(P2):- compound(P2),arg(1,P2,E),ground_enough(E),!.
 
 if_hint(_).
 %easy0(X):- easy_sol(X).
-%easy0(_,=).
+easy0(_,=).
 easy0(0,trim_hv_repeats).
 easy0(0,trim_to_rect).
 
@@ -281,9 +289,10 @@ easy0(1,trim_blank_lines).
 easy0(1,gravity(s,1)):- if_hint(mass(i)==mass(o)).
 
 easy0(2,flip_Once(_)).
-easy0(3,swap_two_colors(_,_)).
+%easy0(3,swap_two_colors(_,_)).
+easy0(2,remove_color(green)).
 easy0(4,blur_flipV).
-easy0(4,blur_flipV_flipH).
+easy0(4,blur_or_not_least_2(flipV,flipH)).
 easy0(5,increase_size_by_grid_mass). %ac0a08a4
 easy0(5,increase_size_by_color_count). %ac0a08a4
 easy0(5,grow_4):- if_hint(mass(i)*4==mass(o)).% 3af2c5a8
@@ -291,7 +300,7 @@ easy0(5,grow_2). % 963e52fc
 easy0(5,grow_flip_2). % 963e52fc
 easy0(5,double_size).
 easy0(5,increase_size(N)):- if_hint(mass(i)*N==mass(o)), ignore(N=4).
-easy0(5,crop_by(_)).
+%easy0(5,crop_by(_)).
 
 simple_todolist(List,I,OO):- nonvar(List),!, do_simple_todolist(List,I,OO).
 simple_todolist(List,I,OO):- ignore(get_attr(OO,expect_p2,O)),nonvar(O),!,simple_todolist(List,I,O).
@@ -361,12 +370,27 @@ increase_size_by_color_count(In,Out):- fg_color_count(In,Size),increase_size(Siz
 
 blur_rot90(I,O):- duplicate_term(I,II), unbind_color(red,II,M), blur(rot90,M,O).
 blur_flipV(I,O):- duplicate_term(I,II), blur(flipV,II,O).
-blur_flipV_flipH(I,O):- 
+
+blur_or_not_least_2(FlipV,Rot180,I,O):- 
+  %blur_or_not_least_pair(FlipV,Rot180),
+  blur_or_not_least_2a(FlipV),
+  blur_or_not_least_2b(Rot180),
+  Rot180\==FlipV,
   do_simple_todolist([
     into_grid,
     duplicate_term,
-    blur_or_not_least(flipV),
-    blur_or_not_least(flipH)],I,O).
+    blur_or_not_least(FlipV),
+    blur_or_not_least(Rot180)],I,O).
+
+blur_or_not_least_2a(flipV). blur_or_not_least_2a(rot90). blur_or_not_least_2a(flipD). blur_or_not_least_2a(blur_or_not_least_rot90_x2).
+blur_or_not_least_2b(flipH). blur_or_not_least_2b(rot90). blur_or_not_least_2b(rot180). 
+
+blur_or_not_least_rot90_x2(I,O):- 
+  do_simple_todolist([
+    into_grid,
+    duplicate_term,
+    blur_or_not_least(rot90),
+    blur_or_not_least(rot90)],I,O).
 
 blur_or_not_least_rot90_x4(I,O):- 
   do_simple_todolist([
@@ -376,13 +400,7 @@ blur_or_not_least_rot90_x4(I,O):-
     blur_or_not_least(rot90),
     blur_or_not_least(rot90)],I,O).
 
-blur_or_not_rot90_x4(I,O):- 
-  do_simple_todolist([
-    into_grid,
-    duplicate_term,
-    blur_or_not(rot90),
-    blur_or_not(rot90),
-    blur_or_not(rot90)],I,O).
+% HOUGH Transform
 
 %unbind_and_fill_in_blanks([guess_unbind_color(black),P2],Grid,RepairedResultO):-
 %  now_fill_in_blanks(P2,Grid,RepairedResultO).
@@ -413,8 +431,11 @@ last_indiv(I,R):- into_group(I,M),I\=@=M,!,predsort(sort_on(loc_term),M,O),rever
 
 fav(A,B):- nonvar_or_ci(A),nonvar_or_ci(B), cls1,mmake, asserta(fav(A,B),Ref),!, call_cleanup(arc1(A),erase(Ref)).
 
-fav(t('05269061'),[indiv(diamonds)]).
+%fav(t('05269061'),[indiv(complete)]).
 
+fav(v('7c9b52a0'),[giz([never_repair])]).
+%fav(v('7c9b52a0'),[indiv([force_by_color,pbox_vm])]).
+fav(v('7c9b52a0'),[indiv([colormass,bg_shapes(colormass)])]).
 fav(t('484b58aa'),[indiv(i_repair_patterns)]).
 fav(t('0dfd9992'),[indiv(i_repair_patterns)]).
 fav(v('af22c60d'),[indiv(i_repair_patterns)]).
@@ -437,6 +458,8 @@ fav(t('73251a56'),[indiv(i_repair_patterns),learn([learn_mapping_stateful]),huma
 
 fav(t('9aec4887'),[indiv(color_blind),todo_sol([find_individuals([hollow,inside([rectangle])],I),rest_indivdual(Is),put_inside(Is,I),
   if_edge_strong([color=C]),touch(Is,Point),set_color(C,Point)])]).
+
+fav(t(a740d043),[human(remove_color(blue))]).
 
 fav(t('47c1f68c'),[hedra,
    human(compute_max_color(C1),compute_next_color(C2),remove_color(C1),subst_color(C2,C1),blur(flipH),blur(flipV))]).
@@ -463,7 +486,8 @@ fav(t('a85d4709'),[indiv(i_rows),learn(i([rows,done]),o([rows,done]),learn_rule)
 
 fav(t('60b61512'),[indiv(i_pbox)]).
 
-fav(t('d0f5fe59'),[indiv(colormass),human(color(largest,Color),ray(Color-point_01_01,count),trim_to_rect),-shape_match,-rotation_match,-mask_match,+color_match,tt,training,separate_shapes,pairwise_analogy,count_shapes,associate_images_to_numbers,'(3, 1)']).
+fav(t('d0f5fe59'),[%indiv(colormass),
+  human(color(largest,Color),ray(Color-point_01_01,count),trim_to_rect),-shape_match,-rotation_match,-mask_match,+color_match,tt,training,separate_shapes,pairwise_analogy,count_shapes,associate_images_to_numbers,'(3, 1)']).
 
 /*
   Grid = [[1,1,1,1]]

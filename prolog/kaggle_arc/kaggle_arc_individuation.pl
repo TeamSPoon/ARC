@@ -160,6 +160,7 @@ flatten_set(F,S):- flatten(F,L),list_to_set(L,BF),!,BF=S.
 show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):- GridIn==GridOfIn,!,
   into_iog(InC,OutC,IndvS),
   show_individuated_nonpair(PairName,ROptions,GridIn,GridOfIn,IndvS).
+
 show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):- 
  must_det_ll((
   dash_chars,
@@ -170,15 +171,25 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
   print_side_by_side(green,GridIn1,ngridIn(ID1),_,GridOut1,ngridOut(ID2)),
   %print_side_by_side(green,InC,ogridIn(ID1),_,OutC,ogridOut(ID2)),
   %dash_chars,
+  
+  grid_size(GridIn,IH,IV),filter_shown(IH,IV,InC,InShown,InHidden),
+  grid_size(GridOut,OH,OV),filter_shown(OH,OV,OutC,OutShown,OutHidden),
+  print_side_by_side(green,InHidden,hiddens(ID1),_,OutHidden,hiddens(ID2)),
+  print_side_by_side(green,InShown,shown(ID1),_,OutShown,shown(ID2)),!,
+
+  print_list_of(show_touches(InShown),in(ID1),InShown),
+  maplist(debug_as_grid,InShown),!,
+  print_list_of(show_touches(OutShown),out(ID2),OutShown),
   setup_call_cleanup(
     luser_setval(no_rdot,true),
     (grid_size(GridIn,IH,IV), grid_size(GridOut,OH,OV),
     ((InC==OutC, InC==[]) -> progress(yellow,nothing_individuated(PairName)) ;
-       show_pair_diff_code(IH,IV,  OH, OV,individuated(ROptions,ID1),individuated(ROptions,ID2),PairName,InC,OutC)),!),
+       show_pair_diff_code(IH,IV,  OH, OV,individuated(ROptions,ID1),individuated(ROptions,ID2),PairName,InC,OutC)),
+    !),
     luser_setval(no_rdot,false)),
   dash_chars)).
 
-
+   
 
 % =========================================================
 
@@ -378,13 +389,16 @@ individuation_macros(some_leftovers, [
 individuation_macros(do_ending, [
   %find_edges,
   % find_contained_points, % mark any "completely contained points"
- combine_same_globalpoints, % make sure any objects are perfectly the equal part of the image are combined    
- find_touches,  
+ combine_same_globalpoints, % make sure any objects are perfectly the equal part of the image are combined
+ keep_only_shown,
+ combine_same_globalpoints,
+ find_touches,
  find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
  find_sees,
  find_overlaps,
+ combine_same_globalpoints,
  group_vm_priors,
- grid_props, 
+ grid_props,
  %combine_objects,
  end_of_macro]).
 
@@ -429,6 +443,7 @@ individuation_macros(i_complete_generic, SetO):-
    find_hybrid_shapes,
    %save_as_obj_group(diamonds),
    gather_cached,
+   keep_only_shown,
    %[pointless([sub_indiv([save_as_obj_group(force_by_color),save_as_obj_group(i_colormass),save_as_obj_group(i_nsew)])])],
    %do_ending,
 
@@ -450,15 +465,16 @@ individuator(i_colormass,[colormass]).
 individuator(i_mono_colormass,[fg_shapes(i_colormass)]).
 individuator(i_nsew,[n_w]).
 individuator(i_mono_nsew,[fg_shapes(i_nsew)]).
-individuator(i_diags,[colormass]).
+individuation_macros(i_diags,[dg_line(d), dg_line(u), diamonds,all_lines,alone_dots]).
 individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), reset_points, by_color(1,black),by_color(1,bg), by_color(1,fg),/* ,*/[]]).
 individuator(i_sub_pbox,[sub_individuate(pbox_vm)]).
+individuator(i_pbox,[maybe_pbox_vm,i_colormass]).
 individuator(i_repair_patterns,[maybe_repair_in_vm(find_symmetry_code)]).
 
 %individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots]).
 
 %individuator(i_abtractions,[fg_abtractions([save_as_obj_group(i_mono_nsew),save_as_obj_group(i_nsew)])]).
-individuation_macros(i_pbox,[maybe_pbox_vm,i_colormass]).
+
 
 /*
 
@@ -522,7 +538,7 @@ find_symmetry_code1(VM,Grid,RepairedResult,Code):-
       *-> 
        (if_t(GridS\==[],print_grid(test_RepairedResult,GridS)),
         if_t(Orig\==Grid,print_side_by_side(green,Orig,orig(ID),_,Grid,altered(ID))),
-        print_side_by_side(green,Orig,gridIn(ID),_,RepairedResult,repaired(ID)),
+        print_side_by_side(green,Orig,gridIn(ID),_,RepairedResult,repaired(ID)),        
         if_t(is_grid(Out),
           if_t(RepairedResult\==Out,
             (print_side_by_side(yellow,RepairedResult,unexpected_repairedResult(ID),_,Out,expected(ID)),
@@ -794,9 +810,9 @@ find_hybrid_shapes(VM):-
   set(VM.grid)= VM.grid_o,
   Grid = VM.grid,
   mass(Grid,GMass),
-  get_current_test(TestID),
+  current_test_example(TestID,ExampleNum),
   findall(In,
-    ( hybrid_shape(TestID,In),
+    ( hybrid_shape(TestID,ExampleNum,pair,In),
       In\=[[_]],In\=Grid,
       mass(In,Mass),  
       Mass<GMass,
@@ -805,7 +821,7 @@ find_hybrid_shapes(VM):-
       nop(AMass==9)),List),
   List\==[],
   length(List,HL),!,
-  as_debug(9,(print_grid(hybrid_shape(HL,TestID,VM.gid),VM.grid))),!,
+  as_debug(9,(print_grid(hybrid_shape(HL,TestID,pair,VM.gid),VM.grid))),!,
   maplist(release_bg,List,FGList),
   % maplist(=,List,FGList),
   predsort(sort_on(hybrid_order),FGList,Set),
@@ -844,35 +860,38 @@ hybrid_order(Grid,Len+NArea):- term_variables_len(Grid,Len),area(Grid,Area),NAre
 
 %shape_size(G,H+V+VsC+Cs):- grid_size(G,H,V),term_variables_len(G,VsC),colors(G,Cs).
 term_variables_len(G,VsC):- term_variables(G,Vs),length(Vs,VsC).
-:- dynamic(is_hybrid_shape/2).
-hybrid_shape(_TestID,Shape):-
-   shape_lib_direct(pair,GalleryS),
-   member(Shape,GalleryS).
-hybrid_shape(TestID,Shape):- is_hybrid_shape(TestID,Shape).
+
+:- dynamic(is_hybrid_shape/4).
+hybrid_shape(TestID,ExampleNum,Name,Shape):- is_hybrid_shape(TestID,ExampleNum,Name,Shape).
+%hybrid_shape(_TestID,_ExampleNum,Name,Shape):- shape_lib_direct(Name,GalleryS), member(Shape,GalleryS). 
 
 
 learn_hybrid_shape(ReColored):-
  learn_hybrid_shape(pair,ReColored).
 
-learn_hybrid_shape(Name,ReColored):- is_grid(ReColored),!,learn_hybrid_shape_grid(Name,ReColored).
-learn_hybrid_shape(Name,ReColored):- is_list(ReColored),!,maplist(learn_hybrid_shape(Name),ReColored).
-learn_hybrid_shape(Name,ReColored):- is_object(ReColored),!,object_grid(ReColored,Grid), learn_hybrid_shape(Name,Grid).
-learn_hybrid_shape(Name,ReColored):- into_grid(ReColored,Grid),!,learn_hybrid_shape_grid(Name,Grid).
+learn_hybrid_shape(Type,Obj):- is_list(Type),!,maplist(lambda_rev(learn_hybrid_shape(Obj)),Type).
+learn_hybrid_shape(Type,Obj):- is_group(Obj),!,mapgroup(learn_hybrid_shape(Type),Obj).
+learn_hybrid_shape(Name,ReColored):-
+ current_test_example(TestID,ExampleNum),
+ learn_hybrid_shape(TestID,ExampleNum,Name,ReColored).
+
+learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- is_grid(ReColored),!,learn_hybrid_shape_grid(TestID,ExampleNum,Name,ReColored).
+learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- is_list(ReColored),!,maplist(learn_hybrid_shape(TestID,ExampleNum,Name),ReColored).
+learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- is_object(ReColored),!,object_grid(ReColored,Grid), learn_hybrid_shape(TestID,ExampleNum,Name,Grid).
+learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- into_grid(ReColored,Grid),!,learn_hybrid_shape_grid(TestID,ExampleNum,Name,Grid).
 
 use_hybrid_grid(In):- In\=[[_]], mass(In,Mass),Mass>2, nop((area(In,AMass),AMass < Mass*2)).
 use_hybrid_grid(In):- In\=[[_]], amass(In,Mass),Mass>2, nop((area(In,AMass),AMass < Mass*2)).
-learn_hybrid_shape_grid(Name,ReColored):- \+ use_hybrid_grid(ReColored),!,ignore((ReColored\=[[_]], print_grid(error(learn_hybrid_shape_grid(Name)),ReColored))),!.
-learn_hybrid_shape_grid(Name,ReColored):- % print_grid(learn_hybrid_shape(Name),ReColored),
-  get_current_test(TestID),
-  if_t( \+ is_hybrid_shape(TestID,ReColored),
-    (print_grid(warn(learn_hybrid_shape_grid(Name)),ReColored),
-     assert_if_new(is_hybrid_shape(TestID,ReColored)),
-     assert_shape_lib(Name,ReColored))),
-  must_det_ll((hybrid_shape(TestID,ReColored))).
+
+learn_hybrid_shape_grid(TestID,ExampleNum,Name,ReColored):- \+ use_hybrid_grid(ReColored),!,ignore((ReColored\=[[_]], print_grid(error(learn_hybrid_shape_grid(TestID,ExampleNum,Name)),ReColored))),!.
+learn_hybrid_shape_grid(TestID,ExampleNum,Name,ReColored):- % print_grid(learn_hybrid_shape(TestID,ExampleNum,Name),ReColored),
+  if_t( \+ is_hybrid_shape(TestID,ExampleNum,Name,ReColored),
+    (print_grid((learn_hybrid_shape_grid(TestID,ExampleNum,Name)),ReColored),
+     assert_if_new(is_hybrid_shape(TestID,ExampleNum,Name,ReColored)))).
 
 get_hybrid_set(Set):-
-  get_current_test(TestID),
-  findall(O,hybrid_shape(TestID,O),List),
+  findall(O,(current_test_example(TestID,ExampleNum),
+             hybrid_shape(TestID,ExampleNum,_Name,O)),List),
   sort(List,SList),
   h_all_rots(SList,SetR),
   predsort(sort_on(hybrid_order),SetR,Set).
@@ -904,6 +923,26 @@ fix_indivs_options(subshape_both(V,I),[subshape_both(V,O)]):- fix_indivs_options
 fix_indivs_options(detect(O),[detect(O)]):-!.
 fix_indivs_options(O,[detect(O)]):- is_gridoid(O),!.
 fix_indivs_options(I,O):-listify(I,O),!.
+
+% =====================================================================
+is_fti_step(keep_only_shown).
+% =====================================================================
+keep_only_shown(VM):-
+  filter_shown(VM.h,VM.v,VM.objs,OutShown,_OutHidden),
+  gset(VM.objs)=OutShown,!.
+
+filter_shown(OH,OV,OutC,OutShown,OutHidden):-
+ must_det_ll((
+  object_printables(OutC,GroupVis,GroupPP),
+  append_sets([GroupVis,GroupPP],OutObjs),
+  findall(Obj,(between(1,OH,H),between(1,OV,V),object_at(H,V,OutObjs,Obj)),Shown),
+  include(has_prop(iz(always_keep)),OutC,Kept),
+  append_sets([Shown,Kept],OutShown0),
+  combine_same_globalpoints(OutShown0,OutShown),
+  my_partition(is_not_in(OutShown),OutC,OutHidden,_Show))).
+
+is_not_in(Set,Obj):- \+ (member(O,Set),O=@=Obj).
+object_at(H,V,OutC,Obj):- hv_point(H,V,Point), member(Obj,OutC),once(globalpoints(Obj,Points)),member(_-Point,Points),!.
 
 % =====================================================================
 is_fti_step(keep_points).
@@ -1035,6 +1074,7 @@ individuate_pair(ROptions,In,Out,IndvSI,IndvSO):-
    (IO==in_out -> individuate_two_grids(ROptions,InG,OutG,IndvSI,IndvSO); 
               individuate_two_grids(IO,OutG,InG,IndvSO,IndvSI)))),!.
 
+
 doing_pair:- nb_current(doing_pair,t).
 
 individuate_two_grids(ROptions,GridIn,GridOut,IndvSI,IndvSO):- 
@@ -1129,7 +1169,7 @@ individuate_two_grids_now_X(OID_In_Out,ROptions,Grid_In,Grid_Out,VM_In,VM_Out,Gr
   print_side_by_side(yellow,Grid_InX,OID_In_Out=gridInX(ID_In),_,Grid_OutX,OID_In_Out=gridOutX(ID_Out)),
 
   with_other_grid(Grid_OutX,do_individuate(VM_In,ROptions,Grid_InX,Objs_In)),!, 
-  set(VM_Out.robjs) = Objs_In,
+  gset(VM_Out.robjs) = Objs_In,
   with_other_grid(Grid_InX,do_individuate(VM_Out,ROptions,Grid_OutX,Objs_Out)),!,
 
   must_grid_to_gid(Grid_In,OID_In),must_grid_to_gid(Grid_Out,OID_Out),
@@ -2102,9 +2142,10 @@ is_fti_step(group_vm_priors).
 group_vm_priors(VM):-
  must_det_ll((
   ObjsG = VM.objs,
+  %print_list_of(wqnl,ObjsG),
   TID_GID=tid_gid(VM.id,VM.gid),
   check_tid_gid(TID_GID,VM.grid_o),
-  group_prior_objs(TID_GID,ObjsG,Objs),
+  group_prior_objs(TID_GID,ObjsG,Objs),  
   gset(VM.objs) = Objs)).
 
 group_prior_objs(Why,Objs,LF):- 
@@ -2532,8 +2573,9 @@ maybe_glyphic(VM):-
 
 %is_glyphic(Points,_GH,_GV):- length(Points,Len), Len < 5.
 %is_glyphic(Points,_GH,_GV):- mass(Points,Len), Len =< 25,!.
-is_glyphic(_VM,Points,GH,GV):- ( GH=<3 , GV=<3 ), nop((length(Points,Len), Len is GH * GV)).
-is_glyphic(VM,_Points,GH,GV):- ( GH=<5 , GV=<5 ), other_grid_size(VM.grid_o,OH,OV),!,
+is_glyphic(_VM,_Points,GH,GV):- ( GH=<4 , GV=<4 ).
+%is_glyphic(_VM, Points,GH,GV):- ( GH=<3 , GV=<3 ), nop((length(Points,Len), Len is GH * GV)).
+is_glyphic( VM,_Points,GH,GV):- ( GH=<5 , GV=<5 ), other_grid_size(VM.grid_o,OH,OV),!,
   (OV > GV,OH > GH),
   is_purp(_How,OH,OV,GH,GV).
 
@@ -2568,7 +2610,7 @@ one_fti(VM,grid_props):-
   H=VM.h,V=VM.v,
   hv_point(H,V,Point),
   grid_props(VM.grid_o,Props),
-  append(Props,[amass(0),vis2D(1,1),birth(grid_props),loc2D(H,V),iz(image),iz(hidden)],AllProps),
+  append(Props,[amass(0),vis2D(1,1),birth(grid_props),loc2D(H,V),iz(always_keep),iz(image),iz(hidden)],AllProps),
   make_indiv_object(VM,AllProps,[wbg-Point],_),!.
 
 
@@ -2587,8 +2629,8 @@ whole_into_obj(VM,Grid,Whole):-
   grid_props(Grid,Props0),
   delete(Props0,sometimes_grid_edges(_),Props),
   if_t(Len>0,
-    (make_indiv_object(VM,[amass(Len),vis2D(H,V),birth(whole),loc2D(1,1),iz(image)|Props],Points,Whole),raddObjects(VM,Whole),
-       save_grouped(individuate(whole,VM.gid),[Whole]),assert_shape_lib(pair,Whole))),
+    (make_indiv_object(VM,[amass(Len),vis2D(H,V),birth(whole),iz(always_keep),loc2D(1,1),iz(always_keep),iz(image)|Props],Points,Whole),raddObjects(VM,Whole),
+       save_grouped(individuate(whole,VM.gid),[Whole]),learn_hybrid_shape(pair,Whole))),
   localpoints(Grid,LPoints),
   length(LPoints,CLen),if_t((CLen=<144,CLen>0),    
     (make_indiv_object(VM,[birth(whole),iz(shaped),loc2D(1,1)],LPoints,Whole2),raddObjects(VM,Whole2))).
