@@ -916,15 +916,16 @@ object_localpoints(I,XX):- must_be_free(XX),
 object_localpoints0(_,L,X):- member(localpoints(X),L),is_list(X),!.
 object_localpoints0(I,L,X):- member(globalpoints(XX),L),is_list(XX),loc2D(I,LoH,LoV),!,deoffset_points(LoH,LoV,XX,X).
 object_localpoints0(I,_L,XX):-  
- must_det_11((shape(I,X), rotation(I,Rot), shape2D(I,H,V), pen(I,PenColors),
+ must_det_ll((shape(I,X), rotation(I,Rot), shape2D(I,H,V), pen(I,PenColors),
    make_localpoints(X,Rot,H,V,PenColors,XX))).
 
 make_localpoints(X,Rot,H,V,PenColors,XX):- 
-  must_det_11((   maybe_unrotate_points(H,V,X,Rot,XXX),
+  must_det_ll((   maybe_unrotate_points(H,V,X,Rot,XXX),
      combine_pen(XXX,PenColors,PenColors,XX) )),!.
 
 maybe_unrotate_points(_,_,X,sameR,XX):- must_be_free(XX),!,X=XX.
-maybe_unrotate_points(H,V,X,Rot,XX):- points_to_grid(H,V,X,Grid),!,unrotate(Rot,Grid,Grid90),localpoints_include_bg(Grid90,XX).
+maybe_unrotate_points(H,V,X,Rot,XX):- must_det_ll((points_to_grid(H,V,X,Grid),   
+   unrotate(Rot,Grid,Grid90),localpoints_include_bg(Grid90,XX))).
 
 combine_pen([],_,_,[]):-!.
 
@@ -1066,7 +1067,7 @@ rebuild_from_localpoints(Obj,WithPoints,NewObj):-
 
   (Points=@=PrevPoints -> (NewObj=Obj) ;
 
- (rotation(Obj,Rot),unrotate(Rot,UnRot),
+ (rotation(Obj,Rot),unrotate_p2(Rot,UnRot),
   loc2D(Obj,X,Y),%vis2D(Obj,H,V),  
   %obj_to_oid(Obj,ID,_Iv),
   %uncast_grid_to_object(Orig,Grid,NewObj),

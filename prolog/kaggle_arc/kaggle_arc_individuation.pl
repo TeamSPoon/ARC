@@ -421,7 +421,7 @@ individuation_macros(complete, ListO):- im_complete(ListC),
    list_to_set(ListM,ListO),!.
 
 
-im_complete(ListO):- test_config(indiv(ListO)),!.
+im_complete(ListO):- test_config(indiv(ListO)), [i_repair_patterns]\=@= ListO,[i_repair_patterns_f]\=@= ListO,!.
 %im_complete(ListO):- ListO=[n_w,all_lines,diamonds,do_ending].
 %im_complete([i_repair_patterns]):- get_current_test(TestID),is_symgrid(TestID),!.
 im_complete(i_complete_generic).
@@ -463,6 +463,7 @@ individuator(i_maybe_glypic,[maybe_glyphic]). %:- \+ doing_pair.
 individuator(i_subtractions,[fg_subtractions([save_as_obj_group(i_mono_nsew),save_as_obj_group(i_nsew)])]).
 individuator(i_colormass,[colormass]).
 individuator(i_mono_colormass,[fg_shapes(i_colormass)]).
+individuator(i_alone_dots,[alone_dots]).
 individuator(i_nsew,[n_w]).
 individuator(i_mono_nsew,[fg_shapes(i_nsew)]).
 individuation_macros(i_diags,[dg_line(d), dg_line(u), diamonds,all_lines,alone_dots]).
@@ -470,6 +471,7 @@ individuator(i_by_color,[by_color(1), by_color(3,wbg), by_color(3,wfg), reset_po
 individuator(i_sub_pbox,[sub_individuate(pbox_vm)]).
 individuator(i_pbox,[maybe_pbox_vm,i_colormass]).
 individuator(i_repair_patterns,[maybe_repair_in_vm(find_symmetry_code)]).
+individuator(i_repair_patterns_f,[repair_in_vm(find_symmetry_code)]).
 
 %individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots]).
 
@@ -883,7 +885,7 @@ learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- into_grid(ReColored,Grid)
 use_hybrid_grid(In):- In\=[[_]], mass(In,Mass),Mass>2, nop((area(In,AMass),AMass < Mass*2)).
 use_hybrid_grid(In):- In\=[[_]], amass(In,Mass),Mass>2, nop((area(In,AMass),AMass < Mass*2)).
 
-learn_hybrid_shape_grid(TestID,ExampleNum,Name,ReColored):- \+ use_hybrid_grid(ReColored),!,ignore((ReColored\=[[_]], print_grid(error(learn_hybrid_shape_grid(TestID,ExampleNum,Name)),ReColored))),!.
+learn_hybrid_shape_grid(TestID,ExampleNum,Name,ReColored):- \+ use_hybrid_grid(ReColored),!,ignore((ReColored\=[[_]], print_grid(unused(learn_hybrid_shape_grid(TestID,ExampleNum,Name)),ReColored))),!.
 learn_hybrid_shape_grid(TestID,ExampleNum,Name,ReColored):- % print_grid(learn_hybrid_shape(TestID,ExampleNum,Name),ReColored),
   if_t( \+ is_hybrid_shape(TestID,ExampleNum,Name,ReColored),
     (print_grid((learn_hybrid_shape_grid(TestID,ExampleNum,Name)),ReColored),

@@ -149,6 +149,8 @@ gravity_1_n_0([Row1,Row2|Grid],GridNew):- nth1(Col,Row1,E1),nth1(Col,Row2,E2),
 gravity_1_n_0([Row1|Grid],[Row1|GridNew]):- gravity_1_n_0(Grid,GridNew).
 
 :- decl_pt(any_xform(p2,prefer_grid,prefer_grid)).
+
+any_xform(Rot90,Any,NewAny):- var(Any),nonvar(NewAny),unrotate_p2(Rot90,Rot270),!, any_xform(Rot270,NewAny,Any).
 any_xform(Rot90,Any,NewAny):- 
   cast_to_grid(Any,RealGrid,UnconvertClosure),!,
   grid_xform(Rot90,RealGrid,NewRealGrid),
@@ -191,8 +193,8 @@ sameR(X,X).
 test_rot:- test_p2(rot270),test_p2(rot90).
 %srot90V,flipV
 %rot90(A,B):- A==[],!,B=[].
-%rot90( Grid,NewAnyWUpdate):- rot180( Grid,M),rot270( M,NewAnyWUpdate).
-rot90( Grid,NewAnyWUpdate):- any_xform(grid_rot90,Grid,NewAnyWUpdate).
+rot90( Grid,NewAnyWUpdate):- !, rot180( Grid,M),rot270( M,NewAnyWUpdate).
+%rot90( Grid,NewAnyWUpdate):- any_xform(grid_rot90,Grid,NewAnyWUpdate).
 rot180( Grid,NewAnyWUpdate):- any_xform(grid_rot180,Grid,NewAnyWUpdate).
 rot270( Grid,NewAnyWUpdate):- any_xform(grid_rot270,Grid,NewAnyWUpdate).
 flipH( Grid,NewAnyWUpdate):- any_xform(grid_flipH,Grid,NewAnyWUpdate).
@@ -229,11 +231,13 @@ grid_flipD(I,O):- grid_size(I,H,V),make_grid(V,H,O),
        nb_set_local_point(Y,X,C,O)))).
 
 
-unrotate(UnRot,X,Y):- unrotate(UnRot,Rot),!,grid_call(Rot,X,Y).
+unrotate(UnRot,X,Y):- unrotate_p2(UnRot,Rot),!,must_grid_call(Rot,X,Y).
 
-unrotate(rot90,rot270):-!.
-unrotate(rot270,rot90):-!.
-unrotate(X,X).
+unrotate_p2r(rot90,rot270).
+unrotate_p2r(double_size,half_size).
+unrotate_p2(X,Y):- unrotate_p2r(X,Y).
+unrotate_p2(X,Y):- unrotate_p2r(Y,X).
+unrotate_p2(X,X).
 
 
 nav(s,0,1). nav(e, 1,0). nav(w,-1,0). nav(n,0,-1).

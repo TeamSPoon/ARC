@@ -8,6 +8,9 @@
 
 
 :- meta_predicate(grid_call(+,+,-)).
+
+must_grid_call(T,I,O):- (grid_call(T,I,O)*->true; (print_side_by_side_msg(failed_grid_call(T),I,O),trace,fail)).
+
 grid_call(T,I,O):- plain_var(I),var(O),!,into_grid(_,G),I=G,grid_call(T,G,O).
 grid_call(=,I,O):- !, I=O. 
 grid_call(T,I+O,II+OO):- !, grid_call(T,I,II),grid_call(T,O,OO).

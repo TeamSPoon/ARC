@@ -612,13 +612,17 @@ print_side_by_side(G1N1,G2N2):-
    pp_msg_color(N1,TitleColor),
    print_side_by_side6(TitleColor,G1,N1,_LW,G2,N2).
 
-print_side_by_side(X,Y,Z):- (var(Y);number(Y)),!, g_out((nl,print_side_by_side0(X,Y,Z))),!.
+print_side_by_side(Info,G1N1,G2N2):- is_gridoid(G1N1),!,
+  print_side_by_side_msg(Info,G1N1,G2N2).
 print_side_by_side(TitleColor,G1N1,G2N2):- is_color(TitleColor),!,
   always_grid_footer(G1N1,G1,N1),
   always_grid_footer(G2N2,G2,N2),  
   print_side_by_side6(TitleColor,G1,N1,_LW,G2,N2).
+print_side_by_side(X,Y,Z):- (var(Y);number(Y)),!, g_out((nl,print_side_by_side0(X,Y,Z))),!.
+print_side_by_side(Info,G1N1,G2N2):- 
+  print_side_by_side_msg(Info,G1N1,G2N2).
 
-print_side_by_side(Info,G1N1,G2N2):-
+print_side_by_side_msg(Info,G1N1,G2N2):-
   always_grid_footer(G1N1,G1,N1),
   always_grid_footer(G2N2,G2,N2),
   pp_msg_color(Info,TitleColor),

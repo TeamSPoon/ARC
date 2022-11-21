@@ -543,7 +543,12 @@ shapelib_opts(Name,Opts):- findall(Opt,is_shapelib_opt(Name,Opt),Opts).
 :- decl_sf(double_size(grid)).
 % ===========================================================
 
-double_size(Grid,Double):- h_and_v(double_rows,Grid,Double).
+double_size(Grid,Double):- any_xform(grid_double_size,Grid,Double).
+
+grid_double_size(Grid,Double):- h_and_v(double_rows,Grid,Double).
+
+half_size(I,O):- grid_size(I,H,V), H>1,V>1, 0 is H rem 2, 0 is V rem 2,  X is H div 2, Y is V div 2, make_grid(X,Y,HS),
+  any_xform(grid_double_size,HS,DS),!,O=HS,I=DS.
 
 double_rows([],[]):-!.
 double_rows([D|DRows90],[D,D|DRows90D]):- double_rows(DRows90,DRows90D).

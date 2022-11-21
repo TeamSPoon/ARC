@@ -622,36 +622,61 @@ grid_size(_,30,30).
 %calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,Obj,LoH,LoV,HiH,HiV,H,V):- \+ is_points_list(Obj), globalpoints(Obj,Points),!,
 %  calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,Points,LoH,LoV,HiH,HiV,H,V).
 
-calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,Var,WLoH,WLoV,WHiH,WHiV,WH,WV):- plain_var(Var),!.
-
-calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,grid_size(IH,IV),LoH,LoV,HiH,HiV,H,V):- !,
-  max_min(WLoV,IV,_,LoV),max_min(WHiV,IV,HiV,_),max_min(HiV,WV,V,_),
-  max_min(WLoH,IH,_,LoH),max_min(WHiH,IH,HiH,_),max_min(HiH,WH,H,_),!.
-
-/*
-calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,grid_size(IH,IV),LoH,LoV,WHiH,WHiV,H,V):- !,
-  max_min(WLoV,IV,_,LoV),max_min(WHiV,IV,HiV,_),max_min(HiV,WV,V,_),
-  max_min(WLoH,IH,_,LoH),max_min(WHiH,IH,HiH,_),max_min(HiH,WH,H,_),!.
-*/
-%calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,vis2D(IH,IV),WLoH,WLoV,WHiH,WHiV,H,V):- !,
+calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,Var,WLoH,WLoV,WHiH,WHiV,WH,WV):- plain_var(Var),!.
+calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,grid_size(IH,IV),WLoH,WLoV,WHiH,WHiV,H,V):- !,
+  max_min(WV,IV,V,_),max_min(WH,IH,H,_).
+%calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,v_hv(IH,IV),WLoH,WLoV,WHiH,WHiV,H,V):- !,
 %  max_min(WV,IV,V,_),max_min(WH,IH,H,_).
-
-calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,[E|L],LoH,LoV,HiH,HiV,H,V):- !,
-  calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,E,MLoH,MLoV,MHiH,MHiV,MH,MV),
-  calc_range(MLoH,MLoV,MHiH,MHiV,MH,MV,L,LoH,LoV,HiH,HiV,H,V).
-calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,[],WLoH,WLoV,WHiH,WHiV,WH,WV).
-calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,offset_ranges(ILoH,ILoV,IHiH,IHiV,IH,IV),LoH,LoV,HiH,HiV,H,V):- 
+calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,[E|L],LoH,LoV,HiH,HiV,H,V):- !,
+  calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,E,MLoH,MLoV,MHiH,MHiV,MH,MV),
+  calc_range_old(MLoH,MLoV,MHiH,MHiV,MH,MV,L,LoH,LoV,HiH,HiV,H,V).
+calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,[],WLoH,WLoV,WHiH,WHiV,WH,WV).
+calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,offset_ranges(ILoH,ILoV,IHiH,IHiV,IH,IV),LoH,LoV,HiH,HiV,H,V):- 
   max_min(WLoV,ILoV,_,LoV),max_min(WHiV,IHiV,HiV,_),max_min(WV,IV,V,_),
   max_min(WLoH,ILoH,_,LoH),max_min(WHiH,IHiH,HiH,_),max_min(WH,IH,H,_),!.
-calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,Point,LoH,LoV,HiH,HiV,H,V):- 
+calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,Point,LoH,LoV,HiH,HiV,H,V):- 
   point_to_hvc(Point,IH,IV,C),nonvar_or_ci(C), !,
   max_min(WLoV,IV,_,LoV),max_min(WHiV,IV,HiV,_),max_min(HiV,WV,V,_),
   max_min(WLoH,IH,_,LoH),max_min(WHiH,IH,HiH,_),max_min(HiH,WH,H,_),!.
-calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,C-Point,LoH,LoV,HiH,HiV,H,V):- nonvar(Point),plain_var(C),
+
+calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,_,WLoH,WLoV,WHiH,WHiV,WH,WV):- !.
+
+
+
+
+calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,EL,LoH,LoV,HiH,HiV,H,V):- calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,EL,LoH,LoV,HiH,HiV,H,V),!.
+%calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,EL,LoH,LoV,HiH,HiV,H,V):- calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,EL,LoH,LoV,HiH,HiV,H,V),!.
+
+
+
+
+calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,Var,WLoH,WLoV,WHiH,WHiV,WH,WV):- plain_var(Var),!.
+calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,grid_size(IH,IV),LoH,LoV,HiH,HiV,H,V):- !,
+  max_min(WLoV,IV,_,LoV),max_min(WHiV,IV,HiV,_),max_min(HiV,WV,V,_),
+  max_min(WLoH,IH,_,LoH),max_min(WHiH,IH,HiH,_),max_min(HiH,WH,H,_),!.
+/*
+calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,grid_size(IH,IV),LoH,LoV,WHiH,WHiV,H,V):- !,
+  max_min(WLoV,IV,_,LoV),max_min(WHiV,IV,HiV,_),max_min(HiV,WV,V,_),
+  max_min(WLoH,IH,_,LoH),max_min(WHiH,IH,HiH,_),max_min(HiH,WH,H,_),!.
+*/
+%calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,vis2D(IH,IV),WLoH,WLoV,WHiH,WHiV,H,V):- !,
+%  max_min(WV,IV,V,_),max_min(WH,IH,H,_).
+calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,[E|L],LoH,LoV,HiH,HiV,H,V):- !,
+  calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,E,MLoH,MLoV,MHiH,MHiV,MH,MV),
+  calc_range_new(MLoH,MLoV,MHiH,MHiV,MH,MV,L,LoH,LoV,HiH,HiV,H,V).
+calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,[],WLoH,WLoV,WHiH,WHiV,WH,WV).
+calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,offset_ranges(ILoH,ILoV,IHiH,IHiV,IH,IV),LoH,LoV,HiH,HiV,H,V):- 
+  max_min(WLoV,ILoV,_,LoV),max_min(WHiV,IHiV,HiV,_),max_min(WV,IV,V,_),
+  max_min(WLoH,ILoH,_,LoH),max_min(WHiH,IHiH,HiH,_),max_min(WH,IH,H,_),!.
+calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,Point,LoH,LoV,HiH,HiV,H,V):- 
+  point_to_hvc(Point,IH,IV,C),nonvar_or_ci(C), !,
+  max_min(WLoV,IV,_,LoV),max_min(WHiV,IV,HiV,_),max_min(HiV,WV,V,_),
+  max_min(WLoH,IH,_,LoH),max_min(WHiH,IH,HiH,_),max_min(HiH,WH,H,_),!.
+calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,C-Point,LoH,LoV,HiH,HiV,H,V):- nonvar(Point),plain_var(C),
   hv_point(IH,IV,Point),!,
   max_min(WLoV,IV,_,LoV),max_min(WHiV,IV,HiV,_),max_min(HiV,WV,V,_),
   max_min(WLoH,IH,_,LoH),max_min(WHiH,IH,HiH,_),max_min(HiH,WH,H,_),!.
-calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,_,WLoH,WLoV,WHiH,WHiV,WH,WV):- !.
+calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,_,WLoH,WLoV,WHiH,WHiV,WH,WV):- !.
 
 
 grid_size_nd(L,_,_):- \+ var(L), \+ is_grid(L), !, fail.

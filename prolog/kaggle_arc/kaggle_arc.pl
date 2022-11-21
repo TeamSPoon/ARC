@@ -223,6 +223,8 @@ must_det_ll((X,Y)):- !, (must_det_ll(X),must_det_ll(Y)).
 %must_det_ll(X):- notrace(catch(X,_,fail)),!.
 must_det_ll(X):- conjuncts_to_list(X,List),List\=[_],!,maplist(must_det_ll,List).
 must_det_ll(must_det_ll(X)):- !, must_det_ll(X).
+must_det_ll(grid_call(P2,I,O)):- !, must_grid_call(P2,I,O).
+must_det_ll(call(P2,I,O)):- !, must_grid_call(P2,I,O).
 %must_det_ll((X,Y,Z)):- !, (must_det_ll(X)->must_det_ll(Y)->must_det_ll(Z)).
 %must_det_ll((X,Y)):- !, (must_det_ll(X)->must_det_ll(Y)).
 must_det_ll(if_t(X,Y)):- !, if_t(must_not_error(X),must_det_ll(Y)).
