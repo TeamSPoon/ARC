@@ -793,4 +793,4 @@ ansi_startup:-
 :- scan_uses_test_id.
 :- make_grid_cache.
 :- gen_gids.
-
+:- store_grid_size_predictions.

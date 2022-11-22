@@ -496,8 +496,9 @@ find_links_objects(How,Obj,[Seen|ScanNext],[BetterSee|WillSee]):-
  once(call(How,Dirs,Obj,Seen)),Dirs\==[],!,
  link_prop(How,Prop),
  better_sdir(Prop,Iv,Dirs,BetterSee),
- /*must_det_ll*/(obj_to_oid(Seen,Iv)),
- /*must_det_ll*/(find_links_objects(How,Obj,ScanNext,WillSee)),!.
+ /*must_det_ll*/obj_to_oid(Seen,Iv),
+ /*must_det_ll*/
+ find_links_objects(How,Obj,ScanNext,WillSee),!.
 find_links_objects(How,Obj,[_|ScanNext],WillSee):- /*must_det_ll*/(find_links_objects(How,Obj,ScanNext,WillSee)),!.
 
 :- dynamic(individuated_cache/3).
