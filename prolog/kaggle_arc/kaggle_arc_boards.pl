@@ -123,10 +123,16 @@ print_reduced_io(TestID):- ensure_test(TestID),
     (print_side_by_side(green,I,orig_in(TestID,ExampleNum),_,O,orig_out(TestID,ExampleNum)),
      forall(show_reduced_io(I+O),true))).
 
-%show_reduced_io(I+O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
+
+
+show_reduced_io(IO):- 
+    once(show_grid_call(reduce_cutaway(_),IO,NextIO)),
+  if_t(((NextIO)\=@=(IO)), show_reduced_io(NextIO)).
+
+  %show_reduced_io(I+O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
 show_reduced_io(I0+O):- 
   once(( grid_size(I0,H,V), grid_size(O,OH,OV))),
-  ((H>OH;V>OV) , grid_call_alters(trim_to_rect,I0,I)),!,
+  ((H>OH;V>OV) , grid_call_alters(trim_to_rect,I0,I)),
  show_reduced_io(I+O).
 
 %show_reduced_io(I+O):- once(show_grid_call(reduce_grids_io(OPS),(I*O),(II*OO))),

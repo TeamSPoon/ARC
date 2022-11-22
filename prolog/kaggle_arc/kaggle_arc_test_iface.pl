@@ -41,8 +41,8 @@ print_menu_cmd1(Info,_Goal):- format('~w',[Info]).
 menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z_make,!,print_test,train_test)).
 menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),
   sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
-menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(cls_z_make,!,ndividuatorO)).
-menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the input/outputs',(cls_z_make,!,ndividuator)).
+menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(clear_tee,cls_z_make,!,ndividuatorO)).
+menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,ndividuator)).
 menu_cmd1(_,'B','                  or (B)oxes test.',(update_changes,pbox_indivs)).
 menu_cmd1(_,'R','                  or (R)epairs test.',(update_changes,repair_symmetry)).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z_make,!,what_unique)).
@@ -54,7 +54,7 @@ menu_cmd1(_,'L','                  or (L)earned program',(learned_test)).
 menu_cmd1(_,'e',S,(Cmd)):- get_test_cmd(Cmd),
       sformat(S,"                  or (e)xecute .................. '~@'",[bold_print(color_print(cyan,Cmd))]).
 menu_cmd1(_,'x',S,(Cmd)):- get_test_cmd2(Cmd),
-      sformat(S,"                  or e(x)ecute .................. '~@'",[bold_print(color_print(cyan,Cmd))]).
+      sformat(S,"                  or e(x)ecute .................. '~@'",[bold_print(color_print(blue,Cmd))]).
 menu_cmd1(_,'s','              Try to (s)olve based on training',(cls_z_make,print_test,!,solve_test)).
 menu_cmd1(_,'S','                  or (S)olve confirming it works on training pairs',(cls_z_make,print_test,!,solve_test_training_too)).
 menu_cmd1(_,'h','                  or (h)uman proposed solution',(human_test)).
@@ -62,7 +62,7 @@ menu_cmd1(_,'r','               Maybe (r)un some of the above: (p)rint, (t)rain,
 menu_cmd1(_,'A','                  or (A)dvance to the next test and (r)un it',(cls_z_make,!,run_next_test)).
 menu_cmd1(_,'n','                  or (n)ext test (skipping this one)',(next_random_test,print_single_pair)).
 menu_cmd1(_,'b','                  or (b)ack to previous test',(previous_test,print_single_pair)).
-menu_cmd1(_,'f','                  or (f)orce a favorite test.',(enter_test)).
+menu_cmd1(_,'f','                  or (f)orce a favorite test.',(force_full_tee,enter_test)).
 menu_cmd1(_,'~','                  or (PageUp) to begining of suite',(prev_suite)).
 menu_cmd1(_,'N','                  or (N)ext suite',(next_suite)).
 menu_cmd1(i,'R','             Menu to (R)un all tests noninteractively',(run_all_tests,menu)).
@@ -71,8 +71,8 @@ menu_cmd1(r,'i','             Re-enter(i)nteractve mode.',(interact)).
 
 % How I got into fostering was I had spent about 10k dollars at Dove Lewis Animal Hospital for a cat in heart failure.  When he passed, about 3 years ago, I decided (this time) to go to a "kill" shelter to adopt another.   While was waiting for an appointment with an adoption screener I saw a flyer that said 'all medical expenses' would be paid if i became a foster volunteer. Holly shit, that sounded good.  So I started fostering 'moms with kittens' and other cats in all stages and needs.  Sometimes cats that are under protection by court orders.  T
 
-menu_cmd9(_,'m','recomple this progra(m),',(make,menu)).
-menu_cmd9(_,'c','(c)lear the scrollback buffer,',(cls)).
+menu_cmd9(_,'m','recomple this progra(m),',(clear_tee,make,menu)).
+menu_cmd9(_,'c','(c)lear the scrollback buffer,',(force_full_tee,cls)).
 menu_cmd9(_,'C','(C)lear cached test info,',(clear_training,clear_test)).
 menu_cmd9(_,'r','(r)un DSL code,',(call_dsl)).
 menu_cmd9(_,'Q','(Q)uit Menu,',true).
@@ -99,7 +99,7 @@ show_tests:- update_changes, list_of_tests(L),forall(nth10(N,L,E),format('~N~@',
 
   % ignore((read_line_to_string(user_input,Sel),atom_number(Sel,Num))),
 
-ui_menu_call(G):- ignore(catch(ignore(G),E,wdmsg(E))).
+ui_menu_call(G):- ignore(catch(must_not_error(G),E,wdmsg(E))).
 %ui_menu_call(G):- if_arc_webui(catch(ignore((G)),E,wdmsg(E))) ->true ; catch(ignore((G)),E,wdmsg(E)).
   
 my_menu_call(E):- locally(set_prolog_flag(gc,true),ui_menu_call(E)).
@@ -213,7 +213,7 @@ menu_goal(Goal):-
 do_menu_key(-1):- !, arc_assert(wants_exit_menu). 
 do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), arc_assert(wants_exit_menu).
 do_menu_key('?'):- !, write_menu_opts('i').
-do_menu_key('M'):- !, update_changed_files, wdmsg('Recompiled').
+do_menu_key('M'):- !, clear_tee, update_changed_files, wdmsg('Recompiled').
 %do_menu_key('W'):- !, set_pair_mode(whole_test).
 do_menu_key('P'):- !, switch_grid_mode,print_test.
 do_menu_key( ''):- !, fail.
@@ -221,7 +221,7 @@ do_menu_key( ''):- !, fail.
 do_menu_key('d'):- !, dump_suite.
 
 
-do_menu_key(Num):- number(Num),!, do_test_number(Num),!.
+do_menu_key(Num):- number(Num),!, update_changed_files, do_test_number(Num),!.
 do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num), number(Num), !, do_test_number(Num),!.
 do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), !, menu_goal(Body).
 do_menu_key(Key):- atom(Key), menu_cmds(_,Key,_,Body), !, menu_goal(Body).
@@ -740,25 +740,35 @@ worth_saving:- size_file('muarc_tmp/tee.ansi',Size), Size > 20_000.
 :- set_prolog_flag(nogc,false).
 
 begin_tee:- get_current_test(TestID),on_entering_test(TestID),at_halt(exit_tee).
-flush_tee_maybe.
+flush_tee_maybe:- force_full_tee.
 flush_tee:- ignore((worth_saving -> force_flush_tee ; true)).
 force_flush_tee:-   
-  test_html_file_name(FN),
-  ignore((FN \== [], my_shell_format('tail -2000 muarc_tmp/tee.ansi > muarc_tmp/tee1000.ansi ; cat muarc_tmp/test_links muarc_tmp/tee1000.ansi muarc_tmp/test_links | ansi2html -a -W -u -m  > ~w',[FN]))).
-clear_test_html :-
-  test_html_file_name(FN),
-  ignore((FN \== [], my_shell_format('cat /dev/null muarc_tmp/test_links |  ansi2html -a -W -u -m  > ~w',[FN]))).
-clear_tee:- shell('cat /dev/null > muarc_tmp/tee.ansi').
+   my_shell_format('tail -20000 muarc_tmp/tee.ansi > muarc_tmp/tee1000.ansi',[]),
+   tee_to_html('muarc_tmp/tee1000.ansi').
+force_full_tee:-   
+   my_shell_format('cat muarc_tmp/tee.ansi > muarc_tmp/tee1000.ansi',[]),
+   tee_to_html('muarc_tmp/tee1000.ansi').
+
+tee_to_html(Tee1000):-
+  test_html_file_name(FN),% -W -a
+  ignore((FN \== [], 
+   my_shell_format('cat kaggle_arc_header.html > ~w',[FN]),
+   my_shell_format('cat muarc_tmp/test_links ~w muarc_tmp/test_links | ansi2html -u -a >> ~w',[Tee1000,FN]),
+   my_shell_format('cat kaggle_arc_footer.html >> ~w',[FN]))).
+
+clear_test_html :- tee_to_html('muarc_tmp/null'). % was /dev/null
+clear_tee:- force_full_tee, shell('cat muarc_tmp/null > muarc_tmp/tee.ansi').
 exit_tee:-  get_current_test(TestID),on_leaving_test(TestID).
 
 write_test_links_file:- notrace((setup_call_cleanup(tell('muarc_tmp/test_links'), write_test_links, told))).
-write_test_links(TestID):- ensure_test(TestID), format('~N'),
+write_test_links(TestID):-  
+  ensure_test(TestID), format('~N'),
   ignore((get_previous_test(TestID,PrevID),write_tee_link('Prev',PrevID))),
   ignore((((luser_getval(prev_test_name,AltPrevID),AltPrevID\==PrevID,AltPrevID\==TestID,AltPrevID\=='.'),write_tee_link('AltPrevID',AltPrevID)))),
   ignore(write_tee_link('This',TestID)),
   ignore((get_next_test(TestID,NextID),write_tee_link('Next',NextID))),
   ignore((((luser_getval(next_test_name,AltNextID),NextID\==AltNextID,AltNextID\==TestID,AltNextID\=='.'),write_tee_link('AltNextID',AltNextID)))),  
-  format('~N').
+  format('~N<pre>').
 
 
 
@@ -886,7 +896,7 @@ print_test(TName):-
     forall(arg(_,v((trn+_),(tst+_)),ExampleNum1),
      forall(kaggle_arc(TestID,ExampleNum1,In,Out),
           print_single_pair(TestID,ExampleNum1,In,Out))),
-  write('%= '), parcCmt(TestID),!.
+  write('%= '), parcCmt(TestID),!,force_full_tee.
 
 next_grid_mode(dots,dashes):-!.
 next_grid_mode(_,dots).
@@ -936,9 +946,7 @@ print_single_pair(TestID,ExampleNum,In,Out):-
    format('~N'),
    nop((grid_hint_swap(i-o,In1,Out1))),
    format('~N'),
-   ignore(show_reduced_io_rarely(In1+Out1)),
-   flush_tee,
-   !.
+   ignore(show_reduced_io_rarely(In1+Out1)),!.
 
 
 in_out_name(trn+NN,SI,SO):- N is NN+1, format(atom(SI),'Training Pair #~w Input',[N]),format(atom(SO),'Output',[]).
@@ -1448,7 +1456,7 @@ print_eval0:- arc(v('009d5c81')).
 parcCmt(TName):- 
   fix_test_name(TName,TestID),
   %color_print(magenta,call(((grid_hint(TestID))))),
-  parcCmt1(TestID).
+  parcCmt1(TestID),flush_tee.
 parcCmt1(TName):- 
   ignore((
   fix_test_name(TName,TestID),

@@ -87,13 +87,6 @@ is_real_color_or_var(C):- (var(C)->true;is_real_color(C)).
 unique_colors(G,SUCOR):- colors(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_color_or_var,UC,SUCO))),reverse(SUCO,SUCOR).
 unique_color_count(G,Len):- unique_colors(G,UC),length(UC,Len).
 
-real_colors(O,CCO):- colors(O,CC),into_mostly_real_colors(CC,CCO),!.
-into_mostly_real_colors(CC,CCO):- include(is_real_cc,CC,CCO),CCO\==[],!.
-into_mostly_real_colors(CC,CCO):- include(is_some_cc,CC,CCO),CCO\==[],!.
-into_mostly_real_colors(CC,CC):- !.
-is_real_cc(cc(C,N)):- N>0, is_real_color(C),!.
-is_some_cc(cc(_,N)):- N>0,!.
-
 
 into_cc(SK,BFO):- maplist(into_cc1,SK,BFO).
 into_cc1(N-C,cc(Nm,CN)):- CN is N,!,color_name(C,Nm).
@@ -456,45 +449,41 @@ add_borders(Color,Grid,GridO):-
   replace_col_e(1,Color,Grid1,Grid2),
   replace_col_e(H,Color,Grid2,GridO),!.
 
-fillFromBorder(FillColor,In,Out):- is_grid(In),!,  
-  grid_edges(In,Edges),
-  likely_bg(Edges,BG),
-  IIn = in(In),
+fillFromBorder(Color,In,Out):- grid_call(fillFromBorder_0(Color),In,Out).
+fillFromBorder_0(FillColor,In,Out):- gref_call(fillFromBorder_gref(FillColor),In,Out).
+fillFromBorder_gref(FillColor,IIn):-
+  grid_edges(In,Edges), likely_bg(Edges,BG),
   grid_size(In,H,V),
   forall(between(1,H,Hi),
     forall(between(1,V,Vi),
          ( if_t((hv_c_value(IIn,Color,Hi,1),Color==BG),
-             fill_from_point(IIn,Hi,1,FillColor)),
+             fill_from_point_gref(Hi,1,FillColor,IIn)),
            if_t((hv_c_value(IIn,Color,Hi,V),Color==BG),
-             fill_from_point(IIn,Hi,V,FillColor)),
+             fill_from_point_gref(Hi,V,FillColor,IIn)),
            if_t((hv_c_value(IIn,Color,1,Vi),Color==BG),
-             fill_from_point(IIn,1,Vi,FillColor)),
+             fill_from_point_gref(1,Vi,FillColor,IIn)),
            if_t((hv_c_value(IIn,Color,H,Vi),Color==BG),
-             fill_from_point(IIn,H,Vi,FillColor))))),
-   dref_grid(IIn,Out).
-fillFromBorder(Color,In,Out):-
- cast_to_grid(In,Grid,UnCast),
- fillFromBorder(Color,Grid,GridO),
- uncast(In,UnCast,GridO,Out).
+             fill_from_point_gref(H,Vi,FillColor,IIn))))).
+   
 
 likely_bg(Grid,BGC):- colors_count_black_first(Grid,CCBF), 
     get_black(Black),(CCBF=[cc(Black,0),cc(BGC,_)|_]-> true ; CCBF=[cc(BGC,_)|_]).
 
-fill_from_point(IIn,H,V,FillColor):-
-  hv_c_value(IIn,Color,H,V),
-  fill_from_point(IIn,Color,H,V,FillColor).
+fill_from_point(H,V,FillColor,In,Out):-
+  grid_call(gref_call(fill_from_point_gref(H,V,FillColor)),In,Out).
 
-fill_from_point(IIn,Color,H,V,FillColor):-
+fill_from_point_gref(H,V,FillColor,IIn):-
+  hv_c_value(IIn,Color,H,V),
+  fill_from_point_c_gref(Color,H,V,FillColor,IIn).
+
+fill_from_point_c_gref(Color,H,V,FillColor,IIn):-
   nb_set_grid_color(IIn,FillColor,H,V),
   is_adjacent_hv(H,V,Dir,HH,VV), Dir\==c, 
   (is_bg_color(Color) -> \+ is_diag(Dir) ; true),
   once((once(hv_c_value(IIn,AColor,HH,VV)),
     AColor == Color,
-    fill_from_point(IIn,Color,HH,VV,FillColor))),
+    fill_from_point_c_gref(Color,HH,VV,FillColor,IIn))),
   fail.
-
-dref_grid(IIn,Grid):- is_grid(IIn),!,Grid=IIn.
-dref_grid(IIn,Grid):- arg(_,IIn,Grid),is_grid(Grid),!.
 
 nb_set_grid_color(IIn,NewC,H,V):- 
   dref_grid(IIn,Grid),
@@ -743,5 +732,5 @@ copy_cells(_,_,[],[]):-!.
 copy_cells(B,A,[H|T],[HH|TT]):-!, copy_cells(B,A,H,HH), copy_cells(B,A,T,TT).
 
 
-:- fixup_exports.
+:- include(kaggle_arc_footer).
 

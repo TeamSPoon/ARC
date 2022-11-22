@@ -117,7 +117,7 @@ arc_sub_path(Subdir,AbsolutePath):- muarc_tmp:arc_directory(ARC_DIR),absolute_di
 
 
 :- load_json_files(t,'./data/training/*.json').
-%:- load_json_files(v,'./data/evaluation/*.json').
+:- load_json_files(v,'./data/evaluation/*.json').
 %:- load_json_files(v,'./data/test_100/*.json').
 %:- load_json_files(t,'./data/test_nar_10x10/*.json').
 :- load_json_files(t,'./data/1D_testset/*.json').

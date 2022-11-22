@@ -10,18 +10,27 @@
 :- meta_predicate(grid_call(+,+,-)).
 
 must_grid_call(T,I,O):- (grid_call(T,I,O)*->true; (print_side_by_side_msg(failed_grid_call(T),I,O),trace,fail)).
+ 
+gref_call(P1,In,Out):- 
+  duplicate_term(in(In),IIn),
+  call(P1,IIn), 
+  dref_grid(IIn,Out).
+dref_grid(IIn,Grid):- is_grid(IIn),!,Grid=IIn.
+dref_grid(IIn,Grid):- arg(_,IIn,Grid),is_grid(Grid),!.
 
 grid_call(T,I,O):- plain_var(I),var(O),!,into_grid(_,G),I=G,grid_call(T,G,O).
 grid_call(=,I,O):- !, I=O. 
-grid_call(T,I+O,II+OO):- !, grid_call(T,I,II),grid_call(T,O,OO).
+grid_call(P2,IO,IIOO):- is_plus_split(IO,I,O),!,unplus_split(IIOO,II,OO),grid_call(P2,I,II),grid_call(P2,O,OO).
 grid_call(Nil,I,I):- Nil==[],!. 
 grid_call([H|T],I,O):- nonvar(H), !, grid_call(H,I,M), grid_call(T,M,O).
 grid_call(T,I,O):- call(T,I,O).
 
 :- meta_predicate(object_call(+,+,-)).
 object_call(=,I,O):- !, I=O. 
-object_call(T,I+O,II+OO):- !, object_call(T,I,II),object_call(T,O,OO).
+
+
 object_call(Nil,I,I):- Nil==[],!. 
+object_call(P2,IO,IIOO):- is_plus_split(IO,I,O),!,unplus_split(IIOO,II,OO), object_call(P2,I,II),object_call(P2,O,OO).
 object_call([H|T],I,O):- nonvar(H), !, object_call(H,I,M), object_call(T,M,O).
 object_call(T,I,O):- call(T,I,O).
 
@@ -32,8 +41,10 @@ grid_call_alters(T,I,O):- grid_call(T,I,O),I\=@=O.
 :- meta_predicate(try_p2(+,+,-)).
 try_p2(P2,In,Out):- grid_call(P2,In,Mid),Mid=@=Out.
 
+is_plus_split(IO,I,O):- compound(IO),unplus_split(IO,I,O).
+unplus_split(II+OO,II,OO).
 
-show_grid_call(P2,I+O,III+OOO):-!,   
+show_grid_call(P2,IO,IIIOOO):- is_plus_split(IO,I,O),!,unplus_split(IIIOOO,III,OOO),
  must_det_ll((grid_to_gid(I,GIDI),grid_to_gid(O,GIDO),
   copy_term(P2,P22),
   grid_call_for_info(P2,I,III,S1),
@@ -689,13 +700,14 @@ goal_expansion_q(Goal,I,Out,O):- var(I), is_goal_query(Goal), (goal_expansion_qu
 :- export(thread_httpd:http_process/4).
 :- system:import(thread_httpd:http_process/4).
 
-:- fixup_exports.
+:- include(kaggle_arc_footer).
 
 :- multifile(goal_expansion/4).
 :- dynamic(goal_expansion/4).
 goal_expansion(Goal,I,Out,O):- 
    nb_current(arc_can_expand_query,t),
-   \+ current_prolog_flag(arc_term_expansion,false),   
+   \+ current_prolog_flag(arc_term_expansion,false),
+   current_predicate(goal_expansion_q/4),
    goal_expansion_q(Goal,I,Out,O).
 
 % ?- print_grid(gridFn(X)).

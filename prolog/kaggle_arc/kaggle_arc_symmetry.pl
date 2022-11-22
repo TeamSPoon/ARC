@@ -686,12 +686,13 @@ diff_repaired(RepairedResult,VM):-
   localpoints_include_bg(VM.grid_o,OriginalPoints),
   localpoints_include_bg(RepairedResult,RepairedPoints),
   intersection(OriginalPoints,RepairedPoints,Unchanged,NeededChanged,ChangedPoints),  
+  H = VM.h, V = VM.v,
   set_vm_obj(unchanged,[iz(image)],Unchanged),
   set_vm_obj(original,[iz(image),iz(hidden)],OriginalPoints),
   set_vm_obj(repaired,[iz(image),iz(always_keep)],RepairedPoints),
   set_vm_obj(neededChanged,[iz(image),iz(hidden),iz(shaped),iz(always_keep)],NeededChanged),
   set_vm_obj(changedUntrimmed,[iz(image),iz(always_keep)],ChangedPoints),
-  points_to_grid(VM.h,VM.v,ChangedPoints,Changed),
+  points_to_grid(H,V,ChangedPoints,Changed),
   trim_to_rect(Changed,TrimChangedG),
   localpoints_include_bg(TrimChangedG,TrimChangedPoints),
   set_vm_obj(changed,[iz(image),iz(always_keep)],TrimChangedPoints))).
@@ -769,7 +770,7 @@ blur_or_not_least(Op,G0,GG):-
 offset_layover(GGG,OH,OV,GGGG):-
   push_downward(OV,GGG,GG), h_as_v(push_downward(OH),GG,GGGG).
 
-push_upward(OOV,G,NewBot):- OOV<0,!, OV is -OOV, push_downward(G,OV,NewBot).
+push_upward(OOV,G,NewBot):- OOV<0,!, OV is -OOV, push_downward(OV,G,NewBot).
 push_upward(OV,G,NewBot):- 
   grid_size(G,H,V),
   make_grid(H,OV,Bot),
@@ -780,7 +781,7 @@ push_upward(OV,G,NewBot):-
   mapgrid(=(black),Bot).
 push_upward(0,G,G).
 
-push_downward(OOV,G,NewBot):- OOV<0,!, OV is -OOV, push_upward(G,OV,NewBot).
+push_downward(OOV,G,NewBot):- OOV<0,!, OV is -OOV, push_upward(OV,G,NewBot).
 push_downward(OV,G,NewTop):- OV>0,!,
   grid_size(G,H,V),
   make_grid(H,OV,Top),
@@ -2208,7 +2209,7 @@ is_empty_grid(Empty):- make_empty_grid(MG),MG=@=Empty,!.
 is_empty_grid(Empty):-  (Empty==[] ; Empty ==[[]]),!.
 
 
-:- fixup_exports.
+:- include(kaggle_arc_footer).
 
 
 

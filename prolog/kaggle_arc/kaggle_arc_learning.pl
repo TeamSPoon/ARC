@@ -944,5 +944,5 @@ learned_color_inner_shape(Name,Color,Fill,Grid,GrowthChart):-
 
  
 
-:- fixup_exports.
+:- include(kaggle_arc_footer).
 

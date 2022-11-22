@@ -73,10 +73,11 @@ first_second_half(Grid,GL,GR):- length(Grid,L),H is floor(L/2), length(GL,H), ap
 %reduce_op1_1(_,Grid,copy_first(N),GridR):- copy_first(N,GridR,Grid).
 %reduce_op1_1(_,Grid,copy_last(N),GridR):- copy_last(N,GridR,Grid).
 
-%reduce_op1_1(_,Grid,_,_):- too_small_Lreduce(Grid,2),!,fail.
+reduce_op1_1(_,Grid,_,_):- too_small_reduce(Grid,3),!,fail.
 % educe_op1_1(_,Grid,_,_):- length(Grid,L3),L3=<2,!,fail.
 
-
+reduce_op1_1(_,I,reapply_cutaway(LBR),O):- reduce_cutaway(LBR,I,O).
+reduce_op1_1(_,I,reapply_cutaway_row(LBR),O):- reduce_cutaway_row(LBR,I,O).
 reduce_op1_1(_,Grid,remove_row(Row),GridR):- get_black(Black), nth1(Row,Grid,Same,GridR),maplist(==(Black),Same),once(Row==1;length(Grid,Row)).
 reduce_op1_1(_,I,double_size,O):- half_size(I,O),!.
 reduce_op1_1(_,Grid,copy_row_ntimes(N1,2),GridR):- append(L,[A,B,C,D,E|R],Grid),A=@=B,B=@=C,C=@=D,D=@=E, append(L,[A,B,C|R],GridR),length([_|L],N1).
@@ -231,4 +232,30 @@ show_sf_if_lame(Info,Solution,ExpectedOut):-
 
 
 %reduce_grid(PassNo,Grid,res(Opers,Result)):- reduce_grid(PassNo,Grid,Opers,res(Opers,Result)),!.
+
+
+common_cutaway(lbr([C], [],  [C])):- is_fg_color(C).
+common_cutaway(lbr([C],[C],  [C])):- C= black.
+common_cutaway(lbr([C],[C,C],[C])):- is_fg_color(C).
+common_cutaway(lbr([], [C],  [])):- is_fg_color(C).
+common_cutaway(lbr([C],[C],  [])):- is_fg_color(C).
+common_cutaway(lbr([], [C], [C])):- is_fg_color(C).
+common_cutaway(lbr([], [C],  [])):- is_bg_color(C).
+common_cutaway(lbr([], [C,C],[])):- is_fg_color(C).
+
+reduce_cutaway(LBR,I,O):- h_and_v(reduce_cutaway_row(LBR),I,O).
+
+reduce_cutaway_row(LBR,I,O):-              LBR = lbr(Left,Between,Right),
+                                            once((member(Row,I), \+ maplist(=(_),Row))),
+                                            (var(Between) -> common_cutaway(LBR) ; true),                                                 
+                                            once((cutaway_row(Left,Between,Right,Row,_))),
+                                            do_cutaway_rows(LBR,I,O).
+
+do_cutaway_rows(lbr(L,B,R),I,O):- maplist(cutaway_row(L,B,R),I,O).
+cutaway_row(L,B,R,Row,NewRow):- append([L,Mid,R],Row),cut_mid(B,Mid,NewRow),!.
+
+cut_mid(_,[C],[C]).
+cut_mid(Between,[C|Mid],[C|NewRow]):-
+  append(Between,More,Mid),
+  cut_mid(Between,More,NewRow).
 

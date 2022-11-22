@@ -1425,6 +1425,6 @@ perfect_result([[blue,blue,blue,blue,blue],[blue,blue,blue,blue,blue],[blue,blue
 perfect_result([[red,red,red,red,red],[red,blue,blue,blue,red],[red,blue,red,blue,red],[red,blue,blue,blue,red],[red,red,red,red,red]],[[green]],false).
 perfect_result([[red,red,red,red,red],[red,blue,blue,blue,red],[red,blue,green,blue,red],[red,blue,blue,blue,blue],[red,red,red,red,red]],[[green]],true).
   
-:- fixup_exports.
+:- include(kaggle_arc_footer).
 
 

@@ -595,7 +595,7 @@ expand_shape_directives(Shapes,None,SmallLib):- None==[],!,
       % Need one the the three bellow
        %decolorize, %"Add blue indivs", 
        %add(change_color), % "Add new colors indivs",		 
-       %all_colors,
+       %into_any_color,
 
        smallest_first, "smallest first",
     %decolorize % decolorized points are not yet printable 
@@ -638,5 +638,5 @@ in_grid_shape_lib([Shape,solid],Grid,GrowthChart):-
   decl_one_fg_color(Color),
   Fill = Color.
 
-:- fixup_exports.
+:- include(kaggle_arc_footer).
 

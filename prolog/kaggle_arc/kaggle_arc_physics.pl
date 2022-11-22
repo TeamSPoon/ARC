@@ -9,6 +9,8 @@
 
 area(Obj,Area):- vis2D(Obj,H,V), Area is H * V.
 
+vis_area(Obj,Area):- vis2D(Obj,H,V), Area is H * V.
+
 area_or_len(Obj,Area):- is_points_list(Obj),!,length_safe(Obj,Area).
 area_or_len(Obj,Area):- vis2D(Obj,H,V), Area is H * V.
 
@@ -631,5 +633,5 @@ replace_i_each(OtherObjects,[I|NewInside],[O|NewInsideM],NewOtherObjects):- must
   replace_i_each(OtherObjectsM,NewInside,NewInsideM,NewOtherObjects).
 replace_i_each(E,[],[],E):-!.
 
-:- fixup_exports.
+:- include(kaggle_arc_footer).
 
