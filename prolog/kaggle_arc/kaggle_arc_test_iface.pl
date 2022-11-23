@@ -211,7 +211,7 @@ menu_goal(Goal):-
    read_pending_codes(user_input,_Ignored2,[]),!.
 
 do_menu_key(-1):- !, arc_assert(wants_exit_menu). 
-do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), arc_assert(wants_exit_menu).
+do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), asserta_if_new(wants_exit_menu).
 do_menu_key('?'):- !, write_menu_opts('i').
 do_menu_key('M'):- !, clear_tee, update_changed_files, wdmsg('Recompiled').
 %do_menu_key('W'):- !, set_pair_mode(whole_test).
@@ -354,6 +354,10 @@ next_indivs_mode:- get_indivs_mode(M1),next_indivs_mode(M1,M2),set_indivs_mode(M
 set_indivs_mode(Mode):- luser_setval('$indivs_mode',Mode).
 get_indivs_mode(Mode):- nonvar(Mode),get_indivs_mode(TMode),!,TMode==Mode.
 get_indivs_mode(Mode):- once(luser_getval('$indivs_mode',Mode);next_indivs_mode(Mode,_)).
+with_indivs_mode(Mode,Goal):- 
+  get_indivs_mode(WasMode),
+  setup_call_cleanup(set_indivs_mode(Mode),
+          call(Goal),set_indivs_mode(WasMode)).
 
 :- first_indivs_modes([M1|_]),set_indivs_mode(M1).
 

@@ -263,7 +263,7 @@ showdiff_groups5(A,B,[H|T],AAR,BBR):- !,
   showdiff_groups5(A1,B1,T,AAR,BBR).
 showdiff_groups5(A,B,Pred,AAR,BBR):- 
   pred_intersection(Pred,A,B,IntersectA,IntersectB,AAR,BBR),
-  ignore((IntersectA\==[], collapsible_section(info,"Object Differences",true,
+  ignore((IntersectA\==[], collapsible_section(info,"Object Differences",false,
    maplist(showdiff_objects_vis(Pred),IntersectA,IntersectB)))).
 
 
@@ -420,7 +420,7 @@ show_pair_now(TITLE,OO1,OO2):-
   debug_indiv_obj(O1),
   debug_indiv_obj(O2),  
   if_t(nb_current(menu_key,'o'),
-   collapsible_section(info,compare_objs1(TITLE),true,
+   collapsible_section(info,compare_objs1(TITLE),false,
    (findall(E,compare_objs1(E,O1,O2),L), pp(compare_objs1(showdiff_objects)=L),
     indv_props(O1,S1),indv_props(O2,S2),
     intersection(S1,S2,Sames,SS1,SS2),

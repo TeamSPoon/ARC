@@ -99,7 +99,7 @@ train_for_objects_from_1pair(Dict0,TestID,Desc,InA,OutA,Dict1):-
 train_for_objects_from_1pair1(Dict0,_TestID,Desc,_InA,_OutA,Dict0):- Desc = [_Trn,'o',_N1,'o',_N2], !.
 
 train_for_objects_from_1pair1(Dict0,TestID,Desc,InA,OutA,Dict1):-
- collapsible_section(debug,train_for_objects_from_1pair1,true,
+ collapsible_section(debug,train_for_objects_from_1pair1,false,
 (maplist(must_det_ll,[
  Desc = [Trn,IsIO1,N1,IsIO2,N2], 
  which_io(IsIO1,IO1),

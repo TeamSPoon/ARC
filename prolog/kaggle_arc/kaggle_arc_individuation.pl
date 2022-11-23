@@ -432,7 +432,7 @@ individuation_macros(complete, ListO):- im_complete(ListC),
 
 
 im_complete(ListO):- test_config(indiv(ListO)), [i_repair_patterns]\=@= ListO,[i_repair_patterns_f]\=@= ListO,!.
-%im_complete(ListO):- ListO=[n_w,all_lines,diamonds,do_ending].
+%im_complete(ListO):- ListO=[nsew,all_lines,diamonds,do_ending].
 %im_complete([i_repair_patterns]):- get_current_test(TestID),is_symgrid(TestID),!.
 im_complete(i_complete_generic).
 
@@ -920,10 +920,15 @@ use_hybrid_grid(In):- In\=[[_]], amass(In,Mass),Mass>2, nop((area(In,AMass),AMas
 learn_hybrid_shape_grid(ReColored,TestID,ExampleNum,Name,Grid):- is_grid(ReColored), \+ use_hybrid_grid(Grid),!,ignore((Grid\=[[_]], nop(print_grid(unused(learn_hybrid_shape_grid(TestID,ExampleNum,Name)),ReColored)))),!.
 learn_hybrid_shape_grid(Object,TestID,ExampleNum,Name,Grid):- \+ is_always_kept(Object),
   \+ use_hybrid_grid(Grid),!,ignore((Grid\=[[_]], nop(print_grid(unused(learn_hybrid_shape_grid(TestID,ExampleNum,Name)),Grid)))),!.
-learn_hybrid_shape_grid(_Object,TestID,ExampleNum,Name,ReColored):- % print_grid(learn_hybrid_shape(TestID,ExampleNum,Name),ReColored),
+learn_hybrid_shape_grid(Object,TestID,ExampleNum,Name,ReColored):- % print_grid(learn_hybrid_shape(TestID,ExampleNum,Name),ReColored),
+  desc_title(Object,Title),
   if_t( \+ is_hybrid_shape(TestID,ExampleNum,Name,ReColored),
-    (print_grid((learn_hybrid_shape_grid(TestID,ExampleNum,Name)),ReColored),
+    (print_grid(learn_hybrid_shape_grid(TestID,ExampleNum,Name,Title),ReColored),
      assert_if_new(is_hybrid_shape(TestID,ExampleNum,Name,ReColored)))).
+
+desc_title(Object,Title):- is_object(Object),!,tersify(Object,Title).
+desc_title(Grid,  Title):- is_grid(Grid),colors(Grid,CC),!,(known_grid(ID,Grid)->Title=(ID/CC);Title=CC).
+desc_title(Object,Title):- data_type(Object,Title),!.
 
 get_hybrid_set(Set):-
   findall(O,(current_test_example(TestID,ExampleNum),
@@ -2210,8 +2215,8 @@ group_prior_objs(Why,ObjsIn,WithPriors):-
  keysort(Lbls,N),
  length(N,Len),
  Title = Why+Len,
- collapsible_section(info,print_objects_grid(Title),true, print_objects_grid(Why,Objs)),
- collapsible_section(info,add_priors(Title),true,
+ collapsible_section(info,print_objects_grid(Title),false, print_objects_grid(Why,Objs)),
+ collapsible_section(info,add_priors(Title),false,
   %print_tree(groupPriors=Lbls,[max_depth(200)]),
   add_priors(Lbls,Objs,WithPriors)))).
 
@@ -2435,28 +2440,45 @@ sa_point(C-P2,Points):- select_always(C-P2,Points,Points0),
 % =====================================================================
 is_fti_step(alone_dots).
 is_fti_step(maybe_alone_dots).
+is_fti_step(maybe_alone_dots_by_color).
 % =====================================================================
+alone_dots(N,VM):- using_alone_dots(VM,maybe_alone_dots(N,VM)),!.
+alone_dots(_,_):-!.
+
+maybe_alone_dots(lte(LTE),VM):- maybe_sa_dots(VM.points,lte(LTE),VM).
+maybe_alone_dots(_,_).
+
 % alone_dots(lte(5)) that have no adjacent points of the equal color (could be gathered first)
 
-is_sa(Points,C-P2):-  \+ (is_adjacent_point(P2,Dir,P3), Dir\==c, member(C-P3,Points), \+ is_diag(Dir)),!.
+is_sa(Points,C-P2):-
+    \+ free_cell(C),
+    \+ (is_adjacent_point(P2,Dir,P3), Dir\==c, member(C-P3,Points), \+ is_diag(Dir)),!.
 
 contains_alone_dots(Grid):- nonvar(Grid), globalpoints_maybe_bg(Grid,Points),include(is_sa(Points),Points,SAs),SAs\==[].
 using_alone_dots(VM, _):- \+ contains_alone_dots(VM.grid_o), \+ contains_alone_dots(VM.grid_target),!.
 using_alone_dots(_,Goal):- once(Goal).
 
-maybe_alone_dots(lte(LTE),VM):-
+maybe_alone_dots_by_color(lte(LTE),VM):-  
+   findall(Color,enum_fg_colors(Color),TodoByColors),
+   do_maybe_alone_dots_by_color(TodoByColors,lte(LTE),VM).
+
+do_maybe_alone_dots_by_color(Color,lte(LTE),VM):- is_color(Color),!,
+    my_partition(has_color(Color),VM.points,ThisGroup,_WrongColor),
+    maybe_sa_dots(ThisGroup,lte(LTE),VM).
+do_maybe_alone_dots_by_color([Color|TodoByColors],lte(LTE),VM):- !,
+  do_maybe_alone_dots_by_color(Color,lte(LTE),VM),
+  do_maybe_alone_dots_by_color(TodoByColors,lte(LTE),VM).
+do_maybe_alone_dots_by_color(_,_,_).
+
+maybe_sa_dots(Points,lte(LTE),VM):-
   \+ exceeded_objs_max_len(VM),
-  if_t(VM.points \== [],
-   (my_partition(is_sa(VM.points),VM.points,SAPs,Keep),
+  if_t(Points \== [],
+   (my_partition(is_sa(Points),Points,SAPs,_NonSAPoints),
     length(SAPs,Len),
     if_t((LTE>=Len),
-    (set(VM.points)=Keep,
+    ( remCPoints(VM,SAPs),
      using_alone_dots(VM,(maplist(make_point_object(VM,[birth(alone_dots(lte(LTE))),iz(shaped)]),SAPs,IndvList),
      nop(raddObjects(VM,IndvList)))))))),!.
-maybe_alone_dots(_,_).
-  
-alone_dots(N,VM):- using_alone_dots(VM,maybe_alone_dots(N,VM)),!.
-alone_dots(_,_):-!.
 
 % =====================================================================
 is_fti_step(maybe_lo_dots).
@@ -3279,10 +3301,10 @@ shape_min_points(_VM,Shape,MinShapeO):-shape_min_points0(Shape,MinShapeO).
 %shape_min_points0(Kind,Points):- nonvar(Points),shape_min_points0(Kind,PointsO),!,
 %  freeze(Points,PointsO = Points).
 % shape_min_points0(colormass,[_,_,_,_,_|_]):-!.
-%shape_min_points0(n_w,[_,_,_]):-!,fail.
-shape_min_points0(nsew,[_,_|_]):-!.
-shape_min_points0(diamonds,[_,_|_]):-!.
-shape_min_points0(_,[_,_|_]).
+%shape_min_points0(nsew,[_,_,_]):-!,fail.
+%shape_min_points0(nsew,[_,_|_]):-!.
+%Rshape_min_points0(diamonds,[_,_|_]):-!.
+%shape_min_points0(_,[_,_|_]).
 shape_min_points0(_,_).
 %  shape_min_points(VM,_,_).
 

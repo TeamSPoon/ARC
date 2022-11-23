@@ -640,9 +640,9 @@ assert_object_oid(TID,Obj,Glyph,OID):-
    obj_iv(Obj,Iv), int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
    atomic_list_concat(['o_',Glyph,'_',GID],OID),
    retractall(oid_glyph_object(OID,_,_)),
-   arc_assert(oid_glyph_object(OID,Glyph,Obj)),
+   arc_assert_fast(oid_glyph_object(OID,Glyph,Obj)),
    retractall(gid_glyph_oid(GID,Glyph,_)), retractall(gid_glyph_oid(GID,_,OID)),
-   arc_assert(gid_glyph_oid(GID,Glyph,OID)),
+   arc_assert_fast(gid_glyph_oid(GID,Glyph,OID)),
    assert_object2(OID,Obj))).
 
 assert_object2(OID,obj(List)):-!,maplist(assert_object2(OID),List).
@@ -655,7 +655,8 @@ assert_object5(OID,F,Pre,Last,_List):-
   arc_assert1(AProp).
 
 arc_assert1(A):- assertz_if_new(A),!.
-arc_assert1(A):- arc_assert(A).
+arc_assert1(A):- arc_assert_fast(A).
+arc_assert_fast(A):- assertz_if_new(A),!.
  
 retract_object(GID,OID,_):- 
  retractall(gid_glyph_oid(GID,_,OID)),
@@ -814,6 +815,7 @@ vm_to_printable(D,R) :- Objs = D.objs,!, (Objs\==[] -> R = Objs; R = D.grid ).
 
 resolve_reference(R,Var):- is_map(R),!,Objs = R.objs,!, (Objs\==[] -> Var=Objs; Var = R.grid).
 resolve_reference(R,Var):- compound(R),arc_expand_arg(R,Var,Goal),!,call(Goal).
+resolve_reference(R,Var):- arc_expand_atom(R,Var),!.
 resolve_reference(R,Var):- nonvar(R),R\=obj(_),known_gridoid(R,Var),!.
 
 rotation(G,X):- is_group(G),!,mapgroup(rotation,G,Points),append_sets(Points,X).
@@ -1016,10 +1018,12 @@ pen(I,C):- indv_props(I,L),member(pen(C),L),!.
 
 object_grid(I,G):- is_grid(I),!,G=I.
 object_grid(Group,List):- is_group(Group),!,override_group(object_grid(Group,List)),!.
+object_grid(ObjRef,List):- \+ is_object(ObjRef), into_obj(ObjRef,Obj),!,object_grid(Obj,List).
 object_grid(I,G):- indv_props(I,L),member(grid(G),L),!.
 object_grid(I,G):- odd_failure((localpoints(I,LP),vis2D(I,H,V),points_to_grid(H,V,LP,G))),!.
 
-global_grid(I,G):- \+ is_object(I),into_grid(I,G),!.
+global_grid(I,G):- is_grid(I),!,G=I.
+global_grid(ObjRef,List):- \+ is_object(ObjRef), into_obj(ObjRef,Obj),!,global_grid(Obj,List).
 global_grid(I,G):- must_det_ll((call((grid_size(I,H,V),globalpoints_maybe_bg(I,LP),points_to_grid(H,V,LP,G))))),!.
 global_grid(I,G):- object_grid(I,G),!.
 %object_grid(I,G):- globalpoints(I,GP),into_grid(GP,G),!.

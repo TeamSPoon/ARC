@@ -98,10 +98,14 @@ term_to_oid(v(A)>(B+C)*D,Atom):- maplist(atomic,[A,B,C,D]),atomic_list_concat([v
 term_to_oid(t(A)>(B+C)*D,Atom):- maplist(atomic,[A,B,C,D]),atomic_list_concat([t,A,B,C,D],'_',Atom),!.
 term_to_oid(T,A):- (compound(T)->term_to_atom(T,A);(atom(T)->T=A;term_to_atom(T,A))).
 
-point_to_hvc(Point,  H,V,wfg):- atomic(Point),!, hv_point(H,V,Point),!.
-point_to_hvc(C-Point,H,V,C):- must(nonvar(Point)),must(hv_point(H,V,Point)),!.
+point_to_hvc(Var,_,_,_):- var(Var),!,fail.
+point_to_hvc(Point,  H,V,wfg):- atomic(Point),!, hv_point(H,V,Point).
+point_to_hvc(CD-Point,H,V,C):- var_or_color_data(CD,C),must(hv_point(H,V,Point)),!.
 %point_ to_hvc(H,V,_,H,V).
 %point_ to_hvc(Inf,Inf,offset_ranges(_,_,_,_)).
+var_or_color_data(CD,C):- only_color_data(CD,C),!.
+var_or_color_data(C,C).
+
 
 make_grid(H,V,Grid):- (H<1;V<1),!,wdmsg(make_grid(H,V,Grid)),break,!,fail.
 make_grid(H,V,Grid):- between(1,40,H),between(1,40,V),  % max_min(H,0,HH,_), max_min(V,0,VV,_), %max_min(HH,32,_,HHH),max_min(VV,32,_,VVV),!,    
