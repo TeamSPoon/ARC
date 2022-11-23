@@ -42,7 +42,7 @@ empty_grid_to_individual(H,V,Obj):-
          shape([]),
          colors([]),
          localpoints([]), vis2D(H, V), 
-         rotation(sameR), 
+         rot2L(sameR), 
          loc2D(1, 1),
          obj_iv(Iv),
          %pen([fg]),
@@ -279,7 +279,7 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
   maplist(append_term(iz),ShapeNames,OShapeNames),
 
   % rotated local points 
-  /*(memberchk(rotation(RotOut),Overrides)-> FinalLocalPoints=LPoints;
+  /*(memberchk(rot2L(RotOut),Overrides)-> FinalLocalPoints=LPoints;
     must_det_ll((tips_to_rot(LPoints,GH,GV,RotOut,Final),localpoints(Final,FinalLocalPoints)))),
   delistify_single_element(RotOut,RotO),
   */
@@ -289,7 +289,7 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
   grid_to_shape(Grid,RotG,SH,SV,ColorlessPoints,PenColors),
   shape_id(ColorlessPoints,ShapeID),
 
-  iv_for([ shape(ColorlessPoints),  loc2D(LoH,LoV),  pen(PenColors),  rotation(RotG)],Iv),
+  iv_for([ shape(ColorlessPoints),  loc2D(LoH,LoV),  pen(PenColors),  rot2L(RotG)],Iv),
 
 
 
@@ -303,7 +303,7 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
     shape(ColorlessPoints),
     loc2D(LoH,LoV),
     pen(PenColors),
-    rotation(RotG),
+    rot2L(RotG),
     
     center2G(CX,CY),
     loc2G(GNX,GNY),
@@ -361,7 +361,7 @@ cclump([], []).  color_c(C,H,C-H).
 
 prop_order([vis2D/2,mass/1,loc2D/2,amass/1,
   %center2G/2,
-  pen/1,shape/1,localpoints/1,rotation/1,cc/2,iz/1,globalpoints/1,obj_to_oid/2,grid_size/2]).
+  pen/1,shape/1,localpoints/1,rot2L/1,cc/2,iz/1,globalpoints/1,obj_to_oid/2,grid_size/2]).
 
 
 iz_o(F,A):- member(F/A,[cenX/1,cenY/1,locY/1,locX/1,tall/1,wide/1,chromatic/2,dot/0]).
@@ -444,7 +444,7 @@ prop_of(size2D,vis2D(_,_)).
 prop_of(amass,mass(_)).
 
 prop_of(loc2D,center2G(_,_)).
-prop_of(rotation,rotation(_)).
+prop_of(rot2L,rot2L(_)).
 prop_of(visually,pen(_)).
 prop_of(shape,shape(_)).
 
@@ -582,10 +582,10 @@ transfer_props_l([_|L],Functors,List,NewList):-
 */
 
 
-%indv_u_props(I,[localpoints(Ps),loc2D(X,Y),pen(Pen),vis2D(H,V),rotation(Rot)]):- loc2D(I,X,Y),shape(I,Ps),pen(I,Pen),vis2D(I,H,V),rotation(I,Rot),!.
-indv_u_props(I,[ shape(C),  loc2D(X,Y),  pen(Ps),  rotation(Rot)]):-  shape(I,C),loc2D(I,X,Y),pen(I,Ps),rotation(I,Rot),!.
-%indv_u_props(I,[ shape(C),  center2G(X,Y),  pen(Ps),  rotation(Rot)]):- shape(I,C),center2G(I,X,Y),pen(I,Ps),rotation(I,Rot),!.
-%indv_u_props(I,[shape(Ps),center2G(X,Y),pen(Pen),vis2D(H,V),rotation(Rot)]):- center2G(I,X,Y),shape(I,Ps),pen(I,Pen),vis2D(I,H,V),rotation(I,Rot),!.
+%indv_u_props(I,[localpoints(Ps),loc2D(X,Y),pen(Pen),vis2D(H,V),rot2L(Rot)]):- loc2D(I,X,Y),shape(I,Ps),pen(I,Pen),vis2D(I,H,V),rot2L(I,Rot),!.
+indv_u_props(I,[ shape(C),  loc2D(X,Y),  pen(Ps),  rot2L(Rot)]):-  shape(I,C),loc2D(I,X,Y),pen(I,Ps),rot2L(I,Rot),!.
+%indv_u_props(I,[ shape(C),  center2G(X,Y),  pen(Ps),  rot2L(Rot)]):- shape(I,C),center2G(I,X,Y),pen(I,Ps),rot2L(I,Rot),!.
+%indv_u_props(I,[shape(Ps),center2G(X,Y),pen(Pen),vis2D(H,V),rot2L(Rot)]):- center2G(I,X,Y),shape(I,Ps),pen(I,Pen),vis2D(I,H,V),rot2L(I,Rot),!.
 
 :- dynamic(is_shape_id_for/2).
 is_shape_id_for([],sid_0).
@@ -818,10 +818,10 @@ resolve_reference(R,Var):- compound(R),arc_expand_arg(R,Var,Goal),!,call(Goal).
 resolve_reference(R,Var):- arc_expand_atom(R,Var),!.
 resolve_reference(R,Var):- nonvar(R),R\=obj(_),known_gridoid(R,Var),!.
 
-rotation(G,X):- is_group(G),!,mapgroup(rotation,G,Points),append_sets(Points,X).
-rotation(I,X):- var_check(I,rotation(I,X)).
-rotation(I,X):- indv_props(I,L),member(rotation(X),L).
-rotation(_,sameR).
+rot2L(G,X):- is_group(G),!,mapgroup(rot2L,G,Points),append_sets(Points,X).
+rot2L(I,X):- var_check(I,rot2L(I,X)).
+rot2L(I,X):- indv_props(I,L),member(rot2L(X),L).
+rot2L(_,sameR).
 
 object_changes(G,X):- is_group(G),!,mapgroup(object_changes,G,Points),append_sets(Points,X).
 object_changes(I,X):- indv_props(I,L),member(changes(X),L).
@@ -938,7 +938,7 @@ object_localpoints(I,XX):- must_be_free(XX),
 object_localpoints0(_,L,X):- member(localpoints(X),L),is_list(X),!.
 object_localpoints0(I,L,X):- member(globalpoints(XX),L),is_list(XX),loc2D(I,LoH,LoV),!,deoffset_points(LoH,LoV,XX,X).
 object_localpoints0(I,_L,XX):-  
- must_det_ll((shape(I,X), rotation(I,Rot), shape2D(I,H,V), pen(I,PenColors),
+ must_det_ll((shape(I,X), rot2L(I,Rot), shape2D(I,H,V), pen(I,PenColors),
    make_localpoints(X,Rot,H,V,PenColors,XX))).
 
 make_localpoints(X,Rot,H,V,PenColors,XX):- 
@@ -1099,7 +1099,7 @@ rebuild_from_localpoints(Obj,WithPoints,NewObj):-
 
   (Points=@=PrevPoints -> (NewObj=Obj) ;
 
- (rotation(Obj,Rot),unrotate_p2(Rot,UnRot),
+ (rot2L(Obj,Rot),unrotate_p2(Rot,UnRot),
   loc2D(Obj,X,Y),%vis2D(Obj,H,V),  
   %obj_to_oid(Obj,ID,_Iv),
   %uncast_grid_to_object(Orig,Grid,NewObj),
@@ -1202,7 +1202,7 @@ rebuild_from_globalpoints(Obj,GPoints,NewObj):-
 is_point_or_colored(birth(_)):-!,fail.
 is_point_or_colored(Prop):- sub_term(CP,Prop),(is_color(CP);is_nc_point(CP)),!.
 is_point_or_colored(Prop):-
- member(Prop,[cc(_),amass(_),mass(_),shape(_),rotation(_),roll_shape(_),pen(_),norm_grid(_),norm_ops(_),
+ member(Prop,[cc(_),amass(_),mass(_),shape(_),rot2L(_),roll_shape(_),pen(_),norm_grid(_),norm_ops(_),
               iz(multicolored(_)),iz(chromatic(_,_)),iz(symmetry(_)),iz(shape(_)),iz(monochrome),
               globalpoints(_),localpoints(_)]),!.
 

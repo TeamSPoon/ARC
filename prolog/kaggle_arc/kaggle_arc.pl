@@ -798,8 +798,5 @@ ansi_startup:-
 :- store_grid_size_predictions.
 :- make_grid_cache.
 :- gen_gids.
-:- color_print(wbg,wbg00000000000000000000),nl,
-   color_print(wfg,wfg00000000000000000000),nl,
-   color_print(bg,bg00000000000000000000),nl,
-   color_print(fg,fg00000000000000000000),nl.
+:- test_show_colors.
 :- fmt('% Type ?- demo. % or press up arrow').

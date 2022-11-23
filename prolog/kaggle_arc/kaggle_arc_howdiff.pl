@@ -525,7 +525,7 @@ prop_type(scale,iz(sizeX(_))).
 prop_type(scale,iz(sizeY(_))).
 prop_type(order,o(_Peers,_Ord,_Type)).
 prop_type(shape,shape(_)).
-prop_type(rotate,rotation(_)).
+prop_type(rotate,rot2L(_)).
 prop_type(repaint,pen(_)).
 prop_type(repaint,colors(_)).
 prop_type(_,edge(_,_)).
@@ -534,7 +534,7 @@ changed_by(shape,reshape).
 changed_by(loc2D,move).
 changed_by(amass,grow).
 changed_by(localpoints,reshape_and_recolor).
-changed_by(rotation,rotate).
+changed_by(rot2L,rotate).
 changed_by(colors,repaint).
 changed_by(vis2D,copy).
 
