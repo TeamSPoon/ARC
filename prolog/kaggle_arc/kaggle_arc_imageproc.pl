@@ -692,29 +692,32 @@ points_to_grid(H,V,Points,Grid):- points_to_grid0(H,V,Points,Grid).
 points_to_grid0(H,V,Points,Grid):- odd_failure((make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
 points_to_grid0(H,V,Points,Grid):- rtrace((make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
 
+add_offset_h_v_c(Grid,H,V,OH,OV,C) :- HH is H-OH+1, VV is V-OV+1,  add_h_v_c(Grid,HH,VV,C).
 
 calc_add_points(OH,OV,Grid,SGrid):- odd_failure(calc_add_points0(OH,OV,Grid,SGrid)),!.
 calc_add_points(OH,OV,Grid,SGrid):- print_side_by_side([Grid,SGrid]),ftrace(calc_add_points0(OH,OV,Grid,SGrid)).
 
 calc_add_points0(OH,OV,Grid,C):- var(C),!,add_h_v_c(Grid,OH,OV,C).
-calc_add_points0(OH,OV,Grid,C):- is_color(C),!,add_h_v_c(Grid,OH,OV,C).
 calc_add_points0(_OH,_OV,_Grid,Nil):- Nil == [],!.
-calc_add_points0(OH,OV,Grid,SGrid):- is_grid(SGrid),!,globalpoints_maybe_bg(SGrid,Points),!,maplist(calc_add_points(OH,OV,Grid),Points).
-calc_add_points0(OH,OV,Grid,CPoint):- is_cpoint(CPoint),!,hv_c_value(CPoint,C,H,V),
- !, HH is H -OH +1, VV is V - OV +1,  add_h_v_c(Grid,HH,VV,C).
-calc_add_points0(OH,OV,Grid,C-Point):- nonvar(Point), var(C),hv_point(H,V,Point),!,
- !, HH is H -OH +1, VV is V - OV +1,  add_h_v_c(Grid,HH,VV,C).
+calc_add_points0(OH,OV,Grid,SGrid):- is_grid(SGrid),!,globalpoints_maybe_bg(SGrid,Points),!,maplist(calc_add_point1(OH,OV,Grid),Points).
+calc_add_points0(OH,OV,Grid, Group):- is_group(Group),!,mapgroup(calc_add_points0(OH,OV,Grid),Group).
+calc_add_points0(OH,OV,Grid,Object):- is_object(Object),!,globalpoints_maybe_bg(Object,Points),maplist(calc_add_point1(OH,OV,Grid),Points).
+calc_add_points0(OH,OV,Grid,Points):- is_list(Points),!,maplist(calc_add_point1(OH,OV,Grid),Points).
+calc_add_points0(OH,OV,Grid,CPoint):- calc_add_point1(OH,OV,Grid,CPoint),!.
 
-calc_add_points0(OH,OV,Grid,Points):- is_list(Points),!,maplist(calc_add_points(OH,OV,Grid),Points).
-calc_add_points0(OH,OV,Grid,Group):- is_group(Group),!,mapgroup(calc_add_points(OH,OV,Grid),Group).
-calc_add_points0(OH,OV,Grid,Points):- is_object(Obj),!,globalpoints_maybe_bg(Obj,Points),maplist(calc_add_points(OH,OV,Grid),Points).
+calc_add_point1(OH,OV,Grid,C):- is_color(C),!,add_h_v_c(Grid,OH,OV,C).
+calc_add_point1(OH,OV,Grid,Color):- is_color(Color),!, show_call(add_h_v_c(Grid,OH,OV,Color)).
+calc_add_point1(OH,OV,Grid,(Symbol)-C-Point):- nonvar(Symbol), hv_point(H,V,Point),!, add_offset_h_v_c(Grid,H,V,OH,OV,C).
+calc_add_point1(OH,OV,Grid,C-Point):- atom(Point),var(C),hv_point(H,V,Point),!,add_offset_h_v_c(Grid,H,V,OH,OV,C).
+calc_add_point1(OH,OV,Grid,_-Point):- point_to_hvc(Point,H,V,C),!, add_offset_h_v_c(Grid,H,V,OH,OV,C).
+calc_add_point1(OH,OV,Grid,CPoint):- is_cpoint(CPoint),!,hv_c_value(CPoint,C,H,V),!,add_offset_h_v_c(Grid,H,V,OH,OV,C).
+calc_add_point1(OH,OV,Grid,Point):- point_to_hvc(Point,H,V,C),!, add_offset_h_v_c(Grid,H,V,OH,OV,C).
+
+
 %calc_add_points(OH,OV,_,Obj):- plain_var(Obj),arcST,trace_or_throw(var_calc_add_points(OH,OV,Obj)).
-calc_add_points0(OH,OV,Grid,ColorInt):- integer(ColorInt), color_name(ColorInt,Color),!, add_h_v_c(Grid,OH,OV,Color).
-calc_add_points0(OH,OV,Grid,Color):- is_color(Color),!, show_call(add_h_v_c(Grid,OH,OV,Color)).
+calc_add_point1(OH,OV,Grid,ColorInt):- integer(ColorInt), color_name(ColorInt,Color),!, add_h_v_c(Grid,OH,OV,Color).
 %calc_add_points(OH,OV,Grid,Point):- is_nc_point(Point),!, HH is H -OH +1, VV is V - OV +1,  add_h_v_c(Grid,HH,VV,wfg).
-calc_add_points0(OH,OV,Grid,Point):- point_to_hvc(Point,H,V,C),!, HH is H -OH +1, VV is V - OV +1,  add_h_v_c(Grid,HH,VV,C).
-calc_add_points0(OH,OV,Grid,_-Point):- point_to_hvc(Point,H,V,C),!, HH is H -OH +1, VV is V - OV +1,  add_h_v_c(Grid,HH,VV,C).
-calc_add_points0(OH,OV,Grid,Obj):- trace,globalpoints(Obj,Points),!,maplist(calc_add_points(OH,OV,Grid),Points).
+calc_add_point1(OH,OV,Grid,Obj):- trace,globalpoints(Obj,Points),!,maplist(calc_add_point1(OH,OV,Grid),Points).
 %calc_add_points(_OH,_OV,_,obj(_)):-
 
 %add_h_v_c(Grid,H,V,C):- plain_var(C),!,nop(add_h_v_c(Grid,H,V,C)).

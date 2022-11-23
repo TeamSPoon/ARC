@@ -2341,7 +2341,7 @@ add_prior(N,Lbl,Objs,ObjsWithPrior):-
   length(Lbld,LL),  
   rank_priors(Lbl,Lbld,RLbldR),
   nop(print_grid(Lbl->N/LL,RLbldR)),
-  write('\t '), writeq(Lbl->N/LL),write(' \t'),
+  write('\t '), writeq(Lbl->N/LL),write(' <p/>\t'),
   append([Unlbl,RLbldR],ObjsWithPrior).  
 
 prior_name_by_size(_VM,[],_Name):-!.
