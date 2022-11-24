@@ -18,12 +18,23 @@ gref_call(P1,In,Out):-
 dref_grid(IIn,Grid):- is_grid(IIn),!,Grid=IIn.
 dref_grid(IIn,Grid):- arg(_,IIn,Grid),is_grid(Grid),!.
 
-grid_call(T,I,O):- plain_var(I),var(O),!,into_grid(_,G),I=G,grid_call(T,G,O).
+grid_call(T,I,O):- plain_var(I),var(O),!,into_grid(_,G),G\=@=I,I=G,grid_call(T,G,O).
 grid_call(=,I,O):- !, I=O. 
 grid_call(P2,IO,IIOO):- is_plus_split(IO,I,O),!,unplus_split(IIOO,II,OO),grid_call(P2,I,II),grid_call(P2,O,OO).
 grid_call(Nil,I,I):- Nil==[],!. 
 grid_call([H|T],I,O):- nonvar(H), !, grid_call(H,I,M), grid_call(T,M,O).
+
+grid_call(P2,IG,IIOO):- is_grid_group(IG),!, grid_group_call(P2,IG,IIOO).
+%grid_call(T,I,O):- into_p2(T,I,O,P),check_args(P,PP),call(PP).
 grid_call(T,I,O):- call(T,I,O).
+
+
+
+into_p2(P2,I,O,PIO):- atom(P2),!,PIO=..[P2,I,O].
+into_p2(P2,I,O,PIO):- P2=..FArgs,append(FArgs,[I,O],FArgsIO),!,PIO=..FArgsIO.
+
+
+grid_group_call(P2,IG,IIOO):- findall(O,(member(I,IG), object_call(P2,I,O)),List),List\==[],list_to_set(List,IIOO).
 
 :- meta_predicate(object_call(+,+,-)).
 object_call(=,I,O):- !, I=O. 
@@ -303,7 +314,7 @@ back_to_map(Was,Dict,Prev,Grid,Closure,New, Ret):-
 %:- use_module(library(pfc_lib)).
 :- endif.
 
-:- decl_pt(into_grid(+(prefer_grid),-mv(grid))).
+:- decl_pt(into_grids(+(prefer_grid),-mv(grid))).
 into_grids(P,G):- no_repeats(G,quietly(cast_to_grid(P,G, _))).
 
 :- decl_pt(into_grid(+(prefer_grid),-grid)).

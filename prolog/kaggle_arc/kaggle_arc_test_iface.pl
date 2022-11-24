@@ -419,9 +419,9 @@ test_pairs(TestID,ExampleNum,I,O):- ignore(get_current_test(TestID)), some_curre
 with_test_pairs(TestID,ExampleNum,I,O,P):- 
  forall(test_pairs(TestID,ExampleNum,I,O),
   my_menu_call((ensure_test(TestID),
-    set_example_num(ExampleNum), 
-     call_cleanup(P,flush_tee)))).
-
+    set_example_num(ExampleNum),     
+     set_current_pair(I,O),
+     call_cleanup(with_current_pair(I,O,P),flush_tee)))).
 
 bad:- ig([complete],v(aa4ec2a5)>(trn+0)*in).
 
@@ -1530,7 +1530,12 @@ with_current_test(P1):- get_pair_mode(enire_suite),!,forall(all_tests_current_fi
 with_current_test(P1):- ensure_test(TestID), call(P1,TestID).
 
 first_cmpd_goal(GG,_):- \+ compound(GG),!,fail.
-first_cmpd_goal((G,_),G).
+first_cmpd_goal(forall(G,_),GG):- !, first_cmpd_goal(G,GG).
+first_cmpd_goal(time(G),GG):- !, first_cmpd_goal(G,GG).
+first_cmpd_goal(my_time(G),GG):- !, first_cmpd_goal(G,GG).
+first_cmpd_goal(':'(G,_),GG):- !, first_cmpd_goal(G,GG).
+first_cmpd_goal(forall_count(G,_),GG):- !, first_cmpd_goal(G,GG).
+first_cmpd_goal((G,_),GG):- !, first_cmpd_goal(G,GG).
 first_cmpd_goal(G,G).
 uses_test_id(P1):- current_predicate(M:F/N),functor(P,F,N),
                   \+ \+ predicate_property(M:P,number_of_clauses(_)), 

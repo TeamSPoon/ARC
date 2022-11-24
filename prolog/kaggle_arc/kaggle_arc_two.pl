@@ -254,11 +254,6 @@ solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut):-
 
     % find indiviuation one each side that creates the equal number of changes
 
-set_target_grid(ExpectedOut):-
-    luser_setval(other_grid,ExpectedOut),
-    grid_size(ExpectedOut,GOH,GOV),
-    luser_setval(other_grid_size,size2D(GOH,GOV)).
-
 
 do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
  must_det_ll(( ppt("BEGIN!!!"+Why+TestID>ExampleNum), 

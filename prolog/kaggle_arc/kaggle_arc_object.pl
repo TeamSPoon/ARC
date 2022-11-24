@@ -1028,8 +1028,6 @@ global_grid(I,G):- must_det_ll((call((grid_size(I,H,V),globalpoints_maybe_bg(I,L
 global_grid(I,G):- object_grid(I,G),!.
 %object_grid(I,G):- globalpoints(I,GP),into_grid(GP,G),!.
 
-other_grid_size(_Grid,OtherH,OtherV):- luser_getval(other_grid_size,size2D(OtherH,OtherV)),!.
-other_grid_size( Grid,OtherH,OtherV):- must_det_ll((other_grid(Grid,OtherGrid),grid_size(OtherGrid,OtherH,OtherV))).
 locG_term(I,loc2G(X,Y)):- loc2G(I,X,Y),!.
 loc2G(Grid,H,V):- is_grid(Grid),!,other_grid_size(Grid,H,V).
 loc2G(G,X,Y):- is_group(G),!,mapgroup(locG_term,G,Offsets),sort(Offsets,[loc2G(X,Y)|_]). % lowest loc2G
