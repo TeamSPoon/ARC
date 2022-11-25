@@ -471,9 +471,11 @@ fast_simple :- true.
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
 %
 individuator(i_maybe_glypic,[maybe_glyphic]). %:- \+ doing_pair.
-individuator(i_subtractions,[fg_subtractions([save_as_obj_group(i_mono_nsew),save_as_obj_group(i_nsew)])]).
+individuator(i_subtractions,[
+  fg_subtractions([whole,save_as_obj_group(i_nsew),save_as_obj_group(i_mono_nsew)]),
+  fg_intersections([whole,save_as_obj_group(i_nsew),save_as_obj_group(i_mono_nsew)])]).
 individuator(i_colormass,[colormass]).
-individuator(i_alone_dots,[maybe_alone_dots_by_color(lte(6))]).
+individuator(i_alone_dots,[maybe_alone_dots_by_color(lte(40)),leftover_as_one]).
 individuator(i_nsew,[pbox_vm,maybe_alone_dots_by_color(lte(6)),nsew,diamonds,colormass]).
 individuator(i_diag,[diamonds,maybe_alone_dots_by_color(lte(6)),colormass]).
 individuator(i_pbox,[i_nsew,leftover_as_one]).
@@ -946,6 +948,16 @@ title_objs(Obj,Title=Grid):- is_object(Obj),object_glyph(Obj,Glyph),loc2D(Obj,X,
   Title=objFn(Glyph,[loc2D(X,Y),size2D(H,V)]),
   object_grid(Obj,Grid),!.
 title_objs(Obj,Title=Grid):- desc_title(Obj,Title),object_grid(Obj,Grid),!.
+
+obj_short_props(Obj,Title=Grid):- obj_short_props(Obj,Title),object_grid(Obj,Grid),!.
+obj_short_props(Obj,Short):- indv_props(Obj,Props),my_partition(is_short_prop,Props,Short,_Long).
+is_long_prop(link(_,_,_)).
+is_long_prop(link(_,_)).
+is_long_prop(giz(_)).
+is_long_prop(P):- compound(P),arg(1,P,A),is_points_list(A),!.
+is_long_prop(edge(_,_)).
+
+is_short_prop(P):- is_long_prop(P),!,fail.
 
 get_hybrid_set(Set):-
   findall(O,(current_test_example(TestID,ExampleNum),
@@ -2135,6 +2147,41 @@ fg_subtractions(Subtraction,VM):-
 
 
 % =====================================================================
+is_fti_step(fg_intersections).
+% =====================================================================
+fg_intersectiond(This,Target,Target):- This =@= Target,!.
+fg_intersectiond(_,_,Black):-  get_black(Black).
+
+fg_intersections(Intersection,VM):-
+ ignore((
+ VMGID = VM.gid,
+ \+ atom_contains(VMGID,'_fg_intersectiond'),
+ Grid = VM.grid_o,
+ other_grid(Grid,Other),
+ other_grid(Grid,Target), 
+ is_grid(Target),!,
+ grid_size(Target,H,V),!,VM.h==H,VM.v==V,!,
+ maplist_ignore(fg_intersectiond,Grid,Target,NewGrid),
+ mass(NewGrid,M),mass(Grid,M2),!,
+ M>0,M2\==M,Grid\==Target,NewGrid\==Grid,
+
+ %(M==0->maplist_ignore(fg_intersectiond,Target,Grid,NewGrid); MNewGrid=NewGrid),
+ must_det_ll((
+  var(OID),atomic_list_concat([VMGID,'_fg_intersectiond'],OID), assert_grid_gid(NewGrid,OID),
+  get_vm(VMS), 
+  %individuate2(_,Intersection,OID,NewGrid,FoundObjs),
+  with_other_grid(Other,individuate(Intersection,NewGrid,FoundObjs)),
+  set_vm(VMS),
+  ReColored = FoundObjs,
+  %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
+  print_grid(fg_intersections(OID),NewGrid),
+  print_side_by_side(ReColored),
+  remCPoints(VM,ReColored),
+  remGPoints(VM,ReColored),
+  addInvObjects(VM,ReColored))))),!.
+
+
+% =====================================================================
 is_fti_step(fg_abtractions).
 % =====================================================================
 %fg_abtractiond(Cell,Cell):- is_bg_color(Cell),!.
@@ -2253,7 +2300,8 @@ print_premuted_objects(Why,Objs):-
   %sort_by_vertical_size(Objs,Sorted),
   grid_size(Objs,IH,IV),!,
   create_vis_layers([],IH,IV,0,ORF,Sets),!,
-  maplist(title_objs,Objs,TitledObjs),
+  nop(maplist(title_objs,Objs,TitledObjs)),
+  maplist(obj_short_props,Objs,TitledObjs),
   pp(breakdown_of(Why)),
   append([
      orule_first=ORF,
@@ -3227,15 +3275,15 @@ one_fti(VM,Option):-
   ignore((exceeded_objs_max_len(VM), !, set(VM.objs_max_len) is VM.objs_max_len + 2)),  
   one_ifti(VM,Option),!.
 
-one_ifti(VM,Option):- 
+one_ifti(VM,Shape):- 
    \+ exceeded_objs_max_len(VM),!,
-   ( Option \== lo_dots),
-   is_thing_or_connection(Option),
-   find_one_individual(Option,Indv,VM),
+   ( Shape \== lo_dots),
+   is_thing_or_connection(Shape),
+   find_one_individual(Shape,Indv,VM),
    globalpoints(Indv,IndvPoints),
-   meets_indiv_criteria(VM,Option,IndvPoints),
+   meets_indiv_criteria(VM,Shape,IndvPoints),
    raddObjects(VM,Indv),!,
-   ignore(one_ifti(VM,Option)).
+   ignore(one_ifti(VM,Shape)).
 
 one_ifti(_VM,Option):- is_thing_or_connection(Option),!.
 
@@ -3250,6 +3298,28 @@ find_one_individual(Option,Obj,VM):- find_one_ifti3(Option,Obj,VM),!.
 %find_one_individual(Option,Obj,VM):- find_one_ifti2(Option,Obj,VM),!.
 
 
+find_one_ifti3(Option,Obj,VM):- 
+    Points = VM.points,
+    shape_min_points(VM,Option,IndvPoints),
+    copy_term(Option,OptionC),Option=ShapeType,    
+    select(C1-HV1,Points,Rest0), \+ free_cell(C1), % non_free_fg(C2), % \+ is_black(C2),
+    ok_color_with(C1,C2), %ScanPoints = Rest1, %maybe_multivar(C2), 
+    is_adjacent_point(HV1,Dir,HV2),
+    allowed_dir(Option,Dir), adjacent_point_allowed(C2,HV1,Dir,HV2), select(C2-HV2,Rest0,Rest1),
+    FirstTwo = [C1-HV1,C2-HV2], points_allowed(VM,Option,FirstTwo),
+    %i3(Option,Dir,Rest1,FirstTwo,ScanPoints,PointsFrom),
+    FirstTwo=PointsFrom,
+    Rest1 = ScanPoints,
+    points_allowed(VM,Option,PointsFrom),
+    all_individuals_near(VM,Dir,Option,C1,PointsFrom,ScanPoints,NextScanPoints,IndvPoints),
+    length(IndvPoints,Len),Len>=2,
+    make_indiv_object(VM,[iz(ShapeType),iz(shaped),birth(ifti(ShapeType))],IndvPoints,Obj),
+    meets_indiv_criteria(VM,Option,IndvPoints),
+  set(VM.points) = NextScanPoints,
+  raddObjects(VM,Obj),
+  cycle_back_in(VM,OptionC),!.
+
+/*
 find_one_ifti3(Option,Obj,VM):- 
     Points = VM.points,
     %shape_min_points(VM,Option,IndvPoints),
@@ -3267,13 +3337,13 @@ find_one_ifti3(Option,Obj,VM):-
     %maybe_multivar(C2), 
     point_allowed(VM,Option,C3-HV3),!,
     all_individuals_near(VM,Dir,Option,C1,[C1-HV1,C2-HV2,C3-HV3],ScanPoints,NextScanPoints,IndvPoints),
-    !, length(IndvPoints,Len),Len>=3,
+    !, length(IndvPoints,Len),Len>=2,
     make_indiv_object(VM,[iz(ShapeType),iz(shaped),birth(i(ShapeType))],IndvPoints,Obj),
     meets_indiv_criteria(VM,Option,IndvPoints),
   set(VM.points) = NextScanPoints,
   raddObjects(VM,Obj),
   cycle_back_in(VM,OptionC),!.
-
+*/
 %meets_indiv_criteria(_VM,_Info,[C-P1,C-P2]):- is_adjacent_point(P1,_Dir,P2),!,fail.
 meets_indiv_criteria(VM,ShapeL,PointL):- is_list(ShapeL),!,forall(member(Shape,ShapeL),points_allowed(VM,Shape,PointL)).
 meets_indiv_criteria(_VM,Shape,PointL):- points_allowed(PointL,Shape,PointL).
