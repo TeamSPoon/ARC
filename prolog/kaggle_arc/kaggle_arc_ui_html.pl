@@ -84,13 +84,14 @@ old_write_expandable(Showing,Title,Goal):-
    flag('$old_write_expandable_depth',_,Depth)).
 
 in_expandable(Showing,Title,Goal):- Showing==always,!,ignore(ppt(Title)),call(Goal).
-in_expandable(Showing,Title,Goal):- flag('$old_write_expandable_depth',X,X), X>2, in_expandable(always,Title,Goal).
+in_expandable(_Show,  Title,Goal):- flag('$old_write_expandable_depth',X,X), X>2, in_expandable(always,Title,Goal).
 in_expandable(Showing,Title,Goal):- (Showing==toplevel;Showing==maybe), flag('$old_write_expandable_depth',X,X), X==1,!,in_expandable(true,Title,Goal).
 in_expandable(Showing,Title,Goal):- (Showing==maybe, flag('$old_write_expandable_depth',X,X), X=<2), !, ignore(ppt(Title)),!,in_expandable(true,Title,Goal).
 in_expandable(Showing,Title,Goal):- title_to_html(Title,HtmlTitle),!,
  (Showing == true -> Class=panel_shown; Class=panel_hidden),
+ (Showing == true -> Click='collapse/expand'; Click='expand/collapse'),
  setup_call_cleanup(format(
-  '<button class="accordion">~w (click to un/expand)</button><div class="~w">',[HtmlTitle,Class]),
+  '<button class="accordion">~w (click to ~w)</button><div class="~w">',[HtmlTitle,Click,Class]),
   call(Goal),
   format('</div>',[])),
  flush_tee_maybe.

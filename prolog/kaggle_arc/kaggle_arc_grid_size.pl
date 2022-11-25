@@ -187,7 +187,7 @@ ratio_between(Unique_color_count,and(Mass,Area)):- !, current_pair(I,O),
   call(Unique_color_count,I,UCC), ratio_about(Mass,UCC,I,O), ratio_about(Area,UCC,I,O).
 ratio_between(Mass1,Mass2):- current_pair(I,O), call(Mass1,I,UCC), ratio_about(Mass2,UCC,I,O).
 
-ratio_about(square(Area), UCC,I,O):- call(Area,I,IA), call(Area,O,OA), n_times(UCC^2,IA,OA).
+ratio_about(square(Area), UCC,I,O):- !, call(Area,I,IA), call(Area,O,OA), n_times(UCC^2,IA,OA).
 ratio_about(Mass, UCC,I,O):-  call(Mass,I,IM), call(Mass,O,OM), n_times(UCC,IM,OM).
 
 test_hint(How,P2):- must_det_ll((current_pair(I,O),call(P2,I,II),call(P2,O,OO))),call(How,II,OO).
@@ -203,7 +203,7 @@ mass_and_area_times(N):- mass_and_area(n_times(N),n_times(N)).
 %   -> 9 - 48
 %   -> 10 - 96
 grow_less_than_times(N,A,B):- N #>= 1, N #=< 4, MaxB #= A*2^(N-1), MinB #= A+N,  MaxB #> B, B #> MinB.
-n_times(N,A,B):- \+ compound(N), B #= N * A.
+n_times(N,A,B):- \+ compound(N),!, B #= N * A.
 n_times(N^2,A,B):- !, B #= N * N * A.
 %n_times(N,A,B):- B #= N * A.
 

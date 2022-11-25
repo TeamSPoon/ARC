@@ -11,20 +11,20 @@ key_pad_tests(TestID):-  kaggle_arc(TestID,tst+0,In,Out), once((make_keypad(In),
 key_pad_tests(TestID):-  kaggle_arc(TestID,tst+0,In,Out), once((make_keypad(Out), \+ make_keypad(In))).
 key_pad_tests(TestID):-  kaggle_arc(TestID,tst+0,In,Out), once((make_keypad(In), \+ make_keypad(Out))).
 
-
+forall_count(P,Q):- flag('$fac_t',W,W), W>0,!,report_forall_count(progress,so_far),forall(P,Q).
 forall_count(P,Q):-
-  time(forall_count(P,Q,EP,ET)),
-  Percent is round(EP/ET*10_000)/100,
-  fmt('~N % Success ~p% (~q) for ~p ~n',[Percent,EP/ET,forall_count(P,Q)]).
-
-forall_count(P,Q,EP,ET):-
   setup_call_cleanup(flag('$fac_t',W,0),
     setup_call_cleanup(flag('$fac_p',W2,0),
-      forall((P,flag('$fac_t',X,X+1)),
-        ignore(once((Q,flag('$fac_p',Y,Y+1))))),
-      flag('$fac_p',EP,W2)),
-    flag('$fac_t',ET,W)).
+      time(forall((P,flag('$fac_t',X,X+1)),
+        ignore(once((Q,flag('$fac_p',Y,Y+1)))))),     
+      (report_forall_count(P,Q),flag('$fac_p',_,W2))),
+    flag('$fac_t',_,W)).
 
+report_forall_count(P,Q):- flag('$fac_t',ET,ET),flag('$fac_p',EP,EP),
+  (ET<2 -> true ;
+   (Percent is round(EP/ET*10_000)/100,
+    fmt('~N % Success ~p% (~q) for ~p ~n',[Percent,EP/ET,forall_count(P,Q)]))).
+  
 
 /*
 solves_all_pairs(TestID,P,P2S):- kaggle_arc(TestID,tst+0,_,_), 
@@ -53,21 +53,21 @@ solves_all_pairs(TestID,P2):-
 */
 
         
-%test_easy_solve_by:- clsmake, fail.
+%test_easy:- clsmake, fail.
 /*
-test_easy_solve_by:- get_pair_mode(single_pair),!,
+test_easy:- get_pair_mode(single_pair),!,
   get_current_test(TestID),some_current_example_num(ExampleNum),
   forall_count(kaggle_arc(TestID,ExampleNum,I,O),test_easy_solve_test_pair(TestID,ExampleNum,I,O)).
-%test_easy_solve_by:- test_p2(test_easy_solve_pair).
-%test_easy_solve_by:- test_p2(simple_todolist(_)).
+%test_easy:- test_p2(test_easy_solve_pair).
+%test_easy:- test_p2(simple_todolist(_)).
 */
-test_easy_solve_by:- once(update_and_fail_cls),fail.
-test_easy_solve_by:- get_pair_mode(entire_suite),!,forall_count(all_arc_test_name(TestID),easy_solve_whole_test(TestID)).
-test_easy_solve_by:- get_pair_mode(whole_test), get_current_test(TestID),!,must_det_ll(ignore(easy_solve_whole_test(TestID))).
-test_easy_solve_by:- once(print_all_info_for_test),fail.
-test_easy_solve_by:- test_p2(test_easy_solve_pair).
+test_easy:- once(update_and_fail_cls),fail.
+test_easy:- get_pair_mode(entire_suite),!,forall_count(all_arc_test_name(TestID),test_easy(TestID)).
+test_easy:- get_pair_mode(whole_test), get_current_test(TestID),!,must_det_ll(ignore(test_easy(TestID))).
+test_easy:- once(print_all_info_for_test),fail.
+test_easy:- test_p2(test_easy_solve_pair).
 
-:- luser_default(cmd,test_easy_solve_by). 
+:- luser_default(cmd,test_easy). 
 
 test_easy_solve_pair(I,O):- %set_current_test(I),
  (kaggle_arc(TestID,ExampleNum,I,O) *-> test_easy_solve_test_pair(TestID,ExampleNum,I,O) ; 
@@ -92,7 +92,7 @@ test_example_grid(I):- var(I),!.
 test_example_grid(I):- kaggle_arc(TestID,ExampleNum,I,O),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
 test_example_grid(O):- kaggle_arc(TestID,ExampleNum,_,O),!,test_easy_solve_test_pair(TestID,ExampleNum,O,_).
 test_example_grid(T):- is_valid_testname(T),set_current_test(T),!,kaggle_arc(T,ExampleNum,I,O),test_easy_solve_test_pair(T,ExampleNum,I,O).
-test_example_grid(G):- set_current_test(G),!,get_current_test(TestID),easy_solve_whole_test(TestID).
+test_example_grid(G):- set_current_test(G),!,get_current_test(TestID),test_easy(TestID).
 
 easy_solve_by(_TestID,P2):- ground(P2),!.
 easy_solve_by( TestID,P2):- nonvar(P2),!, copy_term(P2,P2T), findall(P2T,(easy_solve_by(TestID,P2T),P2\=@=P2T),List), member(P2,[P2|List]).
@@ -232,16 +232,17 @@ induce_from_training_pair(P2,Ex1,II1,OO1):-
    with_io_training_context(II1,OO1,((grid_call(P2,II1,OO1),
       grid_call(P2,II1,OOO1),print_side_by_side_io(checking_training(P2,Ex1),II1,OOO1)))),!.
 */
-easy_solve_whole_test(TestID):- 
-  forall_count(ensure_test(TestID),
-  (arcdbg_info(green,"BEGIN_TEST"=TestID),!,
-   call_cleanup(my_time(easy_solve_whole_test1(TestID)),force_full_tee))).
 
-easy_solve_whole_test1(TestID):- 
+
+test_easy(TestID):- var(TestID),!,
+  forall_count(ensure_test(TestID),test_easy(TestID)).
+test_easy(TestID):- 
+  arcdbg_info(green,"BEGIN_TEST"=TestID),
+  print_test(TestID),   
   (easy_solve_training(TestID,P2)*-> 
     (easy_solve_testing(TestID,P2)*-> arcdbg_info(green,success(TestID,P2)) ; arcdbg_info(yellow,didnt_work(TestID,P2)))
      ; (arcdbg_info(red,failed_finding_plan_to_solve_training(TestID)),fail)),!.
-easy_solve_whole_test1(TestID):- arcdbg_info(red,failed_test(TestID)).
+test_easy(TestID):- arcdbg_info(red,failed_test(TestID)),!,fail.
 
 
 try_p2_verbose(P2,TI1,TO1):-grid_call(P2,TI1,EM),print_side_by_side(grid_call(P2),TI1,EM),try_p2(=,EM,TO1).
@@ -249,16 +250,17 @@ try_p2_verbose(P2,TI1,TO1):-grid_call(P2,TI1,EM),print_side_by_side(grid_call(P2
 easy_solve_training(TestID,P2):- 
    once((
    kaggle_arc(TestID,trn+Some,TI1,TO1), 
-   easy_solve_by(TestID,P2),
+   with_current_pair(TI1,TO1,
+   ((easy_solve_by(TestID,P2),
    pp(?-easy_solve_training(TestID,P2)),
    collapsible_section((try_p2_verbose(P2,TI1,TO1),
    dif(Other,Some), 
    kaggle_arc(TestID,trn+Other,TI2,TO2),
-   warn_and_fail_on_bad_p2(cyan,orange,generalness,P2,TI2,TO2))))).
+   warn_and_fail_on_bad_p2(cyan,orange,generalness,P2,TI2,TO2)))))))).
 
 easy_solve_testing(TestID,P2):- 
    easy_solve_by(TestID,P2),
-   pp(?-easy_solve_whole_test(TestID,P2)),
+   pp(?-test_easy(TestID,P2)),
    kaggle_arc(TestID,tst+0,EI,EO),!,
    warn_and_fail_on_bad_p2(green,red,final_test,P2,EI,EO),!.
 
@@ -279,7 +281,7 @@ with_io_training_context1(I,O,G):-
    call(G))).
 
 
-
+gravity_s_1(I,O):- gravity(1,s,I,O),!.
 ground_enough(P2):- ground(P2),!.
 ground_enough(P2):- compound(P2),arg(1,P2,E),ground_enough(E),!.
 
@@ -289,11 +291,16 @@ easy0(0,trim_hv_repeats):- test_hint(mass_and_area('<','<')).
 easy0(0,trim_to_rect):- test_hint(mass_and_area(ignore_equal,'<')).
 
 easy0(1,trim_blank_lines):- test_hint(mass_and_area(ignore_equal,'<')).
-easy0(1,gravity(s,1)):- test_hint(mass_and_area('=','=')).
+easy0(1,gravity_s_1):- test_hint(mass_and_area('=','=')).
 
 easy0(2,flip_Once(_)):- test_hint(mass_and_area('=','=')).
-%easy0(3,swap_two_colors(_,_)).
+%easy0(3,maybe_subst_fg_color(_,_)).
 easy0(2,remove_color(green)):- test_hint('<',mass), test_hint('<',unique_color_count).
+easy0(2,maybe_subst_fg_color(_,_)):-  test_hint(mass_and_area('=','=')).
+%easy0(2,fill_odd_even(_,_)):-  test_hint(mass_and_area((\=),'=')). % 00d62c1b
+
+%unique_colors( test_hint('=',unique_color_count),test_hint('\=',unique_colors).
+
 easy0(4,blur_flipV):- test_hint(mass_and_area(grow_less_than_times(1),'=')).
 easy0(4,blur_or_not_least_2(flipV,flipH)):- test_hint(mass_and_area(grow_less_than_times(2),'=')).
 
@@ -306,6 +313,15 @@ easy0(5,grow_flip_2):- test_hint(mass_and_area_times(2)). % 963e52fc
 easy0(5,double_size):- test_hint(n_times(2),mass).
 easy0(5,increase_size(N)):- test_hint(mass_and_area_times(N)), ignore(N=4).
 %easy0(5,crop_by(_)).
+
+maybe_subst_fg_color(X,Y,I,O):- unique_fg_colors_pos(I,IC),unique_fg_colors_pos(O,OC), 
+   member(X,IC), once(var(O);\+ member(X,OC)),
+   member(Y,OC), X\==Y, \+ member(Y,IC),
+   swap_colors(X,Y,I,O).
+
+%unique_colors_of(In,Blue):- unique_colors(In,Colors),member(Blue,Colors),is_real_color(Blue).
+unique_fg_colors_pos(I,IC):- var(I),!,available_fg_colors(IC).
+unique_fg_colors_pos(I,IC):- unique_colors(I,ICB),delete(ICB,black,IC).
 
 simple_todolist(List,I,OO):- nonvar(List),!, do_simple_todolist(List,I,OO).
 simple_todolist(List,I,OO):- ignore(get_attr(OO,expect_p2,O)),nonvar(O),!,simple_todolist(List,I,O).
@@ -408,13 +424,8 @@ crop_by(HH/H,In,Out):- grid_size(In,H,V),between(1,H,HH),HH<H,clip(1,1,HH,V,In,O
 grow_4(In,Out):- flipV(In,FlipV),append(In,FlipV,Left),flipH(Left,Right),append_left(Left,Right,Out).
 grow_2(In,Out):- append_left(In,In,Out).
 grow_flip_2(In,Out):- flipH(In,FlipH),append_left(In,FlipH,Out).
-swap_two_colors(Blue,CurrentColor,In,Out):- 
-  % enum_fg_colors(Blue),
-   unique_colors_of(In,Blue),
-   enum_fg_colors(CurrentColor),CurrentColor\==Blue, swap_colors(Blue,CurrentColor,In,Out).
 shrink_grid(I,O):- grid_to_norm(I,_,O),!.
 
-unique_colors_of(In,Blue):- unique_colors(In,Colors),member(Blue,Colors),is_real_color(Blue).
 
 
 :- retractall(muarc_tmp:test_info_cache/2).

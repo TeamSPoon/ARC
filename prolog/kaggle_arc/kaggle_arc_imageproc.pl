@@ -168,7 +168,8 @@ S=[[1,bg,1],[1,bg,1],[1,1,1]],
 
 */
 
-blank(E,G,G1):- grid_size(G,H,V),make_grid(H,V,G1),mapgrid(=(E),G1).
+blank(G,G1):- grid_size(G,H,V),make_grid(H,V,G1).
+blank(E,G,G1):- blank(G,G1),mapgrid(=(E),G1).
 
 join_cols([],[]).
 join_cols([Grid1,Grid2],Grid):- is_grid(Grid1), !,append_left(Grid1,Grid2,Grid).
@@ -502,6 +503,32 @@ add_borders(Color,Grid,GridO):-
   replace_row_e(V,Color,Grid0,Grid1),
   replace_col_e(1,Color,Grid1,Grid2),
   replace_col_e(H,Color,Grid2,GridO),!.
+
+
+%00d62c1b
+fill_odd_even(Color,FGColor,I,O):-
+   (var(FGColor) -> ((unique_fg_colors_pos(I,IC),member(FGColor,IC))) ; true),
+   (var(Color) -> (( unique_fg_colors_pos(O,OC), member(Color,OC), FGColor\==Color, \+ member(Color,IC))) ; true),
+    blank(I,II),
+    maplist(odd_even_fill_row(Color,FGColor,out,black),I,II),
+    rot90(I,I90),
+    blank(I90,II90),
+    maplist(odd_even_fill_row(Color,FGColor,out,black),I90,II90),
+    rot270(II90,II360),
+    mapgrid(combine_odd_even_fill(Color),I,II,II360,O).
+
+combine_odd_even_fill( Color,_I,II,II360,O):-II==out,II360==out,O=Color.
+combine_odd_even_fill(_Color, I, _, _,   I).
+
+   
+odd_even_fill_row(Color,FGColor,IO,Prev,[C|Row],[C|Place]):- C==Prev,!,odd_even_fill_row(Color,FGColor,IO,Prev,Row,Place).
+odd_even_fill_row(_,_,_,_,[],[]):-!.
+odd_even_fill_row(Color,FGColor,IO,_Prev,[C|Row],[C|Place]):- C==FGColor,!,
+  in_out(IO,OI), odd_even_fill_row(Color,FGColor,OI,FGColor,Row,Place).
+odd_even_fill_row(Color,FGColor,IO,Prev,[_|Row],[IO|Place]):-
+  odd_even_fill_row(Color,FGColor,IO,Prev,Row,Place).
+
+
 
 fillFromBorder(Color,In,Out):- grid_call(fillFromBorder_0(Color),In,Out).
 fillFromBorder_0(FillColor,In,Out):- gref_call(fillFromBorder_gref(FillColor),In,Out).

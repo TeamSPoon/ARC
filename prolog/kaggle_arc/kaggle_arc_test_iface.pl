@@ -38,7 +38,7 @@ print_menu_cmd1(Info,_Goal):- format('~w',[Info]).
 
 :- multifile(menu_cmd1/4).
 :- multifile(menu_cmd9/4).
-menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z_make,!,print_test,train_test)).
+menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z_make,fully_train)).
 menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),
   sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
 menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(clear_tee,cls_z_make,!,ndividuatorO)).
@@ -227,7 +227,7 @@ do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes)
 do_menu_key(Key):- atom(Key), menu_cmds(_,Key,_,Body), !, menu_goal(Body).
 do_menu_key(Key):- atom(Key), atom_codes(Key,[Code]), Code<27, CCode is Code + 96, atom_codes(CKey,[94,CCode]),!,do_menu_key(CKey).
 
-do_menu_key(Key):- atom(Key), atom_length(Key,1), \+ menu_cmd1(_,Key,_,_),
+do_menu_key(Key):- atom(Key), display_length(Key,1), \+ menu_cmd1(_,Key,_,_),
    char_type(Key,to_upper(LowerKey)),LowerKey\==Key, \+ \+ menu_cmd1(_,LowerKey,_,_),
    format('~N~n'), get_pair_mode(Mode), alt_pair_mode(Mode,Alt), !,
      with_pair_mode(Alt,do_menu_key(LowerKey)).
@@ -242,7 +242,7 @@ do_menu_key(_).
 
 maybe_call_code(Key):- \+ atom(Key), !, 
  notrace(catch(text_to_string(Key,Str),_,fail)),Key\==Str,catch(atom_string(Atom,Str),_,fail),maybe_call_code(Atom).
-maybe_call_code(Key):- atom_length(Key,Len),Len>2,
+maybe_call_code(Key):- display_length(Key,Len),Len>2,
  notrace(catch(atom_to_term(Key,Term,Vs),_,fail)),!, 
  locally(nb_setval('$variable_names',Vs),
    locally(nb_setval('$term',Term),
@@ -495,10 +495,10 @@ next_suite:-
 
 dont_sort_by_hard(test_names_by_fav). dont_sort_by_hard(all_arc_test_name).
 
+test_suite_name(test_names_by_fav). 
 test_suite_name(human_t).
 test_suite_name(icecuber_fail).
 test_suite_name(is_symgrid).
-test_suite_name(test_names_by_fav). 
 test_suite_name(sol_t).
 %test_suite_name(hard_t).
 test_suite_name(key_pad_tests). % test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
@@ -743,40 +743,45 @@ worth_saving:- size_file('muarc_tmp/tee.ansi',Size), Size > 20_000.
 
 :- set_prolog_flag(nogc,false).
 
-begin_tee:- get_current_test(TestID),on_entering_test(TestID),at_halt(exit_tee).
+
+begin_tee:- get_current_test(TestID),on_entering_test(TestID),tee_op((at_halt(exit_tee))).
 flush_tee_maybe:- force_full_tee.
-flush_tee:- ignore((worth_saving -> force_flush_tee ; true)).
-force_flush_tee:-   
+flush_tee:- tee_op(ignore((worth_saving -> force_flush_tee ; true))).
+force_flush_tee:- tee_op((
    my_shell_format('tail -20000 muarc_tmp/tee.ansi > muarc_tmp/tee1000.ansi',[]),
-   tee_to_html('muarc_tmp/tee1000.ansi').
+   tee_to_html('muarc_tmp/tee1000.ansi'))).
 force_full_tee:-   
+  tee_op((
    my_shell_format('cat muarc_tmp/tee.ansi > muarc_tmp/tee1000.ansi',[]),
-   tee_to_html('muarc_tmp/tee1000.ansi').
+   tee_to_html('muarc_tmp/tee1000.ansi'))).
 
 tee_to_html(Tee1000):-
+ tee_op((
   test_html_file_name(FN),% -W -a
   ignore((FN \== [], 
    my_shell_format('cat kaggle_arc_header.html > ~w',[FN]),
    my_shell_format('cat muarc_tmp/test_links ~w muarc_tmp/test_links | ansi2html -u -a >> ~w',[Tee1000,FN]),
-   my_shell_format('cat kaggle_arc_footer.html >> ~w',[FN]))).
+   my_shell_format('cat kaggle_arc_footer.html >> ~w',[FN]))))).
 
-clear_test_html :- tee_to_html('muarc_tmp/null'). % was /dev/null
-clear_tee:- force_full_tee, shell('cat muarc_tmp/null > muarc_tmp/tee.ansi').
+clear_test_html :- tee_op((tee_to_html('muarc_tmp/null'))). % was /dev/null
+clear_tee:- force_full_tee, tee_op((shell('cat muarc_tmp/null > muarc_tmp/tee.ansi'))).
 exit_tee:-  get_current_test(TestID),on_leaving_test(TestID).
 
-write_test_links_file:- notrace((setup_call_cleanup(tell('muarc_tmp/test_links'), write_test_links, told))).
+write_test_links_file:- tee_op((notrace((setup_call_cleanup(tell('muarc_tmp/test_links'), write_test_links, told))))).
 write_test_links(TestID):-  
   ensure_test(TestID), format('~N'),
+ tee_op((
   ignore((get_previous_test(TestID,PrevID),write_tee_link('Prev',PrevID))),
   ignore((((luser_getval(prev_test_name,AltPrevID),AltPrevID\==PrevID,AltPrevID\==TestID,AltPrevID\=='.'),write_tee_link('AltPrevID',AltPrevID)))),
   ignore(write_tee_link('This',TestID)),
   ignore((get_next_test(TestID,NextID),write_tee_link('Next',NextID))),
   ignore((((luser_getval(next_test_name,AltNextID),NextID\==AltNextID,AltNextID\==TestID,AltNextID\=='.'),write_tee_link('AltNextID',AltNextID)))),  
-  format('~N<pre>').
+  format('~N<pre>'))).
 
+tee_op(G):- nop(G).
+shell_op(G):- nop(G).
 
-
-my_shell_format(F,A):- sformat(S,F,A), shell(S).
+my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).
 
 save_supertest(TestID):- is_list(TestID),maplist(save_supertest,TestID).
 save_supertest(TestID):- ensure_test(TestID),   
@@ -870,7 +875,9 @@ new_test_pair(PairName):-
   retractall(is_grid_tid(PairName,_)),!.
 
 human_test:- solve_test_trial(human).
-fully_test:- print_test, !, train_test, !, solve_test, !.
+
+fully_train:- print_test,train_test.
+fully_test:- fully_train, !, solve_test, !.
 run_next_test:- notrace(next_test), fully_test.
 
 info(Info):- nonvar(Info),wdmsg(Info).
@@ -1315,18 +1322,17 @@ test_p2a(P2):-
   (get_pair_mode(single_pair);get_pair_mode(whole_test)),!,
   append_termlist(P2,[N1,'$VAR'('Result')],N2), 
   put_attr(G2,expect_p2,Expected),
-  my_time((forall_count(test_pairs(_,G1,Expected),     
+  forall_count(test_pairs(_,G1,Expected),     
      forall((set_current_test(G1),call(P2,G1,G2)),
        ((grid_to_gid(G1,N1),
        once(ignore((grid_arg(G2,GR,Rest),print_side_by_side(red,G1,N1-Rest,_LW,GR,(?-(N2))),
-         show_sf_if_lame(test_p2(P2),G2,Expected),dash_chars)))))),EP,ET),
-     wdmsg(forall_count(EP/ET)))),!.
+         show_sf_if_lame(test_p2(P2),G2,Expected),dash_chars))))))),!.
 
 test_p2a(P2):-
   append_termlist(P2,[N1,'$VAR'('Result')],N2), 
-  my_time(forall(into_grids(N1,G1),     
+  forall_count(into_grids(N1,G1),     
      forall((set_current_test(G1),call(P2,G1,G2)),
-       once(ignore((grid_arg(G2,GR,Rest),print_side_by_side(red,G1,N1-Rest,_LW,GR,(?-(N2))),dash_chars)))))).
+       once(ignore((grid_arg(G2,GR,Rest),print_side_by_side(red,G1,N1-Rest,_LW,GR,(?-(N2))),dash_chars))))).
 
 grid_arg(G2,G2,[]):- is_grid(G2),!.
 grid_arg(GRest,GR,GRest):- compound(GRest),arg(N,GRest,GR), is_grid(GR),!,setarg(N,GRest,grid),!.

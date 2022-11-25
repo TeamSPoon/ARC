@@ -186,7 +186,7 @@ debug_indiv(A):- is_point_obj(A,Color,Point),
 object_colors_prop(PA,PenColors):- 
   pen(PA,Pen), colors(PA,Colors), 
   display_length(Pen,PenL), display_length(Colors,ColorsL), 
-    ((PenL=<ColorsL) -> PenColors=pen(Pen);PenColors=colors(Colors)).
+  ((PenL=<ColorsL) -> PenColors=pen(Pen);PenColors=colors(Colors)).
 
 object_dglyphH(PA, OUTS):- 
   obj_to_oid(PA,GA),% mass(PA,Mass),
@@ -233,7 +233,7 @@ object_s_glyph(Obj,SGlyph):-
   print_colors_on_ss(Glyph,Colors,SGlyph))).
   
 print_colors_on_ss(Glyph,[],SSGlyph):- sformat(SSGlyph,'~q',[Glyph]),!.
-print_colors_on_ss(Glyph,Colors,SGlyph):- atom_length(Glyph,N), 
+print_colors_on_ss(Glyph,Colors,SGlyph):- display_length(Glyph,N), 
   wots(SGlyph,print_colors_on(Colors,N,Glyph)).
 print_colors_on([Color],_,Glyph):- color_print(Color,call(writeq(Glyph))),!.
 print_colors_on(Colors,L,Glyph):- length(Colors,CL), CL>L,write('\''), user:maplist(print_ncolors(Glyph),Colors), write('\''),!.
@@ -383,7 +383,7 @@ debug_indiv_obj(AS):-
   predsort(sort_on(arg(2)),TVSO,TVSOR),reverse(TVSOR,TVSOS),
   ignore((TF==true,dash_chars)),
   sformat(SF,"% ~w:\t\t~w\t",[PC,SGlyph]),
-  ignore(( g_out_style(style('font-size2D','75%'),(write(SF), wqs(TVSI))))),
+  ignore(( g_out_style(style('font-size','75%'),(write(SF), wqs(TVSI))))),
   %maplist(write_indented_list('~N    '),wqs(TVSOS),
   nop((format('~N    '),wqs(TVSOS))),
   ignore(( TF==true, amass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),

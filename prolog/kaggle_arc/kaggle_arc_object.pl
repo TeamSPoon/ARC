@@ -473,12 +473,12 @@ obk_key(A,92):- arg(_,A,L), is_list(L).
 obk_key(A,91):- arg(_,A,L), number(L).
 obk_key(_,80). 
 
-priority("bckgrnd",0).
-priority("point",0).
-priority(A,10):- atom_contains(A,")").
+priority(Var,20):- var(Var),!.
+priority("bckgrnd",0):-!.
+priority("point",0):-!.
+priority(T,10):- term_to_atom(T,A),atom_contains(A,")"),!.
 priority(_,20).
-longer_strings(R,A,B):- string(A),string(B),priority(A,PA),priority(B,PB),atom_length(A,AL),atom_length(B,BL),compare(R,PA+AL+A,PB+BL+B).
-longer_strings(R,A,B):- compare(R,A,B).
+longer_strings(R,A,B):- priority(A,PA),priority(B,PB),display_length(A,AL),display_length(B,BL),compare(R,PA+AL+A,PB+BL+B).
 
 
 add_shape_info(Info,I,M):- add_shape_info0(Info,I,M),!.
@@ -612,7 +612,7 @@ iv_for(L,Iv):- copy_term(L,CT,_),numbervars(CT,0,_,[attvar(bind),singletons(true
 
 obj_iv(Obj,Iv):- indv_u_props(Obj,L),iv_for(L,Iv).
 
-obj_to_oid(Obj,OID):-  atom(Obj),atom_length(Obj,L),L>5,Obj=OID,!.
+obj_to_oid(Obj,OID):-  atom(Obj),display_length(Obj,L),L>5,Obj=OID,!.
 obj_to_oid(Obj,OID):-  oid_glyph_object(OID,_,Obj),!.
 obj_to_oid(I,X):- var_check(I,obj_to_oid(I,X))*->!;indv_props(I,L),member(obj_to_oid(X),L).
 obj_to_oid(Obj,OID):- assert_object_oid(_,Obj,_Glyph,OID),!.
@@ -629,7 +629,7 @@ tid_to_gid(TID,GID):- is_grid(TID),!,grid_to_gid(TID,GID).
 tid_to_gid(TID,GID):- var(TID),!,current_gid(GID).
 tid_to_gid(TID,GID):- tid_to_gids(TID,GID),!.
 
-%o2g_f(Obj,Glyph):-  atom(Obj),atom_length(Obj,1),Obj=Glyph,!.
+%o2g_f(Obj,Glyph):-  atom(Obj),display_length(Obj,1),Obj=Glyph,!.
 o2g_f(Obj,Glyph):- oid_glyph_object(_,Glyph,Obj),!.
 o2g_f(Obj,Glyph):- assert_object_oid(_,Obj,Glyph,_OID).
 

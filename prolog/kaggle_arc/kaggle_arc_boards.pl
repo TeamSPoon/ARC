@@ -219,6 +219,7 @@ color_subst(_OSC,_ISC,[]):-!.
 
 detect_pair_hints(TestID,ExampleNum,In,Out):- 
   ensure_test(TestID),
+  must_det_ll((
   dmsg(detect_pair_hints(TestID,ExampleNum)),
   assert_id_grid_cells(In), assert_id_grid_cells(Out),
   detect_supergrid_tt_pair(TestID,ExampleNum,In,Out,_TT),  
@@ -226,7 +227,7 @@ detect_pair_hints(TestID,ExampleNum,In,Out):-
   %print(TT),
   %ignore(show_reduced_io(In+Out)),
   grid_hint_swap(i-o,In,Out),
-  dash_chars,!.
+  dash_chars)),!.
 
 guess_board(TT):- arc_setval(TT,guess_board,t).
 
@@ -578,10 +579,14 @@ min_grid_unifier(_,_,_).
 min_list_unifier(A,B,A):- A=@=B,!.
 min_list_unifier(A,B,_):- \+ compound(A);\+ compound(B),!.
 min_list_unifier(A,B,AA):- is_list(A),is_list(B), sort(A,AA),sort(B,BB),BB=@=AA,!.
-min_list_unifier(A,B,[EC|C]):- is_list(A),is_list(B),select_two(A,B,E1,E2,AA,BB), min_unifier(E1,E2,EC) ,!,min_list_unifier(AA,BB,C).
+
+min_list_unifier(A,B,[EC|C]):- is_list(A),is_list(B),  select_two(A,B,E1,E2,AA,BB), min_unifier(E1,E2,EC) ,!,min_list_unifier(AA,BB,C).
+
+
 min_list_unifier(A,_,_):- (\+ is_list(A), \+ is_cons(A)),!.
 min_list_unifier(_,A,_):- (\+ is_list(A), \+ is_cons(A)),!.
 min_list_unifier(A,B,_):- (\+ is_list(A) ; \+ is_list(B)),!.
+
 %min_list_unifier([E1|AA],[E2|BB],[EC|C]):- min_unifier(E1,E2,EC) ,!,min_unifier(AA,BB,C).
 min_list_unifier(A,B,[E1|C]):- nonvar(A),nonvar(B), select(E1,A,AA),nonvar(E1),select(E2,B,BB),nonvar(E2), E1=@=E2 ,!,min_list_unifier(AA,BB,C).
 %min_list_unifier([_|A],[_|B],[_|C]):- !,min_list_unifier(A,B,C).

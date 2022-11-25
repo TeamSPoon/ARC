@@ -220,7 +220,7 @@ check_len(_).
 must_det_ll(X):- \+ callable(X), !, throw(must_det_ll_not_callable(X)).
 must_det_ll((X,!)):- !, (must_det_ll(X),!).
 must_det_ll((X,!,Y)):- !, (must_det_ll(X),!,must_det_ll(Y)).
-must_det_ll((X,Y)):- !, (must_det_ll(X),must_det_ll(Y)).
+must_det_ll((X,Y)):- !, (must_det_ll(X),!,must_det_ll(Y)),!.
 %must_det_ll(X):- notrace(catch(X,_,fail)),!.
 must_det_ll(X):- conjuncts_to_list(X,List),List\=[_],!,maplist(must_det_ll,List).
 must_det_ll(must_det_ll(X)):- !, must_det_ll(X).
@@ -308,14 +308,22 @@ is_setter_syntax(hset(How,ObjMember),Obj,Member,_Var,How):- obj_member_syntax(Ob
 obj_member_syntax(ObjMember,Obj,Member):-compound(ObjMember), compound_name_arguments(ObjMember,'.',[Obj,Member]),!.
 
 expand_must_det(I,_):- \+ compound(I),!,fail.
-expand_must_det(must_det_ll(GoalL),GoalLO):- !, expand_must_det1(GoalL,GoalLO).
+expand_must_det(must_det_ll(GoalL),GoalLO):- !, expand_must_det0(GoalL,GoalLO).
 expand_must_det(maplist(P1,GoalL),GoalLO):- P1 ==must_det_ll,!,
-  expand_must_det1(GoalL,GoalLO).
+  expand_must_det0(GoalL,GoalLO).
 
-expand_must_det1(Nil,true):- Nil==[],!.
-expand_must_det1(Var,Var):- \+ compound(Var),!.
+expand_must_det0(Nil,true):- Nil==[],!.
+expand_must_det0(Var,Var):- \+ callable(Var),!.
+expand_must_det0([A|B],(AA,BB)):- assertion(callable(A)), assertion(is_list(B)), !, expand_must_det1(A,AA), expand_must_det0(B,BB).
+expand_must_det0(A,AA):- !, expand_must_det1(A,AA).
+
+
+expand_must_det1(Var,Var):- \+ callable(Var),!.
+expand_must_det1(Goal,O):- \+ compound(Goal), !,O = must_det_ll(Goal).
 expand_must_det1((A,B),(AA,BB)):- !, expand_must_det1(A,AA), expand_must_det1(B,BB).
-expand_must_det1([A|B],(AA,BB)):- !, expand_must_det1(A,AA), expand_must_det1(B,BB).
+expand_must_det1((C*->A;B),(C->AA;BB)):- !, expand_must_det1(A,AA), expand_must_det1(B,BB).
+expand_must_det1((C->A;B),(C->AA;BB)):- !, expand_must_det1(A,AA), expand_must_det1(B,BB).
+expand_must_det1((C;B),(C->true;BB)):- !, expand_must_det1(B,BB).
 expand_must_det1(must_det_ll(AB), AABB):-!, expand_must_det1(AB,AABB).
 expand_must_det1( A,must_det_ll(AA)):- expand_goal(A,AA).
 
@@ -790,7 +798,7 @@ ansi_startup:-
 :- luser_default(no_individuator, f).
 :- luser_default(grid_size_only,true).
 :- luser_default(extreme_caching,true).
-:- luser_default(cmd,test_easy_solve_by).
+:- luser_default(cmd,test_easy).
 :- luser_default(cmd2,print_all_info_for_test).
 :- luser_default(individuated_cache,true).
 :- luser_default(extreme_caching,true).
