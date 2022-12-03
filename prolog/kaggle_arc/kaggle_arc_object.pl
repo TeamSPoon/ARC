@@ -223,7 +223,7 @@ zero_one_more(_,[]).
 % [1,2,2,3]=12.
 % [1,2,3]=12.
 
-to_global_coord(H,LH,OH,GH):- max_min(LH,OH,Max,_Min), GH is  floor((H-1)*OH/Max)+1.
+to_global_coord(H,LH,OH,GH/Min):- max_min(LH,OH,Max,Min), GH is  floor((H-1)*OH/Max)+1.
 
 :- style_check(+singleton).
 make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):- 

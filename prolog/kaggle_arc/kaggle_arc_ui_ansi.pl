@@ -410,8 +410,7 @@ wots_vs(SSS,G):- wots(S,G),strip_vspace(S,SS), (atom_contains(SS,'\n') -> wots(S
 
 
 wqs_l(H):- \+ is_list(H),!, wqs(H).
-wqs_l([]).
-wqs_l([H|T]):- !, wqs(H), write_nbsp, wqs_l(T).
+wqs_l(H):- wqs(H).
 
 
 maybe_color(SS,_):- term_contains_ansi(SS),!, write_nbsp, write(SS).
@@ -428,8 +427,9 @@ wqs0(G):- compound(G), G = call(C),callable(C),!,call(C).
 wqs0(G):- is_map(G), !, write_map(G,'wqs').
 wqs0(X):- attvar(X), !, wqs(attvar(X)). 
 wqs0(nl):- !, nl. wqs0(''):-!. wqs0([]):-!.
-wqs0([H|T]):- is_list(T), string(H), !, wqs_l([H|T]).
-wqs0([H|T]):- is_list(T), !, wqs(H),need_nl(H,T), wqs(T).
+wqs0([T]):- !, wqs(T).
+wqs0([H|T]):- is_list(T), wqs(H), need_nl(H,T), wqs(T), !.
+wqs0([H|T]):- is_list(T), string(H), !, write(H), write(' '), wqs(T).
 wqs0(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 wqs0(X):- is_object(X), tersify1(X,Q), X\==Q,!, wqs(Q).
 wqs0(X):- is_object(X), show_shape(X),!.
@@ -501,11 +501,26 @@ probably_nl :- format('~N').
 write_nbsp:- write(' ').
 
 is_breaker(P):- compound(P),functor(P,_,A), A>=3.
+
+last_f(H,F):- \+ compound(H),data_type(H,F).
+last_f(H,F/A):- compound(H),!,functor(H,F,A).
+
+need_nl(_,_):- line_position(current_output,L1),L1<40,!.
+need_nl(_,_):- line_position(current_output,L1),L1>160,!,format(' $ ~N  ').
+need_nl(H0,[H1,H2|_]):- H1\=cc(_,_), last_f(H0,F0),last_f(H1,F1),last_f(H2,F2), F0\==F1, F1==F2,!,format('~N  ').
+%need_nl(H0,[H1|_]):- last_f(H0,F0),last_f(H1,F1), F0==F1, !, write_nbsp.
+need_nl(_,_).
+/*
+need_nl(_Last,[H|_]):- last_f(H,F), 
+ once(nb_current(last_h,cc(LF,C));(LF=F,C=0)), 
+   (LF==F-> (write_nbsp, plus(C,1,CC), nb_setval(last_h,cc(F,CC))) ; ((C>2 -> nl ; write_nbsp), nb_setval(last_h,cc(F,0)))).
+
 need_nl(_,_):- arc_webui,!,write_nbsp.
 %need_nl(_,_):- !,write_nbsp.
 need_nl(H,[P|_]):- \+ is_breaker(H),is_breaker(P),line_position(user_output,L1),L1>80,nl,bformatc1('\t\t').
 need_nl(_,_):- line_position(user_output,L1),L1>160,nl,bformatc1('\t\t').
 need_nl(_,_).
+*/
 
 dash_chars:- dash_chars(40),!.
 dash_chars(H):- integer(H), dash_border(H).
@@ -567,7 +582,8 @@ print_ss(A):- must_det_ll(( format('~N'), into_ss_string(A,SS),!,
 
 print_ss(G,W):- is_really_gridoid(G),!,must_det_ll(print_grid(W,G)).
 
-print_side_by_side([]):-!.
+print_side_by_side(Nil):- Nil == [], !.
+print_side_by_side(P):- \+ is_list(P), ignore((print_side_by_side([P]))),!.
 %print_side_by_side([A,B,C,D|Rest]):- wots(AB,print_side_by_side(A,B)),wots(AC,print_side_by_side(C,D)),!,print_side_by_side(AB,AC),print_side_by_side(Rest).
 %print_side_by_side([A,B,C|Rest]):- wots(AB,print_side_by_side(A,B)),wots(AC,print_grid(C)),print_side_by_side(AB,AC),!,print_side_by_side(Rest).
 print_side_by_side(List):- member(Size,[15,10,8,6,4,3]), once((length(Left,Size), append(Left,Rest,List), reverse(Left,RLeft),

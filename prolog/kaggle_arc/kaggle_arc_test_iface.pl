@@ -293,9 +293,9 @@ do_menu_codes([27,27,91,68]):- !, previous_test, print_test.
 % alt right arrow
 do_menu_codes([27,27,91,67]):- !, next_test, print_test.
 % page up
-do_menu_codes([27,91,53,126]):- !, prev_suite.
+do_menu_codes([27,91,53,126]):- !, set_pair_mode(entire_suite),prev_suite.
 % page down
-do_menu_codes([27,91,54,126]):- !, next_suite.
+do_menu_codes([27,91,54,126]):- !, set_pair_mode(entire_suite),next_suite.
 
 % up arrow
 do_menu_codes([27,91,65]):- !, set_pair_mode(single_pair), prev_pair.
@@ -406,14 +406,11 @@ with_test_grids(TestID,G,P):- forall(test_grids(TestID,G),my_menu_call((ensure_t
 % Hides solution grid from code
 kaggle_arc_safe(TestID,ExampleNum,I,O):- kaggle_arc(TestID,ExampleNum,I,OO), ((((ExampleNum+_) \= ((tst+_)))->O=OO ; true)).
 
-test_pairs(TestID,I,O):- get_pair_mode(entire_suite), !, kaggle_arc_safe(TestID,_ExampleNum,I,O).
-test_pairs(TestID,I,O):- get_pair_mode(whole_test), !, ignore(get_current_test(TestID)), kaggle_arc_safe(TestID,_ExampleNum,I,O).
-test_pairs(TestID,I,O):- ignore(get_current_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc(TestID,ExampleNum,I,O).
+test_pairs(TestID,I,O):- test_pairs(TestID,_ExampleNum,I,O).
 
-
-test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(entire_suite), !, kaggle_arc_safe(TestID,ExampleNum,I,O).
+test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(entire_suite), !, ensure_test(TestID), kaggle_arc_safe(TestID,ExampleNum,I,O).
 test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(whole_test), !, ensure_test(TestID), kaggle_arc_safe(TestID,ExampleNum,I,O).
-test_pairs(TestID,ExampleNum,I,O):- ignore(get_current_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc(TestID,ExampleNum,I,O).
+test_pairs(TestID,ExampleNum,I,O):- ignore(ensure_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc(TestID,ExampleNum,I,O).
 
 %with_test_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call((ensure_test(TestID),P))).
 with_test_pairs(TestID,ExampleNum,I,O,P):- 
@@ -426,7 +423,7 @@ with_test_pairs(TestID,ExampleNum,I,O,P):-
 bad:- ig([complete],v(aa4ec2a5)>(trn+0)*in).
 
 report_suites:- luser_getval(test_suite_name,SuiteXC),
- forall(test_suite_name(SuiteX),(nl,ignore((SuiteXC==SuiteX,write('\n--->>>>'))),report_suite(SuiteX))).
+ forall(test_suite_name(SuiteX),(nl,ignore((SuiteX==SuiteX,write('\n--->>>>'))),report_suite(SuiteX))).
 
 report_suite:- luser_getval(test_suite_name,SuiteX), write('\n--->>>>'),report_suite(SuiteX).
 
@@ -459,10 +456,11 @@ reverse_suite:-
 
 
 restart_suite:- 
-   get_current_suite_testnames([NewFirst|_]),
+   must_det_ll((get_current_suite_testnames(Set),
+   [NewFirst|_]=Set,
    set_current_test(NewFirst),!,
-   report_suite,
-   print_qtest(NewFirst).
+   print_qtest(NewFirst),
+   report_suite)).
 
 randomize_suite:-
   luser_getval(test_suite_name,SuiteX), muarc_tmp:cached_tests(SuiteX,Set),
@@ -493,7 +491,7 @@ next_suite:-
 :- multifile(dir_test_suite_name/1).
 :- dynamic(dir_test_suite_name/1).
 
-dont_sort_by_hard(test_names_by_fav). dont_sort_by_hard(all_arc_test_name).
+dont_sort_by_hard(test_names_by_fav). dont_sort_by_hard(all_arc_test_name). dont_sort_by_hard(all_arc_test_name_unordered).
 
 test_suite_name(test_names_by_fav). 
 test_suite_name(human_t).
@@ -504,7 +502,7 @@ test_suite_name(sol_t).
 test_suite_name(key_pad_tests). % test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
 %test_suite_name(test_names_by_fav_rev). 
 %test_suite_name(test_names_by_hard_rev).
-test_suite_name(all_arc_test_name).
+%test_suite_name(all_arc_test_name).
 test_suite_name(icecuber_pass).
 test_suite_name(dbigham_train_core).
 test_suite_name(dbigham_eval_pass).
@@ -518,13 +516,16 @@ test_suite_name(test_names_by_hard).
 :- dynamic(muarc_tmp:cached_tests/2).
 %:- retractall(muarc_tmp:cached_tests(_,_)).
 :- test_suite_name(Name)->luser_default(test_suite_name,Name).
+
 get_current_suite_testnames(Set):-
   luser_getval(test_suite_name,X),
   current_suite_testnames(X,Set).
 
+
 current_suite_testnames(X,Set):- nonvar(Set),current_suite_testnames(X,SetV),!,Set=SetV.
 current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),Set\==[],!.
-current_suite_testnames(X,Set):-  my_time((pp(creating(current_suite_testnames(X))), 
+current_suite_testnames(X,Set):-  
+ my_time((pp(creating(current_suite_testnames(X))), 
  findall(ID,test_suite_info(X,ID),List),List\==[],   
   my_list_to_set_variant(List,Set),
   !,asserta(muarc_tmp:cached_tests(X,Set)))).
@@ -543,18 +544,21 @@ likely_sort(X,Set,ByHard):-  pp(sorting_suite(X)), !, sort_by_hard(Set,ByHard), 
 some_test_suite_name(SuiteX):- test_suite_name(SuiteX),
   SuiteX\==test_names_ord_hard,
   SuiteX\==test_names_by_hard,
-  SuiteX\==all_arc_test_name,
+  SuiteX\==all_arc_test_name_unordered,
   SuiteX\==test_names_by_hard_rev.
+
 
 test_suite_info(SuiteX,TestID):- var(SuiteX),!,some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
 test_suite_info(SuiteX,TestID):- test_suite_info_set(SuiteX,Set),!,member(TestID,Set).
 
 test_suite_info_set(SuiteX,Set):- muarc_tmp:cached_tests_hard(SuiteX,Set).
 test_suite_info_set(SuiteX,Set):- muarc_tmp:cached_tests(SuiteX,Set).
+test_suite_info_set(SuiteX,Set):- SuiteX==all_arc_test_name_unordered,!,findall(TestID,kaggle_arc(TestID,trn+0,_,_),Set).
 test_suite_info_set(SuiteX,Set):- findall(TestID_C,test_suite_info_1(SuiteX,TestID_C),List),
   list_to_set(List,Set),asserta(muarc_tmp:cached_tests(SuiteX,Set)).
 
 test_suite_info_1(SuiteX,TestID):- var(SuiteX),!,some_test_suite_name(SuiteX),test_suite_info_1(SuiteX,TestID).
+test_suite_info_1(ADir,TestID):- dir_test_suite_name(ADir),some_test_info_prop(TestID,test_suite([ADir])).
 test_suite_info_1(icecuber_fail,TestID):- !, icu(Name,PF),PF == -1,atom_id_e(Name,TestID).
 test_suite_info_1(icecuber_pass,TestID):- !, icu(Name,PF),PF \== -1,atom_id_e(Name,TestID).
 test_suite_info_1(dbigham_fail,TestID):- !, all_arc_test_name(TestID),
@@ -965,9 +969,6 @@ in_out_name(tst+NN,SI,SO):- N is NN+1, format(atom(SI),'EVALUATION TEST #~w',[N]
 in_out_name(X,'Input'(X),'Output'(X)).
 
 
-all_arc_test_name(TestID):- kaggle_arc(TestID,trn+0,_,_).
-
-all_suite_test_name(TestID):- get_current_suite_testnames(Set),!,member(TestID,Set).
 
 arc_pair_id(TestID,ExampleNum):- 
   ensure_test(TestID),
@@ -987,10 +988,14 @@ ensure_test(TestID,RealTestID):- fix_test_name(TestID,RealTestID),!,ensure_test(
 
 ensure_test(TestID):- nonvar(TestID),!, ignore(( is_valid_testname(TestID), set_current_test(TestID))).
 ensure_test(TestID):- \+ get_pair_mode(enire_suite),!,get_current_test(TestID).
-ensure_test(TestID):- all_tests_current_first(TestID).
+ensure_test(TestID):- all_arc_test_name(TestID).
 
-all_tests_current_first(TestID):- get_current_test(Test),!,
- (((TestID=Test);(all_arc_test_name(TestID),TestID\=Test);(set_current_test(Test),!,fail))).
+all_arc_test_name(TestID):- get_current_test(Test),!,
+ (((TestID=Test);(all_suite_test_name(TestID),TestID\=Test);(set_current_test(Test),!,fail))).
+
+all_arc_test_name_unordered(TestID):- kaggle_arc(TestID,trn+0,_,_).
+
+all_suite_test_name(TestID):- get_current_suite_testnames(Set),!,member(TestID,Set).
 
 matches(InfoS,InfoS):-!.
 matches(InfoS,InfoM):- member(InfoS,InfoM).
@@ -1005,17 +1010,17 @@ test_info_no_loop(TestID,Sol):- muarc_tmp:test_info_cache(TestID,Sol),!. % test_
 %test_info_no_loop(TestID,Sol):- some_test_info(TestID,Sol).
 
 ensure_test_info:- muarc_tmp:test_info_cache(_,_)-> true ; ( pp(recreating(test_info)),
-  forall(all_arc_test_name(TestID),test_info_recache(TestID,_))).
+  forall(all_arc_test_name_unordered(TestID),test_info_recache(TestID,_))).
 
 
 test_info(TestID,InfoS):- var(TestID),   var(InfoS), !, ensure_test_info,!, test_info_no_loop(TestID,InfoS).
-test_info(TestID,InfoS):- var(TestID),   nonvar(InfoS),!,all_arc_test_name(TestID),term_variables(InfoS,Vs),no_repeats(Vs,(test_info(TestID,InfoM),matches(InfoS,InfoM))).
+test_info(TestID,InfoS):- var(TestID),   nonvar(InfoS),!,all_arc_test_name_unordered(TestID),term_variables(InfoS,Vs),no_repeats(Vs,(test_info(TestID,InfoM),matches(InfoS,InfoM))).
 test_info(TestID,InfoS):- nonvar(TestID),once(fix_test_name(TestID,FTestID,_)),TestID\=@=FTestID,!,test_info(FTestID,InfoS).
 test_info(TestID,InfoS):- nonvar(TestID),nonvar(InfoS),!,test_info(TestID,InfoM),matches(InfoS,InfoM).
 test_info(TestID,InfoS):- nonvar(TestID),var(InfoS),!,test_info_no_loop(TestID,InfoS)*->true;test_info_recache(TestID,InfoS).
 
 test_info_recache(TestID,InfoSS):-  %once((fix_test_name(CTestID,CFTestID,_),CFTestID=TestID)),
-  findall(Inf,all_test_info(TestID,Inf),Info),
+  findall(Inf,(all_arc_test_name_unordered(TestID),all_test_info(TestID,Inf)),Info),
   flatten([Info],InfoFF),repair_info(InfoFF,InfoF),list_to_set(InfoF,InfoS),!,
   forall(retract(muarc_tmp:test_info_cache(TestID,_)),true),
   asserta(muarc_tmp:test_info_cache(TestID,InfoS)),!,InfoS=InfoSS.
@@ -1040,34 +1045,16 @@ repair_info0(Inf,Inf).% listify(Inf,InfM),maplist(repair_info,InfM,Info).
 
 was_fav(X):- nonvar_or_ci(X), clause(fav(XX,_),true),nonvar_or_ci(XX),X==XX.
 
-test_names_by_hard(Name):- test_names_ord_favs(FavList),test_names_ord_hard(NamesByHard),
- my_append(NamesByHard,FavList,All),list_to_set(All,AllS),!,member(Name,AllS).
 
-test_names_by_hard_rev(Name):- test_names_ord_favs(FavList),test_names_ord_hard(NamesByHard),
- reverse(NamesByHard,NamesByHardR),
- my_append(NamesByHardR,FavList,All),list_to_set(All,AllS),!,member(Name,AllS).
-
-test_names_by_fav(Name):- test_names_ord_favs(All),member(Name,All).
-test_names_by_fav_rev(Name):- test_names_ord_favs(AllS),reverse(AllS,AllR),member(Name,AllR).
-
-:- dynamic(ord_favs/1).
-test_names_ord_favs(FavListS):- ord_favs(FavListS),!.
-test_names_ord_favs(FavListS):- 
- my_time((
-  pp(recreating(test_names_ord_favs)), 
-  findall(Name,fav(Name),FavList),list_to_set(FavList,FavListS),
-  pp(done_recreating(test_names_ord_favs)),  
-  asserta(ord_favs(FavListS)))).
-
-alphabetical_v(Set):- findall(v(Name),all_arc_test_name(v(Name)),List),sort(List,Set).
-alphabetical_t(Set):- findall(t(Name),all_arc_test_name(t(Name)),List),sort(List,Set).
+alphabetical_v(Set):- findall(v(Name),all_arc_test_name_unordered(v(Name)),List),sort(List,Set).
+alphabetical_t(Set):- findall(t(Name),all_arc_test_name_unordered(t(Name)),List),sort(List,Set).
 
 
 human_t(T):- human_t_set(Set),member(T,Set).
 
 human_t_set(NamesByHardUR):- muarc_tmp:cached_tests(human_t,NamesByHardUR),!.
 human_t_set(NamesByHardUR):- % Name=t(_),
-  findall(Name,(all_arc_test_name(Name),some_test_info(Name,Sol),member(human(_),Sol)),All),
+  findall(Name,(all_arc_test_name_unordered(Name),some_test_info(Name,Sol),member(human(_),Sol)),All),
   list_to_set(All,NamesByHardUR),
   asserta(muarc_tmp:cached_tests(human_t,NamesByHardUR)).
 
@@ -1083,18 +1070,6 @@ sol_t_set(NamesByHardUR):- % Name=t(_),
   asserta(muarc_tmp:cached_tests(sol_t,NamesByHardUR)).
 
 
-/*
-hard_t(T):- hard_t_set(Set),member(T,Set).
-
-hard_t_set(NamesByHardUR):- muarc_tmp:cached_tests(hard_t,NamesByHardUR),!.
-hard_t_set(NamesByHardUR):- % Name=t(_),
-  findall(Name,all_arc_test_name(Name),List),sort_by_hard(List,NamesByHardUR),
-  asserta(muarc_tmp:cached_tests(hard_t,NamesByHardUR)).
-
-hard_t:- cls_z, hard_t(NamesByHardUR),
-  forall(member(Name,NamesByHardUR),print_test(Name)).
-
-*/
 sort_by_hard(List,NamesByHardUR):- 
   sort(List,Sorted),
   findall(Hard-Name,(member(Name,Sorted),hardness_of_name(Name,Hard)),All),
@@ -1113,14 +1088,39 @@ write_ansi_file(F):- call(F,Set),
     (wots(S,print_test(T)), write(O,S),write(S))),close(O)).
 
 
+test_names_by_hard(Name):- 
+ test_names_ord_hard(NamesByHard),
+ test_names_ord_favs(FavList),
+ my_append(NamesByHard,FavList,All),list_to_set(All,AllS),!,member(Name,AllS).
+
+test_names_by_hard_rev(Name):- 
+ test_names_ord_hard(NamesByHard),
+ reverse(NamesByHard,NamesByHardR),
+ test_names_ord_favs(FavList),
+ my_append(NamesByHardR,FavList,All),list_to_set(All,AllS),!,member(Name,AllS).
+
+test_names_by_fav(Name):- test_names_ord_favs(All),member(Name,All).
+test_names_by_fav_rev(Name):- test_names_ord_favs(AllS),reverse(AllS,AllR),member(Name,AllR).
+
+
 :- dynamic(ord_hard/1).
 test_names_ord_hard(NamesByHard):- ord_hard(NamesByHard),!.
 test_names_ord_hard(NamesByHard):- 
   pp(recreating(test_names_ord_hard)),
-  findall(Hard-Name,(all_arc_test_name(Name),hardness_of_name(Name,Hard)),All),
+  findall(Hard-Name,(all_arc_test_name_unordered(Name),hardness_of_name(Name,Hard)),All),
   keysort(All,AllK),  maplist(arg(2),AllK,NamesByHardU),!,
   list_to_set(NamesByHardU,NamesByHard), 
   asserta(ord_hard(NamesByHard)).
+
+:- dynamic(ord_favs/1).
+test_names_ord_favs(FavListS):- ord_favs(FavListS),!.
+test_names_ord_favs(FavListS):- 
+ my_time((
+  pp(recreating(test_names_ord_favs)), 
+  findall(Name,fav(Name),FavList),list_to_set(FavList,FavListS),
+  pp(done_recreating(test_names_ord_favs)),  
+  asserta(ord_favs(FavListS)))).
+
 
 %:- use_module(library(pfc_lib)).
 %:- retractall(ord_favs(_)),retractall(ord_hard(_)).
@@ -1532,7 +1532,7 @@ color_sym(_,_,C,Sym):- enum_colors(C),color_int(C,I),nth1(I,`ose=xt~+*zk>`,S),na
 %color_sym(P*T,_,C,Sym):- enum_colors(C),color_int(C,I),S is P+I*T,name(Sym,[S]).
 
 
-with_current_test(P1):- get_pair_mode(enire_suite),!,forall(all_tests_current_first(TestID),call(P1,TestID)).
+with_current_test(P1):- get_pair_mode(enire_suite),!,forall(all_arc_test_name(TestID),call(P1,TestID)).
 with_current_test(P1):- ensure_test(TestID), call(P1,TestID).
 
 first_cmpd_goal(GG,_):- \+ compound(GG),!,fail.

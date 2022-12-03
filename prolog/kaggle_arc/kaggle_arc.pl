@@ -179,6 +179,7 @@ with_webui(Goal):- ignore(when_arc_webui(with_http(Goal))).
 
 :- exists_source(library(xlisting/xlisting_web)) -> system:use_module(library(xlisting/xlisting_web)) ; true.
 
+ld_logicmoo_webui:- !.
 ld_logicmoo_webui:-
    exists_source(library(logicmoo_webui)), use_module(library(logicmoo_webui)), 
   system:use_module(library(xlisting/xlisting_web)),

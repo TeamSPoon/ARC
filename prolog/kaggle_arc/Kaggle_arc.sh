@@ -1,5 +1,5 @@
 #!/bin/bash
-[ -z "$TYPESCRIPT" ] && TYPESCRIPT=1 exec /usr/bin/script -f -e -a muarc_tmp/tee.ansi -c "TYPESCRIPT=1 $0 $@"
+# [ -z "$TYPESCRIPT" ] && TYPESCRIPT=1 exec /usr/bin/script -f -e -a muarc_tmp/tee.ansi -c "TYPESCRIPT=1 $0 $@"
 
 chmod 777 tee.ansi
 
@@ -21,8 +21,10 @@ rm -f out/?*ansi.pl
 # git checkout out
 
 
+mkdir -p muarc_output
 chmod -R 777 muarc_output/
 
+mkdir -p muarc_cache
 chmod -R 777 muarc_cache/
 rm -f muarc_cache/?*ansi.pl
 
@@ -43,6 +45,8 @@ if id -u "norights" >/dev/null 2>&1; then
 else
  bash -l -c "${BCMD}" || stty sane
 fi
+
+sleep 15
 
 if [[ $# -gt 2 ]] ; then
    fuser -n tcp -k 7771

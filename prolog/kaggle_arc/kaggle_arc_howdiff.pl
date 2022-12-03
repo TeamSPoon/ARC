@@ -420,6 +420,7 @@ show_pair_now(TITLE,OO1,OO2):-
   format('~N~n'),
   nop(ignore((into_ngrid(O1,NO1),into_ngrid(O2,NO2), print_side_by_side(silver,NO1,ngrid(T1),_,NO2,ngrid(T2))))),
   debug_indiv_obj(O1),
+  format('~N~n'),
   debug_indiv_obj(O2),  
   if_t(nb_current(menu_key,'o'),
    collapsible_section(info,compare_objs1(TITLE),false,
@@ -769,7 +770,8 @@ combine_same_globalpoints(IndvS,IndvSO):-
   must_det_ll(indv_props(I,IProps)),
   same_globalpoints_and_window(I,O),
   my_partition(props_not_for_merge,IProps,_Exclude,Include),
-  must_det_ll(override_object([iz(merged(cgp))|Include],O,IO)),
+  % iz(merged(cgp))
+  must_det_ll(override_object(Include,O,IO)),
   must_det_ll(combine_same_globalpoints([IO|IndvS2],NoMoreDupes)),
   must_det_ll(append(NoDupes,NoMoreDupes,IndvSO)),!.
 combine_same_globalpoints(IndvSO,IndvSO).
