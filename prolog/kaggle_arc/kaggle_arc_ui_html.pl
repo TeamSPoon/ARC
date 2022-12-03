@@ -83,6 +83,7 @@ old_write_expandable(Showing,Title,Goal):-
    in_expandable(Showing,Title,Goal),
    flag('$old_write_expandable_depth',_,Depth)).
 
+in_expandable(_Showing,_Title,Goal):- !, call(Goal).
 in_expandable(Showing,Title,Goal):- Showing==always,!,ignore(ppt(Title)),call(Goal).
 in_expandable(_Show,  Title,Goal):- flag('$old_write_expandable_depth',X,X), X>2, in_expandable(always,Title,Goal).
 in_expandable(Showing,Title,Goal):- (Showing==toplevel;Showing==maybe), flag('$old_write_expandable_depth',X,X), X==1,!,in_expandable(true,Title,Goal).
