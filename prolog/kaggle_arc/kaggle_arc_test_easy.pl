@@ -64,7 +64,9 @@ test_easy:- get_pair_mode(whole_test), get_current_test(TestID),!,must_det_ll(ig
 test_easy:- get_pair_mode(single_pair),
   get_current_test(TestID),some_current_example_num(ExampleNum),!,
   forall_count(kaggle_arc(TestID,ExampleNum,I,O),
-    (set_current_pair(I,O),print_ss((?-test_easy_solve_test_pair(TestID,ExampleNum,_,_))=I,single_pair=O),test_easy_solve_test_pair(TestID,ExampleNum,I,O))).
+    (set_current_pair(I,O),
+     print_ss((?-test_easy_solve_test_pair(TestID,ExampleNum,_,_))=I,single_pair=O),
+     test_easy_solve_test_pair(TestID,ExampleNum,I,O))).
 test_easy:- test_p2(test_easy_solve_pair).
 
 :- luser_default(cmd,test_easy). 
@@ -79,17 +81,22 @@ test_easy_solve_test_pair(TestID,ExampleNum,I,O):- var(ExampleNum),some_current_
 
 test_easy_solve_test_pair(TestID,ExampleNum,I,O):- 
   ignore(kaggle_arc(TestID,ExampleNum,I,O)), 
-   with_current_pair(I,O,test_easy_solve_test_pair_now(TestID,ExampleNum,I,O)).
+   with_current_pair(I,O,test_easy_solve_test_pair_now(TestID,ExampleNum,I,O,_)).
 
-test_easy_solve_test_pair_now(TestID,ExampleNum,I,O):-   
+test_easy_solve_test_pair_now(TestID,ExampleNum,I,O,P2S):-   
    ensure_test(TestID),
    ignore(kaggle_arc(TestID,ExampleNum,I,O)),
    set_current_pair(I,O),
    put_attr(EM,expect_p2,O),
-   (CALL=  ?-(test_easy_solve_test_pair(TestID,ExampleNum,'$VAR'('I'),'$VAR'('O')))),   
+   (CALL=  ?-(test_easy_solve_test_pair(TestID,ExampleNum,'$VAR'('I'),'$VAR'('O')))),   !,
+
    findall(P2,(easy_solve_by(TestID,P2),grid_call(P2,I,EM),nonvar(EM),
-     print_side_by_side(grid_call_1(P2),I,EM),EM=@=O),P2SI),!,
-   (P2SI\==[]->P2S=P2SI;findall(unify(P2),(easy_solve_by(TestID,P2),grid_call(P2,I,EM),nonvar(EM),print_side_by_side(grid_call_2(P2),I,EM),EM=O),P2S)),
+     print_side_by_side([grid_call_1(P2)=I,result=EM,needed=O]), (EM=@=O->true;fail)),
+     P2SI),!,
+
+   (P2SI\==[]->P2S=P2SI;findall(unify(P2),(easy_solve_by(TestID,P2),grid_call(P2,I,EM),nonvar(EM),
+     print_side_by_side([grid_call_2(P2)=I,result=EM,needed=O])),P2S)),
+
    nl_if_needed,
    (P2S\==[] -> wqs(["Passed: ",CALL,"using\n ",call(maplist(pp(yellow),P2S))]) ; ( \+ get_pair_mode(entire_suite),wqs(["failed: ",b(q(CALL))]),!,fail)).
 
@@ -108,9 +115,9 @@ easy_solve_by( TestID,flip_Once(_)):- get_black(Black),user:arc_test_property(Te
 */
 easy_solve_by(_TestID,P2):- easy_p2(P2). % easy_p2(P2).
 
-easy_p2(blur_or_not_least_rot90_x4):- test_hint(mass_and_area(grow_less_than_times(4),'=')).
-easy_p2(blur_rot90):- test_hint(mass_and_area(grow_less_than_times(1),'=')).
-easy_p2(unbind_and_fill_in_blanks(_Code)).
+easy_p2_0(blur_or_not_least_rot90_x4):- test_hint(mass_and_area(grow_less_than_times(4),'=')).
+easy_p2_0(blur_rot90):- test_hint(mass_and_area(grow_less_than_times(1),'=')).
+easy_p2_0(unbind_and_fill_in_blanks(_Code)).
 easy_p2(repair_and_select(_How,_M)):- test_hint('<',unique_color_count).
 easy_p2(GFS):- easy0(_,GFS).
 easy_p2(do_two(C1,C2)):-
@@ -266,7 +273,8 @@ easy_solve_training(TestID,P2):-
    once((
    kaggle_arc(TestID,trn+Some,TI1,TO1), 
    with_current_pair(TI1,TO1,
-   ((easy_solve_by(TestID,P2),
+   ((test_easy_solve_test_pair_now(TestID,P2,TI1,TO1,P2S),
+   member(P2,P2S),
    pp(?-easy_solve_training(TestID,P2)),
    collapsible_section((try_p2_verbose(P2,TI1,TO1),
    dif(Other,Some), 
@@ -305,7 +313,7 @@ test_hint_easy(A,B):- nop(test_hint(A,B)).
 test_hint_easy(A):- nop(test_hint(A)).
 
 %easy0(X):- easy_sol(X).
-easy0(_,=).
+%easy0(_,=).
 easy0(0,trim_hv_repeats):- test_hint(mass_and_area('<','<')).
 easy0(0,trim_to_rect):- test_hint(mass_and_area(ignore_equal,'<')).
 
@@ -326,16 +334,24 @@ easy0(4,blur_or_not_least_2(flipV,flipH)):- test_hint(mass_and_area(grow_less_th
 easy0(5,grow_4_rot):- test_hint(mass_and_area_times(4)).% 7fe24cdd
 easy0(5,increase_size_by_grid_mass):- test_hint(ratio_between(mass,square(area))). %ac0a08a4
 easy0(5,grow_from_shape):-
-   nop((test_hint('=',unique_color_count),
+   test_hint('=',unique_color_count),
    test_hint(mass_and_area('>','>')),
-   test_hint_easy(ratio_between(mass,square(mass))))). %007bbfb7
+   test_hint(ratio_between(mass,square(mass))). %t(007bbfb7)
 easy0(5,increase_size_by_color_count):- test_hint(ratio_between(unique_color_count,and(square(mass),square(area)))). %ac0a08a4
-easy0(5,grow_4):- test_hint(mass_and_area_times(4)).% 3af2c5a8
-easy0(5,grow_2):- test_hint(mass_and_area_times(2)). % 963e52fc
+easy0(5,grow_4):- test_hint(mass_and_area_times(4)).% t('3af2c5a8')
+easy0(5,grow_2):- test_hint(mass_and_area_times(2)). % t('963e52fc').
 easy0(5,grow_flip_2):- test_hint(mass_and_area_times(2)). % 963e52fc
 easy0(5,double_size):- test_hint(n_times(2),mass).
 easy0(5,increase_size(IS)):- test_hint(mass_and_area_times(N)), nonvar(N), IS is floor(sqrt(N)), N is IS*IS. % .
 %easy0(5,crop_by(_)).
+
+test_suite_name(easy_pass_suite).
+easy_pass_suite(t('963e52fc')).
+easy_pass_suite(t('007bbfb7')).
+easy_pass_suite(t('7fe24cdd')).
+easy_pass_suite(t('00d62c1b')).
+easy_pass_suite(t('3af2c5a8')).
+easy_pass_suite(t('ac0a08a4')).
 
 
 % comp(cbg(black),i-o,ogs)=ogs([ogs(notrim,whole,loose,loc2D(1,1)),ogs(notrim,whole,call_ogs(rot90,loose),loc2D(4,1)),ogs(notrim,whole,call_ogs(rot180,loose),loc2D(4,4)),ogs(notrim,whole,call_ogs(rot270,loose),loc2D(1,4))])

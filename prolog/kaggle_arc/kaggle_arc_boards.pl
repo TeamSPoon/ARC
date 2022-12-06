@@ -613,7 +613,7 @@ grid_hint_swap_io(I-O,In,Out,rev(Hint)):- I\==O,
  Hint \= mono(comp(_,o-i,value(=@=))).
 
 grid_hint_recolor(IO,In,Out,Hint):- get_black(Black), grid_hint_io(cbg(Black),IO,In,Out,Hint).
-grid_hint_recolor(IO,In,Out,mono(Hint)):- % fail,
+grid_hint_recolor(IO,In,Out,mono(Hint)):- arc_option(scan_mono_hints), % fail,
  once((into_monogrid(In,InM),into_monogrid(Out,OutM))),
   (In\==InM;Out\==OutM),grid_hint_io(cbg(wbg),IO,InM,OutM,Hint).
 grid_hint_recolor(IO,In,Out,color_ord(Hint)):- fail,

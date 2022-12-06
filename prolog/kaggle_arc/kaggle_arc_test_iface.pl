@@ -501,6 +501,7 @@ dont_sort_by_hard(test_names_by_fav). dont_sort_by_hard(all_arc_test_name). dont
 
 :- multifile(test_suite_name/1).
 :- dynamic(test_suite_name/1).
+test_suite_name(easy_pass_suite).
 test_suite_name(test_names_by_fav). 
 test_suite_name(human_t).
 test_suite_name(icecuber_fail).
