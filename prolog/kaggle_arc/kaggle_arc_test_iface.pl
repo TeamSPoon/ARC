@@ -422,8 +422,9 @@ with_test_pairs(TestID,ExampleNum,I,O,P):-
 
 bad:- ig([complete],v(aa4ec2a5)>(trn+0)*in).
 
-report_suites:- luser_getval(test_suite_name,SuiteXC),
- forall(test_suite_name(SuiteX),(nl,ignore((SuiteX==SuiteX,write('\n--->>>>'))),report_suite(SuiteX))).
+report_suites:- 
+ (luser_getval(test_suite_name,SuiteXC); SuiteXC=[]),
+ forall(test_suite_name(SuiteX),(nl,ignore((SuiteX==SuiteXC,write('\n--->>>>'))),report_suite(SuiteX))).
 
 report_suite:- luser_getval(test_suite_name,SuiteX), write('\n--->>>>'),report_suite(SuiteX).
 
@@ -431,7 +432,9 @@ report_suite(SuiteX):-
   ((muarc_tmp:cached_tests(SuiteX,Set),length(Set,Len)) -> true ; Len = ?),
   bold_print(underline_print(color_print(yellow,test_suite(SuiteX,Len)))).
 
-
+assert_test_suite(Suite,TestID):- append_term(Suite,TestID,Term),
+  assert_if_new(test_suite_name(Suite)),
+  assert_if_new(Term).
 
 dump_suite1:-   
    get_current_suite_testnames(Set),
@@ -493,6 +496,11 @@ next_suite:-
 
 dont_sort_by_hard(test_names_by_fav). dont_sort_by_hard(all_arc_test_name). dont_sort_by_hard(all_arc_test_name_unordered).
 
+
+
+
+:- multifile(test_suite_name/1).
+:- dynamic(test_suite_name/1).
 test_suite_name(test_names_by_fav). 
 test_suite_name(human_t).
 test_suite_name(icecuber_fail).
@@ -611,7 +619,7 @@ muarc:arc_settings_filename1('/tmp/.arc_current_test').
 
 
 set_current_test(Name):-  
-  ignore((testid_name_num_io(Name,TestID,Example,NumE,_IO),
+  ignore((testid_name_num_io_0(Name,TestID,Example,NumE,_IO),
     ignore((is_valid_testname(TestID),really_set_current_test(TestID))),
     ignore((nonvar(Example),set_example_num(Example+NumE))))).
 
@@ -779,7 +787,8 @@ clear_tee:- force_full_tee, tee_op((shell('cat muarc_tmp/null > muarc_tmp/tee.an
 exit_tee:-  get_current_test(TestID),on_leaving_test(TestID).
 
 write_test_links_file:- tee_op((notrace((setup_call_cleanup(tell('muarc_tmp/test_links'), write_test_links, told))))).
-write_test_links(TestID):-  format('~N'), ensure_test(TestID), 
+write_test_links:-  
+ format('~N'), ensure_test(TestID), 
  tee_op((
   ignore((get_previous_test(TestID,PrevID),write_tee_link('Prev',PrevID))),
   ignore((((luser_getval(prev_test_name,AltPrevID),AltPrevID\==PrevID,AltPrevID\==TestID,AltPrevID\=='.'),write_tee_link('AltPrevID',AltPrevID)))),
@@ -795,10 +804,11 @@ shell_op(G):- nop(G).
 
 my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).
 
-save_supertest(TestID):- is_list(TestID),maplist(save_supertest,TestID).
-save_supertest(TestID):- ensure_test(TestID),   
-   test_name_output_file(TestID,File),
-   save_supertest(TestID,File).
+save_supertest(TestID):- is_list(TestID),!,maplist(save_supertest,TestID).
+save_supertest(TestID):- ensure_test(TestID), save_supertest(TestID,File).
+
+save_supertest(TestID,File):- var(TestID),!, forall(ensure_test(TestID), save_supertest(TestID,File)).
+save_supertest(TestID,File):- var(File),!,test_name_output_file(TestID,File), save_supertest(TestID,File).
 save_supertest(TestID,File):- needs_dot_extention(File,'.pl',NewName),!,save_supertest(TestID,NewName).
 save_supertest(TestID,File):-
  saveable_test_info(TestID,Info),
@@ -924,9 +934,11 @@ print_test(TName):-
 next_grid_mode(dots,dashes):-!.
 next_grid_mode(_,dots).
 switch_grid_mode:- (luser_getval('$grid_mode',Dots);Dots=dots),next_grid_mode(Dots,Dashes),luser_setval('$grid_mode',Dashes).
+
 as_d_grid(In,In):- \+ luser_getval('$grid_mode',dashes),!.
-as_d_grid(In,In1):- as_ngrid(In,In1).
+as_d_grid(In,In1):- as_ngrid(In,In1),!.
 as_ngrid(In,In1):- must_det_ll((change_bg_fg(In, _BG, _FG,In0), most_d_colors(In0,_CI,In1))),!.
+as_ngrid(In,In):-!.
 
 %change_bg_fg(In,_BG,_FG,In):-!.
 change_bg_fg(In,BG,FG,Mid):- 
@@ -994,7 +1006,7 @@ arc_grid(IO,Grid):-
 
 ensure_test(TestID,RealTestID):- fix_test_name(TestID,RealTestID),!,ensure_test(RealTestID).
 
-ensure_test(TestID):- nonvar(TestID),!, ignore(( is_valid_testname(TestID), set_current_test(TestID))).
+ensure_test(TestID):- nonvar(TestID),!, ignore(( is_valid_testname(TestID), really_set_current_test(TestID))).
 ensure_test(TestID):- \+ get_pair_mode(enire_suite),!,get_current_test(TestID).
 ensure_test(TestID):- all_arc_test_name(TestID).
 
@@ -1413,29 +1425,39 @@ fix_test_name(G,T,E):- is_grid(G),!, kaggle_arc_io(T,E,_,GO),GO=@=G.
 fix_test_name(V,VV,_):- var(V),!,VV=V.
 fix_test_name(ID,Fixed,Example+Num):- testid_name_num_io(ID,Tried,Example,Num,_), fix_test_name(Tried,Fixed).
 
-testid_name_num_io(ID,_Name,_Example,_Num,_IO):- var(ID),!, fail.
-testid_name_num_io(X,TestID,E,N,IO):- is_grid(X),!,kaggle_arc_io(TestID,E+N,IO,G),G=@=X.
-testid_name_num_io(ID,_Name,_Example,_Num,_IO):- is_grid(ID),!, fail.
-testid_name_num_io(ID,_Name,_Example,_Num,_IO):- is_list(ID), \+ maplist(nonvar,ID),!,fail.
+testid_name_num_io(ID,TestID,Example,Num,IO):- 
+  track_modes(testid_name_num_io(ID,TestID,Example,Num,IO),Modes),
+  testid_name_num_io_0(ID,TestID,Example,Num,IO),
+  ignore((fail, Modes=[+,-|_], nonvar(TestID), kaggle_arc(TestID,_,_,_), really_set_current_test(TestID))).
 
-testid_name_num_io([V,Name,Example,ANum,IO|_],TestID,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,fix_id_1(VName,TestID).
-testid_name_num_io(TestID>Example+Num*IO,Name,Example,Num,IO):- !,fix_id_1(TestID,Name).
-testid_name_num_io(TestID>(Example+Num)*IO,Name,Example,Num,IO):- !,fix_id_1(TestID,Name).
-testid_name_num_io(TestID>Example+Num,Name,Example,Num,_IO):- !,fix_id_1(TestID,Name).
-testid_name_num_io(TestID>(Example+Num),Name,Example,Num,_IO):- !,fix_id_1(TestID,Name).
-testid_name_num_io(ID,Name,Example,Num,IO):- ID = (TestID>((Example+Num)*IO)),!,fix_id_1(TestID,Name),!.
-testid_name_num_io(ID,Name,Example,Num,IO):- ID = ((TestID>(Example+Num))*IO),!,fix_id_1(TestID,Name),!.
-testid_name_num_io(ID,Name,Example,Num,IO):- ID = (TestID>(Example+Num)*IO),!,fix_id_1(TestID,Name),!.
-testid_name_num_io(ID,Name,Example,Num,_IO):- ID = ((TestID>Example)+Num),!,fix_id_1(TestID,Name),!.
-testid_name_num_io(ID,Name,Example,Num,_IO):- ID = (TestID>Example+Num),!,fix_id_1(TestID,Name),!.
 
-testid_name_num_io(V,TestID,Example,Num,IO):- atom(V), atom_concat(VV,'.json',V),!,testid_name_num_io(VV,TestID,Example,Num,IO).
-testid_name_num_io(ID,Name,Example,Num,IO):- atom(ID),atomic_list_concat(Term,'_',ID), Term\==[ID], 
-  testid_name_num_io(Term,Name,Example,Num,IO),!.
-testid_name_num_io(ID,Name,Example,Num,IO):- atom(ID),notrace(catch(atom_to_term(ID,Term,_),_,fail)), Term\==ID, nonvar(Term), 
-  testid_name_num_io(Term,Name,Example,Num,IO),!.
-%testid_name_num_io(ID,Name,_Example,_Num,_IO):- atom(ID),!,fix_id_1(ID,   Name),!.
-testid_name_num_io(ID,Name,_Example,_Num,_IO):- fix_id_1(ID,   Name),!. %, kaggle_arc_io(Name,Example+Num,IO,_).
+track_modes(I,M):- I=..[_|L],maplist(plus_minus_modes,L,M).
+plus_minus_modes(Var,-):- var(Var),!. 
+plus_minus_modes(_,+).
+
+testid_name_num_io_0(ID,_Name,_Example,_Num,_IO):- var(ID),!, fail.
+testid_name_num_io_0(X,TestID,E,N,IO):- is_grid(X),!,kaggle_arc_io(TestID,E+N,IO,G),G=@=X.
+testid_name_num_io_0(ID,_Name,_Example,_Num,_IO):- is_grid(ID),!, fail.
+testid_name_num_io_0(ID,_Name,_Example,_Num,_IO):- is_list(ID), \+ maplist(nonvar,ID),!,fail.
+
+testid_name_num_io_0([V,Name,Example,ANum,IO|_],TestID,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,fix_id_1(VName,TestID).
+testid_name_num_io_0(TestID>Example+Num*IO,Name,Example,Num,IO):- !,fix_id_1(TestID,Name).
+testid_name_num_io_0(TestID>(Example+Num)*IO,Name,Example,Num,IO):- !,fix_id_1(TestID,Name).
+testid_name_num_io_0(TestID>Example+Num,Name,Example,Num,_IO):- !,fix_id_1(TestID,Name).
+testid_name_num_io_0(TestID>(Example+Num),Name,Example,Num,_IO):- !,fix_id_1(TestID,Name).
+testid_name_num_io_0(ID,Name,Example,Num,IO):- ID = (TestID>((Example+Num)*IO)),!,fix_id_1(TestID,Name),!.
+testid_name_num_io_0(ID,Name,Example,Num,IO):- ID = ((TestID>(Example+Num))*IO),!,fix_id_1(TestID,Name),!.
+testid_name_num_io_0(ID,Name,Example,Num,IO):- ID = (TestID>(Example+Num)*IO),!,fix_id_1(TestID,Name),!.
+testid_name_num_io_0(ID,Name,Example,Num,_IO):- ID = ((TestID>Example)+Num),!,fix_id_1(TestID,Name),!.
+testid_name_num_io_0(ID,Name,Example,Num,_IO):- ID = (TestID>Example+Num),!,fix_id_1(TestID,Name),!.
+
+testid_name_num_io_0(V,TestID,Example,Num,IO):- atom(V), atom_concat(VV,'.json',V),!,testid_name_num_io_0(VV,TestID,Example,Num,IO).
+testid_name_num_io_0(ID,Name,Example,Num,IO):- atom(ID),atomic_list_concat(Term,'_',ID), Term\==[ID], 
+  testid_name_num_io_0(Term,Name,Example,Num,IO),!.
+testid_name_num_io_0(ID,Name,Example,Num,IO):- atom(ID),notrace(catch(atom_to_term(ID,Term,_),_,fail)), Term\==ID, nonvar(Term), 
+  testid_name_num_io_0(Term,Name,Example,Num,IO),!.
+%testid_name_num_io_0(ID,Name,_Example,_Num,_IO):- atom(ID),!,fix_id_1(ID,   Name),!.
+testid_name_num_io_0(ID,Name,_Example,_Num,_IO):- fix_id_1(ID,   Name),!. %, kaggle_arc_io(Name,Example+Num,IO,_).
 
 
 fix_id_1(Tried,   Tried):- var(Tried),!.

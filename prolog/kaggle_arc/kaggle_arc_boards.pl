@@ -468,6 +468,7 @@ maybe_compute_test_io_hints(IO,TestID,N,In,Out):-
     ignore(add_xform_maybe(In,Out)),
       forall(grid_hint_swap_io(IO,In,Out,Hint),add_hint(TestID,Hint,N)).
 
+compute_test_oo_hints(_):- !.
 compute_test_oo_hints(TestID):- 
   forall(
     kaggle_arc_io(TestID,(trn+N),out,Out1), 

@@ -314,10 +314,17 @@ easy0(5,double_size):- test_hint(n_times(2),mass).
 easy0(5,increase_size(N)):- test_hint(mass_and_area_times(N)), ignore(N=4).
 %easy0(5,crop_by(_)).
 
-maybe_subst_fg_color(X,Y,I,O):- unique_fg_colors_pos(I,IC),unique_fg_colors_pos(O,OC), 
-   member(X,IC), once(var(O);\+ member(X,OC)),
-   member(Y,OC), X\==Y, \+ member(Y,IC),
+
+
+
+maybe_subst_fg_color(X,Y,I,O):- 
+   guess_unbound(swap_colors(X,Y,I,O)),
    swap_colors(X,Y,I,O).
+
+guess_unbound(swap_colors(X,Y,I,O)):- 
+   unique_fg_colors_pos(I,IC),unique_fg_colors_pos(O,OC), 
+   member(X,IC), once(var(O);\+ member(X,OC)),
+   member(Y,OC), X\==Y, \+ member(Y,IC).
 
 %unique_colors_of(In,Blue):- unique_colors(In,Colors),member(Blue,Colors),is_real_color(Blue).
 unique_fg_colors_pos(I,IC):- var(I),!,available_fg_colors(IC).

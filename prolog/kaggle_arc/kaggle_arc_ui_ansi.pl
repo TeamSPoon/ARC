@@ -934,28 +934,45 @@ into_ss_string(uc(W),SS):- !, into_ss_string(uc(yellow,W),SS).
 into_ss_string(uc(C,W),SS):- !,into_ss_call(color_print(C,call(underline_print(format("\t~@",[wqs(W)])))),SS).
 into_ss_string(call(C),SS):- !,into_ss_call(C,SS),!.
 
+
 into_ss_string(GG, SS):- is_grid(GG),!,into_ss_grid(GG,SS).
 into_ss_string(GG, SS):- is_group(GG),!,into_ss_grid(GG,SS).
 into_ss_string(GG, SS):- is_points_list(GG),!,into_ss_grid(GG,SS).
 into_ss_string(GG, SS):- is_really_gridoid(GG),!,into_ss_grid(GG,SS).
-into_ss_string(LL, SS):- is_list(LL), find_longest_len(LL,Len),!,SS=ss(Len,LL).
-into_ss_string(Str,SS):- string(Str), !, atomics_to_string(L,'\n',Str),!,into_ss_string(L,SS).
 into_ss_string(GG, SS):- is_object(GG),!,into_ss_grid(GG,SS).
 into_ss_string(GG, SS):- is_point(GG),!,into_ss_grid([GG],SS).
+into_ss_string(GG, SS):- known_grid(GG,G),G\==GG,!,into_ss_grid(G, SS).
+
 into_ss_string(AB, SS):- grid_footer(AB,A,B),!,into_ss_concat(print_grid(A),wqs(B),SS).
-into_ss_string(A+B,SS):- into_ss_concat(A,B,SS).
-into_ss_string(A-B,SS):- into_ss_concat(A,B,SS).
-into_ss_string(NCT,SS):- \+ callable(NCT), into_ss_call(wqs(NCT),SS).
+
+into_ss_string(A+B,SS):- into_ss_concat(A,B,SS),!.
+into_ss_string(A-B,SS):- into_ss_concat(A,B,SS),!.
+
+into_ss_string(Str,SS):- string(Str), !,  string_into_ss(Str,SS).
+into_ss_string(LL, SS):- is_list(LL),  maplist(stringy_string,LL,SL), find_longest_len(SL,Len),!,SS=ss(Len,SL).
+
+into_ss_string(NCT,SS):- \+ callable(NCT), !, into_ss_call(wqs(NCT),SS).
+into_ss_string(LL, SS):- is_list(LL), !, into_ss_call(wqs(LL),SS).
+%into_ss_string(LL, SS):- is_list(LL), find_longest_len(LL,Len),!,SS=ss(Len,LL).
 into_ss_string(Goal,SS):-  \+ missing_arity(Goal,0), into_ss_call(Goal,SS).
 into_ss_string(IntoG,SS):- into_grid(IntoG,GR),is_grid(GR),!,into_ss_grid(GR,SS).
 into_ss_string(Goal,SS):- into_ss_call(Goal,SS).
 
+stringy_string(Str,SS):- notrace(catch(sformat(SS,'~s',[Str]),_,fail)).
+string_into_ss(Str,SS):- stringy_string(Str,S), atomics_to_string(LL,'\n',S),!,find_longest_len(LL,Len),!,SS=ss(Len,LL).
+
 %as_string(S,SS):- wots(SS,write(S)).
 into_ss_grid(G,SS):- into_ss_call(print_grid(G),SS).
 into_ss_grid(H,V,G,SS):- into_ss_call(print_grid0(H,V,G),SS).
-into_ss_call(C,SS):- wots(Str,catch((C->true;write(failed(C))),E,true)), (nonvar(E)->must_not_error(C);true), into_ss_string(Str,SS).
-into_ss_concat(A,B,ss(LenAB,ABL)):- !,into_ss_string(A,ss(LenA,LA)), into_ss_string(B,ss(LenB,LB)),
-                                      append(LA,["",LB],ABL), max_min(LenA,LenB,LenAB,_).
+%into_ss_call(C,SS):- wots(Str,catch((C->true;writeq(failed(C))),E,true)),var(E)
+into_ss_call(C,SS):- 
+  wots(Str,catch((C->true;writeq(failed(C))),E,true)), 
+  (nonvar(E)->(throw(E);must_not_error(C));true), 
+  string_into_ss(Str,SS).
+
+into_ss_concat(A,B,ss(LenAB,ABL)):- !,into_ss_string(A,ss(LenA,LA)),
+                                      into_ss_string(B,ss(LenB,LB)),
+                                      append(LA,[""|LB],ABL), max_min(LenA,LenB,LenAB,_).
 
 
 find_longest_len(SL,L):- find_longest_len(SL,10,L),!.
@@ -1376,15 +1393,16 @@ print_grid_ansi(SH,SV,EH,EV,GridII):- make_bg_visible(GridII,GridI),
 %block_colors([(black),(blue),(red),(green),(yellow),'#c0c0c0',(magenta),'#ff8c00',(cyan),'#8b4513']).
 %block_colors([(black),(blue),(red),(green),(yellow),Silver,('#966cb8'),'#ff8c00',(cyan),'#8b4513']):- silver(Silver),!.
 %block_colors([(black),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan),'#8b4513','#2a2a2a', 9379b4 '#3a5a3a']):- silver(Silver),!.
-block_colors([('#4a2a2a'),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan),
-                                                                                       '#8b4513','#3a5a3a','#f47c7c','#100010','#ffffff',FG]):- fg_cut(FG), silver(Silver),!.
+block_colors([('#4a2a2a'),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan), % '#104010'
+                                                                                       '#8b4513','#3a5a3a','#f47c7c','#104010','#ffffff',FG]):- fg_cut(FG), silver(Silver),!.
 named_colors([(black),(blue),(red),(green),(yellow),(silver),(purple),   (orange),(cyan), (brown),  wbg,      fg,      bg,      wfg,     FG]):- fg_cut(FG).
 named_colors([ (lack),(blue),(red),(green),(yellow),(Silver),(purple),(orange),(cyan),(brown)]):- silver(Silver).
 named_colors([(lack),(blue),(red),(green),(yellow),(silver),(magenta),(orange),(cyan),(brown)]).
 named_colors([(lack),(blue),(red),(green),(yellow),(grey),(pink),(orange),(teal),(maroon)]).
 
-test_show_colors:- maplist(show_color,[0,1,2,3,4,5,6,7,8,9,fg,wfg,bg,wbg,black,_],G),
-  print_grid([G]),nl.
+test_show_colors:- maplist(show_color,[0,1,2,3,4,5,6,7,8,9,fg,wfg,bg,wbg,black,_,'#100010'],G),
+  reverse(G,R),
+  print_grid([G,R,G]),nl.
 show_color(X,N):- color_name(X,N),write(X),write(=),color_print(X,N),write('  ').
 
 % '#1077f1'

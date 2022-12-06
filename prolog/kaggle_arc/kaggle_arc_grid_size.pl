@@ -37,7 +37,8 @@ predict_grid_size(TestID,In,Out):-
    color_print(C,predict_grid_size(TestID,in(size2D(IH,IV)),predicted(size2D(PH,PV)),actual(size2D(OH,OV))))))),!,
    (C==green 
      -> asserta(grid_size_prediction(TestID,In,PH,PV))
-     ;(nop(print_test(TestID)),write(SS),!,fail)).
+     ;(nop(print_test(TestID)),  write(SS),assert_test_suite(failed_predict_grid_size,TestID),!,fail)).
+
 
 add_akeys(A,A-A).
 alphabetize(List,ListA):- maplist(add_akeys,List,AKeys),keysort(AKeys,AKeysSorted),maplist(arg(2),AKeysSorted,ListA).

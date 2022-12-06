@@ -788,8 +788,11 @@ showdiff_objects_vis(N,O1,O2):- showdiff_objects_n(vis(N),O1,O2).
 %showdiff_objects_n(N,O1,O2,[]):- print_list_of(N,[O1,O2]),!.
 showdiff_objects_n(N,O1,O2):-  showdiff_objects(change_obj(N,O1,O2)).
 
+maybe_add_long_web_message(SS):- current_predicate(add_long_web_message/1),!,call(call,add_long_web_message,SS).
+maybe_add_long_web_message(SS):- write(SS).
+
 showdiff_objects(Info):- in_pp(bfly),!, wots(SS,showdiff_objects1(Info)),
-  format('~N'), wots(S,add_long_web_message(SS)),
+  format('~N'), wots(S,maybe_add_long_web_message(SS)),
   format('~N'),!,bfly_in_out(write_expandable3(false,S,bfly_in_out(write(SS)))),format('~N').
 showdiff_objects(Info):- showdiff_objects1(Info).
 
@@ -1202,7 +1205,13 @@ proportional(N1,N2,N):- compound(N1),compound_name_arguments(N1,F,A1),compound_n
   
 proportional(L1,L2,Diff):- locally(nb_setval(diff_porportional,t),diff2_terms(L1,L2,Diff)),!.
 
+:- multifile(gvs:dot_overload_hook/4).
+:- dynamic(gvs:dot_overload_hook/4).
+:- module_transparent(gvs:dot_overload_hook/4).
+gvs:dot_overload_hook(_M,_NewName, _Memb, _Value):- fail.
 
+
+grid_props(Obj1,OOO):- \+ is_grid(Obj1),!,into_grid(Obj1,G),grid_props(G,OOO).
 grid_props(Obj1,OOO):- % \+ arc_option(grid_size_only), 
  %to_assertable_grid(Obj1,AG),data_type(Obj1,DT),
  % wots(S,print_grid(Obj1)),
