@@ -64,7 +64,7 @@ test_easy:- get_pair_mode(whole_test), get_current_test(TestID),!,must_det_ll(ig
 test_easy:- get_pair_mode(single_pair),
   get_current_test(TestID),some_current_example_num(ExampleNum),!,
   forall_count(kaggle_arc(TestID,ExampleNum,I,O),
-    (print_ss((?-test_easy_solve_test_pair(TestID,ExampleNum,_,_))=I,single_pair=O),test_easy_solve_test_pair(TestID,ExampleNum,I,O))).
+    (set_current_pair(I,O),print_ss((?-test_easy_solve_test_pair(TestID,ExampleNum,_,_))=I,single_pair=O),test_easy_solve_test_pair(TestID,ExampleNum,I,O))).
 test_easy:- test_p2(test_easy_solve_pair).
 
 :- luser_default(cmd,test_easy). 
@@ -81,9 +81,10 @@ test_easy_solve_test_pair(TestID,ExampleNum,I,O):-
   ignore(kaggle_arc(TestID,ExampleNum,I,O)), 
    with_current_pair(I,O,test_easy_solve_test_pair_now(TestID,ExampleNum,I,O)).
 
-test_easy_solve_test_pair_now(TestID,ExampleNum,I,O):- 
+test_easy_solve_test_pair_now(TestID,ExampleNum,I,O):-   
    ensure_test(TestID),
-   ignore(kaggle_arc(TestID,ExampleNum,I,O)),   
+   ignore(kaggle_arc(TestID,ExampleNum,I,O)),
+   set_current_pair(I,O),
    put_attr(EM,expect_p2,O),
    (CALL=  ?-(test_easy_solve_test_pair(TestID,ExampleNum,'$VAR'('I'),'$VAR'('O')))),   
    findall(P2,(easy_solve_by(TestID,P2),grid_call(P2,I,EM),nonvar(EM),
@@ -209,6 +210,7 @@ induce_from_training(TestID, P2,I,O):- %copy_term(P2,P22),!,
 
 
 induce_from_testing_pair(P2,Ex1,I,O):- 
+   set_current_pair(I,O),
    with_io_training_context(I,O,
      ((grid_call(P2,I,O), print_side_by_side_io(
         induce_from_testing_pair_pass2(P2,Ex1),I,O)))),!.
@@ -284,6 +286,7 @@ with_io_training_context(I,O,G):- (peek_vm(PrevVM), PrevVM.grid_o \=@=I),!,
 with_io_training_context(I,O,G):- with_io_training_context1(I,O,G).
 :- meta_predicate(with_io_training_context1(+,+,0)).
 with_io_training_context1(I,O,G):- 
+ set_current_pair(I,O),
   %get_current_test(TestID),
   %kaggle_arc(TestID,ExampleNum,I,O),
  with_current_pair(I,O,
@@ -323,9 +326,9 @@ easy0(4,blur_or_not_least_2(flipV,flipH)):- test_hint(mass_and_area(grow_less_th
 easy0(5,grow_4_rot):- test_hint(mass_and_area_times(4)).% 7fe24cdd
 easy0(5,increase_size_by_grid_mass):- test_hint(ratio_between(mass,square(area))). %ac0a08a4
 easy0(5,grow_from_shape):-
-   test_hint('=',unique_color_count),
+   nop((test_hint('=',unique_color_count),
    test_hint(mass_and_area('>','>')),
-   test_hint_easy(ratio_between(mass,square(mass))). %007bbfb7
+   test_hint_easy(ratio_between(mass,square(mass))))). %007bbfb7
 easy0(5,increase_size_by_color_count):- test_hint(ratio_between(unique_color_count,and(square(mass),square(area)))). %ac0a08a4
 easy0(5,grow_4):- test_hint(mass_and_area_times(4)).% 3af2c5a8
 easy0(5,grow_2):- test_hint(mass_and_area_times(2)). % 963e52fc
