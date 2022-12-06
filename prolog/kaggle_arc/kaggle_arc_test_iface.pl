@@ -747,17 +747,24 @@ worth_saving:- size_file('muarc_tmp/tee.ansi',Size), Size > 20_000.
 
 :- set_prolog_flag(nogc,false).
 
+no_tee_file:- \+ (getenv('TEE_FILE',File), exists_file(File)).
 
-begin_tee:- get_current_test(TestID),on_entering_test(TestID),tee_op((at_halt(exit_tee))).
+install_ansi2html:- shell('pip install ansi2html').
+
+begin_tee:- no_tee_file,!.
+begin_tee:- install_ansi2html,get_current_test(TestID),on_entering_test(TestID),tee_op((at_halt(exit_tee))).
 flush_tee_maybe:- force_full_tee.
+
 flush_tee:- tee_op(ignore((worth_saving -> force_flush_tee ; true))).
 force_flush_tee:- tee_op((
    my_shell_format('tail -20000 muarc_tmp/tee.ansi > muarc_tmp/tee1000.ansi',[]),
    tee_to_html('muarc_tmp/tee1000.ansi'))).
+
 force_full_tee:-   
   tee_op((
    my_shell_format('cat muarc_tmp/tee.ansi > muarc_tmp/tee1000.ansi',[]),
    tee_to_html('muarc_tmp/tee1000.ansi'))).
+
 
 tee_to_html(Tee1000):-
  tee_op((
@@ -772,8 +779,7 @@ clear_tee:- force_full_tee, tee_op((shell('cat muarc_tmp/null > muarc_tmp/tee.an
 exit_tee:-  get_current_test(TestID),on_leaving_test(TestID).
 
 write_test_links_file:- tee_op((notrace((setup_call_cleanup(tell('muarc_tmp/test_links'), write_test_links, told))))).
-write_test_links(TestID):-  
-  ensure_test(TestID), format('~N'),
+write_test_links(TestID):-  format('~N'), ensure_test(TestID), 
  tee_op((
   ignore((get_previous_test(TestID,PrevID),write_tee_link('Prev',PrevID))),
   ignore((((luser_getval(prev_test_name,AltPrevID),AltPrevID\==PrevID,AltPrevID\==TestID,AltPrevID\=='.'),write_tee_link('AltPrevID',AltPrevID)))),
@@ -782,7 +788,9 @@ write_test_links(TestID):-
   ignore((((luser_getval(next_test_name,AltNextID),NextID\==AltNextID,AltNextID\==TestID,AltNextID\=='.'),write_tee_link('AltNextID',AltNextID)))),  
   format('~N<pre>'))).
 
-tee_op(G):- nop(G).
+tee_op(_):- no_tee_file,!.
+tee_op(G):- ignore(notrace(catch(call(G),_,fail))).
+
 shell_op(G):- nop(G).
 
 my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).

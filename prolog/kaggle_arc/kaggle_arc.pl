@@ -9,8 +9,16 @@
 
 :- set_prolog_flag(encoding,iso_latin_1).
 :- set_prolog_flag(stream_type_check,false).
-:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(load_arc_webui,true);true).
-:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_webui,true);set_prolog_flag(use_arc_webui,false)).
+
+:- set_prolog_flag(use_arc_swish,false).
+:- set_prolog_flag(use_arc_bfly,false).
+% false = command line (no butterfly)
+% butterfly (arc_webui.sh)
+% true = no butterfly (SWISH only)
+%
+
+:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_bfly,true);set_prolog_flag(use_arc_bfly,false)).
+%:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(load_arc_swish,true);true).
 :- set_prolog_flag(arc_term_expansion,false).
 
 :- dynamic('$messages':to_list/2).
@@ -173,8 +181,8 @@ pfcAddF(P):-
 :- set_prolog_flag(no_sandbox,true).
 
 
-with_webui(_Goal):- \+ current_prolog_flag(use_arc_webui,true),!.
-with_webui(Goal):- ignore(when_arc_webui(with_http(Goal))).
+with_webui(_Goal):- \+ current_prolog_flag(use_arc_swish,true),!.
+with_webui(Goal):- ignore(when_arc_webui(catch_log(with_http(Goal)))).
 %:- initialization arc_http_server.
 
 :- exists_source(library(xlisting/xlisting_web)) -> system:use_module(library(xlisting/xlisting_web)) ; true.
@@ -190,7 +198,7 @@ ld_logicmoo_webui.
 logicmoo_webui:- ld_logicmoo_webui,catch_log(call(call,webui_start_swish_and_clio)).
 
 :- ld_logicmoo_webui.
-:- (current_prolog_flag(load_arc_webui,true)->catch_log(ld_logicmoo_webui) ; true).
+:- (current_prolog_flag(load_arc_swish,true)->catch_log(ld_logicmoo_webui) ; true).
 
     
 
@@ -244,8 +252,11 @@ must_det_ll(X):-
 must_not_error(X):- catch(X,E,((E=='$aborted';nb_current(cant_rrtrace,t))-> throw(E);(/*arcST,*/writeq(E=X),pp(etrace=X),
   rrtrace(visible_rtrace([-all,+exception]),X)))).
 
+odd_failure(G):- nb_current(cant_rrtrace,t),!,call(G).
+odd_failure(G):- locally(nb_setval(cant_rrtrace,t),(call(G)*->true;fail_odd_failure(G))).
 
-odd_failure(G):- call(G)*->true;(wdmsg(odd_failure(G)),fail,rrtrace(G)).
+fail_odd_failure(G):- wdmsg(odd_failure(G)),rtrace(G), fail.
+%fail_odd_failure(G):- call(G)*->true;(wdmsg(odd_failure(G)),fail,rrtrace(G)).
 
 
 %must_det_ll_failed(X):- predicate_property(X,number_of_clauses(1)),clause(X,(A,B,C,Body)), (B\==!),!,must_det_ll(A),must_det_ll((B,C,Body)).
@@ -468,7 +479,7 @@ suggest_arc_user(ID):- catch((http_session:session_data(_,username(ID))),_,fail)
 
 arc_webui:-  notrace(arc_webui0).
 
-arc_webui0:- current_prolog_flag(use_arc_webui,false),!,fail.
+arc_webui0:- current_prolog_flag(use_arc_swish,false),!,fail.
 arc_webui0:- toplevel_pp(http),!.
 arc_webui0:- in_pp(http),!.
 arc_webui0:- toplevel_pp(swish),!.
@@ -769,8 +780,8 @@ user:portray(Grid):- fail,
 
 :- catch_log(set_stream(current_output,encoding(utf8))).
 
-:- (current_prolog_flag(load_arc_webui,true)->catch_log(logicmoo_webui) ; true).
-:- current_prolog_flag(load_arc_webui,true) -> catch_log(start_arc_server) ; true.
+:- (current_prolog_flag(load_arc_swish,true)->catch_log(logicmoo_webui) ; true).
+:- current_prolog_flag(load_arc_swish,true) -> catch_log(start_arc_server) ; true.
 
 :- catch_log(set_long_message_server('https://logicmoo.org:17771')).
 

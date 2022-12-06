@@ -53,6 +53,21 @@ collapsible_section(Type,Title,Goal):-
 
 :- meta_predicate(collapsible_section(+,+,+,0)).
 /*
+
+memristive device arrays
+
+when NNs first came out , they were oftenj based on trying to emulate the design of physical memristive device arrays
+physical memristive device arrays (Neural Networks) were programmed (like in my highschool electronics class in the 1980s) like eeproms.. 
+by shining UV light to reinitialize them.  The training routine was that we submitted a latched vector of electrical voltages.. Pushed STORE.. 
+latched a new set of voltages pushed STORE etc (Idealy these vortages and resistences were computer from microphone or timed video output ) hoping 
+at the end of training the bottem set (the output) of latched voltages ... (that when inverted (inverting the mask patterns) could recreate the input signals 
+would be have the correct readings on the ohm meter (as submitted in training))
+
+
+
+
+like for exmaple when i built the speech encoder/recoder in my teens 
+
 collapsible_section(Type,Title,true,Goal):-
   (nb_current('$collapsible_section',Was);Was=[]),
   length(Was,Depth),

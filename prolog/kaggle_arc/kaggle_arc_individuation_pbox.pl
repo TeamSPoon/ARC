@@ -187,11 +187,12 @@ pbox_io_result(TestID,ExampleNum,IO,G,Objs):- !,
 
 i_pbox(GridIn,Objs):- 
   ROptions=i_pbox,
+  PairName=i_pbox,
   locally(nb_setval(individuated_cache,false),
   ((do_ig(ROptions,GridIn,IndvS),
   into_grid(GridIn,Grid),
   locally(nb_setval(debug_as_grid,t),
-    show_individuated_nonpair(igo,ROptions,GridIn,Grid,IndvS))),
+    show_individuated_nonpair(PairName,ROptions,GridIn,Grid,IndvS))),
    maybe_subdiv(IndvS,Objs))).
 
 maybe_subdiv([OO],Objs):- object_grid(OO,G),i(i_pbox,G,Objs),!.
