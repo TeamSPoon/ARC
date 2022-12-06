@@ -192,6 +192,12 @@ p2_grow_row([C1|Row],Grid,GM):- !, call(C1,Grid,G1),p2_grow_row(Row,Grid,GR),app
 p2_grow([],       _  ,[]).
 p2_grow([Row|Rows],Grid,G1GridO):- p2_grow_row(Row,Grid,G1), p2_grow(Rows,Grid,GridO),my_append(G1,GridO,G1GridO).
 
+p1_grow_row([],_,[]).
+p1_grow_row([C1|Row],Grid,GM):- !, call(C1,G1),p1_grow_row(Row,Grid,GR),append_left(G1,GR,GM).
+p1_grow([],       _  ,[]).
+p1_grow([Row|Rows],Grid,G1GridO):- p1_grow_row(Row,Grid,G1), p1_grow(Rows,Grid,GridO),my_append(G1,GridO,G1GridO).
+
+
 copy_grid_based_on_color(Cell,G,G1):- \+ is_fg_color(Cell),!,grid_size(G,H,V),make_grid(H,V,G1), mapgrid(=(Cell),G1).
 copy_grid_based_on_color(_,G,G1):- safe_grid(G,G1).
 grow_row([],_,[]).

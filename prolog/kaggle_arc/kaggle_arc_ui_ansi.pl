@@ -573,14 +573,30 @@ banner_lines(Color):- nl_if_needed,
   color_print(Color,'=============================================================='),nl,
   color_print(Color,'--------------------------------------------------------------'),nl,!.
 
-print_ss(A):- ( \+ compound(A) ; \+ (sub_term(E,A), is_really_gridoid(E))),!, wdmsg(print_ss(A)),!.
-print_ss(A):- grid_footer(A,G,W),writeln(print_ss(W)), print_ss(G,W),!.
-print_ss(A):- must_det_ll(( format('~N'), into_ss_string(A,SS),!,
+print_sso(A):- ( \+ compound(A) ; \+ (sub_term(E,A), is_really_gridoid(E))),!, wdmsg(print_sso(A)),!.
+print_sso(A):- grid_footer(A,G,W),writeln(print_sso(W)), print_grid(W,G),!.
+print_sso(A):- must_det_ll(( format('~N'), into_ss_string(A,SS),!,
   SS = ss(L,Lst),
-  writeln(print_ss(l(L))), 
+  writeln(print_sso(l(L))), 
   forall(member(S,Lst),writeln(S)),format('~N'))),!.
 
-print_ss(G,W):- is_really_gridoid(G),!,must_det_ll(print_grid(W,G)).
+var_or_number(V):- var(V),!.
+var_or_number(V):- integer(V),!.
+
+print_ss(VAR):- var(VAR),!,pp(ss_var(VAR)).
+print_ss(g(H,V,Grid)):- nonvar(Grid),!,print_grid(H,V,Grid).
+print_ss(Title):- print_side_by_side([Title]).
+
+print_ss(Title,NGrid):- print_side_by_side([Title,NGrid]).
+print_ss(IH,IV,NGrid):- var_or_number(IH),var_or_number(IV),!,print_grid(IH,IV,NGrid).
+print_ss(A,B,C):- is_color(A),!,print_side_by_side(A,B,C).
+print_ss(A,B,C):- print_side_by_side(A,B,C).
+%print_ss(Color,G1,WG,G2):- is_color(Color),var_or_number(WG),!,print_side_by_side(Color,G1,WG,G2).
+print_ss(IH,IV,Title,NGrid):- var_or_number(IH),var_or_number(IV),!,print_grid(IH,IV,Title,NGrid).
+print_ss(A,B,C,D,E):- print_side_by_side(A,B,C,D,E).
+print_ss(A,B,C,D,E,F):- print_side_by_side(A,B,C,D,E,F).
+
+%print_sso(G,W):- is_really_gridoid(G),!,must_det_ll(print_grid(W,G)).
 
 print_side_by_side(Nil):- Nil == [], !.
 print_side_by_side(P):- \+ is_list(P), ignore((print_side_by_side([P]))),!.
@@ -590,7 +606,7 @@ print_side_by_side(List):- member(Size,[15,10,8,6,4,3]), once((length(Left,Size)
    sorted_by_vertical_size(RLeft), list_print_length(RLeft,Len))), Len < 200, !, print_side_by_side_three(Left),
  print_side_by_side(Rest).
 print_side_by_side([A,B|Rest]):- print_side_by_side(A,B),format('~N'),!,print_side_by_side(Rest),!.
-print_side_by_side([A|Rest]):- print_ss(A), print_side_by_side(Rest),!.
+print_side_by_side([A|Rest]):- print_sso(A), print_side_by_side(Rest),!.
 
 vertical_grid_size_with_key(Grid-N,V+H+N+F):- always_grid_footer(Grid,GG,F),grid_size(GG,H,V).
 
@@ -622,9 +638,9 @@ print_side_by_side_three([A,B,C]):- !,
 
 g_nonvar(A,AA):- nonvar(A);nonvar(AA).
 
-%print_side_by_side2(A,B):- (unsized_grid(A);unsized_grid(B)),!, print_ss(A),print_ss(B),!.
-%print_side_by_side2(A,B):- g_smaller_than(A,B),!, print_ss(A),print_ss(B),!.
-%print_side_by_side2(A,B):-  print_ss(A),print_ss(B),!.
+%print_side_by_side2(A,B):- (unsized_grid(A);unsized_grid(B)),!, print_sso(A),print_sso(B),!.
+%print_side_by_side2(A,B):- g_smaller_than(A,B),!, print_sso(A),print_sso(B),!.
+%print_side_by_side2(A,B):-  print_sso(A),print_sso(B),!.
 always_grid_footer(A,GG,FF):- grid_footer(A,GG,GF),!,into_wqs_string(GF,FF).
 always_grid_footer(A,A,"").
 
@@ -721,8 +737,8 @@ gridoid_size(G,H,V):- compound_name_arity(G,print_grid,A),arg(A,G,GG),gridoid_si
 gridoid_size(G,H,V):- is_really_gridoid(G),!,grid_size(G,H,V).
 
 print_side_by_side0([],_,[]):-!.
-%print_side_by_side0(A,_,B):- (unsized_grid(A);unsized_grid(B)),!, writeln(unsized_grid), print_ss(A),print_ss(B),!.
-% % % print_side_by_side0(A,_,B):- g_smaller_than(A,B),!, writeln(g_smaller_than), print_ss(A),print_ss(B),!.
+%print_side_by_side0(A,_,B):- (unsized_grid(A);unsized_grid(B)),!, writeln(unsized_grid), print_sso(A),print_sso(B),!.
+% % % print_side_by_side0(A,_,B):- g_smaller_than(A,B),!, writeln(g_smaller_than), print_sso(A),print_sso(B),!.
 /*
 print_side_by_side0(C1-call(wqs(S1)),LW,C2-call(wqs(S2))):- nonvar(S1),!,
   print_side_by_side0(C1,LW,C2),nl_if_needed,

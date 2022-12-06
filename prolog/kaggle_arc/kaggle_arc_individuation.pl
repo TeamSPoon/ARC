@@ -151,8 +151,8 @@ show_individuated_nonpair(PairName,ROptions,GridIn,Grid,InC):-
   length(InC,Len),
   pp(show_individuated_nonpair=Len),
   if_t(GridIn\==Grid,
-    print_side_by_side(cyan,GridIn,into_grid(PairName),_,Grid,into_grid(result))),
-  print_side_by_side(green,GridIn,grid(PairName),_,InC,indvs(ROptions,PairName)))).
+    print_ss(cyan,GridIn,into_grid(PairName),_,Grid,into_grid(result))),
+  print_ss(green,GridIn,grid(PairName),_,InC,indvs(ROptions,PairName)))).
   
  
 flatten_set(F,S):- flatten(F,L),list_to_set(L,BF),!,BF=S.
@@ -165,11 +165,11 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
  must_det_ll((
   dash_chars,
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),
-  print_side_by_side(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
+  print_ss(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
   as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1),
   xfer_zeros(GridIn1,GridOut1),
-  print_side_by_side(green,GridIn1,ngridIn(ID1),_,GridOut1,ngridOut(ID2)),
-  %print_side_by_side(green,InC,ogridIn(ID1),_,OutC,ogridOut(ID2)),
+  print_ss(green,GridIn1,ngridIn(ID1),_,GridOut1,ngridOut(ID2)),
+  %print_ss(green,InC,ogridIn(ID1),_,OutC,ogridOut(ID2)),
   %dash_chars,  
   grid_size(GridIn,IH,IV),grid_size(GridOut,OH,OV),
   do_pair_filtering(ID1,GridIn,InC,InShown,ID2,GridOut,OutC,OutShown),
@@ -188,9 +188,9 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
 do_pair_filtering(ID1,GridIn,InC,InShownO,ID2,GridOut,OutC,OutShownO):- 
   grid_size(GridIn,IH,IV),filter_shown(IH,IV,InC,InShown,InHidden), filter_shown(IH,IV,InHidden,InHiddenLayer1,InHiddenLayer2),
   grid_size(GridOut,OH,OV),filter_shown(OH,OV,OutC,OutShown,OutHidden), filter_shown(OH,OV,OutHidden,OutHiddenLayer1,OutHiddenLayer2),
-  print_side_by_side(green,InHiddenLayer2,hiddens2(ID1),_,OutHiddenLayer2,hiddens2(ID2)),
-  print_side_by_side(green,InHiddenLayer1,hiddens1(ID1),_,OutHiddenLayer1,hiddens1(ID2)),
-  print_side_by_side(green,InShown,shown(ID1),_,OutShown,shown(ID2)),!,
+  print_ss(green,InHiddenLayer2,hiddens2(ID1),_,OutHiddenLayer2,hiddens2(ID2)),
+  print_ss(green,InHiddenLayer1,hiddens1(ID1),_,OutHiddenLayer1,hiddens1(ID2)),
+  print_ss(green,InShown,shown(ID1),_,OutShown,shown(ID2)),!,
   OutShownO = OutC,InShownO = InC.
 do_pair_filtering(_ID1,_GridIn,InC,InC,_ID2,_GridOut,OutC,OutC).
 
@@ -555,16 +555,16 @@ find_symmetry_code1(VM,Grid,RepairedResult,Code):-
    ((test_symmetry_code(Grid,GridS,RepairedResult,Code)
       *-> 
        (if_t(GridS\==[],print_grid(test_RepairedResult,GridS)),
-        if_t(Orig\==Grid,print_side_by_side(green,Orig,orig(ID),_,Grid,altered(ID))),
-        print_side_by_side(green,Orig,gridIn(ID),_,RepairedResult,repaired(ID)),        
+        if_t(Orig\==Grid,print_ss(green,Orig,orig(ID),_,Grid,altered(ID))),
+        print_ss(green,Orig,gridIn(ID),_,RepairedResult,repaired(ID)),        
         if_t(is_grid(Out),
           if_t(RepairedResult\==Out,
-            (print_side_by_side(yellow,RepairedResult,unexpected_repairedResult(ID),_,Out,expected(ID)),
+            (print_ss(yellow,RepairedResult,unexpected_repairedResult(ID),_,Out,expected(ID)),
             arcdbg_info(yellow,mismatched(symmetry_code(ID,Code)))))),
         arcdbg_info(green,success(symmetry_code(ID,Code))))
     ;
     ((var(Out)->Out=[[_]];true),
-      print_side_by_side(red,Orig,gridIn(ID),_,Out,out(ID)),
+      print_ss(red,Orig,gridIn(ID),_,Out,out(ID)),
       arcdbg_info(red,none_found(symmetry_code(ID))),!,fail))).
 
 find_symmetry_code1(VM,Grid,RepairedResult,Steps):-
@@ -670,7 +670,7 @@ gather_texture(VM):-
     set(VM.points_o)=CPoints,
     set(VM.grid)=NewGrid,
     as_ngrid(NewGrid,NewGMap),!,
-    print_side_by_side(green,GMap,nGrid(1),_,NewGMap,nGrid(2)),
+    print_ss(green,GMap,nGrid(1),_,NewGMap,nGrid(2)),
     maplist(make_textured_point_object(VM,[birth(texture)]),Zeros,_),
     maplist(make_textured_point_object(VM,[birth(texture)]),Shooters,_))),!.
 
@@ -848,7 +848,7 @@ find_hybrid_shapes(VM):-
   maplist(release_bg,List,FGList),
   % maplist(=,List,FGList),
   predsort(sort_on(hybrid_order),FGList,Set),
-  as_debug(1,(print_side_by_side(Set))),!,
+  as_debug(1,(print_ss(Set))),!,
   call(ignore((hybrid_shape_from(Set,VM)))))).
 
 release_bg(List,FGList):- is_list(List),!,maplist(release_bg,List,FGList).
@@ -883,7 +883,7 @@ hybrid_shape_from(Set,VM):-
   %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
   %OffsetGrid = In,
   add_grid_label(Grid,Info,A), add_grid_label([Obj],Info,B),
-  as_debug(9,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_side_by_side(A,B)))), % trace,
+  as_debug(9,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_ss(A,B)))), % trace,
   %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  trace,  
   %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
   remCPoints(VM,GOPoints),
@@ -1023,7 +1023,7 @@ keep_only_shown(_Layers,_VM):-!.
 keep_only_shown(Layers,VM):-
   filter_shown(VM.h,VM.v,VM.objs,Layers,OutShown0,OutHidden),
   if_t(OutHidden\==[],
-    print_side_by_side(blue,OutHidden,deleting,OutShown0,keeping)),
+    print_ss(blue,OutHidden,deleting,OutShown0,keeping)),
   combine_same_globalpoints(OutShown0,OutShown),
   gset(VM.objs)=OutShown,!.
 
@@ -1275,7 +1275,7 @@ individuate_two_grids_now_X(OID_In_Out,ROptions,Grid_In,Grid_Out,VM_In,VM_Out,Gr
 
   grid_to_tid(Grid_In,ID_In), grid_to_tid(Grid_Out,ID_Out),
 
-  print_side_by_side(yellow,Grid_InX,OID_In_Out=gridInX(ID_In),_,Grid_OutX,OID_In_Out=gridOutX(ID_Out)),
+  print_ss(yellow,Grid_InX,OID_In_Out=gridInX(ID_In),_,Grid_OutX,OID_In_Out=gridOutX(ID_Out)),
 
   with_other_grid(Grid_OutX,do_individuate(VM_In,ROptions,Grid_InX,Objs_In)),!, 
   gset(VM_Out.robjs) = Objs_In,
@@ -2162,7 +2162,7 @@ fg_subtractions(Subtraction,VM):-
   ReColored = FoundObjs,
   %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
   print_grid(fg_subtractions(OID),NewGrid),
-  print_side_by_side(ReColored),
+  print_ss(ReColored),
   remCPoints(VM,ReColored),
   remGPoints(VM,ReColored),
   addInvObjects(VM,ReColored))))),!.
@@ -2197,7 +2197,7 @@ fg_intersections(Intersection,VM):-
   ReColored = FoundObjs,
   %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
   print_grid(fg_intersections(OID),NewGrid),
-  print_side_by_side(ReColored),
+  print_ss(ReColored),
   remCPoints(VM,ReColored),
   remGPoints(VM,ReColored),
   addInvObjects(VM,ReColored))))),!.
@@ -2232,7 +2232,7 @@ fg_abtractions(Subtraction,VM):-
   ReColored = FoundObjs,
   %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
   print_grid(fg_abtractions(OID),NewGrid),
-  print_side_by_side(ReColored),
+  print_ss(ReColored),
   remCPoints(VM,ReColored),
   remGPoints(VM,ReColored),
   addInvObjects(VM,ReColored))))),!.
@@ -2332,7 +2332,7 @@ print_premuted_objects(Why,Objs):-
      rev_visible_first=RVF,
      largest_first=LF,
      smallest_first=SF],Sets,SS),
-  print_side_by_side(SS),
+  print_ss(SS),
   print_obj_short_props(ORF))).
 
 
@@ -2682,7 +2682,7 @@ rectangles(VM):-
   if_t(Objs==NewObjs,
    (texture_grid(Grid,TexturedGrid),
     mapgrid(maybe_subst_grid_type,TexturedGrid,Retextured),
-    print_side_by_side(red,TexturedGrid,texture,_,Retextured,no_squares))).
+    print_ss(red,TexturedGrid,texture,_,Retextured,no_squares))).
 
 maybe_subst_grid_type(V,V):- var(V),!.
 maybe_subst_grid_type(E-C,'+'-C):- nonvar(E), arg(_,t('A','<','y','>','/','\\','=','!'),E). %,ignore(C=wbg).
@@ -2765,8 +2765,8 @@ rectangles_from_grid(Grid,VM):-
   nop(maplist(was_color_or_unbound(C),First)),
   maplist(was_color_or_unbound(C),Last),!,
   Width is H - RightN - LeftN,
-  print_side_by_side(C,TexturedGrid,texture,_,Retextured,retextured(Width,N)),
-  print_side_by_side(C,NewGrid,'grid',_,RowsInvolvedClipped,clipped(Width,N)),
+  print_ss(C,TexturedGrid,texture,_,Retextured,retextured(Width,N)),
+  print_ss(C,NewGrid,'grid',_,RowsInvolvedClipped,clipped(Width,N)),
   mapgrid(only_color_data,RowsInvolvedClipped,Textureless),
   localpoints(Textureless,NewObjPoints),!,
   ignore((NewObjPoints\==[],make_indiv_object(VM,[birth(rectangles),iz(poly(rectangle))],NewObjPoints,_Obj))),
@@ -2935,7 +2935,7 @@ try_shape(VM,Method,LibName,Shape):-
    addRObjects(VM,Key),
    show_match(OH,OV,OGrid,Grid),
  %  Grid = VM.grid,
-   %print_side_by_side(,OGrid),
+   %print_ss(,OGrid),
    localpoints_include_bg(Shape,OPoints),
    offset_points(OH,OV,OPoints,ObjPoints),
    %Points = VM.points,
@@ -3027,7 +3027,7 @@ recompute_points(VM):-
     points_to_grid(VM.h,VM.v,LeftOver,NewGrid),
     mapgrid(add_missing,NewGrid,NNewGrid),
     nop((as_ngrid(NNewGrid,NGrid),
-    print_side_by_side(green,NGrid,'recompute_points',_,VM.objs,'objects'))),
+    print_ss(green,NGrid,'recompute_points',_,VM.objs,'objects'))),
     
     gset(VM.points)= LeftOver,
     gset(VM.grid)= NewGrid)).

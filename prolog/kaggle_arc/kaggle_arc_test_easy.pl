@@ -55,16 +55,16 @@ solves_all_pairs(TestID,P2):-
         
 %test_easy:- clsmake, fail.
 /*
-test_easy:- get_pair_mode(single_pair),!,
-  get_current_test(TestID),some_current_example_num(ExampleNum),
-  forall_count(kaggle_arc(TestID,ExampleNum,I,O),test_easy_solve_test_pair(TestID,ExampleNum,I,O)).
 %test_easy:- test_p2(test_easy_solve_pair).
 %test_easy:- test_p2(simple_todolist(_)).
 */
 test_easy:- once(update_and_fail_cls),fail.
 test_easy:- get_pair_mode(entire_suite),!,forall_count(all_arc_test_name(TestID),test_easy(TestID)).
 test_easy:- get_pair_mode(whole_test), get_current_test(TestID),!,must_det_ll(ignore(test_easy(TestID))).
-test_easy:- once(print_all_info_for_test),fail.
+test_easy:- get_pair_mode(single_pair),
+  get_current_test(TestID),some_current_example_num(ExampleNum),!,
+  forall_count(kaggle_arc(TestID,ExampleNum,I,O),
+    (print_ss((?-test_easy_solve_test_pair(TestID,ExampleNum,_,_))=I,single_pair=O),test_easy_solve_test_pair(TestID,ExampleNum,I,O))).
 test_easy:- test_p2(test_easy_solve_pair).
 
 :- luser_default(cmd,test_easy). 
@@ -76,7 +76,12 @@ test_easy_solve_pair(I,O):- %set_current_test(I),
 test_easy_solve_test_pair(TestID,ExampleNum,I,O):- var(TestID),get_current_test(TestID),nonvar(TestID),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
 
 test_easy_solve_test_pair(TestID,ExampleNum,I,O):- var(ExampleNum),some_current_example_num(ExampleNum),!,test_easy_solve_test_pair(TestID,ExampleNum,I,O).
+
 test_easy_solve_test_pair(TestID,ExampleNum,I,O):- 
+  ignore(kaggle_arc(TestID,ExampleNum,I,O)), 
+   with_current_pair(I,O,test_easy_solve_test_pair_now(TestID,ExampleNum,I,O)).
+
+test_easy_solve_test_pair_now(TestID,ExampleNum,I,O):- 
    ensure_test(TestID),
    ignore(kaggle_arc(TestID,ExampleNum,I,O)),   
    put_attr(EM,expect_p2,O),
@@ -99,25 +104,28 @@ test_example_grid(G):- set_current_test(G),!,get_current_test(TestID),test_easy(
 /*
 easy_solve_by( TestID,P2):- nonvar(P2),!, copy_term(P2,P2T), findall(P2T,(easy_solve_by(TestID,P2T),P2\=@=P2T),List), member(P2,[P2|List]).
 easy_solve_by( TestID,flip_Once(_)):- get_black(Black),user:arc_test_property(TestID,common,comp(cbg(Black),i-o,grav_rot),_).
-easy_solve_by(_TestID,P2):- easy_p2(P2). % easy_p2(P2).
 */
-easy_solve_by(_TestID,GFS):- easy0(_,GFS).
-easy_solve_by(_TestID,do_two(C1,C2)):-
-  easy0(N,C1),easy0(M,C2),C1\==C2,C1\==(=),C2\==(=),N<M.
+easy_solve_by(_TestID,P2):- easy_p2(P2). % easy_p2(P2).
 
+easy_p2(blur_or_not_least_rot90_x4):- test_hint(mass_and_area(grow_less_than_times(4),'=')).
+easy_p2(blur_rot90):- test_hint(mass_and_area(grow_less_than_times(1),'=')).
+easy_p2(unbind_and_fill_in_blanks(_Code)).
+easy_p2(repair_and_select(_How,_M)):- test_hint('<',unique_color_count).
+easy_p2(GFS):- easy0(_,GFS).
+easy_p2(do_two(C1,C2)):-
+  easy0(N,C1),easy0(M,C2),C1\==C2,C1\==(=),C2\==(=),N<M.
+/*
 %easy_solve_by( TestID,repair_and_select(_How,_M)):- is_symgrid(TestID),!.
-%easy_p2(flip_Once(_)).
+easy_p2(_):- trace.
 
 %easy_p2(repair_and_select_property([unbind_color(_),now_fill_in_blanks_good],repaired)).
 easy_p2(blur_or_not(rot90_blur_flipD)):- test_hint(mass_and_area(grow_less_than_times(1),'=')).
 easy_p2(repair_and_select(_How,_M)):- test_hint('<',unique_color_count).
-easy_p2(blur_or_not_least_rot90_x4):- test_hint(mass_and_area(grow_less_than_times(4),'=')).
 easy_p2(blur_or_not_least_2(_,_)):- test_hint(mass_and_area(grow_less_than_times(2),'=')).
-easy_p2(blur_rot90):- test_hint(mass_and_area(grow_less_than_times(1),'=')).
 %easy_p2(unbind_and_fill_in_blanks(_Code)).
 easy_p2(simple_todolist([trim_blank_lines,grow_2])):- test_hint(mass_and_area('>',(\=))).
 %easy_p2(simple_todolist(_)).
-easy_p2(P2):- easy0(_,P2).
+easy_p2(P2):- easy0(_,P2).*/
 /*
 easy_p2(do_simple_todolist(List)):- List = [C0,C1,C2,C3,C4,C5],
   easy0(0,C0),easy0(1,C1),easy0(2,C2),easy0(3,C3),easy0(4,C4),easy0(5,C5),
@@ -240,7 +248,8 @@ induce_from_training_pair(P2,Ex1,II1,OO1):-
 
 test_easy(TestID):- var(TestID),!,
   forall_count(ensure_test(TestID),test_easy(TestID)).
-test_easy(TestID):- 
+test_easy(TestID):-
+  % once(print_all_info_for_test),
   arcdbg_info(green,"BEGIN_TEST"=TestID),
   print_test(TestID),   
   (easy_solve_training(TestID,P2)*-> 
@@ -311,6 +320,7 @@ easy0(2,maybe_subst_fg_color(_,_)):-  test_hint(mass_and_area('=','=')).
 easy0(4,blur_flipV):- test_hint(mass_and_area(grow_less_than_times(1),'=')).
 easy0(4,blur_or_not_least_2(flipV,flipH)):- test_hint(mass_and_area(grow_less_than_times(2),'=')).
 
+easy0(5,grow_4_rot):- test_hint(mass_and_area_times(4)).% 7fe24cdd
 easy0(5,increase_size_by_grid_mass):- test_hint(ratio_between(mass,square(area))). %ac0a08a4
 easy0(5,grow_from_shape):-
    test_hint('=',unique_color_count),
@@ -321,10 +331,21 @@ easy0(5,grow_4):- test_hint(mass_and_area_times(4)).% 3af2c5a8
 easy0(5,grow_2):- test_hint(mass_and_area_times(2)). % 963e52fc
 easy0(5,grow_flip_2):- test_hint(mass_and_area_times(2)). % 963e52fc
 easy0(5,double_size):- test_hint(n_times(2),mass).
-easy0(5,increase_size(N)):- test_hint(mass_and_area_times(N)), ignore(N=4).
+easy0(5,increase_size(IS)):- test_hint(mass_and_area_times(N)), nonvar(N), IS is floor(sqrt(N)), N is IS*IS. % .
 %easy0(5,crop_by(_)).
 
 
+% comp(cbg(black),i-o,ogs)=ogs([ogs(notrim,whole,loose,loc2D(1,1)),ogs(notrim,whole,call_ogs(rot90,loose),loc2D(4,1)),ogs(notrim,whole,call_ogs(rot180,loose),loc2D(4,4)),ogs(notrim,whole,call_ogs(rot270,loose),loc2D(1,4))])
+grow_each_p2(Rot90,In,[A,B,C,D]):- into_grid(In,A),call(Rot90,A,B),call(Rot90,B,C),call(Rot90,C,D).
+grow_4_p2(P2,In,Out):- grow_each_p2(P2,In,[A,B,C,D]),p1_grow([[=(A),=(B)],[=(D),=(C)]],[],Out).
+
+%grow_4_rot(In,Out):- !, p2_grow([[sameR,rot90],[rot270,rot180]],In,Out).
+grow_4_rot(In,Out):- grow_4_p2(rot90,In,Out).
+
+%grow_4(In,Out):- !, p2_grow([[sameR,sameR],[sameR,sameR]],In,Out).
+%grow_4(In,Out):- !, flipV(In,FlipV),append(In,FlipV,Left),flipH(Left,Right),append_left(Left,Right,Out).
+%grow_4(In,Out):- grow_each_p2(=,In,[A,B,C,D]), grow([[A,B],[D,C]],[],Out).
+grow_4(In,Out):- grow_4_p2(sameR,In,Out).
 
 
 maybe_subst_fg_color(X,Y,I,O):- 
@@ -438,7 +459,6 @@ blur_or_not_least_rot90_x4(I,O):-
 %  now_fill_in_blanks(P2,Grid,RepairedResultO).
 
 crop_by(HH/H,In,Out):- grid_size(In,H,V),between(1,H,HH),HH<H,clip(1,1,HH,V,In,Out).
-grow_4(In,Out):- flipV(In,FlipV),append(In,FlipV,Left),flipH(Left,Right),append_left(Left,Right,Out).
 grow_2(In,Out):- append_left(In,In,Out).
 grow_flip_2(In,Out):- flipH(In,FlipH),append_left(In,FlipH,Out).
 shrink_grid(I,O):- grid_to_norm(I,_,O),!.

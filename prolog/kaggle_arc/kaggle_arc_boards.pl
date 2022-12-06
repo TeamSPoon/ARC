@@ -696,7 +696,7 @@ test_shapes(_TestID, Objs,In):- member(Obj,Objs),object_grid(Obj,In), once(learn
 test_shapes(TestID,_Objs,In):- ensure_test(TestID), get_hybrid_set(Set),!,member(In,Set).
 
 
-learn_hybrid_shape_board(Why,Shape):- dmsg(learn_hybrid_shape(Why,Shape)).
+learn_hybrid_shape_board(Why,Shape):- nop(dmsg(learn_hybrid_shape(Why,Shape))).
 
 grid_to_obj_other(VM,Grid,O):- other_grid(Grid,Grid2), grid_to_obj_other_grid(VM,Grid,Grid2,O).
 grid_to_obj_other_grid(VM,Grid,Grid2,O):- grid_to_objs(Grid2,Objs),grid_to_obj_other_objs(VM,Grid,Objs,O).

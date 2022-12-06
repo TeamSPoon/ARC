@@ -589,7 +589,10 @@ report_test:- report_suite, print_qtest.
 
 get_current_test(TestID):- luser_getval(task,TestID),is_valid_testname(TestID),!.
 get_current_test(TestID):- get_next_test(TestID,_),!.
-get_current_test(v(fe9372f3)).
+get_current_test(TestID):- get_current_test_fb(TestID),kaggle_arc(TestID,_,_,_),!.
+get_current_test(TestID):- kaggle_arc(TestID,_,_,_),!.
+get_current_test_fb(t('00d62c1b')).
+get_current_test_fb(v(fe9372f3)).
 
 get_random_test(ID):-  
  get_current_test(TestID),get_next_test(TestID,NextID),
@@ -805,7 +808,7 @@ shell_op(G):- nop(G).
 my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).
 
 save_supertest(TestID):- is_list(TestID),!,maplist(save_supertest,TestID).
-save_supertest(TestID):- ensure_test(TestID), save_supertest(TestID,File).
+save_supertest(TestID):- ensure_test(TestID), save_supertest(TestID,_File).
 
 save_supertest(TestID,File):- var(TestID),!, forall(ensure_test(TestID), save_supertest(TestID,File)).
 save_supertest(TestID,File):- var(File),!,test_name_output_file(TestID,File), save_supertest(TestID,File).
