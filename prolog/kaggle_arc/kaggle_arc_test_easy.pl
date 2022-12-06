@@ -340,6 +340,8 @@ grow_each_p2(Rot90,In,[A,B,C,D]):- into_grid(In,A),call(Rot90,A,B),call(Rot90,B,
 grow_4_p2(P2,In,Out):- grow_each_p2(P2,In,[A,B,C,D]),p1_grow([[=(A),=(B)],[=(D),=(C)]],[],Out).
 
 %grow_4_rot(In,Out):- !, p2_grow([[sameR,rot90],[rot270,rot180]],In,Out).
+learn_about_p2(grow_4_rot).
+
 grow_4_rot(In,Out):- grow_4_p2(rot90,In,Out).
 
 %grow_4(In,Out):- !, p2_grow([[sameR,sameR],[sameR,sameR]],In,Out).
