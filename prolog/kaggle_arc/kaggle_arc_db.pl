@@ -100,7 +100,8 @@ term_to_oid(T,A):- (compound(T)->term_to_atom(T,A);(atom(T)->T=A;term_to_atom(T,
 
 point_to_hvc(Var,_,_,_):- var(Var),!,fail.
 point_to_hvc(Point,  H,V,wfg):- atomic(Point),!, hv_point(H,V,Point).
-point_to_hvc(CD-Point,H,V,C):- var_or_color_data(CD,C),must(hv_point(H,V,Point)),!.
+%point_to_hvc(CD-Point,H,V,C):- var_or_color_data(CD,C),must(hv_point(H,V,Point)),!.
+point_to_hvc(CD-Point,H,V,CD):- atomic(Point),!, hv_point(H,V,Point),!.
 %point_ to_hvc(H,V,_,H,V).
 %point_ to_hvc(Inf,Inf,offset_ranges(_,_,_,_)).
 var_or_color_data(CD,C):- only_color_data(CD,C),!.

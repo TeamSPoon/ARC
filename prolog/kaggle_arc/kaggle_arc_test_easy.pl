@@ -94,10 +94,14 @@ test_example_grid(O):- kaggle_arc(TestID,ExampleNum,_,O),!,test_easy_solve_test_
 test_example_grid(T):- is_valid_testname(T),set_current_test(T),!,kaggle_arc(T,ExampleNum,I,O),test_easy_solve_test_pair(T,ExampleNum,I,O).
 test_example_grid(G):- set_current_test(G),!,get_current_test(TestID),test_easy(TestID).
 
-easy_solve_by(_TestID,P2):- ground(P2),!.
+%easy_solve_by(_TestID,P2):- ground(P2),!.
+%easy_solve_by(_TestID,grow_from_shape).
+/*
 easy_solve_by( TestID,P2):- nonvar(P2),!, copy_term(P2,P2T), findall(P2T,(easy_solve_by(TestID,P2T),P2\=@=P2T),List), member(P2,[P2|List]).
 easy_solve_by( TestID,flip_Once(_)):- get_black(Black),user:arc_test_property(TestID,common,comp(cbg(Black),i-o,grav_rot),_).
-easy_solve_by(_TestID,P2):- easy_p2(P2).
+easy_solve_by(_TestID,P2):- easy_p2(P2). % easy_p2(P2).
+*/
+easy_solve_by(_TestID,GFS):- easy0(_,GFS).
 easy_solve_by(_TestID,do_two(C1,C2)):-
   easy0(N,C1),easy0(M,C2),C1\==C2,C1\==(=),C2\==(=),N<M.
 
@@ -285,6 +289,9 @@ gravity_s_1(I,O):- gravity(1,s,I,O),!.
 ground_enough(P2):- ground(P2),!.
 ground_enough(P2):- compound(P2),arg(1,P2,E),ground_enough(E),!.
 
+test_hint_easy(A,B):- nop(test_hint(A,B)).
+test_hint_easy(A):- nop(test_hint(A)).
+
 %easy0(X):- easy_sol(X).
 easy0(_,=).
 easy0(0,trim_hv_repeats):- test_hint(mass_and_area('<','<')).
@@ -305,7 +312,10 @@ easy0(4,blur_flipV):- test_hint(mass_and_area(grow_less_than_times(1),'=')).
 easy0(4,blur_or_not_least_2(flipV,flipH)):- test_hint(mass_and_area(grow_less_than_times(2),'=')).
 
 easy0(5,increase_size_by_grid_mass):- test_hint(ratio_between(mass,square(area))). %ac0a08a4
-easy0(5,grow_from_shape):- test_hint(ratio_between(mass,square(mass))). %007bbfb7
+easy0(5,grow_from_shape):-
+   test_hint('=',unique_color_count),
+   test_hint(mass_and_area('>','>')),
+   test_hint_easy(ratio_between(mass,square(mass))). %007bbfb7
 easy0(5,increase_size_by_color_count):- test_hint(ratio_between(unique_color_count,and(square(mass),square(area)))). %ac0a08a4
 easy0(5,grow_4):- test_hint(mass_and_area_times(4)).% 3af2c5a8
 easy0(5,grow_2):- test_hint(mass_and_area_times(2)). % 963e52fc

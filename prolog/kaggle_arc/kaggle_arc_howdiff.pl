@@ -1211,7 +1211,7 @@ proportional(L1,L2,Diff):- locally(nb_setval(diff_porportional,t),diff2_terms(L1
 gvs:dot_overload_hook(_M,_NewName, _Memb, _Value):- fail.
 
 
-grid_props(Obj1,OOO):- \+ is_grid(Obj1),!,into_grid(Obj1,G),grid_props(G,OOO).
+grid_props(Obj1,OOO):- \+ is_grid(Obj1),!,into_grid(Obj1,G),print_grid(G),grid_props(G,OOO).
 grid_props(Obj1,OOO):- % \+ arc_option(grid_size_only), 
  %to_assertable_grid(Obj1,AG),data_type(Obj1,DT),
  % wots(S,print_grid(Obj1)),

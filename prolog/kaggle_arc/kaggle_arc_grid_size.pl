@@ -192,8 +192,8 @@ ratio_about(square(Area), UCC,I,O):- !, call(Area,I,IA), call(Area,O,OA), n_time
 ratio_about(Mass, UCC,I,O):-  call(Mass,I,IM), call(Mass,O,OM), n_times(UCC,IM,OM).
 
 test_hint(How,P2):- must_det_ll((current_pair(I,O),call(P2,I,II),call(P2,O,OO))),call(How,II,OO).
-
 test_hint(G):- current_predicate(_,G),!,call(G).
+
 mass_and_area(P2Mass,P2Area):- test_hint(P2Mass,mass),test_hint(P2Area,area).
 mass_and_area_times(N):- mass_and_area(n_times(N),n_times(N)).
 

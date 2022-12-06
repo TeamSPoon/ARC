@@ -194,7 +194,8 @@ neighbor_map(Grid,GridO):-
 
 neighbor_map(_,_,[],_,[]):-!.
 neighbor_map(H,V,[NC-P1|Ps],Points,[(N-C)-P1|Ps2]):-
-  must_det_ll((only_color_data(NC,C),  
+  must_det_ll((
+  only_color_data(NC,C),  
   nei_map(H,V,C,P1,Points,N),
   neighbor_map(H,V,Ps,Points,Ps2))).
 

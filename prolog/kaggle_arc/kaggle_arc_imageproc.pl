@@ -786,11 +786,15 @@ calc_add_points0(OH,OV,Grid,Object):- is_object(Object),!,globalpoints_maybe_bg(
 calc_add_points0(OH,OV,Grid,Points):- is_list(Points),!,maplist(calc_add_point1(OH,OV,Grid),Points).
 calc_add_points0(OH,OV,Grid,CPoint):- calc_add_point1(OH,OV,Grid,CPoint),!.
 
-calc_add_point1(OH,OV,Grid,C):- is_color(C),!,add_h_v_c(Grid,OH,OV,C).
+%point_symbol_color(Color-Point,Point,Symbol,Color):- is_color(Color), is_nc_point(Point),!.
+%point_symbol_color(Symbol-Color-Point,Point,Symbol,Color):- is_color(Color), is_nc_point(Point),!.
+
+
+%calc_add_point1(OH,OV,Grid,PSC):- point_symbol_color(PSC,Point,Symbol,Color),hv_point(H,V,Point),!, add_offset_h_v_c(Grid,H,V,OH,OV,C).
+%calc_add_point1(OH,OV,Grid,C):- is_color(C),!,add_h_v_c(Grid,OH,OV,C).
 calc_add_point1(OH,OV,Grid,Color):- is_color(Color),!, show_call(add_h_v_c(Grid,OH,OV,Color)).
 calc_add_point1(OH,OV,Grid,ColorInt):- integer(ColorInt), color_name(ColorInt,Color),!, add_h_v_c(Grid,OH,OV,Color).
 calc_add_point1(OH,OV,Grid,Color):- var(Color),!, show_call(add_h_v_c(Grid,OH,OV,Color)).
-%calc_add_point1(OH,OV,Grid,(Symbol)-C-Point):- nonvar(C), hv_point(H,V,Point),!, add_offset_h_v_c(Grid,H,V,OH,OV,C).
 %calc_add_point1(OH,OV,Grid,Symbol-C-Point):- nonvar(C), hv_point(H,V,Point),!, add_offset_h_v_c(Grid,H,V,OH,OV,C).
 %calc_add_point1(OH,OV,Grid,C-Point):- atom(Point),var(C),hv_point(H,V,Point),!,add_offset_h_v_c(Grid,H,V,OH,OV,C).
 %calc_add_point1(OH,OV,Grid,_-Point):- point_to_hvc(Point,H,V,C),!, add_offset_h_v_c(Grid,H,V,OH,OV,C).
