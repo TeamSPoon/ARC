@@ -463,8 +463,8 @@ wqs1(C):- \+ compound(C),!,wqs0(C).
 wqs1(format(C,N)):- catch((sformat(S,C,N),color_write(S)),_,fail),!.
 wqs1(writef(C,N)):- !, writef(C,N).
 wqs1(q(C)):-  \+ arg_string(C),wots(S,writeq(C)),color_write(S).
-wqs1(g(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs(C))),print(g(S)).
-wqs1(b(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs(C))),color_write(S).
+wqs1(g(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs1(C))),print(g(S)).
+wqs1(b(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs1(C))),color_write(S).
 wqs1(norm(C)):- writeq(norm(C)),!.
 
 wqs1(pp(C)):- \+ arg_string(C), wots_vs(S,pp_no_nl(C)),write((S)).

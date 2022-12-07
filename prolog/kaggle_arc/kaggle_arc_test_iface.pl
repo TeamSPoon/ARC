@@ -374,13 +374,15 @@ set_pair_mode(Mode):- luser_setval('$pair_mode',Mode).
 get_pair_mode(Mode):- nonvar(Mode),get_pair_mode(TMode),!,TMode==Mode.
 get_pair_mode(Mode):- once(luser_getval('$pair_mode',Mode);next_pair_mode(Mode,_)).
 with_pair_mode(Mode,Goal):- get_pair_mode(OldMode), trusted_redo_call_cleanup( set_pair_mode(Mode), Goal, set_pair_mode(OldMode)). 
-switch_pair_mode:- get_pair_mode(Mode),next_pair_mode(Mode,NextMode),!,set_pair_mode(NextMode),show_pair_mode.
+switch_pair_mode:- get_pair_mode(Mode),next_pair_mode(Mode,NextMode),!,set_pair_mode(NextMode).
 show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), luser_getval(test_suite_name,Suite), get_indivs_mode(IndivMode),
   get_current_test(TestID),some_current_example_num(Example),!,
-  wqnl(["~N~t............ (e)xecute: ", b(q(Cmd)), "with pair mode set to: ",b(q(Mode)),
-  "with indivmode set to: ",b(q(IndivMode)),
-  "suite: ",b(q(Suite)),
-  " With selected test: ",b(q(TestID)),b(q(example(Example)))]),flush_tee_maybe.
+  (nonvar(Example)-> (SelTest=(TestID>Example)) ; SelTest=TestID),
+  wqnl([ %"~N (pair mode)",  
+  "~N suite:",b(q(Suite)), b(q(Mode)), " indiv:",b(q(IndivMode)), " selected test: ",b(q(SelTest)), ".......... (e)xecute: ", b(q(Cmd))
+    % "with pair mode set to: ",b(q(Mode)),
+  %b(q(example(Example)))
+  ]),flush_tee_maybe.
 skip_entire_suite:- never_entire_suite,!,fail.
 never_entire_suite:- ignore((get_pair_mode(entire_suite),set_pair_mode(whole_test))).
 
@@ -525,10 +527,10 @@ dont_sort_by_hard(test_names_by_fav). dont_sort_by_hard(all_arc_test_name). dont
 
 :- multifile(test_suite_name/1).
 :- dynamic(test_suite_name/1).
+test_suite_name(evaluation).
 test_suite_name(easy_solve_suite).
 test_suite_name(test_names_by_fav). 
 test_suite_name(human_t).
-test_suite_name(icecuber_fail).
 test_suite_name(is_symgrid).
 test_suite_name(sol_t).
 %test_suite_name(hard_t).
@@ -536,13 +538,14 @@ test_suite_name(key_pad_tests). % test_suite_name(alphabetical_v). test_suite_na
 %test_suite_name(test_names_by_fav_rev). 
 %test_suite_name(test_names_by_hard_rev).
 %test_suite_name(all_arc_test_name).
-test_suite_name(icecuber_pass).
 test_suite_name(dbigham_train_core).
 test_suite_name(dbigham_eval_pass).
 test_suite_name(dbigham_train_pass).
 test_suite_name(dbigham_personal).
 test_suite_name(dbigham_fail).
 test_suite_name(TS):- dir_test_suite_name(TS).
+test_suite_name(icecuber_pass).
+test_suite_name(icecuber_fail).
 test_suite_name(test_names_by_hard). 
 
 
@@ -834,9 +837,8 @@ write_test_links:-
   format('~N<pre>'))).
 
 tee_op(_):- no_tee_file,!.
-tee_op(G):- ignore(notrace(catch(call(G),_,fail))).
-
-shell_op(G):- nop(G).
+tee_op(G):- ignore(notrace(catch(call(G),E,wdmsg(G=E)))).
+shell_op(G):- tee_op(G).
 
 my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).
 

@@ -119,16 +119,55 @@ test_example_grid(G):- set_current_test(G),!,get_current_test(TestID),test_easy(
 easy_solve_by( TestID,P2):- nonvar(P2),!, copy_term(P2,P2T), findall(P2T,(easy_solve_by(TestID,P2T),P2\=@=P2T),List), member(P2,[P2|List]).
 easy_solve_by( TestID,flip_Once(_)):- get_black(Black),user:arc_test_property(TestID,common,comp(cbg(Black),i-o,grav_rot),_).
 */
-easy_solve_by(_TestID,P2):- easy_p2(P2). % easy_p2(P2).
+easy_solve_by(_TestID,use_simplified_recall(_)).
+%easy_solve_by(_TestID,P2):- easy_p2(P2). % easy_p2(P2).
+
+
 
 
 easy_p2_0(blur_or_not_least_rot90_x4):- test_hint(mass_and_area(grow_less_than_times(4),'=')).
 easy_p2_0(blur_rot90):- test_hint(mass_and_area(grow_less_than_times(1),'=')).
 easy_p2_0(unbind_and_fill_in_blanks(_Code)).
-easy_p2(repair_and_select(_How,_M)):- test_hint(input_gt,unique_color_count),
+easy_p2_0(repair_and_select(_How,_M)):- test_hint(input_gt,unique_color_count),
                                       test_hint(input_plus(1),unique_color_count).
+
+easy_p2(use_simplified_recall(_)).
 easy_p2(do_easy1(_)). %:- easy0(_,GFS).
 easy_p2(do_easy2(_,_)).
+
+color_getter_p2(unique_colors).
+color_getter_p2(colors).
+
+io_colors(I,O,IOColors):- 
+  color_getter_p2(P2),
+  once((call(P2,I,IColors),
+  call(P2,O,OColors), 
+  ignore(IColors=OColors),
+  append(IColors,OColors,IIOOColors))),
+  findall(C,(sub_term(C,IIOOColors),is_color(C)),OIColors),
+  list_to_set(OIColors,IOColors).
+
+subst_colors_with_vars(Colors,Vars,I,O):-
+ % io_colors(I,O,Colors),
+  length(Colors,CL),length(Vars,CL),
+  subst_2L(Colors,Vars,I,O).
+
+%apply_equiv_xforms(subst_colors_with_vars(Colors,Vars),II,III):- subst_colors_with_vars(Colors,Vars,II,III).
+
+use_simplified_recall(Where,II,OO):-  nop(get_current_test(Where)),get_simplified_recall(Where,II,OO).
+
+get_simplified_recall(W,I,O):- get_simplified_recall_exact(W,I,O)*->true;get_simplified_recall_close(W,I,O).
+
+get_simplified_recall_exact(d(Where),I,O):- fail,kaggle_arc(Where,_,I,O).
+
+get_simplified_recall_close(Where,II,OO):- 
+   kaggle_arc(Where,_,I,O),  
+   once((io_colors(I,O,Colors), length(Colors,CL),length(Vars,CL))),
+   PairIn = I+O,   subst_2L(Colors,Vars,PairIn,PairOut), 
+   PairOut = II+OO,
+   print_ss([simplified_recall(Colors)=I,orig=O,match=II,for=OO]).
+
+   
 
 do_easy1(C1,I,O):- easy0(_N,C1),once(grid_call(C1,I,O)),I\=@=O.
 do_easy2(C1,C2,I,O):- 
