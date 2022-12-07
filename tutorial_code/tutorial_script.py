@@ -1,4 +1,5 @@
 import json
+
 import os
 import numpy as np
 
@@ -88,7 +89,7 @@ for test_task, task_filename in zip(testing_tasks, file_names):
 # Store solution to json file named solution_teamid where our teamid is lab42
 # Store it in solution folder which is mounted
 solution_json = json.dumps(solution)
-with open('../data/solution/solution_lab42_logicmoo.json', 'w') as outfile:
+with open('../data/solution/solution_logicmoo.json', 'w') as outfile:
     outfile.write(solution_json)
 # Print that program has finished
 print("Program has finished!")

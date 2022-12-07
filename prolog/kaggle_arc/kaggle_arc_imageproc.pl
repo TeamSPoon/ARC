@@ -205,10 +205,11 @@ grow_row([C1|Row],Grid,GM):- !, copy_grid_based_on_color(C1,Grid,G1),grow_row(Ro
 grow([],       _  ,[]).
 grow([Row|Rows],Grid,G1GridO):- grow_row(Row,Grid,G1), grow(Rows,Grid,GridO),my_append(G1,GridO,G1GridO).
 
-grow_from_shape(I,O):- grow_from_shape(I,I,O).
+grow_from_shape(I,O):- max_fg_color(I,Max),mapgrid(only_this_color_or_p1(Max,var),I,Pattern),grow_from_shape(Pattern,I,O).
 grow_from_shape(Grid,I,O):- grow(Grid,I,O).
 
-
+only_this_color_or_p1(Max,_Or,Cell,Cell):- cmatch(Max,Cell),!.
+only_this_color_or_p1(_Max,P1,_Cell,Or):- call(P1,Or).
 
 no_run_dsl(GridO,_Self,GridO).
 
