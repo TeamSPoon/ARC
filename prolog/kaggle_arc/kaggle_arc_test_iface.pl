@@ -941,7 +941,9 @@ fully_test:- fully_train, !, solve_test, !.
 run_next_test:- notrace(next_test), fully_test.
 
 info(Info):- nonvar(Info),wdmsg(Info).
-system:demo:- reverse_suite,update_changes,!,clear_tee,
+system:demo:- 
+  log_catch(reverse_suite),
+  update_changes,!,clear_tee,
   begin_tee,interact.
 
 :- export(demo/0).

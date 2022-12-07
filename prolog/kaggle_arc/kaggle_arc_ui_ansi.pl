@@ -585,7 +585,9 @@ var_or_number(V):- integer(V),!.
 
 print_ss(VAR):- var(VAR),!,pp(ss_var(VAR)).
 print_ss(g(H,V,Grid)):- nonvar(Grid),!,print_grid(H,V,Grid).
+print_ss(Title):- is_list(Title), \+ is_grid(Title),!,print_side_by_side(Title).
 print_ss(Title):- print_side_by_side([Title]).
+%print_ss(Title):- is_gridoid(Title),print_side_by_side([Title]).
 
 print_ss(Title,NGrid):- print_side_by_side([Title,NGrid]).
 print_ss(IH,IV,NGrid):- var_or_number(IH),var_or_number(IV),!,print_grid(IH,IV,NGrid).

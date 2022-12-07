@@ -10,7 +10,7 @@
 :- set_prolog_flag(encoding,iso_latin_1).
 :- set_prolog_flag(stream_type_check,false).
 
-:- set_prolog_flag(use_arc_swish,false).
+:- set_prolog_flag(use_arc_plweb,false).
 :- set_prolog_flag(use_arc_bfly,false).
 % false = command line (no butterfly)
 % butterfly (arc_webui.sh)
@@ -18,7 +18,7 @@
 %
 
 :- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_bfly,true);set_prolog_flag(use_arc_bfly,false)).
-%:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(load_arc_swish,true);true).
+%:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_swish,true);true).
 :- set_prolog_flag(arc_term_expansion,false).
 
 :- dynamic('$messages':to_list/2).
@@ -184,7 +184,8 @@ pfcAddF(P):-
 :- set_prolog_flag(no_sandbox,true).
 
 
-with_webui(_Goal):- \+ current_prolog_flag(use_arc_swish,true),!.
+when_using_swish(G):- (current_prolog_flag(use_arc_swish,true)-> catch_log(G) ; true).
+with_webui(_Goal):- \+ current_prolog_flag(use_arc_plweb,true),!.
 with_webui(Goal):- ignore(when_arc_webui(catch_log(with_http(Goal)))).
 %:- initialization arc_http_server.
 
@@ -200,8 +201,7 @@ ld_logicmoo_webui.
 
 logicmoo_webui:- ld_logicmoo_webui,catch_log(call(call,webui_start_swish_and_clio)).
 
-:- ld_logicmoo_webui.
-:- (current_prolog_flag(load_arc_swish,true)->catch_log(ld_logicmoo_webui) ; true).
+:- when_using_swish(ld_logicmoo_webui).
 
     
 
@@ -454,7 +454,9 @@ arc_term_expansions(H:- (current_prolog_flag(arc_term_expansion, true), B)):-
 :- export(enable_arc_expansion/0).
 enable_arc_expansion:-
  forall(arc_term_expansions(Rule),
-   (strip_module(Rule,M,Rule0), wdmsg(asserta_if_new(Rule,M,Rule0)),asserta_if_new(Rule))),
+   (strip_module(Rule,M,Rule0), 
+     nop(wdmsg(asserta_if_new(Rule,M,Rule0))),
+     asserta_if_new(Rule))),
  set_prolog_flag(arc_term_expansion, true).
 
 :- export(disable_arc_expansion/0).
@@ -485,7 +487,7 @@ suggest_arc_user(ID):- catch((http_session:session_data(_,username(ID))),_,fail)
 
 arc_webui:-  notrace(arc_webui0).
 
-arc_webui0:- current_prolog_flag(use_arc_swish,false),!,fail.
+arc_webui0:- current_prolog_flag(use_arc_plweb,false),!,fail.
 arc_webui0:- toplevel_pp(http),!.
 arc_webui0:- in_pp(http),!.
 arc_webui0:- toplevel_pp(swish),!.
@@ -786,10 +788,10 @@ user:portray(Grid):- fail,
 
 :- catch_log(set_stream(current_output,encoding(utf8))).
 
-:- (current_prolog_flag(load_arc_swish,true)->catch_log(logicmoo_webui) ; true).
-:- current_prolog_flag(load_arc_swish,true) -> catch_log(start_arc_server) ; true.
 
-:- catch_log(set_long_message_server('https://logicmoo.org:17771')).
+:- when_using_swish(logicmoo_webui).
+:- when_using_swish(start_arc_server).
+:- when_using_swish(set_long_message_server('https://logicmoo.org:17771')).
 
 bfly_startup:-
    set_toplevel_pp(bfly),
@@ -826,3 +828,24 @@ ansi_startup:-
 :- gen_gids.
 :- test_show_colors.
 :- fmt('% Type ?- demo. % or press up arrow').
+
+load_task_states:- exists_directory('./secret_data/evaluation/'),catch_log(load_json_files(x,'./secret_data/evaluation/*.json')),!.
+load_task_states:- exists_directory('/data/evaluation/'),catch_log(load_json_files(x,'/data/evaluation/*.json')),!.
+load_task_states:- exists_directory('../../secret_data/evaluation/'),catch_log(load_json_files(x,'../../secret_data/evaluation/*.json')),!.
+
+
+run_arcathon:-
+  load_task_states,
+  catch_log(prolog),
+  catch_log(demo).
+
+save_arcathon_runner:- qsave_program('logicmoo_arcathon_runner',[stand_alone(true),verbose(true),toplevel(run_arcathon),goal(run_arcathon),% class(runtime),
+                                             class(runtime),obfuscate(true)]).
+
+save_arcathon_runner_dbg:- qsave_program('logicmoo_arcathon_runner_dbg',[stand_alone(true),verbose(true),toplevel(run_arcathon),goal(run_arcathon),% class(runtime),
+                                             class(development),obfuscate(false)]).
+
+save_arcathon_runner_devel:- qsave_program('logicmoo_arcathon_runner_devel',[stand_alone(true),verbose(true),class(development),obfuscate(false)]),
+                             save_arcathon_runner_dbg, save_arcathon_runner.
+
+
