@@ -480,7 +480,7 @@ individuator(i_nsew,[pbox_vm,maybe_alone_dots_by_color(lte(20)),nsew,diamonds,co
 individuator(i_diag,[diamonds,maybe_alone_dots_by_color(lte(20)),colormass]).
 individuator(i_pbox,[i_nsew,leftover_as_one]).
 %individuator(i_diags,[do_diags]).
-individuator(i_by_color,[by_color(0), by_color(0,wbg), by_color(0,wfg), 
+individuator(i_by_color,[by_color(0), by_color(0,wbg), by_color(0,fg), 
   reset_points, by_color(1,black),by_color(1,bg), by_color(1,fg),/* ,*/[]]).
 %individuator(i_sub_pbox,[sub_individuate(pbox_vm)]).
 %individuator(i_pbox,[maybe_pbox_vm,i_colormass]).
@@ -1822,7 +1822,7 @@ bg_shapes(Shape,VM):-
 
 into_monogrid(Orig,NewGrid):-mapgrid(bg_shaped,Orig,NewGrid).
 bg_shaped(Cell,NewCell):- is_bg_color(Cell),!,nop(decl_many_bg_colors(NewCell)),NewCell=wbg.
-bg_shaped(Cell,NewCell):- is_fg_color(Cell),!,nop(decl_many_fg_colors(_NewCell)),NewCell=wfg.
+bg_shaped(Cell,NewCell):- is_fg_color(Cell),!,nop(decl_many_fg_colors(_NewCell)),NewCell=fg.
 bg_shaped(Cell,bg):- plain_var(Cell),!.
 bg_shaped(Cell,Cell).
 
@@ -1839,7 +1839,7 @@ recolor_point(Recolors,_-Point,C-Point):-
 is_fti_step(fg_shapes).
 % =====================================================================
 fg_shaped( BGCs,Cell,wbg):- member(C,BGCs),Cell==C,!.
-fg_shaped(_BGCs,Cell,wfg):- is_fg_color(Cell),!.
+fg_shaped(_BGCs,Cell,fg):- is_fg_color(Cell),!.
 fg_shaped(_BGCs,Cell,Cell):- attvar(Cell),!.
 fg_shaped(_BGCs,Cell,bg):- plain_var(Cell),!.
 %fg_shaped(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
@@ -2725,13 +2725,13 @@ row_in_grid(C,L,LeftN,SecondRow,RightN,TexturedGrid):- nonvar(LeftN),
   (var(SecondRow)->member(SecondRow,TexturedGrid);true),
   append([LeftS,[La-Ca],_,[Lb-Cb],RightS],SecondRow),  
   (nonvar(L) -> (La==L, Lb==L) ; (La = Lb, Lb=L)),
-  (nonvar(C) -> (Ca==C, Cb==C) ; (Ca == Cb, Cb=C, C \== wbg, C \== wfg)).
+  (nonvar(C) -> (Ca==C, Cb==C) ; (Ca == Cb, Cb=C, C \== wbg, C \== fg)).
 
 row_in_grid(C,L,LeftN,SecondRow,RightN,TexturedGrid):-
   (var(SecondRow)->member(SecondRow,TexturedGrid);true),
   append([LeftS,[La-Ca],_,[Lb-Cb],RightS],SecondRow),  
   (nonvar(L) -> (La==L, Lb==L) ; (La = Lb, Lb=L)),
-  (nonvar(C) -> (Ca==C, Cb==C) ; (Ca == Cb, Cb=C, C \== wbg, C \== wfg)),  
+  (nonvar(C) -> (Ca==C, Cb==C) ; (Ca == Cb, Cb=C, C \== wbg, C \== fg)),  
   length(LeftS,LeftN), length(RightS,RightN).
 
 

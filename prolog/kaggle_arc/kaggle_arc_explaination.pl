@@ -229,7 +229,7 @@ object_glyph_colorz(Obj,Colors):-
   unique_colors(Obj,[UC|CL]),
   findall(RC,(member(FC,[UC|CL]),to_realer_color(FC,RC)),NColors),
   (nonvar(UC)-> flatten_set([NColors,UC],Colors);Colors=NColors),!.
-object_glyph_colorz(_,[wfg]).
+object_glyph_colorz(_,[fg]).
 
 object_s_glyph_long(PA, CGA):- 
  must_det_ll((

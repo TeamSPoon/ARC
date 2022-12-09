@@ -134,7 +134,7 @@ into_color_name_always(Grid,Grid).
 %into_color_name_always(C,C):- attvar(C),cant_be_color(C,_E),!.
 %into_color_name_always(_,fg).
 
-is_spec_color(V,C):- into_color_name_always(V,C),!,atom(C),!,C\==fg,C\==wfg,C\==wbg,C\==bg.
+is_spec_color(V,C):- into_color_name_always(V,C),!,atom(C),!,C\==fg,C\==fg,C\==wbg,C\==bg.
 
 is_color(CO):- attvar(CO),!,get_attr(CO,ci,_).
 is_color(CO):- is_unreal_color(CO).
@@ -144,7 +144,7 @@ is_color(CO):- is_real_color(CO).
 :- dynamic(color_decls/0).
 color_decls.
 
-is_unreal_color(C):- (C==fg; C==wfg; C==wbg ; C==bg ; C==is_colorish_var ; C==plain_var),!.
+is_unreal_color(C):- (C==fg; C==fg; C==wbg ; C==bg ; C==is_colorish_var ; C==plain_var),!.
 is_real_color(C):- atom(C),atom_concat('#',_,C),!.
 is_real_color(C):- atom(C),named_colors(L),member(C,L),!, \+ is_unreal_color(C).
 get_real_fg_color(C):- named_colors(L),member(C,L),is_fg_color(C).

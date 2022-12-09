@@ -1387,7 +1387,7 @@ print_grid_ansi(SH,SV,EH,EV,GridII):- make_bg_visible(GridII,GridI),
   nl_if_needed,!,
   once((dash_uborder_no_nl(DBW),write(''))))), 
   nop((    
-     (( \+ ground(GridI));sub_var(wbg,GridI);sub_var(bg,GridI);sub_var(wfg,GridI);sub_var(fg,GridI)),
+     (( \+ ground(GridI));sub_var(wbg,GridI);sub_var(bg,GridI);sub_var(fg,GridI);sub_var(fg,GridI)),
       grid_colors(GridI,CGrid),
       (nb_current(print_sbs,left)-> (nl,nl, write(left), write(=)) ; true),
      ppa(CGrid))).
@@ -1413,12 +1413,12 @@ print_grid_ansi(SH,SV,EH,EV,GridII):- make_bg_visible(GridII,GridI),
 %block_colors([(black),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan),'#8b4513','#2a2a2a', 9379b4 '#3a5a3a']):- silver(Silver),!.
 block_colors([('#4a2a2a'),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan), % '#104010'
                                                                                        '#8b4513','#3a5a3a','#f47c7c','#104010','#ffffff',FG]):- fg_cut(FG), silver(Silver),!.
-named_colors([(black),(blue),(red),(green),(yellow),(silver),(purple),   (orange),(cyan), (brown),  wbg,      fg,      bg,      wfg,     FG]):- fg_cut(FG).
+named_colors([(black),(blue),(red),(green),(yellow),(silver),(purple),   (orange),(cyan), (brown),  wbg,      fg,      bg,      fg,     FG]):- fg_cut(FG).
 named_colors([ (lack),(blue),(red),(green),(yellow),(Silver),(purple),(orange),(cyan),(brown)]):- silver(Silver).
 named_colors([(lack),(blue),(red),(green),(yellow),(silver),(magenta),(orange),(cyan),(brown)]).
 named_colors([(lack),(blue),(red),(green),(yellow),(grey),(pink),(orange),(teal),(maroon)]).
 
-test_show_colors:- maplist(show_color,[0,1,2,3,4,5,6,7,8,9,fg,wfg,bg,wbg,black,_,'#100010','#104010'],G),
+test_show_colors:- maplist(show_color,[0,1,2,3,4,5,6,7,8,9,fg,fg,bg,wbg,black,_,'#100010','#104010'],G),
   reverse(G,R),
   print_grid([G,R,G]),nl.
 show_color(X,N):- var(X),!,show_color('#101010',N).
@@ -1434,7 +1434,7 @@ silver('#c0c0c0').
 
 /*
 
-0=black[t] 1=blue[u] 2=red[?] 3=green[?] 4=yellow[?] 5=silver[?] 6=purple[O] 7=orange[?] 8=cyan[?] 9=brown[?] fg=fg[O] wfg=wfg[g] bg= [U] wbg=wbg[?] black=black[t] #101010=#101010[#101010] #100010=#100010[#100010] #104010=#104010[#104010]
+0=black[t] 1=blue[u] 2=red[?] 3=green[?] 4=yellow[?] 5=silver[?] 6=purple[O] 7=orange[?] 8=cyan[?] 9=brown[?] fg=fg[O] fg=fg[g] bg= [U] wbg=wbg[?] black=black[t] #101010=#101010[#101010] #100010=#100010[#100010] #104010=#104010[#104010]
    _____________________________________
   | . l ? ? ? ? O ? ? ? O g     . #101010 #100010   |
   |   #100010 #101010 .     g O ? ? ? O ? ? ? ? l . |

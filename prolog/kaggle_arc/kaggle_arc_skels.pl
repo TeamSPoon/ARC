@@ -55,7 +55,7 @@ make_bg_visible(In,Grid):- duplicate_term(In,In0),subst001(In0,blue,'#6666FF',M)
 make_bg_visible(In,Grid):- duplicate_term(In,In0),
   subst001(In0,blue,'#6666ff',M0),
   %subst001(M0,black,'#5e5656',M1),
-    subst001(M0,wfg,'#888888',M2),subst001(M2,wbg,  '#2F049C',M3),
+    subst001(M0,fg,'#888888',M2),subst001(M2,wbg,  '#2F049C',M3),
      subst001(M3,fg,'#ffffff',M4),subst001(M4,bg,   '#101030',M5),
   make_bg_visible_b(M5,Grid).
 */

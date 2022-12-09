@@ -5,7 +5,7 @@
   unless permission or license is granted (contact at business@logicmoo.org)
 */
 
-is_real_color_or_wfg(X):- (X == wfg; X == wbg),!.
+is_real_color_or_wfg(X):- (X == fg; X == wbg),!.
 is_real_color_or_wfg(X):- is_real_color(X),!.
 
 :- dynamic(gclip_cache/10).
