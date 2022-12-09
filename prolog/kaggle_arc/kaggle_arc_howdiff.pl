@@ -364,7 +364,7 @@ show_mappings(TITLE,AG,BG,BGG,APA):-
   APA = [A,PA|_Atoms],
   find_obj_mappings2(APA,BGG,Pair),  
   Pair = pair4(A,PA,B,PB),
-  must_det_ll(A\==B),
+  % must_det_ll(A\==B),
   nop(PA\==PB),
   %%debug_as_grid('show_mappings',A),
   (TITLE == "IN <- OUT" 

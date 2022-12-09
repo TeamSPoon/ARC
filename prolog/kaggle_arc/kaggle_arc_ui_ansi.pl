@@ -1512,16 +1512,18 @@ color_gl_int(C,C):-!.
 :- dynamic(now_reserved_for_color/2).
 c2s(0,'.'). c2s(1,C):- name(C,[169]). 
 
-c2s(2,C):- name(C,[174]).
-c2s(2,'r'). 
+c2s(2,C):- name(C,[174]). c2s(2,'r'). 
 
 c2s(3,'G').  c2s(4,'Y'). c2s(5,'s'). c2s(6,'v'). c2s(7,'o').
-c2s(8,'C'). c2s(9,'B'). c2s(10,'f').  c2s(11,'q'). c2s(12,'.'). c2s(13,','). c2s(14,'*'). 
+
+c2s(8,C):- name(C,[189]). c2s(8,'C').
+
+c2s(9,'B'). c2s(10,'f').  c2s(11,'q'). c2s(12,'.'). c2s(13,','). c2s(14,'*'). 
 c2g(N,W):- c2s(N,W),!.
 c2g(N,W):- C is 100+N,name(W,[C]), \+ c2s(_,W),!.
 c2g(2,W):- c2g(21,W).
 c2g(N,W):- NN is N *10, int2glyph(NN,W),!.
-%color_gl_int_g(C,W):- nonvar(C),now_reserved_for_color(W,C),!.
+color_gl_int_g(C,W):- nonvar(C),now_reserved_for_color(W,C),!.
 color_gl_int_g(C,W):- color_gl_int(C,N),number(N), c2g(N,W),!,asserta(now_reserved_for_color(W,C)).
 color_gl_int_g(C,W):- color_gl_int(C,W),!.
 

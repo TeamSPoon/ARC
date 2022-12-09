@@ -638,7 +638,7 @@ assert_object_oid(TID,Obj,Glyph,OID):-
    tid_to_gid(TID,GID),
    is_object(Obj),
    obj_iv(Obj,Iv), int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
-   atomic_list_concat(['o_',Glyph,'_',GID],OID),
+   atomic_list_concat(['o_',Glyph,'_',Iv,'_',GID],OID),
    retractall(oid_glyph_object(OID,_,_)),
    arc_assert_fast(oid_glyph_object(OID,Glyph,Obj)),
    retractall(gid_glyph_oid(GID,Glyph,_)), retractall(gid_glyph_oid(GID,_,OID)),
@@ -978,12 +978,14 @@ globalpoints(Grid,Points):- grid_to_tid(Grid,ID),findall(-(C,HV),cmem(ID,HV,C),P
 %colors(Points,CC):- is_list(Points),nth0(_,Points,C-_),is_color(C), CC = [cc(C,3)],!.
 
 all_colors(I,X):- nonvar(X),!,all_colors(I,XX),!,X=XX.
-all_colors(G,[cc(Black,0)]):-  G==[],!,get_black(Black).
-all_colors(I,X):- indv_props(I,L),functor(CC,cc,2),findall(CC,member(CC,L),X),!.
-all_colors(I,X):- is_map(I),into_grid(I,G),!,all_colors(G,X).
-all_colors(I,X):- is_object(I),indv_u_props(I,L),member(localpoints(LP),L),!,all_colors_via_pixels(LP,X).
-all_colors(G,BFO):- localpoints_include_bg(G,G0), all_colors_via_pixels(G0,BFO),!.
-all_colors(G,BFO):- all_colors_via_pixels(G,BFO),!.
+all_colors(G,[cc(fg,0),cc(bg,0),cc(Black,0)]):-  G==[],!,get_black(Black).
+
+all_colors(I,X):- indv_props(I,L),include(is_functor(cc),L,X).
+all_colors(G,X):- is_group(G),mapgroup(all_colors,G,GG),combine_results(GG,X).
+%all_colors(G,X):- is_grid(G),mapgrid(all_colors,G,GG),combine_results(GG,X).
+%all_colors(I,X):- is_map(I),into_grid(I,G),!,all_colors(G,X).
+all_colors(G,BFO):- globalpoints_include_bg(G,G0), !, all_colors_via_pixels(G0,BFO).
+%all_colors(G,BFO):- all_colors_via_pixels(G,BFO),!.
 
 colors(O,CCO):- all_colors(O,CC), into_mostly_real_colors(CC,CCO),!.
 into_mostly_real_colors(CC,CCO):- include(is_real_cc,CC,CCO),CCO\==[],!.

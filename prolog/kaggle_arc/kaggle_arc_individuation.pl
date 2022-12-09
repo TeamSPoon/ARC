@@ -127,6 +127,7 @@ merge_texture1('A',_,'A').
 progress(P):- nop(pp(progress(P))).
 progress(C,P):- nop(pp(C,progress(P))).
 
+xfer_zeros(_,_):-!.
 xfer_zeros(In,Out):- 
   is_grid(In),is_grid(Out),grid_size(In,H,V),  grid_size(Out,H,V),!,
   forall(between(1,H,Hi),forall(between(1,V,Vi),
@@ -536,9 +537,10 @@ individuator(i_mono_nsew,
   %do_ending,
   %complete_broken_lines,
   %complete_occluded,
-find_symmetry_code(VM,Grid,RepairedResult,Code):- % fail,
-  find_symmetry_code1(VM,Grid,RepairedResult,Code),!.
+find_symmetry_code(VM,Grid,RepairedResult,Code):- 
+  if_deepen_arc(find_symmetry_code1(VM,Grid,RepairedResult,Code)),!.
 
+if_deepen_arc(_):- !, fail.
 %never_repair_grid(Grid):- is_grid_symmetricD(Grid),!.
 never_repair_grid(Grid):- get_current_test(TestID),kaggle_arc_io(TestID,_,out,G),G==Grid.
 
@@ -2173,6 +2175,11 @@ is_fti_step(fg_intersections).
 % =====================================================================
 fg_intersectiond(This,Target,Target):- This =@= Target,!.
 fg_intersectiond(_,_,Black):-  get_black(Black).
+
+non_intersectiond(Black,Target,Target):- get_black(Black),!.
+non_intersectiond(Target,Black,Target):- get_black(Black),!.
+non_intersectiond(This,Target,Black):- This =@= Target, get_black(Black), !.
+non_intersectiond(This,_,That):- copy_term(This,That),!.
 
 fg_intersections(Intersection,VM):-
  ignore((

@@ -472,7 +472,7 @@ is_not_tpoint(I):- \+ is_tpoint(I).
 is_tpoint(C):- \+ compound(C),!,fail.
 is_tpoint(T/**/-P):- is_t(T),!,is_point(P).
 
-is_t(T):- atom(T), display_length(T,1).
+is_t(T):- atom(T), atom_length(T,1).
 
 is_cpoint(C):- \+ compound(C),!,fail.
 %is_cpoint(C/**/-P):- (nonvar_or_ci(C);cant_be_color(C)),!,is_nc_point(P).
@@ -548,6 +548,7 @@ is_object(O):- compound(O), O = obj(_).
 is_group([G|V]):- is_object_group([G|V]). % is_object_or_grid(G),is_list(V),maplist(is_object_or_grid,V),!.
 
 is_functor(F,E):- compound(E),functor(E,F,_).
+is_functor(F,A,E):- compound(E),functor(E,F,A).
 is_object_group(V):- is_list(V),maplist(is_functor(obj),V),!.
 is_grid_group([G|V]):- is_grid(G),is_list(V),maplist(call(is_grid),V),!.
 

@@ -10,6 +10,7 @@
 :- set_prolog_flag(encoding,iso_latin_1).
 :- set_prolog_flag(stream_type_check,false).
 
+:- set_prolog_flag(use_arc_swish,false).
 :- set_prolog_flag(use_arc_plweb,false).
 :- set_prolog_flag(use_arc_bfly,false).
 % false = command line (no butterfly)
@@ -829,23 +830,28 @@ ansi_startup:-
 :- test_show_colors.
 :- fmt('% Type ?- demo. % or press up arrow').
 
-load_task_states:- exists_directory('./secret_data/evaluation/'),catch_log(load_json_files(x,'./secret_data/evaluation/*.json')),!.
-load_task_states:- exists_directory('/data/evaluation/'),catch_log(load_json_files(x,'/data/evaluation/*.json')),!.
-load_task_states:- exists_directory('../../secret_data/evaluation/'),catch_log(load_json_files(x,'../../secret_data/evaluation/*.json')),!.
+
+load_task_states:- exists_directory('/data/evaluation/'),catch_log(load_json_files(evaluation,v,'/data/evaluation/*.json')),!.
+load_task_states:- exists_directory('./secret_data/evaluation/'),catch_log(load_json_files(evaluation,v,'./secret_data/evaluation/*.json')),!.
+load_task_states:- exists_directory('../../secret_data/evaluation/'),catch_log(load_json_files(evaluation,v,'../../secret_data/evaluation/*.json')),!.
+test_load_task_states:- load_task_states.
 
 
 run_arcathon:-
   load_task_states,
   catch_log(prolog),
   catch_log(demo).
+test_run_arcathon:- run_arcathon.
+
+test_secret_data:- wdmsg(todo_test_secret_data).
+
 
 save_arcathon_runner:- qsave_program('logicmoo_arcathon_runner',[stand_alone(true),verbose(true),toplevel(run_arcathon),goal(run_arcathon),% class(runtime),
                                              class(runtime),obfuscate(true)]).
-
 save_arcathon_runner_dbg:- qsave_program('logicmoo_arcathon_runner_dbg',[stand_alone(true),verbose(true),toplevel(run_arcathon),goal(run_arcathon),% class(runtime),
                                              class(development),obfuscate(false)]).
-
-save_arcathon_runner_devel:- qsave_program('logicmoo_arcathon_runner_devel',[stand_alone(true),verbose(true),class(development),obfuscate(false)]),
+save_arcathon_runner_devel:- qsave_program('logicmoo_arcathon_runner_devel',[stand_alone(true),verbose(true),goal(demo),class(development),obfuscate(false)]),
                              save_arcathon_runner_dbg, save_arcathon_runner.
+test_compile_arcathon:- save_arcathon_runner_devel.
 
-
+:- load_task_states.

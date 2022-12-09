@@ -404,7 +404,7 @@ if_no_peeking(_).
 test_grids(TestID,G):- get_pair_mode(entire_suite), !, kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
 test_grids(TestID,G):- get_pair_mode(whole_test), !, ensure_test(TestID), kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
 test_grids(TestID,G):- ensure_test(TestID), some_current_example_num(ExampleNum), kaggle_arc_io(TestID,ExampleNum,_IO,G).
-with_test_grids(TestID,G,P):- forall(test_grids(TestID,G),my_menu_call((ensure_test(TestID),P))).
+with_test_grids(TestID,G,P):- forall_count(test_grids(TestID,G),my_menu_call((ensure_test(TestID),P))).
 
 
 % Hides solution grid from code
@@ -451,24 +451,27 @@ print_ctest(S):- print_qtest(S).
 
 dump_suite1:-   
    get_current_suite_testnames(Set),
-   with_pair_mode(single_pair, forall(member(S,Set),print_ctest(S))).
+   with_pair_mode(single_pair, forall_count(member(S,Set),print_ctest(S))).
 
 dump_suite:-   
    get_current_suite_testnames(Set),
-   with_pair_mode(whole_test, forall(member(S,Set),print_ctest(S))).
+   with_pair_mode(whole_test, forall_count(member(S,Set),print_ctest(S))).
+
+dump_suite_sorted:-   
+   get_current_suite_testnames(Set),
+   sort_by_hard(Set,Sorted),
+   with_pair_mode(whole_test, forall_count(member(S,Sorted),print_ctest(S))).
 
 dump_not_suite:-   
    get_current_suite_testnames(Set),
-   forall(((kaggle_arc_safe(TestID,_ExampleNum,_I,_O), \+ member(TestID,Set))),
+   forall_count(((kaggle_arc_safe(TestID,_ExampleNum,_I,_O), \+ member(TestID,Set))),
     print_ctest(TestID)).
 
-dump_from_pairmode:- get_pair_mode(entire_suite),!,dump_suite.
 dump_from_pairmode:- get_pair_mode(single_pair),!,dump_suite1.
+dump_from_pairmode:- get_pair_mode(entire_suite),!,dump_suite.
 %dump_from_pairmode:- get_pair_mode(whole_test),!,dump_suite.
 dump_from_pairmode:- get_pair_mode(whole_test),!,
-  %get_current_suite_testnames(Set),
-  %forall(member(TestID,Set),
-     dump_suite,dump_not_suite.
+     dump_suite_sorted,nop(dump_not_suite).
      %forall(kaggle_arc_safe(TestID,ExampleNum,I,O),
       %  print_ss(blue,in(TestID,ExampleNum)=I,out=O)).
 
@@ -562,16 +565,23 @@ current_suite_testnames(X,Set):- nonvar(Set),current_suite_testnames(X,SetV),!,S
 current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),Set\==[],!.
 current_suite_testnames(X,Set):-  
  my_time((pp(creating(current_suite_testnames(X))), 
- findall(ID,test_suite_info(X,ID),List),List\==[],   
+ must_det_ll((
+ findall(ID,test_suite_info(X,ID),List),
+  length(List,L), pp(current_suite_testnames(X)=L),  
   my_list_to_set_variant(List,Set),
-  !,asserta(muarc_tmp:cached_tests(X,Set)))).
+  !,(ignore((Set\==[],asserta(muarc_tmp:cached_tests(X,Set))))))))).
 
 get_by_hard(X,Set):- nonvar(Set),get_by_hard(X,SetV),!,Set=SetV.
 get_by_hard(X,ByHard):- muarc_tmp:cached_tests_hard(X,ByHard),!.
-get_by_hard(X,ByHard):- my_time((pp(creating(get_by_hard(X))),  
+get_by_hard(X,ByHard):- 
+ my_time((
+  must_det_ll((
+  pp(creating(get_by_hard(X))),    
   current_suite_testnames(X,Set),
+  length(Set,L),
+  pp(get_by_hard(X)=L),  
   likely_sort(X,Set,ByHard),
-  !,asserta(muarc_tmp:cached_tests_hard(X,ByHard)))).
+  !,(ignore((ByHard\==[],asserta(muarc_tmp:cached_tests_hard(X,ByHard))))))))).
 
 
 likely_sort(X,Set,Set):- dont_sort_by_hard(X),!,pp(dont_sort_by_hard(X)).
@@ -592,17 +602,18 @@ some_test_suite_name(SuiteX):- test_suite_name(SuiteX),
   SuiteX\==test_names_by_hard_rev.
 
 
-test_suite_info(SuiteX,TestID):- var(SuiteX),!,some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
-test_suite_info(SuiteX,TestID):- test_suite_info_set(SuiteX,Set),!,member(TestID,Set).
+test_suite_info(SuiteX,TestID):- var(SuiteX),!,forall(some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID)).
+test_suite_info(SuiteX,TestID):- test_suite_testIDs(SuiteX,Set),!,member(TestID,Set).
 
-test_suite_info_set(SuiteX,Set):- muarc_tmp:cached_tests_hard(SuiteX,Set).
-test_suite_info_set(SuiteX,Set):- muarc_tmp:cached_tests(SuiteX,Set).
-test_suite_info_set(SuiteX,Set):- SuiteX==all_arc_test_name_unordered,!,findall(TestID,kaggle_arc(TestID,trn+0,_,_),Set).
-test_suite_info_set(SuiteX,Set):- findall(TestID_C,test_suite_info_1(SuiteX,TestID_C),List),
-  list_to_set(List,Set),asserta(muarc_tmp:cached_tests(SuiteX,Set)).
+test_suite_testIDs(SuiteX,Set):- muarc_tmp:cached_tests_hard(SuiteX,Set).
+test_suite_testIDs(SuiteX,Set):- muarc_tmp:cached_tests(SuiteX,Set).
+test_suite_testIDs(SuiteX,Set):- SuiteX==all_arc_test_name_unordered,!,findall(TestID,kaggle_arc(TestID,trn+0,_,_),Set).
+test_suite_testIDs(SuiteX,Set):- 
+  findall(TestID_C,test_suite_info_1(SuiteX,TestID_C),List),
+  list_to_set(List,Set),ignore((Set\==[],asserta(muarc_tmp:cached_tests(SuiteX,Set)))).
 
 test_suite_info_1(SuiteX,TestID):- var(SuiteX),!,some_test_suite_name(SuiteX),test_suite_info_1(SuiteX,TestID).
-test_suite_info_1(ADir,TestID):- dir_test_suite_name(ADir),some_test_info_prop(TestID,test_suite([ADir])).
+test_suite_info_1(ADir,TestID):- /*dir_test_suite_name(ADir),*/ some_test_info_prop(TestID,test_suite([ADir])).
 test_suite_info_1(icecuber_fail,TestID):- !, icu(Name,PF),PF == -1,atom_id_e(Name,TestID).
 test_suite_info_1(icecuber_pass,TestID):- !, icu(Name,PF),PF \== -1,atom_id_e(Name,TestID).
 test_suite_info_1(dbigham_fail,TestID):- !, all_arc_test_name(TestID),
@@ -942,7 +953,7 @@ run_next_test:- notrace(next_test), fully_test.
 
 info(Info):- nonvar(Info),wdmsg(Info).
 system:demo:- 
-  log_catch(reverse_suite),
+  catch_log(reverse_suite),
   update_changes,!,clear_tee,
   begin_tee,interact.
 
@@ -975,6 +986,9 @@ next_grid_mode(dots,dashes):-!.
 next_grid_mode(_,dots).
 switch_grid_mode:- (luser_getval('$grid_mode',Dots);Dots=dots),next_grid_mode(Dots,Dashes),luser_setval('$grid_mode',Dashes).
 
+with_next_grid_mode(Goal):- 
+  (luser_getval('$grid_mode',Dots);Dots=dots),next_grid_mode(Dots,Dashes), with_luser('$grid_mode',Dashes,Goal).
+
 as_d_grid(In,In):- \+ luser_getval('$grid_mode',dashes),!.
 as_d_grid(In,In1):- as_ngrid(In,In1),!.
 as_ngrid(In,In1):- must_det_ll((change_bg_fg(In, _BG, _FG,In0), most_d_colors(In0,_CI,In1))),!.
@@ -1001,6 +1015,23 @@ print_qtest(TestID):- print_single_pair(TestID),!.
 print_single_pair:-
    with_pair_mode(single_pair, print_qtest).
 
+get_thingy(In,Out,Gets):- 
+  findall(W=GetO,(get_thingy1(In,Out,W,Get),nop(mass(Get,M)->M>0),most_d_colors(Get,_,GetO)),Gets).
+
+get_thingy1(In,Out,"I minus O",NewGrid):-  maplist_ignore(fg_subtractiond,In,Out,NewGrid).
+get_thingy1(Out,In,"O shared I",NewGrid):-  maplist_ignore(fg_intersectiond,In,Out,NewGrid).
+get_thingy1(Out,In,"O minus I",NewGrid):-  maplist_ignore(fg_subtractiond,In,Out,NewGrid).
+get_thingy1(Out,In,"O non_intersectiond I",NewGrid):-  maplist_ignore(non_intersectiond,In,Out,NewGrid).
+get_thingy1(In,Out,"I non_intersectiond O",NewGrid):- maplist_ignore(non_intersectiond,In,Out,NewGrid).
+get_thingy1(In,_,"IN-NGRID",In).
+get_thingy1(_,Out,"OUT-NGRID",Out).
+%easy_diff_idea(In1,Out1,MInfo):- 
+easy_diff_idea(TestID,ExampleNum,In,Out,[NameIn=In,(NameOut+TestID)=Out|Get]):- fail, is_grid(Out),
+  ignore(in_out_name(ExampleNum,NameIn,NameOut)),
+  get_thingy(In,Out,Get).
+easy_diff_idea(TestID,ExampleNum,In,Out,[NameIn=In,(NameOut+TestID)=Out]):-
+  ignore(in_out_name(ExampleNum,NameIn,NameOut)).
+
 
 print_single_pair(TName):-
  must_det_ll((
@@ -1012,17 +1043,18 @@ print_single_pair(TName):-
      write('%= '), parcCmt(TestID))).
 
 print_single_pair(TestID,ExampleNum,In,Out):-
-   as_d_grid(In,In1),as_d_grid(Out,Out1),
+   as_d_grid(In,In1),as_d_grid(Out,Out1),   
    xfer_zeros(In1,Out1),
-   ignore(in_out_name(ExampleNum,NameIn,NameOut)),
+   easy_diff_idea(TestID,ExampleNum,In1,Out1,LIST),
    format('~Ntestcase(~q,"\n~@").~n~n~n',
      [TestID>ExampleNum,
-       print_side_by_side(cyan,In1,NameIn,_LW,Out1,NameOut+TestID)]),
+       print_side_by_side(LIST)]),
    format('~N'),
-   nop((grid_hint_swap(i-o,In1,Out1))),
+   %ignore((grid_hint_swap(i-o,In,Out))),
    format('~N'),
    ignore(show_reduced_io_rarely(In1+Out1)),!.
 
+other_grid_mode(I+O,II+OO):- with_next_grid_mode((as_d_grid(I,II),as_d_grid(O,OO))).
 
 in_out_name(trn+NN,SI,SO):- N is NN+1, format(atom(SI),'Training Pair #~w Input',[N]),format(atom(SO),'Output',[]).
 in_out_name(tst+NN,SI,SO):- N is NN+1, format(atom(SI),'EVALUATION TEST #~w',[N]),format(atom(SO),'Output<(REVEALED)>',[]).
@@ -1070,7 +1102,7 @@ test_info_no_loop(TestID,Sol):- muarc_tmp:test_info_cache(TestID,Sol),!. % test_
 %test_info_no_loop(TestID,Sol):- some_test_info(TestID,Sol).
 
 ensure_test_info:- muarc_tmp:test_info_cache(_,_)-> true ; ( pp(recreating(test_info)),
-  forall(all_arc_test_name_unordered(TestID),test_info_recache(TestID,_))).
+  forall_count(all_arc_test_name_unordered(TestID),test_info_recache(TestID,_))).
 
 
 test_info(TestID,InfoS):- var(TestID),   var(InfoS), !, ensure_test_info,!, test_info_no_loop(TestID,InfoS).
@@ -1199,11 +1231,12 @@ pair_cost(TestID,Cost):- kaggle_arc(TestID,(trn+_),I,O),
  maplist(length,[S,LO,RO],[SN,LON,RON]),
  Cost is (IH+OH)*(IV+OV)*(LON+1)*(RON+1).
 
-hardness_of_name(TestID,Sum+Dif+TArea):-
+hardness_of_name(TestID,TMass+TArea+Sum+Dif):-
  kaggle_arc(TestID,(trn+0),I,O),
- area(I,IArea),area(O,OArea),TArea is IArea*OArea,
- unique_colors(I,II),unique_colors(O,OO),length(II,IL), length(OO,OL), Sum is IL+OL,
- intersection(II,OO,Same,IU,OU),length(IU,IUL), length(OU,OUL), Dif is IUL+OUL,
+ area(I,IArea),area(O,OArea),TArea is -IArea*OArea,
+ mass(I,IMass),mass(O,OMass),TMass is -(IMass+OMass),
+ unique_colors(I,II),unique_colors(O,OO),length(II,IL), length(OO,OL), Sum is -(IL+OL),
+ intersection(II,OO,Same,IU,OU),length(IU,IUL), length(OU,OUL), Dif is -(IUL+OUL),
  
  
  !.
@@ -1610,7 +1643,7 @@ color_sym(_,_,C,Sym):- enum_colors(C),color_int(C,I),nth1(I,`ose=xt~+*zk>`,S),na
 %color_sym(P*T,_,C,Sym):- enum_colors(C),color_int(C,I),S is P+I*T,name(Sym,[S]).
 
 
-with_current_test(P1):- get_pair_mode(enire_suite),!,forall(all_arc_test_name(TestID),call(P1,TestID)).
+with_current_test(P1):- get_pair_mode(enire_suite),!,forall_count(all_arc_test_name(TestID),call(P1,TestID)).
 with_current_test(P1):- ensure_test(TestID), call(P1,TestID).
 
 first_cmpd_goal(GG,_):- \+ compound(GG),!,fail.

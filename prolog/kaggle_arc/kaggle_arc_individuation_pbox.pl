@@ -50,8 +50,8 @@ need_pboxes(VM):-
   testid_name_num_io(VM.id,TestID,_Example,_Num,IO),!,
   forall(kaggle_arc_io(TestID,trn+_,IO,G), \+ \+ (whole_row_or_col(C,G),C\==black)). 
 
-whole_row_or_col(C,Center):- member(Row,Center), maplist(=(C),Row).
-whole_row_or_col(C,Center):- Center\==[], Center\==[[]], rot90(Center,Cols),member(Col,Cols), maplist(=(C),Col).
+whole_row_or_col(C,Center):- member(Row,Center), maplist(=(C),Row),!.
+whole_row_or_col(C,Center):- Center\==[], Center\==[[]], rot90(Center,Cols),member(Col,Cols), maplist(=(C),Col),!.
 not_whole_row_or_col(C,Center):- \+ whole_row_or_col(C,Center).
 
 
@@ -64,8 +64,9 @@ pbox_vm(VM):- !,
    GH is round(VM.h + 0), GV is round(VM.v + 0),
    findall(size2D(H,V),(l_s_4sides(H,V),H=<GH),_Sizes_L_S),
    findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L),
-   GridI=VM.grid_o,
+   GridI0=VM.grid_o,
    get_black(Black),
+   subst_2L([wbg,bg],[Black,Black],GridI0,GridI),
    mapgrid(assign_plain_var_with(Black),GridI,GridM),
    shoot_lines_on_black_grid(GridM,Grid),
    add_top_bot_left_right(Top,_T,Grid,_B,Bot,LLeft,_LL,_RR,RRight,XSG),
@@ -74,7 +75,7 @@ pbox_vm(VM):- !,
    %intersection(TColors,BColors,BlackAndBorderV), intersection(LColors,RColors,BlackAndBorderH),
    %writeln(blackAndBorderHV=[BlackAndBorderH,BlackAndBorderV]),   
    maplist_ls(=(N),Top), maplist_ls(=(S),Bot), maplist_ls(=(W),LLeft), maplist_ls(=(E),RRight),
-   maplist_ls(=(N),Top2), maplist_ls(=(S),Bot2), maplist_ls(=(W),LLeft2), maplist_ls(=(E),RRight2),
+   maplist_ls(=(N),Top2), maplist_ls(=(S),Bot2), maplist_ls(=(W),LLeft2), maplist_ls(=(E),RRight2),!,
    % nth1(1,XSG,RTop),maplist_ls(=(N),RTop), last(XSG,RBot),maplist_ls(=(S),RBot),
    if_t( \+ (GH<4,GV<4),if_t(find_gridline_color(Grid,C),if_t(C\==black,NSEW=[C,C,C,C]))),
    NSEW=[N,S,E,W],
@@ -97,7 +98,7 @@ begin_i_pbox_l(Grid,NSEW,XSG,Points5,Points9,VM,S_L,Sizes_S_L):-
 
    %nop(i_pbox(VM,l_s(2),SizesRectS)), nop(i_pbox(VM,s_l(2),SizesSquareR)), nop(i_pbox(VM,s_l(2),SizesRectR)).
 
-colors_of(T,TColors):- list_to_set(T,TColors).
+%colors_of(T,TColors):- list_to_set(T,TColors).
 
 shoot_lines_on_black_grid(Grid,Grid):-!.
 shoot_lines_on_black_grid(Grid,GridO):- find_gridline_color(Grid,C), \+ is_black(C),!,GridO=Grid.
@@ -298,12 +299,13 @@ maybe_swap(C1,C2,C1,C2). maybe_swap(C1,C2,C2,C1).
 experiment(G):- call(G).
 
 %list_to_set_bf([L|List],SetOL):- is_list(L),!,maplist(list_to_set_bf,[L|List],SetOL).
-list_to_set_bf(List,SetO):- list_to_set(List,Set), ( (select(B,Set,R), B==black) -> SetO=[black|R] ; SetO=Set).
+list_to_set_bf(List,SetO):- sort(List,Set), ( (select(B,Set,R), B==black) -> SetO=[black|R] ; SetO=Set).
 maplist_ls(P1,List):- flatten_set_bf(List,Set),maplist(P1,Set).
 member_ls(P1,List):- flatten_set_bf(List,Set),member(P1,Set).
 black_and(F,C):- flatten_set_bf(F,[Black,C]), Black == black.
 member1(C,N):- select(CC,N,R), C==CC, \+ (member(C2,R),C2==C).
-flatten_set_bf(F,S):- flatten([F],L),list_to_set_bf(L,BF),!,BF=S.
+flatten_set_bf([F|Rest],S):- is_list(F),!,append([F|Rest],L),!,list_to_set_bf(L,BF),!,BF=S.
+flatten_set_bf(F,S):- list_to_set_bf(F,BF),!,BF=S.
 
 
 i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- Points==[], !, wdmsg(pointless(L_S)).
@@ -321,6 +323,7 @@ i_pbox_l(Grid,NSEW,XSG,Points,Points9,VM,L_S,[size2D(H,V)|Sizes]):-
   once((maplist(flatten_set_bf,[Center,Inside,Find],[CenterS,InsideS,FindS]),
   maplist(list_to_set_bf,IBorder,IBorderS),
   maplist(list_to_set_bf,OBorder,OBorderS))),
+  InsideS\==[black],
   %member(Which,[center,inside]),
   once(found_box(L_S,NSEW,FH,FV,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS, Which,WHY)),
   (Which=@=find -> (OBJ=Find,OH is FH-1, OV is FV-1) ;
