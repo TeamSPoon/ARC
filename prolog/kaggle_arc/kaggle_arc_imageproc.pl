@@ -62,10 +62,10 @@ assign_plain_var_with(_,V,V).
 
 pixel_colors0(GH,CC):- 
   term_singletons(GH,TS),
-  maplist(assign_plain_var_with(wbg),TS,TS),
+  maplist(assign_plain_var_with(bg),TS,TS),
   pixel_colors1(GH,CC).
 
-pixel_colors1(GH,CC):- is_grid(GH),!,mapgrid(only_color_data_or(wbg),GH,Cs),append(Cs,CC).
+pixel_colors1(GH,CC):- is_grid(GH),!,mapgrid(only_color_data_or(bg),GH,Cs),append(Cs,CC).
   %include(
   %term_singletons(Cs,Ss),include(is_colorish,Ss,CC),!.
 
@@ -112,7 +112,7 @@ some_colors_count(G,CC):-
 enum_colors_test(C):- no_repeats(C,enum_colors_test0(C)).
 enum_colors_test0(C):- get_bgc(C).
 enum_colors_test0(C):- get_black(Black),C=Black, \+ enum_fg_colors(C).
-enum_colors_test0(C):- enum_fg_colors(C), C \== wbg, C\== '#444455'.
+enum_colors_test0(C):- enum_fg_colors(C), C \== bg, C\== '#444455'.
 enum_colors_test0(fg).
 enum_colors_test0(bg).
 enum_colors_test0(is_colorish_var).
@@ -810,7 +810,7 @@ calc_add_point1(OH,OV,Grid,Point):- point_to_hvc(Point,H,V,C),!, add_offset_h_v_
 
 
 %calc_add_points(OH,OV,_,Obj):- plain_var(Obj),arcST,trace_or_throw(var_calc_add_points(OH,OV,Obj)).
-%calc_add_points(OH,OV,Grid,Point):- is_nc_point(Point),!, HH is H -OH +1, VV is V - OV +1,  add_h_v_c(Grid,HH,VV,wfg).
+%calc_add_points(OH,OV,Grid,Point):- is_nc_point(Point),!, HH is H -OH +1, VV is V - OV +1,  add_h_v_c(Grid,HH,VV,fg).
 calc_add_point1(OH,OV,Grid,Obj):- trace,globalpoints(Obj,Points),!,maplist(calc_add_point1(OH,OV,Grid),Points).
 %calc_add_points(_OH,_OV,_,obj(_)):-
 

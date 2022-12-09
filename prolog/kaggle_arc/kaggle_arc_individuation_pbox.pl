@@ -5,7 +5,7 @@
   unless permission or license is granted (contact at business@logicmoo.org)
 */
 
-is_real_color_or_wfg(X):- (X == wfg; X == wbg),!.
+is_real_color_or_wfg(X):- (X == fg; X == bg),!.
 is_real_color_or_wfg(X):- is_real_color(X),!.
 
 :- dynamic(gclip_cache/10).
@@ -66,7 +66,7 @@ pbox_vm(VM):- !,
    findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L),
    GridI0=VM.grid_o,
    get_black(Black),
-   subst_2L([wbg,bg],[Black,Black],GridI0,GridI),
+   subst_2L([bg,bg],[Black,Black],GridI0,GridI),
    mapgrid(assign_plain_var_with(Black),GridI,GridM),
    shoot_lines_on_black_grid(GridM,Grid),
    add_top_bot_left_right(Top,_T,Grid,_B,Bot,LLeft,_LL,_RR,RRight,XSG),
@@ -104,7 +104,7 @@ shoot_lines_on_black_grid(Grid,Grid):-!.
 shoot_lines_on_black_grid(Grid,GridO):- find_gridline_color(Grid,C), \+ is_black(C),!,GridO=Grid.
 shoot_lines_on_black_grid(Grid,GridO):- Color=black,
   h_and_v(shoot_lines_on_colored_row(LC,Color),Grid,GridO),
-  LC=wbg.
+  LC=bg.
 
 % back half contains middle if odd V
 grid_halves(Grid,Left,Odd,Right):- length(Grid,L), (is_odd(L)->Odd=odd;Odd=even), M is floor(L/2), length(Left,M), append(Left,Right,Grid).

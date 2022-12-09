@@ -423,7 +423,7 @@ sub_individuation_macro(S,Some):-
     From],Some).
 
 
-include_black(_VM):- set_bgc(wbg).
+include_black(_VM):- set_bgc(bg).
 
 % 1204
 %individuation_macros(complete, [parallel,done]).
@@ -480,7 +480,7 @@ individuator(i_nsew,[pbox_vm,maybe_alone_dots_by_color(lte(20)),nsew,diamonds,co
 individuator(i_diag,[diamonds,maybe_alone_dots_by_color(lte(20)),colormass]).
 individuator(i_pbox,[i_nsew,leftover_as_one]).
 %individuator(i_diags,[do_diags]).
-individuator(i_by_color,[by_color(0), by_color(0,wbg), by_color(0,wfg), 
+individuator(i_by_color,[by_color(0), by_color(0,bg), by_color(0,fg), 
   reset_points, by_color(1,black),by_color(1,bg), by_color(1,fg),/* ,*/[]]).
 %individuator(i_sub_pbox,[sub_individuate(pbox_vm)]).
 %individuator(i_pbox,[maybe_pbox_vm,i_colormass]).
@@ -668,7 +668,7 @@ gather_texture(VM):-
     append(BGPoints,NFGPoints,NPoints),
     maplist(remove_texture,NPoints,CPoints),!,
     points_to_grid(H,V,CPoints,NewGrid0),!,
-    mapgrid(assign_plain_var_with(wbg),NewGrid0,NewGrid),
+    mapgrid(assign_plain_var_with(bg),NewGrid0,NewGrid),
     set(VM.points_o)=CPoints,
     set(VM.grid)=NewGrid,
     as_ngrid(NewGrid,NewGMap),!,
@@ -1451,7 +1451,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
 
 
 into_grid_d(Grid,Grid_D):- most_d_colors(Grid,_CI,Grid_D),!.
-%must_det_ll((subst001(Grid,black,wbg,TexturedGrid), most_d_colors(TexturedGrid,_CI,Grid_D))),
+%must_det_ll((subst001(Grid,black,bg,TexturedGrid), most_d_colors(TexturedGrid,_CI,Grid_D))),
 
 transfer_missing(ArgVM,VM):-
      dict_pairs(ArgVM,_,Pairs),
@@ -1821,8 +1821,8 @@ bg_shapes(Shape,VM):-
   addInvObjects(VM,ReColored))),!.
 
 into_monogrid(Orig,NewGrid):-mapgrid(bg_shaped,Orig,NewGrid).
-bg_shaped(Cell,NewCell):- is_bg_color(Cell),!,nop(decl_many_bg_colors(NewCell)),NewCell=wbg.
-bg_shaped(Cell,NewCell):- is_fg_color(Cell),!,nop(decl_many_fg_colors(_NewCell)),NewCell=wfg.
+bg_shaped(Cell,NewCell):- is_bg_color(Cell),!,nop(decl_many_bg_colors(NewCell)),NewCell=bg.
+bg_shaped(Cell,NewCell):- is_fg_color(Cell),!,nop(decl_many_fg_colors(_NewCell)),NewCell=fg.
 bg_shaped(Cell,bg):- plain_var(Cell),!.
 bg_shaped(Cell,Cell).
 
@@ -1838,8 +1838,8 @@ recolor_point(Recolors,_-Point,C-Point):-
 % =====================================================================
 is_fti_step(fg_shapes).
 % =====================================================================
-fg_shaped( BGCs,Cell,wbg):- member(C,BGCs),Cell==C,!.
-fg_shaped(_BGCs,Cell,wfg):- is_fg_color(Cell),!.
+fg_shaped( BGCs,Cell,bg):- member(C,BGCs),Cell==C,!.
+fg_shaped(_BGCs,Cell,fg):- is_fg_color(Cell),!.
 fg_shaped(_BGCs,Cell,Cell):- attvar(Cell),!.
 fg_shaped(_BGCs,Cell,bg):- plain_var(Cell),!.
 %fg_shaped(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
@@ -1854,7 +1854,7 @@ fg_shapes(Shape,VM):-
 
   colors_across(Grid,Silvers),
   get_black(Black),
-  BGCs = [Black,wbg,bg|Silvers],
+  BGCs = [Black,bg,bg|Silvers],
   mapgrid(fg_shaped(BGCs),Grid,NewGrid),
   var(OID),
   other_grid(VM.grid_o,Other),
@@ -2692,12 +2692,12 @@ rectangles(VM):-
     print_ss(red,TexturedGrid,texture,_,Retextured,no_squares))).
 
 maybe_subst_grid_type(V,V):- var(V),!.
-maybe_subst_grid_type(E-C,'+'-C):- nonvar(E), arg(_,t('A','<','y','>','/','\\','=','!'),E). %,ignore(C=wbg).
-maybe_subst_grid_type(E-C,'*'-C):- arg(_,t('v','A'),E). %,ignore(C=wbg).
-%maybe_subst_grid_type(E-C,'.'-C):- arg(_,t('|','-'),E),ignore(C=wbg).
+maybe_subst_grid_type(E-C,'+'-C):- nonvar(E), arg(_,t('A','<','y','>','/','\\','=','!'),E). %,ignore(C=bg).
+maybe_subst_grid_type(E-C,'*'-C):- arg(_,t('v','A'),E). %,ignore(C=bg).
+%maybe_subst_grid_type(E-C,'.'-C):- arg(_,t('|','-'),E),ignore(C=bg).
 maybe_subst_grid_type(A,A).
-maybe_wbg(E-V,E-wbg):- var(V),!.
-maybe_wbg(V,wbg):- var(V),!.
+maybe_wbg(E-V,E-bg):- var(V),!.
+maybe_wbg(V,bg):- var(V),!.
 maybe_wbg(X,X).
 
 unbind_list(L,O):- length(L,N),length(O,N),!.
@@ -2725,13 +2725,13 @@ row_in_grid(C,L,LeftN,SecondRow,RightN,TexturedGrid):- nonvar(LeftN),
   (var(SecondRow)->member(SecondRow,TexturedGrid);true),
   append([LeftS,[La-Ca],_,[Lb-Cb],RightS],SecondRow),  
   (nonvar(L) -> (La==L, Lb==L) ; (La = Lb, Lb=L)),
-  (nonvar(C) -> (Ca==C, Cb==C) ; (Ca == Cb, Cb=C, C \== wbg, C \== wfg)).
+  (nonvar(C) -> (Ca==C, Cb==C) ; (Ca == Cb, Cb=C, C \== bg, C \== fg)).
 
 row_in_grid(C,L,LeftN,SecondRow,RightN,TexturedGrid):-
   (var(SecondRow)->member(SecondRow,TexturedGrid);true),
   append([LeftS,[La-Ca],_,[Lb-Cb],RightS],SecondRow),  
   (nonvar(L) -> (La==L, Lb==L) ; (La = Lb, Lb=L)),
-  (nonvar(C) -> (Ca==C, Cb==C) ; (Ca == Cb, Cb=C, C \== wbg, C \== wfg)),  
+  (nonvar(C) -> (Ca==C, Cb==C) ; (Ca == Cb, Cb=C, C \== bg, C \== fg)),  
   length(LeftS,LeftN), length(RightS,RightN).
 
 
@@ -3039,7 +3039,7 @@ recompute_points(VM):-
     gset(VM.points)= LeftOver,
     gset(VM.grid)= NewGrid)).
 
-add_missing(Plain,wbg):- plain_var(Plain).
+add_missing(Plain,bg):- plain_var(Plain).
 add_missing(X,X).
 % =====================================================================
 is_fti_step(leftover_as_one).

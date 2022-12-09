@@ -1233,7 +1233,7 @@ color_print_webui(C,G):- mbfy(cpwui(C,G)).
 
 cpwui(_,G):- G==' ',!,write_nbsp.
 cpwui(C,G):- multivalued_peek_color(C,W),cpwui(W,G).
-cpwui(C,G):- is_bg_sym_or_var_ui(C),!,cpwui(wbg,G).
+cpwui(C,G):- is_bg_sym_or_var_ui(C),!,cpwui(bg,G).
 
 cpwui([],G):- !, bformatc(G).
 cpwui([C|CC],G):- !,wots(S,cpwui(C,G)),cpwui(CC,S).
@@ -1250,7 +1250,7 @@ cpwui(hfg(C),G):- !, cpwui([C,style('brightness','200%')],G).
 cpwui(style(C),G):- !, format('<font style="~w">~@</font>',[C,bformatc_or_at(G)]).
 cpwui(style(N,V),G):- !, format('<font style="~w: ~w;">~@</font>',[N,V,bformatc_or_at(G)]).
 cpwui(C,G):- get_black(Black),C==Black,!, cpwui(style('opacity: 0.5;'),G).
-cpwui(C,G):- C==wbg,!,cpwui([black,black],G).
+cpwui(C,G):- C==bg,!,cpwui([black,black],G).
 
 cpwui(fg(C),G):- !, format('<font color="~w" style="font-weight: bold;">~@</font>',[C,bformatc_or_at(G)]),!.
 cpwui(color(C),G):- !, format('<font color="~w">~@</font>',[C,bformatc_or_at(G)]).
@@ -1387,7 +1387,7 @@ print_grid_ansi(SH,SV,EH,EV,GridII):- make_bg_visible(GridII,GridI),
   nl_if_needed,!,
   once((dash_uborder_no_nl(DBW),write(''))))), 
   nop((    
-     (( \+ ground(GridI));sub_var(wbg,GridI);sub_var(bg,GridI);sub_var(wfg,GridI);sub_var(fg,GridI)),
+     (( \+ ground(GridI));sub_var(bg,GridI);sub_var(bg,GridI);sub_var(fg,GridI)),
       grid_colors(GridI,CGrid),
       (nb_current(print_sbs,left)-> (nl,nl, write(left), write(=)) ; true),
      ppa(CGrid))).
@@ -1413,12 +1413,12 @@ print_grid_ansi(SH,SV,EH,EV,GridII):- make_bg_visible(GridII,GridI),
 %block_colors([(black),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan),'#8b4513','#2a2a2a', 9379b4 '#3a5a3a']):- silver(Silver),!.
 block_colors([('#4a2a2a'),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan), % '#104010'
                                                                                        '#8b4513','#3a5a3a','#f47c7c','#104010','#ffffff',FG]):- fg_cut(FG), silver(Silver),!.
-named_colors([(black),(blue),(red),(green),(yellow),(silver),(purple),   (orange),(cyan), (brown),  wbg,      fg,      bg,      wfg,     FG]):- fg_cut(FG).
+named_colors([(black),(blue),(red),(green),(yellow),(silver),(purple),   (orange),(cyan), (brown),  bg,      fg,      bg,      fg,     FG]):- fg_cut(FG).
 named_colors([ (lack),(blue),(red),(green),(yellow),(Silver),(purple),(orange),(cyan),(brown)]):- silver(Silver).
 named_colors([(lack),(blue),(red),(green),(yellow),(silver),(magenta),(orange),(cyan),(brown)]).
 named_colors([(lack),(blue),(red),(green),(yellow),(grey),(pink),(orange),(teal),(maroon)]).
 
-test_show_colors:- maplist(show_color,[0,1,2,3,4,5,6,7,8,9,fg,wfg,bg,wbg,black,_,'#100010','#104010'],G),
+test_show_colors:- maplist(show_color,[0,1,2,3,4,5,6,7,8,9,fg,fg,bg,bg,black,_,'#100010','#104010'],G),
   reverse(G,R),
   print_grid([G,R,G]),nl.
 show_color(X,N):- var(X),!,show_color('#101010',N).
@@ -1434,7 +1434,7 @@ silver('#c0c0c0').
 
 /*
 
-0=black[t] 1=blue[u] 2=red[?] 3=green[?] 4=yellow[?] 5=silver[?] 6=purple[O] 7=orange[?] 8=cyan[?] 9=brown[?] fg=fg[O] wfg=wfg[g] bg= [U] wbg=wbg[?] black=black[t] #101010=#101010[#101010] #100010=#100010[#100010] #104010=#104010[#104010]
+0=black[t] 1=blue[u] 2=red[?] 3=green[?] 4=yellow[?] 5=silver[?] 6=purple[O] 7=orange[?] 8=cyan[?] 9=brown[?] fg=fg[O] fg=fg[g] bg= [U] bg=bg[?] black=black[t] #101010=#101010[#101010] #100010=#100010[#100010] #104010=#104010[#104010]
    _____________________________________
   | . l ? ? ? ? O ? ? ? O g     . #101010 #100010   |
   |   #100010 #101010 .     g O ? ? ? O ? ? ? ? l . |
@@ -1667,7 +1667,7 @@ mregression_test(P1):- call(P1,[[_17910,_17922-green,_17934-green,_17946-green,_
 %print_g1(C):- compound_var(C,N),underline_print(print_g1(N)),!.
 
 print_g1(CG):- print_g1(color_print_ele,CG).
-print_g1(P2,C):- C == ((+) - wbg),!,call(P2,wbg,(+)).
+print_g1(P2,C):- C == ((+) - bg),!,call(P2,bg,(+)).
 print_g1(P2,C):- multivalued_peek_color(C,V),C\==V,!,print_g1(P2,V).
 print_g1(P2,C):- plain_var(C), write_nbsp,!, nop(( nobject_glyph(C,G),underline_print(print_g1(P2,G-G)))),!.
 print_g1(_ ,C):- get_black(Black),C == Black,!, write_nbsp.
@@ -1706,7 +1706,7 @@ into_color_glyph_ez(CTerm,Color,Code):-
 
 %into_color_glyph(H,V,CTerm,Color,Code):- fail, get_grid_num_xyc(H,V,SColor,SNth),into_color_glyph(SColor+SNth+CTerm,Color,Code),nonvar_or_ci(Code).
 
-into_color_glyph(C,wbg,VAR):- plain_var(C),var_dot(VAR),!.
+into_color_glyph(C,bg,VAR):- plain_var(C),var_dot(VAR),!.
 into_color_glyph(N,C,DOT):- is_bg_color(N),get_bgc(C),bg_dot(DOT).
 into_color_glyph(N,C,DOT):- is_spec_fg_color(N,C),fg_dot(DOT).
 into_color_glyph(N,C,DOT):- is_fg_color(N),N=C,fg_dot(DOT).

@@ -999,7 +999,7 @@ change_bg_fg(In,BG,FG,Mid):-
    get_black(Black),Black=BG,
    must_det_ll((available_fg_colors(Avails),
    unique_colors(In,Colors),subtract(Avails,Colors,CanUse),
-   ((fail,last(CanUse,FG))->true;FG=wbg),subst001(In,BG,FG,Mid))),!.
+   ((fail,last(CanUse,FG))->true;FG=bg),subst001(In,BG,FG,Mid))),!.
 
 available_fg_colors(Avails):- findall(Color,enum_fg_colors(Color),Avails).
 

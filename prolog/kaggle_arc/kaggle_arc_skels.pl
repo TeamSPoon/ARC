@@ -55,7 +55,7 @@ make_bg_visible(In,Grid):- duplicate_term(In,In0),subst001(In0,blue,'#6666FF',M)
 make_bg_visible(In,Grid):- duplicate_term(In,In0),
   subst001(In0,blue,'#6666ff',M0),
   %subst001(M0,black,'#5e5656',M1),
-    subst001(M0,wfg,'#888888',M2),subst001(M2,wbg,  '#2F049C',M3),
+    subst001(M0,fg,'#888888',M2),subst001(M2,bg,  '#2F049C',M3),
      subst001(M3,fg,'#ffffff',M4),subst001(M4,bg,   '#101030',M5),
   make_bg_visible_b(M5,Grid).
 */
@@ -66,7 +66,7 @@ make_bg_visible_b(In,Grid):- is_list(In),!,maplist(make_bg_visible_b,In,Grid).
 make_bg_visible_b(C-P,CC-P):- !, make_bg_visible_c(C,CC).
 make_bg_visible_b(In,Grid):- make_bg_visible_c(In,Grid).
 
-make_bg_visible_c(In,wbg):- plain_var(In),!.
+make_bg_visible_c(In,bg):- plain_var(In),!.
 make_bg_visible_c(In,In):- var(In),!.
 make_bg_visible_c(In,Grid):- get_black(Black),subst001(In,Black,'#301030',Grid).
 
@@ -82,7 +82,7 @@ get_fill_points(In,UNFP,GridO):-
  localpoints(GridO,NPS),  
  %print(NPS),nl,
  include(p1_or(is_point_type('~'),is_fill_point(NPS)),NPS,FillPoints),
- %%include(is_point_type('wbg'),NPS,NotFillPoints),
+ %%include(is_point_type('bg'),NPS,NotFillPoints),
  include(is_point_type('wbgzzzzz'),NPS,NotFillPoints),
  subtract(FillPoints,NotFillPoints,RFillPoints),
   %my_partition(is_point_type('.'),NFP,OuterEdges,NonFillPointNonOuterEdges),
