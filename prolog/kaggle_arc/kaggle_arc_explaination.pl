@@ -229,7 +229,7 @@ object_glyph_colorz(Obj,Colors):-
   unique_colors(Obj,[UC|CL]),
   findall(RC,(member(FC,[UC|CL]),to_realer_color(FC,RC)),NColors),
   (nonvar(UC)-> flatten_set([NColors,UC],Colors);Colors=NColors),!.
-object_glyph_colorz(_,[fg]).
+object_glyph_colorz(_,[wfg]).
 
 object_s_glyph_long(PA, CGA):- 
  must_det_ll((
@@ -296,7 +296,7 @@ prefered(colormass).
 prefered(alone_dots).
 prefered(hv_line(_)).
 prefered(dg_line(_)).
-prefered_header(cc(Caps,_),Caps):- freeze(Caps,bg == Caps).
+prefered_header(cc(Caps,_),Caps):- freeze(Caps,wbg == Caps).
 prefered_header(cc(Caps,_),Caps):- get_black(Black),freeze(Caps,Black == Caps).
 prefered_header(o(_,_,Caps),Caps):- freeze(Caps,i_bg_shapes == Caps).
 prefered_header(o(sf(_),1,Caps),Caps):- freeze(Caps,atom(Caps)).

@@ -692,7 +692,7 @@ set_vm_obj_nil(Prop,Or):- wdmsg(set_vm_obj_nil(Prop,Or)).
  get_vm(VM), Value==[], H = VM.h, V = VM.v,
 
   %points_to_grid(H,V,Points,Grid),
-  %Grid=[[bg]],
+  %Grid=[[wbg]],
 
   make_indiv_object(VM,[iz(Prop),vis2D(1,1),birth(set_vm(Prop))|Or],IndvPoints,_Obj),
           %addObjects(VM,Obj),

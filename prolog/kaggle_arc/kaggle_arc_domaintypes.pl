@@ -20,9 +20,9 @@ has_color(C,Cell):- only_color_data(Cell,CD), cmatch(C,CD).
 
 cmatch(C,CD):- plain_var(C),!,var(CD),C=CD.
 cmatch(C,CD):- var(C),!,C=CD,!.
-cmatch(fg,CD):- !, CD\==bg, is_fg_color(CD),!.
+cmatch(fg,CD):- !, CD\==wbg, is_fg_color(CD),!.
 cmatch(bg,CD):- !, is_bg_color(CD),!.
-cmatch(bg,CD):- !, (CD==wbc;is_bg_color(CD)),!.
+cmatch(wbg,CD):- !, (CD==wbg;is_bg_color(CD)),!.
 %cmatch(P,CD):- is_real_color(P),!, \+ P\==CD.
 cmatch(P,CD):- is_colorish(P),!, \+ P\=CD.
 cmatch(P,CD):- call(P,CD),!.
@@ -41,7 +41,7 @@ unfree_bg(_,X,X).
 unfree_bg(_,S,T,FB):- plain_var(S),plain_var(T),!,FB=T.
 unfree_bg(BGC,A,B,AA/**/-BB):- unfree_bg(BGC,A,AA),unfree_bg(BGC,B,BB).
 
-get_bg_label(bg).
+get_bg_label(wbg).
 get_fg_label(fg).
 bg_sym('bg').
 fg_sym('fg').
@@ -64,7 +64,7 @@ is_fg_color(C):- is_color(C),!.
 %is_bg_color(BG):- plain_var(BG),!,fail.
 is_bg_color(BG):- var(BG),!,get_attr(BG,ci,bg(_)),!.
 is_bg_color(C):- bg_sym(BG),C==BG,!.
-is_bg_color(bg).
+is_bg_color(wbg).
 is_bg_color('#104010').
 is_bg_color(C):- get_bgc(BG),C==BG,!.
 
@@ -128,13 +128,13 @@ into_color_name_always(Grid,GridI):- is_grid(Grid), !, mapgrid(into_color_name_a
 into_color_name_always(Grid,GridI):- compound(Grid), !, map_pred(into_color_name_always,Grid,GridI),!.
 into_color_name_always(V,C):- is_real_color(V),!,C=V.
 into_color_name_always(V,C):- is_fg_color(V),!,(mv_peek_color(V,C)->true;C=fg).
-into_color_name_always(V,C):- is_bg_color(V),!,(mv_peek_color(V,C)->true;C=bg).
+into_color_name_always(V,C):- is_bg_color(V),!,(mv_peek_color(V,C)->true;C=wbg).
 into_color_name_always(V,V):- plain_var(V),!.
 into_color_name_always(Grid,Grid).
 %into_color_name_always(C,C):- attvar(C),cant_be_color(C,_E),!.
 %into_color_name_always(_,fg).
 
-is_spec_color(V,C):- into_color_name_always(V,C),!,atom(C),!,C\==fg,C\==fg,C\==bg,C\==bg.
+is_spec_color(V,C):- into_color_name_always(V,C),!,atom(C),!,C\==fg,C\==wfg,C\==wbg,C\==bg.
 
 is_color(CO):- attvar(CO),!,get_attr(CO,ci,_).
 is_color(CO):- is_unreal_color(CO).
@@ -144,7 +144,7 @@ is_color(CO):- is_real_color(CO).
 :- dynamic(color_decls/0).
 color_decls.
 
-is_unreal_color(C):- (C==fg; C==fg; C==bg ; C==bg ; C==is_colorish_var ; C==plain_var),!.
+is_unreal_color(C):- (C==fg; C==wfg; C==wbg ; C==bg ; C==is_colorish_var ; C==plain_var),!.
 is_real_color(C):- atom(C),atom_concat('#',_,C),!.
 is_real_color(C):- atom(C),named_colors(L),member(C,L),!, \+ is_unreal_color(C).
 get_real_fg_color(C):- named_colors(L),member(C,L),is_fg_color(C).
@@ -231,7 +231,7 @@ is_bg_or_var(_,X):- free_cell(X),!.
 is_bg_or_var(BG,X):- X==BG.
 
 free_cell(Var):- plain_var(Var),!.
-free_cell(bg):-!.
+free_cell(wbg):-!.
 free_cell(bg):-!.
 %adjacent_point_allowe
 free_cell(C):- get_bgco(X),C==X.

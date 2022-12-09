@@ -549,7 +549,7 @@ some_min_unifier_3(A,List,A):- maplist('=@='(A),List),!.
 some_min_unifier_3(A,[B|List],O):- must_min_unifier(A,B,C), some_min_unifier_3(C,List,O).
 
 is_a_min_unifier(A,B,C):- B==strict,A==loose,!,C=A.
-is_a_min_unifier(A,_,C):- A==fg,B\==bg,B\==bg,!,C=A.
+is_a_min_unifier(A,_,C):- A==fg,B\==bg,B\==wbg,!,C=A.
 is_a_min_unifier(A,_,C):- plain_var(A),!,C=A.
 is_a_min_unifier(A,B,C):- compound(A),A=trim(BB),B==BB,!,C=A.
 
@@ -617,7 +617,7 @@ grid_hint_swap_io(I-O,In,Out,rev(Hint)):- I\==O,
 grid_hint_recolor(IO,In,Out,Hint):- get_black(Black), grid_hint_io(cbg(Black),IO,In,Out,Hint).
 grid_hint_recolor(IO,In,Out,mono(Hint)):- arc_option(scan_mono_hints), % fail,
  once((into_monogrid(In,InM),into_monogrid(Out,OutM))),
-  (In\==InM;Out\==OutM),grid_hint_io(cbg(bg),IO,InM,OutM,Hint).
+  (In\==InM;Out\==OutM),grid_hint_io(cbg(wbg),IO,InM,OutM,Hint).
 grid_hint_recolor(IO,In,Out,color_ord(Hint)):- fail,
  once((into_color_ord(In,InM),into_color_ord(Out,OutM))),
   (In\==InM;Out\==OutM),grid_hint_io(cbg(bg),IO,InM,OutM,Hint).
@@ -625,7 +625,7 @@ grid_hint_recolor(IO,In,Out,color_ord(Hint)):- fail,
 grid_hint_recolor(IO,In,Out,mono(Hint)):- % fail,
  once((into_monogrid(In,InM),into_monogrid(Out,OutM))),
   In\==InM,Out\==OutM,
-  grid_hint_io(cbg(bg),IO,InM,OutM,Hint), 
+  grid_hint_io(cbg(wbg),IO,InM,OutM,Hint), 
   \+ grid_hint_recolor1(IO,In,Out,_Hint).
 */
 

@@ -981,13 +981,11 @@ all_colors(I,X):- nonvar(X),!,all_colors(I,XX),!,X=XX.
 all_colors(G,[cc(fg,0),cc(bg,0),cc(Black,0)]):-  G==[],!,get_black(Black).
 
 all_colors(I,X):- indv_props(I,L),include(is_functor(cc),L,X).
-%all_colors(G,X):- is_group(G),mapgroup(all_colors,G,GG),combine_results(GG,X).
+all_colors(G,X):- is_group(G),mapgroup(all_colors,G,GG),combine_results(GG,X).
 %all_colors(G,X):- is_grid(G),mapgrid(all_colors,G,GG),combine_results(GG,X).
 %all_colors(I,X):- is_map(I),into_grid(I,G),!,all_colors(G,X).
 all_colors(G,BFO):- globalpoints_include_bg(G,G0), !, all_colors_via_pixels(G0,BFO).
 %all_colors(G,BFO):- all_colors_via_pixels(G,BFO),!.
-
-%combine_results([cc(C,N)|LL],R,C):- member(
 
 colors(O,CCO):- all_colors(O,CC), into_mostly_real_colors(CC,CCO),!.
 into_mostly_real_colors(CC,CCO):- include(is_real_cc,CC,CCO),CCO\==[],!.
@@ -1495,8 +1493,8 @@ guess_shape(GH,GV,GridIn,LocalGrid,I,E,N,GH,1,Colors,Points,row).
 guess_shape(GH,GV,I,0,N,N,1,Colors,Points,hv_line(h)):- N > 1.
 guess_shape(GH,GV,I,0,N,1,N,Colors,Points,hv_line(v)):- N > 1.
 
-guess_shape(GH,GV,GridIn,LocalGrid,I,Empty,N,H,V,[cc(Black,_)|Rest],Points, bfc(FGB)):-  Rest == [], ((is_bg_color(Black);Black==bg)->FGB=bg;FGB=fg).
-%guess_shape(GH,GV,GridIn,LocalGrid,I,Empty,N,H,V,[cc(Black,_)|Rest],Points, fbc(FGB)):- Rest == [], ((is_fg_color(Black);Black==fg)->FGB=fg;FGB=bg).
+guess_shape(GH,GV,GridIn,LocalGrid,I,Empty,N,H,V,[cc(Black,_)|Rest],Points, bfc(FGB)):-  Rest == [], ((is_bg_color(Black);Black==wbg)->FGB=bg;FGB=fg).
+%guess_shape(GH,GV,GridIn,LocalGrid,I,Empty,N,H,V,[cc(Black,_)|Rest],Points, fbc(FGB)):- Rest == [], ((is_fg_color(Black);Black==wfg)->FGB=fg;FGB=bg).
 %guess_shape(GH,GV,GridIn,LocalGrid,I,0,N,H,V,Colors,Points,view_sq):- H == V.%guess_shape(GH,GV,GridIn,LocalGrid,I,I,N,H,V,Colors,Points,rectangle):- H>1, V>1.
 guess_shape(GH,GV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,chromatic(Len,BGLen)):- cc_fg_count(Colors,Len),cc_bg_count(Colors,BGLen).
  
