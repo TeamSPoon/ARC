@@ -522,7 +522,7 @@ prop_type(loc2D,iz(locX(_))).
 prop_type(loc2D,iz(cenX(_))).
 prop_type(loc2D,iz(locY(_))).
 prop_type(loc2D,iz(cenY(_))).
-prop_type(scale,shape2D(_,_)).
+prop_type(scale,rotOffset(_,_)).
 prop_type(scale,vis2D(_,_)).
 prop_type(scale,iz(sizeX(_))).
 prop_type(scale,iz(sizeY(_))).
@@ -531,7 +531,7 @@ prop_type(shape,shape(_)).
 prop_type(rotate,rot2L(_)).
 prop_type(repaint,pen(_)).
 prop_type(repaint,colors(_)).
-prop_type(_,edge(_,_)).
+prop_type(loc2D,edge(_,_)).
 
 changed_by(shape,reshape).
 changed_by(loc2D,move).
@@ -561,15 +561,15 @@ diff_groups1(AAR,BBR,DD):- maybe_reorder_pair(AAR,BBR,AAR2,BBR2),!,  diff_groups
 diff_groups1(AAR,BBR,DD):- diff_groups1a(AAR,BBR,AAR,BBR,DD).
 
 diff_groups1a(_OA,_OB,[],[],[]):-!.
-diff_groups1a(_OA,_OB,[],B,right_over(BO)):- maplist(object_dglyphH,B,BO).
-diff_groups1a(_OA,_OB,B,[],left_over(BO)):- maplist(object_dglyphH,B,BO).
+diff_groups1a(_OA,_OB,[],B,right_over(BO)):- maplist(object_ref_desc,B,BO).
+diff_groups1a(_OA,_OB,B,[],left_over(BO)):- maplist(object_ref_desc,B,BO).
 diff_groups1a(OA,OB,AAR,BBR,DD):-
   select_obj_pair_1_3(AAR,BBR,PA,PB,Why),
   diff_objects(PA,PB,DAB,Same),
   (DAB == [] -> D = [] ;  
      (nop(showdiff(PA,PB)),
-      object_dglyphH(PA,GA), 
-      object_dglyphH(PB,GB),
+      object_ref_desc(PA,GA), 
+      object_ref_desc(PB,GB),
       D = change_obj(Why,GA,GB,Same,DAB))),
   select(PA,AAR,AA), select(PB,BBR,BB),
   diff_groups1a(OA,OB,AA,BB,D1),
@@ -579,8 +579,8 @@ diff_groups1a(OA,OB,[PA|AA],[PB|BB],DD):-
   diff_objects(PA,PB,DAB,Same),
   (DAB == [] -> D = [] ;  
      (%(showdiff(PA,PB)),
-      object_dglyphH(PA,GA), 
-      object_dglyphH(PB,GB),
+      object_ref_desc(PA,GA), 
+      object_ref_desc(PB,GB),
       D = change_obj(list_ordered,GA,GB,Same,DAB))),  
   diff_groups1a(OA,OB,AA,BB,D1),
   combine_diffs(D1, D , DD),!.

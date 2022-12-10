@@ -193,7 +193,7 @@ tersify1(I,gridFn(S)):- is_grid(I), into_gridnameA(I,O),!,sformat(S,'~w',[O]).
 tersify1(I,gridFn(O)):- is_grid(I),tersifyG(I,O),!.
 tersify1(I,groupFn(O,List)):- is_group(I), mapgroup(tersify1,I,List),mapgroup(obj_to_oid,I,OIDs),length(List,N), !,ignore((get_current_test(TestID),is_why_grouped(TestID,N,Why,OIDs),!,O=Why)).
 
-tersify1(I,Q):- is_object(I),object_dglyphH(I,Q),!.
+tersify1(I,Q):- is_object(I),object_ref_desc(I,Q),!.
 tersify1(I,O):- is_map(I), get_kov(objs,I,_),!, O='$VAR'('VM').
 tersify1(I,O):- is_map(I), get_kov(pairs,I,_),!, O='$VAR'('Training').
 
@@ -711,7 +711,7 @@ unsized_grid(A):- \+ is_really_gridoid(A),!.
 
 grid_footer(G,_,_):- \+ compound(G),!,fail.
 grid_footer((GF=GG),GG,GF):-!.
-grid_footer(Obj,GG,GF):- is_object(Obj), vis2D(Obj,H,V),localpoints(Obj,Ps),points_to_grid(H,V,Ps,GG), object_dglyphH(Obj,GF),!.
+grid_footer(Obj,GG,GF):- is_object(Obj), vis2D(Obj,H,V),localpoints(Obj,Ps),points_to_grid(H,V,Ps,GG), object_ref_desc(Obj,GF),!.
 grid_footer(print_grid(GF,GG),GG,GF):-!.
 grid_footer(print_grid(_,_,GF,GG),GG,GF):-!.
 grid_footer((GG-GF),GG,GF):- is_grid(GG), !.

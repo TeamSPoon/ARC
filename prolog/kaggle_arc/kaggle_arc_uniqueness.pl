@@ -190,7 +190,7 @@ explain_uniqueness(GroupWhole):-
   get_current_test(TestID),!,
   forall(member(Obj,Group),
    (dash_chars,
-    object_glyph(Obj,G), object_color_glyph(Obj,GC), object_grid(Obj,OG), 
+    object_glyph(Obj,G), object_color_glyph_short(Obj,GC), object_grid(Obj,OG), 
     locally(nb_setval(color_index,[Obj|GroupPP]),print_side_by_side(GC,GroupPP,'explain_uniqueness',_,OG,G)),
     dmsg(uobj=Obj),!,
     forall(what_unique_obj(TestID,Obj,Group),true))),

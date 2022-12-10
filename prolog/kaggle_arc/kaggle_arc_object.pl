@@ -310,7 +310,7 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
     
     iz(sid(ShapeID)),
     
-    shape2D(SH,SV),
+    rotOffset(SH,SV),
     vis2D(Width,Height),
     mass(Len),     
     CC,        
@@ -938,7 +938,7 @@ object_localpoints(I,XX):- must_be_free(XX),
 object_localpoints0(_,L,X):- member(localpoints(X),L),is_list(X),!.
 object_localpoints0(I,L,X):- member(globalpoints(XX),L),is_list(XX),loc2D(I,LoH,LoV),!,deoffset_points(LoH,LoV,XX,X).
 object_localpoints0(I,_L,XX):-  
- must_det_ll((shape(I,X), rot2L(I,Rot), shape2D(I,H,V), pen(I,PenColors),
+ must_det_ll((shape(I,X), rot2L(I,Rot), rotOffset(I,H,V), pen(I,PenColors),
    make_localpoints(X,Rot,H,V,PenColors,XX))).
 
 make_localpoints(X,Rot,H,V,PenColors,XX):- 
@@ -1059,9 +1059,9 @@ vis2D(G,X,Y):- is_group(G),!,mapgroup(vis_hv_term,G,Offsets),sort(Offsets,HighTo
 vis2D(Points,H,V):- points_range(Points,LoH,LoV,HiH,HiV,_,_), H is HiH-LoH+1, V is HiV-LoV+1.
 vis2D(NT,H,V):-  known_gridoid(NT,G),G\==NT, vis2D(G,H,V).
 
-shape2D(I,X,Y):- indv_props(I,L),member(shape2D(X,Y),L),!.
-shape2D(Grid,H,V):- is_grid(Grid),!,grav_roll(Grid,_RotG,RotShape),grid_size(RotShape,H,V).
-shape2D(NT,H,V):-  into_gridoid(NT,G),G\==NT, shape2D(G,H,V).
+rotOffset(I,X,Y):- indv_props(I,L),member(rotOffset(X,Y),L),!.
+rotOffset(Grid,H,V):- is_grid(Grid),!,grav_roll(Grid,_RotG,RotShape),grid_size(RotShape,H,V).
+rotOffset(NT,H,V):-  into_gridoid(NT,G),G\==NT, rotOffset(G,H,V).
 
 %vis2D(Obj,size2D(H,V)):- vis2D(Obj,H,V).
 %loc2D(Obj,loc2D(H,V)):- loc2D(Obj,H,V).
