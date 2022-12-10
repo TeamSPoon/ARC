@@ -411,8 +411,8 @@ get_map_pairs(Map,is_dict(T),Pairs):- is_dict(Map), dict_pairs(Map,T,Pairs).
 
 is_vm(Tree):- is_map(Tree), once(get_kov(program,Tree,_);get_kov(program_i,Tree,_)).
 
-is_map(Tree):- is_rbtree(Tree),!.
-is_map(Dict):- is_dict(Dict),!.
+is_map(Tree):- is_rbtree(Tree),!, \+ rb_lookup(Tree,izmap,false).
+is_map(Dict):- is_dict(Dict),!, \+ get_dict(izmap,Dict,false).
 
 
 
@@ -524,7 +524,8 @@ when_arc_webui(G):- toplevel_pp(swish),call(G),!.
 when_arc_webui(G):- ignore(if_arc_webui(G)).
 
 %arc_option(grid_size_only):- !,fail.
-arc_option(P):- luser_getval(P,t).
+arc_option(O):- luser_getval(O,t).
+if_arc_option(O,G):- (arc_option(O)->must_det_ll(G); true).
 
 with_luser(N,V,Goal):-
   (luser_getval(N,OV);OV=[]),
@@ -619,7 +620,11 @@ is_detatched_thread:- \+ (thread_self(Main) -> Main == main ; main==0),!.
 
 cls_z:- is_detatched_thread,!,flush_tee.
 cls_z:- tracing,!.
-cls_z:- catch(cls,_,true), flush_tee, nop((clear_tee,clear_test_html)).
+cls_z:- catch(really_cls,_,true), flush_tee, nop((clear_tee,clear_test_html)).
+
+really_cls:- write('\ec\33c\033[2J\033[H\033[3J'),!.
+really_cls:- catch(cls,_,true).
+
 cls1:- nop(catch(cls_z,_,true)).
 
 list_to_rbtree_safe(I,O):- must_be_free(O), list_to_rbtree(I,M),!,M=O.
@@ -802,7 +807,7 @@ bfly_startup:-
    catch_log(print_test),
    catch_log(menu),
    %with_pp(bfly,catch_log(menu)),
-   nop((next_test,previous_test)),!,
+   nop((next_test,prev_test)),!,
    ansi.
 
 
@@ -812,7 +817,7 @@ ansi_startup:-
    catch_log(print_test),
    catch_log(menu),
    %with_pp(bfly,catch_log(menu)),
-   nop((next_test,previous_test)),!.
+   nop((next_test,prev_test)),!.
 
 :- luser_default(example,trn+0).
 :- luser_default(no_diags,false).
@@ -823,12 +828,6 @@ ansi_startup:-
 :- luser_default(cmd2,print_all_info_for_test).
 :- luser_default(individuated_cache,true).
 :- luser_default(extreme_caching,true).
-:- scan_uses_test_id.
-:- store_grid_size_predictions.
-:- make_grid_cache.
-:- gen_gids.
-:- test_show_colors.
-:- fmt('% Type ?- demo. % or press up arrow').
 
 
 load_task_states:- exists_directory('/data/evaluation/'),catch_log(load_json_files(evaluation,v,'/data/evaluation/*.json')),!.
@@ -855,3 +854,10 @@ save_arcathon_runner_devel:- qsave_program('logicmoo_arcathon_runner_devel',[sta
 test_compile_arcathon:- save_arcathon_runner_devel.
 
 :- load_task_states.
+:- scan_uses_test_id.
+:- store_grid_size_predictions.
+:- make_grid_cache.
+:- gen_gids.
+:- test_show_colors.
+:- fmt('% Type ?- demo. % or press up arrow').
+

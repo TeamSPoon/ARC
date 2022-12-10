@@ -632,7 +632,7 @@ icu('feca6190', 3 ).
 icu('ff28f65a', -1 ).
 icu('ff805c23', -1 ).
 
-%Personally Created Training Tasks (15)
+%Personally Created Training Tasks (16)
 suite_tag(dbigham_personal,'
 jnohuorzh-easier
 ihiz27k2n
@@ -649,11 +649,12 @@ referenceable-components
 middle
 surface-pixel-count
 4938f0c2-easy
+56dc2b01-easier-2
 ').
 
-% Core ARC Training Tasks (91)
-
+% Core ARC Training Tasks (93)
 suite_tag(dbigham_train_core,'
+
 0ca9ddb6
 3c9b0459
 1caeab9d
@@ -745,9 +746,12 @@ d364b489
 d6ad076f
 f8a8fe49
 5168d44c
+b7249182
+b548a754
 ').
 
-% Training Tasks (86)
+% Tasks Passing via Generalization
+% Training Tasks (88)
 % The following ARC training tasks started passing after some different task was implemented.
 suite_tag(dbigham_train_pass,'
 ea32f347
@@ -835,7 +839,10 @@ b8cdaf2b
 af902bf9
 ba26e723
 dc1df850
-3bdb4ada').
+3bdb4ada
+dc433765
+e50d258f
+').
 
 % Evaluation Tasks (56)
 % The following ARC evaluation tasks are passing. My intention is to not analyzed or implemented evaluation examples specifically, 
@@ -900,6 +907,8 @@ e872b94a
 2b01abd0
 817e6c09
 8ee62060
+3ee1011a
+7039b2d7
+da2b0fe3
 e5790162
-27a77e38
-').
+27a77e38').

@@ -129,7 +129,7 @@ generalize_arglist(List,Loose):-
   sort_looseness(Pos,Gens),!,member(Loose,Gens).
 
 %sort_looseness(Pos,Pos):-!.
-sort_looseness(Pos,Gens):- predsort(using_compare(var_count),Pos,Gens),!.
+sort_looseness(Pos,Gens):- predsort_using_only(var_count,Pos,Gens),!.
 
 sub_term_or_e(E,List):- is_list(List),!,member(EE,List),sub_term_or_e(E,EE).
 sub_term_or_e(E,List):- sub_term(E,List).

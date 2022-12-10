@@ -21,14 +21,19 @@ neg_h_v_area(size2D(H,V),VAL):- NArea is - (H * V),  max_min(H,V,Hi,_Lo), DifHV 
 :- dynamic(l_s_4sides/2).
 :- dynamic(s_l_4sides/2).
 
+predsort_using_only(P2,List,Sorted):- predsort(using_compare(P2),List,Sorted).
+using_compare(C,R,A,B):- (A==B-> R=(=) ; must_det_ll((call(C,A,AA),call(C,B,BB),!,compare(R,AA,BB)))).
+predsort_on(P2,List,Sorted):- predsort(sort_on(P2),List,Sorted).
+sort_on(C,R,A,B):- (A==B-> R= (=) ; must_det_ll((call(C,A,AA),call(C,B,BB),!,compare(R,AA+A,BB+B)))).
+
 :- 
    findall(size2D(HV,HV),between(1,32,HV),SizesSquareS),
    findall(size2D(H,V),(between(1,32,H),between(1,32,V),H\=V),SizesRect),
-   predsort(sort_on(neg_h_v_area),SizesRect,SizesRectS),
+   predsort_on(neg_h_v_area,SizesRect,SizesRectS),
    %reverse(SizesSquareS,SizesSquareR), reverse(SizesRectS,SizesRectR),
   % list_to_set([size2D(3,3),size2D(2,2)|SizesSquareS],Sizes_L_S),
    append(SizesSquareS,SizesRectS,AllSizes),   
-   predsort(sort_on(neg_h_v_area),AllSizes,Sizes_L_S),
+   predsort_on(neg_h_v_area,AllSizes,Sizes_L_S),
 
    forall(member(size2D(H,V),Sizes_L_S),assertz(l_s_4sides(H,V))),
    reverse(Sizes_L_S,Sizes_S_L),

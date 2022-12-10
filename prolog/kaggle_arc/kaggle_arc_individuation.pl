@@ -849,7 +849,7 @@ find_hybrid_shapes(VM):-
   as_debug(9,(print_grid(hybrid_shape(HL,TestID,pair,VM.gid),VM.grid))),!,
   maplist(release_bg,List,FGList),
   % maplist(=,List,FGList),
-  predsort(sort_on(hybrid_order),FGList,Set),
+  predsort_on(hybrid_order,FGList,Set),
   as_debug(1,(print_ss(Set))),!,
   call(ignore((hybrid_shape_from(Set,VM)))))).
 
@@ -988,7 +988,7 @@ get_hybrid_set(Set):-
              hybrid_shape(TestID,ExampleNum,_Name,O)),List),
   sort(List,SList),
   h_all_rots(SList,SetR),
-  predsort(sort_on(hybrid_order),SetR,Set).
+  predsort_on(hybrid_order,SetR,Set).
 
 h_all_rots(Set,SetR):- findall(E,(member(G,Set),each_rot(G,E)),L),list_to_set(L,SetR).
 
@@ -1428,6 +1428,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
    neededChanged:_, repaired:_,
    full_grid:_,
    parent_vm:_,
+   izmap:true,
    % Original copies of Grid and point representations
    grid_o:Grid, 
    rule_dir: ROptions,
@@ -2299,6 +2300,10 @@ check_tid_gid4(OID,GID):- pp(check_tid_gid4(OID,GID)).
 is_fti_step(group_vm_priors).
 % =====================================================================
 group_vm_priors(VM):-
+ if_arc_option(group_vm_priors,
+  really_group_vm_priors(VM)).
+
+really_group_vm_priors(VM):-
  must_det_ll((
   ObjsG = VM.objs,
   %print_list_of(wqnl,ObjsG),
@@ -2576,8 +2581,9 @@ is_sa(Points,C-P2):-
     \+ (is_adjacent_point(P2,Dir,P3), Dir\==c, member(C-P3,Points), \+ is_diag(Dir)),!.
 
 contains_alone_dots(Grid):- nonvar(Grid), globalpoints_maybe_bg(Grid,Points),include(is_sa(Points),Points,SAs),SAs\==[].
+
 using_alone_dots(VM, _):- \+ contains_alone_dots(VM.grid_o), \+ contains_alone_dots(VM.grid_target),!.
-using_alone_dots(_,Goal):- once(Goal).
+using_alone_dots(_,Goal):- when_arc_expanding(once(Goal)).
 
 maybe_alone_dots_by_color(lte(LTE),VM):-  
    available_fg_colors(TodoByColors),

@@ -481,7 +481,7 @@ guess_simple_todolist(N,SolSoFar,DoneSoFar,Plan,I,O,OO):- !,
  ((fits_grid(O,I),N>0) 
 -> (Plan=DoneSoFar,OO=I) 
 ;(findall(h_g(H1,I1),(easy0(N,H1),grid_call(H1, I,I1), (H1=='=' -> true ; (is_a_change(I,I1), \+ member(I1,SolSoFar)))), H1G),
-  predsort(using_compare(arg(2)),H1G,H1GSS),sort(H1GSS,H1GS),
+  predsort_using_only(arg(2),H1G,H1GSS),sort(H1GSS,H1GS),
   maplist(arg(2),H1GS,SOFAR),append(SolSoFar,SOFAR,NewSOFAR),
   member(h_g(H1,I1),H1GS),
   Next is N+1,
@@ -492,7 +492,7 @@ guess_simple_todolist(N,_Failed,IPlan,Plan,I,O,OO):- N\==0, fits_grid(O,I),!,OO=
 /*
 guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):- Next is N+1,
   findall(h_g(H1,I1),(easy0(N,H1),grid_call(H1, I,I1), (H1=='='-> true ; nop((is_a_change(I,I1), \+ member(h_g(_,I1),Failed))))), H1G),
-  predsort(using_compare(arg(2)),H1G,H1GS),
+  predsort_using_only(arg(2),H1G,H1GS),
   select(h_g(H1,I1),H1GS,Rest),
   %append(Rest,Failed,NewFailed), 
   Rest=NewFailed, 
@@ -507,11 +507,11 @@ guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):- Next is N+1,
 /*
 simple_todolist(SolSoFar,List,I,O,OO):-
   findall(h_g(H1,I1),(easy0(H1),grid_call(H1, I,I1),\+ member(I1,SolSoFar)), H1G),
-  predsort(using_compare(arg(2)),H1G,H1GSS),sort(H1GSS,H1GS),
+  predsort_using_only(arg(2),H1G,H1GSS),sort(H1GSS,H1GS),
   maplist(arg(2),H1GS,SOFAR),
   member(h_g(H1,I1),H1GS),
   ((findall(h_g(H2,I2),(easy2(H2),H1\==H2,grid_call(H2,I1,I2),\+ member(I2,SOFAR)),H2G),
-    predsort(using_compare(arg(2)),H2G,H2GSS),sort(H2GSS,H2GS),
+    predsort_using_only(arg(2),H2G,H2GSS),sort(H2GSS,H2GS),
     member(h_g(H2,I2),H2GS),
   ((fits_grid(O,I2),[H1,H2]=List,I2=OO))) 
   ;((fits_grid(O,I1),[H1]=List,I1=OO)))
@@ -573,7 +573,7 @@ shrink_grid(I,O):- grid_to_norm(I,_,O),!.
 
 is_fti_step(last_indiv).
 last_indiv(VM):- show_vm_changes(VM,last_indiv, last_indiv(VM.objs,set(VM.objs))).
-last_indiv(I,R):- into_group(I,M),I\=@=M,!,predsort(sort_on(loc_term),M,O),reverse(O,R).
+last_indiv(I,R):- into_group(I,M),I\=@=M,!,predsort_on(loc_term,M,O),reverse(O,R).
 
 
 

@@ -336,7 +336,7 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
     []],Ps0),  
   include('\\=='([]),Ps0,Ps),
 
-  make_localpoints(ColorlessPoints,RotG,SH,SV,PenColors,XX), assertion((XX == LPoints)),
+  %make_localpoints(ColorlessPoints,RotG,SH,SV,PenColors,XX), assertion((XX == LPoints)),
 
   with_objprops(override,Overrides,Ps,OUT1),
   sort_obj_props(OUT1,OUT),!,as_obj(OUT,Obj),verify_object(Obj),!,
@@ -943,20 +943,21 @@ object_localpoints0(I,_L,XX):-
 
 make_localpoints(X,Rot,H,V,PenColors,XX):- 
   must_det_ll((   maybe_unrotate_points(H,V,X,Rot,XXX),
+     PenColors\==[],is_list(PenColors),
      combine_pen(XXX,PenColors,PenColors,XX) )),!.
 
 maybe_unrotate_points(_,_,X,sameR,XX):- must_be_free(XX),!,X=XX.
 maybe_unrotate_points(H,V,X,Rot,XX):- must_det_ll((points_to_grid(H,V,X,Grid),   
    unrotate(Rot,Grid,Grid90),localpoints_include_bg(Grid90,XX))).
 
+
+combine_pen(A,B,C,D):- nonvar(D),!,combine_pen(A,B,C,V),!,V=D.
 combine_pen([],_,_,[]):-!.
-
 combine_pen([_-L|LL],C,Reset,XX):- nonvar(L),!,combine_pen([L|LL],C,Reset,XX).
+combine_pen(X,[],Reset,XX):- my_assertion(Reset\==[]), !,combine_pen(X,Reset,Reset,XX).
 %combine_pen([_-P1|L],C,Reset,[C-P1|XX]):- is_color(C),!,
-combine_pen([P1|L],C,Reset,[C-P1|XX]):- is_color(C),!,
+combine_pen([P1|L],C,Reset,CP1XX):- \+ is_list(C), is_color(C),!,[C-P1|XX]=CP1XX, 
   combine_pen(L,C,Reset,XX).
-
-combine_pen(X,[],Reset,XX):-!,combine_pen(X,Reset,Reset,XX).
 combine_pen(L,[cc(C,N)|PenColors],Reset,XX):- number(N), make_list(C,N,List),append(List,PenColors,ListPenColors),
   combine_pen(L,ListPenColors,Reset,XX).
 combine_pen([P1|L],[C|PenColors],Reset,[C-P1|XX]):- is_color(C),!,
@@ -981,7 +982,7 @@ all_colors(I,X):- nonvar(X),!,all_colors(I,XX),!,X=XX.
 all_colors(G,[cc(fg,0),cc(bg,0),cc(Black,0)]):-  G==[],!,get_black(Black).
 
 all_colors(I,X):- indv_props(I,L),include(is_functor(cc),L,X).
-all_colors(G,X):- is_group(G),mapgroup(all_colors,G,GG),combine_results(GG,X).
+%all_colors(G,X):- is_group(G),mapgroup(all_colors,G,GG),combine_results(GG,X).
 %all_colors(G,X):- is_grid(G),mapgrid(all_colors,G,GG),combine_results(GG,X).
 %all_colors(I,X):- is_map(I),into_grid(I,G),!,all_colors(G,X).
 all_colors(G,BFO):- globalpoints_include_bg(G,G0), !, all_colors_via_pixels(G0,BFO).

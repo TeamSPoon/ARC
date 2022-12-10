@@ -61,7 +61,7 @@ menu_cmd1(_,'h','                  or (h)uman proposed solution',(human_test)).
 menu_cmd1(_,'r','               Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and (s)olve !',(cls_z_make,fully_test)).
 menu_cmd1(_,'A','                  or (A)dvance to the next test and (r)un it',(cls_z_make,!,run_next_test)).
 menu_cmd1(_,'n','                  or (n)ext test (skipping this one)',(next_random_test,print_single_pair)).
-menu_cmd1(_,'b','                  or (b)ack to previous test',(previous_test,print_single_pair)).
+menu_cmd1(_,'b','                  or (b)ack to previous test',(prev_test,print_single_pair)).
 menu_cmd1(_,'f','                  or (f)orce a favorite test.',(force_full_tee,enter_test)).
 menu_cmd1(_,'~','                  or (PageUp) to begining of suite',(prev_suite)).
 menu_cmd1(_,'N','                  or (N)ext suite',(next_suite)).
@@ -71,8 +71,8 @@ menu_cmd1(r,'i','             Re-enter(i)nteractve mode.',(interact)).
 
 % How I got into fostering was I had spent about 10k dollars at Dove Lewis Animal Hospital for a cat in heart failure.  When he passed, about 3 years ago, I decided (this time) to go to a "kill" shelter to adopt another.   While was waiting for an appointment with an adoption screener I saw a flyer that said 'all medical expenses' would be paid if i became a foster volunteer. Holly shit, that sounded good.  So I started fostering 'moms with kittens' and other cats in all stages and needs.  Sometimes cats that are under protection by court orders.  T
 
-menu_cmd9(_,'m','recomple this progra(m),',(clear_tee,make,menu)).
-menu_cmd9(_,'c','(c)lear the scrollback buffer,',(force_full_tee,cls)).
+menu_cmd9(_,'m','recomple this progra(m),',(clear_tee,update_changed_files)).
+menu_cmd9(_,'c','(c)lear the scrollback buffer,',(force_full_tee,really_cls)).
 menu_cmd9(_,'C','(C)lear cached test info,',(clear_training,clear_test)).
 menu_cmd9(_,'r','(r)un DSL code,',(call_dsl)).
 menu_cmd9(_,'Q','(Q)uit Menu,',true).
@@ -213,7 +213,7 @@ menu_goal(Goal):-
 do_menu_key(-1):- !, arc_assert(wants_exit_menu). 
 do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), asserta_if_new(wants_exit_menu).
 do_menu_key('?'):- !, write_menu_opts('i').
-do_menu_key('M'):- !, clear_tee, update_changed_files, wdmsg('Recompiled').
+do_menu_key('M'):- !, clear_tee, make, wdmsg('Recompiled'),menu.
 %do_menu_key('W'):- !, set_pair_mode(whole_test).
 do_menu_key('P'):- !, switch_grid_mode,print_test.
 do_menu_key( ''):- !, fail.
@@ -285,27 +285,29 @@ do_menu_codes([27,91,51,126]):- !, randomize_suite, print_qtest.
 
 
 % crl left arrow
-do_menu_codes([27,79,68]):- !, previous_test, print_test.
+do_menu_codes([27,79,68]):- !, prev_test, print_test.
 % ctrl right arrow
 do_menu_codes([27,79,67]):- !, next_test, print_test.
 % alt left arrow
-do_menu_codes([27,27,91,68]):- !, previous_test, print_test.
+do_menu_codes([27,27,91,68]):- !, prev_test, print_test.
 % alt right arrow
 do_menu_codes([27,27,91,67]):- !, next_test, print_test.
+
+
 % page up
-do_menu_codes([27,91,53,126]):- !, set_pair_mode(entire_suite),prev_suite.
+do_menu_codes([27,91,53,126]):- !, prev_suite,prev_test,set_pair_mode(entire_suite).
 % page down
-do_menu_codes([27,91,54,126]):- !, set_pair_mode(entire_suite),next_suite.
-
+do_menu_codes([27,91,54,126]):- !, set_pair_mode(entire_suite),next_suite,next_test.
 % up arrow
-do_menu_codes([27,91,65]):- !, set_pair_mode(single_pair), prev_pair.
+do_menu_codes([27,91,65]):- !, set_pair_mode(single_pair),prev_pair.
 % down arrow
-do_menu_codes([27,91,66]):- !, set_pair_mode(single_pair), next_pair.
+do_menu_codes([27,91,66]):- !, set_pair_mode(single_pair),next_pair.
 % left arrow
-do_menu_codes([27,91,68]):- !, set_pair_mode(whole_test), previous_test, cls_z, report_suite, print_qtest.
+do_menu_codes([27,91,68]):- !, set_pair_mode(whole_test), maybe_cls, prev_test, report_suite, print_qtest.
 % right arrow
-do_menu_codes([27,91,67]):- !, set_pair_mode(whole_test), next_test, cls_z, report_suite, print_qtest.
+do_menu_codes([27,91,67]):- !, set_pair_mode(whole_test), maybe_cls, next_test, report_suite, print_qtest.
 
+maybe_cls:- nop(cls_z).
 
 interactive_test(X):- set_current_test(X), print_test(X), interact.
 
@@ -627,7 +629,7 @@ test_suite_info_1(SuiteX,TestID):-
 
 
 
-previous_test:-  get_current_test(TestID), get_previous_test(TestID,NextID), set_current_test(NextID).
+prev_test:-  get_current_test(TestID), get_prev_test(TestID,NextID), set_current_test(NextID).
 next_test:- get_current_test(TestID), notrace((get_next_test(TestID,NextID), set_current_test(NextID))),!.
 next_random_test:-  randomize_suite, next_test.
 is_valid_testname(TestID):- nonvar(TestID), kaggle_arc(TestID,_,_,_).
@@ -646,7 +648,7 @@ get_random_test(ID):-
  get_current_suite_testnames(List),random_member(ID,List),ID\==TestID, ID\==NextID,!.
 
 get_next_test(TestID,NextID):- get_current_suite_testnames(List), next_in_list(TestID,List,NextID).
-get_previous_test(TestID,PrevID):-  get_current_suite_testnames(List), prev_in_list(TestID,List,PrevID).
+get_prev_test(TestID,PrevID):-  get_current_suite_testnames(List), prev_in_list(TestID,List,PrevID).
 next_in_list(TestID,List,Next):- append(_,[TestID,Next|_],List)-> true; List=[Next|_].
 prev_in_list(TestID,List,PrevID):-  once(append(_,[PrevID,TestID|_],List); last(List,PrevID)).
 
@@ -719,7 +721,7 @@ prev_pair:-
   prev_pair(TrnN,ExampleNum),
   set_example_num(ExampleNum),
   set_pair_mode(single_pair),%(ExampleNum=(tst+_)->set_pair_mode(whole_test);set_pair_mode(single_pair)),  
-  ((TrnN==trn+0)->previous_test;true),
+  ((TrnN==trn+0)->prev_test;true),
   print_single_pair.
 
 trn_tst(trn,tst).
@@ -840,7 +842,7 @@ write_test_links_file:- tee_op((notrace((setup_call_cleanup(tell('muarc_tmp/test
 write_test_links:-  
  format('~N'), ensure_test(TestID), 
  tee_op((
-  ignore((get_previous_test(TestID,PrevID),write_tee_link('Prev',PrevID))),
+  ignore((get_prev_test(TestID,PrevID),write_tee_link('Prev',PrevID))),
   ignore((((luser_getval(prev_test_name,AltPrevID),AltPrevID\==PrevID,AltPrevID\==TestID,AltPrevID\=='.'),write_tee_link('AltPrevID',AltPrevID)))),
   ignore(write_tee_link('This',TestID)),
   ignore((get_next_test(TestID,NextID),write_tee_link('Next',NextID))),
