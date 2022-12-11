@@ -380,8 +380,8 @@ switch_pair_mode:- get_pair_mode(Mode),next_pair_mode(Mode,NextMode),!,set_pair_
 show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), luser_getval(test_suite_name,Suite), get_indivs_mode(IndivMode),
   get_current_test(TestID),some_current_example_num(Example),!,
   (nonvar(Example)-> (SelTest=(TestID>Example)) ; SelTest=TestID),
-  wqnl([ %"~N (pair mode)",  
-  "~N suite:",b(q(Suite)), b(q(Mode)), " indiv:",b(q(IndivMode)), " selected test: ",b(q(SelTest)), ".......... (e)xecute: ", b(q(Cmd))
+  wots_vs(SS,color_print(yellow,call(format("'~w'",[Suite])))),
+  wqnl([format("~N ~w: ",[Mode]), format('~w',[SS])," indiv:",b(q(IndivMode)), " selected test: ",b(q(SelTest)), ".......... (e)xecute: ", b(q(Cmd))
     % "with pair mode set to: ",b(q(Mode)),
   %b(q(example(Example)))
   ]),flush_tee_maybe.

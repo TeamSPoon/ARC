@@ -467,8 +467,12 @@ wqs1(g(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs1(C))),print(g(S)).
 wqs1(b(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs1(C))),color_write(S).
 wqs1(norm(C)):- writeq(norm(C)),!.
 
-wqs1(pp(C)):- \+ arg_string(C), wots_vs(S,pp_no_nl(C)),write((S)).
-wqs1(ppt(C)):- \+ arg_string(C), wots_vs(S,ppt_no_nl(C)),write((S)).
+wqs1(pp(P)):-  wots_vs(S,pp_no_nl(P)),write((S)).
+wqs1(ppt(P)):- wots_vs(S,ppt_no_nl(P)),write((S)).
+
+wqs1(wqs(P)):- wots_vs(S,wqs0(P)),write((S)).
+wqs1(wqs(C,P)):- wots_vs(S,wqs0(P)),color_print(C,S).
+
 wqs1(vals(C)):- writeq(vals(C)),!.
 %wqs1(colors(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(colorsz(S)).
 wqs1(io(C)):-  \+ arg_string(C),wots_vs(S,bold_print(wqs(C))),write(io(S)).
@@ -1531,7 +1535,7 @@ color_gl_int_g(C,W):- color_gl_int(C,W),!.
 :- export(color_print/2).
 :- system:import(color_print/2).
 
-color_print(C,CDot):- c_dot(CDot),nonvar(C),!, color_gl_int_g(C,W),!,color_print(C,W).
+% color_print(C,CDot):- c_dot(CDot),nonvar(C),!, color_gl_int_g(C,W),!,color_print(C,W).
 
 %color_print(C,W):- '$current_typein_module'(M), muarc_mod(MM), MM\==M, !,'$set_typein_module'(MM), module(MM),color_print(C,W).
 color_print(C,W):- arc_webui,!,color_print_webui(C,W).
