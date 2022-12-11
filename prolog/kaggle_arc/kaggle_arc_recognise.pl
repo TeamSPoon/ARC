@@ -790,7 +790,7 @@ ascii_append_grid(Text,Start,Grid):-
 
 ascii_append_grid(Style,Text,Start,Grid):- ensure_charlist(Text,Chars),!,ascii_append_grid(Style,Chars,Start,Grid).
 ascii_append_grid(Style,Text,Start,Grid):- 
-  next_row(Style,Text,Chars,MoreText),read_row_cells(Style,Chars,Row), !, 
+  next_row(_,Style,Text,Chars,MoreText),read_row_cells(Style,Chars,Row), !, 
   append(Start,[Row],MidG),
   ascii_append_grid(Style,MoreText,MidG,Grid).
 ascii_append_grid(_,_,PassThruG,PassThruG).
@@ -803,27 +803,52 @@ read_row_cells(_,_,[]).
 
 list_contains(AllText,RowSep):- \+ \+ append([_|RowSep],_,AllText).
 
+% ""
+next_row(strict,_,AllText,RowText,MoreText):- AllText==[],!,fail,RowText = AllText, MoreText = [].
 next_row(strict,Style,AllText,RowText,MoreText):- !,
  Style = g_style(RowSep,CellSep,_,_),
  RowSep = ['|'],
  append(RowSep,CellSep,RowsApart),
- append([XX,RowsApart,RowText,RowsApart,More],AllText),  RowText\==[],
+ append([XX,RowsApart,RowText,RowsApart,More],AllText),  
+ RowText\==[],
  \+ append([_|RowSep],_,XX),
  append(RowsApart,More,MoreText),!.
-next_row1(g_style(RowsApart,CellSep,_,_),AllText,RowText,MoreText):- 
- append([XX,RowsApart,RowText,RowsApart,More],AllText),   RowText\==[],
- \+ (CellSep\==[], append([_|CellSep],_,XX)),
- append(RowsApart,More,MoreText).
-next_row1(g_style(RowsApart,_,_,_),AllText,RowText,MoreText):- 
- append([RowsApart,RowText,RowsApart,More],AllText),   RowText\==[],
- append(RowsApart,More,MoreText).
+ 
+ 
 
-next_row(Style,Text,Chars,MoreText):- !, next_row1(Style,Text,Chars,MoreText),!.
-next_row(g_style(RowsApart,_,_,_),AllText,RowText,MoreText):- 
- append([RowText,RowsApart,More],AllText),   RowText\==[],
- append(RowsApart,More,MoreText).
-next_row(g_style(_,CellSep,_,_),RowText,RowText,[]):-  RowText\==[], \+ \+ append([_|CellSep],_,RowText).
-next_row(_,_,[],[]).
+% a
+next_row(strict,g_style(RowSep,CellSep,_,_),AllText,RowText,MoreText):- 
+ \+ list_contains(AllText,RowSep), !,
+ list_contains(RowText,CellSep),!, RowText = AllText, MoreText = [].
+
+% everything below
+next_row(Strict,Style,AllText,RowText,MoreText):- 
+   next_row1(Strict,Style,AllText,RowText,MoreText),!,
+   ((Strict = strict) -> ( RowText\==[], Style = g_style(_,CellSep,_,_), list_contains(RowText,CellSep)); true).
+
+% |a|b..
+next_row1(strict,g_style(RowSep,CellSep,_,_),AllText,RowText,MoreText):- 
+ append(RowSep,CellSep,RowsApart),
+ append([RowsApart,RowText,RowsApart,More],AllText),  
+ RowText\==[],!, append(RowsApart,More,MoreText),!.
+
+% a|b..
+next_row1(strict,g_style(RowSep,CellSep,_,_),AllText,RowText,MoreText):- 
+ append(RowSep,CellSep,RowsApart),
+ append([RowText,RowsApart,More],AllText),  
+ RowText\==[],!, append(RowsApart,More,MoreText),!.
+
+% |a
+next_row1(strict,g_style(RowSep,CellSep,_,_),AllText,RowText,[]):- 
+ append(RowSep,CellSep,RowsApart),
+ append([RowsApart,RowText],AllText).
+
+% a|
+next_row1(strict,g_style(RowSep,CellSep,_,_),AllText,RowText,[]):- 
+ append(RowSep,CellSep,RowsApart),
+ append([RowText,RowsApart],AllText).
+
+
 
 read_cell(g_style(_RowSep,CellSep,BlackStyle,VarStyle),[C|Rest],Cell,More):- 
   read_one_color(BlackStyle,VarStyle,C,Cell), append(CellSep,Rest,More).
