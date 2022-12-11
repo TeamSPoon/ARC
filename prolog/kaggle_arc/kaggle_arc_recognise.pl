@@ -771,7 +771,8 @@ detect_ascii_grid_style(AllText,Style):-
   suggest_row_cells_seps(RowSep,CellSep),
   Style = g_style(RowSep,CellSep,BlackStyle,VarStyle),
   next_row(strict,Style,AllText,RowText,MoreText), RowText \==[], MoreText \==[],
-  read_cell(Style,RowText,_,_),
+  notrace(read_cell(Style,RowText,Cell,_)),
+  Cell \= unreadable(_),
   ignore((member(BlackStyle,AllText),member(BlackStyle,['0','.',' ']),
   ignore((member(VarStyle,AllText),VarStyle\==BlackStyle,member(VarStyle,['?',' ']))))),!.
 detect_ascii_grid_style(Text,g_style(['|'],[' '],' ','?')):- member('?',Text),!.
@@ -816,18 +817,6 @@ next_row(Strict,Style,AllText,RowText,MoreText):- !,
    next_row1(Strict,Style,AllText,RowText,MoreText),!,
    ((Strict = strict) -> ( RowText\==[], Style = g_style(_,CellSep,_,_), list_contains(RowText,CellSep)); true).
 
-/*
-% |a|b..
-next_row(strict,Style,AllText,RowText,MoreText):- !,
- Style = g_style(RowSep,CellSep,_,_),
- RowSep = ['|'],
- append(RowSep,CellSep,RowsApart),
- append([XX,RowsApart,RowText,RowsApart,More],AllText),  
- RowText\==[],
- \+ append([_|RowSep],_,XX),
- append(RowsApart,More,MoreText),!.
- */
- 
 % |a|b..
 next_row1(strict,g_style(RowSep,CellSep,_,_),AllText,RowText,MoreText):- 
  append(RowSep,CellSep,RowsApart),
