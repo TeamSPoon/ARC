@@ -795,7 +795,7 @@ ascii_append_grid(Style,Text,Start,Grid):-
   ascii_append_grid(Style,MoreText,MidG,Grid).
 ascii_append_grid(_,_,PassThruG,PassThruG).
 
-read_row_cells(_,[],[]):-!.
+read_row_cells(_,[],Row):-!, Row = [].
 read_row_cells(g_style(RowSep,_,_,_),Chars,[]):- append(RowSep,_,Chars),!.
 read_row_cells(Style,Chars,[Cell|MoreCells]):- read_cell(Style,Chars,Cell,MoreChars),read_row_cells(Style,MoreChars,MoreCells).
 read_row_cells(_,_,[]).
@@ -805,6 +805,19 @@ list_contains(AllText,RowSep):- \+ \+ append([_|RowSep],_,AllText).
 
 % ""
 next_row(strict,_,AllText,RowText,MoreText):- AllText==[],!,fail,RowText = AllText, MoreText = [].
+
+% a
+next_row(strict,g_style(RowSep,CellSep,_,_),AllText,RowText,MoreText):- fail,
+ RowSep\==[], \+ list_contains(AllText,RowSep), 
+ list_contains(RowText,CellSep), RowText = AllText, MoreText = [].
+
+% everything below
+next_row(Strict,Style,AllText,RowText,MoreText):- !,
+   next_row1(Strict,Style,AllText,RowText,MoreText),!,
+   ((Strict = strict) -> ( RowText\==[], Style = g_style(_,CellSep,_,_), list_contains(RowText,CellSep)); true).
+
+/*
+% |a|b..
 next_row(strict,Style,AllText,RowText,MoreText):- !,
  Style = g_style(RowSep,CellSep,_,_),
  RowSep = ['|'],
@@ -813,19 +826,8 @@ next_row(strict,Style,AllText,RowText,MoreText):- !,
  RowText\==[],
  \+ append([_|RowSep],_,XX),
  append(RowsApart,More,MoreText),!.
+ */
  
- 
-
-% a
-next_row(strict,g_style(RowSep,CellSep,_,_),AllText,RowText,MoreText):- 
- \+ list_contains(AllText,RowSep), !,
- list_contains(RowText,CellSep),!, RowText = AllText, MoreText = [].
-
-% everything below
-next_row(Strict,Style,AllText,RowText,MoreText):- 
-   next_row1(Strict,Style,AllText,RowText,MoreText),!,
-   ((Strict = strict) -> ( RowText\==[], Style = g_style(_,CellSep,_,_), list_contains(RowText,CellSep)); true).
-
 % |a|b..
 next_row1(strict,g_style(RowSep,CellSep,_,_),AllText,RowText,MoreText):- 
  append(RowSep,CellSep,RowsApart),
