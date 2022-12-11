@@ -731,10 +731,11 @@ ascii_to_growthchart(Text,GrowthChart):-
 :- luser_default(find_rule,regular).
 % ?- h666(X),text_to_grid(X,G).
 text_to_grid(Text,GO):- ascii_to_grid(Text,GO),!.
+text_to_grid(Text,G):- ensure_charlist(Text,Chars),!,text_to_grid(Chars,G).
 
 ascii_to_grid(Text,G):- maybe_fix_ascii(Text,Ascii0), !, ascii_to_grid(Ascii0,G).
 ascii_to_grid(Text,G):- %atom_contains(Text,'____'),!, 
-  must_det_ll((atom_chars(Text,C), ascii_append_grid(C,[],G))).
+   ascii_append_grid(Text,[],G),!.
 ascii_to_grid(Text,G):- 
  ascii_to_growthchart(Text,GrowthChart),
  growthchart_to_grid(GrowthChart,6,5,G).
@@ -769,13 +770,20 @@ detect_ascii_grid_style(Text,Style):- ensure_charlist(Text,Chars),!,detect_ascii
 detect_ascii_grid_style(AllText,Style):-
   suggest_row_cells_seps(RowSep,CellSep),
   Style = g_style(RowSep,CellSep,BlackStyle,VarStyle),
-  next_row1(Style,AllText,RowText,MoreText), RowText \==[], MoreText \==[],
+  next_row(strict,Style,AllText,RowText,MoreText), RowText \==[], MoreText \==[],
   read_cell(Style,RowText,_,_),
   ignore((member(BlackStyle,AllText),member(BlackStyle,['0','.',' ']),
   ignore((member(VarStyle,AllText),VarStyle\==BlackStyle,member(VarStyle,['?',' ']))))),!.
+detect_ascii_grid_style(Text,g_style(['|'],[' '],' ','?')):- member('?',Text),!.
+%detect_ascii_grid_style(Text,g_style(['|'],[' '],' ','.')):- member('.',Text),!.
+detect_ascii_grid_style(_Text,g_style(['|'],[' '],'.',' ')).
+detect_ascii_grid_style(_Text,g_style(['|'],[],'0',' ')).
 
-ensure_charlist(Text,Chars):- \+ is_charlist(Text),format(chars(Chars),'~w',[Text]).
+ensure_charlist(Text,Chars):- notrace((Text\==[], \+ is_charlist(Text),format(chars(Chars),'~w',[Text]))).
 
+ascii_append_grid(Text,Start,Grid):- 
+  detect_ascii_grid_style(Text,Style),
+  ascii_append_grid(Style,Text,Start,Grid),!.
 ascii_append_grid(Text,Start,Grid):- 
   must_det_ll((detect_ascii_grid_style(Text,Style),
     ascii_append_grid(Style,Text,Start,Grid))).
@@ -792,7 +800,12 @@ read_row_cells(g_style(RowSep,_,_,_),Chars,[]):- append(RowSep,_,Chars),!.
 read_row_cells(Style,Chars,[Cell|MoreCells]):- read_cell(Style,Chars,Cell,MoreChars),read_row_cells(Style,MoreChars,MoreCells).
 read_row_cells(_,_,[]).
 
-next_row1(g_style(RowSep,CellSep,_,_),AllText,RowText,MoreText):- 
+
+list_contains(AllText,RowSep):- \+ \+ append([_|RowSep],_,AllText).
+
+next_row(strict,Style,AllText,RowText,MoreText):- !,
+ Style = g_style(RowSep,CellSep,_,_),
+ RowSep = ['|'],
  append(RowSep,CellSep,RowsApart),
  append([XX,RowsApart,RowText,RowsApart,More],AllText),  RowText\==[],
  \+ append([_|RowSep],_,XX),
@@ -817,8 +830,8 @@ read_cell(g_style(_RowSep,CellSep,BlackStyle,VarStyle),[C|Rest],Cell,More):-
 
 read_one_color(BlackStyle,VarStyle,C,Cell):- is_black_color(BlackStyle,VarStyle,C),!,get_black(Cell).
 read_one_color(BlackStyle,VarStyle,C,Cell):- C\==BlackStyle,(C==VarStyle;(var(VarStyle), var(C))),!,Cell=_.
-read_one_color(_BlackStyle,_VarStyle,C,Cell):- trans_to_color1(C,Cell).
-read_one_color(_BlackStyle,_VarStyle,C,unreadable(C)):-!.
+read_one_color(_BlackStyle,_VarStyle,C,Cell):- trans_to_color1(C,Cell),!.
+read_one_color(_BlackStyle,_VarStyle,C,unreadable(C)):- trace, !.
 
 trans_to_color1(Num,Color):- atom_number(Num,CC),color_name(CC,Color),!.
 trans_to_color1(' ',_):-!.
