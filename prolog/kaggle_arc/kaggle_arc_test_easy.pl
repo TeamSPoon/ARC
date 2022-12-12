@@ -665,7 +665,7 @@ test_tag:- forall(test_tag(X),test_tag_info(X)).
  test_tag(associate_patterns_to_patterns).
 
  test_tag(background_filling).
- test_tag(bounce).
+ test_tag(bouncing).
  test_tag(bouncing).
  test_tag(bridges).
  test_tag(bring_patterns_close).
@@ -698,7 +698,7 @@ test_tag:- forall(test_tag(X),test_tag_info(X)).
  test_tag(detect_wall).
  test_tag(diagonal_symmetry).
  test_tag(diagonals).
- test_tag(direction_guesing).
+ test_tag(direction_guessing).
  test_tag(direction_guessing).
  test_tag(divide_by_n).
  test_tag(dominant_color).
@@ -718,7 +718,7 @@ test_tag:- forall(test_tag(X),test_tag_info(X)).
  test_tag(holes).
  test_tag(homeomorphism).
  test_tag(image_expansion).
- test_tag(image_expasion).
+ test_tag(image_expansion).
  test_tag(image_filling).
  test_tag(image_juxtaposition).
  test_tag(image_reflection).
@@ -757,14 +757,14 @@ test_tag:- forall(test_tag(X),test_tag_info(X)).
  test_tag(portals).
  test_tag(projection_unto_rectangle).
  test_tag(proximity_guessing).
- test_tag(recolor).
+ %test_tag(recolor).
  test_tag(recoloring).
  test_tag(rectangle_guessing).
- test_tag(remove_intruder).
+ %test_tag(remove_intruders).
  test_tag(remove_intruders).
  test_tag(remove_noise).
  test_tag(replace_pattern).
- test_tag(rettangle_guessing).
+ test_tag(rectangle_guessing).
  test_tag(separate_image).
  test_tag(separate_images).
  test_tag(separate_shapes).

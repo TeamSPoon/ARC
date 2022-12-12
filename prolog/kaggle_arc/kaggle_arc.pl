@@ -411,7 +411,7 @@ get_map_pairs(Map,is_dict(T),Pairs):- is_dict(Map), dict_pairs(Map,T,Pairs).
 
 is_vm(Tree):- is_map(Tree), once(get_kov(program,Tree,_);get_kov(program_i,Tree,_)).
 
-is_map(Tree):- is_rbtree(Tree),!, \+ rb_lookup(Tree,izmap,false).
+is_map(Tree):- is_rbtree(Tree),!, \+ rb_in(izmap,false,Tree).
 is_map(Dict):- is_dict(Dict),!, \+ get_dict(izmap,Dict,false).
 
 

@@ -48,7 +48,7 @@ fav(t(a740d043),[human(remove_color(blue))]).
 
 fav(t('47c1f68c'),[hedra,
    human(compute_max_color(C1),compute_next_color(C2),remove_color(C1),subst_color(C2,C1),blur(flipH),blur(flipV))]).
-fav(t('47c1f68c'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),recolor,image_repetition,image_reflection,find_the_intruder,detect_grid,crop,color_guessing,'(3, 1)']).
+fav(t('47c1f68c'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),recoloring,image_repetition,image_reflection,find_the_intruder,detect_grid,crop,color_guessing,'(3, 1)']).
 fav(v('cad67732'),[human(i(whole),first_object_term(rotated),learn_rule),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 fav(t('27a28665'),[human(i(whole),learn_rule)]).
 %fav(t('27a28665'),[human(i([glyphic]),one_obj,into_monochrome,db(largest:shape,out:grid:p(1,1):color),resize_grid(1,1))]).
@@ -276,7 +276,7 @@ fav(v('6ea4a07e'),[clue(amass(in)+amass(out)=9),human(use_clues),clue(corispond_
 fav_less(V,[test_suite([less_fav])|T]):- less_fav(V,T).
 
 
-less_fav(t(ba97ae07),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([train400]),rettangle_guessing,recoloring,pattern_modification,pairwise_analogy,'(4, 1)']).
+less_fav(t(ba97ae07),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([train400]),rectangle_guessing,recoloring,pattern_modification,pairwise_analogy,'(4, 1)']).
 less_fav(t(cbded52d),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,+'Errors',test_suite([train400]),separate_images,pattern_repetition,pattern_modification,pattern_juxtaposition,'https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021',detect_grid,connect_the_dots,'(3, 1)']).
 less_fav(t(e8dc4411),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([train400]),pattern_expansion,direction_guessing,'(3, 1)']).
 less_fav(v('45737921'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
@@ -400,7 +400,7 @@ less_fav(v(da515329),[grid_size_same,-rotation_match,-mask_match,+shape_match,+c
 
 
 less_fav(t('8eb1be9a'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_repetition,image_filling,'(2, 1)']).
-less_fav(t(a3df8b1e),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_expansion,draw_line_from_point,diagonals,bounce,'(3, 1)']).
+less_fav(t(a3df8b1e),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_expansion,draw_line_from_point,diagonals,bouncing,'(3, 1)']).
 less_fav(t(ea786f4a),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_modification,draw_line_from_point,diagonals,'(3, 1)']).
 less_fav(v('9ddd00f0'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(t('56ff96f3'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),rectangle_guessing,pattern_completion,'(4, 1)']).
@@ -480,7 +480,7 @@ less_fav(v('50a16a69'),[grid_size_same,-rotation_match,-color_match,+shape_match
 less_fav(v(f823c43c),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(t('4093f84a'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),recoloring,projection_unto_rectangle,gravity,'(3, 1)']).
 less_fav(v('2a5f8217'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(3, 1) ']).
-less_fav(t(ce602527),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),size_guessing,shape_guessing,remove_intruder,find_the_intruder,crop,'(4, 1)']).
+less_fav(t(ce602527),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),size_guessing,shape_guessing,remove_intruders,find_the_intruder,crop,'(4, 1)']).
 less_fav(v('7bb29440'),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(5, 1) ']).
 less_fav(v('5833af48'),[out_grid(16,8),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('505fff84'),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(5, 1) ']).
@@ -576,7 +576,7 @@ less_fav(t('67385a82'),[grid_size_same,-rotation_match,-color_match,+shape_match
 less_fav(t(a5f85a15),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,pattern_modification,pairwise_analogy,'(3, 1)']).
 less_fav(t(aedd82e4),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),take_minimum,separate_shapes,recoloring,count_tiles,associate_colors_to_bools,'(4, 1)']).
 less_fav(t(ba26e723),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,pattern_modification,pairwise_analogy,'(5, 1)']).
-less_fav(t(bb43febb),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),rettangle_guessing,loop_filling,'(2, 1)']).
+less_fav(t(bb43febb),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),rectangle_guessing,loop_filling,'(2, 1)']).
 less_fav(t(ce9e57f2),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),take_half,recoloring,count_tiles,'(3, 1)']).
 less_fav(t(d406998b),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,one_yes_one_no,cylindrical,'(4, 1)']).
 less_fav(v('817e6c09'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(5, 1) ']).
@@ -740,7 +740,7 @@ less_fav(t('780d0b14'),[out_grid(2,2),-shape_match,-rotation_match,-mask_match,-
 less_fav(v(d4c90558),[out_grid(8,3),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('81c0276b'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('7c9b52a0'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(t(b190f7f5),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),separate_images,replace_pattern,image_resizing,image_expasion,color_palette,'(3, 1)']).
+less_fav(t(b190f7f5),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),separate_images,replace_pattern,image_resizing,image_expansion,color_palette,'(3, 1)']).
 less_fav(v('19bb5feb'),[out_grid(2,2),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('20818e16'),[out_grid(8,6)]).
 less_fav(t(e6721834),[out_grid(17,15),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),
@@ -771,7 +771,7 @@ less_fav(v(fafd9572),[grid_size_same,-rotation_match,-color_match,+shape_match,+
 less_fav(v(a680ac02),[out_grid(8,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(b4a43f3b),[out_grid(18,18),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t(f8b3ba0a),[out_grid(1,3),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),summarize,order_numbers,find_the_intruder,dominant_color,detect_grid,count_tiles,'(4, 1)']).
-less_fav(t('8e1813be'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),recoloring,image_within_image,direction_guesing,crop,color_guessing,'(3, 1)']).
+less_fav(t('8e1813be'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),recoloring,image_within_image,direction_guessing,crop,color_guessing,'(3, 1)']).
 less_fav(v('4c177718'),[out_grid(15,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 2) ']).
 less_fav(v('3d31c5b3'),[out_grid(6,3),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(6, 1) ']).
 less_fav(t('75b8110e'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),separate_images,image_juxtaposition,'(5, 1)']).

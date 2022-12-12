@@ -609,7 +609,9 @@ some_test_suite_name(SuiteX):- test_suite_name(SuiteX),
   SuiteX\==test_names_by_hard_rev.
 
 
-test_suite_info(SuiteX,TestID):- var(SuiteX),!,forall(some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID)).
+:- dynamic(muarc_tmp:skip_calc_suite_test/1).
+test_suite_info(SuiteX,TestID):- var(SuiteX),!,forall(some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID)),
+  !,some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
 test_suite_info(SuiteX,TestID):- test_suite_testIDs(SuiteX,Set),!,member(TestID,Set).
 
 test_suite_testIDs(SuiteX,Set):- muarc_tmp:cached_tests_hard(SuiteX,Set).
@@ -631,16 +633,18 @@ test_suite_info_1(dbigham_fail,TestID):- !, all_arc_test_name(TestID),
    \+ test_suite_info(dbigham_eval_pass,TestID).
 test_suite_info_1(SuiteX,TestID):- suite_tag(SuiteX,List),!,tasks_split(TestID,List).
 test_suite_info_1(SuiteX,TestID):- atom(SuiteX),current_predicate(SuiteX/1),!,call(call,SuiteX,TestID).
-%test_suite_info_1(prop_suite(SuiteX),TestID):- !,test_info_no_loop(TestID,Sol), \+ \+ (member(E,Sol), (E==SuiteX)).
+%test_suite_info_1(prop_suite(SuiteX),TestID):- !,some_test_info(TestID,Sol), \+ \+ (member(E,Sol), (E==SuiteX)).
 
-test_suite_list(List):- findall(SN,some_test_suite_name(SN),List).
+full_test_suite_list(List):- findall(SN,some_test_suite_name(SN),List).
+test_suite_list(AtLeastTwo):- full_test_suite_list(List),sort(List,Sort),include(at_least_two_tests,Sort,AtLeastTwo).
+at_least_two_tests(_).
 
 report_suites:-  
  (luser_getval(test_suite_name,SuiteXC); SuiteXC=[]),
  test_suite_list(L),
  forall(nth100(N,L,SuiteX),
-  (nl,format('~N~w:  ',[N]),
-   ignore((SuiteX==SuiteXC,write('\n--->>>>'))),report_suite(SuiteX))).
+  (nl,current_suite_testnames(SuiteX,_), format(' ~w:  ',[N]),
+   report_suite(SuiteX),ignore((SuiteX==SuiteXC,write('   <<<<-------'))))).
 
 
 test_prop_example(TPE):-   less_fav(_,PropList),member(Prop,PropList),as_test_prop(Prop,TPE).

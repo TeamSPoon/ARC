@@ -90,8 +90,9 @@ type_to_letter(training,t):-!.
 type_to_letter(_,v).
 
 
-more_test_info(t(A),BCD):- more_test_info(t(A),B,C,D),my_append([B,C,D,[training]],BCD).
-more_test_info(v(A),BCD):- more_test_info(v(A),B,C,D),my_append([B,C,D,[evaluation]],BCD).
+more_test_info(t(A),BCD):- more_test_info(t(A),B,C,_D),my_append([B,C,[alphabetical_t]],BCD).
+more_test_info(v(A),BCD):- more_test_info(v(A),B,C,_D),my_append([B,C,[alphabetical_v]],BCD).
+
 :- dynamic(more_test_info/4).
 more_test_info(t('0d3d703e'),[+mask_match,+shape_match,-rotation_match,-color_match,associate_colors_to_colors],['(4, 1)'],[tt]).
 more_test_info(t(d511f180),[+mask_match,+shape_match,+'Errors',-rotation_match,-color_match,associate_colors_to_colors],['(3, 1)'], ['https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021#760920']).
@@ -142,7 +143,7 @@ more_test_info(t('28bf18c6'),[+color_match,-mask_match,-shape_match,-rotation_ma
 more_test_info(t('80af3007'),[+color_match,-mask_match,-shape_match,-rotation_match,crop,pattern_resizing,image_resizing,fractal_repetition],['(3, 1)'],[tt]).
 more_test_info(t('3f7978a0'),[+color_match,-mask_match,-shape_match,-rotation_match,crop,rectangle_guessing,find_the_intruder],['(3, 1)'],[tt]).
 more_test_info(t('90c28cc7'),[-mask_match,-shape_match,-rotation_match,-color_match,crop,rectangle_guessing,summarize],['(3, 1)'],[tt]).
-more_test_info(t(ce602527),[-mask_match,-shape_match,-rotation_match,-color_match,crop,size_guessing,shape_guessing,find_the_intruder,remove_intruder],['(4, 1)'],[tt]).
+more_test_info(t(ce602527),[-mask_match,-shape_match,-rotation_match,-color_match,crop,size_guessing,shape_guessing,find_the_intruder,remove_intruders],['(4, 1)'],[tt]).
 more_test_info(t(b94a9452),[-mask_match,-shape_match,-rotation_match,-color_match,crop,take_negative],['(3, 1)'],[tt]).
 more_test_info(t('1cf80156'),[+color_match,-mask_match,-shape_match,-rotation_match,crop],['(3, 1)'],[tt]).
 more_test_info(t(d10ecb37),[+color_match,-mask_match,-shape_match,-rotation_match,crop],['(3, 1)'],[tt]).
@@ -287,7 +288,7 @@ more_test_info(t(c0f76784),[+shape_match,-mask_match,-rotation_match,-color_matc
 more_test_info(t('44d8ac46'),[+shape_match,-mask_match,-rotation_match,-color_match,loop_filling,rectangle_guessing],['(4, 1)'],[tt]).
 more_test_info(t(e73095fd),[+shape_match,-mask_match,-rotation_match,-color_match,loop_filling,rectangle_guessing],['(3, 1)'],[tt]).
 more_test_info(t(d5d6de2d),[+shape_match,-mask_match,-rotation_match,-color_match,loop_filling,replace_pattern,remove_intruders],['(3, 2)'],[tt]).
-more_test_info(t(bb43febb),[+mask_match,+shape_match,-rotation_match,-color_match,loop_filling,rettangle_guessing],['(2, 1)'],[tt]).
+more_test_info(t(bb43febb),[+mask_match,+shape_match,-rotation_match,-color_match,loop_filling,rectangle_guessing],['(2, 1)'],[tt]).
 more_test_info(t('00d62c1b'),[+shape_match,-mask_match,-rotation_match,-color_match,loop_filling],['(5, 1)'],[tt]).
 more_test_info(t(a5313dff),[+shape_match,-mask_match,-rotation_match,-color_match,loop_filling],['(3, 1)'],[tt]).
 more_test_info(t('6455b5f5'),[+shape_match,-mask_match,-rotation_match,-color_match,measure_area,take_maximum,take_minimum,loop_filling,associate_colors_to_ranks],['(4, 1)'],[tt]).
@@ -318,7 +319,7 @@ more_test_info(t('045e512c'),[+shape_match,+color_match,-mask_match,-rotation_ma
 more_test_info(t(e8dc4411),[+mask_match,+shape_match,+color_match,-rotation_match,pattern_expansion,direction_guessing],['(3, 1)'],[tt]).
 more_test_info(t(e21d9049),[+shape_match,+color_match,-mask_match,-rotation_match,pattern_expansion,draw_line_from_point,color_palette],['(2, 1)'],[tt]).
 more_test_info(t(b527c5c6),[+shape_match,+color_match,-mask_match,-rotation_match,pattern_expansion,draw_line_from_point,contouring,direction_guessing,size_guessing],['(4, 1)'],[tt]).
-more_test_info(t(a3df8b1e),[+shape_match,+color_match,-mask_match,-rotation_match,pattern_expansion,draw_line_from_point,diagonals,bounce],['(3, 1)'],[tt]).
+more_test_info(t(a3df8b1e),[+shape_match,+color_match,-mask_match,-rotation_match,pattern_expansion,draw_line_from_point,diagonals,bouncing],['(3, 1)'],[tt]).
 more_test_info(t(b8cdaf2b),[+shape_match,+color_match,-mask_match,-rotation_match,pattern_expansion,draw_line_from_point,diagonals,pairwise_analogy],['(4, 1)'],[tt]).
 more_test_info(t(aba27056),[+shape_match,-mask_match,-rotation_match,-color_match,pattern_expansion,draw_line_from_point,diagonals],['(3, 1)'],[tt]).
 more_test_info(t(ec883f72),[+shape_match,+color_match,-mask_match,-rotation_match,pattern_expansion,draw_line_from_point,diagonals],['(4, 1)'],[tt]).
@@ -364,7 +365,7 @@ more_test_info(t('137eaa0f'),[-mask_match,-shape_match,-rotation_match,-color_ma
 more_test_info(t(ea786f4a),[+shape_match,+color_match,-mask_match,-rotation_match,pattern_modification,draw_line_from_point,diagonals],['(3, 1)'],[tt]).
 more_test_info(t(ecdecbb3),[+shape_match,+color_match,-mask_match,-rotation_match,pattern_modification,draw_line_from_point],['(3, 1)'],[tt]).
 more_test_info(t(ba26e723),[+mask_match,+shape_match,-rotation_match,-color_match,pattern_modification,pairwise_analogy,recoloring],['(5, 1)'],[tt]).
-more_test_info(t(ba97ae07),[+mask_match,+shape_match,+color_match,-rotation_match,pattern_modification,pairwise_analogy,rettangle_guessing,recoloring],['(4, 1)'],[tt]).
+more_test_info(t(ba97ae07),[+mask_match,+shape_match,+color_match,-rotation_match,pattern_modification,pairwise_analogy,rectangle_guessing,recoloring],['(4, 1)'],[tt]).
 more_test_info(t('025d127b'),[+shape_match,+color_match,+'Errors',-mask_match,-rotation_match,pattern_modification],['(2, 1)'],[tt,'https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021']).
 more_test_info(t(e9afcf9a),[+mask_match,+shape_match,+color_match,-rotation_match,pattern_modification],['(2, 1)'],[tt]).
 more_test_info(t(a61ba2ce),[+color_match,-mask_match,-shape_match,-rotation_match,pattern_moving,bring_patterns_close,crop,jigsaw],['(2, 1)'],[tt]).
@@ -423,7 +424,7 @@ more_test_info(t('776ffc46'),[+mask_match,+shape_match,+color_match,-rotation_ma
 more_test_info(t(e509e548),[+mask_match,+shape_match,-rotation_match,-color_match,recoloring,associate_colors_to_shapes,homeomorphism],['(3, 1)'],[tt]).
 more_test_info(t('234bbc79'),[-mask_match,-shape_match,-rotation_match,-color_match,recoloring,bring_patterns_close,crop],['(4, 1)'],[tt]).
 more_test_info(t('77fdfe62'),[-mask_match,-shape_match,-rotation_match,-color_match,recoloring,color_guessing,detect_grid,crop],['(3, 1)'],[tt]).
-more_test_info(t('8e1813be'),[-mask_match,-shape_match,-rotation_match,-color_match,recoloring,color_guessing,direction_guesingcrop,image_within_image],['(3, 1)'],[tt]).
+more_test_info(t('8e1813be'),[-mask_match,-shape_match,-rotation_match,-color_match,recoloring,color_guessing,direction_guessing,crop,image_within_image],['(3, 1)'],[tt]).
 more_test_info(t(aabf363d),[+shape_match,-mask_match,-rotation_match,-color_match,recoloring,color_guessing,remove_intruders],['(2, 1)'],[tt]).
 more_test_info(t('63613498'),[+mask_match,+shape_match,-rotation_match,-color_match,recoloring,compare_image,detect_wall],['(3, 1)'],[tt]).
 more_test_info(t('6e82a1ae'),[+mask_match,+shape_match,-rotation_match,-color_match,recoloring,count_tiles,associate_colors_to_numbers],['(3, 1)'],[tt]).
@@ -471,7 +472,7 @@ more_test_info(t(e50d258f),[-mask_match,-shape_match,-rotation_match,-color_matc
 more_test_info(t('7b7f7511'),[+color_match,-mask_match,-shape_match,-rotation_match,separate_images,detect_repetition,crop],['(3, 1)'],[tt]).
 more_test_info(t('662c240a'),[-mask_match,-shape_match,-rotation_match,-color_match,separate_images,detect_symmetry,find_the_intruder,crop],['(4, 1)'],[tt]).
 more_test_info(t(a87f7484),[-mask_match,-shape_match,-rotation_match,-color_match,separate_images,find_the_intruder,crop],['(4, 1)'],[tt]).
-more_test_info(t(b190f7f5),[-mask_match,-shape_match,-rotation_match,-color_match,separate_images,image_expasion,color_palette,image_resizing,replace_pattern],['(3, 1)'],[tt]).
+more_test_info(t(b190f7f5),[-mask_match,-shape_match,-rotation_match,-color_match,separate_images,image_expansion,color_palette,image_resizing,replace_pattern],['(3, 1)'],[tt]).
 more_test_info(t('75b8110e'),[-mask_match,-shape_match,-rotation_match,-color_match,separate_images,image_juxtaposition],['(5, 1)'],[tt]).
 more_test_info(t('8efcae92'),[-mask_match,-shape_match,-rotation_match,-color_match,separate_images,rectangle_guessing,count_tiles,take_maximum,crop],['(3, 1)'],[tt]).
 more_test_info(t('94f9d214'),[-mask_match,-shape_match,-rotation_match,-color_match,separate_images,take_complement,pattern_intersection],['(4, 1)'],[tt]).
