@@ -95,7 +95,7 @@ find_g_tests(F):- find_tests(F).
 
 list_of_tests(S):- findall(F,find_f_tests(F),L1),findall(F,find_g_tests(F),L),sort(L,L2),append(L1,L2,L12),list_to_set(L12,S).
 
-show_tests:- update_changes, list_of_tests(L),
+show_tests:- update_changes, report_suites,list_of_tests(L),
   print_menu_list(L).
 
 print_menu_list(L):- forall(nth10(N,L,E),format('~N~@',[print_menu_cmd1(N:E,E)])),nl.
@@ -132,32 +132,19 @@ read_menu_chars0( Start, SelMax, Out):- read_menu_chars1( Start, SelMax,Out),!.
 read_menu_chars1( Start, SelMax,Out):- fail,
   read_pending_codes(user_input, Codes, []),
   atom_codes(Key,Codes), append_num_code(Start,SelMax,Key,Out).
+
 read_menu_chars1(Start,SelMax,Out):-
   get_single_key_code(Codes), atom_codes(Key,Codes),
   append_num_code(Start,SelMax,Key,Out).
 
+append_num_code(Start,_SelMax,Key,Start):- atom_codes(Key,[C|_]), char_type(C,end_of_line),!.
+append_num_code(Start,SelMax,Digit,Out):- atom_codes(Digit,[C|_]),char_type(C,digit),write(Digit),atom_concat(Start,Digit,NStart), 
+ ((atom_number(NStart,Num),Num>29) -> Out = NStart ; read_menu_chars1(NStart,SelMax,Out)).
+append_num_code(Start,_SelMax,Key,Sel):- atom_concat(Start,Key,Sel).
+
 get_single_key_code(CCodes):- key_read_borked(PP),!, wdmsg(get_single_key_code(PP)),sleep(5),once((\+ toplevel_pp(http),read(CCodes))).
 get_single_key_code(CCodes):- get_single_char(C), 
   (  C== -1 -> (CCodes=`Q`) ; (read_pending_codes(user_input,Codes, []), [C|Codes]=CCodes)).
-
-/*
-get_single_key_code(Code):- get_single_char(C), into_key_codes([C],Code).
-
-
-into_key_codes([27],Codes):- get_single_char(C1),into_key_codes([27,C1],Codes).
-into_key_codes([27,27],[27|Codes]):- get_single_char(C1),into_key_codes([27,C1],Codes).
-
-into_key_codes([27,91],Codes):- get_single_char(C1),into_key_codes([27,91,C1],Codes).
-into_key_codes([27,79],Codes):- get_single_char(C1),into_key_codes([27,79,C1],Codes).
-into_key_codes([27,N1,54],Codes):- get_single_char(C1),into_key_codes([27,N1,54,C1],Codes).
-into_key_codes([27,N1,53],Codes):- get_single_char(C1),into_key_codes([27,N1,53,C1],Codes).
-into_key_codes(C,C).
-*/
-
-append_num_code(Start,_SelMax,Key,Start):- atom_codes(Key,[C|_]), char_type(C,end_of_line),!.
-append_num_code(Start,SelMax,Digit,Out):- atom_codes(Digit,[C|_]),char_type(C,digit),write(Digit),atom_concat(Start,Digit,NStart), 
- ((atom_number(NStart,Num),Num>29) -> Out = NStart ; read_menu_chars(NStart,SelMax,Out)).
-append_num_code(Start,_SelMax,Key,Sel):- atom_concat(Start,Key,Sel).
 
 
 clsR:- flush_tee, !. % once(cls_z).
@@ -510,7 +497,7 @@ reverse_suite:-
 
 
 restart_suite:- 
-   must_det_ll((get_current_suite_testnames(Set),
+   ignore((get_current_suite_testnames(Set),
    [NewFirst|_]=Set,
    set_current_test(NewFirst))).
 
@@ -575,16 +562,22 @@ get_current_suite_testnames(Set):-
   luser_getval(test_suite_name,X),
   current_suite_testnames(X,Set).
 
+:- dynamic(muarc_tmp:skip_calc_suite/1).
 
 current_suite_testnames(X,Set):- nonvar(Set),current_suite_testnames(X,SetV),!,Set=SetV.
 current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),Set\==[],!.
+current_suite_testnames(X,_Set):- muarc_tmp:skip_calc_suite(X),bt,
+  pp(skip_calc_suite(current_suite_testnames(X))),fail.
 current_suite_testnames(X,Set):-  
+ setup_call_cleanup(
+  assert(muarc_tmp:skip_calc_suite(X),Ref),
  (once((%pp(creating(current_suite_testnames(X))), 
  must_det_ll((
  findall(ID,test_suite_info(X,ID),List),
   %length(List,L), pp(current_suite_testnames(X)=L),  
   my_list_to_set_variant(List,Set),
-  !,(ignore((Set\==[],asserta(muarc_tmp:cached_tests(X,Set)))))))))).
+     !,(ignore((Set\==[],asserta(muarc_tmp:cached_tests(X,Set)))))))))),
+  erase(Ref)).
 
 get_by_hard(X,Set):- nonvar(Set),get_by_hard(X,SetV),!,Set=SetV.
 get_by_hard(X,ByHard):- muarc_tmp:cached_tests_hard(X,ByHard),!.
@@ -630,13 +623,6 @@ test_suite_testIDs(SuiteX,Set):-
   list_to_set(List,Set),ignore((Set\==[],asserta(muarc_tmp:cached_tests(SuiteX,Set)))).
 
 test_suite_info_1(SuiteX,TestID):- var(SuiteX),!,some_test_suite_name(SuiteX),test_suite_info_1(SuiteX,TestID).
-test_suite_info_1(SuiteX,TestID):-
-   test_info_no_loop(TestID,Sol), 
-    \+ \+ (member(E,Sol), 
-     once(E=test_suite([SuiteX]);E==SuiteX;(?(E)==SuiteX);(?(E)==SuiteX))).
-test_suite_info_1(ADir,TestID):- /*dir_test_suite_name(ADir),*/ some_test_info_prop(TestID,test_suite([ADir])).
-test_suite_info_1(SuiteX,TestID):-
-   test_info_no_loop(TestID,Sol), \+ \+ (member(E,Sol), (E=test_suite([SuiteX]);E==SuiteX)).
 test_suite_info_1(icecuber_fail,TestID):- !, icu(Name,PF),PF == -1,atom_id_e(Name,TestID).
 test_suite_info_1(icecuber_pass,TestID):- !, icu(Name,PF),PF \== -1,atom_id_e(Name,TestID).
 test_suite_info_1(dbigham_fail,TestID):- !, all_arc_test_name(TestID),
@@ -644,11 +630,15 @@ test_suite_info_1(dbigham_fail,TestID):- !, all_arc_test_name(TestID),
    \+ test_suite_info(dbigham_train_pass,TestID),
    \+ test_suite_info(dbigham_eval_pass,TestID).
 test_suite_info_1(SuiteX,TestID):- suite_tag(SuiteX,List),!,tasks_split(TestID,List).
+test_suite_info_1(SuiteX,TestID):- test_info_no_loop(TestID,Sol), suite_mark(SuiteX,Sol).
 test_suite_info_1(SuiteX,TestID):- atom(SuiteX),current_predicate(SuiteX/1),!,call(call,SuiteX,TestID).
-%test_suite_info_1(prop_suite(SuiteX),TestID):- !,some_test_info(TestID,Sol), \+ \+ (member(E,Sol), (E==SuiteX)).
 
-full_test_suite_list(List):- findall(SN,some_test_suite_name(SN),List).
-test_suite_list(AtLeastTwo):- full_test_suite_list(List),sort(List,Sort),include(at_least_two_tests,Sort,AtLeastTwo).
+suite_mark(SuiteX,Sol):- sub_term(E,Sol),
+    (E==SuiteX; ('?'(E)==SuiteX)),!.
+full_test_suite_list(List):- 
+  findall(SN,some_test_suite_name(SN),List).
+
+test_suite_list(AtLeastTwo):- full_test_suite_list(List),list_to_set(List,Sort),include(at_least_two_tests,Sort,AtLeastTwo).
 at_least_two_tests(_).
 
 report_suites:-  
@@ -662,11 +652,12 @@ report_suites:-
 test_prop_example(TPE):-   less_fav(_,PropList),member(Prop,PropList),as_test_prop(Prop,TPE).
 test_prop_example(TPE):-   fav(_,PropList),member(Prop,PropList),as_test_prop(Prop,TPE).
 
-test_suite_marker(Prop):- findall(TP,test_prop_example(TP),Props),list_to_set(Props,Set),member(Prop,Set).
-as_test_prop(Prop,Prop):- atom(Prop), \+ atom_contains(Prop,'/'), \+ atom_contains(Prop,' ').
-as_test_prop(+Prop,+Prop):- atom(Prop).
-as_test_prop(-Prop,-Prop):- atom(Prop).
-as_test_prop(Prop,?(Prop)):- atom(Prop), \+ atom_contains(Prop,'/'), nop((\+ atom_contains(Prop,' '))).
+test_suite_marker(Prop):- findall(TP,test_prop_example(TP),Props),list_to_set(Props,Set),sort(Set,Sort),member(Prop,Sort).
+%as_test_prop(Prop,Prop):- atom(Prop), \+ atom_contains(Prop,'/'), \+ atom_contains(Prop,' ').
+as_test_prop(+Prop,+[Prop]):- atom(Prop).
+as_test_prop(-Prop,-[Prop]):- atom(Prop).
+%as_test_prop(Prop,'?'(Prop)):- atom(Prop), \+ atom_contains(Prop,'/'), nop((\+ atom_contains(Prop,' '))).
+as_test_prop(Prop,(Prop)):- atom(Prop), \+ atom_contains(Prop,'/'), nop((\+ atom_contains(Prop,' '))).
 %as_test_prop(Prop,Prop):- compound(Prop).
 
 prev_test:-  get_current_test(TestID), get_prev_test(TestID,NextID), set_current_test(NextID).
@@ -1139,7 +1130,7 @@ matches(InfoS,InfoM):- member(InfoS,InfoM).
 
 print_testinfo(TestID):- ensure_test(TestID), forall(test_info_recache(TestID,F),pp(fav(TestID,F))).
 
-%test_info_no_loop(TestID,Sol):- nonvar(TestID),test_info_recache(TestID,Sol),!.
+test_info_no_loop(TestID,Sol):- var(TestID),!,all_arc_test_name_unordered(TestID),test_info_no_loop(TestID,Sol).
 test_info_no_loop(TestID,Sol):- muarc_tmp:test_info_cache(TestID,Sol),!. % test_info
 test_info_no_loop(TestID,Sol):- some_test_info(TestID,Sol).
 
@@ -1165,6 +1156,7 @@ test_info_recache(TestID,InfoSS):-  %once((fix_test_name(CTestID,CFTestID,_),CFT
 some_test_info(TestID,III):- some_test_info_1(TestID,Inf0),repair_info(Inf0,III).
 some_test_info(TestID,III):- muarc_tmp:test_info_cache(TestID,Inf0),repair_info(Inf0,III).
 
+%some_test_info_1(TestID,Sol):- nonvar(TestID),test_info_recache(TestID,Sol),!.
 some_test_info_1(TestID,III):- more_test_info(TestID,III).
 %some_test_info(X,[keypad]):- key_pad_tests(X). 
 some_test_info_1(TestID,III):- fav(TestID,III).

@@ -251,7 +251,7 @@ fav(v('4b6b68e5'),[grid_size_same,nthDSL(2,[gather_object(_145350,_145352,(iz(_1
 fav(t(d6ad076f),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),draw_line_from_point,connect_the_dots,bridges,'(3, 1)']).
 fav(t('9d9215db'),[grid_size_same,human([overlay_each_pattern]),-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_rotation,pattern_reflection,pattern_expansion,'(3, 1)']).
 fav(v(e41c6fd3),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
-fav(v('1d398264'),[grid_size_same,human([(iz(_140032,keypad),iz(_140032,multicolor),centerof(_140032,_140052)-->sunburst(_140052))]),-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 2) ']).
+fav(v('1d398264'),[grid_size_same,human([(iz(_140032,keypad),iz(_140032,multicolor),centerof(_140032,_140052)-->sunburst(_140052))]),-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 2) ']).
 fav(v(e9bb6954),[grid_size_same,e('box of nine draw outward, if you hit a drawn line blacken it'),human([(iz(_142198,keypad),iz(_142198,monocolor),centerof(_142198,_142218)-->starburst(_142218))]),-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(4, 1) ']).
 fav(t(d511f180),[grid_size_same,human([swap_colors(cyan,silver)]),-rotation_match,-color_match,+shape_match,+mask_match,+'Errors',test_suite([train400]),'https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021#760920',associate_colors_to_colors,'(3, 1)']).
 fav(t('73251a56'),[grid_size_same,learn([learn_mapping_stateful]),human([apply_mapping_stateful]),-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),image_filling,diagonal_symmetry,'(3, 1)']).
@@ -261,8 +261,8 @@ fav(t(a79310a0),[grid_size_same,human([gravity(1,s),swap_colors(cyan,red)]),-rot
 
 fav(t(b230c067),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),separate_shapes,recoloring,find_the_intruder,associate_colors_to_bools,'(2, 1)']).
 fav(t(d2abd087),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),separate_shapes,recoloring,count_tiles,associate_colors_to_numbers,'(3, 1)']).
-fav(v('0a2355a6'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(4, 1) ']).
-fav(v('37d3e8b2'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(3, 1) ']).
+fav(v('0a2355a6'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(4, 1) ']).
+fav(v('37d3e8b2'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
 fav(t('6e82a1ae'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,count_tiles,associate_colors_to_numbers,'(3, 1)']).
 fav(t(b6afb2da),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),replace_pattern,rectangle_guessing,recoloring,'(2, 1)']).
 fav(t(e509e548),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,homeomorphism,associate_colors_to_shapes,'(3, 1)']).
@@ -288,7 +288,7 @@ less_fav(t('150deff5'),[grid_size_same,-rotation_match,-color_match,+shape_match
 less_fav(t('6e02f1e3'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),count_different_colors,associate_images_to_numbers,'(5, 1)']).
 less_fav(t('995c5fa3'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_complement,summarize,separate_images,detect_wall,associate_colors_to_images,'(4, 1)']).
 less_fav(t('25d8a9c8'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),remove_noise,recoloring,detect_hor_lines,'(4, 1)']).
-less_fav(v('17cae0c1'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('17cae0c1'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v(d4b1c2b1),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(7, 1) ']).
 less_fav(v('7039b2d7'),[out_grid(4,3),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('1190e5a7'),[out_grid(4,2),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),detect_grid,detect_background_color,create_image_from_info,count_ver_lines,count_hor_lines,color_guessing,'(3, 1)']).
@@ -297,7 +297,7 @@ less_fav(t(d9fac9be),[out_grid(1,1),-shape_match,-rotation_match,-mask_match,-co
 less_fav(t('445eab21'),[out_grid(2,2),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_maximum,measure_area,'(3, 1)']).
 less_fav(t('239be575'),[out_grid(1,1),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),detect_connectedness,associate_images_to_bools,'(6, 2)']).
 less_fav(t(f9012d9b),[out_grid(2,2),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),pattern_expansion,pattern_completion,crop,'(3, 1)']).
-less_fav(v('1a2e2828'),[out_grid(1,1),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(5, 1) ']).
+less_fav(v('1a2e2828'),[out_grid(1,1),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(5, 1) ']).
 less_fav(t(de1cd16c),[out_grid(1,1),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_maximum,summarize,separate_images,count_tiles,'(4, 1)']).
 less_fav(v(cd3c21df),[out_grid(1,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t(a3325580),[out_grid(3,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_maximum,summarize,separate_shapes,remove_intruders,count_tiles,'(6, 1)']).
@@ -306,51 +306,51 @@ less_fav(v('8597cfd7'),[out_grid(2,2),-shape_match,-rotation_match,-mask_match,-
 less_fav(t(be94b721),[out_grid(3,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_maximum,separate_shapes,crop,count_tiles,'(4, 1)']).
 less_fav(v('642d658d'),[out_grid(1,1),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t(b9b7f026),[out_grid(1,1),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),summarize,find_the_intruder,'(3, 1)']).
-less_fav(v('3194b014'),[-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('3194b014'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('695367ec'),[out_grid(15,15),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('332efdb3'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('332efdb3'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('28e73c20'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),mimic_pattern,ex_nihilo,'(5, 1)']).
 less_fav(v(ed74f2f2),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(6, 1) ']).
 less_fav(t(d4469b4b),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),dominant_color,associate_images_to_colors,'(7, 2)']).
 less_fav(t('017c7c7b'),[out_grid(3,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),recoloring,pattern_repetition,pattern_expansion,image_expansion,'(3, 1)']).
 less_fav(t(e179c5f4),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_expansion,bouncing,'(3, 1)']).
-less_fav(v('32e9702f'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('32e9702f'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t(f8c80d96),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_expansion,background_filling,'(3, 1)']).
 less_fav(v(a3f84088),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t(d5d6de2d),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),replace_pattern,remove_intruders,loop_filling,'(3, 2)']).
-less_fav(v('1c0d0a4b'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('1c0d0a4b'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('9565186b'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),take_maximum,separate_shapes,recoloring,count_tiles,associate_color_to_bools,'(4, 1)']).
 less_fav(t(b1948b0a),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,associate_colors_to_colors,'(3, 1)']).
 less_fav(t('794b24be'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),count_tiles,associate_images_to_numbers,'(10, 2)']).
 less_fav(t(a9f96cdd),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),replace_pattern,out_of_boundary,'(4, 1)']).
 less_fav(t('6773b310'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),separate_images,detect_grid,count_tiles,associate_colors_to_numbers,'(4, 1)']).
-less_fav(v('3b4c2228'),[-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(5, 2) ']).
+less_fav(v('3b4c2228'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(5, 2) ']).
 less_fav(t('3428a4f5'),[out_grid(5,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),separate_images,pattern_differences,detect_wall,'(4, 2)']).
-less_fav(v('195ba7dc'),[out_grid(6,5),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('195ba7dc'),[out_grid(6,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v('5d2a5c43'),[out_grid(4,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(5, 2) ']).
 less_fav(v('66f2d22f'),[out_grid(7,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v(d19f7514),[out_grid(4,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t('1b2d62fb'),[out_grid(3,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),separate_images,pattern_intersection,detect_wall,'(5, 1)']).
 less_fav(t('94f9d214'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_complement,separate_images,pattern_intersection,'(4, 1)']).
 less_fav(v(e345f17b),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 2) ']).
-less_fav(v('31d5ba1a'),[out_grid(5,3),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(5, 2) ']).
+less_fav(v('31d5ba1a'),[out_grid(5,3),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(5, 2) ']).
 less_fav(t('0520fde7'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),separate_images,pattern_intersection,detect_wall,'(3, 1)']).
 less_fav(t(fafffa47),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_complement,separate_images,pattern_intersection,'(5, 1)']).
 less_fav(t('2bcee788'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_reflection,image_filling,direction_guessing,background_filling,'(4, 1)']).
 less_fav(v('604001fa'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(4, 1) ']).
-less_fav(v('009d5c81'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(5, 1) ']).
-less_fav(v('0c9aba6e'),[out_grid(4,6),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('009d5c81'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(5, 1) ']).
+less_fav(v('0c9aba6e'),[out_grid(4,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v('506d28a5'),[out_grid(5,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
-less_fav(v('34b99a2b'),[out_grid(4,5),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('34b99a2b'),[out_grid(4,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t('6430c8c4'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_complement,separate_images,pattern_intersection,detect_wall,'(4, 1)']).
 less_fav(t('99b1bc43'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_complement,separate_images,pattern_intersection,detect_wall,'(4, 1)']).
 less_fav(t(ce4f8723),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_intersection,take_complement,separate_images,detect_wall,'(4, 1)']).
 less_fav(t(f2829549),[out_grid(3,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_complement,separate_images,pattern_intersection,detect_wall,'(5, 1)']).
 less_fav(v(e133d23d),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(5, 1) ']).
-less_fav(v('2037f2c7'),[out_grid(7,3),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('2037f2c7'),[out_grid(7,3),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('9110e3c5'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(7, 2) ']).
 less_fav(v(d5c634a2),[out_grid(6,3),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(7, 2) ']).
-less_fav(v('2072aba6'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('2072aba6'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 
 
 less_fav(t('83302e8f'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),rectangle_guessing,loop_filling,detect_grid,detect_closed_curves,associate_colors_to_bools,'(3, 1)']).
@@ -361,20 +361,20 @@ less_fav(t(e8593010),[grid_size_same,-rotation_match,-mask_match,-color_match,+s
 less_fav(v('575b1a71'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(ccd554ac),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(6, 1) ']).
 less_fav(t(eb5a1d5d),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),summarize,'(3, 1)']).
-less_fav(v('1990f7a8'),[out_grid(7,7),-shape_match,-rotation_match,-mask_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('1990f7a8'),[out_grid(7,7),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('91413438'),[out_grid(12,12),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),image_repetition,count_tiles,algebra,'(4, 1)']).
-less_fav(v('358ba94e'),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,+color_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('358ba94e'),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t('80af3007'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),pattern_resizing,image_resizing,fractal_repetition,crop,'(3, 1)']).
 less_fav(v('5b6cbef5'),[out_grid(16,16),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(5, 1) ']).
 less_fav(v(e57337a4),[-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('8719f442'),[out_grid(15,15),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('2697da3f'),[out_grid(15,15),-shape_match,-rotation_match,-mask_match,+color_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('2697da3f'),[out_grid(15,15),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t(eb281b96),[out_grid(17,9),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),image_repetition,image_reflection,'(2, 1)']).
 
 
 less_fav(v('8e2edd66'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('8b28cd80'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(5, 2) ']).
-less_fav(v('0692e18c'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('0692e18c'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('007bbfb7'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),image_repetition,fractal_repetition,'(5, 1)']).
 less_fav(v(bc4146bd),[out_grid(20,4),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t(bbc9ae5d),[out_grid(6,3),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),pattern_expansion,image_expansion,'(5, 1)']).
@@ -420,7 +420,7 @@ less_fav(t('6e19193c'),[grid_size_same,-rotation_match,-mask_match,+shape_match,
 less_fav(t('7ddcd7ec'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),draw_line_from_point,direction_guessing,diagonals,'(3, 1)']).
 less_fav(v('705a3229'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t('42a50994'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,+'Errors',test_suite([train400]),remove_noise,'https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021','https://github.com/fchollet/ARC/pull/43',count_tiles,'(4, 1)']).
-less_fav(v('423a55dc'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(5, 1) ']).
+less_fav(v('423a55dc'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(5, 1) ']).
 less_fav(v(b9630600),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t(e9afcf9a),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([train400]),pattern_modification,'(2, 1)']).
 less_fav(v('55783887'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([eval400]),'(5, 1) ']).
@@ -431,7 +431,7 @@ less_fav(t('25ff71a9'),[grid_size_same,-rotation_match,-mask_match,+shape_match,
 
 
 
-less_fav(v('1c56ad9f'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('1c56ad9f'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v('42a15761'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('64a7c07e'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('85b81ff1'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
@@ -439,7 +439,7 @@ less_fav(v(d931c21c),[grid_size_same,-rotation_match,-mask_match,-color_match,+s
 less_fav(v(f3e62deb),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(6, 2) ']).
 less_fav(t('1f85a75f'),[out_grid(3,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),find_the_intruder,crop,'(2, 1)']).
 less_fav(t('5ad4f10b'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),remove_noise,recoloring,image_resizing,crop,color_guessing,'(3, 1)']).
-less_fav(v('2c0b0aff'),[out_grid(8,7),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('2c0b0aff'),[out_grid(8,7),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t('8efcae92'),[out_grid(6,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_maximum,separate_images,rectangle_guessing,crop,count_tiles,'(3, 1)']).
 less_fav(t('9f236235'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),summarize,image_reflection,detect_grid,'(3, 1)']).
 less_fav(t('0b148d64'),[out_grid(10,10),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),separate_images,find_the_intruder,detect_grid,crop,'(3, 1)']).
@@ -449,7 +449,7 @@ less_fav(t('7468f01a'),[out_grid(8,4),-shape_match,-rotation_match,-mask_match,-
 less_fav(t(fcb5c309),[out_grid(7,7),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_maximum,separate_images,rectangle_guessing,recoloring,crop,count_tiles,'(3, 1)']).
 less_fav(v('5289ad53'),[out_grid(3,2),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t('39a8645d'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_maximum,crop,count_patterns,'(3, 1)']).
-less_fav(v('351d6448'),[out_grid(13,3),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(2, 1) ']).
+less_fav(v('351d6448'),[out_grid(13,3),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(t(b94a9452),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_negative,crop,'(3, 1)']).
 less_fav(t('2dc579da'),[out_grid(2,2),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),find_the_intruder,detect_grid,crop,'(3, 1)']).
 less_fav(t('97a05b5b'),[out_grid(9,17),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),shape_guessing,pattern_moving,pattern_juxtaposition,crop,'(3, 1)']).
@@ -479,7 +479,7 @@ less_fav(t(caa06a1f),[grid_size_same,-rotation_match,-color_match,+shape_match,+
 less_fav(v('50a16a69'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(f823c43c),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(t('4093f84a'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),recoloring,projection_unto_rectangle,gravity,'(3, 1)']).
-less_fav(v('2a5f8217'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('2a5f8217'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t(ce602527),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),size_guessing,shape_guessing,remove_intruders,find_the_intruder,crop,'(4, 1)']).
 less_fav(v('7bb29440'),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(5, 1) ']).
 less_fav(v('5833af48'),[out_grid(16,8),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
@@ -500,7 +500,7 @@ less_fav(v(c3202e5a),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,-co
 less_fav(t('8731374e'),[out_grid(6,7),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),rectangle_guessing,draw_line_from_point,crop,'(3, 1)']).
 less_fav(t('91714a58'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),remove_noise,find_the_intruder,'(3, 1)']).
 less_fav(v(c1990cce),[out_grid(13,13),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('310f3251'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('310f3251'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v(fb791726),[out_grid(12,12),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t(f5b8619d),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),pattern_expansion,image_repetition,draw_line_from_point,'(3, 1)']).
 less_fav(v(f0afb749),[out_grid(10,10),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
@@ -511,7 +511,7 @@ less_fav(v(e6de6e8f),[out_grid(7,8),-shape_match,-rotation_match,-mask_match,-co
 less_fav(t('8403a5d5'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_repetition,draw_line_from_point,direction_guessing,'(3, 1)']).
 less_fav(t(aba27056),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_expansion,draw_line_from_point,diagonals,'(3, 1)']).
 less_fav(t('4258a5f9'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_repetition,contouring,'(2, 1)']).
-less_fav(v('21f83797'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(2, 1) ']).
+less_fav(v('21f83797'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v('759f3fd3'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(t(db3e9e38),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_expansion,out_of_boundary,'(2, 1)']).
 less_fav(t(dc1df850),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_expansion,out_of_boundary,contouring,'(3, 1)']).
@@ -519,8 +519,8 @@ less_fav(v(aa18de87),[grid_size_same,-rotation_match,-mask_match,-color_match,+s
 less_fav(t('834ec97d'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),spacing,pattern_repetition,measure_distance_from_side,draw_line_from_border,'(3, 1)']).
 less_fav(t(a64e4611),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),rectangle_guessing,background_filling,'(3, 1)']).
 less_fav(t(b60334d2),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),replace_pattern,'(2, 1)']).
-less_fav(v('31adaf00'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('00dbd492'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('31adaf00'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('00dbd492'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v('8fbca751'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(c97c0139),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v('551d5bf1'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(2, 1) ']).
@@ -566,10 +566,10 @@ less_fav(v('84f2aca1'),[grid_size_same,-rotation_match,-mask_match,-color_match,
 less_fav(v('55059096'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('54d82841'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_expansion,gravity,'(3, 1)']).
 less_fav(v(e88171ec),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('0b17323b'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(2, 1) ']).
+less_fav(v('0b17323b'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(t('41e4d17e'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),pattern_repetition,draw_line_from_point,'(2, 1)']).
 less_fav(t(b2862040),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,detect_closed_curves,associate_colors_to_bools,'(4, 1)']).
-less_fav(v('292dd178'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('292dd178'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('67385a82'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,measure_area,associate_colors_to_bools,'(4, 1)']).
 
 
@@ -588,11 +588,11 @@ less_fav(v('456873bc'),[grid_size_same,-rotation_match,-mask_match,-color_match,
 less_fav(t(c8f0f002),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,associate_colors_to_colors,'(3, 1)']).
 less_fav(t('6a1e5592'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,+'Errors',test_suite([train400]),recoloring,pattern_moving,jigsaw,'https://github.com/fchollet/ARC/pull/16','(2, 1)']).
 less_fav(t(d90796e8),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),replace_pattern,'(3, 1)']).
-less_fav(v('12eac192'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('12eac192'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v(c92b942c),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t(db93a21d),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),measure_length,measure_area,draw_line_from_point,contouring,algebra,'(4, 1)']).
 less_fav(t('6455b5f5'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),take_minimum,take_maximum,measure_area,loop_filling,associate_colors_to_ranks,'(4, 1)']).
-less_fav(v('137f0df0'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('137f0df0'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('5207a7b5'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('3bd67248'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_repetition,draw_line_from_border,diagonals,'(3, 1)']).
 less_fav(t('868de0fa'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,+'Errors',test_suite([train400]),measure_area,loop_filling,'https://github.com/fchollet/ARC/pull/45',even_or_odd,color_guessing,associate_colors_to_bools,'(5, 1)']).
@@ -602,13 +602,13 @@ less_fav(v(b7fb29bc),[grid_size_same,-rotation_match,-mask_match,-color_match,+s
 less_fav(t(c0f76784),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),measure_area,loop_filling,associate_colors_to_numbers,'(3, 1)']).
 less_fav(v(dc2e9a9d),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('543a7ed5'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),loop_filling,contouring,'(2, 1)']).
-less_fav(v('140c817e'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('140c817e'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('694f12f3'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),rectangle_guessing,measure_area,loop_filling,associate_colors_to_ranks,'(2, 1)']).
-less_fav(v('15663ba9'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('15663ba9'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('516b51b7'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(fea12743),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,+'Errors','https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021',test_suite([eval400]),'(3, 1)']).
 less_fav(v('84db8fc4'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(4, 1) ']).
-less_fav(v('3f23242b'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(2, 1) ']).
+less_fav(v('3f23242b'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v(fe9372f3),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(t('941d9a10'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pairwise_analogy,loop_filling,detect_grid,'(3, 1)']).
 less_fav(v(aa4ec2a5),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
@@ -621,14 +621,14 @@ less_fav(t('4be741c5'),[out_grid(3,1),-shape_match,-rotation_match,-mask_match,+
 less_fav(t(c8cbb738),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),pattern_moving,jigsaw,crop,'(3, 1)']).
 less_fav(t('3f7978a0'),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),rectangle_guessing,find_the_intruder,crop,'(3, 1)']).
 less_fav(v('67636eac'),[out_grid(9,3),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('3979b1a8'),[out_grid(10,10),-shape_match,-rotation_match,-mask_match,+color_match,test,test_suite([eval400]),'(2, 1) ']).
+less_fav(v('3979b1a8'),[out_grid(10,10),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v('60c09cac'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(t(cce03e0d),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),pairwise_analogy,image_repetition,image_expansion,'(3, 1)']).
 less_fav(v(c48954c1),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('9172f3a0'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),image_resizing,'(2, 1)']).
 less_fav(t(d10ecb37),[out_grid(2,2),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),crop,'(3, 1)']).
 less_fav(t('963e52fc'),[out_grid(12,5),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),pattern_expansion,image_expansion,'(3, 1)']).
-less_fav(v('0c786b71'),[out_grid(8,6),-shape_match,-rotation_match,-mask_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('0c786b71'),[out_grid(8,6),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('00576224'),[out_grid(6,6)]).
 less_fav(v('8ba14f53'),[-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(6, 1) ']).
 less_fav(t('67e8384a'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),image_rotation,image_repetition,image_reflection,'(4, 1)']).
@@ -644,7 +644,7 @@ less_fav(t(a416b8f3),[out_grid(6,3),-shape_match,-rotation_match,-mask_match,+co
 less_fav(t('1bfc4729'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_expansion,'(2, 1)']).
 less_fav(t(d22278a0),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,+'Errors',test_suite([train400]),pattern_expansion,pairwise_analogy,'https://github.com/fchollet/ARC/pull/4','(4, 1)']).
 less_fav(t(bda2d7a6),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),recoloring,pattern_modification,pairwise_analogy,color_permutation,'(3, 2)']).
-less_fav(v('3a301edc'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(5, 1) ']).
+less_fav(v('3a301edc'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(5, 1) ']).
 less_fav(t(b527c5c6),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),size_guessing,pattern_expansion,draw_line_from_point,direction_guessing,contouring,'(4, 1)']).
 less_fav(t('0a938d79'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_expansion,draw_line_from_point,direction_guessing,'(4, 1)']).
 less_fav(t(d037b0a7),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_expansion,draw_line_from_point,'(3, 1)']).
@@ -685,7 +685,7 @@ less_fav(t('5c0a986e'),[grid_size_same,-rotation_match,-mask_match,+shape_match,
 less_fav(t(ecdecbb3),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_modification,draw_line_from_point,'(3, 1)']).
 less_fav(v('73c3b0d8'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v(f8be4b64),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,+'Errors','https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021',test_suite([eval400]),'(4, 1)']).
-less_fav(v('17b80ad2'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('17b80ad2'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t('6d58a25d'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),print_grid,draw_line_from_point,debug_indiv,'(3, 1)',"the blue object is a downward beam maker, each beam must connect to one of its colors "]).
 less_fav(t('7df24a62'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_rotation,pattern_repetition,pattern_juxtaposition,out_of_boundary,'(4, 1)']).
 less_fav(t('3bdb4ada'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),recoloring,pattern_repetition,holes,'(2, 1)']).
@@ -695,7 +695,7 @@ less_fav(t(f1cefba8),[grid_size_same,-rotation_match,-mask_match,+shape_match,+c
 less_fav(v('92e50de0'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('72207abc'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(ac0c5833),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('0d87d2a6'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('0d87d2a6'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('855e0971'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),separate_images,holes,draw_line_from_point,direction_guessing,'(4, 1)']).
 less_fav(v(f83cb3f6),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('3e980e27'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_repetition,pattern_reflection,pattern_juxtaposition,direction_guessing,'(4, 1)']).
@@ -705,13 +705,13 @@ less_fav(v('963f59bc'),[grid_size_same,-rotation_match,-mask_match,+shape_match,
 less_fav(t(ec883f72),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_expansion,draw_line_from_point,diagonals,'(4, 1)']).
 less_fav(t(d43fd935),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),projection_unto_rectangle,draw_line_from_point,direction_guessing,'(3, 1)']).
 less_fav(t('72322fa7'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_repetition,pattern_juxtaposition,'(3, 1)']).
-less_fav(v('18419cfa'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('18419cfa'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('5b692c0f'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(t('98cf29f8'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_moving,bring_patterns_close,'(3, 1)']).
-less_fav(v('2546ccf6'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(2, 1) ']).
+less_fav(v('2546ccf6'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v('93c31fbe'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('3391f8c0'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(4, 1) ']).
-less_fav(v('1c02dbbe'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('3391f8c0'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('1c02dbbe'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('2c608aff'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([train400]),projection_unto_rectangle,draw_line_from_point,'(4, 1)']).
 less_fav(t('74dd1130'),[grid_size_same,+shape_match,+mask_match,+color_match,test_suite([train400]),image_reflection,diagonal_symmetry,'(4, 1)',3]).
 less_fav(t('85c4e7cd'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([train400]),recoloring,color_permutation,color_guessing,'(4, 1)']).
@@ -727,28 +727,28 @@ less_fav(t(a1570a43),[grid_size_same,-rotation_match,-mask_match,+shape_match,+c
 
 less_fav(t(dc433765),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,+'Errors',test_suite([train400]),pattern_moving,only_one,'https://github.com/fchollet/ARC/issues/29',direction_guessing,'(7, 2)']).
 less_fav(t(f8a8fe49),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_reflection,pattern_moving,'(3, 1)']).
-less_fav(v('20981f0e'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('20981f0e'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('4acc7107'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v('67c52801'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v('8ee62060'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('9c56f360'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(e1d2900e),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('7837ac64'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),grid_coloring,extrapolate_image_from_grid,detect_grid,crop,color_guessing,'(4, 1)']).
-less_fav(v('3ee1011a'),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('2f0c5170'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('3ee1011a'),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('2f0c5170'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('780d0b14'),[out_grid(2,2),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),summarize,detect_grid,'(3, 1)']).
 less_fav(v(d4c90558),[out_grid(8,3),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('81c0276b'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('7c9b52a0'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t(b190f7f5),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),separate_images,replace_pattern,image_resizing,image_expansion,color_palette,'(3, 1)']).
-less_fav(v('19bb5feb'),[out_grid(2,2),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('19bb5feb'),[out_grid(2,2),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('20818e16'),[out_grid(8,6)]).
 less_fav(t(e6721834),[out_grid(17,15),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),
   pattern_moving,pattern_juxtaposition,crop,'(3, 1)']).
 less_fav(t(f8ff0b80),[out_grid(1,3),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),summarize,separate_shapes,order_numbers,count_tiles,'(3, 1)']).
 less_fav(v('50aad11f'),[out_grid(4,8),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(b7cb93ac),[out_grid(4,3),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('12997ef3'),[out_grid(9,3),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(4, 2) ']).
+less_fav(v('12997ef3'),[out_grid(9,3),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 2) ']).
 less_fav(t(e50d258f),[out_grid(4,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_maximum,separate_images,detect_background_color,crop,count_tiles,'(3, 1)']).
 less_fav(t('5614dbcf'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),remove_noise,image_resizing,'(2, 1)']).
 less_fav(t(e98196ab),[out_grid(11,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),separate_images,image_juxtaposition,detect_wall,'(3, 1)']).
@@ -761,7 +761,7 @@ less_fav(t(b548a754),[grid_size_same,-rotation_match,-mask_match,-color_match,+s
 less_fav(v('9f27f097'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(e95e3d8e),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(c663677b),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('1d0a4b61'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('1d0a4b61'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('321b1fc6'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_repetition,pattern_juxtaposition,'(2, 1)']).
 less_fav(t('2204b7a8'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,proximity_guessing,'(3, 1)']).
 less_fav(t(c9f8e694),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,pattern_repetition,color_palette,'(2, 1)']).
@@ -773,7 +773,7 @@ less_fav(v(b4a43f3b),[out_grid(18,18),-shape_match,-rotation_match,-mask_match,-
 less_fav(t(f8b3ba0a),[out_grid(1,3),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),summarize,order_numbers,find_the_intruder,dominant_color,detect_grid,count_tiles,'(4, 1)']).
 less_fav(t('8e1813be'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),recoloring,image_within_image,direction_guessing,crop,color_guessing,'(3, 1)']).
 less_fav(v('4c177718'),[out_grid(15,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 2) ']).
-less_fav(v('3d31c5b3'),[out_grid(6,3),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(6, 1) ']).
+less_fav(v('3d31c5b3'),[out_grid(6,3),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(6, 1) ']).
 less_fav(t('75b8110e'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),separate_images,image_juxtaposition,'(5, 1)']).
 less_fav(t(cf98881b),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),separate_images,pattern_juxtaposition,detect_wall,'(5, 1)']).
 less_fav(v('477d2879'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
@@ -793,8 +793,8 @@ less_fav(t(e26a3af2),[grid_size_same,-rotation_match,-color_match,+shape_match,+
 less_fav(t('5bd6f4ac'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),rectangle_guessing,crop,'(4, 1)']).
 less_fav(v(ad7e01d0),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t('469497ad'),[out_grid(10,10),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),image_resizing,draw_line_from_point,diagonals,'(3, 1)']).
-less_fav(v('15696249'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(4, 1) ']).
-less_fav(v('27f8ce4f'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('15696249'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('27f8ce4f'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t(c3e719e8),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_maximum,image_repetition,image_expansion,count_different_colors,'(3, 1)']).
 less_fav(t('9af7a82c'),[out_grid(3,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),summarize,separate_images,order_numbers,count_tiles,'(4, 1)']).
 less_fav(v('692cd3b6'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
@@ -812,7 +812,7 @@ less_fav(t('673ef223'),[grid_size_same,-rotation_match,-mask_match,-color_match,
 less_fav(t(bdad9b1f),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),take_intersection,recoloring,draw_line_from_point,direction_guessing,'(2, 1)']).
 less_fav(v(ac3e2b04),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t('29c11459'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),draw_line_from_point,count_tiles,'(2, 1)']).
-less_fav(v('3490cc26'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('3490cc26'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t(d4a91cb9),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),direction_guessing,connect_the_dots,'(3, 1)']).
 less_fav(v(c074846d),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(5, 2) ']).
 less_fav(t(a2fd1cf0),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),connect_the_dots,'(3, 1)']).
@@ -827,17 +827,17 @@ less_fav(t('32597951'),[grid_size_same,-rotation_match,-color_match,+shape_match
 less_fav(t('36fdfd69'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),rectangle_guessing,recoloring,'(3, 1)']).
 less_fav(t('50846271'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,pattern_completion,'(4, 1)']).
 less_fav(t('50cb2852'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),rectangle_guessing,holes,'(3, 1)']).
-less_fav(v('14754a24'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(4, 1) ']).
-less_fav(v('1acc24af'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(4, 1) ']).
-less_fav(v('22a4bbc2'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('14754a24'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('1acc24af'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('22a4bbc2'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v('7d419a02'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(d94c3b52),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('212895b5'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('212895b5'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('0ca9ddb6'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_expansion,associate_patterns_to_colors,'(3, 1)']).
 less_fav(v('9caba7c3'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(d47aa2ff),[out_grid(10,10),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('891232d6'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(4, 1) ']).
-less_fav(v('2753e76c'),[-shape_match,-rotation_match,-mask_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('2753e76c'),[-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('833dafe3'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v(e1baa8a4),[out_grid(2,2),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t('4290ef0e'),[out_grid(7,7),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),pattern_moving,crop,concentric,'(3, 1)']).
@@ -852,12 +852,12 @@ less_fav(v('7953d61e'),[out_grid(8,8),-shape_match,-rotation_match,-mask_match,+
 less_fav(v('68b67ca3'),[-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t(d13f3404),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),image_expansion,draw_line_from_point,diagonals,'(3, 1)']).
 less_fav(t('62c24649'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),image_rotation,image_repetition,image_reflection,'(3, 1)']).
-less_fav(v('08573cc6'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('08573cc6'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('178fcbfb'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),draw_line_from_point,direction_guessing,'(3, 1)']).
-less_fav(v('0f63c0b9'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('0f63c0b9'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v('52fd389e'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t(f25ffba3),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_repetition,pattern_reflection,'(2, 1)']).
-less_fav(v('29700607'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('29700607'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(e69241bd),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(e760a62e),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t(b782dc8a),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_expansion,maze,'(2, 1)']).
@@ -866,11 +866,11 @@ less_fav(v('9c1e755f'),[grid_size_same,-rotation_match,-mask_match,+shape_match,
 less_fav(t('57aa92db'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_resizing,pattern_repetition,draw_pattern_from_point,'(4, 1)']).
 less_fav(v('94414823'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('99306f82'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('12422b43'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(5, 1) ']).
+less_fav(v('12422b43'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(5, 1) ']).
 less_fav(v('96a8c0cd'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t('39e1d7f9'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_repetition,grid_coloring,detect_grid,'(3, 1)']).
 less_fav(t(e21d9049),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_expansion,draw_line_from_point,color_palette,'(2, 1)']).
-less_fav(v('27a77e38'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('27a77e38'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(cf133acc),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('045e512c'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_expansion,direction_guessing,'(3, 1)']).
 less_fav(v(c35c1b4c),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
@@ -878,14 +878,14 @@ less_fav(t('2dd70a9a'),[grid_size_same,-rotation_match,-mask_match,+shape_match,
 less_fav(t('1f876c06'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),diagonals,connect_the_dots,'(3, 1)']).
 less_fav(t('06df4c85'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),grid_coloring,detect_grid,connect_the_dots,'(3, 1)']).
 less_fav(v('9b2a60aa'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('2b01abd0'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('2b01abd0'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('642248e4'),[grid_size_same]).
-less_fav(v('0607ce86'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('0607ce86'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('94be5b80'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v(b7f8a4d8),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('11852cab'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,+'Errors',test_suite([train400]),pattern_expansion,'https://github.com/fchollet/ARC/pull/33','(3, 1)']).
 less_fav(v(ecaa0ec1),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
-less_fav(v('2c737e39'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('2c737e39'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(c6e1b8da),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(bb52a14b),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('03560426'),[grid_size_same]).
@@ -896,9 +896,9 @@ less_fav(t('6aa20dc0'),[grid_size_same,-rotation_match,+shape_match,+mask_match,
 less_fav(t(d07ae81c),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([train400]),draw_line_from_point,diagonals,color_guessing,'(3, 1)']).
 less_fav(t('1caeab9d'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_moving,pattern_alignment,'(3, 1)']).
 less_fav(t(beb8660c),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_moving,order_numbers,count_tiles,'(3, 1)']).
-less_fav(v('09c534e7'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('15113be4'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('40f6cd08'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('09c534e7'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('15113be4'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('40f6cd08'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('4ff4c9da'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('7ee1c6ea'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(ac2e8ecf),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
@@ -916,23 +916,23 @@ less_fav(v('9b365c51'),[grid_size_same,-rotation_match,-mask_match,-color_match,
 less_fav(t('88a10436'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_repetition,pattern_juxtaposition,'(3, 1)']).
 less_fav(v(f21745ec),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t(ddf7fa4f),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,color_palette,'(3, 1)']).
-less_fav(v('103eff5b'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(2, 1) ']).
-less_fav(v('33b52de3'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(2, 1) ']).
+less_fav(v('103eff5b'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(2, 1) ']).
+less_fav(v('33b52de3'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v('845d6e51'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(b457fec5),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t(c909285e),[out_grid(7,7),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),rectangle_guessing,find_the_intruder,crop,'(3, 1)']).
-less_fav(v('414297c0'),[out_grid(11,12),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('414297c0'),[out_grid(11,12),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(c64f1187),[out_grid(11,8),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v(b0f4d537),[out_grid(7,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v(e99362f0),[out_grid(4,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(6, 1) ']).
-less_fav(v('281123b4'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(6, 1) ']).
+less_fav(v('281123b4'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(6, 1) ']).
 less_fav(t('7c008303'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),separate_images,recoloring,detect_grid,crop,color_palette,color_guessing,'(3, 1)']).
 less_fav(t(dc0a314f),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),pattern_completion,crop,'(3, 1)']).
 less_fav(t('77fdfe62'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),recoloring,detect_grid,crop,color_guessing,'(3, 1)']).
 less_fav(t('49d1d64f'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),pattern_expansion,image_expansion,'(3, 1)']).
-less_fav(v('05a7bcf2'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('0e671a1a'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(4, 1) ']).
-less_fav(v('11e1fe23'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(2, 1) ']).
+less_fav(v('05a7bcf2'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('0e671a1a'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('11e1fe23'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(t('5daaa586'),[out_grid(12,15),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),draw_line_from_point,direction_guessing,detect_grid,crop,'(3, 1)']).
 less_fav(t('46f33fce'),[out_grid(20,20),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),pattern_resizing,image_resizing,'(3, 1)']).
 less_fav(t('8a004b2b'),[out_grid(14,9),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),rectangle_guessing,pattern_resizing,pattern_repetition,pattern_juxtaposition,crop,'(3, 1)']).
@@ -940,9 +940,9 @@ less_fav(t(a61ba2ce),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,+co
 less_fav(t('137eaa0f'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),pattern_juxtaposition,'(3, 1)']).
 less_fav(v(e633a9e5),[out_grid(5,5),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('93b581b8'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_expansion,out_of_boundary,color_guessing,'(3, 1)']).
-less_fav(v('13713586'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('13713586'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(a406ac07),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('2685904e'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(6, 1) ']).
+less_fav(v('2685904e'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(6, 1) ']).
 less_fav(t('82819916'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,+'Errors',test_suite([train400]),pattern_repetition,'https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021','https://github.com/fchollet/ARC/pull/32',draw_line_from_point,color_guessing,associate_colors_to_colors,'(4, 1)']).
 less_fav(v('88207623'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(t('22eb0ac0'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),connect_the_dots,color_matching,'(3, 1)']).
@@ -957,8 +957,8 @@ less_fav(t('1e0a9b12'),[grid_size_same,-rotation_match,-mask_match,+shape_match,
 less_fav(t('1f642eb9'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([train400]),projection_unto_rectangle,image_within_image,'(3, 1)']).
 less_fav(t('228f6490'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,x_marks_the_spot,test_suite([train400]),shape_guessing,pattern_moving,loop_filling,'(3, 1)']).
 less_fav(t(ae3edfdc),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),gravity,bring_patterns_close,'(3, 1)']).
-less_fav(v('0becf7df'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('16b78196'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(2, 1) ']).
+less_fav(v('0becf7df'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('16b78196'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v('5ffb2104'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('66e6c45b'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v('8dae5dfc'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([eval400]),'(4, 1) ']).
@@ -970,8 +970,8 @@ less_fav(v(f3cdc58f),[grid_size_same,-rotation_match,-mask_match,+shape_match,+c
 less_fav(v(f45f5ca7),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('7d18a6fb'),[out_grid(7,7),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(e7a25a18),[out_grid(10,10),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(2, 1) ']).
-less_fav(v('0bb8deee'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('136b0064'),[out_grid(7,7),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('0bb8deee'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('136b0064'),[out_grid(7,7),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(ca8de6ea),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('363442ee'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),pattern_repetition,pattern_juxtaposition,detect_wall,'(3, 1)']).
 less_fav(v('5a5a2103'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(2, 1) ']).
@@ -984,23 +984,23 @@ less_fav(t(d89b689b),[grid_size_same,-rotation_match,-mask_match,-color_match,+s
 less_fav(t(d687bc17),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,+'Errors',test_suite([train400]),remove_intruders,'https://github.com/fchollet/ARC/pull/39',gravity,find_the_intruder,direction_guessing,bring_patterns_close,'(3, 1)']).
 less_fav(v('903d1b4a'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t('63613498'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,detect_wall,compare_image,'(3, 1)']).
-less_fav(v('1da012fc'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(2, 1) ']).
+less_fav(v('1da012fc'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v(ef26cbf6),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(2, 1) ']).
-less_fav(v('0a1d4ef5'),[-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('0a1d4ef5'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('6d0160f0'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),separate_image,pattern_moving,find_the_intruder,detect_grid,'(4, 1)']).
-less_fav(v('0934a4d8'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(4, 1) ']).
+less_fav(v('0934a4d8'),[out_grid(4,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(t('6ecd11f4'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),recoloring,pattern_resizing,crop,color_palette,'(3, 1)']).
 less_fav(v(b0722778),[out_grid(2,11),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v(e66aafb8),[out_grid(5,8),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(5, 1) ']).
-less_fav(v('1a6449f1'),[out_grid(7,6),-shape_match,-rotation_match,-mask_match,-color_match,test,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('25094a63'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test,test_suite([eval400]),'(2, 1) ']).
+less_fav(v('1a6449f1'),[out_grid(7,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('25094a63'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(t('9aec4887'),[out_grid(6,6),todo_sol([find_individuals([hollow,inside([rectangle])],_137826),rest_indivdual(_137858),put_inside(_137858,_137826),if_edge_strong([color=_137892]),touch(_137858,_137904),set_color(_137892,_137904)]),indiv(color_blind),-shape_match,-rotation_match,-mask_match,+color_match,x_marks_the_spot,test_suite([train400]),recoloring,pattern_moving,crop,color_guessing,'(3, 1)']).
 less_fav(v('9356391f'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v('85fa5666'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v(f0df5ff0),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('40853293'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,+'Errors',test_suite([train400]),'https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021',connect_the_dots,'(2, 1)']).
-less_fav(v('070dd51e'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,+'Errors',test,'https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021',test_suite([eval400]),'(2, 1) ','(2, 1)']).
-less_fav(v('3ed85e70'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('070dd51e'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,+'Errors','https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021',test_suite([eval400]),'(2, 1) ','(2, 1)']).
+less_fav(v('3ed85e70'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('68b16354'),[grid_size_same,+shape_match,+mask_match,+color_match,test_suite([train400]),image_reflection,'(3, 1)',2]).
 less_fav(v(ea959feb),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(fd096ab6),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([eval400]),'(2, 1) ']).
@@ -1008,10 +1008,10 @@ less_fav(t('952a094c'),[grid_size_same,-rotation_match,-mask_match,+shape_match,
 less_fav(v('50f325b5'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v('58743b76'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(t(cdecee7f),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),summarize,pairwise_analogy,'(3, 1)']).
-less_fav(v('1e97544e'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('1e97544e'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('4aab4007'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('09629e4f'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),take_minimum,separate_images,enlarge_image,detect_grid,create_grid,count_tiles,adapt_image_to_grid,'(4, 1)']).
-less_fav(v('184a9768'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('184a9768'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(af24b4cc),[out_grid(5,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(b20f7c8b),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(aab50785),[out_grid(5,4),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(5, 1) ']).
@@ -1025,11 +1025,11 @@ less_fav(v(d282b262),[grid_size_same,-rotation_match,-mask_match,+shape_match,+c
 less_fav(t(a8c38be5),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),pattern_moving,jigsaw,crop,'(2, 1)']).
 less_fav(v('981571dc'),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v('47996f11'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(4, 1) ']).
-less_fav(v('256b0a75'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('1e81d6f9'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('256b0a75'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('1e81d6f9'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('5783df64'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(t('9edfc990'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),holes,background_filling,'(3, 1)']).
-less_fav(v('319f2597'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test,test_suite([eval400]),'(3, 1) ']).
+less_fav(v('319f2597'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v(e2092e0c),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 
 
