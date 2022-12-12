@@ -268,7 +268,15 @@ set_test_suite(N):-
    if_t(X\==N,
    (luser_setval(test_suite_name,N),!,
     wdmsg(switched(X-->N)),
-    restart_suite,print_single_pair)).
+    notrace((restart_suite)),
+    set_pair_mode(entire_suite),
+    preview_suite)).
+
+test_preview(TestID):- with_pair_mode(single_pair,print_single_pair(TestID)).
+
+preview_suite:-get_current_suite_testnames(Set),length(Set,L),L=<10,reverse(Set,[_|Rev]),!,maplist(test_preview,Rev).
+preview_suite:-get_current_suite_testnames(Set),length(Set,L),L>10,length(LL,10),append(LL,_,Set),reverse(LL,[_|Rev]),!,maplist(print_single_pair,Rev).
+preview_suite:-print_single_pair.
 
 do_test_number(Num):- Num>=100, test_suite_list(L), nth100(Num,L,SuiteX),!,set_test_suite(SuiteX).
 
@@ -449,7 +457,7 @@ report_suite:- luser_getval(test_suite_name,SuiteX), write('\n--->>>>'),report_s
 
 report_suite(SuiteX):- 
   ((muarc_tmp:cached_tests(SuiteX,Set),length(Set,Len)) -> true ; Len = ?),
-  bold_print(underline_print(color_print(yellow,test_suite(SuiteX,Len)))).
+  bold_print(underline_print(color_print(yellow,SuiteX=Len))).
 
 assert_test_suite(Suite,TestID):- append_term(Suite,TestID,Term),
   assert_if_new(test_suite_name(Suite)),
@@ -541,7 +549,7 @@ test_suite_name(easy_solve_suite).
 test_suite_name(test_names_by_fav). 
 test_suite_name(human_t).
 test_suite_name(is_symgrid).
-test_suite_name(sol_t).
+%test_suite_name(sol_t).
 %test_suite_name(hard_t).
 test_suite_name(key_pad_tests). % test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
 %test_suite_name(test_names_by_fav_rev). 
@@ -571,12 +579,12 @@ get_current_suite_testnames(Set):-
 current_suite_testnames(X,Set):- nonvar(Set),current_suite_testnames(X,SetV),!,Set=SetV.
 current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),Set\==[],!.
 current_suite_testnames(X,Set):-  
- my_time((pp(creating(current_suite_testnames(X))), 
+ (once((%pp(creating(current_suite_testnames(X))), 
  must_det_ll((
  findall(ID,test_suite_info(X,ID),List),
-  length(List,L), pp(current_suite_testnames(X)=L),  
+  %length(List,L), pp(current_suite_testnames(X)=L),  
   my_list_to_set_variant(List,Set),
-  !,(ignore((Set\==[],asserta(muarc_tmp:cached_tests(X,Set))))))))).
+  !,(ignore((Set\==[],asserta(muarc_tmp:cached_tests(X,Set)))))))))).
 
 get_by_hard(X,Set):- nonvar(Set),get_by_hard(X,SetV),!,Set=SetV.
 get_by_hard(X,ByHard):- muarc_tmp:cached_tests_hard(X,ByHard),!.
@@ -622,6 +630,10 @@ test_suite_testIDs(SuiteX,Set):-
   list_to_set(List,Set),ignore((Set\==[],asserta(muarc_tmp:cached_tests(SuiteX,Set)))).
 
 test_suite_info_1(SuiteX,TestID):- var(SuiteX),!,some_test_suite_name(SuiteX),test_suite_info_1(SuiteX,TestID).
+test_suite_info_1(SuiteX,TestID):-
+   test_info_no_loop(TestID,Sol), 
+    \+ \+ (member(E,Sol), 
+     once(E=test_suite([SuiteX]);E==SuiteX;(?(E)==SuiteX);(?(E)==SuiteX))).
 test_suite_info_1(ADir,TestID):- /*dir_test_suite_name(ADir),*/ some_test_info_prop(TestID,test_suite([ADir])).
 test_suite_info_1(SuiteX,TestID):-
    test_info_no_loop(TestID,Sol), \+ \+ (member(E,Sol), (E=test_suite([SuiteX]);E==SuiteX)).
@@ -654,6 +666,7 @@ test_suite_marker(Prop):- findall(TP,test_prop_example(TP),Props),list_to_set(Pr
 as_test_prop(Prop,Prop):- atom(Prop), \+ atom_contains(Prop,'/'), \+ atom_contains(Prop,' ').
 as_test_prop(+Prop,+Prop):- atom(Prop).
 as_test_prop(-Prop,-Prop):- atom(Prop).
+as_test_prop(Prop,?(Prop)):- atom(Prop), \+ atom_contains(Prop,'/'), nop((\+ atom_contains(Prop,' '))).
 %as_test_prop(Prop,Prop):- compound(Prop).
 
 prev_test:-  get_current_test(TestID), get_prev_test(TestID,NextID), set_current_test(NextID).
@@ -1184,6 +1197,7 @@ human_t_set(NamesByHardUR):- % Name=t(_),
   asserta(muarc_tmp:cached_tests(human_t,NamesByHardUR)).
 
 
+/*
 sol_t(T):- sol_t_set(Set),member(T,Set).
 %sol_t(T):- human_t_set(Set),member(T,Set).
 
@@ -1193,7 +1207,7 @@ sol_t_set(NamesByHardUR):- % Name=t(_),
    (some_test_info(Name,Sol),member(C,Sol),compound(C),functor(C,F,1),atom_contains(F,sol)),All),
   list_to_set(All,NamesByHardUR),
   asserta(muarc_tmp:cached_tests(sol_t,NamesByHardUR)).
-
+*/
 
 
 
