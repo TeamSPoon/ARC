@@ -69,6 +69,7 @@ not_for_matching(_Why,_,Var):- var(Var),!,fail.
 not_for_matching(_Why,_,C):- for_matching(C),!,fail.
 not_for_matching(_Why,_,_):-!.
 
+
 not_for_matching(_Why,_,C):- notrace((sub_term(E,C), compound(E))), E= '$VAR'(_),!,fail.
 not_for_matching(_Why,_,iz(combined)).
 not_for_matching(_Why,_,giz(_)).
@@ -125,11 +126,12 @@ for_matching(I):- ( \+ callable(I); I='$VAR'(_)), !.
 for_matching(X):- for_creating(X),!.
 for_matching(o(_,_,_)). 
 for_matching(iz(X)):- !, (atom(X);for_matching1(X)),!.
+for_matching(o(_,_,F)):-!,for_matching(F).
 for_matching(P):- for_matching1(P).
 
 for_matching1(NoUse):- not_used(NoUse),!,fail.
 for_matching1(cc). for_matching1(symmetry). 
-for_matching1(/*b*/iz). 
+%for_matching1(/*b*/iz). 
 for_matching1(P):- compound(P),functor(P,What,_),for_matching1(What).
 
 
