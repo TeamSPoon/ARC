@@ -1696,7 +1696,7 @@ is_fti_step(indiv_grid_pings).
 % =====================================================================
 indiv_grid_pings(Grid):- is_grid(Grid),!,forall(ping_indiv_grid(P1),ignore(catch(call(P1,Grid),E, ((E == '$aborted')->throw(E);fail)))),!.
 indiv_grid_pings(VM):- get_kov(grid,VM,Grid),!, indiv_grid_pings(Grid).
-indiv_grid_pings(VM):- into_grid(VM,G),!,indiv_grid_pings(G).
+indiv_grid_pings(VM):- io_side_effects, into_grid(VM,G),!,indiv_grid_pings(G).
 
 
 

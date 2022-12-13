@@ -95,7 +95,7 @@ print_hybrid_set(TestID):-
   print_side_by_side(Set),
   nop(forall(member(O,Set),print_hybrid_grid(O))).
 
-print_hybrid_grid(G):- into_grid(G,O),grid_to_norm(O,Ops,N),
+print_hybrid_grid(G):- io_side_effects,into_grid(G,O),grid_to_norm(O,Ops,N),
   (O\==N->print_side_by_side([ops(Ops)],G,N); print_grid(O)).
 
 individuate_pairs_from_hints(TestID):- 

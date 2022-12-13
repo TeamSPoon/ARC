@@ -84,6 +84,8 @@ is_real_color_or_var(C):- (var(C)->true;is_real_color(C)).
 unique_colors(G,SUCOR):- colors(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_color_or_var,UC,SUCO))),reverse(SUCO,SUCOR).
 unique_color_count(G,Len):- unique_colors(G,UC),length(UC,Len).
 
+unique_fg_colors(G,SUCOR):- colors(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_fg_color,UC,SUCO))),reverse(SUCO,SUCOR).
+
 
 into_cc(SK,BFO):- maplist(into_cc1,SK,BFO).
 into_cc1(N-C,cc(Nm,CN)):- CN is N,!,color_name(C,Nm).

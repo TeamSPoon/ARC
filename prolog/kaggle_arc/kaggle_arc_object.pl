@@ -1278,7 +1278,7 @@ find_outline_pred(P3,Grid):- is_grid(Grid),!,
       write('from '),write(P3),print_grid(H,V,Grid))
     ;((grid_of(OL,O,Hits),once((amass(O,M))),
      nl,write(solution(Hits,M)), print_grid(H,V,O))))).
-find_outline_pred(ID):- into_grid(ID,Grid),find_outlines(Grid).
+find_outline_pred(ID):- io_side_effects, into_grid(ID,Grid),find_outlines(Grid).
 
 %arc_grid(Nth,X):- (var(Nth)->Nth=1;true), offset(Nth,arc_grid(X)).
 %find_outline(Grid,Result,Grid4):- is_grid(Grid),!,grid_to_points(Grid,Points),!,find_outline(Points,Result,Grid4).
