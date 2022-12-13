@@ -123,7 +123,7 @@ for_creating1(P):- compound(P),functor(P,What,_),for_creating1(What).
 
 for_matching(I):- ( \+ callable(I); I='$VAR'(_)), !.
 for_matching(X):- for_creating(X),!.
-for_matching(o(sf(11),nthOF(9),sizeX(3)):- 
+for_matching(o(_,_,_)). 
 for_matching(iz(X)):- !, (atom(X);for_matching1(X)),!.
 for_matching(P):- for_matching1(P).
 

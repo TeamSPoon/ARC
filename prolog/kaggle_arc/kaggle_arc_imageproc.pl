@@ -285,6 +285,13 @@ trim_to_rect2(G,G8):- get_bgc(BG), h_and_v(trim_unused_vert(BG),G,G8).
   trim_unused_vert(BG,GridR,GridO):- append(Grid,[Row],GridR),maplist(is_bg_or_var(BG),Row),!,trim_unused_vert(BG,Grid,GridO).
   trim_unused_vert(_,G,G).
 
+
+maybe_trim_to_rect(G,GG):- trim_to_rect(G,GG),!,G\=@=GG.
+maybe_trim_outside(G,GG):- trim_outside(G,GG),!,G\=@=GG.
+trim_outside(G,GG):- grid_call([trim_topside_v,rot90,trim_topside_v,rot270],G,GG).
+trim_topside_v(G,GG):- arg(_,v([],[_],[_,_]),L),arg(_,v([],[_],[_,_]),R),append([L,GG,R],G),flipSym_checks(flipV,GG),!.
+trim_topside_v(G,G).
+
 %:- luser_setval(grid_bgc,8).
 
 if_bgc_then_int(X,C,B,A):- \+compound(B),B\==[],is_bg_or_var(X,B), A=C, !.

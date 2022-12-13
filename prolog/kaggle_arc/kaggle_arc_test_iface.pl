@@ -555,6 +555,7 @@ test_suite_name(test_names_by_hard).
 test_suite_name(TS):- dir_test_suite_name(TS).
 test_suite_name(icecuber_pass).
 test_suite_name(icecuber_fail).
+test_suite_name(P1):- test_suite_name_by_call(P1).
 test_suite_name(Prop):- test_suite_marker(Prop).
 
 
@@ -641,6 +642,29 @@ test_suite_info_1(dbigham_fail,TestID):- !, all_arc_test_name_unordered(TestID),
 test_suite_info_1(SuiteX,TestID):- suite_tag(SuiteX,List),!,tasks_split(TestID,List).
 test_suite_info_1(SuiteX,TestID):- test_info_no_loop(TestID,Sol), suite_mark(SuiteX,Sol).
 test_suite_info_1(SuiteX,TestID):- atom(SuiteX),current_predicate(SuiteX/1),!,call(call,SuiteX,TestID).
+
+
+all_grids_io(TestID,ExampleNum,IO,P1):-
+  all_arc_test_name_unordered(TestID),
+  forall(kaggle_arc_io(TestID,ExampleNum,IO,G),call(P1,G)).
+all_grid_pairs(TestID,ExampleNum,P2):-
+  all_arc_test_name_unordered(TestID),
+  forall(kaggle_arc(TestID,ExampleNum,I,O),call(P2,I,O)).
+
+%into_numbers(N,List):- findall(Num,(sub_term(Num,N),number(Num)),List),List\==[].
+%num_op(OP,V1,V2):- number(V1),number(V2),!,call(OP,V1,V2).
+%num_op(OP,V1,V2):- into_numbers(V1,Ns1),into_numbers(V2,Ns2),maplist(num_op(OP),Ns1,Ns2).
+
+test_suite_name_by_call(F):- clauses_predicate(M:F/1,P1),clause(M:P1,Body),first_cmpd_goal(Body,all_grid_pairs(_,_,_)).
+test_suite_name_by_call(F):- clauses_predicate(M:F/1,P1),clause(M:P1,Body),first_cmpd_goal(Body,all_grids_io(_,_,_,_)).
+
+all_grids_keypad(TestID):- all_grids_io(TestID,trn+_,_,keypad_size).
+all_grids_keypad_size_or_less(TestID):- all_grids_io(TestID,trn+_,_,keypad_size_or_less).
+all_pairs_change_size(TestID):- all_grid_pairs(TestID,trn+_,op_op(grid_size_term,(\==))).
+
+keypad_size(Grid):- grid_size(Grid,3,3).
+keypad_size_or_less(Grid):- grid_size(Grid,H,V),H=<3,V=<3.
+
 
 suite_mark(SuiteX,Sol):- sub_term(E,Sol),suite_mark1(SuiteX,E),!.
 suite_mark1(_SuiteX,E):- var(E),!,fail.
@@ -1714,14 +1738,19 @@ with_current_test(P1):- ensure_test(TestID), call(P1,TestID).
 first_cmpd_goal(GG,_):- \+ compound(GG),!,fail.
 first_cmpd_goal(forall(G,_),GG):- !, first_cmpd_goal(G,GG).
 first_cmpd_goal(time(G),GG):- !, first_cmpd_goal(G,GG).
+first_cmpd_goal(must_det_ll(G),GG):- !, first_cmpd_goal(G,GG).
 first_cmpd_goal(my_time(G),GG):- !, first_cmpd_goal(G,GG).
 first_cmpd_goal(':'(G,_),GG):- !, first_cmpd_goal(G,GG).
 first_cmpd_goal(forall_count(G,_),GG):- !, first_cmpd_goal(G,GG).
 first_cmpd_goal((G,_),GG):- !, first_cmpd_goal(G,GG).
 first_cmpd_goal(G,G).
-uses_test_id(P1):- current_predicate(M:F/N),functor(P,F,N),
+
+clauses_predicate(M:F/N,P):-
+                 current_predicate(M:F/N),functor(P,F,N),
                   \+ \+ predicate_property(M:P,number_of_clauses(_)), 
-                   \+ predicate_property(M:P,imported_from(_)),                    
+                   \+ predicate_property(M:P,imported_from(_)).
+
+uses_test_id(P1):- clauses_predicate(M:F/N,P),                    
                    \+ \+ (clause(M:P,GG),first_cmpd_goal(GG,G),compound(G),functor(G,GF,_),
                           \+ \+ member(GF,[ensure_test,testid_name_num_io,fix_test_name,with_test_grids]),
                           arg(1,P,Var1),arg(1,G,Var2),Var1==Var2),

@@ -446,9 +446,9 @@ has_spec_value(T):- sub_term(E,T),number(E),!.
 has_spec_value(T):- sub_term(E1,T),atomic(E1),sub_term(E2,T),atomic(E2),E1\==E2.
 
 
-in_smaller_than_out(TestID):- forall(kaggle_arc(TestID,trn+_,I,O), op_op(v_area,I,O,(<))).
+in_smaller_than_out(TestID):- forall(kaggle_arc(TestID,trn+_,I,O), op_op(v_area,(<),I,O)).
 
-op_op(P2a,I,O,P2b):- call(P2a,I,II),call(P2a,O,OO),call(P2b,II,OO),!.
+op_op(P2a,P2b,I,O):- call(P2a,I,II),call(P2a,O,OO),call(P2b,II,OO),!.
 
 v_area(I,Size):- vis2D(I,IH,IV), Size is IH * IV.
 

@@ -1574,8 +1574,6 @@ grid_call_unbound_p1(P1,[A|B],GridIn,GridOut):- !, grid_call_unbound_p1(P1,A,Gri
 */
 grid_call_unbound_p1(_P1,Call,GridIn,GridOut):- grid_call(Call,GridIn,GridOut).
 
-trim_topside_v(G,GG):- arg(_,v([],[_],[_,_]),L),arg(_,v([],[_],[_,_]),R),append([L,GG,R],G),flipSym_checks(flipV,GG),!.
-trim_topside_v(G,G).
 
 rot_p_plus_trim(alter_and_p1(trim_to_rect,P)):- rot_p_plus_full(P).
 rot_p_plus_trim(alter_and_p1(trim_outside,P)):-  rot_p_plus_full(P).
@@ -1595,9 +1593,6 @@ rot_p2(flipH). rot_p2(flipV). rot_p2(rot180).
 rot_p2(flipDH). rot_p2(flipDV). rot_p2(flipDHV). 
 
 
-maybe_trim_to_rect(G,GG):- trim_to_rect(G,GG),!,G\=@=GG.
-maybe_trim_outside(G,GG):- trim_outside(G,GG),!,G\=@=GG.
-trim_outside(G,GG):- grid_call([trim_topside_v,rot90,trim_topside_v,rot270],G,GG).
 
 %rot_p(P):- rot_p1(P).
 %rot_p(and(trim_to_rect,P)):- rot_p1(P).
