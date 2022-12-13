@@ -536,6 +536,7 @@ is_grid_cell(AB):- \+ compound(AB),!.
 %is_grid_cell(C):- number(C),C<13.
 %is_grid_cell(C):- is_colorish(C),!.
 is_grid_cell(att(_,_)):-!.
+is_grid_cell('$VAR'(_)):-!.
 is_grid_cell(cell(_)):-!.
 
 %is_grid_cell(C):- atomic(C),!.

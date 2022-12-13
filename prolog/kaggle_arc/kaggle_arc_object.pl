@@ -244,7 +244,7 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
   deoffset_points(LoH,LoV,GPoints,LPoints),
   % sort(LPoints,LPointsS), maplist(arg(1),LPointsS,BPenColors), clumped(BPenColors,CPenColors), reclumped(CPenColors,PenColors),
   %remove_color(LPoints,UColorlessPoints),
-  maplist(on_edge(GH,GV),GPoints,EdgeL),count_sets([n,s,e,w,c|EdgeL],_,EdgeC),maplist(zero_one_more,EdgeC,EdgeS),
+  %maplist(on_edge(GH,GV),GPoints,EdgeL),count_sets([n,s,e,w,c|EdgeL],_,EdgeC),maplist(zero_one_more,EdgeC,EdgeS),
   
   length(LPoints,Len),
   Empty is Area - Len,
@@ -328,7 +328,7 @@ make_indiv_object_s(GID,GH,GV,Overrides,GPoints,ObjO):-
     %obj_to_oid(ID,Iv),
     giz(g(IO)),
     giz(gid(GID)),
-    EdgeS,
+    %EdgeS,
     % iz(oid(OID)),
     giz(glyph(Glyph)),
     globalpoints(GPoints),
@@ -536,7 +536,7 @@ aggregates(iz(_)).
 aggregates(cc(_,_)).
 aggregates(giz(_)).
 aggregates(o(_,_,_)).
-aggregates(birth(_)).
+aggregates(/*b*/iz(_)).
 aggregates(link(_,_,_)).
 aggregates(link(_,_)).
 aggregates(insideOf(_)).
@@ -1200,7 +1200,7 @@ rebuild_from_globalpoints(Obj,GPoints,NewObj):-
 
 
 
-is_point_or_colored(birth(_)):-!,fail.
+is_point_or_colored(/*b*/iz(_)):-!,fail.
 is_point_or_colored(Prop):- sub_term(CP,Prop),(is_color(CP);is_nc_point(CP)),!.
 is_point_or_colored(Prop):-
  member(Prop,[cc(_),amass(_),mass(_),shape(_),rot2L(_),roll_shape(_),pen(_),norm_grid(_),norm_ops(_),

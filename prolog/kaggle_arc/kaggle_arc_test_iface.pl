@@ -226,7 +226,11 @@ do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), once(Codes=[27|_];Codes=[_]
 
 do_menu_key(Key):- maybe_call_code(Key),!.
 do_menu_key(Key):- \+ atom(Key), catch(text_to_string(Key,Str),_,fail),Key\==Str,catch(atom_string(Atom,Str),_,fail),do_menu_key(Atom).
+do_menu_key(Key):- test_suite_list(List), member(Key,List),!,set_test_suite(Key).
+do_menu_key(Key):- is_valid_testname(Key), !,set_current_test(Key).
 do_menu_key(Key):- true, fix_test_name(Key,TestID),set_current_test(TestID),!,print_test.
+do_menu_key(Key):- atom_concat(' ',Atom,Key),!,do_menu_key(Atom).
+do_menu_key(Key):- atom_concat(Atom,' ',Key),!,do_menu_key(Atom).
 do_menu_key(Key):- atom(Key),atom_codes(Key,Codes),(Codes=[27|_];Codes=[_]),format("~N % Menu did understand '~w' ~q ~n",[Key,Codes]),once(mmake).
 do_menu_key(_).
 
@@ -610,22 +614,27 @@ some_test_suite_name(SuiteX):- test_suite_name(SuiteX),
   SuiteX\==test_names_by_hard_rev.
 
 
-:- dynamic(muarc_tmp:skip_calc_suite_test/1).
 test_suite_info(SuiteX,TestID):- var(SuiteX),!,forall(some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID)),
   !,some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
 test_suite_info(SuiteX,TestID):- test_suite_testIDs(SuiteX,Set),!,member(TestID,Set).
 
+:- dynamic(muarc_tmp:skip_calc_suite_test/1).
 test_suite_testIDs(SuiteX,Set):- muarc_tmp:cached_tests_hard(SuiteX,Set).
 test_suite_testIDs(SuiteX,Set):- muarc_tmp:cached_tests(SuiteX,Set).
-test_suite_testIDs(SuiteX,Set):- SuiteX==all_arc_test_name_unordered,!,findall(TestID,kaggle_arc(TestID,trn+0,_,_),Set).
+test_suite_testIDs(SuiteX,Set):- SuiteX==all_arc_test_name_unordered,!,findall(TestID,all_arc_test_name_unordered(TestID),Set).
+test_suite_testIDs(SuiteX,_Set):- muarc_tmp:skip_calc_suite_test(SuiteX),
+  pp(looped(muarc_tmp:skip_calc_suite_test(SuiteX))),fail.
 test_suite_testIDs(SuiteX,Set):- 
-  findall(TestID_C,test_suite_info_1(SuiteX,TestID_C),List),
-  list_to_set(List,Set),ignore((Set\==[],asserta(muarc_tmp:cached_tests(SuiteX,Set)))).
+  setup_call_cleanup(assert(muarc_tmp:skip_calc_suite_test(SuiteX),Ref),
+    (findall(TestID_C,test_suite_info_1(SuiteX,TestID_C),List),
+     list_to_set(List,Set),ignore((Set\==[],asserta(muarc_tmp:cached_tests(SuiteX,Set))))),
+    erase(Ref)).
 
 test_suite_info_1(SuiteX,TestID):- var(SuiteX),!,some_test_suite_name(SuiteX),test_suite_info_1(SuiteX,TestID).
+%test_suite_info_1(SuiteX,TestID):- var(TestID),!,all_arc_test_name_unordered(TestID),test_suite_info(SuiteX,TestID).
 test_suite_info_1(icecuber_fail,TestID):- !, icu(Name,PF),PF == -1,atom_id_e(Name,TestID).
 test_suite_info_1(icecuber_pass,TestID):- !, icu(Name,PF),PF \== -1,atom_id_e(Name,TestID).
-test_suite_info_1(dbigham_fail,TestID):- !, all_arc_test_name(TestID),
+test_suite_info_1(dbigham_fail,TestID):- !, all_arc_test_name_unordered(TestID),
    \+ test_suite_info(dbigham_train_core,TestID),
    \+ test_suite_info(dbigham_train_pass,TestID),
    \+ test_suite_info(dbigham_eval_pass,TestID).
@@ -633,13 +642,17 @@ test_suite_info_1(SuiteX,TestID):- suite_tag(SuiteX,List),!,tasks_split(TestID,L
 test_suite_info_1(SuiteX,TestID):- test_info_no_loop(TestID,Sol), suite_mark(SuiteX,Sol).
 test_suite_info_1(SuiteX,TestID):- atom(SuiteX),current_predicate(SuiteX/1),!,call(call,SuiteX,TestID).
 
-suite_mark(SuiteX,Sol):- sub_term(E,Sol),
-    (E==SuiteX; ('?'(E)==SuiteX)),!.
-full_test_suite_list(List):- 
-  findall(SN,some_test_suite_name(SN),List).
-
-test_suite_list(AtLeastTwo):- full_test_suite_list(List),list_to_set(List,Sort),include(at_least_two_tests,Sort,AtLeastTwo).
-at_least_two_tests(_).
+suite_mark(SuiteX,Sol):- sub_term(E,Sol),suite_mark1(SuiteX,E),!.
+suite_mark1(_SuiteX,E):- var(E),!,fail.
+suite_mark1( SuiteX,E):- SuiteX=@=E,!.
+suite_mark1('*'(SuiteX),E):-nonvar(SuiteX),E=SuiteX.
+suite_mark1( SuiteX,E):- compound(E),compound_name_arity(E,F,_),!,suite_mark1(SuiteX,F).
+    
+full_test_suite_list(Set):-   findall(SN,some_test_suite_name(SN),List),list_to_set(List,Set).
+test_suite_list(AtLeastTwo):- full_test_suite_list(Set),include(at_least_two_tests,Set,AtLeastTwo).
+at_least_two_tests(SuiteX):- 
+  nop((current_suite_testnames(SuiteX,Tests),
+  length(Tests,L),L>=2)).
 
 report_suites:-  
  (luser_getval(test_suite_name,SuiteXC); SuiteXC=[]),
@@ -654,11 +667,12 @@ test_prop_example(TPE):-   fav(_,PropList),member(Prop,PropList),as_test_prop(Pr
 
 test_suite_marker(Prop):- findall(TP,test_prop_example(TP),Props),list_to_set(Props,Set),sort(Set,Sort),member(Prop,Sort).
 %as_test_prop(Prop,Prop):- atom(Prop), \+ atom_contains(Prop,'/'), \+ atom_contains(Prop,' ').
-as_test_prop(+Prop,+[Prop]):- atom(Prop).
-as_test_prop(-Prop,-[Prop]):- atom(Prop).
+as_test_prop(+Prop,+Prop):- atom(Prop).
+as_test_prop(-Prop,-Prop):- atom(Prop).
 %as_test_prop(Prop,'?'(Prop)):- atom(Prop), \+ atom_contains(Prop,'/'), nop((\+ atom_contains(Prop,' '))).
-as_test_prop(Prop,(Prop)):- atom(Prop), \+ atom_contains(Prop,'/'), nop((\+ atom_contains(Prop,' '))).
-%as_test_prop(Prop,Prop):- compound(Prop).
+as_test_prop(Prop,Prop):- atom(Prop), use_atom_test(Prop).
+as_test_prop(Prop,F):- compound(Prop),compound_name_arity(Prop,F,_), use_atom_test(F).
+
 
 prev_test:-  get_current_test(TestID), get_prev_test(TestID,NextID), set_current_test(NextID).
 next_test:- get_current_test(TestID), notrace((get_next_test(TestID,NextID), set_current_test(NextID))),!.
@@ -1168,9 +1182,21 @@ all_test_info(TestID,test_suite([SuiteX])):- some_test_suite_name(SuiteX),test_s
 
 
 repair_info(Inf,InfO):- listify(Inf,Inf1),maplist(repair_info0,Inf1,InfO).
+
+is_plus_minus_or_sym(+). is_plus_minus_or_sym(-).
+is_plus_minus_or_sym(F):- upcase_atom(F,UC),downcase_atom(F,UC).
+listify_args(F):- \+ is_plus_minus_or_sym(F).
+
+no_atom_test(print_grid).
+no_atom_test(test_suite).
+no_atom_test(out_grid).
+use_atom_test(F):- no_atom_test(F),!,fail.
+use_atom_test(F):- atom_contains(F,' '),!.
+use_atom_test(F):- \+ is_plus_minus_or_sym(F), \+ atom_contains(F,'/'), nop((\+ atom_contains(F,' '))).
+
 repair_info0(Inf0,Inf):- is_list(Inf0),!,maplist(repair_info0,Inf0,Inf).
-repair_info0(Inf,InfO):- compound(Inf),functor(Inf,F,1),!,arg(1,Inf,A),listify(A,ArgsL),InfO=..[F,ArgsL].
-repair_info0(Inf,InfO):- compound(Inf),!,compound_name_arguments(Inf,F,ArgsL),InfO=..[F,ArgsL].
+repair_info0(Inf,InfO):- compound(Inf),functor(Inf,F,1),listify_args(F),!,arg(1,Inf,A),listify(A,ArgsL),InfO=..[F,ArgsL].
+repair_info0(Inf,InfO):- compound(Inf),compound_name_arguments(Inf,F,ArgsL),listify_args(F),!,InfO=..[F,ArgsL].
 repair_info0(Inf,Inf).% listify(Inf,InfM),maplist(repair_info,InfM,Info).
 
 was_fav(X):- nonvar_or_ci(X), clause(fav(XX,_),true),nonvar_or_ci(XX),X==XX.

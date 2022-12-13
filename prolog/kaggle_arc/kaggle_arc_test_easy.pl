@@ -154,20 +154,49 @@ subst_colors_with_vars(Colors,Vars,I,O):-
 
 %apply_equiv_xforms(subst_colors_with_vars(Colors,Vars),II,III):- subst_colors_with_vars(Colors,Vars,II,III).
 
-use_simplified_recall(Where,II,OO):-  nop(get_current_test(Where)),get_simplified_recall(Where,II,OO).
+use_simplified_recall(Where,II,OO):-  get_simplified_recall(Where,II,OO).
 
 get_simplified_recall(W,I,O):- get_simplified_recall_exact(W,I,O)*->true;get_simplified_recall_close(W,I,O).
 
-get_simplified_recall_exact(d(Where),I,O):- fail,kaggle_arc(Where,_,I,O).
+get_simplified_recall_exact(d(Where+ExampleNum),I,O):- kaggle_arc(Where,ExampleNum,I,O),get_current_test(Current),Where\==Current.
 
-get_simplified_recall_close(Where,II,OO):- 
-   kaggle_arc(Where,_,I,O),  
+t_v2(t,v). t_v2(v,t).
+get_simplified_recall_close(Where+ExampleNum,II,OO):-    
+   get_current_test(Current),
+   t_v2(T,V), functor(Current,T,1), !, 
+   (functor(Where,V,1);functor(Where,T,1)),
+   abstracted_recall(Where,ExampleNum,I,O),
+   kaggle_arc(Where,ExampleNum,OI,OO),
+   Where\==Current,
+   I+O = II+OO,!,
+   print_ss([simplified_recall(Current->Where)=OI,orig=OO,match=I,for=O]).
+
+:- dynamic(in_abstracted_recall_cache/4).
+test_abstracted_recall(TestID):- 
+  ensure_test(TestID), 
+  forall(abstracted_recall(TestID,ExampleNum,I,O),
+  (number_gridvars(I+O),%writeq(I),writeq(O),
+  print_single_pair(TestID,ExampleNum,I,O))).
+
+number_gridvars(Grid):-
+  grid_variables(Grid,Vars),
+  numbervars(Vars).
+
+grid_variables(Grid,Vars):- term_variables(Grid,Vars).
+
+:- abolish(in_abstracted_recall_cache/4).
+:- dynamic(in_abstracted_recall_cache/4).
+
+abstracted_recall(TestID,ExampleNum,I,O):- \+ ground(ExampleNum+TestID),!,kaggle_arc(TestID,ExampleNum,_,_),abstracted_recall(TestID,ExampleNum,I,O).
+abstracted_recall(TestID,ExampleNum,I,O):- in_abstracted_recall_cache(TestID,ExampleNum,I,O),!.
+abstracted_recall(TestID,ExampleNum,II,OO):- 
+   kaggle_arc(TestID,ExampleNum,I,O),
+   PairIn = I+O, 
+   get_black(Black),
    once((io_colors(I,O,Colors), length(Colors,CL),length(Vars,CL))),
-   PairIn = I+O,   subst_2L(Colors,Vars,PairIn,PairOut), 
-   PairOut = II+OO,
-   print_ss([simplified_recall(Colors)=I,orig=O,match=II,for=OO]).
+   subst_2L([Black|Colors],[bg|Vars],PairIn,PairOut), PairOut = II+OO,
+   asserta(in_abstracted_recall_cache(TestID,ExampleNum,II,OO)).
 
-   
 
 do_easy1(C1,I,O):- easy0(_N,C1),once(grid_call(C1,I,O)),I\=@=O.
 do_easy2(C1,C2,I,O):- 

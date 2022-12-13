@@ -319,7 +319,7 @@ pp_hook_g(G):- \+ plain_var(G), lock_doing(in_pp_hook_g,G,pp_hook_g0(G)).
 pp_hook_g0(S):- term_is_ansi(S), !, write_nbsp, write_keeping_ansi_mb(S).
 pp_hook_g0(_):- \+ let_arc_portray,!,fail.
 pp_hook_g0(_):- in_pp(bfly),!,fail.
-pp_hook_g0(G):- wots(S,in_bfly(f,pp_hook_g1(G))),write(S).
+pp_hook_g0(G):- fail, wots(S,in_bfly(f,pp_hook_g1(G))),write(S).
 
 mass_gt1(O1):- into_obj(O1,O2),mass(O2,M),!,M>1.
 
@@ -1730,6 +1730,7 @@ i_glyph(N,Glyph):- trace,i_glyph0(N,Glyph),atom(Glyph),!.
 
 i_glyph0(N,Glyph):- bg_sym_ui(BG), BG==N, bg_dot(Code), name(Glyph,[Code]).
 i_glyph0(N,Glyph):- atom(N),name(N,[_111,95,Code|_])->name(Glyph,[Code]),!.
+i_glyph0(N,Glyph):- atom(N),atom_number(N,Num),!,i_glyph(Num,Glyph).
 i_glyph0(N,Glyph):- atom(N),name(N,[Code])->name(Glyph,[Code]),!.
 i_glyph0(Code,Glyph):- integer(Code), Code> 255, name(Glyph,[Code]).
 i_glyph0(N,Glyph):- integer(N),quietly((i_sym(N,Code),name(Glyph,[Code]))).
