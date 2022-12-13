@@ -55,6 +55,7 @@ save_learnt_rule(RuleIn,InGoal,OutGoal):-
   length(InSet,InLen),length(InVars,InLen),
   subst_rvars(InSet,InVars,RuleIn,NewRuleIn),!,
   Assert = (NewRuleIn:-was_once(InSet,InVars)), 
+  writeq(was_once(InSet,InVars)),
   assert_visually(Assert),!.    
 
 
@@ -69,7 +70,7 @@ not_for_matching(_Why,_,Var):- var(Var),!,fail.
 not_for_matching(_Why,_,C):- for_matching(C),!,fail.
 not_for_matching(_Why,_,_):-!.
 
-
+/*
 not_for_matching(_Why,_,C):- notrace((sub_term(E,C), compound(E))), E= '$VAR'(_),!,fail.
 not_for_matching(_Why,_,iz(combined)).
 not_for_matching(_Why,_,giz(_)).
@@ -92,6 +93,26 @@ not_for_matching(_Why,L,globalpoints(XX)):- !, started_is_list(XX), (member(shap
 %not_for_matching(_Why,_,loc2D(H,V)):- (H\==1;V\==1).
 %not_for_matching(_Why,_,M):- too_unique(M),!.
 %not_for_matching(_Why,_,M):- too_non_unique(M),!.
+*/
+
+propagate(rot2L(_Rot90)).
+propagate(vis2D(_H1,_V3)).
+propagate(loc2D(_X2D,_Y1D)).
+propagate(pen([cc(_SILVER,_N3)|_More])).
+propagate(norm_grid(_NormalGrid)).
+propagate(norm_ops(_UnrotateList)).
+propagate(rotOffset(_O3,_O1)).
+propagate(iz(sid(_Sid_13))).
+propagate(loc2G(_X2G,_Y1G)).
+
+secondary_verification(A):- var(A),!,fail.
+secondary_verification(cc(_,0)).
+secondary_verification(o(_,_,_)).
+secondary_verification(iz(A)):- \+ not_secondary_verification(A).
+
+not_secondary_verification(A):- var(A).
+not_secondary_verification(image).
+not_secondary_verification(symmetry(_)).
 
 started_is_list(X):- nonvar(X), X = [_,_].
 
@@ -102,7 +123,7 @@ not_used(iz(X)):- not_used(X).
 
 must_use(Var):- var(Var),!,fail.
 must_use(/*b*/iz(indiv(i_diag))).
-must_use(/*b*/iz(Atom)):- !, atom(Atom).
+%must_use(/*b*/iz(Atom)):- !, atom(Atom).
 must_use(shape(Atom)):- !, atom(Atom).
 must_use(iz(X)):- must_use(X).
 
@@ -124,8 +145,9 @@ for_creating1(P):- compound(P),functor(P,What,_),for_creating1(What).
 
 for_matching(I):- ( \+ callable(I); I='$VAR'(_)), !.
 for_matching(X):- for_creating(X),!.
-for_matching(o(_,_,_)). 
 for_matching(iz(X)):- !, (atom(X);for_matching1(X)),!.
+for_matching(o(_,nthOf(_),rank1(_))):-!,fail.
+for_matching(o(_,nthOf(_),rank2(_))):-!,fail. 
 for_matching(o(_,_,F)):-!,for_matching(F).
 for_matching(P):- for_matching1(P).
 
@@ -412,10 +434,43 @@ learn_rule_in_out_sames(In,Out):- fail,
   pp_safe(How),
   learn_rule_in_out_objects(How,I,O).
 
-learn_rule_in_out_objects(How,I,O):-   
+learn_rule_in_out_objects(How,I,O):-
+  assert_visually(learn_rule_in_out_full_objects(How,I,O)),
+  make_rule_l2r(I,O,II,OO),
+  save_learnt_rule(test_solved(How,II,OO),I+O,I+O),!.
+
+
+make_rule_l2r(I,O,III,OOO):-
   simplify_for_matching(lhs,I,II),
   simplify_for_creating(O,OO),
-  save_learnt_rule(test_solved(How,II,OO),I+O,I+O),!.
+  propagate_lr(II,OO,III,OOO).
+
+propagate_lr(II,OO,III,OOO):- sub_term(E,OO),compound(E),ground(E),propagate(E), 
+  subst001(II,E,Var,MII),
+  MII\=@=II,!,
+  subst001(OO,E,Var,MOO),
+  make_replacement(E,EVar),  
+  Var = EVar,!,  
+  propagate_lr1(MII,MOO,III,OOO).
+
+propagate_lr1(MII,MOO,III,OOO):- wdmsg(propagate_lr(MII,MOO)),
+  propagate_lr(MII,MOO,III,OOO),!.
+propagate_lr1(II,OO,II,OO).
+
+compound_not_ftvar(C):- compound(C), C\=='$VAR'(_).
+
+make_replacement(I,I):- ( var(I); I='$VAR'(_)), !.
+make_replacement([],[]).
+make_replacement(E,A):- \+ compound(E), p_n_atom(E,Name),A='$VAR'(Name).
+make_replacement(obj(I),obj(O)):- !, maplist(make_replacement,I,O).
+make_replacement([H|T],[HH|TT]):- compound_not_ftvar(H), !, make_replacement(H,HH),make_replacement(T,TT).
+make_replacement([H|T],[H|TT]):- !, make_replacement(T,TT).
+make_replacement(I,O):- 
+ compound_name_arguments(I, F, Args),
+ maplist(make_replacement, Args, ArgsNew),
+ compound_name_arguments( O, F, ArgsNew ),!.
+
+
 
 average_or_mid(_P2,_Out,2):-!.
 average_or_mid(P2,Out,MinMass):- is_list(Out),!,
@@ -760,7 +815,7 @@ maybe_unbind_label(iz(_)):- !,fail.
 maybe_unbind_label(G):- never_unbind_label(G),!,fail.
 maybe_unbind_label(G):- integer(G),G<1.
 maybe_unbind_label(G):- \+ atom(G),!,fail.
-maybe_unbind_label(G):- is_color(G).
+maybe_unbind_label(G):- is_real_fg_color(G),!.
 %maybe_unbind_label(G):- downcase_atom(G,D),\+ upcase_atom(G,D).
 
 subst_rvars([],[],A,A):-!. 
