@@ -47,7 +47,7 @@ menu_cmd1(_,'B','                  or (B)oxes test.',(update_changes,pbox_indivs
 menu_cmd1(_,'R','                  or (R)epairs test.',(update_changes,repair_symmetry)).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z_make,!,what_unique)).
 menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z_make,!,compile_and_save_test)).
-menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changes,print_test)).
+menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changes,maybe_set_suite,print_test)).
 menu_cmd1(_,'w','                  or (w)rite the test info',(update_changes,switch_pair_mode)).
 menu_cmd1(_,'X','                  or  E(X)amine the program leared by training',(cls_z_make,print_test,!,learned_test,solve_easy)).
 menu_cmd1(_,'L','                  or (L)earned program',(learned_test)).
@@ -703,12 +703,13 @@ is_monadic_grid_predicate(F):-  clauses_predicate_cmpd_goal(F/1,Into_Grid),membe
 io_side_effects.
 
 every_grid(P1,TestID):- every_input_grid(P1,TestID), every_output_grid(P1,TestID).
-every_input_grid(P1,TestID):- every_grid(TestID,_,in,P1), nop( \+ every_grid(TestID,trn+_,out,P1)).
-every_output_grid(P1,TestID):- every_grid(TestID,trn+_,out,P1), nop( \+ every_grid(TestID,trn+_,in,P1)).
+every_input_grid(P1,TestID):- every_grid(TestID,_,in,P1).
+every_output_grid(P1,TestID):- every_grid(TestID,trn+_,out,P1).
 
 no_grid(P1,TestID):- no_input_grid(P1,TestID),no_output_grid(P1,TestID).
-no_input_grid(P1,TestID):- every_grid(TestID,_,in, not_p1(P1)), nop( \+ every_grid(TestID,trn+_,out,P1)).
-no_output_grid(P1,TestID):- every_grid(TestID,trn+_,out, not_p1(P1)), nop( \+ every_grid(TestID,trn+_,in,P1)).
+no_input_grid(P1,TestID):- every_input_grid(not_p1(P1),TestID).
+no_output_grid(P1,TestID):- every_output_grid(not_p1(P1),TestID).
+
 
 every_grid(TestID,ExampleNum,IO,P1):-
   all_arc_test_name_unordered(TestID),
@@ -717,14 +718,19 @@ every_grid(TestID,ExampleNum,IO,P1):-
 %is_monochromish(I,O):- unique_colors(I,A),A=[_,_],unique_colors(O,B),sort(A,AB),sort(B,AB).
 %is_colorchanging(I,O):- unique_fg_colors(I,A),unique_fg_colors(O,B),sort(A,AB),\+ sort(B,AB).
 %is_monochromish(Grid):- ensure_grid(Grid), unique_color_count(Grid,[_,_]).
-is_size_1x1(Grid):- ensure_grid(Grid), grid_size(Grid,1,1).
-is_size_3x3(Grid):- ensure_grid(Grid), grid_size(Grid,3,3).
-is_size_lte_3x3(Grid):- ensure_grid(Grid), grid_size(Grid,H,V),H=<3,V=<3.
-is_size_lte_10x10(Grid):- ensure_grid(Grid), grid_size(Grid,H,V),H=<10,V=<10.
-is_size_gte_20x20(Grid):- ensure_grid(Grid), grid_size(Grid,H,V),H>=20,V>=20.
-is_mass_lte_25(Grid):- ensure_grid(Grid), mass(Grid,Mass),!,Mass=<25.
-is_mass_lte_81(Grid):- ensure_grid(Grid), mass(Grid,Mass),!,Mass=<81.
-is_mass_gte_600(Grid):- ensure_grid(Grid), mass(Grid,Mass),!,Mass>=600.
+is_size_1x1(Grid):- ensure_grid(Grid), mgrid_size(Grid,1,1).
+is_size_3x3(Grid):- ensure_grid(Grid), mgrid_size(Grid,3,3).
+is_size_lte_3x3(Grid):- ensure_grid(Grid), mgrid_size(Grid,H,V),H=<3,V=<3.
+is_size_lte_10x10(Grid):- ensure_grid(Grid), mgrid_size(Grid,H,V),H=<10,V=<10.
+is_size_gte_20x20(Grid):- ensure_grid(Grid), mgrid_size(Grid,H,V),H>=20,V>=20.
+is_mass_lte_25(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass=<25.
+is_mass_lte_81(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass=<81.
+is_mass_gte_600(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass>=600.
+
+mgrid_size(A,B,C):- grid_size(A,B,C),!.
+%mgrid_size(A,B,C):- arc_memoized(grid_size(A,B,C)),!.
+mmass(A,B):- mass(A,B),!.
+%mmass(A,B):- arc_memoized(mass(A,B)),!.
 
 not_p2(P2,I,O):- \+ call(P2,I,O).
 not_p1(P1,I):- \+ call(P1,I).
@@ -1131,8 +1137,9 @@ test_id_border(TestID):-
 
 print_whole_test(Name):- fix_test_name(Name,TestID), with_pair_mode(whole_test,print_test(TestID)).
 
+maybe_set_suite:- get_current_test(TestID),maybe_set_suite(TestID).
 print_test(TName):-
-  fix_test_name(TName,TestID,ExampleNum1),
+  fix_test_name(TName,TestID,ExampleNum1),  
   arc_user(USER),  
   %set_example_num(ExampleNum1),
    cmt_border,format('%~w % ?- ~q. ~n',[USER,print_test(TName)]),cmt_border,
@@ -1410,6 +1417,10 @@ pair_cost(TestID,Cost):- kaggle_arc(TestID,(trn+_),I,O),
  maplist(length,[S,LO,RO],[SN,LON,RON]),
  Cost is (IH+OH)*(IV+OV)*(LON+1)*(RON+1).
 
+hardness_of_name(TestID,TMass):-!,
+ kaggle_arc(TestID,(trn+1),I,O),
+ mass(I,IMass),mass(O,OMass),TMass is -(IMass+OMass).
+
 hardness_of_name(TestID,TMass+TArea+Sum+Dif):-
  kaggle_arc(TestID,(trn+0),I,O),
  area(I,IArea),area(O,OArea),TArea is -IArea*OArea,
@@ -1636,7 +1647,7 @@ uncolorize(I,O):- decl_many_fg_colors(FG),set_all_fg_colors(FG,I,O).
 resize_grid(H,V,Grid,NewGrid):- crop(H,V,Grid,NewGrid).
 %resize_grid(H,V,_,NewGrid):- make_grid(H,V,NewGrid).
 
-h_symmetric(Group,TF):- call_bool(h_symmetric(Group),TF).
+%symmetric_type(flipH)(Group,TF):- call_bool(symmetric_type(flipH)(Group),TF).
 
 call_bool(G,TF):- (call(G)*->TF=true;TF=false).
 freeze_on([_NV],Goal):- !, call(Goal).
