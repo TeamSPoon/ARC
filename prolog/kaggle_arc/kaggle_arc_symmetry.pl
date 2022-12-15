@@ -687,16 +687,16 @@ diff_repaired(RepairedResult,VM):-
   localpoints_include_bg(RepairedResult,RepairedPoints),
   intersection(OriginalPoints,RepairedPoints,Unchanged,NeededChanged,ChangedPoints),  
   H = VM.h, V = VM.v,
-  IDR = [iz(media(image)),iz(info(dont_reduce))],
+  IDR = [iz(media(image)),iz(flag(dont_reduce))],
   set_vm_obj(unchanged,IDR,Unchanged),
-  set_vm_obj(original,[iz(info(hidden))|IDR],OriginalPoints),
-  set_vm_obj(repaired,[iz(info(always_keep))|IDR],RepairedPoints),
-  set_vm_obj(neededChanged,[iz(info(hidden)),iz(media(shaped)),iz(info(always_keep))|IDR],NeededChanged),
-  set_vm_obj(changedUntrimmed,[iz(info(always_keep))|IDR],ChangedPoints),
+  set_vm_obj(original,[iz(flag(hidden))|IDR],OriginalPoints),
+  set_vm_obj(repaired,[iz(flag(always_keep))|IDR],RepairedPoints),
+  set_vm_obj(neededChanged,[iz(flag(hidden)),iz(media(shaped)),iz(flag(always_keep))|IDR],NeededChanged),
+  set_vm_obj(changedUntrimmed,[iz(flag(always_keep))|IDR],ChangedPoints),
   points_to_grid(H,V,ChangedPoints,Changed),
   trim_to_rect(Changed,TrimChangedG),
   localpoints_include_bg(TrimChangedG,TrimChangedPoints),
-  set_vm_obj(changed,[iz(info(always_keep))|IDR],TrimChangedPoints))).
+  set_vm_obj(changed,[iz(flag(always_keep))|IDR],TrimChangedPoints))).
 
 
 column_or_row(Grid,Color):- member(Row,Grid), maplist(==(Color),Row),!. 
@@ -1311,7 +1311,7 @@ repair_2x2(Ordered,Steps,Grid,RepairedResult):-
   print_grid(trial_removal_used(RemovalTrialUsed),GridO),
   %nop(retain_vars(VM,Ordered,Grid,NewIndiv4s,KeepNewState,RepairedResult,NewSYQ2,NewEYQ2,NewSYQ4,NewEYQ4,NewSXQ2,NewEXQ2,NewSXQ4,NewEXQ4)),
 
-  set_vm_obj(full_grid,[iz(media(image)),iz(info(always_keep))],GridO),
+  set_vm_obj(full_grid,[iz(media(image)),iz(flag(always_keep))],GridO),
   clip(NewSX,NewSY,NewEX,NewEY,GridO,RepairedResultM),
   
 
@@ -1320,7 +1320,7 @@ repair_2x2(Ordered,Steps,Grid,RepairedResult):-
   gset(VM.points) = [],
   OriginalPoints = VM.points_o,
   include(was_color(Cs),OriginalPoints,NeededChanged),  
-  %gset(VM.neededChanged)=NeededChanged,make_indiv_object(VM,[iz(neededChanged),iz(info(hidden))],NeededChanged,ColorObj),!, addObjects(VM,ColorObj),
+  %gset(VM.neededChanged)=NeededChanged,make_indiv_object(VM,[iz(neededChanged),iz(flag(hidden))],NeededChanged,ColorObj),!, addObjects(VM,ColorObj),
   set_vm_obj(neededChanged,[iz(media(image))],NeededChanged),  
 
   print_grid(clip_to_previous_area((NewSX,NewSY)-(NewEX,NewEY)),RepairedResultM),

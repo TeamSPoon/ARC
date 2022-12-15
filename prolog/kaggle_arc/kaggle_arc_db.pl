@@ -12,6 +12,17 @@
 :- dynamic(cindv/5).
 :- dynamic(gid_glyph_oid/3).
 
+%show_time_gt_duration(Goal):- show_time_gt_duration(0.23,Goal,true). 
+% 793,184,238 inferences, 160.894 CPU in 160.897 seconds (100% CPU, 4929859 Lips)
+show_time_gt_duration(Timespan,Goal):- show_time_gt_duration(Timespan,Goal,true). 
+show_time_gt_duration(Timespan,Goal,Goal2):- 
+  get_time(Now),setup_call_cleanup(true,Goal,maybe_report_time(Timespan,Now,Goal,Goal2)).
+
+maybe_report_time(Timespan, Was,Goal,Goal2):- get_time(Now), Elapse is Now - Was,
+  ignore((Elapse>Timespan , 
+    pp(show_time_gt_duration(Elapse>Timespan,Goal)),
+    once(Goal2 ),
+    pp(yellow,maybe_report_time(Elapse>Timespan,Goal)))).
 
 neg_h_v_area(size2D(H,V),VAL):- NArea is - (H * V),  max_min(H,V,Hi,_Lo), DifHV is - abs(H-V)*Hi, VAL is NArea+DifHV.
 
@@ -50,38 +61,49 @@ erase_obj(OID):-
    pfc_retractall(cindv(OID,_,_,_,_)).
 
 assert_id_cells(ID,Points):- maplist(assert_id_cell(ID),Points).
-assert_id_cell(ID,-(C,HV)):- arc_assert(cmemo(ID,HV,C)).
-assert_hvc_cell(_,_,_,C):- plain_var(C). % free_cell(C),!.
-assert_hvc_cell(ID,H,V,C):- hv_point(H,V,HV),arc_assert(cmem(ID,HV,C)).
+assert_id_cell(ID,-(C,HV)):- assert(cmem(ID,HV,C)).
 
 
 :- dynamic(is_grid_size/3).
 % Grid to_fast_workspace
 
 
-assert_id_grid_cells(Grid):- is_grid(Grid),grid_to_gid(Grid,GID),!,assert_id_grid_cells(GID,Grid).
-assert_id_grid_cells(GID):- oid_to_gridoid(GID,Grid), assert_id_grid_cells(GID,Grid).
-
-assert_id_grid_cells(GID,Grid):-
- %throw(all_in_emem(assert_id_grid_cells(GID,Grid))),
-   grid_size(Grid,SH,SV),
-   %((cmem(GID,_,_);gid_glyph_oid(GID,_,_))-> erase_grid(GID) ; true),
-   retractall(is_grid_size(GID,_,_)),
-   arc_assert(is_grid_size(GID,SH,SV)),
-   assert_id_grid_cells2(GID,SH,SV,Grid).
-   
+%assert_id_grid_cells(Grid):- is_grid(Grid),grid_to_gid(Grid,GID),!,assert_id_grid_cells(GID,Grid).
+%assert_id_grid_cells(GID):- oid_to_gridoid(GID,Grid), assert_id_grid_cells(GID,Grid).
+ensure_gid(Grid,GID):- atom(Grid),!,GID=Grid.
+ensure_gid(Grid,GID):- assert_id_grid_cells(GID,Grid). 
 /*
 assert_id_grid_cells2(ID,_SH,_SV,Grid):- is_grid(Grid),!,
  forall(nth1(N,Grid,Row),
    forall(list_to_row_mem(ID,N,Row,Mem),arc_assert(Mem))).
 */
+assert_id_grid_cells(GID, Grid):- var(GID),grid_to_gid(Grid,GID),!,assert_id_grid_cells(GID,Grid).
+assert_id_grid_cells(GID,_Grid):- nonvar(GID), is_grid_size(GID,_,_),!.
+assert_id_grid_cells(GID, Grid):- var(Grid),!,oid_to_gridoid(GID,Grid),!,assert_id_grid_cells(GID,Grid).
+assert_id_grid_cells(GID, Grid):-
+ %throw(all_in_emem(assert_id_grid_cells(GID,Grid))),
+   grid_size(Grid,SH,SV),
+   %((cmem(GID,_,_);gid_glyph_oid(GID,_,_))-> erase_grid(GID) ; true),
+   retractall(is_grid_size(GID,_,_)),
+   %retractall(is_cmem(GID,_,_)),retractall(is_cmem_hv(GID,_,_,_)),
+   retractall(cmem(GID,_,_)),retractall(cmem_hv(GID,_,_,_)),
+   assert(is_grid_size(GID,SH,SV)),
+   assert_id_grid_cells2(GID,SH,SV,Grid),
+   cache_grid_objs(GID),
+   nop(show_grid_objs(GID)).
 
 assert_id_grid_cells2(ID,SH,SV,Grid):-
    forall(between(1,SH,H),
     forall(between(1,SV,V),
      ignore((hv_c_value(Grid,C,H,V),
        assert_hvc_cell(ID,H,V,C))))).
+assert_hvc_cell(_,_,_,C):- plain_var(C). % free_cell(C),!.
+%assert_hvc_cell(ID,H,V,C):- hv_point(H,V,HV),assert(is_cmem(ID,HV,C)),assert(is_cmem_hv(ID,H,V,C)).
+assert_hvc_cell(ID,H,V,C):- hv_point(H,V,HV),assert(cmem(ID,HV,C)),assert(cmem_hv(ID,H,V,C)).
 
+%:- dynamic(is_cmem/3).
+%cmem(GID,HV,C):- is_cmem(GID,HV,C),C\==black.
+:- dynamic(smem/3).
 
 get_color_at(H,V,Grid,C):-
   ((nth1(V,Grid,Row),nth1(H,Row,C))*->true;C=_).
@@ -162,7 +184,7 @@ maybe_glyph(_G,N,Code):- i_glyph(N,Code),!.
 maybe_glyph(G,_,Glyph):- is_grid(G),grid_dot(Glyph),!.
 maybe_glyph(_,N,N).
 
-is_visible(Obj):- \+ has_prop(iz(info(hidden)),Obj).
+is_visible(Obj):- \+ has_prop(iz(flag(hidden)),Obj).
 
 is_pred_sorted_object_grid(O):- last(O,I), \+ is_visible(I).
 
@@ -355,9 +377,10 @@ replace_local_point_color(Point,NewC,OldC,G,GO):- trace_or_throw(unknown_target_
 
 
 create_movements:- 
+ show_time_gt_duration(0.22,(
  forall( between(1,30,H),
   forall(between(1,30,V),
-  calc_movement(H,V))).
+  calc_movement(H,V))))).
 
 :- initialization(create_movements).
 
@@ -384,6 +407,283 @@ save_calc_movement(H,V,Dir,HO,VO):- H2 is HO+H, V2 is VO+V,
     assert_if_new(M:is_adjacent_hv(H,V,Dir,H2,V2)))).
   
 is_adjacent_2points(HV,Dir,HV2,HV3):-  is_adjacent_point(HV,Dir,HV2),is_adjacent_point(HV2,Dir,HV3).
+
+create_points_plus:- show_time_gt_duration(0.3,create_points_plus_now).
+create_points_plus_now:- 
+ forall(
+  (between(1,30,H1),between(1,30,V1),
+   between(1,30,H2),between(1,30,V2)),
+  (H is H1 + H2 -1,
+   V is V1 + V2 -1,
+   ignore(
+    (hv_point(H, V, HV),
+     hv_point(H1,V1,HV1),
+     hv_point(H2,V2,HV2),
+     assert_point_plus_if_needed(HV1,HV2,HV))))).
+
+
+:- dynamic(is_point_plus/3). % number_of_clauses(214426)
+
+assert_point_plus_if_needed(HV1,HV2,HV):- point_plus(HV1,HV2,HV),!.
+assert_point_plus_if_needed(HV1,HV2,HV):- assert(is_point_plus(HV1,HV2,HV)).
+
+point_plus(point_01_01,HV,HV):- hv_point(_,_,HV).
+point_plus(HV,point_01_01,HV):- hv_point(_,_,HV).
+point_plus(HV1,HV2,HV):- is_point_plus(HV1,HV2,HV).
+
+point_minus(HV,HV2,HV1):- point_plus(HV1,HV2,HV).
+%point_minus(HV,HV2,HV1):-point_plus(HV2,HV1,HV),!.
+
+:- initialization(create_points_plus).
+
+is_adj_point_es(HV1,HV2):- is_adjacent_point(HV1,s,HV2).
+is_adj_point_es(HV1,HV2):- is_adjacent_point(HV1,e,HV2).
+is_adj_point_es_d(HV1,HV2):- is_adj_point_es(HV1,HV2).
+is_adj_point_es_d(HV1,HV2):- is_adjacent_point(HV1,se,HV2).
+is_adj_point_es_d(HV1,HV2):- is_adjacent_point(HV1,sw,HV2).
+
+is_adj_point_wn(HV1,HV2):- is_adjacent_point(HV1,n,HV2).
+is_adj_point_wn(HV1,HV2):- is_adjacent_point(HV1,w,HV2).
+is_adj_point_wn_d(HV1,HV2):- is_adj_point_wn(HV1,HV2).
+is_adj_point_wn_d(HV1,HV2):- is_adjacent_point(HV1,nw,HV2).
+is_adj_point_wn_d(HV1,HV2):- is_adjacent_point(HV1,ne,HV2).
+
+is_adj_point_nsew(HV1,HV2):- is_adj_point_es(HV1,HV2).
+is_adj_point_nsew(HV1,HV2):- is_adj_point_wn(HV1,HV2).
+is_adj_point_d(HV1,HV2):- is_adjacent_point(HV1,ne,HV2).
+is_adj_point_d(HV1,HV2):- is_adjacent_point(HV1,nw,HV2).
+is_adj_point_d(HV1,HV2):- is_adjacent_point(HV1,se,HV2).
+is_adj_point_d(HV1,HV2):- is_adjacent_point(HV1,sw,HV2).
+is_adj_point_colormass(C1,HV1,HV2):- is_adjacent_point(HV1,Dir,HV2), freeze(C1,(C1\==black ->  true ; \+ is_diag(Dir))).
+
+is_adj_point_type(C1,colormass,HV1,HV2):- is_adj_point_colormass(C1,HV1,HV2).
+%is_adj_point_type(C1,v_line,HV1,HV2):- (is_adjacent_point(HV1,n,HV2);is_adjacent_point(HV1,n,HV2)).
+%is_adj_point_type(C1,h_line,HV1,HV2):- (is_adjacent_point(HV1,w,HV2);is_adjacent_point(HV1,e,HV2)).
+is_adj_point_type(_C1,nsew,HV1,HV2):- is_adj_point_nsew(HV1,HV2).
+is_adj_point_type(_C1,diamonds,HV1,HV2):- is_adj_point_d(HV1,HV2).
+
+:- dynamic(gid_type_oid/3).
+
+%ensure_indv_type(Type):- member(Type,[nsew,colormass,diamonds]).
+%ensure_indv_type(Type):- member(Type,[v_line,h_line,nsew,diamonds,colormass]).
+%ensure_indv_type(Type):- member(Type,[nsew,colormass]).
+ensure_indv_type(Type):- member(Type,[nsew,diamonds,colormass]).
+%ensure_indv_type(Type):- member(Type,[colormass]).
+
+grid_type_oid(Grid,Type,OID):- ensure_gid(Grid,GID), cache_grid_objs_for(GID,Type), gid_type_oid(GID,Type,OID).
+
+:- dynamic(is_gridmass/2).
+mmass(Grid,Mass):- ensure_gid(Grid,GID), Grid\==GID,!,mmass(GID,Mass).
+mmass(GID,Mass):- is_gridmass(GID,Mass),!.
+mmass(GID,Mass):- 
+  findall(_,(cmem(GID,_,C),C\==black),L),length(L,Mass),
+  assert(is_gridmass(GID,Mass)).
+
+mgrid_size(Grid,H,V):- ensure_gid(Grid,GID), is_grid_size(GID,H,V).
+
+/*
+is_nsew_same_as_colormass(Grid):-
+  ensure_gid(Grid,GID),
+  grid_object_points(GID,nswe,Nswe),
+  grid_object_points(GID,colormass,Colormass),!,
+  sort(Colormass,S1),sort(Nswe,S2),
+  S1\=@=S2.
+
+is_nsew_same_as_colormass_count(Grid):-
+  ensure_gid(Grid,GID),
+  grid_object_count(GID,nswe,Nswe),
+  grid_object_count(GID,colormass,Colormass),!,
+  Nswe\=@=Colormass.
+*/
+
+ensure_obj(OID,Obj):- into_obj(OID,Obj).
+
+show_oid(OID):-
+ (var(OID)->gid_type_oid(_GID,Type,OID);true),
+ oid_to_points(OID,Points),
+ ignore(gid_type_oid(_,Type,OID)),
+ print_grid(oid(Type,OID),Points).
+
+
+oid_to_points(OID,Points):- findall(C-HV,(omem(GID,HV,OID),cmem(GID,HV,C)),Points).
+oid_to_glyph_points(OID,Points):- oid_to_glyph(OID,Glyph),
+  findall(GC-HV,(omem(GID,HV,OID),cmem(GID,HV,C),(smem(GID,HV,OID)->GC=C;(GC=(Glyph-C)))),Points).
+
+oid_to_glyph(OID,Glyph):- atom_chars(OID,[_,_,Glyph|_]).
+
+other_oid(GID,Type,HV1,OID):- omem(GID,HV1,OID), gid_type_oid(GID,Type,OID), !, fail.
+other_oid(GID,Type,HV1,OID):- omem(GID,HV1,OID), \+ gid_type_oid(GID,Type,OID), !, assert(gid_type_oid(GID,Type,OID)).
+other_oid(GID,Type,HV1,OID):- new_omem(GID,Type,OID), assert(omem(GID,HV1,OID)).
+
+tmem(GID,HV2,Type):- omem(GID,HV2,OID), gid_type_oid(GID,Type,OID).
+
+%cant_reuse(diamonds,nsew).
+cant_reuse(colormass,_):-!.
+%cant_reuse(X,X).
+cant_reuse(_,_):-!.
+%cant_reuse(diamonds,nsew).
+%cant_reuse(nsew,diamonds).
+
+test_show_grid_objs(TestID):- ensure_test(TestID), every_grid(show_grid_objs,TestID).
+
+show_grid_objs(Grid):- true, ensure_gid(Grid,GID),cache_grid_objs(GID),
+  findall(Type=G,(ensure_indv_type(Type),grid_object_glyph_points(GID,Type,Group),flatten(Group,G),G\==[]),Grids),
+  maplist(arg(2),Grids,Flatme),flatten(Flatme,All),
+  show_grid_objs_list(GID,All,Grids).
+  %print_ss([all=All|Grids]),!.
+  
+  
+  %print_grid((GID),All).
+show_grid_objs_list(GID,_All,Grids):- Grids=[N=V],!,print_grid(all(GID,N),V).
+show_grid_objs_list(GID,All,Grids):- print_ss([GID=All|Grids]),!.
+
+grid_object_points(Grid,Type,Groups):-
+  ensure_gid(Grid,GID),
+  cache_grid_objs_for(Type,GID),
+  findall(Points,(gid_type_oid(GID,Type,OID),oid_to_points(OID,Points)),Groups).
+
+grid_object_glyph_points(Grid,Type,Groups):-
+  ensure_gid(Grid,GID),
+  cache_grid_objs_for(Type,GID),
+  findall(Points,(gid_type_oid(GID,Type,OID),oid_to_glyph_points(OID,Points)),Groups).
+
+%grid_object_defs(Grid,Type,Groups):-
+%  ensure_gid(Grid,GID), vm_for_gid(GID,VM),!.
+
+grid_object_count(Grid,Type,Len):-
+  ensure_gid(Grid,GID),
+  grid_object_points(GID,Type,Groups),length(Groups,Len).
+
+% each_o(Grid,Type,OID),show_oid(OID).
+
+grid_type_obj(Grid,Type,OBJ):- ensure_gid(Grid,GID), 
+  cache_grid_objs(GID),!,gid_type_oid(GID,Type,OID),ensure_obj(OID,OBJ).
+
+
+precache_all_grid_objs:- 
+  time(forall(all_arc_test_name_unordered(TestID),cache_grid_objs_for_test(TestID))).
+
+cache_grid_objs_for_test(TestID):- 
+ forall(kaggle_arc(TestID,_Example,I,O),
+    (ignore(cache_grid_objs(I)),ignore(cache_grid_objs(O)))).
+
+% 810,000
+cache_grid_objs_for(Grid,_Type):- ensure_gid(Grid,GID),cache_grid_objs(GID).
+
+cache_grid_objs(TestID):- is_valid_testname(TestID),!, cache_grid_objs_for_test(TestID).
+cache_grid_objs(Grid):- \+ atom(Grid),!, ensure_gid(Grid,GID),cache_grid_objs(GID).
+cache_grid_objs(GID):- gid_type_oid(GID,_,_),!.
+cache_grid_objs(GID):-
+  Shown = _,
+  show_time_gt_duration(0.3, 
+   (forall(ensure_indv_type(Type),cache_grid_objs_now(Type,GID)),
+    forall(how_count(_,How,_),grid_obj_count(GID,How,_))),
+    (Shown = 1,show_grid_objs(GID))),
+  ignore(((   var(Shown),is_grid_obj_count(GID,Type,Count),Count>=40,show_grid_objs(GID),show_obj_counts(GID)))),
+  ignore(((nonvar(Shown),is_grid_obj_count(GID,Type,Count),Count>=40,                    show_obj_counts(GID)))),!.
+
+show_obj_counts(GID):- findall(Type=Count,grid_obj_count(GID,Type,Count),Out),pp(GID=Out),!.
+
+:- dynamic(is_grid_obj_count/3).
+
+is_obj_count_all_lt_15(Grid):- ensure_gid(Grid,GID), grid_obj_count(GID,all,Count),Count<15.
+is_obj_count_all_gt_40(Grid):- ensure_gid(Grid,GID), grid_obj_count(GID,all,Count),Count>40.
+is_obj_count_all_gt_200(Grid):- ensure_gid(Grid,GID), grid_obj_count(GID,all,Count),Count>200.
+is_obj_count_nsew_zero(Grid):- ensure_gid(Grid,GID), grid_obj_count(GID,fg(nsew),C),C==0.
+is_obj_count_diamonds_not_zero(Grid):- ensure_gid(Grid,GID), grid_obj_count(GID,fg(diamonds),C),C>0.
+is_obj_count_colormass_zero(Grid):- ensure_gid(Grid,GID), grid_obj_count(GID,fg(colormass),C),C==0.
+
+grid_obj_count(GID,Type,Count):- var(Type),!,how_count(_,Type,_),grid_obj_count(GID,Type,Count).
+grid_obj_count(GID,Type,Count):- is_grid_obj_count(GID,Type,Count),!.
+grid_obj_count(GID,Type,Count):- 
+   how_count(GID,Type1,Goal),Type=@=Type1, !, 
+   findall(_,Goal,L),length(L,Count), assert(is_grid_obj_count(GID,Type,Count)).
+
+how_count(GID,all,Goal):- Goal = gid_type_oid(GID,_,_).
+how_count(GID,fg,Goal):- Goal = ((gid_type_oid(GID,_,OID),\+ cindv(color,GID,OID,black))).
+how_count(GID,bg,Goal):- Goal = ((gid_type_oid(GID,_,OID), cindv(color,GID,OID,black))).
+how_count(GID,fg(Type),Goal):- ensure_indv_type(Type), Goal = (gid_type_oid(GID,Type,OID),\+ cindv(color,GID,OID,black)).
+how_count(GID,bg(Type),Goal):- ensure_indv_type(Type), Goal = (gid_type_oid(GID,Type,OID), cindv(color,GID,OID,black)).
+%how_count(GID,Color,Goal):- enum_fg_colors(Color), Goal = (cindv(color,GID,_,Color)).
+%how_count(GID,Type,Goal):- ensure_indv_type(Type), Goal = (gid_type_oid(GID,Type,_)).
+
+%cache_gid_objs(GID):- show_time_gt_duration(0.4, forall(ensure_indv_type(Type),cache_grid_objs_now(Type,GID)), show_grid_objs(GID)).
+
+:- dynamic(o_color/3).
+
+cache_grid_objs_now(Type,GID):- gid_type_oid(GID,Type,_),!.
+%cache_grid_objs_now(Type,GID):- var(Type),!,ensure_indv_type(Type),cache_grid_objs(Type,GID).
+cache_grid_objs_now(Type,GID):- cache_grid_objs1(Type,GID).
+
+%cache_grid_objs1(diamonds,_GID):-!.
+cache_grid_objs1(Type,GID):- 
+  type_min_len(Type,Minlen),
+  cmem(GID,HV1,C1),
+  \+ (omem(GID,HV1,OOID), gid_type_oid(GID,OType,OOID), cant_reuse(Type,OType)),
+  continue_obj(GID,Type,[HV1],Points,Len), Len>=Minlen,!,
+  new_omem(GID,Type,OID),
+  assert_omem_points(GID,OID,Points),
+  assert(cindv(color,GID,OID,C1)),
+  assert(cindv(size,GID,OID,Len)),
+  cache_grid_objs1(Type,GID).
+
+cache_grid_objs1(Type,GID):- Type == colormass,
+  cmem(GID,HV1,C1),
+  \+ (omem(GID,HV1,OOID), gid_type_oid(GID,OType,OOID), cant_reuse(Type,OType)),
+  continue_obj(GID,Type,[HV1],Points,Len), Len>=2,!,
+  new_omem(GID,Type,OID),
+  assert_omem_points(GID,OID,Points),
+  assert(cindv(size,GID,OID,Len)),
+  assert(cindv(color,GID,OID,C1)),
+  cache_grid_objs1(Type,GID).
+
+cache_grid_objs1(Type,GID):- Type == colormass,
+  cmem(GID,HV1,C1),
+  \+ (omem(GID,HV1,OOID), gid_type_oid(GID,OType,OOID), cant_reuse(Type,OType)),!,
+  new_omem(GID,Type,OID), 
+  assert(omem(GID,HV1,OID)),
+  assert(cindv(color,GID,OID,C1)),
+  assert(cindv(size,GID,OID,1)),
+  assert(smem(GID,HV1,OID)),
+  cache_grid_objs1(Type,GID).
+
+cache_grid_objs1(_,_).
+
+
+type_min_len(colormass,1).
+type_min_len(nsew,4).
+type_min_len(diamonds,3).
+
+%new_omem(GID,Type,OID), assert(omem(GID,HV1,OID)),assert(omem(GID,HV2,OID)),
+
+assert_omem_points(GID,OID,[HV1]):-  !, assert(omem(GID,HV1,OID)).
+assert_omem_points(GID,OID,[HV1|Points]):-  assert(omem(GID,HV1,OID)),assert_omem_points(GID,OID,Points).
+
+continue_obj(GID,Type,Points,Out,Len):- 
+  cont_obj_execpt(GID,Type,Points,Points,Out),
+  length(Out,Len).
+
+cont_obj_execpt(_GID,_Type,[],_Already,[]):-!.
+
+cont_obj_execpt(GID,Type,[HV1|Points],Already,[HV1|Out]):-   
+ (cmem(GID,HV1,C1),is_adj_point_type(C1,Type,HV1,HV2), \+ member(HV2,Already), cmem(GID,HV2,C1)),
+  \+ (omem(GID,HV2,OOID), gid_type_oid(GID,OType,OOID), cant_reuse(Type,OType)),
+ cont_obj_execpt(GID,Type,[HV2,HV1|Points],[HV2|Already],Out).
+
+cont_obj_execpt(GID,Type,[HV1|Points],Already,[HV1|Out]):-  !,
+  cont_obj_execpt(GID,Type,Points,Already,Out).
+
+/*continue_obj(GID,Type,Points,Already,Out):-   
+ forall(member(HV1,Points),
+  forall(
+    (cmem(GID,HV1,C1),is_adj_point_type(C1,Type,HV1,HV2), cmem(GID,HV2,C1), \+ tmem(GID,HV2,Type)),
+    (assert(omem(GID,HV2,OID)),continue_obj(GID,Type,HV2,OID))).*/
+
+new_omem(GID,Type,OID):- 
+  flag(GID,X,X+1),int2glyph(X,Glyph),
+  name(Glyph,[ID]),!,
+  atomic_list_concat(['o_',Glyph,'_',ID,'_',GID],OID),
+  assert(gid_type_oid(GID,Type,OID)).
 
 :- include(kaggle_arc_footer).
 

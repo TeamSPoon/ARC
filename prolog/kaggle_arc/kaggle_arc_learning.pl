@@ -44,7 +44,8 @@ print_rule(M,(X:-Body)):- !,
     orpt(M=[X]))).
 print_rule(M,O):- \+ \+ (( orpt(M=[O]))).
 
-orpt(G):- \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N'), pp_safe(orange,(call(print(G)))))).
+orpt(G):- \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N'), 
+  pp_safe(orange,(call(print(G)))))).
 
 save_learnt_rule(TestID,In,InKey,RuleDir,Out):-
   if_learn_ok(save_learnt_rule(learnt_rule(TestID,In,InKey,RuleDir,Out))).
@@ -120,6 +121,8 @@ started_is_list(X):- nonvar(X), X = [_,_].
 not_used(Var):- var(Var),!,fail.
 not_used(/*b*/iz(indiv(_))).
 not_used(X):- sub_term(E,X),atom(E),is_nc_point(E),!.
+not_used(X):- sub_term(E,X),compound(E),ground(E),E=info(_).
+
 not_used(iz(X)):- not_used(X).
 
 must_use(Var):- var(Var),!,fail.
@@ -135,7 +138,8 @@ for_creating(P):- for_creating1(P).
 for_creating1(NoUse):- must_use(NoUse),!.
 for_creating1(NoUse):- not_used(NoUse),!,fail.
 %for_creating1(colorless_points). for_creating1(mass). 
-for_creating1(info). for_creating1(grid_props). 
+%for_creating1(info). 
+for_creating1(grid_props). 
 for_creating1(rot2L). for_creating1(rotOffset).
 for_creating1(vis2D). for_creating1(loc2D). 
 for_creating1(vis2G). for_creating1(loc2G). 
@@ -147,12 +151,19 @@ for_creating1(P):- compound(P),functor(P,What,_),for_creating1(What).
 for_matching(I):- ( \+ callable(I); I='$VAR'(_)), !.
 for_matching(X):- for_creating(X),!.
 for_matching(iz(X)):- !, (atom(X);for_matching1(X)),!.
-for_matching(o(_,nthOf(_),rank1(_))):-!,fail.
-for_matching(o(_,nthOf(_),rank2(_))):-!,fail. 
-for_matching(o(_,_,F)):-!,for_matching(F).
+
+for_matching(o(_,_,F)):-for_matching(F),!.
+for_matching(o(_,_,rankA(_))).
+for_matching(o(_,_,rank1(_))).
+for_matching(o(_,_,rank2(_))).
+%for_matching(o(_,nthOf(_),rank1(_))):-!,fail.
+%for_matching(o(_,nthOf(_),rank1(_))):-!,fail.
+%for_matching(o(_,nthOf(_),rank2(_))):-!,fail. 
+
 for_matching(P):- for_matching1(P).
 
 for_matching1(NoUse):- not_used(NoUse),!,fail.
+for_matching1(mass).
 for_matching1(cc). for_matching1(symmetry_type). 
 %for_matching1(/*b*/iz). 
 for_matching1(P):- compound(P),functor(P,What,_),for_matching1(What).
@@ -168,9 +179,11 @@ simplify_for_creating(I,O):- is_grid(I),!,O=I.
 simplify_for_creating(I,O):- is_list(I),my_exclude(not_for_creating(I),I,M),!,maplist(simplify_for_creating,M,O).
 simplify_for_creating(I,O):- 
        compound_name_arguments(I, F, Args),
-       maplist(simplify_for_creating, Args, ArgsNew),
+       maplist(skip_sub_list(simplify_for_creating), Args, ArgsNew),
        compound_name_arguments( O, F, ArgsNew ),!.
   
+skip_sub_list(_, I,O):- is_list(I),!,O=I.
+skip_sub_list(P2,I,O):- call(P2,I,O).
 
 my_exclude(P1,I,O):- my_partition(P1,I,_,O).
 simplify_for_matching(_Why,I,O):- var(I),O=I.
@@ -180,7 +193,7 @@ simplify_for_matching(_Why,I,O):- is_grid(I),!,O=I.
 simplify_for_matching(Why,I,O):- is_list(I), my_exclude(not_for_matching(Why,I),I,M),I\=@=M,!,simplify_for_matching(Why,M,O).
 simplify_for_matching(Why,I,O):- 
        compound_name_arguments(I, F, Args),
-       maplist(simplify_for_matching(Why), Args, ArgsNew),
+       maplist(skip_sub_list(simplify_for_matching(Why)), Args, ArgsNew),
        compound_name_arguments( O, F, ArgsNew ),!.
 
 member_skip_open_(_, El, El).
@@ -246,18 +259,18 @@ learn_rule_o(in_in,_InVM,_OutVM):- !.
 learn_rule_o(Mode,InVM,OutVM):- % is_map(InVM),is_map(OutVM),!,
  in_out = Mode,
  maplist(must_det_ll,[
-  InGrid = InVM.grid_o, InObjs0 = InVM.objs,  
-  OutGrid = OutVM.grid_o, OutObjs0 = OutVM.objs,
+  InGrid = InVM.grid_o, InObjsOriginal = InVM.objs,  
+  OutGrid = OutVM.grid_o, OutObjsOriginal = OutVM.objs,
   ignore(InVM.grid_target = OutGrid),
-  maplist(simplify_for_matching(lhs),InObjs0,InObjs),
-  %maplist(simplify_for_matching,OutObjs0,OutObjs),
-  OutObjs0=OutObjs,
+  maplist(simplify_for_matching(lhs),InObjsOriginal,InObjs),
+  maplist(simplify_for_matching(rhs),OutObjsOriginal,OutObjs),
+ % OutObjsOriginal=OutObjs,
  % extract_vm_props(InVM,InProps),     
  % extract_vm_props(OutVM,OutProps), 
  % prolog_pretty_print:print_term(Mode=learn_rule_o(Mode,InProps,OutProps),[fullstop(true),nl(true)]),!,
   %learn_grid_rules(Mode,InProps),
   %learn_grid_rules(Mode,OutProps),!,
-  learn_rule_i_o(Mode,InObjs,OutObjs),
+  learn_rule_i_o(Mode,InObjsOriginal,OutObjsOriginal),
   %learn_rule_i_o(Mode,InGrid,OutObjs),
   %learn_rule_i_o(Mode,InObjs,OutGrid),
   %learn_rule_i_o(Mode,InGrid,OutGrid),
@@ -265,11 +278,11 @@ learn_rule_o(Mode,InVM,OutVM):- % is_map(InVM),is_map(OutVM),!,
   training_info(TestID,Info),
   length(Info,Len),
   ptc(orange,format('~N~n% Rules so far for ~w: ~w~n~n',[TestID,Len])),!,
-  if_learn_ok(confirm_reproduction(InObjs,InObjs0,InGrid)),!,
-  if_learn_ok(confirm_reproduction(OutObjs,OutObjs0,OutGrid)),!,
+  if_learn_ok(confirm_reproduction(InObjs,InObjsOriginal,InGrid)),!,
+  if_learn_ok(confirm_reproduction(OutObjs,OutObjsOriginal,OutGrid)),!,
   confirm_learned(InGrid,OutGrid),!,
   nop(show_proof(InGrid,OutGrid))]),!.
-
+  
 
 learn_rule_i_o(Mode,In,Out):- 
   forall(learn_rule_in_out(1,Mode,In,Out),true).
@@ -436,44 +449,73 @@ learn_rule_in_out_sames(In,Out):- fail,
 learn_rule_in_out_objects(How,I,O):-
   indv_props(I,IP), indv_props(O,OP),
   %assert_visually(learn_rule_in_out_full_objects(How,I,O)),
-  make_rule_l2r(IP,OP,II,OO,NewShared),
-  save_learnt_rule(test_solved(How,II,NewShared,OO),I+O,I+O),!.
+  make_rule_l2r([],IP,OP,II,OO,Mid),
+  make_rule_l2r_0(Mid,II,OO,III,OOO,NewShared),
+  sort(NewShared,NewSharedS),
+  save_learnt_rule(test_solved(How,obj(III),obj(OOO),NewSharedS),I+O,I+O),!.
 
-is_orignal_val(Var):- nonvar(Var),  Var \= '$VAR'(_).
+is_original_value(Var):- nonvar(Var),  Var \= '$VAR'(_).
 
 % single color changed
-make_rule_l2r(I,O,IIII,OOOO,[lookup(C1,C2,VC1,VC2)|NewShared]):- 
-  member(pen([cc(C1,_)]),I),member(pen([cc(C2,_)]),O),C1\==C2,is_orignal_val(C1),is_orignal_val(C2),!,
-  subst(I,C1,VC1,II),upcase_atom_var(C1,VC1),
-  subst(O,C2,VC2,OO),upcase_atom_var(C2,VC2),
-  make_rule_l2r(II,OO,IIII,OOOO,NewShared).
+make_rule_l2r(Shared,I,O,IIII,OOOO,[level(1,lhs,VC1=C1),level(1,rhs,VC2=C2)|NewShared]):- 
+  member(pen([cc(C1,_)]),I),member(pen([cc(C2,_)]),O),
+  C1\=@=C2,   
+  is_original_value(C1),is_original_value(C2),!,    
+      subst(I,C1,VC1,II),upcase_atom_var(C1,VC1),
+      subst(O,C2,VC2,OO),upcase_atom_var(C2,VC2),
+      make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared).
+
+% unlikely useful Ordinals
+make_rule_l2r(Shared,I,O,IIII,OOOO,[unused(ordinals,o(sf(Size1),Ord1,Val),o(sf(Size2),Ord2,Val))|NewShared]):- fail,
+  select(o(sf(Size1),Ord1,Val),I,II),
+  select(o(sf(Size2),Ord2,Val),O,OO),
+  ((Size1 \== Size2, Ord1==Ord2);(Size1 == Size2, Ord1\==Ord2);(Size1 \== Size2, Ord1\==Ord2)), !,
+  make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared).
+
+make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- 
+   select(I,II,III), not_for_matching(lhs,_,I), !, make_rule_l2r(Shared,III,OO,IIII,OOOO,NewShared).
+make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- 
+   select(O,OO,OOO), not_for_matching(rhs,_,O), !, make_rule_l2r(Shared,II,OOO,IIII,OOOO,NewShared).
+
 
 % Fallback 1
-make_rule_l2r(I,O,IIII,OOOO,NewShared):- intersection(I,O,IO,IIII,OOOO),!,simplify_for_creating(IO,NewShared).
-% Fallback 2
-make_rule_l2r(I,O,I,O,[]):-!.
+make_rule_l2r(Shared,I,O,IIII,OOOO,NewSharedO):- fail,
+  intersection(I,O,IO,IIII,OOOO),!,
+  my_partition(for_creating,IO,Creating,Not),
+  mark_as(2,l_r,Creating,Info1),
+  mark_as(3,l_r,Not,Info2),
+  append([Shared,Info1,Info2],NewSharedO).
+
+make_rule_l2r(Shared,I,O,I,O,Shared):-!.
+
+mark_as(_N,M,I,O):- maplist(append_term(M),I,O),!.
+mark_as(N,M,I,O):- maplist(append_term(level(N,M)),I,O).
 
 % major update
-make_rule_l2r(I,O,IIII,OOOO,NewShared):-
-  simplify_for_matching(lhs,I,II),
-  simplify_for_creating(O,OO),!,
-  propagate_lr1([],II,OO,III,OOO,Mid),
-  propagate_lr2(Mid,III,OOO,IIII,OOOO,NewShared).
+make_rule_l2r_0(Shared,I,O,IIII,OOOO,NewShared):-fail,
+  my_partition(for_matching,I,Matching,NotForMatching),
+  my_partition(for_creating,O,Creating,NotForCreating),
+  mark_as(4,lhs,NotForMatching,Info1),
+  mark_as(5,rhs,NotForCreating,Info2),
+  append([Shared,Info1,Info2],Shared1),
+  make_rule_l2r_1(Shared1,Matching,Creating,III,OOO,Mid),
+  make_rule_l2r_2(Mid,III,OOO,IIII,OOOO,NewShared).
+make_rule_l2r_0(Shared,I,O,I,O,Shared):-!.
 
-propagate_lr1(Shared,II,OO,III,OOO,[when_missing(EVar,E)|SharedMid]):- fail,
+make_rule_l2r_1(Shared,II,OO,III,OOO,[when_missing(EVar,E)|SharedMid]):- fail,
   sub_term(E,OO),compound(E),ground(E),propagate(E), 
   subst001(II,E,Var,MII),
   MII\=@=II,!,
   must_det_ll((
   subst001(OO,E,Var,MOO),
-  propagate_lr1(Shared,MII,MOO,III,OOO,SharedMid),
+  make_rule_l2r_1(Shared,MII,MOO,III,OOO,SharedMid),
   make_replacement(E,EVar),
   Var = EVar)),!.
-propagate_lr1(Shared,II,OO,II,OO,Shared).
+make_rule_l2r_1(Shared,II,OO,II,OO,Shared).
 
-propagate_lr2(Shared,II,OO,III,OOO,[thru(O)|SharedMid]):- 
-  select(I,II,MI),select(O,OO,MO),O=@=I,!,propagate_lr2(Shared,MI,MO,III,OOO,SharedMid).
-propagate_lr2(Shared,II,OO,II,OO,Shared).
+make_rule_l2r_2(Shared,II,OO,III,OOO,[thru(O)|SharedMid]):- 
+  select(I,II,MI),select(O,OO,MO),O=@=I,!,make_rule_l2r_2(Shared,MI,MO,III,OOO,SharedMid).
+make_rule_l2r_2(Shared,II,OO,II,OO,Shared).
 
 /*
 test_solved=[ test_solved( t('0d3d703e'),
@@ -549,7 +591,7 @@ learn_rule_iin_oout(_,In,O,OL):- mass(O,Mass),
   mass(I,Mass),
   simplify_for_matching(lhs,I,II),
   simplify_for_creating(O,OO),
-  save_learnt_rule(test_solved(unk(How),II,OO),I,O),!.
+  save_learnt_rule(test_solved(unk(How),II,OO,[]),I,O),!.
 
 learn_rule_in_out(Depth,Mode,In,Out):- 
   is_list(In), is_list(Out), 
@@ -741,9 +783,9 @@ test_associatable_proof(In,OutR):-
 ignore_some_equals(OutS,Out):- must_det_ll( nb_set_add1(OutS,Out)).
 
 :- dynamic(test_associatable/3).
-:- dynamic(test_solved/4).
+:- dynamic(test_solved/5).
 use_test_associatable_io(I,O,Ref):- is_list(I),!,member(E,I),use_test_associatable_io(E,O,Ref).
-use_test_associatable_io(I,O,Ref):- get_current_test(TestID), clause(test_solved(TestID,_How,Pre,O),_,Ref), \+ \+ same_props(I,Pre).
+use_test_associatable_io(I,O,Ref):- get_current_test(TestID), clause(test_solved(TestID,_How,Pre,O,_),_,Ref), \+ \+ same_props(I,Pre).
 use_test_associatable_io(I,O,Ref):- get_current_test(TestID),
   clause(test_associatable(TestID,Pre,O),_,Ref),
   \+ \+ same_props(I,Pre),

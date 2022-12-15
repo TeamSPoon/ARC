@@ -95,7 +95,7 @@ find_g_tests(F):- find_tests(F).
 
 list_of_tests(S):- findall(F,find_f_tests(F),L1),findall(F,find_g_tests(F),L),sort(L,L2),append(L1,L2,L12),list_to_set(L12,S).
 
-show_tests:- update_changes, report_suites,list_of_tests(L),
+show_tests:- update_changes, list_of_tests(L),
   print_menu_list(L).
 
 print_menu_list(L):- forall(nth_above(100,N,L,E),format('~N~@',[print_menu_cmd1(N:E,E)])),nl.
@@ -553,7 +553,7 @@ test_suite_name(human_t).
 test_suite_name(is_symgrid).
 %test_suite_name(sol_t).
 %test_suite_name(hard_t).
-test_suite_name(key_pad_tests). % test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
+%test_suite_name(key_pad_tests). % test_suite_name(alphabetical_v). test_suite_name(alphabetical_t).
 %test_suite_name(test_names_by_fav_rev). 
 %test_suite_name(test_names_by_hard_rev).
 %test_suite_name(all_arc_test_name).
@@ -698,7 +698,7 @@ test_suite_name_by_call(every_input_grid(P1)):-is_monadic_grid_predicate(P1).
 test_suite_name_by_call(no_output_grid(P1)):-is_monadic_grid_predicate(P1). 
 test_suite_name_by_call(every_output_grid(P1)):-is_monadic_grid_predicate(P1). 
 
-is_monadic_grid_predicate(F):-  clauses_predicate_cmpd_goal(F/1,Into_Grid),member(Into_Grid,[ensure_grid,into_grid]).
+is_monadic_grid_predicate(F):-  clauses_predicate_cmpd_goal(F/1,Into_Grid),member(Into_Grid,[ensure_gid,ensure_grid,into_grid]).
 
 io_side_effects.
 
@@ -721,15 +721,23 @@ every_grid(TestID,ExampleNum,IO,P1):-
 is_size_1x1(Grid):- ensure_grid(Grid), mgrid_size(Grid,1,1).
 is_size_3x3(Grid):- ensure_grid(Grid), mgrid_size(Grid,3,3).
 is_size_lte_3x3(Grid):- ensure_grid(Grid), mgrid_size(Grid,H,V),H=<3,V=<3.
-is_size_lte_10x10(Grid):- ensure_grid(Grid), mgrid_size(Grid,H,V),H=<10,V=<10.
+%is_size_lte_10x10(Grid):- ensure_grid(Grid), mgrid_size(Grid,H,V),H=<10,V=<10.
 is_size_gte_20x20(Grid):- ensure_grid(Grid), mgrid_size(Grid,H,V),H>=20,V>=20.
 is_mass_lte_25(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass=<25.
-is_mass_lte_81(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass=<81.
-is_mass_gte_600(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass>=600.
+%is_mass_lte_81(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass=<81.
+%is_mass_gte_600(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass>=600.
 
-mgrid_size(A,B,C):- grid_size(A,B,C),!.
+is_colors_adjacent(Grid):- ensure_grid(Grid), ensure_gid(Grid,GID), 
+  cmem(GID,HV1,C1),is_adj_point_es_d(HV1,HV2),cmem(GID,HV2,C2),
+  C1\==C2,is_fg_color(C1),is_fg_color(C2),!.
+
+is_colors_adjacent_no_d(Grid):- ensure_gid(Grid,GID), 
+  cmem(GID,HV1,C1),is_adj_point_es(HV1,HV2),cmem(GID,HV2,C2),
+  C1\==C2,is_fg_color(C1),is_fg_color(C2),!.
+
+
+
 %mgrid_size(A,B,C):- arc_memoized(grid_size(A,B,C)),!.
-mmass(A,B):- mass(A,B),!.
 %mmass(A,B):- arc_memoized(mass(A,B)),!.
 
 not_p2(P2,I,O):- \+ call(P2,I,O).
@@ -1026,6 +1034,8 @@ save_supertest(TestID):- ensure_test(TestID), save_supertest(TestID,_File).
 save_supertest(TestID,File):- var(TestID),!, forall(ensure_test(TestID), save_supertest(TestID,File)).
 save_supertest(TestID,File):- var(File),!,test_name_output_file(TestID,File), save_supertest(TestID,File).
 save_supertest(TestID,File):- needs_dot_extention(File,'.pl',NewName),!,save_supertest(TestID,NewName).
+
+save_supertest(TestID,File):- !, wdmsg(skip_save_supertest(TestID,File)).
 save_supertest(TestID,File):-
  saveable_test_info(TestID,Info),
    setup_call_cleanup(open(File,write,O,[create([default]),encoding(text)]), 
@@ -1041,9 +1051,13 @@ test_name_output_file(TestID,File):- sub_atom_value(TestID,OID),!,atomic_list_co
 clear_test(TestID):- is_list(TestID),!,maplist(clear_test,TestID).
 clear_test(TestID):- ensure_test(TestID),
    clear_training(TestID),
-   saveable_test_info(TestID,Info),
-   erase_refs(Info),
+   nop(clear_saveable_test_info(TestID)),
    unload_test_file(TestID).
+
+clear_saveable_test_info(TestID):-
+   saveable_test_info(TestID,Info),
+   erase_refs(Info).
+   
 
 erase_refs(Info):- maplist(erase,Info).
 
@@ -1263,7 +1277,8 @@ matches(InfoS,InfoM):- member(InfoS,InfoM).
 :- abolish(muarc_tmp:test_info_cache,2).
 :- dynamic(muarc_tmp:test_info_cache/2).
 
-print_testinfo(TestID):- ensure_test(TestID), forall(test_info_recache(TestID,F),pp(fav(TestID,F))).
+print_testinfo(TestID):- ensure_test(TestID), forall(test_info_recache(TestID,F),pp(fav(TestID,F))),
+  test_show_grid_objs(TestID).
 
 test_info_no_loop(TestID,Sol):- var(TestID),!,all_arc_test_name_unordered(TestID),test_info_no_loop(TestID,Sol).
 test_info_no_loop(TestID,Sol):- muarc_tmp:test_info_cache(TestID,Sol),!. % test_info
@@ -1299,7 +1314,7 @@ some_test_info_1(TestID,III):- fav_less(TestID,III).
 some_test_info_1(TestID,III):- some_test_info_prop(TestID,III).
 
 all_test_info(TestID,III):- some_test_info(TestID,III).
-all_test_info(TestID,test_suite([SuiteX])):- some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
+all_test_info(TestID,SuiteX):- nonvar(SuiteX),some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
 
 
 repair_info(Inf,InfO):- listify(Inf,Inf1),maplist(repair_info0,Inf1,InfO).

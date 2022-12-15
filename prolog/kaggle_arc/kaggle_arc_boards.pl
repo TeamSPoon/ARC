@@ -225,7 +225,7 @@ detect_pair_hints(TestID,ExampleNum,In,Out):-
   ensure_test(TestID),
   must_det_ll((
   dmsg(detect_pair_hints(TestID,ExampleNum)),
-  assert_id_grid_cells(In), assert_id_grid_cells(Out),
+  assert_id_grid_cells(_,In), assert_id_grid_cells(_,Out),
   detect_supergrid_tt_pair(TestID,ExampleNum,In,Out,_TT),  
   % guess_board(TT),
   %print(TT),

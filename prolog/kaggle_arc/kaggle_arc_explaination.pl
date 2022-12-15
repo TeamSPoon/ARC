@@ -302,7 +302,7 @@ colorize_oterms(O,O).
 
 prefered(repaired).
 prefered(full_grid).
-prefered(info(hidden)).
+prefered(flag(hidden)).
 prefered(neededChanged).
 prefered(changed).
 prefered(nsew).

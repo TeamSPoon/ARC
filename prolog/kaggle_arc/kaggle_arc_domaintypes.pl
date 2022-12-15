@@ -24,7 +24,7 @@ cmatch(plain_var,CD):- !, plain_var(CD).
 cmatch(is_colorish_var,CD):- !,var(CD),is_colorish(CD).
 cmatch(fg,CD):- !, CD\==wbg, is_fg_color(CD),!.
 cmatch(wbg,CD):- !,(CD==wbg;is_bg_color(CD)),!.
-cmatch(bg,CD):- !, is_bg_color(CD),!.
+cmatch(bg,CD):- !, (CD==black; is_bg_color(CD)),!.
 %cmatch(P,CD):- is_real_color(P),!, \+ P\==CD.
 cmatch(P,CD):- is_colorish(P),!, \+ P\=CD.
 cmatch(P,CD):- call(P,CD),!.
@@ -57,7 +57,7 @@ dif_color(_,_).
 % =============================
 % Color types
 % =============================
-is_fg_color(C):- C==black, get_black(Black),!,Black\==black.
+is_fg_color(C):- C==black, !, fail,get_black(Black),!,Black\==black.
 is_fg_color(C):- is_bg_color(C),!,fail.
 is_fg_color(C):- attvar(C),!,get_attr(C,ci,fg(_)).
 is_fg_color(C):- is_color(C),!.

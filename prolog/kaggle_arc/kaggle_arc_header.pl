@@ -34,6 +34,7 @@
 
 :- dynamic((ap/1,apv/2)).
 :- dynamic(cmem/3).
+:- dynamic(omem/3).
 :- dynamic(cmemo/3).
 :- dynamic(grid_nums/1).
 :- dynamic(grid_nums/2).

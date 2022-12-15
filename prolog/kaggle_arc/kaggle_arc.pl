@@ -826,6 +826,7 @@ ansi_startup:-
 :- luser_default(extreme_caching,true).
 :- luser_default(cmd,test_easy).
 :- luser_default(cmd2,print_all_info_for_test).
+:- luser_default(cmd2,test_show_grid_objs).
 :- luser_default(individuated_cache,true).
 :- luser_default(extreme_caching,true).
 

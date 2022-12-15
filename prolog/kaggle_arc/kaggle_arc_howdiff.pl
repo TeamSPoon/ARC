@@ -355,18 +355,21 @@ showdiff_groups_new(AG,BG):-
  must_det_ll((
   maplist(obj_grp_atoms,AG,AGG),
   maplist(obj_grp_atoms,BG,BGG),
-   print_list_of(show_mappings("IN -> OUT",AG,BG,BGG), inputMap,AGG),
+   %print_list_of(show_mappings("IN -> OUT",AG,BG,BGG), inputMap,AGG),
    print_list_of(show_mappings("IN <- OUT",BG,AG,AGG),outputMap,BGG))).
 
 show_mappings(TITLE,AG,BG,BGG,APA):-
- must_det_ll((
-  dash_chars(100),nl,nl,nl,
+ ignore(( 
+    dash_chars(100),nl,nl,nl,
+     member(E,APA),E=obj(_),!, \+ has_prop(cc(fg,0),E),
+
   APA = [A,PA|_Atoms],
   find_obj_mappings2(APA,BGG,Pair),  
   Pair = pair4(A,PA,B,PB),
   % must_det_ll(A\==B),
-  nop(PA\==PB),
+  nop(PA\==PB),!,
   %%debug_as_grid('show_mappings',A),
+
   (TITLE == "IN <- OUT" 
     -> showdiff_arg1(TITLE,BG,B,AG,A)
      ; showdiff_arg1(TITLE,AG,A,BG,B)))).
@@ -427,6 +430,7 @@ show_pair_now(TITLE,OO1,OO2):-
   (collapsible_section(info,compare_objs1(TITLE),false,
      (findall(E,compare_objs1(E,O1,O2),L), pp(compare_objs1(showdiff_objects)=L),
       indv_props(O1,S1),indv_props(O2,S2),
+      %pp(s1=S1),pp(s2=S2),
       intersection(S1,S2,Sames,SS1,SS2),
       proportional(SS1,SS2,lst(vals(_),len(_),PDiffs)),
       show_sames_diffs_now(Sames,PDiffs))))))),
