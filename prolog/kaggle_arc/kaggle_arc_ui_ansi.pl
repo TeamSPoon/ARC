@@ -10,6 +10,11 @@
 
 :- autoload(library(http/html_write),[html/3,print_html/1]).
 
+debug_m(_,Tiny):- display_length(Tiny,Len),Len<30,!,pp(Tiny).
+debug_m(M,_):- \+ debugging(M),!.
+debug_m(_,List):- is_list(List),!,print_ss(List).
+debug_m(_,Term):- pp(Term).
+
 wno(G):-
  locally(b_setval(print_collapsed,10), G).
 

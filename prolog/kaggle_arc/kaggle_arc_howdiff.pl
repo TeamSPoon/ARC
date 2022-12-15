@@ -421,11 +421,15 @@ show_pair_now(TITLE,OO1,OO2):-
   object_grid_to_str(O2,Str2,T2),
   print_side_by_side(yellow,Str1,T1,_,Str2,T2),  
   format('~N~n'),
+
   if_t((true),
     learn_rule_in_out_objects(TITLE,O1,O2)),
+
   nop(ignore((into_ngrid(O1,NO1),into_ngrid(O2,NO2), print_side_by_side(silver,NO1,ngrid(T1),_,NO2,ngrid(T2))))),
+
   if_t(\+ nb_current(menu_key,'u'),
-    (debug_indiv_obj(O1), format('~N~n'), debug_indiv_obj(O2))),  
+    (dash_chars,debug_indiv_obj(O1), format('~N~n'),dash_chars, debug_indiv_obj(O2))),  
+
   if_t(nb_current(menu_key,'o'),
   (collapsible_section(info,compare_objs1(TITLE),false,
      (findall(E,compare_objs1(E,O1,O2),L), pp(compare_objs1(showdiff_objects)=L),

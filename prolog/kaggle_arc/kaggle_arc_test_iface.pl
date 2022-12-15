@@ -281,7 +281,7 @@ do_test_pred(E):-
   get_current_grid(G),
   set_flag(indiv,0), 
   wdmsg(do_test_pred(E)),
-  my_time(my_submenu_call(no_bfly(maybe_test(E,G)))),!.
+  show_time_gt_duration(3.0,my_submenu_call(no_bfly(maybe_test(E,G)))),!.
 
 maybe_test(E,_):- \+ missing_arity(E,0), !, call(E).
 maybe_test(E,G):- \+ missing_arity(E,1), call(E,G),!.
@@ -599,14 +599,14 @@ current_suite_testnames(X,Set):-
 get_by_hard(X,Set):- nonvar(Set),get_by_hard(X,SetV),!,Set=SetV.
 get_by_hard(X,ByHard):- muarc_tmp:cached_tests_hard(X,ByHard),!.
 get_by_hard(X,ByHard):- 
- my_time((
+ show_time_gt_duration(3.0, ((
   must_det_ll((
   pp(creating(get_by_hard(X))),    
   current_suite_testnames(X,Set),
   length(Set,L),
   pp(get_by_hard(X)=L),  
   likely_sort(X,Set,ByHard),
-  !,(ignore((ByHard\==[],asserta(muarc_tmp:cached_tests_hard(X,ByHard))))))))).
+  !,(ignore((ByHard\==[],asserta(muarc_tmp:cached_tests_hard(X,ByHard)))))))))).
 
 
 likely_sort(X,Set,Set):- dont_sort_by_hard(X),!,pp(dont_sort_by_hard(X)).
@@ -702,7 +702,8 @@ is_monadic_grid_predicate(F):-  clauses_predicate_cmpd_goal(F/1,Into_Grid),membe
 
 io_side_effects.
 
-every_grid(P1,TestID):- every_input_grid(P1,TestID), every_output_grid(P1,TestID).
+every_grid(P1,TestID):- %every_input_grid(P1,TestID), every_output_grid(P1,TestID).
+  freeze(IO,once(ExampleNum=(trn+_);IO=in)),every_grid(TestID,ExampleNum,IO,P1).
 every_input_grid(P1,TestID):- every_grid(TestID,_,in,P1).
 every_output_grid(P1,TestID):- every_grid(TestID,trn+_,out,P1).
 
@@ -1035,7 +1036,7 @@ save_supertest(TestID,File):- var(TestID),!, forall(ensure_test(TestID), save_su
 save_supertest(TestID,File):- var(File),!,test_name_output_file(TestID,File), save_supertest(TestID,File).
 save_supertest(TestID,File):- needs_dot_extention(File,'.pl',NewName),!,save_supertest(TestID,NewName).
 
-save_supertest(TestID,File):- !, wdmsg(skip_save_supertest(TestID,File)).
+%save_supertest(TestID,File):- !, wdmsg(skip_save_supertest(TestID,File)).
 save_supertest(TestID,File):-
  saveable_test_info(TestID,Info),
    setup_call_cleanup(open(File,write,O,[create([default]),encoding(text)]), 
@@ -1051,7 +1052,7 @@ test_name_output_file(TestID,File):- sub_atom_value(TestID,OID),!,atomic_list_co
 clear_test(TestID):- is_list(TestID),!,maplist(clear_test,TestID).
 clear_test(TestID):- ensure_test(TestID),
    clear_training(TestID),
-   nop(clear_saveable_test_info(TestID)),
+   clear_saveable_test_info(TestID),
    unload_test_file(TestID).
 
 clear_saveable_test_info(TestID):-

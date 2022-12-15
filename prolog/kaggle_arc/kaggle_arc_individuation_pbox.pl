@@ -32,7 +32,7 @@ make_gclip_cache:-
  consult('make_gclip_cache.pl'))),
  functor(G,gclip_cache,10),
  predicate_property(G,number_of_clauses(NC)),
- wdmsg(gclip_cache=NC).
+ debug_m(indv(pbox),gclip_cache=NC).
 
 %=====================================================================
 is_fti_step(maybe_pbox_vm).
@@ -93,8 +93,8 @@ pbox_vm(VM):- !,
 
 begin_i_pbox_l(Grid,NSEW,XSG,Points5,Points9,VM,S_L,Sizes_S_L):-
   copy_term(NSEW+XSG,CNSEW+CXSG),
-  dmsg(begin(S_L)), my_time(must_det_ll((i_pbox_l([],Recs,Grid,CNSEW,CXSG,Points5,Points9,VM,S_L,Sizes_S_L)))),
-  pp(Recs),!.
+  debug_m(indv(pbox),begin(S_L)), my_time(must_det_ll((i_pbox_l([],Recs,Grid,CNSEW,CXSG,Points5,Points9,VM,S_L,Sizes_S_L)))),
+  debug_m(indv(pbox),Recs),!.
 
 
 
@@ -150,9 +150,10 @@ pbox(Name):-
   update_changes,
   (var(Name)-> true; testid_name_num_io(Name,TestID,Example,Num,IO)),
   ExampleNum=Example+Num,
+  with_debugging(indv(pbox),
   (nonvar(IO) 
    -> forall(kaggle_arc_io(TestID,ExampleNum,IO,G),ignore(pbox_io(TestID,ExampleNum,IO,G))) 
-    ; forall(kaggle_arc(TestID,ExampleNum,I,O),ignore(pbox_pair(TestID,ExampleNum,I,O)))).
+    ; forall(kaggle_arc(TestID,ExampleNum,I,O),ignore(pbox_pair(TestID,ExampleNum,I,O))))).
 
 is_bg_color_or_var(C):- is_bg_color(C) ; \+ is_fg_color(C).
 is_fg_color_or_var(C):- is_fg_color(C) ; \+ is_bg_color(C).
@@ -165,8 +166,9 @@ pbox_indivs:-
   with_test_pairs(TestID,ExampleNum,I,O,pbox_pair(TestID,ExampleNum,I,O)).
 
 pbox_pair(TestID,ExampleNum,GridIn,GridOut):-
-   wdmsg(?- test_p2(pbox_pair(TestID,ExampleNum))),
-   igo_pair(i_pbox,GridIn,GridOut).
+  with_debugging(indv(pbox),
+    (debug_m(indv(pbox),?- test_p2(pbox_pair(TestID,ExampleNum))),
+      igo_pair(i_pbox,GridIn,GridOut))).
 
 pbox_io(TestID,ExampleNum,IO,G0):-
   kaggle_arc_io(TestID,ExampleNum,IO,_),
@@ -174,22 +176,21 @@ pbox_io(TestID,ExampleNum,IO,G0):-
   duplicate_term(G,GG),
   ignore(kaggle_arc_io(TestID,ExampleNum,IO,GG)),
   set_current_test(TestID),
-  wdmsg(?- pbox_io(TestID,ExampleNum,IO)),
+  debug_m(indv(pbox),?- pbox_io(TestID,ExampleNum,IO)),
   my_time((i_pbox(GG,Objs),
   pbox_io_result(TestID,ExampleNum,IO,GG,Objs))).
 
 pbox_io_result(TestID,ExampleNum,IO,G,[]):- !,
  print_grid(wqs(red,no_result_for(?-pbox(TestID>ExampleNum*IO))),G).
-
 /*
 pbox_io_result(TestID,ExampleNum,IO,G,[Objs]):- !,
  obj_global_grid(Obj,OGrid),
  print_side_by_side(orange,G,one_result_for(?-pbox(TestID>ExampleNum*IO)),_,OGrid,(TestID>ExampleNum*IO)),!.
 */
-
 pbox_io_result(TestID,ExampleNum,IO,G,Objs):- !,
  once((maplist(obj_global_grid,Objs,OGG), print_side_by_side(OGG))),!,
  print_side_by_side(cyan,G,(?-pbox(TestID>ExampleNum*IO)),_,print_grid(Objs),(TestID>ExampleNum*IO)),!.
+
 
 i_pbox(GridIn,Objs):- 
   ROptions=i_pbox,
@@ -321,10 +322,10 @@ which_partof_square(Which, OBJ,Find,Inside,Center, IsRim, OH, FH, OV, FV):-
      (Which=@=oborder -> (IsRim=rim_of,rim_of(Find,OBJ),OH is FH-1, OV is FV-1) ;  
       (Which=@=inside -> (IsRim=filltype(solid),OBJ=Inside,OH is FH, OV is FV))))))).
 
-i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- Points==[], !, wdmsg(pointless(L_S)).
-i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,[]):- !, wdmsg(complete(L_S)).
-%i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- L_S \= s_l(p2), L_S \= l_s(p1), experiment(L_S \= l_s(p2)), !, wdmsg(complete(L_S)).
-%i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- L_S \= s_l(p1), L_S \= l_s(p1), experiment(L_S \= l_s(p2)), !, wdmsg(complete(L_S)).
+i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- Points==[], !, debug_m(indv(pbox),pointless(L_S)).
+i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,[]):- !, debug_m(indv(pbox),complete(L_S)).
+%i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- L_S \= s_l(p2), L_S \= l_s(p1), experiment(L_S \= l_s(p2)), !, debug_m(indv(pbox),complete(L_S)).
+%i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- L_S \= s_l(p1), L_S \= l_s(p1), experiment(L_S \= l_s(p2)), !, debug_m(indv(pbox),complete(L_S)).
 i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):- 
   Size2D = size2D(H,V),
   (H>2,V>2),
@@ -376,12 +377,14 @@ i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):-
      USING = w(Rec,o=loc2D(OH,OV),WHY,L_S,Size2D,CACHE,
      centerS=CenterS,insideS=InsideS,findS=FindS,iborderS=IBorderS,oborderS=OBorderS,
      nsew=NSEW),
-   pp(cpmt(USING))),
-   print_side_by_side([Find,OBJ,Obj])))),
+   debug_m(indv(pbox),cpmt(USING))),
+   debug_m(indv(pbox),[Find,OBJ,Obj])))),
    %OHM1 is OH -1,OVM1 is OV -1, EHP1 is OH+HH, EVP1 is OV+VV,  clip(OHM1,OVM1,EHP1,EVP1,Grid,SGrid))),
   i_pbox_l([Rec|SoFarI],SoFarOut,Grid,NSEW,XSG,LeftOver,Points9,VM,L_S,[Size2D|Sizes]))). 
 
 i_pbox_l(SoFarI,SoFarO,Grid,NSEW,XSG,Points,Points9,VM,L_S,[_|Sizes]):- i_pbox_l(SoFarI,SoFarO,Grid,NSEW,XSG,Points,Points9,VM,L_S,Sizes).
+
+
 
 existingObject(VM,GOPoints):- 
   member_ls(O,VM.objs),globalpoints_include_bg(O,Ps),
@@ -536,5 +539,15 @@ found_box(Grid,L_S,NSEW,FH,FV,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,F
   (H>2,V>2), at_least_two_colors(OBorderS,Colors), member(C,Colors), \+ member(C,InsideS),
   no_repeats(good_borders(CACHE,[oBorderTrimmed,oBorder],CSo,PatternProp)).
 
+
+with_debugging(On,Goal):-
+  (prolog_debug:debugging(On, TF, TO)-> true ; (TF = false,TO =[])),
+  asserta((prolog_debug:debugging(On, true, [user_error|TO]):-!), Ref),
+  call_cleanup(Goal,erase(Ref)).
+
+wno_debugging(On,Goal):-
+  (prolog_debug:debugging(On, TF, TO)-> true ; (TF = false,TO =[])),
+  asserta((prolog_debug:debugging(On, false, []):-!), Ref),
+  call_cleanup(Goal,erase(Ref)).
    
 %:- include(kaggle_arc_individuation_pbox_2).

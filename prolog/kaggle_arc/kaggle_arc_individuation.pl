@@ -471,6 +471,8 @@ fast_simple :- true.
 
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
 %
+
+individuator(i_omem_points,[indv_omem_points]).
 individuator(i_maybe_glypic,[maybe_glyphic]). %:- \+ doing_pair.
 individuator(i_subtractions,  [fg_subtractions([whole,save_as_obj_group(i_nsew),save_as_obj_group(i_mono_nsew)])]).
 individuator(i_intersections,[fg_intersections([whole,save_as_obj_group(i_nsew),save_as_obj_group(i_mono_nsew)])]).
@@ -743,6 +745,23 @@ individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
     individuate7(_NewVM,NewGID,SubProgram,Grid,WasInside)),!,
    set_vm(VM))),
    addObjects(VM,WasInside).
+
+% =====================================================================
+is_fti_step(indv_omem_points).
+% =====================================================================
+indv_omem_points(VM):- 
+ must_det_ll((
+  Grid = VM.grid_o,
+  ensure_gid(Grid,GID),
+  cache_grid_objs(GID),
+  show_grid_objs(GID),
+  trace,
+  grid_object_points(GID,_ALL_Types,Groups),
+  maplist(use_indv_omem_points(VM),Groups))).
+
+use_indv_omem_points(VM,Points):-
+  make_indiv_object(VM,[birth(omem)],Points,Obj),
+  debug_as_grid(Obj),trace.
 
 % =====================================================================
 is_fti_step(remove_if_prop).

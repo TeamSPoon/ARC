@@ -687,7 +687,7 @@ assert_visually1(H,B):- get_current_test(TestID), arg(1,H,W),W\==TestID,!, H=..[
 assert_visually1(H,B):- assert_visually2(H,B).
 
 assert_visually2(H,B):- fail, copy_term((H:-B),(HH:-BB)),clause(HH,BB,Ref), clause(RH,RB,Ref),(H:-B)=@=(RH:-RB) ,!,(pp_safe(cyan,known_exact(H:-B))).
-assert_visually2(H,B):- copy_term((H),(HH)),clause(HH,_,Ref), clause(RH,_,Ref),(H)=@=(RH) ,!,pp_safe(cyan,known(H:-B)).
+assert_visually2(H,B):- fail, copy_term((H),(HH)),clause(HH,_,Ref), clause(RH,_,Ref),(H)=@=(RH) ,!,pp_safe(cyan,known(H:-B)).
 assert_visually2(H,B):- functor(H,F,_), my_asserta_if_new(test_local_dyn(F)), print_rule(F,(H:-B)), my_asserta_if_new((H:-B)).
 
 if_learn_ok(G):- call(G).
