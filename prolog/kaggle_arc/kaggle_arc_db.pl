@@ -474,6 +474,7 @@ is_adj_point_type(_C1,diamonds,HV1,HV2):- is_adj_point_d(HV1,HV2).
 :- dynamic(gid_type_oid/3).
 
 
+
 grid_type_oid(Grid,Type,OID):- ensure_gid(Grid,GID), cache_grid_objs_for(GID,Type), gid_type_oid(GID,Type,OID).
 
 :- dynamic(is_gridmass/2).
@@ -668,6 +669,7 @@ type_min_len(diamonds,3).
 
 
 
+
 assert_omem_points(_,_,[]):-!.
 assert_omem_points(GID,OID,[HV1]):-  !, assert_omem_point(GID,OID,HV1).
 assert_omem_points(GID,OID,[HV1|Points]):- assert_omem_point(GID,OID,HV1), assert_omem_points(GID,OID,Points).
@@ -703,9 +705,9 @@ update_object(GID,Type,OID):-
     retractall(gid_type_oid(GID,Type,OID)),
     retractall(is_grid_obj_count(GID,_,_)),
     retract_object(GID,OID,_))).
-    
 
-new_omem(GID,Type,OID):-
+
+new_omem(GID,Type,OID):- 
   new_omem(GID,Type,OID,_Glyph).
 new_omem(GID,Type,OID,Glyph):- 
   flag(GID,X,X+1),int2glyph(X,Glyph),

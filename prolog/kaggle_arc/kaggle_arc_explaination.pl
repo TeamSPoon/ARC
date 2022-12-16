@@ -193,7 +193,7 @@ object_color_desc(PA,PenColors):-
   ((PenL=<ColorsL) -> PenColors=pen(Pen);PenColors=colors(Colors)).
 
 object_birth_desc(PA,Birth):-
-  findall(B,cindv(PA,birth,B),BBs),
+  indv_props(PA,Props),findall(B,member(iz(B),Props),BBs),
   predsort_on(birth_info,BBs,ByDL),last(ByDL,Birth).
 
 birth_info(ifti(Birth),2+InfoLen):- !, display_length(Birth,InfoLen).

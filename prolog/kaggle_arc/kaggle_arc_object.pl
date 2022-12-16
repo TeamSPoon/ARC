@@ -65,7 +65,7 @@ make_indiv_object_s(GID,GH,GV,Overrides0,GPoints,ObjO):-
    (CCX is LoH + floor(Width/2),CCY is LoV + floor(Height/2)))),
 
   other_grid_size(GID,OtherH,OtherV),
-  to_global_coord(LoH,GH,OtherH,GNX),to_global_coord(LoV,GV,OtherV,GNY),
+  %to_global_coord(LoH,GH,OtherH,GNX),to_global_coord(LoV,GV,OtherV,GNY),
   to_global_coord(CCX,GH,OtherH,CX),to_global_coord(CCY,GV,OtherV,CY),
   copy_term(Grid,GridInCopy),
 
@@ -96,7 +96,7 @@ make_indiv_object_s(GID,GH,GV,Overrides0,GPoints,ObjO):-
 
   int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
   % atomic_list_concat(['o_',Glyph,'_',GID],OID),
-  op_grid_to_norm(NormOps,Grid,NormGrid),
+  % op_grid_to_norm(NormOps,Grid,NormGrid),
 
   flatten(
   [ 
@@ -105,10 +105,8 @@ make_indiv_object_s(GID,GH,GV,Overrides0,GPoints,ObjO):-
     pen(PenColors),
     rot2L(RotG),
     
-    center2G(CX,CY), 
-    %iz(cenY(CY)),iz(cenX(CX)),  
+    center2G(CX,CY), %iz(cenY(CY)),iz(cenX(CX)),  
     %loc2G(GNX,GNY),
-    iz(locGY(GNY)),iz(locGX(GNX)),  
     
     iz(sid(ShapeID)),
     
@@ -124,7 +122,7 @@ make_indiv_object_s(GID,GH,GV,Overrides0,GPoints,ObjO):-
     changes([]), % [grid(LocalGrid)],    
     OShapeNames,
     
-    [norm_grid(NormGrid),norm_ops(NormOps)],
+    %[norm_grid(NormGrid),norm_ops(NormOps)],
     % [iz(locY(LoV)),iz(locX(LoH))], % iz(tall(Height)),iz(wide(Width)),
     
     %obj_to_oid(ID,Iv),

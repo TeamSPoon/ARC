@@ -863,4 +863,3 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 :- fmt('% Type ?- demo. % or press up arrow').
 :- set_current_test(t('0d3d703e')).
 :- set_current_test(t('5582e5ca')).
-

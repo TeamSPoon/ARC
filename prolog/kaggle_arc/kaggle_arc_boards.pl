@@ -768,8 +768,8 @@ grid_to_so(_Grid,Named,In):- fail,
   flatten(In,Flat),maplist(count_N(Color,Flat,Counts),Flat).
 
 ideal_rank(Named,[Obj],Obj,Named):-!.
-ideal_rank(Named,_Objs,Obj,Prop):- indv_prop(Obj,Prop),sub_var(Named,Prop),!.
-ideal_rank(_Named,_Objs,Obj,Prop):- indv_prop(Obj,Prop),ideal_prop(Prop),!.
+ideal_rank(Named,_Objs,Obj,Prop):- obj_prop_val(Obj,Prop),sub_var(Named,Prop),!.
+ideal_rank(_Named,_Objs,Obj,Prop):- obj_prop_val(Obj,Prop),ideal_prop(Prop),!.
 ideal_rank(Named,Objs,Obj,nth1(Nth1,Named)):- nth1(Nth1,Objs,Obj),!.
 ideal_prop(o(Sz,1,_)):- Sz\=sf(1).
 
