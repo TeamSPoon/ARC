@@ -1029,6 +1029,8 @@ shell_op(G):- tee_op(G).
 
 my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).
 
+warn_skip(Goal):- wdmsg(warn_skip(Goal)).
+
 save_supertest(TestID):- is_list(TestID),!,maplist(save_supertest,TestID).
 save_supertest(TestID):- ensure_test(TestID), save_supertest(TestID,_File).
 
@@ -1036,7 +1038,7 @@ save_supertest(TestID,File):- var(TestID),!, forall(ensure_test(TestID), save_su
 save_supertest(TestID,File):- var(File),!,test_name_output_file(TestID,File), save_supertest(TestID,File).
 save_supertest(TestID,File):- needs_dot_extention(File,'.pl',NewName),!,save_supertest(TestID,NewName).
 
-%save_supertest(TestID,File):- !, wdmsg(skip_save_supertest(TestID,File)).
+save_supertest(TestID,File):- !, warn_skip(save_supertest(TestID,File)).
 save_supertest(TestID,File):-
  saveable_test_info(TestID,Info),
    setup_call_cleanup(open(File,write,O,[create([default]),encoding(text)]), 
@@ -1052,7 +1054,7 @@ test_name_output_file(TestID,File):- sub_atom_value(TestID,OID),!,atomic_list_co
 clear_test(TestID):- is_list(TestID),!,maplist(clear_test,TestID).
 clear_test(TestID):- ensure_test(TestID),
    clear_training(TestID),
-   clear_saveable_test_info(TestID),
+   warn_skip(clear_saveable_test_info(TestID)),
    unload_test_file(TestID).
 
 clear_saveable_test_info(TestID):-

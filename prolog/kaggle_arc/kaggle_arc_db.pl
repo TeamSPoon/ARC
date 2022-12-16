@@ -13,6 +13,7 @@
 :- dynamic(cindv/3).
 :- dynamic(cindv/4).
 :- dynamic(cindv/5).
+:- dynamic(cindv/6).
 :- dynamic(gid_glyph_oid/3).
 
 %show_time_gt_duration(Goal):- show_time_gt_duration(0.23,Goal,true). 
@@ -468,7 +469,6 @@ is_adj_point_type(_C1,diamonds,HV1,HV2):- is_adj_point_d(HV1,HV2).
 :- dynamic(gid_type_oid/3).
 
 
-
 grid_type_oid(Grid,Type,OID):- ensure_gid(Grid,GID), cache_grid_objs_for(GID,Type), gid_type_oid(GID,Type,OID).
 
 :- dynamic(is_gridmass/2).
@@ -512,18 +512,14 @@ oid_to_glyph(OID,Glyph):- atom_chars(OID,[_,_,Glyph|_]).
 
 tmem(GID,HV2,Type):- omem(GID,HV2,OID), gid_type_oid(GID,Type,OID).
 
-%ensure_indv_type(Type):- member(Type,[nsew,colormass,diamonds]).
-%ensure_indv_type(Type):- member(Type,[v_line,h_line,nsew,diamonds,colormass]).
-%ensure_indv_type(Type):- member(Type,[nsew,colormass]).
-ensure_indv_type(Type):- member(Type,[colormass,diamonds,nsew]).
-%ensure_indv_type(Type):- member(Type,[colormass]).
-%cant_reuse(diamonds,nsew).
-%cant_reuse(X,X):-!.
+ensure_indv_type(Type):- member(Type,[nsew,colormass]).
+
+cant_reuse(X,X):-!.
 cant_reuse(A,B):- can_reuse(A,B),!,fail.
 cant_reuse(_,_):-!.
-can_reuse(X,colormass):- X \== colormass.
-can_reuse(X,diamonds):- X \== diamonds.
-can_reuse(nsew,_).
+%can_reuse(X,colormass):- X \== colormass.
+%can_reuse(X,diamonds):- X \== diamonds.
+can_reuse(nsew,X):- X\==nsew.
 
 test_show_grid_objs(TestID):- ensure_test(TestID), every_grid(show_grid_objs,TestID).
 
@@ -581,7 +577,7 @@ cache_grid_objs(GID):-
    (forall(ensure_indv_type(Type),cache_grid_objs_now(Type,GID)),
     forall(how_count(_,How,_),grid_obj_count_1(GID,How,_))),
     (Shown = 1,show_grid_objs(GID))),
-  ignore(((   var(Shown),is_grid_obj_count(GID,Type,Count),Count>=40,show_grid_objs(GID),show_obj_counts(GID)))),
+  ignore(((   var(Shown),is_grid_obj_count(GID,Type,Count),Count>=100,show_grid_objs(GID),show_obj_counts(GID)))),
   ignore(((nonvar(Shown),is_grid_obj_count(GID,Type,Count),Count>=40,                    show_obj_counts(GID)))),!.
 
 show_obj_counts(GID):- findall(Type=Count,grid_obj_count(GID,Type,Count),Out),pp(GID=Out),!.
@@ -625,19 +621,20 @@ cache_grid_objs_now(Type,GID):- gid_type_oid(GID,Type,_),!.
 %cache_grid_objs_now(Type,GID):- var(Type),!,ensure_indv_type(Type),cache_grid_objs(Type,GID).
 cache_grid_objs_now(Type,GID):- cache_grid_objs1(Type,GID).
 
-type_may_have(GID,Type,HV1):- \+ (omem(GID,HV1,OOID), gid_type_oid(GID,OType,OOID), cant_reuse(Type,OType)).
+type_may_have(GID,Type,HV1):- 
+  \+ (omem(GID,HV1,OOID), gid_type_oid(GID,OType,OOID), cant_reuse(Type,OType)).
 
 %cache_grid_objs1(diamonds,_GID):-!.
-cache_grid_objs1(Type,GID):- 
+cache_grid_objs1(Type,GID):- Type \== colormass,
   type_min_len(Type,Minlen),
   cmem(GID,HV1,C1), type_may_have(GID,Type,HV1),
-  continue_obj(GID,Type,[HV1],Points,Len), Len >= Minlen,!,
+  continue_obj(C1,GID,Type,[HV1],Points,Len), Len>=Minlen,!,
   new_obj_points(GID,Type,C1,Points,Len),
   cache_grid_objs1(Type,GID).
 
 cache_grid_objs1(Type,GID):- Type == colormass,
   cmem(GID,HV1,C1), type_may_have(GID,Type,HV1),
-  continue_obj(GID,Type,[HV1],Points,Len), Len>=2,!,
+  continue_obj(C1,GID,Type,[HV1],Points,Len), Len>=2,!,
   new_obj_points(GID,Type,C1,Points,Len),
   cache_grid_objs1(Type,GID).
 
@@ -648,21 +645,21 @@ cache_grid_objs1(Type,GID):- Type == colormass,
 
 cache_grid_objs1(_,_).
 
-continue_obj(GID,Type,Points,Out,Len):- 
-  cont_obj_execpt(GID,Type,Points,Points,Out),
+continue_obj(C1,GID,Type,Points,Out,Len):- 
+  cont_obj_execpt(C1,GID,Type,Points,Points,Out),
   length(Out,Len).
 
-cont_obj_execpt(_GID,_Type,[],_Already,[]):-!.
-cont_obj_execpt(GID,Type,[HV1|Points],Already,[HV1|Out]):-   
- (cmem(GID,HV1,C1),is_adj_point_type(C1,Type,HV1,HV2), \+ member(HV2,Already), cmem(GID,HV2,C1)),
+cont_obj_execpt(__,_GID,_Type,[],_Already,[]):-!.
+cont_obj_execpt(C1,GID,Type,[HV1|Points],Already,[HV1|Out]):-   
+ (is_adj_point_type(C1,Type,HV1,HV2), \+ member(HV2,Already), cmem(GID,HV2,C1)),
   type_may_have(GID,Type,HV2),
-  cont_obj_execpt(GID,Type,[HV2,HV1|Points],[HV2|Already],Out).
-cont_obj_execpt(GID,Type,[HV1|Points],Already,[HV1|Out]):-  !,
-  cont_obj_execpt(GID,Type,Points,Already,Out).
+ cont_obj_execpt(C1,GID,Type,[HV2,HV1|Points],[HV2|Already],Out).
+cont_obj_execpt(C1,GID,Type,[HV1|Points],Already,[HV1|Out]):-  !,
+  cont_obj_execpt(C1,GID,Type,Points,Already,Out).
 
-type_min_len(diamonds,3).
-type_min_len(nsew,4).
 type_min_len(colormass,1).
+type_min_len(nsew,5).
+type_min_len(diamonds,3).
 
 
 
@@ -671,18 +668,21 @@ assert_omem_points(GID,OID,[HV1]):-  !, assert_omem_point(GID,OID,HV1).
 assert_omem_points(GID,OID,[HV1|Points]):- assert_omem_point(GID,OID,HV1), assert(omem(GID,HV1,OID)), assert_omem_points(GID,OID,Points).
 
 assert_omem_point(GID,OID,HV1):- 
- ignore((retract(omem(GID,HV1,OOID)),update_object(OOID))),
+ ignore((
+   omem(GID,HV1,OOID),
+   retractall(omem(GID,HV1,OOID)),retractall(smem(GID,HV1,OOID)),
+   update_object(OOID))),
    assert(omem(GID,HV1,OID)).
 
-new_obj_points(GID,Type,OID,C1,Points,Len):-
+new_obj_points(GID,Type,C1,Points,Len):-
   new_omem(GID,Type,OID),
   assert_omem_points(GID,OID,Points),
   assert(oindv(color,GID,OID,C1)),
   assert(oindv(size,GID,OID,Len)).
 
 update_object(OID):- 
-   must_det_ll((gid_type_oid(GID,Type,OID), 
-   update_object(GID,Type,OID))).
+   gid_type_oid(GID,Type,OID), 
+   update_object(GID,Type,OID).
 
 update_object(GID,_Type,OID):-
      \+ \+ omem(_,_,OID),!,     
@@ -694,10 +694,10 @@ update_object(GID,Type,OID):-
   ignore(( 
     \+ omem(GID,_,OID),
     gid_type_oid(GID,Type,OID),
-    retract_object(GID,OID,_),
     retractall(oindv(_,GID,OID,_)),
     retractall(gid_type_oid(GID,Type,OID)),
-    retractall(is_grid_obj_count(GID,_,_)))).
+    retractall(is_grid_obj_count(GID,_,_)),
+    retract_object(GID,OID,_))).
     
 
 

@@ -329,7 +329,7 @@ i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,[]):- !, debug_m(ind
 i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):- 
   Size2D = size2D(H,V),
   (H>2,V>2),
-  Rec = rec(IsRim,OH,OV,HH,VV),
+  Rec = writeq(rec(IsRim,OH,OV,HH,VV)),
  once((
   
   % \+ (L_S=l_s(p1);L_S=s_l(p1);L_S=l_s(p2)),

@@ -755,7 +755,6 @@ indv_omem_points(VM):-
   ensure_gid(Grid,GID),
   cache_grid_objs(GID),
   show_grid_objs(GID),
-  trace,
   grid_object_points(GID,_ALL_Types,Groups),
   maplist(use_indv_omem_points(VM),Groups))).
 
@@ -3795,7 +3794,7 @@ props_object_prior(o(sf(_),_,L),L):-!.
 props_object_prior(cc(Color,_Value),rankA(cc(Color))):-!.
 props_object_prior(mass(_),rank1(mass)).
 props_object_prior(birth(S),L):- !, fail, first_atom_value(S,L), L\= indiv(_), \+ never_a_prior(L).
-props_object_prior(iz(S),L):- !, fail,first_atom_value(S,L), \+ rankOnly(L), \+ never_a_prior(L).
+props_object_prior(iz(S),L):- !, S\=info(_), first_atom_value(S,L), \+ rankOnly(L), \+ never_a_prior(L).
 %props_object_prior(iz(S),L):- !, props_object_prior(S,L).
 props_object_prior(S,L):- first_atom_value(S,L), \+ rankOnly(L), \+ never_a_prior(L).
 
