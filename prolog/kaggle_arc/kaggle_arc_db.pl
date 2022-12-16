@@ -71,6 +71,11 @@ assert_id_cell(ID,-(C,HV)):- assert(cmem(ID,HV,C)).
 :- dynamic(is_grid_size/3).
 % Grid to_fast_workspace
 
+lcmem(OID,LHV,C):-  
+  cindv(OID,loc2P,Loc2P),gid_type_oid(GID,_,OID),
+  add_P(Loc2P,LHV,GHV),
+  cmem(GID,GHV,C).
+
 
 %assert_id_grid_cells(Grid):- is_grid(Grid),grid_to_gid(Grid,GID),!,assert_id_grid_cells(GID,Grid).
 %assert_id_grid_cells(GID):- oid_to_gridoid(GID,Grid), assert_id_grid_cells(GID,Grid).
@@ -663,9 +668,9 @@ type_min_len(diamonds,3).
 
 
 
-
+assert_omem_points(_,_,[]):-!.
 assert_omem_points(GID,OID,[HV1]):-  !, assert_omem_point(GID,OID,HV1).
-assert_omem_points(GID,OID,[HV1|Points]):- assert_omem_point(GID,OID,HV1), assert(omem(GID,HV1,OID)), assert_omem_points(GID,OID,Points).
+assert_omem_points(GID,OID,[HV1|Points]):- assert_omem_point(GID,OID,HV1), assert_omem_points(GID,OID,Points).
 
 assert_omem_point(GID,OID,HV1):- 
  ignore((
@@ -700,8 +705,9 @@ update_object(GID,Type,OID):-
     retract_object(GID,OID,_))).
     
 
-
-new_omem(GID,Type,OID):- 
+new_omem(GID,Type,OID):-
+  new_omem(GID,Type,OID,_Glyph).
+new_omem(GID,Type,OID,Glyph):- 
   flag(GID,X,X+1),int2glyph(X,Glyph),
   name(Glyph,[ID]),!,
   atomic_list_concat(['o_',Glyph,'_',ID,'_',GID],OID),
