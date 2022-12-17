@@ -399,11 +399,11 @@ individuation_macros(some_leftovers, [
 individuation_macros(do_ending, [
   %find_edges,
   % find_contained_points, % mark any "completely contained points"
- combine_same_globalpoints, % make sure any objects are perfectly the equal part of the media(image) are iz(flag(combined))
+ %combine_same_globalpoints, % make sure any objects are perfectly the equal part of the media(image) are iz(flag(combined))
  %keep_only_shown(1),
  %remove_if_prop(and(cc(bg,1))),
  combine_if_prop(and(cc(bg,1),cc(fg,0))),
- %remove_if_prop(pen([cc(black,1)])),
+ %remove_if_prop(and(iz(stype(dot))])),
  combine_same_globalpoints,
  find_touches,
  find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
@@ -1494,6 +1494,8 @@ into_fti(ID,ROptions,GridIn0,VM):-
      option_SingleColorObjects: _, % Automatic,                  /* If the single color objects have already been determined, they can be passed in to save time. */
      option_SingleObject: _, % Automatic,                        /* Should all non-background pixels be treated as part of a single object, even if they are non-contiguous? */
      option_IncludeImageShapes: false,   /* Whether to include shapes of stype <Type:  Image, ...|>. */
+
+  option_NoLinks:_,
 
    changed:_,% solution:_,neededChanged
    neededChanged:_, repaired:_,

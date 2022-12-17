@@ -433,6 +433,8 @@ dir_seeing(Ps1,Ps2,Dir):- member(_-P1,Ps1), is_adjacent_point(P1,Dir,P2), \+ mem
 seeing_dir_soon(P1,_Dir,Ps2):- member(_-P1,Ps2),!.
 seeing_dir_soon(P1,Dir,Ps2):- is_adjacent_point(P1,Dir,P2), seeing_dir_soon(P2,Dir,Ps2).
 
+is_physical_object(O):- has_prop(iz(whole),O),!,fail.
+is_physical_object(O):- has_prop(cc(fg,0),O),!,fail.
 is_physical_object(O):- my_assertion(is_object(O)),has_prop(iz(media(shaped)),O),!.
 is_physical_object(O):- has_prop(mass(Mass),O),Mass>0.
 
@@ -491,9 +493,14 @@ find_links(How,[Obj|ScanNext],OtherObjects,[Obj|ScanRest]):- fail,
 find_links(How,[Obj|ScanNext],OtherObjects,[NewObj|ScanRest]):-
   must_det_ll((
   /*must_det_ll*/(find_links_objects(How,Obj,OtherObjects,DirNewSees)),
-  /*must_det_ll*/(override_object(DirNewSees,Obj,NewObj)),
+  /*must_det_ll*/(override_object_link(DirNewSees,Obj,NewObj)),
   /*must_det_ll*/(find_links(How,ScanNext,OtherObjects,ScanRest)))).
 
+
+override_object_link(_,O,O):- peek_vm(VM), ignore((var(VM.option_NoLinks),length(VM.objs,Len),
+  ( Len>100 -> gset(VM.option_NoLinks)=true ; gset(VM.option_NoLinks) =false))), 
+  VM.option_NoLinks==true,!.
+override_object_link(P,O,OO):- override_object(P,O,OO).
 /*
 mention_links(Obj,[],Obj):-!.
 mention_links(Obj,[link(Dir,Seen)|More],NewFObjO):- !,
@@ -501,7 +508,7 @@ mention_links(Obj,[link(Dir,Seen)|More],NewFObjO):- !,
   mention_links(MidObj,More,NewFObjO).
 mention_links(Obj,Dir-Seen,NewObj):-
   /*must_det_ll*/(obj_to_oid(Seen,Iv)),
-  /*must_det_ll*/(override_object(link(links,Dir,Iv),Obj,NewObj)),!.
+  /*must_det_ll*/(override_object_link(link(links,Dir,Iv),Obj,NewObj)),!.
 */
 
 find_links_objects(_How,_,[],[]).
@@ -541,7 +548,7 @@ find_engulfs(Objs,NewObjs):- /*must_det_ll*/((find_engulfs(Objs,Objs,NewObjs))).
 find_engulfs([],_,[]):-!.
 find_engulfs([Obj|ScanNext],OtherObjects,[NewObj|ScanRest]):-
   /*must_det_ll*/(find_engulfs_objects(Obj,OtherObjects,DirNewTouches)),
-  /*must_det_ll*/(override_object(DirNewTouches,Obj,NewObj)),
+  /*must_det_ll*/(override_object_link(DirNewTouches,Obj,NewObj)),
   /*must_det_ll*/(find_engulfs(ScanNext,OtherObjects,ScanRest)).
 
 find_engulfs_objects(_,[],[]).

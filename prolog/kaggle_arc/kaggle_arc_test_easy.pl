@@ -132,6 +132,11 @@ easy_p2_0(repair_and_select(_How,_M)):- test_hint(input_gt,unique_color_count),
                                       test_hint(input_plus(1),unique_color_count).
 
 %easy_p2(use_simplified_recall(_)).
+easy_p2(repair_and_select(_,_)):-
+ nop((
+   test_hint(input_gt,unique_color_count), 
+   test_hint(input_plus(1),unique_color_count))).
+
 easy_p2(do_easy1(_)). %:- easy0(_,GFS).
 easy_p2(do_easy2(_,_)).
 

@@ -80,14 +80,8 @@ first_second_half(Grid,GL,GR):- length(Grid,L),H is floor(L/2), length(GL,H), ap
 too_small_reduce(H,_L,Two):- H=<Two. %X=<N,Y=<N,!.
 
 
-reduce_op1_1(Half,Len,_,Grid,copy_n_times(Times),ARow):- 
-   between(1,Half,NRows), copy_n_rows_n_times(NRows,Times,ARow,Grid).
-
-reduce_op1_1(Half,Len,_,Grid,mult_rows_n_times(Times),ARow):- 
-   between(1,Half,Times), mult_rows_n_times(Times,ARow,Grid).
-
-reduce_op1_1(Half,Len,_,Grid,_,_):- grid_size(Grid,X,Y), max_min(X,Y,H,L),too_small_reduce(H,L,2),!,fail.
-% educe_op1_1(_,Grid,_,_):- length(Grid,L3),L3=<2,!,fail.
+%reduce_op1_1(Half,Len,_,Grid,_,_):- grid_size(Grid,X,Y), max_min(X,Y,H,L),too_small_reduce(H,L,2),!,fail.
+reduce_op1_1(_,Grid,_,_):- length(Grid,L3),L3=<2,!,fail.
 
 reduce_op1_1(Half,Len,_,[Row1|Grid],copy_row_ntimes(1,N),[Row1]):- maplist(==(Row1),Grid),length(Grid,N).
 
@@ -98,6 +92,12 @@ reduce_op1_1(Half,Len,_,I,double_size,O):- fail, half_size(I,O),!.
 %reduce_op1_1(Half,Len,_,Outside,make_frame(Pen),Inside):- grid_size(Outside,X,Y),X>2,Y>2,make_frame(Pen,Inside,Outside).
 reduce_op1_1(Half,Len,_,Grid,copy_row_ntimes(N1,2),GridR):- append(L,[A,B,C,D,E|R],Grid),A=@=B,B=@=C,C=@=D,D=@=E, append(L,[A,B,C|R],GridR),length([_|L],N1).
 reduce_op1_1(Half,Len,_,Grid,copy_row_ntimes(N1,2),GridR):- append(L,[A,B,C,D|R],Grid),A=@=B,B=@=C,C=@=D, append(L,[A,B|R],GridR),length([_|L],N1).
+reduce_op1_1(Half,Len,_,Grid,copy_n_times(Times),ARow):- 
+   between(1,Half,NRows), copy_n_rows_n_times(NRows,Times,ARow,Grid).
+
+reduce_op1_1(Half,Len,_,Grid,mult_rows_n_times(Times),ARow):- 
+   between(1,Half,Times), mult_rows_n_times(Times,ARow,Grid).
+
 %reduce_op1_1(Half,Len,_,Grid,copy_row_ntimes(N1,2),GridR):- append(L,[A,B,C|R],Grid),A=@=B,B=@=C, append(L,[A|R],GridR),length([_|L],N1).
 % reduce_op1_1(Half,Len,_,Grid,_,_):- length(Grid,L3),L3=<3,!,fail.
 % % %  
@@ -114,22 +114,44 @@ copy_n_rows_n_times(NRows,Times,Rows,Grid):-
   append(Rows,Rest,Grid),
   rest_grid_repeats(0,Rows,Rest,Times,Slack),Slack=[].
 
-mult_rows_n_times(N,[R],[R|RRows]):- make_repeater(N,R,[R|RRows]).
-mult_rows_n_times(N,[R|MoreRows],[R|Grid2]):- 
-  make_repeater(N,R,[_|Append]),
-  append(Append,Grid4,Grid2),
-  mult_rows_n_times(N,MoreRows,Grid4).
 
-make_repeater(N,R,[R|RRows]):- between(2,15,N), length([R|RRows],N),maplist(=(R),RRows).
+copy_n_times(N,[C],Rows):- between(2,15,N), length(Rows,N),maplist(=(C),Rows).
 
-copy_n_times(N,C,Rows):- between(2,15,N), length(Rows,N),maplist(=(C),Rows).
+mult_rows_n_times(N,Grid,NGrid):- mult_rows_in_pattern(copy_n_times(N),Grid,NGrid).
 
+ensure_pattern_gen(row_padding(_Type,_Pad)).
+ensure_pattern_gen(copy_n_times(_)).
+ensure_pattern_gen(row_padding_lists(_T,_B)).
+%ensure_pattern_gen(stripes(_StripeColor)).
 
-mult_rows_in_pattern(PatGen,[C],[R,S|Rows]):- make_pattern(PatGen,C,[R,S|Rows]).
-mult_rows_in_pattern(PatGen,[C|MoreRows],[R,S|Grid3]):- 
-  make_pattern(PatGen,C,[R,S|Append]),
-  append(Append,Grid4,Grid3),
-  mult_rows_in_pattern(PatGen,MoreRows,Grid4).
+row_padding_tb(Pad,[C],[Pad,C,Pad]).
+row_padding_t(Pad,[C],[Pad,C]).
+row_padding_b(Pad,[C],[C,Pad]).
+ep3(row_padding_tb).
+ep3(row_padding_b).
+ep3(row_padding_t).
+row_padding(P3,Pad,A,B):- ep3(P3), call(P3,Pad,A,B).
+
+row_padding_lists(Before,After,Source,FullPattern):-
+  size_between(1,2,Source),append([Before,Source,After],FullPattern),
+  size_between(0,4,Before),size_between(0,4,After),Before\==After.
+
+size_between(L,H,After):- nonvar(After)->true;(between(L,H,N),length(After,N)).
+
+mult_rows_in_pattern(PatGen,NoPattern,HasPattern):- (var(PatGen)->ensure_pattern_gen(PatGen);true),
+  mult_rows_in_pattern0(PatGen,NoPattern,HasPattern).
+
+%mult_rows_in_pattern0(PatGen,C,[R,S|Rows]):- make_pattern(PatGen,C,[R,S|Rows]).
+
+mult_rows_in_pattern0(_PatGen,[],[]).
+mult_rows_in_pattern0(PatGen,[C1,C2|NoPattern],[R,S|Grid3]):- 
+  make_pattern(PatGen,[C1,C2],[R,S|Append]),
+  append(Append,HasPattern,Grid3),
+  mult_rows_in_pattern0(PatGen,NoPattern,HasPattern).
+mult_rows_in_pattern0(PatGen,[C|NoPattern],[R,S|Grid3]):- 
+  make_pattern(PatGen,[C],[R,S|Append]),
+  append(Append,HasPattern,Grid3),
+  mult_rows_in_pattern0(PatGen,NoPattern,HasPattern).
 
 
 make_pattern(PatGen,C,RRows):- call(PatGen,C,RRows).
@@ -138,10 +160,10 @@ make_pattern(PatGen,C,RRows):- call(PatGen,C,RRows).
 
 mult_rows_n_times(NRows,1,[R], [R|Grid]):- make_repeater(NRows,R,[R|Grid]).
 mult_rows_n_times(_NRows,0,[],[]):-!.
-mult_rows_n_times(NRows,NTimes,[R|MoreRows],[R|Grid]):- 
+mult_rows_n_times(NRows,NTimes,[R|NoPattern],[R|Grid]):- 
   make_repeater(NRows,R,Rows),
   append(Rows,Rest,[R|Grid]),
-  mult_rows_n_times(NRows,Times,MoreRows,Rest),
+  mult_rows_n_times(NRows,Times,NoPattern,Rest),
   plus(Times,1,NTimes).
 
 */

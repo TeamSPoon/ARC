@@ -237,8 +237,8 @@ do_menu_key(Key):- atom(Key),atom_codes(Key,Codes),!,debuffer_atom_codes(Key,Cod
 debuffer_atom_codes(_Key,[27|Codes]):- append(Left,[27|More],Codes),
   atom_codes(Key1,[27|Left]),atom_codes(Key2,[27|More]),!,
   (do_menu_key(Key1)->true;do_menu_key(Key2)).
-debuffer_atom_codes(_Key,[C|Codes]):- C\==27,
-  atom_codes(Key1,[C]),atom_codes(Key2,[Codes]),
+debuffer_atom_codes(_Key,[C|Codes]):- C\==27, Codes\==[],
+  atom_codes(Key1,[C]),atom_codes(Key2,Codes),
   (do_menu_key(Key1)->true;do_menu_key(Key2)).
 debuffer_atom_codes(Key,Codes):- format("~N % Menu did understand '~w' ~q ~n",[Key,Codes]).
 
