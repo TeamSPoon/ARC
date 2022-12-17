@@ -222,7 +222,17 @@ arc_sub_path(Subdir,AbsolutePath):- muarc_tmp:arc_directory(ARC_DIR),absolute_di
 :- export(kaggle_arc/4).
 kaggle_arc(TName,ExampleNum,In,Out):- kaggle_arc0(TName,ExampleNum,In,Out).
 kaggle_arc(Name,tst+AnswerID,In,Grid):- kaggle_arc_answers(Name,ID,AnswerID,Grid), kaggle_arc0(Name,tst+ID,In,_Out).
-kaggle_arc0(TName,ExampleNum,In,Out):- kaggle_arc_json(TName,ExampleNum,In,O), disallow_test_out(ExampleNum,O,Out).
+
+kaggle_arc0(TName,ExampleNum,In,Out):- nonvar(ExampleNum), \+ kaggle_arc1(TName,ExampleNum,In,Out),
+  kaggle_arc1(TName,NewExample,In,Out),!,
+  ignore((\+ \+ nb_current(example,ExampleNum),  nb_setval(example,NewExample))).
+
+kaggle_arc0(TName,ExampleNum,In,Out):- kaggle_arc1(TName,ExampleNum,In,Out).
+
+
+kaggle_arc1(TName,ExampleNum,In,Out):- kaggle_arc_json(TName,ExampleNum,In,O), disallow_test_out(ExampleNum,O,Out).
+
+   
 
 
 %adisallow_test_out(trn+_,OO,OO):-!.

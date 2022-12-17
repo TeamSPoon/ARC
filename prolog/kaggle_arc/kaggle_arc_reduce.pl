@@ -73,15 +73,23 @@ first_second_half(Grid,GL,GR):- length(Grid,L),H is floor(L/2), length(GL,H), ap
 %reduce_op1_1(Half,Len,_,Grid,copy_first(N),GridR):- copy_first(N,GridR,Grid).
 %reduce_op1_1(Half,Len,_,Grid,copy_last(N),GridR):- copy_last(N,GridR,Grid).
 
+/*
+h,w,cellsize,OborderThick,IborderThick
 
-
-
+****
+*****
+*************
+*/
 
 too_small_reduce(H,_L,Two):- H=<Two. %X=<N,Y=<N,!.
 
 
 %reduce_op1_1(Half,Len,_,Grid,_,_):- grid_size(Grid,X,Y), max_min(X,Y,H,L),too_small_reduce(H,L,2),!,fail.
 reduce_op1_1(_,Grid,_,_):- length(Grid,L3),L3=<2,!,fail.
+
+
+reduce_op1_1(Half,Len,PassNo,Grid,blur(A,flipV),Left):- length(Grid,L),LS is floor(L/2),length(Left,LS),reverse(Left,Right), RS is L-LS, 
+  (RS==LS->  (append(Left,Right,Grid),A=[]) ; (append(Left,[E|Right],Grid),A=[E])).
 
 reduce_op1_1(Half,Len,_,[Row1|Grid],copy_row_ntimes(1,N),[Row1]):- maplist(==(Row1),Grid),length(Grid,N).
 
@@ -321,23 +329,26 @@ all_common_reductions(AB,OPS,Reduced):-
    common_reductions_from_two(AB,OPS,_,_,_,_), OPS\==[],
    common_reductions(AB,OPS,Reduced).  
 
+common_reductions(AB,OPS,REDUCE):- com_red(AB,OPS,REDUCE)*->true;common_reductions1(AB,OPS,REDUCE).
+common_reductions1(AB,[],AB).
+
 % Grid
-common_reductions(AB,OPS,Reduced):- \+ AB = (_^_),is_grid(AB),!,common_reductions(AB^AB,OPS,Reduced^_).
+com_red(AB,OPS,Reduced):- \+ AB = (_^_),is_grid(AB),!,reduce_grid_pair1(AB^AB,OPS,Reduced^_).
 % [Grid]
-common_reductions([AB],OPS,[Reduced]):- is_grid(AB),!,common_reductions(AB,OPS,Reduced).
+com_red([AB],OPS,[Reduced]):- is_grid(AB),!,com_red(AB,OPS,Reduced).
 % [Grid|...]
-common_reductions(List,ROP,ListOUT):- \+ is_grid(List), is_list(List),list_to_caret(List,Caret),!,
-  common_reductions(Caret,ROP,OUT),caret_to_list(OUT,ListOUT).
+com_red(List,ROP,ListOUT):- \+ is_grid(List), is_list(List),list_to_caret(List,Caret),!,
+  com_red(Caret,ROP,OUT),caret_to_list(OUT,ListOUT).
 % [Grid1^Grid2^Grid3...]
-common_reductions(A^BC,ROP,AAO^BBO):- BC=(B^C), !,
-  common_reductions(A^B,ROP,AAO),
-  common_reductions(C,ROP,BBO).
+com_red(A^BC,ROP,AAO^BBO):- BC=(B^C), !,
+  reduce_grid_pair1(A^B,ROP,AAO),
+  com_red(C,ROP,BBO).
 % [Grid1^Grid2]
-common_reductions(A^B,ROP,AAO^BBO):- A\=@=B, B\=(_^_),!,
+com_red(A^B,ROP,AAO^BBO):- A\=@=B, B\=(_^_),!,
  reduce_grid_pair1(A^B,ROP1,AR^BR),
- (AR\==A;BR\==B), common_reductions(AR^BR,ROP2,AAO^BBO),
+ (AR\==A;BR\==B), com_red(AR^BR,ROP2,AAO^BBO),
  append(ROP1,ROP2,ROP).
-common_reductions(A^B,[],A^B).
+
 
 %reduce_grid(A^B,OPA^OPB,AA^BB):- A\=@=B,nth1(N,A,EA,A0),maplist(=(_),EA),nth1(N,B,EB,B0),EA=@=EB,reduce_grid(A0^B0,OPA^OPB,AA^BB).
 

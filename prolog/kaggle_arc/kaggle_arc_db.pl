@@ -70,7 +70,7 @@ assert_id_cell(ID,-(C,HV)):- assert(cmem(ID,HV,C)).
 
 lcmem(OID,LHV,C):-  
   cindv(OID,loc2P,Loc2P),gid_type_oid(GID,_,OID),
-  add_P(Loc2P,LHV,GHV),
+  point_plus(Loc2P,LHV,GHV),
   cmem(GID,GHV,C).
 
 
