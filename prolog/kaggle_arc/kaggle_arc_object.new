@@ -781,18 +781,6 @@ metaq_1(P3,Did,Old,New,Orig,Saved):- compound(Orig),Orig=Old, call(P3,Old,New,Sa
 enum_group(S):- is_unshared_saved(_,S).
 
 
-
-%indv_prop(I,X):- var_check(I,indv_prop(I,X))*->true;(indv_prop(I,X)).
-
-:- decl_pt(helper,cindv(is_object,+)).
-cindv(I,V):- indv_prop(I,V).
-
-%indv_prop(Obj,L):- compound(Obj), arg(1,Obj,L), is_list(L),!.
-
-
-pmember(E,X):- X=obj(L),!,member(X,E,L).
-pmember(E,X):- sub_term(EE,X),nonvar_or_ci(EE),EE=E,ground(E).
-
 indv_prop(obj(L),Prop):- is_list(L),!,member(Prop,L).
 indv_prop(I,Prop):- compound(Prop),!,Prop=..PropL,apply(indv_prop,[I|PropL]).
 indv_prop(I,Prop):- (atom(I);var(I)),indv_prop0(I,Prop).
@@ -804,6 +792,16 @@ indv_prop0(I,Prop):- indv_prop(I,A,B,C,D),Prop=..[A,B,C,D].
 indv_prop(I,A,B):- cindv(I,A,B).
 indv_prop(I,A,B,C):- cindv(I,A,B,C).
 indv_prop(I,A,B,C,D):- cindv(I,A,B,C,D).
+
+
+
+%indv_prop(I,X):- var_check(I,indv_prop(I,X))*->true;(indv_prop(I,X)).
+
+:- decl_pt(helper,cindv(is_object,+)).
+cindv(I,V):- indv_prop(I,V).
+
+%indv_prop(Obj,L):- compound(Obj), arg(1,Obj,L), is_list(L),!.
+
 
 
 indv_props(I,Props):- var(Props),findall(Prop,indv_prop0(I,Prop),Props),Props\==[],!.
@@ -818,6 +816,9 @@ indv_props_for_noteablity(obj(L),Notes):- my_assertion(nonvar(L)),!, include(is_
 %is_not_prop_for_noteablity(obj_to_oid).
 
 %indv_prop(G,L):- arcST,trace,into_obj(G,O),is_object(O),indv_prop(O,L).
+
+pmember(E,X):- X=obj(L),!,member(X,E,L).
+pmember(E,X):- sub_term(EE,X),nonvar_or_ci(EE),EE=E,ground(E).
 
 /*pmember(E,L):- is_map(Points),!,E=grid_size(H,V),!,Points.grid_size=grid_size(H,V).
 pmember(E,L):- member(EE,L),(EE=E;(is_list(EE),pmember(E,EE))).

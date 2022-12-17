@@ -823,12 +823,11 @@ ansi_startup:-
 :- luser_default(no_diags,false).
 :- luser_default(no_individuator, f).
 :- luser_default(grid_size_only,true).
-:- luser_default(extreme_caching,true).
 :- luser_default(cmd,test_easy).
 :- luser_default(cmd2,print_all_info_for_test).
-:- luser_default(cmd2,test_show_grid_objs).
+%:- luser_default(cmd2,test_show_grid_objs).
 :- luser_default(individuated_cache,true).
-:- luser_default(extreme_caching,true).
+%:- luser_default(extreme_caching,true).
 
 
 load_task_states:- exists_directory('/data/evaluation/'),catch_log(load_json_files(evaluation,v,'/data/evaluation/*.json')),!.
@@ -861,5 +860,4 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 :- gen_gids.
 :- test_show_colors.
 :- fmt('% Type ?- demo. % or press up arrow').
-:- set_current_test(t('0d3d703e')).
-:- set_current_test(t('5582e5ca')).
+% :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).

@@ -109,21 +109,84 @@ individuate_pair_here(TestID,Trn+N1,In,Out):-
   nop(train_for_objects_from_1pair(_{},TestID,[Trn,'i',N1,'o',N1],In,Out,_DictMid)).
 
 show_reduced_io_rarely(_):- \+ get_pair_mode(single_pair),!.
-show_reduced_io_rarely(In+Out):- % ignore((nonvar(In),nonvar(Out),grid_hint_swap(i-o,In,Out))),!,
+show_reduced_io_rarely(In^Out):- % ignore((nonvar(In),nonvar(Out),grid_hint_swap(i-o,In,Out))),!,
   ignore((fail,get_thingy(In,Out,Gets),print_ss(Gets))).
 
 show_reduced_io_rarely(IO):- forall(show_reduced_io(IO),true).
 
 print_all_info_for_test:- 
-  print_reduced_io,
+  forall(print_reduced_io,true),
   print_testinfo,
   print_hybrid_set.
 
+into_grid_list(A,[A]):- var(A),!.
+into_grid_list(A,[A]):- is_grid(A),!.
+into_grid_list([A|More],[A|More]):- is_grid(A),!.
+into_grid_list(A^B,List):- caret_to_list(A^B,List),!.
 
+show_common_reductions(TestID,AB):- into_grid_list(AB,GL), GL\==AB,!,show_common_reductions(TestID,GL).
+show_common_reductions(TestID,GL):- once((dash_chars,print_ss(show_common_reductions(TestID)=GL),dash_chars)),fail.
+%show_common_reductions(TestID,[A,B]):- !, common_reductions(A^B,OPS,_)
+show_common_reductions(TestID,GL):-
+ (all_common_reductions(GL,OPS,Reduced)*->print_common_reduction_result(TestID,OPS,Reduced)
+  ;(common_reductions_from_two(GL,OPS,A,B,AA,BB)*-> print_common_reduction_result(common_reductions_from_two(TestID,A,B),OPS,AA^BB) 
+  ; (print_ss(no_common_reductions(TestID))))),
+ dash_chars.
+
+print_common_reduction_result(TestID,OPS,Reduced):- pp(ops(TestID)=OPS), print_ss(common_reductions(TestID)=Reduced).
+
+do_input_grids(TestID,List):- do_some_grids(TestID,"INPUT",List).
+do_output_grids(TestID,Grids):- do_some_grids(TestID,"OUTPUT",Grids). 
+
+do_some_grids(TestID,Kind,[G|Grids]):- arg(2,G,G2),is_grid(G2),!,
+  maplist(arg(2),[G|Grids],ListO),!,do_some_grids1(TestID,Kind,ListO).
+do_some_grids(TestID,ExampleNum,Grids):- do_some_grids1(TestID,ExampleNum,Grids).
+
+do_some_grids1(TestID,Title,Grids):-  
+  dash_chars,
+  wdmsg(TestID=Title),
+  dash_chars,
+  show_common_reductions(TestID,Grids),!,
+  pause,
+  dash_chars,
+  forall(do_as_pairs(Grids,I,O),
+    (print_side_by_side(green,I,orig(TestID,Title),_,O,next_orig(TestID,Title)),
+     forall(show_reduced_io(I^O),true))),
+  dash_chars,!,
+  pause.
+
+show_reduced_io_fav(I^O):- get_current_test(TestID),\+ \+ show_common_reductions(TestID,I^O), show_reduced_io(I^O).
+
+
+get_output_xform(TestID):- findall(ExampleNum=Grid,kaggle_arc(TestID,ExampleNum,_,Grid),Grids),
+   do_output_grids(TestID,Grids).
+
+pause:- !, trace.
+pause:- get_single_char(K),(K=t->trace;true).
 print_reduced_io(TestID):- ensure_test(TestID),
+  cls,
+  wdmsg(?-print_reduced_io(TestID)),
+  dash_chars,
+  \+ \+ (findall(ExampleNum=Grid,kaggle_arc(TestID,ExampleNum,_,Grid),Grids),do_output_grids(TestID,Grids)),
+  dash_chars,
+  
+  \+ \+ (findall(ExampleNum=Grid,kaggle_arc(TestID,ExampleNum,Grid,_),Grids),do_input_grids(TestID,Grids)),
+  dash_chars,
+  pause,
+  wdmsg(TestID=show_reduced_io),
+  dash_chars,
   with_test_pairs(TestID,ExampleNum,I,O,
     (print_side_by_side(green,I,orig_in(TestID,ExampleNum),_,O,orig_out(TestID,ExampleNum)),
-     forall(show_reduced_io(I+O),true))).
+     forall(show_reduced_io(I^O),true))),!.
+
+do_as_pairs([F|More],I,O):- do_as_pairs(F,[F|More],I,O).
+do_as_pairs(_,[I,O|_],I,O).
+do_as_pairs(O,[I],I,O):-!.
+do_as_pairs(F,[_|More],I,O):- do_as_pairs(F,More,I,O).
+
+
+
+
 
 
 
@@ -131,17 +194,14 @@ show_reduced_io(IO):-
     once(show_grid_call(reduce_cutaway(_),IO,NextIO)),
   if_t(((NextIO)\=@=(IO)), show_reduced_io(NextIO)).
 
-  %show_reduced_io(I+O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
-show_reduced_io(I0+O):- 
+  %show_reduced_io(I^O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
+show_reduced_io(I0^O):- 
   once(( grid_size(I0,H,V), grid_size(O,OH,OV))),
   ((H>OH;V>OV) , grid_call_alters(trim_to_rect,I0,I)),
- show_reduced_io(I+O).
-
-%show_reduced_io(I+O):- once(show_grid_call(reduce_grids_io(OPS),(I*O),(II*OO))),
-%  if_t(((I*O)\==(II*OO)), show_reduced_io((II+OO))).
+ show_reduced_io(I^O).
 
 show_reduced_io(IO):-
-  %OP = [_,_|_],
+  %OPS = [_,_|_],
   once(show_grid_call(op_grid_to_norm(_),IO,NextIO)),
   if_t(((NextIO)\=@=(IO)), show_reduced_io(NextIO)).
 
@@ -154,47 +214,45 @@ show_reduced_io(_).
 
 op_grid_to_norm((Op),I,OO):- op_grid_to_norm1(Op,I,OO),!.
 op_grid_to_norm(([]),I,I).
-op_grid_to_norm1((Op),IO,IIOO):-  compound(IO),IO=(I+O),op_grid_to_norm((Op),I,II),!,Op\==[],op_grid_to_norm((Op2),O,OO),!,Op=Op2,IIOO=II+OO.
+op_grid_to_norm1((Op),IO,IIOO):-  compound(IO),IO=(I^O),op_grid_to_norm((Op),I,II),!,Op\==[],op_grid_to_norm((Op2),O,OO),!,Op=Op2,IIOO=II^OO.
 op_grid_to_norm1((Op),I,OO):- (var(Op)->Op=[_|_];true),reduce_grid(I,Op,OO).
 %op_grid_to_norm([],I,I).
 
-mapgridish(P3,I+O,In,Out):- In==I-> mapgrid(P3,O,I,Out) ; mapgrid(P3,I,O,Out).
+mapgridish(P3,I^O,In,Out):- In==I-> mapgrid(P3,O,I,Out) ; mapgrid(P3,I,O,Out).
 
 
-reduce_grids_io(OPS,I+O,III+OOO):- area(I,IArea),area(O,OArea),reduce_grids_area_io(I+O,IArea+OArea,OPS,III+OOO).
-reduce_grids_io(OPS,I*O,III*OOO):- area(I,IArea),area(O,OArea),reduce_grids_area_io(I+O,IArea+OArea,OPS,III+OOO).
+reduce_grids_io(OPS,I^O,III^OOO):- area(I,IArea),area(O,OArea),reduce_grids_area_io(I^O,IArea^OArea,OPS,III^OOO).
 
 interesting_ops(OPS):- OPS==[],!,fail.
 interesting_ops(OPS):- OPS=[unrotate(_)|More],!,interesting_ops(More).
 interesting_ops(_).
 
-reduce_grids_area_io(I+O,_IArea_OArea,[io(OPS)],II+OO):- reduce_grid(I+O,OPS,II+OO), interesting_ops(OPS),!.
-reduce_grids_area_io(I+O,_IArea_OArea,[oi(OPS)],II+OO):- reduce_grid(O+I,OPS,OO+II), interesting_ops(OPS),!.
-%reduce_grids_area_io(I+O,IArea+OArea,[i(OPS)],II+O):- IArea>OArea, reduce_grid(I+I,OPS,II+_), interesting_ops(OPS).
-%reduce_grids_area_io(I+O,IArea+OArea,[o(OPS)],I+OO):- IArea>OArea, reduce_grid(O+O,OPS,OO+_), interesting_ops(OPS).
-%reduce_grids_area_io(I+O,_IArea_OArea,[io(OPS)],II+OO):- reduce_grid(I+O,OPS,II+OO), interesting_ops(OPS).
-%reduce_grids_area_io(I+O,_IArea_OArea,[i(OPS)],II+O):- reduce_grid(I+I,OPS,II+_), interesting_ops(OPS).
-
-%reduce_grids_area_io(I+O,IArea+OArea,[o(OPS)],I+OO):- IArea<OArea, reduce_grid(O+O,OPS,OO+OO), interesting_ops(OPS).
+reduce_grids_area_io(I^O,_IArea_OArea,[io(OPS)],II^OO):- reduce_grid(I^O,OPS,II^OO), interesting_ops(OPS),!.
+reduce_grids_area_io(I^O,_IArea_OArea,[oi(OPS)],II^OO):- reduce_grid(O+I,OPS,OO+II), interesting_ops(OPS),!.
+reduce_grids_area_io(I^O,IArea^OArea,[i(OPS)],II^O):- IArea>OArea, reduce_grid(I+I,OPS,II+_), interesting_ops(OPS).
+reduce_grids_area_io(I^O,IArea^OArea,[o(OPS)],I^OO):- IArea>OArea, reduce_grid(O^O,OPS,OO+_), interesting_ops(OPS).
+reduce_grids_area_io(I^O,_IArea_OArea,[io(OPS)],II^OO):- reduce_grid(I^O,OPS,II^OO), interesting_ops(OPS).
+reduce_grids_area_io(I^O,_IArea_OArea,[i(OPS)],II^O):- reduce_grid(I+I,OPS,II+_), interesting_ops(OPS).
+reduce_grids_area_io(I^O,IArea^OArea,[o(OPS)],I^OO):- IArea<OArea, reduce_grid(O^O,OPS,OO^OO), interesting_ops(OPS).
 /*
-reduce_grids_area_io(I+O,_IArea_OArea,OPS,III+OOO):- 
+reduce_grids_area_io(I^O,_IArea_OArea,OPS,III^OOO):- 
   reduce_grid(I+I,II_Ops,II+II),
-  reduce_grid(O+O,OO_Ops,OO+OO),
-  reduce_grid(II+OO,IO_Ops,III+OOO),
+  reduce_grid(O^O,OO_Ops,OO^OO),
+  reduce_grid(II^OO,IO_Ops,III^OOO),
   (interesting_ops(IO_Ops) ; interesting_ops(OO_Ops) ; interesting_ops(II_Ops)),
   [i(II_Ops),o(OO_Ops),io(IO_Ops)] = OPS,
   !.
-reduce_grids_area_io(I+O,_IArea_OArea,OPS,III+OOO):- 
-  reduce_grid(I+O,IO_Ops,II+OO),
+reduce_grids_area_io(I^O,_IArea_OArea,OPS,III^OOO):- 
+  reduce_grid(I^O,IO_Ops,II^OO),
   reduce_grid(II+II,II_Ops,III+III),
-  reduce_grid(OO+OO,OO_Ops,OOO+OOO),
+  reduce_grid(OO^OO,OO_Ops,OOO^OOO),
   (interesting_ops(IO_Ops) ; interesting_ops(OO_Ops) ; interesting_ops(II_Ops)),
   OPS = [io(IO_Ops)+i(II_Ops)+o(OO_Ops)],
   !.
 */
 
 
-maybe_easy(A,AR,ROPA):- reduce_grid_pass(1,A+A,[A+A],ROPA,AR+AR).
+maybe_easy(A,AR,ROPA):- reduce_grid_pass(1,A^A,[A^A],ROPA,AR^AR).
 maybe_easy(I,II,Code):- maybe_try_something1(I,II,Code),!.
 maybe_easy(I,I,==):- !.
     
@@ -229,7 +287,7 @@ detect_pair_hints(TestID,ExampleNum,In,Out):-
   detect_supergrid_tt_pair(TestID,ExampleNum,In,Out,_TT),  
   % guess_board(TT),
   %print(TT),
-  %ignore(show_reduced_io(In+Out)),
+  %ignore(show_reduced_io(In^Out)),
   grid_hint_swap(i-o,In,Out),
   dash_chars)),!.
 
@@ -242,7 +300,7 @@ detect_supergrid_tt_pair(TestID,ExampleNum,In0,Out0,TT):-
   dmsg(detect_supergrid_tt_pair(TestID,ExampleNum)),
   grid_to_gid(In0,InID),
   print_side_by_side(cyan,In0,?-grid_props(InID,'$VAR'('InProps')),_,Out0,task_out(ExampleNum)),  
-  %forall(show_reduced_io(In0+Out0),true),
+  %forall(show_reduced_io(In0^Out0),true),
   nop((show_recolor(TestID,ExampleNum,In0,Out0,TT)))))),!,
  TT = _{} .
 
@@ -499,7 +557,7 @@ ptv(T):-
  ((numbervars(CT+Goals,10,_,[attvar(bind),singletons(true)]),
   ptv(CT), write('\n/*\n'),ptv(Goals),write('\n*/'))).
 /*ptv(T):- copy_term(FF,FA,GF), GF \==[],
-  numbervars(FA+GF,0,_,[attvar(bind),singletons(true)]),
+  numbervars(FA^GF,0,_,[attvar(bind),singletons(true)]),
   sort(GF,GS),write(' '),
   locally(b_setval(arc_can_portray,nil),
       ptv(FA)),format('~N'),
@@ -610,7 +668,7 @@ grid_hint_swap(IO,In,Out):-
 
 grid_hint_swap_io(IO,In,Out,Hint):-  grid_hint_recolor(IO,In,Out,Hint).
 grid_hint_swap_io(I-O,In,Out,rev(Hint)):- I\==O, 
- nop(show_grid_call(trim_to_rect,In+Out,_)),
+ nop(show_grid_call(trim_to_rect,In^Out,_)),
  grid_hint_recolor(O-I,Out,In,Hint),
  Hint \= mono(comp(_,o-i,value(=@=))).
 

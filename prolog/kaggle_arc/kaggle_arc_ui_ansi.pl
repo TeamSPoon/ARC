@@ -324,11 +324,12 @@ pp_hook_g(G):- \+ plain_var(G), lock_doing(in_pp_hook_g,G,pp_hook_g0(G)).
 pp_hook_g0(S):- term_is_ansi(S), !, write_nbsp, write_keeping_ansi_mb(S).
 pp_hook_g0(_):- \+ let_arc_portray,!,fail.
 pp_hook_g0(_):- in_pp(bfly),!,fail.
-pp_hook_g0(G):- fail, wots(S,in_bfly(f,pp_hook_g1(G))),write(S).
+pp_hook_g0(G):- wots(S,in_bfly(f,pp_hook_g10(G))),write(S).
 
 mass_gt1(O1):- into_obj(O1,O2),mass(O2,M),!,M>1.
 
 % Pretty printing
+pp_hook_g10(G):- \+ plain_var(G), lock_doing(in_pp_hook_g10,G,pp_hook_g1(G)).
 
 as_grid_string(O,SSS):- wots_vs(S,debug_as_grid(O)), sformat(SSS,'{  ~w}',[S]).
 as_pre_string(O,SS):- wots(S,debug_as_grid(O)), strip_vspace(S,SS).
@@ -592,8 +593,20 @@ print_sso(A):- must_det_ll(( format('~N'), into_ss_string(A,SS),!,
 var_or_number(V):- var(V),!.
 var_or_number(V):- integer(V),!.
 
+caret_to_list(Test=(A^B),OUT):- caret_to_list((Test=A)^B,OUT).
+caret_to_list(A^B,[A,B]):-B\=(_^_), !.
+caret_to_list(A^B,[A|BB]):-!,caret_to_list(B,BB).
+caret_to_list(A,[A]).
+
+list_to_caret(A,A):- is_grid(A),!.
+list_to_caret([A],A):-!.
+list_to_caret([A,B],A^B):-!.
+list_to_caret([A|More],A^B):-!,list_to_caret(More,B).
+
 print_ss(VAR):- var(VAR),!,pp(ss_var(VAR)).
 print_ss(g(H,V,Grid)):- nonvar(Grid),!,print_grid(H,V,Grid).
+print_ss(A^B):- caret_to_list(A^B,List),!,print_side_by_side(List).
+print_ss(Title=Value):- !, pp(Title),format(' =~n ',[]),print_ss(Value).
 print_ss(Title):- is_list(Title), \+ is_grid(Title),!,print_side_by_side(Title).
 print_ss(Title):- print_side_by_side([Title]).
 %print_ss(Title):- is_gridoid(Title),print_side_by_side([Title]).
@@ -607,9 +620,13 @@ print_ss(IH,IV,Title,NGrid):- var_or_number(IH),var_or_number(IV),!,print_grid(I
 print_ss(A,B,C,D,E):- print_side_by_side(A,B,C,D,E).
 print_ss(A,B,C,D,E,F):- print_side_by_side(A,B,C,D,E,F).
 
+
 %print_sso(G,W):- is_really_gridoid(G),!,must_det_ll(print_grid(W,G)).
 
 print_side_by_side(Nil):- Nil == [], !.
+
+print_side_by_side(Test=(A^B)):- print_side_by_side((Test=A)^B).
+print_side_by_side(P):- compound(P),A^B=P,!, caret_to_list(A^B,List),!,print_side_by_side(List).
 print_side_by_side(P):- \+ is_list(P), ignore((print_side_by_side([P]))),!.
 %print_side_by_side([A,B,C,D|Rest]):- wots(AB,print_side_by_side(A,B)),wots(AC,print_side_by_side(C,D)),!,print_side_by_side(AB,AC),print_side_by_side(Rest).
 %print_side_by_side([A,B,C|Rest]):- wots(AB,print_side_by_side(A,B)),wots(AC,print_grid(C)),print_side_by_side(AB,AC),!,print_side_by_side(Rest).
@@ -948,6 +965,7 @@ show_pair_diff(IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
 uses_space(C):- code_type(C,print).
 
 :- meta_predicate(into_ss_string(+,-)).
+
 into_ss_string(C, X):- var(C),!, must_det_ll(X=ss(1,["var_into_ss_string"])).
 into_ss_string(C,_):- plain_var(C),!,throw(var_into_ss_string(C)).
 into_ss_string(print_grid(G),SS):- !,into_ss_grid(G,SS).
@@ -973,6 +991,7 @@ into_ss_string(GG, SS):- known_grid(GG,G),G\==GG,!,into_ss_grid(G, SS).
 into_ss_string(AB, SS):- grid_footer(AB,A,B),!,into_ss_concat(print_grid(A),wqs(B),SS).
 
 into_ss_string(A+B,SS):- into_ss_concat(A,B,SS),!.
+into_ss_string(A^B,SS):- into_ss_concat(A,B,SS),!.
 into_ss_string(A-B,SS):- into_ss_concat(A,B,SS),!.
 
 into_ss_string(Str,SS):- string(Str), !,  string_into_ss(Str,SS).

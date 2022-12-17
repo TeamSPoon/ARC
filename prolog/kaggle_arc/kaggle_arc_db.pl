@@ -7,9 +7,6 @@
 :- include(kaggle_arc_header).
 
 %:- dynamic(row_mem/34).
-:- dynamic(oindv/3).
-:- dynamic(oindv/4).
-:- dynamic(oindv/5).
 :- dynamic(cindv/3).
 :- dynamic(cindv/4).
 :- dynamic(cindv/5).
@@ -60,9 +57,9 @@ erase_grid(GID):-
   pfc_retractall(cmem(GID,_,_)), 
   forall(pfc_retract(gid_glyph_oid(GID,_,OID)), erase_obj(OID)).
 erase_obj(OID):-
-   pfc_retractall(oindv(OID,_,_)),
-   pfc_retractall(oindv(OID,_,_,_)),
-   pfc_retractall(oindv(OID,_,_,_,_)).
+   pfc_retractall(cindv(OID,_,_)),
+   pfc_retractall(cindv(OID,_,_,_)),
+   pfc_retractall(cindv(OID,_,_,_,_)).
 
 assert_id_cells(ID,Points):- maplist(assert_id_cell(ID),Points).
 assert_id_cell(ID,-(C,HV)):- assert(cmem(ID,HV,C)).
@@ -527,7 +524,10 @@ cant_reuse(_,_):-!.
 %can_reuse(X,diamonds):- X \== diamonds.
 can_reuse(nsew,X):- X\==nsew.
 
-test_show_grid_objs(TestID):- ensure_test(TestID), every_grid(show_grid_objs,TestID).
+test_show_grid_objs(TestID):- ensure_test(TestID), 
+  show_test_objs(TestID).
+
+show_test_objs(TestID):- every_grid(show_grid_objs,TestID).
 
 show_grid_objs(Grid):- true, 
   ensure_gid(Grid,GID),cache_grid_objs(GID),
@@ -543,7 +543,7 @@ show_grid_objs_list(GID,All,Grids):- dash_chars,print_ss([GID=All|Grids]),dash_c
 
 grid_object_points(Grid,Type,Groups):-
   ensure_gid(Grid,GID),
-  cache_grid_objs_for(Type,GID),
+  \+ \+ cache_grid_objs_for(Type,GID),
   findall(Points,(gid_type_oid(GID,Type,OID),oid_to_points(OID,Points)),Groups).
 
 grid_object_glyph_points(Grid,Type,Groups):-
@@ -604,11 +604,11 @@ grid_obj_count_1(GID,Type,Count):-
    findall(_,Goal,L),length(L,Count), assert(is_grid_obj_count(GID,Type,Count)).
 
 how_count(GID,all,Goal):- Goal = gid_type_oid(GID,_,_).
-how_count(GID,fg,Goal):- Goal = ((gid_type_oid(GID,_,OID),\+ oindv(color,GID,OID,black))).
-how_count(GID,bg,Goal):- Goal = ((gid_type_oid(GID,_,OID), oindv(color,GID,OID,black))).
-how_count(GID,fg(Type),Goal):- ensure_indv_type(Type), Goal = (gid_type_oid(GID,Type,OID),\+ oindv(color,GID,OID,black)).
-how_count(GID,bg(Type),Goal):- ensure_indv_type(Type), Goal = (gid_type_oid(GID,Type,OID), oindv(color,GID,OID,black)).
-%how_count(GID,Color,Goal):- enum_fg_colors(Color), Goal = (oindv(color,GID,_,Color)).
+how_count(GID,fg,Goal):- Goal = ((gid_type_oid(GID,_,OID),\+ cindv(OID,unique_color,element,black))).
+how_count(GID,bg,Goal):- Goal = ((gid_type_oid(GID,_,OID), cindv(OID,unique_color,element,black))).
+how_count(GID,fg(Type),Goal):- ensure_indv_type(Type), Goal = (gid_type_oid(GID,Type,OID),\+ cindv(OID,unique_color,element,black)).
+how_count(GID,bg(Type),Goal):- ensure_indv_type(Type), Goal = (gid_type_oid(GID,Type,OID), cindv(OID,unique_color,element,black)).
+%how_count(GID,Color,Goal):- enum_fg_colors(Color), Goal = (cindv(OID,unique_color,element,Color)).
 %how_count(GID,Type,Goal):- ensure_indv_type(Type), Goal = (gid_type_oid(GID,Type,_)).
 
 %cache_gid_objs(GID):- show_time_gt_duration(0.4, forall(ensure_indv_type(Type),cache_grid_objs_now(Type,GID)), show_grid_objs(GID)).
@@ -684,8 +684,8 @@ assert_omem_point(GID,OID,HV1):-
 new_obj_points(GID,Type,C1,Points,Len):-
   new_omem(GID,Type,OID),
   assert_omem_points(GID,OID,Points),
-  assert(oindv(color,GID,OID,C1)),
-  assert(oindv(size,GID,OID,Len)).
+  assert(cindv(OID,unique_color,element,OID,C1)),
+  assert(cindv(OID,size,Len)).
 
 update_object(OID):- 
    gid_type_oid(GID,Type,OID), 
@@ -694,14 +694,14 @@ update_object(OID):-
 update_object(GID,_Type,OID):-
      \+ \+ omem(_,_,OID),!,     
      findall(_,omem(GID,_,OID),L),length(L,Len),
-     retractall(oindv(size,GID,OID,_)),
-     assert(oindv(size,GID,OID,Len)).
+     retractall(cindv(OID,size,_)),
+     assert(cindv(OID,size,Len)).
 
 update_object(GID,Type,OID):-
   ignore(( 
     \+ omem(GID,_,OID),
     gid_type_oid(GID,Type,OID),
-    retractall(oindv(_,GID,OID,_)),
+    %retractall(cindv(OID,_)),
     retractall(gid_type_oid(GID,Type,OID)),
     retractall(is_grid_obj_count(GID,_,_)),
     retract_object(GID,OID,_))).

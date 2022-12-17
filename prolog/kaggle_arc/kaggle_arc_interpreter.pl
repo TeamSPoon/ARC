@@ -53,7 +53,7 @@ grid_call_alters(T,I,O):- grid_call(T,I,O),I\=@=O.
 try_p2(P2,In,Out):- grid_call(P2,In,Mid),Mid=@=Out.
 
 is_plus_split(IO,I,O):- compound(IO),unplus_split(IO,I,O).
-unplus_split(II+OO,II,OO).
+unplus_split(II^OO,II,OO).
 
 show_grid_call(P2,IO,IIIOOO):- is_plus_split(IO,I,O),!,unplus_split(IIIOOO,III,OOO),
  must_det_ll((grid_to_gid(I,GIDI),grid_to_gid(O,GIDO),
@@ -319,7 +319,7 @@ into_grids(P,G):- no_repeats(G,quietly(cast_to_grid(P,G, _))).
 
 :- decl_pt(into_grid(+(prefer_grid),-grid)).
 into_grid(P,G):- var(P),!,ignore(get_current_test(TestID)),test_grids(TestID,G),grid_to_tid(G,P).
-into_grid(A+B,AA+BB):- nonvar(A), !, cast_to_grid(A,AA, _),cast_to_grid(B,BB, _).
+into_grid(A^B,AA^BB):- trace, nonvar(A), !, cast_to_grid(A,AA, _),cast_to_grid(B,BB, _).
 into_grid(P,G):- cast_to_grid(P,G, _).
 
 map_to_grid(objs,Dict,Obj,Grid,Closure):- get_kov(objs,Dict,Obj), Obj\=[], cast_to_grid(Obj,Grid,Closure),!.

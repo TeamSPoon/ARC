@@ -168,14 +168,14 @@ get_simplified_recall_close(Where+ExampleNum,II,OO):-
    abstracted_recall(Where,ExampleNum,I,O),
    kaggle_arc(Where,ExampleNum,OI,OO),
    Where\==Current,
-   I+O = II+OO,!,
+   I^O = II^OO,!,
    print_ss([simplified_recall(Current->Where)=OI,orig=OO,match=I,for=O]).
 
 :- dynamic(in_abstracted_recall_cache/4).
 test_abstracted_recall(TestID):- 
   ensure_test(TestID), 
   forall(abstracted_recall(TestID,ExampleNum,I,O),
-  (number_gridvars(I+O),%writeq(I),writeq(O),
+  (number_gridvars(I^O),%writeq(I),writeq(O),
   print_single_pair(TestID,ExampleNum,I,O))).
 
 number_gridvars(Grid):-
@@ -194,10 +194,10 @@ abstracted_recall(TestID,ExampleNum,II,OO):-
    grid_copy_size(II,I),
    ignore((nonvar(OO),grid_copy_size(OO,O))),
    kaggle_arc(TestID,ExampleNum,I,O),
-   PairIn = I+O, 
+   PairIn = I^O, 
    get_black(Black),
    once((io_colors(I,O,Colors), length(Colors,CL),length(Vars,CL))),
-   subst_2L([Black|Colors],[bg|Vars],PairIn,PairOut), PairOut = II+OO,
+   subst_2L([Black|Colors],[bg|Vars],PairIn,PairOut), PairOut = II^OO,
    asserta(in_abstracted_recall_cache(TestID,ExampleNum,II,OO)).
 
 

@@ -222,7 +222,8 @@ do_menu_key(Key):- atom(Key), display_length(Key,1), \+ menu_cmd1(_,Key,_,_),
    format('~N~n'), get_pair_mode(Mode), alt_pair_mode(Mode,Alt), !,
      with_pair_mode(Alt,do_menu_key(LowerKey)).
 
-do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), once(Codes=[27|_];Codes=[_]),format("~N % Menu: '~w' ~q ~n",[Key,Codes]),fail.
+
+%do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), once(Codes=[27|_];Codes=[_]),format("~N % Menu: '~w' ~q ~n",[Key,Codes]),fail.
 
 do_menu_key(Key):- maybe_call_code(Key),!.
 do_menu_key(Key):- \+ atom(Key), catch(text_to_string(Key,Str),_,fail),Key\==Str,catch(atom_string(Atom,Str),_,fail),do_menu_key(Atom).
@@ -231,8 +232,16 @@ do_menu_key(Key):- is_valid_testname(Key), !,set_current_test(Key).
 do_menu_key(Key):- io_side_effects, fix_test_name(Key,TestID),set_current_test(TestID),!,print_test.
 do_menu_key(Key):- atom_concat(' ',Atom,Key),!,do_menu_key(Atom).
 do_menu_key(Key):- atom_concat(Atom,' ',Key),!,do_menu_key(Atom).
-do_menu_key(Key):- atom(Key),atom_codes(Key,Codes),(Codes=[27|_];Codes=[_]),format("~N % Menu did understand '~w' ~q ~n",[Key,Codes]),once(mmake).
-do_menu_key(_).
+do_menu_key(Key):- atom(Key),atom_codes(Key,Codes),!,debuffer_atom_codes(Key,Codes),!.
+
+debuffer_atom_codes(_Key,[27|Codes]):- append(Left,[27|More],Codes),
+  atom_codes(Key1,[27|Left]),atom_codes(Key2,[27|More]),!,
+  (do_menu_key(Key1)->true;do_menu_key(Key2)).
+debuffer_atom_codes(_Key,[C|Codes]):- C\==27,
+  atom_codes(Key1,[C]),atom_codes(Key2,[Codes]),
+  (do_menu_key(Key1)->true;do_menu_key(Key2)).
+debuffer_atom_codes(Key,Codes):- format("~N % Menu did understand '~w' ~q ~n",[Key,Codes]).
+
 
 maybe_call_code(Key):- \+ atom(Key), !, 
  notrace(catch(text_to_string(Key,Str),_,fail)),Key\==Str,catch(atom_string(Atom,Str),_,fail),maybe_call_code(Atom).
@@ -684,8 +693,9 @@ clauses_predicate_cmpd_goal(M:F/N,Into):-
    clauses_predicate(M:F/N,P1),clause(M:P1,Body),first_cmpd_goal(Body,Goal),
    compound(Goal),functor(Goal,Into,_),arg(1,P1,Var1),arg(1,Goal,Var2),Var1==Var2.
 
+:- thread_local(t_l:prevent_test_suite_name_by_call/0).
 
-
+test_suite_name_by_call(_):- t_l:prevent_test_suite_name_by_call,!,fail.
 test_suite_name_by_call(F):- clauses_predicate_cmpd_goal(F/1,every_pair).
 test_suite_name_by_call(F):- clauses_predicate_cmpd_goal(F/1,every_grid).
 test_suite_name_by_call(no_pair(P1)):-every_pair(P1). 
@@ -760,6 +770,9 @@ every_pair(TestID,ExampleNum,P2):-
 %into_numbers(N,List):- findall(Num,(sub_term(Num,N),number(Num)),List),List\==[].
 %num_op(OP,V1,V2):- number(V1),number(V2),!,call(OP,V1,V2).
 %num_op(OP,V1,V2):- into_numbers(V1,Ns1),into_numbers(V2,Ns2),maplist(num_op(OP),Ns1,Ns2).
+
+
+
 
 
 
@@ -1237,9 +1250,9 @@ print_single_pair(TestID,ExampleNum,In,Out):-
    format('~N'),
    %ignore((grid_hint_swap(i-o,In,Out))),
    format('~N'),
-   ignore(show_reduced_io_rarely(In1+Out1)),!.
+   ignore(show_reduced_io_rarely(In1^Out1)),!.
 
-other_grid_mode(I+O,II+OO):- with_next_grid_mode((as_d_grid(I,II),as_d_grid(O,OO))).
+other_grid_mode(I^O,II^OO):- with_next_grid_mode((as_d_grid(I,II),as_d_grid(O,OO))).
 
 in_out_name(trn+NN,SI,SO):- N is NN+1, format(atom(SI),'Training Pair #~w Input',[N]),format(atom(SO),'Output',[]).
 in_out_name(tst+NN,SI,SO):- N is NN+1, format(atom(SI),'EVALUATION TEST #~w',[N]),format(atom(SO),'Output<(REVEALED)>',[]).
@@ -1285,7 +1298,7 @@ print_testinfo(TestID):- ensure_test(TestID), forall(test_info_recache(TestID,F)
 
 test_info_no_loop(TestID,Sol):- var(TestID),!,all_arc_test_name_unordered(TestID),test_info_no_loop(TestID,Sol).
 test_info_no_loop(TestID,Sol):- muarc_tmp:test_info_cache(TestID,Sol),!. % test_info
-test_info_no_loop(TestID,Sol):- some_test_info(TestID,Sol).
+test_info_no_loop(TestID,Sol):- most_test_info(TestID,Sol).
 
 ensure_test_info:- muarc_tmp:test_info_cache(_,_)-> true ; ( pp(recreating(test_info)),
   forall_count(all_arc_test_name_unordered(TestID),test_info_recache(TestID,_))).
@@ -1306,8 +1319,14 @@ test_info_recache(TestID,InfoSS):-  %once((fix_test_name(CTestID,CFTestID,_),CFT
   forall(retract(muarc_tmp:test_info_cache(TestID,_)),true),
   asserta(muarc_tmp:test_info_cache(TestID,InfoS)),!,InfoS=InfoSS.
 
+most_test_info(TestID,III):- locally(t_l:prevent_test_suite_name_by_call,all_test_info(TestID,III)).
+
+all_test_info(TestID,III):-  locally(t_l:prevent_test_suite_name_by_call,some_test_info(TestID,III)).
+
 some_test_info(TestID,III):- some_test_info_1(TestID,Inf0),repair_info(Inf0,III).
 some_test_info(TestID,III):- muarc_tmp:test_info_cache(TestID,Inf0),repair_info(Inf0,III).
+some_test_info(TestID,SuiteX):- nonvar(SuiteX),
+  locally(t_l:prevent_test_suite_name_by_call,(some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID))).
 
 %some_test_info_1(TestID,Sol):- nonvar(TestID),test_info_recache(TestID,Sol),!.
 some_test_info_1(TestID,III):- more_test_info(TestID,III).
@@ -1315,9 +1334,6 @@ some_test_info_1(TestID,III):- more_test_info(TestID,III).
 some_test_info_1(TestID,III):- fav(TestID,III).
 some_test_info_1(TestID,III):- fav_less(TestID,III).
 some_test_info_1(TestID,III):- some_test_info_prop(TestID,III).
-
-all_test_info(TestID,III):- some_test_info(TestID,III).
-all_test_info(TestID,SuiteX):- nonvar(SuiteX),some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
 
 
 repair_info(Inf,InfO):- listify(Inf,Inf1),maplist(repair_info0,Inf1,InfO).

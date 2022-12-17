@@ -139,7 +139,7 @@ debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
   if_t((H\==1;V\==1;true),
     must_det_ll((
      loc2D(Grid,OH,_OV),     
-     nop((rotOffset(Grid,SX,SY),max_min(H,SX,IH,_),max_min(V,SY,IV,_))),
+     nop((rotOffset2D(Grid,SX,SY),max_min(H,SX,IH,_),max_min(V,SY,IV,_))),
      ignore(IV=V),ignore(IH=H),
      %printable_grid(H,V,Grid,GridO,NGrid),
      %wots(GS,print_grid(IH,IV,Title,PrintGridC)),replace_in_string(['®'=Glyph,'@'=Glyph],GS,GSS),
@@ -285,20 +285,24 @@ o2ansi(G,S):- \+ is_object(G),!,colorize_oterms(G,S).
 o2ansi(Obj,S):- object_color_glyph_short(Obj,S),!.
 o2ansi(Obj,S):- object_color_glyph_old(Obj,S),!.
 
+colorize_oterms(G,GG):- c_ot(c_o,G,GG),!.
+colorize_oterms(P2,G,GG):- c_ot(P2,G,GG),!.
+c_o(O,A):- is_object(O),O=obj(_),object_color_glyph_short(O,A),!.
 
-colorize_oterms(O,A):- var(O),!,A=O.
-colorize_oterms(O,A):- term_contains_ansi(O),!,A=O.
-colorize_oterms(O,A):- number(O),!,wots(A,bold_print(write(O))).
-colorize_oterms(-O,-A):- !, colorize_oterms(O,A).
-colorize_oterms(+O,+A):- !, colorize_oterms(O,A).
-colorize_oterms(O,A):- is_list(O),!,maplist(colorize_oterms,O,A).
-colorize_oterms(O,A):- is_object(O),O=obj(_),object_color_glyph_short(O,A),!.
-colorize_oterms(O,A):- compound(O),compound_name_arguments(O,F,Args),!,maplist(colorize_oterms,Args,AArgs),compound_name_arguments(A,F,AArgs).
-colorize_oterms(O,A):- \+ atom(O),!,A=O.
-colorize_oterms(O,A):- is_color(O),!,wots(A,color_print(O,O)).
-colorize_oterms(O,A):- member(O,[n,s,e,w,c,ne,se,sw,nw]),!,wots(A,bold_print(write(O))).
-colorize_oterms(O,A):- o2ansi(O,A),!.
-colorize_oterms(O,O).
+c_ot(_P2,O,A):- var(O),!,A=O.
+%c_ot(P2,O,A):- term_contains_ansi(O),!,A=O.
+c_ot(_P2,O,A):- term_is_ansi(O),!,A=O.
+c_ot(P2,O,A):- call(P2,O,A),!.
+c_ot(_P2,O,A):- number(O),!,wots(A,bold_print(write(O))).
+c_ot(P2,-O,-A):- !, c_ot(P2,O,A).
+c_ot(P2,+O,+A):- !, c_ot(P2,O,A).
+c_ot(P2,O,A):- is_list(O),!,maplist(colorize_oterms(P2),O,A).
+c_ot(P2,O,A):- compound(O),compound_name_arguments(O,F,Args),!,maplist(colorize_oterms(P2),Args,AArgs),compound_name_arguments(A,F,AArgs).
+c_ot(_P2,O,A):- \+ atom(O),!,A=O.
+c_ot(_P2,O,A):- is_color(O),!,wots(A,color_print(O,O)).
+c_ot(_P2,O,A):- member(O,[n,s,e,w,c,ne,se,sw,nw]),!,wots(A,bold_print(write(O))).
+c_ot(_P2,O,A):- o2ansi(O,A),!.
+c_ot(_P2,O,O).
 
 prefered(repaired).
 prefered(full_grid).
@@ -497,8 +501,8 @@ too_verbose(rotated_grid).
 %too_verbose(wide). too_verbose(tall).
 too_verbose(locX).
 too_verbose(locY).
-too_verbose(cenX).
-too_verbose(cenY).
+too_verbose(cenXG).
+too_verbose(cenYG).
 
 debug_indiv(_,_,X,_):- too_verbose(X),!.
 debug_indiv(Obj,_,F,[A]):- is_cpoints_list(A),!,

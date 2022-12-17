@@ -7,7 +7,7 @@
 :- include(kaggle_arc_header).
 
 showdiff(A,B):- is_group(A), is_group(B), showdiff_groups(A,B),!.
-showdiff(A,B):- is_object(A), is_object(B), showdiff_objects(A,B),!.
+showdiff(A,B):- is_object(A), is_object(B), dmsg((showdiff_objects(A,B))),!.
 showdiff(A,B):- must(diff_terms(A,B,D)) -> D\==[],!,writeln('SOME DIFFERNCE'),pp(D).
 showdiff(_,_):- writeln('NO DIFFERNCE').
 
@@ -223,7 +223,6 @@ find_obj_mappings2([A,PA|PAP],BBR,pair4(A,PA,B,PB)):-
    % Best = pair(PA,PB,_),
    member(Why,RPairs).
 
-
 showdiff_groups(AG,BG):- \+ is_group(AG),into_group(AG,AGL),!,showdiff_groups(AGL,BG).
 showdiff_groups(AG,BG):- \+ is_group(BG),into_group(BG,BGL),!,showdiff_groups(AG,BGL).
 showdiff_groups(AG,BG):- not_list(AG),into_list(AG,AGL),!,showdiff_groups(AGL,BG).
@@ -361,7 +360,7 @@ showdiff_groups_new(AG,BG):-
 show_mappings(TITLE,AG,BG,BGG,APA):-
  ignore(( 
     dash_chars(100),nl,nl,nl,
-     member(E,APA),E=obj(_),!, \+ has_prop(cc(fg,0),E),
+     member(E,APA),E=obj(_),!, \+ is_bg_object(E),
 
   APA = [A,PA|_Atoms],
   find_obj_mappings2(APA,BGG,Pair),  
@@ -431,13 +430,13 @@ show_pair_now(TITLE,OO1,OO2):-
     (dash_chars,debug_indiv_obj(O1), format('~N~n'),dash_chars, debug_indiv_obj(O2))),  
 
   if_t(nb_current(menu_key,'o'),
-  (collapsible_section(info,compare_objs1(TITLE),false,
+    nop((collapsible_section(info,compare_objs1(TITLE),false,
      (findall(E,compare_objs1(E,O1,O2),L), pp(compare_objs1(showdiff_objects)=L),
       indv_props(O1,S1),indv_props(O2,S2),
       %pp(s1=S1),pp(s2=S2),
       intersection(S1,S2,Sames,SS1,SS2),
       proportional(SS1,SS2,lst(vals(_),len(_),PDiffs)),
-      show_sames_diffs_now(Sames,PDiffs))))))),
+      show_sames_diffs_now(Sames,PDiffs)))))))),
   dash_chars, dash_chars.
 
 
@@ -528,10 +527,10 @@ not_giz(_):-!,fail.
 prop_type(loc2D,loc2D(_,_)).
 prop_type(loc2D,center2G(_,_)).
 prop_type(loc2D,iz(locX(_))).
-prop_type(loc2D,iz(cenX(_))).
+prop_type(loc2D,iz(cenXG(_))).
 prop_type(loc2D,iz(locY(_))).
-prop_type(loc2D,iz(cenY(_))).
-prop_type(scale,rotOffset(_,_)).
+prop_type(loc2D,iz(cenYG(_))).
+prop_type(scale,rotOffset2D(_,_)).
 prop_type(scale,vis2D(_,_)).
 prop_type(scale,iz(sizeX(_))).
 prop_type(scale,iz(sizeY(_))).
@@ -1066,6 +1065,7 @@ list_diff_recurse(I,O,[diff(I->O)]):- !.
 list_diff_recurse([CI|II],[CO|OO],D1D):- must_det_ll(diff2_terms(CI,CO,D1)),!,
        list_diff_recurse(II,OO,D),!, combine_diffs(D1,D,D1D),!.
 
+%object_props_diff(I,O,diff(_,_)):- trace,!.
 object_props_diff(I,O,D):- simplify_objs_l(I,II),!,simplify_objs_l(O,OO),!, list_diff_recurse(II,OO,D).
 
 %kv_list_diff(Style,I,O,D1D):- select_two_0(I,O,CI,CO,II,OO),!,kv_list_diff(Style,II,OO,D1D).

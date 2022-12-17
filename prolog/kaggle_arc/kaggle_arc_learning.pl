@@ -31,6 +31,7 @@ is_clause_ref(Ref):-  atomic(Ref), blob(Ref,_), \+ atom(Ref), clause_name(Ref,_)
 print_rule(M,Ref):-is_clause_ref(Ref),!,
   clause(H,B,Ref), print_rule(M,(H:-B)).
 
+
 print_rule(M,(X:-True)):- True == true,!, print_rule(M,X).
 print_rule(M,(learnt_rule(TestID,A,B,C,D):-Body)):- fail, !,
    \+ \+ (( ignore((Body=was_once(InSet,InVars),maplist(upcase_atom_var,InSet,InVars))),   
@@ -44,8 +45,21 @@ print_rule(M,(X:-Body)):- !,
     orpt(M=[X]))).
 print_rule(M,O):- \+ \+ (( orpt(M=[O]))).
 
-orpt(G):- \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N'), 
+
+
+p_g_s(G,O):- term_is_ansi(G),G=O.
+p_g_s(I,O):- number(I), !, wots(O,write(I)).
+p_g_s(I,O):- is_grid(I), I=O,!.
+%p_g_s(I,O):- is_grid(I), wots(O,print_grid(I)). %orpt2(P):- write_term(P,[blobs(portray),quoted(true),quote_non_ascii(false), portray_goal(s_p_g),portray(true)]),!. %orpt(G):- orpt2(G),!.
+s_p_g(I,_):- is_grid(I), print_grid(I),!.
+s_p_g(G,_):- term_contains_ansi(G),!,write(G),!.
+s_p_g(G,_):- term_is_ansi(G),!,write(G),!. 
+%s_p_g(G,_):- print_term(G,[write_options([ numbervars(true),quoted(true),portray(true)])]),!. %s_p_g(I,_):- flag(orpt2,X,X),X<2,setup_call_cleanup(flag(orpt2,X,X+1),orpt2(I),flag(orpt2,_,X)),!.
+%orpt1(G):- write(G),!.
+
+orpt(G):- !, \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N'), 
   pp_safe(orange,(call(print(G)))))).
+%orpt(P):- colorize_oterms(p_g_s,P,G), format('~N',[]), print_term(G,[write_options([ numbervars(true),quoted(false),portray(true),portray_goal(user:s_p_g)])]),!.
 
 save_learnt_rule(TestID,In,InKey,RuleDir,Out):-
   if_learn_ok(save_learnt_rule(learnt_rule(TestID,In,InKey,RuleDir,Out))).
@@ -68,8 +82,9 @@ learn_about_group(In):-
     maplist(learn_group(What),Groups))).
 
 not_for_matching(_Why,_,Var):- var(Var),!,fail.
+not_for_matching(_Why,_,C):- not_used(C),!.
 not_for_matching(_Why,_,C):- for_matching(C),!,fail.
-not_for_matching(_Why,_,_):-!.
+%not_for_matching(_Why,_,_):-!.
 
 /*
 not_for_matching(_Why,_,C):- notrace((sub_term(E,C), compound(E))), E= '$VAR'(_),!,fail.
@@ -98,12 +113,13 @@ not_for_matching(_Why,L,globalpoints(XX)):- !, started_is_list(XX), (member(colo
 
 propagate(rot2L(_Rot90)).
 propagate(vis2D(_H1,_V3)).
+propagate(center2G(_,_)).
 propagate(loc2D(_X2D,_Y1D)).
 %propagate(pen([cc(_SILVER,_N3)|_More])).
 propagate(pen(_)).
 propagate(norm_grid(_NormalGrid)).
 propagate(norm_ops(_UnrotateList)).
-propagate(rotOffset(_O3,_O1)).
+propagate(rotOffset2D(_O3,_O1)).
 propagate(iz(sid(_Sid_13))).
 propagate(loc2G(_X2G,_Y1G)).
 
@@ -122,13 +138,14 @@ not_used(Var):- var(Var),!,fail.
 not_used(/*b*/iz(indiv(_))).
 not_used(X):- sub_term(E,X),atom(E),is_nc_point(E),!.
 not_used(X):- sub_term(E,X),compound(E),ground(E),E=info(_).
+not_used(o(_,_,_)).
 
 not_used(iz(X)):- not_used(X).
 
 must_use(Var):- var(Var),!,fail.
 must_use(/*b*/iz(indiv(i_diag))).
 %must_use(/*b*/iz(Atom)):- !, atom(Atom).
-must_use(colorless_points(Atom)):- !, atom(Atom).
+must_use(shape(Atom)):- !, atom(Atom).
 must_use(iz(X)):- must_use(X).
 
 for_creating(I):- ( \+ callable(I); I='$VAR'(_)), !.
@@ -139,23 +156,26 @@ for_creating1(NoUse):- must_use(NoUse),!.
 for_creating1(NoUse):- not_used(NoUse),!,fail.
 %for_creating1(colorless_points). for_creating1(mass). 
 %for_creating1(info). 
-for_creating1(grid_props). 
-for_creating1(rot2L). for_creating1(rotOffset).
-for_creating1(vis2D). for_creating1(loc2D). 
-for_creating1(vis2G). for_creating1(loc2G). 
-for_creating1(pen). for_creating1(sid).
-for_creating1(norm_grid). for_creating1(norm_ops).
-for_creating1(P):- compound(P),functor(P,What,_),for_creating1(What).
+for_creating1(grid_props). for_creating1(cc).
+for_creating1(pen).  for_creating1(sid).
+for_creating1(norm_grid).  for_creating1(norm_ops).
+for_creating1(P):- \+ compound(P),!,fail.
+for_creating1(P):- functor(P,2,_),!.
+for_creating1(P):- functor(P,What,_),for_creating1(What).
 
 
 for_matching(I):- ( \+ callable(I); I='$VAR'(_)), !.
 for_matching(X):- for_creating(X),!.
 for_matching(iz(X)):- !, (atom(X);for_matching1(X)),!.
 
-for_matching(o(_,_,F)):-for_matching(F),!.
+
+/*
 for_matching(o(_,_,rankA(_))).
 for_matching(o(_,_,rank1(_))).
 for_matching(o(_,_,rank2(_))).
+for_matching(o(_,_,F)):-for_matching(F),!.
+
+*/
 %for_matching(o(_,nthOf(_),rank1(_))):-!,fail.
 %for_matching(o(_,nthOf(_),rank1(_))):-!,fail.
 %for_matching(o(_,nthOf(_),rank2(_))):-!,fail. 
@@ -166,13 +186,17 @@ for_matching1(NoUse):- not_used(NoUse),!,fail.
 for_matching1(mass).
 for_matching1(cc). for_matching1(symmetry_type). 
 %for_matching1(/*b*/iz). 
-for_matching1(P):- compound(P),functor(P,What,_),for_matching1(What).
+
+for_matching1(P):- \+ compound(P),!,fail.
+for_matching1(P):- functor(P,2,_),!.
+for_matching1(P):- functor(P,What,_),for_matching1(What).
+
 
 
 % when you have I you wont need II for creating
 not_for_creating(_I,II):-for_creating(II),!,fail.
 %not_for_creating(I,II):-not_for_matching(create,I,II),!.
-not_for_creating( _,_).
+%not_for_creating( _,_).
 
 simplify_for_creating(I,I):- ( \+ compound(I); I='$VAR'(_)), !.
 simplify_for_creating(I,O):- is_grid(I),!,O=I.
@@ -451,19 +475,86 @@ learn_rule_in_out_objects(How,I,O):-
   %assert_visually(learn_rule_in_out_full_objects(How,I,O)),
   make_rule_l2r([],IP,OP,II,OO,Mid),
   make_rule_l2r_0(Mid,II,OO,III,OOO,NewShared),
-  sort(NewShared,NewSharedS),
-  save_learnt_rule(test_solved(How,obj(III),obj(OOO),NewSharedS),I+O,I+O),!.
+  arrange_shared(NewShared,NewSharedS),
+  save_learnt_rule(test_solved(How,obj(III),obj(OOO),NewSharedS),I^O,I^O),!.
 
-is_original_value(Var):- nonvar(Var),  Var \= '$VAR'(_).
+arrange_shared(Var,Var):-var(Var),!.
+arrange_shared(List,O):- is_list(List),!,maplist(arrange_shared,List,O).
+arrange_shared(level(_,O),O):- !, arrange_shared(O,O).
+arrange_shared(level(_,F,O),F=O):- !, arrange_shared(O,O).
+arrange_shared(O,O).
+
+is_original_value(Var):- nonvar(Var), Var \= '$VAR'(_).
+is_all_original_value(Var):- nonvar(Var),  \+  (sub_term(E,Var), nonvar(E), E = '$VAR'(_)). 
+
+:- discontiguous(make_rule_l2r/6).
+
+
+skip_in_rules(Why,I):- not_for_matching(Why,_,I),not_for_creating(_,I).
+skip_in_rules(_Why,localpoints(_)).
+skip_in_rules(_Why,globalpoints(_)).
+skip_in_rules(_Why,colorless_points(_)).
+
+
+% Cleanup LHS
+make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- 
+   select(I,II,III), skip_in_rules(lhs,I),!, make_rule_l2r(Shared,III,OO,IIII,OOOO,NewShared).
+
+% Cleanup RHS
+make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- 
+   select(O,OO,OOO), skip_in_rules(rhs,O),!, make_rule_l2r(Shared,II,OOO,IIII,OOOO,NewShared).
+
+make_rule_l2r(Shared,I,O,IIII,OOOO,NewShared):- 
+  simplify_l2r(I,C1,VC1,I_I,O,C2,VC2,O_O,Info),
+  is_all_original_value(C1),is_all_original_value(C2),!,
+  subst(I_I,C1,VC1,II),upcase_atom_var(C1,VC1),
+  subst(O_O,C2,VC2,OO),upcase_atom_var(C2,VC2),
+  make_rule_l2r([Info|Shared],II,OO,IIII,OOOO,NewShared).
+
+remove_empty_colors(O,O_O):- my_exclude(=(cc(_,0)),O,O_O).
+
+:- discontiguous(simplify_l2r/9).
 
 % single color changed
-make_rule_l2r(Shared,I,O,IIII,OOOO,[level(1,lhs,VC1=C1),level(1,rhs,VC2=C2)|NewShared]):- 
-  member(pen([cc(C1,_)]),I),member(pen([cc(C2,_)]),O),
-  C1\=@=C2,   
-  is_original_value(C1),is_original_value(C2),!,    
-      subst(I,C1,VC1,II),upcase_atom_var(C1,VC1),
-      subst(O,C2,VC2,OO),upcase_atom_var(C2,VC2),
-      make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared).
+simplify_l2r(I,C1,VC1,I_I,O,C2,VC2,O_O,Info):-
+  member(pen([cc(C1,_)]),I),member(pen([cc(C2,_)]),O),C1\=@=C2,
+  Info = [level(1,lhs,VC1=C1),level(1,rhs,VC2=C2)],
+  remove_empty_colors(I,I_I),
+  remove_empty_colors(O,O_O),!.
+
+% single color transfer
+simplify_l2r(I,C1,VC1,I_I,O,C2,VC1,O_O,Info):-
+  member(pen([cc(C1,_)]),I),member(pen([cc(C2,_)]),O),C1=@=C2,
+  Info = [level(0,lhs,VC1=C1)],
+  remove_empty_colors(I,I_I),
+  remove_empty_colors(O,O_O),!.
+
+transfer_prop(location,loc2D(_,_)).
+transfer_prop(location,loc2G(_,_)).
+transfer_prop(location,center2G(_,_)).
+
+make_rule_l2r(Shared,II,OO,III,OOO,[level(3,6,7,removed(Type,RemoveL,RemoveR))|SharedMid]):- 
+  member(I,II),ground(I),member(O,OO),O=@=I,transfer_prop(Type,I),!,
+  make_unifier(O,UU),
+  %Info = [level(0,lhs,if(C1=VC1))],
+  my_partition(transfer_prop(Type),II,RemoveL,I_I_I),
+  my_partition(transfer_prop(Type),OO,RemoveR,O_O_O),
+  make_rule_l2r(Shared,[UU|I_I_I],[UU|O_O_O],III,OOO,SharedMid).
+
+make_unifier(C1,_):- \+ compound(C1),fail.
+make_unifier(iz(C1),iz(C2)):- !, make_unifier(C1,C2).
+make_unifier(C1,C2):- functor(C1,F,A),functor(C2,F,A).
+
+% simple purportionals
+simplify_l2r(I,C1,VC1,I_I,O,C2,VC2,O_O,Info):- fail,
+  member(C1,I), make_unifier(C1,VC1),
+  copy_term(VC1,VC2),copy_term(VC2,C2),member(C2,O),  
+  proportional(C1,C2,Purp),
+  Info = [proportional(VC1,VC2,C1,C2,Purp)],
+  I=I_I,O=O_O,!.
+
+make_rule_l2r(Shared,II,OO,III,OOO,[level(3,thru(O))|SharedMid]):- fail,
+  select(I,II,I_I),select(O,OO,O_O),O=@=I,!,make_rule_l2r(Shared,I_I,O_O,III,OOO,SharedMid).
 
 % unlikely useful Ordinals
 make_rule_l2r(Shared,I,O,IIII,OOOO,[unused(ordinals,o(sf(Size1),Ord1,Val),o(sf(Size2),Ord2,Val))|NewShared]):- fail,
@@ -473,9 +564,9 @@ make_rule_l2r(Shared,I,O,IIII,OOOO,[unused(ordinals,o(sf(Size1),Ord1,Val),o(sf(S
   make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared).
 
 make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- 
-   select(I,II,III), not_for_matching(lhs,_,I), !, make_rule_l2r(Shared,III,OO,IIII,OOOO,NewShared).
+   select(O,OO,OOO), not_for_creating(rhs,O), !, make_rule_l2r(Shared,II,OOO,IIII,OOOO,NewShared).
 make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- 
-   select(O,OO,OOO), not_for_matching(rhs,_,O), !, make_rule_l2r(Shared,II,OOO,IIII,OOOO,NewShared).
+   select(I,II,III), not_for_matching(lhs,_,I), !, make_rule_l2r(Shared,III,OO,IIII,OOOO,NewShared).
 
 
 % Fallback 1
@@ -514,7 +605,7 @@ make_rule_l2r_1(Shared,II,OO,III,OOO,[when_missing(EVar,E)|SharedMid]):- fail,
 make_rule_l2r_1(Shared,II,OO,II,OO,Shared).
 
 make_rule_l2r_2(Shared,II,OO,III,OOO,[thru(O)|SharedMid]):- 
-  select(I,II,MI),select(O,OO,MO),O=@=I,!,make_rule_l2r_2(Shared,MI,MO,III,OOO,SharedMid).
+  select(I,II,I_I),select(O,OO,O_O),O=@=I,!,make_rule_l2r_2(Shared,I_I,O_O,III,OOO,SharedMid).
 make_rule_l2r_2(Shared,II,OO,II,OO,Shared).
 
 /*
@@ -527,7 +618,7 @@ test_solved=[ test_solved( t('0d3d703e'),
                        norm_grid([[PURPLE,PURPLE,PURPLE]])
                        | SHARED ])),
 
-                 SHARED= [rot2L(A), vis2D(B,MASS),loc2D(D,E),norm_ops(F), rotOffset(G,H),iz(sid(I)),
+                 SHARED= [rot2L(A), vis2D(B,MASS),loc2D(D,E),norm_ops(F), rotOffset2D(G,H),iz(sid(I)),
                           loc2G(J/K,L/M)],
                  CONSTRAINED =
                          [cc(fg,MASS), cc(bg,0),cc(is_colorish_var,0),cc(plain_var,0), cc(RED,MASS),

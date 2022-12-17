@@ -55,16 +55,50 @@ whole_row_or_col(C,Center):- Center\==[], Center\==[[]], rot90(Center,Cols),memb
 not_whole_row_or_col(C,Center):- \+ whole_row_or_col(C,Center).
 
 
+   
 
+:- nodebug(indv(pbox)).
 %=====================================================================
 is_fti_step(pbox_vm).
 %=====================================================================
 pbox_vm(VM):- !,
    %GH is round(VM.h*2/3), GV is round(VM.v*2/3),
-   GH is round(VM.h + 0), GV is round(VM.v + 0),
-   findall(size2D(H,V),(l_s_4sides(H,V),H=<GH),Sizes_L_S),
-   findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L),
-   GridI0=VM.grid_o,
+  GH is round(VM.h + 0), GV is round(VM.v + 0),
+  %findall(size2D(H,V),(l_s_4sides(H,V),H=<GH),Sizes_L_S),
+  findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L),
+  GridI0=VM.grid_o,
+  pbox_vm(GH,GV,GridI0,Sizes_S_L,VM).
+
+  
+%=====================================================================
+is_fti_step(pbox_vm_special_sizes).
+%=====================================================================
+pbox_vm_special_sizes(VM):- !, 
+  GH is round(VM.h + 0), GV is round(VM.v + 0),
+  findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L),
+  length(Sizes_S_L,A),
+  GridI0=VM.grid_o,
+  Objs = VM.objs,
+  pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM).
+
+pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM):- 
+  (Objs==[];A<40),!,pbox_vm(GH,GV,GridI0,Sizes_S_L,VM).
+pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM):- 
+  maplist(obj_size2D,Objs,HVList),
+  include(near_size(HVList),Sizes_S_L,UseSizes),
+  length(UseSizes,B), wdmsg(reduced(A->B)),
+  pbox_vm(GH,GV,GridI0,UseSizes,VM).
+
+obj_size2D(Obj,size2D(H,V)):- vis2D(Obj,H,V).
+
+near_size(List,size2D(H,V)):- (near_size(List,H,V);near_size(List,V,H)),!.
+near_size(List,H,V):- within1of(H,HH),within1of(V,VV), member(size2D(HH,VV),List).
+within1of(H,HH):- freeze(HH, ( D is abs(H-HH), D =< 1 )).
+
+list_upto(Size,List,Some):- length(List,L),(L=<Size ->Some=List ; (length(Some,Size),append(Some,_,List))).
+
+pbox_vm(GH,GV,GridI0,Sizes_S_L,VM):-   
+   \+ \+ (length(Sizes_S_L,A),wdmsg(use_sizes(A)),list_upto(20,Sizes_S_L,Some),print(Some)),
    get_black(Black),
    subst_2L([wbg,bg],[Black,Black],GridI0,GridI),
    mapgrid(assign_plain_var_with(Black),GridI,GridM),
@@ -268,7 +302,7 @@ make_search_box_fresh_w_borders(H,V,Center,Inside,CACHE,Find,IBorder,OBorder):-
 make_search_box_fresh(1,1,Center,Inside,Find):- 
   Center=[], [[_]]=Inside, make_squarish(no_rule,Inside,  Find).
 make_search_box_fresh(H,V,Center,Inside,Find):- 
-  (H<3;V<3),!,make_grid(H,V,Inside), 
+  (H=<2;V=<2),!,make_grid(H,V,Inside), 
   Center=[],
   make_squarish(no_rule,Inside, Find).
 make_search_box_fresh(H,V,Center,Inside,Find):-
@@ -328,7 +362,7 @@ i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,[]):- !, debug_m(ind
 %i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- L_S \= s_l(p1), L_S \= l_s(p1), experiment(L_S \= l_s(p2)), !, debug_m(indv(pbox),complete(L_S)).
 i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):- 
   Size2D = size2D(H,V),
-  (H>2,V>2),
+  (H>1,V>1),
   Rec = writeq(rec(IsRim,OH,OV,HH,VV)),
  once((
   
@@ -439,7 +473,7 @@ is_all_same(C,List):- maplist(=(C),List).
 :- discontiguous found_box/19. 
 
 found_box(Grid,L_S,NSEW,FH,FV,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS,   inside, twoOrThreeMakeSquare(CCs)):- 
-  (H>2,V>2),  
+  (H>1,V>1),  
   %H=V,H=3,  
   %NSEW=[B,B,B,B],ignore(B = Black),
   %\+ intersection(IBorderS,OBorderS),
@@ -469,7 +503,7 @@ found_box(Grid,L_S,NSEW,FH,FV,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,F
 found_box(Grid,L_S,NSEW,FH,FV,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS,   inside, 
                                                                                 solidOBorder(C,flag(always_keep))):- 
   %once(L_S=l_s(p2);L_S=l_s(p2)),
-  (H>2,V>2), NSEW=[A,B,L,D], A=B,L=D,A=L, flatten_set_bf(CACHE.oBorder,OBorderAll),OBorderAll=[C], 
+  (H>1,V>1), NSEW=[A,B,L,D], A=B,L=D,A=L, flatten_set_bf(CACHE.oBorder,OBorderAll),OBorderAll=[C], 
   %maplist_ls(=(C),OBorderS),
   is_real_color_or_wfg(C), 
    maplist(not_all_same(C),IBorderS), 
@@ -478,14 +512,14 @@ found_box(Grid,L_S,NSEW,FH,FV,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,F
 
 found_box(Grid,L_S,NSEW,FH,FV,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS,   iborder,
                                                                                  black_frame(B)):- 
-  (H>2,V>2), 
+  (H>2,V>2),
   NSEW=[B,B,B,B],B = black,
   maplist_ls(==(B),IBorderS),
   \+ whole_row_or_col(B,Center),!.
 
 found_box(Grid,L_S,NSEW,FH,FV,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS,   inside, 
                                                                                    oBorder_black(B,C)):- fail,
-  (H>2,V>2), 
+  (H>1,V>1), 
   NSEW=[B,B,B,B],B = black,
   maplist_ls(=(C),CACHE.oBorder),C==black,
   maplist(not_all_same(C),CACHE.iBorder),
@@ -494,7 +528,7 @@ found_box(Grid,L_S,NSEW,FH,FV,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,F
 
 found_box(Grid,L_S,NSEW,FH,FV,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS,  inside /*iborder*/, 
                                                                 dashedIBorder(PatternProp,C,CSi,IBorderS)):- %fail,
-  (H>2,V>2), at_least_two_colors(IBorderS,Colors), 
+  (H>1,V>1), at_least_two_colors(IBorderS,Colors), 
      member(C,Colors), \+ member(C,CenterS),  
   \+ sub_var(fg,Colors), \+ sub_var(wbg,Colors),
   \+ sub_var(fg,Find), \+ sub_var(wbg,Find),
@@ -507,7 +541,7 @@ good_borders(CACHE,Options,CSi,PatternProp):- member(PatternProp,Options),
 
 
 found_box(Grid,L_S,NSEW,FH,FV,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS,   inside, dashedIBorder1(C,IBorderS)):- 
-  (H>2,V>2),
+  (H>1,V>1),
   member_ls(C,IBorderS),
   \+ (member_ls(D,Inside),C\==D, whole_row_or_col(D,Center)),
   once(maplist(edge_or_center(N,C),CACHE.iBorder)),
@@ -536,7 +570,7 @@ found_box(Grid,L_S,NSEW,FH,FV,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,F
 % once(L_S=l_s(p1);L_S=s_l(p1)),!,fail.
 found_box(Grid,L_S,NSEW,FH,FV,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS,  find /*oborder*/,   
                                                                               dashedOBorder(PatternProp,C,CSo,OBorderS)):- fail,
-  (H>2,V>2), at_least_two_colors(OBorderS,Colors), member(C,Colors), \+ member(C,InsideS),
+  (H>1,V>1), at_least_two_colors(OBorderS,Colors), member(C,Colors), \+ member(C,InsideS),
   no_repeats(good_borders(CACHE,[oBorderTrimmed,oBorder],CSo,PatternProp)).
 
 
