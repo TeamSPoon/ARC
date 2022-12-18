@@ -802,7 +802,7 @@ at_least_two_tests(SuiteX):-
   length(Tests,L),L>=2)).
 
 ensure_level_1_test_info:-!.
-ensure_level_1_test_info:- luser_setval(generate_gids,true), precache_all_grid_objs.
+ensure_level_1_test_info:- precache_all_grid_objs.
   
   
 

@@ -568,8 +568,9 @@ grid_object_count(Grid,Type,Len):-
 grid_type_obj(Grid,Type,OBJ):- ensure_gid(Grid,GID), 
   cache_grid_objs(GID),!,gid_type_oid(GID,Type,OID),ensure_obj(OID,OBJ).
 
-
+%% 2,467,553,363 inferences, 478.682 CPU in 479.364 seconds (100% CPU, 5154887 Lips)
 precache_all_grid_objs:- 
+  luser_setval(generate_gids,true),
   time(forall(all_arc_test_name_unordered(TestID),cache_grid_objs_for_test(TestID))).
 
 cache_grid_objs_for_test(TestID):- 
