@@ -575,7 +575,6 @@ test_suite_name(test_names_by_hard).
 test_suite_name(TS):- dir_test_suite_name(TS).
 test_suite_name(icecuber_pass).
 test_suite_name(icecuber_fail).
-%test_suite_name(P1):- nonvar(P1),test_suite_name_by_call(P1).
 test_suite_name(P1):- return_sorted(PS,test_suite_name_by_call(PS)),PS=P1.
 test_suite_name(Prop):- test_suite_marker(Prop).
 
@@ -697,25 +696,36 @@ clauses_predicate_cmpd_goal(M:F/N,Into):-
    compound(Goal),functor(Goal,Into,_),arg(1,P1,Var1),arg(1,Goal,Var2),Var1==Var2.
 
 
+test_suite_name_by_call(F):- test_suite_name_by_call_1(F).
 
-test_suite_name_by_call(F):- clauses_predicate_cmpd_goal(F/1,every_pair).
-test_suite_name_by_call(F):- clauses_predicate_cmpd_goal(F/1,every_grid).
-test_suite_name_by_call(no_pair(P1)):-every_pair(P1). 
-test_suite_name_by_call(every_pair(P1)):-every_pair(P1). 
+%test_suite_name_by_call_1(F):- clauses_predicate_cmpd_goal(F/1,every_pair).
+%test_suite_name_by_call_1(F):- clauses_predicate_cmpd_goal(F/1,every_grid).
+test_suite_name_by_call_1(no_pair(P1)):-every_pair(P1). 
+test_suite_name_by_call_1(every_pair(P1)):-every_pair(P1). 
 
-test_suite_name_by_call(no_grid(P1)):-is_monadic_grid_predicate(P1). 
-test_suite_name_by_call(every_grid(P1)):-is_monadic_grid_predicate(P1). 
-test_suite_name_by_call(no_input_grid(P1)):-is_monadic_grid_predicate(P1). 
-test_suite_name_by_call(every_input_grid(P1)):-is_monadic_grid_predicate(P1). 
-test_suite_name_by_call(no_output_grid(P1)):-is_monadic_grid_predicate(P1). 
-test_suite_name_by_call(every_output_grid(P1)):-is_monadic_grid_predicate(P1). 
+test_suite_name_by_call_1(no_grid(P1)):-is_monadic_grid_predicate(P1). 
+test_suite_name_by_call_1(every_grid(P1)):-is_monadic_grid_predicate(P1). 
+test_suite_name_by_call_1(no_input_grid(P1)):-is_monadic_grid_predicate(P1). 
+test_suite_name_by_call_1(every_input_grid(P1)):-is_monadic_grid_predicate(P1). 
+test_suite_name_by_call_1(no_output_grid(P1)):-is_monadic_grid_predicate(P1). 
+test_suite_name_by_call_1(every_output_grid(P1)):-is_monadic_grid_predicate(P1). 
 
-is_monadic_grid_predicate(F):-  clauses_predicate_cmpd_goal(F/1,Into_Grid),member(Into_Grid,[ensure_grid,into_grid]).
-is_monadic_grid_predicate(F):-  luser_getval(generate_gids,true), clauses_predicate_cmpd_goal(F/1,Into_Grid),member(Into_Grid,[ensure_gid]).
+:- multifile(prolog:make_hook/2).
+:- dynamic(prolog:make_hook/2).
+prolog:make_hook(before, Some):- Some \==[], retractall(muarc_tmp:is_monadic_grid_predicate_cache(_)), fail.
+
+:- dynamic(muarc_tmp:is_monadic_grid_predicate_cache/1).
+is_monadic_grid_predicate(F):- muarc_tmp:is_monadic_grid_predicate_cache(L),!,member(F,L).
+is_monadic_grid_predicate(F):-
+   findall(E,is_monadic_grid_predicate_1(E),S),list_to_set(S,L),
+   asserta(muarc_tmp:is_monadic_grid_predicate_cache(L)),!,member(F,L).
+
+is_monadic_grid_predicate_1(F):-  clauses_predicate_cmpd_goal(F/1,Into_Grid),member(Into_Grid,[ensure_grid,into_grid]).
+is_monadic_grid_predicate_1(F):-  luser_getval(generate_gids,true), clauses_predicate_cmpd_goal(F/1,Into_Grid),member(Into_Grid,[ensure_gid]).
 
 io_side_effects.
 
-every_grid(P1,TestID):- every_input_grid(P1,TestID), every_output_grid(P1,TestID).
+every_grid(P1,TestID):-   every_grid(TestID,_ExampleNum,_IO,P1).
 every_input_grid(P1,TestID):- every_grid(TestID,_,in,P1).
 every_output_grid(P1,TestID):- every_grid(TestID,trn+_,out,P1).
 
@@ -726,7 +736,7 @@ no_output_grid(P1,TestID):- every_output_grid(not_p1(P1),TestID).
 
 every_grid(TestID,ExampleNum,IO,P1):-
   all_arc_test_name_unordered(TestID),
-  forall(kaggle_arc_io(TestID,ExampleNum,IO,G),call(P1,G)).
+  forall((kaggle_arc_io(TestID,ExampleNum,IO,G),(IO=in->true;ExampleNum=(trn+_))),call(P1,G)).
 
 %is_monochromish(I,O):- unique_colors(I,A),A=[_,_],unique_colors(O,B),sort(A,AB),sort(B,AB).
 %is_colorchanging(I,O):- unique_fg_colors(I,A),unique_fg_colors(O,B),sort(A,AB),\+ sort(B,AB).
@@ -1307,7 +1317,7 @@ matches(InfoS,InfoM):- member(InfoS,InfoM).
 
 print_testinfo(TestID):- ensure_test(TestID), forall(test_info_recache(TestID,F),pp(fav(TestID,F))),
   nop(test_show_grid_objs(TestID)),
-  findall(III,forall(runtime_test_info(TestID,III)),LL),pp(LL).
+  findall(III,runtime_test_info(TestID,III),LL),pp(LL).
 
 test_info_no_loop(TestID,Sol):- var(TestID),!,all_arc_test_name_unordered(TestID),test_info_no_loop(TestID,Sol).
 test_info_no_loop(TestID,Sol):- muarc_tmp:test_info_cache(TestID,Sol),!. % test_info

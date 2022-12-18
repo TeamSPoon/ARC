@@ -25,6 +25,8 @@ nb_subst(_Obj,_New,_Old).
 :- dynamic(prolog:make_hook/2).
 prolog:make_hook(before, Some):- Some \==[], \+ luser_getval(extreme_caching,true), retractall(in_memo_cached(_,_,_,_,_)), fail.
 %arc_memoized(G):- !, call(G).
+
+arc_memoized(G):- compound(G),ground(G),functor(G,F,1),functor(C,F,1),!,arc_memoized(C),G=C,!.
 arc_memoized(G):-
   copy_term(G,C,GT),
   (Key = (C+GT)),
