@@ -76,6 +76,8 @@ lcmem(OID,LHV,C):-
 
 %assert_id_grid_cells(Grid):- is_grid(Grid),grid_to_gid(Grid,GID),!,assert_id_grid_cells(GID,Grid).
 %assert_id_grid_cells(GID):- oid_to_gridoid(GID,Grid), assert_id_grid_cells(GID,Grid).
+
+ensure_gid(_,_):- \+ luser_getval(generate_gids,true),!,fail.
 ensure_gid(Grid,GID):- atom(Grid),!,GID=Grid.
 ensure_gid(Grid,GID):- assert_id_grid_cells(GID,Grid). 
 /*
@@ -475,13 +477,16 @@ is_adj_point_type(_C1,diamonds,HV1,HV2):- is_adj_point_d(HV1,HV2).
 grid_type_oid(Grid,Type,OID):- ensure_gid(Grid,GID), cache_grid_objs_for(GID,Type), gid_type_oid(GID,Type,OID).
 
 :- dynamic(is_gridmass/2).
+
+mmass(Grid,Mass):- \+ luser_getval(generate_gids,true),!, mass(Grid,Mass).
 mmass(Grid,Mass):- ensure_gid(Grid,GID), Grid\==GID,!,mmass(GID,Mass).
 mmass(GID,Mass):- is_gridmass(GID,Mass),!.
 mmass(GID,Mass):- 
   findall(_,(cmem(GID,_,C),C\==black),L),length(L,Mass),
   assert(is_gridmass(GID,Mass)).
 
-mgrid_size(Grid,H,V):- ensure_gid(Grid,GID), is_grid_size(GID,H,V).
+mgrid_size(Grid,H,V):- luser_getval(generate_gids,true),!, ensure_gid(Grid,GID), is_grid_size(GID,H,V).
+mgrid_size(Grid,H,V):- grid_size(Grid,H,V).
 
 /*
 is_nsew_same_as_colormass(Grid):-

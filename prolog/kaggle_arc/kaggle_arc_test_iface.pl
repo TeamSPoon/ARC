@@ -575,7 +575,8 @@ test_suite_name(test_names_by_hard).
 test_suite_name(TS):- dir_test_suite_name(TS).
 test_suite_name(icecuber_pass).
 test_suite_name(icecuber_fail).
-test_suite_name(P1):- var(P1), return_sorted(P1,test_suite_name_by_call(P1)).
+%test_suite_name(P1):- nonvar(P1),test_suite_name_by_call(P1).
+test_suite_name(P1):- return_sorted(PS,test_suite_name_by_call(PS)),PS=P1.
 test_suite_name(Prop):- test_suite_marker(Prop).
 
 return_sorted(P1,Goal):- findall(P1,Goal,List),sort(List,Set),member(P1,Set).
@@ -591,7 +592,7 @@ get_current_suite_testnames(Set):-
 :- dynamic(muarc_tmp:skip_calc_suite/1).
 
 current_suite_testnames(X,Set):- nonvar(Set),current_suite_testnames(X,SetV),!,Set=SetV.
-current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),Set\==[],!.
+current_suite_testnames(X,Set):- muarc_tmp:cached_tests(X,Set),acceptable_test_set(Set),!.
 current_suite_testnames(X,_Set):- muarc_tmp:skip_calc_suite(X),bt,
   pp(skip_calc_suite(current_suite_testnames(X))),fail.
 current_suite_testnames(X,Set):-  
@@ -602,8 +603,10 @@ current_suite_testnames(X,Set):-
  findall(ID,test_suite_info(X,ID),List),
   %length(List,L), pp(current_suite_testnames(X)=L),  
   my_list_to_set_variant(List,Set),
-     !,(ignore((Set\==[],asserta(muarc_tmp:cached_tests(X,Set)))))))))),
+     !,(ignore((acceptable_test_set(Set),asserta(muarc_tmp:cached_tests(X,Set)))))))))),
   erase(Ref)).
+
+acceptable_test_set(Set):- Set\==[],length(Set,Len),Len\==833.
 
 get_by_hard(X,Set):- nonvar(Set),get_by_hard(X,SetV),!,Set=SetV.
 get_by_hard(X,ByHard):- muarc_tmp:cached_tests_hard(X,ByHard),!.
@@ -660,7 +663,7 @@ test_suite_testIDs(SuiteX,_Set):- muarc_tmp:skip_calc_suite_test(SuiteX),
 test_suite_testIDs(SuiteX,Set):- 
   setup_call_cleanup(assert(muarc_tmp:skip_calc_suite_test(SuiteX),Ref),
     (findall(TestID_C,test_suite_info_1(SuiteX,TestID_C),List),
-     list_to_set(List,Set),ignore((Set\==[],some_test_suite_name_good(SuiteX),
+     list_to_set(List,Set),ignore((acceptable_test_set(Set),some_test_suite_name_good(SuiteX),
        retractall(muarc_tmp:cached_tests(SuiteX,_)),
        asserta(muarc_tmp:cached_tests(SuiteX,Set))))),
     erase(Ref)).
@@ -669,21 +672,21 @@ test_suite_testIDs(SuiteX,Set):-
 
 
 
-test_suite_info_1(SuiteX,TestID):- var(SuiteX),!,some_test_suite_name(SuiteX),test_suite_info_1(SuiteX,TestID).
+%test_suite_info_1(SuiteX,TestID):- var(SuiteX),!,some_test_suite_name(SuiteX),test_suite_info_1(SuiteX,TestID).
 test_suite_info_1(SuiteX,TestID):- muarc_tmp:cached_tests(SuiteX,Set),member(TestID,Set).
 test_suite_info_1(SuiteX,TestID):- muarc_tmp:cached_tests_hard(SuiteX,Set),member(TestID,Set).
-test_suite_info_1(passed(SuiteX),TestID):- !, test_results(pass,SuiteX,TestID,_Info). 
-test_suite_info_1(failed(SuiteX),TestID):- !, test_results(fail,SuiteX,TestID,_Info). 
-%test_suite_info_1(SuiteX,TestID):- var(TestID),!,all_arc_test_name_unordered(TestID),test_suite_info(SuiteX,TestID).
-test_suite_info_1(icecuber_fail,TestID):- !, icu(Name,PF),PF == -1,atom_id_e(Name,TestID).
-test_suite_info_1(icecuber_pass,TestID):- !, icu(Name,PF),PF \== -1,atom_id_e(Name,TestID).
-test_suite_info_1(dbigham_fail,TestID):- !, all_arc_test_name_unordered(TestID),
+test_suite_info_1(passed(SuiteX),TestID):- test_results(pass,SuiteX,TestID,_Info). 
+test_suite_info_1(failed(SuiteX),TestID):- test_results(fail,SuiteX,TestID,_Info). 
+%test_suite_info_1(SuiteX,TestID):- var(TestID), all_arc_test_name_unordered(TestID),test_suite_info(SuiteX,TestID).
+test_suite_info_1(icecuber_fail,TestID):- icu(Name,PF),PF == -1,atom_id_e(Name,TestID).
+test_suite_info_1(icecuber_pass,TestID):- icu(Name,PF),PF \== -1,atom_id_e(Name,TestID).
+test_suite_info_1(dbigham_fail,TestID):- all_arc_test_name_unordered(TestID),
    \+ test_suite_info(dbigham_train_core,TestID),
    \+ test_suite_info(dbigham_train_pass,TestID),
    \+ test_suite_info(dbigham_eval_pass,TestID).
-test_suite_info_1(SuiteX,TestID):- suite_tag(SuiteX,List),!,tasks_split(TestID,List).
+test_suite_info_1(SuiteX,TestID):- suite_tag(SuiteX,List),tasks_split(TestID,List).
 test_suite_info_1(SuiteX,TestID):- test_info_no_loop(TestID,Sol), suite_mark(SuiteX,Sol).
-test_suite_info_1(SuiteX,TestID):- \+ missing_arity(SuiteX,1),!,call(SuiteX,TestID).
+test_suite_info_1(SuiteX,TestID):- nonvar(SuiteX), \+ missing_arity(SuiteX,1),!,call(SuiteX,TestID).
 
 
 clauses_predicate_cmpd_goal(F/N,Into):- !,
@@ -708,16 +711,18 @@ test_suite_name_by_call(no_output_grid(P1)):-is_monadic_grid_predicate(P1).
 test_suite_name_by_call(every_output_grid(P1)):-is_monadic_grid_predicate(P1). 
 
 is_monadic_grid_predicate(F):-  clauses_predicate_cmpd_goal(F/1,Into_Grid),member(Into_Grid,[ensure_grid,into_grid]).
+is_monadic_grid_predicate(F):-  luser_getval(generate_gids,true), clauses_predicate_cmpd_goal(F/1,Into_Grid),member(Into_Grid,[ensure_gid]).
 
 io_side_effects.
 
 every_grid(P1,TestID):- every_input_grid(P1,TestID), every_output_grid(P1,TestID).
-every_input_grid(P1,TestID):- every_grid(TestID,_,in,P1), nop( \+ every_grid(TestID,trn+_,out,P1)).
-every_output_grid(P1,TestID):- every_grid(TestID,trn+_,out,P1), nop( \+ every_grid(TestID,trn+_,in,P1)).
+every_input_grid(P1,TestID):- every_grid(TestID,_,in,P1).
+every_output_grid(P1,TestID):- every_grid(TestID,trn+_,out,P1).
 
 no_grid(P1,TestID):- no_input_grid(P1,TestID),no_output_grid(P1,TestID).
-no_input_grid(P1,TestID):- every_grid(TestID,_,in, not_p1(P1)), nop( \+ every_grid(TestID,trn+_,out,P1)).
-no_output_grid(P1,TestID):- every_grid(TestID,trn+_,out, not_p1(P1)), nop( \+ every_grid(TestID,trn+_,in,P1)).
+no_input_grid(P1,TestID):- every_input_grid(not_p1(P1),TestID).
+no_output_grid(P1,TestID):- every_output_grid(not_p1(P1),TestID).
+
 
 every_grid(TestID,ExampleNum,IO,P1):-
   all_arc_test_name_unordered(TestID),
@@ -726,14 +731,27 @@ every_grid(TestID,ExampleNum,IO,P1):-
 %is_monochromish(I,O):- unique_colors(I,A),A=[_,_],unique_colors(O,B),sort(A,AB),sort(B,AB).
 %is_colorchanging(I,O):- unique_fg_colors(I,A),unique_fg_colors(O,B),sort(A,AB),\+ sort(B,AB).
 %is_monochromish(Grid):- ensure_grid(Grid), unique_color_count(Grid,[_,_]).
-is_size_1x1(Grid):- ensure_grid(Grid), grid_size(Grid,1,1).
-is_size_3x3(Grid):- ensure_grid(Grid), grid_size(Grid,3,3).
-is_size_lte_3x3(Grid):- ensure_grid(Grid), grid_size(Grid,H,V),H=<3,V=<3.
-is_size_lte_10x10(Grid):- ensure_grid(Grid), grid_size(Grid,H,V),H=<10,V=<10.
-is_size_gte_20x20(Grid):- ensure_grid(Grid), grid_size(Grid,H,V),H>=20,V>=20.
-is_mass_lte_25(Grid):- ensure_grid(Grid), mass(Grid,Mass),!,Mass=<25.
-is_mass_lte_81(Grid):- ensure_grid(Grid), mass(Grid,Mass),!,Mass=<81.
-is_mass_gte_600(Grid):- ensure_grid(Grid), mass(Grid,Mass),!,Mass>=600.
+is_size_1x1(Grid):- ensure_grid(Grid), mgrid_size(Grid,1,1).
+is_size_3x3(Grid):- ensure_grid(Grid), mgrid_size(Grid,3,3).
+is_size_lte_3x3(Grid):- ensure_grid(Grid), mgrid_size(Grid,H,V),H=<3,V=<3.
+%is_size_lte_10x10(Grid):- ensure_grid(Grid), mgrid_size(Grid,H,V),H=<10,V=<10.
+is_size_gte_20x20(Grid):- ensure_grid(Grid), mgrid_size(Grid,H,V),H>=20,V>=20.
+is_mass_lte_25(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass=<25.
+%is_mass_lte_81(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass=<81.
+%is_mass_gte_600(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass>=600.
+
+is_colors_adjacent(Grid):- ensure_grid(Grid), ensure_gid(Grid,GID), 
+  cmem(GID,HV1,C1),is_adj_point_es_d(HV1,HV2),cmem(GID,HV2,C2),
+  C1\==C2,is_fg_color(C1),is_fg_color(C2),!.
+
+is_colors_adjacent_no_d(Grid):- ensure_gid(Grid,GID), 
+  cmem(GID,HV1,C1),is_adj_point_es(HV1,HV2),cmem(GID,HV2,C2),
+  C1\==C2,is_fg_color(C1),is_fg_color(C2),!.
+
+
+
+%mgrid_size(A,B,C):- arc_memoized(grid_size(A,B,C)),!.
+%mmass(A,B):- arc_memoized(mass(A,B)),!.
 
 not_p2(P2,I,O):- \+ call(P2,I,O).
 not_p1(P1,I):- \+ call(P1,I).
@@ -758,6 +776,9 @@ every_pair(TestID,ExampleNum,P2):-
 
 
 
+
+
+
 suite_mark(SuiteX,Sol):- sub_term(E,Sol),suite_mark1(SuiteX,E),!.
 suite_mark1(_SuiteX,E):- var(E),!,fail.
 suite_mark1( SuiteX,E):- SuiteX=@=E,!.
@@ -770,7 +791,13 @@ at_least_two_tests(SuiteX):-
   nop((current_suite_testnames(SuiteX,Tests),
   length(Tests,L),L>=2)).
 
+ensure_level_1_test_info:-!.
+ensure_level_1_test_info:- luser_setval(generate_gids,true), precache_all_grid_objs.
+  
+  
+
 report_suites:-  
+ ensure_level_1_test_info,
  (luser_getval(test_suite_name,SuiteXC); SuiteXC=[]),
  test_suite_list(L),
  forall(nth_above(300,N,L,SuiteX),
@@ -1023,12 +1050,16 @@ shell_op(G):- tee_op(G).
 
 my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).
 
+warn_skip(Goal):- wdmsg(warn_skip(Goal)).
+
 save_supertest(TestID):- is_list(TestID),!,maplist(save_supertest,TestID).
 save_supertest(TestID):- ensure_test(TestID), save_supertest(TestID,_File).
 
 save_supertest(TestID,File):- var(TestID),!, forall(ensure_test(TestID), save_supertest(TestID,File)).
 save_supertest(TestID,File):- var(File),!,test_name_output_file(TestID,File), save_supertest(TestID,File).
 save_supertest(TestID,File):- needs_dot_extention(File,'.pl',NewName),!,save_supertest(TestID,NewName).
+
+save_supertest(TestID,File):- !, warn_skip(save_supertest(TestID,File)).
 save_supertest(TestID,File):-
  saveable_test_info(TestID,Info),
    setup_call_cleanup(open(File,write,O,[create([default]),encoding(text)]), 
@@ -1044,9 +1075,13 @@ test_name_output_file(TestID,File):- sub_atom_value(TestID,OID),!,atomic_list_co
 clear_test(TestID):- is_list(TestID),!,maplist(clear_test,TestID).
 clear_test(TestID):- ensure_test(TestID),
    clear_training(TestID),
-   saveable_test_info(TestID,Info),
-   erase_refs(Info),
+   warn_skip(clear_saveable_test_info(TestID)),
    unload_test_file(TestID).
+
+clear_saveable_test_info(TestID):-
+   saveable_test_info(TestID,Info),
+   erase_refs(Info).
+   
 
 erase_refs(Info):- maplist(erase,Info).
 
@@ -1102,6 +1137,10 @@ clear_training(TestID):- ensure_test(TestID),
 
 
 new_test_pair(PairName):-
+  luser_getval(new_test_pair,Was), Was == PairName,!,
+  luser_setval(new_test_pair,waz).
+new_test_pair(PairName):-
+  luser_setval(new_test_pair,PairName),
   %nb_delete(grid_bgc),
   clear_shape_lib(pair),clear_shape_lib(in),clear_shape_lib(out),
   luser_setval(test_pairname,PairName),
@@ -1142,7 +1181,7 @@ print_whole_test(Name):- fix_test_name(Name,TestID), with_pair_mode(whole_test,p
 
 maybe_set_suite:- get_current_test(TestID),maybe_set_suite(TestID).
 print_test(TName):-
-  fix_test_name(TName,TestID,ExampleNum1),
+  fix_test_name(TName,TestID,ExampleNum1),  
   arc_user(USER),  
   %set_example_num(ExampleNum1),
    cmt_border,format('%~w % ?- ~q. ~n',[USER,print_test(TName)]),cmt_border,
@@ -1223,9 +1262,9 @@ print_single_pair(TestID,ExampleNum,In,Out):-
    format('~N'),
    %ignore((grid_hint_swap(i-o,In,Out))),
    format('~N'),
-   ignore(show_reduced_io_rarely(In1+Out1)),!.
+   ignore(show_reduced_io_rarely(In1^Out1)),!.
 
-other_grid_mode(I+O,II+OO):- with_next_grid_mode((as_d_grid(I,II),as_d_grid(O,OO))).
+other_grid_mode(I^O,II^OO):- with_next_grid_mode((as_d_grid(I,II),as_d_grid(O,OO))).
 
 in_out_name(trn+NN,SI,SO):- N is NN+1, format(atom(SI),'Training Pair #~w Input',[N]),format(atom(SO),'Output',[]).
 in_out_name(tst+NN,SI,SO):- N is NN+1, format(atom(SI),'EVALUATION TEST #~w',[N]),format(atom(SO),'Output<(REVEALED)>',[]).
@@ -1266,7 +1305,9 @@ matches(InfoS,InfoM):- member(InfoS,InfoM).
 :- abolish(muarc_tmp:test_info_cache,2).
 :- dynamic(muarc_tmp:test_info_cache/2).
 
-print_testinfo(TestID):- ensure_test(TestID), forall(test_info_recache(TestID,F),pp(fav(TestID,F))).
+print_testinfo(TestID):- ensure_test(TestID), forall(test_info_recache(TestID,F),pp(fav(TestID,F))),
+  nop(test_show_grid_objs(TestID)),
+  findall(III,forall(runtime_test_info(TestID,III)),LL),pp(LL).
 
 test_info_no_loop(TestID,Sol):- var(TestID),!,all_arc_test_name_unordered(TestID),test_info_no_loop(TestID,Sol).
 test_info_no_loop(TestID,Sol):- muarc_tmp:test_info_cache(TestID,Sol),!. % test_info
@@ -1302,8 +1343,14 @@ some_test_info_1(TestID,III):- fav_less(TestID,III).
 some_test_info_1(TestID,III):- some_test_info_prop(TestID,III).
 
 all_test_info(TestID,III):- some_test_info(TestID,III).
-all_test_info(TestID,test_suite([SuiteX])):- some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
+all_test_info(TestID,SuiteX):- nonvar(SuiteX),some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
 
+runtime_test_info(TestID,[test_suite(SuiteSet)]):- 
+  findall(SuiteX,((some_test_suite_name(SuiteX),test_suite_info_1(SuiteX,TestID))),SuiteS),
+  sort(SuiteS,SuiteSet).
+runtime_test_info(T,S):- findall(I,test_info(T,I),F),flatten([F],L),list_to_set(L,S),
+  retractall(muarc_tmp:test_info_cache(T,_)),
+  asserta(muarc_tmp:test_info_cache(T,S)),!.
 
 repair_info(Inf,InfO):- listify(Inf,Inf1),maplist(repair_info0,Inf1,InfO).
 

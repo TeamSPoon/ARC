@@ -1150,18 +1150,17 @@ name_the_pair(TestID,ExampleNum,In,Out,PairName):-
   PairName= (TestID>ExampleNum),
   get_current_test(CName),
   new_test_pair(PairName),
+  GridNameIn= PairName*in,
+  GridNameOut= PairName*out,
+  if_t(nonvar(Out),set_grid_tid(In,GridNameIn)),
+  if_t(nonvar(In),set_grid_tid(Out,GridNameOut)),  
   /*must_det_ll*/((
    ignore((CName\==TestID, 
         set_current_test(TestID),
         dash_chars(60,"A"),nl,dash_chars(60,"|"),dash_chars(6,"\n"),nl,
         dash_chars(60,"|"),nl,dash_chars(60,"V"),nl,
         nl,wqnl(arc1(TestID)),nl,nl,dash_chars(60,"A"),nl)),   
-  GridNameIn= PairName*in,
-  GridNameOut= PairName*out,
-  set_grid_tid(In,GridNameIn),
-  set_grid_tid(Out,GridNameOut),  
-  test_info(TestID,Info), pp(fav(TestID,Info)=ExampleNum),nl)).
-  
+  forall(runtime_test_info(TestID,Info), pp(fav(TestID,Info)=ExampleNum)),nl)),!.
 
 
 compute_unshared_indivs(In,Unshared):-
