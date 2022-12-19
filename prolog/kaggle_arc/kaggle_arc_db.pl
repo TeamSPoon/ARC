@@ -914,7 +914,7 @@ on_edge_become('y','|').
 cache_grid_objs1(countz,GID):- !, ignore(ensure_texture(GID)).
 
 cache_grid_objs1(Type,GID):- cmem(GID,HV1,C1), \+ omem(GID,HV1,_), \+ ok_adjacent(GID,HV1),
- new_obj_points(GID,Type,C1,[HV1],1),!,
+ new_obj_points(GID,Type,C1,[C1-HV1],1),!,
  cache_grid_objs1(Type,GID).
 
 cache_grid_objs1(Type,GID):- 
@@ -948,6 +948,12 @@ assert_omem_points(_,_,[]):-!.
 assert_omem_points(GID,OID,[HV1]):-  !, assert_omem_point(GID,OID,HV1).
 assert_omem_points(GID,OID,[HV1|Points]):- assert_omem_point(GID,OID,HV1), assert_omem_points(GID,OID,Points).
 
+assert_omem_point(GID,OID,((S-C1)-HV1)):-
+  assert_omem_point(GID,OID,C1-HV1),
+  asserta_if_new(smem(GID,HV1,S)).
+assert_omem_point(GID,OID,C1-HV1):-
+  assert_omem_point(GID,OID,HV1),
+  asserta_if_new(cmem(GID,HV1,C1)).
 assert_omem_point(GID,OID,HV1):- 
  ignore((
    omem(GID,HV1,OOID),
@@ -955,10 +961,31 @@ assert_omem_point(GID,OID,HV1):-
    update_object(OOID))),
    assert(omem(GID,HV1,OID)).
 
-new_obj_points(GID,Type,C1,Points,Len):-
-  new_omem(GID,Type,OID),
+as_obj_gpoints(C1,[Point|Points],[GPoint|GPoints]):-
+  as_obj_gpoint(C1,Point,GPoint),
+  as_obj_gpoints(C1,Points,GPoints).
+as_obj_gpoints(_C1,[],[]).
+
+
+as_obj_gpoint(_C1,((S-C)-Point),C-Point):- nonvar(S),!.
+as_obj_gpoint(_C1,((C)-Point),C-Point):- !.
+as_obj_gpoint( C1,Point,C1-Point):- !.
+
+new_obj_points(GID,Type,C1,Points,Len):- new_obj_points(GID,Type,C1,Points,Len,_OID).
+
+new_obj_points(GID,Type,C1,Points,Len,OID):-
+  as_obj_gpoints(C1,Points,GPoints),  
+  Overrides =[],
+  gpoints_to_iv_info(GPoints,LCLPoints,LocX,LocY,PenColors,Rot2L,Iv,Overrides,LPoints,Grid,SH,SV,SizeY,SizeX,CentX,CentY),
+  _List=[colorless_points(LCLPoints),loc2D(LocX,LocY),pen(PenColors),rot2L(Rot2L),iv(Iv),localpoints(LPoints),
+    grid(Grid),rotOffset2D(SH,SV),viz2D(SizeY,SizeX),center2D(CentX,CentY)],
+  int2glyph(Iv,Glyph),
+  %name(Glyph,[Iv]),!,
+  atomic_list_concat(['o_',Glyph,'_',Iv,'_',GID],OID),
+  assert(gid_type_oid(GID,Type,OID)),
   assert_omem_points(GID,OID,Points),
-  assert(cindv(OID,unique_color,element,OID,C1)),
+  length(Points,Len),
+  if_t(nonvar(C1),assert(cindv(OID,unique_color,element,OID,C1))),
   assert(cindv(OID,size,Len)).
 
 update_object(OID):- 
@@ -981,9 +1008,9 @@ update_object(GID,Type,OID):-
     retract_object(GID,OID,_))).
 
 
-new_omem(GID,Type,OID):- 
-  new_omem(GID,Type,OID,_Glyph).
-new_omem(GID,Type,OID,Glyph):- 
+new_omem_NEVER(GID,Type,OID):- 
+  new_omem_NEVER(GID,Type,OID,_Glyph).
+new_omem_NEVER(GID,Type,OID,Glyph):- 
   flag(GID,X,X+1),int2glyph(X,Glyph),
   name(Glyph,[ID]),!,
   atomic_list_concat(['o_',Glyph,'_',ID,'_',GID],OID),

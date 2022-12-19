@@ -75,42 +75,21 @@ gpoints_to_center(GPoints,LocX,LocY,SizeX,SizeY,CentX,CentY):-
 make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):- 
  must_det_ll((
   redress_override(Overrides0,Overrides),
-  testid_name_num_io(GID,_TestID,_Example,_Num,IO),
-  %points_range(GPoints,LocX,LocY,HiH,HiV,_HO,_VO), once(member(vis2D(SizeX,SizeY),Overrides);(SizeX is HiH-LocX+1,SizeY is HiV-LocY+1)),
-  po_loc2D_vis2D(GPoints,Overrides,LocX,LocY,SizeY,SizeX),
+  gpoints_to_iv_info(GPoints,LCLPoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPoints,Grid,SH,SV,SizeY,SizeX,CentX,CentY),
   %luser_getval(test_pairname,ID),
   Area is SizeX * SizeY,
   my_assertion(is_list([overrides|Overrides])),
   my_assertion(is_cpoints_list(GPoints)),
-  %colors(GPoints,CC),
-  %my_assertion(ground(GPoints)),
-  %flag(indiv,Fv,Fv+1),
-  %Iv is (Fv rem 3000) + 1,
   all_colors(GPoints,CC),
   length(GPoints,Len),
-  deoffset_points(LocX,LocY,GPoints,LPoints),
-  % sort(LPoints,LPointsS), maplist(arg(1),LPointsS,BPenColors), clumped(BPenColors,CPenColors), reclumped(CPenColors,PenColors),
-  %remove_color(LPoints,UColorlessPoints),
   %maplist(on_edge(GridH,GridV),GPoints,EdgeL),count_sets([n,s,e,w,c|EdgeL],_,EdgeC),maplist(zero_one_more,EdgeC,EdgeS),
-  
-  length(LPoints,Len),
   Empty is Area - Len,
-
-  make_grid(SizeX,SizeY,Grid),
-  add_global_points(LPoints,Grid,Grid),
   once(member(grid(LocalGrid),Overrides);LocalGrid=Grid),
 
 
   ignore((member(iz(media(shaped)),Overrides),
       % \+ member(iz(media(image)),Overrides),
      learn_hybrid_shape(LocalGrid))),
-
-  % calc center2G
-  must_det_ll(once(
-   ((member(UFgPoints,[GPoints]),
-    ((CentX is LocX + floor(SizeX/2),CentY is LocY + floor(SizeY/2), hv_point(CentX,CentY,Point), member(_-Point,UFgPoints));
-    (length(UFgPoints,UFgLen),CP is round(UFgLen/2), nth1(CP,UFgPoints,Point),hv_point(CentX,CentY,Point)))));
-   (CentX is LocX + floor(SizeX/2),CentY is LocY + floor(SizeY/2)))),
 
   other_grid_size(GID,OtherH,OtherV),
   to_global_coord(LocX,GridH,OtherH,LocXG,GlobalXG),to_global_coord(LocY,GridV,OtherV,LocYG,GlobalYG),
@@ -120,7 +99,7 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):-
   to_global_coord(BottemX,GridH,OtherH,BottemXG,_),to_global_coord(BottemY,GridV,OtherV,BottemYG,_),
   copy_term(Grid,GridInCopy),
 
-  %grid_to_gridmap(Grid,ColorlessPoints), 
+  %grid_to_gridmap(Grid,LCLPoints), 
 
   findall(ShapeName,
    (guess_shape(GridH,GridV,Grid,LocalGrid,Ps,Empty,Len,SizeX,SizeY,CC,LPoints,ShapeName),
@@ -133,25 +112,25 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):-
     must_det_ll((tips_to_rot(LPoints,GridH,GridV,RotOut,Final),localpoints(Final,FinalLocalPoints)))),
   delistify_single_element(RotOut,RotO),
   */
-  %maybe_include_bg(FinalLocalPoints,LPoints),
-  %FinalLocalPoints = LPoints,
+  %grid_to_shape(Grid,RotG,SH,SV,LCLPoints,PenColors),
   
-  grid_to_shape(Grid,RotG,SH,SV,ColorlessPoints,PenColors),
-  shape_id(ColorlessPoints,ShapeID),
+  shape_id(LCLPoints,ShapeID),
 
-  iv_for([ colorless_points(ColorlessPoints),  loc2D(LocX,LocY),  pen(PenColors),  rot2L(RotG)],Iv),
-
-
-
-  
-
+  ((fail,select(oid(OID),Overrides,NewOverrides),
+     atomic_list_concat(['o',GlyphOMem,IvOMem|MustGID],'_',OID),
+     atomic_list_concat(MustGID,'_',GIDOMem),GIDOMem==GID,IvOMem=Iv,GlyphOMem=Glyph,OIDOMem=OID) 
+      -> true ;
+        (NewOverrides=Overrides,
+         %PenColors = [cc(C1,_)|_],new_obj_points(GID,obj,C1,GPoints,Len,OID),
+         lpoints_to_iv_info(LCLPoints,LocX,LocY,PenColors,RotG,Iv), 
   int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
-  % atomic_list_concat(['o_',Glyph,'_',GID],OID),
+         atomic_list_concat(['o',Glyph,Iv,GID],'_',OID))),
   op_grid_to_norm(NormOps,Grid,NormGrid),
-
+  maplist(ignore,[GIDOMem==GID,IvOMem=Iv,GlyphOMem=Glyph,OIDOMem=OID]),
+  testid_name_num_io(GID,_TestID,_Example,_Num,IO),
   flatten(
   [ 
-    colorless_points(ColorlessPoints),    
+    colorless_points(LCLPoints),    
     pen(PenColors),
     rot2L(RotG),
     rotOffset2D(SH,SV),
@@ -183,19 +162,21 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):-
     
     %obj_to_oid(ID,Iv),
     giz(g(IO)),
-    giz(gid(GID)),
-    %EdgeS,
-    % iz(oid(OID)),
-    giz(glyph(Glyph)),
+    
+    %unkept(giz(gid_omem(GIDOMem))), unkept(giz(oid_omem(OIDOMem))), unkept(iv_omem(IvOMem)),giz(glyph_omem(GlyphOMem)),
+    kept(giz(gid(GID))), kept(iv(Iv)), 
+    % kept(oid(OID)), 
+    kept(giz(glyph(Glyph))),
+    
     globalpoints(GPoints),
     giz(grid_sz(GridH,GridV)),
     []],Ps00),  
    redress_override(Ps00,Ps0),
   include('\\=='([]),Ps0,Ps),
 
-  %make_localpoints(ColorlessPoints,RotG,SH,SV,PenColors,XX), assertion((XX == LPoints)),
+  %make_localpoints(LCLPoints,RotG,SH,SV,PenColors,XX), assertion((XX == LPoints)),
 
-  with_objprops(override,Overrides,Ps,OUT1),
+  with_objprops(override,NewOverrides,Ps,OUT1),
   sort_obj_props(OUT1,OUT),!,as_obj(OUT,Obj),verify_object(Obj),!,
  must_det_ll((ObjO = Obj)))).
 
@@ -376,12 +357,12 @@ maybe_replace_object(VM,Orig,NewObj):-
 grav_roll(LPoints,RotG,Shape):-
   must_det_ll(grav_rot(LPoints,RotG,Shape)),!.
 
-grid_to_shape(Grid,RotG,SH,SV,ColorlessPoints,PenColors):-
+grid_to_shape(Grid,RotG,SH,SV,LCLPoints,PenColors):-
   grav_roll(Grid,RotG,RotShape),
   globalpoints_maybe_bg(RotShape,RShape), include(ground,RShape,LShape),
   grid_size(RotShape,SH,SV),
   % colors 
-  maplist(arg(2),LShape,ColorlessPoints), maplist(arg(1),LShape,Colorz),
+  maplist(arg(2),LShape,LCLPoints), maplist(arg(1),LShape,Colorz),
   cclumped(Colorz,PenColors0),!,
   simplify_pen(PenColors0,PenColors).
 
@@ -661,7 +642,8 @@ transfer_props_l([_|L],Functors,List,NewList):-
 
 
 %indv_u_props(I,[localpoints(Ps),loc2D(X,Y),pen(Pen),vis2D(H,V),rot2L(Rot)]):- loc2D(I,X,Y),colorless_points(I,Ps),pen(I,Pen),vis2D(I,H,V),rot2L(I,Rot),!.
-indv_u_props(I,[ colorless_points(C),  loc2D(X,Y),  pen(Ps),  rot2L(Rot)]):-  colorless_points(I,C),loc2D(I,X,Y),pen(I,Ps),rot2L(I,Rot),!.
+indv_u_props(I,[ colorless_points(C),  loc2D(X,Y),  pen(Ps),  rot2L(Rot)]):-  
+  colorless_points(I,C),loc2D(I,X,Y),pen(I,Ps),rot2L(I,Rot),!.
 %indv_u_props(I,[ colorless_points(C),  center2G(X,Y),  pen(Ps),  rot2L(Rot)]):- colorless_points(I,C),center2G(I,X,Y),pen(I,Ps),rot2L(I,Rot),!.
 %indv_u_props(I,[colorless_points(Ps),center2G(X,Y),pen(Pen),vis2D(H,V),rot2L(Rot)]):- center2G(I,X,Y),colorless_points(I,Ps),pen(I,Pen),vis2D(I,H,V),rot2L(I,Rot),!.
 
@@ -692,7 +674,9 @@ obj_iv(Obj,Iv):- indv_u_props(Obj,L),iv_for(L,Iv).
 
 obj_to_oid(Obj,OID):-  atom(Obj),display_length(Obj,L),L>5,Obj=OID,!.
 obj_to_oid(Obj,OID):-  oid_glyph_object(OID,_,Obj),!.
-obj_to_oid(I,X):- var_check(I,obj_to_oid(I,X))*->!;indv_props(I,L),member(obj_to_oid(X),L).
+obj_to_oid(I,X):- var_check(I,obj_to_oid(I,X))*->!;
+ (indv_props(I,L),((member(obj_to_oid(X),L);member(oid(X),L)),!,
+  assert_object_oid(_,I,_Glyph,X))).
 obj_to_oid(Obj,OID):- assert_object_oid(_,Obj,_Glyph,OID),!.
 
 current_gid(GID):- get_vm(VM), GID = VM.gid.
@@ -716,7 +700,7 @@ assert_object_oid(TID,Obj,Glyph,OID):-
    tid_to_gid(TID,GID),
    is_object(Obj),
    obj_iv(Obj,Iv), int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
-   atomic_list_concat(['o_',Glyph,'_',Iv,'_',GID],OID),
+   atomic_list_concat(['o',Glyph,Iv,GID],'_',OID),
    retractall(oid_glyph_object(OID,_,_)),
    arc_assert_fast(oid_glyph_object(OID,Glyph,Obj)),
    retractall(gid_glyph_oid(GID,Glyph,_)), retractall(gid_glyph_oid(GID,_,OID)),
@@ -802,7 +786,7 @@ mass(I,Count):- globalpoints(I,Points),mass(Points,Count),!.
 
 %remove_color(C-_,point_01_01):- is_bg_color(C),!.
 %remove_color(_-P,P).
-%remove_color(LPoints,ColorlessPoints):- mapgroup(remove_color,LPoints,ColorlessPoints).
+%remove_color(LPoints,LCLPoints):- mapgroup(remove_color,LPoints,LCLPoints).
 
 :- decl_pt(setq(object,prop,object)).
 
@@ -1077,7 +1061,7 @@ combine_pen([P1|L],[C|PenColors],Reset,[C-P1|XX]):- is_color(C),!,
 colorless_points(I,X):- is_object(I), indv_props(I,L),(member(colorless_points(X),L)->true; (member(iz(sid(ShapeID)),L),is_shape_id_for(X,ShapeID))).
 colorless_points(G,X):- is_group(G),!,mapgroup(colorless_points,G,Points),append_sets(Points,X).
 % returns the objects decolorize localpoints
-colorless_points(I,ColorlessPoints):- into_grid(I,Grid),grid_to_shape(Grid,_RotG,_SH,_SV,ColorlessPoints,_PenColors).
+colorless_points(I,LCLPoints):- into_grid(I,Grid),grid_to_shape(Grid,_RotG,_SH,_SV,LCLPoints,_PenColors).
   %localpoints(I,Points), grid_to_shape(Points,X).
 
 %globalpoints(Grid,Points):- is_object(Grid),!,globalpoints(Grid,Points).
