@@ -744,15 +744,26 @@ test_local_dyn(cached_dictation).
 test_local_dyn(oout_associatable).
 
 test_local_save(F,A):- setof(F/A,(test_local_save(F),current_predicate(F/A),A\==0),L),member(F/A,L).
-test_local_save(note).
-test_local_save(individuated_cache).
-test_local_save(g_2_o).
-test_local_save(cmem).
-test_local_save(cindv).
-test_local_save(is_why_grouped_g).
 test_local_save(arc_test_property).
+test_local_save(cached_tests).
+test_local_save(cached_tests_hard).
+test_local_save(cindv).
+test_local_save(cmem).
+test_local_save(cmem_hv).
+test_local_save(g_2_o).
 test_local_save(gid_glyph_oid).
+test_local_save(gid_type_oid).
+test_local_save(individuated_cache).
+test_local_save(is_grid_obj_count).
+test_local_save(is_grid_size).
+test_local_save(is_gridmass).
+test_local_save(is_why_grouped_g).
+test_local_save(make_grid_cache).
+test_local_save(note).
 test_local_save(oid_glyph_object).
+test_local_save(omem).
+test_local_save(smem).
+test_local_save(test_info_cache).
 test_local_save(P):- test_local_dyn(P).
 
 training_info(TestID,InfoSet):-

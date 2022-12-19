@@ -147,8 +147,10 @@ is_color(CO):- is_real_color(CO).
 color_decls.
 
 is_unreal_color(C):- (C==fg; C==fg; C==wbg ; C==bg ; C==is_colorish_var ; C==plain_var),!.
-is_real_color(C):- atom(C),atom_concat('#',_,C),!.
-is_real_color(C):- atom(C),named_colors(L),member(C,L),!, \+ is_unreal_color(C).
+is_real_color(C):- \+ atom(C),!,fail.
+is_real_color(C):- is_unreal_color(C),!,fail.
+is_real_color(C):- atom_concat('#',Rest,C),!,atom_length(Rest,6).
+is_real_color(C):- named_colors(L),member(C,L),!.
 get_real_fg_color(C):- named_colors(L),member(C,L),is_fg_color(C).
 is_real_fg_color(C):- C\== is_colorish_var, is_real_color(C),is_fg_color(C).
 

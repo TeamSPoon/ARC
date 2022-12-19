@@ -689,16 +689,25 @@ test_suite_info_1(SuiteX,TestID):- nonvar(SuiteX), \+ missing_arity(SuiteX,1),!,
 
 
 clauses_predicate_cmpd_goal(F/N,Into):- !,
-   clauses_predicate(M:F/N,P1),clause(M:P1,Body),first_cmpd_goal(Body,Goal),
-   compound(Goal),functor(Goal,Into,_),arg(1,P1,Var1),arg(1,Goal,Var2),Var1==Var2.
+  clauses_predicate(M:F/N,P1),clause(M:P1,Body),first_cmpd_goal(Body,Goal),
+  compound(Goal),functor(Goal,Into,_),arg(1,P1,Var1), \+ \+ (sub_term(Cmpd,Goal),compound(Cmpd),arg(1,Cmpd,Var2),Var1==Var2).
 clauses_predicate_cmpd_goal(M:F/N,Into):- 
    clauses_predicate(M:F/N,P1),clause(M:P1,Body),first_cmpd_goal(Body,Goal),
-   compound(Goal),functor(Goal,Into,_),arg(1,P1,Var1),arg(1,Goal,Var2),Var1==Var2.
+   compound(Goal),functor(Goal,Into,_),arg(1,P1,Var1), \+ \+ (sub_term(Cmpd,Goal),compound(Cmpd),arg(1,Cmpd,Var2),Var1==Var2).
 
 
-test_suite_name_by_call(F):- test_suite_name_by_call_1(F).
+:- multifile(prolog:make_hook/2).
+:- dynamic(prolog:make_hook/2).
+:- dynamic(muarc_tmp:p1_memo_caches/2).
+prolog:make_hook(before, Some):- Some \==[], retractall(muarc_tmp:p1_memo_caches(_,_)), fail.
 
-%test_suite_name_by_call_1(F):- clauses_predicate_cmpd_goal(F/1,every_pair).
+memoized_p1(P1,F):- muarc_tmp:p1_memo_caches(P1,L),!,member(F,L).
+memoized_p1(P1,F):- findall(E,call(P1,E),S), list_to_set(S,L), asserta(muarc_tmp:p1_memo_caches(P1,L)),!,member(F,L).
+
+
+test_suite_name_by_call(F):- memoized_p1(test_suite_name_by_call_1,F).
+
+test_suite_name_by_call_1(F):- clauses_predicate_cmpd_goal(F/1,foreach_test).
 %test_suite_name_by_call_1(F):- clauses_predicate_cmpd_goal(F/1,every_grid).
 test_suite_name_by_call_1(no_pair(P1)):-every_pair(P1). 
 test_suite_name_by_call_1(every_pair(P1)):-every_pair(P1). 
@@ -710,18 +719,9 @@ test_suite_name_by_call_1(every_input_grid(P1)):-is_monadic_grid_predicate(P1).
 test_suite_name_by_call_1(no_output_grid(P1)):-is_monadic_grid_predicate(P1). 
 test_suite_name_by_call_1(every_output_grid(P1)):-is_monadic_grid_predicate(P1). 
 
-:- multifile(prolog:make_hook/2).
-:- dynamic(prolog:make_hook/2).
-prolog:make_hook(before, Some):- Some \==[], retractall(muarc_tmp:is_monadic_grid_predicate_cache(_)), fail.
 
-:- dynamic(muarc_tmp:is_monadic_grid_predicate_cache/1).
-is_monadic_grid_predicate(F):- muarc_tmp:is_monadic_grid_predicate_cache(L),!,member(F,L).
-is_monadic_grid_predicate(F):-
-   findall(E,is_monadic_grid_predicate_1(E),S),list_to_set(S,L),
-   asserta(muarc_tmp:is_monadic_grid_predicate_cache(L)),!,member(F,L).
-
-is_monadic_grid_predicate_1(F):-  clauses_predicate_cmpd_goal(F/1,Into_Grid),member(Into_Grid,[ensure_grid,into_grid]).
-is_monadic_grid_predicate_1(F):-  luser_getval(generate_gids,true), clauses_predicate_cmpd_goal(F/1,Into_Grid),member(Into_Grid,[ensure_gid]).
+is_monadic_grid_predicate(F):-  clauses_predicate_cmpd_goal(F/1,Into_Grid),member(Into_Grid,[ensure_grid,into_grid]).
+is_monadic_grid_predicate(F):-  luser_getval(generate_gids,true), clauses_predicate_cmpd_goal(F/1,Into_Grid),member(Into_Grid,[ensure_gid]).
 
 io_side_effects.
 

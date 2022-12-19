@@ -129,11 +129,11 @@ show_common_reductions(TestID,GL):- once((dash_chars,print_ss(show_common_reduct
 %show_common_reductions(TestID,[A,B]):- !, common_reductions(A^B,OPS,_)
 show_common_reductions(TestID,GL):-
  (all_common_reductions(GL,OPS,Reduced)*->print_common_reduction_result(TestID,OPS,Reduced)
-  ;(common_reductions_from_two(GL,OPS,A,B,AA,BB)*-> print_common_reduction_result(common_reductions_from_two(TestID,A,B),OPS,AA^BB) 
+  ;(GL\=[_,_,_|_],common_reductions_from_two(GL,OPS,A,B,AA,BB)*-> print_common_reduction_result(common_reductions_from_two(TestID,A,B),OPS,AA^BB) 
   ; (print_ss(no_common_reductions(TestID))))),
  dash_chars.
 
-print_common_reduction_result(TestID,OPS,Reduced):- pp(ops(TestID)=OPS), print_ss(common_reductions(TestID)=Reduced).
+print_common_reduction_result(TestID,OPS,Reduced):- pp(ops(TestID)=OPS), print_ss(all_common_reductions(TestID)=Reduced).
 
 do_input_grids(TestID,List):- do_some_grids(TestID,"INPUT",List).
 do_output_grids(TestID,Grids):- do_some_grids(TestID,"OUTPUT",Grids). 

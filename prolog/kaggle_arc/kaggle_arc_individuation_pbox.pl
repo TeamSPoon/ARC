@@ -267,7 +267,7 @@ make_squarish(BorderRule,Inside,NewSearch):-
 add_top_bot_left_right(Top,T,Inside,B,Bot,LLeft,LL,RR,RRight,NewSearch):-
  must_det_ll((
   add_top_bot(Top,T,B,Bot,Inside,TInB),
-  h_as_v(add_top_bot(Left,L,R,Right),TInB,NewSearch),
+  c_r(add_top_bot(Left,L,R,Right),TInB,NewSearch),
   append([_|LL],[_],L),
   append([_|LLeft],[_],Left),
   append([_|RR],[_],R),

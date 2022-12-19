@@ -220,12 +220,53 @@ arc_sub_path(Subdir,AbsolutePath):- muarc_tmp:arc_directory(ARC_DIR),absolute_di
 
 %:- load_json_files(v,'./data/test/*.json').
 :- export(kaggle_arc/4).
-kaggle_arc(TName,ExampleNum,In,Out):- kaggle_arc0(TName,ExampleNum,In,Out)*-> true ; kaggle_arc1(TName,ExampleNum,In,Out).
-kaggle_arc(Name,tst+AnswerID,In,Grid):- kaggle_arc_answers(Name,ID,AnswerID,Grid), kaggle_arc0(Name,tst+ID,In,_Out).
 
-kaggle_arc0(TName,ExampleNum,In,Out):- kaggle_arc_json(TName,ExampleNum,In,O), disallow_test_out(ExampleNum,O,Out).
-kaggle_arc1(TName,ExampleNum,In,Out):- nonvar(ExampleNum),
-  kaggle_arc0(TName,NewExample,In,Out),!,
+:- thread_local(t_l:encoder/1).
+
+with_raw_encoder(Goal):- with_encoder(raw,Goal).
+
+with_encoder(Enc,Goal):- locally(t_l:encoder(Enc),Goal).
+
+:- dynamic(is_encode_tst/1).
+
+is_encode_tst(A):- simp_encode(A).
+is_encode_tst(A):- ensure_test(A), fail.
+
+is_output_simple(TestID):- fail, foreach_test((TestID), 
+  \+ \+ (get_raw_input_outputs(TestID,_ExampleNums,_Ins,Outs), simple_reencode(_,Outs,EOuts),Outs\==EOuts)).
+
+is_input_simple(TestID):- fail, foreach_test((TestID), 
+  \+ \+ (get_raw_input_outputs(TestID,_ExampleNums,Ins,_Outs),  simple_reencode(_,Ins,EIns),Ins\==EIns)).
+
+is_each_pair_use_simple(_TestID):- fail.
+
+simp_encode(t('5582e5ca')).
+simp_encode(t('0d3d703e')).
+
+get_raw_input_outputs(TestID,ExampleNums,Ins,Outs):-
+  (var(TestID)-> is_encode_tst(TestID);true),
+  findall(ExampleNum,kaggle_arc_raw(TestID,ExampleNum,In,Out),ExampleNums),
+  findall(In,kaggle_arc_raw(TestID,ExampleNum,In,Out),Ins),
+  findall(Out,kaggle_arc_raw(TestID,ExampleNum,In,Out),Outs).
+
+:- ensure_loaded('./logical_ml/muarc_dmiles').
+%kaggle_arc(TestID,ExampleNum,In,Out):- !, kaggle_arc_raw(TestID,ExampleNum,In,Out).
+kaggle_arc(TestID,ExampleNum,In,Out):-
+  kaggle_arc_raw(TestID,ExampleNum,In0,Out0),
+  % in private impl of muarc_dmiles
+  maybe_reencode(TestID,ExampleNum,In0,Out0,In1,Out1), In1=In, Out1=Out.
+
+maybe_reencode(TestID,ExampleNum,In0,Out0,In,Out):-
+ (t_l:encoder(Enc)->Enc\==raw),!,call(Enc,TestID,ExampleNum,In0,Out0,In,Out).
+maybe_reencode(_TName,_ExampleNum,In,Out,In,Out).
+
+
+kaggle_arc_raw(TestID,ExampleNum,In,Out):- kaggle_arc0(TestID,ExampleNum,In,Out)*-> true ; kaggle_arc1(TestID,ExampleNum,In,Out).
+kaggle_arc_raw(Name,tst+AnswerID,In,Grid):- kaggle_arc_answers(Name,ID,AnswerID,Grid), kaggle_arc0(Name,tst+ID,In,_Out).
+
+kaggle_arc0(TestID,ExampleNum,In,Out):- kaggle_arc_json(TestID,ExampleNum,In,O), disallow_test_out(ExampleNum,O,Out).
+kaggle_arc1(TestID,ExampleNum,In,Out):- nonvar(ExampleNum),
+  kaggle_arc0(TestID,NewExample,In,Out),!,
   ignore((\+ \+ nb_current(example,ExampleNum),  nb_setval(example,NewExample))).
 
    

@@ -447,6 +447,15 @@ solid_square(C,HW,Grid):-
 
 :- decl_sf(hollow_square(fg_color,bg_color,size2D)).
 
+/*
+A = [<,-,>] 
+    [-,-,>]
+    [-,>,>]
+
+B = [-,-,>]  = [-,>,>] 
+*/
+  
+
 hollow_square(C,HW,D):- get_bgc(BG),!,hollow_square(C,BG,HW,D).
 hollow_square(C,BG,HW,D):-
   between(1,30,HW),

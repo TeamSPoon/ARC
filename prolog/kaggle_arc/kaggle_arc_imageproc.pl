@@ -12,12 +12,12 @@
 safe_grid(I,T):- mapgrid(=,I,T).
 
 h_and_v(P2,Grid,Double):- a_as_g(h_and_v0(P2),Grid,Double).
-h_and_v0(P2,I,O):- safe_grid(I,T), grid_call(P2,T,M),h_as_v(P2,M,O),!.
+h_and_v0(P2,I,O):- safe_grid(I,T), grid_call(P2,T,M),c_r(P2,M,O),!.
 
 h_as_rv(P2,Grid,Double):- a_as_g(h_as_rv0(P2),Grid,Double).
 h_as_rv0(P2,I,O):- rot270(I,G90), safe_grid(G90,S90), grid_call(P2,S90,GG90), rot90(GG90,O).
 
-h_as_v(P2,Grid,Double):- a_as_g(h_as_v0(P2),Grid,Double).
+c_r(P2,Grid,Double):- a_as_g(h_as_v0(P2),Grid,Double).
 h_as_v0(P2,I,O):- rot90(I,G90), safe_grid(G90,S90), grid_call(P2,S90,GG90), rot270(GG90,O).
 
 
@@ -265,7 +265,7 @@ trim_v_repeats(G0,G9):- \+ is_list(G0),into_grid(G0,G1),!,trim_v_repeats(G1,G9).
 trim_v_repeats(G0,G9):- append(L,[R1,R2|R],G0),R1=@=R2,append(L,[R1|R],G5),!,trim_v_repeats(G5,G9).
 trim_v_repeats(G0,G0).
 
-trim_h_repeats(G0,G9):- h_as_v(trim_v_repeats,G0,G9).
+trim_h_repeats(G0,G9):- c_r(trim_v_repeats,G0,G9).
 
 easy_sol(trim_blank_lines).
 trim_blank_lines(G0,G9):- into_grid(G0,G8), get_bgc(BG), remove_color(BG,G8,G9).

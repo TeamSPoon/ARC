@@ -341,7 +341,7 @@ grid_numbervars(GridIn,GridO):-
 
 offset_grid(H2,V2,FF,OF):-
   offset_v_grid(V2,FF,FF0),
-  h_as_v(offset_v_grid(H2),FF0,OF).
+  c_r(offset_v_grid(H2),FF0,OF).
 
 offset_v_grid(V2,FF,OF):-  
   vis2D(FF,GW,_), 
@@ -932,7 +932,7 @@ insert_col_row_pad_open(H0,V0,G,GUU):-
    insert_col_pad_open(H0,G,GU),
    insert_row_pad_open(V0,GU,GUU).
 
-insert_col_pad_open(V0,GU,GUU):-  h_as_v(insert_row_pad_open(V0),GU,GUU).
+insert_col_pad_open(V0,GU,GUU):-  c_r(insert_row_pad_open(V0),GU,GUU).
 insert_row_pad_open(V0,GU,GridU):- functor(P,v,V0),P=..[v|L],append(L,GU,LGU), append(LGU,_,GridU).
 
 
@@ -1112,7 +1112,7 @@ f666(1,[[3]]).
 
 create_padding(GridIn,LowH,LowV,HiH,HiV,H,V,HH,VV,GridO):- 
    fix_v_range(LowV,HiV,H,V,VV,GridIn,Grid1),
-   h_as_v(fix_v_range(LowH,HiH,VV,H,HH),Grid1,GridO).
+   c_r(fix_v_range(LowH,HiH,VV,H,HH),Grid1,GridO).
    
 
 

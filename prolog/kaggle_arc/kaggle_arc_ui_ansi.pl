@@ -604,9 +604,10 @@ list_to_caret([A,B],A^B):-!.
 list_to_caret([A|More],A^B):-!,list_to_caret(More,B).
 
 print_ss(VAR):- var(VAR),!,pp(ss_var(VAR)).
+print_ss(G):- G ==[],  writeln('Nil'). 
 print_ss(g(H,V,Grid)):- nonvar(Grid),!,print_grid(H,V,Grid).
 print_ss(A^B):- caret_to_list(A^B,List),!,print_side_by_side(List).
-print_ss(Title=Value):- !, pp(Title),format(' =~n ',[]),print_ss(Value).
+print_ss(Title=Value):- pp(Title),format(' =~n ',[]),print_ss(Value).
 print_ss(Title):- is_list(Title), \+ is_grid(Title),!,print_side_by_side(Title).
 print_ss(Title):- print_side_by_side([Title]).
 %print_ss(Title):- is_gridoid(Title),print_side_by_side([Title]).
@@ -1290,9 +1291,9 @@ cpwui(C,G):- format('<font style="~w">~@</font>',[C,bformatc_or_at(G)]),!.
 bformatc_or_at(C):- wots(S,bformatc(C)), ( (S=="";(fail,atom_contains(S,"><"))) -> write('@') ; write(S)).
 
 is_html_color(A):- \+ atom(A),!,fail.
+is_html_color(A):- atom_concat('#',Rest,A),!,atom_length(Rest,6).
 is_html_color(teal).
 is_html_color(C):- is_real_color(C),!.
-is_html_color(A):- atom_concat('#',_,A),!.
 /*
 cpwui(fg(C),G):- !, cpwui(color(C),G).
 cpwui(color(C),G):- !, cpwui(style('color',C),G)
@@ -1489,7 +1490,7 @@ arc_acolor(fg(C),fg(Color)):- !, arc_acolor(C,Color).
 arc_acolor(bg(C),bg(Color)):- !, arc_acolor(C,Color).
 arc_acolor(hfg(C),hfg(Color)):- !, arc_acolor(C,Color).
 arc_acolor(hbg(C),hbg(Color)):- !, arc_acolor(C,Color).
-arc_acolor(C,fg(Color)):- atom(C),atom_concat('#',_,C),!,Color=C.
+arc_acolor(C,fg(Color)):- atom(C),atom_concat('#',Rest,C),!,atom_length(Rest,6),!,Color=C.
 arc_acolor(L,LL):- is_list(L),!,maplist(arc_acolor,L,LL).
 arc_acolor(C,Color):- nonvar(C), color_int(C,I)->C\==I,!,arc_acolor(I,Color).
 arc_acolor(_,[bold,underline]).

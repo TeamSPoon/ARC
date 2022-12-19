@@ -11,20 +11,37 @@ make_keypad([[_,_,_],[_,_,_],[_,_,_]]).
 %key_pad_tests(TestID):-  kaggle_arc(TestID,tst+0,In,Out), once((make_keypad(Out), \+ make_keypad(In))).
 %key_pad_tests(TestID):-  kaggle_arc(TestID,tst+0,In,Out), once((make_keypad(In), \+ make_keypad(Out))).
 
-forall_count(P,Q):- flag('$fac_t',W,W), W>0,!,forall(P,Q),report_forall_count(progress,so_far).
+forall_count(P,Q):- flag('$fac_t',W,W), W>0,!,forall(P,Q),report_count(progress,so_far).
 forall_count(P,Q):-
+  get_time(Now),luser_setval(report_count_time,Now),
   setup_call_cleanup(flag('$fac_t',W,0),
     setup_call_cleanup(flag('$fac_p',W2,0),
       time(forall((P,flag('$fac_t',X,X+1)),
         ignore(once((Q,flag('$fac_p',Y,Y+1)))))),     
-      (report_forall_count(P,Q),flag('$fac_p',_,W2))),
+      (report_count(P,Q),flag('$fac_p',_,W2))),
+    flag('$fac_t',_,W)).
+  
+
+foreach_test(TestID,Goal):- var(TestID),!,foreach_count(all_suite_test_name(TestID),Goal).
+foreach_test(TestID,Goal):- ensure_test(TestID),call(Goal).
+
+foreach_count(P,Q):- flag('$fac_t',W,W), W>0,!,P,Q,report_count(progress,so_far).
+foreach_count(P,Q):-
+  get_time(Now),luser_setval(report_count_time,Now),
+  setup_call_cleanup(flag('$fac_t',W,0),
+    setup_call_cleanup(flag('$fac_p',W2,0),
+      (((P,flag('$fac_t',X,X+1)),
+        (((Q,flag('$fac_p',Y,Y+1)))))),     
+      (report_count(P,Q),flag('$fac_p',_,W2))),
     flag('$fac_t',_,W)).
 
-report_forall_count(P,Q):- flag('$fac_t',ET,ET),flag('$fac_p',EP,EP),
+report_count(P,Q):- flag('$fac_t',ET,ET),flag('$fac_p',EP,EP),luser_getval(report_count_time,Was),
+ get_time(Now),Diff is Now - Was,
   (ET<2 -> true ;
    (Percent is round(EP/ET*10_000)/100,
-    fmt('~N % Success ~p% (~q) for ~p ~n',[Percent,EP/ET,forall_count(P,Q)]))).
+    fmt('~N % Success ~p% (~q) for ~p in ~d seconds ~n',[Percent,EP/ET,report_count(P,Q),Diff]))).
   
+
 
 /*
 solves_all_pairs(TestID,P,P2S):- kaggle_arc(TestID,tst+0,_,_), 
@@ -132,13 +149,13 @@ easy_p2_0(repair_and_select(_How,_M)):- test_hint(input_gt,unique_color_count),
                                       test_hint(input_plus(1),unique_color_count).
 
 %easy_p2(use_simplified_recall(_)).
+easy_p2(do_easy1(_)). %:- easy0(_,GFS).
+easy_p2(do_easy2(_,_)).
 easy_p2(repair_and_select(_,_)):-
  nop((
    test_hint(input_gt,unique_color_count), 
    test_hint(input_plus(1),unique_color_count))).
 
-easy_p2(do_easy1(_)). %:- easy0(_,GFS).
-easy_p2(do_easy2(_,_)).
 
 color_getter_p2(unique_colors).
 color_getter_p2(colors).
@@ -211,8 +228,9 @@ do_easy2(C1,C2,I,O):-
   easy0(N,C1),N=<3,
   C1\==(=),
   once(grid_call(C1,I,M)),I\=@=M,
-  easy0(M,C2),M>3,
-  C1\==C2, C2\== (=),
+  easy0(M,C2), M>3,
+  C1\==C2, 
+  C2 \== (=),
   grid_call(C2,M,O),
   M\=@=O.
 
@@ -237,7 +255,7 @@ easy_p2(do_simple_todolist(List)):- List = [C0,C1,C2,C3,C4,C5],
   
 %easy_p2(two_ops(repair_in_vm(repair_repeats(black)),get(repaired))).
 
-rot90_blur_flipD(I,O):- h_as_v(blur_or_not(flipD),I,O).
+rot90_blur_flipD(I,O):- c_r(blur_or_not(flipD),I,O).
 
 expect_p2:attr_unify_hook(_,_).
 

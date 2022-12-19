@@ -141,7 +141,7 @@ gravity(N,D,G,GR):- var(N),!,ensure_int(N),gravity(N,D,G,GR).
 gravity(1,n,Grid,GridNew):-!,gravity_1_n_0(Grid,GridNew),!.
 gravity(N,n,Grid,GridNew):-!,gravity_1_n_0(Grid,GridM),(Grid\=@=GridM->(Nm1 is N-1,gravity(Nm1,n,GridM,GridNew));GridNew=GridM).
 gravity(N,s,Grid,GridNew):-!,flipV(Grid,FlipV),gravity(N,n,FlipV,GridM),flipV(GridM,GridNew).
-gravity(N,w,Grid,GridNew):-!,h_as_v(gravity(N,n),Grid,GridNew).
+gravity(N,w,Grid,GridNew):-!,c_r(gravity(N,n),Grid,GridNew).
 gravity(N,e,Grid,GridNew):-!,h_as_rv(gravity(N,n),Grid,GridNew).
 
 gravity_1_n_0([],[]).

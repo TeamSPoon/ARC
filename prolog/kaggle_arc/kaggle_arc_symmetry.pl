@@ -475,8 +475,8 @@ print_quadrants(Color,Q1,Q2,Q3,Q4):-
 trial_removal(RemovalTrials,Grid3,[E],GridO):- 
   member(E,RemovalTrials),call(E,Grid3,GridO).
 
-pad_left(N,Grid,GridO):- (N==0 -> Grid=GridO ;  h_as_v(pad_top(N),Grid,GridO)).
-pad_right(N,Grid,GridO):-  (N==0 -> Grid=GridO ;  h_as_v(pad_bottem(N),Grid,GridO)). 
+pad_left(N,Grid,GridO):- (N==0 -> Grid=GridO ;  c_r(pad_top(N),Grid,GridO)).
+pad_right(N,Grid,GridO):-  (N==0 -> Grid=GridO ;  c_r(pad_bottem(N),Grid,GridO)). 
 pad_top(N,Grid,GridO):-  (N==0 -> Grid=GridO ;  (grid_size(Grid,H,_V),make_grid(H,N,Top),append(Top,Grid,GridO))).
 pad_bottem(N,Grid,GridO):-  (N==0 -> Grid=GridO ;  (grid_size(Grid,H,_V),make_grid(H,N,Bot),append(Grid,Bot,GridO))).
 
@@ -775,7 +775,7 @@ least_overlay(OriginalG,BlurWithG,OverlayedUncasted,OffsetH,OffsetV):-
 
 
 offset_layover(GGG,OffsetH,OffsetV,GGGG):-
-  push_downward(OffsetV,GGG,GG), h_as_v(push_downward(OffsetH),GG,GGGG).
+  push_downward(OffsetV,GGG,GG), c_r(push_downward(OffsetH),GG,GGGG).
 
 push_upward(OOV,G,NewBot):- OOV<0,!, OV is -OOV, push_downward(OV,G,NewBot).
 push_upward(OV,G,NewBot):- 
@@ -1503,7 +1503,7 @@ show_patterns4(GH,GV,Steps,L,G,GG):-
 glean_patterns3_HV(Steps,G,GG):- grid_size(G,GH,GV),gph(GH,GV,Steps,G,GG).
 
 glean_patterns2(Steps,G,GG):- glean_patterns3_HV(Steps,G,GG),!.
-glean_patterns2([rot90|Steps],G,GG):- h_as_v(glean_patterns3_HV(Steps),G,GG).
+glean_patterns2([rot90|Steps],G,GG):- c_r(glean_patterns3_HV(Steps),G,GG).
 
 glean_patterns1(Steps,G,GG):- glean_patterns2(Steps,G,GG),!.
 glean_patterns1([flipH|Steps],G,GG):- flipH(G,G90),glean_patterns2(Steps,G90,GG90),flipH(GG90,GG),!.
@@ -1511,7 +1511,7 @@ glean_patterns1([diaroll(2)|Steps],G,GG):- roll_d(2,G,G90),glean_patterns2(Steps
 
 gph(Steps,G,GG):- glean_patterns1(Steps,G,GG),!.
 gph([diaroll(1)|Steps],G,GG):- roll_d(1,G,G90),glean_patterns1(Steps,G90,GG90),roll_d(1,GG90,GG).
-gph([rot90|Steps],G,GG):- h_as_v(glean_patterns1(Steps),G,GG),!.
+gph([rot90|Steps],G,GG):- c_r(glean_patterns1(Steps),G,GG),!.
 gph([flipV|Steps],G,GG):- flipV(G,G90),glean_patterns1(Steps,G90,GG90),flipV(GG90,GG),!.
 gph(_GH,_GV,Steps,G,GG):- repair_2x2([],Steps,G,GG),!.
 
@@ -2117,7 +2117,7 @@ verify_symmetry((flipH,flipV),GridO):- is_able_v(flipV,GridO),is_able_v(flipH,Gr
 is_flippable_h(Flip,G):- rot90(G,R),is_able_v(Flip,R).
 make_flippable_h(Flip,G,HS):- is_flippable_h(Flip,G),HS=G.
 make_flippable_h(Flip,G,HS):- ((rot270(G,G90),make_able_v(Flip,G90,VS),rot90(VS,HS))*->true;make_flippable_h1(Flip,G,HS)).
-make_flippable_h1(Flip,G,HS):- h_as_v(make_able_v(Flip),G,HS).
+make_flippable_h1(Flip,G,HS):- c_r(make_able_v(Flip),G,HS).
 
 
 is_symmetrical(Grid):-  is_flippable_h(flipH,Grid),is_able_v(flipV,Grid).

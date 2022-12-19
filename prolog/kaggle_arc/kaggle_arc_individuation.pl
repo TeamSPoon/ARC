@@ -407,7 +407,7 @@ individuation_macros(do_ending, [
  combine_same_globalpoints,
  find_touches,
  find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
- %find_sees,
+ find_sees,
  find_overlaps,
  combine_same_globalpoints,
  really_group_vm_priors,
@@ -778,9 +778,10 @@ is_fti_step(indv_omem_points).
 indv_omem_points(VM):- 
  must_det_ll((
   Grid = VM.grid_o,
-  ensure_gid(Grid,GID),
-  cache_grid_objs(GID),
-  show_grid_objs(GID),
+  with_luser(generate_gids,true,
+   (ensure_gid(Grid,GID),
+    cache_grid_objs(GID),
+    show_grid_objs(GID))),
   grid_object_points(GID,_ALL_Types,Groups),
   %pp(gro=Groups), trace,
   maplist(use_indv_omem_points(VM),Groups))).
@@ -3610,7 +3611,7 @@ group_vm_priors(VM):-
 % =====================================================================
 is_fti_step(really_group_vm_priors).
 % =====================================================================
-really_group_vm_priors(_VM):-!.
+%   really_group_vm_priors(_VM):-!.
 really_group_vm_priors(VM):-
  must_det_ll((
   ObjsG = VM.objs,
