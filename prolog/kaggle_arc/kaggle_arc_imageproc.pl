@@ -831,7 +831,9 @@ add_h_v_c(Grid,H,V,C):-
       (Was=C->true;(nth1(V,Grid,Row),nb_set_nth1(H,Row,C),nb_set_nth1(V,Grid,Row))))),!.
 add_h_v_c(Grid,H,V,C):- 
    print_grid(failed_add_h_v_c(H,V,C),Grid),
-   trace,nth1(V,Grid,Row),nb_set_nth1(H,Row,C),nb_set_nth1(V,Grid,Row).
+   ignore((nth1(V,Grid,Row),nb_set_nth1(H,Row,C),nb_set_nth1(V,Grid,Row))),
+   trace.
+   %dumpST.
 
 copy_cells(B,A,H,HH):- call(B,H),!,call(A,HH).
 copy_cells(_,_,H,H):- \+ is_list(H),!.

@@ -406,9 +406,15 @@ called_gid(_Suffix,P2,Color,MGrid):- call(P2,Color,MGrid),!.
 called_gid3(_P2,MOID,_Color,MGrid):- was_grid_gid(MGrid,MOID),!.
 called_gid3(P2,MOID,Color,MGrid):- call(P2,Color,MGrid),assert_grid_gid(MGrid,MOID).
 
-grid_to_gid(Grid,OID):- was_grid_gid(Grid,OID),!.
-grid_to_gid(Grid,OID):- grid_to_etid(Grid,ID),!,(clause(tid_to_gids(ID,OID),true)*-> true ; term_to_oid(ID,OID)).
-grid_to_gid(Grid,OID):- grid_to_tid(Grid,ID),!,(clause(tid_to_gids(ID,OID),true)*-> true ; term_to_oid(ID,OID)).
+grid_to_gid(Grid,GID):- was_grid_gid(Grid,GID),!.
+grid_to_gid(Grid,GID):- grid_to_etid(Grid,ID),!,ensure_now_tid_gids(Grid,ID,GID).
+grid_to_gid(Grid,GID):- grid_to_tid(Grid,ID),!,ensure_now_tid_gids(Grid,ID,GID).
+
+ensure_now_tid_gids(Grid,ID,GID):- 
+  (clause(tid_to_gids(ID,GID),true)*-> true ; term_to_oid(ID,GID)),
+  assert_grid_tid(Grid,ID),
+  assert_grid_gid(Grid,GID),!.
+
 % be03b35f
 
 was_grid_gid(G,GID):- current_predicate(gid_to_grid/2), call(call,gid_to_grid,GID,G),assertion(atom(GID)).

@@ -591,8 +591,9 @@ aggregates(link(_,_)).
 aggregates(insideOf(_)).
 
 %is_bg_object(Obj):- get_black(Black),has_prop(pen(  [cc(Black,_)]),Obj).
-is_bg_object(Obj):- has_prop(cc(fg,0),Obj),!, \+ has_prop(iz(whole),Obj).
+is_bg_object(Obj):- has_prop(cc(fg,0),Obj),!, \+ is_whole_grid(Obj).
 
+is_whole_grid(B):- has_prop(iz(stype(whole)),B),!.
 
 
 
@@ -1087,6 +1088,9 @@ all_colors_via_pixels(G,CC):-
   into_cc(SK,CC),!.
   
 %all_colors_via_pixels(G,BFO):- quietly((pixel_colors(G,GF),count_sets(GF,_,SK),into_cc(SK,BFO))).
+get_ccs(GF,CC):-
+  count_sets(GF,_GS,SK),
+  into_cc(SK,CC).
 
 count_sets(GF,GS,SK):-
   list_to_set(GF,GS),

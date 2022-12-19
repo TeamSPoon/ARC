@@ -10,6 +10,8 @@
 
 :- dynamic(muarc_tmp:cached_tests/2).
 :- dynamic(muarc_tmp:cached_tests_hard/2).
+:- multifile(muarc_tmp:cached_tests/2).
+:- multifile(muarc_tmp:cached_tests_hard/2).
 
 test_menu :- with_webui(menu).
 menu :- write_menu('i').
@@ -47,7 +49,7 @@ menu_cmd1(_,'B','                  or (B)oxes test.',(update_changes,pbox_indivs
 menu_cmd1(_,'R','                  or (R)epairs test.',(update_changes,repair_symmetry)).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z_make,!,what_unique)).
 menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z_make,!,compile_and_save_test)).
-menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changes,maybe_set_suite,print_test)).
+menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changes,maybe_set_suite,print_testinfo,print_test)).
 menu_cmd1(_,'w','                  or (w)rite the test info',(update_changes,switch_pair_mode)).
 menu_cmd1(_,'X','                  or  E(X)amine the program leared by training',(cls_z_make,print_test,!,learned_test,solve_easy)).
 menu_cmd1(_,'L','                  or (L)earned program',(learned_test)).
@@ -1190,7 +1192,7 @@ test_id_border(TestID):-
 print_whole_test(Name):- fix_test_name(Name,TestID), with_pair_mode(whole_test,print_test(TestID)).
 
 maybe_set_suite:- get_current_test(TestID),maybe_set_suite(TestID).
-print_test(TName):-
+print_test(TName):-  
   fix_test_name(TName,TestID,ExampleNum1),  
   arc_user(USER),  
   %set_example_num(ExampleNum1),

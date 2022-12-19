@@ -402,14 +402,16 @@ individuation_macros(do_ending, [
  %combine_same_globalpoints, % make sure any objects are perfectly the equal part of the media(image) are iz(flag(combined))
  %keep_only_shown(1),
  %remove_if_prop(and(cc(bg,1))),
- combine_if_prop(and(cc(bg,1),cc(fg,0))),
+ %combine_if_prop(and(cc(bg,1),)),
  %remove_if_prop(and(iz(stype(dot))])),
- combine_same_globalpoints,
- find_touches,
+ %combine_same_globalpoints,
  find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
- find_sees,
  find_overlaps,
- combine_same_globalpoints,
+ find_touches,
+ find_sees,
+ remove_if_prop(and(link(contains,_),cc(fg,0))),
+ remove_if_prop(and(giz(g(out)),cc(fg,0))),
+ %combine_same_globalpoints,
  really_group_vm_priors,
  %grid_props,
  %combine_objects,
@@ -475,12 +477,14 @@ fast_simple :- true.
 %
 
 
-individuator(i_maybe_glypic,[grid_props,maybe_glyphic]). %:- \+ doing_pair.
 %individuator(i_omem_points,[indv_omem_points]).
-individuator(i_nsew,[whole,indv_omem_points,reset_points,pbox_vm_special_sizes]). %,nop((maybe_alone_dots_by_color(lte(20))))]).
+individuator(i_omem,[indv_omem_points]).
+individuator(i_nsew,[gather_cached,pbox_vm_special_sizes]). %,nop((maybe_alone_dots_by_color(lte(20))))]).
 %individuator(i_pbox,[whole,pbox_vm]).
-individuator(i_subtractions,[fg_subtractions([i_nsew])]).
-individuator(i_intersections,[fg_intersections([i_nsew])]).
+individuator(i_maybe_glypic,[grid_props,maybe_glyphic]). %:- \+ doing_pair.
+individuator(i_repair_patterns,[maybe_repair_in_vm(find_symmetry_code)]).
+%% OMEM SUPER SIMPLE individuator(i_subtractions,[fg_subtractions([i_nsew])]).
+%% OMEM SUPER SIMPLE individuator(i_intersections,[fg_intersections([i_nsew])]).
 /*
 individuator(i_nsew,[nsew]).
 % NEW SYSTEM individuator(i_subtractions,  [fg_subtractions([whole,save_as_obj_group(i_nsew),save_as_obj_group(i_mono_nsew)])]).
@@ -776,19 +780,34 @@ individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
 is_fti_step(indv_omem_points).
 % =====================================================================
 indv_omem_points(VM):- 
+ luser_setval(generate_gids,true),
  must_det_ll((
   Grid = VM.grid_o,
   with_luser(generate_gids,true,
-   (ensure_gid(Grid,GID),
+   ((
+    grid_to_gid(Grid,GID),    
+    ensure_gid(Grid,GID),
+    erase_objects(GID),
+    retractall(cmem(GID,_,_)),
+    ensure_cmem(GID),
+    remake_texture(GID),
+    show_grid_texture(GID),
+    erase_objects(GID),
     cache_grid_objs(GID),
-    show_grid_objs(GID))),
-  grid_object_points(GID,_ALL_Types,Groups),
-  %pp(gro=Groups), trace,
-  maplist(use_indv_omem_points(VM),Groups))).
-
-use_indv_omem_points(VM,Points):-
-  make_indiv_object(VM,[birth(omem)],Points,Obj),
-  nop(debug_as_grid(Obj)).
+    show_gid_objs(GID),
+    findall(OID,omem(GID,_,OID),OIDS),
+    list_to_set(OIDS,SET),
+    length(SET,Len),
+    pp(omem(GID)=Len),
+    forall(member(OID,SET),
+       ((
+         findall(C1-HV1,(omem(GID,HV1,OID),cmem(GID,HV1,C1)),Points),
+         oid_to_texture_points(OID,TPoints),
+         make_indiv_object(VM,[birth(omem),oid(OID),tpoints(TPoints)],Points,Obj),
+         %print_grid(OID,TPoints), debug_indiv(Obj),
+         nop(debug_as_grid(Obj)))))))))).
+ 
+  
 
 % =====================================================================
 is_fti_step(remove_if_prop).
@@ -3930,6 +3949,7 @@ maybe_show_ranking(GType,SFO):-
 % Code = ((
 add_rank(GType,ZType,IndvS,IndvSO):- add_rank(GType,ZType,1,IndvS,IndvSO).
 add_rank(_GType,_ZType,_,[],[]):-!.
+add_rank(_GType,_ZType,1,IO,IO):-!.
 add_rank(GType,ZType,N,[L],[Obj]):-   N>1, !, set_rank(GType,ZType,L,firstOF,Obj).
 add_rank(GType,ZType,N,[L],[Obj]):-  N==1, !, set_rank(GType,ZType,L,firstAndLastOF,Obj).
 add_rank(GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- N = 1, set_rank(GType,ZType,L,lastOF,Obj), 

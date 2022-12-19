@@ -494,6 +494,8 @@ skip_in_rules(Why,I):- not_for_matching(Why,_,I),not_for_creating(_,I).
 skip_in_rules(_Why,localpoints(_)).
 skip_in_rules(_Why,globalpoints(_)).
 skip_in_rules(_Why,colorless_points(_)).
+skip_in_rules(_Why,giz(gid(_))).
+
 
 
 % Cleanup LHS
@@ -553,7 +555,7 @@ simplify_l2r(I,C1,VC1,I_I,O,C2,VC2,O_O,Info):- fail,
   Info = [proportional(VC1,VC2,C1,C2,Purp)],
   I=I_I,O=O_O,!.
 
-make_rule_l2r(Shared,II,OO,III,OOO,[level(3,thru(O))|SharedMid]):- fail,
+make_rule_l2r(Shared,II,OO,III,OOO,[level(3,thru(O))|SharedMid]):- %fail,
   select(I,II,I_I),select(O,OO,O_O),O=@=I,!,make_rule_l2r(Shared,I_I,O_O,III,OOO,SharedMid).
 
 % unlikely useful Ordinals
@@ -758,7 +760,6 @@ test_local_save(is_grid_obj_count).
 test_local_save(is_grid_size).
 test_local_save(is_gridmass).
 test_local_save(is_why_grouped_g).
-test_local_save(make_grid_cache).
 test_local_save(note).
 test_local_save(oid_glyph_object).
 test_local_save(omem).

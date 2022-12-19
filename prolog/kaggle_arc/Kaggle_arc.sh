@@ -52,6 +52,9 @@ export BCMD="cd '${ARC_DIR}' ; pwd ; export TEE_FILE='${TEE_FILE}' ; swipl -l ka
 echo BCMD=$BCMD
 sleep 2
 
+# % 642,202,528 inferences, 104.676 CPU in 104.682 seconds (100% CPU, 6135124 Lips)
+swipl -g "time(load_files([muarc_cache/arc_db_temp_cache],[qcompile(auto)])),halt."
+
 if id -u "norights" >/dev/null 2>&1; then
  sudo -u norights bash -l -c "git config --global --add safe.directory /opt/logicmoo_workspace/packs_sys/logicmoo_utils" || stty sane
  sudo -u norights bash -l -c "${BCMD}" || stty sane

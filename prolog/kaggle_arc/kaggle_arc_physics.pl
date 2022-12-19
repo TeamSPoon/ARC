@@ -403,6 +403,7 @@ touching_object(How,Dirs,O2,O1):- O1\==O2,
 
   %has_prop(o(Y,LC,_),O1), has_prop(o(Y,LC,_),O2),
   is_physical_object(O1), is_physical_object(O2),
+  \+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
   call(How,Ps2,Ps1,Dirs),!.
@@ -417,12 +418,13 @@ dir_touching(Ps1,Ps2,Dir):- member(_-P1,Ps1), is_adjacent_point(P1,Dir,P2),  mem
 %ft i(VM,[find_sees|set(VM.program_i)]):- %cullObjectsOutsideOfRanges(VM), %  find_sees(How,VM).
 is_fti_step(find_sees).
 
-find_sees(VM):-
+find_sees(VM):-  
   /*must_det_ll*/((Objs = VM.objs, pred_find_links(seeing_object(non_overlapping_object_dir(dir_seeing)),Objs,NewObjs))),
   gset(VM.objs) = NewObjs.
 
 seeing_object(How,Dirs,O2,O1):- O1\==O2,
   is_physical_object(O1), is_physical_object(O2),
+  \+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
   call(How,Ps2,Ps1,Dirs),!.
@@ -433,7 +435,7 @@ dir_seeing(Ps1,Ps2,Dir):- member(_-P1,Ps1), is_adjacent_point(P1,Dir,P2), \+ mem
 seeing_dir_soon(P1,_Dir,Ps2):- member(_-P1,Ps2),!.
 seeing_dir_soon(P1,Dir,Ps2):- is_adjacent_point(P1,Dir,P2), seeing_dir_soon(P2,Dir,Ps2).
 
-is_physical_object(O):- has_prop(iz(whole),O),!,fail.
+is_physical_object(O):- is_whole_grid(O),!,fail.
 is_physical_object(O):- has_prop(cc(fg,0),O),!,fail.
 is_physical_object(O):- my_assertion(is_object(O)),has_prop(iz(media(shaped)),O),!.
 is_physical_object(O):- has_prop(mass(Mass),O),Mass>0.
@@ -450,11 +452,16 @@ find_overlaps(VM):-
 
 overlap(overlaping,O2,O1):- O1\==O2,
   is_physical_object(O1), is_physical_object(O2),
+  \+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
   \+ \+ (member(P,Ps1), member(P,Ps2)),!.
 
+already_relation(O1,O2):- \+ \+ already_relation(_,O1,O2).
+already_relation(Link,O1,O2):- obj_to_oid(O1,OID1), obj_to_oid(O2,OID2), already_relation(Link,O1,O2,OID1,OID2).
 
+already_relation(   P, O1,_O2,_OID1, OID2):- sub_term(P,O1),compound(P),arg(_,P,E),E==OID2,!.
+already_relation(r(P),_O1, O2, OID1,_OID2):- sub_term(P,O2),compound(P),arg(_,P,E),E==OID1,!.
 % ==============================================
 % LINKS
 % ==============================================

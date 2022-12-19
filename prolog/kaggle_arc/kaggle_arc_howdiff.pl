@@ -204,11 +204,15 @@ find_obj_mappings(A,BG,OO):-
   maplist(obj_grp_atoms,BG,BBR),
   find_obj_mappings2(AINFO,BBR,OO).
 
+
 find_obj_mappings2([A,PA|PAP],BBR,pair4(A,PA,B,PB)):- 
    ord(NJ/O+JO+Joins,[PA,A],[PB,B]) = Why,
    findall(Why,
     (      
      member([B,PB|PBP],BBR),
+     PA\==PB,
+     B\==A,
+     \+ has_prop(iz(stype(whole)),B),
       must_det_ll((
      % maybe_allow_pair(PA,PB), allow_pair(PA,PB),  
        intersection(PAP,PBP,Joins,OtherA,OtherB),     
@@ -354,21 +358,44 @@ showdiff_groups_new(AG,BG):-
  must_det_ll((
   maplist(obj_grp_atoms,AG,AGG),
   maplist(obj_grp_atoms,BG,BGG),
-   %print_list_of(show_mappings("IN -> OUT",AG,BG,BGG), inputMap,AGG),
-   print_list_of(show_mappings("IN <- OUT",BG,AG,AGG),outputMap,BGG))).
+   retractall(did_map(_,_,_,_)),   
+   print_list_of(xfer_mappings("IN  -> OUT",AG,BG,BGG),  inputOutputMap,AGG),
+   print_list_of(xfer_mappings("IN  <- OUT",BG,AG,AGG),  outputInputMap,BGG),   
+   print_list_of(prox_mappings("IN  -> IN", AG,AG,AGG),   inputInputMap,AGG),
+   print_list_of(prox_mappings("OUT -> OUT",BG,BG,BGG), outputOutputMap,BGG),   
+ true)).
 
-show_mappings(TITLE,AG,BG,BGG,APA):-
+xfer_mappings(TITLE,AG,BG,BGG,APA):-
  ignore(( 
-    dash_chars(100),nl,nl,nl,
-     member(E,APA),E=obj(_),!, \+ is_bg_object(E),
-
+  dash_chars(100),nl,nl,nl,
+  member(E,APA),E=obj(_),!,  
   APA = [A,PA|_Atoms],
   find_obj_mappings2(APA,BGG,Pair),  
   Pair = pair4(A,PA,B,PB),
   % must_det_ll(A\==B),
   nop(PA\==PB),!,
-  %%debug_as_grid('show_mappings',A),
+  %%debug_as_grid('xfer_mappings',A),  
+  (TITLE == "IN <- OUT" 
+    -> showdiff_arg1(TITLE,BG,B,AG,A)
+     ; showdiff_arg1(TITLE,AG,A,BG,B)))).
+  %showdiff_objects(PA,PB),!.
 
+nearest_by_not_simular(A,B,R):- A == B,!, R = inf.
+nearest_by_not_simular(_,B,R):- is_whole_grid(B), !, R = inf.
+nearest_by_not_simular(A,B,R):- distance(A,B,R).
+
+distance(A,B,R):- loc2D(A,X1,Y1),loc2D(B,X2,Y2), R is sqrt(abs(X1-X2)*abs(Y1-Y2)).
+
+prox_mappings(TITLE,AG,BG,_BGG,APA):-
+ ignore((  
+  member(E,APA),E=obj(_),!,
+  \+ is_whole_grid(E),
+  APA = [A,_PA|_Atoms],
+  predsort(sort_on(nearest_by_not_simular(A)),BG,BGS),
+  BGS=[B|_],
+  % must_det_ll(A\==B),
+  %%debug_as_grid('xfer_mappings',A),  
+  dash_chars(100),nl,nl,nl,
   (TITLE == "IN <- OUT" 
     -> showdiff_arg1(TITLE,BG,B,AG,A)
      ; showdiff_arg1(TITLE,AG,A,BG,B)))).
@@ -379,20 +406,44 @@ showdiff_arg1(TITLE,Peers1,Obj1,Peers2,Obj2):-
  must_det_ll((
   findall(Peer,(nop(has_prop(o(X,_,Y),Obj1)),member(Peer,Peers1),has_prop(o(X,_,Y),Peer),Peer\==Obj1),Peers11),
   findall(Peer,(nop(has_prop(o(X,_,Y),Obj2)),member(Peer,Peers2),has_prop(o(X,_,Y),Peer),Peer\==Obj2),Peers22),
-  objs_to_io(Obj1,Obj2,I1,O1),
-  ((Obj1==I1) 
-       -> (PeersI = Peers11,PeersO = Peers22) ; (PeersI = Peers22,PeersO = Peers11)))),
- must_det_ll((
- %link_prop_types(loc2D,I1,O1,_LOCS),
- show_pair_now(TITLE,I1,O1),
-  %what_unique(TestID,O1),
+  objs_to_io(Obj1,Obj2,O1,O2),
+  ((Obj1==O1) 
+       -> (PeersI = Peers11,PeersO = Peers22) ; (PeersI = Peers22,PeersO = Peers11)),
+ % map_objects_now(TITLE,PeersI,O1,PeersO,O2))).
+/*
+map_objects(TITLE,PeersI,O1,PeersO,O2):- 
+ get_did_map(PeersI,O1,PeersM,OM),
+ map_objects_now(m(TITLE),PeersM,OM,PeersO,O2).
 
+map_objects(TITLE,PeersI,O1,PeersO,O2):- 
+ get_did_map(PeersO,O2,PeersM,OM),
+ map_objects_now(m(TITLE),PeersI,O1,PeersM,OM).
+
+map_objects(_TITLE,_PeersI,O1,_PeersO,O2):-
+ (did_map(O1);is_bg_object(O1)),
+ (did_map(O2);is_bg_object(O2)),!.
+
+map_objects(TITLE,PeersI,O2,PeersO,O2):-
+ map_objects_now(TITLE,PeersI,O2,PeersO,O2).
+
+did_map(O1):- did_map(_,O1,_,_),!.
+did_map(O2):- did_map(_,_,_,O2),!.
+get_did_map(PeersI,O1,PeersO,O2):- did_map(PeersI,O1,PeersO,O2).
+get_did_map(PeersO,O2,PeersI,O1):- did_map(PeersI,O1,PeersO,O2).
+*/
+%:- dynamic(did_map/4).
+%map_objects_now(TITLE,PeersI,O2,PeersO,O2):-
+ %must_det_ll((
+              assert(did_map(PeersI,O1,PeersO,O2)),
+ %link_prop_types(loc2D,O1,O2,_LOCS),
+ show_pair_now(TITLE,O1,O2),
+  %what_unique(TestID,O2),
  if_t(nb_current(menu_key,'u'),
  (
-  indv_props(I1,S1),indv_props(O1,S2),
-  get_current_test(TestID), ignore(what_unique(TestID,I1)),
+  indv_props(O1,S1),indv_props(O2,S2),
+  get_current_test(TestID), ignore(what_unique(TestID,O1)),
   remove_giz(S1,T1),remove_giz(S2,T2),
-  indv_u_props(I1,IU),indv_u_props(O1,OU),
+  indv_u_props(O1,IU),indv_u_props(O2,OU),
   intersection(T1,T2,Sames,IA,OA),maplist(refunctor,Sames,NewSames),
   object_props_diff(IA,OA,Diffs), listify(Diffs,DiffL),maplist(print_nl,DiffL),      
   undiff(IA,OA,IZ,OZ),
@@ -402,7 +453,7 @@ showdiff_arg1(TITLE,Peers1,Obj1,Peers2,Obj2):-
   nop(PeersO=PeersO),
   flatten_sets([IU2,TT1],LHSSet),
   flatten_sets([OU2],RHSSet),
-  %peerless_props(O1,PeersO,Props2),
+  %peerless_props(O2,PeersO,Props2),
   %print([x=[in_i(S1),in_o(Props1),out_i(S2),out_o(Props2)]]),
   SETS = RHSSet+LHSSet,
   save_learnt_rule(test_solved(i_o,obj(NewSames,LHSSet,IZ),obj(NewSames,RHSSet,OZ)),1+2+3+4+5+6+SETS,SETS))))),!.  
