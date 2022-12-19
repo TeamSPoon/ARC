@@ -406,11 +406,13 @@ individuation_macros(do_ending, [
  %remove_if_prop(and(iz(stype(dot))])),
  %combine_same_globalpoints,
  find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
+ find_subsumes,
  find_overlaps,
  find_touches,
  find_sees,
  remove_if_prop(and(link(contains,_),cc(fg,0))),
  remove_if_prop(and(giz(g(out)),cc(fg,0))),
+ remove_dead_links,
  %combine_same_globalpoints,
  really_group_vm_priors,
  %grid_props,
@@ -730,7 +732,24 @@ two_rows(Grid,S1,R1,R2):-
   
   
 
-
+% =====================================================================
+is_fti_step(remove_dead_links).
+% =====================================================================
+remove_dead_links(VM):- 
+  Objs = VM.objs,
+  remove_dead_links(Objs,Objs,New),
+  gset(VM.objs) = New.
+remove_dead_links([],_Obj,[]):-!.
+remove_dead_links([Obj|Objs],LiveObjs,[obj(NewProps)|New]):-
+  indv_props(Obj,Props),
+  remove_dead_props(Props,LiveObjs,NewProps),
+  remove_dead_links(Objs,LiveObjs,New).
+remove_dead_props([],_LiveObjs,[]).
+remove_dead_props([Prop|Props],LiveObjs,NewProps):- compound(Prop),arg(2,Prop,Ref),
+  atom(Ref),sub_var(oid(Ref),LiveObjs),!,
+  remove_dead_props(Props,LiveObjs,NewProps).
+remove_dead_props([Prop|Props],LiveObjs,[Prop|NewProps]):-
+  remove_dead_props(Props,LiveObjs,NewProps).
 
 %most_d_colors
 

@@ -44,6 +44,32 @@ if_btype(info).
 if_btype(flag).
 
 
+gpoints_to_iv(GPoints,Iv):-
+  gpoints_to_iv_info(GPoints,_ColorlessPoints,_LocX,_LocY,_PenColors,_RotG,Iv,[],_LPoints,_Grid,_SH,_SV,_SizeY,_SizeX,_CentX,_CentY).
+%     GPoints,LCLPoints,LocX,LocY,PenColors,Rot2L,Iv,LPoints,Grid,SH,SV,SizeY,SizeX,CentX,CentY)
+gpoints_to_iv_info(GPoints,LCLPoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPoints,Grid,SH,SV,SizeY,SizeX,CentX,CentY):-
+  %points_range(GPoints,LocX,LocY,HiH,HiV,_HO,_VO), once(member(vis2D(SizeX,SizeY),Overrides);(SizeX is HiH-LocX+1,SizeY is HiV-LocY+1)),
+  po_loc2D_vis2D(GPoints,Overrides,LocX,LocY,SizeY,SizeX),  
+  deoffset_points(LocX,LocY,GPoints,LPoints),
+  make_grid(SizeX,SizeY,Grid),
+  add_global_points(LPoints,Grid,Grid),
+  grid_to_shape(Grid,RotG,SH,SV,LCLPoints,PenColors),
+  lpoints_to_iv_info(LCLPoints,LocX,LocY,PenColors,RotG,Iv),
+  gpoints_to_center(GPoints,LocX,LocY,SizeX,SizeY,CentX,CentY).
+
+lpoints_to_iv_info(LCLPoints,LocX,LocY,PenColors,RotG,Iv):- 
+  L=[ colorless_points(LCLPoints),  loc2D(LocX,LocY),  pen(PenColors),  rot2L(RotG)],
+  iv_for(L,Iv).
+
+
+gpoints_to_center(GPoints,LocX,LocY,SizeX,SizeY,CentX,CentY):-
+  % calc center2G
+  must_det_ll(once(
+   ((member(UFgPoints,[GPoints]),
+    ((CentX is LocX + floor(SizeX/2),CentY is LocY + floor(SizeY/2), hv_point(CentX,CentY,Point), member(_-Point,UFgPoints));
+    (length(UFgPoints,UFgLen),CP is round(UFgLen/2), nth1(CP,UFgPoints,Point),hv_point(CentX,CentY,Point)))));
+   (CentX is LocX + floor(SizeX/2),CentY is LocY + floor(SizeY/2)))).
+
 
 :- style_check(+singleton).
 make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):- 
