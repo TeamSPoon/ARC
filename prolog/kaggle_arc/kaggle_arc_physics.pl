@@ -442,20 +442,45 @@ is_physical_object(O):- has_prop(mass(Mass),O),Mass>0.
 
 % ==============================================
 % OVERLAPS
+is_fti_step(find_overlaps).
 % ==============================================
 %ft i(VM,[find_overlaps|set(VM.program_i)]):- %cullObjectsOutsideOfRanges(VM), %  find_overlaps(How,VM).
-is_fti_step(find_overlaps).
 
 find_overlaps(VM):-
   /*must_det_ll*/((Objs = VM.objs, pred_find_links(overlap,Objs,NewObjs))),
   gset(VM.objs) = NewObjs.
 
-overlap(overlaping,O2,O1):- O1\==O2,
+overlap(overlaping(OverlapP),O2,O1):- O1\==O2,
   is_physical_object(O1), is_physical_object(O2),
   \+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
-  \+ \+ (member(P,Ps1), member(P,Ps2)),!.
+  intersection(Ps1,Ps2,Overlap,P1L,P2L),
+  maplist(length,[Ps2,P2L,Overlap,P1L,Ps1],List),
+  Overlap\==[],
+  OverlapP =..[ol| List].
+
+
+% ==============================================
+% SUBSUMES
+is_fti_step(find_subsumes).
+% ==============================================
+%ft i(VM,[find_subsumes|set(VM.program_i)]):- %cullObjectsOutsideOfRanges(VM), %  find_subsumes(How,VM).
+
+find_subsumes(VM):-
+  /*must_det_ll*/((Objs = VM.objs, pred_find_links(subsume,Objs,NewObjs))),
+  gset(VM.objs) = NewObjs.
+
+subsume(subsuming(OverlapP),O2,O1):- O1\==O2,
+  is_physical_object(O1), is_physical_object(O2),
+  \+ already_relation(O2,O1),
+  %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
+  globalpoints(O1,Ps1), globalpoints(O2,Ps2),
+  intersection(Ps1,Ps2,Overlap,P1L,P2L),
+  maplist(length,[Ps2,P2L,Overlap,P1L,Ps1],List),
+  Overlap\==[],P1L==[],
+  OverlapP =..[ol| List].
+
 
 already_relation(O1,O2):- \+ \+ already_relation(_,O1,O2).
 already_relation(Link,O1,O2):- obj_to_oid(O1,OID1), obj_to_oid(O2,OID2), already_relation(Link,O1,O2,OID1,OID2).
