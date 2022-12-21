@@ -471,15 +471,35 @@ find_subsumes(VM):-
   /*must_det_ll*/((Objs = VM.objs, pred_find_links(subsume,Objs,NewObjs))),
   gset(VM.objs) = NewObjs.
 
-subsume(subsuming(OverlapP),O2,O1):- O1\==O2,
+subsume(subsuming(Offset,OverlapP),O2,O1):- O1\==O2,
+  is_physical_object(O1), is_physical_object(O2),  
+  %\+ already_relation(O2,O1),
+  %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
+  globalpoints(O1,Ps1), globalpoints(O2,Ps2),  
+  intersection(Ps1,Ps2,Overlap,P1L,P2L),
+  maplist(length,[Ps2,P2L,Overlap,P1L,Ps1],List),
+  Overlap\==[],P1L==[],
+  OverlapP =..[ol| List],
+  object_offset(O2,O1,Offset).
+
+subsume(by_subsuming(Offset,OverlapP),O1,O2):- O1\==O2,
   is_physical_object(O1), is_physical_object(O2),
-  \+ already_relation(O2,O1),
+  %\+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
   intersection(Ps1,Ps2,Overlap,P1L,P2L),
   maplist(length,[Ps2,P2L,Overlap,P1L,Ps1],List),
   Overlap\==[],P1L==[],
-  OverlapP =..[ol| List].
+  OverlapP =..[ol| List],
+  object_offset(O2,O1,Offset).
+
+object_offset(O2,O1,Offset):-
+  loc2D(O1,X1,Y1),
+  loc2D(O2,X2,Y2),
+  X is X2 - X1,
+  Y is Y2 - Y1,
+  Offset = offset2D(X,Y).
+
 
 
 already_relation(O1,O2):- \+ \+ already_relation(_,O1,O2).

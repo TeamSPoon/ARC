@@ -228,6 +228,23 @@ subst0011(X, Y, Term, NewTerm ) :-
         compound_name_arguments( NewTerm, F, ArgsNew )))))),!.
 
 
+
+subst_2LC([],_,I,I).
+subst_2LC([F|FF],[R|RR],I,O):- subst0011C(F,R,I,M),subst_2LC(FF,RR,M,O).
+
+
+subst001C(I,F,R,O):- subst0011C(F,R,I,O),!.
+
+subst0011C(X, Y, Term, NewTerm ) :-
+ (same_term(X,Term)-> Y=NewTerm ;
+  (is_list(Term)-> maplist(subst0011C(X, Y), Term, NewTerm );
+   (( \+ compound(Term); Term='$VAR'(_))->Term=NewTerm;
+     ((compound_name_arguments(Term, F, Args),
+       maplist(subst0011C(X, Y), Args, ArgsNew),
+        compound_name_arguments( NewTerm, F, ArgsNew )))))),!.
+
+
+
 ppa(FF):-
   copy_term(FF,FA,GF),  
   numbervars(FA+GF,0,_,[attvar(bind),singletons(true)]),

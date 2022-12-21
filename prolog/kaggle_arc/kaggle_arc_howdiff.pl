@@ -212,7 +212,7 @@ find_obj_mappings2([A,PA|PAP],BBR,pair4(A,PA,B,PB)):-
      member([B,PB|PBP],BBR),
      PA\==PB,
      B\==A,
-     \+ has_prop(iz(stype(whole)),B),
+     \+ is_whole_grid(B),
       must_det_ll((
      % maybe_allow_pair(PA,PB), allow_pair(PA,PB),  
        intersection(PAP,PBP,Joins,OtherA,OtherB),     
@@ -360,15 +360,16 @@ showdiff_groups_new(AG,BG):-
   maplist(obj_grp_atoms,BG,BGG),
    retractall(did_map(_,_,_,_)),   
    print_list_of(xfer_mappings("IN  -> OUT",AG,BG,BGG),  inputOutputMap,AGG),
+   %print_list_of(prox_mappings("OUT -> OUT",BG,BG,BGG), outputOutputMap,BGG),   
    print_list_of(xfer_mappings("IN  <- OUT",BG,AG,AGG),  outputInputMap,BGG),   
-   print_list_of(prox_mappings("IN  -> IN", AG,AG,AGG),   inputInputMap,AGG),
-   print_list_of(prox_mappings("OUT -> OUT",BG,BG,BGG), outputOutputMap,BGG),   
+   %print_list_of(prox_mappings("IN  -> IN", AG,AG,AGG),   inputInputMap,AGG),
  true)).
 
 xfer_mappings(TITLE,AG,BG,BGG,APA):-
  ignore(( 
   dash_chars(100),nl,nl,nl,
   member(E,APA),E=obj(_),!,  
+  \+ is_whole_grid(E),
   APA = [A,PA|_Atoms],
   find_obj_mappings2(APA,BGG,Pair),  
   Pair = pair4(A,PA,B,PB),
@@ -390,6 +391,7 @@ prox_mappings(TITLE,AG,BG,_BGG,APA):-
  ignore((  
   member(E,APA),E=obj(_),!,
   \+ is_whole_grid(E),
+  \+ did_map(E),
   APA = [A,_PA|_Atoms],
   predsort(sort_on(nearest_by_not_simular(A)),BG,BGS),
   BGS=[B|_],
@@ -401,6 +403,11 @@ prox_mappings(TITLE,AG,BG,_BGG,APA):-
      ; showdiff_arg1(TITLE,AG,A,BG,B)))).
   %showdiff_objects(PA,PB),!.
 
+:- dynamic(did_map/4).
+did_map(O1):- did_map(_,O1,_,_),!.
+did_map(O2):- did_map(_,_,_,O2),!.
+get_did_map(PeersI,O1,PeersO,O2):- did_map(PeersI,O1,PeersO,O2).
+get_did_map(PeersO,O2,PeersI,O1):- did_map(PeersI,O1,PeersO,O2).
 
 showdiff_arg1(TITLE,Peers1,Obj1,Peers2,Obj2):- 
  must_det_ll((
@@ -426,15 +433,11 @@ map_objects(_TITLE,_PeersI,O1,_PeersO,O2):-
 map_objects(TITLE,PeersI,O2,PeersO,O2):-
  map_objects_now(TITLE,PeersI,O2,PeersO,O2).
 
-did_map(O1):- did_map(_,O1,_,_),!.
-did_map(O2):- did_map(_,_,_,O2),!.
-get_did_map(PeersI,O1,PeersO,O2):- did_map(PeersI,O1,PeersO,O2).
-get_did_map(PeersO,O2,PeersI,O1):- did_map(PeersI,O1,PeersO,O2).
 */
-%:- dynamic(did_map/4).
 %map_objects_now(TITLE,PeersI,O2,PeersO,O2):-
  %must_det_ll((
-              assert(did_map(PeersI,O1,PeersO,O2)),
+
+ assert(did_map(PeersI,O1,PeersO,O2)),
  %link_prop_types(loc2D,O1,O2,_LOCS),
  show_pair_now(TITLE,O1,O2),
   %what_unique(TestID,O2),

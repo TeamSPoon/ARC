@@ -533,11 +533,14 @@ simplify_l2r(I,C1,VC1,I_I,O,C2,VC1,O_O,Info):-
 
 transfer_prop(location,loc2D(_,_)).
 transfer_prop(location,loc2G(_,_)).
+transfer_prop(location,center2D(_,_)).
 transfer_prop(location,center2G(_,_)).
+transfer_prop(location,bottem2D(_,_)).
+transfer_prop(location,bottem2G(_,_)).
 
 make_rule_l2r(Shared,II,OO,III,OOO,[level(3,6,7,removed(Type,RemoveL,RemoveR))|SharedMid]):- 
-  member(I,II),ground(I),member(O,OO),O=@=I,transfer_prop(Type,I),!,
-  make_unifier(O,UU),
+  member(I,II),ground(I),member(O,OO),is_all_original_value(I),O=@=I,transfer_prop(Type,I),
+  make_unifier_with_ftvars(I,UU),!,
   %Info = [level(0,lhs,if(C1=VC1))],
   my_partition(transfer_prop(Type),II,RemoveL,I_I_I),
   my_partition(transfer_prop(Type),OO,RemoveR,O_O_O),
@@ -546,6 +549,8 @@ make_rule_l2r(Shared,II,OO,III,OOO,[level(3,6,7,removed(Type,RemoveL,RemoveR))|S
 make_unifier(C1,_):- \+ compound(C1),fail.
 make_unifier(iz(C1),iz(C2)):- !, make_unifier(C1,C2).
 make_unifier(C1,C2):- functor(C1,F,A),functor(C2,F,A).
+
+make_unifier_with_ftvars(C1,C2):- functor(C1,F,A),functor(C2,F,A),numbervars(C2).
 
 % simple purportionals
 simplify_l2r(I,C1,VC1,I_I,O,C2,VC2,O_O,Info):- fail,
@@ -559,9 +564,9 @@ make_rule_l2r(Shared,II,OO,III,OOO,[level(3,thru(O))|SharedMid]):- %fail,
   select(I,II,I_I),select(O,OO,O_O),O=@=I,!,make_rule_l2r(Shared,I_I,O_O,III,OOO,SharedMid).
 
 % unlikely useful Ordinals
-make_rule_l2r(Shared,I,O,IIII,OOOO,[unused(ordinals,o(sf(Size1),Ord1,Val),o(sf(Size2),Ord2,Val))|NewShared]):- fail,
-  select(o(sf(Size1),Ord1,Val),I,II),
-  select(o(sf(Size2),Ord2,Val),O,OO),
+make_rule_l2r(Shared,I,O,IIII,OOOO,[unused(ordinals,o((Size1),Ord1,Val),o((Size2),Ord2,Val))|NewShared]):- fail,
+  select(o((Size1),Ord1,Val),I,II),
+  select(o((Size2),Ord2,Val),O,OO),
   ((Size1 \== Size2, Ord1==Ord2);(Size1 == Size2, Ord1\==Ord2);(Size1 \== Size2, Ord1\==Ord2)), !,
   make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared).
 
@@ -607,7 +612,8 @@ make_rule_l2r_1(Shared,II,OO,III,OOO,[when_missing(EVar,E)|SharedMid]):- fail,
 make_rule_l2r_1(Shared,II,OO,II,OO,Shared).
 
 make_rule_l2r_2(Shared,II,OO,III,OOO,[thru(O)|SharedMid]):- 
-  select(I,II,I_I),select(O,OO,O_O),O=@=I,!,make_rule_l2r_2(Shared,I_I,O_O,III,OOO,SharedMid).
+  select(I,II,I_I),select(O,OO,O_O),O=@=I, \+ transfer_prop(_,I),
+    is_all_original_value(O),!,make_rule_l2r_2(Shared,I_I,O_O,III,OOO,SharedMid).
 make_rule_l2r_2(Shared,II,OO,II,OO,Shared).
 
 /*

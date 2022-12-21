@@ -85,6 +85,9 @@ menu_cmd9(_,'D','or (D)ebug/break to interpreter.',(break)).
 menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd1(Mode,Key,Mesg,Goal).
 menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd9(Mode,Key,Mesg,Goal).
 
+
+menu_or_upper(IOKey):- nb_current(menu_key,Key),(Key==IOKey;(upcase_atom(Key,Key))),!.
+
 find_tests(F):-
    current_predicate(N),N=F/0, (atom_concat(test_,_,F); atom_concat(_,'_test',F)),
     \+ ( atom_codes(F,Codes),member(C,Codes),char_type(C,digit) ).

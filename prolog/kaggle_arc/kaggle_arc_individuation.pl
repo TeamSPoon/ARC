@@ -34,9 +34,11 @@ i2(ROptions,GridSpec):- clsmake,
 
 ip_pair(ROptions,GridIn,GridOut):-
   my_time((maybe_name_the_pair(GridIn,GridOut,PairName),
-    individuate_pair(ROptions,GridIn,GridOut,InC,OutC),    
+    individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
     show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC))).
-  
+
+worker_output(G):- menu_or_upper('B'),!,time(G).
+worker_output(G):- time(wots(_,weto(G))).
 
 ig(ROptions,Grid):-
   do_ig(ROptions,Grid,IndvS),
@@ -50,7 +52,7 @@ igo(ROptions,GridIn):-
 
 igo_pair(ROptions,GridIn,GridOut):-
   my_time((maybe_name_the_pair(GridIn,GridOut,PairName),
-  individuate_pair(ROptions,GridIn,GridOut,InC,OutC),  
+  individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
   locally(nb_setval(debug_as_grid,t),
           show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC)))).
 
@@ -81,7 +83,7 @@ ig_test_id_num_io(ROptions,GridIn,_ID,TestID,trn,Num,in,IndvS):-
 
 ig_test_id_num_io(ROptions,GridIn,_ID,TestID,_Example,_Num,_IO,IndvS):- 
   set_current_test(TestID),
-  my_time(individuate(ROptions,GridIn,IndvS)),!.
+  worker_output(my_time(individuate(ROptions,GridIn,IndvS))),!.
   %maplist(add_shape_lib(as_is),IndvS),  
 
 into_iog(InC,OutC,IndvS):- append(InC,OutC,IndvC),!, must_det_ll(list_to_set(IndvC,IndvS)).
@@ -165,26 +167,82 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):- GridIn==Gri
 show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):- 
  must_det_ll((
   dash_chars,
-  grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),
+  grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2), 
   print_ss(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
-  as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1),
-  xfer_zeros(GridIn1,GridOut1),
-  print_ss(green,GridIn1,ngridIn(ID1),_,GridOut1,ngridOut(ID2)),
-  %print_ss(green,InC,ogridIn(ID1),_,OutC,ogridOut(ID2)),
-  %dash_chars,  
+  as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1), xfer_zeros(GridIn1,GridOut1), print_ss(green,GridIn1,ngridIn(ID1),_,GridOut1,ngridOut(ID2)),
+
   grid_size(GridIn,IH,IV),grid_size(GridOut,OH,OV),
-  do_pair_filtering(ID1,GridIn,InC,InShown,ID2,GridOut,OutC,OutShown),
+
+  % do_pair_filtering(ID1,GridIn,InC,InShown,ID2,GridOut,OutC,OutShown),
   IDIn1 = in(ID1),
   nop(print_list_of(really_show_touches(IDIn1,InShown),IDIn1,InShown)),
+
   print_list_of(show_touches(OutShown),out(ID2),OutShown),
+
   setup_call_cleanup(
     luser_setval(no_rdot,true),
     (grid_size(GridIn,IH,IV), grid_size(GridOut,OH,OV),
     ((InC==OutC, InC==[]) -> progress(yellow,nothing_individuated(PairName)) ;
        show_pair_diff_code(IH,IV,  OH, OV,individuated(ROptions,ID1),individuated(ROptions,ID2),PairName,InC,OutC)),
+       if_t(menu_or_upper('i'),
+        ( dash_chars,
+          print_list_of(show_indiv(inputs),inputs,InC),
+          dash_chars,
+          print_list_of(show_indiv(outputs),outputs,OutC))),
+      
     !),
     luser_setval(no_rdot,false)),
   dash_chars)).
+
+
+dont_change(Var):- copy_term(Var,VarC),freeze(VarC,fail), freeze(Var,Var=@=VarC).
+
+show_indiv(Why,Obj):-
+  format('~N'),dash_chars(45),dash_chars(45),
+  must_det_ll((
+  vis2D(Obj,H,V),   
+
+  DoFF = false,
+
+  if_t((H\==1;V\==1;true),
+    must_det_ll((     
+     object_or_global_grid(Obj,LG+Type,Grid),      
+     Title = show_indiv(Why,objFn(Glyph),LG+Type,loc2D(OH,OV),center2G(CX,CY),size2D(H,V)),   loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
+     Grids = [Title=Grid|_],     
+
+     copy_term(Grid,GridNV,GoalsNV), numbervars(GridNV+GoalsNV,10,Ten,[attvar(bind),singletons(true)]),     
+     grid_to_norm(GridNV,Ops,Reduced),
+
+     if_t(Reduced\=@=GridNV,append(_,["NORMALIZED!!!"=Reduced|_],Grids)),
+
+     if_t(DoFF,((constrain_grid(f,_TrigF,Grid,GridFF), if_t(GridFF\=@=Grid,append(_,["Find"=GridFF|_],Grids)),
+       copy_term(Grid+GridFF,GG1+GridFFNV,GoalsFF), numbervars(GG1+GridFFNV+GoalsFF,10,_,[attvar(bind),singletons(false)])))),
+
+     append(_,[],Grids),
+     wots(SS, print_side_by_side(Grids)), replace_in_string(['®'=Glyph,'@'=Glyph],SS,S),     
+     HH is (OH - 1) * 2, print_w_pad(HH,S),
+     if_t((GoalsNV\==[];Ten\==10), (writeg(gridNV=GridNV),writeg(goals=GoalsNV))),
+
+     if_t(DoFF,if_t((GoalsFF\==[];Ten\==10), (writeg(gridFF=GridFFNV),writeg(goalsFF=GoalsFF)))),
+
+
+     if_t(Ops\==[], writeg(ops=Ops)),
+     if_t(Reduced\=@=GridNV,if_t(GoalsNV\==[], writeg(reduced=Reduced))),
+   true))),
+    
+  if_t(is_object(Obj),
+    (format('~N~n'),
+     locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Obj))))),
+     format('~N'),dash_chars(15))),!.
+
+writeg(N=V):- format('~N'),nonvar(N), pp_no_nl(N),writeln(' = '), !, wots(S,writeg(V)), print_w_pad(2,S).
+writeg(V):- \+ is_list(V),!,pp(V).
+%writeg(V):- \+ is_list(V),!,writeq(V),nl.
+writeg([H|T]):- is_list(H),wots(S,maplist(writeln,[H|T])), print_w_pad(2,S).
+writeg(X):- wots(S,pp(X)), print_w_pad(2,S).
+
+
+
 
 do_pair_filtering(ID1,GridIn,InC,InShownO,ID2,GridOut,OutC,OutShownO):- 
   grid_size(GridIn,IH,IV),filter_shown(IH,IV,InC,InShown,InHidden), filter_shown(IH,IV,InHidden,InHiddenLayer1,InHiddenLayer2),
@@ -410,9 +468,9 @@ individuation_macros(do_ending, [
  find_overlaps,
  find_touches,
  find_sees,
- remove_if_prop(and(link(contains,_),cc(fg,0))),
- remove_if_prop(and(giz(g(out)),cc(fg,0))),
- remove_dead_links,
+ %remove_if_prop(and(link(contains,_),cc(fg,0))),
+ %remove_if_prop(and(giz(g(out)),cc(fg,0))),
+ %remove_dead_links,
  %combine_same_globalpoints,
  really_group_vm_priors,
  %grid_props,
@@ -478,8 +536,11 @@ fast_simple :- true.
 %individuator(i_hammer,[shape_lib(hammer),do_ending]).
 %
 
+individuation_macros(i_pbox,[pbox_vm_special_sizes]).
+
 
 %individuator(i_omem_points,[indv_omem_points]).
+individuator(i_mono_colormass,[fg_shapes(colormass)]).
 individuator(i_omem,[indv_omem_points]).
 individuator(i_nsew,[gather_cached,pbox_vm_special_sizes]). %,nop((maybe_alone_dots_by_color(lte(20))))]).
 %individuator(i_pbox,[whole,pbox_vm]).
@@ -822,7 +883,7 @@ indv_omem_points(VM):-
        ((
          findall(C1-HV1,(omem(GID,HV1,OID),cmem(GID,HV1,C1)),Points),
          oid_to_texture_points(OID,TPoints),
-         make_indiv_object(VM,[birth(omem),oid(OID),tpoints(TPoints)],Points,Obj),
+         make_indiv_object(VM,[birth(omem),omem_oid(OID),oid(OID),tpoints(TPoints)],Points,Obj),
          %print_grid(OID,TPoints), debug_indiv(Obj),
          nop(debug_as_grid(Obj)))))))))).
  
@@ -1389,6 +1450,7 @@ individuate_two_grids_now_X(OID_In_Out,ROptions,Grid_In,Grid_Out,VM_In,VM_Out,Gr
 
   print_ss(yellow,Grid_InX,OID_In_Out=gridInX(ID_In),_,Grid_OutX,OID_In_Out=gridOutX(ID_Out)),
 
+  worker_output((
   with_other_grid(Grid_OutX,do_individuate(VM_In,ROptions,Grid_InX,Objs_In)),!, 
   gset(VM_Out.robjs) = Objs_In,
   with_other_grid(Grid_InX,do_individuate(VM_Out,ROptions,Grid_OutX,Objs_Out)),!,
@@ -1399,7 +1461,7 @@ individuate_two_grids_now_X(OID_In_Out,ROptions,Grid_In,Grid_Out,VM_In,VM_Out,Gr
   with_other_grid(Grid_Out,individuate2(VM_InX,ROptions,OID_In,Grid_InX,Objs_InX)),!,
 
   maybe_into_fti(ID_Out,ROptions,Grid_OutX,VM_OutX), set(VM_OutX.grid_target) = Grid_In, set(VM_OutX.robjs) = Objs_InX, 
-  with_other_grid(Grid_In,individuate2(VM_OutX,ROptions,OID_Out,Grid_OutX,Objs_OutX)),!,
+  with_other_grid(Grid_In,individuate2(VM_OutX,ROptions,OID_Out,Grid_OutX,Objs_OutX)))),!,
 
   into_iog(Objs_InX,Objs_OutX,IndvS),
   save_grouped(individuate(ROptions,OID_In_Out),IndvS))).
@@ -1433,17 +1495,21 @@ into_points_grid(GridIn,Points,Grid):-
    globalpoints_include_bg(GridIn,Points),
    into_grid(GridIn,Grid),!.
 
-do_individuate(VM, ROptions, GridIn,LF):- must_be_free(LF), 
+do_individuate(VM, ROptions, GridIn,LFO):- must_be_free(LF), 
  locally(set_prolog_flag(nogc,false),
    (into_grid(GridIn,Grid),  grid_to_tid(Grid,ID), %my_assertion(\+ is_grid(ID)),
-    individuate7(VM,ID,ROptions,Grid,LF))),!.
+    individuate7(VM,ID,ROptions,Grid,LF))),!,
+    guard_whole(LF,LFO),
+    gset(VM.objs) = LFO,!.
    %nop((tid_to_gid(ID,GID), maplist(assert_object_oid(GID),LF,_Glyphs,_OIDs))).
   %smallest_first(amass,IndvS,SF),
   %largest_first(mass,SF,LF),
-  %gset(VM.objs) = LF,
+  
    %!.
    %VM.grid_target
 
+guard_whole([obj(LF)],[obj([iz(stype(part))|LF])]):- !.
+guard_whole(LF,LF).
 % tiny grid becomes a series of points
 %individuate(GH,GV,ID,ROptions,_Grid,Points,IndvS):- \+ is_list(ROptions), is_glyphic(Points,GH,GV), individuate_glyphic(GH,GV,ID,Points,IndvS),!.
 %individuate(GH,GV,ID,whole,_Grid,Points,IndvS):-  individuate_whole(GH,GV,ID,Points,IndvS),!.
@@ -3838,9 +3904,9 @@ add_prior_placeholder(_Len,Name,IndvS0,IndvS9):-
   override_object(birth(Name),IndvS0,IndvS9),!.
 
 add_prior_placeholder(Len,Name,IndvS0,IndvS9):- 
-  (has_prop(o(sf(Len),_,Name),IndvS0)-> IndvS0=IndvS9 ; 
-    ((has_prop(o(sf(Was),Other,Name),IndvS0)-> delq(IndvS0,o(sf(Was),Other,Name),IndvS1) ; IndvS0=IndvS1),
-     override_object(o(sf(Len),nil,Name),IndvS1,IndvS9))),!.
+  (has_prop(o((Len),_,Name),IndvS0)-> IndvS0=IndvS9 ; 
+    ((has_prop(o((Was),Other,Name),IndvS0)-> delq(IndvS0,o((Was),Other,Name),IndvS1) ; IndvS0=IndvS1),
+     override_object(o((Len),nil,Name),IndvS1,IndvS9))),!.
 */
 
 object_get_priors(X,S):- is_object(X), !, must_det_ll((indv_props(X,Ps),
@@ -3885,31 +3951,37 @@ never_a_prior(colormass).
 never_a_prior(giz(X)):- !, fail, never_a_prior(X).
 never_a_prior(iz(X)):- !, never_a_prior(X).
 never_a_prior(P):- compound(P),functor(P,What,_),never_a_prior(What).
+never_a_prior(P):- rankNever(P).
 
 props_object_prior(V,_):- var(V),!,fail.
 props_object_prior(Prop,_):- never_a_prior(Prop),!,fail.
-%props_object_prior(o(sf(_),_,L),O):- props_object_prior(L,O)
-props_object_prior(o(sf(_),_,L),L):-!.
+%props_object_prior(o(_,_,L),O):- props_object_prior(L,O)
+props_object_prior(o(_,_,L),L):-!.
 props_object_prior(cc(Color,_Value),rankA(cc(Color))):-!.
 props_object_prior(mass(_),rank1(mass)).
 props_object_prior(birth(S),L):- !, fail, first_atom_value(S,L), L\= indiv(_), \+ never_a_prior(L).
-props_object_prior(iz(S),L):- !, S\=info(_), first_atom_value(S,L), \+ rankOnly(L), \+ never_a_prior(L).
+props_object_prior(iz(S),iz(L)):- !, props_object_prior(S,L).
 %props_object_prior(iz(S),L):- !, props_object_prior(S,L).
-props_object_prior(S,L):- first_atom_value(S,L), \+ rankOnly(L), \+ never_a_prior(L).
+props_object_prior(S,L):- S\=info(_), first_atom_value(S,L), \+ rankOnly(L), \+ never_a_prior(L).
+
+first_atom_value(S,S):- atom(S),!.
+first_atom_value(S,_):- \+ compound(S),!,fail.
+first_atom_value(S,rank1(F)):- S=..[F,A],comparable_value(A).
+first_atom_value(S,rank2(F)):- S=..[F,A,B],F\=='/', comparable_value(A),comparable_value(B).
+first_atom_value(S,O):- arg(1,S,E),atomic(E),E\==[],!,O=S, O \= (_/_).
+first_atom_value(S,O):- arg(2,S,E),first_atom_value(E,O),O \= (_/_).
+
+%comparable_value(A):- compound(A),!,A=(_/_).
+comparable_value(A):- is_color(A),!.
+comparable_value(A):- number(A),!.
+%comparable_value(A):- atom(A),!.
 
 
 rankOnly(center2G(_,_)).
 rankOnly(loc2D(_,_)).
 
-comparable_value(A):- compound(A),!,A=(_/_).
-comparable_value(A):- number(A), A\==[].
+rankNever(vis2G(_,_)).
 
-first_atom_value(S,S):- atom(S),!.
-first_atom_value(S,_):- \+ compound(S),!,fail.
-first_atom_value(S,rank1(F)):- S=..[F,A],comparable_value(A).
-first_atom_value(S,rank2(F)):- S=..[F,A,B],F\=='/',comparable_value(A),comparable_value(B).
-first_atom_value(S,O):- arg(1,S,E),atomic(E),E\==[],!,O=S, O \= (_/_).
-first_atom_value(S,O):- arg(2,S,E),first_atom_value(E,O),O \= (_/_).
 
 
 is_prior_prop(Lbl,Obj):- object_prior(Obj,L),L=Lbl,!.
@@ -3951,7 +4023,7 @@ rank_priors(GType,Objs,SFO):-
    smallest_first(smallest_pred(GType),Objs,SF),
    length(SF,SFLen),
    nop(SFLen < 2 -> pp(red,rank_priors(GType,SFLen)); pp(green,rank_priors(GType,SFLen))),   
-   add_rank(GType,sf(SFLen),SF,SFO),
+   add_rank(GType,(SFLen),SF,SFO),
    nop(maybe_show_ranking(GType,SFO)))).
 
 
@@ -3967,14 +4039,17 @@ maybe_show_ranking(GType,SFO):-
 %has_order(O,P1, Code ):- 
 % Code = ((
 add_rank(GType,ZType,IndvS,IndvSO):- add_rank(GType,ZType,1,IndvS,IndvSO).
+
 add_rank(_GType,_ZType,_,[],[]):-!.
-add_rank(_GType,_ZType,1,IO,IO):-!.
+%add_rank(_GType,_ZType,1,IO,IO):-!.
+
+add_rank(_GType,_ZType,N,[L],[L]):-  N==1, !.
 add_rank(GType,ZType,N,[L],[Obj]):-   N>1, !, set_rank(GType,ZType,L,firstOF,Obj).
 add_rank(GType,ZType,N,[L],[Obj]):-  N==1, !, set_rank(GType,ZType,L,firstAndLastOF,Obj).
 add_rank(GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- N = 1, set_rank(GType,ZType,L,lastOF,Obj), 
  N2 is N+1,!, add_rank(GType,ZType,N2,IndvS,IndvSO).
 add_rank(GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- % (GType = rank1(_);GType = rank2(_)),!, 
- set_rank(GType,ZType,L,nthOF(N),Obj), 
+ set_rank(GType,ZType,L,/*nthOF**/(N),Obj), 
  N2 is N+1,!, add_rank(GType,ZType,N2,IndvS,IndvSO).
 add_rank(GType,ZType,N,[L|IndvS],  [L|IndvSO]):- 
  N2 is N+1,!, add_rank(GType,ZType,N2,IndvS,IndvSO).

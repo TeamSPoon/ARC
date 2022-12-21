@@ -135,10 +135,12 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):-
     rot2L(RotG),
     rotOffset2D(SH,SV),
 
-    loc2D(LocX,LocY), unkept(loc2G(LocXG,LocYG)),
-    unkept(center2D(CentX,CentY)),unkept(center2G(CentXG,CentYG)),
+    loc2D(LocX,LocY), 
+    kept(loc2G(LocXG,LocYG)),
+    kept(center2D(CentX,CentY)),
+    kept(center2G(CentXG,CentYG)),
     iz(cenYG(CentYG)),iz(cenXG(CentXG)),  
-    bottem2D(BottemX,BottemY),unkept(bottem2G(BottemXG,BottemYG)),
+    bottem2D(BottemX,BottemY),kept(bottem2G(BottemXG,BottemYG)),
     vis2D(SizeX,SizeY), 
     vis2G(SizeXG,SizeYG), %iz(sizeY(SizeY)),iz(sizeX(SizeX)),
 
@@ -164,10 +166,9 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):-
     giz(g(IO)),
     
     %unkept(giz(gid_omem(GIDOMem))), unkept(giz(oid_omem(OIDOMem))), unkept(iv_omem(IvOMem)),giz(glyph_omem(GlyphOMem)),
-    kept(giz(gid(GID))), kept(iv(Iv)), 
-    % kept(oid(OID)), 
-    kept(giz(glyph(Glyph))),
-    
+    kept(giz(gid(GID))), kept(giz(iv(Iv))),kept(giz(glyph(Glyph))),
+    kept(oid(OID)),
+
     globalpoints(GPoints),
     giz(grid_sz(GridH,GridV)),
     []],Ps00),  
@@ -600,7 +601,7 @@ aggregates(insideOf(_)).
 %is_bg_object(Obj):- get_black(Black),has_prop(pen(  [cc(Black,_)]),Obj).
 is_bg_object(Obj):- has_prop(cc(fg,0),Obj),!, \+ is_whole_grid(Obj).
 
-is_whole_grid(B):- has_prop(iz(stype(whole)),B),!.
+is_whole_grid(B):- has_prop(iz(stype(whole)),B), \+ has_prop(iz(stype(part)),B),!.
 
 
 
@@ -672,12 +673,47 @@ iv_for(L,Iv):- copy_term(L,CT,_),numbervars(CT,0,_,[attvar(bind),singletons(true
 
 obj_iv(Obj,Iv):- indv_u_props(Obj,L),iv_for(L,Iv).
 
+obj_gid(Obj,GID):-  indv_props(Obj,L),member(giz(gid(GID)),L).
+
+
 obj_to_oid(Obj,OID):-  atom(Obj),display_length(Obj,L),L>5,Obj=OID,!.
 obj_to_oid(Obj,OID):-  oid_glyph_object(OID,_,Obj),!.
+/*
 obj_to_oid(I,X):- var_check(I,obj_to_oid(I,X))*->!;
  (indv_props(I,L),((member(obj_to_oid(X),L);member(oid(X),L)),!,
-  assert_object_oid(_,I,_Glyph,X))).
-obj_to_oid(Obj,OID):- assert_object_oid(_,Obj,_Glyph,OID),!.
+  object_glyph(I,Glyph),
+  assert_object_oid(_,I,Glyph,X))).
+*/
+obj_to_oid(Obj,OID):- 
+  indv_props(Obj,L),((member(obj_to_oid(OID),L);member(oid(OID),L);member(omem_oid(OID),L))),
+  must_det_ll(object_glyph(Obj,Glyph)),!,
+  assert(oid_glyph_object(OID,Glyph,Obj)).
+
+obj_to_oid(Obj,OID):- 
+ must_det_ll((
+   obj_iv(Obj,Iv), int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
+   obj_gid(Obj,GID), !,
+   atomic_list_concat(['o',Glyph,Iv,GID],'_',OID),
+   assert(oid_glyph_object(OID,Glyph,Obj)))).
+
+obj_to_oid(Obj,OID):-  assert_object_oid(_,Obj,_Glyph,OID),!.
+
+assert_object_oid(TID,Obj,Glyph,OID):-     
+ must_det_ll((
+
+  
+   tid_to_gid(TID,GID),
+   is_object(Obj),
+   obj_iv(Obj,Iv), int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
+   obj_gid(Obj,GID),  
+   atomic_list_concat(['o',Glyph,Iv|GIDLst],'_',OID),
+   atomic_list_concat(GIDLst,'_',GID),
+   
+   retractall(oid_glyph_object(OID,_,_)),
+   arc_assert_fast(oid_glyph_object(OID,Glyph,Obj)),
+   retractall(gid_glyph_oid(GID,Glyph,_)), retractall(gid_glyph_oid(GID,_,OID)),
+   arc_assert_fast(gid_glyph_oid(GID,Glyph,OID)),
+   assert_object2(OID,Obj))).
 
 current_gid(GID):- get_vm(VM), GID = VM.gid.
    %tid_to_gids(ID,GID),!.
@@ -693,19 +729,8 @@ tid_to_gid(TID,GID):- tid_to_gids(TID,GID),!.
 
 %o2g_f(Obj,Glyph):-  atom(Obj),display_length(Obj,1),Obj=Glyph,!.
 o2g_f(Obj,Glyph):- oid_glyph_object(_,Glyph,Obj),!.
-o2g_f(Obj,Glyph):- assert_object_oid(_,Obj,Glyph,_OID).
+o2g_f(Obj,Glyph):- obj_to_oid(Obj,OID),oid_glyph_object(OID,Glyph,Obj),!.
 
-assert_object_oid(TID,Obj,Glyph,OID):-     
- must_det_ll((
-   tid_to_gid(TID,GID),
-   is_object(Obj),
-   obj_iv(Obj,Iv), int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
-   atomic_list_concat(['o',Glyph,Iv,GID],'_',OID),
-   retractall(oid_glyph_object(OID,_,_)),
-   arc_assert_fast(oid_glyph_object(OID,Glyph,Obj)),
-   retractall(gid_glyph_oid(GID,Glyph,_)), retractall(gid_glyph_oid(GID,_,OID)),
-   arc_assert_fast(gid_glyph_oid(GID,Glyph,OID)),
-   assert_object2(OID,Obj))).
 
 assert_object2(OID,obj(List)):-!,maplist(assert_object2(OID),List).
 assert_object2(OID,List):- is_list(List),!,maplist(assert_object2(OID),List).

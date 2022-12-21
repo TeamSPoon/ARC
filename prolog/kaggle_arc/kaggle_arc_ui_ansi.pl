@@ -957,10 +957,11 @@ toUpperC(A,AU):- term_to_atom(A,AU).
 show_pair_diff(IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
   toUpperC(NameIn,NameInU),toUpperC(NameOut,NameOutU),
   show_pair_grid(cyan,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out),
+  if_t(\+ nb_current(menu_key,'i'),
   locally(nb_setval(debug_as_grid,t),
    ((is_group(In),is_group(Out))-> once(showdiff(In,Out));
     ((ignore((is_group(In), desc(wqnl(NameInU+fav(PairName)), debug_indiv(In)))),
-      ignore((is_group(Out),desc(wqnl(NameOutU+fav(PairName)), debug_indiv(Out)))))))),!.
+      ignore((is_group(Out),desc(wqnl(NameOutU+fav(PairName)), debug_indiv(Out))))))))),!.
 
 
 uses_space(C):- code_type(C,print).
@@ -1261,6 +1262,9 @@ color_print_webui(C,G):- mbfy(cpwui(C,G)).
 
 
 cpwui(_,G):- G==' ',!,write_nbsp.
+
+cpwui(C,G):- C==black,!,cpwui([black,black],G).
+
 cpwui(C,G):- multivalued_peek_color(C,W),cpwui(W,G).
 cpwui(C,G):- is_bg_sym_or_var_ui(C),!,cpwui(wbg,G).
 
@@ -1672,7 +1676,7 @@ print_gw1(N):- print_gw1(color_print_ele,N),!.
 
 print_gw1(P2,N):-  
  wots(S,(((get_bgc(BG),is_color(BG), once(( ( \+ is_black(BG))-> call(P2,BG,'.');write_nbsp);write(',')));write_nbsp),!,
-  (print_g1(P2,N);write('?')))),!, gws(S).
+  (print_g1(P2,N);write('.')))),!, gws(S).
 
 gws(S):- write(S),!.
 %gws(S):- display_length(S,L),(L=28->(write(L),atom_codes(S,Codes),arc_assert(ac(S)));write(S)).
@@ -1696,6 +1700,10 @@ mregression_test(P1):- call(P1,[[_17910,_17922-green,_17934-green,_17946-green,_
 %print_g1(C):- compound_var(C,N),underline_print(print_g1(N)),!.
 
 print_g1(CG):- print_g1(color_print_ele,CG).
+
+print_g1(P2,C):- P2==color_print_ele, C==black,color_print_ele(black,'.').
+print_g1(P2,C):- P2==color_print_ele, C=='$VAR'('_'),underline_print(color_print_ele(black,'.')).
+print_g1(P2,C):- P2==color_print_ele, compound(C),C = '$VAR'(N),number(N),int2glyph(N,S),underline_print(write(S)),!.
 print_g1(P2,C):- C == ((+) - wbg),!,call(P2,wbg,(+)).
 print_g1(P2,C):- multivalued_peek_color(C,V),C\==V,!,print_g1(P2,V).
 print_g1(P2,C):- plain_var(C), write_nbsp,!, nop(( nobject_glyph(C,G),underline_print(print_g1(P2,G-G)))),!.

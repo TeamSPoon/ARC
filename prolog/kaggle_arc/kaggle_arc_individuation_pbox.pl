@@ -82,17 +82,20 @@ pbox_vm_special_sizes(VM):- !,
   pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM).
 
 pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM):- 
-  (Objs==[];A<40),!,pbox_vm(GH,GV,GridI0,Sizes_S_L,VM).
+  length(Objs,Len),
+  (Len=<2;A<40),!,pbox_vm(GH,GV,GridI0,Sizes_S_L,VM).
 pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM):- 
   maplist(obj_size2D,Objs,HVList),
-  include(near_size(HVList),Sizes_S_L,UseSizes),
+  include(near_size(GH,GV,[size2D(3,3),size2D(9,9),size2D(4,4)|HVList]),Sizes_S_L,UseSizes),
   length(UseSizes,B), wdmsg(reduced(A->B)),
   pbox_vm(GH,GV,GridI0,UseSizes,VM).
 
+factor_of(V,GV):- R is GV rem V, ( R==0; (R \== 1, 0 is GV rem R, GV is R+V )),!.
 obj_size2D(Obj,size2D(H,V)):- vis2D(Obj,H,V).
 
-near_size(List,size2D(H,V)):- (near_size(List,H,V);near_size(List,V,H)),!.
-near_size(List,H,V):- within1of(H,HH),within1of(V,VV), member(size2D(HH,VV),List).
+near_size(_,_,List,size2D(H,V)):- (near_size1(List,H,V);near_size1(List,V,H)),!.
+near_size(GH,GV,_,size2D(H,V)):- factor_of(H,GH),factor_of(V,GV).
+near_size1(List,H,V):- within1of(H,HH),within1of(V,VV), member(size2D(HH,VV),List).
 within1of(H,HH):- freeze(HH, ( D is abs(H-HH), D =< 1 )).
 
 list_upto(Size,List,Some):- length(List,L),(L=<Size ->Some=List ; (length(Some,Size),append(Some,_,List))).

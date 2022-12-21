@@ -89,6 +89,13 @@ global_or_object_grid(O1,global+points,Points):- globalpoints_include_bg(O1,Poin
 global_or_object_grid(O1,local+points,Points):- localpoints_include_bg(O1,Points).
 global_or_object_grid(O1,local+self,O1).
 
+
+object_or_global_grid(O1,local+grid,Grid):-  object_grid(O1,Grid),!.
+object_or_global_grid(O1,global+grid,Grid):-  global_grid(O1,Grid),!.
+object_or_global_grid(O1,local+points,Points):- localpoints_include_bg(O1,Points).
+object_or_global_grid(O1,global+points,Points):- globalpoints_include_bg(O1,Points).
+object_or_global_grid(O1,local+self,O1).
+
 object_grid_to_str(Obj,Str,Title):- object_grid_to_str(Obj,_GridO,Str,Title).
 
 object_grid_to_str(Obj,GridO,Str,Title):- 
@@ -317,8 +324,8 @@ prefered(dg_line(_)).
 prefered_header(cc(Caps,_),Caps):- freeze(Caps,wbg == Caps).
 prefered_header(cc(Caps,_),Caps):- get_black(Black),freeze(Caps,Black == Caps).
 prefered_header(o(_,_,Caps),Caps):- freeze(Caps,i_bg_shapes == Caps).
-prefered_header(o(sf(_),1,Caps),Caps):- freeze(Caps,atom(Caps)).
-prefered_header(o(sf(_),last(_),Caps),Caps):- freeze(Caps,atom(Caps)).
+prefered_header(o(/*sf*/(_),1,Caps),Caps):- freeze(Caps,atom(Caps)).
+prefered_header(o(/*sf*/(_),last(_),Caps),Caps):- freeze(Caps,atom(Caps)).
 %prefered_header(/*b*/iz(Caps),PCaps):-prefered(PCaps),freeze(Caps,(nonvar(Caps),Caps = PCaps)).
 %prefered_header(iz(Caps),PCaps):-prefered(PCaps),freeze(Caps,Caps == PCaps).
 prefered_header(Caps,PCaps):-prefered(PCaps),freeze(Caps,(nonvar(Caps),Caps = PCaps)).
