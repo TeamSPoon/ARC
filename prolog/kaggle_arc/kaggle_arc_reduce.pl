@@ -291,6 +291,7 @@ xfr_write_op(OOO,OOO).
 rot_pair(rot90,rot270).
 rot_pair(rot270,rot90).
 rot_pair(flipD,inverseRot(flipD)).
+%rot_pair(rollD,inverseRot(rollD)).
 
 inverseRot(Rot,X,Y):- grid_call(Rot,X,Y).
 
@@ -324,6 +325,7 @@ ungrav_rot(G,UnRotG,GG):- grav_rot(G,RotG,GG),(G==GG->UnRotG=sameR;unrotate_p2(R
 
 :- decl_pt(reduce_grid(grid,list,grid)).
 
+/*
 with_protected_vars(AB,Goal):- ground(AB), !, call(Goal).
 with_protected_vars(AB,Goal):- term_variables(AB,ABV),term_variables(Goal,GoalV),
    include(not_in(ABV),GoalV,RGoalV),   
@@ -333,7 +335,7 @@ with_protected_vars(AB,Goal):- term_variables(AB,ABV),term_variables(Goal,GoalV)
    call(GoalC),
    resubst_vars(110,Ten,(GoalC,ABGoals),(Goal,ABGoalsCallable)),
    maplist(call,ABGoalsCallable).
-
+*/
 
 
 %resubst_vars(S,E,Info,ReInfo):- subst_2LC(S,E,Goal+Info,RGoal+RInfo). %,maplist(call,RGoal).

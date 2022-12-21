@@ -197,11 +197,25 @@ final_alignment(AR,BR,AAR,[],[PA|G1],[PB|G2]):- AAR\==[],
 
 final_alignment(_,_,AA,BB,AA,BB):-!.
 
-obj_grp_atoms(A,[A,PA|Atoms]):- obj_grp_comparable(A,PA),obj_atoms(PA,Atoms).
+:- dynamic(object_atomslist/4).
+%obj_grp_atoms(IO,A,[A,PA|Atoms]):- nonvar(IO),!,into_gid(IO,GID),obj_grp_atoms0(GID,A,[A,PA|Atoms]).
+obj_grp_atoms(IO,A,[A,PA|Atoms]):- obj_grp_atomslist(IO,A,PA,Atoms).
+
+obj_grp_atomslist(IO,A,PA,Atoms):- \+ \+ object_atomslist(IO,A,PA,Atoms), !, object_atomslist(IO,A,PA,Atoms).
+obj_grp_atomslist(IO,A,PA,Atoms):- obj_grp_comparable(A,PA),obj_atoms(PA,Atoms),
+  assert_if_new(object_atomslist(IO,A,PA,Atoms)).
+
+other_io(in,out).
+other_io(out,in).
+other_io(I,O):- 
+  cast_to_grid(I,Grid,UC),
+  other_grid(Grid,Other),
+  uncast(_,UC,Other,O).
 
 find_obj_mappings(A,BG,OO):-
-  obj_grp_atoms(A,AINFO),
-  maplist(obj_grp_atoms,BG,BBR),
+  obj_grp_atoms(IO,A,AINFO),
+  other_io(IO,OI),
+  maplist(obj_grp_atoms(OI),BG,BBR),
   find_obj_mappings2(AINFO,BBR,OO).
 
 
@@ -293,6 +307,8 @@ never_matom(o(_,_,_)).
 never_matom(giz(_)).
 never_matom(globalpoints(_)).
 sub_obj_atom(_,M):- var(M),!,fail.
+sub_obj_atom(M,o(H,L,_)):- !, M = (L/H).
+sub_obj_atom(E,colorless_points(CP)):- !, is_list(CP),member(E,CP).
 sub_obj_atom(_,M):- never_matom(M),!,fail.
 %sub_obj_atom(M,M):- attvar(M),!.
 %sub_obj_atom(A,A).
@@ -302,6 +318,7 @@ sub_obj_atom(M,M).
 %sub_obj_atom(iz(A),iz(A)):-!. % sub_obj_atom(A,M).
 sub_obj_atom(A,M):- M=..[F,List],is_list(List),!,member(E,List),A=..[F,E].
 sub_obj_atom(E,M):- sub_term(E,M),E\==M,compound(E),once((arg(_,E,A), number(A))).
+sub_obj_atom(S,M):- special_properties(M,L),!,member(S,L).
 
 select_obj_pair_2(AAR,BBR,PA,PB,(J/O)):- 
  AAR\==[],
@@ -354,11 +371,16 @@ indiv_show_pairs_output(Peers,_Shown,List,Indv):-
   dash_chars,
   (best_mates(Indv,List,Mate)->showdiff_arg1("I<>O",Peers,Indv,List,Mate);dg(Indv)).
 
+
+showdiff_groups_new(AG,BG):- learn_group_mapping(AG,BG),!.
 showdiff_groups_new(AG,BG):- 
  must_det_ll((
-  maplist(obj_grp_atoms,AG,AGG),
-  maplist(obj_grp_atoms,BG,BGG),
-   retractall(did_map(_,_,_,_)),   
+  other_io(IO,OI),
+  retractall(did_map(_,_,_,_)),   
+  retractall(object_atomslist(IO,_,_,_)),
+  retractall(object_atomslist(OI,_,_,_)),
+  maplist(obj_grp_atoms(IO),AG,_AGG),
+  maplist(obj_grp_atoms(OI),BG,_BGG),
    print_list_of(xfer_mappings("IN  -> OUT",AG,BG,BGG),  inputOutputMap,AGG),
    %print_list_of(prox_mappings("OUT -> OUT",BG,BG,BGG), outputOutputMap,BGG),   
    print_list_of(xfer_mappings("IN  <- OUT",BG,AG,AGG),  outputInputMap,BGG),   
@@ -826,7 +848,7 @@ combine_same_globalpoints(VM):- combine_same_globalpoints(VM.objs,set(VM.objs)).
 
 combine_same_globalpoints(IndvS,IndvSO):- 
   append(NoDupes,[I|Rest],IndvS),
-  select(O,Rest,IndvS2),  
+  select(O,Rest,IndvS2),  \+ is_whole_grid(O),
   %merge_2objs(VM,I,O,[],IO),
   %must_det_ll(indv_props(O,OProps)),
   must_det_ll(indv_props(I,IProps)),

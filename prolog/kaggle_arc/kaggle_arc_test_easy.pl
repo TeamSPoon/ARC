@@ -599,7 +599,7 @@ blur_or_not_least_2(FlipV,Rot180,I,O):-
     blur_or_not_least(FlipV),
     blur_or_not_least(Rot180)],I,O).
 
-blur_or_not_least_2a(flipV). blur_or_not_least_2a(rot90). blur_or_not_least_2a(flipD). blur_or_not_least_2a(blur_or_not_least_rot90_x2).
+blur_or_not_least_2a(flipV). blur_or_not_least_2a(rot90). blur_or_not_least_2a(flipD). blur_or_not_least_2a(rollD). blur_or_not_least_2a(blur_or_not_least_rot90_x2).
 blur_or_not_least_2b(flipH). blur_or_not_least_2b(rot90). blur_or_not_least_2b(rot180). 
 
 blur_or_not_least_rot90_x2(I,O):- 

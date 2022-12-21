@@ -130,9 +130,9 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   
   :- SL  is 2_147_483_648*8*4, set_prolog_flag(stack_limit, SL ).
   :- (getenv('DISPLAY',_) -> true ; setenv('DISPLAY','10.0.0.122:0.0')).
-  %:- unsetenv('DISPLAY').
-  %  :- (getenv('DISPLAY',_) -> guitracer ; true).
-  %  :- noguitracer.
+  :- unsetenv('DISPLAY').
+  :- (getenv('DISPLAY',_) -> guitracer ; true).
+  :- noguitracer.
   :- set_prolog_flag(toplevel_print_anon,false).
   :- set_prolog_flag(toplevel_print_factorized,true).
   
@@ -145,7 +145,7 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   :- set_prolog_flag(on_error,status).
   :- set_prolog_flag(debugger_show_context,true).
   
-  :- set_prolog_flag(last_call_optimisation,false).
+  %:- set_prolog_flag(last_call_optimisation,false).
   %:- set_prolog_flag(trace_gc,false).
   :- set_prolog_flag(write_attributes,dots).
   :- set_prolog_flag(backtrace_depth,1000).
@@ -245,6 +245,7 @@ must_det_ll(call(P2,I,O)):- !, must_grid_call(P2,I,O).
 %must_det_ll((X,Y,Z)):- !, (must_det_ll(X)->must_det_ll(Y)->must_det_ll(Z)).
 %must_det_ll((X,Y)):- !, (must_det_ll(X)->must_det_ll(Y)).
 must_det_ll(if_t(X,Y)):- !, if_t(must_not_error(X),must_det_ll(Y)).
+must_det_ll(forall(X,Y)):- !, forall(must_not_error(X),must_det_ll(Y)).
 must_det_ll((A*->X;Y)):- !,(must_not_error(A)*->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((A->X;Y)):- !,(must_not_error(A)->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((X;Y)):- !, ((must_not_error(X);must_not_error(Y))->true;must_det_ll_failed(X;Y)).
@@ -267,14 +268,17 @@ fail_odd_failure(G):- wdmsg(odd_failure(G)),rtrace(G), fail.
 
 
 %must_det_ll_failed(X):- predicate_property(X,number_of_clauses(1)),clause(X,(A,B,C,Body)), (B\==!),!,must_det_ll(A),must_det_ll((B,C,Body)).
-must_det_ll_failed(X):- notrace,wdmsg(failed(X))/*,arcST*/,nortrace,trace,visible_rtrace([-all,+fail,+exception],X).
+must_det_ll_failed(X):- wdmsg(failed(X))/*,arcST*/,nortrace,trace,visible_rtrace([-all,+fail,+exception],X).
 % must_det_ll(X):- must_det_ll(X),!.
 
 rrtrace(X):- rrtrace(etrace,X).
 
+is_guitracer:- fail, getenv('DISPLAY',_).
 rrtrace(P1,X):- nb_current(cant_rrtrace,t),!,nop((wdmsg(cant_rrtrace(P1,X)))),!,fail.
-rrtrace(P1,X):- !, call(P1,X).
-rrtrace(P1,X):- notrace,nortrace, arcST, sleep(0.5), trace, (notrace(\+ current_prolog_flag(gui_tracer,true)) -> call(P1,X); (trace,call(P1,X))).
+rrtrace(_,X):- notrace,is_guitracer,!,nortrace,gtrace,trace,call(X).
+rrtrace(P1,X):- trace,!, call(P1,X).
+rrtrace(P1,X):- notrace,nortrace, arcST, sleep(0.5), trace,
+   (notrace(\+ current_prolog_flag(gui_tracer,true)) -> call(P1,X); (trace,call(P1,X))).
 
 remove_must_dets(G,GGG):- compound(G), G = must_det_ll(GG),!,expand_goal(GG,GGG),!.
 remove_must_dets(G,GGG):- compound(G), G = must_det_l(GG),!,expand_goal(GG,GGG),!.

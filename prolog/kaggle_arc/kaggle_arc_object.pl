@@ -125,7 +125,13 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):-
          lpoints_to_iv_info(LCLPoints,LocX,LocY,PenColors,RotG,Iv), 
   int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
          atomic_list_concat(['o',Glyph,Iv,GID],'_',OID))),
-  op_grid_to_norm(NormOps,Grid,NormGrid),
+
+  
+  into_ngrid(Grid,NGrid),
+  ngrid_syms(NGrid,Syms),
+
+  %op_grid_to_norm(NormOps,Grid,NormGrid),
+  %grav_rot(Grid,NormOps,NormGrid),
   maplist(ignore,[GIDOMem==GID,IvOMem=Iv,GlyphOMem=Glyph,OIDOMem=OID]),
   testid_name_num_io(GID,_TestID,_Example,_Num,IO),
   flatten(
@@ -147,6 +153,8 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):-
     global2G(GlobalXG,GlobalYG),
     
     iz(sid(ShapeID)),
+
+    Syms,
     
     
     mass(Len),
@@ -159,7 +167,7 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):-
     changes([]), % [grid(LocalGrid)],    
     OShapeNames,
     
-    [norm_grid(NormGrid),norm_ops(NormOps)],
+   % [norm_grid(NormGrid),norm_ops(NormOps)],
     % [iz(locY(LocY)),iz(locX(LocX))], % iz(tall(SizeY)),iz(wide(SizeX)),
     
     %obj_to_oid(ID,Iv),
@@ -334,7 +342,7 @@ make_indiv_object(VM,Overrides,GOPoints,NewObj):-
   sort_points(GPoints,Points),
   Objs = VM.objs,
   Orig = _,!,
-  must_det_ll(((select(Orig,Objs,Rest),same_globalpoints_ovrs_ps_obj(Overrides,Points,Orig))
+  must_det_ll(((select(Orig,Objs,Rest), \+ is_whole_grid(Orig), same_globalpoints_ovrs_ps_obj(Overrides,Points,Orig))
     -> must_det_ll((override_object(Overrides,Orig,NewObj), ROBJS = Rest))
     ; must_det_ll((make_indiv_object_s(VM.gid,VM.h,VM.v,Overrides,Points,NewObj), ROBJS = Objs)))),!,
 
@@ -388,6 +396,8 @@ zero_one_more(2-C,iz(edge(C,touch))):- C\==c.
 zero_one_more(_-C,iz(edge(C,touch))):- C\==c.
 zero_one_more(_,[]).
 
+
+% obj_to_oid(Obj,OID),loc2D(Obj,X,Y),oid_home_grid(OID,GID),vis2D(thru_offset(X,Y,
 % [1,2,3]=27
 % [1,1,1,2,2,2,3,3,3]=27
 
@@ -1147,6 +1157,31 @@ object_grid(ObjRef,List):- \+ is_object(ObjRef), into_obj(ObjRef,Obj),!,object_g
 object_grid(I,G):- indv_props(I,L),member(grid(G),L),!.
 object_grid(I,G):- odd_failure((localpoints(I,LP),vis2D(I,H,V),points_to_grid(H,V,LP,G))),!.
 
+object_ngrid(Obj,GNGrid):- object_grid(Obj,Grid), into_ngrid(Grid,GNGrid).
+
+object_ngrid_symbols(Obj,Syms):- object_ngrid(Obj,NGrid), ngrid_syms(NGrid,Syms).
+
+ngrid_syms(NGrid,Syms):- 
+ subst_syms(bg,NGrid,GFlatSyms),get_ccs(GFlatSyms,Syms).
+
+
+subst_syms(IBGC,List, L) :-
+ must_det_ll(( flatten([List],L1),   
+   maplist(cell_syms(IBGC),L1, L2),
+   maplist(on_edge_sym, L2, L3),
+  include(\==(''),L3,L))).
+
+on_edge_sym(W,S):- on_edge_become(W,S),!. on_edge_sym(S,S).
+
+cell_syms(_IBGC,Cell,''):- plain_var(Cell),!.
+cell_syms( IBGC,Cell,''):- sub_var(IBGC,Cell).
+cell_syms(_IBGC,Cell,'@'):- is_color(Cell),!.
+cell_syms(_IBGC,Sym,Sym):- atom(Sym),atom_length(Sym,1),!.
+cell_syms(_IBGC,Cell,Cell):- \+ compound(Cell),!.
+cell_syms(IBGC,Cell-_,Sym):- cell_syms(IBGC,Cell,Sym),!.
+
+object_global_ngrid(Obj,GNGrid):- global_grid(Obj,Grid), into_ngrid(Grid,GNGrid).
+
 global_grid(I,G):- is_grid(I),!,G=I.
 global_grid(ObjRef,List):- \+ is_object(ObjRef), into_obj(ObjRef,Obj),!,global_grid(Obj,List).
 global_grid(I,G):- must_det_ll((call((grid_size(I,H,V),globalpoints_maybe_bg(I,LP),points_to_grid(H,V,LP,G))))),!.
@@ -1585,14 +1620,14 @@ find_outline_path2(C,L,Grid,sol(ResultO,[]),LeftOverO):-
   my_append(Others,LeftOver,LeftOverO).
 
 
-object_to_nm_grid(Obj,SSP):-
+object_nm_grid(Obj,SSP):-
   vis2D(Obj,H,V),
   localpoints(Obj,LPoints),
   points_to_grid(H,V,LPoints,GridIn),
   grid_to_gridmap(GridIn,SSP),
   print_grid(SSP).
 
-fast_arc.
+fast_arc:- fail.
 
 %neighbor_map
 grid_to_gridmap(GridIn,GridIn):- fast_arc,!.
@@ -1603,7 +1638,7 @@ grid_to_gridmap(GridIn,GridON):-
   nop((subst_1L(['*'-'.'],GridON,_SSP))).
 
 object_to_nm_points(Obj,NPoints):-
-  object_to_nm_grid(Obj,SSP),
+  object_nm_grid(Obj,SSP),
   localpoints(SSP,NPoints),!.
 
 :- style_check(-singleton).
@@ -1627,6 +1662,9 @@ guess_shape(GridH,GridV,GridIn,LocalGrid,I,Empty,N,H,V,Colors,Points,filltype(no
 
 guess_shape(GridH,GridV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,R):- N>=2, iz_symmetry(GridIn,R).
 
+guess_shape(GridH,GridV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,diagonal(u)):- rollD(GridIn,GridInRolled),maplist(=(E),GridInRolled).
+guess_shape(GridH,GridV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,diagonal(d)):- rollDR(GridIn,GridInRolled),maplist(=(E),GridInRolled).
+
 guess_shape(GridH,GridV,GridIn,LocalGrid,I,E,N,H,V,Colors,Points,stype(Keypad)):- 
   guess_shape_poly(I,E,N,H,V,Colors,Points,Keypad).
 
@@ -1634,6 +1672,7 @@ guess_shape_poly(I,0,1,1,1,Colors,Points,dot):-!.
 guess_shape_poly(I,_,_,_,_,Colors,[Point],dot):-!.
 guess_shape_poly(I,E,N,1,GridV,Colors,Points,column).
 guess_shape_poly(I,E,N,GridH,1,Colors,Points,row).
+
 guess_shape_poly(I,0,N,N,1,Colors,Points,hv_line(h)):- N > 1.
 guess_shape_poly(I,0,N,1,N,Colors,Points,hv_line(v)):- N > 1.
 guess_shape_poly(I,0,N,H,V,Colors,Points,rectangulator):- N>1, H\==V,!.
@@ -1716,6 +1755,7 @@ rot_p_plus_full(full). rot_p_plus_full(sym_hv).
 rot_p_plus_full(P):- rot_p2(P).
 
 rot_p2(flipD). rot_p2(rot90). %rot_p2(rot270). 
+rot_p2(rollD). 
 rot_p2(flipH). rot_p2(flipV). rot_p2(rot180). 
 rot_p2(flipDH). % rot_p2(flipDV). rot_p2(flipDHV). 
 

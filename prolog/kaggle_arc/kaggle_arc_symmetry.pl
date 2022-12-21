@@ -1081,6 +1081,7 @@ rotP(P2):-rotP0(P2).
 rotP(blur_least(_,fg)).
 rotP0(P2):-rotP1(P2).
 rotP0(flipD).
+rotP0(rollD).
 rotP1(P2):- rotP2(P2). %,P2\==rot90.
 rotP1(flipV).
 rotP1(flipH).

@@ -37,6 +37,7 @@ test_grav_rot(RotG,Shape,Rotated):- grav_rot(Shape,RotG,Rotated). %,unrotate(Rot
 flip_Once(rot90,X,Y):- rot90(X,Y).
 flip_Once(rot180,X,Y):- rot180(X,Y).
 flip_Once(rot270,X,Y):-  rot270(X,Y).
+flip_Once(rollD,X,Y):-  rollD(X,Y).
 flip_Once(flipD,X,Y):-  flipD(X,Y).
 flip_Once(flipH,X,Y):-  flipH(X,Y).
 flip_Once(flipV,X,Y):-  flipV(X,Y).
@@ -206,8 +207,9 @@ flipD(I,O):- any_xform(grid_flipD,I,O).
 flipDV(I,O):- any_xform(grid_flipDV,I,O).
 flipDH(I,O):- any_xform(grid_flipDH,I,O).
 flipDHV(I,O):- any_xform(grid_flipDHV,I,O).
+rollD(I,O):- any_xform(grid_rollD,I,O).
 nsew_edges(I,O):- any_xform(grid_edges_fresh,I,O).
-
+rollDR(I,O):- reverse(I,II),any_xform(grid_rollD,II,O).
 
 grid_edges_fresh(Find,Edges):- must_det_ll((
   [T|_]=Find,append(_,[B],Find),
@@ -230,6 +232,7 @@ learn_head((P:-_)):- compound(P), compound_name_arity(P,F,2),atom_concat('grid_'
 :- begin_load_hook(learn_head).
 */
 
+grid_rollD(Grid,RollD):-  do_rollD(Grid,RollD).
 grid_rot90(Grid,Rot90):-  rot270(Grid,Rot270),rot180(Rot270,Rot90).
 grid_rot180(Grid,Rot180):- flipV(Grid,Rot90),flipH(Rot90,Rot180).
 grid_rot270(Grid,NewAnyWUpdate):- get_colums(Grid,NewAnyWUpdate),!.
@@ -247,6 +250,13 @@ grid_flipD(I,O):- grid_size(I,H,V),make_grid(V,H,O),
        nb_set_local_point(Y,X,C,O)))).
 
 %:- end_load_hook(learn_head).
+
+do_rollD(Grid,Shifted):-
+ maplist_n(0,rot_row,Grid,Shifted).
+
+rot_row(0,Row,Row).
+rot_row(N,Row,Rot):- rot1(Row,Roll),N2 is N-1,rot_row(N2,Roll,Rot).
+rot1(Row,Roll):- append([E],Rest,Row),append(Rest,[E],Roll).
 
 unrotate(UnRot,X,Y):- unrotate_p2(UnRot,Rot),!,must_grid_call(Rot,X,Y).
 

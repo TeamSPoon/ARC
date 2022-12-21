@@ -211,7 +211,7 @@ neighbor_map1(H,V,[NC-P1|Ps],Points,[(N-C)-P1|Ps2]):-
   nei_map(H,V,C,P1,Points,N),
   neighbor_map1(H,V,Ps,Points,Ps2))).
 
-only_color_data(C,_):- var(C),!,fail.
+only_color_data(C,C):- var(C),!.
 only_color_data(C,C):- is_unreal_color(C),!.
 only_color_data(C,C):- is_color(C),!.
 only_color_data(NC,NC):- \+ compound(NC),!,fail.

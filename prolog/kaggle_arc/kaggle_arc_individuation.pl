@@ -207,16 +207,22 @@ show_indiv(Why,Obj):-
   if_t((H\==1;V\==1;true),
     must_det_ll((     
      object_or_global_grid(Obj,LG+Type,Grid),      
-     Title = show_indiv(Why,objFn(Glyph),LG+Type,loc2D(OH,OV),center2G(CX,CY),size2D(H,V)),   loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
+     Title = show_indiv(Why,objFn(Glyph),LG+Type,loc2D(OH,OV),center2G(CX,CY),size2D(H,V)),
+             loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
      Grids = [Title=Grid|_],     
 
-     copy_term(Grid,GridNV,GoalsNV), numbervars(GridNV+GoalsNV,10,Ten,[attvar(bind),singletons(true)]),     
-     grid_to_norm(GridNV,Ops,Reduced),
-
-     if_t(Reduced\=@=GridNV,append(_,["NORMALIZED!!!"=Reduced|_],Grids)),
+     copy_term(Grid,GridNV,GoalsNV), numbervars(GridNV+GoalsNV,10,Ten,[attvar(bind),singletons(false)]),     
+     
+     %grid_to_norm(GridNV,Ops,Reduced),
+     %if_t(Reduced\=@=GridNV,append(_,["NORMALIZED!!!"=Reduced|_],Grids)),
 
      if_t(DoFF,((constrain_grid(f,_TrigF,Grid,GridFF), if_t(GridFF\=@=Grid,append(_,["Find"=GridFF|_],Grids)),
        copy_term(Grid+GridFF,GG1+GridFFNV,GoalsFF), numbervars(GG1+GridFFNV+GoalsFF,10,_,[attvar(bind),singletons(false)])))),
+
+     object_ngrid(Obj,NGrid), append(_,["NGrid"=NGrid|_],Grids),
+
+    
+
 
      append(_,[],Grids),
      wots(SS, print_side_by_side(Grids)), replace_in_string(['®'=Glyph,'@'=Glyph],SS,S),     
@@ -228,6 +234,7 @@ show_indiv(Why,Obj):-
 
      if_t(Ops\==[], writeg(ops=Ops)),
      if_t(Reduced\=@=GridNV,if_t(GoalsNV\==[], writeg(reduced=Reduced))),
+     writeg("NGrid"=NGrid),
    true))),
     
   if_t(is_object(Obj),
@@ -236,6 +243,14 @@ show_indiv(Why,Obj):-
      format('~N'),dash_chars(15))),!.
 
 writeg(N=V):- format('~N'),nonvar(N), pp_no_nl(N),writeln(' = '), !, wots(S,writeg(V)), print_w_pad(2,S).
+writeg(Term):- 
+  term_attvars(Term,Attvars), Attvars\==[],!,
+  term_variables(Term,Vars),
+  include(not_in(Attvars),Vars,PlainVars),   
+  copy_term(Attvars+PlainVars+Term,AttvarsC+PlainVarsC+TermC,Goals),
+  numbervars(AttvarsC+Goals,10,MTen,[attvar(bind),singletons(false)]),
+  numbervars(PlainVarsC,MTen,_Ten,[singletons(true)]),
+  writeg(TermC), wots(S,writeg(Goals)), print_w_pad(2,S).
 writeg(V):- \+ is_list(V),!,pp(V).
 %writeg(V):- \+ is_list(V),!,writeq(V),nl.
 writeg([H|T]):- is_list(H),wots(S,maplist(writeln,[H|T])), print_w_pad(2,S).
@@ -454,6 +469,29 @@ individuation_macros(some_leftovers, [
      colormass,
      by_color(1),by_color(0)]).
 
+individuation_macros(i_complete_generic, [
+  whole,
+  maybe_glyphic,
+  save_as_obj_group([i_mono_colormass]),
+  indv_omem_points,
+  pbox_vm_special_sizes,
+  grid_props,
+  gather_cached,
+  maybe_repair_in_vm(find_symmetry_code),
+  find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
+  find_subsumes,
+  find_overlaps,
+  find_touches,
+  find_sees,
+  %remove_if_prop(and(link(contains,_),cc(fg,0))),
+  %remove_if_prop(and(giz(g(out)),cc(fg,0))),
+  %remove_dead_links,
+  %combine_same_globalpoints,
+  really_group_vm_priors,
+  %grid_props,
+  %combine_objects,
+  end_of_macro  ]). 
+
 individuation_macros(do_ending, [
   %find_edges,
   % find_contained_points, % mark any "completely contained points"
@@ -463,6 +501,7 @@ individuation_macros(do_ending, [
  %combine_if_prop(and(cc(bg,1),)),
  %remove_if_prop(and(iz(stype(dot))])),
  %combine_same_globalpoints,
+ grid_props,
  find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
  find_subsumes,
  find_overlaps,
@@ -503,7 +542,7 @@ im_complete(i_complete_generic).
 
 %im_complete(i_repair_patterns):-!.
 
-individuation_macros(i_complete_generic, SetO):-
+individuation_macros(i_complete_generic, SetO):- fail,
 %individuation_macros(complete, ListO):-  \+ test_config(indiv(_)),!, %reset_points, %sub_individuate(force_by_color,subshape_both), %TODO %
   %findall(drops_as_objects(From),(individuator(From,_)),ListM),
   findall(save_as_obj_group(From),individuator(From,_),ListS),
@@ -537,15 +576,17 @@ fast_simple :- true.
 %
 
 individuation_macros(i_pbox,[pbox_vm_special_sizes]).
+individuation_macros(i_mono_colormass,[fg_shapes(colormass)]).
 
 
 %individuator(i_omem_points,[indv_omem_points]).
-individuator(i_mono_colormass,[fg_shapes(colormass)]).
+individuator(i_mono,[save_as_obj_group([i_mono_colormass])]).
 individuator(i_omem,[indv_omem_points]).
-individuator(i_nsew,[gather_cached,pbox_vm_special_sizes]). %,nop((maybe_alone_dots_by_color(lte(20))))]).
 %individuator(i_pbox,[whole,pbox_vm]).
-individuator(i_maybe_glypic,[grid_props,maybe_glyphic]). %:- \+ doing_pair.
+individuator(i_maybe_glypic,[maybe_glyphic]). %:- \+ doing_pair.
 individuator(i_repair_patterns,[maybe_repair_in_vm(find_symmetry_code)]).
+%individuator(i_nsew,[gather_cached]). %,nop((maybe_alone_dots_by_color(lte(20))))]).
+individuator(i_pbox_vm_special_sizes,[gather_cached,pbox_vm_special_sizes]).
 %% OMEM SUPER SIMPLE individuator(i_subtractions,[fg_subtractions([i_nsew])]).
 %% OMEM SUPER SIMPLE individuator(i_intersections,[fg_intersections([i_nsew])]).
 /*
@@ -883,7 +924,9 @@ indv_omem_points(VM):-
        ((
          findall(C1-HV1,(omem(GID,HV1,OID),cmem(GID,HV1,C1)),Points),
          oid_to_texture_points(OID,TPoints),
-         make_indiv_object(VM,[birth(omem),omem_oid(OID),oid(OID),tpoints(TPoints)],Points,Obj),
+         nop((TP = [tpoints(TPoints)])),
+         TP=[],
+         make_indiv_object(VM,[birth(omem),omem_oid(OID),oid(OID)|TP],Points,Obj),
          %print_grid(OID,TPoints), debug_indiv(Obj),
          nop(debug_as_grid(Obj)))))))))).
  
@@ -2781,8 +2824,7 @@ mass_gt(N,Obj):- amass(Obj,Mass),Mass>N.
 
 % tiny grid becomes a series of points
 is_fti_step(maybe_glyphic).
-maybe_glyphic(VM):-
-  one_fti(VM,whole),
+maybe_glyphic(VM):- 
   Points = VM.points,
   if_t(is_glyphic(VM,Points,VM.h,VM.v),one_fti(VM,glyphic)).
 
@@ -2824,7 +2866,8 @@ one_fti(VM,glyphic):-
 
 is_fti_step(grid_props).
 grid_props(VM):- one_fti(VM,grid_props),!.
-one_fti(VM,grid_props):-
+one_fti(VM,grid_props):- whole(VM).
+/*
   H=VM.h,V=VM.v,
   Grid= VM.grid_o,
   hv_point_value(1,1,Grid,PointNW),
@@ -2832,33 +2875,43 @@ one_fti(VM,grid_props):-
   hv_point_value(H,1,Grid,PointNE),
   hv_point_value(H,V,Grid,PointSE),
   grid_props(Grid,Props),
-  append(Props,[amass(0),amass(0),vis2D(H,V),birth(grid_props),loc2D(1,1),iz(flag(always_keep)),iz(media(image)),iz(flag(hidden))],AllProps),
+  append(Props,[amass(0),vis2D(H,V),birth(grid_props),loc2D(1,1),iz(flag(always_keep)),iz(media(image)),iz(flag(hidden))],AllProps),
   make_indiv_object(VM,AllProps,[PointNW,PointSW,PointNE,PointSE],_),!.
-
+*/
 hv_point_value(H,V,Grid,C-Point):- hv_point(H,V,Point),point_c_value(Point,C,Grid).
 
 is_fti_step(whole).
 whole(VM):- one_fti(VM,whole),!.
+
 one_fti(VM,whole):-
   %localpoints_include_bg(VM.grid,Points),
   Grid = VM.grid,
-  whole_into_obj(VM,Grid,Obj),
-  raddObjects(VM,Obj).
+  Objs = VM.objs,
+  include(has_prop(iz(stype(whole))),Objs,IsWhole),
+  (IsWhole \== [] -> true;
+   (whole_into_obj(VM,Grid,Whole), gset(VM.objs)=[Whole|Objs])).
 
 whole_into_obj(VM,Grid,Whole):- 
+ must_det_ll((
   grid_size(Grid,H,V),
   localpoints_include_bg(Grid,Points),
-  length(Points,Len),
+  %length(Points,Len),
   grid_props(Grid,Props0),
+  Area is H * V,
   delete(Props0,sometimes_grid_edges(_),Props),
+  make_indiv_object(VM,[iz(stype(whole)),iz(media(image)),% iz(flag(hidden)),
+    mass(Area),loc2D(1,1),globalpoints(Points),localpoints(Points)|Props],
+    Points,Whole),raddObjects(VM,Whole),
+  save_grouped(individuate(whole,VM.gid),[Whole]),learn_hybrid_shape(pair,Whole))).
+  /*
   if_t(Len>=0,
-    (make_indiv_object(VM,[amass(Len),vis2D(H,V),iz(stype(whole)),iz(flag(always_keep)),loc2D(1,1),iz(media(image))|Props],Points,Whole),raddObjects(VM,Whole),
+    (make_indiv_object(VM,[amass(Len),vis2D(H,V),iz(stype(whole)),iz(flag(always_keep)),loc2D(1,1),iz(media(image))|Props],Points,Whole),
+      raddObjects(VM,Whole),
        save_grouped(individuate(whole,VM.gid),[Whole]),learn_hybrid_shape(pair,Whole))),
   localpoints(Grid,LPoints),
-  Area is H * V,
   length(LPoints,CLen),if_t((CLen=<144,CLen>=0),    
     (make_indiv_object(VM,[iz(stype(whole)),iz(media(shaped)),mass(Area),loc2D(1,1)],LPoints,Whole2),raddObjects(VM,Whole2))).
-
+*/
 
 % =====================================================================
 is_fti_step(remove_used_points).
@@ -3715,7 +3768,7 @@ group_vm_priors(VM):-
 % =====================================================================
 is_fti_step(really_group_vm_priors).
 % =====================================================================
-%   really_group_vm_priors(_VM):-!.
+really_group_vm_priors(_VM):-!.
 really_group_vm_priors(VM):-
  must_det_ll((
   ObjsG = VM.objs,
@@ -3743,7 +3796,7 @@ group_prior_objs(Why,ObjsIn,WithPriors):-
  group_prior_objs(Why,BG,BGWithPriors),
  append(FGWithPriors,BGWithPriors,WithPriors),!. 
 
-group_prior_objs(Why,ObjsIn,WithPriors):- 
+group_prior_objs(Why,ObjsIn,WithPriors):- fail,
  once(combine_same_globalpoints(ObjsIn,Objs)),
  ObjsIn\=@=Objs,!,
  group_prior_objs(Why,ObjsIn,WithPriors).
