@@ -1839,7 +1839,7 @@ rot_p2(flipDH). % rot_p2(flipDV). rot_p2(flipDHV).
 
 :- dynamic(individuated_cache/3).
 :- retractall(individuated_cache(_,_,_)).
-:- dynamic(is_why_grouped/4).
+:- dynamic(is_why_grouped_g/4).
 :- retractall(is_why_grouped_g(_,_,_,_)).
 
 

@@ -1423,8 +1423,8 @@ individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):-
          into_iog(IndvSI,IndvSO,IndvS),save_grouped(individuate(ROptions,OID_In_Out),IndvS)))).
 
 
-:- retractall(is_why_grouped(_,_,_,_)).
-prolog:make_hook(before, Some):- Some \==[], retractall(is_why_grouped(_,_,_,_)), fail.
+:- retractall(is_why_grouped_g(_,_,_,_)).
+prolog:make_hook(before, Some):- Some \==[], retractall(is_why_grouped_g(_,_,_,_)), fail.
 
 individuate_two_grids_now(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):- 
  must_det_ll((
