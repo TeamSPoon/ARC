@@ -122,9 +122,9 @@ assert_id_grid_cells(GID, Grid):-
    assert(is_grid_size(GID,SH,SV)),
    assert_grid_cmem(GID,SH,SV,Grid),
    remake_texture(GID),
-   show_grid_texture(GID),
-   cache_grid_objs(GID),
-   show_grid_objs(GID).
+   %show_grid_texture(GID),
+   cache_grid_objs(GID).
+   %show_grid_objs(GID).
 
 ensure_cmem(GID):- \+ \+ cmem(GID,_,_),!.
 ensure_cmem(GID):- 
@@ -205,6 +205,7 @@ make_lengths(N,L):- length(L,N).
 make_grid_cache:-
  my_time((forall(s_l_4sides(GH,GV), make_grid(GH,GV,_)))).
 
+insert_row_of(N,Cell,Grid,NewGrid):- grid_size(Grid,H,V),make_list(Cell,H,Row),insert_row(N,Row,Grid,H,V,NewGrid).
 insert_row(N,Row,Grid,NewGrid):- grid_size(Grid,H,V), insert_row(N,Row,Grid,H,V,NewGrid).
 insert_row(N,Row,Grid,H,V,NewGrid):- N<0, NewN is V + N+1,!,insert_row(NewN,Row,Grid,H,V,NewGrid).
 insert_row(N,Row,Grid,H,_,NewGrid):- length(Row,H),length(Left,N),append(Left,Right,Grid),append(Left,[Row|Right],NewGrid).
@@ -558,14 +559,8 @@ oid_to_glyph(OID,Glyph):- atom_chars(OID,[_,_,Glyph|_]).
 
 tmem(GID,HV2,Type):- omem(GID,HV2,OID), gid_type_oid(GID,Type,OID).
 
-ensure_indv_type(Type):- member(Type,[countz,nsew(6),colormass(6),colormass(1)]).
+ensure_indv_type(Type):- member(Type,[countz,nsew(6),colormass(6),colormass(1),fg(4)]).
 
-%cant_reuse(X,X):-!.
-%cant_reuse(A,B):- can_reuse(A,B),!,fail.
-cant_reuse(_,_).
-%can_reuse(X,colormass(N)):- X \== colormass(N).
-%can_reuse(X,diamonds):- X \== diamonds.
-%can_reuse(nsew(N),X):- X\==nsew(N).
 
 test_show_grid_objs(TestID):- ensure_test(TestID), 
   show_test_objs(TestID).
@@ -712,6 +707,15 @@ cache_grid_objs_now(Type,GID):- cache_grid_objs1(Type,GID).
 
 type_may_have(GID,Type,HV1):- 
   \+ (omem(GID,HV1,OOID), gid_type_oid(GID,OType,OOID), cant_reuse(Type,OType)).
+cant_reuse(X,Y):- can_reuse(X,Y),!,fail.
+cant_reuse(_,_).
+can_reuse(fg(_),Other):- !, Other\=fg(_).
+can_reuse(_,fg(_)).
+%cant_reuse(X,X):-!.
+%cant_reuse(A,B):- can_reuse(A,B),!,fail.
+%can_reuse(X,colormass(N)):- X \== colormass(N).
+%can_reuse(X,diamonds):- X \== diamonds.
+%can_reuse(nsew(N),X):- X\==nsew(N).
 
 :- dynamic(nmem/3).
 :- dynamic(dmem/6).
@@ -732,6 +736,7 @@ remake_texture(GID):-
 
 
 ok_adjacent(GID,HV1):- smem(GID,HV1,'0'),!,fail.
+ok_adjacent(GID,HV1):- smem(GID,HV1,'1'),!,fail.
 ok_adjacent(GID,HV1):- nmem(GID,HV1,0),!,fail.
 ok_adjacent(_,_).
 
@@ -749,7 +754,7 @@ redo_texture_hv(GID,HV1):-
   once(n_d_s(N,[NS,EW,UP,DN],S)),
   asserta(smem(GID,HV1,S)))).
 
-
+do_texture_hv(GID,HV1):- \+ cmem(GID,HV1,_C1),!, dmsg(missing(cmem(GID,HV1))).
 do_texture_hv(GID,HV1):-
  must_det_ll((
   cmem(GID,HV1,C1),
@@ -759,7 +764,14 @@ do_texture_hv(GID,HV1):-
   once(\+ dmem(GID,HV1,_,_,_,_) -> (DMem=..[dmem,GID,HV1|NSs], assert(DMem)) ; true),
   once(\+ nmem(GID,HV1,_) -> (flatten(NSs,L),length(L,N), assert(nmem(GID,HV1,N))) ; true))).
 
-ensure_texture(GID):- \+ ( cmem(GID,HV,_), (( \+ smem(GID,HV,_) ); \+ nmem(GID,HV,_); \+ dmem(GID,HV,_,_,_,_) )),!.
+
+ensure_texture(GID):- \+ cmem(GID,_,_), ensure_cmem(GID), fail.
+
+ensure_texture(GID):- \+ cmem(GID,_,_), dmsg(cant_ensure_cmem(GID)),!.
+
+%ensure_texture(GID):- \+ ( cmem(GID,HV,_), (( \+ smem(GID,HV,_) ); \+ nmem(GID,HV,_); \+ dmem(GID,HV,_,_,_,_) )),!,
+%  dmsg(cant_ensure_texture(GID)),!. % 
+
 ensure_texture(GID):-
   cmem(GID,HV1,_), once( (\+ (nmem(GID,HV1,_)) ; \+ dmem(GID,HV1,_,_,_,_))),
   once(do_texture_hv(GID,HV1)),
@@ -789,25 +801,25 @@ ensure_texture(GID):- each_color(GID,C), C\==black,
   member(cc('0',S1s),SymCC),
   on_edge_become(Weak,_),
   member(cc(Weak,S2s),SymCC),S1s>=S2s,
-  smem(GID,HV1,Weak),replace_smem(GID,HV1,Weak,'1'),fail.
+  smem(GID,HV1,Weak),
+  replace_smem(GID,HV1,Weak,'0'),fail.
 
 ensure_texture(GID):- 
   on_edge_become(Weak,_), 
-  smem(GID,HV1,Weak),nmem(GID,HV1,3), \+ cmem(GID,HV1,black), replace_smem(GID,HV1,Weak,'0'),fail.
+  smem(GID,HV1,Weak),once((nmem(GID,HV1,3), \+ cmem(GID,HV1,black))), replace_smem(GID,HV1,Weak,'0'),fail.
 
-ensure_texture(GID):- 
+ensure_texture(GID):- fail,
   on_edge_become(Weak,_),
-  smem(GID,HV1,Weak),nmem(GID,HV1,1),is_adjacent_point(HV1,_,HV2),
-  smem(GID,HV2,Weak),nmem(GID,HV2,1),
+  smem(GID,HV1,Weak),nmem(GID,HV1,1),is_adjacent_point(HV1,_,HV2), smem(GID,HV2,Weak),nmem(GID,HV2,1),
   replace_smem(GID,HV1,Weak,'0'), \+ cmem(GID,HV1,black), replace_smem(GID,HV2,Weak,'0'),fail.
 
 ensure_texture(_).
 
 each_color(GID,C):-findall(C1,cmem(GID,_,C1),Set),get_ccs(Set,CCs),member(cc(C,_),CCs).
 
-replace_smem(GID,HV1,S,B):- nop(retractall(smem(GID,HV1,S))),
+replace_smem(GID,HV1,S,B):- retractall(smem(GID,HV1,_)),
   asserta(smem(GID,HV1,B)),
-  ((S\==B,B=='0')->redo_texture_hv_neigbors(GID,HV1);true).
+  ignore(((S\==B,B=='0')->redo_texture_hv_neigbors(GID,HV1);true)).
 
 this_has_dir_obj_become('+','n','#','|').
 this_has_dir_obj_become('+','s','#','|').
@@ -912,26 +924,38 @@ on_edge_become(')','-').
 on_edge_become('h','|').
 on_edge_become('y','|').
 
+
+cache_grid_objs1(Var,GID):- var(Var),!,ensure_indv_type(Var),cache_grid_objs1(Var,GID).
 cache_grid_objs1(countz,GID):- !, ignore(ensure_texture(GID)).
 
-cache_grid_objs1(Type,GID):- cmem(GID,HV1,C1), \+ omem(GID,HV1,_), \+ ok_adjacent(GID,HV1),
- new_obj_points(GID,Type,C1,[C1-HV1],1),!,
- cache_grid_objs1(Type,GID).
+cache_grid_objs1(Type,GID):-
+  type_min_len(Type,MinLen),
+  cache_grid_objs_minlen(Type,GID,MinLen).
+cache_grid_objs1(_,_).
 
-cache_grid_objs1(Type,GID):- 
-  type_min_len(Type,Minlen),
+cache_grid_objs_minlen(Type,GID,MinLen):- 
+   cmem(GID,HV1,C1), \+ omem(GID,HV1,_), \+ ok_adjacent(GID,HV1), 1>=MinLen, 
+   new_obj_points(GID,Type,C1,[C1-HV1],1),!,
+   cache_grid_objs1(Type,GID).
+
+cache_grid_objs_minlen(Type,GID,MinLen):-
   cmem(GID,HV1,C1), type_may_have(GID,Type,HV1),
-  continue_obj(C1,GID,Type,[HV1],Points,Len), Len>=Minlen,!,
+  continue_obj(C1,GID,Type,[HV1],Points,Len), Len>=MinLen,!,
   new_obj_points(GID,Type,C1,Points,Len),
   cache_grid_objs1(Type,GID).
-cache_grid_objs1(_,_).
+
 
 continue_obj(C1,GID,Type,Points,Out,Len):- 
   cont_obj_execpt(C1,GID,Type,Points,Points,Out),
   length(Out,Len).
 
+color_compat(_,C1,C1):-!.
+color_compat(fg(_),C1,C2):- !, is_fg_color(C1),is_fg_color(C2). 
+color_compat(colors_in(List),C1,C2):- member(C1,List),member(C2,List).
+
 cont_obj_execpt(C1,GID,Type,[HV1|Points],Already,[HV1|Out]):-   
- (is_adj_point_type(C1,Type,HV1,HV2),HV1\==HV2, \+ member(HV2,Already), cmem(GID,HV2,C1)),
+  is_adj_point_type(C1,Type,HV1,HV2),HV1\==HV2,  \+ member(HV2,Already), 
+  cmem(GID,HV2,C2),color_compat(Type,C1,C2),ok_adjacent(GID,HV2),  
   type_may_have(GID,Type,HV2),!,
  cont_obj_execpt(C1,GID,Type,[HV2,HV1|Points],[HV2|Already],Out).
 cont_obj_execpt(C1,GID,Type,[HV1|Points],Already,[HV1|Out]):-  !,
@@ -939,6 +963,7 @@ cont_obj_execpt(C1,GID,Type,[HV1|Points],Already,[HV1|Out]):-  !,
 cont_obj_execpt(__,_GID,_Type,[],_Already,[]):-!.
 
 type_min_len(colormass(N),N).
+type_min_len(fg(N),N).
 type_min_len(nsew(N),N).
 %type_min_len(diamonds,3).
 

@@ -589,6 +589,7 @@ into_special_props(cc(C,N),[color(C),cc(C,N)]):- number(N), N > 0, is_real_fg_co
 
 save_rule(GID,TITLE,IP,OP):-  list_to_set(IP,IIP), list_to_set(OP,OOP),!, save_rule0(GID,TITLE,IIP,OOP).
 save_rule0(_GID,_TITLE,IP,OP):- sort(IP,I),sort(OP,O), showed_mapping(I,O),!.
+
 save_rule0(GID,TITLE1,IP,OP):-
  must_det_ll((
  length(IP,LI), length(OP,LO), sformat(TITLE,"(~w) ~w (~w)",[LI,TITLE1,LO]),
@@ -620,13 +621,18 @@ save_rule0(GID,TITLE,IP,OP,IIPP,OOPP):-
    save_rule(GID,TITLE,[A|IP],OP))))).
   
 
-save_rule1(_GID,TITLE,IP,OP,IIPP,OOPP):-
+save_rule1(_GID,TITLE,IP,OP,_IIPP,_OOPP):-
  must_det_ll((
  sort(IP,I),sort(OP,O), assert(showed_mapping(I,O)),
- make_rule_l2r([],IIPP,OOPP,II,OO,Mid), make_rule_l2r_0(Mid,II,OO,III,OOO,NewShared),
+
+ make_rule_l2r_objs([],IP,OP,II,OO,Mid), 
+ make_rule_l2r_0(Mid,II,OO,III,OOO,NewShared),
+
  arrange_shared(NewShared,NewSharedS),
- maplist(global_grid,IP,IIP), maplist(global_grid,OP,OOP), maplist(append_term(=('IN')),IIP,INS), maplist(append_term(=('OUT')),OOP,OUTS), append(INS,OUTS,ALL),
+ maplist(global_grid,IP,IIP), maplist(global_grid,OP,OOP), 
+    maplist(append_term(=('IN')),IIP,INS), maplist(append_term(=('OUT')),OOP,OUTS), append(INS,OUTS,ALL),
  print_ss(ALL),
+
  pp(TITLE),
  save_learnt_rule(test_solved(TITLE,obj(III),obj(OOO),NewSharedS),I^O,I^O))).
 
@@ -643,6 +649,15 @@ skip_in_rules(_Why,call(True)):- True==true,!.
 
 
 :- discontiguous(make_rule_l2r/6).
+
+make_rule_l2r_objs(Shared,II,OO,IIIII,OOOOO,NewShared):- 
+  select(obj(ObjI),II,III),  
+  select(obj(ObjO),OO,OOO),
+  make_rule_l2r(Shared,ObjI,ObjO,ObjII,ObjOO,MidShared),
+  (ObjI\=@=ObjII;ObjO\=@=ObjOO),
+  append(III,[obj(ObjII)],IIII),append(OOO,[obj(ObjOO)],OOOO),  
+  make_rule_l2r_objs(MidShared,IIII,OOOO,IIIII,OOOOO,NewShared).
+make_rule_l2r_objs(Shared,II,OO,II,OO,Shared).
 
 % Cleanup LHS
 make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- 

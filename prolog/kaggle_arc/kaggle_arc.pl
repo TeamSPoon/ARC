@@ -269,7 +269,8 @@ fail_odd_failure(G):- wdmsg(odd_failure(G)),rtrace(G), fail.
 
 
 %must_det_ll_failed(X):- predicate_property(X,number_of_clauses(1)),clause(X,(A,B,C,Body)), (B\==!),!,must_det_ll(A),must_det_ll((B,C,Body)).
-must_det_ll_failed(X):- wdmsg(failed(X))/*,arcST*/,nortrace,trace,visible_rtrace([-all,+fail,+exception],X).
+must_det_ll_failed(X):- notrace,is_guitracer,wdmsg(failed(X))/*,arcST*/,nortrace,trace, call(X).
+must_det_ll_failed(X):-  wdmsg(failed(X))/*,arcST*/,nortrace,trace,visible_rtrace([-all,+fail,+exception],X).
 % must_det_ll(X):- must_det_ll(X),!.
 
 rrtrace(X):- rrtrace(etrace,X).

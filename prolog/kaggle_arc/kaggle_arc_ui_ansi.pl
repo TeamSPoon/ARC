@@ -368,7 +368,15 @@ pp_hook_g1(O):-  is_really_gridoid(O),debug_as_grid(O), !.
 %pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  collapsible_section(object,[O1, O2],with_tagged('h5',pp(O))).
 %pp_hook_g1(O):-  O = diff(A -> B), (is_really_gridoid(A);is_really_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
 pp_hook_g1(O):-  O = showdiff( O1, O2), !, showdiff(O1, O2).
-pp_hook_g1(O):- compound(O),wqs1(O),!.
+%pp_hook_g1(O):- compound(O),wqs1(O), !.
+pp_hook_g1(O):- \+ compound(O),fail.
+pp_hook_g1(O):- current_predicate(colorize_oterms/2),colorize_oterms(O,C), notrace(catch(fch(C),_,fail)),! .
+
+fch(O):- wqs1(O).
+%fch(O):- pp_no_nl(O).
+%fch(O):- print(O).
+%fch(O):- p_p_t_no_nl(O).
+
 
 /*
 pp_hook_g1(T):- 
@@ -428,27 +436,28 @@ wqs(P):- wots(SS,wqs0(P)), maybe_color(SS,P).
  
 wqs(C,P):- ansicall(C,wqs0(P)),!.
 
-wqs0(X):- plain_var(X), !, wqs(plain_var(X)). 
+wqs0(X):- plain_var(X), !, wqs(plain_var(X)).
+wqs0(C):- is_colorish(C),color_print(C,C),!.
+wqs0(X):- var(X), !, get_attrs(X,AVs),!,writeq(X),write('/*{'),print(AVs),write('}*/').
 wqs0(G):- compound(G), G = call(C),callable(C),!,call(C).
 wqs0(G):- is_map(G), !, write_map(G,'wqs').
 wqs0(X):- attvar(X), !, wqs(attvar(X)). 
-wqs0(nl):- !, nl. wqs0(''):-!. wqs0([]):-!.
+wqs0(nl):- !, nl. wqs0(X):- X=='', !. wqs0(X):- X==[], !. 
+wqs0(X):- is_grid(X), !, print_grid(X).
 wqs0([T]):- !, wqs(T).
-wqs0([H|T]):- is_list(T), wqs(H), need_nl(H,T), wqs(T), !.
-wqs0([H|T]):- is_list(T), string(H), !, write(H), write(' '), wqs(T).
+wqs0([H|T]):- string(H), !, write(H), write(' '), wqs(T).
+wqs0([H|T]):- compound(H),skip(_)=H, !,wqs(T).
+wqs0([H|T]):- wqs(H), need_nl(H,T), wqs(T), !.
 wqs0(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 wqs0(X):- is_object(X), tersify1(X,Q), X\==Q,!, wqs(Q).
 wqs0(X):- is_object(X), show_shape(X),!.
-wqs0(X):- is_grid(X), !, print_grid(X).
 wqs0(X):- string(X), atom_contains(X,'~'), catch((sformat(S,X,[]),color_write(S)),_,fail),!.
 wqs0(X):- string(X), !, color_write(X).
 %wqs([H1,H2|T]):- string(H1),string(H2),!, write(H1),write_nbsp, wqs([H2|T]).
 %wqs([H1|T]):- string(H1),!, write(H1), wqs(T).
-wqs0([skip(_)|T]):- !,wqs(T).
 %wqs([H|T]):- compound(H),!, writeq(H), wqs(T).
 
 wqs0(call(C)):- !, call(C).
-wqs0(C):- is_color(C),!,wqs(color_print(C,C)).
 wqs0(X):- \+ compound(X),!, write_nbsp, write(X).
 wqs0(C):- compound(C),wqs1(C),!.
 wqs0(C):- wqs2(C).

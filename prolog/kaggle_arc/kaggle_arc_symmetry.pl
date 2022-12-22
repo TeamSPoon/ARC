@@ -125,7 +125,8 @@ is_grid_symmetric(Grid):- flipSym_checks(rot180,Grid),!.
 is_grid_symmetric(Grid):- flipSym_checks(rot90,Grid),!.
 
 is_grid_symmetricD(Grid):- is_grid_symmetric(Grid),!.
-is_grid_symmetricD(Grid):- flipSym_checks(flipD,Grid),(flipSym_checks(flipDH,Grid);flipSym_checks(flipDV,Grid);flipSym_checks(flipDHV,Grid)),!.
+is_grid_symmetricD(Grid):- flipSym_checks(flipD,Grid),
+  (flipSym_checks(flipDH,Grid);flipSym_checks(flipDV,Grid);flipSym_checks(flipDHV,Grid)),!.
 
 vm_for_grid(Grid,VM):- vm_for_grid(Grid,_,_,VM).
 vm_for_grid(Grid,ID,Out,VM):- fail,
@@ -821,7 +822,7 @@ blur_some(B,Mix,I,O):-
 blur_turn(flipD).
 blur_turn(rot90). blur_turn(rot270). 
 blur_turn(flipV). blur_turn(flipH). blur_turn(rot180). 
-blur_turn(flipDHV).  blur_turn(flipDV). blur_turn(flipDH).
+blur_turn(flipDHV). % blur_turn(flipDV). blur_turn(flipDH).
 blur_mix(fg). blur_mix(bg). blur_mix(not_color(Black)):- get_black(Black).
 
 cv(FG,OC):- once(FG==fg;OC==fg;FG==bg;OC==bg),!.
@@ -1082,16 +1083,19 @@ rotP(blur_least(_,fg)).
 rotP0(P2):-rotP1(P2).
 rotP0(flipD).
 rotP0(rollD).
+
 rotP1(P2):- rotP2(P2). %,P2\==rot90.
 rotP1(flipV).
 rotP1(flipH).
+
 rotP2(rot90).
 rotP2(rot180).
 rotP2(rot270).
 
 rotP3(blur_least(_,fg)).
 rotP3(P2):- rotP(P2).
-rotP3(flipDV). rotP3(flipDHV). rotP3(flipDH). 
+%rotP3(flipDV). 
+rotP3(flipDHV). rotP3(flipDH). 
 
 no_conflicts(RepairedResult,RR):- count_changes(_,RepairedResult,RR,Conflicts,Keep,WillChange),!,Conflicts=0,Keep>0,nop(WillChange>0).
 

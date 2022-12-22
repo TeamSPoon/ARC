@@ -195,7 +195,7 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):-
   into_ngrid(Grid,NGrid),
   ngrid_syms(NGrid,Syms),
 
-  %op_grid_to_norm(NormOps,Grid,NormGrid),
+  op_grid_to_norm(NormOps,Grid,NormGrid),
   %grav_rot(Grid,NormOps,NormGrid),
   maplist(ignore,[GIDOMem==GID,IvOMem=Iv,GlyphOMem=Glyph,OIDOMem=OID]),
   testid_name_num_io(GID,_TestID,_Example,_Num,IO),
@@ -231,7 +231,7 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):-
     changes([]), % [grid(LocalGrid)],    
     OShapeNames,
     
-   % [norm_grid(NormGrid),norm_ops(NormOps)],
+   [norm_grid(NormGrid),norm_ops(NormOps)],
     % [iz(locY(LocY)),iz(locX(LocX))], % iz(tall(SizeY)),iz(wide(SizeX)),
     
     %obj_to_oid(ID,Iv),
@@ -1118,7 +1118,7 @@ localpoints_include_bg(Grid,Points):- is_grid(Grid),!, must_det_11((grid_to_poin
 
 
 
-object_localpoints(I,XX):- must_be_free(XX), stack_check(20000),
+object_localpoints(I,XX):- must_be_free(XX), stack_check_or_call(3000,(dmsg(stackcheck>3000),fail)),
  must_det_ll((indv_props(I,L), object_localpoints0(I,L,XX),is_cpoints_list(XX))),!.
 
 object_localpoints0(_,L,X):- member(localpoints(X),L),is_list(X),!.
@@ -1136,13 +1136,13 @@ object_localpoints4(I,XX):-
 
 
 make_localpoints(X,Rot,H,V,PenColors,XX):- 
-  must_det_ll((   maybe_unrotate_points(H,V,X,Rot,XXX),
+  must_det_ll((   maybe_undo_effect_points(H,V,X,Rot,XXX),
      PenColors\==[],is_list(PenColors),
      combine_pen(XXX,PenColors,PenColors,XX) )),!.
 
-maybe_unrotate_points(_,_,X,sameR,XX):- must_be_free(XX),!,X=XX.
-maybe_unrotate_points(H,V,X,Rot,XX):- must_det_ll((points_to_grid(H,V,X,Grid),   
-   unrotate(Rot,Grid,Grid90),localpoints_include_bg(Grid90,XX))).
+maybe_undo_effect_points(_,_,X,sameR,XX):- must_be_free(XX),!,X=XX.
+maybe_undo_effect_points(H,V,X,Rot,XX):- must_det_ll((points_to_grid(H,V,X,Grid),   
+   undo_effect(Rot,Grid,Grid90),localpoints_include_bg(Grid90,XX))).
 
 
 combine_pen(A,B,C,D):- nonvar(D),!,combine_pen(A,B,C,V),!,V=D.
@@ -1233,6 +1233,17 @@ ngrid_syms(NGrid,Syms):-
  subst_syms(bg,NGrid,GFlatSyms),get_ccs(GFlatSyms,Syms).
 
 
+find_syms('-'). find_syms('|'). 
+find_syms('='). find_syms('!'). 
+find_syms('~'). find_syms('0').
+find_syms('X'). find_syms('#').
+find_syms('x'). find_syms('+').
+find_syms('*'). find_syms('.').
+find_syms('<'). find_syms('>').
+find_syms('v'). find_syms('^').
+find_syms('\\'). find_syms('/').
+find_syms('7'). find_syms('`').
+
 subst_syms(IBGC,List, L) :-
  must_det_ll(( flatten([List],L1),   
    maplist(cell_syms(IBGC),L1, L2),
@@ -1296,6 +1307,9 @@ center_term(Obj,loc2D(H,V)):- center2G(Obj,H,V).
 :- decl_pt(prop_g,hw_rat(is_object_or_grid,size2D)).
 hw_rat(Obj,HV):- vis2D(Obj,OH,OV), HV is rationalize(OH/OV).
 
+:- decl_pt(prop_g,colormass_object_count(is_grid  ,size2D)).
+colormass_object_count(Obj,HV):- vis2D(Obj,OH,OV), HV is rationalize(OH/OV).
+
 center2G(I,X,Y):- is_grid(I), !, grid_size(I,H,V),X is floor(H/2),Y is floor(V/2).
 center2G(I,X,Y):- indv_props(I,L),member(center2G(X,Y),L),!.
 center2G(I,X,Y):- indv_props(I,L),member(iz(cenXG(X)),L),member(iz(cenYG(Y)),L),!.
@@ -1325,7 +1339,7 @@ rebuild_from_localpoints(Obj,WithPoints,NewObj):-
 
   (Points=@=PrevPoints -> (NewObj=Obj) ;
 
- (rot2L(Obj,Rot),unrotate_p2(Rot,UnRot),
+ (rot2L(Obj,Rot),undo_p2(Rot,UnRot),
   loc2D(Obj,X,Y),%vis2D(Obj,H,V),  
   %obj_to_oid(Obj,ID,_Iv),
   %uncast_grid_to_object(Orig,Grid,NewObj),
@@ -1823,10 +1837,12 @@ symmetry_type(R,I,O):- grid_call(R,I,O),I=@=O.
 rot_p_plus_full(full). rot_p_plus_full(sym_hv). 
 rot_p_plus_full(P):- rot_p2(P).
 
-rot_p2(flipD). rot_p2(rot90). %rot_p2(rot270). 
-rot_p2(rollD). 
-rot_p2(flipH). rot_p2(flipV). rot_p2(rot180). 
-rot_p2(flipDH). % rot_p2(flipDV). rot_p2(flipDHV). 
+%rot_p2(flipDH). % rot_p2(flipDV). 
+rot_p2(flipD). 
+rot_p2(rot90). rot_p2(rot270). 
+rot_p2(flipH). rot_p2(flipV).
+rot_p2(rot180). rot_p2(flipDHV). 
+rot_p2(rollD). %rot_p2(rollDR).
 
 
 

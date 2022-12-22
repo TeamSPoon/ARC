@@ -177,7 +177,7 @@ frozen_key(Key1,Key):- copy_term(Key1,Key),numbervars(Key,0,_,[attvar(skip),sing
 
 shape_key(Shape,Key):- into_grid(Shape,Key1),frozen_key(Key1,Key).
 
-shape_key_unrotated(Shape,Key):- shape_key(Shape,KeyR), grav_rot(Key,_,KeyR).
+shape_key_undo_effectd(Shape,Key):- shape_key(Shape,KeyR), grav_rot(Key,_,KeyR).
 
 
 searchable(Group,List):- override_group(searchable(Group,List)),!.

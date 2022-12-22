@@ -37,8 +37,9 @@ ip_pair(ROptions,GridIn,GridOut):-
     individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
     show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC))).
 
-worker_output(G):- menu_or_upper('B'),!,time(G).
-worker_output(G):- time(wots(_,weto(G))).
+
+%worker_output(G):- \+ menu_or_upper('B'),!, time(wots(_,weto(G))).
+worker_output(G):- time(G).
 
 ig(ROptions,Grid):-
   do_ig(ROptions,Grid,IndvS),
@@ -211,30 +212,33 @@ show_indiv(Why,Obj):-
              loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
      Grids = [Title=Grid|_],     
 
-     copy_term(Grid,GridNV,GoalsNV), numbervars(GridNV+GoalsNV,10,Ten,[attvar(bind),singletons(false)]),     
-     
-     %grid_to_norm(GridNV,Ops,Reduced),
-     %if_t(Reduced\=@=GridNV,append(_,["NORMALIZED!!!"=Reduced|_],Grids)),
+     object_ngrid(Obj,NGrid), append(_,["NGrid"=NGrid|_],Grids),
+
+     term_variables(Grid,GV1),
+     grid_to_norm(Grid,Ops,Reduced), if_t(Reduced\=@=Grid,append(_,["NORMALIZED!!!"=Reduced|_],Grids)),
+     term_variables(Reduced,RV1),
+
+     unreduce_grid(Reduced,Ops,NewGrid),
+     append(_,["NewGrid"=NewGrid|_],Grids),
+     ShowQ=_,
+
+
+     nop(((((GV1\=@=RV1 ; (Reduced\=@=Grid,Reduced=[[_]])) -> ShowQ = true ; ShowQ = _)))),
 
      if_t(DoFF,((constrain_grid(f,_TrigF,Grid,GridFF), if_t(GridFF\=@=Grid,append(_,["Find"=GridFF|_],Grids)),
        copy_term(Grid+GridFF,GG1+GridFFNV,GoalsFF), numbervars(GG1+GridFFNV+GoalsFF,10,_,[attvar(bind),singletons(false)])))),
 
-     object_ngrid(Obj,NGrid), append(_,["NGrid"=NGrid|_],Grids),
-
-    
-
-
      append(_,[],Grids),
      wots(SS, print_side_by_side(Grids)), replace_in_string(['®'=Glyph,'@'=Glyph],SS,S),     
      HH is (OH - 1) * 2, print_w_pad(HH,S),
-     if_t((GoalsNV\==[];Ten\==10), (writeg(gridNV=GridNV),writeg(goals=GoalsNV))),
 
-     if_t(DoFF,if_t((GoalsFF\==[];Ten\==10), (writeg(gridFF=GridFFNV),writeg(goalsFF=GoalsFF)))),
+     if_t(has_goals(GridFFNV),writeg(gridFF=GridFFNV)),
 
-
-     if_t(Ops\==[], writeg(ops=Ops)),
-     if_t(Reduced\=@=GridNV,if_t(GoalsNV\==[], writeg(reduced=Reduced))),
-     writeg("NGrid"=NGrid),
+     if_t(NewGrid\=@=Grid, (ShowQ = true,writeg(newGrid=NewGrid))),
+     if_t((ShowQ==true;has_goals(Grid)),    writeg(grid=Grid)),
+     if_t((nonvar(Ops),Ops\==[]),       writeg(ops=Ops)),
+     if_t((ShowQ==true;has_goals(Reduced);true), writeg(reduced=Reduced)),
+     %writeg("NGrid"=NGrid),
    true))),
     
   if_t(is_object(Obj),
@@ -242,22 +246,30 @@ show_indiv(Why,Obj):-
      locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Obj))))),
      format('~N'),dash_chars(15))),!.
 
+has_goals(G):- term_attvars(G,AV),AV\==[].
+has_goals(G):- term_variables(G,TV),term_singletons(G,SV),TV\==SV.
+
 writeg(N=V):- format('~N'),nonvar(N), pp_no_nl(N),writeln(' = '), !, wots(S,writeg(V)), print_w_pad(2,S).
 writeg(Term):- 
   term_attvars(Term,Attvars), Attvars\==[],!,
   term_variables(Term,Vars),
   include(not_in(Attvars),Vars,PlainVars),   
   copy_term(Attvars+PlainVars+Term,AttvarsC+PlainVarsC+TermC,Goals),
-  numbervars(AttvarsC+Goals,10,MTen,[attvar(bind),singletons(false)]),
   numbervars(PlainVarsC,MTen,_Ten,[singletons(true)]),
+  numbervars(AttvarsC+Goals,10,MTen,[attvar(bind),singletons(false)]),
   writeg(TermC), wots(S,writeg(Goals)), print_w_pad(2,S).
+
+writeg(Term):- \+ ground(Term),!, \+ \+ (numbervars(Term,99799,_,[singletons(true)]),
+   subst(Term,'$VAR'('_'),'$VAR'('_____'),TermO), writeg(TermO)).
 writeg(V):- \+ is_list(V),!,pp(V).
 %writeg(V):- \+ is_list(V),!,writeq(V),nl.
-writeg([H|T]):- is_list(H),wots(S,maplist(writeln,[H|T])), print_w_pad(2,S).
+writeg([H|T]):- is_list(H),wots(S,maplist(writeg1,[H|T])), print_w_pad(2,S).
 writeg(X):- wots(S,pp(X)), print_w_pad(2,S).
 
 
-
+writeg1(X):- format('~N'),writeq(X),nl,!.
+%writeg1(X):- format('~N'),writeg(X).
+writeg1(X):- writeln(X).
 
 do_pair_filtering(ID1,GridIn,InC,InShownO,ID2,GridOut,OutC,OutShownO):- 
   grid_size(GridIn,IH,IV),filter_shown(IH,IV,InC,InShown,InHidden), filter_shown(IH,IV,InHidden,InHiddenLayer1,InHiddenLayer2),
@@ -470,12 +482,14 @@ individuation_macros(some_leftovers, [
      by_color(1),by_color(0)]).
 
 individuation_macros(i_complete_generic, [
-  whole,
-  maybe_glyphic,
   save_as_obj_group([i_mono_colormass]),
   indv_omem_points,
+  consider_other_grid,
   pbox_vm_special_sizes,
   grid_props,
+  whole,
+  maybe_glyphic,
+
   gather_cached,
   maybe_repair_in_vm(find_symmetry_code),
   find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
@@ -896,6 +910,39 @@ individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
     individuate7(_NewVM,NewGID,SubProgram,Grid,WasInside)),!,
    set_vm(VM))),
    addObjects(VM,WasInside).
+
+% =====================================================================
+is_fti_step(consider_other_grid).
+% =====================================================================
+consider_other_grid(VM):- 
+ ignore((
+  other_grid(VM.grid_o,Other),
+  is_grid(Other),
+  Grid = VM.grid,
+  Other = In,
+  forall( maybe_ogs_color(R,OH,OV,Other,Grid),
+ %wdmsg(maybe_ogs_color(R,OH,OV,In,Grid)),
+  (globalpoints_include_bg(In,OPoints),
+  offset_points(OH,OV,OPoints,GOPoints),
+  intersection(VM.points,GOPoints,Intersection,LeftOver,Missing),
+  Missing\==[],
+  Intersection\==[],
+  count_adjacent_same_colored_points(LeftOver,GOPoints,HVCount,DiagCount),
+  DiagCount=_, HVCount<4,
+  !,
+  must_det_ll((
+  %indv_props(Obj,Props),my_partition(is_prop_automatically_rebuilt,Props,_,PropsRetained),
+  make_indiv_object(VM,[iz(stype(R))],GOPoints,Obj),
+  
+  %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
+  %OffsetGrid = In,
+  add_grid_label(Grid,Info,A), add_grid_label([Obj],Info,B),
+  as_debug(9,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_ss(A,B)))), % trace,
+  %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  trace,  
+  %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
+  remCPoints(VM,GOPoints),
+  remGPoints(VM,Intersection))))))).
+
 
 % =====================================================================
 is_fti_step(indv_omem_points).

@@ -9,23 +9,6 @@
 :- ensure_loaded(kaggle_arc_symmetry).
 %tell(s),ignore((nl,nl,test_pairs(Name,ExampleNum,In,Out),format('~N~q.~n',[test_pairs_cache(Name,ExampleNum,In,Out)]),fail)),told.
 
-safe_grid(I,T):- mapgrid(=,I,T).
-
-h_and_v(P2,Grid,Double):- a_as_g(h_and_v0(P2),Grid,Double).
-h_and_v0(P2,I,O):- safe_grid(I,T), grid_call(P2,T,M),c_r(P2,M,O),!.
-
-h_as_rv(P2,Grid,Double):- a_as_g(h_as_rv0(P2),Grid,Double).
-h_as_rv0(P2,I,O):- rot270(I,G90), safe_grid(G90,S90), grid_call(P2,S90,GG90), rot90(GG90,O).
-
-c_r(P2,Grid,Double):- a_as_g(h_as_v0(P2),Grid,Double).
-h_as_v0(P2,I,O):- rot90(I,G90), safe_grid(G90,S90), grid_call(P2,S90,GG90), rot270(GG90,O).
-
-
-a_as_g(P2,Group,Double):- is_group(Group),!,into_p2(P2,Group,Double,PIO),override_group(PIO),!.
-a_as_g(P2,I,O):- cast_to_grid(I,II,UnCast),grid_call(P2,II,OO),uncast(I,UnCast,OO,O).
-
-
-
 :- dynamic(backfill/1).
 
 

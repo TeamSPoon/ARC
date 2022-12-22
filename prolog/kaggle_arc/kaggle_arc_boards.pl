@@ -224,7 +224,7 @@ mapgridish(P3,I^O,In,Out):- In==I-> mapgrid(P3,O,I,Out) ; mapgrid(P3,I,O,Out).
 reduce_grids_io(OPS,I^O,III^OOO):- area(I,IArea),area(O,OArea),reduce_grids_area_io(I^O,IArea^OArea,OPS,III^OOO).
 
 interesting_ops(OPS):- OPS==[],!,fail.
-interesting_ops(OPS):- OPS=[unrotate(_)|More],!,interesting_ops(More).
+interesting_ops(OPS):- OPS=[undo_effect(_)|More],!,interesting_ops(More).
 interesting_ops(_).
 
 reduce_grids_area_io(I^O,_IArea_OArea,[io(OPS)],II^OO):- reduce_grid(I^O,OPS,II^OO), interesting_ops(OPS),!.
@@ -672,6 +672,7 @@ grid_hint_swap_io(I-O,In,Out,rev(Hint)):- I\==O,
  grid_hint_recolor(O-I,Out,In,Hint),
  Hint \= mono(comp(_,o-i,value(=@=))).
 
+grid_hint_recolor(_IO,_In,_Out,is_grid_hint). 
 grid_hint_recolor(IO,In,Out,Hint):- get_black(Black), grid_hint_io(cbg(Black),IO,In,Out,Hint).
 grid_hint_recolor(IO,In,Out,mono(Hint)):- arc_option(scan_mono_hints), % fail,
  once((into_monogrid(In,InM),into_monogrid(Out,OutM))),
@@ -843,16 +844,19 @@ ensure_arc_test_properties(TestID):- ignore(get_current_test(TestID)),
 
 :- decl_pt(test_prop,input_objects_first(testID)).
 input_objects_first(TestID):- 
-  ensure_arc_test_properties(TestID), get_black(Black),
-  arc_test_property(TestID,common,rev(comp(cbg(Black),o-i,containsAll)),containsAll(o-i)).
+  foreach_test(TestID,
+  once((ensure_arc_test_properties(TestID), get_black(Black),
+   arc_test_property(TestID,common,rev(comp(cbg(Black),o-i,containsAll)),containsAll(o-i))))).
 
 :- decl_pt(test_prop,input_expands_into_output(testID)).
 input_expands_into_output(TestID):- 
+ foreach_test(TestID,
+ once((
   ensure_arc_test_properties(TestID), 
   get_black(Black),
   arc_test_property(TestID,common,comp(cbg(Black),i-o,ogs),ogs(List)),
   \+ \+ (select(ogs(trim,whole,strict,loc2D(_,_)),List,Rest),
-         member(ogs(trim,whole,strict,loc2D(_,_)),Rest)),!.
+         member(ogs(trim,whole,strict,loc2D(_,_)),Rest))))).
 
  
 % grid_to_obj(Grid,[colormass,fg_shapes(colormass)],Obj),print_side_by_side(Grid,Obj).

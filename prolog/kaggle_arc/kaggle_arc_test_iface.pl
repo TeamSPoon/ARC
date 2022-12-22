@@ -712,7 +712,7 @@ memoized_p1(P1,F):- findall(E,call(P1,E),S), list_to_set(S,L), asserta(muarc_tmp
 
 test_suite_name_by_call(F):- memoized_p1(test_suite_name_by_call_1,F).
 
-test_suite_name_by_call_1(F):- clauses_predicate_cmpd_goal(F/1,foreach_test).
+test_suite_name_by_call_1(F):- clauses_predicate_cmpd_goal(F/1,F),member(ensure_arc_test_properties,foreach_test).
 %test_suite_name_by_call_1(F):- clauses_predicate_cmpd_goal(F/1,every_grid).
 test_suite_name_by_call_1(no_pair(P1)):-every_pair(P1). 
 test_suite_name_by_call_1(every_pair(P1)):-every_pair(P1). 
@@ -755,11 +755,11 @@ is_mass_lte_25(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass=<25.
 %is_mass_lte_81(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass=<81.
 %is_mass_gte_600(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass>=600.
 
-is_colors_adjacent(Grid):- ensure_grid(Grid), ensure_gid(Grid,GID), 
+is_colors_adjacent(Grid):- ensure_gid(Grid,GID), ensure_cmem(GID),
   cmem(GID,HV1,C1),is_adj_point_es_d(HV1,HV2),cmem(GID,HV2,C2),
   C1\==C2,is_fg_color(C1),is_fg_color(C2),!.
 
-is_colors_adjacent_no_d(Grid):- ensure_gid(Grid,GID), 
+is_colors_adjacent_no_d(Grid):- ensure_gid(Grid,GID), ensure_cmem(GID),
   cmem(GID,HV1,C1),is_adj_point_es(HV1,HV2),cmem(GID,HV2,C2),
   C1\==C2,is_fg_color(C1),is_fg_color(C2),!.
 

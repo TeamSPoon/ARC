@@ -75,7 +75,9 @@ is_fti_step(pbox_vm_special_sizes).
 %=====================================================================
 pbox_vm_special_sizes(VM):- !, 
   GH is round(VM.h + 0), GV is round(VM.v + 0),
-  findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L),
+  findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L0),
+  other_grid_size(VM.grid_o,OX,OY),
+  Sizes_S_L=[size2D(OX,OY)|Sizes_S_L0],
   length(Sizes_S_L,A),
   GridI0=VM.grid_o,
   Objs = VM.objs,

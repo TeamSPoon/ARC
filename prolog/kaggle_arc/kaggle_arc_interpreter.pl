@@ -9,8 +9,9 @@
 
 :- meta_predicate(grid_call(+,+,-)).
 
-must_grid_call(T,I,O):- (grid_call(T,I,O)*->true; (print_side_by_side_msg(failed_grid_call(T),I,O),trace,fail)).
- 
+must_grid_call(T,I,O):- (grid_call(T,I,O)*->true; (print_side_by_side_msg(failed_grid_call(T),I,O),trace,grid_call(T,I,O),fail)).
+
+
 gref_call(P1,In,Out):- 
   duplicate_term(in(In),IIn),
   call(P1,IIn), 
@@ -18,21 +19,41 @@ gref_call(P1,In,Out):-
 dref_grid(IIn,Grid):- is_grid(IIn),!,Grid=IIn.
 dref_grid(IIn,Grid):- arg(_,IIn,Grid),is_grid(Grid),!.
 
-grid_call(T,I,O):- plain_var(I),var(O),!,into_grid(_,G),G\=@=I,I=G,grid_call(T,G,O).
-grid_call(=,I,O):- !, I=O. 
-grid_call(P2,IO,IIOO):- is_plus_split(IO,I,O),!,unplus_split(IIOO,II,OO),grid_call(P2,I,II),grid_call(P2,O,OO).
-grid_call(Nil,I,I):- Nil==[],!. 
-grid_call([H|T],I,O):- nonvar(H), !, grid_call(H,I,M), grid_call(T,M,O).
+grid_call(T,I,O):- grid_call(call,T,I,O).
 
-grid_call(P2,IG,IIOO):- is_grid_group(IG),!, grid_group_call(P2,IG,IIOO).
-%grid_call(T,I,O):- into_p2(T,I,O,P),check_args(P,PP),call(PP).
-grid_call(T,I,O):- call(T,I,O).
+grid_call(PC,Nil,I,O):- Nil==[],!,call(PC,I=O).
+grid_call(PC,T,I,O):- plain_var(I),var(O),!,into_grid(_,G),G\=@=I,I=G,grid_call(PC,T,G,O).
+grid_call(PC,=,I,O):- !, call(PC,I=O). 
+grid_call(PC,P2,IO,IIOO):- is_plus_split(IO,I,O),!,unplus_split(IIOO,II,OO),grid_call(PC,P2,I,II),grid_call(PC,P2,O,OO).
+grid_call(PC,[H|T],I,O):- nonvar(H), !, grid_call(PC,H,I,M), grid_call(PC,T,M,O).
 
+grid_call(PC,P2,IG,IIOO):- is_grid_group(IG),!, call(PC,grid_group_call(P2,IG,IIOO)).
+%grid_call(PC,T,I,O):- into_p2(T,I,O,P),check_args(P,PP),call(PP).
+grid_call(PC,T,I,O):- call(PC,call(T,I,O)).
 
+c_r(P2,Grid,Double):- a_as_g(h_as_v0(P2),Grid,Double).
+r_c(P2,Grid,Double):- h_as_rv(P2,Grid,Double).
+
+a_as_g(P2,I,O):- is_grid(I),!,grid_call(P2,I,O).
+a_as_g(P2,Group,Double):- is_group(Group),!,into_p2(P2,Group,Double,PIO),override_group(PIO),!.
+a_as_g(P2,I,O):- cast_to_grid(I,II,UnCast),grid_call(P2,II,OO),uncast(I,UnCast,OO,O).
 
 into_p2(P2,I,O,PIO):- atom(P2),!,PIO=..[P2,I,O].
 into_p2(P2,I,O,PIO):- P2=..FArgs,append(FArgs,[I,O],FArgsIO),!,PIO=..FArgsIO.
 
+h_as_v0(P2,I,O):- rot90(I,G90), safe_grid(G90,S90), grid_call(P2,S90,GG90), rot270(GG90,O).
+
+
+safe_grid(I,T):- mapgrid(=,I,T).
+
+h_and_v(P2,Grid,Double):- a_as_g(h_and_v0(P2),Grid,Double).
+h_and_v0(P2,I,O):- safe_grid(I,T), grid_call(P2,T,M),c_r(P2,M,O),!.
+
+h_as_rv(P2,Grid,Double):- a_as_g(h_as_rv0(P2),Grid,Double).
+h_as_rv0(P2,I,O):- rot270(I,G90), safe_grid(G90,S90), grid_call(P2,S90,GG90), rot90(GG90,O).
+
+
+and(P2a,P2b,I,O):- grid_call(P2a,I,M),grid_call(P2b,M,O).
 
 grid_group_call(P2,IG,IIOO):- findall(O,(member(I,IG), object_call(P2,I,O)),List),List\==[],list_to_set(List,IIOO).
 

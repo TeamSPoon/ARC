@@ -32,18 +32,29 @@ into_gridoid(N,G):- no_repeats(S,(into_gridoid0(N,G),once(localpoints(G,P)),sort
 
 
 test_grav_rot:- test_p2(test_grav_rot(_)).
-test_grav_rot(RotG,Shape,Rotated):- grav_rot(Shape,RotG,Rotated). %,unrotate(RotG,Rotated,Back),assertion(Shape==Back).
+test_grav_rot(RotG,Shape,Rotated):- grav_rot(Shape,RotG,Rotated). %,undo_effect(RotG,Rotated,Back),assertion(Shape==Back).
+
+f_o(rot90). % rot90(X,Y).
+f_o(rot180). % rot180(X,Y).
+f_o(rot270). %  rot270(X,Y).
+f_o(flipD). %  flipD(X,Y).
+f_o(flipH). %  flipH(X,Y).
+f_o(flipV). %  flipV(X,Y).
+f_o(flipDHV). % flipDHV(X,Y).
+f_o(rollD). %  rollD(X,Y).
+f_o(rollDR). %  rollDR(X,Y).
 
 flip_Once(rot90,X,Y):- rot90(X,Y).
 flip_Once(rot180,X,Y):- rot180(X,Y).
 flip_Once(rot270,X,Y):-  rot270(X,Y).
 flip_Once(rollD,X,Y):-  rollD(X,Y).
+%flip_Once(rollDR,X,Y):-  rollDR(X,Y).
 flip_Once(flipD,X,Y):-  flipD(X,Y).
 flip_Once(flipH,X,Y):-  flipH(X,Y).
 flip_Once(flipV,X,Y):-  flipV(X,Y).
 flip_Once(flipDHV,X,Y):- flipDHV(X,Y).
-flip_Once(flipDH,X,Y):-  flipDH(X,Y).
-flip_Once(flipDV,X,Y):-  flipDV(X,Y).
+%flip_Once(flipDH,X,Y):-  flipDH(X,Y).
+%flip_Once(flipDV,X,Y):-  flipDV(X,Y).
 
 flip_Many(Rot,X,Y):- flip_Once(Rot,X,Y),X\=@=Y.
 flip_Many(sameR,X,X).
@@ -67,7 +78,7 @@ grid_mass_ints(Grid,GridIII):-
   mapgrid(normal_w(FG),Grid,GridIII),!.
 
 grav_rot(Grid,sameR,Grid):- \+ \+ Grid=[[_]],!.
-grav_rot(Grid,RotG,Rotated):-
+grav_rot(Grid,RotG,Rotated):- dif(RotG,rollD),
   must_det_ll((into_grid(Grid,GridII),
    grid_mass_ints(GridII,GridIII),
    best_grav_rot(GridIII,RotG,_),
@@ -154,7 +165,7 @@ gravity_1_n_0([Row1|Grid],[Row1|GridNew]):- gravity_1_n_0(Grid,GridNew).
 
 :- decl_pt(any_xform(p2,prefer_grid,prefer_grid)).
 
-any_xform(Rot90,Any,NewAny):- var(Any),nonvar(NewAny),unrotate_p2(Rot90,Rot270),!, any_xform(Rot270,NewAny,Any).
+any_xform(Rot90,Any,NewAny):- var(Any),nonvar(NewAny),undo_p2(Rot90,Rot270),!, any_xform(Rot270,NewAny,Any).
 any_xform(Rot90,Any,NewAny):- 
   cast_to_grid(Any,RealGrid,UnconvertClosure),!,
   grid_xform(Rot90,RealGrid,NewRealGrid),
@@ -204,12 +215,13 @@ rot270(I,O):- any_xform(grid_rot270,I,O).
 flipH(I,O):- any_xform(grid_flipH,I,O).
 flipV(I,O):- any_xform(grid_flipV,I,O).
 flipD(I,O):- any_xform(grid_flipD,I,O).
+% rot90? 
 flipDV(I,O):- any_xform(grid_flipDV,I,O).
 flipDH(I,O):- any_xform(grid_flipDH,I,O).
 flipDHV(I,O):- any_xform(grid_flipDHV,I,O).
 rollD(I,O):- any_xform(grid_rollD,I,O).
+rollDR(I,O):- any_xform(grid_rollDR,I,O).
 nsew_edges(I,O):- any_xform(grid_edges_fresh,I,O).
-rollDR(I,O):- reverse(I,II),any_xform(grid_rollD,II,O).
 
 grid_edges_fresh(Find,Edges):- must_det_ll((
   [T|_]=Find,append(_,[B],Find),
@@ -232,7 +244,8 @@ learn_head((P:-_)):- compound(P), compound_name_arity(P,F,2),atom_concat('grid_'
 :- begin_load_hook(learn_head).
 */
 
-grid_rollD(Grid,RollD):-  do_rollD(Grid,RollD).
+grid_rollD(Grid,RollD):-  do_rollD(Grid,RollD),!.
+grid_rollDR(Grid,RollD):-  do_rollDR(Grid,RollD),!.
 grid_rot90(Grid,Rot90):-  rot270(Grid,Rot270),rot180(Rot270,Rot90).
 grid_rot180(Grid,Rot180):- flipV(Grid,Rot90),flipH(Rot90,Rot180).
 grid_rot270(Grid,NewAnyWUpdate):- get_colums(Grid,NewAnyWUpdate),!.
@@ -258,12 +271,24 @@ rot_row(0,Row,Row).
 rot_row(N,Row,Rot):- rot1(Row,Roll),N2 is N-1,rot_row(N2,Roll,Rot).
 rot1(Row,Roll):- append([E],Rest,Row),append(Rest,[E],Roll).
 
-unrotate(UnRot,X,Y):- unrotate_p2(UnRot,Rot),!,must_grid_call(Rot,X,Y).
+do_rollDR(Grid,Shifted):-
+ maplist_n(0,rot_rowR,Grid,Shifted).
+rot_rowR(0,Row,Row).
+rot_rowR(N,Row,Rot):- rot1r(Row,Roll),N2 is N-1,rot_rowR(N2,Roll,Rot).
+rot1r(Row,Roll):- append(Rest,[E],Row),append([E],Rest,Roll).
 
-unrotate_p2r(rot90,rot270). unrotate_p2r(double_size,half_size).
-unrotate_p2(X,Y):- unrotate_p2r(X,Y).
-unrotate_p2(X,Y):- unrotate_p2r(Y,X).
-unrotate_p2(X,X). %:- rot_p2(X). unrotate_p2(sameR,sameR).
+undo_effect(UnRot,X,Y):- undo_p2(UnRot,Rot),!,must_grid_call(Rot,X,Y).
+
+undo_p2r(rot90,rot270). 
+undo_p2r(rollD,rollDR). 
+undo_p2r(double_size,half_size).
+
+undo_p2_lr(X,Y):- undo_p2r(X,Y).
+undo_p2_lr(X,Y):- undo_p2r(Y,X).
+
+undo_p2(X,Y):- undo_p2_lr(X,Y).
+undo_p2(X,X).
+%:- f_o(X), \+ undo_p2_lr(X,_). %:- rot_p2(X). undo_p2(sameR,sameR).
 
 
 nav(s,0,1). nav(e, 1,0). nav(w,-1,0). nav(n,0,-1).
