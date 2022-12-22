@@ -130,9 +130,9 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   
   :- SL  is 2_147_483_648*8*4, set_prolog_flag(stack_limit, SL ).
   :- (getenv('DISPLAY',_) -> true ; setenv('DISPLAY','10.0.0.122:0.0')).
-  :- unsetenv('DISPLAY').
+  %:- unsetenv('DISPLAY').
   :- (getenv('DISPLAY',_) -> guitracer ; true).
-  :- noguitracer.
+  %:- catch(noguitracer,_,true).
   :- set_prolog_flag(toplevel_print_anon,false).
   :- set_prolog_flag(toplevel_print_factorized,true).
   
@@ -149,7 +149,7 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   %:- set_prolog_flag(trace_gc,false).
   :- set_prolog_flag(write_attributes,dots).
   :- set_prolog_flag(backtrace_depth,1000).
-  :- catch(noguitracer,_,true).
+ 
 
 %arc_assert(P):- pfcAddF(P).
 
@@ -256,7 +256,8 @@ must_det_ll(once(A)):- !, once(must_det_ll(A)).
 must_det_ll(X):- 
   strip_module(X,M,P),functor(P,F,A),setup_call_cleanup(nop(trace(M:F/A,+fail)),(must_not_error(X)*->true;must_det_ll_failed(X)),
     nop(trace(M:F/A,-fail))).
-  
+
+must_not_error(X):- is_guitracer,!, call(X).
 must_not_error(X):- catch(X,E,((E=='$aborted';nb_current(cant_rrtrace,t))-> throw(E);(/*arcST,*/writeq(E=X),pp(etrace=X),
   rrtrace(visible_rtrace([-all,+exception]),X)))).
 
@@ -273,7 +274,7 @@ must_det_ll_failed(X):- wdmsg(failed(X))/*,arcST*/,nortrace,trace,visible_rtrace
 
 rrtrace(X):- rrtrace(etrace,X).
 
-is_guitracer:- fail, getenv('DISPLAY',_).
+is_guitracer:- getenv('DISPLAY',_).
 rrtrace(P1,X):- nb_current(cant_rrtrace,t),!,nop((wdmsg(cant_rrtrace(P1,X)))),!,fail.
 rrtrace(_,X):- notrace,is_guitracer,!,nortrace,gtrace,trace,call(X).
 rrtrace(P1,X):- trace,!, call(P1,X).

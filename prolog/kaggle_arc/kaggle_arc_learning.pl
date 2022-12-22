@@ -761,8 +761,9 @@ make_rule_l2r(Shared,II,OO,III,OOO,SharedMid):- fail,
   p_n_atom1(R1,A1),p_n_atom1(R2,A2),
   NewI=o(VT1,VE1,VR1),gen_variatable(['Total',A1],VT1),gen_variatable(['Element',A1],VE1), gen_variatable([A1,'R'],VR1), 
   NewO=o(VT2,VE2,VR2),gen_variatable(['Total',A2],VT2),gen_variatable(['Element',A2],VE2), gen_variatable([A2,'R'],VR2),   
-  gen_offset_expression(R2,R1,VR1,VR2,Code1,OVR),
-  make_rule_l2r(Shared,[if(NewI),call(Code1),offsetV(R1,R2,OVR)|I_I_I],[lookup(NewO)|O_O_O],III,OOO,SharedMid).
+  gen_offset_expression(ranks,R2,R1,o,VR1,VR2,Code1),
+  append([[if(NewI)|Code1],I_I_I],I_I_I_I),
+  make_rule_l2r(Shared,I_I_I_I,[lookup(NewO)|O_O_O],III,OOO,SharedMid).
 
 
 gen_change_color_expression(C1,C2,VC1,VC2,(VC1=C1,VC2=C2),C1,C2).

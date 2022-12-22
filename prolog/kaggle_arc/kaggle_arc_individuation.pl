@@ -1090,7 +1090,7 @@ hybrid_shape_from(Set,VM):-
   DiagCount=_, HVCount<4,
   !,
   must_det_ll((
-  %indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
+  %indv_props(Obj,Props),my_partition(is_prop_automatically_rebuilt,Props,_,PropsRetained),
   make_indiv_object(VM,[iz(stype(R))],GOPoints,Obj),
   
   %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),

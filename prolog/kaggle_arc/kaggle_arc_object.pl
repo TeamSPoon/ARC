@@ -44,9 +44,48 @@ if_btype(info).
 if_btype(flag).
 
 
+
+is_in_subgroup(Obj,bg_obj):- has_prop(cc(fg,0),Obj).
+is_in_subgroup(Obj,fg_obj):- has_prop(cc(bg,0),Obj).
+is_in_subgroup(Obj,single_fc_color):- has_prop(fg_color_count(1),Obj).
+is_in_subgroup(Obj,multicolor):- has_prop(fg_color_count(Two),Obj),!,Two>1.
+is_in_subgroup(Obj,is_parent):- has_prop(link(subsuming(_,_),_),Obj).
+is_in_subgroup(Obj,is_child):- has_prop(link(subsumed_by(_,_),_),Obj).
+is_in_subgroup(Obj,is_parent_and_child):- is_in_subgroup(Obj,is_parent),is_in_subgroup(Obj,is_child).
+is_in_subgroup(_,all).
+
+select_subgroup(Objs,GroupName,Count,SubObjs):- 
+  into_group(Objs,GObjs),
+  findall(O-GroupName,(member(O,GObjs),is_in_subgroup(O,GroupName)),Memberships),
+  maplist(arg(2),Memberships,GroupNames),
+  get_ccs(GroupNames,GroupNameCC),
+  member(cc(GroupName,Count),GroupNameCC),
+  findall(O,member(O-GroupName,Memberships),SubObjs).
+
+object_prop(O,Prop):- indv_props(O,Props),member(Prop,Props).
+
+objects_props(SubObjs,Props):-
+  findall(Prop,(member(O,SubObjs),object_prop(O,Prop)),Props).
+objects_names_props(SubObjs,Props):-
+  findall(F-Prop,(member(O,SubObjs),object_prop(O,Prop),prop_name(Prop,F)),Props).
+
+prop_name(Prop,F):- \+ compound(Prop),!,F=Prop.
+prop_name(Prop,Name):- compound_name_arguments(Prop,F,[A|_]),
+   (number(A)-> Name =F ; compound_name_arguments(Name,F,[A])).
+
+object_group_cc(Objs,GroupName,SubObjs,Count,NamesCC,ValuesCC):-
+  select_subgroup(Objs,GroupName,Count,SubObjs),
+  objects_names_props(SubObjs,Props),
+  maplist(arg(1),Props,Names),get_ccs(Names,NamesCC),
+  maplist(arg(2),Props,Values),get_ccs(Values,ValuesCC).
+  
+
+
 gpoints_to_iv(GPoints,Iv):-
   gpoints_to_iv_info(GPoints,_ColorlessPoints,_LocX,_LocY,_PenColors,_RotG,Iv,[],_LPoints,_Grid,_SH,_SV,_SizeY,_SizeX,_CentX,_CentY).
 %     GPoints,LCLPoints,LocX,LocY,PenColors,Rot2L,Iv,LPoints,Grid,SH,SV,SizeY,SizeX,CentX,CentY)
+
+
 gpoints_to_iv_info(GPoints,LCLPoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPoints,Grid,SH,SV,SizeY,SizeX,CentX,CentY):-
   %points_range(GPoints,LocX,LocY,HiH,HiV,_HO,_VO), once(member(vis2D(SizeX,SizeY),Overrides);(SizeX is HiH-LocX+1,SizeY is HiV-LocY+1)),
   po_loc2D_vis2D(GPoints,Overrides,LocX,LocY,SizeY,SizeX),  
@@ -70,20 +109,46 @@ gpoints_to_center(GPoints,LocX,LocY,SizeX,SizeY,CentX,CentY):-
     (length(UFgPoints,UFgLen),CP is round(UFgLen/2), nth1(CP,UFgPoints,Point),hv_point(CentX,CentY,Point)))));
    (CentX is LocX + floor(SizeX/2),CentY is LocY + floor(SizeY/2)))).
 
+add_prop_list(O,Props):- nb_set_add(O,Props).
+add_prop(O,N,V):- Prop=..[N,V],nb_set_add1(O,Prop).
+add_prop_with_count(O,N,V):- my_assertion(is_list(V)),add_prop(O,N,V),
+  length(V,Len),atom_concat(N,'_count',NN),add_prop(O,NN,Len).
 
 :- style_check(+singleton).
 make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):- 
+ my_assertion(is_list([overrides|Overrides0])),
+ my_assertion(is_cpoints_list(GPoints)),
+  %luser_getval(test_pairname,ID),
  must_det_ll((
   redress_override(Overrides0,Overrides),
   gpoints_to_iv_info(GPoints,LCLPoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPoints,Grid,SH,SV,SizeY,SizeX,CentX,CentY),
-  %luser_getval(test_pairname,ID),
-  Area is SizeX * SizeY,
-  my_assertion(is_list([overrides|Overrides])),
-  my_assertion(is_cpoints_list(GPoints)),
-  all_colors(GPoints,CC),
+
+  %add_prop(PropL,globalpoints,GPoints),
+  %add_prop(PropL,localpoints,LPoints),
+  %add_prop(PropL,colorless_points,LCLPoints),
+
   length(GPoints,Len),
-  %maplist(on_edge(GridH,GridV),GPoints,EdgeL),count_sets([n,s,e,w,c|EdgeL],_,EdgeC),maplist(zero_one_more,EdgeC,EdgeS),
+  Area is SizeX * SizeY,
   Empty is Area - Len,
+  PropL = [area(Area)],
+  %add_prop(PropL,area,Area),
+  add_prop(PropL,empty_area,Empty),
+
+
+  
+  pixel_colors(GPoints,Pixels),
+  colors_cc(Pixels,CC),
+  %add_prop_list(PropL,CC),
+  sort(Pixels,UniqueColors),  
+  my_partition(is_fg_color,UniqueColors,FGC,NotFGC),
+  my_partition(is_bg_color,NotFGC,BGC,OtherC),
+  add_prop_with_count(PropL,unique_colors,UniqueColors),
+  add_prop_with_count(PropL,fg_colors,FGC),
+  add_prop_with_count(PropL,bg_colors,BGC),
+  add_prop_with_count(PropL,other_colors,OtherC),
+
+  %maplist(on_edge(GridH,GridV),GPoints,EdgeL),count_sets([n,s,e,w,c|EdgeL],_,EdgeC),maplist(zero_one_more,EdgeC,EdgeS),
+  
   once(member(grid(LocalGrid),Overrides);LocalGrid=Grid),
 
 
@@ -135,28 +200,27 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):-
   maplist(ignore,[GIDOMem==GID,IvOMem=Iv,GlyphOMem=Glyph,OIDOMem=OID]),
   testid_name_num_io(GID,_TestID,_Example,_Num,IO),
   flatten(
-  [ 
+  [ PropL,
     colorless_points(LCLPoints),    
     pen(PenColors),
     rot2L(RotG),
     rotOffset2D(SH,SV),
 
     loc2D(LocX,LocY), 
-    kept(loc2G(LocXG,LocYG)),
-    kept(center2D(CentX,CentY)),
-    kept(center2G(CentXG,CentYG)),
-    iz(cenYG(CentYG)),iz(cenXG(CentXG)),  
-    bottem2D(BottemX,BottemY),kept(bottem2G(BottemXG,BottemYG)),
+     unkept(loc2G(LocXG,LocYG)),
+     unkept(center2D(CentX,CentY)),
+   kept(center2G(CentXG,CentYG)),
+   % iz(cenYG(CentYG)),iz(cenXG(CentXG)),  
+    unkept(bottem2D(BottemX,BottemY)),unkept(bottem2G(BottemXG,BottemYG)),
     vis2D(SizeX,SizeY), 
-    vis2G(SizeXG,SizeYG), %iz(sizeY(SizeY)),iz(sizeX(SizeX)),
+    unkept(vis2G(SizeXG,SizeYG)), %iz(sizeY(SizeY)),iz(sizeX(SizeX)),
 
     global2G(GlobalXG,GlobalYG),
     
     iz(sid(ShapeID)),
 
     Syms,
-    
-    
+        
     mass(Len),
     CC,        
     localpoints(LPoints),
@@ -600,6 +664,7 @@ with_objprops2(override,E,List,NewList):-
 
 
 aggregates(iz(_)).
+%aggregates(unique_colors_count(_)).
 aggregates(cc(_,_)).
 aggregates(giz(_)).
 aggregates(o(_,_,_)).
@@ -1126,7 +1191,10 @@ is_some_cc(cc(_,N)):- N>0,!.
 
 
 all_colors_via_pixels(G,CC):-
-  pixel_colors(G,All), 
+  pixel_colors(G,All),
+  colors_cc(All,CC).
+
+colors_cc(All,CC):-
   findall(Nm-C,(enum_colors_test(C),occurs:count((sub_term(Sub, All), \+ \+ cmatch(C,Sub)), Nm), 
     once(Nm\==0 ; (atom(C), C\==is_colorish, C\==var, \+ is_real_color(C)))),BF),
   keysort(BF,KS),reverse(KS,SK),
@@ -1265,7 +1333,7 @@ rebuild_from_localpoints(Obj,WithPoints,NewObj):-
   call(UnRot,Grid,UnRotGrid),
   localpoints_include_bg(UnRotGrid,LPoints),
   offset_points(X,Y,LPoints,GPoints),
-  indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
+  indv_props(Obj,Props),my_partition(is_prop_automatically_rebuilt,Props,_,PropsRetained),
   remObjects(VM,Obj),
   make_indiv_object(VM,[loc2D(X,Y),globalpoints(GPoints),localpoints(Points)|PropsRetained],GPoints,NewObj))))),
    verify_object(NewObj),
@@ -1344,7 +1412,7 @@ pct(G):- call(G), ppt(G).
 rebuild_from_globalpoints(Obj,GPoints,NewObj):-
  must_det_ll((
   
-  indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
+  indv_props(Obj,Props),my_partition(is_prop_automatically_rebuilt,Props,_,PropsRetained),
   peek_vm(VM),
   
   %ppa(before=Obj),
@@ -1357,9 +1425,10 @@ rebuild_from_globalpoints(Obj,GPoints,NewObj):-
 
 
 
-is_point_or_colored(/*b*/iz(_)):-!,fail.
-is_point_or_colored(Prop):- sub_term(CP,Prop),(is_color(CP);is_nc_point(CP)),!.
-is_point_or_colored(Prop):-
+is_prop_automatically_rebuilt(iz(birth(_))):-!,fail.
+is_prop_automatically_rebuilt(Prop):- sub_term(CP,Prop),(is_color(CP);is_nc_point(CP)),!.
+is_prop_automatically_rebuilt(Prop):- compound(Prop),functor(Prop,F,_),(atom_contains(F,'color');atom_contains(F,'points')),!.
+is_prop_automatically_rebuilt(Prop):-
  member(Prop,[cc(_),amass(_),mass(_),colorless_points(_),rot2L(_),roll_shape(_),pen(_),norm_grid(_),norm_ops(_),
               iz(multicolored(_)),iz(chromatic(_,_)),
               iz(symmetry_type(_)),iz(stype(_)),iz(monochrome),

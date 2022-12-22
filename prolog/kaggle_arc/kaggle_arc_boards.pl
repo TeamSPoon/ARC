@@ -764,7 +764,7 @@ grid_to_obj_other_objs(VM,Grid,Objs,O):-
   objs_shapes(Objs,In),
   maybe_ogs_color(_R,OH,OV,In,Grid), 
   once((localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints), 
-  %indv_props(Obj,Props),my_partition(is_point_or_colored,Props,_,PropsRetained),
+  %indv_props(Obj,Props),my_partition(is_prop_automatically_rebuilt,Props,_,PropsRetained),
   (nonvar(VM)->true;grid_vm(Grid,VM)),
   make_indiv_object(VM,[],GOPoints,O))).
 

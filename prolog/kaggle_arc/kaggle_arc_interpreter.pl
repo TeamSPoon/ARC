@@ -605,15 +605,18 @@ known_obj0(G,O):- is_group(G),into_group(G,OL),OL=[_],must([O|_]=OL).
 
 % this is bad  ?- into_grid('E',ID),grid_to_tid(G,ID).  ?- into_grid('Z',ID),grid_to_tid(G,ID).
 
+current_group(G):- why_grouped(_Why, G)*->true;current_group1(G).
+current_group1(G):-   
+     arc_grid_pair(In,Out),individuate_pair(complete,In,Out,InC,OutC),append(InC,OutC,Objs),
+ % tries again
+      (why_grouped(_Why, G)*->true; G=Objs).
+
 into_group(GI,G):- into_group(GI,G, _ ).
 
 into_group(G,G,(=)) :- G==[],!.
 into_group(P,G,(=)):- is_group(P),!,G=P.
 into_group(G, G, _):- plain_var(G),!, %throw(var_into_group(G)),
-   (why_grouped(_Why, G)*->true; 
-     (arc_grid_pair(In,Out),individuate_pair(complete,In,Out,InC,OutC),append(InC,OutC,Objs),
-       % tries again
-      (why_grouped(_Why, G)*->true; G=Objs))).
+          current_group(G).
 into_group(VM,G,(group_to_and_from_vm(VM))):- is_vm(VM),G=VM.objs,is_group(G),!.
 into_group(VM,G,(group_to_and_from_vm(VM))):- is_vm(VM),run_fti(VM),G=VM.objs,is_group(G),!.
 into_group(G,I, into_grid):- is_grid(G),!,compute_shared_indivs(G,I).

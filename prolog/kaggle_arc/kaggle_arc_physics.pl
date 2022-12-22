@@ -432,7 +432,7 @@ find_sees(VM):-
   /*must_det_ll*/((Objs = VM.objs, pred_find_links(seeing_object(non_overlapping_object_dir(dir_seeing)),Objs,NewObjs))),
   gset(VM.objs) = NewObjs.
 
-seeing_object(How,Dirs,O2,O1):- O1\==O2,
+seeing_object(How,Dirs,O2,O1):- O1\==O2, fail,
   is_physical_object(O1), is_physical_object(O2),
   \+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
@@ -449,6 +449,8 @@ is_physical_object(O):- is_whole_grid(O),!,fail.
 is_physical_object(O):- has_prop(cc(fg,0),O),!,fail.
 is_physical_object(O):- my_assertion(is_object(O)),has_prop(iz(media(shaped)),O),!.
 is_physical_object(O):- has_prop(mass(Mass),O),Mass>0.
+
+
 
 % ==============================================
 % OVERLAPS
@@ -490,9 +492,9 @@ subsume(subsuming(Offset,OverlapP),O2,O1):- O1\==O2,
   maplist(length,[Ps2,P2L,Overlap,P1L,Ps1],List),
   Overlap\==[],P1L==[],
   OverlapP =..[ol| List],
-  object_offset(O2,O1,Offset).
+  object_offset(O2,O1,Offset),!.
 
-subsume(by_subsuming(Offset,OverlapP),O1,O2):- O1\==O2,
+subsume(subsumed_by(Offset,OverlapP),O1,O2):- O1\==O2,
   is_physical_object(O1), is_physical_object(O2),
   %\+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
