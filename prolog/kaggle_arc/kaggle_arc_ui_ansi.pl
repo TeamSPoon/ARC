@@ -298,9 +298,9 @@ pt_guess_pretty_1(P,O):- copy_term(P,O,_),
 :- multifile(pretty_clauses:pp_hook/3).
 :- module_transparent(pretty_clauses:pp_hook/3).
 pretty_clauses:pp_hook(_,Tab,S):- term_is_ansi(S), !,prefix_spaces(Tab), write_keeping_ansi_mb(S).
-pretty_clauses:pp_hook(_,  _,_):- \+ let_arc_portray,!,fail.
-pretty_clauses:pp_hook(_,Tab,S):- is_vm(S),!,prefix_spaces(Tab),!,write('..VM..').
-pretty_clauses:pp_hook(FS,_  ,G):-
+%pretty_clauses:pp_hook(_,Tab,S):- is_vm(S),!,prefix_spaces(Tab),!,write('..VM..').
+%pretty_clauses:pp_hook(_,  _,_):- \+ let_arc_portray,!,fail.
+pretty_clauses:pp_hook(FS,_  ,G):- let_arc_portray,
   current_predicate(is_group/1),
    locally(b_setval(pp_parent,FS),
      print_with_pad(pp_hook_g(G))),!.

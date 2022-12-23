@@ -980,7 +980,8 @@ grid_color_hint(In,Out,Hint):-
 comp_o(_-o):-!.
 comp_o(_-i).
 
-entire_row(Color,Row):- maplist(==(Color),Row).
+entire_row([Color|Row]):- entire_row(Color,Row).
+entire_row(Color,Row):- maplist(=@=(Color),Row).
 %entire_row(black,Row):- !, maplist(=(black),Row).
 mentire_row(C2,OtherRow):- entire_row(C2,OtherRow),!.
 % mentire_row(C2,OtherRow):- include(\==(C2),OtherRow,Missing),  once((length(Missing,L),L=<1,maplist(=(C2),Missing))),!.

@@ -249,7 +249,6 @@ show_indiv(Why,Obj):-
 has_goals(G):- term_attvars(G,AV),AV\==[].
 has_goals(G):- term_variables(G,TV),term_singletons(G,SV),TV\==SV.
 
-writeg(N=V):- format('~N'),nonvar(N), pp_no_nl(N),writeln(' = '), !, wots(S,writeg(V)), print_w_pad(2,S).
 writeg(Term):- 
   term_attvars(Term,Attvars), Attvars\==[],!,
   term_variables(Term,Vars),
@@ -258,12 +257,14 @@ writeg(Term):-
   numbervars(PlainVarsC,MTen,_Ten,[singletons(true)]),
   numbervars(AttvarsC+Goals,10,MTen,[attvar(bind),singletons(false)]),
   writeg(TermC), wots(S,writeg(Goals)), print_w_pad(2,S).
-
 writeg(Term):- \+ ground(Term),!, \+ \+ (numbervars(Term,99799,_,[singletons(true)]),
    subst(Term,'$VAR'('_'),'$VAR'('_____'),TermO), writeg(TermO)).
+
+writeg(N=V):- format('~N'),nonvar(N), pp_no_nl(N),writeln(' = '), !, wots(S,writeg(V)), print_w_pad(2,S).
 writeg(V):- \+ is_list(V),!,pp(V).
+writeg(V):- is_grid(V),!,print_grid(V),wots(S,(maplist(writeg1,V))), print_w_pad(2,S).
 %writeg(V):- \+ is_list(V),!,writeq(V),nl.
-writeg([H|T]):- is_list(H),wots(S,maplist(writeg1,[H|T])), print_w_pad(2,S).
+writeg([H|T]):- is_list(H),wots(S,((writeln('['),maplist(writeg,[H|T]),writeln(']')))), print_w_pad(2,S).
 writeg(X):- wots(S,pp(X)), print_w_pad(2,S).
 
 

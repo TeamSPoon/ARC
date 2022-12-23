@@ -750,7 +750,7 @@ obj_iv(Obj,Iv):- indv_u_props(Obj,L),iv_for(L,Iv).
 
 obj_gid(Obj,GID):-  indv_props(Obj,L),member(giz(gid(GID)),L).
 
-
+obj_to_oid(Obj,OID):- var(Obj),!,oid_glyph_object(OID,_,Obj).
 obj_to_oid(Obj,OID):-  atom(Obj),display_length(Obj,L),L>5,Obj=OID,!.
 obj_to_oid(Obj,OID):-  oid_glyph_object(OID,_,Obj),!.
 /*
@@ -809,12 +809,20 @@ o2g_f(Obj,Glyph):- obj_to_oid(Obj,OID),oid_glyph_object(OID,Glyph,Obj),!.
 
 assert_object2(OID,obj(List)):-!,maplist(assert_object2(OID),List).
 assert_object2(OID,List):- is_list(List),!,maplist(assert_object2(OID),List).
-assert_object2(OID,Prop):- Prop=..[F|List], append(Pre,[Last],List),
+assert_object2(OID,Prop):- Prop=..[F|List],CINDV=..[cindv,OID,F|List],arc_assert1(CINDV),
+  append(LL,[E],List),
+  ignore((is_list(E),atom_concat(F,'_count',NN),append(LL,[Count],CList),
+  length(E,Count),
+  CINDVL=..[cindv,OID,NN|CList],
+  arc_assert1(CINDVL))).
+
+/*
   assert_object5(OID,F,Pre,Last,List).
 assert_object5(OID,F,Pre,Last,_List):- 
   AProp=..[cindv,OID,F,Pre,Last],
   % (\+ ground(AProp)->dumpST;true),
   arc_assert1(AProp).
+*/
 
 arc_assert1(A):- assertz_if_new(A),!.
 arc_assert1(A):- arc_assert_fast(A).
@@ -1117,19 +1125,31 @@ localpoints_include_bg(Grid,Points):- is_grid(Grid),!, must_det_11((grid_to_poin
 
 
 
-
-object_localpoints(I,XX):- must_be_free(XX), stack_check_or_call(3000,(dmsg(stackcheck>3000),fail)),
+object_localpoints(obj(I),_):- member(obj(_),I),!,break.
+object_localpoints(I,XX):- must_be_free(XX), stack_check_or_call(3000,(dmsg(stackcheck>3000),break)),
  must_det_ll((indv_props(I,L), object_localpoints0(I,L,XX),is_cpoints_list(XX))),!.
 
 object_localpoints0(_,L,X):- member(localpoints(X),L),is_list(X),!.
 object_localpoints0(I,L,X):- member(globalpoints(XX),L),is_list(XX),loc2D(I,LocX,LocY),!,deoffset_points(LocX,LocY,XX,X).
-object_localpoints0(I,_L,X):- object_localpoints4(I,X).
+object_localpoints0(I,_L,X):- object_localpoints3(I,X),!.
+object_localpoints0(I,_L,X):- object_localpoints4(I,X),!.
 
 object_localpoints3(I,XX):-  
- must_det_ll((norm_grid(I,NormalGrid), norm_ops(I,Ops),grid_call(Ops,NormalGrid,LocalGrid),grid_to_points(LocalGrid,XX))).
-norm_grid(I,NormalGrid):- indv_prop_val(I,norm_grid(NormalGrid)).
+ must_det_ll((norm_grid(I,NormalGrid), norm_ops(I,Ops),unreduce_grid(NormalGrid,Ops,LocalGrid),grid_to_points(LocalGrid,XX))).
+norm_grid(I,NormalGrid):- 
+ indv_prop_val(I,norm_grid(NormalGrid)).
 norm_ops(I,NormalGrid):- indv_prop_val(I,norm_ops(NormalGrid)).
-indv_prop_val(I,V):- indv_props(I,L),member(V,L).
+
+indv_prop_val(I,NV):- indv_prop_val1(I,NV);indv_prop_val2(I,NV).
+indv_prop_val1(I,V):- indv_props(I,L),member(V,L).
+indv_prop_val2(I,NV):- obj_to_oid(I,OID),cindv(OID,NV).
+
+cindv(OID,NV):- nonvar(NV),!,NV=..NVL,apply(cindv(OID),NVL).
+cindv(OID,NV):- cindv(OID,A,B),NV=..[A,B].
+cindv(OID,NV):- cindv(OID,A,B,C),NV=..[A,B,C].
+cindv(OID,NV):- cindv(OID,A,B,C,D),NV=..[A,B,C,D].
+cindv(OID,NV):- cindv(OID,A,B,C,D,E),NV=..[A,B,C,D,E].
+
 
 object_localpoints4(I,XX):-  
  must_det_ll((colorless_points(I,X), rot2L(I,Rot), rotOffset2D(I,H,V), pen(I,PenColors), make_localpoints(X,Rot,H,V,PenColors,XX))).

@@ -769,7 +769,7 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 %:- endif.
 
 %:- fixup_module_exports_now.  
-user:portray(Grid):- fail, 
+user:portray(Grid):- % fail, 
    current_prolog_flag(debug,false),
     \+ tracing,
    \+ nb_current(arc_can_portray,nil),

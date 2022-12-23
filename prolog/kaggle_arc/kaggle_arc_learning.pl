@@ -634,7 +634,7 @@ save_rule1(_GID,TITLE,IP,OP,_IIPP,_OOPP):-
  print_ss(ALL),
 
  pp(TITLE),
- save_learnt_rule(test_solved(TITLE,obj(III),obj(OOO),NewSharedS),I^O,I^O))).
+ save_learnt_rule(test_solved(TITLE,lhs(III),rhs(OOO),NewSharedS),I^O,I^O))).
 
 into_title(IO,OI,TITLE):-
   upcase_atom(IO,A), upcase_atom(OI,B),
@@ -643,8 +643,8 @@ into_title(IO,OI,TITLE):-
 skip_in_rules(Why,I):- not_for_matching(Why,_,I),not_for_creating(_,I).
 skip_in_rules(_Why,localpoints(_)).
 skip_in_rules(_Why,globalpoints(_)).
-skip_in_rules(_Why,colorless_points(_)).
-skip_in_rules(_Why,giz(gid(_))).
+%skip_in_rules(_Why,colorless_points(_)).
+%skip_in_rules(_Why,giz(gid(_))).
 skip_in_rules(_Why,call(True)):- True==true,!.
 
 
