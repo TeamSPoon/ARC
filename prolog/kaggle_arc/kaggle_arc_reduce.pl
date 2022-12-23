@@ -163,7 +163,7 @@ solid_lines(Grid,Ns,C):- findall(N1,(nth1(N1,Grid,Row1),entire_row(Row1)),Ns),le
 
 too_small_reduce(H,_L,Two):- H=<Two. %X=<N,Y=<N,!.
 
-reduce_1op(Half,Len,_,[Row1|Grid],(copy_row_ntimes(1,Times)),[Row1]):- maplist(=@=(Row1),Grid),length(Grid,Times), Times\==0.
+reduce_1op(Half,Len,_,[Row1|Grid],(copy_row_ntimes(1,TimesO)),[Row1]):- maplist(=@=(Row1),Grid),length(Grid,Times), Times\==0, TimesO is Times+1.
 
 %reduce_1op(Half,Len,_,Grid,_,_):- grid_size(Grid,X,Y), max_min(X,Y,H,L),too_small_reduce(H,L,2),!,fail.
 % DISABLED
@@ -175,19 +175,23 @@ reduce_1op(Len1,Half1,PassNo,GridIn, make_solid_square(H,V),[[C1]]):-  GridIn = 
   Row1= [C1|Row], maplist(=@=(C1),Row), grid_size(GridIn,H,V), once(H > 1 ; V > 1).
 
 % DISABLED 
-reduce_1op(Len1,Half1,PassNo,A,OP,AAA):- reduce_1op_cr(Len1,Half1,PassNo,A,OP,AAA).
+reduce_1op(Len1,Half1,PassNo,A,copy_row_ntimes(N1,N2),AAA):- 
+  reduce_1op_cr(Len1,Half1,PassNo,A,copy_row_ntimes(N1,N2a),AAA),N2 is N2a+1.
+
 reduce_1op_cr(Half,Len,_,[Row2,Row3|Grid],copy_row_ntimes(1,1),[Row2|Grid]):- Row2=@=Row3.
 reduce_1op_cr(Half,Len,_,[Row1,Row2,Row3|Grid],copy_row_ntimes(2,1),[Row1,Row2|Grid]):- Row2=@=Row3.
 reduce_1op_cr(Half,Len,_,Grid,copy_row_ntimes(N,1),NewGrid):- append(Rows,[Row1,Row2|Rest],Grid),
   append(Rows,[Row1|Rest],NewGrid),Row1=@=Row2,length([_|Rows],N).
 
-copy_row_ntimes(1,1,[Row1|Grid],[Row1,Row1|Grid]):-!.
-copy_row_ntimes(1,N,[Row1|Grid],[Row1,Row1,Row1|GridO]):- N>3,!,
-  N3 is N-3,copy_row_ntimes(1,N3,[Row1|Grid],GridO).
-copy_row_ntimes(1,N,[Row1|Grid],[Row1|GridO]):- 
-  N3 is N-1,copy_row_ntimes(1,N3,[Row1|Grid],GridO).
-copy_row_ntimes(N1,Times,Grid,GridR):- length([_|Left],N1), append(Left,[Row1|Right],Grid),
-  copy_row_ntimes(1,Times,[Row1|Right],Result),
+copy_row_ntimes(N1,Times,Grid,GridR):- Times1 is Times-1,copy_row_ntimes_1(N1,Times1,Grid,GridR).
+
+copy_row_ntimes_1(1,1,[Row1|Grid],[Row1,Row1|Grid]):-!.
+copy_row_ntimes_1(1,N,[Row1|Grid],[Row1,Row1,Row1|GridO]):- N>3,!,
+  N3 is N-3,copy_row_ntimes_1(1,N3,[Row1|Grid],GridO).
+copy_row_ntimes_1(1,N,[Row1|Grid],[Row1|GridO]):- 
+  N3 is N-1,copy_row_ntimes_1(1,N3,[Row1|Grid],GridO).
+copy_row_ntimes_1(N1,Times,Grid,GridR):- length([_|Left],N1), append(Left,[Row1|Right],Grid),
+  copy_row_ntimes_1(1,Times,[Row1|Right],Result),
   append(Left,Result,GridR).
 %copy_row_ntimes(N1,Two,Row,Result):- make_list(Row,N1,NRows),make_list(NRows,Two,Result).
 

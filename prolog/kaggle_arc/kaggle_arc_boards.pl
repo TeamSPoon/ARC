@@ -124,9 +124,14 @@ into_grid_list(A,[A]):- is_grid(A),!.
 into_grid_list([A|More],[A|More]):- is_grid(A),!.
 into_grid_list(A^B,List):- caret_to_list(A^B,List),!.
 
+
+show_reductions(G):- reduce_grid(G,Ops,R),print_ss([G,R]),writeg(Ops).
+
 show_common_reductions(TestID,AB):- into_grid_list(AB,GL), GL\==AB,!,show_common_reductions(TestID,GL).
 show_common_reductions(TestID,GL):- once((dash_chars,print_ss(show_common_reductions(TestID)=GL),dash_chars)),fail.
 %show_common_reductions(TestID,[A,B]):- !, common_reductions(A^B,OPS,_)
+
+show_common_reductions(TestID,GL):- forall(member(G,GL),show_reductions(G)),!.
 show_common_reductions(TestID,GL):-
  (all_common_reductions(GL,OPS,Reduced)*->print_common_reduction_result(TestID,OPS,Reduced)
   ;(GL\=[_,_,_|_],common_reductions_from_two(GL,OPS,A,B,AA,BB)*-> print_common_reduction_result(common_reductions_from_two(TestID,A,B),OPS,AA^BB) 
@@ -161,6 +166,7 @@ show_reduced_io_fav(I^O):- get_current_test(TestID),\+ \+ show_common_reductions
 get_output_xform(TestID):- findall(ExampleNum=Grid,kaggle_arc(TestID,ExampleNum,_,Grid),Grids),
    do_output_grids(TestID,Grids).
 
+pause:- !.
 pause:- !, trace.
 pause:- get_single_char(K),(K=t->trace;true).
 print_reduced_io(TestID):- ensure_test(TestID),
