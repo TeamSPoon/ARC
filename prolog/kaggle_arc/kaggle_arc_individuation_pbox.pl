@@ -77,11 +77,23 @@ pbox_vm_special_sizes(VM):- !,
   GH is round(VM.h + 0), GV is round(VM.v + 0),
   findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L0),
   other_grid_size(VM.grid_o,OX,OY),
-  Sizes_S_L=[size2D(OX,OY)|Sizes_S_L0],
-  length(Sizes_S_L,A),
+  globalpoints(GridI0,Points),
+  points_to_sizes(Points,Sizes),
+  append_sets([Sizes,[size2D(OX,OY)|Sizes_S_L0]],Sizes_S_L),
   GridI0=VM.grid_o,
   Objs = VM.objs,
+  length(Sizes_S_L,A),
   pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM).
+
+points_to_sizes(Points,Sizes):-
+  maplist(arg(1),Points,Colors),
+  sort(Colors,SColors),
+  findall(size2D(SizeX,SizeY),(member(Color,SColors),
+    include(sub_var(Color),Points,CPoints),
+    vis2D_and_1x1_larger(CPoints,SizeX,SizeY)),Sizes).
+
+vis2D_and_1x1_larger(CPoints,SizeX,SizeY):- vis2D(CPoints,SizeX0,SizeY0),
+  ((SizeX,SizeY)=(SizeX0,SizeY0);((SizeY is SizeY0+1,SizeX is SizeX0+1))).
 
 pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM):- 
   length(Objs,Len),

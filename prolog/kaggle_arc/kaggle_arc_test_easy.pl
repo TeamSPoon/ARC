@@ -625,7 +625,7 @@ blur_or_not_least_rot90_x4(I,O):-
 crop_by(HH/H,In,Out):- grid_size(In,H,V),between(1,H,HH),HH<H,clip(1,1,HH,V,In,Out).
 grow_2(In,Out):- append_left(In,In,Out).
 grow_flip_2(In,Out):- flipH(In,FlipH),append_left(In,FlipH,Out).
-shrink_grid(I,O):- grid_to_norm(I,_,O),!.
+shrink_grid(I,O):- normalize_grid(_,I,O),!.
 
 
 

@@ -83,15 +83,16 @@ object_group_cc(Objs,GroupName,SubObjs,Count,NamesCC,ValuesCC):-
 
 gpoints_to_iv(GPoints,Iv):-
   gpoints_to_iv_info(GPoints,_ColorlessPoints,_LocX,_LocY,_PenColors,_RotG,Iv,[],_LPoints,_Grid,_SH,_SV,_SizeY,_SizeX,_CentX,_CentY).
-%     GPoints,LCLPoints,LocX,LocY,PenColors,Rot2L,Iv,LPoints,Grid,SH,SV,SizeY,SizeX,CentX,CentY)
+%     GPoints,LCLPoints,LocX,LocY,PenColors,Rot2L,Iv,LPoints,Grid,SH,SV,SizeX,SizeY,CentX,CentY)
 
 
-gpoints_to_iv_info(GPoints,LCLPoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPoints,Grid,SH,SV,SizeY,SizeX,CentX,CentY):-
+gpoints_to_iv_info(GPoints,LCLPoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPoints,Grid,SH,SV,SizeX,SizeY,CentX,CentY):-
   %points_range(GPoints,LocX,LocY,HiH,HiV,_HO,_VO), once(member(vis2D(SizeX,SizeY),Overrides);(SizeX is HiH-LocX+1,SizeY is HiV-LocY+1)),
-  po_loc2D_vis2D(GPoints,Overrides,LocX,LocY,SizeY,SizeX),  
+  po_loc2D_vis2D(GPoints,Overrides,LocX,LocY,SizeX,SizeY),  
   deoffset_points(LocX,LocY,GPoints,LPoints),
   make_grid(SizeX,SizeY,Grid),
-  add_global_points(LPoints,Grid,Grid),
+  physical_points(LPoints,PLPoints),
+  add_global_points(PLPoints,Grid,Grid),
   grid_to_shape(Grid,RotG,SH,SV,LCLPoints,PenColors),
   lpoints_to_iv_info(LCLPoints,LocX,LocY,PenColors,RotG,Iv),
   gpoints_to_center(GPoints,LocX,LocY,SizeX,SizeY,CentX,CentY).
@@ -115,13 +116,15 @@ add_prop_with_count(O,N,V):- my_assertion(is_list(V)),add_prop(O,N,V),
   length(V,Len),atom_concat(N,'_count',NN),add_prop(O,NN,Len).
 
 :- style_check(+singleton).
-make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):- 
+make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):- 
+ physical_points(GPoints0,GPoints),
  my_assertion(is_list([overrides|Overrides0])),
  my_assertion(is_cpoints_list(GPoints)),
   %luser_getval(test_pairname,ID),
  must_det_ll((
   redress_override(Overrides0,Overrides),
-  gpoints_to_iv_info(GPoints,LCLPoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPoints,Grid,SH,SV,SizeY,SizeX,CentX,CentY),
+  gpoints_to_iv_info(GPoints0,LCLPoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPoints0,Grid,SH,SV,SizeX,SizeY,CentX,CentY),
+  physical_points(LPoints0,LPoints),
 
   %add_prop(PropL,globalpoints,GPoints),
   %add_prop(PropL,localpoints,LPoints),
@@ -192,10 +195,9 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):-
          atomic_list_concat(['o',Glyph,Iv,GID],'_',OID))),
 
   
-  into_ngrid(Grid,NGrid),
-  ngrid_syms(NGrid,Syms),
-
-  op_grid_to_norm(NormOps,Grid,NormGrid),
+  into_ngrid(Grid,NGrid),ngrid_syms(NGrid,Syms),
+  normalize_grid(NormOps,Grid,NormGrid),
+  shape_id(NormGrid,NormShapeID),
   %grav_rot(Grid,NormOps,NormGrid),
   maplist(ignore,[GIDOMem==GID,IvOMem=Iv,GlyphOMem=Glyph,OIDOMem=OID]),
   testid_name_num_io(GID,_TestID,_Example,_Num,IO),
@@ -216,7 +218,7 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints,ObjO):-
     unkept(vis2G(SizeXG,SizeYG)), %iz(sizeY(SizeY)),iz(sizeX(SizeX)),
 
     global2G(GlobalXG,GlobalYG),
-    
+    iz(nsid(NormShapeID)),
     iz(sid(ShapeID)),
 
     Syms,
@@ -361,8 +363,8 @@ same_globalpoints_ovrs_ps_obj(Overrides,P1,O2):-
   get_loc2D_vis2D(O2,P2,H2,V2,OH2,OV2),
   P1=@=P2,H1=H2,V1=V2, OH1=OH2,OV1=OV2.
 
-po_loc2D_vis2D(_GPoints,Overrides,LocX,LocY,SizeY,SizeX):- is_list(Overrides), member(vis2D(SizeX,SizeY),Overrides), member(loc2D(LocX,LocY),Overrides),!.
-po_loc2D_vis2D(GPoints,_Overrides,LocX,LocY,SizeY,SizeX):- points_range(GPoints,LocX,LocY,HiH,HiV,_HO,_VO),SizeX is HiH-LocX+1,SizeY is HiV-LocY+1. 
+po_loc2D_vis2D(_GPoints,Overrides,LocX,LocY,SizeX,SizeY):- is_list(Overrides), member(vis2D(SizeX,SizeY),Overrides), member(loc2D(LocX,LocY),Overrides),!.
+po_loc2D_vis2D(GPoints,_Overrides,LocX,LocY,SizeX,SizeY):- points_range(GPoints,LocX,LocY,HiH,HiV,_HO,_VO),SizeX is HiH-LocX+1,SizeY is HiV-LocY+1. 
 
 get_loc2D_vis2D(O2,P2,H2,V2,OH2,OV2):- globalpoints_include_bg(O2,P2), loc2D(O2,H2,V2), vis2D(O2,OH2,OV2),!.
 
@@ -432,7 +434,9 @@ grav_roll(LPoints,RotG,Shape):-
 
 grid_to_shape(Grid,RotG,SH,SV,LCLPoints,PenColors):-
   grav_roll(Grid,RotG,RotShape),
-  globalpoints_maybe_bg(RotShape,RShape), include(ground,RShape,LShape),
+  globalpoints_maybe_bg(RotShape,RShapeA), 
+  physical_points(RShapeA,RShape),
+  include(ground,RShape,LShape),
   grid_size(RotShape,SH,SV),
   % colors 
   maplist(arg(2),LShape,LCLPoints), maplist(arg(1),LShape,Colorz),
@@ -734,9 +738,25 @@ is_shape_id_for([],sid_0).
 is_shape_id_for([point_01_01,point_01_02],sid_21).
 is_shape_id_for([point_01_01,point_02_01,point_01_02,point_02_02],sid_22).
 is_shape_id_for([point_01_01,point_02_01,point_03_01,point_01_02,point_02_02,point_03_02,point_01_03,point_02_03,point_03_03],sid_33).
+is_shape_id_for([point_01_01,point_02_01,point_03_01,point_01_02,point_03_02,point_01_03,point_02_03,point_03_03],sid_323).
+
+physical_points(GPoints,Points):- 
+   my_partition(sub_var(fg),GPoints,FGPoints,_),
+   FGPoints\==[],!, Points = FGPoints.
+physical_points(GPoints,Points):- 
+   my_partition(sub_var(bg),GPoints,BGPoints,OPoints),
+   BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
+physical_points(GPoints,Points):- 
+   my_partition(sub_var('$VAR'('_')),GPoints,BGPoints,OPoints),
+   BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
+physical_points(GPoints,Points):-
+   my_partition(sub_var(black),GPoints,BGPoints,OPoints),
+   BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
+physical_points(Points,Points).
 
 
-
+shape_id(Shape,ShapeID):- is_grid(Shape),globalpoints(Shape,GPoints),physical_points(GPoints,Points),
+  maplist(arg(2),Points,LCLPoints),!,shape_id(LCLPoints,ShapeID).
 shape_id(Shape,ShapeID):- is_shape_id_for(Shape,ShapeID),!.
 shape_id(Shape,ShapeID):- term_hash(Shape,Hash), atomic_list_concat(['s',Hash],ShapeID), asserta(is_shape_id_for(Shape,ShapeID)).
 
@@ -1765,8 +1785,8 @@ guess_shape(GridH,GridV,GridIn,LocalGrid,I,Empty,N,H,V,Colors,Points,filltype(no
 
 guess_shape(GridH,GridV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,R):- N>=2, iz_symmetry(GridIn,R).
 
-guess_shape(GridH,GridV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,diagonal(u)):- rollD(GridIn,GridInRolled),maplist(=(E),GridInRolled).
-guess_shape(GridH,GridV,GridIn,LocalGrid,I,_,N,H,V,Colors,Points,diagonal(d)):- rollDR(GridIn,GridInRolled),maplist(=(E),GridInRolled).
+guess_shape(GridH,GridV,GridIn,LocalGrid,I,Empty,N,H,V,Colors,Points,diagonal(u)):- Empty>0, rollD(GridIn,GridInRolled),maplist(=(E),GridInRolled).
+guess_shape(GridH,GridV,GridIn,LocalGrid,I,Empty,N,H,V,Colors,Points,diagonal(d)):- Empty>0, rollDR(GridIn,GridInRolled),maplist(=(E),GridInRolled).
 
 guess_shape(GridH,GridV,GridIn,LocalGrid,I,E,N,H,V,Colors,Points,stype(Keypad)):- 
   guess_shape_poly(I,E,N,H,V,Colors,Points,Keypad).

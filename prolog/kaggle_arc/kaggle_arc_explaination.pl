@@ -155,7 +155,7 @@ debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
      wots(S, ((write(Str), nl, write(Title), nl /*, print_grid(NGrid)*/))), 
      HH is (OH - 1) * 2, print_w_pad(HH,S),
      
-     ignore(( O = GridO, once(grid_to_norm(O,Ops,N)), O\=@=N, print_side_by_side(Ops,O,N),writeln(Ops))),
+     ignore(( O = GridO, once(normalize_grid(Ops,O,N)), O\=@=N, print_side_by_side(Ops,O,N),writeln(Ops))),
 
      true))),
   if_t(is_object(Grid),

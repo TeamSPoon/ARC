@@ -130,7 +130,7 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   
   :- SL  is 2_147_483_648*8*4, set_prolog_flag(stack_limit, SL ).
   :- (getenv('DISPLAY',_) -> true ; setenv('DISPLAY','10.0.0.122:0.0')).
-  %:- unsetenv('DISPLAY').
+  :- unsetenv('DISPLAY').
   :- (getenv('DISPLAY',_) -> guitracer ; true).
   %:- catch(noguitracer,_,true).
   :- set_prolog_flag(toplevel_print_anon,false).
@@ -769,7 +769,7 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 %:- endif.
 
 %:- fixup_module_exports_now.  
-user:portray(Grid):- % fail, 
+user:portray(Grid):- fail, 
    current_prolog_flag(debug,false),
     \+ tracing,
    \+ nb_current(arc_can_portray,nil),

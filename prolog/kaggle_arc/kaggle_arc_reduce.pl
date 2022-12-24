@@ -45,10 +45,14 @@ reduce_op1(PassNo,A^B,OPA^OPB,AA^BB):- nth1(N,A,EA,A0),maplist(=(_),EA),nth1(N,B
 reduce_op1(PassNo,A^B,OPA^OPB,AA^BB):- !, reduce_op2(PassNo,B^A,OPB^OPA,BB^AA).
 */
 
+get_reduction_types(Types):- nb_current(grid_reductions,Types),Types\==[],!.
+get_reduction_types([shrink]).
+
 reduce_op1(PassNo,A^B,OP,AA^BB):-  stack_check_or_call(2000,(dmsg(stackcheck>2000),break)),
-  reduce_op1_by_size(PassNo,A,OPA,AA),is_grid(AA),
+  get_reduction_types(Types),
+  reduce_op1_by_size(Types,PassNo,A,OPA,AA),is_grid(AA),
   ensure_reduction_guide(OPA,OPB),
-  reduce_op1_by_size(PassNo,B,OPB,BB),is_grid(BB),
+  reduce_op1_by_size(Types,PassNo,B,OPB,BB),is_grid(BB),
   combin_pair_op(OPA,OPB,OP).
 
 reverse_p2(P2,R,RR):- nonvar(R), !, reverse(R,R1),grid_call(P2,R1,RR1),reverse(RR1,RR).
@@ -60,10 +64,10 @@ copy_first(1,[RowA|Right],[RowA,RowB|Right]):-  RowA=@=RowB.
 copy_last(N,R,RR):- reverse_p2(copy_first(N),R,RR).
 first_second_half(Grid,GL,GR):- length(Grid,L),H is floor(L/2), length(GL,H), append(GL,GR,Grid).
 
-reduce_op1_by_size(PassNo,A,OPS,AA):- 
+reduce_op1_by_size(Types,PassNo,A,OPS,AA):- 
   length(A,Len1),Half1 is floor(Len1/2)+1,  
  % ensure_usefull(OPA),
-  reduce_op1_1d(Len1,Half1,PassNo,A,OPA,AA),
+  reduce_op1_1d(Types,Len1,Half1,PassNo,A,OPA,AA),
   % ensure_usefull(OPA),
   fix_opa(OPA,OPS).
 
@@ -83,19 +87,19 @@ fix_opa([as_rot(flipD,inverseRot(flipD),grav_unrot180(flipV)), c_r(grav_unrot180
 fix_opa(More,More).
 
 /*
-reduce_1op(Half,Len,PassNo,Grid,blur(flipD),Left):- flipD(Grid,GridR), GridR==Grid,!,keep_flipD(Grid,Left).
+reduce_1op(Types,Half,Len,PassNo,Grid,blur(flipD),Left):- flipD(Grid,GridR), GridR==Grid,!,keep_flipD(Grid,Left).
 */
-%reduce_1op(Half,Len,PassNo,Grid,blur(A,flipV),Left):- length(Grid,L),LS is floor(L/2),length(Left,LS),reverse(Left,Right), RS is L-LS, 
+%reduce_1op(Types,Half,Len,PassNo,Grid,blur(A,flipV),Left):- length(Grid,L),LS is floor(L/2),length(Left,LS),reverse(Left,Right), RS is L-LS, 
 %  (RS==LS->  (append(Left,Right,Grid),A=[]) ; (append(Left,[E|Right],Grid),A=[E])).
 
-%reduce_1op(Half,Len,_,Grid,call(=),Grid):- too_small_reduce(Grid,3),!.
+%reduce_1op(Types,Half,Len,_,Grid,call(=),Grid):- too_small_reduce(Grid,3),!.
 
-/*reduce_1op(Half,Len,_,Grid,copy_insert(N1),GridR):- number(N1),!,N2 is N1+1,
+/*reduce_1op(Types,Half,Len,_,Grid,copy_insert(N1),GridR):- number(N1),!,N2 is N1+1,
    length(Left,N2),append(Left,[RowA,RowB|Right],Grid),RowA=@=RowB,length(Left,N2),append(Left,[RowA|Right],GridR).
 */
-% reduce_1op(Half,Len,_,Grid,copy_insert(N1,N3),GridR):- fail, append(Left,[RowA,G,RowB|Right],Grid),RowA=@=RowB,length([_,_|Left],N1),append(Left,[RowA,G|Right],GridR),N3 is N1+2,!.
-%reduce_1op(Half,Len,_,Grid,copy_first(N),GridR):- copy_first(N,GridR,Grid).
-%reduce_1op(Half,Len,_,Grid,copy_last(N),GridR):- copy_last(N,GridR,Grid).
+% reduce_1op(Types,Half,Len,_,Grid,copy_insert(N1,N3),GridR):- fail, append(Left,[RowA,G,RowB|Right],Grid),RowA=@=RowB,length([_,_|Left],N1),append(Left,[RowA,G|Right],GridR),N3 is N1+2,!.
+%reduce_1op(Types,Half,Len,_,Grid,copy_first(N),GridR):- copy_first(N,GridR,Grid).
+%reduce_1op(Types,Half,Len,_,Grid,copy_last(N),GridR):- copy_last(N,GridR,Grid).
 
 /*
 h,w,cellsize,OborderThick,IborderThick
@@ -106,22 +110,22 @@ h,w,cellsize,OborderThick,IborderThick
 */
 
 
-reduce_op1_1d(Len1,Half1,PassNo,A,OPS,AAA):- % stack_depth(Level),Level<1000,
-  (reduce_op1_1e(Len1,Half1,PassNo,A,OPS,AAA)*->true;
-    extend_rollD_make_align(Len1,Half1,PassNo,A,OPS,AAA)).
+reduce_op1_1d(Types,Len1,Half1,PassNo,A,OPS,AAA):- % stack_depth(Level),Level<1000,
+  (reduce_op1_1e(Types,Len1,Half1,PassNo,A,OPS,AAA)*->true;
+    extend_rollD_make_align(Types,Len1,Half1,PassNo,A,OPS,AAA)).
 
-reduce_op1_1e(Len1,Half1,PassNo,A,OP,AAA):-
-  reduce_1op(Len1,Half1,PassNo,A,OP1,AA),
-  ( extend_rollD_make_align(Len1,Half1,PassNo,AA,OP2,AAA)-> OP = and(OP2,OP1); (AA=AAA,OP=OP1)).
+reduce_op1_1e(Types,Len1,Half1,PassNo,A,OP,AAA):-
+  reduce_1op(Types,Len1,Half1,PassNo,A,OP1,AA),
+  ( extend_rollD_make_align(Types,Len1,Half1,PassNo,AA,OP2,AAA)-> OP = and(OP2,OP1); (AA=AAA,OP=OP1)).
 
 
-% DISABLED 
-extend_rollD_make_align(Len1,Half1,PassNo,I,and(RollDR,OP1),O):-  fail,
-  rollD_make_align(RollDR,I,M), reduce_1op(Len1,Half1,PassNo,M,OP1,O),improvement(I,O).
+% COMPRESS 
+extend_rollD_make_align(Types,Len1,Half1,PassNo,I,and(RollDR,OP1),O):-  fail,
+  rollD_make_align(RollDR,I,M), reduce_1op(Types,Len1,Half1,PassNo,M,OP1,O),improvement(I,O).
 
-% DISABLED 
-extend_rollD_make_align(Len1,Half1,PassNo,I,OP1,O):- % fail,
-  reduce_1op(Len1,Half1,PassNo,I,OP1,O).
+% COMPRESS 
+extend_rollD_make_align(Types,Len1,Half1,PassNo,I,OP1,O):- % fail,
+  reduce_1op(Types,Len1,Half1,PassNo,I,OP1,O).
 
 test_reduce_grid_mo:-  
  into_grid(t_c3f564a4_trn_0_out,I),reduce_grid_mo(I,OPS,O),
@@ -159,29 +163,47 @@ improvement_v(I,O,soild_lines):- solid_lines(I,_,IC),solid_lines(O,_,OC),OC>IC,!
 solid_lines(Grid,Ns,C):- findall(N1,(nth1(N1,Grid,Row1),entire_row(Row1)),Ns),length(Ns,C).
 
 
-:- discontiguous(reduce_1op/6).
+:- discontiguous(reduce_1op/7).
 
 too_small_reduce(H,_L,Two):- H=<Two. %X=<N,Y=<N,!.
 
-reduce_1op(Half,Len,_,[Row1|Grid],(copy_row_ntimes(1,TimesO)),[Row1]):- maplist(=@=(Row1),Grid),length(Grid,Times), Times\==0, TimesO is Times+1.
+reduce_1op(Types,Half,Len,_,I,double_size,O):- is_reduce_type(shrink,Types), I=[I1,I2|_],I1=@=I2, half_size(I,O),!.
 
-%reduce_1op(Half,Len,_,Grid,_,_):- grid_size(Grid,X,Y), max_min(X,Y,H,L),too_small_reduce(H,L,2),!,fail.
-% DISABLED
-reduce_1op(Half,Len,_,_Grid,_,_):- fail, Len=<1,!,fail.
+reduce_1op(_Type,Len1,Half1,PassNo,GridIn, make_solid_object(Rect,H,V),[[C1]]):-  GridIn = [Row1|GridR], maplist(=@=(Row1),GridR),
+  Row1= [C1|Row], maplist(=@=(C1),Row), grid_size(GridIn,H,V), once(H > 1 ; V > 1),!,(H==V->Rect=square;Rect=rect).
 
-make_solid_square(H,V,[[Color]],Grid):- solid_rect(Color,H,V,Grid).
+reduce_1op(_Type,Half,Len,_,[Row1|Grid],(copy_row_ntimes(1,TimesO)),[Row1]):- 
+  maplist(=@=(Row1),Grid),length([Row1|Grid],Times),Times>1.
 
-reduce_1op(Len1,Half1,PassNo,GridIn, make_solid_square(H,V),[[C1]]):-  GridIn = [Row1|GridR], maplist(=@=(Row1),GridR),
-  Row1= [C1|Row], maplist(=@=(C1),Row), grid_size(GridIn,H,V), once(H > 1 ; V > 1).
+%reduce_1op(Types,Half,Len,_,Grid,_,_):- grid_size(Grid,X,Y), max_min(X,Y,H,L),too_small_reduce(H,L,2),!,fail.
+% COMPRESS
+reduce_1op(Types,Half,Len,_,_Grid,_,_):- fail, Len=<1,!,fail.
 
-% DISABLED 
-reduce_1op(Len1,Half1,PassNo,A,copy_row_ntimes(N1,N2),AAA):- 
-  reduce_1op_cr(Len1,Half1,PassNo,A,copy_row_ntimes(N1,N2a),AAA),N2 is N2a+1.
+make_solid_object(_,H,V,[[Color]],Grid):- solid_rect(Color,H,V,Grid).
 
-reduce_1op_cr(Half,Len,_,[Row2,Row3|Grid],copy_row_ntimes(1,1),[Row2|Grid]):- Row2=@=Row3.
-reduce_1op_cr(Half,Len,_,[Row1,Row2,Row3|Grid],copy_row_ntimes(2,1),[Row1,Row2|Grid]):- Row2=@=Row3.
-reduce_1op_cr(Half,Len,_,Grid,copy_row_ntimes(N,1),NewGrid):- append(Rows,[Row1,Row2|Rest],Grid),
-  append(Rows,[Row1|Rest],NewGrid),Row1=@=Row2,length([_|Rows],N).
+is_reduce_type(E,L):- member(E,L),!.
+
+% COMPRESS/SHRINK 
+reduce_1op(Types,Len1,Half1,PassNo,A,copy_row_ntimes(N1,N2),AAA):- is_reduce_type(shrink,Types),
+  reduce_1op_cr(Len1,Half1,PassNo,A,copy_row_ntimes(N1,N2a),AAA),N2 is N2a.
+
+reduce_1op_cr(Half,Len,_,Grid,copy_row_ntimes(N,Count),NewGrid):- append(Rows,RowRowRest,Grid),
+  [Row1,Row2|Rest]=RowRowRest,Row1=@=Row2,length([_|Rows],N),
+  maplist_until_count(Count,=@=(Row1),RowRowRest),
+  length(Remove,Count),append(Remove,More,RowRowRest),
+  append(Rows,[Row1|More],NewGrid).
+
+%reduce_1op_cr(Half,Len,_,[Row2,Row3|Grid],copy_row_ntimes(1,1),[Row2|Grid]):- Row2=@=Row3.
+%reduce_1op_cr(Half,Len,_,[Row1,Row2,Row3|Grid],copy_row_ntimes(2,1),[Row1,Row2|Grid]):- Row2=@=Row3.
+
+/*
+reduce_1op(Types,Half,Len,_,Grid,copy_row_ntimes(N1,2),GridR):- 
+          append(L,[A,B,C,D,E|R],Grid),A=@=B,B=@=C,C=@=D,D=@=E, 
+          append(L,[A,B,C|R],GridR),length([_|L],N1).
+reduce_1op(Types,Half,Len,_,Grid ,copy_row_ntimes(N1,2),GridR):- 
+          append(L,[A,B,C,D|R],Grid),A=@=B,B=@=C,C=@=D, 
+          append(L,[A,B|R],GridR),length([_|L],N1).
+*/
 
 copy_row_ntimes(N1,Times,Grid,GridR):- Times1 is Times-1,copy_row_ntimes_1(N1,Times1,Grid,GridR).
 
@@ -196,46 +218,41 @@ copy_row_ntimes_1(N1,Times,Grid,GridR):- length([_|Left],N1), append(Left,[Row1|
 %copy_row_ntimes(N1,Two,Row,Result):- make_list(Row,N1,NRows),make_list(NRows,Two,Result).
 
 
-
-reduce_1op(Len1,Half1,PassNo,A,OP,O):- reduce_1op_ca(Len1,Half1,PassNo,A,OP,O),length(O,OL),OL>=3.
+reduce_1op(Types,Len1,Half1,PassNo,A,OP,O):- once(is_reduce_type(grid,Types);is_reduce_type(compress,Types)),
+    reduce_1op_ca(Len1,Half1,PassNo,A,OP,O),length(O,OL),OL>=3.
 reduce_1op_ca(Half,Len,_,I,reapply_cutaway(LBR),O):- reduce_cutaway(LBR,I,O).
 reduce_1op_ca(Half,Len,_,I,reapply_cutaway_row(LBR),O):- reduce_cutaway_row(LBR,I,O).
 
 
-% DISABLED 
-reduce_1op(Len1,Half1,PassNo,A,OP,O):-  reduce_1op_ci(Len1,Half1,PassNo,A,OP,O),length(O,OL),OL>=3.
+% COMPRESS 
+reduce_1op(Types,Len1,Half1,PassNo,A,OP,O):- is_reduce_type(compress,Types), reduce_1op_ci(Len1,Half1,PassNo,A,OP,O),length(O,OL),OL>=3.
 reduce_1op_ci(Half,Len,_,Grid,copy_insert(N1,N22),GridR):- nth1(N1,Grid,Row1),
   findall(N2,(nth1(N2,Grid,Row2),N1<N2, Row1=@=Row2),N22), N22\==[],!,
   split_list(N1,Left,Grid,Right),
   include(\=@=(Row1),Right,GridRR),append(Left,GridRR,GridR).
 
-% DISABLED
-reduce_1op(Half,Len,_,Grid,insert_row_of(Row,Black),GridR):- fail,
+
+%one_reduction1(insert_row(N,[E|Row1]),G1,G2,G1R,G2R):- nth1(N,G1,[E|Row1],G1R),maplist(=@=(E),Row1),nth1(N,G2,[E|Row2],G2R),Row1=@=Row2.
+% COMPRESS
+reduce_1op(Types,Half,Len,_,Grid,insert_row_of(Row,Black),GridR):- is_reduce_type(compress,Types),
   (Row==1;Row==Len),
   nth1(Row,Grid,[Black|Same],GridR),
   maplist(=@=(Black),Same).  
 
 
-%reduce_1op(Half,Len,_,Grid,copy_insert(N1,N2),GridR):- nth1(N1,Grid,Row1), nth1(N2,Grid,Row2,GridR),N1<N2, Row1=@=Row2.
+%reduce_1op(Types,Half,Len,_,Grid,copy_insert(N1,N2),GridR):- nth1(N1,Grid,Row1), nth1(N2,Grid,Row2,GridR),N1<N2, Row1=@=Row2.
 
-reduce_1op(Half,Len,_PassNo,Grid,border_blur(LS,flipV),MidRight):- Half>3, LS is Half-1, length(Left,LS),reverse(Left,Right),
+reduce_1op(Types,Half,Len,_PassNo,Grid,border_blur(LS,flipV),MidRight):- is_reduce_type(compress,Types),
+   Half>3, LS is Half-1, length(Left,LS),reverse(Left,Right),
   append(Left,MidRight,Grid),append(_Mid,Right,MidRight).
 
 border_blur(LS,flipV,MidRight,Grid):- length(Left,LS),reverse(Left,Right),
   append(_Mid,Right,MidRight),append(Left,MidRight,Grid).
 
-%reduce_1op(Half,Len,_,Outside,make_frame(Pen),Inside):- grid_size(Outside,X,Y),X>2,Y>2,make_frame(Pen,Inside,Outside).
+%reduce_1op(Types,Half,Len,_,Outside,make_frame(Pen),Inside):- grid_size(Outside,X,Y),X>2,Y>2,make_frame(Pen,Inside,Outside).
 
-/*
-reduce_1op(Half,Len,_,Grid,copy_row_ntimes(N1,2),GridR):- 
-          append(L,[A,B,C,D,E|R],Grid),A=@=B,B=@=C,C=@=D,D=@=E, 
-          append(L,[A,B,C|R],GridR),length([_|L],N1).
-reduce_1op(Half,Len,_,Grid ,copy_row_ntimes(N1,2),GridR):- 
-          append(L,[A,B,C,D|R],Grid),A=@=B,B=@=C,C=@=D, 
-          append(L,[A,B|R],GridR),length([_|L],N1).
-*/
 % ENABLED 
-reduce_1op(Half,Len,_,Grid,copy_n_rows_n_times(NRows,Times),ARowsLeftOver):- % fail,
+reduce_1op(Types,Half,Len,_,Grid,copy_n_rows_n_times(NRows,Times),ARowsLeftOver):- is_reduce_type(shrink,Types),
   NRows = 4, between(1,Half,NRows), uncp_n_rows_n_times(NRows,Times,ARows,Grid,LeftOver), Times\==0,
    append(ARows,LeftOver,ARowsLeftOver).
 
@@ -257,32 +274,28 @@ rest_grid_repeats(N,Rows,Grid,M,Slack):-
 rest_grid_repeats(N,_,Slack,N,Slack).
 
 
-% DISABLED 
-reduce_1op(Half,Len,_,Grid,mult_rows_n_times(Times),ARow):- fail,
+% COMPRESS 
+reduce_1op(Types,Half,Len,_,Grid,mult_rows_n_times(Times),ARow):- is_reduce_type(compress,Types),
    between(1,Half,Times), mult_rows_n_times(Times,ARow,Grid), Times\==0.
 
-% Not DISABLED 
-reduce_1op(Len1,Half1,PassNo,Grid,to_just_middle(OPS),AAA):-  
+% Not COMPRESS 
+reduce_1op(Types,Len1,Half1,PassNo,Grid,to_just_middle(OPS),AAA):- is_reduce_type(compress,Types),
   append([R1|Middle],[RLast],Grid), 
-  reduce_op1_by_size(PassNo,Middle,OPS,[M|MMM]),
+  reduce_op1_by_size(Types,PassNo,Middle,OPS,[M|MMM]),
   length(M,Width), length(R1,Width), append([R1,M|MMM],[RLast],AAA).
 
 to_just_middle(OPS,I,O):- append([R1|Middle],[RLast],I),
    unreduce_grid(Middle,OPS,Unreduce),
    append([R1|Unreduce],[RLast],O).
-  
 
-
-reduce_1op(Half,Len,_,I,double_size,O):- I=[I1,I2|_],I1=@=I2, half_size(I,O),!.
-
-reduce_1op(Half,Len,_,Grid,grav_unrot180(RotG),Shape):- fail,
+reduce_1op(Types,Half,Len,_,Grid,grav_unrot180(RotG),Shape):- fail,
    once(grav_roll(Grid,RotG,Shape180)),RotG\==sameR,rot180(Shape180,Shape).
 
-reduce_1op(Half,Len,_,Grid,grav_unrot(RotG),Shape):- fail,
+reduce_1op(Types,Half,Len,_,Grid,grav_unrot(RotG),Shape):- fail,
    once(grav_roll(Grid,RotG,Shape)),RotG\==sameR.
 
 /*
-reduce_1op(Half,Len,_,Grid,left_right(Left,Reduced),GridR):- fail, 
+reduce_1op(Types,Half,Len,_,Grid,left_right(Left,Reduced),GridR):- fail, 
    length(Grid,L), nth1(N1,Grid,A), nth1(N2,Grid,B), A=@=B,
    LS is floor(L/2),
    between(1,LS,LR),LRR is LS-LR,LRR>0, length(Left,LRR),reverse(Left,Right), 
@@ -290,7 +303,7 @@ reduce_1op(Half,Len,_,Grid,left_right(Left,Reduced),GridR):- fail,
    reduce_grid(Left^Left,Reduced).
 
 
-reduce_1op(Half,Len,_,Grid,left_right(Left,Reduced),GridR):- fail, 
+reduce_1op(Types,Half,Len,_,Grid,left_right(Left,Reduced),GridR):- fail, 
    length(Grid,L), nth1(1,Grid,A), nth1(L,Grid,B), A=@=B,
    LS is floor(L/2),
    between(1,LS,LR),LRR is LS-LR,LRR>0, length(Left,LRR),reverse(Left,Right), 
@@ -298,11 +311,11 @@ reduce_1op(Half,Len,_,Grid,left_right(Left,Reduced),GridR):- fail,
    reduce_grid(Left^Left,Reduced).
 */
 
-%reduce_1op(Half,Len,_,Grid,copy_row_ntimes(N1,2),GridR):- append(L,[A,B,C|R],Grid),A=@=B,B=@=C, append(L,[A|R],GridR),length([_|L],N1).
-% reduce_1op(Half,Len,_,Grid,_,_):- length(Grid,L3),L3=<3,!,fail.
+%reduce_1op(Types,Half,Len,_,Grid,copy_row_ntimes(N1,2),GridR):- append(L,[A,B,C|R],Grid),A=@=B,B=@=C, append(L,[A|R],GridR),length([_|L],N1).
+% reduce_1op(Types,Half,Len,_,Grid,_,_):- length(Grid,L3),L3=<3,!,fail.
 % % %  
-%reduce_1op(Half,Len,_,Grid,_,_):- too_small_reduce(Grid,2),!,fail.
-% % % reduce_1op(Half,Len,_,Grid,copy_insert(N1,N2),GridR):- nth1(N2,Grid,A),N2>1, between(1,N2,N1),N1<N2,nth1(N1,Grid,B,GridR), A=@=B, 1 is abs(N1-N2).
+%reduce_1op(Types,Half,Len,_,Grid,_,_):- too_small_reduce(Grid,2),!,fail.
+% % % reduce_1op(Types,Half,Len,_,Grid,copy_insert(N1,N2),GridR):- nth1(N2,Grid,A),N2>1, between(1,N2,N1),N1<N2,nth1(N1,Grid,B,GridR), A=@=B, 1 is abs(N1-N2).
 
 
 %remove_row(Row,G,GG):- nth1(Row,G,GG).
@@ -422,6 +435,8 @@ copy_rows(O,[],O).
 
 xfr_write_op(as_rot(Rot90,Rot270,Op),c_r(Op)):- Rot90==rot90,Rot270==rot270,!.
 xfr_write_op(as_rot(Rot90,Rot270,Op),r_c(Op)):- Rot90==rot270,Rot270==rot90,!.
+%xfr_write_op(as_rot(rollD,rollDR,Op),d_r(Op)).
+%xfr_write_op(as_rot(rollDR,rollD,Op),d_l(Op)).
 xfr_write_op(OOO,OOO).
   
 %reduce_1pair_op(PassNo,GridL,as_rot(rot270,rot90,Op),GridRR):- rot90(GridL,Grid),reduce_op1(PassNo,Grid,Op,GridR),rot270(GridR,GridRR).
@@ -452,16 +467,6 @@ into_grid_io(A,B):- into_grid(A,B).
 
 maybe_into_grid_io(A,B):- into_grid_io(A,B),!,A\=@=B.
 
-lpoints_to_norm(Width,Height,LPoints,IOps,LPointsNorm):- 
-   points_to_grid(Width,Height,LPoints,LGrid), grid_to_norm(LGrid,IOps,LPointsNorm).
-
-grid_to_norm(LGrid,IOps,LPointsNorm):- reduce_grid(LGrid^LGrid,IOps,LPointsNorm^_).
-
-
-:- decl_pt(reduce_grid(grid,infoR)).
-reduce_grid(G,O):- maybe_into_grid_io(G,GG),!,reduce_grid(GG,O).
-reduce_grid(Grid,gridOpFn(GridR,OP)):- reduce_grid(Grid,OP,GridR),OP\==[],!.
-reduce_grid(Grid,Grid).
 
 %ungrav_rot(G,sameR,G):-!.
 %ungrav_rot(G,sameR,G):- grid_size(Grid,X,Y), too_small_reduce(X,Y,2),!.
@@ -483,49 +488,86 @@ with_protected_vars(AB,Goal):- term_variables(AB,ABV),term_variables(Goal,GoalV)
 
 
 %resubst_vars(S,E,Info,ReInfo):- subst_2LC(S,E,Goal+Info,RGoal+RInfo). %,maplist(call,RGoal).
-term_var_types(AB,Attvars,PlainVars,Vars):-
-  term_attvars(AB,Attvars),
+term_var_types(AB,Attvars,PlainVars,PlainSingles):-
   term_variables(AB,Vars),
+  term_attvars(AB,Attvars),
   term_singletons(AB,Singles),  
-  include(not_in(Attvars),Singles,PlainSingles),
   include(not_in(Attvars),Vars,Nonattvars),
+  include(not_in(Attvars),Singles,PlainSingles),
   include(not_in(PlainSingles),Nonattvars,PlainVars).
 
-protect_vars(AB,ABC,How):- 
-  term_var_types(AB,Attvars,PlainVars,PlainSingles),
-  copy_term(Attvars+PlainVars+PlainSingles+AB,AttvarsC+PlainVarsC+PlainSinglesC+ABC,Goals),
-  numbervars(PlainSinglesC,10,MTen,[singletons(true)]),
-  numbervars(AttvarsC+Goals,MTen,Ten0,[attvar(bind),singletons(false)]),  
-  numbervars(PlainVarsC,Ten0,_Ten,[singletons(false)]),
-  append([PlainVars,PlainSingles,Attvars],Into),
-  append([PlainVarsC,PlainSinglesC,AttvarsC],From),
-  How = subst_2LC(From,Into).
 
+protect_vars(AB,ABC,HowUnprotect):-
+  term_var_types(AB,Attvars,PlainVars,PlainSingles),
+  append([Attvars,PlainVars,PlainSingles],Into),
+  copy_term(AB+Into,ABC+From,_Goals),
+  append([AttvarsC,PlainVarsC,PlainSinglesC],From),  
+  numbervars(PlainSinglesC,10,STen,[singletons(true)]),
+  numbervars(ABC+AttvarsC+PlainVarsC,STen,_,[singletons(false)]),
+  HowUnprotect = subst_2LC(From,Into).
+  
 
 %reduce_grid(A^B,ROP,AA^BB):- reduce_grid(A^A,ROP,AA^AA),reduce_grid(B^B,ROP,BB^BB),!.
+lpoints_to_norm(Width,Height,LPoints,IOps,LPointsNorm):- 
+   points_to_grid(Width,Height,LPoints,LGrid), normalize_grid(IOps,LGrid,LPointsNorm).
 
-reduce_grid(G,OPA,AAOO):- G\=(_^_), into_grid(G,Grid),!,A=Grid,B=A,
-   reduce_two(A,B,ROP,AAO,_BBO),reverse(ROP,OP),!,
+:- nodebug(reduce).
+%b_grid_to_norm(I,OUT):- b_grid_to_norm(Op,I,OO),OUT=(OO-w(Op)).
+%b_grid_to_norm(Op,I,O):- Op==[],!,I=O.
+%b_grid_to_norm(Op,IO,IIOO):-  compound(IO),IO=(I^O),b_grid_to_norm(Op,I,II),!,Op\==[],b_grid_to_norm(Op2,O,OO),!,Op=Op2,IIOO=II^OO.
+normalize_grid(Op,I,OO):-   
+ must_det_ll((
+  debug_c(reduce,writeg(normalize_grid=I)),
+  protect_vars(I,II,How),
+  debug_c(reduce,writeg(normalize_grid_nv=II)),
+  must_be_free(OO),  
+  reduce_grid(II,COp,COO),
+  debug_c(reduce,writeg([reduce_grid=COO,cop=COp])),
+  call(How,COp+COO,Op+OO),
+  debug_c(reduce,writeg([un_reduce_grid=OO,un_cop=Op])))).
+
+compress_grid(Op,I,OO):- 
+  normalize_grid(NOp,I,II),
+  locally(nb_setval(grid_reductions,[compress]),reduce_grid(II,COp,OO)),
+  append(COp,NOp,Op).
+%b_grid_to_norm(IOps,LGrid,LPointsNorm):- reduce_grid(LGrid^LGrid,IOps,LPointsNorm^_).
+%b_grid_to_norm([],I,I).
+
+:- decl_pt(reduce_grid(grid,infoR)).
+reduce_grid(G,O):- maybe_into_grid_io(G,GG),!,reduce_grid(GG,O).
+reduce_grid(Grid,gridOpFn(GridR,OP)):- reduce_grid(Grid,OP,GridR),OP\==[],!.
+reduce_grid(Grid,Grid).
+
+reduce_grid(G,OPA,AAOO):- G\=(_^_), into_grid(G,Grid),
+  A=Grid,B=A,
+   reduce_two(A,B,ROP,AAO,_BBO),reverse_op(ROP,OP),
    ((OP==[reversed(rot90^rot90)])-> (OPA=[rollD|OP],rollDR(G,AA),reduce_grid(AA,OP,AAOO)) ; (OPA=OP,AAOO=AAO)).
 reduce_grid(A^B,OP,AAO^BBO):- reduce_two(A,B,ROP,AAO,BBO),reverse(ROP,OP),!.
-reduce_grid(A^B,[],A^B):-!.
+reduce_grid(AB,[],AB):-!.
 
-%reduce_grid_pair1(AB,OPS,ARBR):-  with_protected_vars(AB,reduce_grid_pair1(AB,OPS,ARBR)).
-reduce_grid_pair1(AB,OPS,ARBR):- \+ ground(AB), protect_vars(AB,ABC,How),
+reverse_op(I,R):- reverse(I,R),!.
+reverse_op(I,[I]).
+
+reduce_grid_pair1(AB,OPS,ARBR):- \+ ground(AB), 
+ must_det_ll((
+  protect_vars(AB,ABC,How),
   my_assertion(ground(ABC)),  
-  reduce_grid_pair1(ABC,OPSP,ARBRP),
-  call(How,OPSP+ARBRP,OPS+ARBR).   
+  reduce_grid_pair111(ABC,OPSP,ARBRP),
+  call(How,OPSP+ARBRP,OPS+ARBR),
+  my_assertion((\+ (sub_term(E,OPS+ARBR),compound(E), E='$VAR'(_)))))).
 
-reduce_grid_pair1(A^B,[grid_progress(g(perfect))|ROPA],AR^BR):-
+reduce_grid_pair1(AB,OPS,ARBR):- reduce_grid_pair111(AB,OPS,ARBR),!.
+
+reduce_grid_pair111(A^B,[grid_progress(g(perfect))|ROPA],AR^BR):-
   once((reduce_grid_pass(1,A^A,[A^A],ROPA,AR^AR),
         reduce_grid_pass(1,B^B,[B^B],ROPB,BR^BR))),
   ROPA\==[],
   ROPB= ROPA,!.
 
-reduce_grid_pair1(A^B,[grid_progress(g(ok))|ROPA],AR^BR):-
+reduce_grid_pair111(A^B,[grid_progress(g(ok))|ROPA],AR^BR):-
   once((reduce_grid_pass(1,A^A,[A^A],ROPA,AR^AR))),ROPA\==[], reduce_grid_pass(1,B^B,[B^B],ROPA,BR^BR).
 
-reduce_grid_pair1(A^B,ROP,AAO^BBO):-
+reduce_grid_pair111(A^B,ROP,AAO^BBO):-
   reduce_grid_pass(1,A^B,[A^B],OP,AR^BR), 
   dif(UnRot,rollD),grav_rot(BR,UnRot,BB),
   grid_call(UnRot,AR,AA),
@@ -538,7 +580,7 @@ reduce_grid_pair2(ROP,OP,UnRotGA^UnRotGB,AR^BR,AA^BB,AAO^BBO):-
       reduce_two(AA,BB,ROPL,AAO,BBO),
       append([OP,[RotOP],ROPL],ROP))),!.
 
-grid_progress(Msg,G,G):- print_grid(Msg,G).
+grid_progress(Msg,G,G):- nop(print_grid(Msg,G)).
 
 pick_reductions_from_two(AB,OPS,A,B,AA,BB):- into_grid_list(AB,List),!,
   no_repeats(OPS,(( select(A,List,Rest),
@@ -580,7 +622,6 @@ reductions_from_two(c_r(Reduce),G1,G2,G1RR,G2RR):- rot270(G1,G1R),rot270(G2,G2R)
 
 
 one_reduction1(OP,G1,G2,G1R,G2R):- nonvar(OP),OP\==[],!,one_reduction1(OP,G1,G1R),!,(G2=@=G1->G2R=G1R ; one_reduction2(OP,G2,G2R)).
-one_reduction1(insert_row(N,[E|Row1]),G1,G2,G1R,G2R):- nth1(N,G1,[E|Row1],G1R),maplist(=@=(E),Row1),nth1(N,G2,[E|Row2],G2R),Row1=@=Row2.
 one_reduction1(Reduce,G1,G2,G1R,G2R):- var(Reduce),reduce_grid_pair1(G1^G2,Reduce,G1R^G2R).
 
 one_reduction2(OP,G1,G1R):- one_reduction1(OP,G1,G1R).
@@ -592,30 +633,6 @@ one_reduction1(OPS,G1,G1RR):- nonvar(OPS), OPS=[OP|OPL], !, one_reduction1(OP,G1
 one_reduction1(reversed(OP),G1,G1R):-!, one_reduction1(OP,G1,G1R).
 one_reduction1(OP^OP,G1,G1R):-!,one_reduction1(OP,G1,G1R).
 one_reduction1((OP),G1,G1R):-!, grid_call(OP,G1,G1R). % dmsg(one_reduction1(OP,G1,G1R)).
-
-
-/*
-% Grid1^Grid2^Grid3...
-com_red(A^B^C,OPS,AA^BB^CC):- is_grid(B), !,
-  reduce_grid_pair1(A,B,OPS,AA,BB),
-  com_red(C,OPS,CC).
-% Grid1^Grid2
-com_red(A^B,OPS,AA^BB):- is_grid(B), !,
- reduce_grid_pair1(A,B,OPS,AA,BB).
-% Grid
-com_red(A,OPS,AA):- is_grid(A),!,
-  reduce_grid_pair1(A,A,OPS,AA,_).
-% [Grid]
-com_red([A],OPS,[AA]):- is_grid(A),!,
-reduce_grid_pair1(A,A,OPS,AA,_).
-% [Grid1,Grid2]
-com_red([A,B],OPS,[AA,BB]):- is_grid(B),!,
- reduce_grid_pair1(A,B,OPS,AA,BB).
-% [Grid1,Grid2|...]
-com_red([A,B|More],OPS,[AA|BMoreS]):- is_grid(B),!,
-  reduce_grid_pair1(A,B,OPS,AA,_),
-  com_red([B|More],OPS,BMoreS).
-*/
 
 
 %reduce_grid(A^B,OPA^OPB,AA^BB):- A\=@=B,nth1(N,A,EA,A0),maplist(=(_),EA),nth1(N,B,EB,B0),EA=@=EB,reduce_grid(A0^B0,OPA^OPB,AA^BB).

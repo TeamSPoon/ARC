@@ -14,6 +14,8 @@ debug_m(_,Tiny):- display_length(Tiny,Len),Len<30,!,pp(Tiny).
 debug_m(M,_):- \+ debugging(M),!.
 debug_m(_,List):- is_list(List),!,print_ss(List).
 debug_m(_,Term):- pp(Term).
+debug_c(M,_):- \+ debugging(M),!.
+debug_c(M,C):- wots(S,C),debug_m(M,S),!.
 
 wno(G):-
  locally(b_setval(print_collapsed,10), G).
@@ -51,7 +53,9 @@ srw_arc(I,O):- tersify(I,O),!,I\==O,!.
 :- multifile(dumpst_hook:simple_rewrite/2).
 :- dynamic(dumpst_hook:simple_rewrite/2).
 
-dumpst_hook:simple_rewrite(I,O):- 
+dumpst_hook:simple_rewrite(I,O):- notrace(catch(arc_simple_rewrite(I,O),_,fail)).
+
+arc_simple_rewrite(I,O):-
   let_arc_portray,
   current_predicate(bfly_startup/0),
   current_predicate(is_group/1), 
@@ -297,10 +301,12 @@ pt_guess_pretty_1(P,O):- copy_term(P,O,_),
 :- dynamic(pretty_clauses:pp_hook/3).
 :- multifile(pretty_clauses:pp_hook/3).
 :- module_transparent(pretty_clauses:pp_hook/3).
-pretty_clauses:pp_hook(_,Tab,S):- term_is_ansi(S), !,prefix_spaces(Tab), write_keeping_ansi_mb(S).
-%pretty_clauses:pp_hook(_,Tab,S):- is_vm(S),!,prefix_spaces(Tab),!,write('..VM..').
-%pretty_clauses:pp_hook(_,  _,_):- \+ let_arc_portray,!,fail.
-pretty_clauses:pp_hook(FS,_  ,G):- let_arc_portray,
+pretty_clauses:pp_hook(FS,Tab,S):-  notrace(catch(arc_pp_hook(FS,Tab,S),_,fail)).
+
+arc_pp_hook(_,Tab,S):- term_is_ansi(S), !,prefix_spaces(Tab), write_keeping_ansi_mb(S).
+%arc_pp_hook(_,Tab,S):- is_vm(S),!,prefix_spaces(Tab),!,write('..VM..').
+%arc_pp_hook(_,  _,_):- \+ let_arc_portray,!,fail.
+arc_pp_hook(FS,_  ,G):- let_arc_portray,
   current_predicate(is_group/1),
    locally(b_setval(pp_parent,FS),
      print_with_pad(pp_hook_g(G))),!.

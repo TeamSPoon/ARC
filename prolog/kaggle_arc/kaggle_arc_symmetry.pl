@@ -267,8 +267,8 @@ maplist_until_count(N,Pred2,[X|XX],[Y|YY],[Z|ZZ]):- call(Pred2,X,Y,Z)->(maplist_
 maplist_until_count(0,_,_,_,[]).
 maplist_until_count(N,Pred2,[X|XX],[Y|YY]):- call(Pred2,X,Y)->(maplist_until_count(M,Pred2,XX,YY),N is M+1).
 maplist_until_count(0,_,_,[]).
-maplist_until_count(N,Pred2,[X|XX]):- call(Pred2,X)->(maplist_until_count(M,Pred2,XX),N is M+1).
-maplist_until_count(0,_,[]).
+maplist_until_count(N,Pred1,[X|XX]):- call(Pred1,X)->(maplist_until_count(M,Pred1,XX),N is M+1).
+maplist_until_count(0,_,_). 
 
 
 empty_or_open(L):- \+ \+ L=[].

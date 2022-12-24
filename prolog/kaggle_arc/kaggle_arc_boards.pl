@@ -95,7 +95,7 @@ print_hybrid_set(TestID):-
   print_side_by_side(Set),
   nop(forall(member(O,Set),print_hybrid_grid(O))).
 
-print_hybrid_grid(G):- io_side_effects,into_grid(G,O),grid_to_norm(O,Ops,N),
+print_hybrid_grid(G):- io_side_effects,into_grid(G,O),grid_to_norm(Ops,O,N),
   (O\==N->print_side_by_side([ops(Ops)],G,N); print_grid(O)).
 
 individuate_pairs_from_hints(TestID):- 
@@ -131,7 +131,7 @@ show_common_reductions(TestID,AB):- into_grid_list(AB,GL), GL\==AB,!,show_common
 show_common_reductions(TestID,GL):- once((dash_chars,print_ss(show_common_reductions(TestID)=GL),dash_chars)),fail.
 %show_common_reductions(TestID,[A,B]):- !, common_reductions(A^B,OPS,_)
 
-show_common_reductions(TestID,GL):- forall(member(G,GL),show_reductions(G)),!.
+show_common_reductions(_TestID,GL):- forall(member(G,GL),show_reductions(G)),!.
 show_common_reductions(TestID,GL):-
  (all_common_reductions(GL,OPS,Reduced)*->print_common_reduction_result(TestID,OPS,Reduced)
   ;(GL\=[_,_,_|_],common_reductions_from_two(GL,OPS,A,B,AA,BB)*-> print_common_reduction_result(common_reductions_from_two(TestID,A,B),OPS,AA^BB) 
@@ -208,7 +208,7 @@ show_reduced_io(I0^O):-
 
 show_reduced_io(IO):-
   %OPS = [_,_|_],
-  once(show_grid_call(op_grid_to_norm(_),IO,NextIO)),
+  once(show_grid_call(grid_to_norm(_),IO,NextIO)),
   if_t(((NextIO)\=@=(IO)), show_reduced_io(NextIO)).
 
 show_reduced_io(IO):- once(show_grid_call(mapgridish(remove_color_if_same(black),IO),IO,NextIO)),
@@ -216,13 +216,6 @@ show_reduced_io(IO):- once(show_grid_call(mapgridish(remove_color_if_same(black)
 
 show_reduced_io(_).
 
-%op_grid_to_norm(I,OUT):- op_grid_to_norm(Op,I,OO),OUT=(OO-w(Op)).
-
-op_grid_to_norm((Op),I,OO):- op_grid_to_norm1(Op,I,OO),!.
-op_grid_to_norm(([]),I,I).
-op_grid_to_norm1((Op),IO,IIOO):-  compound(IO),IO=(I^O),op_grid_to_norm((Op),I,II),!,Op\==[],op_grid_to_norm((Op2),O,OO),!,Op=Op2,IIOO=II^OO.
-op_grid_to_norm1((Op),I,OO):- (var(Op)->Op=[_|_];true),reduce_grid(I,Op,OO).
-%op_grid_to_norm([],I,I).
 
 mapgridish(P3,I^O,In,Out):- In==I-> mapgrid(P3,O,I,Out) ; mapgrid(P3,I,O,Out).
 
@@ -232,6 +225,8 @@ reduce_grids_io(OPS,I^O,III^OOO):- area(I,IArea),area(O,OArea),reduce_grids_area
 interesting_ops(OPS):- OPS==[],!,fail.
 interesting_ops(OPS):- OPS=[undo_effect(_)|More],!,interesting_ops(More).
 interesting_ops(_).
+
+grid_to_norm(Op,I,OO):- normalize_grid(Op,I,OO),!.
 
 reduce_grids_area_io(I^O,_IArea_OArea,[io(OPS)],II^OO):- reduce_grid(I^O,OPS,II^OO), interesting_ops(OPS),!.
 reduce_grids_area_io(I^O,_IArea_OArea,[oi(OPS)],II^OO):- reduce_grid(O+I,OPS,OO+II), interesting_ops(OPS),!.
@@ -717,7 +712,7 @@ c_proportional(I,O,R):- proportional(I,O,R).
 
 
 grid_hint_io_not_rev(In,Out,grav_rot(H,V,II)):- once((grav_rot(In,_,II),grav_rot(Out,_,OO))),II=@=OO,grid_size(II,H,V).
-grid_hint_io_not_rev(In,Out,reduce_grid(H,V,II)):- once((grid_to_norm(In,_,II),grid_to_norm(Out,_,OO))),II=@=OO,grid_size(II,H,V).
+grid_hint_io_not_rev(In,Out,reduce_grid(H,V,II)):- once((grid_to_norm(_,In,II),grid_to_norm(_,Out,OO))),II=@=OO,grid_size(II,H,V).
 
 grid_hint_io_1(_MC,_IO,In,Out,value('=@=')):- In=@=Out,!.
 

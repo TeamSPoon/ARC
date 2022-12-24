@@ -471,7 +471,7 @@ seeing_dir_soon(P1,_Dir,Ps2):- member(_-P1,Ps2),!.
 seeing_dir_soon(P1,Dir,Ps2):- is_adjacent_point(P1,Dir,P2), seeing_dir_soon(P2,Dir,Ps2).
 
 is_physical_object(O):- is_whole_grid(O),!,fail.
-is_physical_object(O):- has_prop(cc(fg,0),O),!,fail.
+is_physical_object(O):- has_prop(cc(fg,0),O),has_prop(cc(bg,0),O),!,fail.
 is_physical_object(O):- my_assertion(is_object(O)),has_prop(iz(media(shaped)),O),!.
 is_physical_object(O):- has_prop(mass(Mass),O),Mass>0.
 

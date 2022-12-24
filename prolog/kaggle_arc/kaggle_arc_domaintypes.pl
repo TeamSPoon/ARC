@@ -18,6 +18,8 @@ to_real_grid(G,GO):- notrace((unnumbervars(G,G1),get_bgc(BG),subst001(G1,bg,BG,G
 
 has_color(C,Cell):- only_color_data(Cell,CD), cmatch(C,CD).
 
+cmatch(C,CD):- is_point(CD),  must_det_ll(only_color_data(CD,CC)),!,cmatch(C,CC).
+cmatch(C,CD):- sub_var(C,CD),!.
 cmatch(C,CD):- plain_var(C),!,var(CD),C==CD.
 cmatch(C,CD):- var(C),!, once(C=@=CD; \+ C\=CD).
 cmatch(plain_var,CD):- !, plain_var(CD).
@@ -90,7 +92,13 @@ is_fg_color_if_nonvar(_Trig,C):- is_fg_color(C),!.
 is_bg(C):- is_bg_color(C).
 is_bgc(C):- is_bg_color(C).
 
-is_bgp(Cell):- only_color_data(Cell,C), is_bg_color(C).
+is_bgp(Cell):- plain_var(Cell),!,fail.
+is_bgp(Cell):- only_color_data(Cell,C), is_bg_color(C),!.
+is_bgp(Cell):- var(Cell),!,fail.
+is_bgp(C-_):- !, is_bgp(C).
+is_bgp('$VAR'(C)):-!, is_bgp(C).
+is_bgp('_').
+
 is_fgp(Cell):- only_color_data(Cell,C), is_fg_color(C).
 
 is_bg_sym_or_var(C):- attvar(C),get_attr(C,ci,fg(_)),!,fail.

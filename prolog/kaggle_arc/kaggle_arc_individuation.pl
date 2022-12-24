@@ -214,16 +214,15 @@ show_indiv(Why,Obj):-
 
      object_ngrid(Obj,NGrid), append(_,["NGrid"=NGrid|_],Grids),
 
-     term_variables(Grid,GV1),
-     grid_to_norm(Grid,Ops,Reduced), if_t(Reduced\=@=Grid,append(_,["NORMALIZED!!!"=Reduced|_],Grids)),
-     term_variables(Reduced,RV1),
-
-     unreduce_grid(Reduced,Ops,NewGrid),
-     append(_,["NewGrid"=NewGrid|_],Grids),
      ShowQ=_,
 
 
-     nop(((((GV1\=@=RV1 ; (Reduced\=@=Grid,Reduced=[[_]])) -> ShowQ = true ; ShowQ = _)))),
+     term_variables(Grid,GV1),
+     normalize_grid(NOps,Grid,Normalized), % if_t(Normalized\=@=Grid,append(_,["NORMALIZED!!!"=Normalized|_],Grids)),
+     term_variables(Normalized,RV1),
+     nop(((((GV1\=@=RV1 ; (Normalized\=@=Grid,Normalized=[[_]])) -> ShowQ = true ; ShowQ = _)))),
+
+     %compress_grid(COps,Grid,Compressed), if_t(Compressed\=@=Normalized,append(_,["Compressed!!!"=Compressed|_],Grids)),
 
      if_t(DoFF,((constrain_grid(f,_TrigF,Grid,GridFF), if_t(GridFF\=@=Grid,append(_,["Find"=GridFF|_],Grids)),
        copy_term(Grid+GridFF,GG1+GridFFNV,GoalsFF), numbervars(GG1+GridFFNV+GoalsFF,10,_,[attvar(bind),singletons(false)])))),
@@ -234,10 +233,20 @@ show_indiv(Why,Obj):-
 
      if_t(has_goals(GridFFNV),writeg(gridFF=GridFFNV)),
 
-     if_t(NewGrid\=@=Grid, (ShowQ = true,writeg(newGrid=NewGrid))),
+     if_t((nonvar(COps),COps\==[]), 
+       (writeg(cops=COps), 
+        nop((unreduce_grid(Compressed,COps,Uncompressed), 
+        if_t(Uncompressed\=@=Grid, (ShowQ=true,writeg("Bad Uncompressed"=Uncompressed))))))),
+
+     if_t((nonvar(NOps),NOps\==[]), 
+       (writeg(nops=NOps),
+        if_t((ShowQ==true;Normalized\=@=Grid;has_goals(Normalized);true), writeg(normalized=Normalized)),
+        nop((unreduce_grid(Normalized,NOps,Unnormalized), 
+        if_t(Unnormalized\=@=Grid, (ShowQ=true,writeg("Bad Unnormalized"=Unnormalized))))))),
+     
      if_t((ShowQ==true;has_goals(Grid)),    writeg(grid=Grid)),
-     if_t((nonvar(Ops),Ops\==[]),       writeg(ops=Ops)),
-     if_t((ShowQ==true;has_goals(Reduced);true), writeg(reduced=Reduced)),
+     
+
      %writeg("NGrid"=NGrid),
    true))),
     
@@ -249,28 +258,29 @@ show_indiv(Why,Obj):-
 has_goals(G):- term_attvars(G,AV),AV\==[].
 has_goals(G):- term_variables(G,TV),term_singletons(G,SV),TV\==SV.
 
-writeg(Term):- 
+writeg(Term):- \+ \+ writeg0(Term).
+
+writeg0([H|T]):- \+ is_list(H), is_list(T),wots(S,((write('['),writeg2(H),maplist(writeg0,T),write(']')))), print_w_pad(1,S).
+writeg0(Term):- 
   term_attvars(Term,Attvars), Attvars\==[],!,
   term_variables(Term,Vars),
   include(not_in(Attvars),Vars,PlainVars),   
-  copy_term(Attvars+PlainVars+Term,AttvarsC+PlainVarsC+TermC,Goals),
+  =(Attvars+PlainVars+Term,AttvarsC+PlainVarsC+TermC,Goals),
   numbervars(PlainVarsC,MTen,_Ten,[singletons(true)]),
   numbervars(AttvarsC+Goals,10,MTen,[attvar(bind),singletons(false)]),
-  writeg(TermC), wots(S,writeg(Goals)), print_w_pad(2,S).
-writeg(Term):- \+ ground(Term),!, \+ \+ (numbervars(Term,99799,_,[singletons(true)]),
-   subst(Term,'$VAR'('_'),'$VAR'('_____'),TermO), writeg(TermO)).
+  writeg0(TermC), wots(S,writeg0(Goals)), print_w_pad(2,S).
+%writeg0(Term):- \+ ground(Term),!, \+ \+ (numbervars(Term,99799,_,[singletons(true)]),
+%   subst(Term,'$VAR'('_'),'$VAR'('_____'),TermO), writeg0(TermO)).
+writeg0(N=V):- format('~N'),nonvar(N), pp_no_nl(N),writeln(' = '), !, wots(S,writeg0(V)), print_w_pad(2,S).
+writeg0(V):- \+ is_list(V),!,pp(V).
+writeg0(V):- is_grid(V),!,print_grid(V),wots(S,(maplist(writeg1,V))), print_w_pad(2,S).
+%writeg0(V):- \+ is_list(V),!,writeq(V),nl.
+writeg0(X):- wots(S,pp(X)), print_w_pad(2,S).
 
-writeg(N=V):- format('~N'),nonvar(N), pp_no_nl(N),writeln(' = '), !, wots(S,writeg(V)), print_w_pad(2,S).
-writeg(V):- \+ is_list(V),!,pp(V).
-writeg(V):- is_grid(V),!,print_grid(V),wots(S,(maplist(writeg1,V))), print_w_pad(2,S).
-%writeg(V):- \+ is_list(V),!,writeq(V),nl.
-writeg([H|T]):- is_list(H),wots(S,((writeln('['),maplist(writeg,[H|T]),writeln(']')))), print_w_pad(2,S).
-writeg(X):- wots(S,pp(X)), print_w_pad(2,S).
-
-
-writeg1(X):- format('~N'),writeq(X),nl,!.
+writeg1(X):- format('~N'),writeg2(X).
+writeg2(X):- write_term(X,[quoted(true),quote_non_ascii(true),portrayed(false),nl(false),numbervars(false)]),!.
 %writeg1(X):- format('~N'),writeg(X).
-writeg1(X):- writeln(X).
+writeg2(X):- writeq(X),!.
 
 do_pair_filtering(ID1,GridIn,InC,InShownO,ID2,GridOut,OutC,OutShownO):- 
   grid_size(GridIn,IH,IV),filter_shown(IH,IV,InC,InShown,InHidden), filter_shown(IH,IV,InHidden,InHiddenLayer1,InHiddenLayer2),
@@ -490,8 +500,8 @@ individuation_macros(i_complete_generic, [
   grid_props,
   whole,
   maybe_glyphic,
-
   gather_cached,
+
   maybe_repair_in_vm(find_symmetry_code),
   find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
   find_subsumes,
