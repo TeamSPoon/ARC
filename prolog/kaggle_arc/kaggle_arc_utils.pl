@@ -229,7 +229,8 @@ subst0011(X, Y, Term, NewTerm ) :-
 
 
 
-subst_2LC([],_,I,I).
+subst_2LC([],_,I,I):-!.
+subst_2LC(_,[],I,I):-!.
 subst_2LC([F|FF],[R|RR],I,O):- subst0011C(F,R,I,M),subst_2LC(FF,RR,M,O).
 
 

@@ -523,7 +523,8 @@ normalize_grid(Op,I,OO):-
   must_be_free(OO),  
   reduce_grid(II,COp,COO),
   debug_c(reduce,writeg([reduce_grid=COO,cop=COp])),
-  call(How,COp+COO,Op+OO),
+  call(How,COp,Op),
+  call(How,COO,OO),
   debug_c(reduce,writeg([un_reduce_grid=OO,un_cop=Op])))).
 
 compress_grid(Op,I,OO):- 

@@ -134,6 +134,9 @@ sort_looseness(Pos,Gens):- predsort_using_only(var_count,Pos,Gens),!.
 sub_term_or_e(E,List):- is_list(List),!,member(EE,List),sub_term_or_e(E,EE).
 sub_term_or_e(E,List):- sub_term(E,List).
 
+call_count(G,N):- ground(G),findall(G,G,Gs),length(Gs,N).
+call_count(G,N):- term_variables(G,Vs),findall(Vs,G,Gs),list_to_set(Gs,Ss),length(Ss,N).
+
 count_of(A,P1, NEG):- nonvar(NEG), NEG = -N, !, count_of(A,P1,NN), N is -NN.
 count_of(A,P1,N):- findall(E,(sub_term_or_e(E,A),is_type_call(P1,E)),L),length(L,N).
 count_sum_of(A,P2,N):- findall(EN,(sub_term_or_e(E,A),call(P2,E,EN)),L),sum_list(L,N).

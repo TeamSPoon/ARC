@@ -63,27 +63,28 @@ is_fti_step(pbox_vm).
 %=====================================================================
 pbox_vm(VM):- !,
    %GH is round(VM.h*2/3), GV is round(VM.v*2/3),
+ must_det_ll((
   GH is round(VM.h + 0), GV is round(VM.v + 0),
   %findall(size2D(H,V),(l_s_4sides(H,V),H=<GH),Sizes_L_S),
   findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L),
   GridI0=VM.grid_o,
-  pbox_vm(GH,GV,GridI0,Sizes_S_L,VM).
+  pbox_vm(GH,GV,GridI0,Sizes_S_L,VM))).
 
   
 %=====================================================================
 is_fti_step(pbox_vm_special_sizes).
 %=====================================================================
 pbox_vm_special_sizes(VM):- !, 
+ must_det_ll((
   GH is round(VM.h + 0), GV is round(VM.v + 0),
-  findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L0),
+  findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L0),    
   other_grid_size(VM.grid_o,OX,OY),
-  globalpoints(GridI0,Points),
-  points_to_sizes(Points,Sizes),
-  append_sets([Sizes,[size2D(OX,OY)|Sizes_S_L0]],Sizes_S_L),
   GridI0=VM.grid_o,
+  globalpoints(GridI0,Points),points_to_sizes(Points,Sizes),
+  append_sets([Sizes,[size2D(OX,OY)|Sizes_S_L0]],Sizes_S_L),
   Objs = VM.objs,
   length(Sizes_S_L,A),
-  pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM).
+  pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM))).
 
 points_to_sizes(Points,Sizes):-
   maplist(arg(1),Points,Colors),
@@ -99,10 +100,14 @@ pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM):-
   length(Objs,Len),
   (Len=<2;A<40),!,pbox_vm(GH,GV,GridI0,Sizes_S_L,VM).
 pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM):- 
+ must_det_ll((
   maplist(obj_size2D,Objs,HVList),
-  include(near_size(GH,GV,[size2D(3,3),size2D(9,9),size2D(4,4)|HVList]),Sizes_S_L,UseSizes),
+  globalpoints(GridI0,Points),points_to_sizes(Points,Sizes),
+  append(Sizes,[size2D(3,3),size2D(9,9),size2D(4,4)|HVList],NEAR),
+  debug_m(indv(pbox),NEAR),
+  include(near_size(GH,GV,NEAR),Sizes_S_L,UseSizes),
   length(UseSizes,B), wdmsg(reduced(A->B)),
-  pbox_vm(GH,GV,GridI0,UseSizes,VM).
+  pbox_vm(GH,GV,GridI0,UseSizes,VM))).
 
 factor_of(V,GV):- R is GV rem V, ( R==0; (R \== 1, 0 is GV rem R, GV is R+V )),!.
 obj_size2D(Obj,size2D(H,V)):- vis2D(Obj,H,V).
@@ -421,7 +426,8 @@ i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):-
   nop(Intersection\==[]),!, nop(Unknown==[]),
   %format('~N~q.~n',[USING]),  
  must_det_ll((
-  make_indiv_object(VM,[/*b*/iz(type(pbox(WHY,L_S))),iz(type(pbox)),iz(flag(always_keep)),iz(media(shaped)),iz(media(image)),iz(info(dont_reduce)),loc2D(OH,OV),vis2D(HH,VV)],GOPoints,Obj),
+  make_indiv_object(VM,[/*b*/iz(type(pbox(WHY,L_S))),iz(type(pbox)),iz(flag(always_keep)),
+     iz(media(shaped)),iz(media(image)),iz(info(dont_reduce)),loc2D(OH,OV),vis2D(HH,VV)],GOPoints,Obj),
   ((\+ \+ ((
      ignore_equal_e(NSEW,['N','S','E','W']),
     %grid_size(OBJ,HH,VV), EH is OH+HH-1,EV is OV+VV-1, clip(OH,OV,EH,EV,Grid,OGrid), print_side_by_side(cyan,OGrid,Y,_,OBJ,F),

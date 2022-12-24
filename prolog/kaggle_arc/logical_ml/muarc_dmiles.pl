@@ -5,6 +5,7 @@
   unless permission or license is granted (contact at business@logicmoo.org)
 */
 
+:- ensure_loaded(muarc_public).
 
 test_encoders_mining(TestID):- var(TestID),!,simp_encode(TestID),test_encoders_mining(TestID).
 test_encoders_mining(TestID):- ensure_test(TestID), simple_output_encoder(TestID,_ExampleNum,I,O,II,OO),

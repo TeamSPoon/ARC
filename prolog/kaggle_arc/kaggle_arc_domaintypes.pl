@@ -463,6 +463,7 @@ elems_are([E|_],P1):- !, call(P1,E),!.
 
 is_points_list(L):- elems_are(L,is_point).
 is_cpoints_list(L):- elems_are(L,is_cpoint).
+is_ncpoints_list(L):- elems_are(L,is_nc_point).
 
 %is_cpoints_list(P):- P==[],!.
 %is_cpoints_list(List):- is_list(List),!,is_cpoints_list(List).
@@ -519,6 +520,7 @@ is_printable_gridoid(G):- plain_var(G),!, fail.
 is_printable_gridoid(G):- is_gridoid(G),!.
 is_printable_gridoid(G):- is_point(G),!.
 is_printable_gridoid(G):- is_cpoint(G),!.
+is_printable_gridoid(G):- is_ncpoints_list(G),!.
 is_printable_gridoid(D):- is_map(D),get_kov(grid,D,_).
 is_printable_gridoid(G):- is_list(G),!,maplist(is_printable_gridoid,G).
 is_printable_gridoid(G):- resolve_reference(G,R),!,nonvar(R),!.

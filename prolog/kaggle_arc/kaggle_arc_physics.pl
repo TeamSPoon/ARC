@@ -17,6 +17,8 @@ area_or_len(Obj,Area):- vis2D(Obj,H,V), Area is H * V.
 density(Obj,Density):- area(Obj,Area),amass(Obj,Mass), Density is Mass/Area.
 
 
+inter_object(Relation,I,O):- is_decl_pt(inter_object_relation,Relation),call(Relation,I,O).
+
 into_gridoid0(obj(N),O):- enum_object(O),o2g(O,G),sformat(N," ~w ",[G]).
 into_gridoid0(shape_lib(N:Lib),O):- shape_lib_expanded(Lib,Grids),nth1(N,Grids,O).
 into_gridoid0(N,G):- get_current_test(TestID),is_why_grouped(TestID,_,N,UG), UG\==[],UG\=[_],smallest_first(UG,G).
@@ -434,11 +436,11 @@ find_touches(VM):-
   /*must_det_ll*/((Objs = VM.objs, pred_find_links(touching_object(non_overlapping_object_dir(dir_touching)),Objs,NewObjs))),
   gset(VM.objs) = NewObjs.
 
-touching_object(How,Dirs,O2,O1):- O1\==O2,
-
+:- decl_pt(inter_object_relation,touching_object(_,_)).
+touching_object(How,Dirs,O2,O1):- two_physical_objs(O1,O2), \+ subsume(_,O2,O1),
   %has_prop(o(Y,LC,_),O1), has_prop(o(Y,LC,_),O2),
-  is_physical_object(O1), is_physical_object(O2),
-  \+ already_relation(O2,O1),
+  
+  %\+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
   call(How,Ps2,Ps1,Dirs),!.
@@ -457,9 +459,10 @@ find_sees(VM):-
   /*must_det_ll*/((Objs = VM.objs, pred_find_links(seeing_object(non_overlapping_object_dir(dir_seeing)),Objs,NewObjs))),
   gset(VM.objs) = NewObjs.
 
-seeing_object(How,Dirs,O2,O1):- O1\==O2, fail,
-  is_physical_object(O1), is_physical_object(O2),
-  \+ already_relation(O2,O1),
+
+:- decl_pt(inter_object_relation,seeing_object(_,_)).
+seeing_object(How,Dirs,O2,O1):- two_physical_objs(O1,O2), \+ subsume(_,O2,O1),
+  % \+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
   call(How,Ps2,Ps1,Dirs),!.
@@ -470,6 +473,10 @@ dir_seeing(Ps1,Ps2,Dir):- member(_-P1,Ps1), is_adjacent_point(P1,Dir,P2), \+ mem
 seeing_dir_soon(P1,_Dir,Ps2):- member(_-P1,Ps2),!.
 seeing_dir_soon(P1,Dir,Ps2):- is_adjacent_point(P1,Dir,P2), seeing_dir_soon(P2,Dir,Ps2).
 
+
+two_physical_objs(O1,O2):- O1\==O2, is_physical_object(O1),is_physical_object(O2), O1\==O2.
+
+is_physical_object(O):- var(O),!,enum_object(O),is_physical_object(O).
 is_physical_object(O):- is_whole_grid(O),!,fail.
 is_physical_object(O):- has_prop(cc(fg,0),O),has_prop(cc(bg,0),O),!,fail.
 is_physical_object(O):- my_assertion(is_object(O)),has_prop(iz(media(shaped)),O),!.
@@ -487,9 +494,9 @@ find_overlaps(VM):-
   /*must_det_ll*/((Objs = VM.objs, pred_find_links(overlap,Objs,NewObjs))),
   gset(VM.objs) = NewObjs.
 
-overlap(overlaping(OverlapP),O2,O1):- O1\==O2,
-  is_physical_object(O1), is_physical_object(O2),
-  \+ already_relation(O2,O1),
+:- decl_pt(inter_object_relation,overlap(_)).
+overlap(overlaping(OverlapP),O2,O1):- two_physical_objs(O1,O2), \+ subsume(_,O2,O1),
+  %\+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
   intersection(Ps1,Ps2,Overlap,P1L,P2L),
@@ -508,8 +515,8 @@ find_subsumes(VM):-
   /*must_det_ll*/((Objs = VM.objs, pred_find_links(subsume,Objs,NewObjs))),
   gset(VM.objs) = NewObjs.
 
-subsume(subsuming(Offset,OverlapP),O2,O1):- O1\==O2,
-  is_physical_object(O1), is_physical_object(O2),  
+:- decl_pt(inter_object_relation,subsume(_)).
+subsume(subsuming(Offset,OverlapP),O2,O1):- two_physical_objs(O1,O2),  
   %\+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),  
@@ -519,8 +526,7 @@ subsume(subsuming(Offset,OverlapP),O2,O1):- O1\==O2,
   OverlapP =..[ol| List],
   object_offset(O2,O1,Offset),!.
 
-subsume(subsumed_by(Offset,OverlapP),O1,O2):- O1\==O2,
-  is_physical_object(O1), is_physical_object(O2),
+subsume(subsumed_by(Offset,OverlapP),O1,O2):- two_physical_objs(O1,O2),
   %\+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
@@ -655,8 +661,9 @@ find_engulfs_objects(Obj,[Target|ScanNext],[link(contains,Iv)|Engulfed]):-
 find_engulfs_objects(Obj,[_|ScanNext],Engulfed):- /*must_det_ll*/(find_engulfs_objects(Obj,ScanNext,Engulfed)),!.
 
 
-contained_object(O2,O1):-
-  O1 \== O2,
+:- decl_pt(inter_object_relation,contained_object).
+
+contained_object(O2,O1):- two_physical_objs(O1,O2), \+ subsume(_,O2,O1),
   % \+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
   loc2D(O1,LowH1,LowV1),loc2D(O2,LowH2,LowV2), 
   LowH2 > LowH1, LowV2 > LowV1,

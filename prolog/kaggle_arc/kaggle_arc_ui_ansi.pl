@@ -10,11 +10,15 @@
 
 :- autoload(library(http/html_write),[html/3,print_html/1]).
 
+is_debugging(M):- \+ \+ debugging(M),!.
+is_debugging(_):- menu_or_upper('B').
+
 debug_m(_,Tiny):- display_length(Tiny,Len),Len<30,!,pp(Tiny).
-debug_m(M,_):- \+ debugging(M),!.
-debug_m(_,List):- is_list(List),!,print_ss(List).
+debug_m(M,_):- \+ is_debugging(M),!.
+%debug_m(_,List):- is_list(List),!,print_ss(List).
 debug_m(_,Term):- pp(Term).
-debug_c(M,_):- \+ debugging(M),!.
+debug_c(M,_):- \+ is_debugging(M),!.
+debug_c(_,C):- call(C),!.
 debug_c(M,C):- wots(S,C),debug_m(M,S),!.
 
 wno(G):-
@@ -352,7 +356,7 @@ pp_hook_g1(vals(O)):- !, writeq(vals(O)),!.
 pp_hook_g1(localpoints(O)):- !, is_points_list(O), as_grid_string(O,S), print(localpoints(S)),!.
 pp_hook_g1(C):- compound(C), compound_name_arguments(C,F,[O]),is_points_list(O), length(O,N),N>2, as_grid_string(O,S), compound_name_arguments(CO,F,[S]), print(CO),!.
 
-pp_hook_g1(O):-  is_points_list(O),as_grid_string(O,S),print(S),!.
+pp_hook_g1(O):-  is_points_list(O),as_grid_string(O,S),write(S),!.
 pp_hook_g1(O):-  is_real_color(O), color_print(O,call(writeq(O))),!.
 pp_hook_g1(O):-  is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
 
@@ -376,7 +380,10 @@ pp_hook_g1(O):-  is_really_gridoid(O),debug_as_grid(O), !.
 pp_hook_g1(O):-  O = showdiff( O1, O2), !, showdiff(O1, O2).
 %pp_hook_g1(O):- compound(O),wqs1(O), !.
 pp_hook_g1(O):- \+ compound(O),fail.
-pp_hook_g1(O):- current_predicate(colorize_oterms/2),colorize_oterms(O,C), notrace(catch(fch(C),_,fail)),! .
+pp_hook_g1(G):- \+ current_prolog_flag(debug,true), lock_doing(in_pp_hook_g3,any,pp_hook_g2(G)),!.
+pp_hook_g1(G):- fch(G),!.
+
+%pp_hook_g2(O):- current_predicate(colorize_oterms/2),colorize_oterms(O,C), notrace(catch(fch(C),_,fail)),! .
 
 fch(O):- wqs1(O).
 %fch(O):- pp_no_nl(O).
@@ -1167,7 +1174,7 @@ print_grid0(H,V,Grid):- print_grid0(1,1,H,V,Grid),!.
 %print_grid(SH,SV,EH,EV,Grid):- nop(print_grid(SH,SV,EH,EV,Grid)),!.
 print_grid(SH,SV,EH,EV,Grid):- quietlyd(print_grid0(SH,SV,EH,EV,Grid)),!.
 
-
+print_grid0(SH,SV,EH,EV,NCPs):- is_ncpoints_list(NCPs),maplist(append_term(-(fg)),NCPs,Grid),!,print_grid0(SH,SV,EH,EV,Grid).
 print_grid0(_SH,_SV,_EH,_EV,Grid):- \+ is_printable_gridoid(Grid), !, writeln(\+ is_printable_gridoid(Grid)).
 
 print_grid0(SH,SV,EH,EV,Grid):-  

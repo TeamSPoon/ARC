@@ -299,7 +299,7 @@ c_o(O,A):- is_object(O),O=obj(_),object_color_glyph_short(O,A),!.
 c_ot(_P2,O,A):- var(O),!,A=O.
 %c_ot(P2,O,A):- term_contains_ansi(O),!,A=O.
 c_ot(_P2,O,A):- term_is_ansi(O),!,A=O.
-c_ot(P2,O,A):- call(P2,O,A),!.
+c_ot(P2,O,A):- lock_doing(c_ot,O,call(P2,O,A)),!.
 c_ot(_P2,O,A):- number(O),!,wots(A,bold_print(write(O))).
 c_ot(P2,-O,-A):- !, c_ot(P2,O,A).
 c_ot(P2,+O,+A):- !, c_ot(P2,O,A).
@@ -308,7 +308,7 @@ c_ot(P2,O,A):- compound(O),compound_name_arguments(O,F,Args),!,maplist(colorize_
 c_ot(_P2,O,A):- \+ atom(O),!,A=O.
 c_ot(_P2,O,A):- is_color(O),!,wots(A,color_print(O,O)).
 c_ot(_P2,O,A):- member(O,[n,s,e,w,c,ne,se,sw,nw]),!,wots(A,bold_print(write(O))).
-c_ot(_P2,O,A):- o2ansi(O,A),!.
+c_ot(_P2,O,A):- lock_doing(c_ot,O,o2ansi(O,A)),!.
 c_ot(_P2,O,O).
 
 prefered(repaired).
