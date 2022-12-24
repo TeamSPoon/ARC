@@ -297,15 +297,16 @@ diff_groups(A0,B0,DD):-
   diff_groups1(A2,B2,DD).
 
 
-obj_atoms(PA,PAP):- must_det_ll((nonvar(PA),obj_plist(PA,M),M\==[],
+obj_atoms(PA,PAP):- must_det_ll((nonvar(PA),into_obj_plist(PA,M),M\==[],
   findall(E,(member(SE,M),sub_obj_atom(E,SE)),PAP),PAP\==[])),!.
 
-obj_plist(PA,PAP):- is_list(PA),!,PAP=PA.
-%obj_plist(obj(PA),PAP):- is_list(PA),!,PAP=PA.
-obj_plist(PA,PAP):- 
-  indv_props_list(PA,PAP1),
-  findall(Prop,is_in_subgroup(PA,Prop),PAP2),
-  append(PAP1,PAP2,PAP).
+
+into_obj_plist(OID,List):- var(OID),!,enum_object(OID),into_obj_plist(OID,List).
+into_obj_plist(Grp,GrpOO):- is_group(Grp),!,mapgroup(into_obj_plist,Grp,GrpO),flatten(GrpO,GrpOO).
+into_obj_plist(PA,PAP):- is_list(PA),!,PAP=PA.
+into_obj_plist(obj(PA),PA):- !.
+into_obj_plist(OID,List):- is_oid(OID), oid_to_obj(OID,Obj),!,into_obj_plist(Obj,List).
+%%%into_obj_plist(PA,PAP):- must_det_ll((extend_obj_proplist(PA,Obj), into_obj_plist(Obj,PAP))),!.
  
 
 never_matom(localpoints(_)).

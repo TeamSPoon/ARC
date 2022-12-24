@@ -575,8 +575,8 @@ save_rule0(GID,TITLE1,IP,OP):-
  must_det_ll((
  length(IP,LI), length(OP,LO), sformat(TITLE,"(~w) ~w (~w)",[LI,TITLE1,LO]),
  pp(TITLE),
- maplist(obj_plist,IP,IPP),append(IPP,IIPP0), list_to_set(IIPP0,IIPP),
- maplist(obj_plist,OP,OPP),append(OPP,OOPP0), list_to_set(OOPP0,OOPP),!,
+ maplist(into_obj_plist,IP,IPP),append(IPP,IIPP0), list_to_set(IIPP0,IIPP),
+ maplist(into_obj_plist,OP,OPP),append(OPP,OOPP0), list_to_set(OOPP0,OOPP),!,
  save_rule0(GID,TITLE,IP,OP,IIPP,OOPP))).
 
 
@@ -608,12 +608,22 @@ learn_group_mapping(AG00,BG00):-
   maplist(extend_obj_proplist,BG00,BG0),
   learn_group_mapping_p2(AG0,BG0).
 
-extend_obj_proplist(Obj,obj(Set)):- Obj = obj(Props),
+extend_obj_proplist(Var,NewObj):- var(Var),!, enum_object(Var),extend_obj_proplist(Var,NewObj).
+extend_obj_proplist(Grp,GrpO):- is_group(Grp),!,maplist(extend_obj_proplist,Grp,GrpO).
+extend_obj_proplist(obj(Obj),obj(OUT)):-!, 
+   extend_obj_proplist(Obj,OUT).
+extend_obj_proplist(Props,OUTL):- Obj = obj(Props),
   findall(P,extend_obj_prop(Obj,P),NewProps),
-  append(Props,NewProps,AllProps),
-  list_to_set(AllProps,Set).
+  flatten(NewProps,NewPropsF),
+  override_object(NewPropsF,Props,Obj1),
+  override_object(Props,Obj1,OUT),
+  into_obj_plist(OUT,OUTL).
 
-extend_obj_prop(Obj,P):- is_in_subgroup(Obj,P).
+
+extend_obj_prop(Obj,Prop):- is_in_subgroup(Obj,Prop).
+extend_obj_prop(Obj,Props):- fail,
+ once((localpoints(Obj,P),vis2D(Obj,H,V),points_to_grid(H,V,P,Grid),
+  grid_props(Grid,Props))).
 
 learn_group_mapping_p2(AG0,BG0):-
  must_det_ll((  
@@ -629,28 +639,51 @@ learn_group_mapping_p2(AG0,BG0):-
   maplist(obj_grp_atoms(OI),BG,_BGG),
 
   retractall(doing_map(_,_,_)),
-  forall(member(A,AG),
-    (find_prox_mappings(A,OI,Objs),
-     assert(doing_map(IO,A,Objs)))),
   forall(member(B,BG),
     (find_prox_mappings(B,IO,Objs),
-     assert(doing_map(OI,B,Objs)))),
+     assert_doing_map(OI,B,Objs))),
+  forall(member(B,BG),
+    ignore((find_prox_mappings(B,OI,Objs),
+     assert_doing_map(oo,B,Objs)))),
+  forall(member(A,AG),
+    (find_prox_mappings(A,OI,Objs),
+     assert_doing_map(IO,A,Objs))),
+  forall(member(A,AG),
+    ignore((find_prox_mappings(A,IO,Objs),
+     assert_doing_map(ii,A,Objs)))),
 
   retractall(showed_mapping(_,_)),
 
-  predsort(sort_on(p2_call_p2(doing_map,area)),BG,BGS),
-  predsort(sort_on(p2_call_p2(doing_map,area)),AG,AGS),
+  predsort(sort_on(mapping_order),BG,BGS),
+  predsort(sort_on(mapping_order),AG,AGS),
 
-  learn_group_mapping(IO,OI,AG,BG,AGS,BGS))).
+  learn_group_mapping_p3(IO,OI,AG,BG,AGS,BGS))).
 
+assert_doing_map(IO,A,[B|Objs]):-
+  dash_chars,
+  assert(doing_map(IO,A,[B|Objs])),
+  pp(IO),
+  dash_chars,
+  print_ss(IO,A,B),print_ss_rest(IO,2,Objs),dash_chars.
 
-learn_group_mapping(IO,OI,_AG,_BG,AGS,BGS):- !,
- locally(nb_setval(rule_cannot_add_more_objects,t), 
+print_ss_rest(IO,N,[A,B|Objs]):-  print_ss(IO+N,A,B),N2 is N + 2,print_ss_rest(IO,N2,Objs).
+print_ss_rest(IO,N,[R]):- print_grid(IO+N,R).
+print_ss_rest(_,_,[]).
+
+mapping_order(Obj,MO):- area(Obj,Area),cmass(fg,Obj,CMass),
+  findall(_,doing_map(_,_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt,NCMass is -CMass,
+  MO = NCnt+NCMass+Area.
+
+cmass(FG,Obj,CMass):- has_prop(cc(FG,CMass),Obj).
+
+learn_group_mapping_p3(IO,OI,AG,BG,AGS,BGS):- !,
+ locally(nb_setval(rule_cannot_add_more_objects,t),
+  (nb_linkval(in_out_pair,in_out_pair(AG,BG,shared)),
    must_det_ll((  
     forall(member(B,BGS),
        (doing_map(B,A),save_rule(OI,"INPUT <-- OUTPUT",[A],[B]))),
     forall(member(A,AGS),
-       (doing_map(A,B),save_rule(IO,"INPUT --> OUTPUT",[A],[B])))))).
+       (doing_map(A,B),save_rule(IO,"INPUT --> OUTPUT",[A],[B]))))))).
 
 
 
@@ -658,15 +691,30 @@ into_title(IO,OI,TITLE):-
   upcase_atom(IO,A), upcase_atom(OI,B),
   sformat(TITLE,"~w  -->  ~w",[A,B]),!.
 
-save_rule1(GID,TITLE,IP,OP,IIPP,OOPP):- 
+save_rule1(in,_TITLE,[A],[B],IIPP,OOPP):-    
+   is_bg_object(B),
+   \+ is_bg_object(A),
+   \+ showed_mapping(B,_),!,
+   save_rule2(in,"DELETE Input",[A],[B],IIPP,OOPP).
+
+save_rule1(_,_TITLE,[A],[B],_IIPP,_OOPP):-    
+   is_bg_object(A),is_bg_object(B),
+   \+ is_bg_object(A),
+   \+ showed_mapping(B,_),!.
+
+save_rule1(IO,TITLE,A,B,IIPP,OOPP):- 
+  save_rule2(IO,TITLE,A,B,IIPP,OOPP).
+
+save_rule2(GID,TITLE,IP,OP,_IIPP,_OOPP):- 
  must_det_ll((
  sort(IP,I),sort(OP,O), assert(showed_mapping(I,O)),
+
  make_rule_l2r_objs([],IP,OP,II,OO,Mid), 
  make_rule_l2r_0(Mid,II,OO,III,OOO,NewShared),
 
  arrange_shared(NewShared,NewSharedS),
  maplist(g_display,IP,IIP), maplist(g_display,OP,OOP), 
- maplist(append_term(=('IN')),IIP,INS), maplist(append_term(=('OUT')),OOP,OUTS), append(INS,OUTS,ALL),
+ maplist(append_term(=('IN'(GID))),IIP,INS), maplist(append_term(=('OUT'(GID))),OOP,OUTS), append(INS,OUTS,ALL),
  print_ss(ALL),
 
  pp(TITLE),
@@ -696,7 +744,18 @@ make_rule_l2r_objs(Shared,II,OO,IIIII,OOOOO,NewShared):-
   make_rule_l2r_objs(MidShared,IIII,OOOO,IIIII,OOOOO,NewShared).
 make_rule_l2r_objs(Shared,II,OO,II,OO,Shared).
 
-make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- sub_term(E,II),compound(E),E='$'(D),%wots(S,color_print(white,D)),
+
+
+% Cleanup RHS
+make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- 
+   Rem = omit_in_rules(rhs,O), 
+   select(O,OO,OOO), call(Rem), !, make_rule_l2r(Shared,II,OOO,IIII,OOOO,NewShared).
+% Cleanup LHS
+make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- 
+   Rem = omit_in_rules(lhs,I),
+   select(I,II,III), call(Rem), !, make_rule_l2r(Shared,III,OO,IIII,OOOO,NewShared).
+
+make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- fail, sub_term(E,II),compound(E),E='$'(D),%wots(S,color_print(white,D)),
    S = D, %'$VAR'(D),
    subst(II+OO+Shared,E,S,III+OOO+SharedM),!,
    make_rule_l2r([debug_var(D,S)|SharedM],III,OOO,IIII,OOOO,NewShared).
@@ -746,10 +805,10 @@ transfer_prop(rotations,rot2L(_)).
 :- use_module(library(clpfd)).
 
 gen_offset_expression(_Type,X1,X1,_Var,VX1,VX1,[]).
-gen_offset_expression(Type,X2,X1,Var,VX1,VX2,OUT):- 
+gen_offset_expression(Type,X2,X1,Var,VX1,VX2,OUT):- fail,
                                         number(X2),number(X1),OVX is X2 - X1,
    gen_variatable([Type,Var],OVXV),
-   OUT = [offsetV(Type,x,OVXV,OVX), call(VX2 #= VX1 + OVXV)].
+   OUT = [offsetV(Type,Var,OVXV,OVX), call(VX2 #= VX1 + OVXV)].
   
 % offset 2D
 make_rule_l2r(Shared,II,OO,III,OOO,SharedMid):- 
@@ -839,14 +898,6 @@ simplify_l2r(I,C1,VC1,I_I,O,C2,VC2,O_O,Info):- fail,
   Info = [proportional(VC1,VC2,C1,C2,Purp)],
   I=I_I,O=O_O,!.
 
-% Cleanup RHS
-make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- 
-   Rem = omit_in_rules(rhs,O), 
-   select(O,OO,OOO), call(Rem), !, make_rule_l2r(Shared,II,OOO,IIII,OOOO,NewShared).
-% Cleanup LHS
-make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- 
-   Rem = omit_in_rules(lhs,I),
-   select(I,II,III), call(Rem), !, make_rule_l2r(Shared,III,OO,IIII,OOOO,NewShared).
 make_rule_l2r(Shared,II,OO,III,OOO,[level(3,thru(O))|SharedMid]):- %fail,
   select(I,II,I_I),select(O,OO,O_O),O=@=I,
    \+ transfer_prop(_,I), is_all_original_value(O),!,
@@ -1260,10 +1311,11 @@ upcase_atom_var(Num,VAR):- ignore((uc_av(Num,Name),VAR='$VAR'(Name))),!.
 upcase_atom_var(Num,'$VAR'(Num)):-!.
 upcase_atom_var(_,_).
 
+uc_av(Var,Name):- var(Var),!,p_n_atom1(Var,Name).
 uc_av(Int,Name):- integer(Int),atom_concat('INT_',Int,Name).
 uc_av(Num,Name):- number(Num),atom_concat('FLOAT_',Num,DotName),replace_in_string(['.'-'_dot_'],DotName,Name).
 uc_av(List,Name):- List==[],!,Name='Nil'.
-uc_av(List,Name):- is_list(List),maplist(uc_av,List,Names),atom_list_concat(Names,'_',Name),!.
+uc_av(List,Name):- is_list(List),maplist(uc_av,List,Names),atomic_list_concat(Names,'_',Name),!.
 %uc_av(Atom,Name):- atom(Atom),upcase_atom(Atom,Name).
 uc_av(Atom,Name):- p_n_atom1(Atom,Name).
 
