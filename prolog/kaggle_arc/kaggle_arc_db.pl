@@ -329,7 +329,7 @@ pgt(Obj1-Obj2):- pgt1(Obj1),pgt2(Obj2).
 pgt([Obj1]-[Obj2]):- pgt1(Obj1),pgt2(Obj2).
 pgt([Obj1,Obj2]):- pgt1(Obj1),pgt2(Obj2).
 pgt1(Obj):-
-  Obj = obj( [ amass(536),
+  Obj = obj( [ mass(536),
          colorless_points( [ point_01_01, point_02_01]),
          colors( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
@@ -341,7 +341,7 @@ pgt1(Obj):-
          grid_size(8, 8)]).
 
 pgt2(Obj):- Obj = 
-      obj( [ amass(536),
+      obj( [ mass(536),
          colorless_points( [ point_01_01, point_02_01]),
          colors( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),

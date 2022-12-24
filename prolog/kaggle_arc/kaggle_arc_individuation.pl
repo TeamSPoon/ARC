@@ -426,7 +426,7 @@ individuation_macros(i_complete_generic, [
   %remove_if_prop(and(giz(g(out)),cc(fg,0))),
   %remove_dead_links,
   %combine_same_globalpoints,
-  really_group_vm_priors,
+  %really_group_vm_priors,
   %grid_props,
   %combine_objects,
   end_of_macro  ]). 
@@ -782,7 +782,7 @@ remove_dead_links(VM):-
   gset(VM.objs) = New.
 remove_dead_links([],_Obj,[]):-!.
 remove_dead_links([Obj|Objs],LiveObjs,[obj(NewProps)|New]):-
-  indv_props(Obj,Props),
+  indv_props_list(Obj,Props),
   remove_dead_props(Props,LiveObjs,NewProps),
   remove_dead_links(Objs,LiveObjs,New).
 remove_dead_props([],_LiveObjs,[]).
@@ -856,7 +856,7 @@ consider_other_grid(VM):-
   DiagCount=_, HVCount<4,
   !,
   must_det_ll((
-  %indv_props(Obj,Props),my_partition(is_prop_automatically_rebuilt,Props,_,PropsRetained),
+  %indv_props_list(Obj,Props),my_partition(is_prop_automatically_rebuilt,Props,_,PropsRetained),
   make_indiv_object(VM,[iz(stype(R))],GOPoints,Obj),
   
   %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
@@ -1025,7 +1025,7 @@ find_hybrid_shapes(VM):-
       mass(In,Mass),  
       Mass<GMass,
       Mass>2,
-      amass(In,AMass),
+      mass(In,AMass),
       nop(AMass==9)),List),
   List\==[],
   length(List,HL),!,
@@ -1062,7 +1062,7 @@ hybrid_shape_from(Set,VM):-
   DiagCount=_, HVCount<4,
   !,
   must_det_ll((
-  %indv_props(Obj,Props),my_partition(is_prop_automatically_rebuilt,Props,_,PropsRetained),
+  %indv_props_list(Obj,Props),my_partition(is_prop_automatically_rebuilt,Props,_,PropsRetained),
   make_indiv_object(VM,[iz(stype(R))],GOPoints,Obj),
   
   %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
@@ -1112,7 +1112,7 @@ learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- into_grid(ReColored,Grid)
 
 use_hybrid_grid(In):- grid_size(In,H,V),(H<3;V<3),mass(In,Mass),Mass\==0,Mass<5,!,fail.
 use_hybrid_grid(In):- In\=[[_]], mass(In,Mass),Mass>2, grid_size(In,H,V),H>2,V>2. % nop((area(In,AMass),AMass < Mass*2)).
-use_hybrid_grid(In):- In\=[[_]], amass(In,Mass),Mass>2, nop((area(In,AMass),AMass < Mass*2)).
+use_hybrid_grid(In):- In\=[[_]], mass(In,Mass),Mass>2, nop((area(In,AMass),AMass < Mass*2)).
 
 % learn_hybrid_shape_grid(_ReColored,_TestID,_ExampleNum,_Name,_Grid):-!.
 learn_hybrid_shape_grid(ReColored,TestID,ExampleNum,Name,Grid):- is_grid(ReColored), \+ use_hybrid_grid(Grid),!,ignore((Grid\=[[_]], nop(print_grid(unused(learn_hybrid_shape_grid(TestID,ExampleNum,Name)),ReColored)))),!.
@@ -1141,7 +1141,7 @@ obj_short_props(Obj,Title=Grid):- short_indv_props(Obj,Title,_),global_grid(Obj,
 r_props(Short,SortR):- % obj_to_oid(Obj,MyOID),
   remove_too_verbose(0,Short,TV0),include(not_too_verbose,TV0,TooV),sort(TooV,Sort),reverse(Sort,SortR).
 short_indv_props(Props,ShortR,LongR):- is_list(Props),!,my_partition(is_short_prop,Props,Short,Long),r_props(Short,ShortR),r_props(Long,LongR).
-short_indv_props(Obj,ShortR,LongR):- indv_props(Obj,Props),!,short_indv_props(Props,ShortR,LongR).
+short_indv_props(Obj,ShortR,LongR):- indv_props_list(Obj,Props),!,short_indv_props(Props,ShortR,LongR).
 
 is_long_prop(vis_hv_term(_)).
 is_long_prop(link(_,_,_)). is_long_prop(link(_,_)).
@@ -1517,7 +1517,7 @@ do_individuate(VM, ROptions, GridIn,LFO):- must_be_free(LF),
     guard_whole(LF,LFO),
     gset(VM.objs) = LFO,!.
    %nop((tid_to_gid(ID,GID), maplist(assert_object_oid(GID),LF,_Glyphs,_OIDs))).
-  %smallest_first(amass,IndvS,SF),
+  %smallest_first(mass,IndvS,SF),
   %largest_first(mass,SF,LF),
   
    %!.
@@ -1750,7 +1750,7 @@ print_vm_debug_objs(_VM):- !.
 print_vm_debug_objs(VM):- 
   Objs = VM.objs,  
   length(Objs,Count),
-  as_debug(8,(amass(Objs,Mass), length(VM.points,PC),
+  as_debug(8,(mass(Objs,Mass), length(VM.points,PC),
       maybe_four_terse(VM.program_i,Four),
       progress(t([obj/obj_mass=(Count/Mass),unprocessed_points=PC,roptions=VM.roptions,fsi=Four])))).
 
@@ -1902,7 +1902,7 @@ release_objs_lighter(Two,VM):-
   maplist(globalpoints,Smaller,Points),
   append_sets([VM.points|Points],set(VM.points)))).
 
-less_mass(Mass,Obj):- amass(Obj,M),M<Mass.
+less_mass(Mass,Obj):- mass(Obj,M),M<Mass.
 
 
 mergable_objects(VM,O1,O2):- 
@@ -2792,7 +2792,7 @@ rectangles_from_grid(_,_).
 % @TODO
 rects_of(_Obj,[]).
 
-mass_gt(N,Obj):- amass(Obj,Mass),Mass>N.
+mass_gt(N,Obj):- mass(Obj,Mass),Mass>N.
 
 % tiny grid becomes a series of points
 is_fti_step(maybe_glyphic).
@@ -2847,7 +2847,7 @@ one_fti(VM,grid_props):- whole(VM).
   hv_point_value(H,1,Grid,PointNE),
   hv_point_value(H,V,Grid,PointSE),
   grid_props(Grid,Props),
-  append(Props,[amass(0),vis2D(H,V),birth(grid_props),loc2D(1,1),iz(flag(always_keep)),iz(media(image)),iz(flag(hidden))],AllProps),
+  append(Props,[mass(0),vis2D(H,V),birth(grid_props),loc2D(1,1),iz(flag(always_keep)),iz(media(image)),iz(flag(hidden))],AllProps),
   make_indiv_object(VM,AllProps,[PointNW,PointSW,PointNE,PointSE],_),!.
 */
 hv_point_value(H,V,Grid,C-Point):- hv_point(H,V,Point),point_c_value(Point,C,Grid).
@@ -2877,7 +2877,7 @@ whole_into_obj(VM,Grid,Whole):-
   save_grouped(individuate(whole,VM.gid),[Whole]),learn_hybrid_shape(pair,Whole))).
   /*
   if_t(Len>=0,
-    (make_indiv_object(VM,[amass(Len),vis2D(H,V),iz(stype(whole)),iz(flag(always_keep)),loc2D(1,1),iz(media(image))|Props],Points,Whole),
+    (make_indiv_object(VM,[mass(Len),vis2D(H,V),iz(stype(whole)),iz(flag(always_keep)),loc2D(1,1),iz(media(image))|Props],Points,Whole),
       raddObjects(VM,Whole),
        save_grouped(individuate(whole,VM.gid),[Whole]),learn_hybrid_shape(pair,Whole))),
   localpoints(Grid,LPoints),
@@ -2974,7 +2974,7 @@ try_shape(VM,Method,LibName,Shape):-
    %nl,writeq(((points_to_grid(RestOfPoints,GH,GV,NewGrid)))),nl,
    %set(VM.grid) = NewGrid,
 
-   indv_props(Shape,ShapeProps), 
+   indv_props_list(Shape,ShapeProps), 
    my_partition(props_not_for_merge,ShapeProps,_Exclude,Include),
    make_indiv_object(VM,[birth(shape_lib(Method,LibName)),vis2D(SH,SV),loc2D(OH,OV)|Include],ObjPoints,Indiv),  %obj_to_oid(Shape,_,Iv), %override_object(obj_to_oid(VM.id,Iv),Indiv0,Indiv),  %make_indiv_object(VM,Use,Indiv),
    %nop(points_to_grid(RestOfPoints,set(VM.grid))),  %print_grid(Indiv),
@@ -3008,7 +3008,7 @@ one_fi(VM,retain(Option)):-
     Grid = VM.grid,
     ID = VM.id,
     globalpoints(Grid,NewGPoints), %  H> 14, V> 14,
-    freeze(W,W>5),filter_indivs(VM.objs,[amass(W)];[iz(Option)],Retained1),
+    freeze(W,W>5),filter_indivs(VM.objs,[mass(W)];[iz(Option)],Retained1),
     filter_indivs(Retained1, \+ iz(background),Retained),
     as_debug(9,print_grid(H,V,'retained'+ID,Retained)),    
     remove_global_points(Retained,NewGPoints,set(VM.points)),
@@ -3313,7 +3313,7 @@ extends(ShapeType1,VM):-
 
     combine_2objs(VM,HV1,HV2,NewPoints,IPROPS,Combined):-
       globalpoints(HV1,GP1), globalpoints(HV2,GP2),    
-      % indv_props(HV1,Props1),indv_props(HV2,Props2),
+      % indv_props_list(HV1,Props1),indv_props_list(HV2,Props2),
       
       append_sets([GP1,GP2,NewPoints],GPoints),      
       Props1=[],Props2=[],flatten_sets([Props1,Props2,IPROPS],Info),
@@ -3575,15 +3575,15 @@ nearby_one(_Dir_,Options,C1,C2-E,List):- allowed_dir(Options,Dir), adjacent_poin
 
 check_minsize(_,I,I):-!.
 check_minsize(_,[],[]):-!.
-check_minsize(Sz,[I|IndvS],[A,B|IndvSO]):- amass(I,2),globalpoints(I,[A,B]),!,check_minsize(Sz,IndvS,IndvSO).
-check_minsize(Sz,[I|IndvS],[A,B,C|IndvSO]):- amass(I,3),globalpoints(I,[A,B,C]),!,check_minsize(Sz,IndvS,IndvSO).
+check_minsize(Sz,[I|IndvS],[A,B|IndvSO]):- mass(I,2),globalpoints(I,[A,B]),!,check_minsize(Sz,IndvS,IndvSO).
+check_minsize(Sz,[I|IndvS],[A,B,C|IndvSO]):- mass(I,3),globalpoints(I,[A,B,C]),!,check_minsize(Sz,IndvS,IndvSO).
 check_minsize(Sz,[I|IndvS],[I|IndvSO]):- check_minsize(Sz,IndvS,IndvSO).
 
-meets_size(_,Points):- amass(Points,1).
-meets_size(_,Points):- amass(Points,2),!,fail.
-meets_size(_,Points):- amass(Points,3),!,fail.
-meets_size(_,Points):- amass(Points,4).
-meets_size(Len,Points):- amass(Points,L),!,L>=Len.
+meets_size(_,Points):- mass(Points,1).
+meets_size(_,Points):- mass(Points,2),!,fail.
+meets_size(_,Points):- mass(Points,3),!,fail.
+meets_size(_,Points):- mass(Points,4).
+meets_size(Len,Points):- mass(Points,L),!,L>=Len.
 
 remove_bgs(IndvS,IndvL,BGIndvS):- partition(is_bg_indiv,IndvS,BGIndvS,IndvL).
 
@@ -3685,7 +3685,7 @@ unraw_inds2(_VM,_,IndvS,IndvS).
 
 merge_indivs(IndvA,IndvB,BetterA,BetterB,BetterC):-
   my_append(IndvA,IndvB,IndvSU),list_to_set(IndvSU,IndvS),
-  smallest_first(amass,IndvS,IndvC),
+  smallest_first(mass,IndvS,IndvC),
   merge_indivs_cleanup(IndvA,IndvB,IndvC,BetterA,BetterB,BetterC),!.
 
 merge_indivs_cleanup(IndvA,IndvB,IndvC,_,_,_):-
@@ -3934,7 +3934,8 @@ add_prior_placeholder(Len,Name,IndvS0,IndvS9):-
      override_object(o((Len),nil,Name),IndvS1,IndvS9))),!.
 */
 
-object_get_priors(X,S):- is_object(X), !, must_det_ll((indv_props(X,Ps),
+object_get_priors(X,S):- var(X),!, enum_object(X), object_get_priors(X,S).
+object_get_priors(X,S):- is_object(X), !, must_det_ll((indv_props_list(X,Ps),
   findall(I,(member(P,Ps),props_object_prior(P,I)),L),L\==[],list_to_set(L,S))).
 
 get_prior_labels(Objs,PriorsWithCounts):- must_det_ll((is_list(Objs),
@@ -3944,27 +3945,30 @@ get_prior_labels(Objs,PriorsWithCounts):- must_det_ll((is_list(Objs),
   count_each(PriorsSet,AllPriors,PriorsWithCounts))).
 
 
-ranking_pred(rank1(F1),I,O):- Prop=..[F1,O], indv_props(I,Ps),member_or_iz(Prop,Ps),!.
+ranking_pred(rank1(F1),I,O):- Prop=..[F1,O], indv_props_list(I,Ps),member_or_iz(Prop,Ps),!.
 ranking_pred(rank1(F1),I,O):- !, catch(call(F1,I,O),_,fail),!.
-ranking_pred(rankA(F1),I,O):- append_term(F1,O,Prop), indv_props(I,Ps),member_or_iz(Prop,Ps),!.
+ranking_pred(rankA(F1),I,O):- append_term(F1,O,Prop), indv_props_list(I,Ps),member_or_iz(Prop,Ps),!.
 ranking_pred(rankA(F1),I,O):- !, catch(call(F1,I,O),_,fail),!.
-ranking_pred(rank2(F1),I,O):- Prop=..[F1,O1,O2], indv_props(I,Ps),member_or_iz(Prop,Ps),!,combine_number(F1,O1,O2,O).
+ranking_pred(rank2(F1),I,O):- Prop=..[F1,O1,O2], indv_props_list(I,Ps),member_or_iz(Prop,Ps),!,combine_number(F1,O1,O2,O).
 ranking_pred(rank2(F1),I,O):- !, catch(call(F1,I,O1,O2),_,fail),!,combine_number(F1,O1,O2,O).
 ranking_pred(_F1,I,O):- mass(I,O).
 
-has_prop(Prop,Obj):- var(Prop),!,indv_props(Obj,Props),member(Prop,Props).
+has_prop(Prop,Obj):- var(Obj),!, enum_object(Obj),has_prop(Prop,Obj).
+has_prop(Prop,Objs):- is_list(Objs),!,forall(member(Obj,Objs),has_prop(Prop,Obj)).
+has_prop(Props,Obj):- is_list(Props),!,member(Q,Props),has_prop(Q,Obj).
+
+has_prop(Prop,Obj):- indv_props(Obj,Q), (Q=@=Prop -> true ; ( Q = Prop)).
+has_prop(lbl(Lbl),Obj):- is_prior_prop(Lbl,Obj).
+has_prop(Var,_Obj):- var(Var),!, fail.
+
+has_prop(Lbl ,Obj):- atom(Lbl),!, is_prior_prop(Lbl,Obj),!.
 has_prop(and(A,B),Obj):- !, has_prop(A,Obj),has_prop(B,Obj).
 has_prop(call_1(A),Obj):- !, has_prop(AA,Obj),call(A,AA).
 has_prop(not(A),Obj):- !, \+ has_prop(A,Obj).
 has_prop(or(A,B),Obj):- !, (has_prop(A,Obj);has_prop(B,Obj)).
-has_prop(Props,Objs):- is_list(Objs),!,forall(member(Obj,Objs),has_prop(Props,Obj)).
-has_prop(Props,Obj):- is_list(Props),!,member(Q,Props),has_prop(Q,Obj).
 has_prop(rank1(Lbl),Obj):- atom(Lbl),!, is_prior_prop(rank1(Lbl),Obj),!.
 has_prop(rank2(Lbl),Obj):- atom(Lbl),!, is_prior_prop(rank2(Lbl),Obj),!.
 has_prop(rankA(Lbl),Obj):- nonvar(Lbl),!, is_prior_prop(rankA(Lbl),Obj),!.
-has_prop(Lbl ,Obj):- atom(Lbl),!, is_prior_prop(Lbl,Obj),!.
-has_prop(lbl(Lbl),Obj):- is_prior_prop(Lbl,Obj).
-has_prop(Prop,Obj):- indv_props(Obj,Props),!,member(Q,Props), (Q=@=Prop -> true ; ( Q = Prop)).
 
 never_a_prior(P):- var(P),!,fail.
 never_a_prior(link).

@@ -59,7 +59,7 @@ srw_arc(I,O):- tersify(I,O),!,I\==O,!.
 
 dumpst_hook:simple_rewrite(I,O):- notrace(catch(arc_simple_rewrite(I,O),_,fail)).
 
-arc_simple_rewrite(I,O):-
+arc_simple_rewrite(I,O):- fail,
   let_arc_portray,
   current_predicate(bfly_startup/0),
   current_predicate(is_group/1), 
@@ -305,12 +305,12 @@ pt_guess_pretty_1(P,O):- copy_term(P,O,_),
 :- dynamic(pretty_clauses:pp_hook/3).
 :- multifile(pretty_clauses:pp_hook/3).
 :- module_transparent(pretty_clauses:pp_hook/3).
-pretty_clauses:pp_hook(FS,Tab,S):-  notrace(catch(arc_pp_hook(FS,Tab,S),_,fail)).
+pretty_clauses:pp_hook(FS,Tab,S):-  fail,  notrace(catch(arc_pp_hook(FS,Tab,S),_,fail)).
 
 arc_pp_hook(_,Tab,S):- term_is_ansi(S), !,prefix_spaces(Tab), write_keeping_ansi_mb(S).
 %arc_pp_hook(_,Tab,S):- is_vm(S),!,prefix_spaces(Tab),!,write('..VM..').
 %arc_pp_hook(_,  _,_):- \+ let_arc_portray,!,fail.
-arc_pp_hook(FS,_  ,G):- let_arc_portray,
+arc_pp_hook(FS,_  ,G):- fail, let_arc_portray,
   current_predicate(is_group/1),
    locally(b_setval(pp_parent,FS),
      print_with_pad(pp_hook_g(G))),!.
@@ -959,7 +959,7 @@ show_pair_grid(TitleColor,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
   %LW is (IH * 2 + 12),
 %  wots(U1, print_grid(IH,IV,In)),
 %  wots(U2, print_grid(OH,OV,Out)),
-  INFO = [grid_dim,amass,length,unique_color_count,colors],
+  INFO = [grid_dim,mass,length,unique_color_count,colors],
 %  print_side_by_side(U1,LW,U2),
   print_side_by_side(TitleColor,print_grid(IH,IV,In),NameInU,LW,print_grid(OH,OV,Out),NameOutU),
   print_side_by_side(

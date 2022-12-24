@@ -77,7 +77,7 @@ fav(t('d0f5fe59'),[%indiv(colormass),
 /*
   Grid = [[1,1,1,1]]
   The Drawer does 
-  Draw Grid = loc2D(1,1),line_hv(h), pen(1), amass(4)
+  Draw Grid = loc2D(1,1),line_hv(h), pen(1), mass(4)
   
   % Grid<->Drawer   Drawer<->Grid
   
@@ -87,7 +87,7 @@ fav(t('d0f5fe59'),[%indiv(colormass),
   
   Slover = [- pen(1), + pen(2)]
   
-  DrawGrid = loc2D(1,1),line_hv(h), pen(2), amass(5)
+  DrawGrid = loc2D(1,1),line_hv(h), pen(2), mass(5)
   Grid = [[2,2,2,2,2]]
 */
 /*
@@ -182,7 +182,7 @@ fav(v('73ccf9c2'),[human(colormass,most_unique(symmetry_type),get(solution),trim
 
 fav(v('a8610ef7'),[grid_size_same,find_symmetry,-rotation_match,-color_match,+shape_match,+mask_match,+'Errors','https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021',test_suite([eval400]),'(4, 1)']).
 
-fav(v('6ea4a07e'),[clue(amass(in)+amass(out)=:=9),human(corispond_colors,invert_existence),-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(6, 2) ']).
+fav(v('6ea4a07e'),[clue(mass(in)+mass(out)=:=9),human(corispond_colors,invert_existence),-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(6, 2) ']).
 
 fav(t('23b5c85d'),[human([smallest_indiv,trim_to_rect])]).
 fav(t('1cf80156'),[human([trim_to_rect])]).
@@ -191,8 +191,8 @@ fav(v('94133066'),[human([largest_indiv,trim_to_rect,rot90,flipV]),-shape_match,
 fav(t('23b5c85d'),[human([smallest_indiv,trim_to_rect]),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_minimum,measure_area,crop,'(5, 1)']).
 fav(t('8d5021e8'),[human_skip([grow([[rot180, flipV],[flipH, sameR],[rot180, flipV]])])]).
 
-fav(t('6150a2bd'),[clue(amass(in)=:=amass(out)),human(rot180),-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),image_rotation,'(2, 1)']).
-fav(t('ed36ccf7'),[clue(amass(in)=:=amass(out)),human(rot270),-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),image_rotation,'(4, 1)']).
+fav(t('6150a2bd'),[clue(mass(in)=:=mass(out)),human(rot180),-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),image_rotation,'(2, 1)']).
+fav(t('ed36ccf7'),[clue(mass(in)=:=mass(out)),human(rot270),-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),image_rotation,'(4, 1)']).
 
 
 
@@ -271,7 +271,7 @@ fav(t('08ed6ac7'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mas
 fav(v('626c0bcc'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(3, 1) ']).
 fav(v('639f5a19'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(2, 1) ']).
 
-fav(v('6ea4a07e'),[clue(amass(in)+amass(out)=9),human(use_clues),clue(corispond_colors,invert_existence),-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(6, 2) ']).
+fav(v('6ea4a07e'),[clue(mass(in)+mass(out)=9),human(use_clues),clue(corispond_colors,invert_existence),-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(6, 2) ']).
 
 fav_less(V,[test_suite([less_fav])|T]):- less_fav(V,T).
 

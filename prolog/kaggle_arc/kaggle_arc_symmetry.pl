@@ -1350,7 +1350,7 @@ make_symmetrical_grid(Steps,G,GridO):- trim_to_rect(G,Grid1),G\==Grid1,make_symm
 make_symmetrical_grid(Steps,G,GridO):- 
  must_not_error((
   Steps = [P,pull(BGC),Flip,test_used(Test)],
-  amass(G,OrignalMass),
+  mass(G,OrignalMass),
   MaxMass is OrignalMass * 4,
   most_d_colors(G,Colors,GC),!,
   g_or_gc(G,GC,GG00),
@@ -1364,7 +1364,7 @@ make_symmetrical_grid(Steps,G,GridO):-
     uneib(Grid99,GridO),
     mapgrid(blackFree,GridO))),
     is_able_v(Test,GridO),
-    amass(GridO,NewMass),NewMass =< MaxMass)).
+    mass(GridO,NewMass),NewMass =< MaxMass)).
 /*
 % detect_supergrid(Grid,SGrid):- ...
 line Separated
@@ -2184,7 +2184,7 @@ flipSome(flipDHV,X,Y):-  flipDHV(X,Y).
 
 %find_center(Grid,H,V):- chew_away_at_sides(Grid,GridO,TH,TV),grid_size(GridO,H,V),X is floor(H/2),Y is floor(V/2).
 %chew_away_at_sides(Grid,Grid):-!.
-%chew_away_at_sides(Grid,GridO):- append([Top|Middle],[Btm]),amass(Top,M1),amass(Btm,M2),M1==M2,!,chew_away_at_sides(,GridO).
+%chew_away_at_sides(Grid,GridO):- append([Top|Middle],[Btm]),mass(Top,M1),mass(Btm,M2),M1==M2,!,chew_away_at_sides(,GridO).
 
 idealistic_symmetric_xy_3x3(
 [[Q2,         CN,        flipH(Q2)],

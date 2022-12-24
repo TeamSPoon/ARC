@@ -1624,8 +1624,8 @@ do_pair_dication(In,Out,_Vs):-
   ratio_for(RatioArea,OutArea,InArea),
   max_min(OutArea,InArea,BothMaxArea,BothMinArea),
 
-  amass(In,InMass),
-  amass(Out,OutMass),
+  mass(In,InMass),
+  mass(Out,OutMass),
   ratio_for(DeltaMass,OutMass,InMass),
 
   unique_color_count(In,InColorLen),

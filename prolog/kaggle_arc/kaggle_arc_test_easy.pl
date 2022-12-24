@@ -666,8 +666,8 @@ addNonVMObject(VM,Obj):-
   localpoints_include_bg(Obj,Points),
   make_indiv_object(VM,[],Points,NewObj),
   global_grid(Obj,GGrid),mapgrid(overlay_onto,GGrid,VM.grid,set(VM.grid)),
-  indv_props(Obj,PrevProps),
-  indv_props(NewObj,BetterProps),
+  indv_props_list(Obj,PrevProps),
+  indv_props_list(NewObj,BetterProps),
   override_object(PrevProps,NewObj,NewObj2),
   override_object(BetterProps,NewObj2,NewObj3),
   maybe_replace_object(VM,NewObj,NewObj3).

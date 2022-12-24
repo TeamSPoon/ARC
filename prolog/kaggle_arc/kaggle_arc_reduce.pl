@@ -172,7 +172,7 @@ reduce_1op(Types,Half,Len,_,I,double_size,O):- is_reduce_type(shrink,Types), I=[
 reduce_1op(_Type,Len1,Half1,PassNo,GridIn, make_solid_object(Rect,H,V),[[C1]]):-  GridIn = [Row1|GridR], maplist(=@=(Row1),GridR),
   Row1= [C1|Row], maplist(=@=(C1),Row), grid_size(GridIn,H,V), once(H > 1 ; V > 1),!,(H==V->Rect=square;Rect=rect).
 
-reduce_1op(_Type,Half,Len,_,[Row1|Grid],(copy_row_ntimes(1,TimesO)),[Row1]):- 
+reduce_1op(_Type,Half,Len,_,[Row1|Grid],copy_row_ntimes(1,Times),[Row1]):- 
   maplist(=@=(Row1),Grid),length([Row1|Grid],Times),Times>1.
 
 %reduce_1op(Types,Half,Len,_,Grid,_,_):- grid_size(Grid,X,Y), max_min(X,Y,H,L),too_small_reduce(H,L,2),!,fail.
@@ -185,7 +185,8 @@ is_reduce_type(E,L):- member(E,L),!.
 
 % COMPRESS/SHRINK 
 reduce_1op(Types,Len1,Half1,PassNo,A,copy_row_ntimes(N1,N2),AAA):- is_reduce_type(shrink,Types),
-  reduce_1op_cr(Len1,Half1,PassNo,A,copy_row_ntimes(N1,N2a),AAA),N2 is N2a.
+  reduce_1op_cr(Len1,Half1,PassNo,A,copy_row_ntimes(N1,N2),AAA),
+  my_assertion(number(N2)),my_assertion(number(N1)).
 
 reduce_1op_cr(Half,Len,_,Grid,copy_row_ntimes(N,Count),NewGrid):- append(Rows,RowRowRest,Grid),
   [Row1,Row2|Rest]=RowRowRest,Row1=@=Row2,length([_|Rows],N),
@@ -203,6 +204,8 @@ reduce_1op(Types,Half,Len,_,Grid,copy_row_ntimes(N1,2),GridR):-
 reduce_1op(Types,Half,Len,_,Grid ,copy_row_ntimes(N1,2),GridR):- 
           append(L,[A,B,C,D|R],Grid),A=@=B,B=@=C,C=@=D, 
           append(L,[A,B|R],GridR),length([_|L],N1).
+%reduce_1op(Types,Half,Len,_,Grid,copy_row_ntimes(N1,2),GridR):- append(L,[A,B,C|R],Grid),A=@=B,B=@=C, append(L,[A|R],GridR),length([_|L],N1).
+
 */
 
 copy_row_ntimes(N1,Times,Grid,GridR):- Times1 is Times-1,copy_row_ntimes_1(N1,Times1,Grid,GridR).
@@ -311,7 +314,6 @@ reduce_1op(Types,Half,Len,_,Grid,left_right(Left,Reduced),GridR):- fail,
    reduce_grid(Left^Left,Reduced).
 */
 
-%reduce_1op(Types,Half,Len,_,Grid,copy_row_ntimes(N1,2),GridR):- append(L,[A,B,C|R],Grid),A=@=B,B=@=C, append(L,[A|R],GridR),length([_|L],N1).
 % reduce_1op(Types,Half,Len,_,Grid,_,_):- length(Grid,L3),L3=<3,!,fail.
 % % %  
 %reduce_1op(Types,Half,Len,_,Grid,_,_):- too_small_reduce(Grid,2),!,fail.
@@ -504,9 +506,13 @@ protect_vars(AB,ABC,HowUnprotect):-
   append([AttvarsC,PlainVarsC,PlainSinglesC],From),  
   numbervars(PlainSinglesC,10,STen,[singletons(true)]),
   numbervars(ABC+AttvarsC+PlainVarsC,STen,_,[singletons(false)]),
-  HowUnprotect = subst_2LC(From,Into).
+  HowUnprotect = subst_2LC_safe(From,Into).
   
-
+subst_2LC_safe([F|From],[B|Into],I,O):- 
+  (var(B)->subst_2LC([F],[B],I,O);true),
+  subst_2LC_safe(From,Into,I,O).
+subst_2LC_safe([],[],I,I).
+  
 %reduce_grid(A^B,ROP,AA^BB):- reduce_grid(A^A,ROP,AA^AA),reduce_grid(B^B,ROP,BB^BB),!.
 lpoints_to_norm(Width,Height,LPoints,IOps,LPointsNorm):- 
    points_to_grid(Width,Height,LPoints,LGrid), normalize_grid(IOps,LGrid,LPointsNorm).

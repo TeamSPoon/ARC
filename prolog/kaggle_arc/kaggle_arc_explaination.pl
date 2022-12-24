@@ -35,7 +35,7 @@ debug_indiv:- test_config(nodebug_indiv),!,fail.
 debug_indiv:- test_config(debug_indiv),!.
 debug_indiv:- test_config(indiv(_)),!.
 
-will_show_grid(Obj,true):- amass(Obj,Mass)-> (Mass>4, vis2D(Obj,H,V) -> (H>1,V>1)),!.
+will_show_grid(Obj,true):- mass(Obj,Mass)-> (Mass>4, vis2D(Obj,H,V) -> (H>1,V>1)),!.
 will_show_grid(_,false).
 
 
@@ -200,7 +200,7 @@ object_color_desc(PA,PenColors):-
   ((PenL=<ColorsL) -> PenColors=pen(Pen);PenColors=colors(Colors)).
 
 object_birth_desc(PA,Birth):-
-  indv_props(PA,Props),findall(B,member(iz(B),Props),BBs),
+  indv_props_list(PA,Props),findall(B,member(iz(B),Props),BBs),
   predsort_on(birth_info,BBs,ByDL),last(ByDL,Birth).
 
 birth_info(ifti(Birth),2+InfoLen):- !, display_length(Birth,InfoLen).
@@ -218,9 +218,9 @@ object_ref_desc(Obj, OUTS):-
   colorize_oterms(OUT,OT),
   wots(SS,write(OT)),!,
   OUTS = SS.
-
 object_ref_desc(PA,objFn(GA)):- object_color_glyph_long(PA,GA),!.
 object_ref_desc(PA,objFn(GA)):- object_color_glyph_short(PA,GA),!.
+
 
 object_ref_desc_no_loop(PA, OUTS):- object_ref_desc(PA, OUTS),!.
 object_ref_desc_no_loop(PA, OUTS):-
@@ -235,7 +235,7 @@ object_ref_desc_no_loop(PA, OUTS):-
 
 /*
 tersify1(I,Q):- is_object(I),object_color_glyph_short(I,FC), o2g(I,O),!,wots(A,color_print(FC,call(format('"~w"',[O])))),
-   amass(I,M),
+   mass(I,M),
    wots(S,call(write(objFn(A,M)))),atom_string(Q,S).
 */
 %object_dglyph(O,G):- object_cglyph(O,G). % want this
@@ -409,8 +409,8 @@ debug_indiv_obj(AS0):-
   %maplist(write_indented_list('~N    '),wqs(TVSOS),
   ignore(((ISLINKR \==[], format('~N  '),wqs(ISLINKR)))),
   if_t((nb_current(menu_key,'i');nb_current(menu_key,'t')),ignore(((TVSOS \==[], format('~N  '),wqs(TVSOS))))),
-  ignore(( TF==true, amass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
-  ignore(( fail, amass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
+  ignore(( TF==true, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
+  ignore(( fail, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
   %pp(Props),
   ignore(( TF==true,dash_chars)))),!.
 
@@ -423,7 +423,7 @@ is_o3(o(_,_,_)).
 show_st_map(Obj):-
   ignore(( 
   localpoints(Obj,Points),
-%  amass(Obj,Mass),!,Mass>4,
+%  mass(Obj,Mass),!,Mass>4,
 %  vis2D(Obj,H,V),!,H>1,V>1,
   format('~N'),
   solidness(Points,0,inf,Res),

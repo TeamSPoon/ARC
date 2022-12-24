@@ -566,7 +566,7 @@ into_obj(G,O):- no_repeats(O,known_obj0(G,O))*->true; (into_grid(G,GG),!,into_ob
 %register_obj(O):- quietly((wots(S,weto(arcST)), asserta(obj_cache(TestID,O,S)))),!.
 register_obj(O):-  must_det_ll(o2g(O,_)),!.
 /*register_obj(L):- asserta(obj_cache(TestID,L,'')),
-  ignore(( false, O=obj(L),amass(O,Mass),Mass>7,format('~N'),arc_portray(O,false),nl)).
+  ignore(( false, O=obj(L),mass(O,Mass),Mass>7,format('~N'),arc_portray(O,false),nl)).
 */
 :- dynamic(obj_cache/3).
 :- module_transparent obj_cache/2.
@@ -604,7 +604,7 @@ g2o(G,O):- integer(G),!,int2glyph(G,C),!,g2o(C,O),!.
 g2o(C,O):- compound(C), !, compound_name_arguments(C,objFn,[G|_]), !, g2o(G,O).
 g2o(G,O):- \+ atom(G), !, string(G),!,atom_string(A,G),!,g2o(A,O).
 g2o(G,_):- is_fg_color(G),!,fail.
-g2o(G,O):- oid_to_object(G,O)-> true;(oid_glyph_object(_,G,O)*->true;(Chars=[_,_|_],atom_chars(G,Chars),chars2o(Chars,O))).
+g2o(G,O):- oid_to_obj(G,O)-> true;(oid_glyph_object(_,G,O)*->true;(Chars=[_,_|_],atom_chars(G,Chars),chars2o(Chars,O))).
 
 
 

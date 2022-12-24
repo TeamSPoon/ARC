@@ -17,7 +17,7 @@ select_subgroup(Objs,GroupName,Count,SubObjs):-
   member(cc(GroupName,Count),GroupNameCC),
   findall(O,member(O-GroupName,Memberships),SubObjs).
 
-object_prop(O,Prop):- indv_props(O,Props),member(Prop,Props).
+object_prop(O,Prop):- indv_props_list(O,Props),member(Prop,Props).
 
 objects_props(SubObjs,Props):-
   findall(Prop,(member(O,SubObjs),object_prop(O,Prop)),Props).
@@ -34,18 +34,19 @@ object_group_cc(Objs,GroupName,SubObjs,Count,NamesCC,ValuesCC):-
   maplist(arg(1),Props,Names),get_ccs(Names,NamesCC),
   maplist(arg(2),Props,Values),get_ccs(Values,ValuesCC).
 
-
-is_in_subgroup(Obj,bg_obj):- has_prop(cc(fg,0),Obj).
-is_in_subgroup(Obj,fg_obj):- has_prop(cc(bg,0),Obj).
-is_in_subgroup(Obj,single_fg_color):- has_prop(fg_colors_count(1),Obj).
-is_in_subgroup(Obj,multicolor):- has_prop(fg_colors_count(Two),Obj),Two>1.
+is_in_subgroup(Obj,Prop):- var(Obj),!, enum_object(Obj),is_in_subgroup(Obj,Prop).
+is_in_subgroup(Obj,iz(bg_obj)):- has_prop(cc(fg,0),Obj).
+is_in_subgroup(Obj,iz(fg_obj)):- has_prop(cc(bg,0),Obj).
+is_in_subgroup(Obj,iz(single_fg_color)):- has_prop(fg_colors_count(1),Obj).
+is_in_subgroup(Obj,iz(multicolor)):- has_prop(fg_colors_count(Two),Obj),Two>1.
 is_in_subgroup(Obj,ansestors(N,Set)):-transitive_sets(ansestor,Obj,Set,N).
 is_in_subgroup(Obj,descendants(N,Set)):-transitive_sets(descendant,Obj,Set,N).
-%is_in_subgroup(Obj,touching(N,Set)):- nontransitive_set(touching,Obj,Set,N).
+%is_in_subgroup(Obj,tiouching(N,Set)):- nontransitive_set(touching,Obj,Set,N).
 %is_in_subgroup(Obj,seeing(N,Set)):- nontransitive_set(seeing,Obj,Set,N).
 is_in_subgroup(Obj,insideOf(N,Set)):-transitive_sets(insideOf,Obj,Set,N).
 is_in_subgroup(Obj,contains(N,Set)):-transitive_sets(contains,Obj,Set,N).
-is_in_subgroup(_,all).
+%is_in_subgroup(Obj,Prop):- has_prop(Prop,Obj).
+%is_in_subgroup(_,all).
 
 
 
@@ -63,7 +64,7 @@ trans_no_loop(P2,Skip,Obj,Out):-
 v_obj(v(OID,_Info),OID):-!.
 v_obj(Obj,Obj).
 
-call_oid_objs(P2,OID,Other):- atom(OID),!,oid_to_object(OID,Obj),call(P2,Obj,Other).
+call_oid_objs(P2,OID,Other):- atom(OID),!,oid_to_obj(OID,Obj),call(P2,Obj,Other).
 call_oid_objs(P2,Obj,Other):- call(P2,Obj,Other).
 
 ansestor(Obj,Other):- has_prop(link(subsume,Other,subsumed_by(_,_)),Obj).
@@ -92,7 +93,8 @@ show_indiv(Why,Obj):-
              loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
      Grids = [Title=Grid|_],     
 
-     object_ngrid(Obj,NGrid), append(_,["NGrid"=NGrid|_],Grids),
+     copy_term(Obj,CObj),
+     nop((object_ngrid(CObj,NGrid), append(_,["NGrid"=NGrid|_],Grids))),
 
      ShowQ=_,
 

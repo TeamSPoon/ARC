@@ -211,13 +211,13 @@ neighbor_map1(H,V,[NC-P1|Ps],Points,[(N-C)-P1|Ps2]):-
   nei_map(H,V,C,P1,Points,N),
   neighbor_map1(H,V,Ps,Points,Ps2))).
 
-only_color_data(C,C):- var(C),!.
-only_color_data(C,C):- is_unreal_color(C),!.
 only_color_data(C,C):- is_color(C),!.
+only_color_data(C,C):- is_unreal_color(C),!.
+only_color_data(C,C):- var(C),!.
 only_color_data(NC,NC):- \+ compound(NC),!,fail.
+only_color_data(C-P,C):- var(C),is_nc_point(P),!.
 only_color_data(OC,C):- sub_term(C,OC),is_colorish(C),!.
-only_color_data(C-P,C):- is_nc_point(P),!.
-only_color_data(_-O,C):- only_color_data(O,C).
+%only_color_data(_-O,C):- only_color_data(O,C).
 
 only_point_data(NC,NC):- \+ compound(NC),!.
 only_point_data(_-C,NC):- only_point_data(C,NC).

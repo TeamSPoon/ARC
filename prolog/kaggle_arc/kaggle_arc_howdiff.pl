@@ -301,8 +301,12 @@ obj_atoms(PA,PAP):- must_det_ll((nonvar(PA),obj_plist(PA,M),M\==[],
   findall(E,(member(SE,M),sub_obj_atom(E,SE)),PAP),PAP\==[])),!.
 
 obj_plist(PA,PAP):- is_list(PA),!,PAP=PA.
-obj_plist(obj(PA),PAP):- is_list(PA),!,PAP=PA.
-%obj_plist(obj(PA,PAP):- indv_props(PA,PAP),!.
+%obj_plist(obj(PA),PAP):- is_list(PA),!,PAP=PA.
+obj_plist(PA,PAP):- 
+  indv_props_list(PA,PAP1),
+  findall(Prop,is_in_subgroup(PA,Prop),PAP2),
+  append(PAP1,PAP2,PAP).
+ 
 
 never_matom(localpoints(_)).
 never_matom(colorless_points(_)).
@@ -383,12 +387,13 @@ showdiff_groups_new(AG,BG):-
   retractall(object_atomslist(IO,_,_,_)),
   retractall(object_atomslist(OI,_,_,_)),
   maplist(obj_grp_atoms(IO),AG,_AGG),
-  maplist(obj_grp_atoms(OI),BG,_BGG),
+  maplist(obj_grp_atoms(OI),BG,_BGG),  
    print_list_of(xfer_mappings("IN  -> OUT",AG,BG,BGG),  inputOutputMap,AGG),
    %print_list_of(prox_mappings("OUT -> OUT",BG,BG,BGG), outputOutputMap,BGG),   
    print_list_of(xfer_mappings("IN  <- OUT",BG,AG,AGG),  outputInputMap,BGG),   
    %print_list_of(prox_mappings("IN  -> IN", AG,AG,AGG),   inputInputMap,AGG),
  true)).
+
 
 xfer_mappings(TITLE,AG,BG,BGG,APA):-
  ignore(( 
@@ -468,7 +473,7 @@ map_objects(TITLE,PeersI,O2,PeersO,O2):-
   %what_unique(TestID,O2),
  if_t(nb_current(menu_key,'u'),
  (
-  indv_props(O1,S1),indv_props(O2,S2),
+  indv_props_list(O1,S1),indv_props_list(O2,S2),
   get_current_test(TestID), ignore(what_unique(TestID,O1)),
   remove_giz(S1,T1),remove_giz(S2,T2),
   indv_u_props(O1,IU),indv_u_props(O2,OU),
@@ -511,7 +516,7 @@ show_pair_now(TITLE,OO1,OO2):-
   if_t(nb_current(menu_key,'o'),
     nop((collapsible_section(info,compare_objs1(TITLE),false,
      (findall(E,compare_objs1(E,O1,O2),L), pp(compare_objs1(showdiff_objects)=L),
-      indv_props(O1,S1),indv_props(O2,S2),
+      indv_props_list(O1,S1),indv_props_list(O2,S2),
       %pp(s1=S1),pp(s2=S2),
       intersection(S1,S2,Sames,SS1,SS2),
       proportional(SS1,SS2,lst(vals(_),len(_),PDiffs)),
@@ -622,7 +627,7 @@ prop_type(loc2D,edge(_,_)).
 
 changed_by(colorless_points,reshape).
 changed_by(loc2D,move).
-changed_by(amass,grow).
+changed_by(mass,grow).
 changed_by(localpoints,reshape_and_recolor).
 changed_by(rot2L,rotate).
 changed_by(colors,repaint).
@@ -794,7 +799,7 @@ diff_objects(I,O,DiffsS,Intersect):-
 same_colorless_points(I,O,OUT):-  
   obj_make_comparable(I,II), obj_make_comparable(O,OO),!,
   intersection(II,OO,SL,IIR,OOR),!,
-  %member(amass(_),SL),
+  %member(mass(_),SL),
   member(colorless_points(_),SL),
   diff_objects(I,O,OUT).
 
@@ -821,7 +826,7 @@ combine_duplicates1(IndvS,IndvSO):-
   select(O,Rest,IndvS2),
   overlap_same_obj_no_diff(I,O),
   %merge_2objs(VM,I,O,[],IO),
-  must_det_ll(indv_props(I,Props)),
+  must_det_ll(indv_props_list(I,Props)),
   must_det_ll(override_object(Props,O,IO)),
   must_det_ll(combine_duplicates1([IO|IndvS2],NoMoreDupes)),
   must_det_ll(append(NoDupes,NoMoreDupes,IndvSO)),!.
@@ -853,8 +858,8 @@ combine_same_globalpoints(IndvS,IndvSO):-
   append(NoDupes,[I|Rest],IndvS),
   select(O,Rest,IndvS2),  \+ is_whole_grid(O),
   %merge_2objs(VM,I,O,[],IO),
-  %must_det_ll(indv_props(O,OProps)),
-  must_det_ll(indv_props(I,IProps)),
+  %must_det_ll(indv_props_list(O,OProps)),
+  must_det_ll(indv_props_list(I,IProps)),
   same_globalpoints_and_window(I,O),
   my_partition(props_not_for_merge,IProps,_Exclude,Include),
   % iz(merged(cgp))
@@ -1223,7 +1228,7 @@ not_very_different(loc_term(loc2D(A,B))):-  !, not_very_different_t(A),not_very_
 not_very_different(center_term(loc2D(A,B))):-  !, not_very_different_t(A),not_very_different_t(B).
 
 not_very_different(mass(A)):- !, not_very_different_t(A).
-not_very_different(amass(A)):- !, not_very_different_t(A).
+not_very_different(mass(A)):- !, not_very_different_t(A).
 not_very_different_t(difference(0)). not_very_different_t(ratio(1)). not_very_different_t(moved(0)).
 
 
@@ -1394,7 +1399,7 @@ map_overlap(_P,L1,[],L1).
 %proportional_grids(Obj1,Obj2,vis_hv_term(N)):- once((vis_hv_term(Obj1,N1),vis_hv_term(Obj2,N2))),proportional(N1,N2,N).
 %proportional_grids(Obj1,Obj2,loc_term(N)):- once((loc_term(Obj1,N1),loc_term(Obj2,N2))),proportional(N1,N2,N).
 %proportional_grids(Obj1,Obj2,center_term(N)):- center_term(Obj1,N1),center_term(Obj2,N2),proportional(N1,N2,N).
-%proportional_grids(Obj1,Obj2,amass(N)):- once((amass(Obj1,N1),amass(Obj2,N2))),proportional_size(N1,N2,N).
+%proportional_grids(Obj1,Obj2,mass(N)):- once((mass(Obj1,N1),mass(Obj2,N2))),proportional_size(N1,N2,N).
 
 /*
 The IEEE floating-point standard, supported by almost all modern floating-point units, specifies that every floating 

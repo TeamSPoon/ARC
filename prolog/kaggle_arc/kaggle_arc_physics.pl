@@ -14,10 +14,10 @@ vis_area(Obj,Area):- vis2D(Obj,H,V), Area is H * V.
 area_or_len(Obj,Area):- is_points_list(Obj),!,length_safe(Obj,Area).
 area_or_len(Obj,Area):- vis2D(Obj,H,V), Area is H * V.
 
-density(Obj,Density):- area(Obj,Area),amass(Obj,Mass), Density is Mass/Area.
+density(Obj,Density):- area(Obj,Area),mass(Obj,Mass), Density is Mass/Area.
 
 
-inter_object(Relation,I,O):- is_decl_pt(inter_object_relation,Relation),call(Relation,I,O).
+inter_object(Relation,I,O):- two_physical_objs(I,O), is_decl_pt(inter_object_relation,Relation),call(Relation,I,O).
 
 into_gridoid0(obj(N),O):- enum_object(O),o2g(O,G),sformat(N," ~w ",[G]).
 into_gridoid0(shape_lib(N:Lib),O):- shape_lib_expanded(Lib,Grids),nth1(N,Grids,O).
@@ -73,11 +73,26 @@ color_mass_int(Cell,0):- is_bg_color(Cell),!.
 %color_mass_int(Cell,N):- color_int(Cell,N),!.
 color_mass_int(_,0).
 
+/*
+arc_test_property(Prop):-
+ get_current_test(TestID),first_current_example_num(trn+N)
+ arc_test_property(TestID, gh(N), comp(cbg(black), i-o, _), Prop).
+
+*/
+
+
 %grid_mass_ints(Grid,[[1]]):- Grid=@=[[_]],!. 
 grid_mass_ints(Grid,GridIII):- 
+  %arc_test_property(Prop),
+  mapgrid(color_mass_int,Grid,GridIII),!.
+  /*
+  %Prop = unique_colors(lst(vals([[cyan,yellow,orange,green,red,blue,black],[orange,cyan,yellow,green,black,red,blue]]),len(7),diff([orange,cyan,yellow,green,black,red,blue]=@=[cyan,yellow,orange,green,red,blue,black])))
   unique_colors(Grid,CC),
   include(is_fg_color,CC,FG),
-  mapgrid(normal_w(FG),Grid,GridIII),!.
+  (FG==[]->SORT=[fg,black,bg];SORT=FG),!,
+  %((unique_fg_colors(Grid,FG)->FG\==[])->true;FG=[black]),
+  mapgrid(normal_w(SORT),Grid,GridIII),!.
+*/
 
 grav_rot(Grid,sameR,Grid):- \+ \+ Grid=[[_]],!.
 grav_rot(Grid,RotG,Rotated):- dif(RotG,rollD),
@@ -443,6 +458,7 @@ touching_object(How,Dirs,O2,O1):- two_physical_objs(O1,O2), \+ subsume(_,O2,O1),
   %\+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
+  ignore(How=dir_touching),
   call(How,Ps2,Ps1,Dirs),!.
 
 dir_touching(Ps1,Ps2,Dir):- member(_-P1,Ps1), is_adjacent_point(P1,Dir,P2),  member(_-P2,Ps2).
@@ -465,6 +481,7 @@ seeing_object(How,Dirs,O2,O1):- two_physical_objs(O1,O2), \+ subsume(_,O2,O1),
   % \+ already_relation(O2,O1),
   %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
   globalpoints(O1,Ps1), globalpoints(O2,Ps2),
+  ignore(How=dir_seeing),
   call(How,Ps2,Ps1,Dirs),!.
 
 dir_seeing(Ps1,Ps2,Dir):- member(_-P1,Ps1), is_adjacent_point(P1,Dir,P2), \+ member(_-P2,Ps1), 
@@ -474,7 +491,9 @@ seeing_dir_soon(P1,_Dir,Ps2):- member(_-P1,Ps2),!.
 seeing_dir_soon(P1,Dir,Ps2):- is_adjacent_point(P1,Dir,P2), seeing_dir_soon(P2,Dir,Ps2).
 
 
-two_physical_objs(O1,O2):- O1\==O2, is_physical_object(O1),is_physical_object(O2), O1\==O2.
+same_surface(O1,O2):- obj_gid(O1,GID),obj_gid(O2,GID).
+
+two_physical_objs(O1,O2):- O1\==O2, is_physical_object(O1),is_physical_object(O2), O1\==O2, same_surface(O1,O2).
 
 is_physical_object(O):- var(O),!,enum_object(O),is_physical_object(O).
 is_physical_object(O):- is_whole_grid(O),!,fail.
@@ -588,6 +607,7 @@ find_links(How,[Obj|ScanNext],OtherObjects,[Obj|ScanRest]):- fail,
 find_links(How,[Obj|ScanNext],OtherObjects,[NewObj|ScanRest]):-
   must_det_ll((
   /*must_det_ll*/(find_links_objects(How,Obj,OtherObjects,DirNewSees)),
+  %pp(find_links(How)=DirNewSees),
   /*must_det_ll*/(override_object_link(DirNewSees,Obj,NewObj)),
   /*must_det_ll*/(find_links(How,ScanNext,OtherObjects,ScanRest)))).
 
@@ -653,7 +673,7 @@ find_engulfs_objects(Obj,[Target|ScanNext],[link(insideOf,Iv)|Engulfed]):-
  once(contained_object(Obj,Target)),!,
  /*must_det_ll*/(obj_to_oid(Target,Iv)),
  /*must_det_ll*/(find_engulfs_objects(Obj,ScanNext,Engulfed)),!.
-find_engulfs_objects(Obj,_,[]):- amass(Obj,Mass),Mass<5,!.
+find_engulfs_objects(Obj,_,[]):- mass(Obj,Mass),Mass<5,!.
 find_engulfs_objects(Obj,[Target|ScanNext],[link(contains,Iv)|Engulfed]):-    
  once(contained_object(Target,Obj)),!,
  /*must_det_ll*/(obj_to_oid(Target,Iv)),

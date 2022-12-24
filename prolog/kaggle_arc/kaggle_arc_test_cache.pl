@@ -3093,7 +3093,7 @@ testcase(t('6150a2bd')>tst+0,"
    -------                         ------- 
                      
 ").
-%= fav(t('6150a2bd'),[no_sol(i(complete),copy_grid(in),incomplete),human([rot180]),clue([amass(in)=:=amass(out)]),-[rotation_match],-[mask_match],+[shape_match],+[color_match],tt,training,keypad,image_rotation,'(2, 1)']).
+%= fav(t('6150a2bd'),[no_sol(i(complete),copy_grid(in),incomplete),human([rot180]),clue([mass(in)=:=mass(out)]),-[rotation_match],-[mask_match],+[shape_match],+[color_match],tt,training,keypad,image_rotation,'(2, 1)']).
 
 
 testcase(t('623ea044')>tst+0,"
@@ -8215,7 +8215,7 @@ testcase(t(ed36ccf7)>tst+0,"
    -------                         ------- 
                      
 ").
-%= fav(t(ed36ccf7),[no_sol(i(complete),copy_grid(in),incomplete),human([rot270]),clue([amass(in)=:=amass(out)]),-[rotation_match],-[mask_match],+[shape_match],+[color_match],tt,training,keypad,image_rotation,'(4, 1)']).
+%= fav(t(ed36ccf7),[no_sol(i(complete),copy_grid(in),incomplete),human([rot270]),clue([mass(in)=:=mass(out)]),-[rotation_match],-[mask_match],+[shape_match],+[color_match],tt,training,keypad,image_rotation,'(4, 1)']).
 
 
 testcase(t(ef135b50)>tst+0,"
@@ -12953,7 +12953,7 @@ testcase(v('6ea4a07e')>tst+0,"
    -------                         ------- 
                      
 ").
-%= fav(v('6ea4a07e'),[no_sol(i(complete),copy_grid(in),incomplete),human([use_clues]),human([corispond_colors,invert_existence]),clue([amass(in)+amass(out)=:=9]),clue([amass(in)+amass(out)=9]),clue([corispond_colors,invert_existence]),-[rotation_match],-[mask_match],-[color_match],+[shape_match],keypad,evaluation,'(6, 2) ']).
+%= fav(v('6ea4a07e'),[no_sol(i(complete),copy_grid(in),incomplete),human([use_clues]),human([corispond_colors,invert_existence]),clue([mass(in)+mass(out)=:=9]),clue([mass(in)+mass(out)=9]),clue([corispond_colors,invert_existence]),-[rotation_match],-[mask_match],-[color_match],+[shape_match],keypad,evaluation,'(6, 2) ']).
 
 
 testcase(v('6ea4a07e')>tst+1,"
@@ -12965,7 +12965,7 @@ testcase(v('6ea4a07e')>tst+1,"
    -------                         ------- 
                      
 ").
-%= fav(v('6ea4a07e'),[no_sol(i(complete),copy_grid(in),incomplete),human([use_clues]),human([corispond_colors,invert_existence]),clue([amass(in)+amass(out)=:=9]),clue([amass(in)+amass(out)=9]),clue([corispond_colors,invert_existence]),-[rotation_match],-[mask_match],-[color_match],+[shape_match],keypad,evaluation,'(6, 2) ']).
+%= fav(v('6ea4a07e'),[no_sol(i(complete),copy_grid(in),incomplete),human([use_clues]),human([corispond_colors,invert_existence]),clue([mass(in)+mass(out)=:=9]),clue([mass(in)+mass(out)=9]),clue([corispond_colors,invert_existence]),-[rotation_match],-[mask_match],-[color_match],+[shape_match],keypad,evaluation,'(6, 2) ']).
 
 
 testcase(v('6f473927')>tst+0,"
