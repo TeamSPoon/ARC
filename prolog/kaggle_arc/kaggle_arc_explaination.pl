@@ -195,9 +195,9 @@ debug_indiv(A):- is_point_obj(A,Color,Point),
   wqnl([' % Point: ', color_print(Color,Sym), dot, color(Color), fav1(Tst), nth(Id), loc2D(H,V)]),!. 
 */
 object_color_desc(PA,PenColors):- 
-  pen(PA,Pen), colors(PA,Colors), 
+  pen(PA,Pen), colors_cc(PA,Colors), 
   display_length(Pen,PenL), display_length(Colors,ColorsL), 
-  ((PenL=<ColorsL) -> PenColors=pen(Pen);PenColors=colors(Colors)).
+  ((PenL=<ColorsL) -> PenColors=pen(Pen);PenColors=colors_cc(Colors)).
 
 object_birth_desc(PA,Birth):-
   indv_props_list(PA,Props),findall(B,member(iz(B),Props),BBs),
@@ -278,7 +278,7 @@ print_colors_on_s([C|Color],Glyph):- length([C|Color],CL),length(Glyph,GL),CLL i
   sformat(G,'~s',[GLL]),!,color_print(C,G),print_colors_on_s(Color,More).
 print_colors_on_s([C|Color],[G|Glyph]):- color_print(C,G),print_colors_on_s(Color,Glyph).
 
-object_color_glyph_old(Obj,S):- o2g(Obj,G),colors(Obj,Colors),maplist(arg(1),Colors,NColors),
+object_color_glyph_old(Obj,S):- o2g(Obj,G),colors_cc(Obj,Colors),maplist(arg(1),Colors,NColors),
   wots(S,maplist(user:print_ncolors1(G),NColors)),!.
 
 print_ncolors(G,C):- color_print(C,G).
@@ -485,7 +485,7 @@ remove_too_verbose(MyOID,TP,OO):- compound(TP),compound_name_arguments(TP,link,[
    compound_name_arguments(TPP,F,AA),!,remove_too_verbose(MyOID,TPP,HH),
    OO= HH,!.
 
-remove_too_verbose(MyOID,colors(H),HH):- !, remove_too_verbose(MyOID,H,HH).
+remove_too_verbose(MyOID,colors_cc(H),HH):- !, remove_too_verbose(MyOID,H,HH).
 %remove_too_verbose(MyOID,loc2D(X,Y),loc2D(X,Y)).
 %remove_too_verbose(MyOID,vis2D(X,Y),size2D(X,Y)).
 remove_too_verbose(_MyID,changes([]),'').

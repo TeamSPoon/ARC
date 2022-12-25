@@ -169,8 +169,9 @@ too_small_reduce(H,_L,Two):- H=<Two. %X=<N,Y=<N,!.
 
 reduce_1op(Types,Half,Len,_,I,double_size,O):- is_reduce_type(shrink,Types), I=[I1,I2|_],I1=@=I2, half_size(I,O),!.
 
-reduce_1op(_Type,Len1,Half1,PassNo,GridIn, make_solid_object(Rect,H,V),[[C1]]):-  GridIn = [Row1|GridR], maplist(=@=(Row1),GridR),
-  Row1= [C1|Row], maplist(=@=(C1),Row), grid_size(GridIn,H,V), once(H > 1 ; V > 1),!,(H==V->Rect=square;Rect=rect).
+reduce_1op(_Type,Len1,Half1,PassNo,GridIn, make_solid_object(Rect,H,V),OUT):-  GridIn = [Row1|GridR], maplist(=@=(Row1),GridR),
+  Row1= [C1|Row], maplist(=@=(C1),Row), grid_size(GridIn,H,V), once(H > 1 ; V > 1),!,
+    (H==V->(Rect=square,OUT=[[C1]]);(H>V->(Rect=rect,OUT=[[C1,C1]]);(Rect=rect,OUT=[[C1],[C1]]))).
 
 reduce_1op(_Type,Half,Len,_,[Row1|Grid],copy_row_ntimes(1,Times),[Row1]):- 
   maplist(=@=(Row1),Grid),length([Row1|Grid],Times),Times>1.
@@ -179,7 +180,7 @@ reduce_1op(_Type,Half,Len,_,[Row1|Grid],copy_row_ntimes(1,Times),[Row1]):-
 % COMPRESS
 reduce_1op(Types,Half,Len,_,_Grid,_,_):- fail, Len=<1,!,fail.
 
-make_solid_object(_,H,V,[[Color]],Grid):- solid_rect(Color,H,V,Grid).
+make_solid_object(_,H,V,[[Color|_]|_],Grid):- solid_rect(Color,H,V,Grid).
 
 is_reduce_type(E,L):- member(E,L),!.
 
@@ -255,7 +256,7 @@ border_blur(LS,flipV,MidRight,Grid):- length(Left,LS),reverse(Left,Right),
 %reduce_1op(Types,Half,Len,_,Outside,make_frame(Pen),Inside):- grid_size(Outside,X,Y),X>2,Y>2,make_frame(Pen,Inside,Outside).
 
 % ENABLED 
-reduce_1op(Types,Half,Len,_,Grid,copy_n_rows_n_times(NRows,Times),ARowsLeftOver):- is_reduce_type(shrink,Types),
+reduce_1op(Types,Half,Len,_,Grid,copy_n_rows_n_times(NRows,Times),ARowsLeftOver):- is_reduce_type(shrink,Types), fail,
   NRows = 4, between(1,Half,NRows), uncp_n_rows_n_times(NRows,Times,ARows,Grid,LeftOver), Times\==0,
    append(ARows,LeftOver,ARowsLeftOver).
 
@@ -266,12 +267,14 @@ uncp_n_rows_n_times(NRows,Times,ARows,Grid,LeftOver):-
   rest_grid_repeats(0,ARows,Rest,Times,LeftOver).
 
 copy_n_rows_n_times(NRows,Times,ARowsLeftOver,Grid):- 
+ must_det_ll((
   between(2,15,NRows),length(ARows,NRows),
   append(ARows,LeftOver,ARowsLeftOver),
   append(ARows,Rest,Grid),
-  rest_grid_repeats(0,ARows,Rest,Times,LeftOver).
+  rest_grid_repeats(0,ARows,Rest,Times,LeftOver))).
 
-rest_grid_repeats(N,Rows,Grid,M,Slack):-
+%rest_grid_repeats(_,Rows,[],0,[]).
+rest_grid_repeats(N,Rows,Grid,M,Slack):- 
   append(Rows,Rest,Grid),plus(1,N,MM),!,
   rest_grid_repeats(MM,Rows,Rest,M,Slack).
 rest_grid_repeats(N,_,Slack,N,Slack).
@@ -516,6 +519,7 @@ subst_2LC_safe([],[],I,I).
 %reduce_grid(A^B,ROP,AA^BB):- reduce_grid(A^A,ROP,AA^AA),reduce_grid(B^B,ROP,BB^BB),!.
 lpoints_to_norm(Width,Height,LPoints,IOps,LPointsNorm):- 
    points_to_grid(Width,Height,LPoints,LGrid), normalize_grid(IOps,LGrid,LPointsNorm).
+
 
 :- nodebug(reduce).
 %b_grid_to_norm(I,OUT):- b_grid_to_norm(Op,I,OO),OUT=(OO-w(Op)).

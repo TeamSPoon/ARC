@@ -165,8 +165,12 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):- GridIn==Gri
   into_iog(InC,OutC,IndvS),
   show_individuated_nonpair(PairName,ROptions,GridIn,GridOfIn,IndvS).
 
-show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):- 
+show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC0,OutC0):- 
  must_det_ll((
+  predsort(sort_on(most_visible),InC0,InCR),
+  predsort(sort_on(most_visible),OutC0,OutCR),
+  reverse(InCR,InC),
+  reverse(OutCR,OutC),
   dash_chars,
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2), 
   print_ss(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
@@ -180,21 +184,45 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
 
   print_list_of(show_touches(OutShown),out(ID2),OutShown),
 
-  setup_call_cleanup(
-    luser_setval(no_rdot,true),
-    (grid_size(GridIn,IH,IV), grid_size(GridOut,OH,OV),
+  with_luser(no_rdot,true,
+    ((grid_size(GridIn,IH,IV), grid_size(GridOut,OH,OV),
     ((InC==OutC, InC==[]) -> progress(yellow,nothing_individuated(PairName)) ;
-       show_pair_diff_code(IH,IV,  OH, OV,individuated(ROptions,ID1),individuated(ROptions,ID2),PairName,InC,OutC)),
-       if_t(menu_or_upper('i'),
-        ( dash_chars,
-          print_list_of(show_indiv(inputs),inputs,InC),
-          dash_chars,
-          print_list_of(show_indiv(outputs),outputs,OutC))),
-      
-    !),
-    luser_setval(no_rdot,false)),
+     ((
+       banner_lines(green), show_io_groups(ROptions,ID1,InC,ID2,OutC))), banner_lines(green),
+
+     if_t((menu_or_upper('i');menu_or_upper('t')),
+      (         
+        banner_lines(yellow),show_io_groups(ROptions,ID1,InC,ID1,GridIn),banner_lines(yellow),
+        print_list_of(show_indiv(inputs),inputs,InC),
+        banner_lines(yellow),show_io_groups(ROptions,ID2,OutC,ID2,GridOut),banner_lines(yellow),
+        print_list_of(show_indiv(outputs),outputs,OutC),
+       !)),
+
+     if_t((menu_or_upper('o');menu_or_upper('t')),
+      ( banner_lines(orange),
+        learn_group_mapping(InC,OutC),
+        banner_lines(orange),
+       !)),
+
+       banner_lines(yellow), show_io_groups(ROptions,ID1,InC,ID2,OutC), banner_lines(yellow),
+
+    !)))),
   dash_chars)).
 
+most_visible(Obj,LV):- area(Obj,1),!, grid_size(Obj,H,V), Area is (H-1)*(V-1), LV=Area^1000^1000.
+most_visible(Obj,LV):- area(Obj,Area),cmass(bg,Obj,BGMass), % cmass(fg,Obj,FGMass),
+  findall(_,doing_map(_,_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt, %, NCMass is -CMass,
+  LV = Area^BGMass^NCnt.
+
+visible_order(InC0,InC):- is_grid(InC0),!,InC=InC0.
+visible_order(InC0,InC):- is_list(InC0),!, predsort(sort_on(most_visible),InC0,InC).
+visible_order(InC,InC).
+
+show_io_groups(ROptions,ID1,InC0,ID2,OutC0):- 
+   visible_order(InC0,InC),
+   visible_order(OutC0,OutC),
+   print_ss([individuated(ROptions,ID1)=InC,individuated(ROptions,ID2)=OutC]),
+   dash_chars.
 
 do_pair_filtering(ID1,GridIn,InC,InShownO,ID2,GridOut,OutC,OutShownO):- 
   grid_size(GridIn,IH,IV),filter_shown(IH,IV,InC,InShown,InHidden), filter_shown(IH,IV,InHidden,InHiddenLayer1,InHiddenLayer2),
@@ -411,6 +439,7 @@ individuation_macros(i_complete_generic, [
   indv_omem_points,
   consider_other_grid,
   pbox_vm_special_sizes,
+  interlink_overlapping_black_lines,
   grid_props,
   whole,
   maybe_glyphic,
@@ -424,7 +453,7 @@ individuation_macros(i_complete_generic, [
   find_sees,
   %remove_if_prop(and(link(contains,_),cc(fg,0))),
   %remove_if_prop(and(giz(g(out)),cc(fg,0))),
-  %remove_dead_links,
+  remove_dead_links,
   %combine_same_globalpoints,
   %really_group_vm_priors,
   %grid_props,
@@ -667,7 +696,7 @@ individuation_macros(complete2, [
     point_corners,
     reduce_population, % @TODO DISABLED FOR TESTS    %altro,
     colormass_subshapes, % find subshapes of the altro
-    %when((colors(i.points,Cs),len(Cs)<2),alone_dots(lte(5))), % any after this wont find individuals unless this is commented out
+    %when((colors_cc(i.points,Cs),len(Cs)<2),alone_dots(lte(5))), % any after this wont find individuals unless this is commented out
     colormass_merger(2),
     when((len(points)=<ThreeO),alone_dots(lte(5))),
     alone_dots(lte(5)),
@@ -771,7 +800,45 @@ two_rows(Grid,S1,R1,R2):-
   maplist(==(S1),Row1).
 */  
   
-  
+% =====================================================================
+is_fti_step(interlink_overlapping_black_lines).
+% =====================================================================
+interlink_overlapping_black_lines(VM):- 
+  Objs = VM.objs,
+  interlink_overlapping_black_lines(VM,Objs,New),
+  gset(VM.objs) = New.
+
+
+
+interlink_overlapping_black_lines(VM,Objs,[Obj1|New]):-
+  BlackL = [_],
+  select(Obj1,Objs,Rest0),
+  ( \+ has_prop(iz(type(pbox(border_frame(_,_,BlackL),_))),Obj1) ;
+    \+ has_prop(unique_colors(BlackL),Obj1)),!,
+  interlink_overlapping_black_lines(VM,Rest0,New).
+
+interlink_overlapping_black_lines(VM,Objs,New):-
+  BlackL = [_],
+  select(Obj1,Objs,Rest0),
+  has_prop(iz(type(pbox(border_frame(H,V,BlackL),PassNum))),Obj1),
+  has_prop(unique_colors(BlackL),Obj1),
+  globalpoints(Obj1,P1s),
+
+  select(Obj2,Rest0,Rest),
+  has_prop(iz(type(pbox(border_frame(H,V,BlackL),_))),Obj2),
+  has_prop(unique_colors(BlackL),Obj2),
+  globalpoints(Obj2,P2s),
+
+  intersection(P1s,P2s,Overlap,_,_),
+  Overlap=[_,_|_],!,
+  append(P1s,P2s,P12s),!,
+
+  sort(P12s,Points),
+  make_indiv_object(VM,[iz(info(combined)),iz(type(pbox(border_frame(H,V,BlackL),PassNum))),
+    iz(type(frame_group)),birth(merge_frame_group)],Points,NewObj),
+
+  interlink_overlapping_black_lines(VM,[NewObj|Rest],New).
+interlink_overlapping_black_lines(_,Objs,Objs).
 
 % =====================================================================
 is_fti_step(remove_dead_links).
@@ -785,12 +852,14 @@ remove_dead_links([Obj|Objs],LiveObjs,[obj(NewProps)|New]):-
   indv_props_list(Obj,Props),
   remove_dead_props(Props,LiveObjs,NewProps),
   remove_dead_links(Objs,LiveObjs,New).
-remove_dead_props([],_LiveObjs,[]).
-remove_dead_props([Prop|Props],LiveObjs,NewProps):- compound(Prop),arg(2,Prop,Ref),
-  atom(Ref),sub_var(oid(Ref),LiveObjs),!,
-  remove_dead_props(Props,LiveObjs,NewProps).
-remove_dead_props([Prop|Props],LiveObjs,[Prop|NewProps]):-
-  remove_dead_props(Props,LiveObjs,NewProps).
+
+remove_dead_props([Prop|Props],LiveObjs,OUT):-
+  select(Prop,Props,RestProps),compound(Prop),
+  functor(Prop,link,_), arg(_,Prop,Ref),atom(Ref),is_oid(Ref),
+  (sub_var(oid(Ref),LiveObjs)->OUT=[Prop|NewProps];OUT=NewProps),
+  remove_dead_props(RestProps,LiveObjs,NewProps).
+remove_dead_props(Props,_LiveObjs,Props).
+
 
 %most_d_colors
 
@@ -1087,7 +1156,7 @@ colors_match_count(Match,N,Count,CD):- \+ is_list(CD),!,(cmatch(Match,CD)->plus(
 colors_match_count(Match,N,Count,[H|T]):- !, colors_match_count(Match,N,NCount,H), colors_match_count(Match,NCount,Count,T).
 colors_match_count(_,N,N,[]).
 
-%shape_size(G,H+V+VsC+Cs):- grid_size(G,H,V),term_variables_len(G,VsC),colors(G,Cs).
+%shape_size(G,H+V+VsC+Cs):- grid_size(G,H,V),term_variables_len(G,VsC),colors_cc(G,Cs).
 term_variables_len(G,VsC):- term_variables(G,Vs),length(Vs,VsC).
 
 :- dynamic(is_hybrid_shape/4).
@@ -1125,7 +1194,7 @@ learn_hybrid_shape_grid(Object,TestID,ExampleNum,Name,ReColored):- % print_grid(
      assert_if_new(is_hybrid_shape(TestID,ExampleNum,Name,ReColored)))).
 
 desc_title(Object,Title):- is_object(Object),!,tersify(Object,Title).
-desc_title(Grid,  Title):- is_grid(Grid),colors(Grid,CC),!,(known_grid(ID,Grid)->Title=(ID/CC);Title=CC).
+desc_title(Grid,  Title):- is_grid(Grid),colors_cc(Grid,CC),!,(known_grid(ID,Grid)->Title=(ID/CC);Title=CC).
 desc_title(Object,Title):- data_type(Object,Title),!.
 
 title_objs(Obj,Title=Grid):- is_object(Obj),object_glyph(Obj,Glyph),loc2D(Obj,X,Y),vis2D(Obj,H,V),!,
@@ -1151,7 +1220,7 @@ is_long_prop(pen(_)).
 is_long_prop(merged(_)). is_long_prop(rot2L(sameR)).
 is_long_prop(gid(_)). is_long_prop(cc(_,0)). is_long_prop(symmetry_type(_)).
 is_long_prop(chromatic(_,_)). is_long_prop(sizeY(_)). is_long_prop(sizeX(_)). 
-is_long_prop(overlap(_,_)).  is_long_prop(dir_touching(_,_)). is_long_prop(dir_seeing(_,_)). is_long_prop(contains(_)).
+is_long_prop(overlap(_,_)).  is_long_prop(dir_touching(_,_)). is_long_prop(dir_seeing(_,_)). is_long_prop(contains(_,_)).
 is_long_prop(iz(P)):- compound(P),arg(1,P,A),number(A),!.
 is_long_prop(iz(S)):-!,is_long_prop(S).
 is_long_prop(P):- compound(P),arg(1,P,A),is_long_arg(A).
@@ -1267,7 +1336,7 @@ is_fti_step(maybe_1_3rd_mass).
 % =====================================================================
 maybe_1_3rd_mass(VM):-
   mass(VM.grid,Mass),
-  colors(VM.grid,[cc(C,Size)|_Colors]),
+  colors_cc(VM.grid,[cc(C,Size)|_Colors]),
   Area is VM.h * VM.v,
   Size * 3 > Area,
   Size * 3 > Mass,
@@ -3954,6 +4023,7 @@ ranking_pred(rank2(F1),I,O):- !, catch(call(F1,I,O1,O2),_,fail),!,combine_number
 ranking_pred(_F1,I,O):- mass(I,O).
 
 has_prop(Prop,Obj):- var(Obj),!, enum_object(Obj),has_prop(Prop,Obj).
+has_prop(Prop,Obj):- is_grid(Obj),grid_props(Obj,Props),!,member(Prop,Props).
 has_prop(Prop,Objs):- is_list(Objs),!,forall(member(Obj,Objs),has_prop(Prop,Obj)).
 has_prop(Props,Obj):- is_list(Props),!,member(Q,Props),has_prop(Q,Obj).
 

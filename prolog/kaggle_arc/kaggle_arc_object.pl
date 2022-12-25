@@ -130,9 +130,9 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):-
   my_partition(is_fg_color,UniqueColors,FGC,NotFGC),
   my_partition(is_bg_color,NotFGC,BGC,OtherC),
   add_prop_with_count(PropL,unique_colors,UniqueColors),
-  add_prop_with_count(PropL,fg_colors,FGC),
-  add_prop_with_count(PropL,bg_colors,BGC),
-  add_prop_with_count(PropL,other_colors,OtherC),
+  add_prop_with_count(PropL,unique_fg_colors,FGC),
+  add_prop_with_count(PropL,unique_bg_colors,BGC),
+  add_prop_with_count(PropL,unique_other_colors,OtherC),
 
   %maplist(on_edge(GridH,GridV),GPoints,EdgeL),count_sets([n,s,e,w,c|EdgeL],_,EdgeC),maplist(zero_one_more,EdgeC,EdgeS),
   
@@ -271,7 +271,7 @@ empty_grid_to_individual(H,V,Obj):-
   Iv is H + V*34,
   Obj = obj( [ mass(0),
          colorless_points([]),
-         colors([]),
+         colors_cc([]),
          localpoints([]), vis2D(H, V), 
          rot2L(sameR), 
          loc2D(1, 1),
@@ -436,7 +436,7 @@ grid_to_shape(Grid,RotG,OffsetX,OffsetY,ShapePoints,PenColors):-
   include(ground,RShape,LShape),
  % writeg([rotShape=RotShape,rShapeA=RShapeA,lShape=LShape]),
   grid_size(RotShape,OffsetX,OffsetY),
-  % colors 
+  % colors_cc 
   maplist(arg(2),LShape,ShapePoints), maplist(arg(1),LShape,Colorz),
   cclumped(Colorz,PenColors0),!,
   simplify_pen(PenColors0,PenColors).
@@ -565,7 +565,7 @@ obj_to_program(Obj,Program,VM):-
 %object_pen(Obj,[cc(Color,1)]):- color(Obj,Color),!.
 
 prop_of(mass,mass(_)).
-prop_of(colors,pen(_)).
+prop_of(colors_cc,pen(_)).
 
 prop_of(visually,localpoints(_)).
 prop_of(loc2D,loc2D(_,_)).
@@ -952,8 +952,9 @@ indv_props(I,NV):- cindv(I,NV).
 
 cindv(OID,NV):- var(OID),!,is_oid(OID),cindv(OID,NV).
 cindv(OID,NV):- is_oid(OID),!,cindv0(OID,NV).
-cindv(Obj,NV):- is_object(Obj),obj_to_objlist(Obj,L),member(NV,L).
-cindv(OID,NV):- is_object(Obj),!,obj_to_oid(Obj,OID),cindv0(OID,NV).
+cindv(Obj,_):- \+ is_object(Obj),!,fail.
+cindv(Obj,NV):- obj_to_objlist(Obj,L),member(NV,L).
+cindv(Obj,NV):- obj_to_oid(Obj,OID),cindv0(OID,NV).
 
 cindv0(OID,NV):- \+ nb_current(o2obj,t), oid_to_objlist(OID,L),member(NV,L).
 cindv0(OID,NV):- cindv1(OID,NV).
@@ -1231,19 +1232,25 @@ globalpoints(ID,Points):- \+ \+ cmem(ID,_,_), findall(-(C,HV),cmem(ID,HV,C),Poin
 globalpoints(Grid,Points):- grid_to_tid(Grid,ID),findall(-(C,HV),cmem(ID,HV,C),Points).
 */
 
-%colors(Points,CC):- is_list(Points),nth0(_,Points,C-_),is_color(C), CC = [cc(C,3)],!.
+is_color_cc(cc(C,_)):- is_color(C).
+%colors_cc(Points,CC):- is_list(Points),nth0(_,Points,C-_),is_color(C), CC = [cc(C,3)],!.
+colors_cc(I,X):- nonvar(X),!,colors_cc(I,XX),!,X=XX.
+colors_cc(G,[cc(fg,0),cc(bg,0),cc(Black,0)]):-  G==[],!,get_black(Black).
+colors_cc(I,X):- is_object(I),!,CC=cc(_,_),findall(CC,(indv_props(I,CC),is_color_cc(CC)),X).
+colors_cc(I,X):- is_oid(I),!,CC=cc(_,_),findall(CC,(indv_props(I,CC),is_color_cc(CC)),X).
+%colors_cc(G,X):- is_group(G),mapgroup(colors_cc,G,GG),combine_results(GG,X).
+%colors_cc(G,X):- is_grid(G),mapgrid(colors_cc,G,GG),combine_results(GG,X).
+%colors_cc(I,X):- is_map(I),into_grid(I,G),!,colors_cc(G,X).
+colors_cc(G,BFO):- globalpoints_include_bg(G,G0), !, all_colors_via_pixels(G0,BFO).
+%colors_cc(G,BFO):- all_colors_via_pixels(G,BFO),!.
+%colors_cc(O,CCO):- colors_cc(O,CC), into_mostly_real_colors(CC,CCO),!.
+colors_cc(All,CC):-
+  findall(Nm-C,(enum_colors_test(C),occurs:count((sub_term(Sub, All), \+ \+ cmatch(C,Sub)), Nm), 
+    once(Nm\==0 ; (atom(C), C\==is_colorish, C\==var, \+ is_real_color(C)))),BF),
+  keysort(BF,KS),reverse(KS,SK),
+  into_cc(SK,CC),!.
 
-all_colors(I,X):- nonvar(X),!,all_colors(I,XX),!,X=XX.
-all_colors(G,[cc(fg,0),cc(bg,0),cc(Black,0)]):-  G==[],!,get_black(Black).
 
-all_colors(I,X):- indv_props(I,L),include(is_functor(cc),L,X).
-%all_colors(G,X):- is_group(G),mapgroup(all_colors,G,GG),combine_results(GG,X).
-%all_colors(G,X):- is_grid(G),mapgrid(all_colors,G,GG),combine_results(GG,X).
-%all_colors(I,X):- is_map(I),into_grid(I,G),!,all_colors(G,X).
-all_colors(G,BFO):- globalpoints_include_bg(G,G0), !, all_colors_via_pixels(G0,BFO).
-%all_colors(G,BFO):- all_colors_via_pixels(G,BFO),!.
-
-colors(O,CCO):- all_colors(O,CC), into_mostly_real_colors(CC,CCO),!.
 into_mostly_real_colors(CC,CCO):- include(is_real_cc,CC,CCO),CCO\==[],!.
 into_mostly_real_colors(CC,CCO):- include(is_some_cc,CC,CCO),CCO\==[],!.
 into_mostly_real_colors(CC,CC):- !.
@@ -1255,11 +1262,6 @@ all_colors_via_pixels(G,CC):-
   pixel_colors(G,All),
   colors_cc(All,CC).
 
-colors_cc(All,CC):-
-  findall(Nm-C,(enum_colors_test(C),occurs:count((sub_term(Sub, All), \+ \+ cmatch(C,Sub)), Nm), 
-    once(Nm\==0 ; (atom(C), C\==is_colorish, C\==var, \+ is_real_color(C)))),BF),
-  keysort(BF,KS),reverse(KS,SK),
-  into_cc(SK,CC),!.
   
 %all_colors_via_pixels(G,BFO):- quietly((pixel_colors(G,GF),count_sets(GF,_,SK),into_cc(SK,BFO))).
 get_ccs(GF,CC):-
@@ -1271,7 +1273,7 @@ count_sets(GF,GS,SK):-
   count_each(GS,GF,UC),keysort(UC,KS),reverse(KS,SK),!.
 
   
-%colors(G,X):- is_group(G),!,mapgroup(colors,G,Points),append_sets(Points,X).
+%colors_cc(G,X):- is_group(G),!,mapgroup(colors_cc,G,Points),append_sets(Points,X).
 
 
 get_instance_method(Obj,Compound,F):- is_object(Obj), compound(Compound),compound_name_arity(Compound,Name,A),
@@ -1379,10 +1381,10 @@ center2G(I,X,Y):- indv_props(I,iz(cenXG(X))),indv_props(I,iz(cenYG(Y))),!.
 
 object_color(HV,C):- color(HV,C).
 
-color(HV,C):- colors(HV,[cc(C,_)]),!.
-color(HV,multicolor(Stuff)):- colors(HV,Stuff),!.
+color(HV,C):- colors_cc(HV,[cc(C,_)]),!.
+color(HV,multicolor(Stuff)):- colors_cc(HV,Stuff),!.
 
-main_color(HV,C):- colors(HV,[cc(C,_)|_]).
+main_color(HV,C):- colors_cc(HV,[cc(C,_)|_]).
 first_gpoint(HV,P):- globalpoints(HV,[P|_]).
 last_gpoint(HV,P):- globalpoints(HV,PS),last(PS,P).
 any_gpoint(HV,P):- globalpoints(HV,P).

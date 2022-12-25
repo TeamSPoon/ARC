@@ -3618,7 +3618,7 @@ testcase(t('6d58a25d')>tst+0,"
    -----------------------------------------                                                           ----------------------------------------- 
                                                        
 ").
-%= fav(t('6d58a25d'),[no_sol(i(complete),copy_grid(in),incomplete),-[rotation_match],-[mask_match],+[shape_match],+[color_match],tt,training,print_grid,grid_size_same,draw_line_from_point,debug_indiv,'(3, 1)',"the blue object is a downward beam maker, each beam must connect to one of its colors "]).
+%= fav(t('6d58a25d'),[no_sol(i(complete),copy_grid(in),incomplete),-[rotation_match],-[mask_match],+[shape_match],+[color_match],tt,training,print_grid,grid_size_same,draw_line_from_point,debug_indiv,'(3, 1)',"the blue object is a downward beam maker, each beam must connect to one of its colors_cc "]).
 
 
 testcase(t('6d75e8bb')>tst+0,"
@@ -11632,7 +11632,7 @@ testcase(v('4b6b68e5')>tst+0,"
    -------------------------------------------------                                                                   ------------------------------------------------- 
                                                                
 ").
-%= fav(v('4b6b68e5'),[no_sol(i(complete),copy_grid(in),incomplete),nthDSL([2,[gather_object(_12956,_12958,(iz(_12958,dot),inside(_12958,_12984),iz(_12984,polygon),wall_thickness(_12984,1),noexit(_12984))),colors(_12956,_13024),first(_13034,_13024),part_of(_12956,_13048),color(_13048,_13034),fillAt(_13048,_13034),forall(_12958,(iz(_12958,dot),\+ (inside(_12958,_12984),iz(_12984,polygon))),delete(_12958))]]),human([doall((iz(_12870,outline),internal_region(_12870,_12884),individuate_by_color(_12884),largestIn(_12884,_12906),color(_12906,_12918),fill(_12918,_12884)))]),-[rotation_match],-[mask_match],-[color_match],+[shape_match],grid_size_same,evaluation,'(3, 1) ']).
+%= fav(v('4b6b68e5'),[no_sol(i(complete),copy_grid(in),incomplete),nthDSL([2,[gather_object(_12956,_12958,(iz(_12958,dot),inside(_12958,_12984),iz(_12984,polygon),wall_thickness(_12984,1),noexit(_12984))),colors_cc(_12956,_13024),first(_13034,_13024),part_of(_12956,_13048),color(_13048,_13034),fillAt(_13048,_13034),forall(_12958,(iz(_12958,dot),\+ (inside(_12958,_12984),iz(_12984,polygon))),delete(_12958))]]),human([doall((iz(_12870,outline),internal_region(_12870,_12884),individuate_by_color(_12884),largestIn(_12884,_12906),color(_12906,_12918),fill(_12918,_12884)))]),-[rotation_match],-[mask_match],-[color_match],+[shape_match],grid_size_same,evaluation,'(3, 1) ']).
 
 
 testcase(v('4c177718')>tst+0,"

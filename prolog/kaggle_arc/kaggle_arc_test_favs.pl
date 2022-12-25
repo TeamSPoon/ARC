@@ -123,7 +123,7 @@ fav(t('8be77c9e'),[human([grow([[sameR],[flipV]])])]).
 fav(t('7f4411dc'),[human([shave_away_1s])]).
 fav(t('7b6016b9'),[human([fillFromBorder(green),subst_color(black,red)])]).
 fav(t('6f8cd79b'),[human([add_borders(cyan)])]).
-fav(t('6d58a25d'),[debug_indiv,print_grid,"the blue object is a downward beam maker, each beam must connect to one of its colors "]).
+fav(t('6d58a25d'),[debug_indiv,print_grid,"the blue object is a downward beam maker, each beam must connect to one of its colors_cc "]).
 fav(t('6cf79266'),[learn([find(nines),remove_them]),human(reverse_learned)]).
 fav(v(f9d67f8b),[human([overlay_each_pattern])]).
 
@@ -155,7 +155,7 @@ human([
          largestIn(Region,Largest),color(Largest,Color),fill(Color,Region)))]),
 
    nthDSL(2,[gather_object(O1,X,(iz(X,dot),inside(X,P),iz(P,polygon),wall_thickness(P,1),noexit(P))),
-          colors(O1,CC),first(C,CC),part_of(O1,E),color(E,C),fillAt(E,C),
+          colors_cc(O1,CC),first(C,CC),part_of(O1,E),color(E,C),fillAt(E,C),
                 forall(X,(iz(X,dot), \+ (inside(X,P),iz(P,polygon))),delete(X))])
 
   ]).
@@ -246,7 +246,7 @@ fav(t('6cf79266'),[grid_size_same,learn([find(nines),remove_them]),human(reverse
 fav(t('810b9b61'),[grid_size_same,human([(iz(_140032,rectangle),iz(_140032,hollow),iz(_140032,thick1),iz(_140032,noexit)-->color(_140032,green))]),-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),recoloring,detect_closed_curves,'(3, 1)']).
 
 fav(t(a48eeaf7),[grid_size_same,human([largest_indiv(_136900),tiny_individuals(_136910),gravity_to(_136910,_136900)]),-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_moving,gravity,direction_guessing,bring_patterns_close,'(2, 1)']).
-fav(v('4b6b68e5'),[grid_size_same,nthDSL(2,[gather_object(_145350,_145352,(iz(_145352,dot),inside(_145352,_145378),iz(_145378,polygon),wall_thickness(_145378,1),noexit(_145378))),colors(_145350,_145418),first(_145428,_145418),part_of(_145350,_145442),color(_145442,_145428),fillAt(_145442,_145428),forall(_145352,(iz(_145352,dot),\+ (inside(_145352,_145378),iz(_145378,polygon))),delete(_145352))]),human([doall((iz(_145548,outline),internal_region(_145548,_145562),individuate_by_color(_145562),largestIn(_145562,_145584),color(_145584,_145596),fill(_145596,_145562)))]),-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
+fav(v('4b6b68e5'),[grid_size_same,nthDSL(2,[gather_object(_145350,_145352,(iz(_145352,dot),inside(_145352,_145378),iz(_145378,polygon),wall_thickness(_145378,1),noexit(_145378))),colors_cc(_145350,_145418),first(_145428,_145418),part_of(_145350,_145442),color(_145442,_145428),fillAt(_145442,_145428),forall(_145352,(iz(_145352,dot),\+ (inside(_145352,_145378),iz(_145378,polygon))),delete(_145352))]),human([doall((iz(_145548,outline),internal_region(_145548,_145562),individuate_by_color(_145562),largestIn(_145562,_145584),color(_145584,_145596),fill(_145596,_145562)))]),-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(3, 1) ']).
 
 fav(t(d6ad076f),[grid_size_same,-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),draw_line_from_point,connect_the_dots,bridges,'(3, 1)']).
 fav(t('9d9215db'),[grid_size_same,human([overlay_each_pattern]),-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_rotation,pattern_reflection,pattern_expansion,'(3, 1)']).
@@ -686,7 +686,7 @@ less_fav(t(ecdecbb3),[grid_size_same,-rotation_match,-mask_match,+shape_match,+c
 less_fav(v('73c3b0d8'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v(f8be4b64),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,+'Errors','https://www.kaggle.com/c/abstraction-and-reasoning-challenge/discussion/131021',test_suite([eval400]),'(4, 1)']).
 less_fav(v('17b80ad2'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
-less_fav(t('6d58a25d'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),print_grid,draw_line_from_point,debug_indiv,'(3, 1)',"the blue object is a downward beam maker, each beam must connect to one of its colors "]).
+less_fav(t('6d58a25d'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),print_grid,draw_line_from_point,debug_indiv,'(3, 1)',"the blue object is a downward beam maker, each beam must connect to one of its colors_cc "]).
 less_fav(t('7df24a62'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),pattern_rotation,pattern_repetition,pattern_juxtaposition,out_of_boundary,'(4, 1)']).
 less_fav(t('3bdb4ada'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),recoloring,pattern_repetition,holes,'(2, 1)']).
 less_fav(t('3618c87e'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),gravity,'(3, 1)']).

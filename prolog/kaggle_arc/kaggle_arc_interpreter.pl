@@ -311,10 +311,10 @@ override_object_io(_VM,Update,Obj,In,Out):-
   add_global_points(ObjCopy,Mid, Out).
 
 
-sync_colors(Orig,Colors):- is_object(Orig),!,colors(Orig,Colors),
-  globalpoints(Orig,OrigGPoints),colors(OrigGPoints,Colors),
-  localpoints(Orig,OrigLPoints),colors(OrigLPoints,Colors),!.
-sync_colors(Orig,Colors):- colors(Orig,Colors).
+sync_colors(Orig,Colors):- is_object(Orig),!,colors_cc(Orig,Colors),
+  globalpoints(Orig,OrigGPoints),colors_cc(OrigGPoints,Colors),
+  localpoints(Orig,OrigLPoints),colors_cc(OrigLPoints,Colors),!.
+sync_colors(Orig,Colors):- colors_cc(Orig,Colors).
 
 uncast_grid_to_object(Orig,Grid,NewObj):- 
  must_det_ll((

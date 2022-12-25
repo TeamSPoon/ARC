@@ -115,7 +115,7 @@ the_hammer1(RedComplex):-  the_hammer(red,RedComplex).
 
 the_hammer(Color,ColorComplex):- 
   ColorComplex = obj([mass(6), colorless_points([point_01_01, point_01_02, point_01_03, point_02_01, point_02_02, point_03_02]), 
-  colors([cc(Color, 6)]), localpoints([Color-point_01_01, Color-point_01_02, Color-point_01_03, Color-point_02_01, 
+  colors_cc([cc(Color, 6)]), localpoints([Color-point_01_01, Color-point_01_02, Color-point_01_03, Color-point_02_01, 
   Color-point_02_02, Color-point_03_02]), vis2D(3, 3), rot2L(sameR), loc2D(2, 5), 
   changes([]), iz(shape(rectangle)), iz(hammer), 
   globalpoints([Color-point_02_05, Color-point_02_06, Color-point_02_07, Color-point_03_05, Color-point_03_06, Color-point_04_06]), 
@@ -194,7 +194,7 @@ into_monochrome(VM):- Grid = VM.grid,
 into_monochrome(Color,Mono):- called_gid('_mono', into_monochrome2, Color,Mono),!.
 
 into_monochrome2(NoBlack,Mono):-  get_black(Black),
-  colors_count_black_first(NoBlack,CCBF), 
+  color_cc_black_first(NoBlack,CCBF), 
     CCBF=[cc(Black,0),cc(BGC,_)|_],!, 
   into_monochrome4(fg,BGC,NoBlack,Mono).
 into_monochrome2(Color,Mono):- get_black(Black),into_monochrome4(fg,Black,Color,Mono).
@@ -609,7 +609,7 @@ expand_shape_directives(Shapes,None,SmallLib):- None==[],!,
 
       % Need one the the three bellow
        %decolorize, %"Add blue indivs", 
-       %add(change_color), % "Add new colors indivs",		 
+       %add(change_color), % "Add new colors_cc indivs",		 
        %into_any_color,
 
        smallest_first, "smallest first",

@@ -331,7 +331,7 @@ pgt([Obj1,Obj2]):- pgt1(Obj1),pgt2(Obj2).
 pgt1(Obj):-
   Obj = obj( [ mass(536),
          colorless_points( [ point_01_01, point_02_01]),
-         colors( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
+         colors_cc( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
          localpoints( [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2L(sameR), loc2D(3, 1),
          changes([]), iz(info(combined)),
@@ -343,7 +343,7 @@ pgt1(Obj):-
 pgt2(Obj):- Obj = 
       obj( [ mass(536),
          colorless_points( [ point_01_01, point_02_01]),
-         colors( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
+         colors_cc( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
          localpoints( [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2L(sameR), loc2D(2, 1),
          changes([]), iz(info(combined)),

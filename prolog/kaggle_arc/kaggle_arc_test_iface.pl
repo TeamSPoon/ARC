@@ -43,8 +43,8 @@ print_menu_cmd1(Info,_Goal):- format('~w',[Info]).
 menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z_make,fully_train)).
 menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),
   sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
-menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(clear_tee,cls_z_make,!,ndividuatorO,ndividuator)).
-menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,ndividuator,ndividuatorO)).
+menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(clear_tee,cls_z_make,!,ndividuatorO)).
+menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,ndividuator)).
 menu_cmd1(_,'B','                  or (B)oxes test.',(update_changes,pbox_indivs)).
 menu_cmd1(_,'R','                  or (R)epairs test.',(update_changes,repair_symmetry)).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z_make,!,what_unique)).

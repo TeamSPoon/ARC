@@ -158,7 +158,7 @@ easy_p2(repair_and_select(_,_)):-
 
 
 color_getter_p2(unique_colors).
-color_getter_p2(colors).
+color_getter_p2(colors_cc).
 
 io_colors(I,O,IOColors):- 
   color_getter_p2(P2),
@@ -495,7 +495,7 @@ easy_solve_suite(t('67a3c6ac'),flip_Once(flipH)).
 easy_solve_suite(t('007bbfb7'),grow_from_shape).
 easy_solve_suite(t('c3e719e8'),grow_from_shape).
 
-max_fg_color(Grid,Color):- colors(Grid,Colors),member(cc(Color,N),Colors),N>0,is_fg_color(Color),is_real_color(Color).
+max_fg_color(Grid,Color):- colors_cc(Grid,Colors),member(cc(Color,N),Colors),N>0,is_fg_color(Color),is_real_color(Color).
 
 % comp(cbg(black),i-o,ogs)=ogs([ogs(notrim,whole,loose,loc2D(1,1)),ogs(notrim,whole,call_ogs(rot90,loose),loc2D(4,1)),ogs(notrim,whole,call_ogs(rot180,loose),loc2D(4,4)),ogs(notrim,whole,call_ogs(rot270,loose),loc2D(1,4))])
 grow_each_p2(Rot90,In,[A,B,C,D]):- into_grid(In,A),call(Rot90,A,B),call(Rot90,B,C),call(Rot90,C,D).

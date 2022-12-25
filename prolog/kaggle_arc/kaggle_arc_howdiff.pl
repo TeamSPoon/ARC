@@ -623,7 +623,7 @@ prop_type(order,o(_Peers,_Ord,_Type)).
 prop_type(colorless_points,colorless_points(_)).
 prop_type(rotate,rot2L(_)).
 prop_type(repaint,pen(_)).
-prop_type(repaint,colors(_)).
+prop_type(repaint,colors_cc(_)).
 prop_type(loc2D,edge(_,_)).
 
 changed_by(colorless_points,reshape).
@@ -631,7 +631,7 @@ changed_by(loc2D,move).
 changed_by(mass,grow).
 changed_by(localpoints,reshape_and_recolor).
 changed_by(rot2L,rotate).
-changed_by(colors,repaint).
+changed_by(colors_cc,repaint).
 changed_by(vis2D,copy).
 
 link_prop_types(Loc,O1,O2,Ps):-
@@ -713,7 +713,7 @@ dislike_points(obj(I)):-!,dislike_points(I).
 dislike_points(I):- is_list(I),dislike_points1(L),forall(member(E,L),member(E,I)).
 
 %dislike_points1([iz(type(dot)),grid_size(H,V)]):- freeze(H, freeze(V, (HV is H * V, HV > 49))).
-dislike_points1([colors([cc(BG, _)]),iz(shape(polygon))]):- freeze(BG,is_black_or_bg(BG)).
+dislike_points1([colors_cc([cc(BG, _)]),iz(shape(polygon))]):- freeze(BG,is_black_or_bg(BG)).
 
 
 uncomparable(_,Var):- var(Var),!.
@@ -758,7 +758,7 @@ no_diff(in,out).
 simular([],_,_,[]):- !.
 simular(loc2D=Where,I,O,object_has_moved(Where)):-  
   \+ (mass(O,OC), OC < 6) ,
-  \+ (colors(O,[cc(BG, _)|_]),is_black_or_bg(BG)),
+  \+ (colors_cc(O,[cc(BG, _)|_]),is_black_or_bg(BG)),
   object_glyph(I,G), \+ object_glyph(O,G).
 
 
@@ -944,7 +944,7 @@ sprop(perfect).
 sprop_of(sameO,visually).
 sprop_of(sameO,size2D).
 sprop_of(sameO,colorless_points).
-sprop_of(sameO,colors).
+sprop_of(sameO,colors_cc).
 
 sprop_of(moved,sameO).
 sprop_of(moved,loc2D).
@@ -1260,7 +1260,7 @@ proportional(L1,L2,List):- non_grid_list(L1),non_grid_list(L2),!,must_det_ll(pro
 proportional(loc2D(H1,V1),loc2D(H2,V2),loc2D(H,V)):- !, proportional_loc(H1,H2,H),proportional_loc(V1,V2,V).
 proportional(loc2G(H1,V1),loc2G(H2,V2),loc2G(H,V)):- !, proportional_loc(H1,H2,H),proportional_loc(V1,V2,V).
 proportional(center2G(H1,V1),center2G(H2,V2),center2G(H,V)):- !, proportional_loc(H1,H2,H),proportional_loc(V1,V2,V).
-proportional(colors(H1),colors(H2),color_changes(H)):- !, proportional_lists(H1,H2,H).
+proportional(colors_cc(H1),colors_cc(H2),color_changes(H)):- !, proportional_lists(H1,H2,H).
 %proportional(cc(N1,C),cc(N2,C),cc(H,C)):- !, proportional_size(N1,N2,H).
 proportional(N1,N2,N):- number(N1),number(N2),!,proportional_size(N1,N2,N).
 
@@ -1447,7 +1447,7 @@ prefer_grid(G):- is_object_or_grid(G).
 :- decl_pt(prop_g,has_x_columns(grid,rowcount,color,set(colnums))).
 :- decl_pt(prop_g,x_columns(grid,set)).
 :- decl_pt(prop_g,y_rows(grid,set)).
-:- decl_pt(prop_g,colors(prefer_grid, set)).
+:- decl_pt(prop_g,colors_cc(prefer_grid, set)).
 :- decl_pt(prop_g,symmetric_types(prefer_grid, set)).
 
 

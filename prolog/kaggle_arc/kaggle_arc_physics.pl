@@ -553,7 +553,7 @@ subsume(subsumed_by(Offset,OverlapP),O1,O2):- two_physical_objs(O1,O2),
   maplist(length,[Ps2,P2L,Overlap,P1L,Ps1],List),
   Overlap\==[],P1L==[],
   OverlapP =..[ol| List],
-  object_offset(O2,O1,Offset).
+  object_offset(O1,O2,Offset).
 
 object_offset(O2,O1,Offset):-
   loc2D(O1,X1,Y1),
@@ -668,24 +668,24 @@ find_engulfs([Obj|ScanNext],OtherObjects,[NewObj|ScanRest]):-
 
 find_engulfs_objects(_,[],[]).
 %find_engulfs_objects(Obj,_,[]):- has_prop(link(insideOf,_),Obj),!.
-find_engulfs_objects(Obj,_,[]):- has_prop(link(contains,_),Obj),!.
-find_engulfs_objects(Obj,[Target|ScanNext],[link(insideOf,Iv)|Engulfed]):-    
- once(contained_object(Obj,Target)),!,
+%find_engulfs_objects(Obj,_,[]):- has_prop(link(contains,_),Obj),!.
+find_engulfs_objects(Obj,[Target|ScanNext],[link(insideOf,Iv,Offset)|Engulfed]):-    
+ once(contained_object(Offset,Obj,Target)),!,
  /*must_det_ll*/(obj_to_oid(Target,Iv)),
  /*must_det_ll*/(find_engulfs_objects(Obj,ScanNext,Engulfed)),!.
 find_engulfs_objects(Obj,_,[]):- mass(Obj,Mass),Mass<5,!.
-find_engulfs_objects(Obj,[Target|ScanNext],[link(contains,Iv)|Engulfed]):-    
- once(contained_object(Target,Obj)),!,
+find_engulfs_objects(Obj,[Target|ScanNext],[link(contains,Iv,Offset)|Engulfed]):-    
+ once(contained_object(Offset,Target,Obj)),!,
  /*must_det_ll*/(obj_to_oid(Target,Iv)),
  /*must_det_ll*/(find_engulfs_objects(Obj,ScanNext,Engulfed)),!.
 find_engulfs_objects(Obj,[_|ScanNext],Engulfed):- /*must_det_ll*/(find_engulfs_objects(Obj,ScanNext,Engulfed)),!.
 
 
-:- decl_pt(inter_object_relation,contained_object).
+:- decl_pt(inter_object_relation,contained_object(_Offset)).
 
-contained_object(O2,O1):- two_physical_objs(O1,O2), \+ subsume(_,O2,O1),
+contained_object(Offset,O2,O1):- two_physical_objs(O1,O2), \+ subsume(_,O2,O1),
   % \+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
-  loc2D(O1,LowH1,LowV1),loc2D(O2,LowH2,LowV2), 
+  loc2D(O1,LowH1,LowV1),loc2D(O2,LowH2,LowV2),   
   LowH2 > LowH1, LowV2 > LowV1,
   vis2D(O1,H1,V1),vis2D(O2,H2,V2), 
   H1> H2, V1> V2,
@@ -694,7 +694,8 @@ contained_object(O2,O1):- two_physical_objs(O1,O2), \+ subsume(_,O2,O1),
   HighH1 > HighH2,
   HighV1 > HighV2,
   nop(globalpoints(O2,[Point|_])),!,
-  nop(object_surrounds_point(O1,Point)).
+  nop(object_surrounds_point(O1,Point)),
+  object_offset(O2,O1,Offset).
 
 
 % ==============================================

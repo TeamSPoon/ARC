@@ -404,7 +404,7 @@ compare_objs_how(_).
 /*
 vis2D(5,5), mass(25),
 center2G(9,14),loc2D(7,12),
-colors([cc(PURPLE,21),cc(BLACK,4)]),
+colors_cc([cc(PURPLE,21),cc(BLACK,4)]),
 localpoints
 */
 
@@ -660,11 +660,10 @@ learn_group_mapping_p2(AG0,BG0):-
   learn_group_mapping_p3(IO,OI,AG,BG,AGS,BGS))).
 
 assert_doing_map(IO,A,[B|Objs]):-
-  dash_chars,
   assert(doing_map(IO,A,[B|Objs])),
-  pp(IO),
-  dash_chars,
-  print_ss(IO,A,B),print_ss_rest(IO,2,Objs),dash_chars.
+  debug_c(mapping,
+   (dash_chars, pp(IO), dash_chars,
+     print_ss(IO,A,B),print_ss_rest(IO,2,Objs),dash_chars)).
 
 print_ss_rest(IO,N,[A,B|Objs]):-  print_ss(IO+N,A,B),N2 is N + 2,print_ss_rest(IO,N2,Objs).
 print_ss_rest(IO,N,[R]):- print_grid(IO+N,R).
@@ -681,9 +680,16 @@ learn_group_mapping_p3(IO,OI,AG,BG,AGS,BGS):- !,
   (nb_linkval(in_out_pair,in_out_pair(AG,BG,shared)),
    must_det_ll((  
     forall(member(B,BGS),
-       (doing_map(B,A),save_rule(OI,"INPUT <-- OUTPUT",[A],[B]))),
+       (doing_map(OI,B,[A|Others]),
+          has_prop(iz(sid(SA)),A),
+           (once((fail, member(C,Others), \+ has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
+           save_rule(OI,"INPUT <-- OUTPUT",[A|CC],[B]))),
     forall(member(A,AGS),
-       (doing_map(A,B),save_rule(IO,"INPUT --> OUTPUT",[A],[B]))))))).
+       (doing_map(IO,A,[B|Others]),
+          has_prop(iz(sid(SA)),A),
+          (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
+           save_rule(IO,"INPUT --> OUTPUT",[A],[B|CC]))),
+   !)))).
 
 
 
@@ -691,16 +697,16 @@ into_title(IO,OI,TITLE):-
   upcase_atom(IO,A), upcase_atom(OI,B),
   sformat(TITLE,"~w  -->  ~w",[A,B]),!.
 
-save_rule1(in,_TITLE,[A],[B],IIPP,OOPP):-    
-   is_bg_object(B),
-   \+ is_bg_object(A),
-   \+ showed_mapping(B,_),!,
-   save_rule2(in,"DELETE Input",[A],[B],IIPP,OOPP).
+% All background objects
+save_rule1(_,_TITLE,AL,BL,_IIPP,_OOPP):-    
+   is_bg_object(AL),is_bg_object(BL),!.
 
-save_rule1(_,_TITLE,[A],[B],_IIPP,_OOPP):-    
-   is_bg_object(A),is_bg_object(B),
-   \+ is_bg_object(A),
-   \+ showed_mapping(B,_),!.
+save_rule1(in,_TITLE,AL,BL,IIPP,OOPP):-    
+   is_bg_object(BL),
+   \+ is_fg_object(AL),
+   sort(BL,BS),
+   \+ showed_mapping(BS,_),!,
+   save_rule2(in,"DELETE Input",AL,BL,IIPP,OOPP).
 
 save_rule1(IO,TITLE,A,B,IIPP,OOPP):- 
   save_rule2(IO,TITLE,A,B,IIPP,OOPP).

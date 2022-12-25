@@ -474,7 +474,7 @@ enum_fg_colors(FG):- enum_colors(FG), is_fg_color(FG), \+ is_bg_color(FG), FG\==
 %enum_fg_colors(Color):- enum_colors(Color),is_color_no_bgc(Color).
 fill_color(Color,OtherColor):- enum_colors(OtherColor),Color\==OtherColor,is_color_no_bgc(OtherColor).
 
-is_bg_indiv(O):- colors(O,[cc(C,CC)]),CC>0,is_bg_color(C).
+is_bg_indiv(O):- colors_cc(O,[cc(C,CC)]),CC>0,is_bg_color(C).
 
 
 is_not_cpoint(I):- \+ is_cpoint(I).

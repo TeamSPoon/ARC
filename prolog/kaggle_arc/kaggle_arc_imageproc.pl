@@ -64,19 +64,22 @@ only_color_data_or(Alt,Cell,Color):- only_color_data(Cell,Color)->true;Color=Alt
 %pixel_colors(G,GL):- findall(Name,(sub_term(CP,G),compound(CP),CP=(C-_),color_name(C,Name)),GL).
 is_real_color_or_var(C):- (var(C)->true;is_real_color(C)).
 
-unique_colors(G,SUCOR):- colors(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_color_or_var,UC,SUCO))),reverse(SUCO,SUCOR).
+unique_colors(G,SUCOR):- indv_props(G,unique_colors(SUCOR)),!.
+unique_colors(G,SUCOR):- colors_cc(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_color_or_var,UC,SUCO))),reverse(SUCO,SUCOR).
+unique_color_count(G,SUCOR):- indv_props(G,unique_color_count(SUCOR)),!.
 unique_color_count(G,Len):- unique_colors(G,UC),length(UC,Len).
 
-unique_fg_colors(G,SUCOR):- colors(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_fg_color,UC,SUCO))),reverse(SUCO,SUCOR).
+unique_fg_colors(G,FG):- indv_props(G,unique_colors(SUCOR)),include(is_fg_color,SUCOR,FG),!.
+unique_fg_colors(G,SUCOR):- colors_cc(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_fg_color,UC,SUCO))),reverse(SUCO,SUCOR).
 
 
 into_cc(SK,BFO):- maplist(into_cc1,SK,BFO).
 into_cc1(N-C,cc(Nm,CN)):- CN is N,!,(color_name(C,Nm)->true;C=Nm).
 
-colors_count_black_first(G,BF):- colors(G,SK),black_first(SK,BF).
+color_cc_black_first(G,BF):- colors_cc(G,SK),black_first(SK,BF).
 
-colors_count_fg(G,FG):- colors(G,SK), include_cc(is_real_fg_color,SK,FG),!.
-colors_count_no_black(G,BF):- colors(G,SK),no_black(SK,BF),!.
+%unique_colors(G,SUCOR):- indv_props(G,unique_colors(SUCOR)),!.
+color_cc_only_fg(G,FG):- colors_cc(G,SK), include_cc(is_real_fg_color,SK,FG),!.
 
 
 
@@ -387,8 +390,8 @@ learn_mapping_stateful(In,Out):- get_bgc(BG),
 apply_mapping_stateful(Grid,G):- into_grid(G,Grid),unbind_color(0,Grid,GridO),ignore(backfill_vars(GridO)).
 
 
-compute_max_color(Color1,Grid,Grid):- colors_count_fg(Grid,[cc(Color1,_)|_]).
-compute_next_color(Color1,Grid,Grid):- colors_count_fg(Grid,[_,cc(Color1,_)|_]).
+compute_max_color(Color1,Grid,Grid):- color_cc_only_fg(Grid,[cc(Color1,_)|_]).
+compute_next_color(Color1,Grid,Grid):- color_cc_only_fg(Grid,[_,cc(Color1,_)|_]).
 
 subst_color(Color1,Color2,Grid,NewGrid):- 
   quietly((
@@ -546,7 +549,7 @@ fillFromBorder_gref(FillColor,IIn):-
              fill_from_point_gref(H,Vi,FillColor,IIn))))).
    
 
-likely_bg(Grid,BGC):- colors_count_black_first(Grid,CCBF), 
+likely_bg(Grid,BGC):- color_cc_black_first(Grid,CCBF), 
     get_black(Black),(CCBF=[cc(Black,0),cc(BGC,_)|_]-> true ; CCBF=[cc(BGC,_)|_]).
 
 fill_from_point(H,V,FillColor,In,Out):-

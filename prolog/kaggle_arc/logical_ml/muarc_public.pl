@@ -71,10 +71,11 @@ ansestor(Obj,Other):- has_prop(link(subsume,Other,subsumed_by(_,_)),Obj).
 descendant(Obj,Other):- has_prop(link(subsume,Other,subsuming(_,_)),Obj).
 touching(Obj,v(Other,Info)):- has_prop(link(dir_touching,Other,Info),Obj).
 seeing(Obj,v(Other,Info)):- has_prop(link(dir_seeing,Other,Info),Obj).
-insideOf(Obj,Other):- has_prop(link(insideOf,Other),Obj).
-contains(Obj,Other):- has_prop(link(contains,Other),Obj).
+insideOf(Obj,Other):- has_prop(link(insideOf,Other,_),Obj).
+contains(Obj,Other):- has_prop(link(contains,Other,_),Obj).
 
-show_indiv(Why,Obj):-
+%show_indiv(_Why,Obj):- is_bg_object(Obj),!.
+show_indiv(Why, Obj):-  
   format('~N'),dash_chars(45),dash_chars(45),
   must_det_ll((
   vis2D(Obj,H,V),   

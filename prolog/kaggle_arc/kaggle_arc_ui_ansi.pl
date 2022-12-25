@@ -11,7 +11,7 @@
 :- autoload(library(http/html_write),[html/3,print_html/1]).
 
 is_debugging(M):- \+ \+ debugging(M),!.
-is_debugging(_):- menu_or_upper('B').
+%is_debugging(_):- menu_or_upper('B').
 
 debug_m(_,Tiny):- display_length(Tiny,Len),Len<30,!,pp(Tiny).
 debug_m(M,_):- \+ is_debugging(M),!.
@@ -502,7 +502,7 @@ wqs1(wqs(P)):- wots_vs(S,wqs0(P)),write((S)).
 wqs1(wqs(C,P)):- wots_vs(S,wqs0(P)),color_print(C,S).
 
 wqs1(vals(C)):- writeq(vals(C)),!.
-%wqs1(colors(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(colorsz(S)).
+%wqs1(colors_cc(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(colorsz(S)).
 wqs1(io(C)):-  \+ arg_string(C),wots_vs(S,bold_print(wqs(C))),write(io(S)).
 
 wqs1(uc(C,W)):- !, write_nbsp, color_print(C,call(underline_print(format("\t~@",[wqs(W)])))).
@@ -959,7 +959,7 @@ show_pair_grid(TitleColor,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
   %LW is (IH * 2 + 12),
 %  wots(U1, print_grid(IH,IV,In)),
 %  wots(U2, print_grid(OH,OV,Out)),
-  INFO = [grid_dim,mass,length,unique_color_count,colors],
+  INFO = [grid_dim,mass,length,unique_color_count,colors_cc],
 %  print_side_by_side(U1,LW,U2),
   print_side_by_side(TitleColor,print_grid(IH,IV,In),NameInU,LW,print_grid(OH,OV,Out),NameOutU),
   print_side_by_side(
@@ -1081,7 +1081,7 @@ print_equals(N,[S|L]):- string(S),writeq(N),write('= '),write(S),maplist(commawr
 print_equals(Name,json(JSON)):-!, print_equals(Name,JSON).
 print_equals(Name,trn=Y):- !, print_equals(Name,Y).
 print_equals(Name,X->Y):- !, print_equals(in(Name),X), print_equals(out(Name),Y).
-print_equals(colors,XY):-print_equals(cc,XY).
+print_equals(colors_cc,XY):-print_equals(cc,XY).
 %print_equals(Name,cc(C,N)):-print_equals(Name,cc(C,N)).
 print_equals(Name,X=Y):- !, print_equals(Name=X,Y).
 %print_equals(Name,[H|L]):- !, maplist(print_equals(Name),[H|L]).

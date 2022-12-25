@@ -107,7 +107,7 @@ into_fg_bg(Color,fg):- is_fg_color(Color),!.
 into_fg_bg(Color,bg):- is_bg_color(Color),!.
 into_fg_bg(Color,Color).
 
-into_bicolor(Grid,Mono):- colors_count_black_first(Grid,CC), into_bicolor(CC,Grid,Mono). 
+into_bicolor(Grid,Mono):- color_cc_black_first(Grid,CC), into_bicolor(CC,Grid,Mono). 
 
 into_bicolor([_],Grid,Grid):- !.
 into_bicolor([_,_],Grid,Grid):- !.
@@ -900,9 +900,9 @@ reinforce_best_values(ID,Code):-
 
  
 repair_repeats(UC,VM,Grid,RepairedResult,Code):-
-  colors(Grid,[cc(HC,Count)|_]),!,
+  colors_cc(Grid,[cc(HC,Count)|_]),!,
   repair_repeats0(UC,VM,Grid,RepairedResult,Code), Grid\=@=RepairedResult,
-  nop((colors(RepairedResult,ListCounts),
+  nop((colors_cc(RepairedResult,ListCounts),
   (member(cc(HC,NewCount),ListCounts)-> NewCount =< Count ; true))).
 
 repair_repeats0(UC,_VM,Grid,RepairedResult,Did):-
@@ -1009,7 +1009,7 @@ guess_to_unbind(_Grid,Color):- Color = black.
 
 
 ok_used_in(ColorC,Grid,Out):- 
-  colors(Grid,Colors),Colors\==[], % reverse(Colors,ColorsR),
+  colors_cc(Grid,Colors),Colors\==[], % reverse(Colors,ColorsR),
   member(cc(Color,N),Colors),N>0, is_real_color(Color), Color \== black,
   if_target(Out, ( \+ contains_color(Color,Out))), 
   if_target(Out, ( v_area(Out,SizeOut),v_area(Grid,SizeIn),(SizeIn>SizeOut -> N is SizeOut ; true))),
@@ -1020,13 +1020,13 @@ ok_used_in(ColorC,Grid,Out):-
 guess_to_unbind11(Grid,Color):- 
   if_target(Out, FinalColors = Out),
   ignore((var(FinalColors) -> kaggle_arc(_,trn+_,Grid,FinalColors) ; true)),
-  colors(Grid,Colors),Colors\==[], % reverse(Colors,ColorsR),
+  colors_cc(Grid,Colors),Colors\==[], % reverse(Colors,ColorsR),
   member(cc(Color,N),Colors),N>0, Color \== black, is_real_color(Color), 
   if_t(nonvar(FinalColors), ( \+ contains_color(Color,FinalColors))), 
   if_target(Out, ( v_area(Out,SizeOut),v_area(Grid,SizeIn),(SizeIn>SizeOut -> N is SizeOut ; true))),
   \+ column_or_row(Grid,Color).
 %guess_to_unbind12(_Grid,Color):- Color = blue.
-guess_to_unbind12(Grid,Color):- colors(Grid,Colors),member(cc(Color,N),Colors),N>0, Color \== black, is_real_color(Color).
+guess_to_unbind12(Grid,Color):- colors_cc(Grid,Colors),member(cc(Color,N),Colors),N>0, Color \== black, is_real_color(Color).
 /*
 guess_to_unbind(Grid,Color):- !, fail, select(Row1,Grid,Rows),member(Row2,Rows),
   append(_,[C1,C2],Row1),C1==C2,
@@ -1235,7 +1235,7 @@ repair_fourway(VM,Grid,RepairedResult,Steps):- fail,
 repair_fourway(VM,Grid,RepairedResult,Steps):- 
   maybe_set_vm(VM),
   VM.option_repair_grid == true,
-  once((colors(Grid,Colors),length(Colors,CL),CL>3)),
+  once((colors_cc(Grid,Colors),length(Colors,CL),CL>3)),
   largest_first(VM.objs,Ordered),  
   repair_2x2(Ordered,Steps,Grid,RepairedResult),!.
 
