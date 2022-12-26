@@ -521,6 +521,7 @@ lpoints_to_norm(Width,Height,LPoints,IOps,LPointsNorm):-
    points_to_grid(Width,Height,LPoints,LGrid), normalize_grid(IOps,LGrid,LPointsNorm).
 
 %add_bg(III,III,_):- \+ fail,!.
+add_bg(III,II,fg):- sub_var('black',III), \+ sub_var('bg',III), subst(III,'$VAR'('_'),'bg',II0),subst(II0,'fg','bg',II),!.
 add_bg(III,II,fg):- sub_var('black',III), \+ sub_var('fg',III), subst(III,'$VAR'('_'),'fg',II0),subst(II0,'bg','fg',II),!.
 add_bg(III,II,bg):- subst(III,'$VAR'('_'),'bg',II).
 

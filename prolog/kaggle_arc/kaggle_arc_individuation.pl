@@ -442,7 +442,7 @@ individuation_macros(i_complete_generic, [
   indv_omem_points,
   consider_other_grid,
   pbox_vm_special_sizes,
-  remove_omem_trumped_by_boxes,
+  %remove_omem_trumped_by_boxes,
   grid_props,
   whole,
   maybe_glyphic,
@@ -450,6 +450,7 @@ individuation_macros(i_complete_generic, [
   interlink_overlapping_black_lines,
   identify_subgrids,
   pixelate_swatches,
+  %remove_omem_trumped_by_boxes,
   maybe_repair_in_vm(find_symmetry_code),
   
                      %%find_subsumes,
@@ -825,6 +826,7 @@ remove_omem_trumped_by_boxes(VM,I,O):-
   O1\==O2, 
   globalpoints(O1,Ps1),globalpoints(O2,Ps2),
   Ps1\==Ps2,
+  area(O1,A1),area(O2,A2), (A1/2>A2),
   area_contained(O1,O2),!,
   obj_to_oid(O1,OID),
   erase_obj(OID),
@@ -837,8 +839,7 @@ remove_omem_trumped_by_boxes(VM,I,O):-
   O1\==O2, 
   globalpoints(O1,Ps1),globalpoints(O2,Ps2),
   Ps1\==Ps2,
-  area(O1,A1),area(O2,A2),
-  (A1/2>A2),
+  area(O1,A1),area(O2,A2), (A1/4>A2),
   findall(C-P1,(member(C-P1,Ps1),member(C-P1,Ps2)),Overlaps),
   length(Overlaps,Len),Len>=2,
   area_contained(O1,O2),
@@ -1028,8 +1029,17 @@ is_fti_step(consider_other_grid).
 % =====================================================================
 consider_other_grid(VM):- 
  ignore((
-  other_grid(VM.grid_o,Other),
+  GridO = VM.grid_o,
+  other_grid_size(GridO,OGX,OGY),
+  gset(VM.ogx)=OGX,
+  gset(VM.ogy)=OGY,
+  % let pbox take over objectification
+  if_t(this_grid_is_multiple_of_other(VM),
+    gset(VM.objs)=[]),
+
+  other_grid(GridO,Other),
   is_grid(Other),
+
   Grid = VM.grid,
   Other = In,
   forall( maybe_ogs_color(R,OH,OV,Other,Grid),
@@ -1769,6 +1779,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
   Area is H*V,
  % progress(yellow,ig(ROptions,ID)=into_fti(H,V)),
   ArgVM = vm{
+    ogx:_,ogy:_,
    % parent VM
    %training:_,
      %compare:_, 
@@ -2771,7 +2782,8 @@ is_sa(Points,C-P2):-
 contains_alone_dots(Grid):- nonvar(Grid), globalpoints_maybe_bg(Grid,Points),include(is_sa(Points),Points,SAs),SAs\==[].
 
 using_alone_dots(VM, _):- \+ contains_alone_dots(VM.grid_o), \+ contains_alone_dots(VM.grid_target),!.
-using_alone_dots(_,Goal):- when_arc_expanding(once(Goal)).
+using_alone_dots(_,Goal):- fail,  when_arc_expanding(once(Goal)).
+using_alone_dots(_,Goal):- call(Goal).
 
 maybe_alone_dots_by_color(lte(LTE),VM):-  
    available_fg_colors(TodoByColors),
@@ -3015,7 +3027,7 @@ one_fti(VM,glyphic):-
   ignore(( %ULen=<15,
   UPoints = Points,
   VM.program_i=Code,
-  run_fti(VM,[i_by_color]),
+  %run_fti(VM,[i_by_color]),
   set(VM.program_i)=Code,
   using_alone_dots(VM,(maplist(make_point_object(VM,[birth(glyphic),iz(media(shaped))]),UPoints,IndvList), raddObjects(VM,IndvList),
   save_grouped(individuate(glyphic,VM.gid),IndvList))))))).

@@ -563,7 +563,29 @@ learn_group_mapping_v1(IO,OI,AG,BG,AGS,BGS):-
 
 
 
-:- dynamic(showed_mapping/2).
+:- dynamic(showed_point_mapping/2).
+
+var_or_globalpoints(IP,[]):- var(IP),!.
+var_or_globalpoints(IP,GP):- globalpoints(IP,GP).
+
+showed_mapping(IP,OP):-
+   var_or_globalpoints(IP,PsI),
+   var_or_globalpoints(OP,PsO),!,
+   maplist(showed_point_mapping_ok(in),PsI),
+   maplist(showed_point_mapping_ok(out),PsO),!.
+
+assert_showed_mapping(IP,OP):-
+   var_or_globalpoints(IP,PsI),
+   var_or_globalpoints(OP,PsO),!,
+   maplist(assert_showed_point_mapping(in),PsI),
+   maplist(assert_showed_point_mapping(out),PsO),!.
+
+assert_showed_point_mapping(_,Black-_):- \+ Black \= black,!.
+assert_showed_point_mapping(IO,Ps):- showed_point_mapping(IO,Ps),!.
+assert_showed_point_mapping(IO,Ps):- assert(showed_point_mapping(IO,Ps)).
+
+showed_point_mapping_ok(_,Black-_):- \+ Black \= black,!.
+showed_point_mapping_ok(IO,Ps):- showed_point_mapping(IO,Ps),!.
 
 special_properties(I,O):- findall(SP,(sub_term(E,I), compound(E), into_special_props(E,SP)),L),flatten([L],F),list_to_set(F,O).
 into_special_props(cc(C,N),[color(C),cc(C,N)]):- number(N), N > 0, is_real_fg_color(C),!.
@@ -652,7 +674,7 @@ learn_group_mapping_p2(AG0,BG0):-
     ignore((find_prox_mappings(A,IO,Objs),
      assert_doing_map(ii,A,Objs)))),
 
-  retractall(showed_mapping(_,_)),
+  retractall(showed_point_mapping(_,_)),
 
   predsort(sort_on(mapping_order),BG,BGS),
   predsort(sort_on(mapping_order),AG,AGS),
@@ -697,34 +719,56 @@ into_title(IO,OI,TITLE):-
   upcase_atom(IO,A), upcase_atom(OI,B),
   sformat(TITLE,"~w  -->  ~w",[A,B]),!.
 
+is_fg_bg_objects(AL,BL):- is_bg_object(BL) -> is_fg_object(AL) ; \+ is_fg_object(AL).
+same_values(Prop,AL,BL):- one_has_prop(Prop,AL),one_has_prop(Prop,BL).
+one_has_prop(P,L):- is_list(L),!,member(E,L),has_prop(P,E).
+one_has_prop(P,O):- has_prop(P,O).
+
+
 % All background objects
-save_rule1(_,_TITLE,AL,BL,_IIPP,_OOPP):-    
-   is_bg_object(AL),is_bg_object(BL),!.
+save_rule1(IO,_TITLE,AL,BL,IIPP,OOPP):-
+  is_bg_object(AL),is_bg_object(BL),
+  showed_mapping(AL,BL),!,
+  skip_rule(IO,"IGNORED BG Objects Already",AL,BL,IIPP,OOPP).
 
-save_rule1(in,_TITLE,AL,BL,IIPP,OOPP):-    
-   is_bg_object(BL),
-   \+ is_fg_object(AL),
-   sort(BL,BS),
-   \+ showed_mapping(BS,_),!,
-   save_rule2(in,"DELETE Input",AL,BL,IIPP,OOPP).
+% All background objects
+save_rule1(IO,_TITLE,AL,BL,IIPP,OOPP):-    
+  is_bg_object(AL),is_bg_object(BL),!,
+  assert_showed_mapping(AL,BL),!,
+  skip_rule(IO,"IGNORE BG Objects",AL,BL,IIPP,OOPP).
 
-save_rule1(IO,TITLE,A,B,IIPP,OOPP):- 
+save_rule1(IO,TITLE,AL,BL,IIPP,OOPP):- 
+  same_values(iz(sid(_)),AL,BL),!,
+  save_rule2(IO,TITLE,AL,BL,IIPP,OOPP).
+
+save_rule1(in,_TITLE,AL,BL,IIPP,OOPP):-
+  is_fg_object(BL),
+  showed_mapping(_,BL),!,
+  skip_rule(in,"IGNORE Input (in)",AL,BL,IIPP,OOPP).
+
+save_rule1(IO,TITLE,A,B,IIPP,OOPP):-  !,
   save_rule2(IO,TITLE,A,B,IIPP,OOPP).
 
-save_rule2(GID,TITLE,IP,OP,_IIPP,_OOPP):- 
+save_rule2(GID,TITLE,IP,OP,IIPP,OOPP):- 
  must_det_ll((
- sort(IP,I),sort(OP,O), assert(showed_mapping(I,O)),
+
+ assert_showed_mapping(IP,OP),
 
  make_rule_l2r_objs([],IP,OP,II,OO,Mid), 
  make_rule_l2r_0(Mid,II,OO,III,OOO,NewShared),
 
  arrange_shared(NewShared,NewSharedS),
- maplist(g_display,IP,IIP), maplist(g_display,OP,OOP), 
- maplist(append_term(=('IN'(GID))),IIP,INS), maplist(append_term(=('OUT'(GID))),OOP,OUTS), append(INS,OUTS,ALL),
- print_ss(ALL),
-
- pp(TITLE),
+ print_rule_grids(GID,TITLE,IP,OP,IIPP,OOPP),
  save_learnt_rule(test_solved(TITLE,lhs(III),rhs(OOO),NewSharedS),I^O,I^O))).
+
+skip_rule(GID,TITLE,IP,OP,IIPP,OOPP):- 
+   print_rule_grids(GID,TITLE,IP,OP,IIPP,OOPP).
+
+print_rule_grids(GID,TITLE,IP,OP,_IIPP,_OOPP):- 
+ must_det_ll((
+ listify(IP,IPL), listify(OP,OPL), maplist(g_display,IPL,IIP), maplist(g_display,OPL,OOP), 
+ maplist(append_term(=('IN'(TITLE,GID))),IIP,INS), maplist(append_term(=('OUT'(TITLE,GID))),OOP,OUTS), append(INS,OUTS,ALL),
+ print_ss(ALL))).
 
 g_display(obj(I),O):- member(oid(OID),I), oid_to_obj(OID,Obj),!,g_display2(Obj,O).
 g_display(I,O):- g_display2(I,O).
@@ -745,7 +789,7 @@ skip_in_rules(_Why,localpoints(_)).
 :- discontiguous(make_rule_l2r/6).
 
 make_rule_l2r_objs(Shared,II,OO,IIIII,OOOOO,NewShared):- 
-  select(obj(ObjI),II,III),  
+  select(obj(ObjI),II,III),
   select(obj(ObjO),OO,OOO),
   make_rule_l2r(Shared,ObjI,ObjO,ObjII,ObjOO,MidShared),
   (ObjI\=@=ObjII;ObjO\=@=ObjOO),
@@ -754,6 +798,14 @@ make_rule_l2r_objs(Shared,II,OO,IIIII,OOOOO,NewShared):-
 make_rule_l2r_objs(Shared,II,OO,II,OO,Shared).
 
 
+make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):-
+  \+ member(was_oid(_),II), 
+  \+ member(was_oid(_),OO),
+  select(oid(OID1),II,II0),atom(OID1),
+  select(oid(OID2),OO,OO0),atom(OID2),
+   IIOO = [was_oid(OID1)|II0]+[was_oid(OID2)|OO0], 
+   remove_oids(IIOO,III+OOO,EL),EL\==[],!,
+   make_rule_l2r([remove_oids(EL)|Shared],[oid(OID1)|III],[oid(OID2)|OOO],IIII,OOOO,NewShared).
 
 % Cleanup RHS
 make_rule_l2r(Shared,II,OO,IIII,OOOO,NewShared):- 
@@ -810,6 +862,7 @@ transfer_prop(rotOffG,rotOffset2G(_,_)).
 transfer_prop(rotations,rot2L(_)).
 
 no_thru(oid(_)).
+no_thru(was_oid(_)).
 
 :- use_module(library(clpfd)).
 

@@ -160,6 +160,7 @@ other_grid_size(_Grid,PH,PV):- luser_getval(other_grid_size,size2D(PH,PV)),!.
 other_grid_size( Grid,PH,PV):- must_det_ll((other_grid(Grid,OtherGrid),grid_size(OtherGrid,PH,PV))).
 other_grid_size(   In,PH,PV):- get_current_test(TestID), grid_size_prediction(TestID,In,PH,PV).
 
+
 set_target_grid(ExpectedOut):-
     luser_setval(other_grid,ExpectedOut),
     grid_size(ExpectedOut,GOH,GOV),

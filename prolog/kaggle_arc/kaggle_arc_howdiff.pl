@@ -308,10 +308,14 @@ into_obj_plist(obj(PA),PA):- !.
 into_obj_plist(OID,List):- is_oid(OID), oid_to_obj(OID,Obj),!,into_obj_plist(Obj,List).
 %%%into_obj_plist(PA,PAP):- must_det_ll((extend_obj_proplist(PA,Obj), into_obj_plist(Obj,PAP))),!.
  
-
-is_oid_or_gid(OID):- atom(OID),is_oid(OID),!.
-is_oid_or_gid(GID):- compound(GID), GID= gid(_),!.
-overly_oided(M,MM):- sub_term(E,M),is_oid_or_gid(E),subst001(M,E,_,MM).
+is_oid_or_gid(V,_):-var(V),!,fail.
+is_oid_or_gid(OID,OID):- atom(OID),is_oid(OID),!.
+is_oid_or_gid(oid(OID),OID):- !, atom(OID).
+is_oid_or_gid(gid(GID),GID):- !, atom(GID).
+is_oid_or_gid(glyph(GID),GID):- !, atom(GID).
+overly_oided(M,E=Var,MM):- sub_term(E,M),is_oid_or_gid(E,EE),subst001(M,EE,Var,MM).
+remove_oids(M,O,[E|EL]):- overly_oided(M,E,MM),remove_oids(MM,O,EL).
+remove_oids(M,M,[]).
 
 never_matom(localpoints(_)).
 never_matom(colorless_points(_)).
@@ -320,7 +324,7 @@ never_matom(giz(_)).
 never_matom(globalpoints(_)).
 sub_obj_atom(_,M):- var(M),!,fail.
 sub_obj_atom(M,M):- \+ compound(M),!.
-sub_obj_atom(NO,M):- overly_oided(M,MM),!,sub_obj_atom(MM,NO).
+sub_obj_atom(NO,M):- remove_oids(M,MM,EL),EL\==[], !,sub_obj_atom(NO,MM).
 sub_obj_atom(M,o(H,L,_)):- !, M = (L/H).
 sub_obj_atom(E,colorless_points(CP)):- !, is_list(CP),member(E,CP).
 sub_obj_atom(_,M):- never_matom(M),!,fail.

@@ -1145,10 +1145,15 @@ gp_point_corners(Obj,_Points0,Dir,CPoint):-  %sort_points(Points,SPoints),
    C-P1 = CPoint,
   (points_corner_dir(Shape,Dir)*->(SPoints=[CPoint|_];last(SPoints,CPoint));fail).
    
-
+fixed_defunt_obj(OL,Obj):- compound(OL),OL=obj(I),defunct_objprops(I),member(oid(OID),I),oid_to_obj(OID,Obj),Obj\=@=obj(I).
+defunct_objprops(I):- \+ ( member(globalpoints(Ps),I), is_cpoints_list(Ps)),
+                       \+ ( member(localpoints(Ps),I), is_cpoints_list(Ps)),!.
 %globalpoints(ID,Points):- \+ \+ cmem(ID,_,_), no_repeats(ID,cmem(ID,_,_)), findall(-(C,HV),cmem(ID,HV,C),Points).
 %globalpoints(Grid,Points):- grid_to_gid(Grid,ID),\+ \+ cmem(ID,_,_),findall(-(C,HV),cmem(ID,HV,C),Points).
 globalpoints(I,_):-  var(I),!,fail.
+
+globalpoints(I,O):- fixed_defunt_obj(I,Obj),!,globalpoints(Obj,O).
+
 globalpoints(Grid,Points):- is_grid(Grid),!, grid_to_points(Grid,Points).
 globalpoints(I,X):-  (var_check(I,globalpoints(I,X)), deterministic(TF), true), (TF==true-> ! ; true).
 globalpoints([],[]):-!.
