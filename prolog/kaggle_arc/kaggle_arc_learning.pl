@@ -726,8 +726,11 @@ save_rule2(GID,TITLE,IP,OP,_IIPP,_OOPP):-
  pp(TITLE),
  save_learnt_rule(test_solved(TITLE,lhs(III),rhs(OOO),NewSharedS),I^O,I^O))).
 
-g_display(I,I):- !. 
-g_display(I,O):- object_or_global_grid(I,_,O).
+g_display(obj(I),O):- member(oid(OID),I), oid_to_obj(OID,Obj),!,g_display2(Obj,O).
+g_display(I,O):- g_display2(I,O).
+g_display2(I,print_grid(H,V,[I])):- sub_term(E,I),compound(E),E=globalpoints(_O),grid_size(I,H,V),!.
+g_display2(I,O):- object_or_global_grid(I,_,O),!.
+g_display2(I,I):- !. 
 
 
 omit_in_rules(_Why,globalpoints(_)).
@@ -806,7 +809,7 @@ transfer_prop(rotOffD,rotOffset2D(_,_)).
 transfer_prop(rotOffG,rotOffset2G(_,_)).
 transfer_prop(rotations,rot2L(_)).
 
-
+no_thru(oid(_)).
 
 :- use_module(library(clpfd)).
 
@@ -829,7 +832,7 @@ make_rule_l2r(Shared,II,OO,III,OOO,SharedMid):-
   gen_offset_expression(Type,X2,X1,'X',VX1,VX2,Code1), 
   gen_offset_expression(Type,Y2,Y1,'Y',VY1,VY2,Code2), 
   append([[if(NewI)|Code1],Code2,I_I_I],I_I_I_I),
-  make_rule_l2r(Shared,I_I_I_I,[NewO|O_O_O],III,OOO,SharedMid).
+  make_rule_l2r([removed(lhs,RemoveI),removed(rhs,RemoveO)|Shared],I_I_I_I,[NewO|O_O_O],III,OOO,SharedMid).
 
 % mass(R)
 make_rule_l2r(Shared,II,OO,III,OOO,SharedMid):- 
@@ -843,7 +846,7 @@ make_rule_l2r(Shared,II,OO,III,OOO,SharedMid):-
   NewO=..[F1,VR2],gen_variatable([F2,'R'],VR2), 
   gen_offset_expression(Type,R2,R1,'R',VR1,VR2,Code1), 
   append([[if(NewI)|Code1],I_I_I],I_I_I_I),
-  make_rule_l2r(Shared,I_I_I_I,[NewO|O_O_O],III,OOO,SharedMid).
+  make_rule_l2r([removed(lhs,RemoveI),removed(rhs,RemoveO)|Shared],I_I_I_I,[NewO|O_O_O],III,OOO,SharedMid).
 
 % cc(C,N)
 make_rule_l2r(Shared,II,OO,III,OOO,SharedMid):- 
@@ -857,7 +860,7 @@ make_rule_l2r(Shared,II,OO,III,OOO,SharedMid):-
   NewO=..[F1,C1,VN2],gen_variatable([F2,C2,'N'],VN2), 
   gen_offset_expression(Type,N2,N1,'N',VN1,VN2,Code1), 
   append([[if(NewI)|Code1],I_I_I],I_I_I_I),
-  make_rule_l2r(Shared,I_I_I_I,[NewO|O_O_O],III,OOO,SharedMid).
+  make_rule_l2r([removed(lhs,NemoveI),removed(rhs,NemoveO)|Shared],I_I_I_I,[NewO|O_O_O],III,OOO,SharedMid).
 
 
 % o(T,E,R)
@@ -972,7 +975,7 @@ make_rule_l2r_1(Shared,II,OO,III,OOO,[when_missing(EVar,E)|SharedMid]):- fail,
 make_rule_l2r_1(Shared,II,OO,II,OO,Shared).
 
 make_rule_l2r_2(Shared,II,OO,III,OOO,[thru(O)|SharedMid]):- 
-  select(I,II,I_I),select(O,OO,O_O),O=@=I, \+ transfer_prop(_,I), is_all_original_value(O),!,
+  select(I,II,I_I),select(O,OO,O_O),O=@=I, \+ transfer_prop(_,I), no_thru(O), is_all_original_value(O),!,
   make_rule_l2r_2(Shared,I_I,O_O,III,OOO,SharedMid).
 make_rule_l2r_2(Shared,II,OO,II,OO,Shared).
 

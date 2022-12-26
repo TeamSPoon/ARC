@@ -520,22 +520,32 @@ subst_2LC_safe([],[],I,I).
 lpoints_to_norm(Width,Height,LPoints,IOps,LPointsNorm):- 
    points_to_grid(Width,Height,LPoints,LGrid), normalize_grid(IOps,LGrid,LPointsNorm).
 
+%add_bg(III,III,_):- \+ fail,!.
+add_bg(III,II,fg):- sub_var('black',III), \+ sub_var('fg',III), subst(III,'$VAR'('_'),'fg',II0),subst(II0,'bg','fg',II),!.
+add_bg(III,II,bg):- subst(III,'$VAR'('_'),'bg',II).
+
 
 :- nodebug(reduce).
 %b_grid_to_norm(I,OUT):- b_grid_to_norm(Op,I,OO),OUT=(OO-w(Op)).
 %b_grid_to_norm(Op,I,O):- Op==[],!,I=O.
 %b_grid_to_norm(Op,IO,IIOO):-  compound(IO),IO=(I^O),b_grid_to_norm(Op,I,II),!,Op\==[],b_grid_to_norm(Op2,O,OO),!,Op=Op2,IIOO=II^OO.
-normalize_grid(Op,I,OO):-   
+normalize_grid(Op,I,GOO):-   
  must_det_ll((
   debug_c(reduce,writeg(normalize_grid=I)),
-  protect_vars(I,II,How),
+  protect_vars(I,III,How),
+  add_bg(III,II,Which),
   debug_c(reduce,writeg(normalize_grid_nv=II)),
   must_be_free(OO),  
   reduce_grid(II,COp,COO),
   debug_c(reduce,writeg([reduce_grid=COO,cop=COp])),
   call(How,COp,Op),
   call(How,COO,OO),
+  mapgrid(fix_bg(Which),OO,GOO),
   debug_c(reduce,writeg([un_reduce_grid=OO,un_cop=Op])))).
+
+fix_bg(Which,OO,X):- fail, Which=@=OO,!,freeze(X,X\=(_,_)).
+%fix_bg(Which,OO,_):-OO=fg,!.
+fix_bg(_,OO,OO).
 
 compress_grid(Op,I,OO):- 
   normalize_grid(NOp,I,II),
@@ -565,7 +575,7 @@ reduce_grid_pair1(AB,OPS,ARBR):- \+ ground(AB),
   my_assertion(ground(ABC)),  
   reduce_grid_pair111(ABC,OPSP,ARBRP),
   call(How,OPSP+ARBRP,OPS+ARBR),
-  my_assertion((\+ (sub_term(E,OPS+ARBR),compound(E), E='$VAR'(_)))))).
+  nop((my_assertion((\+ (sub_term(E,OPS+ARBR),compound(E), E='$VAR'(_)))))))).
 
 reduce_grid_pair1(AB,OPS,ARBR):- reduce_grid_pair111(AB,OPS,ARBR),!.
 

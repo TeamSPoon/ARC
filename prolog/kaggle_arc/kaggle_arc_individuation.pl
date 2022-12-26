@@ -209,6 +209,9 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC0,OutC0):-
     !)))),
   dash_chars)).
 
+
+ 
+most_visible(Obj,LV):- has_prop(pixel2C(_,_,_),Obj),!, LV= (-1)^1000^1000.
 most_visible(Obj,LV):- area(Obj,1),!, grid_size(Obj,H,V), Area is (H-1)*(V-1), LV=Area^1000^1000.
 most_visible(Obj,LV):- area(Obj,Area),cmass(bg,Obj,BGMass), % cmass(fg,Obj,FGMass),
   findall(_,doing_map(_,_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt, %, NCMass is -CMass,
@@ -439,21 +442,24 @@ individuation_macros(i_complete_generic, [
   indv_omem_points,
   consider_other_grid,
   pbox_vm_special_sizes,
-  interlink_overlapping_black_lines,
+  remove_omem_trumped_by_boxes,
   grid_props,
   whole,
   maybe_glyphic,
   gather_cached,
-
+  interlink_overlapping_black_lines,
+  identify_subgrids,
+  pixelate_swatches,
   maybe_repair_in_vm(find_symmetry_code),
-  find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
-  find_subsumes,
-  find_overlaps,
-  find_touches,
-  find_sees,
+  
+                     %%find_subsumes,
+                     %%find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
+                     %%find_overlaps,
+                     %%find_touches,
+                     %%find_sees,
   %remove_if_prop(and(link(contains,_),cc(fg,0))),
   %remove_if_prop(and(giz(g(out)),cc(fg,0))),
-  remove_dead_links,
+  %remove_dead_links,
   %combine_same_globalpoints,
   %really_group_vm_priors,
   %grid_props,
@@ -469,12 +475,14 @@ individuation_macros(do_ending, [
  %combine_if_prop(and(cc(bg,1),)),
  %remove_if_prop(and(iz(stype(dot))])),
  %combine_same_globalpoints,
- grid_props,
- find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
- find_subsumes,
- find_overlaps,
- find_touches,
- find_sees,
+ find_relations,
+ %grid_props,
+ remove_dead_links,
+ %find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
+ %find_subsumes,
+ %find_overlaps,
+ %find_touches,
+ %find_sees,
  %remove_if_prop(and(link(contains,_),cc(fg,0))),
  %remove_if_prop(and(giz(g(out)),cc(fg,0))),
  %remove_dead_links,
@@ -799,7 +807,98 @@ two_rows(Grid,S1,R1,R2):-
   [S1|Row1]==Row2,
   maplist(==(S1),Row1).
 */  
-  
+
+   
+% =====================================================================
+is_fti_step(remove_omem_trumped_by_boxes).
+% =====================================================================
+remove_omem_trumped_by_boxes(VM):-
+  Objs = VM.objs,
+  remove_omem_trumped_by_boxes(VM,Objs,New),
+  gset(VM.objs) = New.
+remove_omem_trumped_by_boxes(VM,I,O):-
+  member(O1,I),
+  has_prop(iz(type(pbox)),O1),  
+  select(O2,I,II),
+  has_prop(iz(flag(omem)),O2),
+  O1\==O2, 
+  globalpoints(O1,Ps1),globalpoints(O2,Ps2),
+  Ps1\==Ps2,
+  area_contained(O2,O1),!,
+  remove_omem_trumped_by_boxes(VM,II,O).
+remove_omem_trumped_by_boxes(_,O,O).
+
+area_contained(Outer,Inner):-
+  loc2D(Outer,LowHOuter,LowVOuter),loc2D(Inner,LowHInner,LowVInner),   
+  LowHInner >= LowHOuter, LowVInner >= LowVOuter,
+  vis2D(Outer,HOuter,VOuter),vis2D(Inner,HInner,VInner), 
+  HOuter>= HInner, VOuter>= VInner,
+  HighHOuter is LowHOuter+HOuter, HighVOuter is LowVOuter+VOuter,
+  HighHInner is LowHInner+HInner, HighVInner is LowVInner+VInner,
+  HighHOuter >= HighHInner,
+  HighVOuter >= HighVInner.
+
+
+
+% =====================================================================
+is_fti_step(identify_subgrids).
+% =====================================================================
+identify_subgrids(VM):-
+  Objs = VM.objs,
+  identify_subgrids(VM,Objs,New),
+  gset(VM.objs) = New.
+identify_subgrids(_,IO,IO).
+
+% =====================================================================
+is_fti_step(pixelate_swatches).
+% =====================================================================
+pixelate_swatches(VM):-
+  Objs = VM.objs,
+  pixelate_swatches(VM,Objs,New),
+  gset(VM.objs) = New.
+
+
+fill_in_missing(_C,LPoints,_X,Y,_VX,_VY,LPoints):- Y<1,!.
+fill_in_missing(C,LPoints0,X,Y,VX,VY,LPoints):- X<1,!, Ym1 is Y-1, fill_in_missing(C,LPoints0,VX,Ym1,VX,VY,LPoints).
+fill_in_missing(C,LPoints0,X,Y,VX,VY,LPoints):-
+  hv_point(X,Y,P1), \+ member(_-P1,LPoints0),!,
+  Xm1 is X-1, fill_in_missing(C,[C-P1|LPoints0],Xm1,Y,VX,VY,LPoints).
+fill_in_missing(C,LPoints0,X,Y,VX,VY,LPoints):- Xm1 is X-1, 
+  fill_in_missing(C,LPoints0,Xm1,Y,VX,VY,LPoints).
+
+pixelate_swatches(VM,[Obj|Objs],New):-
+   pixelate_swatches(VM,Objs,ObjsNew),!,
+   pixelate_swatches(VM,Obj,ObjsNew,New).
+pixelate_swatches(VM,[Obj|Objs],[Obj|New]):-!, pixelate_swatches(VM,Objs,New).
+pixelate_swatches(_,[],[]).
+
+pixelate_swatches(VM,Obj,ObjsNew,New):-
+   has_prop(iz(type(pbox)),Obj),
+   has_prop(unique_colors_count(UCC),Obj),UCC>=3,
+   area(Obj,Area), Area<30, Area>3,
+   globalpoints(Obj,GPoints), % length(GPoints,GLen), GLen==Area,
+   loc2D(Obj,OX,OY),
+   deoffset_points(OX,OY,GPoints,LPoints0),
+   vis2D(Obj,VX,VY),
+   fill_in_missing(black,LPoints0,VX,VY,VX,VY,LPoints),
+   offset_points(OX,OY,LPoints,AllGpoints),   
+   add_pixel_swatches(VM,OX,OY,VX,VY,AllGpoints,NewGs),
+   append(ObjsNew,NewGs,New).
+
+pixelate_swatches(_VM,Obj,ObjsNew,[Obj|ObjsNew]).
+
+add_pixel_swatches(_VM,_OX,_OY,_VX,_VY,[],[]).
+add_pixel_swatches(VM,OX,OY,VX,VY,[C-P1|GPoints],[New|Gs]):-   
+  add_pixel_swatches(VM,OX,OY,VX,VY,GPoints,Gs),
+  hv_point(PX,PY,P1),
+  X is PX-OX+1,Y is PY-OY+1,
+  PosX = rational(X/VX),
+  PosY = rational(Y/VY),
+
+   make_point_object(VM,[birth(pixelate_swatches),pixel2D(X,Y),pixel2C(X,Y,C), 
+     % iz(flag(hidden)),
+     pixel2G(PosX,PosY),iz(media(shaped))],C-P1,New).
+ 
 % =====================================================================
 is_fti_step(interlink_overlapping_black_lines).
 % =====================================================================
@@ -967,7 +1066,7 @@ indv_omem_points(VM):-
          oid_to_texture_points(OID,TPoints),
          nop((TP = [tpoints(TPoints)])),
          TP=[],
-         make_indiv_object(VM,[birth(omem),omem_oid(OID),oid(OID)|TP],Points,Obj),
+         make_indiv_object(VM,[birth(omem),iz(flag(omem)),omem_oid(OID),oid(OID)|TP],Points,Obj),
          %print_grid(OID,TPoints), debug_indiv(Obj),
          nop(debug_as_grid(Obj)))))))))).
  

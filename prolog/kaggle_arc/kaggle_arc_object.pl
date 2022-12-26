@@ -124,7 +124,7 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):-
 
   
   pixel_colors(GPoints,Pixels),
-  colors_cc(Pixels,CC),
+  pixels_to_cc(Pixels,CC),
   %add_prop_list(PropL,CC),
   sort(Pixels,UniqueColors),  
   my_partition(is_fg_color,UniqueColors,FGC,NotFGC),
@@ -198,10 +198,10 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):-
     rotOffset2D(OffsetX,OffsetY),
 
     loc2D(LocX,LocY), 
-     unkept(loc2G(LocXG,LocYG)),
-     unkept(center2D(CentX,CentY)),
-   kept(center2G(CentXG,CentYG)),
-   % iz(cenYG(CentYG)),iz(cenXG(CentXG)),  
+    unkept(loc2G(LocXG,LocYG)),
+    kept(center2D(CentX,CentY)),
+    kept(center2G(CentXG,CentYG)),
+    iz(cenYG(CentYG)),iz(cenXG(CentXG)),  
     unkept(bottem2D(BottemX,BottemY)),unkept(bottem2G(BottemXG,BottemYG)),
     vis2D(SizeX,SizeY), 
     unkept(vis2G(SizeXG,SizeYG)), %iz(sizeY(SizeY)),iz(sizeX(SizeX)),
@@ -766,6 +766,7 @@ shape_id(Shape,ShapeID):- term_hash(Shape,Hash), atomic_list_concat(['s',Hash],S
 iv_for(L,Iv):- copy_term(L,CT,_),numbervars(CT,0,_,[attvar(bind),singletons(true)]),term_hash(CT,Fv),
  number(Fv), Iv is (Fv rem 800) + 1,!. % (\+ is_iv_for(Iv,_) -> asserta_if_new(is_iv_for(Iv,L)) ; true).
 
+obj_iv(Obj,Iv):- indv_props(Obj,giz(iv(Iv))),!.
 obj_iv(Obj,Iv):- indv_u_props(Obj,L),iv_for(L,Iv).
 
 obj_gid(Obj,GID):-  indv_props(Obj,giz(gid(GID))).
@@ -782,8 +783,8 @@ obj_to_oid(I,X):- var_check(I,obj_to_oid(I,X))*->!;
   object_glyph(I,Glyph),
   assert_object_oid(_,I,Glyph,X))).
 */
-obj_to_oid(Obj,OID):- 
-  indv_props_list(Obj,L),((member(obj_to_oid(OID),L);member(oid(OID),L);member(omem_oid(OID),L))),
+obj_to_oid(Obj,OID):- Obj = obj(L),
+  ((member(obj_to_oid(OID),L);member(oid(OID),L);member(omem_oid(OID),L))),!,
   must_det_ll(object_glyph(Obj,Glyph)),!,
   assert(oid_glyph_object(OID,Glyph,Obj)).
 
@@ -930,8 +931,15 @@ enum_group(S):- is_unshared_saved(_,S).
 %indv_prop_val1(I,V):- indv_props(I,V).
 %indv_prop_val1(I,X):- compound(X),I=obj(List),member(X,List).
 indv_props_list(Obj,Props):- var(Obj),!,enum_object(Obj),indv_props_list(Obj,Props).
-indv_props_list(Obj,Props):- findall(Prop,cindv(Obj,Prop),Props),Props\==[],!.
+indv_props_list(OID,NVL):- is_oid(OID),!,oid_to_objlist(OID,NVS), combine_cindv(OID,NVS,NVL).
+indv_props_list(Obj,NVL):- is_object(Obj),!,obj_to_objlist(Obj,NVS), combine_cindv(Obj,NVS,NVL).
+indv_props_list(Obj,Props):- lock_doing(has_prop_list,Obj,has_prop_list(Obj,Props)).
 
+has_prop_list(Obj,Props):- findall(Prop,has_prop(Prop,Obj),Props),Props\==[],!.
+
+combine_cindv(_,NVL,NVL):- \+ really_use_cindv,!.
+combine_cindv(OID,NVS,NVL):- atom(OID),!,findall(NV,cindv0(OID,NV),Props2),append_sets(NVS,Props2,NVL),!.
+combine_cindv(Obj,NVS,NVL):- obj_to_oid(Obj,OID), findall(NV,cindv0(OID,NV),Props2),append_sets(NVS,Props2,NVL),!.
 /*
 indv_props_list_e(Obj,NV):- var(Obj),!,enum_object(Obj),indv_props_list_e(Obj,NV).
 indv_props_list_e(Obj,NV):- \+ is_object(Obj),!,into_obj(Obj,O),!,indv_props_list_e(O,NV).
@@ -954,16 +962,18 @@ cindv(OID,NV):- var(OID),!,is_oid(OID),cindv(OID,NV).
 cindv(OID,NV):- is_oid(OID),!,cindv0(OID,NV).
 cindv(Obj,_):- \+ is_object(Obj),!,fail.
 cindv(Obj,NV):- obj_to_objlist(Obj,L),member(NV,L).
-cindv(Obj,NV):- obj_to_oid(Obj,OID),cindv0(OID,NV).
+cindv(Obj,NV):- really_use_cindv, obj_to_oid(Obj,OID),cindv0(OID,NV).
 
 cindv0(OID,NV):- \+ nb_current(o2obj,t), oid_to_objlist(OID,L),member(NV,L).
-cindv0(OID,NV):- cindv1(OID,NV).
+cindv0(OID,NV):- really_use_cindv, cindv1(OID,NV).
 
 cindv1(OID,NV):- compound(NV),!,NV=..NVL,apply(cindv(OID),NVL).
 cindv1(OID,NV):- cindv(OID,A,B),NV=..[A,B].
 cindv1(OID,NV):- cindv(OID,A,B,C),NV=..[A,B,C].
 cindv1(OID,NV):- cindv(OID,A,B,C,D),NV=..[A,B,C,D].
 cindv1(OID,NV):- cindv(OID,A,B,C,D,E),NV=..[A,B,C,D,E].
+
+really_use_cindv:- false.
 
 oid_to_objlist(OID,List):- oid_to_obj(OID,Obj),obj_to_objlist(Obj,List).
 
@@ -1235,44 +1245,65 @@ globalpoints(Grid,Points):- grid_to_tid(Grid,ID),findall(-(C,HV),cmem(ID,HV,C),P
 is_color_cc(cc(C,_)):- is_color(C).
 %colors_cc(Points,CC):- is_list(Points),nth0(_,Points,C-_),is_color(C), CC = [cc(C,3)],!.
 colors_cc(I,X):- nonvar(X),!,colors_cc(I,XX),!,X=XX.
-colors_cc(G,[cc(fg,0),cc(bg,0),cc(Black,0)]):-  G==[],!,get_black(Black).
+colors_cc(G,[cc(Black,0),cc(fg,0),cc(bg,0)]):-  G==[],!,get_black(Black).
 colors_cc(I,X):- is_object(I),!,CC=cc(_,_),findall(CC,(indv_props(I,CC),is_color_cc(CC)),X).
 colors_cc(I,X):- is_oid(I),!,CC=cc(_,_),findall(CC,(indv_props(I,CC),is_color_cc(CC)),X).
 %colors_cc(G,X):- is_group(G),mapgroup(colors_cc,G,GG),combine_results(GG,X).
 %colors_cc(G,X):- is_grid(G),mapgrid(colors_cc,G,GG),combine_results(GG,X).
-%colors_cc(I,X):- is_map(I),into_grid(I,G),!,colors_cc(G,X).
-colors_cc(G,BFO):- globalpoints_include_bg(G,G0), !, all_colors_via_pixels(G0,BFO).
-%colors_cc(G,BFO):- all_colors_via_pixels(G,BFO),!.
-%colors_cc(O,CCO):- colors_cc(O,CC), into_mostly_real_colors(CC,CCO),!.
-colors_cc(All,CC):-
+colors_cc(I,X):- is_map(I),!,into_grid(I,G),!,colors_cc(G,X).
+color_cc(G,CC):- pixel_colors(G,Pixels),pixels_to_cc(Pixels,CC).
+
+/*colors_cc(All,CC):-
   findall(Nm-C,(enum_colors_test(C),occurs:count((sub_term(Sub, All), \+ \+ cmatch(C,Sub)), Nm), 
     once(Nm\==0 ; (atom(C), C\==is_colorish, C\==var, \+ is_real_color(C)))),BF),
   keysort(BF,KS),reverse(KS,SK),
-  into_cc(SK,CC),!.
+  into_cc(SK,CC),!.*/
 
+pixels_to_cc(Pixels,ECC):- get_ccs(Pixels,RCC),add_summary_colors(RCC,ECC),!.
 
+is_cc_n(P1,cc(_,N)):-call(P1,N).
+add_summary_colors(CC,CCO):- total_summary_colors(0,0,0,BG,FG,Vars,CC),
+   include(is_cc_n('=<'(0)),[cc(bg,BG),cc(fg,FG),cc(plain_var,Vars)],CCE),append(CC,CCE,CCO).
+
+special_plus(N,NP,NNP):-   ((N>=0)->plus(N,NP,NNP);NNP=N).
+
+total_summary_colors(BG,FG,Vars,BGO,FGO,VarsO,[CC|CCs]):- 
+  total_summary_colors_e(BG,FG,Vars,BGM,FGM,VarsM,CC),
+  total_summary_colors(BGM,FGM,VarsM,BGO,FGO,VarsO,CCs).
+total_summary_colors(BG,FG,Vars,BG,FG,Vars,[]).
+
+total_summary_colors_e(BG,FG,N,BG,FG,NNP,cc(C,NP)):- plain_var(C),!,special_plus(N,NP,NNP).
+total_summary_colors_e(_BG,FG,Vars,-1,FG,Vars,cc(bg,_)).
+total_summary_colors_e(BG,_FG,Vars,BG,-1,Vars,cc(fg,_)).
+total_summary_colors_e(BG,FG,_Vars,BG,FG,-1,cc(plain_var,_)).
+total_summary_colors_e(N,FG,Vars,NNP,FG,Vars,cc(C,NP)):- is_bg_color(C),!,special_plus(N,NP,NNP).
+total_summary_colors_e(BG,N,Vars,BG,NNP,Vars,cc(C,NP)):- is_fg_color(C),!,special_plus(N,NP,NNP).
+total_summary_colors_e(BG,FG,Vars,BG,FG,Vars,_).
+
+mostly_usefull_colors_cc(O,CCO):- colors_cc(O,CC), into_mostly_real_colors(CC,CCO),!.
 into_mostly_real_colors(CC,CCO):- include(is_real_cc,CC,CCO),CCO\==[],!.
 into_mostly_real_colors(CC,CCO):- include(is_some_cc,CC,CCO),CCO\==[],!.
 into_mostly_real_colors(CC,CC):- !.
+
 is_real_cc(cc(C,N)):- N>0, is_real_color(C),!.
 is_some_cc(cc(_,N)):- N>0,!.
 
 
-all_colors_via_pixels(G,CC):-
-  pixel_colors(G,All),
-  colors_cc(All,CC).
 
   
-%all_colors_via_pixels(G,BFO):- quietly((pixel_colors(G,GF),count_sets(GF,_,SK),into_cc(SK,BFO))).
+%color_cc_via_pixels(G,BFO):- quietly((pixel_colors(G,GF),count_sets(GF,_,SK),into_cc(SK,BFO))).
 get_ccs(GF,CC):-
-  count_sets(GF,_GS,SK),
-  into_cc(SK,CC).
+  %count_sets(GF,SK),
+  sort(GF,GS), count_each(GS,GF,UC),keysort(UC,KS),reverse(KS,SK),
+  into_cc(SK,CC),!.
 
-count_sets(GF,GS,SK):-
-  list_to_set(GF,GS),
-  count_each(GS,GF,UC),keysort(UC,KS),reverse(KS,SK),!.
+count_sets(GF,SK):- sort(GF,GS), count_each(GS,GF,UC),keysort(UC,KS),reverse(KS,SK),!.
+count_sets(GF,GS,SK):- (var(GS)->list_to_set(GF,GS);true), count_each(GS,GF,UC),keysort(UC,KS),reverse(KS,SK),!.
 
-  
+/*
+pixels_to_cc([ blue, cyan,blue,blue,cyan,cyan,blue,blue,blue,blue,yellow,yellow,cyan,blue,blue,yellow],Pixels_to_cc))
+
+*/
 %colors_cc(G,X):- is_group(G),!,mapgroup(colors_cc,G,Points),append_sets(Points,X).
 
 
@@ -1376,6 +1407,11 @@ colormass_object_count(Obj,HV):- vis2D(Obj,OH,OV), HV is rationalize(OH/OV).
 center2G(I,X,Y):- is_grid(I), !, grid_size(I,H,V),X is floor(H/2),Y is floor(V/2).
 center2G(I,X,Y):- indv_props(I,center2G(X,Y)),!.
 center2G(I,X,Y):- indv_props(I,iz(cenXG(X))),indv_props(I,iz(cenYG(Y))),!.
+
+
+center2D(I,X,Y):- is_grid(I), !, grid_size(I,H,V),X is floor(H/2),Y is floor(V/2).
+center2D(I,X,Y):- indv_props(I,center2D(X,Y)),!.
+%center2D(I,X,Y):- indv_props(I,iz(cenXD(X))),indv_props(I,iz(cenYD(Y))),!.
 %center2G(Obj,CentX,CentY):- vis2D(Obj,H,V), loc2D(Obj,X,Y),CentX is X + floor(H/2),CentY is Y + floor(V/2).
 
 

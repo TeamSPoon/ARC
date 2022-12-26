@@ -107,11 +107,11 @@ as_debug(L,G):- as_debug(L,true,G).
 as_debug(9,_,_):- !.
 as_debug(_,C,G):- ignore(catch((call(C)->wots(S,G),format('~NDEBUG: ~w~N',[S]);true),_,true)).
 
-count_each([],_,[]).
 count_each([C|L],GC,[Len-C|LL]):- include(==(C),GC,Lst),length(Lst,Len),count_each(L,GC,LL).
+count_each([],_,[]).
 
-count_each_inv([],_,[]).
 count_each_inv([C|L],GC,[C-Len|LL]):- include(==(C),GC,Lst),length(Lst,Len),count_each_inv(L,GC,LL).
+count_each_inv([],_,[]).
 
 maplist_n(N,P,[H1|T1]):-
   call(P,N,H1), N1 is N+1,
@@ -377,6 +377,7 @@ dont_include_var(Vs0,Vs,Var):- select(_=VV,Vs0,Vs),VV==Var,!.
 dont_include_var(Vs,Vs,_).
   
 append_sets(Sets,Set):- append(Sets,List),list_to_set(List,Set).
+append_sets(Set1,Set2,Set):- append(Set1,Set2,List),list_to_set(List,Set).
 flatten_sets(Sets,Set):- flatten(Sets,List),list_to_set(List,Set).
 
 print_prop_val(N=V):- to_prop_name(N,P),format('~N\t\t'),print(P=V),nl.

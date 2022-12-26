@@ -47,11 +47,10 @@ pixel_colors0(GH,CC):-
   term_singletons(GH,TS),
   maplist(assign_plain_var_with(wbg),TS,TS),
   pixel_colors1(GH,CC).
-
-pixel_colors1(GH,CC):- is_grid(GH),!,mapgrid(only_color_data_or(wbg),GH,Cs),append(Cs,CC).
   %include(
   %term_singletons(Cs,Ss),include(is_colorish,Ss,CC),!.
 
+pixel_colors1(GH,CC):- is_grid(GH),!,mapgrid(only_color_data_or(wbg),GH,Cs),append(Cs,CC).
 pixel_colors1(GH,CC):- is_list(GH),!,maplist(pixel_colors0,GH,PG),my_append(PG,CC).
 pixel_colors1(GH,CC):- is_colorish(GH),!,CC=GH.
 pixel_colors1(Cell,[C]):- is_point(Cell),!,only_color_data_or(fg,Cell,C).
@@ -64,8 +63,9 @@ only_color_data_or(Alt,Cell,Color):- only_color_data(Cell,Color)->true;Color=Alt
 %pixel_colors(G,GL):- findall(Name,(sub_term(CP,G),compound(CP),CP=(C-_),color_name(C,Name)),GL).
 is_real_color_or_var(C):- (var(C)->true;is_real_color(C)).
 
+unique_colors(G,SUCOR):- is_grid(G),flatten(G,GF),get_ccs(GF,CC),!,maplist(arg(1),CC,Colors),include(is_real_color,Colors,SUCOR).
 unique_colors(G,SUCOR):- indv_props(G,unique_colors(SUCOR)),!.
-unique_colors(G,SUCOR):- colors_cc(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_color_or_var,UC,SUCO))),reverse(SUCO,SUCOR).
+unique_colors(G,SUCOR):- colors_cc(G,GF),maplist(arg(1),GF,Colors),include(is_real_color,Colors,SUCOR).
 unique_color_count(G,SUCOR):- indv_props(G,unique_color_count(SUCOR)),!.
 unique_color_count(G,Len):- unique_colors(G,UC),length(UC,Len).
 

@@ -1670,6 +1670,7 @@ grid_dot(169).
 %print_g(H,V,C0,_,_,_,_):- plain_var(C0),print_g1(H,V,C-'?'),!.
 %print_g(H,V,C,_,_,_,_):- write_nbsp, print_g1(P2,H,V,C),!.
 
+object_glyph(G,Glyph):- is_object(G),G=obj(L),member(giz(glyph(Glyph)),L),!.
 object_glyph(G,Glyph):- is_object(G),!,obj_iv(G,Iv), int2glyph(Iv,Glyph).
 object_glyph(G,Glyph):- is_grid(G),!,grid_dot(Dot),name(Glyph,[Dot]).
 object_glyph(G,Glyph):- nobject_glyph(G,Glyph).

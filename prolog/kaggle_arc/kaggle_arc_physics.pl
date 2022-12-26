@@ -441,126 +441,125 @@ show_grid_changes(VM,S,Goal):-
 print_side_by_side_d(C,A,AN,W,B,BN):- nop(print_side_by_side(C,A,AN,W,B,BN)).
 
 
-% ==============================================
-% TOUCHES
-% ==============================================
-%ft i(VM,[find_touches|set(VM.program_i)]):- %cullObjectsOutsideOfRanges(VM), %  find_touches(How,VM).
-is_fti_step(find_touches).
-
-find_touches(VM):-
-  /*must_det_ll*/((Objs = VM.objs, pred_find_links(touching_object(non_overlapping_object_dir(dir_touching)),Objs,NewObjs))),
-  gset(VM.objs) = NewObjs.
-
-:- decl_pt(inter_object_relation,touching_object(_,_)).
-touching_object(How,Dirs,O2,O1):- two_physical_objs(O1,O2), \+ subsume(_,O2,O1),
-  %has_prop(o(Y,LC,_),O1), has_prop(o(Y,LC,_),O2),
-  
-  %\+ already_relation(O2,O1),
-  %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
-  globalpoints(O1,Ps1), globalpoints(O2,Ps2),
-  ignore(How=dir_touching),
-  call(How,Ps2,Ps1,Dirs),!.
-
-dir_touching(Ps1,Ps2,Dir):- member(_-P1,Ps1), is_adjacent_point(P1,Dir,P2),  member(_-P2,Ps2).
-
-
-
-% ==============================================
-% SEES
-% ==============================================
-%ft i(VM,[find_sees|set(VM.program_i)]):- %cullObjectsOutsideOfRanges(VM), %  find_sees(How,VM).
-is_fti_step(find_sees).
-
-find_sees(VM):-  
-  /*must_det_ll*/((Objs = VM.objs, pred_find_links(seeing_object(non_overlapping_object_dir(dir_seeing)),Objs,NewObjs))),
-  gset(VM.objs) = NewObjs.
-
-
-:- decl_pt(inter_object_relation,seeing_object(_,_)).
-seeing_object(How,Dirs,O2,O1):- two_physical_objs(O1,O2), \+ subsume(_,O2,O1),
-  % \+ already_relation(O2,O1),
-  %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
-  globalpoints(O1,Ps1), globalpoints(O2,Ps2),
-  ignore(How=dir_seeing),
-  call(How,Ps2,Ps1,Dirs),!.
-
-dir_seeing(Ps1,Ps2,Dir):- member(_-P1,Ps1), is_adjacent_point(P1,Dir,P2), \+ member(_-P2,Ps1), 
-  seeing_dir_soon(P1,Dir,Ps2).
-    
-seeing_dir_soon(P1,_Dir,Ps2):- member(_-P1,Ps2),!.
-seeing_dir_soon(P1,Dir,Ps2):- is_adjacent_point(P1,Dir,P2), seeing_dir_soon(P2,Dir,Ps2).
-
 
 same_surface(O1,O2):- obj_gid(O1,GID),obj_gid(O2,GID).
 
-two_physical_objs(O1,O2):- O1\==O2, is_physical_object(O1),is_physical_object(O2), O1\==O2, same_surface(O1,O2).
+two_physical_objs(O1,O2):- O1\==O2, is_physical_object(O1),is_physical_object(O2), O1\=@=O2, same_surface(O1,O2).
 
 is_physical_object(O):- var(O),!,enum_object(O),is_physical_object(O).
+is_physical_object(O):- has_prop(iz(flag(not_physical_object)),O),!,fail.
+is_physical_object(O):- has_prop(iz(flag(hidden)),O),!,fail.
 is_physical_object(O):- is_whole_grid(O),!,fail.
-is_physical_object(O):- has_prop(cc(fg,0),O),has_prop(cc(bg,0),O),!,fail.
-is_physical_object(O):- my_assertion(is_object(O)),has_prop(iz(media(shaped)),O),!.
-is_physical_object(O):- has_prop(mass(Mass),O),Mass>0.
-
-
+is_physical_object(_).
+%is_physical_object(O):- has_prop(cc(fg,0),O),has_prop(cc(bg,0),O),!,fail.
+%is_physical_object(O):- my_assertion(is_object(O)),has_prop(iz(media(shaped)),O),!.
+%is_physical_object(O):- has_prop(mass(Mass),O),Mass>0.
 
 % ==============================================
-% OVERLAPS
-is_fti_step(find_overlaps).
-% ==============================================
-%ft i(VM,[find_overlaps|set(VM.program_i)]):- %cullObjectsOutsideOfRanges(VM), %  find_overlaps(How,VM).
+  %%find_subsumes,
+  %%find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
+  %%find_overlaps,
+  %%find_touches,
+  %%find_sees,
 
-find_overlaps(VM):-
-  /*must_det_ll*/((Objs = VM.objs, pred_find_links(overlap,Objs,NewObjs))),
+is_fti_step(find_relations).
+% ==============================================
+find_relations(VM):- 
+  Objs = VM.objs,
+  find_relations(Objs,NewObjs),
   gset(VM.objs) = NewObjs.
 
-:- decl_pt(inter_object_relation,overlap(_)).
-overlap(overlaping(OverlapP),O2,O1):- two_physical_objs(O1,O2), \+ subsume(_,O2,O1),
-  %\+ already_relation(O2,O1),
-  %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
-  globalpoints(O1,Ps1), globalpoints(O2,Ps2),
-  intersection(Ps1,Ps2,Overlap,P1L,P2L),
-  maplist(length,[Ps2,P2L,Overlap,P1L,Ps1],List),
+find_relations(Objs,NewObjs):-
+ must_det_ll((
+  include(is_physical_object,Objs,Phys),
+  maplist(add_oinfo,Phys,PhysOInfo),
+  find_relations(PhysOInfo,[],TodoLIST),
+  do_todo3(PhysOInfo,TodoLIST,NewObjs),
+  nop(do_todo(PhysOInfo,NewObjs)))),!.
+
+do_todo3([oinfo(O1,_Ps1,OID1,_)|PhysOInfo],TodoLIST,[O11|NewObjs]):-
+  findall(AddToO1,member(some_todo(OID1,AddToO1),TodoLIST),REALTodo),
+  %pp(override_object(REALTodo,O1,O11)),
+  flatten(REALTodo,REALTodoF),
+  my_partition(sub_var(contained_by(completely)),REALTodoF,CBC,Rest),
+  my_partition(sub_var(contains(completely)),Rest,CBC2,Rest0),
+  length(CBC2,LenCBC2),length(CBC,LenCBC),
+  override_object([iz(contains(LenCBC2,CBC2)),iz(contained_by(LenCBC,CBC))|Rest0],O1,O11), 
+  do_todo3(PhysOInfo,TodoLIST,NewObjs).
+do_todo3([],_,[]).  
+
+do_todo([oinfo(O1,_Ps1,_OID1,REALTodo)|PhysOInfo],[O11|NewObjs]):-
+   pp(override_object(REALTodo,O1)),
+   override_object(REALTodo,O1,O11),
+   do_todo(PhysOInfo,NewObjs).
+do_todo([],[]).  
+
+add_oinfo(O1,oinfo(O1,Ps1,OID1,[])):- obj_to_oid(O1,OID1),globalpoints(O1,Ps1),!.
+
+find_relations([O1|Rest],TodoIN,TodoOUT):-
+  find_relations2(O1,Rest,TodoIN,TodoMID),
+  find_relations(Rest,TodoMID,TodoOUT).
+find_relations([],TodoINOUT,TodoINOUT).
+
+find_relations2(O1,[O2|Rest],TodoIN,TodoOUT):- fail,
+  \+ two_physical_objs(O1,O2),!,
+  find_relations2(O1,Rest,TodoIN,TodoOUT).
+
+find_relations2(O1,[O2|Rest],TodoIN,TodoOUT):-
+  find_relations4(O1,O2,TodoIN,TodoMID),
+  find_relations2(O1,Rest,TodoMID,TodoOUT).
+find_relations2(_,[],TodoINOUT,TodoINOUT).
+
+find_relations4(INFO1,INFO2,TodoIN,TodoOUT):-
+ must_det_ll((
+  INFO1 = oinfo(O1,Ps1,OID1,Todo1),%arg(1,INFO1,O1), arg(2,INFO1,Ps1), arg(3,INFO1,OID1), arg(4,INFO1,Todo1),  
+  INFO2 = oinfo(O2,Ps2,OID2,Todo2),%arg(1,INFO2,O2), arg(2,INFO2,Ps2), arg(3,INFO2,OID2), arg(4,INFO2,Todo2),
+  intersection(Ps1,Ps2,Overlap,P1L,P2L), 
+  findall(How,related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,P2L),AddToO1),
+  findall(How,related_how(How,O2,O1,Ps2,Ps1,Overlap,P2L,P1L),AddToO2),
+  %if_t(AddToO1\==[],(append(AddToO1,Todo1,NewTodo1),nb_setarg(4,INFO1,NewTodo1),nop(pp(OID1=NewTodo1)))),
+  %if_t(AddToO2\==[],(append(AddToO2,Todo2,NewTodo2),nb_setarg(4,INFO2,NewTodo2),nop(pp(OID2=NewTodo2)))),
+  ((AddToO1==[],AddToO2==[]) -> TodoIN=TodoOUT ; (append(TodoIN,[some_todo(OID1,link(rel,OID2,AddToO1)),some_todo(OID2,link(rel,OID1,AddToO2))],TodoOUT))),
+   !)).
+  
+related_how(subsumed_by(Offset,OverlapP),O1,O2,Ps1,Ps2,Overlap,P1L,_P2L):- Overlap\==[],P1L==[],!,
+  length(Ps1,Len1),length(Ps2,Len2), OverlapP = rational(Len1/Len2), object_offset(O2,O1,Offset).
+related_how(   subsumed(Offset,OverlapP),O1,O2,Ps1,Ps2,Overlap,_P1L,P2L):- Overlap\==[],P2L==[],!,
+  length(Ps1,Len1),length(Ps2,Len2), OverlapP = rational(Len2/Len1), object_offset(O2,O1,Offset).
+related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,P2L):- 
+  once((points_range(P1L,SX1,SY1,EX1,EY1,_,_), points_range(P2L,SX2,SY2,EX2,EY2,_,_))),
+  related_how2(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2).
+
+sees_dir(s,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SY1 >= EY2, D is SY1-EY2.
+sees_dir(n,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SY2 >= EY1, D is SY2-EY1.
+sees_dir(e,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 >= EX2, D is SX1-EX2.
+sees_dir(w,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX2 >= EX1, D is SX2-EX1.
+related_how2(sees(DirsDists),O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
+  findall(cc(Dir,Dist),sees_dir(Dir,Dist,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2),DirsDists), DirsDists\==[].
+
+%related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 < SX2, SY1 < SY2, EX2 < EX1, EY2 < EY1, How = contains(engulfed).
+related_how2(contains(completely),O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
+  SX1 >= SX2, SY1 >= SY2, EX2 >= EX1, EY2 >= EY1.
+%related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 > SX2, SY1 > SY2, EX2 > EX1, EY2 > EY1, How = contained_by(engulfed).
+related_how2(contained_by(completely),O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
+  SX1 =< SX2, SY1 =< SY2, EX2 =< EX1, EY2 =< EY1.
+
+related_how2(overlap(Overlap1,Overlap2),O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- Overlap\==[],
+  length(Overlap,OL), length(Ps1,Len1),length(Ps2,Len2),
+  Overlap1 = rational(OL/Len1), Overlap2 = rational(OL/Len2).
+
+related_how2(touches(TouchDirs),O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   Overlap\==[],
-  OverlapP =..[ol| List].
+  findall(Dir,(member(_-P1,P1L), is_adjacent_point(P1,Dir,P2),  member(_-P2,P2L)),Dirs),
+  get_ccs(Dirs,TouchDirs), TouchDirs\==[].
 
 
-% ==============================================
-% SUBSUMES
-is_fti_step(find_subsumes).
-% ==============================================
-%ft i(VM,[find_subsumes|set(VM.program_i)]):- %cullObjectsOutsideOfRanges(VM), %  find_subsumes(How,VM).
-
-find_subsumes(VM):-
-  /*must_det_ll*/((Objs = VM.objs, pred_find_links(subsume,Objs,NewObjs))),
-  gset(VM.objs) = NewObjs.
-
-:- decl_pt(inter_object_relation,subsume(_)).
-subsume(subsuming(Offset,OverlapP),O2,O1):- two_physical_objs(O1,O2),  
-  %\+ already_relation(O2,O1),
-  %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
-  globalpoints(O1,Ps1), globalpoints(O2,Ps2),  
-  intersection(Ps1,Ps2,Overlap,P1L,P2L),
-  maplist(length,[Ps2,P2L,Overlap,P1L,Ps1],List),
-  Overlap\==[],P1L==[],
-  OverlapP =..[ol| List],
-  object_offset(O2,O1,Offset),!.
-
-subsume(subsumed_by(Offset,OverlapP),O1,O2):- two_physical_objs(O1,O2),
-  %\+ already_relation(O2,O1),
-  %\+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
-  globalpoints(O1,Ps1), globalpoints(O2,Ps2),
-  intersection(Ps1,Ps2,Overlap,P1L,P2L),
-  maplist(length,[Ps2,P2L,Overlap,P1L,Ps1],List),
-  Overlap\==[],P1L==[],
-  OverlapP =..[ol| List],
-  object_offset(O1,O2,Offset).
 
 object_offset(O2,O1,Offset):-
-  loc2D(O1,X1,Y1),
-  loc2D(O2,X2,Y2),
-  X is X2 - X1,
-  Y is Y2 - Y1,
-  Offset = offset2D(X,Y).
+  loc2D(O1,X1,Y1), loc2D(O2,X2,Y2), X is abs(X2 - X1), Y is abs(Y2 - Y1),
+  center2D(O1,X1,Y1), center2D(O2,X2,Y2), X1 is abs(X2 - X1), Y1 is abs(Y2 - Y1),
+  ((X==0,Y==0) -> Offset = locOffset2D(X,Y) ; 
+   ((X1==0,Y1==0) -> Offset = centralOffset2D(X1,Y1) ; Offset = locOffset2D(X,Y))).
 
 
 
@@ -587,116 +586,6 @@ better_sdir(S,Iv,Dirs,O):- member(nw,Dirs),subtract(Dirs,[n,w],NDirs),NDirs\==Di
 better_sdir(S,Iv,Dirs,O):- member(se,Dirs),subtract(Dirs,[s,e],NDirs),NDirs\==Dirs,!,better_sdir(S,Iv,NDirs,O).
 better_sdir(S,Iv,Dirs,O):- member(ne,Dirs),subtract(Dirs,[n,e],NDirs),NDirs\==Dirs,!,better_sdir(S,Iv,NDirs,O).
 better_sdir(S,Iv,Dirs,link(S,Iv,Dirs)).
-
-
-non_overlapping_object_dir(_How,Ps1,Ps2,[overlap]):- member(P1,Ps1), \+ \+ member(P1,Ps2),!,fail.
-non_overlapping_object_dir(How,Ps1,Ps2,Dirs):- findall(Dir,(member(Dir,[n,s,e,w,nw,ne,sw,se]),
-  once(call(How,Ps1,Ps2,Dir))),Dirs),Dirs\==[].
-
-pred_find_links(How,Objs,NewObjs):- 
-  must_det_ll((find_links(How,Objs,Objs,NewObjs))).
-
-link_prop(T,A):- sub_term(A,T),atom(A),!.
-
-find_links(_How,[],_,[]):-!.
-find_links(How,[Obj|ScanNext],OtherObjects,[Obj|ScanRest]):- fail,
-  link_prop(How,Prop),
-  has_prop(link(Prop,_,_),Obj),!,
-  find_links(How,ScanNext,OtherObjects,ScanRest).
-
-find_links(How,[Obj|ScanNext],OtherObjects,[NewObj|ScanRest]):-
-  must_det_ll((
-  /*must_det_ll*/(find_links_objects(How,Obj,OtherObjects,DirNewSees)),
-  %pp(find_links(How)=DirNewSees),
-  /*must_det_ll*/(override_object_link(DirNewSees,Obj,NewObj)),
-  /*must_det_ll*/(find_links(How,ScanNext,OtherObjects,ScanRest)))).
-
-
-override_object_link(_,O,O):- peek_vm(VM), ignore((var(VM.option_NoLinks),length(VM.objs,Len),
-  ( Len>100 -> gset(VM.option_NoLinks)=true ; gset(VM.option_NoLinks) =false))), 
-  VM.option_NoLinks==true,!.
-override_object_link(P,O,OO):- override_object(P,O,OO).
-/*
-mention_links(Obj,[],Obj):-!.
-mention_links(Obj,[link(Dir,Seen)|More],NewFObjO):- !,
-  mention_links(Obj,Dir-Seen,MidObj),
-  mention_links(MidObj,More,NewFObjO).
-mention_links(Obj,Dir-Seen,NewObj):-
-  /*must_det_ll*/(obj_to_oid(Seen,Iv)),
-  /*must_det_ll*/(override_object_link(link(links,Dir,Iv),Obj,NewObj)),!.
-*/
-
-find_links_objects(_How,_,[],[]).
-%find_links_objects(How,Obj,_,[]):- has_prop(iz(type(dots)),Obj),!.
-find_links_objects(How,Obj,[Seen|ScanNext],[BetterSee|WillSee]):-    
- once(call(How,Dirs,Obj,Seen)),Dirs\==[],!,
- link_prop(How,Prop),
- better_sdir(Prop,Iv,Dirs,BetterSee),
- /*must_det_ll*/obj_to_oid(Seen,Iv),
- /*must_det_ll*/
- find_links_objects(How,Obj,ScanNext,WillSee),!.
-find_links_objects(How,Obj,[_|ScanNext],WillSee):- /*must_det_ll*/(find_links_objects(How,Obj,ScanNext,WillSee)),!.
-
-:- dynamic(individuated_cache/3).
-:- retractall(individuated_cache(_,_,_)).
-
-% ==============================================
-% ENGULFS
-% ==============================================
-is_fti_step(check_engulfed).
-check_engulfed(VM):-
-   smallest_first(VM.objs,SmallestFirst),
-   set(VM.objs) = SmallestFirst,
-   set(VM.program_i) = [find_engulfs|VM.program_i].
-
-% Find object that are contained in objects and individuate them in their own way  (TODO mame this more complete)
-% Find free points that are contained in objects and individuate them in their own way
-%  find_engulfs(VM).   
-
-is_fti_step(find_engulfs).
-find_engulfs(VM):-
-  /*must_det_ll*/((Objs = VM.objs, find_engulfs(Objs,NewObjs))),
-  gset(VM.objs) = NewObjs.
-
-
-find_engulfs(Objs,NewObjs):- /*must_det_ll*/((find_engulfs(Objs,Objs,NewObjs))).
-find_engulfs([],_,[]):-!.
-find_engulfs([Obj|ScanNext],OtherObjects,[NewObj|ScanRest]):-
-  /*must_det_ll*/(find_engulfs_objects(Obj,OtherObjects,DirNewTouches)),
-  /*must_det_ll*/(override_object_link(DirNewTouches,Obj,NewObj)),
-  /*must_det_ll*/(find_engulfs(ScanNext,OtherObjects,ScanRest)).
-
-find_engulfs_objects(_,[],[]).
-%find_engulfs_objects(Obj,_,[]):- has_prop(link(insideOf,_),Obj),!.
-%find_engulfs_objects(Obj,_,[]):- has_prop(link(contains,_),Obj),!.
-find_engulfs_objects(Obj,[Target|ScanNext],[link(insideOf,Iv,Offset)|Engulfed]):-    
- once(contained_object(Offset,Obj,Target)),!,
- /*must_det_ll*/(obj_to_oid(Target,Iv)),
- /*must_det_ll*/(find_engulfs_objects(Obj,ScanNext,Engulfed)),!.
-find_engulfs_objects(Obj,_,[]):- mass(Obj,Mass),Mass<5,!.
-find_engulfs_objects(Obj,[Target|ScanNext],[link(contains,Iv,Offset)|Engulfed]):-    
- once(contained_object(Offset,Target,Obj)),!,
- /*must_det_ll*/(obj_to_oid(Target,Iv)),
- /*must_det_ll*/(find_engulfs_objects(Obj,ScanNext,Engulfed)),!.
-find_engulfs_objects(Obj,[_|ScanNext],Engulfed):- /*must_det_ll*/(find_engulfs_objects(Obj,ScanNext,Engulfed)),!.
-
-
-:- decl_pt(inter_object_relation,contained_object(_Offset)).
-
-contained_object(Offset,O2,O1):- two_physical_objs(O1,O2), \+ subsume(_,O2,O1),
-  % \+ has_prop(/*b*/iz(glyphic),O2), %\+ has_prop(/*b*/iz(glyphic),O1),
-  loc2D(O1,LowH1,LowV1),loc2D(O2,LowH2,LowV2),   
-  LowH2 > LowH1, LowV2 > LowV1,
-  vis2D(O1,H1,V1),vis2D(O2,H2,V2), 
-  H1> H2, V1> V2,
-  HighH1 is LowH1+H1, HighV1 is LowV1+V1,
-  HighH2 is LowH2+H2, HighV2 is LowV2+V2,
-  HighH1 > HighH2,
-  HighV1 > HighV2,
-  nop(globalpoints(O2,[Point|_])),!,
-  nop(object_surrounds_point(O1,Point)),
-  object_offset(O2,O1,Offset).
-
 
 % ==============================================
 % Contained
