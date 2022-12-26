@@ -818,13 +818,32 @@ remove_omem_trumped_by_boxes(VM):-
   gset(VM.objs) = New.
 remove_omem_trumped_by_boxes(VM,I,O):-
   member(O1,I),
-  has_prop(iz(type(pbox)),O1),  
+  has_prop(iz(type(pbox)),O1),
   select(O2,I,II),
   has_prop(iz(flag(omem)),O2),
+  \+ has_prop(iz(type(pbox)),O2),
   O1\==O2, 
   globalpoints(O1,Ps1),globalpoints(O2,Ps2),
   Ps1\==Ps2,
-  area_contained(O2,O1),!,
+  area_contained(O1,O2),!,
+  obj_to_oid(O1,OID),
+  erase_obj(OID),
+  remove_omem_trumped_by_boxes(VM,II,O).
+remove_omem_trumped_by_boxes(VM,I,O):-
+  member(O1,I),
+  has_prop(iz(type(pbox)),O1),
+  select(O2,I,II),
+  has_prop(iz(type(pbox)),O2),
+  O1\==O2, 
+  globalpoints(O1,Ps1),globalpoints(O2,Ps2),
+  Ps1\==Ps2,
+  area(O1,A1),area(O2,A2),
+  (A1/2>A2),
+  findall(C-P1,(member(C-P1,Ps1),member(C-P1,Ps2)),Overlaps),
+  length(Overlaps,Len),Len>=2,
+  area_contained(O1,O2),
+  obj_to_oid(O2,OID),
+  erase_obj(OID),
   remove_omem_trumped_by_boxes(VM,II,O).
 remove_omem_trumped_by_boxes(_,O,O).
 

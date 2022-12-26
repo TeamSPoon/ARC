@@ -324,12 +324,15 @@ sub_obj_atom(NO,M):- overly_oided(M,MM),!,sub_obj_atom(MM,NO).
 sub_obj_atom(M,o(H,L,_)):- !, M = (L/H).
 sub_obj_atom(E,colorless_points(CP)):- !, is_list(CP),member(E,CP).
 sub_obj_atom(_,M):- never_matom(M),!,fail.
+
 %sub_obj_atom(M,M):- attvar(M),!.
 %sub_obj_atom(A,A).
 sub_obj_atom(M,M).
 %sub_obj_atom(A,M):- M = localpoints(_),!,A=M.
 %sub_obj_atom(iz(A),iz(A)):-!. % sub_obj_atom(A,M).
 sub_obj_atom(A,M):- M=..[F,List],is_list(List),!,member(E,List),A=..[F,E].
+
+sub_obj_atom(M,M):- functor(link,M,_),!.
 sub_obj_atom(E,M):- sub_term(E,M),E\==M,compound(E),once((arg(_,E,A), number(A))).
 sub_obj_atom(S,M):- special_properties(M,L),!,member(S,L).
 

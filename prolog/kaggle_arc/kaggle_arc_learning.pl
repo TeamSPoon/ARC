@@ -908,7 +908,7 @@ simplify_l2r(I,C1,VC1,I_I,O,C2,VC2,O_O,Info):- fail,
   I=I_I,O=O_O,!.
 
 make_rule_l2r(Shared,II,OO,III,OOO,[level(3,thru(O))|SharedMid]):- %fail,
-  select(I,II,I_I),select(O,OO,O_O),O=@=I,
+  select(I,II,I_I),select(O,OO,O_O),O=@=I, \+ no_thru(O),
    \+ transfer_prop(_,I), is_all_original_value(O),!,
    make_rule_l2r(Shared,I_I,O_O,III,OOO,SharedMid).
 
@@ -975,7 +975,7 @@ make_rule_l2r_1(Shared,II,OO,III,OOO,[when_missing(EVar,E)|SharedMid]):- fail,
 make_rule_l2r_1(Shared,II,OO,II,OO,Shared).
 
 make_rule_l2r_2(Shared,II,OO,III,OOO,[thru(O)|SharedMid]):- 
-  select(I,II,I_I),select(O,OO,O_O),O=@=I, \+ transfer_prop(_,I), no_thru(O), is_all_original_value(O),!,
+  select(I,II,I_I),select(O,OO,O_O),O=@=I, \+ transfer_prop(_,I), \+ no_thru(O), is_all_original_value(O),!,
   make_rule_l2r_2(Shared,I_I,O_O,III,OOO,SharedMid).
 make_rule_l2r_2(Shared,II,OO,II,OO,Shared).
 
