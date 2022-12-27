@@ -496,7 +496,7 @@ learn_rule_in_out_sames(In,Out):- fail,
   pp_safe(How),
   learn_rule_in_out_objects(How,I,O).
 
-:- dynamic(doing_map/3).
+:- dynamic(doing_map/4).
 
 learn_rule_in_out_objects(How,I,O):-
   indv_props_list(I,IP), indv_props_list(O,OP),
@@ -512,11 +512,16 @@ learn_rule_in_out_objects(How,I,O):-
 
 sort_by_closeness(In,Objs,List):- sorted_by_closeness(In,_Sorted,Objs,List).
 
+enum_in_objs(In,Objs):- nonvar(In),nonvar(Objs),!.
+enum_in_objs(In,Objs):- var(In),see_object_atomslist(_,In,_,_),enum_in_objs(In,Objs).
+%enum_in_objs(In,Objs):- is_list(Objs),var(In),select(In,Objs,Rest),Rest\==[],!, enum_in_objs(In,Objs).
+enum_in_objs(In,Objs):- var(Objs),!, enum_groups(Objs),enum_in_objs(In,Objs).
+enum_in_objs(In,Objs):- is_list(Objs),var(In),member(Obj,Objs),has_prop(giz(g(IO)),Obj), in_to_out(IO,OI), prop_group(giz(g(OI)),In),enum_in_objs(In,Objs).
+enum_in_objs(In,Objs):- var(Objs),nonvar(In),in_to_out(IO,OI),has_prop(giz(g(IO)),In), 
+   prop_group(giz(g(OI)),Objs),Objs\==[],!,enum_in_objs(In,Objs).
+
 :- dynamic(saved_sorted_by_closeness/4).
-sorted_by_closeness(In,Sorted,Objs,List):- is_list(Objs),var(In),select(In,Objs,Rest),Rest\==[],!, sorted_by_closeness(In,Sorted,Rest,List).
-sorted_by_closeness(In,Sorted,Objs,List):- var(Objs),nonvar(In),has_prop(giz(g(IO)),In),in_to_out(IO,OI), prop_group(giz(g(OI)),Objs),Objs\==[],!, sorted_by_closeness(In,Sorted,Objs,List).
-sorted_by_closeness(In,Sorted,Objs,List):- var(Objs),!, enum_groups(Objs), sorted_by_closeness(In,Sorted,Objs,List).
-sorted_by_closeness(In,Sorted,Objs,List):- var(In),!, object_atomslist(_,In,_,_),sorted_by_closeness(In,Sorted,Objs,List).
+sorted_by_closeness(In,Sorted,Objs,List):- once(var(In);var(Objs)),!,enum_in_objs(In,Objs), sorted_by_closeness(In,Sorted,Objs,List),List\==[].
 sorted_by_closeness(In,Sorted,Objs,List):- var(Sorted), maplist(obj_to_oid,Objs,OIDS), sort(OIDS,Sorted),!,sorted_by_closeness(In,Sorted,Objs,List).
 sorted_by_closeness(In,Sorted,Objs,List):- saved_sorted_by_closeness(In,Sorted,Objs,List),!.
 sorted_by_closeness(In,Sorted,Objs,List):- 
@@ -525,11 +530,11 @@ sorted_by_closeness(In,Sorted,Objs,List):-
 
 
 find_prox_mappings(A,GID,Candidates,Objs):-
-    object_atomslist(_,A,PA,PAP),
+    obj_grp_atomslist(_,A,PA,PAP),
     ord(NJ/O+JO+Joins,[PA,A],[PB,B],B) = Why,
     findall(Why,
     (      
-     member(B,Candidates),object_atomslist(GID,B,PB,PBP),
+     member(B,Candidates),obj_grp_atomslist(GID,B,PB,PBP),
      PA\==PB,
      B\==A,
      \+ is_whole_grid(B),
@@ -546,11 +551,11 @@ find_prox_mappings(A,GID,Candidates,Objs):-
    maplist(arg(4),RPairs,Objs).
 
 find_prox_mappings(A,GID,Objs):-
-    object_atomslist(_,A,PA,PAP),
+    obj_grp_atomslist(_,A,PA,PAP),
     ord(NJ/O+JO+Joins,[PA,A],[PB,B],B) = Why,
     findall(Why,
     (      
-     object_atomslist(GID,B,PB,PBP),
+     obj_grp_atomslist(GID,B,PB,PBP),
      PA\==PB,
      B\==A,
      \+ is_whole_grid(B),
@@ -566,7 +571,9 @@ find_prox_mappings(A,GID,Objs):-
    %list_upto(3,RPairs,Some),
    maplist(arg(4),RPairs,Objs).
 
-doing_map(B,A):- doing_map(_,B,[A|_]).
+doing_map(B,A):-  doing_map(_,B,[A|_]).
+doing_map(B,C,D):- call_in_testid(doing_map(B,C,D)).
+
 p2_call_p2(P2a,P2b,A,B):- call(P2a,A,M),call(P2b,M,B).
 
 maybe_exclude_whole([I],[I]).
@@ -648,8 +655,9 @@ save_rule0(GID,TITLE1,IP,OP):-
  save_rule0(GID,TITLE,IP,OP,IIPP,OOPP))).
 
 
-reachable_a(IP,_OP,A):- member(FF,IP),doing_map(_,FF,List),member(A,List).
-reachable_a(_IP,OP,A):- member(FF,OP),doing_map(_,FF,List),member(A,List).
+reachable_a(IP,_OP,A):- member(FF,IP),call_in_testid(doing_map(_,FF,List)),member(A,List).
+reachable_a(_IP,OP,A):- member(FF,OP),call_in_testid(doing_map(_,FF,List)),member(A,List).
+
 
 input_atoms_list(List):- 
  findall(PAP,obj_grp_atomslist(in,_,_,PAP),ListList),flatten(ListList,List).
@@ -692,26 +700,26 @@ learn_group_mapping(AG00,BG00):-
   maplist(extend_obj_proplist,BG00,BG0),
  must_det_ll((  
   other_io(IO,OI),
-  retractall(did_map(_,_,_,_)),
+  retractall_in_testid(did_map(_,_,_)),
 
   maybe_exclude_whole(AG0,AG), 
   maybe_exclude_whole(BG0,BG),
 
-  retractall(object_atomslist(IO,_,_,_)),
+  retractall_in_testid(object_atomslist(IO,_,_,_)),
   maplist(obj_grp_atoms(IO),AG,_AGG),
-  retractall(object_atomslist(OI,_,_,_)),
+  retractall_in_testid(object_atomslist(OI,_,_,_)),
   maplist(obj_grp_atoms(OI),BG,_BGG),
 
-  retractall(doing_map(_,_,_)),
+  retractall_in_testid(doing_map(_,_,_)),
   forall(member(B,BG),
-    (find_prox_mappings(B,IO,Objs),
-     assert_doing_map(OI,B,Objs))),
+    ignore((find_prox_mappings(B,IO,Objs),
+     assert_doing_map(OI,B,Objs)))),
  % forall(member(B,BG),
  %   ignore((find_prox_mappings(B,OI,Objs),
  %    assert_doing_map(oo,B,Objs)))),
   forall(member(A,AG),
-    (find_prox_mappings(A,OI,Objs),
-     assert_doing_map(IO,A,Objs))),
+    ignore((find_prox_mappings(A,OI,Objs),
+     assert_doing_map(IO,A,Objs)))),
  % forall(member(A,AG),
  %   ignore((find_prox_mappings(A,IO,Objs),
  %    assert_doing_map(ii,A,Objs)))),
@@ -722,6 +730,8 @@ learn_group_mapping(AG00,BG00):-
   predsort(sort_on(mapping_order),AG,AGS),
 
   learn_group_mapping_p3(IO,OI,AG,BG,AGS,BGS))).
+
+
 learn_group_mapping_p3(IO,OI,AG,BG,AGS,BGS):- !,
  locally(nb_setval(rule_cannot_add_more_objects,t),
   (nb_linkval(in_out_pair,in_out_pair(AG,BG,shared)),
@@ -731,17 +741,22 @@ learn_group_mapping_p3(IO,OI,AG,BG,AGS,BGS):- !,
        (doing_map(OI,B,[A|Others]),
           has_prop(iz(sid(SA)),A),
            (once((fail, member(C,Others), \+ has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
-           save_rule(OI,"INPUT <-- OUTPUT",[A|CC],[B]))),
+           assertz_in_testid(assumed_mapped([A],[B])),
+           %save_rule2
+           save_rule3(OI,"INPUT <-- OUTPUT",[A|CC],[B]))),
     forall(member(A,AGS),
        (doing_map(IO,A,[B|Others]),
           has_prop(iz(sid(SA)),A),
-          (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
-           save_rule(IO,"INPUT --> OUTPUT",[A],[B|CC]))),
+          (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),           
+           assertz_in_testid(assumed_mapped([A],[B])),
+           %save_rule2
+           save_rule3(IO,"INPUT --> OUTPUT",[A],[B|CC]))),
    !)))).
 
+:- dynamic(assumed_mapped/3).
 
-assert_doing_map(IO,A,[B|Objs]):-
-  assert(doing_map(IO,A,[B|Objs])),
+assert_doing_map(IO,A,[B|Objs]):- 
+  assertz_in_testid(doing_map(IO,A,[B|Objs])),
   debug_c(mapping,
    (dash_chars, pp(IO), dash_chars,
      print_ss(IO,A,B),print_ss_rest(IO,2,Objs),dash_chars)).
@@ -793,6 +808,9 @@ save_rule1(in,_TITLE,AL,BL,IIPP,OOPP):- fail,
 save_rule1(IO,TITLE,A,B,IIPP,OOPP):-  !,
   save_rule2(IO,TITLE,A,B,IIPP,OOPP).
 
+  
+
+
 save_rule2(GID,TITLE,IP,OP,IIPP,OOPP):- 
  must_det_ll((
 
@@ -802,8 +820,11 @@ save_rule2(GID,TITLE,IP,OP,IIPP,OOPP):-
  make_rule_l2r_0(Dir,Mid,II,OO,III,OOO,NewShared),
 
  arrange_shared(NewShared,NewSharedS),
- print_rule_grids(GID,TITLE,IP,OP,IIPP,OOPP),
+ save_rule3(GID,TITLE,IP,OP),
  save_learnt_rule(test_solved(TITLE,lhs(III),rhs(OOO),NewSharedS),I^O,I^O))).
+
+save_rule3(GID,TITLE,IP,OP):-
+  print_rule_grids(GID,TITLE,IP,OP,_IIPP,_OOPP).
 
 skip_rule(GID,TITLE,IP,OP,IIPP,OOPP):- 
    print_rule_grids(GID,TITLE,IP,OP,IIPP,OOPP).
@@ -1265,6 +1286,14 @@ saveable_test_info(TestID,InfoSet):-
  list_to_set(Info,InfoSet).
 
 
+assertz_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,assertz_if_new(TestIDGoal).
+assert_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,assert_if_new(TestIDGoal).
+call_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,call(TestIDGoal).
+retractall_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),retractall(TestIDGoal).
+
+
+dress_in_testid(Goal,TestIDGoal):- get_current_test(TestID),arg(1,Goal,A1),A1==TestID,!,TestIDGoal=Goal.
+dress_in_testid(Goal,TestIDGoal):- get_current_test(TestID),Goal=..[F|Args], TestIDGoal=..[F,TestID|Args].
 
 assert_visually(H:-B):- !,unnumbervars((H:-B),(HH:-BB)), assert_visually1(HH,BB).
 assert_visually( H  ):- unnumbervars(H,HH),assert_visually1(HH,true).
@@ -1385,7 +1414,7 @@ same_prop(P,P-_).
 enum_groups(G):- enum_groups0(G),length(G,L),between(2,30,L).
 enum_groups0(G):- group_prop(Prop), prop_group(Prop,G).
 enum_groups0(G):- why_grouped(_Why, G).
-enum_groups0(G):- findall(Obj,(object_atomslist(_,Obj,_,_)),G), G\==[].
+enum_groups0(G):- findall(Obj,(see_object_atomslist(_,Obj,_,_)),G), G\==[].
 enum_groups0(S):- is_unshared_saved(_,S).
 %enum_groups0(G):- current_group(G).
 
