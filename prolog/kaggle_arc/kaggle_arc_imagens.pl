@@ -114,7 +114,7 @@ the_hammer1(BlueComplex):- the_hammer(blue,BlueComplex).
 the_hammer1(RedComplex):-  the_hammer(red,RedComplex).
 
 the_hammer(Color,ColorComplex):- 
-  ColorComplex = obj([mass(6), colorless_points([point_01_01, point_01_02, point_01_03, point_02_01, point_02_02, point_03_02]), 
+  ColorComplex = obj([mass(6), colorlesspoints([point_01_01, point_01_02, point_01_03, point_02_01, point_02_02, point_03_02]), 
   colors_cc([cc(Color, 6)]), localpoints([Color-point_01_01, Color-point_01_02, Color-point_01_03, Color-point_02_01, 
   Color-point_02_02, Color-point_03_02]), vis2D(3, 3), rot2L(sameR), loc2D(2, 5), 
   changes([]), iz(shape(rectangle)), iz(hammer), 

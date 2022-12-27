@@ -70,23 +70,29 @@ pbox_vm(VM):- !,
   GridI0=VM.grid_o,
   pbox_vm(GH,GV,GridI0,Sizes_S_L,VM))).
 
-  
+
+gather_sizes(_VM,[],[]):-!.
+gather_sizes(VM,[T|Types],Sizes):- 
+  gather_sizes(VM,T,Sizes1),
+  gather_sizes(VM,Types,Sizes2),
+  append(Sizes1,Sizes2,List),list_to_set(List,Sizes).
+gather_sizes(VM,P3,Sizes1):- findall(size2D(H,V),call(P3,VM,H,V),Sizes1).
+
+:- dynamic(special_sizes/2).
 %=====================================================================
 is_fti_step(pbox_vm_special_sizes).
 %=====================================================================
-pbox_vm_special_sizes(VM):- !, 
+pbox_vm_special_sizes(Types,VM):- !, 
  must_det_ll((
+  gather_sizes(VM,Types,Sizes),
   GH is round(VM.h + 0), GV is round(VM.v + 0),
-  findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L0),    
-  other_grid_size(VM.grid_o,OX,OY),
-  GridI0=VM.grid_o,
-  globalpoints(GridI0,Points),points_to_sizes(Points,Sizes),
-  append_sets([Sizes,[size2D(OX,OY)|Sizes_S_L0]],Sizes_S_L),
-  Objs = VM.objs,
+  findall(size2D(H,V),(member(size2D(H,V),Sizes),V=<GV,H=<GH),Sizes_S_L),
+  GridI0=VM.grid,
+  Objs=VM.objs,
   length(Sizes_S_L,A),
   pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM))).
 
-points_to_sizes(Points,Sizes):-
+color_mass_points_to_sizes(Points,Sizes):-
   maplist(arg(1),Points,Colors),
   sort(Colors,SColors),
   findall(size2D(SizeX,SizeY),(member(Color,SColors),
@@ -102,8 +108,8 @@ pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM):-
 pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM):- 
  must_det_ll((
   maplist(obj_size2D,Objs,HVList),
-  globalpoints(GridI0,Points),points_to_sizes(Points,Sizes),
-  append(Sizes,[size2D(3,3),size2D(9,9),size2D(4,4)|HVList],NEAR),
+  globalpoints(GridI0,Points),color_mass_points_to_sizes(Points,Sizes),
+  append(Sizes,[size2D(VM.ogx,VM.ogy),size2D(3,3),size2D(9,9),size2D(4,4)|HVList],NEAR),
   debug_m(indv(pbox),NEAR),
   include(near_size(GH,GV,NEAR),Sizes_S_L,UseSizes),
   length(UseSizes,B), wdmsg(reduced(A->B)),
@@ -425,10 +431,13 @@ i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):-
       (Which=@=inside -> (IsRim=filltype(solid),OBJ=Inside,OH is FX, OV is FY) 
       ; (writeq(Which),break, OH is FX-0, OV is FY-0)))))),*/
   once(( OBJ \=@=Grid, OBJ \==[],  %CACHE.objFound = OBJ, %CACHE.which = Which, %CACHE.objMade = Obj, %append(SoFarI,[Rec],SoFarMid),
+%  fix_obj(
+  OBJ\=Grid,
   obj_gpoints(OBJ,OH,OV,GOPoints),
   intersection(Points,GOPoints,Intersection,LeftOver,Unknown))),
   nop(Intersection\==[]),!, nop(Unknown==[]),
   %format('~N~q.~n',[USING]),  
+  %\+ \+ (grid_size(OBJ,HH,VV), \+ (HH==TGX, VV==TGY)),
  must_det_ll((
   make_indiv_object(VM,[/*b*/iz(type(pbox(WHY,L_S))),iz(type(pbox)),iz(flag(always_keep)),
      iz(media(shaped)),iz(media(image)),iz(info(dont_reduce)),loc2D(OH,OV),vis2D(HH,VV)],GOPoints,Obj),
@@ -452,7 +461,10 @@ existingObject(VM,GOPoints):-
   member_ls(O,VM.objs),globalpoints_include_bg(O,Ps),
   GOPoints==Ps,!.
 
-obj_gpoints(OBJ,OH,OV,GOPoints):- localpoints_include_bg(OBJ,OPoints), offset_points(OH,OV,OPoints,GOPoints).
+obj_gpoints(OBJ,OH,OV,GOPoints):-
+   localpoints_include_bg(OBJ,OPoints), 
+   ((member(OPoints,W-point_01_01),is_fg_color(W)) -> OPoints=OOPoints ; OOPoints=[wbg-point_01_01|OPoints]),
+   offset_points(OH,OV,OOPoints,GOPoints).
 
 rim_of(Find,HeadNewMidFooter):- 
   append([Top|OldMid],[Bot],Find), 
@@ -519,8 +531,9 @@ found_box(Grid,L_S,NSEW,FX,FY,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,F
   is_sub_grid_object(CACHE,FX,FY,H,V,TGX,THY,OGX,OGY,Why).
 
 found_box(Grid,L_S,NSEW,FX,FY,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS,   What, Why):- 
+  (enum_fg_colors(Black);Black=black),
   once(((H>2,V>2),
-  NSEW=[B,B,B,B],B = black,
+  NSEW=[B,B,B,B],B = Black,
   maplist_ls(==(B),IBorderS),
   \+ whole_row_or_col(B,Center))),
   member(What=Why,[iborder=border_frame(H,V,[B]),center=framed_image(H,V,[B])]).

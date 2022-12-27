@@ -689,8 +689,8 @@ jnohuorzh
 2wfys5w64-relative-right-side
 n1hczotml
 ifmyulnv8
-ifmyulnv8-colorless_points
-ifmyulnv8-dynamic-colorless_points
+ifmyulnv8-colorlesspoints
+ifmyulnv8-dynamic-colorlesspoints
 referenceable-components
 178fcbfb-easier
 middle

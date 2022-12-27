@@ -51,8 +51,8 @@ fav(t('47c1f68c'),[hedra,
 fav(t('47c1f68c'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),recoloring,image_repetition,image_reflection,find_the_intruder,detect_grid,crop,color_guessing,'(3, 1)']).
 fav(v('cad67732'),[human(i(whole),first_object_term(rotated),learn_rule),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
 fav(t('27a28665'),[human(i(whole),learn_rule)]).
-%fav(t('27a28665'),[human(i([glyphic]),one_obj,into_monochrome,db(largest:colorless_points,out:grid:p(1,1):color),resize_grid(1,1))]).
-%fav(t('27a28665'),[human(i(whole),one_obj,into_monochrome,db(largest:colorless_points,out:grid:p(1,1):color),resize_grid(1,1))]).
+%fav(t('27a28665'),[human(i([glyphic]),one_obj,into_monochrome,db(largest:colorlesspoints,out:grid:p(1,1):color),resize_grid(1,1))]).
+%fav(t('27a28665'),[human(i(whole),one_obj,into_monochrome,db(largest:colorlesspoints,out:grid:p(1,1):color),resize_grid(1,1))]).
 fav(t('27a28665'),[learn([shape_to_color]),no_sol([make_box(1),shape_to_color(C),cls_with(C)])]).
 fav(t('27a28665'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),take_negative,associate_images_to_patterns,associate_colors_to_patterns,'(7, 3)']).
 %fav(t('44f52bb0'),[human(i(whole),print_grid,get_vm(objs,[Obj|_]),print_grid,(call(iz(Obj,symmetric_type(flipH)))->(print_grid,set_out([[blue]]));(print_grid,set_out([[orange]]))))]).
@@ -66,7 +66,7 @@ fav(t('d631b094'),[-shape_match,-rotation_match,-mask_match,-color_match,test_su
 
 %fav(t('0d3d703e'),[human(i([columns,done]),db(objs:color,color),get(objs),learn_rule),-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),associate_colors_to_colors,'(4, 1)']).
 fav(t('0d3d703e'),[indiv(i_columns),human(i([columns,done]),get(objs),learn_rule),-rotation_match,-color_match,+shape_match,+mask_match,test_suite([train400]),associate_colors_to_colors,'(4, 1)']).
-%fav(t('a85d4709'),[human(i([rows,done]),o([rows,done]),   db(objs:colorless_points,color=Color),set(objs:rectangle,objs:monochrome=true,objs:color=Color)),-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),summarize,separate_images,associate_colors_to_images,'(4, 1)']).
+%fav(t('a85d4709'),[human(i([rows,done]),o([rows,done]),   db(objs:colorlesspoints,color=Color),set(objs:rectangle,objs:monochrome=true,objs:color=Color)),-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),summarize,separate_images,associate_colors_to_images,'(4, 1)']).
 fav(t('a85d4709'),[indiv(i_rows),learn(i([rows,done]),o([rows,done]),learn_rule),-rotation_match,-mask_match,-color_match,+shape_match,test_suite([train400]),summarize,separate_images,associate_colors_to_images,'(4, 1)']).
 
 fav(t('60b61512'),[indiv(i_pbox)]).

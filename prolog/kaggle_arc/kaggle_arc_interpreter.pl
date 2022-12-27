@@ -599,12 +599,18 @@ g_2_o(_,_,_):- fail.
 
 %set_glyph_to_object(G,O):- ignore(luser_linkval(G,O)),(get_current_test(TestID),my_asserta_if_new(g_2_o(TestID,G,O))).
 
-g2o(G,O):- var(G), !, oid_glyph_object(_,G,O).
-g2o(G,O):- integer(G),!,int2glyph(G,C),!,g2o(C,O),!.
-g2o(C,O):- compound(C), !, compound_name_arguments(C,objFn,[G|_]), !, g2o(G,O).
-g2o(G,O):- \+ atom(G), !, string(G),!,atom_string(A,G),!,g2o(A,O).
-g2o(G,_):- is_fg_color(G),!,fail.
-g2o(G,O):- oid_to_obj(G,O)-> true;(oid_glyph_object(_,G,O)*->true;(Chars=[_,_|_],atom_chars(G,Chars),chars2o(Chars,O))).
+g2o(G,O):- g2o0(G,O),
+  once(if_t(get_current_test(TestID),
+    (O=obj(T),member(giz(testid(TestID)),T)))),
+  once(if_t((get_example_num(ExampleNum),ground(ExampleNum)),
+    (O=obj(T),member(giz(example_num(ExampleNum)),T)))).
+
+g2o0(G,O):- var(G), !, oid_glyph_object(_,G,O).
+g2o0(G,O):- integer(G),!,int2glyph(G,C),!,g2o(C,O),!.
+g2o0(C,O):- compound(C), !, compound_name_arguments(C,objFn,[G|_]), !, g2o(G,O).
+g2o0(G,O):- \+ atom(G), !, string(G),!,atom_string(A,G),!,g2o(A,O).
+g2o0(G,_):- is_fg_color(G),!,fail.
+g2o0(G,O):- oid_to_obj(G,O)-> true;(oid_glyph_object(_,G,O)*->true;(Chars=[_,_|_],atom_chars(G,Chars),chars2o(Chars,O))).
 
 
 

@@ -313,12 +313,12 @@ is_oid_or_gid(OID,OID):- atom(OID),is_oid(OID),!.
 is_oid_or_gid(oid(OID),OID):- !, atom(OID).
 is_oid_or_gid(gid(GID),GID):- !, atom(GID).
 is_oid_or_gid(glyph(GID),GID):- !, atom(GID).
-overly_oided(M,E=Var,MM):- sub_term(E,M),is_oid_or_gid(E,EE),subst001(M,EE,Var,MM).
+overly_oided(M,EE=Var,MM):- sub_term(E,M),is_oid_or_gid(E,EE),subst001(M,EE,Var,MM).
 remove_oids(M,O,[E|EL]):- overly_oided(M,E,MM),remove_oids(MM,O,EL).
 remove_oids(M,M,[]).
 
 never_matom(localpoints(_)).
-never_matom(colorless_points(_)).
+never_matom(colorlesspoints(_)).
 never_matom(o(_,_,_)).
 never_matom(giz(_)).
 never_matom(globalpoints(_)).
@@ -326,7 +326,7 @@ sub_obj_atom(_,M):- var(M),!,fail.
 sub_obj_atom(M,M):- \+ compound(M),!.
 sub_obj_atom(NO,M):- remove_oids(M,MM,EL),EL\==[], !,sub_obj_atom(NO,MM).
 sub_obj_atom(M,o(H,L,_)):- !, M = (L/H).
-sub_obj_atom(E,colorless_points(CP)):- !, is_list(CP),member(E,CP).
+sub_obj_atom(E,colorlesspoints(CP)):- !, is_list(CP),member(E,CP).
 sub_obj_atom(_,M):- never_matom(M),!,fail.
 
 %sub_obj_atom(M,M):- attvar(M),!.
@@ -634,13 +634,13 @@ prop_type(scale,vis2D(_,_)).
 prop_type(scale,iz(sizeX(_))).
 prop_type(scale,iz(sizeY(_))).
 prop_type(order,o(_Peers,_Ord,_Type)).
-prop_type(colorless_points,colorless_points(_)).
+prop_type(colorlesspoints,colorlesspoints(_)).
 prop_type(rotate,rot2L(_)).
 prop_type(repaint,pen(_)).
 prop_type(repaint,colors_cc(_)).
 prop_type(loc2D,edge(_,_)).
 
-changed_by(colorless_points,reshape).
+changed_by(colorlesspoints,reshape).
 changed_by(loc2D,move).
 changed_by(mass,grow).
 changed_by(localpoints,reshape_and_recolor).
@@ -745,7 +745,7 @@ uncomparable2(group,o).
 uncomparable2(group,obj_to_oid).
 %uncomparable2(group,link).
 uncomparable2(object,iz).
-uncomparable2(colorless_points,localpoints).
+uncomparable2(colorlesspoints,localpoints).
 
 never_show_diff(V):- var(V),!,fail.
 never_show_diff(_):- nb_current(diff_porportional,t),!,fail.
@@ -815,7 +815,7 @@ same_colorless_points(I,O,OUT):-
   obj_make_comparable(I,II), obj_make_comparable(O,OO),!,
   intersection(II,OO,SL,IIR,OOR),!,
   %member(mass(_),SL),
-  member(colorless_points(_),SL),
+  member(colorlesspoints(_),SL),
   diff_objects(I,O,OUT).
 
 
@@ -927,7 +927,7 @@ excl_diff(C):- var(C),!,fail.
 excl_diff(diff(A->_)):- !, excl_diff(A).
 excl_diff(C):- compound(C),!, compound_name_arity(C,F,_),!,excl_diff(F).
 excl_diff(localpoints).
-excl_diff(colorless_points).
+excl_diff(colorlesspoints).
 leftover_diffs(P):- \+ excl_diff(P).
 
 compare_objs1(_,I,O):- I==O,!,fail.
@@ -957,7 +957,7 @@ sprop(perfect).
 
 sprop_of(sameO,visually).
 sprop_of(sameO,size2D).
-sprop_of(sameO,colorless_points).
+sprop_of(sameO,colorlesspoints).
 sprop_of(sameO,colors_cc).
 
 sprop_of(moved,sameO).
@@ -1017,8 +1017,8 @@ diff_termz(I,O,I):- O==[],!.
 diff_termz([IH,IV],[OH,OV],D):- maplist(number,[IH,IV,OH,OV]),!,maplist(diff_numbers,[IH,IV],[OH,OV],D).
 
 %diff_termz(I,O, [] ):- (never_do_diff(I);never_do_diff(O)),!.
-diff_termz(colorless_points(I),colorless_points(O),[]):- !,sort(I,II),sort(O,OO),II=@=OO,!.
-diff_termz(colorless_points(I),colorless_points(O),colorless_points(diff(I->O))):-!.
+diff_termz(colorlesspoints(I),colorlesspoints(O),[]):- !,sort(I,II),sort(O,OO),II=@=OO,!.
+diff_termz(colorlesspoints(I),colorlesspoints(O),colorlesspoints(diff(I->O))):-!.
 %diff_termz(I,O, (O \== I)):- O=@=I,!.
 diff_termz(group_o(I),group_o(O),group_o(DD)):- !, must_det_ll(diff_groups(I,O,DD)).
 diff_termz(I,O,DD):-  is_group(I), is_group(O), !, must_det_ll(diff_groups(I,O,DD)).
@@ -1060,7 +1060,7 @@ compute_diff_or_same(I,O,IO):-
 maybe_no_diff(I,_,[],I):-!.
 maybe_no_diff(_,_,D,D).
 
-is_object_props(O):- is_list(O),member(E,O),compound(E),colorless_points(_)=E,!.
+is_object_props(O):- is_list(O),member(E,O),compound(E),colorlesspoints(_)=E,!.
 diff_lists(AA,BB,D):- AA=@=BB,!,D=[].
 diff_lists(AA,BB,diff(AA=@=BB)):- sort(AA,A),sort(BB,B), A=@=B,!.
 diff_lists(I,O,D1D):- is_kv_list(I),is_kv_list(O),!,kv_list_diff(_Sytle,I,O,D1D).
@@ -1109,7 +1109,7 @@ reduce_required(obj(IO),IO).
 reduce_required(giz(IO),IO).
 %reduce_required(pen(IO),IO).
 %reduce_required(/*b*/iz(IO),IO).
-reduce_required(colorless_points(IO),IO).
+reduce_required(colorlesspoints(IO),IO).
 reduce_required(g(IO),IO).
 reduce_required(i(IO),IO).
 

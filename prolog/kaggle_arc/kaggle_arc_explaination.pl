@@ -83,6 +83,8 @@ print_info_1(G):- print_info(G).
 print_info_l(GridS):- maplist(print_info_1,GridS).
 
 
+global_or_object_grid(O1,O1):- \+ is_object(O1).
+global_or_object_grid(O1,Grid):- global_or_object_grid(O1,_,Grid).
 global_or_object_grid(O1,global+grid,Grid):-  global_grid(O1,Grid),!.
 global_or_object_grid(O1,local+grid,Grid):-  object_grid(O1,Grid),!.
 global_or_object_grid(O1,global+points,Points):- globalpoints_include_bg(O1,Points).
@@ -210,7 +212,7 @@ birth_info(Birth,1+InfoLen):- display_length(Birth,InfoLen).
 object_ref_desc(Obj, OUTS):- 
   into_obj(Obj,PA),
   obj_to_oid(PA,GA),% mass(PA,Mass),
-  colorless_points(PA,Shape),loc2D(PA,X,Y), rot2L(PA,ROT), vis2D(PA,XX,YY),
+  colorlesspoints(PA,Shape),loc2D(PA,X,Y), rot2L(PA,ROT), vis2D(PA,XX,YY),
   shape_id(Shape,ShapeID),
   object_birth_desc(PA,Birth),
   object_color_desc(PA,PenColors),
@@ -227,7 +229,7 @@ object_ref_desc_no_loop(PA, OUTS):-
  must_det_ll((
   object_color_glyph_long(PA, CGA),
   mass(PA,Mass),
-  colorless_points(PA,Shape),pen(PA,Pen),loc2D(PA,X,Y), rot2L(PA,ROT),
+  colorlesspoints(PA,Shape),pen(PA,Pen),loc2D(PA,X,Y), rot2L(PA,ROT),
   shape_id(Shape,ShapeID),  
   OUT = oFn(CGA,Mass,loc2D(X,Y),ROT,pen(Pen),ShapeID),
   wots(SS,wqs_l(OUT)),
@@ -497,7 +499,7 @@ remove_too_verbose(_MyID,H,H).
 too_verbose(P):- compound(P),compound_name_arity(P,F,_),!,too_verbose(F).
 too_verbose(globalpoints).
 too_verbose(monochrome).
-too_verbose(colorless_points).
+too_verbose(colorlesspoints).
 % too_verbose(gid). too_verbose(giz). 
 too_verbose(grid_sz). too_verbose(grid_size). 
 too_verbose(localpoints).

@@ -277,7 +277,7 @@ set_test_suite(N):-
    if_t(X\==N,
    (set_test_suite_silently(N),
     notrace((restart_suite)),
-    set_pair_mode(entire_suite),
+    was_set_pair_mode(entire_suite),
     preview_suite)).
 
 test_preview(TestID):- with_pair_mode(single_pair,print_single_pair(TestID)).
@@ -326,17 +326,17 @@ do_menu_codes([27,27,91,67]):- !, next_test, print_test.
 
 
 % page up
-do_menu_codes([27,91,53,126]):- !, prev_suite,prev_test,set_pair_mode(entire_suite).
+do_menu_codes([27,91,53,126]):- !, prev_suite,prev_test, was_set_pair_mode(entire_suite).
 % page down
-do_menu_codes([27,91,54,126]):- !, set_pair_mode(entire_suite),next_suite,print_single_pair.
+do_menu_codes([27,91,54,126]):- !, was_set_pair_mode(entire_suite), next_suite,print_single_pair.
 % up arrow
 do_menu_codes([27,91,65]):- !, set_pair_mode(single_pair),prev_pair.
 % down arrow
 do_menu_codes([27,91,66]):- !, set_pair_mode(single_pair),next_pair.
 % left arrow
-do_menu_codes([27,91,68]):- !, set_pair_mode(whole_test), maybe_cls, prev_test, report_suite, print_qtest.
+do_menu_codes([27,91,68]):- !, was_set_pair_mode(whole_test), maybe_cls, prev_test, report_suite, print_qtest.
 % right arrow
-do_menu_codes([27,91,67]):- !, set_pair_mode(whole_test), maybe_cls, next_test, report_suite, print_qtest.
+do_menu_codes([27,91,67]):- !, was_set_pair_mode(whole_test), maybe_cls, next_test, report_suite, print_qtest.
 
 maybe_cls:- nop(cls_z).
 
@@ -403,6 +403,7 @@ next_pair_mode(M1,M2):- first_pair_modes(List),next_in_list(M1,List,M2).
 alt_pair_mode(M1,M2):- first_pair_modes([M1,M2|_]),!.
 alt_pair_mode(_,M1):- first_pair_modes([M1|_]).
 
+was_set_pair_mode(_).
 set_pair_mode(Mode):- luser_setval('$pair_mode',Mode).
 get_pair_mode(Mode):- nonvar(Mode),get_pair_mode(TMode),!,TMode==Mode.
 get_pair_mode(Mode):- once(luser_getval('$pair_mode',Mode);next_pair_mode(Mode,_)).

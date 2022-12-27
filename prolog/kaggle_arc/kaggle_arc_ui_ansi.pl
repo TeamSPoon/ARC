@@ -351,7 +351,7 @@ pp_hook_g1(O):-  is_grid(O),
 % \+ (sub_term(E,O),compound(E),E='$VAR'(_)), 
   catch((wots(S,print_grid(O)),strip_vspace(S,SS),ptc(orange,(format('"  ~w  "',[SS])))),_,(never_let_arc_portray_again,fail)).
 
-pp_hook_g1(colorless_points(O)):- !, is_points_list(O), as_grid_string(O,S), print(colorless_points(S)),!.
+pp_hook_g1(colorlesspoints(O)):- !, is_points_list(O), as_grid_string(O,S), print(colorlesspoints(S)),!.
 pp_hook_g1(vals(O)):- !, writeq(vals(O)),!.
 pp_hook_g1(localpoints(O)):- !, is_points_list(O), as_grid_string(O,S), print(localpoints(S)),!.
 pp_hook_g1(C):- compound(C), compound_name_arguments(C,F,[O]),is_points_list(O), length(O,N),N>2, as_grid_string(O,S), compound_name_arguments(CO,F,[S]), print(CO),!.
@@ -597,13 +597,14 @@ arcdbg(G):- wdmsg(G).
 
 %user:portray(Grid):- ((\+ tracing, is_group(Grid),print_grid(Grid))).
 %user:portray(Grid):- quietlyd((is_object(Grid),print_grid(Grid))).
-
-banner_lines(Color):- nl_if_needed,
-  color_print(Color,'--------------------------------------------------------------'),nl,
-  color_print(Color,'=============================================================='),nl,
-  color_print(Color,'--------------------------------------------------------------'),nl,
-  color_print(Color,'=============================================================='),nl,
-  color_print(Color,'--------------------------------------------------------------'),nl,!.
+n_times(N,Goal):- forall(between(1,N,_),ignore(Goal)).
+banner_lines(Color):- banner_lines(Color,1).
+banner_lines(Color,N):- nl_if_needed,
+  n_times(N,color_print(Color,'-------------------------------------------------')),nl,
+  n_times(N,color_print(Color,'=================================================')),nl,
+  n_times(N,color_print(Color,'-------------------------------------------------')),nl,
+  n_times(N,color_print(Color,'=================================================')),nl,
+  n_times(N,color_print(Color,'-------------------------------------------------')),nl,!.
 
 print_sso(A):- ( \+ compound(A) ; \+ (sub_term(E,A), is_really_gridoid(E))),!, wdmsg(print_sso(A)),!.
 print_sso(A):- grid_footer(A,G,W),writeln(print_sso(W)), print_grid(W,G),!.

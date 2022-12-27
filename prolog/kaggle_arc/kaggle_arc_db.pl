@@ -330,7 +330,7 @@ pgt([Obj1]-[Obj2]):- pgt1(Obj1),pgt2(Obj2).
 pgt([Obj1,Obj2]):- pgt1(Obj1),pgt2(Obj2).
 pgt1(Obj):-
   Obj = obj( [ mass(536),
-         colorless_points( [ point_01_01, point_02_01]),
+         colorlesspoints( [ point_01_01, point_02_01]),
          colors_cc( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
          localpoints( [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2L(sameR), loc2D(3, 1),
@@ -342,7 +342,7 @@ pgt1(Obj):-
 
 pgt2(Obj):- Obj = 
       obj( [ mass(536),
-         colorless_points( [ point_01_01, point_02_01]),
+         colorlesspoints( [ point_01_01, point_02_01]),
          colors_cc( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
          localpoints( [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2L(sameR), loc2D(2, 1),
@@ -418,7 +418,7 @@ replace_local_point_color(Point,NewC,OldC,G,GO):- is_list(G),!, maplist(replace_
 replace_local_point_color(Point,NewC,OldC,G,GO):- is_object(G), !,
     localpoints(G,Points),     
     replace_in_points(Point,NewC,OldC,Points,RPoints),
-    %loc2D(G,OH,OV),offset_point(OH,OV,Point,LPoint),colorless_points(G,NCPoints), maplist(replace_in_points(Point,NewC,OldC),NCPoints,RNCPoints),,colorless_points(RNCPoints)
+    %loc2D(G,OH,OV),offset_point(OH,OV,Point,LPoint),colorlesspoints(G,NCPoints), maplist(replace_in_points(Point,NewC,OldC),NCPoints,RNCPoints),,colorlesspoints(RNCPoints)
     setq(G,localpoints(RPoints),GO).
 replace_local_point_color(Point,NewC,OldC,G,GO):- trace_or_throw(unknown_target_type(replace_local_point_color(Point,NewC,OldC,G,GO))).
 
@@ -1003,7 +1003,7 @@ new_obj_points(GID,Type,C1,Points,Len,OID):-
   as_obj_gpoints(C1,Points,GPoints),  
   Overrides =[],
   gpoints_to_iv_info(GPoints,LCLPoints,LocX,LocY,PenColors,Rot2L,Iv,Overrides,LPoints,Grid,SH,SV,SizeY,SizeX,CentX,CentY),
-  _List=[colorless_points(LCLPoints),loc2D(LocX,LocY),pen(PenColors),rot2L(Rot2L),iv(Iv),localpoints(LPoints),
+  _List=[colorlesspoints(LCLPoints),loc2D(LocX,LocY),pen(PenColors),rot2L(Rot2L),iv(Iv),localpoints(LPoints),
     grid(Grid),rotOffset2D(SH,SV),viz2D(SizeY,SizeX),center2D(CentX,CentY)],
   int2glyph(Iv,Glyph),
   %name(Glyph,[Iv]),!,
