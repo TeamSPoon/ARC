@@ -602,8 +602,8 @@ g_2_o(_,_,_):- fail.
 g2o(G,O):- g2o0(G,O),
   once(if_t(get_current_test(TestID),
     (O=obj(T),member(giz(testid(TestID)),T)))),
-  once(if_t((get_example_num(ExampleNum),ground(ExampleNum)),
-    (O=obj(T),member(giz(example_num(ExampleNum)),T)))).
+  nop(once(if_t((get_example_num(ExampleNum),ground(ExampleNum)),
+    (O=obj(T),member(giz(example_num(ExampleNum)),T))))).
 
 g2o0(G,O):- var(G), !, oid_glyph_object(_,G,O).
 g2o0(G,O):- integer(G),!,int2glyph(G,C),!,g2o(C,O),!.

@@ -17,6 +17,7 @@
 % butterfly (arc_webui.sh)
 % true = no butterfly (SWISH only)
 %
+:- nb_setval(arc_can_portray,nil).
 
 :- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_bfly,true);set_prolog_flag(use_arc_bfly,false)).
 %:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_swish,true);true).
@@ -772,12 +773,6 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 %:- endif.
 
 %:- fixup_module_exports_now.  
-user:portray(Grid):- fail, 
-   current_prolog_flag(debug,false),
-    \+ tracing,
-   \+ nb_current(arc_can_portray,nil),
-   current_predicate(bfly_startup/0), \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!, flush_output.
-
 
 %:- ignore(check_dot_spacing).
 
@@ -792,8 +787,6 @@ user:portray(Grid):- fail,
 :- add_history1((demo)).
 
 
-:- nb_setval(arc_can_portray,nil).
-:- nb_setval(arc_can_portray,t).
 :- nb_setval(arc_can_expand_query,nil).
 :- nb_setval(arc_can_expand_query,t).
 %:- \+ nb_current(arc_can_portray,nil).
@@ -868,6 +861,8 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 :- make_grid_cache.
 :- gen_gids.
 :- test_show_colors.
+:- nb_setval(arc_can_portray,nil).
+:- nb_setval(arc_can_portray,t).
 %:- load_arc_db_temp_cache.
 :- fmt('% Type ?- demo. % or press up arrow').
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).

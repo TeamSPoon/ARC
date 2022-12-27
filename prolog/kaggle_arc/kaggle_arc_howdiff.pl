@@ -205,7 +205,8 @@ final_alignment(_,_,AA,BB,AA,BB):-!.
 obj_grp_atoms(IO,A,[A,PA|Atoms]):- obj_grp_atomslist(IO,A,PA,Atoms).
 
 obj_grp_atomslist(IO,A,PA,Atoms):- \+ \+ object_atomslist(IO,A,PA,Atoms), !, object_atomslist(IO,A,PA,Atoms).
-obj_grp_atomslist(IO,A,PA,Atoms):- obj_grp_comparable(A,PA),obj_atoms(PA,Atoms),
+obj_grp_atomslist(IO,A,PA,Atoms):- 
+  obj_grp_comparable(A,PA),obj_atoms(PA,Atoms),
   assert_if_new(object_atomslist(IO,A,PA,Atoms)).
 
 other_io(in,out).

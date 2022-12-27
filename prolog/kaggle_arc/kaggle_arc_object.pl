@@ -231,7 +231,7 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):-
     kept(giz(g(IO))), kept(giz(testid(TestID))), kept(giz(example_num(Example+Num))),
     
     %unkept(giz(gid_omem(GIDOMem))), unkept(giz(oid_omem(OIDOMem))), unkept(iv_omem(IvOMem)),giz(glyph_omem(GlyphOMem)),
-    kept(oid(OID)),kept(giz(iv(Iv))),kept(giz(glyph(Glyph))),kept(giz(gid(GID))),
+    kept(oid(OID)),kept(giz(iv(Iv))),kept(giz(glyph(Glyph))), kept(giz(gid(GID))),
     
 
     globalpoints(GPoints),
@@ -303,6 +303,8 @@ as_obj(O,Obj):- compound(O), O = obj(_), Obj = O. % , register_obj(L).
 
 enum_object(O):- var(O),!,no_repeats_cmp(=@=,O,enum_object0(O)).
 enum_object(O):- nop(ppt(enum_object(O))),!.
+
+enum_object0(Obj):- oid_glyph_object(_,_,Obj).
 
 enum_object0(Obj):- % listing(obj_cache/2),
       get_current_test(TestID), obj_cache(TestID,O,_S),as_obj(O,Obj).
@@ -777,62 +779,49 @@ obj_gid(Obj,GID):-  indv_props(Obj,giz(gid(GID))).
 is_oid(OID):- oid_glyph_object(OID,_,_).
 is_oid(OID):- gid_type_oid(_,_,OID), \+ oid_glyph_object(OID,_,_).
 
-obj_to_oid(Obj,OID):-  var(Obj),!,oid_glyph_object(OID,_,Obj).
-obj_to_oid(Obj,OID):-  atom(Obj),display_length(Obj,L),L>5,Obj=OID,!.
-obj_to_oid(Obj,OID):-  oid_glyph_object(OID,_,Obj),!.
 /*
 obj_to_oid(I,X):- var_check(I,obj_to_oid(I,X))*->!;
  (indv_props(I,L),((member(obj_to_oid(X),L);member(oid(X),L)),!,
   object_glyph(I,Glyph),
   assert_object_oid(_,I,Glyph,X))).
 */
-obj_to_oid(Obj,OID):- Obj = obj(L),
-  ((member(obj_to_oid(OID),L);member(oid(OID),L);member(omem_oid(OID),L))),!,
-  must_det_ll(object_glyph(Obj,Glyph)),!,
-  assert(oid_glyph_object(OID,Glyph,Obj)).
-
-obj_to_oid(Obj,OID):- 
+obj_to_oid(Obj,OID):-  var(Obj),!,oid_glyph_object(OID,_,Obj).
+obj_to_oid(Obj,OID):-  atom(Obj),display_length(Obj,L),L>5,Obj=OID,!.
+obj_to_oid(Obj,OID):-  oid_glyph_object(OID,_,Obj),!.
+obj_to_oid(Obj,OID):-  Obj = obj(L),
+  ((member(obj_to_oid(OID),L);member(was_oid(OID),L);member(omem_oid(OID),L);member(omem_oid(OID),L)),atom(OID)),!,
+  %must_det_ll(object_glyph(Obj,Glyph)),!,
+  assert_object_oid(_TID,Obj,_Glyph,OID).
+/*obj_to_oid(Obj,OID):- 
  must_det_ll((
    obj_iv(Obj,Iv), int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
    obj_gid(Obj,GID), !,
    atomic_list_concat(['o',Glyph,Iv,GID],'_',OID),
-   assert(oid_glyph_object(OID,Glyph,Obj)))).
-
+   assert_object_oid(GID,Obj,Glyph,OID))).
+   %assert(oid_glyph_object(OID,Glyph,Obj)))).*/
 obj_to_oid(Obj,OID):-  assert_object_oid(_,Obj,_Glyph,OID),!.
 
-assert_object_oid(TID,Obj,Glyph,OID):-     
- must_det_ll((
-
-  
-   tid_to_gid(TID,GID),
+assert_object_oid(_TID,Obj,Glyph,OID):-     
+ must_det_ll((   
    is_object(Obj),
    obj_iv(Obj,Iv), int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
    obj_gid(Obj,GID),  
-   atomic_list_concat(['o',Glyph,Iv|GIDLst],'_',OID),
-   atomic_list_concat(GIDLst,'_',GID),
-   
+   %(nonvar(GID)->tid_to_gid(TID,GID);true),
+
+   if_t((nonvar(OID),var(GID)),
+    (atomic_list_concat(['o',Glyph,Iv|GIDLst],'_',OID),
+     atomic_list_concat(GIDLst,'_',GID))),
+
+   if_t((nonvar(GID),var(OID)),
+    (atomic_list_concat(['o',Glyph,Iv,GID],'_',OID))),
+
    retractall(oid_glyph_object(OID,_,_)),
+   retractall(gid_glyph_oid(GID,Glyph,_)), 
+   retractall(gid_glyph_oid(GID,_,OID)),
+
    arc_assert_fast(oid_glyph_object(OID,Glyph,Obj)),
-   retractall(gid_glyph_oid(GID,Glyph,_)), retractall(gid_glyph_oid(GID,_,OID)),
    arc_assert_fast(gid_glyph_oid(GID,Glyph,OID)),
    assert_object2(OID,Obj))).
-
-current_gid(GID):- get_vm(VM), GID = VM.gid.
-   %tid_to_gids(ID,GID),!.
-
-oid_to_obj(OID,Obj):- oid_glyph_object(OID,_,Obj).
-
-
-
-obj_to_oid(Obj,_,MyID):- obj_to_oid(Obj,MyID).
-tid_to_gid(TID,GID):- is_grid(TID),!,grid_to_gid(TID,GID).
-tid_to_gid(TID,GID):- var(TID),!,current_gid(GID).
-tid_to_gid(TID,GID):- tid_to_gids(TID,GID),!.
-
-%o2g_f(Obj,Glyph):-  atom(Obj),display_length(Obj,1),Obj=Glyph,!.
-o2g_f(Obj,Glyph):- oid_glyph_object(_,Glyph,Obj),!.
-o2g_f(Obj,Glyph):- obj_to_oid(Obj,OID),oid_glyph_object(OID,Glyph,Obj),!.
-
 
 assert_object2(OID,obj(List)):-!,maplist(assert_object2(OID),List).
 assert_object2(OID,List):- is_list(List),!,maplist(assert_object2(OID),List).
@@ -879,6 +868,24 @@ assert_object1(OID,Prop):- Prop=..List, AProp=..[cindv,OID|List],
   pfcAdd(AProp).
 */
 
+current_gid(GID):- get_vm(VM), GID = VM.gid.
+   %tid_to_gids(ID,GID),!.
+
+oid_to_obj(OID,Obj):- oid_glyph_object(OID,_,Obj).
+
+
+
+%obj_to_oid(Obj,_,MyID):- obj_to_oid(Obj,MyID).
+tid_to_gid(TID,GID):- is_grid(TID),!,grid_to_gid(TID,GID).
+tid_to_gid(TID,GID):- var(TID),!,current_gid(GID).
+tid_to_gid(TID,GID):- tid_to_gids(TID,GID),!.
+
+%o2g_f(Obj,Glyph):-  atom(Obj),display_length(Obj,1),Obj=Glyph,!.
+o2g_f(Obj,Glyph):- oid_glyph_object(_,Glyph,Obj),!.
+o2g_f(Obj,Glyph):- obj_to_oid(Obj,OID),oid_glyph_object(OID,Glyph,Obj),!.
+
+
+
 
 %obj_to_oid(I,_,Iv):- is_object(I), obj_iv(I,Iv).
 %obj_to_oid(I,_ID,Fv):- is_grid(I),!, flag(indiv,Fv,Fv+1).
@@ -923,7 +930,6 @@ metaq(P3,Orig,New,Saved):- functor(New,F,A),functor(Old,F,A),Did=done(nil),map_p
 metaq_1(_,done(t),_,_,Orig,Orig):-!.
 metaq_1(P3,Did,Old,New,Orig,Saved):- compound(Orig),Orig=Old, call(P3,Old,New,Saved),nb_setarg(1,Did,t).
 
-enum_group(S):- is_unshared_saved(_,S).
 
 
 

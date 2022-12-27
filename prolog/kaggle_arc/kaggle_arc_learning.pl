@@ -338,7 +338,7 @@ confirm_reproduction(Objs0,DebugObjs0,ExpectedOut):-
   call((points_to_grid(H,V,OGPoints,Sols)->true;points_to_grid(DH,DV,OGPoints,Sols))),
   count_difs(ExpectedOut,Sols,Errors),
   show_result("Our Reproduction"=Len0/Len, Sols,ExpectedOut,Errors),
-  (Errors==0 -> true; maplist(debug_reproduction(H,V),Objs,DebugObjs)))).
+  (Errors==0 -> true; maplist(debug_reproduction(H,V),Objs,DebugObjs)))),!.
 
 debug_reproduction(H,V,Obj,DObj):- 
  must_det_ll((
@@ -508,6 +508,42 @@ learn_rule_in_out_objects(How,I,O):-
   arrange_shared(OOO,OOOO),
   arrange_shared(NewShared,NewSharedS),
   save_learnt_rule(test_solved(How,obj(IIII),obj(OOOO),NewSharedS),I^O,I^O),!.
+
+
+sort_by_closeness(In,Objs,List):- sorted_by_closeness(In,_Sorted,Objs,List).
+
+:- dynamic(saved_sorted_by_closeness/4).
+sorted_by_closeness(In,Sorted,Objs,List):- is_list(Objs),var(In),select(In,Objs,Rest),Rest\==[],!, sorted_by_closeness(In,Sorted,Rest,List).
+sorted_by_closeness(In,Sorted,Objs,List):- var(Objs),nonvar(In),has_prop(giz(g(IO)),In),in_to_out(IO,OI), prop_group(giz(g(OI)),Objs),Objs\==[],!, sorted_by_closeness(In,Sorted,Objs,List).
+sorted_by_closeness(In,Sorted,Objs,List):- var(Objs),!, enum_groups(Objs), sorted_by_closeness(In,Sorted,Objs,List).
+sorted_by_closeness(In,Sorted,Objs,List):- var(In),!, object_atomslist(_,In,_,_),sorted_by_closeness(In,Sorted,Objs,List).
+sorted_by_closeness(In,Sorted,Objs,List):- var(Sorted), maplist(obj_to_oid,Objs,OIDS), sort(OIDS,Sorted),!,sorted_by_closeness(In,Sorted,Objs,List).
+sorted_by_closeness(In,Sorted,Objs,List):- saved_sorted_by_closeness(In,Sorted,Objs,List),!.
+sorted_by_closeness(In,Sorted,Objs,List):- 
+  find_prox_mappings(In,_,Objs,List),
+  asserta(saved_sorted_by_closeness(In,Sorted,Objs,List)),!.
+
+
+find_prox_mappings(A,GID,Candidates,Objs):-
+    object_atomslist(_,A,PA,PAP),
+    ord(NJ/O+JO+Joins,[PA,A],[PB,B],B) = Why,
+    findall(Why,
+    (      
+     member(B,Candidates),object_atomslist(GID,B,PB,PBP),
+     PA\==PB,
+     B\==A,
+     \+ is_whole_grid(B),
+     must_det_ll((
+     % maybe_allow_pair(PA,PB), allow_pair(PA,PB),  
+       intersection(PAP,PBP,Joins,OtherA,OtherB),     
+       flatten([OtherA,OtherB],Other),
+       length(Joins,J),length(Other,O),
+       NJ is -J,
+       JO is - rationalize(J/(O+1))))),
+     Pairs), 
+   sort(Pairs,RPairs),!,
+   %list_upto(3,RPairs,Some),
+   maplist(arg(4),RPairs,Objs).
 
 find_prox_mappings(A,GID,Objs):-
     object_atomslist(_,A,PA,PAP),
@@ -963,8 +999,8 @@ gen_variatable(Names,VAR):-upcase_atom_var(Names,VAR).
 
 
 make_unifier(C1,_):- \+ compound(C1),fail.
+make_unifier(cc(C,_),cc(C,_)):-!.
 make_unifier(iz(C1),iz(C2)):- !, make_unifier(C1,C2).
-make_unifier(cc(C,_),cc(C,_)).
 make_unifier(giz(C1),giz(C2)):- !, make_unifier(C1,C2).
 make_unifier(Cmp,CmpU):-  Cmp=..[F,C1],\+ is_list(C1), compound(C1), CmpU=..[F,C2], make_unifier(C1,C2),!.
 make_unifier(C1,C2):- functor(C1,F,A),functor(C2,F,A).
@@ -1298,7 +1334,77 @@ rev_key0(C-P,P-C).
 use_test_associatable_group(In,Solution):- findall(Sol,(member(I,In),use_test_associatable_obj(I,Sol)),Solution).
 use_test_associatable_obj(obj(I),Sols):- findall(Sol,use_test_associatable_props(I,Sol),Sols).
 
-use_test_associatable_props(In,Sol):-
+matches_close_prop(In,Prop,List):-
+  prop_group(Prop,Objs),
+  sort_by_closeness(In,Objs,List).
+
+cur_obj(Obj):- oid_glyph_object(_,_,Obj).
+prop_group(Prop,Objs):-
+  ensure_group_prop(Prop),findall(Obj,(cur_obj(Obj),has_prop(Prop,Obj)),Objs).
+
+
+
+shared_prop(Objs,Info):- var(Objs),!,enum_groups(Objs),shared_prop(Objs,Info).
+%shared_prop([O|Objs],all_same(Prop)):- 
+%  has_prop(Prop,O),once(maplist(has_prop(Prop),Objs)).
+%shared_prop([O|Objs],all_diff(Unif)):-  has_prop(Prop,O),make_unifier(Prop,Unif), 
+%  once((findall(Unif,(member(E,Objs),O\=@=E,has_prop(Unif,E)),LL),
+%    sort([Prop|LL],S),length(S,Len1),length([O|Objs],Len2))),Len1\==Len2.
+
+shared_prop(Objs,OUT):- shared_prop(_Prop,Objs,OUT).
+shared_prop(Prop,Objs,OUT):- 
+  length(Objs,ON),
+  findall(Prop-E,(member(E,Objs),has_prop(Prop,E)),PropsObjs),
+  maplist(arg(1),PropsObjs,PropVals),
+  sort(PropVals,SProps),
+  shared_prop(ON,Objs,PropsObjs,SProps,OUT).
+
+shared_prop(ON,Objs,PropsObjs,[Prop|PropVals],OUT):- 
+  make_unifier(Prop,Unif),  my_partition(can_unify(Unif),PropVals,MatchingPV,Nonmatching),
+   length([Prop|MatchingPV],MPV),!,
+  (shared_prop(ON,Objs,PropsObjs,MPV,Unif,MatchingPV,Prop,PropVals,OUT);
+  shared_prop(ON,Objs,PropsObjs,Nonmatching,OUT)).
+
+shared_prop(ON,Objs,PropsObjs,MPV,Unif,[PV],Prop,PropVals,unique_value(PV,E)):- MPV==1, !, member(PV-E,PropsObjs).
+shared_prop(ON,Objs,PropsObjs,MPV,Unif,_,   Prop,   PropVals,OUT):- 
+  my_partition(same_prop(Prop),PropsObjs,HasProp,NotHasProp),
+  maplist(arg(2),HasProp,OHasProp),length(HasProp,N),
+  my_partition(can_unify(Unif-_),NotHasProp,HasPropUnif,_NotHasProp),
+  length(HasPropUnif,NHP),
+  out_prop(Prop,N,NHP,OHasProp,HasPropUnif,OUT).
+
+%out_prop(Prop,N,0,OHasProp,HasPropUnif,OUT):- !, OUT = all_diff(Prop).
+out_prop(Prop,_,0,OHasProp,HasPropUnif,OUT):- !, OUT = all_same(Prop).
+out_prop(Prop,N,NHP,OHasProp,HasPropUnif,OUT):- OUT = prop(Prop,N,NHP,OHasProp),
+  maplist(arg(2),HasPropUnif,ONotHasProp),
+  nop(once(shared_prop(Unif,ONotHasProp,PP))).
+
+can_unify(I,O):- \+ (I \= O).
+same_prop(P,P-_).
+
+enum_groups(G):- enum_groups0(G),length(G,L),between(2,30,L).
+enum_groups0(G):- group_prop(Prop), prop_group(Prop,G).
+enum_groups0(G):- why_grouped(_Why, G).
+enum_groups0(G):- findall(Obj,(object_atomslist(_,Obj,_,_)),G), G\==[].
+enum_groups0(S):- is_unshared_saved(_,S).
+%enum_groups0(G):- current_group(G).
+
+group_prop(giz(g(in))).
+group_prop(giz(g(out))).
+
+ensure_group_prop(Prop):- var(Prop),!,group_prop(Prop).
+ensure_group_prop(_).
+
+use_test_associatable_props(IIn,Sol):-
+   In = obj(IIn),   
+   dmsg(looking_for(In)),  
+   matches_close_prop(In,giz(g(out)),ListOut),
+   print_ss(listIn=ListIn),
+   matches_close_prop(In,giz(g(in)),ListIn),
+   print_ss(listOut=ListOut),
+   Sol=ListOut,trace.
+   
+/*
  must_det_ll((
   simplify_for_matching(lhs,In,IIn),
   dmsg(looking_for(IIn)),
@@ -1316,7 +1422,7 @@ use_test_associatable_props(In,Sol):-
   maplist(arg(2),OutLS2SS,OutLS2SSBest),
   last(OutLS2SSBest,Best),
   globalpoints(Best,OGPoints),  
-  points_to_grid(OGPoints,Sol))),trace.
+  points_to_grid(OGPoints,Sol))),trace.*/
 
 use_test_associatable(In,OutR):- 
   findall(InS,simplify_for_matching_nondet(lhs,In,InS),InL),

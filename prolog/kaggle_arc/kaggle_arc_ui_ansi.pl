@@ -305,12 +305,12 @@ pt_guess_pretty_1(P,O):- copy_term(P,O,_),
 :- dynamic(pretty_clauses:pp_hook/3).
 :- multifile(pretty_clauses:pp_hook/3).
 :- module_transparent(pretty_clauses:pp_hook/3).
-pretty_clauses:pp_hook(FS,Tab,S):-  fail,  notrace(catch(arc_pp_hook(FS,Tab,S),_,fail)).
+pretty_clauses:pp_hook(FS,Tab,S):- let_arc_portray,  notrace(catch(arc_pp_hook(FS,Tab,S),_,fail)).
 
 arc_pp_hook(_,Tab,S):- term_is_ansi(S), !,prefix_spaces(Tab), write_keeping_ansi_mb(S).
 %arc_pp_hook(_,Tab,S):- is_vm(S),!,prefix_spaces(Tab),!,write('..VM..').
 %arc_pp_hook(_,  _,_):- \+ let_arc_portray,!,fail.
-arc_pp_hook(FS,_  ,G):- fail, let_arc_portray,
+arc_pp_hook(FS,_  ,G):- let_arc_portray,
   current_predicate(is_group/1),
    locally(b_setval(pp_parent,FS),
      print_with_pad(pp_hook_g(G))),!.
@@ -325,6 +325,13 @@ lock_doing(Lock,G,Goal):-
 
 never_let_arc_portray_again:- set_prolog_flag(never_pp_hook, true),bt,!.
 let_arc_portray:- \+ nb_current(arc_can_portray,nil), \+ current_prolog_flag(never_pp_hook, true).
+
+user:portray(Grid):- let_arc_portray, 
+   current_prolog_flag(debug,false),
+    \+ tracing,
+   \+ nb_current(arc_can_portray,nil),
+   current_predicate(bfly_startup/0), \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!, flush_output.
+
 
 pp_hook_g(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 pp_hook_g(_):- \+ let_arc_portray,!,fail.

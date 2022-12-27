@@ -21,10 +21,11 @@ save_grouped(Why,G):-
   get_current_test(TestID),
   length(GS,Len),
   mapgroup(register_obj,GS),
-  maplist(obj_to_oid,GS,GGG),
+  maplist(obj_to_oid_u,GS,GGG),
   %maplist(obj_to_oid,GS,OIDs),
   my_asserta_if_new(is_why_grouped_g(TestID,Len,Why,GGG)).
 
+obj_to_oid_u(Obj,OID):- obj_to_oid(Obj,OID).
 
 normal_group_form(Group,Group):-!.
 
