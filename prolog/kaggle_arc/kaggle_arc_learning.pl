@@ -549,7 +549,7 @@ find_prox_mappings(A,GID,Candidates,Objs):-
    sort(Pairs,RPairs),!,
    %list_upto(3,RPairs,Some),
    maplist(arg(4),RPairs,Objs).
-
+/*
 find_prox_mappings(A,GID,Objs):-
     obj_grp_atomslist(_,A,PA,PAP),
     ord(NJ/O+JO+Joins,[PA,A],[PB,B],B) = Why,
@@ -570,7 +570,7 @@ find_prox_mappings(A,GID,Objs):-
    sort(Pairs,RPairs),!,
    %list_upto(3,RPairs,Some),
    maplist(arg(4),RPairs,Objs).
-
+*/
 doing_map(B,A):-  doing_map(_,B,[A|_]).
 doing_map(B,C,D):- call_in_testid(doing_map(B,C,D)).
 
@@ -712,16 +712,16 @@ learn_group_mapping(AG00,BG00):-
 
   retractall_in_testid(doing_map(_,_,_)),
   forall(member(B,BG),
-    ignore((find_prox_mappings(B,IO,Objs),
+    ((find_prox_mappings(B,IO,AG,Objs),
      assert_doing_map(OI,B,Objs)))),
  % forall(member(B,BG),
- %   ignore((find_prox_mappings(B,OI,Objs),
+ %   ignore((find_prox_mappings(B,OI,BG,Objs),
  %    assert_doing_map(oo,B,Objs)))),
   forall(member(A,AG),
-    ignore((find_prox_mappings(A,OI,Objs),
+    ((find_prox_mappings(A,OI,BG,Objs),
      assert_doing_map(IO,A,Objs)))),
  % forall(member(A,AG),
- %   ignore((find_prox_mappings(A,IO,Objs),
+ %   ignore((find_prox_mappings(A,IO,AG,Objs),
  %    assert_doing_map(ii,A,Objs)))),
 
   retractall(showed_point_mapping(_,_)),
@@ -741,14 +741,14 @@ learn_group_mapping_p3(IO,OI,AG,BG,AGS,BGS):- !,
        (doing_map(OI,B,[A|Others]),
           has_prop(iz(sid(SA)),A),
            (once((fail, member(C,Others), \+ has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
-           assertz_in_testid(assumed_mapped([A],[B])),
+           assertz_in_testid(assumed_mapped([A|CC],[B])),
            %save_rule2
            save_rule3(OI,"INPUT <-- OUTPUT",[A|CC],[B]))),
     forall(member(A,AGS),
        (doing_map(IO,A,[B|Others]),
           has_prop(iz(sid(SA)),A),
           (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),           
-           assertz_in_testid(assumed_mapped([A],[B])),
+           assertz_in_testid(assumed_mapped([A],[B|CC])),
            %save_rule2
            save_rule3(IO,"INPUT --> OUTPUT",[A],[B|CC]))),
    !)))).
@@ -811,7 +811,7 @@ save_rule1(IO,TITLE,A,B,IIPP,OOPP):-  !,
   
 
 
-save_rule2(GID,TITLE,IP,OP,IIPP,OOPP):- 
+save_rule2(GID,TITLE,IP,OP,_IIPP,_OOPP):- 
  must_det_ll((
 
  assert_showed_mapping(IP,OP),
@@ -1359,13 +1359,7 @@ ignore_equal(X,Y):- ignore(X=Y).
 
 rev_key0(C-P,P-C).
 
-%pp_safe(O):- format('~N'),print(O),nl.
-use_test_associatable_group(In,Solution):- findall(Sol,(member(I,In),use_test_associatable_obj(I,Sol)),Solution).
-use_test_associatable_obj(obj(I),Sols):- findall(Sol,use_test_associatable_props(I,Sol),Sols).
 
-matches_close_prop(In,Prop,List):-
-  prop_group(Prop,Objs),
-  sort_by_closeness(In,Objs,List).
 
 cur_obj(Obj):- oid_glyph_object(_,_,Obj).
 prop_group(Prop,Objs):-
@@ -1424,15 +1418,47 @@ group_prop(giz(g(out))).
 ensure_group_prop(Prop):- var(Prop),!,group_prop(Prop).
 ensure_group_prop(_).
 
-use_test_associatable_props(IIn,Sol):-
-   In = obj(IIn),   
-   dmsg(looking_for(In)),  
-   matches_close_prop(In,giz(g(out)),ListOut),
-   print_ss(listIn=ListIn),
-   matches_close_prop(In,giz(g(in)),ListIn),
-   print_ss(listOut=ListOut),
-   Sol=ListOut,trace.
-   
+
+%pp_safe(O):- format('~N'),print(O),nl.
+use_test_associatable_group_real(In,Solution):- 
+  once((listify(In,In1), visible_order_fg(In1,In2))), 
+  findall(Sol,(member(In3,In2),use_test_associatable_obj(In3,Sol)),SolutionO),
+  flatten(Solution,SolutionF),visible_order_fg(SolutionF,SolutionO).
+
+use_test_associatable_group(I,O):- use_test_associatable_group_real(I,O),
+  print_side_by_side(I,O),trace.
+
+gather_assumed_mapped(A,B):-
+  call_in_testid(assumed_mapped([A],[B])).
+
+use_test_associatable_obj(In,Sol):-
+ ((
+   matches_close_prop(In,giz(g(in)),List),
+
+   if_t(List\==[],
+        (member(F0,List),gather_assumed_mapped(F0,F1),
+         print_side_by_side((in->in),In,F0),
+         print_side_by_side((in->in->out),F0,F1))),
+
+   matches_close_prop(In,giz(g(out)),OutList),
+   if_t(OutList\==[],
+        (member(F2,OutList), 
+         print_side_by_side((in<-out),In,F2))),
+  
+   ignore(Sol=F1),
+   ignore(Sol=F2))).
+
+matches_close_prop(In,giz(g(in)),List):- 
+  findall(F0,gather_assumed_mapped(F0,_),Objs),
+  sort_by_closeness(In,Objs,List), List\==[].
+matches_close_prop(In,giz(g(out)),List):- 
+  findall(F1,gather_assumed_mapped(_,F1),Objs),
+  sort_by_closeness(In,Objs,List), List\==[].
+matches_close_prop(In,Prop,List):-
+  prop_group(Prop,Objs),
+  sort_by_closeness(In,Objs,List).
+
+
 /*
  must_det_ll((
   simplify_for_matching(lhs,In,IIn),
