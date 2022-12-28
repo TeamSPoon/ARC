@@ -6,6 +6,7 @@
 */
 :- include(kaggle_arc_header).
 
+end_of_file.
 
 
 :- dynamic(learnt_rule/5).

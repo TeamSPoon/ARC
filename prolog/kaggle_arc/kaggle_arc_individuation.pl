@@ -58,20 +58,23 @@ special_sizes_v_h_sorted_l_s(H,V):- peek_vm(VM),special_sizes_v_h_sorted_l_s(VM,
 
 special_sizes_v_h_sorted_l_s(VM,H,V):- findall(size2D(H,V),special_sizes_vm(VM,H,V),Sizes1),
   predsort(sort_on(neg_h_v_area),Sizes1,SizesR),reverse(SizesR,Sizes),member(size2D(H,V),Sizes),H>0,V>0.
+
 special_sizes_v_h_sorted_s_l(VM,H,V):- findall(size2D(H,V),special_sizes_vm(VM,H,V),Sizes1),
   predsort(sort_on(neg_h_v_area),Sizes1,SizesR),member(size2D(H,V),SizesR),H>0,V>0.
 
 individuation_macros(i_complete_generic, [
-    call(retractall(special_sizes(_,_))),
+    %call(retractall(special_sizes(_,_))),
     consider_other_grid, reset_points,
     indv_omem_points, reset_points,
     i_mono_colormass, reset_points,
-    by_color(2), reset_points,
-    reset_objs,
+    by_color, reset_points,
+    reset_objs,%call(trace),
     pbox_vm_special_sizes([special_sizes_v_h_sorted_l_s]),
     reset_points,
     pbox_vm_special_sizes([special_sizes_v_h_sorted_s_l]),
     remove_used_points,
+    gather_cached,
+    find_relations,
     interlink_overlapping_black_lines,
     reset_points,remove_used_points,
     grid_props]).
@@ -96,6 +99,7 @@ individuation_macros(i_complete_generic2, [
   %really_group_vm_priors,
   %grid_props,
   %combine_objects,
+   find_relations,
   end_of_macro  ]). 
 
 individuation_macros(do_ending, [
@@ -107,7 +111,7 @@ individuation_macros(do_ending, [
  %combine_if_prop(and(cc(bg,1),)),
  %remove_if_prop(and(iz(stype(dot))])),
  %combine_same_globalpoints,
- find_relations,
+ 
  %grid_props,
  remove_dead_links,
  %find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
@@ -4188,10 +4192,10 @@ individuation_macros(complete, ListO):- im_complete(ListC),
    list_to_set(ListM,ListO),!.
 
 
+im_complete(i_complete_generic).
 im_complete(ListO):- test_config(indiv(ListO)), [i_repair_patterns]\=@= ListO,[i_repair_patterns_f]\=@= ListO,!.
 %im_complete(ListO):- ListO=[nsew,all_lines,diamonds,do_ending].
 %im_complete([i_repair_patterns]):- get_current_test(TestID),is_symgrid(TestID),!.
-im_complete(i_complete_generic).
 
 %im_complete(i_repair_patterns):-!.
 

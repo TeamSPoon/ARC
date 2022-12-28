@@ -141,9 +141,9 @@ not_used(/*b*/iz(indiv(_))).
 not_used(X):- sub_term(E,X),atom(E),is_nc_point(E),!.
 not_used(X):- sub_term(E,X),compound(E),ground(E),E=info(_).
 not_used(giz(_)).
-not_used(link(_,_,_)).
-not_used(link(_,_)).
-not_used(iz(contained_by(0,[]))).
+%not_used(link(_,_,_)).
+%not_used(link(_,_)).
+%not_used(iz(contained_by(0,[]))).
 not_used(colorlesspoints(_)).
 not_used(localpoints(_)).
 not_used(globalpoints(_)).
@@ -700,15 +700,15 @@ learn_group_mapping_p3(IO,OI,AG,BG,AGS,BGS):- !,
           has_prop(iz(sid(SA)),A),
            (once((fail, member(C,Others), \+ has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
            assertz_in_testid(assumed_mapped([A|CC],[B])),
-           %save_rule2
-           save_rule3(OI,"INPUT <-- OUTPUT",[A|CC],[B]))),
+          % save_learnt_rule(assumed_mapped(lhs([A|CC]),rhs([B])),A^B,A^B),
+           save_rule2(OI,"INPUT <-- OUTPUT",[A|CC],[B]))),
     forall(member(A,AGS),
        (doing_map(IO,A,[B|Others]),
           has_prop(iz(sid(SA)),A),
           (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),           
            assertz_in_testid(assumed_mapped([A],[B|CC])),
-           %save_rule2
-           save_rule3(IO,"INPUT --> OUTPUT",[A],[B|CC]))),
+           % save_learnt_rule(assumed_mapped(lhs([A]),rhs([B|CC])),A^B,A^B),
+           save_rule2(IO,"INPUT --> OUTPUT",[A],[B|CC]))),
    !)))).
 
 :- dynamic(assumed_mapped/3).
@@ -769,7 +769,7 @@ save_rule1(IO,TITLE,A,B,IIPP,OOPP):-  !,
   
 
 
-save_rule2(GID,TITLE,IP,OP,_IIPP,_OOPP):- 
+save_rule2(GID,TITLE,IP,OP):- 
  must_det_ll((
 
  assert_showed_mapping(IP,OP),
@@ -1410,8 +1410,7 @@ use_test_associatable_obj(In,Sol):-
 
    if_t(List\==[],
         (member(F0,List),gather_assumed_mapped(F0,F1),
-         print_side_by_side((in->in),In,F0),
-         print_side_by_side((in->in->out),F0,F1))),
+         print_ss([in=In,mid=F0,out=F1]))),
 
    matches_close_prop(In,giz(g(out)),OutList),
    if_t(OutList\==[],

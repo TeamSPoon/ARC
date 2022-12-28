@@ -482,7 +482,7 @@ remove_too_verbose(MyOID,link(Touched,ID),HH):- % number(MyOID),
   MyOID\==0, integer(ID),alt_id(MyOID,ID,Alt),o2ansi(ID,Glyph),
   remove_too_verbose(0,link(Touched,Alt,Glyph),HH).
 
-remove_too_verbose(MyOID,TP,OO):- compound(TP),compound_name_arguments(TP,link,[F|A]),atom(F),
+remove_too_verbose(MyOID,TP,OO):- fail, compound(TP),compound_name_arguments(TP,link,[F|A]),atom(F),
    maplist(colorize_oterms,A,AA),
    compound_name_arguments(TPP,F,AA),!,remove_too_verbose(MyOID,TPP,HH),
    OO= HH,!.

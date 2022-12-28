@@ -443,7 +443,7 @@ print_side_by_side_d(C,A,AN,W,B,BN):- nop(print_side_by_side(C,A,AN,W,B,BN)).
 
 
 same_surface(O1,O2):- obj_gid(O1,GID),obj_gid(O2,GID).
-
+ 
 two_physical_objs(O1,O2):- O1\==O2, is_physical_object(O1),is_physical_object(O2), O1\=@=O2, same_surface(O1,O2).
 
 is_physical_object(O):- var(O),!,enum_object(O),is_physical_object(O).
@@ -466,44 +466,36 @@ is_fti_step(find_relations).
 % ==============================================
 find_relations(VM):- 
   Objs = VM.objs,
-  find_relations(Objs,NewObjs),
+  find_relationsA(Objs,NewObjs),
   gset(VM.objs) = NewObjs.
 
-find_relations(Objs,NewObjs):-
+find_relationsA(Objs,NewObjs):-
  must_det_ll((
   include(is_physical_object,Objs,Phys),
   maplist(add_oinfo,Phys,PhysOInfo),
-  find_relations(PhysOInfo,[],TodoLIST),
-  do_todo3(PhysOInfo,TodoLIST,NewObjs),
-  nop(do_todo(PhysOInfo,NewObjs)))),!.
+  find_relationsB(PhysOInfo,[],TodoLIST),
+  do_todo3(Objs,TodoLIST,NewObjs))).
 
-do_todo3([oinfo(O1,_Ps1,OID1,_)|PhysOInfo],TodoLIST,[O11|NewObjs]):-
-  findall(AddToO1,member(some_todo(OID1,AddToO1),TodoLIST),REALTodo),
-  %pp(override_object(REALTodo,O1,O11)),
-  flatten(REALTodo,REALTodoF),
-  my_partition(sub_var(contained_by(completely)),REALTodoF,CBC,Rest),
-  my_partition(sub_var(contains(completely)),Rest,CBC2,Rest0),
-  length(CBC2,LenCBC2),length(CBC,LenCBC),
-  override_object([iz(contains(LenCBC2,CBC2)),iz(contained_by(LenCBC,CBC))|Rest0],O1,O11), 
-  do_todo3(PhysOInfo,TodoLIST,NewObjs).
+do_todo3([Obj|Objs],TODO,NewObjs):-
+  obj_to_oid(Obj,OID1),
+  sub_term(E,TODO),compound(E),E=some_todo(OID1,AddToO1),!,
+  subst001(TODO,E,[],NTODO),
+  flatten([AddToO1],REALTodoF),
+  pp(override_object(REALTodo,Obj)),
+  override_object(REALTodoF,Obj,O11), 
+  do_todo3([O11|Objs],NTODO,NewObjs).
+do_todo3([O1|Objs],TODO,[O1|NewObjs]):-
+  do_todo3(Objs,TODO,NewObjs).
 do_todo3([],_,[]).  
 
-do_todo([oinfo(O1,_Ps1,_OID1,REALTodo)|PhysOInfo],[O11|NewObjs]):-
-   pp(override_object(REALTodo,O1)),
-   override_object(REALTodo,O1,O11),
-   do_todo(PhysOInfo,NewObjs).
-do_todo([],[]).  
 
 add_oinfo(O1,oinfo(O1,Ps1,OID1,[])):- obj_to_oid(O1,OID1),globalpoints(O1,Ps1),!.
 
-find_relations([O1|Rest],TodoIN,TodoOUT):-
+find_relationsB([O1|Rest],TodoIN,TodoOUT):-
   find_relations2(O1,Rest,TodoIN,TodoMID),
-  find_relations(Rest,TodoMID,TodoOUT).
-find_relations([],TodoINOUT,TodoINOUT).
+  find_relationsB(Rest,TodoMID,TodoOUT).
+find_relationsB([],TodoINOUT,TodoINOUT).
 
-find_relations2(O1,[O2|Rest],TodoIN,TodoOUT):- fail,
-  \+ two_physical_objs(O1,O2),!,
-  find_relations2(O1,Rest,TodoIN,TodoOUT).
 
 find_relations2(O1,[O2|Rest],TodoIN,TodoOUT):-
   find_relations4(O1,O2,TodoIN,TodoMID),
@@ -515,12 +507,14 @@ find_relations4(INFO1,INFO2,TodoIN,TodoOUT):-
   INFO1 = oinfo(O1,Ps1,OID1,Todo1),%arg(1,INFO1,O1), arg(2,INFO1,Ps1), arg(3,INFO1,OID1), arg(4,INFO1,Todo1),  
   INFO2 = oinfo(O2,Ps2,OID2,Todo2),%arg(1,INFO2,O2), arg(2,INFO2,Ps2), arg(3,INFO2,OID2), arg(4,INFO2,Todo2),
   intersection(Ps1,Ps2,Overlap,P1L,P2L), 
-  findall(How,related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,P2L),AddToO1),
-  findall(How,related_how(How,O2,O1,Ps2,Ps1,Overlap,P2L,P1L),AddToO2),
+  findall(link(r,OID2,How),related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,P2L),AddToO1),
+  findall(link(r,OID1,How),related_how(How,O2,O1,Ps2,Ps1,Overlap,P2L,P1L),AddToO2),
   %if_t(AddToO1\==[],(append(AddToO1,Todo1,NewTodo1),nb_setarg(4,INFO1,NewTodo1),nop(pp(OID1=NewTodo1)))),
   %if_t(AddToO2\==[],(append(AddToO2,Todo2,NewTodo2),nb_setarg(4,INFO2,NewTodo2),nop(pp(OID2=NewTodo2)))),
-  ((AddToO1==[],AddToO2==[]) -> TodoIN=TodoOUT ; (append(TodoIN,[some_todo(OID1,link(rel,OID2,AddToO1)),some_todo(OID2,link(rel,OID1,AddToO2))],TodoOUT))),
-   !)).
+  ((AddToO1==[],AddToO2==[]) -> TodoIN=TodoOUT ; 
+  (append(TodoIN,[
+    some_todo(OID1,link(rel,OID2,AddToO1)),
+    some_todo(OID2,link(rel,OID1,AddToO2))] ,TodoOUT))))).
   
 related_how(subsumed_by(Offset,OverlapP),O1,O2,Ps1,Ps2,Overlap,P1L,_P2L):- Overlap\==[],P1L==[],!,
   length(Ps1,Len1),length(Ps2,Len2), OverlapP = rational(Len1/Len2), object_offset(O2,O1,Offset).
@@ -538,10 +532,10 @@ related_how2(sees(DirsDists),O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,S
   findall(cc(Dir,Dist),sees_dir(Dir,Dist,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2),DirsDists), DirsDists\==[].
 
 %related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 < SX2, SY1 < SY2, EX2 < EX1, EY2 < EY1, How = contains(engulfed).
-related_how2(contains(completely),O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
+related_how2(contains,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   SX1 >= SX2, SY1 >= SY2, EX2 >= EX1, EY2 >= EY1.
 %related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 > SX2, SY1 > SY2, EX2 > EX1, EY2 > EY1, How = contained_by(engulfed).
-related_how2(contained_by(completely),O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
+related_how2(contained_by,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   SX1 =< SX2, SY1 =< SY2, EX2 =< EX1, EY2 =< EY1.
 
 related_how2(overlap(Overlap1,Overlap2),O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- Overlap\==[],
