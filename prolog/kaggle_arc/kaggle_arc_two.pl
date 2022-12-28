@@ -70,10 +70,12 @@ train_using_io(TestID,Trn,N1,DictIn,DictOut):-
   kaggle_arc(TestID,(Trn+N1),In,Out),!,
   must_det_ll((
   %detect_pair_hints(TestID,(Trn+N1),In,Out),
-  train_for_objects_from_1pair(DictIn,TestID,[Trn,'i',N1,'o',N1],In,Out,DictMid),
+  pp(train_for_objects_from_1pair(DictIn,TestID,[Trn,'i',N1,'o',N1],In,Out,DictMid)),
+  DictMid=DictIn,
+  igo_pair(complete,In,Out),
   N2 is N1 + 1,
   train_using_io(TestID,Trn,N2,DictMid,DictOut))).
-train_using_io(_TestID,_Trn,_,DictInOut,DictInOut).
+train_using_io(_TestID,_Trn,_,DictInOut,DictInOut):-!.
 
 %:- thread_local(keep_going/0).
 
@@ -226,7 +228,6 @@ solve_test_trial(Trial,TestID,ExampleNum):-
 
 solve_test(TestID,ExampleNum,TestIn,ExpectedOut):-
   forall(trial_non_human(Trial),solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut)).
-
   
 solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut):-
    must_det_ll((    
@@ -257,6 +258,7 @@ solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut):-
 
     % find indiviuation one each side that creates the equal number of changes
 
+do_solve(InVM,SolutionProgram,GridOut):- run_dsl(InVM,SolutionProgram,InVM,GridOut).  
 
 do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
  must_det_ll(( ppt("BEGIN!!!"+Why+TestID>ExampleNum), 
@@ -271,7 +273,7 @@ do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
               kaggle_arc_io(TestID,ExampleNum,in,TestIn),
               gset(InVM.grid) = TestIn,
               maybe_set_vm(InVM),
-              run_dsl(InVM,SolutionProgram,InVM,GridOut)))*->!;GridOut=InVM.grid),
+              do_solve(InVM,SolutionProgram,GridOut)))*->!;GridOut=InVM.grid),
        into_pipe(GridOut,Solution)))
        *->    
       ignore((count_difs(ExpectedOut,Solution,Errors),

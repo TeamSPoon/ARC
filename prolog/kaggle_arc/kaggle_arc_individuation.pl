@@ -162,16 +162,28 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC0,OutC0):-
         print_list_of(show_indiv(outputs),outputs,OutC),
        !)),
 
+     
+
      if_t((menu_or_upper('o');menu_or_upper('t')),
-      ( banner_lines(orange),
-        learn_group_mapping(InCR,OutCR),
-        banner_lines(orange),
-       !)),
+      (( banner_lines(orange),
 
-       show_io_groups(yellow,ROptions,ID1,InC,ID2,OutC),
+         visible_order(InC,InCR),
+         if_t(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR)),
 
+         if_t((sub_var(tst,ID1)), 
+             forall(member(In,InC),show_output_for(ROptions,ID1,In,GridOut))),
+
+         if_t((sub_var(tst,ID1)), show_output_for(ROptions,ID1,InCR,GridOut)),
+
+        banner_lines(orange),!))),
     !)))),
   dash_chars)).
+
+show_output_for(ROptions,ID1,InC,GridOut):- 
+  print_grid(show_output_for(ROptions,ID1),InC),
+  (use_test_associatable_group(InC,Sols) -> 
+           show_result("Our Learned Sols", Sols,GridOut,_)
+        ; arcdbg_info(red,warn("No Learned Sols"))).
 
 show_io_groups(Color,ROptions,ID1,InC0,ID2,OutC0):- 
     banner_lines(Color,3),
@@ -209,7 +221,7 @@ visible_order(InC,InC).
 most_visible(Obj,LV):- has_prop(pixel2C(_,_,_),Obj),!, LV= (-1)^1000^1000.
 most_visible(Obj,LV):- area(Obj,1), grid_size(Obj,H,V), Area is (H-1)*(V-1), !, LV=Area^1000^1000.
 most_visible(Obj,LV):- area(Obj,Area),cmass(bg,Obj,BGMass), % cmass(fg,Obj,FGMass),
-  findall(_,doing_map(_,_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt, !, %, NCMass is -CMass,
+  findall(_,doing_map(_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt, !, %, NCMass is -CMass,
   LV = Area^BGMass^NCnt.
 most_visible(_Obj,LV):- LV= (-1)^1000^1000.
 

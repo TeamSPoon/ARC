@@ -581,41 +581,6 @@ maybe_exclude_whole(I,I):- \+ (member(Obj,I), is_fg_object(Obj), \+ is_whole_gri
 maybe_exclude_whole(I,II):- 
   include(not_p1(is_whole_grid),I,II).
 
-
-
-
-learn_group_mapping_v1(IO,OI,AG,BG,AGS,BGS):- 
- must_det_ll((  
-  forall(member(B,BGS),
-    (findall(A,doing_map(A,B),AA),
-      (AA==[] 
-      -> nop(((doing_map(B,A),save_rule(OI,"INPUT <-- OUTPUT",[A],[B]))))
-      ;                        save_rule(OI,"INPUT =-> OUTPUT",AA,[B])))),
-
-  forall(member(A,AGS),
-    (findall(B,doing_map(B,A),BB),
-      (BB==[] 
-       -> nop(((doing_map(A,B),save_rule(IO,"INPUT --> OUTPUT",[A],[B]))))
-       ;                         save_rule(IO,"INPUT <-= OUTPUT",[A],BB)))),
-
-  %forall((doing_map(A,B),doing_map(B,A)), save_rule(IO,"INPUT <==> OUTPUT",[A],[B])),
-
-  forall(member(A,AG),
-    (findall(B,doing_map(B,A),BB),
-      (BB==[] 
-       -> ((doing_map(A,B),save_rule(IO,"INPUT --> OUTPUT",[A],[B])))
-       ;                         nop((save_rule(IO,"INPUT <-= OUTPUT",[A],BB)))))),
-
-  forall(member(B,BG),
-    (findall(A,doing_map(A,B),AA),
-      (AA==[] 
-      -> (doing_map(B,A),save_rule(OI,"INPUT <-- OUTPUT",[A],[B]))
-      ;                        nop((save_rule(OI,"INPUT =-> OUTPUT",AA,[B])))))),
-
-  !)).
-
-
-
 :- dynamic(showed_point_mapping/2).
 
 var_or_globalpoints(IP,[]):- var(IP),!.
@@ -690,6 +655,7 @@ extend_obj_proplist(Props,OUTL):- Obj = obj(Props),
   into_obj_plist(OUT,OUTL).
 
 
+
 extend_obj_prop(Obj,Prop):- is_in_subgroup(Obj,Prop).
 extend_obj_prop(Obj,Props):- fail,
  once((localpoints(Obj,P),vis2D(Obj,H,V),points_to_grid(H,V,P,Grid),
@@ -700,29 +666,21 @@ learn_group_mapping(AG00,BG00):-
   maplist(extend_obj_proplist,BG00,BG0),
  must_det_ll((  
   other_io(IO,OI),
-  retractall_in_testid(did_map(_,_,_)),
 
   maybe_exclude_whole(AG0,AG), 
   maybe_exclude_whole(BG0,BG),
 
-  retractall_in_testid(object_atomslist(IO,_,_,_)),
   maplist(obj_grp_atoms(IO),AG,_AGG),
-  retractall_in_testid(object_atomslist(OI,_,_,_)),
   maplist(obj_grp_atoms(OI),BG,_BGG),
 
-  retractall_in_testid(doing_map(_,_,_)),
   forall(member(B,BG),
-    ((find_prox_mappings(B,IO,AG,Objs),
+    ((find_prox_mappings(B,OI,AG,Objs),
      assert_doing_map(OI,B,Objs)))),
- % forall(member(B,BG),
- %   ignore((find_prox_mappings(B,OI,BG,Objs),
- %    assert_doing_map(oo,B,Objs)))),
+
   forall(member(A,AG),
-    ((find_prox_mappings(A,OI,BG,Objs),
+    ((find_prox_mappings(A,IO,BG,Objs),
      assert_doing_map(IO,A,Objs)))),
- % forall(member(A,AG),
- %   ignore((find_prox_mappings(A,IO,AG,Objs),
- %    assert_doing_map(ii,A,Objs)))),
+
 
   retractall(showed_point_mapping(_,_)),
 
@@ -1420,16 +1378,31 @@ ensure_group_prop(_).
 
 
 %pp_safe(O):- format('~N'),print(O),nl.
-use_test_associatable_group_real(In,Solution):- 
+use_test_associatable_group_real(In,SolutionO):- 
+ must_det_ll((
   once((listify(In,In1), visible_order_fg(In1,In2))), 
-  findall(Sol,(member(In3,In2),use_test_associatable_obj(In3,Sol)),SolutionO),
-  flatten(Solution,SolutionF),visible_order_fg(SolutionF,SolutionO).
+  findall(Sol,(member(In3,In2),once(use_test_associatable_obj(In3,Sol))),Solution),
+  flatten(Solution,SolutionF),visible_order_fg(SolutionF,SolutionO))),
+  print_side_by_side(use_test_associatable,In,SolutionO).
 
 use_test_associatable_group(I,O):- use_test_associatable_group_real(I,O),
-  print_side_by_side(I,O),trace.
+  print_side_by_side(I,O).
 
 gather_assumed_mapped(A,B):-
   call_in_testid(assumed_mapped([A],[B])).
+
+clear_arc_training:- !.
+clear_arc_training:- 
+  dmsg(clear_arc_training),
+  must_det_ll((
+  retractall_in_testid(did_map(_,_,_,_)),   
+  retractall_in_testid(doing_map(_,_,_)),
+  retractall_in_testid(object_atomslist(_,_,_,_)),
+  retractall_in_testid(assumed_mapped(_,_)),
+  retractall_in_testid(object_atomslist(_,_,_,_)))),!.
+prolog:make_hook(before, Some):- Some \==[], forall(clear_arc_training,true), fail.
+
+%:- clear_arc_training.
 
 use_test_associatable_obj(In,Sol):-
  ((
@@ -1873,4 +1846,5 @@ learned_color_inner_shape(Name,Color,Fill,Grid,GrowthChart):-
  
 
 :- include(kaggle_arc_footer).
+
 
