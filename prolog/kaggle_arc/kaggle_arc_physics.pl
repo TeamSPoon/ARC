@@ -436,7 +436,7 @@ show_grid_changes(VM,S,Goal):-
    setup_call_cleanup(duplicate_term(VM.grid,Was),
                      Goal,
      ignore((VM.grid\=@=Was,
-        print_side_by_side(silver,print_grid(VM.h,VM.v,Was),grid>was:S,_,print_grid(VM.h,VM.v,VM.grid),grid>new:S)))).
+        print_side_by_side(silver,print_grid(VM.h,VM.v,Was), grid>was:S,_,print_grid(VM.h,VM.v,VM.grid),grid>new:S)))).
 
 print_side_by_side_d(C,A,AN,W,B,BN):- nop(print_side_by_side(C,A,AN,W,B,BN)).
 
@@ -449,7 +449,7 @@ two_physical_objs(O1,O2):- O1\==O2, is_physical_object(O1),is_physical_object(O2
 is_physical_object(O):- var(O),!,enum_object(O),is_physical_object(O).
 is_physical_object(O):- has_prop(iz(flag(not_physical_object)),O),!,fail.
 is_physical_object(O):- has_prop(iz(flag(hidden)),O),!,fail.
-is_physical_object(O):- is_whole_grid(O),!,fail.
+%is_physical_object(O):- is_whole_grid(O),!,fail.
 is_physical_object(_).
 %is_physical_object(O):- has_prop(cc(fg,0),O),has_prop(cc(bg,0),O),!,fail.
 %is_physical_object(O):- my_assertion(is_object(O)),has_prop(iz(media(shaped)),O),!.
@@ -481,7 +481,7 @@ do_todo3([Obj|Objs],TODO,NewObjs):-
   sub_term(E,TODO),compound(E),E=some_todo(OID1,AddToO1),!,
   subst001(TODO,E,[],NTODO),
   flatten([AddToO1],REALTodoF),
-  pp(override_object(REALTodo,Obj)),
+ % pp(override_object(REALTodoF,Obj)),
   override_object(REALTodoF,Obj,O11), 
   do_todo3([O11|Objs],NTODO,NewObjs).
 do_todo3([O1|Objs],TODO,[O1|NewObjs]):-
@@ -507,14 +507,14 @@ find_relations4(INFO1,INFO2,TodoIN,TodoOUT):-
   INFO1 = oinfo(O1,Ps1,OID1,Todo1),%arg(1,INFO1,O1), arg(2,INFO1,Ps1), arg(3,INFO1,OID1), arg(4,INFO1,Todo1),  
   INFO2 = oinfo(O2,Ps2,OID2,Todo2),%arg(1,INFO2,O2), arg(2,INFO2,Ps2), arg(3,INFO2,OID2), arg(4,INFO2,Todo2),
   intersection(Ps1,Ps2,Overlap,P1L,P2L), 
-  findall(link(r,OID2,How),related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,P2L),AddToO1),
-  findall(link(r,OID1,How),related_how(How,O2,O1,Ps2,Ps1,Overlap,P2L,P1L),AddToO2),
+  findall(link(How,OID2),related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,P2L),AddToO1),
+  findall(link(How,OID1),related_how(How,O2,O1,Ps2,Ps1,Overlap,P2L,P1L),AddToO2),
   %if_t(AddToO1\==[],(append(AddToO1,Todo1,NewTodo1),nb_setarg(4,INFO1,NewTodo1),nop(pp(OID1=NewTodo1)))),
   %if_t(AddToO2\==[],(append(AddToO2,Todo2,NewTodo2),nb_setarg(4,INFO2,NewTodo2),nop(pp(OID2=NewTodo2)))),
   ((AddToO1==[],AddToO2==[]) -> TodoIN=TodoOUT ; 
   (append(TodoIN,[
-    some_todo(OID1,link(rel,OID2,AddToO1)),
-    some_todo(OID2,link(rel,OID1,AddToO2))] ,TodoOUT))))).
+    some_todo(OID1,AddToO1),
+    some_todo(OID2,AddToO2)] ,TodoOUT))))).
   
 related_how(subsumed_by(Offset,OverlapP),O1,O2,Ps1,Ps2,Overlap,P1L,_P2L):- Overlap\==[],P1L==[],!,
   length(Ps1,Len1),length(Ps2,Len2), OverlapP = rational(Len1/Len2), object_offset(O2,O1,Offset).

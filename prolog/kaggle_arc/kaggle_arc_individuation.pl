@@ -65,6 +65,7 @@ special_sizes_v_h_sorted_s_l(VM,H,V):- findall(size2D(H,V),special_sizes_vm(VM,H
 individuation_macros(i_complete_generic, [
     %call(retractall(special_sizes(_,_))),
     consider_other_grid, reset_points,
+    pbox_vm_special_sizes([special_sizes_v_h_sorted_s_l]),
     indv_omem_points, reset_points,
     i_mono_colormass, reset_points,
     by_color, reset_points,
