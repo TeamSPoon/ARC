@@ -33,6 +33,7 @@ print_collapsed0(Size,G):- Size>=10, !, wots(_S,G).
 print_collapsed0(_,G):- wots(S,G),write(S).
 
 tersify(I,O):- tracing,!,I=O.
+tersify(X,X):-!.
 %tersify(I,O):- term_variables(I,Vs), \+ ( member(V,Vs), attvar(V)),!,I=O.
 tersify(I,O):- quietly((tersify2(I,M),tersify3(M,O))),!.
 
@@ -59,7 +60,7 @@ srw_arc(I,O):- tersify(I,O),!,I\==O,!.
 
 dumpst_hook:simple_rewrite(I,O):- notrace(catch(arc_simple_rewrite(I,O),_,fail)).
 
-arc_simple_rewrite(I,O):- fail,
+arc_simple_rewrite(I,O):- 
   let_arc_portray,
   current_predicate(bfly_startup/0),
   current_predicate(is_group/1), 
@@ -181,6 +182,9 @@ terseA(_,A,A):-!.
 simple_enough(I):- plain_var(I).
 simple_enough(I):- atomic(I).
 simple_enough(I):- \+ compound(I),!.
+simple_enough(_*_):-!.
+simple_enough(_+_):-!.
+simple_enough(A):- functor(A,_,1),arg(1,A,E),!,simple_enough(E).
 %simple_enough(I):- number(I).
 %simple_enough(I):- atom(I).
 
@@ -637,14 +641,15 @@ print_ss(VAR):- var(VAR),!,pp(ss_var(VAR)).
 print_ss(G):- G ==[],  writeln('Nil'). 
 print_ss(g(H,V,Grid)):- nonvar(Grid),!,print_grid(H,V,Grid).
 print_ss(A^B):- caret_to_list(A^B,List),!,print_side_by_side(List).
-print_ss(Title=Value):- pp(Title),format(' =~n ',[]),print_ss(Value).
-print_ss(Title):- is_list(Title), \+ is_grid(Title),!,print_side_by_side(Title).
-print_ss(Title):- print_side_by_side([Title]).
+print_ss(Title=Value):- pp(Title),format(' =~n ',[]),!,call_w_pad(2,print_ss(Value)).
+print_ss(List):- is_list(List), \+ is_grid(List),!,print_side_by_side(List).
+print_ss(Title):- print_side_by_side([Title]),!.
+print_ss(List):- pp(List),!.
 %print_ss(Title):- is_gridoid(Title),print_side_by_side([Title]).
 
-print_ss(Title,NGrid):- print_side_by_side([Title,NGrid]).
-print_ss(IH,IV,NGrid):- var_or_number(IH),var_or_number(IV),!,print_grid(IH,IV,NGrid).
-print_ss(A,B,C):- is_color(A),!,print_side_by_side(A,B,C).
+print_ss(G1,G2):- print_side_by_side([G1,G2]).
+print_ss(IH,IV,NGrid):- var_or_number(IH),var_or_number(IV),!, \+ \+ print_grid(IH,IV,NGrid).
+%print_ss(A,B,C):- is_color(A),!,print_side_by_side(A,B,C).
 print_ss(A,B,C):- print_side_by_side(A,B,C).
 %print_ss(Color,G1,WG,G2):- is_color(Color),var_or_number(WG),!,print_side_by_side(Color,G1,WG,G2).
 print_ss(IH,IV,Title,NGrid):- var_or_number(IH),var_or_number(IV),!,print_grid(IH,IV,Title,NGrid).
@@ -1066,7 +1071,8 @@ print_with_pad(Goal):-
   wots(S,Goal),
   print_w_pad(O1,S).
 
-print_w_pad(Pad,S):- atomics_to_string(L,'\n',S)-> maplist(print_w_pad0(Pad),L).
+print_w_pad(Pad,Text):- notrace(catch(text_to_string(Text,S),_,fail)), atomics_to_string(L,'\n',S)-> maplist(print_w_pad0(Pad),L).
+call_w_pad(Pad,Goal):- wots(S,Goal), print_w_pad(Pad,S).
 print_w_pad0(Pad,S):- nl_if_needed,dash_chars(Pad,' '), write(S).
 
 print_equals(_,N,V):- \+ compound(V),wqnl(N=V).
@@ -1629,6 +1635,8 @@ color_name(C,W):- color_name0(C,W),!.
 color_name(C-_,W):- color_name0(C,W),!.
 color_name(_-C,W):- !,color_name(C,W),!.
 
+color_name0(C,W):- atom(C),atom_number(C,I),!,color_name0(I,W).
+color_name0('@'(null),_).
 color_name0(C,W):- atom(C),display_length(C,L),L>1,!,W=C.
 color_name0(C,W):- integer(C),C>=0,named_colors(L),nth0(C,L,W),!.
 color_name0(C,W):- mv_color_name(C,V),C\==V,color_name0(V,W).

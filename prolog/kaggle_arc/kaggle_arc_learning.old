@@ -356,14 +356,14 @@ pp_safe(C,W):- color_print(C,call(pp_safe(W))).
 show_result(What,Sols,ExpectedOut,Errors):-
   show_sameness_or_lameness(green,red,What,Sols,ExpectedOut,Errors).
 
-show_sameness_or_lameness(Green,Red,What,OurOut,ExpectedOut,Errors):- 
+show_sameness_or_lameness(Green,Red,What,OurOut,ExpectOut,Errors):- 
    ignore(( get_current_test(TestID), test_info(TestID,InfoF))), !,
-   ignore(( (var(Errors)->count_difs(OurOut,ExpectedOut,Errors);true),
+   ignore(( (var(Errors)->count_difs(OurOut,ExpectOut,Errors);true),
     (Errors==0 -> 
       ColorMessage=wqs(Green,pass(What,TestID));
       ColorMessage=wqs(Red,fail(errors(Errors),What,TestID))),
     ColorMessage = wqs(Color,Message),    
-    banner_grids(Color,OurOut,Message,ExpectedOut,fav(TestID,InfoF)))).
+    banner_grids(Color,OurOut,Message,ExpectOut,fav(TestID,InfoF)))).
 
 banner_grids(Color,I,Message1,O,Message2):- 
  ignore((
@@ -530,7 +530,7 @@ sorted_by_closeness(In,Sorted,Objs,List):-
 
 
 find_prox_mappings(A,GID,Candidates,Objs):-
-    obj_grp_atomslist(GID,A,PA,PAP),
+    obj_grp_atomslist(_,A,PA,PAP),
     ord(NJ/O+JO+Joins,[PA,A],[PB,B],B) = Why,
     findall(Why,
     (      
@@ -572,7 +572,6 @@ find_prox_mappings(A,GID,Objs):-
    maplist(arg(4),RPairs,Objs).
 */
 doing_map(B,A):-  doing_map(_,B,[A|_]).
-doing_map_sc(B,A):-  doing_map(_,B,List),member(A,List),(is_bg_object(B)->is_bg_object(A);is_fg_object(A)).
 doing_map(B,C,D):- call_in_testid(doing_map(B,C,D)).
 
 p2_call_p2(P2a,P2b,A,B):- call(P2a,A,M),call(P2b,M,B).
@@ -582,7 +581,7 @@ maybe_exclude_whole(I,I):- \+ (member(Obj,I), is_fg_object(Obj), \+ is_whole_gri
 maybe_exclude_whole(I,II):- 
   include(not_p1(is_whole_grid),I,II).
 
-:- dynamic(showed_point_mapping/3).
+:- dynamic(showed_point_mapping/2).
 
 var_or_globalpoints(IP,[]):- var(IP),!.
 var_or_globalpoints(IP,GP):- globalpoints(IP,GP).
@@ -594,19 +593,17 @@ showed_mapping(IP,OP):-
    maplist(showed_point_mapping_ok(out),PsO),!.
 
 assert_showed_mapping(IP,OP):-
-  %pp(assert_showed_mapping(IP,OP)),
-   must_det_ll((
    var_or_globalpoints(IP,PsI),
-   var_or_globalpoints(OP,PsO),
+   var_or_globalpoints(OP,PsO),!,
    maplist(assert_showed_point_mapping(in),PsI),
-   maplist(assert_showed_point_mapping(out),PsO))),!.
+   maplist(assert_showed_point_mapping(out),PsO),!.
 
-assert_showed_point_mapping(IO,Ps):- \+ \+ showed_point_mapping_ok(IO,Ps),!.
-assert_showed_point_mapping(IO,Ps):- assert_in_testid(showed_point_mapping(IO,Ps)).
+assert_showed_point_mapping(_,Black-_):- \+ Black \= black,!.
+assert_showed_point_mapping(IO,Ps):- showed_point_mapping(IO,Ps),!.
+assert_showed_point_mapping(IO,Ps):- assert(showed_point_mapping(IO,Ps)).
 
-showed_point_mapping_ok(_,Black-_):- nonvar(Black), \+ Black \= black,!.
-showed_point_mapping_ok(_,BGC-_):- \+ plain_var(BGC), \+ is_fg_color(BGC),!.
-showed_point_mapping_ok(IO,Ps):-  call_in_testid(showed_point_mapping(IO,Ps)),!.
+showed_point_mapping_ok(_,Black-_):- \+ Black \= black,!.
+showed_point_mapping_ok(IO,Ps):- showed_point_mapping(IO,Ps),!.
 
 special_properties(I,O):- findall(SP,(sub_term(E,I), compound(E), into_special_props(E,SP)),L),flatten([L],F),list_to_set(F,O).
 into_special_props(cc(C,N),[color(C),cc(C,N)]):- number(N), N > 0, is_real_fg_color(C),!.
@@ -645,15 +642,12 @@ save_rule0(GID,TITLE,IP,OP,IIPP,OOPP):-
    member(S,PAP)))),
    save_rule(GID,TITLE,[A|IP],OP))))).
 
-is_obj_props(Props):- is_list(Props), Props\==[], \+ is_grid(Props), \+ is_group(Props), \+ is_points_list(Props).
 
 extend_obj_proplist(Var,NewObj):- var(Var),!, enum_object(Var),extend_obj_proplist(Var,NewObj).
-extend_obj_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
-extend_obj_proplist(Grp,GrpO):- is_group(Grp),!,mapgroup(extend_obj_proplist,Grp,GrpO).
+extend_obj_proplist(Grp,GrpO):- is_group(Grp),!,maplist(extend_obj_proplist,Grp,GrpO).
 extend_obj_proplist(obj(Obj),obj(OUT)):-!, 
    extend_obj_proplist(Obj,OUT).
-extend_obj_proplist(Props,OUTL):- is_obj_props(Props),
-  Obj = obj(Props),
+extend_obj_proplist(Props,OUTL):- Obj = obj(Props),
   findall(P,extend_obj_prop(Obj,P),NewProps),
   flatten(NewProps,NewPropsF),
   override_object(NewPropsF,Props,Obj1),
@@ -661,47 +655,22 @@ extend_obj_proplist(Props,OUTL):- is_obj_props(Props),
   into_obj_plist(OUT,OUTL).
 
 
-show_changes(P2BeforeAfter):- P2BeforeAfter=..[P2,Before,After],show_changes(P2,Before,After),!.
-show_changes(P2BeforeAfter):- P2BeforeAfter=..[P3,Before,After,Rem],show_changes(P3,Before,After,Rem),!.
-show_changes(P2,Before,After):-
- must_det_ll((call(P2,Before,After),
- intersection(Before,After,Retained,Removed,Added),
- dash_chars,
- print_ss(retained=Retained),
- print_ss(removed=Removed),
- print_ss(added=Added))),!.
-show_changes(P2,Before,Retained,Removed):-
- must_det_ll((call(P2,Before,Retained,Removed),
- dash_chars,
- print_ss(retained=Retained),
- print_ss(removed=Removed))).
-
 
 extend_obj_prop(Obj,Prop):- is_in_subgroup(Obj,Prop).
 extend_obj_prop(Obj,Props):- fail,
  once((localpoints(Obj,P),vis2D(Obj,H,V),points_to_grid(H,V,P,Grid),
   grid_props(Grid,Props))).
 
-
-fix_groups(AG00,BG00,AG,BG):- 
-  fix_group(AG00,AG),
-  fix_group(BG00,BG).
-
-fix_group(AG00,AG):- 
-  maplist(extend_obj_proplist,AG00,AG0),
-  maybe_exclude_whole(AG0,AG2),
-  predsort(sort_on(mapping_order),AG2,AG1),
-  show_changes(filter_redundant(AG1,AG)).
-
-
 learn_group_mapping(AG00,BG00):-
-  fix_groups(AG00,BG00,AG,BG),
- 
+  maplist(extend_obj_proplist,AG00,AG0),
+  maplist(extend_obj_proplist,BG00,BG0),
  must_det_ll((  
   other_io(IO,OI),
 
-  maplist(obj_grp_atoms(IO),AG,_AGG),
+  maybe_exclude_whole(AG0,AG), 
+  maybe_exclude_whole(BG0,BG),
 
+  maplist(obj_grp_atoms(IO),AG,_AGG),
   maplist(obj_grp_atoms(OI),BG,_BGG),
 
   forall(member(B,BG),
@@ -712,153 +681,13 @@ learn_group_mapping(AG00,BG00):-
     ((find_prox_mappings(A,IO,BG,Objs),
      assert_doing_map(IO,A,Objs)))),
 
-  abolish(showed_point_mapping/3),dynamic(showed_point_mapping/3),
 
-  learn_group_mapping_p3(IO,OI,AG,BG,AG,BG))).
+  retractall(showed_point_mapping(_,_)),
 
-try_using_training(In,ExpectedOut):- 
-   try_each_using_training(In,Rules,OurOut),
-   count_difs(OurOut,ExpectedOut,Errors),
-   (Errors==0->pp(Rules);true).
+  predsort(sort_on(mapping_order),BG,BGS),
+  predsort(sort_on(mapping_order),AG,AGS),
 
-try_each_using_training(In,ExpectedOut,Keeper,OurOut):-
-   is_grid(In),individuate(complete,In,InC),!,
-   must_det_ll(try_each_using_training(InC,ExpectedOut,Keeper,OurOut)).
-
-try_each_using_training(In,ExpectedOut,Keeper,OurOut):- 
- must_det_ll((
-  enum_ruleset(Rules),
-  pp(in=In), try_each_using_training(In,ExpectedOut,Rules,Keeper,OurOut))).
-
-try_each_using_training(In,_ExpectedOut,Rules,Keeper,OurOut):- Rules==[],
-   pp(Keeper=[no_rules]),!,
-   o_globalpoints(In,OurOut).
-try_each_using_training(In,ExpectedOut,Rules,Keeper,OurOut):-
- must_det_ll((
-  classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown),
-  pp(keeper=Keeper),
-  pp(rejected=Rejected),
-  maplist(writeln,Unknown),
-  o_globalpoints(Keeper,GPs),
-  points_to_grid(GPs,OurOut))).
-
-
-classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):- \+ is_points_list(ExpectedOut),!,
- must_det_ll((o_globalpoints(ExpectedOut,Out),ExpectedOut\=@=Out,
- classify_rules(In,Out,Rules,Keeper,Rejected,Unknown))).
-classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):- \+ is_group(In),!,
- must_det_ll((is_grid(In),individuate(complete,In,InC),
-   classify_rules_0(InC,ExpectedOut,Rules,Keeper,Rejected,Unknown))).
-classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):-
-  must_det_ll(classify_rules_0(In,ExpectedOut,Rules,Keeper,Rejected,Unknown)).
-
-classify_rules_0(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):-
-  select(I,In,IIn), find_prox_mappings(I,ri,Rules,Sorted),!,
-  classify_rules_1([I|IIn],ExpectedOut,Sorted,[],Keeper,Rejected,Unknown).
-
-classify_rules_1(In,ExpectedOut,Rules,PairsUsed,Keeper,Rejected,Unknown):- 
-  member(I,In), member(R,Rules),
-  copy_term(R,RR),
-  \+ member(kept(I,R,RR),PairsUsed),
-  matches_input(I,RR,Matches), o_globalpoints(RR,GPs),!,
-  PAIR = kept(I,R,RR,GPs,Matches),
-  classify_rules_2(In,ExpectedOut,Rules,Matches,GPs,PAIR,[PAIR|PairsUsed],Keeper,Rejected,Unknown).
-classify_rules_1(_,_,_,_,[],[],[]).
-
-classify_rules_2(In,ExpectedOut,Rules,Matches,_GPs,PAIR,PairsUsed,Keeper,Rejected,[PAIR|Unknown]):- 
-  Matches==[],!,
-  classify_rules_1(In,ExpectedOut,Rules,[PAIR|PairsUsed],Keeper,Rejected,Unknown).
-classify_rules_2(In,ExpectedOut,Rules,_Matches,GPs,PAIR,PairsUsed,Keeper,[PAIR|Rejected],Unknown):- 
-  violates(GPs,ExpectedOut),
-  classify_rules_1(In,ExpectedOut,Rules,[PAIR|PairsUsed],Keeper,Rejected,Unknown).
-classify_rules_2(In,ExpectedOut,Rules,_Matches,_GPs,PAIR,PairsUsed,[PAIR|Keeper],Rejected,Unknown):- 
-  classify_rules_1(In,ExpectedOut,Rules,[PAIR|PairsUsed],Keeper,Rejected,Unknown).
-
-violates(GPs,ExpectedOut):- intersection(GPs,ExpectedOut,_Shared,Bad,_LeftOver), Bad\==[].
-
-enum_ruleset(Rules):- 
-  get_current_test(TestID),
-  R = test_solved(TestID,Name,Match,Create,DebugInfo),
-  findall(R,
-     test_solved(TestID,Name,Match,Create,DebugInfo),Rules).
-
-
-
- 
-o_globalpoints(obj(C),Grid):- maplist(reduce_prop,C,CC),!,must_det_ll(olg_globalpoints(obj(CC),CC,Grid)). 
-o_globalpoints(rhs(C),GPs):- !, must_det_ll(o_globalpoints(C,GPs)).
-o_globalpoints(test_solved(_TestID,_Name,_Match,Create,DebugInfo),GPs):- !, 
-  must_det_ll((run_delayed_goals(DebugInfo),!,o_globalpoints(Create,GPs))).
-o_globalpoints(obj(C) - Docalls,Grid):- !, must_det_ll(((run_delayed_goals(Docalls),!,o_globalpoints(obj(C),Grid)))). 
-o_globalpoints(C,GPs):- is_points_list(C),!,GPs=C.
-o_globalpoints(C,GPs):- is_grid(C),!,globalpoints(C,GPs).
-o_globalpoints(C,GPsS):- is_list(C),!,must_det_ll((maplist(o_globalpoints,C,GPs),append_sets(GPs,GPsS))).
-  
-olg_globalpoints(_Obj,L,GP):-
-   member(globalpoints(GP),L).
-olg_globalpoints(_Obj,L,GP):-
-   member(localpoints(LP),L),
-   get_nw_absAt(L,X,Y),
-   offset_points(X,Y,LP,GP).
-olg_globalpoints(_Obj,L,GP):-
-   member(norm_grid(NG),L),
-   member(norm_ops(Ops),L),
-   maplist(writeln,[unreduce_grid=NG,ops=Ops]),
-   must_det_ll((unreduce_grid(NG,Ops,RR),
-   localpoints(RR,LP),
-   get_nw_absAt(L,X,Y),
-   offset_points(X,Y,LP,GP))).
-   %olg_globalpoints(Obj,[localpoints(LP)|L],GP).
-
-
-get_nw_absAt(L,X,Y):- make_loc2D(L,X,Y).
-get_nw_absAt(L,X,Y):- make_center2D(L,CX,CY),number(CX),number(CY), make_vis2D(L,SX,SY), X is CX+floor(SX/2),Y is CY+floor(SY/2).
-
-valid_xy(X,Y):- number(X),number(Y).
-
-rescale(TY,SY,GY,Y):- TY==SY,!,GY=Y.
-rescale(TY,SY,GY,Y):- Y is (TY/SY)*GY.
-g_to_d(L,GX,GY,X,Y):- member(globalG(SX,SY),L),member(grid_size(TX,TY),L),rescale(TX,SX,GX,X),rescale(TY,SY,GY,Y).
-g_to_d(_,X,Y,X,Y).
-
-make_loc2D(L,X,Y):- member(loc2D(X,Y),L),valid_xy(X,Y).
-make_loc2D(L,X,Y):- member(loc2G(GX,GY),L),valid_xy(GX,GY),g_to_d(L,GX,GY,X,Y).
-
-make_vis2D(L,X,Y):- member(vis2D(X,Y),L),valid_xy(X,Y),!.
-make_vis2D(L,X,Y):- member(vis2G(GX,GY),L),valid_xy(GX,GY),!,g_to_d(L,GX,GY,X,Y).
-
-make_center2D(L,X,Y):- member(center2D(X,Y),L),valid_xy(X,Y),!.
-make_center2D(L,X,Y):- member(center2G(GX,GY),L),valid_xy(GX,GY),!,g_to_d(L,GX,GY,X,Y).
-
-
-good_enough_match(Matches):- Matches\==[],member(M,Matches),arg(_,M,Num),number(Num),!.
-
-matches_input(InC,Match,Matches):- is_group(InC),!,member(In,InC),matches_input(In,Match,Matches).
-matches_input(InC,Match,Matches):- is_group(Match),!,member(E,Match),matches_input(InC,E,Matches).
-matches_input(InC,test_solved(_TestID,_Name,Match,_Create,DebugInfo),Matches):- !,
-  matches_input(InC,Match,Matches), run_delayed_goals(DebugInfo).
-matches_input(InC,lhs(Match),Matches):- !,matches_input(InC,Match,Matches).
-matches_input(InC,rhs(Match),Matches):- !,matches_input(InC,Match,Matches).
-matches_input(rhs(InC),Match,Matches):- !,matches_input(InC,Match,Matches).
-matches_input(InC,Match,Matches):- must_det_ll(matches_oprops(InC,Match,Matches)).
-
-matches_oprops(I,obj(M),Matches):-!,must_det_ll(matches_oprops(I,M,Matches)).
-matches_oprops(obj(I),M,Matches):-!,must_det_ll(matches_oprops(I,M,Matches)).
-
-matches_oprops(I,M,Matches):- 
- findall(MM,(member(II,I),member(MM,M),match_prop(II,MM),writeg(match_prop(II,MM))),Matches),
-   run_delayed_goals(M).
-
-run_delayed_goals([]):-!.
-run_delayed_goals([call(M)|More]):- !, ignore(call(M)), run_delayed_goals(More).
-run_delayed_goals([_|More]):- !, run_delayed_goals(More).
-  
-reduce_prop(ii(II),MM):- !, reduce_prop(II,MM).
-reduce_prop(if(II),MM):- !, reduce_prop(II,MM).
-reduce_prop(thr(II),MM):- !, reduce_prop(II,MM).
-reduce_prop(MM,MM).
-
-match_prop(II,MM):- reduce_prop(II,I),reduce_prop(MM,M),I=M,!.
+  learn_group_mapping_p3(IO,OI,AG,BG,AGS,BGS))).
 
 
 learn_group_mapping_p3(IO,OI,AG,BG,AGS,BGS):- !,
@@ -925,17 +754,17 @@ save_rule1(IO,_TITLE,AL,BL,IIPP,OOPP):-
   assert_showed_mapping(AL,BL),!,
   skip_rule(IO,"IGNORE BG Objects",AL,BL,IIPP,OOPP).
 
-save_rule1(IO,TITLE,AL,BL,_IIPP,_OOPP):- 
+save_rule1(IO,TITLE,AL,BL,IIPP,OOPP):- 
   same_values(iz(sid(_)),AL,BL),!,
-  save_rule2(IO,TITLE,AL,BL).
+  save_rule2(IO,TITLE,AL,BL,IIPP,OOPP).
 
 save_rule1(in,_TITLE,AL,BL,IIPP,OOPP):- fail,
   is_fg_object(BL),
   showed_mapping(_,BL),!,
   skip_rule(in,"IGNORE Input (in)",AL,BL,IIPP,OOPP).
 
-save_rule1(IO,TITLE,A,B,_IIPP,_OOPP):-  !,
-  save_rule2(IO,TITLE,A,B).
+save_rule1(IO,TITLE,A,B,IIPP,OOPP):-  !,
+  save_rule2(IO,TITLE,A,B,IIPP,OOPP).
 
   
 
@@ -965,6 +794,7 @@ print_rule_grids(GID,TITLE,IP,OP,_IIPP,_OOPP):-
  append(INS,OUTS,ALL),
  print_ss(ALL))).
 
+
 omit_in_rules(_,giz(_)).
 omit_in_rules(lhs,P):- not_for_matching(lhs,_,P).
 omit_in_rules(rhs,P):- not_for_creating(rhs,P).
@@ -977,15 +807,13 @@ skip_in_rules(_Why,localpoints(_)).
 %skip_in_rules(_Why,colorlesspoints(_)).
 %skip_in_rules(_Why,giz(gid(_))).
 
-must_make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):-
-  must_det_ll((make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid))).
 
 :- discontiguous(make_rule_l2r/7).
 
 make_rule_l2r_objs(Dir,Shared,II,OO,IIIII,OOOOO,NewShared):- 
   select(obj(ObjI),II,III),
   select(obj(ObjO),OO,OOO),
-  must_make_rule_l2r(Dir,Shared,ObjI,ObjO,ObjII,ObjOO,MidShared),
+  make_rule_l2r(Dir,Shared,ObjI,ObjO,ObjII,ObjOO,MidShared),
   (ObjI\=@=ObjII;ObjO\=@=ObjOO),!,
   append(III,[obj(ObjII)],IIII),append(OOO,[obj(ObjOO)],OOOO),  
   make_rule_l2r_objs(Dir,MidShared,IIII,OOOO,IIIII,OOOOO,NewShared).
@@ -1001,30 +829,30 @@ make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):-
    (ELI\==[];ELO\==[]),
    numbervars(ELI,66,_,[attvars(skip),singletons(false)]),
    numbervars(ELO,66,_,[attvars(skip),singletons(false)]),
-   must_make_rule_l2r(Dir,[remove_oids(lhs,OID1,ELI),remove_oids(rhs,OID2,ELO)|Shared],
+   make_rule_l2r(Dir,[remove_oids(lhs,OID1,ELI),remove_oids(rhs,OID2,ELO)|Shared],
                                 [was_oid(OID1)|III],[was_oid(OID2)|OOO],IIII,OOOO,NewShared).
 
 % Cleanup RHS
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
    Rem = omit_in_rules(rhs,O), 
-   select(O,OO,OOO), call(Rem), !, must_make_rule_l2r(Dir,Shared,II,OOO,IIII,OOOO,NewShared).
+   select(O,OO,OOO), call(Rem), !, make_rule_l2r(Dir,Shared,II,OOO,IIII,OOOO,NewShared).
 % Cleanup LHS
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
    Rem = omit_in_rules(lhs,I),
-   select(I,II,III), call(Rem), !, must_make_rule_l2r(Dir,Shared,III,OO,IIII,OOOO,NewShared).
+   select(I,II,III), call(Rem), !, make_rule_l2r(Dir,Shared,III,OO,IIII,OOOO,NewShared).
 
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
    sub_term(E,II+OO),compound(E),E='$VAR'(D),%wots(S,color_print(white,D)),
    \+ number(D),
    subst(II+OO+Shared,E,S,III+OOO+SharedM),!,
-   must_make_rule_l2r(Dir,[debug_var(D,S)|SharedM],III,OOO,IIII,OOOO,NewShared).
+   make_rule_l2r(Dir,[debug_var(D,S)|SharedM],III,OOO,IIII,OOOO,NewShared).
 
 make_rule_l2r(Dir,Shared,I,O,IIII,OOOO,NewShared):- 
   simplify_l2r(Dir,I,C1,VC1,I_I,O,C2,VC2,O_O,Info),
   is_all_original_value(C1),is_all_original_value(C2),!,
   subst001(I_I,C1,VC1,II),gen_variatable(C1,VC1),
   subst001(O_O,C2,VC2,OO),gen_variatable(C2,VC2),
-  must_make_rule_l2r(Dir,[Info|Shared],II,OO,IIII,OOOO,NewShared).
+  make_rule_l2r(Dir,[Info|Shared],II,OO,IIII,OOOO,NewShared).
 
 remove_empty_colors(O,O_O):- my_exclude(=(cc(_,0)),O,O_O).
 
@@ -1542,6 +1370,9 @@ enum_groups0(G):- findall(Obj,(see_object_atomslist(_,Obj,_,_)),G), G\==[].
 enum_groups0(S):- is_unshared_saved(_,S).
 %enum_groups0(G):- current_group(G).
 
+group_prop(giz(g(in))).
+group_prop(giz(g(out))).
+
 ensure_group_prop(Prop):- var(Prop),!,group_prop(Prop).
 ensure_group_prop(_).
 
@@ -1559,73 +1390,6 @@ use_test_associatable_group(I,O):- use_test_associatable_group_real(I,O),
 
 gather_assumed_mapped(A,B):-
   call_in_testid(assumed_mapped([A],[B])).
-
-io_order(A,B,B,A):- has_prop(giz(g(out)),A),!.
-io_order(A,B,A,B).
-
-
-minfo_gp(BS,gp(BS,PP)):- globalpoints(BS,GP),physical_points(GP,PP).
-
-  /*
-filter_redundant(BS,BSSS):- 
-  abolish(showed_point_mapping/3),dynamic(showed_point_mapping/3),
-  include(need_object,BS,BSSS).
-*/
-filter_redundant(BS,BSSSR):- filter_redundant(BS,BSSSR,_Removed).
-filter_redundant(BS,BSSSR,Removed):- maplist(minfo_gp,BS,BSGP),
-  reverse(BSGP,BSR),
-  filter_redundant_r(BSR,BSSS,Removed),
-  reverse(BSSS,BSSSR).
-
-filter_redundant_r([gp(BS,GP)|BSR],[BS|BSSS],Removed):-
-  findall(GPE,member(gp(_,GPE),BSR),GPS),flatten(GPS,Flat),
-  intersection(GP,Flat,_Shared,Unique,_),Unique\==[],!,
-  %pp(uniq=Unique),
-  filter_redundant_r(BSR,BSSS,Removed).
-filter_redundant_r([gp(BS,_)|BSR],BSSS,[BS|Removed]):-
-  filter_redundant_r(BSR,BSSS,Removed).
-filter_redundant_r([],[],[]).
-
-
-need_object(B):- 
-  must_det_ll((
-  is_object(B),
-  has_prop(giz(g(IO)),B),  
-  findall(IO-Ps,showed_point_mapping_ok(IO,Ps),L),
-  assert_showed_mapping(B,[]),
-  findall(IO-Ps,showed_point_mapping_ok(IO,Ps),L2),!,
-  pp(L2\=@=L))),
-  (L2\=@=L). %->writeln(need_object(B));(writeln(not_need_object(B)),fail)).
-  
-
-show_safe_assumed_mapped:-
- findall(sam(Why,AA,BB),(safe_assumed_mapped(Why,A,B),io_order(A,B,AA,BB)),SAMS),
- maplist(arg(2),SAMS,AS),list_to_set(AS,ASS),
- maplist(arg(3),SAMS,BS),list_to_set(BS,BSS),
- pp(show_safe_assumed_mapped),
- filter_redundant(ASS,ASSS),
- filter_redundant(BSS,BSSS),!,
- forall( (member(A,ASSS),member(B,BSSS)),
-   (findall(Why,member(sam(Why,A,B),SAMS),WHYS),  
-    (ignore((
-            \+  is_bg_object(A), \+ is_bg_object(B),
-      (WHYS==[]-> true; (sformat(SWHYS,'~w',[WHYS]),g_display(A,AA),g_display(B,BB),dash_chars,print_ss(SWHYS,AA,BB)))))))),
- dash_chars.
-
-
-gather_assumed_mapped_o_l(A,BL):- findall(B,gather_assumed_mapped(A,B),BL).
-gather_assumed_mapped_l_o(AL,B):- findall(A,gather_assumed_mapped(A,B),AL).
-
-safe_assumed_mapped(two_way,A,B):- doing_map(A,B),doing_map(B,A).
-safe_assumed_mapped(two_way_sc,A,B):- doing_map_sc(A,B),doing_map_sc(B,A).
-
-safe_assumed_mapped(only_ness,A,B):- gather_assumed_mapped(A,B), \+ (gather_assumed_mapped(A,C),B\==C).
-
-safe_assumed_mapped(priorities(LenA,LenB),A,B):- findall(v(APB,A,LenA,B,LenB), (safe_assumed_mapped(A,LenA,B,LenB),APB is LenA+LenB),List),
-   sort(List,Set),
-   member(v(_,A,LenA,B,LenB),Set).
-safe_assumed_mapped(A,LenA,B,LenB):- gather_assumed_mapped(A,B),
-  gather_assumed_mapped_o_l(A,BL),length(BL,LenA), gather_assumed_mapped_l_o(AL,B),length(AL,LenB).
 
 clear_arc_training:- !.
 clear_arc_training:- 

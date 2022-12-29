@@ -73,7 +73,7 @@ menu_cmd1(r,'i','             Re-enter(i)nteractve mode.',(interact)).
 
 % How I got into fostering was I had spent about 10k dollars at Dove Lewis Animal Hospital for a cat in heart failure.  When he passed, about 3 years ago, I decided (this time) to go to a "kill" shelter to adopt another.   While was waiting for an appointment with an adoption screener I saw a flyer that said 'all medical expenses' would be paid if i became a foster volunteer. Holly shit, that sounded good.  So I started fostering 'moms with kittens' and other cats in all stages and needs.  Sometimes cats that are under protection by court orders.  T
 
-menu_cmd9(_,'m','recomple this progra(m),',(clear_tee,update_changed_files)).
+menu_cmd9(_,'m','recomple this progra(m),',(clear_tee,update_changes)).
 menu_cmd9(_,'c','(c)lear the scrollback buffer,',(force_full_tee,really_cls)).
 menu_cmd9(_,'C','(C)lear cached test info,',(clear_training,clear_test)).
 menu_cmd9(_,'r','(r)un DSL code,',(call_dsl)).
@@ -216,7 +216,7 @@ do_menu_key( ''):- !, fail.
 do_menu_key('d'):- !, dump_from_pairmode.
 
 
-do_menu_key(Num):- number(Num),!, update_changed_files, do_test_number(Num),!.
+do_menu_key(Num):- number(Num),!, update_changes, do_test_number(Num),!.
 do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num), number(Num), !, do_test_number(Num),!.
 do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), !, menu_goal(Body).
 do_menu_key(Key):- atom(Key), menu_cmds(_,Key,_,Body), !, menu_goal(Body).

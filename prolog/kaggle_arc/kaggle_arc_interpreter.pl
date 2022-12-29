@@ -573,10 +573,13 @@ register_obj(O):-  must_det_ll(o2g(O,_)),!.
 
 :- dynamic(oid_glyph_object/3).
 
-o2g(Obj,Glyph):- var(Obj),!,gid_glyph_oid(_,Glyph,OID),oid_glyph_object(OID,Glyph,Obj).
+o2g(Obj,Glyph):- var(Obj),!,oid_glyph_object(_,Glyph,Obj).
+o2g(Obj,Glyph):- oid_glyph_object(_,Glyph,Obj),!.
+o2g(Obj,Glyph):- obj_to_oid(Obj,OID),!,oid_glyph_object(OID,Glyph,_).
+o2g(Obj,Glyph):- object_glyph(Obj,Glyph),!.%oid_glyph_object(_,Glyph,Obj).
 %o2g(Obj,Glyph):-  g2o(Glyph,Obj),!.
-o2g(Obj,NewGlyph):- var(NewGlyph),must_det_ll((o2g_f(Obj,NewGlyph))),!. 
-o2g(Obj,NewGlyph):- trace,o2g_f(Obj,NewGlyph).
+%o2g(Obj,NewGlyph):- var(NewGlyph),must_det_ll((o2g_f(Obj,NewGlyph))),!. 
+%o2g(Obj,NewGlyph):- trace,o2g_f(Obj,NewGlyph).
 
 /*
  obj_to _oid(Obj,Old), int2glyph(Old,Glyph), 
@@ -610,6 +613,8 @@ g2o0(G,O):- integer(G),!,int2glyph(G,C),!,g2o(C,O),!.
 g2o0(C,O):- compound(C), !, compound_name_arguments(C,objFn,[G|_]), !, g2o(G,O).
 g2o0(G,O):- \+ atom(G), !, string(G),!,atom_string(A,G),!,g2o(A,O).
 g2o0(G,_):- is_fg_color(G),!,fail.
+g2o0(G,O):- oid_glyph_object(_,G,O),!.
+g2o0(G,O):- oid_glyph_object(G,_,O),!.
 g2o0(G,O):- oid_to_obj(G,O)-> true;(oid_glyph_object(_,G,O)*->true;(Chars=[_,_|_],atom_chars(G,Chars),chars2o(Chars,O))).
 
 

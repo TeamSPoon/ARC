@@ -204,10 +204,23 @@ final_alignment(_,_,AA,BB,AA,BB):-!.
 %obj_grp_atoms(IO,A,[A,PA|Atoms]):- nonvar(IO),!,into_gid(IO,GID),obj_grp_atoms0(GID,A,[A,PA|Atoms]).
 obj_grp_atoms(IO,A,[A,PA|Atoms]):- obj_grp_atomslist(IO,A,PA,Atoms).
 
+
+
 obj_grp_atomslist(IO,A,PA,Atoms):- \+ \+ see_object_atomslist(IO,A,PA,Atoms), !, see_object_atomslist(IO,A,PA,Atoms).
 obj_grp_atomslist(IO,A,PA,Atoms):- 
-  obj_grp_comparable(A,PA),obj_atoms(PA,Atoms),
+  obj_grp_atoms_deep(A,PA,Atoms),
   assert_in_testid(object_atomslist(IO,A,PA,Atoms)).
+
+dref_match(rhs(Match),PA):- !, dref_match(Match,PA).
+dref_match(lhs(Match),PA):- !, dref_match(Match,PA).
+dref_match([obj(Match)],PA):- !, dref_match(Match,PA).
+dref_match(test_solved(_TestID,_Name,Match,_Create,_DebugInfo),PA):- !, dref_match(Match,PA).
+dref_match(obj(Match),PA):- !, dref_match(Match,PA).
+dref_match(List,PA):- is_list(List), flatten(List,ListF),List\=@=ListF,!,dref_match(ListF,PA).
+dref_match(PA,PA).
+
+obj_grp_atoms_deep(A,PA,Atoms):- A=obj(_),!,obj_grp_comparable(A,PA),obj_atoms(PA,Atoms).
+obj_grp_atoms_deep(A,PA,Atoms):- dref_match(A,PA), obj_atoms(PA,Atoms).
 
 see_object_atomslist(IO,A,PA,Atoms):- call_in_testid(object_atomslist(IO,A,PA,Atoms)).
 
@@ -720,6 +733,7 @@ unused_diff_groups0(AAR,BBR,DD):-
 
 obj_grp_comparable(I,obj(O)):- obj_make_comparable(I,M),
   my_partition(uncomparable(group),M,_,O).
+  
 
 include_fav_points(I,II):- include(fav_points,I,II),II=[_,_|_],!.
 include_fav_points(I,I).
@@ -872,6 +886,7 @@ is_fti_step(combine_same_globalpoints).
 %combine_same_globalpoints(_VM):-!.
 combine_same_globalpoints(VM):- combine_same_globalpoints(VM.objs,set(VM.objs)).
 
+  
 combine_same_globalpoints(IndvS,IndvSO):- 
   append(NoDupes,[I|Rest],IndvS),
   select(O,Rest,IndvS2),  \+ is_whole_grid(O),

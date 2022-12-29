@@ -118,7 +118,17 @@ quietlyd(G):- quietly(G),!.
 %:- discontiguous '$autoload'/3.
 :- dynamic '$autoload'/3.
 
-update_changes:- notrace((ignore(update_changed_files))).
+update_changes:- 
+    '$update_library_index',
+    findall(File, make:modified_file(File), Reload0),
+    list_to_set(Reload0, Reload),
+    forall(prolog:make_hook(before, Reload),true),
+    notrace((ignore(update_changed_files))),
+    print_message(silent, make(reload(Reload))),
+    make:maplist(reload_file, Reload),
+    print_message(silent, make(done(Reload))),
+    forall(prolog:make_hook(after, Reload),true).
+
 cls_z_make:- notrace((ignore(cls_z),ignore(update_and_fail))).
 clsmake:- notrace(ignore((\+ is_detatched_thread, cls_z_make))),!.
 update_and_fail:- once(update_changes),fail.
@@ -246,11 +256,10 @@ must_det_ll(call(P2,I,O)):- !, must_grid_call(P2,I,O).
 %must_det_ll((X,Y,Z)):- !, (must_det_ll(X)->must_det_ll(Y)->must_det_ll(Z)).
 %must_det_ll((X,Y)):- !, (must_det_ll(X)->must_det_ll(Y)).
 must_det_ll(if_t(X,Y)):- !, if_t(must_not_error(X),must_det_ll(Y)).
-must_det_ll(forall(X,Y)):- !, forall(must_not_error(X),must_det_ll(Y)).
+must_det_ll(forall(X,Y)):- !, must_det_ll(forall(must_not_error(X),must_not_error(Y))).
+must_det_ll(\+ (X, \+ Y)):- !, must_det_ll(forall(must_not_error(X),must_not_error(Y))).
 
-must_det_ll(\+ (X, \+ Y)):- !, forall(must_not_error(X),must_det_ll(Y)).
-
-must_det_ll((A*->X;Y)):- !,(must_not_error(A)*->must_det_ll(X);must_det_ll(Y)).
+must_det_ll((A*->X;Y)):- !,must_det_ll((must_not_error(A)*->must_not_error(X);must_det_ll(Y))).
 must_det_ll((A->X;Y)):- !,(must_not_error(A)->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((X;Y)):- !, ((must_not_error(X);must_not_error(Y))->true;must_det_ll_failed(X;Y)).
 must_det_ll(\+ (X)):- !, (\+ must_not_error(X) -> true ; must_det_ll_failed(\+ X)).
@@ -861,8 +870,8 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 :- make_grid_cache.
 :- gen_gids.
 :- test_show_colors.
-:- nb_setval(arc_can_portray,nil).
 :- nb_setval(arc_can_portray,t).
+:- nb_setval(arc_can_portray,nil).
 %:- load_arc_db_temp_cache.
 :- fmt('% Type ?- demo. % or press up arrow').
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).

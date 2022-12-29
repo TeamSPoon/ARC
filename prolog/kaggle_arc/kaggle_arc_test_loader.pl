@@ -140,6 +140,8 @@ add_test_info_prop(Name,F,V):-
   load_json_of_file(TestID,test,T):-!,load_json_of_file(TestID,tst,T).
 
 
+  
+  load_json_of_file(Name,_Type,[train =In, test=Out]):- load_json_of_file(Name,train,In),load_json_of_file(Name,test,Out).
   load_json_of_file(Name,Type,[input=In,output=Out]):- assert_kaggle_arc_json(Name,Type,In,Out),!.
   load_json_of_file(Name,Type,[input=In]):-assert_kaggle_arc_json(Name,Type,In,_Out),!.
 
@@ -212,6 +214,7 @@ arc_sub_path(Subdir,AbsolutePath):- muarc_tmp:arc_directory(ARC_DIR),absolute_di
 %:- load_json_files(t,'./data/test_nar_10x10/*.json').
 :- load_json_files('1D_testset',t,'./data/1D_testset/*.json').
 :- load_json_files('MyTrainingData',t,'./dbigham/Data/MyTrainingData/*.json').
+:- load_json_files('MiniARC',t,'./MINI-ARC/data/MiniARC/*.json').
 
 
 %:- load_json_files(v,'../../secret_data/solu**66/*.json').

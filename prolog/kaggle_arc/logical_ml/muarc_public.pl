@@ -34,17 +34,23 @@ object_group_cc(Objs,GroupName,SubObjs,Count,NamesCC,ValuesCC):-
   maplist(arg(1),Props,Names),get_ccs(Names,NamesCC),
   maplist(arg(2),Props,Values),get_ccs(Values,ValuesCC).
 
+group_prop(P):- group_prop(P,_).
+group_prop(giz(g(in)),input).
+group_prop(giz(g(out)),output).
+group_prop(cc(fg,0),bg_obj).
+group_prop(cc(bg,0),fg_obj).
+group_prop(fg_colors_count(1),single_fg_color).
+group_prop(fg_colors_count(Two),multicolor):- freeze(Two,Two>1).
+
+
 is_in_subgroup(Obj,Prop):- var(Obj),!, enum_object(Obj),is_in_subgroup(Obj,Prop).
-is_in_subgroup(Obj,iz(bg_obj)):- has_prop(cc(fg,0),Obj).
-is_in_subgroup(Obj,iz(fg_obj)):- has_prop(cc(bg,0),Obj).
-is_in_subgroup(Obj,iz(single_fg_color)):- has_prop(fg_colors_count(1),Obj).
-is_in_subgroup(Obj,iz(multicolor)):- has_prop(fg_colors_count(Two),Obj),Two>1.
-is_in_subgroup(Obj,ansestors(N,Set)):-transitive_sets(ansestor,Obj,Set,N).
-is_in_subgroup(Obj,descendants(N,Set)):-transitive_sets(descendant,Obj,Set,N).
+is_in_subgroup(Obj,iz(IZ)):- group_prop(Prop,IZ), has_prop(Prop,Obj).
+%is_in_subgroup(Obj,ansestors(N,Set)):-transitive_sets(ansestor,Obj,Set,N).
+%is_in_subgroup(Obj,descendants(N,Set)):-transitive_sets(descendant,Obj,Set,N).
 %is_in_subgroup(Obj,tiouching(N,Set)):- nontransitive_set(touching,Obj,Set,N).
 %is_in_subgroup(Obj,seeing(N,Set)):- nontransitive_set(seeing,Obj,Set,N).
-is_in_subgroup(Obj,insideOf(N,Set)):-transitive_sets(insideOf,Obj,Set,N).
-is_in_subgroup(Obj,contains(N,Set)):-transitive_sets(contains,Obj,Set,N).
+%is_in_subgroup(Obj,insideOf(N,Set)):-transitive_sets(insideOf,Obj,Set,N).
+%is_in_subgroup(Obj,contains(N,Set)):-transitive_sets(contains,Obj,Set,N).
 %is_in_subgroup(Obj,Prop):- has_prop(Prop,Obj).
 %is_in_subgroup(_,all).
 

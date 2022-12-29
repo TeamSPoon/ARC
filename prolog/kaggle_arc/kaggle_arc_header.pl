@@ -39,6 +39,10 @@
 :- dynamic(grid_nums/1).
 :- dynamic(grid_nums/2).
 
+:- multifile(prolog:make_hook/2).
+:- dynamic(prolog:make_hook/2).
+:- discontiguous(prolog:make_hook/2).
+
 :- multifile(fav/2).
 :- discontiguous(fav/2).
 :- dynamic(fav/2).

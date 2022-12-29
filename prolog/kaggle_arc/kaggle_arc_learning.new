@@ -508,8 +508,6 @@ learn_rule_in_out_objects(How,I,O):-
   arrange_shared(OOO,OOOO),
   arrange_shared(NewShared,NewSharedS),
   save_learnt_rule(test_solved(How,obj(IIII),obj(OOOO),NewSharedS),I^O,I^O),!.
-
-
 sort_by_closeness(In,Objs,List):- sorted_by_closeness(In,_Sorted,Objs,List).
 
 enum_in_objs(In,Objs):- nonvar(In),nonvar(Objs),!.
@@ -949,6 +947,7 @@ save_rule2(GID,TITLE,IP,OP):-
  make_rule_l2r_0(Dir,Mid,II,OO,III,OOO,NewShared),
 
  arrange_shared(NewShared,NewSharedS),
+
  save_rule3(GID,TITLE,IP,OP),
  save_learnt_rule(test_solved(TITLE,lhs(III),rhs(OOO),NewSharedS),I^O,I^O))).
 
@@ -986,7 +985,7 @@ make_rule_l2r_objs(Dir,Shared,II,OO,IIIII,OOOOO,NewShared):-
   select(obj(ObjI),II,III),
   select(obj(ObjO),OO,OOO),
   must_make_rule_l2r(Dir,Shared,ObjI,ObjO,ObjII,ObjOO,MidShared),
-  (ObjI\=@=ObjII;ObjO\=@=ObjOO),!,
+  (ObjI\=@=ObjII;ObjO\=@=ObjOO),!,  
   append(III,[obj(ObjII)],IIII),append(OOO,[obj(ObjOO)],OOOO),  
   make_rule_l2r_objs(Dir,MidShared,IIII,OOOO,IIIII,OOOOO,NewShared).
 make_rule_l2r_objs(_Dir,Shared,II,OO,II,OO,Shared).
@@ -1007,23 +1006,25 @@ make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):-
 % Cleanup RHS
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
    Rem = omit_in_rules(rhs,O), 
-   select(O,OO,OOO), call(Rem), !, must_make_rule_l2r(Dir,Shared,II,OOO,IIII,OOOO,NewShared).
+   select(O,OO,OOO), call(Rem), \+ no_thru(O),  must_make_rule_l2r(Dir,Shared,II,OOO,IIII,OOOO,NewShared).
 % Cleanup LHS
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
    Rem = omit_in_rules(lhs,I),
-   select(I,II,III), call(Rem), !, must_make_rule_l2r(Dir,Shared,III,OO,IIII,OOOO,NewShared).
+   select(I,II,III), call(Rem),  \+ no_thru(I), !, must_make_rule_l2r(Dir,Shared,III,OO,IIII,OOOO,NewShared).
 
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
    sub_term(E,II+OO),compound(E),E='$VAR'(D),%wots(S,color_print(white,D)),
    \+ number(D),
-   subst(II+OO+Shared,E,S,III+OOO+SharedM),!,
+   subst(II+OO+Shared,E,S,III+OOO+SharedM),
+   II+OO\=@=III+OOO,!,
    must_make_rule_l2r(Dir,[debug_var(D,S)|SharedM],III,OOO,IIII,OOOO,NewShared).
 
 make_rule_l2r(Dir,Shared,I,O,IIII,OOOO,NewShared):- 
   simplify_l2r(Dir,I,C1,VC1,I_I,O,C2,VC2,O_O,Info),
-  is_all_original_value(C1),is_all_original_value(C2),!,
+  is_all_original_value(C1),is_all_original_value(C2),
   subst001(I_I,C1,VC1,II),gen_variatable(C1,VC1),
   subst001(O_O,C2,VC2,OO),gen_variatable(C2,VC2),
+  II\=I,!,
   must_make_rule_l2r(Dir,[Info|Shared],II,OO,IIII,OOOO,NewShared).
 
 remove_empty_colors(O,O_O):- my_exclude(=(cc(_,0)),O,O_O).
@@ -1070,11 +1071,16 @@ no_thru(T):- compound(T),sub_term(E,T),(var(E);E='$VAR'(_)),!.
 :- use_module(library(clpfd)).
 
 gen_offset_expression(_Type,X1,X1,_Var,VX1,VX1,[]).
-gen_offset_expression(Type,X2,X1,Var,VX1,VX2,OUT):- fail,
-                                        number(X2),number(X1),OVX is X2 - X1,
+gen_offset_expression(Type,X2,X1,Var,VX1,VX2,OUT):- 
+   number(X2),number(X1),OVX is X2 - X1,
    gen_variatable([Type,Var],OVXV),
    OUT = [offsetV(Type,Var,OVXV,OVX), call(VX2 #= VX1 + OVXV)].
-  
+
+transfer_props(Type,I,O):- transfer_prop(Type,I), transfer_prop(Type,O), I\=@=O.
+transfer_props(Type,I,O):- transfer_prop(Type,I), transfer_prop(Type,O), (\+ I\=O).
+
+
+
 % offset 2D
 make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- 
   transfer_prop(Type,I),
@@ -1212,6 +1218,123 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- %fail,
      select(O,OO,O_O),!, % numbervars(U),
    make_rule_l2r(Dir,Shared,[ii(I)|I_I],[ii(O)|O_O],III,OOO,SharedMid).
 
+make_rule_l2r(_Dir,Shared,I,O,I,O,Shared):-!.
+
+
+% offset 2D
+make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- 
+  transfer_props(Type,I,O), select(O,OO,O_O_O), select(I,II,I_I_I),
+   \+ no_thru(O), \+ no_thru(I), 
+  I=..[F1,X1,Y1], is_original_value(X1),is_original_value(Y1),
+  O=..[F2,X2,Y2], is_original_value(X2),is_original_value(Y2),
+  ((X1=X2,Y1=Y2);(X1=X2;Y1=Y2)),
+  NewI=..[F1,VX1,VY1],gen_variatable([F1,'X'],VX1), gen_variatable([F1,'Y'],VY1),
+  NewO=..[F1,VX2,VY2],gen_variatable([F2,'X'],VX2), gen_variatable([F2,'Y'],VY2),
+  gen_offset_expression(Type,X2,X1,'X',VX1,VX2,Code1), 
+  gen_offset_expression(Type,Y2,Y1,'Y',VY1,VY2,Code2), 
+  append([[(NewI)|Code1],Code2,I_I_I],I_I_I_I),
+  append([[(NewO)|Code2],Code1,O_O_O],O_O_O_O),!,
+  must_make_rule_l2r(Dir,Shared,I_I_I_I,O_O_O_O,III,OOO,SharedMid).
+
+% mass(R)
+make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- 
+  transfer_props(Type,I,O), select(O,OO,O_O_O), select(I,II,I_I_I),
+  \+ no_thru(O), \+ no_thru(I), 
+  I=..[F1,R1],is_original_value(R1),
+  O=..[F2,R2],is_original_value(R2),
+  (R1=R2),
+  NewI=..[F1,VR1],gen_variatable([F1,'R'],VR1), 
+  NewO=..[F2,VR2],gen_variatable([F2,'R'],VR2), 
+  gen_offset_expression(Type,R2,R1,'R',VR1,VR2,Code1), 
+  append([[(NewI)|Code1],Code2,I_I_I],I_I_I_I),
+  append([[(NewO)|Code2],Code1,O_O_O],O_O_O_O),!,
+  must_make_rule_l2r(Dir,Shared,I_I_I_I,O_O_O_O,III,OOO,SharedMid).
+
+% cc(C,N)
+make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- 
+  transfer_prop(Type,I), select(I,II,I_I_I),
+  transfer_prop(Type,O), select(O,OO,O_O_O),
+  \+ no_thru(O), \+ no_thru(I), 
+  I=..[F1,C1,R1],is_original_value(R1),
+  O=..[F2,C1,R2],is_original_value(R2),
+  (R1=R2),
+  NewI=..[F1,C1,VR1],gen_variatable([F1,C1,'R'],VR1), 
+  NewO=..[F2,C1,VR2],gen_variatable([F2,C1,'R'],VR2), 
+  gen_offset_expression(Type,R2,R1,'R',VR1,VR2,Code1), 
+  append([[(NewI)|Code1],Code2,I_I_I],I_I_I_I),
+  append([[(NewO)|Code2],Code1,O_O_O],O_O_O_O),!,
+  must_make_rule_l2r(Dir,Shared,I_I_I_I,O_O_O_O,III,OOO,SharedMid).
+
+
+% o(T,E,R)
+make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- fail,
+  I=o(T1,E1,R1),O=o(T2,E2,R2),
+  select(I,II,I_I_I),is_original_value(R1),
+  select(O,OO,O_O_O),is_original_value(R2),
+  (E1/T1 =@= E2/T2),
+  \+ no_thru(O), \+ no_thru(I), 
+  %((R1==R2);(R1=@=R2);(R1=R2)),
+  upcase_atom_var(R1,A1),upcase_atom_var(R2,A2),
+  NewI=o(VT1,VE1,VR1),gen_variatable(['Total',A1],VT1),gen_variatable(['Element',A1],VE1), gen_variatable([A1,'R'],VR1), 
+  NewO=o(VT2,VE2,VR2),gen_variatable(['Total',A2],VT2),gen_variatable(['Element',A2],VE2), gen_variatable([A2,'R'],VR2),   
+  gen_offset_expression(ranks,R2,R1,o,VR1,VR2,Code1),
+  append([[thr(NewI)|Code1],I_I_I],I_I_I_I),!,
+  must_make_rule_l2r(Dir,Shared,I_I_I_I,[lookup(NewO)|O_O_O],III,OOO,SharedMid).
+
+
+% single color transfer/change
+make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- 
+  member(pen([cc(C1,_)]),II),  member(pen([cc(C2,_)]),OO),is_original_value(C1),
+  gen_variatable([C1],VC1),gen_variatable([C2],VC2),
+  subst001(II,C1,VC1,I_I),subst001(OO,C2,VC2,O_O),
+  NewI=pen([cc(VC1,_)]),NewO=pen([cc(VC2,1)]),
+  remove_empty_colors(I_I,I_I_I),remove_empty_colors(O_O,O_O_O),
+  gen_change_color_expression(C2,C1,VC1,VC2,Code,OVC1,OVC2),!,
+  must_make_rule_l2r(Dir,Shared,[thr(NewI),call(Code),offsetV(color,OVC1),offsetV(color,OVC2)|I_I_I],[NewO|O_O_O],III,OOO,SharedMid).
+
+
+make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
+   Rem = not_for_creating(rhs,O),    
+   select(O,OO,OOO), call(Rem), !, must_make_rule_l2r(Dir,Shared,II,OOO,IIII,OOOO,NewShared).
+
+make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
+   Rem = not_for_matching(lhs,I),
+   select(I,II,III), call(Rem), !, must_make_rule_l2r(Dir,Shared,III,OO,IIII,OOOO,NewShared).
+
+% Cleanup RHS
+make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
+   Rem = skip_in_rules(rhs,O), 
+   select(O,OO,OOO), call(Rem), !, must_make_rule_l2r(Dir,[Rem|Shared],II,OOO,IIII,OOOO,NewShared).
+
+% Cleanup LHS
+make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
+   Rem = skip_in_rules(lhs,I),
+   select(I,II,III), call(Rem), !, make_rule_l2r(Dir,[Rem|Shared],III,OO,IIII,OOOO,NewShared).
+
+% Fallback 1
+make_rule_l2r(_Dir,Shared,I,O,IIII,OOOO,NewSharedO):- fail,
+  intersection(I,O,IO,IIII,OOOO),!,
+  my_partition(for_creating,IO,Creating,Not),
+  mark_as(2,l_r,Creating,Info1),
+  mark_as(3,l_r,Not,Info2),
+  append([Shared,Info1,Info2],NewSharedO).
+
+make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- %fail,
+  I=O,
+  select(I,II,I_I), \+ no_thru(I), \+ transfer_prop(_,I), select(O,OO,O_O), is_all_original_value(I),
+  \+ no_thru(O), \+ no_thru(I), 
+  make_unifier(I,U),!,
+  must_make_rule_l2r(Dir,Shared,[U,call(ignore(U=I))|I_I],[U,call(ignore(U=O))|O_O],III,OOO,SharedMid).
+
+make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- %fail,
+  select(I,II,I_I), \+ no_thru(I),   \+ transfer_prop(_,I), is_all_original_value(I),make_unifier(I,U), O=U, select(O,OO,O_O),
+  is_all_original_value(O),
+  \+ no_thru(O), \+ no_thru(I), 
+  !, 
+  must_make_rule_l2r(Dir,Shared,[U,call(ignore(U=I))|I_I],[U,call(ignore(U=O))|O_O],III,OOO,SharedMid).
+
+make_rule_l2r(Dir,Shared,I,O,III,OOO,Shared):- arrange_shared(I,II),I\=@=II,!,must_make_rule_l2r(Dir,Shared,II,O,III,OOO,Shared).
+make_rule_l2r(Dir,Shared,I,O,III,OOO,Shared):- arrange_shared(O,OO),O\=@=OO,!,must_make_rule_l2r(Dir,Shared,I,OO,III,OOO,Shared).
 make_rule_l2r(_Dir,Shared,I,O,I,O,Shared):-!.
 
 mark_as(_N,M,I,O):- maplist(append_term(M),I,O),!.

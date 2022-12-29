@@ -347,19 +347,31 @@ sort_points(P0,P2):-
 %same_globalpoints(O1,O2):-  globalpoints_include_bg(O1,P1),same_globalpoints_ps_obj(P1,O2).
 
 same_globalpoints_and_window(I,O):-
-  get_loc2D_vis2D(I,P1,H1,V1,OH1,OV1),
-  get_loc2D_vis2D(O,P2,H2,V2,OH2,OV2),!,
-  P1=@=P2,H1=H2,V1=V2, OH1=OH2,OV1=OV2.
+  %get_loc2D_vis2D(I,P1,H1,V1,OH1,OV1),
+  %get_loc2D_vis2D(O,P2,H2,V2,OH2,OV2),!,  
+  %P1=@=P2,H1=H2,V1=V2, OH1=OH2,OV1=OV2,
+  loc2D(I,X1,Y1),loc2D(O,X2,Y2),X1=X2,Y1=Y2,
+  vis2D(I,X1a,Y1a),vis2D(O,X2a,Y2a),X1a=X2a,Y1a=Y2a,
+  colorlesspoints(I,P1),colorlesspoints(O,P2), P1=@=P2.
  
 same_globalpoints_ovrs_ps_obj(Overrides,P1,O2):-
   po_loc2D_vis2D(P1,Overrides,H1,V1,OH1,OV1),
   get_loc2D_vis2D(O2,P2,H2,V2,OH2,OV2),
   P1=@=P2,H1=H2,V1=V2, OH1=OH2,OV1=OV2.
 
-po_loc2D_vis2D(_GPoints,Overrides,LocX,LocY,SizeX,SizeY):- is_list(Overrides), member(vis2D(SizeX,SizeY),Overrides), member(loc2D(LocX,LocY),Overrides),!.
+po_loc2D_vis2D(GPoints,Overrides,LocX,LocY,SizeX,SizeY):- is_list(Overrides), 
+  select(loc2D(LocX,LocY),Overrides,Overrides0),!,
+  po_loc2D_vis2D(GPoints,Overrides0,_,_,SizeX,SizeY).
+
+po_loc2D_vis2D(GPoints,Overrides,LocX,LocY,SizeX,SizeY):- is_list(Overrides), 
+  select(vis2D(SizeX,SizeY),Overrides,Overrides0),!,
+  po_loc2D_vis2D(GPoints,Overrides0,LocX,LocY,_,_).
+
+%po_loc2D_vis2D(GPoints,_Overrides,LocX,LocY,SizeX,SizeY):- points_range(GPoints,_LocX,_LocY,_HiH,_HiV,SizeX,SizeY).
 po_loc2D_vis2D(GPoints,_Overrides,LocX,LocY,SizeX,SizeY):- points_range(GPoints,LocX,LocY,HiH,HiV,_HO,_VO),SizeX is HiH-LocX+1,SizeY is HiV-LocY+1. 
 
-get_loc2D_vis2D(O2,P2,H2,V2,OH2,OV2):- globalpoints_include_bg(O2,P2), loc2D(O2,H2,V2), vis2D(O2,OH2,OV2),!.
+get_loc2D_vis2D(O2,P2,H2,V2,OH2,OV2):- 
+  globalpoints(O2,P2), loc2D(O2,H2,V2), vis2D(O2,OH2,OV2),!.
 
 %get_loc2D_vis2D( O2,P2,_Props2,H2,V2,OH2,OV2):- nonvar(O2), (var(P2)-> globalpoints_include_bg(O2,P2) ; true), loc2D(O2,H2,V2), vis2D(O2,OH2,OV2),!.
 %get_loc2D_vis2D(_O2,P2, Props2,H2,V2,OH2,OV2):- po_loc2D_vis2D(P2,Props2,H2,V2,OH2,OV2),!.
@@ -745,15 +757,19 @@ is_shape_id_for([point_01_01,point_02_01,point_01_02,point_02_02],sid_22).
 is_shape_id_for([point_01_01,point_02_01,point_03_01,point_01_02,point_02_02,point_03_02,point_01_03,point_02_03,point_03_03],sid_33).
 is_shape_id_for([point_01_01,point_02_01,point_03_01,point_01_02,point_03_02,point_01_03,point_02_03,point_03_03],sid_323).
 
-physical_points(GPoints,Points):- 
-   my_partition(sub_var(fg),GPoints,FGPoints,_),
-   FGPoints\==[],!, Points = FGPoints.
+physical_points(GPoints,Points):- sub_var(wbg,GPoints),!,
+   GPoints=Points,!.
+physical_points(GPoints,Points):- sub_var(wfg,GPoints),!,
+   GPoints=Points,!.
 physical_points(GPoints,Points):- 
    my_partition(sub_var(bg),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
 physical_points(GPoints,Points):- 
    my_partition(sub_var('$VAR'('_')),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
+physical_points(GPoints,Points):- 
+   my_partition(sub_var(fg),GPoints,FGPoints,_),
+   FGPoints\==[],!, Points = FGPoints.
 physical_points(GPoints,Points):-
    my_partition(sub_var(black),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).

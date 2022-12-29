@@ -474,19 +474,20 @@ find_relationsA(Objs,NewObjs):-
   include(is_physical_object,Objs,Phys),
   maplist(add_oinfo,Phys,PhysOInfo),
   find_relationsB(PhysOInfo,[],TodoLIST),
-  do_todo3(Objs,TodoLIST,NewObjs))).
+  flatten(TodoLIST,TodoLISTF),
+  do_todo3(PhysOInfo,TodoLISTF,NewObjs))).
 
-do_todo3([Obj|Objs],TODO,NewObjs):-
-  obj_to_oid(Obj,OID1),
-  sub_term(E,TODO),compound(E),E=some_todo(OID1,AddToO1),!,
-  subst001(TODO,E,[],NTODO),
+do_todo3([],_,[]):-!.
+do_todo3([oinfo(O1,Ps1,OID1,Todo1)|Objs],TODO,NewObjs):-
+ %length(Objs,L),pp(do_todo3=L),
+  select(some_todo(OID1,AddToO1),TODO,NTODO),!,
   flatten([AddToO1],REALTodoF),
  % pp(override_object(REALTodoF,Obj)),
-  override_object(REALTodoF,Obj,O11), 
-  do_todo3([O11|Objs],NTODO,NewObjs).
-do_todo3([O1|Objs],TODO,[O1|NewObjs]):-
+  override_object(REALTodoF,O1,O11), 
+  do_todo3([oinfo(O11,Ps1,OID1,Todo1)|Objs],NTODO,NewObjs).
+do_todo3([oinfo(O1,_Ps1,_OID1,_Todo1)|Objs],TODO,[O1|NewObjs]):-
   do_todo3(Objs,TODO,NewObjs).
-do_todo3([],_,[]).  
+
 
 
 add_oinfo(O1,oinfo(O1,Ps1,OID1,[])):- obj_to_oid(O1,OID1),globalpoints(O1,Ps1),!.
@@ -516,13 +517,13 @@ find_relations4(INFO1,INFO2,TodoIN,TodoOUT):-
     some_todo(OID1,AddToO1),
     some_todo(OID2,AddToO2)] ,TodoOUT))))).
   
+related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,P2L):- 
+  once((points_range(P1L,SX1,SY1,EX1,EY1,_,_), points_range(P2L,SX2,SY2,EX2,EY2,_,_))),
+  related_how2(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2).
 related_how(subsumed_by(Offset,OverlapP),O1,O2,Ps1,Ps2,Overlap,P1L,_P2L):- Overlap\==[],P1L==[],!,
   length(Ps1,Len1),length(Ps2,Len2), OverlapP = rational(Len1/Len2), object_offset(O2,O1,Offset).
 related_how(   subsumed(Offset,OverlapP),O1,O2,Ps1,Ps2,Overlap,_P1L,P2L):- Overlap\==[],P2L==[],!,
   length(Ps1,Len1),length(Ps2,Len2), OverlapP = rational(Len2/Len1), object_offset(O2,O1,Offset).
-related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,P2L):- 
-  once((points_range(P1L,SX1,SY1,EX1,EY1,_,_), points_range(P2L,SX2,SY2,EX2,EY2,_,_))),
-  related_how2(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2).
 
 sees_dir(s,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SY1 >= EY2, D is SY1-EY2.
 sees_dir(n,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SY2 >= EY1, D is SY2-EY1.

@@ -837,6 +837,11 @@ this_has_dir_obj_become('#','s','~','~').
 this_has_dir_obj_become('#','e','~','~').
 this_has_dir_obj_become('#','w','~','~').
 
+this_has_dir_obj_become('^','n','-','0').
+this_has_dir_obj_become('v','s','-','0').
+this_has_dir_obj_become('>','e','-','0').
+this_has_dir_obj_become('<','w','-','0').
+
 
 this_has_dir_obj_become('!','n','|','|').
 this_has_dir_obj_become('!','s','|','|').

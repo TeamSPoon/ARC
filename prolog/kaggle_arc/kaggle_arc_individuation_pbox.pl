@@ -109,7 +109,7 @@ pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM):-
  must_det_ll((
   maplist(obj_size2D,Objs,HVList),
   globalpoints(GridI0,Points),color_mass_points_to_sizes(Points,Sizes),
-  append(Sizes,[size2D(VM.ogx,VM.ogy),size2D(3,3),size2D(9,9),size2D(4,4)|HVList],NEAR),
+  append(Sizes,HVList,NEAR),
   debug_m(indv(pbox),NEAR),
   include(near_size(GH,GV,NEAR),Sizes_S_L,UseSizes),
   length(UseSizes,B), wdmsg(reduced(A->B)),
@@ -462,9 +462,14 @@ existingObject(VM,GOPoints):-
   GOPoints==Ps,!.
 
 obj_gpoints(OBJ,OH,OV,GOPoints):-
+   grid_size(OBJ,H,V),
+   HH is OH+H-1,VV is OV+V-1,
+   hv_point(HH,VV,HV2),
+   hv_point(1,1,HV1),
    localpoints_include_bg(OBJ,OPoints), 
-   ((member(OPoints,W-point_01_01),is_fg_color(W)) -> OPoints=OOPoints ; OOPoints=[wbg-point_01_01|OPoints]),
-   offset_points(OH,OV,OOPoints,GOPoints).
+  ((member(W-HV1,OPoints),is_fg_color(W)) -> OPoints=OOPoints ; OOPoints=[black-HV1|OPoints]),
+  ((member(W-HV2,OOPoints),is_fg_color(W)) -> OOPoints=OOOOPoints ; OOOOPoints=[black-HV2|OOPoints]),
+   offset_points(OH,OV,OOOOPoints,GOPoints).
 
 rim_of(Find,HeadNewMidFooter):- 
   append([Top|OldMid],[Bot],Find), 
@@ -512,12 +517,31 @@ is_all_same(C,List):- maplist(=(C),List).
 
 :- discontiguous found_box/19. 
 
-% is_sub_grid_object(FX,FY,H,V,TGX,THY,OGX,OGY,Type)
-is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TXY,OGX,OGY,subgrid(IX,IY,SX,SY)):- 
+is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,subgrid(IX,IY,SX,SY)):- 
+  %this_grid_is_multiple_of_other(CACHE),
+ % TGX=OGX,TGY=OGY, % searching for somethning the size of the other grid
+  0 is TGX rem SX, 
+  0 is TGY rem SY, % fits prefectly
+  NX is TGX / SX, 
+  NY is TGY / SY, 
+  %NX=<5, NY=<5,
+  NX*NY =< 10, % no bigger than 10 cells 
+
+  0 is (FX-1) rem SX, 
+  0 is (FY-1) rem SY,  % fits prefectly
+
+  %make up a index for it
+  IX is (FX-1)/SX+1,
+  IY is (FY-1)/SY+1,!.
+
+% is_sub_grid_object(FX,FY,H,V,TGX,TGY,OGX,OGY,Type)
+is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,subgrid(IX,IY,SX,SY)):- 
   this_grid_is_multiple_of_other(CACHE),
   SX=OGX,SY=OGY, % searching for somethning the size of the other grid
+
   0 is (FX-1) rem OGX, 0 is (FY-1) rem OGY, % fits prefectly
   IX is ((FX-1)/OGX)+1, IY is ((FY-1)/OGY)+1,!. %make up a index for it
+
 
 this_grid_is_multiple_of_other(CACHE):-
   CACHE.h=TGX,CACHE.v=TGY,CACHE.ogx=OGX,CACHE.ogy=OGY,
@@ -528,7 +552,7 @@ this_grid_is_multiple_of_other(CACHE):-
 found_box(Grid,L_S,NSEW,FX,FY,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS,   inside, Why):- 
   (H>2,V>2),
   CACHE.h=TGX,CACHE.v=TGY,CACHE.ogx=OGX,CACHE.ogy=OGY,
-  is_sub_grid_object(CACHE,FX,FY,H,V,TGX,THY,OGX,OGY,Why).
+  is_sub_grid_object(CACHE,FX,FY,H,V,TGX,TGY,OGX,OGY,Why).
 
 found_box(Grid,L_S,NSEW,FX,FY,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS,   What, Why):- 
   (enum_fg_colors(Black);Black=black),
