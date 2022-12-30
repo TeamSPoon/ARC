@@ -524,7 +524,6 @@ guess_unbound(swap_colors(X,Y,I,O)):-
 %unique_colors_of(In,Blue):- unique_colors(In,Colors),member(Blue,Colors),is_real_color(Blue).
 unique_fg_colors_pos(I,IC):- var(I),!,available_fg_colors(IC).
 unique_fg_colors_pos(I,IC):- unique_colors(I,ICB),delete(ICB,black,IC).
-
 simple_todolist(List,I,OO):- nonvar(List),!, do_simple_todolist(List,I,OO).
 simple_todolist(List,I,OO):- ignore(get_attr(OO,expect_p2,O)),nonvar(O),!,simple_todolist(List,I,O).
 /*

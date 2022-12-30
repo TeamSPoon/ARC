@@ -440,6 +440,8 @@ is_maybe_bold(_P,G):- call(G).
 pp_msg_color(P,C):- compound(P),pc_msg_color(P,C),!.
 pp_msg_color(P,C):- must_det_ll(mesg_color(P,C)).
 pc_msg_color(iz(P),C):- pp_msg_color(P,C).
+pc_msg_color(link(P,_,_),C):- pp_msg_color(P,C).
+pc_msg_color(link(P,_),C):- pp_msg_color(P,C).
 pc_msg_color((_->P),C):- pp_msg_color(P,C).
 pc_msg_color([P|_],C):- pp_msg_color(P,C).
 pc_msg_color(diff(P),C):- pp_msg_color(P,C).

@@ -39,12 +39,15 @@ group_prop(giz(g(in)),input).
 group_prop(giz(g(out)),output).
 group_prop(cc(fg,0),bg_obj).
 group_prop(cc(bg,0),fg_obj).
+
 group_prop(fg_colors_count(1),single_fg_color).
 group_prop(fg_colors_count(Two),multicolor):- freeze(Two,Two>1).
 
 
 is_in_subgroup(Obj,Prop):- var(Obj),!, enum_object(Obj),is_in_subgroup(Obj,Prop).
 is_in_subgroup(Obj,iz(IZ)):- group_prop(Prop,IZ), has_prop(Prop,Obj).
+is_in_subgroup(Obj,holes(Holes)):- findall(Y, (indv_props(Obj,link(contained_by,Y)),is_bg_object(Y)), L), length(L,Holes).
+is_in_subgroup(Obj,nth_fg_color(Nth,Color)):- unique_fg_colors(Obj,List),nth1(Nth,List,Color).
 %is_in_subgroup(Obj,ansestors(N,Set)):-transitive_sets(ansestor,Obj,Set,N).
 %is_in_subgroup(Obj,descendants(N,Set)):-transitive_sets(descendant,Obj,Set,N).
 %is_in_subgroup(Obj,tiouching(N,Set)):- nontransitive_set(touching,Obj,Set,N).

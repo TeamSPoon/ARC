@@ -319,9 +319,6 @@ learn_rule_o(Mode,InVM,OutVM):- % is_map(InVM),is_map(OutVM),!,
   nop(show_proof(InGrid,OutGrid))]),!.
   
 
-learn_rule_i_o(Mode,In,Out):- 
-  forall(learn_rule_in_out(1,Mode,In,Out),true).
-
 is_reproduction_obj(O):- \+ is_object(O),!.
 is_reproduction_obj(O):-  \+ iz(O,info(hidden)).
 
@@ -485,31 +482,28 @@ aliased_valued('$VAR'(_)). aliased_valued('VAR'(_)). aliased_valued('$'(_)).
 is_all_original_value(Var):- nonvar(Var), \+ (sub_term(E,Var), nonvar(E), \+ is_original_value(E)).
 
 :- discontiguous(learn_rule_in_out/4).
-learn_rule_in_out(_,in_out,In,Out):- is_list(In),is_list(Out),
-  (learn_rule_in_out_sames(In,Out), deterministic(TF), true), (TF==true -> !; true).
-learn_rule_in_out_sames(In,Out):- fail,
-  is_list(In),is_list(Out),
-  average_or_mid(mass,Out,MinMass),
-  member(I,In),member(O,Out),
-  mass(O,Mass), Mass>MinMass,
-  mass(I,Mass),
-  once((compare_objs_how(How), nonvar(How), compare_objs1(How,I,O))),
-  pp_safe(How),
-  learn_rule_in_out_objects(How,I,O).
+
 
 :- dynamic(doing_map/4).
 
-learn_rule_in_out_objects(How,I,O):-
-  indv_props_list(I,IP), indv_props_list(O,OP),
-  %assert_visually(learn_rule_in_out_full_objects(How,I,O)),
-  make_rule_l2r(Dir,[],IP,OP,II,OO,Mid),
-  make_rule_l2r_0(Dir,Mid,II,OO,III,OOO,NewShared),
-  arrange_shared(NewShared,NewSharedS),
-  arrange_shared(III,IIII),
-  arrange_shared(OOO,OOOO),
-  arrange_shared(NewShared,NewSharedS),
-  save_learnt_rule(object_to_object(How,obj(IIII),obj(OOOO),NewSharedS),I^O,I^O),!.
+learn_rule_i_o(Mode,In,Out):- 
+  forall(learn_rule_in_out(Mode,In,Out),true).
 
+%learn_rule_in_out(_,in_out,In,Out):- is_list(In),is_list(Out),
+%  (learn_rule_in_out_objects(in_out,In,Out), deterministic(TF), true), (TF==true -> !; true).
+learn_rule_in_out(Mode,In,Out):- 
+  is_list(In),is_list(Out),!,
+  average_or_mid(mass,Out,MinMass),  
+  length(In,IL),length(Out,OL),
+  nth(II,In,I),member(OO,Out,O),
+  mass(O,Mass), Mass>MinMass,
+  mass(I,Mass),
+  once((compare_objs_how(Mode), nonvar(Mode), compare_objs1(Mode,I,O))),
+  pp_safe(Mode),
+  locally(nb_setval(rule_note,rule(II/IL,OO/OL)),
+    learn_rule_in_out(Mode,I,O)).
+
+learn_rule_in_out(Mode,I,O):- save_rule2(Mode,"INPUT <--> OUTPUT",I,O).
 
 sort_by_closeness(In,Objs,List):- sorted_by_closeness(In,_Sorted,Objs,List).
 
@@ -715,6 +709,53 @@ learn_group_mapping(AG00,BG00):-
 
   learn_group_mapping_p3(IO,OI,AG,BG))).
 
+learn_group_mapping_p3(IO,OI,AG,BG):- !,
+ locally(nb_setval(rule_cannot_add_more_objects,t),
+  (nb_linkval(in_out_pair,in_out_pair(AG,BG,shared)),
+   must_det_ll((  
+    length(BG,BL),length(AG,AL),
+    forall(nth1(BB,BG,B),
+       locally(nb_setval(rule_note,rule(AA/AL,BB/BL)),
+         (doing_map_list(OI,B,[A|Others]),
+          has_prop(iz(sid(SA)),A),
+          (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
+           assertz_in_testid(assumed_mapped([A|CC],[B])),
+          % save_learnt_rule(assumed_mapped(lhs([A|CC]),rhs([B])),A^B,A^B),
+           save_rule2(OI,"INPUT <-- OUTPUT",[A|CC],[B])))),
+    
+    forall(nth1(AA,AG,A),
+       locally(nb_setval(rule_note,rule(AA/AL,BB/BL)),
+       (doing_map_list(IO,A,[B|Others]),
+          has_prop(iz(sid(SA)),A),
+          (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
+           assertz_in_testid(assumed_mapped([A],[B|CC])),
+           % save_learnt_rule(assumed_mapped(lhs([A]),rhs([B|CC])),A^B,A^B),
+           save_rule2(IO,"INPUT --> OUTPUT",[A],[B|CC])))),
+
+   !)))).
+/*
+learn_group_mapping_p3(IO,OI,AG,BG,AGS,BGS):- !,
+ locally(nb_setval(rule_cannot_add_more_objects,t),
+  (nb_linkval(in_out_pair,in_out_pair(AG,BG,shared)),
+   must_det_ll((  
+    
+    forall(member(B,BGS),
+       (doing_map_list(OI,B,[A|Others]),
+          has_prop(iz(sid(SA)),A),
+          (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
+           assertz_in_testid(assumed_mapped([A|CC],[B])),
+          % save_learnt_rule(assumed_mapped(lhs([A|CC]),rhs([B])),A^B,A^B),
+           save_rule2(OI,"INPUT <-- OUTPUT",[A|CC],[B]))),
+    forall(member(A,AGS),
+       (doing_map_list(IO,A,[B|Others]),
+          has_prop(iz(sid(SA)),A),
+          (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
+           assertz_in_testid(assumed_mapped([A],[B|CC])),
+           % save_learnt_rule(assumed_mapped(lhs([A]),rhs([B|CC])),A^B,A^B),
+           save_rule2(IO,"INPUT --> OUTPUT",[A],[B|CC]))),
+   !)))).*/
+
+
 try_using_training(In,ExpectedOut):- 
    try_each_using_training(In,ExpectedOut,Rules,OurOut),
    count_difs(OurOut,ExpectedOut,Errors),
@@ -869,47 +910,6 @@ reduce_prop(MM,MM).
 match_prop(II,MM):- reduce_prop(II,I),reduce_prop(MM,M),I=M,!.
 
 
-learn_group_mapping_p3(IO,OI,AG,BG):- !,
- locally(nb_setval(rule_cannot_add_more_objects,t),
-  (nb_linkval(in_out_pair,in_out_pair(AG,BG,shared)),
-   must_det_ll((  
-    
-    forall(member(B,BG),
-       (doing_map_list(OI,B,[A|Others]),
-          has_prop(iz(sid(SA)),A),
-          (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
-           assertz_in_testid(assumed_mapped([A|CC],[B])),
-          % save_learnt_rule(assumed_mapped(lhs([A|CC]),rhs([B])),A^B,A^B),
-           save_rule2(OI,"INPUT <-- OUTPUT",[A|CC],[B]))),
-    nop((forall(member(A,AG),
-       (doing_map_list(IO,A,[B|Others]),
-          has_prop(iz(sid(SA)),A),
-          (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
-           assertz_in_testid(assumed_mapped([A],[B|CC])),
-           % save_learnt_rule(assumed_mapped(lhs([A]),rhs([B|CC])),A^B,A^B),
-           save_rule2(IO,"INPUT --> OUTPUT",[A],[B|CC]))))),
-   !)))).
-/*
-learn_group_mapping_p3(IO,OI,AG,BG,AGS,BGS):- !,
- locally(nb_setval(rule_cannot_add_more_objects,t),
-  (nb_linkval(in_out_pair,in_out_pair(AG,BG,shared)),
-   must_det_ll((  
-    
-    forall(member(B,BGS),
-       (doing_map_list(OI,B,[A|Others]),
-          has_prop(iz(sid(SA)),A),
-          (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
-           assertz_in_testid(assumed_mapped([A|CC],[B])),
-          % save_learnt_rule(assumed_mapped(lhs([A|CC]),rhs([B])),A^B,A^B),
-           save_rule2(OI,"INPUT <-- OUTPUT",[A|CC],[B]))),
-    forall(member(A,AGS),
-       (doing_map_list(IO,A,[B|Others]),
-          has_prop(iz(sid(SA)),A),
-          (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
-           assertz_in_testid(assumed_mapped([A],[B|CC])),
-           % save_learnt_rule(assumed_mapped(lhs([A]),rhs([B|CC])),A^B,A^B),
-           save_rule2(IO,"INPUT --> OUTPUT",[A],[B|CC]))),
-   !)))).*/
 
 :- dynamic(assumed_mapped/3).
 
@@ -970,16 +970,15 @@ save_rule1(IO,TITLE,A,B,_IIPP,_OOPP):-  !,
 
 
 save_rule2(GID,TITLE,IP,OP):- 
- must_det_ll((
-
+ if_t(once(true;is_fg_object(IP);is_fg_object(OP)),
+ (must_det_ll((
  assert_showed_mapping(IP,OP),
- once(is_fg_object(IP);is_fg_object(OP)),
  make_rule_l2r_objs(Dir,[],IP,OP,II,OO,Mid), 
  make_rule_l2r_0(Dir,Mid,II,OO,III,OOO,NewShared),
-
  arrange_shared(NewShared,NewSharedS),
  save_rule3(GID,TITLE,IP,OP),
- save_learnt_rule(object_to_object(TITLE,lhs(III),rhs(OOO),NewSharedS),III+OOO+NewSharedS,III+OOO+NewSharedS))).
+ ((nb_current(rule_note,RN);RN=rule_note), pp(RN)),
+ save_learnt_rule(object_to_object(TITLE,lhs(III),rhs(OOO),NewSharedS),III+OOO+NewSharedS,III+OOO+NewSharedS))))).
 
 save_rule3(GID,TITLE,IP,OP):-
   print_rule_grids(GID,TITLE,IP,OP,_IIPP,_OOPP).
@@ -1414,13 +1413,13 @@ learn_rule_iin_oout(_,In,O,OL):- mass(O,Mass),
   reverse(SSLIDL,RSLIDL),
   member(SL-SAME-I-DL,RSLIDL),
   pp_safe([SL+DL, equal = SAME, in=I,out=OL]),  
-  compare_objs1(How,I,O),
+  compare_objs1(Mode,I,O),
   %colorlesspoints(I,Shape),colorlesspoints(O,Shape),
   %pen(I,Pen),pen(O,Pen),
   mass(I,Mass),
   simplify_for_matching(lhs,I,II),
   simplify_for_creating(O,OO),
-  save_learnt_rule(object_to_object(unk(How),II,OO,[]),I,O),!.
+  save_learnt_rule(object_to_object(unk(Mode),II,OO,[]),I,O),!.
 
 learn_rule_in_out(Depth,Mode,In,Out):- 
   is_list(In), is_list(Out), 
@@ -1734,11 +1733,11 @@ can_pair(A,B):-
 safe_assumed_mapped(o_i,A,B):-  doing_map_list(out,B,[A|_]),can_pair(A,B).
 safe_assumed_mapped(two_way_sc,A,B):- doing_map_sc(out,B,A),doing_map_sc(in,A,B),can_pair(A,B).
 %doing_map_list(in,A,[B|_]),
-safe_assumed_mapped(only_ness,A,B):- gather_assumed_mapped(A,B), \+ (gather_assumed_mapped(A,C),B\==C).
+safe_assumed_mapped(only_ness,A,B):- gather_assumed_mapped(A,B), \+ (gather_assumed_mapped(A,C),B\==C),can_pair(A,B).
 
 safe_assumed_mapped(priorities(LenA,LenB),A,B):- findall(v(APB,A,LenA,B,LenB), (safe_assumed_mapped(A,LenA,B,LenB),APB is LenA+LenB),List),
    sort(List,Set),
-   member(v(_,A,LenA,B,LenB),Set).
+   member(v(_,A,LenA,B,LenB),Set),can_pair(A,B).
 safe_assumed_mapped(A,LenA,B,LenB):- gather_assumed_mapped(A,B),
   gather_assumed_mapped_o_l(A,BL),length(BL,LenA), gather_assumed_mapped_l_o(AL,B),length(AL,LenB).
 

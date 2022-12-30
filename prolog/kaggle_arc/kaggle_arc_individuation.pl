@@ -175,13 +175,11 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC0,OutC0):-
        show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
        !)),     
 
-       if_t((menu_or_upper('o');menu_or_upper('t')),
+       if_t((menu_or_upper('o');menu_or_upper('t');menu_or_upper('u')),
         (( banner_lines(orange),
 
            visible_order(InC,InCR),
            if_t(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR)),
-
-           if_t(sub_var(tst,ID1), forall(member(In,InC),show_output_for(ROptions,ID1,In,GridOut))),
 
            if_t(sub_var(tst,ID1), show_output_for(ROptions,ID1,InCR,GridOut)),
 
@@ -191,6 +189,8 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC0,OutC0):-
 
        if_t((menu_or_upper('u');menu_or_upper('s')),
         (( banner_lines(orange),
+
+           if_t(sub_var(tst,ID1), forall(member(In,InC),show_output_for(ROptions,ID1,In,GridOut))),
 
            forall(must_det_ll((try_each_using_training(InC,GridOut,Rules,OurOut))),
              must_det_ll((print_grid(try_each_using_training,OurOut),

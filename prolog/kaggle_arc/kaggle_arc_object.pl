@@ -94,6 +94,7 @@ add_prop(O,N,V):- Prop=..[N,V],nb_set_add1(O,Prop).
 add_prop_with_count(O,N,V):- my_assertion(is_list(V)),add_prop(O,N,V),
   length(V,Len),atom_concat(N,'_count',NN),add_prop(O,NN,Len).
 
+
 :- style_check(+singleton).
 make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):- 
  physical_points(GPoints0,GPoints),
@@ -136,6 +137,8 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):-
   add_prop_with_count(PropL,unique_fg_colors,FGC),
   add_prop_with_count(PropL,unique_bg_colors,BGC),
   add_prop_with_count(PropL,unique_other_colors,OtherC),
+
+
 
   %maplist(on_edge(GridH,GridV),GPoints,EdgeL),count_sets([n,s,e,w,c|EdgeL],_,EdgeC),maplist(zero_one_more,EdgeC,EdgeS),
   
@@ -291,8 +294,6 @@ empty_grid_to_individual(H,V,Obj):-
 
 close_enough_grid(GridIn,GridInCopy,LocalGrid):- 
   \+ \+ (LocalGrid=GridIn, GridIn=@=GridInCopy).
-
-
 
 make_indiv_object_list(_,[],[]):-!.
 make_indiv_object_list(VM,[E|L],[O|OL]):-   
@@ -931,6 +932,10 @@ mass(I,Count):- globalpoints(I,Points),mass(Points,Count),!.
 
 is_object_or_oid(I):- once((is_object(I) ; is_oid(I))).
 
+
+unique_fg_colors(Obj,List):- indv_props(Obj,unique_fg_colors(List))*->true;unique_fg_colors2(Obj,List).
+%unique_fg_colors(G,FG):- indv_props(G,unique_colors(SUCOR)),include(is_fg_color,SUCOR,FG),!.
+unique_fg_colors2(G,SUCOR):- colors_cc(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_fg_color,UC,SUCO))),reverse(SUCO,SUCOR).
 
 
 %remove_color(C-_,point_01_01):- is_bg_color(C),!.

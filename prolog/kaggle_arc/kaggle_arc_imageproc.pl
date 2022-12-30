@@ -69,8 +69,6 @@ unique_colors(G,SUCOR):- colors_cc(G,GF),maplist(arg(1),GF,Colors),include(is_re
 unique_color_count(G,SUCOR):- indv_props(G,unique_color_count(SUCOR)),!.
 unique_color_count(G,Len):- unique_colors(G,UC),length(UC,Len).
 
-unique_fg_colors(G,FG):- indv_props(G,unique_colors(SUCOR)),include(is_fg_color,SUCOR,FG),!.
-unique_fg_colors(G,SUCOR):- colors_cc(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_fg_color,UC,SUCO))),reverse(SUCO,SUCOR).
 
 
 into_cc(SK,BFO):- maplist(into_cc1,SK,BFO).
