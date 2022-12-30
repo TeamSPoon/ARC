@@ -230,7 +230,7 @@ pbox_indivs:-
 pbox_pair(TestID,ExampleNum,GridIn,GridOut):-
   with_debugging(indv(pbox),
     (debug_m(indv(pbox),?- test_p2(pbox_pair(TestID,ExampleNum))),
-      igo_pair(i_pbox,GridIn,GridOut))).
+      i_pair(i_pbox,GridIn,GridOut))).
 
 pbox_io(TestID,ExampleNum,IO,G0):-
   kaggle_arc_io(TestID,ExampleNum,IO,_),

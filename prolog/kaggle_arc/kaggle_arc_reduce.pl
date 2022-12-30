@@ -167,14 +167,22 @@ solid_lines(Grid,Ns,C):- findall(N1,(nth1(N1,Grid,Row1),entire_row(Row1)),Ns),le
 
 too_small_reduce(H,_L,Two):- H=<Two. %X=<N,Y=<N,!.
 
-reduce_1op(Types,Half,Len,_,I,double_size,O):- is_reduce_type(shrink,Types), I=[I1,I2|_],I1=@=I2, half_size(I,O),!.
 
+reduce_1op(_Type,Len1,Half1,PassNo,GridIn,[],Out):- GridIn = [[C1,C1]],GridIn = Out,!.
+reduce_1op(_Type,Len1,Half1,PassNo,GridIn,[],Out):- GridIn = [[C1],[C1]],GridIn = Out,!.
+%reduce_1op(_Type,Len1,Half1,PassNo,GridIn,[make_solid_object(square,1,1)],Out):- GridIn = [[C1]],GridIn = Out,!.
+
+%reduce_1op(_Type,Len1,Half1,PassNo,GridIn, make_solid_object(Rect,H,V),OUT):-  GridIn = [Row1|GridR], maplist(=@=(Row1),GridR),
+%  Row1= [C1|Row], maplist(=@=(C1),Row), grid_size(GridIn,H,V), once(H > 1 ; V > 1),!,
+%    (H==V->(Rect=square,OUT=[[C1]]);(H>V->(Rect=rect,OUT=[[C1,C1]]);(Rect=rect,OUT=[[C1],[C1]]))).
 reduce_1op(_Type,Len1,Half1,PassNo,GridIn, make_solid_object(Rect,H,V),OUT):-  GridIn = [Row1|GridR], maplist(=@=(Row1),GridR),
   Row1= [C1|Row], maplist(=@=(C1),Row), grid_size(GridIn,H,V), once(H > 1 ; V > 1),!,
     (H==V->(Rect=square,OUT=[[C1]]);(H>V->(Rect=rect,OUT=[[C1,C1]]);(Rect=rect,OUT=[[C1],[C1]]))).
 
 reduce_1op(_Type,Half,Len,_,[Row1|Grid],copy_row_ntimes(1,Times),[Row1]):- 
   maplist(=@=(Row1),Grid),length([Row1|Grid],Times),Times>1.
+
+reduce_1op(Types,Half,Len,_,I,double_size,O):- is_reduce_type(shrink,Types), I=[I1,I2|_],I1=@=I2, half_size(I,O),!.
 
 %reduce_1op(Types,Half,Len,_,Grid,_,_):- grid_size(Grid,X,Y), max_min(X,Y,H,L),too_small_reduce(H,L,2),!,fail.
 % COMPRESS

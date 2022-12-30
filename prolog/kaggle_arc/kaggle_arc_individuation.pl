@@ -164,14 +164,15 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC0,OutC0):-
      ((
        show_io_groups(green,ROptions,ID1,InC,ID2,OutC))),
 
+     if_t(nb_current(menu_key,'i'),(clear_arc_training,abolish(object_to_object/5),dynamic(object_to_object/5))),
+
      if_t((menu_or_upper('i');menu_or_upper('t')),
       (         
-        abolish(test_solved/5),dynamic(test_solved/5),
-        show_io_groups(yellow,ROptions,ID1,InC,ID1,GridIn),
-        print_list_of(show_indiv(inputs),inputs,InC),
-        show_io_groups(yellow,ROptions,ID2,OutC,ID2,GridOut),
-        print_list_of(show_indiv(outputs),outputs,OutC),
-        show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
+       show_io_groups(yellow,ROptions,ID1,InC,ID1,GridIn),
+       print_list_of(show_indiv(inputs),inputs,InC),
+       show_io_groups(yellow,ROptions,ID2,OutC,ID2,GridOut),
+       print_list_of(show_indiv(outputs),outputs,OutC),
+       show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
        !)),     
 
        if_t((menu_or_upper('o');menu_or_upper('t')),
@@ -180,23 +181,25 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC0,OutC0):-
            visible_order(InC,InCR),
            if_t(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR)),
 
-           if_t((sub_var(tst,ID1)), 
-               forall(member(In,InC),show_output_for(ROptions,ID1,In,GridOut))),
+           if_t(sub_var(tst,ID1), forall(member(In,InC),show_output_for(ROptions,ID1,In,GridOut))),
 
-           if_t((sub_var(tst,ID1)), show_output_for(ROptions,ID1,InCR,GridOut)),
+           if_t(sub_var(tst,ID1), show_output_for(ROptions,ID1,InCR,GridOut)),
 
            show_safe_assumed_mapped,
 
+        banner_lines(orange),!))),
+
+       if_t((menu_or_upper('u');menu_or_upper('s')),
+        (( banner_lines(orange),
+
            forall(must_det_ll((try_each_using_training(InC,GridOut,Rules,OurOut))),
-             must_det_ll((print_grid(try_each_using_training,OurOut),pp(Rules),banner_lines(orange)))),
-  
+             must_det_ll((print_grid(try_each_using_training,OurOut),
+               nop(pp(Rules)),
+               banner_lines(orange)))),
+
         banner_lines(orange),!))),
 
 
-       if_t((menu_or_upper('o');menu_or_upper('s');menu_or_upper('t');menu_or_upper('i')),
-        (( banner_lines(orange),
-           
-       !))),
 
     !)))),
 
@@ -244,7 +247,7 @@ visible_order(InC,InC).
 most_visible(Obj,LV):- has_prop(pixel2C(_,_,_),Obj),!, LV= (-1)^1000^1000.
 most_visible(Obj,LV):- area(Obj,1), grid_size(Obj,H,V), Area is (H-1)*(V-1), !, LV=Area^1000^1000.
 most_visible(Obj,LV):- area(Obj,Area),cmass(bg,Obj,BGMass), % cmass(fg,Obj,FGMass),
-  findall(_,doing_map(_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt, !, %, NCMass is -CMass,
+  findall(_,doing_map_list(_,_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt, !, %, NCMass is -CMass,
   LV = Area^BGMass^NCnt.
 most_visible(_Obj,LV):- LV= (-1)^1000^1000.
 
@@ -253,16 +256,15 @@ most_visible(_Obj,LV):- LV= (-1)^1000^1000.
 % TESTING FOR INDIVIDUATIONS
 % =========================================================
  %i:- fav_i(X),i(X).   %i(GridIn):- i2([complete],GridIn).
-ig:- fav_i(X),ig(X),!. ig(GridIn):- i2(complete,GridIn).
-iq:- fav_i(X),ig(X). iq(GridIn):- iq(complete,GridIn).
-iL:- fav_i(X),iL(X). iL(GridIn):- i2([shape_lib(as_is),complete],GridIn).
-igo:- fav_i(X),igo(X). igo(GridIn):- igo(complete,GridIn).
+igo:- fav_i(X),igo(X),!. igo(GridIn):- i2(complete,GridIn).
+iq:- fav_i(X),igo(X).    iq(GridIn):-  iq(complete,GridIn).
+iL:- fav_i(X),iL(X).     iL(GridIn):-  i2([shape_lib(as_is),complete],GridIn).
 
 :- multifile is_fti_step/1.
 :- discontiguous is_fti_step/1.
 :- discontiguous is_fti_stepr/1.
 
-:- arc_history1(ig).
+:- arc_history1(igo).
 
 fav_i(X):- clsmake, luser_getval(task,X),X\==[].
 fav_i(t('00d62c1b')).
@@ -272,32 +274,20 @@ fav_i(_).
 i2(ROptions,GridSpec):- clsmake,
   clear_shape_lib(as_is),
   into_grids(GridSpec,GridIn),
-  once((into_grid(GridIn,Grid),ig(ROptions,Grid))).
+  once((into_grid(GridIn,Grid),igo(ROptions,Grid))).
 
-ip_pair(ROptions,GridIn,GridOut):-
+i_pair(ROptions,GridIn,GridOut):-
   my_time((maybe_name_the_pair(GridIn,GridOut,PairName),
     individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
     show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC))).
 
-
 %worker_output(G):- \+ menu_or_upper('B'),!, time(wots(_,weto(G))).
 worker_output(G):- time(G).
 
-ig(ROptions,Grid):-
+igo(ROptions,Grid):-
   do_ig(ROptions,Grid,IndvS),
   into_grid(Grid,GridIn),
-  locally(nb_setval(debug_as_grid,nil),show_individuated_nonpair(ig,ROptions,Grid,GridIn,IndvS)).
-
-igo(ROptions,GridIn):-
-  do_ig(ROptions,GridIn,IndvS),
-  into_grid(GridIn,Grid),
-  locally(nb_setval(debug_as_grid,t),show_individuated_nonpair(ig,ROptions,Grid,GridIn,IndvS)).
-
-igo_pair(ROptions,GridIn,GridOut):-
-  my_time((maybe_name_the_pair(GridIn,GridOut,PairName),
-  individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
-  locally(nb_setval(debug_as_grid,t),
-          show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC)))).
+  show_individuated_nonpair(igo,ROptions,Grid,GridIn,IndvS).
 
 maybe_name_the_pair(In,Out,PairName):-
   ignore((kaggle_arc(TestID,ExampleNum,In,Out),
@@ -423,7 +413,7 @@ really_show_touches(Title,InShown,Obj):-
 
 % =========================================================
 
-iq(ROptions,Grid):-ig(ROptions,Grid).
+iq(ROptions,Grid):-igo(ROptions,Grid).
 
 % =========================================================
 
@@ -1233,7 +1223,6 @@ prolog:make_hook(before, Some):- Some \==[], forall(clear_arc_caches,true), fail
 
 get_individuated_cache(_TID,ROptions,OID,IndvS):- nonvar(ROptions),
   ground(OID), \+ luser_getval(individuated_cache,false), individuated_cache(_,OID,ROptions,IndvS),!.
-
 get_individuated_cache(_TID,ROptions,OID,IndvS):- nonvar(ROptions),
   ground(OID), \+ luser_getval(individuated_cache,false), saved_group(individuate(ROptions,OID),IndvS),!.
 
@@ -1401,7 +1390,7 @@ individuate2(VM,[ROptions],OID,Grid,IndvS):- nonvar(ROptions), !, individuate2(V
 
 
 individuate2(_VM,ROptions,OID,_GridIn,IndvS):- nonvar(OID), 
-  fail, get_individuated_cache(_TID,ROptions,OID,IndvS),!,
+  get_individuated_cache(_TID,ROptions,OID,IndvS),!,
   length(IndvS,Len),ignore((Len>=0,progress(yellow,oid_cached(ROptions,OID,len(Len),'$VAR'(Len))))),
   !.
 individuate2(VM,ROptions,OID,GridIn,IndvS):-
@@ -1499,7 +1488,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
 
   listify(ROptions,OOptions),
   Area is H*V,
- % progress(yellow,ig(ROptions,ID)=into_fti(H,V)),
+ % progress(yellow,igo(ROptions,ID)=into_fti(H,V)),
   ArgVM = vm{
     ogx:OGX,ogy:OGY,
    % parent VM
@@ -1560,7 +1549,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
     true)),
    %b_set_dict(objs,VM,[]),
    %set(VM.current_i) = VM
-   progress(yellow,ig(ROptions,ID)=(H,V)),
+   progress(yellow,igo(ROptions,ID)=(H,V)),
    !.
 
 
@@ -3671,7 +3660,7 @@ group_vm_priors(VM):-
 % =====================================================================
 is_fti_step(really_group_vm_priors).
 % =====================================================================
-really_group_vm_priors(_VM):-!.
+%really_group_vm_priors(_VM):-!.
 really_group_vm_priors(VM):-
  must_det_ll((
   ObjsG = VM.objs,

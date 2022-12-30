@@ -168,7 +168,8 @@ for_creating1(NoUse):- not_used(NoUse),!,fail.
 %for_creating1(info). 
 for_creating1(grid_props). for_creating1(cc).
 for_creating1(pen).  for_creating1(sid).
-for_creating1(norm_grid).  for_creating1(norm_ops).
+for_creating1(norm_grid).  
+for_creating1(norm_ops).
 for_creating1(P):- \+ compound(P),!,fail.
 for_creating1(P):- functor(P,2,_),!.
 for_creating1(P):- functor(P,What,_),for_creating1(What).
@@ -721,28 +722,28 @@ try_using_training(In,ExpectedOut):-
 
 try_each_using_training(In,ExpectedOut,Keeper,OurOut):-
    is_grid(In),individuate(complete,In,InC),!,
-   must_det_ll(try_each_using_training(InC,ExpectedOut,Keeper,OurOut)).
+   must_det_ll(try_each_using_training(InC,ExpectedOut,Keeper,OurOut)),!.
 
 try_each_using_training(In,ExpectedOut,Keeper,OurOut):- 
  must_det_ll((
   enum_ruleset(Rules),
-  pp(in=In), try_each_using_training(In,ExpectedOut,Rules,Keeper,OurOut))).
+  %pp(in=In), 
+  try_each_using_training(In,ExpectedOut,Rules,Keeper,OurOut))),!.
 
-try_each_using_training(In,_ExpectedOut,Rules,Keeper,OurOut):- Rules==[],
-   pp(Keeper=[no_rules]),!,
-   o_globalpoints(In,OurOut).
+try_each_using_training(In,_ExpectedOut,Rules,Keeper,OurOut):- Rules==[], pp(Keeper=[no_rules]),!, o_globalpoints([],In,OurOut),!.
 try_each_using_training(In,ExpectedOut,Rules,Keeper,OurOut):-
  must_det_ll((
   classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown),
-  pp(keeper=Keeper),
-  pp(rejected=Rejected),
-  maplist(writeln,Unknown),
-  o_globalpoints(Keeper,GPs),
-  points_to_grid(GPs,OurOut))).
+   maplist(length,[In,Rules,Keeper,Rejected,Unknown],[InC,RulesC|Nums]),
+   Pos is InC*RulesC,
+   pp(in_rules_times_keepers_rejected_unknown=[InC,RulesC,Pos|Nums]),!,
+   %nop(pp(keeper=Keeper)), nop(pp(rejected=Rejected)), nop(maplist(writeln,Unknown)), 
+   o_globalpoints([],Keeper,GPs),
+   points_to_grid(GPs,OurOut))),!.
 
 
 classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):- \+ is_points_list(ExpectedOut),!,
- must_det_ll((o_globalpoints(ExpectedOut,Out),ExpectedOut\=@=Out,
+ must_det_ll((globalpoints(ExpectedOut,Out),ExpectedOut\=@=Out,
  classify_rules(In,Out,Rules,Keeper,Rejected,Unknown))).
 classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):- \+ is_group(In),!,
  must_det_ll((is_grid(In),individuate(complete,In,InC),
@@ -757,20 +758,21 @@ classify_rules_0(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):-
 classify_rules_1(In,ExpectedOut,Rules,PairsUsed,Keeper,Rejected,Unknown):- 
   member(I,In), member(R,Rules),
   copy_term(R,RR),
-  \+ member(kept(I,R,RR),PairsUsed),
-  matches_input(I,RR,Matches), o_globalpoints(RR,GPs),!,
   PAIR = kept(I,R,RR,GPs,Matches),
-  classify_rules_2(In,ExpectedOut,Rules,Matches,GPs,PAIR,[PAIR|PairsUsed],Keeper,Rejected,Unknown).
+  \+ member(PAIR,PairsUsed),!,
+  must_det_ll((
+  matches_input(I,RR,Matches), o_globalpoints(Matches,RR,GPs),
+  classify_rules_2(In,ExpectedOut,Rules,Matches,GPs,PAIR,[PAIR|PairsUsed],Keeper,Rejected,Unknown))).
 classify_rules_1(_,_,_,_,[],[],[]).
 
 classify_rules_2(In,ExpectedOut,Rules,Matches,_GPs,PAIR,PairsUsed,Keeper,Rejected,[PAIR|Unknown]):- 
-  Matches==[],!,
+  (Matches==[]; \+ (sub_term(N,Matches),number(N))),!,
   classify_rules_1(In,ExpectedOut,Rules,[PAIR|PairsUsed],Keeper,Rejected,Unknown).
 classify_rules_2(In,ExpectedOut,Rules,_Matches,GPs,PAIR,PairsUsed,Keeper,[PAIR|Rejected],Unknown):- 
-  violates(GPs,ExpectedOut),
-  classify_rules_1(In,ExpectedOut,Rules,[PAIR|PairsUsed],Keeper,Rejected,Unknown).
+  violates(GPs,ExpectedOut),!,
+  must_det_ll(classify_rules_1(In,ExpectedOut,Rules,[PAIR|PairsUsed],Keeper,Rejected,Unknown)).
 classify_rules_2(In,ExpectedOut,Rules,_Matches,_GPs,PAIR,PairsUsed,[PAIR|Keeper],Rejected,Unknown):- 
-  classify_rules_1(In,ExpectedOut,Rules,[PAIR|PairsUsed],Keeper,Rejected,Unknown).
+  must_det_ll(classify_rules_1(In,ExpectedOut,Rules,[PAIR|PairsUsed],Keeper,Rejected,Unknown)).
 
 violates(GPs,ExpectedOut):- intersection(GPs,ExpectedOut,_Shared,Bad,_LeftOver), Bad\==[].
 
@@ -783,30 +785,37 @@ enum_ruleset(Rules):-
 
 
  
-o_globalpoints(obj(C),Grid):- maplist(reduce_prop,C,CC),!,must_det_ll(olg_globalpoints(obj(CC),CC,Grid)). 
-o_globalpoints(rhs(C),GPs):- !, must_det_ll(o_globalpoints(C,GPs)).
-o_globalpoints(test_solved(_TestID,_Name,_Match,Create,DebugInfo),GPs):- !, 
-  must_det_ll((run_delayed_goals(DebugInfo),!,o_globalpoints(Create,GPs))).
-o_globalpoints(obj(C) - Docalls,Grid):- !, must_det_ll(((run_delayed_goals(Docalls),!,o_globalpoints(obj(C),Grid)))). 
-o_globalpoints(C,GPs):- is_points_list(C),!,GPs=C.
-o_globalpoints(C,GPs):- is_grid(C),!,globalpoints(C,GPs).
-o_globalpoints(C,GPsS):- is_list(C),!,must_det_ll((maplist(o_globalpoints,C,GPs),append_sets(GPs,GPsS))).
+o_globalpoints(Matches,obj(C),Grid):- maplist(reduce_prop,C,CC),!,must_det_ll(olg_globalpoints(Matches,obj(CC),CC,Grid)). 
+o_globalpoints(Matches,rhs(C),GPs):- !, must_det_ll(o_globalpoints(Matches,C,GPs)).
+o_globalpoints(Matches,test_solved(_TestID,_Name,_Match,Create,DebugInfo),GPs):- !, 
+  must_det_ll((run_delayed_goals(DebugInfo),!,o_globalpoints(Matches,Create,GPs))).
+o_globalpoints(Matches,obj(C) - Docalls,Grid):- !, must_det_ll(((run_delayed_goals(Docalls),!,o_globalpoints(Matches,obj(C),Grid)))). 
+o_globalpoints(_Matches,C,GPs):- is_points_list(C),!,GPs=C.
+o_globalpoints(_,kept(_I,_R,_RR,GPs,_Matches),GPs):- !.
+o_globalpoints(_Matches,C,GPs):- is_grid(C),!,globalpoints(C,GPs).
+o_globalpoints(Matches,C,GPsS):- is_list(C),!,must_det_ll((maplist(must_o_globalpoints(Matches),C,GPs),append_sets(GPs,GPsS))).
+
   
-olg_globalpoints(_Obj,L,GP):-
+must_o_globalpoints(A,B,C):- must_det_ll(o_globalpoints(A,B,C)).
+
+olg_globalpoints(_Matches,_Obj,L,GP):-
    member(globalpoints(GP),L).
-olg_globalpoints(_Obj,L,GP):-
+olg_globalpoints(_Matches,_Obj,L,GP):-
    member(localpoints(LP),L),
    get_nw_absAt(L,X,Y),
    offset_points(X,Y,LP,GP).
-olg_globalpoints(_Obj,L,GP):-
-   member(norm_grid(NG),L),
-   member(norm_ops(Ops),L),
-   maplist(writeln,[unreduce_grid=NG,ops=Ops]),
+olg_globalpoints(Matches,_Obj,L,GP):-
+ must_det_ll((
+   flatten([Matches,L],LL),!,
+   member(norm_grid(NG),LL),
+   member(norm_ops(Ops),LL),
+   %maplist(writeln,[unreduce_grid=NG,ops=Ops]),
    must_det_ll((unreduce_grid(NG,Ops,RR),
    localpoints(RR,LP),
-   get_nw_absAt(L,X,Y),
-   offset_points(X,Y,LP,GP))).
-   %olg_globalpoints(Obj,[localpoints(LP)|L],GP).
+   get_nw_absAt(LL,X,Y),
+   offset_points(X,Y,LP,GP))))).
+   %olg_globalpoints(Matches,Obj,[localpoints(LP)|L],GP).
+
 
 
 get_nw_absAt(L,X,Y):- make_loc2D(L,X,Y).
@@ -843,9 +852,10 @@ matches_input(InC,Match,Matches):- must_det_ll(matches_oprops(InC,Match,Matches)
 matches_oprops(I,obj(M),Matches):-!,must_det_ll(matches_oprops(I,M,Matches)).
 matches_oprops(obj(I),M,Matches):-!,must_det_ll(matches_oprops(I,M,Matches)).
 
-matches_oprops(I,M,Matches):- 
- findall(MM,(member(II,I),member(MM,M),match_prop(II,MM),writeg(match_prop(II,MM))),Matches),
-   run_delayed_goals(M).
+matches_oprops(I,M,[I|Matches]):-
+ select(II,I,III),select(MM,M,MMM),match_prop(II,MM),% writeg(match_prop(II,MM)),
+ matches_oprops(III,MMM,Matches).
+matches_oprops(_,M,[]):- run_delayed_goals(M).
 
 run_delayed_goals([]):-!.
 run_delayed_goals([call(M)|More]):- !, ignore(call(M)), run_delayed_goals(More).
@@ -1006,17 +1016,16 @@ make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):-
 % Cleanup RHS
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
    Rem = omit_in_rules(rhs,O), 
-   select(O,OO,OOO), call(Rem), \+ no_thru(O),  must_make_rule_l2r(Dir,Shared,II,OOO,IIII,OOOO,NewShared).
+   select(O,OO,OOO), call(Rem), !, must_make_rule_l2r(Dir,Shared,II,OOO,IIII,OOOO,NewShared).
 % Cleanup LHS
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
    Rem = omit_in_rules(lhs,I),
-   select(I,II,III), call(Rem),  \+ no_thru(I), !, must_make_rule_l2r(Dir,Shared,III,OO,IIII,OOOO,NewShared).
+   select(I,II,III), call(Rem), !, must_make_rule_l2r(Dir,Shared,III,OO,IIII,OOOO,NewShared).
 
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
    sub_term(E,II+OO),compound(E),E='$VAR'(D),%wots(S,color_print(white,D)),
    \+ number(D),
-   subst(II+OO+Shared,E,S,III+OOO+SharedM),
-   II+OO\=@=III+OOO,!,
+   subst(II+OO+Shared,E,S,III+OOO+SharedM),!,
    must_make_rule_l2r(Dir,[debug_var(D,S)|SharedM],III,OOO,IIII,OOOO,NewShared).
 
 make_rule_l2r(Dir,Shared,I,O,IIII,OOOO,NewShared):- 
@@ -1034,14 +1043,14 @@ remove_empty_colors(O,O_O):- my_exclude(=(cc(_,0)),O,O_O).
 % single color changed
 simplify_l2r(_Dir,I,C1,VC1,I_I,O,C2,VC2,O_O,Info):-
   member(pen([cc(C1,_)]),I),member(pen([cc(C2,_)]),O),C1\=@=C2,
-  Info = [level(1,lhs,VC1=C1),level(1,rhs,VC2=C2)],
+  Info = call((ignore((VC1=C1),ignore((VC2=C2))))),
   remove_empty_colors(I,I_I),
   remove_empty_colors(O,O_O),!.
 
 % single color transfer/change
-simplify_l2r(_Dir,I,C1,VC1,I_I,O,C2,VC1,O_O,Info):-
+simplify_l2r(_Dir,I,C1,VC1,I_I,O,C2,VC2,O_O,Info):-
   member(pen([cc(C1,_)]),I),member(pen([cc(C2,_)]),O),C1=@=C2,
-  Info = [level(0,lhs,VC1=C1)],
+  Info = call((ignore((VC1=C1),ignore((VC2=C2))))),
   remove_empty_colors(I,I_I),
   remove_empty_colors(O,O_O),!.
 
@@ -1062,6 +1071,9 @@ transfer_prop(rotations,rot2L(_)).
 
 no_thru(oid(_)).
 no_thru(was_oid(_)).
+no_thru(norm_ops(_)).
+no_thru(norm_grid(_)).
+no_thru(loc2D(_,_)).
 no_thru(if(_,_)).
 no_thru(if(_)).
 no_thru(ii(_)).
@@ -1078,147 +1090,6 @@ gen_offset_expression(Type,X2,X1,Var,VX1,VX2,OUT):-
 
 transfer_props(Type,I,O):- transfer_prop(Type,I), transfer_prop(Type,O), I\=@=O.
 transfer_props(Type,I,O):- transfer_prop(Type,I), transfer_prop(Type,O), (\+ I\=O).
-
-
-
-% offset 2D
-make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- 
-  transfer_prop(Type,I),
-  my_partition(transfer_prop(Type),II,RemoveI,I_I_I),
-  my_partition(transfer_prop(Type),OO,RemoveO,O_O_O),
-  member(I,RemoveI),I=..[F1,X1,Y1],is_original_value(X1),is_original_value(Y1),
-  member(O,RemoveO),O=..[F2,X2,Y2],is_original_value(X2),is_original_value(Y2),
-  ((X1=X2,Y1=Y2);(X1=X2;Y1=Y2)),
-  NewI=..[F1,VX1,VY1],gen_variatable([F1,'X'],VX1), gen_variatable([F1,'Y'],VY1),
-  NewO=..[F1,VX2,VY2],gen_variatable([F2,'X'],VX2), gen_variatable([F2,'Y'],VY2),
-  gen_offset_expression(Type,X2,X1,'X',VX1,VX2,Code1), 
-  gen_offset_expression(Type,Y2,Y1,'Y',VY1,VY2,Code2), 
-  append([[thr(NewI)|Code1],Code2,I_I_I],I_I_I_I),
-  make_rule_l2r(Dir,[removed(lhs,RemoveI),removed(rhs,RemoveO)|Shared],I_I_I_I,[NewO|O_O_O],III,OOO,SharedMid).
-
-% mass(R)
-make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- 
-  transfer_prop(Type,I),
-  my_partition(transfer_prop(Type),II,RemoveI,I_I_I),
-  my_partition(transfer_prop(Type),OO,RemoveO,O_O_O),
-  member(I,RemoveI),I=..[F1,R1],is_original_value(R1),
-  member(O,RemoveO),O=..[F2,R2],is_original_value(R2),
-  ((R1==R2);(R1=@=R2);(R1=R2)),
-  NewI=..[F1,VR1],gen_variatable([F1,'R'],VR1), 
-  NewO=..[F1,VR2],gen_variatable([F2,'R'],VR2), 
-  gen_offset_expression(Type,R2,R1,'R',VR1,VR2,Code1), 
-  append([[thr(NewI)|Code1],I_I_I],I_I_I_I),
-  make_rule_l2r(Dir,[removed(lhs,RemoveI),removed(rhs,RemoveO)|Shared],I_I_I_I,[NewO|O_O_O],III,OOO,SharedMid).
-
-% cc(C,N)
-make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- 
-  transfer_prop(Type,I),
-  my_partition(transfer_prop(Type),II,NemoveI,I_I_I),
-  my_partition(transfer_prop(Type),OO,NemoveO,O_O_O),
-  member(I,NemoveI),I=..[F1,C1,N1],is_original_value(N1),
-  member(O,NemoveO),O=..[F2,C2,N2],is_original_value(N2),
-  ((N1==N2);(N1=@=N2);(N1=N2)),
-  NewI=..[F1,C1,VN1],gen_variatable([F1,C1,'N'],VN1), 
-  NewO=..[F1,C1,VN2],gen_variatable([F2,C2,'N'],VN2), 
-  gen_offset_expression(Type,N2,N1,'N',VN1,VN2,Code1), 
-  append([[thr(NewI)|Code1],I_I_I],I_I_I_I),
-  make_rule_l2r(Dir,[removed(lhs,NemoveI),removed(rhs,NemoveO)|Shared],I_I_I_I,[NewO|O_O_O],III,OOO,SharedMid).
-
-
-% o(T,E,R)
-make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- fail,
-  I=o(T1,E1,R1),O=o(T2,E2,R2),
-  select(I,II,I_I_I),is_original_value(R1),
-  select(O,OO,O_O_O),is_original_value(R2),
-  (E1/T1 =@= E2/T2),
-  %((R1==R2);(R1=@=R2);(R1=R2)),
-  upcase_atom_var(R1,A1),upcase_atom_var(R2,A2),
-  NewI=o(VT1,VE1,VR1),gen_variatable(['Total',A1],VT1),gen_variatable(['Element',A1],VE1), gen_variatable([A1,'R'],VR1), 
-  NewO=o(VT2,VE2,VR2),gen_variatable(['Total',A2],VT2),gen_variatable(['Element',A2],VE2), gen_variatable([A2,'R'],VR2),   
-  gen_offset_expression(ranks,R2,R1,o,VR1,VR2,Code1),
-  append([[thr(NewI)|Code1],I_I_I],I_I_I_I),
-  make_rule_l2r(Dir,Shared,I_I_I_I,[lookup(NewO)|O_O_O],III,OOO,SharedMid).
-
-
-gen_change_color_expression(C1,C2,VC1,VC2,(VC1=C1,VC2=C2),C1,C2).
-
-% single color transfer/change
-make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- 
-  member(pen([cc(C1,_)]),II),  member(pen([cc(C2,_)]),OO),is_original_value(C1),
-  gen_variatable([C1],VC1),gen_variatable([C2],VC2),
-  subst001(II,C1,VC1,I_I),subst001(OO,C2,VC2,O_O),
-  NewI=pen([cc(VC1,_)]),NewO=pen([cc(VC2,1)]),
-  remove_empty_colors(I_I,I_I_I),remove_empty_colors(O_O,O_O_O),
-  gen_change_color_expression(C2,C1,VC1,VC2,Code,OVC1,OVC2),
-  make_rule_l2r(Dir,Shared,[thr(NewI),call(Code),offsetV(color,OVC1),offsetV(color,OVC2)|I_I_I],[NewO|O_O_O],III,OOO,SharedMid).
-
-gen_variatable(Names,VAR):-upcase_atom_var(Names,VAR).
-
-
-make_unifier(C1,_):- \+ compound(C1),fail.
-make_unifier(cc(C,_),cc(C,_)):-!.
-make_unifier(iz(C1),iz(C2)):- !, make_unifier(C1,C2).
-make_unifier(giz(C1),giz(C2)):- !, make_unifier(C1,C2).
-make_unifier(Cmp,CmpU):-  Cmp=..[F,C1],\+ is_list(C1), compound(C1), CmpU=..[F,C2], make_unifier(C1,C2),!.
-make_unifier(C1,C2):- functor(C1,F,A),functor(C2,F,A).
-
-make_unifier_with_ftvars(C1,C2):- functor(C1,F,A),functor(C2,F,A),numbervars(C2).
-
-% simple purportionals
-simplify_l2r(_Dir,I,C1,VC1,I_I,O,C2,VC2,O_O,Info):- fail,
-  member(C1,I), make_unifier(C1,VC1),
-  copy_term(VC1,VC2),copy_term(VC2,C2),member(C2,O),  
-  proportional(C1,C2,Purp),
-  Info = [proportional(VC1,VC2,C1,C2,Purp)],
-  I=I_I,O=O_O,!.
-
-make_rule_l2r(Dir,Shared,II,OO,III,OOO,[level(3,thru(O))|SharedMid]):- %fail,
-  select(I,II,I_I),select(O,OO,O_O),O=@=I, \+ no_thru(O),   
-   \+ transfer_prop(_,I), is_all_original_value(O),!,%make_unifier(I,U),% numbervars(U),
-   make_rule_l2r(Dir,Shared,[if(I)|I_I],O_O,III,OOO,SharedMid).
-
-% unlikely useful Ordinals
-make_rule_l2r(Dir,Shared,I,O,IIII,OOOO,[unused(ordinals,o((Size1),Ord1,Val),o((Size2),Ord2,Val))|NewShared]):- fail,
-  select(o((Size1),Ord1,Val),I,II),
-  select(o((Size2),Ord2,Val),O,OO),
-  ((Size1 \== Size2, Ord1==Ord2);(Size1 == Size2, Ord1\==Ord2);(Size1 \== Size2, Ord1\==Ord2)), !,
-  make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared).
-
-make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
-   Rem = not_for_creating(rhs,O), 
-   select(O,OO,OOO), call(Rem), !, make_rule_l2r(Dir,Shared,II,OOO,IIII,OOOO,NewShared).
-
-make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
-   Rem = not_for_matching(lhs,I),
-   select(I,II,III), call(Rem), !, make_rule_l2r(Dir,Shared,III,OO,IIII,OOOO,NewShared).
-
-not_for_matching(lhs,I):- not_for_matching(lhs,_,I).
-
-% Cleanup RHS
-make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
-   Rem = skip_in_rules(rhs,O), 
-   select(O,OO,OOO), call(Rem), !, make_rule_l2r(Dir,[Rem|Shared],II,OOO,IIII,OOOO,NewShared).
-
-% Cleanup LHS
-make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
-   Rem = skip_in_rules(lhs,I),
-   select(I,II,III), call(Rem), !, make_rule_l2r(Dir,[Rem|Shared],III,OO,IIII,OOOO,NewShared).
-
-% Fallback 1
-make_rule_l2r(_Dir,Shared,I,O,IIII,OOOO,NewSharedO):- fail,
-  intersection(I,O,IO,IIII,OOOO),!,
-  my_partition(for_creating,IO,Creating,Not),
-  mark_as(2,l_r,Creating,Info1),
-  mark_as(3,l_r,Not,Info2),
-  append([Shared,Info1,Info2],NewSharedO).
-
-make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- %fail,
-  select(I,II,I_I), \+ no_thru(I),   
-   \+ transfer_prop(_,I), is_all_original_value(I),make_unifier(I,U), O=U,
-     select(O,OO,O_O),!, % numbervars(U),
-   make_rule_l2r(Dir,Shared,[ii(I)|I_I],[ii(O)|O_O],III,OOO,SharedMid).
-
-make_rule_l2r(_Dir,Shared,I,O,I,O,Shared):-!.
 
 
 % offset 2D
@@ -1281,6 +1152,7 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- fail,
   append([[thr(NewI)|Code1],I_I_I],I_I_I_I),!,
   must_make_rule_l2r(Dir,Shared,I_I_I_I,[lookup(NewO)|O_O_O],III,OOO,SharedMid).
 
+gen_change_color_expression(C1,C2,VC1,VC2,(VC1=C1,VC2=C2),C1,C2).
 
 % single color transfer/change
 make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- 
@@ -1292,6 +1164,8 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):-
   gen_change_color_expression(C2,C1,VC1,VC2,Code,OVC1,OVC2),!,
   must_make_rule_l2r(Dir,Shared,[thr(NewI),call(Code),offsetV(color,OVC1),offsetV(color,OVC2)|I_I_I],[NewO|O_O_O],III,OOO,SharedMid).
 
+gen_variatable(Names,VAR):-upcase_atom_var(Names,VAR).
+
 
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
    Rem = not_for_creating(rhs,O),    
@@ -1300,6 +1174,8 @@ make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):-
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
    Rem = not_for_matching(lhs,I),
    select(I,II,III), call(Rem), !, must_make_rule_l2r(Dir,Shared,III,OO,IIII,OOOO,NewShared).
+
+not_for_matching(lhs,I):- not_for_matching(lhs,_,I).
 
 % Cleanup RHS
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 

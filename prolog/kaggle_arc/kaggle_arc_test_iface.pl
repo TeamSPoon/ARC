@@ -43,11 +43,11 @@ print_menu_cmd1(Info,_Goal):- format('~w',[Info]).
 menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z_make,fully_train)).
 menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),
   sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
-menu_cmd1(i,'o','             See the (o)bjects found in the input/outputs',(clear_tee,cls_z_make,!,ndividuatorO)).
-menu_cmd1(i,'i','                  or (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,ndividuator)).
+menu_cmd1(i,'i','             See the (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,locally(nb_setval(debug_as_grid,f),ndividuator))).
+menu_cmd1(i,'o','                  or (o)bjects found in the input/outputs',                (clear_tee,cls_z_make,!,locally(nb_setval(debug_as_grid,t),ndividuator))).
+menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',   (cls_z_make,!,ignore(what_unique),ndividuator)).
 menu_cmd1(_,'B','                  or (B)oxes test.',(update_changes,pbox_indivs)).
 menu_cmd1(_,'R','                  or (R)epairs test.',(update_changes,repair_symmetry)).
-menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',(cls_z_make,!,what_unique)).
 menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z_make,!,compile_and_save_test)).
 menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changes,maybe_set_suite,print_testinfo,print_test)).
 menu_cmd1(_,'w','                  or (w)rite the test info',(update_changes,switch_pair_mode)).
@@ -299,7 +299,7 @@ do_test_pred(E):-
 
 maybe_test(E,_):- \+ missing_arity(E,0), !, call(E).
 maybe_test(E,G):- \+ missing_arity(E,1), call(E,G),!.
-maybe_test(E,G):- ig(E,G).
+maybe_test(E,G):- igo(E,G).
 
 
 
@@ -354,23 +354,12 @@ rtty:- with_tty_raw(rtty1).
 rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 
 
-ndividuator(TestID,ExampleNum,Complete,In,Out):- name_the_pair(TestID,ExampleNum,In,Out,_PairName),ip_pair(Complete,In,Out).
-ndividuator(TestID,ExampleNum,In,Out):-
-  get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
-
-ndividuatorO(TestID,ExampleNum,Complete,In,Out):- name_the_pair(TestID,ExampleNum,In,Out,_PairName), igo_pair(Complete,In,Out).
-ndividuatorO(TestID,ExampleNum,In,Out):-
- get_indivs_mode(Complete), ndividuatorO(TestID,ExampleNum,Complete,In,Out).
-
-%show_test_pairs,
 ndividuator(TestID):- ensure_test(TestID),
- never_entire_suite, nop(show_test_pairs), set_flag(indiv,0),
+ never_entire_suite,nop(show_test_grids), set_flag(indiv,0),
  with_test_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)).
 
-ndividuatorO(TestID):- ensure_test(TestID),
- never_entire_suite,nop(show_test_grids), set_flag(indiv,0),
- with_test_pairs(TestID,ExampleNum,In,Out,ndividuatorO(TestID,ExampleNum,In,Out)).
-
+ndividuator(TestID,ExampleNum,In,Out):- get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
+ndividuator(TestID,ExampleNum,Complete,In,Out):- name_the_pair(TestID,ExampleNum,In,Out,_PairName),i_pair(Complete,In,Out).
 
 show_test_pairs(TestID):- ensure_test(TestID), set_flag(indiv,0),
   with_test_pairs(TestID,ExampleNum,In,Out,
@@ -459,7 +448,7 @@ with_test_pairs(TestID,ExampleNum,I,O,P):-
      set_current_pair(I,O),
      call_cleanup(with_current_pair(I,O,P),flush_tee)))).
 
-bad:- ig([complete],v(aa4ec2a5)>(trn+0)*in).
+bad:- igo([complete],v(aa4ec2a5)>(trn+0)*in).
 
 
 report_suite:- luser_getval(test_suite_name,SuiteX), write('\n--->>>>'),report_suite(SuiteX).

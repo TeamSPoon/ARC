@@ -147,7 +147,7 @@ show_indiv(Why, Obj):-
 has_goals(G):- term_attvars(G,AV),AV\==[].
 has_goals(G):- term_variables(G,TV),term_singletons(G,SV),TV\==SV.
 
-writeg(Term):- \+ \+ writeg0(Term).
+writeg(Term):- ignore((\+ \+ writeg0(Term))),!.
 
 writeg0(Term):- 
   term_attvars(Term,Attvars), Attvars\==[],!,

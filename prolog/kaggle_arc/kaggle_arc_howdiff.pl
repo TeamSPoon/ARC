@@ -214,7 +214,7 @@ obj_grp_atomslist(IO,A,PA,Atoms):-
 dref_match(rhs(Match),PA):- !, dref_match(Match,PA).
 dref_match(lhs(Match),PA):- !, dref_match(Match,PA).
 dref_match([obj(Match)],PA):- !, dref_match(Match,PA).
-dref_match(test_solved(_TestID,_Name,Match,_Create,_DebugInfo),PA):- !, dref_match(Match,PA).
+dref_match(object_to_object(_TestID,_Name,Match,_Create,_DebugInfo),PA):- !, dref_match(Match,PA).
 dref_match(obj(Match),PA):- !, dref_match(Match,PA).
 dref_match(List,PA):- is_list(List), flatten(List,ListF),List\=@=ListF,!,dref_match(ListF,PA).
 dref_match(PA,PA).
@@ -520,7 +520,7 @@ map_objects(TITLE,PeersI,O2,PeersO,O2):-
   %peerless_props(O2,PeersO,Props2),
   %print([x=[in_i(S1),in_o(Props1),out_i(S2),out_o(Props2)]]),
   SETS = RHSSet+LHSSet,
-  save_learnt_rule(test_solved(i_o,obj(NewSames,LHSSet,IZ),obj(NewSames,RHSSet,OZ)),1+2+3+4+5+6+SETS,SETS))))),!.  
+  save_learnt_rule(object_to_object(i_o,obj(NewSames,LHSSet,IZ),obj(NewSames,RHSSet,OZ)),1+2+3+4+5+6+SETS,SETS))))),!.  
 
 
 %dg(I1):-  print_grid(I1),!, print_info(I1).

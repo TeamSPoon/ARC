@@ -67,6 +67,7 @@ gpoints_to_iv_info(GPoints,ShapePoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPo
   %writeg([plPoints=PLPoints,grid=Grid]),
   add_global_points(PLPoints,Grid,Grid),
   %writeg([nowgrid=Grid]),
+
   grid_to_shape(Grid,RotG,OffsetX,OffsetY,ShapePoints,PenColors),
   %writeg([then=Grid]),
   lpoints_to_iv_info(ShapePoints,LocX,LocY,PenColors,RotG,Iv),
@@ -106,7 +107,9 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):-
 
   %writeg([gpoints0=GPoints0,lpoints=LPoints,shapePoints(RotG,OffsetX,OffsetY)=ShapePoints]),
   if_t(ShapePoints==[],break),
-  make_localpoints(ShapePoints,RotG,OffsetX,OffsetY,PenColors,CheckLPoints),
+  make_localpoints(ShapePoints,RotG,OffsetX,OffsetY,PenColors,_CheckLPoints),
+  %sort(LPoints0,LPoints0S),
+  %CheckLPoints=LPoints0S,
   %writeg([checkLPoints=CheckLPoints]),
 
 
@@ -167,7 +170,7 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):-
   %grid_to_shape(Grid,RotG,OffsetX,OffsetY,ShapePoints,PenColors),
   
   %shape_id(NormMonoLocalGrid,MonoNormShapeID),
-  into_ngrid(Grid,NGrid),ngrid_syms(NGrid,Syms),
+  %into_ngrid(Grid,NGrid),ngrid_syms(NGrid,Syms),
   normalize_grid(NormOps,Grid,NormGrid),
   %writeg([normgrid=NormGrid]), 
   %if_t([[black,_]]=@=NormGrid,trace),
@@ -211,7 +214,7 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):-
     %iz(mono_norm_sid(MonoNormShapeID)),    
     iz(sid(ShapeID)),
 
-    Syms,
+    %unkept(Sym),
         
     mass(Len),
     CC,        
@@ -258,6 +261,8 @@ if_point_offset(OH,OV,Point,LPoint):- is_nc_point(Point), hv_point(H,V,Point),HH
 offset_point(OH,OV,Point,LPoint):- is_nc_point(Point), hv_point(H,V,Point),HH is H +OH -1, VV is V + OV -1,hv_point(HH,VV,LPoint).
 offset_point(OH,OV,C-Point,C-LPoint):- is_nc_point(Point), hv_point(H,V,Point),HH is H +OH -1, VV is V + OV -1,hv_point(HH,VV,LPoint).
 
+obj_example_num(O,EN):- indv_props(O,giz(example_num(EN))).
+obj_testid(O,EN):- indv_props(O,giz(testid(EN))).
 
 grid_to_individual(GridIn,Obj):- 
   %my_assertion(is_grid(Grid)),!,
@@ -434,14 +439,17 @@ maybe_replace_object(VM,Orig,NewObj):-
        print_grid(remove_prev(OOID),Orig))),
     set(VM.objs)= [NewObj|ROBJS])))).
 
+grav_roll([[Y]],sameR,[[Y]]):-!.
 grav_roll(LPoints,RotG,Shape):-
-  must_det_ll(grav_rot(LPoints,RotG,Shape)),!.
+  must_det_ll((grav_rot(LPoints,RotG,Shape),
+  undo_effect(RotG,Shape,LPoints0),LPoints0=LPoints)).
 
 protect_black(Grid,PGrid,UndoProtect):-
   Grid=PGrid, UndoProtect = (=).
 
 grid_to_shape(Grid,RotG,OffsetX,OffsetY,ShapePoints,PenColors):-
 %  writeg([grid=Grid]),
+ must_det_ll((
   protect_black(Grid,PGrid,UndoProtect),
   grav_roll(PGrid,RotG,PRotShape),
 %  writeg([pGrid2=PGrid,pRotShape=PRotShape]),
@@ -454,7 +462,7 @@ grid_to_shape(Grid,RotG,OffsetX,OffsetY,ShapePoints,PenColors):-
   % colors_cc 
   maplist(arg(2),LShape,ShapePoints), maplist(arg(1),LShape,Colorz),
   cclumped(Colorz,PenColors0),!,
-  simplify_pen(PenColors0,PenColors).
+  simplify_pen(PenColors0,PenColors))).
 
 simplify_pen([cc(C,_)],[cc(C,1)]).
 simplify_pen(Pen,Pen).
@@ -1241,10 +1249,11 @@ object_localpoints4(I,LPoints):-
      make_localpoints(RotLCLPoints,RotG,OffsetX,OffsetY,PenColors,LPoints))).
 
 
-make_localpoints(RotLCLPoints,RotG,OffsetX,OffsetY,PenColors,LPoints):- 
+make_localpoints(RotLCLPoints,RotG,OffsetX,OffsetY,PenColors,LPointS):- 
   must_det_ll((   maybe_undo_effect_points(OffsetX,OffsetY,RotLCLPoints,RotG,ShapePoints),
      PenColors\==[],is_list(PenColors),
-     combine_pen(ShapePoints,PenColors,PenColors,LPoints) )),!.
+     combine_pen(ShapePoints,PenColors,PenColors,LPoints) )),!,
+  sort(LPoints,LPointS).
 
 maybe_undo_effect_points(_,_,RotLCLPoints,sameR,LPoints):- must_be_free(LPoints),!,RotLCLPoints=LPoints.
 maybe_undo_effect_points(OffsetX,OffsetY,RotLCLPoints,RotG,LPoints):- must_det_ll((points_to_grid(OffsetX,OffsetY,RotLCLPoints,Grid),   

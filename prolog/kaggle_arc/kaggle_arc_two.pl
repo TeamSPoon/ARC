@@ -72,7 +72,7 @@ train_using_io(TestID,Trn,N1,DictIn,DictOut):-
   %detect_pair_hints(TestID,(Trn+N1),In,Out),
   pp(train_for_objects_from_1pair(DictIn,TestID,[Trn,'i',N1,'o',N1],In,Out,DictMid)),
   DictMid=DictIn,
-  igo_pair(complete,In,Out),
+  i_pair(complete,In,Out),
   N2 is N1 + 1,
   train_using_io(TestID,Trn,N2,DictMid,DictOut))).
 train_using_io(_TestID,_Trn,_,DictInOut,DictInOut):-!.
