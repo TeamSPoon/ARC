@@ -545,15 +545,19 @@ makeup_gridname(Grid,TID):- get_current_test(TestID), kaggle_arc_io(TestID,Trn+N
 makeup_gridname(Grid,TID):- is_grid_tid(Grid,TID),!.
 %makeup_gridname(Grid,TID):- was_grid_gid(Grid,TID),!.
 makeup_gridname(Grid,TID):- get_current_test(TestID),
-  flag(made_up_grid,F,F+1),
-   get_example_num(Example+Num),
-   (ground(Example+Num)->atomic_list_concat([Example,Num,ex],'_',HH);HH= 'Example'),
-   name_num_io_id(TestID,HH,F,io,TID),
+ must_det_ll((
+   flag('$makeup_gridname',F,F+1),
+   current_example_num_io(Example,Num,IO),
+   format(atom(HH),'~w_~w_~w_~w',[Example,Num,subgrid,IO]),
+   name_num_io_id(TestID,HH,F,IO,TID),
    assert_grid_tid(Grid,TID), nop(dumpST), 
-    %nop
-    (print_grid(no_name(TestID,TID),Grid)).
+    (print_grid(no_name(TestID,TID),Grid)))).
 
 incomplete(X,X).
+
+current_example_num_io(Example,Num,IO):- 
+   get_example_num(Example+Num),
+   (peek_vm(VM)-> VM.id = (_>(_+_)*IO) ; IO=io_unk).
 
 into_obj(G,O):- is_object(G),!,G=O.
 into_obj(G,O):- is_grid(G),!,individuate(whole,G,Objs),last(Objs,O),!.

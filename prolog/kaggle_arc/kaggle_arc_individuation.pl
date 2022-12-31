@@ -4,7 +4,17 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
+/*
 
+Rule types
+
+i1 to o1
+i2 to o1
+o1 to o1
+
+
+
+*/
 :- include(kaggle_arc_header).
 individuation_macros(i_complete_generic, [
     call(retractall(special_sizes(_,_))),
@@ -139,10 +149,12 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):- GridIn==Gri
   into_iog(InC,OutC,IndvS),
   show_individuated_nonpair(PairName,ROptions,GridIn,GridOfIn,IndvS).
 
-show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC0,OutC0):- 
+show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):- 
  must_det_ll((
-  fix_group(InC0,InCR),
-  fix_group(OutC0,OutCR),
+ maplist(extend_obj_proplist,InC00,InC0),
+ maplist(extend_obj_proplist,OutC00,OutC0),
+  maybe_fix_group(InC0,InCR),
+  maybe_fix_group(OutC0,OutCR),
   reverse(InCR,InC),
   reverse(OutCR,OutC),
   dash_chars,
@@ -150,19 +162,20 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC0,OutC0):-
   print_ss(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
   as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1), xfer_zeros(GridIn1,GridOut1), print_ss(green,GridIn1,ngridIn(ID1),_,GridOut1,ngridOut(ID2)),
 
-  grid_size(GridIn,IH,IV),grid_size(GridOut,OH,OV),
+  %grid_size(GridIn,IH,IV),grid_size(GridOut,OH,OV),
 
   % do_pair_filtering(ID1,GridIn,InC,InShown,ID2,GridOut,OutC,OutShown),
   IDIn1 = in(ID1),
   nop(print_list_of(really_show_touches(IDIn1,InShown),IDIn1,InShown)),
 
   print_list_of(show_touches(OutShown),out(ID2),OutShown),
+  
 
+  ((InC==OutC, InC==[]) -> progress(yellow,nothing_individuated(PairName)) ;
   with_luser(no_rdot,true,
-    ((grid_size(GridIn,IH,IV), grid_size(GridOut,OH,OV),
-    ((InC==OutC, InC==[]) -> progress(yellow,nothing_individuated(PairName)) ;
-     ((
-       show_io_groups(green,ROptions,ID1,InC,ID2,OutC))),
+    ((
+    
+       show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
 
      if_t(nb_current(menu_key,'i'),(clear_arc_training,abolish(object_to_object/5),dynamic(object_to_object/5))),
 
@@ -173,15 +186,17 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC0,OutC0):-
        show_io_groups(yellow,ROptions,ID2,OutC,ID2,GridOut),
        print_list_of(show_indiv(outputs),outputs,OutC),
        show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
-       !)),     
+       show_changes(InC0,InCR),
+       show_changes(OutC0,OutCR),
+     !)),     
 
        if_t((menu_or_upper('o');menu_or_upper('t');menu_or_upper('u')),
         (( banner_lines(orange),
 
-           visible_order(InC,InCR),
-           if_t(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR)),
+           %visible_order(InC,InCR),
+           if_t((true;sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)),
 
-           if_t(sub_var(tst,ID1), show_output_for(ROptions,ID1,InCR,GridOut)),
+           if_t((true;sub_var(tst,ID1)), show_output_for(ROptions,ID1,InCR,GridOut)),
 
            show_safe_assumed_mapped,
 
@@ -190,20 +205,18 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC0,OutC0):-
        if_t((menu_or_upper('u');menu_or_upper('s')),
         (( banner_lines(orange),
 
-           if_t(sub_var(tst,ID1), forall(member(In,InC),show_output_for(ROptions,ID1,In,GridOut))),
+           %if_t(sub_var(tst,ID1), 
+           forall(member(In,InC),show_output_for(ROptions,ID1,In,GridOut))),
+
+           print_ss(try_each_using_training,InC,GridOut),
 
            forall(must_det_ll((try_each_using_training(InC,GridOut,Rules,OurOut))),
              must_det_ll((print_grid(try_each_using_training,OurOut),
                nop(pp(Rules)),
                banner_lines(orange)))),
 
-        banner_lines(orange),!))),
-
-
-
-    !)))),
-
-  dash_chars)).
+        banner_lines(orange),!)),
+    !)))))).
 
 show_output_for(ROptions,ID1,InC,GridOut):- 
   print_grid(show_output_for(ROptions,ID1),InC),
@@ -212,9 +225,10 @@ show_output_for(ROptions,ID1,InC,GridOut):-
         ; arcdbg_info(red,warn("No Learned Sols"))).
 
 show_io_groups(Color,ROptions,ID1,InC0,ID2,OutC0):- 
+    if_t(InC0==OutC0,break),
     banner_lines(Color,3),
-    visible_order(InC0,InC),
-    visible_order(OutC0,OutC),
+    visible_order(InC0,InC), visible_order(OutC0,OutC),
+
     print_ss([individuated(ROptions,ID1)=InC,individuated(ROptions,ID2)=OutC]),
     banner_lines(Color,2),
     g_display(InC,InCG),
@@ -3660,7 +3674,7 @@ group_vm_priors(VM):-
 % =====================================================================
 is_fti_step(really_group_vm_priors).
 % =====================================================================
-%really_group_vm_priors(_VM):-!.
+really_group_vm_priors(_VM):-!.
 really_group_vm_priors(VM):-
  must_det_ll((
   ObjsG = VM.objs,
