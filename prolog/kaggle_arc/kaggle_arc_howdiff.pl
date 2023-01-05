@@ -211,10 +211,12 @@ obj_grp_atomslist(IO,A,PA,Atoms):-
   obj_grp_atoms_deep(A,PA,Atoms),
   assert_in_testid(object_atomslist(IO,A,PA,Atoms)).
 
+dref_match(Var,_):- var(Var),wdmsg(dref_match(Var)),!,fail.
 dref_match(rhs(Match),PA):- !, dref_match(Match,PA).
 dref_match(lhs(Match),PA):- !, dref_match(Match,PA).
 dref_match([obj(Match)],PA):- !, dref_match(Match,PA).
-dref_match(object_to_object(_TestID,_Name,Match,_Create,_DebugInfo),PA):- !, dref_match(Match,PA).
+dref_match([Match],PA):- !, dref_match(Match,PA).
+dref_match(object_to_object(_TestID,_Name,Match,_Create,_DebugInfo,_),PA):- !, dref_match(Match,PA).
 dref_match(obj(Match),PA):- !, dref_match(Match,PA).
 dref_match(List,PA):- is_list(List), flatten(List,ListF),List\=@=ListF,!,dref_match(ListF,PA).
 dref_match(PA,PA).
@@ -324,14 +326,6 @@ into_obj_plist(obj(PA),PA):- !.
 into_obj_plist(OID,List):- is_oid(OID), oid_to_obj(OID,Obj),!,into_obj_plist(Obj,List).
 %%%into_obj_plist(PA,PAP):- must_det_ll((extend_obj_proplist(PA,Obj), into_obj_plist(Obj,PAP))),!.
  
-is_oid_or_gid(V,_):-var(V),!,fail.
-is_oid_or_gid(OID,OID):- atom(OID),is_oid(OID),!.
-is_oid_or_gid(oid(OID),OID):- !, atom(OID).
-is_oid_or_gid(gid(GID),GID):- !, atom(GID).
-is_oid_or_gid(glyph(GID),GID):- !, atom(GID).
-overly_oided(M,EE=Var,MM):- sub_term(E,M),is_oid_or_gid(E,EE),subst001(M,EE,Var,MM).
-remove_oids(M,O,[E|EL]):- overly_oided(M,E,MM),remove_oids(MM,O,EL).
-remove_oids(M,M,[]).
 
 never_matom(localpoints(_)).
 never_matom(colorlesspoints(_)).
@@ -537,7 +531,7 @@ show_pair_now(TITLE,OO1,OO2):-
   format('~N~n'),
 
   if_t((true),
-    learn_rule_in_out_objects(TITLE,O1,O2)),
+    learn_rule_in_out(TITLE,O1,O2)),
 
   nop(ignore((into_ngrid(O1,NO1),into_ngrid(O2,NO2), print_side_by_side(silver,NO1,ngrid(T1),_,NO2,ngrid(T2))))),
 

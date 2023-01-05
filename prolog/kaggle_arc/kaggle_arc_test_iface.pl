@@ -112,7 +112,7 @@ ui_menu_call(G):- ignore(catch(must_not_error(G),E,wdmsg(E))).
   
 my_menu_call(E):- locally(set_prolog_flag(gc,true),ui_menu_call(E)).
 
-my_submenu_call(G):- current_predicate(_,G), \+ is_list(G),!, locally(set_prolog_flag(gc,true),ui_menu_call(G)),!.
+my_submenu_call(G):- current_predicate(_,G), \+ is_list(G),!, locally(set_prolog_flag(gc,false),ui_menu_call(G)),!.
 my_submenu_call0(E):- peek_vm(VM),!, ui_menu_call(run_dsl(VM,E,VM.grid,Out)), set(VM.grid) = Out.
 
 key_read_borked(PP):- in_pp(PP), PP\==ansi,PP\==bfly.
@@ -694,7 +694,7 @@ clauses_predicate_cmpd_goal(M:F/N,Into):-
 :- multifile(prolog:make_hook/2).
 :- dynamic(prolog:make_hook/2).
 :- dynamic(muarc_tmp:p1_memo_caches/2).
-prolog:make_hook(before, Some):- Some \==[], retractall(muarc_tmp:p1_memo_caches(_,_)), fail.
+prolog:make_hook(before, Some):- any_arc_files(Some), retractall(muarc_tmp:p1_memo_caches(_,_)), fail.
 
 memoized_p1(P1,F):- muarc_tmp:p1_memo_caches(P1,L),!,member(F,L).
 memoized_p1(P1,F):- findall(E,call(P1,E),S), list_to_set(S,L), asserta(muarc_tmp:p1_memo_caches(P1,L)),!,member(F,L).

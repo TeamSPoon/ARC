@@ -140,10 +140,14 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   :- set_prolog_flag(access_level,system).
   
   :- SL  is 2_147_483_648*8*4, set_prolog_flag(stack_limit, SL ).
-  :- (getenv('DISPLAY',_) -> true ; setenv('DISPLAY','10.0.0.122:0.0')).
-  :- unsetenv('DISPLAY').
-  :- (getenv('DISPLAY',_) -> guitracer ; true).
+  set_guitracer:- ((getenv('DISPLAY',_) -> true ; setenv('DISPLAY','10.0.0.122:0.0'))),checkgui_tracer.
+  unset_guitracer:- (unsetenv('DISPLAY')),checkgui_tracer.
+  checkgui_tracer:- (getenv('DISPLAY',_) -> guitracer ; catch(noguitracer,_,true)).
+  
   %:- catch(noguitracer,_,true).
+  %:- set_guitracer.
+  :- unsetenv('DISPLAY').
+  %:- unset_guitracer.
   :- set_prolog_flag(toplevel_print_anon,false).
   :- set_prolog_flag(toplevel_print_factorized,true).
   
@@ -244,10 +248,17 @@ check_len(_).
 
 %must_det_ll(G):- !, call(G).
 %must_det_ll(X):- !,must_not_error(X).
+
+wno_must(G):- locally(nb_setval(no_must_det_ll,t),locally(nb_setval(cant_rrtrace,t),must_det_ll(G))).
+
+
+must_det_ll(X):- nb_current(no_must_det_ll,t),!,call(X).
 must_det_ll(X):- \+ callable(X), !, throw(must_det_ll_not_callable(X)).
+must_det_ll((A*->X;Y)):- !,(must_not_error(A)*->must_det_ll(X);must_det_ll(Y)).
+must_det_ll((A->X;Y)):- !,(must_not_error(A)->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((X,!)):- !, (must_det_ll(X),!).
 must_det_ll((X,!,Y)):- !, (must_det_ll(X),!,must_det_ll(Y)).
-must_det_ll((X,Y)):- !, (must_det_ll(X),!,must_det_ll(Y)),!.
+must_det_ll((X,Y)):- !, (must_det_ll(X),must_det_ll(Y)),!.
 %must_det_ll(X):- notrace(catch(X,_,fail)),!.
 must_det_ll(X):- conjuncts_to_list(X,List),List\=[_],!,maplist(must_det_ll,List).
 must_det_ll(must_det_ll(X)):- !, must_det_ll(X).
@@ -259,8 +270,6 @@ must_det_ll(if_t(X,Y)):- !, if_t(must_not_error(X),must_det_ll(Y)).
 must_det_ll(forall(X,Y)):- !, must_det_ll(forall(must_not_error(X),must_not_error(Y))).
 must_det_ll(\+ (X, \+ Y)):- !, must_det_ll(forall(must_not_error(X),must_not_error(Y))).
 
-must_det_ll((A*->X;Y)):- !,must_det_ll((must_not_error(A)*->must_not_error(X);must_det_ll(Y))).
-must_det_ll((A->X;Y)):- !,(must_not_error(A)->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((X;Y)):- !, ((must_not_error(X);must_not_error(Y))->true;must_det_ll_failed(X;Y)).
 must_det_ll(\+ (X)):- !, (\+ must_not_error(X) -> true ; must_det_ll_failed(\+ X)).
 %must_det_ll((M:Y)):- nonvar(M), !, M:must_det_ll(Y).
@@ -270,12 +279,12 @@ must_det_ll(X):-
   strip_module(X,M,P),functor(P,F,A),setup_call_cleanup(nop(trace(M:F/A,+fail)),(must_not_error(X)*->true;must_det_ll_failed(X)),
     nop(trace(M:F/A,-fail))).
 
-must_not_error(X):- is_guitracer,!, call(X).
+must_not_error(X):- \+ nb_current(cant_rrtrace,t),is_guitracer,!, call(X).
 must_not_error(X):- catch(X,E,((E=='$aborted';nb_current(cant_rrtrace,t))-> throw(E);(/*arcST,*/writeq(E=X),pp(etrace=X),
   rrtrace(visible_rtrace([-all,+exception]),X)))).
 
 odd_failure(G):- nb_current(cant_rrtrace,t),!,call(G).
-odd_failure(G):- locally(nb_setval(cant_rrtrace,t),(call(G)*->true;fail_odd_failure(G))).
+odd_failure(G):- wno_must(G)*->true;fail_odd_failure(G).
 
 fail_odd_failure(G):- wdmsg(odd_failure(G)),rtrace(G), fail.
 %fail_odd_failure(G):- call(G)*->true;(wdmsg(odd_failure(G)),fail,rrtrace(G)).

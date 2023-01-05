@@ -266,6 +266,17 @@ pp(_):- is_print_collapsed,!.
 %pp(Term):- is_toplevel_printing(Term), !, nl_if_needed, pp_no_nl(Term),!,probably_nl.
 pp(Term):- nl_if_needed, az_ansi(pp_no_nl(Term)),!,probably_nl.
 
+
+pp_wcg(G):- pp_safe(call((locally(nb_setval(arc_can_portray,t),print(G))))),!.
+
+npp_wcg(G):- pp_safe(call((locally(nb_setval(arc_can_portray,nil),print(G))))),!.
+
+pp_safe(_):- nb_current(pp_hide,t),!.
+pp_safe(call(W)):- nl_if_needed,nl,call(W),nl.
+pp_safe(W):- nl_if_needed,nl,writeq(W),nl.
+pp_safe(C,W):- color_print(C,call(pp_safe(W))).
+
+
 %p_p_t_no_nl(Term):- is_toplevel_printing(Term), !, print_tree_no_nl(Term).
 p_p_t_no_nl(Term):- az_ansi(print_tree_no_nl(Term)).
 
@@ -507,6 +518,11 @@ wqs1(q(C)):-  \+ arg_string(C),wots(S,writeq(C)),color_write(S).
 wqs1(g(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs1(C))),print(g(S)).
 wqs1(b(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs1(C))),color_write(S).
 wqs1(norm(C)):- writeq(norm(C)),!.
+wqs1(norm_grid(C)):- writeq(norm_grid(C)),!.
+wqs1(grid(C)):- writeq(grid(C)),!.
+wqs1(rhs(RHS)):- nl,npp_wcg(rhs(RHS)),nl.
+%wqs1(norm_ops(C)):- writeq(norm(C)),!.
+%norm_grid
 
 wqs1(pp(P)):-  wots_vs(S,pp_no_nl(P)),write((S)).
 wqs1(ppt(P)):- wots_vs(S,ppt_no_nl(P)),write((S)).

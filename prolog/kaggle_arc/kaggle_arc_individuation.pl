@@ -145,22 +145,39 @@ individuation_macros(do_ending, [
  %combine_objects,
  end_of_macro]).
 
-show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):- GridIn==GridOfIn,!,
+
+
+show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):- 
+  GridIn=@=GridOfIn,!,
+ must_det_ll((
   into_iog(InC,OutC,IndvS),
-  show_individuated_nonpair(PairName,ROptions,GridIn,GridOfIn,IndvS).
+  show_individuated_nonpair(PairName,ROptions,GridIn,GridOfIn,IndvS))).
+
+show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):- 
+  InC=@=OutC,!,
+  must_det_ll((into_iog(InC,OutC,IndvS),
+  show_individuated_nonpair(PairName,ROptions,GridIn,GridOfIn,IndvS))).
 
 show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):- 
- must_det_ll((
- maplist(extend_obj_proplist,InC00,InC0),
- maplist(extend_obj_proplist,OutC00,OutC0),
+ once((must_det_ll((
+ extend_obj_proplist(InC00,InC0),
+ extend_obj_proplist(OutC00,OutC0),
   maybe_fix_group(InC0,InCR),
   maybe_fix_group(OutC0,OutCR),
-  reverse(InCR,InC),
-  reverse(OutCR,OutC),
+  show_changes(InC0,InCR),
+  show_changes(OutC0,OutCR))))),
+  (InC00\=@=InCR;OutC00\=@=OutCR),!,
+  show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCR,OutCR).
+
+show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
+ must_det_ll((
+ must_det_ll((
+  =(InCR,InC), =(OutCR,OutC),
   dash_chars,
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2), 
   print_ss(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
-  as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1), xfer_zeros(GridIn1,GridOut1), print_ss(green,GridIn1,ngridIn(ID1),_,GridOut1,ngridOut(ID2)),
+  as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1), xfer_zeros(GridIn1,GridOut1), 
+    print_ss(green,GridIn1,ngridIn(ID1),_,GridOut1,ngridOut(ID2)),
 
   %grid_size(GridIn,IH,IV),grid_size(GridOut,OH,OV),
 
@@ -177,7 +194,7 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):-
     
        show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
 
-     if_t(nb_current(menu_key,'i'),(clear_arc_training,abolish(object_to_object/5),dynamic(object_to_object/5))),
+     if_t(nb_current(menu_key,'i'),(clear_arc_learning,abolish(object_to_object/6),dynamic(object_to_object/6))),
 
      if_t((menu_or_upper('i');menu_or_upper('t')),
       (         
@@ -186,43 +203,43 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):-
        show_io_groups(yellow,ROptions,ID2,OutC,ID2,GridOut),
        print_list_of(show_indiv(outputs),outputs,OutC),
        show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
-       show_changes(InC0,InCR),
-       show_changes(OutC0,OutCR),
+
+       %if_t((true;sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)), show_safe_assumed_mapped,
      !)),     
 
-       if_t((menu_or_upper('o');menu_or_upper('t');menu_or_upper('u')),
+       if_t((menu_or_upper('o');menu_or_upper('u');menu_or_upper('t')),
         (( banner_lines(orange),
 
            %visible_order(InC,InCR),
-           if_t((true;sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)),
+           if_t((sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)), show_safe_assumed_mapped,
 
-           if_t((true;sub_var(tst,ID1)), show_output_for(ROptions,ID1,InCR,GridOut)),
+           %if_t((true;sub_var(tst,ID1)), show_test_associatable_groups(ROptions,ID1,InCR,GridOut)),
 
-           show_safe_assumed_mapped,
 
-        banner_lines(orange),!))),
+        banner_lines(orange,3),!))),
 
        if_t((menu_or_upper('u');menu_or_upper('s')),
         (( banner_lines(orange),
 
-           %if_t(sub_var(tst,ID1), 
-           forall(member(In,InC),show_output_for(ROptions,ID1,In,GridOut))),
-
-           print_ss(try_each_using_training,InC,GridOut),
+           %if_t(sub_var(tst,ID1),
+           forall(member(In1,InC),show_test_associatable_groups(ROptions,ID1,In1,GridOut)),
+           
+           print_ss(begin_try_each_using_training,InC,GridOut),
 
            forall(must_det_ll((try_each_using_training(InC,GridOut,Rules,OurOut))),
-             must_det_ll((print_grid(try_each_using_training,OurOut),
+             must_det_ll((
+               print_grid(try_each_using_training,OurOut),
                nop(pp(Rules)),
-               banner_lines(orange)))),
+               banner_lines(orange,2)))),
 
-        banner_lines(orange),!)),
-    !)))))).
+        banner_lines(orange,4),!))),
+    !)))))))).
 
-show_output_for(ROptions,ID1,InC,GridOut):- 
-  print_grid(show_output_for(ROptions,ID1),InC),
-  (use_test_associatable_group(InC,Sols) -> 
-           show_result("Our Learned Sols", Sols,GridOut,_)
-        ; arcdbg_info(red,warn("No Learned Sols"))).
+show_test_associatable_groups(ROptions,ID1,InC,GridOut):- 
+  print_grid(show_test_assocs(ROptions,ID1),InC),
+  forall(
+    ((use_test_associatable_group(InC,Sols)*-> show_result("Our Learned Sols", Sols,GridOut,_); arcdbg_info(red,warn("No Learned Sols")))),
+    true).
 
 show_io_groups(Color,ROptions,ID1,InC0,ID2,OutC0):- 
     if_t(InC0==OutC0,break),
@@ -1230,7 +1247,7 @@ clear_arc_caches:- retractall(individuated_cache(_,_,_,_)).
 
 :- dynamic(individuated_cache/4).
 :- retractall(individuated_cache(_,_,_,_)).
-prolog:make_hook(before, Some):- Some \==[], forall(clear_arc_caches,true), fail.
+prolog:make_hook(before, Some):- any_arc_files(Some), forall(clear_arc_caches,true), fail.
 :- luser_default(individuated_cache,true).
 
 :- luser_setval(individuated_cache,true).
@@ -1315,7 +1332,7 @@ individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):-
 
 
 :- retractall(is_why_grouped_g(_,_,_,_)).
-prolog:make_hook(before, Some):- Some \==[], retractall(is_why_grouped_g(_,_,_,_)), fail.
+prolog:make_hook(before, Some):- any_arc_files(Some), retractall(is_why_grouped_g(_,_,_,_)), fail.
 
 individuate_two_grids_now(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):- 
  must_det_ll((

@@ -19,11 +19,14 @@ nb_subst(Obj,New,Old):-
   call(P1,New),!,nb_subst(Obj,New,Old).
 nb_subst(_Obj,_New,_Old).
 
+system:any_arc_files(Some):- is_list(Some),!, Some\==[],maplist(any_arc_files,Some).
+system:any_arc_files(Some):- atom_contains(Some,'arc').
 
 :- thread_local(in_memo_cached/5).
 :- multifile(prolog:make_hook/2).
 :- dynamic(prolog:make_hook/2).
-prolog:make_hook(before, Some):- Some \==[], \+ luser_getval(extreme_caching,true), retractall(in_memo_cached(_,_,_,_,_)), fail.
+
+prolog:make_hook(before, Some):- any_arc_files(Some), \+ luser_getval(extreme_caching,true), retractall(in_memo_cached(_,_,_,_,_)), fail.
 %arc_memoized(G):- !, call(G).
 
 arc_memoized(G):- compound(G),ground(G),functor(G,F,1),functor(C,F,1),!,arc_memoized(C),G=C,!.
@@ -255,7 +258,7 @@ ppa(FF):-
   ignore((GS\==[], format('\t'),ppawt(attvars=GS),nl)),nl,!.
 
 ppawt(FA):-
-  write_term(FA,[numbervars(true), quoted(true), 
+  write_term(FA,[numbervars(false), quoted(true), 
    character_escapes(true),cycles(true),dotlists(false),no_lists(false),
     blobs(portray),attributes(dots), 
     portray(true), partial(false), fullstop(true),

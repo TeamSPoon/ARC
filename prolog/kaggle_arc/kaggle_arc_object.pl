@@ -210,7 +210,8 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):-
     iz(cenYG(CentYG)),iz(cenXG(CentXG)),  
     unkept(bottem2D(BottemX,BottemY)),unkept(bottem2G(BottemXG,BottemYG)),
     vis2D(SizeX,SizeY), 
-    unkept(vis2G(SizeXG,SizeYG)), %iz(sizeY(SizeY)),iz(sizeX(SizeX)),
+    %kept(iz(vis2G(SizeXG))), %
+    iz(sizeGY(SizeYG)),iz(sizeGX(SizeXG)),
 
     global2G(GlobalXG,GlobalYG),
     iz(norm_sid(NormShapeID)),
@@ -441,7 +442,8 @@ maybe_replace_object(VM,Orig,NewObj):-
     set(VM.objs)= [NewObj|ROBJS])))).
 
 grav_roll([[Y]],sameR,[[Y]]):-!.
-grav_roll(LPoints,RotG,Shape):-
+grav_roll(Shape,sameR,Shape):-!.
+grav_roll(LPoints,RotG,Shape):- 
   must_det_ll((grav_rot(LPoints,RotG,Shape),
   undo_effect(RotG,Shape,LPoints0),LPoints0=LPoints)).
 
