@@ -157,19 +157,19 @@ clsR:- flush_tee, !. % once(cls_z).
 
 enter_test:- repeat, write("\nYour favorite: "), read_line_to_string(user_input,Sel),enter_test(Sel),!.
 
-enter_test(""):- wqnl("resuming menu"), menu,!.
+enter_test(""):- ppnl("resuming menu"), menu,!.
 enter_test(Sel):- fix_test_name(Sel,TestID),switch_test(TestID),!.
 enter_test(Sel):- 
    sformat(SSel,'~q',[Sel]),
    catch(read_term_from_atom(SSel,Name,[module(user),double_quotes(string),variable_names(Vs),singletons(Singles)]),_,
-        (wqnl(['failed to read: ',Sel]),fail)),
+        (ppnl(['failed to read: ',Sel]),fail)),
         maplist(ignore,Vs),maplist(ignore,Singles),
         Name\==Sel,
-       (fix_test_name(Name,TestID) -> true ; (wqnl(['could not read a test from: ',Sel,nl,'try again']),!,fail)),
+       (fix_test_name(Name,TestID) -> true ; (ppnl(['could not read a test from: ',Sel,nl,'try again']),!,fail)),
        enter_test(TestID).
 
 
-switch_test(TestID):- wqnl(['Swithing to test: ',TestID]),set_current_test(TestID),print_test.
+switch_test(TestID):- ppnl(['Swithing to test: ',TestID]),set_current_test(TestID),print_test.
 
 
 
@@ -403,7 +403,7 @@ show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), luser_getval(test_suite_
   (nonvar(Example)-> (SelTest=(TestID>Example)) ; SelTest=TestID),  
   ((muarc_tmp:cached_tests(Suite,Set),length(Set,Len)) -> true ; Len = ?),
   wots_vs(SS,color_print(yellow,call(format("'~w' (~w)",[Suite,Len])))),
-  wqnl([format("~N ~w: ",[Mode]), format('~w',[SS])," indiv:",b(q(IndivMode)), " selected test: ",b(q(SelTest)), ".......... (e)xecute: ", b(q(Cmd))
+  ppnl([format("~N ~w: ",[Mode]), format('~w',[SS])," indiv:",b(q(IndivMode)), " selected test: ",b(q(SelTest)), ".......... (e)xecute: ", b(q(Cmd))
     % "with pair mode set to: ",b(q(Mode)),
   %b(q(example(Example)))
   ]),flush_tee_maybe.
@@ -1764,7 +1764,8 @@ testid_name_num_io_0(X,TestID,E,N,IO):- is_grid(X),!,kaggle_arc_io(TestID,E+N,IO
 testid_name_num_io_0(ID,_Name,_Example,_Num,_IO):- is_grid(ID),!, fail.
 testid_name_num_io_0(ID,_Name,_Example,_Num,_IO):- is_list(ID), \+ maplist(nonvar,ID),!,fail.
 
-testid_name_num_io_0([V,Name,Example,ANum,IO|_],TestID,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,fix_id_1(VName,TestID).
+testid_name_num_io_0([V,Name,Example,ANum|IOL],TestID,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,
+  fix_id_1(VName,TestID), freeze(IO,member(IO,[in,out])),member(IO,IOL),!.
 testid_name_num_io_0(TestID>Example+Num*IO,Name,Example,Num,IO):- !,fix_id_1(TestID,Name).
 testid_name_num_io_0(TestID>(Example+Num)*IO,Name,Example,Num,IO):- !,fix_id_1(TestID,Name).
 testid_name_num_io_0(TestID>Example+Num,Name,Example,Num,_IO):- !,fix_id_1(TestID,Name).
@@ -1783,6 +1784,7 @@ testid_name_num_io_0(ID,Name,Example,Num,IO):- atom(ID),notrace(catch(atom_to_te
 %testid_name_num_io_0(ID,Name,_Example,_Num,_IO):- atom(ID),!,fix_id_1(ID,   Name),!.
 testid_name_num_io_0(ID,Name,_Example,_Num,_IO):- fix_id_1(ID,   Name),!. %, kaggle_arc_io(Name,Example+Num,IO,_).
 
+testid_name_num_io_gid(TestID,Example,Num,IO,GIDR):- TestID=..[V,ID],atomic_list_concat([V,ID,Example,Num,IO],'_',GIDR).
 
 fix_id_1(Tried,   Tried):- var(Tried),!.
 fix_id_1(X,_):- is_cpoint(X),!,fail.
@@ -1806,10 +1808,10 @@ atom_id_e(Tried,v(Tried)):- kaggle_arc(v(Tried),_,_,_),!.
 atom_id_e(Tried,x(Tried)):- kaggle_arc(x(Tried),_,_,_),!.
 atom_id_e(Sel, TestID):- sformat(SSel,'~q',[Sel]),
    catch(read_term_from_atom(SSel,Name,[module(user),double_quotes(string),variable_names(Vs),singletons(Singles)]),_,
-        (wqnl(['failed to read: ',Sel]),fail)),
+        (ppnl(['failed to read: ',Sel]),fail)),
         maplist(ignore,Vs),maplist(ignore,Singles),
         Name\==Sel,
-       (fix_test_name(Name,TestID,_) -> true ; (wqnl(['could not read a test from: ',Sel,nl,'try again']),fail)).
+       (fix_test_name(Name,TestID,_) -> true ; (ppnl(['could not read a test from: ',Sel,nl,'try again']),fail)).
 
 
 

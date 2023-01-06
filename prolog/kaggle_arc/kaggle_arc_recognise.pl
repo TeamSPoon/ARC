@@ -38,7 +38,7 @@ save_tr:- cls_z,
   format('~N~@.',[write_term(perfect_result(X,Y,Z),
     [quoted(true),quote_non_ascii(true),numbervars(false)])])).
 
-got_result(SG,FG,Match):-  
+got_result(SG,FG,Match):-
   copy_term(FG,CFG),copy_term(SG,CSG),
   numbervars(CSG+CFG,999,_,[attvar(bind)]),
   ignore((perfect_result(CSG,CFG,WMatch), 
@@ -55,7 +55,7 @@ was_result(SG,FG,WMatch):-
 
 % hacking on this one
 test_ogs2(H,V,Match):-
-  wqln("searching..."),
+  ppnl("searching..."),
   ss666(T,SG),
   ff666(T,FG),
   copy_term(SG,CSG),copy_term(FG,CFG),
@@ -72,7 +72,7 @@ test_ogs2(H,V,Match):-
 % should still be the sameR
 test_ogs1(H,V,Match):-
   Run = once(( print_side_by_side(FG,SG),nop(ppt(tf=T)))),
-  wqln("searching..."),
+  ppnl("searching..."),
     ff666(T,UFG),      ss666(T,USG),
   copy_term(UFG,FG), copy_term(USG,SG),
 
@@ -95,7 +95,7 @@ never_fg(Var):- freeze(Var, \+ is_fg_color(Var)).
 % should still be the sameR
 test_ogs0(H,V,Match):-
   Run = once(( print_side_by_side(FG,SG),print(test_ogs0(H,V,TMatch)),nop(ppt(tf=T)))),
-  wqln("searching..."),
+  ppnl("searching..."),
     ff666(T,UFG),      ss666(T,USG),
   copy_term(UFG,FG), copy_term(USG,SG),
 
@@ -118,7 +118,7 @@ test_ogs0(H,V,Match):-
 
 test_ogs(H,V,Match):- 
   Run = once(( print_side_by_side(FG,XSG),ppa(FG),ppa(XSG),nop(ppt(tf=T)))),
-  wqln("searching..."),
+  ppnl("searching..."),
     ff666(_,FG),
     ss666(T,SG),
     
@@ -230,7 +230,7 @@ ogs_0(CheckType,H,V,FG,SG):-
   ogs_1(H,V,XFG,XSG).
   %CheckType=run,
   %print_grid(XFG),nl,
-  %wqnl(found_at(H,V)),
+  %ppnl(found_at(H,V)),
   %print_grid(XSG),nl,
   %true.
 

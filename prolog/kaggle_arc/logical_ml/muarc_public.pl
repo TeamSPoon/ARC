@@ -147,35 +147,4 @@ show_indiv(Why, Obj):-
      locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Obj))))),
      format('~N'),dash_chars(15))),!.
 
-has_goals(G):- term_attvars(G,AV),AV\==[].
-has_goals(G):- term_variables(G,TV),term_singletons(G,SV),TV\==SV.
-
-writeg(Term):- ignore((\+ \+ writeg0(Term))),!.
-
-writeg0(Term):- 
-  term_attvars(Term,Attvars), Attvars\==[],!,
-  term_variables(Term,Vars),
-  include(not_in(Attvars),Vars,PlainVars),   
-  copy_term((Attvars+PlainVars+Term),(AttvarsC+PlainVarsC+TermC),Goals),
-  numbervars(PlainVarsC,10,Ten1,[singletons(true)]),
-  numbervars(AttvarsC+Goals,Ten1,_Ten,[attvar(bind),singletons(false)]),
-  writeg0(TermC), wots(S,writeg0(Goals)), print_w_pad(2,S).
-
-writeg0(N=V):- format('~N'),nonvar(N), pp_no_nl(N),writeln(' = '), !, wots(S,writeg0(V)), print_w_pad(2,S).
-writeg0(V):- is_gridoid(V),!,print_grid(V),wots(S,(maplist(writeg1,V))), print_w_pad(2,S).
-writeg0(O):- compound(O),compound_name_arguments(O,F,[A]),!,wots(S,((writeq(F),write('('),writeg3(A),write(')')))), print_w_pad(1,S).
-writeg0([H|T]):- compound(H),H=(_=_), maplist(writeg0,[H|T]).
-writeg0([H|T]):- is_list(T),wots(S,((write('['),writeg2(H),maplist(writeg0,T),write(']')))), print_w_pad(1,S).
-%writeg0(Term):- \+ ground(Term),!, \+ \+ (numbervars(Term,99799,_,[singletons(true)]),
-%   subst(Term,'$VAR'('_'),'$VAR'('_____'),TermO), writeg0(TermO)).
-%writeg0(V):- \+ is_list(V),!,writeq(V),nl.
-writeg0(V):- \+ is_list(V),!,pp(V).
-writeg0(X):- wots(S,pp(X)), print_w_pad(2,S).
-
-writeg1(X):- format('~N'),writeg2(X),!,write(' '),!.
-writeg2(X):- write_term(X,[quoted(true),quote_non_ascii(true),portrayed(false),nl(false),numbervars(false)]),!.
-%writeg1(X):- format('~N'),writeg(X).
-writeg2(X):- writeq(X),!.
-writeg3(X):- is_list(X),X\==[],X=[_,_|_],!,writeg(X).
-writeg3(X):- writeg2(X).
 

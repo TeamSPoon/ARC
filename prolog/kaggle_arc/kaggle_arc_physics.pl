@@ -442,7 +442,7 @@ print_side_by_side_d(C,A,AN,W,B,BN):- nop(print_side_by_side(C,A,AN,W,B,BN)).
 
 
 
-same_surface(O1,O2):- obj_gid(O1,GID),obj_gid(O2,GID).
+same_surface(O1,O2):- obj_test_example_io(O1,GID),obj_test_example_io(O2,GID).
  
 two_physical_objs(O1,O2):- O1\==O2, is_physical_object(O1),is_physical_object(O2), O1\=@=O2, same_surface(O1,O2).
 
@@ -490,7 +490,7 @@ do_todo3([oinfo(O1,_Ps1,_OID1,_Todo1)|Objs],TODO,[O1|NewObjs]):-
 
 
 
-add_oinfo(O1,oinfo(O1,Ps1,OID1,[])):- obj_to_oid(O1,OID1),globalpoints(O1,Ps1),!.
+add_oinfo(Ref,oinfo(O1,Ps1,OID1,[])):- into_obj(Ref,O1),obj_to_oid(O1,OID1),globalpoints(O1,Ps1),!.
 
 find_relationsB([O1|Rest],TodoIN,TodoOUT):-
   find_relations2(O1,Rest,TodoIN,TodoMID),
@@ -502,6 +502,26 @@ find_relations2(O1,[O2|Rest],TodoIN,TodoOUT):-
   find_relations4(O1,O2,TodoIN,TodoMID),
   find_relations2(O1,Rest,TodoMID,TodoOUT).
 find_relations2(_,[],TodoINOUT,TodoINOUT).
+
+% ?- relations_of(Rel,O1,O2),print_ss(global_grid(O1),global_grid(O2)).
+relations_of(Rel,O1,O2):- var(O1),var(O2),!,
+  relations_of1(RelAB,OA,OB), 
+  (RelAB = inv(Rel) ->  (OA=O1,OB=O2) ; (RelAB = Rel ,OA=O2,OB=O1)).
+relations_of(Rel,O2,O1):- relations_of1(Rel,O1,O2).
+
+% ?- into_obj(472,O1),into_obj(691,O2),print_ss(O1,O2),relations_of(Rel,O1,O2)
+
+relations_of1(Rel,O1,O2):- two_physical_objs(O1,O2),
+  once((add_oinfo(O1,INFO1),add_oinfo(O2,INFO2))),
+  once((find_relations4(INFO1,INFO2,[],TodoOUT))),
+  flatten(TodoOUT,List),member(some_todo(OID1,LINKS),List),
+  member(RLINKS,LINKS),
+  align_to_oid(OID1,INFO1,RLINKS,Rel).
+
+align_to_oid(OID1,oinfo(_,_,OIDA,_),link(Rel,_OID2),Rel):- OIDA==OID1.
+align_to_oid(OID1,oinfo(_,_,OIDA,_),link(Rel,_OID2),inv(Rel)):- OIDA\==OID1,!.
+  
+  
 
 find_relations4(INFO1,INFO2,TodoIN,TodoOUT):-
  must_det_ll((
@@ -520,26 +540,33 @@ find_relations4(INFO1,INFO2,TodoIN,TodoOUT):-
 related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,P2L):- 
   once((points_range(P1L,SX1,SY1,EX1,EY1,_,_), points_range(P2L,SX2,SY2,EX2,EY2,_,_))),
   related_how2(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2).
-related_how(subsumed_by(Offset,OverlapP),O1,O2,Ps1,Ps2,Overlap,P1L,_P2L):- Overlap\==[],P1L==[],!,
+
+related_how(subsumed_by(Offset,OverlapP),O1,O2,Ps1,Ps2,Overlap,P1L,_P2L):- Overlap\==[],P1L==[],
   length(Ps1,Len1),length(Ps2,Len2), OverlapP = rational(Len1/Len2), object_offset(O2,O1,Offset).
-related_how(   subsumed(Offset,OverlapP),O1,O2,Ps1,Ps2,Overlap,_P1L,P2L):- Overlap\==[],P2L==[],!,
+
+related_how(   subsumed(Offset,OverlapP),O1,O2,Ps1,Ps2,Overlap,_P1L,P2L):- Overlap\==[],P2L==[],
   length(Ps1,Len1),length(Ps2,Len2), OverlapP = rational(Len2/Len1), object_offset(O2,O1,Offset).
 
 sees_dir(s,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SY1 >= EY2, D is SY1-EY2.
 sees_dir(n,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SY2 >= EY1, D is SY2-EY1.
 sees_dir(e,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 >= EX2, D is SX1-EX2.
 sees_dir(w,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX2 >= EX1, D is SX2-EX1.
-related_how2(sees(DirsDists),O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
+
+related_how2(sees(DirsDists),O1,O2,Ps1,Ps2,Overlap,P1L,
+  SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   findall(cc(Dir,Dist),sees_dir(Dir,Dist,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2),DirsDists), DirsDists\==[].
 
 %related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 < SX2, SY1 < SY2, EX2 < EX1, EY2 < EY1, How = contains(engulfed).
-related_how2(contains,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
+related_how2(contains,O1,O2,Ps1,Ps2,Overlap,P1L,
+  SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   SX1 >= SX2, SY1 >= SY2, EX2 >= EX1, EY2 >= EY1.
 %related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 > SX2, SY1 > SY2, EX2 > EX1, EY2 > EY1, How = contained_by(engulfed).
-related_how2(contained_by,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
+related_how2(contained_by,O1,O2,Ps1,Ps2,Overlap,P1L,
+  SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   SX1 =< SX2, SY1 =< SY2, EX2 =< EX1, EY2 =< EY1.
 
-related_how2(overlap(Overlap1,Overlap2),O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- Overlap\==[],
+related_how2(overlap(Overlap1,Overlap2),O1,O2,Ps1,Ps2,Overlap,
+  P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- Overlap\==[],
   length(Overlap,OL), length(Ps1,Len1),length(Ps2,Len2),
   Overlap1 = rational(OL/Len1), Overlap2 = rational(OL/Len2).
 

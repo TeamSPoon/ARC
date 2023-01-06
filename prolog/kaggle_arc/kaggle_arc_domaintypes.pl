@@ -87,7 +87,7 @@ set_fg_vars(Vars):-
   maplist(decl_many_fg_colors,Vars).
 
 is_fg_color_if_nonvar(Trig,V):- plain_var(V),Trig==run,!,fail,constrain_type(V,is_fg_color_if_nonvar(Trig,V)).
-is_fg_color_if_nonvar(Trig,V):- nop(wqnl(is_fg_color_if_nonvar(Trig,V))),fail.
+is_fg_color_if_nonvar(Trig,V):- nop(ppnl(is_fg_color_if_nonvar(Trig,V))),fail.
 is_fg_color_if_nonvar(_Trig,C):- is_fg_color(C),!.
 is_bg(C):- is_bg_color(C).
 is_bgc(C):- is_bg_color(C).

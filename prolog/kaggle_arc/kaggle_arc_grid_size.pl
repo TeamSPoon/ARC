@@ -48,9 +48,9 @@ predict_grid_size(List,IH,IV,PH,PV):-
   alphabetize(List,ListA),
   predsort_on(better_grid_size_prop,ListA,SList),
   add_info(SList,[],NewInfo),
-   %maplist(wqnl,List),dash_chars,
-   maplist(wqnl,ListA),dash_chars,
-   maplist(wqnl,NewInfo),dash_chars,
+   %maplist(ppnl,List),dash_chars,
+   maplist(ppnl,ListA),dash_chars,
+   maplist(ppnl,NewInfo),dash_chars,
   predict_grid_size1(ListA,NewInfo,IH,IV,PH,PV).
 predict_grid_size(_List,IH,IV,IH,IV).
 

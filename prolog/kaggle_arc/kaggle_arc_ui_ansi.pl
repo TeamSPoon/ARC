@@ -33,9 +33,9 @@ print_collapsed0(Size,G):- Size>=10, !, wots(_S,G).
 print_collapsed0(_,G):- wots(S,G),write(S).
 
 tersify(I,O):- tracing,!,I=O.
-tersify(X,X):-!.
 %tersify(I,O):- term_variables(I,Vs), \+ ( member(V,Vs), attvar(V)),!,I=O.
 tersify(I,O):- quietly((tersify2(I,M),tersify3(M,O))),!.
+tersify(X,X):-!.
 
 %srw_arc(I,O):- is_grid(I),!, wots(O,(write('"'),print_grid(I),write('"'))).
 %srw_arc(I,O):- compound(I),!, wots(O,(write(ppt(I)))).
@@ -224,6 +224,7 @@ tersifyL(I,O):- tersify0(I,O),!.
 tersifyL(I,O):- tersify1(I,O),!.
 tersifyL(I,I).
 
+tersify2(I,O):- compound(I),(I=(N=V)),tersify2(N,NN),tersify2(V,VV),!,O=(NN=VV).
 tersify2(I,O):- simple_enough(I),!,I=O.
 tersify2(I,O):- compound(I),tersify1(I,O),!.
 tersify2(I,O):- tersify0(I,O),!.
@@ -231,6 +232,7 @@ tersify2(I,O):- is_list(I), !, maplist(tersify2,I,O).
 tersify2(I,O):- compound(I), !, compound_name_arguments(I,F,IA), maplist(tersify,IA,OA), compound_name_arguments(O,F,OA).
 tersify2(I,I).
 
+tersify3(I,O):- compound(I),(I=(N=V)),tersify3(N,NN),tersify3(V,VV),!,O=(NN=VV).
 tersify3(I,O):- simple_enough(I),!,I=O.
 tersify3(I,O):- compound(I),tersify1(I,O),!.
 tersify3(I,O):- tersify0(I,O),!.
@@ -248,7 +250,7 @@ write_map(_G,Where):- write('...'),write(Where),write('...').
 ppt(_):- is_print_collapsed,!.
 ppt(G):- is_map(G), !, write_map(G,'ppt').
 ppt(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
-ppt(P):- compound(P),wqs1(P),!.
+%ppt(P):- compound(P),wqs1(P),!.
 ppt(P):- \+ \+ ((tersify(P,Q),!,pp(Q))),!.
 ppt(C,P):- \+ \+ ((tersify(P,Q),!,pp(C,Q))),!.
 
@@ -258,18 +260,20 @@ ptcol(P):- pp(P).
 
 ptc(Color,Call):- pp(Color,call(Call)).
 
-wqln(Term):- wqnl(Term).
-wqnl(Term):- is_list(Term),!,g_out(wqs(Term)).
-wqnl(Term):- nl_if_needed,format('~q',[Term]),probably_nl.
+ppnl(Term):- is_list(Term),!,g_out(wqs(Term)).
+ppnl(Term):- nl_if_needed,format('~q',[Term]),probably_nl.
 
 pp(_):- is_print_collapsed,!.
 %pp(Term):- is_toplevel_printing(Term), !, nl_if_needed, pp_no_nl(Term),!,probably_nl.
-pp(Term):- nl_if_needed, az_ansi(pp_no_nl(Term)),!,probably_nl.
+pp(_Term):- nl_if_needed, fail.
+pp(Term):- \+ nb_current(arc_can_portray,_),!,locally(nb_setval(arc_can_portray,t),print(Term)).
+pp(Term):- az_ansi(pp_no_nl(Term)),!,probably_nl.
 
 
 pp_wcg(G):- pp_safe(call((locally(nb_setval(arc_can_portray,t),print(G))))),!.
 
-npp_wcg(G):- pp_safe(call((locally(nb_setval(arc_can_portray,nil),print(G))))),!.
+wqln(Term):- ppnl(Term).
+wqnl(G):- pp_safe(call((locally(nb_setval(arc_can_portray,nil),print(G))))),!.
 
 pp_safe(_):- nb_current(pp_hide,t),!.
 pp_safe(call(W)):- nl_if_needed,nl,call(W),nl.
@@ -366,6 +370,7 @@ pp_hook_g10(G):- \+ plain_var(G), lock_doing(in_pp_hook_g10,G,pp_hook_g1(G)).
 as_grid_string(O,SSS):- wots_vs(S,debug_as_grid(O)), sformat(SSS,'{  ~w}',[S]).
 as_pre_string(O,SS):- wots(S,debug_as_grid(O)), strip_vspace(S,SS).
 
+
 pp_hook_g1(O):-  plain_var(O), !, fail.
 pp_hook_g1(O):-  attvar(O), !, is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
 pp_hook_g1(S):-  term_is_ansi(S), !, write_nbsp, write_keeping_ansi_mb(S).
@@ -373,9 +378,9 @@ pp_hook_g1(O):-  is_grid(O),
 % \+ (sub_term(E,O),compound(E),E='$VAR'(_)), 
   catch((wots(S,print_grid(O)),strip_vspace(S,SS),ptc(orange,(format('"  ~w  "',[SS])))),_,(never_let_arc_portray_again,fail)).
 
-pp_hook_g1(colorlesspoints(O)):- !, is_points_list(O), as_grid_string(O,S), print(colorlesspoints(S)),!.
+pp_hook_g1(colorlesspoints(O)):- is_points_list(O), as_grid_string(O,S), wotsq(O,Q), print(colorlesspoints(S,Q)),!.
 pp_hook_g1(vals(O)):- !, writeq(vals(O)),!.
-pp_hook_g1(localpoints(O)):- !, is_points_list(O), as_grid_string(O,S), print(localpoints(S)),!.
+pp_hook_g1(localpoints(O)):- is_points_list(O), as_grid_string(O,S), wotsq(O,Q), print(localpoints(S,Q)),!.
 pp_hook_g1(C):- compound(C), compound_name_arguments(C,F,[O]),is_points_list(O), length(O,N),N>2, as_grid_string(O,S), compound_name_arguments(CO,F,[S]), print(CO),!.
 
 pp_hook_g1(O):-  is_points_list(O),as_grid_string(O,S),write(S),!.
@@ -411,6 +416,47 @@ fch(O):- wqs1(O).
 %fch(O):- pp_no_nl(O).
 %fch(O):- print(O).
 %fch(O):- p_p_t_no_nl(O).
+
+wotsq(O,Q):- wots(Q,wqnl(O)).
+has_goals(G):- term_attvars(G,AV),AV\==[].
+has_goals(G):- term_variables(G,TV),term_singletons(G,SV),TV\==SV.
+
+writeg(Term):- ignore((\+ \+ writeg0(Term))),!.
+
+maybe_term_goals(Term,TermC,Goals):- 
+  term_attvars(Term,Attvars), Attvars\==[],!,
+  term_variables(Term,Vars),
+  include(not_in(Attvars),Vars,PlainVars),   
+  copy_term((Attvars+PlainVars+Term),(AttvarsC+PlainVarsC+TermC),Goals),
+  numbervars(PlainVarsC,10,Ten1,[singletons(true)]),
+  numbervars(AttvarsC+Goals,Ten1,_Ten,[attvar(bind),singletons(false)]).
+
+writeg0(Term):- 
+  maybe_term_goals(Term,TermC,Goals),
+  writeg0(TermC), wots(S,writeg0(Goals)), print_w_pad(2,S),!.
+writeg0(N=V):- format('~N'),nonvar(N), pp_no_nl(N),writeln(' = '), !, wots(S,writeg0(V)), print_w_pad(2,S).
+writeg0(V):- is_gridoid(V),!,print_grid(V),wots(S,(maplist(writeg1,V))), print_w_pad(2,S).
+writeg0(O):- writeg00(O).
+
+writeg00(Term):-
+  maybe_term_goals(Term,TermC,Goals),
+  writeg00(TermC), wots(S,writeg00(Goals)), print_w_pad(2,S),!.
+writeg00(N=V):- format('~N'),nonvar(N), pp_no_nl(N),writeln(' = '), !, wots(S,writeg00(V)), print_w_pad(2,S).
+writeg00(O):- compound(O),compound_name_arguments(O,F,[A]),!,wots(S,((writeq(F),write('('),writeg3(A),write(')')))), print_w_pad(1,S).
+writeg00([H|T]):- compound(H),H=(_=_), maplist(writeg0,[H|T]).
+writeg00([H|T]):- is_list(T),wots(S,((write('['),writeg2(H),maplist(writeg0,T),write(']')))), print_w_pad(1,S).
+%writeg0(Term):- \+ ground(Term),!, \+ \+ (numbervars(Term,99799,_,[singletons(true)]),
+%   subst(Term,'$VAR'('_'),'$VAR'('_____'),TermO), writeg0(TermO)).
+%writeg0(V):- \+ is_list(V),!,writeq(V),nl.
+writeg00(V):- \+ is_list(V),!,pp(V).
+writeg00(X):- wots(S,pp(X)), print_w_pad(2,S).
+
+writeg1(X):- format('~N'),writeg2(X),!,write(' '),!.
+writeg2(X):- write_term(X,[quoted(true),quote_non_ascii(true),portrayed(false),nl(false),numbervars(false)]),!.
+%writeg1(X):- format('~N'),writeg(X).
+writeg2(X):- writeq(X),!.
+writeg3(X):- is_list(X),X\==[],X=[_,_|_],!,writeg(X).
+writeg3(X):- writeg2(X).
 
 
 /*
@@ -520,7 +566,7 @@ wqs1(b(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs1(C))),color_write(S).
 wqs1(norm(C)):- writeq(norm(C)),!.
 wqs1(norm_grid(C)):- writeq(norm_grid(C)),!.
 wqs1(grid(C)):- writeq(grid(C)),!.
-wqs1(rhs(RHS)):- nl,npp_wcg(rhs(RHS)),nl.
+wqs1(rhs(RHS)):- nl,wqnl(rhs(RHS)),nl.
 %wqs1(norm_ops(C)):- writeq(norm(C)),!.
 %norm_grid
 
@@ -994,8 +1040,8 @@ show_pair_grid(TitleColor,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
 %  print_side_by_side(U1,LW,U2),
   print_side_by_side(TitleColor,print_grid(IH,IV,In),NameInU,LW,print_grid(OH,OV,Out),NameOutU),
   print_side_by_side(
-     call(describe_feature(In,[call(wqnl(NameInU+fav(PairName)))|INFO])),LW,
-    call(describe_feature(Out,[call(wqnl(NameOutU+fav(PairName)))|INFO]))),!.
+     call(describe_feature(In,[call(ppnl(NameInU+fav(PairName)))|INFO])),LW,
+    call(describe_feature(Out,[call(ppnl(NameOutU+fav(PairName)))|INFO]))),!.
 
 
 toUpperC(A,AU):- A==[],!,AU='  []  '.
@@ -1013,8 +1059,8 @@ show_pair_diff(IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
   if_t(\+ nb_current(menu_key,'i'),
   locally(nb_setval(debug_as_grid,t),
    ((is_group(In),is_group(Out))-> once(showdiff(In,Out));
-    ((ignore((is_group(In), desc(wqnl(NameInU+fav(PairName)), debug_indiv(In)))),
-      ignore((is_group(Out),desc(wqnl(NameOutU+fav(PairName)), debug_indiv(Out))))))))),!.
+    ((ignore((is_group(In), desc(ppnl(NameInU+fav(PairName)), debug_indiv(In)))),
+      ignore((is_group(Out),desc(ppnl(NameOutU+fav(PairName)), debug_indiv(Out))))))))),!.
 
 
 uses_space(C):- code_type(C,print).
@@ -1056,6 +1102,7 @@ into_ss_string(NCT,SS):- \+ callable(NCT), !, into_ss_call(wqs(NCT),SS).
 into_ss_string(LL, SS):- is_list(LL), !, into_ss_call(wqs(LL),SS).
 %into_ss_string(LL, SS):- is_list(LL), find_longest_len(LL,Len),!,SS=ss(Len,LL).
 into_ss_string(Goal,SS):-  \+ missing_arity(Goal,0), into_ss_call(Goal,SS).
+into_ss_string(Goal,SS):-  \+ missing_arity(Goal,1), call(Goal,R1), into_ss_grid(R1,SS).
 into_ss_string(IntoG,SS):- into_grid(IntoG,GR),is_grid(GR),!,into_ss_grid(GR,SS).
 into_ss_string(Goal,SS):- into_ss_call(Goal,SS).
 
@@ -1093,19 +1140,19 @@ print_w_pad(Pad,Text):- notrace(catch(text_to_string(Text,S),_,fail)), atomics_t
 call_w_pad(Pad,Goal):- wots(S,Goal), print_w_pad(Pad,S).
 print_w_pad0(Pad,S):- nl_if_needed,dash_chars(Pad,' '), write(S).
 
-print_equals(_,N,V):- \+ compound(V),wqnl(N=V).
+print_equals(_,N,V):- \+ compound(V),ppnl(N=V).
 print_equals(Grid,N,Ps):- is_object(Ps),grid_size(Grid,H,V),print_grid(H,V,N,Ps),!.
 %print_equals(Grid,N,PL):- is_group(PL), grid_size(Grid,H,V), locally(grid_nums(PL),print_list_of_points(N,H,V,[[]])).
 print_equals(_,N,G):- print_equals(N,G).
 
 
-print_equals(N,V):- \+ compound(V),wqnl(N=V).
-print_equals(N,V):- is_grid(V),!,wqnl(N),print_grid(V).
+print_equals(N,V):- \+ compound(V),ppnl(N=V).
+print_equals(N,V):- is_grid(V),!,ppnl(N),print_grid(V).
 print_equals(N,[G|L]):-
   is_grid(G),is_list(L),maplist(is_grid,L),!,
   length([G|L],Len), 
   grid_size(G,H,_),
-  wqnl(N=len(Len)),  
+  ppnl(N=len(Len)),  
   dash_chars(H,"-"),
   forall(member(E,[G|L]),(print_grid(E),dash_chars(H,"-"),nl)).
 print_equals(N,V):- better_value(V,BV)-> BV\=@=V, !,print_equals(N,BV).

@@ -183,10 +183,10 @@ debug_indiv(Atom):- atom(Atom),into_gridoid(Atom,Gridoid),pp(into_gridoid(Atom))
 
 debug_indiv(List):- is_list(List),length(List,Len),!,
   dash_chars,
-  wqnl(debug_indiv = Len),
+  ppnl(debug_indiv = Len),
   print_list_of(debug_indiv,debug_indiv_list,List),
   %max_min(Len,40,_,Min),
-  %forall(between(1,Min,N),(N=<40->(nth1(N,List,E),debug_indiv(E));wqnl(total = 40/Len))),
+  %forall(between(1,Min,N),(N=<40->(nth1(N,List,E),debug_indiv(E));ppnl(total = 40/Len))),
   dash_chars,!.
 
 
@@ -194,7 +194,7 @@ debug_indiv(List):- is_list(List),length(List,Len),!,
 debug_indiv(A):- is_point_obj(A,Color,Point),
   obj_to_oid(A,Tst,Id), i_glyph(Id,Sym),
   hv_point(H,V,Point), i_glyph(Id,Sym),
-  wqnl([' % Point: ', color_print(Color,Sym), dot, color(Color), fav1(Tst), nth(Id), loc2D(H,V)]),!. 
+  ppnl([' % Point: ', color_print(Color,Sym), dot, color(Color), fav1(Tst), nth(Id), loc2D(H,V)]),!. 
 */
 object_color_desc(PA,PenColors):- 
   pen(PA,Pen), colors_cc(PA,Colors), 
@@ -451,7 +451,7 @@ is_rule(A:-B,A:-B):-!.
 debug_indiv(Other):-
   dash_chars,
   functor(Other,F,A),
-  wqnl(other = F/A),
+  ppnl(other = F/A),
   pp(Other),
   dash_chars,!.
 
@@ -515,7 +515,7 @@ too_verbose(cenYG).
 
 debug_indiv(_,_,X,_):- too_verbose(X),!.
 debug_indiv(Obj,_,F,[A]):- is_cpoints_list(A),!,
-  vis2D(Obj,H,V), wqnl(F), 
+  vis2D(Obj,H,V), ppnl(F), 
   loc2D(Obj,OH,OV),
   EH is OH+H-1,
   EV is OV+V-1,

@@ -1781,7 +1781,7 @@ mirror_xy(CXL,CYL,CX,CY,SXQ2,SYQ2,EXQ2,EYQ2,SXCC,SYCC,EXCC,EYCC,SXQ4,SYQ4,EXQ4,E
    %sort_row_by_num_colors(G,Rows),
    %print_grid(Rows),
    nonvar(EXQ2),nonvar(EYQ2),
-   %wqnl(cx=CX+EXQ2),print_grid(EXQ2,EYQ2,G),wqnl(cy=CY+EYQ2),
+   %ppnl(cx=CX+EXQ2),print_grid(EXQ2,EYQ2,G),ppnl(cy=CY+EYQ2),
    check_mirror_xy(CX,CY,SXQ2,SYQ2,EXQ2,EYQ2,SXCC,SYCC,EXCC,EYCC,SXQ4,SYQ4,EXQ4,EYQ4).
 
 check_mirror_xy([],[],1,1,EXQ2,EYQ2,0,0,0,0,SXQ4,SYQ4,EXQ4,EYQ4):-

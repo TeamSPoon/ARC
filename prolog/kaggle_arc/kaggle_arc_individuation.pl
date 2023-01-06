@@ -162,8 +162,10 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):-
  once((must_det_ll((
  extend_obj_proplist(InC00,InC0),
  extend_obj_proplist(OutC00,OutC0),
-  maybe_fix_group(InC0,InCR),
-  maybe_fix_group(OutC0,OutCR),
+  maybe_fix_group(InC0,InCRFGBG),
+  maybe_fix_group(OutC0,OutCRFGBG),
+  include(is_fg_object,InCRFGBG,InCR),
+  include(is_fg_object,OutCRFGBG,OutCR),
   show_changes(InC0,InCR),
   show_changes(OutC0,OutCR))))),
   (InC00\=@=InCR;OutC00\=@=OutCR),!,
@@ -195,6 +197,7 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
        show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
 
      if_t(nb_current(menu_key,'i'),(clear_arc_learning,abolish(object_to_object/6),dynamic(object_to_object/6))),
+     if_t(nb_current(menu_key,'o'),(clear_arc_learning,abolish(object_to_object/6),dynamic(object_to_object/6))),
 
      if_t((menu_or_upper('i');menu_or_upper('t')),
       (         
@@ -204,10 +207,23 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
        print_list_of(show_indiv(outputs),outputs,OutC),
        show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
 
-       %if_t((true;sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)), show_safe_assumed_mapped,
+       if_t((sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)), show_safe_assumed_mapped,
      !)),     
 
-       if_t((menu_or_upper('o');menu_or_upper('u');menu_or_upper('t')),
+       if_t((menu_or_upper('o');menu_or_upper('t')),
+        (( banner_lines(orange),
+
+           %visible_order(InC,InCR),
+           if_t((true;sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)), show_safe_assumed_mapped,
+
+           %if_t((true;sub_var(tst,ID1)), show_test_associatable_groups(ROptions,ID1,InCR,GridOut)),
+
+
+        banner_lines(orange,3),!))),
+
+
+
+       if_t((menu_or_upper('u')),
         (( banner_lines(orange),
 
            %visible_order(InC,InCR),
@@ -215,8 +231,9 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
 
            %if_t((true;sub_var(tst,ID1)), show_test_associatable_groups(ROptions,ID1,InCR,GridOut)),
 
-
         banner_lines(orange,3),!))),
+
+
 
        if_t((menu_or_upper('u');menu_or_upper('s')),
         (( banner_lines(orange),
@@ -1059,7 +1076,7 @@ title_objs(Obj,Title=Grid):- is_object(Obj),object_glyph(Obj,Glyph),loc2D(Obj,X,
 title_objs(Obj,Title=Grid):- desc_title(Obj,Title),object_grid(Obj,Grid),!.
 
 print_obj_short_props(Set):- is_list(Set),!,maplist(print_obj_short_props,Set).
-print_obj_short_props(Obj):- short_indv_props(Obj,Props,_),global_grid(Obj,Grid),!,print_grid(Grid),nl_if_needed,wqnl(Props).
+print_obj_short_props(Obj):- short_indv_props(Obj,Props,_),global_grid(Obj,Grid),!,print_grid(Grid),nl_if_needed,ppnl(Props).
 
 obj_short_props(Obj,Title=Grid):- short_indv_props(Obj,Title,_),global_grid(Obj,Grid),!.
 
@@ -3695,7 +3712,7 @@ really_group_vm_priors(_VM):-!.
 really_group_vm_priors(VM):-
  must_det_ll((
   ObjsG = VM.objs,
-  %print_list_of(wqnl,ObjsG),
+  %print_list_of(ppnl,ObjsG),
   TID_GID=tid_gid(VM.id,VM.gid),
   check_tid_gid(TID_GID,VM.grid_o),
   group_prior_objs(TID_GID,ObjsG,Objs),  
@@ -3938,8 +3955,10 @@ props_object_prior(V,_):- var(V),!,fail.
 props_object_prior(Prop,_):- never_a_prior(Prop),!,fail.
 %props_object_prior(o(_,_,L),O):- props_object_prior(L,O)
 props_object_prior(o(_,_,L),L):-!.
-props_object_prior(cc(Color,_Value),rankA(cc(Color))):-!.
 props_object_prior(mass(_),rank1(mass)).
+
+
+props_object_prior(cc(Color,_Value),rankA(cc(Color))):-!.
 props_object_prior(birth(S),L):- !, fail, first_atom_value(S,L), L\= indiv(_), \+ never_a_prior(L).
 props_object_prior(iz(S),iz(L)):- !, props_object_prior(S,L).
 %props_object_prior(iz(S),L):- !, props_object_prior(S,L).
@@ -3976,7 +3995,7 @@ add_priors(_,IO,IO).
 
 add_prior(N,Lbl,Objs,ObjsWithPrior):- 
   %is_list(Objs),
-  %print_list_of(wqnl,Title,N),
+  %print_list_of(ppnl,Title,N),
   my_partition(is_prior_prop(Lbl),Objs,Lbld,Unlbl),  
   %add_prior_placeholder(Lbl,Lbld,RLbld),
   length(Lbld,LL),  

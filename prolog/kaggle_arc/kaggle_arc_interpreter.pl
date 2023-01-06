@@ -559,6 +559,9 @@ current_example_num_io(Example,Num,IO):-
    get_example_num(Example+Num),
    (peek_vm(VM)-> VM.id = (_>(_+_)*IO) ; IO=io_unk).
 
+into_obj(G,O):- var(G),var(O),!,enum_object(O),G=O.
+into_obj(G,O):- atom(G),oid_to_obj(G,O),!.
+into_obj(G,O):- atom(G),g2o(G,O),!.
 into_obj(G,O):- is_object(G),!,G=O.
 into_obj(G,O):- is_grid(G),!,individuate(whole,G,Objs),last(Objs,O),!.
 into_obj(G,O):- no_repeats(O,known_obj0(G,O))*->true; (into_grid(G,GG),!,into_obj(GG,O)),!.
@@ -606,11 +609,13 @@ g_2_o(_,_,_):- fail.
 
 %set_glyph_to_object(G,O):- ignore(luser_linkval(G,O)),(get_current_test(TestID),my_asserta_if_new(g_2_o(TestID,G,O))).
 
+g2o(G,O):- var(G), !, oid_glyph_object(_,G,O).
 g2o(G,O):- g2o0(G,O),
   once(if_t(get_current_test(TestID),
     (O=obj(T),member(giz(testid(TestID)),T)))),
   nop(once(if_t((get_example_num(ExampleNum),ground(ExampleNum)),
-    (O=obj(T),member(giz(example_num(ExampleNum)),T))))).
+    (O=obj(T),member(giz(example_num(ExampleNum)),T))))),!.
+g2o(G,O):- g2o0(G,O).
 
 g2o0(G,O):- var(G), !, oid_glyph_object(_,G,O).
 g2o0(G,O):- integer(G),!,int2glyph(G,C),!,g2o(C,O),!.

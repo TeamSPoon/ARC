@@ -249,7 +249,7 @@ check_len(_).
 %must_det_ll(G):- !, call(G).
 %must_det_ll(X):- !,must_not_error(X).
 
-wno_must(G):- locally(nb_setval(no_must_det_ll,t),locally(nb_setval(cant_rrtrace,t),must_det_ll(G))).
+wno_must(G):- locally(nb_setval(no_must_det_ll,t),locally(nb_setval(cant_rrtrace,t),call(G))).
 
 
 must_det_ll(X):- nb_current(no_must_det_ll,t),!,call(X).

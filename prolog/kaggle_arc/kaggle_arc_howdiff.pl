@@ -212,12 +212,12 @@ obj_grp_atomslist(IO,A,PA,Atoms):-
   assert_in_testid(object_atomslist(IO,A,PA,Atoms)).
 
 dref_match(Var,_):- var(Var),wdmsg(dref_match(Var)),!,fail.
-dref_match(rhs(Match),PA):- !, dref_match(Match,PA).
-dref_match(lhs(Match),PA):- !, dref_match(Match,PA).
-dref_match([obj(Match)],PA):- !, dref_match(Match,PA).
-dref_match([Match],PA):- !, dref_match(Match,PA).
-dref_match(object_to_object(_TestID,_Name,Match,_Create,_DebugInfo,_),PA):- !, dref_match(Match,PA).
-dref_match(obj(Match),PA):- !, dref_match(Match,PA).
+dref_match(rhs(LHS),PA):- !, dref_match(LHS,PA).
+dref_match(lhs(LHS),PA):- !, dref_match(LHS,PA).
+dref_match([obj(LHS)],PA):- !, dref_match(LHS,PA).
+dref_match([LHS],PA):- !, dref_match(LHS,PA).
+dref_match(object_to_object(_TestID,_Name,LHS,_Create,_DebugInfo,_),PA):- !, dref_match(LHS,PA).
+dref_match(obj(LHS),PA):- !, dref_match(LHS,PA).
 dref_match(List,PA):- is_list(List), flatten(List,ListF),List\=@=ListF,!,dref_match(ListF,PA).
 dref_match(PA,PA).
 
@@ -1458,7 +1458,7 @@ simplify_objs(F,F).
 
 simplify_objs_l(obj(I),O):- is_list(I),!,simplify_objs_l(I,O).
 simplify_objs_l(I,O):- include(compound,I,M1),sort_obj_props(M1,M2),maplist(simplify_objs_e,M2,O).
-%simplify_objs(iz(g(_)),iz(g(_))).
+%simplify_objs(giz(g(_)),giz(g(_))).
 %simplify_objs(Comp,F):- compound(Comp),functor(Comp,F,_),uncomparable(group,Comp),!.
 
 

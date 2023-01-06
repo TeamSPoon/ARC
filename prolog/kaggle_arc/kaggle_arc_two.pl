@@ -283,7 +283,7 @@ do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
           (Errors==0 -> 
              arcdbg_info(green,pass(Why,TestID,ExampleNum,SolutionProgram))
              ; (banner_lines(red), arcdbg(fail(Why,Errors,TestID,ExampleNum,SolutionProgram)),
-                test_info(TestID,InfoF),wqnl(fav(TestID>ExampleNum,InfoF)),
+                test_info(TestID,InfoF),ppnl(fav(TestID>ExampleNum,InfoF)),
                 banner_lines(red)))))
 
      

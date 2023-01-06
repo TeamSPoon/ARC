@@ -96,7 +96,10 @@ add_prop_with_count(O,N,V):- my_assertion(is_list(V)),add_prop(O,N,V),
 
 
 :- style_check(+singleton).
-make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):- 
+make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):- 
+ testid_name_num_io(GID0,TestID,Example,Num,IO),
+ testid_name_num_io_gid(TestID,Example,Num,IO,GIDR),
+ GID0=GID,
  physical_points(GPoints0,GPoints),
  my_assertion(is_list([overrides|Overrides0])),
  my_assertion(is_cpoints_list(GPoints)),
@@ -181,7 +184,6 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):-
   shape_id(ShapeNormLPoints,NormShapeID),
   % NormShapeID=ShapeID,
   shape_id(ShapePoints,ShapeID),
-
   ((fail,select(oid(OID),Overrides,NewOverrides),
      atomic_list_concat(['o',GlyphOMem,IvOMem|MustGID],'_',OID),
      atomic_list_concat(MustGID,'_',GIDOMem),GIDOMem==GID,IvOMem=Iv,GlyphOMem=Glyph,OIDOMem=OID) 
@@ -190,12 +192,12 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):-
          %PenColors = [cc(C1,_)|_],new_obj_points(GID,obj,C1,GPoints,Len,OID),
          lpoints_to_iv_info(ShapePoints,LocX,LocY,PenColors,RotG,Iv), 
   int2glyph(Iv,Glyph), % object_glyph(Obj,Glyph),       
-         atomic_list_concat(['o',Glyph,Iv,GID],'_',OID))),
+         atomic_list_concat(['o',Glyph,Iv,GIDR],'_',OID))),
 
   
   %grav_rot(Grid,NormOps,NormGrid),
   maplist(ignore,[GIDOMem==GID,IvOMem=Iv,GlyphOMem=Glyph,OIDOMem=OID]),
-  testid_name_num_io(GID,TestID,Example,Num,IO),
+  
   flatten(
   [ PropL,
     colorlesspoints(ShapePoints),    
@@ -236,9 +238,11 @@ make_indiv_object_s(GID,GridH,GridV,Overrides0,GPoints0,ObjO):-
     %obj_to_oid(ID,Iv),
     
     kept(giz(g(IO))), kept(giz(testid(TestID))), kept(giz(example_num(Example+Num))),
+    kept(giz(testid_example_io(TestID>(Example+Num)*IO))),
+    
     
     %unkept(giz(gid_omem(GIDOMem))), unkept(giz(oid_omem(OIDOMem))), unkept(iv_omem(IvOMem)),giz(glyph_omem(GlyphOMem)),
-    kept(oid(OID)),kept(giz(iv(Iv))),kept(giz(glyph(Glyph))), kept(giz(gid(GID))),
+    kept(oid(OID)),kept(giz(iv(Iv))),kept(giz(glyph(Glyph))),kept(giz(gid(GIDR))),kept(giz(gido(GID))),
     
 
     globalpoints(GPoints),
@@ -267,6 +271,7 @@ offset_point(OH,OV,C-Point,C-LPoint):- is_nc_point(Point), hv_point(H,V,Point),H
 
 obj_example_num(O,EN):- indv_props(O,giz(example_num(EN))).
 obj_testid(O,EN):- indv_props(O,giz(testid(EN))).
+obj_test_example_io(O,TestIDEN_IO):- indv_props(O,giz(testid_example_io(TestIDEN_IO))).
 
 grid_to_individual(GridIn,Obj):- 
   %my_assertion(is_grid(Grid)),!,
