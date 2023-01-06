@@ -874,13 +874,12 @@ classify_rules_2(PAIR,In,ExpectedOut,Rules,PairsUsed,Keeper,[PAIR|Rejected],Unkn
   PAIR = result(I,Rule,_,GPs,Matches),
   \+ no_violation(GPs,ExpectedOut),!,
   must_det_ll((
-  once((
+  nop((
   banner_lines(red,3),
   print_ss([in=I,makes=GPs,violates=ExpectedOut]),
   npp_wcg(in(violates)=I),
-  npp_wcg(rule(violates)=Rule))),
-  list_to_set(Matches,MatchesSet),
-  npp_wcg(matches(violates)=MatchesSet),
+  npp_wcg(rule(violates)=Rule),
+  list_to_set(Matches,MatchesSet),npp_wcg(matches(violates)=MatchesSet))),
   classify_rules_1(In,ExpectedOut,Rules,[PAIR|PairsUsed],Keeper,Rejected,Unknown))).
 classify_rules_2(PAIR,In,ExpectedOut,Rules,PairsUsed,[PAIR|Keeper],Rejected,Unknown):- 
   must_det_ll((
@@ -947,19 +946,22 @@ olg_globalpoints(Matches,_Obj,L,GP):-
    combine_props(L,Matches,LL),!,   
    member_prop(norm_grid(NG),LL), member_prop(norm_ops(Ops),LL),
    maplist(writeln,[unreduce_grid=NG,ops=Ops]),
-   can_do_ops(NG,Ops),
-   if_t(once(var(NG);var(Ops)), npp_wcg(olg_globalpoints(LL))),
+   BAD = once(var(NG);var(Ops); \+ can_do_ops(NG,Ops)))),
+   if_t(BAD, npp_wcg(olg_globalpoints(LL))),
+   \+ ( BAD ),
+   unreduce_grid(NG,Ops,RR),!,
    must_det_ll((
-   unreduce_grid(NG,Ops,RR),
    localpoints(RR,LP),   
    get_nw_absAt(LL,X,Y),
-   offset_points(X,Y,LP,GP))))),!.
+   offset_points(X,Y,LP,GP))).
    %olg_globalpoints(Matches,Obj,[localpoints(LP)|L],GP).
 
 combine_props(L,Matches,LL):- flatten([L,Matches],LL).
 member_prop(Prop,LL):- member(Prop,LL),arg(1,Prop,NV),nonvar(NV).
 member_prop(Prop,LL):- sub_term(E,LL),compound(E),E=Prop,arg(1,Prop,NV),nonvar(NV),!.
 member_prop(Prop,LL):- member(Prop,LL).
+
+can_do_ops(NG,Ops):- wno_must(unreduce_grid(NG,Ops,G)),is_grid(G).
 
 get_nw_absAt(L,X,Y):- make_loc2D(L,X,Y).
 get_nw_absAt(L,X,Y):- make_center2D(L,CX,CY),number(CX),number(CY), make_vis2D(L,SX,SY), X is CX+floor(SX/2),Y is CY+floor(SY/2).

@@ -16,9 +16,9 @@ unreduce_grid(gridOpFn(GridR,OP),GridO):- !, unreduce_grid(GridR,OP,GridO).
 unreduce_grid(GridO,GridO).
 
 :- decl_pt(unreduce_grid(grid,list,grid)).
+unreduce_grid(G,[],G):-!.
 unreduce_grid(G,OP,GO):- maybe_into_grid_io(G,GG),!,unreduce_grid(GG,OP,GO).
 unreduce_grid(G,[OP|List],GO):- !, unreduce_grid(G,OP,M),unreduce_grid(M,List,GO).
-unreduce_grid(G,[],G):-!.
 unreduce_grid(A^B,OP,AO^BO):-!, unreduce_grid(A,OP,AO),unreduce_grid(B,OP,BO).
 unreduce_grid(G,OP,GO):- must_grid_call(OP,G,GO).
 
@@ -175,9 +175,14 @@ reduce_1op(_Type,Len1,Half1,PassNo,GridIn,[],Out):- GridIn = [[C1],[C1]],GridIn 
 %reduce_1op(_Type,Len1,Half1,PassNo,GridIn, make_solid_object(Rect,H,V),OUT):-  GridIn = [Row1|GridR], maplist(=@=(Row1),GridR),
 %  Row1= [C1|Row], maplist(=@=(C1),Row), grid_size(GridIn,H,V), once(H > 1 ; V > 1),!,
 %    (H==V->(Rect=square,OUT=[[C1]]);(H>V->(Rect=rect,OUT=[[C1,C1]]);(Rect=rect,OUT=[[C1],[C1]]))).
-reduce_1op(_Type,Len1,Half1,PassNo,GridIn, make_solid_object(Rect,H,V),OUT):-  GridIn = [Row1|GridR], maplist(=@=(Row1),GridR),
+reduce_1op(_Type,Len1,Half1,PassNo,GridIn, make_solid_object(Rect,H,V),OUT):-  fail, GridIn = [Row1|GridR], maplist(=@=(Row1),GridR),
   Row1= [C1|Row], maplist(=@=(C1),Row), grid_size(GridIn,H,V), once(H > 1 ; V > 1),!,
     (H==V->(Rect=square,OUT=[[C1]]);(H>V->(Rect=rect,OUT=[[C1,C1]]);(Rect=rect,OUT=[[C1],[C1]]))).
+
+reduce_1op(_Type,Len1,Half1,PassNo,GridIn, make_solid_object(Rect,H,V),OUT):-  GridIn = [Row1|GridR], maplist(=@=(Row1),GridR),
+  Row1= [C1|Row], maplist(=@=(C1),Row), grid_size(GridIn,H,V), once(H > 1 ; V > 1),!,
+    (H==V->(Rect=square,OUT=[[C1]]);(H>V->(Rect=rect,OUT=[[C1]]);(Rect=rect,OUT=[[C1]]))).
+
 
 reduce_1op(_Type,Half,Len,_,[Row1|Grid],copy_row_ntimes(1,Times),[Row1]):- 
   maplist(=@=(Row1),Grid),length([Row1|Grid],Times),Times>1.
