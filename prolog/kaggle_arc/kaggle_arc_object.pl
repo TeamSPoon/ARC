@@ -778,10 +778,10 @@ physical_points(GPoints,Points):- sub_var(wbg,GPoints),!,
 physical_points(GPoints,Points):- sub_var(wfg,GPoints),!,
    GPoints=Points,!.
 physical_points(GPoints,Points):- 
-   my_partition(sub_var(bg),GPoints,BGPoints,OPoints),
+   my_partition(sub_var('$VAR'('_')),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
 physical_points(GPoints,Points):- 
-   my_partition(sub_var('$VAR'('_')),GPoints,BGPoints,OPoints),
+   my_partition(sub_var(bg),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
 physical_points(GPoints,Points):- 
    my_partition(sub_var(fg),GPoints,FGPoints,_),
@@ -1411,10 +1411,11 @@ cell_syms(IBGC,Cell-_,Sym):- cell_syms(IBGC,Cell,Sym),!.
 object_global_ngrid(Obj,GNGrid):- global_grid(Obj,Grid), into_ngrid(Grid,GNGrid).
 
 global_grid(I,G):- is_grid(I),!,G=I.
-global_grid(ObjRef,List):- \+ is_object(ObjRef), into_obj(ObjRef,Obj),!,global_grid(Obj,List).
+global_grid(ObjRef,List):- \+ is_object(ObjRef), atomic(ObjRef),into_obj(ObjRef,Obj),!,global_grid(Obj,List).
+%global_grid(Group,List):- is_group(Group),globalpoints(Group,Points),!,
 global_grid(I,G):- must_det_ll((call((grid_size(I,H,V),globalpoints_maybe_bg(I,LP),points_to_grid(H,V,LP,G))))),!.
-global_grid(I,G):- object_grid(I,G),!.
-%object_grid(I,G):- globalpoints(I,GP),into_grid(GP,G),!.
+global_grid(I,G):- is_object(I), object_grid(I,G),!.
+global_grid(I,G):- globalpoints(I,GP),into_grid(GP,G),!.
 
 locG_term(I,loc2G(X,Y)):- loc2G(I,X,Y),!.
 loc2G(Grid,H,V):- is_grid(Grid),!,other_grid_size(Grid,H,V).
@@ -2008,7 +2009,7 @@ rot_p2(rollD). %rot_p2(rollDR).
 
 
 :- dynamic(individuated_cache/3).
-:- retractall(individuated_cache(_,_,_)).
+:- retractall(individuated_cache(_,_,_,_)).
 :- dynamic(is_why_grouped_g/4).
 :- retractall(is_why_grouped_g(_,_,_,_)).
 

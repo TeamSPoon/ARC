@@ -15,7 +15,9 @@
 :- ensure_loaded(kaggle_arc_typecheck).
 :- ensure_loaded(kaggle_arc_interpreter).
 :- ensure_loaded(kaggle_arc_test_favs).
+
 :- ensure_loaded(kaggle_arc_test_loader).
+
 :- ensure_loaded(kaggle_arc_domaintypes).
 :- ensure_loaded(kaggle_arc_test_iface).
 :- ensure_loaded(kaggle_arc_explaination).
@@ -27,7 +29,6 @@
 :- ensure_loaded(kaggle_arc_intruder).
 :- ensure_loaded(kaggle_arc_test_cache).
 :- ensure_loaded(kaggle_arc_individuation).
-
 
 :- ensure_loaded(kaggle_arc_object).
 :- ensure_loaded(kaggle_arc_boards).

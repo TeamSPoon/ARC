@@ -518,6 +518,7 @@ is_all_same(C,List):- maplist(=(C),List).
 :- discontiguous found_box/19. 
 
 is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,subgrid(IX,IY,SX,SY)):- 
+  \+ arc_common_property(containsAll(_)),
   %this_grid_is_multiple_of_other(CACHE),
  % TGX=OGX,TGY=OGY, % searching for somethning the size of the other grid
   0 is TGX rem SX, 
@@ -536,6 +537,7 @@ is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,subgrid(IX,IY,SX,SY)):-
 
 % is_sub_grid_object(FX,FY,H,V,TGX,TGY,OGX,OGY,Type)
 is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,subgrid(IX,IY,SX,SY)):- 
+  \+ arc_common_property(containsAll(_)),
   this_grid_is_multiple_of_other(CACHE),
   SX=OGX,SY=OGY, % searching for somethning the size of the other grid
 

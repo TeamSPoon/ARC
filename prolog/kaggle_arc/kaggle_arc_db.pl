@@ -132,7 +132,7 @@ ensure_cmem(GID):-
    oid_to_gridoid(GID,Grid),
    assert_grid_cmem(GID,SH,SV,Grid).
 
-
+assert_grid_cmem(GID,SH,SV,Grid):- var(Grid),!,ignore((ground(SH+SV),assert_if_new(is_grid_size(GID,SH,SV)))).
 assert_grid_cmem(ID,SH,SV,Grid):-
    my_assertion(is_grid(Grid)),
    forall(between(1,SH,H),
@@ -767,7 +767,7 @@ do_texture_hv(GID,HV1):-
 
 ensure_texture(GID):- \+ cmem(GID,_,_), ensure_cmem(GID), fail.
 
-ensure_texture(GID):- \+ cmem(GID,_,_), dmsg(cant_ensure_cmem(GID)),!.
+ensure_texture(GID):- \+ cmem(GID,_,_), dmsg(cant_ensure_cmem(GID)),!,break.
 
 %ensure_texture(GID):- \+ ( cmem(GID,HV,_), (( \+ smem(GID,HV,_) ); \+ nmem(GID,HV,_); \+ dmem(GID,HV,_,_,_,_) )),!,
 %  dmsg(cant_ensure_texture(GID)),!. % 

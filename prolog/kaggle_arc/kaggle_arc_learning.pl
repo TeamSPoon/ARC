@@ -60,8 +60,8 @@ s_p_g(G,_):- term_is_ansi(G),!,write(G),!.
 orpt(G):- sub_term(E,G),compound(E),E=debug_var(N,V),!,subst(G,E,was_debug_var(N,V),GG),subst(GG,V,'$VAR'(N),GGG),orpt(GGG).
 orpt(G):- !, \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N'), ignore(wcg(orange,G)))).
 
-wcg(_,G):- pp_wcg(G),!.
-wcg(O,G):- pp_safe(O,(call(pp(G)))),!.
+%wcg(_,G):- pp_wcg(G),!.
+wcg(O,G):- pp_safe(O,(call(pp_wcg(G)))),!.
 
 
 
@@ -163,6 +163,8 @@ must_use(/*b*/iz(indiv(i_diag))).
 
 must_use(link(NotSees,_)):- NotSees\=sees(_).
 must_use(link(_,_,_)).
+must_use(norm_grid(_)).
+must_use(norm_ops(_)).
 %must_use(/*b*/iz(Atom)):- !, atom(Atom).
 must_use(shape(Atom)):- !, atom(Atom).
 must_use(iz(X)):- must_use(X).
@@ -178,8 +180,8 @@ for_creating1(grid_props). %for_creating1(cc).
 for_creating1(pen).  for_creating1(sid).
 for_creating1(sid(_)).
 for_creating1(rot2L(_)).
-for_creating1(norm_grid(_)).
 for_creating1(norm_ops(_)).
+for_creating1(norm_grid(_)).
 for_creating1(thr(_)).
 for_creating1(loc2G).
 for_creating1(center2G).
@@ -310,12 +312,19 @@ confirm_train_io_from_hint(TestID,ExampleNum):-
 learn_rule_o(out_out,_InVM,_OutVM):- !.
 learn_rule_o(out_in,_InVM,_OutVM):- !.
 learn_rule_o(in_in,_InVM,_OutVM):- !.
-learn_rule_o(Mode,InVM,OutVM):- % is_map(InVM),is_map(OutVM),!,
+
+learn_rule_o(Mode,InVM,OutVM):- is_map(InVM),is_map(OutVM),!,
  in_out = Mode,
  maplist(must_det_ll,[
   InGrid = InVM.grid_o, InObjsOriginal = InVM.objs,  
   OutGrid = OutVM.grid_o, OutObjsOriginal = OutVM.objs,
   ignore(InVM.grid_target = OutGrid),
+  /*
+  learn_rule_o(Mode,InObjsOriginal,OutObjsOriginal).
+
+learn_rule_o(Mode,InObjsOriginal,OutObjsOriginal):-
+  into_grid(InObjsOriginal,InGrid),
+  into_grid(OutObjsOriginal,OutGrid),*/
   maplist(simplify_for_matching(lhs),InObjsOriginal,InObjs),
   maplist(simplify_for_matching(rhs),OutObjsOriginal,OutObjs),
  % OutObjsOriginal=OutObjs,
@@ -406,15 +415,7 @@ show_proof(In,ExpectedOut):-
 %learn_rule_o(_Mode,G,_):- is_list(G), is_group(G), learn_about_group(G), fail.
 %learn_rule_o(_Mode,_,G):- is_list(G), is_group(G), learn_about_group(G), fail.
 
-/*
-learn_rule_in_out(Depth,Mode,In,Out):- is_list(In), is_list(Out), 
-  \+ is_grid(In), \+ is_grid(Out),
-  \+ is_group(In), \+ is_group(Out),
-  forall(select_some(I,In,MoreIn),
-   forall(select_some(O,Out,MoreOut),
-    (learn_rule_in_out(Depth,Mode,MoreIn,MoreOut),
-     learn_rule_in_out(Depth,Mode,I,O)))).
-*/
+
 
 %learn_rule_in_out(Depth,out_out,I,O):- !, ignore(( is_grid(O), save_learnt_rule(oout_associatable(I,O)))).
 
@@ -498,7 +499,6 @@ aliased_valued('$VAR'(_)). aliased_valued('VAR'(_)). aliased_valued('$'(_)).
 is_all_original_value(Var):- nonvar(Var), \+ non_original_value(Var).
 non_original_value(Var):- sub_term(E,Var), compound(E), E='$VAR'(_). 
 
-:- discontiguous(learn_rule_in_out/4).
 
 
 :- dynamic(doing_map/4).
@@ -506,6 +506,16 @@ non_original_value(Var):- sub_term(E,Var), compound(E), E='$VAR'(_).
 learn_rule_i_o(Mode,In,Out):- 
   forall(learn_rule_in_out(Mode,In,Out),true).
 
+:- discontiguous(learn_rule_in_out/4).
+/*
+learn_rule_in_out(Depth,Mode,In,Out):- is_list(In), is_list(Out), 
+  \+ is_grid(In), \+ is_grid(Out),
+  \+ is_group(In), \+ is_group(Out),
+  forall(select_some(I,In,MoreIn),
+   forall(select_some(O,Out,MoreOut),
+    (learn_rule_in_out(Depth,Mode,MoreIn,MoreOut),
+     learn_rule_in_out(Depth,Mode,I,O)))).
+*/
 %learn_rule_in_out(_,in_out,In,Out):- is_list(In),is_list(Out),
 %  (learn_rule_in_out_objects(in_out,In,Out), deterministic(TF), true), (TF==true -> !; true).
 learn_rule_in_out(Mode,In,Out):- 
@@ -724,10 +734,10 @@ fix_group(AG00,AG):-
   maybe_exclude_whole(AG1,AG2),
  filter_redundant(AG2,AG).
  
-learn_group_mapping1(AG00,BG00):- 
+learn_group_mapping1(AG00,BG00):-   
   fix_groups(AG00,BG00,AG,BG),
   %forall(member(A,AG), forall(member(B,BG), save_rule2(in,"each I<-->O",A,B))),
-  save_rule2(in,"all I<-->O",AG,BG),!,
+  save_rule2(in,"all I<-->O",AG,BG),!,  
   other_io(IO,OI),
 
   maplist(obj_grp_atoms(IO),AG,_AGG),
@@ -749,13 +759,14 @@ learn_group_mapping(AG00,BG00):-
   %ignore(learn_group_mapping1(AG00,BG00)),
   fix_groups(AG00,BG00,AG,BG),
  
- 
+ learn_rule_i_o(in_out,AG00,BG00),
+
  must_det_ll((  
   other_io(IO,OI),
 
   maplist(obj_grp_atoms(IO),AG,_AGG),
 
-  maplist(obj_grp_atoms(OI),BG,_BGG),
+  maplist(obj_grp_atoms(OI),BG,_BGG))),
 
   forall(member(B,BG),
     ((find_prox_mappings(B,OI,AG,Objs),
@@ -765,6 +776,7 @@ learn_group_mapping(AG00,BG00):-
     ((find_prox_mappings(A,IO,BG,Objs),
      assert_doing_map(IO,A,Objs)))),
 
+  must_det_ll((  
   abolish(showed_point_mapping/3),dynamic(showed_point_mapping/3),
 
   learn_group_mapping_p3(IO,OI,AG,BG))).
@@ -772,7 +784,7 @@ learn_group_mapping(AG00,BG00):-
 learn_group_mapping_p3(IO,OI,AG,BG):- !,
  locally(nb_setval(rule_cannot_add_more_objects,t),
   (nb_linkval(in_out_pair,in_out_pair(AG,BG,shared)),
-   must_det_ll((  
+   ((  
     length(BG,BL),length(AG,AL),
     forall(nth1(BB,BG,B),
        locally(nb_setval(rule_note,rule(AA/AL,BB/BL)),
@@ -965,7 +977,8 @@ olg_globalpoints(_Matches,_Obj,L,GP):-
 olg_globalpoints(Matches,_Obj,L,GP):-
  must_det_ll((
    combine_props(L,Matches,LL),!,   
-   member_prop(norm_grid(NG),LL), member_prop(norm_ops(Ops),LL),
+   member_prop(norm_grid(NG),LL), 
+   member_prop(norm_ops(Ops),LL),
    maplist(writeln,[unreduce_grid=NG,ops=Ops]),
    BAD = once(var(NG);var(Ops); \+ can_do_ops(NG,Ops)))),
    if_t(BAD, wqnl(olg_globalpoints(LL))),!,
@@ -1122,15 +1135,14 @@ save_rule1(in,_TITLE,AL,BL):- fail,
 
 save_rule1(IO,TITLE,A,B):- save_rule2(IO,TITLE,A,B),!.
 
-  
-
+ip_op_debug_info(IP,OP,[LOCK]):- global_grid(IP,IPO),global_grid(OP,OPO),LOCK=print_ss([lhs=IPO,rhs=OPO]).
 
 save_rule2(_GID,_TITLE,IP,OP):- 
- debugInfo2(IP,OP)=LOCK,
- object_to_object(_,_,_,_,_,[LOCK]),!.
+ ip_op_debug_info(IP,OP,LOCK),
+ object_to_object(_,_,_,_,_,LOCK),!.
 
 save_rule2(GID,TITLE,IP,OP):- 
- debugInfo2(IP,OP)=LOCK,
+ ip_op_debug_info(IP,OP,LOCK),
  if_t(once(true;is_fg_object(IP);is_fg_object(OP)),
  (must_det_ll((
  assert_showed_mapping(IP,OP),
@@ -1139,7 +1151,7 @@ save_rule2(GID,TITLE,IP,OP):-
  arrange_shared(NewShared,NewSharedS),
  save_rule3(GID,TITLE,IP,OP),
  ((nb_current(rule_note,RN);RN=rule_note), pp_wcg(RN)),
- save_learnt_rule(object_to_object(TITLE,lhs(III),rhs(OOO),NewSharedS,[LOCK]),oneTwo,twoOne))))).
+ save_learnt_rule(object_to_object(TITLE,lhs(III),rhs(OOO),NewSharedS,LOCK),oneTwo,twoOne))))).
 
 save_rule3(GID,TITLE,IP,OP):-
   print_rule_grids(GID,TITLE,IP,OP).
@@ -1150,9 +1162,9 @@ skip_rule(GID,TITLE,IP,OP):-
 print_rule_grids(GID,TITLE,IP,OP):- 
  must_det_ll((
  g_display(IP,IIP), g_display(OP,OOP), 
- maplist(append_term(=('IN'(TITLE,GID))),IIP,INS), maplist(append_term(=('OUT'(TITLE,GID))),OOP,OUTS), 
- append(INS,OUTS,ALL),
- print_ss(ALL))).
+ %maplist(append_term(=('IN'(TITLE,GID))),IIP,INS), maplist(append_term(=('OUT'(TITLE,GID))),OOP,OUTS), 
+ print_ss('IN'(TITLE,GID)=IIP),
+ print_ss('OUT'(TITLE,GID)=OOP))).
 
 omit_in_rules(_,giz(_)).
 omit_in_rules(lhs,P):- not_for_matching(lhs,_,P).
@@ -1445,15 +1457,14 @@ transfer_props(Type,I,O):- transfer_prop(Type,I), transfer_prop(Type,O), make_un
 transfer_props(Type,I,O):- transfer_prop(Type,I), transfer_prop(Type,O), \+ make_unifier(I,O).
 
 % norm_ops([...])
-make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- F1=norm_ops, 
+make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- fail, F1=norm_ops, 
   I=..[F1,R1],
   O=..[F1,R2],
   select(I,II,I_I_I),
   select(O,OO,O_O_O),
   \+ no_process(O), \+ no_process(I),
   R1=@=R2,
-  is_original_value(R1),
-  is_original_value(R2),  
+  is_original_value(R1), is_original_value(R2),  
   (R1=R2),
   NewI=..[F1,RR1],gen_subst([F1,'NORM1'],RR1), 
   NewO=..[F1,RR2],gen_subst([F1,'NORM2'],RR2), 
@@ -1814,6 +1825,7 @@ saveable_test_info(TestID,InfoSet):-
 
 
 assertz_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,assertz_if_new(TestIDGoal).
+asserta_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,asserta_if_new(TestIDGoal).
 assert_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,assert_if_new(TestIDGoal).
 call_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,call(TestIDGoal).
 retractall_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),retractall(TestIDGoal).
@@ -1991,16 +2003,16 @@ need_object(B):-
   
 
 show_safe_assumed_mapped:-
+  pp_wcg(show_safe_assumed_mapped),
  findall(sam(Why,AA,BB),(safe_assumed_mapped(Why,A,B),io_order(A,B,AA,BB)),SAMS),
  maplist(arg(2),SAMS,AS),list_to_set(AS,ASS),
- maplist(arg(3),SAMS,BS),list_to_set(BS,BSS),
- pp_wcg(show_safe_assumed_mapped),
+ maplist(arg(3),SAMS,BS),list_to_set(BS,BSS), 
  filter_redundant(ASS,ASSS),
  filter_redundant(BSS,BSSS),!,
  forall( (member(A,ASSS),member(B,BSSS)),
    (findall(Why,member(sam(Why,A,B),SAMS),WHYS),  
     (ignore((
-            \+  is_bg_object(A), \+ is_bg_object(B),
+           % \+  is_bg_object(A), \+ is_bg_object(B),
       (WHYS==[]-> true; (sformat(SWHYS,'~w',[WHYS]),g_display(A,AA),g_display(B,BB),dash_chars,print_ss(SWHYS,AA,BB)))))))),
  dash_chars.
 
@@ -2024,7 +2036,7 @@ can_pair(A,B):-
   once(is_fg_object(A);is_fg_object(B)), \+ cant_pair(A,B).
 
 safe_assumed_mapped(o_i,A,B):-  doing_map_list(out,B,[A|_]),can_pair(A,B).
-safe_assumed_mapped(two_way_sc,A,B):- doing_map_sc(out,B,A),doing_map_sc(in,A,B),can_pair(A,B).
+%safe_assumed_mapped(two_way_sc,A,B):- doing_map_sc(out,B,A),doing_map_sc(in,A,B),can_pair(A,B).
 %doing_map_list(in,A,[B|_]),
 safe_assumed_mapped(only_ness,A,B):- gather_assumed_mapped(A,B), \+ (gather_assumed_mapped(A,C),B\==C),can_pair(A,B).
 
@@ -2063,9 +2075,9 @@ use_test_associatable_obj(In,Sol):-
          print_side_by_side((in<-out),In,F2))),
   
    ignore(Sol=F1),
-   ignore(Sol=F2))),fail.
+   ignore(Sol=F2))).
 
-use_test_associatable_obj(obj(O1),Sol):- 
+use_test_associatable_obj(In,Sol):- In = obj(O1),
   wno_must(try_each_using_training([obj(O1)],_ExpectedOut,Keepers,OurOut)),
   o_globalpoints(OurOut,Sol1),
   o_globalpoints(Keepers,Sol2),

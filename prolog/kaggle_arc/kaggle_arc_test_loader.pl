@@ -33,7 +33,8 @@ mask_to_fullnames(Mask,FullNames):-
 :- export(load_json_files/3).
 load_json_files(SuiteX,F,Mask):- 
   asserta_if_new(dir_test_suite_name(SuiteX)),
-  locally(t_l:local_test_props([test_suite=SuiteX,loadmask=Mask]),load_json_file(F,Mask)).
+  locally(t_l:local_test_props([test_suite=SuiteX,loadmask=Mask]),
+     load_json_file(F,Mask)).
 
 /*:- export(load_json_files/2).
 load_json_files(F,Mask):- 
@@ -45,14 +46,33 @@ no_uscore(UBaseName,BaseName):-
   atomic_list_concat(List,'_',UBaseName),
   atomic_list_concat(List,'-',BaseName).
 
+/*
+expand_to_abs_file_name_list(FName,ABSFullNames):- 
+  \+ exists_file(FName), expand_file_name(FName,FullNames),FullNames\=@=[FName],
+  maplist(afn_maybe,FullNames,ABSFullNames),
+  last(ABSFullNames,Exist),
+  exists_file(Exist),!.
+afn_maybe(A,A).
+load_json_file(F, FName):-  pp(load_json_file(F)=FName),fail.
 load_json_file(F, FName):- is_list(FName),!,maplist(load_json_file(F), FName).
-load_json_file(F, FName):- \+ exists_file(FName), expand_file_name(FName,FullNames),last(FullNames,Exist),exists_file(Exist),!,load_json_file(F, FullNames).
-load_json_file(F, FName):- exists_file(FName),\+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\==ABSName,!,load_json_file(F, ABSName).
-load_json_file(F, FName):- absolute_file_name(FName,ABSName),FName\==ABSName,!,load_json_file(F, ABSName).
-load_json_file(F, FullName):- 
+load_json_file(F, FName):- \+ exists_file(FName), !, expand_to_abs_file_name_list(FName,FullNames),load_json_file(F, FullNames).
+%load_json_file(F, FName):- exists_file(FName),\+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\==ABSName,!,load_json_file_abs(F, ABSName).
+load_json_file(F, FName):- \+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\=@=ABSName,!,load_json_file_abs(F, ABSName).
+load_json_file(F, FName):- load_json_file_abs(F, FName),!.
+*/
+%load_json_file(F, FName):-  pp(load_json_file(F)=FName),fail.
+load_json_file(F, FName):- is_list(FName),!,maplist(load_json_file(F), FName).
+load_json_file(F, FName):- \+ exists_file(FName), expand_file_name(FName,FullNames),FullNames\=@=[FName],last(FullNames,Exist),exists_file(Exist),!,load_json_file(F, FullNames).
+%load_json_file(F, FName):- exists_file(FName),\+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\==ABSName,!,load_json_file2(F, ABSName).
+load_json_file(F, FName):- \+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\=@=ABSName,!,load_json_file2(F, ABSName),!.
+load_json_file(F, FName):- load_json_file2(F, FName),!.
+
+load_json_file2(F, FullName):- 
+  %pp(load_json_file2(F)=FullName),!,
+  must_det_ll((
   file_base_name(FullName,FileBaseName),
   file_name_extension(UName,_,FileBaseName),
-  must_det_ll((no_uscore(UName,Name), 
+  no_uscore(UName,Name), 
   Testname=..[F,Name], 
   % dmsg(load_json_file=FullName),
   setup_call_cleanup(open(FullName,read,In),
@@ -60,9 +80,11 @@ load_json_file(F, FullName):-
    close(In)),
   locally(t_l:local_test_props(filename=FullName),
     (load_json_of_file(Testname,file,Term),
-     ignore((kaggle_arc(Testname,_,_,_), 
+     ignore((
+      kaggle_arc(Testname,_,_,_), 
       add_test_info(Testname),
-      add_testfile_name(Testname,FullName))))))).
+      add_testfile_name(Testname,FullName))))))),!.
+
 
 add_testfile_name(Testname,FullName):- 
   ignore((  
@@ -81,15 +103,18 @@ add_test_info_props(Name,F=V):- !, add_test_info_prop(Name,F,V).
 add_test_info_props(Name,FV):- compound_name_arguments(FV,F,V),add_test_info_prop(Name,F,V),!.
 add_test_info_props(Name,TV):- assert_if_new(some_test_info_prop(Name,TV)),wdmsg(fallback_some_test_info_prop(Name,TV)).
 
+:- multifile(muarc_tmp:some_test_info_prop/2).
+:- dynamic(muarc_tmp:some_test_info_prop/2).
+
 add_test_info_prop(Name,F,V):- var(V),!,wdmsg(var_add_test_info_prop(Name,F,V)).
-add_test_info_prop(Name,F,[]):- NV=..[F,_], \+ \+ some_test_info_prop(Name,NV),!.
+add_test_info_prop(Name,F,[]):- NV=..[F,_], \+ \+ muarc_tmp:some_test_info_prop(Name,NV),!.
 add_test_info_prop(Name,F,[V]):- !,add_test_info_prop(Name,F,V).
 add_test_info_prop(Name,F,V):-  
   must_det_ll((
-    NV=..[F,[]],ignore(retract(some_test_info_prop(Name,NV))), 
+    NV=..[F,[]],ignore(retract(muarc_tmp:some_test_info_prop(Name,NV))), 
    n_v_to_nv(F,[V],TV),
-   assert_if_new(some_test_info_prop(Name,TV)),
-   nop(wdmsg(some_test_info_prop(Name,TV))))).
+   assert_if_new(muarc_tmp:some_test_info_prop(Name,TV)),
+   nop(wdmsg(muarc_tmp:some_test_info_prop(Name,TV))))).
 
 :- thread_local(t_l:local_test_props/1).
 
@@ -108,16 +133,16 @@ add_test_info_prop(Name,F,V):-
   load_json_predictions(Name,Rest,Term):- wdmsg(munused_load_json_predictions(Name,Rest,Term)),!.
 
 
- add_prediction(Name,ID,AnswerID,Grid):- assert_if_new(kaggle_arc_answers(Name,ID,AnswerID,Grid)).
+ add_prediction(Name,ID,AnswerID,_Grid):- assert_if_new(kaggle_arc_answers(Name,ID,AnswerID,_BadGrid)).
 
 
   load_json_of_file(_, Atom+_, []):- atom(Atom),!.
   load_json_of_file(Name,Type,json(Term)):-! , load_json_of_file(Name,Type,Term).
   
-  load_json_of_file(FName,Type,Term):- select(task_name=Name,Term,Rest),
+  load_json_of_file(FName,Type,Term):- select(task_name=Name,Term,Rest),!,
    must_det_ll((FName=..[F|Info], TestID=..[F,Name],         
          add_test_info(TestID), 
-         add_test_info_props(TestID,Info),
+         add_test_info_props(TestID,info(Info)),
          load_json_of_file(TestID,Type,Rest))).
 
   load_json_of_file(Name,Type,[id=_|T]):- !, load_json_of_file(Name,Type,T).
@@ -153,12 +178,14 @@ add_test_info_prop(Name,F,V):-
   load_json_of_file(Name,A,V):- wdmsg(miss_load_json_of_file(Name,A,V)),!, add_test_info_prop(Name,A,V).
 
 assert_kaggle_arc_json(Name,Type,In0,Out0):- 
-  json_to_colors(In0,In), json_to_colors(Out0,Out), 
+  json_to_colors(In0,In), json_to_colors(Out0,Out),!, 
   assert_kaggle_arc_json_now(Name,Type,In,Out).
   
 
-assert_kaggle_arc_json_now(Name,Type,In,Out):- kaggle_arc_json(Name,Type,In,OutO),Out=OutO,!.
-assert_kaggle_arc_json_now(Name,Type,In,Out):- assert_if_new(kaggle_arc_json(Name,Type,In,Out)),
+%assert_kaggle_arc_json_now(Name,Type,In,Out):- kaggle_arc_json(Name,Type,In,OutO),Out=OutO,!.
+assert_kaggle_arc_json_now(Name,Type,In,Out):- 
+  retractall(kaggle_arc_json(Name,Type,_In,_Out)),
+  assert_if_new(kaggle_arc_json(Name,Type,In,Out)),
   add_test_info(Name).
 
 
@@ -207,19 +234,24 @@ arc_sub_path(Subdir,AbsolutePath):- muarc_tmp:arc_directory(ARC_DIR),absolute_di
 
 :- export(arc_sub_path/2).
 
+load_deval:- fail.
 
-:- load_json_files(train400,t,'./data/training/*.json').
-:- load_json_files(eval400,v,'./data/devaluation/*.json').
+load_json_files1:- load_json_files(train400,t,'./data/training/*.json').
+load_json_files1:- load_json_files(eval400,v,'./data/devaluation/*.json').
 %:- load_json_files(v,'./data/test_100/*.json').
 %:- load_json_files(t,'./data/test_nar_10x10/*.json').
-:- load_json_files('1D_testset',t,'./data/1D_testset/*.json').
-:- load_json_files('MyTrainingData',t,'./dbigham/Data/MyTrainingData/*.json').
-:- load_json_files('MiniARC',t,'./MINI-ARC/data/MiniARC/*.json').
-
-
+load_json_files1:- load_json_files('1D_testset',t,'./data/1D_testset/*.json').
+load_json_files1:- load_json_files('MyTrainingData',t,'./dbigham/Data/MyTrainingData/*.json').
 %:- load_json_files(v,'../../secret_data/solu**66/*.json').
 %:- load_json_files(v,'../../secret_data/evaluation/*.json').
-% :- load_json_files(v,'../../secret_data/solution/*.json').
+%load_json_files1:- load_deval, load_json_files('secret_data_evaluation',v,'/data/evaluation/*.json').
+%load_json_files1:- load_json_files('secret_data_solution',v,'/secret_data/solution/*.json').
+% % % load_json_files1:- load_json_files('secret_data_solution',v,'/data/solution/*.json').
+
+load_json_files2:- load_json_files('MiniARC',t,'./MINI-ARC/data/MiniARC/*.json').
+
+load_json_files:- 
+  forall(load_json_files1,true).
 
 %:- load_json_files(v,'./data/test/*.json').
 :- export(kaggle_arc/4).

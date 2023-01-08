@@ -200,6 +200,7 @@ final_alignment(AR,BR,AAR,[],[PA|G1],[PB|G2]):- AAR\==[],
 
 final_alignment(_,_,AA,BB,AA,BB):-!.
 
+:- abolish(object_atomslist/5).
 :- dynamic(object_atomslist/5).
 %obj_grp_atoms(IO,A,[A,PA|Atoms]):- nonvar(IO),!,into_gid(IO,GID),obj_grp_atoms0(GID,A,[A,PA|Atoms]).
 obj_grp_atoms(IO,A,[A,PA|Atoms]):- obj_grp_atomslist(IO,A,PA,Atoms).
@@ -332,25 +333,31 @@ never_matom(colorlesspoints(_)).
 never_matom(o(_,_,_)).
 never_matom(giz(_)).
 never_matom(globalpoints(_)).
-sub_obj_atom(_,M):- var(M),!,fail.
-sub_obj_atom(M,M):- \+ compound(M),!.
+sub_obj_atom(_,E):- var(E),!,fail.
+sub_obj_atom(E,E):- \+ compound(E),!.
+sub_obj_atom(E,L):- is_list(L),!,member(EM,L),sub_obj_atom(E,EM).
 sub_obj_atom(NO,M):- remove_oids(M,MM,EL),EL\==[], !,sub_obj_atom(NO,MM).
 sub_obj_atom(M,o(H,L,_)):- !, M = (L/H).
-sub_obj_atom(E,colorlesspoints(CP)):- !, is_list(CP),member(E,CP).
-sub_obj_atom(_,M):- never_matom(M),!,fail.
+%sub_obj_atom(E,colorlesspoints(CP)):- !, is_list(CP),member(E,CP).
 
 %sub_obj_atom(M,M):- attvar(M),!.
 %sub_obj_atom(A,A).
-sub_obj_atom(M,M).
+sub_obj_atom(E,E).
+%sub_obj_atom(globalpoints(E),globalpoints(CP)):- !, maplist(arg(2),CP,EL),!, (member(E,EL); (E=EL)).
+%sub_obj_atom(_,M):- never_matom(M),!,fail.
 %sub_obj_atom(A,M):- M = localpoints(_),!,A=M.
 %sub_obj_atom(iz(A),iz(A)):-!. % sub_obj_atom(A,M).
-sub_obj_atom(A,M):- M=..[F,List],is_list(List),!,member(E,List),A=..[F,E].
+sub_obj_atom(A,M):- M=..[F,List],is_list(List),length(List,Len),!,
+  (A=len(F,Len) ; (interesting_sub_atoms(List,E),A=..[F,E])).
 
 sub_obj_atom(M,M):- functor(link,M,_),!.
-sub_obj_atom(E,M):- sub_term(E,M),E\==M,compound(E),once((arg(_,E,A), number(A))).
-sub_obj_atom(S,M):- special_properties(M,L),!,member(S,L).
+sub_obj_atom(E,M):- interesting_sub_atoms(M,E).
+%sub_obj_atom(S,M):- special_properties(M,L),!,member(S,L).
 
-
+interesting_sub_atoms(List,E) :- is_list(List),!,member(EM,List),interesting_sub_atoms(EM,E).
+interesting_sub_atoms(E,_):- var(E),!,fail.
+interesting_sub_atoms(E,E) :- atomic(E),!.
+interesting_sub_atoms(EM,E) :- sub_term(E,EM),compound(E), \+ \+ (arg(_,E,A),atomic(A)).
 
 select_obj_pair_2(AAR,BBR,PA,PB,(J/O)):- 
  AAR\==[],

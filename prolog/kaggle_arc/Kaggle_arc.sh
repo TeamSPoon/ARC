@@ -9,6 +9,13 @@ mkdir -p muarc_tmp ; chmod -R 777 muarc_tmp
 mkdir -p muarc_cache ; chmod -R 777 muarc_cache
 mkdir -p muarc_output ; chmod -R 777 muarc_output
 
+if [ "${1}" == "--" ] ; then
+shift 1
+[ -z "$TEE_FILE" ] && export TEE_FILE="muarc_tmp/tee.ansi"
+[ -z "$TYPESCRIPT" ] && TYPESCRIPT=1 exec /usr/bin/script -f -e -a ${TEE_FILE} -c "TYPESCRIPT=1 $0 --tee $@"
+echo start $0 $@
+fi
+
 if [ "${1}" == "--tee" ] ; then
 shift 1
 [ -z "$TEE_FILE" ] && export TEE_FILE="muarc_tmp/tee.ansi"

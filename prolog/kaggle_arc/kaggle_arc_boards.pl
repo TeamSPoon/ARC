@@ -50,7 +50,8 @@ clsbake:- nop(clsmake).
 
 compile_and_save_test:- update_and_fail,fail.
 compile_and_save_test:- get_pair_mode(entire_suite),!,clsbake, forall_count(all_arc_test_name(TestID),time(compile_and_save_test(TestID))).
-compile_and_save_test:- get_current_test(TestID),time(compile_and_save_test(TestID)).
+compile_and_save_test:- get_current_test(TestID),time(compile_and_save_test(TestID)),detect_all_training_hints.
+  
 
 gen_gids:- wdmsg(start(gen_gids)),forall(all_arc_test_name(TestID),gen_gids(TestID)),wdmsg(end(gen_gids)).
 gen_gids(Mask):-
@@ -61,14 +62,22 @@ gen_gids(Mask):-
     once((assertz_if_new(tid_to_gids(ID,GID)),assertz_if_new(gid_to_grid(GID,G))))),
   forall(kaggle_arc_io(TestID,_,_,G),once(grid_to_gid(G,_))),!.
 
+:- dynamic(workflow_status/3).
+once_with_workflow_status(Goal):- call_in_testid(workflow_status(Goal,success)),!.
+once_with_workflow_status(Goal):- call_in_testid(workflow_status(Goal,begun)),!.
+once_with_workflow_status(Goal):- 
+  assert_in_testid(workflow_status(Goal,begun)),
+  (call(Goal)-> assert_in_testid(workflow_status(Goal,success)) ; assert_in_testid(workflow_status(Goal,failed))).
 
-compile_and_save_test(TestID):- var(TestID),!,all_arc_test_name(TestID),compile_and_save_test(TestID).
-compile_and_save_test(Mask):-  
-  fix_test_name(Mask,TestID),  
+compile_and_save_test(TestID):- once_with_workflow_status(compile_and_save_test_now(TestID)).
+
+compile_and_save_test_now(TestID):- var(TestID),!,all_arc_test_name(TestID),compile_and_save_test_now(TestID).
+compile_and_save_test_now(Mask):- fix_test_name(Mask,TestID),  Mask\=@=TestID,!,compile_and_save_test_now(TestID).
+compile_and_save_test_now(TestID):- 
   %ignore(retract(saved_training(TestID))),
   %ignore(retract(process_test(TestID))),
 
-  locally(nb_setval(individuated_cache,true),
+  time((locally(nb_setval(individuated_cache,true),
      ((
       gen_gids(TestID),
       compute_all_test_hints(TestID)),
@@ -77,8 +86,8 @@ compile_and_save_test(Mask):-
       detect_all_training_hints(TestID),
       nop(individuate_pairs_from_hints(TestID)),
       %train_test(TestID,train_using_io),  
-      print_hybrid_set,
-      save_supertest(TestID))).
+      %print_hybrid_set,
+      save_supertest(TestID))))).
 
 
 deduce_shapes(TestID):-

@@ -412,6 +412,7 @@ never_entire_suite:- ignore((get_pair_mode(entire_suite),set_pair_mode(whole_tes
 
 :- first_pair_modes([M1|_]),set_pair_mode(M1).
 
+set_test_cmd(Mode):- Mode==print_test,!.
 set_test_cmd(Mode):- luser_setval('cmd',Mode).
 get_test_cmd(Mode):- luser_getval('cmd',Mode).
 set_test_cmd2(Mode):- luser_setval('cmd2',Mode).
@@ -476,7 +477,7 @@ print_ctest(S):- print_qtest(S).
 
 dump_suite1:-   
    get_current_suite_testnames(Set),
-   with_pair_mode(single_pair, forall_count(member(S,Set),print_ctest(S))).
+   with_luser(alt_grid_dot,color_number,with_pair_mode(single_pair, forall_count(member(S,Set),print_ctest(S)))).
 
 dump_suite:-   
    get_current_suite_testnames(Set),
@@ -1340,12 +1341,15 @@ test_info_recache(TestID,InfoSS):-  %once((fix_test_name(CTestID,CFTestID,_),CFT
 some_test_info(TestID,III):- some_test_info_1(TestID,Inf0),repair_info(Inf0,III).
 some_test_info(TestID,III):- muarc_tmp:test_info_cache(TestID,Inf0),repair_info(Inf0,III).
 
+:- multifile(muarc_tmp:some_test_info_prop/2).
+:- dynamic(muarc_tmp:some_test_info_prop/2).
+
 %some_test_info_1(TestID,Sol):- nonvar(TestID),test_info_recache(TestID,Sol),!.
 some_test_info_1(TestID,III):- more_test_info(TestID,III).
 %some_test_info(X,[keypad]):- key_pad_tests(X). 
 some_test_info_1(TestID,III):- fav(TestID,III).
 some_test_info_1(TestID,III):- fav_less(TestID,III).
-some_test_info_1(TestID,III):- some_test_info_prop(TestID,III).
+some_test_info_1(TestID,III):- muarc_tmp:some_test_info_prop(TestID,III).
 
 all_test_info(TestID,III):- some_test_info(TestID,III).
 all_test_info(TestID,SuiteX):- nonvar(SuiteX),some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).

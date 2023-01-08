@@ -43,6 +43,8 @@ collapsible_section(Type,Goal):-
   invent_header(Goal,Title),
   collapsible_section(Type,Title,toplevel,Goal).
 
+avacp(Vars):-  prolog_current_choice(Chp),'$attvars_after_choicepoint'(Chp, Vars).
+
 print_title(Var):- (var(Var);Var==[]),!.
 print_title([L|List]):- is_list(List), !, print_title(L),write(' '),print_title(List).
 print_title(Title):- trim_newlines(ppt(Title)).
@@ -98,8 +100,15 @@ old_write_expandable(Showing,Title,Goal):-
    in_expandable(Showing,Title,Goal),
    flag('$old_write_expandable_depth',_,Depth)).
 
-in_expandable(_Showing,_Title,Goal):- !, call(Goal).
-in_expandable(Showing,Title,Goal):- Showing==always,!,ignore(ppt(Title)),call(Goal).
+expandable_inlines:- expandable_mode(javascript).
+expandable_mode(How):- var(How),!,luser_getval(expansion,How).
+expandable_mode(How):- luser_getval(expansion,V),!,How==V.
+
+:- luser_default(expansion,javascript).
+:- luser_setval(expansion,bfly).
+
+in_expandable(_Showing,_Title,Goal):- expandable_inlines, !, (call_maybe_det(Goal,Det),((Det==true-> ! ; true))).
+in_expandable(Showing,Title,Goal):- Showing==always,!,ignore(ppt(Title)),(call_maybe_det(Goal,Det),((Det==true-> ! ; true))).
 in_expandable(_Show,  Title,Goal):- flag('$old_write_expandable_depth',X,X), X>2, in_expandable(always,Title,Goal).
 in_expandable(Showing,Title,Goal):- (Showing==toplevel;Showing==maybe), flag('$old_write_expandable_depth',X,X), X==1,!,in_expandable(true,Title,Goal).
 in_expandable(Showing,Title,Goal):- (Showing==maybe, flag('$old_write_expandable_depth',X,X), X=<2), !, ignore(ppt(Title)),!,in_expandable(true,Title,Goal).
@@ -108,9 +117,12 @@ in_expandable(Showing,Title,Goal):- title_to_html(Title,HtmlTitle),!,
  (Showing == true -> Click='collapse/expand'; Click='expand/collapse'),
  setup_call_cleanup(format(
   '<button class="accordion">~w (click to ~w)</button><div class="~w">',[HtmlTitle,Click,Class]),
-  call(Goal),
+  (call_maybe_det(Goal,Det),((Det==true-> ! ; true))),
   format('</div>',[])),
- flush_tee_maybe.
+ flush_tee_maybe,
+ (Det==true-> ! ; true).
+
+call_maybe_det(Goal,Det):- true,call(Goal),deterministic(Det),true.
 
 old_in_expandable(Showing,Title,Goal):- 
  on_xf_ignore_flush(ensure_colapable_styles), 
@@ -119,14 +131,14 @@ old_in_expandable(Showing,Title,Goal):-
   %with_pp(http,wots(S,weto(ignore(Goal)))),
   setup_call_cleanup(format(
    '~N<pre><button type="button" class="collapsible">~w (click to un/expand)</button><div class="~w" style="max-height: ~wpx"><pre>~n',
-  [Title,Exp,PX]), call(Goal),
+  [Title,Exp,PX]), (call_maybe_det(Goal,Det),(Det==true-> ! ; true)),
    format('~N</pre></div></pre>~n',[])), 
-  flush_tee_maybe.
+  flush_tee_maybe,(Det==true-> ! ; true).
 
 format_s(S):- atomic(S),!,format('~w',[S]).
 format_s(S):- format('~s',[S]).
 
-tabbed_print_im(_Tab,Goal):- !, call(Goal).
+tabbed_print_im(_Tab,Goal):- expandable_inlines, !, call(Goal).
 tabbed_print_im(Tab,Goal):- Tab2 is Tab, tabbed_print(Tab2,Goal).
 
 :- meta_predicate(trim_newlines(0)).
@@ -151,6 +163,8 @@ dumb_functor(Term):- compound_name_arity(Term,F,_),atom(F),upcase_atom(F,UC),!,d
 test_collapsible_section:- 
   collapsible_section(info,
     forall(nth0(N,[a,b,c,d],E),writeln(N=E))).
+
+%test_collapsible_section:- 
      
 
 
@@ -472,8 +486,8 @@ invoke_arc_cmd(Prolog):-
    asserta_new(xlisting_whook:offer_testcase(Prolog)), !,
    catch(weto(Prolog),E,wdmsg(E)),!.
 
-:- luser_default(cmd,print_test).
-:- luser_default(tc_cmd,ndividuatorO1).
+%:- luser_default(cmd,print_test).
+:- luser_default(tc_cmd,ndividuator).
 :- luser_default(footer_cmd,statistics).
 
 current_arc_cmd(Prolog):- current_arc_cmd(cmd,Prolog).

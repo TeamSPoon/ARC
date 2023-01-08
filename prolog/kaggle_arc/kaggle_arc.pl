@@ -219,7 +219,6 @@ logicmoo_webui:- ld_logicmoo_webui,catch_log(call(call,webui_start_swish_and_cli
 
 :- when_using_swish(ld_logicmoo_webui).
 
-    
 
 
 %:- autoload_all.
@@ -643,6 +642,7 @@ arc1(G,TName):-
     run_arc_io(TestID,ExampleNum)),'$aborted',true)))))).
 
 
+
 is_detatched_thread:- arc_webui,!.
 is_detatched_thread:- \+ (thread_self(Main) -> Main == main ; main==0),!.
 
@@ -751,6 +751,8 @@ get_oov_value(ValueOOV,Value):- compound(ValueOOV),ValueOOV=oov(Value),!.
 get_oov_value(Value,Value).
 
 :- ensure_loaded(kaggle_arc_two).
+
+
 test_regressions:- make, forall((clause(mregression_test,Body),ppt(Body)),must_det_ll(Body)).
 :- arc_history1(test_regressions).
 
@@ -758,7 +760,11 @@ test_regressions:- make, forall((clause(mregression_test,Body),ppt(Body)),must_d
 :- strip_module(_,M,_), prolog_load_context(module,MM), retractall(muarc_2_mods(_,_)), asserta(muarc_2_mods(M,MM)).
 
 %:- forall(ping_indiv_grid(X),atom_concat(X,Y
+
+
 :- include(kaggle_arc_footer).
+
+
 %:- initialization(demo,program).
 %:- initialization(demo,restore_state).
 %:- initialization(demo,main).
@@ -819,6 +825,7 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 :- when_using_swish(start_arc_server).
 :- when_using_swish(set_long_message_server('https://logicmoo.org:17771')).
 
+
 bfly_startup:-
    set_toplevel_pp(bfly),
    asserta(was_inline_to_bfly),inline_to_bfly_html,
@@ -873,7 +880,9 @@ save_arcathon_runner_devel:- qsave_program('logicmoo_arcathon_runner_devel',[sta
                              save_arcathon_runner_dbg, save_arcathon_runner.
 test_compile_arcathon:- save_arcathon_runner_devel.
 
+:- load_json_files.
 :- load_task_states.
+:- load_json_files(eval400,v,'./data/devaluation/*.json').
 :- scan_uses_test_id.
 :- store_grid_size_predictions.
 :- make_grid_cache.
