@@ -325,9 +325,9 @@ prefered(hv_line(_)).
 prefered(dg_line(_)).
 prefered_header(cc(Caps,_),Caps):- freeze(Caps,wbg == Caps).
 prefered_header(cc(Caps,_),Caps):- get_black(Black),freeze(Caps,Black == Caps).
-prefered_header(o(_,_,Caps),Caps):- freeze(Caps,i_bg_shapes == Caps).
-prefered_header(o(/*sf*/(_),1,Caps),Caps):- freeze(Caps,atom(Caps)).
-prefered_header(o(/*sf*/(_),last(_),Caps),Caps):- freeze(Caps,atom(Caps)).
+prefered_header(og(_OG,_,_,Caps),Caps):- freeze(Caps,i_bg_shapes == Caps).
+prefered_header(og(_OG,/*sf*/(_),1,Caps),Caps):- freeze(Caps,atom(Caps)).
+prefered_header(og(_OG,/*sf*/(_),last(_),Caps),Caps):- freeze(Caps,atom(Caps)).
 %prefered_header(/*b*/iz(Caps),PCaps):-prefered(PCaps),freeze(Caps,(nonvar(Caps),Caps = PCaps)).
 %prefered_header(iz(Caps),PCaps):-prefered(PCaps),freeze(Caps,Caps == PCaps).
 prefered_header(Caps,PCaps):-prefered(PCaps),freeze(Caps,(nonvar(Caps),Caps = PCaps)).
@@ -420,7 +420,7 @@ write_indented_list(F,WQS):- format(F),wqs(WQS).
 
 not_too_verbose(X):- X\==(''), X\==s('').
 
-is_o3(o(_,_,_)).
+is_o3(og(_OG,_,_,_)).
 
 show_st_map(Obj):-
   ignore(( 

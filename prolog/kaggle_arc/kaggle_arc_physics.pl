@@ -565,16 +565,19 @@ related_how2(contained_by,O1,O2,Ps1,Ps2,Overlap,P1L,
   SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   SX1 =< SX2, SY1 =< SY2, EX2 =< EX1, EY2 =< EY1.
 
-related_how2(overlap(Overlap1,Overlap2),O1,O2,Ps1,Ps2,Overlap,
+related_how2(OLPred,O1,O2,Ps1,Ps2,Overlap,
   P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- Overlap\==[],
   length(Overlap,OL), length(Ps1,Len1),length(Ps2,Len2),
-  Overlap1 = rational(OL/Len1), Overlap2 = rational(OL/Len2).
+  Overlap1 = rational(OL/Len1), Overlap2 = rational(OL/Len2),
+  overlaps_pred(OLPred,Overlap1,Overlap2).
 
 related_how2(touches(TouchDirs),O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   Overlap\==[],
   findall(Dir,(member(_-P1,P1L), is_adjacent_point(P1,Dir,P2),  member(_-P2,P2L)),Dirs),
   get_ccs(Dirs,TouchDirs), TouchDirs\==[].
 
+overlaps_pred(overlaps(Overlap1,Overlap2),Overlap1,Overlap2):- Overlap1>Overlap2,!.
+overlaps_pred(overlapped_by(Overlap1,Overlap2),Overlap1,Overlap2).
 
 
 object_offset(O2,O1,Offset):-

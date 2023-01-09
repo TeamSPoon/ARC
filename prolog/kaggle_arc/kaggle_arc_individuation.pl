@@ -172,7 +172,7 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):-
   show_changes(InC0,InCR),
   show_changes(OutC0,OutCR))))),
   (InC00\=@=InCR;OutC00\=@=OutCR),!,
-  show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCR,OutCR).
+  show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCR,OutCR),!.
 
 show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
  must_det_ll((
@@ -207,45 +207,27 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
        print_list_of(show_indiv(inputs),inputs,InC),
        show_io_groups(yellow,ROptions,ID2,OutC,ID2,GridOut),
        print_list_of(show_indiv(outputs),outputs,OutC),
-       show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
-
-       if_t((sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)), show_safe_assumed_mapped,!)),     
+       show_io_groups(green,ROptions,ID1,InC,ID2,OutC))),
 
        if_t((menu_or_upper('o');menu_or_upper('t')),
-        (( banner_lines(orange),
-
-           %visible_order(InC,InCR),
-           if_t((true;sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)), show_safe_assumed_mapped,
-
-           %if_t((true;sub_var(tst,ID1)), show_test_associatable_groups(ROptions,ID1,InCR,GridOut)),
-
-
+        (( banner_lines(orange), %visible_order(InC,InCR),
+           if_t((true;sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)), show_safe_assumed_mapped, %if_t((true;sub_var(tst,ID1)), show_test_associatable_groups(ROptions,ID1,InCR,GridOut)),
         banner_lines(orange,3),!))),
-
 
 
        if_t((menu_or_upper('u')),
-        (( banner_lines(orange),
+        (( banner_lines(orange), %visible_order(InC,InCR),
 
-           %visible_order(InC,InCR),
-           if_t((sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)), show_safe_assumed_mapped,
-
-           %if_t((true;sub_var(tst,ID1)), show_test_associatable_groups(ROptions,ID1,InCR,GridOut)),
-
-        banner_lines(orange,3),!))),
-
-
-
-       if_t((menu_or_upper('u');menu_or_upper('s')),
-        (( banner_lines(orange),
-
-           %if_t(sub_var(tst,ID1),
-           ignore((forall(member(In1,InC),show_test_associatable_groups(ROptions,ID1,In1,GridOut)))),
-           
            print_ss(begin_try_each_using_training,InC,GridOut),
 
-           ignore((forall(must_det_ll((try_each_using_training(InC,GridOut,Rules,OurOut))),
-             must_det_ll((
+           if_t((sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)), 
+           show_safe_assumed_mapped,!, %if_t((true;sub_var(tst,ID1)), show_test_associatable_groups(ROptions,ID1,InCR,GridOut)),
+
+           ignore((forall(member(In1,InC),show_test_associatable_groups(ROptions,ID1,In1,GridOut)))),                     
+
+           ignore((forall(
+             try_each_using_training(InC,GridOut,Rules,OurOut),
+              ignore((
                print_grid(try_each_using_training,OurOut),
                nop(pp(Rules)),
                banner_lines(orange,2))))))))),
@@ -351,11 +333,11 @@ maybe_name_the_pair(In,Out,PairName):-
 do_ig(ROptions,Grid,IndvS):-
  must_det_ll((
   into_grid(Grid, GridIn), 
-  dash_chars,
+  dash_chars('='),
   print_grid(GridIn), 
   %indiv_grid_pings(GridIn),
   grid_to_tid(GridIn,ID),
-  dash_chars,
+  dash_chars('*'),
   format("~N~n% ?- ~q.~n~n",[igo(ROptions,ID)]),
   testid_name_num_io(ID,TestID,Example,Num,IO),
   ig_test_id_num_io(ROptions,GridIn,ID,TestID,Example,Num,IO,IndvS))).
@@ -1098,7 +1080,7 @@ short_indv_props(Obj,ShortR,LongR):- indv_props_list(Obj,Props),!,short_indv_pro
 
 is_long_prop(vis_hv_term(_)).
 is_long_prop(link(_,_,_)). is_long_prop(link(_,_)).
-is_long_prop(o(_,_,_)). is_long_prop(giz(_)).
+is_long_prop(og(_,_,_,_)). is_long_prop(giz(_)).
 is_long_prop(edge(_,_)). is_long_prop(on_edge(_,_)). is_long_prop(on_edge(_)). 
 is_long_prop(pen(_)).
 is_long_prop(merged(_)). is_long_prop(rot2L(sameR)).
@@ -3763,7 +3745,7 @@ group_vm_priors(VM):-
 % =====================================================================
 is_fti_step(really_group_vm_priors).
 % =====================================================================
-really_group_vm_priors(_VM):-!.
+%really_group_vm_priors(_VM):-!.
 really_group_vm_priors(VM):-
  must_det_ll((
   ObjsG = VM.objs,
@@ -3774,7 +3756,9 @@ really_group_vm_priors(VM):-
   gset(VM.objs) = Objs)).
 
 % bg from fg
-relivant_divide(is_bg_object).
+relivant_divide(is_fg_object).
+relivant_group(G):- relivant_divide(G).
+relivant_group(not_has_prop(mass(1))).
 %relivant_divide(has_prop(cc(bg,0))).
 % seperate input from output
 %relivant_divide(has_prop(giz(g(in)))).
@@ -3785,7 +3769,7 @@ unique_fg_color_count_eq_1(Obj):- unique_fg_colors(Obj,II),II=1.
 group_prior_objs(Why,ObjsIn,WithPriors):- 
  relivant_divide(RelivantDivide),
  my_partition(RelivantDivide,ObjsIn,FG,BG),
- (FG\==[],BG\==[]),!,
+ ((FG\==[],BG\==[])),!,
  print_ss([splitting_group(RelivantDivide)=FG,splitting_group(RelivantDivide)=BG]), 
  group_prior_objs(Why,FG,FGWithPriors),
  group_prior_objs(Why,BG,BGWithPriors),
@@ -3845,7 +3829,7 @@ equal_sets(A,B):- sort(A,AA),sort(B,BB),AA=@=BB.
 
 % sprop_piority(Class,Priority).
 
-%sprop_piority(o(_,_,0),0).
+%sprop_piority(og(OG,_,_,0),0).
 %sprop_piority(birth(i3(_)),0).
 %sprop_piority(birth(i2(_)),0).
 sprop_piority(iz(flag(hidden)),9).
@@ -3952,9 +3936,9 @@ add_prior_placeholder(_Len,Name,IndvS0,IndvS9):-
   override_object(birth(Name),IndvS0,IndvS9),!.
 
 add_prior_placeholder(Len,Name,IndvS0,IndvS9):- 
-  (has_prop(o((Len),_,Name),IndvS0)-> IndvS0=IndvS9 ; 
-    ((has_prop(o((Was),Other,Name),IndvS0)-> delq(IndvS0,o((Was),Other,Name),IndvS1) ; IndvS0=IndvS1),
-     override_object(o((Len),nil,Name),IndvS1,IndvS9))),!.
+  (has_prop(og(OG,Len,_,Name),IndvS0)-> IndvS0=IndvS9 ; 
+    ((has_prop(og(OG,Was,Other,Name),IndvS0)-> delq(IndvS0,og(OG,Was,Other,Name),IndvS1) ; IndvS0=IndvS1),
+     override_object(og(OG,Len,nil,Name),IndvS1,IndvS9))),!.
 */
 
 object_get_priors(X,S):- var(X),!, enum_object(X), object_get_priors(X,S).
@@ -3972,8 +3956,8 @@ ranking_pred(rank1(F1),I,O):- Prop=..[F1,O], indv_props_list(I,Ps),member_or_iz(
 ranking_pred(rank1(F1),I,O):- !, catch(call(F1,I,O),_,fail),!.
 ranking_pred(rankA(F1),I,O):- append_term(F1,O,Prop), indv_props_list(I,Ps),member_or_iz(Prop,Ps),!.
 ranking_pred(rankA(F1),I,O):- !, catch(call(F1,I,O),_,fail),!.
-ranking_pred(rank2(F1),I,O):- Prop=..[F1,O1,O2], indv_props_list(I,Ps),member_or_iz(Prop,Ps),!,combine_number(F1,O1,O2,O).
-ranking_pred(rank2(F1),I,O):- !, catch(call(F1,I,O1,O2),_,fail),!,combine_number(F1,O1,O2,O).
+%ranking_pred(rank2(F1),I,O):- Prop=..[F1,O1,O2], indv_props_list(I,Ps),member_or_iz(Prop,Ps),!,combine_number(F1,O1,O2,O).
+%ranking_pred(rank2(F1),I,O):- !, catch(call(F1,I,O1,O2),_,fail),!,combine_number(F1,O1,O2,O).
 ranking_pred(_F1,I,O):- mass(I,O).
 
 has_prop(Prop,Obj):- var(Obj),!, enum_object(Obj),has_prop(Prop,Obj).
@@ -3991,7 +3975,7 @@ has_prop(call_1(A),Obj):- !, has_prop(AA,Obj),call(A,AA).
 has_prop(not(A),Obj):- !, \+ has_prop(A,Obj).
 has_prop(or(A,B),Obj):- !, (has_prop(A,Obj);has_prop(B,Obj)).
 has_prop(rank1(Lbl),Obj):- atom(Lbl),!, is_prior_prop(rank1(Lbl),Obj),!.
-has_prop(rank2(Lbl),Obj):- atom(Lbl),!, is_prior_prop(rank2(Lbl),Obj),!.
+%has_prop(rank2(Lbl),Obj):- atom(Lbl),!, is_prior_prop(rank2(Lbl),Obj),!.
 has_prop(rankA(Lbl),Obj):- nonvar(Lbl),!, is_prior_prop(rankA(Lbl),Obj),!.
 
 never_a_prior(P):- var(P),!,fail.
@@ -4008,8 +3992,8 @@ never_a_prior(P):- rankNever(P).
 
 props_object_prior(V,_):- var(V),!,fail.
 props_object_prior(Prop,_):- never_a_prior(Prop),!,fail.
-%props_object_prior(o(_,_,L),O):- props_object_prior(L,O)
-props_object_prior(o(_,_,L),L):-!.
+%props_object_prior(og(OG,_,_,L),O):- props_object_prior(L,O)
+props_object_prior(og(_OG,_,_,L),L):-!.
 props_object_prior(mass(_),rank1(mass)).
 
 
@@ -4022,7 +4006,7 @@ props_object_prior(S,L):- S\=info(_), first_atom_value(S,L), \+ rankOnly(L), \+ 
 first_atom_value(S,S):- atom(S),!.
 first_atom_value(S,_):- \+ compound(S),!,fail.
 first_atom_value(S,rank1(F)):- S=..[F,A],comparable_value(A).
-first_atom_value(S,rank2(F)):- S=..[F,A,B],F\=='/', comparable_value(A),comparable_value(B).
+%first_atom_value(S,rank2(F)):- S=..[F,A,B],F\=='/', comparable_value(A),comparable_value(B).
 first_atom_value(S,O):- arg(1,S,E),atomic(E),E\==[],!,O=S, O \= (_/_).
 first_atom_value(S,O):- arg(2,S,E),first_atom_value(E,O),O \= (_/_).
 
@@ -4054,31 +4038,35 @@ add_prior(N,Lbl,Objs,ObjsWithPrior):-
   my_partition(is_prior_prop(Lbl),Objs,Lbld,Unlbl),  
   %add_prior_placeholder(Lbl,Lbld,RLbld),
   length(Lbld,LL),  
+
   rank_priors(Lbl,Lbld,RLbldR),
   nop(print_grid(Lbl->N/LL,RLbldR)),
   write('\t '), writeq(Lbl->N/LL),write(' <p/>\t'),
   append([Unlbl,RLbldR],ObjsWithPrior).  
 
+/*
 prior_name_by_size(_VM,[],_Name):-!.
 prior_name_by_size(VM,IndvS0,Name):-  
   rank_priors(Name,IndvS0,IndvSL),
   addObjectOverlap(VM,IndvSL).
+*/
 
 rank_priors(GType,Objs,SFO):-
  relivant_divide(RelivantDivide),
  my_partition(RelivantDivide,Objs,FG,BG),
  (FG\==[],BG\==[]),!,
- rank_priors(GType,FG,SFO1),
- rank_priors(GType,BG,SFO2),
+ rank_priors(RelivantDivide,GType,FG,SFO1),
+ rank_priors(inv(RelivantDivide),GType,BG,SFO2),
  append(SFO1,SFO2,SFO).
 
 rank_priors(GType,Objs,SFO):-
  must_det_ll((
    %add_prior_placeholder(GType,Group,Objs),
    smallest_first(smallest_pred(GType),Objs,SF),
+   once((relivant_group(OG), maplist(OG,Objs))),
    length(SF,SFLen),
    nop(SFLen < 2 -> pp(red,rank_priors(GType,SFLen)); pp(green,rank_priors(GType,SFLen))),   
-   add_rank(GType,(SFLen),SF,SFO),
+   add_rank(OG,GType,SFLen,SF,SFO),
    nop(maybe_show_ranking(GType,SFO)))).
 
 
@@ -4093,31 +4081,31 @@ maybe_show_ranking(GType,SFO):-
 
 %has_order(O,P1, Code ):- 
 % Code = ((
-add_rank(GType,ZType,IndvS,IndvSO):- add_rank(GType,ZType,1,IndvS,IndvSO).
+add_rank(OG,GType,ZType,IndvS,IndvSO):- add_rank(OG,GType,ZType,1,IndvS,IndvSO).
 
-add_rank(_GType,_ZType,_,[],[]):-!.
-%add_rank(_GType,_ZType,1,IO,IO):-!.
+add_rank(_OG,_GType,_ZType,_,[],[]):-!.
+%add_rank(OG,_GType,_ZType,1,IO,IO):-!.
 
-add_rank(_GType,_ZType,N,[L],[L]):-  N==1, !.
-add_rank(GType,ZType,N,[L],[Obj]):-   N>1, !, set_rank(GType,ZType,L,firstOF,Obj).
-add_rank(GType,ZType,N,[L],[Obj]):-  N==1, !, set_rank(GType,ZType,L,firstAndLastOF,Obj).
-add_rank(GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- N = 1, set_rank(GType,ZType,L,lastOF,Obj), 
- N2 is N+1,!, add_rank(GType,ZType,N2,IndvS,IndvSO).
-add_rank(GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- % (GType = rank1(_);GType = rank2(_)),!, 
- set_rank(GType,ZType,L,/*nthOF**/(N),Obj), 
- N2 is N+1,!, add_rank(GType,ZType,N2,IndvS,IndvSO).
-add_rank(GType,ZType,N,[L|IndvS],  [L|IndvSO]):- 
- N2 is N+1,!, add_rank(GType,ZType,N2,IndvS,IndvSO).
+add_rank(_OG,_GType,_ZType,N,[L],[L]):-  N==1, !.
+add_rank(OG,GType,ZType,N,[L],[Obj]):-   N>1, !, set_rank(OG,GType,ZType,L,firstOF,Obj).
+add_rank(OG,GType,ZType,N,[L],[Obj]):-  N==1, !, set_rank(OG,GType,ZType,L,firstAndLastOF,Obj).
+add_rank(OG,GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- N = 1, set_rank(OG,GType,ZType,L,lastOF,Obj), 
+ N2 is N+1,!, add_rank(OG,GType,ZType,N2,IndvS,IndvSO).
+add_rank(OG,GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- % (GType = rank1(_);GType = rank2(_)),!, 
+ set_rank(OG,GType,ZType,L,/*nthOF**/(N),Obj), 
+ N2 is N+1,!, add_rank(OG,GType,ZType,N2,IndvS,IndvSO).
+add_rank(OG,GType,ZType,N,[L|IndvS],  [L|IndvSO]):- 
+ N2 is N+1,!, add_rank(OG,GType,ZType,N2,IndvS,IndvSO).
 
 
-set_rank(GType,ZType,L,N,Obj):-  O = o, 
+set_rank(OG,GType,ZType,L,N,Obj):- % O = o, 
   get_setarg_p1(nb_setarg,I,L,P1), 
-  compound(I), I=.. [O,ZType,_,GType], 
-  II=..[O,ZType,N,GType],
+  compound(I), I = o(OG,ZType,_,GType),
+  II = o(ZType,N,GType), 
   call(P1 ,II),!, Obj = L.
 
-set_rank(GType,ZType,L,N,Obj):-  O = o, 
-   II=..[O,ZType,N,GType], 
+set_rank(OG,GType,ZType,L,N,Obj):- 
+   II = o(OG,ZType,N,GType), 
    override_object([II],L,Obj),!.
 
 

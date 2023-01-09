@@ -773,6 +773,18 @@ points_to_grid(H,V,Points,Grid):- points_to_grid0(H,V,Points,Grid).
 points_to_grid0(H,V,Points,Grid):- odd_failure((make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
 points_to_grid0(H,V,Points,Grid):- rtrace((make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
 
+
+points_to_default_grid(Points,Grid):- points_to_default_grid(_,_,Points,Grid).
+points_to_default_grid(C,Points,Grid):- points_to_default_grid(C,_H,_V,Points,Grid).
+
+points_to_default_grid(H,V,Points,Grid):- var(H),var(V),must_det_ll(grid_size(Points,H,V)),!,points_to_default_grid0('0',H,V,Points,Grid).
+
+points_to_default_grid(C,H,V,Points,Grid):- var(H),var(V),must_det_ll(grid_size(Points,H,V)),!,points_to_default_grid0(C,H,V,Points,Grid).
+points_to_default_grid(C,H,V,Points,Grid):- points_to_default_grid0(C,H,V,Points,Grid).
+points_to_default_grid0(C,H,V,Points,Grid):- odd_failure((make_default_grid(C,H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
+points_to_default_grid0(C,H,V,Points,Grid):- rtrace((make_default_grid(C,H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
+
+
 add_offset_h_v_c(Grid,H,V,OH,OV,C) :- HH is H-OH+1, VV is V-OV+1,  add_h_v_c(Grid,HH,VV,C),!.
 
 calc_add_points(OH,OV,Grid,SGrid):- odd_failure(calc_add_points0(OH,OV,Grid,SGrid)),!.

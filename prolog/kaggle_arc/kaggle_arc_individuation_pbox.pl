@@ -32,7 +32,7 @@ make_gclip_cache:-
  consult('make_gclip_cache.pl'))),
  functor(G,gclip_cache,10),
  predicate_property(G,number_of_clauses(NC)),
- debug_m(indv(pbox),gclip_cache=NC).
+ debug_m(indiv(pbox),gclip_cache=NC).
 
 %=====================================================================
 is_fti_step(maybe_pbox_vm).
@@ -57,7 +57,7 @@ not_whole_row_or_col(C,Center):- \+ whole_row_or_col(C,Center).
 
    
 
-:- nodebug(indv(pbox)).
+:- nodebug(indiv(pbox)).
 %=====================================================================
 is_fti_step(pbox_vm).
 %=====================================================================
@@ -110,7 +110,7 @@ pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM):-
   maplist(obj_size2D,Objs,HVList),
   globalpoints(GridI0,Points),color_mass_points_to_sizes(Points,Sizes),
   append(Sizes,HVList,NEAR),
-  debug_m(indv(pbox),NEAR),
+  debug_m(indiv(pbox),NEAR),
   include(near_size(GH,GV,NEAR),Sizes_S_L,UseSizes),
   length(UseSizes,B), wdmsg(reduced(A->B)),
   pbox_vm(GH,GV,GridI0,UseSizes,VM))).
@@ -155,8 +155,8 @@ pbox_vm(GH,GV,GridI0,Sizes_S_L,VM):-
 
 begin_i_pbox_l(Grid,NSEW,XSG,Points5,Points9,VM,S_L,Sizes_S_L):-
   copy_term(NSEW+XSG,CNSEW+CXSG),
-  debug_m(indv(pbox),begin(S_L)), my_time(must_det_ll((i_pbox_l([],Recs,Grid,CNSEW,CXSG,Points5,Points9,VM,S_L,Sizes_S_L)))),
-  debug_m(indv(pbox),Recs),!.
+  debug_m(indiv(pbox),begin(S_L)), my_time(must_det_ll((i_pbox_l([],Recs,Grid,CNSEW,CXSG,Points5,Points9,VM,S_L,Sizes_S_L)))),
+  debug_m(indiv(pbox),Recs),!.
 
 
 
@@ -212,7 +212,7 @@ pbox(Name):-
   update_changes,
   (var(Name)-> true; testid_name_num_io(Name,TestID,Example,Num,IO)),
   ExampleNum=Example+Num,
-  with_debugging(indv(pbox),
+  with_debugging(indiv(pbox),
   (nonvar(IO) 
    -> forall(kaggle_arc_io(TestID,ExampleNum,IO,G),ignore(pbox_io(TestID,ExampleNum,IO,G))) 
     ; forall(kaggle_arc(TestID,ExampleNum,I,O),ignore(pbox_pair(TestID,ExampleNum,I,O))))).
@@ -228,8 +228,8 @@ pbox_indivs:-
   with_test_pairs(TestID,ExampleNum,I,O,pbox_pair(TestID,ExampleNum,I,O)).
 
 pbox_pair(TestID,ExampleNum,GridIn,GridOut):-
-  with_debugging(indv(pbox),
-    (debug_m(indv(pbox),?- test_p2(pbox_pair(TestID,ExampleNum))),
+  with_debugging(indiv(pbox),
+    (debug_m(indiv(pbox),?- test_p2(pbox_pair(TestID,ExampleNum))),
       i_pair(i_pbox,GridIn,GridOut))).
 
 pbox_io(TestID,ExampleNum,IO,G0):-
@@ -238,7 +238,7 @@ pbox_io(TestID,ExampleNum,IO,G0):-
   duplicate_term(G,GG),
   ignore(kaggle_arc_io(TestID,ExampleNum,IO,GG)),
   set_current_test(TestID),
-  debug_m(indv(pbox),?- pbox_io(TestID,ExampleNum,IO)),
+  debug_m(indiv(pbox),?- pbox_io(TestID,ExampleNum,IO)),
   my_time((i_pbox(GG,Objs),
   pbox_io_result(TestID,ExampleNum,IO,GG,Objs))).
 
@@ -384,10 +384,10 @@ which_partof_square(Which, OBJ,Find,Inside,Center, IsRim, OH, FX, OV, FY):-
      (Which=@=oborder -> (IsRim=rim_of,rim_of(Find,OBJ),OH is FX-1, OV is FY-1) ;  
       (Which=@=inside -> (IsRim=filltype(solid),OBJ=Inside,OH is FX, OV is FY))))))).
 
-i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- Points==[], !, debug_m(indv(pbox),pointless(L_S)).
-i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,[]):- !, debug_m(indv(pbox),complete(L_S)).
-%i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- L_S \= s_l(p2), L_S \= l_s(p1), experiment(L_S \= l_s(p2)), !, debug_m(indv(pbox),complete(L_S)).
-%i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- L_S \= s_l(p1), L_S \= l_s(p1), experiment(L_S \= l_s(p2)), !, debug_m(indv(pbox),complete(L_S)).
+i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- Points==[], !, debug_m(indiv(pbox),pointless(L_S)).
+i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,[]):- !, debug_m(indiv(pbox),complete(L_S)).
+%i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- L_S \= s_l(p2), L_S \= l_s(p1), experiment(L_S \= l_s(p2)), !, debug_m(indiv(pbox),complete(L_S)).
+%i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- L_S \= s_l(p1), L_S \= l_s(p1), experiment(L_S \= l_s(p2)), !, debug_m(indiv(pbox),complete(L_S)).
 
 i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):- 
   Size2D = size2D(H,V),
@@ -441,7 +441,7 @@ i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):-
  must_det_ll((
   make_indiv_object(VM,[/*b*/iz(type(pbox(WHY,L_S))),iz(type(pbox)),iz(flag(always_keep)),
      iz(media(shaped)),iz(media(image)),iz(info(dont_reduce)),loc2D(OH,OV),vis2D(HH,VV)],GOPoints,Obj),
-  debug_c(indv(pbox),
+  debug_c(indiv(pbox),
    ((\+ \+ ((
      ignore_equal_e(NSEW,['N','S','E','W']),
     %grid_size(OBJ,HH,VV), EH is OH+HH-1,EV is OV+VV-1, clip(OH,OV,EH,EV,Grid,OGrid), print_side_by_side(cyan,OGrid,SY,_,OBJ,F),

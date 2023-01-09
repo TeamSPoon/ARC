@@ -1965,7 +1965,7 @@ glean_pattern_reps(Steps,G,NewGrid):-
   writeln(pattern),
   %grid_to_tid(G,ID),
   print_grid(G),
-  writeln(repired_result),
+  writeln(repaired_result),
   Steps = rp(patW=PatWidth,type=Type,divW=DivW,startV=StartV,patV=PatV),
   pp(Steps),
   %pp(Grid9x9),

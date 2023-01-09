@@ -62,7 +62,7 @@ fav_testcase(v('414297c0')>trn+1,"
    ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 
         'Training Pair #2 Input' (grid(20,16))          'Output' v('414297c0') (grid(6,9))
-",human(indv(colormass),output(largest_object),paste_subobjs)).
+",[indiv(colormass)]).
 
 
 %= fav(v('414297c0'),[no_sol(i(complete),resize_grid(11,12,Color),incomplete),test_suite([less_fav]),test_suite([evaluation]),test_suite([eval400]),test_suite([devaluation]),out_grid([11,12]),loadmask(['/data/evaluation/*.json']),loadmask(['./data/devaluation/*.json']),filename(['/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/data/devaluation/414297c0.json']),filename(['/data/evaluation/414297c0.json']),-shape_match,-rotation_match,-mask_match,-color_match,alphabetical_v,'(3, 1) ']).
@@ -2808,7 +2808,7 @@ fav(t('9ecd008a'),[indiv(i_repair_patterns_f), ohuman([indiv_is_one_hole,fix_ima
 fav(t('73251a56'),[indiv(i_repair_patterns_f),learn([learn_mapping_stateful]),ohuman([apply_mapping_stateful])]).
 
 
-fav(t('9aec4887'),[indiv(color_blind),todo_sol([find_individuals([hollow,inside([rectangle])],I),rest_indivdual(Is),put_inside(Is,I),
+fav(t('9aec4887'),[indiv_option(color_blind),todo_sol([find_individuals([hollow,inside([rectangle])],I),rest_indivdual(Is),put_inside(Is,I),
   if_edge_strong([color=C]),touch(Is,Point),set_color(C,Point)])]).
 
 fav(t(a740d043),[ohuman(remove_color(blue))]).
@@ -3762,7 +3762,7 @@ less_fav(v(b0722778),[out_grid(2,11),-shape_match,-rotation_match,-mask_match,-c
 less_fav(v(e66aafb8),[out_grid(5,8),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(5, 1) ']).
 less_fav(v('1a6449f1'),[out_grid(7,6),-shape_match,-rotation_match,-mask_match,-color_match,test_suite([eval400]),'(3, 1) ']).
 less_fav(v('25094a63'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mask_match,test_suite([eval400]),'(2, 1) ']).
-less_fav(t('9aec4887'),[out_grid(6,6),todo_sol([find_individuals([hollow,inside([rectangle])],_137826),rest_indivdual(_137858),put_inside(_137858,_137826),if_edge_strong([color=_137892]),touch(_137858,_137904),set_color(_137892,_137904)]),indiv(color_blind),-shape_match,-rotation_match,-mask_match,+color_match,x_marks_the_spot,test_suite([train400]),recoloring,pattern_moving,crop,color_guessing,'(3, 1)']).
+less_fav(t('9aec4887'),[out_grid(6,6),todo_sol([find_individuals([hollow,inside([rectangle])],_137826),rest_indivdual(_137858),put_inside(_137858,_137826),if_edge_strong([color=_137892]),touch(_137858,_137904),set_color(_137892,_137904)]),indiv_option(color_blind),-shape_match,-rotation_match,-mask_match,+color_match,x_marks_the_spot,test_suite([train400]),recoloring,pattern_moving,crop,color_guessing,'(3, 1)']).
 less_fav(v('9356391f'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(2, 1) ']).
 less_fav(v('85fa5666'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(4, 1) ']).
 less_fav(v(f0df5ff0),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).

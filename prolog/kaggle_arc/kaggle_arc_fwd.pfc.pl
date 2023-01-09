@@ -106,6 +106,7 @@ arc_test_property(T, common,(comp(i-o, area)), area(n(X, X, d(0), a(0), r(1))))/
 %:- forall_assert(kaggle_arc_io(TestID,ExampleNum,IO,_),some_grid_tid(TestID>ExampleNum*IO)).
 :- set_prolog_flag(pfc_term_expansion,false).
 
+need_save_rule1(Mode,Why,I,O)==>do_save_rule1(Mode,Why,I,O).
 
 :- include(kaggle_arc_footer).
 

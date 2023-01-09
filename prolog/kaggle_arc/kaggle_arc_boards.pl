@@ -683,6 +683,7 @@ grid_hint_swap_io(I-O,In,Out,rev(Hint)):- I\==O,
  Hint \= mono(comp(_,o-i,value(=@=))).
 
 grid_hint_recolor(_IO,_In,_Out,is_grid_hint). 
+grid_hint_recolor(IO,In,Out,ogs_hint(IO,Hint)):-  all_ogs(Out,In,Hint), Hint\==[].
 grid_hint_recolor(IO,In,Out,Hint):- get_black(Black), grid_hint_io(cbg(Black),IO,In,Out,Hint).
 grid_hint_recolor(IO,In,Out,mono(Hint)):- arc_option(scan_mono_hints), % fail,
  once((into_monogrid(In,InM),into_monogrid(Out,OutM))),
@@ -840,7 +841,7 @@ ideal_rank(Named,[Obj],Obj,Named):-!.
 ideal_rank(Named,_Objs,Obj,Prop):- indv_props_list(Obj,Prop),sub_var(Named,Prop),!.
 ideal_rank(_Named,_Objs,Obj,Prop):- indv_props_list(Obj,Prop),ideal_prop(Prop),!.
 ideal_rank(Named,Objs,Obj,nth1(Nth1,Named)):- nth1(Nth1,Objs,Obj),!.
-ideal_prop(o(Sz,1,_)):- Sz\=1.
+ideal_prop(og(_OG,Sz,1,_)):- Sz\=1.
 
 %grid_to_so(Grid,_Out,l(Obj),In,R):- grid_to_so(Grid,Obj,In,R).
 %grid_to_so(_Grid,Out,o(Obj),In,R):- grid_to_so(Out,Obj,In,R).
@@ -880,7 +881,12 @@ all_ogs1(II,Out,XY):-
   findall(ogs(trim,whole,R,loc2D(XX,YY)),
      (trim_for_offset_1_1(II,In,OX,OY),maybe_ogs(R,X,Y,In,Out),XX is X-OX+1, YY is Y-OY+1),XY),!.
 
-all_ogs2(In,Out,XY):- findall(ogs(notrim,whole,R,loc2D(XX,YY)),maybe_ogs(R,XX,YY,In,Out),XY),!.
+subst_black_for_var(G,_):- G==black,!.
+subst_black_for_var(G,G).
+
+all_ogs2(In0,Out,XY):- 
+   mapgrid(subst_black_for_var,In0,In),
+   findall(ogs(notrim,whole,R,loc2D(XX,YY)),maybe_ogs(R,XX,YY,In,Out),XY),!.
 
 all_ogs3(Grid,Out,XY):-
   findall(ogs(notrim,Named,R,loc2D(XX,YY)),(fail,grid_to_so(Grid,Named,In),maybe_ogs(R,XX,YY,In,Out)),XY).
@@ -935,18 +941,18 @@ grid_hint_iso(cbg(BGC),IO,Out,In,GH,GV,GH,GV,Hint):-
 %grid_hint_iso(cbg(_BGC),IO,In,Out,_IH,_IV,_OH,_OV,cg(IO,mass_r(Mass))):- comp_o(IO), mass(In,IMass),mass(Out,OMass), IMass\==0,Mass is rationalize(OMass/IMass),Mass\==1.
 /*
 grid_hint_iso(cbg(_BGC),i-o,Out,_,_IH,_IV,_OH,_OV,rev(RInfo)):- 
- setup_call_cleanup(flag(indv,Was,0),
+ setup_call_cleanup(flag(indiv,Was,0),
   ((findall(Info,grid_part(Out,Info),List)),flatten([List],FList),member(Info,FList), rinfo(Info,RInfo)),
-                    flag(indv,_,Was)).
+                    flag(indiv,_,Was)).
 grid_hint_iso(cbg(_BGC),i-o,_In,Out,_IH,_IV,_OH,_OV,RInfo):- !,
- setup_call_cleanup(flag(indv,Was,0),
+ setup_call_cleanup(flag(indiv,Was,0),
   ((findall(Info,grid_part(Out,Info),List)),flatten([List],FList),member(Info,FList), rinfo(Info,RInfo)),
-                    flag(indv,_,Was)).
+                    flag(indiv,_,Was)).
 */
 /*grid_hint_iso(cbg(_BGC),i-o,_In,Out,_IH,_IV,_OH,_OV,RInfo):- 
- setup_call_cleanup(flag(indv,Was,0),
+ setup_call_cleanup(flag(indiv,Was,0),
   ((wno( findall(Info,grid_part(Out,Info),List)),flatten([List],FList),member(Info,FList), rinfo(Info,RInfo))),
-                    flag(indv,_,Was)).
+                    flag(indiv,_,Was)).
 */
 termsub_to_atom(List,OO):- is_list(List),!,maplist(termsub_to_atom,List,LL),
  atomic_list_concat(LL,'_',O),atomic_list_concat(['[',O,']'],OO).

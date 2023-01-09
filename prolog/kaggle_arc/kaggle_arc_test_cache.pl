@@ -5195,7 +5195,7 @@ testcase(t('9aec4887')>tst+0,"
    ---------------------------------                                                
                                                
 ").
-%= fav(t('9aec4887'),[no_sol(i(complete),resize_grid(6,6,Color),incomplete),todo_sol([find_individuals([hollow,inside([rectangle])],_27706),rest_indivdual(_27738),put_inside(_27738,_27706),if_edge_strong([color=_27772]),touch(_27738,_27784),set_color(_27772,_27784)]),out_grid([6,6]),indiv([color_blind]),-[shape_match],-[rotation_match],-[mask_match],+[color_match],x_marks_the_spot,tt,training,recoloring,pattern_moving,crop,color_guessing,'(3, 1)']).
+%= fav(t('9aec4887'),[no_sol(i(complete),resize_grid(6,6,Color),incomplete),todo_sol([find_individuals([hollow,inside([rectangle])],_27706),rest_indivdual(_27738),put_inside(_27738,_27706),if_edge_strong([color=_27772]),touch(_27738,_27784),set_color(_27772,_27784)]),out_grid([6,6]),indiv_option([color_blind]),-[shape_match],-[rotation_match],-[mask_match],+[color_match],x_marks_the_spot,tt,training,recoloring,pattern_moving,crop,color_guessing,'(3, 1)']).
 
 
 testcase(t('9af7a82c')>tst+0,"

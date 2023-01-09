@@ -375,6 +375,10 @@ next_indivs_mode:- get_indivs_mode(M1),next_indivs_mode(M1,M2),set_indivs_mode(M
 
 set_indivs_mode(Mode):- luser_setval('$indivs_mode',Mode).
 get_indivs_mode(Mode):- nonvar(Mode),get_indivs_mode(TMode),!,TMode==Mode.
+
+get_indivs_mode(Mode):- test_config(indiv(Mode)).
+%get_indivs_mode(IndivMode):- get_current_test(TestID),test_info(Name,InfoL),!,contains_nonvar(This,InfoL).
+%
 get_indivs_mode(Mode):- once(luser_getval('$indivs_mode',Mode);next_indivs_mode(Mode,_)).
 with_indivs_mode(Mode,Goal):- 
   get_indivs_mode(WasMode),

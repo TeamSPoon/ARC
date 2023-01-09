@@ -330,14 +330,14 @@ into_obj_plist(OID,List):- is_oid(OID), oid_to_obj(OID,Obj),!,into_obj_plist(Obj
 
 never_matom(localpoints(_)).
 never_matom(colorlesspoints(_)).
-never_matom(o(_,_,_)).
+never_matom(og(_OG,_,_,_)).
 never_matom(giz(_)).
 never_matom(globalpoints(_)).
 sub_obj_atom(_,E):- var(E),!,fail.
 sub_obj_atom(E,E):- \+ compound(E),!.
 sub_obj_atom(E,L):- is_list(L),!,member(EM,L),sub_obj_atom(E,EM).
 sub_obj_atom(NO,M):- remove_oids(M,MM,EL),EL\==[], !,sub_obj_atom(NO,MM).
-sub_obj_atom(M,o(H,L,_)):- !, M = (L/H).
+sub_obj_atom(M,og(OG,H,L,_)):- !, ((M = (L/H));(M = (L/OG))).
 %sub_obj_atom(E,colorlesspoints(CP)):- !, is_list(CP),member(E,CP).
 
 %sub_obj_atom(M,M):- attvar(M),!.
@@ -473,8 +473,8 @@ get_did_map(PeersO,O2,PeersI,O1):- call_in_testid(did_map(PeersI,O1,PeersO,O2)).
 
 showdiff_arg1(TITLE,Peers1,Obj1,Peers2,Obj2):- 
  must_det_ll((
-  findall(Peer,(nop(has_prop(o(X,_,Y),Obj1)),member(Peer,Peers1),has_prop(o(X,_,Y),Peer),Peer\==Obj1),Peers11),
-  findall(Peer,(nop(has_prop(o(X,_,Y),Obj2)),member(Peer,Peers2),has_prop(o(X,_,Y),Peer),Peer\==Obj2),Peers22),
+  findall(Peer,(nop(has_prop(og(OG,X,_,Y),Obj1)),member(Peer,Peers1),has_prop(og(OG,X,_,Y),Peer),Peer\==Obj1),Peers11),
+  findall(Peer,(nop(has_prop(og(OG,X,_,Y),Obj2)),member(Peer,Peers2),has_prop(og(OG,X,_,Y),Peer),Peer\==Obj2),Peers22),
   objs_to_io(Obj1,Obj2,O1,O2),
   ((Obj1==O1) 
        -> (PeersI = Peers11,PeersO = Peers22) ; (PeersI = Peers22,PeersO = Peers11)),
@@ -559,7 +559,7 @@ show_pair_now(TITLE,OO1,OO2):-
 show_sames_diffs_now(Sames,PDiffs):- 
    D is  2,
     az_ansi(noisey_debug(print_list_of(print_sames,sames,Sames))),    
-    my_partition('\\='(o(_,_,_)),PDiffs,NonFunDiffs,FunDiffs),
+    my_partition('\\='(og(_,_,_,_)),PDiffs,NonFunDiffs,FunDiffs),
     print_list_of(print_diffs(D + 1),diffs,NonFunDiffs),
     print_list_of(print_diffs(D + 1),oDiffs2,FunDiffs),  !.
 
@@ -576,7 +576,7 @@ refunctor(I,O):- \+ compound(I),!,O=I.
 refunctor(iz(C),iz(O)):-!, refunctor(C,O).
 refunctor(pen([cc(Silver,_)]),pen([cc(Silver,_)])).
 refunctor(edge(CI1,CI2),edge(CO1,CO2)):-!,(CI2=CO2;CI1=CO1).
-refunctor(o(NS1,WE,_),o(NS2,WE,_)):-!,NS1=NS2.
+refunctor(og(OG,NS1,WE,_),og(OG,NS2,WE,_)):-!,NS1=NS2.
 refunctor([H|T],[HH|TT]):- !, refunctor(H,HH),refunctor(T,TT).
 %refunctor(C,O):- is_list(C),!,maplist(refunctor,C,O).
 refunctor(C,O):- compound_name_arguments(C,F,A),!,refunctor_args(A,B),compound_name_arguments(O,F,B).
@@ -584,8 +584,8 @@ refunctor(C,O):- compound_name_arguments(C,F,A),!,refunctor_args(A,B),compound_n
 objs_to_io(O2,O1,O1,O2):- (has_prop(giz(g(in)),O1);has_prop(giz(g(out)),O2)),!.
 objs_to_io(O1,O2,O1,O2).
 
-try_omember(_,S1,[O]):- O = o(  LF,N, A), member(O,S1),number(N),member(o(LF,N,B),S1),B\==A,!.
-try_omember(_,S1,[O]):- O = o(_LF,N,_A), member(O,S1),number(N),!.
+try_omember(_,S1,[O]):- O = og(OG, LF,N, A), member(O,S1),number(N),member(og(OG,LF,N,B),S1),B\==A,!.
+try_omember(_,S1,[O]):- O = og(_OG,_LF,N,_A), member(O,S1),number(N),!.
 try_omember(Peers,S1,Props1):- include(not_peerless_prop(Peers),S1,Props1).
 
   
@@ -607,14 +607,14 @@ select_obj_pair_1_3(AAR,BBR,PA,PB,maybe_good_prop(PAP,PBP)):-    maybe_good_prop
 %select_obj_pair_1_3(AAR,BBR,PA,PB):-   maybe_good_prop(PA,PB), member(PA,AAR), member(PB,BBR), \+ allow_pair(PA,PB),!.
 %select_obj_pair_1_3(AAR,BBR,PA,PB):-   member(PA,AAR), member(PB,BBR), \+ allow_pair(PA,PB),!.
 
-maybe_good_prop(o(How,LFN,O),o(How,LFN,O)).
-maybe_good_prop(o(How,LFN,_),o(How,LFN,_)).
+maybe_good_prop(og(OG,How,LFN,O),og(OG,How,LFN,O)).
+maybe_good_prop(og(OG,How,LFN,_),og(OG,How,LFN,_)).
 maybe_good_prop(pen([Color1|_]),pen([Color2|_])):- prop_color(Color1,Color2).
 maybe_good_prop(pen([_,Color1|_]),pen([_,Color2|_])):- prop_color(Color1,Color2).
 maybe_good_prop(pen([_,Color1|_]),pen([Color2|_])):- prop_color(Color1,Color2).
 maybe_good_prop(pen([Color1|_]),pen([_,Color2|_])):- prop_color(Color1,Color2).
 maybe_good_prop(A,A):- maybe_good_prop1(A).
-maybe_good_prop(o(How,_,_),o(How,_,_)).
+maybe_good_prop(og(OG,How,_,_),og(OG,How,_,_)).
 
 maybe_good_prop1(vis2D(_,_)).
 maybe_good_prop1(loc2D(_,_)).
@@ -632,7 +632,7 @@ usefull_compare(P):- changed_by(P,_).
 
 remove_giz(L,O):- include(not_giz,L,M),list_to_set(M,O).
 not_giz(giz(_)):-!,fail.
-not_giz(o(_,_,_)):-!,fail.
+not_giz(og(_,_,_,_)):-!,fail.
 not_giz(merged(_)):-!,fail.
 not_giz(/*b*/iz(_)):-!,fail.
 not_giz(changes(_)):-!,fail.
@@ -650,7 +650,7 @@ prop_type(scale,rotOffset2D(_,_)).
 prop_type(scale,vis2D(_,_)).
 prop_type(scale,iz(sizeX(_))).
 prop_type(scale,iz(sizeY(_))).
-prop_type(order,o(_Peers,_Ord,_Type)).
+prop_type(order,og(_OG,_Peers,_Ord,_Type)).
 prop_type(colorlesspoints,colorlesspoints(_)).
 prop_type(rotate,rot2L(_)).
 prop_type(repaint,pen(_)).
@@ -758,7 +758,7 @@ uncomparable(H,F):- uncomparable2(H,F).
 uncomparable2(group,grid).
 uncomparable2(group,globalpoints).
 uncomparable2(group,giz).
-uncomparable2(group,o).
+uncomparable2(group,og).
 %uncomparable2(group,grid_size).
 uncomparable2(group,obj_to_oid).
 %uncomparable2(group,link).
@@ -1135,7 +1135,7 @@ reduce_required(i(IO),IO).
 
 two_ok(I,O):- I=@=O,!.
 two_ok(I,O):- ( is_list(I);is_list(O); \+ compound(I); \+ compound(O)),!, two_ok_dt(I,O).
-two_ok(o(A,_,B),o(A,_,B)):-!.
+two_ok(og(OG,A,_,B),og(OG,A,_,B)):-!.
 two_ok(I,O):- reduce_required(I,II),!,functor(I,F,A),functor(O,F,A),arg(1,O,OO),!,two_ok(II,OO).
 two_ok(cc(_,N),cc(_,N)).
 two_ok(cc(N,_),cc(N,_)).
@@ -1376,10 +1376,10 @@ into_vals(V1,V2,Vals):- extract_vals(V1,VV1),extract_vals(V2,VV2),append(VV1,VV2
 %extract_vals(M,Vals):- var(M),!,Vals=M.
 %extract_vals(M,Vals):- \+ compound(M),!,Vals=[M].
 extract_vals(M,Vals):- maybe_extract_values(M,Vals),!.
-extract_vals(M,N):- M=..[_,A],maybe_extract_values(A,N).
+extract_vals(M,N):- M=..[_,A],maybe_extract_values(A,N),!.
 extract_vals(V2,[V2]).
 
-maybe_extract_values(Color,Values):- must_be_free(Values), compound(Color), Color=..[DF,vals(Values)|_],diff_f(DF),!,is_list(Values),!.
+maybe_extract_values(Color,Values):- must_be_free(Values), compound(Color), Color=..[DF,vals(Values)|_],diff_f(DF), fail,!,is_list(Values),!.
 maybe_extract_value(Color,Value):- maybe_extract_values(Color,Values),!,member(Value,Values).
 
 

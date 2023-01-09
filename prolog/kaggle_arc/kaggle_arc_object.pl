@@ -36,10 +36,10 @@ iz_type0(I,I).
 
 if_atype(always_keep,flag).
 if_atype(hidden,flag).
-if_atype(nsew,indv).
-if_atype(indv,info).
+if_atype(nsew,indiv).
+if_atype(indiv,info).
 if_atype(birth,info).
-if_atype(colomass,indv).
+if_atype(colomass,indiv).
 if_btype(info).
 if_btype(flag).
 
@@ -572,7 +572,7 @@ add_grid_at_offset(X,Y,Grid,VM):- !,
 
 
 
-o(Obj,W,LF,N):- enum_object(Obj), indv_props(Obj,o(W,LF,N)).
+o(Obj,OG,W,LF,N):- enum_object(Obj), indv_props(Obj,og(OG,W,LF,N)).
 
 
 obj_to_program(Obj,Program,VM):-
@@ -700,7 +700,7 @@ aggregates(iz(_)).
 %aggregates(unique_colors_count(_)).
 aggregates(cc(_,_)).
 aggregates(giz(_)).
-aggregates(o(_,_,_)).
+aggregates(og(_,_,_,_)).
 %aggregates(birth(_)).
 aggregates(link(_,_,_)).
 aggregates(link(_,_)).
@@ -1410,12 +1410,25 @@ cell_syms(IBGC,Cell-_,Sym):- cell_syms(IBGC,Cell,Sym),!.
 
 object_global_ngrid(Obj,GNGrid):- global_grid(Obj,Grid), into_ngrid(Grid,GNGrid).
 
+/*
 global_grid(I,G):- is_grid(I),!,G=I.
-global_grid(ObjRef,List):- \+ is_object(ObjRef), atomic(ObjRef),into_obj(ObjRef,Obj),!,global_grid(Obj,List).
+global_grid(ObjRef,List):- \+ is_object(ObjRef), into_obj(ObjRef,Obj),!,global_grid(Obj,List).
 %global_grid(Group,List):- is_group(Group),globalpoints(Group,Points),!,
-global_grid(I,G):- must_det_ll((call((grid_size(I,H,V),globalpoints_maybe_bg(I,LP),points_to_grid(H,V,LP,G))))),!.
+global_grid(I,G):- must_det_ll((call((grid_size(I,H,V),globalpoints_maybe_bg(I,LP),points_to_default_grid(H,V,LP,G))))),!.
+global_grid(I,G):- globalpoints(I,GP),points_to_default_grid(GP,G),!.
 global_grid(I,G):- is_object(I), object_grid(I,G),!.
-global_grid(I,G):- globalpoints(I,GP),into_grid(GP,G),!.
+*/
+global_grid0(I,G):- is_grid(I),!,G=I.
+global_grid0(ObjRef,List):- \+ is_object(ObjRef), into_obj(ObjRef,Obj),!,global_grid0(Obj,List).
+global_grid0(I,G):- must_det_ll((call((grid_size(I,H,V),globalpoints_maybe_bg(I,LP),points_to_grid(H,V,LP,G))))),!.
+
+%global_grid(I,G):- global_grid0(I,G),!.
+global_grid(I,G):- global_grid0(I,G0),!,mapgrid(black_vs_bg,G0,G).
+global_grid(I,G):- object_grid(I,G0),!,loc2D(I,H,V),pad_top(V,G0,GV),pad_left(H,GV,G).
+
+black_vs_bg(C,O):- C == black,!, O = wbg.
+black_vs_bg(C,O):- C == bg,!, O = _.
+black_vs_bg(C,C).
 
 locG_term(I,loc2G(X,Y)):- loc2G(I,X,Y),!.
 loc2G(Grid,H,V):- is_grid(Grid),!,other_grid_size(Grid,H,V).
