@@ -17,7 +17,33 @@ o1 to o1
 */
 :- include(kaggle_arc_header).
 
-individuation_macros(i_complete_generic, [
+individuation_macros(i_complete_generic, 
+  [fg_intersections(in_intersection),
+   fg_subtractions(in_subtraction),   
+   colormass,lo_dots]).
+
+in_intersection(VM):-
+  Grid = VM.grid,
+  trim_to_rect(Grid,Trim),
+  localpoints(Trim,Ps),length(Ps,PsL),PsL<25,!,
+  run_fti(VM,[lo_dots]).
+in_intersection(VM):-
+  run_fti(VM,[nsew,colormass,lo_dots]).
+
+
+in_subtraction(VM):-
+  Grid = VM.grid,
+  trim_to_rect(Grid,Trim),
+  localpoints(Trim,Ps),length(Ps,PsL),PsL<25,!,
+  run_fti(VM,[lo_dots]).
+in_subtraction(VM):-
+  run_fti(VM,[nsew,colormass,lo_dots]).
+  
+
+
+
+
+individuation_macros(i_complete_generic1, [
 
     call(retractall(special_sizes(_,_))),
     ([fg_subtractions(colormass),fg_intersections(colormass),colormass]),
@@ -49,11 +75,11 @@ individuation_macros(do_ending, [
  %combine_if_prop(and(cc(bg,1),)),
  %remove_if_prop(and(iz(stype(dot))])),
  %combine_same_globalpoints,
- reset_points,remove_used_points,
- find_relations,
+ reset_points,
  gather_cached,
- grid_props
- %grid_props,
+ remove_used_points,
+ named_grid_props(post_indiv),
+ find_relations,
  remove_dead_links,
  %find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
  %find_subsumes,
@@ -66,7 +92,7 @@ individuation_macros(do_ending, [
  %combine_same_globalpoints,  
  extend_obj_proplists,
  really_group_vm_priors,
- %grid_props,
+ %whole,
  %combine_objects,
  end_of_macro]).
 
@@ -97,7 +123,7 @@ individuation_macros(i_complete_generic3, [
   interlink_overlapping_black_lines,
   reset_points,remove_used_points,
 %  print_vm_info,
-  grid_props]).
+  whole]).
 
 special_sizes_v_h(H,V):-  special_sizes(H,V).
 special_sizes_v_h(H,V):-  special_sizes(V,H).
@@ -127,7 +153,7 @@ special_sizes_v_h_sorted_s_l(VM,H,V):- findall(size2D(H,V),special_sizes_vm(VM,H
 
 
 individuation_macros(i_complete_generic2, [
-   grid_props,
+   named_grid_props(pre_objs),
    whole,
    maybe_glyphic,
    identify_subgrids,
@@ -144,7 +170,6 @@ individuation_macros(i_complete_generic2, [
   %remove_dead_links,
   %combine_same_globalpoints,
   %really_group_vm_priors,
-  %grid_props,
   %combine_objects,
    find_relations,
   end_of_macro  ]). 
@@ -492,7 +517,9 @@ preserve_vm(VM,Goal):-
 remove_texture(Cell,C-Point):- color_texture_point_data(Cell,C,_Texure,Point).
 is_texture(List,Cell):- color_texture_point_data(Cell,_C,Texture,_Point),member(T,List),Texture==T,!.
 is_fti_step(gather_texture).
-gather_texture(_VM):-!.
+
+gather_texture(VM):- nonvar(VM.ngrid),!.
+gather_texture(VM):- Grid = VM.grid, into_ngrid(Grid,NGrid), gset(VM.ngrid)=NGrid,!.
 gather_texture(VM):-
  must_det_ll((
     Grid = VM.grid,
@@ -930,7 +957,7 @@ grid_to_obj_other(VM):-
 
 % =====================================================================
 :- ensure_loaded(kaggle_arc_individuation_pbox).
-:- ensure_loaded(kaggle_arc_prior_grouping).
+:- ensure_loaded(kaggle_arc_prior_groups).
 % =====================================================================
 
 % =====================================================================
@@ -1541,10 +1568,10 @@ individuate8(VM,ID,ROptions,GridIn,IndvS):-
       nop(print_info(IndvS)))).  
 
 
-
 maybe_into_fti(ID_In,[ROptions],Grid_In,VM_In):- nonvar(ROptions),!,maybe_into_fti(ID_In,ROptions,Grid_In,VM_In). 
 maybe_into_fti(ID_In,ROptions,Grid_In,VM_In):- ROptions==complete,grid_vm(Grid_In,VM_In),!,gset(VM_In.id) = ID_In.
 maybe_into_fti(ID_In,ROptions,Grid_In,VM_In):- into_fti(ID_In,ROptions,Grid_In,VM_In).
+
 into_fti(ID,ROptions,GridIn0,VM):-
   fix_indivs_options(ROptions,Options),
   must_det_ll((
@@ -1619,6 +1646,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
    izmap:true,
    % Original copies of Grid and point representations
    grid_o:Grid, 
+   ngrid:_,
    rule_dir: ROptions,
    points_o:Points, % repaired:[],
    % objects found in grid and object that are reserved to not be found
@@ -2328,17 +2356,18 @@ objectProperties((
 % =====================================================================
 is_fti_step(fg_subtractions).
 % =====================================================================
-%fg_subtractiond(Cell,Cell):- is_bg_color(Cell),!.
-fg_subtractiond(This,Target,Black):- \+ This \= Target,!,get_black(Black).
-fg_subtractiond(This,_,Black):-  get_black(Black), \+ This \= Black,!.
-%fg_subtractiond(This,Target,This):- get_black(Black), \+ Target \= Black,!.
-fg_subtractiond(This,_,This).
-%fg_subtractiond(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
+fg_subtractiond(This,Target,Target):- This =@= Target,!.
+fg_subtractiond(_,_,Black):-  get_black(Black).
+
+non_subtractiond(Black,Target,Target):- get_black(Black),!.
+non_subtractiond(Target,Black,Target):- get_black(Black),!.
+non_subtractiond(This,Target,Black):- This =@= Target, get_black(Black), !.
+non_subtractiond(This,_,That):- copy_term(This,That),!.
 
 fg_subtractions(Subtraction,VM):-
  ignore((
-         VMID = VM.id,
-         \+ sub_var(tst,VMID),
+ VMID = VM.id,
+ \+ sub_var(tst,VMID),
  VMGID = VM.gid,
  \+ atom_contains(VMGID,'_fg_subtractiond'),
  Grid = VM.grid_o,
@@ -2355,11 +2384,19 @@ fg_subtractions(Subtraction,VM):-
   var(GOID),atomic_list_concat([VMGID,'_fg_subtractiond'],GOID), assert_grid_gid(NewGrid,GOID),
   get_vm(VMS), 
   %individuate2(_,Subtraction,GOID,NewGrid,FoundObjs),
-  with_other_grid(Other,individuate(Subtraction,NewGrid,FoundObjs)),
+  with_other_grid(Other,
+   must_det_ll(( into_fti(VM.id,Subtraction,NewGrid,SubVM),      
+      set(SubVM.gid) = GOID,
+      set(SubVM.ngrid)= VM.ngrid,
+      set_vm(SubVM),
+      %individuals_raw(VM,GH,GV,ID,NewOptions,Reserved,Points,Grid,IndvSRaw),
+      run_fti(SubVM,Subtraction), 
+      make_indiv_object_list(SubVM,SubVM.objs,FoundObjs)))))),
+ must_det_ll((
   set_vm(VMS),
   ReColored = FoundObjs,
   %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
-  print_grid(fg_subtractions(GOID),NewGrid),
+  print_ss(fg_subtractions(GOID),NewGrid,FoundObjs),
   print_ss(ReColored),
   remCPoints(VM,ReColored),
   remGPoints(VM,ReColored),
@@ -2397,11 +2434,19 @@ fg_intersections(Intersection,VM):-
   var(GOID),atomic_list_concat([VMGID,'_fg_intersectiond'],GOID), assert_grid_gid(NewGrid,GOID),
   get_vm(VMS), 
   %individuate2(_,Intersection,GOID,NewGrid,FoundObjs),
-  with_other_grid(Other,individuate(Intersection,NewGrid,FoundObjs)),
+  with_other_grid(Other,
+   must_det_ll(( into_fti(VM.id,Intersection,NewGrid,SubVM),      
+      set(SubVM.gid) = GOID,
+      set(SubVM.ngrid)= VM.ngrid,
+      set_vm(SubVM),
+      %individuals_raw(VM,GH,GV,ID,NewOptions,Reserved,Points,Grid,IndvSRaw),
+      run_fti(SubVM,Intersection), 
+      make_indiv_object_list(SubVM,SubVM.objs,FoundObjs)))))),
+ must_det_ll((
   set_vm(VMS),
   ReColored = FoundObjs,
   %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
-  print_grid(fg_intersections(GOID),NewGrid),
+  print_ss(fg_intersections(GOID),NewGrid,FoundObjs),
   print_ss(ReColored),
   remCPoints(VM,ReColored),
   remGPoints(VM,ReColored),
@@ -2839,9 +2884,11 @@ one_fti(VM,glyphic):-
 %make_point_object(VM,_Opts,Point,Indv):-
 %    member(Point=Indv, VM.allocated_points),!.
 
-is_fti_step(grid_props).
-grid_props(VM):- one_fti(VM,grid_props),!.
-one_fti(VM,grid_props):- whole(VM).
+
+named_grid_props(Name,VM):- one_fti(VM,named_grid_props(Name)),!.
+
+is_fti_step(named_grid_props(name)).
+one_fti(VM,named_grid_props(Name)):- nop(named_grid_props(Name,VM)).
 /*
   H=VM.h,V=VM.v,
   Grid= VM.grid_o,
@@ -2850,7 +2897,7 @@ one_fti(VM,grid_props):- whole(VM).
   hv_point_value(H,1,Grid,PointNE),
   hv_point_value(H,V,Grid,PointSE),
   grid_props(Grid,Props),
-  append(Props,[mass(0),vis2D(H,V),birth(grid_props),loc2D(1,1),iz(flag(always_keep)),iz(media(image)),iz(flag(hidden))],AllProps),
+  append(Props,[mass(0),vis2D(H,V),birth(named_grid_props),loc2D(1,1),iz(flag(always_keep)),iz(media(image)),iz(flag(hidden))],AllProps),
   make_indiv_object(VM,AllProps,[PointNW,PointSW,PointNE,PointSE],_),!.
 */
 hv_point_value(H,V,Grid,C-Point):- hv_point(H,V,Point),point_c_value(Point,C,Grid).
@@ -3914,7 +3961,7 @@ include_black(_VM):- set_bgc(wbg).
 %individuation_macros(complete, [parallel,done]).
 
 individuation_macros(complete, ListO):- im_complete(ListC),
-   flatten([ListC,do_ending],ListM),
+   flatten([named_grid_props(pre_objs),ListC,do_ending],ListM),
    list_to_set(ListM,ListO),!.
 
 

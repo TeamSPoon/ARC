@@ -176,7 +176,7 @@ make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):-
   %grid_to_shape(Grid,RotG,OffsetX,OffsetY,ShapePoints,PenColors),
   
   %shape_id(NormMonoLocalGrid,MonoNormShapeID),
-  %into_ngrid(Grid,NGrid),ngrid_syms(NGrid,Syms),
+  into_ngrid(Grid,NGrid),ngrid_syms(NGrid,Syms),
   normalize_grid(NormOps,Grid,NormGrid),
   %writeg([normgrid=NormGrid]), 
   %if_t([[black,_]]=@=NormGrid,trace),
@@ -219,8 +219,9 @@ make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):-
     iz(norm_sid(NormShapeID)),
     %iz(mono_norm_sid(MonoNormShapeID)),    
     iz(sid(ShapeID)),
+    ngrid(NGrid),
 
-    %unkept(Sym),
+    kept(Syms),
         
     mass(Len),
     CC,        

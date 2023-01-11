@@ -855,7 +855,6 @@ ansi_startup:-
 :- luser_default(cmd2,print_all_info_for_test).
 %:- luser_default(cmd2,test_show_grid_objs).
 :- luser_default(individuated_cache,true).
-%:- luser_default(extreme_caching,true).
 
 
 load_task_states:- exists_directory('/data/evaluation/'),catch_log(load_json_files(evaluation,v,'/data/evaluation/*.json')),!.
@@ -893,4 +892,5 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 :- nb_setval(arc_can_portray,nil).
 %:- load_arc_db_temp_cache.
 :- fmt('% Type ?- demo. % or press up arrow').
+:- luser_default(extreme_caching,false).
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).

@@ -240,7 +240,6 @@ is_fti_step(extend_obj_proplists).
 % =====================================================================
 %really_group_vm_priors(_VM):-!.
 extend_obj_proplists(VM):- extend_obj_proplist(VM.objs,set(VM.objs)).
- 
 
 
 % =====================================================================
