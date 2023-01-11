@@ -404,6 +404,7 @@ subClassOf(diamond,hv_symmetric).
 subClassOf(circle,hv_symmetric).
 subClassOf(round,hv_symmetric).
 subClassOf(symmetry_type(sym_hv),hv_symmetric).
+subClassOf(symmetry_type(sym_hv_non_90),hv_symmetric).
 subClassOf(hv_symmetric,h_symmetric).
 subClassOf(hv_symmetric,v_symmetric).
 
@@ -471,6 +472,8 @@ is_ncpoints_list(L):- elems_are(L,is_nc_point).
 
 enum_colors(OtherColor):- named_colors(Colors),!,member(OtherColor,Colors).
 enum_fg_colors(FG):- enum_colors(FG), is_fg_color(FG), \+ is_bg_color(FG), FG\==fg.
+enum_real_colors(FG):- enum_colors(FG), is_real_color(FG).
+enum_fg_real_colors(FG):- enum_colors(FG), is_real_color(FG), is_fg_color(FG).
 %enum_fg_colors(Color):- enum_colors(Color),is_color_no_bgc(Color).
 fill_color(Color,OtherColor):- enum_colors(OtherColor),Color\==OtherColor,is_color_no_bgc(OtherColor).
 

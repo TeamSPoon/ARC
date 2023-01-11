@@ -25,8 +25,11 @@ system:any_arc_files(Some):- atom_contains(Some,'arc').
 :- thread_local(in_memo_cached/5).
 :- multifile(prolog:make_hook/2).
 :- dynamic(prolog:make_hook/2).
+prolog:make_hook(before, Some):- any_arc_files(Some), forall(clear_all_caches,true).
 
-prolog:make_hook(before, Some):- any_arc_files(Some), \+ luser_getval(extreme_caching,true), retractall(in_memo_cached(_,_,_,_,_)), fail.
+:- multifile(muarc:clear_all_caches/0).
+:- dynamic(muarc:clear_all_caches/0).
+muarc:clear_all_caches:-  \+ luser_getval(extreme_caching,true), retractall(in_memo_cached(_,_,_,_,_)), fail.
 %arc_memoized(G):- !, call(G).
 
 arc_memoized(G):- compound(G),ground(G),functor(G,F,1),functor(C,F,1),!,arc_memoized(C),G=C,!.

@@ -974,7 +974,7 @@ unbind_and_fill_in_blanks([CodeFirst,CodeNext],Grid,RepairedResultOMaybeHint):- 
   guess_pre_repair_steps(CodeFirst,Grid,RepairedResultOMaybeHint,RepairedResult),
   (nonvar(CodeNext)->true; (CodeNext=now_fill_in_blanks_good;CodeNext = now_fill_in_blanks(_))),
   peek_target_or_else(Grid,Out),
-  must_det_ll((best_of(Out,CodeFirst,CodeNext,RepairedResult,RepairedResultOMaybeHint))),  
+  ((best_of(Out,CodeFirst,CodeNext,RepairedResult,RepairedResultOMaybeHint))),  
   mass(RepairedResultOMaybeHint,Mass), Mass>0.
 
 
@@ -995,6 +995,7 @@ guess_pre_repair_steps(CodeFirst,Grid,OptionalRepairResultHint,RepairedResultMid
    must_det_ll((CodeFirst = unbind_color(UnbindColor))),
    guess_to_unbind(Grid,UnbindColor),
    unbind_color(UnbindColor,Grid,RepairedResultMid),    
+   RepairedResultMid\=@=Grid,
    mass(RepairedResultMid,Mass),Mass>0,
    get_black(Black),
    if_t(UnbindColor\==Black, 
@@ -1004,9 +1005,21 @@ guess_pre_repair_steps(CodeFirst,Grid,OptionalRepairResultHint,RepairedResultMid
    
 
 guess_to_unbind(Grid,Color):- nonvar(Color),!,nop(sub_var(Color,Grid)).
-guess_to_unbind(Grid,Color):- guess_to_unbind11(Grid,Color)*->true;(!,(Color = black;guess_to_unbind12(Grid,Color))).
-guess_to_unbind(_Grid,Color):- Color = black.
+guess_to_unbind(Grid,Color):- guess_to_unbind11(Grid,Color)*->true;(!,(guess_to_unbind_fb(Grid,Color);guess_to_unbind12(Grid,Color))).
+guess_to_unbind(Grid,Color):- guess_to_unbind_fb(Grid,Color).
 
+guess_to_unbind_fb(_Grid,Color):- Color = black.
+guess_to_unbind_fb(_Grid,Color):- !, enum_real_colors(Color),
+  Color \= wfg , Color \= '#b399d4', Color \= black.
+
+
+guess_to_unbind_fb(Grid,Color):- 
+  findall(C,(guess_to_unbind_fb_0(Grid,C),\+ plain_var(Color)),ColorS),!,
+  list_to_set(ColorS,SColor),member(Color,SColor).
+guess_to_unbind_fb_0(Grid,Color):- member(Row,Grid),append(_,[C1,C2,Color|_],Row), C1=@=C2,C2=@=Color.
+%guess_to_unbind_fb_0(Grid,Color):- member(Row,Grid),append(_,[Color|_],Row).
+guess_to_unbind_fb_0(_Grid,Color):- Color = brown;Color = black.
+guess_to_unbind_fb_0(_Grid,Color):- Color = orange;Color = yellow.
 
 ok_used_in(ColorC,Grid,Out):- 
   colors_cc(Grid,Colors),Colors\==[], % reverse(Colors,ColorsR),
@@ -1036,7 +1049,8 @@ guess_to_unbind(Grid,Color):- !, fail, select(Row1,Grid,Rows),member(Row2,Rows),
 */
 %after_unbind(P2,RepairedResult,RepairedResultO):- now_fill_in_blanks(P2,RepairedResult,RepairedResultO).
 
-now_fill_in_blanks_good(RepairedResult,RepairedResultO):- findall(P2,rotP3(P2),List),
+
+now_fill_in_blanks_good(RepairedResult,RepairedResultO):- rotP_L_safe(List),
   now_fill_in_blanks_good(List,RepairedResult,RepairedResultO).
 
 now_fill_in_blanks_good([],RepairedResult,RepairedResult):-!.
@@ -1048,10 +1062,13 @@ now_fill_in_blanks_good([P2|List],RepairedResult,RepairedResultO):- !,
 now_fill_in_blanks(P2,RepairedResult,RepairedResultO):- ground(RepairedResult),!,RepairedResultO=RepairedResult,ignore(P2=_).
 now_fill_in_blanks(P2,RepairedResult,RepairedResultO):-   
   copy_term(RepairedResult,UnRepairedResult),
-  select_p2_rot(P2,RepairedResult,Orig),
+  select_p2_rot_safe(P2,RepairedResult,Orig),
   once(fill_in_blanks(P2,Orig,900,RepairedResult)),
   RepairedResult \== UnRepairedResult,
   RepairedResultO = RepairedResult.
+
+select_p2_rot_safe(sameR,RepairedResult,RepairedResult).
+select_p2_rot_safe(P2,RepairedResult,Orig):- select_p2_rot(P2,RepairedResult,Orig).
 
 select_p2_rot(P2,RepairedResult,Orig):- rot_orig(P2,RepairedResult,Orig).
 select_p2_rot(P2,RepairedResult,Orig):- fail,
@@ -1106,32 +1123,160 @@ select_2_lines(Row1,Row2,RepairedResult):-
   append(_,[Row1,Row2|_],RepairedResult).
 
 
-fill_in_blanks(_P2,_Orig,_Limit,RepairedResult):- ground(RepairedResult),!.
+change_checker(RepairedResult, \=@=(RCopy) ):- !, copy_term(RepairedResult,RCopy).
+
+change_checker(RepairedResult, change_check(RRVs) ):- !,
+  term_variables(RepairedResult,RRVs).
+change_check(RRVs,RepairedResult):-
+  term_variables(RepairedResult,RRVs2),
+  RRVs2\=@=RRVs, length(RRVs,RRVsL), length(RRVs2,RRVs2L), RRVs2L<RRVsL.
+
+
+
+fill_in_blanks(P2,Orig,Limit,RepairedResult):- 
+  fill_in_blanks_rr(Limit,RepairedResult),
+  fill_in_blanks1(P2,Orig,Limit,RepairedResult),
+  rot90(RepairedResult,RR90),
+  fill_in_blanks1(P2,Orig,Limit,RR90),
+  fill_in_blanks_rr(Limit,RR90).
+
+
+fill_in_blanks_rr(_Limit,RepairedResult):- ground(RepairedResult),!.
+
+fill_in_blanks_rr(Limit,RepairedResult):- Limit>700,
+  change_checker(RepairedResult,P1),
+  fill_in_some_blanks_rr(Limit,RepairedResult), call(P1,RepairedResult),!,
+  Limit2 is Limit-1, fill_in_blanks_rr(Limit2,RepairedResult).
+fill_in_blanks_rr(_Limit,_).
+
+
+fill_in_blanks1(_P2,_Orig,_Limit,RepairedResult):- ground(RepairedResult),!.
+fill_in_blanks1(P2,Orig,Limit,RepairedResult):- Limit>700,
+  change_checker(RepairedResult,P1),
+  fill_in_some_blanks_orig(Orig,Limit,RepairedResult), call(P1,RepairedResult),!,
+  Limit2 is Limit-1,
+  fill_in_blanks1(P2,Orig,Limit2,RepairedResult).
+/*
+fill_in_blanks1(P2,Orig,Limit,RepairedResult):- fail, Limit>0,
+  rotP_L(P2_List),next_in_list(P2,P2_List,NextP2), 
+  call(NextP2,RepairedResult,RepairedResult2),
+  call(NextP2,Orig,Orig2), \+ maplist(single_color,Orig2),!,
+  Limit2 is Limit-1,
+  fill_in_blanks1(NextP2,Orig2,Limit2,RepairedResult2).
+*/
+fill_in_blanks1(P2,Orig,Limit,RepairedResult):- Limit>700,
+  rotP_L_safe(P2_List),append(_,[P2,NextP2|_],P2_List),
+  call(NextP2,Orig,NextOrig), \+ maplist(single_color,NextOrig),!,
+  Limit2 is Limit-1,
+  fill_in_blanks1(NextP2,NextOrig,Limit2,RepairedResult).
+fill_in_blanks1(_P2,_Orig,_Limit,_).
+
+fill_in_some_blanks_orig(Orig,Limit,RepairedResult):-  Limit>0,
+  member(Repair,Orig),
+  copy_term(Repair,Repairing),
+  member(From,RepairedResult),
+  From\=@=Repair,  
+  From=Repair, 
+  \+ single_color(From),
+  only_for_debug((nl,writeq(Repairing-->Repair),nl,nl)).
+
+fill_in_some_blanks_orig(Orig,Limit,RepairedResult):-  Limit>850,
+  Orig \=@= RepairedResult, Orig = RepairedResult.
+
+fill_in_some_blanks_orig(Orig,Limit,RepairedResult):-  Limit>850,
+  length(Repair,2),
+  append([_,Repair,Right],RepairedResult), \+ (ground(Repair)), \+ maplist(plain_var,Repair),
+  append([_,From,FRight],Orig), \+ maplist(plain_var,Orig),
+  From\=@=Repair,
+  only_for_debug(copy_term(Repair,Repairing)),
+  From=Repair, \+ maplist(single_color,From),
+  maplist_until1(=,FRight,Right),
+  only_for_debug((nl,writeq(Repairing-->Repair),nl,nl)).
+
+%rotP_L_safe(P2_List_Safe):- findall(P2,rotP3(P2),P2_List_Safe).
+rotP_L_safe([sameR,flipV,flipDHV,rollD,rot180,rot90]):-!.
+rotP_L_safe(P2_List_Safe):- rotP_L(P2_List),include(is_safe_rot,P2_List,P2_List_Safe).
+is_safe_rot(Atom):- atom(Atom).
+
+append_safe(A,B):- append(A,B).
+
+append_safe([], L, L).
+append_safe([H|T], L, [H|R]) :-
+    append_safe(T, L, R).
+
+
+%73251a56
+fill_in_some_blanks_rr(Limit,RepairedResult):- Limit>897, 
+  %term_variables(RepairedResult,Vs),
+  subst_colors_with_vars(Colors,Vars,RepairedResult,RRVars),
+  get_current_test(TestID),
+  %kaggle_arc(TestID,trn+_,_,RRVars),
+  kaggle_arc(TestID,trn+_,_,RRVars),
+  Colors=Vars.
 
 %484b58aa
-fill_in_blanks(P2,Orig,Limit,RepairedResult):- Limit>790, fail,
+fill_in_some_blanks_rr(Limit,RepairedResult):- Limit>790,
   %rr_rot(RepairedResult,RR), 
   member(E,RepairedResult), \+ ground(E),
   member(H,RepairedResult), ground(H),
-  E=H,  ground(E),!,
-  Limit2 is Limit-1,
-  fill_in_blanks(P2,Orig,Limit2,RepairedResult).
-
-fill_in_blanks(P2,Orig,Limit,RepairedResult):- Limit>890, 
-  %rr_rot(RepairedResult,RR), 
-  rr_rot(_P2A,RepairedResult,RR),
-  RR \=@= RepairedResult, RR=RepairedResult, 
-  Limit2 is Limit-1,
-  fill_in_blanks(P2,Orig,Limit2,RepairedResult).
-fill_in_blanks(_P2,Orig,Limit,RepairedResult):- Limit>800, 
-  Orig \=@= RepairedResult, Orig = RepairedResult, 
-  Limit2 is Limit-1,
-  fill_in_blanks1(Orig,Limit2,RepairedResult).
-
+  E=H,  ground(E),!.
 
 
 % f9d67f8b
-fill_in_blanks(P2,_Orig,Limit,RepairedResult):- Limit>890, fail,
+fill_in_some_blanks_rr(Limit,RepairedResult):- Limit>890,
+  rot90(RepairedResult,RR90),flipH(RR90,RR90H),
+  %rr_rot(RepairedResult,RR),  
+  %rot270(RepairedResult,RR90H),
+  member(Row,RepairedResult),\+ ground(Row),
+  append_safe([L,[C1,C2,C3],Vars,[C4,C5,C6],_],Row),maplist(var,Vars),
+  length(L,LL), length(LLL,LL),
+  copy_term(Row,Copy),
+  append_safe([LLL,[C1,C2,C3],Vars,[C4,C5,C6],_],SRow),
+  member(SRow,RR90H),
+  Row\=@=Copy.
+
+
+fill_in_some_blanks_rr(Limit,RepairedResult):-  Limit>870, G=RepairedResult,
+  arg(_,v([],[_],[_,_],[_,_,_]),L),arg(_,v([],[_],[_,_],[_,_,_]),R),append_safe([L,GG,R],G),
+  G\==GG,
+  flipV(GG,FGG),
+  GG\=@=FGG,
+  GG=FGG, \+ maplist(single_color,GG),!.
+
+fill_in_some_blanks_rr(Limit,RepairedResult):-  Limit>850,
+  Orig=RepairedResult,
+  length(Repair,2),
+  append_safe([_,Repair,Right],RepairedResult), \+ (ground(Repair)), \+ maplist(plain_var,Repair),
+  append_safe([_,From,FRight],Orig), \+ maplist(plain_var,Orig),
+  From\=@=Repair,
+  only_for_debug(copy_term(Repair,Repairing)),
+  From=Repair, \+ maplist(single_color,From),
+  maplist_until1(=,FRight,Right),
+  only_for_debug((nl,writeq(Repairing-->Repair),nl,nl)).
+
+% 1e97544e
+fill_in_some_blanks_rr(Limit,RepairedResult):- Limit>880, 
+   copy_term(RepairedResult,CRepairedResult),
+   append_safe(_,[RRow1,RRow2|_],RepairedResult),once( \+ ground(RRow1); \+ ground(RRow2)),
+   ((reverse(RRow1,Row1),reverse(RRow2,Row2)); (RRow1=Row1,RRow2=Row2)),
+   (append_safe(Left,[C1,C2,NC|Right],Row1),C1==C2,C2\==NC, append_safe(Left,[C1,NC,NC|Right],Row2)),
+   CRepairedResult \=@= RepairedResult.
+
+
+fill_in_some_blanks_rr2(Limit,RepairedResult):- fail, Limit>890, 
+  %rr_rot(RepairedResult,RR), 
+  rr_rot(_P2A,RepairedResult,RR),
+  RR \=@= RepairedResult, RR=RepairedResult. 
+
+%484b58aa
+fill_in_some_blanks_rr2(Limit,RepairedResult):- Limit>790, %fail,
+  %rr_rot(RepairedResult,RR), 
+  member(E,RepairedResult), \+ ground(E),
+  member(H,RepairedResult), ground(H),
+  E=H. % ,  ground(E).
+
+% f9d67f8b
+fill_in_some_blanks_rr2(Limit,RepairedResult):- Limit>890, 
   rot90(RepairedResult,RR90),flipH(RR90,RR90H),
   %rr_rot(RepairedResult,RR),  
   %rot270(RepairedResult,RR90H),
@@ -1141,51 +1286,21 @@ fill_in_blanks(P2,_Orig,Limit,RepairedResult):- Limit>890, fail,
   copy_term(Row,Copy),
   append([LLL,[C1,C2,C3],Vars,[C4,C5,C6],_],SRow),
   member(SRow,RR90H),
-  Row\=@=Copy,
-  Limit2 is Limit-1,
-  fill_in_blanks(P2,RR90H,Limit2,RepairedResult).
+  Row\=@=Copy.
 
-
-fill_in_blanks(P2,Orig,Limit,RepairedResult):-  Limit>870, G=RepairedResult,
+fill_in_some_blanks_rr2(Limit,RepairedResult):-  Limit>870, G=RepairedResult,
   arg(_,v([],[_],[_,_],[_,_,_]),L),arg(_,v([],[_],[_,_],[_,_,_]),R),append([L,GG,R],G),
   G\==GG,
   flipV(GG,FGG),
   GG\=@=FGG,
-  GG=FGG, \+ maplist(single_color,GG),!,
-  Limit2 is Limit-1,
-  fill_in_blanks(P2,Orig,Limit2,RepairedResult).
-
-fill_in_blanks(P2,Orig,Limit,RepairedResult):-  Limit>850,
-  length(Repair,2),
-  append([_,Repair,Right],RepairedResult), \+ (ground(Repair)), \+ maplist(plain_var,Repair),
-  append([_,From,FRight],Orig), \+ maplist(plain_var,Orig),
-  From\=@=Repair,
-  only_for_debug(copy_term(Repair,Repairing)),
-  From=Repair, \+ maplist(single_color,From),
-  maplist_until1(=,FRight,Right),
-  only_for_debug((nl,writeq(Repairing-->Repair),nl,nl)),
-  Limit2 is Limit-1,!,
-  fill_in_blanks(P2,Orig,Limit2,RepairedResult).
+  GG=FGG, \+ maplist(single_color,GG).
 
 % 1e97544e
-fill_in_blanks(P2,Orig,Limit,RepairedResult):- Limit>880, 
-   copy_term(RepairedResult,CRepairedResult),
+fill_in_some_blanks_rr2(Limit,RepairedResult):- Limit>880,    
    append(_,[RRow1,RRow2|_],RepairedResult),once( \+ ground(RRow1); \+ ground(RRow2)),
    ((reverse(RRow1,Row1),reverse(RRow2,Row2)); (RRow1=Row1,RRow2=Row2)),
-   (append(Left,[C1,C2,NC|Right],Row1),C1==C2,C2\==NC, append(Left,[C1,NC,NC|Right],Row2)),
-   CRepairedResult \=@= RepairedResult,
-   Limit2 is Limit-1,!,
-  fill_in_blanks(P2,Orig,Limit2,RepairedResult).
+   (append(Left,[C1,C2,NC|Right],Row1),C1==C2,C2\==NC, append(Left,[C1,NC,NC|Right],Row2)).
 
-fill_in_blanks(P2,Orig,Limit,RepairedResult):- Limit>0,
-  Limit2 is Limit-1,
-  fill_in_blanks1(Orig,Limit2,RepairedResult),
-  rotP_L(P2_List),next_in_list(P2,P2_List,NextP2), 
-  call(NextP2,RepairedResult,RepairedResult2),
-  call(NextP2,Orig,Orig2), \+ maplist(single_color,Orig2),!,
-  fill_in_blanks(NextP2,Orig2,Limit2,RepairedResult2).
-
-fill_in_blanks(_P2,_Orig,_Limit,_).
 
 single_color(List):- is_list(List), \+ \+ (member(C,List), \+ is_list(C)), !,maplist(=(C),List),!.
 single_color(List):- is_list(List), \+ \+ (member(C,List), is_list(C)), !,maplist(single_color,C),!.
@@ -1195,26 +1310,7 @@ single_color(C,V):- plain_var(V),!,C=V.
 single_color(C,V):- attvar(V), !, \+ V \=  C.
 single_color(C,C). 
 
-fill_in_blanks1(_Orig,_Limit,RepairedResult):- ground(RepairedResult),!.
 
-/*
-fill_in_blanks1(Orig,Limit,RepairedResult):- Limit>890, 
-  rr_rot(RepairedResult,RR), 
-  RR \=@= RepairedResult, RR=RepairedResult, !,
-  Limit2 is Limit-1,
-  fill_in_blanks1(Orig,Limit2,RepairedResult).
-*/
-
-fill_in_blanks1(Orig,Limit,RepairedResult):-  Limit>0,
-  select(Repair,Orig,RestOrig),
-  From\=@=Repair, 
-  member(From,RepairedResult),
-  copy_term(Repair,Repairing),
-  From=Repair, \+ single_color(From),
-  only_for_debug((nl,writeq(Repairing-->Repair),nl,nl)),
-  Limit2 is Limit-1,!,
-  fill_in_blanks1(RestOrig,Limit2,RepairedResult).
-fill_in_blanks1(_Orig,_Limit,_RepairedResult).
 
 only_for_debug(_):-!.
 only_for_debug(G):- call(G).

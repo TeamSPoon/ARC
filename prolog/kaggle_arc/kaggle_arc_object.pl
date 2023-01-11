@@ -2000,9 +2000,11 @@ symmetry_after(A,B,I,O):- grid_call(A,I,M),!,I\=@=M, symmetry_type(B,M,O).
 %symmetry_type(full,I,O):- grid_size(I,H,V)
 symmetry_type(full,I,O):- !, flipSym_checks(rot90,I),!,symmetry_type(sym_hv,I,O).
 symmetry_type(sym_hv,I,O):- !, flipSym_checks(flipH,I),!,symmetry_type(flipV,I,O).
+symmetry_type(sym_hv_non_90,I,O):- !, symmetry_type(sym_hv,I,O), \+ symmetry_type(rot90,I,O).
+symmetry_type(sym_h_xor_v,I,O):- !, (symmetry_type(flipH,I,O) -> ( \+ symmetry_type(flipV,I,O) ) ;   symmetry_type(flipV,I,O)).
 symmetry_type(R,I,O):- grid_call(R,I,O),I=@=O.
 
-rot_p_plus_full(full). rot_p_plus_full(sym_hv). 
+rot_p_plus_full(sym_hv_non_90). rot_p_plus_full(sym_hv). rot_p_plus_full(full). rot_p_plus_full(sym_h_xor_v). 
 rot_p_plus_full(P):- rot_p2(P).
 
 %rot_p2(flipDH). % rot_p2(flipDV). 

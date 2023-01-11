@@ -211,7 +211,7 @@ birth_info(Birth,1+InfoLen):- display_length(Birth,InfoLen).
 
 object_ref_desc(Obj, OUTS):- 
   into_obj(Obj,PA),
-  obj_to_oid(PA,GA),% mass(PA,Mass),
+  object_color_glyph_long(PA,GA),% mass(PA,Mass),
   colorlesspoints(PA,Shape),loc2D(PA,X,Y), rot2L(PA,ROT), vis2D(PA,XX,YY),
   shape_id(Shape,ShapeID),
   object_birth_desc(PA,Birth),
@@ -261,6 +261,7 @@ object_color_glyph_long(PA, CGA):-
   print_colors_on_ss(OID,Colors,CGAO),
   CGA=CGAO)).
 
+object_color_glyph_short(Obj,SGlyph):- object_color_glyph_long(Obj,SGlyph),!.
 object_color_glyph_short(Obj,SGlyph):-
  must_det_ll((
   o2g(Obj,Glyph),

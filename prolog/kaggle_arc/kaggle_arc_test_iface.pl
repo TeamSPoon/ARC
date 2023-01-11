@@ -46,6 +46,10 @@ menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),
 menu_cmd1(i,'i','             See the (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,locally(nb_setval(debug_as_grid,f),ndividuator))).
 menu_cmd1(i,'o','                  or (o)bjects found in the input/outputs',                (clear_tee,cls_z_make,!,locally(nb_setval(debug_as_grid,t),ndividuator))).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',   (cls_z_make,!,ignore(what_unique),ndividuator)).
+menu_cmd1(_,'y','                  or  Wh(y) between objects in the input/outputs',   (cls_z_make,!,ignore(what_unique),ndividuator)).
+menu_cmd1(_,'a','                  or (a)ll between objects',   (cls_z_make,!,ignore(what_unique),ndividuator)).
+menu_cmd1(_,'j','                  or (j)unctions between objects',   (cls_z_make,!,ignore(what_unique),ndividuator)).
+menu_cmd1(_,'k','                  or (k)ill/clear all test data.',(update_changes,clear_test)).
 menu_cmd1(_,'B','                  or (B)oxes test.',(update_changes,pbox_indivs)).
 menu_cmd1(_,'R','                  or (R)epairs test.',(update_changes,repair_symmetry)).
 menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z_make,!,compile_and_save_test)).
@@ -330,9 +334,9 @@ do_menu_codes([27,91,53,126]):- !, prev_suite,prev_test, was_set_pair_mode(entir
 % page down
 do_menu_codes([27,91,54,126]):- !, was_set_pair_mode(entire_suite), next_suite,print_single_pair.
 % up arrow
-do_menu_codes([27,91,65]):- !, set_pair_mode(single_pair),prev_pair.
+do_menu_codes([27,91,65]):- !, was_set_pair_mode(single_pair),prev_pair.
 % down arrow
-do_menu_codes([27,91,66]):- !, set_pair_mode(single_pair),next_pair.
+do_menu_codes([27,91,66]):- !, was_set_pair_mode(single_pair),next_pair.
 % left arrow
 do_menu_codes([27,91,68]):- !, was_set_pair_mode(whole_test), maybe_cls, prev_test, report_suite, print_qtest.
 % right arrow
@@ -696,10 +700,12 @@ clauses_predicate_cmpd_goal(M:F/N,Into):-
    compound(Goal),functor(Goal,Into,_),arg(1,P1,Var1), \+ \+ (sub_term(Cmpd,Goal),compound(Cmpd),arg(1,Cmpd,Var2),Var1==Var2).
 
 
-:- multifile(prolog:make_hook/2).
-:- dynamic(prolog:make_hook/2).
+
 :- dynamic(muarc_tmp:p1_memo_caches/2).
-prolog:make_hook(before, Some):- any_arc_files(Some), retractall(muarc_tmp:p1_memo_caches(_,_)), fail.
+
+:- multifile(muarc:clear_all_caches/0).
+:- dynamic(muarc:clear_all_caches/0).
+muarc:clear_all_caches:-  retractall(muarc_tmp:p1_memo_caches(_,_)), fail.
 
 memoized_p1(P1,F):- muarc_tmp:p1_memo_caches(P1,L),!,member(F,L).
 memoized_p1(P1,F):- findall(E,call(P1,E),S), list_to_set(S,L), asserta(muarc_tmp:p1_memo_caches(P1,L)),!,member(F,L).
@@ -900,12 +906,13 @@ set_example_num(TrnN):- luser_setval(example,TrnN).
 first_current_example_num(TrnN):- some_current_example_num(TrnN),ground(TrnN),TrnN\==[],get_current_test(TestID),kaggle_arc(TestID,TrnN,_,_),!.
 first_current_example_num(TrnN):- TrnN = trn+0.
 
-next_pair:- 
+next_pair:- with_pair_mode(single_pair,next_pair0).
+next_pair0:- 
   %get_current_test(TestID),
   first_current_example_num(TrnN),  
   next_pair(TrnN,ExampleNum),
   set_example_num(ExampleNum),
-  set_pair_mode(single_pair),%(ExampleNum=(tst+_)->set_pair_mode(whole_test);set_pair_mode(single_pair)),  
+  set_pair_mode(single_pair), %(ExampleNum=(tst+_)->set_pair_mode(whole_test);set_pair_mode(single_pair)),  
   ((ExampleNum==trn+0)->next_test;true),
   print_single_pair,!.
 
@@ -914,7 +921,9 @@ next_pair(Trn+N,Trn+N2):- N2 is N+1.
 pair_count(Trn,C):- get_current_test(TestID),findall(N2,kaggle_arc(TestID,Trn+N2,_,_),List),sort(List,Sort),last(Sort,C).
 prev_pair(Tst+0,Trn+N2):- trn_tst(Tst,Trn),!,pair_count(Trn,N2).
 prev_pair(Trn+N,Trn+N2):- N2 is N-1.
-prev_pair:- 
+
+prev_pair:- with_pair_mode(single_pair,prev_pair0).
+prev_pair0:- 
   %get_current_test(TestID),
   first_current_example_num(TrnN),  
   prev_pair(TrnN,ExampleNum),

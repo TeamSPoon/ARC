@@ -82,11 +82,20 @@ gather_sizes(VM,P3,Sizes1):- findall(size2D(H,V),call(P3,VM,H,V),Sizes1).
 %=====================================================================
 is_fti_step(pbox_vm_special_sizes).
 %=====================================================================
-pbox_vm_special_sizes(Types,VM):- !, 
+
+pbox_vm_special_sizes(H,V,VM):- !,
+  pbox_vm_special_sizes_list([size2D(H,V)],VM).
+
+pbox_vm_special_sizes(Types,VM):- !,
  must_det_ll((
-  gather_sizes(VM,Types,Sizes),
+  gather_sizes(VM,Types,Sizes),  
   GH is round(VM.h + 0), GV is round(VM.v + 0),
   findall(size2D(H,V),(member(size2D(H,V),Sizes),V=<GV,H=<GH),Sizes_S_L),
+  pbox_vm_special_sizes_list(Sizes_S_L,VM))).
+
+pbox_vm_special_sizes_list(Sizes_S_L,VM):-
+ must_det_ll((
+  GH is round(VM.h + 0), GV is round(VM.v + 0),
   GridI0=VM.grid,
   Objs=VM.objs,
   length(Sizes_S_L,A),
@@ -384,6 +393,9 @@ which_partof_square(Which, OBJ,Find,Inside,Center, IsRim, OH, FX, OV, FY):-
      (Which=@=oborder -> (IsRim=rim_of,rim_of(Find,OBJ),OH is FX-1, OV is FY-1) ;  
       (Which=@=inside -> (IsRim=filltype(solid),OBJ=Inside,OH is FX, OV is FY))))))).
 
+foundbox_why(FBWHY,WHY):- is_list(FBWHY),!,maplist(foundbox_why,FBWHY,WHY).
+foundbox_why(FBWHY,[iz(shape),iz(type(FBWHY))]):-!.
+
 i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- Points==[], !, debug_m(indiv(pbox),pointless(L_S)).
 i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,[]):- !, debug_m(indiv(pbox),complete(L_S)).
 %i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- L_S \= s_l(p2), L_S \= l_s(p1), experiment(L_S \= l_s(p2)), !, debug_m(indiv(pbox),complete(L_S)).
@@ -420,8 +432,7 @@ i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):-
   %InsideS\==[black],
   %member(Which,[center,inside]),
 
-  found_box(Grid,L_S,NSEW,FX,FY,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS, Which,WHY),
-
+  found_box(Grid,L_S,NSEW,FX,FY,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS, Which,FBWHY),  
   once((which_partof_square(Which, OBJ,Find,Inside,Center, IsRim, OH, FX, OV, FY), grid_size(OBJ,HH,VV), \+ member(Rec,SoFarI))),
 
 /*  (Which=@=find -> (IsRim=filltype(solid),OBJ=Find,OH is FX-1, OV is FY-1) ;
@@ -439,8 +450,10 @@ i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):-
   %format('~N~q.~n',[USING]),  
   %\+ \+ (grid_size(OBJ,HH,VV), \+ (HH==TGX, VV==TGY)),
  must_det_ll((
-  make_indiv_object(VM,[/*b*/iz(type(pbox(WHY,L_S))),iz(type(pbox)),iz(flag(always_keep)),
-     iz(media(shaped)),iz(media(image)),iz(info(dont_reduce)),loc2D(OH,OV),vis2D(HH,VV)],GOPoints,Obj),
+  foundbox_why(FBWHY,WHY),
+  listify(WHY,WHYL),
+  make_indiv_object(VM,[iz(type(pbox)),iz(flag(always_keep)),
+     iz(info(dont_reduce)),loc2D(OH,OV),vis2D(HH,VV)|WHYL],GOPoints,Obj),
   debug_c(indiv(pbox),
    ((\+ \+ ((
      ignore_equal_e(NSEW,['N','S','E','W']),
@@ -517,7 +530,7 @@ is_all_same(C,List):- maplist(=(C),List).
 
 :- discontiguous found_box/19. 
 
-is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,subgrid(IX,IY,SX,SY)):- 
+is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,[iz(image),subgrid(IX,IY,SX,SY),subgrid_hv(SX,SY),subgrid_loc(IX,IY)]):- 
   \+ arc_common_property(containsAll(_)),
   %this_grid_is_multiple_of_other(CACHE),
  % TGX=OGX,TGY=OGY, % searching for somethning the size of the other grid
@@ -533,16 +546,18 @@ is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,subgrid(IX,IY,SX,SY)):-
 
   %make up a index for it
   IX is (FX-1)/SX+1,
-  IY is (FY-1)/SY+1,!.
+  IY is (FY-1)/SY+1,!,
+  subgrid_hv(SX,SY)\==subgrid_hv(10,10).
 
 % is_sub_grid_object(FX,FY,H,V,TGX,TGY,OGX,OGY,Type)
-is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,subgrid(IX,IY,SX,SY)):- 
+is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,[iz(image),subgrid(IX,IY,SX,SY),subgrid_hv(SX,SY),subgrid_loc(IX,IY)]):- 
   \+ arc_common_property(containsAll(_)),
   this_grid_is_multiple_of_other(CACHE),
   SX=OGX,SY=OGY, % searching for somethning the size of the other grid
 
   0 is (FX-1) rem OGX, 0 is (FY-1) rem OGY, % fits prefectly
-  IX is ((FX-1)/OGX)+1, IY is ((FY-1)/OGY)+1,!. %make up a index for it
+  IX is ((FX-1)/OGX)+1, IY is ((FY-1)/OGY)+1,!, %make up a index for it
+  subgrid_hv(SX,SY)\==subgrid_hv(10,10).
 
 
 this_grid_is_multiple_of_other(CACHE):-

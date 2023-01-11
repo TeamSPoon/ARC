@@ -145,9 +145,10 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   checkgui_tracer:- (getenv('DISPLAY',_) -> guitracer ; catch(noguitracer,_,true)).
   
   %:- catch(noguitracer,_,true).
-  %:- set_guitracer.
-  :- unsetenv('DISPLAY').
+  :- set_guitracer.
+  %:- unsetenv('DISPLAY').
   %:- unset_guitracer.
+  %:- checkgui_tracer.
   :- set_prolog_flag(toplevel_print_anon,false).
   :- set_prolog_flag(toplevel_print_factorized,true).
   

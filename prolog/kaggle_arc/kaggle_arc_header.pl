@@ -43,6 +43,8 @@
 :- dynamic(prolog:make_hook/2).
 :- discontiguous(prolog:make_hook/2).
 
+:- discontiguous(muarc:clear_all_caches/0).
+
 :- multifile(fav/2).
 :- discontiguous(fav/2).
 :- dynamic(fav/2).

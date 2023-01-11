@@ -144,7 +144,7 @@ started_is_list(X):- nonvar(X), X = [_,_].
 
 not_used(Var):- var(Var),!,fail.
 not_used(/*b*/iz(indiv(_))).
-not_used(X):- sub_term(E,X),atom(E),is_nc_point(E),!.
+%not_used(X):- sub_term(E,X),atom(E),is_nc_point(E),!.
 not_used(X):- sub_term(E,X),compound(E),ground(E),E=info(_).
 not_used(giz(_)).
 %not_used(link(_,_,_)).
@@ -152,10 +152,9 @@ not_used(giz(_)).
 %not_used(iz(contained_by(0,[]))).
 not_used(colorlesspoints(_)).
 not_used(colorlesspoints(_,_)).
-not_used(localpoints(_)).
+%not_used(localpoints(_)).
 not_used(globalpoints(_)).
 %not_used(og(OG,_,_,_)).
-
 not_used(iz(X)):- not_used(X).
 
 must_use(Var):- var(Var),!,fail.
@@ -174,18 +173,20 @@ must_use(shape(Atom)):- !, atom(Atom).
 must_use(iz(X)):- must_use(X).
 
 % when you have I you wont need II for creating
-not_for_creating(_I,II):-for_creating(II),!,fail.
+not_for_creating(_I,II):- for_creating(II),!,fail.
 %not_for_creating(I,II):-not_for_matching(create,I,II),!.
 not_for_creating( _,_).
 
 for_creating(I):- ( \+ callable(I); I='$VAR'(_)), !.
 
+%for_creating(NoUse):- not_used(NoUse),!,fail.
 for_creating(rot2L(_Rot90)).
 for_creating(vis2D(_H1,_V3)).
 for_creating(center2G(_,_)).
 for_creating(loc2D(_X2D,_Y1D)).
 %propagate(pen([cc(_SILVER,_N3)|_More])).
 for_creating(pen(_)).
+for_creating(iz(Atom)):- atom(Atom).
 for_creating(norm_grid(_NormalGrid)).
 for_creating(norm_ops(_UnrotateList)).
 for_creating(rotOffset2D(_O3,_O1)).
@@ -194,7 +195,6 @@ for_creating(loc2G(_X2G,_Y1G)).
 
 for_creating(P):- for_creating1(P),!.
 for_creating(NoUse):- must_use(NoUse),!.
-for_creating(NoUse):- not_used(NoUse),!,fail.
 for_creating(iz(X)):- !, for_creating1(X).
 
 
@@ -1161,7 +1161,7 @@ save_rule2(IO_DIR,TITLE,IP,OP):-
 save_rule2(IO_DIR,TITLE,IP,OP):- 
  ip_op_debug_info(IP,OP,LOCK),
  object_to_object(_,Was,_,_,_,LOCK),!,
- skip_rule(IO_DIR,TITLE + "Already "+ Was,IP,OP).
+ nop(skip_rule(IO_DIR, TITLE + "Already " + Was, IP, OP)).
 
 % All background objects
 save_rule2(IO_DIR,TITLE,AL,BL):-
@@ -1194,7 +1194,7 @@ print_rule_grids(IO_DIR,TITLE,IP,OP):-
  print_ss('OUT'(TITLE,IO_DIR)=OOP))).
 
 %omit_in_rules(_,giz(_)).
-omit_in_rules(lhs,P):- not_for_matching(lhs,_,P).
+%omit_in_rules(lhs,P):- not_for_matching(lhs,_,P).
 %omit_in_rules(rhs,P):- not_for_creating(rhs,P).
 omit_in_rules(_Why,globalpoints(_)).
 omit_in_rules(_Why,call(True)):- True==true,!.
@@ -1250,7 +1250,8 @@ remove_oids(M,O,[E|EL]):- overly_oided(M,E,MM),remove_oids(MM,O,EL).
 remove_oids(M,M,[]).
 
 % offset 2D
-make_rule_l2r(Dir,Shared,II,OO,III,OOO,[remove_io(RemoveI,RemoveO)|SharedMid]):- % 3 is random(2),
+% make_rule_l2r(Dir,Shared,II,OO,III,OOO,[remove_io(RemoveI,RemoveO)|SharedMid]):- % 3 is random(2),
+make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- % 3 is random(2),
   transfer_props(Type,I,O), 
   my_partition(transfer_prop(Type),II,RemoveI,I_I_I),
   my_partition(transfer_prop(Type),OO,RemoveO,O_O_O),
@@ -1372,13 +1373,6 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- % 3 is random(2),
 
 not_for_matching(Lhs,I):- not_for_matching(Lhs,_,I).
 
-
-/*
-% Cleanup RHS
-make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
-   my_partition(skip_in_rules(rhs), OO, Removed, OOO), Removed\==[],!,
-   must_make_rule_l2r(Dir,Shared,II,OOO,IIII,OOOO,NewShared).
-
 % Cleanup LHS
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
    my_partition(omit_in_rules(lhs), II, Removed, III), Removed\==[],!,
@@ -1387,6 +1381,13 @@ make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):-
 % Cleanup RHS
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
    my_partition(omit_in_rules(rhs), OO, Removed, OOO), Removed\==[],!,
+   must_make_rule_l2r(Dir,Shared,II,OOO,IIII,OOOO,NewShared).
+
+/*
+
+% Cleanup RHS
+make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):- 
+   my_partition(skip_in_rules(rhs), OO, Removed, OOO), Removed\==[],!,
    must_make_rule_l2r(Dir,Shared,II,OOO,IIII,OOOO,NewShared).
 
 % Cleanup LHS
