@@ -283,8 +283,8 @@ hv_c_value([],_Color,_H,_V):-  !,fail.
 hv_c_value(diff(_-> New),C,H,V):-!,hv_c_value(New,C,H,V).
 hv_c_value(diff(_),_C,_H,_V):-!, fail.
 hv_c_value(O,C,_H,_V):- is_colorish(O),!,C=O.
-hv_c_value(O,GN,H,V):- is_map(O),O.objs\==[],!,hv_c_value(O.objs,GN,H,V).
-hv_c_value(O,GN,H,V):- is_map(O),!,hv_c_value(O.grid,GN,H,V).
+hv_c_value(O,GN,H,V):- is_vm_map(O),O.objs\==[],!,hv_c_value(O.objs,GN,H,V).
+hv_c_value(O,GN,H,V):- is_vm_map(O),!,hv_c_value(O.grid,GN,H,V).
 
 hv_c_value(ID,C,H,V):- (var(H);var(V)),!,arcST,trace, hv_point(H,V,_),hv_c_value(ID,CC,H,V),CC=C.
 hv_c_value(O,Color,H,V):- is_object(O),!,globalpoints(O,Ps),hv_c_value(Ps,Color,H,V).
@@ -304,8 +304,8 @@ point_c_value(Point,C,Grid):- hv_point(Point,H,V),hv_c_value(Grid,C,H,V).
 hv_cg_value(O,_Color,_H,_V):-  var(O),!,fail.
 hv_cg_value(ID,C,H,V):- (var(H);var(V)),!, hv_point(H,V,_),hv_cg_value(ID,CC,H,V),CC=C.
 hv_cg_value(Grid,Color,H,V):- is_grid(Grid),!,nth1(V,Grid,Row),nth1(H,Row,Color).
-hv_cg_value(O,GN,H,V):- is_map(O),O.objs\==[],!,hv_cg_value(O.objs,GN,H,V).
-hv_cg_value(O,GN,H,V):- is_map(O),!,hv_cg_value(O.grid,GN,H,V).
+hv_cg_value(O,GN,H,V):- is_vm_map(O),O.objs\==[],!,hv_cg_value(O.objs,GN,H,V).
+hv_cg_value(O,GN,H,V):- is_vm_map(O),!,hv_cg_value(O.grid,GN,H,V).
 hv_cg_value(O,Color-GN,H,V):- is_object(O), hv_c_value(O,Color,H,V),obj_to_oid(O,GN),nonvar_or_ci(GN),!.
 
 hv_cg_value([G|Points],CN,H,V):- quietly(( is_list(Points), is_object_or_grid(G))), 

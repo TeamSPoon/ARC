@@ -133,7 +133,7 @@ propagate(loc2G(_X2G,_Y1G)).
 
 secondary_verification(A):- var(A),!,fail.
 secondary_verification(cc(_,0)).
-secondary_verification(og(_OG,_,_,_)).
+secondary_verification(pg(_OG,_,_,_)).
 secondary_verification(iz(A)):- \+ not_secondary_verification(A).
 
 not_secondary_verification(A):- var(A).
@@ -154,7 +154,7 @@ not_used(colorlesspoints(_)).
 not_used(colorlesspoints(_,_)).
 %not_used(localpoints(_)).
 not_used(globalpoints(_)).
-%not_used(og(OG,_,_,_)).
+%not_used(pg(OG,_,_,_)).
 not_used(iz(X)):- not_used(X).
 
 must_use(Var):- var(Var),!,fail.
@@ -205,8 +205,10 @@ for_creating1(P):- propagate(P),!.
 for_creating1(giz(W)):- for_creating1(W).
 for_creating1(thr(_)).
 for_creating1(oi(W)):- for_creating1(W).
+for_creating1(oi(W,_)):- for_creating1(W).
+
+
 for_creating1(oi(_)).
-for_creating1(io(_)).
 for_creating1(sid(_)).
 for_creating1(norm_grid).
 for_creating1(norm_ops).
@@ -226,13 +228,13 @@ for_creating1(NoUse):- not_used(NoUse),!,fail.
 
 
 for_matching(I):- ( \+ callable(I); I='$VAR'(_)), !.
-%for_matching(og(OG,_,nthOf(_),rank1(_))):-!,fail.
-%for_matching(og(OG,_,nthOf(_),rank1(_))):-!,fail.
-%for_matching(og(OG,_,nthOf(_),rank2(_))):-!,fail. 
-for_matching(og(_OG,_,_,rankA(_))).
-for_matching(og(_OG,_,_,rank1(_))).
-%for_matching(og(OG,_,_,rank2(_))).
-for_matching(og(_OG,_,_,F)):-for_matching(F),!.
+%for_matching(pg(OG,_,nthOf(_),rank1(_))):-!,fail.
+%for_matching(pg(OG,_,nthOf(_),rank1(_))):-!,fail.
+%for_matching(pg(OG,_,nthOf(_),rank2(_))):-!,fail. 
+for_matching(pg(_OG,_,_,rankA(_))).
+for_matching(pg(_OG,_,_,rank1(_))).
+%for_matching(pg(OG,_,_,rank2(_))).
+for_matching(pg(_OG,_,_,F)):-for_matching(F),!.
 for_matching(P):- for_matching1(P),!.
 for_matching(X):- for_creating(X),!.
 for_matching(iz(X)):- !, (atom(X);for_matching1(X)),!.
@@ -332,7 +334,7 @@ learn_rule_o(out_out,_InVM,_OutVM):- !.
 learn_rule_o(out_in,_InVM,_OutVM):- !.
 learn_rule_o(in_in,_InVM,_OutVM):- !.
 
-learn_rule_o(Mode,InVM,OutVM):- is_map(InVM),is_map(OutVM),!,
+learn_rule_o(Mode,InVM,OutVM):- is_vm_map(InVM),is_vm_map(OutVM),!,
  in_out = Mode,
  maplist(must_det_ll,[
   InGrid = InVM.grid_o, InObjsOriginal = InVM.objs,  
@@ -520,7 +522,7 @@ non_original_value(Var):- sub_term(E,Var), compound(E), E='$VAR'(_).
 
 
 
-:- dynamic(doing_map/4).
+:- dynamic(arc_cache:doing_map/4).
 
 learn_rule_i_o(Mode,In,Out):- 
   forall(learn_rule_in_out(Mode,In,Out),true).
@@ -619,7 +621,7 @@ maybe_exclude_whole(I,I):- \+ (member(Obj,I), is_fg_object(Obj), \+ is_whole_gri
 maybe_exclude_whole(I,II):- 
   include(not_p1(is_whole_grid),I,II).
 
-:- dynamic(showed_point_mapping/3).
+:- dynamic(arc_cache:showed_point_mapping/3).
 
 var_or_globalpoints(IP,[]):- var(IP),!.
 var_or_globalpoints(IP,GP):- globalpoints(IP,GP).
@@ -639,11 +641,11 @@ assert_showed_mapping(IP,OP):-
    maplist(assert_showed_point_mapping(out),PsO))),!.
 
 assert_showed_point_mapping(IO_DIR,Ps):- \+ \+ showed_point_mapping_ok(IO_DIR,Ps),!.
-assert_showed_point_mapping(IO_DIR,Ps):- assert_in_testid(showed_point_mapping(IO_DIR,Ps)).
+assert_showed_point_mapping(IO_DIR,Ps):- assert_in_testid(arc_cache:showed_point_mapping(IO_DIR,Ps)).
 
 showed_point_mapping_ok(_,Black-_):- nonvar(Black), \+ Black \= black,!.
 showed_point_mapping_ok(_,BGC-_):- \+ plain_var(BGC), \+ is_fg_color(BGC),!.
-showed_point_mapping_ok(IO_DIR,Ps):-  call_in_testid(showed_point_mapping(IO_DIR,Ps)),!.
+showed_point_mapping_ok(IO_DIR,Ps):-  call_in_testid(arc_cache:showed_point_mapping(IO_DIR,Ps)),!.
 
 special_properties(I,O):- findall(SP,(sub_term(E,I), compound(E), into_special_props(E,SP)),L),flatten([L],F),list_to_set(F,O).
 into_special_props(cc(C,N),[color(C),cc(C,N)]):- number(N), N > 0, is_real_fg_color(C),!.
@@ -682,6 +684,7 @@ save_rule00(GID,TITLE,IP,OP):-
    member(S,PAP)))),
    save_rule(GID,TITLE,[A|IP],OP))))).
 */
+
 is_obj_props(Props):- is_list(Props), Props\==[], \+ is_grid(Props), \+ is_group(Props), \+ is_points_list(Props).
 
 extend_obj_proplist(Var,NewObj):- var(Var),!, enum_object(Var),extend_obj_proplist(Var,NewObj).
@@ -689,13 +692,26 @@ extend_obj_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
 extend_obj_proplist(Grp,GrpO):- is_group(Grp),!,mapgroup(extend_obj_proplist,Grp,GrpO).
 extend_obj_proplist(obj(Obj),obj(OUT)):-!, 
    extend_obj_proplist(Obj,OUT).
-extend_obj_proplist(Props,OUTL):- is_obj_props(Props),
+
+extend_obj_proplist(Props,OUTL):- must_det_ll(is_obj_props(Props)),
   Obj = obj(Props),
   findall(P,extend_obj_prop(Obj,P),NewProps),
   flatten(NewProps,NewPropsF),
   override_object(NewPropsF,Props,Obj1),
   override_object(Props,Obj1,OUT),
   into_obj_plist(OUT,OUTL).
+
+extend_obj_prop(Obj,Prop):- is_in_subgroup(Obj,Prop).
+extend_obj_prop(obj(List),Prop):- 
+ once((\+ member(norm_grid(_),List),
+  object_grid(obj(List),Grid),
+  normalize_grid(NormOps,Grid,NormGrid))),
+  member(Prop,[norm_ops(NormOps),norm_grid(NormGrid)]).
+extend_obj_prop(Obj,Props):- fail,
+ once((localpoints(Obj,P),vis2D(Obj,H,V),points_to_grid(H,V,P,Grid),
+  grid_props(Grid,Props))).
+
+
 
 
 show_changes(P2BeforeAfter):- P2BeforeAfter=..[_,Before,After],
@@ -715,19 +731,12 @@ show_changes(Before,After):-
  !.
 
 show_elem_changes_rr(Retained,Removed):-
- if_t(Removed==[],
-   print_ss(keptAll=Retained)),
+ %if_t(Removed==[], print_ss(keptAll=Retained)),
  if_t(Removed\==[],
    (print_ss(retained=Retained),
     dash_chars,
     print_ss(removed=Removed))),
  dash_chars('^').
-
-
-extend_obj_prop(Obj,Prop):- is_in_subgroup(Obj,Prop).
-extend_obj_prop(Obj,Props):- fail,
- once((localpoints(Obj,P),vis2D(Obj,H,V),points_to_grid(H,V,P,Grid),
-  grid_props(Grid,Props))).
 
 
 fix_groups(AG00,BG00,AG,BG):- 
@@ -792,7 +801,7 @@ learn_group_mapping(AG00,BG00):-
      assert_doing_map(IO_DIR,A,Objs)))),
 
   must_det_ll((  
-  abolish(showed_point_mapping/3),dynamic(showed_point_mapping/3),
+  abolish(arc_cache:showed_point_mapping/3),dynamic(arc_cache:showed_point_mapping/3),
 
   learn_group_mapping_p3(IO_DIR,OI,AG,BG))).
 
@@ -807,8 +816,8 @@ learn_group_mapping_p3(IO_DIR,OI,AG,BG):- !,
          
          (has_prop(iz(sid(SA)),A),
           (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
-           assertz_in_testid(assumed_mapped([A|CC],[B])),
-          % save_learnt_rule(assumed_mapped(lhs([A|CC]),rhs([B])),A^B,A^B),
+           assertz_in_testid(arc_cache:assumed_mapped([A|CC],[B])),
+          % save_learnt_rule(arc_cache:assumed_mapped(lhs([A|CC]),rhs([B])),A^B,A^B),
            save_rule1(OI,"INPUT <-- OUTPUT",[A|CC],[B]))))),
     
     forall(nth1(AA,AG,A),
@@ -816,8 +825,8 @@ learn_group_mapping_p3(IO_DIR,OI,AG,BG):- !,
          locally(nb_setval(rule_note,rule(AA/AL,BB/BL)),
           (has_prop(iz(sid(SA)),A),
           (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
-           assertz_in_testid(assumed_mapped([A],[B|CC])),
-           % save_learnt_rule(assumed_mapped(lhs([A]),rhs([B|CC])),A^B,A^B),
+           assertz_in_testid(arc_cache:assumed_mapped([A],[B|CC])),
+           % save_learnt_rule(arc_cache:assumed_mapped(lhs([A]),rhs([B|CC])),A^B,A^B),
            save_rule1(IO_DIR,"INPUT --> OUTPUT",[A],[B|CC]))))),
 
    !)))).
@@ -831,15 +840,15 @@ learn_group_mapping_p3(IO_DIR,OI,AG,BG,AGS,BGS):- !,
        (doing_map_list(OI,B,[A|Others]),
           has_prop(iz(sid(SA)),A),
           (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
-           assertz_in_testid(assumed_mapped([A|CC],[B])),
-          % save_learnt_rule(assumed_mapped(lhs([A|CC]),rhs([B])),A^B,A^B),
+           assertz_in_testid(arc_cache:assumed_mapped([A|CC],[B])),
+          % save_learnt_rule(arc_cache:assumed_mapped(lhs([A|CC]),rhs([B])),A^B,A^B),
            save_rule2(OI,"INPUT <-- OUTPUT",[A|CC],[B]))),
     forall(member(A,AGS),
        (doing_map_list(IO_DIR,A,[B|Others]),
           has_prop(iz(sid(SA)),A),
           (once((fail, member(C,Others), has_prop(iz(sid(SA)),C)))->CC=[C];CC=[]),
-           assertz_in_testid(assumed_mapped([A],[B|CC])),
-           % save_learnt_rule(assumed_mapped(lhs([A]),rhs([B|CC])),A^B,A^B),
+           assertz_in_testid(arc_cache:assumed_mapped([A],[B|CC])),
+           % save_learnt_rule(arc_cache:assumed_mapped(lhs([A]),rhs([B|CC])),A^B,A^B),
            save_rule2(IO_DIR,"INPUT --> OUTPUT",[A],[B|CC]))),
    !)))).*/
 
@@ -866,9 +875,10 @@ try_each_using_training(In,ExpectedOut,Rules,Keeper,OurOut):-
    maplist(length,[In,Rules,Keeper,Rejected,Unknown],[InC,RulesC|Nums]),
    Pos is InC*RulesC,
    pp_wcg(in_rules_times_keepers_rejected_unknown=[InC,RulesC,Pos|Nums]),!,
-   %nop(pp_wcg(awesome=Keeper)), nop(pp_wcg(rejected=Rejected)), nop(maplist(writeln,Unknown)), 
+   %nop(pp_wcg(Awesome=Keeper)), nop(pp_wcg(rejected=Rejected)), nop(maplist(writeln,Unknown)), 
    wno_must(o_globalpoints(Keeper,GPs)),
-   points_to_grid(GPs,OurOut))),!.
+   points_to_grid(GPs,OurOut))),!,
+ print_grid(using_training,OurOut).
 
 
 classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):- \+ is_points_list(ExpectedOut),!,
@@ -883,8 +893,8 @@ classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):-
 classify_rules_0(In,ExpectedOut,Rules,[PAIR],[],[]):- fail,
   select(I,In,_IIn), find_prox_mappings(I,ri,Rules,[R|_Sorted]),
   copy_term(R,RR),  
-  PAIR = result(I,R,RR,GPs,Matches),
-  matches_input(I,RR,Matches), 
+  PAIR = result(I,R,RR,GPs,Matches,untested),
+  matches_input(I,RR,Matches),
   o_globalpoints(Matches,RR,GPs),
   gp_class(I,GPs,expected,ExpectedOut),
   nop((pp_wcg(matches(classify_rules_0)=Matches), pp_wcg(rule(classify_rules_0)=R))).
@@ -896,26 +906,29 @@ classify_rules_0(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):-
 classify_rules_1(In,ExpectedOut,Rules,PairsUsed,Keeper,Rejected,Unknown):- 
   member(I,In), member(R,Rules),
   copy_term(R,RR),
-  PAIR = result(I,R,RR,GPs,Matches),
+  PAIR = result(I,R,RR,GPs,Matches,_TestedOrNot),
   \+ member(PAIR,PairsUsed),!,
   must_det_ll((
-  matches_input(I,RR,Matches), o_globalpoints(Matches,RR,GPs),
+  once(((matches_input(I,RR,Matches) -> o_globalpoints(Matches,RR,GPs); Matches=[]))),
   classify_rules_2(PAIR,In,ExpectedOut,Rules,[PAIR|PairsUsed],Keeper,Rejected,Unknown))).
 classify_rules_1(_,_,_,_,[],[],[]).
 
 classify_rules_2(PAIR,In,ExpectedOut,Rules,PairsUsed,Keeper,Rejected,[PAIR|Unknown]):- 
-  PAIR = result(I,Rule,_,GPs,Matches),
+  PAIR = result(I,Rule,_,GPs,Matches,_),
   (Matches==[]; \+ (sub_term(N,Matches),once(number(N);is_color(N)))),!,
+  NotMatched = notMatched,
   must_det_ll((  
   banner_lines(orange,3),
-  gp_class(I,GPs,no_matches,ExpectedOut),
-  pp_wcg(matches(not_matched)=Matches),
-  pp_wcg(rule(not_matched)=Rule),
+  nb_setarg(6,PAIR,NotMatched),
+  gp_class(I,GPs,NotMatched,ExpectedOut),
+  pp_wcg(matches(NotMatched)=Matches),
+  pp_wcg(rule(NotMatched)=Rule),
   classify_rules_1(In,ExpectedOut,Rules,[PAIR|PairsUsed],Keeper,Rejected,Unknown))).
 classify_rules_2(PAIR,In,ExpectedOut,Rules,PairsUsed,Keeper,[PAIR|Rejected],Unknown):- 
-  PAIR = result(I,Rule,_,GPs,Matches),
+  PAIR = result(I,Rule,_,GPs,Matches,_),
   \+ no_violation(GPs,ExpectedOut),!,
-  wqnl([voliation=GPs,expected=ExpectedOut]),
+  nb_setarg(6,PAIR,violates),
+  wqnl([violates=GPs,expected=ExpectedOut]),
   must_det_ll((
   once((
   banner_lines(red,3),
@@ -924,17 +937,21 @@ classify_rules_2(PAIR,In,ExpectedOut,Rules,PairsUsed,Keeper,[PAIR|Rejected],Unkn
   wqnl(rule(violates)=Rule),
   list_to_set(Matches,MatchesSet),ppt(matches(violates)=MatchesSet))),
   classify_rules_1(In,ExpectedOut,Rules,[PAIR|PairsUsed],Keeper,Rejected,Unknown))).
+
 classify_rules_2(PAIR,In,ExpectedOut,Rules,PairsUsed,[PAIR|Keeper],Rejected,Unknown):- 
   must_det_ll((
-  PAIR = result(I,Rule,_,GPs,Matches),
+  Awesome=awesome,
+  PAIR = result(I,Rule,_,GPs,Matches,_),
   banner_lines(green,3),
-  gp_class(I,GPs,awesome,ExpectedOut),
-  pp(rule(awesome)=Rule),
-  ppt(matches(awesome)=Matches),
+  nb_setarg(6,PAIR,Awesome),
+  gp_class(I,GPs,Awesome,ExpectedOut),
+  pp(rule(Awesome)=Rule),
+  ppt(matches(Awesome)=Matches),
+  print(Matches),
   classify_rules_1(In,ExpectedOut,Rules,[PAIR|PairsUsed],Keeper,Rejected,Unknown))).
 
 gp_class(I,GPs,Awesome,ExpectedOut):- 
-  print_ss(in,I,print_ss(Awesome,GPs,ExpectedOut)).
+  print_ss(in,I,print_ss(wqs(Awesome),GPs,ExpectedOut)).
 
 %no_violation([],[]):-!.
 no_violation(GPs,_):- GPs==[],!.
@@ -952,7 +969,7 @@ enum_ruleset(Rules):-
   get_current_test(TestID),
   R = object_to_object(TestID,Name,LHS,Create,DebugInfo,DebugInfo2),
   findall(R,
-     object_to_object(TestID,Name,LHS,Create,DebugInfo,DebugInfo2),Rules).
+     arc_cache:object_to_object(TestID,Name,LHS,Create,DebugInfo,DebugInfo2),Rules).
 
 
 
@@ -961,8 +978,8 @@ reduce_rules(rhs(LHS),Out):- !,reduce_rules(LHS,Out).
 reduce_rules([LHS],Out):- !,reduce_rules(LHS,Out).
 %reduce_rules(obj(LHS),Out):- !,reduce_rules(LHS,Out).
 %reduce_rules(some(LHS),Out):- !, member(M,LHS),reduce_rules(M,Out).
-reduce_rules(object_to_object(_TestID,_Name,LHS,_Create,_DebugInfo,_DebugInfo2),Out):- !,reduce_rules(LHS,Out).
-reduce_rules(object_to_object(_TestID,_Name,LHS,_Create,_DebugInfo),Out):- !,reduce_rules(LHS,Out).
+reduce_rules(arc_cache:object_to_object(_TestID,_Name,LHS,_Create,_DebugInfo,_DebugInfo2),Out):- !,reduce_rules(LHS,Out).
+reduce_rules(arc_cache:object_to_object(_TestID,_Name,LHS,_Create,_DebugInfo),Out):- !,reduce_rules(LHS,Out).
 reduce_rules(O,O).
 
 o_globalpoints(I,O):- o_globalpoints([],I,O),!.
@@ -1043,8 +1060,8 @@ good_enough_match(Matches):- Matches\==[],member(M,Matches),arg(_,M,Num),number(
 matches_input(InC,LHS,Matches):- 
  must_det((
   reduce_rules(InC,ReducedInC),
-  reduce_rules(LHS,Reduced),
-  matches_input_2(ReducedInC,Reduced,Matches))).
+  reduce_rules(LHS,Reduced))),
+  matches_input_2(ReducedInC,Reduced,Matches).
 
 matches_input_2(obj(InC),object_to_object(_TestID,_Name,LHS,_Create,DebugInfo,_DebugInfo2),Matches):- !,
   matches_input_2(obj(InC),LHS,Matches), run_delayed_goals(DebugInfo).
@@ -1053,21 +1070,45 @@ matches_input_2(InC,LHS,Matches):- is_list(LHS),!,maplist(reduce_rules,LHS,LOut)
    matches_input_2(InC,Out,Matches).
 matches_input_2(InC,LHS,Matches):- is_list(InC),!,maplist(reduce_rules,InC,LOut),append(LOut,Out),!,
    matches_input_2(Out,LHS,Matches).
-matches_input_2(InC,LHS,Matches):- must_det_ll(matches_oprops(InC,LHS,Matches)).
+matches_input_2(InC,LHS,Matches):- matches_oprops(InC,LHS,Matches).
 
 matches_oprops(obj(I),M,Matches):-!,must_det_ll(matches_oprops(I,M,Matches)).
 matches_oprops(I,obj(M),Matches):-!,must_det_ll(matches_oprops(I,M,Matches)).
-matches_oprops(I,M,Matches):- matches_oprops3(I,M,Matches).
+matches_oprops(I,M,[shared(Shared)|Matches]):- intersection(I,M,Shared,II,MM),matches_1oprop(II,MM,Matches).
 
-matches_oprops3(I,M,[I|Matches]):-
- select(II,I,III),select(MM,M,MMM),match_prop(II,MM),!,% pp_wcg(match_prop(II,MM)),
- matches_oprops3(III,MMM,Matches).
-matches_oprops3(_,M,[]):- run_delayed_goals(M),!.
+
+is_skipped_match(iz(input)).
+is_skipped_match(colorlesspoints(_)).
+is_skipped_match(localpoints(_)).
+is_skipped_match(globalpoints(_)).
+is_skipped_match(pg(_,_,_,_)).
+is_skipped_match(link(_,_)).
+
+matches_1oprop(_,[],[]):-!.
+matches_1oprop([],R,R):-!.
+matches_1oprop(I,M,[Prop|Matches]):- select(Prop,M,MM),select(Prop,I,II),!,matches_1oprop(II,MM,Matches).
+matches_1oprop(I,M,[oi(Prop)|Matches]):- select(oi(Prop),M,MM),!,select(Prop,I,II),!,matches_1oprop(II,MM,Matches).
+matches_1oprop(I,M,[oi(Prop,Code)|Matches]):- select(oi(Prop,Code),M,MM),!,select(Prop,I,II),run_delayed_goals(Code),!,matches_1oprop(II,MM,Matches).
+matches_1oprop(I,M,[prefer_thru(Prop,Use)|Matches]):- select(prefer_thru(Prop,Use),M,MM),!,
+   (select(Prop,I,II)->matches_1oprop(II,MM,Matches);(Prop=Use)).
+matches_1oprop(I,M,[prefer_thru(Prop,Use)|Matches]):- select(prefer_thru(Prop,Use),M,MM),!,
+   (select(Prop,I,II)->matches_1oprop(II,MM,Matches);(Prop=Use)).
+matches_1oprop(I,M,[skip(Prop)|Matches]):- select(Prop,M,MM),is_skipped_match(Prop),!,matches_1oprop(I,MM,Matches). 
+matches_1oprop(I,M,_):- member(Prop,M),make_unifier(Prop,UProp),member(UProp,I),!,fail.
+matches_1oprop(I,M,[leftover(I,M)]).
+% matches_1oprop(I,M,[oi(Prop)|Matches]):- select(oi(Prop),M,MM),!,select(Prop,I,II),!,matches_1oprop(II,MM,Matches).
+
+/*
+matches_1oprop(I,M,[I|Matches]):- 
+ select(MM,M,MMM),select(II,I,III),match_prop(II,MM),!,% pp_wcg(match_prop(II,MM)),
+ matches_1oprop(III,MMM,Matches).*/
+matches_1oprop(_,M,[]):- run_delayed_goals(M),!.
 
 run_delayed_goals([]):-!.
 run_delayed_goals([call(M)|More]):- !, call(M), run_delayed_goals(More).
 run_delayed_goals([ignore(M)|More]):- !, ignore(M), run_delayed_goals(More).
 run_delayed_goals([prefer_if(M,U)|More]):- !, ignore(M=U), run_delayed_goals(More).
+run_delayed_goals([only_if(M,U)|More]):- !, call(M=U), run_delayed_goals(More).
 run_delayed_goals([prefer_thru(M,U)|More]):- !, ignore(M=U), run_delayed_goals(More).
 run_delayed_goals([_|More]):- !, run_delayed_goals(More).
 run_delayed_goals(G):- ignore(call(G)). 
@@ -1075,11 +1116,12 @@ run_delayed_goals(G):- ignore(call(G)).
 reduce_prop(ii(II),MM):- !, reduce_prop(II,MM).
 reduce_prop(oi(II),MM):- !, reduce_prop(II,MM).
 reduce_prop(obj(II),MM):- !, reduce_prop(II,MM).
-reduce_prop(io(II),MM):- !, reduce_prop(II,MM).
+reduce_prop(oi(II),MM):- !, reduce_prop(II,MM).
 reduce_prop(oo(II),MM):- !, reduce_prop(II,MM).
 reduce_prop(if(II),MM):- !, reduce_prop(II,MM).
 reduce_prop(thr(II),MM):- !, reduce_prop(II,MM).
 reduce_prop(prefer_if(II,MM),II):-!, ignore(II=MM).
+reduce_prop(only_if(_,II),MM):- !, reduce_prop(II,MM).
 reduce_prop(prefer_thru(II,MM),II):-!, ignore(II=MM).
 reduce_prop(MM,MM).
 
@@ -1094,10 +1136,10 @@ same_props(I,Pre):- select(E2,Pre,PrePre),select(E2,I,II),!,same_props(II,PrePre
 match_prop(II,MM):- reduce_prop(II,I),reduce_prop(MM,M),!,I=M,!.
 
 
-:- dynamic(assumed_mapped/3).
+:- dynamic(arc_cache:assumed_mapped/3).
 
 assert_doing_map(IO_DIR,A,[B|Objs]):- 
-  assertz_in_testid(doing_map(IO_DIR,A,[B|Objs])),
+  assertz_in_testid(arc_cache:doing_map(IO_DIR,A,[B|Objs])),
   debug_c(mapping,
    (dash_chars, pp_wcg(IO_DIR), dash_chars,
      print_ss(IO_DIR,A,B),print_ss_rest(IO_DIR,2,Objs),dash_chars)).
@@ -1160,7 +1202,7 @@ save_rule2(IO_DIR,TITLE,IP,OP):-
 
 save_rule2(IO_DIR,TITLE,IP,OP):- 
  ip_op_debug_info(IP,OP,LOCK),
- object_to_object(_,Was,_,_,_,LOCK),!,
+ arc_cache:object_to_object(_,Was,_,_,_,LOCK),!,
  nop(skip_rule(IO_DIR, TITLE + "Already " + Was, IP, OP)).
 
 % All background objects
@@ -1175,12 +1217,12 @@ save_rule2(IO_DIR,TITLE,IP,OP):-
  (must_det_ll((
  assert_showed_mapping(IP,OP),
  make_rule_l2r_objs(Dir,[],IP,OP,II,OO,Mid), 
- %save_learnt_rule(object_to_object(TITLE,lhs(II),rhs(OO),Mid,LOCK),oneTwo,twoOne),
+ %save_learnt_rule(arc_cache:object_to_object(TITLE,lhs(II),rhs(OO),Mid,LOCK),oneTwo,twoOne),
  make_rule_l2r_0(Dir,Mid,II,OO,III,OOO,NewShared),
  arrange_shared(NewShared,NewSharedS),
  print_rule_grids(IO_DIR,TITLE,IP,OP),
  ((nb_current(rule_note,RN);RN=rule_note), pp_wcg(RN)),
- save_learnt_rule(object_to_object(TITLE,lhs(III),rhs(OOO),NewSharedS,LOCK),oneTwo,twoOne))))).
+ save_learnt_rule(arc_cache:object_to_object(TITLE,lhs(III),rhs(OOO),NewSharedS,LOCK),oneTwo,twoOne))))).
 
 
 skip_rule(IO_DIR,TITLE,IP,OP):- 
@@ -1266,11 +1308,9 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- % 3 is random(2),
   %once((X1=X2,Y1=Y2);(X1=X2;Y1=Y2)),
   gen_offset_expression(Type,X2,X1,'X',VX1,VX2,Code1),
   gen_offset_expression(Type,Y2,Y1,'Y',VY1,VY2,Code2), /* gen_subst([F1,'X1'],VX1V), gen_subst([F1,'Y1'],VY1V), gen_subst([F2,'X2'],VX2V), gen_subst([F2,'Y2'],VY2V), DEBUGVARS = [debug_var(VY1V,VY1),debug_var(VY2V,VY2),debug_var(VX2V,VX2),debug_var(VX1V,VX1)], */
-  DEBUGVARS=[],
   NewI=..[F1,VX1,VY1], NewO=..[F2,VX2,VY2],
-  append([[oi(NewI)],Code2,Code1,DEBUGVARS,I_I_I,[]],I_I_I_I),
-  append([[oi(NewO)],Code2,Code1,DEBUGVARS,O_O_O,[]],O_O_O_O),
-  must_make_rule_l2r(Dir,Shared,I_I_I_I,O_O_O_O,III,OOO,SharedMid).
+  combine_code(Code2,Code1,Code),
+  must_make_rule_l2r(Dir,Shared,[oi(NewI,Code)|I_I_I],[oi(NewO,Code)|O_O_O],III,OOO,SharedMid).
 
 
 make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):-
@@ -1322,9 +1362,9 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- fail,
   gen_offset_expression(Type,X2,X1,'X3',VX1,VX2,Code1), 
   gen_offset_expression(Type,Y2,Y1,'Y4',VY1,VY2,Code2), 
   NewI=..[F1,VX1,VY1],%gen_subst([F1,'X3'],VX1), gen_subst([F1,'Y'],VY1),
-  NewO=..[F2,VX2,VY2],%gen_subst([F2,'X4'],VX2), gen_subst([F2,'Y'],VY2),
-  append([[thr(NewI)|Code1],Code2,I_I_I],I_I_I_I),
-  make_rule_l2r(Dir,[removed(lhs,RemoveI),removed(rhs,RemoveO)|Shared],I_I_I_I,[NewO|O_O_O],III,OOO,SharedMid).
+  NewO=..[F2,VX2,VY2],%gen_subst([F2,'X4'],VX2), gen_subst([F2,'Y'],VY2), 
+  combine_code(Code2,Code1,Code),
+  must_make_rule_l2r(Dir,[removed(lhs,RemoveI),removed(rhs,RemoveO)|Shared],[oi(NewI,Code)|I_I_I],[oi(NewO,Code)|O_O_O],III,OOO,SharedMid).
 
 % offset 2D
 make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- fail, % 3 is random(2),
@@ -1333,26 +1373,19 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- fail, % 3 is random(2),
   %writeq(I), %is_all_original_value(X1),is_all_original_value(Y1), %is_all_original_value(X2),is_all_original_value(Y2), 
   %once((X1=X2,Y1=Y2);(X1=X2;Y1=Y2)),
   gen_offset_expression(Type,X2,X1,'X',VX1,VX2,Code1), 
-  gen_offset_expression(Type,Y2,Y1,'Y',VY1,VY2,Code2), !, /* gen_subst([F1,'X1'],VX1V), gen_subst([F1,'Y1'],VY1V), gen_subst([F2,'X2'],VX2V), gen_subst([F2,'Y2'],VY2V), DEBUGVARS = [debug_var(VY1V,VY1),debug_var(VY2V,VY2),debug_var(VX2V,VX2),debug_var(VX1V,VX1)], */
-  DEBUGVARS=[],
+  gen_offset_expression(Type,Y2,Y1,'Y',VY1,VY2,Code2), !, /* gen_subst([F1,'X1'],VX1V), gen_subst([F1,'Y1'],VY1V), gen_subst([F2,'X2'],VX2V), gen_subst([F2,'Y2'],VY2V), DEBUGVARS = [debug_var(VY1V,VY1),debug_var(VY2V,VY2),debug_var(VX2V,VX2),debug_var(VX1V,VX1)], */  
   NewI=..[F1,VX1,VY1],NewO=..[F2,VX2,VY2],
-  append([[oi(NewI)],Code1,Code2,DEBUGVARS,I_I_I,[]],I_I_I_I),
-  %writeq(I_I_I_I),nl,
-  append([[oi(NewO)],Code2,Code1,O_O_O],O_O_O_O),!,
-  must_make_rule_l2r(Dir,Shared,I_I_I_I,O_O_O_O,III,OOO,SharedMid).
+  combine_code(Code2,Code1,Code),
+  must_make_rule_l2r(Dir,Shared,[oi(NewI,Code)|I_I_I],[oi(NewO,Code)|O_O_O],III,OOO,SharedMid).
 
 
 % mass(R)
 make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- % 3 is random(2),
   transfer_props(Type,I,O), select(O,OO,O_O_O), select(I,II,I_I_I),
   I=..[F1,R1], O=..[F2,R2], \+ no_process(O), \+ no_process(I),
-  gen_offset_expression(Type,R2,R1,'R',VR1,VR2,Code1), 
-  DEBUGVARS=[],
+  gen_offset_expression(Type,R2,R1,'R',VR1,VR2,Code), 
   NewI=..[F1,VR1],NewO=..[F2,VR2],
-  append([[oi(NewI)],Code1,DEBUGVARS,I_I_I,[]],I_I_I_I),
-  %writeq(I_I_I_I),nl,
-  append([[oi(NewO)],Code1,O_O_O],O_O_O_O),!,
-  must_make_rule_l2r(Dir,Shared,I_I_I_I,O_O_O_O,III,OOO,SharedMid).
+  must_make_rule_l2r(Dir,Shared,[oi(NewI,Code)|I_I_I],[oi(NewO,Code)|O_O_O],III,OOO,SharedMid).
 
 
 % cc(C,R)
@@ -1361,13 +1394,9 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- % 3 is random(2),
   C1=C2,
   I=..[F1,C1,R1], O=..[F1,C2,R2],
   select(O,OO,O_O_O), \+ no_process_props(O), \+ no_process_props(I), make_unifier(I,O),
-  DEBUGVARS=[],
-  gen_offset_expression(_Type,R2,R1,'R',VR1,VR2,Code1), 
+  gen_offset_expression(_Type,R2,R1,'R',VR1,VR2,Code), 
   NewI=..[F1,C1,VR1],NewO=..[F1,C2,VR2],
-  append([[oi(NewI)],Code1,DEBUGVARS,I_I_I,[]],I_I_I_I),
-  %writeq(I_I_I_I),nl,
-  append([[oi(NewO)],Code1,O_O_O],O_O_O_O),!,
-  must_make_rule_l2r(Dir,Shared,I_I_I_I,O_O_O_O,III,OOO,SharedMid).
+  must_make_rule_l2r(Dir,Shared,[oi(NewI,Code)|I_I_I],[oi(NewO,Code)|O_O_O],III,OOO,SharedMid).
 
 
 
@@ -1406,7 +1435,7 @@ make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared):-
    %pp_wcg(upcase_atom_var(CL1=Vars)),
    maplist(make_term3(debug_var),Overlap,Vars,DebugVars),
    subst_2L(Overlap,Vars,II0+OO+CL1,III+OOO+REPLACED),
-   make_rule_l2r(Dir,Shared,[prefer_if(unique_colors(REPLACED),unique_colors(CL1)),call_list(DebugVars)|III],OOO,IIII,OOOO,NewShared))).
+   make_rule_l2r(Dir,Shared,[prefer_if(unique_colors(REPLACED),unique_colors(CL1)),run_delayed_goals(DebugVars)|III],OOO,IIII,OOOO,NewShared))).
 
 
 gen_change_color_expression(C1,C2,VC1,VC2,(VC1=C2,VC2=C1),C1,C2).
@@ -1458,7 +1487,7 @@ remove_empty_colors(O,O_O):- my_exclude(=(cc(_,0)),O,O_O).
 simplify_l2r(_Dir,I,C1,VC1,I_I,O,C2,VC2,O_O,Info):- fail,
   member(pen([cc(C1,_)]),I),member(pen([cc(C2,_)]),O),C1\=@=C2,
   is_all_original_value(C1),is_all_original_value(C2),
-  Info = call((prefer_unify(VC1,C1),prefer_unify(VC2=C2))),
+  Info = call((prefer_unify(VC1,C1),prefer_unify(VC2,C2))),
   remove_empty_colors(I,I_I),
   remove_empty_colors(O,O_O),!.
 
@@ -1470,7 +1499,7 @@ simplify_l2r(_Dir,I,C1,VC1,I_I,O,C2,VC2,O_O,Info):-
   remove_empty_colors(I,I_I),
   remove_empty_colors(O,O_O),!.
 
-
+prefer_unify(A,B):- A=B.
 transfer_prop(locationD,bottem2D(_,_)).
 transfer_prop(locationD,loc2D(_,_)).
 transfer_prop(locationD,iz(cenYD(_))).
@@ -1479,8 +1508,8 @@ transfer_prop(locationD,center2D(_,_)).
 
 transfer_prop(locationG,bottem2G(_,_)).
 transfer_prop(locationG,loc2G(_,_)).
-transfer_prop(locationG,iz(cenYG(_))).
-transfer_prop(locationG,iz(cenXG(_))).
+transfer_prop(locationG,iz(cenGY(_))).
+transfer_prop(locationG,iz(cenGX(_))).
 transfer_prop(locationG,center2G(_,_)).
 
 transfer_prop(vis2D,vis2D(_,_)).
@@ -1503,11 +1532,13 @@ no_process(was_oid(_)).
 no_process(call(_)).
 no_process(prefer_unify(_,_)).
 no_process(prefer_if(_,_)).
+no_process(only_if(_,_)).
 no_process(ignore(_)).
 %no_process(loc2D(_,_)).
 no_process(if(_,_)).
 no_process(if(_)).
 no_process(oi(_)).
+no_process(oi(_,_)).
 no_process(ii(_)).
 no_process(oo(_)).
 no_process(O):- \+ is_all_original_value(O).
@@ -1530,11 +1561,10 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- F1=norm_ops,
   (R1=R2),
   NewI=..[F1,RR1],gen_subst([F1,'NORM1'],RR1), 
   NewO=..[F1,RR2],gen_subst([F1,'NORM2'],RR2), 
-  gen_offset_expression(F1,R2,R1,'NORM',RR1,RR2,Code1), 
-  append([[io(NewI)|Code1],Code2,I_I_I],I_I_I_I),
-  append([[io(NewO)|Code2],Code1,O_O_O],O_O_O_O),!,
-  must_make_rule_l2r(Dir,Shared,I_I_I_I,O_O_O_O,III,OOO,SharedMid).
+  gen_offset_expression(F1,R2,R1,'NORM',RR1,RR2,Code), 
+  must_make_rule_l2r(Dir,Shared,[oi(NewI,Code)|I_I_I],[oi(NewO,Code)|O_O_O],III,OOO,SharedMid).
 
+combine_code(Code1,Code2,Code):- listify(Code1,C1),listify(Code2,C2),append(C1,C2,Code).
 %make_solid_object(shape,sx,sy,grid)
 %make_solid_object(shape,sx,sy,grid)
 %c_r(copy_row_ntimes(_,sx))
@@ -1611,9 +1641,9 @@ simplify_l2r(_Dir,I,C1,VC1,I_I,O,C2,VC2,O_O,Info):- fail,
   I=I_I,O=O_O,!.
 
 % unlikely useful Ordinals
-make_rule_l2r(Dir,Shared,I,O,IIII,OOOO,[unused(ordinals,og(OG,Size1,Ord1,Val),og(OG,Size2,Ord2,Val))|NewShared]):- fail,
-  select(og(OG,Size1,Ord1,Val),I,II),
-  select(og(OG,Size2,Ord2,Val),O,OO),
+make_rule_l2r(Dir,Shared,I,O,IIII,OOOO,[unused(ordinals,pg(OG,Size1,Ord1,Val),pg(OG,Size2,Ord2,Val))|NewShared]):- fail,
+  select(pg(OG,Size1,Ord1,Val),I,II),
+  select(pg(OG,Size2,Ord2,Val),O,OO),
   ((Size1 \== Size2, Ord1==Ord2);(Size1 == Size2, Ord1\==Ord2);(Size1 \== Size2, Ord1\==Ord2)), !,
   must_make_rule_l2r(Dir,Shared,II,OO,IIII,OOOO,NewShared).
 
@@ -1648,36 +1678,32 @@ make_rule_l2r(_Dir,Shared,I,O,I,O,Shared):-!.
 maybe_now_rule(Dir,Shared,I,O,I_I_I,O_O_O,III,OOO,SharedMid):- fail,
   I=..[F1,X1,Y1], O=..[F2,X2,Y2], \+ no_process(O), \+ no_process(I),
   gen_offset_expression(Type,X2,X1,'X',VX1,VX2,Code1), 
-  gen_offset_expression(Type,Y2,Y1,'Y',VY1,VY2,Code2), !, DEBUGVARS=[],
+  gen_offset_expression(Type,Y2,Y1,'Y',VY1,VY2,Code2), !,
   NewI=..[F1,VX1,VY1],NewO=..[F2,VX2,VY2],
-  append([[oi(NewI)],Code1,Code2,DEBUGVARS,I_I_I,[]],I_I_I_I),
-  %writeq(I_I_I_I),nl,
-  append([[oi(NewO)],Code2,Code1,O_O_O],O_O_O_O),!,
-  must_make_rule_l2r(Dir,Shared,I_I_I_I,O_O_O_O,III,OOO,SharedMid).
+  combine_code(Code2,Code1,Code),
+must_make_rule_l2r(Dir,Shared,[oi(NewI,Code)|I_I_I],[oi(NewO,Code)|O_O_O],III,OOO,SharedMid).
 
 maybe_now_rule(Dir,Shared,I,O,I_I_I,O_O_O,III,OOO,SharedMid):- 
   I=..[F1,R1], \+ no_process(I),
   O=..[F2,R2], \+ no_process(O),
-  gen_offset_expression(maybe_now_rule,R2,R1,'R',VR1,VR2,Code1), 
+  gen_offset_expression(maybe_now_rule,R2,R1,'R',VR1,VR2,Code), 
   NewI=..[F1,VR1], %gen_subst([F1,'R1'],VR1), 
   NewO=..[F2,VR2], %gen_subst([F2,'R2'],VR2), 
-  append([[oi(NewI)|Code1],I_I_I],I_I_I_I),
-  append([[oi(NewO)|Code1],O_O_O],O_O_O_O),!,
-  must_make_rule_l2r(Dir,Shared,I_I_I_I,O_O_O_O,III,OOO,SharedMid).
+  must_make_rule_l2r(Dir,Shared,[oi(NewI,Code)|I_I_I],[oi(NewO,Code)|O_O_O],III,OOO,SharedMid).
+
 
 maybe_now_rule(Dir,Shared,I,O,I_I_I,O_O_O,III,OOO,SharedMid):- 
   I=..[F1,R1], \+ no_process(I),
   O=..[F2,R2], \+ no_process(O),
-  gen_offset_expression(maybe_now_rule,R2,R1,'R',VR1,VR2,Code1), 
+  gen_offset_expression(maybe_now_rule,R2,R1,'R',VR1,VR2,Code), 
   NewI=..[F1,VR1], %gen_subst([F1,'R1'],VR1), 
   NewO=..[F2,VR2], %gen_subst([F2,'R2'],VR2), 
-  append([[oi(NewI)|Code1],I_I_I],I_I_I_I),
-  append([[oi(NewO)|Code1],O_O_O],O_O_O_O),!,
-  must_make_rule_l2r(Dir,Shared,I_I_I_I,O_O_O_O,III,OOO,SharedMid).
+must_make_rule_l2r(Dir,Shared,[oi(NewI,Code)|I_I_I],[oi(NewO,Code)|O_O_O],III,OOO,SharedMid).
 
 maybe_now_rule(Dir,Shared,I,O,I_I,O_O,III,OOO,SharedMid):- 
-  make_unifier(I,I_U),  %make_unifier(O,O_U), !, % numbervars(U),
-  make_rule_l2r(Dir,Shared,[prefer_if(I_U,I)|I_I],[io(O)|O_O],III,OOO,SharedMid).
+   %make_unifier(O,O_U), !, % numbervars(U),
+  %make_unifier(I,I_U),  make_rule_l2r(Dir,Shared,[only_if(I_U,I)|I_I],[oi(O)|O_O],III,OOO,SharedMid).
+  make_rule_l2r(Dir,Shared,[oi(I)|I_I],[oi(O)|O_O],III,OOO,SharedMid).
 
 
 
@@ -1712,7 +1738,7 @@ make_rule_l2r_2(Dir,Shared,II,OO,III,OOO,[thru(O)|SharedMid]):-
 make_rule_l2r_2(_Dir,Shared,II,OO,II,OO,Shared).
 
 /*
-object_to_object=[ object_to_object( t('0d3d703e'),
+arc_cache:object_to_object=[ arc_cache:object_to_object( t('0d3d703e'),
                 "IN -> OUT",
                 obj( [ pen([cc(RED,MASS)]),
                        norm_grid([[RED,RED,RED]]),
@@ -1783,7 +1809,7 @@ learn_rule_iin_oout(_,In,O,OL):- mass(O,Mass),
   mass(I,Mass),
   simplify_for_matching(lhs,I,II),
   simplify_for_creating(O,OO),
-  save_learnt_rule(object_to_object(unk(Mode),II,OO,[],[learn_rule_iin_oout(I,O)]),I,O),!.
+  save_learnt_rule(arc_cache:object_to_object(unk(Mode),II,OO,[],[learn_rule_iin_oout(I,O)]),I,O),!.
 
 learn_rule_in_out(Depth,Mode,In,Out):- 
   is_list(In), is_list(Out), 
@@ -1890,6 +1916,7 @@ assert_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,assert_if_new(TestID
 call_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,call(TestIDGoal).
 retractall_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),retractall(TestIDGoal).
 
+dress_in_testid(M:Goal,M:TestIDGoal):- !, dress_in_testid(Goal,TestIDGoal).
 dress_in_testid(Goal,TestIDGoal):- Goal=..[F,A|Args], get_current_test(TestID), (A==TestID-> TestIDGoal=Goal; TestIDGoal=..[F,TestID,A|Args]).
 
 assert_visually(H:-B):- !,unnumbervars((H:-B),(HH:-BB)), assert_visually1(HH,BB).
@@ -2021,7 +2048,7 @@ use_test_associatable_group(I,O):-
   print_side_by_side(ut_associatable_group,I,O).
 
 gather_assumed_mapped(A,B):-
-  call_in_testid(assumed_mapped([A],[B])).
+  call_in_testid(arc_cache:assumed_mapped([A],[B])).
 
 io_order(A,B,B,A):- has_prop(giz(g(out)),A),!.
 io_order(A,B,A,B).
@@ -2032,7 +2059,7 @@ minfo_gp(BS,gp(BS,PP)):- globalpoints(BS,GP),physical_points(GP,PP).
 
   /*
 filter_redundant(BS,BSSS):- 
-  abolish(showed_point_mapping/3),dynamic(showed_point_mapping/3),
+  abolish(arc_cache:showed_point_mapping/3),dynamic(arc_cache:showed_point_mapping/3),
   include(need_object,BS,BSSS).
 */
 filter_redundant(BS,BSSSR):- filter_redundant(BS,BSSSR,_Removed).
@@ -2083,13 +2110,13 @@ show_safe_assumed_mapped:-
 gather_assumed_mapped_o_l(A,BL):- findall(B,gather_assumed_mapped(A,B),BL).
 gather_assumed_mapped_l_o(AL,B):- findall(A,gather_assumed_mapped(A,B),AL).
 
-doing_map(Out,B,A):-      doing_map_list(Out,B,[A|_]).
+arc_cache:doing_map(Out,B,A):-      doing_map_list(Out,B,[A|_]).
 
 doing_map_sc(Out,A,B):-   doing_map_list(Out,B,List),member(A,List),(is_bg_object(B)->is_bg_object(A);is_fg_object(A)),can_pair(A,B).
 
 :- dynamic(cant_pair/2).
 
-doing_map_list(Out,C,D):- call_in_testid(doing_map(Out,C,D)).
+doing_map_list(Out,C,D):- call_in_testid(arc_cache:doing_map(Out,C,D)).
 
 can_pair(A,B):- 
   obj_testid(A,TestID),obj_testid(B,TestID),
@@ -2110,15 +2137,15 @@ safe_assumed_mapped(A,LenA,B,LenB):- gather_assumed_mapped(A,B),
 
 %clear_arc_learning:- !.
 clear_arc_learning:- 
-  abolish(object_to_object/6),dynamic(object_to_object/6),
+  abolish(arc_cache:object_to_object/6),dynamic(arc_cache:object_to_object/6),
   dmsg(clear_arc_learning),
   must_det_ll((
-  retractall_in_testid(did_map(_,_,_,_)),   
-  retractall_in_testid(doing_map(_,_,_)),
-  retractall_in_testid(object_atomslist(_,_,_,_)),
-  retractall_in_testid(object_to_object(_,_,_,_,_)),
-  retractall_in_testid(assumed_mapped(_,_)),
-  retractall_in_testid(object_atomslist(_,_,_,_)))),!.
+  retractall_in_testid(arc_cache:did_map(_,_,_,_)),   
+  retractall_in_testid(arc_cache:doing_map(_,_,_)),
+  retractall_in_testid(arc_cache:object_atomslist(_,_,_,_)),
+  retractall_in_testid(arc_cache:object_to_object(_,_,_,_,_)),
+  retractall_in_testid(arc_cache:assumed_mapped(_,_)),
+  retractall_in_testid(arc_cache:object_atomslist(_,_,_,_)))),!.
 prolog:make_hook(after, Some):- any_arc_files(Some), forall(clear_arc_learning,true), fail.
 
 %:- clear_arc_learning.
@@ -2198,9 +2225,9 @@ test_associatable_proof(In,OutR):-
 ignore_some_equals(OutS,Out):- must_det_ll( nb_set_add1(OutS,Out)).
 
 :- dynamic(test_associatable/3).
-:- dynamic(object_to_object/6).
+:- dynamic(arc_cache:object_to_object/6).
 use_test_associatable_io(I,O,Ref):- is_list(I),!,member(E,I),use_test_associatable_io(E,O,Ref).
-use_test_associatable_io(I,O,Ref):- get_current_test(TestID), clause(object_to_object(TestID,_How,Pre,O,_,_),_,Ref), \+ \+ same_props(I,Pre).
+use_test_associatable_io(I,O,Ref):- get_current_test(TestID), clause(arc_cache:object_to_object(TestID,_How,Pre,O,_,_),_,Ref), \+ \+ same_props(I,Pre).
 use_test_associatable_io(I,O,Ref):- get_current_test(TestID),
   clause(test_associatable(TestID,Pre,O),_,Ref),
   \+ \+ same_props(I,Pre),

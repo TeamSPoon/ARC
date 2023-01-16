@@ -200,8 +200,8 @@ final_alignment(AR,BR,AAR,[],[PA|G1],[PB|G2]):- AAR\==[],
 
 final_alignment(_,_,AA,BB,AA,BB):-!.
 
-:- abolish(object_atomslist/5).
-:- dynamic(object_atomslist/5).
+:- abolish(arc_cache:object_atomslist/5).
+:- dynamic(arc_cache:object_atomslist/5).
 %obj_grp_atoms(IO,A,[A,PA|Atoms]):- nonvar(IO),!,into_gid(IO,GID),obj_grp_atoms0(GID,A,[A,PA|Atoms]).
 obj_grp_atoms(IO,A,[A,PA|Atoms]):- obj_grp_atomslist(IO,A,PA,Atoms).
 
@@ -210,7 +210,7 @@ obj_grp_atoms(IO,A,[A,PA|Atoms]):- obj_grp_atomslist(IO,A,PA,Atoms).
 obj_grp_atomslist(IO,A,PA,Atoms):- \+ \+ see_object_atomslist(IO,A,PA,Atoms), !, see_object_atomslist(IO,A,PA,Atoms).
 obj_grp_atomslist(IO,A,PA,Atoms):- 
   obj_grp_atoms_deep(A,PA,Atoms),
-  assert_in_testid(object_atomslist(IO,A,PA,Atoms)).
+  assert_in_testid(arc_cache:object_atomslist(IO,A,PA,Atoms)).
 
 dref_match(Var,_):- var(Var),wdmsg(dref_match(Var)),!,fail.
 dref_match(rhs(LHS),PA):- !, dref_match(LHS,PA).
@@ -225,7 +225,7 @@ dref_match(PA,PA).
 obj_grp_atoms_deep(A,PA,Atoms):- A=obj(_),!,obj_grp_comparable(A,PA),obj_atoms(PA,Atoms).
 obj_grp_atoms_deep(A,PA,Atoms):- dref_match(A,PA), obj_atoms(PA,Atoms).
 
-see_object_atomslist(IO,A,PA,Atoms):- call_in_testid(object_atomslist(IO,A,PA,Atoms)).
+see_object_atomslist(IO,A,PA,Atoms):- call_in_testid(arc_cache:object_atomslist(IO,A,PA,Atoms)).
 
 other_io(in,out).
 other_io(out,in).
@@ -330,14 +330,14 @@ into_obj_plist(OID,List):- is_oid(OID), oid_to_obj(OID,Obj),!,into_obj_plist(Obj
 
 never_matom(localpoints(_)).
 never_matom(colorlesspoints(_)).
-never_matom(og(_OG,_,_,_)).
+never_matom(pg(_OG,_,_,_)).
 never_matom(giz(_)).
 never_matom(globalpoints(_)).
 sub_obj_atom(_,E):- var(E),!,fail.
 sub_obj_atom(E,E):- \+ compound(E),!.
 sub_obj_atom(E,L):- is_list(L),!,member(EM,L),sub_obj_atom(E,EM).
 sub_obj_atom(NO,M):- remove_oids(M,MM,EL),EL\==[], !,sub_obj_atom(NO,MM).
-sub_obj_atom(M,og(OG,H,L,_)):- !, ((M = (L/H));(M = (L/OG))).
+sub_obj_atom(M,pg(OG,H,L,_)):- !, ((M = (L/H));(M = (L/OG))).
 %sub_obj_atom(E,colorlesspoints(CP)):- !, is_list(CP),member(E,CP).
 
 %sub_obj_atom(M,M):- attvar(M),!.
@@ -415,9 +415,9 @@ showdiff_groups_new(AG,BG):- learn_group_mapping(AG,BG),!.
 showdiff_groups_new(AG,BG):- 
  must_det_ll((
   other_io(IO,OI),
-  retractall_in_testid(did_map(_,_,_,_)),   
-  retractall_in_testid(object_atomslist(IO,_,_,_)),
-  retractall_in_testid(object_atomslist(OI,_,_,_)),
+  retractall_in_testid(arc_cache:did_map(_,_,_,_)),   
+  retractall_in_testid(arc_cache:object_atomslist(IO,_,_,_)),
+  retractall_in_testid(arc_cache:object_atomslist(OI,_,_,_)),
   maplist(obj_grp_atoms(IO),AG,_AGG),
   maplist(obj_grp_atoms(OI),BG,_BGG),  
    print_list_of(xfer_mappings("IN  -> OUT",AG,BG,BGG),  inputOutputMap,AGG),
@@ -453,7 +453,7 @@ prox_mappings(TITLE,AG,BG,_BGG,APA):-
  ignore((  
   member(E,APA),E=obj(_),!,
   \+ is_whole_grid(E),
-  \+ did_map(E),
+  \+ use_did_map(E),
   APA = [A,_PA|_Atoms],
   predsort(sort_on(nearest_by_not_simular(A)),BG,BGS),
   BGS=[B|_],
@@ -465,16 +465,16 @@ prox_mappings(TITLE,AG,BG,_BGG,APA):-
      ; showdiff_arg1(TITLE,AG,A,BG,B)))).
   %showdiff_objects(PA,PB),!.
 
-:- dynamic(did_map/5).
-did_map(O1):- call_in_testid(did_map(_,O1,_,_)),!.
-did_map(O2):- call_in_testid(did_map(_,_,_,O2)),!.
-get_did_map(PeersI,O1,PeersO,O2):- call_in_testid(did_map(PeersI,O1,PeersO,O2)).
-get_did_map(PeersO,O2,PeersI,O1):- call_in_testid(did_map(PeersI,O1,PeersO,O2)).
+:- dynamic(arc_cache:did_map/5).
+use_did_map(O1):- call_in_testid(arc_cache:did_map(_,O1,_,_)),!.
+use_did_map(O2):- call_in_testid(arc_cache:did_map(_,_,_,O2)),!.
+get_did_map(PeersI,O1,PeersO,O2):- call_in_testid(arc_cache:did_map(PeersI,O1,PeersO,O2)).
+get_did_map(PeersO,O2,PeersI,O1):- call_in_testid(arc_cache:did_map(PeersI,O1,PeersO,O2)).
 
 showdiff_arg1(TITLE,Peers1,Obj1,Peers2,Obj2):- 
  must_det_ll((
-  findall(Peer,(nop(has_prop(og(OG,X,_,Y),Obj1)),member(Peer,Peers1),has_prop(og(OG,X,_,Y),Peer),Peer\==Obj1),Peers11),
-  findall(Peer,(nop(has_prop(og(OG,X,_,Y),Obj2)),member(Peer,Peers2),has_prop(og(OG,X,_,Y),Peer),Peer\==Obj2),Peers22),
+  findall(Peer,(nop(has_prop(pg(OG,X,_,Y),Obj1)),member(Peer,Peers1),has_prop(pg(OG,X,_,Y),Peer),Peer\==Obj1),Peers11),
+  findall(Peer,(nop(has_prop(pg(OG,X,_,Y),Obj2)),member(Peer,Peers2),has_prop(pg(OG,X,_,Y),Peer),Peer\==Obj2),Peers22),
   objs_to_io(Obj1,Obj2,O1,O2),
   ((Obj1==O1) 
        -> (PeersI = Peers11,PeersO = Peers22) ; (PeersI = Peers22,PeersO = Peers11)),
@@ -499,7 +499,7 @@ map_objects(TITLE,PeersI,O2,PeersO,O2):-
 %map_objects_now(TITLE,PeersI,O2,PeersO,O2):-
  %must_det_ll((
 
- assertz_in_testid(did_map(PeersI,O1,PeersO,O2)),
+ assertz_in_testid(arc_cache:did_map(PeersI,O1,PeersO,O2)),
  %link_prop_types(loc2D,O1,O2,_LOCS),
  show_pair_now(TITLE,O1,O2),
   %what_unique(TestID,O2),
@@ -521,7 +521,7 @@ map_objects(TITLE,PeersI,O2,PeersO,O2):-
   %peerless_props(O2,PeersO,Props2),
   %print([x=[in_i(S1),in_o(Props1),out_i(S2),out_o(Props2)]]),
   SETS = RHSSet+LHSSet,
-  save_learnt_rule(object_to_object(i_o,obj(NewSames,LHSSet,IZ),obj(NewSames,RHSSet,OZ)),1+2+3+4+5+6+SETS,SETS))))),!.  
+  save_learnt_rule(arc_cache:object_to_object(i_o,obj(NewSames,LHSSet,IZ),obj(NewSames,RHSSet,OZ)),1+2+3+4+5+6+SETS,SETS))))),!.  
 
 
 %dg(I1):-  print_grid(I1),!, print_info(I1).
@@ -559,7 +559,7 @@ show_pair_now(TITLE,OO1,OO2):-
 show_sames_diffs_now(Sames,PDiffs):- 
    D is  2,
     az_ansi(noisey_debug(print_list_of(print_sames,sames,Sames))),    
-    my_partition('\\='(og(_,_,_,_)),PDiffs,NonFunDiffs,FunDiffs),
+    my_partition('\\='(pg(_,_,_,_)),PDiffs,NonFunDiffs,FunDiffs),
     print_list_of(print_diffs(D + 1),diffs,NonFunDiffs),
     print_list_of(print_diffs(D + 1),oDiffs2,FunDiffs),  !.
 
@@ -576,7 +576,7 @@ refunctor(I,O):- \+ compound(I),!,O=I.
 refunctor(iz(C),iz(O)):-!, refunctor(C,O).
 refunctor(pen([cc(Silver,_)]),pen([cc(Silver,_)])).
 refunctor(edge(CI1,CI2),edge(CO1,CO2)):-!,(CI2=CO2;CI1=CO1).
-refunctor(og(OG,NS1,WE,_),og(OG,NS2,WE,_)):-!,NS1=NS2.
+refunctor(pg(OG,NS1,WE,_),pg(OG,NS2,WE,_)):-!,NS1=NS2.
 refunctor([H|T],[HH|TT]):- !, refunctor(H,HH),refunctor(T,TT).
 %refunctor(C,O):- is_list(C),!,maplist(refunctor,C,O).
 refunctor(C,O):- compound_name_arguments(C,F,A),!,refunctor_args(A,B),compound_name_arguments(O,F,B).
@@ -584,8 +584,8 @@ refunctor(C,O):- compound_name_arguments(C,F,A),!,refunctor_args(A,B),compound_n
 objs_to_io(O2,O1,O1,O2):- (has_prop(giz(g(in)),O1);has_prop(giz(g(out)),O2)),!.
 objs_to_io(O1,O2,O1,O2).
 
-try_omember(_,S1,[O]):- O = og(OG, LF,N, A), member(O,S1),number(N),member(og(OG,LF,N,B),S1),B\==A,!.
-try_omember(_,S1,[O]):- O = og(_OG,_LF,N,_A), member(O,S1),number(N),!.
+try_omember(_,S1,[O]):- O = pg(OG, LF,N, A), member(O,S1),number(N),member(pg(OG,LF,N,B),S1),B\==A,!.
+try_omember(_,S1,[O]):- O = pg(_OG,_LF,N,_A), member(O,S1),number(N),!.
 try_omember(Peers,S1,Props1):- include(not_peerless_prop(Peers),S1,Props1).
 
   
@@ -607,14 +607,14 @@ select_obj_pair_1_3(AAR,BBR,PA,PB,maybe_good_prop(PAP,PBP)):-    maybe_good_prop
 %select_obj_pair_1_3(AAR,BBR,PA,PB):-   maybe_good_prop(PA,PB), member(PA,AAR), member(PB,BBR), \+ allow_pair(PA,PB),!.
 %select_obj_pair_1_3(AAR,BBR,PA,PB):-   member(PA,AAR), member(PB,BBR), \+ allow_pair(PA,PB),!.
 
-maybe_good_prop(og(OG,How,LFN,O),og(OG,How,LFN,O)).
-maybe_good_prop(og(OG,How,LFN,_),og(OG,How,LFN,_)).
+maybe_good_prop(pg(OG,How,LFN,O),pg(OG,How,LFN,O)).
+maybe_good_prop(pg(OG,How,LFN,_),pg(OG,How,LFN,_)).
 maybe_good_prop(pen([Color1|_]),pen([Color2|_])):- prop_color(Color1,Color2).
 maybe_good_prop(pen([_,Color1|_]),pen([_,Color2|_])):- prop_color(Color1,Color2).
 maybe_good_prop(pen([_,Color1|_]),pen([Color2|_])):- prop_color(Color1,Color2).
 maybe_good_prop(pen([Color1|_]),pen([_,Color2|_])):- prop_color(Color1,Color2).
 maybe_good_prop(A,A):- maybe_good_prop1(A).
-maybe_good_prop(og(OG,How,_,_),og(OG,How,_,_)).
+maybe_good_prop(pg(OG,How,_,_),pg(OG,How,_,_)).
 
 maybe_good_prop1(vis2D(_,_)).
 maybe_good_prop1(loc2D(_,_)).
@@ -632,7 +632,7 @@ usefull_compare(P):- changed_by(P,_).
 
 remove_giz(L,O):- include(not_giz,L,M),list_to_set(M,O).
 not_giz(giz(_)):-!,fail.
-not_giz(og(_,_,_,_)):-!,fail.
+not_giz(pg(_,_,_,_)):-!,fail.
 not_giz(merged(_)):-!,fail.
 not_giz(/*b*/iz(_)):-!,fail.
 not_giz(changes(_)):-!,fail.
@@ -643,14 +643,14 @@ not_giz(_):-!,fail.
 prop_type(loc2D,loc2D(_,_)).
 prop_type(loc2D,center2G(_,_)).
 prop_type(loc2D,iz(locX(_))).
-prop_type(loc2D,iz(cenXG(_))).
+prop_type(loc2D,iz(cenGX(_))).
 prop_type(loc2D,iz(locY(_))).
-prop_type(loc2D,iz(cenYG(_))).
+prop_type(loc2D,iz(cenGY(_))).
 prop_type(scale,rotOffset2D(_,_)).
 prop_type(scale,vis2D(_,_)).
 prop_type(scale,iz(sizeX(_))).
 prop_type(scale,iz(sizeY(_))).
-prop_type(order,og(_OG,_Peers,_Ord,_Type)).
+prop_type(order,pg(_OG,_Peers,_Ord,_Type)).
 prop_type(colorlesspoints,colorlesspoints(_)).
 prop_type(rotate,rot2L(_)).
 prop_type(repaint,pen(_)).
@@ -758,7 +758,7 @@ uncomparable(H,F):- uncomparable2(H,F).
 uncomparable2(group,grid).
 uncomparable2(group,globalpoints).
 uncomparable2(group,giz).
-uncomparable2(group,og).
+uncomparable2(group,pg).
 %uncomparable2(group,grid_size).
 uncomparable2(group,obj_to_oid).
 %uncomparable2(group,link).
@@ -1050,7 +1050,7 @@ diff_termz(O,I,[]):- no_diff(I,O),!.
 %diff_termz(obj(I),obj(O),OUT):- !, diff_objects(I,O,OUT).
 
 
-diff_termz(I,O,D):- is_map(I),!,findall(D1,(get_kov(K, I, V),diff_terms(K=V,O,D1)),D).
+diff_termz(I,O,D):- is_vm_map(I),!,findall(D1,(get_kov(K, I, V),diff_terms(K=V,O,D1)),D).
 diff_termz(IF=IA,O,IF=D):- find_kval(O,IF,OA),!,diff_terms(IA,OA,D).
 
 
@@ -1135,7 +1135,7 @@ reduce_required(i(IO),IO).
 
 two_ok(I,O):- I=@=O,!.
 two_ok(I,O):- ( is_list(I);is_list(O); \+ compound(I); \+ compound(O)),!, two_ok_dt(I,O).
-two_ok(og(OG,A,_,B),og(OG,A,_,B)):-!.
+two_ok(pg(OG,A,_,B),pg(OG,A,_,B)):-!.
 two_ok(I,O):- reduce_required(I,II),!,functor(I,F,A),functor(O,F,A),arg(1,O,OO),!,two_ok(II,OO).
 two_ok(cc(_,N),cc(_,N)).
 two_ok(cc(N,_),cc(N,_)).
@@ -1208,7 +1208,7 @@ kv_list_diff(Style,[CI|II],[CO|OO],D1D):- must_det_ll(diff2_terms(CI,CO,D1)),!,
 
 find_kval(OF=OA,OF,OA):- !.
 find_kval(List,OF,OA):- is_list(List),member(E,List),nonvar_or_ci(E),find_kval(E,OF,OA).
-find_kval(Dict,OF,OA):- is_map(Dict),get_kov(OF,Dict,OA).
+find_kval(Dict,OF,OA):- is_vm_map(Dict),get_kov(OF,Dict,OA).
 find_kval(O,OF,OA):- compound(O),compound_name_arguments(O,OF,[OA]).
 find_kval(obj(O),OF,OA):- !, find_kval(O,OF,OA).
 find_kval(O,OF,OA):- compound(O),compound_name_arguments(O,OF,OA).

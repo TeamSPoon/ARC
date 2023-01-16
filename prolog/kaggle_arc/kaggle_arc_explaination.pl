@@ -91,7 +91,7 @@ global_or_object_grid(O1,global+points,Points):- globalpoints_include_bg(O1,Poin
 global_or_object_grid(O1,local+points,Points):- localpoints_include_bg(O1,Points).
 global_or_object_grid(O1,local+self,O1).
 
-
+object_or_global_grid(O1,global+grid,Grid):- vis2D(O1,1,1), global_grid(O1,Grid),!.
 object_or_global_grid(O1,local+grid,Grid):-  object_grid(O1,Grid),!.
 object_or_global_grid(O1,global+grid,Grid):-  global_grid(O1,Grid),!.
 object_or_global_grid(O1,local+points,Points):- localpoints_include_bg(O1,Points).
@@ -326,9 +326,9 @@ prefered(hv_line(_)).
 prefered(dg_line(_)).
 prefered_header(cc(Caps,_),Caps):- freeze(Caps,wbg == Caps).
 prefered_header(cc(Caps,_),Caps):- get_black(Black),freeze(Caps,Black == Caps).
-prefered_header(og(_OG,_,_,Caps),Caps):- freeze(Caps,i_bg_shapes == Caps).
-prefered_header(og(_OG,/*sf*/(_),1,Caps),Caps):- freeze(Caps,atom(Caps)).
-prefered_header(og(_OG,/*sf*/(_),last(_),Caps),Caps):- freeze(Caps,atom(Caps)).
+prefered_header(pg(_OG,_,_,Caps),Caps):- freeze(Caps,i_bg_shapes == Caps).
+prefered_header(pg(_OG,/*sf*/(_),1,Caps),Caps):- freeze(Caps,atom(Caps)).
+prefered_header(pg(_OG,/*sf*/(_),last(_),Caps),Caps):- freeze(Caps,atom(Caps)).
 %prefered_header(/*b*/iz(Caps),PCaps):-prefered(PCaps),freeze(Caps,(nonvar(Caps),Caps = PCaps)).
 %prefered_header(iz(Caps),PCaps):-prefered(PCaps),freeze(Caps,Caps == PCaps).
 prefered_header(Caps,PCaps):-prefered(PCaps),freeze(Caps,(nonvar(Caps),Caps = PCaps)).
@@ -410,6 +410,7 @@ debug_indiv_obj(AS0):-
   sformat(SF,"% ~w:\t~w  ",[PC,SGlyph]),
   ignore(( g_out_style(style('font-size','75%'),(write(SF), wqs(TVSI))))),
   %maplist(write_indented_list('~N    '),wqs(TVSOS),
+  writeq(TVSI),
   ignore(((ISLINKR \==[], format('~N  '),wqs(ISLINKR)))),
   if_t((nb_current(menu_key,'i');nb_current(menu_key,'t')),ignore(((TVSOS \==[], format('~N  '),wqs(TVSOS))))),
   ignore(( TF==true, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
@@ -421,7 +422,7 @@ write_indented_list(F,WQS):- format(F),wqs(WQS).
 
 not_too_verbose(X):- X\==(''), X\==s('').
 
-is_o3(og(_OG,_,_,_)).
+is_o3(pg(_OG,_,_,_)).
 
 show_st_map(Obj):-
   ignore(( 
@@ -511,8 +512,8 @@ too_verbose(rotated_grid).
 %too_verbose(wide). too_verbose(tall).
 too_verbose(locX).
 too_verbose(locY).
-too_verbose(cenXG).
-too_verbose(cenYG).
+too_verbose(cenGX).
+too_verbose(cenGY).
 
 debug_indiv(_,_,X,_):- too_verbose(X),!.
 debug_indiv(Obj,_,F,[A]):- is_cpoints_list(A),!,

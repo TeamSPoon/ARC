@@ -69,7 +69,8 @@ simple_output_encoder(TestID,ExampleNums,Ins,Outs,ReEncIn,ReEncOut,EIns,EOuts):-
        ; (simple_reencode(Ins,ReEncIn,EIns), simple_reencode(Outs,ReEncOut,EOuts), 
                  asserta(task_pre_encoder(TestID,ReEncIn,ReEncOut)))).
 
+%:- meta_predicate(simple_reencode(//)).
 simple_reencode(P2s,Ins,EIns):- var(P2s),!,all_common_reductions(Ins,P2s,EIns).
-simple_reencode(P2s,Ins,EIns):- reduce_grid(P2s,Ins,EIns).
+simple_reencode(P2s,Ins,EIns):- reduce_grid(Ins,P2s,EIns).
 
 

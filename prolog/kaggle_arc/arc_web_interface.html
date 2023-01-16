@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>Logicmoo ARC TopFrame</title>
+	   <script type="text/javascript">
+function LoadFrame(){
+	if (location.search && location.search.length > 1 && location.search.charAt(0) == "?") {
+		document.getElementById('lm_xref').src = "/arcproc_right" +location.search;
+	} else {
+		document.getElementById('lm_xref').src = "/arcproc_right";
+	}
+    makeFramesetVerticallyResizable('mainFrameSet');
+  }
+
+    function makeFramesetVerticallyResizable(frameSetId) {
+        var frameSet = document.getElementById(frameSetId);
+
+        // insert a vertical box called resizeHandle into the righthand document:
+        var frameDoc = frameSet.children[1].contentDocument;
+        var resizeHandle = frameDoc.createElement("div");
+        resizeHandle.style.backgroundColor = "#999999";// remove this line to hide the handle
+        resizeHandle.style.position = "fixed";
+        resizeHandle.style.width = "100%";
+        resizeHandle.style.height = "6px";
+        resizeHandle.style.top = "3px"; // put it a little away from the border so firefox can detect dragging to the left
+        resizeHandle.style.left = "0px";
+        resizeHandle.style.cursor = "n-resize";
+        resizeHandle.style.zIndex = 99999;        
+        frameDoc.body.insertBefore(resizeHandle, frameDoc.body.firstChild);
+
+        // Drag functions:
+        var dragStartScreenY = null;
+        resizeHandle.draggable = true;
+        resizeHandle.ondragstart = function(event) {
+             dragStartScreenY = event.screenY;            
+             event.dataTransfer.setData('text/plain', 'dummy');
+             event.dataTransfer.effectAllowed = 'move';             
+        };
+        resizeHandle.ondrag = function(event) {
+            if(dragStartScreenY !== null && event.screenY != 0) { // we have a mouse position ?
+                var offset = event.screenY - dragStartScreenY;
+                var height = frameSet.firstElementChild.offsetHeight;
+                var newHeight = height + offset;
+                frameSet.rows = "" + newHeight + ",*";
+                dragStartScreenY = event.screenY;
+            }            
+        }        
+        resizeHandle.ondragend = resizeHandle.ondrag;// Firefox does not give us the current mouse position during dragging, so resize the frames at the end        
+    }
+
+</script></head>  
+	 <frameset id="mainFrameSet" rows="*" cols="300,100%" border="0" onload="LoadFrame()">
+        <frame src="/arcproc_left" name = "menu_page" scrolling="auto">
+		<frame src="" name="lm_xref" id="lm_xref" scrolling="auto">
+         <noframes>
+         <body>Your browser does not support frames.</body>
+      </noframes>
+  </frameset>
+</html>

@@ -445,7 +445,7 @@ data_typec(lst(vals([N|_]),_,_),Type):- nonvar(N),!,data_type(N,Type).
 data_typec(O,object):- is_object(O),!.
 data_typec(iz(O),iz(T)):- !, data_type(O,T).
 data_typec(diff(_->O),T):- nonvar(O),!, data_type(O,T).
-data_typec(O,dict(L)):- is_map(O),get_kov(objs,O,Value),!,data_type(Value,L).
+data_typec(O,dict(L)):- is_vm_map(O),get_kov(objs,O,Value),!,data_type(Value,L).
 data_typec(O,group(N)):- is_group(O),into_list(O,L),!,length(L,N).
 data_typec(Out,grid(H,V)):- is_grid(Out),!,grid_size(Out,H,V).
 data_typec(Out,lst(DT)=H):- is_list(Out),!,length(Out,H), last(Out,Last),data_type(Last,DT).
@@ -524,7 +524,7 @@ is_printable_gridoid(G):- is_gridoid(G),!.
 is_printable_gridoid(G):- is_point(G),!.
 is_printable_gridoid(G):- is_cpoint(G),!.
 is_printable_gridoid(G):- is_ncpoints_list(G),!.
-is_printable_gridoid(D):- is_map(D),get_kov(grid,D,_).
+is_printable_gridoid(D):- is_vm_map(D),get_kov(grid,D,_).
 is_printable_gridoid(G):- is_list(G),!,maplist(is_printable_gridoid,G).
 is_printable_gridoid(G):- resolve_reference(G,R),!,nonvar(R),!.
 is_printable_gridoid(G):- known_gridoid(G,R),!,nonvar(R),!.
@@ -564,7 +564,7 @@ h_symmetric(Group):- true,into_grid(Group,Grid),!,h_symmetric(Grid).
 is_object(O):- compound(O), O = obj(_).
 
 %is_object_group([G|V]):- is_object(G),is_list(V),maplist(is_object,V).
-%is_group(Dict):- is_map(Dict),!,get_kov(objs,Dict,_).
+%is_group(Dict):- is_vm_map(Dict),!,get_kov(objs,Dict,_).
 is_group([G|V]):- is_object_group([G|V]). % is_object_or_grid(G),is_list(V),maplist(is_object_or_grid,V),!.
 
 is_functor(F,E):- compound(E),functor(E,F,_).

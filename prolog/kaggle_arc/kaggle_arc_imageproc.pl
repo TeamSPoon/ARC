@@ -670,14 +670,14 @@ close_color(green,cyan).
 grid_size_term(I,size2D(X,Y)):- grid_size(I,X,Y),!.
 
 :- decl_pt(grid_size(prefer_grid,_,_)).
-%grid_size(Points,H,V):- is_map(Points),!,Points.grid_size=grid_size(H,V).
+%grid_size(Points,H,V):- is_vm_map(Points),!,Points.grid_size=grid_size(H,V).
 grid_size(NIL,1,1):- NIL==[],!.
 grid_size(I,X,Y):- is_object(I),indv_props_list(I,L),(member(grid_size(X,Y),L);member(giz(grid_sz(X,Y)),L);member(vis2D(X,Y),L)),!.
 grid_size(G,H,V):- quietly(is_object(G)), !, vis2D(G,H,V).
 grid_size(Points,H,V):- is_points_list(Points),!,points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V),!.
 grid_size(ID,H,V):- is_grid_size(ID,H,V),!.
 %grid_size(G,H,V):- is_graid(G,GG),!, grid_size(GG,H,V).
-grid_size(G,H,V):- is_map(G),H = G.h,V = G.v,!,grid_size_nd(G,H,V),!.
+grid_size(G,H,V):- is_vm_map(G),H = G.h,V = G.v,!,grid_size_nd(G,H,V),!.
 grid_size(G,H,V):- is_grid(G),!,grid_size_nd(G,H,V),!.
 grid_size(G,X,Y):- is_group(G),!,mapgroup(grid_size_term,G,Offsets),sort(Offsets,HighToLow),last(HighToLow,size2D(X,Y)).
 %grid_size([G|G],H,V):- is_list(G), length(G,H),length([G|G],V),!.

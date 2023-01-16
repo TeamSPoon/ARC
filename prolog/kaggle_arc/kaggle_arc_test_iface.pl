@@ -13,7 +13,7 @@
 :- multifile(muarc_tmp:cached_tests/2).
 :- multifile(muarc_tmp:cached_tests_hard/2).
 
-test_menu :- with_webui(menu).
+test_webui_menu :- as_if_webui(write_menu_opts('i')).
 menu :- write_menu('i').
 
 write_menu(Mode):-
@@ -31,12 +31,26 @@ menu_options(Mode):-
   % show_pair_mode,
   !.
 print_menu_cmd(Key):- ignore((menu_cmd1(_,Key,Info,Goal),print_menu_cmd(Key,Info,Goal))).
+print_menu_cmd(Key,Info,_Goal):- wants_html,!, write('<br/>'),print_menu_cmd1(Info,do_menu_key(Key)).
 print_menu_cmd(_Key,Info,Goal):- format('~N '),print_menu_cmd1(Info,Goal).
 print_menu_cmd9(_Key,Info,Goal):- format(' '),print_menu_cmd1(Info,Goal).
 
-print_menu_cmd1(Goal):-  if_arc_webui(write_cmd_link(Goal)),!.
-print_menu_cmd1(Info,Goal):- if_arc_webui(write_cmd_link(Info,Goal)),!.
+print_menu_cmd1(Goal):-  print_menu_cmd1(Goal,Goal),!.
+print_menu_cmd1(Info,Goal):- wants_html,shorten_text(Info,Info1),write_http_link(Info1,Goal),!.
 print_menu_cmd1(Info,_Goal):- format('~w',[Info]).
+
+write_http_link(Info,Goal):- nonvar(Goal),with_output_to(string(S),writeq(Goal)),
+  toplevel_pp(PP),
+  %in_pp(PP),
+  www_form_encode(S,A), 
+   sformat(SO,'<a href="/swish/lm_xref/?mouse_iframer_div=~w&cmd=~w" target="lm_xref">~w</a> ',[PP,A,Info]),!,
+   our_pengine_output(SO).
+
+shorten_text(Info,Info1):- \+ string(Info),!,sformat(S,'~w',[Info]),!,shorten_text(S,Info1).
+%shorten_text(Info,Info1):- \+ atom_contains(Info,'  '),!,Info1=Info.
+shorten_text(Info,Info1):- string_concat(' or ',L,Info),!,shorten_text(L,Info1).
+shorten_text(Info,Info1):- string_concat(' ',L,Info),!,shorten_text(L,Info1).
+shorten_text(Info,Info).
 
 :- multifile(menu_cmd1/4).
 :- multifile(menu_cmd9/4).
@@ -46,9 +60,9 @@ menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),
 menu_cmd1(i,'i','             See the (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,locally(nb_setval(debug_as_grid,f),ndividuator))).
 menu_cmd1(i,'o','                  or (o)bjects found in the input/outputs',                (clear_tee,cls_z_make,!,locally(nb_setval(debug_as_grid,t),ndividuator))).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',   (cls_z_make,!,ignore(what_unique),ndividuator)).
-menu_cmd1(_,'y','                  or  Wh(y) between objects in the input/outputs',   (cls_z_make,!,ignore(what_unique),ndividuator)).
-menu_cmd1(_,'a','                  or (a)ll between objects',   (cls_z_make,!,ignore(what_unique),ndividuator)).
-menu_cmd1(_,'j','                  or (j)unctions between objects',   (cls_z_make,!,ignore(what_unique),ndividuator)).
+menu_cmd1(_,'y','                  or Wh(y) between objects in the input/outputs',   (cls_z_make,!,ndividuator)).
+menu_cmd1(_,'a','                  or (a)ll between objects',   (cls_z_make,!,ndividuator)).
+menu_cmd1(_,'j','                  or (j)unctions between objects',   (cls_z_make,!,ndividuator)).
 menu_cmd1(_,'k','                  or (k)ill/clear all test data.',(update_changes,clear_test)).
 menu_cmd1(_,'B','                  or (B)oxes test.',(update_changes,pbox_indivs)).
 menu_cmd1(_,'R','                  or (R)epairs test.',(update_changes,repair_symmetry)).
@@ -90,7 +104,9 @@ menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd1(Mode,Key,Mesg,Goal).
 menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd9(Mode,Key,Mesg,Goal).
 
 
-menu_or_upper(IOKey):- nb_current(menu_key,Key),(Key==IOKey;(upcase_atom(Key,Key))),!.
+menu_or_upper(IOKey):- nb_current(menu_key,Key),(Key==IOKey;(upcase_atom(Key,Key),\+ upper_already_bound(Key))),!.
+
+upper_already_bound(Key):- menu_cmds(_Mode,Key,_Mesg,_Goal).
 
 find_tests(F):-
    current_predicate(N),N=F/0, (atom_concat(test_,_,F); atom_concat(_,'_test',F)),
@@ -112,11 +128,11 @@ print_menu_list(L):- forall(nth_above(100,N,L,E),format('~N~@',[print_menu_cmd1(
   % ignore((read_line_to_string(user_input,Sel),atom_number(Sel,Num))),
 
 ui_menu_call(G):- ignore(catch(must_not_error(G),E,wdmsg(E))).
-%ui_menu_call(G):- if_arc_webui(catch(ignore((G)),E,wdmsg(E))) ->true ; catch(ignore((G)),E,wdmsg(E)).
+%ui_menu_call(G):- when_in_html(catch(ignore((G)),E,wdmsg(E))) ->true ; catch(ignore((G)),E,wdmsg(E)).
   
 my_menu_call(E):- locally(set_prolog_flag(gc,true),ui_menu_call(E)).
 
-my_submenu_call(G):- current_predicate(_,G), \+ is_list(G),!, locally(set_prolog_flag(gc,false),ui_menu_call(G)),!.
+my_submenu_call(G):- current_predicate(_,G), \+ is_list(G),!, locally(set_prolog_flag(nogc,false),ui_menu_call(G)),!.
 my_submenu_call0(E):- peek_vm(VM),!, ui_menu_call(run_dsl(VM,E,VM.grid,Out)), set(VM.grid) = Out.
 
 key_read_borked(PP):- in_pp(PP), PP\==ansi,PP\==bfly.
@@ -1133,7 +1149,7 @@ clear_test_training(TestID):-
       (exists_file(File)->delete_file(File);true))),
 */
 clear_training(TestID):- ensure_test(TestID),
-  %retractall(individuated_cache(_,_,_)),
+  %retractall(arc_cache:individuated_cache(_,_,_)),
   set_bgc(_),
   set_flag(indiv,0),
   retractall(arc_test_property(TestID,_,_,_)),
@@ -1258,6 +1274,7 @@ get_thingy1(_,Out,"OUT-NGRID",Out).
 easy_diff_idea(TestID,ExampleNum,In,Out,[NameIn=In,(NameOut+TestID)=Out|Get]):- fail, is_grid(Out),
   ignore(in_out_name(ExampleNum,NameIn,NameOut)),
   get_thingy(In,Out,Get).
+
 easy_diff_idea(TestID,ExampleNum,In,Out,[NameIn=In,(NameOut+TestID)=Out]):-
   ignore(in_out_name(ExampleNum,NameIn,NameOut)).
 
@@ -1274,10 +1291,10 @@ print_single_pair(TName):-
 print_single_pair(TestID,ExampleNum,In,Out):-
    as_d_grid(In,In1),as_d_grid(Out,Out1),   
    xfer_zeros(In1,Out1),
-   easy_diff_idea(TestID,ExampleNum,In1,Out1,LIST),
+   in_out_name(ExampleNum,NameIn,NameOut),%easy_diff_idea(TestID,ExampleNum,In1,Out1,LIST),!,
    format('~Ntestcase(~q,"\n~@").~n~n~n',
      [TestID>ExampleNum,
-       print_side_by_side(LIST)]),
+       print_side_by_side6(cyan,In1,NameIn,_,Out1,NameOut)]),!,
    format('~N'),
    %ignore((grid_hint_swap(i-o,In,Out))),
    format('~N'),
@@ -1285,9 +1302,9 @@ print_single_pair(TestID,ExampleNum,In,Out):-
 
 other_grid_mode(I^O,II^OO):- with_next_grid_mode((as_d_grid(I,II),as_d_grid(O,OO))).
 
-in_out_name(trn+NN,SI,SO):- N is NN+1, format(atom(SI),'Training Pair #~w Input',[N]),format(atom(SO),'Output',[]).
-in_out_name(tst+NN,SI,SO):- N is NN+1, format(atom(SI),'EVALUATION TEST #~w',[N]),format(atom(SO),'Output<(REVEALED)>',[]).
-in_out_name(X,'Input'(X),'Output'(X)).
+in_out_name(trn+NN,SI,SO):- N is NN+1, format(atom(SI),'Training Pair #~w Input',[N]),format(atom(SO),'Output',[]),!.
+in_out_name(tst+NN,SI,SO):- N is NN+1, format(atom(SI),'EVALUATION TEST #~w',[N]),format(atom(SO),'Output<(REVEALED)>',[]),!.
+in_out_name(X,'Input'(X),'Output'(X)):-!.
 
 
 

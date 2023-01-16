@@ -148,7 +148,7 @@ call_expanded(_VM,G):- catch(call(G),E,(arcST,pp(E),rrtrace(G))).
 
 quinish(Var):- var(Var),!.
 quinish(Var):- is_grid(Var),!.
-quinish(Var):- is_map(Var),!.
+quinish(Var):- is_vm_map(Var),!.
 quinish(Var):- is_object(Var),!.
 quinish(Var):- is_group(Var),!.
 quinish(Var):- is_list(Var),!.
@@ -189,7 +189,7 @@ set_vm_grid(VM,In):- In == VM,!.
 set_vm_grid(VM,In):- var(In),!, In = VM.grid . 
 set_vm_grid(VM,In):- is_grid(In), !, set_vm_grid_now(VM,In).
 set_vm_grid(VM,In):- into_grid(In,Grid), set_vm_grid_now(VM,Grid),!.
-set_vm_grid(VM,In):- is_map(In), map_to_grid(_Was,In,Obj,_Grid,_Closure), Obj\=@=In, !, set_vm_grid(VM,Obj).
+set_vm_grid(VM,In):- is_vm_map(In), map_to_grid(_Was,In,Obj,_Grid,_Closure), Obj\=@=In, !, set_vm_grid(VM,Obj).
 set_vm_grid(VM,In):- collapsible_section(debug,set_vm_grid_now(VM,In)).
 
 set_vm_grid_now(VM,Grid):- VM.grid=@=Grid,!.
@@ -198,7 +198,7 @@ set_vm_grid_now(VM,Grp):-
   gset(VM.type) = data_type(Type),
   pp(yellow,set_vm_grid_now(Type)),pp(cyan,Type),fail.
 set_vm_grid_now(VM,In):- VM==In,!.
-set_vm_grid_now(VM,In):- is_map(In),!,map_to_grid(_Was,In,Obj,_Grid,_Closure), Obj\=@=In, !, set_vm_grid(VM,Obj).
+set_vm_grid_now(VM,In):- is_vm_map(In),!,map_to_grid(_Was,In,Obj,_Grid,_Closure), Obj\=@=In, !, set_vm_grid(VM,Obj).
 set_vm_grid_now(VM,Grp):- is_group(Grp), !,
   gset(VM.points_o) = VM.points,
   gset(VM.objs)=Grp,
@@ -362,8 +362,8 @@ cast_to_grid(Text,Grid, print_grid_to_string ):- string(Text),text_to_grid(Text,
 cast_to_grid(Text,Grid, print_grid_to_atom ):- atom(Text),atom_length(Text,Len),Len>20,atom_contains(Text,'|'),text_to_grid(Text,Grid),!.
 
 % TODO Comment out next line to prefer the line after
-% cast_to_grid(Dict,Grid, (=) ):- is_map(Dict), get_kov(grid,Dict,Grid),!.
-cast_to_grid(Dict,Grid, back_to_map(Was,Dict,Prev,Grid,Closure)):- is_map(Dict), map_to_grid(Was,Dict,Prev,Grid,Closure),!.
+% cast_to_grid(Dict,Grid, (=) ):- is_vm_map(Dict), get_kov(grid,Dict,Grid),!.
+cast_to_grid(Dict,Grid, back_to_map(Was,Dict,Prev,Grid,Closure)):- is_vm_map(Dict), map_to_grid(Was,Dict,Prev,Grid,Closure),!.
 
 cast_to_grid(Obj,Grid, Closure):- cast_to_grid1(Obj,Grid, Closure).
 
@@ -442,7 +442,7 @@ was_grid_gid(G,GID):- current_predicate(gid_to_grid/2), call(call,gid_to_grid,GI
 was_grid_gid(Grid,GID):- atom(GID),oid_to_gridoid(GID,G),into_grid(G,GG),Grid=GG,assertz_if_new(gid_to_grid(GID,Grid)).
 was_grid_gid(Grid,GID):- is_grid_tid(Grid,GID),atom(GID),assertz_if_new(gid_to_grid(GID,Grid)).
 assert_grid_tid(Grid,GID):- asserta_new(is_grid_tid(Grid,GID)),ignore((atom(GID),asserta_new(gid_to_grid(GID,Grid)))).
-assert_grid_gid(Grid,GID):- assertz_if_new(is_grid_tid(Grid,GID)),ignore((atom(GID),assertz_if_new(gid_to_grid(GID,Grid)))).
+assert_grid_gid(Grid,GID):- asserta_new(is_grid_tid(Grid,GID)),ignore((atom(GID),asserta_new(gid_to_grid(GID,Grid)))).
 
 oid_to_gridoid(GID,G):- current_predicate(gid_to_grid/2), call(call,gid_to_grid,GID,G),!.
 

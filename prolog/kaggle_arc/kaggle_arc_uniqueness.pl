@@ -87,7 +87,7 @@ what_unique(TestID):-
    ((VM.id \= (TestID > _ * _)), ndividuator),
    get_vm(VM2), explain_uniqueness(VM2.objs).
 
-what_unique(TestID,Dict):- is_map(Dict),!,what_unique_dict(TestID,Dict).
+what_unique(TestID,Dict):- is_vm_map(Dict),!,what_unique_dict(TestID,Dict).
 what_unique(TestID,Obj):- get_current_test(TestID),select_group(TestID,Group,_How), member(Obj,Group), must_det_ll(what_unique(TestID,Obj,Group)).
 what_unique(TestID,Obj,Group):- (is_group(Group);is_object(Obj)),!,what_unique_obj(TestID,Obj,Group).
 what_unique(TestID,CountMask,GroupSizeMask):-

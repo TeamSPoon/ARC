@@ -9,17 +9,11 @@
 
 :- set_prolog_flag(encoding,iso_latin_1).
 :- set_prolog_flag(stream_type_check,false).
+:- set_prolog_flag(xpce,false).
+:- set_prolog_flag(pce,false).
+:- set_prolog_flag(windows,false).
+:- set_prolog_flag(gui_tracer,false).
 
-:- set_prolog_flag(use_arc_swish,false).
-:- set_prolog_flag(use_arc_plweb,false).
-:- set_prolog_flag(use_arc_bfly,false).
-% false = command line (no butterfly)
-% butterfly (arc_webui.sh)
-% true = no butterfly (SWISH only)
-%
-:- nb_setval(arc_can_portray,nil).
-
-:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_bfly,true);set_prolog_flag(use_arc_bfly,false)).
 %:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_swish,true);true).
 :- set_prolog_flag(arc_term_expansion,false).
 
@@ -118,6 +112,7 @@ quietlyd(G):- quietly(G),!.
 %:- discontiguous '$autoload'/3.
 :- dynamic '$autoload'/3.
 
+update_changes:- wants_html,!.
 update_changes:- 
     '$update_library_index',
     findall(File, make:modified_file(File), Reload0),
@@ -129,7 +124,9 @@ update_changes:-
     print_message(silent, make(done(Reload))),
     forall(prolog:make_hook(after, Reload),true).
 
+cls_z_make:- wants_html,!.
 cls_z_make:- notrace((ignore(cls_z),ignore(update_and_fail))).
+clsmake:- wants_html,!.
 clsmake:- notrace(ignore((\+ is_detatched_thread, cls_z_make))),!.
 update_and_fail:- once(update_changes),fail.
 update_and_fail_cls:- once(cls_z),update_and_fail.
@@ -142,12 +139,12 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   :- SL  is 2_147_483_648*8*4, set_prolog_flag(stack_limit, SL ).
   set_guitracer:- ((getenv('DISPLAY',_) -> true ; setenv('DISPLAY','10.0.0.122:0.0'))),checkgui_tracer.
   unset_guitracer:- (unsetenv('DISPLAY')),checkgui_tracer.
-  checkgui_tracer:- (getenv('DISPLAY',_) -> guitracer ; catch(noguitracer,_,true)).
+  checkgui_tracer:- (getenv('DISPLAY',_) -> catch(call(call,guitracer),_,true) ; catch(call(call,noguitracer),_,true)).
   
   %:- catch(noguitracer,_,true).
-  :- set_guitracer.
-  %:- unsetenv('DISPLAY').
-  %:- unset_guitracer.
+  %:- set_guitracer.
+  :- unsetenv('DISPLAY').
+  :- catch(noguitracer,_,true).
   %:- checkgui_tracer.
   :- set_prolog_flag(toplevel_print_anon,false).
   :- set_prolog_flag(toplevel_print_factorized,true).
@@ -161,7 +158,7 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   :- set_prolog_flag(on_error,status).
   :- set_prolog_flag(debugger_show_context,true).
   
-  %:- set_prolog_flag(last_call_optimisation,false).
+  :- set_prolog_flag(last_call_optimisation,false).
   %:- set_prolog_flag(trace_gc,false).
   :- set_prolog_flag(write_attributes,dots).
   :- set_prolog_flag(backtrace_depth,1000).
@@ -195,30 +192,37 @@ pfcAddF(P):-
 %:- set_prolog_flag(verbose_autoload,true).
 
 
-
 :- current_prolog_flag(argv,C),wdmsg(current_prolog_flag(argv,C)),!.
 
 :- set_prolog_flag(no_sandbox,true).
 
 
-when_using_swish(G):- (current_prolog_flag(use_arc_swish,true)-> catch_log(G) ; true).
-with_webui(_Goal):- \+ current_prolog_flag(use_arc_plweb,true),!.
-with_webui(Goal):- ignore(when_arc_webui(catch_log(with_http(Goal)))).
-%:- initialization arc_http_server.
+:- set_prolog_flag(use_arc_swish,false).
+:- set_prolog_flag(use_arc_www,false).
+:- set_prolog_flag(use_arc_bfly,false).
+% false = command line (no butterfly)
+% butterfly (wants_html.sh)
+% true = no butterfly (SWISH only)
+%
+:- nb_setval(arc_can_portray,nil).
 
-:- exists_source(library(xlisting/xlisting_web)) -> system:use_module(library(xlisting/xlisting_web)) ; true.
+% --name=bool, --name, --no-name or --no-name=false.
+process_not_option(P2,E,false):- process_cmdln_option(P2,E,true).
+process_not_option(P2,E,_):- process_cmdln_option(P2,E,false).
+process_cmdln_option(P2,E,TF):- atom_concat('no-',O,E),process_not_option(P2,O,TF),!.
+%process_cmdln_option(P2,E,TF):- atom_concat('no',O,E),process_not_option(P2,O,TF),!.
+process_cmdln_option(P2,E,TF):- atom_concat(O,'=false',E),process_not_option(P2,O,TF).
+process_cmdln_option(_,'--',_):-!.
+process_cmdln_option(P2,E,TF):- atom_concat(O,'=true',E),process_cmdln_option(P2,O,TF).
+process_cmdln_option(P2,E,TF):- atom_concat('--',O,E),!,process_cmdln_option(P2,O,TF).
+process_cmdln_option(P2,E,TF):- atom_concat('use-',O,E),!,process_cmdln_option(P2,O,TF).
+process_cmdln_option(P2,E,true):- atom_contains(E,'='),!,atom_to_term(E,N=V,Vs),maplist(call,Vs),process_cmdln_option(P2,N,V).
+process_cmdln_option(_P2,E,V):- forall((current_prolog_flag(O,_),atom_concat(_,E,O)),(echo_option(O,V),set_prolog_flag(O,V))),fail.
+process_cmdln_option(P2,E,V):- call(P2,E,V).
 
-ld_logicmoo_webui:- !.
-ld_logicmoo_webui:-
-   exists_source(library(logicmoo_webui)), use_module(library(logicmoo_webui)), 
-  system:use_module(library(xlisting/xlisting_web)),
-  system:use_module(library(xlisting/xlisting_web_server)),
-  catch_log(dmsg((?-webui_start_swish_and_clio))).
-ld_logicmoo_webui.
-
-logicmoo_webui:- ld_logicmoo_webui,catch_log(call(call,webui_start_swish_and_clio)).
-
-:- when_using_swish(ld_logicmoo_webui).
+echo_option(N,V):- wdmsg(echo_option(N,V)).
+:- current_prolog_flag(argv,C),forall(member(E,C),process_cmdln_option(echo_option,E,true)).
+:- current_prolog_flag(argv,C),forall(member(E,C),process_cmdln_option(set_prolog_flag,E,true)).
 
 
 
@@ -251,12 +255,19 @@ check_len(_).
 
 wno_must(G):- locally(nb_setval(no_must_det_ll,t),locally(nb_setval(cant_rrtrace,t),call(G))).
 
+must_det_ll_maplist(_,[]):-!.
+must_det_ll_maplist(P1,[H|T]):- must_det_ll(call(P1,H)), must_det_ll_maplist(P1,T).
+
+must_det_ll_maplist(_,[],[]):-!.
+must_det_ll_maplist(P2,[HA|TA],[HB|TB]):- must_det_ll(call(P2,HA,HB)), must_det_ll_maplist(P2,TA,TB).
 
 must_det_ll(X):- nb_current(no_must_det_ll,t),!,call(X).
 must_det_ll(X):- \+ callable(X), !, throw(must_det_ll_not_callable(X)).
 must_det_ll((A*->X;Y)):- !,(must_not_error(A)*->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((A->X;Y)):- !,(must_not_error(A)->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((X,!)):- !, (must_det_ll(X),!).
+must_det_ll(maplist(P1,List)):- !, must_det_ll_maplist(P1,List).
+must_det_ll(maplist(P2,ListA,ListB)):- !, must_det_ll_maplist(P2,ListA,ListB).
 must_det_ll((X,!,Y)):- !, (must_det_ll(X),!,must_det_ll(Y)).
 must_det_ll((X,Y)):- !, (must_det_ll(X),must_det_ll(Y)),!.
 %must_det_ll(X):- notrace(catch(X,_,fail)),!.
@@ -297,12 +308,12 @@ must_det_ll_failed(X):-  wdmsg(failed(X))/*,arcST*/,nortrace,trace,visible_rtrac
 
 rrtrace(X):- rrtrace(etrace,X).
 
-is_guitracer:- getenv('DISPLAY',_).
+is_guitracer:- getenv('DISPLAY',_), current_prolog_flag(gui_tracer,true).
 rrtrace(P1,X):- nb_current(cant_rrtrace,t),!,nop((wdmsg(cant_rrtrace(P1,X)))),!,fail.
-rrtrace(_,X):- notrace,is_guitracer,!,nortrace,gtrace,trace,call(X).
-rrtrace(P1,X):- trace,!, call(P1,X).
-rrtrace(P1,X):- notrace,nortrace, arcST, sleep(0.5), trace,
+rrtrace(P1,X):- notrace, \+ is_guitracer,!,nortrace, arcST, sleep(0.5), trace,
    (notrace(\+ current_prolog_flag(gui_tracer,true)) -> call(P1,X); (trace,call(P1,X))).
+rrtrace(_,X):- notrace,nortrace,catch(call(call,gtrace),_,true),trace,call(X).
+rrtrace(P1,X):- trace,!, call(P1,X).
 
 remove_must_dets(G,GGG):- compound(G), G = must_det_ll(GG),!,expand_goal(GG,GGG),!.
 remove_must_dets(G,GGG):- compound(G), G = must_det_l(GG),!,expand_goal(GG,GGG),!.
@@ -437,10 +448,10 @@ get_map_pairs(Map,is_assoc,Pairs):- is_assoc(Map), assoc_to_list(Map, Pairs).
 get_map_pairs(Map,is_rbtree,Pairs):- is_rbtree(Map), rb_visit(Map, Pairs).
 get_map_pairs(Map,is_dict(T),Pairs):- is_dict(Map), dict_pairs(Map,T,Pairs).
 
-is_vm(Tree):- is_map(Tree), once(get_kov(program,Tree,_);get_kov(program_i,Tree,_)).
+is_vm(Tree):- is_vm_map(Tree), once(get_kov(program,Tree,_);get_kov(program_i,Tree,_)).
 
-is_map(Tree):- is_rbtree(Tree),!, \+ rb_in(izmap,false,Tree).
-is_map(Dict):- is_dict(Dict),!, \+ get_dict(izmap,Dict,false).
+is_vm_map(Tree):- is_rbtree(Tree),!, rb_in(izmap,true,Tree).
+is_vm_map(Dict):- is_dict(Dict),!, get_dict(izmap,Dict,true).
 
 
 
@@ -507,24 +518,79 @@ doit(set(E.v)):- that.
 :- style_check(+singleton).
 */
 
+:- meta_predicate(when_in_html(-)).
+%when_in_html(Goal):- !, fail,Goal.
+%when_in_html(_):- never_webui,!.
+when_in_html(Goal):- ignore((wants_html,!,g_out(call(Goal)))).
+
+:- meta_predicate(when_arc_webui_enabled(-)).
+when_arc_webui_enabled(G):- wants_html,!, call(G).
+when_arc_webui_enabled(_):- never_webui,!.
+when_arc_webui_enabled(G):- call(G).
+
+when_using_swish(G):- (current_prolog_flag(use_arc_swish,true)-> catch_log(G) ; true).
+
+%as_if_webui(_Goal):- never_webui,!.
+as_if_webui(Goal):- in_pp(bfly),!,call(Goal).
+as_if_webui(Goal):- in_pp(swish),!,call(Goal).
+as_if_webui(Goal):- with_toplevel_pp(http,Goal).
+/*
+as_if_webui(Goal):- wants_html,!,call(Goal).
+as_if_webui(Goal):- in_pp(bfly),!,call(Goal).
+as_if_webui(Goal):- ignore(when_arc_webui_enabled(catch_log(as_if_http(Goal)))).
+%:- initialization arc_http_server.
+as_if_http(Goal):- in_pp(bfly),!,call(Goal).
+as_if_http(Goal):- in_pp(swish),!,call(Goal).
+as_if_http(Goal):- with_toplevel_pp(http,Goal).
+*/
+%wants_html:- in_pp(http),!.
+%wants_html:- \+ current_output(user_output).
+
+never_webui:- 
+  \+ current_prolog_flag(use_arc_www,true),
+  \+ current_prolog_flag(use_arc_swish,true),
+  \+ current_prolog_flag(use_arc_bfly,true).
+
+wants_html:-  notrace(wants_html0).
+wants_html0:- never_webui, !, fail.
+wants_html0:- in_pp(bfly),!.
+wants_html0:- in_pp(http),!.
+wants_html0:- toplevel_pp(http),!.
+wants_html0:- toplevel_pp(swish),!.
+wants_html0:- in_pp(swish),!,fail.
+%wants_html0:- is_http,!.
+
+:- exists_source(library(xlisting/xlisting_web)) -> system:use_module(library(xlisting/xlisting_web)) ; true.
+
+%ld_logicmoo_webui:- !.
+ld_logicmoo_webui:-
+   set_prolog_flag(use_arc_www,true),
+   ignore((exists_source(library(logicmoo_webui)), 
+         use_module(library(logicmoo_webui)),
+         catch_log(dmsg((?-webui_start_swish_and_clio))),
+         catch_log(set_long_message_server('https://logicmoo.org:11766')))), 
+  system:use_module(library(xlisting/xlisting_web)),
+  system:use_module(library(xlisting/xlisting_web_server)),
+  ensure_loaded(kaggle_arc_ui_html_wss),
+  ensure_loaded(kaggle_arc_ui_html),
+  start_arc_http_server,!.
+
+
+logicmoo_use_swish:-
+  set_prolog_flag(use_arc_swish,true),
+  ld_logicmoo_webui,catch_log(call(call,webui_start_swish_and_clio)),
+  http_handler('/swish', http_redirect(moved, '/swish/'), []).
+
 %arc_user(main):- !.
 arc_user(ID):- thread_self(TID),arc_user(TID, ID).
 
-suggest_arc_user(ID):- catch((if_arc_webui(xlisting_web:find_http_session(ID))),_,fail),!.
 suggest_arc_user(ID):- catch((pengine:pengine_user(ID)),_,fail),!.
 suggest_arc_user(ID):- catch((http_session:session_data(_,username(ID))),_,fail),!.
+suggest_arc_user(ID):- catch((wants_html, (xlisting_web:find_http_session(ID))),_,fail),!.
 
-arc_webui:-  notrace(arc_webui0).
 
-arc_webui0:- current_prolog_flag(use_arc_plweb,false),!,fail.
-arc_webui0:- toplevel_pp(http),!.
-arc_webui0:- in_pp(http),!.
-arc_webui0:- toplevel_pp(swish),!.
-arc_webui0:- in_pp(swish),!,fail.
-arc_webui0:- in_pp(bfly),!.
-arc_webui0:- is_webui,!.
-
-arc_user(TID, ID):- \+ arc_webui,!,TID=ID,!.
+arc_user(TID, ID):- \+ wants_html,!,TID=ID,!.
+arc_user(_,web_user):-!.
 arc_user(TID, ID):- catch((http_session:session_data(TID,username(ID))),_,fail),!.
 arc_user(TID, ID):- suggest_arc_user(ID), TID\=ID,!.
 
@@ -540,16 +606,6 @@ luser_default(N,V):- luser_setval(global,N,V).
 luser_linkval(N,V):- arc_user(ID),luser_linkval(ID,N,V),!.
 luser_linkval(ID,N,V):- nb_linkval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
 
-:- meta_predicate(if_arc_webui(-)).
-%if_arc_webui(Goal):- !, fail,Goal.
-if_arc_webui(_):- \+ arc_webui,!,fail.
-if_arc_webui(Goal):- arc_webui,!,g_out(call(Goal)).
-
-
-:- meta_predicate(when_arc_webui(-)).
-when_arc_webui(G):- toplevel_pp(http),call(G),!.
-when_arc_webui(G):- toplevel_pp(swish),call(G),!.
-when_arc_webui(G):- ignore(if_arc_webui(G)).
 
 %arc_option(grid_size_only):- !,fail.
 arc_option(O):- luser_getval(O,t).
@@ -566,7 +622,7 @@ luser_getval(N,V):- nb_current(N,VV),VV\==[],!,V=VV.
 % caches the valuetemp on this thread
 luser_getval(N,V):-  luser_getval_0(N,VV),nb_setval(N,VV),b_setval(N,VV),!,VV=V.
 
-luser_getval_0(N,V):- if_arc_webui((((get_param_req_or_session/2),get_param_req_or_session(N,V), V\=='',V\==""))).
+luser_getval_0(N,V):- wants_html, (((current_predicate(get_param_req_or_session/2),get_param_req_or_session(N,V), V\=='',V\==""))).
 luser_getval_0(N,V):- arc_user(ID),luser_getval_id(ID,N,V),!.
 %luser_getval(ID,N,V):- thread_self(ID),nb_current(N,V),!.
 %luser_getval(ID,N,V):- !, ((arc_user_prop(ID,N,V);nb_current(N,V))*->true;arc_user_prop(global,N,V)).
@@ -644,7 +700,7 @@ arc1(G,TName):-
 
 
 
-is_detatched_thread:- arc_webui,!.
+is_detatched_thread:- wants_html,!.
 is_detatched_thread:- \+ (thread_self(Main) -> Main == main ; main==0),!.
 
 cls_z:- is_detatched_thread,!,flush_tee.
@@ -751,9 +807,6 @@ get_kov1(K,O,V):- is_rbtree(O),!,rb_in(K,V,OOV),get_oov_value(OOV,V).
 get_oov_value(ValueOOV,Value):- compound(ValueOOV),ValueOOV=oov(Value),!.
 get_oov_value(Value,Value).
 
-:- ensure_loaded(kaggle_arc_two).
-
-
 test_regressions:- make, forall((clause(mregression_test,Body),ppt(Body)),must_det_ll(Body)).
 :- arc_history1(test_regressions).
 
@@ -822,11 +875,6 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 :- catch_log(set_stream(current_output,encoding(utf8))).
 
 
-:- when_using_swish(logicmoo_webui).
-:- when_using_swish(start_arc_server).
-:- when_using_swish(set_long_message_server('https://logicmoo.org:17771')).
-
-
 bfly_startup:-
    set_toplevel_pp(bfly),
    asserta(was_inline_to_bfly),inline_to_bfly_html,
@@ -854,7 +902,9 @@ ansi_startup:-
 :- luser_default(cmd,test_easy).
 :- luser_default(cmd2,print_all_info_for_test).
 %:- luser_default(cmd2,test_show_grid_objs).
-:- luser_default(individuated_cache,true).
+:- luser_default(use_individuated_cache,true).
+
+:- current_prolog_flag(argv,C),forall(member(E,C),process_cmdln_option(luser_default,E,true)).
 
 
 load_task_states:- exists_directory('/data/evaluation/'),catch_log(load_json_files(evaluation,v,'/data/evaluation/*.json')),!.
@@ -880,6 +930,10 @@ save_arcathon_runner_devel:- qsave_program('logicmoo_arcathon_runner_devel',[sta
                              save_arcathon_runner_dbg, save_arcathon_runner.
 test_compile_arcathon:- save_arcathon_runner_devel.
 
+:- ensure_loaded(kaggle_arc_two).
+:- when_arc_webui_enabled(ld_logicmoo_webui).
+:- when_using_swish(logicmoo_use_swish).
+
 :- load_json_files.
 :- load_task_states.
 :- load_json_files(eval400,v,'./data/devaluation/*.json').
@@ -887,10 +941,16 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 :- store_grid_size_predictions.
 :- make_grid_cache.
 :- gen_gids.
+:- no_web_dbg.
 :- test_show_colors.
 :- nb_setval(arc_can_portray,t).
 :- nb_setval(arc_can_portray,nil).
 %:- load_arc_db_temp_cache.
 :- fmt('% Type ?- demo. % or press up arrow').
 :- luser_default(extreme_caching,false).
+%:- autoload_all.
+:- set_current_test(v('1d398264')). 
+:- luser_default(task,v('1d398264')). 
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).
+:- nb_setval(arc_can_portray,nil).
+:- remove_undef_search.

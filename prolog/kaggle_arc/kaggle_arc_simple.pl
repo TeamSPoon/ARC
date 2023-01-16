@@ -115,7 +115,7 @@ relax_prop(S1,R1):- R1 = S1.
 
 relax_prop1(S1,R1):- relax_prop2(S1,R1)*->true;generalize(S1,R1).
 
-relax_prop2(og(OG,X,Y,_),og(OG,X,Y,_)).
+relax_prop2(pg(OG,X,Y,_),pg(OG,X,Y,_)).
 relax_prop2(loc2D(X,_),loc2D(X,_)).
 relax_prop2(loc2D(_,Y),loc2D(_,Y)).
 
@@ -135,11 +135,11 @@ simplify_props(_,A,A).
 pregroup1(iz(media(shaped))).
 pregroup1(iz(media(image))).
 pregroup1(iz(chromatic(N,BGN))):- between(1,10,N),between(0,2,BGN).
-pregroup1(og(_OG,_,_,How)):- dif(How,i_repair_patterns).
+pregroup1(pg(_OG,_,_,How)):- dif(How,i_repair_patterns).
 
 
 never_uprop(localpoints(_)).
-never_group_on(og(_,I,_,_)):- I == i_repair_patterns.
+never_group_on(pg(_,I,_,_)):- I == i_repair_patterns.
 never_group_on(P):- never_uprop(P).
 
 regroups(IndvS,[Why1,Why2],[Obj|Grp]):-

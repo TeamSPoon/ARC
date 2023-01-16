@@ -25,9 +25,10 @@ show_interesting_props(ObjsI,ObjsO):-
 
 show_interesting_props(ObjsI,ObjsO):-
    append(ObjsO,ObjsI,Objs),
-   show_interesting_props(Objs).
+   show_interesting_props_gojs(Objs).
 
-
+show_interesting_props_gojs(Objs):- wdmsg(show_interesting_props_gojs(Objs)).
+  %8731374e
 
 
 show_interesting_props(Objs):-
@@ -61,7 +62,7 @@ skip_ku(link(_,_)).
 skip_ku(iz(media(_))).
 skip_ku(changes(_)).
 skip_ku(o(_,_,_,_)).
-skip_ku(og(_,_,_,_)).
+skip_ku(pg(_,_,_,_)).
 skip_ku(cc(C,_)):- is_color(C).
 
 objs_with_props([KU-_|Props],Objs,OL,GO):- skip_ku(KU),!,objs_with_props(Props,Objs,OL,GO).
@@ -173,8 +174,7 @@ contains(Obj,Other):- has_prop(link(contains,Other,_),Obj).
 show_indiv(Why, Obj):-  
   format('~N'),dash_chars(45),dash_chars(45),
   must_det_ll((
-  vis2D(Obj,H,V),   
-
+  vis2D(Obj,H,V),
   DoFF = false,
 
   findall(SubGroup,is_in_subgroup(Obj,SubGroup),SubGroupS), 
@@ -184,10 +184,13 @@ show_indiv(Why, Obj):-
 
   if_t((H\==1;V\==1;true),
     must_det_ll((     
-     object_or_global_grid(Obj,LG+Type,Grid),      
-     Title = show_indiv(Why,objFn(Glyph),LG+Type,loc2D(OH,OV),center2G(CX,CY),size2D(H,V)),
+     %object_or_global_grid(Obj,LG+Type,GridS),      
+     global_grid(Obj,GridS),
+     object_grid(Obj,Grid),   
+     Title = show_indiv(Why,objFn(Glyph),loc2D(OH,OV),center2G(CX,CY),size2D(H,V)),
              loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
-     Grids = [Title=Grid|_],     
+
+     Grids = [Title=GridS|_],     
 
      copy_term(Obj,CObj),
      nop((object_ngrid(CObj,NGrid), append(_,["NGrid"=NGrid|_],Grids))),
@@ -230,7 +233,7 @@ show_indiv(Why, Obj):-
     
   if_t(is_object(Obj),
     (format('~N~n'),
-     locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Obj))))),
+     if_t(menu_or_upper('i'),locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Obj)))))),
      format('~N'),dash_chars(15))),!.
 
 
@@ -336,7 +339,7 @@ equal_sets(A,B):- sort(A,AA),sort(B,BB),AA=@=BB.
 
 % sprop_piority(Class,Priority).
 
-%sprop_piority(og(OG,_,_,0),0).
+%sprop_piority(pg(OG,_,_,0),0).
 %sprop_piority(birth(i3(_)),0).
 %sprop_piority(birth(i2(_)),0).
 sprop_piority(iz(flag(hidden)),9).
@@ -443,9 +446,9 @@ add_prior_placeholder(_Len,Name,IndvS0,IndvS9):-
   override_object(birth(Name),IndvS0,IndvS9),!.
 
 add_prior_placeholder(Len,Name,IndvS0,IndvS9):- 
-  (has_prop(og(OG,Len,_,Name),IndvS0)-> IndvS0=IndvS9 ; 
-    ((has_prop(og(OG,Was,Other,Name),IndvS0)-> delq(IndvS0,og(OG,Was,Other,Name),IndvS1) ; IndvS0=IndvS1),
-     override_object(og(OG,Len,nil,Name),IndvS1,IndvS9))),!.
+  (has_prop(pg(OG,Len,_,Name),IndvS0)-> IndvS0=IndvS9 ; 
+    ((has_prop(pg(OG,Was,Other,Name),IndvS0)-> delq(IndvS0,pg(OG,Was,Other,Name),IndvS1) ; IndvS0=IndvS1),
+     override_object(pg(OG,Len,nil,Name),IndvS1,IndvS9))),!.
 */
 
 object_get_priors(X,S):- var(X),!, enum_object(X), object_get_priors(X,S).
@@ -461,7 +464,7 @@ get_prior_labels(Objs,PriorsWithCounts):- must_det_ll((is_list(Objs),
 
 never_prior(giz(_)).
 never_prior(oid(_)).
-never_prior(og(_,_,_,_)).
+%never_prior(pg(_,_,_,_)).
 
 ranking_pred(rank1(F1),I,O):- Prop=..[F1,O], indv_props_list(I,Ps),member_or_iz(Prop,Ps),!.
 ranking_pred(rank1(F1),I,O):- !, catch(call(F1,I,O),_,fail),!.
@@ -474,11 +477,16 @@ ranking_pred(_F1,I,O):- mass(I,O).
 has_prop(Prop,Obj):- var(Obj),!, enum_object(Obj),has_prop(Prop,Obj).
 has_prop(Prop,Obj):- is_grid(Obj),grid_props(Obj,Props),!,member(Prop,Props).
 has_prop(Prop,Objs):- is_list(Objs),!,forall(member(Obj,Objs),has_prop(Prop,Obj)).
+has_prop(Prop,ObjRef):- \+ is_object(ObjRef),!,atom(ObjRef),into_obj(ObjRef,Obj),!,has_prop(Prop,Obj).
+
+
+
 has_prop(Props,Obj):- is_list(Props),!,member(Q,Props),has_prop(Q,Obj).
 
-has_prop(Prop,Obj):- indv_props(Obj,Q), (Q=@=Prop -> true ; ( Q = Prop)).
-has_prop(lbl(Lbl),Obj):- is_prior_prop(Lbl,Obj).
-has_prop(Var,_Obj):- var(Var),!, fail.
+has_prop(Prop,Obj):- var(Prop), !, indv_props_list(Obj,L), member(Prop,L).
+%has_prop(Var,_Obj):- var(Var),!, fail.
+has_prop(Prop,Obj):- indv_props_list(Obj,L), member(Q,L), (Q=@=Prop -> true ; ( Q = Prop)).
+has_prop(lbl(Lbl),Obj):- !, is_prior_prop(Lbl,Obj).
 
 has_prop(Lbl ,Obj):- atom(Lbl),!, is_prior_prop(Lbl,Obj),!.
 has_prop(and(A,B),Obj):- !, has_prop(A,Obj),has_prop(B,Obj).
@@ -503,8 +511,8 @@ never_a_prior(P):- rankNever(P).
 
 props_object_prior(V,_):- var(V),!,fail.
 props_object_prior(Prop,_):- never_a_prior(Prop),!,fail.
-%props_object_prior(og(OG,_,_,L),O):- props_object_prior(L,O)
-props_object_prior(og(_OG,_,_,L),L):-!.
+%props_object_prior(pg(OG,_,_,L),O):- props_object_prior(L,O)
+props_object_prior(pg(_OG,_,_,L),L):-!.
 props_object_prior(mass(_),rank1(mass)).
 
 
@@ -611,14 +619,14 @@ add_rank(OG,GType,ZType,N,[L|IndvS],  [L|IndvSO]):-
  N2 is N+1,!, add_rank(OG,GType,ZType,N2,IndvS,IndvSO).
 
 
-set_rank(OG,GType,ZType,L,N,Obj):- % O = o, 
+set_rank(OG,GType,ZType,L,N,Obj):-
   get_setarg_p1(nb_setarg,I,L,P1), 
-  compound(I), I = o(OG,ZType,_,GType),
-  II = o(ZType,N,GType), 
+  compound(I), I = pg(OG,ZType,_,GType),
+  II = pg(OG,ZType,N,GType), 
   call(P1 ,II),!, Obj = L.
 
 set_rank(OG,GType,ZType,L,N,Obj):- 
-   II = o(OG,ZType,N,GType), 
+   II = pg(OG,ZType,N,GType), 
    override_object([II],L,Obj),!.
 
 

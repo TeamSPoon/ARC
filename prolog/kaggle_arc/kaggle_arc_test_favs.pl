@@ -13,7 +13,6 @@ fav(A,B):- nonvar_or_ci(A),nonvar_or_ci(B), cls1,mmake, asserta(fav(A,B),Ref),!,
 %~ warn_skip(save_supertest(v('00576224'),'muarc_cache/00576224.ansi.pl'))
 %~ warn_skip(clear_saveable_test_info(v('00576224')))
 %~ warn_skip(clear_saveable_test_info(v('423a55dc')))
-fav(TestID,Stuff):- fav_testcase((TestID>_+_),_,Stuff).
 
 :- discontiguous((fav_testcase/2,fav_testcase/3)).
 
@@ -3040,6 +3039,8 @@ fav(v('639f5a19'),[grid_size_same,-rotation_match,-color_match,+shape_match,+mas
 
 fav(v('6ea4a07e'),[clue(mass(in)+mass(out)=9),ohuman(use_clues),clue(corispond_colors,invert_existence),-rotation_match,-mask_match,-color_match,+shape_match,test_suite([eval400]),'(6, 2) ']).
 
+fav(TestID,Stuff):- fav_testcase((TestID>_+_),_,Stuff).
+
 fav_less(V,[test_suite([less_fav])|T]):- less_fav(V,T).
 
 
@@ -3397,7 +3398,7 @@ less_fav(t('9172f3a0'),[out_grid(9,9),-shape_match,-rotation_match,-mask_match,+
 less_fav(t(d10ecb37),[out_grid(2,2),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),crop,'(3, 1)']).
 less_fav(t('963e52fc'),[out_grid(12,5),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),pattern_expansion,image_expansion,'(3, 1)']).
 less_fav(v('0c786b71'),[out_grid(8,6),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(3, 1) ']).
-less_fav(v('00576224'),[out_grid(6,6)]).
+%less_fav(v('00576224'),[out_grid(6,6)]).
 less_fav(v('8ba14f53'),[-shape_match,-rotation_match,-mask_match,+color_match,test_suite([eval400]),'(6, 1) ']).
 less_fav(t('67e8384a'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),image_rotation,image_repetition,image_reflection,'(4, 1)']).
 less_fav(t('7fe24cdd'),[out_grid(6,6),-shape_match,-rotation_match,-mask_match,+color_match,test_suite([train400]),image_rotation,image_repetition,'(3, 1)']).

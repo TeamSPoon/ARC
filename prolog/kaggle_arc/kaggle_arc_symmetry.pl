@@ -1200,10 +1200,12 @@ is_safe_rot(Atom):- atom(Atom).
 
 append_safe(A,B):- append(A,B).
 
-append_safe([], L, L).
-append_safe([H|T], L, [H|R]) :-
-    append_safe(T, L, R).
+one_var_only(A,B,C):- var(A),!,nonvar(B),nonvar(C).
+one_var_only(A,B,C):- var(B),!,nonvar(A),nonvar(C).
+one_var_only(A,B,C):- var(C),!,nonvar(B),nonvar(A).
 
+append_safe([H|T], L, [H|R]) :- one_var_only(T,L,R), append_safe(T, L, R).
+append_safe([], L, L):-!.
 
 %73251a56
 fill_in_some_blanks_rr(Limit,RepairedResult):- Limit>897, 
@@ -1211,7 +1213,9 @@ fill_in_some_blanks_rr(Limit,RepairedResult):- Limit>897,
   subst_colors_with_vars(Colors,Vars,RepairedResult,RRVars),
   get_current_test(TestID),
   %kaggle_arc(TestID,trn+_,_,RRVars),
-  kaggle_arc(TestID,trn+_,_,RRVars),
+  kaggle_arc(TestID,trn+Num,_,RRVarsO),
+  (current_test_example(TestID,ExampleNum)->(ExampleNum\==trn+Num);true),
+  RRVarsO=RRVars,
   Colors=Vars.
 
 %484b58aa

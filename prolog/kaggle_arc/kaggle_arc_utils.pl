@@ -25,7 +25,7 @@ system:any_arc_files(Some):- atom_contains(Some,'arc').
 :- thread_local(in_memo_cached/5).
 :- multifile(prolog:make_hook/2).
 :- dynamic(prolog:make_hook/2).
-prolog:make_hook(before, Some):- any_arc_files(Some), forall(clear_all_caches,true).
+prolog:make_hook(before, Some):- any_arc_files(Some), forall(muarc:clear_all_caches,true).
 
 :- multifile(muarc:clear_all_caches/0).
 :- dynamic(muarc:clear_all_caches/0).
@@ -319,7 +319,7 @@ run_source_code(ShareVars, Vs, QQ):-
     ; maplist(mort,SourceCode)).
 
 
-%vars_to_dictation([_=Value|Gotten],TIn,TOut):- is_map(Value),!, vars_to_dictation(Gotten,TIn,TOut).
+%vars_to_dictation([_=Value|Gotten],TIn,TOut):- is_vm_map(Value),!, vars_to_dictation(Gotten,TIn,TOut).
 
 vars_to_dictation([Name=Value|Gotten],TIn,TOut):- !,
   my_assertion(atom(Name)),

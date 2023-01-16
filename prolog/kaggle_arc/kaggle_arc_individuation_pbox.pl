@@ -37,7 +37,7 @@ make_gclip_cache:-
 %=====================================================================
 is_fti_step(maybe_pbox_vm).
 %=====================================================================
-%:- luser_setval(individuated_cache,false).
+%:- luser_setval(use_individuated_cache,false).
 
 maybe_pbox_vm(VM):- VM.option_pboxes==false,!.
 maybe_pbox_vm(VM):- var(VM.option_pboxes), !, 
@@ -85,6 +85,10 @@ is_fti_step(pbox_vm_special_sizes).
 
 pbox_vm_special_sizes(H,V,VM):- !,
   pbox_vm_special_sizes_list([size2D(H,V)],VM).
+
+pbox_vm_special_sizes(VM):-
+  pbox_vm_special_sizes([special_sizes_v_h_sorted_s_l,special_sizes_v_h_sorted_l_s],VM),!.
+
 
 pbox_vm_special_sizes(Types,VM):- !,
  must_det_ll((
@@ -266,7 +270,7 @@ pbox_io_result(TestID,ExampleNum,IO,G,Objs):- !,
 i_pbox(GridIn,Objs):- 
   ROptions=i_pbox,
   PairName=i_pbox,
-  locally(nb_setval(individuated_cache,false),
+  locally(nb_setval(use_individuated_cache,false),
   ((do_ig(ROptions,GridIn,IndvS),
   into_grid(GridIn,Grid),
   locally(nb_setval(debug_as_grid,t),
@@ -394,14 +398,14 @@ which_partof_square(Which, OBJ,Find,Inside,Center, IsRim, OH, FX, OV, FY):-
       (Which=@=inside -> (IsRim=filltype(solid),OBJ=Inside,OH is FX, OV is FY))))))).
 
 foundbox_why(FBWHY,WHY):- is_list(FBWHY),!,maplist(foundbox_why,FBWHY,WHY).
-foundbox_why(FBWHY,[iz(shape),iz(type(FBWHY))]):-!.
+foundbox_why(FBWHY,[iz(media(shaped)),iz(type(FBWHY))]):-!.
 
 i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- Points==[], !, debug_m(indiv(pbox),pointless(L_S)).
 i_pbox_l(SoFar,SoFar,_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,[]):- !, debug_m(indiv(pbox),complete(L_S)).
 %i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- L_S \= s_l(p2), L_S \= l_s(p1), experiment(L_S \= l_s(p2)), !, debug_m(indiv(pbox),complete(L_S)).
 %i_pbox_l(_Grid,_NSEW,_XSG,Points,Points,_VM,L_S,_):- L_S \= s_l(p1), L_S \= l_s(p1), experiment(L_S \= l_s(p2)), !, debug_m(indiv(pbox),complete(L_S)).
 
-i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):- 
+i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,OUT):- OUT = [Size2D|Sizes],
   Size2D = size2D(H,V),
   grid_size(Grid,TGX,TGY),
   other_grid_size(Grid,OGX,OGY),
@@ -444,7 +448,7 @@ i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):-
   once(( OBJ \=@=Grid, OBJ \==[],  %CACHE.objFound = OBJ, %CACHE.which = Which, %CACHE.objMade = Obj, %append(SoFarI,[Rec],SoFarMid),
 %  fix_obj(
   OBJ\=Grid,
-  obj_gpoints(OBJ,OH,OV,GOPoints),
+  obj_gpoints(Grid,OBJ,OH,OV,GOPoints),
   intersection(Points,GOPoints,Intersection,LeftOver,Unknown))),
   nop(Intersection\==[]),!, nop(Unknown==[]),
   %format('~N~q.~n',[USING]),  
@@ -474,15 +478,24 @@ existingObject(VM,GOPoints):-
   member_ls(O,VM.objs),globalpoints_include_bg(O,Ps),
   GOPoints==Ps,!.
 
-obj_gpoints(OBJ,OH,OV,GOPoints):-
+obj_gpoints(Grid,OBJ,OH,OV,GOPoints):-
    grid_size(OBJ,H,V),
+   obj_gpoints(Grid,OBJ,OH,OV,H,V,GOPoints).
+
+obj_gpoints(_Grid,OBJ,OH,OV,H,V,GOPoints):- is_grid(OBJ),!,
    HH is OH+H-1,VV is OV+V-1,
    hv_point(HH,VV,HV2),
    hv_point(1,1,HV1),
-   localpoints_include_bg(OBJ,OPoints), 
-  ((member(W-HV1,OPoints),is_fg_color(W)) -> OPoints=OOPoints ; OOPoints=[black-HV1|OPoints]),
-  ((member(W-HV2,OOPoints),is_fg_color(W)) -> OOPoints=OOOOPoints ; OOOOPoints=[black-HV2|OOPoints]),
+  localpoints_include_bg(OBJ,OPoints), 
+ ((member(W-HV1,OPoints),is_fg_color(W)) -> OPoints=OOPoints ; OOPoints=[black-HV1|OPoints]),
+ ((member(W-HV2,OOPoints),is_fg_color(W)) -> OOPoints=OOOOPoints ; OOOOPoints=[black-HV2|OOPoints]),
    offset_points(OH,OV,OOOOPoints,GOPoints).
+
+obj_gpoints(Grid,OBJ,OH,OV,H,V,GOPoints):- 
+  EX is OH+H-1, EY is OV+V-1,
+  clip(OH,OV,EX,EY,Grid,OBJ),!,
+  obj_gpoints(Grid,OBJ,OH,OV,H,V,GOPoints).
+
 
 rim_of(Find,HeadNewMidFooter):- 
   append([Top|OldMid],[Bot],Find), 
@@ -530,7 +543,18 @@ is_all_same(C,List):- maplist(=(C),List).
 
 :- discontiguous found_box/19. 
 
-is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,[iz(image),subgrid(IX,IY,SX,SY),subgrid_hv(SX,SY),subgrid_loc(IX,IY)]):- 
+%195ba7dc
+is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,[iz(media(image)),subgrid(IX,IY,2,1),subgrid_hv(SX,SY),subgrid_loc(IX,IY)]):- 
+  \+ arc_common_property(containsAll(_)),
+  %this_grid_is_multiple_of_other(CACHE),
+ % TGX=OGX,TGY=OGY, % searching for somethning the size of the other grid
+  TGX is OGX*2+1, TGY is OGY, 
+  SX is OGX, SY is OGY,
+  FY=1,
+ (FX=1->IX=1;((FX=:=OGX+1)->IX=2)).
+
+
+is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,[iz(media(image)),subgrid(IX,IY,SX,SY),subgrid_hv(SX,SY),subgrid_loc(IX,IY)]):- 
   \+ arc_common_property(containsAll(_)),
   %this_grid_is_multiple_of_other(CACHE),
  % TGX=OGX,TGY=OGY, % searching for somethning the size of the other grid
@@ -550,7 +574,7 @@ is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,[iz(image),subgrid(IX,IY,SX
   subgrid_hv(SX,SY)\==subgrid_hv(10,10).
 
 % is_sub_grid_object(FX,FY,H,V,TGX,TGY,OGX,OGY,Type)
-is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,[iz(image),subgrid(IX,IY,SX,SY),subgrid_hv(SX,SY),subgrid_loc(IX,IY)]):- 
+is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,[iz(media(image)),subgrid(IX,IY,SX,SY),subgrid_hv(SX,SY),subgrid_loc(IX,IY)]):- 
   \+ arc_common_property(containsAll(_)),
   this_grid_is_multiple_of_other(CACHE),
   SX=OGX,SY=OGY, % searching for somethning the size of the other grid

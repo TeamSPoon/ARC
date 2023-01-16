@@ -7,29 +7,45 @@
 
 % INSTRUCTIONS
 % =swipl kaggle_arc.pl=
-% =:- start_arc_server.=
+% =:- start_arc_http_server.=
 %
 % Then navigate to http://localhost:1766 in your browser
 
 /*
 :- module(kaggle_arc_ui_html,
-  [ start_arc_server/0,
-    stop_arc_server/0
+  [ start_arc_http_server/0,
+    stop_arc_http_server/0
   ]
 ).
 */
 :- include(kaggle_arc_header).
 
-:- use_module(library(thread_pool)).
-:- use_module(library(http/thread_httpd)).
-:- use_module(library(http/http_dispatch)).
-:- use_module(library(http/http_dispatch)).
+:- use_module(library(debug)).
+%:- use_module(library(thread_pool)).
+%:- use_module(library(http/thread_httpd)).
+%:- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_files)).
 :- use_module(library(http/http_path)).
-:- use_module(library(http/thread_httpd)).
-:- use_module(library(http/http_dispatch)).
-:- use_module(library(http/http_files)).
 :- use_module(library(http/websocket)).
+
+:- multifile
+    http:location/3.                % Alias, Expansion, Options
+:- dynamic
+    http:location/3.                % Alias, Expansion, Options
+
+%http:location(icons, root(icons), [ priority(-100) ]).
+%http:location(css,   root(css),   [ priority(-100) ]).
+%http:location(js,    root(js),    [ priority(-100) ]).
+http:location(swish,    root(swish),    [ priority(-100) ]).
+
+:- multifile
+    user:file_search_path/2.
+:- dynamic
+    user:file_search_path/2.
+
+%user:file_search_path(icons, library('http/web/icons')).
+%user:file_search_path(css,   library('http/web/css')).
+%user:file_search_path(js,    library('http/web/js')).
 
 
 :- meta_predicate(noisey_debug(0)).
@@ -128,12 +144,11 @@ old_in_expandable(Showing,Title,Goal):-
  on_xf_ignore_flush(ensure_colapable_styles), 
  (Showing -> PX='128'; PX='600'),
  (Showing -> Exp=''; Exp='collapsed-c'),
-  %with_pp(http,wots(S,weto(ignore(Goal)))),
-  setup_call_cleanup(format(
-   '~N<pre><button type="button" class="collapsible">~w (click to un/expand)</button><div class="~w" style="max-height: ~wpx"><pre>~n',
-  [Title,Exp,PX]), (call_maybe_det(Goal,Det),(Det==true-> ! ; true)),
-   format('~N</pre></div></pre>~n',[])), 
-  flush_tee_maybe,(Det==true-> ! ; true).
+  inline_html_format([
+   '<pre><button type="button" class="collapsible">',Title,' (click to un/expand)</button>',
+   '<div class="',write(Exp),'" style="max-height: ',PX,'px"><pre>',
+   call(Goal),'</pre></div></pre>']).
+
 
 format_s(S):- atomic(S),!,format('~w',[S]).
 format_s(S):- format('~s',[S]).
@@ -182,45 +197,26 @@ test_collapsible_section:-
 
 user:file_search_path(arc,  AbsolutePath):- arc_sub_path('.',AbsolutePath).
 
+%:- http_handler('/swish/muarc/swish_config.json', swish_reply_config_root,[priority(200)]).
+:- http_handler('/arcproc_left', arcproc_left, [prefix]).
+:- http_handler('/arcproc_right', arcproc_right, [prefix]).
 :- http_handler('/swish/arc/', swish_arc, [prefix]).
 :- http_handler('/swish/muarc/arcproc_right', arcproc_right, [prefix]).
 :- http_handler('/swish/muarc/arcproc_left', arcproc_left, [prefix]).
-:- http_handler('/swish/muarc/swish_config.json', swish_reply_config_root,[priority(200)]).
 :- http_handler('/', swish_arc_root, [prefix]).
 
-% http_handler docs: http://www.swi-prolog.org/pldoc/man?predicate=http_handler/3
-% =http_handler(+Path, :Closure, +Options)=
-%
-% * root(.) indicates we're matching the root URL
-% * We create a closure using =http_reply_from_files= to serve up files
-%   in the local directory
-% * The option =spawn= is used to spawn a thread to handle each new
-%   request (not strictly necessary, but otherwise we can only handle one
-%   client at a time since echo will block the thread)
-%:- http_handler(('/swish/arc/'), http_reply_from_files(arc, []), [prefix]).
-% * root(echo) indicates we're matching the echo path on the URL e.g.
-%   localhost:1766/echo of the server
-% * We create a closure using =http_upgrade_to_websocket=
-% * The option =spawn= is used to spawn a thread to handle each new
-%   request (not strictly necessary, but otherwise we can only handle one
-%   client at a time since echo will block the thread)
+start_arc_http_server :-
+    catch_log((default_port(Port),start_arc_http_server(Port))),
+    catch_log((start_arc_http_server(3020))).
 
+start_arc_http_server(Port):- atom_concat('http@',Port,IDName),thread_property(ID,status(running)),ID==IDName,!.
+start_arc_http_server(Port) :-
+    catch_log(http_server(http_dispatch, [port(Port)])).
 
-:- http_handler('/swish/arcproc/web_socket_echo',
-                http_upgrade_to_websocket(web_socket_echo, []),
-                [spawn([])]).
-
-start_arc_server :-
-    catch_log((default_port(Port),start_arc_server(Port))),
-    arc_http_server.
-
-start_arc_server(Port) :-
-    http_server(http_dispatch, [port(Port)]).
-
-stop_arc_server :-
+stop_arc_http_server :-
     default_port(Port),
-    stop_arc_server(Port).
-stop_arc_server(Port) :-
+    stop_arc_http_server(Port).
+stop_arc_http_server(Port) :-
     http_stop_server(Port, []).
 
 default_port(1766).
@@ -246,23 +242,6 @@ get_response_echo(Message, Response) :-
   get_time(Time),
   Response = _{message:Message.message, time: Time}.
 
-arc_http_server:- thread_property(ID,status(running)),ID=='http@1766',!.
-arc_http_server:- 
-  use_module(library(xlisting/xlisting_web)),
-  use_module(library(xlisting/xlisting_web_server)),
-  catch_log((http_server(http_dispatch, [port(1766)]))), arc_http_server2.
-
-arc_http_server2:- 
- thread_pool_create(compute, 3,
-                      [ local(20000), global(100000), trail(50000),
-                        backlog(5)
-                      ]),
- thread_pool_create(media, 30,
-                      [ local(100), global(100), trail(100),
-                        backlog(100)
-                      ]),
- http_handler('/swish/arc/solve',     solve,     [spawn(compute)]),
- http_handler('/swish/arc/thumbnail', thumbnail, [spawn(media)]).
 
 %:- http_handler('/swish/arc/user'/User), user(Method, User),[ method(Method), methods([get,post,put]) ]).
 
@@ -280,65 +259,187 @@ no_web_dbg:-
   unsetenv('DISPLAY'),
   no_xdbg_flags,
   no_x_flags,
-  set_prolog_flag(xpce,true).
+  nop((set_prolog_flag(xpce,true))).
 
 %:- no_web_dbg.
 
-begin_arc_html(Request):- var(Request),!, current_predicate(get_http_current_request/1),call(call,get_http_current_request,Request),!,begin_arc_html(Request).
-begin_arc_html(Request):- notrace(with_webui(begin_arc_html0(Request))).
-begin_arc_html0(Request):-
-  ignore((current_output(Out),
-  set_stream(Out,buffer(false)))),
+intern_arc_request_data(Request):-
+  intern_request_data(Request),
+  save_in_luser(Request).
+
+save_in_luser(NV):- \+ compound(NV),!.
+save_in_luser(NV):- is_list(NV),!,must_maplist(save_in_luser,NV),!.
+save_in_luser(NV):- NV=..[N,V],!,save_in_luser(N,V),!.
+save_in_luser(N=V):- save_in_luser(N,V),!.
+save_in_luser(media(_,_,_,_)):-!.
+save_in_luser(NV):- dmsg(not_save_in_session(NV)),!.
+
+save_in_luser(N,V):- luser_setval(N,V), luser_default(N,V), 
+  ignore((is_list(V),last(V,E),compound(E),save_in_luser(V))).
+
+
+
+begin_arc_html_request(LR,Request):- var(Request), current_predicate(get_http_current_request/1),call(call,get_http_current_request,Request),
+  nonvar(Request),!, begin_arc_html_request(LR,Request).
+begin_arc_html_request(LR,Request):- 
+ notrace(as_if_webui(begin_arc_html(LR,Request))).
+begin_arc_html(LR,Request):-
+  ignore((member(search(List),Request),member(task=Task,List),  atom_id(Task,ID), nop((dmsg(Task-> ID))), set_current_test(ID))),  
+  %ignore((current_output(Out), set_stream(Out,buffer(false)))), flush_output,
+%  format('<!DOCTYPE html>',[]),
+  ignore((LR==right,write_begin_html('ARC Solver',true))),
+  ignore((LR==left, fail,write_begin_html('ARC Solver Menu',inline_to_bfly_html))),
+  %ignore((wants_html, (write_begin_html('ARC Solver')))),
+  %ignore((wants_html, (intern_arc_request_data(Request)))),
+
   /* set_stream(Out,close_on_exec(false)),
   set_stream(Out,close_on_abort(true)),
   set_stream(Out,encoding(octet)),
   set_stream(Out,write_errors(ignore)))),*/
-  format('Content-type: text/html~n~n',[]),
-  format('<!DOCTYPE html>',[]),
   %ignore(set_test_param),
-  ignore((member(search(List),Request),member(task=Task,List),  
-  atom_id(Task,ID), dmsg(Task-> ID), set_current_test(ID))),
-  ignore(when_arc_webui(intern_request_data(Request))),
-  ignore(when_arc_webui(write_begin_html('ARC Solver'))),
-  nop(ensure_readable_html).
+  
+  nop(ensure_readable_html),
+  flush_output,
+  intern_arc_request_data(Request).
 
 set_test_param:-
-  ignore((when_arc_webui((get_param_sess(task,Task), Task\=='',  Task\=="",
+  ignore((as_if_webui((get_param_sess(task,Task), Task\=='',  Task\=="",
   atom_id(Task,ID), dmsg(Task-> ID), set_current_test(ID))))),!.
 
-:- http_handler('/swish', http_redirect(moved, '/swish/'), []).
+%:- http_handler('/swish', http_redirect(moved, '/swish/'), []).
 
-swish_arc(Request):-   
-  muarc_tmp:arc_directory(ARC_DIR),
-  http_reply_from_files(ARC_DIR, [], Request).
-
-swish_arc_root(Request):-   
-  arc_sub_path('.',DEMO),
-  http_reply_from_files(DEMO, [], Request),!.
-swish_arc_root(Request):- 
-  Options = [],
+swish_arc(Request):- swish_arc_root(Request).
+%  muarc_tmp:arc_directory(ARC_DIR),
+%  http_reply_from_files(ARC_DIR, [unsafe(true), static_gzip(true)], Request).
+wfln(P):- stream_property(X,file_no(2)),nl(X),writeln(X,P),flush_output(X).
+%swish_arc_root(Request):-  arc_sub_path('.',DEMO), arc_reply_from_files(DEMO, Request),!.
+swish_arc_root(Request):-  wfln(Request), ipe(attempt_file_reply(Request)),!.
+swish_arc_root(Request):-  current_predicate(swish_page:swish_reply2/2),
+  Options = [], 
   call(call,swish_page:swish_reply2(Options, Request)),!.
+swish_arc_root(Request):- ipe(attempt_file_reply(Request)),!.
+swish_arc_root(Request):- attempt_file_reply(Request).
+
+ipe(G):- catch(G,E,(is_good_reply(E),throw(E))).
+
+is_good_reply(E):- wfln(E),fail.
+is_good_reply(existence_error(_,_)):-!,fail.
+is_good_reply(not_found(_)):-!,fail.
+is_good_reply(http_reply(moved_temporary(_))):-!.
+is_good_reply(http_reply(not_found(_))):-!,fail.
+is_good_reply(http_reply(_)).
+is_good_reply(http_reply(_,_)).
+is_good_reply(http_reply(_,_,_)).
+
+extra_files_in('/',DEMO):- arc_sub_path('.',DEMO).
+extra_files_in(swish,'/opt/logicmoo_workspace/packs_web/swish/web').
+%extra_files_in(swish,'/opt/logicmoo_workspace/packs_web/ClioPatria/web').
+extra_files_in(www,'/opt/logicmoo_workspace/packs_web/ClioPatria/web').
+extra_files_in(plugin,'/opt/logicmoo_workspace/packs_sys/logicmoo_nlu/ext/swish/config-available/web/plugin').
+extra_files_in('/','/opt/logicmoo_workspace/packs_sys/logicmoo_nlu/ext/swish/pack/sCASP/prolog/scasp/web').
+
+attempt_file_reply(Request):- 
+  wfln(afr(Request)),
+  select(path_info(PathInfo), Request, NewRequestP),
+  extra_files_in(Swish,Dir),
+  chop_begpath(Swish,PathInfo,Rest),
+  append([path_info(Rest)], NewRequestP, NewRequest),  
+  ipe(arc_reply_from_files(Dir, NewRequest)),!.
+
+attempt_file_reply(Request):- 
+  select(path_info(PathInfo), Request, NewRequestP),
+  extra_files_in(Swish,_),
+  chop_begpath(Swish,PathInfo,Rest),
+  extra_files_in(_,Dir),
+  append([path_info(Rest)], NewRequestP, NewRequest),  
+  ipe(arc_reply_from_files(Dir, NewRequest)),!.
+
+attempt_file_reply(Request):- 
+ select(path_info(PathInfo), Request, NewRequestP),
+  extra_files_in(Swish,_),
+  chop_begpath(Swish,PathInfo,Rest), 
+  append([path_info(Rest)], NewRequestP, NewRequest),
+  extra_files_in(_,Dir),
+  absolute_file_name(Rest, Path, [relative_to(Dir), access(exist)]),
+  arc_reply_file(Path, NewRequest),!.
+
+attempt_file_reply(Request):- 
+ select(path_info(PathInfo), Request, NewRequestP),
+  chop_begpath('/',PathInfo,Rest), 
+  append([path_info(Rest)], NewRequestP, NewRequest),
+  extra_files_in(_,Dir),
+  absolute_file_name(Rest, Path, [relative_to(Dir), access(exist)]),
+  arc_reply_file(Path, NewRequest),!.
+
+attempt_file_reply(Request):- 
+  extra_files_in(_,Dir),
+  ipe(arc_reply_from_files(Dir,Request)),!.
+
+attempt_file_reply(Request):- 
+  member(path_info(PathInfo), Request),
+  atom_concat('/',Rest,PathInfo),
+  extra_files_in(_,Dir), absolute_file_name(Rest, Path, [relative_to(Dir), access(exist)]),
+  mime_ext(Path,Ext),
+  throw(http_reply(file(Ext,Path),[])).
+
+attempt_file_reply(Request):- 
+  member(path_info(PathInfo), Request),
+  absolute_file_name(PathInfo, Path),
+  mime_ext(Path,Ext),
+  throw(http_reply(file(Ext,Path),[])).
+
+attempt_file_reply(Request):- 
+  member(path_info(PathInfo), Request),
+  extra_files_in(_,Dir), absolute_file_name(PathInfo, Path, [relative_to(Dir), access(exist)]),
+  mime_ext(Path,Ext),
+  throw(http_reply(file(Ext,Path),[])).
 
 
-%arcproc_left(Request):- xlisting_web:handler_logicmoo_cyclone(Request),!.
-arcproc_left(Request):-  
-  %no_web_dbg,
- with_pp(http, notrace((begin_arc_html(Request),
-  flush_output,
-  ((arc_html_format([
-    ignore(handler_logicmoo_left),
-    ignore(ensure_colapsable_script),
-    ignore(write_end_html)])))))),!.
+mime_ext(Path,Ext):- file_name_extension(_,Path0,Path),Path0\=='',!,mime_ext(Path0,Ext).
+mime_ext(js,'text/javascript'):-!.
+mime_ext(txt,'text/plain'):- !.
+mime_ext(X,Mime):- mime_ext(X),!,atom_concat('text/',X,Mime).
+mime_ext(_,'text/html'):- !.
+mime_ext(html).
+mime_ext(css).
 
-%arcproc_left(Request):- swish_arc(Request),!.
+arc_reply_from_files(Dir, Request):- ipe(http_reply_from_files(Dir, [unsafe(false), static_gzip(true)], Request)).
+arc_reply_from_files(Dir, Request):- ipe(http_reply_from_files(Dir, [unsafe(true), static_gzip(true)], Request)).
+arc_reply_from_files(Dir, Request):- ipe(http_reply_from_files(Dir, [], Request)).
+arc_reply_file(Path,Request):- ipe(http_reply_file(Path, [unsafe(false)], Request)).
+arc_reply_file(Path,Request):- ipe(http_reply_file(Path, [unsafe(true)], Request)).
+arc_reply_file(Path,Request):- ipe(http_reply_file(Path, [], Request)).
+
+finish_chop(PathInfo,Right):- atom_concat('/',Right,PathInfo),!.
+finish_chop(PathInfo,PathInfo).
+chop_begpath(Swish,PathInfo,Rest):- atom_concat(Swish,Rest0,PathInfo),finish_chop(Rest0,Rest).
+chop_begpath(Swish,PathInfo,Rest):- atom_concat('/',Right,PathInfo),chop_begpath(Swish,Right,Rest).
+
 arcproc_left(Request):- 
- with_pp(http,  notrace((begin_arc_html(Request),
-  ((arc_html_format([
-    handler_logicmoo_right,
-    ensure_colapsable_script,
-    write_end_html])))))).
+ format('Content-type: text/html~n~n',[]),
+ no_web_dbg,
+ with_pp(http,  
+  notrace((begin_arc_html_request(left,Request),
+    arc_html_format([handler_logicmoo_menu,write_end_html])))).
+arcproc_left(Request):- xlisting_web:handler_logicmoo_cyclone(Request),!.
 
+
+arcproc_right(Request):- 
+ format('Content-type: text/html~n~n',[]),
+ no_web_dbg,
+ with_pp(http,  
+  notrace((begin_arc_html_request(right,Request),
+    arc_html_format([handler_logicmoo_right,write_end_html])))).
+arcproc_right(Request):- swish_arc(Request),!.
+
+arc_html_format(TextAndGoal):- wants_html,!,arc_inline_html_format(TextAndGoal).
 arc_html_format(TextAndGoal):- bfly_in_out(call(call,inline_html_format(TextAndGoal))).
+
+arc_inline_html_format([H|T]):- is_codelist([H|T]),!,sformat(S,'~s',[[H|T]]),!,arc_inline_html_format(S).
+arc_inline_html_format([H|T]):- is_charlist([H|T]),!,sformat(S,'~s',[[H|T]]),!,arc_inline_html_format(S).
+arc_inline_html_format(TextAndGoal):- is_list(TextAndGoal),!,maplist(arc_inline_html_format,TextAndGoal).
+%arc_inline_html_format(Msg):- flush_output_safe, wdmsg(call(Msg)),fail.
+arc_inline_html_format(TextAndGoal):- inline_html_format(TextAndGoal),flush_output_safe.
 
 % arc_find_tests(menu):- ignore(menu).
 arc_find_tests(F):- find_tests(F).
@@ -347,30 +448,45 @@ arc_find_tests(F):- find_tests(F).
 :- multifile(xlisting_whook:offer_testcase/1).
 xlisting_whook:offer_testcase(F):- arc_find_tests(F).
 
-handler_logicmoo_right:-   
- when_arc_webui(arc_html_format([
-   ignore((get_http_current_request(Request))),write('<pre>'),
-   pp(Request),offer_testcases,show_http_session,
+handler_logicmoo_menu:-   
+ as_if_webui(arc_html_format([
+   write('<pre>'),
+   ignore(test_webui_menu),
+   ignore(arc_http_nav_menu),
+   ignore(offer_testcases),
+   ignore(show_http_session),
+   ignore((get_http_current_request(Request))),
+   pp(Request),
    write('</pre>')])).
 
-handler_logicmoo_arc:- when_arc_webui(arc_html_format([call(handler_logicmoo_left)])).
-handler_logicmoo_left:- 
-   when_arc_webui(arc_html_format( 
+%handler_logicmoo_arc:- as_if_webui(arc_html_format([call(handler_logicmoo_menu)])).
+handler_logicmoo_right:- 
+   as_if_webui(arc_html_format( 
    [ `<pre>`,
-   ignore(arc_nav_menu),
    flush_output,
-   ignore(show_console_info),
-   flush_output,
+   ignore(arc_http_nav_menu),
+   ignore(print_test),
+   %ignore(show_console_info),
    ignore(call_current_arc_cmd),
-   flush_output,
-   invoke_arc_cmd(menu),
-   flush_output,
+   `<hr>`,
    invoke_arc_cmd(edit1term),
    show_http_session,
     `</pre>`])), 
   !.
 
-arc_nav_menu:- 
+call_current_arc_cmds:- 
+ %call_current_arc_cmd(tc_cmd),
+ call_current_arc_cmd(cmd),
+ call_current_arc_cmd(cmd2),
+ call_current_arc_cmd(footer_cmd).
+
+call_current_arc_cmd(Var):-
+   current_arc_cmd(Var,Prolog),        
+   dmsg(Var=Prolog),invoke_arc_cmd(Prolog).
+
+
+
+arc_http_nav_menu:- 
   current_arc_cmd(tc_cmd,Prolog),
   print_menu_cmd1((prev_test,Prolog)),
   print_menu_cmd1((next_test,Prolog)),
@@ -378,15 +494,8 @@ arc_nav_menu:-
 show_console_info:-
   in_pp(PP),pp(in_pp(PP)),!.
 
-call_current_arc_cmd:- 
-  call_current_arc_cmd(cmd),
- call_current_arc_cmd(footer_cmd).
+/*
 
-call_current_arc_cmd(Var):-
-   current_arc_cmd(Var,Prolog),        
-   dmsg(Var=Prolog),invoke_arc_cmd(Prolog).
-
-   
 arc_script_header:- 
   use_module(library(xlisting/xlisting_web)),
   use_module(library(xlisting/xlisting_web_server)),
@@ -401,10 +510,10 @@ arc_script_header_pt2:-
 <link rel="stylesheet" type="text/css" href="/swish/css/cliopatria.css">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script type="text/javascript">window.name="lm_xref"; </script>  
-<script data-main="/swish/js/swish" src="https://logicmoo.org/node_modules/requirejs/require.js"></script>
+<script data-main="/swish/js/swish" src="/node_modules/requirejs/require.js"></script>
+<script type="text/javascript" src="/www/yui/2.7.0/build/utilities/utilities.js"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
-<script type="text/javascript" src="https://logicmoo.org/www/yui/2.7.0/build/utilities/utilities.js"></script>
 <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 <script type="text/javascript" src="/swish/lm_xref/pixmapx/popupmenu/scripts/Popup-plugin.js"></script>
@@ -416,16 +525,17 @@ arc_script_header_pt2:-
 <script type="text/javascript" href="/swish/js/butterfly_term.js"></script>
 <link rel="stylesheet" type="text/css" href="/swish/css/term.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/json2html/2.1.0/json2html.min.js"></script>').
+*/
 
 :- dynamic(was_inline_to_bfly/0).
 
 inline_to_bfly:- was_inline_to_bfly,!.
 inline_to_bfly:- asserta(was_inline_to_bfly),inline_to_bfly_html.
 
-inline_to_bfly_html:- toplevel_pp(swish),!,ensure_colapsable_styles.
-inline_to_bfly_html:- catch_log(ensure_colapsable_styles),
+inline_to_bfly_html:- toplevel_pp(swish),!,ensure_collapsable_styles.
+inline_to_bfly_html:- catch_log(ensure_collapsable_styles),
  arc_html_format(
-`<link rel="stylesheet" type="text/css" href="/swish/css/menu.css">
+'<link rel="stylesheet" type="text/css" href="/swish/css/menu.css">
 <link rel="stylesheet" type="text/css" href="/swish/css/cliopatria.css">
 <script src="https://unpkg.com/gojs@2.2.15/release/go.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -446,12 +556,10 @@ inline_to_bfly_html:- catch_log(ensure_colapsable_styles),
 <script type="text/javascript" src="/swish/js/cliopatria.js"></script>
 <link rel="stylesheet" type="text/css" href="/swish/css/butterfly_term.css">
 <script type="text/javascript" href="/swish/js/butterfly_term.js"></script>
-<script type="text/javascript" href="/swish/js/butterfly_term.js"></script>
 <link rel="stylesheet" type="text/css" href="/swish/css/term.css">
-<script data-main="/swish/js/swish" src="https://logicmoo.org/node_modules/requirejs/require.js"></script>
-
-`).
-
+<!-- -->
+<script data-main="/swish/js/swish" src="/node_modules/requirejs/require.js"></script> 
+').
 
 arc_script_header2:- 
   arc_html_format((('<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
