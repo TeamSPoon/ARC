@@ -213,6 +213,110 @@ find_links_objects(How,Obj,[_|ScanNext],WillSee):- /*must_det_ll*/(find_links_ob
 :- dynamic(individuated_cache/3).
 :- retractall(individuated_cache(_,_,_)).
 
+
+fg_subtractions(Subtraction,VM):-
+ ignore((
+ VMID = VM.id,
+ \+ sub_var(tst,VMID),
+ VMGID = VM.gid,
+ \+ atom_contains(VMGID,'_fg_subtractiond'),
+ Grid = VM.grid_o,
+ other_grid(Grid,Other),
+ other_grid(Grid,Target), 
+ is_grid(Target),!,
+ grid_size(Target,H,V),!,VM.h==H,VM.v==V,!,
+ mapgrid(fg_subtractiond,Grid,Target,NewGrid),
+ mass(NewGrid,M),mass(Grid,M2),!,
+ M>0,M2\==M,Grid\==Target,NewGrid\==Grid,
+
+ %(M==0->maplist_ignore(fg_subtractiond,Target,Grid,NewGrid); MNewGrid=NewGrid),
+ must_det_ll((
+  var(GOID),atomic_list_concat([VMGID,'_fg_subtractiond'],GOID), assert_grid_gid(NewGrid,GOID),
+  get_vm(VMS), 
+  %individuate2(_,Subtraction,GOID,NewGrid,FoundObjs),
+  with_other_grid(Other,
+   must_det_ll(( into_fti(VM.id,Subtraction,NewGrid,SubVM),      
+      set(SubVM.gid) = GOID,
+      set(SubVM.ngrid)= VM.ngrid,
+      set_vm(SubVM),
+      %individuals_raw(VM,GH,GV,ID,NewOptions,Reserved,Points,Grid,IndvSRaw),
+      run_fti(SubVM,Subtraction)))),
+ must_det_ll((
+  make_indiv_object_list(SubVM,SubVM.objs,FoundObjs),
+  set_vm(VMS),
+  assert_grid_gid(VM.grid_o,VMGID),
+  ReColored = FoundObjs,
+  %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
+  print_ss(fg_subtractions(GOID),NewGrid,FoundObjs),
+  print_ss(ReColored),
+  remCPoints(VM,ReColored),
+  remGPoints(VM,ReColored),
+  addInvObjects(VM,ReColored))))))),!.
+
+fg_intersections0(Intersection,VM):-
+ ignore((
+ VMID = VM.id,
+ \+ sub_var(tst,VMID),
+ VMGID = VM.gid,
+ \+ atom_contains(VMGID,'_fg_intersectio'),
+  copy_term(VM.grid_o,Grid),
+  other_grid(Grid,Other),
+  fg_intersections1(Intersection,Grid,Other,VM))).
+
+fg_intersections1(Intersection,Grid,Other,VM):-
+ grid_size(Other,H,V),VM.h==H,VM.v==V,
+ mapgrid(fg_intersectiond,Grid,Other,NewGrid),
+ mass(NewGrid,NM), % mass(Grid,GM),!, ,!, mass(Other,OM),
+ NM > 0,NewGrid\=@=Grid, !, %, 
+ %(M==0->maplist_ignore(fg_intersectiond,Target,Grid,NewGrid); MNewGrid=NewGrid),
+ must_det_ll((
+  VMGID = VM.gid,
+  mapgrid(plain_var_to(black),NewGrid),
+
+  ignore(((NewGrid\=@=Other,NewGrid\=@=Grid,atomic_list_concat([VMGID,'_fg_intersectiond'],GOID), 
+     assert_grid_gid(NewGrid,GOID)))),
+  (var(GOID)-> grid_to_gid(NewGrid,GOID);true),
+  get_vm(VMS),
+  %individuate2(_,Intersection,GOID,NewGrid,FoundObjs),
+  with_other_grid(Other,
+   must_det_ll(( into_fti(VM.id,Intersection,NewGrid,SubVM),      
+      set(SubVM.gid) = GOID,
+      set(SubVM.ngrid)= VM.ngrid,
+      set(SubVM.grid_target)= Other,
+      set_vm(SubVM),
+      %individuals_raw(VM,GH,GV,ID,NewOptions,Reserved,Points,Grid,IndvSRaw),
+      run_fti(SubVM,Intersection),
+      make_indiv_object_list(SubVM,SubVM.objs,FoundObjs),  
+  set_vm(VMS),
+  assert_grid_gid(VM.grid_o,VMGID),
+  ReColored = FoundObjs,
+  %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
+  print_ss(fg_intersections(GOID),NewGrid,FoundObjs),
+  print_ss(ReColored),
+  remCPoints(VM,ReColored),
+  remGPoints(VM,ReColored),
+  addInvObjects(VM,ReColored)))))),!.
+fg_intersections1(Intersection,Out,In,VM):-
+  must_det_ll(fg_intersections2(Intersection,Out,In,VM)).
+%fg_subtractiond(This,Target,Black):- \+ This \= Target,!,get_black(Black).
+%fg_subtractiond(This,_,Black):-  get_black(Black), \+ This \= Black,!.
+%fg_subtractiond(This,Target,This):- get_black(Black), \+ Target \= Black,!.
+%fg_subtractiond(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
+/*
+fg_subtractiond(This,Target,Target):- This =@= Target,!.
+fg_subtractiond(_,_,Black):-  get_black(Black).
+
+non_subtractiond(Black,Target,Target):- get_black(Black),!.
+non_subtractiond(Target,Black,Target):- get_black(Black),!.
+non_subtractiond(This,Target,Black):- This =@= Target, get_black(Black), !.
+non_subtractiond(This,_,That):- copy_term(This,That),!.
+
+non_intersectiond(Black,Target,Target):- get_black(Black),!.
+non_intersectiond(Target,Black,Target):- get_black(Black),!.
+non_intersectiond(This,Target,Black):- This =@= Target, get_black(Black), !.
+non_intersectiond(This,_,That):- copy_term(This,That),!.
+
+*/
 % ==============================================
 % ENGULFS
 % ==============================================

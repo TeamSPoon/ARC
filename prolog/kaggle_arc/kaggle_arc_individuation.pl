@@ -52,27 +52,28 @@ individuation_macros(do_ending, [
  end_of_macro]).
 
 individuation_macros(i_complete_generic, 
-  [fg_intersections([in_intersection]),
+  [fg_intersections([i_intersect]),
+    each_ogs_object([i_ogs_subobj]),
    %remove_used_points,
    %save_as_obj_group([pbox_vm_special_sizes([special_sizes_v_h_sorted_s_l])]),
    %pbox_vm_special_sizes([special_sizes_v_h_sorted_l_s]),
    %print_vm_info(post_in_intersection),
-   in_subtraction,
-   %fg_subtractions([in_subtraction]),
+   %i_subtract_objs,
+   fg_subtractions([i_subtract_objs]),
    remove_used_points,
    print_vm_info(post_i_complete_generic)]).
 
 individuation_macros(i_complete_generic2, 
-  [%fg_intersections2([in_intersection]),
-   fg_intersections([in_intersection]),
+  [%fg_intersections2([i_intersect]),
+   fg_intersections([i_intersect]),
    gather_cached,
    %remove_used_points,
    %save_as_obj_group([pbox_vm_special_sizes([special_sizes_v_h_sorted_s_l])]),
    %pbox_vm_special_sizes([special_sizes_v_h_sorted_l_s]),
    %print_vm_info(post_in_intersection),
-   %fg_subtractions([in_subtraction]),
+   %fg_subtractions([i_subtract_objs]),
    remove_used_points,
-   fg_subtractions(in_subtraction),
+   fg_subtractions(i_subtract_objs),
    print_vm_info(post_i_complete_generic)]).
 
 
@@ -798,15 +799,15 @@ is_fti_step(consider_other_grid).
 % =====================================================================
 consider_other_grid(VM):- 
  ignore((
-  GridO = VM.grid_o,
-  other_grid_size(GridO,OGX,OGY),
+  StartGrid = VM.grid_o,
+  other_grid_size(StartGrid,OGX,OGY),
   gset(VM.ogx)=OGX,
   gset(VM.ogy)=OGY,
   % let  take over objectification
   if_t(this_grid_is_multiple_of_other(VM),
     gset(VM.objs)=[]),
 
-  other_grid(GridO,Other),
+  other_grid(StartGrid,Other),
   is_grid(Other),
 
   Grid = VM.grid,
@@ -815,9 +816,9 @@ consider_other_grid(VM):-
  %wdmsg(maybe_ogs_color(R,OH,OV,In,Grid)),
   (globalpoints_include_bg(In,OPoints),
   offset_points(OH,OV,OPoints,GOPoints),
-  intersection(VM.points,GOPoints,Intersection,LeftOver,Missing),
+  intersection(VM.points,GOPoints,TODO,LeftOver,Missing),
   Missing\==[],
-  Intersection\==[],
+  TODO\==[],
   count_adjacent_same_colored_points(LeftOver,GOPoints,HVCount,DiagCount),
   DiagCount=_, HVCount<4,
   !,
@@ -832,7 +833,7 @@ consider_other_grid(VM):-
   %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  trace,  
   %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
   remCPoints(VM,GOPoints),
-  remGPoints(VM,Intersection))))))).
+  remGPoints(VM,TODO))))))).
 
 
 % =====================================================================
@@ -1031,9 +1032,9 @@ hybrid_shape_from(Set,VM):-
  %wdmsg(maybe_ogs_color(R,OH,OV,In,Grid)),
   globalpoints_include_bg(In,OPoints),
   offset_points(OH,OV,OPoints,GOPoints),
-  intersection(VM.points,GOPoints,Intersection,LeftOver,Missing),
+  intersection(VM.points,GOPoints,TODO,LeftOver,Missing),
   Missing\==[],
-  Intersection\==[],
+  TODO\==[],
   count_adjacent_same_colored_points(LeftOver,GOPoints,HVCount,DiagCount),
   DiagCount=_, HVCount<4,
   !,
@@ -1048,7 +1049,7 @@ hybrid_shape_from(Set,VM):-
   %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  trace,  
   %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
   remCPoints(VM,GOPoints),
-  remGPoints(VM,Intersection),
+  remGPoints(VM,TODO),
   ignore(hybrid_shape_from(Set,VM)))).
 
 
@@ -1683,6 +1684,9 @@ transfer_missing(ArgVM,VM):-
      dict_pairs(ArgVM,_,Pairs),
      maplist(nb_link_pairs_if_missing(VM),Pairs).
 transfer_onto_dict(ArgVM,VM):-
+     dict_pairs(ArgVM,_,Pairs),
+     maplist(nb_link_pairs(VM),Pairs).
+force_onto_dict(ArgVM,VM):-
      dict_pairs(ArgVM,_,Pairs),
      maplist(nb_link_pairs(VM),Pairs).
 
@@ -2362,230 +2366,126 @@ objectProperties((
     ))
 )).
 
+sub_self(NewGrid,NewOther,TODO,VM):- 
+ print_grid(doing(TODO),NewGrid),
+ must_det_ll((
+ globalpoints(NewGrid,Points),
+ duplicate_term(VM,SavedVM),
+ set(VM.points) = Points,
+ set(VM.points_o) = Points,
+ set(VM.grid)= NewGrid,
+ set(VM.grid_o)= NewGrid,
+ set(VM.grid_target)= NewOther,
+ run_fti(VM,TODO),
+ FoundObjs = VM.objs,
+ LOPoints = VM.points,
+ force_onto_dict(SavedVM,VM),
+ set(VM.points)= LOPoints, 
+ set(VM.objs)= FoundObjs,
+ %set(VM.grid)= PrevGrid,
+ %set(VM.grid_target)= Other,
+ remCPoints(VM,FoundObjs),
+ remGPoints(VM,FoundObjs),
+ addInvObjects(VM,FoundObjs))),!.
+
+
 
 % =====================================================================
-is_fti_step(in_subtraction).
+is_fti_step(i_subtract_objs).
 % =====================================================================
-in_subtraction(VM):-
+i_subtract_objs(VM):-
   Grid = VM.grid,
   localpoints(Grid,Ps),include(is_fgp,Ps,FGPs),length(FGPs,PsL),PsL<25,!,
   run_fti(VM,[lo_dots,pbox_vm_special_sizes]).
-in_subtraction(VM):-
+i_subtract_objs(VM):-
   run_fti(VM,[nsew,colormass,lo_dots]).
   
 % =====================================================================
 is_fti_step(fg_subtractions).
 % =====================================================================
-%fg_subtractiond(Cell,Cell):- is_bg_color(Cell),!.
-fg_subtractiond(This,Target,_):- This =@= Target,!.
-fg_subtractiond(This,Target,_):- \+ This \= Target,!.
+fg_subtractiond(This,Minus,_):- This =@= Minus,!.  %fg_subtractiond(This,Minus,_):- \+ This \= Minus,!.
 fg_subtractiond(This,_,This).
-%fg_subtractiond(This,Target,Black):- \+ This \= Target,!,get_black(Black).
-%fg_subtractiond(This,_,Black):-  get_black(Black), \+ This \= Black,!.
-%fg_subtractiond(This,Target,This):- get_black(Black), \+ Target \= Black,!.
-%fg_subtractiond(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
-/*
-fg_subtractiond(This,Target,Target):- This =@= Target,!.
-fg_subtractiond(_,_,Black):-  get_black(Black).
 
-non_subtractiond(Black,Target,Target):- get_black(Black),!.
-non_subtractiond(Target,Black,Target):- get_black(Black),!.
-non_subtractiond(This,Target,Black):- This =@= Target, get_black(Black), !.
-non_subtractiond(This,_,That):- copy_term(This,That),!.
-*/
-
-fg_subtractions(Subtraction,VM):-
- ignore((
- VMID = VM.id,
- \+ sub_var(tst,VMID),
- VMGID = VM.gid,
- \+ atom_contains(VMGID,'_fg_subtractiond'),
- Grid = VM.grid_o,
- other_grid(Grid,Other),
- other_grid(Grid,Target), 
- is_grid(Target),!,
- grid_size(Target,H,V),!,VM.h==H,VM.v==V,!,
- mapgrid(fg_subtractiond,Grid,Target,NewGrid),
- mass(NewGrid,M),mass(Grid,M2),!,
- M>0,M2\==M,Grid\==Target,NewGrid\==Grid,
-
- %(M==0->maplist_ignore(fg_subtractiond,Target,Grid,NewGrid); MNewGrid=NewGrid),
- must_det_ll((
-  var(GOID),atomic_list_concat([VMGID,'_fg_subtractiond'],GOID), assert_grid_gid(NewGrid,GOID),
-  get_vm(VMS), 
-  %individuate2(_,Subtraction,GOID,NewGrid,FoundObjs),
-  with_other_grid(Other,
-   must_det_ll(( into_fti(VM.id,Subtraction,NewGrid,SubVM),      
-      set(SubVM.gid) = GOID,
-      set(SubVM.ngrid)= VM.ngrid,
-      set_vm(SubVM),
-      %individuals_raw(VM,GH,GV,ID,NewOptions,Reserved,Points,Grid,IndvSRaw),
-      run_fti(SubVM,Subtraction)))),
- must_det_ll((
-  make_indiv_object_list(SubVM,SubVM.objs,FoundObjs),
-  set_vm(VMS),
-  assert_grid_gid(VM.grid_o,VMGID),
-  ReColored = FoundObjs,
-  %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
-  print_ss(fg_subtractions(GOID),NewGrid,FoundObjs),
-  print_ss(ReColored),
-  remCPoints(VM,ReColored),
-  remGPoints(VM,ReColored),
-  addInvObjects(VM,ReColored))))))),!.
-
+fg_subtractions(TODO,VM):-
+ copy_term(VM.grid_o,Grid),
+ other_grid(Grid,Other), is_grid(Other),
+ grid_size(Other,H,V),VM.h==H,VM.v==V,
+ mapgrid(fg_subtractiond,Grid,Other,NewGrid),
+ mapgrid(plain_var_to(black),NewGrid),
+ mass(NewGrid,NM), NM > 0, % mass(Grid,GM), NM\==GM,% ,!, mass(Other,OM),
+ sub_self(NewGrid,Other,TODO,VM).
 
 % =====================================================================
-is_fti_step(in_intersection).
+is_fti_step(i_intersect).
 % =====================================================================
-in_intersection(VM):-
+i_intersect(VM):-
   Grid = VM.grid,
   localpoints(Grid,Ps),include(is_fgp,Ps,FGPs),length(FGPs,PsL),PsL<25,!,
   run_fti(VM,[lo_dots]),!.
 
-in_intersection(VM):-
+i_intersect(VM):-
   run_fti(VM,[nsew,colormass,lo_dots]).
 
 % =====================================================================
 is_fti_step(fg_intersections).
 % =====================================================================
-fg_intersectiond(This,Target,This):- This =@= Target,!.
+fg_intersectiond(This,That,This):- This =@= That,!.
 fg_intersectiond(_,_,_).
 %fg_intersectiond(_,_,Black):-  get_black(Black).
 
-non_intersectiond(Black,Target,Target):- get_black(Black),!.
-non_intersectiond(Target,Black,Target):- get_black(Black),!.
-non_intersectiond(This,Target,Black):- This =@= Target, get_black(Black), !.
-non_intersectiond(This,_,That):- copy_term(This,That),!.
-
-
-fg_intersections(Intersection,VM):-
- ignore((
- VMID = VM.id,
- \+ sub_var(tst,VMID),
- VMGID = VM.gid,
- \+ atom_contains(VMGID,'_fg_intersectiond'),
+fg_intersections(TODO,VM):-
  copy_term(VM.grid_o,Grid),
  other_grid(Grid,Other), is_grid(Other),
  grid_size(Other,H,V),VM.h==H,VM.v==V,
  mapgrid(fg_intersectiond,Grid,Other,NewGrid),
  mapgrid(plain_var_to(black),NewGrid),
- mass(NewGrid,NM), mass(Grid,GM),!,% ,!, mass(Other,OM),
- NM > 0, NM\==GM,
- %(M==0->maplist_ignore(fg_intersectiond,Target,Grid,NewGrid); MNewGrid=NewGrid),
- must_det_ll((  
-  ignore(((NewGrid\=@=Other,NewGrid\=@=Grid,atomic_list_concat([VMGID,'_fg_intersectiond'],GOID), 
-     assert_grid_gid(NewGrid,GOID)))),
-  (var(GOID)-> grid_to_gid(NewGrid,GOID);true),
-  get_vm(VMS), 
-  %individuate2(_,Intersection,GOID,NewGrid,FoundObjs),
-  with_other_grid(Other,
-   (( into_fti(VM.id,Intersection,NewGrid,SubVM),      
-      set(SubVM.gid) = GOID,
-      set(SubVM.ngrid)= VM.ngrid,
-      set_vm(SubVM),
-      %individuals_raw(VM,GH,GV,ID,NewOptions,Reserved,Points,Grid,IndvSRaw),
-      run_fti(SubVM,Intersection),
-  make_indiv_object_list(SubVM,SubVM.objs,FoundObjs),
-  set_vm(VMS),
-  assert_grid_gid(VM.grid_o,VMGID),
-  ReColored = FoundObjs,
-  %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
-  %print_ss(fg_intersections(GOID),NewGrid,FoundObjs),
-  %print_ss(ReColored),
-  remCPoints(VM,ReColored),
-  remGPoints(VM,ReColored),
-  addInvObjects(VM,ReColored)))))))),!.
+ mass(NewGrid,NM), NM > 0, % mass(Grid,GM), NM\==GM,% ,!, mass(Other,OM),
+ sub_self(NewGrid,Other,TODO,VM).
 
-fg_intersections(Intersection,VM):-
- ignore((
- VMID = VM.id,
- \+ sub_var(tst,VMID),
- VMGID = VM.gid,
- \+ atom_contains(VMGID,'_fg_intersectio'),
-  copy_term(VM.grid_o,Grid),
-  other_grid(Grid,Other),
-  fg_intersections1(Intersection,Grid,Other,VM))).
-
-fg_intersections1(Intersection,Grid,Other,VM):-
- grid_size(Other,H,V),VM.h==H,VM.v==V,
- mapgrid(fg_intersectiond,Grid,Other,NewGrid),
- mass(NewGrid,NM), % mass(Grid,GM),!, ,!, mass(Other,OM),
- NM > 0,NewGrid\=@=Grid, !, %, 
- %(M==0->maplist_ignore(fg_intersectiond,Target,Grid,NewGrid); MNewGrid=NewGrid),
- must_det_ll((
-  VMGID = VM.gid,
-  mapgrid(plain_var_to(black),NewGrid),
-
-  ignore(((NewGrid\=@=Other,NewGrid\=@=Grid,atomic_list_concat([VMGID,'_fg_intersectiond'],GOID), 
-     assert_grid_gid(NewGrid,GOID)))),
-  (var(GOID)-> grid_to_gid(NewGrid,GOID);true),
-  get_vm(VMS),
-  %individuate2(_,Intersection,GOID,NewGrid,FoundObjs),
-  with_other_grid(Other,
-   must_det_ll(( into_fti(VM.id,Intersection,NewGrid,SubVM),      
-      set(SubVM.gid) = GOID,
-      set(SubVM.ngrid)= VM.ngrid,
-      set(SubVM.grid_target)= Other,
-      set_vm(SubVM),
-      %individuals_raw(VM,GH,GV,ID,NewOptions,Reserved,Points,Grid,IndvSRaw),
-      run_fti(SubVM,Intersection),
-      make_indiv_object_list(SubVM,SubVM.objs,FoundObjs),  
-  set_vm(VMS),
-  assert_grid_gid(VM.grid_o,VMGID),
-  ReColored = FoundObjs,
-  %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
-  print_ss(fg_intersections(GOID),NewGrid,FoundObjs),
-  print_ss(ReColored),
-  remCPoints(VM,ReColored),
-  remGPoints(VM,ReColored),
-  addInvObjects(VM,ReColored)))))),!.
-fg_intersections1(Intersection,Out,In,VM):-
-  must_det_ll(fg_intersections2(Intersection,Out,In,VM)).
 
 % =====================================================================
-is_fti_step(fg_intersections2).
+is_fti_step(i_ogs_subobj).
 % =====================================================================
-fg_intersections2(Intersection,VM):-
- ignore((
- VMID = VM.id,
- \+ sub_var(tst,VMID),
- VMGID = VM.gid,
- \+ atom_contains(VMGID,'_fg_intersectiond'),
+i_ogs_subobj(VM):-
+  Grid = VM.grid,
+  localpoints(Grid,Ps),include(is_fgp,Ps,FGPs),length(FGPs,PsL),PsL<25,!.
+
+i_ogs_subobj(VM):-
+  run_fti(VM,[nsew,colormass,lo_dots]).
+
+% =====================================================================
+is_fti_step(each_ogs_object).
+% =====================================================================
+each_ogs_object(TODO,VM):-
  must_det_ll((
-  copy_term(VM.grid_o,Grid),
-  other_grid(Grid,Other),
-  fg_intersections2(Intersection,Other,Grid,VM))))).
+  copy_term(VM.grid_o,StartGrid), 
+  other_grid(StartGrid,Other), is_grid(Other),
+  %copy_term(VM.grid,This),  
+  all_ogs(t-o,StartGrid,Other,Hints1),
+  all_ogs(o-t,Other,StartGrid,Hints2),
+  append(Hints1,Hints2,Hints))),
+  must_det_ll_maplist(use_each_ogs(VM,TODO,StartGrid,Other),Hints).
 
-fg_intersections2(Intersection,This,Other,VM):- 
+about_i_or_o(_-OorT,OorT):-!. about_i_or_o(TrimIO,OorT):- arg(1,TrimIO,IO),!,about_i_or_o(IO,OorT). about_i_or_o(_,t).
+
+use_each_ogs(VM,TODO,This,Other,Hint):- 
+ nl_if_needed,pp(cyan,Hint),
+ Hint = ogs(TrimIO,Named,Special,[loc2D(OH,OV),vis2D(SH,SV)]),
+ about_i_or_o(TrimIO,OorT), ( (OorT == o) -> From = This ; From = Other ),
+ obj_gpoints(From,OBJGRID,OH,OV,SH,SV,GOPoints),
+ intersection(GOPoints, VM.points_o,Shared,MissingGoPoints,_ExtraPoints),
+((MissingGoPoints==[], Shared\==[]) -> true;
  must_det_ll((
-  all_ogs_swap(This,Other,Hints), 
-  (Hints==[]-> true;must_det_ll_maplist(use_each_ogs(VM,Intersection,This,Other),Hints)))).
+  print_grid(Hint,OBJGRID),
+  make_indiv_object(VM,[iz(stype(ogs)),
+     iz(tio(TrimIO)),iz(todo(TODO)),grid(OBJGRID),iz(named(Named)),iz(spec(Special))],GOPoints,Obj),    
+  % remCPoints(VM,Obj), remGPoints(VM,Obj),
+  addInvObjects(VM,Obj),
+  addCPoints(VM,GOPoints),
+  grid_size(From,GH,GV),
+  points_to_grid(GH,GV,GOPoints,NewGrid),
+  sub_self(NewGrid,Other,TODO,VM)))).
 
-use_each_ogs(VM,Intersection,This,Other,Hint):- 
-   must_det_ll((( 
-   nl_if_needed,pp(cyan,Hint),
-   Hint = ogs(TrimIO,Named,Special,[loc2D(XX,YY),vis2D(SIX,SIY)]),
-   select_points(TrimIO,Other,This,loc2D(XX,YY),vis2D(SIX,SIY),GOPoints,OBJGRID),
-   print_grid(Hint,OBJGRID),
-   make_indiv_object(VM,[iz(stype(ogs)),
-     iz(tio(TrimIO)),iz(todo(Intersection)),grid(OBJGRID),iz(named(Named)),iz(spec(Special))],GOPoints,Obj),    
-      %remCPoints(VM,Obj),
-      %remGPoints(VM,Obj),
-      addInvObjects(VM,Obj),
-      addCPoints(VM,GOPoints)))).
-
-select_points(TrimIO,This,Other,loc2D(OH,OV),vis2D(SIX,SIY),GOPoints,OBJ):- 
- must_det_ll((
-   about_i_or_o(TrimIO,OorT),
-   ( (OorT == o) -> From = This ; From = Other ),
-   obj_gpoints(From,OBJ,OH,OV,SIX,SIY,GOPoints))).
-
-all_ogs_swap(This,Other,Hints):- all_ogs(t-o,This,Other,Hints).
-all_ogs_swap(This,Other,Hints):- all_ogs(o-t,Other,This,Hints).
-
-about_i_or_o(_-OorT,OorT):-!.
-about_i_or_o(TrimIO,OorT):- arg(1,TrimIO,IO),!,about_i_or_o(IO,OorT).
-about_i_or_o(_,t).
 % =====================================================================
 is_fti_step(fg_abtractions).
 % =====================================================================
@@ -3379,13 +3279,13 @@ remOptions(VM,Obj):- assume_vm(VM),!,listify(Obj,List),
 
 remGPoints(VM,Obj):- assume_vm(VM),!,globalpoints(Obj,List), 
   Grid = VM.grid,
-  remove_global_points(List,Grid,GridO),
-  set(VM.grid) = GridO.
+  remove_global_points(List,Grid,StartGrid),
+  set(VM.grid) = StartGrid.
   
 addGPoints(VM,Obj):- assume_vm(VM),!,globalpoints(Obj,List), 
   Grid = VM.grid,
-  replace_grid_points(List,_,Grid,GridO),
-  set(VM.grid) = GridO.
+  replace_grid_points(List,_,Grid,StartGrid),
+  set(VM.grid) = StartGrid.
   
 
 :- style_check(+singleton).
