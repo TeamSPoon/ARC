@@ -16,14 +16,14 @@ o1 to o1
 
 */
 
-show_interesting_props(ObjsI,ObjsO):-
+show_interesting_props(Named,ObjsI,ObjsO):-
   banner_lines(cyan,4),
-  show_interesting_props(ObjsI),
+  show_interesting_props(input(Named),ObjsI),
   banner_lines(white,2),
-  show_interesting_props(ObjsO),
+  show_interesting_props(output(Named),ObjsO),
   banner_lines(cyan,4).
 
-show_interesting_props(ObjsI,ObjsO):-
+show_interesting_props(_Named,ObjsI,ObjsO):-
    append(ObjsO,ObjsI,Objs),
    show_interesting_props_gojs(Objs).
 
@@ -31,28 +31,28 @@ show_interesting_props_gojs(Objs):- wdmsg(show_interesting_props_gojs(Objs)).
   %8731374e
 
 
-show_interesting_props(Objs):-
-   get_interesting_groups(Objs,Groups),
+show_interesting_props(Named,Objs):-
+   get_interesting_groups(Named,Objs,Groups),
    banner_lines(cyan,3),
    forall(member(G,Groups),
-     show_interesting_props2(G)).
+     show_interesting_props2(Named,G)).
 
-show_interesting_props2(Title-Objs):- 
+show_interesting_props2(Named,Title-Objs):- 
   banner_lines(cyan,2),
   pp(cyan, Title),
-   print_ss(group(Title)=Objs),
+   print_ss(group(Named,Title)=Objs),
    banner_lines(cyan,1).
 
-get_interesting_groups(In,Groups):-
+get_interesting_groups(Named,In,Groups):-
   extend_obj_proplist(In,Objs),
   findall(Prop,(member(obj(O),Objs),member(Prop,O), \+ skip_ku(Prop) ),Props),
-  sort(Props,SProps),pp(props=SProps),
+  sort(Props,SProps),pp(props(Named)=SProps),
   maplist(make_unifier,SProps,UProps), predsort(using_compare(numbered_vars),UProps,SUProps),  
-  pp(suprops=SUProps),
+  pp(suprops(Named)=SUProps),
   %count_each(SProps,Props,GroupsWithCounts),
   length(Objs,L),
   group_quals(SUProps,SProps,L,KUProps),
-  pp(kuprops=KUProps),  
+  pp(kuprops(Named)=KUProps),  
   objs_with_props(KUProps,Objs,L,Groups),
   nop(print_ss(groups=Groups)).
 

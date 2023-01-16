@@ -772,7 +772,7 @@ grid_to_obj_other(VM,Grid,O):- other_grid(Grid,Grid2), grid_to_obj_other_grid(VM
 grid_to_obj_other_grid(VM,Grid,Grid2,O):- grid_to_objs(Grid2,Objs),grid_to_obj_other_objs(VM,Grid,Objs,O).
 grid_to_obj_other_objs(VM,Grid,Objs,O):- 
   objs_shapes(Objs,In),
-  maybe_ogs_color(_SIX,_SIY,_R,OH,OV,In,Grid), 
+  maybe_ogs_color(_R,OH,OV,In,Grid), 
   once((localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints), 
   %indv_props_list(Obj,Props),my_partition(is_prop_automatically_rebuilt,Props,_,PropsRetained),
   (nonvar(VM)->true;grid_vm(Grid,VM)),
@@ -875,10 +875,18 @@ trim_for_offset_1_1(II,In,OX,OY):-
   % print_side_by_side(II,In),
   once(ogs_11(OX,OY,In,II);(OX=OY,OX=1)).
 
+/*
 all_ogs1(IO,Whole,II,Out,XY):-
   findall(ogs(trim(IO),Whole,R,[loc2D(XX,YY),vis2D(SIX,SIY)]),
      (trim_for_offset_1_1(II,In,OX,OY),
+       %maybe_ogs(SIX,SIY,R,X,Y,In,Out),XX is X+OX-1, YY is Y+OY-1),XY),!.
+  maybe_ogs(SIX,SIY,R,X,Y,In,Out),XX is X, YY is Y),XY),!.
+*/
+all_ogs1(IO,Whole,II,Out,XY):-
+  findall(ogs(trim_1_1(IO),Whole,R,[loc2D(XX,YY),vis2D(SIX,SIY)]),
+     (trim_for_offset_1_1(II,In,OX,OY),
        maybe_ogs(SIX,SIY,R,X,Y,In,Out),XX is X-OX+1, YY is Y-OY+1),XY),!.
+       %maybe_ogs(SIX,SIY,R,X,Y,In,Out)),XY),!.
 
 subst_black_for_var(G,_):- G==black,!.
 subst_black_for_var(G,G).
@@ -914,7 +922,9 @@ rot_ogs(trim_to_rect).
 rot_ogs(P2):- rotP0(P2).
 rot_ogs([trim_to_rect,P2]):- rotP2(P2).
  
-maybe_ogs_color(SX,SY,R,X,Y,In,Out):- maybe_ogs_color0(R,X,Y,In,Out), learn_hybrid_shape_board(ogs(R),In),
+maybe_ogs_color(R,X,Y,In,Out):- maybe_ogs_color0(R,X,Y,In,Out), ignore(learn_hybrid_shape_board(ogs(R),In)).
+maybe_ogs_color(SX,SY,R,X,Y,In,Out):- maybe_ogs_color0(R,X,Y,In,Out), 
+  ignore(learn_hybrid_shape_board(ogs(R),In)),
   grid_size(In,SX,SY).
 maybe_ogs_color0(R,X,Y,In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
 maybe_ogs_color0(R,X,Y,In,Out):- ogs_11(X,Y,In,Out),(find_ogs(X,Y,In,Out)->R=strict;R=loose).

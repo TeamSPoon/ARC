@@ -235,7 +235,7 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
 
      show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
 
-      if_t((menu_or_upper('y')), show_interesting_props(InC,OutC)),
+      if_t((menu_or_upper('y')), show_interesting_props(ID1,InC,OutC)),
 
 
        if_t((menu_or_upper('o');menu_or_upper('t')),
@@ -2513,22 +2513,29 @@ fg_intersections2(Intersection,This,Other,VM):-
 
 use_each_ogs(VM,Intersection,This,Other,Hint):- 
    must_det_ll((( 
-   Hint = ogs(TrimIO,Named,Special,[loc2D(XX,YY),vis2D(SIX,SIY)]),
-   select_points(Hint,TrimIO,Other,This,loc2D(XX,YY),vis2D(SIX,SIY),GOPoints,OBJGRID),
-   make_indiv_object(VM,[iz(stype(ogs)),
-     iz(tio(TrimIO)),iz(todo(Intersection)),grid(OBJGRID),iz(named(Named)),iz(spec(Special))],GOPoints,_Obj),
-   print_grid(Hint,OBJGRID)))).
-
-select_points(Hint,TrimIO,This,Other,loc2D(OH,OV),vis2D(SIX,SIY),GOPoints,OBJ):- 
- must_det_ll((
-   about_i_or_o(TrimIO,IorO),
    nl_if_needed,pp(cyan,Hint),
-   ( (IorO == t) -> From = This ; From = Other ),
+   Hint = ogs(TrimIO,Named,Special,[loc2D(XX,YY),vis2D(SIX,SIY)]),
+   select_points(TrimIO,Other,This,loc2D(XX,YY),vis2D(SIX,SIY),GOPoints,OBJGRID),
+   print_grid(Hint,OBJGRID),
+   make_indiv_object(VM,[iz(stype(ogs)),
+     iz(tio(TrimIO)),iz(todo(Intersection)),grid(OBJGRID),iz(named(Named)),iz(spec(Special))],GOPoints,Obj),    
+      %remCPoints(VM,Obj),
+      %remGPoints(VM,Obj),
+      addInvObjects(VM,Obj),
+      addCPoints(VM,GOPoints)))).
+
+select_points(TrimIO,This,Other,loc2D(OH,OV),vis2D(SIX,SIY),GOPoints,OBJ):- 
+ must_det_ll((
+   about_i_or_o(TrimIO,OorT),
+   ( (OorT == o) -> From = This ; From = Other ),
    obj_gpoints(From,OBJ,OH,OV,SIX,SIY,GOPoints))).
 
 all_ogs_swap(This,Other,Hints):- all_ogs(t-o,This,Other,Hints).
 all_ogs_swap(This,Other,Hints):- all_ogs(o-t,Other,This,Hints).
-about_i_or_o(TrimIO,IorO):- arg(1,TrimIO,IO),arg(2,IO,IorO).
+
+about_i_or_o(_-OorT,OorT):-!.
+about_i_or_o(TrimIO,OorT):- arg(1,TrimIO,IO),!,about_i_or_o(IO,OorT).
+about_i_or_o(_,t).
 % =====================================================================
 is_fti_step(fg_abtractions).
 % =====================================================================
