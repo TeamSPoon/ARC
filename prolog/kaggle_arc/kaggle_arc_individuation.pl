@@ -21,11 +21,38 @@ individuation_macros(complete, ListO):- im_complete(ListC),
    flatten([ListC,do_ending],ListM),
    list_to_set(ListM,ListO),!.
 
-
+individuation_macros(do_ending, [
+  %find_edges,
+  % find_contained_points, % mark any "completely contained points"
+ %combine_same_globalpoints, % make sure any objects are perfectly the equal part of the media(image) are iz(flag(combined))
+ %keep_only_shown(1),
+ %remove_if_prop(and(cc(bg,1))),
+ %combine_if_prop(and(cc(bg,1),)),
+ %remove_if_prop(and(iz(stype(dot))])),
+ %combine_same_globalpoints,
+ reset_points,
+ %gather_cached,
+ remove_used_points,
+ named_grid_props(post_indiv),
+ find_relations,
+ remove_dead_links,
+ %find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
+ %find_subsumes,
+ %find_overlaps,
+ %find_touches,
+ %find_sees,
+ %remove_if_prop(and(link(contains,_),cc(fg,0))),
+ %remove_if_prop(and(giz(g(out)),cc(fg,0))),
+ %remove_dead_links,
+ %combine_same_globalpoints,  
+ extend_obj_proplists,
+ really_group_vm_priors,
+ %whole,
+ %combine_objects,
+ end_of_macro]).
 
 individuation_macros(i_complete_generic, 
-  [fg_intersections2([in_intersection]),
-   fg_intersections([in_intersection]),
+  [fg_intersections([in_intersection]),
    %remove_used_points,
    %save_as_obj_group([pbox_vm_special_sizes([special_sizes_v_h_sorted_s_l])]),
    %pbox_vm_special_sizes([special_sizes_v_h_sorted_l_s]),
@@ -33,6 +60,19 @@ individuation_macros(i_complete_generic,
    in_subtraction,
    %fg_subtractions([in_subtraction]),
    remove_used_points,
+   print_vm_info(post_i_complete_generic)]).
+
+individuation_macros(i_complete_generic2, 
+  [%fg_intersections2([in_intersection]),
+   fg_intersections([in_intersection]),
+   gather_cached,
+   %remove_used_points,
+   %save_as_obj_group([pbox_vm_special_sizes([special_sizes_v_h_sorted_s_l])]),
+   %pbox_vm_special_sizes([special_sizes_v_h_sorted_l_s]),
+   %print_vm_info(post_in_intersection),
+   %fg_subtractions([in_subtraction]),
+   remove_used_points,
+   fg_subtractions(in_subtraction),
    print_vm_info(post_i_complete_generic)]).
 
 
@@ -60,36 +100,6 @@ individuation_macros(i_complete_generic1, [
                      pbox_vm_special_sizes([special_sizes_v_h_sorted_s_l]),
     remove_used_points,
     interlink_overlapping_black_lines]).
-
-individuation_macros(do_ending, [
-  %find_edges,
-  % find_contained_points, % mark any "completely contained points"
- %combine_same_globalpoints, % make sure any objects are perfectly the equal part of the media(image) are iz(flag(combined))
- %keep_only_shown(1),
- %remove_if_prop(and(cc(bg,1))),
- %combine_if_prop(and(cc(bg,1),)),
- %remove_if_prop(and(iz(stype(dot))])),
- %combine_same_globalpoints,
- reset_points,
- gather_cached,
- remove_used_points,
- named_grid_props(post_indiv),
- find_relations,
- remove_dead_links,
- %find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
- %find_subsumes,
- %find_overlaps,
- %find_touches,
- %find_sees,
- %remove_if_prop(and(link(contains,_),cc(fg,0))),
- %remove_if_prop(and(giz(g(out)),cc(fg,0))),
- %remove_dead_links,
- %combine_same_globalpoints,  
- extend_obj_proplists,
- really_group_vm_priors,
- %whole,
- %combine_objects,
- end_of_macro]).
 
 individuation_macros(i_complete_generic3, [
                      consider_other_grid, reset_points,
@@ -2438,7 +2448,7 @@ in_intersection(VM):-
 % =====================================================================
 is_fti_step(fg_intersections).
 % =====================================================================
-fg_intersectiond(This,Target,Target):- This =@= Target,!.
+fg_intersectiond(This,Target,This):- This =@= Target,!.
 fg_intersectiond(_,_,_).
 %fg_intersectiond(_,_,Black):-  get_black(Black).
 
@@ -2447,12 +2457,51 @@ non_intersectiond(Target,Black,Target):- get_black(Black),!.
 non_intersectiond(This,Target,Black):- This =@= Target, get_black(Black), !.
 non_intersectiond(This,_,That):- copy_term(This,That),!.
 
+
 fg_intersections(Intersection,VM):-
  ignore((
  VMID = VM.id,
  \+ sub_var(tst,VMID),
  VMGID = VM.gid,
  \+ atom_contains(VMGID,'_fg_intersectiond'),
+ copy_term(VM.grid_o,Grid),
+ other_grid(Grid,Other), is_grid(Other),
+ grid_size(Other,H,V),VM.h==H,VM.v==V,
+ mapgrid(fg_intersectiond,Grid,Other,NewGrid),
+ mapgrid(plain_var_to(black),NewGrid),
+ mass(NewGrid,NM), mass(Grid,GM),!,% ,!, mass(Other,OM),
+ NM > 0, NM\==GM,
+ %(M==0->maplist_ignore(fg_intersectiond,Target,Grid,NewGrid); MNewGrid=NewGrid),
+ must_det_ll((  
+  ignore(((NewGrid\=@=Other,NewGrid\=@=Grid,atomic_list_concat([VMGID,'_fg_intersectiond'],GOID), 
+     assert_grid_gid(NewGrid,GOID)))),
+  (var(GOID)-> grid_to_gid(NewGrid,GOID);true),
+  get_vm(VMS), 
+  %individuate2(_,Intersection,GOID,NewGrid,FoundObjs),
+  with_other_grid(Other,
+   (( into_fti(VM.id,Intersection,NewGrid,SubVM),      
+      set(SubVM.gid) = GOID,
+      set(SubVM.ngrid)= VM.ngrid,
+      set_vm(SubVM),
+      %individuals_raw(VM,GH,GV,ID,NewOptions,Reserved,Points,Grid,IndvSRaw),
+      run_fti(SubVM,Intersection),
+  make_indiv_object_list(SubVM,SubVM.objs,FoundObjs),
+  set_vm(VMS),
+  assert_grid_gid(VM.grid_o,VMGID),
+  ReColored = FoundObjs,
+  %globalpoints_include_bg(VM.grid_o,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
+  %print_ss(fg_intersections(GOID),NewGrid,FoundObjs),
+  %print_ss(ReColored),
+  remCPoints(VM,ReColored),
+  remGPoints(VM,ReColored),
+  addInvObjects(VM,ReColored)))))))),!.
+
+fg_intersections(Intersection,VM):-
+ ignore((
+ VMID = VM.id,
+ \+ sub_var(tst,VMID),
+ VMGID = VM.gid,
+ \+ atom_contains(VMGID,'_fg_intersectio'),
   copy_term(VM.grid_o,Grid),
   other_grid(Grid,Other),
   fg_intersections1(Intersection,Grid,Other,VM))).
@@ -2461,12 +2510,14 @@ fg_intersections1(Intersection,Grid,Other,VM):-
  grid_size(Other,H,V),VM.h==H,VM.v==V,
  mapgrid(fg_intersectiond,Grid,Other,NewGrid),
  mass(NewGrid,NM), % mass(Grid,GM),!, ,!, mass(Other,OM),
- NM > 0,!, %NM\==GM,NM\==OM, 
+ NM > 0,NewGrid\=@=Grid, !, %, 
  %(M==0->maplist_ignore(fg_intersectiond,Target,Grid,NewGrid); MNewGrid=NewGrid),
  must_det_ll((
   VMGID = VM.gid,
   mapgrid(plain_var_to(black),NewGrid),
-  ignore(((NewGrid\=@=Other,NewGrid\=@=Grid,atomic_list_concat([VMGID,'_fg_intersectiond'],GOID), assert_grid_gid(NewGrid,GOID)))),
+
+  ignore(((NewGrid\=@=Other,NewGrid\=@=Grid,atomic_list_concat([VMGID,'_fg_intersectiond'],GOID), 
+     assert_grid_gid(NewGrid,GOID)))),
   (var(GOID)-> grid_to_gid(NewGrid,GOID);true),
   get_vm(VMS),
   %individuate2(_,Intersection,GOID,NewGrid,FoundObjs),
@@ -2474,12 +2525,11 @@ fg_intersections1(Intersection,Grid,Other,VM):-
    must_det_ll(( into_fti(VM.id,Intersection,NewGrid,SubVM),      
       set(SubVM.gid) = GOID,
       set(SubVM.ngrid)= VM.ngrid,
+      set(SubVM.grid_target)= Other,
       set_vm(SubVM),
       %individuals_raw(VM,GH,GV,ID,NewOptions,Reserved,Points,Grid,IndvSRaw),
-      run_fti(SubVM,Intersection)))))),
-
- must_det_ll((
-  make_indiv_object_list(SubVM,SubVM.objs,FoundObjs),
+      run_fti(SubVM,Intersection),
+      make_indiv_object_list(SubVM,SubVM.objs,FoundObjs),  
   set_vm(VMS),
   assert_grid_gid(VM.grid_o,VMGID),
   ReColored = FoundObjs,
@@ -2488,9 +2538,9 @@ fg_intersections1(Intersection,Grid,Other,VM):-
   print_ss(ReColored),
   remCPoints(VM,ReColored),
   remGPoints(VM,ReColored),
-  addInvObjects(VM,ReColored))),!.
+  addInvObjects(VM,ReColored)))))),!.
 fg_intersections1(Intersection,Out,In,VM):-
-  fg_intersections2(Intersection,Out,In,VM).
+  must_det_ll(fg_intersections2(Intersection,Out,In,VM)).
 
 % =====================================================================
 is_fti_step(fg_intersections2).
