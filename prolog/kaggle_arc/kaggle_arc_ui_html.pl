@@ -198,11 +198,11 @@ test_collapsible_section:-
 user:file_search_path(arc,  AbsolutePath):- arc_sub_path('.',AbsolutePath).
 
 %:- http_handler('/swish/muarc/swish_config.json', swish_reply_config_root,[priority(200)]).
-:- http_handler('/arcproc_left', arcproc_left, [prefix]).
-:- http_handler('/arcproc_right', arcproc_right, [prefix]).
-:- http_handler('/swish/arc/', swish_arc, [prefix]).
-:- http_handler('/swish/muarc/arcproc_right', arcproc_right, [prefix]).
 :- http_handler('/swish/muarc/arcproc_left', arcproc_left, [prefix]).
+:- http_handler('/arcproc_left', arcproc_left, [prefix]).
+:- http_handler('/arcproc_right', arcproc_right, [prefix,chunked]).
+:- http_handler('/swish/muarc/arcproc_right', arcproc_right, [prefix,chunked]).
+:- http_handler('/swish/arc/', swish_arc, [prefix]).
 :- http_handler('/', swish_arc_root, [prefix]).
 
 start_arc_http_server :-
@@ -254,7 +254,7 @@ webui_tests:-
   test_print_tree,
   bfly_tests.
 
-
+no_web_dbg:-!.
 no_web_dbg:-
   unsetenv('DISPLAY'),
   no_xdbg_flags,
@@ -311,6 +311,7 @@ set_test_param:-
 swish_arc(Request):- swish_arc_root(Request).
 %  muarc_tmp:arc_directory(ARC_DIR),
 %  http_reply_from_files(ARC_DIR, [unsafe(true), static_gzip(true)], Request).
+wfln(_):- !.
 wfln(P):- stream_property(X,file_no(2)),nl(X),writeln(X,P),flush_output(X).
 %swish_arc_root(Request):-  arc_sub_path('.',DEMO), arc_reply_from_files(DEMO, Request),!.
 swish_arc_root(Request):-  wfln(Request), ipe(attempt_file_reply(Request)),!.
@@ -322,7 +323,7 @@ swish_arc_root(Request):- attempt_file_reply(Request).
 
 ipe(G):- catch(G,E,(is_good_reply(E),throw(E))).
 
-is_good_reply(E):- wfln(E),fail.
+%is_good_reply(E):- wfln(E),fail.
 is_good_reply(existence_error(_,_)):-!,fail.
 is_good_reply(not_found(_)):-!,fail.
 is_good_reply(http_reply(moved_temporary(_))):-!.
@@ -403,6 +404,7 @@ mime_ext(_,'text/html'):- !.
 mime_ext(html).
 mime_ext(css).
 
+
 arc_reply_from_files(Dir, Request):- ipe(http_reply_from_files(Dir, [unsafe(false), static_gzip(true)], Request)).
 arc_reply_from_files(Dir, Request):- ipe(http_reply_from_files(Dir, [unsafe(true), static_gzip(true)], Request)).
 arc_reply_from_files(Dir, Request):- ipe(http_reply_from_files(Dir, [], Request)).
@@ -417,19 +419,15 @@ chop_begpath(Swish,PathInfo,Rest):- atom_concat('/',Right,PathInfo),chop_begpath
 
 arcproc_left(Request):- 
  format('Content-type: text/html~n~n',[]),
- no_web_dbg,
- with_pp(http,  
-  notrace((begin_arc_html_request(left,Request),
-    arc_html_format([handler_logicmoo_menu,write_end_html])))).
+  %no_web_dbg,
+   as_if_webui(((begin_arc_html_request(left,Request),
+      arc_html_format([handler_logicmoo_left,write_end_html])))),!.
 arcproc_left(Request):- xlisting_web:handler_logicmoo_cyclone(Request),!.
 
 
 arcproc_right(Request):- 
  format('Content-type: text/html~n~n',[]),
- no_web_dbg,
- with_pp(http,  
-  notrace((begin_arc_html_request(right,Request),
-    arc_html_format([handler_logicmoo_right,write_end_html])))).
+ notrace((with_toplevel_pp(http,handler_logicmoo_right(Request)))),!.
 arcproc_right(Request):- swish_arc(Request),!.
 
 arc_html_format(TextAndGoal):- wants_html,!,arc_inline_html_format(TextAndGoal).
@@ -448,7 +446,9 @@ arc_find_tests(F):- find_tests(F).
 :- multifile(xlisting_whook:offer_testcase/1).
 xlisting_whook:offer_testcase(F):- arc_find_tests(F).
 
+handler_logicmoo_left:- handler_logicmoo_menu,!.
 handler_logicmoo_menu:-   
+ set_prolog_flag(gui_tracer,false),
  as_if_webui(arc_html_format([
    write('<pre>'),
    ignore(test_webui_menu),
@@ -459,21 +459,45 @@ handler_logicmoo_menu:-
    pp(Request),
    write('</pre>')])).
 
-%handler_logicmoo_arc:- as_if_webui(arc_html_format([call(handler_logicmoo_menu)])).
-handler_logicmoo_right:- 
-   as_if_webui(arc_html_format( 
-   [ `<pre>`,
-   flush_output,
-   ignore(arc_http_nav_menu),
-   ignore(print_test),
-   %ignore(show_console_info),
-   ignore(call_current_arc_cmd),
-   `<hr>`,
-   invoke_arc_cmd(edit1term),
-   show_http_session,
-    `</pre>`])), 
-  !.
+set_http_debug_error(False):- 
+  set_prolog_flag(gui_tracer,false),
+  set_prolog_flag(debug,false),
+  set_prolog_flag(debug_on_error,False),
+  set_prolog_flag(debug_on_interrupt,False),
+  set_prolog_flag(determinism_error,silent),
+  set_prolog_flag(report_error,False),
+  nop((False==false->set_prolog_flag(on_error,halt);set_prolog_flag(on_error,status))).
 
+
+%handler_logicmoo_arc:- as_if_webui(arc_html_format([call(handler_logicmoo_menu)])).
+handler_logicmoo_right(Request):- 
+   set_http_debug_error(false),
+   intern_arc_request_data(Request),
+   %begin_arc_html_request(right,Request),
+   %arc_html_format([handler_logicmoo_right,write_end_html]))
+   arc_html_format( 
+   [write('<pre>'),
+   ignore(flush_output),
+   ignore(arc_http_nav_menu),
+   ignore(flush_output),
+   notrace(ignore(call_current_arc_cmds)),
+   %ignore(print_test),
+   %ignore(show_console_info),   
+ %  ignore(call_current_arc_cmds),
+   ignore(flush_output),
+   write('<hr>'),
+   invoke_arc_cmd(edit1term),
+   ignore(show_http_session),
+   write('</pre>')]), !.
+
+get_now_cmd(Cmd,Prolog):- httpd_wrapper:http_current_request(Request), member(search(List),Request),member(Cmd=Call,List),url_decode_term(Call,Prolog),!.
+%get_now_cmd(Cmd,Prolog):- get_param_req(Cmd,Call),url_decode_term(Call,Prolog).
+%get_now_cmd(Cmd,Prolog):- get_http_current_request(Request), member(request_uri(List),Request),request_uri(/arc_web_interface.html?dump_from_pairmode),url_decode_term(Call,Prolog),!.
+
+call_current_arc_cmds_pp:- with_toplevel_pp(http,call_current_arc_cmds).
+
+call_current_arc_cmds:- get_now_cmd(cmd,Prolog),!,call(user:Prolog),!.
+call_current_arc_cmds:- print_test,!,print_all_info_for_test,do_web_menu_key('t'),!.
 call_current_arc_cmds:- 
  %call_current_arc_cmd(tc_cmd),
  call_current_arc_cmd(cmd),
@@ -592,7 +616,9 @@ arc_script_header2:-
 invoke_arc_cmd(Prolog):-
    nonvar(Prolog),
    asserta_new(xlisting_whook:offer_testcase(Prolog)), !,
-   catch(weto(Prolog),E,wdmsg(E)),!.
+   catch(arc_weto(Prolog),E,wdmsg(E)),!.
+
+arc_weto(G):- call(G).
 
 %:- luser_default(cmd,print_test).
 :- luser_default(tc_cmd,ndividuator).

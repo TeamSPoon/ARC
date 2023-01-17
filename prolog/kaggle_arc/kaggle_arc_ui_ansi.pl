@@ -277,7 +277,7 @@ wqln(Term):- ppnl(Term).
 wqnl(G):- pp_safe(call((locally(nb_setval(arc_can_portray,nil),print(G))))),!.
 
 pp_safe(_):- nb_current(pp_hide,t),!.
-pp_safe(call(W)):- nl_if_needed,nl,call(W),nl.
+pp_safe(call(W)):- !, nl_if_needed,nl,call(W),nl.
 pp_safe(W):- nl_if_needed,nl,writeq(W),nl.
 pp_safe(C,W):- color_print(C,call(pp_safe(W))).
 
@@ -732,9 +732,12 @@ g_display2(I,O):- is_grid(I),!,I=O.
 g_display2(N=I,N=O):- g_display2(I,O),!.
 g_display2(I,O):- is_points_list(I),!,I=O.
 %g_display2(I,O):- is_list(I),!, maplist(g_display2,I,O).
-g_display2(I,obj(at(X,Y),viz(H,V),GOID)=G):- obj_to_oid(I,GOID), loc2D(I,X,Y),vis2D(I,H,V), global_or_object_grid(I,G),!.
+g_display2(I,obj(at(X,Y),viz(H,V),GOID)=G):- obj_to_oid(I,GOID), loc2D(I,X,Y),vis2D(I,H,V), object_grid_g_display2(I,H,V,G),!.
 g_display2(I,print_grid(H,V,[I])):- sub_term(E,I),compound(E),E=globalpoints(_O),grid_size(I,H,V),!.
 g_display2(I,I):- !. 
+
+object_grid_g_display2(I,1,1,G):- !, global_grid(I,G).
+object_grid_g_display2(I,_H,_V,G):- object_grid(I,G),!.
 
 %print_sso(G,W):- is_really_gridoid(G),!,must_det_ll(print_grid(W,G)).
 
@@ -1323,7 +1326,7 @@ print_grid0(H,V,G):- is_empty_grid(G), %trace, arcST,
  make_grid(H,V,Empty),
  print_grid0(H,V,Empty),!. 
 
-print_grid0(H,V,Grid):- \+ is_really_gridoid(Grid), into_grid(Grid,G),!,print_grid0(H,V,G).
+%print_grid0(H,V,Grid):- \+ is_really_gridoid(Grid), into_grid(Grid,G), G\=@=Grid, !, print_grid0(H,V,G).
 print_grid0(H,V,Grid):- print_grid0(1,1,H,V,Grid),!.
 
 %print_grid(SH,SV,EH,EV,Grid):- nop(print_grid(SH,SV,EH,EV,Grid)),!.
@@ -1331,6 +1334,7 @@ print_grid(SH,SV,EH,EV,Grid):- quietlyd(print_grid0(SH,SV,EH,EV,Grid)),!.
 
 print_grid0(SH,SV,EH,EV,NCPs):- is_ncpoints_list(NCPs),maplist(append_term(-(fg)),NCPs,Grid),!,print_grid0(SH,SV,EH,EV,Grid).
 print_grid0(_SH,_SV,_EH,_EV,GridFooter):- grid_footer(GridFooter,Grid,Footer),!,print_grid(Footer,Grid).
+print_grid0(SH,SV,EH,EV,Grid):- Grid= A^B,!,print_grid0(SH,SV,EH,EV,A),print_grid0(SH,SV,EH,EV,B).
 print_grid0(_SH,_SV,_EH,_EV,Grid):- \+ is_printable_gridoid(Grid), !, writeln(\+ is_printable_gridoid(Grid)).
 
 print_grid0(SH,SV,EH,EV,Grid):-  
@@ -1352,7 +1356,7 @@ nl_if_not_side_by_side:- ignore(( \+ in_side_by_side, probably_nl)).
 in_side_by_side:- current_output(Out), \+ stream_property(Out,alias(user_output)).
 
 
-
+print_grid_pad(_,SH,SV,EH,EV,Grid):- wants_html,!, print_grid_html(SH,SV,EH,EV,Grid).
 print_grid_pad(O1,SH,SV,EH,EV,Grid):-
   into_color_name_always(Grid,GridI),
   wots(S,print_grid2(SH,SV,EH,EV,GridI)),
@@ -1423,6 +1427,7 @@ with_enc(Enc,Goal):-
        set_stream_encoding(Was))))),
        set_prolog_flag(encoding,EncWas)).
       
+:- set_url_encoding(_,iso_latin_1).
 
 set_stream_encoding(Text):- 
  %set_prolog_flag(encoding,Text),
@@ -1441,36 +1446,39 @@ into_entity(A,B,C,D,S):- atom_codes('\u0Aaa',C)
 
 color_print_webui(C,G):- mbfy(cpwui(C,G)).
 
+cpwui0(C,G):-
+  flag('$in_cpwui',X,X),
+  (X>6->true; setup_call_cleanup(flag('$in_cpwui',X,X+1),cpwui(C,G),flag('$in_cpwui',_,X))).
 
 cpwui(_,G):- G==' ',!,write_nbsp.
 
-cpwui(C,G):- C==black,!,cpwui([black,black],G).
+cpwui(C,G):- C==black,!,cpwui0([black,black],G).
 
-cpwui(C,G):- multivalued_peek_color(C,W),cpwui(W,G).
-cpwui(C,G):- is_bg_sym_or_var_ui(C),!,cpwui(wbg,G).
+cpwui(C,G):- multivalued_peek_color(C,W),cpwui0(W,G).
+cpwui(C,G):- is_bg_sym_or_var_ui(C),!,cpwui0(wbg,G).
 
 cpwui([],G):- !, bformatc(G).
-cpwui([C|CC],G):- !,wots(S,cpwui(C,G)),cpwui(CC,S).
-%cpwui(_C,G):- \+ wants_html,!,bformatc(G).
+cpwui([C|CC],G):- !,wots(S,cpwui0(C,G)),cpwui0(CC,S).
+%cpwui0(_C,G):- \+ wants_html,!,bformatc(G).
 
-cpwui(underline,G):- !, cpwui(style('text-decoration','underline'),G).
-cpwui(bold,G):- !, cpwui(style('font-weight','bold'),G).
-cpwui(italic,G):- !, cpwui(style('font-style','italic'),G).
+cpwui(underline,G):- !, cpwui0(style('text-decoration','underline'),G).
+cpwui(bold,G):- !, cpwui0(style('font-weight','bold'),G).
+cpwui(italic,G):- !, cpwui0(style('font-style','italic'),G).
 
-%cpwui(C,G):- \+ wants_html,!,color_print(C,G).
-cpwui(bg(C),G):- !, cpwui(style('background-color',C),G).
-cpwui(hbg(C),G):- !, cpwui([bg(C),style('filter','brightness(150%)')],G).
-cpwui(hfg(C),G):- !, cpwui([C,style('brightness','200%')],G).
+%cpwui0(C,G):- \+ wants_html,!,color_print(C,G).
+cpwui(bg(C),G):- !, cpwui0(style('background-color',C),G).
+cpwui(hbg(C),G):- !, cpwui0([bg(C),style('filter','brightness(150%)')],G).
+cpwui(hfg(C),G):- !, cpwui0([C,style('brightness','200%')],G).
 cpwui(style(C),G):- !, format('<font style="~w">~@</font>',[C,bformatc_or_at(G)]).
 cpwui(style(N,V),G):- !, format('<font style="~w: ~w;">~@</font>',[N,V,bformatc_or_at(G)]).
-cpwui(C,G):- get_black(Black),C==Black,!, cpwui(style('opacity: 0.5;'),G).
-cpwui(C,G):- C==wbg,!,cpwui([black,black],G).
+cpwui(C,G):- get_black(Black),C==Black,!, cpwui0(style('opacity: 0.5;'),G).
+cpwui(C,G):- C==wbg,!,cpwui0([black,black],G).
 
 cpwui(fg(C),G):- !, format('<font color="~w" style="font-weight: bold;">~@</font>',[C,bformatc_or_at(G)]),!.
 cpwui(color(C),G):- !, format('<font color="~w">~@</font>',[C,bformatc_or_at(G)]).
-cpwui(C,G):- integer(C),arc_acolor(C,CC),CC\==C,!,cpwui(CC,G).
+cpwui(C,G):- integer(C),arc_acolor(C,CC),CC\==C,!,cpwui0(CC,G).
 cpwui(C,G):- is_html_color(C),!, format('<font color="~w">~@</font>',[C,bformatc_or_at(G)]).
-%cpwui((C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
+%cpwu((C),G):- !, format('<font color="~w">~@</font>',[C,bformatc(G)]).
 cpwui(C,G):- format('<font style="~w">~@</font>',[C,bformatc_or_at(G)]),!.
 
 bformatc_or_at(C):- wots(S,bformatc(C)), ( (S=="";(fail,atom_contains(S,"><"))) -> write('@') ; write(S)).
@@ -1544,13 +1552,14 @@ print_grid_html_real(SH,SV,EH,EV,Grid):-
 
 print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):-
  write('<br>'),
-  write('<table border="1" style="text-align:center; table-layout: fixed; padding: 0px; border: 1px solid black;">'),
+  write('<table border="1" style="text-align:center; table-layout: fixed; padding: 0px; border: 0px; border-style: none; border-spacing: 1px">'),
   forall(between(SV,EV,V),
-   (write('<tr>'),
+   (write('<tr style="padding: 0px; border: 0px; border-style: none; border-spacing: 0px">'),
     forall(between(SH,EH,H),
      must_det_ll((once((hv_cg_value(Grid,CG,H,V);CG=BGC)), 
-       only_color_data(CG,Color),
-       format('<td style="width:13px; border: 0px" bgcolor="~w">',[Color]), (print_gw1(CG)),write('</td>')))),
+       only_color_data_or_atom(CG,Color),
+       format('<td style="width:13px; padding: 0px; border: 0px; border-style: none; border-spacing: 0px" bgcolor="~w">',[Color]),
+       catch(print_g1(CG),E,writeln(CG=E)),write('</td>')))),
     write('</tr>'))),
   write('</table>'),!.
 
@@ -1561,7 +1570,7 @@ print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):-
            [ tr(th(colspan(EH), ['Table for ', 'This'])),
              \ mforeach(between(SV,EV,V),
                       html(tr([ \ mforeach((between(SH,EH,H),once(hv_cg_value(Grid,CG,H,V);CG=BGC), 
-                         wots(Cell,(print_g1(cpwui,CG)))),
+                         wots(Cell,(print_g1(cpwui0,CG)))),
                                      html(td([class('mc-10'),style('text-align:center; width:11px;')], html_echo(Cell) ))) ])))
            ])),!.
 

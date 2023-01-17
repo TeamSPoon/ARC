@@ -475,7 +475,7 @@ colors_to_vars(Vars,Grid,GridO):-  colors_to_vars(_Colors,Vars,Grid,GridO).
 colors_to_vars(Colors,Vars,Grid,GridO):- (plain_var(Colors)->unique_colors(Grid,Colors);true),!,
   length(Colors,Len),length(Vars,Len),
    subst_cvars(Colors,Vars,Grid,GridO),
-   pp(Grid-->GridO).
+   nop((pp(Grid-->GridO))).
 
 subst_cvars([],[],A,A):-!. 
 subst_cvars([F|FF],[R|RR],S,D):- !, freeze(R,(\=(R,_-_))),subst001(S,F,R,M), subst_cvars(FF,RR,M,D).
@@ -771,7 +771,7 @@ points_to_grid(H,V,Points,Grid):- var(H),var(V),must_det_ll(grid_size(Points,H,V
 points_to_grid(H,V,Points,Grid):- points_to_grid0(H,V,Points,Grid).
 
 points_to_grid0(H,V,Points,Grid):- odd_failure((make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
-points_to_grid0(H,V,Points,Grid):- rtrace((make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
+points_to_grid0(H,V,Points,Grid):- rrtrace((make_grid(H,V,Grid), calc_add_points(1,1,Grid,Points))),!.
 
 
 points_to_default_grid(Points,Grid):- points_to_default_grid(_,_,Points,Grid).

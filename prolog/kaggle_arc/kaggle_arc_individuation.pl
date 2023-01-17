@@ -59,8 +59,9 @@ individuation_macros(i_complete_generic,
    %pbox_vm_special_sizes([special_sizes_v_h_sorted_l_s]),
    %print_vm_info(post_in_intersection),
    %i_subtract_objs,
-   fg_subtractions([i_subtract_objs]),
-   remove_used_points,
+   %fg_subtractions([i_subtract_objs]),
+   i_subtract_objs,
+   %remove_used_points,
    print_vm_info(post_i_complete_generic)]).
 
 individuation_macros(i_complete_generic2, 
@@ -356,7 +357,7 @@ i_pair(ROptions,GridIn,GridOut):-
     individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
     show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC))).
 
-%worker_output(G):- \+ menu_or_upper('B'),!, time(wots(_,weto(G))).
+%worker_output(G):- \+ menu_or_upper('B'),!, time(wots(_,arc_weto(G))).
 worker_output(G):- time(G).
 
 igo(ROptions,Grid):-
@@ -1833,11 +1834,6 @@ fti(VM,[Routine|set(VM.program_i)]):-  fail,
    length(VM.objs,Count),
    Count>Max,!,fail.
 
-fti(VM,[when(G,D)|TODO]):- ((call_expanded(VM,G),!,progress(using_when(G,D)))->R=D;R=call(nop(progress(skipped(G,D))))),
-  set(VM.program_i) = [R|TODO].
-
-fti(VM,[call(G)|TODO]):-   set(VM.program_i) = TODO, !, my_submenu_call(call_expanded(VM,G)).
-
 fti(VM,[-(DelOptions)|TODO]):-
   listify(DelOptions,OList),
   my_partition(option_matches(OList),VM.options,_,set(VM.options)),
@@ -1867,12 +1863,55 @@ fti(VM,[macrof(AddTodo)|set(VM.program_i)]):-
 fti(VM,[macro(AddTodo)|TODO]):-
   listify(AddTodo,TodoL),
   my_append([progress|TodoL],TODO,set(VM.program_i)).
-  
+
+/*
 %fti(VM,Prog):- length(Prog,Len),Len>2, exceeded_objs_max_len(VM),!,set(VM.program_i)= [do_ending],!,length(VM.objs,Count),set(VM.objs_max_len) is Count+3.
 fti(VM,[Step|Program]):- functor(Step,F,_), ping_indiv_grid(F), \+ warn_missing_arity(Step,1), set(VM.program_i) = Program, !, my_submenu_call(call(Step, VM.grid)).
 fti(VM,[Step|Program]):- functor(Step,F,_), is_fti_step(F), \+ warn_missing_arity(Step,1), set(VM.program_i) = Program, !, my_submenu_call(call(Step,VM)).
 fti(VM,[Step|Program]):- functor(Step,F,_), is_fti_stepr(F), \+ warn_missing_arity(Step,1), set(VM.program_i) = Program, Step=..[F|ARGS], !, my_submenu_call(apply(F,[VM|ARGS])).
 fti(VM,[Step|Program]):- set(VM.program_i) = Program, one_fti_step(Step), !, my_submenu_call(one_fti(VM,Step)),!.
+*/
+
+fti(VM,[when(G,D)|TODO]):- ((call_expanded(VM,G),!,progress(using_when(G,D)))->R=D;R=call(nop(progress(skipped(G,D))))),
+  set(VM.program_i) = [R|TODO].
+
+fti(VM,[call(G)|TODO]):-   set(VM.program_i) = TODO, !, my_subfti_call(call(G),VM,call_expanded(VM,G)).
+
+%fti(VM,Prog):- length(Prog,Len),Len>2, exceeded_objs_max_len(VM),!,set(VM.program_i)= [do_ending],!,length(VM.objs,Count),set(VM.objs_max_len) is Count+3.
+fti(VM,[Step|Program]):- functor(Step,F,_), ping_indiv_grid(F), \+ warn_missing_arity(Step,1), set(VM.program_i) = Program, !, my_subfti_call(Step,VM,call(Step, VM.grid)).
+fti(VM,[Step|Program]):- functor(Step,F,_), is_fti_step(F), \+ warn_missing_arity(Step,1), set(VM.program_i) = Program, !, my_subfti_call(Step,VM,call(Step,VM)).
+fti(VM,[Step|Program]):- functor(Step,F,_), is_fti_stepr(F), \+ warn_missing_arity(Step,1), set(VM.program_i) = Program, Step=..[F|ARGS], !, my_subfti_call(Step,VM,apply(F,[VM|ARGS])).
+fti(VM,[Step|Program]):- set(VM.program_i) = Program, one_fti_step(Step), !, my_subfti_call(Step,VM,one_fti(VM,Step)),!.
+
+%my_subfti_call(_Step,VM,Goal):- !, _OldObjs = VM.objs, !, my_submenu_call(Goal).
+
+my_subfti_call(Step,VM,Goal):-
+  my_subfti_vm_call(VM,my_submenu_call(Goal),GoodObjs,Added),
+  add_birth_if_missing(Step,Added,FixAdded),
+  append(GoodObjs,FixAdded,NewObjs),
+  set(VM.objs)=NewObjs.
+
+
+my_subfti_vm_call(VM,Goal,GoodObjs,Added):-  
+  OldObjs = VM.objs, 
+  my_submenu_call(Goal),
+  Objs = VM.objs,!,
+  pred_intersection(is_same_oids,OldObjs,Objs,_OldUpdated,GoodObjs,_Deleted,Added).
+
+
+% =====================================================================
+is_fti_step(larger_than).
+% =====================================================================
+larger_than(Mass,TODO,VM):- 
+  my_subfti_vm_call(VM,run_fti(VM,TODO),GoodObjs,Added),
+  include(not_less_mass(Mass),Added,FixAdded),
+  append(GoodObjs,FixAdded,NewObjs),
+  set(VM.objs)=NewObjs.
+  
+
+
+is_same_oids(O1,O2):- obj_to_oid(O1,OID1),obj_to_oid(O2,OID2),OID1=@=OID2.
+
 
 %fti(VM,[Step|Program]):- \+ missing_arity(Step,0), !, set(VM.program_i) = Program, my_submenu_call(call(Step)).
 
@@ -1939,6 +1978,7 @@ release_objs_lighter(Two,VM):-
   append_sets([VM.points|Points],set(VM.points)))).
 
 less_mass(Mass,Obj):- mass(Obj,M),M<Mass.
+not_less_mass(Mass,Obj):- mass(Obj,M), \+ M<Mass.
 
 
 mergable_objects(VM,O1,O2):- 
@@ -1973,6 +2013,7 @@ dir_mergeable_list(Ps1,Ps2,DirsOK,DirsNotOK):-
 
 mergable_dir(Ps1,Ps2,Dir):- member(C-P1,Ps1), member(C-P2,Ps2), is_adjacent_point(P1,Dir,P2),!.
 
+% one_fti(VM,List):- is_list(List),!,fti(VM,List).
 one_fti(VM,'all_rows'):-
  Grid = VM.grid_o,
  (\+ ground(Grid) -> true ;
@@ -2393,12 +2434,16 @@ sub_self(NewGrid,NewOther,TODO,VM):-
 % =====================================================================
 is_fti_step(i_subtract_objs).
 % =====================================================================
-i_subtract_objs(VM):-
+i_subtract_objs(VM):- fail,
   Grid = VM.grid,
-  localpoints(Grid,Ps),include(is_fgp,Ps,FGPs),length(FGPs,PsL),PsL<25,!,
-  run_fti(VM,[lo_dots,pbox_vm_special_sizes]).
-i_subtract_objs(VM):-
-  run_fti(VM,[nsew,colormass,lo_dots]).
+  localpoints(Grid,Ps),include(is_fgp,Ps,FGPs),length(FGPs,PsL),PsL<25, fail,!,
+  run_fti(VM,[pbox_vm_special_sizes,lo_dots]).
+
+i_subtract_objs(VM):-   
+  points_to_grid(VM.h,VM.v,VM.points,Grid),
+  print_grid(i_subtract_objs(points),Grid),
+  print_grid(i_subtract_objs(grid),VM.grid),
+  run_fti(VM,[colormass,pbox_vm_special_sizes,nsew,lo_dots]).
   
 % =====================================================================
 is_fti_step(fg_subtractions).
@@ -2451,7 +2496,8 @@ i_ogs_subobj(VM):-
   localpoints(Grid,Ps),include(is_fgp,Ps,FGPs),length(FGPs,PsL),PsL<25,!.
 
 i_ogs_subobj(VM):-
-  run_fti(VM,[nsew,colormass,lo_dots]).
+  run_fti(VM,[larger_than(3,nsew),colormass,lo_dots]).
+
 
 % =====================================================================
 is_fti_step(each_ogs_object).
@@ -2460,11 +2506,15 @@ each_ogs_object(TODO,VM):-
  must_det_ll((
   copy_term(VM.grid_o,StartGrid), 
   other_grid(StartGrid,Other), is_grid(Other),
+  all_ogs_123(StartGrid,Other,Hints))),
   %copy_term(VM.grid,This),  
+  must_det_ll_maplist(use_each_ogs(VM,TODO,StartGrid,Other),Hints).
+
+all_ogs_123(StartGrid,Other,Hints):- 
   all_ogs(t-o,StartGrid,Other,Hints1),
   all_ogs(o-t,Other,StartGrid,Hints2),
-  append(Hints1,Hints2,Hints))),
-  must_det_ll_maplist(use_each_ogs(VM,TODO,StartGrid,Other),Hints).
+  append(Hints1,Hints2,Hints).
+
 
 about_i_or_o(_-OorT,OorT):-!. about_i_or_o(TrimIO,OorT):- arg(1,TrimIO,IO),!,about_i_or_o(IO,OorT). about_i_or_o(_,t).
 
@@ -2592,8 +2642,9 @@ save_as_obj_group(ROptions,VM):-
   asserta_in_testid(arc_cache:individuated_cache(TID,GOID,ROptions,IndvSL)),
   nop((addObjectOverlap(VM,IndvSL))))),!.
 
-add_birth_if_missing(_,I,I):-!.
-add_birth_if_missing(_,O,O):- has_prop(birth(_),O),!.
+add_birth_if_missing(Birth,I,O):- is_list(I),maplist(add_birth_if_missing(Birth),I,O).
+%add_birth_if_missing(_,I,I):-!.
+%add_birth_if_missing(_,O,O):- has_prop(iz(birth(_)),O),!.
 add_birth_if_missing(Birth,I,O):- override_object(iz(birth(Birth)),I,O).
 
 

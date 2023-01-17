@@ -9,10 +9,10 @@
 
 :- set_prolog_flag(encoding,iso_latin_1).
 :- set_prolog_flag(stream_type_check,false).
-:- set_prolog_flag(xpce,false).
-:- set_prolog_flag(pce,false).
-:- set_prolog_flag(windows,false).
-:- set_prolog_flag(gui_tracer,false).
+%:- set_prolog_flag(xpce,false).
+%:- set_prolog_flag(pce,false).
+%:- set_prolog_flag(windows,false).
+%:- set_prolog_flag(gui_tracer,false).
 
 %:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_swish,true);true).
 :- set_prolog_flag(arc_term_expansion,false).
@@ -79,9 +79,9 @@ decl_gf(G):- must_det_ll((nonvar(G), !, my_assertz_if_new(is_decl_gf(G)))).
 decl_pt(G):- must_det_ll((nonvar(G), !, my_assertz_if_new(is_decl_pt(plain,G)))).
 decl_pt(How,G):- must_det_ll((nonvar(How),nonvar(G), !, my_assertz_if_new(is_decl_pt(How,G)))).
 :- set_prolog_flag(color_term,true).
-:- set_stream(current_output, tty(true)).
-:- set_stream(user_output, tty(true)).
-:- set_stream(user_error, tty(true)).
+%:- set_stream(current_output, tty(true)).
+%:- set_stream(user_output, tty(true)).
+%:- set_stream(user_error, tty(true)).
 %:- set_stream(user_output, newline(unix)).
 
 :- stream_property(S,file_no(2)), set_stream(S,tty(true)).
@@ -140,12 +140,15 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   set_guitracer:- ((getenv('DISPLAY',_) -> true ; setenv('DISPLAY','10.0.0.122:0.0'))),checkgui_tracer.
   unset_guitracer:- (unsetenv('DISPLAY')),checkgui_tracer.
   checkgui_tracer:- (getenv('DISPLAY',_) -> catch(call(call,guitracer),_,true) ; catch(call(call,noguitracer),_,true)).
-  
-  %:- catch(noguitracer,_,true).
-  %:- set_guitracer.
+
   :- unsetenv('DISPLAY').
-  :- catch(noguitracer,_,true).
+  :- set_prolog_flag(gui_tracer,false).
   %:- checkgui_tracer.
+  %:- catch(noguitracer,_,true).
+
+  :- set_guitracer.
+  :- catch(guitracer,_,true).  
+
   :- set_prolog_flag(toplevel_print_anon,false).
   :- set_prolog_flag(toplevel_print_factorized,true).
   
@@ -250,8 +253,6 @@ check_len(_).
 
 :- no_xdbg_flags.
 
-%must_det_ll(G):- !, call(G).
-%must_det_ll(X):- !,must_not_error(X).
 
 wno_must(G):- locally(nb_setval(no_must_det_ll,t),locally(nb_setval(cant_rrtrace,t),call(G))).
 
@@ -261,6 +262,8 @@ must_det_ll_maplist(P1,[H|T]):- must_det_ll(call(P1,H)), must_det_ll_maplist(P1,
 must_det_ll_maplist(_,[],[]):-!.
 must_det_ll_maplist(P2,[HA|TA],[HB|TB]):- must_det_ll(call(P2,HA,HB)), must_det_ll_maplist(P2,TA,TB).
 
+must_det_ll(G):- wants_html,!, ignore(notrace(G)).
+%must_det_ll(X):- !,must_not_error(X).
 must_det_ll(X):- nb_current(no_must_det_ll,t),!,call(X).
 must_det_ll(X):- \+ callable(X), !, throw(must_det_ll_not_callable(X)).
 must_det_ll((A*->X;Y)):- !,(must_not_error(A)*->must_det_ll(X);must_det_ll(Y)).
@@ -302,6 +305,7 @@ fail_odd_failure(G):- wdmsg(odd_failure(G)),rtrace(G), fail.
 
 
 %must_det_ll_failed(X):- predicate_property(X,number_of_clauses(1)),clause(X,(A,B,C,Body)), (B\==!),!,must_det_ll(A),must_det_ll((B,C,Body)).
+must_det_ll_failed(G):- wants_html,!, wdmsg(wants_html(must_det_ll_failed(G))).
 must_det_ll_failed(X):- notrace,is_guitracer,wdmsg(failed(X))/*,arcST*/,nortrace,trace, call(X).
 must_det_ll_failed(X):-  wdmsg(failed(X))/*,arcST*/,nortrace,trace,visible_rtrace([-all,+fail,+exception],X).
 % must_det_ll(X):- must_det_ll(X),!.
@@ -310,6 +314,7 @@ rrtrace(X):- rrtrace(etrace,X).
 
 is_guitracer:- getenv('DISPLAY',_), current_prolog_flag(gui_tracer,true).
 rrtrace(P1,X):- nb_current(cant_rrtrace,t),!,nop((wdmsg(cant_rrtrace(P1,X)))),!,fail.
+rrtrace(P1,G):- wants_html,!, wdmsg(wants_html(rrtrace(P1,G))).
 rrtrace(P1,X):- notrace, \+ is_guitracer,!,nortrace, arcST, sleep(0.5), trace,
    (notrace(\+ current_prolog_flag(gui_tracer,true)) -> call(P1,X); (trace,call(P1,X))).
 rrtrace(_,X):- notrace,nortrace,catch(call(call,gtrace),_,true),trace,call(X).
@@ -533,6 +538,7 @@ when_using_swish(G):- (current_prolog_flag(use_arc_swish,true)-> catch_log(G) ; 
 %as_if_webui(_Goal):- never_webui,!.
 as_if_webui(Goal):- in_pp(bfly),!,call(Goal).
 as_if_webui(Goal):- in_pp(swish),!,call(Goal).
+as_if_webui(Goal):- wants_html,!,call(Goal).
 as_if_webui(Goal):- with_toplevel_pp(http,Goal).
 /*
 as_if_webui(Goal):- wants_html,!,call(Goal).
@@ -578,7 +584,7 @@ ld_logicmoo_webui:-
 
 logicmoo_use_swish:-
   set_prolog_flag(use_arc_swish,true),
-  ld_logicmoo_webui,catch_log(call(call,webui_start_swish_and_clio)),
+  ld_logicmoo_webui,webui_start_swish_and_clio,
   http_handler('/swish', http_redirect(moved, '/swish/'), []).
 
 %arc_user(main):- !.

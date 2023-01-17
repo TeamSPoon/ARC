@@ -31,7 +31,7 @@ menu_options(Mode):-
   % show_pair_mode,
   !.
 print_menu_cmd(Key):- ignore((menu_cmd1(_,Key,Info,Goal),print_menu_cmd(Key,Info,Goal))).
-print_menu_cmd(Key,Info,_Goal):- wants_html,!, write('<br/>'),print_menu_cmd1(Info,do_menu_key(Key)).
+print_menu_cmd(Key,Info,_Goal):- wants_html,!, write('<br/>'),nonvar(Key),print_menu_cmd1(Info,user:do_web_menu_key(Key)).
 print_menu_cmd(_Key,Info,Goal):- format('~N '),print_menu_cmd1(Info,Goal).
 print_menu_cmd9(_Key,Info,Goal):- format(' '),print_menu_cmd1(Info,Goal).
 
@@ -43,7 +43,7 @@ write_http_link(Info,Goal):- nonvar(Goal),with_output_to(string(S),writeq(Goal))
   toplevel_pp(PP),
   %in_pp(PP),
   www_form_encode(S,A), 
-   sformat(SO,'<a href="/swish/lm_xref/?mouse_iframer_div=~w&cmd=~w" target="lm_xref">~w</a> ',[PP,A,Info]),!,
+   sformat(SO,'<a href="/swish/muarc/arcproc_right?mouse_iframer_div=~w&cmd=~w" target="lm_xref">~w</a> ',[PP,A,Info]),!,
    our_pengine_output(SO).
 
 shorten_text(Info,Info1):- \+ string(Info),!,sformat(S,'~w',[Info]),!,shorten_text(S,Info1).
@@ -213,7 +213,7 @@ interact(SelMax):- catch(interact0(SelMax),'$aborted',interact(SelMax)).
 interact0(_SelMax):- retract(wants_exit_menu),!.
 interact0(SelMax):- i_key(SelMax,Key),
     writeq(Key),%flush_tee,
-    locally(nb_setval(menu_key,Key),ignore((do_menu_key(Key)))),flush_tee,
+    do_web_menu_key(Key),flush_tee,
     interact0(SelMax).
 
 i_key(SelMax,Key):-
@@ -225,16 +225,20 @@ menu_goal(Goal):-
   pp(calling(Goal)),!, ignore(once((catch(my_menu_call(Goal),'$aborted',fail)*->!;(!,fail,trace,arcST,rrtrace(Goal))))),!,
    read_pending_codes(user_input,_Ignored2,[]),!.
 
+:- public(do_web_menu_key/1).
+:- export(do_web_menu_key/1).
+
+do_web_menu_key(Key):- locally(nb_setval(menu_key,Key),ignore((do_menu_key(Key)))).
+
 do_menu_key(-1):- !, arc_assert(wants_exit_menu). 
 do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), asserta_if_new(wants_exit_menu).
 do_menu_key('?'):- !, write_menu_opts('i').
-do_menu_key('M'):- !, clear_tee, make, wdmsg('Recompiled'),menu.
+do_menu_key('M'):- !, clear_tee, make, wdmsg('Recompiled'),real_list_undefined,menu.
 do_menu_key('W'):- !, report_suites.
 do_menu_key('P'):- !, switch_grid_mode,print_test.
 do_menu_key( ''):- !, fail.
 
 do_menu_key('d'):- !, dump_from_pairmode.
-
 
 do_menu_key(Num):- number(Num),!, update_changes, do_test_number(Num),!.
 do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num), number(Num), !, do_test_number(Num),!.
@@ -1113,7 +1117,7 @@ clear_test(TestID):- ensure_test(TestID),
    warn_skip(clear_saveable_test_info(TestID)),
    unload_test_file(TestID).
 
-clear_saveable_test_info(TestID):-
+clear_saveable_test_info(TestID):- 
    saveable_test_info(TestID,Info),
    erase_refs(Info).
    
@@ -1263,6 +1267,11 @@ print_single_pair:-
 get_thingy(In,Out,Gets):- 
   findall(W=GetO,(get_thingy1(In,Out,W,Get),nop(mass(Get,M)->M>0),most_d_colors(Get,_,GetO)),Gets).
 
+non_intersectiond(Black,Target,Target):- get_black(Black),!.
+non_intersectiond(Target,Black,Target):- get_black(Black),!.
+non_intersectiond(This,Target,Black):- This =@= Target, get_black(Black), !.
+non_intersectiond(This,_,That):- copy_term(This,That),!.
+
 get_thingy1(In,Out,"I minus O",NewGrid):-  maplist_ignore(fg_subtractiond,In,Out,NewGrid).
 get_thingy1(Out,In,"O shared I",NewGrid):-  maplist_ignore(fg_intersectiond,In,Out,NewGrid).
 get_thingy1(Out,In,"O minus I",NewGrid):-  maplist_ignore(fg_subtractiond,In,Out,NewGrid).
@@ -1323,6 +1332,13 @@ arc_grid(IO,Grid):-
   kaggle_arc_io(TestID,ExampleNum,IO,Grid).
 
 ensure_test(TestID,RealTestID):- fix_test_name(TestID,RealTestID),!,ensure_test(RealTestID).
+
+var_ensure_test(TestID):- ground(TestID), !, is_valid_testname(TestID).
+var_ensure_test(TestID):- var(TestID), !, ensure_test(TestID).
+var_ensure_test(TestID):- \+ ground(TestID), !, all_arc_test_name(TestID).
+
+var_ensure_test(TestID,OUT):- var_ensure_test(TestID),OUT=TestID,is_valid_testname(OUT).
+
 
 ensure_test(TestID):- nonvar(TestID),!, ignore(( is_valid_testname(TestID), really_set_current_test(TestID))).
 ensure_test(TestID):- \+ get_pair_mode(enire_suite),!,get_current_test(TestID).
@@ -1942,9 +1958,16 @@ clauses_predicate(M:F/N,P):-
                   \+ \+ predicate_property(M:P,number_of_clauses(_)), 
                    \+ predicate_property(M:P,imported_from(_)).
 
-uses_test_id(P1):- clauses_predicate(M:F/N,P),                    
+indicates_arg1_testid(var_ensure_test).
+indicates_arg1_testid(ensure_test).
+indicates_arg1_testid(testid_name_num_io).
+indicates_arg1_testid(fix_test_name).
+indicates_arg1_testid(is_valid_testname).
+indicates_arg1_testid(with_test_grids).
+
+uses_test_id(P1):- clauses_predicate(M:F/N,P), \+ indicates_arg1_testid(F),             
                    \+ \+ (clause(M:P,GG),first_cmpd_goal(GG,G),compound(G),functor(G,GF,_),
-                          \+ \+ member(GF,[ensure_test,testid_name_num_io,fix_test_name,with_test_grids]),
+                          \+ \+ indicates_arg1_testid(GF),
                           arg(1,P,Var1),arg(1,G,Var2),Var1==Var2),
                    N1 is N-1, functor(P1,F,N1),
                    \+ predicate_property(M:P1,static).

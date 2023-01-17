@@ -1,18 +1,11 @@
 {
   "files.exclude": {
     "BFLY0": true,
-    "prolog\\kaggle_arc2": true,
     "BFLY1": true,
     "butterfly_web": true,
     "prolog2": true,
-    "prolog\\kaggle_arc2222222111111": true,
-    "prolog\\kaggle_arc222\\.git..hide": true,
     "**/ImportantDocs": true,
-    "**/prolog/feeeeeee": true,
-    "**/prolog/SSSDDDD": true,
-    "**/prolog/NEWPL": true,
-    "**/prolog/KA": true,
-    "**/prolog/kaggle_arc222": true
+    "prolog\\kaggle_arc\\**": false
   },
   "editor.tabCompletion": "on",
   "diffEditor.codeLens": true,

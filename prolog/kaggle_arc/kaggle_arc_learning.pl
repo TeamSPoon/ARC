@@ -745,8 +745,9 @@ fix_groups(AG00,BG00,AG,BG):-
 
 
 maybe_fix_group(I,OO):-
-  extend_obj_proplist(I,AG0),  
-  predsort(sort_on(mapping_order),AG0,AG1),
+  extend_obj_proplist(I,AG0),
+  predsort(sort_on(mapping_order),AG0,AG01),
+  remove_singles_unneeded(AG01,AG1),
   maybe_exclude_whole(AG1,AG2),
   filter_redundant(AG2,AG),
   intersection(AG0,AG,Retained,_Removed,_Added),
@@ -2068,13 +2069,25 @@ filter_redundant(BS,BSSSR,Removed):- maplist(minfo_gp,BS,BSGP),
   filter_redundant_r(BSR,BSSS,Removed),
   reverse(BSSS,BSSSR).
 
+is_one_point(Obj1,HV1,C):- globalpoints(Obj1,Points),!,[C-HV1]=Points,nonvar(C).
+contains_point(CHV,Obj2):- globalpoints(Obj2,Points),!,member(CHV,Points).
+
+remove_singles_unneeded([],[]).
+remove_singles_unneeded(AG01,AG0):- 
+  select(Obj1,AG01,Rest), is_one_point(Obj1,HV,C),
+  member(Obj2,Rest),contains_point(C-HV,Obj2),!,
+  remove_singles_unneeded(Rest,AG0).
+remove_singles_unneeded(AG0,AG0).
+
+filter_redundant_r(BSR,RRest,[BS|Removed]):- fail,
+  select(gp(BS,[GP]),BSR,Rest), member(gp(_,[A,B|C]),Rest),member(OO,[A,B|C]),
+  OO=@=GP, !, filter_redundant_r(Rest,RRest,Removed).
 filter_redundant_r([gp(BS,GP)|BSR],[BS|BSSS],Removed):-
   findall(GPE,member(gp(_,GPE),BSR),GPS),flatten(GPS,Flat),
   intersection(GP,Flat,_Shared,Unique,_),Unique\==[],!,
   %pp_wcg(uniq=Unique),
   filter_redundant_r(BSR,BSSS,Removed).
-filter_redundant_r([gp(BS,_)|BSR],BSSS,[BS|Removed]):-
-  filter_redundant_r(BSR,BSSS,Removed).
+filter_redundant_r([gp(BS,_)|BSR],BSSS,[BS|Removed]):- filter_redundant_r(BSR,BSSS,Removed).
 filter_redundant_r([],[],[]).
 
 

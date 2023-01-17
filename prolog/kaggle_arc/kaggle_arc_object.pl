@@ -1248,15 +1248,21 @@ localpoints_include_bg(I,X):- must_be_free(X),  \+ is_grid(I), !, must_det_11((l
 localpoints_include_bg(Grid,Points):- is_grid(Grid),!, must_det_11((grid_to_points_include_bg(Grid,Points),is_cpoints_list(Points))),!.
 
 
+object_grid(I,G):- is_grid(I),!,G=I.
+object_grid(I,G):- indv_props(I,grid(G)),!.
+object_grid(Group,List):- is_group(Group),!,override_group(object_grid(Group,List)),!.
+object_grid(ObjRef,List):- \+ is_object(ObjRef), into_obj(ObjRef,Obj), is_object(Obj), !,object_grid(Obj,List).
+object_grid(I,G):- object_localpoints(I,LP),vis2D(I,H,V),!,points_to_grid(H,V,LP,G),!.
 
-object_localpoints(obj(I),_):- member(obj(_),I),!,break.
-object_localpoints(I,XX):- must_be_free(XX), stack_check_or_call(3000,(dmsg(stackcheck>3000),break)),
- must_det_ll((indv_props_list(I,L), object_localpoints0(I,L,XX),is_cpoints_list(XX))),!.
+%object_localpoints(obj(I),_):- member(obj(_),I),!,break.
+object_localpoints(I,XX):- must_be_free(XX), %stack_check_or_call(3000,(dmsg(stackcheck>3000),break)),
+ must_det_ll((indv_props_list(I,L),
+   setup_call_cleanup(flag('$olp',X,X+1),(X<30,object_localpoints0(I,L,XX)),flag('$olp',_,X)),
+   is_cpoints_list(XX))),!.
 
 object_localpoints0(_,L,X):- member(localpoints(X),L),is_list(X),!.
 object_localpoints0(I,L,X):- member(globalpoints(XX),L),is_list(XX),loc2D(I,LocX,LocY),!,deoffset_points(LocX,LocY,XX,X).
-
-object_localpoints0(I,L,X):- writeq(I=L), trace,object_localpoints1(I,L,X).
+object_localpoints0(I,L,X):- object_localpoints1(I,L,X).
 
 object_localpoints1(I,_L,X):- object_localpoints3(I,X),!.
 object_localpoints1(I,_L,X):- object_localpoints4(I,X),!.
@@ -1264,9 +1270,9 @@ object_localpoints1(I,_L,X):- object_localpoints4(I,X),!.
 object_localpoints3(I,XX):-  
  must_det_ll((norm_grid(I,NormGrid), norm_ops(I,Ops),unreduce_grid(NormGrid,Ops,LocalGrid),grid_to_points(LocalGrid,XX))).
 
-norm_grid(I,NormGrid):- indv_props(I,norm_grid(NormGrid))*->true;(object_grid(I,Grid), normalize_grid(_NormOps,Grid,NormGrid)).
+norm_grid(I,NormGrid):- indv_props(I,norm_grid(NormGrid))*->true;(fail,object_grid(I,Grid), normalize_grid(_NormOps,Grid,NormGrid)).
 
-norm_ops(I,NormOps):- indv_props(I,norm_ops(NormOps))*->true;(object_grid(I,Grid), normalize_grid(NormOps,Grid,_NormGrid)).
+norm_ops(I,NormOps):- indv_props(I,norm_ops(NormOps))*->true;(fail,object_grid(I,Grid), normalize_grid(NormOps,Grid,_NormGrid)).
 
 object_localpoints4(I,LPoints):-  
  must_det_ll((colorlesspoints(I,RotLCLPoints), 
@@ -1298,7 +1304,7 @@ combine_pen([P1|L],[C|PenColors],Reset,[C-P1|XX]):- is_color(C),!,
   combine_pen(L,PenColors,Reset,XX).
   
 
-colorlesspoints(I,X):- is_object(I), indv_props_list(I,L),(member(colorlesspoints(X),L)->true; (member(iz(sid(ShapeID)),L),is_shape_id_for(X,ShapeID))).
+colorlesspoints(I,X):- is_object(I),!, indv_props_list(I,L),(member(colorlesspoints(X),L)->true; (member(iz(sid(ShapeID)),L),is_shape_id_for(X,ShapeID))).
 colorlesspoints(G,X):- is_group(G),!,mapgroup(colorlesspoints,G,Points),append_sets(Points,X).
 % returns the objects decolorize localpoints
 colorlesspoints(I,ShapePoints):- into_grid(I,Grid),grid_to_shape(Grid,_RotG,_SH,_SV,ShapePoints,_PenColors).
@@ -1381,11 +1387,6 @@ get_instance_method(Obj,Compound,F):- is_object(Obj), compound(Compound),compoun
 pen(I,C):- indv_props(I,pen(C)),!.
 
 
-object_grid(I,G):- is_grid(I),!,G=I.
-object_grid(Group,List):- is_group(Group),!,override_group(object_grid(Group,List)),!.
-object_grid(ObjRef,List):- \+ is_object(ObjRef), into_obj(ObjRef,Obj),!,object_grid(Obj,List).
-object_grid(I,G):- indv_props(I,grid(G)),!.
-object_grid(I,G):- odd_failure((localpoints(I,LP),vis2D(I,H,V),points_to_grid(H,V,LP,G))),!.
 
 object_ngrid(Obj,GNGrid):- object_grid(Obj,Grid), into_ngrid(Grid,GNGrid).
 
@@ -1393,7 +1394,6 @@ object_ngrid_symbols(Obj,Syms):- object_ngrid(Obj,NGrid), ngrid_syms(NGrid,Syms)
 
 ngrid_syms(NGrid,Syms):- 
  subst_syms(bg,NGrid,GFlatSyms),get_ccs(GFlatSyms,Syms).
-
 
 find_syms('-'). find_syms('|'). 
 find_syms('='). find_syms('!'). 

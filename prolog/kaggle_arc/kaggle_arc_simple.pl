@@ -30,7 +30,7 @@ try_easy_io(Name,I,O):-
  ignore((
   Template = try_something(W,Did,I,M,SS),
   findall(Template,
-    (wots(SS,weto(maybe_try_something_easy(I,M,Did))),count_changes(M,O,1,W),(W==1->!;true)),
+    (wots(SS,arc_weto(maybe_try_something_easy(I,M,Did))),count_changes(M,O,1,W),(W==1->!;true)),
      List),
   sort(List,[Template|_]),
   %ignore((call(P2,I,II),call(P2,O,OO),
