@@ -481,53 +481,12 @@ set_http_debug_error(Bool):-
 
 echo_file(File):- read_file_to_string(File,Str,[]),write(Str).
 
-write_ddm:- !,
-  format('<html><head>
-<script type="text/javascript">
-
-function clickGrid(thiz) {
-  console.log("clickGrid(" + thiz + ")");
-}
-
-function clickAccordian(thizn) {
-  var thiz = document.getElementById(thizn);
-  console.log("clickAccordian(" + thiz + ")");
-  thiz.classList.toggle("active");
-  var panel = thiz.nextElementSibling;
-  panel.classList.toggle("panel_hidden");
-  panel.classList.toggle("panel_shown");
-  if (panel.style.display === "block") {
-    panel.style.display = "none";
-  } else {
-    panel.style.display = "block";
-  }
-}
-
-var TwoFiftyPx = "250px";
-
-function toggleNavL(Name) {
-  if (document.getElementById("main").style.marginLeft != "10px") {
-    document.getElementById(Name).style.width = "0px";
-    document.getElementById("main").style.marginLeft = "10px";
-  } else {
-    document.getElementById(Name).style.width = TwoFiftyPx;
-    document.getElementById("main").style.marginLeft = TwoFiftyPx;
-  }
-}
-
-function toggleNavR(Name) {
-  if (document.getElementById(Name).style.width != "0px") {
-    document.getElementById(Name).style.width = "0px";
-    document.getElementById("main").style.marginRight = "0px";
-  } else {
-    document.getElementById(Name).style.width = TwoFiftyPx;
-    document.getElementById("main").style.marginRight = TwoFiftyPx;
-  }
-}
+write_ddm:- !, format('<html><head><script type="text/javascript"> 
+~@
 </script></head><body>
 <style>
 ~@
-</style>',[echo_file('kaggle_arc_ui_html.css')]).
+</style>',[echo_file('kaggle_arc_ui_html.js'),echo_file('kaggle_arc_ui_html.css')]).
 
 write_ddm:- get_time(Now),Now10M is floor(Now * 10_000_000),
   update_changes, format('<html><head>

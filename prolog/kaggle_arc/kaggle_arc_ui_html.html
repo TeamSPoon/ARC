@@ -11,38 +11,36 @@
 
     <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
 
-    <script src="kaggle_arc_ui_html.js"></script>
-    ""
-    <link rel="stylesheet" type="text/css" href="kaggle_arc_ui_html.css">
+    <!--script src="kaggle_arc_ui_html.js"></script-->
 
-</head>
+    <link rel="stylesheet" type="text/css" href="./kaggle_arc_ui_html.css">
 
-<body>
 
     <script type="text/javascript">
-        function LoadFrame() {
+		
+		function  checkIFrameMainURL() {
+			var iframe = document.getElementById("lm_xref");
+			var srch = iframe.contentWindow.location.search;
+            var thisUrl = window.location.href;
+            if(!thisUrl.endsWith(srch)) {
+				new_url = window.location.pathname + srch;
+				window.history.pushState({}, null, new_url);
+			}
+		}
+        
+
+		function LoadFrame() {
+			var iframe = document.getElementById("lm_xref");
+		   // Remove the unloadHandler in case it was already attached.
+		   // Otherwise, the change will be dispatched twice.
+		   iframe.contentWindow.removeEventListener("beforeunload", (e)=>{checkIFrameMainURL();});
+		   iframe.contentWindow.addEventListener("beforeunload", (e)=>{checkIFrameMainURL();});
+		   iframe.contentWindow.removeEventListener("readystatechange", (e)=>{checkIFrameMainURL();});
+		   iframe.contentWindow.addEventListener("readystatechange", (e)=>{checkIFrameMainURL();});
 			var src = "/arcproc_main" + location.search;
 			var iframeE = document.getElementById('lm_xref');
 			iframeE.style.width= document.getElementById("main").style.width;
 			iframeE.setAttribute("src",src);
-        }
-
-        function clickGrid(thiz) {
-            console.log("clickGrid(" + thiz + ")");
-        }
-
-        function clickAccordian(thizn) {
-            var thiz = document.getElementById(thizn);
-            console.log("clickAccordian(" + thiz + ")");
-            thiz.classList.toggle("active");
-            var panel = thiz.nextElementSibling;
-            panel.classList.toggle("panel_hidden");
-            panel.classList.toggle("panel_shown");
-            if (panel.style.display === "block") {
-                panel.style.display = "none";
-            } else {
-                panel.style.display = "block";
-            }
         }
 
         var TwoFiftyPx = "250px";
@@ -72,79 +70,24 @@
         }
 
 
-
-        /* window.addEventListener("click", (e) => {
-           e = e || window.event;
-           console.log(e.target);  // to get the element
-           console.log(e.target.tagName);  // to get the element tag name alone
-           console.log(e.target.id);  // to get the element tag name alone
-           var target = e.target|| e.srcElement;
-           while(target.id=="") {
-             if (target.onclick != undefined) {
-               target.click();
-             }
-             if(target.classList.contains("accordian")) {
-               clickAccordian(target);
-             }
-             target = target.parentElement;
-           }
-           console.log(target);  // to get the element
-           console.log(target.tagName);  // to get the element tag name alone
-           if (target.tagName!="TABLE") {
-            e.stopPropagation()f;
-           }
-           console.log(target.id);  // to get the element tag name alone
-         });   */
-
         window.onload = (event) => {
             console.log("page is fully loaded");
             LoadFrame();
         };
 
-
-        function makeFramesetVerticallyResizable(frameSetId) {
-            var frameSet = document.getElementById(frameSetId);
-
-            // insert a vertical box called resizeHandle into the righthand document:
-            var frameDoc = frameSet.children[1].contentDocument;
-            var resizeHandle = frameDoc.createElement("div");
-            resizeHandle.style.backgroundColor = "#999999"; // remove this line to hide the handle
-            resizeHandle.style.position = "fixed";
-            resizeHandle.style.width = "100%";
-            resizeHandle.style.height = "6px";
-            resizeHandle.style.top = "3px"; // put it a little away from the border so firefox can detect dragging to the left
-            resizeHandle.style.left = "0px";
-            resizeHandle.style.cursor = "n-resize";
-            resizeHandle.style.zIndex = 99999;
-            frameDoc.body.insertBefore(resizeHandle, frameDoc.body.firstChild);
-
-            // Drag functions:
-            var dragStartScreenY = null;
-            resizeHandle.draggable = true;
-            resizeHandle.ondragstart = function(event) {
-                dragStartScreenY = event.screenY;
-                event.dataTransfer.setData('text/plain', 'dummy');
-                event.dataTransfer.effectAllowed = 'move';
-            };
-            resizeHandle.ondrag = function(event) {
-                if (dragStartScreenY !== null && event.screenY != 0) { // we have a mouse position ?
-                    var offset = event.screenY - dragStartScreenY;
-                    var height = frameSet.firstElementChild.offsetHeight;
-                    var newHeight = height + offset;
-                    frameSet.rows = "" + newHeight + ",*";
-                    dragStartScreenY = event.screenY;
-                }
-            }
-            resizeHandle.ondragend = resizeHandle.ondrag; // Firefox does not give us the current mouse position during dragging, so resize the frames at the end        
-        }
     </script>
+
+
+
+</head>
+
+<body>
     <div id="mySideNavL" class="sidenavL">
         <a href="javascript:void(0)" class="closebtnL" onclick="toggleNavL('mySideNavL')">×</a>
         <style type="text/css">
             a {
                 color: cyan;
-            }
-            
+            }            
             body {
                 background-blend-mode: difference;
                 mix-blend-mode: difference
@@ -687,8 +630,7 @@
         <a href="arcproc_main?cmd=l&task=1d398264" target="lm_xref">(l)ist special tests to run,</a> &nbsp;
 
         <a href="arcproc_main?cmd=clear_tee%2cupdate_changes&task=1d398264" target="lm_xref">recomple this progra(m),</a> &nbsp;
-        <a href="arcproc_main?cmd=force_full_tee%2creally_cls&task=1d398264" target="lm_xref">(c)lear the scrollback
-            buffer,</a> &nbsp;
+        <a href="arcproc_main?cmd=force_full_tee%2creally_cls&task=1d398264" target="lm_xref">(c)lear the scrollback buffer,</a> &nbsp;
         <a href="arcproc_main?cmd=clear_training%2cclear_test&task=1d398264" target="lm_xref">(C)lear cached test info,</a> &nbsp;
         <a href="arcproc_main?cmd=call_dsl&task=1d398264" target="lm_xref">(r)un DSL code,</a> &nbsp;
         <a href="arcproc_main?cmd=true&task=1d398264" target="lm_xref">(Q)uit Menu,</a> &nbsp;
@@ -781,7 +723,7 @@
 
 
     <div id="main"><span style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0; position: fixed" onclick="toggleNavL('mySideNavL')">&#9776; Test Suites</span>
-        <pre></pre><input type="checkbox" id="accordian_82" class="hidecontent"><label for="accordian_82">
+        <input type="checkbox" id="accordian_82" class="hidecontent"><label for="accordian_82">
             <div style="all: initial;">
                 <div class="faint">
                     <font color="red" style="filter: brightness(85%);">
@@ -804,7 +746,7 @@
         </label>
         <div class="content hidecontent">
             <p>Content for first Accordion.</p>
-            <pre></pre><input type="checkbox" id="accordian_83" class="hidecontent"><label for="accordian_83">
+            <input type="checkbox" id="accordian_83" class="hidecontent"><label for="accordian_83">
                 <div style="all: initial;">
                     <div class="faint">
                         <font color="red" style="filter: brightness(85%);">
@@ -849,13 +791,13 @@
                 font-size: small;
             } 
         </style>
-        <pre><a href="arcproc_main?cmd=prev_test&task=1d398264" target="lm_xref">prev_test</a>
+   <pre><a href="arcproc_main?cmd=prev_test&task=1d398264" target="lm_xref">prev_test</a>
     <a href="arcproc_main?cmd=print_all_info_for_test&task=1d398264" target="lm_xref">print_all_info_for_test</a>
     <a href="arcproc_main?cmd=next_test&task=1d398264" target="lm_xref">next_test</a>
     <a href="arcproc_main?cmd=331&task=1d398264" target="lm_xref">331</a>
-        </pre>
-       </pre>
-         <iframe src="/arcproc_main?cmd=331&task=1d398264" width="1024" height="100%" frameborder="0" name="lm_xref" id="lm_xref" style="width: 100%" scrolling="auto">
+   </pre>
+      
+         <iframe src="/arcproc_main?cmd=331&task=1d398264" onLoad="checkIFrameMainURL()" width="1024" height="100%" frameborder="0" name="lm_xref" id="lm_xref" style="width: 100%" scrolling="auto">
     </div>
     </body>
 </html>
