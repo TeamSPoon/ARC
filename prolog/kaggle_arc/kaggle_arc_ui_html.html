@@ -101,7 +101,6 @@
             LoadFrame();
         };
 
-        LoadFrame();
 
         function makeFramesetVerticallyResizable(frameSetId) {
             var frameSet = document.getElementById(frameSetId);
@@ -622,7 +621,7 @@
     <div id="mySideNavR" class="sidenavR">
         <a href="javascript:void(0)" class="closebtnR" onclick="toggleNavR('mySideNavR')">×</a> With selected test: v('1d398264') example(trn+0)
 
-        <a href="arcproc_main?cmd=t&task=1d398264" target="lm_xref">You may fully (t)rain from examples</a>
+        <a href="arcproc_main?cmd=i&task=1d398264" target="lm_xref">You may fully (t)rain from examples</a>
 
         <a href="arcproc_main?cmd=%27T%27&task=1d398264" target="lm_xref">(T)rain Mode switches between:
             'entire_suite','whole_test','single_pair' (currently: single_pair)</a>
@@ -856,7 +855,7 @@
     <a href="arcproc_main?cmd=331&task=1d398264" target="lm_xref">331</a>
         </pre>
        </pre>
-         <iframe src="/arcproc_main" width="1024" height="100%" frameborder="0" name="lm_xref" id="lm_xref" scrolling="auto">
+         <iframe src="/arcproc_main?cmd=331&task=1d398264" onload="LoadFrame()" width="1024" height="100%" frameborder="0" name="lm_xref" id="lm_xref" style="width: 100%" scrolling="auto">
     </div>
     </body>
 </html>
