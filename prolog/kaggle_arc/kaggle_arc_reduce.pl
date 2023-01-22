@@ -4,6 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
+:- encoding(iso_latin_1).
 :- include(kaggle_arc_header).
 
 :- use_module(library(nb_set)).
@@ -167,6 +168,7 @@ solid_lines(Grid,Ns,C):- findall(N1,(nth1(N1,Grid,Row1),entire_row(Row1)),Ns),le
 
 too_small_reduce(H,_L,Two):- H=<Two. %X=<N,Y=<N,!.
 
+:- style_check(-singleton).
 
 reduce_1op(_Type,Len1,Half1,PassNo,GridIn,[],Out):- GridIn = [[C1,C1]],GridIn = Out,!.
 reduce_1op(_Type,Len1,Half1,PassNo,GridIn,[],Out):- GridIn = [[C1],[C1]],GridIn = Out,!.
@@ -312,6 +314,8 @@ reduce_1op(Types,Half,Len,_,Grid,grav_unrot180(RotG),Shape):- fail,
 
 reduce_1op(Types,Half,Len,_,Grid,grav_unrot(RotG),Shape):- fail,
    once(grav_roll(Grid,RotG,Shape)),RotG\==sameR.
+
+:- style_check(+singleton).
 
 /*
 reduce_1op(Types,Half,Len,_,Grid,left_right(Left,Reduced),GridR):- fail, 

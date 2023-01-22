@@ -4,6 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
+:- encoding(iso_latin_1).
 :- include(kaggle_arc_header).
 
 
@@ -165,7 +166,7 @@ into_lib_object2(ShapeProps,ScaledGrid,LibObj):-
   %ppa(grid_colors(ScaledGrid,SPoints)),
   globalpoints_maybe_bg(ScaledGrid,SPoints)))),
   G = make_indiv_object_no_vm(into_lib_object2,H,V,[iz(into_lib_object),grid(ScaledGrid),vis2D(H,V)|ShapeProps],SPoints,LibObj),
-  catch(G,E,(arcST,wdmsg(E=G),trace,G)).
+  catch(G,E,(arcST,wdmsg(E=G),atrace,G)).
 
 % todo temp
 sortshapes(List,Set):- my_list_to_set_cmp(List, using_compare(shape_key), Set).
@@ -214,7 +215,7 @@ from_monochrome4(_FG,BG,Color,Mono):- is_bg_color(Color), apply_recolor(BG,Color
 from_monochrome4(FG,_BG,Color,Mono):- is_fg_color(Color), apply_recolor(FG,Color,Mono),!.
 
 apply_recolor(Izer,Color,Mono):- 
-  (is_color(Izer)->copy_term(Izer,Mono);( \+ missing_arity(Izer,2) -> call(Izer,Color,Mono); ( \+ missing_arity(Izer,1) -> call(Izer,Mono)))).
+  (is_color(Izer)->copy_term(Izer,Mono);( callable_arity(Izer,2) -> call(Izer,Color,Mono); ( callable_arity(Izer,1) -> call(Izer,Mono)))).
 
 
 into_monochrome3(MonoP2,Color,Mono):- into_mono3(MonoP2,Color,Mono).
@@ -527,7 +528,7 @@ show_shape_lib(Name):- make,
 
 clear_shape_lib(Name):- 
   findall(_,(clause(in_shape_lib(Name,_),true,Ref),erase(Ref)),L),
-  length(L,Len),pp(clear_shape_lib(Name)=Len),
+  length(L,Len),(Len > 0 -> pp(clear_shape_lib(Name)=Len) ; true),
   nop(show_shape_lib(Name)).
  
 shape_lib_expanded(Name,GallerySOS):- 

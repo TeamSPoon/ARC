@@ -22,7 +22,7 @@ make_gclip_cache_file:- exists_file('make_gclip_cache.pl'),!.
 make_gclip_cache_file:- 
  tell('make_gclip_cache.pl'),
 
- format(':- style_check(-singletons). ~n'),
+ format(':- style_check(-singleton). ~n'),
  make_gclip_cache_0,
  told.
 
@@ -139,7 +139,7 @@ within1of(H,HH):- freeze(HH, ( D is abs(H-HH), D =< 1 )).
 list_upto(Size,List,Some):- length(List,L),(L=<Size ->Some=List ; (length(Some,Size),append(Some,_,List))).
 
 pbox_vm(GH,GV,GridI0,Sizes_S_L,VM):-
-   \+ \+ (length(Sizes_S_L,A),wdmsg(use_sizes(A)),list_upto(20,Sizes_S_L,Some),print(Some)),
+   % \+ \+ (length(Sizes_S_L,A),list_upto(20,Sizes_S_L,Some),wdmsg(use_sizes(A)),print(Some)),
    get_black(Black),
    subst_2L([wbg,bg],[Black,Black],GridI0,GridI),
    mapgrid(assign_plain_var_with(Black),GridI,GridM),
@@ -536,7 +536,7 @@ edge_or_center(center,C,List):- length(List,Len), Center is 1 + floor(Len/2),nth
   | T t   t T |
   | T t t t T |
   | T T T T T |
-   ¯¯¯¯¯¯¯¯¯¯¯
+   -----------
 */
 not_all_same(C,List):- \+ maplist(==(C),List).
 is_all_same(C,List):- maplist(=(C),List).

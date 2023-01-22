@@ -930,17 +930,17 @@ showdiff_objects1(change_obj(N,O1,O2)):-
 showdiff_objects1(XY):- pp(showdiff_objects(XY)),!.
 
 print_sames(N):- is_list(N),!, maplist(print_sames,N).
-print_sames(N):- format('\t'), pp_no_nl(N),probably_nl.
+print_sames(N):- format('\t'), pp_no_nl(N),nl_if_needed_ansi.
 
 print_diffs(D,N):- is_list(N),!, maplist(print_diffs(D + 1),N).
 print_diffs(D,diff(List1->List2)):- \+ is_points_list(List1), \+ is_points_list(List2), !,  
      n_tabs(D-1), print_list_of(print_diffs(D + 2),uniqLeft,List1),print_list_of(print_diffs(D + 1),uniqRight,List2).
-print_diffs(D,N):- n_tabs(D), pp_no_nl(N),probably_nl.
+print_diffs(D,N):- n_tabs(D), pp_no_nl(N),nl_if_needed_ansi.
 
 n_tabs(D):- DD is D, forall(between(1,DD,_),format('\t')).
 
 print_hints(N):- is_list(N),!, maplist(print_hints,N).
-print_hints(N):- format('\t'), pp_no_nl(N),probably_nl.
+print_hints(N):- format('\t'), pp_no_nl(N),nl_if_needed_ansi.
 
 excl_diff(C):- var(C),!,fail.
 excl_diff(diff(A->_)):- !, excl_diff(A).
@@ -995,7 +995,7 @@ sprop_of(reshape_and_recolor,localpoints).
 
   %pp(remove_sames(II,OO)),
 %  select(C,IIR,IIR2),compound(C),generalize(C,M),select(M,OOR,OOR2),
-  %trace,diff_terms(IIR,OOR,OUT),!.
+  %atrace,diff_terms(IIR,OOR,OUT),!.
   
 /*
   append(L,[A|R],II),append(L,[B|R],OO),
@@ -1007,7 +1007,7 @@ needs_indivs(I,_):- is_object(I),!,fail.
 needs_indivs(globalpoints(O),O):- !.
 needs_indivs(I,O):- is_gridoid(I), \+ is_group(I),!, globalpoints_maybe_bg(I,O),!,I\==O.
 %needs_indivs(I,O):- is_grid(I),_unshared_indivs(I,O),!.
-needs_indivs(I,O):- is_gridoid(I), \+ is_group(I), arcST, trace, compute_unshared_indivs(I,O),!.
+needs_indivs(I,O):- is_gridoid(I), \+ is_group(I), arcST, atrace, compute_unshared_indivs(I,O),!.
 
 %diff_terms(IPs,OPs,Difs2):- diff_terms(IPs,OPs,Difs2).
 
@@ -1183,7 +1183,7 @@ list_diff_recurse(I,O,[diff(I->O)]):- !.
 list_diff_recurse([CI|II],[CO|OO],D1D):- must_det_ll(diff2_terms(CI,CO,D1)),!,
        list_diff_recurse(II,OO,D),!, combine_diffs(D1,D,D1D),!.
 
-%object_props_diff(I,O,diff(_,_)):- trace,!.
+%object_props_diff(I,O,diff(_,_)):- atrace,!.
 object_props_diff(I,O,D):- simplify_objs_l(I,II),!,simplify_objs_l(O,OO),!, list_diff_recurse(II,OO,D).
 
 %kv_list_diff(Style,I,O,D1D):- select_two_0(I,O,CI,CO,II,OO),!,kv_list_diff(Style,II,OO,D1D).
@@ -1363,7 +1363,7 @@ proportional_or_same(G1,G2,Out):- unused_proportion(G1,G2,Out),!.
 proportional_or_same(A1,A2,A1):- A1==A2,!.
 proportional_or_same(L1,L2,LR):- proportional(L1,L2,LR).
 
-on_x_log_and_fail(G):- catch(G,E,(wdmsg(red((E -> G))),trace,G,fail)).
+on_x_log_and_fail(G):- catch(G,E,(wdmsg(red((E -> G))),rrtrace(G),fail)).
 
 %proportional(N1,N2,N):- is_object(N1),is_object(N2),!,proportional_objs(N1,N2,N).
 %proportional(N1,N2,N):- is_grid(N1),is_grid(N2),!,proportional_grids(N1,N2,N).

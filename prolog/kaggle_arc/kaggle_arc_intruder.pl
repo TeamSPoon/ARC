@@ -25,7 +25,7 @@ test( " Fill the smallest square hole?",
 |       N         N       |   |       ?         ?       |
 |       N         N       |   |       ?         ?       |
 |       N N N N N N       |   |       ? ? ? ? ? ?       |
- ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯     ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯").
+ -------------------------     -------------------------").
 :- multifile learn_shapelib/7.
 :- discontiguous learn_shapelib/7.
 learn_shapelib(PairName,In,Out,IH,IV,OH,OV):-
@@ -82,7 +82,7 @@ current_neurons(NeuralVM):- luser_getval(system_props,NeuralVM).
 :- ht_new(NeuralVM), luser_linkval(system_props,NeuralVM).
 
 % Grid subtraction
-learn_intruders(PairName,In,Out,IH,IV,OH,OV):- %trace, 
+learn_intruders(PairName,In,Out,IH,IV,OH,OV):- %atrace, 
   current_neurons(NeuralVM),
   set_prop_of(NeuralVM,NeuralVM,in,In),
   set_prop_of(NeuralVM,NeuralVM,out,Out),
@@ -175,7 +175,7 @@ in_out_xform(NeuralVM,PairName,StartInOut,ResultInOut,[DONE|MORETODO]):-
 
 
 maybe_in_out_xform(NeuralVM,PairName,StartInOut,NextStartInOut,DONE):-
- arcST,trace,
+ arcST,atrace,
  DONE=withStuff(SourceType,StuffType,TargetType,OverlapType,WhatWithType),
   must_det_ll((
     maplist(call(SourceType,NeuralVM,PairName),StartInOut,FromInOut),

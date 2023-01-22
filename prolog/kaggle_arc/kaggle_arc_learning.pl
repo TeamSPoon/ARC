@@ -58,7 +58,7 @@ s_p_g(G,_):- term_is_ansi(G),!,write(G),!.
 %orpt1(G):- write(G),!.
 
 orpt(G):- sub_term(E,G),compound(E),E=debug_var(N,V),!,subst(G,E,was_debug_var(N,V),GG),subst(GG,V,'$VAR'(N),GGG),orpt(GGG).
-orpt(G):- !, \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N'), ignore(wcg(orange,G)))).
+orpt(G):- !, \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), nl_if_needed, ignore(wcg(orange,G)))).
 
 %wcg(_,G):- pp_wcg(G),!.
 wcg(O,G):- pp_safe(O,(call(pp_wcg(G)))),!.
@@ -413,9 +413,9 @@ banner_grids(Color,I,Message1,O,Message2):-
  ignore((
     banner_lines(Color),
     print_side_by_side(Color,I,Message1,_,O,Message2),
-    format('~N'),pp_safe(Color,Message1),
-    format('~N'),pp_safe(Color,Message2),
-    format('~N'),
+    nl_if_needed,pp_safe(Color,Message1),
+    nl_if_needed,pp_safe(Color,Message2),
+    nl_if_needed,
     banner_lines(Color))).
 
 arcdbg_info(Color, Info):- banner_lines(Color), arcdbg(Info), banner_lines(Color).
@@ -2036,7 +2036,7 @@ ensure_group_prop(Prop):- var(Prop),!,group_prop(Prop).
 ensure_group_prop(_).
 
 
-%pp_safe(O):- format('~N'),print(O),nl.
+%pp_safe(O):- nl_if_needed,print(O),nl.
 use_test_associatable_group_real(In,SolutionO):- 
  must_det_ll((
   once((listify(In,In1), visible_order_fg(In1,In2))), 
@@ -2215,7 +2215,7 @@ matches_close_prop(In,Prop,List):-
   maplist(arg(2),OutLS2SS,OutLS2SSBest),
   last(OutLS2SSBest,Best),
   globalpoints(Best,OGPoints),  
-  points_to_grid(OGPoints,Sol))),trace.*/
+  points_to_grid(OGPoints,Sol))),atrace.*/
 
 use_test_associatable(In,OutR):- 
   findall(InS,simplify_for_matching_nondet(lhs,In,InS),InL),
@@ -2410,7 +2410,7 @@ find_by_shape(Grid,Find,Founds):-
  Prog = 
   (all_rotations(F,F1),
    %print_grid(F1),!,
-   find_ogs(H,V,F1,Grid),% trace,
+   find_ogs(H,V,F1,Grid),% atrace,
 
    grid_to_points(F1,GH,GV,Points),
    pp_safe(Points),

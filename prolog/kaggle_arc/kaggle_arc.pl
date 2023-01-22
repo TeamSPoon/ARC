@@ -4,10 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-
 :- encoding(iso_latin_1).
-
-:- set_prolog_flag(encoding,iso_latin_1).
 :- set_prolog_flag(stream_type_check,false).
 %:- set_prolog_flag(xpce,false).
 %:- set_prolog_flag(pce,false).
@@ -137,17 +134,23 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   :- set_prolog_flag(access_level,system).
   
   :- SL  is 2_147_483_648*8*4, set_prolog_flag(stack_limit, SL ).
-  set_guitracer:- ((getenv('DISPLAY',_) -> true ; setenv('DISPLAY','10.0.0.122:0.0'))),checkgui_tracer.
+  :- if(current_prolog_flag(xpce,true)).
+  set_display:- ((getenv('DISPLAY',_) -> true ; setenv('DISPLAY','10.0.0.122:0.0'))).
+  :- set_display.
+  :- endif.
+  set_guitracer:- set_display,checkgui_tracer.
   unset_guitracer:- (unsetenv('DISPLAY')),checkgui_tracer.
   checkgui_tracer:- (getenv('DISPLAY',_) -> catch(call(call,guitracer),_,true) ; catch(call(call,noguitracer),_,true)).
 
   :- unsetenv('DISPLAY').
+
   :- set_prolog_flag(gui_tracer,false).
   %:- checkgui_tracer.
   %:- catch(noguitracer,_,true).
 
+  :- if(current_prolog_flag(xpce,true)).
   :- set_guitracer.
-  :- catch(guitracer,_,true).  
+  :- endif.
 
   :- set_prolog_flag(toplevel_print_anon,false).
   :- set_prolog_flag(toplevel_print_factorized,true).
@@ -251,7 +254,7 @@ check_len(_).
 :- meta_predicate(must_not_error(0)).
 %:- meta_predicate(must_det_l(0)).
 
-:- no_xdbg_flags.
+%:- no_xdbg_flags.
 
 
 wno_must(G):- locally(nb_setval(no_must_det_ll,t),locally(nb_setval(cant_rrtrace,t),call(G))).
@@ -290,8 +293,8 @@ must_det_ll(\+ (X)):- !, (\+ must_not_error(X) -> true ; must_det_ll_failed(\+ X
 must_det_ll(X):- tracing,!,must_not_error(X).
 must_det_ll(once(A)):- !, once(must_det_ll(A)).
 must_det_ll(X):- 
-  strip_module(X,M,P),functor(P,F,A),setup_call_cleanup(nop(trace(M:F/A,+fail)),(must_not_error(X)*->true;must_det_ll_failed(X)),
-    nop(trace(M:F/A,-fail))).
+  strip_module(X,M,P),functor(P,F,A),setup_call_cleanup(nop(atrace(M:F/A,+fail)),(must_not_error(X)*->true;must_det_ll_failed(X)),
+    nop(atrace(M:F/A,-fail))).
 
 must_not_error(X):- \+ nb_current(cant_rrtrace,t),is_guitracer,!, call(X).
 must_not_error(X):- catch(X,E,((E=='$aborted';nb_current(cant_rrtrace,t))-> throw(E);(/*arcST,*/writeq(E=X),pp(etrace=X),
@@ -306,8 +309,8 @@ fail_odd_failure(G):- wdmsg(odd_failure(G)),rtrace(G), fail.
 
 %must_det_ll_failed(X):- predicate_property(X,number_of_clauses(1)),clause(X,(A,B,C,Body)), (B\==!),!,must_det_ll(A),must_det_ll((B,C,Body)).
 must_det_ll_failed(G):- wants_html,!, wdmsg(wants_html(must_det_ll_failed(G))).
-must_det_ll_failed(X):- notrace,is_guitracer,wdmsg(failed(X))/*,arcST*/,nortrace,trace, call(X).
-must_det_ll_failed(X):-  wdmsg(failed(X))/*,arcST*/,nortrace,trace,visible_rtrace([-all,+fail,+exception],X).
+must_det_ll_failed(X):- notrace,is_guitracer,wdmsg(failed(X))/*,arcST*/,nortrace,atrace, call(X).
+must_det_ll_failed(X):-  wdmsg(failed(X))/*,arcST*/,nortrace,atrace,visible_rtrace([-all,+fail,+exception],X).
 % must_det_ll(X):- must_det_ll(X),!.
 
 rrtrace(X):- rrtrace(etrace,X).
@@ -315,10 +318,15 @@ rrtrace(X):- rrtrace(etrace,X).
 is_guitracer:- getenv('DISPLAY',_), current_prolog_flag(gui_tracer,true).
 rrtrace(P1,X):- nb_current(cant_rrtrace,t),!,nop((wdmsg(cant_rrtrace(P1,X)))),!,fail.
 rrtrace(P1,G):- wants_html,!, wdmsg(wants_html(rrtrace(P1,G))).
-rrtrace(P1,X):- notrace, \+ is_guitracer,!,nortrace, arcST, sleep(0.5), trace,
-   (notrace(\+ current_prolog_flag(gui_tracer,true)) -> call(P1,X); (trace,call(P1,X))).
-rrtrace(_,X):- notrace,nortrace,catch(call(call,gtrace),_,true),trace,call(X).
-rrtrace(P1,X):- trace,!, call(P1,X).
+rrtrace(P1,X):- notrace, \+ is_guitracer,!,nortrace, arcST, sleep(0.5), atrace,
+   (notrace(\+ current_prolog_flag(gui_tracer,true)) -> call(P1,X); (atrace,call(P1,X))).
+%rrtrace(_,X):- is_guitracer,!,notrace,nortrace,catch(call(call,gtrace),_,true),atrace,call(X).
+rrtrace(P1,X):- atrace,!, call(P1,X).
+
+arc_wote(G):- with_toplevel_pp(ansi,wote(G)).
+arcST:- arc_wote(dumpST).
+atrace:- arc_wote(dumpST).
+%atrace:- ignore((stream_property(X,file_no(2)), with_output_to(X,dumpST))),!.
 
 remove_must_dets(G,GGG):- compound(G), G = must_det_ll(GG),!,expand_goal(GG,GGG),!.
 remove_must_dets(G,GGG):- compound(G), G = must_det_l(GG),!,expand_goal(GG,GGG),!.
@@ -552,19 +560,6 @@ as_if_http(Goal):- with_toplevel_pp(http,Goal).
 %wants_html:- in_pp(http),!.
 %wants_html:- \+ current_output(user_output).
 
-never_webui:- 
-  \+ current_prolog_flag(use_arc_www,true),
-  \+ current_prolog_flag(use_arc_swish,true),
-  \+ current_prolog_flag(use_arc_bfly,true).
-
-wants_html:-  notrace(wants_html0).
-wants_html0:- never_webui, !, fail.
-wants_html0:- in_pp(bfly),!.
-wants_html0:- in_pp(http),!.
-wants_html0:- toplevel_pp(http),!.
-wants_html0:- toplevel_pp(swish),!.
-wants_html0:- in_pp(swish),!,fail.
-%wants_html0:- is_http,!.
 
 :- exists_source(library(xlisting/xlisting_web)) -> system:use_module(library(xlisting/xlisting_web)) ; true.
 
@@ -578,8 +573,7 @@ ld_logicmoo_webui:-
   system:use_module(library(xlisting/xlisting_web)),
   system:use_module(library(xlisting/xlisting_web_server)),
   ensure_loaded(kaggle_arc_ui_html_wss),
-  ensure_loaded(kaggle_arc_ui_html),
-  start_arc_http_server,!.
+  ensure_loaded(kaggle_arc_ui_html),!.
 
 
 logicmoo_use_swish:-
@@ -591,6 +585,7 @@ logicmoo_use_swish:-
 arc_user(ID):- thread_self(TID),arc_user(TID, ID).
 
 suggest_arc_user(ID):- catch((pengine:pengine_user(ID)),_,fail),!.
+suggest_arc_user(ID):- wants_html,ID=web_user,!.
 suggest_arc_user(ID):- catch((http_session:session_data(_,username(ID))),_,fail),!.
 suggest_arc_user(ID):- catch((wants_html, (xlisting_web:find_http_session(ID))),_,fail),!.
 
@@ -605,8 +600,10 @@ arc_user(TID, ID):- suggest_arc_user(ID), TID\=ID,!.
 
 %luser_setval(N,V):- nb_setval(N,V),!.
 luser_setval(N,V):- arc_user(ID),luser_setval(ID,N,V),!.
-luser_setval(ID,N,V):- nb_setval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
+luser_setval(ID,N,V):- 
+  nb_setval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
 
+luser_default(N,V):- var(V),!,luser_getval(N,V).
 luser_default(N,V):- luser_setval(global,N,V).
 
 luser_linkval(N,V):- arc_user(ID),luser_linkval(ID,N,V),!.
@@ -624,17 +621,23 @@ with_luser(N,V,Goal):-
     Goal,
     luser_setval(N,OV)).
 
-luser_getval(N,V):- nb_current(N,VV),VV\==[],!,V=VV.
+%luser_getval(N,V):- nb_current(N,VVV),not_eof(VVV,VV),!,V=VV.
 % caches the valuetemp on this thread
 luser_getval(N,V):-  luser_getval_0(N,VV),nb_setval(N,VV),b_setval(N,VV),!,VV=V.
 
-luser_getval_0(N,V):- wants_html, (((current_predicate(get_param_req_or_session/2),get_param_req_or_session(N,V), V\=='',V\==""))).
+luser_getval_0(N,V):- wants_html,arc_user_prop(web_user,N,V),!.
+luser_getval_0(N,V):- wants_html,
+  (((current_predicate(get_param_req_or_session/2),get_param_req_or_session(N,V), V\=='',V\==""))).
+luser_getval_0(Cmd,Prolog):- httpd_wrapper:http_current_request(Request), 
+  member(search(List),Request),member(Cmd=Call,List),!,url_decode_term(Call,Prolog).
 luser_getval_0(N,V):- arc_user(ID),luser_getval_id(ID,N,V),!.
 %luser_getval(ID,N,V):- thread_self(ID),nb_current(N,V),!.
 %luser_getval(ID,N,V):- !, ((arc_user_prop(ID,N,V);nb_current(N,V))*->true;arc_user_prop(global,N,V)).
 luser_getval_id(ID,N,V):-
- ((nb_current(N,Val),Val\==[])*->Val=V;
+ ((nb_current(N,ValV),not_eof(ValV,Val))*->Val=V;
   (arc_user_prop(ID,N,V)*->true;arc_user_prop(global,N,V))).
+
+not_eof(V,O):- sensical_term(V), V \==[], V \== end_of_file, !, O=V.
 
 /*
 luser_getval(ID,N,V):- 
@@ -878,7 +881,6 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 :- fixup_module_exports_into(baseKB).
 :- fixup_module_exports_into(system).
 
-:- catch_log(set_stream(current_output,encoding(utf8))).
 
 
 bfly_startup:-
@@ -937,8 +939,6 @@ save_arcathon_runner_devel:- qsave_program('logicmoo_arcathon_runner_devel',[sta
 test_compile_arcathon:- save_arcathon_runner_devel.
 
 :- ensure_loaded(kaggle_arc_two).
-:- when_arc_webui_enabled(ld_logicmoo_webui).
-:- when_using_swish(logicmoo_use_swish).
 
 :- load_json_files.
 :- load_task_states.
@@ -954,9 +954,42 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 %:- load_arc_db_temp_cache.
 :- fmt('% Type ?- demo. % or press up arrow').
 :- luser_default(extreme_caching,false).
-%:- autoload_all.
 :- set_current_test(v('1d398264')). 
 :- luser_default(task,v('1d398264')). 
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).
 :- nb_setval(arc_can_portray,nil).
+%:- (getenv('DISPLAY',_) -> ensure_guitracer_x ; true).
+
+:- if(current_prolog_flag(xpce,true)).
+:- current_prolog_flag(xpce,Was1),
+%  current_prolog_flag(gui,Was2),
+  absolute_file_name(swi(xpce/prolog/lib),X), 
+  set_prolog_flag(xpce,true),
+  %set_prolog_flag(gui,true),
+  asserta(user:library_directory(X),CLRef), 
+  user:use_module(library(pce_prolog_xref)),
+  user:use_module(library(emacs_extend)),
+  user:use_module(library(trace/gui)),
+  user:use_module(library(pce)),
+  user:use_module(library(gui_tracer)),
+  %reload_library_index,
+  erase(CLRef),
+  set_prolog_flag(xpce,Was1).
+  %set_prolog_flag(gui,Was2).
+:- prolog_ide(thread_monitor).
+:- endif.
 :- remove_undef_search.
+:- set_prolog_flag(verbose_load,false).
+:- set_prolog_flag(verbose_autoload,false).
+%:- prolog_ide(debug_monitor).
+:- when_arc_webui_enabled(((ld_logicmoo_webui))).
+%kill_xpce:- user:file_search_path(image, '/usr/lib/swi-prolog
+%:- redefine_system_predicate(prolog_trace:trace/0),abolish(prolog_trace:trace/0),asserta(prolog_trace:trace).
+%:- redefine_system_predicate(system:break/0),abolish(system:break/0),asserta(system:break).
+%:- redefine_system_predicate(system:trace/0),abolish(system:trace/0),asserta(system:trace).
+%:- redefine_system_predicate(prolog_trace:trace/2),abolish(prolog_trace:trace/2),asserta(prolog_trace:trace(_,_)).
+%:- set_prolog_flag(autoload,false).
+:- when_arc_webui_enabled(((start_arc_http_server))).
+:- when_using_swish(logicmoo_use_swish).
+
+

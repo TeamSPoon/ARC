@@ -120,7 +120,7 @@ make_box(X,_,G):- make_grid(X,X,G).
   | T   T T   T |
   | T   T T   T |
   | T T T T T T |
-   ¯¯¯¯¯¯¯¯¯¯¯¯¯
+   -------------
 
  S=[[1,bg,1],[1,bg,1],[1,1,1]],
        p2_grow([[blank(bg),sameR,blank(bg)],[rot270,blank(bg),rot90],[blank(bg),rot180,blank(bg)]],S, X),
@@ -135,7 +135,7 @@ make_box(X,_,G):- make_grid(X,X,G).
   |       T T T       |
   |       T   T       |
   |       T   T       |
-   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+   -------------------
 
 S=[[1,bg,1],[1,bg,1],[1,1,1]],
        p2_grow([[blank(bg),sameR,blank(bg)],[rot270,blur(flipV),rot90],[blank(bg),rot180,blank(bg)]],S, X),
@@ -150,7 +150,7 @@ S=[[1,bg,1],[1,bg,1],[1,1,1]],
   |       T T T       |
   |       T   T       |
   |       T   T       |
-   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+   -------------------
 
 */
 
@@ -788,7 +788,7 @@ points_to_default_grid0(C,H,V,Points,Grid):- rtrace((make_default_grid(C,H,V,Gri
 add_offset_h_v_c(Grid,H,V,OH,OV,C) :- HH is H-OH+1, VV is V-OV+1,  add_h_v_c(Grid,HH,VV,C),!.
 
 calc_add_points(OH,OV,Grid,SGrid):- odd_failure(calc_add_points0(OH,OV,Grid,SGrid)),!.
-calc_add_points(OH,OV,Grid,SGrid):- print_side_by_side([Grid,SGrid]),ftrace(calc_add_points0(OH,OV,Grid,SGrid)).
+calc_add_points(OH,OV,Grid,SGrid):- print_side_by_side([Grid,SGrid]),nop(ftrace(calc_add_points0(OH,OV,Grid,SGrid))).
 
 calc_add_points0(OH,OV,Grid,C):- var(C),!,add_h_v_c(Grid,OH,OV,C).
 calc_add_points0(_OH,_OV,_Grid,Nil):- Nil == [],!.
@@ -830,7 +830,7 @@ add_h_v_c(Grid,H,V,C):-
 add_h_v_c(Grid,H,V,C):- 
    print_grid(failed_add_h_v_c(H,V,C),Grid),
    ignore((nth1(V,Grid,Row),nb_set_nth1(H,Row,C),nb_set_nth1(V,Grid,Row))),
-   trace.
+   atrace.
    %dumpST.
 
 copy_cells(B,A,H,HH):- call(B,H),!,call(A,HH).

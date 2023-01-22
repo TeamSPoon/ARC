@@ -4,6 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
+:- encoding(iso_latin_1).
 :- include(kaggle_arc_header).
 
 
@@ -150,7 +151,7 @@ grav_mass(Grid,sameR):- iz(Grid,hv_symmetric),!.
 grav_mass(Grid,RotOut):- vis2D(Grid,H,V), !, tips_to_rot(Grid,H,V,RotOut,_).
 
 % make things bottem heavy
-tips_to_rot(Grid,H,V,[rot270|RotOut],Final):- H<V, !, rot90(Grid,Grid90),!,trace,tips_to_rot(Grid90,V,H,RotOut,Final).
+tips_to_rot(Grid,H,V,[rot270|RotOut],Final):- H<V, !, rot90(Grid,Grid90),!,atrace,tips_to_rot(Grid90,V,H,RotOut,Final).
 tips_to_rot(Grid,H,V,[rot90|RotOut],Final):- is_top_heavy(Grid), !, rot270(Grid,Grid90), !, tips_to_rot(Grid90,V,H,RotOut,Final).
 %tips_to_rot(Grid,H,V,[rot180|RotOut]):- is_top_heavy(Grid), !, rot180(Grid,Grid90), !, tips_to_rot(Grid90,H,V,RotOut).
 tips_to_rot(Grid,_H,_V,RotOut,Final):- is_left_heavy(Grid)-> (RotOut=[rot180],rot180(Grid,Final)); (RotOut=[sameR],Final=Grid).
@@ -522,7 +523,7 @@ align_to_oid(OID1,oinfo(_,_,OIDA,_),link(Rel,_OID2),Rel):- OIDA==OID1.
 align_to_oid(OID1,oinfo(_,_,OIDA,_),link(Rel,_OID2),inv(Rel)):- OIDA\==OID1,!.
   
   
-
+:- style_check(-singleton).
 find_relations4(INFO1,INFO2,TodoIN,TodoOUT):-
  must_det_ll((
   INFO1 = oinfo(O1,Ps1,OID1,Todo1),%arg(1,INFO1,O1), arg(2,INFO1,Ps1), arg(3,INFO1,OID1), arg(4,INFO1,Todo1),  
@@ -575,6 +576,8 @@ related_how2(touches(TouchDirs),O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX
   Overlap\==[],
   findall(Dir,(member(_-P1,P1L), is_adjacent_point(P1,Dir,P2),  member(_-P2,P2L)),Dirs),
   get_ccs(Dirs,TouchDirs), TouchDirs\==[].
+
+:- style_check(+singleton).
 
 overlaps_pred(overlaps(Overlap1,Overlap2),Overlap1,Overlap2):- Overlap1>Overlap2,!.
 overlaps_pred(overlapped_by(Overlap1,Overlap2),Overlap1,Overlap2).

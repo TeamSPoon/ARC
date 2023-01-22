@@ -1,4 +1,4 @@
-:- encoding(iso_latin_1).
+:- encoding(iso_latin_1 ).
 /*
   this is part of (H)MUARC  https://logicmoo.org/xwiki/bin/view/Main/ARC/
 
@@ -182,7 +182,7 @@ make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):-
  % RE=ADD=PHASE2 into_ngrid(Grid,NGrid),ngrid_syms(NGrid,Syms),
  % RE=ADD=PHASE2 normalize_grid(NormOps,Grid,NormGrid),
   %writeg([normgrid=NormGrid]), 
-  %if_t([[black,_]]=@=NormGrid,trace),
+  %if_t([[black,_]]=@=NormGrid,atrace),
 % RE=ADD=PHASE2   localpoints(NormGrid,NormLPoints),maplist(arg(2),NormLPoints,ShapeNormLPoints),
  
 % RE=ADD=PHASE2  shape_id(ShapeNormLPoints,NormShapeID),
@@ -358,7 +358,7 @@ rev_key(C-P,P-C).
 rev_key(List,ListO):- is_list(List),!,maplist(rev_key,List,ListO).
 
 sort_points(P0,P2):- 
-   (P0==[] -> (trace) ; true),
+   (P0==[] -> (rrtrace(true)) ; true),
    my_assertion(is_list(P0)),
    sort(P0,P1),my_assertion(P1\==[]), 
    my_assertion(is_cpoints_list(P1)),  
@@ -1062,7 +1062,7 @@ indv_props_for_noteablity(obj(L),Notes):- my_assertion(nonvar(L)),!, include(is_
 %is_not_prop_for_noteablity(grid_size).
 %is_not_prop_for_noteablity(obj_to_oid).
 
-%indv_props(G,L):- arcST,trace,into_obj(G,O),is_object(O),indv_props(O).
+%indv_props(G,L):- arcST,atrace,into_obj(G,O),is_object(O),indv_props(O).
 
 pmember(E,X):- indv_props(X,E).
 %pmember(E,X):- sub_term(EE,X),nonvar_or_ci(EE),EE=E,ground(E).
@@ -1238,7 +1238,7 @@ localpoints(Grid,Points):- is_group(Grid),!,mapgroup(localpoints,Grid,MPoints),a
 localpoints(G,G):- is_points_list(G).
 localpoints(Grid,Points):- is_list(Grid),!,maplist(localpoints,Grid,MPoints),append_sets(MPoints,Points).
 %localpoints(Atom,_):- \+ compound(Atom),!,trace_or_throw(localpoints(Atom)).
-localpoints(I,X):- trace,trace_or_throw(unknown(localpoints(I,X))).
+localpoints(I,X):- trace_or_throw(unknown(localpoints(I,X))).
 
   %localpoints(I,X):- into_grid(I,G),!,grid_size(G,H,V),grid_to_points(G,H,V,X).
 
@@ -1457,7 +1457,7 @@ loc2D(G,X,Y):- is_group(G),!,mapgroup(loc_term,G,Offsets),sort(Offsets,[loc2D(X,
 %loc2D(Grid,H,V):- is_grid(Grid),!,globalpoints(Grid,Points),!,points_range(Points,LocX,LocY,_,_,_,_), H is LocX, V is LocY.
 loc2D(I,X,Y):- is_object(I), indv_props(I,loc2D(X,Y)),!.
 loc2D(I,X,Y):- into_obj(I,O), indv_props(O,loc2D(X,Y)),!.
-%loc2D(NT,H,V):- trace, known_gridoid(NT,G),loc2D(G,H,V).
+%loc2D(NT,H,V):- atrace, known_gridoid(NT,G),loc2D(G,H,V).
 
 
 :- decl_pt(prop_g,vis_hv_term(is_object_or_grid,size2D)).

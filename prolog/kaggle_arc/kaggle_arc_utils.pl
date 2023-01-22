@@ -12,7 +12,6 @@ my_len(X,Y):- is_list(X),!,length(X,Y).
 my_len(X,Y):- functor([_|_],F,A),functor(X,F,A),!,length(X,Y).
 my_len(X,Y):- arcST,!,break.
 */
-arcST:- nop(dumpST).
 
 nb_subst(Obj,New,Old):-
   get_setarg_p1(nb_setarg,Found,Obj,P1),Found=@=Old,!,

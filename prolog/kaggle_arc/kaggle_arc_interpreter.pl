@@ -9,7 +9,7 @@
 
 :- meta_predicate(grid_call(+,+,-)).
 
-must_grid_call(T,I,O):- (grid_call(T,I,O)*->true; (print_side_by_side_msg(failed_grid_call(T),I,O),trace,grid_call(T,I,O),fail)).
+must_grid_call(T,I,O):- (grid_call(T,I,O)*->true; (print_side_by_side_msg(failed_grid_call(T),I,O),atrace,grid_call(T,I,O),fail)).
 
 
 gref_call(P1,In,Out):- 
@@ -104,7 +104,7 @@ member_or_it(G,G).
 
 
 show_workflow(InO,_,InO):-pass_thru_workflow(InO),!. 
-show_workflow(In,String,Out):- nonvar(Out),!,arcST,trace,must_det_ll((show_workflow(In,String,OutM),Out=OutM)).
+show_workflow(In,String,Out):- nonvar(Out),!,arcST,atrace,must_det_ll((show_workflow(In,String,OutM),Out=OutM)).
 show_workflow(InO,String,InO):- string(String),!, 
  ignore((InO\==[], nl, writeln(String), forall(member_or_it(G,InO),ignore(print_grid(_,_,String,G))))).
 show_workflow(InO,[],InO):-!.
@@ -281,10 +281,10 @@ run_dsl(VM,Mode,Prog,In,Out):- Out==dsl_pipe,!, run_dsl(VM,Mode,Prog,In,PipeOut)
 run_dsl(_VM,_Mode,sameR,In,Out):-!, duplicate_term(In,Out).
 
 % prevents unneeded updates such as color/position settings
-run_dsl(VM,_Mode,Prog,In,Out):- \+ missing_arity(Prog, 0), !, vm_grid(VM, call_expanded(VM,Prog),In,Out).
-run_dsl(VM,_Mode,Step,In,Out):- \+ missing_arity(Step, 1), functor(Step,F,_), is_fti_step(F), !, vm_grid(VM, call(Step,VM),In,Out).
-run_dsl(VM,_Mode,Step,In,Out):- \+ missing_arity(Step, 1), functor(Step,F,_), is_fti_stepr(F), Step=..[F|ARGS], !, vm_grid(VM, apply(F,[VM|ARGS]),In,Out).
-run_dsl(VM,_Mode,Step,In,Out):- \+ missing_arity(Step, 1), functor(Step,F,_), ping_indiv_grid(F), !, vm_grid(VM, call(Step,VM.grid),In,Out).
+run_dsl(VM,_Mode,Prog,In,Out):- callable_arity(Prog, 0), !, vm_grid(VM, call_expanded(VM,Prog),In,Out).
+run_dsl(VM,_Mode,Step,In,Out):- callable_arity(Step, 1), functor(Step,F,_), is_fti_step(F), !, vm_grid(VM, call(Step,VM),In,Out).
+run_dsl(VM,_Mode,Step,In,Out):- callable_arity(Step, 1), functor(Step,F,_), is_fti_stepr(F), Step=..[F|ARGS], !, vm_grid(VM, apply(F,[VM|ARGS]),In,Out).
+run_dsl(VM,_Mode,Step,In,Out):- callable_arity(Step, 1), functor(Step,F,_), ping_indiv_grid(F), !, vm_grid(VM, call(Step,VM.grid),In,Out).
 
 run_dsl(VM,_Mode,Step,In,Out):-  i_step(Step), !, vm_grid(VM,fti(VM,Step),In,Out).
 
@@ -295,7 +295,7 @@ run_dsl(VM,enforce,color(Obj,Color),In,Out):-!,
 
 run_dsl(VM,enforce,vert_pos(Obj,New),In,Out):-!, loc2D(Obj,X,_Old), override_object_io(VM,loc2D(X,New),Obj,In,Out).
 
-run_dsl(VM,Mode,Prog,In,Out):- \+ missing_arity(Prog,2), !, 
+run_dsl(VM,Mode,Prog,In,Out):- callable_arity(Prog,2), !, 
   vm_grid(VM, run_dsl_call_io(VM,Mode,Prog,In,Out), In, Out).
 
 run_dsl(_VM,Mode,Prog,In,In):- arcdbg(warn(missing(run_dsl(Mode,Prog)))),!,fail.
@@ -319,7 +319,7 @@ sync_colors(Orig,Colors):- colors_cc(Orig,Colors).
 uncast_grid_to_object(Orig,Grid,NewObj):- 
  must_det_ll((
   localpoints(Grid,LocalPoints),
-  (( LocalPoints==[]) -> (arcST,writeq(LocalPoints),trace ); true),
+  (( LocalPoints==[]) -> (arcST,writeq(LocalPoints),atrace ); true),
   rebuild_from_localpoints(Orig,LocalPoints,NewObj))).
 
 closure_grid_to_group(Orig,Grid,Group):- individuate(Orig,Grid,Group).
@@ -340,7 +340,7 @@ into_grids(P,G):- no_repeats(G,quietly(cast_to_grid(P,G, _))).
 
 :- decl_pt(into_grid(+(prefer_grid),-grid)).
 into_grid(P,G):- var(P),!,ignore(get_current_test(TestID)),test_grids(TestID,G),grid_to_tid(G,P).
-into_grid(A^B,AA^BB):- trace, nonvar(A), !, cast_to_grid(A,AA, _),cast_to_grid(B,BB, _).
+into_grid(A^B,AA^BB):- atrace, nonvar(A), !, cast_to_grid(A,AA, _),cast_to_grid(B,BB, _).
 into_grid(P,G):- cast_to_grid(P,G, _).
 
 map_to_grid(objs,Dict,Obj,Grid,Closure):- get_kov(objs,Dict,Obj), Obj\=[], cast_to_grid(Obj,Grid,Closure),!.
@@ -476,7 +476,7 @@ known_grid0(ID,G):- compound(ID),ID=(_>(Trn+Num)*IO),!,fix_test_name(ID,Name,Trn
 known_grid0(ID,G):- compound(ID),ID=(_>_),fix_test_name(ID,Name,ExampleNum),!,(kaggle_arc_io(Name,ExampleNum,_IO,G),deterministic(YN),true), (YN==true-> ! ; true).
 %known_grid0(ID,G):- (is_shared_saved(ID,G),deterministic(YN),true), (YN==true-> ! ; true).
 %known_grid0(ID,G):- (is_unshared_saved(ID,G),deterministic(YN),true), (YN==true-> ! ; true).
-known_grid0(ID,G):- (atom(ID);string(ID)),notrace(catch(atom_to_term(ID,Term,_),_,fail)), Term\==ID,!,known_grid0(Term,G).
+known_grid0(ID,G):- (atom(ID);string(ID)),atom_to_term_safe(ID,Term,_), Term\==ID,!,known_grid0(Term,G).
 
 
 :- dynamic(kaggle_arc_answers/4).
@@ -551,7 +551,7 @@ makeup_gridname(Grid,TID):- get_current_test(TestID),
    format(atom(HH),'~w_~w_~w_~w',[Example,Num,subgrid,IO]),
    name_num_io_id(TestID,HH,F,IO,TID),
    assert_grid_tid(Grid,TID), nop(dumpST), 
-    (print_grid(no_name(TestID,TID),Grid)))).
+    (print_grid(no_name(TestID,TID),Grid)))),!.
 
 incomplete(X,X).
 
@@ -586,7 +586,7 @@ o2g(Obj,Glyph):- obj_to_oid(Obj,OID),!,oid_glyph_object(OID,Glyph,_).
 o2g(Obj,Glyph):- object_glyph(Obj,Glyph),!.%oid_glyph_object(_,Glyph,Obj).
 %o2g(Obj,Glyph):-  g2o(Glyph,Obj),!.
 %o2g(Obj,NewGlyph):- var(NewGlyph),must_det_ll((o2g_f(Obj,NewGlyph))),!. 
-%o2g(Obj,NewGlyph):- trace,o2g_f(Obj,NewGlyph).
+%o2g(Obj,NewGlyph):- atrace,o2g_f(Obj,NewGlyph).
 
 /*
  obj_to _oid(Obj,Old), int2glyph(Old,Glyph), 
@@ -596,9 +596,9 @@ o2g(Obj,Glyph):- object_glyph(Obj,Glyph),!.%oid_glyph_object(_,Glyph,Obj).
            flag(indiv,Iv,Iv+1),
            int2glyph(Iv,NewGlyph),!,           
            subst001(Obj,obj_to_oid(ID,Old),obj_to_oid(ID,Iv),NewObj),
-           (number(NewGlyph)->trace;true),
+           (number(NewGlyph)->atrace;true),
            set_glyph_to_object(NewGlyph,NewObj))))
-  ; ((number(NewGlyph)->trace;true),NewGlyph=Glyph,(number(NewGlyph)->trace;true),set_glyph_to_object(NewGlyph,Obj))),
+  ; ((number(NewGlyph)->atrace;true),NewGlyph=Glyph,(number(NewGlyph)->atrace;true),set_glyph_to_object(NewGlyph,Obj))),
  set_glyph_to_object(NewGlyph,Obj).
 */
 
@@ -693,8 +693,11 @@ calc(_).
 create_bag(Obj1):- gensym(bag_,Obj1),ain(iz(Obj1,group)).
 
 
-missing_arity(P2,N):- compound(P2),!,compound_name_arity(P2,F,Am2),A is Am2 + N, \+ current_predicate(F/A).
-missing_arity(F,N):- \+ current_predicate(F/N).
+missing_arity(P2,N):- \+ callable_arity(P2,N).
+
+callable_arity(P2,N):- compound(P2),!, \+ is_list(P2), compound_name_arity(P2,F,Am2),A is Am2 + N, current_predicate(F/A).
+callable_arity(F,N):-  atom(F),current_predicate(F/N).
+
 % turtle(H,V,Dir,N,H2,V2):- 
 prim_ops([
   call_object_grid_size(obj),
@@ -712,7 +715,7 @@ prim_ops([
 
 throw_missed(G):-  Info = missed(G),wdmsg(Info),break, arcST,throw_missed_pt2(G,Info).
 throw_missed_pt2(_,Info):- tracing,!,throw(Info).
-throw_missed_pt2(G,Info):- notrace,nortrace,trace,wdmsg(Info),break,rrtrace(G),throw(Info).
+throw_missed_pt2(G,Info):- notrace,nortrace,atrace,wdmsg(Info),break,rrtrace(G),throw(Info).
 
 
 

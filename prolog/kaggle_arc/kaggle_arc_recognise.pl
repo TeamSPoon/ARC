@@ -4,6 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
+:- encoding(iso_latin_1).
 :- include(kaggle_arc_header).
 
 :- discontiguous h666/2. 
@@ -203,7 +204,7 @@ print_sgrid(F):- ((\+ \+ ((constrain_grid(s,_Trig,F,_FG),print_grid(F),nl)))),!.
 
 
 %constrain_type(Var,Cond):- nonvar(Var),!,call(Cond).
-%constrain_type(Var,Cond):- frozen(Var,Goals),sub_term(E,Goals),E=@=Cond,!. % wdmsg(skipping(Cond)),trace.
+%constrain_type(Var,Cond):- frozen(Var,Goals),sub_term(E,Goals),E=@=Cond,!. % wdmsg(skipping(Cond)),atrace.
 constrain_type(Var,Cond):- freeze(Var,Cond).
 
 find_ogs(H,V,FG,SG):- luser_getval(find_rule,Rul),find_ogs_c(Rul,H,V,FG,SG).
@@ -655,7 +656,7 @@ S="
      B    
      B    
  _________",
- must_det_ll((trace,text_to_grid(S,SG),print_ss(SG),into_g666(SG,G1),Color=blue,once(subst001(G1,blue,Color,G)))).
+ must_det_ll((atrace,text_to_grid(S,SG),print_ss(SG),into_g666(SG,G1),Color=blue,once(subst001(G1,blue,Color,G)))).
 
 hamstring(G):- 
 S="
@@ -882,7 +883,7 @@ read_cell(g_style(_RowSep,CellSep,BlackStyle,VarStyle),[C|Rest],Cell,More):-
 read_one_color(BlackStyle,VarStyle,C,Cell):- is_black_color(BlackStyle,VarStyle,C),!,get_black(Cell).
 read_one_color(BlackStyle,VarStyle,C,Cell):- C\==BlackStyle,(C==VarStyle;(var(VarStyle), var(C))),!,Cell=_.
 read_one_color(_BlackStyle,_VarStyle,C,Cell):- trans_to_color1(C,Cell),!.
-read_one_color(_BlackStyle,_VarStyle,C,unreadable(C)):- trace, !.
+read_one_color(_BlackStyle,_VarStyle,C,unreadable(C)):- atrace, !.
 
 trans_to_color1(Num,Color):- atom_number(Num,CC),color_name(CC,Color),!.
 trans_to_color1(' ',_):-!.

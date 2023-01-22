@@ -207,7 +207,7 @@ is_grid_color(C):- plain_var(C),!,fail.
 is_grid_color(C/**/-_):- !, is_color(C).
 is_grid_color(C):- is_color(C).
 
-is_color_dat(C):- atomic(C),color_code(C,W),!,C==W.
+is_color_dat(C):- atomic(C),user:color_code(C,W),!,C==W.
 
 
 :- export(set_bgc/1).

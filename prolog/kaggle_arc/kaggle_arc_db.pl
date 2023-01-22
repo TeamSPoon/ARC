@@ -187,7 +187,7 @@ make_default_grid(C,H,V,Grid):- ensure_make_grid(H,V,Grid),set_grid_default(C,Gr
 
 set_grid_default(C,Grid):- mapgrid(ignore_equal(C),Grid).
 
-make_grid(H,V,Grid):- (H<1;V<1),!,wdmsg(make_grid(H,V,Grid)),!,with_toplevel_pp(ansi,((write('<pre>'),bt,nop(break)))),!,fail.
+make_grid(H,V,Grid):- (H<1;V<1),!,wdmsg(make_grid(H,V,Grid)),!,with_toplevel_pp(ansi,((write('<pre>'),nop(bt),nop(break)))),!,fail.
 make_grid(H,V,Grid):- between(1,40,H),between(1,40,V),  % max_min(H,0,HH,_), max_min(V,0,VV,_), %max_min(HH,32,_,HHH),max_min(VV,32,_,VVV),!,    
    ensure_make_grid(H,V,G),G=Grid.
 
@@ -286,7 +286,7 @@ hv_c_value(O,C,_H,_V):- is_colorish(O),!,C=O.
 hv_c_value(O,GN,H,V):- is_vm_map(O),O.objs\==[],!,hv_c_value(O.objs,GN,H,V).
 hv_c_value(O,GN,H,V):- is_vm_map(O),!,hv_c_value(O.grid,GN,H,V).
 
-hv_c_value(ID,C,H,V):- (var(H);var(V)),!,arcST,trace, hv_point(H,V,_),hv_c_value(ID,CC,H,V),CC=C.
+hv_c_value(ID,C,H,V):- (var(H);var(V)),!,arcST,atrace, hv_point(H,V,_),hv_c_value(ID,CC,H,V),CC=C.
 hv_c_value(O,Color,H,V):- is_object(O),!,globalpoints(O,Ps),hv_c_value(Ps,Color,H,V).
 hv_c_value(O,Color,H,V):- is_list(O), is_cpoints_list(  O),!,hv_point(H,V,Point),member(Color-Point,O).
 hv_c_value(O,FGL   ,H,V):- is_list(O), maplist(is_nc_point,O),!,hv_point(H,V,Point),member(Point,O),get_fg_label(FGL).

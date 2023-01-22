@@ -346,12 +346,12 @@ contains_a4obj(Term):- is_dict(Term),!.
 contains_a4obj(Term):- arg(_,Term,E),contains_a4obj(E),!.
 
 ptgf(G):- call(G),!.
-ptgf(G):- trace,G,!.
+ptgf(G):- atrace,G,!.
 ptgf(G):- 
  ignore((write_term(failed(G),[max_depth(4)]),!,  
   locally(set_prolog_flag(debugger_write_options,
    [quoted(true),portray(false),max_depth(4),attributes(portray),spacing(next_argument)]),
-    (trace,G)))).
+    (atrace,G)))).
 
 base_obj('game').
 base_obj('app').

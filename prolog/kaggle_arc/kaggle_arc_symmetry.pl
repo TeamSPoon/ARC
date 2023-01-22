@@ -865,8 +865,8 @@ mix_cell(not_color(NC),GC,BC,GC):- BC==NC,!.
 mix_cell(not_color(_),GC,_,GC).
 
 
-mix_cell(P,I,M,O):- \+ missing_arity(P,3),call(P,I,M,O),!.
-mix_cell(P,I,M,O):- \+ missing_arity(P,2),call(P,I,M),!,O=M.
+mix_cell(P,I,M,O):- callable_arity(P,3),call(P,I,M,O),!.
+mix_cell(P,I,M,O):- callable_arity(P,2),call(P,I,M),!,O=M.
 mix_cell(_,_,_,_).
 
 
@@ -939,7 +939,7 @@ maybe_try_something1(Grid,RepairedResult,Did):-
 mprint_grid(wqs(P),RepairedResult):-!, print_grid((P),RepairedResult),!.
 mprint_grid((P),RepairedResult):-!, print_grid((P),RepairedResult),!.
 mprint_grid(O):- print_grid(O),!.
-mprint_grid(O):- arcST,trace,print_grid(O),!.
+mprint_grid(O):- arcST,atrace,print_grid(O),!.
 
 
 best_of(Grid,CodeFirst,P2Did,In,RepairedResult):- must_be(callable,P2Did),

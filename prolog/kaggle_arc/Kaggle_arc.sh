@@ -55,6 +55,8 @@ else
     SWIPL_OPTIONS="-- ${SWIPL_OPTIONS}"
 fi
 
+killall -9 xterm
+
 export BCMD="cd '${ARC_DIR}' ; pwd ; export TEE_FILE='${TEE_FILE}' ; swipl -l kaggle_arc.pl ${SWIPL_OPTIONS}"
 
 echo BCMD=$BCMD

@@ -39,7 +39,7 @@ report_count(P,Q):- flag('$fac_t',ET,ET),flag('$fac_p',EP,EP),luser_getval(repor
  get_time(Now),Diff is Now - Was,
   (ET<2 -> true ;
    (Percent is round(EP/ET*10_000)/100,
-    fmt('~N % Success ~p% (~q) for ~p in ~d seconds ~n',[Percent,EP/ET,report_count(P,Q),Diff]))).
+    format('~N % Success ~p% (~q) for ~p in ~w seconds ~n',[Percent,EP/ET,report_count(P,Q),Diff]))).
   
 
 
@@ -201,7 +201,7 @@ do_easy2(C1,C2,I,O):-
 
 /*
 %easy_solve_by( TestID,repair_and_select(_How,_M)):- is_symgrid(TestID),!.
-easy_p2(_):- trace.
+easy_p2(_):- atrace.
 
 %easy_p2(repair_and_select_property([unbind_color(_),now_fill_in_blanks_good],repaired)).
 easy_p2(blur_or_not(rot90_blur_flipD)):- test_hint(mass_and_area(grow_less_than_times(1),'=')).

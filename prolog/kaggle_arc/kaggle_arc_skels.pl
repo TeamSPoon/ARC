@@ -23,13 +23,13 @@ D=fill_area
 */
 :- decl_pt(most_d_colors(grid,color,grid)).
 most_d_colors(Grid,ColorO,GridNM):-
-  %trace,
+  %atrace,
  
   get_fill_points(Grid,Points,GridNM),
   uneib(Points,FPoints),
   % grid_size(GridNM,H,V), pp(fillPoints(H,V) = FPoints),
   sort(FPoints,NPSS),
-  %trace,
+  %atrace,
   % (N2-C)-P1
   maplist(arg(1),NPSS,Colors),
   clumped(Colors,CColors),
@@ -49,6 +49,7 @@ maybe_make_bg_visible(In,Grid):- make_bg_visible(In,Grid),!,In\=@=Grid.
 
 %make_bg_visible(In,Grid):- var(In),!,Grid=In.
 %make_bg_visible(In,Grid):- !, duplicate_term(In,Grid),!.
+make_bg_visible(In,Grid):- wants_html,!,In=Grid.
 make_bg_visible(In,Grid):- duplicate_term(In,In0),subst001(In0,blue,'#6666FF',M),
   make_bg_visible_b(M,Grid).
 /*
@@ -68,7 +69,7 @@ make_bg_visible_b(In,Grid):- make_bg_visible_c(In,Grid).
 
 make_bg_visible_c(In,wbg):- plain_var(In),!.
 make_bg_visible_c(In,In):- var(In),!.
-make_bg_visible_c(In,Grid):- get_black(Black),subst001(In,Black,'#301030',Grid).
+make_bg_visible_c(In,Grid):- get_black(Black),subst001(In,Black,'#201020',Grid).
 
 
 

@@ -165,9 +165,11 @@ print_common_reduction_result(TestID,OPS,Reduced):- pp(ops(TestID)=OPS), print_s
 
 
 pause:- !.
+/*
 pause:- wants_html, !.
-pause:- !, trace.
-pause:- get_single_char(K),(K=t->trace;true).
+pause:- !, atrace.
+pause:- get_single_char(K),(K=t->atrace;true).
+*/
 
 do_as_pairs([F|More],I,O):- do_as_pairs(F,[F|More],I,O).
 do_as_pairs(_,[I,O|_],I,O).
@@ -274,7 +276,7 @@ maybe_easy(I,I,==):- !.
 
 
 
-detect_all_training_hints:- clsbake, get_current_test(TestID),time(detect_all_training_hints(TestID)).
+detect_all_training_hints:- get_current_test(TestID),time(detect_all_training_hints(TestID)).
 detect_all_training_hints(TestID):- ensure_test(TestID),
   training_only_examples(ExampleNum), 
   dmsg(detect_all_training_hints(TestID>ExampleNum)),
@@ -476,11 +478,13 @@ compute_and_show_test_hints(TestID):- format('~N'),
   nop()),
   list_common_props(TestID).
 */
-compute_and_show_test_hints(TestID):- ensure_test(TestID),format('~N'),
+
+compute_and_show_test_hints(TestID):- collapsible_section(compute_and_show_test_hints1(TestID)).
+compute_and_show_test_hints1(TestID):- ensure_test(TestID),format('~N'),
   compute_all_test_hints(TestID),
   ignore(list_common_props_so_far(TestID)),!,
   %listing(arc_test_property(TestID,_,_)),
-  listing(io_xform(TestID,_,_)),
+  with_pre(listing(io_xform(TestID,_,_))),
   %ignore(list_common_props(TestID)),!,
   format('~N').
 
@@ -495,7 +499,7 @@ list_common_props_so_far(TestID):-
   sort(FComs,SComs),  
   print_test(TestID),
   %wots(SS,maplist(ptv1,SComs)),
-  call((format('~N % ~w:: ~@.~n',[list_common_props,ptv1(cyan+magenta,SComs)]))),
+  with_pre((format('~N % ~w:: ~@.~n',[list_common_props,ptv1(cyan+magenta,SComs)]))),
   !.
 
 ptv1(Color,T):- is_list(T), !, maplist(ptv1(Color),T).
@@ -677,8 +681,8 @@ min_list_unifier(_,_,_):-!.
 grid_hint_swap(IO,In,Out):-
  ignore(kaggle_arc(TestID,trn+N,In,Out)),
  maybe_compute_test_io_hints(IO,TestID,N,In,Out),
- format('~N%% ~w: ',[IO]),!,
-   forall((arc_test_property(TestID,gh(N),P,V)),ptv1(magenta+cyan,P=V)).
+ with_pre(((format('~N%% ~w: ',[IO])),!,
+   forall((arc_test_property(TestID,gh(N),P,V)),ptv1(magenta+cyan,P=V)))).
 
 
 grid_hint_swap_io(IO,In,Out,Hint):-  grid_hint_recolor(IO,In,Out,Hint).

@@ -15,6 +15,8 @@ o1 to o1
 
 
 */
+:- encoding(iso_latin_1).
+:- include(kaggle_arc_header).
 
 show_interesting_props(Named,ObjsI,ObjsO):-
   banner_lines(cyan,4),
@@ -597,7 +599,7 @@ maybe_show_ranking(GType,SFO):-
   length(SFO,Len),
   print_list_of(pp,setOF(GType),SFO),
   print_ss(G),
-  wdmsg(setOF(GType)=Len),trace.
+  wdmsg(setOF(GType)=Len),atrace.
 
 
 %has_order(O,P1, Code ):- 

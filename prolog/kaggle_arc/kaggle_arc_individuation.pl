@@ -830,9 +830,9 @@ consider_other_grid(VM):-
   %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
   %OffsetGrid = In,
   add_grid_label(Grid,Info,A), add_grid_label([Obj],Info,B),
-  as_debug(9,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_ss(A,B)))), % trace,
-  %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  trace,  
-  %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
+  as_debug(9,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_ss(A,B)))), % atrace,
+  %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  atrace,  
+  %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  atrace,  
   remCPoints(VM,GOPoints),
   remGPoints(VM,TODO))))))).
 
@@ -1046,9 +1046,9 @@ hybrid_shape_from(Set,VM):-
   %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
   %OffsetGrid = In,
   add_grid_label(Grid,Info,A), add_grid_label([Obj],Info,B),
-  as_debug(9,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_ss(A,B)))), % trace,
-  %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  trace,  
-  %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  trace,  
+  as_debug(9,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_ss(A,B)))), % atrace,
+  %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  atrace,  
+  %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  atrace,  
   remCPoints(VM,GOPoints),
   remGPoints(VM,TODO),
   ignore(hybrid_shape_from(Set,VM)))).
@@ -1535,7 +1535,7 @@ check_len(Len,IndvS):- \+ \+ ((is_list(IndvS),number(Len),length(IndvS,LenS),Len
 
 
 into_points_grid(GridIn,Points,Grid):-
-  (var(GridIn) -> trace ; true),
+  (var(GridIn) -> atrace ; true),
    globalpoints_include_bg(GridIn,Points),
    into_grid(GridIn,Grid),!.
 
@@ -1565,7 +1565,7 @@ individuate8(VM,ID,ROptions,GridIn,IndvS):-
       (var(VM) -> maybe_into_fti(ID,ROptions,GridIn,VM) ; true),
       %VM.points = Points,
       %individuation_reserved_options(ROptions,Reserved,NewOptions),
-      %trace,
+      %atrace,
       %ensure_fti(GH,GV,ID,Grid,[],Reserved,NewOptions,Points,VM),   
       set_vm(VM),
       %individuals_raw(VM,GH,GV,ID,NewOptions,Reserved,Points,Grid,IndvSRaw),
@@ -1913,7 +1913,7 @@ larger_than(Mass,TODO,VM):-
 is_same_oids(O1,O2):- obj_to_oid(O1,OID1),obj_to_oid(O2,OID2),OID1=@=OID2.
 
 
-%fti(VM,[Step|Program]):- \+ missing_arity(Step,0), !, set(VM.program_i) = Program, my_submenu_call(call(Step)).
+%fti(VM,[Step|Program]):- callable_arity(Step,0), !, set(VM.program_i) = Program, my_submenu_call(call(Step)).
 
 fti(VM,_):- 
   Objs = VM.objs,
@@ -1939,7 +1939,7 @@ fti(VM,[F|TODO]):-
    set(VM.program_i)= TODO.
 
 %:- listing(fti/2).
-% fti(_VM,[F|_]):- wdmsg(F),!. % trace,fail.
+% fti(_VM,[F|_]):- wdmsg(F),!. % atrace,fail.
 
 
 one_fti_step(Name):- is_thing_or_connection(Name).
@@ -2408,7 +2408,8 @@ objectProperties((
 )).
 
 sub_self(NewGrid,NewOther,TODO,VM):- 
- print_grid(doing(TODO),NewGrid),
+ print_grid(NewGrid),
+ pp(doing(TODO)),
  must_det_ll((
  globalpoints(NewGrid,Points),
  duplicate_term(VM,SavedVM),
@@ -2505,7 +2506,8 @@ is_fti_step(each_ogs_object).
 each_ogs_object(TODO,VM):-
  must_det_ll((
   copy_term(VM.grid_o,StartGrid), 
-  other_grid(StartGrid,Other), is_grid(Other),
+  other_grid(StartGrid,Other), 
+  is_grid(Other),
   all_ogs_123(StartGrid,Other,Hints))),
   %copy_term(VM.grid,This),  
   must_det_ll_maplist(use_each_ogs(VM,TODO,StartGrid,Other),Hints).
@@ -2668,7 +2670,7 @@ gather_cached(VM):-
    
 
 /*
-  trace,Obj = obj(Props),
+  atrace,Obj = obj(Props),
   globalpoints_include_bg(Obj,GPoints),
   my_partition(props_not_for_merge,Props,_Exclude,Overrides),
   wdmsg(oberrides=Overrides),
@@ -3359,7 +3361,7 @@ one_fti(VM,merge_shapes(ShapeType1)):-one_fti(VM,merge_shapes(ShapeType1,ShapeTy
 one_fti(VM,merge_shapes(ShapeType1,ShapeType2)):-
   Option = merge_shapes(ShapeType1,ShapeType2), copy_term(Option,OptionC),!, 
       Sofar = VM.objs,
-      selected_from(Sofar,ShapeType1,ShapeType2,HV1,HV2,SofarLess), % trace,
+      selected_from(Sofar,ShapeType1,ShapeType2,HV1,HV2,SofarLess), % atrace,
       \+ has_prop(iz(media(image)),HV1),
       \+ has_prop(iz(media(image)),HV2),
       any_gpoint(HV1,C-P1), is_adjacent_point(P1,Dir,P2), any_gpoint(HV2,C-P2), 
@@ -4205,7 +4207,7 @@ find_symmetry_code1(VM,Grid,RepairedResult,Code):-
     ignore((Out  = VM.grid_target)),
 
    ID = VM.id,
-   %trace,
+   %atrace,
    ((test_symmetry_code(Grid,GridS,RepairedResult,Code)
       *-> 
        (if_t(GridS\==[],print_grid(test_RepairedResult,GridS)),
