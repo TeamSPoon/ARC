@@ -1,17 +1,34 @@
 function clickGrid(thiz) {
 	console.log("clickGrid(" + thiz + ")");
-	navTo("?grid="+thiz);
+	navToParams({grid: thiz});
+}
+function navCmd(thiz) {
+	console.log("navCmd(" + thiz + ")");
+	navToParams({cmd: thiz});
 }
 
-function navTo(thiz) {
-	var thisUrl = window.location.href;
-	if ( thisUrl.indexOf("html.html")>-1 ){
-		window.location.href = window.location.pathname + thiz;
-	} else{
-		var iframe = document.getElementById("lm_xref");
-		iframe.contentWindow.location.href = iframe.contentWindow.location.pathname + thiz;
+function getNavWindow() {
+	var iframe = document.getElementById("lm_xref");
+	if (iframe!=null) {
+		var cw = iframe.contentWindow;
+		if (cw!=null) {
+			return cw;
+		}
 	}
+	return window;
 }
+
+function navToParams(thiz) { 
+	var windoe = getNavWindow();
+	let url = new URL(windoe.location.href);
+	url.search = new URLSearchParams(thiz);
+	console.log("windoe="+windoe.location);
+	console.log("url="+url);
+	console.log("url.ref="+url.href);
+	debugger;
+	windoe.location.assign(url);
+}
+
 
 function clickAccordian(thizn) {
 	var thiz = document.getElementById(thizn);
