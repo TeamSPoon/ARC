@@ -343,6 +343,8 @@ arc_pp_hook(FS,_  ,G):- let_arc_portray,
 pp_parent(PP):- nb_current(pp_parent,PP),!.
 pp_parent([]):-!.
 
+%:- meta_predicate(lock_doing(+,+,0)).
+:- meta_predicate(lock_doing(+,+,:)).
 lock_doing(Lock,G,Goal):- 
  (nb_current(Lock,Was);Was=[]), !, 
   \+ ((member(E,Was),E==G)),
@@ -371,7 +373,7 @@ pp_hook_g0(G):- wots(S,in_bfly(f,pp_hook_g10(G))),write(S).
 mass_gt1(O1):- into_obj(O1,O2),mass(O2,M),!,M>1.
 
 % Pretty printing
-pp_hook_g10(G):- \+ plain_var(G), lock_doing(in_pp_hook_g10,G,pp_hook_g1(G)).
+pp_hook_g10(G):- \+ plain_var(G), current_predicate(pp_hook_g1/1), lock_doing(in_pp_hook_g10,G,pp_hook_g1(G)).
 
 as_grid_string(O,SSS):- wots_vs(S,debug_as_grid(O)), sformat(SSS,'{  ~w}',[S]).
 as_pre_string(O,SS):- wots(S,debug_as_grid(O)), strip_vspace(S,SS).
@@ -413,8 +415,11 @@ pp_hook_g1(O):-  is_really_gridoid(O),debug_as_grid(O), !.
 pp_hook_g1(O):-  O = showdiff( O1, O2), !, showdiff(O1, O2).
 %pp_hook_g1(O):- compound(O),wqs1(O), !.
 pp_hook_g1(O):- \+ compound(O),fail.
-pp_hook_g1(G):- \+ current_prolog_flag(debug,true), lock_doing(in_pp_hook_g3,any,pp_hook_g2(G)),!.
-pp_hook_g1(G):- fch(G),!.
+pp_hook_g1(G):- '@'(pp_hook_g1a(G),user).
+
+pp_hook_g1a(G):- \+ current_prolog_flag(debug,true),
+  current_predicate(pp_hook_g2/1), lock_doing(in_pp_hook_g3,any,pp_hook_g2(G)),!.
+pp_hook_g1a(G):- fch(G),!.
 
 %pp_hook_g2(O):- current_predicate(colorize_oterms/2),colorize_oterms(O,C), notrace(catch(fch(C),_,fail)),! .
 
@@ -871,7 +876,7 @@ print_side_by_side(TitleColor,G1,N1,LW,G2,N2):-
 :- meta_predicate(print_side_by_side6(+,+,+,?,+,+)).
 
 print_side_by_side6(TitleColor,G1,N1,_LW,G2,N2):- wants_html,!,
- with_tag_style('p','style="width: 100%; background: #132;"',g_out((nl_now,
+ with_tag_style('p','width: 100%; background: #132;',g_out((nl_now,
    data_type(G1,S1), data_type(G2,S2),
    into_wqs_string(N1,NS1), into_wqs_string(N2,NS2),
    print_card_list([card(print_grid(G1),format_footer(TitleColor,NS1,S1)),

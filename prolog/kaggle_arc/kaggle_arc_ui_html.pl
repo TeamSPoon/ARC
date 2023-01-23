@@ -279,6 +279,7 @@ save_in_luser(_,V):- is_list(V),save_in_luser(V).
 save_in_luser(N,V):- decode_luser(V,VV),save_in_luser2(N,VV).
 
 save_in_luser2(task,V):- !, set_current_test(V),get_current_test(CT),dmsg(current_test(V-->CT)).
+save_in_luser2(test_suite_name,V):- !, nop(maybe_set_suite(V)).
 %save_in_luser2(cmd,V):-  !, ignore(set_test_cmd(V)),!.
 save_in_luser2(N,V):- luser_setval(N,V), luser_default(N,V), 
   ignore((is_list(V),last(V,E),compound(E),save_in_luser(V))).
@@ -439,10 +440,13 @@ arcproc_left(Request):- xlisting_web:handler_logicmoo_cyclone(Request),!.
 arc_html_format(TextAndGoal):- wants_html,!,arc_inline_html_format(TextAndGoal).
 arc_html_format(TextAndGoal):- bfly_in_out(call(call,inline_html_format(TextAndGoal))).
 
+arc_inline_html_format(Var):- var(Var),!, arc_inline_html_format(writeln(var(Var))).
+arc_inline_html_format(Var):- string(Var),!, write(Var).
 arc_inline_html_format([H|T]):- is_codelist([H|T]),!,sformat(S,'~s',[[H|T]]),!,arc_inline_html_format(S).
 arc_inline_html_format([H|T]):- is_charlist([H|T]),!,sformat(S,'~s',[[H|T]]),!,arc_inline_html_format(S).
 arc_inline_html_format(TextAndGoal):- is_list(TextAndGoal),!,maplist(arc_inline_html_format,TextAndGoal).
 %arc_inline_html_format(Msg):- flush_output_safe, wdmsg(call(Msg)),fail.
+arc_inline_html_format(format(H,V)):-!, format(H,V).
 arc_inline_html_format(TextAndGoal):- inline_html_format(TextAndGoal),flush_output_safe.
 
 % arc_find_tests(menu):- ignore(menu).
@@ -481,14 +485,15 @@ set_http_debug_error(Bool):-
 
 echo_file(File):- read_file_to_string(File,Str,[]),write(Str).
 
-write_ddm:- !, format('<html><head><script type="text/javascript"> 
-~@
-</script></head><body>
-<style>
-~@
-</style>',[echo_file('kaggle_arc_ui_html.js'),echo_file('kaggle_arc_ui_html.css')]).
-
-write_ddm:- get_time(Now),Now10M is floor(Now * 10_000_000),
+:- volatile(wrote_arc_start/1).
+:- thread_local(wrote_arc_start/1).
+write_arc_start(Where):- var(Where), current_output(Where), write_arc_start(Where).
+write_arc_start(Where):- wrote_arc_start(Where),!.
+write_arc_start(Where):- asserta(wrote_arc_start(Where)),
+  format(Where,'<script type="text/javascript">~@</script>
+<style>~@</style>',[echo_file('kaggle_arc_ui_html.js'),echo_file('kaggle_arc_ui_html.css')]).
+write_arc_end(Where):- retractall(wrote_arc_start(Where)).
+old_write_arc_start:- get_time(Now),Now10M is floor(Now * 10_000_000),
   update_changes, format('<html><head>
   <script type="text/javascript" href="./kaggle_arc_ui_html.js?time=~|~`0t~d~5+"></script>
   <link rel="stylesheet" type="text/css" href="./kaggle_arc_ui_html.css?time=~|~`0t~d~5+">
@@ -512,7 +517,7 @@ bformatw(G):- g_out(bformat(G)).
 
 with_style(S,G):-
  (wants_html -> 
-   sccl(format('<span style="~w">',[S]),once(G),write('</span>')) 
+   sccs(format('<span style="~w">',[S]),once(G),write('</span>')) 
     ; call(G)).
 
 html_echo(G)--> [G].
@@ -544,22 +549,23 @@ print_card_n(N,H):- callable_arity(H,1),call(H,R), data_type(R,DT),print_tb_card
 print_card_n(N,H):- data_type(H,DT),print_tb_card(pp(H),wprl([N,DT])).
 
 
-print_tb_card(Top,Bottem):- \+ wants_html, !,
-   call(Top),nl_if_needed,print_wrappable(Bottem),!.
+print_tb_card(Top,Bottem):- \+ wants_html, !, sccs(Top,nl_if_needed,wprl(Bottem)),!.
 
-print_tb_card(Top,Bottem):- !,
+print_tb_card(Top,Bottem):- 
   wots(S,once(Bottem)),
   replace_in_string(['<br>'='\n','"'=' ','<hr>'='\n','<br/>'='\n','\n'=' ','  '=' ','  '=' '],S,RS),
   %RS=S,
   locally(nb_setval(grid_footer,RS),
     (once(Top),
      ignore((nb_current(grid_footer,S),S\==[],write(S))))).
-
+/*
 print_tb_card(Top,Bottem):-
   with_tag_class(div,"column, wrapper",
    with_tag_class(div,"card, first_div",
      (call(Top), with_tag_class(div,"container, second_div",print_wrappable(Bottem))))).
+*/
 
+print_wrappable(L):- \+ wants_html, !, wprl(L).
 print_wrappable(L):- with_tag_class(pre,wrappable,wprl(L)).
 wprl(L):- is_list(L),!,maplist(wprl,L).
 wprl(H):-  callable_arity(H,0),call(H),write(' ').
@@ -567,7 +573,7 @@ wprl(H):-  ppt(H),write(' ').
 
 % width: fit-content
 % html_table(ListOfLists):- setup_call_cleanup(write('<table style="width: fit-content;m width: 100%; border: 0px">'), maplist(html_table_row,ListOfLists), write('</table>')),!.
-html_table(ListOfLists):- with_tag_style('table','style="tblo"', maplist(html_table_row,ListOfLists)).
+html_table(ListOfLists):- with_tag_class('table','tblo', maplist(html_table_row,ListOfLists)).
 html_table_row(ListOfLists):- with_tag('tr',html_table_col(ListOfLists)).
 html_table_col(ListOfLists):- is_list(ListOfLists),\+ is_grid(ListOfLists),!,maplist(html_table_col,ListOfLists).
 html_table_col(H):- with_tag('td',print_card_n('',H)).
@@ -609,7 +615,7 @@ print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):-
 
 
 print_grid_http_bound(ID,BGC,SH,SV,EH,EV,Grid):- 
- ignore((nonvar(ID),format('<p><table onclick="clickGrid(`~w`)" class="grid_table">',[ID]))),
+ ignore((nonvar(ID),format('<p><table onclick="clickGrid(`~q`)" class="grid_table">',[ID]))),
  forall(between(SV,EV,V),
     with_tag('tr',((
     forall(between(SH,EH,H),
@@ -666,14 +672,15 @@ write_http_link(Info,Goal):- nonvar(Goal), %toplevel_pp(PP), %first_current_exam
   our_pengine_output(SO).
 
 
-write_csection(Goal):- write_csection(Goal,Goal,toplevel).
+write_csection(Goal):- write_csection(Goal,Goal).
 write_csection(Title,Goal):- write_csection(Title,Goal,true),!.
 
 write_csection(Title,Goal,Showing):- gensym(accordian_,Sym),
- title_to_html(Title,HtmlTitle),!,
- arc_html_format(['<input type="checkbox" id="',Sym,'" class="hidecontent"><label for="',Sym,'">',wqs(HtmlTitle),
-   '</label><div class="content hidecontent">', call(Goal), 
-    format('<label for="~w" style="right: 0; position: relative; width: 8px">x</label></div>',[Sym])]),
+ arc_html_format([
+'<input type="checkbox" id="',Sym,'" class="hidecontent"><label for="',Sym,'">',wqs(Title),'</label>',
+'<div class="content hidecontent">', call(Goal),
+ format('<label for="~w" style="right: 0; position: relative; width: 8px">x</label>',[Sym]),
+'</div>']),
  ignore((Showing==true->format('<script>document.getElementById("~w").click();</script>',[Sym]))).
 
 arcproc_iframe(Request):- 
@@ -682,8 +689,7 @@ arcproc_iframe(Request):-
   intern_arc_request_data(Request),
  with_toplevel_pp(http,handler_arcproc_iframe(Request)),!.
 handler_arcproc_iframe(_Request):-
-  write_ddm,
-  call_current_arc_cmds.
+  sccs(write_arc_start(Where), call_current_arc_cmd(icmd), write_arc_end(Where)).
 
 arcproc_main(Request):- 
  format('Content-type: text/html~n~n',[]),!,
@@ -691,8 +697,7 @@ arcproc_main(Request):-
   intern_arc_request_data(Request),
  with_toplevel_pp(http,handler_arcproc_main(Request)),!.
 handler_arcproc_main(_Request):-
-    write_ddm,
-  call_current_arc_cmds.
+  sccs(write_arc_start(Where),(call_current_arc_cmd(cmd)->true;main_no_cmd), write_arc_end(Where)).
 
 arcproc_right(Request):- 
  format('Content-type: text/html~n~n',[]),!,
@@ -708,12 +713,12 @@ handler_logicmoo_right(Request):-
    %set_html_stream_encoding(utf8),
    %set_stream(Out, encoding(utf8)),  
    intern_arc_request_data(Request),
-  write_ddm,
+   write_arc_start(Where),
    handler_logicmoo_menu,
-  write('  <div id="main_">'),  
+  write('<div id="main">'),  
   write('<span style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0; position: fixed" onclick="toggleNavL(\'mySideNavL\')">&#9776; Test Suites</span>'),
   write_csection("Accordion One Heading",(write('<p>Content for first Accordion.</p>'),write_csection("Accordion Two Heading",write('<p>Content for Second Accordion.</p>'),true)),true),
-  with_tag_style('ul','style="right: 300px; top: 0px"', (
+  with_tag_style('ul','right: 300px; top: 0px', (
     %write_ddm('Suite Menu',ignore(report_suites)),
     %write_ddm('Test Menu',ignore(with_pre(test_webui_menu))),    
     nop((write_ddm('Test Cases',ignore(offer_testcases)),
@@ -741,12 +746,33 @@ handler_logicmoo_right(Request):-
    write('<hr>'),
    %write_csection(edit1term),
    %write_csection(show_http_session),
-   write('</div></body></html>'),
-   
+   write('</div>'),
+   write_arc_end(Where),
    !.
 
-%get_now_cmd(Cmd,Prolog):- get_param_req(Cmd,Call),url_decode_term(Call,Prolog).
-%get_now_cmd(Cmd,Prolog):- get_http_current_request(Request), member(request_uri(List),Request),request_uri(/arc_web_interface.html?dump_from_pairmode),url_decode_term(Call,Prolog),!.
+click_grid:- get_now_cmd(grid,TG),click_grid(TG),!,main_no_cmd.
+click_grid:- main_no_cmd.
+
+click_grid(G):- writeq(G),nl,fail.
+click_grid(TG):- \+ is_grid(TG),into_grid(TG,G),G\==TG,!,click_grid(G).
+click_grid(G):- is_grid(G),print_grid(G),set_current_test(G).
+
+
+set_html_component(_Name,_Value):-  \+ wants_html,!.
+set_html_component(Name,Value):- 
+  write_arc_start(Where),
+  format(Where,'<script> window.setUrlParam("~w","~w"); window.setComponent("~w","~w");</script>',[Name,Value,Name,Value]).
+
+
+main_no_cmd:-   
+   ignore(show_console_info),   
+   ignore(print_test),
+   write('<hr>'),
+   write_csection(edit1term,edit1term,false),
+   show_http_session.
+
+get_now_cmd(Cmd,Prolog):- get_param_req(Cmd,Call),url_decode_term(Call,Prolog).
+%get_now_cmd(Cmd,Prolog):- get_http_current_request(Request), member(request_uri(List),Request),request_uri('/arc_web_interface.html?dump_from_pairmode),url_decode_term(Call,Prolog),!.
 
 call_current_arc_cmds_pp:- with_toplevel_pp(http,call_current_arc_cmds).
 
@@ -760,8 +786,8 @@ call_current_arc_cmds:-
  call_current_arc_cmd(footer_cmd).
 */
 call_current_arc_cmd(Var):-
-   current_arc_cmd(Var,Prolog),        
-   dmsg(call_current_arc_cmd(Var)=Prolog),invoke_arc_cmd(Prolog).
+   ignore((get_now_cmd(Var,Prolog),        
+   dmsg(call_current_arc_cmd(Var)=Prolog),invoke_arc_cmd(Prolog))).
 
 
 

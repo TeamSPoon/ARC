@@ -933,7 +933,9 @@ get_current_test(TestID):- kaggle_arc(TestID,_,_,_),!.
 get_current_test_fb(t('00d62c1b')).
 get_current_test_fb(v(fe9372f3)).
 
-get_current_test_atom(UUID):- get_current_test(TestID),((compound(TestID),arg(1,TestID,UUID));UUID=TestID),atom(UUID).
+get_current_test_atom(UUID):- get_current_test(TestID),test_atom(TestID,UUID).
+
+test_atom(TestID,UUID):- ((compound(TestID),arg(1,TestID,UUID));UUID=TestID),atom(UUID),!.
 
 get_random_test(ID):-  
  get_current_test(TestID),get_next_test(TestID,NextID),
@@ -969,10 +971,11 @@ set_current_test(Name):-
 
 really_set_current_test(TestID):-
   once(luser_getval(task,WTestID);WTestID=[]),
-  ignore((WTestID\==TestID,luser_setval(task,TestID))),
+  ignore((WTestID\==TestID,luser_setval(task,TestID), test_atom(TestID,Atom),set_html_component(task,Atom))),
   once(luser_getval(last_test_name,WasTestID);WasTestID=[]),
   ignore((WasTestID\==TestID, new_current_test_info(WasTestID,TestID))).
-  
+
+
 
 some_current_example_num(_):- get_pair_mode(whole_test), !.
 some_current_example_num(_):- get_pair_mode(entire_suite), !.
@@ -1325,7 +1328,7 @@ preview_test(TName):-
          print_grid_http_bound(ID2,BGC,1,1,H2,V2,Out1)]])))))))).
 
 print_side_by_side66(TitleColor,G1,N1,_LW,G2,N2):- wants_html,!,
- with_tag_style('p','style="width: 100%; background: #132;"',g_out((nl_now,
+ with_tag_style('p','width: 100%; background: #132',g_out((nl_now,
    data_type(G1,S1), data_type(G2,S2),
    into_wqs_string(N1,NS1), into_wqs_string(N2,NS2),
    print_card_list([card(print_grid(G1),format_footer(TitleColor,NS1,S1)),
