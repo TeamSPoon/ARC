@@ -61,7 +61,7 @@ srw_arc(I,O):- tersify(I,O),!,I\==O,!.
 dumpst_hook:simple_rewrite(I,O):- fail, notrace(catch(arc_simple_rewrite(I,O),_,fail)).
 
 arc_simple_rewrite(I,O):- 
-  let_arc_portray,
+  \+ current_prolog_flag(never_pp_hook, true), nb_current(arc_can_portray,t),
   current_predicate(bfly_startup/0),
   current_predicate(is_group/1), 
   b_setval(arc_can_portray,nil),
@@ -75,7 +75,7 @@ portray_terse:- true,!.
 :- discontiguous arc_portray/2. 
 
 arc_portray(S,_):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
-arc_portray(_,_):- \+ let_arc_portray, !, fail.
+arc_portray(_,_):- \+ \+ current_prolog_flag(never_pp_hook, true), nb_current(arc_can_portray,t), !, fail.
 arc_portray(Map,TF):- get_map_pairs(Map,Type,Pairs),!, arc_portray_pairs(Type,TF,Pairs). 
 
 arc_portray_t(G, _):- is_vm_map(G), !, write_map(G,'arc_portray_t').
@@ -330,12 +330,12 @@ pt_guess_pretty_1(P,O):- copy_term(P,O,_),
 :- dynamic(pretty_clauses:pp_hook/3).
 :- multifile(pretty_clauses:pp_hook/3).
 :- module_transparent(pretty_clauses:pp_hook/3).
-pretty_clauses:pp_hook(FS,Tab,S):- let_arc_portray,  notrace(catch(arc_pp_hook(FS,Tab,S),_,fail)).
+pretty_clauses:pp_hook(FS,Tab,S):- \+ current_prolog_flag(never_pp_hook, true), nb_current(arc_can_portray,t),  notrace(catch(arc_pp_hook(FS,Tab,S),_,fail)).
 
 arc_pp_hook(_,Tab,S):- term_is_ansi(S), !,prefix_spaces(Tab), write_keeping_ansi_mb(S).
 %arc_pp_hook(_,Tab,S):- is_vm(S),!,prefix_spaces(Tab),!,write('..VM..').
-%arc_pp_hook(_,  _,_):- \+ let_arc_portray,!,fail.
-arc_pp_hook(FS,_  ,G):- let_arc_portray,
+%arc_pp_hook(_,  _,_):- \+ \+ current_prolog_flag(never_pp_hook, true), nb_current(arc_can_portray,t),!,fail.
+arc_pp_hook(FS,_  ,G):- \+ current_prolog_flag(never_pp_hook, true), nb_current(arc_can_portray,t),
   current_predicate(is_group/1),
    locally(b_setval(pp_parent,FS),
      print_with_pad(pp_hook_g(G))),!.
@@ -351,9 +351,9 @@ lock_doing(Lock,G,Goal):-
   locally(nb_setval(Lock,[G|Was]),Goal).
 
 never_let_arc_portray_again:- set_prolog_flag(never_pp_hook, true),!.
-let_arc_portray:- \+ nb_current(arc_can_portray,nil), \+ current_prolog_flag(never_pp_hook, true).
+arc_can_portray:- \+ current_prolog_flag(never_pp_hook, true), nb_current(arc_can_portray,t).
 
-user:portray(Grid):- let_arc_portray, 
+user:portray(Grid):- \+ current_prolog_flag(never_pp_hook, true), nb_current(arc_can_portray,t), 
    current_prolog_flag(debug,false),
     \+ tracing,
    \+ nb_current(arc_can_portray,nil),
@@ -361,12 +361,12 @@ user:portray(Grid):- let_arc_portray,
 
 
 pp_hook_g(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
-pp_hook_g(_):- \+ let_arc_portray,!,fail.
+pp_hook_g(_):- \+ \+ current_prolog_flag(never_pp_hook, true), nb_current(arc_can_portray,t),!,fail.
 pp_hook_g(S):- term_contains_ansi(S), !, write_nbsp, pp_hook_g0(S).
 pp_hook_g(G):- \+ plain_var(G), lock_doing(in_pp_hook_g,G,pp_hook_g0(G)).
 
 pp_hook_g0(S):- term_is_ansi(S), !, write_nbsp, write_keeping_ansi_mb(S).
-pp_hook_g0(_):- \+ let_arc_portray,!,fail.
+pp_hook_g0(_):- \+ \+ current_prolog_flag(never_pp_hook, true), nb_current(arc_can_portray,t),!,fail.
 pp_hook_g0(_):- in_pp(bfly),!,fail.
 pp_hook_g0(G):- wots(S,in_bfly(f,pp_hook_g10(G))),write(S).
 
@@ -599,6 +599,8 @@ wqs1(io(C)):-  \+ arg_string(C),wots_vs(S,bold_print(wqs(C))),write(io(S)).
 
 wqs1(uc(C,W)):- !, write_nbsp, color_print(C,call(underline_print(format("\t~@",[wqs(W)])))).
 wqs1(cc(C,N)):- is_color(C),!,color_print(C,call(writeq(cc(C,N)))).
+wqs1(write_nav_cmd(C,N)):- !, write_nav_cmd(C,N).
+
 wqs1(-(C,N)):- is_color(C),!,color_print(C,call(writeq(C))), write('-'), wqs(N).
 wqs1(cc(C,N)):- N\==0,attvar(C), get_attrs(C,PC), !, wqs(ccc(PC,N)).
 wqs1(cc(C,N)):- N\==0,var(C), sformat(PC,"~p",[C]), !, wqs(ccc(PC,N)).
@@ -749,12 +751,13 @@ g_display2(I,O):- is_grid(I),!,I=O.
 g_display2(N=I,N=O):- g_display2(I,O),!.
 g_display2(I,O):- is_points_list(I),!,I=O.
 %g_display2(I,O):- is_list(I),!, maplist(g_display2,I,O).
-g_display2(I,obj(at(X,Y),viz(H,V),GOID)=G):- obj_to_oid(I,GOID), loc2D(I,X,Y),vis2D(I,H,V), object_grid_g_display2(I,H,V,G),!.
+g_display2(I,Desc=G):- vis2D(I,H,V), object_grid_g_display2(I,H,V,G,Desc),!.
 g_display2(I,print_grid(H,V,[I])):- sub_term(E,I),compound(E),E=globalpoints(_O),grid_size(I,H,V),!.
 g_display2(I,I):- !. 
 
-object_grid_g_display2(I,H,V,G):- (H=<3;V=<3), !, global_grid(I,GPs),object_glyph(I,Glyph),mapgrid(add_g_texture(Glyph),GPs,G).
-object_grid_g_display2(I,_H,_V,G):- object_grid(I,GPs),!,object_glyph(I,Glyph),mapgrid(add_g_texture(Glyph),GPs,G).
+object_grid_g_display2(I,H,V,G,Desc):- (H=<3;V=<3), !, global_grid(I,GPs),object_glyph(I,Glyph),mapgrid(add_g_texture(Glyph),GPs,G),obj_to_oid(I,Desc).
+object_grid_g_display2(I,H,V,G,Desc):- object_grid(I,GPs),!,object_glyph(I,Glyph),mapgrid(add_g_texture(Glyph),GPs,G),  
+  obj_to_oid(I,GOID), loc2D(I,X,Y), Desc = obj(at(X,Y),viz(H,V),GOID).
 
 add_g_texture(Glyph,G,Glyph-G):- is_real_color(G),!.
 add_g_texture(_,G,G).
@@ -1375,6 +1378,9 @@ print_grid_pad(O1,SH,SV,EH,EV,Grid):-
   into_color_name_always(Grid,GridI),
   wots(S,print_grid2(SH,SV,EH,EV,GridI)),
   print_w_pad(O1,S),!.
+
+print_grid2(SH,SV,EH,EV,GridII):- atomic(GridII), once(into_grid(GridII,GridIII)), \+ atomic(GridIII),!,
+  print_grid2(SH,SV,EH,EV,GridIII).
 
 print_grid2(SH,SV,EH,EV,GridI):- wants_html,!, print_grid_html(SH,SV,EH,EV,GridI).
 print_grid2(SH,SV,EH,EV,GridI):- in_pp(ansi),!,ignore(print_grid_ansi(SH,SV,EH,EV,GridI)).

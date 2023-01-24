@@ -237,45 +237,47 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
 
   ((InC==OutC, InC==[]) -> progress(yellow,nothing_individuated(PairName)) ;
    with_luser(no_rdot,true,
-    must_det_ll((ignore((
+
+ must_det_ll((ignore((
     
      %show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
      %show_io_groups(yellow,ROptions,ID1,InC,ID2,OutC),
-     print_side_by_side(yellow,InC,objs(ID1),_,OutC,objs(ID2)),
-     print_list_of(show_indiv(inputs),inputs,InC),     
-     print_list_of(show_indiv(outputs),outputs,OutC),
+   print_side_by_side(yellow,InC,objs(ID1),_,OutC,objs(ID2)),
+   print_list_of(show_indiv(inputs),inputs,InC),     
+   print_list_of(show_indiv(outputs),outputs,OutC),
 
-     show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
+   show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
 
-      if_t((menu_or_upper('y')), show_interesting_props(ID1,InC,OutC)),
+   ignore((wants_output_for(show_interesting_props), show_interesting_props(ID1,InC,OutC))),
+       
+   banner_lines(orange), %visible_order(InC,InCR),
+
+   ignore((wants_output_for(learn_group_mapping),sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
+
+   ignore((wants_output_for(learn_group_mapping_of_tst),sub_var(tst,ID1),learn_group_mapping(InCR,OutCR))), 
+
+   ignore((wants_output_for(show_safe_assumed_mapped),show_safe_assumed_mapped)),
+
+   ignore((wants_output_for(show_test_associatable_groups), forall(member(In1,InC),show_test_associatable_groups(ROptions,ID1,In1,GridOut)))), 
+
+   ignore((wants_output_for(try_each_using_training),
+     forall(try_each_using_training(InC,GridOut,Rules,OurOut),
+      ignore((
+       print_grid(try_each_using_training,OurOut),
+       nop(pp(Rules)),
+       banner_lines(orange,2)))))),
+
+   banner_lines(orange,4))))))).
 
 
-       if_t((menu_or_upper('o');menu_or_upper('t')),
-        (( banner_lines(orange), %visible_order(InC,InCR),
-           if_t((true;sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)),
-              show_safe_assumed_mapped, %if_t((true;sub_var(tst,ID1)), show_test_associatable_groups(ROptions,ID1,InCR,GridOut)),
-        banner_lines(orange,3),!))),
+arc_spyable_keyboard_key(detect_pair_hints,'g').
+arc_spyable_keyboard_key(show_interesting_props,'y').
+arc_spyable_keyboard_key(show_safe_assumed_mapped,'j').
+arc_spyable_keyboard_key(learn_group_mapping,'o').
+arc_spyable_keyboard_key(learn_group_mapping_of_tst,'o').
+arc_spyable_keyboard_key(show_test_associatable_groups,'a').
+arc_spyable_keyboard_key(try_each_using_training,'u').
 
-
-       if_t((menu_or_upper('j');menu_or_upper('a');menu_or_upper('u')),
-        (( banner_lines(orange), %visible_order(InC,InCR),
-
-           
-           print_ss(begin_try_each_using_training,InC,GridOut),
-
-           if_t((sub_var(trn,ID1)), learn_group_mapping(InCR,OutCR)), 
-           show_safe_assumed_mapped,!, %if_t((true;sub_var(tst,ID1)), show_test_associatable_groups(ROptions,ID1,InCR,GridOut)),
-
-           ignore((forall(member(In1,InC),show_test_associatable_groups(ROptions,ID1,In1,GridOut)))),                     
-
-           ignore((forall(
-             try_each_using_training(InC,GridOut,Rules,OurOut),
-              ignore((
-               print_grid(try_each_using_training,OurOut),
-               nop(pp(Rules)),
-               banner_lines(orange,2))))))))),
-
-        banner_lines(orange,4))))))).
 
 show_test_associatable_groups(ROptions,ID1,InC,GridOut):- 
   print_grid(show_test_assocs(ROptions,ID1),InC),
@@ -354,17 +356,17 @@ i2(ROptions,GridSpec):- clsmake,
 i_pair(ROptions,GridIn,GridOut):-
   check_for_refreshness,
   my_time((maybe_name_the_pair(GridIn,GridOut,PairName),
-    individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
-    show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC))).
+    collapsible_section(individuate_pair(ROptions,GridIn,GridOut,InC,OutC)),
+    collapsible_section(show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC)))).
 
 %worker_output(G):- \+ menu_or_upper('B'),!, time(wots(_,arc_weto(G))).
 worker_output(G):- time(G).
 
 igo(ROptions,Grid):-
   check_for_refreshness,
-  do_ig(ROptions,Grid,IndvS),
+  collapsible_section(do_ig(ROptions,Grid,IndvS)),
   into_grid(Grid,GridIn),
-  show_individuated_nonpair(igo,ROptions,Grid,GridIn,IndvS).
+  collapsible_section(show_individuated_nonpair(igo,ROptions,Grid,GridIn,IndvS)).
 
 maybe_name_the_pair(In,Out,PairName):-
   ignore((kaggle_arc(TestID,ExampleNum,In,Out),

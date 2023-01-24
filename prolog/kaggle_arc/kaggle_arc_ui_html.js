@@ -1,6 +1,9 @@
 function clickGrid(thiz) {
     console.log("clickGrid(" + thiz + ")");
-    navToParams({ grid: thiz, cmd: "click_grid" });
+    var val = getComponent("grid", "");
+    if (val != thiz) {
+        navToParams({ grid: thiz, cmd: "click_grid" });
+    }
 }
 
 function navCmd(thiz) {
@@ -135,13 +138,18 @@ function setComponent(name, value) {
 
 function getComponent(name, elsev) {
     if (name instanceof String) {
+        var topw = getTopWindow();
+        var srch = new URLSearchParams(topw.location.search);
+        debugger;
+        if (srch.has(name)) {
+            return srch.get(name);
+        }
         var nav = getNavWindow();
         var ele = nav.window.getElementById("param_" + name);
         if (ele == null) ele = nav.window.getElementById(name);
         if (ele != null) return getComponent(ele, value);
-        var topw = getTopWindow();
-        var tele = nav.window.getElementById("param_" + name);
-        if (tele == null) tele = nav.window.getElementById(name);
+        var tele = topw.window.getElementById("param_" + name);
+        if (tele == null) tele = topw.window.getElementById(name);
         if (tele != null) return getComponent(tele, value);
         return elsev;
     }
@@ -236,10 +244,16 @@ function navToParams(jsonDict) {
     var newSrch = new URLSearchParams(jsonDict);
     var nav = getNavWindow();
     var topw = getTopWindow();
-    console.log("nav=" + nav.location);
+    var ooldSrch = new URLSearchParams(nav.location.search);
+    ooldSrch.delete("");
+    var topSrch = new URLSearchParams(topw.location.search);
+    topSrch.delete("");
+    console.log("nav=" + ooldSrch);
+    console.log("topw=" + topSrch);
+    console.log("newSrch=" + newSrch);
 
     var oldSrch = new URLSearchParams(nav.location.search);
-
+    oldSrch.delete("");
     // Display the key/value pairs
     for (const [key, value] of oldSrch.entries()) {
         if (key == "" || key.startsWith("accord")) continue;
@@ -262,25 +276,40 @@ function navToParams(jsonDict) {
             setComponent(key, value);
         }
     }
+    newSrch.delete("");
     for (const [key, value] of newSrch.entries()) {
         console.log(`new '${key}:' '${value}'`);
     }
     var newSrchStr = "?" + newSrch;
-    var src = topw.location.origin + "/arcproc_main" + newSrchStr;
-    setMainQueryParams(newSrchStr);
+    var nsrc = topw.location.origin + "/arcproc_main" + newSrchStr;
+    var tsrc = topw.location.origin + topw.location.pathname + newSrchStr;
+    topw.history.pushState({}, null, tsrc);
     var iframe = document.getElementById("lm_xref");
     if (iframe == null) {
         iframe = window.parent.document.getElementById("lm_xref");
     }
-    //	debugger;
-    //iframe.style.width = document.getElementById("main").style.width;
-    if (iframe.src == "about:blank") {
-        iframe.setAttribute("src", src);
-    } else {
-        nav.location.assign(src);
+    if (iframe.src == "about:blank" || !sameSrch(ooldSrch, newSrch)) {
+
+        // setMainQueryParams(newSrchStr);
+        //	debugger;
+        //iframe.style.width = document.getElementById("main").style.width;
+        if (iframe.src == "about:blank") {
+            iframe.setAttribute("src", nsrc);
+        } else {
+            nav.location.assign(nsrc);
+        }
     }
 }
 
+function sameSrch(oldSrch, newSrch) {
+    for (const [key, value] of newSrch.entries()) {
+        if (oldSrch.get(key) != newSrch.get(key)) return false;
+    }
+    for (const [key, value] of oldSrch.entries()) {
+        if (oldSrch.get(key) != newSrch.get(key)) return false;
+    }
+    return true;
+}
 
 function clickAccordian(thizn) {
     var thiz = document.getElementById(thizn);

@@ -104,7 +104,7 @@ print_hybrid_set(TestID):-
   print_side_by_side(Set),
   nop(forall(member(O,Set),print_hybrid_grid(O))).
 
-print_hybrid_grid(G):- io_side_effects,into_grid(G,O),grid_to_norm(Ops,O,N),
+print_hybrid_grid(G):- io_side_effects,into_grid_free(G,O),grid_to_norm(Ops,O,N),
   (O\==N->print_side_by_side([ops(Ops)],G,N); print_grid(O)).
 
 individuate_pairs_from_hints(TestID):- 
@@ -135,17 +135,21 @@ print_all_info_for_test0:-
   
   print_hybrid_set.
 
-into_grid_list(A,[A]):- var(A),!.
-into_grid_list(A,[A]):- is_grid(A),!.
-into_grid_list(A,[AG]):- always_grid_footer(A,G,_),into_grid(G,AG),!.
-into_grid_list([A|More],[A|More]):- is_grid(A),!.
-into_grid_list(A^B,List):- caret_to_list(A^B,List),!.
-into_grid_list([G|Grids],GridL):- into_grid_list(G,G1),into_grid_list(Grids,GS),
+into_grid_free(I,O):- must_be_free(O),into_grid(I,O),!.
+into_grid_list(I,O):- must_be_free(O),!,into_grid_list0(I,O).
+
+into_grid_list0(A,[A]):- var(A),!.
+into_grid_list0(A^B,List):- !, caret_to_list(A^B,List),!.
+into_grid_list0(A,[A]):- is_grid(A),!.
+into_grid_list0(A,[AG]):- always_grid_footer(A,G,_),into_grid_free(G,AG),!.
+into_grid_list0([A|More],[A|More]):- is_grid(A),!.
+into_grid_list0([G|Grids],GridL):- into_grid_list(G,G1),into_grid_list(Grids,GS),
   append(G1,GS,GridL).
 
 
 show_single_reduction_1(G):- reduce_grid(G,Ops,R),print_ss([G,R]),writeg(Ops).
 
+do_some_grids(Title,AB):- is_grid(AB),!,do_some_grids(Title,[AB]).
 do_some_grids(Title,AB):- into_grid_list(AB,GL), GL\==AB,!,do_some_grids(Title,GL).
 do_some_grids(Title,GL):- once((dash_chars,print_ss(do_some_grids(Title)=GL),dash_chars)),fail.
 %do_some_grids(Title,[A,B]):- !, common_reductions(A^B,OPS,_)
@@ -301,7 +305,6 @@ detect_pair_hints(TestID,ExampleNum,In,Out):-
   must_det_ll((
   dmsg(detect_pair_hints(TestID,ExampleNum)),
   assert_id_grid_cells(_,In), assert_id_grid_cells(_,Out),
-  detect_supergrid_tt_pair(TestID,ExampleNum,In,Out,_TT),  
   % guess_board(TT),
   %print(TT),
   %ignore(show_reduced_io(In^Out)),
@@ -310,16 +313,6 @@ detect_pair_hints(TestID,ExampleNum,In,Out):-
 
 guess_board(TT):- arc_setval(TT,guess_board,t).
 
-detect_supergrid_tt_pair(TestID,ExampleNum,In0,Out0,TT):-
- ensure_test(TestID),
- must_det_ll(((
-  dash_chars, dash_chars,
-  dmsg(detect_supergrid_tt_pair(TestID,ExampleNum)),
-  grid_to_gid(In0,InID),
-  print_side_by_side(cyan,In0,?-grid_props(InID,'$VAR'('InProps')),_,Out0,task_out(ExampleNum)),  
-  %forall(show_reduced_io(In0^Out0),true),
-  nop((show_recolor(TestID,ExampleNum,In0,Out0,TT)))))),!,
- TT = _{} .
 
 show_recolor(TestID,_ExampleNum,In0,Out0,TT):- 
   ensure_test(TestID),
@@ -791,7 +784,7 @@ grid_to_obj(Grid,O):- var(Grid),!,ensure_grid(Grid),grid_to_obj(Grid,O).
 grid_to_obj(Grid,O):- grid_to_obj_other(_VM,Grid,O).
 grid_to_obj(Grid,Obj):- grid_to_objs(Grid,Objs),member(Obj,Objs).
 
-grid_vm(G,VM):- into_grid(G,Grid),grid_to_gid(Grid,GID),
+grid_vm(G,VM):- into_grid_free(G,Grid),grid_to_gid(Grid,GID),
  ((nb_current(GID,VM),is_vm(VM))
   -> true
   ; (grid_to_tid(Grid,ID1),

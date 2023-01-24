@@ -6,6 +6,7 @@
 */
 :- encoding(iso_latin_1).
 :- set_prolog_flag(stream_type_check,false).
+:- set_prolog_flag(never_pp_hook, true).
 %:- set_prolog_flag(xpce,false).
 %:- set_prolog_flag(pce,false).
 %:- set_prolog_flag(windows,false).
@@ -22,7 +23,8 @@
 :- use_module(library(statistics)).
 :- import(prolog_statistics:time/1).
 my_time(Goal):- time(Goal),flush_tee.
-
+:- export(plain_var/1).
+plain_var(V):- notrace((var(V), \+ attvar(V), \+ get_attr(V,ci,_))).
 catch_log(G):- ignore(catch(notrace(G),E,writeln(E=G))).
 catch_nolog(G):- ignore(catch(notrace(G),E,nop(wdmsg(E=G)))).
 
@@ -142,9 +144,10 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   unset_guitracer:- (unsetenv('DISPLAY')),checkgui_tracer.
   checkgui_tracer:- (getenv('DISPLAY',_) -> catch(call(call,guitracer),_,true) ; catch(call(call,noguitracer),_,true)).
 
+  :- if( \+ current_prolog_flag(xpce,true)).
   :- unsetenv('DISPLAY').
-
   :- set_prolog_flag(gui_tracer,false).
+  :- endif.
   %:- checkgui_tracer.
   %:- catch(noguitracer,_,true).
 
@@ -581,27 +584,19 @@ logicmoo_use_swish:-
   ld_logicmoo_webui,webui_start_swish_and_clio,
   http_handler('/swish', http_redirect(moved, '/swish/'), []).
 
-%arc_user(main):- !.
-arc_user(ID):- thread_self(TID),arc_user(TID, ID).
-
-suggest_arc_user(ID):- catch((pengine:pengine_user(ID)),_,fail),!.
-suggest_arc_user(ID):- wants_html,ID=web_user,!.
-suggest_arc_user(ID):- catch((http_session:session_data(_,username(ID))),_,fail),!.
-suggest_arc_user(ID):- catch((wants_html, (xlisting_web:find_http_session(ID))),_,fail),!.
-
-
-arc_user(TID, ID):- \+ wants_html,!,TID=ID,!.
-arc_user(_,web_user):-!.
-arc_user(TID, ID):- catch((http_session:session_data(TID,username(ID))),_,fail),!.
-arc_user(TID, ID):- suggest_arc_user(ID), TID\=ID,!.
-
+arc_user(Nonvar):- nonvar(Nonvar),!,arc_user(Var),!,Nonvar=Var.
+arc_user(main):- thread_self(main),!.
+arc_user(ID):- catch((pengine:pengine_user(ID)),_,fail),!.
+arc_user(ID):- catch((http_stream:is_cgi_stream(_),xlisting_web:find_http_session(User),http_session:session_data(User,username(ID))),_,fail),!.
+arc_user(ID):- catch((wants_html, (xlisting_web:find_http_session(ID))),_,fail),!.
+arc_user(ID):- wants_html,!,ID=web_user.
+arc_user(ID):- thread_self(ID).
 
 :- dynamic(arc_user_prop/3).
 
 %luser_setval(N,V):- nb_setval(N,V),!.
 luser_setval(N,V):- arc_user(ID),luser_setval(ID,N,V),!.
-luser_setval(ID,N,V):- 
-  nb_setval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
+luser_setval(ID,N,V):- nb_setval(N,V),retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
 
 luser_default(N,V):- var(V),!,luser_getval(N,V).
 luser_default(N,V):- luser_setval(global,N,V).
@@ -618,24 +613,36 @@ with_luser(N,V,Goal):-
   (luser_getval(N,OV);OV=[]),
   setup_call_cleanup(
     luser_setval(N,V),
-    Goal,
+    once(Goal),
     luser_setval(N,OV)).
 
 %luser_getval(N,V):- nb_current(N,VVV),not_eof(VVV,VV),!,V=VV.
 % caches the valuetemp on this thread
-luser_getval(N,V):-  luser_getval_0(N,VV),nb_setval(N,VV),b_setval(N,VV),!,VV=V.
+luser_getval(N,V):-  luser_getval_0(N,VV),VV=V.
 
-luser_getval_0(N,V):- wants_html,arc_user_prop(web_user,N,V),!.
-luser_getval_0(N,V):- wants_html,
-  (((current_predicate(get_param_req_or_session/2),get_param_req_or_session(N,V), V\=='',V\==""))).
-luser_getval_0(Cmd,Prolog):- httpd_wrapper:http_current_request(Request), 
-  member(search(List),Request),member(Cmd=Call,List),!,url_decode_term(Call,Prolog).
-luser_getval_0(N,V):- arc_user(ID),luser_getval_id(ID,N,V),!.
+
+luser_getval_0(arc_user,V):- arc_user(V).
+luser_getval_0(N,V):- luser_getval_1(N,V).
+
+luser_getval_1(N,V):- luser_getval_2(N,V).
+luser_getval_1(N,V):- luser_getval_3(N,V), \+ (luser_getval_2(N,VV), nop(VV\=V)).
+luser_getval_1(N,V):- luser_getval_4(N,V), \+ (luser_getval_3(N,VV), nop(VV\=V)), \+ (luser_getval_2(N,VV), nop(VV\=V)).
+
+%luser_getval_0(N,V):- luser_getval_2(N,V), \+ luser_getval_1(N,_).
+%luser_getval_0(N,V):- luser_getval_3(N,V), \+ luser_getval_2(N,_), \+ luser_getval_1(N,_).
+%luser_getval_3(N,V):- wants_html, current_predicate(get_param_req/2),get_param_req(N,M),url_decode_term(M,V).
+luser_getval_2(N,V):- \+ wants_html, !, nb_current(N,ValV),not_eof(ValV,Val),Val=V.
+luser_getval_2(N,V):- httpd_wrapper:http_current_request(Request), member(search(List),Request),member(N=VV,List),url_decode_term(VV,V).
+
+luser_getval_3(N,V):- arc_user(ID), arc_user_prop(ID,N,V).
+luser_getval_3(_,_):- \+ wants_html, !, fail.
+luser_getval_3(N,V):- current_predicate(get_param_sess/2),get_param_sess(N,M),url_decode_term(M,V).
+luser_getval_3(N,V):- nb_current(N,ValV),not_eof(ValV,Val),Val=V.
+
+luser_getval_4(N,V):- arc_user_prop(global,N,V).
+luser_getval_4(N,V):- current_prolog_flag(N,V).
 %luser_getval(ID,N,V):- thread_self(ID),nb_current(N,V),!.
 %luser_getval(ID,N,V):- !, ((arc_user_prop(ID,N,V);nb_current(N,V))*->true;arc_user_prop(global,N,V)).
-luser_getval_id(ID,N,V):-
- ((nb_current(N,ValV),not_eof(ValV,Val))*->Val=V;
-  (arc_user_prop(ID,N,V)*->true;arc_user_prop(global,N,V))).
 
 not_eof(V,O):- sensical_term(V), V \==[], V \== end_of_file, !, O=V.
 
@@ -746,6 +753,7 @@ get_vm(VM):- ndividuator,!,luser_getval('$grid_vm',VM),!.
 
 peek_vm(VM):- luser_getval('$grid_vm',VM),!.
 peek_vm(Key,Value):- luser_getval('$grid_vm',VM)->get_kov(Key,VM,Value);luser_getval(Key,Value).
+
 
 set_vm(Prop,Value):- ignore(luser_getval('$grid_vm',VM)),
  luser_set_vm(VM,Prop,Value).
@@ -992,4 +1000,4 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 :- when_arc_webui_enabled(((start_arc_http_server))).
 :- when_using_swish(logicmoo_use_swish).
 
-
+:- set_prolog_flag(never_pp_hook, false).

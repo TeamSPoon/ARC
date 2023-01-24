@@ -96,23 +96,44 @@ collapsible_section(Type,Title,true,Goal):-
 */
 
 
-collapsible_section(Tag,Title,Showing,Goal):-
-  once(nb_current('$collapsible_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),
-  setup_call_cleanup(format('~N~w!mu~w! ~@ |~n',[Ident, Tag, print_title(Title)]),
-                     locally(b_setval('$collapsible_section',[c(Tag)|Was]),
-                                      tabbed_print_im(Depth+2,old_write_expandable(Tag=Title,Goal,Showing))), 
-                     format('~N~w\u00A1mu~w\u00A1 ',[Ident, Tag])).
+write_csection(Goal):- write_csection(Goal,Goal).
+write_csection(Title,Goal):- write_csection(Title,Goal,true),!.
+write_csection(Title,Goal,Showing):-  Showing\==always,flag('$old_write_expandable_depth',X,X), X>2,!,write_csection(Title,Goal,always).
+%write_csection(_Title,Goal,_Showing):- expandable_inlines, !, (call_maybe_det(Goal,Det),((Det==true-> ! ; true))).
+write_csection(Title,Goal,Showing):-  Showing==always,!,ignore(ppt(Title)),call(Goal).
+write_csection(Title,Goal,Showing):- (Showing==toplevel;Showing==maybe), flag('$old_write_expandable_depth',X,X), X==1,!,write_csection(Title,Goal,true).
+write_csection(Title,Goal,Showing):- (Showing==maybe, flag('$old_write_expandable_depth',X,X), X=<2), !, ignore(ppt(Title)),!,write_csection(Title,Goal,true).
+write_csection(Title,Goal,Showing):- wants_html,!,write_csection_html(Title,Goal,Showing).
+write_csection(Title,Goal,Showing):- \+ wants_html, !, write_csection_ansi(Title,Goal,Showing).
 
-with_tagged(Tag,Goal):- 
+
+write_csection_ansi(Title,Goal,Showing):- collapsible_section(info,Title,Showing,Goal).
+write_csection_html(Title,Goal,Showing):- wants_html,!,gensym(accordian_,Sym), 
+ arc_html_format([
+'<input type="checkbox" id="',Sym,'" class="hidecontent"><label for="',Sym,'">', print_title(Title),'</label>',
+'<div class="content hidecontent">', call(Goal),
+ format('<label for="~w" style="right: 0; position: relative; width: 8px">x</label>',[Sym]),
+'</div>']),
+ ignore((Showing==true->format('<script>document.getElementById("~w").click();</script>',[Sym]))).
+
+collapsible_section(SectionType,Title,Showing,Goal):- wants_html,!, 
+  write_csection(SectionType=Title,Goal,Showing).
+collapsible_section(SectionType,Title,_Showing,Goal):-
+  once(nb_current('$collapsible_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),
+  setup_call_cleanup(format('~N~w!mu~w! ~@ |~n',[Ident, SectionType, print_title(Title)]),
+                     locally(b_setval('$collapsible_section',[c(SectionType)|Was]),
+                                      tabbed_print_im(Depth+2,Goal)), 
+                     format('~N~w\u00A1mu~w\u00A1 ',[Ident, SectionType])).
+/*  
+with_tagged(SectionType,Goal):- 
   once(nb_current('$collapsible_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),
   setup_call_cleanup(
-    bfly_html_goal(format('~w<~w> ~N',[Ident,Tag])),
-    locally(b_setval('$collapsible_section',[h(Tag)|Was]),tabbed_print_im(Depth+2,(Goal))),
-    bfly_html_goal(format('~w</~w> ',[Ident,Tag]))).
-
+    bfly_html_goal(format('~w<~w> ~N',[Ident,SectionType])),
+    locally(b_setval('$collapsible_section',[h(SectionType)|Was]),tabbed_print_im(Depth+2,(Goal))),
+    bfly_html_goal(format('~w</~w> ',[Ident,SectionType]))).
+*/
 
 title_to_html(Title,HtmlTitle):- with_pp(plain,into_attribute(Title,HtmlTitle)),!.
-
 
 old_write_expandable(Title,Goal,Showing):- 
    setup_call_cleanup(flag('$old_write_expandable_depth',Depth,Depth+1),
@@ -126,22 +147,8 @@ expandable_mode(How):- luser_getval(expansion,V),!,How==V.
 :- luser_default(expansion,javascript).
 :- luser_setval(expansion,bfly).
 
-in_expandable(_Title,Goal,_Showing):- expandable_inlines, !, (call_maybe_det(Goal,Det),((Det==true-> ! ; true))).
-in_expandable(Title,Goal,Showing):- Showing==always,!,ignore(ppt(Title)),(call_maybe_det(Goal,Det),((Det==true-> ! ; true))).
-in_expandable(Title,Goal,_Showing):- flag('$old_write_expandable_depth',X,X), X>2, in_expandable(Title,Goal,always).
-in_expandable(Title,Goal,Showing):- (Showing==toplevel;Showing==maybe), flag('$old_write_expandable_depth',X,X), X==1,!,in_expandable(Title,Goal,true).
-in_expandable(Title,Goal,Showing):- (Showing==maybe, flag('$old_write_expandable_depth',X,X), X=<2), !, ignore(ppt(Title)),!,in_expandable(Title,Goal,true).
-in_expandable(Title,Goal,Showing):- write_csection(Title,Goal,Showing).
 
 call_maybe_det(Goal,Det):- true,call(Goal),deterministic(Det),true.
-
-old_in_expandable(Title,Goal,Showing):- 
- on_xf_ignore_flush(ensure_colapable_styles), 
- (Showing -> PX='128'; PX='600'),
- (Showing -> Exp=''; Exp='panel_hidden'),
-  inline_html_format([
-   '<pre><button type="button" class="accordian">',Title,' (click to un/expand)</button>',
-   '<div class="',write(Exp),'" style="max-height: ',PX,'px">',invoke_arc_cmd(Goal),'</div></pre>']).
 
 
 format_s(S):- atomic(S),!,format('~w',[S]).
@@ -157,10 +164,22 @@ trim_leading_trailing_whitespace(In,Out):-
   atomics_to_string(List,' ',Out).
 
 :- meta_predicate(invent_header(+,-)).
-invent_header(Term,Title):- \+ compound(Term),!, Title = goal(Term).
-invent_header(Term,Title):- compound_name_arity(Term,F,_),
-  (( \+ dumb_functor(Term)) -> (maybe_ia(Term,E),Title=g(F,E));
-     (header_arg(Term,E),invent_header(E,Title))).
+invent_header(Term,Title):- compound(Term), dumb_functor(Term), header_arg(Term,E), invent_header(E,Title),!.
+invent_header(Term,Title):- \+ compound(Term),!, into_str(Term,Str), title_string_to_functor(Str,F),
+  functor_to_title_string(F,Title).
+invent_header(Term,Title=Term):- compound_name_arity(Term,F,_),invent_header(F,Title),!.
+
+invent_key(Term,Title):- compound(Term), dumb_functor(Term), header_arg(Term,E), invent_key(E,Title),!.
+invent_key(Term,Title):- \+ compound(Term),!, into_str(Term,Str), title_string_to_functor(Str,F),
+  functor_to_title_string(F,Title).
+invent_key(Term,Title=Term):- compound_name_arity(Term,F,_),invent_key(F,Title),!.
+
+
+functor_to_title_string(F,OO):- to_case_breaks(F,X),include(\=(xti(_,punct)),X,O),maplist(arg(1),O,O1),
+ maplist(toProperCamelAtom,O1,O2),maplist(any_to_string,O2,O3),atomics_to_string(O3," ",OO).
+title_string_to_functor(F,OO):- to_case_breaks(F,X),include(\=(xti(_,punct)),X,O),maplist(arg(1),O,O1),
+ maplist(toLowercase,O1,O2),maplist(any_to_atom,O2,O3),atomic_list_concat(O3,'_',OO).
+
 header_arg(Term,E):- sub_term(E,Term), E\=@=Term, compound(E), \+ is_list(E).
 maybe_ia(Term,DT):- header_arg(Term,E), !, \+ dumb_functor(E), data_type(E,DT),!.
 maybe_ia(_Term,args).
@@ -192,12 +211,12 @@ user:file_search_path(arc,  AbsolutePath):- arc_sub_path('.',AbsolutePath).
 
 %:- http_handler('/swish/muarc/swish_config.json', swish_reply_config_root,[priority(200)]).
 :- http_handler('/swish/muarc/arcproc_left', arcproc_left, [prefix,chunked,time_limit(30)]).
-:- http_handler('/swish/muarc/arcproc_right', arcproc_right, [prefix,time_limit(3600)]). % one hour
-:- http_handler('/swish/muarc/arcproc_main', arcproc_main, [prefix,chunked,time_limit(3600)]).
+:- http_handler('/swish/muarc/arcproc_right', arcproc_right, [prefix,time_limit(30)]).
+:- http_handler('/swish/muarc/arcproc_main', arcproc_main, [prefix,chunked,time_limit(3600)]). % one hour
 :- http_handler('/swish/muarc/arcproc_iframe', arcproc_iframe, [prefix,chunked,time_limit(120)]).
 :- http_handler('/arcproc_left', arcproc_left, [prefix,chunked,time_limit(30)]).
-:- http_handler('/arcproc_right', arcproc_right, [prefix,time_limit(3600)]). % one hour
-:- http_handler('/arcproc_main', arcproc_main, [prefix,chunked,time_limit(3600)]).
+:- http_handler('/arcproc_right', arcproc_right, [prefix,time_limit(30)]). 
+:- http_handler('/arcproc_main', arcproc_main, [prefix,chunked,time_limit(3600)]).% one hour
 :- http_handler('/arcproc_iframe', arcproc_iframe, [prefix,chunked,time_limit(120)]).
 :- http_handler('/swish/muarc/', swish_arc, [prefix]).
 :- http_handler('/', swish_arc_root, [prefix]).
@@ -316,7 +335,9 @@ set_test_param:-
   ignore((as_if_webui((get_param_sess(task,Task), Task\=='',  Task\=="",
   atom_id(Task,ID), dmsg(Task-> ID), set_current_test(ID))))),!.
 
-%:- http_handler('/swish', http_redirect(moved, '/swish/'), []).
+:- http_handler('/swish', http_redirect(moved, '/swish/'), []).
+:- http_handler('/swish/muarc', http_redirect(moved, '/swish/muarc/'), []).
+:- http_handler('/', http_redirect(moved, '/swish/muarc/kaggle_arc_ui_html.html'), []).
 
 swish_arc(Request):- swish_arc_root(Request).
 %  muarc_tmp:arc_directory(ARC_DIR),
@@ -468,7 +489,7 @@ test_webui_menu :- as_if_webui((write_menu_opts('i'))).
 
 write_nav(ID,LR,_Title,Goal):- 
  format('<div id="~w" class="sidenav~w">
-  <a href="javascript:void(0)" class="closebtn~w" onclick="toggleNav~w(\'~w\')">&times;</a>',[ID,LR,LR,LR,ID]),
+  <a href="javascript:void(0)" class="closebtn" onclick="toggleNav~w(\'~w\')">&times;</a>',[ID,LR,LR,ID]),
   call(Goal),write('</div>').
 
 
@@ -493,13 +514,14 @@ write_arc_start(Where):- asserta(wrote_arc_start(Where)),
   format(Where,'<script type="text/javascript">~@</script>
 <style>~@</style>',[echo_file('kaggle_arc_ui_html.js'),echo_file('kaggle_arc_ui_html.css')]).
 write_arc_end(Where):- retractall(wrote_arc_start(Where)).
+/*
 old_write_arc_start:- get_time(Now),Now10M is floor(Now * 10_000_000),
   update_changes, format('<html><head>
   <script type="text/javascript" href="./kaggle_arc_ui_html.js?time=~|~`0t~d~5+"></script>
   <link rel="stylesheet" type="text/css" href="./kaggle_arc_ui_html.css?time=~|~`0t~d~5+">
 </head>
 <body>',[Now10M,Now10M]).
-
+*/
 
 %map_html_entities_mono(I,O):- atom_codes(O,I),!.
 map_html_entities_mono(I,O):- map_html_entities(I,O).
@@ -535,18 +557,21 @@ print_card_l(_,Nil):- Nil==[],!.
 print_card_l(N,[H|T]):- print_card_n(N,H), N2 is N+1, print_card_l(N2,T).
 
 print_card_n(N,Var):- \+ callable(Var),!,print_tb_card(print_wrappable(Var),print_wrappable(N)).
-print_card_n(N,card(T,B)):- !, print_tb_card(T,(write(N),call(B))).
-print_card_n(N,GF):- grid_footer(GF,G,F), is_gridoid(G),!,
-  data_type(G,DT), print_tb_card(print_grid(G),wprl([N,DT,F])).
 
-print_card_n(N,G):- is_gridoid(G),!,
-  data_type(G,DT), print_tb_card(print_grid(G),wprl([N,DT])).
+print_card_n(N,H):- H= [I], is_object(I), !,  print_card_n(N,I).
+print_card_n(N,H):- H= [I], is_gridoid(I), \+ is_gridoid(H), !,  print_card_n(N,I).
+
+print_card_n(N,card(T,B)):- !, print_tb_card(T,(write(N),call(B))).
+print_card_n(N,GF):- grid_footer(GF,G,F), is_gridoid(G), data_type(G,DT), print_tb_card(print_grid(G),wprl([N,DT,F])),!.
+
+print_card_n(N,I):- is_object(I),g_display(I,G),print_card_n(N,G),!.
+print_card_n(N,G):- is_gridoid(G), data_type(G,DT), print_tb_card(print_grid(G),wprl([N,DT])),!.
 
 print_card_n(_,H):- string(H),!,write(H).
 print_card_n(_,H):- atom(H),!,write(H).
-print_card_n(N,H):- callable_arity(H,0),print_tb_card(call(H),wprl([N,H])).
-print_card_n(N,H):- callable_arity(H,1),call(H,R), data_type(R,DT),print_tb_card(wprl([N,H,DT]),R).
-print_card_n(N,H):- data_type(H,DT),print_tb_card(pp(H),wprl([N,DT])).
+print_card_n(N,H):- callable_arity(H,0),print_tb_card(call(H),wprl([N,H])),!.
+print_card_n(N,H):- callable_arity(H,1),call(H,R), data_type(R,DT),print_tb_card(wprl([N,H,DT]),R),!.
+print_card_n(N,H):- data_type(H,DT),print_tb_card(pp(H),wprl([N,DT])),!.
 
 
 print_tb_card(Top,Bottem):- \+ wants_html, !, sccs(Top,nl_if_needed,wprl(Bottem)),!.
@@ -567,9 +592,14 @@ print_tb_card(Top,Bottem):-
 
 print_wrappable(L):- \+ wants_html, !, wprl(L).
 print_wrappable(L):- with_tag_class(pre,wrappable,wprl(L)).
-wprl(L):- is_list(L),!,maplist(wprl,L).
-wprl(H):-  callable_arity(H,0),call(H),write(' ').
-wprl(H):-  ppt(H),write(' ').
+wprl(S):- (string(S);is_codelist(S);is_charlist(S)),!,format('~s',[S]).
+wprl(S):- atomic(S),!,notrace(catch(format(S,[]),_,write(S))).
+wprl(S):- is_grid(S), print_grid(S),!.
+wprl(S):- is_vm(S), pp(S) ,!.
+wprl([H]):- wprl(H),!.
+wprl([H|T]):- wprl(H),write_nbsp,wprl(T).
+wprl(H):- callable_arity(H,0),call(H),!.
+wprl(H):- ppt(H),!.
 
 % width: fit-content
 % html_table(ListOfLists):- setup_call_cleanup(write('<table style="width: fit-content;m width: 100%; border: 0px">'), maplist(html_table_row,ListOfLists), write('</table>')),!.
@@ -578,6 +608,21 @@ html_table_row(ListOfLists):- with_tag('tr',html_table_col(ListOfLists)).
 html_table_col(ListOfLists):- is_list(ListOfLists),\+ is_grid(ListOfLists),!,maplist(html_table_col,ListOfLists).
 html_table_col(H):- with_tag('td',print_card_n('',H)).
 
+arc_session_vars:- 
+  show_indiv_filters('<br/>'),
+  show_console_info,
+  findall(N=V,luser_getval(N,V),List),
+  sort(List,SList),
+  with_tag(table,forall(member(N=V,SList),(wots(NS,writeq(N)),wots(VS,writeq(V)),html_table_row([NS,VS])))),
+  arc_session_vars_pt2(SList).
+arc_session_vars_pt2(ASList):- 
+  findall(NG=V,(luser_getval_g(NG,N,V),\+ member(N=V,ASList)),List),
+  sort(List,SList),
+  with_tag(table,forall(member(N=V,SList),(wots(NS,writeq(N)),wots(VS,writeq(V)),html_table_row([NS,VS])))).
+
+luser_getval_g(nb_current(N),N,V):- nb_current(N,V).
+luser_getval_g(global_user(N),N,V):- arc_user_prop(global,N,V).
+luser_getval_g(prolog_flag(N),N,V):- current_prolog_flag(N,V).
 
 print_grid_html:- arc_grid(Grid),print_grid_html(_SH,_SV,_EH,_EV,Grid).
 %print_grid_html(Grid):-print_grid_html(_SH,_SV,_EH,_EV,Grid),!.
@@ -602,17 +647,33 @@ print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):-
   THGHT is HGHT*10,
   (format('<p><table nwidth="~wpx" nheight="~wpx" id="~w" onclick="clickGrid(`~w`)" class="grid_table">',
                       [TWidth,THGHT,TaskIDSubTask,TaskIDSubTask]),
-  Header = TaskIDSubTask,
-  ignore((
-   (has_content(Header)->true;(nb_current(grid_header,Footer),has_content(Header),nb_setval(grid_header,[]))),
+  ignore((take_value(grid_header,Header),
     with_tag('tr',format('<th nwidth="~wpx" colspan="~w" style="all: none;" class="wrappable">~w</td>',[TWidth,Width,Header])))),
 
   print_grid_http_bound(_,BGC,SH,SV,EH,EV,Grid),
-  ignore((
-   (has_content(Footer)->true;(nb_current(grid_footer,Footer),has_content(Footer),nb_setval(grid_footer,[]))),
+
+  ignore((take_value(grid_footer,Footer),
     with_tag('tr',format('<th nwidth="~wpx" colspan="~w" style="all: none;" class="wrappable">~w</td>',[TWidth,Width,Footer])))),
+
   write('</table></p>')),!.
 
+take_value(_Var,Footer):- nonvar(Footer),has_content(Footer),!.
+take_value(Name,Footer):- nb_current(Name,Footer),has_content(Footer),nb_setval(Name,[]).
+
+grid_member(E,Grid):- is_grid(Grid), append(Grid,List),!,member(E,List).
+
+print_grid_http_bound(ID,BGC,SH,SV,EH,EV,Grid):- EH>=12, EH>=12,is_grid(Grid), 
+ \+ ( grid_member(E,Grid), compound(E)), !, 
+ ignore((nonvar(ID),format('<p><table onclick="clickGrid(`~q`)" class="grid_table_shrink">',[ID]))),
+ forall(between(SV,EV,V),
+    with_tag('tr',((
+    forall(between(SH,EH,H),
+     (( must_det_ll((once((hv_cg_value(Grid,CG,H,V);CG=BGC)), 
+       only_color_data_or_atom(CG,Color),
+       into_html_color(Color,HTMLColor))),
+         format('<td bgcolor="~w" title="~w (~w,~w)">',[HTMLColor,CG,H/EH,V/EV]),
+          catch(print_hg1(CG),E,writeln(CG=E)),write('</td>')))))))),
+ ignore((nonvar(ID),write('</table>'))).
 
 print_grid_http_bound(ID,BGC,SH,SV,EH,EV,Grid):- 
  ignore((nonvar(ID),format('<p><table onclick="clickGrid(`~q`)" class="grid_table">',[ID]))),
@@ -622,7 +683,7 @@ print_grid_http_bound(ID,BGC,SH,SV,EH,EV,Grid):-
      (( must_det_ll((once((hv_cg_value(Grid,CG,H,V);CG=BGC)), 
        only_color_data_or_atom(CG,Color),
        into_html_color(Color,HTMLColor))),
-         format('<td bgcolor="~w" tooltip="~w">',[HTMLColor,CG]),
+         format('<td bgcolor="~w" title="~w (~w,~w)">',[HTMLColor,CG,H/EH,V/EV]),
           catch(print_hg1(CG),E,writeln(CG=E)),write('</td>')))))))),
  ignore((nonvar(ID),write('</table>'))).
 
@@ -665,23 +726,21 @@ write_ddm(Title,Goal):-
  write('</a><div class="dropdown-content">'),call(Goal),write('</div></li>').
 term_to_www_encoding(Goal,A):- with_output_to(string(S),writeq(Goal)),www_form_encode(S,A).
 
+write_nav_cmd(Info,Cmd):- \+ compound(Cmd), !, write_nav_cmd(Info,navCmd(Cmd)).
+write_nav_cmd(Info,navCmd(Cmd)):- !, %nonvar(Goal), %toplevel_pp(PP), %first_current_example_num(ExampleNum),
+  %get_current_test_atom(TestAtom), %get_current_test(TestID), term_to_www_encoding(TestID,TestAtom), %in_pp(PP),  
+  %term_to_www_encoding(Goal,CmdAtom),
+  into_str(Info,Info1),
+  into_attribute(Cmd,Attr),
+  sformat(SO,'<a href="javascript:void(0)" onclick="navCmd(`~w`)">~w</a>~n',[Attr,Info1]),!,
+  our_pengine_output(SO).
+write_nav_cmd(Info,Cmd):- write_nav_cmd(Info,navCmd(Cmd)).
 write_http_link(Info,Goal):- nonvar(Goal), %toplevel_pp(PP), %first_current_example_num(ExampleNum),
   get_current_test_atom(TestAtom), %get_current_test(TestID), term_to_www_encoding(TestID,TestAtom), %in_pp(PP),  
   term_to_www_encoding(Goal,CmdAtom),
-  sformat(SO,'<a href="?cmd=~w&task=~w" target="_top">~w</a>~n',[CmdAtom,TestAtom,Info]),!,
-  our_pengine_output(SO).
-
-
-write_csection(Goal):- write_csection(Goal,Goal).
-write_csection(Title,Goal):- write_csection(Title,Goal,true),!.
-
-write_csection(Title,Goal,Showing):- gensym(accordian_,Sym),
- arc_html_format([
-'<input type="checkbox" id="',Sym,'" class="hidecontent"><label for="',Sym,'">',wqs(Title),'</label>',
-'<div class="content hidecontent">', call(Goal),
- format('<label for="~w" style="right: 0; position: relative; width: 8px">x</label>',[Sym]),
-'</div>']),
- ignore((Showing==true->format('<script>document.getElementById("~w").click();</script>',[Sym]))).
+  into_str(Info,Info1),
+  sformat(SO,'<a href="?cmd=~w" target="_top">~w</a>~n',[CmdAtom,TestAtom,Info1]),!,
+  our_pengine_output(SO),!.
 
 arcproc_iframe(Request):- 
  format('Content-type: text/html~n~n',[]),!,
@@ -697,7 +756,7 @@ arcproc_main(Request):-
   intern_arc_request_data(Request),
  with_toplevel_pp(http,handler_arcproc_main(Request)),!.
 handler_arcproc_main(_Request):-
-  sccs(write_arc_start(Where),(call_current_arc_cmd(cmd)->true;main_no_cmd), write_arc_end(Where)).
+  sccs(write_arc_start(Where),(call_current_arc_cmd(cmd)->true;show_selected_object), write_arc_end(Where)).
 
 arcproc_right(Request):- 
  format('Content-type: text/html~n~n',[]),!,
@@ -750,8 +809,8 @@ handler_logicmoo_right(Request):-
    write_arc_end(Where),
    !.
 
-click_grid:- get_now_cmd(grid,TG),click_grid(TG),!,main_no_cmd.
-click_grid:- main_no_cmd.
+click_grid:- get_now_cmd(grid,TG),click_grid(TG),!,show_selected_object.
+click_grid:- show_selected_object.
 
 click_grid(G):- writeq(G),nl,fail.
 click_grid(TG):- \+ is_grid(TG),into_grid(TG,G),G\==TG,!,click_grid(G).
@@ -763,13 +822,69 @@ set_html_component(Name,Value):-
   write_arc_start(Where),
   format(Where,'<script> window.setUrlParam("~w","~w"); window.setComponent("~w","~w");</script>',[Name,Value,Name,Value]).
 
-
-main_no_cmd:-   
+show_selected_object:- get_pair_mode(entire_suite),!, preview_suite.
+show_selected_object:- get_pair_mode(whole_test),!, do_web_menu_key('o'). 
+show_selected_object:- get_pair_mode(single_pair),!, do_web_menu_key('i'). 
+show_selected_object:-   
    ignore(show_console_info),   
    ignore(print_test),
    write('<hr>'),
    write_csection(edit1term,edit1term,false),
    show_http_session.
+
+
+show_indiv_filters(BR):- 
+   must_run_html((
+   findall(N,ui_option_checkbox(N,_,_),NList),
+   list_to_set(NList,Set),
+   forall(member(N,Set),once((ui_option_checkbox(N,C,TF),ignore(session_checkbox(N,C,BR,TF=='1'))))))).
+
+ui_option_checkbox(doDiagonals,'doDiagonals','1').
+ui_option_checkbox(Showable,title(Showable),Str):- vm_bool_opts(Showable,Str).
+ui_option_checkbox(Showable,wants_output_for(Showable),Str):- is_arc_spyable(Showable),
+  (wants_output_for(Showable)->Str='1';Str='0').
+
+:- dynamic(is_arc_spyable_deduced/1).
+is_arc_spyable_known(Showable):- is_arc_spyable_deduced(Showable).
+is_arc_spyable_known(Showable):- 
+   luser_getval(Showable,Show), \+ is_arc_spyable_deduced(Showable),
+   once(Show==hide;Show==show).
+
+is_arc_spyable(Showable):- arc_spyable_keyboard_key(Showable,_), \+ is_arc_spyable_known(Showable).
+is_arc_spyable(Showable):- is_arc_spyable_known(Showable).
+
+
+wants_output_for(Showable):- wants_html,!,
+  (wants_output_for_1(Showable)-> session_checkbox(Showable,wants_output_for(Showable),'<br/>',true) ;
+    (session_checkbox(Showable,wants_output_for(Showable),'<br/>',false),!,fail)).
+wants_output_for(Showable):- 
+   (wants_output_for_1(Showable)-> pp(showing(Showable));
+     ((arc_spyable_keyboard_key(Showable,Key)->pp(skipping(Showable,key(Key)));(pp(skipping(Showable)))),!,fail)).
+
+wants_output_for_1(Showable):- nb_current(menu_key,_), arc_spyable_keyboard_key(Showable,Key), menu_or_upper(Key).
+wants_output_for_1(Showable):- is_arc_spyable_known(Showable),luser_getval(Showable,show).
+wants_output_for_1(Showable):- \+ is_arc_spyable_known(Showable), 
+   assertz_if_new(is_arc_spyable_deduced(Showable)), luser_setval(Showable,hide),!,fail.
+
+
+vm_bool_opts(Key,Str):- 
+ must_det_ll((ensure_peek_vm(Machine),
+  get_kov1(Key,Machine,Value))),into_0_or_1(Value,Str).
+
+ensure_peek_vm(Machine):- peek_vm(Machine),!.
+ensure_peek_vm(Machine):- rand_current_grid(X),into_fti(_ID,[complete],X,Machine),!,set_vm(Machine).
+rand_current_grid(X):- get_current_grid(X).
+rand_current_grid([[blue]]).
+
+
+into_0_or_1(Value,Str):- is_bool_like(T,F),(Value==T->Str='1';(Value==F->Str='0';fail)).
+is_bool_like(true,false). is_bool_like(yes,no). is_bool_like(on,off).
+is_bool_like(1,0). is_bool_like('1','0').
+is_bool_like('CHECKED','UNCHECKED'). 
+is_bool_like('CHECKED',''). 
+% is_bool_like(show,hide).
+
+
 
 get_now_cmd(Cmd,Prolog):- get_param_req(Cmd,Call),url_decode_term(Call,Prolog).
 %get_now_cmd(Cmd,Prolog):- get_http_current_request(Request), member(request_uri(List),Request),request_uri('/arc_web_interface.html?dump_from_pairmode),url_decode_term(Call,Prolog),!.
@@ -911,6 +1026,14 @@ http_debug_console:-
 
 invoke_arc_cmd(Key):- \+ sensical_term(Key),!.
 invoke_arc_cmd(Key):- atom_to_term_safe(Key,Prolog,_Vs), Prolog\=@=Key,!,invoke_arc_cmd(Prolog).
+
+invoke_arc_cmd(O):- ground(O), O = (TestID>ExampleNum*_IO),!,set_example_num(ExampleNum),set_current_test(TestID),
+  click_grid(O).
+invoke_arc_cmd(E):- ground(E), E = (TestID>ExampleNum),!,set_example_num(ExampleNum),set_current_test(TestID),
+  set_pair_mode(single_pair),show_selected_object.
+invoke_arc_cmd(E):- ground(E), fix_test_name(E,TestID),set_current_test(TestID),
+  set_pair_mode(whole_test),show_selected_object.
+invoke_arc_cmd(E):- number(E),E>=300,set_pair_mode(entire_suite),fail.
 invoke_arc_cmd(Prolog):- %nonvar(Prolog),
    current_predicate(_,Prolog),
    asserta_new(xlisting_whook:offer_testcase(Prolog)),!,
@@ -918,6 +1041,7 @@ invoke_arc_cmd(Prolog):- %nonvar(Prolog),
 invoke_arc_cmd(Key):- do_menu_key(Key).
 
 arc_weto(G):- call(G).
+
 
 %:- luser_default(cmd,print_test).
 :- luser_default(cmd,ndividuator). 

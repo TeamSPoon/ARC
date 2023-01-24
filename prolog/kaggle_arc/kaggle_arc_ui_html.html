@@ -8,7 +8,6 @@
     <!--link rel="stylesheet" type="text/css" href="css/common.css">
     <link rel="stylesheet" type="text/css" href="css/testing_interface.css"-->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
-    <script src="kaggle_arc_ui_html.js"></script>
     <link rel="stylesheet" type="text/css" href="./kaggle_arc_ui_html.css">
 
     <script type="text/javascript">
@@ -60,6 +59,11 @@
 
         window.onload = (event) => {
             console.log("page is fully loaded");
+
+            window.onbeforeunload = function () {
+					//alert("Leaving page...");
+				return "onbeforeunload "+ document.activeElement.href ;
+			}
             var iframe = document.getElementById('lm_xref');
             iframe.style.width = document.getElementById("main").style.width;
             iframe.contentWindow.addEventListener("beforeunload", (e) => {
@@ -70,11 +74,13 @@
             });
             ensureIFrameUseTopParams();
 
-			if(false) {
-			
-            document.getElementById('page_head_iframe').innerHTML =
-                '<iframe src="arcproc_iframe?icmd=(edit1term,show_http_session)" width="1024" height="70%"' +
-                'frameborder="0" id="arc_left_frame" style="width: 100%" scrolling="auto">';
+			if(true) {
+
+	        var sessCmd = "arcproc_iframe?icmd=arc_session_vars";
+            document.getElementById('page_head_div').innerHTML =
+				'<p><a href="'+sessCmd+'" target="page_head_iframe">Refresh</a><br/></p>'+
+                '<p><iframe src="'+sessCmd+'" width="1024" height="70%"' +
+                'frameborder="0" id="page_head_iframe" name="page_head_iframe" style="width: 100%" scrolling="auto" /></p>';
 			}
             /*var iframe = document.getElementById("lm_xref");
 		   // Remove the unloadHandler in case it was already attached.
@@ -107,8 +113,9 @@
 
 </head>
 <body style="background-color: #000; color: white;">
+<script src="kaggle_arc_ui_html.js"></script>
 <div id="mySideNavL" class="sidenavL">
-        <a href="javascript:void(0)" class="closebtnL" style="overflow: none" onclick="toggleNavL('mySideNavL')">&#10005;</a>
+        <a href="javascript:void(0)" class="closebtn" onclick="toggleNavL('mySideNavL')">&#10005;</a>
         <!--input type="text" id="param_task" name="task" value="3bdb4ada"><br>
         <input type="text" id="param_test_suite_name" name="test_suite_name" value="dbigham_eval_pass"--><br>
         <a href="javascript:void(0)" onclick="navCmd('300')">300: <font color="yellow" style="color: yellow">evaluation=100</font></a> &lt;&lt;&lt;&lt;-------
@@ -347,15 +354,12 @@
         <a href="javascript:void(0)" onclick="navCmd('533')">533: <font color="yellow" style="color: yellow">failed_predict_grid_size=14</font></a>
     </div>
     <div id="mySideNavR" class="sidenavR">
-        <a href="javascript:void(0)" class="closebtnR" style="overflow: none" onclick="toggleNavR('mySideNavR')">&#10005;</a> With selected test: v('1d398264') example(trn+0)
+        <a href="javascript:void(0)" class="closebtn" onclick="toggleNavR('mySideNavR')">&#10005;</a> With selected test: v('1d398264') example(trn+0)
 
-        <a href="javascript:void(0)" onclick="navCmd('i')">You may fully (t)rain from examples</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('T')">(T)rain Mode switches between:
-            'entire_suite','whole_test','single_pair' (currently: single_pair)</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('i')">See the (i)ndividuation correspondences in the
-            input/outputs</a>
+        <a href="javascript:void(0)" onclick="navCmd('t')">You may fully (t)rain from examples</a>
+        
+		<a href="javascript:void(0)" onclick="navCmd('i')">See the (i)ndividuation correspondences in the input/outputs</a>
+        <a href="javascript:void(0)" onclick="navCmd('I')">FULL (I)ndividuation</a>
 
         <a href="javascript:void(0)" onclick="navCmd('o')">(o)bjects found in the input/outputs</a>
 
@@ -504,17 +508,12 @@
 		
         <input type="checkbox" id="accordian_82" class="hidecontent">
 		<label for="accordian_82"><div class="font(1)">Session Info</div></label>
-        <div class="content hidecontent">
-		   <pre>
-			    <a href="javascript:void(0)" onclick="navCmd('prev_test')">prev_test</a>
-				<a href="javascript:void(0)" onclick="navCmd('print_all_info_for_test')">print_all_info_for_test</a>
-				<a href="javascript:void(0)" onclick="navCmd('next_test')">next_test</a>
-				<div id="page_head_iframe"></div>
-		   </pre>
+        <div class="content hidecontent">		   
+	       <div id="page_head_div"></div>		   
            <label for="accordian_82" style="right: 0; position: relative; width: 8px">x</label>
         </div>
         <script>
-            document.getElementById("accordian_82").click();
+           // document.getElementById("accordian_82").click();
         </script>
 		
         <ul style="right: 300px; top: 0px"></ul><span style="font-size:20px;cursor:pointer;color: white" onclick="toggleNavL('mySideNavL')">&#9776; Test Suites</span><span style="font-size:20px;cursor:pointer;color: white" onclick="toggleNavR('mySideNavR')">&#9776; Task

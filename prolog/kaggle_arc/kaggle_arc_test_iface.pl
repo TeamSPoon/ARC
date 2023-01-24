@@ -37,7 +37,7 @@ print_menu_cmd(_Key,Info,Goal):- nl_if_needed, print_menu_cmd1(write(Info),Goal)
 print_menu_cmd9(_Key,Info,Goal):- write_nbsp,print_menu_cmd1(Info,Goal).
 
 print_menu_cmd1(Goal):-  print_menu_cmd1(write(Goal),Goal),!.
-print_menu_cmd1(Info,Goal):- wants_html,!,must_det_ll((shorten_text(Info,Info1),write_http_link(Info1,Goal))),!.
+print_menu_cmd1(Info,Goal):- wants_html,!,must_det_ll((shorten_text(Info,Info1),write_nav_cmd(Info1,Goal))),!.
 print_menu_cmd1(Info,_Goal):- into_str(Info,Str), format('~w',[Str]).
 
 write_cmd_link2(Info,Goal):- nonvar(Goal),
@@ -45,7 +45,7 @@ write_cmd_link2(Info,Goal):- nonvar(Goal),
    sformat(SO,'<a href="/swish/lm_xref/?mouse_iframer_div=~w&cmd=~w" target="lm_xref">~w</a>~n ',[PP,A,Info]),!,
    our_pengine_output(SO).
 
-into_str(Info,Info1):- compound(Info),wots(S,call(Info)),!,into_str(S,Info1).
+into_str(Info,Info1):- compound(Info),wots(S,wprl(Info)),!,into_str(S,Info1).
 into_str(Info,Info1):- \+ string(Info),!,sformat(Info1,'~w',[Info]),!.
 into_str(Info,Info).
 
@@ -58,7 +58,7 @@ shorten_text(Info,Info).
 :- multifile(menu_cmd1/4).
 :- multifile(menu_cmd9/4).
 menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z_make,fully_train)).
-menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),
+menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),  \+ wants_html, 
   sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
 menu_cmd1(i,'i','             See the (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,locally(nb_setval(debug_as_grid,f),ndividuator))).
 menu_cmd1(i,'o','                  or (o)bjects found in the input/outputs',                (clear_tee,cls_z_make,!,locally(nb_setval(debug_as_grid,t),ndividuator))).
@@ -85,7 +85,7 @@ menu_cmd1(_,'r','               Maybe (r)un some of the above: (p)rint, (t)rain,
 menu_cmd1(_,'A','                  or (A)dvance to the next test and (r)un it',(cls_z_make,!,run_next_test)).
 menu_cmd1(_,'n','                  or (n)ext test (skipping this one)',(next_random_test,print_single_pair)).
 menu_cmd1(_,'b','                  or (b)ack to previous test',(prev_test,print_single_pair)).
-menu_cmd1(_,'f','                  or (f)orce a favorite test.',(force_full_tee,enter_test)).
+menu_cmd1(_,'f','                  or (f)orce a favorite test.',(force_full_tee,enter_test)):- \+ wants_html.
 menu_cmd1(_,'~','                  or (PageUp) to begining of suite',(prev_suite)).
 menu_cmd1(_,'N','                  or (N)ext suite',(next_suite)).
 menu_cmd1(i,'R','             Menu to (R)un all tests noninteractively',(run_all_tests)).
@@ -94,7 +94,7 @@ menu_cmd1(r,'i','             Re-enter(i)nteractve mode.',(interact)).
 
 % How I got into fostering was I had spent about 10k dollars at Dove Lewis Animal Hospital for a cat in heart failure.  When he passed, about 3 years ago, I decided (this time) to go to a "kill" shelter to adopt another.   While was waiting for an appointment with an adoption screener I saw a flyer that said 'all medical expenses' would be paid if i became a foster volunteer. Holly shit, that sounded good.  So I started fostering 'moms with kittens' and other cats in all stages and needs.  Sometimes cats that are under protection by court orders.  T
 
-menu_cmd9(_,'m','recomple this progra(m),',(clear_tee,update_changes)).
+menu_cmd9(_,'m','recomple this progra(m),',(clear_tee,update_changes,threads)).
 menu_cmd9(_,'c','(c)lear the scrollback buffer,',(force_full_tee,really_cls)).
 menu_cmd9(_,'C','(C)lear cached test info,',(clear_training,clear_test)).
 menu_cmd9(_,'r','(r)un DSL code,',(call_dsl)).
@@ -327,11 +327,11 @@ preview_suite:- luser_getval(test_suite_name,X),preview_suite(X).
 
 preview_suite(Num):- number(Num),do_test_number(Num).
 preview_suite(Name):- \+ is_list(Name),set_test_suite(Name),get_current_suite_testnames(Set),!,preview_suite(Set).
-preview_suite(Set):- length(Set,L),L=<10,reverse(Set,[_|Rev]),!, with_pair_mode(whole_test,maplist(preview_test,Rev)).
+preview_suite(Set):- length(Set,L),L=<10,reverse(Set,Rev),!, with_pair_mode(whole_test,maplist(preview_test,Rev)).
 preview_suite(Set):- length(Set,L),L>100, first_ten(Set,100,Rev),with_pair_mode(single_pair,maplist(preview_test,Rev)).
 preview_suite(Set):- reverse(Set,Rev), with_pair_mode(single_pair,maplist(preview_test,Rev)).
 
-first_ten(Set,Ten,Rev):- length(LL,Ten),append(LL,_,Set),reverse(LL,[_|Rev]).
+first_ten(Set,Ten,Rev):- length(LL,Ten),append(LL,_,Set),reverse(LL,Rev).
 
 do_test_number(Num):- Num>=300, test_suite_list(L), nth_above(300,Num,L,SuiteX),!,set_test_suite(SuiteX),
   preview_suite.
@@ -880,7 +880,8 @@ ensure_level_1_test_info:- precache_all_grid_objs.
   
 when_html(G):- wants_html->call(G);true.
 
-grid_to_task_pair(Grid,TestIDExample):- grid_to_gid(Grid,TestIDExample),!.
+grid_to_task_pair(Grid,TestIDExample):- ground(Grid),was_grid_gid(Grid,TestIDExample),!.
+grid_to_task_pair(Grid,TestIDExample):- ground(Grid),is_grid_tid(Grid,TestIDExample),!.
 %grid_to_task_pair(_,TestID>Example):- get_current_test(TestID),some_current_example_num(Example),!.
 grid_to_task_pair(_,'???').
 
@@ -1292,6 +1293,18 @@ test_id_border(TestID):-
 print_whole_test(Name):- fix_test_name(Name,TestID), with_pair_mode(whole_test,print_test(TestID)).
 
 maybe_set_suite:- get_current_test(TestID),maybe_set_suite(TestID).
+
+print_single_pair(TName):- wants_html,!,preview_test(TName).
+print_single_pair(TName):-
+ must_det_ll((
+  fix_test_name(TName,TestID,ExampleNum),
+  ensure_test(TestID),
+  ignore(first_current_example_num(ExampleNum)),
+  forall(once(kaggle_arc(TestID,ExampleNum,In,Out)),
+       print_single_pair(TestID,ExampleNum,In,Out)),
+     write('%= '), parcCmt(TestID))).
+
+print_test(TName):- wants_html,!,preview_test(TName).
 print_test(TName):-    
   fix_test_name(TName,TestID,ExampleNum1),  
   arc_user(USER),  
@@ -1305,27 +1318,49 @@ print_test(TName):-
   write('%= '), parcCmt(TestID),!,force_full_tee.
 
 
+preview_test(TName):- \+ wants_html,!, print_single_pair(TName).
 preview_test(TName):-
-  fix_test_name(TName,TestID,ExampleNum1),  
-  TitleColor = cyan,
- when_in_html((write('<hr>'),pp(TestID))),
+ fix_test_name(TName,TestID,ExampleNum1),    
+ test_atom(TestID,TestAtom),
+ when_in_html((write('<hr>'),write_nav_cmd(pp(TestID),navCmd(TestAtom)))),
  with_tag_class('p','grow',
  ((  
   %set_example_num(ExampleNum1),
     forall(arg(_,v((trn+_),(tst+_)),ExampleNum1),
      forall(kaggle_arc(TestID,ExampleNum1,In,Out),
-     (( once((as_d_grid(In,In1),as_d_grid(Out,Out1),data_type(In1,S1), data_type(Out1,S2))),
-       xfer_zeros(In1,Out1),
-       in_out_name(ExampleNum1,NameIn,NameOut),
-       (ID1 = (TestID>ExampleNum1*in)),
-       (ID2 = (TestID>ExampleNum1*out)),
-       HIn = wqs(TitleColor,[S1,ID1,NameIn]),
-       HOut = wqs(TitleColor,[S2,TestID>ExampleNum1*out,NameOut]),
-       grid_size(In1,H1,V1),
-       grid_size(Out1,H2,V2),
-       BGC = 'bg',
-       html_table([[HIn,'   ',HOut],[print_grid_http_bound(ID1,BGC,1,1,H1,V1,In1),'-->',
-         print_grid_http_bound(ID2,BGC,1,1,H2,V2,Out1)]])))))))).
+       print_single_pair(TestID,ExampleNum1,In,Out)))))).
+
+
+print_single_pair(TestID,ExampleNum,In,Out):- as_d_grid(In,In1),as_d_grid(Out,Out1), xfer_zeros(In1,Out1),!,
+   print_single_pair_pt2(TestID,ExampleNum,In1,Out1).
+
+print_single_pair_pt2(TestID,ExampleNum,In1,Out1):- \+ wants_html,!,
+   in_out_name(ExampleNum,NameIn,NameOut),%easy_diff_idea(TestID,ExampleNum,In1,Out1,LIST),!,
+   format('~Ntestcase(~q,"\n~@").~n~n~n',
+     [TestID>ExampleNum,
+       print_side_by_side6(cyan,In1,NameIn,_,Out1,NameOut)]),!,
+   format('~N'),
+   %ignore((grid_hint_swap(i-o,In,Out))),
+   format('~N'),
+   ignore(show_reduced_io_rarely(In1^Out1)),!.
+
+print_single_pair_pt2(TestID,ExampleNum,In1,Out1):- wants_html,!,
+ once((data_type(In1,S1), data_type(Out1,S2))),
+ test_atom(TestID,TestAtom),
+ in_out_name(ExampleNum,NameIn,NameOut),
+ (ID1 = (TestID>ExampleNum*in)),
+ (ID2 = (TestID>ExampleNum*out)),
+ TitleColor = cyan,
+  HIn = wqs(TitleColor,[write_nav_cmd(NameIn,TestID>ExampleNum)]),
+  HOut = wqs(TitleColor,[write_nav_cmd(TestAtom,navCmd(TestAtom))]),
+  wots(FIn,format_footer(TitleColor,'Input',S2)),
+  FOut = format_footer(TitleColor,NameOut,S1),
+ grid_size(In1,H1,V1),
+ grid_size(Out1,H2,V2),
+ BGC = 'bg',
+ html_table([[HIn,'   ',HOut],[
+   locally(nb_setval(grid_footer,FIn),print_grid_http_bound(ID1,BGC,1,1,H1,V1,In1)),'-->',
+   locally(nb_setval(grid_footer,FOut),print_grid_http_bound(ID2,BGC,1,1,H2,V2,Out1))]]).
 
 print_side_by_side66(TitleColor,G1,N1,_LW,G2,N2):- wants_html,!,
  with_tag_style('p','width: 100%; background: #132',g_out((nl_now,
@@ -1333,6 +1368,8 @@ print_side_by_side66(TitleColor,G1,N1,_LW,G2,N2):- wants_html,!,
    into_wqs_string(N1,NS1), into_wqs_string(N2,NS2),
    print_card_list([card(print_grid(G1),format_footer(TitleColor,NS1,S1)),
                  card(print_grid(G2),format_footer(TitleColor,NS2,S2))])))).
+
+
 
 next_grid_mode(dots,dashes):-!.
 next_grid_mode(_,dots).
@@ -1390,32 +1427,10 @@ easy_diff_idea(TestID,ExampleNum,In,Out,[NameIn=In,(NameOut+TestID)=Out|Get]):- 
 easy_diff_idea(TestID,ExampleNum,In,Out,[NameIn=In,(NameOut+TestID)=Out]):-
   ignore(in_out_name(ExampleNum,NameIn,NameOut)).
 
-
-print_single_pair(TName):-
- must_det_ll((
-  fix_test_name(TName,TestID,ExampleNum),
-  ensure_test(TestID),
-  ignore(first_current_example_num(ExampleNum)),
-  forall(once(kaggle_arc(TestID,ExampleNum,In,Out)),
-       print_single_pair(TestID,ExampleNum,In,Out)),
-     write('%= '), parcCmt(TestID))).
-
-print_single_pair(TestID,ExampleNum,In,Out):-
-   as_d_grid(In,In1),as_d_grid(Out,Out1),   
-   xfer_zeros(In1,Out1),
-   in_out_name(ExampleNum,NameIn,NameOut),%easy_diff_idea(TestID,ExampleNum,In1,Out1,LIST),!,
-   format('~Ntestcase(~q,"\n~@").~n~n~n',
-     [TestID>ExampleNum,
-       print_side_by_side6(cyan,In1,NameIn,_,Out1,NameOut)]),!,
-   format('~N'),
-   %ignore((grid_hint_swap(i-o,In,Out))),
-   format('~N'),
-   ignore(show_reduced_io_rarely(In1^Out1)),!.
-
 other_grid_mode(I^O,II^OO):- with_next_grid_mode((as_d_grid(I,II),as_d_grid(O,OO))).
 
-in_out_name(trn+NN,SI,SO):- wants_html,N is NN+1, format(atom(SI),'Training Pair #~w Input',[N]),format(atom(SO),'Training Pair #~w Output',[N]),!.
-in_out_name(trn+NN,SI,SO):- N is NN+1, format(atom(SI),'Training Pair #~w Input',[N]),format(atom(SO),'Output',[]),!.
+%in_out_name(trn+NN,SI,SO):- wants_html,N is NN+1, format(atom(SI),'Training Pair #~w Input',[N]),format(atom(SO),'Training Pair #~w Output',[N]),!.
+in_out_name(trn+NN,SI,SO):- N is NN+1, format(atom(SI),'Training Pair #~w',[N]),format(atom(SO),'Output',[]),!.
 in_out_name(tst+NN,SI,SO):- N is NN+1, format(atom(SI),'EVALUATION TEST #~w',[N]),format(atom(SO),'Output<(REVEALED)>',[]),!.
 in_out_name(X,'Input'(X),'Output'(X)):-!.
 
@@ -2046,7 +2061,7 @@ color_sym(_,_,C,Sym):- enum_colors(C),color_int(C,I),nth1(I,`ose=xt~+*zk>`,S),na
 %color_sym(P*T,_,C,Sym):- enum_colors(C),color_int(C,I),S is P+I*T,name(Sym,[S]).
 
 
-with_current_test(P1):- get_pair_mode(enire_suite),!,forall_count(all_arc_test_name(TestID),call(P1,TestID)).
+with_current_test(P1):- get_pair_mode(entire_suite),!,forall_count(all_arc_test_name(TestID),call(P1,TestID)).
 with_current_test(P1):- ensure_test(TestID), call(P1,TestID).
 
 first_cmpd_goal(GG,_):- \+ compound(GG),!,fail.

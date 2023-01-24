@@ -267,8 +267,6 @@ ppawt(FA):-
     %portray(false), partial(true), fullstop(true),
    ignore_ops(false), quoted(true), quote_non_ascii(true), brace_terms(false)]).
 
-:- export(plain_var/1).
-plain_var(V):- notrace((var(V), \+ attvar(V), \+ get_attr(V,ci,_))).
 
 my_assertion(G):- call(G),!.
 my_assertion(G):- wdmsg(my_assertion(G)),writeq(goal(G)),nl,!,break.

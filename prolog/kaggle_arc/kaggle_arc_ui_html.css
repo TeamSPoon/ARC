@@ -241,20 +241,13 @@ code {
     color: #f1f1f1;
 }
 
-.sidenavL .closebtnL {
+.closebtn {
     position: absolute;
     top: 0;
     right: 25px;
     font-size: 36px;
     margin-left: 50px;
-}
-
-.sidenavR .closebtnR {
-    position: absolute;
-    top: 0;
-    right: 25px;
-    font-size: 36px;
-    margin-left: 50px;
+    overflow: none;
 }
 
 @media screen and (max-height: 450px) {
@@ -284,6 +277,11 @@ code {
 
 .tblo td {
   /*border: 3px solid grey;*/
+   /* text-shadow:
+        0.07em 0 black,
+        0 0.07em black,
+        -0.07em 0 black,
+        0 -0.07em black;*/
 }
 
 .wrappable {
@@ -324,6 +322,27 @@ code {
 }
 */
 
+.grid_table_shrink td {
+    /*
+    // display: block; 
+    //float: left;*/
+    width: 8px;
+    position: relative;
+    border-radius: 6%/30%;
+    height: 7px;
+    font-size: 5px;
+    text-align: center;
+    vertical-align: baseline;
+    padding: 1px;
+    border: 1px;
+    border-style: none;
+    border-spacing: 1px;
+   /* text-shadow:
+        0.07em 0 black,
+        0 0.07em black,
+        -0.07em 0 black,
+        0 -0.07em black;*/
+}
 .grid_table td {
     /*
     // display: block; 
@@ -339,12 +358,17 @@ code {
     border: 1px;
     border-style: none;
     border-spacing: 1px;
+   /* text-shadow:
+        0.07em 0 black,
+        0 0.07em black,
+        -0.07em 0 black,
+        0 -0.07em black;*/
 }
 
 th {
     /* display: block; 
     //float: left;*/
-    width: 12px;
+    // width: 12px;
     position: relative;
     border-radius: 10%/50%;
     height: 8px;
@@ -404,7 +428,7 @@ dead-br {
     content: "";
 }
 
-br:after {
+dead-br:after {
     content: " ";
     /* note we've added space here.*/
 }
@@ -510,5 +534,10 @@ second_div,
     }
 
     td {
-        font-size: small;
+      font-size: small;
+   /* text-shadow:
+        0.07em 0 black,
+        0 0.07em black,
+        -0.07em 0 black,
+        0 -0.07em black;*/
     }
