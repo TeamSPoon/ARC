@@ -70,13 +70,15 @@ train_only_from_pairs(TestID):- clear_training(TestID), train_test(TestID,train_
 train_using_io(TestID,DictIn,DictOut):- train_using_io(TestID,trn,0,DictIn,DictOut),!.
 train_using_io(TestID,Trn,N1,DictIn,DictOut):-  
   kaggle_arc(TestID,(Trn+N1),In,Out),!,
+
+  with_test_pairs(TestID,(Trn+N1),In,Out,
   must_det_ll((
   %detect_pair_hints(TestID,(Trn+N1),In,Out),
   pp(train_for_objects_from_1pair(DictIn,TestID,[Trn,'i',N1,'o',N1],In,Out,DictMid)),
   DictMid=DictIn,
   i_pair(complete,In,Out),
   N2 is N1 + 1,
-  train_using_io(TestID,Trn,N2,DictMid,DictOut))).
+  train_using_io(TestID,Trn,N2,DictMid,DictOut)))).
 train_using_io(_TestID,_Trn,_,DictInOut,DictInOut):-!.
 
 %:- thread_local(keep_going/0).
@@ -99,7 +101,7 @@ train_for_objects_from_pair_with_mono(Dict0,TestID,Desc,In,Out,Dict9):-
    ignore(Dict1=Dict9))),!.
 
 cs(G):- call(G).
-%cs(G):- collapsible_section(debug,train_for_objects_from_1pair1,false,G).
+%cs(G):- w_section(train_for_objects_from_1pair1,G,debug).
 
 train_for_objects_from_1pair(Dict0,TestID,Desc,InA,OutA,Dict1):-
   locally(set_prolog_flag(gc,true),

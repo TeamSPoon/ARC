@@ -2,11 +2,13 @@
 
 <head>
     <title>Logicmoo ARC TopFrame</title>
-    <base href="/swish/muarc/">
+    <!--base href="https://logicmoo.org:11766/swish/muarc/kaggle_arc_ui_html.html"-->
+	<script src="kaggle_arc_ui_html.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <!--link rel="stylesheet" type="text/css" href="css/common.css">
+    <!--<link rel="stylesheet" type="text/css" href="css/common.css">
     <link rel="stylesheet" type="text/css" href="css/testing_interface.css"-->
+  
     <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="./kaggle_arc_ui_html.css">
 
@@ -29,34 +31,6 @@
             }
         }
 
-
-
-        var TwoFiftyPx = "250px";
-
-        function toggleNavL(Name) {
-            if (document.getElementById(Name).style.width != "0px") {
-                document.getElementById(Name).style.width = "0px";
-                document.getElementById("main").style.marginLeft = "0px";
-            } else {
-                document.getElementById(Name).style.width = TwoFiftyPx;
-                document.getElementById("main").style.marginLeft = TwoFiftyPx;
-            }
-            document.getElementById('lm_xref').style.width = document.getElementById("main").style.width;
-
-        }
-
-        function toggleNavR(Name) {
-            if (document.getElementById(Name).style.width != "0px") {
-                document.getElementById(Name).style.width = "0px";
-                document.getElementById("main").style.marginRight = "0px";
-            } else {
-                document.getElementById(Name).style.width = TwoFiftyPx;
-                document.getElementById("main").style.marginRight = TwoFiftyPx;
-            }
-            document.getElementById('lm_xref').style.width = document.getElementById("main").style.width;
-
-        }
-
         window.onload = (event) => {
             console.log("page is fully loaded");
 
@@ -65,7 +39,10 @@
 				return "onbeforeunload "+ document.activeElement.href ;
 			}
             var iframe = document.getElementById('lm_xref');
-            iframe.style.width = document.getElementById("main").style.width;
+			var mainE = document.getElementById("main");
+
+             iframe.style.width = mainE.style.width - 800;
+
             iframe.contentWindow.addEventListener("beforeunload", (e) => {
                 ensureTopUsesIFrameParams();
             });
@@ -81,6 +58,10 @@
 				'<p><a href="'+sessCmd+'" target="page_head_iframe">Refresh</a><br/></p>'+
                 '<p><iframe src="'+sessCmd+'" width="1024" height="70%"' +
                 'frameborder="0" id="page_head_iframe" name="page_head_iframe" style="width: 100%" scrolling="auto" /></p>';
+
+
+			document.getElementById("sess_accordian").click();
+
 			}
             /*var iframe = document.getElementById("lm_xref");
 		   // Remove the unloadHandler in case it was already attached.
@@ -110,10 +91,9 @@
     }
 
     </style>
-
 </head>
-<body style="background-color: #000; color: white;">
-<script src="kaggle_arc_ui_html.js"></script>
+<body style="background-color: #000; color: white">
+
 <div id="mySideNavL" class="sidenavL">
         <a href="javascript:void(0)" class="closebtn" onclick="toggleNavL('mySideNavL')">&#10005;</a>
         <!--input type="text" id="param_task" name="task" value="3bdb4ada"><br>
@@ -122,79 +102,6 @@
         <a href="javascript:void(0)" onclick="navCmd('301')">301: <font color="yellow" style="color: yellow">easy_solve_suite=7</font></a>
         <a href="javascript:void(0)" onclick="navCmd('302')">302: <font color="yellow" style="color: yellow">test_names_by_fav=97</font></a>
         <a href="javascript:void(0)" onclick="navCmd('303')">303: <font color="yellow" style="color: yellow">human_t=6</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('304')">304: <font color="yellow" style="color: yellow">is_symgrid=36</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('305')">305: <font color="yellow" style="color: yellow">dbigham_train_core=92</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('306')">306: <font color="yellow" style="color: yellow">dbigham_eval_pass=64</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('307')">307: <font color="yellow" style="color: yellow">dbigham_train_pass=88</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('308')">308: <font color="yellow" style="color: yellow">dbigham_personal=14</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('309')">309: <font color="yellow" style="color: yellow">dbigham_fail=589</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('310')">310: <font color="yellow" style="color: yellow">test_names_by_hard=834</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('311')">311: <font color="yellow" style="color: yellow">MyTrainingData=21</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('312')">312: <font color="yellow" style="color: yellow">1D_testset=12</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('313')">313: <font color="yellow" style="color: yellow">devaluation=400</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('314')">314: <font color="yellow" style="color: yellow">eval400=400</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('315')">315: <font color="yellow" style="color: yellow">training=400</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('316')">316: <font color="yellow" style="color: yellow">train400=400</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('317')">317: <font color="yellow" style="color: yellow">icecuber_pass=233</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('318')">318: <font color="yellow" style="color: yellow">icecuber_fail=167</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('319')">319: <font color="yellow" style="color: yellow">every_grid(is_mass_lte_25)=213</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('320')">320: <font color="yellow" style="color: yellow">every_grid(is_size_1x1)= ?</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('321')">321: <font color="yellow" style="color: yellow">every_grid(is_size_3x3)=14</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('322')">322: <font color="yellow" style="color: yellow">every_grid(is_size_gte_20x20)=58</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('323')">323: <font color="yellow" style="color: yellow">every_grid(is_size_lte_3x3)=16</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('324')">324: <font color="yellow" style="color: yellow">every_input_grid(is_mass_lte_25)=370</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('325')">325: <font color="yellow" style="color: yellow">every_input_grid(is_size_1x1)= ?</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('326')">326: <font color="yellow" style="color: yellow">every_input_grid(is_size_3x3)=47</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('327')">327: <font color="yellow" style="color: yellow">every_input_grid(is_size_gte_20x20)=80</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('328')">328: <font color="yellow" style="color: yellow">every_input_grid(is_size_lte_3x3)=52</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('329')">329: <font color="yellow" style="color: yellow">every_output_grid(is_mass_lte_25)=334</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('330')">330: <font color="yellow" style="color: yellow">every_output_grid(is_size_1x1)=8</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('306')">306: <font color="yellow" style="color: yellow">every_output_grid(is_size_3x3)=51</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('332')">332: <font color="yellow" style="color: yellow">every_output_grid(is_size_gte_20x20)=59</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('333')">333: <font color="yellow" style="color: yellow">every_output_grid(is_size_lte_3x3)=75</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('334')">334: <font color="yellow" style="color: yellow">every_pair(op_op(grid_size_term,\==))=272</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('335')">335: <font color="yellow" style="color: yellow">no_grid(is_mass_lte_25)=214</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('336')">336: <font color="yellow" style="color: yellow">no_grid(is_size_1x1)=822</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('337')">337: <font color="yellow" style="color: yellow">no_grid(is_size_3x3)=678</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('338')">338: <font color="yellow" style="color: yellow">no_grid(is_size_gte_20x20)=673</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('339')">339: <font color="yellow" style="color: yellow">no_grid(is_size_lte_3x3)=648</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('340')">340: <font color="yellow" style="color: yellow">no_input_grid(is_mass_lte_25)=305</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('341')">341: <font color="yellow" style="color: yellow">no_input_grid(is_size_1x1)= ?</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('342')">342: <font color="yellow" style="color: yellow">no_input_grid(is_size_3x3)=740</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('343')">343: <font color="yellow" style="color: yellow">no_input_grid(is_size_gte_20x20)=675</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('344')">344: <font color="yellow" style="color: yellow">no_input_grid(is_size_lte_3x3)=736</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('345')">345: <font color="yellow" style="color: yellow">no_output_grid(is_mass_lte_25)=322</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('346')">346: <font color="yellow" style="color: yellow">no_output_grid(is_size_1x1)=822</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('347')">347: <font color="yellow" style="color: yellow">no_output_grid(is_size_3x3)=731</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('348')">348: <font color="yellow" style="color: yellow">no_output_grid(is_size_gte_20x20)=733</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('349')">349: <font color="yellow" style="color: yellow">no_output_grid(is_size_lte_3x3)=699</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('350')">350: <font color="yellow" style="color: yellow">no_pair(op_op(grid_size_term,\==))=556</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('351')">351: <font color="yellow" style="color: yellow">(10, 2)=1</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('352')">352: <font color="yellow" style="color: yellow">(2, 1)=57</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('353')">353: <font color="yellow" style="color: yellow">(2, 1)=44</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('354')">354: <font color="yellow" style="color: yellow">(2, 2)=1</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('355')">355: <font color="yellow" style="color: yellow">(3, 1)=232</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('356')">356: <font color="yellow" style="color: yellow">(3, 1)=209</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('357')">357: <font color="yellow" style="color: yellow">(3, 2)=3</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('358')">358: <font color="yellow" style="color: yellow">(3, 2)=3</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('359')">359: <font color="yellow" style="color: yellow">(4, 1)=79</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('360')">360: <font color="yellow" style="color: yellow">(4, 1)=83</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('361')">361: <font color="yellow" style="color: yellow">(4, 2)=2</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('362')">362: <font color="yellow" style="color: yellow">(4, 2) =4</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('363')">363: <font color="yellow" style="color: yellow">(5, 1)=17</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('364')">364: <font color="yellow" style="color: yellow">(5, 1) =23</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('365')">365: <font color="yellow" style="color: yellow">(5, 2)=1</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('366')">366: <font color="yellow" style="color: yellow">(5, 2) =7</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('367')">367: <font color="yellow" style="color: yellow">(6, 1)=3</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('368')">368: <font color="yellow" style="color: yellow">(6, 1) =12</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('369')">369: <font color="yellow" style="color: yellow">(6, 2)=2</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('370')">370: <font color="yellow" style="color: yellow">(6, 2) =2</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('371')">371: <font color="yellow" style="color: yellow">(7, 1) =1</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('372')">372: <font color="yellow" style="color: yellow">(7, 2)=2</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('373')">373: <font color="yellow" style="color: yellow">(7, 2) =3</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('374')">374: <font color="yellow" style="color: yellow">(7, 3)=1</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('375')">375: <font color="yellow" style="color: yellow">(8, 1)=1</font></a>
-        <a href="javascript:void(0)" onclick="navCmd('376')">376: <font color="yellow" style="color: yellow">(8, 3)=1</font></a>
         <a href="javascript:void(0)" onclick="navCmd('377')">377: <font color="yellow" style="color: yellow">adapt_image_to_grid=1</font></a>
         <a href="javascript:void(0)" onclick="navCmd('378')">378: <font color="yellow" style="color: yellow">algebra=2</font></a>
         <a href="javascript:void(0)" onclick="navCmd('379')">379: <font color="yellow" style="color: yellow">associate_color_to_bools=1</font></a>
@@ -352,172 +259,227 @@
         <a href="javascript:void(0)" onclick="navCmd('531')">531: <font color="yellow" style="color: yellow">-rotation_match=790</font></a>
         <a href="javascript:void(0)" onclick="navCmd('532')">532: <font color="yellow" style="color: yellow">-shape_match=265</font></a>
         <a href="javascript:void(0)" onclick="navCmd('533')">533: <font color="yellow" style="color: yellow">failed_predict_grid_size=14</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('304')">304: <font color="yellow" style="color: yellow">is_symgrid=36</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('305')">305: <font color="yellow" style="color: yellow">dbigham_train_core=92</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('306')">306: <font color="yellow" style="color: yellow">dbigham_eval_pass=64</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('307')">307: <font color="yellow" style="color: yellow">dbigham_train_pass=88</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('308')">308: <font color="yellow" style="color: yellow">dbigham_personal=14</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('309')">309: <font color="yellow" style="color: yellow">dbigham_fail=589</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('310')">310: <font color="yellow" style="color: yellow">test_names_by_hard=834</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('311')">311: <font color="yellow" style="color: yellow">MyTrainingData=21</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('312')">312: <font color="yellow" style="color: yellow">1D_testset=12</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('313')">313: <font color="yellow" style="color: yellow">devaluation=400</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('314')">314: <font color="yellow" style="color: yellow">eval400=400</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('315')">315: <font color="yellow" style="color: yellow">training=400</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('316')">316: <font color="yellow" style="color: yellow">train400=400</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('317')">317: <font color="yellow" style="color: yellow">icecuber_pass=233</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('318')">318: <font color="yellow" style="color: yellow">icecuber_fail=167</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('319')">319: <font color="yellow" style="color: yellow">every_grid(is_mass_lte_25)=213</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('320')">320: <font color="yellow" style="color: yellow">every_grid(is_size_1x1)= ?</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('321')">321: <font color="yellow" style="color: yellow">every_grid(is_size_3x3)=14</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('322')">322: <font color="yellow" style="color: yellow">every_grid(is_size_gte_20x20)=58</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('323')">323: <font color="yellow" style="color: yellow">every_grid(is_size_lte_3x3)=16</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('324')">324: <font color="yellow" style="color: yellow">every_input_grid(is_mass_lte_25)=370</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('325')">325: <font color="yellow" style="color: yellow">every_input_grid(is_size_1x1)= ?</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('326')">326: <font color="yellow" style="color: yellow">every_input_grid(is_size_3x3)=47</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('327')">327: <font color="yellow" style="color: yellow">every_input_grid(is_size_gte_20x20)=80</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('328')">328: <font color="yellow" style="color: yellow">every_input_grid(is_size_lte_3x3)=52</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('329')">329: <font color="yellow" style="color: yellow">every_output_grid(is_mass_lte_25)=334</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('330')">330: <font color="yellow" style="color: yellow">every_output_grid(is_size_1x1)=8</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('306')">306: <font color="yellow" style="color: yellow">every_output_grid(is_size_3x3)=51</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('332')">332: <font color="yellow" style="color: yellow">every_output_grid(is_size_gte_20x20)=59</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('333')">333: <font color="yellow" style="color: yellow">every_output_grid(is_size_lte_3x3)=75</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('334')">334: <font color="yellow" style="color: yellow">every_pair(op_op(grid_size_term,\==))=272</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('335')">335: <font color="yellow" style="color: yellow">no_grid(is_mass_lte_25)=214</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('336')">336: <font color="yellow" style="color: yellow">no_grid(is_size_1x1)=822</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('337')">337: <font color="yellow" style="color: yellow">no_grid(is_size_3x3)=678</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('338')">338: <font color="yellow" style="color: yellow">no_grid(is_size_gte_20x20)=673</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('339')">339: <font color="yellow" style="color: yellow">no_grid(is_size_lte_3x3)=648</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('340')">340: <font color="yellow" style="color: yellow">no_input_grid(is_mass_lte_25)=305</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('341')">341: <font color="yellow" style="color: yellow">no_input_grid(is_size_1x1)= ?</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('342')">342: <font color="yellow" style="color: yellow">no_input_grid(is_size_3x3)=740</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('343')">343: <font color="yellow" style="color: yellow">no_input_grid(is_size_gte_20x20)=675</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('344')">344: <font color="yellow" style="color: yellow">no_input_grid(is_size_lte_3x3)=736</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('345')">345: <font color="yellow" style="color: yellow">no_output_grid(is_mass_lte_25)=322</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('346')">346: <font color="yellow" style="color: yellow">no_output_grid(is_size_1x1)=822</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('347')">347: <font color="yellow" style="color: yellow">no_output_grid(is_size_3x3)=731</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('348')">348: <font color="yellow" style="color: yellow">no_output_grid(is_size_gte_20x20)=733</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('349')">349: <font color="yellow" style="color: yellow">no_output_grid(is_size_lte_3x3)=699</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('350')">350: <font color="yellow" style="color: yellow">no_pair(op_op(grid_size_term,\==))=556</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('351')">351: <font color="yellow" style="color: yellow">(10, 2)=1</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('352')">352: <font color="yellow" style="color: yellow">(2, 1)=57</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('353')">353: <font color="yellow" style="color: yellow">(2, 1)=44</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('354')">354: <font color="yellow" style="color: yellow">(2, 2)=1</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('355')">355: <font color="yellow" style="color: yellow">(3, 1)=232</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('356')">356: <font color="yellow" style="color: yellow">(3, 1)=209</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('357')">357: <font color="yellow" style="color: yellow">(3, 2)=3</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('358')">358: <font color="yellow" style="color: yellow">(3, 2)=3</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('359')">359: <font color="yellow" style="color: yellow">(4, 1)=79</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('360')">360: <font color="yellow" style="color: yellow">(4, 1)=83</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('361')">361: <font color="yellow" style="color: yellow">(4, 2)=2</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('362')">362: <font color="yellow" style="color: yellow">(4, 2) =4</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('363')">363: <font color="yellow" style="color: yellow">(5, 1)=17</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('364')">364: <font color="yellow" style="color: yellow">(5, 1) =23</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('365')">365: <font color="yellow" style="color: yellow">(5, 2)=1</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('366')">366: <font color="yellow" style="color: yellow">(5, 2) =7</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('367')">367: <font color="yellow" style="color: yellow">(6, 1)=3</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('368')">368: <font color="yellow" style="color: yellow">(6, 1) =12</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('369')">369: <font color="yellow" style="color: yellow">(6, 2)=2</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('370')">370: <font color="yellow" style="color: yellow">(6, 2) =2</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('371')">371: <font color="yellow" style="color: yellow">(7, 1) =1</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('372')">372: <font color="yellow" style="color: yellow">(7, 2)=2</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('373')">373: <font color="yellow" style="color: yellow">(7, 2) =3</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('374')">374: <font color="yellow" style="color: yellow">(7, 3)=1</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('375')">375: <font color="yellow" style="color: yellow">(8, 1)=1</font></a>
+        <a href="javascript:void(0)" onclick="navCmd('376')">376: <font color="yellow" style="color: yellow">(8, 3)=1</font></a>
     </div>
-    <div id="mySideNavR" class="sidenavR">
-        <a href="javascript:void(0)" class="closebtn" onclick="toggleNavR('mySideNavR')">&#10005;</a> With selected test: v('1d398264') example(trn+0)
+<div id="mySideNavR" class="sidenavR">
+  <a href="javascript:void(0)" class="closebtn" onclick="toggleNavR('mySideNavR')">&#10005;</a>
+<pre><nav id="navbar-example" class="navbar navbar-light bg-light px-3">
+	<!--
+  <a class="navbar-brand" href="javascript:void(0)">Navbar</a>
+-->
+  <ul id="navbar_items" class="nav nav-pills">
+<!-- 
+    <li class="nav-item"><a class="nav-link" href="#main">Main Div</a></li>
+    <li class="nav-item"><a class="nav-link" href="#sess_accordian">Session Info</a></li>
+   <li class="nav-item"><a class="nav-link" href="#" target="lm_xref" >Main In IFrame</a></li> -->
+  </ul>
 
-        <a href="javascript:void(0)" onclick="navCmd('t')">You may fully (t)rain from examples</a>
-        
-		<a href="javascript:void(0)" onclick="navCmd('i')">See the (i)ndividuation correspondences in the input/outputs</a>
-        <a href="javascript:void(0)" onclick="navCmd('I')">FULL (I)ndividuation</a>
+</nav></pre>
+	<br>
+	<hr>
+	<br>
 
-        <a href="javascript:void(0)" onclick="navCmd('o')">(o)bjects found in the input/outputs</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('u')">(u)niqueness between objects in the input/outputs</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('y')">Wh(y) between objects in the input/outputs</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('a')">(a)ll between objects</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('j')">(j)unctions between objects</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('k')">(k)ill/clear all test data.</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('B')">(B)oxes test.</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('R')">(R)epairs test.</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('g')">(g)ridcells between objects in the input/outputs</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('p')">(p)rint the test (textured grid)</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('w')">(w)rite the test info</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('X')">E(X)amine the program leared by training</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('L')">(L)earned program</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('e')">(e)xecute .................. '<font color="cyan"
-                style="color: cyan">306</font>'</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('x')">e(x)ecute .................. '<font color="blue"
-                style="color: blue">print_all_info_for_test</font>'</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('s')">Try to (s)olve based on training</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('S')">(S)olve confirming it works on training pairs</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('h')">(h)uman proposed solution</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('r')">Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and
-            (s)olve !</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('A')">(A)dvance to the next test and (r)un it</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('n')">(n)ext test (skipping this one)</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('b')">(b)ack to previous test</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('f')">(f)orce a favorite test.</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('~')">(PageUp) to begining of suite</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('N')">(N)ext suite</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('R')">Menu to (R)un all tests noninteractively</a>
-
-        <a href="javascript:void(0)" onclick="navCmd('l')">(l)ist special tests to run,</a> &nbsp;
-
-        <a href="javascript:void(0)" onclick="navCmd('clear_tee%2cupdate_changes')">recomple this progra(m),</a> &nbsp;
-        <a href="javascript:void(0)" onclick="navCmd('force_full_tee%2creally_cls')">(c)lear the scrollback buffer,</a> &nbsp;
-        <a href="javascript:void(0)" onclick="navCmd('clear_training%2cclear_test')">(C)lear cached test info,</a> &nbsp;
-        <a href="javascript:void(0)" onclick="navCmd('call_dsl')">(r)un DSL code,</a> &nbsp;
-        <a href="javascript:void(0)" onclick="navCmd('true')">(Q)uit Menu,</a> &nbsp;
-        <a href="javascript:void(0)" onclick="navCmd('halt%284%29')">(^q)uit to shell,</a> &nbsp;
-        <a href="javascript:void(0)" onclick="navCmd('break')">or (D)ebug/break to interpreter.</a>
-        <a href="javascript:void(0)" onclick="navCmd('pbox')">100:pbox</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_pbox')">101:test_pbox</a>
-        <a href="javascript:void(0)" onclick="navCmd('clear_test')">102:clear_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('compile_and_save_test')">103:compile_and_save_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('enter_test')">104:enter_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('fully_test')">105:fully_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('human_test')">106:human_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('js_test')">107:js_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('learned_test')">108:learned_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('local_sanity_test')">109:local_sanity_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('mregression_test')">110:mregression_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('next_random_test')">111:next_random_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('next_test')">112:next_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('prev_test')">113:prev_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('preview_test')">114:preview_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('print_all_info_for_test')">115:print_all_info_for_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('print_test')">116:print_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('print_whole_test')">117:print_whole_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('report_test')">118:report_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('run_next_test')">119:run_next_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('show_colorfull_idioms')">120:show_colorfull_idioms</a>
-        <a href="javascript:void(0)" onclick="navCmd('show_make_symmetrical')">121:show_make_symmetrical</a>
-        <a href="javascript:void(0)" onclick="navCmd('show_neighbor_map')">122:show_neighbor_map</a>
-        <a href="javascript:void(0)" onclick="navCmd('show_patterns')">123:show_patterns</a>
-        <a href="javascript:void(0)" onclick="navCmd('show_reps')">124:show_reps</a>
-        <a href="javascript:void(0)" onclick="navCmd('solve_test')">125:solve_test</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_abstracted_recall')">126:test_abstracted_recall</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_arcui')">127:test_arcui</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_blur_least')">128:test_blur_least</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_classes')">129:test_classes</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_collapsible_section')">130:test_collapsible_section</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_compile_arcathon')">131:test_compile_arcathon</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_easy')">132:test_easy</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_encoder_for_simple_output')">133:test_encoder_for_simple_output</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_encoders')">134:test_encoders</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_encoders_mining')">135:test_encoders_mining</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_example_grid')">136:test_example_grid</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_find_outline')">137:test_find_outline</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_grav_rot')">138:test_grav_rot</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_grid_size_prediction')">139:test_grid_size_prediction</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_is_single_char_ifiable')">140:test_is_single_char_ifiable</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_learn_decls')">141:test_learn_decls</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_load_task_states')">142:test_load_task_states</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_make_predicate')">143:test_make_predicate</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_make_symmetrical')">144:test_make_symmetrical</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_make_symmetrical_sanity_tests')">145:test_make_symmetrical_sanity_tests</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_most_d_colors')">146:test_most_d_colors</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_neighbor_map')">147:test_neighbor_map</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_ogs')">148:test_ogs</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_ogs_l')">149:test_ogs_l</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_ogs_m')">150:test_ogs_m</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_ogs_s')">151:test_ogs_s</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_pp')">152:test_pp</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_print_tree')">153:test_print_tree</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_reduce_grid')">154:test_reduce_grid</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_reduce_grid_mo')">155:test_reduce_grid_mo</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_regressions')">156:test_regressions</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_repair_symmetry')">157:test_repair_symmetry</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_repair_symmetry_ALL')">158:test_repair_symmetry_ALL</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_reps')">159:test_reps</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_rok')">160:test_rok</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_rot')">161:test_rot</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_run_arcathon')">162:test_run_arcathon</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_secret_data')">163:test_secret_data</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_show_colors')">164:test_show_colors</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_show_grid_objs')">165:test_show_grid_objs</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_show_patterns')">166:test_show_patterns</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_supergrid')">167:test_supergrid</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_tag')">168:test_tag</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_tmw')">169:test_tmw</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_try_something')">170:test_try_something</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_url_encode')">171:test_url_encode</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_webui_menu')">172:test_webui_menu</a>
-        <a href="javascript:void(0)" onclick="navCmd('test_what_unique')">173:test_what_unique</a>
-        <a href="javascript:void(0)" onclick="navCmd('train_test')">174:train_test</a>
-    </div>
-    <div id="main">
-		<!--begin sess head-->
-		<span style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0; position: fixed" onclick="toggleNavL('mySideNavL')">&#9776; Test Suites</span>
-		<span style="font-size:20px;cursor:pointer;color: white; top: 0; right: 0; position: fixed" onclick="toggleNavR('mySideNavR')">&#9776; Task Operations</span>
+<ul id="menu2">
+	With selected test: ....
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('t')">You may fully (t)rain from examples</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('i')">See the (i)ndividuation correspondences in the input/outputs</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('I')">FULL (I)ndividuation</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('o')">(o)bjects found in the input/outputs</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('u')">(u)niqueness between objects in the input/outputs</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('y')">Wh(y) between objects in the input/outputs</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('a')">(a)ll between objects</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('j')">(j)unctions between objects</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('k')">(k)ill/clear all test data.</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('B')">(B)oxes test.</a></li> 
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('R')">(R)epairs test.</a></li> 
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('g')">(g)ridcells between objects in the input/outputs</a></li> 
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('p')">(p)rint the test (textured grid)</a></li> 
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('w')">(w)rite the test info</a></li> 
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('X')">E(X)amine the program leared by training</a></li> 
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('L')">(L)earned program</a></li> 
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('e')">(e)xecute .................. '<font color="cyan" style="color: cyan">306</font>'</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('x')">e(x)ecute .................. '<font color="blue" style="color: blue">print_all_info_for_test</font>'</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('s')">Try to (s)olve based on training</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('S')">(S)olve confirming it works on training pairs</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('h')">(h)uman proposed solution</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('r')">Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and (s)olve !</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('A')">(A)dvance to the next test and (r)un it</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('n')">(n)ext test (skipping this one)</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('b')">(b)ack to previous test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('f')">(f)orce a favorite test.</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('~')">(PageUp) to begining of suite</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('N')">(N)ext suite</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('R')">Menu to (R)un all tests noninteractively</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('l')">(l)ist special tests to run,</a></li> &nbsp;
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('clear_tee%2cupdate_changes')">recomple this progra(m),</a></li> &nbsp;
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('force_full_tee%2creally_cls')">(c)lear the scrollback buffer,</a></li> &nbsp;
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('clear_training%2cclear_test')">(C)lear cached test info,</a></li> &nbsp;
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('call_dsl')">(r)un DSL code,</a></li> &nbsp;
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('true')">(Q)uit Menu,</a></li> &nbsp;
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('halt%284%29')">(^q)uit to shell,</a></li> &nbsp;
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('break')">or (D)ebug/break to interpreter.</a></li>
+</ul>
+	
+	
+<ul id="menu3">
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('pbox')">100:pbox</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_pbox')">101:test_pbox</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('clear_test')">102:clear_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('compile_and_save_test')">103:compile_and_save_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('enter_test')">104:enter_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('fully_test')">105:fully_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('human_test')">106:human_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('js_test')">107:js_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('learned_test')">108:learned_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('local_sanity_test')">109:local_sanity_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('mregression_test')">110:mregression_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('next_random_test')">111:next_random_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('next_test')">112:next_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('prev_test')">113:prev_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('preview_test')">114:preview_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('print_all_info_for_test')">115:print_all_info_for_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('print_test')">116:print_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('print_whole_test')">117:print_whole_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('report_test')">118:report_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('run_next_test')">119:run_next_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('show_colorfull_idioms')">120:show_colorfull_idioms</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('show_make_symmetrical')">121:show_make_symmetrical</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('show_neighbor_map')">122:show_neighbor_map</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('show_patterns')">123:show_patterns</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('show_reps')">124:show_reps</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('solve_test')">125:solve_test</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_abstracted_recall')">126:test_abstracted_recall</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_arcui')">127:test_arcui</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_blur_least')">128:test_blur_least</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_classes')">129:test_classes</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_w_section')">130:test_w_section</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_compile_arcathon')">131:test_compile_arcathon</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_easy')">132:test_easy</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_encoder_for_simple_output')">133:test_encoder_for_simple_output</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_encoders')">134:test_encoders</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_encoders_mining')">135:test_encoders_mining</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_example_grid')">136:test_example_grid</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_find_outline')">137:test_find_outline</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_grav_rot')">138:test_grav_rot</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_grid_size_prediction')">139:test_grid_size_prediction</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_is_single_char_ifiable')">140:test_is_single_char_ifiable</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_learn_decls')">141:test_learn_decls</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_load_task_states')">142:test_load_task_states</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_make_predicate')">143:test_make_predicate</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_make_symmetrical')">144:test_make_symmetrical</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_make_symmetrical_sanity_tests')">145:test_make_symmetrical_sanity_tests</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_most_d_colors')">146:test_most_d_colors</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_neighbor_map')">147:test_neighbor_map</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_ogs')">148:test_ogs</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_ogs_l')">149:test_ogs_l</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_ogs_m')">150:test_ogs_m</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_ogs_s')">151:test_ogs_s</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_pp')">152:test_pp</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_print_tree')">153:test_print_tree</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_reduce_grid')">154:test_reduce_grid</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_reduce_grid_mo')">155:test_reduce_grid_mo</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_regressions')">156:test_regressions</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_repair_symmetry')">157:test_repair_symmetry</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_repair_symmetry_ALL')">158:test_repair_symmetry_ALL</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_reps')">159:test_reps</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_rok')">160:test_rok</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_rot')">161:test_rot</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_run_arcathon')">162:test_run_arcathon</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_secret_data')">163:test_secret_data</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_show_colors')">164:test_show_colors</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_show_grid_objs')">165:test_show_grid_objs</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_show_patterns')">166:test_show_patterns</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_supergrid')">167:test_supergrid</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_tag')">168:test_tag</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_tmw')">169:test_tmw</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_try_something')">170:test_try_something</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_url_encode')">171:test_url_encode</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_webui_menu')">172:test_webui_menu</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_what_unique')">173:test_what_unique</a></li>
+ <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('train_test')">174:train_test</a></li>
+	</ul>
+ </div>
 		
-        <input type="checkbox" id="accordian_82" class="hidecontent">
-		<label for="accordian_82"><div class="font(1)">Session Info</div></label>
-        <div class="content hidecontent">		   
-	       <div id="page_head_div"></div>		   
-           <label for="accordian_82" style="right: 0; position: relative; width: 8px">x</label>
-        </div>
-        <script>
-           // document.getElementById("accordian_82").click();
-        </script>
-		
-        <ul style="right: 300px; top: 0px"></ul><span style="font-size:20px;cursor:pointer;color: white" onclick="toggleNavL('mySideNavL')">&#9776; Test Suites</span><span style="font-size:20px;cursor:pointer;color: white" onclick="toggleNavR('mySideNavR')">&#9776; Task
-            Operations</span><span style="font-size:20px;cursor:pointer;color: white; top: 0; right: 0; position: fixed" onclick="toggleNavR('mySideNavR')">&#9776; Task Operations</span>
+		<!--begin sess head
+		<span style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0; position: fixed" onclick="toggleNavL('mySideNavL')">&#9776; Test Suites</span>	     
+		 -->
+
+
+		<div id="main" style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0; position: fixed">
+		 <span style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0; position: fixed" onclick="toggleNavL('mySideNavL')">&#9776; Task Suites</span>
+		 <span style="font-size:20px;cursor:pointer;color: white; top: 0; right: 0; position: fixed" onclick="toggleNavR('mySideNavR')">&#9776; Task Operations</span>
 		 <!--   end sess head-->
         <style type="text/css">
             html,
@@ -531,6 +493,14 @@
                 font-size: small;
             } 
         </style>
+  
+	  <input type="checkbox" id="sess_accordian" class="hidecontent">
+		<label for="sess_accordian"><div class="font(1)">Session Info</div></label>
+        <div class="content hidecontent"> 
+		   <div id="page_head_div"></div>
+           <label id="sess_accordian_x" for="sess_accordian" style="right: 0; position: relative; width: 8px">x</label>
+        </div>
+  
 		<iframe src="about:blank" nononLoad="ensureTopUsesIFrameParams()" 
 			width="1024" height="100%" frameborder="0" name="lm_xref" id="lm_xref" 
 			style="width: 100%; height=" scrolling="auto" />

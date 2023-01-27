@@ -302,8 +302,8 @@ showdiff_groups5(A,B,[H|T],AAR,BBR):- !,
   showdiff_groups5(A1,B1,T,AAR,BBR).
 showdiff_groups5(A,B,Pred,AAR,BBR):- 
   pred_intersection(Pred,A,B,IntersectA,IntersectB,AAR,BBR),
-  ignore((IntersectA\==[], collapsible_section(info,"Object Differences",false,
-   maplist(showdiff_objects_vis(Pred),IntersectA,IntersectB)))).
+  ignore((IntersectA\==[], w_section("Object Differences",
+   maplist(showdiff_objects_vis(Pred),IntersectA,IntersectB))),info).
 
 
 diff_groups2(AAR,BBR,proportional(DD,Diffs)):- proportional(AAR,BBR,DD), maplist(diff_objects,AAR,BBR,Diffs).
@@ -546,13 +546,13 @@ show_pair_now(TITLE,OO1,OO2):-
     (dash_chars,debug_indiv_obj(O1), format('~N~n'),dash_chars, debug_indiv_obj(O2))),  
 
   if_t(nb_current(menu_key,'o'),
-    nop((collapsible_section(info,compare_objs1(TITLE),false,
+    nop((w_section(compare_objs1(TITLE),
      (findall(E,compare_objs1(E,O1,O2),L), pp(compare_objs1(showdiff_objects)=L),
       indv_props_list(O1,S1),indv_props_list(O2,S2),
       %pp(s1=S1),pp(s2=S2),
       intersection(S1,S2,Sames,SS1,SS2),
       proportional(SS1,SS2,lst(vals(_),len(_),PDiffs)),
-      show_sames_diffs_now(Sames,PDiffs)))))))),
+      show_sames_diffs_now(Sames,PDiffs)),info,false)))))),
   dash_chars, dash_chars.
 
 

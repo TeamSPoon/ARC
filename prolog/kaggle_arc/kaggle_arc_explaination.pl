@@ -61,11 +61,11 @@ print_list_of(P1,Title,Len,O):- fail, Len = 1,!,
   g_out( maplist(ignore_call_p1(P1),O)))),!.
 
 print_list_of(P1,Title,_Len,O):-
- collapsible_section(info,Title,maybe,
+ w_section(Title,
 ((
  ignore(maybe_cache_glyphs(O)),
   %save_grouped(print_list_of(Title),O),
-  g_out( maplist(ignore_call_p1(P1),O))))),!.
+  g_out( maplist(ignore_call_p1(P1),O)))),info),!.
 
 ignore_call_p1(P1,A):- ignore(call(P1,A)).
 
@@ -183,12 +183,12 @@ debug_indiv(Grid):- maplist(is_point,Grid),!,debug_as_grid(is_point,Grid).
 debug_indiv(Atom):- atom(Atom),into_gridoid(Atom,Gridoid),pp(into_gridoid(Atom)),!,debug_as_grid(Gridoid).
 
 debug_indiv(List):- is_list(List),length(List,Len),!,
-  dash_chars,
+ w_section((
   ppnl(debug_indiv = Len),
   print_list_of(debug_indiv,debug_indiv_list,List),
   %max_min(Len,40,_,Min),
   %forall(between(1,Min,N),(N=<40->(nth1(N,List,E),debug_indiv(E));ppnl(total = 40/Len))),
-  dash_chars,!.
+  !)).
 
 
 /*
@@ -441,10 +441,7 @@ debug_indiv([]):- !.
 
 debug_indiv(diff(_)):-!.
 debug_indiv([Other]):-debug_indiv(Other),!.
-debug_indiv(P):- is_rule(P,Q),
-  dash_chars,
-  pp(Q),
-  dash_chars,!.
+debug_indiv(P):- is_rule(P,Q), w_section(( pp(Q))).
 
 is_rule(P,_):- \+ compound(P),!,fail.
 is_rule(A:-true,A):-!.
@@ -452,11 +449,10 @@ is_rule(A:-B,A:-B):-!.
 
 
 debug_indiv(Other):-
-  dash_chars,
+ w_section((
   functor(Other,F,A),
   ppnl(other = F/A),
-  pp(Other),
-  dash_chars,!.
+  pp(Other))).
 
 
 

@@ -30,7 +30,9 @@ superinput_blob
 */
 :- dynamic(kaggle_arc/4).
 
-test_supergrid:- clsbake, forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_pair_hints(TestID,ExampleNum,In,Out)).
+test_supergrid:- clsbake, 
+ forall(kaggle_arc(TestID,ExampleNum,In,Out),
+   detect_pair_hints(TestID,ExampleNum,In,Out)).
 
 
 print_directive(P):- format('~N:- ~q. ~n',[P]).
@@ -472,7 +474,7 @@ compute_and_show_test_hints(TestID):- format('~N'),
   list_common_props(TestID).
 */
 
-compute_and_show_test_hints(TestID):- collapsible_section(compute_and_show_test_hints1(TestID)).
+compute_and_show_test_hints(TestID):- w_section(compute_and_show_test_hints1(TestID)).
 compute_and_show_test_hints1(TestID):- ensure_test(TestID),format('~N'),
   compute_all_test_hints(TestID),
   ignore(list_common_props_so_far(TestID)),!,
@@ -489,9 +491,11 @@ list_common_props_so_far(TestID):-
     (( findall(Data,arc_test_property(TestID,gh(_),F,Data),Commons),
       once((some_min_unifier(Commons,Common),nonvar(Common))))),
       arc_assert(arc_test_property(TestID,common,F,Common))),FComs),
-  sort(FComs,SComs),  
-  print_test(TestID),
+  sort(FComs,SComs),
+  %dash_chars,
+  %print_test(TestID),
   %wots(SS,maplist(ptv1,SComs)),
+  dash_chars,
   with_pre((format('~N % ~w:: ~@.~n',[list_common_props,ptv1(cyan+magenta,SComs)]))),
   !.
 

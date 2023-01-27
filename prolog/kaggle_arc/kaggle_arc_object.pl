@@ -1018,7 +1018,7 @@ cindv(Obj,_):- \+ is_object(Obj),!,fail.
 cindv(Obj,NV):- obj_to_objlist(Obj,L),member(NV,L).
 cindv(Obj,NV):- really_use_cindv, obj_to_oid(Obj,OID),cindv0(OID,NV).
 
-cindv0(OID,NV):- \+ nb_current(o2obj,t), oid_to_objlist(OID,L),member(NV,L).
+cindv0(OID,NV):- \+ nb_current(o2obj,t), oid_to_objlist(OID,L),nv_member(NV,L).
 cindv0(OID,NV):- really_use_cindv, cindv1(OID,NV).
 
 cindv1(OID,NV):- compound(NV),!,NV=..NVL,apply(cindv(OID),NVL).
@@ -1031,6 +1031,7 @@ really_use_cindv:- false.
 
 oid_to_objlist(OID,List):- oid_to_obj(OID,Obj),obj_to_objlist(Obj,List).
 
+obj_to_objlist(obj(List),ListO):- member(was_oid(OID),List),!,oid_to_obj(OID,obj(ListM)),append_sets(ListM,List,ListO).
 obj_to_objlist(obj(List),List).
 obj_to_objlist(Obj,[NV]):- fail, \+ nb_current(o2obj,t), locally(nb_setval(o2obj,t),is_in_subgroup(Obj,NV)).
 
@@ -1039,6 +1040,15 @@ cindv(OID,A,B,C):- oid_to_objlist(OID,L),member(NV,L),NV=..[A,B,C].
 cindv(OID,A,B,C,D):- oid_to_objlist(OID,L),member(NV,L),NV=..[A,B,C,D].
 cindv(OID,A,B,C,D,E):- oid_to_objlist(OID,L),member(NV,L),NV=..[A,B,C,D,E].
 
+nv_member(NV,L):- var(NV),nonvar(L),!,member(PNV,L),pnv_to_nv(PNV,NV).
+nv_member(PNV,L):- nonvar(PNV),pnv_to_nv1(PNV,NV),!,member(PNV2,L),pnv_to_nv(PNV2,NV).
+nv_member(NV,L):- member(NV,L).
+
+pnv_to_nv1(io(NV),NV):-!.
+pnv_to_nv1(oi(NV),NV):-!.
+pnv_to_nv1(if(NV),NV):-!.
+pnv_to_nv(PNV,NV):-pnv_to_nv1(PNV,NV).
+pnv_to_nv(NV,NV):-!.
 
 indv_props(Obj,A,B):- NV=..[A,B], indv_props(Obj,NV).
 indv_props(Obj,A,B,C):- NV=..[A,B,C], indv_props(Obj,NV).
@@ -1450,8 +1460,13 @@ loc2G(G,X,Y):- is_group(G),!,mapgroup(locG_term,G,Offsets),sort(Offsets,[loc2G(X
 loc2G(I,X,Y):- is_object(I), indv_props(I,loc2G(X,Y)),!.
 loc2G(I,X,Y):- into_obj(I,O), indv_props(O,loc2G(X,Y)),!.
 
+obj_var(O):- var(O).
+maybe_defunct(O,obj(Obj)):- compound(O),O=obj(L),nonvar(L),member(was_oid(OID),L),!,oid_to_obj(OID,obj(Obj)).
 
 loc_term(I,loc2D(X,Y)):- loc2D(I,X,Y),!.
+loc2D(O,H,V):- obj_var(O),!,into_obj(O,Obj),loc2D(Obj,H,V).
+loc2D(O,H,V):- maybe_defunct(O,Obj),!,loc2D(Obj,H,V).
+loc2D(I,X,Y):- is_object(I), indv_props(I,io(loc2D(X,Y))),!.
 loc2D(Grid,H,V):- is_grid(Grid),!,H=1,V=1.
 loc2D(G,X,Y):- is_group(G),!,mapgroup(loc_term,G,Offsets),sort(Offsets,[loc2D(X,Y)|_]). % lowest loc2D
 %loc2D(Grid,H,V):- is_grid(Grid),!,globalpoints(Grid,Points),!,points_range(Points,LocX,LocY,_,_,_,_), H is LocX, V is LocY.

@@ -356,21 +356,23 @@ i2(ROptions,GridSpec):- clsmake,
 i_pair(ROptions,GridIn,GridOut):-
   check_for_refreshness,
   my_time((maybe_name_the_pair(GridIn,GridOut,PairName),
-    collapsible_section(individuate_pair(ROptions,GridIn,GridOut,InC,OutC)),
-    collapsible_section(show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC)))).
+    individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
+    w_section(show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC)))).
 
 %worker_output(G):- \+ menu_or_upper('B'),!, time(wots(_,arc_weto(G))).
 worker_output(G):- time(G).
 
 igo(ROptions,Grid):-
   check_for_refreshness,
-  collapsible_section(do_ig(ROptions,Grid,IndvS)),
+  w_section(do_ig,do_ig(ROptions,Grid,IndvS)),
   into_grid(Grid,GridIn),
-  collapsible_section(show_individuated_nonpair(igo,ROptions,Grid,GridIn,IndvS)).
+  w_section(show_individuated_nonpair(igo,ROptions,Grid,GridIn,IndvS)).
 
 maybe_name_the_pair(In,Out,PairName):-
-  ignore((kaggle_arc(TestID,ExampleNum,In,Out),
-    name_the_pair(TestID,ExampleNum,In,Out,PairName))).
+  kaggle_arc(TestID,ExampleNum,In,Out),
+    name_the_pair(TestID,ExampleNum,In,Out,PairName),!.
+maybe_name_the_pair(_In,_Out,PairName):-current_test_example(TestID,ExampleNum),
+  PairName = (TestID>ExampleNum),!.
 
 
 do_ig(ROptions,Grid,IndvS):-
@@ -1387,10 +1389,15 @@ cell_minus_cell(I,_,I).
 individuate_pair(ROptions,In,Out,IndvSI,IndvSO):-
   check_for_refreshness,
   into_grid(In,InG), into_grid(Out,OutG),
-  compile_and_save_current_test([for(out,OutG),for(in,InG)]),
-  must_det_ll((first_grid(InG,OutG,IO),
-   (IO==in_out -> individuate_two_grids(ROptions,InG,OutG,IndvSI,IndvSO); 
-              individuate_two_grids(IO,OutG,InG,IndvSO,IndvSI)))),!.
+  current_test_example(TestID,ExampleNum),
+ [for(out,OutG),for(in,InG)] = Why,
+ compile_and_save_current_test(Why),
+ w_section(format("individuate pair: ~w ~w",[TestID,ExampleNum]),
+  must_det_ll(((   
+   first_grid(InG,OutG,IO),
+   (IO==in_out 
+       -> individuate_two_grids(ROptions,InG,OutG,IndvSI,IndvSO)
+              ; individuate_two_grids(IO,OutG,InG,IndvSO,IndvSI)))))),!.
 
 individuate_nonpair(ROptions,In,IndvSI):- 
   into_grid(In,InG), 
@@ -1937,6 +1944,7 @@ fti(VM,[F|TODO]):- once(fix_indivs_options([F|TODO],NEWTODO)),[F|TODO]\==NEWTODO
   
 
 fti(VM,[F|TODO]):-
+   ptu(fti_miss(F)),
    wdmsg(fti_miss(F)),
    set(VM.program_i)= TODO.
 

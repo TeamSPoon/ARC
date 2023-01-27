@@ -159,7 +159,8 @@ arc_portray_pair_optional(Ps,K,Val,TF):-
 % arc_portray(G):- \+ \+ catch((wots(S,( tracing->arc_portray(G,true);arc_portray(G,false))),write(S),ttyflush),_,fail).
 arc_portray(G):- is_vm(G), !, write('..VM..').
 arc_portray(G):- \+ nb_current(arc_portray,t),is_print_collapsed,!, locally(nb_setval(arc_portray,t),arc_portray(G)).
-arc_portray(G):- compound(G), \+ \+ catch(((tracing->arc_portray(G,true);arc_portray(G,false)),ttyflush),E,(fail,format(user_error,"~N~q~n",[E]),fail)).
+arc_portray(G):- compound(G), \+ \+ catch(((tracing->arc_portray(G,true);
+  arc_portray(G,false)),ttyflush),E,(fail,format(user_error,"~N~q~n",[E]),fail)).
 
   
 
@@ -248,6 +249,7 @@ write_map(G,Where):- is_dict(G), !, write('...Dict_'),write(Where),write('...').
 write_map(_G,Where):- write('...'),write(Where),write('...').
 
 ppt(_):- is_print_collapsed,!.
+ppt(G):- stack_check_or_call(4000,writeq(G)),!.
 ppt(G):- is_vm_map(G), !, write_map(G,'ppt').
 ppt(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 %ppt(P):- compound(P),wqs1(P),!.
@@ -258,7 +260,7 @@ ppt(C,P):- wants_html,!,pp(C,P).
 ppt(C,P):- \+ \+ ((tersify(P,Q),!,pp(C,Q))),!.
 
 :- meta_predicate(pp(+)).
-pp(Color,P):- wants_html,!,with_color_span(Color,pp(P)).
+pp(Color,P):- wants_html,!,with_color_span(Color,ptcol(P)).
 pp(Color,P):- ignore((quietlyd((wots(S,ptcol(P)),!,color_print(Color,S))))).
 ptcol(call(P)):- callable(P),!,call(P).
 ptcol(P):- wants_html,!,print_tree_no_nl(P).
@@ -408,9 +410,9 @@ pp_hook_g1(O):-  is_group(O),pp_no_nl(O), !.
 
 pp_hook_g1(O):-  is_vm_map(O),data_type(O,DT), writeq('..map.'(DT)),!.
 pp_hook_g1(O):-  is_really_gridoid(O),debug_as_grid(O), !.
-%pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  with_tagged('h5',collapsible_section(object,[O1, O2],pp(O))).
-%pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff), collapsible_section(object,showdiff_objects(O1,O2)),!.
-%pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  collapsible_section(object,[O1, O2],with_tagged('h5',pp(O))).
+%pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  with_tagged('h5',w_section(object,[O1, O2],pp(O))).
+%pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff), w_section(showdiff_objects(O1,O2)),!.
+%pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  w_section(object,[O1, O2],with_tagged('h5',pp(O))).
 %pp_hook_g1(O):-  O = diff(A -> B), (is_really_gridoid(A);is_really_gridoid(B)),!, p_c_o('diff', [A, '-->', B]),!.
 pp_hook_g1(O):-  O = showdiff( O1, O2), !, showdiff(O1, O2).
 %pp_hook_g1(O):- compound(O),wqs1(O), !.
@@ -652,15 +654,19 @@ need_nl(H,[P|_]):- \+ is_breaker(H),is_breaker(P),line_position(user_output,L1),
 need_nl(_,_):- line_position(user_output,L1),L1>160,nl_now,bformatc1('\t\t').
 need_nl(_,_).
 */
-dash_chars:- wants_html,!,write('<hr>').
+
+dash_chars:- wants_html,!,section_break.
 dash_chars:- dash_chars(40),!.
-dash_chars(_):- wants_html,!,write('<hr>').
+
+dash_chars(_):- wants_html,!,section_break.
 dash_chars(H):- integer(H), dash_border(H).
 dash_chars(S):- nl_if_needed,dash_chars(60,S),nl_if_needed_ansi.
-dash_chars(_,_):- wants_html,!,write('<hr>').
+dash_chars(_,_):- wants_html,!,section_break.
 dash_chars(H,_):- H < 1,!.
 dash_chars(H,C):- forall(between(0,H,_),bformatc1(C)).
 
+section_break:- wants_html,!,write('<p><hr></p>').
+section_break.
 %dash_uborder_no_nl_1:-  line_position(current_output,0),!, bformatc1('\u00AF\u00AF\u00AF ').
 %dash_uborder_no_nl_1:-  line_position(current_output,W),W==1,!, bformatc1('\u00AF\u00AF\u00AF ').
 dash_uborder_no_nl_1:- bformatc1('\u00AF\u00AF\u00AF ').
@@ -1291,7 +1297,7 @@ print_grid(Grid):- make_bg_visible(Grid,GGrid),  quietly(print_grid0(_,_,GGrid))
 print_grid(Str,Grid):- Grid==[],!, pp(nil_grid(Str)).
 print_grid(Str,Grid):- Grid==[[]],!, pp(zero_size_grid(Str)).
 
-%print_grid(Str,Grid):- wants_html,!,html_table([[print_grid(Grid)],[ppt(Str)]]).
+%print_grid(Str,Grid):- wants_html,!,print_table([[print_grid(Grid)],[ppt(Str)]]).
 print_grid(Str,Grid):-  make_bg_visible(Grid,GGrid), ignore((print_grid(_,_,Str,GGrid))),!.
 %print_grid(Str,G):- compound(G), maybe_make_bg_visible(G,GG),!,print_grid0(H,V,GG).
 %print_grid0(Grid):-  ignore(print_grid0(_,_,Grid)),!.
@@ -1812,9 +1818,11 @@ grid_dot(169).
 %print_g(H,V,C0,_,_,_,_):- plain_var(C0),print_g1(H,V,C-'?'),!.
 %print_g(H,V,C,_,_,_,_):- write_nbsp, print_g1(P2,H,V,C),!.
 
-object_glyph(G,Glyph):- is_object(G),G=obj(L),member(giz(glyph(Glyph)),L),!.
+object_glyph(G,Glyph):- var(G),!,into_obj(G,O),object_glyph(O,Glyph).
+object_glyph([G|Rid],Glyph):- is_grid([G|Rid]),!,grid_dot(Dot),name(Glyph,[Dot]).
+object_glyph(obj(L),Glyph):- is_list(L),member(giz(glyph(Glyph)),L),!.
+object_glyph(obj(L),Glyph):- is_list(L),member(was_oid(OID),L),atom_chars(OID,[o,'_',Glyph|_]),!.
 object_glyph(G,Glyph):- is_object(G),!,obj_iv(G,Iv), int2glyph(Iv,Glyph).
-object_glyph(G,Glyph):- is_grid(G),!,grid_dot(Dot),name(Glyph,[Dot]).
 object_glyph(G,Glyph):- nobject_glyph(G,Glyph).
 
 nobject_glyph(G,Glyph):- integer(G), between(0,9,G),atom_number(Glyph,G),!.

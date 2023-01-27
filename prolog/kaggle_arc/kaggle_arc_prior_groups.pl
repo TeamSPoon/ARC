@@ -299,8 +299,8 @@ group_prior_objs(Why,Objs,WithPriors):-
  keysort(Lbls,N),
  length(N,Len),
  Title = Why+Len,
- nop(collapsible_section(info,print_premuted_objects(Title),false, print_premuted_objects(Why,Objs))),
- collapsible_section(info,add_priors(Title),false,
+ nop(noisey_debug(print_premuted_objects(Title))),
+ w_section(add_priors(Title),
   %print_tree(groupPriors=Lbls,[max_depth(200)]),
   add_priors(Lbls,Objs,WithPriors)))).
 

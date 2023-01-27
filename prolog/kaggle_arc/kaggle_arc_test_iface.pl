@@ -220,7 +220,7 @@ interact(SelMax):- catch(interact0(SelMax),'$aborted',interact(SelMax)).
 interact0(_SelMax):- retract(wants_exit_menu),!.
 interact0(SelMax):- i_key(SelMax,Key),
     writeq(Key),%flush_tee,
-    do_web_menu_key(Key),flush_tee,
+    invoke_arc_cmd(Key),flush_tee,
     interact0(SelMax).
 
 i_key(SelMax,Key):-
@@ -236,6 +236,23 @@ menu_goal(Goal):-
 
 :- public(do_web_menu_key/1).
 :- export(do_web_menu_key/1).
+
+invoke_arc_cmd(Key):- \+ sensical_term(Key),!.
+invoke_arc_cmd(Key):- atom_to_term_safe(Key,Prolog,_Vs), Prolog\=@=Key,!,invoke_arc_cmd(Prolog).
+
+invoke_arc_cmd(O):- ground(O), O = (TestID>ExampleNum*_IO),!,set_example_num(ExampleNum),set_current_test(TestID),
+  click_grid(O).
+invoke_arc_cmd(E):- ground(E), E = (TestID>ExampleNum),!,set_example_num(ExampleNum),set_current_test(TestID),
+  set_pair_mode(single_pair),show_selected_object.
+invoke_arc_cmd(E):- ground(E), fix_test_name(E,TestID),is_valid_testname(TestID),set_current_test(TestID),!,
+  set_pair_mode(whole_test),show_selected_object.
+invoke_arc_cmd(E):- number(E),E>=300,set_pair_mode(entire_suite),fail.
+invoke_arc_cmd(Prolog):- %nonvar(Prolog),
+   current_predicate(_,Prolog),
+   asserta_new(xlisting_whook:offer_testcase(Prolog)),!,
+   call(Prolog).
+invoke_arc_cmd(Key):- do_web_menu_key(Key).
+
 
 do_web_menu_key(Key):-
   locally(nb_setval(menu_key,Key),ignore((do_menu_key(Key)))).
@@ -325,17 +342,38 @@ set_test_suite(X,N):-
 
 preview_suite:- luser_getval(test_suite_name,X),preview_suite(X).
 
-preview_suite(Num):- number(Num),do_test_number(Num).
-preview_suite(Name):- \+ is_list(Name),set_test_suite(Name),get_current_suite_testnames(Set),!,preview_suite(Set).
-preview_suite(Set):- length(Set,L),L=<10,reverse(Set,Rev),!, with_pair_mode(whole_test,maplist(preview_test,Rev)).
-preview_suite(Set):- length(Set,L),L>100, first_ten(Set,100,Rev),with_pair_mode(single_pair,maplist(preview_test,Rev)).
-preview_suite(Set):- reverse(Set,Rev), with_pair_mode(single_pair,maplist(preview_test,Rev)).
+preview_suite(Num):- number(Num),do_suite_number(Num),!.
+preview_suite(Name):- \+ is_list(Name),set_test_suite(Name),
+ w_section([preview_suite,Name],(get_current_suite_testnames(Set),!,preview_suite(Set))).
+% suites with only one test
+ 
+%preview_suite([TestID]):- invoke_arc_cmd(TestID),!.
+preview_suite([TestID]):- set_current_test(TestID),!,set_pair_mode(whole_test),show_selected_object.
+preview_suite(Set):- length(Set,L),L=<10,web_reverse(Set,Rev),!, with_pair_mode(whole_test,maplist(preview_test,Rev)).
+preview_suite(Set):- length(Set,L),L=<20,web_reverse(Set,Rev),!, with_pair_mode(single_pair,maplist(preview_test,Rev)).
+preview_suite(Set):- length(Set,L),L>100, first_ten(Set,100,Rev),with_pair_mode(single_pair,preview_test_per_page(Rev)).
+preview_suite(Set):- reverse(Set,Rev), with_pair_mode(single_pair,preview_test_per_page(Rev)).
 
-first_ten(Set,Ten,Rev):- length(LL,Ten),append(LL,_,Set),reverse(LL,Rev).
+first_n_of_list(Max,List,LeftMax,Rest):-length(List,Len),Len>Max,!,length(LeftMax,Max),append(LeftMax,Rest,List).
+first_n_of_list(_Max,List,List,[]).
 
-do_test_number(Num):- Num>=300, test_suite_list(L), nth_above(300,Num,L,SuiteX),!,set_test_suite(SuiteX),
+preview_test_per_page(List):- preview_test_per_page(1,20,List).
+preview_test_per_page(Strt,Max,List):- length(List,Len),Len>Max,first_n_of_list(Max,List,LeftMax,Rest),
+   NStrt is Strt+Max,Thru is NStrt-1,
+   w_section(format('Preview ~w-~w',[Strt,Thru]),maplist(preview_test,LeftMax)),preview_test_per_page(NStrt,Max,Rest).
+preview_test_per_page(Strt,_,List):- length(List,Len), 
+  Thru is Strt+Len-1,
+  w_section(format('Preview ~w-~w',[Strt,Thru]),maplist(preview_test,List)).
+
+first_ten(Set,Ten,Rev):- length(LL,Ten),append(LL,_,Set),web_reverse(LL,Rev).
+
+web_reverse(E,E):- wants_html,!.
+web_reverse(L,R):- reverse(L,R).
+
+do_suite_number(Num):- Num>=300, test_suite_list(L), nth_above(300,Num,L,SuiteX),!,set_test_suite(SuiteX),
   preview_suite.
 
+do_test_number(Num):- Num>=300,do_suite_number(Num),!.
 do_test_number(Num):- list_of_tests(L), 
   wdmsg(do_test_number(Num)),nth_above(100,Num,L,E),!,set_test_cmd(E),do_test_pred(E).
 
@@ -407,7 +445,9 @@ ndividuator(TestID):- ensure_test(TestID),
  with_test_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)).
 
 ndividuator(TestID,ExampleNum,In,Out):- get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
-ndividuator(TestID,ExampleNum,Complete,In,Out):- name_the_pair(TestID,ExampleNum,In,Out,_PairName),i_pair(Complete,In,Out).
+ndividuator(TestID,ExampleNum,Complete,In,Out):- 
+ name_the_pair(TestID,ExampleNum,In,Out,_PairName),
+  with_test_pairs(TestID,ExampleNum,In,Out, i_pair(Complete,In,Out)).
 
 show_test_pairs(TestID):- ensure_test(TestID), set_flag(indiv,0),
   with_test_pairs(TestID,ExampleNum,In,Out,
@@ -507,14 +547,16 @@ kaggle_arc_safe(TestID,ExampleNum,I,O):- kaggle_arc(TestID,ExampleNum,I,OO), if_
 
 test_pairs(TestID,I,O):- test_pairs(TestID,_ExampleNum,I,O).
 
+test_pairs(_TestID,ExampleNum,I,_O):- nonvar(ExampleNum),nonvar(I),!.
 test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(entire_suite), !, ensure_test(TestID), kaggle_arc_safe(TestID,ExampleNum,I,O).
 test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(whole_test), !, ensure_test(TestID), kaggle_arc_safe(TestID,ExampleNum,I,O).
 test_pairs(TestID,ExampleNum,I,O):- ignore(ensure_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc(TestID,ExampleNum,I,O).
 
 %with_test_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call((ensure_test(TestID),P))).
 with_test_pairs(TestID,ExampleNum,I,O,P):- 
- forall(test_pairs(TestID,ExampleNum,I,O),
-  my_menu_call((ensure_test(TestID),
+ forall(must_det_ll(test_pairs(TestID,ExampleNum,I,O)),
+   my_menu_call((
+    ensure_test(TestID),
     set_example_num(ExampleNum),     
      set_current_pair(I,O),
      call_cleanup(with_current_pair(I,O,P),flush_tee)))).
@@ -877,7 +919,8 @@ at_least_two_tests(SuiteX):-
 
 ensure_level_1_test_info:-!.
 ensure_level_1_test_info:- precache_all_grid_objs.
-  
+
+:- meta_predicate(when_html(0)).
 when_html(G):- wants_html->call(G);true.
 
 grid_to_task_pair(Grid,TestIDExample):- ground(Grid),was_grid_gid(Grid,TestIDExample),!.
@@ -1328,7 +1371,8 @@ preview_test(TName):-
   %set_example_num(ExampleNum1),
     forall(arg(_,v((trn+_),(tst+_)),ExampleNum1),
      forall(kaggle_arc(TestID,ExampleNum1,In,Out),
-       print_single_pair(TestID,ExampleNum1,In,Out)))))).
+       print_single_pair(TestID,ExampleNum1,In,Out)))))),
+ when_in_html(write('<hr>')).
 
 
 print_single_pair(TestID,ExampleNum,In,Out):- as_d_grid(In,In1),as_d_grid(Out,Out1), xfer_zeros(In1,Out1),!,
@@ -1344,8 +1388,8 @@ print_single_pair_pt2(TestID,ExampleNum,In1,Out1):- \+ wants_html,!,
    format('~N'),
    ignore(show_reduced_io_rarely(In1^Out1)),!.
 
-print_single_pair_pt2(TestID,ExampleNum,In1,Out1):- wants_html,!,
- once((data_type(In1,S1), data_type(Out1,S2))),
+print_single_pair_pt2(TestID,ExampleNum,In,Out):- wants_html,!,
+ once((data_type(In,S1), data_type(Out,S2))),
  test_atom(TestID,TestAtom),
  in_out_name(ExampleNum,NameIn,NameOut),
  (ID1 = (TestID>ExampleNum*in)),
@@ -1355,12 +1399,12 @@ print_single_pair_pt2(TestID,ExampleNum,In1,Out1):- wants_html,!,
   HOut = wqs(TitleColor,[write_nav_cmd(TestAtom,navCmd(TestAtom))]),
   wots(FIn,format_footer(TitleColor,'Input',S2)),
   FOut = format_footer(TitleColor,NameOut,S1),
- grid_size(In1,H1,V1),
- grid_size(Out1,H2,V2),
+ grid_size(In,H1,V1),
+ grid_size(Out,H2,V2),
  BGC = 'bg',
- html_table([[HIn,'   ',HOut],[
-   locally(nb_setval(grid_footer,FIn),print_grid_http_bound(ID1,BGC,1,1,H1,V1,In1)),'-->',
-   locally(nb_setval(grid_footer,FOut),print_grid_http_bound(ID2,BGC,1,1,H2,V2,Out1))]]).
+ print_table([[HIn,'   ',HOut],[
+   locally(nb_setval(grid_footer,FIn),with_other_grid(Out,print_grid_http_bound(ID1,BGC,1,1,H1,V1,In))),'-->',
+   locally(nb_setval(grid_footer,FOut),with_other_grid(In,print_grid_http_bound(ID2,BGC,1,1,H2,V2,Out)))]]).
 
 print_side_by_side66(TitleColor,G1,N1,_LW,G2,N2):- wants_html,!,
  with_tag_style('p','width: 100%; background: #132',g_out((nl_now,
@@ -1969,7 +2013,9 @@ fix_id_1(t(Tried),   TriedV):- !, atom_id(Tried,TriedV),!.
 fix_id_1(Tried,   TriedV):- atom_id(Tried,TriedV),!.
 
 %DD2401ED
-atom_id(NonAtom,TriedV):- \+ atom(NonAtom),!,string(NonAtom),atom_string(Tried,NonAtom),atom_id(Tried,TriedV).
+atom_id(NonAtom,TriedV):- \+ atom(NonAtom),string(NonAtom),!,atom_string(Tried,NonAtom),atom_id(Tried,TriedV).
+%0934a4d8 %07654321
+atom_id(NonAtom,_TriedV):- \+ atom(NonAtom),!,number(NonAtom), fail, todo.
 atom_id(Tried,TriedV):- atom_concat(Atom,'.json',Tried),!,atom_id(Atom,TriedV),!.
 atom_id(Atom,TriedV):- atom_id_e(Atom,TriedV),!.
 atom_id(Atom,TriedV):- downcase_atom(Atom,Tried),Atom\==Tried,atom_id(Tried,TriedV).

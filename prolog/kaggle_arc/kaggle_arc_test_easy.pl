@@ -35,7 +35,9 @@ foreach_count(P,Q):-
       (report_count(P,Q),flag('$fac_p',_,W2))),
     flag('$fac_t',_,W)).
 
-report_count(P,Q):- flag('$fac_t',ET,ET),flag('$fac_p',EP,EP),luser_getval(report_count_time,Was),
+report_count(P,Q):-
+ section_break,
+ flag('$fac_t',ET,ET),flag('$fac_p',EP,EP),luser_getval(report_count_time,Was),
  get_time(Now),Diff is Now - Was,
   (ET<2 -> true ;
    (Percent is round(EP/ET*10_000)/100,
@@ -311,7 +313,7 @@ induce_from_training_pair(P2,Ex1,II1,OO1):-
       ignore(( warn_and_fail_on_bad_p2(cyan,orange,checking_training(P2,Ex1),P2,II1,OO1)))))).
 
 warn_and_fail_on_bad_p2(Cyan,Orange,Ex1,P2,I,Expect):- 
-  %collapsible_section(warn_and_fail_on_bad_p2, )
+  %w_section(warn_and_fail_on_bad_p2, )
  \+ \+ with_io_training_context(I,Expect,   
    (( put_attr(M,expect_p2,Expect),
    (grid_call(P2,I,M)->OurOut=M;OurOut=I),
@@ -439,7 +441,7 @@ easy_solve_training(TestID,P2In):-
      test_easy_solve_test_pair_now(P2In,TestID,Other,TI2,TO2,P2S)),!,
    
   nop((
-   collapsible_section((
+   w_section((
       once((member(P2,P2S),try_p2_verbose(P2,TI2,TO2),
        warn_and_fail_on_bad_p2(cyan,orange,generalness,P2,TI2,TO2))))))).
 

@@ -14,6 +14,8 @@
 
 %:- current_prolog_flag(argv,C),(member('--',C)->set_prolog_flag(use_arc_swish,true);true).
 :- set_prolog_flag(arc_term_expansion,false).
+:- multifile prolog_edit:load/0.
+:- dynamic prolog_edit:load/0.
 
 :- dynamic('$messages':to_list/2).
 :- multifile('$messages':to_list/2).
@@ -218,22 +220,32 @@ pfcAddF(P):-
 % --name=bool, --name, --no-name or --no-name=false.
 process_not_option(P2,E,false):- process_cmdln_option(P2,E,true).
 process_not_option(P2,E,_):- process_cmdln_option(P2,E,false).
+
 process_cmdln_option(P2,E,TF):- atom_concat('no-',O,E),process_not_option(P2,O,TF),!.
+process_cmdln_option(P2,E,TF):- atom_concat('--no-',M,E),atom_concat('--',M,O),process_not_option(P2,O,TF),!.
 %process_cmdln_option(P2,E,TF):- atom_concat('no',O,E),process_not_option(P2,O,TF),!.
 process_cmdln_option(P2,E,TF):- atom_concat(O,'=false',E),process_not_option(P2,O,TF).
 process_cmdln_option(_,'--',_):-!.
 process_cmdln_option(P2,E,TF):- atom_concat(O,'=true',E),process_cmdln_option(P2,O,TF).
 process_cmdln_option(P2,E,TF):- atom_concat('--',O,E),!,process_cmdln_option(P2,O,TF).
 process_cmdln_option(P2,E,TF):- atom_concat('use-',O,E),!,process_cmdln_option(P2,O,TF).
-process_cmdln_option(P2,E,true):- atom_contains(E,'='),!,atom_to_term(E,N=V,Vs),maplist(call,Vs),process_cmdln_option(P2,N,V).
+process_cmdln_option(P2,E,true):- atomic_list_concat([N,V],'=',E),!,process_cmdln_option(P2,N,V).
+%process_cmdln_option(P2,E,true):- atom_contains(E,'='),!,notrace(catch((atom_to_term(E,N=V,Vs),maplist(ignore,Vs)),_,fail)),process_cmdln_option(P2,N,V).
 process_cmdln_option(_P2,E,V):- forall((current_prolog_flag(O,_),atom_concat(_,E,O)),(echo_option(O,V),set_prolog_flag(O,V))),fail.
 process_cmdln_option(P2,E,V):- call(P2,E,V).
 
 echo_option(N,V):- wdmsg(echo_option(N,V)).
+
 :- current_prolog_flag(argv,C),forall(member(E,C),process_cmdln_option(echo_option,E,true)).
 :- current_prolog_flag(argv,C),forall(member(E,C),process_cmdln_option(set_prolog_flag,E,true)).
 
 
+:- if(current_prolog_flag(xpce,false)).
+:- ignore((retract((prolog_edit:load:- pce:ensure_loaded(library(swi_edit)))))).
+:- listing(prolog_edit:load).
+%:- use_module(libary(swi_edit)).
+:- use_module(library(edit)).
+:- endif.
 
 %:- autoload_all.
 
@@ -296,8 +308,8 @@ must_det_ll(\+ (X)):- !, (\+ must_not_error(X) -> true ; must_det_ll_failed(\+ X
 must_det_ll(X):- tracing,!,must_not_error(X).
 must_det_ll(once(A)):- !, once(must_det_ll(A)).
 must_det_ll(X):- 
-  strip_module(X,M,P),functor(P,F,A),setup_call_cleanup(nop(atrace(M:F/A,+fail)),(must_not_error(X)*->true;must_det_ll_failed(X)),
-    nop(atrace(M:F/A,-fail))).
+  strip_module(X,M,P),functor(P,F,A),setup_call_cleanup(nop(trace(M:F/A,+fail)),(must_not_error(X)*->true;must_det_ll_failed(X)),
+    nop(trace(M:F/A,-fail))).
 
 must_not_error(X):- \+ nb_current(cant_rrtrace,t),is_guitracer,!, call(X).
 must_not_error(X):- catch(X,E,((E=='$aborted';nb_current(cant_rrtrace,t))-> throw(E);(/*arcST,*/writeq(E=X),pp(etrace=X),
@@ -320,11 +332,11 @@ rrtrace(X):- rrtrace(etrace,X).
 
 is_guitracer:- getenv('DISPLAY',_), current_prolog_flag(gui_tracer,true).
 rrtrace(P1,X):- nb_current(cant_rrtrace,t),!,nop((wdmsg(cant_rrtrace(P1,X)))),!,fail.
-rrtrace(P1,G):- wants_html,!, wdmsg(wants_html(rrtrace(P1,G))).
-rrtrace(P1,X):- notrace, \+ is_guitracer,!,nortrace, arcST, sleep(0.5), atrace,
-   (notrace(\+ current_prolog_flag(gui_tracer,true)) -> call(P1,X); (atrace,call(P1,X))).
+rrtrace(P1,G):- wants_html,!, wdmsg(wants_html(rrtrace(P1,G))),call(P1,G).
+rrtrace(P1,X):- notrace, \+ is_guitracer,!,nortrace, /*arcST, sleep(0.5), trace,*/
+   (notrace(\+ current_prolog_flag(gui_tracer,true)) -> call(P1,X); (trace,call(P1,X))).
 %rrtrace(_,X):- is_guitracer,!,notrace,nortrace,catch(call(call,gtrace),_,true),atrace,call(X).
-rrtrace(P1,X):- atrace,!, call(P1,X).
+rrtrace(P1,X):- trace,!, call(P1,X).
 
 arc_wote(G):- with_toplevel_pp(ansi,wote(G)).
 arcST:- arc_wote(dumpST).
@@ -896,6 +908,7 @@ bfly_startup:-
    asserta(was_inline_to_bfly),inline_to_bfly_html,
    bfly,
    catch_log(webui_tests),
+   ansi,
    catch_log(print_test),
    catch_log(menu),
    %with_pp(bfly,catch_log(menu)),
@@ -999,5 +1012,7 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 %:- set_prolog_flag(autoload,false).
 :- when_arc_webui_enabled(((start_arc_http_server))).
 :- when_using_swish(logicmoo_use_swish).
-
 :- set_prolog_flag(never_pp_hook, false).
+:- if(current_prolog_flag(bfly,true)).
+:- bfly_startup.
+:- endif.
