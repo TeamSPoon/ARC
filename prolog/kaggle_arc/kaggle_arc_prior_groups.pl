@@ -13,7 +13,6 @@ i2 to o1
 o1 to o1
 
 
-
 */
 :- encoding(iso_latin_1).
 :- include(kaggle_arc_header).
@@ -29,7 +28,7 @@ show_interesting_props(_Named,ObjsI,ObjsO):-
    append(ObjsO,ObjsI,Objs),
    show_interesting_props_gojs(Objs).
 
-show_interesting_props_gojs(Objs):- wdmsg(show_interesting_props_gojs(Objs)).
+show_interesting_props_gojs(Objs):- u_dmsg(show_interesting_props_gojs(Objs)).
   %8731374e
 
 
@@ -48,7 +47,7 @@ show_interesting_props2(Named,Title-Objs):-
 get_interesting_groups(Named,In,Groups):-
   extend_obj_proplist(In,Objs),
   findall(Prop,(member(obj(O),Objs),member(Prop,O), \+ skip_ku(Prop) ),Props),
-  sort(Props,SProps),pp(props(Named)=SProps),
+  sort_safe(Props,SProps),pp(props(Named)=SProps),
   maplist(make_unifier,SProps,UProps), predsort(using_compare(numbered_vars),UProps,SUProps),  
   pp(suprops(Named)=SUProps),
   %count_each(SProps,Props,GroupsWithCounts),
@@ -80,7 +79,7 @@ objs_with_props([_-List|Props],Objs,OL,GO):-
 objs_with_props([],_,_,[]).
 
 group_quals([U|SUProps],SProps,L,[U-ListUS|KUProps]):- findall(U,member(U,SProps),ListU),
-  length(ListU,LUL),LUL\==L, sort(ListU,ListUS),
+  length(ListU,LUL),LUL\==L, sort_safe(ListU,ListUS),
    ListUS=[_,_|_],!,group_quals(SUProps,SProps,L,KUProps).
 group_quals([_|SUProps],SProps,L,KUProps):-  group_quals(SUProps,SProps,L,KUProps).
 group_quals([],_SProps,_,[]).
@@ -149,8 +148,8 @@ is_in_subgroup(Obj,nth_fg_color(Nth,Color)):- unique_fg_colors(Obj,List),nth1(Nt
 
 
 
-transitive_sets(P2,Obj,Set,N):- findall(n(P,List),(trans(P2,Obj,List),List\==[],length(List,P)),Lists),sort(Lists,Set),length(Set,N).
-nontransitive_set(P2,Obj,Set,N):- findall(Other,call(P2,Obj,Other),List),sort(List,Set),length(Set,N).
+transitive_sets(P2,Obj,Set,N):- findall(n(P,List),(trans(P2,Obj,List),List\==[],length(List,P)),Lists),sort_safe(Lists,Set),length(Set,N).
+nontransitive_set(P2,Obj,Set,N):- findall(Other,call(P2,Obj,Other),List),sort_safe(List,Set),length(Set,N).
 
 trans(P2,Obj,Out):- obj_to_oid(Obj,OID),trans_no_loop(P2,[OID],Obj,Out).
 
@@ -171,73 +170,6 @@ touching(Obj,v(Other,Info)):- has_prop(link(dir_touching,Other,Info),Obj).
 seeing(Obj,v(Other,Info)):- has_prop(link(dir_seeing,Other,Info),Obj).
 insideOf(Obj,Other):- has_prop(link(insideOf,Other,_),Obj).
 contains(Obj,Other):- has_prop(link(contains,Other,_),Obj).
-
-%show_indiv(_Why,Obj):- is_bg_object(Obj),!.
-show_indiv(Why, Obj):-  
-  format('~N'),dash_chars(45),dash_chars(45),
-  must_det_ll((
-  vis2D(Obj,H,V),
-  DoFF = false,
-
-  findall(SubGroup,is_in_subgroup(Obj,SubGroup),SubGroupS), 
-  pp(subGroupS=SubGroupS),
-
-  %writeg(obj=Obj),
-
-  if_t((H\==1;V\==1;true),
-    must_det_ll((     
-     %object_or_global_grid(Obj,LG+Type,GridS),      
-     global_grid(Obj,GridS),
-     object_grid(Obj,Grid),   
-     Title = show_indiv(Why,objFn(Glyph),loc2D(OH,OV),center2G(CX,CY),size2D(H,V)),
-             loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
-
-     Grids = [Title=GridS|_],     
-
-     copy_term(Obj,CObj),
-     nop((object_ngrid(CObj,NGrid), append(_,["NGrid"=NGrid|_],Grids))),
-
-     ShowQ=_,
-
-
-     term_variables(Grid,GV1),
-     normalize_grid(NOps,Grid,Normalized), % if_t(Normalized\=@=Grid,append(_,["NORMALIZED!!!"=Normalized|_],Grids)),
-     term_variables(Normalized,RV1),
-     nop(((((GV1\=@=RV1 ; (Normalized\=@=Grid,Normalized=[[_]])) -> ShowQ = true ; ShowQ = _)))),
-
-     compress_grid(COps,Grid,Compressed), if_t(Compressed\=@=Normalized,append(_,["Compressed!!!"=Compressed|_],Grids)),
-
-     if_t(DoFF,((constrain_grid(f,_TrigF,Grid,GridFF), if_t(GridFF\=@=Grid,append(_,["Find"=GridFF|_],Grids)),
-       copy_term(Grid+GridFF,GG1+GridFFNV,GoalsFF), numbervars(GG1+GridFFNV+GoalsFF,10,_,[attvar(bind),singletons(false)])))),
-
-     append(_,[],Grids),
-     wots(SS, print_side_by_side(Grids)), replace_in_string(['®'=Glyph,'@'=Glyph],SS,S),     
-     HH is (OH - 1) * 2, print_w_pad(HH,S),
-
-     if_t(has_goals(GridFFNV),writeg(gridFF=GridFFNV)),
-
-     if_t((nonvar(COps),COps\==[]), 
-       (writeg(cops=COps), 
-        nop((unreduce_grid(Compressed,COps,Uncompressed), 
-        if_t(Uncompressed\=@=Grid, (ShowQ=true,writeg("Bad Uncompressed"=Uncompressed))))))),
-
-     if_t((nonvar(NOps),NOps\==[]), 
-       (writeg(nops=NOps),
-        if_t((ShowQ==true;Normalized\=@=Grid;has_goals(Normalized);true), writeg(normalized=Normalized)),
-        nop((unreduce_grid(Normalized,NOps,Unnormalized), 
-        if_t(Unnormalized\=@=Grid, (ShowQ=true,writeg("Bad Unnormalized"=Unnormalized))))))),
-     
-     if_t((ShowQ==true;has_goals(Grid)),    writeg(grid=Grid)),
-     
-
-     %writeg("NGrid"=NGrid),
-   true))),
-    
-  if_t(is_object(Obj),
-    (format('~N~n'),
-     if_t(menu_or_upper('i'),locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Obj)))))),
-     format('~N'),dash_chars(15))),!.
-
 
 
 % =====================================================================
@@ -336,7 +268,7 @@ create_vis_layers(Fallback,IH,IV,LayerNum,InC,[layer(LayerNum2)=BestOrder|Rest])
   list_to_set(Fallback2,BestOrder),
   ((InHidden==[];equal_sets(InHidden,InC))-> Rest=[] ; create_vis_layers(Fallback2,IH,IV,LayerNum2,InHidden,Rest)).
 
-equal_sets(A,B):- sort(A,AA),sort(B,BB),AA=@=BB.
+equal_sets(A,B):- sort_safe(A,AA),sort_safe(B,BB),AA=@=BB.
 
 
 % sprop_piority(Class,Priority).
@@ -402,7 +334,7 @@ largest_pred(_,I,O):- mass(I,O).
 largest_priority(Indv,Priority):- sprop_piority(Prop,Priority), has_prop(Prop,Indv),!.
 largest_priority(_,1).
 largest_first(P2,IndvS0,IndvR):-   
- sort(IndvS0,IndvS),
+ sort_safe(IndvS0,IndvS),
  %must_det_ll
  ((
   findall((Priority+Size)-Indv,(member(Indv,IndvS),largest_priority(Indv,NPriority),call(P2,Indv,Size),Priority is - NPriority),All),
@@ -460,7 +392,7 @@ object_get_priors(X,S):- is_object(X), !, must_det_ll((indv_props_list(X,Ps),
 get_prior_labels(Objs,PriorsWithCounts):- must_det_ll((is_list(Objs),
   findall(Name,(member(Obj,Objs),object_get_priors(Obj,Name)),AllPriorsL),
   append(AllPriorsL,AllPriors),
-  sort(AllPriors,PriorsSet),
+  sort_safe(AllPriors,PriorsSet),
   my_partition(never_prior,PriorsSet,_Unused,PriorsSetClean),
   count_each(PriorsSetClean,AllPriors,PriorsWithCounts))).
 
@@ -599,7 +531,7 @@ maybe_show_ranking(GType,SFO):-
   length(SFO,Len),
   print_list_of(pp,setOF(GType),SFO),
   print_ss(G),
-  wdmsg(setOF(GType)=Len),atrace.
+  u_dmsg(setOF(GType)=Len),atrace.
 
 
 %has_order(O,P1, Code ):- 

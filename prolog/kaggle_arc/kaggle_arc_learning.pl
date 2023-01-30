@@ -563,7 +563,7 @@ enum_in_objs(In,Objs):- var(Objs),nonvar(In),in_to_out(IO_DIR,OI),has_prop(giz(g
 
 :- dynamic(saved_sorted_by_closeness/4).
 sorted_by_closeness(In,Sorted,Objs,List):- once(var(In);var(Objs)),!,enum_in_objs(In,Objs), sorted_by_closeness(In,Sorted,Objs,List),List\==[].
-sorted_by_closeness(In,Sorted,Objs,List):- var(Sorted), maplist(obj_to_oid,Objs,OIDS), sort(OIDS,Sorted),!,sorted_by_closeness(In,Sorted,Objs,List).
+sorted_by_closeness(In,Sorted,Objs,List):- var(Sorted), maplist(obj_to_oid,Objs,OIDS), sort_safe(OIDS,Sorted),!,sorted_by_closeness(In,Sorted,Objs,List).
 sorted_by_closeness(In,Sorted,Objs,List):- saved_sorted_by_closeness(In,Sorted,Objs,List),!.
 sorted_by_closeness(In,Sorted,Objs,List):- 
   find_prox_mappings(In,_,Objs,List),
@@ -587,7 +587,7 @@ find_prox_mappings(A,GID,Candidates,Objs):-
        NJ is -J,
        JO is - rationalize(J/(O+1))))),
      Pairs), 
-   sort(Pairs,RPairs),!,
+   sort_safe(Pairs,RPairs),!,
    %list_upto(3,RPairs,Some),
    maplist(arg(4),RPairs,Objs).
 /*
@@ -608,7 +608,7 @@ find_prox_mappings(A,GID,Objs):-
        NJ is -J,
        JO is - rationalize(J/(O+1))))),
      Pairs), 
-   sort(Pairs,RPairs),!,
+   sort_safe(Pairs,RPairs),!,
    %list_upto(3,RPairs,Some),
    maplist(arg(4),RPairs,Objs).
 */
@@ -652,7 +652,7 @@ into_special_props(cc(C,N),[color(C),cc(C,N)]):- number(N), N > 0, is_real_fg_co
 
 save_rule(GID,TITLE,IP,OP):-  list_to_set(IP,IIP), list_to_set(OP,OOP),!, save_rule0(GID,TITLE,IIP,OOP).
 
-save_rule0(_GID,_TITLE,IP,OP):- sort(IP,I),sort(OP,O), showed_mapping(I,O),!.
+save_rule0(_GID,_TITLE,IP,OP):- sort_safe(IP,I),sort_safe(OP,O), showed_mapping(I,O),!.
 save_rule0(GID,TITLE1,IP,OP):-
  must_det_ll((
  length(IP,LI), length(OP,LO), sformat(TITLE,"(~w) ~w (~w)",[LI,TITLE1,LO]),
@@ -714,12 +714,14 @@ extend_obj_prop(Obj,Props):- fail,
 
 
 
+%  print_g1(P2,CG):- arc_html,with_toplevel_pp(ansi,( \+ arc_html,print_g1(P2,CG))),!.
 show_changes(P2BeforeAfter):- P2BeforeAfter=..[_,Before,After],
  must_det_ll((
   call(P2BeforeAfter),
   show_changes(Before,After))).
 show_changes(P3BeforeAfterRem):- 
- must_det_ll(( P3BeforeAfterRem=..[_,_,Retained,Removed|_],
+ must_det_ll(( 
+ P3BeforeAfterRem=..[_,_,Retained,Removed|_],
  call(P3BeforeAfterRem),
  show_elem_changes_rr(Retained,Removed))).
 
@@ -1802,7 +1804,7 @@ learn_rule_iin_oout(_,In,O,OL):- mass(O,Mass),
     pred_intersection(same_2props,IL,OL,SAME,_,_IF,_OF),
     pred_intersection(diff_2props,IL,OL,DIFF,_,_,_),
     length(SAME,SL), length(DIFF,DL),SL>DL),SLIDL),
-  sort(SLIDL,SSLIDL),
+  sort_safe(SLIDL,SSLIDL),
   reverse(SSLIDL,RSLIDL),
   member(SL-SAME-I-DL,RSLIDL),
   pp_safe([SL+DL, equal = SAME, in=I,out=OL]),  
@@ -1992,14 +1994,14 @@ shared_prop(Objs,Info):- var(Objs),!,enum_groups(Objs),shared_prop(Objs,Info).
 %  has_prop(Prop,O),once(maplist(has_prop(Prop),Objs)).
 %shared_prop([O|Objs],all_diff(Unif)):-  has_prop(Prop,O),make_unifier(Prop,Unif), 
 %  once((findall(Unif,(member(E,Objs),O\=@=E,has_prop(Unif,E)),LL),
-%    sort([Prop|LL],S),length(S,Len1),length([O|Objs],Len2))),Len1\==Len2.
+%    sort_safe([Prop|LL],S),length(S,Len1),length([O|Objs],Len2))),Len1\==Len2.
 
 shared_prop(Objs,OUT):- shared_prop(_Prop,Objs,OUT).
 shared_prop(Prop,Objs,OUT):- 
   length(Objs,ON),
   findall(Prop-E,(member(E,Objs),has_prop(Prop,E)),PropsObjs),
   maplist(arg(1),PropsObjs,PropVals),
-  sort(PropVals,SProps),
+  sort_safe(PropVals,SProps),
   shared_prop(ON,Objs,PropsObjs,SProps,OUT).
 
 shared_prop(ON,Objs,PropsObjs,[Prop|PropVals],OUT):- 
@@ -2143,7 +2145,7 @@ safe_assumed_mapped(o_i,A,B):-  doing_map_list(out,B,[A|_]),can_pair(A,B).
 safe_assumed_mapped(only_ness,A,B):- gather_assumed_mapped(A,B), \+ (gather_assumed_mapped(A,C),B\==C),can_pair(A,B).
 
 safe_assumed_mapped(priorities(LenA,LenB),A,B):- findall(v(APB,A,LenA,B,LenB), (safe_assumed_mapped(A,LenA,B,LenB),APB is LenA+LenB),List),
-   sort(List,Set),
+   sort_safe(List,Set),
    member(v(_,A,LenA,B,LenB),Set),can_pair(A,B).
 safe_assumed_mapped(A,LenA,B,LenB):- gather_assumed_mapped(A,B),
   gather_assumed_mapped_o_l(A,BL),length(BL,LenA), gather_assumed_mapped_l_o(AL,B),length(AL,LenB).
@@ -2208,7 +2210,7 @@ matches_close_prop(In,Prop,List):-
   print(outs1=OutLS2),nl,
   clumped(OutLS2,OutLS3),
   maplist(rev_key0,OutLS3,OutLS4),
-  sort(OutLS4,OutLS2SS),
+  sort_safe(OutLS4,OutLS2SS),
   reverse(OutLS2SS,OutLS2SSR),
   maybe_four_terse(OutLS2SSR,OutLS2SSRT),
   print(outs2=OutLS2SSRT),nl,
@@ -2269,13 +2271,13 @@ use_learnt_rule(In,RuleDir,Out):- get_vm(VM), % Target=VM.grid_target,
     call(Head),
     matchlen([In0,Key0,RuleDir0,TestID0],[In,Key,RuleDir,TestID],Len)),
    Matches), 
-   sort(Matches,Sort),
+   sort_safe(Matches,Sort),
    %reverse(Sort,Reverse), 
    last(Sort,Last),
    must_det_ll(Last = Rule),
    ignore(In=In0),
    ignore(Out = Out0),
-   %\+ \+ maplist(print_rule(sort),Matches),
+   %\+ \+ maplist(print_rule(sort_safe),Matches),
    \+ \+ print_rule(using_learnt_rule=Len,ref(Ref)),!.
 
 
@@ -2487,7 +2489,7 @@ with_named_pair(solve,TestID,PairName,In,Out):- !,
   with_named_pair(cheat,TestID,PairName,In,Out).
 
 with_named_pair(cheat,TestID,PairName,In,Out):- !,
-  ignore(catch(solve_test(TestID,PairName,In,Out),E,(wdmsg(E),fail))),!.
+  ignore(catch(solve_test(TestID,PairName,In,Out),E,(u_dmsg(E),fail))),!.
 
 with_named_pair(learn,TestID,PairName,In,Out):- !,
   nop((ppnl(learning(TestID=PairName)),nl)),

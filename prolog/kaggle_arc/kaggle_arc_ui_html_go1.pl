@@ -14,13 +14,13 @@ handler_logicmoo_right_2(Request):-
    open_null_stream(Err),
    set_prolog_IO(In,Out,Err),   */
    %set_html_stream_encoding(utf8),
-   %set_stream(Out, encoding(utf8)),  
+   %arc_set_stream(Out, encoding(utf8)),  
    intern_arc_request_data(Request),
    write_arc_start(Where),
    handler_logicmoo_menu,
   write('<div id="main">'),  
   write('<span style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0; position: fixed" onclick="toggleNavL(\'mySideNavL\')">&#9776; Test Suites</span>'),
-  write_csection("Accordion One Heading",(write('<p>Content for first Accordion.</p>'),write_csection("Accordion Two Heading",write('<p>Content for Second Accordion.</p>'),true)),true),
+  w_section("Accordion One Heading",(write('<p>Content for first Accordion.</p>'),w_section("Accordion Two Heading",write('<p>Content for Second Accordion.</p>'),true)),true),
   with_tag_style('ul','right: 300px; top: 0px', (
     %write_ddm('Suite Menu',ignore(report_suites)),
     %write_ddm('Test Menu',ignore(with_pre(test_webui_menu))),    
@@ -47,8 +47,8 @@ handler_logicmoo_right_2(Request):-
    %ignore(show_console_info),   
  %  ignore(call_current_arc_cmds),
    write('<hr>'),
-   %write_csection(edit1term),
-   %write_csection(show_http_session),
+   %w_section(edit1term),
+   %w_section(show_http_session),
    write('</div>'),
    write_arc_end(Where),
    !.

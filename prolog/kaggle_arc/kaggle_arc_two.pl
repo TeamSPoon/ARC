@@ -149,7 +149,7 @@ train_for_objects_from_1pair1(Dict0,TestID,Desc,InA,OutA,Dict1):-
    OutC = OutVM.objs,
   %print_info(InC),
   %print_info(OutC),
-  %wdmsg(InC=OutC),
+  %u_dmsg(InC=OutC),
   
   pred_intersection(overlap_same_obj,InC,OutC,RetainedIn,RetainedOut,Removed,Added),
   /*add_shape_lib(pair,RetainedIn),
@@ -210,11 +210,11 @@ solve_test_trial(Trial):- mmake, with_test_pairs(TestID,ExampleNum,I,O,solve_tes
 
 solve_test_trial_pair(Trial,TestID,ExampleNum,_I,_O):- 
  my_time((my_menu_call((catch(solve_test_trial(Trial,TestID,ExampleNum),E,
-   wdmsg(E=solve_test_trial(Trial,TestID,(ExampleNum)))))))),!.
+   u_dmsg(E=solve_test_trial(Trial,TestID,(ExampleNum)))))))),!.
 
 solve_test_training_too:- 
  solve_test,
- my_menu_call((get_current_test(TestID), catch(solve_test_trial(Trial,TestID,(trn+A)),E,wdmsg(E=solve_test_trial(Trial,TestID,(trn+A)))))),!.
+ my_menu_call((get_current_test(TestID), catch(solve_test_trial(Trial,TestID,(trn+A)),E,u_dmsg(E=solve_test_trial(Trial,TestID,(trn+A)))))),!.
 
 
 solve_test(Name):- forall(trial_non_human(Trial),solve_test_trial(Trial,Name)).
@@ -309,7 +309,7 @@ reuse_indivs(IndvA,IndvB,BetterA,BetterB):-
 
 reuse_indivs_cleanup(IndvA,IndvB,IndvC,_,_,_):-
   maplist(length,[IndvA,IndvB,IndvC],Rest),
-  wdmsg(len=Rest),fail.
+  u_dmsg(len=Rest),fail.
 reuse_indivs_cleanup(IndvA,IndvB,IndvC,BetterAO,BetterBO,BetterCO):-
   select(A,IndvC,IndvCRest), member(B,IndvCRest),
   select(A,IndvA,IndvARest),

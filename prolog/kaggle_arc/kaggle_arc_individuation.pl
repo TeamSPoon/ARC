@@ -219,7 +219,7 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):-
 
 show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
  must_det_ll((
-  =(InCR,InC), =(OutCR,OutC),
+  %=(InCR,InC), =(OutCR,OutC),
   dash_chars,
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),   
   print_side_by_side(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
@@ -248,27 +248,39 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
 
    show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
 
-   ignore((wants_output_for(show_interesting_props), show_interesting_props(ID1,InC,OutC))),
+   if_wants_output_for(show_interesting_props, show_interesting_props(ID1,InC,OutC)),
+
+   nop(show_individuated_pair_pt2(_PairName,ROptions,GridIn,GridOut,InC,OutC)))))))).
+
+
+show_individuated_pair_pt2(_PairName,ROptions,GridIn,GridOut,InC,OutC):- 
+ must_det_ll((
+  =(InCR,InC), =(OutCR,OutC),
+  dash_chars,
+  grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,_ID2),   
        
    banner_lines(orange), %visible_order(InC,InCR),
 
-   ignore((wants_output_for(learn_group_mapping),sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
+   if_wants_output_for(learn_group_mapping,(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
 
-   ignore((wants_output_for(learn_group_mapping_of_tst),sub_var(tst,ID1),learn_group_mapping(InCR,OutCR))), 
+   if_wants_output_for(learn_group_mapping_of_tst,
+        (sub_var(tst,ID1),learn_group_mapping(InCR,OutCR))), 
 
-   ignore((wants_output_for(show_safe_assumed_mapped),show_safe_assumed_mapped)),
+   if_wants_output_for(show_safe_assumed_mapped,
+       show_safe_assumed_mapped),
 
-   ignore((wants_output_for(show_test_associatable_groups), forall(member(In1,InC),show_test_associatable_groups(ROptions,ID1,In1,GridOut)))), 
+   if_wants_output_for(show_test_associatable_groups, 
+       forall(member(In1,InC),show_test_associatable_groups(ROptions,ID1,In1,GridOut))), 
 
-   ignore((wants_output_for(try_each_using_training),
+   if_wants_output_for(try_each_using_training,
      forall(try_each_using_training(InC,GridOut,Rules,OurOut),
       ignore((
        print_grid(try_each_using_training,OurOut),
        nop(pp(Rules)),
-       banner_lines(orange,2)))))),
+       banner_lines(orange,2))))),
 
-   banner_lines(orange,4))))))).
-
+   banner_lines(orange,4))).
+  
 
 arc_spyable_keyboard_key(detect_pair_hints,'g').
 arc_spyable_keyboard_key(show_interesting_props,'y').
@@ -727,7 +739,7 @@ interlink_overlapping_black_lines(VM,Objs,New):-
   Overlap=[_,_|_],!,
   append(P1s,P2s,P12s),!,
 
-  sort(P12s,Points),
+  sort_safe(P12s,Points),
   make_indiv_object(VM,[iz(info(combined)),iz(type((border_frame(H,V,BlackL),PassNum))),
     iz(type(frame_group)),birth(merge_frame_group)],Points,NewObj),
 
@@ -818,7 +830,7 @@ consider_other_grid(VM):-
   Grid = VM.grid,
   Other = In,
   forall( maybe_ogs_color(R,OH,OV,Other,Grid),
- %wdmsg(maybe_ogs_color(R,OH,OV,In,Grid)),
+ %u_dmsg(maybe_ogs_color(R,OH,OV,In,Grid)),
   (globalpoints_include_bg(In,OPoints),
   offset_points(OH,OV,OPoints,GOPoints),
   intersection(VM.points,GOPoints,TODO,LeftOver,Missing),
@@ -1034,7 +1046,7 @@ hybrid_shape_from(Set,VM):-
   Grid = VM.grid,
   member(In,Set),
   maybe_ogs_color(R,OH,OV,In,Grid),
- %wdmsg(maybe_ogs_color(R,OH,OV,In,Grid)),
+ %u_dmsg(maybe_ogs_color(R,OH,OV,In,Grid)),
   globalpoints_include_bg(In,OPoints),
   offset_points(OH,OV,OPoints,GOPoints),
   intersection(VM.points,GOPoints,TODO,LeftOver,Missing),
@@ -1121,7 +1133,7 @@ print_obj_short_props(Obj):- short_indv_props(Obj,Props,_),global_grid(Obj,Grid)
 obj_short_props(Obj,Title=Grid):- short_indv_props(Obj,Title,_),global_grid(Obj,Grid),!.
 
 r_props(Short,SortR):- % obj_to_oid(Obj,MyOID),
-  remove_too_verbose(0,Short,TV0),include(not_too_verbose,TV0,TooV),sort(TooV,Sort),reverse(Sort,SortR).
+  remove_too_verbose(0,Short,TV0),include(not_too_verbose,TV0,TooV),sort_safe(TooV,Sort),reverse(Sort,SortR).
 short_indv_props(Props,ShortR,LongR):- is_list(Props),!,my_partition(is_short_prop,Props,Short,Long),r_props(Short,ShortR),r_props(Long,LongR).
 short_indv_props(Obj,ShortR,LongR):- indv_props_list(Obj,Props),!,short_indv_props(Props,ShortR,LongR).
 
@@ -1151,7 +1163,7 @@ is_short_prop(_).
 get_hybrid_set(Set):-
   findall(O,(current_test_example(TestID,ExampleNum),
              hybrid_shape(TestID,ExampleNum,_Name,O)),List),
-  sort(List,SList),
+  sort_safe(List,SList),
   h_all_rots(SList,SetR),
   predsort_on(hybrid_order,SetR,Set).
 
@@ -1423,7 +1435,7 @@ individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):-
 */
 
 individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):- 
-  %wdmsg(individuate(ROptions,OID_In_Out,IndvSI,IndvSO)),
+  %u_dmsg(individuate(ROptions,OID_In_Out,IndvSI,IndvSO)),
   (saved_group(individuate(ROptions,OID_In_Out),IndvS)
     -> into_gio(IndvS,IndvSI,IndvSO)
     ; ((individuate_two_grids_now(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO),
@@ -1455,7 +1467,7 @@ individuate_two_grids_now(OID_In_Out,ROptions,GridIn,GridOut,IDIn,IDOut,PIn,POut
   must_det_ll((
   %points_to_grid(HIn,VIn,PUIn,GridInX),
   %points_to_grid(HOut,VOut,PUOut,GridOutX),
-  wdmsg(individuate_two_grids_now),
+  u_dmsg(individuate_two_grids_now),
   individuate_two_grids_now(OID_In_Out,ROptions,GridIn,GridOut,IDIn,IDOut,PUIn,PUOut,IndvSI,IndvSO))).
 
 
@@ -1472,7 +1484,7 @@ individuate_two_grids_now(OID_In_Out,ROptions,Grid_In,Grid_Out,ID_In,ID_Out,P_In
       mostly_fgp(P_In,P_InX),
       mostly_fgp(P_Out,P_OutX),
       intersection(P_InX,P_OutX,Same,U_In,U_Out),
-      wdmsg(intersection(P_InX,P_OutX,Same,U_In,U_Out)),
+      u_dmsg(intersection(P_InX,P_OutX,Same,U_In,U_Out)),
 
       if_t((U_In==[],U_Out\==[]),(set(VM_Out.points)=U_Out,set(VM_Out.points_o)=U_Out,
                             points_to_grid(H_Out,V_Out,U_Out,Grid_OutX),
@@ -1777,8 +1789,8 @@ run_fti(_,[]):- !.
 run_fti(_,_):- arc_option(no_individuator), !.
 run_fti(VM,NotAList):- \+ is_list( NotAList),!, must_det_ll(run_fti(VM,[NotAList])).
 run_fti(VM,[Step|Program]):- is_list(Step),flatten([Step|Program],StepProgram),!,must_det_ll(run_fti(VM,StepProgram)).
-run_fti(_,[Done|TODO]):- my_assertion(nonvar(Done)), ( \+ done \= Done ), !, wdmsg(done_run_fti([Done|TODO])),set_vm(program_i,[done]),!.
-run_fti(VM,[if_done|TODO]):- !, (VM.points==[] -> (wdmsg(if_done),set_vm(program_i,[if_done])) ; run_fti(VM,TODO)).
+run_fti(_,[Done|TODO]):- my_assertion(nonvar(Done)), ( \+ done \= Done ), !, u_dmsg(done_run_fti([Done|TODO])),set_vm(program_i,[done]),!.
+run_fti(VM,[if_done|TODO]):- !, (VM.points==[] -> (u_dmsg(if_done),set_vm(program_i,[if_done])) ; run_fti(VM,TODO)).
 run_fti(VM,[end_of_macro|TODO]):- !, must_det_ll(run_fti(VM,TODO)).
 run_fti(VM,[recalc_sizes|TODO]):- !, must_det_ll(run_fti(VM,TODO)).
 
@@ -1808,7 +1820,7 @@ fti(_,[]):- !.
 fti(VM,NotAList):- \+ is_list( NotAList),!, fti(VM,[NotAList]).
 fti(VM,[Step|Program]):- is_list(Step),append(Step,Program,StepProgram),!,fti(VM,StepProgram).
 fti(VM,[end_of_macro|TODO]):- !, fti(VM,TODO).
-fti(_,[Done|TODO]):-  ( \+ done \= Done ), !, wdmsg(done_fti([Done|TODO])),!.
+fti(_,[Done|TODO]):-  ( \+ done \= Done ), !, u_dmsg(done_fti([Done|TODO])),!.
 %fti(VM,_):- VM.points==[], !.
 fti(VM,_):-
   Objs = VM.objs,  
@@ -1890,7 +1902,8 @@ fti(VM,[call(G)|TODO]):-   set(VM.program_i) = TODO, !, my_subfti_call(call(G),V
 fti(VM,[Step|Program]):- functor(Step,F,_), ping_indiv_grid(F), \+ warn_missing_arity(Step,1), set(VM.program_i) = Program, !, my_subfti_call(Step,VM,call(Step, VM.grid)).
 fti(VM,[Step|Program]):- functor(Step,F,_), is_fti_step(F), \+ warn_missing_arity(Step,1), set(VM.program_i) = Program, !, my_subfti_call(Step,VM,call(Step,VM)).
 fti(VM,[Step|Program]):- functor(Step,F,_), is_fti_stepr(F), \+ warn_missing_arity(Step,1), set(VM.program_i) = Program, Step=..[F|ARGS], !, my_subfti_call(Step,VM,apply(F,[VM|ARGS])).
-fti(VM,[Step|Program]):- set(VM.program_i) = Program, one_fti_step(Step), !, my_subfti_call(Step,VM,one_fti(VM,Step)),!.
+fti(VM,[Step|Program]):- set(VM.program_i) = Program, one_fti_step(Step), !, ignore(one_fti(VM,Step)).
+   %my_subfti_call(Step,VM,one_fti(VM,Step)),!.
 
 %my_subfti_call(_Step,VM,Goal):- !, _OldObjs = VM.objs, !, my_submenu_call(Goal).
 
@@ -1935,21 +1948,20 @@ exceeded_objs_max_len(VM):-
   Objs = VM.objs,
   length(Objs,Count),
   Count > VM.objs_max_len,
-  wdmsg(warn(Count > VM.objs_max_len)),
+  u_dmsg(warn(Count > VM.objs_max_len)),
   %dumpST(2),
-  wdmsg(throw(exeeded_object_limit(Count > VM.objs_max_len))),!.
+  u_dmsg(throw(exeeded_object_limit(Count > VM.objs_max_len))),!.
   
 
 fti(VM,[F|TODO]):- once(fix_indivs_options([F|TODO],NEWTODO)),[F|TODO]\==NEWTODO,!,fti(VM,NEWTODO).
   
 
 fti(VM,[F|TODO]):-
-   ptu(fti_miss(F)),
-   wdmsg(fti_miss(F)),
+   u_dmsg(fti_miss(F)),
    set(VM.program_i)= TODO.
 
 %:- listing(fti/2).
-% fti(_VM,[F|_]):- wdmsg(F),!. % atrace,fail.
+% fti(_VM,[F|_]):- u_dmsg(F),!. % atrace,fail.
 
 
 one_fti_step(Name):- is_thing_or_connection(Name).
@@ -1965,7 +1977,7 @@ i_step0(Name):- ping_indiv_grid(Name).
 i_step0(Name):- individuation_macros(Name,_).
 
 
-warn_missing_arity(Step,N):- missing_arity(Step,N) -> wdmsg(warning(missing_arity(Step,N))).
+warn_missing_arity(Step,N):- missing_arity(Step,N) -> u_dmsg(warning(missing_arity(Step,N))).
 
 is_fti_stepr(_):-fail.
 
@@ -2608,7 +2620,7 @@ drops_as_objects(Name,VM):-
   %Objs = VM.objs,!,
  must_det_ll((
   Grid = VM.grid,
-  %notrace(catch(call_with_depth_limit(individuate1(_,Name,VM.grid_o,IndvS0),20_000,R),E,(wdmsg(E)))),
+  %notrace(catch(call_with_depth_limit(individuate1(_,Name,VM.grid_o,IndvS0),20_000,R),E,(u_dmsg(E)))),
   individuate1(_,Name,Grid,_IndvS0)
   %maplist(override_object(iz(bp(Name))),IndvS0,IndvS1),
   )),!.
@@ -2645,7 +2657,7 @@ save_as_obj_group(ROptions,VM):-
   %Objs = VM.objs,!,
  must_det_ll((
   GridIn = VM.grid,
-  %notrace(catch(call_with_depth_limit(individuate1(_,Name,VM.grid_o,IndvS0),20_000,R),E,(wdmsg(E)))),
+  %notrace(catch(call_with_depth_limit(individuate1(_,Name,VM.grid_o,IndvS0),20_000,R),E,(u_dmsg(E)))),
     must_grid_to_gid(GridIn,GOID),
     individuate2(_,ROptions,GOID,GridIn,IndvS0),
     maplist(add_birth_if_missing(indiv(ROptions)),IndvS0,IndvSL),
@@ -2683,7 +2695,7 @@ gather_cached(VM):-
   atrace,Obj = obj(Props),
   globalpoints_include_bg(Obj,GPoints),
   my_partition(props_not_for_merge,Props,_Exclude,Overrides),
-  wdmsg(oberrides=Overrides),
+  u_dmsg(oberrides=Overrides),
   make_indiv_object(VM,Overrides,GPoints,Obj),
   raddObjects(VM,Obj).
 */
@@ -2824,7 +2836,7 @@ find_mergeable(VM,Found,[_|ScanPoints],Engulfed):-
 %individuateR(Grid,complete,Objs):- individuate(complete,Grid,Objs).
 %individuateR(Grid,Name,Objs):- var(Grid),!,arc_grid(Grid),individuateR(Grid,Name,Objs).
 %individuateR(Grid,Name,Objs):- 
-%  no_repeats(Name+DirS,(allow_dir_list(Name,Dirs),sort(Dirs,DirS))),
+%  no_repeats(Name+DirS,(allow_dir_list(Name,Dirs),sort_safe(Dirs,DirS))),
 %  individuate(Name,Grid,Objs),Objs\==[].
 
 %one_fti_step(Name)
@@ -3220,7 +3232,7 @@ is_fti_step(leftover_as_one).
 leftover_as_one(VM):-
    Points = VM.points,
    ignore((Points\==[],
-   wdmsg(leftover_as_one=Points),
+   u_dmsg(leftover_as_one=Points),
    make_indiv_object(VM,[iz(info(combined)),iz(info(leftover_as_one))],Points,LeftOverObj), verify_object(LeftOverObj),
    raddObjects(VM,LeftOverObj))),
    VM.points=[].
@@ -3233,7 +3245,7 @@ current_as_one(VM):-
    ignore((
    Points\==[],
    %set_html_stream_encoding, 
-   wdmsg(current_as_one=Points),
+   u_dmsg(current_as_one=Points),
    make_indiv_object(VM,[iz(info(combined)),birth(current_as_one)],Points,LeftOverObj), verify_object(LeftOverObj),
    raddObjects(VM,LeftOverObj),
    set(VM.points) = Points)).
@@ -3694,7 +3706,7 @@ unused_filtered_point(C,HV):- maybe_multivar(C), t_l:id_cells(_ID,Points),% sele
   findall(Dir-HV2,(adjacent_point_allowed(C,HV,Dir,HV2),member(C-HV2,Points)),Used),
   findall(Dir-HV2,(adjacent_disallowed(C,HV,Dir,HV2),member(C-HV2,Points)),Unused),
   shape_has_filtered_use(C,Used,Unused),
-  %wdmsg(shape_has_filtered_use(C,HV,Used,Unused)),
+  %u_dmsg(shape_has_filtered_use(C,HV,Used,Unused)),
   !.
 
 shape_has_filtered_use(_,[],_Unused).
@@ -3845,7 +3857,7 @@ merge_indivs(IndvA,IndvB,BetterA,BetterB,BetterC):-
 
 merge_indivs_cleanup(IndvA,IndvB,IndvC,_,_,_):-
   maplist(length,[IndvA,IndvB,IndvC],Rest),
-  wdmsg(len=Rest),fail.
+  u_dmsg(len=Rest),fail.
 merge_indivs_cleanup(IndvA,IndvB,IndvC,BetterAO,BetterBO,BetterCO):-
   select(A,IndvC,IndvCRest), member(B,IndvCRest),
   select(A,IndvA,IndvARest),

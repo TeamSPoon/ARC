@@ -187,7 +187,8 @@ make_default_grid(C,H,V,Grid):- ensure_make_grid(H,V,Grid),set_grid_default(C,Gr
 
 set_grid_default(C,Grid):- mapgrid(ignore_equal(C),Grid).
 
-make_grid(H,V,Grid):- (H<1;V<1),!,wdmsg(make_grid(H,V,Grid)),!,with_toplevel_pp(ansi,((write('<pre>'),nop(bt),nop(break)))),!,fail.
+make_grid(H,V,Grid):- (H<1;V<1),!,u_dmsg(make_grid(H,V,Grid)),!,
+  with_toplevel_pp(ansi,((write('<pre>'),nop(bt),nop(break)))),!,fail.
 make_grid(H,V,Grid):- between(1,40,H),between(1,40,V),  % max_min(H,0,HH,_), max_min(V,0,VV,_), %max_min(HH,32,_,HHH),max_min(VV,32,_,VVV),!,    
    ensure_make_grid(H,V,G),G=Grid.
 
@@ -538,7 +539,7 @@ is_nsew_same_as_colormass(Grid):-
   ensure_gid(Grid,GID),
   grid_object_points(GID,nswe,Nswe),
   grid_object_points(GID,colormass(N),Colormass),!,
-  sort(Colormass,S1),sort(Nswe,S2),
+  sort_safe(Colormass,S1),sort_safe(Nswe,S2),
   S1\=@=S2.
 
 is_nsew_same_as_colormass_count(Grid):-

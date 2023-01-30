@@ -107,7 +107,7 @@ pbox_vm_special_sizes_list(Sizes_S_L,VM):-
 
 color_mass_points_to_sizes(Points,Sizes):-
   maplist(arg(1),Points,Colors),
-  sort(Colors,SColors),
+  sort_safe(Colors,SColors),
   findall(size2D(SizeX,SizeY),(member(Color,SColors),
     include(sub_var(Color),Points,CPoints),
     vis2D_and_1x1_larger(CPoints,SizeX,SizeY)),Sizes).
@@ -125,7 +125,7 @@ pbox_vm_special_sizes(Objs,A,GH,GV,GridI0,Sizes_S_L,VM):-
   append(Sizes,HVList,NEAR),
   debug_m(indiv(pbox),NEAR),
   include(near_size(GH,GV,NEAR),Sizes_S_L,UseSizes),
-  length(UseSizes,B), wdmsg(reduced(A->B)),
+  length(UseSizes,B), u_dmsg(reduced(A->B)),
   pbox_vm(GH,GV,GridI0,UseSizes,VM))).
 
 factor_of(V,GV):- R is GV rem V, ( R==0; (R \== 1, 0 is GV rem R, GV is R+V )),!.
@@ -139,7 +139,7 @@ within1of(H,HH):- freeze(HH, ( D is abs(H-HH), D =< 1 )).
 list_upto(Size,List,Some):- length(List,L),(L=<Size ->Some=List ; (length(Some,Size),append(Some,_,List))).
 
 pbox_vm(GH,GV,GridI0,Sizes_S_L,VM):-
-   % \+ \+ (length(Sizes_S_L,A),list_upto(20,Sizes_S_L,Some),wdmsg(use_sizes(A)),print(Some)),
+   % \+ \+ (length(Sizes_S_L,A),list_upto(20,Sizes_S_L,Some),u_dmsg(use_sizes(A)),print(Some)),
    get_black(Black),
    subst_2L([wbg,bg],[Black,Black],GridI0,GridI),
    mapgrid(assign_plain_var_with(Black),GridI,GridM),
@@ -381,7 +381,7 @@ maybe_swap(C1,C2,C1,C2). maybe_swap(C1,C2,C2,C1).
 experiment(G):- call(G).
 
 %list_to_set_bf([L|List],SetOL):- is_list(L),!,maplist(list_to_set_bf,[L|List],SetOL).
-list_to_set_bf(List,SetO):- sort(List,Set), ( (select(B,Set,R), B==black) -> SetO=[black|R] ; SetO=Set).
+list_to_set_bf(List,SetO):- sort_safe(List,Set), ( (select(B,Set,R), B==black) -> SetO=[black|R] ; SetO=Set).
 maplist_ls(P1,List):- flatten_set_bf(List,Set),maplist(P1,Set).
 member_ls(P1,List):- flatten_set_bf(List,Set),member(P1,Set).
 black_and(F,C):- flatten_set_bf(F,[Black,C]), Black == black.

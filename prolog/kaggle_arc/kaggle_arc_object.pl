@@ -112,7 +112,7 @@ make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):-
   %writeg([gpoints0=GPoints0,lpoints=LPoints,shapePoints(RotG,OffsetX,OffsetY)=ShapePoints]),
   if_t(ShapePoints==[],break),
   make_localpoints(ShapePoints,RotG,OffsetX,OffsetY,PenColors,_CheckLPoints),
-  %sort(LPoints0,LPoints0S),
+  %sort_safe(LPoints0,LPoints0S),
   %CheckLPoints=LPoints0S,
   %writeg([checkLPoints=CheckLPoints]),
 
@@ -136,7 +136,7 @@ make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):-
 
 
   %add_prop_list(PropL,CC),
-  sort(Pixels,UniqueColors),  
+  sort_safe(Pixels,UniqueColors),  
   my_partition(is_fg_color,UniqueColors,FGC,NotFGC),
   my_partition(is_bg_color,NotFGC,BGC,OtherC),
   add_prop_with_count(PropL,unique_colors,UniqueColors),
@@ -360,7 +360,7 @@ rev_key(List,ListO):- is_list(List),!,maplist(rev_key,List,ListO).
 sort_points(P0,P2):- 
    (P0==[] -> (rrtrace(true)) ; true),
    my_assertion(is_list(P0)),
-   sort(P0,P1),my_assertion(P1\==[]), 
+   sort_safe(P0,P1),my_assertion(P1\==[]), 
    my_assertion(is_cpoints_list(P1)),  
    maplist(rev_key,P1,R1),keysort(R1,R2),maplist(rev_key,R2,P2).
 
@@ -402,7 +402,7 @@ get_loc2D_vis2D(O2,P2,H2,V2,OH2,OV2):-
 ensure_indiv_object(VM,IPoints,Obj):- 
   ((compound(IPoints), IPoints = obj(_)) -> (IPoints = Obj, nop(addObjects(VM,Obj)));
    (my_partition(is_cpoint,IPoints,Points,Overrides),
-    wdmsg(po(Points,Overrides)),
+    u_dmsg(po(Points,Overrides)),
     make_indiv_object(VM,Overrides,Points,Obj))).
 
 make_point_object(VM,Overrides,C-Point,Obj):- 
@@ -1118,7 +1118,7 @@ var_check(I,_):- I==[],!,fail.
 var_check(I,G):- resolve_reference(I,O),I\==O,!,subst001(G,I,O,GG),GG\==G,!,call(GG).
 var_check(I,G):- var(I),!,(enum_object(I)*->G;var_check_throw(I,G)).
 %var_check(I,G):- var(I),!,var_check_throw(I,G).
-var_check_throw(I,G):- var(I),wdmsg(error(var(G))),!,arcST,wdmsg(error(var(G))),break,trace_or_throw(maybe_enum_i(I,G)),call(G).
+var_check_throw(I,G):- var(I),u_dmsg(error(var(G))),!,arcST,u_dmsg(error(var(G))),break,trace_or_throw(maybe_enum_i(I,G)),call(G).
 
 object_shapeW(I,X):- compound(I),I=obj(L),!,my_assertion(is_list(L)),!,member(iz(X),L ).
 object_shapeW(I,X):- indv_props(I,iz(X)).
@@ -1294,7 +1294,7 @@ make_localpoints(RotLCLPoints,RotG,OffsetX,OffsetY,PenColors,LPointS):-
   must_det_ll((   maybe_undo_effect_points(OffsetX,OffsetY,RotLCLPoints,RotG,ShapePoints),
      PenColors\==[],is_list(PenColors),
      combine_pen(ShapePoints,PenColors,PenColors,LPoints) )),!,
-  sort(LPoints,LPointS).
+  sort_safe(LPoints,LPointS).
 
 maybe_undo_effect_points(_,_,RotLCLPoints,sameR,LPoints):- must_be_free(LPoints),!,RotLCLPoints=LPoints.
 maybe_undo_effect_points(OffsetX,OffsetY,RotLCLPoints,RotG,LPoints):- must_det_ll((points_to_grid(OffsetX,OffsetY,RotLCLPoints,Grid),   
@@ -1378,10 +1378,10 @@ is_some_cc(cc(_,N)):- N>0,!.
 %color_cc_via_pixels(G,BFO):- quietly((pixel_colors(G,GF),count_sets(GF,_,SK),into_cc(SK,BFO))).
 get_ccs(GF,CC):-
   %count_sets(GF,SK),
-  sort(GF,GS), count_each(GS,GF,UC),keysort(UC,KS),reverse(KS,SK),
+  sort_safe(GF,GS), count_each(GS,GF,UC),keysort(UC,KS),reverse(KS,SK),
   into_cc(SK,CC),!.
 
-count_sets(GF,SK):- sort(GF,GS), count_each(GS,GF,UC),keysort(UC,KS),reverse(KS,SK),!.
+count_sets(GF,SK):- sort_safe(GF,GS), count_each(GS,GF,UC),keysort(UC,KS),reverse(KS,SK),!.
 count_sets(GF,GS,SK):- (var(GS)->list_to_set(GF,GS);true), count_each(GS,GF,UC),keysort(UC,KS),reverse(KS,SK),!.
 
 /*
@@ -1455,7 +1455,7 @@ black_vs_bg(C,C).
 
 locG_term(I,loc2G(X,Y)):- loc2G(I,X,Y),!.
 loc2G(Grid,H,V):- is_grid(Grid),!,other_grid_size(Grid,H,V).
-loc2G(G,X,Y):- is_group(G),!,mapgroup(locG_term,G,Offsets),sort(Offsets,[loc2G(X,Y)|_]). % lowest loc2G
+loc2G(G,X,Y):- is_group(G),!,mapgroup(locG_term,G,Offsets),sort_safe(Offsets,[loc2G(X,Y)|_]). % lowest loc2G
 %loc2G(Grid,H,V):- is_grid(Grid),!,globalpoints(Grid,Points),!,points_range(Points,LocX,LocY,_,_,_,_), H is LocX, V is LocY.
 loc2G(I,X,Y):- is_object(I), indv_props(I,loc2G(X,Y)),!.
 loc2G(I,X,Y):- into_obj(I,O), indv_props(O,loc2G(X,Y)),!.
@@ -1468,7 +1468,7 @@ loc2D(O,H,V):- obj_var(O),!,into_obj(O,Obj),loc2D(Obj,H,V).
 loc2D(O,H,V):- maybe_defunct(O,Obj),!,loc2D(Obj,H,V).
 loc2D(I,X,Y):- is_object(I), indv_props(I,io(loc2D(X,Y))),!.
 loc2D(Grid,H,V):- is_grid(Grid),!,H=1,V=1.
-loc2D(G,X,Y):- is_group(G),!,mapgroup(loc_term,G,Offsets),sort(Offsets,[loc2D(X,Y)|_]). % lowest loc2D
+loc2D(G,X,Y):- is_group(G),!,mapgroup(loc_term,G,Offsets),sort_safe(Offsets,[loc2D(X,Y)|_]). % lowest loc2D
 %loc2D(Grid,H,V):- is_grid(Grid),!,globalpoints(Grid,Points),!,points_range(Points,LocX,LocY,_,_,_,_), H is LocX, V is LocY.
 loc2D(I,X,Y):- is_object(I), indv_props(I,loc2D(X,Y)),!.
 loc2D(I,X,Y):- into_obj(I,O), indv_props(O,loc2D(X,Y)),!.
@@ -1482,7 +1482,7 @@ vis_hv_term(I,size2D(X,Y)):- vis2D(I,X,Y),!.
 vis2D(Grid,H,V):- is_grid(Grid),!,grid_size(Grid,H,V).
 vis2D(Grid,H,V):- is_grid(Grid),!,globalpoints(Grid,Points),!,points_range(Points,LocX,LocY,HiH,HiV,_,_), H is HiH-LocX+1, V is HiV-LocY+1.
 vis2D(I,X,Y):- indv_props(I,vis2D(X,Y)),!.
-vis2D(G,X,Y):- is_group(G),!,mapgroup(vis_hv_term,G,Offsets),sort(Offsets,HighToLow),last(HighToLow,size2D(X,Y)).
+vis2D(G,X,Y):- is_group(G),!,mapgroup(vis_hv_term,G,Offsets),sort_safe(Offsets,HighToLow),last(HighToLow,size2D(X,Y)).
 vis2D(Points,H,V):- points_range(Points,LocX,LocY,HiH,HiV,_,_), H is HiH-LocX+1, V is HiV-LocY+1.
 vis2D(NT,H,V):-  known_gridoid(NT,G),G\==NT, vis2D(G,H,V).
 

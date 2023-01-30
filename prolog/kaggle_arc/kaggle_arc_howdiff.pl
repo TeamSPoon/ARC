@@ -212,7 +212,7 @@ obj_grp_atomslist(IO,A,PA,Atoms):-
   obj_grp_atoms_deep(A,PA,Atoms),
   assert_in_testid(arc_cache:object_atomslist(IO,A,PA,Atoms)).
 
-dref_match(Var,_):- var(Var),wdmsg(dref_match(Var)),!,fail.
+dref_match(Var,_):- var(Var),u_dmsg(dref_match(Var)),!,fail.
 dref_match(rhs(LHS),PA):- !, dref_match(LHS,PA).
 dref_match(lhs(LHS),PA):- !, dref_match(LHS,PA).
 dref_match([obj(LHS)],PA):- !, dref_match(LHS,PA).
@@ -257,7 +257,7 @@ find_obj_mappings2([A,PA|PAP],BBR,pair4(A,PA,B,PB)):-
        NJ is -J,
        JO is - rationalize(J/(O+1))))),
      Pairs), 
-   sort(Pairs,RPairs),!,
+   sort_safe(Pairs,RPairs),!,
    %maplist(writeln,Pairs),
    %last(RPairs,prop_atoms(Best,_,_,_)),
    % Best = pair(PA,PB,_),
@@ -302,8 +302,9 @@ showdiff_groups5(A,B,[H|T],AAR,BBR):- !,
   showdiff_groups5(A1,B1,T,AAR,BBR).
 showdiff_groups5(A,B,Pred,AAR,BBR):- 
   pred_intersection(Pred,A,B,IntersectA,IntersectB,AAR,BBR),
-  ignore((IntersectA\==[], w_section("Object Differences",
-   maplist(showdiff_objects_vis(Pred),IntersectA,IntersectB))),info).
+  ignore(((IntersectA\==[], 
+   w_section("Object Differences",
+     maplist(showdiff_objects_vis(Pred),IntersectA,IntersectB))))).
 
 
 diff_groups2(AAR,BBR,proportional(DD,Diffs)):- proportional(AAR,BBR,DD), maplist(diff_objects,AAR,BBR,Diffs).
@@ -376,7 +377,7 @@ select_obj_pair_2(AAR,BBR,PA,PB,(J/O)):-
      NJ is -J,
      JO is - rationalize(J/(O+1))))),
    Pairs), 
- sort(Pairs,RPairs),!,
+ sort_safe(Pairs,RPairs),!,
  %maplist(writeln,Pairs),
  %last(RPairs,prop_atoms(Best,_,_,_)),
  % Best = pair(PA,PB,_),
@@ -795,19 +796,19 @@ simular(loc2D=Where,I,O,object_has_moved(Where)):-
 
 
 
-maye_sort(L,S):- is_list(L),\+ is_grid(L), !,sort(L,S).
+maye_sort(L,S):- is_list(L),\+ is_grid(L), !,sort_safe(L,S).
 maye_sort(S,S).
 obj_make_comparable(I,_):- plain_var(I),!,fail.
 obj_make_comparable(obj(I),O):- !, obj_make_comparable(I,O).
 obj_make_comparable(I,O):- is_list(I),maplist(obj_make_comparable_e,I,M),sort_obj_props(M,O),
  nop(pp(sort_obj_props(O))).
 obj_make_comparable(I,O):- into_obj(I,M),obj_make_comparable(M,O).
-%obj_make_comparable_e(I,O):- is_list(I),sort(I,O).
+%obj_make_comparable_e(I,O):- is_list(I),sort_safe(I,O).
 %obj_make_comparable_e(Comp,F):- compound(Comp),functor(Comp,F,_),f_uncomparable_e(F).
 %obj_make_comparable_e(grid_size(_,_),grid([])).
 %obj_make_comparable_e(I,O):- I=..[F,L],maye_sort(L,S),O=..[F,S].
 obj_make_comparable_e(I,I).
-%obj_make_comparable(I,SI):- exclude(uncomparable,I,II), sort(II,SI).
+%obj_make_comparable(I,SI):- exclude(uncomparable,I,II), sort_safe(II,SI).
 
 % f_uncomparable_e(F).
 f_uncomparable_e(grid).
@@ -1036,7 +1037,7 @@ diff_termz(I,O,I):- O==[],!.
 diff_termz([IH,IV],[OH,OV],D):- maplist(number,[IH,IV,OH,OV]),!,maplist(diff_numbers,[IH,IV],[OH,OV],D).
 
 %diff_termz(I,O, [] ):- (never_do_diff(I);never_do_diff(O)),!.
-diff_termz(colorlesspoints(I),colorlesspoints(O),[]):- !,sort(I,II),sort(O,OO),II=@=OO,!.
+diff_termz(colorlesspoints(I),colorlesspoints(O),[]):- !,sort_safe(I,II),sort_safe(O,OO),II=@=OO,!.
 diff_termz(colorlesspoints(I),colorlesspoints(O),colorlesspoints(diff(I->O))):-!.
 %diff_termz(I,O, (O \== I)):- O=@=I,!.
 diff_termz(group_o(I),group_o(O),group_o(DD)):- !, must_det_ll(diff_groups(I,O,DD)).
@@ -1081,7 +1082,7 @@ maybe_no_diff(_,_,D,D).
 
 is_object_props(O):- is_list(O),member(E,O),compound(E),colorlesspoints(_)=E,!.
 diff_lists(AA,BB,D):- AA=@=BB,!,D=[].
-diff_lists(AA,BB,diff(AA=@=BB)):- sort(AA,A),sort(BB,B), A=@=B,!.
+diff_lists(AA,BB,diff(AA=@=BB)):- sort_safe(AA,A),sort_safe(BB,B), A=@=B,!.
 diff_lists(I,O,D1D):- is_kv_list(I),is_kv_list(O),!,kv_list_diff(_Sytle,I,O,D1D).
 diff_lists(I,O,D1D):- is_object_props(I),is_object_props(O),!,object_props_diff(I,O,D1D).
 diff_lists(AA,BB,D):- must_det_ll((non_grid_list(AA), non_grid_list(BB), =(AA,A),=(BB,B), length(A,AL), length(B,BL))),
@@ -1176,7 +1177,7 @@ list_diff_recurse(I,O,D1D):- list_diff_recurse_nil(I,O,D1D),!.
 
 list_diff_recurse(I,O,D1D):- select_two(I,O,CI,CO,II,OO),diff2_terms(CI,CO,D1),!,
        list_diff_recurse(II,OO,D),!, combine_diffs(D1,D,D1D),!.
-list_diff_recurse(I,O,D1D):- sort(I,III),sort(O,OOO),select_two_any(III,OOO,CI,CO,II,OO),diff2_terms(CI,CO,D1),!,
+list_diff_recurse(I,O,D1D):- sort_safe(I,III),sort_safe(O,OOO),select_two_any(III,OOO,CI,CO,II,OO),diff2_terms(CI,CO,D1),!,
        list_diff_recurse(II,OO,D),!, combine_diffs(D1,D,D1D),!.
 list_diff_recurse(I,O,[diff(I->O)]):- !.
 
@@ -1363,7 +1364,7 @@ proportional_or_same(G1,G2,Out):- unused_proportion(G1,G2,Out),!.
 proportional_or_same(A1,A2,A1):- A1==A2,!.
 proportional_or_same(L1,L2,LR):- proportional(L1,L2,LR).
 
-on_x_log_and_fail(G):- catch(G,E,(wdmsg(red((E -> G))),rrtrace(G),fail)).
+on_x_log_and_fail(G):- catch(G,E,(u_dmsg(red((E -> G))),rrtrace(G),fail)).
 
 %proportional(N1,N2,N):- is_object(N1),is_object(N2),!,proportional_objs(N1,N2,N).
 %proportional(N1,N2,N):- is_grid(N1),is_grid(N2),!,proportional_grids(N1,N2,N).
@@ -1371,7 +1372,7 @@ on_x_log_and_fail(G):- catch(G,E,(wdmsg(red((E -> G))),rrtrace(G),fail)).
 maybe_number(N,N):- \+ compound(N),!,number(N).
 maybe_number(M,N):- extract_vals(M,Vals),!,last(Vals,N),number(N),!.
 
-into_vals(V1,V2,Vals):- extract_vals(V1,VV1),extract_vals(V2,VV2),append(VV1,VV2,Vs),sort(Vs,Vals).
+into_vals(V1,V2,Vals):- extract_vals(V1,VV1),extract_vals(V2,VV2),append(VV1,VV2,Vs),sort_safe(Vs,Vals).
 
 %extract_vals(M,Vals):- var(M),!,Vals=M.
 %extract_vals(M,Vals):- \+ compound(M),!,Vals=[M].
@@ -1397,7 +1398,7 @@ diff_numbers(I,O,0):- I =:= O,!.
 diff_numbers(I,O,diff(-(D))):- I<O,!, D is O -I.
 diff_numbers(I,O,diff(+(D))):- D is I -O.
 
-is_vset(Colors):- sort(Colors,ColorsS),!,Colors=ColorsS.
+is_vset(Colors):- sort_safe(Colors,ColorsS),!,Colors=ColorsS.
 is_lset(Colors):- list_to_set(Colors,ColorsS),!,Colors=ColorsS.
 
 

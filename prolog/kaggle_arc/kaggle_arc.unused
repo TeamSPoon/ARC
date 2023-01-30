@@ -377,3 +377,67 @@ contained_object(Offset,O2,O1):- two_physical_objs(O1,O2), not_subsume(_,O2,O1),
 not_subsume(_,_O2,_O1):-!.
 not_subsume(_,O2,O1):- \+ subsume(_,O2,O1),!.
 
+/*
+w_show_s31(Title,Goal,_Showing):- title_to_html(Title,HtmlTitle),!,
+ gensym('accordian_css_',Sym),
+ format('<input type="checkbox" id="~w" class="hidecontent">
+		<label for="~w"><div class="font(1)">~w</div></label>
+        <div class="content hidecontent">',[Sym,Sym,HtmlTitle]),
+           goal_new_lines(Goal,_NewChars),
+           format('<label for="~w" style="right: 0; position: relative; width: 8px">x</label>
+			<script>
+			 if(true) document.getElementById("~w").click();
+			</script>
+        </div>',[Sym,Sym]).
+
+w_show_s32(Title,Goal,Showing):- title_to_html(Title,HtmlTitle),!,
+ gensym('accordian_css_',Sym),
+ format('<input type="checkbox" id="~w" class="hidecontent">',[Sym]),
+ format('<label for="~w"><div class="font(1)">~@</div></label>',[Sym,print_title(HtmlTitle)]),
+ %(Showing == true -> Class=panel_shown; Class=panel_hidden),
+ Class=panel_shown,
+ %format('<hr><label id="~w" onclick="clickAccordian(`~w`);" class="accordian , title"><div class="font(1)">',[Sym,Sym]),
+ format('<div id="~w_panel" onmouseover="activateMenu(`~w_link`);" class="content , hidecontent">',[Sym,Sym]), 
+ flag('$w_section_depth',X,X),
+ format('<script>addAccordian(document.getElementById("~w"),~w);</script><p>',[Sym,X]),flush_output,
+ goal_new_lines(Goal,NewChars), format('<br></div>',[]),
+ ignore((  
+   ((Showing==false,NewChars<600);(Showing==true,Class==panel_hidden);(Showing==false,Class==panel_shown))
+    ->format('<script>document.getElementById("~w").click();</script>',[Sym]))).
+
+
+w_section_html_1(Title,Goal,Showing):- gensym(accordian_,Sym), !,
+   format('<label for="~w">',[Sym]),
+	 format('<input id="~w" type="checkbox" />',[Sym]),
+	 write('<div class="title"> <h3>'),pp(Title),write('</h3></div>'),
+	 write('<div class="content">'),goal_new_lines(Goal,NewChars),
+   %pp(newlines=NewChars),format('<--label for="~w" style="right: 0; position: relative; width: 8px">x</label-->',[Sym]),   
+   ignore(((Showing==true;NewChars<600)->format('<script>document.getElementById("~w").click();</script>',[Sym]))),
+   write('</div>'),!,write('</label>').
+
+w_section_html_2(Title,Goal,Showing):- gensym(accordian_,Sym), !,
+   format('<input type="checkbox" id="~w" class="hidecontent">',[Sym]),
+   format('<label for="~w"><div class="font(1)">',[Sym]),
+   pp(Title),write('</div></label><div class="content hidecontent">'),
+   goal_new_lines(Goal,NewChars),
+   format('<label for="~w" style="right: 0; position: relative; width: 8px">x</label>',[Sym]),
+   ignore(((Showing==true;NewChars<600)->format('<script>document.getElementById("~w").click();</script>',[Sym]))),
+   write('</div>').
+*/
+/*  
+with_tagged(Spyable,Goal):- 
+  once(nb_current('$w_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),
+  setup_call_cleanup(
+    bfly_html_goal(format('~w<~w> ~N',[Ident,Spyable])),
+    locally(b_setval('$w_section',[h(Spyable)|Was]),tabbed_print_im(Depth+2,(Goal))),
+    bfly_html_goal(format('~w</~w> ',[Ident,Spyable]))).
+
+w_section(Title,Goal,true):-
+  (nb_current('$w_section',Was);Was=[]),
+  length(Was,Depth),
+  setup_call_cleanup(format('~N~@!mu~w! ~@ |~n',[dash_chars(Depth,' '), Type, print_title(Title)]),
+                     locally(b_setval('$w_section',[Type|Was]),wots(S,Goal)), 
+                     format('~N~w~@\u00A1mu~w\u00A1~n',[S,dash_chars(Depth,' '), Type])).
+
+*/
+

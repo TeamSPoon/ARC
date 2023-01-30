@@ -32,7 +32,7 @@ try_easy_io(Name,I,O):-
   findall(Template,
     (wots(SS,arc_weto(maybe_try_something_easy(I,M,Did))),count_changes(M,O,1,W),(W==1->!;true)),
      List),
-  sort(List,[Template|_]),
+  sort_safe(List,[Template|_]),
   %ignore((call(P2,I,II),call(P2,O,OO),
   %reduce_grid(GridIn+GridOut,IOps,II+OO),!,
   (W==1 -> Color=green; Color = yellow),
@@ -60,7 +60,7 @@ group_same_props(IndvS0,Ps):-  guard_invs(IndvS0,IndvS),
 
 group_same_props(IndvS0,P1N,GsOO):-  guard_invs(IndvS0,IndvS),
    findall(Have-Prop,(group_same_prop(IndvS,Prop,Have,HN),HN\==[],length(Have,HH),call(P1N,HH)),Gs),
-   sort(Gs,GsO),combine_keys(GsO,GsOO).
+   sort_safe(Gs,GsO),combine_keys(GsO,GsOO).
 
 combine_keys([],[]):-!.
 combine_keys([K1-V1|GsO],[K1-Props|GsOO]):- my_partition(=(K1-_),[K1-V1|GsO],G1,G2),

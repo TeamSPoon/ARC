@@ -46,28 +46,19 @@ will_show_grid(_,false).
 print_list_of(Title,O):- print_list_of(print_info,Title,O).
 
 :- meta_predicate(print_list_of(1,+,+)).
-print_list_of(P1,Title,O):- \+ is_list(O),!,print_list_of(P1,Title,[O]).
-print_list_of(_,Title,[]):- pp(no_data(Title)),!.
+print_list_of(P1,Title,O):- \+ non_grid_list(O),!,print_list_of(P1,Title,1,[O]).
 print_list_of(P1,Title,O):- length(O,Len), 
-  wots_vs(SS,((Title\=[],Title\="",Title\='') -> pp(Title=print_list_of(Len)); ppt(P1=print_list_of(Len)))),
-  print_list_of(P1,SS,Len,O).
+  print_list_of(P1,Title,Len,O).
+
 :- meta_predicate(print_list_of(1,+,+,+)).
-
-print_list_of(P1,Title,Len,O):- fail, Len = 1,!,
-((
-  write(Title),
-  ignore(maybe_cache_glyphs(O)),
-  %save_grouped(print_list_of(Title),O),
-  g_out( maplist(ignore_call_p1(P1),O)))),!.
-
-print_list_of(P1,Title,_Len,O):-
- w_section(Title,
-((
+print_list_of(P1,Title,0,_):- pp(no_data(P1,Title)),!.
+print_list_of(P1,Title,Len,O):-
  ignore(maybe_cache_glyphs(O)),
+ w_section([Title,print_list_of(Len),P1],
   %save_grouped(print_list_of(Title),O),
-  g_out( maplist(ignore_call_p1(P1),O)))),info),!.
+  maplist_n(1,ignore_call_p1(P1),O),P1),!.
 
-ignore_call_p1(P1,A):- ignore(call(P1,A)).
+ignore_call_p1(P1,N,A):- nl_if_needed,write(N),write(': '),ignore(call(P1,A)).
 
 maybe_cache_glyphs(O):- ignore((is_group(O),mapgroup(o2g,O,_))).
 
@@ -99,6 +90,7 @@ object_or_global_grid(O1,local+points,Points):- localpoints_include_bg(O1,Points
 object_or_global_grid(O1,global+points,Points):- globalpoints_include_bg(O1,Points).
 object_or_global_grid(O1,local+self,O1).
 
+/*
 object_grid_to_str(Obj,Str,Title):- object_grid_to_str(Obj,_GridO,Str,Title).
 
 object_grid_to_str(Obj,GridO,Str,Title):- 
@@ -117,11 +109,12 @@ object_grid_to_str(Obj,GridO,Str,Title):-
   make_bg_visible(GridO,GridOO),
   wots(GS,(print_grid(IH,IV,GridOO))),
 
-  replace_in_string(['®'=Glyph,'@'=Glyph],GS,GSS),
+  replace_in_string(['ï¿½'=Glyph,'@'=Glyph],GS,GSS),
 
   (LG==local
    -> (HH is (OH - 1) * 2, wots(Str,(print_w_pad(HH,GSS))))
     ; (Str=GSS)))).
+*/
 
 printable_grid(_,_,Grid,GridO,GridO):-localpoints_include_bg(Grid,GridO).
 printable_grid(H,V,Grid,GridO,NGrid):-
@@ -139,37 +132,88 @@ debug_as_grid(Why,R):- atom(R), atom_contains(R,'_'), pp_parent([LF|_]), \+ (LF=
   resolve_reference(R,Var), R\==Var, \+ plain_var(Var),!, 
   write(' '), writeq(R), write(' /* '), debug_as_grid(Why,Var), write(' */ ').
 
-%debug_as_grid(Why,R):- resolve_reference(R,Var)-> R\==Var, write(' ( '), writeq(R),write(' , '),debug_as_grid(Why,Var),write(' )'),!.
-debug_as_grid(Why,Grid):- (is_object(Grid)/*;is_grid(Grid)*/),!,
-  must_det_ll((
-  vis2D(Grid,H,V),
-  object_glyph(Grid,Glyph),  
-  object_grid_to_str(Grid,GridO,Str,TitleG),
-  Title = debug_as_grid(Why,objFn(Glyph),TitleG),
-  if_t((H\==1;V\==1;true),
-    must_det_ll((
-     loc2D(Grid,OH,_OV),     
-     nop((rotOffset2D(Grid,SX,SY),max_min(H,SX,IH,_),max_min(V,SY,IV,_))),
-     ignore(IV=V),ignore(IH=H),
-     %printable_grid(H,V,Grid,GridO,NGrid),
-     %wots(GS,print_grid(IH,IV,Title,PrintGridC)),replace_in_string(['®'=Glyph,'@'=Glyph],GS,GSS),
-     %wots(S,print_side_by_side(GSS,print_grid(IH,IV,ngrid,NGrid))),
-
-     wots(S, ((write(Str), nl, write(Title), nl /*, print_grid(NGrid)*/))), 
-     HH is (OH - 1) * 2, print_w_pad(HH,S),
-     
-     ignore(( O = GridO, once(normalize_grid(Ops,O,N)), O\=@=N, print_side_by_side(Ops,O,N),writeln(Ops))),
-
-     true))),
-  if_t(is_object(Grid),
-    (format('~N~n'),
-     locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Grid))))),
-     format('~N'),dash_chars(15))),!.
-
+debug_as_grid(Why, Obj):- is_object(Obj),!,show_indiv(Why, Obj).
 debug_as_grid(  I,   A):- is_1gridoid(A), !, make_bg_visible(A,AA), print_grid(I,AA).
 debug_as_grid( '',Grid):- !, pp(Grid).
 debug_as_grid(Why,Grid):- pp(debug_as_grid(Why,Grid)).
-  
+
+
+
+%show_indiv(_Why,Obj):- is_bg_object(Obj),!.
+show_indiv(Why, Obj):-  
+  format('~N'),dash_chars(45),dash_chars(45),
+  must_det_ll((
+  vis2D(Obj,H,V),
+  DoFF = false,
+
+  findall(SubGroup,is_in_subgroup(Obj,SubGroup),SubGroupS), 
+  pp(subGroupS=SubGroupS),
+
+  %writeg(obj=Obj),
+
+  if_t((H\==1;V\==1;true),
+    must_det_ll((     
+     %object_or_global_grid(Obj,LG+Type,GridS),      
+     global_grid(Obj,GridS),
+     object_grid(Obj,Grid),   
+     Title = show_indiv(Why,objFn(Glyph),loc2D(OH,OV),center2G(CX,CY),size2D(H,V)),
+             loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
+
+     Grids = [Title=GridS|_],     
+
+     copy_term(Obj,CObj),
+     nop((object_ngrid(CObj,NGrid), append(_,["NGrid"=NGrid|_],Grids))),
+
+     ShowQ=_,
+
+
+     term_variables(Grid,GV1),
+     normalize_grid(NOps,Grid,Normalized), % if_t(Normalized\=@=Grid,append(_,["NORMALIZED!!!"=Normalized|_],Grids)),
+     term_variables(Normalized,RV1),
+     nop(((((GV1\=@=RV1 ; (Normalized\=@=Grid,Normalized=[[_]])) -> ShowQ = true ; ShowQ = _)))),
+
+     compress_grid(COps,Grid,Compressed), if_t(Compressed\=@=Normalized,append(_,["Compressed!!!"=Compressed|_],Grids)),
+
+     if_t(DoFF,((constrain_grid(f,_TrigF,Grid,GridFF), if_t(GridFF\=@=Grid,append(_,["Find"=GridFF|_],Grids)),
+       copy_term(Grid+GridFF,GG1+GridFFNV,GoalsFF), numbervars(GG1+GridFFNV+GoalsFF,10,_,[attvar(bind),singletons(false)])))),
+
+     append(_,[],Grids),
+     HH is (OH - 1) * 2, 
+     call_w_pad(HH, print_side_by_side(Grids)),
+
+     if_t(has_goals(GridFFNV),writeg(gridFF=GridFFNV)),
+
+     if_t((nonvar(COps),COps\==[]), 
+       (writeg(cops=COps), 
+        nop((unreduce_grid(Compressed,COps,Uncompressed), 
+        if_t(Uncompressed\=@=Grid, (ShowQ=true,writeg("Bad Uncompressed"=Uncompressed))))))),
+
+     if_t((nonvar(NOps),NOps\==[]), 
+       (writeg(nops=NOps),
+        if_t((ShowQ==true;Normalized\=@=Grid;has_goals(Normalized);true), writeg(normalized=Normalized)),
+        nop((unreduce_grid(Normalized,NOps,Unnormalized), 
+        if_t(Unnormalized\=@=Grid, (ShowQ=true,writeg("Bad Unnormalized"=Unnormalized))))))),
+     
+     if_t((ShowQ==true;has_goals(Grid)),    writeg(grid=Grid)),
+     
+
+     %writeg("NGrid"=NGrid),
+   true))),
+    
+  if_t(is_object(Obj),
+    (format('~N~n'),
+     if_t(menu_or_upper('i'),locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Obj)))))),
+     format('~N'),dash_chars(15))),!.
+
+
+
+
+
+  %writeg(obj=Obj),
+
+
+
+
 
 :- discontiguous debug_indiv/1. 
 
@@ -520,19 +564,17 @@ debug_indiv(Obj,_,F,[A]):- is_cpoints_list(A),!,
   EV is OV+V-1,
   object_glyph(Obj,Glyph),
   Pad1 is floor(H),  
-
-  wots(S,
-    (dash_chars(Pad1,' '),write(Id=Glyph),
-     print_grid(OH,OV,EH,EV,Obj))),
-
+  Pad is floor(20-V/2),
+  max_min(Pad,OH,PadH,_),
+  call_w_pad(PadH,
+    (dash_chars(Pad1,' '),write(F=Glyph),
+     print_grid(OH,OV,EH,EV,Obj))).
+/*
   nop(wots(S,
     (dash_chars(Pad1,' '),write(Id=Glyph),
      print_grid(H,V,A)))),
+*/
 
-
-  Pad is floor(20-V/2),
-  max_min(Pad,OH,PadH,_),
-  print_w_pad(PadH,S).
 
 
 debug_indiv(_,P,_,_):- pp(P).

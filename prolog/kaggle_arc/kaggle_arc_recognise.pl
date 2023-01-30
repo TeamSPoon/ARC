@@ -204,7 +204,7 @@ print_sgrid(F):- ((\+ \+ ((constrain_grid(s,_Trig,F,_FG),print_grid(F),nl)))),!.
 
 
 %constrain_type(Var,Cond):- nonvar(Var),!,call(Cond).
-%constrain_type(Var,Cond):- frozen(Var,Goals),sub_term(E,Goals),E=@=Cond,!. % wdmsg(skipping(Cond)),atrace.
+%constrain_type(Var,Cond):- frozen(Var,Goals),sub_term(E,Goals),E=@=Cond,!. % u_dmsg(skipping(Cond)),atrace.
 constrain_type(Var,Cond):- freeze(Var,Cond).
 
 find_ogs(H,V,FG,SG):- luser_getval(find_rule,Rul),find_ogs_c(Rul,H,V,FG,SG).
@@ -530,7 +530,7 @@ constrain_dir_ele(CT, Trig,[Dir|SEW],GridIn,H,V,C1I,C1O,GridO):-
      \+ is_spec_fg_color(C2I,_),
      count_o_neighbors(C1I,H2,V2,DCN,GridIn),
      count_c_neighbors(C1I,H2,V2,SCN,GridIn),
-     sort(SCN,SCNS),
+     sort_safe(SCN,SCNS),
      o_c_n(CT,Dir,DCN,SCNS),     
      dif(C2O,C1O))),!,
   constrain_dir_ele(CT, Trig,SEW,GridIn,H,V,C1I,C1O,GridO).
@@ -711,7 +711,7 @@ into_g666(Obj,G):- is_object(Obj),!,must_det_ll(object_grid(Obj,OG)),!,into_g666
 
 %into_g666(Text,G):- atomic(Text),maybe_fix_ascii(Text,Ascii0),!,into_g666(Ascii0,G).
 into_g666(Text,G):-  notrace(catch(text_to_string(Text,String),_,fail)),!,into_g666(String,G).
-into_g666(Other,G):- wdmsg(failed(into_g666(Other,G))),!,fail.
+into_g666(Other,G):- u_dmsg(failed(into_g666(Other,G))),!,fail.
 
 ss666(T,G):- h666(T,S),must_det_ll(into_g666(S,G)).
 sp666(T,Y):- ss666(T,X), fpad_grid(s,X,Y).

@@ -175,11 +175,11 @@ repair_symmetry(Grid):- is_grid(Grid),!,
   (Example==tst->set(VM.grid_target)=_;set(VM.grid_target)=Out),
   %\+ is_monotrim_symmetric(Grid), is_monotrim_symmetric(Out),
   format('~N'), dash_chars,
-  wdmsg(begin_test(ID)),
+  u_dmsg(begin_test(ID)),
   print_side_by_side(Grid,Out),
   %\+ is_hard(TestID), \+ is_need(TestID),    
-  if_t(is_need(TestID),wdmsg(is_need(TestID))),
-  if_t(is_hard(TestID),wdmsg(is_hard(TestID))),!,
+  if_t(is_need(TestID),u_dmsg(is_need(TestID))),
+  if_t(is_hard(TestID),u_dmsg(is_hard(TestID))),!,
   ignore(time(repair_symmetry_code(Grid,_,_))),
   set(VM.grid_target)=_.
 
@@ -196,7 +196,7 @@ repair_symmetry_code(Grid,RepairedResult,Code):-
   ignore((kaggle_arc_io_trn(TestID,ExampleNum,in,Grid),
           kaggle_arc_io_trn(TestID,ExampleNum,out,Out))),
   ID = (TestID>ExampleNum*in),
-  wdmsg(begun_repair_symmetry(ID)))),!,
+  u_dmsg(begun_repair_symmetry(ID)))),!,
   (test_symmetry_code(Grid,GridS,RepairedResult,Code)
      *-> 
       (if_t(GridS\==[],print_grid(test_RepairedResult,GridS)),
@@ -456,8 +456,8 @@ grid_to _3x3_objs(VM,Ordered,Grid,NewIndiv4s,KeepNewState,RepairedResult):-
   
   append([  [A,B,C,D,E,F,G,G],D,[]Row
   notrace(catch(call_with_time_limit(4,find_and_use_pattern_gen(Grid,Image9x9)),time_limit_exceeded, 
-   (wdmsg(time_limit_exceeded),fail))),
-  %catch(find_and_use_pattern_gen(Grid,Image9x9),E, (wdmsg(E),fail)),
+   (u_dmsg(time_limit_exceeded),fail))),
+  %catch(find_and_use_pattern_gen(Grid,Image9x9),E, (u_dmsg(E),fail)),
   %rtrace(find_and_use_pattern_gen(Grid,Image9x9)),
   must_not_error((
   flatten(Image9x9,Flat),
@@ -618,8 +618,8 @@ grid_to_3x3_objs(VM,Ordered,Grid,NewIndiv4s,KeepNewState,RepairedResult,grid_to_
  
 grid_to_3x3_objs11(VM,Ordered,Grid,NewIndiv4s,KeepNewState,RepairedResult,find_and_use_pattern_gen):-
   notrace(catch(call_with_time_limit(4,find_and_use_pattern_gen(Grid,Image9x9)),time_limit_exceeded, 
-   (wdmsg(time_limit_exceeded),fail))),
-  %catch(find_and_use_pattern_gen(Grid,Image9x9),E, (wdmsg(E),fail)),
+   (u_dmsg(time_limit_exceeded),fail))),
+  %catch(find_and_use_pattern_gen(Grid,Image9x9),E, (u_dmsg(E),fail)),
   %rtrace(find_and_use_pattern_gen(Grid,Image9x9)),
   must_not_error((
   flatten(Image9x9,Flat),
@@ -895,7 +895,7 @@ reinforce_best_values(ID,Code):-
   Data = remember_learning(_VarsIn,_VarsOut,_Goal),
   forall(Data,assert_test_property(TestID,rbv,reinforce_best_values,Data)),
   forall(Data,assert_test_property(TestID,rbv,code,Code)),
-  wdmsg(reinforce_best_values(ID,Code)).
+  u_dmsg(reinforce_best_values(ID,Code)).
 
 
  
@@ -947,7 +947,7 @@ best_of(Grid,CodeFirst,P2Did,In,RepairedResult):- must_be(callable,P2Did),
   findall(AnswerFormat,
     (call(P2Did,In,RepairedResult), 
       saliency_quality_of_change(Grid,RepairedResult,Quality)), Trials),
-  sort(Trials,STrials),
+  sort_safe(Trials,STrials),
   format('~N'),dash_chars,
   nop(maplist(call,STrials)),
   last(STrials,AnswerFormat).
@@ -1001,7 +1001,7 @@ guess_pre_repair_steps(CodeFirst,Grid,OptionalRepairResultHint,RepairedResultMid
    if_t(UnbindColor\==Black, 
        ( if_target(Out, \+ contains_color(UnbindColor,Out)),
          if_t(is_grid(OptionalRepairResultHint), \+ contains_color(UnbindColor,OptionalRepairResultHint)))),
-   wdmsg(CodeFirst).
+   u_dmsg(CodeFirst).
    
 
 guess_to_unbind(Grid,Color):- nonvar(Color),!,nop(sub_var(Color,Grid)).
@@ -1671,8 +1671,8 @@ show_patterns(G):-
 
   nth1(N,Grid,E),nth1(N2,Grid,E),
 
-   (wdmsg(time_limit_exceeded),fail))),
-  %catch(find_and_use_pattern_gen(Grid,Image9x9),E, (wdmsg(E),fail)),
+   (u_dmsg(time_limit_exceeded),fail))),
+  %catch(find_and_use_pattern_gen(Grid,Image9x9),E, (u_dmsg(E),fail)),
   %rtrace(find_and_use_pattern_gen(Grid,Image9x9)),
   must_not_error((
   flatten(Image9x9,Flat),
@@ -1729,7 +1729,7 @@ consensus2(Steps,Vars,[C|BG],Blk,Color,Other,C).
 
 maybe_repair_image(VM,Ordered,Objects,CorrectObjects,KeepNewState,RepairedResult):- 
   maplist(object_grid,Objects,AllGrids),
-  AllGrids=Grids , %once(predsort_on(colored_pixel_count,AllGrids,Grids);sort(AllGrids,Grids)),
+  AllGrids=Grids , %once(predsort_on(colored_pixel_count,AllGrids,Grids);sort_safe(AllGrids,Grids)),
   (all_rows_can_align(Grids)
     -> (KeepNewState=[], format('~N'),dmsg('Must already be perfect...'),CorrectObjects = Objects);
     repair_patterned_images(VM,Ordered,Objects,Grids,CorrectObjects,KeepNewState,RepairedResult)).
@@ -1752,7 +1752,7 @@ rows_will_align(A,B):- A=B,!.
 
 max_hv(Objects,H,V):- 
   findall(size2D(H,V),(member(O,Objects),vis2D(O,H,V)),Sizes),
-  sort(Sizes,SizesS),
+  sort_safe(Sizes,SizesS),
   reverse(SizesS,[size2D(H,V)|_]),!.
 
 makes_prefect_result(_VM,H,V,ColorAdvice,Grids,RepairedResult):-  
@@ -2151,10 +2151,10 @@ find_and_use_pattern_gen(G,Grid9x9):-
 
 print_symmetry(Steps,Q2,Q1,Q3,Q4):-  
   call(Steps,Q1,QL1), call(Steps,Q2,QL2),call(Steps,Q3,QL3),call(Steps,Q4,QL4),
-  wdmsg("printed_pie II   I"),
+  u_dmsg("printed_pie II   I"),
   print_side_by_side(QL2,QL1),
   print_side_by_side(QL3,QL4),
-  wdmsg("printed_pie III  IV"),
+  u_dmsg("printed_pie III  IV"),
   !.
 
 
@@ -2262,7 +2262,7 @@ suggest_i(_V,Max,Min,Min,I):-
               Max+5, 
               Max+7, 
               Max-Min],Results), 
-  sort(Results,Set),member(I,Set).
+  sort_safe(Results,Set),member(I,Set).
   
  
 

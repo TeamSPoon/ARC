@@ -12,6 +12,10 @@ my_len(X,Y):- is_list(X),!,length(X,Y).
 my_len(X,Y):- functor([_|_],F,A),functor(X,F,A),!,length(X,Y).
 my_len(X,Y):- arcST,!,break.
 */
+sort_safe(I,O):- catch(sort(I,O),_,I=O).
+
+with_tty_false(Goal):- with_set_stream(current_output,tty(false),Goal).
+
 
 nb_subst(Obj,New,Old):-
   get_setarg_p1(nb_setarg,Found,Obj,P1),Found=@=Old,!,
@@ -254,7 +258,7 @@ subst0011C(X, Y, Term, NewTerm ) :-
 ppa(FF):-
   copy_term(FF,FA,GF),  
   numbervars(FA+GF,0,_,[attvar(bind),singletons(true)]),
-  sort(GF,GS),write(' '),
+  sort_safe(GF,GS),write(' '),
   locally(b_setval(arc_can_portray,nil),
       ppawt(FA)),format('~N'),
   ignore((GS\==[], format('\t'),ppawt(attvars=GS),nl)),nl,!.
@@ -269,11 +273,11 @@ ppawt(FA):-
 
 
 my_assertion(G):- call(G),!.
-my_assertion(G):- wdmsg(my_assertion(G)),writeq(goal(G)),nl,!,break.
+my_assertion(G):- u_dmsg(my_assertion(G)),writeq(goal(G)),nl,!,break.
 must_be_free(AllNew):- plain_var(AllNew),!.
-must_be_free(AllNew):- arcST,wdmsg(must_be_free(AllNew)),break,fail.
+must_be_free(AllNew):- arcST,u_dmsg(must_be_free(AllNew)),break,fail.
 must_be_nonvar(AllNew):- nonvar_or_ci(AllNew),!.
-must_be_nonvar(AllNew):- arcST,wdmsg(must_be_nonvar(AllNew)),break,fail.
+must_be_nonvar(AllNew):- arcST,u_dmsg(must_be_nonvar(AllNew)),break,fail.
 
 intersection([],LeftOverB,[],[],LeftOverB):-!.
 intersection(LeftOverA,[],[],LeftOverA,[]):-!.

@@ -87,14 +87,14 @@ learn_intruders(PairName,In,Out,IH,IV,OH,OV):- %atrace,
   set_prop_of(NeuralVM,NeuralVM,in,In),
   set_prop_of(NeuralVM,NeuralVM,out,Out),
   in_out_xform(NeuralVM,PairName,[In,Out],[ImO,OmI],[PLAN]),
-  wdmsg(learn_intruders=PLAN),
+  u_dmsg(learn_intruders=PLAN),
   individualizer_heuristics(PairName,ImO,OmI,IH,IV,OH,OV).
 
 individuals_from_pair(PairName,In,Out,IH,IV,OH,OV,RestOfInObjs,RestOfOutObjs):-
   current_neurons(NeuralVM),
   in_out_xform(NeuralVM,PairName,[In,Out],[ImO,OmI],[PLAN]),
   (In\=@=ImO;Out\=@=OmI),
-  wdmsg(individuals_from_pair=PLAN),
+  u_dmsg(individuals_from_pair=PLAN),
   individuals_from_pair(PairName,ImO,OmI,IH,IV,OH,OV,RestOfInObjs,RestOfOutObjs).
   
 

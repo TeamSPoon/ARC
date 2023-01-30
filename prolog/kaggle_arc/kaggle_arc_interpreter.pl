@@ -713,9 +713,9 @@ prim_ops([
   rotate_grid(nsew)]).
 
 
-throw_missed(G):-  Info = missed(G),wdmsg(Info),break, arcST,throw_missed_pt2(G,Info).
+throw_missed(G):-  Info = missed(G),u_dmsg(Info),break, arcST,throw_missed_pt2(G,Info).
 throw_missed_pt2(_,Info):- tracing,!,throw(Info).
-throw_missed_pt2(G,Info):- notrace,nortrace,atrace,wdmsg(Info),break,rrtrace(G),throw(Info).
+throw_missed_pt2(G,Info):- notrace,nortrace,atrace,u_dmsg(Info),break,rrtrace(G),throw(Info).
 
 
 

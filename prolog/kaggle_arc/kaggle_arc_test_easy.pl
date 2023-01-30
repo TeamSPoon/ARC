@@ -275,7 +275,7 @@ training_pp_msg_color(P2,Color):- pp_msg_color(P2,Color).
 
 induce_from_training(P2,I,O):- \+ is_grid(I),!,into_grid(I,G),induce_from_training(P2,G,O).
 %induce_from_training(P2,I,O):- nonvar(O),!,
-induce_from_training(P2,I,O):- ground_enough(P2),!,wdmsg(ground_enough(P2)),grid_call(P2,I,O).
+induce_from_training(P2,I,O):- ground_enough(P2),!,u_dmsg(ground_enough(P2)),grid_call(P2,I,O).
 induce_from_training(P2,I,O):- get_current_test(TestID), !, induce_from_training(TestID, P2,I,O).
 
 induce_from_training(TestID, P2,I,O):-  (nonvar(O) ; (kaggle_arc(TestID,Ex1,I,O),(Ex1 = trn+_))), !, induce_from_training_pair(P2,Ex1,I,O).
@@ -578,7 +578,7 @@ guess_simple_todolist(N,SolSoFar,DoneSoFar,Plan,I,O,OO):- !,
  ((fits_grid(O,I),N>0) 
 -> (Plan=DoneSoFar,OO=I) 
 ;(findall(h_g(H1,I1),(easy0(N,H1),grid_call(H1, I,I1), (H1=='=' -> true ; (is_a_change(I,I1), \+ member(I1,SolSoFar)))), H1G),
-  predsort_using_only(arg(2),H1G,H1GSS),sort(H1GSS,H1GS),
+  predsort_using_only(arg(2),H1G,H1GSS),sort_safe(H1GSS,H1GS),
   maplist(arg(2),H1GS,SOFAR),append(SolSoFar,SOFAR,NewSOFAR),
   member(h_g(H1,I1),H1GS),
   Next is N+1,
@@ -604,11 +604,11 @@ guess_simple_todolist(N,Failed,Planned,Plan,I,O,OO):- Next is N+1,
 /*
 simple_todolist(SolSoFar,List,I,O,OO):-
   findall(h_g(H1,I1),(easy0(H1),grid_call(H1, I,I1),\+ member(I1,SolSoFar)), H1G),
-  predsort_using_only(arg(2),H1G,H1GSS),sort(H1GSS,H1GS),
+  predsort_using_only(arg(2),H1G,H1GSS),sort_safe(H1GSS,H1GS),
   maplist(arg(2),H1GS,SOFAR),
   member(h_g(H1,I1),H1GS),
   ((findall(h_g(H2,I2),(easy2(H2),H1\==H2,grid_call(H2,I1,I2),\+ member(I2,SOFAR)),H2G),
-    predsort_using_only(arg(2),H2G,H2GSS),sort(H2GSS,H2GS),
+    predsort_using_only(arg(2),H2G,H2GSS),sort_safe(H2GSS,H2GS),
     member(h_g(H2,I2),H2GS),
   ((fits_grid(O,I2),[H1,H2]=List,I2=OO))) 
   ;((fits_grid(O,I1),[H1]=List,I1=OO)))
@@ -733,9 +733,9 @@ test_tag_info(X):-
   list_to_set(Tests,Set),
   length(Set,LS),
   dash_chars,
-  wdmsg(?- test_tag_info(X)=LS),
+  u_dmsg(?- test_tag_info(X)=LS),
   maplist(test_tag_info(X),Set),
-  wdmsg(test_tag_info(X)=LS),
+  u_dmsg(test_tag_info(X)=LS),
   dash_chars.
 
 test_tag_info(_X,TestID):- print_qtest(TestID),!.

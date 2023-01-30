@@ -166,12 +166,12 @@ into_lib_object2(ShapeProps,ScaledGrid,LibObj):-
   %ppa(grid_colors(ScaledGrid,SPoints)),
   globalpoints_maybe_bg(ScaledGrid,SPoints)))),
   G = make_indiv_object_no_vm(into_lib_object2,H,V,[iz(into_lib_object),grid(ScaledGrid),vis2D(H,V)|ShapeProps],SPoints,LibObj),
-  catch(G,E,(arcST,wdmsg(E=G),atrace,G)).
+  catch(G,E,(arcST,u_dmsg(E=G),atrace,G)).
 
 % todo temp
 sortshapes(List,Set):- my_list_to_set_cmp(List, using_compare(shape_key), Set).
 % sortshapes(List,ListS):- predsort_using_only(shape_key,List,ListS),!.
-%sortshapes(List,ListS):- sort(List,ListS),!.
+%sortshapes(List,ListS):- sort_safe(List,ListS),!.
 
 
 frozen_key(Key1,Key):- copy_term(Key1,Key),numbervars(Key,0,_,[attvar(skip),singletons(true)]).

@@ -235,6 +235,7 @@ get_bgco(X):- luser_getval(grid_bgc,X),X\==[],is_color_dat(X),!.
 get_bgc(X):- get_bgco(X),!.
 get_bgc(X):- get_black(X).
 
+grid_bgc(_,BGC):- get_bgc(BGC).
 
 is_color_no_bgc(X):- \+ is_bg_color(X), is_color(X).
 

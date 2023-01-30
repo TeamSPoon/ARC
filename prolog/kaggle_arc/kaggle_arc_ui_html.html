@@ -52,15 +52,20 @@
             ensureIFrameUseTopParams();
 
 			if(true) {
-
-	        var sessCmd = "arcproc_iframe?icmd=arc_session_vars";
-            document.getElementById('page_head_div').innerHTML =
-				'<p><a href="'+sessCmd+'" target="page_head_iframe">Refresh</a><br/></p>'+
-                '<p><iframe src="'+sessCmd+'" width="1024" height="70%"' +
-                'frameborder="0" id="page_head_iframe" name="page_head_iframe" style="width: 100%" scrolling="auto" /></p>';
-
-
-			document.getElementById("sess_accordian").click();
+				var sessCmd = "arcproc_iframe?icmd=arc_session_vars";
+				var s = ""+window.location.search;
+				if(s.lenth!="") {
+					if(s.startsWith("?")) {
+						s=s.substring(1);
+					}
+					sessCmd=sessCmd+"&"+s;
+				}
+				document.getElementById('page_head_div').innerHTML =
+					'<p><a href="'+sessCmd+'" target="page_head_iframe">Refresh</a><br/></p>'+
+					'<p><iframe src="'+sessCmd+'" width="1024" height="70%"' +
+					'frameborder="0" id="page_head_iframe" name="page_head_iframe" style="width: 100%" scrolling="auto" /></p>';
+	
+			   //  document.getElementById("sess_accordian").click();
 
 			}
             /*var iframe = document.getElementById("lm_xref");
@@ -83,7 +88,7 @@
         //background-color: #000;
         //
        background-blend-mode: difference;
-       mix-blend-mode: difference;
+       ;;;;mix-blend-mode: difference;;;;;
     }
 
     td {
@@ -477,7 +482,7 @@
 		 -->
 
 
-		<div id="main" style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0; position: fixed">
+		<div id="main" style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0">
 		 <span style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0; position: fixed" onclick="toggleNavL('mySideNavL')">&#9776; Task Suites</span>
 		 <span style="font-size:20px;cursor:pointer;color: white; top: 0; right: 0; position: fixed" onclick="toggleNavR('mySideNavR')">&#9776; Task Operations</span>
 		 <!--   end sess head-->

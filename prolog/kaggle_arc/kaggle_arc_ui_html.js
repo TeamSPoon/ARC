@@ -1,8 +1,33 @@
-function clickGrid(thiz) {
-	console.log("clickGrid(" + thiz + ")");
+
+function clickGrid(name) {
+	// in case we are passed the object and no the name
+	var node = toEle(name);
+	if(node != null) name = node.id;	
+	console.log("clickGrid(" + name + ")");
 	var val = getComponent("grid", "");
-	if ( val != thiz ) {
-		navToParams({ grid: thiz, cmd: "click_grid"});
+	if ( val != name ) {
+		navToParams({ grid: name, cmd: "click_grid"});
+	}
+}
+
+function toEle(name) {
+	if(name==null) return null;
+	var node = name;
+	if ( typeof name === "string" ) {
+        node = document.getElementById(name);
+		if(node==null) {
+			var nav = getNavWindow();
+			node = nav.document.getElementById(name);
+			if(node==null) {
+				console.warn(name + " not found in " + nav);
+				var topw = getTopWindow();
+				node = topw.document.getElementById(name);
+				if(node==null) {
+					console.warn(name + " not found in " + topw);
+					return null;
+				}
+			}
+		}
 	}
 }
 
@@ -67,15 +92,15 @@ function toggleNavL(Name) {
 	if ( nameE.style.width != "0px" ) {
 		nameE.style.width = "0px";
 		mainE.style.marginLeft = "0px";
-		mainE.style.width = "200vh";
+		//mainE.style.width = "200vh";
 	} else {
 		nameE.style.width = TwoFiftyPx;
 		mainE.style.marginLeft = TwoFiftyPx;
 	}
 	var iframeE = top.document.getElementById('lm_xref');
 	if ( iframeE!=null ) {
-		iframeE.style.width = mainE.style.width;
-		iframeE.style.marginRight = mainE.style.marginRight; 
+		//iframeE.style.width = mainE.style.width;
+		//iframeE.style.marginRight = mainE.style.marginRight; 
 	}
 }
 
@@ -86,15 +111,15 @@ function toggleNavR(Name) {
 	if ( nameE.style.width != "0px" ) {
 		nameE.style.width = "0px";
 		mainE.style.marginRight = "0px";
-		mainE.style.width = "200vh";
+		//mainE.style.width = "200vh";
 	} else {
 		nameE.style.width = TwoFiftyPx;
 		mainE.style.marginRight = TwoFiftyPx;
 	}
 	var iframeE = top.document.getElementById('lm_xref');
 	if ( iframeE!=null ) {
-		iframeE.style.width = mainE.style.width;
-		iframeE.style.marginRight = mainE.style.marginRight; 
+	   // iframeE.style.width = mainE.style.width;
+	//	iframeE.style.marginRight = mainE.style.marginRight; 
 	}
 }
 
@@ -105,7 +130,11 @@ function navCmd(thiz) {
 	return false;
 }
 
+{
+	navWindow = null;
+}
 function getNavWindow() {
+	if(navWindow != null) return navWindow;
 	var iframe = document.getElementById("lm_xref");
 	if ( iframe == null ) {
 		iframe = window.parent.document.getElementById("lm_xref");
@@ -116,6 +145,7 @@ function getNavWindow() {
 	if ( iframe != null ) {
 		var cw = iframe.contentWindow;
 		if ( cw != null ) {
+			navWindow = cw;
 			return cw;
 		}
 	}
@@ -186,12 +216,22 @@ function setUrlParam(name, value) {
 	}
 }
 
+function toComponent(name) {
+	var nav = getNavWindow();
+	var ele = nav.document.getElementById("param_" + name);
+	if ( ele != null ) return ele;
+	ele = nav.document.getElementById(name);
+	if ( ele != null ) return ele;
+	ele = document.getElementById("param_" + name);
+	if ( ele != null ) return ele;
+	ele = document.getElementById(name);
+	if ( ele != null ) return ele;
+	return null;
+}
 function setComponent(name, value) {
 	if ( typeof name === "string" ) {
 		setUrlParam(name, value);
-		var nav = getNavWindow();
-		var ele = nav.document.getElementById("param_" + name);
-		if ( ele == null ) ele = nav.document.getElementById(name);
+		ele = toComponent(name);
 		var retval = false;
 		if ( ele != null ) retval = setComponent(ele, value);
 		var topw = getTopWindow();
@@ -418,10 +458,17 @@ function clickAccordian(thizn) {
 function togglePanel(name,scrollTo) {
 	var panel = intoPanel(name);
 	if(panel==null) return;
-	if ( panel.style.display === "none" ) {
-		showPanel(panel,scrollTo);
-	} else {
+	if(scrollTo) {
+	  panel.scrollIntoView(false);
+	  var scrl= panel.previousElementSibling;
+	  if(scrl==null)scrl=panel;
+	  scrl.scrollIntoView(true);
+	}
+
+	if ( panel.style.maxHeight == "none" ) {
 		hidePanel(panel);
+	} else {
+		showPanel(panel,scrollTo);
 	}
 }
 
@@ -436,7 +483,6 @@ function intoPanel(name) {
 	if ( typeof name === "string" ) {
 		var nav = getNavWindow();
 		panel = nav.document.getElementById(name);
-		console.warn(panel + "not a panel: " + panel.classList);
 		if(panel==null) {
 			console.warn(name + " not found in " + nav);
             return null;
@@ -489,9 +535,10 @@ function showPanel(name,scrollTo) {
 	}
 	panel.classList.add("panel_shown");
 	panel.classList.remove("panel_hidden");
-	panel.style.display = "block";
-	panel.style.maxHeight = "100%";
+	panel.style.display = "inline-block";
 	panel.style.minHeight = "10px";
+	panel.style.maxHeight = "none";
+	panel.style.overflow = "auto";
 	if(scrollTo) {
 	  var scrl= panel.previousElementSibling;
 	  if(scrl==null)scrl=panel;
@@ -507,8 +554,9 @@ function hidePanel(name) {
 	panel.classList.add("panel_hidden");
 	panel.classList.remove("panel_shown");
 	panel.style.display = "none";
+    panel.style.minHeight = "0px";  
 	panel.style.maxHeight = "0px";
-	panel.style.minHeight = "0px";  
+	panel.style.overflow = "none";
 }
 
 function addAccordian(thizn,depth) {
@@ -531,12 +579,13 @@ function addAccordian(thizn,depth) {
 }
 
 function clearMenu() {
+	navWindow = null;
 	var e = top.document.getElementById("navbar_items");
 	var child = e.lastElementChild; 
 	while (child) {
 		e.removeChild(child);
 		child = e.lastElementChild;
-	}
+	}	
 }
 
 function activateMenu(thizn) {
@@ -555,14 +604,66 @@ function activateMenu(thizn) {
 	elem.scrollIntoView(false);	
 }
 
-function htmlToPNG(name) {
-	var node = document.getElementById(name);
-	
-	htmlToImage.toPng(node)
+
+function htmlToIMG2(name) {
+	var node = toEle(name);
+	name = node.id;
+	var img = null;
+	var url = null;
+	htmlToImage.toJpeg(node , { quality: 0.95 })
 	  .then(function (dataUrl) {
-		var img = new Image();
+		/*
+			var link = document.createElement('a');
+			link.download = name+'.png';
+			link.href = dataUrl;
+			link.click();
+        */
+		img = new Image();
+		img.id = node.id;
+		img.onclick = node.onclick;
 		img.src = dataUrl;
-		node.appendChild(img);
+		node.replaceWith(img);
+	  })
+	  .catch(function (error) {
+		console.error('oops, something went wrong!', error);
+	  });
+}
+function htmlToJPEG(name) {
+	var node = toEle(name);
+	var url = null;
+	htmlToImage.toJpeg(node , { quality: 1.00 })
+	  .then(function (dataUrl) {
+		url = dataUrl;
+	  })
+	  .catch(function (error) {
+		console.error('oops, something went wrong!', error);
+	  });
+	return url;
+}
+
+
+function cvtToIMG(name) {
+	var node = toEle(name);
+	if(node==null) node = document.getElementById(name);
+	if(node==null) return null;
+	//debugger;
+	name = node.id;
+	htmlToImage.toJpeg(node , { quality: 1.00 })
+	  .then(function (dataUrl) {
+		/*
+			var link = document.createElement('a');
+			link.download = name+'.png';
+			link.href = dataUrl;
+			link.click();
+        */
+		var img = new Image();
+		img.id = name;
+		img.style.width=node.clientWidth
+		img.style.height=node.clientHeight;
+		img.onclick = node.onclick;
+		img.src = dataUrl;
+		img.info = node.info;
+		node.replaceWith(img);
 	  })
 	  .catch(function (error) {
 		console.error('oops, something went wrong!', error);

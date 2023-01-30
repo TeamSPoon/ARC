@@ -53,11 +53,11 @@ select_group0(TestID,Group,How):-
     %length(Group1,G1), length(Group2,G2), G1>G2,
   once((sub_term(E,How1),sub_var(E,How2))),
   %member(M1,Group1),member(M2,Group2),M1=M2,
-  my_append(Group1,Group2,GroupJ), sort(GroupJ,Group),
+  my_append(Group1,Group2,GroupJ), sort_safe(GroupJ,Group),
   How = [How1,How2])) 
     *-> true ; is_why_grouped(TestID,_,How,Group).
 
-select_group0(TestID,Group,obj_cache):- findall(O,obj_cache(TestID,O,_),GroupJ), GroupJ\==[], sort(GroupJ,Group).
+select_group0(TestID,Group,obj_cache):- findall(O,obj_cache(TestID,O,_),GroupJ), GroupJ\==[], sort_safe(GroupJ,Group).
 
 :- arc_history(test_what_unique).
 test_what_unique:- get_current_test(TestID), what_unique(TestID,n=0,n>10).
@@ -180,9 +180,9 @@ what_unique_dict(TestID,Dict):-
    %dif(WTrait,Trait),
    functor(Trait,F,A),functor(WTrait,F,A),
    found_in_w(WTrait,NotMine,HTraitList),length(HTraitList,ListL),
-   sort(HTraitList,HTraitSet),length(HTraitSet,SetL),
+   sort_safe(HTraitList,HTraitSet),length(HTraitSet,SetL),
    findall(C-HTrait,(member(HTrait,HTraitSet),found_in_w(HTrait,NotMine,LS),length(LS,C)),TraitCounts),
-   sort(TraitCounts,TraitCountSets),
+   sort_safe(TraitCounts,TraitCountSets),
    \+ filter_what_unique(TestID,SharedWith,Obj,Trait,GroupSizeMask,ActualGroupSize,CountMask,ActualCount,OtherL,ListL,SetL,How).
 
 
@@ -228,7 +228,7 @@ compare_objects(Objs,Interesting):-
   maplist(indv_props_for_noteablity,Objs,ObjProps),
   flatten(ObjProps,FlatProps),
   maplist(functorize_props,FlatProps,Functors),
-  sort(Functors,SortedFunctors),
+  sort_safe(Functors,SortedFunctors),
   gather_props(SortedFunctors,FlatProps,ListOfLists),
   maplist(compare_values,ListOfLists,Diffs),
   include(\=([]),Diffs,Interesting).

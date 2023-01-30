@@ -55,7 +55,7 @@ compile_and_save_test:- get_pair_mode(entire_suite),!,clsbake, forall_count(all_
 compile_and_save_test:- get_current_test(TestID),time(compile_and_save_test(TestID)),detect_all_training_hints.
   
 
-gen_gids:- wdmsg(start(gen_gids)),forall(all_arc_test_name(TestID),gen_gids(TestID)),wdmsg(end(gen_gids)).
+gen_gids:- u_dmsg(start(gen_gids)),forall(all_arc_test_name(TestID),gen_gids(TestID)),u_dmsg(end(gen_gids)).
 gen_gids(Mask):-
   testid_name_num_io(Mask,TestID,Example,Num,IO),
   ExampleNum = Example+Num,!,
@@ -172,7 +172,7 @@ print_common_reduction_result(TestID,OPS,Reduced):- pp(ops(TestID)=OPS), print_s
 
 pause:- !.
 /*
-pause:- wants_html, !.
+pause:- arc_html, !.
 pause:- !, atrace.
 pause:- get_single_char(K),(K=t->atrace;true).
 */
@@ -184,7 +184,7 @@ do_as_pairs(F,[_|More],I,O):- do_as_pairs(F,More,I,O).
 
 %show_all_test_reductions(TestSpec):- var(TestSpec),!,show_all_test_reductions.
 show_all_test_reductions(TestSpec):- var_ensure_test(TestSpec,TestID),
-  wdmsg(?-show_reduced_test(TestID)),  
+  u_dmsg(?-show_reduced_test(TestID)),  
   dash_chars,
   show_reduced_inputs(TestID),
   dash_chars,
@@ -279,15 +279,18 @@ maybe_easy(A,AR,ROPA):- reduce_grid_pass(1,A^A,[A^A],ROPA,AR^AR).
 maybe_easy(I,II,Code):- maybe_try_something1(I,II,Code),!.
 maybe_easy(I,I,==):- !.
     
-
+must_ll(G):- G*->true;throw(failed(G)).
 
 
 detect_all_training_hints:- get_current_test(TestID),time(detect_all_training_hints(TestID)).
 detect_all_training_hints(TestID):- ensure_test(TestID),
   training_only_examples(ExampleNum), 
-  dmsg(detect_all_training_hints(TestID>ExampleNum)),
-  forall(kaggle_arc(TestID,ExampleNum,In,Out),must_det_ll(detect_pair_hints(TestID,ExampleNum,In,Out))),
-  color_print(magenta,call(((must_det_ll(compute_and_show_test_hints(TestID)))))).
+  w_section(detect_all_training_hints(TestID>ExampleNum),
+    ( 
+       forall(must_ll(kaggle_arc(TestID,ExampleNum,In,Out)),
+           must_det_ll(detect_pair_hints(TestID,ExampleNum,In,Out))),
+
+       color_print(magenta,call(((must_det_ll(compute_and_show_test_hints(TestID)))))))).
 
 training_only_examples(ExampleNum):- ignore(ExampleNum=(trn+_)).
 
@@ -310,6 +313,7 @@ detect_pair_hints(TestID,ExampleNum,In,Out):-
   % guess_board(TT),
   %print(TT),
   %ignore(show_reduced_io(In^Out)),
+ % ignore(print_single_pair(TestID,ExampleNum,In,Out)),
   grid_hint_swap(i-o,In,Out),
   dash_chars)),!.
 
@@ -399,7 +403,7 @@ show_found(HOI,VOI,H,V,Info,F):-
   HO is HOI-3, VO is VOI-3, 
   show_found2(HO,VO,H,V,Info,F).
 
-show_found2(HO,VO,H,V,Info,_F):- wdmsg(show_found2(HO,VO,H,V,Info)),!.
+show_found2(HO,VO,H,V,Info,_F):- u_dmsg(show_found2(HO,VO,H,V,Info)),!.
 show_found2(HO,VO,H,V,Info,F):-
   offset_grid(HO,VO,F,OF),
   constrain_grid(f,_TrigF,OF,FF),!,
@@ -479,7 +483,7 @@ compute_and_show_test_hints1(TestID):- ensure_test(TestID),format('~N'),
   compute_all_test_hints(TestID),
   ignore(list_common_props_so_far(TestID)),!,
   %listing(arc_test_property(TestID,_,_)),
-  with_pre(listing(io_xform(TestID,_,_))),
+  with_li_pre(listing(io_xform(TestID,_,_))),
   %ignore(list_common_props(TestID)),!,
   format('~N').
 
@@ -491,13 +495,17 @@ list_common_props_so_far(TestID):-
     (( findall(Data,arc_test_property(TestID,gh(_),F,Data),Commons),
       once((some_min_unifier(Commons,Common),nonvar(Common))))),
       arc_assert(arc_test_property(TestID,common,F,Common))),FComs),
-  sort(FComs,SComs),
+  sort_safe(FComs,SComs),
   %dash_chars,
   %print_test(TestID),
   %wots(SS,maplist(ptv1,SComs)),
   dash_chars,
-  with_pre((format('~N % ~w:: ~@.~n',[list_common_props,ptv1(cyan+magenta,SComs)]))),
+  with_li_pre((format('~N % ~w:: ~@.~n',[list_common_props,ptv1(cyan+magenta,SComs)]))),
   !.
+
+
+%with_li_pre(Goal):- with_tag(li,with_tag(pre,Goal)).
+with_li_pre(Goal):- call(Goal).
 
 ptv1(Color,T):- is_list(T), !, maplist(ptv1(Color),T).
 ptv1(_Color,_=T):- T==[],!.
@@ -574,7 +582,7 @@ ptv(T):-
   ptv(CT), write('\n/*\n'),ptv(Goals),write('\n*/'))).
 /*ptv(T):- copy_term(FF,FA,GF), GF \==[],
   numbervars(FA^GF,0,_,[attvar(bind),singletons(true)]),
-  sort(GF,GS),write(' '),
+  sort_safe(GF,GS),write(' '),
   locally(b_setval(arc_can_portray,nil),
       ptv(FA)),format('~N'),
   ignore((GS\==[], format('\t'),ppawt(attvars=GS),nl)),nl,!.
@@ -640,7 +648,7 @@ min_unifier(A,B,D):- number(A),number(B),!,c_proportional(A,B,D).
 min_unifier(A,B,AA):- is_grid(A),is_grid(B),!,min_grid_unifier(A,B,AA),!.
 min_unifier(A,B,AA):- is_list(A),is_list(B),!,min_list_unifier(A,B,AA),ignore((length(A,AL),length(B,AL),length(AA,AL))).
 min_unifier(A,B,AA):- is_cons(A),is_cons(B),!,min_list_unifier(A,B,AA),!.
-%min_unifier(A,B,C):- is_list(A),sort(A,AA),A\==AA,!,min_unifier(B,AA,C).
+%min_unifier(A,B,C):- is_list(A),sort_safe(A,AA),A\==AA,!,min_unifier(B,AA,C).
 min_unifier(A,B,R):- compound(A),compound(B),
  compound_name_arguments(A,F,AA),compound_name_arguments(B,F,BB),!,
  maplist(must_min_unifier,AA,BB,RR),compound_name_arguments(R,F,RR).
@@ -658,7 +666,7 @@ min_grid_unifier(_,_,_).
 
 min_list_unifier(A,B,A):- A=@=B,!.
 min_list_unifier(A,B,_):- \+ compound(A);\+ compound(B),!.
-min_list_unifier(A,B,AA):- is_list(A),is_list(B), sort(A,AA),sort(B,BB),BB=@=AA,!.
+min_list_unifier(A,B,AA):- is_list(A),is_list(B), sort_safe(A,AA),sort_safe(B,BB),BB=@=AA,!.
 
 min_list_unifier(A,B,[EC|C]):- is_list(A),is_list(B),  select_two(A,B,E1,E2,AA,BB), min_unifier(E1,E2,EC) ,!,min_list_unifier(AA,BB,C).
 
@@ -678,7 +686,8 @@ min_list_unifier(_,_,_):-!.
 grid_hint_swap(IO,In,Out):-
  ignore(kaggle_arc(TestID,trn+N,In,Out)),
  maybe_compute_test_io_hints(IO,TestID,N,In,Out),
- with_pre(((format('~N%% ~w: ',[IO])),!,
+ ignore(print_single_pair(TestID,trn+N,In,Out)),
+ with_li_pre(((format('~N%% ~w: ',[IO])),!,
    forall((arc_test_property(TestID,gh(N),P,V)),ptv1(magenta+cyan,P=V)))).
 
 
@@ -1010,7 +1019,7 @@ grid_color_hint(In,Out,Hint):-
     include(is_color,IColor0,IColor),
     include(is_color,OColor0,OColor),
     intersection(IColor,OColor,Shared,IOnlyC,OOnlyC))),
-    sort(Shared,SharedS),
+    sort_safe(Shared,SharedS),
     member(Hint,[shared_color(SharedS),lhs_only(IOnlyC),rhs_only(OOnlyC)]).
 
 

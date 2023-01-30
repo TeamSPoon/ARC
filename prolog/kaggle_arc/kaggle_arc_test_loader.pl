@@ -39,7 +39,7 @@ load_json_files(SuiteX,F,Mask):-
 /*:- export(load_json_files/2).
 load_json_files(F,Mask):- 
   mask_to_fullnames(Mask,FullNames),  FullNames\==[],
-  wdmsg(load_json_files(F,Mask)),
+  u_dmsg(load_json_files(F,Mask)),
   maplist(load_json_file(F),FullNames),!.
 */
 no_uscore(UBaseName,BaseName):- 
@@ -101,12 +101,12 @@ add_test_info(Name):- forall(t_l:local_test_props(Props),add_test_info_props(Nam
 add_test_info_props(Name,RestInfo):- is_list(RestInfo),!, maplist(add_test_info_props(Name),RestInfo).
 add_test_info_props(Name,F=V):- !, add_test_info_prop(Name,F,V).
 add_test_info_props(Name,FV):- compound_name_arguments(FV,F,V),add_test_info_prop(Name,F,V),!.
-add_test_info_props(Name,TV):- assert_if_new(some_test_info_prop(Name,TV)),wdmsg(fallback_some_test_info_prop(Name,TV)).
+add_test_info_props(Name,TV):- assert_if_new(some_test_info_prop(Name,TV)),u_dmsg(fallback_some_test_info_prop(Name,TV)).
 
 :- multifile(muarc_tmp:some_test_info_prop/2).
 :- dynamic(muarc_tmp:some_test_info_prop/2).
 
-add_test_info_prop(Name,F,V):- var(V),!,wdmsg(var_add_test_info_prop(Name,F,V)).
+add_test_info_prop(Name,F,V):- var(V),!,u_dmsg(var_add_test_info_prop(Name,F,V)).
 add_test_info_prop(Name,F,[]):- NV=..[F,_], \+ \+ muarc_tmp:some_test_info_prop(Name,NV),!.
 add_test_info_prop(Name,F,[V]):- !,add_test_info_prop(Name,F,V).
 add_test_info_prop(Name,F,V):-  
@@ -114,13 +114,13 @@ add_test_info_prop(Name,F,V):-
     NV=..[F,[]],ignore(retract(muarc_tmp:some_test_info_prop(Name,NV))), 
    n_v_to_nv(F,[V],TV),
    assert_if_new(muarc_tmp:some_test_info_prop(Name,TV)),
-   nop(wdmsg(muarc_tmp:some_test_info_prop(Name,TV))))).
+   nop(u_dmsg(muarc_tmp:some_test_info_prop(Name,TV))))).
 
 :- thread_local(t_l:local_test_props/1).
 
 
   load_json_predictions(Name,Rest,json(Term)):- !, load_json_predictions(Name,Rest,Term).
-  load_json_predictions(Name,Rest,Term):- %wdmsg(load_json_predictions(Name,Rest,Term)),
+  load_json_predictions(Name,Rest,Term):- %u_dmsg(load_json_predictions(Name,Rest,Term)),
     select(output_id=ID,Rest,RestInfo),
     select(prediction_id=AnswerID0,Term,TermInfo0),    
      AnswerID is AnswerID0 + 10,
@@ -130,7 +130,7 @@ add_test_info_prop(Name,F,V):-
     json_to_colors(G,Grid), 
     add_prediction(Name,ID,AnswerID,Grid).
 
-  load_json_predictions(Name,Rest,Term):- wdmsg(munused_load_json_predictions(Name,Rest,Term)),!.
+  load_json_predictions(Name,Rest,Term):- u_dmsg(munused_load_json_predictions(Name,Rest,Term)),!.
 
 
  add_prediction(Name,ID,AnswerID,_Grid):- assert_if_new(kaggle_arc_answers(Name,ID,AnswerID,_BadGrid)).
@@ -175,7 +175,7 @@ add_test_info_prop(Name,F,V):-
   load_json_of_file(Name,Type,[H|T]):- atom(Type),is_list(T),!,forall(nth00(N,[H|T],E), 
       load_json_of_file(Name,Type+N,E)).    
 
-  load_json_of_file(Name,A,V):- wdmsg(miss_load_json_of_file(Name,A,V)),!, add_test_info_prop(Name,A,V).
+  load_json_of_file(Name,A,V):- u_dmsg(miss_load_json_of_file(Name,A,V)),!, add_test_info_prop(Name,A,V).
 
 assert_kaggle_arc_json(Name,Type,In0,Out0):- 
   json_to_colors(In0,In), json_to_colors(Out0,Out),!, 

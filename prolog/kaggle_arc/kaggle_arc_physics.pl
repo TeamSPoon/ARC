@@ -26,7 +26,7 @@ into_gridoid0(N,G):- get_current_test(TestID),is_why_grouped(TestID,_,N,UG), UG\
 into_gridoid0(N,G):- into_obj(N,G).
 into_gridoid0(N,G):- into_grids(N,G).
 
-into_gridoid(N,G):- no_repeats(S,(into_gridoid0(N,G),once(localpoints(G,P)),sort(P,S))).
+into_gridoid(N,G):- no_repeats(S,(into_gridoid0(N,G),once(localpoints(G,P)),sort_safe(P,S))).
 %into_gridoid(N,G):- into_gridoid0(N,G).    
    
 
@@ -111,7 +111,7 @@ best_grav_rot_grid(Grid,RotG,Rotated):- must_be_free(Rotated),
  must_det_ll(( is_grid(Grid), 
     w(W,Rotated,RotG)=Template,
     findall(Template,(flip_Many(RotG,Grid,Rotated),rot_mass(Rotated,W)),Pos),
-    sort(Pos,LPos),last(LPos,Template))).
+    sort_safe(Pos,LPos),last(LPos,Template))).
 
 length_safe(L,N):- do_my_check_args(length(L,N)),length(L,N).
 

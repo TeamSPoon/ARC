@@ -28,7 +28,7 @@ most_d_colors(Grid,ColorO,GridNM):-
   get_fill_points(Grid,Points,GridNM),
   uneib(Points,FPoints),
   % grid_size(GridNM,H,V), pp(fillPoints(H,V) = FPoints),
-  sort(FPoints,NPSS),
+  sort_safe(FPoints,NPSS),
   %atrace,
   % (N2-C)-P1
   maplist(arg(1),NPSS,Colors),
@@ -49,7 +49,7 @@ maybe_make_bg_visible(In,Grid):- make_bg_visible(In,Grid),!,In\=@=Grid.
 
 %make_bg_visible(In,Grid):- var(In),!,Grid=In.
 %make_bg_visible(In,Grid):- !, duplicate_term(In,Grid),!.
-make_bg_visible(In,Grid):- wants_html,!,In=Grid.
+make_bg_visible(In,Grid):- arc_html,!,In=Grid.
 make_bg_visible(In,Grid):- duplicate_term(In,In0),subst001(In0,blue,'#6666FF',M),
   make_bg_visible_b(M,Grid).
 /*
@@ -126,7 +126,7 @@ uneib(X,X).
 
 
 
-show_call_tf(G):- functor(G,F,_),\+ \+ (call(G)->wdmsg(F=true);wdmsg(F=false)).
+show_call_tf(G):- functor(G,F,_),\+ \+ (call(G)->u_dmsg(F=true);u_dmsg(F=false)).
 
 test_most_d_colors:- clsmake, forall(rp_test(G),show_most_d_colors(G)).
 show_most_d_colors(G):- 
@@ -424,7 +424,7 @@ map_neib_ex([_,sw],_,U):- curvDU(U).
 */
 
 
-same_sets(S1,S2):- sort(S1,SS1),sort(S2,SS2),SS1==SS2.
+same_sets(S1,S2):- sort_safe(S1,SS1),sort_safe(S2,SS2),SS1==SS2.
 
 map_neib_u1([n,s,e,w],[ne,se,nw,sw],'0').
 
