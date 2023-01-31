@@ -122,9 +122,10 @@ w_section_html(Title,Goal,_Spyable,Showing):-
   flag('$w_section_depth',X,X),
  %(Showing == true -> Class=panel_shown; Class=panel_hidden),
  Class=panel_shown,
- format('<label class="font(1)" class="accordian"><button id="~w" onclick="clickAccordian(`~w`);" class="accordian">',[Sym,Sym]),
- print_title(Title), format('</button></label>'),
- format('<script>addAccordian(document.getElementById("~w"),~w);</script>',[Sym,X]),flush_output,
+ format('<button id="~w" onclick="clickAccordian(`~w`);" class="accordian"><label class="font(1)" class="accordian">',[Sym,Sym]),
+ print_title(Title),format('</label>',[]),
+ format('<script>addAccordian(document.getElementById("~w").firstChild,~w);</script>',[Sym,X]),
+ format('</button><br/>'),flush_output,
  flush_output,
  format('<div id="~w_panel" onmouseover="activateMenu(`~w_link`);" class="~w , panel">',[Sym,Sym,Class]), 
  once(ignore((goal_new_lines(in_w_section_depth(Goal),NewChars)))),
@@ -536,9 +537,9 @@ set_http_debug_error(Bool):-
     arc_set_stream(Out, alias(current_output)),
     !)),
   %arc_set_stream(Out,representation_errors(unicode)),
-  arc_set_stream(Out,write_errors(ignore)),
   %arc_set_stream(Out,close_on_exec(false)),
   %arc_set_stream(Out,close_on_abort(false)),
+  arc_set_stream(Out,write_errors(ignore)),
   arc_set_stream(Out,buffer(false)),
   arc_set_stream(Out,tty(false)), 
   arc_set_stream(Out,representation_errors(unicode)),
@@ -743,8 +744,9 @@ into_entity(A,B,C,D,S):- atom_codes('\u0Aaa',C)
 
 
 arc_session_vars:- 
-  show_indiv_filters('<br/>'),!,
   show_console_info,
+  show_indiv_filters('<br/>'),!,
+  
   findall(N=V,luser_getval(N,V),List), sort_safe(List,SList), print_table_vars(SList), 
   arc_session_vars_pt2(SList).
 arc_session_vars_pt2(ASList):- 
@@ -758,7 +760,12 @@ arc_session_vars_pt2(ASList):-
 print_table_vars(SList):- 
    with_tag_class(table,session_vars,
      forall(member(N=V,SList),
-      (wots(NS,writeq(N)),wots(VS,writeq(V)),html_table_row([NS,VS])))).
+      (wots(NS,print(N)),
+         wots(VS,
+           with_toplevel_pp(http,
+           locally(t_l:print_mode(html),
+             in_pp_html(print_tree_nl(V))))),
+ html_table_row([NS,VS])))).
 
 luser_getval_g(nb_current(N),N,V):- nb_current(N,V).
 luser_getval_g(global_user(N),N,V):- arc_user_prop(global,N,V).
@@ -845,8 +852,8 @@ print_grid_http_bound(ID,BGC,SH,SV,EH,EV,Grid):-
 
 cvtToIMG.
 
-into_html_color(Color,lime):- plain_var(Color),!.
-into_html_color(Color,white):- var(Color),!.
+into_html_color(Color,'#060'):- var(Color),!.
+into_html_color(Color,'#608'):- plain_var(Color),!.
 into_html_color(bg,'#123').
 into_html_color(wbg,'#321').
 into_html_color(purple,'#A45EE5').
@@ -905,8 +912,12 @@ write_http_link(Info,Goal):- nonvar(Goal), %toplevel_pp(PP), %first_current_exam
 
 arcproc_iframe(Request):- 
  nodebug,notrace,
- set_stream(current_output,buffer(false)),
- format('Content-type: text/html~n~n',[]),!, 
+  format('Content-type: text/html~n~n',[]),!,
+  arc_set_stream(current_output,buffer(false)),
+  arc_set_stream(current_output,write_errors(ignore)),
+  arc_set_stream(current_output,tty(false)), 
+  arc_set_stream(current_output,representation_errors(unicode)),
+  %arc_set_stream(current_output,encoding(octet)), arc_set_stream(current_output,encoding(utf8)),
  wots(_,intern_arc_request_data(Request)),
  %set_http_debug_error(false),
  with_toplevel_pp(http,handler_arcproc_iframe(Request)),!.
@@ -915,8 +926,12 @@ handler_arcproc_iframe(_Request):-
 
 arcproc_main(Request):- % update_changed_files1,
  nodebug,notrace,
- set_stream(current_output,buffer(false)),
- format('Content-type: text/html~n~n',[]),!,
+  format('Content-type: text/html~n~n',[]),!,
+  arc_set_stream(current_output,buffer(false)),
+  arc_set_stream(current_output,write_errors(ignore)),
+  arc_set_stream(current_output,tty(false)), 
+  arc_set_stream(current_output,representation_errors(unicode)),
+  %arc_set_stream(current_output,encoding(octet)), arc_set_stream(current_output,encoding(utf8)),
  wots(_,intern_arc_request_data(Request)),
  %set_http_debug_error(true),
  with_toplevel_pp(http,handler_arcproc_main(Request)),!.
@@ -1124,7 +1139,14 @@ arc_http_nav_menu:-
 pgo(N):- true, into_grid(N,O),!,print_grid(O).
 
 show_console_info:-
-  in_pp(PP),pp(in_pp(PP)),!.
+  show_webui_call(in_pp(_)),
+  show_webui_call(toplevel_pp(_)),
+  show_webui_call(is_cgi),
+  show_webui_call(wants_html),
+  show_webui_call(arc_html),
+  show_webui_call(em_html),!.
+
+show_webui_call(G):- (call(G)*->pp(webui_call_success(G));pp(webui_call_failed(G))).
 
 /*
 

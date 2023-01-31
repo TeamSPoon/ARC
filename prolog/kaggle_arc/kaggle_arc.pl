@@ -125,18 +125,12 @@ quietlyd(G):- quietly(G),!.
 :- catch((assert(('$autoload'(_,_,_):- fail))),_,true).
 %'$autoload'(_,_,_):- fail.
 
-:- multifile(is_cgi_stream/0).
-:- dynamic(is_cgi_stream/0).
 
-:- multifile(em_html/0).
 :- dynamic(em_html/0).
 
 
-:- multifile(wants_html/0).
-:- dynamic(wants_html/0).
-
 %is_cgi:- !.
-is_cgi:- is_cgi_stream,!.
+is_cgi:- xlisting_web:is_cgi_stream,!.
 is_cgi:- em_html,!.
 arc_html:- wants_html,!.
 arc_html:- em_html,!.

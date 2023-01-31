@@ -1391,6 +1391,7 @@ print_test(TName):-
   write('%= '), parcCmt(TestID),!,force_full_tee.
 
 
+preview_test(TName):- \+ (is_cgi ; arc_html), !,print_single_pair(TName).
 preview_test(TName):- (is_cgi ; arc_html),!,
  fix_test_name(TName,TestID,ExampleNum1),
  test_atom(TestID,TestAtom),
@@ -1402,7 +1403,7 @@ preview_test(TName):- (is_cgi ; arc_html),!,
      print_single_pair(TestID,ExampleNum1,In,Out))),
  write('</span>'),
  when_in_html(write('<hr>')).
-preview_test(TName):- print_single_pair(TName).
+
 
 
 print_single_pair(TestID,ExampleNum,In,Out):- 

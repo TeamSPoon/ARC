@@ -263,7 +263,10 @@ ppt(C,P):- \+ \+ ((tersify(P,Q),!,pp(C,Q))),!.
 pp(Color,P):- is_cgi,!,with_color_span(Color,ptcol(P)).
 pp(Color,P):- ignore((quietlyd((wots(S,ptcol(P)),!,color_print(Color,S))))).
 ptcol(call(P)):- callable(P),!,call(P).
-ptcol(P):- is_cgi,!,with_toplevel_pp(http,print_tree_no_nl(P)).
+ptcol(P):- is_cgi,!,
+ with_toplevel_pp(http,
+   locally(t_l:print_mode(html),
+     in_pp_html(print_tree_nl(P)))).
 ptcol(P):- pp(P).
 
 ptc(Color,Call):- pp(Color,call(Call)).
@@ -890,10 +893,10 @@ print_side_by_side(TitleColor,G1,N1,LW,G2,N2):-
 :- meta_predicate(print_side_by_side6(+,+,+,?,+,+)).
 
 print_ss_html(TitleColor,G1,N1,_LW,G2,N2):-  
- with_tty_false(( print_ss_html(TitleColor, N1,navCmd(N1),N1,G1,N1, N2,navCmd(N2),N2,G2,N2))).   
+ (( print_ss_html(TitleColor, N1,navCmd(N1),N1,G1,N1, N2,navCmd(N2),N2,G2,N2))).   
 
 
-print_side_by_side6(TitleColor,G1,N1,LW,G2,N2):- is_cgi,!,  print_ss_html(TitleColor,G1,N1,LW,G2,N2).
+print_side_by_side6(TitleColor,G1,N1,LW,G2,N2):- wants_html,!,  print_ss_html(TitleColor,G1,N1,LW,G2,N2).
 
 print_side_by_side6(TitleColor,G1,N1,LW,G2,N2):-
    g_out((nl_now,
@@ -1417,7 +1420,7 @@ print_grid_pad(O1,SH,SV,EH,EV,Grid):-
 print_grid2(SH,SV,EH,EV,GridII):- atomic(GridII), once(into_grid(GridII,GridIII)), \+ atomic(GridIII),!,
   print_grid2(SH,SV,EH,EV,GridIII).
 
-print_grid2(SH,SV,EH,EV,GridI):- is_cgi,!, with_toplevel_pp(http,print_grid_html(SH,SV,EH,EV,GridI)).
+print_grid2(SH,SV,EH,EV,GridI):- arc_html,!,print_grid_html(SH,SV,EH,EV,GridI).
 print_grid2(SH,SV,EH,EV,GridI):- in_pp(ansi),!,ignore(print_grid_ansi(SH,SV,EH,EV,GridI)).
 print_grid2(SH,SV,EH,EV,GridI):- in_pp(bfly),!,az_ansi(ignore(print_grid_ansi(SH,SV,EH,EV,GridI))).
 print_grid2(SH,SV,EH,EV,GridI):- \+ in_pp(bfly), \+ in_pp(ansi), is_cgi,!, with_toplevel_pp(http,print_grid_html(SH,SV,EH,EV,GridI)),nl_now.

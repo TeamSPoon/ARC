@@ -399,7 +399,7 @@ w_show_s32(Title,Goal,Showing):- title_to_html(Title,HtmlTitle),!,
  %format('<hr><label id="~w" onclick="clickAccordian(`~w`);" class="accordian , title"><div class="font(1)">',[Sym,Sym]),
  format('<div id="~w_panel" onmouseover="activateMenu(`~w_link`);" class="content , hidecontent">',[Sym,Sym]), 
  flag('$w_section_depth',X,X),
- format('<script>addAccordian(document.getElementById("~w"),~w);</script><p>',[Sym,X]),flush_output,
+ format('<script>addAccordian(document.getElementById("~w").firstChild,~w);</script><p>',[Sym,X]),flush_output,
  goal_new_lines(Goal,NewChars), format('<br></div>',[]),
  ignore((  
    ((Showing==false,NewChars<600);(Showing==true,Class==panel_hidden);(Showing==false,Class==panel_shown))
