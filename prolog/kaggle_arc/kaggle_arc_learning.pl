@@ -61,7 +61,7 @@ orpt(G):- sub_term(E,G),compound(E),E=debug_var(N,V),!,subst(G,E,was_debug_var(N
 orpt(G):- !, \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), nl_if_needed, ignore(wcg(orange,G)))).
 
 %wcg(_,G):- pp_wcg(G),!.
-wcg(O,G):- pp_safe(O,(call(pp_wcg(G)))),!.
+wcg(O,G):- pp(O,(call(pp_wcg(G)))),!.
 
 
 
@@ -394,7 +394,7 @@ debug_reproduction(H,V,Obj,DObj):-
   print_grid(H,V,Info,Points),
   obj_to_oid(Obj,ID1),
   obj_to_oid(DObj,ID2),
-  pp_safe(dobj(ID1,ID2)=DObj))),!.
+  pp(dobj(ID1,ID2)=DObj))),!.
 
 
 show_result(What,Sols,ExpectedOut,Errors):-
@@ -413,8 +413,8 @@ banner_grids(Color,I,Message1,O,Message2):-
  ignore((
     banner_lines(Color),
     print_side_by_side(Color,I,Message1,_,O,Message2),
-    nl_if_needed,pp_safe(Color,Message1),
-    nl_if_needed,pp_safe(Color,Message2),
+    nl_if_needed,pp(Color,Message1),
+    nl_if_needed,pp(Color,Message2),
     nl_if_needed,
     banner_lines(Color))).
 
@@ -544,7 +544,7 @@ learn_rule_in_out(Mode,In,Out):- is_list(In),is_list(Out),!,
   length(In,IL),length(Out,OL),
   forall(nth1(II,In,I),forall(nth1(OO,Out,O),  
   %mass(O,Mass), Mass>MinMass, mass(I,Mass),
-  ((ignore((once((compare_objs_how(Mode), nonvar(Mode), compare_objs1(Mode,I,O))),pp_safe(Mode))),
+  ((ignore((once((compare_objs_how(Mode), nonvar(Mode), compare_objs1(Mode,I,O))),pp(Mode))),
   locally(nb_setval(rule_note,rule(II/IL,OO/OL)),
     learn_rule_in_out(Mode,I,O)))))).
 
@@ -707,6 +707,11 @@ extend_obj_prop(obj(List),Prop):-
   object_grid(obj(List),Grid),
   normalize_grid(NormOps,Grid,NormGrid))),
   member(Prop,[norm_ops(NormOps),norm_grid(NormGrid)]).
+extend_obj_prop(obj(List),Prop):- 
+ once((\+ member(comp_grid(_),List),
+  object_grid(obj(List),Grid),
+  compress_grid(NormOps,Grid,NormGrid))),
+  member(Prop,[comp_ops(NormOps),comp_grid(NormGrid)]).
 extend_obj_prop(Obj,Props):- fail,
  once((localpoints(Obj,P),vis2D(Obj,H,V),points_to_grid(H,V,P,Grid),
   grid_props(Grid,Props))).
@@ -1222,21 +1227,21 @@ save_rule2(IO_DIR,TITLE,IP,OP):-
  make_rule_l2r_objs(Dir,[],IP,OP,II,OO,Mid), 
  %save_learnt_rule(arc_cache:object_to_object(TITLE,lhs(II),rhs(OO),Mid,LOCK),oneTwo,twoOne),
  make_rule_l2r_0(Dir,Mid,II,OO,III,OOO,NewShared),
- arrange_shared(NewShared,NewSharedS),
- print_rule_grids(IO_DIR,TITLE,IP,OP),
- ((nb_current(rule_note,RN);RN=rule_note), pp_wcg(RN)),
- save_learnt_rule(arc_cache:object_to_object(TITLE,lhs(III),rhs(OOO),NewSharedS,LOCK),oneTwo,twoOne))))).
-
+ arrange_shared(NewShared,NewSharedS), 
+ once((nb_current(rule_note,RN);RN=rule_note)),
+ w_section(title(["SAVE", TITLE ,IO_DIR,RN]),
+ ((print_rule_grids(IO_DIR,TITLE,IP,OP),
+   save_learnt_rule(arc_cache:object_to_object(TITLE,lhs(III),rhs(OOO),NewSharedS,LOCK),oneTwo,twoOne)))))))).
 
 skip_rule(IO_DIR,TITLE,IP,OP):- 
-   print_rule_grids(IO_DIR,"SKIP " + TITLE,IP,OP).
+ once((nb_current(rule_note,RN);RN=rule_note)),
+ w_section(title(["SKIP", IO_DIR, TITLE , RN]),
+   print_rule_grids(IO_DIR,"SKIP " + TITLE,IP,OP)).
 
-print_rule_grids(IO_DIR,TITLE,IP,OP):- 
+print_rule_grids(IO_DIR,TITLE,IP,OP):-
  must_det_ll((
  g_display(IP,IIP), g_display(OP,OOP), 
- %maplist(append_term(=('IN'(TITLE,IO_DIR))),IIP,INS), maplist(append_term(=('OUT'(TITLE,IO_DIR))),OOP,OUTS), 
- print_ss('IN'(TITLE,IO_DIR)=IIP),
- print_ss('OUT'(TITLE,IO_DIR)=OOP))).
+ print_ss_html(orange,IIP,'IN'(TITLE,IO_DIR),_LW,OOP,'OUT'(TITLE,IO_DIR)))).
 
 %omit_in_rules(_,giz(_)).
 %omit_in_rules(lhs,P):- not_for_matching(lhs,_,P).
@@ -1807,7 +1812,7 @@ learn_rule_iin_oout(_,In,O,OL):- mass(O,Mass),
   sort_safe(SLIDL,SSLIDL),
   reverse(SSLIDL,RSLIDL),
   member(SL-SAME-I-DL,RSLIDL),
-  pp_safe([SL+DL, equal = SAME, in=I,out=OL]),  
+  pp([SL+DL, equal = SAME, in=I,out=OL]),  
   compare_objs1(Mode,I,O), %colorlesspoints(I,Shape),colorlesspoints(O,Shape), %pen(I,Pen),pen(O,Pen),
   mass(I,Mass),
   simplify_for_matching(lhs,I,II),
@@ -1928,8 +1933,8 @@ assert_visually( H  ):- unnumbervars(H,HH),assert_visually1(HH,true).
 assert_visually1(H,B):- get_current_test(TestID), arg(1,H,W),W\==TestID,!, H=..[F|Args],GG=..[F,TestID|Args],assert_visually2(GG,B).
 assert_visually1(H,B):- assert_visually2(H,B).
 
-assert_visually2(H,B):- fail, copy_term((H:-B),(HH:-BB)),clause(HH,BB,Ref), clause(RH,RB,Ref),(H:-B)=@=(RH:-RB) ,!,(pp_safe(cyan,known_exact(H:-B))).
-assert_visually2(H,B):- fail, copy_term((H),(HH)),clause(HH,_,Ref), clause(RH,_,Ref),(H)=@=(RH) ,!,pp_safe(cyan,known(H:-B)).
+assert_visually2(H,B):- fail, copy_term((H:-B),(HH:-BB)),clause(HH,BB,Ref), clause(RH,RB,Ref),(H:-B)=@=(RH:-RB) ,!,(pp(cyan,known_exact(H:-B))).
+assert_visually2(H,B):- fail, copy_term((H),(HH)),clause(HH,_,Ref), clause(RH,_,Ref),(H)=@=(RH) ,!,pp(cyan,known(H:-B)).
 assert_visually2(H,B):- functor(H,F,_), my_asserta_if_new(test_local_dyn(F)), print_rule(F,(H:-B)), my_asserta_if_new((H:-B)).
 
 if_learn_ok(G):- call(G).
@@ -2038,7 +2043,7 @@ ensure_group_prop(Prop):- var(Prop),!,group_prop(Prop).
 ensure_group_prop(_).
 
 
-%pp_safe(O):- nl_if_needed,print(O),nl.
+%pp(O):- nl_if_needed,print(O),nl.
 use_test_associatable_group_real(In,SolutionO):- 
  must_det_ll((
   once((listify(In,In1), visible_order_fg(In1,In2))), 
@@ -2105,7 +2110,7 @@ need_object(B):-
   
 
 show_safe_assumed_mapped:-
-  pp_wcg(show_safe_assumed_mapped),
+% pp_wcg(show_safe_assumed_mapped),
  findall(sam(Why,AA,BB),
    (safe_assumed_mapped(Why,A,B),io_order(A,B,AA,BB)),SAMS),
  maplist(arg(2),SAMS,AS),list_to_set(AS,ASS),
@@ -2115,9 +2120,13 @@ show_safe_assumed_mapped:-
  forall(member(A,ASSS),
    forall(member(B,BSSS),
    (findall(Why,member(sam(Why,A,B),SAMS),WHYS),  
-    (ignore((
+    (ignore((      
+       %print_ss(A,B),
            % \+  is_bg_object(A), \+ is_bg_object(B),
-      (WHYS\==[], sformat(SWHYS,'~w',[WHYS]),g_display(A,AA),g_display(B,BB),dash_chars,print_ss(SWHYS,AA,BB)))))))),
+      (WHYS\==[], 
+        sformat(SWHYS,'~w',[WHYS]),
+        g_display(A,AA),g_display(B,BB),
+         dash_chars,print_ss(SWHYS,AA,BB)))))))),
  dash_chars,!.
 
 
@@ -2203,7 +2212,7 @@ matches_close_prop(In,Prop,List):-
  must_det_ll((
   simplify_for_matching(lhs,In,IIn),
   dmsg(looking_for(IIn)),
-  %pp_safe(in=IIn),  
+  %pp(in=IIn),  
   findall(Ref-OutS,use_test_associatable_io(IIn,OutS,Ref),OutL),
   keysort(OutL,OutLS),
   maplist(arg(2),OutLS,OutLS2),
@@ -2225,7 +2234,7 @@ use_test_associatable(In,OutR):-
    OutSet=[for_output2],     
    nb_set_add1(OutSet,OutL),
    ignore(OutR=OutSet),!,
-   pp_safe(outSet2=OutSet).
+   pp(outSet2=OutSet).
 
 test_associatable_proof(In,OutR):-
   findall(InS,simplify_for_matching_nondet(lhs,In,InS),InL),
@@ -2246,7 +2255,7 @@ use_test_associatable_io(I,O,Ref):- get_current_test(TestID), clause(arc_cache:o
 use_test_associatable_io(I,O,Ref):- get_current_test(TestID),
   clause(test_associatable(TestID,Pre,O),_,Ref),
   \+ \+ same_props(I,Pre),
-  nop(pp_safe(same_props(I,Pre))).
+  nop(pp(same_props(I,Pre))).
 
 
 
@@ -2256,7 +2265,7 @@ use_learnt_rule(In,RuleDir,ROut):- %get_vm(VM), %Target=VM.grid_target,
  get_current_test(TestID),
   ignore(get_vm(last_key,Key)),
   ((has_learnt_rule(TestID,In,Key,RuleDir,Out);has_learnt_rule(TestID,_,Key,RuleDir,Out);has_learnt_rule(TestID,In,_,RuleDir,Out))),
-  pp_safe(orange,using_learnt_rule(In,Key,RuleDir,Out)),
+  pp(orange,using_learnt_rule(In,Key,RuleDir,Out)),
   ignore(Out = ROut).
 
 use_learnt_rule(In,RuleDir,Out):- get_vm(VM), % Target=VM.grid_target, 
@@ -2265,7 +2274,7 @@ use_learnt_rule(In,RuleDir,Out):- get_vm(VM), % Target=VM.grid_target,
    In = VM.grid_o,
    Head = learnt_rule(TestID0,In0,Key0,RuleDir0,Out0),
    Rule = rule(Len,In0,Key0,RuleDir0,TestID0,Out0,Ref),
-   pp_safe(searching_for=[in(In),dir(RuleDir),key(Key)]),
+   pp(searching_for=[in(In),dir(RuleDir),key(Key)]),
   findall(Rule,
    (clause(Head,_Vars,Ref),
     call(Head),
@@ -2415,7 +2424,7 @@ find_by_shape(Grid,Find,Founds):-
    find_ogs(H,V,F1,Grid),% atrace,
 
    grid_to_points(F1,GH,GV,Points),
-   pp_safe(Points),
+   pp(Points),
    make_indiv_object(VM,[iz(find_by_shape),F1,loc2D(H,V),alt_grid_size(GH,GV)],Points,F2)),
  findall(F2,Prog,Matches),
  align_founds(Matches,Founds).

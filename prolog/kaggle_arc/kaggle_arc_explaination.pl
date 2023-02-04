@@ -132,7 +132,7 @@ debug_as_grid(Why,R):- atom(R), atom_contains(R,'_'), pp_parent([LF|_]), \+ (LF=
   resolve_reference(R,Var), R\==Var, \+ plain_var(Var),!, 
   write(' '), writeq(R), write(' /* '), debug_as_grid(Why,Var), write(' */ ').
 
-debug_as_grid(Why, Obj):- is_object(Obj),!,show_indiv(Why, Obj).
+debug_as_grid(Why, Obj):- is_object(Obj),!, show_indiv(Why, Obj).
 debug_as_grid(  I,   A):- is_1gridoid(A), !, make_bg_visible(A,AA), print_grid(I,AA).
 debug_as_grid( '',Grid):- !, pp(Grid).
 debug_as_grid(Why,Grid):- pp(debug_as_grid(Why,Grid)).
@@ -140,7 +140,23 @@ debug_as_grid(Why,Grid):- pp(debug_as_grid(Why,Grid)).
 
 
 %show_indiv(_Why,Obj):- is_bg_object(Obj),!.
-show_indiv(Why, Obj):-  
+arg1(P1,E):- arg(1,E,E1),call(P1,E1),!.
+
+show_indiv(_Why, Obj):- obj(ObjL)=Obj,
+  object_color_glyph_short(Obj,SGlyph),
+  my_partition(arg1(is_grid),ObjL,_GridArgs,NonGridArgs),
+  my_partition(arg1(is_cpoints_list),NonGridArgs,_CArgs,NonCArgs),
+  my_partition(arg1(is_points_list),NonCArgs,_PArgs,NonPArgs),
+  sformat(S,'Object ~w',[SGlyph]),
+  global_grid(Obj,GG),
+  norm_grid(Obj,NormGrid),
+  norm_ops(Obj,NormOps),
+  print_side_by_side(green,GG,SGlyph,_,NormGrid,NormOps),!,
+  %print_side_by_side(green,GG,SGlyph,_,NormGrid,NormOps),!,
+  pp([S|NonPArgs]).
+
+show_indiv(Why, Obj):-
+
   format('~N'),dash_chars(45),dash_chars(45),
   must_det_ll((
   vis2D(Obj,H,V),
@@ -148,8 +164,6 @@ show_indiv(Why, Obj):-
 
   findall(SubGroup,is_in_subgroup(Obj,SubGroup),SubGroupS), 
   pp(subGroupS=SubGroupS),
-
-  %writeg(obj=Obj),
 
   if_t((H\==1;V\==1;true),
     must_det_ll((     
@@ -159,13 +173,13 @@ show_indiv(Why, Obj):-
      Title = show_indiv(Why,objFn(Glyph),loc2D(OH,OV),center2G(CX,CY),size2D(H,V)),
              loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
 
+
      Grids = [Title=GridS|_],     
 
      copy_term(Obj,CObj),
      nop((object_ngrid(CObj,NGrid), append(_,["NGrid"=NGrid|_],Grids))),
 
      ShowQ=_,
-
 
      term_variables(Grid,GV1),
      normalize_grid(NOps,Grid,Normalized), % if_t(Normalized\=@=Grid,append(_,["NORMALIZED!!!"=Normalized|_],Grids)),
@@ -199,17 +213,49 @@ show_indiv(Why, Obj):-
 
      %writeg("NGrid"=NGrid),
    true))),
-    
+  WillHaveShown = [loc2D(OH,OV),center2G(CX,CY),size2D(H,V)|SubGroupS],    
   if_t(is_object(Obj),
     (format('~N~n'),
-     if_t(menu_or_upper('i'),locally(nb_setval(debug_as_grid,nil),underline_print(debug_indiv(Obj)))))),
-     format('~N'),dash_chars(15))),!.
+     if_t(menu_or_upper('i'),
+       locally(nb_setval(debug_as_grid,nil),
+         underline_print(debug_indiv_obj(Obj,WillHaveShown)))))),
 
+  format('~N'),dash_chars(15))),!.
 
+:- ansi_term:import(debug_indiv_obj/2).
+debug_indiv_obj(AS0):-debug_indiv_obj(AS0,[]).
+debug_indiv_obj(Obj,ExceptFor):- Obj = obj(A), nonvar(A),!,debug_indiv_obj(A,ExceptFor).
+debug_indiv_obj(Props,ExceptFor):- is_open_list(Props),!,must_det_ll((append(Props,[],CProps),!,debug_indiv_obj(CProps,ExceptFor))).
+debug_indiv_obj(AS0,ExceptFor):- 
+ must_det_ll((
+  Obj = obj(AS0),
+  append(AS0,[],Props),
+  %ignore((o2g(Obj,GGG), nonvar(GGG),set_glyph_to_object(GGG,Obj))),
+ % will_show_grid(Obj,TF),
+  TF = false,
+ % obj_to_oid(Obj,MyOID),
+  %o2ansi(MyOID,MissGlyph),
+  object_color_glyph_short(Obj,SGlyph),
 
+  my_partition(is_functor(link),Props,ISLINK,AS1), r_props(ISLINK,ISLINKR),
+  my_partition(is_o3,AS1,TVSO0,AS),  r_props(TVSO0,TVSO), predsort_on(arg(2),TVSO,TVSOR),reverse(TVSOR,TVSOS),
+  short_indv_props(AS,TVSI1,TVSI2),append(TVSI1,TVSI2,TVSI),
+  %flatten(TV,F),predsort(longer_strings,F,[Caps|_]), 
+  append([TVSI,Props],ASFROM), choose_header(ASFROM,Caps), toPropercase(Caps,PC),
+  
+  ignore((TF==true,dash_chars)),
+  sformat(S,"% ~w:\t~w  ",[PC,SGlyph]), format('~N~s',[S]),
+  print_if_non_nil(ExceptFor,TVSI),
+  print_if_non_nil(ExceptFor,ISLINKR),
+  print_if_non_nil(ExceptFor,TVSOS),
+  ignore(( TF==true, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
+  ignore(( fail, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
+  %pp(Props),
+  ignore(( TF==true,dash_chars)))),!.
 
-
-  %writeg(obj=Obj),
+print_if_non_nil(ExceptFor,TVSI):- 
+  include(is_not_in(ExceptFor),TVSI,TVSI_PP),
+  ignore(((TVSI_PP \==[], format('~N  '),pp(TVSI_PP)))).
 
 
 
@@ -227,12 +273,12 @@ debug_indiv(Grid):- maplist(is_point,Grid),!,debug_as_grid(is_point,Grid).
 debug_indiv(Atom):- atom(Atom),into_gridoid(Atom,Gridoid),pp(into_gridoid(Atom)),!,debug_as_grid(Gridoid).
 
 debug_indiv(List):- is_list(List),length(List,Len),!,
- w_section((
+ w_section((debug_indiv = Len),((
   ppnl(debug_indiv = Len),
   print_list_of(debug_indiv,debug_indiv_list,List),
   %max_min(Len,40,_,Min),
   %forall(between(1,Min,N),(N=<40->(nth1(N,List,E),debug_indiv(E));ppnl(total = 40/Len))),
-  !)).
+  !))).
 
 
 /*
@@ -342,6 +388,7 @@ o2ansi(Obj,S):- object_color_glyph_old(Obj,S),!.
 
 colorize_oterms(G,GG):- c_ot(c_o,G,GG),!.
 colorize_oterms(P2,G,GG):- c_ot(P2,G,GG),!.
+
 c_o(O,A):- is_object(O),O=obj(_),object_color_glyph_short(O,A),!.
 
 c_ot(_P2,O,A):- var(O),!,A=O.
@@ -352,7 +399,10 @@ c_ot(_P2,O,A):- number(O),!,wots(A,bold_print(write(O))).
 c_ot(P2,-O,-A):- !, c_ot(P2,O,A).
 c_ot(P2,+O,+A):- !, c_ot(P2,O,A).
 c_ot(P2,O,A):- is_list(O),!,maplist(colorize_oterms(P2),O,A).
-c_ot(P2,O,A):- compound(O),compound_name_arguments(O,F,Args),!,maplist(colorize_oterms(P2),Args,AArgs),compound_name_arguments(A,F,AArgs).
+c_ot(P2,O,A):- compound(O),compound_name_arguments(O,F,Args),!,
+  maplist(colorize_oterms(P2),Args,AArgs),
+  (Args=@=AArgs-> O=A ; compound_name_arguments(A,F,AArgs)).
+
 c_ot(_P2,O,A):- \+ atom(O),!,A=O.
 c_ot(_P2,O,A):- is_color(O),!,wots(A,color_print(O,O)).
 c_ot(_P2,O,A):- member(O,[n,s,e,w,c,ne,se,sw,nw]),!,wots(A,bold_print(write(O))).
@@ -430,38 +480,6 @@ dbg_show_touches2(SGlyph,TP):-
   remove_too_verbose(SGlyph,TP,OO),
   format("~N~n% ~w:  ",[SGlyph]),wqs_l(OO),format('~N').
 
-
-
-debug_indiv_obj(Obj):- Obj = obj(A), nonvar(A),!,debug_indiv_obj(A).
-debug_indiv_obj(Props):- is_open_list(Props),!,must_det_ll((append(Props,[],CProps),!,debug_indiv_obj(CProps))).
-debug_indiv_obj(AS0):- 
- must_det_ll((
-  Obj = obj(AS0),
-  append(AS0,[],Props),
-  %ignore((o2g(Obj,GGG), nonvar(GGG),set_glyph_to_object(GGG,Obj))),
- % will_show_grid(Obj,TF),
-  TF = false,
- % obj_to_oid(Obj,MyOID),
-  %o2ansi(MyOID,MissGlyph),
-  object_color_glyph_short(Obj,SGlyph),
-
-  my_partition(is_functor(link),Props,ISLINK,AS1), r_props(ISLINK,ISLINKR),
-  my_partition(is_o3,AS1,TVSO0,AS),  r_props(TVSO0,TVSO), predsort_on(arg(2),TVSO,TVSOR),reverse(TVSOR,TVSOS),
-  short_indv_props(AS,TVSI1,TVSI2),append(TVSI1,TVSI2,TVSI),
-  %flatten(TV,F),predsort(longer_strings,F,[Caps|_]), 
-  append([TVSI,Props],ASFROM), choose_header(ASFROM,Caps), toPropercase(Caps,PC),
-  
-  ignore((TF==true,dash_chars)),
-  sformat(SF,"% ~w:\t~w  ",[PC,SGlyph]),
-  ignore(( g_out_style(style('font-size','75%'),(write(SF), wqs(TVSI))))),
-  %maplist(write_indented_list('~N    '),wqs(TVSOS),
-  writeq(TVSI),
-  ignore(((ISLINKR \==[], format('~N  '),wqs(ISLINKR)))),
-  if_t((nb_current(menu_key,'i');nb_current(menu_key,'t')),ignore(((TVSOS \==[], format('~N  '),wqs(TVSOS))))),
-  ignore(( TF==true, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
-  ignore(( fail, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
-  %pp(Props),
-  ignore(( TF==true,dash_chars)))),!.
 
 write_indented_list(F,WQS):- format(F),wqs(WQS).
 

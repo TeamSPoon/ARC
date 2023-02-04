@@ -176,8 +176,8 @@ term_to_oid(T,A):- (compound(T)->term_to_atom(T,A);(atom(T)->T=A;term_to_atom(T,
 point_to_hvc(Var,_,_,_):- var(Var),!,fail.
 point_to_hvc(Point,  H,V,fg):- atomic(Point),!, hv_point(H,V,Point).
 %point_to_hvc(CD-Point,H,V,C):- var_or_color_data(CD,C),must(hv_point(H,V,Point)),!.
-point_to_hvc((C,D)-Point,H,V,(C,D)):- atomic(Point),!, hv_point(H,V,Point),!.
 point_to_hvc(CD-Point,H,V,CD):- atomic(Point),!, hv_point(H,V,Point),!.
+%point_to_hvc((C,D)-Point,H,V,(C,D)):- atomic(Point),!, hv_point(H,V,Point),!.
 %point_ to_hvc(H,V,_,H,V).
 %point_ to_hvc(Inf,Inf,offset_ranges(_,_,_,_)).
 var_or_color_data(CD,C):- only_color_data(CD,C),!.
@@ -436,7 +436,6 @@ create_movements:-
   forall(between(1,30,V),
   calc_movement(H,V))))).
 
-:- initialization(create_movements).
 
 :- dynamic(hv_point/3).
 :- dynamic(is_adjacent_point/3).
@@ -488,7 +487,6 @@ point_plus(HV1,HV2,HV):- is_point_plus(HV1,HV2,HV).
 point_minus(HV,HV2,HV1):- point_plus(HV1,HV2,HV).
 %point_minus(HV,HV2,HV1):-point_plus(HV2,HV1,HV),!.
 
-:- initialization(create_points_plus).
 
 is_adj_point_es(HV1,HV2):- is_adjacent_point(HV1,s,HV2).
 is_adj_point_es(HV1,HV2):- is_adjacent_point(HV1,e,HV2).
@@ -1088,4 +1086,6 @@ load_arc_db_temp_cache:-
   load_files('muarc_cache/arc_db_temp_cache',[qcompile(auto)]).
 
 :- include(kaggle_arc_footer).
+:- initialization(create_movements).
+:- initialization(create_points_plus).
 

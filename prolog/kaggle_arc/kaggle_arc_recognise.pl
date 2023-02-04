@@ -53,7 +53,6 @@ was_result(SG,FG,WMatch):-
   ignore((perfect_result(CSG,CFG,WMatch))).
 
 
-
 % hacking on this one
 test_ogs2(H,V,Match):-
   ppnl("searching..."),

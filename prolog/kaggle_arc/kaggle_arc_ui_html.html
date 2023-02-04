@@ -10,8 +10,6 @@
     <link rel="stylesheet" type="text/css" href="css/testing_interface.css"-->
   
     <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="./kaggle_arc_ui_html.css">
-
     <script type="text/javascript">
         function ensureTopUsesIFrameParams() {
             var iframe = document.getElementById("lm_xref");
@@ -79,30 +77,101 @@
     </script>
     <style type="text/css">
 
-    a {
-        color: cyan;
-    }
+a { color: cyan; }
 
-    body {
-        font-size: xx-small;
-        //background-color: #000;
-        //
-       background-blend-mode: difference;
-       ;;;;mix-blend-mode: difference;;;;;
-    }
+.sidenavL {
+    width: 250px;
+    height: 100%;
+    z-index: 1;
+    color: #fff; background-color: #111;
+    overflow: scroll;
+    transition: 0.5s;
+    padding-top: 60px;
+    left: 0;
+    top: 0px;
+    display: inline;
+    position: fixed;
+    background-blend-mode: none;
+    mix-blend-mode: none;
+}
 
-    td {
-        font-size: small;
+.sidenavL a {
+    padding: 8px 8px 8px 32px;
+    text-decoration: none;
+    font-size: 12px;
+    color: #818181;
+    display: inline;
+    white-space: nowrap;
+    overflow: auto;
+    transition: 0.3s;
+}
+
+.sidenavR {
+    height: 100%;
+    z-index: 1;
+	color: #eeeeee; background-color: #111;
+    overflow: scroll;
+    transition: 0.5s;
+    padding-top: 10px;
+    right: 0;
+    top: 0px;
+    display: inline;
+    position: fixed;
+    width: 250px;
+    background-blend-mode: none;
+    mix-blend-mode: none;
+}
+
+.sidenavR a {
+    padding: 8px 8px 8px 8px;
+    text-decoration: none;
+    font-size: 12px;
+    color: #f1f1f1;
+    display: block;
+	overflow: auto;
+    transition: 0.3s;
+}
+
+.sidenavL a:hover {
+    color: #ffffff;
+}
+
+.sidenavR a:hover {
+   color: #ffffff;
+}
+
+.closebtn {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
+    overflow: none;
+    background-blend-mode: none;
+    mix-blend-mode: none;
+
+}
+
+@media screen and (max-height: 450px) {
+    .sidenavR {
+        padding-top: 15px;
     }
+    .sidenavR a {
+        font-size: 18px;
+    }
+    .sidenavL {
+        padding-top: 15px;
+    }
+    .sidenavL a {
+        font-size: 18px;
+    }
+}
 
     </style>
+<link rel="stylesheet" type="text/css" href="kaggle_arc_ui_html.css">
 </head>
-<body style="background-color: #000; color: white">
-
-<div id="mySideNavL" class="sidenavL">
-        <a href="javascript:void(0)" class="closebtn" onclick="toggleNavL('mySideNavL')">&#10005;</a>
-        <!--input type="text" id="param_task" name="task" value="3bdb4ada"><br>
-        <input type="text" id="param_test_suite_name" name="test_suite_name" value="dbigham_eval_pass"--><br>
+<body><div id="mySideNavL" class="sidenavL">
+        <a href="javascript:void(0)" class="closebtn" onclick="toggleNavL('mySideNavL')">&#10005;</a><br>
         <a href="javascript:void(0)" onclick="navCmd('300')">300: <font color="yellow" style="color: yellow">evaluation=100</font></a> &lt;&lt;&lt;&lt;-------
         <a href="javascript:void(0)" onclick="navCmd('301')">301: <font color="yellow" style="color: yellow">easy_solve_suite=7</font></a>
         <a href="javascript:void(0)" onclick="navCmd('302')">302: <font color="yellow" style="color: yellow">test_names_by_fav=97</font></a>
@@ -338,25 +407,11 @@
         <a href="javascript:void(0)" onclick="navCmd('375')">375: <font color="yellow" style="color: yellow">(8, 1)=1</font></a>
         <a href="javascript:void(0)" onclick="navCmd('376')">376: <font color="yellow" style="color: yellow">(8, 3)=1</font></a>
     </div>
-<div id="mySideNavR" class="sidenavR">
+	<div id="mySideNavR" class="sidenavR">
   <a href="javascript:void(0)" class="closebtn" onclick="toggleNavR('mySideNavR')">&#10005;</a>
-<pre><nav id="navbar-example" class="navbar navbar-light bg-light px-3">
-	<!--
-  <a class="navbar-brand" href="javascript:void(0)">Navbar</a>
--->
+<pre><nav id="navbar-example" class="navbar navbar-light bg-light px-3" style="white-space: pre;">
   <ul id="navbar_items" class="nav nav-pills">
-<!-- 
-    <li class="nav-item"><a class="nav-link" href="#main">Main Div</a></li>
-    <li class="nav-item"><a class="nav-link" href="#sess_accordian">Session Info</a></li>
-   <li class="nav-item"><a class="nav-link" href="#" target="lm_xref" >Main In IFrame</a></li> -->
-  </ul>
-
-</nav></pre>
-	<br>
-	<hr>
-	<br>
-
-<ul id="menu2">
+  </ul></nav></pre><br><hr><br><ul id="menu2">
 	With selected test: ....
  <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('t')">You may fully (t)rain from examples</a></li>
  <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('i')">See the (i)ndividuation correspondences in the input/outputs</a></li>
@@ -396,8 +451,6 @@
  <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('halt%284%29')">(^q)uit to shell,</a></li> &nbsp;
  <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('break')">or (D)ebug/break to interpreter.</a></li>
 </ul>
-	
-	
 <ul id="menu3">
  <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('pbox')">100:pbox</a></li>
  <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_pbox')">101:test_pbox</a></li>
@@ -474,38 +527,12 @@
  <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_webui_menu')">172:test_webui_menu</a></li>
  <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('test_what_unique')">173:test_what_unique</a></li>
  <li class="nav-item"><a class="nav-link" href="javascript:void(0)"  onclick="navCmd('train_test')">174:train_test</a></li>
-	</ul>
- </div>
-		
-		<!--begin sess head
-		<span style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0; position: fixed" onclick="toggleNavL('mySideNavL')">&#9776; Test Suites</span>	     
-		 -->
-
-
-		<div id="main" style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0">
-		 <span style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0; position: fixed" onclick="toggleNavL('mySideNavL')">&#9776; Task Suites</span>
-		 <span style="font-size:20px;cursor:pointer;color: white; top: 0; right: 0; position: fixed" onclick="toggleNavR('mySideNavR')">&#9776; Task Operations</span>
-		 <!--   end sess head-->
-        <style type="text/css">
-            html,
-            body {
-                font-size: xx-small;
-                background-color: #333;
-                color: white;
-            }
-            
-            td {
-                font-size: small;
-            } 
-        </style>
-  
-	  <input type="checkbox" id="sess_accordian" class="hidecontent">
-		<label for="sess_accordian"><div class="font(1)">Session Info</div></label>
-        <div class="content hidecontent"> 
-		   <div id="page_head_div"></div>
-           <label id="sess_accordian_x" for="sess_accordian" style="right: 0; position: relative; width: 8px">x</label>
-        </div>
-  
+</ul></div>
+<div id="main" style="top: 0; left: 0">
+ <span style="font-size:20px;cursor:pointer; top: 0; left: 0; position: fixed" onclick="toggleNavL('mySideNavL')">&#9776; Task Suites</span>
+ <span style="font-size:20px;cursor:pointer; top: 0; right: 0; position: fixed" onclick="toggleNavR('mySideNavR')">&#9776; Task Operations</span><input type="checkbox" id="sess_accordian" class="hidecontent">
+	  <label for="sess_accordian"><div class="font(1)">Session Info</div></label>
+		<div class="content hidecontent"><div id="page_head_div"></div><label id="sess_accordian_x" for="sess_accordian" style="right: 0; position: relative; width: 8px">x</label></div>  
 		<iframe src="about:blank" nononLoad="ensureTopUsesIFrameParams()" 
 			width="1024" height="100%" frameborder="0" name="lm_xref" id="lm_xref" 
 			style="width: 100%; height=" scrolling="auto" />

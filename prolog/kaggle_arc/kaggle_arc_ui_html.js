@@ -6,6 +6,7 @@ function clickGrid(name) {
 	console.log("clickGrid(" + name + ")");
 	var val = getComponent("grid", "");
 	if ( val != name ) {
+		if(true) return;
 		navToParams({ grid: name, cmd: "click_grid"});
 	}
 }
@@ -14,6 +15,7 @@ function toEle(name) {
 	if(name==null) return null;
 	var node = name;
 	if ( typeof name === "string" ) {
+		node = null;
         node = document.getElementById(name);
 		if(node==null) {
 			var nav = getNavWindow();
@@ -24,11 +26,13 @@ function toEle(name) {
 				node = topw.document.getElementById(name);
 				if(node==null) {
 					console.warn(name + " not found in " + topw);
+					debugger;
 					return null;
 				}
 			}
 		}
 	}
+	return node;
 }
 
 function getSomeElementById(Name) {
@@ -153,9 +157,9 @@ function getNavWindow() {
 }
 
 function getTopWindow() {
-   //	var nav = getNavWindow();
-   // if ( nav != null ) return nav.parent;
-	return window.top; //parent;
+   var nav = getNavWindow();
+   if ( nav != null ) return nav.parent;
+   return window.top; //parent;
 }
 
 function setFormFields(srch) {
@@ -224,7 +228,7 @@ function toComponent(name) {
 	if ( ele != null ) return ele;
 	ele = document.getElementById("param_" + name);
 	if ( ele != null ) return ele;
-	ele = document.getElementById(name);
+	ele = toEle(name);
 	if ( ele != null ) return ele;
 	return null;
 }
@@ -446,16 +450,47 @@ function sameSrch(oldSrch, newSrch) {
 	return true;
 }
 
-function clickAccordian(thizn) {
-	var thiz = document.getElementById(thizn);
-	console.log("clickAccordian(" + thiz + ")");
-	thiz.classList.toggle("active");
-	var panel = document.getElementById(thizn+"_panel");
-	if ( panel==null ) panel = thiz.nextElementSibling;
-	togglePanel(panel,false);
+
+function addAccordian(thiz_name,depth) {
+	var thiz_id = thiz_name.id;
+	var thiz_textContent = thiz_name.firstChild.textContent;
+	console.log(`addAccordian(${thiz_id},${thiz_textContent},${depth})`);
+	var nav = top.document.getElementById("navbar_items");
+	var br=top.document.createElement('br'); 
+	nav.appendChild(br);
+	var e=top.document.createElement('li');
+	e.classList.add("nav-item");
+	var  spaces = "";
+	for ( i=0;i<depth;i++ ) {
+		spaces=spaces+"&nbsp;";
+	}
+	e.innerHTML ='<a class="nav-link" href="javascript:void(0)" id="'+ thiz_id+'_link" target="lm_xref" onclick="clickAccordian(`'+ thiz_id+'`,true);" >'+spaces+thiz_textContent+'</a>';
+
+	nav.appendChild(e);
+	e.scrollIntoView(false);
+	// thiz_name.scrollIntoView(false);
 }
 
-function togglePanel(name,scrollTo) {
+function clickAccordian(thiz_name,scrollTo) {
+	console.log(`clickAccordian('${thiz_name}',${scrollTo})`);
+	if (typeof thiz_name === "string") {
+        thiz_name = thiz_name.replace('_panel', '');
+		thiz_name = thiz_name.replace('_link', '');
+	}
+	var thiz = toEle(thiz_name);
+	thiz.classList.toggle("active");
+	var panel = toEle(thiz_name+"_panel");
+	var keepGoing = (panel== null || !(panel.classList.contains("panel")));
+	if ( panel==null )  {
+		panel = thiz .nextElementSibling;
+		togglePanel(panel,keepGoing,scrollTo);
+	} else {
+		togglePanel(panel,keepGoing,scrollTo);
+	}
+
+}
+
+function togglePanel(name,keepGoing,scrollTo) {
 	var panel = intoPanel(name);
 	if(panel==null) return;
 	if(scrollTo) {
@@ -465,10 +500,10 @@ function togglePanel(name,scrollTo) {
 	  scrl.scrollIntoView(true);
 	}
 
-	if ( panel.style.maxHeight == "none" ) {
-		hidePanel(panel);
+	if (!(panel.classList.contains("panel_hidden")) ) {
+		hidePanel(panel,keepGoing);
 	} else {
-		showPanel(panel,scrollTo);
+		showPanel(panel,keepGoing,scrollTo);
 	}
 }
 
@@ -481,8 +516,7 @@ function intoPanel(name) {
 	if(name==null) return null;
 	var panel = name;
 	if ( typeof name === "string" ) {
-		var nav = getNavWindow();
-		panel = nav.document.getElementById(name);
+		panel = toEle(name);
 		if(panel==null) {
 			console.warn(name + " not found in " + nav);
             return null;
@@ -490,15 +524,16 @@ function intoPanel(name) {
 	}	
     if(!panel.classList.contains("panel")) {
 		console.warn(panel + "not a panel: " + panel.classList);
-		return null;
+	   // return null;
 	}
 	return panel;
 }
 
-function showPanel(name,scrollTo) {
+function showPanel(name,keepGoing,scrollTo) {
 	var panel = intoPanel(name);
 	if(panel==null) return;
 
+	/*
 	if(scrollTo) {
 		// gets us the show hide toggles
 		if(window.lastPanelShown == panel) {
@@ -508,7 +543,7 @@ function showPanel(name,scrollTo) {
 			   return;
 			}
 		} 
-	}
+	}*/
 	//panel.scrollIntoView(false);
 
 	var PE = panel.parentElement;
@@ -518,6 +553,8 @@ function showPanel(name,scrollTo) {
 			 if(GPE!=null) {
 				 if(GPE.classList.contains("panel")) {
 					 PE = GPE;
+				 } else {
+					 PE = GPE.parentElement;
 				 }
 			 }
 		}
@@ -530,15 +567,15 @@ function showPanel(name,scrollTo) {
 					}
 				}
 			} while (sibling = sibling.nextElementSibling);
-			showPanel(PE,false);
+			showPanel(PE,false,false);
 		}
 	}
 	panel.classList.add("panel_shown");
 	panel.classList.remove("panel_hidden");
-	panel.style.display = "inline-block";
-	panel.style.minHeight = "10px";
-	panel.style.maxHeight = "none";
-	panel.style.overflow = "auto";
+	//panel.style.display = "inline-block";
+	//panel.style.minHeight = "10px";
+	//panel.style.maxHeight = "none";
+	//panel.style.overflow = "auto";
 	if(scrollTo) {
 	  var scrl= panel.previousElementSibling;
 	  if(scrl==null)scrl=panel;
@@ -548,34 +585,16 @@ function showPanel(name,scrollTo) {
 	
 }
 
-function hidePanel(name) {
+function hidePanel(name,keepGoing) {
 	var panel = intoPanel(name);
 	if(panel==null) return;
 	panel.classList.add("panel_hidden");
 	panel.classList.remove("panel_shown");
+	/*
 	panel.style.display = "none";
     panel.style.minHeight = "0px";  
 	panel.style.maxHeight = "0px";
-	panel.style.overflow = "none";
-}
-
-function addAccordian(thizn,depth) {
-
-	console.log("addAccordian(" + thizn.id  +  "," + thizn.innerText + "," + depth + ")");
-	var nav = top.document.getElementById("navbar_items");
-	var br=top.document.createElement('p');
-	nav.appendChild(br);
-	var e=top.document.createElement('li');
-	e.classList.add("nav-item");
-	var  spaces = "";
-	for ( i=0;i<depth;i++ ) {
-		spaces=spaces+"&nbsp;";
-	}
-	e.innerHTML ='<a class="nav-link" href="javascript:void(0)" id="'+ thizn.id+'_link" target="lm_xref" onclick="togglePanel(`'+ thizn.id+'_panel`,true);" >'+spaces+thizn.textContent+'</a>';
-	nav.appendChild(e);
-	e.scrollIntoView(false);
-	// thizn.scrollIntoView(false);
-	
+	panel.style.overflow = "none";*/
 }
 
 function clearMenu() {
@@ -588,8 +607,8 @@ function clearMenu() {
 	}	
 }
 
-function activateMenu(thizn) {
-	var elem = top.document.getElementById(thizn);
+function activateMenu(thiz_name) {
+	var elem = top.document.getElementById(thiz_name);
 	if(elem==null) return;
 	if(elem.classList.contains("active")) {
 	   // return;
@@ -662,7 +681,7 @@ function cvtToIMG(name) {
 		img.style.height=node.clientHeight;
 		img.onclick = node.onclick;
 		img.src = dataUrl;
-		img.info = node.info;
+		img.title = node.title;
 		node.replaceWith(img);
 	  })
 	  .catch(function (error) {

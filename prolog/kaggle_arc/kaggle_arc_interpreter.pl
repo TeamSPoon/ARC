@@ -476,7 +476,7 @@ known_grid0(ID,G):- compound(ID),ID=(_>(Trn+Num)*IO),!,fix_test_name(ID,Name,Trn
 known_grid0(ID,G):- compound(ID),ID=(_>_),fix_test_name(ID,Name,ExampleNum),!,(kaggle_arc_io(Name,ExampleNum,_IO,G),deterministic(YN),true), (YN==true-> ! ; true).
 %known_grid0(ID,G):- (is_shared_saved(ID,G),deterministic(YN),true), (YN==true-> ! ; true).
 %known_grid0(ID,G):- (is_unshared_saved(ID,G),deterministic(YN),true), (YN==true-> ! ; true).
-known_grid0(ID,G):- (atom(ID);string(ID)),atom_to_term_safe(ID,Term,_), Term\==ID,!,known_grid0(Term,G).
+known_grid0(ID,G):- (atom(ID);string(ID)),arc_atom_to_term(ID,Term,_), Term\==ID,!,known_grid0(Term,G).
 
 
 :- dynamic(kaggle_arc_answers/4).

@@ -45,7 +45,9 @@ write_cmd_link2(Info,Goal):- nonvar(Goal),
    sformat(SO,'<a href="/swish/lm_xref/?mouse_iframer_div=~w&cmd=~w" target="lm_xref">~w</a>~n ',[PP,A,Info]),!,
    our_pengine_output(SO).
 
-into_str(Info,Info1):- compound(Info),wots(S,wprl(Info)),!,into_str(S,Info1).
+into_str(Info,Info1):- atom(Info), atom_contains(Info,'_'), \+ atom_contains(Info,' '), functor_to_title_string(Info,Info1),!.
+into_str(Info,Info1):- string(Info),!,Info1=Info.
+into_str(Info,Info1):- compound(Info),wots_html(S,wprl(Info)),!,into_str(S,Info1).
 into_str(Info,Info1):- \+ string(Info),!,sformat(Info1,'~w',[Info]),!.
 into_str(Info,Info).
 
@@ -124,7 +126,7 @@ menu_cmd9(_,'D','or (D)ebug/break to interpreter.',(break)).
 menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd1(Mode,Key,Mesg,Goal).
 menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd9(Mode,Key,Mesg,Goal).
 
-
+menu_or_upper(_IOKey):- is_cgi,!.
 menu_or_upper(IOKey):- nb_current(menu_key,Key),(Key==IOKey;(upcase_atom(Key,Key),\+ upper_already_bound(Key))),!.
 
 upper_already_bound(Key):- menu_cmds(_Mode,Key,_Mesg,_Goal).
@@ -255,8 +257,9 @@ menu_goal(Goal):-
 :- public(do_web_menu_key/1).
 :- export(do_web_menu_key/1).
 
-invoke_arc_cmd(Key):- \+ sensical_term(Key),!.
-invoke_arc_cmd(Key):- atom_to_term_safe(Key,Prolog,Vs),Vs==[], Prolog\=@=Key,!,invoke_arc_cmd(Prolog).
+arc_sensical_term(O):-nonvar(O), O\==[], O\=='', O \= (_ - _), O\==end_of_file.
+invoke_arc_cmd(Key):- \+ arc_sensical_term(Key),!.
+invoke_arc_cmd(Key):- arc_atom_to_term(Key,Prolog,Vs),Vs==[], Prolog\=@=Key,!,invoke_arc_cmd(Prolog).
 
 
 invoke_arc_cmd(Key):- do_web_menu_key(Key).
@@ -301,7 +304,7 @@ do_menu_key(E):- ground(E), fix_test_name(E,TestID),is_valid_testname(TestID),se
   set_pair_mode(whole_test),show_selected_object.
 
 do_menu_key(Key):- \+ atom(Key), catch(text_to_string(Key,Str),_,fail),Key\==Str,catch(atom_string(Atom,Str),_,fail),do_menu_key(Atom).
-do_menu_key(Key):- atom(Key), atom_to_term_safe(Key,Term,Vs), nonvar(Term),
+do_menu_key(Key):- atom(Key), arc_atom_to_term(Key,Term,Vs), nonvar(Term),
   Term\=@=Key, locally(nb_setval('$variable_names',Vs), do_menu_key(Term)).
 do_menu_key(Key):- maybe_call_code(Key),!.
 do_menu_key(Key):- test_suite_list(List), member(Key,List),!,set_test_suite(Key).
@@ -317,11 +320,12 @@ debuffer_atom_codes(_Key,[C|Codes]):- C\==27, Codes\==[],
   (do_menu_key(Key1)->true;do_menu_key(Key2)).
 debuffer_atom_codes(Key,Codes):- format("~N % Menu did understand '~w' ~q ~n",[Key,Codes]).
 
+arc_atom_to_term(Key,Prolog,Vs):- atom(Key),notrace(catch(atom_to_term(Key,Prolog,Vs),_,fail)), arc_sensical_term(Prolog).
 
 maybe_call_code(Key):- \+ atom(Key), !, 
  notrace(catch(text_to_string(Key,Str),_,fail)),Key\==Str,catch(atom_string(Atom,Str),_,fail),maybe_call_code(Atom).
 maybe_call_code(Key):- atom(Key), 
-  atom_to_term_safe(Key,Term,Vs),
+  arc_atom_to_term(Key,Term,Vs),
   nonvar(Term),
   Term\=@=Key,
   locally(nb_setval('$variable_names',Vs),
@@ -392,10 +396,10 @@ first_n_of_list(_Max,List,List,[]).
 preview_test_per_page(List):- preview_test_per_page(1,20,List).
 preview_test_per_page(Strt,Max,List):- length(List,Len),Len>Max,first_n_of_list(Max,List,LeftMax,Rest),
    NStrt is Strt+Max,Thru is NStrt-1,
-   w_section(format('Suite Tasks ~w-~w',[Strt,Thru]),maplist(preview_test,LeftMax)),preview_test_per_page(NStrt,Max,Rest).
+   w_section(title(format('Suite Tasks ~w-~w',[Strt,Thru])),maplist(preview_test,LeftMax)),preview_test_per_page(NStrt,Max,Rest).
 preview_test_per_page(Strt,_,List):- length(List,Len), 
   Thru is Strt+Len-1,
-  w_section(format('Suite Tasks ~w-~w',[Strt,Thru]),maplist(preview_test,List)).
+  w_section(title(format('Suite Tasks ~w-~w',[Strt,Thru])),maplist(preview_test,List)).
 
 first_ten(Set,Ten,Rev):- length(LL,Ten),append(LL,_,Set),web_reverse(LL,Rev).
 
@@ -637,7 +641,7 @@ dump_suite_sorted:-
    with_pair_mode(whole_test, forall_count(member(S,Sorted),print_ctest(S))).
 
 dump_not_suite:-   
-   get_current_suite_testnames(Set),
+   get_current_suitme_testnames(Set),
    forall_count(((kaggle_arc_safe(TestID,_ExampleNum,_I,_O), \+ member(TestID,Set))),
     print_ctest(TestID)).
 
@@ -963,7 +967,7 @@ full_test_suite_list:-
  (luser_getval(test_suite_name,SuiteXC); SuiteXC=[]),
  full_test_suite_list(L),
  %when_html(write('<style type="text/css">a {color: cyan;} body {background-color: black; color: white; background-blend-mode: difference; mix-blend-mode: difference}</style>')),
- when_html(write('<style type="text/css">a {color: cyan;} body { background-blend-mode: difference; mix-blend-mode: difference}</style>')),
+ when_html(write('<style type="text/css">a {color: cyan;} </style>')),
  ((forall(nth_above(300,N,L,SuiteX),
   (%nl,%current_suite_testnames(SuiteX,_),
    print_menu_cmd1((format(' ~w:  ',[N]),
@@ -974,7 +978,7 @@ report_suites:-
  (luser_getval(test_suite_name,SuiteXC); SuiteXC=[]),
  test_suite_list(L),
  %when_html(write('<style type="text/css">a {color: cyan;} body {background-color: black; color: white; background-blend-mode: difference; mix-blend-mode: difference}</style>')),
- when_html(write('<style type="text/css">a {color: cyan;} body { background-blend-mode: difference; mix-blend-mode: difference}</style>')),
+ when_html(write('<style type="text/css">a {color: cyan;} </style>')),
  ((forall(nth_above(300,N,L,SuiteX),
   (nl,current_suite_testnames(SuiteX,_),
    print_menu_cmd1((format(' ~w:  ',[N]),
@@ -1417,7 +1421,7 @@ print_single_pair_pt2(TestID,ExampleNum,In,Out):- is_cgi,!,
  (ID2 = (TestID>ExampleNum*out)),
  print_ss_html(cyan, 
    NameIn,navCmd((TestID>ExampleNum)),ID1,In,'Input',
-          TestAtom,navCmd((TestAtom)),ID2,Out,RightTitle).
+   TestAtom,navCmd((TestAtom)),ID2,Out,RightTitle).
 print_single_pair_pt2(TestID,ExampleNum,In1,Out1):- 
    in_out_name(ExampleNum,NameIn,NameOut),%easy_diff_idea(TestID,ExampleNum,In1,Out1,LIST),!,
    format('~Ntestcase(~q,"\n~@").~n~n~n',
@@ -2007,7 +2011,7 @@ testid_name_num_io_0(ID,Name,Example,Num,_IO):- ID = (TestID>Example+Num),!,fix_
 testid_name_num_io_0(V,TestID,Example,Num,IO):- atom(V), atom_concat(VV,'.json',V),!,testid_name_num_io_0(VV,TestID,Example,Num,IO).
 testid_name_num_io_0(ID,Name,Example,Num,IO):- atom(ID),atomic_list_concat(Term,'_',ID), Term\==[ID], 
   testid_name_num_io_0(Term,Name,Example,Num,IO),!.
-testid_name_num_io_0(ID,Name,Example,Num,IO):- atom_to_term_safe(ID,Term,_), Term\==ID, nonvar(Term), sensical_term(Term), 
+testid_name_num_io_0(ID,Name,Example,Num,IO):- arc_atom_to_term(ID,Term,_), Term\==ID, nonvar(Term), arc_sensical_term(Term), 
   testid_name_num_io_0(Term,Name,Example,Num,IO),!.
 %testid_name_num_io_0(ID,Name,_Example,_Num,_IO):- atom(ID),!,fix_id_1(ID,   Name),!.
 testid_name_num_io_0(ID,Name,_Example,_Num,_IO):- fix_id_1(ID,   Name),!. %, kaggle_arc_io(Name,Example+Num,IO,_).

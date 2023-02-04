@@ -20,7 +20,7 @@ handler_logicmoo_right_2(Request):-
    handler_logicmoo_menu,
   write('<div id="main">'),  
   write('<span style="font-size:20px;cursor:pointer;color: white; top: 0; left: 0; position: fixed" onclick="toggleNavL(\'mySideNavL\')">&#9776; Test Suites</span>'),
-  w_section("Accordion One Heading",(write('<p>Content for first Accordion.</p>'),w_section("Accordion Two Heading",write('<p>Content for Second Accordion.</p>'),true)),true),
+  w_section(title("Accordion One Heading"),(write('<p>Content for first Accordion.</p>'),w_section("Accordion Two Heading",write('<p>Content for Second Accordion.</p>'),true)),true),
   with_tag_style('ul','right: 300px; top: 0px', (
     %write_ddm('Suite Menu',ignore(report_suites)),
     %write_ddm('Test Menu',ignore(with_pre(test_webui_menu))),    

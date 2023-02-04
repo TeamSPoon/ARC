@@ -313,8 +313,8 @@ induce_from_training_pair(P2,Ex1,II1,OO1):-
       ignore(( warn_and_fail_on_bad_p2(cyan,orange,checking_training(P2,Ex1),P2,II1,OO1)))))).
 
 warn_and_fail_on_bad_p2(Cyan,Orange,Ex1,P2,I,Expect):- 
-  %w_section(warn_and_fail_on_bad_p2, )
- \+ \+ with_io_training_context(I,Expect,   
+ w_section(title(warn_and_fail_on_bad_p2),
+ ((\+ \+ with_io_training_context(I,Expect,   
    (( put_attr(M,expect_p2,Expect),
    (grid_call(P2,I,M)->OurOut=M;OurOut=I),
     count_difs(OurOut,Expect,Errors),
@@ -325,7 +325,7 @@ warn_and_fail_on_bad_p2(Cyan,Orange,Ex1,P2,I,Expect):-
         banner_grids(red,I,fail(Errors,P2,Ex1),OurOut,"WRONG"),
         nop(show_sameness_or_lameness(Cyan,Orange,warn_and_fail_on_bad_p2(P2,Ex1),OurOut,Expect,Errors)),
         !,fail)),!,
-   Errors == 0))).
+   Errors == 0)))))).
      
 
 

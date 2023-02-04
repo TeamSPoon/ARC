@@ -405,7 +405,7 @@ ensure_indiv_object(VM,IPoints,Obj):-
     u_dmsg(po(Points,Overrides)),
     make_indiv_object(VM,Overrides,Points,Obj))).
 
-make_point_object(VM,Overrides,C-Point,Obj):- 
+make_point_object(VM,Overrides,C-Point,Obj):- never_newd(C),
   must_det_ll(make_indiv_object(VM,Overrides,[C-Point],Obj)).
 
 globalpoints_maybe_bg([],[]):-!.
@@ -1155,7 +1155,8 @@ all_points_between(_Grid,_LowH,_LowV,_GridH,GridV,_Hi,Vi,Points,Points):- Vi>Gri
 all_points_between(Grid,LowH,LowV,GridH,GridV,Hi,Vi,PointsIn,PointsO):-
   (Hi>GridH -> (H = LowH, V is Vi+1) ; (H is Hi +1, V = Vi )),
    all_points_between(Grid,LowH,LowV,GridH,GridV,H,V,PointsIn,Points),
-  ((hv_c_value(Grid,C,Hi,Vi), hv_point(Hi,Vi,Point)) -> PointsO = [C-Point|Points] ; PointsO = Points).
+  ((hv_c_value(Grid,C,Hi,Vi), hv_point(Hi,Vi,Point)) -> 
+   (PointsO = [C-Point|Points],never_newd(C)) ; PointsO = Points).
 
 
 color_spec_or_fail(Grid,C,Hi,Vi):- hv_c_value(Grid,C,Hi,Vi),!.
@@ -1165,12 +1166,17 @@ color_spec_or_fail(Grid,C,Hi,Vi):- hv_c_value(Grid,C2,Hi,Vi),
   get_bgc(BGC),C\==BGC.
 */
 
+%never_newd(C):- plain_var(C),!,freeze(C, ignore(never_newd(C))).
+%never_newd(C):- compound(C),C =(_-_), dumpST,throw(never_newd(C)).
+never_newd(_).
+
 % Is there an advantage to counting down?
 all_points_between_include_bg(_Grid,_LowH,_LowV,_GridH,GridV,_Hi,Vi,Points,Points):- Vi>GridV,!.
 all_points_between_include_bg(Grid,LowH,LowV,GridH,GridV,Hi,Vi,Points,PointsO):-
   ((color_spec_or_fail_include_bg_more(Grid,C,Hi,Vi),
   hv_point(Hi,Vi,Point))
-     -> PointsT = [C-Point|Points] ; PointsT = Points),
+     -> (PointsT = [C-Point|Points], never_newd(C)) ; PointsT = Points),
+
    (Hi>GridH -> (H = LowH, V is Vi+1) ; (H is Hi +1, V = Vi )),!,
    all_points_between_include_bg(Grid,LowH,LowV,GridH,GridV,H,V,PointsT,PointsO).
 
@@ -1183,7 +1189,7 @@ color_spec_or_fail_include_bg_more(Grid,C,Hi,Vi):-
   hv_c_value_or(Grid,C2,Hi,Vi,BGC),
   (is_spec_color(C2,C);(atomic(C2),C=C2);(compound(C2),C=C2);(attvar(C2),C=C2);(fail,var(C2),C=BGC)).
   
-grid_cpoint(Grid,C-Point,Hi,Vi):- hv_c_value(Grid,C2,Hi,Vi),
+grid_cpoint(Grid,C-Point,Hi,Vi):- hv_c_value(Grid,C2,Hi,Vi),never_newd(C),
  (is_spec_color(C2,C);(atomic(C2),C=C2);(compound(C2),C=C2);(attvar(C2),C=C2);(fail,var(C2),C=C2)),
   hv_point(Hi,Vi,Point).
 
@@ -1283,6 +1289,9 @@ object_localpoints3(I,XX):-
 norm_grid(I,NormGrid):- indv_props(I,norm_grid(NormGrid))*->true;(fail,object_grid(I,Grid), normalize_grid(_NormOps,Grid,NormGrid)).
 
 norm_ops(I,NormOps):- indv_props(I,norm_ops(NormOps))*->true;(fail,object_grid(I,Grid), normalize_grid(NormOps,Grid,_NormGrid)).
+
+comp_grid(I,NormGrid):- indv_props(I,comp_grid(NormGrid))*->true;(fail,object_grid(I,Grid), compress_grid(_NormOps,Grid,NormGrid)).
+comp_ops(I,NormOps):- indv_props(I,comp_ops(NormOps))*->true;(fail,object_grid(I,Grid), compress_grid(NormOps,Grid,_NormGrid)).
 
 object_localpoints4(I,LPoints):-  
  must_det_ll((colorlesspoints(I,RotLCLPoints), 

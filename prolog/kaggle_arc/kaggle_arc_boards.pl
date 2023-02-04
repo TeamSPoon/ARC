@@ -285,7 +285,7 @@ must_ll(G):- G*->true;throw(failed(G)).
 detect_all_training_hints:- get_current_test(TestID),time(detect_all_training_hints(TestID)).
 detect_all_training_hints(TestID):- ensure_test(TestID),
   training_only_examples(ExampleNum), 
-  w_section(detect_all_training_hints(TestID>ExampleNum),
+  w_section(title(detect_all_training_hints(TestID>ExampleNum)),
     ( 
        forall(must_ll(kaggle_arc(TestID,ExampleNum,In,Out)),
            must_det_ll(detect_pair_hints(TestID,ExampleNum,In,Out))),
@@ -478,7 +478,8 @@ compute_and_show_test_hints(TestID):- format('~N'),
   list_common_props(TestID).
 */
 
-compute_and_show_test_hints(TestID):- w_section(compute_and_show_test_hints1(TestID)).
+compute_and_show_test_hints(TestID):- 
+ w_section(compute_and_show_test_hints1(TestID)).
 compute_and_show_test_hints1(TestID):- ensure_test(TestID),format('~N'),
   compute_all_test_hints(TestID),
   ignore(list_common_props_so_far(TestID)),!,
@@ -499,8 +500,7 @@ list_common_props_so_far(TestID):-
   %dash_chars,
   %print_test(TestID),
   %wots(SS,maplist(ptv1,SComs)),
-  dash_chars,
-  with_li_pre((format('~N % ~w:: ~@.~n',[list_common_props,ptv1(cyan+magenta,SComs)]))),
+  w_section(title(list_common_props),ptv1(cyan+magenta,SComs)),
   !.
 
 
@@ -685,10 +685,12 @@ min_list_unifier(_,_,_):-!.
 
 grid_hint_swap(IO,In,Out):-
  ignore(kaggle_arc(TestID,trn+N,In,Out)),
- maybe_compute_test_io_hints(IO,TestID,N,In,Out),
- ignore(print_single_pair(TestID,trn+N,In,Out)),
- with_li_pre(((format('~N%% ~w: ',[IO])),!,
-   forall((arc_test_property(TestID,gh(N),P,V)),ptv1(magenta+cyan,P=V)))).
+ w_section(title(grid_hint_swap(IO,TestID>trn+N)),
+ (maybe_compute_test_io_hints(IO,TestID,N,In,Out),
+   ignore(print_single_pair(TestID,trn+N,In,Out)),
+   with_li_pre(((format('~N%% ~w: ',[IO])),!,
+     forall((arc_test_property(TestID,gh(N),P,V)),
+       ptv1(magenta+cyan,P=V)))))).
 
 
 grid_hint_swap_io(IO,In,Out,Hint):-  grid_hint_recolor(IO,In,Out,Hint).

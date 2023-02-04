@@ -19,9 +19,9 @@ o1 to o1
 
 show_interesting_props(Named,ObjsI,ObjsO):-
   banner_lines(cyan,4),
-  show_interesting_props(input(Named),ObjsI),
+  show_interesting_named_props(input(Named),ObjsI),
   banner_lines(white,2),
-  show_interesting_props(output(Named),ObjsO),
+  show_interesting_named_props(output(Named),ObjsO),
   banner_lines(cyan,4).
 
 show_interesting_props(_Named,ObjsI,ObjsO):-
@@ -32,30 +32,34 @@ show_interesting_props_gojs(Objs):- u_dmsg(show_interesting_props_gojs(Objs)).
   %8731374e
 
 
-show_interesting_props(Named,Objs):-
-   get_interesting_groups(Named,Objs,Groups),
+show_interesting_named_props(Named,Objs):-
+   show_three_interesting_groups(Named,Objs,Groups),
    banner_lines(cyan,3),
    forall(member(G,Groups),
-     show_interesting_props2(Named,G)).
+     show_interesting_group(Named,G)).
 
-show_interesting_props2(Named,Title-Objs):- 
+show_interesting_group(Named,Title-Objs):- 
   banner_lines(cyan,2),
   pp(cyan, Title),
    print_ss(group(Named,Title)=Objs),
    banner_lines(cyan,1).
 
-get_interesting_groups(Named,In,Groups):-
+show_three_interesting_groups(Named,In,Groups):-
   extend_obj_proplist(In,Objs),
   findall(Prop,(member(obj(O),Objs),member(Prop,O), \+ skip_ku(Prop) ),Props),
-  sort_safe(Props,SProps),pp(props(Named)=SProps),
+  sort_safe(Props,SProps),
+  print_interesting_named_groups(props(Named),SProps),
   maplist(make_unifier,SProps,UProps), predsort(using_compare(numbered_vars),UProps,SUProps),  
-  pp(suprops(Named)=SUProps),
+  print_interesting_named_groups(suprops(Named),SUProps),
   %count_each(SProps,Props,GroupsWithCounts),
   length(Objs,L),
   group_quals(SUProps,SProps,L,KUProps),
-  pp(kuprops(Named)=KUProps),  
+  print_interesting_named_groups(kuprops(Named),KUProps),
   objs_with_props(KUProps,Objs,L,Groups),
   nop(print_ss(groups=Groups)).
+
+print_interesting_named_groups(Named,KUProps):- 
+   w_section(title(Named),pp(KUProps)).
 
 numbered_vars(A,B):- copy_term(A,B),numbervars(B,0,_,[attvars(skip)]).
 
@@ -232,7 +236,7 @@ group_prior_objs(Why,Objs,WithPriors):-
  length(N,Len),
  Title = Why+Len,
  nop(noisey_debug(print_premuted_objects(Title))),
- w_section(add_priors(Title),
+ w_section(title(add_priors(Title)),
   %print_tree(groupPriors=Lbls,[max_depth(200)]),
   add_priors(Lbls,Objs,WithPriors)))).
 
