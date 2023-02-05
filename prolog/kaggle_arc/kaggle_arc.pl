@@ -340,6 +340,7 @@ must_det_ll(X):-
   strip_module(X,M,P),functor(P,F,A),setup_call_cleanup(nop(trace(M:F/A,+fail)),(must_not_error(X)*->true;must_det_ll_failed(X)),
     nop(trace(M:F/A,-fail))).
 
+must_not_error(G):- is_cgi,!, catch(notrace(G),E,((u_dmsg(E=G)))).
 must_not_error(X):- \+ nb_current(cant_rrtrace,t),is_guitracer,!, call(X).
 must_not_error(X):- catch(X,E,((E=='$aborted';nb_current(cant_rrtrace,t))-> throw(E);(/*arcST,*/writeq(E=X),pp(etrace=X),
   rrtrace(visible_rtrace([-all,+exception]),X)))).

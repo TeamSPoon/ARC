@@ -102,7 +102,7 @@ arc_portray_nt(G0, false):- is_group(G0), into_list(G0,G), length(G,L),% L>1, !,
    dash_chars.
 
 
-arc_portray_nt(G,_False):- is_object(G), wots_html(S,ppt(G)), debug_as_grid(S,G).
+arc_portray_nt(G,_False):- is_object(G), wots(S,ppt(G)), debug_as_grid(S,G).
   %object_grid(G,OG), 
   %neighbor_map(OG,NG), !,
   %print_grid(object_grid,NG),nl_now,
@@ -543,6 +543,8 @@ pc_msg_color([P|_],C):- pp_msg_color(P,C).
 pc_msg_color(diff(P),C):- pp_msg_color(P,C).
 
 :- meta_predicate(wots_html(-,0)).
+wots_html(S,G):- \+ is_cgi,!,wots(S,G).
+wots_html(S,G):- wots(S,G),!.
 wots_html(S,G):- wots(SS,G),remove_huge_spaces(SS,S). 
 :- meta_predicate(wots_vs(-,0)).
 wots_vs(OOO,G):- wots(S,G),strip_vspace(S,SS), (atom_contains(SS,'\n') -> 
@@ -865,17 +867,15 @@ print_side_by_side_three(N,List):- \+ wants_html, is_cgi, !, with_toplevel_pp(ht
 print_side_by_side_three(N,List):- is_cgi,!,print_card_list(N,List).
 
 print_side_by_side_three(_,[]):-!.
-print_side_by_side_three(N,[B|C]):- 
-  nminus( N1, N ,1),
-  print_ss(N=B),!,
-  print_side_by_side_three(N1,C).
-
-/*
+print_side_by_side_three(N,[B|C]):-  nminus( N1, N ,1), print_ss(N=B),!, print_side_by_side_three(N1,C).
 print_side_by_side_three(N,[B,C]):- !, 
   nminus( N1, N ,1),
   grid_with_footer_string(N,B,BGS),
   grid_with_footer_string(N1,C,CGS),
   print_side_by_side0(BGS,_,CGS).
+
+
+
   %print_side_by_side_three(N,[L|List]):- is_object(L), print_side_by_side([L|List]),!, % length(List,L),
 %  nop((length(Left,5),append(Left,Rest,List),length(Rest,NN),NN>1,!, 
 %  print_side_by_side_three(N,[L|Left]),print_side_by_side_three(N,Rest))),!.
@@ -884,7 +884,7 @@ print_side_by_side_three(N,[A|BC]):-
   nminus(N1, N , 1), 
   wots_vs(BCGS,print_side_by_side_three(N1,BC)),
   print_side_by_side0(AGS,_,BCGS),!.
-*/
+
 
 nminus(N2,N,R):- number(N), N2 is N + R,!.
 nminus(N2:M,N:M,R):- number(N), N2 is N + R,!.
@@ -950,12 +950,29 @@ print_side_by_side(TitleColor,G1,N1,LW,G2,N2):-
 print_side_by_side_pref(TitleColor,G1,N1,LW,G2,N2):- is_cgi,!,  print_ss_html(TitleColor,G1,N1,LW,G2,N2).
 print_side_by_side_pref(TitleColor,G1,N1,LW,G2,N2):- print_side_by_side_ansi(TitleColor,G1,N1,LW,G2,N2).
 
-print_side_by_side_ansi(TitleColor,G1,N1,LW,G2,N2):-
+
+print_side_by_side_ansi(TitleColor,G1,N1,_LW,G2,N2):-
    g_out((nl_now,
    data_type(G1,S1), data_type(G2,S2),
    into_wqs_string(N1,NS1), into_wqs_string(N2,NS2),
+
    print_side_by_side0(G1,LW,G2),
-   print_side_by_side_footer(TitleColor,S1,NS1,LW,S2,NS2))).
+   print_side_by_side0(format_footer(TitleColor,NS1,S1),LW,format_footer(TitleColor,NS2,S2)))),!.
+   /*
+   print_grid(,G1),
+   print_grid(format_footer(TitleColor,NS2,S2),G2),
+   %print_side_by_side0(G1,LW,G2),
+   !)). %print_side_by_side_footer(TitleColor,S1,NS1,LW,S2,NS2))).
+*/
+print_side_by_side_ansi(TitleColor,G1,N1,_LW,G2,N2):-
+   g_out((nl_now,
+   data_type(G1,S1), data_type(G2,S2),
+   into_wqs_string(N1,NS1), into_wqs_string(N2,NS2),
+   %print_side_by_side0(G1,LW,G2),
+   print_grid(format_footer(TitleColor,NS1,S1),G1),
+   print_grid(format_footer(TitleColor,NS2,S2),G2),
+   %print_side_by_side0(G1,LW,G2),
+   !)). %print_side_by_side_footer(TitleColor,S1,NS1,LW,S2,NS2))).
 
 % SWAP
 print_side_by_side_footer(TitleColor,S1,N1,LW0,S2,N2):- number(LW0), LW0 < 0, LW is -LW0, !, 

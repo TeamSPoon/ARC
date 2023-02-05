@@ -118,7 +118,7 @@ individuation_macros(i_complete_generic3, [
    print_vm_info(pre_boxes),
    pbox_vm_special_sizes,
    print_vm_info(post_boxes),
-   keep_if_prop(or(iz(type(dot)),iz(type(sa_dots)))),                     
+   keep_if_prop(or(iz(type()),iz(type(sa_dots)))),                     
    remove_used_points,
    pbox_vm_special_sizes,
    remove_used_points,
@@ -250,8 +250,9 @@ show_individuated_learning(ID1,_ID2,ROptions,_GridIn,GridOut,InC,OutC):-
   =(InCR,InC), =(OutCR,OutC),
 
   if_wants_output_for(guess_some_relations,guess_some_relations(InC,OutC)),
+
   banner_lines(orange), %visible_order(InC,InCR),
-  if_wants_output_for(learn_group_mapping,(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
+   if_wants_output_for(learn_group_mapping,(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
    if_wants_output_for(learn_group_mapping_of_tst, (sub_var(tst,ID1),learn_group_mapping(InCR,OutCR))), 
    if_wants_output_for(show_safe_assumed_mapped, show_safe_assumed_mapped),
 
@@ -541,9 +542,7 @@ gather_texture(VM):-
     my_partition(is_fgp,TPoints,FGPoints,BGPoints),
     
     my_partition(is_texture([0]),FGPoints,Zeros,Rest),
-    %TT = [ /*'V','<','^','v','>'*/ ],
-    TT = [],
-    my_partition(is_texture(TT),Rest,Shooters,NFGPoints),
+    my_partition(is_texture([/*'V','<','^','v','>'*/]),Rest,Shooters,NFGPoints),
     append(BGPoints,NFGPoints,NPoints),
     maplist(remove_texture,NPoints,CPoints),!,
     points_to_grid(H,V,CPoints,NewGrid0),!,
@@ -594,10 +593,10 @@ remove_omem_trumped_by_boxes(VM):-
   gset(VM.objs) = New.
 remove_omem_trumped_by_boxes(VM,I,O):-
   member(O1,I),
-  has_prop(iz(type(pomem)),O1),
+  has_prop(iz(type()),O1),
   select(O2,I,II),
   has_prop(iz(flag(omem)),O2),
-  \+ has_prop(iz(type(pomem)),O2),
+  \+ has_prop(iz(type()),O2),
   O1\==O2, 
   globalpoints(O1,Ps1),globalpoints(O2,Ps2),
   Ps1\==Ps2,
@@ -607,10 +606,10 @@ remove_omem_trumped_by_boxes(VM,I,O):-
   erase_obj(GOID),
   remove_omem_trumped_by_boxes(VM,II,O).
 remove_omem_trumped_by_boxes(VM,I,O):-
-  member(O1,I), 
-  has_prop(iz(type(pomem)),O1),
+  member(O1,I),
+  has_prop(iz(type()),O1),
   select(O2,I,II),
-  has_prop(iz(type(pomem)),O2),
+  has_prop(iz(type()),O2),
   O1\==O2, 
   globalpoints(O1,Ps1),globalpoints(O2,Ps2),
   Ps1\==Ps2,
@@ -668,7 +667,7 @@ pixelate_swatches(VM,[Obj|Objs],[Obj|New]):-!, pixelate_swatches(VM,Objs,New).
 pixelate_swatches(_,[],[]).
 
 pixelate_swatches(VM,Obj,ObjsNew,New):-
-   has_prop(iz(type(pomem)),Obj),
+   has_prop(iz(type()),Obj),
    \+ has_prop(iz(type(subgrid(_,_,_,_))),Obj),
    has_prop(unique_colors_count(UCC),Obj),UCC>=3,
    area(Obj,Area), Area<30, Area>3,
@@ -1276,7 +1275,7 @@ maybe_1_3rd_mass(VM):-
    raddObjects(VM,ColorObj)))).
 
 
-:- decl_pt(detect_indvs(group,group,'-')).
+:- decl_pt(detect_indvs(group,group,-)).
 detect_indvs(In,Out,Grid):- individuate(In,Grid,Out).
 
 individuation_reserved_options(ROptions,Reserved,Options):- 
@@ -1393,11 +1392,10 @@ individuate_pair(ROptions,In,Out,IndvSI,IndvSO):-
   current_test_example(TestID,ExampleNum),
  [for(out,OutG),for(in,InG)] = Why,
  compile_and_save_current_test(Why),
-  sformat(Title,"individuate pair: ~w ~w",[TestID,ExampleNum]),
-  w_section(title(Title),
+ w_section(format("individuate pair: ~w ~w",[TestID,ExampleNum]),
   must_det_ll(((   
    first_grid(InG,OutG,IO),
-   ((IO==in_out; true)
+   (IO==in_out 
        -> individuate_two_grids(ROptions,InG,OutG,IndvSI,IndvSO)
               ; individuate_two_grids(IO,OutG,InG,IndvSO,IndvSI)))))),!.
 
@@ -4125,9 +4123,7 @@ individuator(i_nsew,[nsew]).
 % NEW SYSTEM individuator(i_colormass,[colormass]).
 individuator(i_alone_dots,[maybe_alone_dots_by_color(lte(40)),leftover_as_one]).
 %individuator(i_diags,[do_diags]).
-%individuator(i_by_color,[by_color(0), by_color(0,wbg), by_color(0,fg),  reset_points, by_color(1,black),by_color(1,bg), by_color(1,fg),
- ,
- []]).
+%individuator(i_by_color,[by_color(0), by_color(0,wbg), by_color(0,fg),  reset_points, by_color(1,black),by_color(1,bg), by_color(1,fg),/* ,*/[]]).
 individuator(i_by_color,[by_color(0,wbg), by_color(1,black),by_color(1,bg), by_color(1,fg)]).
 individuator(i_hybrid_shapes,[find_hybrid_shapes]).
 individuator(i_repair_patterns,[maybe_repair_in_vm(find_symmetry_code)]).
@@ -4153,9 +4149,7 @@ individuator(i_diag,[diamonds,maybe_alone_dots_by_color(lte(20)),colormass]).
 individuator(i_pbox,[i_nsew,leftover_as_one]).
 %individuator(i_diags,[do_diags]).
 individuator(i_by_color,[by_color(0), by_color(0,wbg), by_color(0,fg), 
-  reset_points, by_color(1,black),by_color(1,bg), by_color(1,fg),
-  % ,
-  []]).
+  reset_points, by_color(1,black),by_color(1,bg), by_color(1,fg),/* ,*/[]]).
 %individuator(i_sub_pbox,[sub_individuate(pbox_vm)]).
 %individuator(i_pbox,[maybe_pbox_vm,i_colormass]).
 individuator(i_mono_colormass,[fg_shapes(i_colormass)]).
@@ -4177,6 +4171,11 @@ individuator(i_mono,[save_as_obj_group(bg_shapes([subshape_both(h,nsew)])),
 
 */
 /*
+individuator(i_mono_nsew,
+ [sub_individuate(
+    bg_shapes([subshape_both(h,nsew)]),
+   ([save_as_obj_group(force_by_color),save_as_obj_group(i_colormass)])),do_ending]).
+*/
 %individuator(i_subobjs,[sub_indiv([save_as_obj_group(force_by_color),save_as_obj_group(i_colormass)])]).
 
 %individuator(i_bg_nsew,[bg_shapes(subshape_both(h,nsew))]).
@@ -4201,17 +4200,7 @@ individuator(i_mono,[save_as_obj_group(bg_shapes([subshape_both(h,nsew)])),
   %do_ending,
   %complete_broken_lines,
   %complete_occluded,
-  */
-% eeee
-/*
-individuator(i_mono_nsew,
- [sub_individuate(
-    bg_shapes([subshape_both(h,nsew)]),
-   ([save_as_obj_group(force_by_color),save_as_obj_group(i_colormass)])),do_ending]).
-*/
-
-% 
-find_symmetry_code(VM,Grid,RepairedResult,Code) :- 
+find_symmetry_code(VM,Grid,RepairedResult,Code):- 
   if_deepen_arc(find_symmetry_code1(VM,Grid,RepairedResult,Code)),!.
 
 %if_deepen_arc(_):- !, fail.

@@ -996,98 +996,131 @@ sprop_of(reshape_and_recolor,localpoints).
 % which objects deleted in I have no O counterpart
 % which objects are added in O are closest to other objects in I
 % which objects are added in O are closest to other objects in O
-related_formula(simply_copied,i_o,[pen,loc2D,rot2L,colorlesspoints]).
+related_formula(simply_copied,i_o,[loc2D,colorlesspoints,pen,rot2L]).
 related_formula(simply_moved,i_o,[pen,differ(loc2D),rot2L,colorlesspoints]).
 related_formula(simply_recolored,i_o,[differ(pen),loc2D,rot2L,colorlesspoints]).
-related_formula(simply_rotated,i_o,[pen,loc2D,differ(rot2L),colorlesspoints]).
-related_formula(simply_resized,i_o,[pen,loc2D,rot2L,norm_grid,differ(norm_ops)]).
+related_formula(simply_rotated,i_o,[pen,near(loc2D),differ(rot2L),colorlesspoints]).
+related_formula(simply_resized,i_o,[pen,near(loc2D),rot2L,norm_grid,differ(norm_ops)]).
 related_formula(i_triggers_o,i_o,[near(loc2D)]).
 related_formula(o_triggers_o,o_o,[near(loc2D)]).
 
 
-not_in_sub(P2CallList,Obj):- sub_var(Obj,P2CallList).
+not_in_sub(P2CallList,Obj):- member(E,P2CallList),(arg(3,E,O);arg(4,E,O)),Obj=O,!,fail.
+not_in_sub(_,_).
 
-remove_some(PAIRS,P2CallList,NEWPAIRS):-
+remove_some(P,_,P):-!.
+remove_some(PAIRS,P2CallList,NewPAIRS):-
   from_pairs_i(PAIRS,InC),
   from_pairs_o(PAIRS,OutC),
   include(not_in_sub(P2CallList),InC,NewInC),
   include(not_in_sub(P2CallList),OutC,NewOutC),!,
-  into_pairs(NewInC,NewOutC,NEWPAIRS).
+  into_pairs(NewInC,NewOutC,NewPAIRS).
 
 from_pairs_i(i_o(I,_),I).
-from_pairs_i_e(PAIRS,E):- from_pairs_i(PAIRS,I),member(E,I).
-
 from_pairs_o(i_o(_,O),O).
-from_pairs_o_e(PAIRS,E):- from_pairs_o(PAIRS,I),member(E,I).
+one_pair(i_o,PAIRS,X,Y):- from_pairs_i(PAIRS,IObjs),from_pairs_o(PAIRS,OObjs),!,member(X,IObjs),member(Y,OObjs).
+one_pair(o_o,PAIRS,X,Y):- from_pairs_o(PAIRS,Objs),!,select_two_objs(X,Y,Objs).
+one_pair(i_i,PAIRS,X,Y):- from_pairs_i(PAIRS,Objs),!,select_two_objs(X,Y,Objs).
 
-one_pair(i_o,PAIR,X,Y):- from_pairs_i(PAIR,IObjs),from_pairs_o(PAIR,OObjs),member(X,IObjs),member(Y,OObjs).
-one_pair(i_i,PAIR,X,Y):- from_pairs_i(PAIR,Objs),select(X,Objs,RestObjs),member(Y,RestObjs).
-one_pair(o_o,PAIR,X,Y):- from_pairs_o(PAIR,Objs),select(X,Objs,RestObjs),member(Y,RestObjs).
+select_two_objs(X,Y,Objs):- select(X,Objs,RestObjs),member(Y,RestObjs).
 
 into_pairs(I,O,i_o(I,O)).
 
 guess_some_relations(I,O):-
-  guess_some_relations(I,O,RelationsList),
+  guess_some_relations([],I,O,RelationsList),
   pp(RelationsList).
 
-guess_some_relations(I,O,RelationsList):-
+guess_some_relations(ExceptFor,I,O,RelationsList):-
   into_pairs(I,O,PAIRS),
-  guess_some_pair_relations(PAIRS, 
+  guess_some_pair_relations(ExceptFor,PAIRS, 
        [simply_copied,simply_moved,simply_rotated,simply_recolored,simply_resized,
           i_triggers_o,simply_deleted,o_triggers_o],  RelationsList).
 
+guess_some_pair_relations(ExceptFor,PAIRS,P2L,RelationsList):-
+   try_some_pair_relations(ExceptFor,PAIRS,P2L,P2CallList), P2CallList\==[],
+   append(P2CallList,ExceptFor,NewExceptFor),
+   guess_some_pair_relations(NewExceptFor,PAIRS,P2L,RelationsList).
 
-try_some_pair_relations(PAIRS,P2L,P2CallList):- 
+try_some_pair_relations(ExceptFor,PAIRS,P2L,P2CallList):- 
    (P2L\==[]->member(P2,P2L);true),
    related_formula(P2,Sel,Tests),
-   findall(pair(P2,Sel,O1,O2),(one_pair(Sel,PAIRS,O1,O2),equiv_props(Tests,O1,O2)),P2CallList).
+   Save = pair(P2,Sel,O1,O2),   
+   findall(Save,
+     (one_pair(Sel,PAIRS,O1,O2), \+ member(Save,ExceptFor), 
+      once(equiv_props(Tests,O1,O2))),P2CallList),
+   P2CallList\==[].
+
+io_is_correct(i_o,O1,O2):- indv_props(O1,iz(input)),indv_props(O1,iz(output)).
+io_is_correct(i_i,O1,O2):- indv_props(O1,iz(input)),indv_props(O1,iz(input)).
+io_is_correct(o_o,O1,O2):- indv_props(O1,iz(output)),indv_props(O1,iz(output)).
+  
+
+pair4(P2,Sel,O1,O2):-
+  related_formula(P2,Sel,Tests),
+  into_obj(_,O1),into_obj(_,O2),
+  io_is_correct(Sel,O1,O2),
+  one_pair(Sel,PAIRS,O1,O2),   
+  equiv_props(Tests,O1,O2).
 
 get_prop(Test,O1,Prop):- 
-      nonvar(Test),!,prop_specifier(Test,Prop),
-      indiv_prop(O1,Prop).
+  nonvar(Test),!,prop_specifier(Test,Prop),
+  indv_props(O1,Prop).
 get_prop(Test,O1,Prop):- 
-      indiv_prop_list(O1,PropList),
-      member(Prop,PropList),
-      prop_specifier(Test,Prop).
-        
+  indiv_prop_list(O1,PropList),
+  member(Prop,PropList),
+  prop_specifier(Test,Prop).
+    
 prop_specifier(F,Prop):- Prop=..[F,_].
 prop_specifier(F,Prop):- Prop=..[F,_,_].
 prop_specifier(Spec,Prop):- Spec=..[F,A],Prop=..[F,A,_].
 
-equiv_props([H|T],O1,O2):- is_list(T),!,equiv_props(H,O1,O2),equiv_props(T,O1,O2).
 equiv_props(Nil,_,_):- Nil==[],!.
-equiv_props(differ(Test),O1,O2):-
-  get_prop(Test,O1,Prop1),
-  get_prop(Test,O2,Prop2),
-  differ_props(Prop1,Prop2).
-equiv_props(near(Test),O1,O2):-
-  get_prop(Test,O1,Prop1),
-  get_prop(Test,O2,Prop2),
-  near_props(Prop1,Prop2).
-equiv_props(Test,O1,O2):-
+equiv_props([H|T],O1,O2):- is_list(T),!,equiv_props(H,O1,O2),equiv_props(T,O1,O2).
+equiv_props(Test,O1,O2):- var(Test),!,
   get_prop(Test,O1,Prop1),
   get_prop(Test,O2,Prop2),
   equiv_props(Prop1,Prop2).
+equiv_props(differ(Test),O1,O2):- !,
+  get_prop(Test,O1,Prop1),
+  get_prop(Test,O2,Prop2),
+  differ_props(Prop1,Prop2).
+equiv_props(near(loc2D),O1,O2):-
+  indv_props(O1,loc2D(X1,Y1)),
+  indv_props(O2,loc2D(X2,Y2)),!,
+  R is sqrt(abs(X1-X2)*abs(Y1-Y2)),
+  R<3.
+equiv_props(near(Test),O1,O2):- !,
+  get_prop(Test,O1,Prop1),
+  get_prop(Test,O2,Prop2),
+  near_props(Prop1,Prop2).
+equiv_props(loc2D,O1,O2):- !, 
+  indv_props(O1,loc2D(X,Y)),!,
+  indv_props(O2,loc2D(X,Y)).
+
+equiv_props(Test,O1,O2):- related_formula(Test,_,Expanded),!, equiv_props(Expanded,O1,O2).
+equiv_props(Test,O1,O2):- 
+  get_prop(Test,O1,Prop1),!,
+  get_prop(Test,O2,Prop2),
+  not_differ_props(Prop1,Prop2).
 /*equiv_props(Tests,O1,O2):-
     indiv_prop_list(O1,L1),
     indiv_prop_list(O2,L2),
     intersection(L1,L2,Tests,_D1,_D2).*/
 
 
-near_props(Prop1,Prop2):-  number(Prop1),number(Prop2),!,PropDif is abs(Prop1-Prop2),PropDif=<1.
-near_props(Prop1,Prop2):-  atom(Prop1),atom(Prop2),!.
+near_props(Prop1,Prop2):-  number(Prop1),!,number(Prop2),!,PropDif is abs(Prop1-Prop2),PropDif=<1.
+near_props(Prop1,Prop2):-  atom(Prop1),!,atom(Prop2),!.
 near_props(Prop1,Prop2):-  compound(Prop1),
   compound_name_arguments(Prop1,_,Args1),
   compound_name_arguments(Prop2,_,Args2),
   maplist(near_props,Args1,Args2).
-differ_props(Prop1,Prop2):- \+ equiv_props(Prop1,Prop2).
-equiv_props(Prop1,Prop2):- Prop1=@=Prop2.
+differ_props(Prop1,Prop2):- \+ not_differ_props(Prop1,Prop2).
+not_differ_props(Prop1,Prop2):- Prop1=Prop2,!.
+not_differ_props(Prop1,Prop2):- fail, compound(Prop1),
+  compound_name_arguments(Prop1,_,Args1),
+  compound_name_arguments(Prop2,_,Args2),
+  maplist(not_differ_props,Args1,Args2).
   
-guess_some_pair_relations(PAIRS,P2L,RelationsList):-
-     try_some_pair_relations(PAIRS,P2L,P2CallList), P2CallList\==[],
-     remove_some(PAIRS,P2CallList,NewPAIRS),
-    guess_some_pair_relations(NewPAIRS,P2L,RelationsList).
-
 
 
 :- style_check(+singleton).

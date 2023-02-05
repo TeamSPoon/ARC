@@ -113,13 +113,11 @@ w_section(Title,Goal,Spyable,Showing):-  Showing==maybe,!,
 w_section(Title,Goal,Spyable,Showing):-  Showing==toplevel,!, 
    ((flag('$w_section_depth',X,X), X=<1) -> w_section(Title,Goal,Spyable,'1'); w_section(Title,Goal,Spyable,'0')).
 
-w_section(Title,Goal,Spyable,Showing):-  is_cgi, !,
-  (into_0_or_1(Showing,Bool)->w_section_html(Title,Goal,Spyable,Bool);w_section_html(Title,Goal,Spyable,Showing)).
+w_section(Title,Goal,Spyable,Showing):- 
+  (into_0_or_1(Showing,Bool)->w_section_4(Title,Goal,Spyable,Bool);w_section_4(Title,Goal,Spyable,Showing)).
 
-w_section(Title,Goal,Spyable,Showing):- \+ is_cgi,!,
-  (into_0_or_1(Showing,Bool)->w_section_ansi(Title,Goal,Spyable,Bool);w_section_ansi(Title,Goal,Spyable,Showing)).
-
-
+w_section_4(Title,Goal,Spyable,Showing):- \+ is_cgi,!,w_section_ansi(Title,Goal,Spyable,Showing).
+w_section_4(Title,Goal,Spyable,Showing):- w_section_html(Title,Goal,Spyable,Showing).
 
 
 w_section_ansi(Title,Goal,Spyable,_Showing):- 
@@ -250,7 +248,7 @@ title_string_to_functor(Str,Goal,Spyable):- var(Str),!,invent_key2(Goal,Spyable)
 title_string_to_functor(Str,Goal,Spyable):- Str =="",!,invent_key2(Goal,Spyable).
 title_string_to_functor(A,_Goal,OO):- any_to_string(A,F), 
  any_to_string(A,F), to_case_breaks(F,X),include(\=(xti(_,punct)),X,O),maplist(arg(1),O,O1),
- maplist(toLowercase,O1,O2),maplist(any_to_atom,O2,O3),atomic_list_concat(O3,'_',OO).
+ maplist(any_to_atom,O1,O2),maplist(toLowercase,O2,O3),atomic_list_concat(O3,'_',OO).
 
 %header_arg(_:Term,E):-!,header_arg(Term,E).
 %header_arg(Term,E):- sub_term(E,Term), E\=@=Term, compound(E), \+ is_list(E).
@@ -997,11 +995,11 @@ arcproc_iframe(Request):-
  with_toplevel_pp(http,handler_arcproc_iframe(Request)),!.
 
 start_arc_html:-
-  nodebug,notrace,
+  %nodebug,notrace,
   format('Content-type: text/html~n~n',[]),!,
-  arc_set_stream(current_output,buffer(false)),
+  set_stream(current_output,buffer(false)),
  % arc_set_stream(current_output,write_errors(ignore)),
-  arc_set_stream(current_output,tty(false)), !.
+  set_stream(current_output,tty(false)), !.
  % arc_set_stream(current_output,representation_errors(unicode)),
   %arc_set_stream(current_output,encoding(octet)), arc_set_stream(current_output,encoding(utf8)),
 
@@ -1147,8 +1145,8 @@ is_arc_spyable(Spyable):- is_arc_spyable_known(Spyable).
 is_arc_spyable(Spyable):- luser_getval(Spyable,Show), once(Show==hide;Show==show), \+ is_arc_spyable_known(Spyable).
 
 if_wants_output_for(Spyable, Goal):-
-  (wants_output_for(Spyable)->w_section(title(Spyable),Goal,Spyable) ; 
-     w_section(title(Spyable),Goal,later)).
+  catch_log(((wants_output_for(Spyable)->w_section(title(Spyable),Goal,Spyable) ; 
+     w_section(title(Spyable),Goal,later)))).
     
 wants_output_for(Spyable):- is_cgi,!,
   (wants_output_for_1(Spyable)-> make_session_checkbox(Spyable,wants_output_for(Spyable),'<br/>',true) ;
@@ -1184,6 +1182,8 @@ is_bool_like('CHECKED','UNCHECKED').
 is_bool_like('CHECKED',''). 
 % is_bool_like(show,hide).
 is_bool_like(always,never).
+is_bool_like(later,never).
+
 is_bool_like(show,hide).
 is_bool_like(shown,hidden).
 

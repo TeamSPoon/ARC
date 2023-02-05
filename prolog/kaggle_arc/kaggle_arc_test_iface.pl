@@ -299,7 +299,7 @@ do_menu_key(Key):- atom(Key),atom_concat(Atom,' ',Key),!,do_menu_key(Atom).
 do_menu_key(O):- ground(O), O = (TestID>ExampleNum*_IO),!,set_example_num(ExampleNum),set_current_test(TestID),
   click_grid(O).
 do_menu_key(E):- ground(E), E = (TestID>ExampleNum),!,set_example_num(ExampleNum),set_current_test(TestID),
-  set_pair_mode(single_pair),show_selected_object.
+  set_pair_mode(whole_test),show_selected_object.
 do_menu_key(E):- ground(E), fix_test_name(E,TestID),is_valid_testname(TestID),set_current_test(TestID),!,
   set_pair_mode(whole_test),show_selected_object.
 
