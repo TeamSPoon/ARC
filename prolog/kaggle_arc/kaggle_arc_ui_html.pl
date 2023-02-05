@@ -9,7 +9,7 @@
 % =swipl kaggle_arc.pl=
 % =:- start_arc_http_server.=
 %
-% Then navigate to http://localhost:1766 in your browser
+% Then navigate to http://localhost:1677 in your browser
 
 /*
 :- module(kaggle_arc_ui_html,
@@ -116,18 +116,25 @@ w_section(Title,Goal,Spyable,Showing):-  Showing==toplevel,!,
 w_section(Title,Goal,Spyable,Showing):-  is_cgi, !,
   (into_0_or_1(Showing,Bool)->w_section_html(Title,Goal,Spyable,Bool);w_section_html(Title,Goal,Spyable,Showing)).
 
-w_section(Title,Goal,Spyable,_Showing):- \+ is_cgi,!,
+w_section(Title,Goal,Spyable,Showing):- \+ is_cgi,!,
+  (into_0_or_1(Showing,Bool)->w_section_ansi(Title,Goal,Spyable,Bool);w_section_ansi(Title,Goal,Spyable,Showing)).
+
+
+
+
+w_section_ansi(Title,Goal,Spyable,_Showing):- 
   nl_if_needed,dash_chars,
+  MU = '', % was 'mu'
   once(nb_current('$w_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),
-  setup_call_cleanup(format('~N~w!mu~w! ~@ |~n',[Ident, Spyable, print_title(Title)]),
+  setup_call_cleanup(format('~N~w~w!~w! ~@ |~n',[MU,Ident, Spyable, print_title(Title)]),  
                      locally(b_setval('$w_section',[c(Spyable)|Was]),
                                       once(tabbed_print_im(Depth+2,in_w_section_depth(Goal)))), 
-                     format('~N~w\u00A1mu~w\u00A1 ',[Ident, Spyable])).
+                     format('~N~w\u00A1~w~w\u00A1 ',[Ident, MU,Spyable])).
 
 in_w_section_depth(Goal):- 
    setup_call_cleanup(
        flag('$w_section_depth',Depth,Depth+1),
-       once(Goal),
+       catch(once(Goal),E,u_dmsg(E-->Goal)),
        flag('$w_section_depth',_,Depth)).
 
 clip_string(Attr,Len,SAttr):- atom_length(Attr,SLen),clip_string(SLen,Attr,Len,SAttr).
@@ -159,10 +166,13 @@ w_section_html(Title,Goal,_Spyable,Showing):-
     ->format('<script>document.getElementById("~w").click();</script>',[Sym]))))))).
     
 
+call_e_dmsg(Goal):- catch(Goal,E,(u_dmsg(error_r(E=Goal)),writeln(E=Goal))).
+
+
 goal_new_lines(Goal,NewChars):-
   current_output(Out),
   character_count(Out,Start),
-  ignore(catch(Goal,E,u_dmsg(error_r(E,Goal,E)))),
+  ignore(call_e_dmsg(Goal)),
   character_count(Out,End),
   NewChars is End - Start.
 
@@ -183,14 +193,14 @@ expandable_mode(How):- luser_getval(expansion,V),!,How==V.
 :- luser_setval(expansion,bfly).
 
 
-call_maybe_det(Goal,Det):- true,call(Goal),deterministic(Det),true.
+call_maybe_det(Goal,Det):- true,call_e_dmsg(Goal),deterministic(Det),true.
 
 
 format_s(S):- atomic(S),!,format('~w',[S]).
 format_s(S):- format('~s',[S]),flush_output.
 
-tabbed_print_im(_Tab,Goal):- expandable_inlines, !, call(Goal).
-tabbed_print_im(Tab,Goal):- Tab2 is Tab, call_w_pad(Tab2,Goal).
+tabbed_print_im(_Tab,Goal):- expandable_inlines, !, call_e_dmsg(Goal).
+tabbed_print_im(Tab,Goal):- Tab2 is Tab, call_w_pad(Tab2,call_e_dmsg(Goal)).
 
 :- meta_predicate(trim_newlines(0)).
 trim_newlines(Goal):- wots(S,Goal),trim_leading_trailing_whitespace(S,SS),write(SS).
@@ -212,8 +222,19 @@ invent_key(Term,Spyable):- \+ compound(Term),!, must_det_ll((
 invent_key(Term,Spyable):- invent_key2(Term,Spyable).
 invent_key2(_:Term,Spyable):- !, invent_key(Term,Spyable).
 %invent_key2((Term,_),Spyable):- !, invent_key(Term,Spyable).
-invent_key2(Term,DT):- sub_term(E,Term), compound(E), \+ overly_plain_functor(E), data_type(E,DT),!.
-invent_key2(Term,DT):- data_type(Term,DT).
+invent_key2(Term,DT):- sub_term(E,Term), compound(E), \+ overly_plain_functor(E), one_invent_key(E,DT),!.
+invent_key2(Term,DT):- one_invent_key(Term,DT).
+
+one_invent_key(Term,Spyable):- \+ compound(Term), invent_key(Term,Spyable),!.
+one_invent_key(Term,Spyable):- compound_name_arguments(Term,F,Args),
+   include(is_simple_title_arg,Args,ArgsO),
+   (ArgsO=@=Args-> =(Term,Spyable) ; compound_name_arguments(Spyable,F,ArgsO)),!.
+
+
+is_simple_title_arg(X):- \+ compound(X),!, \+ is_gridoid(X),!.
+is_simple_title_arg(_>_):-!.
+is_simple_title_arg(_+_):-!.
+is_simple_title_arg(X):- arg(1,X,A), \+ compound(A), !, \+ is_gridoid(A),!.
 
 overly_plain_functor(Term):- is_list(Term).
 overly_plain_functor(_:_):- !.
@@ -275,9 +296,14 @@ start_arc_http_server :-
     catch_log((default_port(Port),start_arc_http_server(Port))),
     nop(catch_log((start_arc_http_server(3020)))).
 
+
+
 start_arc_http_server(Port):- atom_concat('http@',Port,IDName),thread_property(ID,status(running)),ID==IDName,!.
 start_arc_http_server(Port) :-
-    catch_log(http_server(http_dispatch, [port(Port),workers(1)])).
+   % catch_log(http_server(http_dispatch, [port(Port),ip('127.0.0.1'),workers(2)])),
+   % catch_log(http_server(http_dispatch, [port(Port),ip('10.0.0.122'),workers(2)])),
+    catch_log(http_server(http_dispatch, [port(Port),ip('10.0.0.122'),workers(10)])),
+    !.
 
 stop_arc_http_server :-
     default_port(Port),
@@ -285,7 +311,8 @@ stop_arc_http_server :-
 stop_arc_http_server(Port) :-
     http_stop_server(Port, []).
 
-default_port(1766).
+default_port(Port):- current_prolog_flag(http_port,Port).
+default_port(1677).
 
 %! web_socket_echo(+WebSocket) is nondet.
 % This predicate is used to read in a message via websockets and echo it
@@ -538,7 +565,7 @@ test_webui_menu :- as_if_webui((write_menu_opts('i'))).
 write_nav(ID,LR,_Title,Goal):- 
  format('<div id="~w" class="sidenav~w">
   <a href="javascript:void(0)" class="closebtn" onclick="toggleNav~w(\'~w\')">&times;</a>',[ID,LR,LR,ID]),
-  call(Goal),write('</div>').
+  call_e_dmsg(Goal),write('</div>').
 
 
 
@@ -627,7 +654,7 @@ bformatw(G):- g_out(bformat(G)).
 
 with_style(S,G):-
  (arc_html -> 
-   sccs(format('<span style="~w">',[S]),once(G),write('</span>')) 
+   sccs(format('<span style="~w">',[S]),call_e_dmsg(G),write('</span>')) 
     ; call(G)).
 
 html_echo(G)--> [G].
@@ -650,7 +677,7 @@ print_card_n(N,Var):- \+ callable(Var),!,print_tb_card(print_wrappable(Var),prin
 print_card_n(N,H):- H= [I], is_object(I), !,  print_card_n(N,I).
 print_card_n(N,H):- H= [I], is_gridoid(I), \+ is_gridoid(H), !,  print_card_n(N,I).
 
-print_card_n(N,card(T,B)):- !, print_tb_card(T,(wprl(N),call(B))).
+print_card_n(N,card(T,B)):- !, print_tb_card(T,(wprl(N),call_e_dmsg(B))).
 print_card_n(N,GF):- grid_footer(GF,G,F), is_gridoid(G), data_type(G,DT), print_tb_card(print_grid(G),wprl([N,DT,F])),!.
 
 print_card_n(N,I):- is_object(I),g_display(I,G),print_card_n(N,G),!.
@@ -658,7 +685,7 @@ print_card_n(N,G):- is_gridoid(G), data_type(G,DT), print_tb_card(print_grid(G),
 
 print_card_n(_,H):- string(H),!,write(H).
 print_card_n(_,H):- atom(H),!,write(H).
-print_card_n(N,H):- callable_arity(H,0),print_tb_card(call(H),wprl([N,H])),!.
+print_card_n(N,H):- callable_arity(H,0),print_tb_card(call_e_dmsg(H),wprl([N,H])),!.
 print_card_n(N,H):- callable_arity(H,1),call(H,R), data_type(R,DT),print_tb_card(wprl([N,H,DT]),R),!.
 print_card_n(N,H):- data_type(H,DT),print_tb_card(pp(H),wprl([N,DT])),!.
 
@@ -666,11 +693,11 @@ print_card_n(N,H):- data_type(H,DT),print_tb_card(pp(H),wprl([N,DT])),!.
 print_tb_card(Top,Bottem):- \+ is_cgi, !, sccs(Top,nl_if_needed,wprl(Bottem)),!.
 
 print_tb_card(Top,Bottem):- 
-  wots(S,once(Bottem)),
+  wots(S,call_e_dmsg(Bottem)),
   replace_in_string(['<br>'='\n','"'=' ','<hr>'='\n','<br/>'='\n','\n'=' ','  '=' ','  '=' '],S,RS),
   %RS=S,
   locally(nb_setval(grid_footer,RS),
-    (once(Top),
+    (call_e_dmsg(Top),
      ignore((nb_current(grid_footer,S),S\==[],write(S))))).
 /*
 print_tb_card(Top,Bottem):-
@@ -695,9 +722,10 @@ wprl(L):- is_list(L), include(non_empty_wprl,L,LL),L\=@=LL,wprl(LL).
 wprl([H|T]):- wprl(H),write_nbsp,wprl(T),!.
 wprl([H|T]):- wqs([H|T]),!.
 %wprl([H]):- wprl(H),!.
-wprl(H):- callable_arity(H,0),is_writer_goal(H),call(H),!.
+wprl(H):- callable_arity(H,0),is_writer_goal(H),call_e_dmsg(H),!.
 %wprl(H):- callable_arity(H,0),call(H),!.
 wprl(H):- ppt(H),!.
+
 
 non_empty_wprl(V):- \+ empty_wprl(V).
 empty_wprl(V):- var(V),!,fail.
@@ -944,7 +972,7 @@ pri=======================nt_grid_http_bound(BGC,SH,SV,EH,EV,Grid):-
 
 write_ddm(Title,Goal):- 
  write('<li class="dropdown"><a href="javascript:void(0)" class="dropbtn">'),wqs(Title),
- write('</a><div class="dropdown-content">'),call(Goal),write('</div>').
+ write('</a><div class="dropdown-content">'),call_e_dmsg(Goal),write('</div>').
 term_to_www_encoding(Goal,A):- with_output_to(string(S),writeq(Goal)),www_form_encode(S,A).
 
 write_nav_cmd(Info,Cmd):- \+ compound(Cmd), !, write_nav_cmd(Info,navCmd(Cmd)).
@@ -1092,7 +1120,7 @@ show_selected_object:-
    ignore(show_console_info),   
    ignore(print_test),
    section_break,
-   w_section(title(edit1term),call(edit1term)),
+   w_section(title(edit1term),call_e_dmsg(edit1term)),
    show_http_session.
 
 
@@ -1105,36 +1133,36 @@ show_indiv_filters(BR):-
    forall(member(N,Set),once((ui_option_checkbox(N,C,TF),ignore(make_session_checkbox(N,C,BR,TF=='1'))))))).
 
 ui_option_checkbox(doDiagonals,'doDiagonals','1').
-ui_option_checkbox(Showable,title(Showable),Str):- vm_bool_opts(Showable,Str).
-ui_option_checkbox(Showable,wants_output_for(Showable),Str):- is_arc_spyable(Showable),
-  (wants_output_for(Showable)->Str='1';Str='0').
+ui_option_checkbox(Spyable,title(Spyable),Str):- vm_bool_opts(Spyable,Str).
+ui_option_checkbox(Spyable,wants_output_for(Spyable),Str):- is_arc_spyable(Spyable),
+  (wants_output_for(Spyable)->Str='1';Str='0').
 
 :- dynamic(is_arc_spyable_deduced/1).
 is_arc_spyable_known(NonAtom):- var(NonAtom),!,fail.
-is_arc_spyable_known(Showable):- is_arc_spyable_deduced(Showable).
-is_arc_spyable_known(Showable):- arc_spyable_keyboard_key(Showable,_).
+is_arc_spyable_known(Spyable):- is_arc_spyable_deduced(Spyable).
+is_arc_spyable_known(Spyable):- arc_spyable_keyboard_key(Spyable,_).
 
 is_arc_spyable(debug).  is_arc_spyable(info).
-is_arc_spyable(Showable):- is_arc_spyable_known(Showable).
-is_arc_spyable(Showable):- luser_getval(Showable,Show), once(Show==hide;Show==show), \+ is_arc_spyable_known(Showable).
+is_arc_spyable(Spyable):- is_arc_spyable_known(Spyable).
+is_arc_spyable(Spyable):- luser_getval(Spyable,Show), once(Show==hide;Show==show), \+ is_arc_spyable_known(Spyable).
 
-if_wants_output_for(Option, Goal):-
-  (wants_output_for(Option)->w_section(title(Option),Goal,Option) ; 
-     w_section(title(Option),Goal,later)).
+if_wants_output_for(Spyable, Goal):-
+  (wants_output_for(Spyable)->w_section(title(Spyable),Goal,Spyable) ; 
+     w_section(title(Spyable),Goal,later)).
     
-wants_output_for(Showable):- is_cgi,!,
-  (wants_output_for_1(Showable)-> make_session_checkbox(Showable,wants_output_for(Showable),'<br/>',true) ;
-    (make_session_checkbox(Showable,wants_output_for(Showable),'<br/>',false),!,fail)).
-wants_output_for(Showable):- 
-   (wants_output_for_1(Showable)-> pp(showing(Showable));
-     ((arc_spyable_keyboard_key(Showable,Spyable)->pp(skipping(Showable,key(Spyable)));(pp(skipping(Showable)))),!,fail)).
+wants_output_for(Spyable):- is_cgi,!,
+  (wants_output_for_1(Spyable)-> make_session_checkbox(Spyable,wants_output_for(Spyable),'<br/>',true) ;
+    (make_session_checkbox(Spyable,wants_output_for(Spyable),'<br/>',false),!,fail)).
+wants_output_for(Spyable):- 
+   (wants_output_for_1(Spyable)-> pp(showing(Spyable));
+     ((arc_spyable_keyboard_key(Spyable,SpyableKey)->pp(skipping(Spyable,key(SpyableKey)));(pp(skipping(Spyable)))),!,fail)).
 
-wants_output_for_1(Showable):- nb_current(menu_key,_), arc_spyable_keyboard_key(Showable,Spyable), menu_or_upper(Spyable),!.
-wants_output_for_1(Showable):- is_arc_spyable_known(Showable), !, \+ luser_getval(Showable, hide).
-wants_output_for_1(Showable):- \+ is_arc_spyable_known(Showable), 
-   assertz_if_new(is_arc_spyable_deduced(Showable)), 
-   luser_setval(Showable,show),!,
-   nop(wants_output_for_1(Showable)).
+wants_output_for_1(Spyable):- nb_current(menu_key,_), arc_spyable_keyboard_key(Spyable,SpyableKey), menu_or_upper(SpyableKey),!.
+wants_output_for_1(Spyable):- is_arc_spyable_known(Spyable), !, \+ luser_getval(Spyable, hide).
+wants_output_for_1(Spyable):- \+ is_arc_spyable_known(Spyable), 
+   assertz_if_new(is_arc_spyable_deduced(Spyable)), 
+   luser_setval(Spyable,show),!,
+   nop(wants_output_for_1(Spyable)).
    
 
 
@@ -1203,7 +1231,7 @@ show_console_info:-
   show_webui_call(arc_html),
   show_webui_call(em_html),!.
 
-show_webui_call(G):- (call(G)*->pp(webui_call_success(G));pp(webui_call_failed(G))).
+show_webui_call(G):- (call_e_dmsg(G)*->pp(webui_call_success(G));pp(webui_call_failed(G))).
 
 /*
 
@@ -1303,7 +1331,7 @@ arc_script_header2:-
 
 
 
-arc_weto(G):- call(G).
+arc_weto(G):- call_e_dmsg(G).
 
 
 %:- luser_default(cmd,print_test).

@@ -377,6 +377,9 @@ preview_suite:- luser_getval(test_suite_name,X),preview_suite(X).
 do_suite_number(Num):- Num>=300, test_suite_list(L), nth_above(300,Num,L,SuiteX),!,set_test_suite(SuiteX),
   preview_suite.
 
+select_suite(N):- string(N),atom_string(A,N),select_suite(A),!.
+select_suite(N):- preview_suite(N).
+
 preview_suite(Num):- number(Num),!,do_suite_number(Num).
 preview_suite(Name):- \+ is_list(Name),set_test_suite(Name),
  w_section(["Suite:",Name],

@@ -861,15 +861,22 @@ sort_by_vertical_size(List,Sorted):- lists:number_list(List, 1, Numbered),
 
 grid_with_footer_string(N,C,CGS):- always_grid_footer(C,CG,CF),wots_vs(CGS,print_grid(CF:N,CG)).
 
-print_side_by_side_three(N,List):- \+ is_cgi/**/, is_cgi, !, with_toplevel_pp(http,print_side_by_side(N,List)).
+print_side_by_side_three(N,List):- \+ wants_html, is_cgi, !, with_toplevel_pp(http,print_side_by_side(N,List)).
 print_side_by_side_three(N,List):- is_cgi,!,print_card_list(N,List).
+
 print_side_by_side_three(_,[]):-!.
+print_side_by_side_three(N,[B|C]):- 
+  nminus( N1, N ,1),
+  print_ss(N=B),!,
+  print_side_by_side_three(N1,C).
+
+/*
 print_side_by_side_three(N,[B,C]):- !, 
   nminus( N1, N ,1),
   grid_with_footer_string(N,B,BGS),
   grid_with_footer_string(N1,C,CGS),
   print_side_by_side0(BGS,_,CGS).
-%print_side_by_side_three(N,[L|List]):- is_object(L), print_side_by_side([L|List]),!, % length(List,L),
+  %print_side_by_side_three(N,[L|List]):- is_object(L), print_side_by_side([L|List]),!, % length(List,L),
 %  nop((length(Left,5),append(Left,Rest,List),length(Rest,NN),NN>1,!, 
 %  print_side_by_side_three(N,[L|Left]),print_side_by_side_three(N,Rest))),!.
 print_side_by_side_three(N,[A|BC]):-  
@@ -877,6 +884,7 @@ print_side_by_side_three(N,[A|BC]):-
   nminus(N1, N , 1), 
   wots_vs(BCGS,print_side_by_side_three(N1,BC)),
   print_side_by_side0(AGS,_,BCGS),!.
+*/
 
 nminus(N2,N,R):- number(N), N2 is N + R,!.
 nminus(N2:M,N:M,R):- number(N), N2 is N + R,!.
@@ -909,14 +917,14 @@ print_side_by_side(G1N1,G2N2):-
    always_grid_footer(G1N1,G1,N1),
    always_grid_footer(G2N2,G2,N2),
    pp_msg_color(N1,TitleColor),!,
-   print_side_by_side6(TitleColor,G1,N1,_LW,G2,N2),!.
+   print_side_by_side_pref(TitleColor,G1,N1,_LW,G2,N2),!.
 
 print_side_by_side(Info,G1N1,G2N2):- is_gridoid(G1N1),!,
   print_side_by_side_msg(Info,G1N1,G2N2).
 print_side_by_side(TitleColor,G1N1,G2N2):- is_color(TitleColor),!,
   always_grid_footer(G1N1,G1,N1),
   always_grid_footer(G2N2,G2,N2),  
-  print_side_by_side6(TitleColor,G1,N1,_LW,G2,N2).
+  print_side_by_side_pref(TitleColor,G1,N1,_LW,G2,N2).
 print_side_by_side(X,Y,Z):- (var(Y);number(Y)),!, g_out((nl_now,print_side_by_side0(X,Y,Z))),!.
 print_side_by_side(Info,G1N1,G2N2):- 
   print_side_by_side_msg(Info,G1N1,G2N2).
@@ -926,17 +934,17 @@ print_side_by_side_msg(Info,G1N1,G2N2):-
   always_grid_footer(G2N2,G2,N2),
   pp_msg_color(Info,TitleColor),
   into_wqs_string(Info,String),
-  print_side_by_side6(TitleColor,G1,String+N1,_LW,G2,N2).
+  print_side_by_side_pref(TitleColor,G1,String+N1,_LW,G2,N2).
 
 :- meta_predicate(print_side_by_side(+,+,+,+,+)).
 print_side_by_side(TitleColor,G1,N1,G2,N2):- 
-  print_side_by_side6(TitleColor,G1,N1,_LW,G2,N2).
+  print_side_by_side_pref(TitleColor,G1,N1,_LW,G2,N2).
 
 :- meta_predicate(print_side_by_side(+,+,+,?,+,+)).
 print_side_by_side(TitleColor,G1,N1,LW,G2,N2):- 
-  print_side_by_side6(TitleColor,G1,N1,LW,G2,N2).
+  print_side_by_side_pref(TitleColor,G1,N1,LW,G2,N2).
 
-:- meta_predicate(print_side_by_side6(+,+,+,?,+,+)).
+:- meta_predicate(print_side_by_side_pref(+,+,+,?,+,+)).
 
 
 print_side_by_side_pref(TitleColor,G1,N1,LW,G2,N2):- is_cgi,!,  print_ss_html(TitleColor,G1,N1,LW,G2,N2).

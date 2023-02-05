@@ -600,6 +600,7 @@ function hidePanel(name,keepGoing) {
 function clearMenu() {
 	navWindow = null;
 	var e = top.document.getElementById("navbar_items");
+	if(e==null) return;
 	var child = e.lastElementChild; 
 	while (child) {
 		e.removeChild(child);

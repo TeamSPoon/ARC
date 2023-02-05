@@ -2048,12 +2048,13 @@ use_test_associatable_group_real(In,SolutionO):-
  must_det_ll((
   once((listify(In,In1), visible_order_fg(In1,In2))), 
   findall(Sol,(member(In3,In2),once(use_test_associatable_obj(In3,Sol))),Solution),
-  flatten(Solution,SolutionF),visible_order_fg(SolutionF,SolutionO))),
-  print_side_by_side(use_test_associatable,In,SolutionO).
+  flatten(Solution,SolutionF),visible_order_fg(SolutionF,SolutionO))), 
+ w_section(use_test_associatable_group_real,
+    print_side_by_side(use_test_associatable_group_real,In2,SolutionO)).
 
 use_test_associatable_group(I,O):- 
   use_test_associatable_group_real(I,O),
-  print_side_by_side(ut_associatable_group,I,O).
+  nop(print_side_by_side(real_associatable_group,I,O)).
 
 gather_assumed_mapped(A,B):-
   call_in_testid(arc_cache:assumed_mapped([A],[B])).

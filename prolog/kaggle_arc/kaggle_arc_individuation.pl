@@ -248,8 +248,10 @@ show_individuated_sections(ID1,ID2,ROptions,_GridIn,_GridOut,InC,OutC):-
 show_individuated_learning(ID1,_ID2,ROptions,_GridIn,GridOut,InC,OutC):- 
  must_det_ll((
   =(InCR,InC), =(OutCR,OutC),
+
+  if_wants_output_for(guess_some_relations,guess_some_relations(InC,OutC)),
   banner_lines(orange), %visible_order(InC,InCR),
-   if_wants_output_for(learn_group_mapping,(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
+  if_wants_output_for(learn_group_mapping,(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
    if_wants_output_for(learn_group_mapping_of_tst, (sub_var(tst,ID1),learn_group_mapping(InCR,OutCR))), 
    if_wants_output_for(show_safe_assumed_mapped, show_safe_assumed_mapped),
 

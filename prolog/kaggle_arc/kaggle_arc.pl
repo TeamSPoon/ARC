@@ -238,6 +238,7 @@ pfcAddF(P):-
 :- set_prolog_flag(use_arc_www,true).
 :- set_prolog_flag(use_arc_swish,false).
 :- set_prolog_flag(use_arc_bfly,false).
+:- set_prolog_flag(http_port,1766).
 
 % false = command line (no butterfly)
 % butterfly (arc_html.sh)
@@ -1075,4 +1076,4 @@ gui_flag(GUI):- (current_prolog_flag(gui, GUI)-> true ;
 :- bfly_startup.
 :- endif.
 :- set_prolog_flag(autoload,true).
-
+%:- demo.
