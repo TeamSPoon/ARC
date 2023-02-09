@@ -58,6 +58,19 @@ cpoints_to_shapepoints(GPoints,RotG,OffsetX,OffsetY,ShapePoints,PenColors):-
   add_global_points(PLPoints,Grid,Grid),
   grid_to_shape(Grid,RotG,OffsetX,OffsetY,ShapePoints,PenColors),!.
 
+gpoints_to_iv_info(Cmpd,ShapePoints,LocX,LocY,PenColors,RotG,Iv,_Overrides,[C-point_01_01],[[C]],OffsetX,OffsetY,SizeX,SizeY,CentX,CentY):-
+    is_list(Cmpd),Cmpd=[CP], compound(CP),
+    (CP=(C-P)),!,
+    SizeX=1,SizeY=1,
+    ShapePoints=[point_01_01],
+    RotG=sameR,
+    OffsetX=1,OffsetY=1,
+    CentX=LocX,CentY=LocY,
+    hv_point(LocX,LocY,P),
+    PenColors=[cc(C,1)],
+    lpoints_to_iv_info(ShapePoints,LocX,LocY,PenColors,RotG,Iv).
+
+
 gpoints_to_iv_info(GPoints,ShapePoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPoints,Grid,OffsetX,OffsetY,SizeX,SizeY,CentX,CentY):-
   %points_range(GPoints,LocX,LocY,HiH,HiV,_HO,_VO), once(member(vis2D(SizeX,SizeY),Overrides);(SizeX is HiH-LocX+1,SizeY is HiV-LocY+1)),
   po_loc2D_vis2D(GPoints,Overrides,LocX,LocY,SizeX,SizeY),  
@@ -1312,13 +1325,17 @@ maybe_undo_effect_points(OffsetX,OffsetY,RotLCLPoints,RotG,LPoints):- must_det_l
 
 combine_pen(A,B,C,D):- nonvar(D),!,combine_pen(A,B,C,V),!,V=D.
 combine_pen([],_,_,[]):-!.
-combine_pen([_-L|LL],C,Reset,XX):- nonvar(L),!,combine_pen([L|LL],C,Reset,XX).
 combine_pen(X,[],Reset,XX):- my_assertion(Reset\==[]), !,combine_pen(X,Reset,Reset,XX).
+
+combine_pen([P],[cc(C,_)|_],_,[C-P]):- atom(P),!.
+combine_pen([_-L|LL],C,Reset,XX):- nonvar(L),!,combine_pen([L|LL],C,Reset,XX).
 %combine_pen([_-P1|L],C,Reset,[C-P1|XX]):- is_color(C),!,
 combine_pen([P1|L],C,Reset,CP1XX):- \+ is_list(C), is_color(C),!,[C-P1|XX]=CP1XX, 
   combine_pen(L,C,Reset,XX).
+
 combine_pen(L,[cc(C,N)|PenColors],Reset,XX):- number(N), make_list(C,N,List),append(List,PenColors,ListPenColors),
   combine_pen(L,ListPenColors,Reset,XX).
+
 combine_pen([P1|L],[C|PenColors],Reset,[C-P1|XX]):- is_color(C),!,
   combine_pen(L,PenColors,Reset,XX).
   

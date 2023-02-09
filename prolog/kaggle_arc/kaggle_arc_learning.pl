@@ -1230,18 +1230,24 @@ save_rule2(IO_DIR,TITLE,IP,OP):-
  arrange_shared(NewShared,NewSharedS), 
  once((nb_current(rule_note,RN);RN=rule_note)),
  w_section(title(["SAVE", TITLE ,IO_DIR,RN]),
- ((print_rule_grids(IO_DIR,TITLE,IP,OP),
+ ((print_rule_grids(IO_DIR,TITLE,IP,OP,LOCK),
    save_learnt_rule(arc_cache:object_to_object(TITLE,lhs(III),rhs(OOO),NewSharedS,LOCK),oneTwo,twoOne)))))))).
 
 skip_rule(IO_DIR,TITLE,IP,OP):- 
+ ip_op_debug_info(IP,OP,LOCK),
  once((nb_current(rule_note,RN);RN=rule_note)),
  w_section(title(["SKIP", IO_DIR, TITLE , RN]),
-   print_rule_grids(IO_DIR,"SKIP " + TITLE,IP,OP)).
+   print_rule_grids(IO_DIR,"SKIP " + TITLE,IP,OP,LOCK)).
 
-print_rule_grids(IO_DIR,TITLE,IP,OP):-
+print_rule_grids(IO_DIR,TITLE,IP,OP,LOCK):-
  must_det_ll((
- g_display(IP,IIP), g_display(OP,OOP), 
- print_ss_html(orange,IIP,'IN'(TITLE,IO_DIR),_LW,OOP,'OUT'(TITLE,IO_DIR)))).
+ print_ss(LOCK),
+ nop((og_display(IP,IIP), og_display(OP,OOP), 
+ print_ss_html(orange,IIP,'IN'(TITLE,IO_DIR),_LW,OOP,'OUT'(TITLE,IO_DIR)))))).
+
+og_display(OP,[wbg-P|OOP]):- 
+  grid_size(OP,H,V),globalpoints(OP,OOP),
+  hv_point(H,V,P),
 
 %omit_in_rules(_,giz(_)).
 %omit_in_rules(lhs,P):- not_for_matching(lhs,_,P).

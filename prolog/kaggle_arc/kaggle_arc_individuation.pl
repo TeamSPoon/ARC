@@ -191,7 +191,7 @@ individuation_macros(i_complete_generic2, [
 
 
 
-show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):- 
+show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):-  
   GridIn=@=GridOfIn,!,
  must_det_ll((
   into_iog(InC,OutC,IndvS),
@@ -214,10 +214,11 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):-
   include(is_fg_object,OutCRFGBG,OutCR),
   show_changes(InC0,InCR),
   show_changes(OutC0,OutCR))))),
-  (InC00\=@=InCR;OutC00\=@=OutCR),!,
+  (InC00\=@=InCR;OutC00\=@=OutCR),
+  (InCR\==[],OutCR\==[]),!,
   show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCR,OutCR),!.
 
-show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
+show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-  fail,
  must_det_ll((
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),   
   print_side_by_side(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
@@ -230,16 +231,45 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
   %IDIn1 = in(ID1), nop(print_list_of(really_show_touches(IDIn1,InShown),IDIn1,InShown)),
 
   %print_list_of(show_touches(OutShown),out(ID2),OutShown))),
-  ((InC==OutC, InC==[]) -> progress(yellow,nothing_individuated(PairName)) ;
-   with_luser(no_rdot,true,
-     (w_section(show_individuated_sections(ID1,ID2,ROptions,GridIn,GridOut,InC,OutC)),
-      w_section(show_individuated_learning(ID1,ID2,ROptions,GridIn,GridOut,InC,OutC))))))).
+  ((InC==OutC, InC==[]) -> progress(yellow,nothing_individuated(PairName)) ; true),
+   w_section(show_individuated_sections(ID1,ID2,ROptions,GridIn,GridOut,InC,OutC),
+   w_section(show_individuated_learning(ID1,ID2,ROptions,GridIn,GridOut,InC,OutC))))),!.
+
+
+show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
+ must_det_ll((
+  grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),   
+  print_side_by_side(green,GridIn,gridIn(ID1),_,GridOut,gridOut(ID2)),
+  as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1), xfer_zeros(GridIn1,GridOut1), 
+  print_side_by_side(red,GridIn1,ngridIn(ID1,PairName),_,GridOut1,ngridOut(ID2)),
+  print_side_by_side(yellow,InC,objs(ID1),_,OutC,objs(ID2)),
+  if_wants_output_for(guess_some_relations,guess_some_relations(InC,OutC)),
+  print_list_of(show_indiv(inputs),inputs,InC),     
+  print_list_of(show_indiv(outputs),outputs,OutC),
+  show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
+  if_wants_output_for(show_interesting_props, show_interesting_props(ID1,InC,OutC)),
+  =(InCR,InC), =(OutCR,OutC),
+  banner_lines(orange), %visible_order(InC,InCR),
+  if_wants_output_for(learn_group_mapping,(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
+  if_wants_output_for(learn_group_mapping_of_tst, (sub_var(tst,ID1),learn_group_mapping(InCR,OutCR))), 
+  if_wants_output_for(show_safe_assumed_mapped, show_safe_assumed_mapped),
+  if_wants_output_for(show_test_associatable_groups, 
+      forall(member(In1,InC),show_test_associatable_groups(ROptions,ID1,In1,GridOut))), 
+  if_wants_output_for(try_each_using_training,
+     forall(try_each_using_training(InC,GridOut,Rules,OurOut),
+      ignore((
+       print_grid(try_each_using_training,OurOut),
+       nop(pp(Rules)),
+       banner_lines(orange,2))))),
+
+  banner_lines(orange,4))).
+
+
 
 show_individuated_sections(ID1,ID2,ROptions,_GridIn,_GridOut,InC,OutC):- 
   must_det_ll((((
-   %show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
-   %show_io_groups(yellow,ROptions,ID1,InC,ID2,OutC),
    print_side_by_side(yellow,InC,objs(ID1),_,OutC,objs(ID2)),
+   if_wants_output_for(guess_some_relations,guess_some_relations(InC,OutC)),
    print_list_of(show_indiv(inputs),inputs,InC),     
    print_list_of(show_indiv(outputs),outputs,OutC),
    show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
@@ -248,9 +278,6 @@ show_individuated_sections(ID1,ID2,ROptions,_GridIn,_GridOut,InC,OutC):-
 show_individuated_learning(ID1,_ID2,ROptions,_GridIn,GridOut,InC,OutC):- 
  must_det_ll((
   =(InCR,InC), =(OutCR,OutC),
-
-  if_wants_output_for(guess_some_relations,guess_some_relations(InC,OutC)),
-
   banner_lines(orange), %visible_order(InC,InCR),
    if_wants_output_for(learn_group_mapping,(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
    if_wants_output_for(learn_group_mapping_of_tst, (sub_var(tst,ID1),learn_group_mapping(InCR,OutCR))), 
@@ -355,16 +382,16 @@ i2(ROptions,GridSpec):- clsmake,
 
 i_pair(ROptions,GridIn,GridOut):-
   check_for_refreshness,
-  my_time((maybe_name_the_pair(GridIn,GridOut,PairName),
-    individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
-    w_section(show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC)))).
+  maybe_name_the_pair(GridIn,GridOut,PairName),
+  individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
+  show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC).
 
 %worker_output(G):- \+ menu_or_upper('B'),!, time(wots(_,arc_weto(G))).
-worker_output(G):- time(G).
+worker_output(G):- call(G).
 
 igo(ROptions,Grid):-
   check_for_refreshness,
-  w_section(do_ig(ROptions,Grid,IndvS)),
+  w_section(do_ig,do_ig(ROptions,Grid,IndvS)),
   into_grid(Grid,GridIn),
   w_section(show_individuated_nonpair(igo,ROptions,Grid,GridIn,IndvS)).
 
@@ -372,7 +399,7 @@ maybe_name_the_pair(In,Out,PairName):-
   kaggle_arc(TestID,ExampleNum,In,Out),
     name_the_pair(TestID,ExampleNum,In,Out,PairName),!.
 maybe_name_the_pair(_In,_Out,PairName):-current_test_example(TestID,ExampleNum),
-  PairName = (TestID>ExampleNum),!.
+  ignore((PairName = (TestID>ExampleNum))),!.
 
 
 do_ig(ROptions,Grid,IndvS):-
@@ -397,7 +424,7 @@ ig_test_id_num_io(ROptions,GridIn,_ID,TestID,trn,Num,in,IndvS):-
 
 ig_test_id_num_io(ROptions,GridIn,_ID,TestID,_Example,_Num,_IO,IndvS):- 
   set_current_test(TestID),
-  worker_output(my_time(individuate_nonpair(ROptions,GridIn,IndvS))),!.
+  worker_output((individuate_nonpair(ROptions,GridIn,IndvS))),!.
   %maplist(add_shape_lib(as_is),IndvS),  
 
 into_iog(InC,OutC,IndvS):- append(InC,OutC,IndvC),!, must_det_ll(list_to_set(IndvC,IndvS)).
@@ -1385,8 +1412,12 @@ cell_minus_cell(I,_,I).
 
 
 
-
 individuate_pair(ROptions,In,Out,IndvSI,IndvSO):-
+  individuate_pair1(ROptions,In,Out,IndvSI,IndvSO)*->
+   true;individuate_pair2(ROptions,In,Out,IndvSI,IndvSO).
+
+individuate_pair1(ROptions,In,Out,IndvSI,IndvSO):-
+ once((
   check_for_refreshness,
   into_grid(In,InG), into_grid(Out,OutG),
   current_test_example(TestID,ExampleNum),
@@ -1397,7 +1428,17 @@ individuate_pair(ROptions,In,Out,IndvSI,IndvSO):-
    first_grid(InG,OutG,IO),
    (IO==in_out 
        -> individuate_two_grids(ROptions,InG,OutG,IndvSI,IndvSO)
-              ; individuate_two_grids(IO,OutG,InG,IndvSO,IndvSI)))))),!.
+              ; individuate_two_grids(IO,OutG,InG,IndvSO,IndvSI)))))))),
+ (IndvSO\==[],IndvSI\==[]).
+
+individuate_pair2(ROptions,In,Out,IndvSI,IndvSO):-
+ must_be_free(IndvSI),must_be_free(IndvSO),
+  check_for_refreshness,
+  into_grid(In,InG), into_grid(Out,OutG),
+  individuate_two_grids(ROptions,InG,OutG,IndvSII,IndvSOO),
+  IndvSOO=IndvSO,IndvSII=IndvSI,!.
+  
+
 
 individuate_nonpair(ROptions,In,IndvSI):- 
   into_grid(In,InG), 
@@ -1424,7 +1465,7 @@ individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):-
 
 individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):- 
   %u_dmsg(individuate(ROptions,OID_In_Out,IndvSI,IndvSO)),
-  (saved_group(individuate(ROptions,OID_In_Out),IndvS)
+  ((saved_group(individuate(ROptions,OID_In_Out),IndvS),IndvS\==[])
     -> into_gio(IndvS,IndvSI,IndvSO)
     ; ((individuate_two_grids_now(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO),
          into_iog(IndvSI,IndvSO,IndvS),save_grouped(individuate(ROptions,OID_In_Out),IndvS)))).
@@ -1479,7 +1520,8 @@ individuate_two_grids_now(OID_In_Out,ROptions,Grid_In,Grid_Out,ID_In,ID_Out,P_In
                             set(VM_Out.grid)=Grid_OutX,set(VM_Out.grid_o)=Grid_OutX)),
 
       if_t((U_In\==[],U_Out==[]),(set(VM_In.points)=U_In,set(VM_In.points_o)=U_In,
-                            points_to_grid(H_In,V_In,U_In,Grid_InX),set(VM_In.grid)=Grid_InX,set(VM_In.grid_o)=Grid_InX)),
+                            points_to_grid(H_In,V_In,U_In,Grid_InX),
+                            set(VM_In.grid)=Grid_InX,set(VM_In.grid_o)=Grid_InX)),
 
       if_t((U_In\==[],U_Out\==[]),(subtract(P_Out,Same,NewP_Out),
                              set(VM_Out.points)=NewP_Out,set(VM_Out.points_o)=NewP_Out,

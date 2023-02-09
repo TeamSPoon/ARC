@@ -443,6 +443,7 @@ was_grid_gid(Grid,GID):- atom(GID),oid_to_gridoid(GID,G),into_grid(G,GG),Grid=GG
 was_grid_gid(Grid,GID):- is_grid_tid(Grid,GID),atom(GID),assertz_if_new(gid_to_grid(GID,Grid)).
 assert_grid_tid(Grid,GID):- asserta_new(is_grid_tid(Grid,GID)),ignore((atom(GID),asserta_new(gid_to_grid(GID,Grid)))).
 assert_grid_gid(Grid,GID):- asserta_new(is_grid_tid(Grid,GID)),ignore((atom(GID),asserta_new(gid_to_grid(GID,Grid)))).
+assert_grid_oid(Grid,GID):- asserta_new(is_grid_tid(Grid,GID)),ignore((atom(GID),asserta_new(gid_to_grid(GID,Grid)))).
 
 oid_to_gridoid(GID,G):- current_predicate(gid_to_grid/2), call(call,gid_to_grid,GID,G),!.
 

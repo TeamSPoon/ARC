@@ -19,9 +19,9 @@ o1 to o1
 
 show_interesting_props(Named,ObjsI,ObjsO):-
   banner_lines(cyan,4),
-  show_interesting_named_props(input(Named),ObjsI),
+  w_section('INPUT PROPS',show_interesting_named_props(input(Named),ObjsI)),
   banner_lines(white,2),
-  show_interesting_named_props(output(Named),ObjsO),
+  w_section('OUTPUT PROPS',show_interesting_named_props(output(Named),ObjsO)),
   banner_lines(cyan,4).
 
 show_interesting_props(_Named,ObjsI,ObjsO):-

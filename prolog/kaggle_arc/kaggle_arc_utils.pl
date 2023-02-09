@@ -15,6 +15,7 @@ my_len(X,Y):- arcST,!,break.
 sort_safe(I,O):- catch(sort(I,O),_,I=O).
 
 with_tty_false(Goal):- with_set_stream(current_output,tty(false),Goal).
+with_tty_true(Goal):- with_set_stream(current_output,tty(true),Goal).
 
 
 nb_subst(Obj,New,Old):-

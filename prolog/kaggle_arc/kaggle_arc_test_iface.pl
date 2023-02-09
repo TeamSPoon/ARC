@@ -47,18 +47,21 @@ write_cmd_link2(Info,Goal):- nonvar(Goal),
 
 into_str(Info,Info1):- atom(Info), atom_contains(Info,'_'), \+ atom_contains(Info,' '), functor_to_title_string(Info,Info1),!.
 into_str(Info,Info1):- string(Info),!,Info1=Info.
-into_str(Info,Info1):- compound(Info),wots_html(S,wprl(Info)),!,into_str(S,Info1).
+into_str(CInfo,Info1):- compound(CInfo),copy_term(CInfo,Info),wots_vs(S,wqs_c(Info)),!,into_str(S,Info1).
 into_str(Info,Info1):- \+ string(Info),!,sformat(Info1,'~w',[Info]),!.
-into_str(Info,Info).
+into_str(CInfo,Info):- copy_term(CInfo,Info).
 
 
 test_http_on:-
   current_output(Out),
   arc_set_stream(Out,tty(false)),
   arc_set_stream(Out,encoding(utf8)),
+  arc_set_stream(Out,representation_errors(error)),
+  arc_set_stream(Out,locale(default)),
   retractall(em_html),
   assert(em_html),
-  set_http_debug_error(true).
+  set_http_debug_error(true),
+  set_toplevel_pp(http).
 
 test_http_off:-
   current_output(Out),
@@ -66,7 +69,8 @@ test_http_off:-
   arc_set_stream(Out,encoding(text)),
   arc_set_stream(Out,representation_errors(unicode)),
   arc_set_stream(Out,locale(default)),
-  retractall(em_html).
+  retractall(em_html),
+  set_toplevel_pp(ansi).
 
 
 shorten_text(Info,Info1):- \+ string(Info),!,into_str(Info,S),!,shorten_text(S,Info1).
@@ -260,8 +264,11 @@ menu_goal(Goal):-
 arc_sensical_term(O):-nonvar(O), O\==[], O\=='', O \= (_ - _), O\==end_of_file.
 invoke_arc_cmd(Key):- \+ arc_sensical_term(Key),!.
 invoke_arc_cmd(Key):- arc_atom_to_term(Key,Prolog,Vs),Vs==[], Prolog\=@=Key,!,invoke_arc_cmd(Prolog).
-
-
+  
+invoke_arc_cmd(Goal):- \+ missing_arity(Goal,0),!, 
+  write('<pre style="color: white">'),
+  weto(ignore(Goal)),
+  write('</pre>'),!.
 invoke_arc_cmd(Key):- do_web_menu_key(Key).
 
 
@@ -285,31 +292,44 @@ do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes)
 do_menu_key(Key):- atom(Key), menu_cmds(_,Key,_,Body), !, menu_goal(Body).
 do_menu_key(Key):- atom(Key), atom_codes(Key,[Code]), Code<27, CCode is Code + 96, atom_codes(CKey,[94,CCode]),!,do_menu_key(CKey).
 
-do_menu_key(Key):- atom(Key), display_length(Key,1), \+ menu_cmd1(_,Key,_,_),
+do_menu_key(Key):- atom(Key), atom_length(Key,1), \+ menu_cmd1(_,Key,_,_),
    char_type(Key,to_upper(LowerKey)),LowerKey\==Key, \+ \+ menu_cmd1(_,LowerKey,_,_),
    format('~N~n'), get_pair_mode(Mode), alt_pair_mode(Mode,Alt), !,
      with_pair_mode(Alt,do_menu_key(LowerKey)).
 
-
 %do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), once(Codes=[27|_];Codes=[_]),format("~N % Menu: '~w' ~q ~n",[Key,Codes]),fail.
+do_menu_key(Key):- atom(Key),atom_concat(' ',Atom,Key),Atom\=='', !,do_menu_key(Atom).
+do_menu_key(Key):- atom(Key),atom_concat(Atom,' ',Key),Atom\=='', !,do_menu_key(Atom).
+do_menu_key(Key):- atom(Key),atom_concat(Atom,'\r',Key),Atom\=='', !,do_menu_key(Atom).
 
-do_menu_key(Key):- atom(Key),atom_concat(' ',Atom,Key),!,do_menu_key(Atom).
-do_menu_key(Key):- atom(Key),atom_concat(Atom,' ',Key),!,do_menu_key(Atom).
-
-do_menu_key(O):- ground(O), O = (TestID>ExampleNum*_IO),!,set_example_num(ExampleNum),set_current_test(TestID),
-  click_grid(O).
-do_menu_key(E):- ground(E), E = (TestID>ExampleNum),!,set_example_num(ExampleNum),set_current_test(TestID),
+% refering to a Test Suite or Object
+do_menu_key(Key):- test_suite_list(List), member(Key,List), !, 
+  set_test_suite(Key), show_selected_object.
+do_menu_key(Key):- ground(Key), Key = (TestID>ExampleNum*_IO),!,set_example_num(ExampleNum),set_current_test(TestID),
+  set_pair_mode(single_pair), click_grid(Key).
+do_menu_key(Key):- ground(Key), Key = (TestID>ExampleNum),!,set_example_num(ExampleNum),set_current_test(TestID),
+  set_pair_mode(single_pair),show_selected_object.
+do_menu_key(Key):- is_valid_testname(Key), set_current_test(Key),!,
   set_pair_mode(whole_test),show_selected_object.
-do_menu_key(E):- ground(E), fix_test_name(E,TestID),is_valid_testname(TestID),set_current_test(TestID),!,
+do_menu_key(Key):- ground(Key), fix_test_name(Key,TestID),is_valid_testname(TestID),set_current_test(TestID),!,
   set_pair_mode(whole_test),show_selected_object.
 
-do_menu_key(Key):- \+ atom(Key), catch(text_to_string(Key,Str),_,fail),Key\==Str,catch(atom_string(Atom,Str),_,fail),do_menu_key(Atom).
+
+% a Text object
+do_menu_key(Key):- \+ atom(Key), catch(text_to_string(Key,Str),_,fail),Key\==Str,catch(atom_string(Atom,Str),_,fail),
+  Atom\=@=Key, 
+    do_menu_key(Atom),!.
+
+% Atom masking a Code object
 do_menu_key(Key):- atom(Key), arc_atom_to_term(Key,Term,Vs), nonvar(Term),
-  Term\=@=Key, locally(nb_setval('$variable_names',Vs), do_menu_key(Term)).
-do_menu_key(Key):- maybe_call_code(Key),!.
-do_menu_key(Key):- test_suite_list(List), member(Key,List),!,set_test_suite(Key).
-do_menu_key(Key):- is_valid_testname(Key), !,set_current_test(Key).
-do_menu_key(Key):- io_side_effects, fix_test_name(Key,TestID),set_current_test(TestID),!,print_test.
+  Term\=@=Key, 
+    locally(nb_setval('$variable_names',Vs), do_menu_key(Term)),!.
+
+% Any Code object
+do_menu_key(Key):- % ls   foo
+ % nl,writeq(do_menu_key(Key)),nl,
+  maybe_call_code(Key),!.
+
 do_menu_key(Key):- atom(Key),atom_codes(Key,Codes),!,debuffer_atom_codes(Key,Codes),!.
 
 debuffer_atom_codes(_Key,[27|Codes]):- append(Left,[27|More],Codes),
@@ -317,23 +337,22 @@ debuffer_atom_codes(_Key,[27|Codes]):- append(Left,[27|More],Codes),
   (do_menu_key(Key1)->true;do_menu_key(Key2)).
 debuffer_atom_codes(_Key,[C|Codes]):- C\==27, Codes\==[],
   atom_codes(Key1,[C]),atom_codes(Key2,Codes),
-  (do_menu_key(Key1)->true;do_menu_key(Key2)).
+  (do_menu_key(Key1)->true;do_menu_key(Key2)). 
 debuffer_atom_codes(Key,Codes):- format("~N % Menu did understand '~w' ~q ~n",[Key,Codes]).
 
 arc_atom_to_term(Key,Prolog,Vs):- atom(Key),notrace(catch(atom_to_term(Key,Prolog,Vs),_,fail)), arc_sensical_term(Prolog).
 
-maybe_call_code(Key):- \+ atom(Key), !, 
- notrace(catch(text_to_string(Key,Str),_,fail)),Key\==Str,catch(atom_string(Atom,Str),_,fail),maybe_call_code(Atom).
+maybe_call_code(Key):- \+ atom(Key),
+ notrace(catch(text_to_string(Key,Str),_,fail)),Key\==Str,catch(atom_string(Atom,Str),_,fail),!,maybe_call_code(Atom).
+
 maybe_call_code(Key):- atom(Key), 
-  arc_atom_to_term(Key,Term,Vs),
-  nonvar(Term),
-  Term\=@=Key,
+  arc_atom_to_term(Key,Term,Vs), nonvar(Term), Term\=@=Key,
   locally(nb_setval('$variable_names',Vs),
-  maybe_call_code(Term)).
+  maybe_call_code(Term)),!.
 
 maybe_call_code(Term):- 
 %nonvar(Term),
- current_predicate(_,Term),
+ % current_predicate(_,Term),
    \+ missing_arity(Term,0),
    asserta_new(xlisting_whook:offer_testcase(Term)),!,
    locally(nb_setval('$term',Term),

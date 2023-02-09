@@ -1026,9 +1026,118 @@ select_two_objs(X,Y,Objs):- select(X,Objs,RestObjs),member(Y,RestObjs).
 
 into_pairs(I,O,i_o(I,O)).
 
-guess_some_relations(I,O):-
-  guess_some_relations([],I,O,RelationsList),
-  pp(RelationsList).
+/*
+__|i1, i2, i3, i4
+o1| x   y   x  xy
+o2|         y   
+o3|
+o4|         x
+*/
+prev_intoNamedImg(OID):- format(
+'<script>
+  var oid = "~w";
+  var me = document.currentScript;
+  var prev = me.previousElementSibling;
+  intoNamedImg(prev,oid,100,100);
+</script>',[OID]).
+into_image(Obj,S):- obj_to_oid(Obj,OID),global_grid(Obj,Grid),
+  numbervars(Grid,666,_,[attvars(bind),singletons(true)]),
+  assert_grid_oid(Grid,OID),
+  wots(S,
+     (locally(nb_setval(grid_title,OID),print_grid(OID,Grid)),
+      prev_intoNamedImg(OID))).
+
+%  
+into_th(ColOrRow,Nth,Obj,TH):- obj_to_oid(Obj,OID),into_image(Obj,S),sformat(TH,'<th id="th_~w" onclick="sortTable~ws(this,~w);" class="th-sm selectable">~w</th>',[OID,ColOrRow,Nth,S]).
+
+write_i_o_data(IDPrefix,O,I):- 
+ must_det_ll((
+   id_between(IDPrefix,I,O,ID),
+   format('<td id="~w" class="tiptext selectable" style="color: white"',[ID]),
+   write_data_between(I,O))),!.
+
+write_data_between(I,O):- I==O,  !,
+  Title = I,
+  write_te(Title), 
+  write(' onclick="showDesc(this);">'),  
+  write(0),
+  write('</td>'),
+  !.
+  
+write_data_between(I,O):- 
+ must_det_ll((
+  indv_props_list(I,IL),indv_props_list(O,OL),
+  include(cmpable_value,IL,ILC),
+  include(cmpable_value,OL,OLC),
+  intersection(IL,OL,Rels,LO,RO),!,
+  intersection(ILC,OLC,RelsC,LOC,ROC),!,
+  maplist(length,[Rels,LO,RO,RelsC,LOC,ROC],[RelsL,LOL,ROL,RelsCL,LOCL,ROCL]),
+  max_min(LOL,ROL,_,Missed),
+  max_min(LOCL,ROCL,_,MissedC),
+  (MissedC==LOCL->MissedRel=LOC;MissedRel=ROC),
+  wots_ansi(Title, (pp(RelsCL/MissedC), nl, write_gec(same=RelsC), nl, write_gec(missed=MissedRel))),
+  write_te(Title), write(' onclick="showDesc(this);">'),
+  Val is RelsCL*100+ (100-(MissedC*2)),
+  write(Val),
+  write('</td>'))),!.
+  %nop(add_tool_tips(ID,Title)))),!.
+
+write_te(Title):- write(' title="'), write_ea(Title), write('"'),!.
+
+write_gec(N=V):- nl_if_needed,nonvar(N), !, pp_no_nl(N),writeln(' = '), !, wots(S,write_gec(V)),print_w_pad(2,S).
+write_gec(Val):- is_list(Val), !, wots(S,maplist(write_gec,Val)), print_w_pad(2,S).
+write_gec(Val):- writeg(Val).
+
+
+write_ea(Title):-  string(Title),!, into_attribute(Title,TitleSA),write(TitleSA).
+write_ea(Title):-  wots_ansi(TitleS,wqs_c((Title))), into_attribute(TitleS,TitleSA),write(TitleSA).
+write_eh(List):- is_list(List),!,maplist(write_eh,List).
+write_eh(String):- atomic(String),!,write(String).
+write_eh(Compound):- wqs_c(Compound),!.
+
+id_between(IDPrefix,I,O,ID):-  obj_to_oid(I,OID1),obj_to_oid(O,OID2),sformat(ID,'~w_~w_~w',[IDPrefix,OID1,OID2]).
+   
+
+cmpable_value(V):- \+ compound(V),!,fail.
+cmpable_value(V):- sub_term(S,V),number(S),S\==0,!.
+cmpable_value(V):- arg(1,V,E), is_points_list(E),!,fail.
+cmpable_value(V):- sub_term(S,V),is_color(S),!, \+ has_zero(V).
+cmpable_value(V):- sub_term(S,V),compound(S),cmpable_cmpd(S),!.
+cmpable_cmpd(sid(_)).
+cmpable_cmpd(rot2L(_)).
+has_zero(V):- sub_var(0,V).
+
+
+guess_some_relations(IL,OL):- 
+ write('<div id="guess_some_relations">'),
+  guess_some_relations("I->O",IL,OL),
+  guess_some_relations("O->I",OL,IL),!,
+  guess_some_relations("I->I",IL,IL),
+  guess_some_relations("O->O",OL,OL),!,
+  write('</div>').
+
+guess_some_relations(Title,IL,OL):- wants_html,!,
+ w_section(title(Title),
+  (
+    sformat(IDPrefix,'~w_guess_some_relations',[Title]),
+
+    format_s(`<p>To display 'compare_objects' click <a href = "javascript:void(0)" onclick = "setVisible(document.getElementById('~w_panel'),'block')">here</a></p>`,[IDPrefix]),	
+    format_s(`<div id="~w_panel" class="white_content">This is the panel content.`,[IDPrefix]),
+    format_s(`<a href = "javascript:void(0)" onclick = "setVisible(document.getElementById('~w_panel'),'none')">Close</a>`,[IDPrefix]),
+    format_s(`<table id="~w" class="compare_objects sorttable sortable searchable display table table-bordered table-sm"><tr><th><h3>~w</h3></th>`,[IDPrefix,Title]),
+
+    forall(nth1(M,IL,I),(into_th('Row',M,I,ITH),write_eh(ITH))),write('</tr>'),
+
+    forall(nth1(N,OL,O),
+       (write('<tr>'),into_th('Col',N,O,OTH),write_eh(OTH),
+        forall(member(I,IL),write_i_o_data(IDPrefix,O,I)),
+        write('</tr>'))),
+  format_s(`</table><a href = "javascript:void(0)" onclick = "setVisible(document.getElementById('~w_panel'),'none')">Close</a></div>`,[IDPrefix]))),
+  !.
+
+guess_some_relations(Title,IL,OL):-
+  guess_some_relations([],IL,OL,RelationsList),
+  w_section(title(Title),pp(RelationsList)).
 
 guess_some_relations(ExceptFor,I,O,RelationsList):-
   into_pairs(I,O,PAIRS),
@@ -1037,7 +1146,7 @@ guess_some_relations(ExceptFor,I,O,RelationsList):-
           i_triggers_o,simply_deleted,o_triggers_o],  RelationsList).
 
 guess_some_pair_relations(ExceptFor,PAIRS,P2L,RelationsList):-
-   try_some_pair_relations(ExceptFor,PAIRS,P2L,P2CallList), P2CallList\==[],
+   try_some_pair_relations(ExceptFor,PAIRS,P2L,P2CallList), P2CallList\==[],!,
    append(P2CallList,ExceptFor,NewExceptFor),
    guess_some_pair_relations(NewExceptFor,PAIRS,P2L,RelationsList).
 
@@ -1066,7 +1175,7 @@ get_prop(Test,O1,Prop):-
   nonvar(Test),!,prop_specifier(Test,Prop),
   indv_props(O1,Prop).
 get_prop(Test,O1,Prop):- 
-  indiv_prop_list(O1,PropList),
+  indv_props_list(O1,PropList),
   member(Prop,PropList),
   prop_specifier(Test,Prop).
     
@@ -1103,8 +1212,8 @@ equiv_props(Test,O1,O2):-
   get_prop(Test,O2,Prop2),
   not_differ_props(Prop1,Prop2).
 /*equiv_props(Tests,O1,O2):-
-    indiv_prop_list(O1,L1),
-    indiv_prop_list(O2,L2),
+    indv_props_list(O1,L1),
+    indv_props_list(O2,L2),
     intersection(L1,L2,Tests,_D1,_D2).*/
 
 

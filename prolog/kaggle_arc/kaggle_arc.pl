@@ -133,12 +133,14 @@ quietlyd(G):- quietly(G),!.
 
 
 %is_cgi:- !.
-is_cgi:- xlisting_web:is_cgi_stream,!.
 is_cgi:- em_html,!.
+is_cgi:- xlisting_web:is_cgi_stream,!,current_predicate( wants_html/0), wants_html.
 is_cgi:- arc_html,!.
+%arc_html:- in_pp(ansi),!,fail.
 arc_html:- em_html,!.
 arc_html:- current_predicate( wants_html/0), wants_html.
 
+ansi_main:- thread_self(main),is_cgi,!.
 
 update_changes:- \+ thread_self(main),!.
 update_changes:- 
@@ -682,8 +684,8 @@ luser_getval_1(N,V):- luser_getval_4(N,V), \+ (luser_getval_3(N,VV), nop(VV\=V))
 %luser_getval_0(N,V):- luser_getval_2(N,V), \+ luser_getval_1(N,_).
 %luser_getval_0(N,V):- luser_getval_3(N,V), \+ luser_getval_2(N,_), \+ luser_getval_1(N,_).
 %luser_getval_3(N,V):- is_cgi, current_predicate(get_param_req/2),get_param_req(N,M),url_decode_term(M,V).
-luser_getval_2(N,V):- \+ arc_html, !, atom(N), nb_current(N,ValV),not_eof(ValV,Val),Val=V.
-luser_getval_2(N,V):- atom(N), httpd_wrapper:http_current_request(Request), member(search(List),Request),member(N=VV,List),url_decode_term(VV,V).
+luser_getval_2(N,V):- atom(N), httpd_wrapper:http_current_request(Request), member(search(List),Request),member(N=VV,List),url_decode_term(VV,V),!.
+luser_getval_2(N,V):- atom(N), nb_current(N,ValV),not_eof(ValV,Val),Val=V.
 
 luser_getval_3(N,V):- arc_user(ID), arc_user_prop(ID,N,V).
 luser_getval_3(_,_):- \+ is_cgi, !, fail.
@@ -799,7 +801,9 @@ get_training(Training):- must_det_ll(((
 set_training(Training):- luser_linkval('$training_vm',Training).
 set_training(Prop,Value):- get_training(Training), gset(Training.Prop)=Value.
 get_training(Prop,Value):- get_training(Training), get_kov(Prop,Training,Value).
+
 set_vm(VM):- luser_linkval('$grid_vm',VM).
+
 get_vm(VM):- luser_getval('$grid_vm',VM),!.
 get_vm(VM):- ndividuator,!,luser_getval('$grid_vm',VM),!.
 
@@ -1039,6 +1043,8 @@ gui_flag(GUI):- (current_prolog_flag(gui, GUI)-> true ;
       set_prolog_flag(gui,GUI))).
 
 :- gui_flag(GUI),set_prolog_flag(gui,GUI).
+
+:- current_prolog_flag(gui,false)->set_prolog_flag(xpce,true);true.
 
 :- if(current_prolog_flag(xpce,true)).
 :- 

@@ -78,24 +78,26 @@ like for exmaple when i built the speech encoder/recoder in my teens
 
 :- meta_predicate(w_section(0)).
 w_section(Goal):-
-  must_det_ll((goal_to_title_key(Goal,Title,Spyable), w_section(Title,Goal,Spyable,maybe))).
+  copy_term(Goal,GoalC),
+  must_det_ll((goal_to_title_key(GoalC,Title,Spyable), w_section(Title,Goal,Spyable,maybe))).
 :- meta_predicate(w_section(+,0)).
 w_section(AmmtShown,Goal):- var(AmmtShown),!,w_section(title(AmmtShown),Goal).
-w_section(title(Title),Goal):- !,
+w_section(title(Title),Goal):- !, copy_term(Goal,GoalC),
   must_det_ll((into_str(Title,TitleStr),
-     title_string_to_functor(TitleStr,Goal,Spyable), 
+     title_string_to_functor(TitleStr,GoalC,Spyable), 
      w_section(Title,Goal,Spyable,maybe))).
-w_section(AmmtShown,Goal):- is_amount_shown(AmmtShown),!,
-  must_det_ll((goal_to_title_key(Goal,Title,Spyable), w_section(Title,Goal,Spyable,AmmtShown))).
+w_section(AmmtShown,Goal):- is_amount_shown(AmmtShown),!,  copy_term(Goal,GoalC),
+  must_det_ll((goal_to_title_key(GoalC,Title,Spyable), w_section(Title,Goal,Spyable,AmmtShown))).
 %w_section(Spyable,Goal):-  is_arc_spyable(Spyable),!,
 %  must_det_ll((functor_to_title_string(Spyable,Title), w_section(Title,Goal,Spyable,maybe))).
-w_section(Title,Goal):- 
-  must_det_ll((into_str(Title,TitleStr), title_string_to_functor(TitleStr,Goal,Spyable), 
+w_section(Title,Goal):- copy_term(Goal,GoalC),
+  must_det_ll((into_str(Title,TitleStr), title_string_to_functor(TitleStr,GoalC,Spyable), 
      w_section(Title,Goal,Spyable,maybe))).
 
 t_section(Title,Goal):- 
+ copy_term(Goal,GoalC),
   must_det_ll((into_str(Title,TitleStr),
-     title_string_to_functor(TitleStr,Goal,Spyable), 
+     title_string_to_functor(TitleStr,GoalC,Spyable), 
      w_section(Title,Goal,Spyable,maybe))).
 
 :- meta_predicate(w_section(+,0,+)).
@@ -116,8 +118,8 @@ w_section(Title,Goal,Spyable,Showing):-  Showing==toplevel,!,
 w_section(Title,Goal,Spyable,Showing):- 
   (into_0_or_1(Showing,Bool)->w_section_4(Title,Goal,Spyable,Bool);w_section_4(Title,Goal,Spyable,Showing)).
 
-w_section_4(Title,Goal,Spyable,Showing):- \+ is_cgi,!,w_section_ansi(Title,Goal,Spyable,Showing).
-w_section_4(Title,Goal,Spyable,Showing):- w_section_html(Title,Goal,Spyable,Showing).
+w_section_4(Title,Goal,Spyable,Showing):- wants_html, !, w_section_html(Title,Goal,Spyable,Showing).
+w_section_4(Title,Goal,Spyable,Showing):- w_section_ansi(Title,Goal,Spyable,Showing).
 
 
 w_section_ansi(Title,Goal,Spyable,_Showing):- 
@@ -141,17 +143,18 @@ clip_string(_,Attr,Len,SAttr):- sub_string(Attr, 0, Len, _After, SAttr).
 
 w_section_html(Title,Goal,_Spyable,Showing):-
  must_det_ll(( 
+ copy_term(Goal,GoalC),
   gensym('accordian_css_',Sym),
-  into_attribute(Goal,Attr),
+  into_attribute(GoalC,Attr),
   clip_string(Attr,800,SAttr),
   into_attribute(Title,TAttr),
   clip_string(TAttr,800,STAttr),
   flag('$w_section_depth',X,X),
  Class=panel_shown, %(Showing == true -> Class=panel_shown; Class=panel_hidden),
- 
+ wots(AC,(wots(S,trim_newlines(wqs_c(Title))),(S==""-> write(Title) ; write(S)))),
  format('<br><button id="~w" onclick="clickAccordian(`~w`,false);" class="accordian" title="~w">',[Sym,Sym,STAttr]),
- format('<label for="~w" class="font(1)" class="accordian" title="~w">',[Sym,SAttr]),flush_output,
- (wots(S,trim_newlines(wprl(Title))),(S==""-> write(Title) ; write(S))),
+ format('<label for="~w" class="font(1)" class="accordian" title="~w">',[Sym,SAttr]),flush_output, 
+ write(AC),
  format('</label>',[]),flush_output,
  format('<script>addAccordian(document.getElementById("~w"),~w);</script>',[Sym,X]),
  format('</button><br>'),flush_output, 
@@ -163,6 +166,8 @@ w_section_html(Title,Goal,_Spyable,Showing):-
    ((Showing==false,(var(NewChars);NewChars<600));(Showing==true,Class==panel_hidden);(Showing==false,Class==panel_shown))
     ->format('<script>document.getElementById("~w").click();</script>',[Sym]))))))).
     
+
+
 
 call_e_dmsg(Goal):- catch(Goal,E,(u_dmsg(error_r(E=Goal)),writeln(E=Goal))).
 
@@ -196,6 +201,9 @@ call_maybe_det(Goal,Det):- true,call_e_dmsg(Goal),deterministic(Det),true.
 
 format_s(S):- atomic(S),!,format('~w',[S]).
 format_s(S):- format('~s',[S]),flush_output.
+format_s(Fmt,Args):-
+  sformat(SFmt,'~s',[Fmt]),
+  format(SFmt,Args).
 
 tabbed_print_im(_Tab,Goal):- expandable_inlines, !, call_e_dmsg(Goal).
 tabbed_print_im(Tab,Goal):- Tab2 is Tab, call_w_pad(Tab2,call_e_dmsg(Goal)).
@@ -211,17 +219,19 @@ trim_leading_trailing_whitespace(In,Out):-
 :- meta_predicate(goal_to_title_key(+,-,-)).
 goal_to_title_key(Term,Title,Spyable):-
    must_det_ll((invent_key(Term,Spyable),
-   functor_to_title_string(Spyable,Title))),!,
+   copy_term(Spyable,SpyableC),
+   functor_to_title_string(SpyableC,Title))),!,
    nop((u_dmsg(goal_to_title_key(Term,Spyable,Title)))).
 
 
 invent_key(Term,Spyable):- \+ compound(Term),!, must_det_ll((
    into_str(Term,Str), title_string_to_functor(Str,Term,Spyable))).
 invent_key(Term,Spyable):- invent_key2(Term,Spyable).
-invent_key2(_:Term,Spyable):- !, invent_key(Term,Spyable).
+invent_key2(_:Term,Spyable):- !, must_det_ll(invent_key(Term,Spyable)).
 %invent_key2((Term,_),Spyable):- !, invent_key(Term,Spyable).
-invent_key2(Term,DT):- sub_term(E,Term), compound(E), \+ overly_plain_functor(E), one_invent_key(E,DT),!.
-invent_key2(Term,DT):- one_invent_key(Term,DT).
+invent_key2(Term,DT):- copy_term(Term,Copy),must_det_ll(invent_key3(Copy,DT)),!.
+invent_key3(Term,DT):- sub_term(E,Term), compound(E), \+ overly_plain_functor(E), one_invent_key(E,DT),!.
+invent_key3(Term,DT):- one_invent_key(Term,DT).
 
 one_invent_key(Term,Spyable):- \+ compound(Term), invent_key(Term,Spyable),!.
 one_invent_key(Term,Spyable):- compound_name_arguments(Term,F,Args),
@@ -246,9 +256,12 @@ functor_to_title_string(A,OO):- term_string(A,OO),!.
 
 title_string_to_functor(Str,Goal,Spyable):- var(Str),!,invent_key2(Goal,Spyable).
 title_string_to_functor(Str,Goal,Spyable):- Str =="",!,invent_key2(Goal,Spyable).
-title_string_to_functor(A,_Goal,OO):- any_to_string(A,F), 
- any_to_string(A,F), to_case_breaks(F,X),include(\=(xti(_,punct)),X,O),maplist(arg(1),O,O1),
- maplist(any_to_atom,O1,O2),maplist(toLowercase,O2,O3),atomic_list_concat(O3,'_',OO).
+title_string_to_functor(A,_Goal,OO):- any_to_string(A,F), !, must_be_free(OO), title_string_to_functor(F,OO).
+
+title_string_to_functor(F,OO):- 
+ to_case_breaks(F,X),include(\=(xti(_,punct)),X,O),maplist(arg(1),O,O1),
+ maplist(any_to_atom,O1,O2),maplist(toLowercase,O2,O3),atomic_list_concat(O3,'_',OO),!.
+title_string_to_functor(F,OO):- atom_string(OO,F),!.
 
 %header_arg(_:Term,E):-!,header_arg(Term,E).
 %header_arg(Term,E):- sub_term(E,Term), E\=@=Term, compound(E), \+ is_list(E).
@@ -621,6 +634,12 @@ echo_file(File):- read_file_to_string(File,Str,[]),write(Str).
 
 :- volatile(wrote_arc_start/1).
 :- thread_local(wrote_arc_start/1).
+
+write_arc_start_script(Where):- var(Where), current_output(Where), write_arc_start_script(Where).
+write_arc_start_script(Where):- wrote_arc_start(Where),!.
+write_arc_start_script(Where):- nop(write_arc_start(Where)).
+
+
 write_arc_start(Where):- var(Where), current_output(Where), write_arc_start(Where).
 write_arc_start(Where):- wrote_arc_start(Where),!.
 write_arc_start(Where):- asserta(wrote_arc_start(Where)),
@@ -675,20 +694,20 @@ print_card_n(N,Var):- \+ callable(Var),!,print_tb_card(print_wrappable(Var),prin
 print_card_n(N,H):- H= [I], is_object(I), !,  print_card_n(N,I).
 print_card_n(N,H):- H= [I], is_gridoid(I), \+ is_gridoid(H), !,  print_card_n(N,I).
 
-print_card_n(N,card(T,B)):- !, print_tb_card(T,(wprl(N),call_e_dmsg(B))).
-print_card_n(N,GF):- grid_footer(GF,G,F), is_gridoid(G), data_type(G,DT), print_tb_card(print_grid(G),wprl([N,DT,F])),!.
+print_card_n(N,card(T,B)):- !, print_tb_card(T,(wqs_c(N),call_e_dmsg(B))).
+print_card_n(N,GF):- grid_footer(GF,G,F), is_gridoid(G), data_type(G,DT), print_tb_card(print_grid(G),wqs_c([N,DT,F])),!.
 
 print_card_n(N,I):- is_object(I),g_display(I,G),print_card_n(N,G),!.
-print_card_n(N,G):- is_gridoid(G), data_type(G,DT), print_tb_card(print_grid(G),wprl([N,DT])),!.
+print_card_n(N,G):- is_gridoid(G), data_type(G,DT), print_tb_card(print_grid(G),wqs_c([N,DT])),!.
 
 print_card_n(_,H):- string(H),!,write(H).
 print_card_n(_,H):- atom(H),!,write(H).
-print_card_n(N,H):- callable_arity(H,0),print_tb_card(call_e_dmsg(H),wprl([N,H])),!.
-print_card_n(N,H):- callable_arity(H,1),call(H,R), data_type(R,DT),print_tb_card(wprl([N,H,DT]),R),!.
-print_card_n(N,H):- data_type(H,DT),print_tb_card(pp(H),wprl([N,DT])),!.
+print_card_n(N,H):- callable_arity(H,0),print_tb_card(call_e_dmsg(H),wqs_c([N,H])),!.
+print_card_n(N,H):- callable_arity(H,1),call(H,R), data_type(R,DT),print_tb_card(wqs_c([N,H,DT]),R),!.
+print_card_n(N,H):- data_type(H,DT),print_tb_card(pp(H),wqs_c([N,DT])),!.
 
 
-print_tb_card(Top,Bottem):- \+ is_cgi, !, sccs(Top,nl_if_needed,wprl(Bottem)),!.
+print_tb_card(Top,Bottem):- \+ is_cgi, !, sccs(Top,nl_if_needed,wqs_c(Bottem)),!.
 
 print_tb_card(Top,Bottem):- 
   wots(S,call_e_dmsg(Bottem)),
@@ -704,56 +723,11 @@ print_tb_card(Top,Bottem):-
      (call(Top), with_tag_class(div,"container, second_div",print_wrappable(Bottem))))).
 */
 
-print_wrappable(L):- \+ is_cgi, !, wprl(L).
-print_wrappable(L):- with_tag_class(div,wrappable,wprl(L)).
-wprl(S):- (string(S);is_codelist(S);is_charlist(S)),catch(format('~s',[S]),_,writeq(S)).
-wprl(S):- var(S),!,write(var(S)).
-wprl(S):- empty_wprl(S),!.
-wprl(S):- atom(S),atom_contains(S,'~'),!,notrace(catch(format(S,[]),_,write(S))).
-wprl(S):- atom(S),functor_to_title_string(S,TS),write(TS).
-wprl(S):- \+compound(S),!,notrace(catch(format('~p',[S]),_,write(S))).
-wprl(title(S)):- !, wprl(S).
-wprl(H+T):- !, wprl(H),write_nbsp,wprl(T).
-wprl(S):- is_grid(S), print_grid(S),!.
-wprl(S):- is_vm(S), pp(S) ,!.
-wprl(L):- is_list(L), include(non_empty_wprl,L,LL),L\=@=LL,wprl(LL).
-wprl([H|T]):- wprl(H),write_nbsp,wprl(T),!.
-wprl([H|T]):- wqs([H|T]),!.
-%wprl([H]):- wprl(H),!.
-wprl(H):- callable_arity(H,0),is_writer_goal(H),call_e_dmsg(H),!.
-%wprl(H):- callable_arity(H,0),call(H),!.
-wprl(H):- ppt(H),!.
-
-
-non_empty_wprl(V):- \+ empty_wprl(V).
-empty_wprl(V):- var(V),!,fail.
-empty_wprl(A):- atom(A),atom_string(A,S),!,empty_wprl(S).
-empty_wprl([]).
-empty_wprl("").
-empty_wprl("&nbsp;").
-empty_wprl(" ").
-empty_wprl("\n").
-
-is_writer_goal(H):- \+ callable(H),!,fail.
-is_writer_goal(A):- atom(A),!,is_writer_goal_f(A).
-is_writer_goal((C1,C2)):- !, is_writer_goal(C1),is_writer_goal(C2).
-is_writer_goal(C):- compound_name_arity(C,F,_),!,is_writer_goal_f(F).
-
-is_writer_goal_f(wprl).
-is_writer_goal_f(F):- is_writer_goal_l(F),!.
-is_writer_goal_f(F):- \+ atom(F),!, term_to_atom(F,A),is_writer_goal_f(A).
-is_writer_goal_f(F):- not_writer_goal_r(R),atom_concat(_,R,F),!,fail.
-is_writer_goal_f(F):- is_writer_goal_l(L),atom_concat(L,_,F),!.
-is_writer_goal_f(F):- is_writer_goal_l(R),atom_concat(_,R,F),!.
-not_writer_goal_r(test). is_writer_goal_l(msg). is_writer_goal_l(call). 
-is_writer_goal_l(nl).  is_writer_goal_l(format). is_writer_goal_l(with_).  
-is_writer_goal_l(html).  is_writer_goal_l(ptcol).
-is_writer_goal_l(print). is_writer_goal_l(flush_output).  is_writer_goal_l(wqs).
-is_writer_goal_l(pp). is_writer_goal_l(write).  is_writer_goal_l(dash_).
-
+print_wrappable(L):- \+ is_cgi, !, wqs_c(L).
+print_wrappable(L):- with_tag_class(div,wrappable,wqs_c(L)).
 
 print_title(Var):- (var(Var);Var==[]),!.
-print_title(Title):- trim_newlines(wprl(Title)).
+print_title(Title):- trim_newlines(wqs_c(Title)).
 
 % width: fit-content
 % print_table(ListOfLists):- setup_call_cleanup(write('<table style="width: fit-content;m width: 100%; border: 0px">'), maplist(html_table_row,ListOfLists), write('</table>')),!.
@@ -866,11 +840,11 @@ into_nv_cmd(N2,N2Cmd):-
 print_ss_html(TitleColor,
                     NameIn,    NameInCmd, ID1,In, LeftTitle,
                     TestAtom,TestAtomCmd, ID2,Out,RightTitle):-
-  wots_html(HIn, with_color_span(color(TitleColor),write_nav_cmd(NameIn,NameInCmd))),
-  wots_html(HOut,with_color_span(color(TitleColor),write_nav_cmd(TestAtom,TestAtomCmd))),
+  wots_vs(HIn, with_color_span(color(TitleColor),write_nav_cmd(NameIn,NameInCmd))),
+  wots_vs(HOut,with_color_span(color(TitleColor),write_nav_cmd(TestAtom,TestAtomCmd))),
   once((data_type(In,S1), data_type(Out,S2))),
-  wots_html(FIn, format_footer(TitleColor, LeftTitle,S1)),
-  wots_html(FOut,format_footer(TitleColor,RightTitle,S2)),
+  wots_vs(FIn, format_footer(TitleColor, LeftTitle,S1)),
+  wots_vs(FOut,format_footer(TitleColor,RightTitle,S2)),
  grid_size(In,H1,V1), grid_size(Out,H2,V2),
  grid_bgc(In,BGC1), grid_bgc(Out,BGC2),
  print_table([[HIn,'   ',HOut],[
@@ -878,6 +852,7 @@ print_ss_html(TitleColor,
    locally(nb_setval(grid_footer,FOut),with_other_grid(In,print_grid_http_bound(ID2,BGC2,1,1,H2,V2,Out)))]]).
 
 
+print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):- ansi_main,!,print_grid_ansi_real(SH,SV,EH,EV,Grid).
 print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):- 
   grid_to_task_pair(Grid,TaskIDSubTask),
   (should_shrink_grid_half(Grid,EH,EV)->(GridClass=grid_table_shrink,HM=8);(GridClass=grid_table,HM=16)),
@@ -885,22 +860,30 @@ print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):-
   TWidth is Width*HM,
   HGHT is EV-SV+2,
   THGHT is HGHT*HM,
-  format('<table style="max-width: ~wpx; max-height: ~wpx;" id="~w" onclick="clickGrid(this)" class="~w">',
-                      [TWidth,THGHT,TaskIDSubTask,GridClass]),
 
-  ignore((take_value(grid_header,Header),
+    wots(GTitle, 
+     (format('grid(~w,~w)',[EH,EV]),
+     (nb_has_content(grid_title,Title)-> format(' ~w',[Title]) ; true),
+     (nonvar(ID)-> format(' ~w',[ID]) ; true))),
+
+
+  format('<table style="max-width: ~wpx; max-height: ~wpx;" id="~w" class="~w selectable" title="~w">',
+                      [TWidth,THGHT,TaskIDSubTask,GridClass,GTitle]),
+
+  ignore((nb_take_content(grid_header,Header),
     with_tag('tr',format('<th style="max-width: ~wpx" colspan="~w" class="wrappable">~w</th>',[TWidth,Width,Header])))),
 
   print_grid_http_bound(_,BGC,SH,SV,EH,EV,Grid),
 
-  ignore((take_value(grid_footer,Footer),
+  ignore((nb_take_content(grid_footer,Footer),
     with_tag('tr',format('<th style="max-width: ~wpx" colspan="~w" class="wrappable">~w</th>',[TWidth,Width,Footer])))),
   write('</table>'),
   ignore((cvtToIMG,format('<script>cvtToIMG(`~w`);</script>',[TaskIDSubTask]))),!.
 
 
-take_value(_Var,Footer):- nonvar(Footer),has_content(Footer),!.
-take_value(Name,Footer):- nb_current(Name,Footer),has_content(Footer),nb_setval(Name,[]).
+nb_take_content(_Var,Footer):- nonvar(Footer),has_content(Footer),!.
+nb_take_content(Name,Footer):- nb_has_content(Name,Footer),nb_setval(Name,[]).
+nb_has_content(Name,Footer):- nb_current(Name,Footer),has_content(Footer).
 
 grid_member(E,Grid):- is_grid(Grid), append(Grid,List),!,member(E,List).
 
@@ -916,14 +899,20 @@ should_shrink_grid_half(Grid,EH,EV):- is_grid(Grid),
 
 print_grid_http_bound(ID,BGC,SH,SV,EH,EV,Grid):-  
  (should_shrink_grid_half(Grid,EH,EV)->GridClass=grid_table_shrink;GridClass=grid_table),
-  ignore((nonvar(ID),format('<table id="~w" onclick="clickGrid(this)" class="~w" title="grid(~w,~w)">',[ID,GridClass,EH,EV]))),
+ (nb_take_content(grid_title,Title)->true;Title=_),
+  wots(GTitle, 
+     (format('grid(~w,~w)',[EH,EV]),
+     (nonvar(Title)-> format(' ~w',[Title]) ; true),
+     (nonvar(ID)-> format(' ~w',[ID]) ; true))),
+ ignore((nonvar(ID),format('<table id="~w" class="~w selectable" title="~w">',[ID,GridClass,GTitle]))),
  forall(between(SV,EV,V),
     with_tag('tr',((
     forall(between(SH,EH,H),
      (( must_det_ll((once((hv_cg_value(Grid,CG,H,V);CG=BGC)), 
        only_color_data_or_atom(CG,Color),
        into_html_color(Color,HTMLColor))),
-         format('<td bgcolor="~w" title="~w (~w,~w)">',[HTMLColor,CG,H/EH,V/EV]),
+         (var(Title)-> format('<td bgcolor="~w" title="~w (~w,~w)">',[HTMLColor,CG,H/EH,V/EV]);
+           format('<td bgcolor="~w">',[HTMLColor])),
           catch(print_hg1(CG),E,writeln(CG=E)),write('</td>')))))))),
   ignore((nonvar(ID),write('</table>'))),
   ignore((cvtToIMG,nonvar(ID),format('<script>cvtToIMG(`~w`);</script>',[ID]))),!.
@@ -1028,15 +1017,24 @@ nop(format_s(`<!--html
 <meta name="author" content="Douglas R. Miles & Mounier Florian"> 
 <title>LOGICMOO ARC Solver Butterfly WebUI</title>-->`)),
 format_s(`
-<link rel="shortcut icon" href="/static/images/favicon.png?v=ab6cc8e66e2c76decf54d9c3fa2b90345ce2df6bfcd7b546450cf2ddcc5a6311d4a76feaff55c28512c1688bc017478e24a7af1c0949c1da366417b44d6cbcf3">
-<!-- link href="/static/main.css?v=b444208d059c3295dda5c1c4a6d0a02bff152940b111d4ad63742f48b1b396e1724d2d6b071172e7fc7fbd880367543e32bb639dd711ce764d21170f877bb7d0" rel="stylesheet" id="style"-->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script> <!-- necessary for the "draggable" ui -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
-<script src="node_modules/html-to-image/dist/html-to-image.js"></script>
-<!--Use either font-awesome icons or Google icons with these links. Other icons could also be used if preferred-->
-<!--link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"-->
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>`),
+<link rel="shortcut icon" href="/static/images/favicon.png?v=ab6cc8e66e2c76decf54d9c3fa2b90345ce2df6bfcd7b546450cf2ddcc5a6311d4a76feaff55c28512c1688bc017478e24a7af1c0949c1da366417b44d6cbcf3" crossorigin="anonymous">
+<script src="https://releases.jquery.com/git/jquery-3.x-git.js" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js" integrity="sha256-6XMVI0zB8cRzfZjqKcD01PBsAy3FlDASrlC8SxCpInY=" crossorigin="anonymous"></script>
+<!--script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js" crossorigin="anonymous"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script-->
+<script src="https://www.kryogenix.org/code/browser/sorttable/sorttable.js" crossorigin="anonymous"></script>
+
+<link rel="stylesheet" type="text/css" href="/node_modules/datatables.net-dt/css/jquery.dataTables.css" crossorigin="anonymous">
+<script type="text/javascript" charset="utf8" src="/node_modules/datatables.net/js/jquery.dataTables.js"></script>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+<script src="/node_modules/html-to-image/dist/html-to-image.js" crossorigin="anonymous"></script>
+<script src="https://www.w3schools.com/lib/w3.js" crossorigin="anonymous"></script>
+<link href="https://www.w3schools.com/w3css/4/w3.css" rel="stylesheet" crossorigin="anonymous">
+<script>
+$(document).ready(function(){});
+</script>`),
 write_arc_start(Where),
 format_s(`<div id="mouse_iframer_div" style="display:none;"><iframe id="mouse_iframer" name="lm_xref_two" height="300px" width="100%" title="Iframe Example" src="about:blank"></iframe></div>`),
 nop(format_s(`<!--body-->`)),
@@ -1099,6 +1097,13 @@ set_html_component(Name,Value):-
   nop((write_arc_start(Where),
   format(Where,'<script> window.setUrlParam("~w","~w"); window.setComponent("~w","~w");</script>',[Name,Value,Name,Value]))).
 
+add_tool_tips(_Name,_Value):-  \+ is_cgi,!.
+add_tool_tips(Name,Value):- 
+  must_det_ll((
+   write_arc_start_script(Where),
+   into_attribute(Value,SValue),
+   format(Where,'<script> window.add_tool_tips("~w","~w");</script>',[Name,SValue]))).
+
 get_context_atoms(TestAtom,PairName):- 
   ignore(get_current_test_atom(TestAtom)),
   get_current_test(TestID), foc_current_example_num(ExampleNum),
@@ -1144,19 +1149,22 @@ is_arc_spyable(debug).  is_arc_spyable(info).
 is_arc_spyable(Spyable):- is_arc_spyable_known(Spyable).
 is_arc_spyable(Spyable):- luser_getval(Spyable,Show), once(Show==hide;Show==show), \+ is_arc_spyable_known(Spyable).
 
-if_wants_output_for(Spyable, Goal):-
+if_wants_output_for(Spyable, Goal):- wants_html,!,w_section(Spyable,Goal,Spyable,true).
+
+if_wants_output_for(SpyableC, Goal):-
+ copy_term(SpyableC,Spyable),
   catch_log(((wants_output_for(Spyable)->w_section(title(Spyable),Goal,Spyable) ; 
      w_section(title(Spyable),Goal,later)))).
     
-wants_output_for(Spyable):- is_cgi,!,
+wants_output_for(SpyableC):- is_cgi,!, copy_term(SpyableC,Spyable),
   (wants_output_for_1(Spyable)-> make_session_checkbox(Spyable,wants_output_for(Spyable),'<br/>',true) ;
     (make_session_checkbox(Spyable,wants_output_for(Spyable),'<br/>',false),!,fail)).
-wants_output_for(Spyable):- 
+wants_output_for(SpyableC):- copy_term(SpyableC,Spyable),
    (wants_output_for_1(Spyable)-> pp(showing(Spyable));
      ((arc_spyable_keyboard_key(Spyable,SpyableKey)->pp(skipping(Spyable,key(SpyableKey)));(pp(skipping(Spyable)))),!,fail)).
 
 wants_output_for_1(Spyable):- nb_current(menu_key,_), arc_spyable_keyboard_key(Spyable,SpyableKey), menu_or_upper(SpyableKey),!.
-wants_output_for_1(Spyable):- is_arc_spyable_known(Spyable), !, \+ luser_getval(Spyable, hide).
+wants_output_for_1(Spyable):- \+ \+ is_arc_spyable_known(Spyable), !, \+ luser_getval(Spyable, hide).
 wants_output_for_1(Spyable):- \+ is_arc_spyable_known(Spyable), 
    assertz_if_new(is_arc_spyable_deduced(Spyable)), 
    luser_setval(Spyable,show),!,
@@ -1164,7 +1172,7 @@ wants_output_for_1(Spyable):- \+ is_arc_spyable_known(Spyable),
    
 
 
-vm_bool_opts(Spyable,Str):- 
+vm_bool_opts(SpyableC,Str):- copy_term(SpyableC,Spyable),
  ((ensure_peek_vm(Machine),
   get_kov1(Spyable,Machine,Value))),into_0_or_1(Value,Str).
 
