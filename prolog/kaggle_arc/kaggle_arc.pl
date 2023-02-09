@@ -414,6 +414,8 @@ term_expansion_setter((Head:-Body),Out):-
 
 set(_355218._355220)=_355272)
 */
+arc_sensical_term(O):- nonvar(O), O\==[], O\=='', O \= (_ - _), O\==end_of_file.
+arc_sensical_term(V,O):- arc_sensical_term(V), !, O=V.
 
 is_setter_syntax(I,_Obj,_Member,_Var,_):- \+ compound(I),!,fail.
 is_setter_syntax(set(Obj,Member),Obj,Member,_Var,b).
@@ -645,6 +647,7 @@ arc_user(ID):- thread_self(ID).
 
 %luser_setval(N,V):- nb_setval(N,V),!.
 luser_setval(N,V):- arc_user(ID),luser_setval(ID,N,V),!.
+luser_setval(ID,N,V):- \+ (arc_sensical_term(N),arc_sensical_term(V)),  u_dmsg(not_arc_sensical_term(luser_setval(ID,N,V))).
 luser_setval(ID,N,V):- 
   (atom(N)->nb_setval(N,V);true),
   retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
@@ -653,6 +656,7 @@ luser_default(N,V):- var(V),!,luser_getval(N,V).
 luser_default(N,V):- luser_setval(global,N,V).
 
 luser_linkval(N,V):- arc_user(ID),luser_linkval(ID,N,V),!.
+luser_linkval(ID,N,V):- \+ (arc_sensical_term(N),arc_sensical_term(V)),  u_dmsg(not_arc_sensical_term(luser_linkval(ID,N,V))).
 luser_linkval(ID,N,V):- 
   (atom(N)->nb_linkval(N,V);true), 
   retractall(arc_user_prop(ID,N,_)),asserta(arc_user_prop(ID,N,V)).
@@ -669,9 +673,9 @@ with_luser(N,V,Goal):-
     once(Goal),
     luser_setval(N,OV)).
 
-%luser_getval(N,V):- nb_current(N,VVV),not_eof(VVV,VV),!,V=VV.
+%luser_getval(N,V):- nb_current(N,VVV),arc_sensical_term(VVV,VV),!,V=VV.
 % caches the valuetemp on this thread
-luser_getval(N,V):-  luser_getval_0(N,VV),VV=V.
+luser_getval(N,V):-  luser_getval_0(N,VV),VV=V,arc_sensical_term(V),!.
 
 
 luser_getval_0(arc_user,V):- arc_user(V).
@@ -684,20 +688,19 @@ luser_getval_1(N,V):- luser_getval_4(N,V), \+ (luser_getval_3(N,VV), nop(VV\=V))
 %luser_getval_0(N,V):- luser_getval_2(N,V), \+ luser_getval_1(N,_).
 %luser_getval_0(N,V):- luser_getval_3(N,V), \+ luser_getval_2(N,_), \+ luser_getval_1(N,_).
 %luser_getval_3(N,V):- is_cgi, current_predicate(get_param_req/2),get_param_req(N,M),url_decode_term(M,V).
-luser_getval_2(N,V):- atom(N), httpd_wrapper:http_current_request(Request), member(search(List),Request),member(N=VV,List),url_decode_term(VV,V),!.
-luser_getval_2(N,V):- atom(N), nb_current(N,ValV),not_eof(ValV,Val),Val=V.
+luser_getval_2(N,V):- atom(N), httpd_wrapper:http_current_request(Request), member(search(List),Request),member(N=VV,List),url_decode_term(VV,V),arc_sensical_term(V),!.
+luser_getval_2(N,V):- atom(N), nb_current(N,ValV),arc_sensical_term(ValV,Val),Val=V.
 
 luser_getval_3(N,V):- arc_user(ID), arc_user_prop(ID,N,V).
 luser_getval_3(_,_):- \+ is_cgi, !, fail.
-luser_getval_3(N,V):- atom(N), current_predicate(get_param_sess/2),get_param_sess(N,M),url_decode_term(M,V).
-luser_getval_3(N,V):- atom(N), nb_current(N,ValV),not_eof(ValV,Val),Val=V.
+luser_getval_3(N,V):- atom(N), current_predicate(get_param_sess/2),get_param_sess(N,M),url_decode_term(M,V),arc_sensical_term(V).
+luser_getval_3(N,V):- atom(N), nb_current(N,ValV),arc_sensical_term(ValV,Val),Val=V.
 
 luser_getval_4(N,V):- arc_user_prop(global,N,V).
 luser_getval_4(N,V):- atom(N), current_prolog_flag(N,V).
 %luser_getval(ID,N,V):- thread_self(ID),nb_current(N,V),!.
 %luser_getval(ID,N,V):- !, ((arc_user_prop(ID,N,V);nb_current(N,V))*->true;arc_user_prop(global,N,V)).
 
-not_eof(V,O):- arc_sensical_term(V), V \==[], V \== end_of_file, !, O=V.
 
 /*
 luser_getval(ID,N,V):- 

@@ -1986,8 +1986,11 @@ exceeded_objs_max_len(VM):-
 fti(VM,[F|TODO]):- once(fix_indivs_options([F|TODO],NEWTODO)),[F|TODO]\==NEWTODO,!,fti(VM,NEWTODO).
   
 
-fti(VM,[F|TODO]):-
-   u_dmsg(fti_miss(F)),
+fti(VM,[F|TODO]):- F=='',!,
+   u_dmsg(fti_miss(F,TODO)),
+   dumpST,
+   u_dmsg(fti_miss(F,TODO)),
+   
    set(VM.program_i)= TODO.
 
 %:- listing(fti/2).

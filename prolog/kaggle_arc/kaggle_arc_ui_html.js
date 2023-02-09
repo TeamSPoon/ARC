@@ -526,8 +526,8 @@ function getFormDicts() {
 
 function ignoredData(key) {
     if (key == null || key == undefined || key == [] || key == {} || key == 'nothing') return true;
-	if (key == 'undefined' || key === "" || key == " " || key === "icmd" || key === "cmd") return true;
-	if ((typeof key === 'string') && key.includes("accord")) return true;
+    if (key == 'undefined' || key === "" || key == " " || key === "icmd" || key === "cmd") return true;
+    if ((typeof key === 'string') && key.includes("accord")) return true;
     return false;
 }
 
@@ -554,14 +554,14 @@ function opener() {
     if (top.winObj == null || top.winObj.closed) {
         top.winObj = top.open("", "tips", "width=500, height=300");
         top.winObj.realTop = window.top;
-		popup = top.winObj;
+        popup = top.winObj;
         popup.window.addEventListener('load', () => {
-			popup.window.addEventListener('unload', () => {
-				console.log('> Popup Closed');
+            popup.window.addEventListener('unload', () => {
+                console.log('> Popup Closed');
                 top.winObj = null;
-				// window.location.reload();
-			});
-		});
+                // window.location.reload();
+            });
+        });
 
         popup.document.open();
         popup.document.write(`<!DOCTYPE html>
@@ -596,48 +596,39 @@ function writeTips(info) {
     if (ignoredData(info)) return;
 
     var infotext = "" + info;
+    var jqinfo = null;
 
     if (isElement(info)) {
-        infotext = info.innerText;
+        jqinfo = $(info);
     } else {
         if ( // skip simple one liners
             (!(infotext.includes("\n"))) &&
             (!(infotext.includes("\r"))) &&
             (!(infotext.includes("<")))) return false;
+        jqinfo = $(`<pre style="font-size:30px">${infotext}</pre>`);
     }
 
-    if (top.winObj == null) {
-        opener();
-    }
+    opener();
 
     let tipsList = top.winObj.document.getElementById('toolTips');
+    var e2m = easyToMatch(jqinfo.innerText);
 
-    if (tipsList.innerHTML.includes(infotext)) {
-        return;
+    for (const tip in tipsList.children) {
+        if (easyToMatch(tip.innerText).includes(easyToMatch(e2m))) {
+            jqinfo = tip;
+            tip.detach()
+            break;
+        }
     }
 
-	if (easyToMatch(tipsList.innerText).includes(easyToMatch(infotext))) {
-		return;
-	}
-	if (easyToMatch(tipsList.innerHTML).includes(easyToMatch(infotext))) {
-		return;
-	}
-
-    if (isElement(info)) {
-        tipsList.prepend(info);
-    } else {
-        let html = `<pre style="font-size:30px">${info}</pre>`;
-        tipsList.insertAdjacentHTML('afterbegin', html);
-    }
-
-    tipsList.scrollIntoView(true);
-
+    tipsList.prepend(jqinfo);
+    jqinfo.scrollIntoView(true);
     top.winObj.focus();
 }
 
 
 function resizer() {
-	opener();
+    opener();
     top.winObj.moveTo(0, 0);
     top.winObj.resizeTo(screen.availWidth, screen.availHeight);
 }
@@ -729,8 +720,8 @@ function addAccordian4(NBI, target_name, target_textContent, depth) {
     for (i = 0; i < depth; i++) {
         spaces = spaces + "&nbsp;";
     }
-	var href = `#${target_id}`;
-		href = "javascript:void(0)";
+    var href = `#${target_id}`;
+    href = "javascript:void(0)";
     let html = `<li class="nav-item" id="${target_id}_menu" >${spaces}<a class="nav-link" href="${href}" id="${target_id}_link" target="lm_xref" onclick="clickAccordian('${target_id}',true);">${target_textContent}</a></li>`;
     nav.insertAdjacentHTML('beforeend', html);
     e = nav.lastElementChild;
@@ -981,14 +972,14 @@ function hidePanel(name, keepGoing) {
 
 function correctCmd(sessCmd) {
     var newSrch;
-	if(sessCmd.startsWith("?")) {
-		newSrch = new URLSearchParams(sessCmd);
-		sessCmd = top.window.location.origin + "/arcproc_iframe";
+    if (sessCmd.startsWith("?")) {
+        newSrch = new URLSearchParams(sessCmd);
+        sessCmd = top.window.location.origin + "/arcproc_iframe";
     } else if (sessCmd.includes("/") || sessCmd.includes("?")) {
-		var url = new URL(sessCmd, top.window.location);
-		newSrch = new URLSearchParams(url.search);
-		sessCmd = top.window.location.origin + url.pathname;
-	} else if (sessCmd.indexOf("=") > 0) {
+        var url = new URL(sessCmd, top.window.location);
+        newSrch = new URLSearchParams(url.search);
+        sessCmd = top.window.location.origin + url.pathname;
+    } else if (sessCmd.indexOf("=") > 0) {
         newSrch = new URLSearchParams("?" + sessCmd);
         sessCmd = top.window.location.origin + "/arcproc_iframe";
     } else {

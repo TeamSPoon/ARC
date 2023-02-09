@@ -77,10 +77,12 @@ like for exmaple when i built the speech encoder/recoder in my teens
 :- set_prolog_flag(verbose_autoload, false).
 
 :- meta_predicate(w_section(0)).
+w_section(Goal):- w_section_g(Goal),!.
 w_section(Goal):-
   copy_term(Goal,GoalC),
   must_det_ll((goal_to_title_key(GoalC,Title,Spyable), w_section(Title,Goal,Spyable,maybe))).
 :- meta_predicate(w_section(+,0)).
+w_section(_,Goal):- w_section_g(Goal),!.
 w_section(AmmtShown,Goal):- var(AmmtShown),!,w_section(title(AmmtShown),Goal).
 w_section(title(Title),Goal):- !, copy_term(Goal,GoalC),
   must_det_ll((into_str(Title,TitleStr),
@@ -102,13 +104,16 @@ t_section(Title,Goal):-
 
 :- meta_predicate(w_section(+,0,+)).
 
+w_section(_,Goal,_):- w_section_g(Goal),!.
 w_section(Title,Goal,Spyable):- into_str(Title,TitleStr),Title\==TitleStr,!,w_section(TitleStr,Goal,Spyable).
 w_section(Title,Goal,AmmtShown):- is_amount_shown(AmmtShown),!,
   must_det_ll((title_string_to_functor(Title,Goal,Spyable), w_section(Title,Goal,Spyable,AmmtShown))).
 w_section(Title,Goal,Spyable):- must_det_ll(w_section(Title,Goal,Spyable,maybe)).
-  
+
+w_section_g(Goal):- fail, ignore(call(Goal)),!.
   
 :- meta_predicate(w_section(+,0,+,+)).
+w_section(_,Goal,_,_):- w_section_g(Goal),!.
 w_section(Title,Goal,Spyable,Showing):-  Showing==maybe,!, 
    (wants_output_for(Spyable) -> w_section(Title,Goal,Spyable,'1'); w_section(Title,Goal,Spyable,'0')).
 

@@ -261,7 +261,6 @@ menu_goal(Goal):-
 :- public(do_web_menu_key/1).
 :- export(do_web_menu_key/1).
 
-arc_sensical_term(O):-nonvar(O), O\==[], O\=='', O \= (_ - _), O\==end_of_file.
 invoke_arc_cmd(Key):- \+ arc_sensical_term(Key),!.
 invoke_arc_cmd(Key):- arc_atom_to_term(Key,Prolog,Vs),Vs==[], Prolog\=@=Key,!,invoke_arc_cmd(Prolog).
   
