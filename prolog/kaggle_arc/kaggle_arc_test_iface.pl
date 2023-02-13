@@ -497,10 +497,11 @@ rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 
 ndividuator(TestID):- ensure_test(TestID),
  never_entire_suite,nop(show_test_grids), set_flag(indiv,0),
+ compile_and_save_test(TestID),
  with_test_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)).
 
 ndividuator(TestID,ExampleNum,In,Out):- get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
-ndividuator(TestID,ExampleNum,Complete,In,Out):- 
+ndividuator(TestID,ExampleNum,Complete,In,Out):-  
  name_the_pair(TestID,ExampleNum,In,Out,_PairName),
   with_test_pairs(TestID,ExampleNum,In,Out, i_pair(Complete,In,Out)).
 
@@ -980,8 +981,13 @@ when_html(G):- arc_html->call(G);true.
 
 grid_to_task_pair(Grid,TestIDExample):- ground(Grid),was_grid_gid(Grid,TestIDExample),!.
 grid_to_task_pair(Grid,TestIDExample):- ground(Grid),is_grid_tid(Grid,TestIDExample),!.
+grid_to_task_pair(Grid,OID):- grid_to_image_oid(Grid,OID),!.
 %grid_to_task_pair(_,TestID>Example):- get_current_test(TestID),some_current_example_num(Example),!.
 grid_to_task_pair(_,Unknown):- gensym(grid_table_,Unknown).
+
+grid_to_image_oid(Grid,OID):- ground(Grid), !, oid_to_global_grid(OID,Grid),!.
+grid_to_image_oid(Grid,OID):- copy_term(Grid,GridC), oid_to_global_grid(OID,GridC),
+  oid_to_global_grid(OID,GridCC),GridCC=@=Grid,!.
 
 full_test_suite_list:-
   ensure_level_1_test_info,

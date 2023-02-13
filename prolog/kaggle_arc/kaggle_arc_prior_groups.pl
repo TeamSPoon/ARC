@@ -16,12 +16,18 @@ o1 to o1
 */
 :- encoding(iso_latin_1).
 :- include(kaggle_arc_header).
-
-show_interesting_props(Named,ObjsI,ObjsO):-
+:- thread_local(t_l:objs_others/2).
+show_interesting_props(Named,InC,OutC):-
+ extend_obj_proplist(InC,ObjsI),
+ extend_obj_proplist(OutC,ObjsO),
   banner_lines(cyan,4),
-  w_section('INPUT PROPS',show_interesting_named_props(input(Named),ObjsI)),
+  w_section('INPUT PROPS',
+    locally(t_l:objs_others(ObjsI,ObjsO),
+      show_interesting_named_props(input(Named),ObjsI))),
   banner_lines(white,2),
-  w_section('OUTPUT PROPS',show_interesting_named_props(output(Named),ObjsO)),
+  w_section('OUTPUT PROPS',
+    locally(t_l:objs_others(ObjsO,ObjsI),
+      show_interesting_named_props(output(Named),ObjsO))),
   banner_lines(cyan,4).
 
 show_interesting_props(_Named,ObjsI,ObjsO):-
@@ -32,21 +38,34 @@ show_interesting_props_gojs(Objs):- u_dmsg(show_interesting_props_gojs(Objs)).
   %8731374e
 
 
-show_interesting_named_props(Named,Objs):-
+show_interesting_named_props(Named,In):-
+   extend_obj_proplist(In,Objs),
+   w_section(print_prop_groups(Named),print_prop_groups(Objs)).
+
+show_interesting_named_props(Named,In):-
+ 
+ must_det_ll((
+   extend_obj_proplist(In,Objs),
+   print_prop_groups(Objs),
    show_three_interesting_groups(Named,Objs,Groups),
-   banner_lines(cyan,3),
-   forall(member(G,Groups),
-     show_interesting_group(Named,G)).
+   %banner_lines(cyan,3),
+   groups_to_groupsets(Groups,GroupSets),
+   forall(member(GObjs,GroupSets),
+    (findall(Title,member(Title-GObjs,Groups),Titles),
+      show_interesting_group(Named,Titles-GObjs))))).
+
+groups_to_groupsets(Groups,GroupSets):-
+  maplist(arg(2),Groups,GroupsList), sort(GroupsList,GroupSets).
 
 show_interesting_group(Named,Title-Objs):- 
-  banner_lines(cyan,2),
-  pp(cyan, Title),
-   print_ss(group(Named,Title)=Objs),
-   banner_lines(cyan,1).
+  length(Objs,Len),
+  mass(Objs,Mass),
+  sformat(SGroup,'~w Object(s) ~w mass (~q)',[Len,Mass,Named]), 
+  w_section(title(SGroup),
+    (pp(Title),nl,print_ss(Objs))).
 
-show_three_interesting_groups(Named,In,Groups):-
-  extend_obj_proplist(In,Objs),
-  findall(Prop,(member(obj(O),Objs),member(Prop,O), \+ skip_ku(Prop) ),Props),
+show_three_interesting_groups(Named,Objs,Groups):-
+  findall(Prop,(member(obj(O),Objs),member(Prop,O), not_skip_ku(Prop) ),Props),
   sort_safe(Props,SProps),
   print_interesting_named_groups(props(Named),SProps),
   maplist(make_unifier,SProps,UProps), predsort(using_compare(numbered_vars),UProps,SUProps),  
@@ -63,11 +82,12 @@ print_interesting_named_groups(Named,KUProps):-
 
 numbered_vars(A,B):- copy_term(A,B),numbervars(B,0,_,[attvars(skip)]).
 
-skip_ku(link(_,_)).
+%skip_ku(pg(_,_,FL,_)):- !, FL \==firstOF, FL \==lastOF. 
+skip_ku(pg(_,_,_,_)).
+%skip_ku(link(_,_)).
 skip_ku(iz(media(_))).
 skip_ku(changes(_)).
 skip_ku(o(_,_,_,_)).
-skip_ku(pg(_,_,_,_)).
 skip_ku(cc(C,_)):- is_color(C).
 
 objs_with_props([KU-_|Props],Objs,OL,GO):- skip_ku(KU),!,objs_with_props(Props,Objs,OL,GO).
@@ -112,6 +132,9 @@ prop_name(Prop,F):- \+ compound(Prop),!,F=Prop.
 prop_name(Prop,Name):- compound_name_arguments(Prop,F,[A|_]),
    (number(A)-> Name =F ; compound_name_arguments(Name,F,[A])).
 
+mostly_fg_objs(OutCR,OutCR):-!.
+mostly_fg_objs(InCRFGBG,OutCR):- include(is_fg_object,InCRFGBG,OutCR),!.
+
 object_group_cc(Objs,GroupName,SubObjs,Count,NamesCC,ValuesCC):-
   select_subgroup(Objs,GroupName,Count,SubObjs),
   objects_names_props(SubObjs,Props),
@@ -148,9 +171,45 @@ is_in_subgroup(Obj,nth_fg_color(Nth,Color)):- unique_fg_colors(Obj,List),nth1(Nt
 %is_in_subgroup(Obj,contains(N,Set)):-transitive_sets(contains,Obj,Set,N).
 %is_in_subgroup(Obj,Prop):- has_prop(Prop,Obj).
 %is_in_subgroup(_,all).
+not_skip_ku(P):- \+ skip_ku(P).
 
+print_prop_groups(Objs):-
+  maplist(indv_props_list,Objs,PropLists),
+  flatten(PropLists,List),list_to_set(List,Set),
+  include(not_skip_ku,Set,ESet),
+  maplist(has_props(Objs),ESet,GrpList),
+  predsort(sort_on(length),GrpList,GrpSetR),reverse(GrpSetR,GrpSet),
+  maplist(print_prop_groups(Objs),GrpSet),
+  forall(select(O1,Objs,Rest),print_prop_groups(Rest,O1,[])).
 
+has_props(Objs,Prop,Set):- include(has_prop(Prop),Objs,Set).
+print_prop_groups(_,[]):-!.
+print_prop_groups(_,[_]):-!.
+print_prop_groups(All,Group):-
+  subtract(All,Group,Except),
+  [O1|Rest]=Group,
+  print_prop_groups(Except,O1,Rest).
 
+print_prop_groups(Except,O1,Rest):-
+  indv_props_list(O1,PropsIKU), include(not_skip_ku,PropsIKU,Props),
+  findall(Prop,(member(Prop,Props), \+ any_have_prop(Except,Prop), 
+                               forall(member(O,Rest),has_prop(Prop,O))),UniqueToGroup),
+  t_l:objs_others(_These,Those),
+  findall(O2,(member(O2,Those), forall(member(Prop,UniqueToGroup),has_prop(Prop,O2))),OtherObjs),  
+  [O1|Rest]=Group,
+  asserta_if_new(prop_groups(UniqueToGroup,Group,Except)),
+  maplist(global_grid,Group,Grids),
+  maplist(global_grid,OtherObjs,OGrids),
+  print_prop_grids_list(UniqueToGroup,Grids,OGrids).
+
+print_prop_grids_list(UniqueToGroup,Grids,OGrids):- 
+ print_table([[with_tag_style(pre,"width: 450px",write_tall(UniqueToGroup)),
+  write_scrollable(print_table([Grids,OGrids]))]]),!.
+%print_prop_grids_list(UniqueToGroup,Grids,OGrids):- print_table([[with_tag(pre,write_tall(UniqueToGroup)),print_table([[print_ss(Grids)],[print_ss(OGrids)]])]]).
+
+write_scrollable(Goal):- with_tag_class(div,scrollable,Goal).
+
+any_have_prop(Except,Prop):- member(O,Except),has_prop(Prop,O),!.
 
 transitive_sets(P2,Obj,Set,N):- findall(n(P,List),(trans(P2,Obj,List),List\==[],length(List,P)),Lists),sort_safe(Lists,Set),length(Set,N).
 nontransitive_set(P2,Obj,Set,N):- findall(Other,call(P2,Obj,Other),List),sort_safe(List,Set),length(Set,N).
@@ -238,7 +297,7 @@ group_prior_objs(Why,Objs,WithPriors):-
  nop(noisey_debug(print_premuted_objects(Title))),
  w_section(title(add_priors(Title)),
   %print_tree(groupPriors=Lbls,[max_depth(200)]),
-  add_priors(Lbls,Objs,WithPriors)))).
+  with_tag_class(div,nonpre,add_priors(Lbls,Objs,WithPriors))))).
 
 print_premuted_objects(Why,Objs):- Objs==[],!,dmsg(no_objs(Why)).
 print_premuted_objects(Why,Objs):- 
@@ -495,7 +554,6 @@ add_prior(N,Lbl,Objs,ObjsWithPrior):-
   my_partition(is_prior_prop(Lbl),Objs,Lbld,Unlbl),  
   %add_prior_placeholder(Lbl,Lbld,RLbld),
   length(Lbld,LL),  
-
   rank_priors(Lbl,Lbld,RLbldR),
   nop(print_grid(Lbl->N/LL,RLbldR)),
   write('\t '), writeq(Lbl->N/LL),write(' <p/>\t'),

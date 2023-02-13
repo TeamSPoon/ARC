@@ -18,6 +18,8 @@
 :- multifile(cindv/5).
 :- multifile(cindv/6).
 
+:- dynamic(oid_to_global_grid/2).
+
 :- dynamic(zmem/3).
 
 %show_time_gt_duration(Goal):- show_time_gt_duration(0.23,Goal,true). 

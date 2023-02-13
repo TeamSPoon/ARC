@@ -1470,12 +1470,16 @@ global_grid(I,G):- is_object(I), object_grid(I,G),!.
 global_grid0(I,G):- is_grid(I),!,G=I.
 global_grid0(ObjRef,List):- \+ is_object(ObjRef), into_obj(ObjRef,Obj),!,global_grid0(Obj,List).
 global_grid0(I,G):- must_det_ll((call((grid_size(I,H,V),globalpoints_maybe_bg(I,LP),points_to_grid(H,V,LP,G))))),!.
+global_grid0(I,G):- object_grid(I,G0),!,loc2D(I,H,V),pad_top(V,G0,GV),pad_left(H,GV,G).
 
 %global_grid(I,G):- global_grid0(I,G),!.
-global_grid(I,G):- global_grid0(I,G0),!,mapgrid(black_vs_bg,G0,G).
-global_grid(I,G):- object_grid(I,G0),!,loc2D(I,H,V),pad_top(V,G0,GV),pad_left(H,GV,G).
+global_grid(I,G):- obj_to_oid(I,OID),global_grid(I,OID,G).
+global_grid(I,OID,G):- var(OID),obj_to_oid(I,OID),!,global_grid(I,OID,G).
+global_grid(_,OID,G):- atom(OID),oid_to_global_grid(OID,G),!.
+global_grid(I,OID,G):- global_grid0(I,G0),!,mapgrid(black_vs_bg,G0,G), assert_if_new(oid_to_global_grid(OID,G)).
 
-black_vs_bg(C,O):- C == black,!, O = wbg.
+%black_vs_bg(C,O):- C == black,!, O = wbg.
+black_vs_bg(C,O):- plain_var(C),!,O = bg.
 black_vs_bg(C,O):- C == bg,!, O = _.
 black_vs_bg(C,C).
 

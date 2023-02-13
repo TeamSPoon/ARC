@@ -2789,7 +2789,7 @@ fav(v('7ee1c6ea'),[grid_size_same,-rotation_match,+shape_match,+mask_match,+colo
 %fav(v('7c9b52a0'),[indiv([force_by_color,pbox_vm])]).
 fav(v('7c9b52a0'),[indiv([colormass,bg_shapes(colormass)])]).
 fav(t('484b58aa'),[indiv(i_repair_patterns_f)]).
-fav(t('0dfd9992'),[indiv(i_repair_patterns_f)]).
+%fav(t('0dfd9992'),[indiv(i_repair_patterns_f)]).
 fav(v('af22c60d'),[indiv(i_repair_patterns_f)]).
 fav(v('903d1b4a'),[indiv(i_repair_patterns_f)]).
 fav(v('e66aafb8'),[indiv(i_repair_patterns_f)]).

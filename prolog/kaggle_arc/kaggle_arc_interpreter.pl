@@ -696,8 +696,9 @@ create_bag(Obj1):- gensym(bag_,Obj1),ain(iz(Obj1,group)).
 
 missing_arity(P2,N):- \+ callable_arity(P2,N).
 
-callable_arity(P2,N):- compound(P2),!, \+ is_list(P2), compound_name_arity(P2,F,Am2),A is Am2 + N, current_predicate(F/A).
-callable_arity(F,N):-  atom(F),current_predicate(F/N).
+callable_arity(F,N):-  atom(F),!, upcase_atom(F,UC), \+ downcase_atom(F,UC), current_predicate(F/N).
+callable_arity(P2,N):- compound(P2),!, \+ is_list(P2), compound_name_arity(P2,F,Am2),A is Am2 + N, callable_arity(F,A).
+  
 
 % turtle(H,V,Dir,N,H2,V2):- 
 prim_ops([

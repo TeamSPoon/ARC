@@ -148,10 +148,10 @@ show_indiv_html(_Why, Obj):- obj(ObjL)=Obj,
   my_partition(arg1(is_cpoints_list),NonGridArgs,_CArgs,NonCArgs),
   my_partition(arg1(is_points_list),NonCArgs,_PArgs,NonPArgs),
   sformat(S,'Object ~w',[SGlyph]),
-  global_grid(Obj,GG),
-  norm_grid(Obj,NormGrid),
+  global_grid(Obj,GG),norm_grid(Obj,NormGrid),
   norm_ops(Obj,NormOps),
-  print_side_by_side(green,GG,SGlyph,_,NormGrid,NormOps),!,
+  wots(S1,writeq(global_grid(SGlyph))),wots(S2,writeq(NormOps)),
+  print_side_by_side(green,GG,S1,_,NormGrid,S2),!,
   %print_side_by_side(green,GG,SGlyph,_,NormGrid,NormOps),!,
   pp([S|NonPArgs]).
 
@@ -167,9 +167,9 @@ show_indiv(Why, Obj):-
 
   if_t((H\==1;V\==1;true),
     must_det_ll((     
-     %object_or_global_grid(Obj,LG+Type,GridS),      
+     %object_or_global_grid(Obj,LG+Type,GridS),           
+     object_grid(Obj,Grid),
      global_grid(Obj,GridS),
-     object_grid(Obj,Grid),   
      Title = show_indiv(Why,objFn(Glyph),loc2D(OH,OV),center2G(CX,CY),size2D(H,V)),
              loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
 

@@ -102,9 +102,11 @@ t_section(Title,Goal):-
      title_string_to_functor(TitleStr,GoalC,Spyable), 
      w_section(Title,Goal,Spyable,maybe))).
 
-:- meta_predicate(w_section(+,0,+)).
+:- meta_predicate(w_section('+',0,'+')).
 
 w_section(_,Goal,_):- w_section_g(Goal),!.
+
+w_section(Title,Goal,AmmtShown):- AmmtShown==ran_collapsed, w_section_4(Title,Goal,debug,ran_collapsed).
 w_section(Title,Goal,Spyable):- into_str(Title,TitleStr),Title\==TitleStr,!,w_section(TitleStr,Goal,Spyable).
 w_section(Title,Goal,AmmtShown):- is_amount_shown(AmmtShown),!,
   must_det_ll((title_string_to_functor(Title,Goal,Spyable), w_section(Title,Goal,Spyable,AmmtShown))).
@@ -123,6 +125,7 @@ w_section(Title,Goal,Spyable,Showing):-  Showing==toplevel,!,
 w_section(Title,Goal,Spyable,Showing):- 
   (into_0_or_1(Showing,Bool)->w_section_4(Title,Goal,Spyable,Bool);w_section_4(Title,Goal,Spyable,Showing)).
 
+w_section_4(title(Title),Goal,Spyable,Showing):- nonvar(Title),!, w_section_4(Title,Goal,Spyable,Showing).
 w_section_4(Title,Goal,Spyable,Showing):- wants_html, !, w_section_html(Title,Goal,Spyable,Showing).
 w_section_4(Title,Goal,Spyable,Showing):- w_section_ansi(Title,Goal,Spyable,Showing).
 
@@ -146,7 +149,10 @@ clip_string(Attr,Len,SAttr):- atom_length(Attr,SLen),clip_string(SLen,Attr,Len,S
 clip_string(SLen,Attr,Len,Attr):- SLen=<Len,!.
 clip_string(_,Attr,Len,SAttr):- sub_string(Attr, 0, Len, _After, SAttr).
 
-w_section_html(Title,Goal,_Spyable,Showing):-
+w_section_html(Title,Goal,Spyable,ran_collapsed):- !, w_section_html(Title,Goal,Spyable,panel_shown,false).
+w_section_html(Title,Goal,Spyable,Showing):- w_section_html(Title,Goal,Spyable,panel_shown,Showing).
+
+w_section_html(Title,Goal,_Spyable,Class,Showing):-
  must_det_ll(( 
  copy_term(Goal,GoalC),
   gensym('accordian_css_',Sym),
@@ -155,18 +161,22 @@ w_section_html(Title,Goal,_Spyable,Showing):-
   into_attribute(Title,TAttr),
   clip_string(TAttr,800,STAttr),
   flag('$w_section_depth',X,X),
- Class=panel_shown, %(Showing == true -> Class=panel_shown; Class=panel_hidden),
+% Class=panel_shown, %(Showing == true -> Class=panel_shown; Class=panel_hidden),
  wots(AC,(wots(S,trim_newlines(wqs_c(Title))),(S==""-> write(Title) ; write(S)))),
- format('<br><button id="~w" onclick="clickAccordian(`~w`,false);" class="accordian" title="~w">',[Sym,Sym,STAttr]),
+ format('<br><button id="~w" onclick="top.clickAccordian(`~w`,false);" class="accordian" title="~w">',[Sym,Sym,STAttr]),
  format('<label for="~w" class="font(1)" class="accordian" title="~w">',[Sym,SAttr]),flush_output, 
  write(AC),
- format('</label>',[]),flush_output,
- format('<script>addAccordian(document.getElementById("~w"),~w);</script>',[Sym,X]),
+ format('</label>',[]),flush_output, 
  format('</button><br>'),flush_output, 
- format('<div id="~w_panel" onmouseover="activateMenu(`~w_link`);" class="~w , panel">',[Sym,Sym,Class]), 
- flush_output,
+ format('<div id="~w_panel" onmouseover="top.activateMenu(`~w_link`);" class="~w , panel ">',[Sym,Sym,Class]), flush_output,
+ format('<div class="wtopscroller11"><div class="dtopscroller1"></div></div>'),
+ format('<div id="~w_scroller" class="wtopscroller22"><div class="dtopscroller2">',[Sym]),
+ format('<script>top.add_top_scroller(document.currentScript)</script>',[]),flush_output,
+ format('<script>top.addAccordian(document.getElementById("~w"),~w);</script>',[Sym,X]),
+
  once(ignore((goal_new_lines(in_w_section_depth(Goal),NewChars)))),
- ignore((format('</div>',[]),flush_output,
+ format('<script>top.check_top_scroller(document.getElementById("~w"))</script>',[Sym]),flush_output,
+ ignore((format('</div></div><script>top.commonLoading()</script></div>',[]),flush_output,
  ignore((  
    ((Showing==false,(var(NewChars);NewChars<600));(Showing==true,Class==panel_hidden);(Showing==false,Class==panel_shown))
     ->format('<script>document.getElementById("~w").click();</script>',[Sym]))))))).
@@ -198,7 +208,8 @@ expandable_mode(How):- var(How),!,luser_getval(expansion,How).
 expandable_mode(How):- luser_getval(expansion,V),!,How==V.
 
 :- luser_default(expansion,javascript).
-:- luser_setval(expansion,bfly).
+:- luser_default(expansion,bfly).
+
 
 
 call_maybe_det(Goal,Det):- true,call_e_dmsg(Goal),deterministic(Det),true.
@@ -648,8 +659,9 @@ write_arc_start_script(Where):- nop(write_arc_start(Where)).
 write_arc_start(Where):- var(Where), current_output(Where), write_arc_start(Where).
 write_arc_start(Where):- wrote_arc_start(Where),!.
 write_arc_start(Where):- asserta(wrote_arc_start(Where)),
-  format(Where,'<script type="text/javascript">~@</script>
-<style>~@</style>',[echo_file('kaggle_arc_ui_html.js'),echo_file('kaggle_arc_ui_html.css')]).
+  format(Where,'<script type="text/javascript" href="/swish/muarc/kaggle_arc_ui_html.js"></script>',[]),
+  %format(Where,'<script type="text/javascript">~@</script>',[echo_file('kaggle_arc_ui_html.js')]),
+  format(Where,'<style>~@</style>',[echo_file('kaggle_arc_ui_html.css')]).
 write_arc_end(Where):- retractall(wrote_arc_start(Where)).
 /*
 old_write_arc_start:- get_time(Now),Now10M is floor(Now * 10_000_000),
@@ -736,11 +748,21 @@ print_title(Title):- trim_newlines(wqs_c(Title)).
 
 % width: fit-content
 % print_table(ListOfLists):- setup_call_cleanup(write('<table style="width: fit-content;m width: 100%; border: 0px">'), maplist(html_table_row,ListOfLists), write('</table>')),!.
-print_table(ListOfLists):- with_tag_class('table','tblo', maplist(html_table_row,ListOfLists)).
+print_table(ListOfRows):- 
+   make_rows_same_length(ListOfRows,ListOfLists), with_tag_class('table','tblo', maplist(html_table_row,ListOfLists)).
 html_table_row(ListOfLists):- with_tag('tr',html_table_col(ListOfLists)).
 html_table_col(ListOfLists):- is_list(ListOfLists),\+ is_grid(ListOfLists),!,maplist(html_table_col,ListOfLists).
 html_table_col(H):- with_tag('td',print_card_n('',H)).
 
+make_rows_same_length(ListOfLists,ListOfRows):-
+  maplist(length,ListOfLists,Lens),
+  sort(Lens,ListLens),last(ListLens,Len),
+  maplist(slack_rows(Len),ListOfLists,ListOfRows).
+
+slack_rows(Len,List,Row):-length(Row,Len),slack_into_rows(List,Row).
+blank_stuff(Col):- ignore(Col="").
+slack_into_rows(List,Row):- append(List,Stf,Row),!,maplist(blank_stuff,Stf).
+slack_into_rows(List,Row):- append(Row,_DropStf,List),!.
 
 as_html_encoded(Goal):- 
   html_stream_encoding(UTF8),
@@ -832,6 +854,13 @@ has_content(Header):- nonvar(Header), Header\==[], Header\=='',Header\=="''&nbsp
 
 
 print_ss_html(TitleColor,G1,N1,LW,G2,N2):- \+ wants_html,!,  print_side_by_side_ansi(TitleColor,G1,N1,LW,G2,N2).
+
+print_ss_html(TitleColor,In,FIn,_LW,Out,FOut):-
+ wots_vs(HIn, with_color_span(color(TitleColor),wqs_c(FIn))),
+ wots_vs(HOut, with_color_span(color(TitleColor),wqs_c(FOut))),
+ print_ss_html_h(In,HIn,Out,HOut).
+
+
 print_ss_html(TitleColor,G1,N1,_LW,G2,N2):-  
  into_nv_cmd(N1,N1Cmd),
  into_nv_cmd(N2,N2Cmd),
@@ -856,20 +885,43 @@ print_ss_html(TitleColor,
    locally(nb_setval(grid_footer,FIn),with_other_grid(Out,print_grid_http_bound(ID1,BGC1,1,1,H1,V1,In))),'-->',
    locally(nb_setval(grid_footer,FOut),with_other_grid(In,print_grid_http_bound(ID2,BGC2,1,1,H2,V2,Out)))]]).
 
+print_ss_html_h(In,HIn,Out,HOut):- 
+  print_table([[HIn,'   ',HOut],
+  [ locally(nb_setval(grid_footer,[]),with_other_grid(Out,print_grid(In))),
+    '-->',
+    locally(nb_setval(grid_footer,[]),with_other_grid(In,print_grid(Out)))]]).
+print_ss_html_h(In,HIn,Out,HOut):- 
+ print_table([
+  [locally(nb_setval(grid_footer,HIn),with_other_grid(Out,print_grid(In))),
+   '-->',
+   locally(nb_setval(grid_footer,HOut),with_other_grid(In,print_grid(Out)))]]).
 
-print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):- ansi_main,!,print_grid_ansi_real(SH,SV,EH,EV,Grid).
+print_grid_http_bound(_BGC,SH,SV,EH,EV,Grid):- ansi_main,!,print_grid_ansi_real(SH,SV,EH,EV,Grid).
+
+/*
+print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):-
+  grid_to_task_pair(Grid,TaskIDSubTask),
+  grid_to_image_oid(Grid,OID),
+  format('<img id="~w" name="~w" title="grid(~w,~w)" src="(none)"/>',[TaskIDSubTask,OID,EH,EV]),
+  format('<script> var var oid="~w"; name="~w" title="grid(~w,~w)" src="(none)"/>',[TaskIDSubTask,OID,EH,EV]),
+*/
+
 print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):- 
   grid_to_task_pair(Grid,TaskIDSubTask),
+  ignore(grid_to_image_oid(Grid,ID)),
   (should_shrink_grid_half(Grid,EH,EV)->(GridClass=grid_table_shrink,HM=8);(GridClass=grid_table,HM=16)),
+
   Width is EH-SH+1,
   TWidth is Width*HM,
   HGHT is EV-SV+2,
   THGHT is HGHT*HM,
 
-    wots(GTitle, 
-     (format('grid(~w,~w)',[EH,EV]),
-     (nb_has_content(grid_title,Title)-> format(' ~w',[Title]) ; true),
-     (nonvar(ID)-> format(' ~w',[ID]) ; true))),
+ (nb_take_content(grid_title,Title)->true;Title=_),
+   
+     wots(GTitle, 
+             (format('grid(~w,~w)',[EH,EV]),             
+             (nonvar(Title)-> format(' ~w',[Title]) ; true),
+             (nonvar(ID)-> format(' ~w',[ID]) ; true))),
 
 
   format('<table style="max-width: ~wpx; max-height: ~wpx;" id="~w" class="~w selectable" title="~w">',
@@ -883,7 +935,54 @@ print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):-
   ignore((nb_take_content(grid_footer,Footer),
     with_tag('tr',format('<th style="max-width: ~wpx" colspan="~w" class="wrappable">~w</th>',[TWidth,Width,Footer])))),
   write('</table>'),
-  ignore((cvtToIMG,format('<script>cvtToIMG(`~w`);</script>',[TaskIDSubTask]))),!.
+
+  ignore((cvtToIMG,
+     ((grid_to_image_oid(Grid,ID),atom(ID))->prev_intoNamedImg(ID);
+      format('<script>cvtToIMG(`~w`); $(document.currentScript).remove(); </script>',[TaskIDSubTask])))),!.
+
+
+
+
+prev_intoNamedImg(OID):-
+ asserta(did_prev_intoNamedImg(OID)),
+ gensym(script_id_,ScriptID),
+ format('<script id="~w">
+  var me = document.currentScript;
+  var prev = me.previousElementSibling;
+  top.intoNamedImg(true,true,prev,"~w"); $(me).remove();
+</script>',[ScriptID,OID]).
+into_image(I,S):- wots(S,print_html_image(I)).
+
+:- dynamic(page_has_grid_out/2).
+:- retractall(page_has_grid_out(_,_)).
+
+draw_html_image(Obj):-
+  global_grid(Obj,OID,Grid), numbervars(Grid,666,_,[attvars(bind),singletons(true)]), assert_grid_oid(Grid,OID),
+  locally(nb_setval(grid_title,OID),print_grid(OID,Grid)),!.
+
+current_output_page(Page):- current_output(Page).
+print_html_image(Obj):- ansi_main,!,draw_html_image(Obj),!.
+print_html_image(Obj):- 
+  obj_to_oid(Obj,OID),current_output_page(Page),print_html_image(Page,OID,Obj).
+
+print_html_image(Page,OID,_Obj):- page_has_grid_out(Page,OID),!,  
+  with_output_to(Page,((
+  format('<img src="https://via.placeholder.com/100" class="placeholder" name="~w"/>',[OID]),
+  format('<script>
+   var me = document.currentScript;
+   var prev = me.previousElementSibling; 
+   var url=top.milledImages["~w"];
+   if(url!==undefined) {
+     prev.src = url;
+   }
+   debugger;
+   $(me).remove();
+ </script>',[OID])))).
+
+%print_html_image(Obj):- draw_html_image(Obj),!.
+print_html_image(Page,OID,Obj):- assert(page_has_grid_out(Page,OID)),
+  with_output_to(Page,((draw_html_image(Obj), prev_intoNamedImg(OID)))).
+  %print_html_image(Obj).
 
 
 nb_take_content(_Var,Footer):- nonvar(Footer),has_content(Footer),!.
@@ -903,13 +1002,24 @@ should_shrink_grid_half(Grid,EH,EV):- is_grid(Grid),
 
 
 print_grid_http_bound(ID,BGC,SH,SV,EH,EV,Grid):-  
- (should_shrink_grid_half(Grid,EH,EV)->GridClass=grid_table_shrink;GridClass=grid_table),
+
+ 
+
+
  (nb_take_content(grid_title,Title)->true;Title=_),
-  wots(GTitle, 
-     (format('grid(~w,~w)',[EH,EV]),
-     (nonvar(Title)-> format(' ~w',[Title]) ; true),
-     (nonvar(ID)-> format(' ~w',[ID]) ; true))),
- ignore((nonvar(ID),format('<table id="~w" class="~w selectable" title="~w">',[ID,GridClass,GTitle]))),
+
+ ignore((nonvar(ID),
+
+   
+     wots(GTitle, 
+             (format('grid(~w,~w)',[EH,EV]),             
+             (nonvar(Title)-> format(' ~w',[Title]) ; true),
+             (nonvar(ID)-> format(' ~w',[ID]) ; true))),
+   (should_shrink_grid_half(Grid,EH,EV)->GridClass=grid_table_shrink;GridClass=grid_table),
+   format('<table id="~w" class="~w selectable" title="~w">',[ID,GridClass,GTitle])
+
+   )),
+
  forall(between(SV,EV,V),
     with_tag('tr',((
     forall(between(SH,EH,H),
@@ -919,10 +1029,11 @@ print_grid_http_bound(ID,BGC,SH,SV,EH,EV,Grid):-
          (var(Title)-> format('<td bgcolor="~w" title="~w (~w,~w)">',[HTMLColor,CG,H/EH,V/EV]);
            format('<td bgcolor="~w">',[HTMLColor])),
           catch(print_hg1(CG),E,writeln(CG=E)),write('</td>')))))))),
-  ignore((nonvar(ID),write('</table>'))),
-  ignore((cvtToIMG,nonvar(ID),format('<script>cvtToIMG(`~w`);</script>',[ID]))),!.
 
-cvtToIMG:- false.
+  ignore((nonvar(ID),write('</table>'))),
+  ignore((nonvar(ID),cvtToIMG,format('<script>cvtToIMG(`~w`); $(document.currentScript).remove(); </script>',[ID]))),!.
+
+cvtToIMG:- true.
 
 into_html_color(Color,'#333'):- plain_var(Color),!.
 into_html_color(Color,'#060'):- var(Color),!.
@@ -973,7 +1084,7 @@ write_nav_cmd(Info,navCmd(Cmd)):- !, %nonvar(Goal), %toplevel_pp(PP), %first_cur
   %term_to_www_encoding(Goal,CmdAtom),
   into_str(Info,Info1),
   into_attribute(Cmd,Attr),
-  sformat(SO,'<a href="javascript:void(0)" onclick="navCmd(`~w`)">~w</a>~n',[Attr,Info1]),!,
+  sformat(SO,'<a href="javascript:void(0)" onclick="top.navCmd(`~w`)">~w</a>~n',[Attr,Info1]),!,
   our_pengine_output(SO).
 write_nav_cmd(Info,Cmd):- write_nav_cmd(Info,navCmd(Cmd)).
 
@@ -1004,8 +1115,7 @@ arcproc_main(Request):- % update_changed_files1,
 
 
 handler_arcproc_iframe(_Request):- Var = icmd,
-  get_now_cmd(Var,Prolog),
-  dmsg(call_current_arc_cmd(Var)=Prolog),
+  get_now_cmd(Var,Prolog),!, dmsg(call_current_arc_cmd(Var)=Prolog),
   ignore(invoke_arc_cmd(Prolog)),!.
 handler_arcproc_iframe(Request):-
   wots(_,intern_arc_request_data(Request)),
@@ -1027,7 +1137,7 @@ format_s(`
 <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js" integrity="sha256-6XMVI0zB8cRzfZjqKcD01PBsAy3FlDASrlC8SxCpInY=" crossorigin="anonymous"></script>
 <!--script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js" crossorigin="anonymous"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script-->
-<script src="https://www.kryogenix.org/code/browser/sorttable/sorttable.js" crossorigin="anonymous"></script>
+<!--script src="https://www.kryogenix.org/code/browser/sorttable/sorttable.js" crossorigin="anonymous"></script-->
 
 <link rel="stylesheet" type="text/css" href="/node_modules/datatables.net-dt/css/jquery.dataTables.css" crossorigin="anonymous">
 <script type="text/javascript" charset="utf8" src="/node_modules/datatables.net/js/jquery.dataTables.js"></script>
@@ -1035,15 +1145,22 @@ format_s(`
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 <script src="/node_modules/html-to-image/dist/html-to-image.js" crossorigin="anonymous"></script>
-<script src="https://www.w3schools.com/lib/w3.js" crossorigin="anonymous"></script>
-<link href="https://www.w3schools.com/w3css/4/w3.css" rel="stylesheet" crossorigin="anonymous">
+<!--script src="https://www.w3schools.com/lib/w3.js" crossorigin="anonymous"></script>
+link href="https://www.w3schools.com/w3css/4/w3.css" rel="stylesheet" crossorigin="anonymous"-->
+
+<script src="https://d3js.org/d3.v4.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>	
+<script src="/swish/muarc/kaggle_arc_ui_html.js"></script>
+<script src="/swish/muarc/kaggle_arc_ui_html_d3.js"></script>
 <script>
 $(document).ready(function(){});
 </script>`),
 write_arc_start(Where),
 format_s(`<div id="mouse_iframer_div" style="display:none;"><iframe id="mouse_iframer" name="lm_xref_two" height="300px" width="100%" title="Iframe Example" src="about:blank"></iframe></div>`),
 nop(format_s(`<!--body-->`)),
-format_s(`<script> clearMenu(); </script>`),
+format_s(`<script> top.clearMenu(); </script>`),
+retractall(page_has_grid_out(_,_)),
 format_s(`<div id="main_in_iframe" class="frame_body , scrollable-nav">`),
 format_s(`<div id="hidden_swish_app" style="display:none; visibility:hidden"><div id="swish_app"><header class="navbar navbar-default"><div class="container pull-left"><div class="navbar-header"><a href="/" class="pengine-logo">&nbsp;</a><a href="/" class="swish-logo">&nbsp;</a></div><nav id="navbar"></nav></div></header><div id="content" class="container"><div class="tile horizontal" data-split="60%"><div class="prolog-editor"></div><div class="tile vertical" data-split="70%"><div class="prolog-runners"></div><div class="prolog-query"></div></div></div></div></div></div>`),
 format_s(`<div id="hidden_popups" style="display:none; visibility:hidden"><pre><textarea id="input-helper"></textarea></pre><div id="input-view" class="hidden"></div><div id="popup" class="hidden"></div></div>`),
@@ -1159,11 +1276,13 @@ if_wants_output_for(Spyable, Goal):- wants_html,!,w_section(Spyable,Goal,Spyable
 if_wants_output_for(SpyableC, Goal):-
  copy_term(SpyableC,Spyable),
   catch_log(((wants_output_for(Spyable)->w_section(title(Spyable),Goal,Spyable) ; 
-     w_section(title(Spyable),Goal,later)))).
-    
+     w_section(title(Spyable),Goal,ran_on_expand)))).
+
+
+if_extreme_debug(G):- nop(G).
 wants_output_for(SpyableC):- is_cgi,!, copy_term(SpyableC,Spyable),
-  (wants_output_for_1(Spyable)-> make_session_checkbox(Spyable,wants_output_for(Spyable),'<br/>',true) ;
-    (make_session_checkbox(Spyable,wants_output_for(Spyable),'<br/>',false),!,fail)).
+  if_extreme_debug((wants_output_for_1(Spyable)-> make_session_checkbox(Spyable,wants_output_for(Spyable),'<br/>',true) ;
+    (make_session_checkbox(Spyable,wants_output_for(Spyable),'<br/>',false),!,fail))).
 wants_output_for(SpyableC):- copy_term(SpyableC,Spyable),
    (wants_output_for_1(Spyable)-> pp(showing(Spyable));
      ((arc_spyable_keyboard_key(Spyable,SpyableKey)->pp(skipping(Spyable,key(SpyableKey)));(pp(skipping(Spyable)))),!,fail)).
@@ -1195,14 +1314,19 @@ is_bool_like('CHECKED','UNCHECKED').
 is_bool_like('CHECKED',''). 
 % is_bool_like(show,hide).
 is_bool_like(always,never).
-is_bool_like(later,never).
+is_bool_like(ran_expanded,ran_on_expand).
 
 is_bool_like(show,hide).
 is_bool_like(shown,hidden).
 
 is_amount_shown(toplevel). 
 is_amount_shown(maybe).
+is_amount_shown(UWH):- user_wants_header(UWH).
 is_amount_shown(YN):- into_0_or_1(YN,_),!.
+
+user_wants_header(ran_expanded). % 1
+user_wants_header(ran_collapsed). % ... ?
+user_wants_header(ran_on_expand). % 0
 
 
 

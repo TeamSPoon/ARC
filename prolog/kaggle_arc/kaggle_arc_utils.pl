@@ -52,7 +52,9 @@ arc_memoized(G):-
 set_nth1(1,[_|Row],E,[E|Row]):-!.
 set_nth1(N,[W|Row],E,[W|RowMod]):- Nm1 is N-1, set_nth1(Nm1,Row,E,RowMod).
 
-findall_count(T,G,N):- findall(T,G,L),list_to_set(L,S),length(S,N).
+findall_count(T,G,N):- findall_set(T,G,S),length(S,N).
+
+findall_set(T,G,S):- findall(T,G,L),list_to_set(L,S).
 
 make_list_inited(0,_,[]):-!.
 make_list_inited(1,E,[E]):-!.
@@ -203,7 +205,11 @@ mapg_list(P3,Grid,GridN,GridO):- call(P3,Grid,GridN,GridO),!.
 
 mapgrid(P2,Grid,GridN):- into_grid_or_var(Grid,G1),into_grid_or_var(GridN,G2),mapg_list(P2,G1,G2).
 mapg_list(P2,Grid,GridN):- is_list(Grid),!,maplist(mapg_list(P2),Grid,GridN).
-mapg_list(P2,Grid,GridN):- call(P2,Grid,GridN),!.
+mapg_list(P2,Grid,GridN):- call_p2s(P2,Grid,GridN),!.
+
+call_p2s([P2],Grid,GridN):- !, call(P2,Grid,GridN).
+call_p2s([P2|P2L],Grid,GridN):- !, call(P2,Grid,GridM),call_p2s(P2L,GridM,GridN).
+call_p2s(P2,Grid,GridN):- call(P2,Grid,GridN).
 
 mapgrid(P1,Grid):- into_grid_or_var(Grid,G1),mapg_list(P1,G1).
 mapg_list(P1,Grid):- is_list(Grid),!,maplist(mapg_list(P1),Grid).

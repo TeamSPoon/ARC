@@ -86,11 +86,12 @@ function clickGrid(name) {
 }
 
 function toEle(name) {
+    var node = null;
+    if (name == null)
+        return node;
     if (isElement(name))
         return name;
-    if (name == null)
-        return null;
-    var node = null;
+    if (typeof name !== 'string') return name;
     if (typeof name === "string") {
         node = document.getElementById(name);
         if (node != null)
@@ -188,8 +189,11 @@ function toggleNavL(Name) {
     var iframeE = top.document.getElementById('lm_xref');
     if (iframeE != null) { //iframeE.style.width = mainE.style.width;
         //iframeE.style.marginRight = mainE.style.marginRight; 
+
     }
+    everyoneScrollLeft();
 }
+
 
 function toggleNavR(Name) {
     var mainE = top.document.getElementById("main");
@@ -205,6 +209,30 @@ function toggleNavR(Name) {
     var iframeE = top.document.getElementById('lm_xref');
     if (iframeE != null) { // iframeE.style.width = mainE.style.width;
         //	iframeE.style.marginRight = mainE.style.marginRight; 
+    }
+    everyoneScrollLeft();
+}
+
+function everyoneScrollLeft() {
+
+    if (top == window) {
+        $("body").scrollLeft(0);
+        $("#main").scrollLeft(0);
+        var iframeE = top.document.getElementById('lm_xref');
+        if (iframeE != null) {
+            var contentWindow = iframeE.contentWindow;
+            contentWindow.everyoneScrollLeft = window.everyoneScrollLeft;
+            try {
+                contentWindow.everyoneScrollLeft();
+            } catch (err) {};
+        }
+    } else {
+        $("body").scrollLeft(0);
+        $(".panel").scrollLeft(0);
+        $("pre").scrollLeft(0);
+        $(".wrappable").scrollLeft(0);
+        $(".scrollable").scrollLeft(0);
+        $("iframe").scrollLeft(0);
     }
 }
 
@@ -533,7 +561,7 @@ function ignoredData(key) {
 
 {
     top.winObj = null;
-    top.milledImages = {};
+    if (top.milledImages === undefined) top.milledImages = {};
     top.navWindow = null;
 }
 
@@ -570,7 +598,7 @@ function opener() {
    <meta charset="UTF-8" />
    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-   <title>Remove HTML</title>
+   <title>ARC Objects</title>
 </head>
 <body>
    <input type="button" value="click here to clear" onclick="document.getElementById('toolTips').innerHTML = '' "/>
@@ -588,6 +616,7 @@ function opener() {
 }
 
 function easyToMatch(text) {
+    if (text == null || text === undefined) return "";
     return text.replace(/[^0-9a-zA-Z_()]/gi, '');
 }
 
@@ -595,34 +624,43 @@ function writeTips(info) {
 
     if (ignoredData(info)) return;
 
-    var infotext = "" + info;
     var jqinfo = null;
 
     if (isElement(info)) {
         jqinfo = $(info);
     } else {
+        var infotext = "" + info;
         if ( // skip simple one liners
             (!(infotext.includes("\n"))) &&
             (!(infotext.includes("\r"))) &&
             (!(infotext.includes("<")))) return false;
-        jqinfo = $(`<pre style="font-size:30px">${infotext}</pre>`);
+
+        if (!infotext.includes("<")) {
+            //if (infotext.includes("\n"))
+            infotext = `<pre>${infotext}</pre>`;
+        }
+        jqinfo = $(infotext);
     }
 
     opener();
 
-    let tipsList = top.winObj.document.getElementById('toolTips');
-    var e2m = easyToMatch(jqinfo.innerText);
-
-    for (const tip in tipsList.children) {
-        if (easyToMatch(tip.innerText).includes(easyToMatch(e2m))) {
-            jqinfo = tip;
-            tip.detach()
-            break;
-        }
+    var tipsListDiv = top.winObj.document.getElementById('toolTips');
+    var e2m = easyToMatch(jqinfo.prop("innerText"));
+    var tip = tipsListDiv.firstElementChild;
+    if (tip != null) {
+        do {
+            if (easyToMatch(tip.innerText).includes(e2m) ||
+                easyToMatch(tip.innerHtml).includes(e2m) ||
+                easyToMatch(tip.textContent).includes(e2m)) {
+                jqinfo = $(tip);
+                jqinfo.detach();
+                break;
+            }
+        } while (tip = tip.nextElementSibling);
     }
 
-    tipsList.prepend(jqinfo);
-    jqinfo.scrollIntoView(true);
+    $(tipsListDiv).prepend(jqinfo);
+    tipsListDiv.scrollIntoView(true);
     top.winObj.focus();
 }
 
@@ -746,6 +784,10 @@ function clickAccordian(target_name, scrollTo) {
         togglePanel(panel, keepGoing, scrollTo);
     }
 
+    if (scrollTo) {
+        everyoneScrollLeft();
+    }
+
 }
 
 function getCurrentFrameAbsolutePosition() {
@@ -839,6 +881,12 @@ function togglePanel(name, keepGoing, scrollTo) {
     var inViewport = isInViewport_when_IFrame(panel);
     console.warn("inViewport=" + inViewport);
     var wasLastPanel = (top.lastPanelShown == panel);
+
+    if (!scrollTo) {
+        wasLastPanel = true;
+        top.lastPanelShown = panel;
+    }
+
     if (wasLastPanel) {
         inViewport = true;
     }
@@ -861,6 +909,7 @@ function togglePanel(name, keepGoing, scrollTo) {
 }
 
 function setVisible(panel, tf) {
+    if (panel == null) return;
     //var block = (tf?"block":"none");
     var block = tf;
     panel.style.display = block;
@@ -870,11 +919,13 @@ function setVisible(panel, tf) {
 }
 
 function scrollToPanel(panel) {
+    if (panel == null) return;
     panel.scrollIntoView(false);
     var scrl = panel.previousElementSibling;
     if (scrl == null)
         scrl = panel;
     scrl.scrollIntoView(true);
+    everyoneScrollLeft();
 }
 
 {
@@ -892,8 +943,13 @@ function intoPanel(name) {
             return null;
         }
     }
+    if (isElement(panel)) {
+        if (panel.classList.contains("panel")) return panel;
+        var p = findParentWithClass(panel, "panel");
+        if (isElement(p) && p.classList.contains("panel")) return p;
+    }
     if (!panel.classList.contains("panel")) {
-        console.warn(panel + "not a panel: " + panel.classList);
+        console.warn(panel + "not a panel: " + pp(panel));
         // return null;
     }
     return panel;
@@ -943,6 +999,8 @@ function showPanel(name, keepGoing, scrollTo) {
     }
     panel.classList.add("panel_shown");
     panel.classList.remove("panel_hidden");
+    var menu_id = panel.id;
+    openCloseMenu(menu_id, true);
     //panel.style.display = "inline-block";
     //panel.style.minHeight = "10px";
     //panel.style.maxHeight = "none";
@@ -963,6 +1021,9 @@ function hidePanel(name, keepGoing) {
         return;
     panel.classList.add("panel_hidden");
     panel.classList.remove("panel_shown");
+    var menu_id = panel.id;
+    openCloseMenu(menu_id, false);
+
     /*
 		panel.style.display = "none";
 		panel.style.minHeight = "0px";  
@@ -1067,6 +1128,81 @@ function accordianStem(target_name) {
     return target_name;
 }
 
+
+
+/** Function that count occurrences of a substring in a string;
+ * @param {String} string               The string
+ * @param {String} subString            The sub string to search for
+ * @param {Boolean} [allowOverlapping]  Optional. (Default:false)
+ *
+ * @author Vitim.us https://gist.github.com/victornpb/7736865
+ * @see Unit Test https://jsfiddle.net/Victornpb/5axuh96u/
+ * @see https://stackoverflow.com/a/7924240/938822
+ */
+function occurrences(string, subString, allowOverlapping) {
+
+    string += "";
+    subString += "";
+    if (subString.length <= 0) return (string.length + 1);
+
+    var n = 0,
+        pos = 0,
+        step = allowOverlapping ? 1 : subString.length;
+
+    while (true) {
+        pos = string.indexOf(subString, pos);
+        if (pos >= 0) {
+            ++n;
+            pos += step;
+        } else break;
+    }
+    return n;
+}
+
+function openCloseMenu(target_name, isExpanded) {
+    var elem = target_name;
+    if (typeof target_name === "string") {
+        target_name = accordianStem(target_name);
+        elem = top.document.getElementById(target_name + '_menu');
+    }
+    if (!isElement(elem)) return;
+
+    if (isExpanded) {
+        elem.classList.remove("collapsed_menu");
+        elem.classList.add("expanded_menu");
+    } else {
+        elem.classList.remove("expanded_menu");
+        elem.classList.add("collapsed_menu");
+    }
+    //if (elem.classList.contains("active")) { return; }
+    var count = occurrences(elem.innerHTML, "&nbsp;");
+    sibling = elem;
+    while (sibling = sibling.nextElementSibling) {
+        var scount = occurrences(sibling.innerHTML, "&nbsp;");
+        if (scount <= count) {
+            // if(isExpanded) {
+            sibling.previousElementSibling.scrollIntoView(true);
+            //}
+            break;
+        }
+        if (isExpanded) {
+            if (sibling.classList.contains("collapsed_menu")) {
+                ///hidePanel(sibling.id, undefined);
+            }
+            sibling.classList.remove("collapsed_menu");
+            sibling.classList.add("expanded_menu");
+        } else {
+            if (sibling.classList.contains("collapsed_menu")) {
+                ///showPanel(sibling.id, undefined, false);
+            }
+            sibling.classList.remove("expanded_menu");
+            sibling.classList.add("collapsed_menu");
+        }
+    }
+
+
+}
+
 function activateMenu(target_name) {
     var elem = target_name;
     if (typeof target_name === "string") {
@@ -1089,128 +1225,104 @@ function activateMenu(target_name) {
     elem.scrollIntoView(false);
 }
 
-function htmlToIMG2(name) {
-    var node = toEle(name);
-    name = node.id;
-    var img = null;
-    var url = null;
-    htmlToImage.toJpeg(node, {
-        quality: 0.95
-    }).then(function(dataUrl) {
-        img = new Image();
-        img.id = node.id;
-        img.onclick = node.onclick;
-        img.src = dataUrl;
-        node.replaceWith(img);
-    }).catch(function(error) {
-        console.error('htmlToIMG2', error);
-    });
+
+function isBlank(v) {
+    return (v == null || v === undefined || v === "");
 }
 
-function htmlToJPEG(name) {
-    var node = toEle(name);
-    if (node == null)
-        node = document.getElementById(name);
-    if (node == null)
-        return null;
-    var url = null;
-    var nodeid = node.id;
-    htmlToImage.toJpeg(node, {
-        quality: 1.00
-    }).then(function(dataUrl) {
-        window.top.milledImages[nodeid] = dataUrl;
-        url = dataUrl;
-    }).catch(function(error) {
-        console.error('htmlToJPEG', error);
-    });
-    return url;
-}
-
-function alreadyMilled(name) {
-    var node = toEle(name);
-    if (node == null)
-        node = document.getElementById(name);
-    if (node == null)
-        return null;
-    var url = null;
-    var nodeid = node.id;
-    htmlToImage.toJpeg(node, {
-        quality: 1.00
-    }).then(function(dataUrl) {
-        window.top.milledImages[nodeid] = dataUrl;
-        url = dataUrl;
-    }).catch(function(error) {
-        console.error('htmlToJPEG', error);
-    });
-    return url;
-}
-
-
-function intoNamedImg(nodespec, nodeid, h, w) {
-
-    var node = toEle(nodespec);
-    if (node == null)
-        node = document.getElementById(nodespec);
-    if (node == null)
-        return null;
-    //debugger;
-    htmlToImage.toJpeg(node, {
-        quality: 1.00
-    }).then(function(dataUrl) {
-        window.top.milledImages[nodeid] = dataUrl;
-        if (false) {
-            var link = document.createElement('a');
-            link.download = name + '.png';
-            link.href = dataUrl;
-            link.click();
-        }
-        var img = new Image();
-        img.id = nodeid;
-        img.style.width = w + "px";
-        img.style.height = h + "px";
-        img.setAttribute("width", w);
-        img.setAttribute("height", h);
-        img.onclick = node.onclick;
-        img.src = dataUrl;
-        img.title = node.title;
-        node.replaceWith(img);
-    }).catch(function(error) { // console.error('intoNamedImg', error);
-    });
-}
 
 function cvtToIMG(name) {
-    var node = toEle(name);
-    if (node == null)
-        node = document.getElementById(name);
-    if (node == null)
-        return null;
-    //debugger;
-    var nodeid = node.id;
-    if (false) {
-        return intoNamedImg(node, nodeid, node.clientWidth, node.clientHeight);
-    }
-    htmlToImage.toJpeg(node, {
-        quality: 1.00
-    }).then(function(dataUrl) {
-        window.top.milledImages[nodeid] = dataUrl;
-        /*
-				var link = document.createElement('a');
-				link.download = name+'.png';
-				link.href = dataUrl;
-				link.click();
-			*/
-        var img = new Image();
-        img.id = nodeid;
-        img.style.width = node.clientWidth
-        img.style.height = node.clientHeight;
-        img.onclick = node.onclick;
-        img.src = dataUrl;
-        img.title = node.title;
-        node.replaceWith(img);
-    }).catch(function(error) {
-        console.error('oops, something went wrong!', error);
-    });
+    return intoNamedImg(false, true, name);
 }
+
+function intoNamedImg(useCache, replace, nodespec, nodeid, h, w) {
+    if (isBlank(nodespec)) {
+        if (isBlank(nodeid)) {
+            var me = document.currentScript;
+            nodespec = me.previousElementSibling;
+        }
+    }
+    if (isBlank(nodespec)) nodespec = nodeid;
+    var node = toEle(nodespec || nodeid);
+    if (isBlank(node)) node = document.getElementById(nodespec || nodeid);
+    if (isBlank(node)) {
+        var me = document.currentScript;
+        nodespec = me.previousElementSibling;
+    }
+    if (isBlank(nodeid) &&
+        !isBlank(node)) nodeid = node.id;
+    if (isBlank(h) && !isBlank(node)) {
+        h = node.height;
+        if (isBlank(h)) h = node.clientHeight;
+    }
+    if (isBlank(w) && !isBlank(node)) {
+        w = node.width;
+        if (isBlank(w)) w = node.clientWidth;
+    }
+    var dataUrl = top.htmlToJPEG(node, nodeid, useCache);
+    return replaceNode(replace, node, nodeid, dataUrl, h, w);
+}
+
+function replaceNode(replace, node, nodeid, dataUrl, h, w) {
+    if (isBlank(dataUrl)) {
+        console.warn(`replaceNode(${pp(top.milledImages.count)},
+        ${pp(top.milledImages)},
+        ${pp(img)},${pp(node)},
+                   ${pp(nodeid)}, ${pp(h)}, ${pp(w)});`);
+        return null;
+    }
+    var img = new Image();
+    img.src = dataUrl;
+
+    if (false) downloadImage(nodeid, dataUrl);
+    if (true) {
+        if (!isBlank(w)) {
+            img.style.width = w + "px";
+            img.setAttribute("width", w);
+        }
+        if (!isBlank(h)) {
+            img.style.height = h + "px";
+            img.setAttribute("height", h);
+        }
+    }
+    if (node != null) {
+        img.title = node.title;
+        img.name = node.name;
+        if (replace) img.id = nodeid || node.id;
+        img.onclick = node.onclick;
+        if (replace) node.replaceWith(img);
+    }
+    if (replace) img.id = nodeid;
+    return img;
+}
+
+function htmlToJPEG(node, nodeid, useCache) {
+    var waz = window.top.milledImages[nodeid];
+    if (isBlank(waz) || useCache == false) {
+        htmlToImage.toJpeg(node, {
+            quality: 1.0
+        }).then(function(dataUrl) {
+            waz = dataUrl;
+            if (!isBlank(nodeid)) { window.top.milledImages[nodeid] = dataUrl; }
+        }).catch((error) => {
+            console.warn(`htmlToJPEG(${pp(top.milledImages.count)},
+               ${pp(top.milledImages)},
+               ${pp(node)},${pp(nodeid)}`, error);
+            //   debugger;
+        });
+    }
+    return waz;
+}
+
+
+
+function downloadImage(name, dataUrl) {
+    var link = document.createElement('a');
+    link.download = name + '.png';
+    link.href = dataUrl;
+    link.click();
+}
+
 
 /* window.addEventListener("click", (e) => {
 	   e = e || window.event;
@@ -1234,6 +1346,9 @@ function cvtToIMG(name) {
 	   }
 	   console.log(target.id);  // to get the element tag name alone
 	 });   */
+
+
+
 function interceptClickEvent(e) {
     var href;
     var target = e.target || e.srcElement;
@@ -1268,8 +1383,31 @@ function interceptClickEvent(e) {
     }
 
     maybeShowTips(target);
-    console.log(`interceptClickEvent('${target}',${e})`);
+    var selectable = findParentWithClass(target, "selectable");
+    if (selectable != null && selectable != target) {
+        maybeShowTips(selectable);
+        target = selectable;
+    }
+    //if (target.tagName == 'DIV') {
+    //    top.setScollers(target);
+    //}
+    //if (panel == null) panel = findParentWithClass(target, "dtopscroller2");
+    var dtopscroller2 = findParentWithClass(target, "dtopscroller2");
+    if (dtopscroller2 !== null) {
+        top.setScollers(dtopscroller2);
+        console.log(`top.setScollers(${pp(dtopscroller2)});`)
+    }
+    console.log(`interceptClickEvent('${pp(target)}',${pp(e)})`);
     return;
+}
+
+function pp(term) {
+    if (term != null) {
+        if (typeof term === "object") {
+            return `<${term.tagName} id='${term.id}' class="${term.classList}" ... >`
+        }
+    }
+    return "" + term;
 }
 
 function maybeShowTips(target) {
@@ -1300,7 +1438,7 @@ function findParentWithClass(target, clasz) {
 function mouseOverEvent(e) {
 
     var target = e.target || e.srcElement;
-    if (true) {
+    if (false) {
         $(target).children(".description").show();
         $(target).mouseout(
             function() { $(this).children(".description").hide(); }
@@ -1316,7 +1454,7 @@ function mouseOverEvent(e) {
     var selectable = findParentWithClass(target, "selectable");
     if (selectable != null) {
         //activateMenu(selectable.id);
-        console.log("mouseOverSelectable(" + selectable.id + "," + selectable.tagName + ")");
+        console.log(`mouseOverSelectable(${pp(selectable)})`);
     }
 
 }
@@ -1399,7 +1537,8 @@ function sortTableRowIndex(tableSpec, rowInd, desc) {
 function sortTableCols(tableSpec, rowIndex) {
 
     var tableE = upToTable(tableSpec);
-    if (true) {
+    if (false) $(tableE).DataTable();
+    if (false) {
         return sortTableRowIndex(tableE, rowIndex, top.sortAscnd);
     }
     return sortTableColsCur(tableE, rowIndex);
@@ -1521,6 +1660,69 @@ function upToTable(table) {
     return table;
 }
 
+function sortTableColz(tableSpec, n) {
+    var cols, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+
+    var table = upToTable(tableSpec);
+
+    if (table == null) {
+        return;
+    }
+
+    switching = true;
+    //Set the sorting direction to ascending:
+    dir = "asc";
+    /*Make a loop that will continue until
+	  no switching has been done:*/
+    while (switching) {
+        //start by saying: no switching is done:
+        switching = false;
+        cols = table.cols;
+        /*Loop through all table columns (except the
+		first, which contains table headers):*/
+        for (i = 1; i < (cols.length - 1); i++) {
+            //start by saying there should be no switching:
+            shouldSwitch = false;
+            /*Get the two elements you want to compare,
+		  one from current col and one from the next:*/
+            x = cols[i].getElementsByTagName("TD")[n];
+            y = cols[i + 1].getElementsByTagName("TD")[n];
+            /*check if the two columns should switch place,
+		  based on the direction, asc or desc:*/
+            if (dir == "asc") {
+                if (isGreater(x, y) > 0) {
+                    //if so, mark as a switch and break the loop:
+                    shouldSwitch = true;
+                    break;
+                }
+            } else if (dir == "desc") {
+                if (isGreater(y, x) > 0) {
+                    //if so, mark as a switch and break the loop:
+                    shouldSwitch = true;
+                    break;
+                }
+            }
+        }
+        if (shouldSwitch) {
+            /*If a switch has been marked, make the switch
+		  and mark that a switch has been done:*/
+            cols[i].parentNode.insertBefore(cols[i + 1], cols[i]);
+            switching = true;
+            //Each time a switch is done, increase this count by 1:
+            switchcount++;
+        } else {
+            /*If no switching has been done AND the direction is "asc",
+		  set the direction to "desc" and run the while loop again.*/
+            if (switchcount == 0 && dir == "asc") {
+                dir = "desc";
+                switching = true;
+            }
+        }
+    }
+}
+
+
+
 function sortTableRows(tableSpec, n) {
     var rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
 
@@ -1581,6 +1783,8 @@ function sortTableRows(tableSpec, n) {
         }
     }
 }
+
+
 
 function intoDataTable(target) {
     $(target).DataTable();
@@ -1700,10 +1904,52 @@ function fadeOut(elem, ms) {
     }
 }
 
+function scroll_top_and_bottom(ele) {
+    if (true) return;
+    if (typeof ele === string) {
+        if (ele.startsWith(".")) {
+            var className = ele.substring(1);
+            const resizers = document.getElementsByClassName(clazzname)
+            for (let i = 0; i < resizers.length; i++) {
+                const currentResizer = resizers[i];
+                scroll_top_and_bottom(currentResizer);
+            }
+            return;
+        }
+
+        var node = toEle(ele);
+        if (node != null) {
+            scroll_top_and_bottom(node);
+            return;
+        }
+        return;
+    }
+
+    if (!ele.parentElement.classList.contains("dtopscroller2")) {
+        NEW = $(`<div><div class="wtopscroller1"><div class="dtopscroller1"></div></div>
+			   <div class="wtopscroller2"><div class="dtopscroller2"><div id="rm1"></div></div></div>`);
+        ele.replaceWith(NEW);
+        NEW.$("#rm1").replaceWith(ele);
+    }
+}
+
+
 /*Make resizable div by Hung Nguyen*/
-function makeResizableDiv(div) {
-    const element = document.querySelector(div);
-    const resizers = document.querySelectorAll(div + ' .resizer')
+function makeResizableDiv(clazzname) {
+    if (true) return;
+    if (clazzname.startsWith(".")) className = clazzname.substring(1);
+    const resizers = document.getElementsByClassName(clazzname)
+    for (let i = 0; i < resizers.length; i++) {
+        const currentResizer = resizers[i];
+        makeResizable1Div(currentResizer);
+    }
+}
+
+
+function makeResizable1Div(elin) {
+    if (true) return;
+    const element = $(elin);
+    const resizers = element.querySelectorAll('.resizer');
     const minimum_size = 20;
     let original_width = 0;
     let original_height = 0;
@@ -1774,6 +2020,752 @@ function makeResizableDiv(div) {
         }
     }
 }
+//initilize svg or grab svg
+
+// const { boolean } = require("webidl-conversions");
+
+
+function testRunD3Sim(htmlEle) {
+    var nodes = [
+        { color: "red", size: 5 },
+        { color: "orange", size: 10 },
+        { color: "yellow", size: 15 },
+        { color: "green", size: 20 },
+        { color: "blue", size: 25 },
+        { color: "purple", size: 30 }
+    ];
+
+    var links = [
+        { source: "red", target: "orange" },
+        { source: "orange", target: "yellow" },
+        { source: "yellow", target: "green" },
+        { source: "green", target: "blue" },
+        { source: "blue", target: "purple" },
+        { source: "purple", target: "red" },
+        { source: "green", target: "red" }
+    ];
+    runD3Sim(htmlEle, nodes, links);
+}
+
+function tableToGraph(table) {
+
+    var IvO = table.row[0].getElementsByTagName('TH')[0].innerText;
+    var iioroo = IvO.slice(-1) === IvO.charAt(0);
+
+    function adduniquenodes(nodes, value) {
+        if (nodes.indexOf(value) === -1) {
+            nodes.push(value);
+        }
+    }
+
+    graph = { "nodes": [], "links": [] };
+
+    /*Loop through all table rows (except the first, which contains table headers):*/
+    for (i = 1; i < (table.columns.length - 1); i++) {
+        var d = table.row[0].getElementsByTagName('TH')[i];
+        adduniquenodes(graph.nodes, {
+            "object": d.id,
+            "image-src": imageFromID(d.id),
+        });
+    }
+    if (!iioroo) {
+        for (i = 1; i < (table.rows.length - 1); i++) {
+            d = table.row[i].getElementsByTagName('TH')[0];
+            adduniquenodes(graph.nodes, {
+                "object": d.id,
+                "image-src": imageFromID(d.id),
+            });
+        }
+    }
+
+    for (i = 1; i < (table.row.length - 1); i++) {
+        for (j = 1; i < (table.col.length - 1); j++) {
+            var to = table.row[0].getElementsByTagName('TH')[j]
+            var from = table.row[j].getElementsByTagName('TH')[0]
+            var str = table.row[i].getElementsByTagName('TD')[j];
+            adduniquenodes(graph.links, {
+                "source": from.id,
+                "target": to.id,
+                "value": str
+            });
+        }
+    }
+    console.log(graph);
+    return graph;
+}
+
+function onBeforeUnload(leavingTo) {
+    return;
+}
+
+function runD3Sim(htmlEleSpec, nodes, links) {
+    var htmlEle = toEle(htmlEleSpec);
+    var width = htmlEle.clientWidth; //svg.attr("width");
+    var height = htmlEle.clientHeight; //svg.attr("height");
+
+    if (height < 300) {
+        height = 300;
+    }
+    var svgEle;
+    if (htmlEle.tagName == 'SVG') {
+        svgEle = htmlEle;
+    } else {
+        let svgml = `<svg width="${width}" height="${height}" style="background-color: #dfd; min-height: 200"></svg>`;
+        htmlEle.insertAdjacentHTML('afterbegin', svgml);
+        svgEle = htmlEle.firstElementChild;
+    }
+
+    var margin = { top: 20, right: 10, bottom: 20, left: 10 };
+
+    var svg = d3
+        .select(svgEle)
+        .attr("width", width)
+        .attr("height", height)
+
+    svg.append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var linkSelection = svg
+        .selectAll("line")
+        .data(links)
+        .enter()
+        .append("line")
+        .attr("stroke", "black")
+        .attr("stroke-width", 2);
+
+    var imgurl = "http://wallpapers.androlib.com/wallicons/wallpaper.big-pqC.cs.png"
+
+    var defs = svg.append("defs").attr("id", "imgdefs")
+
+    var catpattern = defs.append("pattern")
+        .attr("id", "catpattern")
+        .attr("height", 1)
+        .attr("width", 1)
+        .attr("x", "0")
+        .attr("y", "0")
+
+    svg.append("circle")
+        .attr("r", 100)
+        .attr("cy", 80)
+        .attr("cx", 120)
+        .attr("fill", "url(#catpattern)");
+
+    var nodeSelection = svg
+        .selectAll("circle")
+        .data(nodes)
+        .enter()
+        //.attr("style", "color: white")
+        .append("circle")
+        .attr("r", d => d.size)
+        .attr("fill", d => d.oid)
+        .call(
+            d3.drag()
+            .on("start", dragStart)
+            .on("drag", drag)
+            .on("end", dragEnd)
+        );
+
+    var simulation = d3.forceSimulation(nodes);
+
+    simulation
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("nodes", d3.forceManyBody())
+        .force(
+            "links",
+            d3
+            .forceLink(links)
+            .id(d => d.oid)
+            .distance(d => 3 * (100 - d.value))
+        )
+        .on("tick", ticked);
+
+    function ticked() {
+        // console.log(simulation.alpha());
+
+        nodeSelection.attr("cx", d => d.x).attr("cy", d => d.y);
+
+        linkSelection
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
+    }
+
+    function tick(node, path) {
+        path.attr("d", function(d) {
+
+            var dx = d.target.x - d.source.x,
+                dy = d.target.y - d.source.y,
+                dr = Math.sqrt(dx * dx + dy * dy);
+            return "M" + d.source.x + "," +
+                d.source.y +
+                "A" + dr + "," +
+                dr + " 0 0,1 " +
+                d.target.x + "," +
+                d.target.y;
+        });
+        node.attr("transform", nodeTransform);
+    }
+
+
+    /**
+     * Gives the coordinates of the border for keeping the nodes inside a frame
+     * http://bl.ocks.org/mbostock/1129492
+     */
+    function nodeTransform(d) {
+        d.x = Math.max(maxNodeSize, Math.min(w - (d.imgwidth / 2 || 16), d.x));
+        d.y = Math.max(maxNodeSize, Math.min(h - (d.imgheight / 2 || 16), d.y));
+        return "translate(" + d.x + "," + d.y + ")";
+    }
+
+    function dragStart(d) {
+        // console.log('drag start');
+        simulation.alphaTarget(0.5).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+
+    function drag(d) {
+        // console.log('dragging');
+        // simulation.alpha(0.5).restart()
+        d.fx = d3.event.x;
+        d.fy = d3.event.y;
+    }
+
+    function dragEnd(d) {
+        // console.log('drag end');
+        simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+
+    }
+}
+
+function makeMarval() {
+    var marvelJson = {
+        "name": "marvel",
+        "img": "https://dl.dropboxusercontent.com/u/19954023/marvel_force_chart_img/marvel.png",
+        "children": [{
+                "name": "Heroes",
+                "children": [{
+                        "oid": "Spider-Man",
+                        "name": "Peter Benjamin Parker",
+                        "link": "http://marvel.com/characters/54/spider-man",
+                        "img": "https://dl.dropboxusercontent.com/u/19954023/marvel_force_chart_img/top_spiderman.png",
+                        "size": 40000
+                    },
+                    {
+                        "oid": "CAPTAIN MARVEL",
+                        "name": "Carol Danvers",
+                        "link": "http://marvel.com/characters/9/captain_marvel",
+                        "img": "https://dl.dropboxusercontent.com/u/19954023/marvel_force_chart_img/top_captainmarvel.png",
+                        "size": 40000
+                    }
+                ]
+            },
+            {
+                "name": "Villains",
+                "children": [{
+                        "oid": "Dr. Doom",
+                        "name": "Victor von Doom",
+                        "link": "http://marvel.com/characters/13/dr_doom",
+                        "img": "https://dl.dropboxusercontent.com/u/19954023/marvel_force_chart_img/drdoom.png",
+                        "size": 40000
+                    },
+                    {
+                        "oid": "Mystique",
+                        "name": "Unrevealed",
+                        "link": "http://marvel.com/characters/1552/mystique",
+                        "img": "https://dl.dropboxusercontent.com/u/19954023/marvel_force_chart_img/mystique.png",
+                        "size": 40000
+                    }
+                ]
+            },
+            {
+                "name": "Teams",
+                "children": [{
+                        "oid": "Avengers",
+                        "name": "",
+                        "link": "http://marvel.com/characters/68/avengers",
+                        "img": "https://dl.dropboxusercontent.com/u/19954023/marvel_force_chart_img/avengers.png",
+                        "size": 40000
+                    },
+                    {
+                        "oid": "Guardians of the Galaxy",
+                        "name": "",
+                        "link": "http://marvel.com/characters/70/guardians_of_the_galaxy",
+                        "img": "https://dl.dropboxusercontent.com/u/19954023/marvel_force_chart_img/gofgalaxy.png",
+                        "size": 40000
+                    }
+                ]
+            }
+        ]
+    }
+
+    /*
+        var imgurl = "http://wallpapers.androlib.com/wallicons/wallpaper.big-pqC.cs.png"
+    
+        var margin = {top: 20, right: 10, bottom: 20, left: 10};
+    
+    
+        var width = 960 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+    
+    
+        var svg = d3.select("body").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+    
+        var defs = svg.append("defs").attr("id", "imgdefs")
+    
+        var catpattern = defs.append("pattern")
+                                .attr("id", "catpattern")
+                                .attr("height", 1)
+                                .attr("width", 1)
+                                .attr("x", "0")
+                                .attr("y", "0")
+    
+    
+        catpattern.append("image")
+             .attr("x", -130)
+             .attr("y", -220)
+             .attr("height", 640)
+             .attr("width", 480)
+             .attr("xlink:href", imgurl)
+    
+        svg.append("circle")
+            .attr("r", 100)
+            .attr("cy", 80)
+            .attr("cx", 120)
+            .attr("fill", "url(#catpattern)")
+            */
+
+
+    // some colour variables
+    var tcBlack = "#130C0E";
+
+    // rest of vars
+    var w = 960,
+        h = 800,
+        maxNodeSize = 50,
+        x_browser = 20,
+        y_browser = 25,
+        root;
+
+    var vis;
+    var force = d3.layout.force();
+
+    vis = d3.select("#vis").append("svg").attr("width", w).attr("height", h);
+
+    //d3.json("marvel.json", function(json) {
+    var json = marvelJson;
+
+    root = json;
+    root.fixed = true;
+    root.x = w / 2;
+    root.y = h / 4;
+
+
+    // Build the path
+    var defs = vis.insert("svg:defs")
+        .data(["end"]);
+
+
+    defs.enter().append("svg:path")
+        .attr("d", "M0,-5L10,0L0,5");
+    try {
+        update();
+    } catch (e) {
+        console.log(e);
+    }
+    //});
+
+
+    /**
+     *   
+     */
+    function update() {
+        var nodes = flatten(root),
+            links = d3.layout.tree().links(nodes);
+
+        // Restart the force layout.
+        force.nodes(nodes)
+            .links(links)
+            .gravity(0.05)
+            .charge(-1500)
+            .linkDistance(100)
+            .friction(0.5)
+            .linkStrength(function(l, i) { return 1; })
+            .size([w, h])
+            .on("tick", tick)
+            .start();
+
+        var path = vis.selectAll("path.link")
+            .data(links, function(d) { return d.target.id; });
+
+        path.enter().insert("svg:path")
+            .attr("class", "link")
+            // .attr("marker-end", "url(#end)")
+            .style("stroke", "#eee");
+
+
+        // Exit any old paths.
+        path.exit().remove();
+
+
+
+        // Update the nodesÃ¯Â¿Â½
+        var node = vis.selectAll("g.node")
+            .data(nodes, function(d) { return d.id; });
+
+
+        // Enter any new nodes.
+        var nodeEnter = node.enter().append("svg:g")
+            .attr("class", "node")
+            .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+            .on("click", click)
+            .call(force.drag);
+
+
+        /*Dinesh Code*/
+        /*
+        
+        var defs = svg.append("defs").attr("id", "imgdefs")
+       
+       var catpattern = defs.append("pattern")
+                               .attr("id", "catpattern")
+                               .attr("height", 1)
+                               .attr("width", 1)
+                               .attr("x", "0")
+                               .attr("y", "0")
+       
+       
+       catpattern.append("image")
+            .attr("x", -130)
+            .attr("y", -220)
+            .attr("height", 640)
+            .attr("width", 480)
+            .attr("xlink:href", imgurl)
+       
+       svg.append("circle")
+           .attr("r", 100)
+           .attr("cy", 80)
+           .attr("cx", 120)
+           .attr("fill", "url(#catpattern)")
+           */
+
+        /******* Dinesh Code End******/
+
+        nodeEnter.append("defs").attr("id", "imgdefs")
+            .append("pattern")
+            .attr("id", function(d) {
+                if (d.img) return d.img.replace(/[/|.|:]/g, "");
+                else null;
+            })
+            .attr("height", 1)
+            .attr("width", 1)
+            .attr("x", "0")
+            .attr("y", "0")
+            .append("image")
+            .attr("height", function(d) { return 2 * Math.sqrt(d.size) / 10 || 4.5; })
+            .attr("width", function(d) { return 2 * Math.sqrt(d.size) / 10 || 4.5; })
+            .attr("xlink:href", function(d) {
+                if (d.img) return d.img + "";
+                else null;
+            })
+
+        // Append a circle
+        var images = nodeEnter.append("svg:circle")
+            .attr("r", function(d) { return Math.sqrt(d.size) / 10 || 4.5; })
+            .attr("fill", function(d) {
+                if (d.img) return "url(#" + d.img.replace(/[/|.|:]/g, "") + ")";
+                else null;
+            });
+
+
+        // Append images
+        /* var images = nodeEnter.append("svg:image")
+               .attr("xlink:href",  function(d) { return d.img;})
+               .attr("x", function(d) { return -25;})
+               .attr("y", function(d) { return -25;})
+               .attr("height", 50)
+               .attr("width", 50);*/
+
+        // make the image grow a little on mouse over and add the text details on click
+        var setEvents = images
+            // Append oid text
+            .on('click', function(d) {
+                d3.select("h1").html(d.oid);
+                d3.select("h2").html(d.name);
+                d3.select("h3").html("Take me to " + "<a href='" + d.link + "' >" + d.oid + " web page ?" + "</a>");
+            })
+
+        .on('mouseenter', function(d) {
+                if (d.img) {
+                    //console.log(d3.select(this).parent);
+                    d3.select("pattern#" + d.img.replace(/[/|.|:]/g, "")).select("image").attr("width", "100").attr("height", "100");
+                    // select element in current context
+                    d3.select(this)
+                        .transition()
+                        .attr("x", function(d) { return -60; })
+                        .attr("y", function(d) { return -60; })
+                        .attr("r", "50")
+                        //.attr("height", 100)
+                        //.attr("width", 100);
+                }
+            })
+            // set back
+            .on('mouseleave', function(d) {
+                if (d.img) {
+                    d3.select("pattern#" + d.img.replace(/[/|.|:]/g, "")).select("image").attr("width", "40").attr("height", "40");
+
+                    d3.select(this)
+                        .transition()
+                        .attr("x", function(d) { return -25; })
+                        .attr("y", function(d) { return -25; })
+                        .attr("r", "20")
+                        //.attr("height", 50)
+                        //.attr("width", 50);
+                }
+            });
+
+        // Append oid name on roll over next to the node as well
+        nodeEnter.append("text")
+            .attr("class", "nodetext")
+            .attr("x", x_browser)
+            .attr("y", y_browser + 15)
+            .attr("fill", tcBlack)
+            .text(function(d) { return d.oid; });
+
+
+        // Exit any old nodes.
+        node.exit().remove();
+
+
+        // Re-select for update.
+        path = vis.selectAll("path.link");
+        node = vis.selectAll("g.node");
+
+        function tick() {
+
+
+            path.attr("d", function(d) {
+
+                var dx = d.target.x - d.source.x,
+                    dy = d.target.y - d.source.y,
+                    dr = Math.sqrt(dx * dx + dy * dy);
+                return "M" + d.source.x + "," +
+                    d.source.y +
+                    "A" + dr + "," +
+                    dr + " 0 0,1 " +
+                    d.target.x + "," +
+                    d.target.y;
+            });
+            node.attr("transform", nodeTransform);
+        }
+    }
+
+
+    /**
+     * Gives the coordinates of the border for keeping the nodes inside a frame
+     * http://bl.ocks.org/mbostock/1129492
+     */
+    function nodeTransform(d) {
+        d.x = Math.max(maxNodeSize, Math.min(w - (d.imgwidth / 2 || 16), d.x));
+        d.y = Math.max(maxNodeSize, Math.min(h - (d.imgheight / 2 || 16), d.y));
+        return "translate(" + d.x + "," + d.y + ")";
+    }
+
+    /**
+     * Toggle children on click.
+     */
+    function click(d) {
+        if (d.children) {
+            d._children = d.children;
+            d.children = null;
+        } else {
+            d.children = d._children;
+            d._children = null;
+        }
+
+        update();
+    }
+
+
+    /**
+     * Returns a list of all nodes under the root.
+     */
+    function flatten(root) {
+        var nodes = [];
+        var i = 0;
+
+        function recurse(node) {
+            if (node.children)
+                node.children.forEach(recurse);
+            if (!node.id)
+                node.id = ++i;
+            nodes.push(node);
+        }
+
+        recurse(root);
+        return nodes;
+    }
+
+
+}
+
+function ignoreScollerOrPlane(target) {
+    if (!isElement(target)) return true;
+    if (target.classList.contains("ignore-scroll")) return true;
+    if (target.classList.contains("ignorable")) return true;
+    if (target.classList.contains("ignore")) return true;
+    if (target.classList.contains("wtopscroller11")) return true;
+    if (target.classList.contains("wtopscroller1")) return true;
+    return false;
+}
+
+function setScollers(target) {
+    if (window != top) {
+        top.setScollers(target);
+        return;
+    }
+    if (!ignoreScollerOrPlane(target)) {
+
+        console.log(`setScollers(${pp(target)},${e})`);
+        var wasT = target;
+        $(target).scroll(function() {
+            if (!ignoreScollerOrPlane(wasT)) {
+                top.divToScroll = wasT;
+                var sw = wasT.width;
+                var sl = $(this).scrollLeft();
+                top.syncScroll(wasT, sl, sw);
+            }
+        });
+    }
+}
+
+function syncScroll(target, sl, sw) {
+    if (window != top) {
+        top.syncScroll(target, sl, sw);
+        return;
+    }
+
+    if (!top.ticking) {
+        window.requestAnimationFrame(() => {
+            top.syncScrollReal(target, sl, sw);
+            top.ticking = false;
+        });
+        top.ticking = true;
+    }
+}
+
+
+function syncScrollReal(target, sl, sw) {
+
+    if (target == null || target == undefined) {
+        target = top.divToScroll;
+    }
+
+    if (ignoreScollerOrPlane(target)) {
+        target = top.divToScroll;
+    } else {
+        // top.divToScroll = target;
+    }
+    if (sw === undefined && isElement(target)) {
+        sw = target.width;
+    }
+    if (sw !== undefined) {
+        console.log(`min-width=(${sw}px)`);
+        $('#top_scoller > div').css('min-width', sw + 'px');
+        ///$('#bottem_scoller > div').css('min-width', sw + 'px');
+    }
+    if (sl !== undefined) {
+        console.log(`syncScroll(${sl},${pp(target)})`);
+        $('#top_scoller').scrollLeft(sl);
+        //$('#bottem_scoller').scrollLeft(sl);
+        if (isElement(target)) {
+            $(target.parentElement).scrollLeft(sl);
+            $(target).scrollLeft(sl);
+        }
+    }
+
+}
+
+function add_top_scroller(script) {
+
+    var PEDiv2 = script.parentElement.parentElement;
+    var PEDiv1 = PEDiv2.previousElementSibling;
+
+    $(PEDiv2).scroll(function() {
+        var sl = $(PEDiv2).scrollLeft();
+        check_top_scroller(PEDiv2, sl);
+        $(PEDiv1).scrollLeft(sl);
+    });
+
+    $(PEDiv1).scroll(function() {
+        var sl = $(PEDiv1).scrollLeft();
+        check_top_scroller(PEDiv2, sl);
+        $(PEDiv2).scrollLeft(sl);
+    });
+}
+
+function doSomething(e, ignored) {
+    var target = e.target || e.srcElement;
+    if (!ignoreScollerOrPlane(target)) {
+        top.lastScoller = target;
+        $("#top_scroller").scrollLeft($(target).scrollLeft());
+    }
+
+}
+
+
+function check_top_scroller(PEDiv2, sl) {
+    if (top.lastScoller && sl !== undefined) $(top.lastScoller).scrollLeft(sl);
+    var PEDiv1 = PEDiv2.previousElementSibling;
+    var paddDiv2 = PEDiv2.firstElementChild;
+    var paddDiv1 = PEDiv1.firstElementChild;
+    var panel = PEDiv2.parentElement;
+
+    if (panel.classList.contains("dtopscroller1")) {
+        PEDiv1 = panel.parentElement;
+        PEDiv2 = PEDiv1.nextElementSibling;
+        check_top_scroller(PEDiv2, sl);
+        return;
+    }
+    if (panel.classList.contains("dtopscroller2")) {
+        PEDiv2 = panel.parentElement;
+        check_top_scroller(PEDiv2, sl);
+        return;
+    }
+    if (paddDiv1 !== null) {
+        console.log(`check_top_scroller(${pp(PEDiv2)}, ${sl})`);
+        $(top.lastScoller).scrollLeft(sl);
+        panel.style.minWidth = "fit-content";
+        paddDiv2.style.minWidth = "fit-content";
+        top.divToScroll = paddDiv2;
+        var sw = paddDiv2.width;
+        var PEDiv1 = PEDiv2.previousElementSibling;
+        if (sl) $(PEDiv1).scrollLeft(sl);
+        top.syncScroll(paddDiv2, sl, sw);
+        panel.style.width = sw + "px";
+        paddDiv1.style.width = sw + "px";
+        paddDiv1.style.minWidth = sw + "px";
+        PEDiv1.style.scrollY = "auto";
+        PEDiv2.style.scrollY = "auto";
+        panel.style.scrollY = "auto";
+    }
+
+}
+
+
+
+function xframeLoading() {
+    console.log("XFrame Loading Start: " + window.location.href);
+    commonLoading();
+}
 
 function topReady() {
     $('#tableMySideNavL').DataTable();
@@ -1782,47 +2774,65 @@ function topReady() {
         try {
             windowCreation(i);
         } catch (err) {}
+
+    }
+    $('#top_scoller').scroll(function() {
+        var sl = $('#top_scoller').scrollLeft();
+        if (top.lastScoller != null) {
+            $(top.lastScoller).scrollLeft(sl);
+        }
+        syncScroll(top.divToScroll, sl, undefined);
+    });
+    if (false) {
+        $('#bottem_scoller').scroll(function() {
+            var sl = $('#bottem_scoller').scrollLeft();
+            syncScroll(top.divToScroll, sl, undefined);
+        });
+    }
+    commonLoading();
+}
+
+{
+    top.ticking = false;
+    top.lastKnownScrollYPosition = 0;
+}
+
+
+function interceptScrollEvent(event) {
+    top.lastKnownScrollYPosition = window.scrollY;
+    if (!top.ticking) {
+        window.requestAnimationFrame(() => {
+            top.doSomething(event, top.lastKnownScrollYPosition);
+            top.ticking = false;
+        });
+        top.ticking = true;
     }
 }
 
 function xframeReady() {
-    $(".tiptext").mouseover(function() {
-        $(this).children(".description").show();
-    }).mouseout(function() {
-        $(this).children(".description").hide();
-    });
-    $(".sortable tbody th").on("click", function(e) {
-        var r = $(this).parent();
-        top.seInd = r.index();
-        if ($(this).data("sort") == undefined) {
-            $(this).data("sort", true);
-        }
-        sortRow(r, $(this).data("sort"));
-        $(this).data("sort", $(this).data("sort") ? false : true);
-    });
+    commonLoading();
+    if (document.addEventListener && false) {
+        document.removeEventListener('scroll', interceptScrollEvent);
+        document.addEventListener('scroll', interceptScrollEvent);
+    }
     console.log("XFrame Ready End: " + window.location.href);
 }
 
-function xframeLoading() {
-    console.log("XFrame Loading Start: " + window.location.href);
-    $(".tiptext").mouseover(function() {
-        $(this).children(".description").show();
-    }).mouseout(function() {
-        $(this).children(".description").hide();
-    });
-    $(".sortable tbody th").on("click", function(e) {
-        var r = $(this).parent();
-        top.seInd = r.index();
-        if ($(this).data("sort") == undefined) {
-            $(this).data("sort", true);
-        }
-        sortRow(r, $(this).data("sort"));
-        $(this).data("sort", $(this).data("sort") ? false : true);
-    });
+function commonLoading() {
+    if (top == window) {
+        var navWindow = getNavWindow();
+        navWindow.commonLoadingImpl = top.commonLoadingImpl;
+        navWindow.commonLoadingImpl();
+        commonLoadingImpl();
+    } else {
+        // debugger;
+        top.commonLoadingImpl();
+        commonLoadingImpl();
+    }
 }
 
-function commonLoading() {
-    console.log("Loading: " + window.location.href);
+function commonLoadingImpl() {
+    console.log("commonLoadingImpl: " + window.location.href);
     //listen for link click events at the document level
     if (document.addEventListener) {
         document.removeEventListener('click', interceptClickEvent);
@@ -1835,19 +2845,61 @@ function commonLoading() {
     }
 }
 
+function commonLoadingImplicitlyImplemented() {
+
+    // we are already iomplicitly imlemented above
+    if (true) {
+        return;
+    }
+    $(".wtopscroller1").scroll(function(e) {
+        var target = e.target || e.srcElement;
+        var PE = target.parentElement;
+        var w1 = PE.querySelector(".wtopscroller1");
+        if (w1 === undefined) w1 = PE.closest(".wtopscroller1");
+        var w2 = PE.querySelector(".wtopscroller2");
+        if (w2 === undefined) w2 = PE.closest(".wtopscroller2");
+        console.log(PE + "-> " + target + " w1= " + w1 + " w2= " + w2);
+        $(w2).scrollLeft($(w1).scrollLeft());
+    });
+
+    $(".wtopscroller2").scroll(function(e) {
+        var target = e.target || e.srcElement;
+        var PE = target.parentElement;
+        var w1 = PE.querySelector(".wtopscroller1");
+        if (w1 === undefined) w1 = PE.closest(".wtopscroller1");
+        var w2 = PE.querySelector(".wtopscroller2");
+        if (w2 === undefined) w2 = PE.closest(".wtopscroller2");
+        console.log(PE + "-> " + target + " w1= " + w1 + " w2= " + w2);
+        $(w1).scrollLeft($(w2).scrollLeft());
+    });
+    $(".tiptext").mouseover(function() {
+        $(this).children(".description").show();
+    }).mouseout(function() {
+        $(this).children(".description").hide();
+    });
+    $(".sortable tbody th").on("click", function(e) {
+        var r = $(this).parent();
+        top.seInd = r.index();
+        if ($(this).data("sort") == undefined) {
+            $(this).data("sort", true);
+        }
+        sortRow(r, $(this).data("sort"));
+        $(this).data("sort", $(this).data("sort") ? false : true);
+    });
+    makeResizableDiv('.resizable');
+    scroll_top_and_bottom('.scroll_top_and_bottom');
+}
+
 
 $(document).ready(function() {
     console.log("Document Ready Start: " + window.location.href);
     if (window == top) topReady();
     if (window !== top) xframeReady();
-
-    commonLoading();
     console.log("Document Ready End: " + window.location.href);
 });
 
 {
-    if (window !== top) xframeLoading();
     commonLoading();
 }
-
+//});
 //});

@@ -691,9 +691,10 @@ extend_obj_proplist(Var,NewObj):- var(Var),!, enum_object(Var),extend_obj_propli
 extend_obj_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
 extend_obj_proplist(Grp,GrpO):- is_group(Grp),!,mapgroup(extend_obj_proplist,Grp,GrpO).
 extend_obj_proplist(obj(Obj),obj(OUT)):-!, 
-   extend_obj_proplist(Obj,OUT).
+   extend_obj_proplist1(Obj,OUT).
+extend_obj_proplist(L1,L2):- extend_obj_proplist1(L1,L2).
 
-extend_obj_proplist(Props,OUTL):- must_det_ll(is_obj_props(Props)),
+extend_obj_proplist1(Props,OUTL):- must_det_ll(is_obj_props(Props)),
   Obj = obj(Props),
   findall(P,extend_obj_prop(Obj,P),NewProps),
   flatten(NewProps,NewPropsF),
@@ -2077,21 +2078,28 @@ filter_redundant(BS,BSSS):-
   abolish(arc_cache:showed_point_mapping/3),dynamic(arc_cache:showed_point_mapping/3),
   include(need_object,BS,BSSS).
 */
-filter_redundant(BS,BSSSR):- filter_redundant(BS,BSSSR,_Removed).
-filter_redundant(BS,BSSSR,Removed):- maplist(minfo_gp,BS,BSGP),
-  reverse(BSGP,BSR),
-  filter_redundant_r(BSR,BSSS,Removed),
-  reverse(BSSS,BSSSR).
+
 
 is_one_point(Obj1,HV1,C):- globalpoints(Obj1,Points),!,[C-HV1]=Points,nonvar(C).
 contains_point(CHV,Obj2):- globalpoints(Obj2,Points),!,member(CHV,Points).
 
 remove_singles_unneeded([],[]).
 remove_singles_unneeded(AG01,AG0):- 
+  arc_option(remove_singles_unneeded),
   select(Obj1,AG01,Rest), is_one_point(Obj1,HV,C),
   member(Obj2,Rest),contains_point(C-HV,Obj2),!,
   remove_singles_unneeded(Rest,AG0).
 remove_singles_unneeded(AG0,AG0).
+
+
+
+filter_redundant(BS,BSSSR):- arc_option(filter_redundant),!,filter_redundant(BS,BSSSR,_Removed).
+filter_redundant(BS,BS).
+
+filter_redundant(BS,BSSSR,Removed):- maplist(minfo_gp,BS,BSGP),
+  reverse(BSGP,BSR),
+  filter_redundant_r(BSR,BSSS,Removed),
+  reverse(BSSS,BSSSR).
 
 filter_redundant_r(BSR,RRest,[BS|Removed]):- fail,
   select(gp(BS,[GP]),BSR,Rest), member(gp(_,[A,B|C]),Rest),member(OO,[A,B|C]),
@@ -2103,6 +2111,7 @@ filter_redundant_r([gp(BS,GP)|BSR],[BS|BSSS],Removed):-
   filter_redundant_r(BSR,BSSS,Removed).
 filter_redundant_r([gp(BS,_)|BSR],BSSS,[BS|Removed]):- filter_redundant_r(BSR,BSSS,Removed).
 filter_redundant_r([],[],[]).
+
 
 
 need_object(B):- 

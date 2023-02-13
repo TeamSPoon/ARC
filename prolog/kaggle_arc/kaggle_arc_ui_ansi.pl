@@ -288,13 +288,13 @@ ptcol(P):- pp(P).
 
 %ptcol_html(P):- ptcol_html_0(P).
 ptcol_html(P):- ptcol_html_scrollable_0(P).
-ptcol_html_scrollable(P):- ptcol_html_scrollable_0(P).
+ptcol_html_scrollable(P):- with_tag_class(div,scrollable,ptcol_html_scrollable_0(P)).
 
 
 ptcol_html_0(P):- with_tag(pre,ptcol_html_wo_pre(P)).
 ptcol_html_wo_pre(call(P)):- callable(P),!, in_pp_html(call(P)).
 ptcol_html_wo_pre(P):- in_pp_html(print_tree_no_nl(P)).
-ptcol_html_scrollable_0(P):- with_tag_class(div,scrollable,ptcol_html_wo_pre(P)).
+ptcol_html_scrollable_0(P):- ptcol_html_wo_pre(P).
 
 
 pp_wcg(G):- wants_html,!,ptcol_html_scrollable(G).
@@ -547,21 +547,31 @@ pc_msg_color(diff(P),C):- pp_msg_color(P,C).
 %wots_hs(G):- wots_hs(S,G),write(S).
 
 :- meta_predicate(wots_ansi(-,0)).
-wots_ansi(S,Goal):- with_toplevel_pp(ansi,wots(S,Goal)).
+wots_ansi(S,Goal):- wots(S,woto_ansi(Goal)).
 :- meta_predicate(wots_ansi(-,0)).
-wots_html(S,Goal):- with_toplevel_pp(html,wots(S,Goal)).
+wots_html(S,Goal):- wots(S,woto_html(Goal)).
+
+:- meta_predicate(woto_ansi(0)).
+woto_ansi(Goal):- with_toplevel_pp(ansi,Goal).
+:- meta_predicate(woto_html(0)).
+woto_html(Goal):- with_toplevel_pp(http,Goal).
 
 :- meta_predicate(wots_hs(-,0)).
-wots_hs(S,G):- \+ wants_html,!,wots(S,G).
+%wots_hs(S,G):- \+ wants_html,!,wots(S,G).
 %wots_hs(S,G):- wots(S,G),!.
-wots_hs(S,G):- wots_html(SS,G),remove_huge_spaces(SS,S). 
+wots_hs(S,G):- wots(SS,G),remove_huge_spaces(SS,S). 
 :- meta_predicate(wots_vs(-,0)).
 wots_vs(OOO,G):- wots(S,G),strip_vspace(S,SS), (atom_contains(SS,'\n') -> 
   wots_hs(SSS,(nl_now,write('   '),write(SS),nl_now));SSS=SS),
   remove_huge_spaces(SSS,OOO).
 
-p_to_br(S,SS):-
-  cr_to_br(S,SSS),
+write_tall(L):- is_list(L),!,maplist(write_tall,L).
+write_tall(E):- wots_vs(S,wqs_c(E)),writeln(S).
+write_wide(L):- is_list(L),!,maplist(write_wide,L).
+write_wide(E):- wots_vs(S,wqs_c(E)),write(S),write_nbsp.
+
+p_to_br(S,SS):- fix_br_nls(S,S0),
+  cr_to_br(S0,SSS),
   replace_in_string(['<p>'='<br>','<br/>'='<br>','</p>'=' ','<p/>'='<br>','<br><br>'='<br>'],SSS,SSSS),
   cr_to_br(SSSS,SS).
 
@@ -571,7 +581,11 @@ cr_to_br(S,SSS):- cr_to_br_ansi(S,SSS).
 cr_to_br_html(S,SSS):- replace_in_string(['\r\n'='<br>','\r'='<br>','\n'='<br>'],S,SSS).
 cr_to_br_ansi(S,SSS):- replace_in_string(['<br>'='\n','&nbsp;'=' '],S,SSS).
 
-remove_huge_spaces(S,O):-
+fix_br_nls(S,O):- replace_in_string(
+ ['<br/>\n'='<br/>','<br>\n'='<br>','</p>\n'='</p>','<p/>\n'='<p/>','<p>\n'='<p>',
+  '\n<br>'='<br>','\n<br/>'='<br/>','\n</p>'='</p>','\n<p/>'='<p/>','\n<p>'='<p>'],S,O).
+
+remove_huge_spaces(S,O):- fix_br_nls(S,S0),
   replace_in_string(['          '='     ',
     '                                                                          '='     ',
     '                                                                          '='     ',
@@ -580,7 +594,7 @@ remove_huge_spaces(S,O):-
     '                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        '='    ',
     '                                                                          '='     ',
     '\t'='  ',
-    '                         '='     '],S,SS),p_to_br(SS,O).
+    '                         '='     '],S0,SS),p_to_br(SS,O).
 
 
 
@@ -594,9 +608,12 @@ empty_wqs_c(" ").
 empty_wqs_c("\n").
 
 is_writer_goal(H):- \+ callable(H),!,fail.
+is_writer_goal(H):- is_list(H),!,fail.
 is_writer_goal(A):- atom(A),!,is_writer_goal_f(A).
-is_writer_goal((C1,C2)):- !, is_writer_goal(C1),is_writer_goal(C2).
-is_writer_goal(C):- compound_name_arity(C,F,_),!,is_writer_goal_f(F).
+is_writer_goal(H):- \+ compound(H),!,fail.
+%is_writer_goal((C1,C2)):- !, (is_writer_goal(C1);is_writer_goal(C2)).
+is_writer_goal(C):- compound_name_arity(C,F,_),once(is_writer_goal_f(F);(arg(_,C,E),is_writer_goal(E))).
+
 
 is_writer_goal_f(wqs_c).
 is_writer_goal_f(F):- is_writer_goal_l(F),!.
@@ -606,7 +623,7 @@ is_writer_goal_f(F):- is_writer_goal_l(L),atom_concat(L,_,F),!.
 is_writer_goal_f(F):- is_writer_goal_l(R),atom_concat(_,R,F),!.
 not_writer_goal_r(test). is_writer_goal_l(msg). is_writer_goal_l(call). 
 is_writer_goal_l(nl).  is_writer_goal_l(format). is_writer_goal_l(with_).  
-is_writer_goal_l(html).  is_writer_goal_l(ptcol).
+is_writer_goal_l(html).  is_writer_goal_l(ptcol).  is_writer_goal_l(wots).
 is_writer_goal_l(print). is_writer_goal_l(flush_output).  is_writer_goal_l(wqs).
 is_writer_goal_l(pp). is_writer_goal_l(write).  is_writer_goal_l(dash_).
 
@@ -615,12 +632,17 @@ maybe_color(SS,_):- term_contains_ansi(SS),!, write_nbsp, write(SS).
 maybe_color(SS,P):- term_contains_ansi(P),!, write_nbsp, write(SS).
 maybe_color(SS,P):- pp_msg_color(P,C), ansicall(C,is_maybe_bold(P,write(SS))),!.
 
+write_atom(S):- \+ atom(S),!,wqs(S).
+write_atom(S):- atom_contains(S,'~'),!,notrace(catch(format(S,[]),_,maybe_write_atom_link(S))).
+write_atom(S):- maybe_write_atom_link(S),!.
+write_atom(S):- functor_to_title_string(S,TS),write(TS),!.
+write_atom(S):- writeq(S),!.
+
 wqs_c(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 wqs_c(S):- (string(S);is_codelist(S);is_charlist(S)),catch(format('~s',[S]),_,writeq(S)).
 wqs_c(S):- empty_wqs_c(S),!.
 wqs_c(S):- var(S),!,write(var(S)).
-wqs_c(S):- atom(S),atom_contains(S,'~'),!,notrace(catch(format(S,[]),_,write(S))).
-wqs_c(S):- atom(S),functor_to_title_string(S,TS),write(TS).
+wqs_c(S):- atom(S),write_atom(S),!.
 wqs_c(S):- \+compound(S),!,notrace(catch(format('~p',[S]),_,write(S))).
 wqs_c(title(S)):- !, wqs_c(S).
 wqs_c(H+T):- !, wqs_c(H),write_nbsp,wqs_c(T).
@@ -630,7 +652,7 @@ wqs_c(L):- is_list(L), include(non_empty_wqs_c,L,LL),!,wqs_c_l(LL).
 wqs_c([H|T]):- pp([H|T]),!.
 wqs_c(H):- callable_arity(H,0),is_writer_goal(H),catch(call_e_dmsg(H),_,fail),!.
 %wqs_c(H):- callable_arity(H,0),call(H),!.
-wqs_c(H):- pp(H),!.
+wqs_c(H):- locally(t_l:wqs_fb(pp_no_nl),wqs(H)),!.
 
 wqs_c_l([]):-!.
 wqs_c_l([H]):- wqs_c(H),!.
@@ -671,6 +693,8 @@ wqs0(C):- wqs2(C).
 
 wqs2(S):- term_contains_ansi(S), !, write_nbsp, write_keeping_ansi_mb(S).
 %wqs2(P):- wants_html,!,pp(P).
+
+wqs2(X):- t_l:wqs_fb(P1),call(P1,X).
 wqs2(X):- !, write_nbsp,writeq(X).
 wqs2(X):- write_nbsp,write_term(X,[quoted(true)]).
 
@@ -683,10 +707,11 @@ arg_string(S):- term_contains_ansi(S),!.
 
 wqs1(C):- \+ compound(C),!,wqs0(C).
 wqs1(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
+
 wqs1(format(C,N)):- catch((sformat(S,C,N),color_write(S)),_,fail),!.
 wqs1(writef(C,N)):- !, writef(C,N).
 wqs1(q(C)):-  \+ arg_string(C),wots_hs(S,writeq(C)),color_write(S),!.
-wqs1(g(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs1(C))),print(g(S)),!.
+wqs1(g(C)):-  \+ arg_string(C),wots_vs(S,bold_print(wqs1(C))),print(g(S)),!.
 wqs1(print_ss(C)):-  \+ arg_string(C), wots_vs(S,print_ss(C)),wqs1(print_ss(S)),!.
 wqs1(b(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs1(C))),color_write(S).
 wqs1(norm(C)):- writeq(norm(C)),!.
@@ -698,9 +723,8 @@ wqs1(rhs(RHS)):- nl_now,wqnl(rhs(RHS)),nl_now.
 
 wqs1(pp(P)):-  wots_vs(S,pp_no_nl(P)),write((S)).
 wqs1(ppt(P)):- wots_vs(S,ppt_no_nl(P)),write((S)).
-
-wqs1(wqs(P)):- wots_vs(S,wqs0(P)),write((S)).
-wqs1(wqs(C,P)):- wots_vs(S,wqs0(P)),color_print(C,S).
+wqs1(wqs(P)):- wots_vs(S,wqs(P)),write((S)).
+wqs1(wqs(C,P)):- wots_vs(S,wqs(P)),color_print(C,S).
 
 wqs1(vals(C)):- writeq(vals(C)),!.
 %wqs1(colors_cc(C)):- \+ arg_string(C), as_arg_str(C,S),wqs(colorsz(S)).
@@ -716,10 +740,18 @@ wqs1(cc(C,N)):- N\==0,var(C), sformat(PC,"~p",[C]), !, wqs(ccc(PC,N)).
 wqs1(cc(C,N)):- \+ arg_string(C), wots_hs(S,color_print(C,C)), wqs(cc(S,N)).
 wqs1(color_print(C,X)):- is_color(C), !, write_nbsp, color_print(C,X).
 wqs1(color_print(C,X)):- \+ plain_var(C), !, write_nbsp, color_print(C,X).
-wqs1(X):- compound(X), compound_name_arguments(X,_,[Arg]),is_really_gridoid(Arg),area_or_len(Arg,Area),Area<5,writeq(X),!.
+wqs1(X):- into_f_arg1(X,_,Arg),is_really_gridoid(Arg),area_or_len(Arg,Area),Area<5,writeq(X),!.
 % wqs1(C):- callable(C), is_wqs(C),wots_vs(S,catch(C,_,fail)),write((S)).
-wqs1(X):- compound(X), compound_name_arguments(X,F,[Arg]),is_really_gridoid(Arg),wots_vs(VS,print_grid(Arg)),
-  writeq(F),write('(`\n'),!,write(VS),write('`)').
+wqs1(X):- is_gridoid_arg1(X), print_gridoid_arg1(X).
+
+into_f_arg1(X,F,Arg):- compound(X), compound_name_arguments(X,F,[Arg]), compound(Arg).
+
+is_gridoid_arg1(X):- into_f_arg1(X,_F,Arg),is_really_gridoid(Arg).
+print_gridoid_arg1(X):- into_f_arg1(X,F,Arg),print_gridoid_arg1(F,Arg).
+
+print_gridoid_arg1(F,Arg):- \+ wants_html,!, wots_vs(VS,wqs(Arg)), writeq(F),write('(`'),!, print_with_pad(write(VS)),write('`)').
+print_gridoid_arg1(F,Arg):- wots_vs(VS,wqs(Arg)),
+ with_tag_style(span,"display: inline; white-space: nowrap",(writeq(F),write('({'),!,write(VS),write('})'))).
 
 is_really_gridoid(G):- is_gridoid(G),(is_list(G) -> ( \+ (member(E,G),non_gridoid_cell(E))); true).
 non_gridoid_cell(C):- plain_var(C),!,fail.
@@ -895,8 +927,8 @@ print_side_by_side(A^B):- caret_to_list(A^B,List),print_side_by_side(List),!.
 print_side_by_side(call(P)):- !, call(P,Ret),!,print_side_by_side_l(1,Ret).
 
 print_side_by_side(G):- is_grid(G),!,print_grid(G).
-print_side_by_side(GF):- grid_footer(GF,G,W),is_gridoid(G),!,print_grid(W,G).
 print_side_by_side(Title=Value):- !, w_section(title(Title),print_side_by_side(Value)).
+print_side_by_side(GF):- grid_footer(GF,G,W),is_gridoid(G),!,print_grid(W,G).
 %print_side_by_side(Title=(A^B)):- print_side_by_side((Title=A)^B).
 
 print_side_by_side(P):- is_list(P), print_side_by_side_l(1,P), !,nop((length(P,PL),PL>5,writeln(pss=PL))).
@@ -1668,6 +1700,7 @@ with_color_span(C,G):- format('<span style="~w">~@</span>',[C,bformatc(G)]),!.
 */
 
 
+:- meta_predicate(bformatc(+)).
 bformatc(G):- var(G),!,bformatc(vaR(G)).
 bformatc(G):- string(G),!,bformats(G).
 bformatc(G):- is_list(G), notrace(catch(text_to_string(G,S),_,fail)),G\==S,!,bformatc(S).
@@ -1747,13 +1780,14 @@ print_grid_ansi_real(SH,SV,EH,EV,GridII):- make_bg_visible(GridII,GridI),
 %block_colors([(black),(blue),(red),(green),(yellow),Silver,('#966cb8'),'#ff8c00',(cyan),'#8b4513']):- silver(Silver),!.
 %block_colors([(black),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan),'#8b4513','#2a2a2a', 9379b4 '#3a5a3a']):- silver(Silver),!.
 block_colors([('#4a2a2a'),(blue),(red),(green),(yellow),Silver,(magenta),'#ff8c00',(cyan), % '#104010'
-                                                                                       '#8b4513','#3a5a3a','#f47c7c','#4a2a2a','#ffffff',FG]):- fg_cut(FG), silver(Silver),!.
-named_colors([(black),(blue),(red),(green),(yellow),(silver),(purple),   (orange),(cyan), (brown),  wbg,      wfg,      bg,      fg,     FG]):- fg_cut(FG).
+                                                                                       '#8b4513','#707007','#3a5a3a','#f47c7c','#4a2a2a','#ffffff',FG]):- fg_cut(FG), silver(Silver),!.
+named_colors([(Zero),(blue),(red),(green),(yellow),(silver),(purple),   (orange),(cyan), (brown),Black,  wbg,      wfg,      bg,      fg,     FG]):- 
+  fg_cut(FG), grid_zero(Zero),z_or_b(Zero,Black).
 named_colors([ (lack),(blue),(red),(green),(yellow),(Silver),(purple),(orange),(cyan),(brown)]):- silver(Silver).
 named_colors([(lack),(blue),(red),(green),(yellow),(silver),(magenta),(orange),(cyan),(brown)]).
 named_colors([(lack),(blue),(red),(green),(yellow),(grey),(pink),(orange),(teal),(maroon)]).
 
-test_show_colors:- maplist(show_color,[0,1,2,3,4,5,6,7,8,9,fg,wfg,bg,wbg,black,_,'#100010','#104010','#4a2a2a'],G),
+test_show_colors:- maplist(show_color,[0,1,2,3,4,5,6,7,8,9,zero,fg,wfg,bg,wbg,black,_,'#100010','#104010','#4a2a2a'],G),
   reverse(G,R),
   print_grid([G,R,G]),nl_now.
 show_color(X,N):- var(X),!,show_color('#101010',N).
@@ -1920,9 +1954,14 @@ color_int(C,W):- integer(C),!,W=C.
 color_int(C,W):- atom(C),named_colors(L),nth0(W,L,C),!.
 color_int(C,C).
 
+%grid_zero(zero).
+grid_zero(black).
+z_or_b(zero,black).
+z_or_b(black,zero).
 
 :- export(grid_color_code/2).
 grid_color_code(C,C):- var(C),!.
+grid_color_code(0,Zero):- grid_zero(Zero).
 grid_color_code(C-W,CC-W):- color_code(C,CC),!.
 grid_color_code(C,CC):- color_code(C,CC),!.
 %grid_color_code(C,CC):- is_grid_color(black-_),!,color_code(C,CC).

@@ -522,7 +522,7 @@ map_objects(TITLE,PeersI,O2,PeersO,O2):-
   %peerless_props(O2,PeersO,Props2),
   %print([x=[in_i(S1),in_o(Props1),out_i(S2),out_o(Props2)]]),
   SETS = RHSSet+LHSSet,
-  save_learnt_rule(arc_cache:object_to_object(i_o,obj(NewSames,LHSSet,IZ),obj(NewSames,RHSSet,OZ)),1+2+3+4+5+6+SETS,SETS))))),!.  
+  save_learnt_rule(arc_cache:object_to_object(i_to_o,obj(NewSames,LHSSet,IZ),obj(NewSames,RHSSet,OZ)),1+2+3+4+5+6+SETS,SETS))))),!.  
 
 
 %dg(I1):-  print_grid(I1),!, print_info(I1).
@@ -996,13 +996,13 @@ sprop_of(reshape_and_recolor,localpoints).
 % which objects deleted in I have no O counterpart
 % which objects are added in O are closest to other objects in I
 % which objects are added in O are closest to other objects in O
-related_formula(simply_copied,i_o,[loc2D,colorlesspoints,pen,rot2L]).
-related_formula(simply_moved,i_o,[pen,differ(loc2D),rot2L,colorlesspoints]).
-related_formula(simply_recolored,i_o,[differ(pen),loc2D,rot2L,colorlesspoints]).
-related_formula(simply_rotated,i_o,[pen,near(loc2D),differ(rot2L),colorlesspoints]).
-related_formula(simply_resized,i_o,[pen,near(loc2D),rot2L,norm_grid,differ(norm_ops)]).
-related_formula(i_triggers_o,i_o,[near(loc2D)]).
-related_formula(o_triggers_o,o_o,[near(loc2D)]).
+related_formula(simply_copied,i_to_o,[loc2D,colorlesspoints,pen,rot2L]).
+related_formula(simply_moved,i_to_o,[pen,differ(loc2D),rot2L,colorlesspoints]).
+related_formula(simply_recolored,i_to_o,[differ(pen),loc2D,rot2L,colorlesspoints]).
+related_formula(simply_rotated,i_to_o,[pen,near(loc2D),differ(rot2L),colorlesspoints]).
+related_formula(simply_resized,i_to_o,[pen,near(loc2D),rot2L,norm_grid,differ(norm_ops)]).
+related_formula(i_triggers_o,i_to_o,[near(loc2D)]).
+related_formula(o_triggers_o,o_to_o,[near(loc2D)]).
 
 
 not_in_sub(P2CallList,Obj):- member(E,P2CallList),(arg(3,E,O);arg(4,E,O)),Obj=O,!,fail.
@@ -1016,15 +1016,15 @@ remove_some(PAIRS,P2CallList,NewPAIRS):-
   include(not_in_sub(P2CallList),OutC,NewOutC),!,
   into_pairs(NewInC,NewOutC,NewPAIRS).
 
-from_pairs_i(i_o(I,_),I).
-from_pairs_o(i_o(_,O),O).
-one_pair(i_o,PAIRS,X,Y):- from_pairs_i(PAIRS,IObjs),from_pairs_o(PAIRS,OObjs),!,member(X,IObjs),member(Y,OObjs).
-one_pair(o_o,PAIRS,X,Y):- from_pairs_o(PAIRS,Objs),!,select_two_objs(X,Y,Objs).
-one_pair(i_i,PAIRS,X,Y):- from_pairs_i(PAIRS,Objs),!,select_two_objs(X,Y,Objs).
+from_pairs_i(i_to_o(I,_),I).
+from_pairs_o(i_to_o(_,O),O).
+one_pair(i_to_o,PAIRS,X,Y):- from_pairs_i(PAIRS,IObjs),from_pairs_o(PAIRS,OObjs),!,member(X,IObjs),member(Y,OObjs).
+one_pair(o_to_o,PAIRS,X,Y):- from_pairs_o(PAIRS,Objs),!,select_two_objs(X,Y,Objs).
+one_pair(i_to_i,PAIRS,X,Y):- from_pairs_i(PAIRS,Objs),!,select_two_objs(X,Y,Objs).
 
 select_two_objs(X,Y,Objs):- select(X,Objs,RestObjs),member(Y,RestObjs).
 
-into_pairs(I,O,i_o(I,O)).
+into_pairs(I,O,i_to_o(I,O)).
 
 /*
 __|i1, i2, i3, i4
@@ -1033,38 +1033,40 @@ o2|         y
 o3|
 o4|         x
 */
-prev_intoNamedImg(OID):- format(
-'<script>
-  var oid = "~w";
-  var me = document.currentScript;
-  var prev = me.previousElementSibling;
-  intoNamedImg(prev,oid,100,100);
-</script>',[OID]).
-into_image(Obj,S):- obj_to_oid(Obj,OID),global_grid(Obj,Grid),
-  numbervars(Grid,666,_,[attvars(bind),singletons(true)]),
-  assert_grid_oid(Grid,OID),
-  wots(S,
-     (locally(nb_setval(grid_title,OID),print_grid(OID,Grid)),
-      prev_intoNamedImg(OID))).
 
 %  
-into_th(ColOrRow,Nth,Obj,TH):- obj_to_oid(Obj,OID),into_image(Obj,S),sformat(TH,'<th id="th_~w" onclick="sortTable~ws(this,~w);" class="th-sm selectable">~w</th>',[OID,ColOrRow,Nth,S]).
+into_th(ColOrRow,Nth,Obj,TH):- obj_to_oid(Obj,OID),into_image(Obj,S),sformat(TH,'<th id="th_~w" onclick="top.sortTable~ws(this,~w);" class="th-sm selectable" style="max-width: 100; max-height: 100">~w</th>',[OID,ColOrRow,Nth,S]).
 
-write_i_o_data(IDPrefix,O,I):- 
+write_o_i_data(DIR,O,I):- 
  must_det_ll((
-   id_between(IDPrefix,I,O,ID),
-   format('<td id="~w" class="tiptext selectable" style="color: white"',[ID]),
-   write_data_between(I,O))),!.
+   id_between(DIR,I,O,ID),
+   format('<td id="~w" class="tiptext selectable" style="color: white; max-width: 100; max-height: 100"',[ID]),
+   ignore(write_data_between(DIR,I,O)),
+   write('</td>'))),!.
 
-write_data_between(I,O):- I==O,  !,
+
+:- dynamic(relation_between/4).
+
+write_data_between(_DIR,I,O):- I==O,  !,
   Title = I,
-  write_te(Title), 
-  write(' onclick="showDesc(this);">'),  
-  write(0),
-  write('</td>'),
-  !.
+  write_ta(Title), 
+  write(' onclick="top.showDesc(this);">'),  write(0),
+  print_html_image(I),!.
   
-write_data_between(I,O):- 
+write_data_between(DIR,I,O):- 
+ must_det_ll((
+  relation_value(I,O,Val,RelsC,MissedRel),
+  wots_ansi(ToolTips, (pp(RelsCL/MissedC), nl, write_gec(same=RelsC), nl, write_gec(missed=MissedRel))),
+  write_ta(ToolTips), write(' onclick="top.showDesc(this);">'),
+  obj_to_oid(I,OID1),
+  obj_to_oid(O,OID2),
+  assert_if_new(relation_between(DIR,OID1,OID2,Val)),
+  write(Val),
+  print_html_image(I))),!.
+  %nop(add_tool_tips(ID,Title)))),!.
+
+relation_value(II,OO,Val,RelsC,MissedRel):- 
+ into_obj(II,I),into_obj(OO,O),
  must_det_ll((
   indv_props_list(I,IL),indv_props_list(O,OL),
   include(cmpable_value,IL,ILC),
@@ -1075,14 +1077,11 @@ write_data_between(I,O):-
   max_min(LOL,ROL,_,Missed),
   max_min(LOCL,ROCL,_,MissedC),
   (MissedC==LOCL->MissedRel=LOC;MissedRel=ROC),
-  wots_ansi(Title, (pp(RelsCL/MissedC), nl, write_gec(same=RelsC), nl, write_gec(missed=MissedRel))),
-  write_te(Title), write(' onclick="showDesc(this);">'),
-  Val is RelsCL*100+ (100-(MissedC*2)),
-  write(Val),
-  write('</td>'))),!.
-  %nop(add_tool_tips(ID,Title)))),!.
+  Val is (RelsCL*100+ (100-(MissedC*2))))),!.
+relation_value(I,O,Val):-
+  relation_value(I,O,Val,_RelsC,_MissedRel).
 
-write_te(Title):- write(' title="'), write_ea(Title), write('"'),!.
+write_ta(Title):- write(' title="'), write_ea(Title), write('"'),!.
 
 write_gec(N=V):- nl_if_needed,nonvar(N), !, pp_no_nl(N),writeln(' = '), !, wots(S,write_gec(V)),print_w_pad(2,S).
 write_gec(Val):- is_list(Val), !, wots(S,maplist(write_gec,Val)), print_w_pad(2,S).
@@ -1095,8 +1094,68 @@ write_eh(List):- is_list(List),!,maplist(write_eh,List).
 write_eh(String):- atomic(String),!,write(String).
 write_eh(Compound):- wqs_c(Compound),!.
 
-id_between(IDPrefix,I,O,ID):-  obj_to_oid(I,OID1),obj_to_oid(O,OID2),sformat(ID,'~w_~w_~w',[IDPrefix,OID1,OID2]).
+id_between(DIR,I,O,ID):-  obj_to_oid(I,OID1),obj_to_oid(O,OID2),sformat(ID,'~w_~w_~w',[DIR,OID1,OID2]).
    
+sort_some_relations(IL,OL):- 
+ write('<div id="sort_some_relations">'),
+  sort_some_relations(i_to_o,OL,IL),
+  sort_some_relations(o_to_i,IL,OL),
+  sort_some_relations(i_to_i,OL,OL),
+  sort_some_relations(o_to_o,IL,IL),
+  write('</div>').
+
+sort_some_relations(DIR,IL,OL):- 
+ upcase_atom(DIR,Title),
+  sformat(IDDIR,'~w_sort_some_relations',[DIR]),
+ w_section(title(Title),
+  (
+    format('<div id="~w_panel" class="sort_some_relations resizable" style="min-height: 200; min-width: 80%"></div>',[IDDIR]),
+    get_relation_between(DIR,Nodes,Links),
+    u_dmsg(nodes=Nodes),
+    u_dmsg(links=Links),
+    sformat(S,'<script>top.runD3Sim("~w_panel",~@,~@)</script>',
+                            [IDDIR,
+                             json_write(current_output,Nodes),
+                             json_write(current_output,Links)]),
+    write(S))),
+  !.
+
+dir_to_oidset(Dir,OIDSet):-
+ findall_set(OID,(relation_between(DIR,OID1,OID2,_),member(OID,[OID1,OID2])),OIDSet).
+
+% relation_between(DIR,OID1,OID2,Val)
+get_relation_between(DIR,Nodes,Links):-
+  dir_to_oidset(Dir,OIDSet),
+  u_dmsg(tOIDSet=OIDSet),
+  maplist(oid_to_node,OIDSet,Nodes),
+  findall(_{source: OID1, target: OID2, value: Val100}, 
+   (dir_to_oidset(Dir,OIDSet),
+    member(OID1,OIDSet),
+    good_relation_between(DIR,OID1,OID2,Val),Val100 is Val/100+10),Links).
+
+best_relation_between(DIR,OID1,OID2,Val):-
+  dir_to_oidset(Dir,OIDSet),member(OID1,OIDSet),
+  findall(Val-OID2,(relation_between(DIR,OID1,OID2,Val);relation_between(DIR,OID2,OID1,Val)),List),
+  sort(List,SList),last(SList,Val-OID2).
+
+
+good_relation_between(DIR,OID1,OID2,Val):-
+  best_relation_between(DIR,OID1,OID2,Val).
+
+good_relation_between(DIR,OID1,OID2,Val):-
+  findall_set(Val,relation_between(DIR,_,_,Val),VList),
+  sort(VList,SVList),  
+  length(SVList,Len), Len>=4,
+  [_,_|UseList] = SVList,!,
+  relation_between(DIR,OID1,OID2,Val),
+  \+ \+ member(Val,UseList).
+good_relation_between(DIR,OID1,OID2,Val):- relation_between(DIR,OID1,OID2,Val).
+
+oid_to_node(OID,_{oid:OID,name:OID,desc:Glyph,color:HTMLColor,shape:circle,size:10}):- 
+   oid_to_obj(OID,Obj),
+   object_glyph(Obj,Glyph),object_glyph_colorz(Obj,[Color|_]),into_html_color(Color,HTMLColor),!.
+oid_to_node(OID,_{oid:OID,name:OID,shape:circle,size:10}).
+
 
 cmpable_value(V):- \+ compound(V),!,fail.
 cmpable_value(V):- sub_term(S,V),number(S),S\==0,!.
@@ -1110,30 +1169,32 @@ has_zero(V):- sub_var(0,V).
 
 guess_some_relations(IL,OL):- 
  write('<div id="guess_some_relations">'),
-  guess_some_relations("I->O",IL,OL),
-  guess_some_relations("O->I",OL,IL),!,
-  guess_some_relations("I->I",IL,IL),
-  guess_some_relations("O->O",OL,OL),!,
+  guess_some_relations(i_to_o,OL,IL),
+  guess_some_relations(o_to_i,IL,OL),
+  guess_some_relations(i_to_i,OL,OL),
+  guess_some_relations(o_to_o,IL,IL),
   write('</div>').
 
-guess_some_relations(Title,IL,OL):- wants_html,!,
+%sort_il(A,BG,BGS):- predsort(sort_on(nearest_by_not_simular(A)),BG,BGS).
+sort_il(A,BG,BGSR):- predsort(sort_on(relation_value(A)),BG,BGS),reverse(BGS,BGSR).
+
+
+
+guess_some_relations(DIR,IL,OL):- 
+ upcase_atom(DIR,Title),
  w_section(title(Title),
-  (
-    sformat(IDPrefix,'~w_guess_some_relations',[Title]),
-
-    format_s(`<p>To display 'compare_objects' click <a href = "javascript:void(0)" onclick = "setVisible(document.getElementById('~w_panel'),'block')">here</a></p>`,[IDPrefix]),	
-    format_s(`<div id="~w_panel" class="white_content">This is the panel content.`,[IDPrefix]),
-    format_s(`<a href = "javascript:void(0)" onclick = "setVisible(document.getElementById('~w_panel'),'none')">Close</a>`,[IDPrefix]),
-    format_s(`<table id="~w" class="compare_objects sorttable sortable searchable display table table-bordered table-sm"><tr><th><h3>~w</h3></th>`,[IDPrefix,Title]),
-
-    forall(nth1(M,IL,I),(into_th('Row',M,I,ITH),write_eh(ITH))),write('</tr>'),
-
+  ( sformat(IDDIR,'~w_guess_some_relations',[DIR]),
+    retractall(relation_between(DIR,_OID1,_OID2,_Val)),
+    format_s(`<table id="~w" class="compare_objects resizable sorttable sortable searchable display table table-bordered table-sm">`,[IDDIR]),
+    format_s(`<tr><th><h3>~w</h3></th>`,[Title]), 
+      forall(nth1(M,IL,I),must_det_ll(((into_th('Row',M,I,ITH),write_eh(ITH))))), write('</tr>'),
     forall(nth1(N,OL,O),
-       (write('<tr>'),into_th('Col',N,O,OTH),write_eh(OTH),
-        forall(member(I,IL),write_i_o_data(IDPrefix,O,I)),
-        write('</tr>'))),
-  format_s(`</table><a href = "javascript:void(0)" onclick = "setVisible(document.getElementById('~w_panel'),'none')">Close</a></div>`,[IDPrefix]))),
-  !.
+      must_det_ll(((write('<tr>'),into_th('Col',N,O,OTH),write_eh(OTH),
+       sort_il(O,IL,SIL),
+       forall(member(I,SIL),ignore(write_o_i_data(DIR,O,I))),
+       write('</tr>'))))),
+  format_s(`</table>`,[]))),!.
+
 
 guess_some_relations(Title,IL,OL):-
   guess_some_relations([],IL,OL,RelationsList),
@@ -1159,9 +1220,9 @@ try_some_pair_relations(ExceptFor,PAIRS,P2L,P2CallList):-
       once(equiv_props(Tests,O1,O2))),P2CallList),
    P2CallList\==[].
 
-io_is_correct(i_o,O1,O2):- indv_props(O1,iz(input)),indv_props(O1,iz(output)).
-io_is_correct(i_i,O1,O2):- indv_props(O1,iz(input)),indv_props(O1,iz(input)).
-io_is_correct(o_o,O1,O2):- indv_props(O1,iz(output)),indv_props(O1,iz(output)).
+io_is_correct(i_to_o,O1,O2):- indv_props(O1,iz(input)),indv_props(O1,iz(output)).
+io_is_correct(i_to_i,O1,O2):- indv_props(O1,iz(input)),indv_props(O1,iz(input)).
+io_is_correct(o_to_o,O1,O2):- indv_props(O1,iz(output)),indv_props(O1,iz(output)).
   
 
 pair4(P2,Sel,O1,O2):-

@@ -140,7 +140,8 @@ is_cgi:- arc_html,!.
 arc_html:- em_html,!.
 arc_html:- current_predicate( wants_html/0), wants_html.
 
-ansi_main:- thread_self(main),is_cgi,!.
+ansi_main:- thread_self(main),nop(is_cgi),!.
+main_thread:- thread_self(main),!.
 
 update_changes:- \+ thread_self(main),!.
 update_changes:- 
@@ -1032,6 +1033,8 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 :- luser_default(extreme_caching,false).
 :- set_current_test(v('1d398264')). 
 :- luser_default(task,v('1d398264')). 
+:- luser_default(task,v('37d3e8b2')). 
+
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).
 :- nb_setval(arc_can_portray,nil).
 %:- (getenv('DISPLAY',_) -> ensure_guitracer_x ; true).
