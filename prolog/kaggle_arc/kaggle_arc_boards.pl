@@ -504,8 +504,8 @@ list_common_props_so_far(TestID):-
   !.
 
 
-%with_li_pre(Goal):- with_tag(li,with_tag(pre,Goal)).
-with_li_pre(Goal):- call(Goal).
+with_li_pre(Goal):- with_tag(li,with_tag(pre,Goal)).
+%with_li_pre(Goal):- call(Goal).
 
 ptv1(Color,T):- is_list(T), !, maplist(ptv1(Color),T).
 ptv1(_Color,_=T):- T==[],!.

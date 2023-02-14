@@ -78,36 +78,29 @@ like for exmaple when i built the speech encoder/recoder in my teens
 
 :- meta_predicate(w_section(0)).
 w_section(Goal):- w_section_g(Goal),!.
-w_section(Goal):-
-  copy_term(Goal,GoalC),
-  must_det_ll((goal_to_title_key(GoalC,Title,Spyable), w_section(Title,Goal,Spyable,maybe))).
+w_section(Goal):- must_det_ll((goal_to_title_key(Goal,Title,Spyable), w_section(Title,Goal,Spyable,maybe))).
+
 :- meta_predicate(w_section(+,0)).
 w_section(_,Goal):- w_section_g(Goal),!.
 w_section(AmmtShown,Goal):- var(AmmtShown),!,w_section(title(AmmtShown),Goal).
-w_section(title(Title),Goal):- !, copy_term(Goal,GoalC),
-  must_det_ll((into_str(Title,TitleStr),
-     title_string_to_functor(TitleStr,GoalC,Spyable), 
-     w_section(Title,Goal,Spyable,maybe))).
-w_section(AmmtShown,Goal):- is_amount_shown(AmmtShown),!,  copy_term(Goal,GoalC),
-  must_det_ll((goal_to_title_key(GoalC,Title,Spyable), w_section(Title,Goal,Spyable,AmmtShown))).
+w_section(title(Title),Goal):- !, 
+     must_det_ll((into_title_str(Title,TitleStr),title_string_to_functor(TitleStr,Goal,Spyable), 
+     w_section(TitleStr,Goal,Spyable,maybe))).
+w_section(AmmtShown,Goal):- is_amount_shown(AmmtShown),!,  
+  must_det_ll((goal_to_title_key(Goal,Title,Spyable), w_section(Title,Goal,Spyable,AmmtShown))).
 %w_section(Spyable,Goal):-  is_arc_spyable(Spyable),!,
-%  must_det_ll((functor_to_title_string(Spyable,Title), w_section(Title,Goal,Spyable,maybe))).
-w_section(Title,Goal):- copy_term(Goal,GoalC),
-  must_det_ll((into_str(Title,TitleStr), title_string_to_functor(TitleStr,GoalC,Spyable), 
-     w_section(Title,Goal,Spyable,maybe))).
+%  must_det_ll((into_title_str(Spyable,Title), w_section(Title,Goal,Spyable,maybe))).
+w_section(Title,Goal):-
+  must_det_ll((into_title_str(Title,TitleStr), title_string_to_functor(TitleStr,Goal,Spyable), 
+     w_section(TitleStr,Goal,Spyable,maybe))).
 
-t_section(Title,Goal):- 
- copy_term(Goal,GoalC),
-  must_det_ll((into_str(Title,TitleStr),
-     title_string_to_functor(TitleStr,GoalC,Spyable), 
-     w_section(Title,Goal,Spyable,maybe))).
 
 :- meta_predicate(w_section('+',0,'+')).
 
 w_section(_,Goal,_):- w_section_g(Goal),!.
 
 w_section(Title,Goal,AmmtShown):- AmmtShown==ran_collapsed, w_section_4(Title,Goal,debug,ran_collapsed).
-w_section(Title,Goal,Spyable):- into_str(Title,TitleStr),Title\==TitleStr,!,w_section(TitleStr,Goal,Spyable).
+w_section(Title,Goal,Spyable):- into_title_str(Title,TitleStr),Title\==TitleStr,!,w_section(TitleStr,Goal,Spyable).
 w_section(Title,Goal,AmmtShown):- is_amount_shown(AmmtShown),!,
   must_det_ll((title_string_to_functor(Title,Goal,Spyable), w_section(Title,Goal,Spyable,AmmtShown))).
 w_section(Title,Goal,Spyable):- must_det_ll(w_section(Title,Goal,Spyable,maybe)).
@@ -130,7 +123,7 @@ w_section_4(Title,Goal,Spyable,Showing):- wants_html, !, w_section_html(Title,Go
 w_section_4(Title,Goal,Spyable,Showing):- w_section_ansi(Title,Goal,Spyable,Showing).
 
 
-w_section_ansi(Title,Goal,Spyable,_Showing):- 
+w_section_ansi(Title0,Goal,Spyable,_Showing):- into_title_str(Title0,Title),
   nl_if_needed,dash_chars,
   MU = '', % was 'mu'
   once(nb_current('$w_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),
@@ -196,7 +189,7 @@ goal_new_lines(Goal,NewChars):-
 
 
 title_to_html(Title,HtmlTitle):- 
-  into_str(Title,Str), with_pp(plain,into_attribute(Str,HtmlTitle)),!.
+  into_title_str(Title,Str), with_pp(plain,into_attribute(Str,HtmlTitle)),!.
 /*
 old_write_expandable(Title,Goal,Showing):- 
    setup_call_cleanup(flag('$w_section_depth',Depth,Depth+1),
@@ -234,14 +227,11 @@ trim_leading_trailing_whitespace(In,Out):-
 
 :- meta_predicate(goal_to_title_key(+,-,-)).
 goal_to_title_key(Term,Title,Spyable):-
-   must_det_ll((invent_key(Term,Spyable),
-   copy_term(Spyable,SpyableC),
-   functor_to_title_string(SpyableC,Title))),!,
-   nop((u_dmsg(goal_to_title_key(Term,Spyable,Title)))).
+   must_det_ll((into_title_str(Term,Title),invent_key(Term,Spyable))).
 
 
 invent_key(Term,Spyable):- \+ compound(Term),!, must_det_ll((
-   into_str(Term,Str), title_string_to_functor(Str,Term,Spyable))).
+   into_title_str(Term,Str), string_to_functor(Str,Spyable))).
 invent_key(Term,Spyable):- invent_key2(Term,Spyable).
 invent_key2(_:Term,Spyable):- !, must_det_ll(invent_key(Term,Spyable)).
 %invent_key2((Term,_),Spyable):- !, invent_key(Term,Spyable).
@@ -266,18 +256,14 @@ overly_plain_functor(Term):- predicate_property(Term,meta_predicate(_)),!.
 overly_plain_functor(Term):- compound_name_arity(Term,F,_),atom(F),upcase_atom(F,UC),!,downcase_atom(F,UC).
 
 
-functor_to_title_string(A,OO):- atom(A),functor(A,F,_), to_case_breaks(F,X),include(\=(xti(_,punct)),X,O),maplist(arg(1),O,O1),
- maplist(toProperCamelAtom,O1,O2),maplist(any_to_string,O2,O3),atomics_to_string(O3," ",OO).
-functor_to_title_string(A,OO):- term_string(A,OO),!.
+title_string_to_functor(_Str,Goal,Spyable):- invent_key(Goal,Spyable),!.
+title_string_to_functor(Str,_Goal,Spyable):- callable(Str),invent_key(Str,Spyable),!.
 
-title_string_to_functor(Str,Goal,Spyable):- var(Str),!,invent_key2(Goal,Spyable).
-title_string_to_functor(Str,Goal,Spyable):- Str =="",!,invent_key2(Goal,Spyable).
-title_string_to_functor(A,_Goal,OO):- any_to_string(A,F), !, must_be_free(OO), title_string_to_functor(F,OO).
 
-title_string_to_functor(F,OO):- 
+string_to_functor(F,OO):- 
  to_case_breaks(F,X),include(\=(xti(_,punct)),X,O),maplist(arg(1),O,O1),
  maplist(any_to_atom,O1,O2),maplist(toLowercase,O2,O3),atomic_list_concat(O3,'_',OO),!.
-title_string_to_functor(F,OO):- atom_string(OO,F),!.
+string_to_functor(F,OO):- atom_string(OO,F),!.
 
 %header_arg(_:Term,E):-!,header_arg(Term,E).
 %header_arg(Term,E):- sub_term(E,Term), E\=@=Term, compound(E), \+ is_list(E).
@@ -744,7 +730,7 @@ print_wrappable(L):- \+ is_cgi, !, wqs_c(L).
 print_wrappable(L):- with_tag_class(div,wrappable,wqs_c(L)).
 
 print_title(Var):- (var(Var);Var==[]),!.
-print_title(Title):- trim_newlines(wqs_c(Title)).
+print_title(Title):- into_title_str(Title,Str), trim_newlines(wqs_c(Str)).
 
 % width: fit-content
 % print_table(ListOfLists):- setup_call_cleanup(write('<table style="width: fit-content;m width: 100%; border: 0px">'), maplist(html_table_row,ListOfLists), write('</table>')),!.
@@ -860,18 +846,16 @@ print_ss_html(TitleColor,In,FIn,_LW,Out,FOut):-
  wots_vs(HOut, with_color_span(color(TitleColor),wqs_c(FOut))),
  print_ss_html_h(In,HIn,Out,HOut).
 
-
+/*
 print_ss_html(TitleColor,G1,N1,_LW,G2,N2):-  
  into_nv_cmd(N1,N1Cmd),
  into_nv_cmd(N2,N2Cmd),
- (( print_ss_html(TitleColor, 
+ (( print_ss_html_pair(TitleColor, 
     wqs(N1),navCmd(N1Cmd),N1,G1,wqs(N1),
     wqs(N2),navCmd(N2Cmd),N2,G2,wqs(N2)))).   
+*/
 
-into_nv_cmd(N2,N2Cmd):- 
- into_attribute(N2,N2Cmd).
-
-print_ss_html(TitleColor,
+print_ss_html_pair(TitleColor,
                     NameIn,    NameInCmd, ID1,In, LeftTitle,
                     TestAtom,TestAtomCmd, ID2,Out,RightTitle):-
   wots_vs(HIn, with_color_span(color(TitleColor),write_nav_cmd(NameIn,NameInCmd))),
@@ -884,6 +868,9 @@ print_ss_html(TitleColor,
  print_table([[HIn,'   ',HOut],[
    locally(nb_setval(grid_footer,FIn),with_other_grid(Out,print_grid_http_bound(ID1,BGC1,1,1,H1,V1,In))),'-->',
    locally(nb_setval(grid_footer,FOut),with_other_grid(In,print_grid_http_bound(ID2,BGC2,1,1,H2,V2,Out)))]]).
+
+into_nv_cmd(N2,N2Cmd):- into_attribute(N2,N2Cmd).
+
 
 print_ss_html_h(In,HIn,Out,HOut):- 
   print_table([[HIn,'   ',HOut],
@@ -937,20 +924,34 @@ print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):-
   write('</table>'),
 
   ignore((cvtToIMG,
-     ((grid_to_image_oid(Grid,ID),atom(ID))->prev_intoNamedImg(ID);
-      format('<script>cvtToIMG(`~w`); $(document.currentScript).remove(); </script>',[TaskIDSubTask])))),!.
+     ((grid_to_image_oid(Grid,ID),atom(ID))->prev_intoNamedImg(ID); cvtToIMG(TaskIDSubTask)))).
 
-
-
+cvtToIMG(TaskIDSubTask):-
+  run_script('cvtToIMG(`~w`);',[TaskIDSubTask]),!.
 
 prev_intoNamedImg(OID):-
  asserta(did_prev_intoNamedImg(OID)),
+ run_script_now(' top.intoNamedImg(true,true,prev,`~w`); ',[OID]).
+
+run_script(Fmt,Args):-
  gensym(script_id_,ScriptID),
  format('<script id="~w">
-  var me = document.currentScript;
-  var prev = me.previousElementSibling;
-  top.intoNamedImg(true,true,prev,"~w"); $(me).remove();
-</script>',[ScriptID,OID]).
+ var me = document.currentScript; 
+ var prev = me.previousElementSibling;
+ setTimeout(function(){ 
+ ~@ 
+ prev = me.previousElementSibling; alreadyRan(me,prev);}, 3000); 
+</script>',[ScriptID,format(Fmt,Args)]).
+
+run_script_now(Fmt,Args):-
+ gensym(script_id_,ScriptID),
+ format('<script id="~w">
+ var me = document.currentScript; 
+ var prev = me.previousElementSibling;
+ ~@ 
+ prev = me.previousElementSibling; alreadyRan(me,prev); 
+</script>',[ScriptID,format(Fmt,Args)]).
+
 into_image(I,S):- wots(S,print_html_image(I)).
 
 :- dynamic(page_has_grid_out/2).
@@ -968,18 +969,9 @@ print_html_image(Obj):-
 print_html_image(Page,OID,_Obj):- page_has_grid_out(Page,OID),!,  
   with_output_to(Page,((
   format('<img src="https://via.placeholder.com/100" class="placeholder" name="~w"/>',[OID]),
-  format('<script>
-   var me = document.currentScript;
-   var prev = me.previousElementSibling; 
-   var url=top.milledImages["~w"];
-   if(url!==undefined) {
-     prev.src = url;
-   }
-   debugger;
-   $(me).remove();
- </script>',[OID])))).
-
-%print_html_image(Obj):- draw_html_image(Obj),!.
+  run_script('prev.setAttribute("src",top.milledImages["~w"]);',[OID])))).
+ 
+print_html_image(_Page,_OID,Obj):- draw_html_image(Obj),!.
 print_html_image(Page,OID,Obj):- assert(page_has_grid_out(Page,OID)),
   with_output_to(Page,((draw_html_image(Obj), prev_intoNamedImg(OID)))).
   %print_html_image(Obj).
@@ -1031,7 +1023,7 @@ print_grid_http_bound(ID,BGC,SH,SV,EH,EV,Grid):-
           catch(print_hg1(CG),E,writeln(CG=E)),write('</td>')))))))),
 
   ignore((nonvar(ID),write('</table>'))),
-  ignore((nonvar(ID),cvtToIMG,format('<script>cvtToIMG(`~w`); $(document.currentScript).remove(); </script>',[ID]))),!.
+  ignore((nonvar(ID),cvtToIMG(ID))),!.
 
 cvtToIMG:- true.
 
@@ -1082,7 +1074,7 @@ write_nav_cmd(Info,Cmd):- \+ compound(Cmd), !, write_nav_cmd(Info,navCmd(Cmd)).
 write_nav_cmd(Info,navCmd(Cmd)):- !, %nonvar(Goal), %toplevel_pp(PP), %first_current_example_num(ExampleNum),
   %get_current_test_atom(TestAtom), %get_current_test(TestID), term_to_www_encoding(TestID,TestAtom), %in_pp(PP),  
   %term_to_www_encoding(Goal,CmdAtom),
-  into_str(Info,Info1),
+  into_title_str(Info,Info1),
   into_attribute(Cmd,Attr),
   sformat(SO,'<a href="javascript:void(0)" onclick="top.navCmd(`~w`)">~w</a>~n',[Attr,Info1]),!,
   our_pengine_output(SO).
@@ -1091,7 +1083,7 @@ write_nav_cmd(Info,Cmd):- write_nav_cmd(Info,navCmd(Cmd)).
 write_http_link(Info,Goal):- nonvar(Goal), %toplevel_pp(PP), %first_current_example_num(ExampleNum),
   get_current_test_atom(TestAtom), %get_current_test(TestID), term_to_www_encoding(TestID,TestAtom), %in_pp(PP),  
   term_to_www_encoding(Goal,CmdAtom),
-  into_str(Info,Info1),
+  into_title_str(Info,Info1),
   sformat(SO,'<a href="?cmd=~w" target="_top">~w</a>~n',[CmdAtom,TestAtom,Info1]),!,
   our_pengine_output(SO),!.
 

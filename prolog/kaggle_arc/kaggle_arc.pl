@@ -285,7 +285,7 @@ echo_option(N,V):- u_dmsg(echo_option(N,V)).
 %:- autoload_all.
 :- set_prolog_flag(verbose_autoload, false).
 :- set_prolog_flag(verbose_load,false).
-:- autoload_all.
+%:- autoload_all.
 
 
 % we alias these so we can catch out of control list growth
@@ -1042,7 +1042,7 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 
 :- set_prolog_flag(verbose_autoload, false).
 :- set_prolog_flag(verbose_load,false).
-:- autoload_all.
+%:- autoload_all.
 
 gui_flag(GUI):- (current_prolog_flag(gui, GUI)-> true ;
    (((getenv('DISPLAY', Display), Display \== '') -> GUI = true ; GUI=false),
@@ -1053,7 +1053,7 @@ gui_flag(GUI):- (current_prolog_flag(gui, GUI)-> true ;
 :- current_prolog_flag(gui,false)->set_prolog_flag(xpce,true);true.
 
 :- if(current_prolog_flag(xpce,true)).
-:- 
+use_gui_debugger:- 
  locally(set_prolog_flag(xpce,true),
    locally(set_prolog_flag(gui,true),
      locally(set_prolog_flag(autoload,true),
@@ -1068,8 +1068,9 @@ gui_flag(GUI):- (current_prolog_flag(gui, GUI)-> true ;
     %reload_library_index,
     erase(CLRef),
     gtrace,notrace,guitracer,notrace,
-    autoload_all))))).
+    call(autoload_all)))))).
 
+%:- use_gui_debugger.
 :- locally(set_prolog_flag(autoload,true), 
            prolog_ide(thread_monitor)).
 

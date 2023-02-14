@@ -34,8 +34,10 @@ print_collapsed0(_,G):- wots_vs(S,G),write(S).
 
 tersify(I,O):- tracing,!,I=O.
 %tersify(I,O):- term_variables(I,Vs), \+ ( member(V,Vs), attvar(V)),!,I=O.
-tersify(I,O):- quietly((tersify2(I,M),tersify3(M,O))),!.
+tersify(I,O):- tersify23(I,O),!.
 tersify(X,X):-!.
+
+tersify23(I,O):- quietly((tersify2(I,M),tersify3(M,O))),!.
 
 %srw_arc(I,O):- is_grid(I),!, wots_hs(O,(write('"'),print_grid(I),write('"'))).
 %srw_arc(I,O):- compound(I),!, wots_hs(O,(write(ppt(I)))).
@@ -247,6 +249,121 @@ write_map(G,Where):- is_vm(G), !, write('...VM_'),write(Where),write('...').
 write_map(G,Where):- is_vm_map(G), !, write('...Map_'),write(Where),write('...').
 write_map(G,Where):- is_dict(G), !, write('...Dict_'),write(Where),write('...').
 write_map(_G,Where):- write('...'),write(Where),write('...').
+
+
+
+non_empty_wqs_c(V):- \+ empty_wqs_c(V).
+empty_wqs_c(V):- var(V),!,fail.
+empty_wqs_c(A):- atom(A),atom_string(A,S),!,empty_wqs_c(S).
+empty_wqs_c([]).
+empty_wqs_c("").
+empty_wqs_c("&nbsp;").
+empty_wqs_c(" ").
+empty_wqs_c("\n").
+
+is_writer_goal(H):- \+ callable(H),!,fail.
+is_writer_goal(H):- is_list(H),!,fail.
+is_writer_goal(A):- atom(A),!,is_writer_goal_f(A).
+is_writer_goal(H):- \+ compound(H),!,fail.
+%is_writer_goal((C1,C2)):- !, (is_writer_goal(C1);is_writer_goal(C2)).
+is_writer_goal(C):- compound_name_arity(C,F,_),once(is_writer_goal_f(F);(arg(_,C,E),is_writer_goal(E))).
+
+
+is_writer_goal_f(wqs_c).
+is_writer_goal_f(F):- is_writer_goal_l(F),!.
+is_writer_goal_f(F):- \+ atom(F),!, term_to_atom(F,A),is_writer_goal_f(A).
+is_writer_goal_f(F):- not_writer_goal_r(R),atom_concat(_,R,F),!,fail.
+is_writer_goal_f(F):- is_writer_goal_l(L),atom_concat(L,_,F),!.
+is_writer_goal_f(F):- is_writer_goal_l(R),atom_concat(_,R,F),!.
+not_writer_goal_r(test). is_writer_goal_l(msg). is_writer_goal_l(call). 
+is_writer_goal_l(nl).  is_writer_goal_l(format). is_writer_goal_l(with_).  
+is_writer_goal_l(html).  is_writer_goal_l(ptcol).  is_writer_goal_l(wots).
+is_writer_goal_l(print). is_writer_goal_l(flush_output).  is_writer_goal_l(wqs).
+is_writer_goal_l(pp). is_writer_goal_l(write).  is_writer_goal_l(dash_).
+
+
+maybe_color(SS,_):- term_contains_ansi(SS),!, write_nbsp, write(SS).
+maybe_color(SS,P):- term_contains_ansi(P),!, write_nbsp, write(SS).
+maybe_color(SS,P):- pp_msg_color(P,C), ansicall(C,is_maybe_bold(P,write(SS))),!.
+
+write_atom(S):- \+ atom(S),!,wqs(S).
+write_atom(S):- atom_contains(S,'~'),!,notrace(catch(format(S,[]),_,maybe_write_atom_link(S))).
+write_atom(S):- maybe_write_atom_link(S),!.
+write_atom(S):- into_title_str(S,TS),write(TS),!.
+
+
+into_title_str(Term,Str):- string(Term),!,Str=Term.
+into_title_str(Term,Str):- term_is_ansi(Term), wots(Str,write_keeping_ansi_mb(Term)),!.
+into_title_str(Term,Str):- (is_codelist(Term);is_charlist(Term)),catch(sformat(Str,'~s',[Term]),_,sformat(Str,'~p',[Term])),!.
+into_title_str(Term,Str):- plain_var(Term),sformat(Str,'~p',[Term]),!.
+into_title_str(Term,Str):- var(Term),tersify0(Term,Terse), sformat(Str,'~p',[Terse]),!.
+into_title_str(Term,Str):- \+ callable(Term),sformat(Str,'~p',[Term]),!.
+into_title_str(Term,""):- empty_wqs_c(Term),!.
+into_title_str(Term,Str):- is_list(Term),maplist(into_title_str,Term,O3),atomics_to_string(O3," ",Str).
+into_title_str(out,"Output").
+into_title_str(in,"Input").
+into_title_str(i,"IN").
+into_title_str(o,"OUT").
+into_title_str(T-U,Str):- into_title_str([some(T),"..to..",some(U)],Str).
+into_title_str(T*U,Str):- into_title_str([some(T),"(",some(U),")"],Str).
+into_title_str(T+U,Str):- into_title_str(T,S1), number(U), N is U+1, sformat(Str,'~w #~w',[S1,N]).
+into_title_str(T+U,Str):- var(U), into_title_str(T,S1), sformat(Str,'~w(s)',[S1]).
+into_title_str(title(Term),Str):- into_title_str(Term,Str),!.
+into_title_str(some(Var),"Some"):- var(Var),!.
+into_title_str(some(Var),Str):- !, into_title_str(Var,Str).
+into_title_str(User:Term,Str):- User == user, !, into_title_str(Term,Str).
+into_title_str(trn,"Training Pair").
+into_title_str(tst,"EVALUATION TEST").
+into_title_str(Term,Str):- atom(Term),is_valid_linkid(Term,Kind,_),into_title_str(Kind,KS),sformat(Str,'~w (~w)',[Term,KS]),!.
+into_title_str(Term,Str):- atom(Term), atom_contains(Term,'_'), \+ atom_contains(Term,' '),  to_case_breaks(Term,T),
+ include(\=(xti(_,punct)),T,O),maplist(arg(1),O,O1),maplist(toProperCamelAtom,O1,O2),
+  atomics_to_string(O2," ",Str).
+into_title_str(Term,Str):- has_short_id(Term,Kind,ID),into_title_str(Kind,KS),sformat(Str,'~w (~w)',[ID,KS]),!.
+into_title_str(Term,Str):- tersify23(Term,Terse),Term\=@=Terse,!,into_title_str(Terse,Str).
+into_title_str(Term,Str):- callable_arity(Term,0),is_writer_goal(Term),catch(notrace(wots(Str,call_e_dmsg(Term))),_,fail),!.
+into_title_str(Term,Str):- compound(Term), compound_name_arguments(Term,Name,Args),
+   include(not_p1(plain_var),Args,Nonvars),
+   maplist(tersify,Nonvars,ArgsT), into_title_str([Name,"(",ArgsT,")"],Str).
+
+into_title_str(Term,Str):- catch(sformat(Str,'~p',[Term]),_,term_string(Term,Str)),!.
+
+has_short_id(TestID,testid,UUID):- is_valid_testname(TestID),test_atom(TestID,UUID).
+has_short_id(Obj,object,OID):- is_object(Obj),obj_to_oid(Obj,OID).
+has_short_id(Grid,grid,GID):- is_grid(Grid),grid_to_gid(Grid,GID).
+
+
+is_valid_linkid(ID,testid,TestID):- atom_id(ID,TestID),is_valid_testname(TestID),!.
+is_valid_linkid(ID,object,Obj):- known_object(ID,Obj),!.
+is_valid_linkid(ID,grid,Grid):- known_grid(ID,Grid),!.
+% individuate(complete, two(v_1d398264_trn_0_in, v_1d398264_trn_0_out))
+is_valid_linkid(ID,group,Grp):- get_current_test(TestID),is_why_grouped_g(TestID,_Count,ID,Grp).
+
+
+wqs_c(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
+wqs_c(S):- (string(S);is_codelist(S);is_charlist(S)),catch(format('~s',[S]),_,writeq(S)).
+wqs_c(S):- empty_wqs_c(S),!.
+wqs_c(S):- var(S),!,write(var(S)).
+wqs_c(S):- atom(S),into_title_str(S,TS),write(TS),!.
+wqs_c(S):- atom(S),write_atom(S),!.
+%wqs_c(S):- atom(S),write(S),!.
+wqs_c(S):- \+compound(S),!,notrace(catch(format('~p',[S]),_,write(S))).
+wqs_c(title(S)):- !, wqs_c(S).
+wqs_c(H+T):- !, wqs_c(H),write_nbsp,wqs_c(T).
+wqs_c(S):- is_grid(S), print_grid(S),!.
+wqs_c(S):- is_vm(S), pp(S) ,!.
+wqs_c(L):- is_list(L), include(non_empty_wqs_c,L,LL),!,wqs_c_l(LL).
+wqs_c([H|T]):- pp([H|T]),!.
+wqs_c(H):- callable_arity(H,0),is_writer_goal(H),catch(call_e_dmsg(H),_,fail),!.
+%wqs_c(H):- callable_arity(H,0),call(H),!.
+wqs_c(H):- locally(t_l:wqs_fb(pp_no_nl),wqs(H)),!.
+
+wqs_c_l([]):-!.
+wqs_c_l([H]):- wqs_c(H),!.
+wqs_c_l([H|T]):- wqs_c(H),write_nbsp,wqs_c_l(T),!.
+
+
+
+
 
 ppt(_):- is_print_collapsed,!.
 ppt(G):- stack_check_or_call(4000,writeq(G)),!.
@@ -597,66 +714,6 @@ remove_huge_spaces(S,O):- fix_br_nls(S,S0),
     '                         '='     '],S0,SS),p_to_br(SS,O).
 
 
-
-non_empty_wqs_c(V):- \+ empty_wqs_c(V).
-empty_wqs_c(V):- var(V),!,fail.
-empty_wqs_c(A):- atom(A),atom_string(A,S),!,empty_wqs_c(S).
-empty_wqs_c([]).
-empty_wqs_c("").
-empty_wqs_c("&nbsp;").
-empty_wqs_c(" ").
-empty_wqs_c("\n").
-
-is_writer_goal(H):- \+ callable(H),!,fail.
-is_writer_goal(H):- is_list(H),!,fail.
-is_writer_goal(A):- atom(A),!,is_writer_goal_f(A).
-is_writer_goal(H):- \+ compound(H),!,fail.
-%is_writer_goal((C1,C2)):- !, (is_writer_goal(C1);is_writer_goal(C2)).
-is_writer_goal(C):- compound_name_arity(C,F,_),once(is_writer_goal_f(F);(arg(_,C,E),is_writer_goal(E))).
-
-
-is_writer_goal_f(wqs_c).
-is_writer_goal_f(F):- is_writer_goal_l(F),!.
-is_writer_goal_f(F):- \+ atom(F),!, term_to_atom(F,A),is_writer_goal_f(A).
-is_writer_goal_f(F):- not_writer_goal_r(R),atom_concat(_,R,F),!,fail.
-is_writer_goal_f(F):- is_writer_goal_l(L),atom_concat(L,_,F),!.
-is_writer_goal_f(F):- is_writer_goal_l(R),atom_concat(_,R,F),!.
-not_writer_goal_r(test). is_writer_goal_l(msg). is_writer_goal_l(call). 
-is_writer_goal_l(nl).  is_writer_goal_l(format). is_writer_goal_l(with_).  
-is_writer_goal_l(html).  is_writer_goal_l(ptcol).  is_writer_goal_l(wots).
-is_writer_goal_l(print). is_writer_goal_l(flush_output).  is_writer_goal_l(wqs).
-is_writer_goal_l(pp). is_writer_goal_l(write).  is_writer_goal_l(dash_).
-
-
-maybe_color(SS,_):- term_contains_ansi(SS),!, write_nbsp, write(SS).
-maybe_color(SS,P):- term_contains_ansi(P),!, write_nbsp, write(SS).
-maybe_color(SS,P):- pp_msg_color(P,C), ansicall(C,is_maybe_bold(P,write(SS))),!.
-
-write_atom(S):- \+ atom(S),!,wqs(S).
-write_atom(S):- atom_contains(S,'~'),!,notrace(catch(format(S,[]),_,maybe_write_atom_link(S))).
-write_atom(S):- maybe_write_atom_link(S),!.
-write_atom(S):- functor_to_title_string(S,TS),write(TS),!.
-write_atom(S):- writeq(S),!.
-
-wqs_c(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
-wqs_c(S):- (string(S);is_codelist(S);is_charlist(S)),catch(format('~s',[S]),_,writeq(S)).
-wqs_c(S):- empty_wqs_c(S),!.
-wqs_c(S):- var(S),!,write(var(S)).
-wqs_c(S):- atom(S),write_atom(S),!.
-wqs_c(S):- \+compound(S),!,notrace(catch(format('~p',[S]),_,write(S))).
-wqs_c(title(S)):- !, wqs_c(S).
-wqs_c(H+T):- !, wqs_c(H),write_nbsp,wqs_c(T).
-wqs_c(S):- is_grid(S), print_grid(S),!.
-wqs_c(S):- is_vm(S), pp(S) ,!.
-wqs_c(L):- is_list(L), include(non_empty_wqs_c,L,LL),!,wqs_c_l(LL).
-wqs_c([H|T]):- pp([H|T]),!.
-wqs_c(H):- callable_arity(H,0),is_writer_goal(H),catch(call_e_dmsg(H),_,fail),!.
-%wqs_c(H):- callable_arity(H,0),call(H),!.
-wqs_c(H):- locally(t_l:wqs_fb(pp_no_nl),wqs(H)),!.
-
-wqs_c_l([]):-!.
-wqs_c_l([H]):- wqs_c(H),!.
-wqs_c_l([H|T]):- wqs_c(H),write_nbsp,wqs_c_l(T),!.
 
 wqs_l(H):- \+ is_list(H),!, wqs(H).
 wqs_l(H):- wqs(H).

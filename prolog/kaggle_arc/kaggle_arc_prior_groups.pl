@@ -556,7 +556,7 @@ add_prior(N,Lbl,Objs,ObjsWithPrior):-
   length(Lbld,LL),  
   rank_priors(Lbl,Lbld,RLbldR),
   nop(print_grid(Lbl->N/LL,RLbldR)),
-  write('\t '), writeq(Lbl->N/LL),write(' <p/>\t'),
+  %write('\t '), writeq(Lbl->N/LL),write(' <p/>\t'),
   append([Unlbl,RLbldR],ObjsWithPrior).  
 
 /*

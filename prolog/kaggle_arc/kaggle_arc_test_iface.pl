@@ -38,18 +38,13 @@ print_menu_cmd9(_Key,Info,Goal):- write_nbsp,print_menu_cmd1(Info,Goal).
 
 print_menu_cmd1(Goal):-  print_menu_cmd1(write(Goal),Goal),!.
 print_menu_cmd1(Info,Goal):- arc_html,!,must_det_ll((shorten_text(Info,Info1),write_nav_cmd(Info1,Goal))),!.
-print_menu_cmd1(Info,_Goal):- into_str(Info,Str), format('~w',[Str]).
+print_menu_cmd1(Info,_Goal):- into_title_str(Info,Str), format('~w',[Str]).
 
 write_cmd_link2(Info,Goal):- nonvar(Goal),
   term_to_www_encoding(Goal,A),  toplevel_pp(PP), %in_pp(PP),
    sformat(SO,'<a href="/swish/lm_xref/?mouse_iframer_div=~w&cmd=~w" target="lm_xref">~w</a>~n ',[PP,A,Info]),!,
    our_pengine_output(SO).
 
-into_str(Info,Info1):- atom(Info), atom_contains(Info,'_'), \+ atom_contains(Info,' '), functor_to_title_string(Info,Info1),!.
-into_str(Info,Info1):- string(Info),!,Info1=Info.
-into_str(CInfo,Info1):- compound(CInfo),copy_term(CInfo,Info),wots_vs(S,wqs_c(Info)),!,into_str(S,Info1).
-into_str(Info,Info1):- \+ string(Info),!,sformat(Info1,'~w',[Info]),!.
-into_str(CInfo,Info):- copy_term(CInfo,Info).
 
 
 test_http_on:-
@@ -73,7 +68,7 @@ test_http_off:-
   set_toplevel_pp(ansi).
 
 
-shorten_text(Info,Info1):- \+ string(Info),!,into_str(Info,S),!,shorten_text(S,Info1).
+shorten_text(Info,Info1):- \+ string(Info),!,into_title_str(Info,S),!,shorten_text(S,Info1).
 %shorten_text(Info,Info1):- \+ atom_contains(Info,'  '),!,Info1=Info.
 shorten_text(Info,Info1):- string_concat(' or ',L,Info),!,shorten_text(L,Info1).
 shorten_text(Info,Info1):- string_concat(' ',L,Info),!,shorten_text(L,Info1).
@@ -1446,7 +1441,7 @@ print_single_pair_pt2(TestID,ExampleNum,In,Out):- is_cgi,!,
  in_out_name(ExampleNum,NameIn,RightTitle),
  (ID1 = (TestID>ExampleNum*in)),
  (ID2 = (TestID>ExampleNum*out)),
- print_ss_html(cyan, 
+ print_ss_html_pair(cyan, 
    NameIn,navCmd((TestID>ExampleNum)),ID1,In,'Input',
    TestAtom,navCmd((TestAtom)),ID2,Out,RightTitle).
 print_single_pair_pt2(TestID,ExampleNum,In1,Out1):- 
@@ -1520,10 +1515,9 @@ easy_diff_idea(TestID,ExampleNum,In,Out,[NameIn=In,(NameOut+TestID)=Out]):-
 other_grid_mode(I^O,II^OO):- with_next_grid_mode((as_d_grid(I,II),as_d_grid(O,OO))).
 
 %in_out_name(trn+NN,SI,SO):- arc_html,N is NN+1, format(atom(SI),'Training Pair #~w Input',[N]),format(atom(SO),'Training Pair #~w Output',[N]),!.
-in_out_name(trn+NN,SI,SO):- N is NN+1, format(atom(SI),'Training Pair #~w',[N]),format(atom(SO),'Output',[]),!.
-in_out_name(tst+NN,SI,SO):- N is NN+1, format(atom(SI),'EVALUATION TEST #~w',[N]),format(atom(SO),'Output<(REVEALED)>',[]),!.
+in_out_name(trn+N,SI,SO):- into_title_str(trn+N,SI), format(atom(SO),'Output',[]),!.
+in_out_name(tst+N,SI,SO):- into_title_str(tst+N,SI), format(atom(SO),'Output<(REVEALED)>',[]),!.
 in_out_name(X,'Input'(X),'Output'(X)):-!.
-
 
 
 arc_pair_id(TestID,ExampleNum):- 

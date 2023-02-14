@@ -1176,8 +1176,11 @@ one_has_prop(P,L):- is_list(L),!,member(E,L),has_prop(P,E).
 one_has_prop(P,O):- has_prop(P,O).
 
 
+obj_oids(Obj,OIDZ):- is_object(Obj),!,obj_to_oid(Obj,OIDZ).
 obj_oids(Objs,OIDZ):- into_group(Objs,Grp),maplist(obj_to_oid,Grp,OIDS),delistify_single_element(OIDS,OIDZ).
 
+ip_op_debug_info([IP],OP,LOCK):- nonvar(IP), !, ip_op_debug_info(IP,OP,LOCK).
+ip_op_debug_info(IP,[OP],LOCK):- nonvar(IP), !, ip_op_debug_info(IP,OP,LOCK).
 ip_op_debug_info(IP,OP,[LOCK]):- 
    global_grid(IP,IPO),global_grid(OP,OPO),
    obj_oids(IP,IOIDS),obj_oids(OP,OOIDS),

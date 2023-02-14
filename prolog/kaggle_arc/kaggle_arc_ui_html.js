@@ -1259,8 +1259,25 @@ function intoNamedImg(useCache, replace, nodespec, nodeid, h, w) {
         w = node.width;
         if (isBlank(w)) w = node.clientWidth;
     }
-    var dataUrl = top.htmlToJPEG(node, nodeid, useCache);
-    return replaceNode(replace, node, nodeid, dataUrl, h, w);
+    var waz = window.top.milledImages[nodeid];
+    if (!isBlank(waz)) {
+        return replaceNode(replace, node, nodeid, waz, h, w);
+    }
+    if (isBlank(waz) || useCache == false) {
+        htmlToImage.
+            //domtoimage.
+        toJpeg(node, {
+            quality: 1.0
+        }).then(function(dataUrl) {
+            if (!isBlank(nodeid)) { window.top.milledImages[nodeid] = dataUrl; }
+            return replaceNode(replace, node, nodeid, dataUrl, h, w);
+        }).catch((error) => {
+            console.error(`htmlToJPEG(${pp(top.milledImages.count)},
+               ${pp(top.milledImages)},
+               ${pp(node)},${pp(nodeid)}`, error);
+            //   debugger;
+        });
+    }
 }
 
 function replaceNode(replace, node, nodeid, dataUrl, h, w) {
@@ -1296,20 +1313,39 @@ function replaceNode(replace, node, nodeid, dataUrl, h, w) {
     return img;
 }
 
+function alreadyRan(currentScript,prev) {
+    var tagName = "MISSING";
+	if (prev != null) tagName = prev.tagName;
+    if (tagName !== 'TABLE') {
+        currentScript.remove();
+    } else {
+       /* var ss = "<!-- " +
+            tagName + " " + currentScript.outerHTML + " -->";
+        currentScript.replaceWith($(ss)[0]);*/
+    }
+}
+
 function htmlToJPEG(node, nodeid, useCache) {
     var waz = window.top.milledImages[nodeid];
+    if (!isBlank(waz)) return waz;
     if (isBlank(waz) || useCache == false) {
-        htmlToImage.toJpeg(node, {
+        var ret = {};
+        ret.was = null;
+        htmlToImage.
+            //domtoimage.
+        toJpeg(node, {
             quality: 1.0
         }).then(function(dataUrl) {
-            waz = dataUrl;
             if (!isBlank(nodeid)) { window.top.milledImages[nodeid] = dataUrl; }
+            waz = dataUrl;
+            ret.was = dataUrl;
         }).catch((error) => {
-            console.warn(`htmlToJPEG(${pp(top.milledImages.count)},
+            console.error(`htmlToJPEG(${pp(top.milledImages.count)},
                ${pp(top.milledImages)},
                ${pp(node)},${pp(nodeid)}`, error);
             //   debugger;
         });
+        return ret.was;
     }
     return waz;
 }
@@ -2303,45 +2339,45 @@ function makeMarval() {
     }
 
     /*
-        var imgurl = "http://wallpapers.androlib.com/wallicons/wallpaper.big-pqC.cs.png"
+                var imgurl = "http://wallpapers.androlib.com/wallicons/wallpaper.big-pqC.cs.png"
     
-        var margin = {top: 20, right: 10, bottom: 20, left: 10};
-    
-    
-        var width = 960 - margin.left - margin.right,
-            height = 500 - margin.top - margin.bottom;
+                var margin = {top: 20, right: 10, bottom: 20, left: 10};
     
     
-        var svg = d3.select("body").append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-          .append("g")
-            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                var width = 960 - margin.left - margin.right,
+                    height = 500 - margin.top - margin.bottom;
     
     
-        var defs = svg.append("defs").attr("id", "imgdefs")
-    
-        var catpattern = defs.append("pattern")
-                                .attr("id", "catpattern")
-                                .attr("height", 1)
-                                .attr("width", 1)
-                                .attr("x", "0")
-                                .attr("y", "0")
+                var svg = d3.select("body").append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                  .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     
     
-        catpattern.append("image")
-             .attr("x", -130)
-             .attr("y", -220)
-             .attr("height", 640)
-             .attr("width", 480)
-             .attr("xlink:href", imgurl)
+                var defs = svg.append("defs").attr("id", "imgdefs")
     
-        svg.append("circle")
-            .attr("r", 100)
-            .attr("cy", 80)
-            .attr("cx", 120)
-            .attr("fill", "url(#catpattern)")
-            */
+                var catpattern = defs.append("pattern")
+                                        .attr("id", "catpattern")
+                                        .attr("height", 1)
+                                        .attr("width", 1)
+                                        .attr("x", "0")
+                                        .attr("y", "0")
+    
+    
+                catpattern.append("image")
+                     .attr("x", -130)
+                     .attr("y", -220)
+                     .attr("height", 640)
+                     .attr("width", 480)
+                     .attr("xlink:href", imgurl)
+    
+                svg.append("circle")
+                    .attr("r", 100)
+                    .attr("cy", 80)
+                    .attr("cx", 120)
+                    .attr("fill", "url(#catpattern)")
+                    */
 
 
     // some colour variables

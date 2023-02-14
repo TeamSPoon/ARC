@@ -261,12 +261,12 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
   as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1), xfer_zeros(GridIn1,GridOut1), 
   print_side_by_side(yellow,GridIn1,ngridIn(ID1,PairName),_,GridOut1,ngridOut(ID2)),
   print_side_by_side(green,InC,objs(ID1),_,OutC,objs(ID2)),
-  nop((show_indivs_side_by_side(inputs,InC),
-       show_indivs_side_by_side(outputs,OutC),
-       show_io_groups(green,ROptions,ID1,InC,ID2,OutC))),
+  show_indivs_side_by_side(inputs,InC),show_indivs_side_by_side(outputs,OutC),
+  %w_section(show_io_groups,show_io_groups(green,ROptions,ID1,InC,ID2,OutC)),
+  %show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
   if_wants_output_for(show_interesting_props, show_interesting_props(PairName,InC,OutC))))),
   =(InCR,InC), =(OutCR,OutC),
-  nop(((
+ (((
   banner_lines(orange), %visible_order(InC,InCR),
  if_t( once(true; \+ nb_current(menu_key,'i')),
  w_section(show_individuated_learning,must_det_ll((
@@ -396,7 +396,7 @@ worker_output(G):- call(G).
 
 igo(ROptions,Grid):-
   check_for_refreshness,
-  w_section(do_ig,do_ig(ROptions,Grid,IndvS)),
+  w_section(do_ig(ROptions,Grid,IndvS)),
   into_grid(Grid,GridIn),
   w_section(show_individuated_nonpair(igo,ROptions,Grid,GridIn,IndvS)).
 
@@ -1447,7 +1447,7 @@ individuate_pair1(ROptions,In,Out,IndvSI,IndvSO):-
   current_test_example(TestID,ExampleNum),
  [for(out,OutG),for(in,InG)] = Why,
  compile_and_save_current_test(Why),
- w_section(format("individuate pair: ~w ~w",[TestID,ExampleNum]),
+ w_section(["individuate pair: ",TestID,ExampleNum],
   must_det_ll(((   
    first_grid(InG,OutG,IO),
    (IO==in_out 
