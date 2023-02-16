@@ -98,13 +98,16 @@ maybe_ogs(R,In,Out):- In\==[],converts_to_grid(In,Grid),!, maybe_ogs0(R,Grid,Out
 maybe_ogs0(R,In,Out):- maybe_ogs00(R,In,Out).
 maybe_ogs0([trim_to_rect(T,Rgt,B,L)|R],In,Out):- maybe_if_changed(trim_to_rect(T,Rgt,B,L),In,IIn),maybe_ogs00(R,IIn,Out).
 
-maybe_ogs00(R,In,Out):- fpad_grid(f,In,IIn),fpad_grid(s,Out,OOut),!,maybe_ogs000(R,IIn,OOut).
+constrain_search(constn_g,In,Outr,IIn,OOut):- 
+  constrain_grid(f,Trig,In,IIn),
+  writeg(In-->IIn),
+  constrain_grid(s,Trig,Out,OOut).
+constrain_search(bg_to_not_fg,In,Out,IIn,OOut):-
+  fpad_grid(f, In, In1),bg_to_not_fg(In1,In2),unbind_bg(In2,IIn),
+  fpad_grid(s,Out,Out1),bg_to_not_fg(Out1,OOut).
 
-maybe_ogs000(R,In0,Out):- 
-   bg_to_not_fg(In0,In),
-   unbind_bg(In,IIn),
-  bg_to_not_fg(Out,OOut),
-  % =(Out,OOut),
+maybe_ogs00([Constrn|R],In,Out):- 
+  constrain_search(Constrn,In,Outr,IIn,OOut),
   maybe_ogs1(R,IIn,OOut),
   (member(rul(loose),R) -> was_loose_ok(R) ; true).
 
@@ -495,19 +498,19 @@ grid_label_bg(CT,GridIn,GridO):- CT=f,!,
   copy_term(GridIn,Grid1),
   grid_detect_bg(Grid1,Background),
   maplist(to_grid_bg(CT,Grid1),Background),
-  get_bg_label(BGL),
+  get_dc_label(BGL),
   get_bgc(BG),subst001(Grid1,BG,BGL,GridO),!.
 grid_label_bg(CT,GridIn,GridO):- CT=s,!,
   copy_term(GridIn,Grid1),
   grid_detect_bg(Grid1,Background),
   maplist(to_grid_bg(CT,Grid1),Background),
-  get_bg_label(BGL),
+  get_dc_label(BGL),
   get_bgc(BG),subst001(Grid1,BG,BGL,GridO),!.
 grid_label_bg(CT,GridIn,GridO):- 
   copy_term(GridIn,Grid1),
   grid_detect_bg(Grid1,Background),
   maplist(to_grid_bg(CT,Grid1),Background),
-  get_bg_label(BGL),
+  get_dc_label(BGL),
   get_bgc(BG),subst001(Grid1,BG,BGL,GridO),!.
 grid_label_bg(_,GridO,GridO):-!.
 
@@ -566,17 +569,17 @@ offset_v_grid_row(GW,V2,FF,[Row|OF]):- V1 is V2-1,
    length(Row,GW), offset_v_grid_row(GW,V1,FF,OF).
    
   
-
+get_dc_label(bg).
 
 %pad_with_contraints_3(GridO,TODO):-
 %  vis2D(GridO,HH,VV),
 %  pad_with_contraints_3(GridO,HH,VV,TODO),!.
 fpad_grid(CT,Before,After):-
-  get_bg_label(BGL),sub_var(BGL,Before),!,
+  get_dc_label(BGL),sub_var(BGL,Before),!,
   fpad_grid(CT,=(BGL),Before,After).
 
 fpad_grid(CT,Before,After):-  
-  get_bg_label(BGL),
+  get_dc_label(BGL),
   fpad_grid(CT,=(BGL),Before,After).
 fpad_grid(CT,P1,O,GridO):- is_object(O),!,object_grid(O,GridIn),!,fpad_grid(CT,P1,GridIn,GridO).
 fpad_grid(_CT,P1,Grid,Grid2):-
