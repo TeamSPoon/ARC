@@ -236,6 +236,19 @@ subst_2L([F|FF],[R|RR],I,O):- subst0011(F,R,I,M),subst_2L(FF,RR,M,O).
 subst001(I,F,R,O):- subst0011(F,R,I,O),!.
 
 subst0011(X, Y, Term, NewTerm ) :-
+  copy_term((X,Y,Term),(CX,CY,Copy),Goals), 
+  (Goal==[]
+  ->subst0011a( X,  Y, Term, NewTerm )
+  ;(subst0011a(CX, CY, Goals, NewGoals),
+     NewGoals==Goals -> 
+       subst0011a( X,  Y, Term, NewTerm )
+       ; (subst0011a(CX, CY, Copy, NewCopy),
+          NewTerm = NewCopy, maplist(call,NewGoals)))).
+
+         
+    
+
+subst0011a(X, Y, Term, NewTerm ) :-
  (X==Term-> Y=NewTerm ;
   (is_list(Term)-> maplist(subst0011(X, Y), Term, NewTerm );
    (( \+ compound(Term); Term='$VAR'(_))->Term=NewTerm;

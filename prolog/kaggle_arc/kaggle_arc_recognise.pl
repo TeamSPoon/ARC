@@ -98,16 +98,17 @@ maybe_ogs(R,In,Out):- In\==[],converts_to_grid(In,Grid),!, maybe_ogs0(R,Grid,Out
 maybe_ogs0(R,In,Out):- maybe_ogs00(R,In,Out).
 maybe_ogs0([trim_to_rect(T,Rgt,B,L)|R],In,Out):- maybe_if_changed(trim_to_rect(T,Rgt,B,L),In,IIn),maybe_ogs00(R,IIn,Out).
 
-constrain_search(constn_g,In,Outr,IIn,OOut):- 
+constrain_search(constn_g,In,Out,IIn,OOut):- 
   constrain_grid(f,Trig,In,IIn),
-  writeg(In-->IIn),
+  subst(IIn,blue,blu,IInO),
+  writeg(IIn-->IInO),
   constrain_grid(s,Trig,Out,OOut).
 constrain_search(bg_to_not_fg,In,Out,IIn,OOut):-
   fpad_grid(f, In, In1),bg_to_not_fg(In1,In2),unbind_bg(In2,IIn),
   fpad_grid(s,Out,Out1),bg_to_not_fg(Out1,OOut).
 
 maybe_ogs00([Constrn|R],In,Out):- 
-  constrain_search(Constrn,In,Outr,IIn,OOut),
+  constrain_search(Constrn,In,Out,IIn,OOut),
   maybe_ogs1(R,IIn,OOut),
   (member(rul(loose),R) -> was_loose_ok(R) ; true).
 
@@ -117,14 +118,14 @@ maybe_ogs1([unbind_black|R],In,Out):- sub_var(black,In),maybe_if_changed(unbind_
   mass(IIn,Mass),Mass>0, maybe_ogs2(R,IIn,Out).
 maybe_ogs1(R,In,Out):- maybe_ogs2(R,In,Out).
 
-%maybe_ogs2([into_monogrid(find)|R],In,Out):- maybe_if_changed(into_monogrid,Out,OOut), maybe_ogs3(R,In,OOut).
+%maybe_ogs2([into_monogrid(find)|R],In,Out):- maybe_if_chafnged(into_monogrid,Out,OOut), maybe_ogs3(R,In,OOut).
 maybe_ogs2(R,In,Out):- maybe_ogs3(R,In,Out).
 maybe_ogs2([into_monogrid(srcharea)|R],In,Out):- maybe_if_changed(into_monogrid,In,IIn), maybe_ogs3(R,IIn,Out).
 
 %maybe_ogs3([into_monogrid(srcharea)|R],In,Out):- maybe_if_changed(into_monogrid,In,IIn), maybe_ogs4(R,IIn,Out).
 maybe_ogs3(R,In,Out):- maybe_ogs4(R,In,Out).
 
-maybe_ogs4([trim_to_rect|R],In,Out):- maybe_if_changed(trim_to_rect,In,IIn),maybe_ogs5(R,IIn,Out).
+%maybe_ogs4([trim_to_rect|R],In,Out):- maybe_if_changed(trim_to_rect,In,IIn),maybe_ogs5(R,IIn,Out).
 maybe_ogs4(R,In,Out):- maybe_ogs5(R,In,Out).
 
 maybe_ogs5([rotate(P2)|R],In,Out):- rotP0(P2),maybe_if_changed(P2,In,IIn),maybe_ogs7(R,IIn,Out).
@@ -691,6 +692,7 @@ constrain_ele(f,_GH,_GV,_Trig,_GridIn,_H,_V,C1I,C1O,_GridO):- fail, is_spec_fg_c
   (C1O==C1I -> true ; C1O=C1I).
 
 constrain_ele(f,_GH,_GV,Trig,GridIn,H,V,C1I,C1O,GridO):- is_spec_fg_color(C1I,_),!, 
+  C1I=C1O,
   ((C1O==C1I,false) -> true ; must_det_ll((constrain_type(Trig,C1I=C1O), attach_fg_ci(C1O,C1I)))), 
   constrain_dir_ele(f,Trig,[n,s,e,w],GridIn,H,V,C1I,C1O,GridO).
 
