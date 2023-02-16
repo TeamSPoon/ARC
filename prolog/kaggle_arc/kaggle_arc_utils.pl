@@ -250,10 +250,10 @@ subst0011(X, Y, Term, NewTerm ) :-
 
 subst0011a(X, Y, Term, NewTerm ) :-
  (X==Term-> Y=NewTerm ;
-  (is_list(Term)-> maplist(subst0011(X, Y), Term, NewTerm );
+  (is_list(Term)-> maplist(subst0011a(X, Y), Term, NewTerm );
    (( \+ compound(Term); Term='$VAR'(_))->Term=NewTerm;
      ((compound_name_arguments(Term, F, Args),
-       maplist(subst0011(X, Y), Args, ArgsNew),
+       maplist(subst0011a(X, Y), Args, ArgsNew),
         compound_name_arguments( NewTerm, F, ArgsNew )))))),!.
 
 
@@ -265,12 +265,23 @@ subst_2LC([F|FF],[R|RR],I,O):- subst0011C(F,R,I,M),subst_2LC(FF,RR,M,O).
 
 subst001C(I,F,R,O):- subst0011C(F,R,I,O),!.
 
+
 subst0011C(X, Y, Term, NewTerm ) :-
+  copy_term((X,Y,Term),(CX,CY,Copy),Goals), 
+  (Goal==[]
+  ->subst0011Ca( X,  Y, Term, NewTerm )
+  ;(subst0011Ca(CX, CY, Goals, NewGoals),
+     NewGoals==Goals -> 
+       subst0011Ca( X,  Y, Term, NewTerm )
+       ; (subst0011Ca(CX, CY, Copy, NewCopy),
+          NewTerm = NewCopy, maplist(call,NewGoals)))).
+
+subst0011Ca(X, Y, Term, NewTerm ) :-
  (same_term(X,Term)-> Y=NewTerm ;
-  (is_list(Term)-> maplist(subst0011C(X, Y), Term, NewTerm );
+  (is_list(Term)-> maplist(subst0011Ca(X, Y), Term, NewTerm );
    (( \+ compound(Term); Term='$VAR'(_))->Term=NewTerm;
      ((compound_name_arguments(Term, F, Args),
-       maplist(subst0011C(X, Y), Args, ArgsNew),
+       maplist(subst0011Ca(X, Y), Args, ArgsNew),
         compound_name_arguments( NewTerm, F, ArgsNew )))))),!.
 
 
