@@ -181,8 +181,9 @@ set_current_pair(I,O):-
   luser_setval(output_grid,O),ensure_other_grid(I,O),set_target_grid(O),
   must_det_ll((other_grid(I,OO),OO==O)).
 
-current_pair(I,O):- luser_getval(input_grid,I), is_gridoid(I),!, must_det_ll((other_grid(I,O))).
-current_pair(I,O):- current_test_example(TestID,ExampleNum),
+current_pair(I,O):- current_pair0(II,OO),II=I,OO=O.
+current_pair0(I,O):- luser_getval(input_grid,I), is_gridoid(I),!, must_det_ll((other_grid(I,O))).
+current_pair0(I,O):- current_test_example(TestID,ExampleNum),
    setup_call_cleanup(true,
      ((kaggle_arc(TestID,ExampleNum,I,O);fail),set_current_pair(I,O)), luser_setval(input_grid,[])).
 

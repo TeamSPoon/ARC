@@ -2021,7 +2021,9 @@ color_int(C,C).
 %grid_zero(zero).
 grid_zero(black).
 z_or_b(zero,black).
-z_or_b(black,zero).
+z_or_b(black,zero):- may_use_zero.
+
+may_use_zero:- false.
 
 :- export(grid_color_code/2).
 grid_color_code(C,C):- var(C),!.

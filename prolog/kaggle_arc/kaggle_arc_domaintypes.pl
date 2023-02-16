@@ -548,14 +548,17 @@ is_grid_of(P1,[[C|H]|R]):-
 is_row_len(N,L):- is_list(L),length(L,N).
 
 %is_object(H):- is_list(H),is_cpoints_list(H).
-is_grid_cell(AB):- compound(AB),!, \+ is_list(AB), sub_term(E,AB),(var(E);is_colorish(E)),!.
-is_grid_cell(C):- is_colorish(C),!.
+%is_grid_cell(AB):- ,!, \+ is_list(AB), sub_term(E,AB),(var(E);is_colorish(E)),!.
 is_grid_cell(C):- var(C),!.
-is_grid_cell(C):- number(C),C<13.
+is_grid_cell(A):- \+ compound(A),!,is_grid_cell_e(A).
 is_grid_cell(att(_,_)):-!.
+is_grid_cell('cell'(_)):-!.
 is_grid_cell('$VAR'(_)):-!.
-is_grid_cell(cell(_)):-!.
-is_grid_cell(AB):- \+ compound(AB),!,fail.
+is_grid_cell((A-B)):- !,(is_grid_cell_e(B);is_grid_cell_e(A)).
+
+is_grid_cell_e(C):- atom(C),!,(is_colorish(C);atom_length(C,1)).
+is_grid_cell_e(C):- is_color(C),!.
+is_grid_cell_e(C):- integer(C),!,C<13,C>=0.
 
 %is_grid_cell(C):- atomic(C),!.
 

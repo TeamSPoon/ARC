@@ -2586,8 +2586,9 @@ i_intersect(VM):- %generic_nsew_colormass
 is_fti_step(black_to_zero).
 is_fti_step(zero_to_black).
 % =====================================================================
-black_to_zero(VM):- vm_subst(zero,black,VM).
-zero_to_black(VM):- vm_subst(black,zero,VM).
+black_to_zero(VM):- may_use_zero -> vm_subst(zero,black,VM) ; true.
+zero_to_black(VM):- may_use_zero -> vm_subst(black,zero,VM) ; true.
+
 
 vm_subst(Black,Zero,VM):-
   subst001(VM,Black,Zero,NewVM),

@@ -99,13 +99,18 @@ maybe_ogs0(R,In,Out):- maybe_ogs00(R,In,Out).
 maybe_ogs0([trim_to_rect(T,Rgt,B,L)|R],In,Out):- maybe_if_changed(trim_to_rect(T,Rgt,B,L),In,IIn),maybe_ogs00(R,IIn,Out).
 
 constrain_search(constn_g,In,Out,IIn,OOut):- 
-  constrain_grid(f,Trig,In,IIn),
-  subst(IIn,blue,blu,IInO),
-  writeg(IIn-->IInO),
-  constrain_grid(s,Trig,Out,OOut).
-constrain_search(bg_to_not_fg,In,Out,IIn,OOut):-
-  fpad_grid(f, In, In1),bg_to_not_fg(In1,In2),unbind_bg(In2,IIn),
-  fpad_grid(s,Out,Out1),bg_to_not_fg(Out1,OOut).
+  constrain_grid(f,Trig,In,In1), %subst(IIn,blue,blu,IInO), %writeg(IIn-->IInO),
+  constrain_grid(s,Trig,Out,Out1),
+  bg_to_not_fg(In1,Out1,IIn,OOut).
+
+constrain_search(fpad_grid,In,Out,IIn,OOut):- fail,
+  fpad_grid(f, In, In1), fpad_grid(s,Out,Out1),
+  bg_to_not_fg(In1,Out1,IIn,OOut).
+
+
+bg_to_not_fg(In1,Out1,IIn,OOut):-
+  bg_to_not_fg(In1,In2),unbind_bg(In2,IIn),
+  bg_to_not_fg(Out1,OOut).
 
 maybe_ogs00([Constrn|R],In,Out):- 
   constrain_search(Constrn,In,Out,IIn,OOut),
