@@ -277,6 +277,8 @@ is_writer_goal_f(F):- is_writer_goal_l(L),atom_concat(L,_,F),!.
 is_writer_goal_f(F):- is_writer_goal_l(R),atom_concat(_,R,F),!.
 not_writer_goal_r(test). is_writer_goal_l(msg). is_writer_goal_l(call). 
 is_writer_goal_l(nl).  is_writer_goal_l(format). is_writer_goal_l(with_).  
+is_writer_goal_l(locally).
+
 is_writer_goal_l(html).  is_writer_goal_l(ptcol).  is_writer_goal_l(wots).
 is_writer_goal_l(print). is_writer_goal_l(flush_output).  is_writer_goal_l(wqs).
 is_writer_goal_l(pp). is_writer_goal_l(write).  is_writer_goal_l(dash_).
@@ -322,7 +324,8 @@ into_title_str(Term,Str):- has_short_id(Term,Kind,ID),into_title_str(Kind,KS),sf
 into_title_str(Term,Str):- tersify23(Term,Terse),Term\=@=Terse,!,into_title_str(Terse,Str).
 into_title_str(Term,Str):- callable_arity(Term,0),is_writer_goal(Term),catch(notrace(wots(Str,call_e_dmsg(Term))),_,fail),!.
 into_title_str(Term,Str):- compound(Term), compound_name_arguments(Term,Name,Args),
-   include(not_p1(plain_var),Args,Nonvars),
+   %include(not_p1(plain_var),Args,Nonvars),
+   Args=Nonvars,
    maplist(tersify,Nonvars,ArgsT), into_title_str([Name,"(",ArgsT,")"],Str).
 
 into_title_str(Term,Str):- catch(sformat(Str,'~p',[Term]),_,term_string(Term,Str)),!.
@@ -751,10 +754,14 @@ wqs0(C):- wqs2(C).
 wqs2(S):- term_contains_ansi(S), !, write_nbsp, write_keeping_ansi_mb(S).
 %wqs2(P):- wants_html,!,pp(P).
 
-wqs2(X):- t_l:wqs_fb(P1),call(P1,X).
-wqs2(X):- !, write_nbsp,writeq(X).
-wqs2(X):- write_nbsp,write_term(X,[quoted(true)]).
+:- thread_local(t_l:wqs_fb/1).
+wqs2(X):- t_l:wqs_fb(P1),call(P1,X),!.
+%wqs2(X):- with_wqs_fb(writeq,X).
+wqs2(X):- with_wqs_fb(writeq,print(X)),!.
+%wqs2(X):- with_wqs_fb(writeq,((write_nbsp,write_term(X,[quoted(true)])))).
 
+with_wqs_fb(FB,Goal):-
+  locally(t_l:wqs_fb(FB),Goal).
 
 
 as_arg_str(C,S):- wots_vs(S,print(C)).
@@ -1480,7 +1487,7 @@ pre_pend_each_line(Pre,Goal):-
 
 
 pre_pend_each_line(Pre,Goal):-
-  with_output_to_each(string(Str),Goal)*->once((maybe_print_pre_pended(Pre,Str),nl_if_needed)).
+  with_output_to_each(string(Str),Goal)*->once((maybe_print_pre_pended(current_output,Pre,Str),nl_if_needed)).
 
 
 

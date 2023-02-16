@@ -2,7 +2,7 @@
   this is part of (H)MUARC  https://logicmoo.org/xwiki/bin/view/Main/ARC/
 
   This work may not be copied and used by anyone other than the author Douglas Miles
-  unless permission or license is granted (contact at business@logicmoo.org)
+  unless permission or license is granted (contact loc2D business@logicmoo.org)
 */
 :- include(kaggle_arc_header).
 
@@ -320,7 +320,7 @@ detect_pair_hints(TestID,ExampleNum,In,Out):-
 guess_board(TT):- arc_setval(TT,guess_board,t).
 
 
-show_recolor(TestID,_ExampleNum,In0,Out0,TT):- 
+show_recolor(TestID,_ExampleNum,IIn,Out0,TT):- 
   ensure_test(TestID),
   must_det_ll(((
   %show_patterns(In),show_patterns(Out),
@@ -329,12 +329,12 @@ show_recolor(TestID,_ExampleNum,In0,Out0,TT):-
   %gset(TT.z_contains_in)=out(HOI,VOI),
 
 
-  % grid_size(In0,IH,IV), 
+  % grid_size(IIn,IH,IV), 
   %grid_size(Out0,OH,OV), % max_min(OV,IV,V,_),max_min(OH,IH,H,_),
-  into_bicolor(In0,In), into_bicolor(Out0,Out),
+  into_bicolor(IIn,In), into_bicolor(Out0,Out),
 
   /*
-  pair_dictation(TestID,ExampleNum,In0,Out0,T), T.in = In0, T.out = Out0,
+  pair_dictation(TestID,ExampleNum,IIn,Out0,T), T.in = IIn, T.out = Out0,
   ((OV==1,OH==1) -> (O2I=[]) ; (T.in_specific_colors = ISC, T.out_specific_colors = OSC,    color_subst(OSC,ISC,O2I))),
   subst_1L(O2I,OOut,Out), %subst_1L(O2I,Out0,OutF),
   get_map_pairs(T,_,Pairs),
@@ -342,12 +342,12 @@ show_recolor(TestID,_ExampleNum,In0,Out0,TT):-
 
   arc_setval(TT,rhs_color_remap, O2I),
 
-  show_colorfull_idioms(In0), show_colorfull_idioms(Out0),
+  show_colorfull_idioms(IIn), show_colorfull_idioms(Out0),
 */
   (most_d_colors(Out,CO,NO),arc_setval(TT,out_d_colors,CO),arc_setval(TT,out_map,NO)),  
   (most_d_colors(In,CI,NI),  arc_setval(TT,in_d_colors,CI), arc_setval(TT,in_map,NI)),
-  %if_t(find_ogs(HOI,VOI,In0,OutF),arc_setval(TT,z_in_contains_out,(HOI,VOI))),
-  %if_t(find_ogs(HIO,VIO,OutF,In0),arc_setval(TT,z_out_contains_in,(HIO,VIO))),
+  %if_t(find_ogs(HOI,VOI,IIn,OutF),arc_setval(TT,z_in_contains_out,(HOI,VOI))),
+  %if_t(find_ogs(HIO,VIO,OutF,IIn),arc_setval(TT,z_out_contains_in,(HIO,VIO))),
   %@TODO record in the out_in _may_ hold the in_out 
   print_side_by_side(cyan,NI,CI,_,NO,CO),
   get_map_pairs(TT,_,List),pp(List)))),!.
@@ -355,7 +355,7 @@ show_recolor(TestID,_ExampleNum,In0,Out0,TT):-
 
 /*
 
-show_recolor(TestID,ExampleNum,In0,Out0,TT):- 
+show_recolor(TestID,ExampleNum,IIn,Out0,TT):- 
   must_det_ll(((
   %show_patterns(In),show_patterns(Out),
   
@@ -363,11 +363,11 @@ show_recolor(TestID,ExampleNum,In0,Out0,TT):-
   %gset(TT.z_contains_in)=out(HOI,VOI),
 
 
-  % grid_size(In0,IH,IV), 
+  % grid_size(IIn,IH,IV), 
   grid_size(Out0,OH,OV), % max_min(OV,IV,V,_),max_min(OH,IH,H,_),
-  into_bicolor(In0,In), into_bicolor(Out0,OOut),
+  into_bicolor(IIn,In), into_bicolor(Out0,OOut),
 
-  pair_dictation(TestID,ExampleNum,In0,Out0,T), T.in = In0, T.out = Out0,
+  pair_dictation(TestID,ExampleNum,IIn,Out0,T), T.in = IIn, T.out = Out0,
   ((OV==1,OH==1) -> (O2I=[]) ; (T.in_specific_colors = ISC, T.out_specific_colors = OSC,    color_subst(OSC,ISC,O2I))),
   subst_1L(O2I,OOut,Out), %subst_1L(O2I,Out0,OutF),
   get_map_pairs(T,_,Pairs),
@@ -375,12 +375,12 @@ show_recolor(TestID,ExampleNum,In0,Out0,TT):-
 
   arc_setval(TT,rhs_color_remap, O2I),
 
-  show_colorfull_idioms(In0), show_colorfull_idioms(Out0),
+  show_colorfull_idioms(IIn), show_colorfull_idioms(Out0),
 
   (most_d_colors(Out,CO,NO),arc_setval(TT,out_d_colors,CO),arc_setval(TT,out_map,NO)),  
   (most_d_colors(In,CI,NI),  arc_setval(TT,in_d_colors,CI), arc_setval(TT,in_map,NI)),
-  %if_t(find_ogs(HOI,VOI,In0,OutF),arc_setval(TT,z_in_contains_out,(HOI,VOI))),
-  %if_t(find_ogs(HIO,VIO,OutF,In0),arc_setval(TT,z_out_contains_in,(HIO,VIO))),
+  %if_t(find_ogs(HOI,VOI,IIn,OutF),arc_setval(TT,z_in_contains_out,(HOI,VOI))),
+  %if_t(find_ogs(HIO,VIO,OutF,IIn),arc_setval(TT,z_out_contains_in,(HIO,VIO))),
   %@TODO record in the out_in _may_ hold the in_out 
   print_side_by_side(cyan,NI,CI,_,NO,CO),
   get_map_pairs(TT,_,List),pp(List)))),!.
@@ -748,8 +748,8 @@ grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- grid_hint_io_1(MC,IO,In,Out,Hint).
 */
 %grid_hint_io(MC,IO,In,Out,comp(MC,IO,rev_ogs3(Hint))):-  all_ogs3(IO,Out,In,Hint).
 
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs(Hint))):- not_reversed(IO), all_ogs(IO,In,Out,Hint).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs_rev(Hint))):- not_reversed(IO), all_ogs(IO,Out,In,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs(Hint))):- /*not_reversed(IO),*/ all_ogs(IO,In,Out,Hint).
+%grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs_rev(Hint))):- not_reversed(IO), all_ogs(IO,Out,In,Hint).
 
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):-  \+ arc_option(grid_size_only), grid_size(In,IH,IV),grid_size(Out,OH,OV), 
   grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
@@ -789,7 +789,7 @@ grid_to_obj_other(VM,Grid,O):- other_grid(Grid,Grid2), grid_to_obj_other_grid(VM
 grid_to_obj_other_grid(VM,Grid,Grid2,O):- grid_to_objs(Grid2,Objs),grid_to_obj_other_objs(VM,Grid,Objs,O).
 grid_to_obj_other_objs(VM,Grid,Objs,O):- 
   objs_shapes(Objs,In),
-  maybe_ogs_color(_R,OH,OV,In,Grid), 
+  maybe_ogs(ROHOV,In,Grid), member(loc2D(OH,OV),ROHOV),
   once((localpoints_include_bg(In,OPoints),offset_points(OH,OV,OPoints,GOPoints), 
   %indv_props_list(Obj,Props),my_partition(is_prop_automatically_rebuilt,Props,_,PropsRetained),
   (nonvar(VM)->true;grid_vm(Grid,VM)),
@@ -884,72 +884,6 @@ input_expands_into_output(TestID):-
   \+ \+ (select(ogs(Trim,Whole,Strict,[loc2D(_,_)|_]),List,Rest),
          member(ogs(Trim,Whole,Strict,[loc2D(_,_)|_]),Rest))))).
 
- 
-% grid_to_obj(Grid,[colormass,fg_shapes(colormass)],Obj),print_side_by_side(Grid,Obj).
-
-trim_for_offset_1_1(II,In,OX,OY):- 
-  trim_to_rect2(II,In), !, II\=@=In,
-  % print_side_by_side(II,In),
-  once(ogs_11(OX,OY,In,II);(OX=OY,OX=1)).
-
-/*
-all_ogs1(IO,Whole,II,Out,XY):-
-  findall(ogs(trim(IO),Whole,R,[loc2D(XX,YY),vis2D(SIX,SIY)]),
-     (trim_for_offset_1_1(II,In,OX,OY),
-       %maybe_ogs(SIX,SIY,R,X,Y,In,Out),XX is X+OX-1, YY is Y+OY-1),XY),!.
-  maybe_ogs(SIX,SIY,R,X,Y,In,Out),XX is X, YY is Y),XY),!.
-*/
-all_ogs1(IO,Whole,II,Out,XY):-
-  findall(ogs(trim_1_1(IO),Whole,R,[loc2D(XX,YY),vis2D(SIX,SIY)]),
-     (trim_for_offset_1_1(II,In,OX,OY),
-       maybe_ogs(SIX,SIY,R,X,Y,In,Out),XX is X-OX+1, YY is Y-OY+1),XY),!.
-       %maybe_ogs(SIX,SIY,R,X,Y,In,Out)),XY),!.
-
-subst_black_for_var(G,_):- G==black,!.
-subst_black_for_var(G,G).
-
-all_ogs2(IO,Whole,In0,Out,XY):- 
-   mapgrid(subst_black_for_var,In0,In),
-   findall(ogs(notrim(IO),Whole,R,[loc2D(XX,YY),vis2D(SIX,SIY)]),maybe_ogs(SIX,SIY,R,XX,YY,In,Out),XY),!.
-
-all_ogs3(IO,Grid,Out,XY):-
-  findall(ogs(notrim(IO),Named,R,[loc2D(XX,YY),vis2D(SIX,SIY)]),(fail,grid_to_so(Grid,Named,In),maybe_ogs(SIX,SIY,R,XX,YY,In,Out)),XY).
-
-all_ogs(IO,In,Out,Set):- %member(R,[strict,loose]),
-  all_ogs1(IO,whole,In,Out,XY1),
-  all_ogs2(IO,whole,In,Out,XY2),
-  all_ogs3(IO,In,Out,XY3),  
-  flatten([XY1,XY2,XY3],XY),
-  list_to_set(XY,Set).
-
-%maybe_ogs(SX,SY,R,X,Y,In,Out):-  find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R=loose).
-maybe_ogs(SX,SY,R,X,Y,In,Out):- maybe_ogs_color(SX,SY,R,X,Y,In,Out).
-maybe_ogs(SX,SY,call_ogs(P2,R),X,Y,In,Out):-  
-  no_repeats(IIN,(pre_ogs_alter(P2),once(grid_call_alters(P2,In,IIN)))), maybe_ogs_color(SX,SY,R,X,Y,IIN,Out).
-
-%pre_ogs_alter(maybe_unbind_bg).
-pre_ogs_alter(P2):- rot_ogs(P2).
-
-unbind_bg(In,NewIn):- get_black(BGC), unbind_color(BGC,In,NewIn),!.
-fg_to_bg(In,NewIn):- get_black(Black), \+ sub_var(Black,In), unique_colors(In,UCs),
- include(is_real_fg_color,UCs,FGC),!,FGC=[FG],subst(In,FG,Black,NewIn),!.
-
-maybe_if_changed(P2,I,O):- grid_call(P2,I,O),I\=@=O.
-
-rot_ogs_step2(maybe_if_changed(unbind_bg)).
-rot_ogs_step2(maybe_if_changed(colors_to_vars)).
-rot_ogs_step1(maybe_if_changed(trim_to_rect)).
-rot_ogs_step1([maybe_if_changed(trim_to_rect),Step2]):- rot_ogs_step2(Step2).
-rot_ogs(Step1):- rot_ogs_step1(Step1).
-rot_ogs(maybe_if_changed(P2)):- rotP0(P2).
-rot_ogs([Step1,maybe_if_changed(P2)]):- rot_ogs_step1(Step1),rotP2(P2).
- 
-maybe_ogs_color(R,X,Y,In,Out):- maybe_ogs_color0(R,X,Y,In,Out), ignore(learn_hybrid_shape_board(ogs(R),In)).
-maybe_ogs_color(SX,SY,R,X,Y,In,Out):- maybe_ogs_color0(R,X,Y,In,Out), 
-  ignore(learn_hybrid_shape_board(ogs(R),In)),
-  grid_size(In,SX,SY).
-maybe_ogs_color0(R,X,Y,In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
-maybe_ogs_color0(R,X,Y,In,Out):- ogs_11(X,Y,In,Out),(find_ogs(X,Y,In,Out)->R=strict;R=loose).
 
 
 %grid_hint_iso(MC,IO,In,_Out,_IH,_IV,OH,OV,is_xy_columns):- once(has_xy_columns(In,_Color,OH,OV,)).
@@ -1070,7 +1004,7 @@ gather_chunks(Color,In,Chunks,X,Y,GX,GY,BorderNumsX,BorderNumsY):-
   EX1 is EX - 1,
   EY1 is EY - 1,
   clip(SX1,SY1,EX1,EY1,In,Clip),
-  % print_grid((X,Y),Clip), pp(clipped(SX,SY,EX,EY,into(X,Y))),
+  % print_grid((X,Y),Clip), pp(clipped(EX,EY,into(X,Y))),
   % once(Clip = [_,[_,Cell|_]|_];Clip = [[Cell|_]|_]),  
   get_black(Black),
   once(((Clip = [_,[_,C|_]|_];Clip = [[C|_]|_];(member(CR,Clip),member(C,CR))),C\==Color,C\==Black,Cell=C);Cell=Clip),

@@ -579,6 +579,23 @@ th {
     /*border-spacing: 1px;*/
 }
 
+.grid-to-grid th {
+  border: 1px solid black;
+  border-radius: 10px;
+  border-color: #96D4D4;
+  background-color: #96D4D4;
+  max-height: 80px; max-width: 80px; height: 80px; width: 80px;
+  overflow: none;
+}
+.grid-to-grid td {
+  border: 1px solid black;
+  border-radius: 10px;
+  border-color: #96D4D4;
+  background-color: #96D4D4;
+  max-height: 80px; max-width: 80px; height: 80px; width: 80px;
+  overflow: none;
+}
+
 html {
     box-sizing: border-box;
 }

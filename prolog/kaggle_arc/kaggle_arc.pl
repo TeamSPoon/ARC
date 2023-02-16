@@ -1031,9 +1031,12 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 %:- load_arc_db_temp_cache.
 :- fmt('% Type ?- demo. % or press up arrow').
 :- luser_default(extreme_caching,false).
+/*
 :- set_current_test(v('1d398264')). 
 :- luser_default(task,v('1d398264')). 
 :- luser_default(task,v('37d3e8b2')). 
+:- luser_default(task,v('1b60fb0c')). 
+*/
 
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).
 :- nb_setval(arc_can_portray,nil).
@@ -1050,7 +1053,7 @@ gui_flag(GUI):- (current_prolog_flag(gui, GUI)-> true ;
 
 :- gui_flag(GUI),set_prolog_flag(gui,GUI).
 
-:- current_prolog_flag(gui,false)->set_prolog_flag(xpce,true);true.
+:- current_prolog_flag(gui,false)->set_prolog_flag(xpce,false);true.
 
 :- if(current_prolog_flag(xpce,true)).
 use_gui_debugger:- 

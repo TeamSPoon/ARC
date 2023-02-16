@@ -700,6 +700,7 @@ print_card_n(N,H):- H= [I], is_gridoid(I), \+ is_gridoid(H), !,  print_card_n(N,
 print_card_n(N,card(T,B)):- !, print_tb_card(T,(wqs_c(N),call_e_dmsg(B))).
 print_card_n(N,GF):- grid_footer(GF,G,F), is_gridoid(G), data_type(G,DT), print_tb_card(print_grid(G),wqs_c([N,DT,F])),!.
 
+
 print_card_n(N,I):- is_object(I),g_display(I,G),print_card_n(N,G),!.
 print_card_n(N,G):- is_gridoid(G), data_type(G,DT), print_tb_card(print_grid(G),wqs_c([N,DT])),!.
 
@@ -734,11 +735,42 @@ print_title(Title):- into_title_str(Title,Str), trim_newlines(wqs_c(Str)).
 
 % width: fit-content
 % print_table(ListOfLists):- setup_call_cleanup(write('<table style="width: fit-content;m width: 100%; border: 0px">'), maplist(html_table_row,ListOfLists), write('</table>')),!.
-print_table(ListOfRows):- 
-   make_rows_same_length(ListOfRows,ListOfLists), with_tag_class('table','tblo', maplist(html_table_row,ListOfLists)).
-html_table_row(ListOfLists):- with_tag('tr',html_table_col(ListOfLists)).
-html_table_col(ListOfLists):- is_list(ListOfLists),\+ is_grid(ListOfLists),!,maplist(html_table_col,ListOfLists).
-html_table_col(H):- with_tag('td',print_card_n('',H)).
+
+is_real_grid(Grid):- is_grid(Grid),!,mapgrid(can_be_cell,Grid).
+can_be_cell(Cell):-var(Cell),!.
+can_be_cell(Cell):- is_color(Cell),!.
+can_be_cell(Cell):- integer(Cell),!.
+can_be_cell(Cell):- \+ callable(Cell),!,fail.
+can_be_cell(Cell):- \+ cant_be_cell(Cell).
+can_be_cell(_).
+
+cant_be_cell(T):- is_list(T),!.
+cant_be_cell(T):- atom(T), !, \+ is_color(T).
+
+
+print_table(Row):- \+ is_list(Row),!,print_cell(Row).
+print_table(Grid):- is_real_grid(Grid),!,print_grid(Grid),!.
+print_table(Rows):- Rows=[T],\+ is_list(T),!,print_cell(T).
+%print_table(Rows):- Rows=[[T]],!,print_cell([[T]]).
+print_table(table(Rows)):- make_rows_same_length(Rows,LLRows),!, print_table_rows(LLRows).
+%print_table(Grid):- is_grid(Grid),!,print_cell(Grid).
+print_table(Rows):- make_rows_same_length(Rows,LLRows),!, print_table_rows(LLRows).
+print_table_rows(Row):- \+ is_list(Row),!,print_table_rows([Row]).
+print_table_rows(Rows):- with_tag_class('table','tblo', maplist(html_table_row,Rows)).
+html_table_row(Row):- \+ is_list(Row),!,html_table_row([Row]).
+html_table_row(Cols):- with_tag('tr',maplist(html_table_col,Cols)).
+html_table_col(td(H)):-with_tag('td',html_table_cell(H)).
+html_table_col(th(H)):-with_tag('th',html_table_cell(H)).
+html_table_col(H):- with_tag('td',html_table_cell(H)).
+%html_table_cell(Grid):- notrace(catch((wots(S,print_cell(Grid)),write(S)),_,true)).
+html_table_cell(Grid):- notrace(catch((wots_html(S,print_cell(Grid)),write(S)),_,true)).
+
+print_cell(call(Grid)):- !, ignore(call(Grid)).
+print_cell(Grid):- is_real_grid(Grid),!,print_grid(Grid).
+print_cell([V]):- !,print_cell(V).
+print_cell([]):- !,write_nbsp.
+print_cell(V):- is_list(V),findall([E],member(E,V),L),!,print_table(L).
+print_cell(H):- print_card_n('',H).
 
 make_rows_same_length(ListOfLists,ListOfRows):-
   maplist(length,ListOfLists,Lens),
@@ -777,7 +809,7 @@ set_html_stream_encoding(UTF8):-
     set_prolog_flag(encoding,UTF8),
     ignore(catch(arc_set_stream(current_output,encoding(UTF8)),_,true)).
 
-set_stream_encoding(Text):- ignore(catch(arc_set_stream(current_output,encoding(Text)),_,true)).
+set_stream_encoding(Text):- ignore(catch(set_stream(current_output,encoding(Text)),_,true)).
  %set_prolog_flag(encoding,Text),
 /*
  notrace((
@@ -834,7 +866,7 @@ print_grid_html(SH,SV,EH,EV,Grid):-
 (plain_var(EH) ->grid_size(Grid,EH,_) ; true),ignore(SH=1),
   (plain_var(EV) ->grid_size(Grid,_,EV) ; true),ignore(SV=1),
     bg_sym_ui(BGC),
-     with_luser(alt_grid_dot,'_',print_grid_http_bound(BGC,SH,SV,EH,EV,Grid)),!.
+     with_luser(alt_grid_dot,'@',print_grid_http_bound(BGC,SH,SV,EH,EV,Grid)),!.
 
 has_content(Header):- nonvar(Header), Header\==[], Header\=='',Header\=="''&nbsp;",Header\=='\'\'&nbsp;', Header\=="".
 
@@ -866,22 +898,22 @@ print_ss_html_pair(TitleColor,
  grid_size(In,H1,V1), grid_size(Out,H2,V2),
  grid_bgc(In,BGC1), grid_bgc(Out,BGC2),
  print_table([[HIn,'   ',HOut],[
-   locally(nb_setval(grid_footer,FIn),with_other_grid(Out,print_grid_http_bound(ID1,BGC1,1,1,H1,V1,In))),'-->',
-   locally(nb_setval(grid_footer,FOut),with_other_grid(In,print_grid_http_bound(ID2,BGC2,1,1,H2,V2,Out)))]]).
+   call(locally(nb_setval(grid_footer,FIn),with_other_grid(Out,print_grid_http_bound(ID1,BGC1,1,1,H1,V1,In)))),'-->',
+   call(locally(nb_setval(grid_footer,FOut),with_other_grid(In,print_grid_http_bound(ID2,BGC2,1,1,H2,V2,Out))))]]).
 
 into_nv_cmd(N2,N2Cmd):- into_attribute(N2,N2Cmd).
 
 
 print_ss_html_h(In,HIn,Out,HOut):- 
   print_table([[HIn,'   ',HOut],
-  [ locally(nb_setval(grid_footer,[]),with_other_grid(Out,print_grid(In))),
+  [ call(locally(nb_setval(grid_footer,[]),with_other_grid(Out,print_grid(In)))),
     '-->',
-    locally(nb_setval(grid_footer,[]),with_other_grid(In,print_grid(Out)))]]).
+    call(locally(nb_setval(grid_footer,[]),with_other_grid(In,print_grid(Out))))]]).
 print_ss_html_h(In,HIn,Out,HOut):- 
  print_table([
-  [locally(nb_setval(grid_footer,HIn),with_other_grid(Out,print_grid(In))),
+  [call(locally(nb_setval(grid_footer,HIn),with_other_grid(Out,print_grid(In)))),
    '-->',
-   locally(nb_setval(grid_footer,HOut),with_other_grid(In,print_grid(Out)))]]).
+   call(locally(nb_setval(grid_footer,HOut),with_other_grid(In,print_grid(Out))))]]).
 
 print_grid_http_bound(_BGC,SH,SV,EH,EV,Grid):- ansi_main,!,print_grid_ansi_real(SH,SV,EH,EV,Grid).
 
@@ -909,10 +941,10 @@ print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):-
              (format('grid(~w,~w)',[EH,EV]),             
              (nonvar(Title)-> format(' ~w',[Title]) ; true),
              (nonvar(ID)-> format(' ~w',[ID]) ; true))),
-
+  into_attribute(GTitle,GTitleAttr),
 
   format('<table style="max-width: ~wpx; max-height: ~wpx;" id="~w" class="~w selectable" title="~w">',
-                      [TWidth,THGHT,TaskIDSubTask,GridClass,GTitle]),
+                      [TWidth,THGHT,TaskIDSubTask,GridClass,GTitleAttr]),
 
   ignore((nb_take_content(grid_header,Header),
     with_tag('tr',format('<th style="max-width: ~wpx" colspan="~w" class="wrappable">~w</th>',[TWidth,Width,Header])))),
@@ -1007,8 +1039,9 @@ print_grid_http_bound(ID,BGC,SH,SV,EH,EV,Grid):-
              (format('grid(~w,~w)',[EH,EV]),             
              (nonvar(Title)-> format(' ~w',[Title]) ; true),
              (nonvar(ID)-> format(' ~w',[ID]) ; true))),
+     into_attribute(GTitle,GTitleAttr),
    (should_shrink_grid_half(Grid,EH,EV)->GridClass=grid_table_shrink;GridClass=grid_table),
-   format('<table id="~w" class="~w selectable" title="~w">',[ID,GridClass,GTitle])
+   format('<table id="~w" class="~w selectable" title="~w">',[ID,GridClass,GTitleAttr])
 
    )),
 
@@ -1018,12 +1051,14 @@ print_grid_http_bound(ID,BGC,SH,SV,EH,EV,Grid):-
      (( must_det_ll((once((hv_cg_value(Grid,CG,H,V);CG=BGC)), 
        only_color_data_or_atom(CG,Color),
        into_html_color(Color,HTMLColor))),
-         (var(Title)-> format('<td bgcolor="~w" title="~w (~w,~w)">',[HTMLColor,CG,H/EH,V/EV]);
+         (var(Title)-> (into_title_str_attr(CG,Str),format('<td bgcolor="~w" title="~w (~w,~w)">',[HTMLColor,Str,H/EH,V/EV]));
            format('<td bgcolor="~w">',[HTMLColor])),
           catch(print_hg1(CG),E,writeln(CG=E)),write('</td>')))))))),
 
   ignore((nonvar(ID),write('</table>'))),
   ignore((nonvar(ID),cvtToIMG(ID))),!.
+
+into_title_str_attr(CG,Str):- into_title_str(CG,A), into_attribute(A,Str),!.
 
 cvtToIMG:- true.
 

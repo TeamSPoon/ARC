@@ -412,10 +412,10 @@ first_n_of_list(_Max,List,List,[]).
 preview_test_per_page(List):- preview_test_per_page(1,20,List).
 preview_test_per_page(Strt,Max,List):- length(List,Len),Len>Max,first_n_of_list(Max,List,LeftMax,Rest),
    NStrt is Strt+Max,Thru is NStrt-1,
-   w_section(title(format('Suite Tasks ~w-~w',[Strt,Thru])),maplist(preview_test,LeftMax)),preview_test_per_page(NStrt,Max,Rest).
+   w_section(title(['Suite Tasks',Strt,"thru",Thru]),maplist(preview_test,LeftMax)),preview_test_per_page(NStrt,Max,Rest).
 preview_test_per_page(Strt,_,List):- length(List,Len), 
   Thru is Strt+Len-1,
-  w_section(title(format('Suite Tasks ~w-~w',[Strt,Thru])),maplist(preview_test,List)).
+  w_section(title(['Suite Tasks',Strt,"thru",Thru]),maplist(preview_test,List)).
 
 first_ten(Set,Ten,Rev):- length(LL,Ten),append(LL,_,Set),web_reverse(LL,Rev).
 
@@ -658,7 +658,7 @@ dump_suite_sorted:-
    with_pair_mode(whole_test, forall_count(member(S,Sorted),print_ctest(S))).
 
 dump_not_suite:-   
-   get_current_suitme_testnames(Set),
+   get_current_suite_testnames(Set),
    forall_count(((kaggle_arc_safe(TestID,_ExampleNum,_I,_O), \+ member(TestID,Set))),
     print_ctest(TestID)).
 

@@ -51,27 +51,28 @@ individuation_macros(do_ending, [
  %combine_objects,
  end_of_macro]).
 
-individuation_macros(i_complete_generic,[nsew,black_to_zero,nsew,zero_to_black,colormass,black_to_zero,
-  alone_dots(lte(25)),zero_to_black,lo_dots]).
-/*
+individuation_macros(i_complete_generic(X),[X]).
 
-individuation_macros(i_complete_generic,[i_complete_generic(1)]):-
-  get_current_test(TestID),
-     arc_test_property(TestID, common, comp(_, i-o, mass), mass(_)),!.
-individuation_macros(i_complete_generic,[i_complete_generic(0)]):-
-  get_current_test(TestID),
-  \+ arc_test_property(TestID, common, comp(_, i-o, mass), mass(_)),!.
-*/
+individuation_macros(i_complete_generic,i_complete_generic(subtractions)):-  use_subtractions.
+individuation_macros(i_complete_generic,i_complete_generic(generic_nsew_colormass)):- mass_same_io.
+individuation_macros(generic_nsew_colormass, 
+ [nsew,black_to_zero,nsew,zero_to_black,colormass,black_to_zero, alone_dots(lte(25)),zero_to_black,lo_dots]).
+
+
+mass_same_io:- arc_common_property(mass(_)).
+use_subtractions:-    once(arc_common_property(containsAll(o-i));arc_common_property(containsAll(o-i))).
+
 % vm_grid_call(subst_color(black,brown)),
 
 individuation_macros(nsew_bg,[
   with_mapgrid([fgc_as_color(plain_var),bgc_as_color(zero),plain_var_as(black)],'_nsew_bg',[nsew,alone_dots,lo_dots])]).
 
-individuation_macros(i_complete_generic(0),
-  [fg_intersections([i_intersect]),
-   %save_as_obj_group(fg_subtractions([i_subtract_objs])),
+individuation_macros(subtractions, 
+ [ bigger_grid_contains_other,
+   find_hybrid_shapes,
+   fg_intersections([i_intersect]),
+   fg_subtractions([i_subtract_objs]),
    i_subtract_objs]).
-individuation_macros(i_complete_generic(1),[generic_nsew_colormass]).
 
 
 individuation_macros(i_complete_generic333, 
@@ -849,9 +850,11 @@ consider_other_grid(VM):-
 
   Grid = VM.grid,
   Other = In,
-  forall( maybe_ogs_color(R,OH,OV,Other,Grid),
- %u_dmsg(maybe_ogs_color(R,OH,OV,In,Grid)),
-  (globalpoints_include_bg(In,OPoints),
+  forall( maybe_ogs(ROHOV,Other,Grid),
+ %u_dmsg(maybe_ogs(R,OH,OV,In,Grid)),
+   
+ (member(loc2D(OH,OV),ROHOV),
+  globalpoints_include_bg(In,OPoints),
   offset_points(OH,OV,OPoints,GOPoints),
   intersection(VM.points,GOPoints,TODO,LeftOver,Missing),
   Missing\==[],
@@ -866,9 +869,9 @@ consider_other_grid(VM):-
   %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
   %OffsetGrid = In,
   add_grid_label(Grid,Info,A), add_grid_label([Obj],Info,B),
-  as_debug(9,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_ss(A,B)))), % atrace,
-  %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  atrace,  
-  %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  atrace,  
+  as_debug(9,((dash_chars,Info=maybe_ogs(R,OH,OV), print_ss(A,B)))), % atrace,
+  %print_ss([Obj|Grid]-wqs(maybe_ogs(R,OH,OV))), %  atrace,  
+  %print_grid(maybe_ogs(R,OH,OV),[Obj|Grid]), %  atrace,  
   remCPoints(VM,GOPoints),
   remGPoints(VM,TODO))))))).
 
@@ -1027,7 +1030,7 @@ kept_ideal_obj(VM,GMass,Objs,OMass,O).
 % =====================================================================
 is_fti_step(find_hybrid_shapes).
 % =====================================================================
-hybrid_shape(VM):-
+find_hybrid_shapes(VM):-
  ignore((
   set(VM.grid)= VM.grid_o,
   Grid = VM.grid,
@@ -1065,9 +1068,11 @@ count_adjacent_same_colored_points(O1,O2,HVCount,DiagCount):-
 hybrid_shape_from(Set,VM):-
   Grid = VM.grid,
   member(In,Set),
-  maybe_ogs_color(R,OH,OV,In,Grid),
- %u_dmsg(maybe_ogs_color(R,OH,OV,In,Grid)),
+  maybe_ogs(ROHOV,In,Grid),
+
+ %u_dmsg(maybe_ogs(R,OH,OV,In,Grid)),
   globalpoints_include_bg(In,OPoints),
+  member(loc2D(OH,OV),ROHOV),
   offset_points(OH,OV,OPoints,GOPoints),
   intersection(VM.points,GOPoints,TODO,LeftOver,Missing),
   Missing\==[],
@@ -1082,9 +1087,9 @@ hybrid_shape_from(Set,VM):-
   %offset_grid(OH,OV,In,OffsetGrid),!, is_grid(OffsetGrid),
   %OffsetGrid = In,
   add_grid_label(Grid,Info,A), add_grid_label([Obj],Info,B),
-  as_debug(9,((dash_chars,Info=maybe_ogs_color(R,OH,OV), print_ss(A,B)))), % atrace,
-  %print_ss([Obj|Grid]-wqs(maybe_ogs_color(R,OH,OV))), %  atrace,  
-  %print_grid(maybe_ogs_color(R,OH,OV),[Obj|Grid]), %  atrace,  
+  as_debug(9,((dash_chars,Info=maybe_ogs(R,OH,OV), print_ss(A,B)))), % atrace,
+  %print_ss([Obj|Grid]-wqs(maybe_ogs(R,OH,OV))), %  atrace,  
+  %print_grid(maybe_ogs(R,OH,OV),[Obj|Grid]), %  atrace,  
   remCPoints(VM,GOPoints),
   remGPoints(VM,TODO),
   ignore(hybrid_shape_from(Set,VM)))).
@@ -1113,12 +1118,13 @@ learn_hybrid_shape(ReColored):-
  learn_hybrid_shape(pair,ReColored).
 
 learn_hybrid_shape(Type,Obj):- is_list(Type),!,maplist(lambda_rev(learn_hybrid_shape(Obj)),Type).
-learn_hybrid_shape(Type,Obj):- is_group(Obj),!,mapgroup(learn_hybrid_shape(Type),Obj).
+%learn_hybrid_shape(Type,Obj):- is_group(Obj),!,mapgroup(learn_hybrid_shape(Type),Obj).
 learn_hybrid_shape(Name,ReColored):-
  current_test_example(TestID,ExampleNum),
  learn_hybrid_shape(TestID,ExampleNum,Name,ReColored).
 
 learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- is_grid(ReColored),!,learn_hybrid_shape_grid(ReColored,TestID,ExampleNum,Name,ReColored).
+learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- is_group(ReColored),!,mapgroup(learn_hybrid_shape(TestID,ExampleNum,Name),ReColored).
 learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- is_list(ReColored),!,maplist(learn_hybrid_shape(TestID,ExampleNum,Name),ReColored).
 learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- is_object(ReColored),!,object_grid(ReColored,Grid), 
   learn_hybrid_shape_grid(ReColored,TestID,ExampleNum,Name,Grid).
@@ -1409,10 +1415,14 @@ first_grid1(_In,_Out,in_out).
 
 
 compile_and_save_current_test(Why):-
-  compile_and_save_test(TestID),
-  forall(compile_and_save_current_test_pt_2(TestID,Why),true).
+ get_current_test(TestID),time(compile_and_save_test(TestID)),!,
+ detect_all_training_hints,!,
+ forall(compile_and_save_current_test_pt_2(TestID,Why),true).
 
-arc_test_property(A,B,C):- get_current_test(TestID), compile_and_save_test(TestID), arc_test_property(TestID,A,B,C).
+arc_test_property(A,B,C):- 
+  get_current_test(TestID), compile_and_save_test(TestID), !,
+  arc_test_property(TestID,A,B,C).
+
 arc_common_property(Prop):- arc_test_property(common,_,Prop).
 arc_common_property(Prop):- arc_test_property(common,Prop,O),O\==[].
 
@@ -1425,9 +1435,9 @@ compile_and_save_current_test_pt_2(_TestID,_):-
 
 compile_and_save_current_test_pt_2(_TestID,_):-
    current_pair(I,O), 
-   arc_common_property(containsAll(i-o)),
+   arc_common_property(containsAll(o-i)),
    mapgrid(cell_minus_cell,O,I,R),
-   print_grid(o_minus_i,R).
+   print_grid(pre_o_minus_i,R).
 
 cell_minus_cell(I,O,M):- I=@=O, M=bg.
 %cell_minus_cell(I,_,M):- dont_care_color(I),M=I.
@@ -1435,18 +1445,23 @@ cell_minus_cell(I,O,M):- I=@=O, M=bg.
 cell_minus_cell(I,_,I).
 
 
+individuate_nonpair(ROptions,In,IndvSI):- 
+  into_grid(In,InG), 
+  compile_and_save_current_test([for(InG)]),!,
+  individuate(ROptions,InG,IndvSI).
 
 individuate_pair(ROptions,In,Out,IndvSI,IndvSO):-
-  individuate_pair1(ROptions,In,Out,IndvSI,IndvSO)*->
-   true;individuate_pair2(ROptions,In,Out,IndvSI,IndvSO).
+ into_grid(In,InG), into_grid(Out,OutG),
+ [for(out,OutG),for(in,InG)] = Why,
+ compile_and_save_current_test(Why),!,
+  (individuate_pair1(ROptions,In,Out,IndvSI,IndvSO)*->
+   true;individuate_pair2(ROptions,In,Out,IndvSI,IndvSO)),!.
 
 individuate_pair1(ROptions,In,Out,IndvSI,IndvSO):-
  once((
   check_for_refreshness,
   into_grid(In,InG), into_grid(Out,OutG),
   current_test_example(TestID,ExampleNum),
- [for(out,OutG),for(in,InG)] = Why,
- compile_and_save_current_test(Why),
  w_section(["individuate pair: ",TestID,ExampleNum],
   must_det_ll(((   
    first_grid(InG,OutG,IO),
@@ -1461,14 +1476,6 @@ individuate_pair2(ROptions,In,Out,IndvSI,IndvSO):-
   into_grid(In,InG), into_grid(Out,OutG),
   individuate_two_grids(ROptions,InG,OutG,IndvSII,IndvSOO),
   IndvSOO=IndvSO,IndvSII=IndvSI,!.
-  
-
-
-individuate_nonpair(ROptions,In,IndvSI):- 
-  into_grid(In,InG), 
-  compile_and_save_current_test([for(InG)]),
-  individuate(ROptions,InG,IndvSI).
-
 
 
 
@@ -2608,6 +2615,112 @@ fg_intersections(TODO,VM):-
  mapgrid(plain_var_to(black),NewGrid),
  mass(NewGrid,NM), NM > 0, % mass(Grid,GM), NM\==GM,% ,!, mass(Other,OM),
  sub_self(NewGrid,Other,TODO,VM).
+
+
+% =====================================================================
+is_fti_step(bigger_grid_contains_other).
+% =====================================================================
+bigger_grid_contains_other(VM):- 
+  w_section(bigger_grid_contains_other,
+    once(bigger_grid_contains_other_i_o(VM))).
+
+bigger_grid_contains_other_i_o(VM):- 
+  flag(bigger_grid_contains_other_i_o,X,X+1), X<5,
+  setup_call_cleanup(true,
+     (ignore(bigger_grid_contains_other_i_o_1(VM)),
+      ignore(bigger_grid_contains_other_i_o_2(VM))),
+     flag(bigger_grid_contains_other_i_o,_,X)).
+
+
+bigger_grid_contains_other_i_o_1(VM):- 
+ copy_term(VM.grid_o,Grid),
+ other_grid(Grid,Other), is_grid(Other),
+ current_pair(I,O),
+ I=@=Grid,
+  arc_common_property(containsAll(o-i)),
+  must_det_ll((
+  mapgrid(cell_minus_cell,O,I,R),
+  %mapgrid(cell_minus_cell,O,R,NewO),
+  %print_grid(o_minus_i,R),print_grid(o_minus_r,NewO),
+  individuate(generic_nsew_colormass,R,Objs),
+  print_grid(containsAll(o-i),Objs),
+  maplist(learn_hybrid_shape,Objs))).
+
+bigger_grid_contains_other_i_o_2(VM):- 
+ copy_term(VM.grid_o,Grid),
+ other_grid(Grid,Other), is_grid(Other),
+ current_pair(I,O),
+ I=@=Grid,  
+   arc_common_property(containsAll(i-o)),
+  must_det_ll((
+   mapgrid(cell_minus_cell,I,O,R),
+   mapgrid(cell_minus_cell,I,R,NewI),
+   individuate(generic_nsew_colormass,R,Objs),
+   set(VM.grid)=NewI,
+   %print_grid(i_minus_o,R),print_grid(i_minus_r,NewI),
+   individuate(generic_nsew_colormass,R,Objs),
+   print_grid(containsAll(i-o),Objs),
+   maplist(learn_hybrid_shape,Objs))),!.
+
+ 
+
+
+/*
+
+glean_shape_lib(VM):- 
+ current_pair(I,O),
+ ignore(glean_shape_lib_i(I,O,VM)),
+ ignore(glean_shape_lib_o(I,O,VM)).
+
+glean_shape_lib_o(I,O,VM):-
+  arc_common_property(containsAll(o-i)),
+  mapgrid(cell_minus_cell,O,I,R),
+  mapgrid(cell_minus_cell,O,R,NewO),
+  %print_grid(o_minus_i,R),print_grid(o_minus_r,NewO),
+  individuate(generic_nsew_colormass,R,Objs),
+  print_grid(containsAll(o-i),Objs),
+  maplist(add_shape_lib(as_is),Objs).
+glean_shape_lib_i(I,O,VM):-
+ arc_common_property(containsAll(i-o)),
+ mapgrid(cell_minus_cell,I,O,R),
+ mapgrid(cell_minus_cell,I,R,NewI),
+ %print_grid(i_minus_o,R),print_grid(i_minus_r,NewI),
+ individuate(generic_nsew_colormass,R,Objs),
+ print_grid(containsAll(i-o),Objs),
+ maplist(add_shape_lib(as_is),Objs).
+
+
+
+
+  forall(
+ suggest_r1(R1),
+(grid_call(R1,R,BRect),
+ writeg(BRect),
+ nl,nl,writeq(?-all_ogs(R1,BRect,NewO,HintO)),writeln('.'),nl,
+ all_ogs(R1,BRect,NewO,HintO),
+ all_ogs(R1,BRect,I,HintI), 
+ %(HintI\==[];HintO\==[]),
+ pp(o_r(R1)=HintO),
+ pp(i_r(R1)=HintI))),
+ ttyflush,!,fail,
+ ((sleep(30))))),!.
+suggest_r1([subst_color(red,_)]).
+suggest_r1([my_release_bg]).
+suggest_r1([my_release_bg,subst_color(red,_)]).
+*/
+
+/*
+ pp(all_ogs(i,R2)=HintI),!.
+
+
+ individuate(generic_nsew_colormass,R,Objs),
+ print_grid(o_minus_i_objs,Objs),
+ %decolorize(Objs,MObjs),
+ =(Objs,MObjs),
+ 
+ pp(all_ogs(o,R1)=HintO),
+ pp(all_ogs(i,R2)=HintI),!.
+*/ 
 
 
 % =====================================================================

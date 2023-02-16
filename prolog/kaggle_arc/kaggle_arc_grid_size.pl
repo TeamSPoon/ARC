@@ -181,7 +181,10 @@ set_current_pair(I,O):-
   luser_setval(output_grid,O),ensure_other_grid(I,O),set_target_grid(O),
   must_det_ll((other_grid(I,OO),OO==O)).
 
-current_pair(I,O):- luser_getval(input_grid,I), must_det_ll((other_grid(I,O))).
+current_pair(I,O):- luser_getval(input_grid,I), is_gridoid(I),!, must_det_ll((other_grid(I,O))).
+current_pair(I,O):- current_test_example(TestID,ExampleNum),
+   setup_call_cleanup(true,
+     ((kaggle_arc(TestID,ExampleNum,I,O);fail),set_current_pair(I,O)), luser_setval(input_grid,[])).
 
 % test_hint(ratio_between(mass,mass)). %ac0a08a4
 increase_size_by_grid_mass(In,Out):- mass(In,Mass),increase_size(Mass,In,Out).
