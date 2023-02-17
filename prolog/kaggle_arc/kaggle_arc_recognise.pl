@@ -33,6 +33,14 @@ test_ogs_m0:- clsmake, my_time(forall(test_ogs0(_,_,true),true)).
 
 
 
+ttt1a:-
+  into_grid(t_1b60fb0c_trn_0_in,In),
+  into_grid(t_1b60fb0c_trn_0_out,Y),
+  grid_minus_grid(Y,In,X),
+  print_side_by_side(X,Y),
+  all_ogs(A,X,Y),pp(A).
+
+
 
 maybe_ogs_test:- 
   set_current_test('1b60fb0c'),
@@ -47,7 +55,7 @@ maybe_ogs_test2:-
 maybe_ogs_test_i(In):- maybe_ogs_test_j(I),(maybe_if_changed(trim_to_rect,I,In);In=I),mass(In,Mass),Mass>0.
 maybe_ogs_test_j(In):- enum_object(O),global_grid(O,In).
 maybe_ogs_test_j(In):- maybe_ogs_test_p(In).
-maybe_ogs_test_p(In):- current_pair(I,O),mapgrid(cell_minus_cell,I,O,In).
+maybe_ogs_test_p(In):- current_pair(I,O),grid_minus_grid(I,O,In).
 maybe_ogs_test_p(In):- current_pair(I,O),mapgrid(cell_minus_cell,O,I,In).
 maybe_ogs_test_p(Out):- current_test_example(X,Y),into_grid(X>Y*_,Out).
 maybe_ogs_test_o(Out):- get_current_test(TestID), kaggle_arc(TestID,_,_,Out), \+ maybe_ogs_test_p(Out).
@@ -55,10 +63,20 @@ maybe_ogs_test_o(Out):- maybe_ogs_test_p(Out).
 
 bg_to_not_fg(G,GG):- is_grid(G),!,mapgrid(bg_to_not_fg,G,GG).
 bg_to_not_fg(G,GG):- is_group(G),!,mapgroup(bg_to_not_fg,G,GG).
-bg_to_not_fg(G,GG):- var(G),freeze(G,if_t(is_color(G), \+ is_fg_color(GG))).
+bg_to_not_fg(G,GG):- plain_var(G),!,cbg(GG).
+bg_to_not_fg(G,GG):- attvar(G), \+ get_attr(G,ci,_),!, GG = G, put_attr(GG,ci,bg(_)).
+bg_to_not_fg(G,GG):- attvar(G), !, GG=G.
+bg_to_not_fg(G,GG):- fail, var(G),freeze(G,if_t(is_color(G),cbg(GG))).
 bg_to_not_fg(G,GG):- is_list(G),!,maplist(bg_to_not_fg,G,GG).
-bg_to_not_fg(G,GG):- is_bg_color(G),!,freeze(GG, \+ is_fg_color(GG)).
+bg_to_not_fg(G,GG):- is_bg_color(G),!,cbg(GG).
 bg_to_not_fg(G,G). 
+
+cbg(Trig,Var):- freeze(Trig, cbg(Var)).
+cbg(GG):- plain_var(GG),!,put_attr(GG,ci,bg(_)),!. 
+cbg(GG):- \+ is_fg_color(GG).
+%cbg(GG):-freeze(GG, \+ is_fg_color(GG)).
+%cbg(Var):- freeze(Var, \+ is_fg_color(Var)).
+
 /*
 yg_to_not_xg(G,GG):- is_grid(G),!,mapgrid(yg_to_not_xg,G,GG).
 yg_to_not_xg(G,GG):- is_group(G),!,mapgroup(yg_to_not_xg,G,GG).
@@ -89,27 +107,37 @@ trim_unused_n_vert(N,BG,[Row|Grid],GridO,N2):- is_trimmable_row(Row,BG),!,trim_u
 
 maybe_ogs(R,In,Out):- var(In),!,maybe_ogs_test_i(In),maybe_ogs(R,In,Out).
 maybe_ogs(R,In,Out):- var(Out),!,maybe_ogs_test_o(Out),maybe_ogs(R,In,Out).
+
 maybe_ogs(R,In,Out):- \+ is_grid(Out),!,into_grid(Out,OOut),maybe_ogs(R,In,OOut).
 maybe_ogs(R,In,Out):- is_grid(In),!, maybe_ogs0(R,In,Out).
 maybe_ogs(R,[In|List],Out):- !,
  converts_to_grid(In,Grid),!, (maybe_ogs0(R,Grid,Out);maybe_ogs(R,List,Out)).
-maybe_ogs(R,In,Out):- In\==[],converts_to_grid(In,Grid),!, maybe_ogs0(R,Grid,Out).
+maybe_ogs(R,In,Out):- In\==[],converts_to_grid(In,Grid),!, maybe_ogs(R,Grid,Out).
 
-maybe_ogs0(R,In,Out):- maybe_ogs00(R,In,Out).
-maybe_ogs0([trim_to_rect(T,Rgt,B,L)|R],In,Out):- maybe_if_changed(trim_to_rect(T,Rgt,B,L),In,IIn),maybe_ogs00(R,IIn,Out).
+all_ogs(R,In,Out):-
+  findall(E,maybe_ogs0(E,In,Out),R).
 
-constrain_search(constn_g,In,Out,IIn,OOut):- 
-  constrain_grid(f,Trig,In,In1), %subst(IIn,blue,blu,IInO), %writeg(IIn-->IInO),
-  constrain_grid(s,Trig,Out,Out1),
-  bg_to_not_fg(In1,Out1,IIn,OOut).
+
+maybe_ogs0(R,In,Out):- maybe_ogs0a(R,In,Out).
+
+maybe_ogs0a(R,In,Out):- maybe_ogs00(R,In,Out).
+maybe_ogs0a([trim_to_rect(T,Rgt,B,L)|R],In,Out):- maybe_if_changed(trim_to_rect(T,Rgt,B,L),In,IIn),maybe_ogs00(R,IIn,Out).
+
+constrain_search(constn_g,In1,Out1,In3,Out3):-   
+  constrain_grid(f,Trig,In1,In2), %subst(IIn,blue,blu,IInO), %writeg(IIn-->IInO),
+  constrain_grid(f,Trig,Out1,Out2),
+  bg_to_not_fg(In2,Out2,In3,Out3),
+  nop((writeg([in3(grid)= In3]),
+  writeg([out3(grid)=Out3]))).
+ 
 
 constrain_search(fpad_grid,In,Out,IIn,OOut):- fail,
   fpad_grid(f, In, In1), fpad_grid(s,Out,Out1),
   bg_to_not_fg(In1,Out1,IIn,OOut).
 
 
-bg_to_not_fg(In1,Out1,IIn,OOut):-
-  bg_to_not_fg(In1,In2),unbind_bg(In2,IIn),
+bg_to_not_fg(In1,Out1,IIn,OOut):-  
+  bg_to_not_fg(In1,In2),unbind_bg(In2,IIn),%fg_to_not_bg(In1,In2),
   bg_to_not_fg(Out1,OOut).
 
 maybe_ogs00([Constrn|R],In,Out):- 
@@ -117,13 +145,13 @@ maybe_ogs00([Constrn|R],In,Out):-
   maybe_ogs1(R,IIn,OOut),
   (member(rul(loose),R) -> was_loose_ok(R) ; true).
 
-was_loose_ok(R):- \+ member(rotate(_),R), \+ member(into_monogrid(_),R).
+was_loose_ok(R):- \+ member(subst(_,_),R), \+ member(rotate(_),R), \+ member(into_monogrid(_),R).
 
 maybe_ogs1([unbind_black|R],In,Out):- sub_var(black,In),maybe_if_changed(unbind_black,In,IIn),
   mass(IIn,Mass),Mass>0, maybe_ogs2(R,IIn,Out).
 maybe_ogs1(R,In,Out):- maybe_ogs2(R,In,Out).
 
-%maybe_ogs2([into_monogrid(find)|R],In,Out):- maybe_if_chafnged(into_monogrid,Out,OOut), maybe_ogs3(R,In,OOut).
+%maybe_ogs2([into_monogrid(find)|R],In,Out):- maybe_if_changed(into_monogrid,Out,OOut), maybe_ogs3(R,In,OOut).
 maybe_ogs2(R,In,Out):- maybe_ogs3(R,In,Out).
 maybe_ogs2([into_monogrid(srcharea)|R],In,Out):- maybe_if_changed(into_monogrid,In,IIn), maybe_ogs3(R,IIn,Out).
 
@@ -133,6 +161,7 @@ maybe_ogs3(R,In,Out):- maybe_ogs4(R,In,Out).
 %maybe_ogs4([trim_to_rect|R],In,Out):- maybe_if_changed(trim_to_rect,In,IIn),maybe_ogs5(R,IIn,Out).
 maybe_ogs4(R,In,Out):- maybe_ogs5(R,In,Out).
 
+%maybe_ogs5(R,In,Out):- subst(In,red,blue,InC),rot180(InC,In180), maybe_ogs7(R,In180,Out).
 maybe_ogs5([rotate(P2)|R],In,Out):- rotP0(P2),maybe_if_changed(P2,In,IIn),maybe_ogs7(R,IIn,Out).
 maybe_ogs5(R,In,Out):- maybe_ogs7(R,In,Out).
 
@@ -155,7 +184,7 @@ same_color_class(BG,NotFG):- is_bg_color(BG),!, \+ is_fg_color(NotFG).
 maybe_ogs9([rul(R),loc2D(X,Y)/*grid(In)*/],In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
 % 007bbfb7 needs loose %,!,R\==loose.
 
-maybe_ogs9([rul(R),loc2D(X,Y)/*grid(In)*/],In,Out):- ogs_11(X,Y,In,Out),(find_ogs(X,Y,In,Out)->R=strict;R=loose).
+maybe_ogs9([rul(R),loc2D(X,Y)/*grid(In)*/],In,Out):- once(( ogs_11(X,Y,In,Out),(find_ogs(X,Y,In,Out)->R=strict;R=loose))).
 
 
 
@@ -187,9 +216,6 @@ rot_ogs1([Step1,maybe_if_changed(P2)]):- rot_ogs_step1(Step1),rotP2(P2).
 
 rot_ogs(Step1):-rot_ogs1(Step1).
 rot_ogs([Step0,Step1]):-rot_ogs0(Step0),rot_ogs1(Step1).
-
-all_ogs(_,In,Out,R):-
-  findall(E,maybe_ogs(E,In,Out),R).
 
 
 % grid_to_obj(Grid,[colormass,fg_shapes(colormass)],Obj),print_side_by_side(Grid,Obj).
@@ -257,7 +283,7 @@ was_result(SG,FG,WMatch):-
 :- asserta((prolog_stack:option(_,_):- fail)).
 
 test_ogs2:- 
- with_tag_style('table','grid-to-grid', 
+ with_tag_class('table','grid-to-grid', 
   (findall(T-SG,ss666(T,SG),TargetsR),
    reverse(TargetsR,Targets),
    findall(th(SG),member(_-SG,Targets),THs),
@@ -300,7 +326,7 @@ test_ogs1(H,V,Match):-
   get_black(Black),
   once((constrain_grid(f,CheckType,FG,XFG))),
   
-  once((grid_detect_bg(SG,Background), maplist(never_fg,Background))),
+  once((grid_detect_bg(SG,Background), maplist(cbg,Background))),
 
   ((ogs_11(H,V,XFG,XSG),CheckType=Black) *-> Match=true; Match=false),
 
@@ -308,8 +334,6 @@ test_ogs1(H,V,Match):-
   ignore(got_result(SG,FG,Match)),
   Match==true.
 
-never_fg(Trig,Var):- freeze(Trig, \+ is_fg_color(Var)).
-never_fg(Var):- freeze(Var, \+ is_fg_color(Var)).
 
 
 % should still be the sameR
@@ -322,7 +346,7 @@ test_ogs0(H,V,Match):-
   ground(UFG),
   get_black(Black),
   once((constrain_grid(f,CheckType,FG,XFG), nop(constrain_grid(s,CheckType,SG,XSG)))),
-  once((grid_detect_bg(XSG,Background), maplist(never_fg,Background))),
+  once((grid_detect_bg(XSG,Background), maplist(cbg,Background))),
   
   ((ogs_11(H,V,XFG,XSG),CheckType=Black) *-> TMatch=true; TMatch=false),
 
@@ -358,6 +382,7 @@ test_ogs(H,V,Match):-
 
 % get_prolog_backtrace(3,StackFrames,[]), nth0(2, StackFrames, SFrame) , prolog_stack_frame_property(SFrame, location(File:Line)),
 
+grid_minus_grid(I,O,In):- is_grid(I),is_grid(O),!,mapgrid(cell_minus_cell,I,O,In).
 grid_minus_grid(B,A,OI):- vis2D(B,BH,BV),vis2D(A,AH,AV),(BH\==AH;BV\==AV),!,OI=B.
 grid_minus_grid(B,A,OI):- remove_global_points(A,B,OI),!.
 %grid_minus_grid(B,A,OI):- is_list(B),maplist(grid_minus_grid,B,A,OI).
@@ -550,6 +575,8 @@ maybe_grid_numbervars(GridIn,GridIn):-!.
 
 not_in(Background,Foreground):-
   \+ (member(E,Background), E == Foreground). 
+not_sub_var(Background,Foreground):-
+  \+ sub_var(Foreground,Background).
 
 to_grid_fg(_CT,_,E,_):- cant_be_color(E),!.
 to_grid_fg(_CT,_,N,'$VAR'(N)):-!.
@@ -696,9 +723,10 @@ constrain_ele(f,_GH,_GV,_Trig,_GridIn,_H,_V,C1I,C1O,_GridO):- nonvar(C1I), nonva
 constrain_ele(f,_GH,_GV,_Trig,_GridIn,_H,_V,C1I,C1O,_GridO):- fail, is_spec_fg_color(C1I,_),nonvar(C1I),!, 
   (C1O==C1I -> true ; C1O=C1I).
 
+
 constrain_ele(f,_GH,_GV,Trig,GridIn,H,V,C1I,C1O,GridO):- is_spec_fg_color(C1I,_),!, 
   C1I=C1O,
-  ((C1O==C1I,false) -> true ; must_det_ll((constrain_type(Trig,C1I=C1O), attach_fg_ci(C1O,C1I)))), 
+  ((C1O==C1I) -> true ; must_det_ll((constrain_type(Trig,C1I=C1O), attach_fg_ci(C1O,C1I)))), 
   constrain_dir_ele(f,Trig,[n,s,e,w],GridIn,H,V,C1I,C1O,GridO).
 
 % BG Find On Canvas
@@ -739,6 +767,8 @@ mfreeze(Trig,CDE):- constrain_type(Trig,CDE).
 
 constrain_dir_ele(_CT,_Trig,_,_GridIn,_H,_V,_C1I,_C1O,_GridO):- luser_getval(find_rule,loose),!.
 constrain_dir_ele(_CT,_Trig,[],_GridIn,_H,_V,_C1I,_C1O,_GridO).
+
+/*
 constrain_dir_ele(CT, Trig,[Dir|SEW],GridIn,H,V,C1I,C1O,GridO):- luser_getval(find_rule,strict),!,
   muarc_mod(M),
   ignore((
@@ -748,6 +778,8 @@ constrain_dir_ele(CT, Trig,[Dir|SEW],GridIn,H,V,C1I,C1O,GridO):- luser_getval(fi
      \+ is_spec_fg_color(C2I,_),
      dif(C2O,C1O))),!,
   constrain_dir_ele(CT, Trig,SEW,GridIn,H,V,C1I,C1O,GridO).
+*/
+
 constrain_dir_ele(CT, Trig,[Dir|SEW],GridIn,H,V,C1I,C1O,GridO):-
   muarc_mod(M),
   ignore((
@@ -766,6 +798,7 @@ constrain_dir_ele(CT, Trig,[Dir|SEW],GridIn,H,V,C1I,C1O,GridO):-
 o_c_n(f,_,[],[_]):-!,fail. % no neighbours and just self
 o_c_n(f,_,[_,_|_],[]):-!,fail. % no neighbours and just self
 %o_c_n(f,_,[_,_|_],_):-!,fail.
+o_c_n(f,_,[_],_):-!,fail.
 o_c_n(f,_,_,_).
 o_c_n(s,_,_,_).
 
@@ -910,7 +943,7 @@ S="
  must_det_ll((text_to_grid(S,SG),into_g666(SG,G1),Same=_,once(subst001(G1,blue,Same,G)))).
 
 hamstring3(G):- hamstring(G1),subst001(G1,'blue',red,G).
-hamstring4(G):- hamstring(G1),subst001(G1,'#6666FF',_Same,G).
+%hamstring4(G):- hamstring(G1),subst001(G1,'#6666FF',_Same,G).
 
 
 h666(_Ham,G):- into_grid(v(aa4ec2a5)>(tst+0)*in,G).

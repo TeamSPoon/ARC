@@ -235,16 +235,16 @@ subst_2L([F|FF],[R|RR],I,O):- subst0011(F,R,I,M),subst_2L(FF,RR,M,O).
 
 subst001(I,F,R,O):- subst0011(F,R,I,O),!.
 
+
 subst0011(X, Y, Term, NewTerm ) :-
   copy_term((X,Y,Term),(CX,CY,Copy),Goals), 
-  (Goal==[]
-  ->subst0011a( X,  Y, Term, NewTerm )
-  ;(subst0011a(CX, CY, Goals, NewGoals),
-     NewGoals==Goals -> 
+  (Goals==[]
+   ->subst0011a( X,  Y, Term, NewTerm )
+   ;(subst0011a(CX, CY, Goals, NewGoals),
+     (NewGoals==Goals -> 
        subst0011a( X,  Y, Term, NewTerm )
        ; (subst0011a(CX, CY, Copy, NewCopy),
-          NewTerm = NewCopy, maplist(call,NewGoals)))).
-
+          NewTerm = NewCopy, maplist(call,NewGoals))))).
          
     
 
@@ -268,13 +268,13 @@ subst001C(I,F,R,O):- subst0011C(F,R,I,O),!.
 
 subst0011C(X, Y, Term, NewTerm ) :-
   copy_term((X,Y,Term),(CX,CY,Copy),Goals), 
-  (Goal==[]
+  (Goals==[]
   ->subst0011Ca( X,  Y, Term, NewTerm )
   ;(subst0011Ca(CX, CY, Goals, NewGoals),
-     NewGoals==Goals -> 
+     (NewGoals==Goals -> 
        subst0011Ca( X,  Y, Term, NewTerm )
        ; (subst0011Ca(CX, CY, Copy, NewCopy),
-          NewTerm = NewCopy, maplist(call,NewGoals)))).
+          NewTerm = NewCopy, maplist(call,NewGoals))))).
 
 subst0011Ca(X, Y, Term, NewTerm ) :-
  (same_term(X,Term)-> Y=NewTerm ;

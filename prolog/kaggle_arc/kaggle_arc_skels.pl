@@ -48,7 +48,7 @@ get_fill_points2(Grid,FillPoints):-
 maybe_make_bg_visible(In,Grid):- make_bg_visible(In,Grid),!,In\=@=Grid.
 
 %make_bg_visible(In,Grid):- var(In),!,Grid=In.
-%make_bg_visible(In,Grid):- !, duplicate_term(In,Grid),!.
+make_bg_visible(In,Grid):- !, duplicate_term(In,Grid),!.
 make_bg_visible(In,Grid):- arc_html,!,In=Grid.
 make_bg_visible(In,Grid):- duplicate_term(In,In0),subst001(In0,blue,'#6666FF',M),
   make_bg_visible_b(M,Grid).
@@ -206,20 +206,28 @@ neighbor_map2(H,V,[(N1-C)-P1|Ps],Points,[(N2-C)-P1|Ps2]):-
 fix_n2(_H,_V,_C,_P1,_Points,N1,N1).
 
 neighbor_map1(_,_,[],_,[]):-!.
+neighbor_map1(H,V,[(N-C)-P1|Ps],Points,[(N-C)-P1|Ps2]):- nonvar(C),!,
+  must_det_ll((
+  nei_map(H,V,C,P1,Points,N),
+  neighbor_map1(H,V,Ps,Points,Ps2))).
+
 neighbor_map1(H,V,[NC-P1|Ps],Points,[(N-C)-P1|Ps2]):-
   must_det_ll((
-  only_color_data(NC,C),  
+  only_color_data(NC,C),
   nei_map(H,V,C,P1,Points,N),
   neighbor_map1(H,V,Ps,Points,Ps2))).
 
 only_color_data_or_atom(OC,C):- only_color_data(OC,C),!.
 only_color_data_or_atom(C,C).
-only_color_data(C,C):- is_color(C),!.
-only_color_data(C,C):- is_unreal_color(C),!.
-only_color_data(C,C):- var(C),!.
-only_color_data(NC,NC):- \+ compound(NC),!,fail.
-only_color_data(C-P,C):- var(C),is_nc_point(P),!.
-only_color_data(OC,C):- sub_term(C,OC),is_colorish(C),!.
+
+only_color_data(C,D):- only_color_data0(C,CD),!,CD=D.
+
+only_color_data0(C,C):- is_color(C),!.
+only_color_data0(C,C):- is_unreal_color(C),!.
+only_color_data0(C,C):- var(C),!.
+only_color_data0(NC,NC):- \+ compound(NC),!,fail.
+only_color_data0(C-P,C):- var(C),is_nc_point(P),!.
+only_color_data0(OC,C):- sub_term(C,OC),is_colorish(C),!.
 %only_color_data(_-O,C):- only_color_data(O,C).
 
 only_point_data(NC,NC):- \+ compound(NC),!.

@@ -579,6 +579,10 @@ th {
     /*border-spacing: 1px;*/
 }
 
+.rows_distinct th {
+  border: 2px solid blue;
+}
+
 .grid-to-grid th {
   border: 1px solid black;
   border-radius: 10px;

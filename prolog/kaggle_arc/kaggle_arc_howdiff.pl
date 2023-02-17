@@ -1035,7 +1035,7 @@ o4|         x
 */
 
 %  
-into_th(ColOrRow,Nth,Obj,TH):- obj_to_oid(Obj,OID),into_image(Obj,S),sformat(TH,'<th id="th_~w" onclick="top.sortTable~ws(this,~w);" class="th-sm selectable" style="max-width: 100; max-height: 100">~w</th>',[OID,ColOrRow,Nth,S]).
+into_th(ColOrRow,Nth,Obj,TH):- obj_to_oid(Obj,OID),into_gui_item(Obj,S),sformat(TH,'<th id="th_~w" onclick="top.sortTable~ws(this,~w);" class="th-sm selectable" style="max-width: 100; max-height: 100">~w</th>',[OID,ColOrRow,Nth,S]).
 
 write_o_i_data(DIR,O,I):- 
  must_det_ll((
@@ -1051,7 +1051,7 @@ write_data_between(_DIR,I,O):- I==O,  !,
   Title = I,
   write_ta(Title), 
   write(' onclick="top.showDesc(this);">'),  write(0),
-  print_html_image(I),!.
+  print_gui_item(I),!.
   
 write_data_between(DIR,I,O):- 
  must_det_ll((
@@ -1062,7 +1062,7 @@ write_data_between(DIR,I,O):-
   obj_to_oid(O,OID2),
   assert_if_new(relation_between(DIR,OID1,OID2,Val)),
   write(Val),
-  print_html_image(I))),!.
+  print_gui_item(I))),!.
   %nop(add_tool_tips(ID,Title)))),!.
 
 relation_value(II,OO,Val,RelsC,MissedRel):- 

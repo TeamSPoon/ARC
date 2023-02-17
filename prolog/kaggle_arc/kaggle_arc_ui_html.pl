@@ -722,8 +722,8 @@ print_tb_card(Top,Bottem):-
      ignore((nb_current(grid_footer,S),S\==[],write(S))))).
 /*
 print_tb_card(Top,Bottem):-
-  with_tag_class(div,"column, wrapper",
-   with_tag_class(div,"card, first_div",
+  with_tag_class(div,"column , wrapper",
+   with_tag_class(div,"card , first_div",
      (call(Top), with_tag_class(div,"container, second_div",print_wrappable(Bottem))))).
 */
 
@@ -748,17 +748,20 @@ cant_be_cell(T):- is_list(T),!.
 cant_be_cell(T):- atom(T), !, \+ is_color(T).
 
 
-print_table(Row):- \+ is_list(Row),!,print_cell(Row).
-print_table(Grid):- is_real_grid(Grid),!,print_grid(Grid),!.
-print_table(Rows):- Rows=[T],\+ is_list(T),!,print_cell(T).
-%print_table(Rows):- Rows=[[T]],!,print_cell([[T]]).
-print_table(table(Rows)):- make_rows_same_length(Rows,LLRows),!, print_table_rows(LLRows).
-%print_table(Grid):- is_grid(Grid),!,print_cell(Grid).
-print_table(Rows):- make_rows_same_length(Rows,LLRows),!, print_table_rows(LLRows).
+%print_table(Row):- \+ is_list(Row),!,print_cell(Row).
+%print_table(table(Rows)):- !, make_rows_same_length(Rows,LLRows),!, print_table_rows(LLRows).
+%print_table(Grid):- is_real_grid(Grid),!,print_grid(Grid),!.
+% % print_table(Rows):- Rows=[T],\+ is_list(T),!,print_cell(T).
+% % print_table(Rows):- Rows=[[T]],!,print_cell([[T]]).
+% % print_table(Grid):- is_grid(Grid),!,print_cell(Grid).
+%print_table(Rows):- make_rows_same_length(Rows,LLRows),!, print_table_rows(LLRows).
+print_table(Rows):- print_table_rows(Rows).
 print_table_rows(Row):- \+ is_list(Row),!,print_table_rows([Row]).
 print_table_rows(Rows):- with_tag_class('table','tblo', maplist(html_table_row,Rows)).
-html_table_row(Row):- \+ is_list(Row),!,html_table_row([Row]).
+
+%html_table_row(Row):- \+ is_list(Row),!,html_table_row([Row]).
 html_table_row(Cols):- with_tag('tr',maplist(html_table_col,Cols)).
+
 html_table_col(td(H)):-with_tag('td',html_table_cell(H)).
 html_table_col(th(H)):-with_tag('th',html_table_cell(H)).
 html_table_col(H):- with_tag('td',html_table_cell(H)).
@@ -769,7 +772,7 @@ print_cell(call(Grid)):- !, ignore(call(Grid)).
 print_cell(Grid):- is_real_grid(Grid),!,print_grid(Grid).
 print_cell([V]):- !,print_cell(V).
 print_cell([]):- !,write_nbsp.
-print_cell(V):- is_list(V),findall([E],member(E,V),L),!,print_table(L).
+%print_cell(V):- is_list(V),findall([E],member(E,V),L),!,print_table(L).
 print_cell(H):- print_card_n('',H).
 
 make_rows_same_length(ListOfLists,ListOfRows):-
@@ -778,7 +781,7 @@ make_rows_same_length(ListOfLists,ListOfRows):-
   maplist(slack_rows(Len),ListOfLists,ListOfRows).
 
 slack_rows(Len,List,Row):-length(Row,Len),slack_into_rows(List,Row).
-blank_stuff(Col):- ignore(Col="").
+blank_stuff(Col):- ignore(Col="&nbsp;").
 slack_into_rows(List,Row):- append(List,Stf,Row),!,maplist(blank_stuff,Stf).
 slack_into_rows(List,Row):- append(Row,_DropStf,List),!.
 
@@ -956,14 +959,19 @@ print_grid_http_bound(BGC,SH,SV,EH,EV,Grid):-
   write('</table>'),
 
   ignore((cvtToIMG,
-     ((grid_to_image_oid(Grid,ID),atom(ID))->prev_intoNamedImg(ID); cvtToIMG(TaskIDSubTask)))).
+     ((grid_to_image_oid(Grid,ID),contains_data(ID))->prev_intoNamedImg(ID); cvtToIMG(TaskIDSubTask)))).
 
+cvtToIMG:- false.
 cvtToIMG(TaskIDSubTask):-
-  run_script('cvtToIMG(`~w`);',[TaskIDSubTask]),!.
+  if_t(contains_data(TaskIDSubTask),
+    run_script('cvtToIMG(`~w`);',[TaskIDSubTask])),!.
 
 prev_intoNamedImg(OID):-
- asserta(did_prev_intoNamedImg(OID)),
- run_script_now(' top.intoNamedImg(true,true,prev,`~w`); ',[OID]).
+ if_t(contains_data(OID),
+  (asserta(did_prev_intoNamedImg(OID)),
+   run_script_now(' top.intoNamedImg(true,true,prev,`~w`); ',[OID]))).
+
+contains_data(OID):- atomic(OID),sformat(S,'~w',[OID]),atom_length(S,Len),Len>=4.
 
 run_script(Fmt,Args):-
  gensym(script_id_,ScriptID),
@@ -972,7 +980,7 @@ run_script(Fmt,Args):-
  var prev = me.previousElementSibling;
  setTimeout(function(){ 
  ~@ 
- prev = me.previousElementSibling; alreadyRan(me,prev);}, 3000); 
+ prev = me.previousElementSibling; alreadyRan(me,prev);}, 30000); 
 </script>',[ScriptID,format(Fmt,Args)]).
 
 run_script_now(Fmt,Args):-
@@ -984,29 +992,38 @@ run_script_now(Fmt,Args):-
  prev = me.previousElementSibling; alreadyRan(me,prev); 
 </script>',[ScriptID,format(Fmt,Args)]).
 
-into_image(I,S):- wots(S,print_html_image(I)).
 
 :- dynamic(page_has_grid_out/2).
 :- retractall(page_has_grid_out(_,_)).
 
-draw_html_image(Obj):-
-  global_grid(Obj,OID,Grid), numbervars(Grid,666,_,[attvars(bind),singletons(true)]), assert_grid_oid(Grid,OID),
-  locally(nb_setval(grid_title,OID),print_grid(OID,Grid)),!.
+
+
+into_gui_item(I,S):- wots(S,print_gui_item(I)).
 
 current_output_page(Page):- current_output(Page).
-print_html_image(Obj):- ansi_main,!,draw_html_image(Obj),!.
-print_html_image(Obj):- 
-  obj_to_oid(Obj,OID),current_output_page(Page),print_html_image(Page,OID,Obj).
+print_gui_item(Obj):- ansi_main,!,draw_gui_item(Obj),!.
+print_gui_item(Obj):- obj_to_oid(Obj,OID),current_output_page(Page),print_gui_item(Page,OID,Obj).
 
-print_html_image(Page,OID,_Obj):- page_has_grid_out(Page,OID),!,  
+print_gui_item(Page,OID,_Obj):- page_has_grid_out(Page,OID),!,  
   with_output_to(Page,((
   format('<img src="https://via.placeholder.com/100" class="placeholder" name="~w"/>',[OID]),
   run_script('prev.setAttribute("src",top.milledImages["~w"]);',[OID])))).
- 
-print_html_image(_Page,_OID,Obj):- draw_html_image(Obj),!.
-print_html_image(Page,OID,Obj):- assert(page_has_grid_out(Page,OID)),
-  with_output_to(Page,((draw_html_image(Obj), prev_intoNamedImg(OID)))).
-  %print_html_image(Obj).
+print_gui_item(_Page,_OID,Obj):- draw_gui_item(Obj),!.
+print_gui_item(Page,OID,Obj):- assert(page_has_grid_out(Page,OID)),
+  with_output_to(Page,((draw_gui_item(Obj), prev_intoNamedImg(OID)))).
+  %print_gui_item(Obj).
+
+draw_gui_item(Obj):- is_object(Obj),!,
+  ignore(loc2D(Obj,H,V)),
+  obj_to_oid(Obj,OID),
+  object_glyph(Obj,O),
+  global_grid(Obj,Grid),!,
+  with_tag_ats(div,[name(OID),title(Obj),class(selectable)],
+    (print_grid(Grid),nl_if_needed,format('~w (~w,~w)',[O,H,V]))).
+draw_gui_item(Obj):- is_gridoid(Obj),!,print_grid(Obj).
+draw_gui_item(Obj):-
+  global_grid(Obj,OID,Grid), numbervars(Grid,666,_,[attvars(bind),singletons(true)]), assert_grid_oid(Grid,OID),
+  locally(nb_setval(grid_title,OID),print_grid(OID,Grid)),!.
 
 
 nb_take_content(_Var,Footer):- nonvar(Footer),has_content(Footer),!.
@@ -1060,7 +1077,6 @@ print_grid_http_bound(ID,BGC,SH,SV,EH,EV,Grid):-
 
 into_title_str_attr(CG,Str):- into_title_str(CG,A), into_attribute(A,Str),!.
 
-cvtToIMG:- true.
 
 into_html_color(Color,'#333'):- plain_var(Color),!.
 into_html_color(Color,'#060'):- var(Color),!.

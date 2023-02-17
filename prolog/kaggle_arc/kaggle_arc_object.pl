@@ -1333,12 +1333,17 @@ combine_pen([_-L|LL],C,Reset,XX):- nonvar(L),!,combine_pen([L|LL],C,Reset,XX).
 combine_pen([P1|L],C,Reset,CP1XX):- \+ is_list(C), is_color(C),!,[C-P1|XX]=CP1XX, 
   combine_pen(L,C,Reset,XX).
 
+combine_pen(L,[cc(C,N)],[cc(C,N)],XX):- add_color(L,C,XX),!.
+
 combine_pen(L,[cc(C,N)|PenColors],Reset,XX):- number(N), make_list(C,N,List),append(List,PenColors,ListPenColors),
   combine_pen(L,ListPenColors,Reset,XX).
 
 combine_pen([P1|L],[C|PenColors],Reset,[C-P1|XX]):- is_color(C),!,
   combine_pen(L,PenColors,Reset,XX).
-  
+
+add_color([],_,[]):-!.
+add_color([C1-P|L],C,[C1-P|XX]):- !, add_color(L,C,XX).
+add_color([P|L],C,[C-P|XX]):- !, add_color(L,C,XX).
 
 colorlesspoints(I,X):- is_object(I),!, indv_props_list(I,L),(member(colorlesspoints(X),L)->true; (member(iz(sid(ShapeID)),L),is_shape_id_for(X,ShapeID))).
 colorlesspoints(G,X):- is_group(G),!,mapgroup(colorlesspoints,G,Points),append_sets(Points,X).

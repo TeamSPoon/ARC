@@ -186,6 +186,10 @@ cauh(_Self,_Atts,Val):- \+ is_color(Val),!, fail.
 cauh(_,_,_).
 
 ci:attr_unify_hook(Atts,Val):- (arg(1,Atts,Self)-> cauh(Self,Atts,Val) ; true).
+%ci:project_attributes(QueryVars, ResidualVars):-
+ci:attribute_goals(Var) --> {get_attr(Var,ci,bg(_))},!,[cbg(Var)],!.
+ci:attribute_goals(Var) --> {cant_be_color(Var,Color)},!,[cant_be_color(Var,Color)],!.
+% ci:attr_portray_hook(Var)
 
 cant_be_color(Y):- get_attr(Y,dif,_),!.
 cant_be_color(Y):- get_attr(Y,cc,_),!.
@@ -534,10 +538,10 @@ vm_grid(VM,VM.grid).
 vm_obj(VM,O):- member(O,VM.objs).
 
 :- export(is_grid/1).
-is_grid(G):- nonvar(G), \+ \+  quietly(fast_is_grid(G)).
+is_grid(G):- \+ \+  quietly(fast_is_grid(G)).
 %is_grid(G):- nonvar(G), \+ \+  quietly(is_grid_of(is_grid_cell,G)).
 
-fast_is_grid(List):- maplist(fast_is_row(_LenMinus1),List).
+fast_is_grid(List):- nonvar(List), List\==[], maplist(fast_is_row(_LenMinus1),List).
 fast_is_row(LenMinus1,[C|List]):- is_list(List), is_grid_cell(C), !, length(List,LenMinus1),!.
 
 is_grid_of(P1,[[C|H]|R]):- 
@@ -553,6 +557,7 @@ is_grid_cell(C):- var(C),!.
 is_grid_cell(A):- \+ compound(A),!,is_grid_cell_e(A).
 is_grid_cell(att(_,_)):-!.
 is_grid_cell('cell'(_)):-!.
+is_grid_cell('{}'(_)):-!.
 is_grid_cell('$VAR'(_)):-!.
 is_grid_cell((A-B)):- !,(is_grid_cell_e(B);is_grid_cell_e(A)).
 

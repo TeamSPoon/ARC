@@ -408,7 +408,7 @@ ptcol(P):- pp(P).
 
 %ptcol_html(P):- ptcol_html_0(P).
 ptcol_html(P):- ptcol_html_scrollable_0(P).
-ptcol_html_scrollable(P):- with_tag_class(div,scrollable,ptcol_html_scrollable_0(P)).
+ptcol_html_scrollable(P):- with_tag_ats(div,scrollable,ptcol_html_scrollable_0(P)).
 
 
 ptcol_html_0(P):- with_tag(pre,ptcol_html_wo_pre(P)).
@@ -587,12 +587,57 @@ maybe_term_goals(Term,TermC,Goals):-
   numbervars(PlainVarsC,10,Ten1,[singletons(true)]),
   numbervars(AttvarsC+Goals,Ten1,_Ten,[attvar(bind),singletons(false)]).
 
+maybe_replace_vars([],SGoals,TermC,SGoals,TermC):-!.
+maybe_replace_vars([V|VarsC],SGoals,TermC,RSGoals,RTermC):-
+   my_partition(sub_var(V),SGoals,Withvar,WithoutVar),
+   Withvar=[OneGoal], findall(_,sub_var(V,TermC),LL),LL=[_],!,
+   subst([WithoutVar,TermC],V,{OneGoal},[SGoalsM,TermCM]),
+   maybe_replace_vars(VarsC,SGoalsM,TermCM,RSGoals,RTermC).
+maybe_replace_vars([_|VarsC],SGoals,TermC,RSGoals,RTermC):-
+  maybe_replace_vars(VarsC,SGoals,TermC,RSGoals,RTermC).
+ 
+
+writeg0(X):- is_ftVar(X),!,write_nbsp,write_nbsp,print(X).
 writeg0(Term):- 
-  maybe_term_goals(Term,TermC,Goals),
-  writeg0(TermC), call_w_pad(2,writeg0(Goals)),!.
+  term_attvars(Term,Vars), Vars\==[],
+  copy_term(Term+Vars,TermC+VarsC,Goals),
+  term_singletons(TermC,Singles),
+  numbervars(TermC+Goals,0,_Ten1,[singletons(false)]),
+  sort_goals(Goals,VarsC,SGoals),
+  maybe_replace_vars(VarsC,SGoals,TermC,RSGoals,RTermC),
+  include(not_sub_var(RSGoals),Singles,KSingles),
+  length(KSingles,SL),length(VSingles,SL),maplist(=('_'),VSingles),
+  subst_2L(KSingles,VSingles,[RTermC,RSGoals],[SRTermC,SRSGoals]),
+  subst(SRTermC,{cbg('_')},wbg,SSRTermC),
+  writeg0(SSRTermC),
+  if_t(SRSGoals\==[],(nl_if_needed, write(' goals='), call_w_pad(3,az_ansi(print_tree_no_nl(SRSGoals))))),!.
+writeg0(Term):- fail,
+  term_attvars(Term,Vars),
+  maybe_term_goals(Term+Vars,TermC+VarsC,Goals),
+  writeg0(TermC),
+  sort_goals(Goals,VarsC,SGoals),
+  call_w_pad(2,p_p_t(goals=SGoals)),!.
+writeg0(N=V):- is_gridoid(V),!,print_grid(N,V),writeln(' = '),call_w_pad(2,maplist(writeg1,V)).
+writeg0(V):- is_gridoid(V),!,print_grid(V),call_w_pad(2,maplist(writeg1,V)).
 writeg0(N=V):- nl_if_needed,nonvar(N), pp_no_nl(N),writeln(' = '), !, call_w_pad(2,writeg0(V)). 
+writeg0(_):- write_nbsp, fail.
+writeg0(V):- is_list(V),nl_if_needed,write('['),maplist(writeg0,V),write(']').
+writeg0(V):- pp_no_nl(V).
+
+writeg1(V):- is_list(V),nl_if_needed,write('['),!,maplist(writeg1,V),write(']').
+writeg1(_):- write_nbsp,write('\t'),fail.
+writeg1(X):- is_ftVar(X),!,write_nbsp,write_nbsp,print(X).
+writeg1(V):- pp_no_nl(V).
+
+arg1_near(Vars,Goal,Nth):- arg(1,Goal,PreSort),nth1(Nth,Vars,E),E==PreSort,!.
+arg1_near(_VarsC,Goal,PreSort):- arg(1,Goal,PreSort),!.
+arg1_near(_VarsC,Goal,Goal).
+
+sort_goals(Goals,VarsC,SGoals):- predsort(sort_on(arg1_near(VarsC)),Goals,SGoals).
+
+/*
+
 writeg0(Obj):- is_object(Obj),pp(Obj),!.
-writeg0(V):- is_gridoid(V),!,print_grid(V),call_w_pad(2,(maplist(writeg1,V))).
 writeg0(O):- writeg00(O).
 
 writeg00(Term):-
@@ -602,23 +647,27 @@ writeg00(N=V):- nl_if_needed,nonvar(N), pp_no_nl(N),writeln(' = '), !, call_w_pa
 writeg00(O):- compound(O),compound_name_arguments(O,F,[A]),!,call_w_pad(2,((writeq(F),write('('),writeg3(A),write(')')))).
 writeg00(S):- term_contains_ansi(S), !, write_keeping_ansi_mb(S).
 writeg00([H|T]):- compound(H),H=(_=_), maplist(writeg0,[H|T]).
-writeg00([H|T]):- is_list(T),call_w_pad(2,((write('['),writeg2(H),maplist(writeg0,T),write(']')))).
+writeg00([H|T]):- is_list(T),call_w_pad(2,((nl,write('['),writeg2(H),maplist(writeg0,T),write(']'),nl))).
 %writeg0(Term):- \+ ground(Term),!, \+ \+ (numbervars(Term,99799,_,[singletons(true)]),
 %   subst(Term,'$VAR'('_'),'$VAR'('_____'),TermO), writeg0(TermO)).
 %writeg0(V):- \+ is_list(V),!,writeq(V),nl_now.
 writeg00(V):- \+ is_list(V),!,pp(V).
 writeg00(X):- call_w_pad(2,pp(X)).
 
+writeg1(N=V):- is_gridoid(V),!,print_grid(N,V),call_w_pad(2,(maplist(writeg1,V))).
 writeg1(X):- nl_if_needed,writeg2(X),!,write_nbsp,!.
 writeg2(S):- term_contains_ansi(S), !, write_keeping_ansi_mb(S).
-writeg2(X):- write_term(X,[quoted(true),quote_non_ascii(true),portrayed(false),nl_now(false),numbervars(false)]),!.
+writeg2(X):- is_ftVar(X),!,print(X).
+writeg2(X):- write_term(X,[quoted(true),quote_non_ascii(true),portrayed(false),nl(false),numbervars(true)]),!.
+%writeg2(X):- write_term(X,[quoted(true),quote_non_ascii(true),portrayed(false),nl(false),numbervars(false)]),!.
 %writeg1(X):- nl_if_needed,writeg(X).
 writeg2(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 writeg2(X):- writeq(X),!.
 writeg3(X):- is_list(X),X\==[],X=[_,_|_],!,writeg(X).
 writeg3(X):- writeg2(X).
+*/
 
-
+% Nov 9th, 1989
 /*
 pp_hook_g1(T):- 
  nb_current('$portraying',Was)
@@ -705,6 +754,8 @@ fix_br_nls(S,O):- replace_in_string(
  ['<br/>\n'='<br/>','<br>\n'='<br>','</p>\n'='</p>','<p/>\n'='<p/>','<p>\n'='<p>',
   '\n<br>'='<br>','\n<br/>'='<br/>','\n</p>'='</p>','\n<p/>'='<p/>','\n<p>'='<p>'],S,O).
 
+remove_huge_spaces(S,O):- fix_br_nls(S,SS),!,p_to_br(SS,O),!.
+/*
 remove_huge_spaces(S,O):- fix_br_nls(S,S0),
   replace_in_string(['          '='     ',
     '                                                                          '='     ',
@@ -715,7 +766,7 @@ remove_huge_spaces(S,O):- fix_br_nls(S,S0),
     '                                                                          '='     ',
     '\t'='  ',
     '                         '='     '],S0,SS),p_to_br(SS,O).
-
+*/
 
 
 wqs_l(H):- \+ is_list(H),!, wqs(H).
@@ -971,8 +1022,11 @@ g_display2(I,print_grid(H,V,[I])):- sub_term(E,I),compound(E),E=globalpoints(_O)
 g_display2(I,I):- !. 
 
 object_grid_g_display2(I,H,V,G,Desc):- (H=<3;V=<3), !, global_grid(I,GPs),object_glyph(I,Glyph),mapgrid(add_g_texture(Glyph),GPs,G),obj_to_oid(I,Desc).
-object_grid_g_display2(I,H,V,G,Desc):- object_grid(I,GPs),!,object_glyph(I,Glyph),mapgrid(add_g_texture(Glyph),GPs,G),  
-  obj_to_oid(I,GOID), loc2D(I,X,Y), Desc = obj(at(X,Y),viz(H,V),GOID).
+
+object_grid_g_display2(I,H,V,G,Desc):- object_grid(I,GPs),!, object_glyph(I,Glyph),mapgrid(add_g_texture(Glyph),GPs,G),  
+  obj_to_oid(I,GOID), loc2D(I,X,Y), 
+  nop((Desc = obj(at(X,Y),viz(H,V),GOID))),
+  Desc = GOID.
 
 add_g_texture(Glyph,G,Glyph-G):- is_real_color(G),!.
 add_g_texture(_,G,G).
@@ -1467,8 +1521,10 @@ into_s(Obj,S):- wots_hs(S,pp(Obj)),!.
 
 %call_w_pad(N,Goal):- wants_html,!,format('<span style="margin-left:~w0%;">',[N]),call_cleanup(call(Goal),write('</span>')).
 call_w_pad(_N,Goal):- wants_html,!,format('<span style="margin-left:10px;">',[]),call_cleanup(call(Goal),write('</span>')).
+
+call_w_pad(Pad,Goal):- wots_hs(S,Goal), print_w_pad(Pad,S).
+
 call_w_pad(N,Goal):- nl_if_needed,wots_hs(S,dash_chars(N,' ')),!,pre_pend_each_line(S,Goal).
-%call_w_pad(Pad,Goal):- wots_hs(S,Goal), print_w_pad(Pad,S).
 maybe_print_pre_pended(Out,Pre,S):- atomics_to_string(L,'\n',S), maybe_print_pre_pended_L(Out,Pre,L).
 maybe_print_pre_pended_L(Out,_,[L]):- write(Out,L),!,flush_output(Out).
 maybe_print_pre_pended_L(Out,Pre,[H|L]):- write(Out,H),nl(Out),!,write(Out,Pre),maybe_print_pre_pended_L(Out,Pre,L).
@@ -2015,13 +2071,14 @@ color_name0(C,W):- is_color(C),!,W=C.
 color_int(C,C):- var(C),!.
 color_int(C-_,W):-!,color_int(C,W).
 color_int(C,W):- integer(C),!,W=C.
+color_int(C,0):- grid_zero(C),!.
 color_int(C,W):- atom(C),named_colors(L),nth0(W,L,C),!.
 color_int(C,C).
 
 %grid_zero(zero).
 grid_zero(black).
-z_or_b(zero,black).
-z_or_b(black,zero):- may_use_zero.
+z_or_b(zero,black):- may_use_zero.
+z_or_b(black,zero).
 
 may_use_zero:- false.
 
@@ -2090,6 +2147,7 @@ int2glyph0(GN,Glyph):- GN > 255, GN2 is GN div 2 + (GN rem 2), int2glyph0(GN2,Gl
 %print_gw1(C):- plain_var(C), write('  '),!.
 
 print_gw1(N):- print_gw1(color_print_ele,N),!.
+print_gw1(N):- print(N),!.
 
 print_gw1(P2,N):-  
  wots_hs(S,(((get_bgc(BG),is_color(BG), once(( ( \+ is_black(BG))-> call(P2,BG,'.');write_nbsp);write(',')));write_nbsp),!,
@@ -2123,7 +2181,9 @@ print_g1(CG):- print_g1(color_print_ele,CG),!.
 print_g1(P2,CG):- arc_html,with_toplevel_pp(ansi,(\+ arc_html, print_g1(P2,CG))),!.
 print_g1(P2,C):- P2==color_print_ele, C==black,color_print_ele(black,'.').
 print_g1(P2,C):- P2==color_print_ele, C=='$VAR'('_'),underline_print(color_print_ele(black,'.')).
+print_g1(P2,C):- P2==color_print_ele, compound(C),C = '$VAR'(N),number(N),N=<24,underline_print(print(C)).
 print_g1(P2,C):- P2==color_print_ele, compound(C),C = '$VAR'(N),number(N),int2glyph(N,S),underline_print(write(S)),!.
+print_g1(P2,C):- P2==color_print_ele, compound(C), C='$VAR'(_),underline_print(print(C)),!.
 print_g1(P2,C):- C == ((+) - wbg),!,call(P2,wbg,(+)).
 print_g1(P2,C):- multivalued_peek_color(C,V),C\==V,!,print_g1(P2,V).
 print_g1(P2,C):- plain_var(C), write_nbsp,!, nop(( nobject_glyph(C,G),underline_print(print_g1(P2,G-G)))),!.
@@ -2188,7 +2248,8 @@ into_color_glyph(0,Black,BGD):- get_bg_label(BGL),!, into_color_glyph(BGL,Black,
 into_color_glyph(N,FGL,FGD):- get_fg_label(FGL),FGL==N, fg_dot(FGD),!.
 
 i_glyph(N,Glyph):- notrace((i_glyph0(N,Glyph),atom(Glyph))),!.
-i_glyph(N,Glyph):- atrace,i_glyph0(N,Glyph),atom(Glyph),!.
+i_glyph(_,Glyph):- bg_dot(Code), name_safe(Glyph,[Code]),!.
+%i_glyph(N,Glyph):- i_glyph0(N,Glyph),!.%:- atrace,i_glyph0(N,Glyph),atom(Glyph),!.
 
 name_safe(Glyph,Codes):- catch(name(Glyph,Codes),_,fail).
 i_glyph0(NIL,'?'):- NIL==nil,!.

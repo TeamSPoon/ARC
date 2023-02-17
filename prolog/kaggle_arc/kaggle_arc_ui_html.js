@@ -1264,21 +1264,24 @@ function intoNamedImg(useCache, replace, nodespec, nodeid, h, w) {
         return replaceNode(replace, node, nodeid, waz, h, w);
     }
     if (isBlank(waz) || useCache == false) {
-        htmlToImage.
-            //domtoimage.
-        toJpeg(node, {
+		return htmlToImage.
+            //domtoimage.       
+		toJpeg(node, {
             quality: 1.0
         }).then(function(dataUrl) {
-            if (!isBlank(nodeid)) { window.top.milledImages[nodeid] = dataUrl; }
+			waz = dataUrl;
+            if(false) if (!isBlank(nodeid) && !isBlank(dataUrl)) { window.top.milledImages[nodeid] = dataUrl; }
             return replaceNode(replace, node, nodeid, dataUrl, h, w);
         }).catch((error) => {
-            console.error(`htmlToJPEG(${pp(top.milledImages.count)},
+            console.error(`intoNamedImg(${pp(top.milledImages.count)},
                ${pp(top.milledImages)},
                ${pp(node)},${pp(nodeid)}`, error);
             //   debugger;
+			return null;
         });
     }
 }
+
 
 function replaceNode(replace, node, nodeid, dataUrl, h, w) {
     if (isBlank(dataUrl)) {
@@ -1303,6 +1306,7 @@ function replaceNode(replace, node, nodeid, dataUrl, h, w) {
         }
     }
     if (node != null) {
+		copyStylesInline(img,node);
         img.title = node.title;
         img.name = node.name;
         if (replace) img.id = nodeid || node.id;
@@ -1311,6 +1315,22 @@ function replaceNode(replace, node, nodeid, dataUrl, h, w) {
     }
     if (replace) img.id = nodeid;
     return img;
+}
+
+function copyStylesInline(destinationNode, sourceNode) {
+   var containerElements = ["svg","g"];
+   for (var cd = 0; cd < destinationNode.childNodes.length; cd++) {
+       var child = destinationNode.childNodes[cd];
+       if (containerElements.indexOf(child.tagName) != -1) {
+            copyStylesInline(child, sourceNode.childNodes[cd]);
+            continue;
+       }
+       var style = sourceNode.childNodes[cd].currentStyle || window.getComputedStyle(sourceNode.childNodes[cd]);
+       if (style == "undefined" || style == null) continue;
+       for (var st = 0; st < style.length; st++){
+            child.style.setProperty(style[st], style.getPropertyValue(style[st]));
+       }
+   }
 }
 
 function alreadyRan(currentScript,prev) {
@@ -1325,30 +1345,6 @@ function alreadyRan(currentScript,prev) {
     }
 }
 
-function htmlToJPEG(node, nodeid, useCache) {
-    var waz = window.top.milledImages[nodeid];
-    if (!isBlank(waz)) return waz;
-    if (isBlank(waz) || useCache == false) {
-        var ret = {};
-        ret.was = null;
-        htmlToImage.
-            //domtoimage.
-        toJpeg(node, {
-            quality: 1.0
-        }).then(function(dataUrl) {
-            if (!isBlank(nodeid)) { window.top.milledImages[nodeid] = dataUrl; }
-            waz = dataUrl;
-            ret.was = dataUrl;
-        }).catch((error) => {
-            console.error(`htmlToJPEG(${pp(top.milledImages.count)},
-               ${pp(top.milledImages)},
-               ${pp(node)},${pp(nodeid)}`, error);
-            //   debugger;
-        });
-        return ret.was;
-    }
-    return waz;
-}
 
 
 
@@ -1359,6 +1355,35 @@ function downloadImage(name, dataUrl) {
     link.click();
 }
 
+/*
+const waitForImage = imgElem => new Promise(resolve => imgElem.complete ? resolve() : imgElem.onload = imgElem.onerror = resolve);
+
+const svgToImgDownload = ext => {
+  if (!['png', 'jpg', 'webp'].includes(ext))
+    return;
+  const _svg = document.querySelector("#svg_container").querySelector('svg');
+  const xmlSerializer = new XMLSerializer();
+  let _svgStr = xmlSerializer.serializeToString(_svg);
+  const img = document.createElement('img');
+  img.src = 'data:image/svg+xml;base64,' + window.btoa(_svgStr);
+  waitForImage(img)
+    .then(_ => {
+      const canvas = document.createElement('canvas');
+      canvas.width = _svg.clientWidth;
+      canvas.height = _svg.clientHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0, _svg.clientWidth, _svg.clientHeight);
+      return canvas.toDataURL('image/' + (ext == 'jpg' ? 'jpeg' : ext), 1.0);
+    })
+    .then(dataURL => {
+      console.log(dataURL);
+      document.querySelector("#img_download_btn").innerHTML = `<a href="${dataURL}" download="img.${ext}">Download</a>`;
+    })
+    .catch(console.error);
+};
+
+document.querySelector('#map2Png').addEventListener('click', _ => svgToImgDownload('png'));
+document.querySelector('#map2Jpg').addEventListener('click', _ => svgToImgDownload('jpg'));
+document.querySelector('#map2Webp').addEventListener('click', _ => svgToImgDownload('webp'));*/
 
 /* window.addEventListener("click", (e) => {
 	   e = e || window.event;

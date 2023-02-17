@@ -16,17 +16,17 @@ o1 to o1
 */
 :- encoding(iso_latin_1).
 :- include(kaggle_arc_header).
-:- thread_local(t_l:objs_others/2).
+:- thread_local(t_l:objs_others/4).
 show_interesting_props(Named,InC,OutC):-
  extend_obj_proplist(InC,ObjsI),
  extend_obj_proplist(OutC,ObjsO),
   banner_lines(cyan,4),
   w_section('INPUT PROPS',
-    locally(t_l:objs_others(ObjsI,ObjsO),
+    locally(t_l:objs_others(inputs,ObjsI,ObjsO,outputs),
       show_interesting_named_props(input(Named),ObjsI))),
   banner_lines(white,2),
   w_section('OUTPUT PROPS',
-    locally(t_l:objs_others(ObjsO,ObjsI),
+    locally(t_l:objs_others(outputs,ObjsO,ObjsI,inputs),
       show_interesting_named_props(output(Named),ObjsO))),
   banner_lines(cyan,4).
 
@@ -86,6 +86,7 @@ numbered_vars(A,B):- copy_term(A,B),numbervars(B,0,_,[attvars(skip)]).
 skip_ku(pg(_,_,_,_)).
 %skip_ku(link(_,_)).
 skip_ku(iz(media(_))).
+skip_ku(giz(_)).
 skip_ku(changes(_)).
 skip_ku(o(_,_,_,_)).
 skip_ku(cc(C,_)):- is_color(C).
@@ -177,35 +178,55 @@ print_prop_groups(Objs):-
   maplist(indv_props_list,Objs,PropLists),
   flatten(PropLists,List),list_to_set(List,Set),
   include(not_skip_ku,Set,ESet),
-  maplist(has_props(Objs),ESet,GrpList),
+  maplist(has_props_set(Objs),ESet,GrpList),
   predsort(sort_on(length),GrpList,GrpSetR),reverse(GrpSetR,GrpSet),
-  maplist(print_prop_groups(Objs),GrpSet),
-  forall(select(O1,Objs,Rest),print_prop_groups(Rest,O1,[])).
+  with_tag_ats(table,class("tblo rows_distinct"),
+   (html_table_row([th(props),td('&nbsp;'),th(objects),td('&nbsp')]),
+    maplist(print_prop_groups(Objs),GrpSet),
+    forall(select(O1,Objs,Rest),print_prop_groups(Rest,O1,[])))).
 
-has_props(Objs,Prop,Set):- include(has_prop(Prop),Objs,Set).
+has_props_set(Objs,Prop,Set):- include(has_prop(Prop),Objs,Set).
 print_prop_groups(_,[]):-!.
 print_prop_groups(_,[_]):-!.
 print_prop_groups(All,Group):-
-  subtract(All,Group,Except),
+  include(not_in(Group),All,Except),
   [O1|Rest]=Group,
   print_prop_groups(Except,O1,Rest).
 
 print_prop_groups(Except,O1,Rest):-
+  [O1|Rest]=Group,
   indv_props_list(O1,PropsIKU), include(not_skip_ku,PropsIKU,Props),
+
   findall(Prop,(member(Prop,Props), \+ any_have_prop(Except,Prop), 
                                forall(member(O,Rest),has_prop(Prop,O))),UniqueToGroup),
-  t_l:objs_others(_These,Those),
-  findall(O2,(member(O2,Those), forall(member(Prop,UniqueToGroup),has_prop(Prop,O2))),OtherObjs),  
-  [O1|Rest]=Group,
   asserta_if_new(prop_groups(UniqueToGroup,Group,Except)),
-  maplist(global_grid,Group,Grids),
-  maplist(global_grid,OtherObjs,OGrids),
-  print_prop_grids_list(UniqueToGroup,Grids,OGrids).
+
+  t_l:objs_others(_,_These,Those,_),
+  findall(O2,(member(O2,Those), forall(member(UProp,UniqueToGroup),has_prop(UProp,O2))),OtherObjs),
+
+  maplist(into_gui_item,Group,Grids),
+  maplist(into_gui_item,OtherObjs,OGrids),
+  %OGrids=[],
+  print_prop_grids_list(UniqueToGroup,Grids,OGrids),!.
+
 
 print_prop_grids_list(UniqueToGroup,Grids,OGrids):- 
- print_table([[with_tag_style(pre,"width: 450px",write_tall(UniqueToGroup)),
-  write_scrollable(print_table([Grids,OGrids]))]]),!.
+ html_table_row([
+  th(with_tag_style(pre,"width: 225px; font-size: 14px",write_tall(UniqueToGroup))), 
+  td('&nbsp;'),
+  td(write_scrollable(print_table_rows_2([Grids,OGrids ]))),
+  td('&nbsp;')]),!.
 %print_prop_grids_list(UniqueToGroup,Grids,OGrids):- print_table([[with_tag(pre,write_tall(UniqueToGroup)),print_table([[print_ss(Grids)],[print_ss(OGrids)]])]]).
+
+%print_table_rows_2([RowA,RowB]):- !, print_side_by_side(RowA),!,print_side_by_side(RowB),!.
+print_table_rows_2([RowA,[]]):- 
+  t_l:objs_others(These,_,_,_),
+  with_tag_style('table','border: 2px solid blue;', maplist(html_table_row,[[th(These)|RowA]])).
+print_table_rows_2([RowA,RowB]):- 
+  make_rows_same_length([RowA,[],RowB],[Row1,Spaces,Row2]),
+  Spacer = [td(" ")|Spaces],
+  t_l:objs_others(These,_,_,Those),
+  with_tag_style('table','border: 2px solid blue;', maplist(html_table_row,[Spacer,Spacer,[th(These)|Row1],Spacer,[th(Those)|Row2],Spacer,Spacer])).
 
 write_scrollable(Goal):- with_tag_class(div,scrollable,Goal).
 
@@ -252,7 +273,7 @@ group_vm_priors(VM):-
 % =====================================================================
 is_fti_step(really_group_vm_priors).
 % =====================================================================
-%really_group_vm_priors(_VM):-!.
+really_group_vm_priors(_VM):-!.
 really_group_vm_priors(VM):-
  must_det_ll((
   ObjsG = VM.objs,
@@ -276,7 +297,9 @@ unique_fg_color_count_eq_1(Obj):- unique_fg_colors(Obj,II),II=1.
 group_prior_objs(Why,ObjsIn,WithPriors):- 
  relivant_divide(RelivantDivide),
  my_partition(RelivantDivide,ObjsIn,FG,BG),
- ((FG\==[],BG\==[])),!,
+ ((FG\==[],BG\==[])), 
+ fail,
+ !,
  print_ss([splitting_group(RelivantDivide)=FG,splitting_group(RelivantDivide)=BG]), 
  group_prior_objs(Why,FG,FGWithPriors),
  group_prior_objs(Why,BG,BGWithPriors),

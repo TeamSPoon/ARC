@@ -271,8 +271,8 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
   banner_lines(orange), %visible_order(InC,InCR),
  if_t( once(true; \+ nb_current(menu_key,'i')),
  w_section(show_individuated_learning,must_det_ll((
-   when_in_html(if_wants_output_for(guess_some_relations,guess_some_relations(InC,OutC))),
-   when_in_html(if_wants_output_for(sort_some_relations,sort_some_relations(InC,OutC))),
+   %when_in_html(if_wants_output_for(guess_some_relations,guess_some_relations(InC,OutC))),
+   %when_in_html(if_wants_output_for(sort_some_relations,sort_some_relations(InC,OutC))),
    if_wants_output_for(learn_group_mapping,(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
    if_wants_output_for(learn_group_mapping_of_tst, (sub_var(tst,ID1),learn_group_mapping(InCR,OutCR))), 
    if_wants_output_for(show_safe_assumed_mapped, show_safe_assumed_mapped),
@@ -1068,6 +1068,7 @@ count_adjacent_same_colored_points(O1,O2,HVCount,DiagCount):-
 hybrid_shape_from(Set,VM):-
   Grid = VM.grid,
   member(In,Set),
+  fail,
   maybe_ogs(ROHOV,In,Grid),
 
  %u_dmsg(maybe_ogs(R,OH,OV,In,Grid)),
@@ -2697,7 +2698,7 @@ glean_shape_lib_i(I,O,VM):-
  suggest_r1(R1),
 (grid_call(R1,R,BRect),
  writeg(BRect),
- nl,nl,writeq(?-all_ogs(R1,BRect,NewO,HintO)),writeln('.'),nl,
+ nl,nl,writeq(?-all_ogs(HintO,BRect,NewO)),writeln('.'),nl,
  all_ogs(R1,BRect,NewO,HintO),
  all_ogs(R1,BRect,I,HintI), 
  %(HintI\==[];HintO\==[]),
