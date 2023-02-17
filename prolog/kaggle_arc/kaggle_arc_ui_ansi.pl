@@ -610,16 +610,11 @@ writeg0(Term):-
   subst_2L(KSingles,VSingles,[RTermC,RSGoals],[SRTermC,SRSGoals]),
   subst(SRTermC,{cbg('_')},wbg,SSRTermC),
   writeg0(SSRTermC),
-  if_t(SRSGoals\==[],(nl_if_needed, write(' goals='), call_w_pad(3,az_ansi(print_tree_no_nl(SRSGoals))))),!.
-writeg0(Term):- fail,
-  term_attvars(Term,Vars),
-  maybe_term_goals(Term+Vars,TermC+VarsC,Goals),
-  writeg0(TermC),
-  sort_goals(Goals,VarsC,SGoals),
-  call_w_pad(2,p_p_t(goals=SGoals)),!.
-writeg0(N=V):- is_gridoid(V),!,print_grid(N,V),writeln(' = '),call_w_pad(2,maplist(writeg1,V)).
-writeg0(V):- is_gridoid(V),!,print_grid(V),call_w_pad(2,maplist(writeg1,V)).
-writeg0(N=V):- nl_if_needed,nonvar(N), pp_no_nl(N),writeln(' = '), !, call_w_pad(2,writeg0(V)). 
+  if_t(SRSGoals\==[],(nl_if_needed, write(' goals='), call_w_pad_prev(3,az_ansi(print_tree_no_nl(SRSGoals))))),!.
+
+writeg0(N=V):- is_gridoid(V),!,print_grid(N,V),writeln(' = '),call_w_pad_prev(2,maplist(writeg1,V)).
+writeg0(V):- is_gridoid(V),!,print_grid(V),call_w_pad_prev(2,maplist(writeg1,V)).
+writeg0(N=V):- nl_if_needed,nonvar(N), pp_no_nl(N),writeln(' = '), !, call_w_pad_prev(2,writeg0(V)). 
 writeg0(_):- write_nbsp, fail.
 writeg0(V):- is_list(V),nl_if_needed,write('['),maplist(writeg0,V),write(']').
 writeg0(V):- pp_no_nl(V).
@@ -1519,11 +1514,10 @@ print_with_pad(Goal):-(line_position(current_output,O);O=0),!,  O1 is O+1,wots(S
 into_s(Text,S):- notrace(catch(text_to_string(Text,S),_,fail)),!.
 into_s(Obj,S):- wots_hs(S,pp(Obj)),!.
 
+call_w_pad_prev(Pad,Goal):- wots_hs(S,Goal), print_w_pad(Pad,S).
+
 %call_w_pad(N,Goal):- wants_html,!,format('<span style="margin-left:~w0%;">',[N]),call_cleanup(call(Goal),write('</span>')).
 call_w_pad(_N,Goal):- wants_html,!,format('<span style="margin-left:10px;">',[]),call_cleanup(call(Goal),write('</span>')).
-
-call_w_pad(Pad,Goal):- wots_hs(S,Goal), print_w_pad(Pad,S).
-
 call_w_pad(N,Goal):- nl_if_needed,wots_hs(S,dash_chars(N,' ')),!,pre_pend_each_line(S,Goal).
 maybe_print_pre_pended(Out,Pre,S):- atomics_to_string(L,'\n',S), maybe_print_pre_pended_L(Out,Pre,L).
 maybe_print_pre_pended_L(Out,_,[L]):- write(Out,L),!,flush_output(Out).
