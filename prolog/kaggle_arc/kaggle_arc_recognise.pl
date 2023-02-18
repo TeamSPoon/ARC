@@ -43,6 +43,7 @@ test_ogs2a:- mmake,
   print_side_by_side(test_ogs2a,In,Out),
   show_ogs_ans(In,Out).
 
+:- thread_local(t_l:pss_trace/1).
 
 show_ogs_ans(In,Out):- all_ogs(Answers,In,Out),Answers\==[],!,pp(Answers).
 show_ogs_ans(In,Out):- 
@@ -158,7 +159,7 @@ idea_for(IOD-Call):- idea_for_data(IO-Call),expand_io(IO,IOD).
 idea_for_data(inp-trim_to_rect4).
 %idea_for_data(inp-fpad_grid(f)).
 %idea_for_data(out-fpad_grid(s)).
-idea_for_data(both-bg_to_not_fg).
+%idea_for_data(both-bg_to_not_fg).
 %idea_for_data(subst_all_fg_colors_with_vars(_,_)).
 %idea_for_data(both-unbind_bg).
 %idea_for_data(both-unbind_black).
@@ -179,15 +180,11 @@ def_ogs_prog(
   must(out-subst_color(black,zero)),
   %must(inp-subst_color(red,blue)),
   disallow(inp-bg_to_not_fg),
-
+  disallow(out-bg_to_not_fg),
   must(inp-trim_to_rect4),
   must(inp-fpad_grid(f,var)),
-
-  disallow(out-bg_to_not_fg),
-  
   must(out-constrain_grid_now(s,Trig)),
-  must(inp-constrain_grid_now(f,Trig)),
-  disallow(out-bg_to_not_fg),  
+  must(inp-constrain_grid_now(f,Trig)),   
   allow(all)]).
 %def_ogs_prog([all,must(out-trim_to_rect4)]).
 def_ogs_prog([
@@ -289,6 +286,17 @@ maybe_if_changed_grid_call(Call,Out,NewOut):-
 %maybe_ogs(pass_4,[trim_to_rect|R],In,Out):- maybe_if_changed(trim_to_rect,In,IIn),maybe_ogs(pass_5,R,IIn,Out).
 %maybe_ogs(pass_5,R,In,Out):- subst(In,red,blue,InC),rot180(InC,In180), maybe_ogs(pass_7,R,In180,Out).
 try_ogs_pass_8(Prf,R,In,Out):- try_ogs_pass_9(Prf,R,In,Out).
+try_ogs_pass_8(Prf,[subst(Cs,Vs)|R],In,Out):- 
+  subst_all_fg_colors_with_vars(Cs,Vs,In,IIn),
+  Cs\==[], % at least some colors
+  ground(Cs), % fully grounded test
+  try_ogs_pass_9(Prf,R,IIn,Out),  % do our search!
+  Cs\=@=Vs, % slightly differnt 
+  maplist(cfg,Vs),
+  maplist(same_color_class,Cs,Vs), % FG == FG ,.. BG == BG etc    
+  ground(Vs), % fully grounded results
+  list_to_set(Vs,Set), Vs=@=Set. % All differnt colors
+
 % 007bbfb7 needs loose %,!,R\==loose.
 %try_ogs_pass_9(Prf,[rul(R),loc2D(X,Y)/*grid(In)*/],In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
 %try_ogs_pass_9(Prf,[loc2D(X,Y),rul(ogs_11)/*grid(In)*/|Prf],In,Out):- 

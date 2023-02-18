@@ -95,7 +95,7 @@ my_list_to_set(List, Set):- my_list_to_set(List, (=) ,Set).
 my_list_to_set_variant(List, Set):- my_list_to_set(List, (=@=) ,Set).
 my_list_to_set_cmp(List, Set):- my_list_to_set(List, (=@=) ,Set).
 
-my_list_to_set([E|List],P2, Set):- select(C,List,Rest), call(P2,E,C), !, my_list_to_set([E|Rest],P2, Set).
+my_list_to_set([E|List],P2, Set):- select(C,List,Rest), call(P2, E,C), !, my_list_to_set([E|Rest],P2, Set).
 my_list_to_set([E|List],P2, [E|Set]):-!, my_list_to_set(List,P2, Set).
 my_list_to_set([],_,[]).
 
@@ -172,15 +172,15 @@ map_pred(NoCycles,Pred, P, X) :- call(Pred, P, X)*->true;map_pred0(NoCycles,Pred
 
 map_pred0(_NoCycles,_Pred, Args, ArgSO) :- must_be_free(ArgSO), Args==[],!, ArgSO=[].
 map_pred0(_NoCycles, Pred, P, P1) :-  call(Pred, P, P1),!. % *->true;fail.
-map_pred0(NoCycles,Pred, P, X) :- fail,  attvar(P), !, %duplicate_term(P,X),P=X, 
-  get_attrs(P,VS),  map_pred([P|NoCycles],Pred, VS, VSX), P=X,  put_attrs(X,VSX),!.
+map_pred0(NoCycles,Pred, P, X) :- fail, attvar(P), !, %duplicate_term(P,X),P=X, 
+  get_attrs(P,VS), map_pred([P|NoCycles],Pred, VS, VSX), P=X, put_attrs(X,VSX),!.
 map_pred0(_NoCycles,_Pred, P, P1) :- ( \+ compound(P) ; is_ftVar(P)), !, must_det_ll(P1=P), !.
-% map_pred0(NoCycles,Pred, Args, ArgSO) :- is_list(Args), !,  maplist(map_pred([Args|NoCycles],Pred), Args, ArgS), ArgS=ArgSO.
+% map_pred0(NoCycles,Pred, Args, ArgSO) :- is_list(Args), !, maplist(map_pred([Args|NoCycles],Pred), Args, ArgS), ArgS=ArgSO.
 map_pred0(NoCycles,Pred, IO, OO) :- is_list(IO),!, maplist(map_pred(NoCycles,Pred), IO, OO).
 map_pred0(NoCycles,Pred, IO, [O|ArgS]) :-  IO= [I|Args], !, 
-  map_pred([IO,ArgS|NoCycles],Pred, I, O),  map_pred0([IO,I|NoCycles],Pred, Args, ArgS).
+  map_pred([IO,ArgS|NoCycles],Pred, I, O), map_pred0([IO,I|NoCycles],Pred, Args, ArgS).
 map_pred0(NoCycles,Pred, P, P1) :-  
-  compound_name_arguments(P, F, Args),  maplist(map_pred([P|NoCycles],Pred),Args,ArgS),  compound_name_arguments(P1, F, ArgS).
+  compound_name_arguments(P, F, Args), maplist(map_pred([P|NoCycles],Pred),Args,ArgS), compound_name_arguments(P1, F, ArgS).
 %map_pred(_Pred, P, P).
 /*
 :- meta_predicate map_pred(2, ?, ?, ?, ?).
@@ -203,13 +203,13 @@ mapgrid(P3,Grid,GridN,GridO):- into_grid_or_var(Grid,G1),into_grid_or_var(GridN,
 mapg_list(P3,Grid,GridN,GridO):- is_list(Grid),!,maplist(mapg_list(P3),Grid,GridN,GridO).
 mapg_list(P3,Grid,GridN,GridO):- call(P3,Grid,GridN,GridO),!.
 
-mapgrid(P2,Grid,GridN):- into_grid_or_var(Grid,G1),into_grid_or_var(GridN,G2),mapg_list(P2,G1,G2).
-mapg_list(P2,Grid,GridN):- is_list(Grid),!,maplist(mapg_list(P2),Grid,GridN).
-mapg_list(P2,Grid,GridN):- call_p2s(P2,Grid,GridN),!.
+mapgrid(P2, Grid,GridN):- into_grid_or_var(Grid,G1),into_grid_or_var(GridN,G2),mapg_list(P2, G1,G2).
+mapg_list(P2, Grid,GridN):- is_list(Grid),!,maplist(mapg_list(P2),Grid,GridN).
+mapg_list(P2, Grid,GridN):- call_p2s(P2, Grid,GridN),!.
 
-call_p2s([P2],Grid,GridN):- !, call(P2,Grid,GridN).
-call_p2s([P2|P2L],Grid,GridN):- !, call(P2,Grid,GridM),call_p2s(P2L,GridM,GridN).
-call_p2s(P2,Grid,GridN):- call(P2,Grid,GridN).
+call_p2s([P2],Grid,GridN):- !, call(P2, Grid,GridN).
+call_p2s([P2|P2L],Grid,GridN):- !, call(P2, Grid,GridM),call_p2s(P2L,GridM,GridN).
+call_p2s(P2, Grid,GridN):- call(P2, Grid,GridN).
 
 mapgrid(P1,Grid):- into_grid_or_var(Grid,G1),mapg_list(P1,G1).
 mapg_list(P1,Grid):- is_list(Grid),!,maplist(mapg_list(P1),Grid).
@@ -221,8 +221,8 @@ maplist_ignore(P3,H,I,J):- \+ is_list(H),!, ignore(call(P3,H,I,J)).
 maplist_ignore(P3,[H|Grid],[I|GridN],[J|GridO]):- maplist_ignore(P3,H,I,J), !,maplist_ignore(P3,Grid,GridN,GridO).
 
 maplist_ignore(_2,H,I):- (H==[];I==[]),!,(ignore(H=[]),ignore(I=[])).
-maplist_ignore(P2,H,I):- \+ is_list(H),!, ignore(call(P2,H,I)).
-maplist_ignore(P2,[H|Grid],[I|GridN]):- maplist_ignore(P2,H,I), !,maplist_ignore(P2,Grid,GridN).
+maplist_ignore(P2, H,I):- \+ is_list(H),!, ignore(call(P2, H,I)).
+maplist_ignore(P2, [H|Grid],[I|GridN]):- maplist_ignore(P2, H,I), !,maplist_ignore(P2, Grid,GridN).
 
 subst_1L([],Term,Term):-!.
 subst_1L([X-Y|List], Term, NewTerm ) :-
@@ -239,17 +239,17 @@ subst001(I,F,R,O):- subst0011(F,R,I,O),!.
 subst0011(X, Y, Term, NewTerm ) :-
   copy_term((X,Y,Term),(CX,CY,Copy),Goals), 
   (Goals==[]
-   ->subst0011a( X,  Y, Term, NewTerm )
+   ->subst0011a( X, Y, Term, NewTerm )
    ;(subst0011a(CX, CY, Goals, NewGoals),
      (NewGoals==Goals -> 
-       subst0011a( X,  Y, Term, NewTerm )
+       subst0011a( X, Y, Term, NewTerm )
        ; (subst0011a(CX, CY, Copy, NewCopy),
           NewTerm = NewCopy, maplist(call,NewGoals))))).
          
     
 
 subst0011a(X, Y, Term, NewTerm ) :-
- (X==Term-> Y=NewTerm ;
+ ((X==Term)-> Y=NewTerm ;
   (is_list(Term)-> maplist(subst0011a(X, Y), Term, NewTerm );
    (( \+ compound(Term); Term='$VAR'(_))->Term=NewTerm;
      ((compound_name_arguments(Term, F, Args),
@@ -257,37 +257,43 @@ subst0011a(X, Y, Term, NewTerm ) :-
         compound_name_arguments( NewTerm, F, ArgsNew )))))),!.
 
 
+subst001C(I,F,R,O):- subst001_p2(same_terms,I,F,R,O),!.
+subst0011C(F,R,I,O):- subst0011_p2(same_terms,F,R,I,O),!.
+subst_2LC(F,R,I,O):- subst_2L_p2(same_terms,F,R,I,O).
 
-subst_2LC([],_,I,I):-!.
-subst_2LC(_,[],I,I):-!.
-subst_2LC([F|FF],[R|RR],I,O):- subst0011C(F,R,I,M),subst_2LC(FF,RR,M,O).
+subst_2L_p2(_P2, [],_,I,I):-!.
+subst_2L_p2(_P2, _,[],I,I):-!.
+subst_2L_p2(P2, [F|FF],[R|RR],I,O):- subst0011_p2(P2, F,R,I,M),subst_2L_p2(P2, FF,RR,M,O).
 
+subst001_p2(P2, I,F,R,O):- subst0011_p2(P2, F,R,I,O),!.
 
-subst001C(I,F,R,O):- subst0011C(F,R,I,O),!.
+subst_1L_p2(_,  [],Term,Term):-!.
+subst_1L_p2(P2, [X-Y|List], Term, NewTerm ) :-
+  subst0011_p2(P2, X, Y, Term, MTerm ),
+  subst_1L_p2(P2, List, MTerm, NewTerm ).
 
-
-subst0011C(X, Y, Term, NewTerm ) :-
+subst0011_p2(P2, X, Y, Term, NewTerm ) :-
   copy_term((X,Y,Term),(CX,CY,Copy),Goals), 
   (Goals==[]
-  ->subst0011Ca( X,  Y, Term, NewTerm )
-  ;(subst0011Ca(CX, CY, Goals, NewGoals),
+  ->subst0011a_p2(P2, X, Y, Term, NewTerm )
+  ;(subst0011a_p2(P2, CX, CY, Goals, NewGoals),
      (NewGoals==Goals -> 
-       subst0011Ca( X,  Y, Term, NewTerm )
-       ; (subst0011Ca(CX, CY, Copy, NewCopy),
+       subst0011a_p2(P2, X, Y, Term, NewTerm )
+       ; (subst0011a_p2(P2, CX, CY, Copy, NewCopy),
           NewTerm = NewCopy, maplist(call,NewGoals))))).
 
-subst0011Ca(X, Y, Term, NewTerm ) :-
- (same_term(X,Term)-> Y=NewTerm ;
-  (is_list(Term)-> maplist(subst0011Ca(X, Y), Term, NewTerm );
+subst0011a_p2(P2, X, Y, Term, NewTerm ) :-
+ (call_p2(P2, X,Term)-> Y=NewTerm ;
+  (is_list(Term)-> maplist(subst0011a_p2(P2, X, Y), Term, NewTerm );
    (( \+ compound(Term); Term='$VAR'(_))->Term=NewTerm;
      ((compound_name_arguments(Term, F, Args),
-       maplist(subst0011Ca(X, Y), Args, ArgsNew),
+       maplist(subst0011a_p2(P2, X, Y), Args, ArgsNew),
         compound_name_arguments( NewTerm, F, ArgsNew )))))),!.
 
 
 
 ppa(FF):-
-  copy_term(FF,FA,GF),  
+  copy_term(FF,FA,GF), 
   numbervars(FA+GF,0,_,[attvar(bind),singletons(true)]),
   sort_safe(GF,GS),write(' '),
   locally(b_setval(arc_can_portray,nil),
@@ -322,14 +328,14 @@ intersection([A|APoints],BPoints,Intersected,[A|LeftOverA],LeftOverB):-
 each_obj([],_,_):-!.
 each_obj([Obj|List],Obj,Goal):- ignore(Goal), each_obj(List,Obj,Goal).
 
-pred_intersection(_P2,[],LeftOverB,  [],[], [],LeftOverB):-!.
-pred_intersection(_P2,LeftOverA,[],  [],[], LeftOverA,[]):-!.
-pred_intersection(P2,[A|APoints],BPoints,[A|IntersectedA],[B|IntersectedB],LeftOverA,LeftOverB):-
+pred_intersection(_P2, [],LeftOverB, [],[], [],LeftOverB):-!.
+pred_intersection(_P2, LeftOverA,[], [],[], LeftOverA,[]):-!.
+pred_intersection(P2, [A|APoints],BPoints,[A|IntersectedA],[B|IntersectedB],LeftOverA,LeftOverB):-
   select(B,BPoints,BPointsMinusA),
-  \+ \+ call(P2,A,B),!,
-  pred_intersection(P2,APoints,BPointsMinusA,IntersectedA,IntersectedB,LeftOverA,LeftOverB).
-pred_intersection(P2,[A|APoints],BPoints,IntersectedA,IntersectedB,[A|LeftOverA],LeftOverB):-
-  pred_intersection(P2,APoints,BPoints,IntersectedA,IntersectedB,LeftOverA,LeftOverB).
+  \+ \+ call(P2, A,B),!,
+  pred_intersection(P2, APoints,BPointsMinusA,IntersectedA,IntersectedB,LeftOverA,LeftOverB).
+pred_intersection(P2, [A|APoints],BPoints,IntersectedA,IntersectedB,[A|LeftOverA],LeftOverB):-
+  pred_intersection(P2, APoints,BPoints,IntersectedA,IntersectedB,LeftOverA,LeftOverB).
 
 
 

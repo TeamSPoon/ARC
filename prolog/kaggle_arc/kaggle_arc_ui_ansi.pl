@@ -577,8 +577,6 @@ wotsq(O,Q):- wots_hs(Q,wqnl(O)).
 has_goals(G):- term_attvars(G,AV),AV\==[].
 has_goals(G):- term_variables(G,TV),term_singletons(G,SV),TV\==SV.
 
-writeg(Term):- ignore((\+ \+ writeg0(Term))),!.
-
 maybe_term_goals(Term,TermC,Goals):- 
   term_attvars(Term,Attvars), Attvars\==[],!,
   term_variables(Term,Vars),
@@ -590,12 +588,32 @@ maybe_term_goals(Term,TermC,Goals):-
 maybe_replace_vars([],SGoals,TermC,SGoals,TermC):-!.
 maybe_replace_vars([V|VarsC],SGoals,TermC,RSGoals,RTermC):-
    my_partition(sub_var(V),SGoals,Withvar,WithoutVar),
-   Withvar=[OneGoal], findall(_,sub_var(V,TermC),LL),LL=[_],!,
+   Withvar=[OneGoal], 
+   freeze(OneGoal,(OneGoal\==null,OneGoal \== @(null))),
+   findall(_,sub_var(V,TermC),LL),LL=[_],!,
    subst([WithoutVar,TermC],V,{OneGoal},[SGoalsM,TermCM]),
    maybe_replace_vars(VarsC,SGoalsM,TermCM,RSGoals,RTermC).
 maybe_replace_vars([_|VarsC],SGoals,TermC,RSGoals,RTermC):-
   maybe_replace_vars(VarsC,SGoals,TermC,RSGoals,RTermC).
- 
+
+
+src_sameish(Orig,Find):- copy_term(Orig,COrig),Find=Orig,Orig=@=COrig.
+
+number_vars_calc_goals(Term,SSRTermC,SRSGoals):- 
+  term_singletons(Term,Singles),
+  term_attvars(Term,Vars),
+  copy_term(Term+Vars+Singles,TermC+VarsC+SinglesC,Goals),
+  notrace(catch(numbervars(TermC+Goals,0,_Ten1,[singletons(false)]),_,fail)),
+  sort_goals(Goals,VarsC,SGoals),
+  maybe_replace_vars(VarsC,SGoals,TermC,RSGoals,RTermC),
+  include(not_sub_var(RSGoals),SinglesC,KSingles),
+  length(KSingles,SL),length(VSingles,SL),maplist(=('$VAR'('__')),VSingles),
+  subst_2L(KSingles,VSingles,[RTermC,RSGoals],[SRTermC,SRSGoals]),
+  subst_1L_p2(src_sameish,[
+    {dif('$VAR'('__'),RED)}=dif(RED),
+    {cbg('$VAR'('__'))}=cbg],
+     SRTermC,SSRTermC),!.
+
 
 number_vars_calc_goals(Term,RTermC,RSGoals):-
   term_attvars(Term,AVars),
@@ -605,7 +623,11 @@ number_vars_calc_goals(Term,RTermC,RSGoals):-
   append([VarsC,GAttvarsC,AVars,GAttvars],SortVars),
   numbervars(TermC+Goals,0,_Ten1,[singletons(false),attvar(bind)]),
   sort_goals(Goals,SortVars,SGoals),
-  maybe_replace_vars(VarsC,SGoals,TermC,RSGoals,RTermC),!.
+  maybe_replace_vars(SortVars,SGoals,TermC,RSGoals,RTermC),
+  subst_1L_p2(src_sameish,[
+    {dif('$VAR'('__'),RED)}=dif(RED),
+    {cbg('$VAR'('__'))}=cbg],
+     RTermC,SRTermC),!.
 
 
 number_vars_calc_goals(Term,SSRTermC,SRSGoals):-
@@ -618,32 +640,28 @@ number_vars_calc_goals(Term,SSRTermC,SRSGoals):-
   include(not_sub_var(RSGoals),SinglesC,KSingles),
   length(KSingles,SL),length(VSingles,SL),maplist(=('_'),VSingles),
   subst_2L(KSingles,VSingles,[RTermC,RSGoals],[SRTermC,SRSGoals]),
-  subst(SRTermC,{cbg('_')},cbg,SSRTermC).
+  subst(SRTermC,{cbg('_')},cbg,SSRTermC),!.
 
-writeg0(X):- is_ftVar(X),!,write_nbsp,write_nbsp,print(X).
+writeg(Term):- ignore( \+ notrace(catch(writeg0(Term),E,(pp(E),writeq(Term))))).
 
 writeg0(Term):- 
-  term_variables(Term,Vars), Vars\==[],
   number_vars_calc_goals(Term,SSRTermC,SRSGoals),
-  writeg0(SSRTermC),
+  writeg5(SSRTermC),
   if_t(SRSGoals\==[],(nl_if_needed, write(' goals='), call_w_pad_prev(3,az_ansi(print_tree_no_nl(SRSGoals))))),!.
-writeg0(Term):- 
-  term_attvars(Term,Vars), Vars\==[],
-  number_vars_calc_goals(Term,SSRTermC,SRSGoals),
-  writeg0(SSRTermC),
-  if_t(SRSGoals\==[],(nl_if_needed, write(' goals='), call_w_pad_prev(3,az_ansi(print_tree_no_nl(SRSGoals))))),!.
+writeg0(Term):- writeg5(Term),!.
 
-writeg0(N=V):- is_gridoid(V),!,print_grid(N,V),writeln(' = '),call_w_pad_prev(2,maplist(writeg1,V)).
-writeg0(V):- is_gridoid(V),!,call_w_pad_prev(2,maplist(writeg1,V)).
-writeg0(N=V):- nl_if_needed,nonvar(N), pp_no_nl(N),writeln(' = '), !, call_w_pad_prev(2,writeg0(V)). 
-writeg0(_):- write_nbsp, fail.
-writeg0(V):- is_list(V),nl_if_needed,write('['),maplist(writeg0,V),write(']').
-writeg0(V):- pp_no_nl(V).
+writeg5(X):- is_ftVar(X),!,write_nbsp,write_nbsp,print(X).
+writeg5(N=V):- is_gridoid(V),!,print_grid(N,V),writeln(' = '),call_w_pad_prev(2,maplist(writeg9,V)).
+writeg5(V):- is_gridoid(V),!,call_w_pad_prev(2,maplist(writeg9,V)).
+writeg5(N=V):- nl_if_needed,nonvar(N), pp_no_nl(N),writeln(' = '), !, call_w_pad_prev(2,writeg5(V)). 
+writeg5(_):- write_nbsp, fail.
+writeg5(V):- is_list(V),nl_if_needed,write('['),maplist(writeg5,V),write(']').
+writeg5(V):- pp_no_nl(V).
 
-writeg1(V):- is_list(V),nl_if_needed,write('['),!,maplist(writeg1,V),write(']').
-writeg1(_):- write_nbsp,write(' \t '),fail.
-writeg1(X):- is_ftVar(X),!,write_nbsp,write_nbsp,print(X).
-writeg1(V):- pp_no_nl(V).
+writeg9(V):- is_list(V),nl_if_needed,write('['),!,maplist(writeg9,V),write(']').
+writeg9(_):- write_nbsp,write(' \t '),fail.
+writeg9(X):- is_ftVar(X),!,write_nbsp,write_nbsp,print(X).
+writeg9(V):- pp_no_nl(V).
 
 arg1_near(Vars,Goal,Nth):- arg(1,Goal,PreSort),nth1(Nth,Vars,E),E==PreSort,!.
 arg1_near(_VarsC,Goal,PreSort):- arg(1,Goal,PreSort),!.
