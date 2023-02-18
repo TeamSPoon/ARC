@@ -17,9 +17,9 @@ o1 to o1
 :- encoding(iso_latin_1).
 :- include(kaggle_arc_header).
 :- thread_local(t_l:objs_others/4).
-show_interesting_props(Named,InC,OutC):-
- extend_obj_proplist(InC,ObjsI),
- extend_obj_proplist(OutC,ObjsO),
+show_interesting_props(Named,OutC,InC):-
+ extend_grp_proplist(InC,ObjsI),
+ extend_grp_proplist(OutC,ObjsO),
   banner_lines(cyan,4),
   w_section('INPUT PROPS',
     locally(t_l:objs_others(inputs,ObjsI,ObjsO,outputs),
@@ -39,13 +39,12 @@ show_interesting_props_gojs(Objs):- u_dmsg(show_interesting_props_gojs(Objs)).
 
 
 show_interesting_named_props(Named,In):-
-   extend_obj_proplist(In,Objs),
+   extend_grp_proplist(In,Objs),
    w_section(print_prop_groups(Named),print_prop_groups(Objs)).
 
 show_interesting_named_props(Named,In):-
- 
  must_det_ll((
-   extend_obj_proplist(In,Objs),
+   extend_grp_proplist(In,Objs),
    print_prop_groups(Objs),
    show_three_interesting_groups(Named,Objs,Groups),
    %banner_lines(cyan,3),
@@ -84,7 +83,7 @@ numbered_vars(A,B):- copy_term(A,B),numbervars(B,0,_,[attvars(skip)]).
 
 %skip_ku(pg(_,_,FL,_)):- !, FL \==firstOF, FL \==lastOF. 
 skip_ku(pg(_,_,_,_)).
-%skip_ku(link(_,_)).
+skip_ku(link(_,_)).
 skip_ku(iz(media(_))).
 skip_ku(giz(_)).
 skip_ku(changes(_)).
@@ -116,7 +115,7 @@ dont_change(Var):- copy_term(Var,VarC),freeze(VarC,fail), freeze(Var,Var=@=VarC)
 
 select_subgroup(Objs,GroupName,Count,SubObjs):- 
   into_group(Objs,GObjs),
-  findall(O-GroupName,(member(O,GObjs),is_in_subgroup(O,GroupName)),Memberships),
+  findall(O-GroupName,(member(O,GObjs),is_in_subgroup(Objs,O,GroupName)),Memberships),
   maplist(arg(2),Memberships,GroupNames),
   get_ccs(GroupNames,GroupNameCC),
   member(cc(GroupName,Count),GroupNameCC),
@@ -151,58 +150,84 @@ group_prop(cc(bg,0),fg_obj).
 group_prop(fg_colors_count(1),single_fg_color).
 group_prop(fg_colors_count(Two),multicolor):- freeze(Two,Two>1).
 
+link_rel(sees(_)).
+link_rel(overlaps(_,_)).
+link_rel(overlapped_by(_,_)).
+link_rel(contained_by).
+link_rel(contains).
+link_rel(P,F):- link_rel(P),functor(P,F,_).
 
-is_in_subgroup_c(Obj,holes(Count)):- findall(Y, (indv_props(Obj,link(contained_by,Y)),is_bg_object(Y)), L), length(L,Count).
-is_in_subgroup_c(Obj,fg_parts(Count)):- findall(Y, (indv_props(Obj,link(contained_by,Y)),is_fg_object(Y)), L), length(L,Count).
-is_in_subgroup_c(Obj,bg_containers(Count)):- findall(Y, (indv_props(Obj,link(contains,Y)),is_bg_object(Y)), L), length(L,Count).
-is_in_subgroup_c(Obj,fg_containers(Count)):- findall(Y, (indv_props(Obj,link(contains,Y)),is_fg_object(Y)), L), length(L,Count).
-is_in_subgroup_c(Obj,fg_overlap(Count)):- findall(Y, (indv_props(Obj,link(overlaps(_,_),Y)),is_fg_object(Y)), L), length(L,Count).
-is_in_subgroup_c(Obj,fg_overlapped_by(Count)):- findall(Y, (indv_props(Obj,link(overlapped_by(_,_),Y)),is_fg_object(Y)), L), length(L,Count).
+/*
+is_in_subgroup_c(Contained_by,Functor,_Grp,Obj,count_of_bg_links(Functor,Count)):- findall(Y, (indv_props(Obj,link(Contained_by,Y)),is_bg_object(Y)), L), length(L,Count).
+is_in_subgroup_c(Contained_by,Functor,_Grp,Obj,count_of_fg_links(Functor,Count)):- findall(Y, (indv_props(Obj,link(Contained_by,Y)),is_fg_object(Y)), L), length(L,Count).
+is_in_subgroup_c(Contained_by,Functor,Grp,YObj,links_from_bg_count(Functor,Count)):- obj_to_oid(YObj,Y), link_rel(Contained_by,Functor),findall(Obj, (member(Obj,Grp),indv_props(Obj,link(Contained_by,Y)),is_bg_object(Obj)), L), length(L,Count).
+is_in_subgroup_c(Contained_by,Functor,Grp,YObj,links_from_fg_count(Functor,Count)):- obj_to_oid(YObj,Y), link_rel(Contained_by,Functor),findall(Obj, (member(Obj,Grp),indv_props(Obj,link(Contained_by,Y)),is_fg_object(Obj)), L), length(L,Count).
+*/
+
+fyl_functor_count(FYL,Functor,Count):-
+  maplist(arg(1),FYL,Fs),list_to_set(Fs,FSet),
+  member(Functor,FSet),
+  findall(_,member(Functor-_,FYL),L),length(L,Count).
 
 
-is_in_subgroup(Obj,Prop):- var(Obj),!, enum_object(Obj),is_in_subgroup(Obj,Prop).
-is_in_subgroup(Obj,iz(IZ)):- group_prop(Prop,IZ), has_prop(Prop,Obj).
-is_in_subgroup(Obj,Prop):- is_in_subgroup_c(Obj,Prop).
-is_in_subgroup(Obj,nth_fg_color(Nth,Color)):- unique_fg_colors(Obj,List),nth1(Nth,List,Color).
-%is_in_subgroup(Obj,ansestors(N,Set)):-transitive_sets(ansestor,Obj,Set,N).
-%is_in_subgroup(Obj,descendants(N,Set)):-transitive_sets(descendant,Obj,Set,N).
-%is_in_subgroup(Obj,tiouching(N,Set)):- nontransitive_set(touching,Obj,Set,N).
-%is_in_subgroup(Obj,seeing(N,Set)):- nontransitive_set(seeing,Obj,Set,N).
-%is_in_subgroup(Obj,insideOf(N,Set)):-transitive_sets(insideOf,Obj,Set,N).
-%is_in_subgroup(Obj,contains(N,Set)):-transitive_sets(contains,Obj,Set,N).
-%is_in_subgroup(Obj,Prop):- has_prop(Prop,Obj).
-%is_in_subgroup(_,all).
+%is_in_subgroup(Grp,Obj,Prop):- var(Obj),!, enum_object(Obj),is_in_subgroup(Grp,Obj,Prop).
+is_in_subgroup(Grp,Obj,Prop):- nonvar(Grp),var(Obj),!,member(Obj,Grp),is_in_subgroup(Grp,Obj,Prop).
+is_in_subgroup(Grp,Obj,Prop):- var(Grp),var(Obj),!,findall(Obj,enum_object(Obj),Grp),is_in_subgroup(Grp,Obj,Prop).
+is_in_subgroup(_Grp,Obj,iz(IZ)):- group_prop(Prop,IZ), has_prop(Prop,Obj).
+is_in_subgroup(_Grp,Obj,nth_fg_color(Nth,Color)):- unique_fg_colors(Obj,List),nth1(Nth,List,Color).
+is_in_subgroup(_Grp,Obj,count_of_links(Functor,Count)):- 
+  findall(Functor-Y, (indv_props_list(Obj,PL),member(link(Contained_by,Y),PL),functor(Contained_by,Functor,_)), FYL), 
+  fyl_functor_count(FYL,Functor,Count).  
+is_in_subgroup(Grp,YObj,occurs_in_links(Functor,Count)):- 
+  obj_to_oid(YObj,Y), findall(Functor-Obj, 
+    (member(Obj,Grp),indv_props_list(Obj,PL),member(link(Contained_by,YY),PL),YY=Y,functor(Contained_by,Functor,_)), FYL), 
+  fyl_functor_count(FYL,Functor,Count).
+%is_in_subgroup(Grp,Obj,ansestors(N,Set)):-transitive_sets(ansestor,Obj,Set,N).
+%is_in_subgroup(Grp,Obj,descendants(N,Set)):-transitive_sets(descendant,Obj,Set,N).
+%is_in_subgroup(Grp,Obj,tiouching(N,Set)):- nontransitive_set(touching,Obj,Set,N).
+%is_in_subgroup(Grp,Obj,seeing(N,Set)):- nontransitive_set(seeing,Obj,Set,N).
+%is_in_subgroup(Grp,Obj,insideOf(N,Set)):-transitive_sets(insideOf,Obj,Set,N).
+%is_in_subgroup(Grp,Obj,contains(N,Set)):-transitive_sets(contains,Obj,Set,N).
+%is_in_subgroup(Grp,Obj,Prop):- has_prop(Prop,Obj).
+%is_in_subgroup(Grp,_,all).
 not_skip_ku(P):- \+ skip_ku(P).
 
-print_prop_groups(Objs):-
+determine_esets(Objs,ESet):-
   maplist(indv_props_list,Objs,PropLists),
   flatten(PropLists,List),list_to_set(List,Set),
-  include(not_skip_ku,Set,ESet),
+  include(not_skip_ku,Set,ESet).
+
+print_prop_groups(Objs):-
+  determine_esets(Objs,ESet),
+  print_propset_groups(Objs,ESet).
+
+print_propset_groups(Objs,ESet):- 
   maplist(has_props_set(Objs),ESet,GrpList),
   predsort(sort_on(length),GrpList,GrpSetR),reverse(GrpSetR,GrpSet),
   with_tag_ats(table,class("tblo rows_distinct"),
    (html_table_row([th(props),td('&nbsp;'),th(objects),td('&nbsp')]),
-    maplist(print_prop_groups(Objs),GrpSet),
-    forall(select(O1,Objs,Rest),print_prop_groups(Rest,O1,[])))).
+    maplist(print_prop_groups(ESet,Objs),GrpSet),
+    forall(select(O1,Objs,Rest),print_prop_groups(ESet,Rest,O1,[])))).
 
 has_props_set(Objs,Prop,Set):- include(has_prop(Prop),Objs,Set).
-print_prop_groups(_,[]):-!.
-print_prop_groups(_,[_]):-!.
-print_prop_groups(All,Group):-
+print_prop_groups(_ESet,_,[]):-!.
+print_prop_groups(_ESet,_,[_]):-!.
+print_prop_groups(ESet,All,Group):-
   include(not_in(Group),All,Except),
   [O1|Rest]=Group,
-  print_prop_groups(Except,O1,Rest).
+  print_prop_groups(ESet,Except,O1,Rest).
 
-print_prop_groups(Except,O1,Rest):-
+print_prop_groups(_ESet,Except,O1,Rest):-
   [O1|Rest]=Group,
   indv_props_list(O1,PropsIKU), include(not_skip_ku,PropsIKU,Props),
 
   findall(Prop,(member(Prop,Props), \+ any_have_prop(Except,Prop), 
                                forall(member(O,Rest),has_prop(Prop,O))),UniqueToGroup),
-  asserta_if_new(prop_groups(UniqueToGroup,Group,Except)),
 
   t_l:objs_others(_,_These,Those,_),
   findall(O2,(member(O2,Those), forall(member(UProp,UniqueToGroup),has_prop(UProp,O2))),OtherObjs),
+
+  asserta_if_new(prop_groups(Group,UniqueToGroup,Except,OtherObjs)),
 
   maplist(into_gui_item,Group,Grids),
   maplist(into_gui_item,OtherObjs,OGrids),
@@ -260,7 +285,7 @@ contains(Obj,Other):- has_prop(link(contains,Other,_),Obj).
 is_fti_step(extend_obj_proplists).
 % =====================================================================
 %really_group_vm_priors(_VM):-!.
-extend_obj_proplists(VM):- extend_obj_proplist(VM.objs,set(VM.objs)).
+extend_obj_proplists(VM):- extend_grp_proplist(VM.objs,set(VM.objs)).
 
 
 % =====================================================================

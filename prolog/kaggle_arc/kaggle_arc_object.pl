@@ -1046,7 +1046,7 @@ oid_to_objlist(OID,List):- oid_to_obj(OID,Obj),obj_to_objlist(Obj,List).
 
 obj_to_objlist(obj(List),ListO):- member(was_oid(OID),List),!,oid_to_obj(OID,obj(ListM)),append_sets(ListM,List,ListO).
 obj_to_objlist(obj(List),List).
-obj_to_objlist(Obj,[NV]):- fail, \+ nb_current(o2obj,t), locally(nb_setval(o2obj,t),is_in_subgroup(Obj,NV)).
+obj_to_objlist(Obj,[NV]):- fail, \+ nb_current(o2obj,t), locally(nb_setval(o2obj,t),is_in_subgroup(_Grp,Obj,NV)).
 
 cindv(OID,A,B):- oid_to_objlist(OID,L),member(NV,L),NV=..[A,B].
 cindv(OID,A,B,C):- oid_to_objlist(OID,L),member(NV,L),NV=..[A,B,C].

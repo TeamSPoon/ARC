@@ -1191,20 +1191,25 @@ format_s(`
 <!--script src="https://www.w3schools.com/lib/w3.js" crossorigin="anonymous"></script>
 link href="https://www.w3schools.com/w3css/4/w3.css" rel="stylesheet" crossorigin="anonymous"-->
 
+<script src="/node_modules/floating-scroll/dist/jquery.floatingscroll.min.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" type="text/css" href="/node_modules/floating-scroll/dist/jquery.floatingscroll.css" crossorigin="anonymous"/>
+
 <script src="https://d3js.org/d3.v4.js"></script>
 <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
 <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>	
+
 <script src="/swish/muarc/kaggle_arc_ui_html.js"></script>
 <script src="/swish/muarc/kaggle_arc_ui_html_d3.js"></script>
 <script>
-$(document).ready(function(){});
+$(document).ready(function(){$(".spacious-container").floatingScroll();});
 </script>`),
 write_arc_start(Where),
-format_s(`<div id="mouse_iframer_div" style="display:none;"><iframe id="mouse_iframer" name="lm_xref_two" height="300px" width="100%" title="Iframe Example" src="about:blank"></iframe></div>`),
+format_s(`<body class="ignore-scroll" style="top: 0px; bottem: 0px; left: 0px; width: 100vw; height: 100vh; overflow: auto; padding: 0px;">
+<div id="mouse_iframer_div" style="display:none;"><iframe id="mouse_iframer" name="lm_xref_two" height="300px" width="100%" title="Iframe Example" src="about:blank"></iframe></div>`),
 nop(format_s(`<!--body-->`)),
 format_s(`<script> top.clearMenu(); </script>`),
 retractall(page_has_grid_out(_,_)),
-format_s(`<div id="main_in_iframe" class="frame_body , scrollable-nav">`),
+format_s(`<div id="main_in_iframe" class="spacious-container frame_body , scrollable-nav">`),
 format_s(`<div id="hidden_swish_app" style="display:none; visibility:hidden"><div id="swish_app"><header class="navbar navbar-default"><div class="container pull-left"><div class="navbar-header"><a href="/" class="pengine-logo">&nbsp;</a><a href="/" class="swish-logo">&nbsp;</a></div><nav id="navbar"></nav></div></header><div id="content" class="container"><div class="tile horizontal" data-split="60%"><div class="prolog-editor"></div><div class="tile vertical" data-split="70%"><div class="prolog-runners"></div><div class="prolog-query"></div></div></div></div></div></div>`),
 format_s(`<div id="hidden_popups" style="display:none; visibility:hidden"><pre><textarea id="input-helper"></textarea></pre><div id="input-view" class="hidden"></div><div id="popup" class="hidden"></div></div>`),
 %format_s(`<script src="https://logicmoo.org:17771/static/main.js"></script><script src="https://logicmoo.org:17771/static/ext.js"></script><pre><div id="app"></div><div id="packed"></div><div id="term"></div></pre>`),

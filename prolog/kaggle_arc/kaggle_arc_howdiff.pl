@@ -326,7 +326,7 @@ into_obj_plist(Grp,GrpOO):- is_group(Grp),!,mapgroup(into_obj_plist,Grp,GrpO),fl
 into_obj_plist(PA,PAP):- is_list(PA),!,PAP=PA.
 into_obj_plist(obj(PA),PA):- !.
 into_obj_plist(OID,List):- is_oid(OID), oid_to_obj(OID,Obj),!,into_obj_plist(Obj,List).
-%%%into_obj_plist(PA,PAP):- must_det_ll((extend_obj_proplist(PA,Obj), into_obj_plist(Obj,PAP))),!.
+%%%into_obj_plist(PA,PAP):- must_det_ll((extend_grp_proplist(PA,Obj), into_obj_plist(Obj,PAP))),!.
  
 
 never_matom(localpoints(_)).

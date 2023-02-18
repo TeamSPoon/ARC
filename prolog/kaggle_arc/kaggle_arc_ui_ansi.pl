@@ -608,7 +608,7 @@ writeg0(Term):-
   include(not_sub_var(RSGoals),Singles,KSingles),
   length(KSingles,SL),length(VSingles,SL),maplist(=('_'),VSingles),
   subst_2L(KSingles,VSingles,[RTermC,RSGoals],[SRTermC,SRSGoals]),
-  subst(SRTermC,{cbg('_')},wbg,SSRTermC),
+  subst(SRTermC,{cbg('_')},cbg,SSRTermC),
   writeg0(SSRTermC),
   if_t(SRSGoals\==[],(nl_if_needed, write(' goals='), call_w_pad_prev(3,az_ansi(print_tree_no_nl(SRSGoals))))),!.
 

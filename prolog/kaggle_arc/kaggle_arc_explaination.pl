@@ -162,8 +162,8 @@ show_indiv(Why, Obj):-
   vis2D(Obj,H,V),
   DoFF = false,
 
-  findall(SubGroup,is_in_subgroup(Obj,SubGroup),SubGroupS), 
-  pp(subGroupS=SubGroupS),
+  %findall(SubGroup,is_in_subgroup(Grp,Obj,SubGroup),SubGroupS), 
+  %pp(subGroupS=SubGroupS),
 
   if_t((H\==1;V\==1;true),
     must_det_ll((     
@@ -213,7 +213,7 @@ show_indiv(Why, Obj):-
 
      %writeg("NGrid"=NGrid),
    true))),
-  WillHaveShown = [loc2D(OH,OV),center2G(CX,CY),size2D(H,V)|SubGroupS],    
+  WillHaveShown = [loc2D(OH,OV),center2G(CX,CY),size2D(H,V)],    
   if_t(is_object(Obj),
     (format('~N~n'),
      if_t(menu_or_upper('i'),

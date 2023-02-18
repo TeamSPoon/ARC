@@ -335,6 +335,7 @@ subtypes(C,S):- subClassOf(S,C).
 allow_dir_list(nsew,[n,s,e,w]). %s,e,n,w 
 
 allow_dir_list(nsew_5,[n,s,e,w]). %s,e,n,w 
+allow_dir_list(nsew_2,[n,s,e,w]). %s,e,n,w 
 
 allow_dir_list(s_e,[s,e]). %s,e,n,w 
 allow_dir_list(n_e,[n,e]). %s,e,n,w 

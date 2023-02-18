@@ -56,7 +56,7 @@ individuation_macros(i_complete_generic(X),[X]).
 individuation_macros(i_complete_generic,i_complete_generic(subtractions)):-  use_subtractions.
 individuation_macros(i_complete_generic,i_complete_generic(generic_nsew_colormass)):- mass_same_io.
 individuation_macros(generic_nsew_colormass, 
- [nsew,black_to_zero,nsew,zero_to_black,colormass,black_to_zero, alone_dots(lte(25)),zero_to_black,lo_dots]).
+ [nsew,black_to_zero,nsew,nsew_2,zero_to_black,colormass,black_to_zero,alone_dots(lte(25)),zero_to_black,lo_dots]).
 
 
 mass_same_io:- arc_common_property(mass(_)).
@@ -241,8 +241,8 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):-
  wots(S,
  w_section(optimize_objects, ((
  once((must_det_ll((
- extend_obj_proplist(InC00,InC0),
- extend_obj_proplist(OutC00,OutC0),
+ extend_grp_proplist(InC00,InC0),
+ extend_grp_proplist(OutC00,OutC0),
   maybe_fix_group(InC0,InCRFGBG),
   maybe_fix_group(OutC0,OutCRFGBG),
   mostly_fg_objs(InCRFGBG,InCR),
@@ -982,6 +982,32 @@ objects_into_grid(VM):-
   %DebugObjs = Objs, confirm_reproduction(Objs,DebugObjs,VM.grid_o),
   set(VM.grid)=Grid,
   print_grid(VM))),!.
+
+% =====================================================================
+is_fti_step(nsew_2).
+% =====================================================================
+nsew_2(VM):- 
+  Points = VM.points,
+  select(C-P1,Points,Points1),
+  member(Nsew,[s,e]),
+  is_adjacent_point(P1,Nsew,P2),
+  select(C-P2,Points1,PointsRest),
+  \+ (is_adjacent_point(P1,_,P1E),member(C-P1E,PointsRest)),
+  \+ (is_adjacent_point(P2,_,P2E),member(C-P2E,PointsRest)),
+  make_indiv_object(VM,[iz(type(nsew)),iz(media(shaped)),birth(nsew_2)],[C-P1,C-P2],NewObj),
+  set(VM.points)=PointsRest,
+  raddObjects(VM,NewObj),
+  nsew_2(VM),!.
+nsew_2(VM):- 
+  Points = VM.points,
+  select(C-P1,Points,PointsRest),
+  \+ (is_adjacent_point(P1,_,P1E),member(C-P1E,PointsRest)),
+  make_indiv_object(VM,[iz(type(nsew)),iz(media(shaped)),birth(nsew_1)],[C-P1],NewObj),
+  set(VM.points)=PointsRest,
+  raddObjects(VM,NewObj),
+  nsew_2(VM),!.
+nsew_2(_).
+
 
 % =====================================================================
 is_fti_step(sub_individuate).
@@ -3962,10 +3988,12 @@ check_minsize(Sz,[I|IndvS],[A,B|IndvSO]):- mass(I,2),globalpoints(I,[A,B]),!,che
 check_minsize(Sz,[I|IndvS],[A,B,C|IndvSO]):- mass(I,3),globalpoints(I,[A,B,C]),!,check_minsize(Sz,IndvS,IndvSO).
 check_minsize(Sz,[I|IndvS],[I|IndvSO]):- check_minsize(Sz,IndvS,IndvSO).
 
+/*
 meets_size(_,Points):- mass(Points,1).
 meets_size(_,Points):- mass(Points,2),!,fail.
 meets_size(_,Points):- mass(Points,3),!,fail.
 meets_size(_,Points):- mass(Points,4).
+*/
 meets_size(Len,Points):- mass(Points,L),!,L>=Len.
 
 remove_bgs(IndvS,IndvL,BGIndvS):- partition(is_bg_indiv,IndvS,BGIndvS,IndvL).

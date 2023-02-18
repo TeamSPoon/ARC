@@ -687,33 +687,33 @@ save_rule00(GID,TITLE,IP,OP):-
 
 is_obj_props(Props):- is_list(Props), Props\==[], \+ is_grid(Props), \+ is_group(Props), \+ is_points_list(Props).
 
-extend_obj_proplist(Var,NewObj):- var(Var),!, enum_object(Var),extend_obj_proplist(Var,NewObj).
-extend_obj_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
-extend_obj_proplist(Grp,GrpO):- is_group(Grp),!,mapgroup(extend_obj_proplist,Grp,GrpO).
-extend_obj_proplist(obj(Obj),obj(OUT)):-!, 
-   extend_obj_proplist1(Obj,OUT).
-extend_obj_proplist(L1,L2):- extend_obj_proplist1(L1,L2).
+%extend_grp_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
+extend_grp_proplist(Grp,GrpO):- mapgroup(extend_obj_proplist(Grp),Grp,GrpO).
 
-extend_obj_proplist1(Props,OUTL):- must_det_ll(is_obj_props(Props)),
+%extend_obj_proplist(Var,NewObj):- var(Var),!, enum_object(Var),extend_grp_proplist(Var,NewObj).
+extend_obj_proplist(Grp,obj(Obj),obj(OUT)):-!, extend_obj_proplist1(Grp,Obj,OUT).
+extend_obj_proplist(Grp,L1,L2):- extend_obj_proplist1(Grp,L1,L2).
+
+extend_obj_proplist1(Grp,Props,OUTL):- must_det_ll(is_obj_props(Props)),
   Obj = obj(Props),
-  findall(P,extend_obj_prop(Obj,P),NewProps),
+  findall(P,extend_obj_prop(Grp,Obj,P),NewProps),
   flatten(NewProps,NewPropsF),
   override_object(NewPropsF,Props,Obj1),
   override_object(Props,Obj1,OUT),
   into_obj_plist(OUT,OUTL).
 
-extend_obj_prop(Obj,Prop):- is_in_subgroup(Obj,Prop).
-extend_obj_prop(obj(List),Prop):- 
+extend_obj_prop(Grp,Obj,Prop):- is_in_subgroup(Grp,Obj,Prop).
+extend_obj_prop(_Grp,obj(List),Prop):- 
  once((\+ member(norm_grid(_),List),
   object_grid(obj(List),Grid),
   normalize_grid(NormOps,Grid,NormGrid))),
   member(Prop,[norm_ops(NormOps),norm_grid(NormGrid)]).
-extend_obj_prop(obj(List),Prop):- 
+extend_obj_prop(_Grp,obj(List),Prop):- 
  once((\+ member(comp_grid(_),List),
   object_grid(obj(List),Grid),
   compress_grid(NormOps,Grid,NormGrid))),
   member(Prop,[comp_ops(NormOps),comp_grid(NormGrid)]).
-extend_obj_prop(Obj,Props):- fail,
+extend_obj_prop(_Grp,Obj,Props):- fail,
  once((localpoints(Obj,P),vis2D(Obj,H,V),points_to_grid(H,V,P,Grid),
   grid_props(Grid,Props))).
 
@@ -753,7 +753,7 @@ fix_groups(AG00,BG00,AG,BG):-
 
 
 maybe_fix_group(I,OO):-
-  extend_obj_proplist(I,AG0),
+  extend_grp_proplist(I,AG0),
   predsort(sort_on(mapping_order),AG0,AG01),
   remove_singles_unneeded(AG01,AG1),
   maybe_exclude_whole(AG1,AG2),
@@ -762,7 +762,7 @@ maybe_fix_group(I,OO):-
   (Retained==[]-> OO = AG1 ; OO = AG1).  % yeah for now doesnt change anything
 
 fix_group(AG00,AG):- 
-  extend_obj_proplist(AG00,AG0),  
+  extend_grp_proplist(AG00,AG0),  
   predsort(sort_on(mapping_order),AG0,AG1),
   maybe_exclude_whole(AG1,AG2),
  filter_redundant(AG2,AG).
