@@ -163,10 +163,14 @@ get_real_fg_color(C):- named_colors(L),member(C,L),is_fg_color(C).
 is_real_fg_color(C):- C\== is_colorish_var, is_real_color(C),is_fg_color(C).
 
 decl_one_fg_color(Color):- put_attr(Color,ci,fg(Color)).
-decl_many_fg_colors(X):- put_attr(X,ci,fg(X)),multivar:multivar(X).
-decl_bg_color(X):- put_attr(X,ci,bg(X)),multivar:multivar(X).
+decl_many_fg_colors(X):- put_attr(X,ci,fg(X)),decl_multivar(X).
+decl_many_bg_colors(X):- put_attr(X,ci,bg(X)),decl_multivar(X).
+decl_bg_color(X):- put_attr(X,ci,bg(X)).
 decl_fill_color(X):-  put_attr(X,ci,hollow(X)),
-    freeze(X,(mv_peek1(X,V)->(var(V)->true;is_color(V));true)),multivar:multivar(X).
+    freeze(X,(mv_peek1(X,V)->(var(V)->true;is_color(V));true)),decl_multivar(X).
+
+decl_multivar(_).
+%decl_multivar(X):- multivar:multivar(X).
 
 decl_not_color(NC,GC):- is_bg_color(NC),!,decl_many_fg_colors(GC).
 decl_not_color(NC,GC):- decl_fill_color(GC),!,dif(GC,NC).
@@ -187,8 +191,11 @@ cauh(_,_,_).
 
 ci:attr_unify_hook(Atts,Val):- (arg(1,Atts,Self)-> cauh(Self,Atts,Val) ; true).
 %ci:project_attributes(QueryVars, ResidualVars):-
-ci:attribute_goals(Var) --> {get_attr(Var,ci,bg(_))},!,[cbg(Var)],!.
-ci:attribute_goals(Var) --> {cant_be_color(Var,Color)},!,[cant_be_color(Var,Color)],!.
+ci:attribute_goals(Var) --> {findall(Meaning,ci_meaning(Var,Meaning),MeaningList)},MeaningList.
+
+ci_meaning(Var,cant_be_color(Var,Color)):- cant_be_color(Var,Color).
+ci_meaning(Var,cbg(Var)):- get_attr(Var,ci,bg(_)).
+ci_meaning(Var,cfg(Var)):- get_attr(Var,ci,fg(_)).
 % ci:attr_portray_hook(Var)
 
 cant_be_color(Y):- get_attr(Y,dif,_),!.

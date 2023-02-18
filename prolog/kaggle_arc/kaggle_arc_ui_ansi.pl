@@ -597,30 +597,51 @@ maybe_replace_vars([_|VarsC],SGoals,TermC,RSGoals,RTermC):-
   maybe_replace_vars(VarsC,SGoals,TermC,RSGoals,RTermC).
  
 
-writeg0(X):- is_ftVar(X),!,write_nbsp,write_nbsp,print(X).
-writeg0(Term):- 
-  term_attvars(Term,Vars), Vars\==[],
-  copy_term(Term+Vars,TermC+VarsC,Goals),
-  term_singletons(TermC,Singles),
-  numbervars(TermC+Goals,0,_Ten1,[singletons(false)]),
+number_vars_calc_goals(Term,RTermC,RSGoals):-
+  term_attvars(Term,AVars),
+  copy_term(Term+AVars,TermC+VarsC,GoalsI), 
+  term_attvars(GoalsI,GAttvars), copy_term(GoalsI+GAttvars,_+GAttvarsC,GoalsGoals),
+  append(GoalsI,GoalsGoals,Goals),
+  append([VarsC,GAttvarsC,AVars,GAttvars],SortVars),
+  numbervars(TermC+Goals,0,_Ten1,[singletons(false),attvar(bind)]),
+  sort_goals(Goals,SortVars,SGoals),
+  maybe_replace_vars(VarsC,SGoals,TermC,RSGoals,RTermC),!.
+
+
+number_vars_calc_goals(Term,SSRTermC,SRSGoals):-
+  term_singletons(Term,Singles),
+  term_attvars(Term,Vars),
+  copy_term(Term+Vars+Singles,TermC+VarsC+SinglesC,Goals),
+  numbervars(TermC+Goals,0,_Ten1,[singletons(false),attvar(bind)]),
   sort_goals(Goals,VarsC,SGoals),
   maybe_replace_vars(VarsC,SGoals,TermC,RSGoals,RTermC),
-  include(not_sub_var(RSGoals),Singles,KSingles),
+  include(not_sub_var(RSGoals),SinglesC,KSingles),
   length(KSingles,SL),length(VSingles,SL),maplist(=('_'),VSingles),
   subst_2L(KSingles,VSingles,[RTermC,RSGoals],[SRTermC,SRSGoals]),
-  subst(SRTermC,{cbg('_')},cbg,SSRTermC),
+  subst(SRTermC,{cbg('_')},cbg,SSRTermC).
+
+writeg0(X):- is_ftVar(X),!,write_nbsp,write_nbsp,print(X).
+
+writeg0(Term):- 
+  term_variables(Term,Vars), Vars\==[],
+  number_vars_calc_goals(Term,SSRTermC,SRSGoals),
+  writeg0(SSRTermC),
+  if_t(SRSGoals\==[],(nl_if_needed, write(' goals='), call_w_pad_prev(3,az_ansi(print_tree_no_nl(SRSGoals))))),!.
+writeg0(Term):- 
+  term_attvars(Term,Vars), Vars\==[],
+  number_vars_calc_goals(Term,SSRTermC,SRSGoals),
   writeg0(SSRTermC),
   if_t(SRSGoals\==[],(nl_if_needed, write(' goals='), call_w_pad_prev(3,az_ansi(print_tree_no_nl(SRSGoals))))),!.
 
 writeg0(N=V):- is_gridoid(V),!,print_grid(N,V),writeln(' = '),call_w_pad_prev(2,maplist(writeg1,V)).
-writeg0(V):- is_gridoid(V),!,print_grid(V),call_w_pad_prev(2,maplist(writeg1,V)).
+writeg0(V):- is_gridoid(V),!,call_w_pad_prev(2,maplist(writeg1,V)).
 writeg0(N=V):- nl_if_needed,nonvar(N), pp_no_nl(N),writeln(' = '), !, call_w_pad_prev(2,writeg0(V)). 
 writeg0(_):- write_nbsp, fail.
 writeg0(V):- is_list(V),nl_if_needed,write('['),maplist(writeg0,V),write(']').
 writeg0(V):- pp_no_nl(V).
 
 writeg1(V):- is_list(V),nl_if_needed,write('['),!,maplist(writeg1,V),write(']').
-writeg1(_):- write_nbsp,write('\t'),fail.
+writeg1(_):- write_nbsp,write(' \t '),fail.
 writeg1(X):- is_ftVar(X),!,write_nbsp,write_nbsp,print(X).
 writeg1(V):- pp_no_nl(V).
 

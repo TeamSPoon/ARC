@@ -32,20 +32,28 @@ test_ogs_m:- clsmake, my_time(forall(test_ogs(_,_,true),true)).
 test_ogs_m0:- clsmake, my_time(forall(test_ogs0(_,_,true),true)).
 
 
+red_only(X):-
+  into_grid(t_1b60fb0c_trn_0_in,In),
+  into_grid(t_1b60fb0c_trn_0_out,Y),
+  grid_minus_grid(Y,In,X).
 
 test_ogs2a:- mmake,
-  into_grid(t_1b60fb0c_trn_0_in,In),
-  into_grid(t_1b60fb0c_trn_0_out,Y),
-  grid_minus_grid(Y,In,X),
-  print_side_by_side(X,Y),
-  all_ogs_test(A,X,Y),pp(A).
+  red_only(In),
+  into_grid(t_1b60fb0c_trn_0_out,Out),
+  print_side_by_side(test_ogs2a,In,Out),
+  show_ogs_ans(In,Out).
+
+
+show_ogs_ans(In,Out):- all_ogs(Answers,In,Out),Answers\==[],!,pp(Answers).
+show_ogs_ans(In,Out):- 
+  locally(t_l:pss_trace([redo]), % options: call,step,redo,exit
+    all_ogs(Answers,In,Out)),Answers\==[],!,pp(Answers).
 
 test_ogs2b:- mmake,
-  into_grid(t_1b60fb0c_trn_0_in,In),
-  into_grid(t_1b60fb0c_trn_0_out,Y),
-  grid_minus_grid(Y,In,X),
-  print_side_by_side(X,In),
-  all_ogs_test(A,X,Y),pp(A).
+  red_only(In),
+  into_grid(t_1b60fb0c_trn_0_in,Out),
+  print_side_by_side(test_ogs2b,In,Out),
+  show_ogs_ans(In,Out).
 
 maybe_ogs_test:- 
   set_current_test('1b60fb0c'),
@@ -151,6 +159,7 @@ idea_for_data(inp-trim_to_rect4).
 %idea_for_data(inp-fpad_grid(f)).
 %idea_for_data(out-fpad_grid(s)).
 idea_for_data(both-bg_to_not_fg).
+%idea_for_data(subst_all_fg_colors_with_vars(_,_)).
 %idea_for_data(both-unbind_bg).
 %idea_for_data(both-unbind_black).
 %idea_for_data(both-constrain_grid(f,_CheckType)).
@@ -164,15 +173,26 @@ ogs_rotate(P2,I,O):- rotP2(P2),grid_call(P2,I,O),I\=@=O.
 all_ogs(R,In,Out):-
   findall(E,maybe_ogs(E,In,Out),R).
 
-all_ogs_test(R,In,Out):-
-  findall(E,maybe_ogs(E,In,Out),R).
+def_ogs_prog(
+ [
+ %must(inp-subst_all_fg_colors_with_vars(_,_)),
+  must(out-subst_color(black,zero)),
+  %must(inp-subst_color(red,blue)),
+  disallow(inp-bg_to_not_fg),
 
-def_ogs_prog([must(inp-bg_to_not_fg),
-  must(out-bg_to_not_fg),allow(all)]).
+  must(inp-trim_to_rect4),
+  must(inp-fpad_grid(f,var)),
+
+  disallow(out-bg_to_not_fg),
+  
+  must(out-constrain_grid_now(s,Trig)),
+  must(inp-constrain_grid_now(f,Trig)),
+  disallow(out-bg_to_not_fg),  
+  allow(all)]).
 %def_ogs_prog([all,must(out-trim_to_rect4)]).
 def_ogs_prog([
    must( inp-trim_to_rect4), out-trim_to_rect4, inp-ogs_rotate(_),
-    out-bg_to_not_fg,
+   must(out-bg_to_not_fg),
     rul(strict)]):- fail.
 maybe_ogs(R,In,Out):- 
    def_ogs_prog(OGS),maybe_ogs(OGS,R,In,Out),
@@ -184,8 +204,8 @@ maybe_ogs(Constr,R,In,Out):- var(Out),!,maybe_ogs_test_o(Out),maybe_ogs(Constr,R
 maybe_ogs(Constr,R,In,Out):- \+ is_grid(Out),!,into_grid(Out,OOut),maybe_ogs(Constr,R,In,OOut).
 maybe_ogs(Constr,R,In,Out):- is_grid(In),!, maybe_ogs_pass0(Constr,R,In,Out).
 maybe_ogs(Constr,R,[In|List],Out):- !,
- converts_to_grid(In,Grid),!, (maybe_ogs_pass_1([converts_to_grid],Constr,R,Grid,Out);maybe_ogs(Constr,R,List,Out)).
-maybe_ogs(Constr,R,In,Out):- In\==[],converts_to_grid(In,Grid),!, maybe_ogs_pass0(Constr,R,Grid,Out).
+ maybe_cvt_to_grid(In,Grid),!, (maybe_ogs_pass_1([maybe_cvt_to_grid],Constr,R,Grid,Out);maybe_ogs(Constr,R,List,Out)).
+maybe_ogs(Constr,R,In,Out):- In\==[],maybe_cvt_to_grid(In,Grid),!, maybe_ogs_pass0(Constr,R,Grid,Out).
 
 
 maybe_if_changed(P2,I,O):- grid_call(P2,I,O),notrace(((I\=@=O,mass(O,Mass),Mass>0))).
@@ -195,70 +215,131 @@ maybe_if_changed(P2,I,O):-
   notrace(((print_side_by_side(P2,I,O)),I\=@=O,notrace(mass(O,Mass)),Mass>0)),
   writeg(O),nl_if_needed.
 */
-%pss(P2,I,O):- !.
-pss(P2,I,O):- 
- (( nl_if_needed, dash_chars, pp(P2), nl_if_needed, writeg(I),nl_if_needed, writeg(O),nl_if_needed,dash_chars)).
+skip_pps_port(Port):- t_l:pss_trace(List),!, \+ member(Port,List).
+skip_pps_port(Port):- Port \== exit,!.
+%skip_pps_port(_All).
+pss(Port,_,_,_):- skip_pps_port(Port),!.
+pss(Port,P2,I,O):-   
+ once(( nl_if_needed, dash_chars,dash_chars,pp(Port),dash_chars,writeg(P2), nl_if_needed, writeg(I),nl_if_needed, 
+    print_side_by_side(P2,I,O), writeg(O),nl_if_needed,dash_chars)).
 
 %maybe_ogs_pass0(Constr,R,Grid,Out):- maybe_if_changed(fpad_grid(s),Out,OOut),!, maybe_ogs_pass_1(Prf,Constr,R,Grid,OOut).
-maybe_ogs_pass0(Constr,R,Grid,Out):- maybe_ogs_pass_1([],Constr,RR,Grid,Out),reverse(RR,R).
+maybe_ogs_pass0(Constr,R,Grid,Out):- 
+  pss(call,begin_search(Constr),Grid,Out),
+  maybe_ogs_pass_1([],Constr,RR,Grid,Out),
+  do_exit_hooks(RR),
+  reverse(RR,R).
+
+do_exit_hooks(R):- \+ compound(R),!.
+do_exit_hooks([H|T]):-!,do_exit_hooks(H),do_exit_hooks(T).
+do_exit_hooks(C):- clause(is_exit_hook(C),Hook),!,call(Hook).
+do_exit_hooks(_).
 
 maybe_ogs_pass_1(Prf,Constr,R,In,Out):- select(after(Before,Idea),Constr,Next),member(Before,Prf),!, 
   io_idea(Idea,IO,Call), maybe_ogs_pass_2([Idea|Prf],Next,Idea,IO,Call,R,In,Out).  
-
 maybe_ogs_pass_1(Prf,Constr,R,In,Out):- select(must(Idea),Constr,Next),!,
-  io_idea(Idea,IO,Call), maybe_ogs_pass_2([Idea|Prf],Next,Idea,IO,Call,R,In,Out).  
-
-maybe_ogs_pass_1(Prf,Constr,R,In,Out):- select(must(Idea),Constr,Next),!,
-  io_idea(Idea,IO,Call), maybe_ogs_pass_2([Idea|Prf],Next,Idea,IO,Call,R,In,Out).  
+  io_idea(Idea,IO,Call), maybe_ogs_pass_2([Idea|Prf],Next,Idea,must(IO),Call,R,In,Out).  
 maybe_ogs_pass_1(Prf,_Constr,R,In,Out):- try_ogs_pass_8(Prf,R,In,Out),!,ignore(learn_hybrid_shape_board(ogs(R),In)).
 
 maybe_ogs_pass_1(Prf,Constr,R,In,Out):- idea_for(Idea), 
   allowed_in(Idea,Constr), io_idea(Idea,IO,Call),  
   maybe_ogs_pass_2([Idea|Prf],Constr,Idea,IO,Call,R,In,Out).  
 
-maybe_ogs_pass_2(Prf,Constr,Idea,inp,Call,R,In,Out):- 
-   maybe_if_changed(grid_call(Call),In,NewIn),       
+maybe_ogs_pass_2(Prf,Constr,Idea,must(inp),Call,R,In,Out):- 
+   call(grid_call(Call),In,NewIn),       
    maybe_ogs_pass_1(Prf,[disallow(Idea)|Constr],R,NewIn,Out).
-maybe_ogs_pass_2(Prf,Constr,Idea,out,Call,R,In,Out):- 
-   maybe_if_changed(grid_call(Call),Out,NewOut),   
+maybe_ogs_pass_2(Prf,Constr,Idea,must(out),Call,R,In,Out):- 
+   call(grid_call(Call),Out,NewOut),   
    maybe_ogs_pass_1(Prf,[disallow(Idea)|Constr],R,In,NewOut).
 
-%maybe_ogs(pass_1,[unbind_black|R],In,Out):- sub_var(black,In),maybe_if_changed(unbind_black,In,IIn), mass(IIn,Mass),Mass>0, maybe_ogs(pass_2,R,IIn,Out).
+maybe_ogs_pass_2(Prf,Constr,Idea,inp,Call,R,In,Out):- 
+   maybe_if_changed_grid_call(Call,In,NewIn),       
+   maybe_ogs_pass_1(Prf,[disallow(Idea)|Constr],R,NewIn,Out).
+maybe_ogs_pass_2(Prf,Constr,Idea,out,Call,R,In,Out):-
+   maybe_if_changed_grid_call(Call,Out,NewOut),       
+   maybe_ogs_pass_1(Prf,[disallow(Idea)|Constr],R,In,NewOut).
+
+
+subst_all_fg_colors_with_vars(Cs,Vs,In,Out):- 
+  unique_colors(In,UC),
+  include(p1_call((is_fg_color,is_real_color,\==(zero))),UC,Cs),!,
+  Cs\==[], % at least some colors
+  subst_colors_with_vars(Cs,Vs,In,Out),    
+  ground(Cs), % fully grounded test
+  maplist(cfg,Vs), % constrain to foreground
+  maplist(dif(zero),Vs), % constrain to not zero
+  !.
+
+is_exit_hook(subst_all_fg_colors_with_vars(Cs,Vs,_In,_Out)):- trace,
+  Cs\=@=Vs, % slightly differnt 
+  list_to_set(Vs,Set), Vs=@=Set, % All differnt colors
+  ground(Vs), % fully grounded results
+  maplist(same_color_class,Cs,Vs), % FG == FG ,.. BG == BG etc    
+  %\+ member(black,Vs),
+  !.
+
+
+maybe_if_changed_grid_call(Call,Out,NewOut):-
+   maybe_if_changed(grid_call(Call),Out,NewOut),
+   pss(step,before_and_after(maybe_if_changed(grid_call(Call))),Out,NewOut).
+
+   %maybe_ogs(pass_1,[unbind_black|R],In,Out):- sub_var(black,In),maybe_if_changed(unbind_black,In,IIn), mass(IIn,Mass),Mass>0, maybe_ogs(pass_2,R,IIn,Out).
 %maybe_ogs(pass_2,[into_monogrid(find)|R],In,Out):- maybe_if_changed(into_monogrid,Out,OOut), maybe_ogs(pass_3,R,In,OOut).
 %maybe_ogs(pass_3,[into_monogrid(srcharea)|R],In,Out):- maybe_if_changed(into_monogrid,In,IIn), maybe_ogs(pass_4,R,IIn,Out).
 %maybe_ogs(pass_4,[trim_to_rect|R],In,Out):- maybe_if_changed(trim_to_rect,In,IIn),maybe_ogs(pass_5,R,IIn,Out).
 %maybe_ogs(pass_5,R,In,Out):- subst(In,red,blue,InC),rot180(InC,In180), maybe_ogs(pass_7,R,In180,Out).
 try_ogs_pass_8(Prf,R,In,Out):- try_ogs_pass_9(Prf,R,In,Out).
-try_ogs_pass_8(Prf,[subst(Cs,Vs)|R],In,Out):- subst_colors_with_vars(Cs,Vs,In,IIn),
-  Cs\==[], % at least some colors
-  ground(Cs), % fully grounded test
-  try_ogs_pass_9(Prf,R,IIn,Out),  % do our search!
-  Cs\=@=Vs, % slightly differnt 
-  maplist(cfg,Vs),
-  maplist(same_color_class,Cs,Vs), % FG == FG ,.. BG == BG etc    
-  ground(Vs), % fully grounded results
-  list_to_set(Vs,Set), Vs=@=Set. % All differnt colors
-  %\+ member(black,Vs),
 % 007bbfb7 needs loose %,!,R\==loose.
 %try_ogs_pass_9(Prf,[rul(R),loc2D(X,Y)/*grid(In)*/],In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
 %try_ogs_pass_9(Prf,[loc2D(X,Y),rul(ogs_11)/*grid(In)*/|Prf],In,Out):- 
-%  pss(ogs_11(Prf),In,Out),
+%  pss(redo,ogs_11(Prf),In,Out),
 %  ogs_11(X,Y,In,Out),!.
 try_ogs_pass_9(Prf,ROut,In,Out):-
- copy_term(In+Out,CIn+COut), once(( ogs_11(X,Y,In,Out),(find_ogs(X,Y,In,Out)->R=strict;R=loose))),
+   pss(redo,ogs_r_find(Prf),In,Out),
+   ogs_r_find(X,Y,R,In,Out),
    [loc2D(X,Y),rul(R)/*grid(In)*/|Prf]=ROut,
-   reverse(ROut,OutR),
-   pss(OutR,CIn,COut).
+   once((reverse(ROut,OutR), pss(exit,OutR,In,Out))).
 
+ogs_r_find(X,Y,R,In,Out):- 
+  copy_term(In+Out,CIn+COut),
+  copy_term(In+Out,DIn+DOut), 
+  ogs_11(X,Y,DIn,DOut),(find_ogs(X,Y,CIn,COut)->R=strict;R=loose).
 
 same_color_class(FG,NotBG):- is_fg_color(FG),!, \+ is_bg_color(NotBG).
 same_color_class(BG,NotFG):- is_bg_color(BG),!, \+ is_fg_color(NotFG).
 
+% unify allowing some failures
+uaf(Fm,G1,G2):- uaf(Fm,0,_Fo,G1,G2).
+
+uaf_split(Cmpd,H,T):- compound(Cmpd),uaf_split_2(Cmpd,H,T).
+uaf_split_2([H|T],H,T):-!.
+uaf_split_2(Cmpd,Name,Args):-compound_name_arguments(Cmpd,Name,Args).
+
+% unify allowing some failures (cells only)
+uaf(_Fm,Fn,Fn,Cell1,Cell2):- Cell1=Cell2,!.
+uaf(Fm,Fi,Fo,Cmpd1,Cmpd2):- uaf_split(Cmpd1,H1,T1),uaf_split(Cmpd2,H2,T2),
+  uaf(Fm,Fi,Fn,H1,H2), uaf(Fm,Fn,Fo,T1,T2).   
+uaf(Fm,Fi,Fo,_,_):- plus(Fi,1,Fo),Fm>Fo.
+
+% unify penalizing a resource each failure
+upref(Resource,O1,O2):-
+  resource_value(Resource,Value),
+  uaf(Value,0,Used,O1,O2),
+  ((Used>0) ->  
+    (minus(Value,Used,NewValue),b_set_resource(Resource,NewValue)) 
+   ; true).
+
+uaf_append(Fm,Fi,Fo,[], L1, L2):- uaf(Fm,Fi,Fo,L1,L2).
+uaf_append(Fm,Fi,Fo,[H1|T], L, [H2|R]) :- uaf(Fm,Fi,Fn,H1,H2),
+    uaf_append(Fm,Fn,Fo,T, L, R).
+
+% append allowing some failures (cells only)
+
+  
 
 
 
-
-converts_to_grid(In,Grid):- is_object(In),
+maybe_cvt_to_grid(In,Grid):- is_object(In),
    global_grid(In,Grid),!.
 
 
@@ -547,7 +628,7 @@ ogs_0(CheckType,H,V,FG,SG):-
   %true.
 
 
-ogs_1(H,V,FindI,Search):- \+ is_grid(FindI),!,converts_to_grid(FindI,Grid),ogs_1(H,V,Grid,Search).
+ogs_1(H,V,FindI,Search):- \+ is_grid(FindI),!,maybe_cvt_to_grid(FindI,Grid),ogs_1(H,V,Grid,Search).
 ogs_1(H,V,FindI,Search):- (\+ number(H); \+ number(V)), !, ogs_11(H,V,FindI,Search).
 ogs_1(Hi,Vi,Find,Search):-
   H is Hi - 1, V is Vi - 1,  
@@ -560,7 +641,7 @@ ogs_1(Hi,Vi,Find,Search):-
   ogs_pt2(H,FGrid,Next),!.
 
 
-ogs_11(H,V,FindI,Search):- \+ is_grid(FindI),!,converts_to_grid(FindI,Grid),ogs_11(H,V,Grid,Search).
+ogs_11(H,V,FindI,Search):- \+ is_grid(FindI),!,maybe_cvt_to_grid(FindI,Grid),ogs_11(H,V,Grid,Search).
 ogs_11(H,V,FindI,Search):-
   vis2D(Search,SH,SV),
   vis2D(FindI,FH,FV),
