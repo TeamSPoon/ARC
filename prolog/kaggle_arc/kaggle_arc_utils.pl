@@ -256,10 +256,9 @@ subst0011a(X, Y, Term, NewTerm ) :-
        maplist(subst0011a(X, Y), Args, ArgsNew),
         compound_name_arguments( NewTerm, F, ArgsNew )))))),!.
 
-
-subst001C(I,F,R,O):- subst001_p2(same_terms,I,F,R,O),!.
-subst0011C(F,R,I,O):- subst0011_p2(same_terms,F,R,I,O),!.
-subst_2LC(F,R,I,O):- subst_2L_p2(same_terms,F,R,I,O).
+subst001C(I,F,R,O):- subst001_p2(same_term,I,F,R,O),!.
+subst0011C(F,R,I,O):- subst0011_p2(same_term,F,R,I,O),!.
+subst_2LC(F,R,I,O):- subst_2L_p2(same_term,F,R,I,O).
 
 subst_2L_p2(_P2, [],_,I,I):-!.
 subst_2L_p2(_P2, _,[],I,I):-!.
@@ -283,7 +282,7 @@ subst0011_p2(P2, X, Y, Term, NewTerm ) :-
           NewTerm = NewCopy, maplist(call,NewGoals))))).
 
 subst0011a_p2(P2, X, Y, Term, NewTerm ) :-
- (call_p2(P2, X,Term)-> Y=NewTerm ;
+ (call_p2s(P2,X,Term)-> Y=NewTerm ;
   (is_list(Term)-> maplist(subst0011a_p2(P2, X, Y), Term, NewTerm );
    (( \+ compound(Term); Term='$VAR'(_))->Term=NewTerm;
      ((compound_name_arguments(Term, F, Args),

@@ -190,9 +190,9 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   :- set_prolog_flag(toplevel_print_anon,false).
   :- set_prolog_flag(toplevel_print_factorized,true).
   
-  :- set_prolog_flag(answer_write_options, [quoted(true), portray(true), max_depth(5), attributes(dots)]).
-  :- set_prolog_flag(debugger_write_options, [quoted(true), portray(true), max_depth(5), attributes(dots)]).
-  :- set_prolog_flag(print_write_options, [quoted(true), portray(true), max_depth(50), attributes(dots)]).
+  :- set_prolog_flag(answer_write_options, [quoted(true), portray(true), max_depth(5), attributes(portray)]).
+  :- set_prolog_flag(debugger_write_options, [quoted(true), portray(true), max_depth(5), attributes(portray)]).
+  :- set_prolog_flag(print_write_options, [quoted(true), portray(true), max_depth(50), attributes(portray)]).
   
   :- set_prolog_flag(debug_on_error,true).
   :- set_prolog_flag(report_error,true).

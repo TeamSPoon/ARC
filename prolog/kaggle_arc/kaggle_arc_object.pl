@@ -962,7 +962,11 @@ mass(I,Count):- globalpoints(I,Points),mass(Points,Count),!.
 is_object_or_oid(I):- once((is_object(I) ; is_oid(I))).
 
 
+unique_fg_colors(In,Cs):- is_grid(In),!,
+  unique_colors(In,UC),
+  include(p1_call((is_fg_color,is_real_color,\==(zero))),UC,Cs),!.
 unique_fg_colors(Obj,List):- indv_props(Obj,unique_fg_colors(List))*->true;unique_fg_colors2(Obj,List).
+
 %unique_fg_colors(G,FG):- indv_props(G,unique_colors(SUCOR)),include(is_fg_color,SUCOR,FG),!.
 unique_fg_colors2(G,SUCOR):- colors_cc(G,GF),quietly((maplist(arg(1),GF,UC),include(is_real_fg_color,UC,SUCO))),reverse(SUCO,SUCOR).
 

@@ -582,7 +582,7 @@ maybe_term_goals(Term,TermC,Goals):-
   term_variables(Term,Vars),
   include(not_in(Attvars),Vars,PlainVars),   
   copy_term((Attvars+PlainVars+Term),(AttvarsC+PlainVarsC+TermC),Goals),
-  numbervars(PlainVarsC,10,Ten1,[singletons(true)]),
+  numbervars(PlainVarsC,10,Ten1,[singletons(true),attvar(skip)]),
   numbervars(AttvarsC+Goals,Ten1,_Ten,[attvar(bind),singletons(false)]).
 
 maybe_replace_vars([],SGoals,TermC,SGoals,TermC):-!.
@@ -599,11 +599,11 @@ maybe_replace_vars([_|VarsC],SGoals,TermC,RSGoals,RTermC):-
 
 src_sameish(Orig,Find):- copy_term(Orig,COrig),Find=Orig,Orig=@=COrig.
 
-number_vars_calc_goals(Term,SSRTermC,SRSGoals):- 
+number_vars_calc_goals(Term,SSRTermC,[1|SRSGoals]):- 
   term_singletons(Term,Singles),
   term_attvars(Term,Vars),
   copy_term(Term+Vars+Singles,TermC+VarsC+SinglesC,Goals),
-  notrace(catch(numbervars(TermC+Goals,0,_Ten1,[singletons(false)]),_,fail)),
+  notrace(catch(numbervars(TermC+Goals,0,_Ten1,[singletons(false),attvar(skip)]),_,fail)),
   sort_goals(Goals,VarsC,SGoals),
   maybe_replace_vars(VarsC,SGoals,TermC,RSGoals,RTermC),
   include(not_sub_var(RSGoals),SinglesC,KSingles),
@@ -614,8 +614,7 @@ number_vars_calc_goals(Term,SSRTermC,SRSGoals):-
     {cbg('$VAR'('__'))}=cbg],
      SRTermC,SSRTermC),!.
 
-
-number_vars_calc_goals(Term,RTermC,RSGoals):-
+number_vars_calc_goals(Term,SRTermC,[2|RSGoals]):-
   term_attvars(Term,AVars),
   copy_term(Term+AVars,TermC+VarsC,GoalsI), 
   term_attvars(GoalsI,GAttvars), copy_term(GoalsI+GAttvars,_+GAttvarsC,GoalsGoals),
@@ -625,12 +624,11 @@ number_vars_calc_goals(Term,RTermC,RSGoals):-
   sort_goals(Goals,SortVars,SGoals),
   maybe_replace_vars(SortVars,SGoals,TermC,RSGoals,RTermC),
   subst_1L_p2(src_sameish,[
-    {dif('$VAR'('__'),RED)}=dif(RED),
-    {cbg('$VAR'('__'))}=cbg],
+    {dif('$VAR'('___'),RED)}=dif(RED),
+    {cbg('$VAR'('___'))}=cbg],
      RTermC,SRTermC),!.
 
-
-number_vars_calc_goals(Term,SSRTermC,SRSGoals):-
+number_vars_calc_goals(Term,SSRTermC,[3|SRSGoals]):-
   term_singletons(Term,Singles),
   term_attvars(Term,Vars),
   copy_term(Term+Vars+Singles,TermC+VarsC+SinglesC,Goals),
@@ -638,16 +636,38 @@ number_vars_calc_goals(Term,SSRTermC,SRSGoals):-
   sort_goals(Goals,VarsC,SGoals),
   maybe_replace_vars(VarsC,SGoals,TermC,RSGoals,RTermC),
   include(not_sub_var(RSGoals),SinglesC,KSingles),
-  length(KSingles,SL),length(VSingles,SL),maplist(=('_'),VSingles),
+  length(KSingles,SL),length(VSingles,SL),maplist(=('$VAR'('__')),VSingles),
   subst_2L(KSingles,VSingles,[RTermC,RSGoals],[SRTermC,SRSGoals]),
   subst(SRTermC,{cbg('_')},cbg,SSRTermC),!.
 
-writeg(Term):- ignore( \+ notrace(catch(writeg0(Term),E,(pp(E),writeq(Term))))).
+number_vars_calc_goals(Term,TermC,[4|SGoals]):-
+  term_variables(Term,Vars),
+  term_attvars(Term,Attvars),
+  copy_term(Term+Vars+Attvars,TermC+VarsC+AttvarsC,Goals),
+  notrace(catch(numbervars(TermC+Goals,0,_Ten1,[singletons(true)]),_,fail)),
+  append([AttvarsC,VarsC,Attvars,Vars],Sorted),
+  sort_goals(Goals,Sorted,SGoals),!.
 
-writeg0(Term):- 
-  number_vars_calc_goals(Term,SSRTermC,SRSGoals),
-  writeg5(SSRTermC),
-  if_t(SRSGoals\==[],(nl_if_needed, write(' goals='), call_w_pad_prev(3,az_ansi(print_tree_no_nl(SRSGoals))))),!.
+number_vars_calc_goals(Term,TermC,[5|SGoals]):-
+  term_variables(Term,Vars),
+  term_attvars(Term,Attvars),
+  copy_term(Term+Vars+Attvars,TermC+VarsC+AttvarsC,Goals),
+  numbervars(TermC+Goals,0,_Ten1,[singletons(false),attvar(skip)]),
+  append([AttvarsC,VarsC,Attvars,Vars],Sorted),
+  sort_goals(Goals,Sorted,SGoals),!.
+
+
+
+writeg(Term):- ignore( \+ notrace(catch(once(writeg0(Term);pp(Term)),E,(pp(E),writeq(Term))))).
+
+writeg0(Term):- term_attvars(Term,Attvars),Attvars\==[],!,
+  (((number_vars_calc_goals(Term,TermC,Goals),
+  writeg5(TermC)),!,
+  if_t(Goals\==[],(nl_if_needed, 
+    write(' goals='), call_w_pad_prev(3,az_ansi(print_tree_no_nl(Goals))))))),!.
+
+writeg0(Term):- \+ ground(Term), must_det_ll((  
+  numbervars(Term,0,_Ten1,[singletons(true),attvar(skip)]), writeg5(Term))).
 writeg0(Term):- writeg5(Term),!.
 
 writeg5(X):- is_ftVar(X),!,write_nbsp,write_nbsp,print(X).
