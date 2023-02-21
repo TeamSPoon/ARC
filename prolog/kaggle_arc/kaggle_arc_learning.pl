@@ -125,8 +125,8 @@ propagate(center2G(_,_)).
 propagate(loc2D(_X2D,_Y1D)).
 %propagate(pen([cc(_SILVER,_N3)|_More])).
 propagate(pen(_)).
-propagate(norm_grid(_NormalGrid)).
-propagate(norm_ops(_UnrotateList)).
+propagate(algo_grid(norm,_NormalGrid)).
+propagate(algo_ops(norm,_UnrotateList)).
 propagate(rotOffset2D(_O3,_O1)).
 propagate(iz(sid(_Sid_13))).
 propagate(loc2G(_X2G,_Y1G)).
@@ -164,8 +164,8 @@ must_use(/*b*/iz(indiv(i_diag))).
 
 must_use(link(NotSees,_)):- NotSees\=sees(_).
 %must_use(link(_,_,_)).
-must_use(norm_grid(_)).
-must_use(norm_ops(_)).
+must_use(algo_grid(norm,_)).
+must_use(algo_ops(norm,_)).
 must_use(was_oid(_)).
 must_use(sid(_)).
 %must_use(/*b*/iz(Atom)):- !, atom(Atom).
@@ -187,8 +187,8 @@ for_creating(loc2D(_X2D,_Y1D)).
 %propagate(pen([cc(_SILVER,_N3)|_More])).
 for_creating(pen(_)).
 for_creating(iz(Atom)):- atom(Atom).
-for_creating(norm_grid(_NormalGrid)).
-for_creating(norm_ops(_UnrotateList)).
+for_creating(algo_grid(norm,_NormalGrid)).
+for_creating(algo_ops(norm,_UnrotateList)).
 for_creating(rotOffset2D(_O3,_O1)).
 for_creating(iz(sid(_Sid_13))).
 for_creating(loc2G(_X2G,_Y1G)).
@@ -703,20 +703,22 @@ extend_obj_proplist1(Grp,Props,OUTL):- must_det_ll(is_obj_props(Props)),
   into_obj_plist(OUT,OUTL).
 
 extend_obj_prop(Grp,Obj,Prop):- is_in_subgroup(Grp,Obj,Prop).
-extend_obj_prop(_Grp,obj(List),Prop):- 
- once((\+ member(norm_grid(_),List),
+extend_obj_prop(_Grp,obj(List),Prop):- algo_list(Algo),
+ once((\+ member(algo_grid(Algo,_),List),
   object_grid(obj(List),Grid),
-  normalize_grid(NormOps,Grid,NormGrid))),
-  member(Prop,[norm_ops(NormOps),norm_grid(NormGrid)]).
-extend_obj_prop(_Grp,obj(List),Prop):- 
- once((\+ member(comp_grid(_),List),
-  object_grid(obj(List),Grid),
-  compress_grid(NormOps,Grid,NormGrid))),
-  member(Prop,[comp_ops(NormOps),comp_grid(NormGrid)]).
+  algo_ops_grid(Algo,NormOps,Grid,NormGrid),
+  localpoints(NormGrid,NormLPoints),maplist(arg(2),NormLPoints,ShapeNormLPoints),  
+  shape_id(ShapeNormLPoints,NormShapeID))),
+  member(Prop,[algo_ops(Algo,NormOps),iz(algo_sid(Algo,NormShapeID)),algo_grid(Algo,NormGrid)]).
+
 extend_obj_prop(_Grp,Obj,Props):- fail,
  once((localpoints(Obj,P),vis2D(Obj,H,V),points_to_grid(H,V,P,Grid),
   grid_props(Grid,Props))).
 
+algo_list(norm).
+algo_list(comp).
+algo_ops_grid(comp,NormOps,Grid,NormGrid):- compress_grid(NormOps,Grid,NormGrid).
+algo_ops_grid(norm,NormOps,Grid,NormGrid):- normalize_grid(NormOps,Grid,NormGrid).
 
 
 
@@ -1022,8 +1024,8 @@ olg_globalpoints(_Matches,_Obj,L,GP):-
 olg_globalpoints(Matches,_Obj,L,GP):-
  must_det_ll((
    combine_props(L,Matches,LL),!,   
-   member_prop(norm_grid(NG),LL), 
-   member_prop(norm_ops(Ops),LL),
+   member_prop(algo_grid(norm,NG),LL), 
+   member_prop(algo_ops(norm,Ops),LL),
    maplist(writeln,[unreduce_grid=NG,ops=Ops]),
    BAD = once(var(NG);var(Ops); \+ can_do_ops(NG,Ops)))),
    if_t(BAD, wqnl(olg_globalpoints(LL))),!,
@@ -1191,9 +1193,11 @@ ip_op_debug_info(IP,OP,[LOCK]):-
 
 
 save_rule1(GID,TITLE,IP,OP):- 
+  WAZ_REV = "Was Reversed ",
+  \+ sub_var(WAZ_REV,TITLE ),
   has_prop(giz(g(in)),OP),
   has_prop(giz(g(out)),IP),!,
-  save_rule1(GID,"Was Reversed " + TITLE,OP,IP).
+  save_rule1(GID,WAZ_REV + TITLE,OP,IP).
 
 % All background objects
 save_rule1(IO_DIR,TITLE,AL,BL):-
@@ -1207,10 +1211,12 @@ save_rule1(IO_DIR,TITLE,AL,BL):-
 
 save_rule1(IO_DIR,TITLE,A,B):- save_rule2(IO_DIR,TITLE,A,B),!.
 
-save_rule2(IO_DIR,TITLE,IP,OP):- 
+save_rule2(IO_DIR,TITLE,IP,OP):- fail,
+  WAZ_REV = "Was Reversed ",
+  \+ sub_var(WAZ_REV,TITLE ),
   has_prop(giz(g(in)),OP),
   has_prop(giz(g(out)),IP),!,
-  save_rule2(IO_DIR,"Reversed " + TITLE,OP,IP).
+  save_rule2(IO_DIR,WAZ_REV + TITLE,OP,IP).
 
 save_rule2(IO_DIR,TITLE,IP,OP):- 
  ip_op_debug_info(IP,OP,LOCK),
@@ -1545,8 +1551,8 @@ no_process_props(P):- no_process(P); (compound(P),compound_name_arity(P,F,_),no_
 no_process(oid(_)).
 no_process(P):- (compound(P),compound_name_arity(P,F,_),no_process_props_f(F)),!.
 no_process(was_oid(_)).
-%no_process(norm_ops(_)).
-%no_process(norm_grid(_)).
+%no_process(algo_ops(norm,_)).
+%no_process(algo_grid(norm,_)).
 no_process(call(_)).
 no_process(prefer_unify(_,_)).
 no_process(prefer_if(_,_)).
@@ -1567,7 +1573,7 @@ no_process(T):- compound(T),sub_term(E,T),(var(E);E='$VAR'(_)),!.
 transfer_props(Type,I,O):- transfer_prop(Type,I), transfer_prop(Type,O), make_unifier(I,O).
 transfer_props(Type,I,O):- transfer_prop(Type,I), transfer_prop(Type,O), \+ make_unifier(I,O).
 
-% norm_ops([...])
+% algo_ops(norm,[...])
 make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- F1=norm_ops, 
   I=..[F1,R1],
   O=..[F1,R2],
@@ -1592,7 +1598,7 @@ combine_code(Code1,Code2,Code):- listify(Code1,C1),listify(Code2,C2),append(C1,C
 %copy_row_ntimes(_,sy)
 %and(make_solid_object(rect,2,1),make_solid_object(rect,3,1)),grid_progress(g(perfect))
 
-%norm_norm_ops([double_size,grid_progress(g(perfect))],[Red],Ops,G):- (Ops = make_solid_object(square,2,2), G=[[Red]]),!.
+%norm_algo_ops(norm,[double_size,grid_progress(g(perfect))],[Red],Ops,G):- (Ops = make_solid_object(square,2,2), G=[[Red]]),!.
 
   /*
 
@@ -1759,13 +1765,13 @@ make_rule_l2r_2(_Dir,Shared,II,OO,II,OO,Shared).
 arc_cache:object_to_object=[ arc_cache:object_to_object( t('0d3d703e'),
                 "IN -> OUT",
                 obj( [ pen([cc(RED,MASS)]),
-                       norm_grid([[RED,RED,RED]]),
+                       algo_grid(norm,[[RED,RED,RED]]),
                        | SHARED_CONSTRAINED_OPEN ]),
                 obj( [ pen([cc(PURPLE,MASS)]),
-                       norm_grid([[PURPLE,PURPLE,PURPLE]])
+                       algo_grid(norm,[[PURPLE,PURPLE,PURPLE]])
                        | SHARED ])),
 
-                 SHARED= [rot2L(A), vis2D(B,MASS),loc2D(D,E),norm_ops(F), rotOffset2D(G,H),iz(sid(I)),
+                 SHARED= [rot2L(A), vis2D(B,MASS),loc2D(D,E),algo_ops(norm,F), rotOffset2D(G,H),iz(sid(I)),
                           loc2G(J/K,L/M)],
                  CONSTRAINED =
                          [cc(fg,MASS), cc(bg,0),cc(is_colorish_var,0),cc(plain_var,0), cc(RED,MASS),
@@ -1781,7 +1787,7 @@ compound_not_ftvar(C):- compound(C), C\=='$VAR'(_).
 make_replacement(I,I):- ( var(I); I='$VAR'(_)), !.
 make_replacement([],[]).
 make_replacement(E,A):- \+ compound(E), p_n_atom(E,Name),gensym(Name,Name1), A='$VAR'(Name1).
-make_replacement(norm_ops(I),norm_ops(_)):- I==[],!.
+make_replacement(algo_ops(norm,I),algo_ops(norm,_)):- I==[],!.
 make_replacement(obj(I),obj(O)):- !, maplist(make_replacement,I,O).
 make_replacement(E,A):- is_list(E), p_n_atom(E,Name),gensym(Name,Name1), A='$VAR'(Name1).
 make_replacement([H|T],[HH|TT]):- compound_not_ftvar(H), !, make_replacement(H,HH),make_replacement(T,TT).

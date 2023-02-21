@@ -1693,18 +1693,6 @@ consensus1(ColorAdvice,GridS,X,Y,VGrid):-
 nb_set_local_point(H,V,C,Grid):- assertion(is_grid(Grid)),!, 
   ignore((nth1(V,Grid,Row),(Row==[]-> true;nb_set_nth1(H,Row,C)))).
 
-p1_call((P1;Q1),E):- must_be(callable,P1),!, (p1_call(P1,E);p1_call(Q1,E)).
-p1_call((P1,Q1),E):- must_be(callable,P1),!, (p1_call(P1,E),p1_call(Q1,E)).
-p1_call(not(P1),E):- !, \+ p1_call(P1,E).
-p1_call(P1,E):- !, call(P1,E).
-
-my_partition(_,[],[],[]):-!.
-my_partition(P1,[H|L],[H|I],E):- \+ \+ call(P1,H),!,
-  my_partition(P1,L,I,E).
-my_partition(P1,[H|L],I,[H|E]):- 
-   my_partition(P1,L,I,E),!.
-my_partition(P1,H,I,HE):- arcST,break,
-  my_partition(P1,[H],I,HE).
 
 consensus22(Steps,ColorAdvice,L,C):- 
   my_partition(plain_var,L,Vars,Rest0),

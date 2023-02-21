@@ -110,7 +110,6 @@ is_fill_point(GridO,_,C,P1):- would_fill(GridO,C,P1).
  
 is_sedge('.').
  
-p1_or(P1A,P1B,X):- call(P1A,X)->true;call(P1B,X).
 is_point_type(T,V):- ground(V),ground(T), sub_var(T,V).
 
 

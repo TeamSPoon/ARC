@@ -108,7 +108,7 @@ w_section(Title,Goal,Spyable):- must_det_ll(w_section(Title,Goal,Spyable,maybe))
 w_section_g(Goal):- fail, ignore(call(Goal)),!.
   
 :- meta_predicate(w_section(+,0,+,+)).
-w_section(_,Goal,_,_):- w_section_g(Goal),!.
+%w_section(_,Goal,_,_):- w_section_g(Goal),!.
 w_section(Title,Goal,Spyable,Showing):-  Showing==maybe,!, 
    (wants_output_for(Spyable) -> w_section(Title,Goal,Spyable,'1'); w_section(Title,Goal,Spyable,'0')).
 
@@ -123,19 +123,20 @@ w_section_4(Title,Goal,Spyable,Showing):- wants_html, !, w_section_html(Title,Go
 w_section_4(Title,Goal,Spyable,Showing):- w_section_ansi(Title,Goal,Spyable,Showing).
 
 
-w_section_ansi(Title0,Goal,Spyable,_Showing):- into_title_str(Title0,Title),
+w_section_ansi(Title0,Goal,Spyable,_Showing):- 
+  must_det_ll((into_title_str(Title0,Title),
   nl_if_needed,dash_chars,
   MU = '', % was 'mu'
   once(nb_current('$w_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),
-  setup_call_cleanup(format('~N~w~w!~w! ~@ |~n',[MU,Ident, Spyable, print_title(Title)]),  
+  setup_call_cleanup(must_det_ll((format('~N~w~w!~w! ~@ |~n',[MU,Ident, Spyable, print_title(Title)]))),  
                      locally(b_setval('$w_section',[c(Spyable)|Was]),
-                                      once(tabbed_print_im(Depth+2,in_w_section_depth(Goal)))), 
-                     format('~N~w\u00A1~w~w\u00A1 ',[Ident, MU,Spyable])).
+                                      ignore(once(tabbed_print_im(Depth+2,in_w_section_depth(Goal))))), 
+                     must_det_ll((format('~N~w\u00A1~w~w\u00A1 ',[Ident, MU,Spyable])))))).
 
 in_w_section_depth(Goal):- 
    setup_call_cleanup(
        flag('$w_section_depth',Depth,Depth+1),
-       catch(once(Goal),E,u_dmsg(E-->Goal)),
+       catch(must_det_ll(Goal),E,u_dmsg(E-->Goal)),
        flag('$w_section_depth',_,Depth)).
 
 clip_string(Attr,Len,SAttr):- atom_length(Attr,SLen),clip_string(SLen,Attr,Len,SAttr).
@@ -176,10 +177,10 @@ w_section_html(Title,Goal,_Spyable,Class,Showing):-
     
 
 
+:- meta_predicate(call_e_dmsg(+,0)).
+call_e_dmsg(Goal):- catch(ignore(Goal),E,(u_dmsg(error_r(E=Goal)),writeln(E=Goal))).
 
-call_e_dmsg(Goal):- catch(Goal,E,(u_dmsg(error_r(E=Goal)),writeln(E=Goal))).
-
-
+:- meta_predicate(call_e_dmsg(0,-)).
 goal_new_lines(Goal,NewChars):-
   current_output(Out),
   character_count(Out,Start),
@@ -204,7 +205,7 @@ expandable_mode(How):- luser_getval(expansion,V),!,How==V.
 :- luser_default(expansion,bfly).
 
 
-
+:- meta_predicate(call_maybe_det(0,-)).
 call_maybe_det(Goal,Det):- true,call_e_dmsg(Goal),deterministic(Det),true.
 
 
@@ -214,6 +215,7 @@ format_s(Fmt,Args):-
   sformat(SFmt,'~s',[Fmt]),
   format(SFmt,Args).
 
+:- meta_predicate(tabbed_print_im(+,0)).
 tabbed_print_im(_Tab,Goal):- expandable_inlines, !, call_e_dmsg(Goal).
 tabbed_print_im(Tab,Goal):- Tab2 is Tab, call_w_pad(Tab2,call_e_dmsg(Goal)).
 
@@ -240,18 +242,24 @@ invent_key3(Term,DT):- sub_term(E,Term), compound(E), \+ overly_plain_functor(E)
 invent_key3(Term,DT):- one_invent_key(Term,DT).
 
 one_invent_key(Term,Spyable):- \+ compound(Term), invent_key(Term,Spyable),!.
-one_invent_key(Term,Spyable):- compound_name_arguments(Term,F,Args),
+one_invent_key(Term,Spyable):- compound_name_arguments(Term,F,Args), 
    include(is_simple_title_arg,Args,ArgsO),
-   (ArgsO=@=Args-> =(Term,Spyable) ; compound_name_arguments(Spyable,F,ArgsO)),!.
 
+   ((ArgsO=@=Args;cant_re_arity(Term))-> =(Term,Spyable) ; compound_name_arguments(Spyable,F,ArgsO)),!.
+
+cant_re_arity(S):- is_list(S),!.
+cant_re_arity(format(_,_)).
 
 is_simple_title_arg(X):- \+ compound(X),!, \+ is_gridoid(X),!.
+is_simple_title_arg(Map):- is_vm_map(Map),!,fail.
 is_simple_title_arg(_>_):-!.
 is_simple_title_arg(_+_):-!.
-is_simple_title_arg(X):- arg(1,X,A), \+ compound(A), !, \+ is_gridoid(A),!.
+is_simple_title_arg(X):- arg(_,X,A), compound(A),!,fail.
+is_simple_title_arg(_).
 
 overly_plain_functor(Term):- is_list(Term).
 overly_plain_functor(_:_):- !.
+overly_plain_functor(Term):- is_gridoid(Term),!.
 overly_plain_functor(Term):- predicate_property(Term,meta_predicate(_)),!.
 overly_plain_functor(Term):- compound_name_arity(Term,F,_),atom(F),upcase_atom(F,UC),!,downcase_atom(F,UC).
 
@@ -785,10 +793,12 @@ blank_stuff(Col):- ignore(Col="&nbsp;").
 slack_into_rows(List,Row):- append(List,Stf,Row),!,maplist(blank_stuff,Stf).
 slack_into_rows(List,Row):- append(Row,_DropStf,List),!.
 
+:- meta_predicate(as_html_encoded(0)).
 as_html_encoded(Goal):- 
   html_stream_encoding(UTF8),
   with_enc(UTF8,Goal).
 
+:- meta_predicate(with_enc(+,0)).
 with_enc(Enc,Goal):-
  stream_property(current_output,encoding(Was)),
  setup_call_cleanup(current_prolog_flag(encoding,EncWas),

@@ -46,7 +46,8 @@ predsort_using_only(P2,List,Sorted):- predsort(using_compare(P2),List,Sorted).
 using_compare(C,R,A,B):- (A==B-> R=(=) ; must_det_ll((call(C,A,AA),call(C,B,BB),!,compare(R,AA,BB)))).
 predsort_on(P2,List,Sorted):- predsort(sort_on(P2),List,Sorted).
 sort_on(C,R,A,B):- (A==B-> R= (=) ; must_det_ll((call(C,A,AA),call(C,B,BB),!,compare(R,AA+A,BB+B)))).
-
+variants_equal(R,A,B):- first_equals(=@=,compare,R,A,B).
+first_equals(P2,P3,R,A,B):- call(P2,A,B) -> R= (=) ; call(P3,R,A,B).
 :- 
    findall(size2D(HV,HV),between(1,32,HV),SizesSquareS),
    findall(size2D(H,V),(between(1,32,H),between(1,32,V),H\=V),SizesRect),

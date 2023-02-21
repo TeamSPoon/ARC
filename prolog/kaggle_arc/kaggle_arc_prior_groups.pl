@@ -37,10 +37,22 @@ show_interesting_props(_Named,ObjsI,ObjsO):-
 show_interesting_props_gojs(Objs):- u_dmsg(show_interesting_props_gojs(Objs)).
   %8731374e
 
+print_treeified_props(Objs):-
+  maplist(indv_props_list,Objs,RawPropLists),
+  maplist(treed_props_list,RawPropLists,PropLists),
+  treeify_props(PropLists,Tree),
+  pp(Tree).
+
+treed_props_list(RawPropLists,PropLists):-
+  include(p1_not(p1_arg(1,is_gridoid)),RawPropLists,RawPropLists0),
+  care_to_count(RawPropLists0,RawPropLists1),
+  include(p1_not(skip_ku2),RawPropLists1,PropLists),!.
+
 
 show_interesting_named_props(Named,In):-
-   extend_grp_proplist(In,Objs),
-   w_section(print_prop_groups(Named),print_prop_groups(Objs)).
+   extend_grp_proplist(In,Objs),!,
+   w_section(print_prop_groups(Named),print_prop_groups(Objs)),
+   w_section(print_treeified_props(Named),print_treeified_props(Objs)).
 
 show_interesting_named_props(Named,In):-
  must_det_ll((
@@ -82,12 +94,15 @@ print_interesting_named_groups(Named,KUProps):-
 numbered_vars(A,B):- copy_term(A,B),numbervars(B,0,_,[attvars(skip)]).
 
 %skip_ku(pg(_,_,FL,_)):- !, FL \==firstOF, FL \==lastOF. 
-skip_ku(pg(_,_,_,_)).
-skip_ku(link(_,_)).
-skip_ku(iz(media(_))).
+skip_ku2(pg(_,_,_,_)).
+skip_ku2(link(_,_)).
+skip_ku2(iz(media(_))).
+skip_ku2(changes(_)).
+skip_ku2(o(_,_,_,_)).
+
+
+skip_ku(P):- skip_ku2(P).
 skip_ku(giz(_)).
-skip_ku(changes(_)).
-skip_ku(o(_,_,_,_)).
 skip_ku(cc(C,_)):- is_color(C).
 
 objs_with_props([KU-_|Props],Objs,OL,GO):- skip_ku(KU),!,objs_with_props(Props,Objs,OL,GO).
@@ -199,7 +214,13 @@ determine_esets(Objs,ESet):-
 
 print_prop_groups(Objs):-
   determine_esets(Objs,ESet),
-  print_propset_groups(Objs,ESet).
+  w_section(print_esets,print_esets(ESet)),
+  skip_if_ansi(print_propset_groups(Objs,ESet)).
+
+print_esets(ESet):-
+  sort(ESet,ESSet),
+  care_to_count(ESSet,ESSet1),
+  pp(ESSet1).
 
 print_propset_groups(Objs,ESet):- 
   maplist(has_props_set(Objs),ESet,GrpList),
@@ -337,7 +358,7 @@ group_prior_objs(Why,ObjsIn,WithPriors):- fail,
 
 group_prior_objs(Why,Objs,WithPriors):- 
  must_det_ll((
- %print_list_of(debug_as_grid,group_prior_objs,Objs),!,
+ %print_list_of(show_indiv,group_prior_objs,Objs),!,
  get_prior_labels(Objs,Lbls),
  keysort(Lbls,N),
  length(N,Len),
@@ -458,6 +479,53 @@ largest_first_nonbg(IndvS,IndvOB):-
   remove_bgs(IndvO,IndvL,BGIndvS),
   my_append(IndvL,BGIndvS,IndvOB).
 
+care_to_count(GSS,GS):- is_list(GSS),include(is_care_to_count,GSS,GS).
+
+not_care_to_count(Cmpd):- arg(1,Cmpd,E),is_gridoid(E),!.
+not_care_to_count(Cmpd):- arg(1,Cmpd,E),is_points_list(E),!.
+not_care_to_count(iz(info(_))).
+not_care_to_count(iz(HasNumber)):- sub_term(N,HasNumber),number(N),!.
+is_care_to_count(P):- not_care_to_count(P),!,fail.
+is_care_to_count(_).
+
+is_length(N,L):- length(L,N).
+treeify_props([],[]):-!.
+%treeify_props(One,[One]):- \+ is_list(One), !.
+%treeify_props(RRR,R):- sort_vertically(RRR,R),!.
+treeify_props(One,One):- \+ is_list(One), !.
+treeify_props([One],One):-!.
+treeify_props(One,One):- length(One,1), !.
+treeify_props(One,One):- maplist(is_length(1),One), !.
+treeify_props(RRR,R):- sort_vertically(RRR,RR),RRR\=@=RR,!,treeify_props(RR,R).
+%treeify_props(L,LM):- maplist(simpl_ogs,L,MM),L\=@=MM,!,treeify_props(MM,LM).
+%treeify_props(RRR,R):- sort_vertically(RRR,RR),RRR\=@=RR,!,treeify_props(RR,R).
+treeify_props(RRR,HAD->RO):- member(R,RRR),member(HAD,R),maplist(safe_select(HAD),RRR,RR),treeify_props(RR,RO). %,RR\=[[]|_],!.
+treeify_props(RRR,[ (yes(HAD)=HL/NL)->FHAVES ,  (not(HAD)=NL/HL)->FHAVENOTS ]):- flatten(RRR,GF),
+  sort_safe(GF,GSS), 
+  care_to_count(GSS,GS),
+  count_each(GS,GF,UC),keysort(UC,KS),last(KS,N-HAD),N\==1,
+  my_partition(member(HAD),RRR,HAVES,HAVENOTS), % HAVES\=[_],HAVENOTS\=[_],
+  length(HAVES,HL),length(HAVENOTS,NL),
+  maplist(safe_select(HAD),HAVES,HAVESS),%HAVESS\=[[]|_],
+  treeify_props(HAVESS,FHAVES),
+  treeify_props(HAVENOTS,FHAVENOTS),
+  FHAVENOTS\=[].
+
+/*
+%treeify_props(RRR,R):- predsort(using_compare(sort),RRR,RR),RRR\=@=RR,!,treeify_props(RR,R).
+treeify_props(RRR,[One|R]):- select(One,RRR,RRRR),treeify_props(RRRR,R).
+*/
+treeify_props(RRR,R):- sort_vertically(RRR,R).
+
+%:- functor(VV,vv,9009),nb_linkval(vv9009,VV).
+:- length(VV,9009),nb_linkval(vv9009,VV).
+variant_copy(V,C):- ground(V),!,V=C.
+variant_copy(V,C):- copy_term(V,C),term_variables(C,CTV),append(CTV,_,OVV),nb_current(vv9009,VV),OVV=VV,!.
+
+sort_vertically(RRR,RR):- \+ is_list(RRR),!,RR=RRR.
+sort_vertically(RRR,RRO):- maplist(sort_vertically,RRR,RRR0),list_to_set(RRR0,R),predsort(first_equals(variant,sort_on(get_loc2D)),R,RR),reverse(RR,RRO),!.
+get_loc2D(List,loc2D(V,H)):- sub_term(E,List),compound(E),E=loc2D(H,V),!. 
+get_loc2D(P,loc2D(inf,P)). 
 
 
 
@@ -475,7 +543,7 @@ prior_name_by_size(VM,IndvS0,Name):-
       %rank_priors(Name,IndvS1,IndvSL),
       gset(VM.objs)=IndvSL,
       nop((( Name == i_nsew ) -> DebugThis = full ; luser_getval(debug,DebugThis)->true; DebugThis=true)),
-      nop(( DebugThis\==false -> Feedback = debug_as_grid(Title) ; Feedback = print_info)),
+      nop(( DebugThis\==false -> Feedback = show_indiv(Title) ; Feedback = print_info)),
       nop(ignore((DebugThis\==false, print_grid(VM.h,VM.v,Title,IndvSL)))),     
       %dash_chars,
       */

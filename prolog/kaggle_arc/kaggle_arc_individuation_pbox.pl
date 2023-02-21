@@ -273,7 +273,7 @@ i_pbox(GridIn,Objs):-
   locally(nb_setval(use_individuated_cache,false),
   ((do_ig(ROptions,GridIn,IndvS),
   into_grid(GridIn,Grid),
-  locally(nb_setval(debug_as_grid,t),
+  locally(nb_setval(debug_indiv,t),
     show_individuated_nonpair(PairName,ROptions,GridIn,Grid,IndvS))),
    maybe_subdiv(IndvS,Objs))).
 

@@ -198,7 +198,8 @@ make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):-
   %if_t([[black,_]]=@=NormGrid,atrace),
 % RE=ADD=PHASE2   localpoints(NormGrid,NormLPoints),maplist(arg(2),NormLPoints,ShapeNormLPoints),
  
-% RE=ADD=PHASE2  shape_id(ShapeNormLPoints,NormShapeID),
+% RE=ADD=PHASE2
+  %  
   % NormShapeID=ShapeID,
   shape_id(ShapePoints,ShapeID),
   ((fail,select(oid(OID),Overrides,NewOverrides),
@@ -233,8 +234,8 @@ make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):-
     iz(sizeGY(SizeYG)),iz(sizeGX(SizeXG)),
 
     global2G(GlobalXG,GlobalYG),
-  % RE=ADD=PHASE2  iz(norm_sid(NormShapeID)),
-    %iz(mono_norm_sid(MonoNormShapeID)),    
+  % RE=ADD=PHASE2  iz(algo_sid(norm,NormShapeID)),
+    %iz(mono_algo_sid(norm,MonoNormShapeID)),    
     iz(sid(ShapeID)),
     %ngrid(NGrid),
 
@@ -250,7 +251,7 @@ make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):-
     changes([]), % [grid(LocalGrid)],    
     OShapeNames,
     
-  % RE=ADD=PHASE2 [norm_grid(NormGrid),norm_ops(NormOps)],
+  % RE=ADD=PHASE2 [algo_grid(norm,NormGrid),algo_ops(norm,NormOps)],
     % [iz(locY(LocY)),iz(locX(LocX))], % iz(tall(SizeY)),iz(wide(SizeX)),
     
     %obj_to_oid(ID,Iv),
@@ -440,6 +441,13 @@ fix_global_offset(Points,PointsO):- nb_current(global_offset,loc2D(X,Y)),!, offs
 fix_global_offset(GOPoints,OPoints):- GOPoints=OPoints,!.
 
 make_indiv_object(VM,Overrides,GOPoints,NewObj):-
+ must_det_ll((
+  make_indiv_object_real(VM,Overrides,GOPoints,NewObj),
+  %show_indiv(make_indiv_object,NewObj),
+  itrace)).
+ %show_indiv_textinfo(NewObj),!.
+
+make_indiv_object_real(VM,Overrides,GOPoints,NewObj):-
  fix_global_offset(GOPoints,OPoints),
  must_det_ll((
   globalpoints_maybe_bg(OPoints,GPoints),
@@ -1301,14 +1309,10 @@ object_localpoints1(I,_L,X):- object_localpoints3(I,X),!.
 object_localpoints1(I,_L,X):- object_localpoints4(I,X),!.
 
 object_localpoints3(I,XX):-  
- must_det_ll((norm_grid(I,NormGrid), norm_ops(I,Ops),unreduce_grid(NormGrid,Ops,LocalGrid),grid_to_points(LocalGrid,XX))).
+ must_det_ll((algo_grid(norm,I,NormGrid), algo_ops(norm,I,Ops),unreduce_grid(NormGrid,Ops,LocalGrid),grid_to_points(LocalGrid,XX))).
 
-norm_grid(I,NormGrid):- indv_props(I,norm_grid(NormGrid))*->true;(fail,object_grid(I,Grid), normalize_grid(_NormOps,Grid,NormGrid)).
-
-norm_ops(I,NormOps):- indv_props(I,norm_ops(NormOps))*->true;(fail,object_grid(I,Grid), normalize_grid(NormOps,Grid,_NormGrid)).
-
-comp_grid(I,NormGrid):- indv_props(I,comp_grid(NormGrid))*->true;(fail,object_grid(I,Grid), compress_grid(_NormOps,Grid,NormGrid)).
-comp_ops(I,NormOps):- indv_props(I,comp_ops(NormOps))*->true;(fail,object_grid(I,Grid), compress_grid(NormOps,Grid,_NormGrid)).
+algo_grid(I,Algo,NormGrid):- indv_props(I,algo_grid(Algo,NormGrid))*->true;(fail,object_grid(I,Grid), algo_ops_grid(Algo,_NormOps,Grid,NormGrid)).
+algo_ops(I,Algo,NormOps):- indv_props(I,algo_ops(Algo,NormOps))*->true;(fail,object_grid(I,Grid), algo_ops_grid(Algo,NormOps,Grid,_NormGrid)).
 
 object_localpoints4(I,LPoints):-  
  must_det_ll((colorlesspoints(I,RotLCLPoints), 
@@ -1689,7 +1693,7 @@ is_prop_automatically_rebuilt(iz(birth(_))):-!,fail.
 is_prop_automatically_rebuilt(Prop):- sub_term(CP,Prop),(is_color(CP);is_nc_point(CP)),!.
 is_prop_automatically_rebuilt(Prop):- compound(Prop),functor(Prop,F,_),(atom_contains(F,'color');atom_contains(F,'points')),!.
 is_prop_automatically_rebuilt(Prop):-
- member(Prop,[cc(_),mass(_),mass(_),colorlesspoints(_),rot2L(_),roll_shape(_),pen(_),norm_grid(_),norm_ops(_),
+ member(Prop,[cc(_),mass(_),mass(_),colorlesspoints(_),rot2L(_),roll_shape(_),pen(_),algo_grid(norm,_),algo_ops(norm,_),
               iz(multicolored(_)),iz(chromatic(_,_)),
               iz(symmetry_type(_)),iz(stype(_)),iz(monochrome),
               globalpoints(_),localpoints(_)]),!.

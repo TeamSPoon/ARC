@@ -472,7 +472,7 @@ dupe_shape(L,E):- mapgroup(dupe_shape,L,E).
 
 show_shape_lib_expanded(Name):- 
   shape_lib_expanded(Name,GallerySOS),
-  debug_indiv(GallerySOS).
+  print_info(GallerySOS).
 
 show_shape_lib:- %mmake, 
   findall(Name,(clause(in_shape_lib(Name,_Obj),_),nonvar(Name)),Gallery),

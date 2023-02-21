@@ -89,8 +89,16 @@ function toEle(name) {
     var node = null;
     if (name == null)
         return node;
-    if (isElement(name))
-        return name;
+	if( name.jquery ) {
+		node = name.get(0);
+		if (isElement(node))
+			return node;
+	}
+	if( name.nodeType ) {
+		return name;
+	}
+	if (isElement(name))
+		return name;
     if (typeof name !== 'string') return name;
     if (typeof name === "string") {
         node = document.getElementById(name);
@@ -175,81 +183,85 @@ function getSomeElementById(Name, P) {
 
 var TwoFiftyPx = "250px";
 
-function toggleNavL(Name) {
-    var mainE = top.document.getElementById("main");
-    var nameE = top.document.getElementById(Name);
+function toggleNavL(nameE) {
+	var nameE = top.document.getElementById(nameE);
     if (nameE.style.width != "0px") {
         nameE.style.width = "0px";
-        mainE.style.marginLeft = "0px";
-        //mainE.style.width = "200vh";
     } else {
         nameE.style.width = TwoFiftyPx;
-        mainE.style.marginLeft = TwoFiftyPx;
     }
-    var iframeE = top.document.getElementById('lm_xref');
-    if (iframeE != null) { //iframeE.style.width = mainE.style.width;
-        //iframeE.style.marginRight = mainE.style.marginRight; 
-
-    }
+	
     everyoneScrollLeft();
 }
 
 
 function toggleNavR(Name) {
-	var mainE = top.document.getElementById("main");
-	var iframeE = top.document.getElementById('lm_xref');
 	var nameE = top.document.getElementById(Name);
 	if (nameE.style.width != "0px") {
 		nameE.style.width = "0px";
-		mainE.style.marginRight = "0px";
 		//mainE.style.width = "200vh";
 	} else {
 		nameE.style.width = TwoFiftyPx;
-		mainE.style.marginRight = TwoFiftyPx;
 	}
-	if (iframeE != null) { // iframeE.style.width = mainE.style.width;
-		iframeE.style.width = "100%";
-		iframeE.style.height = "fit-content";
-		//	iframeE.style.marginRight = mainE.style.marginRight; 
-	}
-	nameE.style.height = "fit-content";
     everyoneScrollLeft();
+}
+
+function likeMain(mainE) {
+	var mySideNavL = top.document.getElementById('mySideNavL');
+	var mySideNavR = top.document.getElementById('mySideNavR');
+	//mainE.style.marginLeft = mySideNavL.style.width;
+	mainE.style.left = mySideNavL.style.width; mainE.style.marginLeft = "0px";
+	mainE.style.marginRight = mySideNavR.style.width;  mainE.style.right = "0px";
+	//mainE.style.right = mySideNavR.style.width; mainE.style.marginRight ="0px";
+	mainE.style.width = `calc(100% - ${mySideNavL.style.width} - ${mySideNavR.style.width})`
+    mainE.style.height = "calc(100%- 1px)";
+}
+function likeIFrame(mainE) {
+	var mySideNavL = top.document.getElementById('mySideNavL');
+	var mySideNavR = top.document.getElementById('mySideNavR');
+	//mainE.style.marginLeft = mySideNavL.style.width;
+	mainE.style.left = mySideNavL.style.width; mainE.style.marginLeft = "0px";
+	mainE.style.marginRight = mySideNavR.style.width;  mainE.style.right = "0px";
+	//mainE.style.right = mySideNavR.style.width; mainE.style.marginRight ="0px";
+	mainE.style.width = `calc(100% - ${mySideNavL.style.width} - ${mySideNavR.style.width})`
+    mainE.style.height = "calc(100%- 1px)";
 }
 
 function everyoneScrollLeft() {
 
-	var iframeE = top.document.getElementById('lm_xref');
-	var mainE = top.document.getElementById("main");
-	mainE.style.height = "100%";
-	var nameE = top.document.getElementById("mySideNavR");
-	if (iframeE != null) { // iframeE.style.width = mainE.style.width;
-		$(iframeE).scrollLeft(0);
-		$(mainE).scrollLeft(0);
-		$(nameE).scrollLeft(0);
-		iframeE.style.width = "100%";
-		iframeE.style.height = "100%";
-		//	iframeE.style.marginRight = mainE.style.marginRight; 
-	}
+	if (top == window) {
 
-    if (top == window) {
-        $("body").scrollLeft(0);
-        $("#main").scrollLeft(0);
-        var iframeE = top.document.getElementById('lm_xref');
+		$("body").scrollLeft(0);
+		$("#main").scrollLeft(0);
+
+		var mainE = top.document.getElementById("main");
+		if (mainE != null) {
+			likeMain(mainE);
+			$(mainE).scrollLeft(0);
+		}
+		var iframeE = top.document.getElementById('lm_xref');
+		if (iframeE != null) { 
+			likeIFrame(iframeE);
+			$(iframeE).scrollLeft(0);
+		}
+
         if (iframeE != null) {
             var contentWindow = iframeE.contentWindow;
-            contentWindow.everyoneScrollLeft = window.everyoneScrollLeft;
+            //contentWindow.everyoneScrollLeft = window.everyoneScrollLeft;
             try {
-                contentWindow.everyoneScrollLeft();
+                contentWindow.everyoneScrollLeftFrame();
             } catch (err) {};
         }
     } else {
-        $("body").scrollLeft(0);
-        $(".panel").scrollLeft(0);
-        $("pre").scrollLeft(0);
-        $(".wrappable").scrollLeft(0);
-        $(".scrollable").scrollLeft(0);
-        $("iframe").scrollLeft(0);
     }
+}
+function everyoneScrollLeftFrame() {
+	$("body").scrollLeft(0);
+	$(".panel").scrollLeft(0);
+	$("pre").scrollLeft(0);
+	$(".wrappable").scrollLeft(0);
+	$(".scrollable").scrollLeft(0);
+	$("iframe").scrollLeft(0);
 }
 
 function navCmd(target) {
@@ -676,7 +688,7 @@ function writeTips(info) {
     }
 
     $(tipsListDiv).prepend(jqinfo);
-    tipsListDiv.scrollIntoView(true);
+    tipsListDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
     top.winObj.focus();
 }
 
@@ -931,7 +943,7 @@ function setVisible(panel, tf) {
     panel.style.display = block;
     //panel.nextElementSibling.style.display=block;
     panel.scrollIntoView(false);
-    panel.scrollIntoView(true)
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
 }
 
 function scrollToPanel(panel) {
@@ -940,8 +952,7 @@ function scrollToPanel(panel) {
     var scrl = panel.previousElementSibling;
     if (scrl == null)
         scrl = panel;
-    scrl.scrollIntoView(true);
-    everyoneScrollLeft();
+    scrl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
 }
 
 {
@@ -1025,7 +1036,7 @@ function showPanel(name, keepGoing, scrollTo) {
         var scrl = panel.previousElementSibling;
         if (scrl == null)
             scrl = panel;
-        scrl.scrollIntoView(true);
+        scrl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
         top.lastPanelShown = panel;
     }
 
@@ -1197,7 +1208,7 @@ function openCloseMenu(target_name, isExpanded) {
         var scount = occurrences(sibling.innerHTML, "&nbsp;");
         if (scount <= count) {
             // if(isExpanded) {
-            sibling.previousElementSibling.scrollIntoView(true);
+            sibling.previousElementSibling.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
             //}
             break;
         }

@@ -406,7 +406,7 @@ indiv_show_pairs_input(_Peers,_Shown,_List,Indv):- nb_current(menu_key,'o'),!, d
 indiv_show_pairs_input(_Peers,_Shown,_List,Indv):- get_current_test(TestID), print_info(Indv), ignore(what_unique(TestID,Indv)).
 
 indiv_show_pairs_output(_Peers,_Shown,_List,Indv):- nb_current(menu_key,'o'),!, dg(Indv).
-%indiv_show_pairs_output(_Peers,_Shown,_List,Indv):- has_prop(pen([cc('black',_)]),Indv),!, dash_chars, nop(debug_as_grid(Indv)).
+%indiv_show_pairs_output(_Peers,_Shown,_List,Indv):- has_prop(pen([cc('black',_)]),Indv),!, dash_chars, nop(show_indiv(Indv)).
 indiv_show_pairs_output(Peers,_Shown,List,Indv):-
   dash_chars,
   (best_mates(Indv,List,Mate)->showdiff_arg1("I<>O",Peers,Indv,List,Mate);dg(Indv)).
@@ -438,7 +438,7 @@ xfer_mappings(TITLE,AG,BG,BGG,APA):-
   Pair = pair4(A,PA,B,PB),
   % must_det_ll(A\==B),
   nop(PA\==PB),!,
-  %%debug_as_grid('xfer_mappings',A),  
+  %%show_indiv('xfer_mappings',A),  
   (TITLE == "IN <- OUT" 
     -> showdiff_arg1(TITLE,BG,B,AG,A)
      ; showdiff_arg1(TITLE,AG,A,BG,B)))).
@@ -459,7 +459,7 @@ prox_mappings(TITLE,AG,BG,_BGG,APA):-
   predsort(sort_on(nearest_by_not_simular(A)),BG,BGS),
   BGS=[B|_],
   % must_det_ll(A\==B),
-  %%debug_as_grid('xfer_mappings',A),  
+  %%show_indiv('xfer_mappings',A),  
   dash_chars(100),nl,nl,nl,
   (TITLE == "IN <- OUT" 
     -> showdiff_arg1(TITLE,BG,B,AG,A)
@@ -526,7 +526,7 @@ map_objects(TITLE,PeersI,O2,PeersO,O2):-
 
 
 %dg(I1):-  print_grid(I1),!, print_info(I1).
-dg(I1):- debug_as_grid(I1) -> true ; (print_grid(I1), print_info(I1)).
+dg(I1):- show_indiv(I1) -> true ; (print_grid(I1), print_info(I1)).
 %print_object_pair(I1,O1):- dg(I1),!, dg(O1),!.
 
 show_pair_now(TITLE,OO1,OO2):-  
@@ -544,7 +544,7 @@ show_pair_now(TITLE,OO1,OO2):-
   nop(ignore((into_ngrid(O1,NO1),into_ngrid(O2,NO2), print_side_by_side(silver,NO1,ngrid(T1),_,NO2,ngrid(T2))))),
 
   if_t(\+ nb_current(menu_key,'u'),
-    (dash_chars,debug_indiv_obj(O1), format('~N~n'),dash_chars, debug_indiv_obj(O2))),  
+    (dash_chars,show_indiv_textinfo(O1), format('~N~n'),dash_chars, show_indiv_textinfo(O2))),  
 
   if_t(nb_current(menu_key,'o'),
     nop((w_section(compare_objs1(TITLE),

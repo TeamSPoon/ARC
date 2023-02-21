@@ -146,9 +146,10 @@ into_color_name_always(Grid,Grid).
 
 is_spec_color(V,C):- into_color_name_always(V,C),!,atom(C),!,C\==fg,C\==fg,C\==wbg,C\==bg.
 
-is_color(CO):- attvar(CO),!,get_attr(CO,ci,_).
-is_color(CO):- is_unreal_color(CO).
-is_color(CO):- is_real_color(CO).
+is_color(CO):- notrace(is_color0(CO)).
+is_color0(CO):- attvar(CO),!,get_attr(CO,ci,_).
+is_color0(CO):- is_unreal_color(CO).
+is_color0(CO):- is_real_color(CO).
 
 :- multifile(color_decls/0).
 :- dynamic(color_decls/0).
@@ -631,11 +632,13 @@ non_v_ori(flipH).
 non_v_ori(rot270).
 
 enum_orientation(sameR).
-enum_orientation(flipV).
 enum_orientation(rot180). % = rot180
 enum_orientation(rot90).
 enum_orientation(rot270).
 enum_orientation(flipH).
+enum_orientation(flipV).
+enum_orientation(rollD).
+enum_orientation(flipD).
 
   
 ap(scotch_patterns). ap(rug_patterns). ap(rougue_like). ap(space_invaders).

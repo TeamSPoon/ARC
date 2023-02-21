@@ -224,6 +224,25 @@ maplist_ignore(_2,H,I):- (H==[];I==[]),!,(ignore(H=[]),ignore(I=[])).
 maplist_ignore(P2, H,I):- \+ is_list(H),!, ignore(call(P2, H,I)).
 maplist_ignore(P2, [H|Grid],[I|GridN]):- maplist_ignore(P2, H,I), !,maplist_ignore(P2, Grid,GridN).
 
+%p1_or(P1,Q1,E):- must_be(callable,P1),!, (p1_call(P1,E);p1_call(Q1,E)).
+
+p1_call((P1;Q1),E):- must_be(callable,P1),!, (p1_call(P1,E);p1_call(Q1,E)).
+p1_call((P1,Q1),E):- must_be(callable,P1),!, (p1_call(P1,E),p1_call(Q1,E)).
+p1_call(not(P1),E):- !, \+ p1_call(P1,E).
+p1_call(P1,E):- !, call(P1,E).
+
+p1_or(P1A,P1B,X):- p1_call(P1A,X)->true;p1_call(P1B,X).
+p1_not(P1,E):- \+ p1_call(P1,E).
+p1_arg(N,P1,E):- arg(N,E,Arg),p1_call(P1,Arg).
+my_partition(_,[],[],[]):-!.
+my_partition(P1,[H|L],[H|I],E):- \+ \+ call(P1,H),!,
+  my_partition(P1,L,I,E).
+my_partition(P1,[H|L],I,[H|E]):- 
+   my_partition(P1,L,I,E),!.
+my_partition(P1,H,I,HE):- arcST,break,
+  my_partition(P1,[H],I,HE).
+
+
 subst_1L([],Term,Term):-!.
 subst_1L([X-Y|List], Term, NewTerm ) :-
   subst0011(X, Y, Term, MTerm ),
