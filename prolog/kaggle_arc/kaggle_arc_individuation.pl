@@ -860,8 +860,8 @@ consider_other_grid(VM):-
   forall( maybe_ogs(ROHOV,Other,Grid),
   %u_dmsg(maybe_ogs(R,OH,OV,In,Grid)),       
      (member(loc2D(OH,OV),ROHOV),
-      globalpoints_include_bg(In,OPoints),
-      include(p1_arg(1,is_real_color),OPoints,ROPoints),
+      globalpoints_include_bg(In,LPoints),
+      include(p1_arg(1,is_real_color),LPoints,ROPoints),
       offset_points(OH,OV,ROPoints,GOPoints),
       intersection(VM.points,GOPoints,TODO,LeftOver,Missing),
       Missing\==[],
@@ -1175,6 +1175,9 @@ hybrid_shape_from_search(Set,ROHOVInS,VM):-
       hybrid_shape_from(Set,VM),
       nop(ignore(hybrid_shape_from_search(Set,ROHOVRest,VM))))))).
 
+
+hybrid_shape_from_search(Group,VM):-
+   addInvObjects(VM,Group).
 
 hybrid_order(Grid,DCT+NArea):-
   dont_care_terms(Grid,DCT),area(Grid,Area),NArea is -Area.
@@ -3450,8 +3453,8 @@ try_shape(VM,Method,LibName,Shape):-
    show_match(OH,OV,OGrid,Grid),
  %  Grid = VM.grid,
    %print_ss(,OGrid),
-   localpoints_include_bg(Shape,OPoints),
-   offset_points(OH,OV,OPoints,ObjPoints),
+   localpoints_include_bg(Shape,LPoints),
+   offset_points(OH,OV,LPoints,ObjPoints),
    %Points = VM.points,
    %intersection(ObjPoints,Points,Intersected,NeedAsWell,RestOfPoints),
    %Sofar = VM.robjs,
@@ -3587,6 +3590,9 @@ not_list(G):- \+ is_list(G).
 mapgroup(P2,G1,L2):- into_list(G1,L1),!, maplist(P2,L1,L2).
 mapgroup(P1,G1):- into_list(G1,L1), !, maplist(P1,L1).
 
+maybe_remove_sort_tag(L-G,G):- nonvar(L),(L=sort(_);L=result(_,_);L=sort(_,_)).
+into_list(G,L):- maybe_remove_sort_tag(G,LL),!,into_list(LL,L).
+into_list(G,L):- is_grid(G),!,L=[G].
 into_list(G,L):- is_list(G),!,L=G.
 into_list(G,L):- is_vm_map(G),!,L = G.objs,my_assertion(is_list(L)).
 into_list(I,O):- listify(I,O),!.
