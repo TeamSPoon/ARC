@@ -237,10 +237,9 @@ try_ogs_pass_8b(Prf,ROut,In,Out):-
   [subst(Cs,Vs)|R]=ROut.
 */
 % 007bbfb7 needs loose %,!,R\==loose.
-%try_ogs_pass_9(Prf,[rul(R),loc2D(X,Y)/*grid(In)*/],In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
-%try_ogs_pass_9(Prf,[loc2D(X,Y),rul(ogs_11)/*grid(In)*/|Prf],In,Out):- 
+%try_ogs_pass_9(Prf,[rul(R),loc2D(X,Y)/*f_grid(In)*/],In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)).
+%try_ogs_pass_9(Prf,[loc2D(X,Y),rul(ogs_11)/*f_grid(In)*/|Prf],In,Out):- 
 %  trace_ogs(redo,ogs_11(Prf),In,Out),
-%  ogs_11(X,Y,In,Out),!.
 try_ogs_pass_9(Prf,ROut,In,Out):- !,
   (try_ogs_pass_9a(Prf,ROut,In,Out)
    *-> trace_ogs(exit,ROut,In,Out)
@@ -375,12 +374,14 @@ choose_bg_color(Out,Black,Else):-
 %maybe_constrain_grid_now(f,CheckTypes,Out2,OutZ):- constrain_grid_now(f,CheckTypes,Out2,OutZ),!.
 maybe_constrain_grid_now(f,_CheckTypes,OutZ,OutZ):-!.
 
-prepare_output_hooks(CheckTypes,[canvas(Black,Zero),ogs_trig(CheckTypes)],Out,OutZ):-
-  Zero = zero, Else = Zero,
+prepare_output_hooks(CheckTypes,[canvas(BlackS,ZeroS),ogs_trig(CheckTypes)],Out,OutZ):-
+  Zero = black, Else = Zero,
   choose_bg_color(Out,Black,Else),
   subst_color_auto(Black,Zero,Out,Out1),
   fpad_grid(f,var,Out1,Out2),
-  maybe_constrain_grid_now(f,CheckTypes,Out2,OutZ).
+  maybe_constrain_grid_now(f,CheckTypes,Out2,OutZ),
+  sformat(BlackS,'~w',[Black]),
+  sformat(ZeroS,'~w',[Zero]).
 
 %if_be_fast(G):- can_be_slow,!.
 if_be_fast(G):-once(G).

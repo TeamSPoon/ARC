@@ -248,7 +248,8 @@ make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):-
     %mass(Len),
     
     %width(SizeX), height(SizeY), area(Area), %missing(Empty),
-    changes([]), % [grid(LocalGrid)],    
+    changes([]),
+    grid(LocalGrid),    
     OShapeNames,
     
   % RE=ADD=PHASE2 [algo_grid(norm,NormGrid),algo_ops(norm,NormOps)],
@@ -1012,6 +1013,7 @@ metaq_1(P3,Did,Old,New,Orig,Saved):- compound(Orig),Orig=Old, call(P3,Old,New,Sa
 indv_props_list(Obj,Props):- var(Obj),!,enum_object(Obj),indv_props_list(Obj,Props).
 indv_props_list(OID,NVL):- is_oid(OID),!,oid_to_objlist(OID,NVS), combine_cindv(OID,NVS,NVL).
 indv_props_list(Obj,NVL):- is_object(Obj),!,obj_to_objlist(Obj,NVS), combine_cindv(Obj,NVS,NVL).
+indv_props_list([E|OID],NVL):- is_list(OID), compound(E), \+ is_list(E), [E|OID]=NVL,!.
 indv_props_list(Obj,Props):- lock_doing(has_prop_list,Obj,has_prop_list(Obj,Props)).
 
 has_prop_list(Obj,Props):- findall(Prop,has_prop(Prop,Obj),Props),Props\==[],!.
@@ -1244,6 +1246,15 @@ fixed_defunt_obj(OL,Obj):- compound(OL),OL=obj(I),defunct_objprops(I),
   ((member(oid(OID),I);member(was_oid(OID),I)),atom(OID)),!,
   oid_to_obj(OID,Obj),Obj\=@=obj(I).
 
+
+object_l(P,L):- functor(P,F,A),functor(PP,F,A), member(PP,L),!,P=PP.
+object_l(globalpoints(O),L):- !, object_l(loc2D(OH,OV),L),object_l(localpoints(LPoints),L),!, offset_points(OH,OV,LPoints,O).
+object_l(localpoints(O),L):- !, object_l(grid(In),L),!,release_some_c(In,Out),globalpoints(Out,O).
+object_l(grid(O),L):- !, object_l(f_grid(In),L),!,include(p1_arg(1,is_real_color),In,O).
+object_l(f_grid(O),L):- member(grid(In),L),fpad_grid(f,var,In,O).
+
+
+
 defunct_objprops(I):- member(was_oid(_),I),!.
 defunct_objprops(I):- \+ ( member(globalpoints(Ps),I), is_cpoints_list(Ps)),
                        \+ ( member(localpoints(Ps),I), is_cpoints_list(Ps)),!.
@@ -1254,6 +1265,8 @@ globalpoints(I,_):-  var(I),!,fail.
 globalpoints(I,O):- fixed_defunt_obj(I,Obj),!,globalpoints(Obj,O).
 
 globalpoints(Grid,Points):- is_grid(Grid),!, grid_to_points(Grid,Points).
+globalpoints(obj(L),O):- object_l(globalpoints(O),L),!.
+globalpoints(CP,[CP]):- is_point(CP),!.
 globalpoints(I,X):-  (var_check(I,globalpoints(I,X)), deterministic(TF), true), (TF==true-> ! ; true).
 globalpoints([],[]):-!.
 globalpoints(G,[G]):- is_cpoint(G),!.
@@ -1305,11 +1318,14 @@ object_localpoints0(_,L,X):- member(localpoints(X),L),is_list(X),!.
 object_localpoints0(I,L,X):- member(globalpoints(XX),L),is_list(XX),loc2D(I,LocX,LocY),!,deoffset_points(LocX,LocY,XX,X).
 object_localpoints0(I,L,X):- object_localpoints1(I,L,X).
 
+
+object_localpoints1(_I,L,X):- object_l(localpoints(X),L),!.
 object_localpoints1(I,_L,X):- object_localpoints3(I,X),!.
 object_localpoints1(I,_L,X):- object_localpoints4(I,X),!.
 
-object_localpoints3(I,XX):-  
- must_det_ll((algo_grid(norm,I,NormGrid), algo_ops(norm,I,Ops),unreduce_grid(NormGrid,Ops,LocalGrid),grid_to_points(LocalGrid,XX))).
+object_localpoints3(I,XX):- 
+  must_det_ll((algo_grid(norm,I,NormGrid), algo_ops(norm,I,Ops),
+     unreduce_grid(NormGrid,Ops,LocalGrid),grid_to_points(LocalGrid,XX))).
 
 algo_grid(I,Algo,NormGrid):- indv_props(I,algo_grid(Algo,NormGrid))*->true;(fail,object_grid(I,Grid), algo_ops_grid(Algo,_NormOps,Grid,NormGrid)).
 algo_ops(I,Algo,NormOps):- indv_props(I,algo_ops(Algo,NormOps))*->true;(fail,object_grid(I,Grid), algo_ops_grid(Algo,NormOps,Grid,_NormGrid)).
