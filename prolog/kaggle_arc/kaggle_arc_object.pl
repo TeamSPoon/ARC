@@ -835,7 +835,8 @@ iv_for(L,Iv):- copy_term(L,CT,_),numbervars(CT,0,_,[attvar(bind),singletons(true
  number(Fv), Iv is (Fv rem 800) + 1,!. % (\+ is_iv_for(Iv,_) -> asserta_if_new(is_iv_for(Iv,L)) ; true).
 
 obj_iv(Obj,Iv):- indv_props(Obj,giz(iv(Iv))),!.
-obj_iv(Obj,Iv):- indv_u_props(Obj,L),iv_for(L,Iv).
+obj_iv(Obj,Iv):- indv_u_props(Obj,L),iv_for(L,Iv),!.
+obj_iv(Obj,Iv):- globalpoints(Obj,GP),gpoints_to_iv(GP,Iv),!.
 
 obj_gid(Obj,GID):-  indv_props(Obj,giz(gid(GID))).
 
