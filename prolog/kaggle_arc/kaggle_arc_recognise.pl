@@ -47,7 +47,8 @@ show_ogs_ans_success(TestID,Answers,In,Out):-
   must_det_ll((treeify_props(Answers,R),
   pp(R))),
   forall(member(Ans,Answers),show_answer(Ans,In,Out)),!.
-show_answer(Ans,_In,Out):- 
+
+show_answer(Ans,_In,Out):- !,
  must_det_ll((
   member(grid(Grid),Ans), 
   member(loc2D(H,V),Ans),
@@ -56,6 +57,37 @@ show_answer(Ans,_In,Out):-
   H2 is H-2, V2 is V-2,
   offset_grid(H2,V2,Grid,OF),
   print_grid(GH,GV,Props,OF))),!.
+
+show_answer(Ans,In,Out):-  
+ %must_det_ll((
+  include(p1_not(p1_arg(1,is_gridoid)),Ans,Props),
+  member(loc2D(H,V),Ans),
+  H2 is H-2, V2 is V-2,
+ (once(member(grid(Grid),Ans);member(f_grid(Grid),Ans);object_l(grid_f(Grid),Ans);object_l(grid(Grid),Ans))->
+  offset_grid(H2,V2,Grid,OF);OF=Out),
+  grid_size(Out,GH,GV),
+  (like_object(Ans,Out,ObjO)->true;ObjO=In),
+  print_side_by_side(Props,print_grid(GH,GV,OF),print_grid(GH,GV,[ObjO,ObjO])),!.
+
+
+like_obj_props(ObjL,_Ans,_GOPoints):- is_grid(ObjL),!,fail.
+like_obj_props(ObjL,Ans,GOPoints):- 
+ must_det_ll((
+  once((compound(ObjL),ObjL=obj(Ans));is_list(ObjL)->ObjL=Ans),
+  globalpoints(obj(Ans),GOPoints))).
+
+like_object(Ans,Out,obj(ObjO)):- 
+  like_obj_props(Ans,Props,GOPoints),
+  grid_to_gid(Out,GID),grid_size(Out,GH,GV), 
+  make_indiv_object_s(GID,GH,GV,Props,GOPoints,obj(ObjO)).
+/*
+like_object(Ans,Out,obj([f_grid(Grid),grid(Grid)|ObjO])):- 
+  like_obj_props(Ans,Props,GOPoints),
+  once(member(grid(Grid),Ans);member(f_grid(Grid),Ans);object_l(grid(Grid),Ans);object_l(grid_f(Grid),Ans)),
+  grid_size(Out,GH,GV),
+  grid_to_gid(Out,GID),
+  make_indiv_object_s(GID,GH,GV,Props,GOPoints,obj(ObjO)).
+*/
 
 test_ogs_a:- 
   red_only(In),
@@ -166,6 +198,36 @@ maybe_ogs_pass_2(Prf,Constr,IO,Call,R,In,Out):-
 use_idea(inp,Call,In,Out,NewIn,Out):- copy_term(In,InC),call(Call,In,NewIn),trace_ogs(step,before_and_after(inp,Call),InC,NewIn).
 use_idea(out,Call,In,Out,In,NewOut):- call(Call,Out,NewOut),trace_ogs(step,before_and_after(out,Call),Out,NewOut).
 
+
+release_some_c(Grid,Grid):-!.
+
+release_some_c(Grid,NonBG):- is_group(Grid),!,mapgroup(release_some_c,Grid,NonBG).
+release_some_c(Grid,Out):- sub_var(black,Grid),!,Out=Grid.
+release_some_c(Grid,Out):- release_non_fg(Grid,Out).
+
+release_non_mc(Grid,Grid):-!.
+
+release_non_mc(Grid,NonBG):- is_group(Grid),!,mapgroup(release_non_mc,Grid,NonBG).
+release_non_mc(Grid,NonBG):- 
+ ((sub_var(black,Grid),(sub_var(bg,Grid);sub_var(wbg,Grid);sub_var(fg,Grid);sub_var(zero,Grid);sub_var(wfg,Grid)))->
+  release_non_bg(Grid,NonBG);release_non_fg(Grid,NonBG)).
+
+
+release_non_fg(Point,Point):- is_fg_color(Point),!.
+release_non_fg(Point,_):- is_color(Point),!.
+release_non_fg(List,FGList):- is_list(List),!,maplist(release_non_fg,List,FGList).
+release_non_fg(Keep,NonFG):- is_grid(Keep),!,mapgrid(release_non_fg,Keep,NonFG).
+release_non_fg(Keep,NonFG):- is_cpoints_list(Keep),!,maplist(release_non_fg,Keep,NonFG).
+release_non_fg(Keep,NonFG):- map_pred1(release_non_fg,Keep,NonFG),!.
+release_non_fg(Keep,Keep).
+
+release_non_bg(Point,Point):- is_bg_color(Point),!.
+release_non_bg(Point,_):- is_color(Point),!.
+release_non_bg(Keep,NonFG):- is_grid(Keep),!,mapgrid(release_non_bg,Keep,NonFG).
+release_non_bg(Keep,NonFG):- is_cpoints_list(Keep),!,maplist(release_non_bg,Keep,NonFG).
+release_non_bg(List,FGList):- is_list(List),!,maplist(release_non_bg,List,FGList).
+release_non_bg(Keep,NonBG):- map_pred1(release_non_bg,Keep,NonBG),!.
+release_non_bg(Keep,Keep).
 
 subst_all_fg_colors_with_vars(Cs,Vs,In,Mid):- 
   copy_safe(In,InC),unique_fg_colors(InC,Cs),
