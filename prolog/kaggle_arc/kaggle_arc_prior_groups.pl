@@ -38,7 +38,7 @@ show_interesting_props_gojs(Objs):- u_dmsg(show_interesting_props_gojs(Objs)).
   %8731374e
 
 print_treeified_props(Objs):-
-  maplist(indv_props_list,Objs,RawPropLists),
+  maplist(into_obj_plist,Objs,RawPropLists),
   maplist(treed_props_list,RawPropLists,PropLists),
   treeify_props(PropLists,Tree),
   pp(Tree).

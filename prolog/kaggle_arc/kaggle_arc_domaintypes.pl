@@ -471,7 +471,8 @@ data_typec(Out,FS):- compound_name_arity(Out,F,A),arg(A,Out,P),data_type(P,S),!,
 
 is_point(P):- var(P),!,fail.
 is_point(P):- is_nc_point(P),!.
-is_point(P):- is_cpoint(P).
+is_point(P):- is_cpoint(P),!.
+is_point(_-P):- is_nc_point(P),!.
 
 %elems_are(L,P1):- L\==[],is_list(L),maplist(P1,L).
 elems_are([E|_],P1):- !, call(P1,E),!.
