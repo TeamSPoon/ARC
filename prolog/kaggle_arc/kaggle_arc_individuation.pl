@@ -3629,7 +3629,7 @@ addRObjects(VM,Obj):- assume_vm(VM),!,into_list(Obj,List),
 
 addInvObjects(_VM,Obj):- Obj==[],!.
 addInvObjects(VM,Obj):- assume_vm(VM),!,into_list(Obj,List), 
-  intersection(VM.objs,List,PretendToAdd,Prev,ReallyAdd),
+  intersection(VM.objs,List,_PretendToAdd,_Prev,ReallyAdd),
   maplist(mergeObject(VM),ReallyAdd).
 
 mergeObject(VM,obj(ReallyAdd)):-
@@ -3637,6 +3637,12 @@ mergeObject(VM,obj(ReallyAdd)):-
  (GPoints\==[] -> (make_indiv_object(VM,ReallyReallyAdd,GPoints,Obj),
    addInvObjects(VM,Obj)) ; true).
 %  my_append(VM.objs,ReallyAdd,set(VM.objs)).
+
+addOGSObjects(_VM,Obj):- Obj==[],!.
+addOGSObjects(VM,Obj):- assume_vm(VM),!,into_list(Obj,List), 
+  intersection(VM.objs,List,_PretendToAdd,_Prev,ReallyAdd),
+  maplist(mergeObject(VM),ReallyAdd).
+
 
 remObjects(_VM,Obj):- Obj==[],!.
 remObjects(VM,Obj):- assume_vm(VM),!,into_list(Obj,List), 

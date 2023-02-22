@@ -324,8 +324,9 @@ obj_atoms(PA,PAP):- must_det_ll((nonvar(PA),into_obj_plist(PA,M),M\==[],
 into_obj_plist(OID,List):- var(OID),!,enum_object(OID),into_obj_plist(OID,List).
 into_obj_plist(Grp,GrpOO):- is_group(Grp),!,mapgroup(into_obj_plist,Grp,GrpO),flatten(GrpO,GrpOO).
 into_obj_plist(PA,PAP):- is_list(PA),!,PAP=PA.
-into_obj_plist(obj(PA),PA):- !.
+into_obj_plist(obj(PA),PA):- my_assertion(is_list(PA)).
 into_obj_plist(OID,List):- is_oid(OID), oid_to_obj(OID,Obj),!,into_obj_plist(Obj,List).
+into_obj_plist(Obj,Props):- indv_props_list(Obj,Props),!.
 %%%into_obj_plist(PA,PAP):- must_det_ll((extend_grp_proplist(PA,Obj), into_obj_plist(Obj,PAP))),!.
  
 
