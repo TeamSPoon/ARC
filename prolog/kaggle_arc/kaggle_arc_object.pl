@@ -1305,34 +1305,30 @@ object_grid(ObjRef,List):- \+ is_object(ObjRef), into_obj(ObjRef,Obj), is_object
 object_grid(I,G):- object_localpoints(I,LP),vis2D(I,H,V),!,points_to_grid(H,V,LP,G),!.
 
 %object_localpoints(obj(I),_):- member(obj(_),I),!,break.
+/*
 object_localpoints(I,XX):- must_be_free(XX), %stack_check_or_call(3000,(dmsg(stackcheck>3000),break)),
  must_det_ll((indv_props_list(I,L),
    setup_call_cleanup(flag('$olp',X,X+1),(X<30,object_localpoints0(I,L,XX)),flag('$olp',_,X)),
    is_cpoints_list(XX))),!.
+*/
 
-
-object_localpoints(I,L,X):- indv_props_list(I,L), object_l(localpoints(X),L),!.
-
+object_localpoints(I,X):- indv_props_list(I,L), object_l(localpoints(X),L),!.
 
 
 object_l(P,L):- functor(P,F,A),functor(PP,F,A), member(PP,L),!,P=PP.
 object_l(globalpoints(O),L):- !,object_l(loc2D(OH,OV),L),object_l(localpoints(LPoints),L),!, offset_points(OH,OV,LPoints,O).
+object_l(localpoints(O),L):- member(globalpoints(XX),L),is_list(XX),object_l(loc2D(OH,OV),L),!,deoffset_points(OH,OV,XX,O).
+object_l(localpoints(O),L):- object_l(grid(In),L),!,release_some_c(In,Out),localpoints(Out,O).
+object_l(grid(G),L):- member(grid(grav,SCGrid),L), object_l(rot2D(RotG),L), grid_call(RotG,SCGrid,G).
 object_l(grid(O),L):- member(f_grid(In),L),!,include(p1_arg(1,is_real_color),In,O).
 object_l(grid(O),L):- member(grid_rep(Norm,NormGrid),L),member(grid_ops(Norm,Ops),L),
      unreduce_grid(NormGrid,Ops,LocalGrid),grid_to_points(LocalGrid,O).
 object_l(f_grid(O),L):- object_l(grid(In),L),fpad_grid(f,var,In,O).
 object_l(shape_rep(grav,Shape),L):- member(iz(sid(ShapeID)),L),id_shape(ShapeID,Shape).
-object_l(localpoints(O),L):- member(globalpoints(XX),L),is_list(XX),object_l(loc2D(OH,OV),L),!,deoffset_points(OH,OV,XX,O).
-object_l(localpoints(O),L):- object_l(grid(In),L),!,release_some_c(In,Out),localpoints(Out,O).
-
-
-object_l(points_rep(Grav,ColoredShape),L):- member(pen(PenColors),L),object_l(shape_rep(Grav,ShapePoints),L),
+object_l(grid_rep(Grav,Grid),L):-   member(points_rep(Grav,Points),L), 
+   member(rotSize2D(Grav,OX,OY),L), points_to_grid(OX,OY,Points,Grid).
+object_l(points_rep(Grav,ColoredShape),L):- member(shape_rep(Grav,ShapePoints),L),object_l(pen(PenColors),L),
   colorize_points(ShapePoints,PenColors,ColoredShape).
-
-object_l(grid_rep(Grav,Grid),L):- object_l(points_rep(Grav,Points),L), 
-  object_l(rotSize2D(Grav,OX,OY),L), points_to_grid(OX,OY,Points,Grid).
-
-object_l(grid(Grid),L):- object_l(grid(grav,SCGrid),L), object_l(rot2D(RotG),L), grid_call(RotG,SCGrid,Grid).
 
 grid_rep(I,Algo,NormGrid):- indv_props(I,grid_rep(Algo,NormGrid))*->true;
   (object_grid(I,Grid), algo_ops_grid(Algo,_NormOps,Grid,NormGrid)).

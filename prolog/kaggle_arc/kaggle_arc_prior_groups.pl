@@ -28,6 +28,11 @@ show_interesting_props(Named,OutC,InC):-
   w_section('OUTPUT PROPS',
     locally(t_l:objs_others(outputs,ObjsO,ObjsI,inputs),
       show_interesting_named_props(output(Named),ObjsO))),
+  banner_lines(white,2),
+  append(ObjsO,ObjsI,ObjsAll),
+  w_section('BOTH PROPS',
+    locally(t_l:objs_others(both,ObjsAll,ObjsAll,both),
+      show_interesting_named_props(both(Named),ObjsAll))),
   banner_lines(cyan,4).
 
 show_interesting_props(_Named,ObjsI,ObjsO):-
@@ -37,11 +42,12 @@ show_interesting_props(_Named,ObjsI,ObjsO):-
 show_interesting_props_gojs(Objs):- u_dmsg(show_interesting_props_gojs(Objs)).
   %8731374e
 
-print_treeified_props(Objs):-
+print_treeified_props(Named,Objs):-
   maplist(into_obj_plist,Objs,RawPropLists),
   maplist(treed_props_list,RawPropLists,PropLists),
   treeify_props(PropLists,Tree),
-  pp(Tree).
+  remember_tree(Named,Tree),
+  pp(Named=Tree).
 
 treed_props_list(RawPropLists,PropLists):-
   include(p1_not(p1_arg(1,is_gridoid)),RawPropLists,RawPropLists0),
@@ -51,15 +57,15 @@ treed_props_list(RawPropLists,PropLists):-
 
 show_interesting_named_props(Named,In):-
    extend_grp_proplist(In,Objs),!,
-   w_section(print_prop_groups(Named),print_prop_groups(Objs,HackedObjs)),
-   w_section(print_treeified_props(Named),print_treeified_props(Objs)),
-   w_section(print_treeified_hacked_props(Named),print_treeified_props(HackedObjs)).
+   w_section(print_prop_groups(Named),hack_prop_groups(Named,Objs,HackedObjs)),
+   w_section(print_treeified_props(Named),print_treeified_props(Named,Objs)),
+   w_section(print_treeified_hacked_props(Named),print_treeified_props(Named,HackedObjs)).
    
 
 show_interesting_named_props(Named,In):-
  must_det_ll((
    extend_grp_proplist(In,Objs),
-   print_prop_groups(Objs),
+   hack_prop_groups(Named,Objs,_Hacked),
    show_three_interesting_groups(Named,Objs,Groups),
    %banner_lines(cyan,3),
    groups_to_groupsets(Groups,GroupSets),
@@ -103,17 +109,24 @@ skip_ku1(iz(media(_))).
 skip_ku1(changes(_)).
 skip_ku1(o(_,_,_,_)).
 skip_ku1(iz(info(_))).
+%skip_ku(cc(C,_)):- is_color(C).
+skip_ku1(giz(_)).
 skip_ku2(KU):- skip_ku1(KU),!.
 skip_ku2(_-KU):- skip_ku1(KU),!.
+skip_ku(P):- skip_ku2(P).
 
+ku_rewrite_props(Var,Var):- var(Var),!.
+ku_rewrite_props(List0,List9):- is_grid(List0),!,List9=List0.
+ku_rewrite_props(List0,List9):- is_group(List0),!,mapgroup(ku_rewrite_props,List0,List9).
+ku_rewrite_props(obj(List0),obj(List9)):-!,ku_rewrite_props(List0,List9).
+ku_rewrite_props(List0,List9):- is_list(List0),!,
+  include(not_skip_ku,List0,List1),
+  maplist(ku_rewrite_props,List1,List2),
+  variant_list_to_set(List2,List9).
 ku_rewrite_props(link(sees([cc(S,_)]),_),link(sees([cc(S,_)]),_)).
 ku_rewrite_props(link(S,_),link(S,_)):-!.
 ku_rewrite_props(S-A,S-B):- ku_rewrite_props(A,B),!.
 ku_rewrite_props(A,A).
-
-skip_ku(P):- skip_ku2(P).
-skip_ku(giz(_)).
-%skip_ku(cc(C,_)):- is_color(C).
 
 objs_with_props([KU-_|Props],Objs,OL,GO):- skip_ku(KU),!,objs_with_props(Props,Objs,OL,GO).
 
@@ -219,9 +232,8 @@ not_skip_ku(P):- \+ skip_ku(P).
 
 indv_eprops_list(Indv,List9):- 
   indv_props_list(Indv,List0),
-  include(not_skip_ku,List0,List1),
-  maplist(ku_rewrite_props,List1,List2),
-  variant_list_to_set(List2,List9).
+  ku_rewrite_props(List0,List9).
+
 
 variant_list_to_set(I,O):- list_to_set(I,M),list_to_set_variants_equal2(M,O).
 
@@ -235,39 +247,12 @@ determine_elists(Objs,EList):-
   flatten(PropLists,List), %list_to_set(List,Set),
   include(not_skip_ku,List,EList).
 
-print_prop_groups(Objs,HackedObjs):-
+%hack_prop_groups(Named,Objs,HackedObjs)
+hack_prop_groups(Named,Objs,HackedObjs):-
   determine_elists(Objs,EList),
   w_section(print_elists,print_elists_hack_objs(EList,Objs,HackedObjs)),
-  skip_if_ansi(print_propset_groups(Objs,EList)).
+  skip_if_ansi(print_propset_groups(Named,Objs,EList)).
 
-subst_obj_props(F,[OO|OnlyOne],Objs,ObjsO):-
-  RR =.. ['-',F,OO],
-  subst001_p2(shall_count_as_same,Objs,OO,RR,Objs1),
-  subst_obj_props(F,OnlyOne,Objs1,ObjsO).
-subst_obj_props(_,[],Objs,Objs).
-/*
-print_elists_hack_objs(EList,Objs,HackedObjs):-
- must_det_ll((
-  list_to_set(EList,ESet),
-  %subtract_each(ESet1,EList,MoreThanOne),
-  intersection(EList,ESet,_,MoreThanOne,_),
-  intersection(ESet,MoreThanOne,_,OnlyOne,_),
-  list_to_set(MoreThanOne,MoreThanOneSet),
-  subst_obj_props((0/0),OnlyOne,Objs,Objs1),
-  pp(onlyOne=OnlyOne),
-  pp(morethanOne=MoreThanOne),
-  maplist(make_unifiable,MoreThanOneSet,UMoreThanOne),
-  count_each(MoreThanOneSet,MoreThanOne,CountOfEachL),
-  sort(CountOfEachL,CountOfEach),
-  predsort(variants_equal,UMoreThanOne,UMoreThanOneSet),
-  pp(umorethanOne=UMoreThanOneSet),
-  count_each(UMoreThanOneSet,MoreThanOne,GroupsWithCounts),
-  sort(GroupsWithCounts,SortedWithCounts),
-  pp(groupsWithCounts=SortedWithCounts),
-  pp(countOfEach=CountOfEach),
-  replace_props_with_stats(SortedWithCounts,CountOfEach,Objs1,HackedObjs),
-  nop(pp(hackedObjs=HackedObjs)))).
-*/
 
 var_to_underscore(Var,_):- plain_var(Var),!.
 print_elists_hack_objs(Props,Objs,HackedObjs):-
@@ -284,8 +269,10 @@ print_elists_hack_objs(Props,Objs,HackedObjs):-
   count_each(UPropsSetGSet,UPropsSetG,GroupsWithCountsL),
   variant_list_to_set(GroupsWithCountsL,GroupsWithCountsLVS),
   predsort(sort_on(arg(2)),GroupsWithCountsLVS,GroupsWithCounts),!,
-  pp(countOfEachU=GroupsWithCounts),!,
-  replace_props_with_stats(GroupsWithCounts,CountOfEach,Objs,HackedObjs),
+  variant_list_to_set(GroupsWithCounts,GroupsWithCountsW),
+  pp(countOfEachU=GroupsWithCountsW),!,
+  replace_props_with_stats(GroupsWithCounts,CountOfEach,Objs,HackedObjsM),
+  maplist(ku_rewrite_props,HackedObjsM,HackedObjs),
   nop(pp(hackedObjs=HackedObjs)))).
 
 sort_obj_props(How,obj(Props),obj(Sorted)):-
@@ -313,23 +300,23 @@ by_freq(SortedWithCounts,CountOfEach,Prop,OProp):-
 by_freq(_SortedWithCounts,CountOfEach,Prop,(c(N2)-Prop)):-
    ((member(N2-CProp,CountOfEach),CProp=@=Prop)),!.
 by_freq(_,_,P,0-P):-!.
-print_propset_groups(Objs,EList):- 
+print_propset_groups(Named,Objs,EList):- 
   maplist(has_props_set(Objs),EList,GrpList),
   predsort(sort_on(length),GrpList,GrpSetR),reverse(GrpSetR,GrpSet),
   with_tag_ats(table,class("tblo rows_distinct"),
    (html_table_row([th(props),td('&nbsp;'),th(objects),td('&nbsp')]),
-    maplist(print_prop_groups(EList,Objs),GrpSet),
-    forall(select(O1,Objs,Rest),print_prop_groups(EList,Rest,O1,[])))).
+    maplist(print_prop_groups(Named,EList,Objs),GrpSet),
+    forall(select(O1,Objs,Rest),print_prop_groups(Named,EList,Rest,O1,[])))).
 
 has_props_set(Objs,Prop,Set):- include(has_prop(Prop),Objs,Set).
-print_prop_groups(_ESet,_,[]):-!.
-print_prop_groups(_ESet,_,[_]):-!.
-print_prop_groups(EList,All,Group):-
+print_prop_groups(_Named,_ESet,_,[]):-!.
+print_prop_groups(_Named,_ESet,_,[_]):-!.
+print_prop_groups(Named,EList,All,Group):-
   include(not_in(Group),All,Except),
   [O1|Rest]=Group,
-  print_prop_groups(EList,Except,O1,Rest).
+  print_prop_groups(Named,EList,Except,O1,Rest).
 
-print_prop_groups(_ESet,Except,O1,Rest):-
+print_prop_groups(Named,_ESet,Except,O1,Rest):-
   [O1|Rest]=Group,
   indv_props_list(O1,PropsIKU), include(not_skip_ku,PropsIKU,Props),
 
@@ -339,13 +326,14 @@ print_prop_groups(_ESet,Except,O1,Rest):-
   t_l:objs_others(_,_These,Those,_),
   findall(O2,(member(O2,Those), forall(member(UProp,UniqueToGroup),has_prop(UProp,O2))),OtherObjs),
 
-  asserta_if_new(prop_groups(Group,UniqueToGroup,Except,OtherObjs)),
+  asserta_if_new(prop_groups(Named,Group,UniqueToGroup,Except,OtherObjs)),
 
   maplist(into_gui_item,Group,Grids),
   maplist(into_gui_item,OtherObjs,OGrids),
   %OGrids=[],
   print_prop_grids_list(UniqueToGroup,Grids,OGrids),!.
 
+remember_tree(_,_).
 
 print_prop_grids_list(UniqueToGroup,Grids,OGrids):- 
  html_table_row([

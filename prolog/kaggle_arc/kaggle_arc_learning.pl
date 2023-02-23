@@ -1641,13 +1641,26 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- fail,
   make_rule_l2r(Dir,Shared,I_I_I_I,[lookup(NewO)|O_O_O],III,OOO,SharedMid).
 
 */
+make_unifiable(A1,A2):- make_unifiable0(A1,O),!,A2=O.
+make_unifiable0(C1,_):- \+ compound(C1),fail.
+make_unifiable0(A1,A2):- var(A1),!,A2=A1.
+make_unifiable0(cc(C,_),cc(C,_)):-!.
+make_unifiable0(iz(C1),iz(C2)):- !, make_unifiable(C1,C2).
+make_unifiable0(giz(C1),giz(C2)):- !, make_unifiable(C1,C2).
+make_unifiable0(Cmp,CmpU):-  Cmp=..[F|List1], 
+  append(Left1,[C1],List1),append(Left2,[C2],List2), CmpU=..[F|List2],
+  maplist(unifiable_cmpd_else_keep,Left1,Left2),
+  unifiable_cmpd_else_var(C1,C2),!.
+make_unifiable0(C1,C2):- functor(C1,F,A),functor(C2,F,A).
 
-make_unifiable(C1,_):- \+ compound(C1),fail.
-make_unifiable(cc(C,_),cc(C,_)):-!.
-make_unifiable(iz(C1),iz(C2)):- !, make_unifiable(C1,C2).
-make_unifiable(giz(C1),giz(C2)):- !, make_unifiable(C1,C2).
-make_unifiable(Cmp,CmpU):-  Cmp=..[F,C1],\+ is_list(C1), compound(C1), CmpU=..[F,C2], make_unifiable(C1,C2),!.
-make_unifiable(C1,C2):- functor(C1,F,A),functor(C2,F,A).
+unifiable_cmpd_else_keep(A1,A2):- var(A1),!,A2=A1.
+unifiable_cmpd_else_keep(Num,_):- number(Num),!.
+unifiable_cmpd_else_keep(A1,A2):- compound(A1), \+ is_list(A1), make_unifiable(A1,A2),!.
+unifiable_cmpd_else_keep(A1,A1).
+
+unifiable_cmpd_else_var(A1,A2):- var(A1),!,A2=A1.
+unifiable_cmpd_else_var(A1,A2):- compound(A1), \+ is_list(A1), make_unifiable(A1,A2),!.
+unifiable_cmpd_else_var(_,_).
 
 make_unifiable_with_ftvars(C1,C2):- functor(C1,F,A),functor(C2,F,A),numbervars(C2).
 
