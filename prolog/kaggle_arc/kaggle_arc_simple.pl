@@ -179,7 +179,7 @@ number_obj(N,obj(List),obj([ord(N)|List])).
  % atomic_list_concat([obj,X,Y],'_',Key),
   localpoints_include_bg(Obj,LocalPoints),
   points_to_grid(X,Y,LocalPoints,Grid),mapgrid(sometimes_assume(=,bg),Grid),
-  select(colorlesspoints(Shape),List,Rest2),mapgrid(sometimes_assume(=,bg),Shape),
+  select(shape_rep(grav,Shape),List,Rest2),mapgrid(sometimes_assume(=,bg),Shape),
   Rest3 = Rest2,
   must_det_ll((remove_too_verbose(MyID,Rest3,TV00))),flatten([TV00],TV0),
   must_det_ll((include(not_too_verbose,TV0,TV1),maplist(fix_iz,TV1,TV))),!,

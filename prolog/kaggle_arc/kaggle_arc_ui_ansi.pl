@@ -535,7 +535,7 @@ pp_hook_g1(O):-  is_grid(O),
 % \+ (sub_term(E,O),compound(E),E='$VAR'(_)), 
   catch((wots_hs(S,print_grid(O)),strip_vspace(S,SS),ptc(orange,(format('"  ~w  "',[SS])))),_,(never_let_arc_portray_again,fail)).
 
-pp_hook_g1(colorlesspoints(O)):- is_points_list(O), as_grid_string(O,S), wotsq(O,Q), print(colorlesspoints(S,Q)),!.
+pp_hook_g1(shape_rep(grav,O)):- is_points_list(O), as_grid_string(O,S), wotsq(O,Q), print(shape_rep(grav,S,Q)),!.
 pp_hook_g1(vals(O)):- !, writeq(vals(O)),!.
 pp_hook_g1(localpoints(O)):- is_points_list(O), as_grid_string(O,S), wotsq(O,Q), print(localpoints(S,Q)),!.
 pp_hook_g1(C):- compound(C), compound_name_arguments(C,F,[O]),is_points_list(O), length(O,N),N>2, as_grid_string(O,S), compound_name_arguments(CO,F,[S]), print(CO),!.
@@ -892,10 +892,10 @@ wqs1(g(C)):-  \+ arg_string(C),wots_vs(S,bold_print(wqs1(C))),print(g(S)),!.
 wqs1(print_ss(C)):-  \+ arg_string(C), wots_vs(S,print_ss(C)),wqs1(print_ss(S)),!.
 wqs1(b(C)):-  \+ arg_string(C), wots_vs(S,bold_print(wqs1(C))),color_write(S).
 wqs1(norm(C)):- writeq(norm(C)),!.
-wqs1(algo_grid(norm,C)):- writeq(algo_grid(norm,C)),!.
+wqs1(grid_rep(norm,C)):- writeq(grid_rep(norm,C)),!.
 wqs1(grid(C)):- writeq(grid(C)),!.
 wqs1(rhs(RHS)):- nl_now,wqnl(rhs(RHS)),nl_now.
-%wqs1(algo_ops(norm,C)):- writeq(norm(C)),!.
+%wqs1(grid_ops(norm,C)):- writeq(norm(C)),!.
 %norm_grid
 
 wqs1(pp(P)):-  wots_vs(S,pp_no_nl(P)),write((S)).

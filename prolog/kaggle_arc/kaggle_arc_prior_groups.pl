@@ -51,8 +51,10 @@ treed_props_list(RawPropLists,PropLists):-
 
 show_interesting_named_props(Named,In):-
    extend_grp_proplist(In,Objs),!,
-   w_section(print_prop_groups(Named),print_prop_groups(Objs)),
-   w_section(print_treeified_props(Named),print_treeified_props(Objs)).
+   w_section(print_prop_groups(Named),print_prop_groups(Objs,HackedObjs)),
+   w_section(print_treeified_props(Named),print_treeified_props(Objs)),
+   w_section(print_treeified_hacked_props(Named),print_treeified_props(HackedObjs)).
+   
 
 show_interesting_named_props(Named,In):-
  must_det_ll((
@@ -66,7 +68,7 @@ show_interesting_named_props(Named,In):-
       show_interesting_group(Named,Titles-GObjs))))).
 
 groups_to_groupsets(Groups,GroupSets):-
-  maplist(arg(2),Groups,GroupsList), sort(GroupsList,GroupSets).
+  maplist(arg(2),Groups,GroupsList), predsort(variants_equal,GroupsList,GroupSets).
 
 show_interesting_group(Named,Title-Objs):- 
   length(Objs,Len),
@@ -79,7 +81,7 @@ show_three_interesting_groups(Named,Objs,Groups):-
   findall(Prop,(member(obj(O),Objs),member(Prop,O), not_skip_ku(Prop) ),Props),
   sort_safe(Props,SProps),
   print_interesting_named_groups(props(Named),SProps),
-  maplist(make_unifier,SProps,UProps), predsort(using_compare(numbered_vars),UProps,SUProps),  
+  maplist(make_unifiable,SProps,UProps), predsort(using_compare(numbered_vars),UProps,SUProps),  
   print_interesting_named_groups(suprops(Named),SUProps),
   %count_each(SProps,Props,GroupsWithCounts),
   length(Objs,L),
@@ -94,16 +96,24 @@ print_interesting_named_groups(Named,KUProps):-
 numbered_vars(A,B):- copy_term(A,B),numbervars(B,0,_,[attvars(skip)]).
 
 %skip_ku(pg(_,_,FL,_)):- !, FL \==firstOF, FL \==lastOF. 
-skip_ku2(pg(_,_,_,_)).
-skip_ku2(link(_,_)).
-skip_ku2(iz(media(_))).
-skip_ku2(changes(_)).
-skip_ku2(o(_,_,_,_)).
+skip_ku1(pg(_,_,_,_)).
+skip_ku1(link(sees([_,_|_]),_)).
+skip_ku1(link(sees(_),_)).
+skip_ku1(iz(media(_))).
+skip_ku1(changes(_)).
+skip_ku1(o(_,_,_,_)).
+skip_ku1(iz(info(_))).
+skip_ku2(KU):- skip_ku1(KU),!.
+skip_ku2(_-KU):- skip_ku1(KU),!.
 
+ku_rewrite_props(link(sees([cc(S,_)]),_),link(sees([cc(S,_)]),_)).
+ku_rewrite_props(link(S,_),link(S,_)):-!.
+ku_rewrite_props(S-A,S-B):- ku_rewrite_props(A,B),!.
+ku_rewrite_props(A,A).
 
 skip_ku(P):- skip_ku2(P).
 skip_ku(giz(_)).
-skip_ku(cc(C,_)):- is_color(C).
+%skip_ku(cc(C,_)):- is_color(C).
 
 objs_with_props([KU-_|Props],Objs,OL,GO):- skip_ku(KU),!,objs_with_props(Props,Objs,OL,GO).
 
@@ -207,36 +217,117 @@ is_in_subgroup(Grp,YObj,occurs_in_links(Functor,Count)):-
 %is_in_subgroup(Grp,_,all).
 not_skip_ku(P):- \+ skip_ku(P).
 
-determine_esets(Objs,ESet):-
-  maplist(indv_props_list,Objs,PropLists),
-  flatten(PropLists,List),list_to_set(List,Set),
-  include(not_skip_ku,Set,ESet).
+indv_eprops_list(Indv,List9):- 
+  indv_props_list(Indv,List0),
+  include(not_skip_ku,List0,List1),
+  maplist(ku_rewrite_props,List1,List2),
+  variant_list_to_set(List2,List9).
 
-print_prop_groups(Objs):-
-  determine_esets(Objs,ESet),
-  w_section(print_esets,print_esets(ESet)),
-  skip_if_ansi(print_propset_groups(Objs,ESet)).
+variant_list_to_set(I,O):- list_to_set(I,M),list_to_set_variants_equal2(M,O).
 
-print_esets(ESet):-
-  sort(ESet,ESSet),
-  care_to_count(ESSet,ESSet1),
-  pp(ESSet1).
+list_to_set_variants_equal2([E|List],[E|Set]):- !,
+  ((select(S,List,Rest),shall_count_as_same(E,S))
+    ->list_to_set_variants_equal2(Rest,Set);list_to_set_variants_equal2(List,Set)).
+list_to_set_variants_equal2(H,H).
 
-print_propset_groups(Objs,ESet):- 
-  maplist(has_props_set(Objs),ESet,GrpList),
+determine_elists(Objs,EList):-
+  maplist(indv_eprops_list,Objs,PropLists),
+  flatten(PropLists,List), %list_to_set(List,Set),
+  include(not_skip_ku,List,EList).
+
+print_prop_groups(Objs,HackedObjs):-
+  determine_elists(Objs,EList),
+  w_section(print_elists,print_elists_hack_objs(EList,Objs,HackedObjs)),
+  skip_if_ansi(print_propset_groups(Objs,EList)).
+
+subst_obj_props(F,[OO|OnlyOne],Objs,ObjsO):-
+  RR =.. ['-',F,OO],
+  subst001_p2(shall_count_as_same,Objs,OO,RR,Objs1),
+  subst_obj_props(F,OnlyOne,Objs1,ObjsO).
+subst_obj_props(_,[],Objs,Objs).
+/*
+print_elists_hack_objs(EList,Objs,HackedObjs):-
+ must_det_ll((
+  list_to_set(EList,ESet),
+  %subtract_each(ESet1,EList,MoreThanOne),
+  intersection(EList,ESet,_,MoreThanOne,_),
+  intersection(ESet,MoreThanOne,_,OnlyOne,_),
+  list_to_set(MoreThanOne,MoreThanOneSet),
+  subst_obj_props((0/0),OnlyOne,Objs,Objs1),
+  pp(onlyOne=OnlyOne),
+  pp(morethanOne=MoreThanOne),
+  maplist(make_unifiable,MoreThanOneSet,UMoreThanOne),
+  count_each(MoreThanOneSet,MoreThanOne,CountOfEachL),
+  sort(CountOfEachL,CountOfEach),
+  predsort(variants_equal,UMoreThanOne,UMoreThanOneSet),
+  pp(umorethanOne=UMoreThanOneSet),
+  count_each(UMoreThanOneSet,MoreThanOne,GroupsWithCounts),
+  sort(GroupsWithCounts,SortedWithCounts),
+  pp(groupsWithCounts=SortedWithCounts),
+  pp(countOfEach=CountOfEach),
+  replace_props_with_stats(SortedWithCounts,CountOfEach,Objs1,HackedObjs),
+  nop(pp(hackedObjs=HackedObjs)))).
+*/
+
+var_to_underscore(Var,_):- plain_var(Var),!.
+print_elists_hack_objs(Props,Objs,HackedObjs):-
+ must_det_ll((
+
+  variant_list_to_set(Props,PropsSet),
+  count_each(PropsSet,Props,CountOfEachL),
+  predsort(sort_on(arg(2)),CountOfEachL,CountOfEach),
+  pp(countOfEach=CountOfEach),
+
+  maplist(make_unifiable,PropsSet,UPropsSet),
+  map_pred(var_to_underscore,UPropsSet,UPropsSetG),
+  variant_list_to_set(UPropsSetG,UPropsSetGSet),
+  count_each(UPropsSetGSet,UPropsSetG,GroupsWithCountsL),
+  variant_list_to_set(GroupsWithCountsL,GroupsWithCountsLVS),
+  predsort(sort_on(arg(2)),GroupsWithCountsLVS,GroupsWithCounts),!,
+  pp(countOfEachU=GroupsWithCounts),!,
+  replace_props_with_stats(GroupsWithCounts,CountOfEach,Objs,HackedObjs),
+  nop(pp(hackedObjs=HackedObjs)))).
+
+sort_obj_props(How,obj(Props),obj(Sorted)):-
+  predsort(How,Props,Sorted).
+
+replace_props_with_stats(SortedWithCounts,CountOfEach,obj(Objs),obj(HackedObjs)):- 
+  !,maplist(replace_props_with_stats(SortedWithCounts,CountOfEach),Objs,Hacked),
+  sort(Hacked,HackedObjsR),reverse(HackedObjsR,List0),!,
+  include(not_skip_ku,List0,List1),
+  maplist(ku_rewrite_props,List1,HackedObjs).
+replace_props_with_stats(SortedWithCounts,CountOfEach,Objs,HackedObjs):-
+  is_list(Objs),!,maplist(replace_props_with_stats(SortedWithCounts,CountOfEach),Objs,HackedObjs).
+replace_props_with_stats(SortedWithCounts,CountOfEach,Prop,OProp):-
+   by_freq(SortedWithCounts,CountOfEach,Prop,OProp),!.
+
+
+by_freq(_,_,N-P,N-P):-!.
+by_freq(SortedWithCounts,CountOfEach,Prop,OProp):-
+   ((member(N1-UProp,SortedWithCounts), \+ \+ (UProp=Prop))),!,
+   ((member(N2-CProp,CountOfEach),CProp=@=Prop)
+      ->
+        (OProp=((N1/N2)-Prop))
+      ;
+        (OProp=u(N1)-Prop)).
+by_freq(_SortedWithCounts,CountOfEach,Prop,(c(N2)-Prop)):-
+   ((member(N2-CProp,CountOfEach),CProp=@=Prop)),!.
+by_freq(_,_,P,0-P):-!.
+print_propset_groups(Objs,EList):- 
+  maplist(has_props_set(Objs),EList,GrpList),
   predsort(sort_on(length),GrpList,GrpSetR),reverse(GrpSetR,GrpSet),
   with_tag_ats(table,class("tblo rows_distinct"),
    (html_table_row([th(props),td('&nbsp;'),th(objects),td('&nbsp')]),
-    maplist(print_prop_groups(ESet,Objs),GrpSet),
-    forall(select(O1,Objs,Rest),print_prop_groups(ESet,Rest,O1,[])))).
+    maplist(print_prop_groups(EList,Objs),GrpSet),
+    forall(select(O1,Objs,Rest),print_prop_groups(EList,Rest,O1,[])))).
 
 has_props_set(Objs,Prop,Set):- include(has_prop(Prop),Objs,Set).
 print_prop_groups(_ESet,_,[]):-!.
 print_prop_groups(_ESet,_,[_]):-!.
-print_prop_groups(ESet,All,Group):-
+print_prop_groups(EList,All,Group):-
   include(not_in(Group),All,Except),
   [O1|Rest]=Group,
-  print_prop_groups(ESet,Except,O1,Rest).
+  print_prop_groups(EList,Except,O1,Rest).
 
 print_prop_groups(_ESet,Except,O1,Rest):-
   [O1|Rest]=Group,

@@ -43,9 +43,9 @@ neg_h_v_area(size2D(H,V),VAL):- NArea is - (H * V),  max_min(H,V,Hi,_Lo), DifHV 
 :- dynamic(s_l_4sides/2).
 
 predsort_using_only(P2,List,Sorted):- predsort(using_compare(P2),List,Sorted).
-using_compare(C,R,A,B):- (A==B-> R=(=) ; must_det_ll((call(C,A,AA),call(C,B,BB),!,compare(R,AA,BB)))).
+using_compare(C,R,A,B):- (A==B-> R=(=) ; must_det_ll((call(C,A,AA),call(C,B,BB),!,compare(R,AA,BB)))),!.
 predsort_on(P2,List,Sorted):- predsort(sort_on(P2),List,Sorted).
-sort_on(C,R,A,B):- (A==B-> R= (=) ; must_det_ll((call(C,A,AA),call(C,B,BB),!,compare(R,AA+A,BB+B)))).
+sort_on(C,R,A,B):- (A==B-> R= (=) ; must_det_ll((call(C,A,AA),call(C,B,BB),!,compare(R,AA+A,BB+B)))),!.
 variants_equal(R,A,B):- first_equals(=@=,compare,R,A,B).
 first_equals(P2,P3,R,A,B):- call(P2,A,B) -> R= (=) ; call(P3,R,A,B).
 :- 
@@ -337,10 +337,10 @@ pgt([Obj1]-[Obj2]):- pgt1(Obj1),pgt2(Obj2).
 pgt([Obj1,Obj2]):- pgt1(Obj1),pgt2(Obj2).
 pgt1(Obj):-
   Obj = obj( [ mass(536),
-         colorlesspoints( [ point_01_01, point_02_01]),
+         shape_rep(grav, [ point_01_01, point_02_01]),
          colors_cc( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
-         localpoints( [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2L(sameR), loc2D(3, 1),
+         localpoints( [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2D(sameR), loc2D(3, 1),
          changes([]), iz(info(combined)),
          iz(shape(rectangle)), iz(multicolored),
          iz(shape(polygon)), %obj _to_oid(v('0ad4ef5')>(trn+0)*in, 21),
@@ -349,10 +349,10 @@ pgt1(Obj):-
 
 pgt2(Obj):- Obj = 
       obj( [ mass(536),
-         colorlesspoints( [ point_01_01, point_02_01]),
+         shape_rep(grav, [ point_01_01, point_02_01]),
          colors_cc( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
-         localpoints( [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2L(sameR), loc2D(2, 1),
+         localpoints( [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2D(sameR), loc2D(2, 1),
          changes([]), iz(info(combined)),
          iz(shape(rectangle)), iz(multicolored),
          iz(shape(polygon)), %obj _to_oid(v('a1d4ef5')>(trn+0)*in, 66),
@@ -425,7 +425,7 @@ replace_local_point_color(Point,NewC,OldC,G,GO):- is_list(G),!, maplist(replace_
 replace_local_point_color(Point,NewC,OldC,G,GO):- is_object(G), !,
     localpoints(G,Points),     
     replace_in_points(Point,NewC,OldC,Points,RPoints),
-    %loc2D(G,OH,OV),offset_point(OH,OV,Point,LPoint),colorlesspoints(G,NCPoints), maplist(replace_in_points(Point,NewC,OldC),NCPoints,RNCPoints),,colorlesspoints(RNCPoints)
+    %loc2D(G,OH,OV),offset_point(OH,OV,Point,LPoint),shape_rep(grav,G,NCPoints), maplist(replace_in_points(Point,NewC,OldC),NCPoints,RNCPoints),,shape_rep(grav,RNCPoints)
     setq(G,localpoints(RPoints),GO).
 replace_local_point_color(Point,NewC,OldC,G,GO):- trace_or_throw(unknown_target_type(replace_local_point_color(Point,NewC,OldC,G,GO))).
 
@@ -1013,8 +1013,8 @@ new_obj_points(GID,Type,C1,Points,Len,OID):-
   as_obj_gpoints(C1,Points,GPoints),  
   Overrides =[],
   gpoints_to_iv_info(GPoints,LCLPoints,LocX,LocY,PenColors,Rot2L,Iv,Overrides,LPoints,Grid,SH,SV,SizeY,SizeX,CentX,CentY),
-  _List=[colorlesspoints(LCLPoints),loc2D(LocX,LocY),pen(PenColors),rot2L(Rot2L),iv(Iv),localpoints(LPoints),
-    grid(Grid),rotOffset2D(SH,SV),viz2D(SizeY,SizeX),center2D(CentX,CentY)],
+  _List=[shape_rep(grav,LCLPoints),loc2D(LocX,LocY),pen(PenColors),rot2D(Rot2L),iv(Iv),localpoints(LPoints),
+    grid(Grid),rotSize2D(grav,SH,SV),viz2D(SizeY,SizeX),center2D(CentX,CentY)],
   int2glyph(Iv,Glyph),
   %name(Glyph,[Iv]),!,
   atomic_list_concat(['o_',Glyph,'_',Iv,'_',GID],OID),

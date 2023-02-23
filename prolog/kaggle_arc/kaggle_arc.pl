@@ -333,7 +333,7 @@ when_in_html(Goal):- ignore((arc_html,!,current_output(Out),with_set_stream(Out,
 
 :- meta_predicate(with_set_stream(+,+,0)).
 with_set_stream(Stream,Set,Goal):-
-  make_unifier(Set,Unset),compound(Unset),stream_property(Stream,Unset), ground(Unset),!,
+  make_unifiable(Set,Unset),compound(Unset),stream_property(Stream,Unset), ground(Unset),!,
   redo_call_cleanup(arc_set_stream(Stream,Set),Goal,arc_set_stream(Stream,Unset)).
 with_set_stream(Stream,Set,Goal):- arc_set_stream(Stream,Set),!,call(Goal).
    

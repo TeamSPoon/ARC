@@ -119,10 +119,16 @@ as_debug(L,G):- as_debug(L,true,G).
 as_debug(9,_,_):- !.
 as_debug(_,C,G):- ignore(catch((call(C)->wots(S,G),format('~NDEBUG: ~w~N',[S]);true),_,true)).
 
-count_each([C|L],GC,[Len-C|LL]):- include(==(C),GC,Lst),length(Lst,Len),count_each(L,GC,LL).
+shall_count_as_same(A,B):- plain_var(A),!,A==B.
+shall_count_as_same(A,B):- atomic(A),!, A=@=B.
+shall_count_as_same(A,B):- var(B),!,A=@=B.
+shall_count_as_same(A,B):- A=@=B,!.
+shall_count_as_same(A,B):- \+ A \= B, !.
+
+count_each([C|L],GC,[Len-C|LL]):- include(shall_count_as_same(C),GC,Lst),length(Lst,Len),!,count_each(L,GC,LL).
 count_each([],_,[]).
 
-count_each_inv([C|L],GC,[C-Len|LL]):- include(==(C),GC,Lst),length(Lst,Len),count_each_inv(L,GC,LL).
+count_each_inv([C|L],GC,[C-Len|LL]):- include(shall_count_as_same(C),GC,Lst),length(Lst,Len),count_each_inv(L,GC,LL).
 count_each_inv([],_,[]).
 
 maplist_n(N,P,[H1|T1]):-

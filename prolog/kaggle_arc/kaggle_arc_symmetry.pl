@@ -408,7 +408,7 @@ clip_quadrant(CRef,SXC,SXC,EXC,EYC,VM,SXQ4,SYQ4,EXQ4,EYQ4,G,Same,OBJL):-
   make_indiv_object(VM,
     [iz(quadrant(CRef,Same)),
      iz(pattern(CRef,SXC,SXC,EXC,EYC)),
-     rot2L(Same),
+     rot2D(Same),
      vis2D(Width,Height),
      loc2D(SXQ4,SYQ4),
      globalpoints(GPoints),
@@ -424,12 +424,12 @@ nop((
   globalpoints(Q4,LPoints),
   offset_points(SXQ4,SYQ4,LPoints,GPoints),
   embue_points1(VM,SXQ4,SYQ4,EXQ4,EYQ4,GPoints,Ps),!,
-  append([[rot2L(Same),
+  append([[rot2D(Same),
      center_info(CRef,SXC,SXC,EXC,EYC),grid(LikeQ4)],CommonQ,Ps],OBJL),
   OBJ=obj(OBJL))).
 
 
-%rot2L(obj(L),G):- member(rot2L(G),L).
+%rot2D(obj(L),G):- member(rot2D(G),L).
 % Hedra's t('47c1f68c')
 % v(be03b35f)>(trn+2),
 %detect_grid(Grid,E):- 

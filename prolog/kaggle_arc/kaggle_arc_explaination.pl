@@ -137,25 +137,23 @@ show_indiv_object(Why, Obj):-
 
   %findall(SubGroup,is_in_subgroup(Grp,Obj,SubGroup),SubGroupS), 
   %pp(subGroupS=SubGroupS),
-
-  if_t((H\==1;V\==1;true),
+  
     must_det_ll((     
-     %object_or_global_grid(Obj,LG+Type,GridS),           
-     object_grid(Obj,Grid),
+     %object_or_global_grid(Obj,LG+Type,GridS),                
      global_grid(Obj,GridS),
+     loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
      Title = show_indiv(Why,objFn(Glyph),loc2D(OH,OV),center2G(CX,CY),size2D(H,V)),
-             loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
 
-
+     object_grid(Obj,Grid),
      Grids = [Title=GridS|_],     
 
-     copy_term(Obj,CObj),
-     nop((object_ngrid(CObj,NGrid), append(_,["NGrid"=NGrid|_],Grids))),
+   if_t((H\==1;V\==1;true),
+    (term_variables(Grid,GV1),
+     nop(((((copy_term(Obj,CObj),object_ngrid(CObj,NGrid), append(_,["NGrid"=NGrid|_],Grids)))))),
 
      ShowQ=_,
+     nop(((((normalize_grid(NOps,Grid,Normalized), if_t(Normalized\=@=Grid,append(_,["NORMALIZED!!!"=Normalized|_],Grids))))))),
 
-     term_variables(Grid,GV1),
-     normalize_grid(NOps,Grid,Normalized), % if_t(Normalized\=@=Grid,append(_,["NORMALIZED!!!"=Normalized|_],Grids)),
      term_variables(Normalized,RV1),
      nop(((((GV1\=@=RV1 ; (Normalized\=@=Grid,Normalized=[[_]])) -> ShowQ = true ; ShowQ = _)))),
 
@@ -185,7 +183,7 @@ show_indiv_object(Why, Obj):-
      
 
      %writeg("NGrid"=NGrid),
-   true))),
+   true)))),
   WillHaveShown = [loc2D(OH,OV),center2G(CX,CY),size2D(H,V)],    
   if_t(is_object(Obj),
     (format('~N~n'),
@@ -242,8 +240,8 @@ show_indiv_html(_Why, Obj):- obj(ObjL)=Obj,
   my_partition(arg1(is_cpoints_list),NonGridArgs,_CArgs,NonCArgs),
   my_partition(arg1(is_points_list),NonCArgs,_PArgs,NonPArgs),
   sformat(S,'Object ~w',[SGlyph]),
-  global_grid(Obj,GG),algo_grid(norm,Obj,NormGrid),
-  algo_ops(norm,Obj,NormOps),
+  global_grid(Obj,GG),grid_rep(norm,Obj,NormGrid),
+  grid_ops(norm,Obj,NormOps),
   wots(S1,writeq(global_grid(SGlyph))),wots(S2,writeq(NormOps)),
   print_side_by_side(green,GG,S1,_,NormGrid,S2),!,
   %print_side_by_side(green,GG,SGlyph,_,NormGrid,NormOps),!,
@@ -323,11 +321,11 @@ birth_info(Birth,1+InfoLen):- display_length(Birth,InfoLen).
 object_ref_desc(Obj, OUTS):- 
   into_obj(Obj,PA),
   object_color_glyph_long(PA,GA),% mass(PA,Mass),
-  colorlesspoints(PA,Shape),loc2D(PA,X,Y), rot2L(PA,ROT), vis2D(PA,XX,YY),
+  shape_rep(grav,PA,Shape),loc2D(PA,X,Y), rot2D(PA,ROT), vis2D(PA,XX,YY),
   shape_id(Shape,ShapeID),
   object_birth_desc(PA,Birth),
   object_color_desc(PA,PenColors),
-  OUT = objFn(GA,[b(Birth),loc2D(X,Y),rot2L(ROT),vis2D(XX,YY),sid(ShapeID),PenColors]),
+  OUT = objFn(GA,[b(Birth),loc2D(X,Y),rot2D(ROT),vis2D(XX,YY),sid(ShapeID),PenColors]),
   colorize_oterms(OUT,OT),
   %trace,
   OUTS = OT,!.
@@ -343,7 +341,7 @@ object_ref_desc_no_loop(PA, OUTS):-
  must_det_ll((
   object_color_glyph_long(PA, CGA),
   mass(PA,Mass),
-  colorlesspoints(PA,Shape),pen(PA,Pen),loc2D(PA,X,Y), rot2L(PA,ROT),
+  shape_rep(grav,PA,Shape),pen(PA,Pen),loc2D(PA,X,Y), rot2D(PA,ROT),
   shape_id(Shape,ShapeID),  
   OUT = oFn(CGA,Mass,loc2D(X,Y),ROT,pen(Pen),ShapeID),
   wots(SS,wqs_l(OUT)),
@@ -546,7 +544,7 @@ remove_too_verbose(MyOID,colors_cc(H),HH):- !, remove_too_verbose(MyOID,H,HH).
 %remove_too_verbose(MyOID,loc2D(X,Y),loc2D(X,Y)).
 %remove_too_verbose(MyOID,vis2D(X,Y),size2D(X,Y)).
 remove_too_verbose(_MyID,changes([]),'').
-remove_too_verbose(_MyID,rot2L(sameR),'').
+remove_too_verbose(_MyID,rot2D(sameR),'').
 remove_too_verbose(MyOID,L,LL):- is_list(L),!, maplist(remove_too_verbose(MyOID),L,LL).
 remove_too_verbose(_MyID,H,HH):- compound(H),arg(1,H,L), is_list(L), maybe_four_terse(L,T),H=..[F,L|Args],HH=..[F,T|Args].
 remove_too_verbose(_MyID,H,H).

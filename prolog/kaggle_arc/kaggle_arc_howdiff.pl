@@ -331,7 +331,7 @@ into_obj_plist(Obj,Props):- indv_props_list(Obj,Props),!.
  
 
 never_matom(localpoints(_)).
-never_matom(colorlesspoints(_)).
+never_matom(shape_rep(grav,_)).
 never_matom(pg(_OG,_,_,_)).
 never_matom(giz(_)).
 never_matom(globalpoints(_)).
@@ -340,7 +340,7 @@ sub_obj_atom(E,E):- \+ compound(E),!.
 sub_obj_atom(E,L):- is_list(L),!,member(EM,L),sub_obj_atom(E,EM).
 sub_obj_atom(NO,M):- remove_oids(M,MM,EL),EL\==[], !,sub_obj_atom(NO,MM).
 sub_obj_atom(M,pg(OG,H,L,_)):- !, ((M = (L/H));(M = (L/OG))).
-%sub_obj_atom(E,colorlesspoints(CP)):- !, is_list(CP),member(E,CP).
+%sub_obj_atom(E,shape_rep(grav,CP)):- !, is_list(CP),member(E,CP).
 
 %sub_obj_atom(M,M):- attvar(M),!.
 %sub_obj_atom(A,A).
@@ -648,13 +648,13 @@ prop_type(loc2D,iz(locX(_))).
 prop_type(loc2D,iz(cenGX(_))).
 prop_type(loc2D,iz(locY(_))).
 prop_type(loc2D,iz(cenGY(_))).
-prop_type(scale,rotOffset2D(_,_)).
+prop_type(scale,rotSize2D(grav,_,_)).
 prop_type(scale,vis2D(_,_)).
 prop_type(scale,iz(sizeX(_))).
 prop_type(scale,iz(sizeY(_))).
 prop_type(order,pg(_OG,_Peers,_Ord,_Type)).
-prop_type(colorlesspoints,colorlesspoints(_)).
-prop_type(rotate,rot2L(_)).
+prop_type(colorlesspoints,shape_rep(grav,_)).
+prop_type(rotate,rot2D(_)).
 prop_type(repaint,pen(_)).
 prop_type(repaint,colors_cc(_)).
 prop_type(loc2D,edge(_,_)).
@@ -663,7 +663,7 @@ changed_by(colorlesspoints,reshape).
 changed_by(loc2D,move).
 changed_by(mass,grow).
 changed_by(localpoints,reshape_and_recolor).
-changed_by(rot2L,rotate).
+changed_by(rot2D,rotate).
 changed_by(colors_cc,repaint).
 changed_by(vis2D,copy).
 
@@ -835,7 +835,7 @@ same_colorless_points(I,O,OUT):-
   obj_make_comparable(I,II), obj_make_comparable(O,OO),!,
   intersection(II,OO,SL,IIR,OOR),!,
   %member(mass(_),SL),
-  member(colorlesspoints(_),SL),
+  member(shape_rep(grav,_),SL),
   diff_objects(I,O,OUT).
 
 
@@ -997,11 +997,11 @@ sprop_of(reshape_and_recolor,localpoints).
 % which objects deleted in I have no O counterpart
 % which objects are added in O are closest to other objects in I
 % which objects are added in O are closest to other objects in O
-related_formula(simply_copied,i_to_o,[loc2D,colorlesspoints,pen,rot2L]).
-related_formula(simply_moved,i_to_o,[pen,differ(loc2D),rot2L,colorlesspoints]).
-related_formula(simply_recolored,i_to_o,[differ(pen),loc2D,rot2L,colorlesspoints]).
-related_formula(simply_rotated,i_to_o,[pen,near(loc2D),differ(rot2L),colorlesspoints]).
-related_formula(simply_resized,i_to_o,[pen,near(loc2D),rot2L,norm_grid,differ(norm_ops)]).
+related_formula(simply_copied,i_to_o,[loc2D,colorlesspoints,pen,rot2D]).
+related_formula(simply_moved,i_to_o,[pen,differ(loc2D),rot2D,colorlesspoints]).
+related_formula(simply_recolored,i_to_o,[differ(pen),loc2D,rot2D,colorlesspoints]).
+related_formula(simply_rotated,i_to_o,[pen,near(loc2D),differ(rot2D),colorlesspoints]).
+related_formula(simply_resized,i_to_o,[pen,near(loc2D),rot2D,norm_grid,differ(norm_ops)]).
 related_formula(i_triggers_o,i_to_o,[near(loc2D)]).
 related_formula(o_triggers_o,o_to_o,[near(loc2D)]).
 
@@ -1164,7 +1164,7 @@ cmpable_value(V):- arg(1,V,E), is_points_list(E),!,fail.
 cmpable_value(V):- sub_term(S,V),is_color(S),!, \+ has_zero(V).
 cmpable_value(V):- sub_term(S,V),compound(S),cmpable_cmpd(S),!.
 cmpable_cmpd(sid(_)).
-cmpable_cmpd(rot2L(_)).
+cmpable_cmpd(rot2D(_)).
 has_zero(V):- sub_var(0,V).
 
 
@@ -1341,8 +1341,8 @@ diff_termz(I,O,I):- O==[],!.
 diff_termz([IH,IV],[OH,OV],D):- maplist(number,[IH,IV,OH,OV]),!,maplist(diff_numbers,[IH,IV],[OH,OV],D).
 
 %diff_termz(I,O, [] ):- (never_do_diff(I);never_do_diff(O)),!.
-diff_termz(colorlesspoints(I),colorlesspoints(O),[]):- !,sort_safe(I,II),sort_safe(O,OO),II=@=OO,!.
-diff_termz(colorlesspoints(I),colorlesspoints(O),colorlesspoints(diff(I->O))):-!.
+diff_termz(shape_rep(grav,I),shape_rep(grav,O),[]):- !,sort_safe(I,II),sort_safe(O,OO),II=@=OO,!.
+diff_termz(shape_rep(grav,I),shape_rep(grav,O),shape_rep(grav,diff(I->O))):-!.
 %diff_termz(I,O, (O \== I)):- O=@=I,!.
 diff_termz(group_o(I),group_o(O),group_o(DD)):- !, must_det_ll(diff_groups(I,O,DD)).
 diff_termz(I,O,DD):-  is_group(I), is_group(O), !, must_det_ll(diff_groups(I,O,DD)).
@@ -1384,7 +1384,7 @@ compute_diff_or_same(I,O,IO):-
 maybe_no_diff(I,_,[],I):-!.
 maybe_no_diff(_,_,D,D).
 
-is_object_props(O):- is_list(O),member(E,O),compound(E),colorlesspoints(_)=E,!.
+is_object_props(O):- is_list(O),member(E,O),compound(E),shape_rep(grav,_)=E,!.
 diff_lists(AA,BB,D):- AA=@=BB,!,D=[].
 diff_lists(AA,BB,diff(AA=@=BB)):- sort_safe(AA,A),sort_safe(BB,B), A=@=B,!.
 diff_lists(I,O,D1D):- is_kv_list(I),is_kv_list(O),!,kv_list_diff(_Sytle,I,O,D1D).
@@ -1433,7 +1433,7 @@ reduce_required(obj(IO),IO).
 reduce_required(giz(IO),IO).
 %reduce_required(pen(IO),IO).
 %reduce_required(/*b*/iz(IO),IO).
-reduce_required(colorlesspoints(IO),IO).
+reduce_required(shape_rep(grav,IO),IO).
 reduce_required(g(IO),IO).
 reduce_required(i(IO),IO).
 
