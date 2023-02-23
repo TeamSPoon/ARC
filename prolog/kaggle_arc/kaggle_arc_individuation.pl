@@ -56,7 +56,7 @@ individuation_macros(i_complete_generic(X),[X]).
 individuation_macros(i_complete_generic,i_complete_generic(subtractions)):-  use_subtractions.
 individuation_macros(i_complete_generic,i_complete_generic(generic_nsew_colormass)):- mass_same_io.
 individuation_macros(generic_nsew_colormass, 
- [
+[ save_as_hybrid_shapes([indv_omem_points]),
   find_hybrid_shapes,
   nsew,
   black_to_zero,
@@ -76,8 +76,9 @@ individuation_macros(nsew_bg,[
   with_mapgrid([fgc_as_color(plain_var),bgc_as_color(zero),plain_var_as(black)],'_nsew_bg',[nsew,alone_dots,lo_dots])]).
 
 individuation_macros(subtractions, 
- [ save_as_obj_group([indv_omem_points]),  
-   bigger_grid_contains_other,
+  [ save_as_hybrid_shapes([indv_omem_points]),
+    bigger_grid_contains_other,
+    find_hybrid_shapes,
    fg_intersections([generic_nsew_colormass]),
    fg_subtractions([i_subtract_objs]),
    i_subtract_objs]).
@@ -1072,13 +1073,18 @@ find_hybrid_shapes(VM):-
   ((var(Group);Group==[])->true;addOGSObjects(VM,Group)))).
   
 enum_hybrid_shapes(Set,_VM):-
+ must_det_ll((
   current_test_example(TestID,ExampleNum),
   Pair = pair,
   findall(Grid,hybrid_shape(TestID,ExampleNum,Pair,Grid),List),
- must_det_ll((
-  maplist(release_non_mc,List,FGList),
+  remove_shapes_redundant(List,Better),
+  maplist(release_non_mc,Better,FGList),
   predsort_on(hybrid_order,FGList,Set))).
 
+remove_shapes_redundant([S1,S2|List],Better):- maybe_ogs(Found,S1,S2),Found\==[],!,
+  remove_shapes_redundant([S1|List],Better).
+remove_shapes_redundant([S1|List],[S1|Better]):- remove_shapes_redundant(List,Better).
+remove_shapes_redundant([],[]).
 
 count_adjacent_same_colored_points(O1,O2,HVCount,DiagCount):-
   flag(is_diag,WasD,0),flag(is_hv,WasH,0),
@@ -2993,6 +2999,31 @@ save_as_obj_group(ROptions,VM):-
     TID = VM.id,
   asserta_in_testid(arc_cache:individuated_cache(TID,GOID,ROptions,IndvSL)),
   nop((addObjectOverlap(VM,IndvSL))))),!.
+
+
+% =====================================================================
+is_fti_step(save_as_hybrid_shapes).
+% =====================================================================
+save_as_hybrid_shapes(ROptions,VM):-
+ must_det_ll((
+    GridIn = VM.grid,
+    save_as_hybrid_shapes(ROptions,GridIn,VM),
+    other_grid(VM.grid,Other),
+    if_t(is_grid(Other),
+     save_as_hybrid_shapes(ROptions,Other,VM)))).
+
+
+save_as_hybrid_shapes(ROptions,GridIn,VM):-
+ must_det_ll((
+    VM.objs = Objs,  
+  %notrace(catch(call_with_depth_limit(individuate1(_,Name,VM.grid_o,IndvS0),20_000,R),E,(u_dmsg(E)))),
+    must_grid_to_gid(GridIn,GOID),
+    individuate2(_,ROptions,GOID,GridIn,IndvS0),  maplist(add_birth_if_missing(indiv(ROptions)),IndvS0,IndvSL),
+    set(VM.grid) = VM.grid_o,
+    set(VM.points) = VM.points_o,
+    set(VM.objs) = Objs,
+    learn_hybrid_shape(IndvSL))).
+
 
 add_birth_if_missing(Birth,I,O):- is_list(I),maplist(add_birth_if_missing(Birth),I,O).
 %add_birth_if_missing(_,I,I):-!.
