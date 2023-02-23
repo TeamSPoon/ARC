@@ -128,6 +128,8 @@ skip_ku(_-KU):- skip_ku(KU),!.
 
 
 priority_prop(Var):- var(Var),!,fail.
+priority_prop((algo_sid(norm,_))).
+priority_prop((stype(_))).
 priority_prop(iz(P)):- priority_prop(P),!.
 priority_prop(giz(P)):- priority_prop(P),!.
 priority_prop(_-P):- priority_prop(P),!.
@@ -203,13 +205,19 @@ object_group_cc(Objs,GroupName,SubObjs,Count,NamesCC,ValuesCC):-
   maplist(arg(2),Props,Values),get_ccs(Values,ValuesCC).
 
 group_prop(P):- group_prop(P,_).
-group_prop(giz(g(in)),input).
-group_prop(giz(g(out)),output).
-group_prop(cc(fg,0),bg_obj).
-group_prop(cc(bg,0),fg_obj).
+group_prop(giz(g(in)),i_o(input)).
+group_prop(giz(g(out)),i_o(output)).
+group_prop(cc(fg,0),fg_or_bg(iz_bg)).
+group_prop(cc(bg,0),fg_or_bg(iz_fg)).
+group_prop(Pof2,Extra):- compound(Pof2),compound_name_arguments(Pof2,F,List),append(Left,[A],List),
+  classify_n(A,Plural),
+  append([F|Left],[Plural],AmmountL),
+  compound_name_arguments(Extra,ammount,AmmountL),!.
+classify_n(Var,any):- var(Var),!.
+classify_n(0,zero).
+classify_n(1,zero).
+classify_n(Two,any):- number(Two),!, Two>=2.
 
-group_prop(fg_colors_count(1),single_fg_color).
-group_prop(fg_colors_count(Two),multicolor):- freeze(Two,Two>1).
 
 link_rel(sees(_)).
 link_rel(overlaps(_,_)).
@@ -235,7 +243,8 @@ fyl_functor_count(FYL,Functor,Count):-
 is_in_subgroup(Grp,Obj,Prop):- nonvar(Grp),var(Obj),!,member(Obj,Grp),is_in_subgroup(Grp,Obj,Prop).
 is_in_subgroup(Grp,Obj,Prop):- var(Grp),var(Obj),!,findall(Obj,enum_object(Obj),Grp),is_in_subgroup(Grp,Obj,Prop).
 is_in_subgroup(_Grp,Obj,iz(IZ)):- group_prop(Prop,IZ), has_prop(Prop,Obj).
-is_in_subgroup(_Grp,Obj,nth_fg_color(Nth,Color)):- unique_fg_colors(Obj,List),nth1(Nth,List,Color).
+is_in_subgroup(_Grp,Obj,nth_fg_color(Nth,Color)):- unique_fg_colors(Obj,List),
+ sort_color_by_mass(Obj,List,Sorted),nth1(Nth,Sorted,Color).
 is_in_subgroup(_Grp,Obj,count_of_links(Functor,Count)):- 
   findall(Functor-Y, (indv_props_list(Obj,PL),member(link(Contained_by,Y),PL),functor(Contained_by,Functor,_)), FYL), 
   fyl_functor_count(FYL,Functor,Count).  
@@ -291,7 +300,7 @@ print_elists_hack_objs(Named,Props,Objs,Hacked):-
   count_each(PropsSet,Props,CountOfEachL),
   predsort(sort_on(arg(2)),CountOfEachL,CountOfEach0),
   sort(CountOfEach0,CountOfEach),
-  pp(countOfEach=CountOfEach),
+  %mpp(countOfEach=CountOfEach),
   maplist(remember_propcounts(Named,count),CountOfEach),
   maplist(make_unifiable,PropsSet,UPropsSet),
   map_pred(var_to_underscore,UPropsSet,UPropsSetG),
@@ -302,7 +311,7 @@ print_elists_hack_objs(Named,Props,Objs,Hacked):-
   variant_list_to_set(GroupsWithCounts,GroupsWithCountsW),
   sort(GroupsWithCountsW,GroupsWithCountsWP),
   variant_list_to_set(GroupsWithCountsWP,GroupsWithCountsWPO),
-  make_splitter(GroupsWithCountsWPO,CountOfEach,Splits),
+  make_splitter(GroupsWithCountsWPO,CountOfEach,SSplits),sort(SSplits,Splits),
   pp(countOfEachU=Splits),!,
   maplist(remember_propcounts(Named,diversity),GroupsWithCountsWPO),
   replace_props_with_stats(GroupsWithCountsWPO,CountOfEach,Objs,HackedObjsM),
@@ -316,8 +325,10 @@ make_splitter([N-UProp|WithCountsWPO],CountOfEach,OutSplits):-
   make_splitter(WithCountsWPO,Unused,Splits).
 make_splitter([],_,[]).
 
-made_split(N,UProp,[],[]).
-made_split(N,UProp,List,(N-UProp)->List).
+made_split(_N,_UProp,[],[]).
+made_split(N,UProp,List,Out):-variant_list_to_set(List,Set),List\=@=Set,!,made_split(N,UProp,Set,Out).
+made_split(N,UProp,List,Out):-sort(List,Set),List\=@=Set,!,made_split(N,UProp,Set,Out).
+made_split(_,UProp,List,((Len-UProp)->List)):- length(List,Len).
 sameps(UProp,_-Prop):- \+ Prop \= UProp.
 
 remember_propcounts(Named,Diversity,N-Prop):-

@@ -370,7 +370,7 @@ reclumped(PenColors,PenColors).
 maybe_include_bg(Points,FgPoints):- fg_points(Points,FgPoints),FgPoints\==[],!.
 maybe_include_bg(Points,Points).
 fg_points(Points,FgPoints):- include(is_fg_point,Points,FgPoints).
-is_fg_point(CPoint):- \+ (only_color_data(CPoint,Color),is_bg_color(Color)).
+is_fg_point(CPoint):- \+ \+ (only_color_data(CPoint,Color),is_fg_color(Color)).
 
 rev_key(C-P,P-C).
 rev_key(List,ListO):- is_list(List),!,maplist(rev_key,List,ListO).
@@ -1402,8 +1402,12 @@ colors_cc(I,X):- is_oid(I),!,CC=cc(_,_),findall(CC,(indv_props(I,CC),is_color_cc
 %colors_cc(G,X):- is_group(G),mapgroup(colors_cc,G,GG),combine_results(GG,X).
 %colors_cc(G,X):- is_grid(G),mapgrid(colors_cc,G,GG),combine_results(GG,X).
 colors_cc(I,X):- is_vm_map(I),!,into_grid(I,G),!,colors_cc(G,X).
-color_cc(G,CC):- pixel_colors(G,Pixels),pixels_to_cc(Pixels,CC).
+colors_cc(G,CC):- pixel_colors(G,Pixels),pixels_to_cc(Pixels,CC).
 
+sort_color_by_mass(_,[E],[E]):-!.
+sort_color_by_mass(Obj,List,SortedColors):-colors_cc(Obj,CC),predsort(sort_on(cc_mass(CC)),List,SortedColors).
+
+cc_mass(CC,Color,N):- member(cc(Color,N),CC).
 /*colors_cc(All,CC):-
   findall(Nm-C,(enum_colors_test(C),occurs:count((sub_term(Sub, All), \+ \+ cmatch(C,Sub)), Nm), 
     once(Nm\==0 ; (atom(C), C\==is_colorish, C\==var, \+ is_real_color(C)))),BF),

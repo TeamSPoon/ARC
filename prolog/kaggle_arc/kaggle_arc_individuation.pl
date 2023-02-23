@@ -76,7 +76,8 @@ individuation_macros(nsew_bg,[
   with_mapgrid([fgc_as_color(plain_var),bgc_as_color(zero),plain_var_as(black)],'_nsew_bg',[nsew,alone_dots,lo_dots])]).
 
 individuation_macros(subtractions, 
- [ bigger_grid_contains_other,
+ [ save_as_obj_group([indv_omem_points]),  
+   bigger_grid_contains_other,
    fg_intersections([generic_nsew_colormass]),
    fg_subtractions([i_subtract_objs]),
    i_subtract_objs]).
@@ -1153,7 +1154,8 @@ best_fit_combos(OgsList,GridPs,ComboGroups):-
 max_group_filling(SmallToBig,GridPoints,Smallest,SizeLeftOver,SizeLeftOut):-
   remove_objs(SmallToBig,GridPoints,Smallest,LeftOverA,LeftOutA),
   length(LeftOutA,SizeLeftOut),
-  length(LeftOverA,SizeLeftOver).
+  fg_points(LeftOverA,FGs),
+  length(FGs,SizeLeftOver).
 
 remove_objs(SmallToBig,[],[],[],SmallToBig):-!.
 remove_objs([],GridPoints,[],GridPoints,[]):-!.
