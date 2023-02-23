@@ -27,13 +27,15 @@ show_interesting_props(Named,OutC,InC):-
   banner_lines(white,2),
   w_section('OUTPUT PROPS',
     locally(t_l:objs_others(outputs,ObjsO,ObjsI,inputs),
-      show_interesting_named_props(output(Named),ObjsO))),
+      show_interesting_named_props(output(Named),ObjsO))),  
+  /*
   banner_lines(white,2),
   append(ObjsO,ObjsI,ObjsAll),
   w_section('BOTH PROPS',
     locally(t_l:objs_others(both,ObjsAll,ObjsAll,both),
-      show_interesting_named_props(both(Named),ObjsAll))),
+      show_interesting_named_props(both(Named),ObjsAll))),*/
   banner_lines(cyan,4).
+
 
 show_interesting_props(_Named,ObjsI,ObjsO):-
    append(ObjsO,ObjsI,Objs),
@@ -52,7 +54,7 @@ print_treeified_props(Named,Objs):-
 treed_props_list(RawPropLists,PropLists):-
   include(p1_not(p1_arg(1,is_gridoid)),RawPropLists,RawPropLists0),
   care_to_count(RawPropLists0,RawPropLists1),
-  include(p1_not(skip_ku2),RawPropLists1,PropLists),!.
+  include(p1_not(skip_ku),RawPropLists1,PropLists),!.
 
 
 show_interesting_named_props(Named,In):-
@@ -104,20 +106,37 @@ print_interesting_named_groups(Named,KUProps):-
 numbered_vars(A,B):- copy_term(A,B),numbervars(B,0,_,[attvars(skip)]).
 
 %skip_ku(pg(_,_,FL,_)):- !, FL \==firstOF, FL \==lastOF. 
-skip_ku1(pg(_,_,_,_)).
-skip_ku1(link(sees([_,_|_]),_)).
-skip_ku1(link(sees(_),_)).
-skip_ku1(iz(media(_))).
-skip_ku1(iz((_))).
-skip_ku1(shape_rep( grav,_)).
-skip_ku1(changes(_)).
-skip_ku1(o(_,_,_,_)).
-skip_ku1(iz(info(_))).
+
+skip_ku(Var):- var(Var),!,fail.
+skip_ku(S):- priority_prop(S),!,fail.
+skip_ku(pg(_,_,_,_)).
+skip_ku(link(sees([_,_|_]),_)).
+skip_ku(link(sees(_),_)).
+skip_ku(iz(media(_))).
+skip_ku(shape_rep( _,_)).
+skip_ku(points_rep( _,_)).
+skip_ku(globalpoints(_)).
+skip_ku(center2G(_,_)).
+skip_ku(changes(_)).
+skip_ku(o(_,_,_,_)).
 %skip_ku(cc(C,_)):- is_color(C).
-skip_ku1(giz(_)).
-skip_ku2(KU):- skip_ku1(KU),!.
-skip_ku2(_-KU):- skip_ku1(KU),!.
-skip_ku(P):- skip_ku2(P).
+skip_ku(giz(_)).
+skip_ku(iz(KU)):- skip_ku(KU),!.
+%skip_ku(iz(info(_))).
+%skip_ku(iz(_)).
+skip_ku(_-KU):- skip_ku(KU),!.
+
+
+priority_prop(Var):- var(Var),!,fail.
+priority_prop(iz(P)):- priority_prop(P),!.
+priority_prop(giz(P)):- priority_prop(P),!.
+priority_prop(_-P):- priority_prop(P),!.
+priority_prop(pen(_)).
+priority_prop(iv(_)).
+priority_prop(sid(_)).
+priority_prop(cc(fg,_)).
+priority_prop(cc(bg,_)).
+priority_prop(occurs_in_links(contains,_)).
 
 ku_rewrite_props(Var,Var):- var(Var),!.
 ku_rewrite_props(List0,List9):- is_grid(List0),!,List9=List0.
@@ -270,7 +289,8 @@ print_elists_hack_objs(Named,Props,Objs,Hacked):-
 
   variant_list_to_set(Props,PropsSet),
   count_each(PropsSet,Props,CountOfEachL),
-  predsort(sort_on(arg(2)),CountOfEachL,CountOfEach),
+  predsort(sort_on(arg(2)),CountOfEachL,CountOfEach0),
+  sort(CountOfEach0,CountOfEach),
   pp(countOfEach=CountOfEach),
   maplist(remember_propcounts(Named,count),CountOfEach),
   maplist(make_unifiable,PropsSet,UPropsSet),
@@ -282,12 +302,23 @@ print_elists_hack_objs(Named,Props,Objs,Hacked):-
   variant_list_to_set(GroupsWithCounts,GroupsWithCountsW),
   sort(GroupsWithCountsW,GroupsWithCountsWP),
   variant_list_to_set(GroupsWithCountsWP,GroupsWithCountsWPO),
-  pp(countOfEachU=GroupsWithCountsWPO),!,
+  make_splitter(GroupsWithCountsWPO,CountOfEach,Splits),
+  pp(countOfEachU=Splits),!,
   maplist(remember_propcounts(Named,diversity),GroupsWithCountsWPO),
   replace_props_with_stats(GroupsWithCountsWPO,CountOfEach,Objs,HackedObjsM),
   maplist(ku_rewrite_props,HackedObjsM,HackedObjs),
   nop(pp(hackedObjs=HackedObjs)))).
 
+make_splitter([N-UProp|WithCountsWPO],CountOfEach,OutSplits):-
+  my_partition(sameps(UProp),CountOfEach,Used,Unused),
+  made_split(N,UProp,Used,Out),
+  (Out==[]->OutSplits=Splits;OutSplits=[Out|Splits]),
+  make_splitter(WithCountsWPO,Unused,Splits).
+make_splitter([],_,[]).
+
+made_split(N,UProp,[],[]).
+made_split(N,UProp,List,(N-UProp)->List).
+sameps(UProp,_-Prop):- \+ Prop \= UProp.
 
 remember_propcounts(Named,Diversity,N-Prop):-
   arc_assert(propcounts(Named,Diversity,N,Prop)).

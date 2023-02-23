@@ -313,14 +313,14 @@ override_object_io(_VM,Update,Obj,In,Out):-
 
 sync_colors(Orig,Colors):- is_object(Orig),!,colors_cc(Orig,Colors),
   globalpoints(Orig,OrigGPoints),colors_cc(OrigGPoints,Colors),
-  localpoints(Orig,OrigLPoints),colors_cc(OrigLPoints,Colors),!.
+  points_rep(local,Orig,OrigLPoints),colors_cc(OrigLPoints,Colors),!.
 sync_colors(Orig,Colors):- colors_cc(Orig,Colors).
 
 uncast_grid_to_object(Orig,Grid,NewObj):- 
  must_det_ll((
-  localpoints(Grid,LocalPoints),
+  points_rep(local,Grid,LocalPoints),
   (( LocalPoints==[]) -> (arcST,writeq(LocalPoints),atrace ); true),
-  rebuild_from_localpoints(Orig,LocalPoints,NewObj))).
+  rebuild_from_points_rep(local,Orig,LocalPoints,NewObj))).
 
 closure_grid_to_group(Orig,Grid,Group):- individuate(Orig,Grid,Group).
 

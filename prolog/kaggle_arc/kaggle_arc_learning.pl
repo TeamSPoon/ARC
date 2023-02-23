@@ -105,12 +105,12 @@ not_for_matching(_Why,_,iz(monochrome)).
 not_for_matching(_Why,_,iz(C)):- atom(C),!,fail.
 %not_for_matching(_Why,_,iz(C)):- sub_term(E,C), number(E),E\==1.
 not_for_matching(_Why,_,iz(_)):- !, fail.
-%not_for_matching(_Why,localpoints(_)).
+%not_for_matching(_Why,points_rep(local,_)).
 not_for_matching(_Why,_,/*b*/iz(_)).
 not_for_matching(_Why,_,obj_to_oid(_,_)).
-%not_for_matching(_Why,L,form(_)):- !, member(localpoints(_),L).
-not_for_matching(_Why,L,localpoints(XX)):- !, started_is_list(XX), member(shape_rep(grav,_),L).
-not_for_matching(_Why,L,globalpoints(XX)):- !, started_is_list(XX), (member(shape_rep(grav,_),L);member(localpoints(_),L)).
+%not_for_matching(_Why,L,form(_)):- !, member(points_rep(local,_),L).
+not_for_matching(_Why,L,points_rep(local,XX)):- !, started_is_list(XX), member(shape_rep(grav,_),L).
+not_for_matching(_Why,L,globalpoints(XX)):- !, started_is_list(XX), (member(shape_rep(grav,_),L);member(points_rep(local,_),L)).
 
 %not_for_matching(_Why,_,center2G(H,V)):- (H\==1,V\==1,H\==2,V\==2,H\==3,V\==3).
 %not_for_matching(_Why,_,loc2D(H,V)):- (H\==1;V\==1).
@@ -152,7 +152,7 @@ not_used(giz(_)).
 %not_used(iz(contained_by(0,[]))).
 not_used(shape_rep(grav,_)).
 not_used(shape_rep(grav,_,_)).
-%not_used(localpoints(_)).
+%not_used(points_rep(local,_)).
 not_used(globalpoints(_)).
 %not_used(pg(OG,_,_,_)).
 not_used(iz(X)):- not_used(X).
@@ -707,12 +707,12 @@ extend_obj_prop(_Grp,obj(List),Prop):- algo_list(Algo),
  once((\+ member(grid_rep(Algo,_),List),
   object_grid(obj(List),Grid),
   algo_ops_grid(Algo,NormOps,Grid,NormGrid),
-  localpoints(NormGrid,NormLPoints),maplist(arg(2),NormLPoints,ShapeNormLPoints),  
+  points_rep(local,NormGrid,NormLPoints),maplist(arg(2),NormLPoints,ShapeNormLPoints),  
   shape_id(ShapeNormLPoints,NormShapeID))),
   member(Prop,[grid_ops(Algo,NormOps),iz(algo_sid(Algo,NormShapeID)),grid_rep(Algo,NormGrid)]).
 
 extend_obj_prop(_Grp,Obj,Props):- fail,
- once((localpoints(Obj,P),vis2D(Obj,H,V),points_to_grid(H,V,P,Grid),
+ once((points_rep(local,Obj,P),vis2D(Obj,H,V),points_to_grid(H,V,P,Grid),
   grid_props(Grid,Props))).
 
 
@@ -1013,7 +1013,7 @@ must_o_globalpoints(A,B,C):- must_det_ll(o_globalpoints(A,B,C)).
 olg_globalpoints(_Matches,_Obj,L,GP):-
    member(globalpoints(GP),L).
 olg_globalpoints(_Matches,_Obj,L,GP):-
-   member(localpoints(LP),L),
+   member(points_rep(local,LP),L),
    get_nw_absAt(L,X,Y),
    offset_points(X,Y,LP,GP).
 olg_globalpoints(Matches,_Obj,L,GP):-
@@ -1027,10 +1027,10 @@ olg_globalpoints(Matches,_Obj,L,GP):-
    \+ ( BAD ),
    unreduce_grid(NG,Ops,RR),!,
    must_det_ll((
-   localpoints(RR,LP),   
+   points_rep(local,RR,LP),   
    get_nw_absAt(LL,X,Y),
    offset_points(X,Y,LP,GP))).
-   %olg_globalpoints(Matches,Obj,[localpoints(LP)|L],GP).
+   %olg_globalpoints(Matches,Obj,[points_rep(local,LP)|L],GP).
 
 combine_props(L,Matches,LL):- flatten([L,Matches],LL).
 member_prop(Prop,LL):- member(Prop,LL),arg(1,Prop,NV),nonvar(NV).
@@ -1085,7 +1085,7 @@ matches_oprops(I,M,[shared(Shared)|Matches]):- intersection(I,M,Shared,II,MM),ma
 
 is_skipped_match(iz(input)).
 is_skipped_match(shape_rep(grav,_)).
-is_skipped_match(localpoints(_)).
+is_skipped_match(points_rep(local,_)).
 is_skipped_match(globalpoints(_)).
 is_skipped_match(pg(_,_,_,_)).
 is_skipped_match(link(_,_)).
@@ -1262,7 +1262,7 @@ omit_in_rules(_Why,call(True)):- True==true,!.
 omit_in_rules(_,P):- not_used(P).
 
 %skip_in_rules(Why,I):- not_for_matching(Why,_,I),not_for_creating(_,I).
-skip_in_rules(_Why,localpoints(_)).
+skip_in_rules(_Why,points_rep(local,_)).
 %skip_in_rules(_Why,link(_,_)).
 %skip_in_rules(_Why,shape_rep(grav,_)).
 %skip_in_rules(_Why,giz(gid(_))).

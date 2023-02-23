@@ -299,7 +299,7 @@ hv_c_value(O,FGL   ,H,V):- is_nc_point(O),!,O=Point,hv_point(H,V,Point),!,get_fg
 %hv_c_value(G,Color,H,V):- is_group(G),!,into_list(G,L),member(E,L),hv_c_value(E,Color,H,V),!.
 %hv_c_value(O,Color,H,V):- known_gridoid(O,G),!,hv_c_value(G,Color,H,V).
 hv_c_value(G,Color,H,V):- my_assertion(into_list(G,L)),!,member(E,L),hv_c_value(E,Color,H,V),!.
-%hv_c_value(O,Color,H,V):- is_object(O),localpoints(O,Ps),hv_c_value(Ps,Color,H,V).
+%hv_c_value(O,Color,H,V):- is_object(O),points_rep(local,O,Ps),hv_c_value(Ps,Color,H,V).
 %hv_c_value(L,Color,H,V):- is_list(L), member(E,L),hv_c_value(E,Color,H,V),!.
 
 point_c_value(Point,C,Grid):- hv_point(Point,H,V),hv_c_value(Grid,C,H,V).
@@ -340,7 +340,7 @@ pgt1(Obj):-
          shape_rep(grav, [ point_01_01, point_02_01]),
          colors_cc( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
-         localpoints( [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2D(sameR), loc2D(3, 1),
+         points_rep(local, [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2D(sameR), loc2D(3, 1),
          changes([]), iz(info(combined)),
          iz(shape(rectangle)), iz(multicolored),
          iz(shape(polygon)), %obj _to_oid(v('0ad4ef5')>(trn+0)*in, 21),
@@ -352,7 +352,7 @@ pgt2(Obj):- Obj =
          shape_rep(grav, [ point_01_01, point_02_01]),
          colors_cc( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
-         localpoints( [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2D(sameR), loc2D(2, 1),
+         points_rep(local, [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2D(sameR), loc2D(2, 1),
          changes([]), iz(info(combined)),
          iz(shape(rectangle)), iz(multicolored),
          iz(shape(polygon)), %obj _to_oid(v('a1d4ef5')>(trn+0)*in, 66),
@@ -400,7 +400,7 @@ replace_in_points(Point,NewC,OldC,G,GO):- (var(OldC);is_bg_color(OldC)),!, GO= [
 
 
 
-%replace_local_points(Obj,Grid,GridO):- is_group(Obj), localpoints(Obj,Points),replace_local_points(Points,Grid,GridO).
+%replace_local_points(Obj,Grid,GridO):- is_group(Obj), points_rep(local,Obj,Points),replace_local_points(Points,Grid,GridO).
 %replace_local_points([H|T],Grid,GridO):- is_points_list([H|T]), !, replace_local_points([H|T],Grid,GridO).
 %replace_local_points([H|T],Grid,GridO):- !, replace_local_points(H,Grid,GridM),replace_local_points(T,GridM,GridO).
 
@@ -411,7 +411,7 @@ replace_grid_points(List,OldC,Grid,GridO):- replace_local_points(List,OldC,Grid,
 replace_local_points(Nil,_OldC,G,G):- Nil ==[], !.
 replace_local_points(Obj,OldC,Grid,GridO):- is_grid(Obj),!, localpoints_include_bg(Obj,Points),replace_local_points(Points,OldC,Grid,GridO).
 replace_local_points([H|T],OldC,G,GO):- !,  replace_local_points(H,OldC,G,MGO), replace_local_points(T,OldC,MGO,GO). 
-replace_local_points(Obj,OldC,Grid,GridO):- is_object(Obj), localpoints(Obj,Points),replace_local_points(Points,OldC,Grid,GridO).
+replace_local_points(Obj,OldC,Grid,GridO):- is_object(Obj), points_rep(local,Obj,Points),replace_local_points(Points,OldC,Grid,GridO).
 
 replace_local_points(Point,OldC,G,GO):- is_grid(G),!, point_to_hvc(Point,H,V,NewC),my_assertion_is_color((NewC)), 
   replace_grid_point(H,V,NewC,OldC,G,GO),!.
@@ -423,10 +423,10 @@ replace_local_points(Point,OldC,G,GO):- trace_or_throw(unknown_target_type(repla
 replace_local_point_color(Point,NewC,OldC,G,GO):- is_points_list(G),!, replace_in_points(Point,NewC,OldC,G,GO).
 replace_local_point_color(Point,NewC,OldC,G,GO):- is_list(G),!, maplist(replace_local_point_color(Point,NewC,OldC),G,GO).
 replace_local_point_color(Point,NewC,OldC,G,GO):- is_object(G), !,
-    localpoints(G,Points),     
+    points_rep(local,G,Points),     
     replace_in_points(Point,NewC,OldC,Points,RPoints),
     %loc2D(G,OH,OV),offset_point(OH,OV,Point,LPoint),shape_rep(grav,G,NCPoints), maplist(replace_in_points(Point,NewC,OldC),NCPoints,RNCPoints),,shape_rep(grav,RNCPoints)
-    setq(G,localpoints(RPoints),GO).
+    setq(G,points_rep(local,RPoints),GO).
 replace_local_point_color(Point,NewC,OldC,G,GO):- trace_or_throw(unknown_target_type(replace_local_point_color(Point,NewC,OldC,G,GO))).
 
 
@@ -1013,7 +1013,7 @@ new_obj_points(GID,Type,C1,Points,Len,OID):-
   as_obj_gpoints(C1,Points,GPoints),  
   Overrides =[],
   gpoints_to_iv_info(GPoints,LCLPoints,LocX,LocY,PenColors,Rot2L,Iv,Overrides,LPoints,Grid,SH,SV,SizeY,SizeX,CentX,CentY),
-  _List=[shape_rep(grav,LCLPoints),loc2D(LocX,LocY),pen(PenColors),rot2D(Rot2L),iv(Iv),localpoints(LPoints),
+  _List=[shape_rep(grav,LCLPoints),loc2D(LocX,LocY),pen(PenColors),rot2D(Rot2L),iv(Iv),points_rep(local,LPoints),
     grid(Grid),rotSize2D(grav,SH,SV),viz2D(SizeY,SizeX),center2D(CentX,CentY)],
   int2glyph(Iv,Glyph),
   %name(Glyph,[Iv]),!,

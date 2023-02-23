@@ -138,7 +138,7 @@ pregroup1(iz(chromatic(N,BGN))):- between(1,10,N),between(0,2,BGN).
 pregroup1(pg(_OG,_,_,How)):- dif(How,i_repair_patterns).
 
 
-never_uprop(localpoints(_)).
+never_uprop(points_rep(local,_)).
 never_group_on(pg(_,I,_,_)):- I == i_repair_patterns.
 never_group_on(P):- never_uprop(P).
 

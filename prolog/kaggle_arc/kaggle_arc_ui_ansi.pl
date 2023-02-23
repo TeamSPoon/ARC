@@ -537,7 +537,7 @@ pp_hook_g1(O):-  is_grid(O),
 
 pp_hook_g1(shape_rep(grav,O)):- is_points_list(O), as_grid_string(O,S), wotsq(O,Q), print(shape_rep(grav,S,Q)),!.
 pp_hook_g1(vals(O)):- !, writeq(vals(O)),!.
-pp_hook_g1(localpoints(O)):- is_points_list(O), as_grid_string(O,S), wotsq(O,Q), print(localpoints(S,Q)),!.
+pp_hook_g1(points_rep(local,O)):- is_points_list(O), as_grid_string(O,S), wotsq(O,Q), print(points_rep(local,S,Q)),!.
 pp_hook_g1(C):- compound(C), compound_name_arguments(C,F,[O]),is_points_list(O), length(O,N),N>2, as_grid_string(O,S), compound_name_arguments(CO,F,[S]), print(CO),!.
 
 pp_hook_g1(O):-  is_points_list(O),as_grid_string(O,S),write(S),!.
@@ -1267,7 +1267,7 @@ unsized_grid(A):- \+ is_really_gridoid(A),!.
 grid_footer(G,_,_):- \+ compound(G),!,fail.
 grid_footer(GFGG:M,GG,GF:M):-grid_footer(GFGG,GG,GF),!.
 grid_footer((GF=GG),GG,GF):- !, is_really_gridoid(GG).
-grid_footer(Obj,GG,GF):- is_object(Obj), %vis2D(Obj,H,V),localpoints(Obj,Ps),points_to_grid(H,V,Ps,GG), 
+grid_footer(Obj,GG,GF):- is_object(Obj), %vis2D(Obj,H,V),points_rep(local,Obj,Ps),points_to_grid(H,V,Ps,GG), 
   global_grid(Obj,GG),
   object_ref_desc(Obj,GF),!.
 grid_footer(print_grid(GF,GG),GG,GF):-!.
@@ -1686,8 +1686,8 @@ print_grid(Grid):- use_row_db, is_grid(Grid),!, grid_to_tid(Grid,TID),print_grid
 
 print_grid(Grid):- make_bg_visible(Grid,GGrid),  quietly(print_grid0(_,_,GGrid)),!.
 
-print_grid(Str,Grid):- Grid==[],!, pp(nil_grid(Str)).
-print_grid(Str,Grid):- Grid==[[]],!, pp(zero_size_grid(Str)).
+print_grid(Str,Grid):- Grid==[],!, wots(S,wqs_c(Str)), write(nil_grid(S)).
+print_grid(Str,Grid):- Grid==[[]],!, wots(S,wqs_c(Str)), write(zero_size_grid(S)).
 
 %print_grid(Str,Grid):- wants_html,!,print_table([[print_grid(Grid)],[ppt(Str)]]).
 print_grid(Str,Grid):-  make_bg_visible(Grid,GGrid), ignore((print_grid(_,_,Str,GGrid))),!.
@@ -1698,8 +1698,9 @@ print_grid(Str,Grid):-  make_bg_visible(Grid,GGrid), ignore((print_grid(_,_,Str,
 
 format_u(TitleColor,Format,Args):- quietlyd( ignore((underline_print(color_print(TitleColor,call(format(Format,Args))))))).
 
-format_footer(TitleColor,W1,W2):- W2==string,!,format_u(TitleColor,'~w',[W1]).
-format_footer(TitleColor,W1,W2):- format_u(TitleColor,'~w (~w)',[W1,W2]).
+%format_footer(TitleColor,Name,SS)
+format_footer(TitleColor,W1,W2):- wots(S1,wqs_c(W1)), W2==string,!,format_u(TitleColor,'~w',[S1]).
+format_footer(TitleColor,W1,W2):- wots(S1,wqs_c(W1)), format_u(TitleColor,'~w (~w)',[S1,W2]).
 
 print_grid(_,_,_,_):- is_print_collapsed,!.
 

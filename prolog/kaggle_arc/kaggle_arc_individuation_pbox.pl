@@ -280,7 +280,7 @@ i_pbox(GridIn,Objs):-
 maybe_subdiv([OO],Objs):- object_grid(OO,G),i(i_pbox,G,Objs),!.
 maybe_subdiv(Objs,Objs).
 
-obj_global_grid(SX,G-wqs(DSC)):- localpoints(SX,Grid),make_bg_visible(Grid,G), vis2D(SX,VH,VV), loc2D(SX,OH,OV),!,
+obj_global_grid(SX,G-wqs(DSC)):- points_rep(local,SX,Grid),make_bg_visible(Grid,G), vis2D(SX,VH,VV), loc2D(SX,OH,OV),!,
   DSC=[loc2D(OH,OV),vis2D(VH,VV)].
 obj_global_grid(SX,G-wqs(DSC)):- global_grid(SX,Grid),make_bg_visible(Grid,G), vis2D(SX,VH,VV), loc2D(SX,OH,OV),!,
   DSC=[loc2D(OH,OV),vis2D(VH,VV)].

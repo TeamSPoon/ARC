@@ -219,7 +219,7 @@ show_indiv_textinfo(Why,AS0,ExceptFor):-
   print_if_non_nil(ExceptFor,TVSI),
   print_if_non_nil(ExceptFor,ISLINKR),
   print_if_non_nil(ExceptFor,TVSOS),
-  ignore(( TF==true, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
+  ignore(( TF==true, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, points_rep(local,Obj,Points), print_grid(H,V,Points))),
   ignore(( fail, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
   %pp(Props),
   ignore(( TF==true,dash_chars)))),!.
@@ -501,7 +501,7 @@ is_o3(pg(_OG,_,_,_)).
 
 show_st_map(Obj):-
   ignore(( 
-  localpoints(Obj,Points),
+  points_rep(local,Obj,Points),
 %  mass(Obj,Mass),!,Mass>4,
 %  vis2D(Obj,H,V),!,H>1,V>1,
   format('~N'),

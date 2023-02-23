@@ -80,7 +80,7 @@ get_fill_points(In,UNFP,GridO):-
  make_bg_visible_b(In,Grid),
  %print(In=Grid),
  neighbor_map(Grid,GridO), 
- localpoints(GridO,NPS),  
+ points_rep(local,GridO,NPS),  
  %print(NPS),nl,
  include(p1_or(is_point_type('~'),is_fill_point(NPS)),NPS,FillPoints),
  %%include(is_point_type('wbg'),NPS,NotFillPoints),

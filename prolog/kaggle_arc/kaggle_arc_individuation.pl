@@ -1118,8 +1118,8 @@ find_hybrid_shapes_on(_,_Set,_Grid,[]).
 
 
 /*
-localpoints(I,LPoints):- object_grid(I,Grid),localpoints(Grid,LPoints).
-object_grid(I,LPoints):- localpoints(I,LPoints),vis2D(H,V),points_to_grid(H,V,LPoints,Grid).
+points_rep(local,I,LPoints):- object_grid(I,Grid),points_rep(local,Grid,LPoints).
+object_grid(I,LPoints):- points_rep(local,I,LPoints),vis2D(H,V),points_to_grid(H,V,LPoints,Grid).
 */
 %ogs_into_obj(_Obj,AnsProps,Obj):-
 ogs_into_obj(_OutGrid,ObjL,Props):- \+ is_list(ObjL), indiv_props_list(ObjL,PropStart),ogs_into_obj(PropStart,Props),!.
@@ -1130,7 +1130,7 @@ ogs_into_obj(OldProps,obj([globalpoints(RGOPoints)|Props])):-
   select(globalpoints(RGOPoints),OldProps,Props),!.
 ogs_into_obj(   Props,obj([globalpoints(RGOPoints)|Props])):-
   member(loc2D(OH,OV),Props),
-  member(localpoints(LPoints),Props),!,
+  member(points_rep(local,LPoints),Props),!,
   offset_points(OH,OV,LPoints,GOPoints),
   include(p1_arg(1,is_real_color),GOPoints,RGOPoints).
 ogs_into_obj(   Props,obj([globalpoints(RGOPoints)|Props])):-
@@ -1139,7 +1139,7 @@ ogs_into_obj(   Props,obj([globalpoints(RGOPoints)|Props])):-
   globalpoints(In,LPoints),
   offset_points(OH,OV,LPoints,GOPoints),
   include(p1_arg(1,is_real_color),GOPoints,RGOPoints).
-%ogs_into_obj(I,GPoints):- localpoints(I,LPoints),loc2D(I,OH,OV),offset_points(OH,OV,LPoints,GPoints).
+%ogs_into_obj(I,GPoints):- points_rep(local,I,LPoints),loc2D(I,OH,OV),offset_points(OH,OV,LPoints,GPoints).
 
 best_fit_combos(OgsList,GridPs,ComboGroups):-
   globalpoints(GridPs,GridPoints), 
@@ -2631,7 +2631,7 @@ is_fti_step(i_subtract_objs).
 % =====================================================================
 i_subtract_objs(VM):- fail,
   Grid = VM.grid,
-  localpoints(Grid,Ps),include(is_fgp,Ps,FGPs),
+  points_rep(local,Grid,Ps),include(is_fgp,Ps,FGPs),
   FGPs\==[],
   length(FGPs,PsL),PsL<25,!,
   %zero_to_black(VM),
@@ -2668,7 +2668,7 @@ is_fti_step(i_intersect).
 i_intersect(VM):- fail,
   %zero_to_black(VM),
   Grid = VM.grid,
-  localpoints(Grid,Ps),include(is_fgp,Ps,FGPs),
+  points_rep(local,Grid,Ps),include(is_fgp,Ps,FGPs),
   FGPs\==[],
   length(FGPs,PsL),PsL=<15,!,
   set(VM.points)=FGPs,
@@ -2838,7 +2838,7 @@ is_fti_step(i_ogs_subobj).
 % =====================================================================
 i_ogs_subobj(VM):-
   Grid = VM.grid,
-  localpoints(Grid,Ps),include(is_fgp,Ps,FGPs),length(FGPs,PsL),PsL<25,!.
+  points_rep(local,Grid,Ps),include(is_fgp,Ps,FGPs),length(FGPs,PsL),PsL<25,!.
 
 i_ogs_subobj(VM):-
   run_fti(VM,[larger_than(3,nsew),colormass,lo_dots]).
@@ -3266,7 +3266,7 @@ rectangles_from_grid(Grid,VM):-
   print_ss(C,TexturedGrid,texture,_,Retextured,retextured(Width,N)),
   print_ss(C,NewGrid,'grid',_,RowsInvolvedClipped,clipped(Width,N)),
   mapgrid(only_color_data,RowsInvolvedClipped,Textureless),
-  localpoints(Textureless,NewObjPoints),!,
+  points_rep(local,Textureless,NewObjPoints),!,
   ignore((NewObjPoints\==[],make_indiv_object(VM,[birth(rectangles),iz(stype(rectangle))],NewObjPoints,_Obj))),
   ignore((NewGrid\==[], print_grid(newGrid, NewGrid),!, rectangles_from_grid(NewGrid,VM))),
   !.
@@ -3358,7 +3358,7 @@ whole_into_obj(VM,Grid,Whole):-
   Area is H * V,
   delete(Props0,sometimes_grid_edges(_),Props),
   make_indiv_object(VM,[iz(stype(whole)),iz(media(image)),% iz(flag(hidden)),
-    mass(Area),loc2D(1,1),globalpoints(Points),localpoints(Points)|Props],
+    mass(Area),loc2D(1,1),globalpoints(Points),points_rep(local,Points)|Props],
     Points,Whole),raddObjects(VM,Whole),
   save_grouped(individuate(whole,VM.gid),[Whole]),learn_hybrid_shape(pair,Whole))).
   /*
@@ -3366,7 +3366,7 @@ whole_into_obj(VM,Grid,Whole):-
     (make_indiv_object(VM,[mass(Len),vis2D(H,V),iz(stype(whole)),iz(flag(always_keep)),loc2D(1,1),iz(media(image))|Props],Points,Whole),
       raddObjects(VM,Whole),
        save_grouped(individuate(whole,VM.gid),[Whole]),learn_hybrid_shape(pair,Whole))),
-  localpoints(Grid,LPoints),
+  points_rep(local,Grid,LPoints),
   length(LPoints,CLen),if_t((CLen=<144,CLen>=0),    
     (make_indiv_object(VM,[iz(stype(whole)),iz(media(shaped)),mass(Area),loc2D(1,1)],LPoints,Whole2),raddObjects(VM,Whole2))).
 */
