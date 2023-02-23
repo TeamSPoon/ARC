@@ -1066,8 +1066,8 @@ is_fti_step(find_hybrid_shapes).
 find_hybrid_shapes(VM):-
  ignore((
   enum_hybrid_shapes(Set,VM),
-  %find_hybrid_shapes_on(Set,VM.o_grid,GroupO),
-  find_hybrid_shapes_on(Set,VM.grid,Group),
+  %find_hybrid_shapes_on(VM.gid,Set,VM.o_grid,GroupO),
+  find_hybrid_shapes_on(VM.id,Set,VM.grid,Group),
   ((var(Group);Group==[])->true;addOGSObjects(VM,Group)))).
   
 enum_hybrid_shapes(Set,_VM):-
@@ -1092,12 +1092,13 @@ ogs_size_ok(SX,SY,_Mass):- SX=1,SY>=3,!.
 ogs_size_ok(SX,SY,_Mass):- SY=2,SX=2,!.
 ogs_size_ok(_SX,_SY,Mass):- Mass>3,!.
 
-find_hybrid_shapes_on([],_,[]):-!.
-find_hybrid_shapes_on(Set,Grid,RGroup):-
+find_hybrid_shapes_on(_GID,[],_,[]):-!.
+find_hybrid_shapes_on(GID,Set,Grid,RGroup):-
  ignore((
   mass(Grid,GMass), GMass>0,  
   length(Set,Len),
-  print_ss(find_hybrid_shapes_on(Len),Set,Grid),
+  %Set
+  print_grid(find_hybrid_shapes_on(GID,Len),Grid),
   with_ogs_trace([],
     findall(ROHOV,
         ((member(In,Set),maybe_ogs(ROHOV,In,Grid))),ROHOVInS)),
@@ -1113,17 +1114,18 @@ find_hybrid_shapes_on(Set,Grid,RGroup):-
   best_fit_combos(OgsList,Grid,ComboGroups),
   last(ComboGroups,Group),
   remove_sort_tag(Group,RGroup))))).
-find_hybrid_shapes_on(_Set,_Grid,[]).
+find_hybrid_shapes_on(_,_Set,_Grid,[]).
 
 
 /*
 localpoints(I,LPoints):- object_grid(I,Grid),localpoints(Grid,LPoints).
 object_grid(I,LPoints):- localpoints(I,LPoints),vis2D(H,V),points_to_grid(H,V,LPoints,Grid).
 */
+%ogs_into_obj(_Obj,AnsProps,Obj):-
+ogs_into_obj(_OutGrid,ObjL,Props):- \+ is_list(ObjL), indiv_props_list(ObjL,PropStart),ogs_into_obj(PropStart,Props),!.
+ogs_into_obj(_OutGrid,ObjL,Props):- is_list(ObjL), ogs_into_obj(ObjL,Props),!.
+ogs_into_obj( OutGrid,AnsProps,Obj):- like_object(AnsProps,OutGrid,Obj),!.
 
-ogs_into_obj(OutGrid,AnsProps,Obj):- like_object(AnsProps,OutGrid,Obj).
-
-ogs_into_obj(ObjL,Props):- \+ is_list(ObjL), indiv_props_list(ObjL,PropStart),!,ogs_into_obj(PropStart,Props).
 ogs_into_obj(OldProps,obj([globalpoints(RGOPoints)|Props])):-
   select(globalpoints(RGOPoints),OldProps,Props),!.
 ogs_into_obj(   Props,obj([globalpoints(RGOPoints)|Props])):-
@@ -1502,19 +1504,20 @@ compile_and_save_current_test_pt_2(_TestID,_):-
    current_pair(I,O),
    arc_common_property(containsAll(i-o)),
    mapgrid(cell_minus_cell,I,O,IMinusO),
-   print_grid(i_minus_o,IMinusO).
+   print_grid(early_i_minus_o,IMinusO).
 
 compile_and_save_current_test_pt_2(_TestID,_):-
    current_pair(I,O), 
    arc_common_property(containsAll(o-i)),
-   mapgrid(cell_minus_cell,O,I,R),
-   print_grid(pre_o_minus_i,R).
+   mapgrid(cell_minus_cell,O,I,OMinusI),
+   print_grid(early_o_minus_i,OMinusI),!.
 
 cell_minus_cell(I,O,M):- I=@=O, M=bg.
 %cell_minus_cell(I,_,M):- dont_care_color(I),M=I.
 %cell_minus_cell(I,O,M):- dont_care_color(O),M=I.
 cell_minus_cell(I,_,I).
 
+lessThan(How,A,B):- call(How,A,AA),call(How,B,BB), AA < BB.
 
 individuate_nonpair(ROptions,In,IndvSI):- 
   into_grid(In,InG), 
@@ -2095,7 +2098,7 @@ fti(VM,[F|TODO]):- once(fix_indivs_options([F|TODO],NEWTODO)),[F|TODO]\==NEWTODO
 
 fti(VM,[F|TODO]):- F=='',!,
    u_dmsg(fti_miss(F,TODO)),
-   dumpST,
+   bt,
    u_dmsg(fti_miss(F,TODO)),
    
    set(VM.program_i)= TODO.
@@ -2583,23 +2586,23 @@ objectProperties((
 )).
 
 sub_self(NewGrid,NewOther,TODO,VM,FoundObjs):- !,
- print_ss(sub_self(TODO),NewGrid,NewOther),
  ttyflush,
  must_det_ll((
  % if_thread_main(cls),
- print_grid(sub_self(TODO),NewGrid),
+ print_ss(sub_self(TODO),NewGrid,NewOther),
+% print_grid(sub_self(TODO),NewGrid),
  with_other_grid(NewOther,
-   (itrace,do_individuate(_,TODO,NewGrid,FoundObjs))),
+   (/*itrace,*/do_individuate(_,TODO,NewGrid,FoundObjs))),
+
  print_grid(sub_self(foundObjs),FoundObjs),
  addInvObjects(VM,FoundObjs),
- itrace,
+ %itrace,
  remCPoints(VM,FoundObjs),
  remGPoints(VM,FoundObjs),
  addInvObjects(VM,FoundObjs))),!.
 
 sub_self(NewGrid,NewOther,TODO,VM,FoundObjs):-  
- print_grid(NewGrid),
- pp(doing(TODO)),
+ print_grid(pp(doing(TODO)),NewGrid),
  must_det_ll((
  globalpoints(NewGrid,Points),
  duplicate_term(VM,SavedVM),
@@ -2719,9 +2722,15 @@ is_fti_step(bigger_grid_contains_other).
 % =====================================================================
 bigger_grid_contains_other(VM):- 
   ignore((w_section(bigger_grid_contains_other,
-    once(bigger_grid_contains_other_i_o(VM))))).
+    once(bigger_grid_contains_other_i_o(VM.id,VM))))).
 
-bigger_grid_contains_other_i_o(VM):- 
+bigger_grid_contains_other_i_o(ID,VM):-
+  ID = ((_TestID)>(_Trn+_N)*IO),
+  if_t((IO\==out;IO\==in), pp(id=ID)),
+  if_t((IO==out;IO==in),
+    bigger_grid_contains_other_i_o_now(VM)).
+
+bigger_grid_contains_other_i_o_now(VM):-
   flag(bigger_grid_contains_other_i_o,X,X), X==0,
   setup_call_cleanup(flag(bigger_grid_contains_other_i_o,_,X+1),
      (ignore(bigger_grid_contains_other_i_o_1(VM)),

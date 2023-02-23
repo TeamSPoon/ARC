@@ -719,7 +719,7 @@ print_card_n(N,H):- callable_arity(H,1),call(H,R), data_type(R,DT),print_tb_card
 print_card_n(N,H):- data_type(H,DT),print_tb_card(pp(H),wqs_c([N,DT])),!.
 
 
-print_tb_card(Top,Bottem):- \+ is_cgi, !, sccs(Top,nl_if_needed,wqs_c(Bottem)),!.
+print_tb_card(Top,Bottem):- ( \+ is_cgi ; ansi_main), !, sccs(Top,nl_if_needed,wqs_c(Bottem)),!.
 
 print_tb_card(Top,Bottem):- 
   wots(S,call_e_dmsg(Bottem)),

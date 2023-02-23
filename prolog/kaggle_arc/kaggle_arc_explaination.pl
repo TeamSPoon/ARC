@@ -62,7 +62,7 @@ maybe_cache_glyphs(O):- ignore((is_group(O),mapgroup(o2g,O,_))).
 
 print_info_1(G):- print_info(G).
 
-print_info_l(GridS):- maplist(print_info_1,GridS).
+print_info_l(Global):- maplist(print_info_1,Global).
 
 
 :- discontiguous print_info/1. 
@@ -138,30 +138,31 @@ show_indiv_object(Why, Obj):-
   %findall(SubGroup,is_in_subgroup(Grp,Obj,SubGroup),SubGroupS), 
   %pp(subGroupS=SubGroupS),
   
-    must_det_ll((     
-     %object_or_global_grid(Obj,LG+Type,GridS),                
-     global_grid(Obj,GridS),
-     loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
-     Title = show_indiv(Why,objFn(Glyph),loc2D(OH,OV),center2G(CX,CY),size2D(H,V)),
-
-     object_grid(Obj,Grid),
-     Grids = [Title=GridS|_],     
-
-   if_t((H\==1;V\==1;true),
-    (term_variables(Grid,GV1),
-     nop(((((copy_term(Obj,CObj),object_ngrid(CObj,NGrid), append(_,["NGrid"=NGrid|_],Grids)))))),
+ 
+   %object_or_global_grid(Obj,LG+Type,Global),                
+   global_grid(Obj,Global),
+   loc2D(Obj,OH,OV), ignore(center2G(Obj,CX,CY)), object_glyph(Obj,Glyph),
+   Title = show_indiv(Why,objFn(Glyph),loc2D(OH,OV),center2G(CX,CY),size2D(H,V)),
+   object_grid(Obj,Grid),
+   pp(Title),
+   Grids = ["Global"=Global|_],
+   if_t((H\==1;V\==1),
+     
+    (append(_,["Object"=Grid|_],Grids), 
+     term_variables(Grid,GV1),
+     (((((copy_term(Obj,CObj),object_ngrid(CObj,NGrid), append(_,["NGrid"=NGrid|_],Grids)))))),
 
      ShowQ=_,
-     nop(((((normalize_grid(NOps,Grid,Normalized), if_t(Normalized\=@=Grid,append(_,["NORMALIZED!!!"=Normalized|_],Grids))))))),
+     (((((normalize_grid(NOps,Grid,Normalized), nop((mif_t(Normalized\=@=Grid,append(_,["NORMALIZED!!!"=Normalized|_],Grids))))))))),
 
      term_variables(Normalized,RV1),
-     nop(((((GV1\=@=RV1 ; (Normalized\=@=Grid,Normalized=[[_]])) -> ShowQ = true ; ShowQ = _)))),
+     (((((GV1\=@=RV1 ; (Normalized\=@=Grid,Normalized=[[_]])) -> ShowQ = true ; ShowQ = _)))),
 
      compress_grid(COps,Grid,Compressed), if_t(Compressed\=@=Normalized,append(_,["Compressed!!!"=Compressed|_],Grids)),
 
      if_t(DoFF,((constrain_grid(f,_TrigF,Grid,GridFF), if_t(GridFF\=@=Grid,append(_,["Find"=GridFF|_],Grids)),
-       copy_term(Grid+GridFF,GG1+GridFFNV,GoalsFF), numbervars(GG1+GridFFNV+GoalsFF,10,_,[attvar(bind),singletons(false)])))),
-
+       copy_term(Grid+GridFF,GG1+GridFFNV,GoalsFF), numbervars(GG1+GridFFNV+GoalsFF,10,_,[attvar(bind),singletons(false)]))))
+   )),
      append(_,[],Grids),
      HH is (OH - 1) * 2, 
      call_w_pad(HH, print_side_by_side(Grids)),
@@ -183,13 +184,13 @@ show_indiv_object(Why, Obj):-
      
 
      %writeg("NGrid"=NGrid),
-   true)))),
+   true)),
   WillHaveShown = [loc2D(OH,OV),center2G(CX,CY),size2D(H,V)],    
   if_t(is_object(Obj),
     (format('~N~n'),
      if_t(menu_or_upper('i'),
        locally(nb_setval(debug_indiv,f),
-         underline_print(show_indiv_textinfo(Why,Obj,WillHaveShown)))))),
+         underline_print(show_indiv_textinfo(Why,Obj,WillHaveShown)))),
 
   format('~N'),dash_chars(15))),!.
 

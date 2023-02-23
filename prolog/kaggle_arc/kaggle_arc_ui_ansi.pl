@@ -1104,10 +1104,10 @@ print_side_by_side(A^B):- caret_to_list(A^B,List),print_side_by_side(List),!.
 print_side_by_side(call(P)):- !, call(P,Ret),!,print_side_by_side_l(1,Ret).
 
 print_side_by_side(G):- is_grid(G),!,print_grid(G).
-print_side_by_side(Title=Value):- !, w_section(title(Title),print_side_by_side(Value)).
 print_side_by_side(GF):- grid_footer(GF,G,W),is_gridoid(G),!,print_grid(W,G).
 %print_side_by_side(Title=(A^B)):- print_side_by_side((Title=A)^B).
 
+print_side_by_side(Title=Value):- !, format('~N'),print_title(Title),write('==>'),print_side_by_side(Value).
 print_side_by_side(P):- is_list(P), print_side_by_side_l(1,P), !,nop((length(P,PL),PL>5,writeln(pss=PL))).
 print_side_by_side(P):- \+ is_list(P), !, ignore((print_side_by_side_l(1,[P]))),!.
 
@@ -1232,12 +1232,10 @@ print_side_by_side_pref(TitleColor,G1,N1,LW,G2,N2):- print_side_by_side_ansi(Tit
 
 
 print_side_by_side_ansi(TitleColor,G1,N1,_LW,G2,N2):-
-   g_out((nl_now,
    data_type(G1,S1), data_type(G2,S2),
    into_wqs_string(N1,NS1), into_wqs_string(N2,NS2),
-
    print_side_by_side0(G1,LW,G2),
-   print_side_by_side0(format_footer(TitleColor,NS1,S1),LW,format_footer(TitleColor,NS2,S2)))),!.
+   print_side_by_side0(format_footer(TitleColor,NS1,S1),LW,format_footer(TitleColor,NS2,S2)).
    /*
    print_grid(,G1),
    print_grid(format_footer(TitleColor,NS2,S2),G2),
@@ -1268,7 +1266,7 @@ unsized_grid(A):- \+ is_really_gridoid(A),!.
 
 grid_footer(G,_,_):- \+ compound(G),!,fail.
 grid_footer(GFGG:M,GG,GF:M):-grid_footer(GFGG,GG,GF),!.
-grid_footer((GF=GG),GG,GF):-!.
+grid_footer((GF=GG),GG,GF):- !, is_really_gridoid(GG).
 grid_footer(Obj,GG,GF):- is_object(Obj), %vis2D(Obj,H,V),localpoints(Obj,Ps),points_to_grid(H,V,Ps,GG), 
   global_grid(Obj,GG),
   object_ref_desc(Obj,GF),!.
@@ -1520,7 +1518,8 @@ into_ss_string(print_grid(X,Y,G),SS):- !, into_ss_grid(X,Y,G,SS).
 into_ss_string(print_grid0(X,Y,G),SS):- !, into_ss_grid(X,Y,G,SS).
 into_ss_string(wqs(W),SS):- !,into_ss_call(wqs(W),SS).
 into_ss_string(print_ss(W),SS):- !,into_ss_call(print_ss(W),SS).
-into_ss_string(wqs(C,W),SS):- !,into_ss_call(wqs(C,W),SS).
+into_ss_string(wqs(C,W),SS):- !,into_ss_call(wqs(C,W),SS). 
+
 into_ss_string(ss(Len,L),ss(Len,L)):-!.
 into_ss_string(uc(W),SS):- !, into_ss_string(uc(yellow,W),SS).
 into_ss_string(uc(C,W),SS):- !,into_ss_call(color_print(C,call(underline_print(format("\t~@",[wqs(W)])))),SS).
@@ -1547,6 +1546,8 @@ into_ss_string(LL, SS):- is_list(LL),  maplist(stringy_string,LL,SL), find_longe
 into_ss_string(NCT,SS):- \+ callable(NCT), !, into_ss_call(wqs(NCT),SS).
 into_ss_string(LL, SS):- is_list(LL), !, into_ss_call(wqs(LL),SS).
 %into_ss_string(LL, SS):- is_list(LL), find_longest_len(LL,Len),!,SS=ss(Len,LL).
+%into_ss_string(H,SS):- callable_arity(H,0),is_writer_goal(H),wots(catch(call_e_dmsg(H),_,fail),S), string_into_ss(S,SS).
+
 into_ss_string(Goal,SS):-  callable_arity(Goal,0), into_ss_call(Goal,SS).
 into_ss_string(Goal,SS):-  callable_arity(Goal,1), call(Goal,R1), into_ss_grid(R1,SS).
 into_ss_string(IntoG,SS):- into_grid(IntoG,GR),is_grid(GR),!,into_ss_grid(GR,SS).

@@ -57,9 +57,11 @@ treed_props_list(RawPropLists,PropLists):-
 
 show_interesting_named_props(Named,In):-
    extend_grp_proplist(In,Objs),!,
-   w_section(hack_prop_groups(Named,Objs,HackedObjs)),
    w_section(print_treeified_props(Named,Objs)),
-   w_section(print_treeified_props(hacked(Named),HackedObjs)).
+   banner_lines(green,2),banner_lines(green,2),
+   w_section(hack_prop_groups(Named,Objs)),
+   banner_lines(green,2),banner_lines(green,2), 
+   !.
    
 
 show_interesting_named_props(Named,In):-
@@ -106,6 +108,8 @@ skip_ku1(pg(_,_,_,_)).
 skip_ku1(link(sees([_,_|_]),_)).
 skip_ku1(link(sees(_),_)).
 skip_ku1(iz(media(_))).
+skip_ku1(iz((_))).
+skip_ku1(shape_rep( grav,_)).
 skip_ku1(changes(_)).
 skip_ku1(o(_,_,_,_)).
 skip_ku1(iz(info(_))).
@@ -248,15 +252,20 @@ determine_elists(Objs,EList):-
   include(not_skip_ku,List,EList).
 
 %hack_prop_groups(Named,Objs,HackedObjs)
-hack_prop_groups(Named,Objs,HackedObjs):-
+hack_prop_groups(Named,Objs):-
   determine_elists(Objs,EList),
   w_section(print_elists,print_elists_hack_objs(Named,EList,Objs,HackedObjs)),
+  maplist(arg(1),HackedObjs,RRR),
+  treeify_props(RRR,Tree),
+  banner_lines(orange,2),
+  pp(hacked(Named)=Tree),
+  banner_lines(yellow,2),  
   skip_if_ansi(print_propset_groups(Named,Objs,EList)).
 
 
 var_to_underscore(Var,_):- plain_var(Var),!.
 print_elists_hack_objs(Named,Props,Objs,Hacked):-
- Objs = Hacked,
+ HackedObjs = Hacked,
  must_det_ll((
 
   variant_list_to_set(Props,PropsSet),
@@ -271,9 +280,11 @@ print_elists_hack_objs(Named,Props,Objs,Hacked):-
   variant_list_to_set(GroupsWithCountsL,GroupsWithCountsLVS),
   predsort(sort_on(arg(2)),GroupsWithCountsLVS,GroupsWithCounts),!,
   variant_list_to_set(GroupsWithCounts,GroupsWithCountsW),
-  pp(countOfEachU=GroupsWithCountsW),!,
-  maplist(remember_propcounts(Named,diversity),GroupsWithCountsW),
-  replace_props_with_stats(GroupsWithCounts,CountOfEach,Objs,HackedObjsM),
+  sort(GroupsWithCountsW,GroupsWithCountsWP),
+  variant_list_to_set(GroupsWithCountsWP,GroupsWithCountsWPO),
+  pp(countOfEachU=GroupsWithCountsWPO),!,
+  maplist(remember_propcounts(Named,diversity),GroupsWithCountsWPO),
+  replace_props_with_stats(GroupsWithCountsWPO,CountOfEach,Objs,HackedObjsM),
   maplist(ku_rewrite_props,HackedObjsM,HackedObjs),
   nop(pp(hackedObjs=HackedObjs)))).
 
@@ -290,10 +301,13 @@ replace_props_with_stats(SortedWithCounts,CountOfEach,obj(Objs),obj(HackedObjs))
   sort(Hacked,HackedObjsR),reverse(HackedObjsR,List0),!,
   include(not_skip_ku,List0,List1),
   maplist(ku_rewrite_props,List1,HackedObjs).
+
 replace_props_with_stats(SortedWithCounts,CountOfEach,Objs,HackedObjs):-
   is_list(Objs),!,maplist(replace_props_with_stats(SortedWithCounts,CountOfEach),Objs,HackedObjs).
-replace_props_with_stats(SortedWithCounts,CountOfEach,Prop,OProp):-
-   by_freq(SortedWithCounts,CountOfEach,Prop,OProp),!.
+
+
+
+replace_props_with_stats(SortedWithCounts,CountOfEach,Prop,OProp):-  by_freq(SortedWithCounts,CountOfEach,Prop,OProp),!.
 
 
 by_freq(_,_,N-P,N-P):-!.
@@ -586,6 +600,29 @@ treeify_props(RRR,R):- sort_vertically(RRR,RR),RRR\=@=RR,!,treeify_props(RR,R).
 %treeify_props(L,LM):- maplist(simpl_ogs,L,MM),L\=@=MM,!,treeify_props(MM,LM).
 %treeify_props(RRR,R):- sort_vertically(RRR,RR),RRR\=@=RR,!,treeify_props(RR,R).
 treeify_props(RRR,HAD->RO):- member(R,RRR),member(HAD,R),maplist(safe_select(HAD),RRR,RR),treeify_props(RR,RO). %,RR\=[[]|_],!.
+/*treeify_props(RRR,HAD->RO):- member(R,RRR),member(HAS,R),
+  make_unifible(HAS,HAD), maplist(p1_not_not(member(HAD)),RRR),
+  maplist(p1_not_not(member(HAD)),RRR),
+  findall(H->RObjL,(member(H,HHH),
+    findall(RObj,(member(Obj,RRR),select(H,Obj,RObj)),RObjL),
+  treeify_props(RR,RO). %,RR\=[[]|_],!.*/
+treeify_props(RRR, OUTPUT):- is_list(RRR), fail,
+  flatten(RRR,Props),
+  ku_rewrite_props(Props,GSS), 
+  care_to_count(GSS,PropsSet),
+  %count_each(PropsSet,Props,CountOfEachL),
+  %predsort(sort_on(arg(2)),CountOfEachL,CountOfEach),
+  %pp(countOfEach=CountOfEach),  
+  maplist(make_unifiable,PropsSet,UPropsSet),
+  map_pred(var_to_underscore,UPropsSet,UPropsSetG),
+  variant_list_to_set(UPropsSetG,UPropsSetGSet),
+  count_each(UPropsSetGSet,UPropsSetG,GroupsWithCountsL),
+  variant_list_to_set(GroupsWithCountsL,GroupsWithCountsLVS),
+  predsort(sort_on(arg(2)),GroupsWithCountsLVS,GroupsWithCounts),!,
+  variant_list_to_set(GroupsWithCounts,GroupsWithCountsW),
+  sort(GroupsWithCountsW,KS), [_N-HAD|_] = KS,
+  findall(HAD,member(HAD,PropsSet),HHH),!,
+  treeify_props_these_next(HAD,HHH,RRR,OUTPUT).
 treeify_props(RRR,[ (yes(HAD)=HL/NL)->FHAVES ,  (not(HAD)=NL/HL)->FHAVENOTS ]):- flatten(RRR,GF),
   sort_safe(GF,GSS), 
   care_to_count(GSS,GS),
@@ -596,12 +633,28 @@ treeify_props(RRR,[ (yes(HAD)=HL/NL)->FHAVES ,  (not(HAD)=NL/HL)->FHAVENOTS ]):-
   treeify_props(HAVESS,FHAVES),
   treeify_props(HAVENOTS,FHAVENOTS),
   FHAVENOTS\=[].
-
 /*
 %treeify_props(RRR,R):- predsort(using_compare(sort),RRR,RR),RRR\=@=RR,!,treeify_props(RR,R).
 treeify_props(RRR,[One|R]):- select(One,RRR,RRRR),treeify_props(RRRR,R).
 */
 treeify_props(RRR,R):- sort_vertically(RRR,R).
+
+
+treeify_props_these_next(HAD,HHH,RRR,HAD->OUTPUT):-
+  findall(H->RObjLO,(member(H,HHH),h_for(H,RRR,RObjLO)),OUTPUT).
+
+h_for(H,RRR,RObjLO):- 
+  findall(RObj,(member(Obj,RRR),select(H,Obj,RObj)),RObjL),
+  treeify_props(RObjL,RObjLO).
+
+/*
+  my_partition(member(HAD),RRR,HAVES,HAVENOTS), % HAVES\=[_],HAVENOTS\=[_],
+  length(HAVES,HL),length(HAVENOTS,NL),
+  maplist(safe_select(HAD),HAVES,HAVESS),%HAVESS\=[[]|_],
+  treeify_props(HAVESS,FHAVES),
+  treeify_props(HAVENOTS,FHAVENOTS),
+  FHAVENOTS\=[].
+*/
 
 %:- functor(VV,vv,9009),nb_linkval(vv9009,VV).
 :- length(VV,9009),nb_linkval(vv9009,VV).
