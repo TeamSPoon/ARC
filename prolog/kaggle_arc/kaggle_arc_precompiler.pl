@@ -92,8 +92,8 @@ rrtrace(P1,X):- trace,!, call(P1,X).
 
 :- meta_predicate(arc_wote(0)).
 arc_wote(G):- with_pp(ansi,wote(G)).
-arcST:- arc_wote(dumpST).
-atrace:- arc_wote(dumpST).
+arcST:- arc_wote(bt).
+atrace:- arc_wote(bt).
 %atrace:- ignore((stream_property(X,file_no(2)), with_output_to(X,dumpST))),!.
 
 

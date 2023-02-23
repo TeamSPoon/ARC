@@ -57,9 +57,9 @@ treed_props_list(RawPropLists,PropLists):-
 
 show_interesting_named_props(Named,In):-
    extend_grp_proplist(In,Objs),!,
-   w_section(print_prop_groups(Named),hack_prop_groups(Named,Objs,HackedObjs)),
-   w_section(print_treeified_props(Named),print_treeified_props(Named,Objs)),
-   w_section(print_treeified_hacked_props(Named),print_treeified_props(Named,HackedObjs)).
+   w_section(hack_prop_groups(Named,Objs,HackedObjs)),
+   w_section(print_treeified_props(Named,Objs)),
+   w_section(print_treeified_props(hacked(Named),HackedObjs)).
    
 
 show_interesting_named_props(Named,In):-
@@ -250,19 +250,20 @@ determine_elists(Objs,EList):-
 %hack_prop_groups(Named,Objs,HackedObjs)
 hack_prop_groups(Named,Objs,HackedObjs):-
   determine_elists(Objs,EList),
-  w_section(print_elists,print_elists_hack_objs(EList,Objs,HackedObjs)),
+  w_section(print_elists,print_elists_hack_objs(Named,EList,Objs,HackedObjs)),
   skip_if_ansi(print_propset_groups(Named,Objs,EList)).
 
 
 var_to_underscore(Var,_):- plain_var(Var),!.
-print_elists_hack_objs(Props,Objs,HackedObjs):-
+print_elists_hack_objs(Named,Props,Objs,Hacked):-
+ Objs = Hacked,
  must_det_ll((
 
   variant_list_to_set(Props,PropsSet),
   count_each(PropsSet,Props,CountOfEachL),
   predsort(sort_on(arg(2)),CountOfEachL,CountOfEach),
   pp(countOfEach=CountOfEach),
-
+  maplist(remember_propcounts(Named,count),CountOfEach),
   maplist(make_unifiable,PropsSet,UPropsSet),
   map_pred(var_to_underscore,UPropsSet,UPropsSetG),
   variant_list_to_set(UPropsSetG,UPropsSetGSet),
@@ -271,9 +272,15 @@ print_elists_hack_objs(Props,Objs,HackedObjs):-
   predsort(sort_on(arg(2)),GroupsWithCountsLVS,GroupsWithCounts),!,
   variant_list_to_set(GroupsWithCounts,GroupsWithCountsW),
   pp(countOfEachU=GroupsWithCountsW),!,
+  maplist(remember_propcounts(Named,diversity),GroupsWithCountsW),
   replace_props_with_stats(GroupsWithCounts,CountOfEach,Objs,HackedObjsM),
   maplist(ku_rewrite_props,HackedObjsM,HackedObjs),
   nop(pp(hackedObjs=HackedObjs)))).
+
+
+remember_propcounts(Named,Diversity,N-Prop):-
+  arc_assert(propcounts(Named,Diversity,N,Prop)).
+
 
 sort_obj_props(How,obj(Props),obj(Sorted)):-
   predsort(How,Props,Sorted).

@@ -10,9 +10,10 @@
 saved_group(Why,IndvS):-
   is_why_grouped(_TestID,_Count,Why,IndvS).
 
-is_why_grouped(TestID,Count,Why,IndvS):-
+is_why_grouped(TestID,Count,Why,IndvSO):-
   is_why_grouped_g(TestID,Count,Why,IndvSG),
-  maplist(must_oid_to_object,IndvSG,IndvS).
+  maplist(must_oid_to_object,IndvSG,IndvS),!,
+  IndvSO=IndvS.
 
 must_oid_to_object(ID,O):- must_det_ll(oid_to_obj(ID,O)).
 

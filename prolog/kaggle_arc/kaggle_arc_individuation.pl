@@ -1103,7 +1103,7 @@ find_hybrid_shapes_on(Set,Grid,RGroup):-
         ((member(In,Set),maybe_ogs(ROHOV,In,Grid))),ROHOVInS)),
   !,  ROHOVInS\==[], % unless debugging 
   must_det_ll((
-  print_treeified_props(ROHOVInS),
+  print_treeified_props(find_hybrid_shapes_on,ROHOVInS),
   if_t(ROHOVInS==[],
     forall(member(In,Set),
       ((ignore((test_ogs_for_ans(fail,find_hybrid_shapes_on,In,Grid)))),itrace))),
