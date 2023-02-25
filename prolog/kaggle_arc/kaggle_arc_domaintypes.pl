@@ -18,11 +18,11 @@ to_real_grid(G,GO):- notrace((unnumbervars(G,G1),get_bgc(BG),subst001(G1,bg,BG,G
 
 has_color(C,Cell):- only_color_data(Cell,CD), cmatch(C,CD).
 
-cmatch(C,CD):- is_point(CD),  must_det_ll(only_color_data(CD,CC)),!,cmatch(C,CC).
 cmatch(C,CD):- sub_var(C,CD),!.
 cmatch(C,CD):- plain_var(C),!,var(CD),C==CD.
 cmatch(C,CD):- var(C),!, once(C=@=CD; \+ C\=CD).
 cmatch(plain_var,CD):- !, plain_var(CD).
+cmatch(C,CD):- is_point(CD),!,compound(CD), arg(_,CD,E),cmatch(C,E),!.
 cmatch(is_colorish_var,CD):- !,var(CD),is_colorish(CD).
 cmatch(fg,CD):- !, CD\==wbg, is_fg_color(CD),!.
 cmatch(wbg,CD):- !,(CD==wbg;is_bg_color(CD)),!.

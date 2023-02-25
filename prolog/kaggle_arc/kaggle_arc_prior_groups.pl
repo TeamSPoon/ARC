@@ -48,14 +48,25 @@ show_interesting_props_gojs(Objs):- u_dmsg(show_interesting_props_gojs(Objs)).
 print_treeified_props(Named,Objs):-
   maplist(into_obj_plist,Objs,RawPropLists),
   maplist(treed_props_list,RawPropLists,PropLists),
-  treeify_props(PropLists,Tree),
-  remember_tree(Named,Tree),
-  with_tag('pre',pp(Named=Tree)).
+  print_ptree(Named,PropLists).
 
 treed_props_list(RawPropLists,PropLists):-
   include(p1_not(p1_arg(_,is_gridoid)),RawPropLists,RawPropLists0),
   care_to_count(RawPropLists0,RawPropLists1),
   include(p1_not(p1_subterm(skip_ku)),RawPropLists1,PropLists),!.
+
+print_ptree(Named,RRR):- 
+  treeify_props(RRR,Tree),
+  remember_tree(Named,Tree),
+  tersify_gridoids(Tree,TTree),
+  with_pre(pp(Named=TTree)).
+
+tersify_gridoids(Tree,TTree):- map_pred1(replace_gridoids,Tree,TTree).
+replace_gridoids(Tree,TTree):- is_points_list(Tree),length(Tree,F),F>4,!,length(Four,4),append(Four,_,Tree),append(Four,'...',TTree),!.
+replace_gridoids(G,O):- is_grid(G),!,tersify(G,O).
+replace_gridoids(Tree,TTree):- is_grid(Tree),length(Tree,F),F>4,!,length(Four,4),append(Four,_,Tree),append(Four,'...',TTree),!.
+%tersify_gridoids(Tree,TTree):- is_grid(Tree),length_s(Tree,F),F>4,!,length_s(Tree,F),append(Four,_,Tree),append(Four,'...',TTree),!.
+replace_gridoids(G,O):- is_gridoid(G),!,tersify(G,O).
 
 
 show_interesting_named_props(Named,In):-
@@ -83,7 +94,7 @@ groups_to_groupsets(Groups,GroupSets):-
   maplist(arg(2),Groups,GroupsList), predsort(variants_equal,GroupsList,GroupSets).
 
 show_interesting_group(Named,Title-Objs):- 
-  length(Objs,Len),
+  length_s(Objs,Len),
   mass(Objs,Mass),
   sformat(SGroup,'~w Object(s) ~w mass (~q)',[Len,Mass,Named]), 
   w_section(title(SGroup),
@@ -96,7 +107,7 @@ show_three_interesting_groups(Named,Objs,Groups):-
   maplist(make_unifiable,SProps,UProps), predsort(using_compare(numbered_vars),UProps,SUProps),  
   print_interesting_named_groups(suprops(Named),SUProps),
   %count_each(SProps,Props,GroupsWithCounts),
-  length(Objs,L),
+  length_s(Objs,L),
   group_quals(SUProps,SProps,L,KUProps),
   print_interesting_named_groups(kuprops(Named),KUProps),
   objs_with_props(KUProps,Objs,L,Groups),
@@ -158,7 +169,7 @@ ku_rewrite_props(A,A).
 objs_with_props([KU-_|Props],Objs,OL,GO):- skip_ku(KU),!,objs_with_props(Props,Objs,OL,GO).
 
 objs_with_props([KU-_|Props],Objs,OL,GO):-
-  findall(O,(member(O,Objs),has_prop(KU,O)),KL), length(KL,KLL), 
+  findall(O,(member(O,Objs),has_prop(KU,O)),KL), length_s(KL,KLL), 
   KLL==OL,!,objs_with_props(Props,Objs,OL,GO).
 objs_with_props([_-List|Props],Objs,OL,GO):-
   findall(Prop-OO,(member(Prop,List),
@@ -168,7 +179,7 @@ objs_with_props([_-List|Props],Objs,OL,GO):-
 objs_with_props([],_,_,[]).
 
 group_quals([U|SUProps],SProps,L,[U-ListUS|KUProps]):- findall(U,member(U,SProps),ListU),
-  length(ListU,LUL),LUL\==L, sort_safe(ListU,ListUS),
+  length_s(ListU,LUL),LUL\==L, sort_safe(ListU,ListUS),
    ListUS=[_,_|_],!,group_quals(SUProps,SProps,L,KUProps).
 group_quals([_|SUProps],SProps,L,KUProps):-  group_quals(SUProps,SProps,L,KUProps).
 group_quals([],_SProps,_,[]).
@@ -229,16 +240,16 @@ link_rel(contained_by).
 link_rel(P,F):- link_rel(P),functor(P,F,_).
 
 /*
-is_in_subgroup_c(Contained_by,Functor,_Grp,Obj,count_of_bg_links(Functor,Count)):- findall(Y, (indv_props(Obj,link(Contained_by,Y)),is_bg_object(Y)), L), length(L,Count).
-is_in_subgroup_c(Contained_by,Functor,_Grp,Obj,count_of_fg_links(Functor,Count)):- findall(Y, (indv_props(Obj,link(Contained_by,Y)),is_fg_object(Y)), L), length(L,Count).
-is_in_subgroup_c(Contained_by,Functor,Grp,YObj,links_from_bg_count(Functor,Count)):- obj_to_oid(YObj,Y), link_rel(Contained_by,Functor),findall(Obj, (member(Obj,Grp),indv_props(Obj,link(Contained_by,Y)),is_bg_object(Obj)), L), length(L,Count).
-is_in_subgroup_c(Contained_by,Functor,Grp,YObj,links_from_fg_count(Functor,Count)):- obj_to_oid(YObj,Y), link_rel(Contained_by,Functor),findall(Obj, (member(Obj,Grp),indv_props(Obj,link(Contained_by,Y)),is_fg_object(Obj)), L), length(L,Count).
+is_in_subgroup_c(Contained_by,Functor,_Grp,Obj,count_of_bg_links(Functor,Count)):- findall(Y, (indv_props(Obj,link(Contained_by,Y)),is_bg_object(Y)), L), length_s(L,Count).
+is_in_subgroup_c(Contained_by,Functor,_Grp,Obj,count_of_fg_links(Functor,Count)):- findall(Y, (indv_props(Obj,link(Contained_by,Y)),is_fg_object(Y)), L), length_s(L,Count).
+is_in_subgroup_c(Contained_by,Functor,Grp,YObj,links_from_bg_count(Functor,Count)):- obj_to_oid(YObj,Y), link_rel(Contained_by,Functor),findall(Obj, (member(Obj,Grp),indv_props(Obj,link(Contained_by,Y)),is_bg_object(Obj)), L), length_s(L,Count).
+is_in_subgroup_c(Contained_by,Functor,Grp,YObj,links_from_fg_count(Functor,Count)):- obj_to_oid(YObj,Y), link_rel(Contained_by,Functor),findall(Obj, (member(Obj,Grp),indv_props(Obj,link(Contained_by,Y)),is_fg_object(Obj)), L), length_s(L,Count).
 */
 
 fyl_functor_count(FYL,Functor,Count):-
   maplist(arg(1),FYL,Fs),list_to_set(Fs,FSet),
   member(Functor,FSet),
-  findall(_,member(Functor-_,FYL),L),length(L,Count).
+  findall(_,member(Functor-_,FYL),L),length_s(L,Count).
 
 link_functor(contains,contains).
 link_functor(sees(_),sees).
@@ -251,7 +262,7 @@ is_in_subgroup(Grp,Obj,Prop):- var(Grp),var(Obj),!,findall(Obj,enum_object(Obj),
 is_in_subgroup(_Grp,Obj,links_count(Functor,Count)):- 
   link_functor(Contained_by,Functor),
   findall(_, (indv_props(Obj,link(Contained_by,_))), FYL), 
-  length(FYL,Count).
+  length_s(FYL,Count).
 
 is_in_subgroup(Grp,YObj,occurs_in_links(Functor,Count)):- 
   obj_to_oid(YObj,Y), findall(Functor-Obj, 
@@ -293,13 +304,13 @@ determine_elists(Objs,EList):-
 hack_prop_groups(Named,Objs):-
  must_det_ll((
   determine_elists(Objs,EList),
-  w_section(print_elists,print_elists_hack_objs(Named,EList,Objs,HackedObjs)),
-  maplist(arg(1),HackedObjs,RRR),
-  treeify_props(RRR,Tree),
+  w_section(print_elists(Named),print_elists_hack_objs(Named,EList,Objs,HackedObjs)),
+  maplist(arg(1),HackedObjs,RRR),  
   banner_lines(orange,2),
-  with_tag('pre',((pp(hacked(Named)=Tree)))),
+  print_ptree(hacked(Named),RRR),
   banner_lines(yellow,2),  
   ignore(skip_if_ansi(print_propset_groups(Named,Objs,EList))))).
+
 
 
 var_to_underscore(Var,_):- plain_var(Var),!.
@@ -307,7 +318,7 @@ print_elists_hack_objs(Named,Props,Objs,HackedObjs):-
  HackedObjs = Hacked,
  % HackedObjs = Splits,
  must_det_ll((
-  length(Objs,BaseSize),
+  length_s(Objs,BaseSize),
   variant_list_to_set(Props,PropsSet),
   count_each(PropsSet,Props,CountOfEachL),
   predsort(sort_on(arg(2)),CountOfEachL,CountOfEach0),
@@ -325,7 +336,7 @@ print_elists_hack_objs(Named,Props,Objs,HackedObjs):-
   variant_list_to_set(GroupsWithCountsWP,GroupsWithCountsWPO),
   make_splitter(GroupsWithCountsWPO,CountOfEach,SSplits),sort(SSplits,CSplits),
   store_splits(Named,BaseSize,CSplits,Splits),
-  with_tag('pre',((pp(countOfEachU(Named)=Splits)))),!,
+  print_ptree(countOfEachU(Named),Splits),
   maplist(remember_propcounts(Named,diversity),GroupsWithCountsWPO),
   replace_props_with_stats(GroupsWithCountsWPO,CountOfEach,Objs,HackedObjsM),
   maplist(ku_rewrite_props,HackedObjsM,Hacked),
@@ -336,8 +347,8 @@ store_splits(Named,BaseSize,CSplits,Splits):-
   clean_splits(BaseSize,CSplits,Splits).
 
 %save_1split(Named,Six,(1-_)->[Six-CSplits]):- maplist(remember_propcounts(Named,nth(_)),[CSplits]).
-%save_1split(Named,Six,(Six-_)->List):- length(List,Six),maplist(p1_call(chk(=(1-_))),List),
-save_1split(Named,_,(N-Div)->CSplits):- maplist(remember_propcounts(Named,div(Div,N)),[CSplits]).  
+%save_1split(Named,Six,(Six-_)->List):- length_s(List,Six),maplist(p1_call(chk(=(1-_))),List),
+save_1split(Named,_,(N-Div)->CSplits):- maplist(remember_propcounts(Named,div(Div,N)),CSplits).  
 %save_1split(Named,_,(1-_)->[1-CSplits]):- !.
 %save_1split(Named,_,(N)->List):- predsort(sort_on(last_type_is_value),List,Sort).
 %save_1split(Named,_,_).
@@ -350,8 +361,8 @@ clean_splits(_,I,I).
 clean_1split(Six,(1-_)->[Six-_CSplits],'').
 clean_1split(Six,(1-_)->[Six-CSplits],ignore(CSplits)).
 clean_1split(_,(1-_)->[1-CSplits],1-CSplits).
-%clean_1split(Six,(Six-_)->List,Sort):- length(List,Six),maplist(arg(2),List,Last),predsort(sort_on(last_type_is_value),Last,Sort).
-clean_1split(Six,(Six-_)->List,(Six)->Sort):- length(List,Six),maplist(arg(2),List,Last),predsort(sort_on(last_type_is_value),Last,Sort).
+%clean_1split(Six,(Six-_)->List,Sort):- length_s(List,Six),maplist(arg(2),List,Last),predsort(sort_on(last_type_is_value),Last,Sort).
+clean_1split(Six,(Six-_)->List,(Six)->Sort):- length_s(List,Six),maplist(arg(2),List,Last),predsort(sort_on(last_type_is_value),Last,Sort).
 clean_1split(_,(N)->List,(N)->Sort):- predsort(sort_on(last_type_is_value),List,Sort).
 clean_1split(_,X,X).
 
@@ -374,7 +385,7 @@ make_splitter([],_,[]).
 made_split(_N,_UProp,[],[]).
 made_split(N,UProp,List,Out):-variant_list_to_set(List,Set),List\=@=Set,!,made_split(N,UProp,Set,Out).
 made_split(N,UProp,List,Out):-sort(List,Set),List\=@=Set,!,made_split(N,UProp,Set,Out).
-made_split(_,UProp,List,((Len-UProp)->List)):- length(List,Len).
+made_split(_,UProp,List,((Len-UProp)->List)):- length_s(List,Len).
 sameps(UProp,_-Prop):- \+ Prop \= UProp.
 
 remember_propcounts(Named,Diversity,N-Prop):-
@@ -409,9 +420,13 @@ by_freq(SortedWithCounts,CountOfEach,Prop,OProp):-
 by_freq(_SortedWithCounts,CountOfEach,Prop,(c(N2)-Prop)):-
    ((member(N2-CProp,CountOfEach),CProp=@=Prop)),!.
 by_freq(_,_,P,0-P):-!.
+
 print_propset_groups(Named,Objs,EList):- 
+  w_section(print_propset_groups(Named),print_propset_groups_now(Named,Objs,EList)).
+
+print_propset_groups_now(Named,Objs,EList):-
   maplist(has_props_set(Objs),EList,GrpList),
-  predsort(sort_on(length),GrpList,GrpSetR),reverse(GrpSetR,GrpSet),
+  predsort(sort_on(length_s),GrpList,GrpSetR),reverse(GrpSetR,GrpSet),
   with_tag_ats(table,class("tblo rows_distinct"),
    (html_table_row([th(props),td('&nbsp;'),th(objects),td('&nbsp')]),
     maplist(print_prop_groups(Named,EList,Objs),GrpSet),
@@ -466,8 +481,8 @@ write_scrollable(Goal):- with_tag_class(div,scrollable,Goal).
 
 any_have_prop(Except,Prop):- member(O,Except),has_prop(Prop,O),!.
 
-transitive_sets(P2,Obj,Set,N):- findall(n(P,List),(trans(P2,Obj,List),List\==[],length(List,P)),Lists),sort_safe(Lists,Set),length(Set,N).
-nontransitive_set(P2,Obj,Set,N):- findall(Other,p2_call(P2,Obj,Other),List),sort_safe(List,Set),length(Set,N).
+transitive_sets(P2,Obj,Set,N):- findall(n(P,List),(trans(P2,Obj,List),List\==[],length_s(List,P)),Lists),sort_safe(Lists,Set),length_s(Set,N).
+nontransitive_set(P2,Obj,Set,N):- findall(Other,p2_call(P2,Obj,Other),List),sort_safe(List,Set),length_s(Set,N).
 
 trans(P2,Obj,Out):- obj_to_oid(Obj,OID),trans_no_loop(P2,[OID],Obj,Out).
 
@@ -553,7 +568,7 @@ group_prior_objs(Why,Objs,WithPriors):-
  %print_list_of(show_indiv,group_prior_objs,Objs),!,
  get_prior_labels(Objs,Lbls),
  keysort(Lbls,N),
- length(N,Len),
+ length_s(N,Len),
  Title = Why+Len,
  nop(noisey_debug(print_premuted_objects(Title))),
  w_section(title(add_priors(Title)),
@@ -608,7 +623,7 @@ sprop_piority(iz(info(by_color)),3).
 sprop_piority(iz(info(glyphic)),2).
 
 
-resize_inf(X,N):- is_list(X),!,length(X,N).
+resize_inf(X,N):- is_list(X),!,length_s(X,N).
 resize_inf(X,X).
 
 member_or_iz(Prop,Ps):- member(Prop,Ps).
@@ -619,10 +634,12 @@ member_or_iz(Prop,Ps):- member(giz(Prop),Ps).
 %combine_number(_F1,O1,O2,O):- O is ((abs(O1-O2)+1)*O1)+(O2*30).
 combine_number(_F1,O1,O2,O):- O is sqrt(O1*O1+O2*O2).
 
+length_s(L,S):- (is_list(L);var(L)),!,length(L,S).
+length_s(L,S):- itrace,fail,length(L,S).
 
 visible_first(IndvS0,IndvO):- predsort_two_p2(visible_priority,visible_first_order,IndvS0,IndvO).
 %visible_pred(F1,I,O):- ranking_pred(F1,I,O),!.
-visible_first_order(I,VArea):-  vis_area(I,Area), globalpoints(I,Ps),length(Ps,L), VArea is Area/L.
+visible_first_order(I,VArea):-  vis_area(I,Area), globalpoints(I,Ps),length_s(Ps,L), VArea is Area/L.
 visible_priority(Indv,Priority):- mass(Indv,1),!,Priority=7.
 visible_priority(Indv,Priority):- mass(Indv,0),!,Priority=8.
 visible_priority(Indv,Priority):- sprop_piority(Prop,Priority), has_prop(Prop,Indv),!.
@@ -680,13 +697,13 @@ not_care_to_count(iz(HasNumber)):- sub_term(N,HasNumber),number(N),!.
 is_care_to_count(P):- not_care_to_count(P),!,fail.
 is_care_to_count(_).
 
-is_length(N,L):- length(L,N).
+is_length(N,L):- length_s(L,N).
 treeify_props([],[]):-!.
 %treeify_props(One,[One]):- \+ is_list(One), !.
 %treeify_props(RRR,R):- sort_vertically(RRR,R),!.
 treeify_props(One,One):- \+ is_list(One), !.
 treeify_props([One],One):-!.
-treeify_props(One,One):- length(One,1), !.
+treeify_props(One,One):- length_s(One,1), !.
 treeify_props(One,One):- maplist(is_length(1),One), !.
 treeify_props(RRR,R):- sort_vertically(RRR,RR),RRR\=@=RR,!,treeify_props(RR,R).
 %treeify_props(L,LM):- maplist(simpl_ogs,L,MM),L\=@=MM,!,treeify_props(MM,LM).
@@ -720,7 +737,7 @@ treeify_props(RRR,[ (yes(HAD)=HL/NL)->FHAVES ,  (not(HAD)=NL/HL)->FHAVENOTS ]):-
   care_to_count(GSS,GS),
   count_each(GS,GF,UC),keysort(UC,KS),last(KS,N-HAD),N\==1,
   my_partition(member(HAD),RRR,HAVES,HAVENOTS), % HAVES\=[_],HAVENOTS\=[_],
-  length(HAVES,HL),length(HAVENOTS,NL))), Diff is abs(HL-NL),  Diff <3,
+  length_s(HAVES,HL),length_s(HAVENOTS,NL))), Diff is abs(HL-NL),  Diff <3,
   maplist(safe_select(HAD),HAVES,HAVESS),%HAVESS\=[[]|_],
   treeify_props(HAVESS,FHAVES),
   treeify_props(HAVENOTS,FHAVENOTS),
@@ -730,7 +747,7 @@ treeify_props(RRR,[ (yes(HAD)=HL/NL)->FHAVES ,  (not(HAD)=NL/HL)->FHAVENOTS ]):-
   care_to_count(GSS,GS),
   count_each(GS,GF,UC),keysort(UC,KS),last(KS,N-HAD),N\==1,
   my_partition(member(HAD),RRR,HAVES,HAVENOTS), % HAVES\=[_],HAVENOTS\=[_],
-  length(HAVES,HL),length(HAVENOTS,NL),
+  length_s(HAVES,HL),length_s(HAVENOTS,NL),
   maplist(safe_select(HAD),HAVES,HAVESS),%HAVESS\=[[]|_],
   treeify_props(HAVESS,FHAVES),
   treeify_props(HAVENOTS,FHAVENOTS),
@@ -751,7 +768,7 @@ h_for(H,RRR,RObjLO):-
 
 /*
   my_partition(member(HAD),RRR,HAVES,HAVENOTS), % HAVES\=[_],HAVENOTS\=[_],
-  length(HAVES,HL),length(HAVENOTS,NL),
+  length_s(HAVES,HL),length_s(HAVENOTS,NL),
   maplist(safe_select(HAD),HAVES,HAVESS),%HAVESS\=[[]|_],
   treeify_props(HAVESS,FHAVES),
   treeify_props(HAVENOTS,FHAVENOTS),
@@ -774,7 +791,7 @@ get_loc2D(P,loc2D(inf,P)).
 prior_name_by_size(VM,IndvS0,Name):- 
   Title = save_as_obj_group(Name),
   if_t((true;number(_R)),
-   (length(IndvS0,Len),
+   (length_s(IndvS0,Len),
     if_t(Len>0,
      must_det_ll((
       %add_prior_placeholder(Name,IndvS0,IndvS1),
@@ -793,7 +810,7 @@ prior_name_by_size(VM,IndvS0,Name):-
 /*
 %add_prior_placeholder(_,I,I):-!.
 add_prior_placeholder(Name,IndvS0,IndvS9):- is_list(IndvS0),!,
-  length(IndvS0,Len),
+  length_s(IndvS0,Len),
   maplist(add_prior_placeholder(Len,Name),IndvS0,IndvS9).
 
 add_prior_placeholder(_Len,Name,IndvS0,IndvS9):- 
@@ -910,7 +927,7 @@ add_prior(N,Lbl,Objs,ObjsWithPrior):-
   %print_list_of(ppnl,Title,N),
   my_partition(is_prior_prop(Lbl),Objs,Lbld,Unlbl),  
   %add_prior_placeholder(Lbl,Lbld,RLbld),
-  length(Lbld,LL),  
+  length_s(Lbld,LL),  
   rank_priors(Lbl,Lbld,RLbldR),
   nop(print_grid(Lbl->N/LL,RLbldR)),
   write('\t '), writeq(Lbl->N/LL),write(' <p/>\t'),
@@ -938,7 +955,7 @@ rank_priors(GType,Objs,SFO):-
    %add_prior_placeholder(GType,Group,Objs),
    smallest_first(smallest_pred(GType),Objs,SF),
    ignore((relivant_group(OG), maplist(OG,Objs))),
-   length(SF,SFLen),
+   length_s(SF,SFLen),
    nop(SFLen < 2 -> pp(red,rank_priors(GType,SFLen)); pp(green,rank_priors(GType,SFLen))),  
    reverse(SF,SFR),
    add_rank(OG,GType,SFLen,SFR,SFO),
@@ -948,7 +965,7 @@ rank_priors(GType,Objs,SFO):-
 maybe_show_ranking(GType,SFO):-
  dash_chars,dash_chars,dash_chars,dash_chars,
  maplist(object_grid,SFO,G),
-  length(SFO,Len),
+  length_s(SFO,Len),
   print_list_of(pp,setOF(GType),SFO),
   print_ss(G),
   u_dmsg(setOF(GType)=Len),atrace.
