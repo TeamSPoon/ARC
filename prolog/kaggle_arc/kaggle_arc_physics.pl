@@ -26,7 +26,7 @@ into_gridoid0(N,G):- get_current_test(TestID),is_why_grouped(TestID,_,N,UG), UG\
 into_gridoid0(N,G):- into_obj(N,G).
 into_gridoid0(N,G):- into_grids(N,G).
 
-into_gridoid(N,G):- no_repeats(S,(into_gridoid0(N,G),once(points_rep(local,G,P)),sort_safe(P,S))).
+into_gridoid(N,G):- no_repeats(S,(into_gridoid0(N,G),once(localpoints(G,P)),sort_safe(P,S))).
 %into_gridoid(N,G):- into_gridoid0(N,G).    
    
 
@@ -404,7 +404,7 @@ move_scale_dir_object(N,D,I,O):- into_group(I,M),M\=@=I,!,move_scale_dir_object(
 move_object(NX,NY,I,M):- is_object(I),!,
  /*must_det_ll*/((
   (NY<1 -> M=I ;
-  ( points_rep(local,I,LPoints),
+  ( localpoints(I,LPoints),
     offset_points(NX,NY,LPoints,GPoints),
     setq(I,[globalpoints(GPoints),loc2D(NX,NY)],M))))).
 move_object(H,V,L,LM):- is_group(L),!,mapgroup(move_object(H,V),L,LM).
@@ -557,12 +557,12 @@ related_how2(sees(DirsDists),O1,O2,Ps1,Ps2,Overlap,P1L,
   SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   findall(cc(Dir,Dist),sees_dir(Dir,Dist,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2),DirsDists), DirsDists\==[].
 
-%related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 < SX2, SY1 < SY2, EX2 < EX1, EY2 < EY1, How = contains(engulfed).
-related_how2(contains,O1,O2,Ps1,Ps2,Overlap,P1L,
+%related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 < SX2, SY1 < SY2, EX2 < EX1, EY2 < EY1, How = contained_by(engulfed).
+related_how2(contained_by,O1,O2,Ps1,Ps2,Overlap,P1L,
   SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   SX1 >= SX2, SY1 >= SY2, EX2 >= EX1, EY2 >= EY1.
-%related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 > SX2, SY1 > SY2, EX2 > EX1, EY2 > EY1, How = contained_by(engulfed).
-related_how2(contained_by,O1,O2,Ps1,Ps2,Overlap,P1L,
+%related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 > SX2, SY1 > SY2, EX2 > EX1, EY2 > EY1, How = contains_child(engulfed).
+related_how2(contains_child,O1,O2,Ps1,Ps2,Overlap,P1L,
   SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   SX1 =< SX2, SY1 =< SY2, EX2 =< EX1, EY2 =< EY1.
 

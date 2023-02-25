@@ -385,7 +385,7 @@ logicmoo_use_swish:-
   http_handler('/swish', http_redirect(moved, '/swish/'), []).
 
 arc_user(Nonvar):- nonvar(Nonvar),!,arc_user(Var),!,Nonvar=Var.
-arc_user(main):- \+ if_thread_main(fail),!.
+arc_user(main):- main_thread, !. %\+ if_thread_main(fail),!.
 arc_user(ID):- catch((pengine:pengine_user(ID)),_,fail),!.
 arc_user(ID):- catch((xlisting_web:is_cgi_stream,xlisting_web:find_http_session(User),http_session:session_data(User,username(ID))),_,fail),!.
 arc_user(ID):- catch((is_cgi, (xlisting_web:find_http_session(ID))),_,fail),!.
@@ -437,13 +437,13 @@ luser_getval_1(N,V):- luser_getval_4(N,V), \+ (luser_getval_3(N,VV), nop(VV\=V))
 %luser_getval_0(N,V):- luser_getval_2(N,V), \+ luser_getval_1(N,_).
 %luser_getval_0(N,V):- luser_getval_3(N,V), \+ luser_getval_2(N,_), \+ luser_getval_1(N,_).
 %luser_getval_3(N,V):- is_cgi, current_predicate(get_param_req/2),get_param_req(N,M),url_decode_term(M,V).
-luser_getval_2(N,V):- atom(N), httpd_wrapper:http_current_request(Request), member(search(List),Request),member(N=VV,List),url_decode_term(VV,V),arc_sensical_term(V),!.
+luser_getval_2(N,V):- \+ main_thread, atom(N), httpd_wrapper:http_current_request(Request), member(search(List),Request),member(N=VV,List),url_decode_term(VV,V),arc_sensical_term(V),!.
 luser_getval_2(N,V):- atom(N), nb_current(N,ValV),arc_sensical_term(ValV,Val),Val=V.
 
 luser_getval_3(N,V):- arc_user(ID), arc_user_prop(ID,N,V).
 luser_getval_3(_,_):- \+ is_cgi, !, fail.
-luser_getval_3(N,V):- atom(N), current_predicate(get_param_sess/2),get_param_sess(N,M),url_decode_term(M,V),arc_sensical_term(V).
-luser_getval_3(N,V):- atom(N), nb_current(N,ValV),arc_sensical_term(ValV,Val),Val=V.
+luser_getval_3(N,V):-  \+ main_thread, atom(N), current_predicate(get_param_sess/2),get_param_sess(N,M),url_decode_term(M,V),arc_sensical_term(V).
+%luser_getval_3(N,V):- atom(N), nb_current(N,ValV),arc_sensical_term(ValV,Val),Val=V.
 
 luser_getval_4(N,V):- arc_user_prop(global,N,V).
 luser_getval_4(N,V):- atom(N), current_prolog_flag(N,V).
@@ -672,6 +672,7 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 :- add_history((test_pp)).
 :- add_history((bfly_startup)).
 %:- add_history1((cls_z,make,demo)).
+:- add_history1((noguitracer,demo)).
 :- add_history1((demo)).
 
 
@@ -828,8 +829,8 @@ use_gui_debugger:-
 :- luser_default(task,v('1d398264')). 
 :- luser_default(task,v('37d3e8b2')). 
 */
-:- create_group(dmiles,['1b60fb0c','37d3e8b2','1d398264','0d3d703e','626c0bcc','5582e5ca']).
-
+:- create_group(dmiles,['37d3e8b2','1b60fb0c','1d398264','0d3d703e','626c0bcc','5582e5ca','ea32f347']).
+%:- noguitracer.
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).
 
 %:- luser_default(task,v('1b60fb0c')). %626c0bcc

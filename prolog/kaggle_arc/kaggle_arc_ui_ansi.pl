@@ -537,7 +537,7 @@ pp_hook_g1(O):-  is_grid(O),
 
 pp_hook_g1(shape_rep(grav,O)):- is_points_list(O), as_grid_string(O,S), wotsq(O,Q), print(shape_rep(grav,S,Q)),!.
 pp_hook_g1(vals(O)):- !, writeq(vals(O)),!.
-pp_hook_g1(points_rep(local,O)):- is_points_list(O), as_grid_string(O,S), wotsq(O,Q), print(points_rep(local,S,Q)),!.
+pp_hook_g1(localpoints(O)):- is_points_list(O), as_grid_string(O,S), wotsq(O,Q), print(localpoints(S,Q)),!.
 pp_hook_g1(C):- compound(C), compound_name_arguments(C,F,[O]),is_points_list(O), length(O,N),N>2, as_grid_string(O,S), compound_name_arguments(CO,F,[S]), print(CO),!.
 
 pp_hook_g1(O):-  is_points_list(O),as_grid_string(O,S),write(S),!.
@@ -1228,20 +1228,21 @@ print_side_by_side(TitleColor,G1,N1,LW,G2,N2):-
 
 
 print_side_by_side_pref(TitleColor,G1,N1,LW,G2,N2):- wants_html,!,  print_ss_html(TitleColor,G1,N1,LW,G2,N2).
-print_side_by_side_pref(TitleColor,G1,N1,LW,G2,N2):- print_side_by_side_ansi(TitleColor,G1,N1,LW,G2,N2).
+print_side_by_side_pref(TitleColor,G1,N1,LW,G2,N2):- print_side_by_side_ansi(TitleColor,G1,N1,LW,G2,N2),!.
 
 
-print_side_by_side_ansi(TitleColor,G1,N1,_LW,G2,N2):-
+print_side_by_side_ansi(TitleColor,G1,N1,LW0,G2,N2):-
+ must_det_ll((
    data_type(G1,S1), data_type(G2,S2),
-   into_wqs_string(N1,NS1), into_wqs_string(N2,NS2),
-   print_side_by_side0(G1,LW,G2),
-   print_side_by_side0(format_footer(TitleColor,NS1,S1),LW,format_footer(TitleColor,NS2,S2)).
+   print_side_by_side0(G1,LW0,G2),!,
+   print_side_by_side_footer(TitleColor,S1,N1,LW0,S2,N2))).
+   %write(F1),write(' '),write(F2))),!.
    /*
    print_grid(,G1),
    print_grid(format_footer(TitleColor,NS2,S2),G2),
    %print_side_by_side0(G1,LW,G2),
    !)). %print_side_by_side_footer(TitleColor,S1,NS1,LW,S2,NS2))).
-*/
+*//*
 print_side_by_side_ansi(TitleColor,G1,N1,_LW,G2,N2):-
    g_out((nl_now,
    data_type(G1,S1), data_type(G2,S2),
@@ -1251,12 +1252,14 @@ print_side_by_side_ansi(TitleColor,G1,N1,_LW,G2,N2):-
    print_grid(format_footer(TitleColor,NS2,S2),G2),
    %print_side_by_side0(G1,LW,G2),
    !)). %print_side_by_side_footer(TitleColor,S1,NS1,LW,S2,NS2))).
-
+*/
 % SWAP
 print_side_by_side_footer(TitleColor,S1,N1,LW0,S2,N2):- number(LW0), LW0 < 0, LW is -LW0, !, 
    print_side_by_side_footer(TitleColor,S2,N2,LW,S1,N1).
 
 print_side_by_side_footer(TitleColor,S1,N1,_LW,S2,N2):- 
+%   into_wqs_string(N1,NS1), into_wqs_string(N2,NS2),
+%   wots(F1,format_footer(TitleColor,NS1,S1)),wots(F2,format_footer(TitleColor,NS2,S2)),
    nl_if_needed, write('\t'),format_footer(TitleColor,N1,S1),write('\t\t'),format_footer(TitleColor,N2,S2),write('\n'),!.
 
 
@@ -1267,7 +1270,7 @@ unsized_grid(A):- \+ is_really_gridoid(A),!.
 grid_footer(G,_,_):- \+ compound(G),!,fail.
 grid_footer(GFGG:M,GG,GF:M):-grid_footer(GFGG,GG,GF),!.
 grid_footer((GF=GG),GG,GF):- !, is_really_gridoid(GG).
-grid_footer(Obj,GG,GF):- is_object(Obj), %vis2D(Obj,H,V),points_rep(local,Obj,Ps),points_to_grid(H,V,Ps,GG), 
+grid_footer(Obj,GG,GF):- is_object(Obj), %vis2D(Obj,H,V),localpoints(Obj,Ps),points_to_grid(H,V,Ps,GG), 
   global_grid(Obj,GG),
   object_ref_desc(Obj,GF),!.
 grid_footer(print_grid(GF,GG),GG,GF):-!.
@@ -1710,7 +1713,8 @@ print_grid(OH,OV,Name,Grid):-
    data_type(Grid,SS), 
    mesg_color(SS,TitleColor),
    print_tb_card(print_grid0(OH,OV,Grid),
-                 format_footer(TitleColor,Name,SS)))))).
+                 format_footer(TitleColor,Name,SS)))))),
+ if_thread_main(print_title(Name)).
 /*
 print_grid(OH,OV,Name,Grid):- 
  quietly(( make_bg_visible(Grid,Out),

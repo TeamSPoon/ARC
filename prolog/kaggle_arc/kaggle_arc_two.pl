@@ -188,12 +188,16 @@ show_pair_code(In,Out):-
   dash_chars,dash_chars.
 
 % trials(learn). trials(clue).   
-%trials(human). 
-trials(sol).
+trials(human). 
+trials(Sol):-trial_non_human(Sol).
 % trials(dsl). trials(runDSL).
 trial_non_human(sol).
 
-sols_for(TestID,Trial,TrialSol):- trials(Trial),once((compound_name_arguments(Entry,Trial,[Sol]), test_info(TestID,Sols),member(Entry,Sols))),
+sols_for(TestID,Trial,TrialSol):- 
+ ensure_test(TestID),
+ (var(Trial)->trials(Trial);true),
+ once((compound_name_arguments(Entry,Trial,[Sol]), 
+ test_info(TestID,Sols),member(Entry,Sols))),
   append_trial(Trial,Sol,TrialSol).
 
 append_trial(Trial,Sol,TrialSol):- listify(Sol,SolL),
@@ -252,7 +256,7 @@ solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut):-
     %set(InVM.training) = Training,
     set_training(Training),
     maybe_set_vm(InVM),    
-    gset(InVM.grid_target) = _,
+    gset(InVM.grid_target) = ExpectedOut,
     must_det_ll((
     %print(training(Training)),nl,
     %ppt(InVM),

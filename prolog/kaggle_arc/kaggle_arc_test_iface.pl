@@ -109,6 +109,7 @@ menu_cmd1(_,'~','                  or (PageUp) to begining of suite',(prev_suite
 menu_cmd1(_,'N','                  or (N)ext suite',(next_suite)).
 menu_cmd1(i,'R','             Menu to (R)un all tests noninteractively',(run_all_tests)).
 menu_cmd1(_,'l','                  or (l)ist special tests to run,',(show_tests)).
+menu_cmd1(_,'I','                  or L(I)ist special individualizations to run,',(show_indivizers)).
 menu_cmd1(r,'i','             Re-enter(i)nteractve mode.',(interact)).
 
 % How I got into fostering was I had spent about 10k dollars at Dove Lewis Animal Hospital for a cat in heart failure.  When he passed, about 3 years ago, I decided (this time) to go to a "kill" shelter to adopt another.   While was waiting for an appointment with an adoption screener I saw a flyer that said 'all medical expenses' would be paid if i became a foster volunteer. Holly shit, that sounded good.  So I started fostering 'moms with kittens' and other cats in all stages and needs.  Sometimes cats that are under protection by court orders.  T
@@ -130,6 +131,9 @@ menu_or_upper(IOKey):- nb_current(menu_key,Key),(Key==IOKey;(upcase_atom(Key,Key
 
 upper_already_bound(Key):- menu_cmds(_Mode,Key,_Mesg,_Goal).
 
+
+
+
 find_tests(F):-
    current_predicate(N),N=F/0, (atom_concat(test_,_,F); atom_concat(_,'_test',F)),
     \+ ( atom_codes(F,Codes),member(C,Codes),char_type(C,digit) ).
@@ -142,12 +146,18 @@ find_g_tests(F):- find_tests(F).
 
 list_of_tests(S):- findall(F,find_f_tests(F),L1),findall(F,find_g_tests(F),L),sort_safe(L,L2),append(L1,L2,L12),list_to_set(L12,S).
 
-show_tests:- update_changes, list_of_tests(L),
-  print_menu_list(L).
+show_tests:- update_changes, list_of_tests(L), print_menu_list(L), show_indivizers.
 
 print_menu_list(L):- forall(nth_above(100,N,L,E),format('~N~@',[print_menu_cmd1(write(N:E),E)])),nl.
 
-  % ignore((read_line_to_string(user_input,Sel),atom_number(Sel,Num))),
+
+
+
+
+
+
+
+% ignore((read_line_to_string(user_input,Sel),atom_number(Sel,Num))),
 
 ui_menu_call(G):- ignore(catch(must_not_error(G),E,u_dmsg(E))).
 %ui_menu_call(G):- when_in_html(catch(ignore((G)),E,u_dmsg(E))) ->true ; catch(ignore((G)),E,u_dmsg(E)).
@@ -279,8 +289,10 @@ do_menu_key( ''):- !, fail.
 
 do_menu_key('d'):- !, dump_from_pairmode.
 
-do_menu_key(E):- number(E),E>=300,set_pair_mode(entire_suite),fail.
-do_menu_key(Num):- number(Num),!, do_test_number(Num),!.
+do_menu_key(N):- number(N),N>=300,N=<800,set_pair_mode(entire_suite),fail.
+do_menu_key(N):- number(N),N>=300,N=<800,do_test_number(N),!.
+do_menu_key(N):- number(N),N>=800,N=<999,do_indivizer_number(N),!.
+
 do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num), number(Num), !, do_test_number(Num),!.
 do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), !, menu_goal(Body).
 do_menu_key(Key):- atom(Key), menu_cmds(_,Key,_,Body), !, menu_goal(Body).
@@ -386,7 +398,7 @@ set_test_suite(X,N):-
 
 preview_suite:- luser_getval(test_suite_name,X),preview_suite(X).
 
-do_suite_number(Num):- Num>=300, test_suite_list(L), nth_above(300,Num,L,SuiteX),!,set_test_suite(SuiteX),
+do_suite_number(Num):- E>=300,E=<800, test_suite_list(L), nth_above(300,Num,L,SuiteX),!,set_test_suite(SuiteX),
   preview_suite.
 
 select_suite(N):- string(N),atom_string(A,N),select_suite(A),!.
@@ -422,7 +434,7 @@ web_reverse(E,E):- arc_html,!.
 web_reverse(L,R):- reverse(L,R).
 
 
-do_test_number(Num):- Num>=300,do_suite_number(Num),!.
+do_test_number(Num):- Num>=300,Num<800,do_suite_number(Num),!.
 do_test_number(Num):- list_of_tests(L), 
   u_dmsg(do_test_number(Num)),nth_above(100,Num,L,E),!,set_test_cmd(E),do_test_pred(E).
 
@@ -996,12 +1008,13 @@ grid_to_image_oid(Grid,OID):- ground(Grid), !, oid_to_global_grid(OID,Grid),!.
 grid_to_image_oid(Grid,OID):- copy_term(Grid,GridC), oid_to_global_grid(OID,GridC),
   oid_to_global_grid(OID,GridCC),GridCC=@=Grid,!.
 
+
 full_test_suite_list:-
   ensure_level_1_test_info,
  (luser_getval(test_suite_name,SuiteXC); SuiteXC=[]),
  full_test_suite_list(L),
  %when_html(write('<style type="text/css">a {color: cyan;} body {background-color: black; color: white; background-blend-mode: difference; mix-blend-mode: difference}</style>')),
- when_html(write('<style type="text/css">a {color: cyan;} </style>')),
+ when_html(write('<style type="text/css">a {color: cyan;} body { background-blend-mode: difference; mix-blend-mode: difference}</style>')),
  ((forall(nth_above(300,N,L,SuiteX),
   (%nl,%current_suite_testnames(SuiteX,_),
    print_menu_cmd1((format(' ~w:  ',[N]),
@@ -1012,11 +1025,12 @@ report_suites:-
  (luser_getval(test_suite_name,SuiteXC); SuiteXC=[]),
  test_suite_list(L),
  %when_html(write('<style type="text/css">a {color: cyan;} body {background-color: black; color: white; background-blend-mode: difference; mix-blend-mode: difference}</style>')),
- when_html(write('<style type="text/css">a {color: cyan;} </style>')),
+ when_html(write('<style type="text/css">a {color: cyan;} body { background-blend-mode: difference; mix-blend-mode: difference}</style>')),
  ((forall(nth_above(300,N,L,SuiteX),
   (nl,current_suite_testnames(SuiteX,_),
-   print_menu_cmd1((format(' ~w:  ',[N]),
-   report_suite_test_count(SuiteX)),N),ignore((SuiteX==SuiteXC,write('   <<<<-------'))))))).
+   wots(SS,(format(' ~w:  ',[N]),report_suite_test_count(SuiteX))),
+   print_menu_cmd1(SS,N),ignore((SuiteX==SuiteXC,write('   <<<<-------'))))))).
+
 
 
 test_prop_example(TPE):-   less_fav(_,PropList),member(Prop,PropList),as_test_prop(Prop,TPE).
@@ -1413,7 +1427,7 @@ print_single_pair(TName):-
   ignore(first_current_example_num(ExampleNum)),
   forall(once(kaggle_arc(TestID,ExampleNum,In,Out)),
        print_single_pair(TestID,ExampleNum,In,Out)),
-     write('%= '), parcCmt(TestID))).
+     write('%= '), parcCmt(TestID))),!.
 
 print_test(TName):- (is_cgi ; arc_html),!,preview_test(TName).
 print_test(TName):-    
@@ -1429,7 +1443,7 @@ print_test(TName):-
   write('%= '), parcCmt(TestID),!,force_full_tee.
 
 
-preview_test(TName):- \+ (is_cgi ; arc_html), !,print_single_pair(TName).
+preview_test(TName):- \+ (is_cgi ; arc_html), !,print_single_pair(TName),!.
 preview_test(TName):- (is_cgi ; arc_html),!,
  fix_test_name(TName,TestID,ExampleNum1),
  test_atom(TestID,TestAtom),
@@ -1440,13 +1454,13 @@ preview_test(TName):- (is_cgi ; arc_html),!,
    forall(kaggle_arc(TestID,ExampleNum1,In,Out),
      print_single_pair(TestID,ExampleNum1,In,Out))),
  write('</span>'),
- when_in_html(write('<hr>')).
+ when_in_html(write('<hr>')),!.
 
 
 
 print_single_pair(TestID,ExampleNum,In,Out):- 
   as_d_grid(In,In1),as_d_grid(Out,Out1), xfer_zeros(In1,Out1),!,
-   print_single_pair_pt2(TestID,ExampleNum,In1,Out1).
+   print_single_pair_pt2(TestID,ExampleNum,In1,Out1),!.
 
 print_single_pair_pt2(TestID,ExampleNum,In,Out):- is_cgi,!, 
  must_det_ll((test_atom(TestID,TestAtom),
@@ -1455,12 +1469,11 @@ print_single_pair_pt2(TestID,ExampleNum,In,Out):- is_cgi,!,
  (ID2 = (TestID>ExampleNum*out)),
  print_ss_html_pair(cyan, 
    NameIn,navCmd((TestID>ExampleNum)),ID1,In,'Input',
-   TestAtom,navCmd((TestAtom)),ID2,Out,RightTitle))).
+   TestAtom,navCmd((TestAtom)),ID2,Out,RightTitle))),!.
 print_single_pair_pt2(TestID,ExampleNum,In1,Out1):- 
-   in_out_name(ExampleNum,NameIn,NameOut),%easy_diff_idea(TestID,ExampleNum,In1,Out1,LIST),!,
-   format('~Ntestcase(~q,"\n~@").~n~n~n',
-     [TestID>ExampleNum,
-       print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut)]),!,
+   in_out_name(ExampleNum,NameIn,NameOut),!,%easy_diff_idea(TestID,ExampleNum,In1,Out1,LIST),!,
+   format('~Ntestcase(~q,"\n',[TestID>ExampleNum]),
+   call_cleanup(ignore(print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut)),write('").\n\n')),
    format('~N'),
    %ignore((grid_hint_swap(i-o,In,Out))),
    format('~N'),
@@ -2149,7 +2162,7 @@ parc11(ExampleNum,OS,TName):-
   mapgrid(color_sym(OS),In,I),
   mapgrid(color_sym(OS),Out,O),
   format('~Ntestcase(~q,"\n',[TestID>ExampleNum]),
-    print_side_by_side(I,O), format('").\n'),
+    print_side_by_side(I,O),!, format('").\n'),
   ignore((write('%= '), parcCmt(TestID),nl,nl))))).
 
 %color_sym(OS,[(black='�'),(blue='�'),(red='�'),(green=''),(yellow),(silver='O'),(purple),(orange='o'),(cyan= 248	� ),(brown)]).

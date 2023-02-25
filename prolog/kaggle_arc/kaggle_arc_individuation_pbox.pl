@@ -183,7 +183,7 @@ shoot_lines_on_black_grid(Grid,GridO):- Color=black,
   h_and_v(shoot_lines_on_colored_row(LC,Color),Grid,GridO),
   LC=wbg.
 
-% back half contains middle if odd V
+% back half contained_by middle if odd V
 grid_halves(Grid,Left,Odd,Right):- length(Grid,L), (is_odd(L)->Odd=odd;Odd=even), M is floor(L/2), length(Left,M), append(Left,Right,Grid).
 
 find_gridline_color(Grid,C):- find_rowline_color(Grid,C) -> true ; (rot90(Grid,Grid90), find_rowline_color(Grid90,C)).
@@ -280,7 +280,7 @@ i_pbox(GridIn,Objs):-
 maybe_subdiv([OO],Objs):- object_grid(OO,G),i(i_pbox,G,Objs),!.
 maybe_subdiv(Objs,Objs).
 
-obj_global_grid(SX,G-wqs(DSC)):- points_rep(local,SX,Grid),make_bg_visible(Grid,G), vis2D(SX,VH,VV), loc2D(SX,OH,OV),!,
+obj_global_grid(SX,G-wqs(DSC)):- localpoints(SX,Grid),make_bg_visible(Grid,G), vis2D(SX,VH,VV), loc2D(SX,OH,OV),!,
   DSC=[loc2D(OH,OV),vis2D(VH,VV)].
 obj_global_grid(SX,G-wqs(DSC)):- global_grid(SX,Grid),make_bg_visible(Grid,G), vis2D(SX,VH,VV), loc2D(SX,OH,OV),!,
   DSC=[loc2D(OH,OV),vis2D(VH,VV)].

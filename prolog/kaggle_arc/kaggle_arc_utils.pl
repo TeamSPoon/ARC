@@ -214,11 +214,7 @@ mapg_list(P3,Grid,GridN,GridO):- call(P3,Grid,GridN,GridO),!.
 
 mapgrid(P2, Grid,GridN):- into_grid_or_var(Grid,G1),into_grid_or_var(GridN,G2),mapg_list(P2, G1,G2).
 mapg_list(P2, Grid,GridN):- is_list(Grid),!,maplist(mapg_list(P2),Grid,GridN).
-mapg_list(P2, Grid,GridN):- call_p2s(P2, Grid,GridN),!.
-
-call_p2s([P2],Grid,GridN):- !, call(P2, Grid,GridN).
-call_p2s([P2|P2L],Grid,GridN):- !, call(P2, Grid,GridM),call_p2s(P2L,GridM,GridN).
-call_p2s(P2, Grid,GridN):- call(P2, Grid,GridN).
+mapg_list(P2, Grid,GridN):- p2_call(P2, Grid,GridN),!.
 
 mapgrid(P1,Grid):- into_grid_or_var(Grid,G1),mapg_list(P1,G1).
 mapg_list(P1,Grid):- is_list(Grid),!,maplist(mapg_list(P1),Grid).
@@ -237,19 +233,45 @@ maplist_ignore(P2, [H|Grid],[I|GridN]):- maplist_ignore(P2, H,I), !,maplist_igno
 
 p1_call((P1;Q1),E):- must_be(callable,P1),!, (p1_call(P1,E);p1_call(Q1,E)).
 p1_call((P1,Q1),E):- must_be(callable,P1),!, (p1_call(P1,E),p1_call(Q1,E)).
-p1_call(not(P1),E):- !, \+ p1_call(P1,E).
+p1_call(or(P1,Q1),E):- must_be(callable,P1),!, (p1_call(P1,E);p1_call(Q1,E)).
+p1_call(and(P1,Q1),E):- must_be(callable,P1),!, (p1_call(P1,E),p1_call(Q1,E)).
+p1_call(not(not(P1)),E):- !, p1_call(P1,E).
+p1_call(not(P1),E):- !, not(p1_call(P1,E)).
+p1_call(once(P1),E):- !, once(p1_call(P1,E)).
+p1_call(chk(P1),E):- !, \+ \+ (p1_call(P1,E)).
+p1_call( \+ (P1),E):- !, \+ p1_call(P1,E).
 p1_call(P1,E):- !, call(P1,E).
 
+p2_call_p2(P2a,P2b,A,B):- p2_call(P2a,A,M),p2_call(P2b,M,B).
+
+p2_call(p1_call(P1),E,O):- !, p1_call(P1,E), E=O.
+p2_call([P2],Grid,GridN):- !, p2_call(P2, Grid,GridN).
+p2_call([P2|P2L],Grid,GridN):- !, p2_call(P2, Grid,GridM),p2_call(P2L,GridM,GridN).
+p2_call(ignore(P2),A,B):- call(P2,A,B)*->true;A=B.
+p2_call(type(Type,P2),A,B):- coerce(Type,A,AA),p2_call(P2,AA,B).
+p2_call(or(P2,Q2),A,B):- must_be(callable,P2),!, (p2_call(P2,A,B);p2_call(Q2,A,B)).
+p2_call(and(P2,Q2),A,B):- must_be(callable,P2),!, (p2_call(P2,A,AB),p2_call(Q2,AB,B)).
+p2_call(P2,A,B):- call(P2,A,B).
+
+
 p1_or(P1A,P1B,X):- p1_call(P1A,X)->true;p1_call(P1B,X).
+p1_and(P1A,P1B,X):- p1_call(P1A,X),p1_call(P1B,X).
 p1_not(P1,E):- \+ p1_call(P1,E).
 p1_arg(N,P1,E):- arg(N,E,Arg),p1_call(P1,Arg).
+p1_subterm(P1,E):- sub_term(Arg,E),p1_call(P1,Arg).
 my_partition(_,[],[],[]):-!.
-my_partition(P1,[H|L],[H|I],E):- \+ \+ call(P1,H),!,
+my_partition(P1,[H|L],[H|I],E):- \+ \+ p1_call(P1,H),!,
   my_partition(P1,L,I,E).
 my_partition(P1,[H|L],I,[H|E]):- 
    my_partition(P1,L,I,E),!.
 my_partition(P1,H,I,HE):- arcST,break,
   my_partition(P1,[H],I,HE).
+
+my_include(P1,[H|L],O):- (p2_call(p1_call(P1),H,HH)*->(my_include(P1,L,I),O=[HH|I]);my_include(P1,L,O)).
+my_include(_,_,[]).
+
+%my_exclude(P1,I,O):- my_include(not(P1),I,O).
+my_exclude(P1,I,O):- my_partition(P1,I,_,O).
 
 
 subst_1L([],Term,Term):-!.
@@ -310,7 +332,7 @@ subst0011_p2(P2, X, Y, Term, NewTerm ) :-
           NewTerm = NewCopy, maplist(call,NewGoals))))).
 
 subst0011a_p2(P2, X, Y, Term, NewTerm ) :-
- (call_p2s(P2,X,Term)-> Y=NewTerm ;
+ (p2_call(P2,X,Term)-> Y=NewTerm ;
   (is_list(Term)-> maplist(subst0011a_p2(P2, X, Y), Term, NewTerm );
    (( \+ compound(Term); Term='$VAR'(_))->Term=NewTerm;
      ((compound_name_arguments(Term, F, Args),

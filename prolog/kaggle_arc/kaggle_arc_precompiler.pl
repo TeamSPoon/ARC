@@ -92,10 +92,19 @@ rrtrace(P1,X):- trace,!, call(P1,X).
 
 :- meta_predicate(arc_wote(0)).
 arc_wote(G):- with_pp(ansi,wote(G)).
-arcST:- arc_wote(bt).
-atrace:- arc_wote(bt).
+arcST:- arc_wote(bts).
+atrace:- arc_wote(bts).
 %atrace:- ignore((stream_property(X,file_no(2)), with_output_to(X,dumpST))),!.
 
+bts:- 
+ ensure_loaded(library(prolog_stack)),
+ prolog_stack:export(prolog_stack:get_prolog_backtrace_lc/3),
+ use_module(library(prolog_stack),[print_prolog_backtrace/2,get_prolog_backtrace_lc/3]),
+  notrace(prolog_stack:call(call,get_prolog_backtrace_lc,8000, Stack, [goal_depth(600)])),
+
+  stream_property(S,file_no(1)), prolog_stack:print_prolog_backtrace(S, Stack),
+
+  ignore((current_output(Out), \+ stream_property(Out,file_no(1)), print_prolog_backtrace(Out, Stack))),!.
 
 
 

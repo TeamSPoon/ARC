@@ -421,7 +421,8 @@ is_trimmable_cell(BG,Cell):- \+ \+ BG = Cell, !, BG=Cell.
 is_trimmable_cell(_BG,Cell):- \+ is_fg_color(Cell),!.
 %is_trimmable_cell(_BG,Cell):- attvar(Cell),!,fail.
 
-itrace:- if_thread_main(nop(trace)).
+itrace:- \+ current_prolog_flag(debug,true),!.
+itrace:- nop(if_thread_main(trace)),!.
 ibreak:- if_thread_main(((trace,break))).
 recolor(_,_):- ibreak.
 
@@ -453,22 +454,22 @@ prepare_input_hooks(CheckTypes,Props,In,O):- % R = [],
  must_det_ll(( 
    choose_bg_color(In,Black,dont),
    subst_color_auto(Black,bg,In,InBG),
-   trim_to_rect4_always(T,L,B,R,InBG,InBGTrimmed))),
+   trim_to_rect4_always(L,T,R,B,InBG,InBGTrimmed))),
  grid_size(InBGTrimmed,H,V),if_be_fast(H>=3;V>=3),
  must_det_ll(( fpad_grid(f,var,InBGTrimmed,MO),constrain_grid_now(f,CheckTypes,MO,O),  
    Props = [offset2D(L,T),shrinkSE(R,B),size2D(H,V),vis2D_Z(GH,GV)])).
 /*
 prepare_input_hooks(CheckTypes,Props,I,O):- % R = [],
- must_det_ll(( grid_size(I,GH,GV), I=M, ([T,L,B,R] = [0,0,0,0]),
+ must_det_ll(( grid_size(I,GH,GV), I=M, ([L,T,R,B] = [0,0,0,0]),
   grid_size(M,H,V),fpad_grid(f,var,M,MO),constrain_grid_now(f,CheckTypes,MO,O),
   Props = [offset2D(L,T),shrinkSE(R,B),size2D(H,V),vis2D_Z(GH,GV)])).
 */
-trim_to_rect4_always(T,L,B,R,I,M):- trim_to_rect4(T,L,B,R,I,M),!.
+trim_to_rect4_always(L,T,R,B,I,M):- trim_to_rect4(L,T,R,B,I,M),!.
 trim_to_rect4_always(0,0,0,0,I,M):- I=M.
 
 trim_to_rect4(Grid,MGrid):-  trim_to_rect4(_T,_R,_B,_L,Grid,MGrid).
-%trim_to_rect4(T,L,B,R,Grid,MGrid):- get_bgc(BG), trim_then_90(BG,[T,L,B,R],Grid,MGrid),!.
-trim_to_rect4(T,L,B,R,Grid,IM360):-
+%trim_to_rect4(L,T,R,B,Grid,MGrid):- get_bgc(BG), trim_then_90(BG,[L,T,R,B],Grid,MGrid),!.
+trim_to_rect4(L,T,R,B,Grid,IM360):-
   trim_unused_n_vert(0,BG,Grid,IM,T), 
   rot90(IM,IM90),
   trim_unused_n_vert(0,BG,IM90,I90,L), 

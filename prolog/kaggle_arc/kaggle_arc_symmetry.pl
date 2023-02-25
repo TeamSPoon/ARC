@@ -1813,12 +1813,12 @@ replace_diffs(LPoints,Obj,NewObj):-
  must_not_error((
   vis2D(Obj,H,V),
   my_partition(point_between(1,1,H,V),LPoints,Points,_),
-  points_rep(local,Obj,LP),
+  localpoints(Obj,LP),
   intersection(LP,Points,_Same,LPOnly,LPointOnly),
   ((LPOnly ==[], LPointOnly ==[]) -> NewObjM = Obj ;
   (
    % pp(LPOnly), pp(LPointOnly),
-  rebuild_from_points_rep(local,Obj,Points,NewObjM))))),
+  rebuild_from_localpoints(Obj,Points,NewObjM))))),
   override_object(repaired(pattern),NewObjM,NewObj),
     %mprint_grid(NewObj),
   nop(show_shape(NewObj)),!.
@@ -1831,7 +1831,7 @@ point_between(LoH,LoV,HiH,HiV,Point):- point_to_hvc(Point,H,V,_),
 
 colored_pixel_count(A,Count):- is_points_list(A),fg_pixel_count(A,Count),!.
 colored_pixel_count(G,Count):- is_grid(G), fg_pixel_count(G,Count),!.
-colored_pixel_count(A,Count):- is_object(A),points_rep(local,A,G), fg_pixel_count(G,Count),!.
+colored_pixel_count(A,Count):- is_object(A),localpoints(A,G), fg_pixel_count(G,Count),!.
 colored_pixel_count(A,Count):- is_list(A),!,maplist(colored_pixel_count,A,Summe),sum_list(Summe,Count),!.
 colored_pixel_count(A,1):- atomic(A),is_fg_color(A),!.
 colored_pixel_count(_,0).

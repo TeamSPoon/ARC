@@ -11,6 +11,25 @@
 :- dynamic(fav/2).
 :- discontiguous fav/2.
 fav(A,B):- nonvar_or_ci(A),nonvar_or_ci(B), cls1,mmake, asserta(fav(A,B),Ref),!, call_cleanup(arc1(A),erase(Ref)).
+
+fav(v('37d3e8b2'),[dmiles]).
+
+fav(v('37d3e8b2'), 
+ human(
+   grid_to_objs,
+   rule(links_count(contains_child,1),subst_color(fg,blue)),
+   rule(links_count(contains_child,2),subst_color(fg,red)),
+   rule(links_count(contains_child,3),subst_color(fg,green)),
+   rule(links_count(contains_child,4),subst_color(fg,yellow)))).
+fav(t('ea32f347'), 
+ human(
+   grid_to_objs,
+   rule(rank(cc(fg),1),subst_color(fg,blue)),
+   rule(rank(cc(fg),2),subst_color(fg,yellow)),
+   rule(rank(cc(fg),3),subst_color(fg,red)))).
+
+
+
 %~ warn_skip(save_supertest(v('00576224'),'muarc_cache/00576224.ansi.pl'))
 %~ warn_skip(clear_saveable_test_info(v('00576224')))
 %~ warn_skip(clear_saveable_test_info(v('423a55dc')))

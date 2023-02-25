@@ -124,11 +124,12 @@ w_section_4(Title,Goal,Spyable,Showing):- w_section_ansi(Title,Goal,Spyable,Show
 
 
 w_section_ansi(Title0,Goal,Spyable,_Showing):- 
-  must_det_ll((into_title_str(Title0,Title),
+ must_det_ll((
+  wots(Str,print(Title0)),
   nl_if_needed,dash_chars,
   MU = '', % was 'mu'
   once(nb_current('$w_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),
-  setup_call_cleanup(must_det_ll((format('~N~w~w!~w! ~@ |~n',[MU,Ident, Spyable, print_title(Title)]))),  
+  setup_call_cleanup(must_det_ll((format('~N~w~w!~w! ~@ |~n',[MU,Ident, Spyable, write(Str)]))),  
                      locally(b_setval('$w_section',[c(Spyable)|Was]),
                                       ignore(once(tabbed_print_im(Depth+2,in_w_section_depth(Goal))))), 
                      must_det_ll((format('~N~w\u00A1~w~w\u00A1 ',[Ident, MU,Spyable])))))).
@@ -884,7 +885,7 @@ print_grid_html(SH,SV,EH,EV,Grid):-
 has_content(Header):- nonvar(Header), Header\==[], Header\=='',Header\=="''&nbsp;",Header\=='\'\'&nbsp;', Header\=="".
 
 
-print_ss_html(TitleColor,G1,N1,LW,G2,N2):- \+ wants_html,!,  print_side_by_side_ansi(TitleColor,G1,N1,LW,G2,N2).
+print_ss_html(TitleColor,G1,N1,LW,G2,N2):- \+ wants_html,!,  print_side_by_side_ansi(TitleColor,G1,N1,LW,G2,N2),!.
 
 print_ss_html(TitleColor,In,FIn,_LW,Out,FOut):-
  wots_vs(HIn, with_color_span(color(TitleColor),wqs_c(FIn))),
@@ -1341,8 +1342,10 @@ if_extreme_debug(G):- nop(G).
 wants_output_for(SpyableC):- is_cgi,!, copy_term(SpyableC,Spyable),
   if_extreme_debug((wants_output_for_1(Spyable)-> make_session_checkbox(Spyable,wants_output_for(Spyable),'<br/>',true) ;
     (make_session_checkbox(Spyable,wants_output_for(Spyable),'<br/>',false),!,fail))).
+
+wants_output_for(_Spyable):- main_thread,!.
 wants_output_for(SpyableC):- copy_term(SpyableC,Spyable),
-   (wants_output_for_1(Spyable)-> pp(showing(Spyable));
+   (wants_output_for_1(Spyable)-> pp(wqs(showing(Spyable)));
      ((arc_spyable_keyboard_key(Spyable,SpyableKey)->pp(skipping(Spyable,key(SpyableKey)));(pp(skipping(Spyable)))),!,fail)).
 
 wants_output_for_1(Spyable):- nb_current(menu_key,_), arc_spyable_keyboard_key(Spyable,SpyableKey), menu_or_upper(SpyableKey),!.

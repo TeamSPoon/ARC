@@ -330,7 +330,7 @@ into_obj_plist(Obj,Props):- indv_props_list(Obj,Props),!.
 %%%into_obj_plist(PA,PAP):- must_det_ll((extend_grp_proplist(PA,Obj), into_obj_plist(Obj,PAP))),!.
  
 
-never_matom(points_rep(local,_)).
+never_matom(localpoints(_)).
 never_matom(shape_rep(grav,_)).
 never_matom(pg(_OG,_,_,_)).
 never_matom(giz(_)).
@@ -347,7 +347,7 @@ sub_obj_atom(M,pg(OG,H,L,_)):- !, ((M = (L/H));(M = (L/OG))).
 sub_obj_atom(E,E).
 %sub_obj_atom(globalpoints(E),globalpoints(CP)):- !, maplist(arg(2),CP,EL),!, (member(E,EL); (E=EL)).
 %sub_obj_atom(_,M):- never_matom(M),!,fail.
-%sub_obj_atom(A,M):- M = points_rep(local,_),!,A=M.
+%sub_obj_atom(A,M):- M = localpoints(_),!,A=M.
 %sub_obj_atom(iz(A),iz(A)):-!. % sub_obj_atom(A,M).
 sub_obj_atom(A,M):- M=..[F,List],is_list(List),length(List,Len),!,
   (A=len(F,Len) ; (interesting_sub_atoms(List,E),A=..[F,E])).

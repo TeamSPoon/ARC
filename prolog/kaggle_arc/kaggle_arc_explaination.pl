@@ -73,6 +73,7 @@ print_info(Atom):- atom(Atom),into_gridoid(Atom,Gridoid),pp(into_gridoid(Atom)),
 print_info(Grid):- is_grid(Grid),!,show_indiv(is_grid,Grid),!.
 print_info(OBJ):- compound(OBJ), OBJ=obj(_), show_indiv(print_info,OBJ),!.
 print_info(R):- is_object_props(R),!,print_info(obj(R)).
+print_info(TName):- fix_test_name(TName,TestID,ExampleNum), is_valid_testname(TestID), !, pp(testid(TestID>ExampleNum)).
 
 print_info(A):- is_grid(A),print_grid(print_info,A),!.
 print_info(Grid):- is_cpoints_list(Grid),!,print_grid(is_cpoints_list,Grid).
@@ -199,40 +200,70 @@ show_indiv_textinfo(Why,Obj,ExceptFor):- Obj = obj(A), nonvar(A),!,show_indiv_te
 show_indiv_textinfo(Why,Props,ExceptFor):- is_open_list(Props),!,must_det_ll((append(Props,[],CProps),!,show_indiv_textinfo(Why,CProps,ExceptFor))).
 show_indiv_textinfo(Why,AS0,ExceptFor):- 
  must_det_ll((
-  Obj = obj(AS0),
-  append(AS0,[],Props),
+  %Obj = obj(AS0),
+  append(AS0,[],Props11),
+
+  =(Props11,Props),
   %ignore((o2g(Obj,GGG), nonvar(GGG),set_glyph_to_object(GGG,Obj))),
  % will_show_grid(Obj,TF),
   TF = false,
  % obj_to_oid(Obj,MyOID),
   %o2ansi(MyOID,MissGlyph),
-  object_color_glyph_short(Obj,SGlyph),
+  Obj = obj(Props), object_color_glyph_short(Obj,SGlyph),
 
-  my_partition(is_functor(link),Props,ISLINK,AS1), r_props(ISLINK,ISLINKR),
-  my_partition(is_o3,AS1,TVSO0,AS),  r_props(TVSO0,TVSO), predsort_on(arg(2),TVSO,TVSOR),reverse(TVSOR,TVSOS),
-  short_indv_props(AS,TVSI1,TVSI2),append(TVSI1,TVSI2,TVSI),
+  my_partition(p1_subterm(p1_or(is_points_list,is_grid)),Props,_ContainsGrid,Props1), 
+
+  my_partition(is_functor(link),Props1,ISLINK,Props2),
+
+  my_partition(is_o3,Props2,Rankings0,Props3),  sr_props(Rankings0,Rankings1), 
+  predsort_on(arg(2),Rankings1,Rankings2),reverse(Rankings2,Rankings),
+
+  %short_indv_props(Props3,TVSI1,TVSI2), 
+  %append(TVSI1,TVSI2,TVSI),
+   TVSI = Props3,
   %flatten(TV,F),predsort(longer_strings,F,[Caps|_]), 
   append([TVSI,Props],ASFROM), choose_header(ASFROM,Caps), toPropercase(Caps,PC),
   
   ignore((TF==true,dash_chars)),
   sformat(S,"% ~w ~w:\t~w  ",[Why,PC,SGlyph]), format('~N~s',[S]),
-  print_if_non_nil(ExceptFor,TVSI),
-  print_if_non_nil(ExceptFor,ISLINKR),
-  print_if_non_nil(ExceptFor,TVSOS),
-  ignore(( TF==true, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, points_rep(local,Obj,Points), print_grid(H,V,Points))),
+  print_if_non_nil(props,ExceptFor,TVSI),
+  print_if_non_nil(links,ExceptFor,ISLINK),
+  print_if_non_nil(rankings,ExceptFor,Rankings),
+  ignore(( TF==true, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
   ignore(( fail, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
   %pp(Props),
   ignore(( TF==true,dash_chars)))),!.
 :- export(show_indiv_textinfo/3).
 :- ansi_term:import(show_indiv_textinfo/3).
 
-print_if_non_nil(ExceptFor,TVSI):- \+ is_list(TVSI),!,print_if_non_nil(ExceptFor,[TVSI]).
-print_if_non_nil(ExceptFor,TVSI):- 
-  include(is_not_in(ExceptFor),TVSI,TVSI_PP),
-  ignore(((TVSI_PP \==[], print_if_non_nil(TVSI_PP)))).
+sr_props(Sort,SortRO):- \+ is_list(Sort),!,sr_props([Sort],SortRO).
+sr_props(Sort,SortRO):- predsort(sort_on(prop_display_order),Sort,SortR),Sort\=@=SortR,!,sr_props(SortR,SortRO).
+sr_props(Sort,SortRO):- colorize_oterms(Sort,SortRO),!.
+sr_props(Sort,Sort).
+%sr_props(Sort,Sort).
 
-print_if_non_nil(TVSI_PP):- wants_html,!,pp(TVSI_PP).
-print_if_non_nil(TVSI_PP):- wqs(TVSI_PP).
+prop_display_order(iz(P),iz+F):- prop_display_order(P,F).
+prop_display_order(giz(P),giz+F):- prop_display_order(P,F).
+prop_display_order(P,az+F):- functor(P,F,_).
+
+print_if_non_nil(Title,ExceptFor,TVSI):- sr_props(TVSI,SortRO),
+  include(is_not_in(ExceptFor),SortRO,TVSI_PP),
+  ignore(((TVSI_PP \==[], nl_if_needed, 
+    format('~w == ',[Title]),print_o_props(TVSI_PP)))).
+
+%sr_props2(Sort,SortRO):- remove_too_verbose(0,Sort,SortR),Sort\=@=SortR,!,sr_props2(SortR,SortRO).
+sr_props2(Sort,SortRO):- colorize_oterms(Sort,SortRO),!.
+sr_props2(Sort,Sort).
+
+%print_if_non_nil(I):- wants_html,!,pp(I).
+print_o_props(I):- is_list(I),maplist(print_o_props,I),!.
+print_o_props(I):- sr_props2(I,M),wots(SS,wqs(M)),!,write_trim_h_space(SS).
+%print_o_props(I):- !, pp(I).
+
+write_trim_h_space(SS):- atom_concat(' ',S,SS),!,write_trim_h_space(S).
+write_trim_h_space(SS):- atom_concat('\t',S,SS),!,write_trim_h_space(S).
+write_trim_h_space(SS):- atom_concat('\n',S,SS),!,write_trim_h_space(S).
+write_trim_h_space(SS):- nl_if_needed, write('  \t  '),write(SS).
 
 
 show_indiv_html(_Why, Obj):- obj(ObjL)=Obj,
@@ -501,7 +532,7 @@ is_o3(pg(_OG,_,_,_)).
 
 show_st_map(Obj):-
   ignore(( 
-  points_rep(local,Obj,Points),
+  localpoints(Obj,Points),
 %  mass(Obj,Mass),!,Mass>4,
 %  vis2D(Obj,H,V),!,H>1,V>1,
   format('~N'),
@@ -513,15 +544,16 @@ show_st_map(Obj):-
 
 %alt_id(_MyID,ID,Alt):- int2glyph(ID,Alt).
 alt_id(MyOID,ID,Alt):- Alt is abs(MyOID-ID).
+
 remove_too_verbose(_MyID,Var,plain_var(Var)):- plain_var(Var),!.
 remove_too_verbose(_MyID,H,''):- too_verbose(H),!.
-remove_too_verbose(MyOID,List,ListO):- is_list(List),!,maplist(remove_too_verbose(MyOID),List,ListO),!.
-
+remove_too_verbose(MyOID,List,ListO):- is_list(List),maplist(remove_too_verbose(MyOID),ListM,ListO),exclude(==(''),ListM,ListO),!.
+remove_too_verbose(_MyOID,List,ListO):- is_list(List),exclude(==(''),List,ListO).
 % @TODO UNCOMMENT THIS remove_too_verbose(MyOID,dot,"point"):- !.
 %remove_too_verbose(MyOID,line(HV),S):- sformat(S,'~w-Line',[HV]).
 %remove_too_verbose(MyOID,square,S):- sformat(S,'square',[]).
 % @TODO UNCOMMENT THIS remove_too_verbose(MyOID,background,S):- sformat(S,'bckgrnd',[]).
-%remove_too_verbose(MyOID,iz(H),HH):- compound(H), remove_too_verbose(MyOID,H,HH),!.
+remove_too_verbose(MyOID,iz(H),HH):- compound(H), remove_too_verbose(MyOID,H,HH),!.
 remove_too_verbose(MyOID,giz(H),HH):- compound(H), remove_too_verbose(MyOID,H,HH),!.
 
 %remove_too_verbose(_MyID,obj_to _oid(_ * _ * X,Y),NTH):- NTH=..[X,Y].
@@ -545,8 +577,8 @@ remove_too_verbose(MyOID,colors_cc(H),HH):- !, remove_too_verbose(MyOID,H,HH).
 %remove_too_verbose(MyOID,loc2D(X,Y),loc2D(X,Y)).
 %remove_too_verbose(MyOID,vis2D(X,Y),size2D(X,Y)).
 remove_too_verbose(_MyID,changes([]),'').
-remove_too_verbose(_MyID,rot2D(sameR),'').
-remove_too_verbose(MyOID,L,LL):- is_list(L),!, maplist(remove_too_verbose(MyOID),L,LL).
+%remove_too_verbose(_MyID,rot2D(sameR),'').
+%remove_too_verbose(MyOID,L,LL):- is_list(L),!, maplist(remove_too_verbose(MyOID),L,LL).
 remove_too_verbose(_MyID,H,HH):- compound(H),arg(1,H,L), is_list(L), maybe_four_terse(L,T),H=..[F,L|Args],HH=..[F,T|Args].
 remove_too_verbose(_MyID,H,H).
 
