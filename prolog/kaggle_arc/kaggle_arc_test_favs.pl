@@ -24,9 +24,9 @@ fav(v('37d3e8b2'),
 fav(t('ea32f347'), 
  human(
    grid_to_objs,
-   rule(rank(cc(fg),1),subst_color(fg,blue)),
-   rule(rank(cc(fg),2),subst_color(fg,yellow)),
-   rule(rank(cc(fg),3),subst_color(fg,red)))).
+   rule(pg(is_fg_object,rankA(cc(fg)),_,1),subst_color(fg,blue)),
+   rule(pg(is_fg_object,rankA(cc(fg)),_,2),subst_color(fg,yellow)),
+   rule(pg(is_fg_object,rankA(cc(fg)),3,3),subst_color(fg,red)))).
 
 
 

@@ -1077,29 +1077,48 @@ is_fti_step(grid_to_objs).
 % =====================================================================
 grid_to_objs(VM):- 
   run_fti(VM,[complete]),
-  set_vm_grid_now(VM,VM.objs),!.
+  extend_obj_proplists(VM),
+  Objs = VM.objs,!,
+  show_indivs_side_by_side(grid_to_objs,Objs),
+  maplist(pp,Objs),
+  Objs = Grp,
+  gset(VM.objs)=Grp,
+  grid_size(Grp,H,V), gset(VM.h)=H, gset(VM.v)=V,
+  globalpoints(Grp, Points),
+  gset(VM.points)=Points,
+  points_to_grid(VM.h,VM.v,Points,Grid),
+  gset(VM.grid)=Grid,!.
+ % set_vm_grid_now(VM,Objs),!.
 
 % =====================================================================
 is_fti_step(rule).
 % =====================================================================
 
-rule(Pre,Post,VM):-
+rule(Pre,Post,VM):- 
   OldObjs = VM.objs,
-  maplist(maybe_rule(Pre,Post),OldObjs,NewObjs),
-  set(VM.objs)=NewObjs,
-  print_side_by_side(did_rule(Pre,Post),OldObjs,NewObjs),!,
-  itrace.
+  maplist(maybe_rule(VM,Pre,Post),OldObjs,NewObjs),
+  gset(VM.objs)=NewObjs,
+  print_side_by_side(did_rule(Pre,Post),OldObjs,NewObjs),!.
 
-is_fti_step(maybe_rule).
-maybe_rule(Pre,Post,Obj,NewObj):- 
-   once((sub_term(E,Obj),nonvar(E),E==Pre,obj_call(Post,Obj,NewObj))),Obj\=@=NewObj,!.
+is_fti_stepr(maybe_rule).
+maybe_rule(VM,Pre,Post,Obj,NewObj):- 
+   sub_term(E,Obj),nonvar(E),E=Pre,do_rule(VM,Pre,Post,Obj,NewObj),!.
 maybe_rule(_,_,Obj,Obj).
+
+do_rule(_VM,Pre,Post,Obj,NewObj):-
+   global_grid(Obj,GPs),
+   obj_call(Post,GPs,GPsO),
+  print_side_by_side(rule(Pre,Post),[Obj],GPsO),!,
+   trace,
+   obj_call(Post,Obj,NewObj),
+  print_side_by_side(rule(Pre,Post),[Obj],[NewObj]),!,
+   Obj\=@=NewObj,!.
 
 obj_call(subst_color(fg,Color),O1,O2):- !, map_pred1(replace_term(is_fg_color,=(Color)),O1,O2).
 obj_call(copy,Obj,ObjO):- !, ObjO=Obj.
 obj_call(P2,I,O):- object_call(P2,I,O),!.
 
-replace_term(P1C,P1A,I,O):- p1_call(P1C,I),p1_call(P1A,O).
+replace_term(P1C,P1A,I,O):- p1_call(P1C,I), p1_call(P1A,O).
 
 % =====================================================================
 is_fti_step(grid_to_obj_other).

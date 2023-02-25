@@ -61,7 +61,8 @@ orpt(G):- sub_term(E,G),compound(E),E=debug_var(N,V),!,subst(G,E,was_debug_var(N
 orpt(G):- !, \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), nl_if_needed, ignore(wcg(orange,G)))).
 
 %wcg(_,G):- pp_wcg(G),!.
-wcg(O,G):- pp(O,(call(pp_wcg(G)))),!.
+%wcg(O,G):- pp(O,(call(pp_wcg(G)))),!.
+wcg(O,G):- pp(O,G),!.
 
 
 
@@ -883,7 +884,7 @@ try_each_using_training(In,ExpectedOut,Rules,Keeper,OurOut):-
   classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown),
    maplist(length,[In,Rules,Keeper,Rejected,Unknown],[InC,RulesC|Nums]),
    Pos is InC*RulesC,
-   pp_wcg(in_rules_times_keepers_rejected_unknown=[InC,RulesC,Pos|Nums]),!,
+   fpp_wcg(in_rules_times_keepers_rejected_unknown=[InC,RulesC,Pos|Nums]),!,
    %nop(pp_wcg(Awesome=Keeper)), nop(pp_wcg(rejected=Rejected)), nop(maplist(writeln,Unknown)), 
    wno_must(o_globalpoints(Keeper,GPs)),
    points_to_grid(GPs,OurOut))),!,
@@ -1231,6 +1232,7 @@ save_rule2(IO_DIR,TITLE,IP,OP):-
  ip_op_debug_info(IP,OP,LOCK),
  if_t(once(true;is_fg_object(IP);is_fg_object(OP)),
  (must_det_ll((
+  print_treeified_props(save_rule2,[IP,OP]),
  assert_showed_mapping(IP,OP),
  make_rule_l2r_objs(Dir,[],IP,OP,II,OO,Mid), 
  %save_learnt_rule(arc_cache:object_to_object(TITLE,lhs(II),rhs(OO),Mid,LOCK),oneTwo,twoOne),
@@ -1295,13 +1297,14 @@ must_make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):-
   pp_wcg(must_make_rule_l2r(II,OO)),
   must_det_ll((make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid))).
 */
-
-make_rule_l2r_until_no_changes(Dir,Shared,II,OO,IIII,OOOO,NewShared):-
+make_rule_l2r_until_no_changes(Dir,SharedMid,III,OOO,IIII,OOOO,NewShared):-
+  make_rule_l2r_until_no_changes1(Dir,SharedMid,III,OOO,IIII,OOOO,NewShared).
+make_rule_l2r_until_no_changes1(Dir,Shared,II,OO,IIII,OOOO,NewShared):-  
    %pp_wcg(must_make_rule_l2r(Shared,II,OO)),
   make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid),
   ((II=@=III,OO=@=OOO,Shared=@=SharedMid) 
     -> (III=IIII,OOO=OOOO,Shared=NewShared);
-    make_rule_l2r_until_no_changes(Dir,SharedMid,III,OOO,IIII,OOOO,NewShared)).
+    make_rule_l2r_until_no_changes1(Dir,SharedMid,III,OOO,IIII,OOOO,NewShared)).
 
 is_oid_or_gid(V,_):-var(V),!,fail.
 is_oid_or_gid(OID,OID):- atom(OID),is_oid(OID),!.
