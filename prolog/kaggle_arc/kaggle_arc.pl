@@ -834,5 +834,6 @@ use_gui_debugger:-
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).
 
 %:- luser_default(task,v('1b60fb0c')). %626c0bcc
+:- set_prolog_flag(gui_tracer, false), visible(-cut_call).
 
 %:- demo.
