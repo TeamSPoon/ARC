@@ -224,7 +224,7 @@ classify_n(Two,any):- number(Two),!, Two>=2.
 link_rel(sees(_)).
 link_rel(overlaps(_,_)).
 link_rel(overlapped_by(_,_)).
-link_rel(contains_child).
+link_rel(contains).
 link_rel(contained_by).
 link_rel(P,F):- link_rel(P),functor(P,F,_).
 
@@ -240,7 +240,7 @@ fyl_functor_count(FYL,Functor,Count):-
   member(Functor,FSet),
   findall(_,member(Functor-_,FYL),L),length(L,Count).
 
-link_functor(contains_child,contains_child).
+link_functor(contains,contains).
 link_functor(sees(_),sees).
 link_functor(contained_by,contained_by).
 
@@ -307,7 +307,7 @@ print_elists_hack_objs(Named,Props,Objs,HackedObjs):-
  HackedObjs = Hacked,
  % HackedObjs = Splits,
  must_det_ll((
-
+  length(Objs,BaseSize),
   variant_list_to_set(Props,PropsSet),
   count_each(PropsSet,Props,CountOfEachL),
   predsort(sort_on(arg(2)),CountOfEachL,CountOfEach0),
@@ -323,12 +323,46 @@ print_elists_hack_objs(Named,Props,Objs,HackedObjs):-
   variant_list_to_set(GroupsWithCounts,GroupsWithCountsW),
   sort(GroupsWithCountsW,GroupsWithCountsWP),
   variant_list_to_set(GroupsWithCountsWP,GroupsWithCountsWPO),
-  make_splitter(GroupsWithCountsWPO,CountOfEach,SSplits),sort(SSplits,Splits),
+  make_splitter(GroupsWithCountsWPO,CountOfEach,SSplits),sort(SSplits,CSplits),
+  store_splits(Named,BaseSize,CSplits,Splits),
   with_tag('pre',((pp(countOfEachU(Named)=Splits)))),!,
   maplist(remember_propcounts(Named,diversity),GroupsWithCountsWPO),
   replace_props_with_stats(GroupsWithCountsWPO,CountOfEach,Objs,HackedObjsM),
   maplist(ku_rewrite_props,HackedObjsM,Hacked),
   nop(pp(hackedObjs(Named)=HackedObjs)))).
+
+store_splits(Named,BaseSize,CSplits,Splits):-
+  maplist(save_1split(Named,BaseSize),CSplits),
+  clean_splits(BaseSize,CSplits,Splits).
+
+%save_1split(Named,Six,(1-_)->[Six-CSplits]):- maplist(remember_propcounts(Named,nth(_)),[CSplits]).
+%save_1split(Named,Six,(Six-_)->List):- length(List,Six),maplist(p1_call(chk(=(1-_))),List),
+save_1split(Named,_,(N-Div)->CSplits):- maplist(remember_propcounts(Named,div(Div,N)),[CSplits]).  
+%save_1split(Named,_,(1-_)->[1-CSplits]):- !.
+%save_1split(Named,_,(N)->List):- predsort(sort_on(last_type_is_value),List,Sort).
+%save_1split(Named,_,_).
+
+clean_splits(BaseSize,CSplits,SplitsO):- is_list(CSplits),!,
+  maplist(clean_1split(BaseSize),CSplits,Splits),
+  include(\==(''),Splits,SplitsO).
+clean_splits(_,I,I).
+
+clean_1split(Six,(1-_)->[Six-_CSplits],'').
+clean_1split(Six,(1-_)->[Six-CSplits],ignore(CSplits)).
+clean_1split(_,(1-_)->[1-CSplits],1-CSplits).
+%clean_1split(Six,(Six-_)->List,Sort):- length(List,Six),maplist(arg(2),List,Last),predsort(sort_on(last_type_is_value),Last,Sort).
+clean_1split(Six,(Six-_)->List,(Six)->Sort):- length(List,Six),maplist(arg(2),List,Last),predsort(sort_on(last_type_is_value),Last,Sort).
+clean_1split(_,(N)->List,(N)->Sort):- predsort(sort_on(last_type_is_value),List,Sort).
+clean_1split(_,X,X).
+
+last_type_is_value(I,O):- last_type_is(number,I,O).
+last_type_is_value(I,O):- last_type_is(is_list,I,O).
+last_type_is_value(I,O):- last_type_is(is_color,I,O).
+last_type_is_value(I,I).
+
+last_type_is(P1,List,Last):- is_list(List),reverse(List,Term),member(E,Term),last_type_is(P1,E,Last).
+last_type_is(P1,Numb,Numb):- p1_call(P1,Numb),!.
+last_type_is(P1,Term,Last):- compound(Term),compound_name_arguments(Term,_,Args),reverse(Args,List),!,member(E,List),last_type_is(P1,E,Last).
 
 make_splitter([N-UProp|WithCountsWPO],CountOfEach,OutSplits):-
   my_partition(sameps(UProp),CountOfEach,Used,Unused),
@@ -433,7 +467,7 @@ write_scrollable(Goal):- with_tag_class(div,scrollable,Goal).
 any_have_prop(Except,Prop):- member(O,Except),has_prop(Prop,O),!.
 
 transitive_sets(P2,Obj,Set,N):- findall(n(P,List),(trans(P2,Obj,List),List\==[],length(List,P)),Lists),sort_safe(Lists,Set),length(Set,N).
-nontransitive_set(P2,Obj,Set,N):- findall(Other,call(P2,Obj,Other),List),sort_safe(List,Set),length(Set,N).
+nontransitive_set(P2,Obj,Set,N):- findall(Other,p2_call(P2,Obj,Other),List),sort_safe(List,Set),length(Set,N).
 
 trans(P2,Obj,Out):- obj_to_oid(Obj,OID),trans_no_loop(P2,[OID],Obj,Out).
 
@@ -905,8 +939,9 @@ rank_priors(GType,Objs,SFO):-
    smallest_first(smallest_pred(GType),Objs,SF),
    ignore((relivant_group(OG), maplist(OG,Objs))),
    length(SF,SFLen),
-   nop(SFLen < 2 -> pp(red,rank_priors(GType,SFLen)); pp(green,rank_priors(GType,SFLen))),   
-   add_rank(OG,GType,SFLen,SF,SFO),
+   nop(SFLen < 2 -> pp(red,rank_priors(GType,SFLen)); pp(green,rank_priors(GType,SFLen))),  
+   reverse(SF,SFR),
+   add_rank(OG,GType,SFLen,SFR,SFO),
    nop(maybe_show_ranking(GType,SFO)))).
 
 
@@ -927,10 +962,10 @@ add_rank(_OG,_GType,_ZType,_,[],[]):-!.
 %add_rank(OG,_GType,_ZType,1,IO,IO):-!.
 
 add_rank(_OG,_GType,_ZType,N,[L],[L]):-  N==1, !.
-add_rank(OG,GType,ZType,N,[L],[Obj]):-   N>1, !, value_sym(firstOF,FO),set_rank(OG,GType,ZType,L,FO,Obj).
-add_rank(OG,GType,ZType,N,[L],[Obj]):-  N==1, !, set_rank(OG,GType,ZType,L,firstAndLastOF,Obj).
-add_rank(OG,GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- value_sym(lastOF,_LO),set_rank(OG,GType,ZType,L,N,Obj), 
- N2 is N+1,!, add_rank(OG,GType,ZType,N2,IndvS,IndvSO).
+%add_rank(OG,GType,ZType,N,[L],[Obj]):-   N>1, !, value_sym(firstOF,FO),set_rank(OG,GType,ZType,L,FO,Obj).
+%add_rank(OG,GType,ZType,N,[L],[Obj]):-  N==1, !, set_rank(OG,GType,ZType,L,N,Obj),!. %firstAndLastOF
+%add_rank(OG,GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- value_sym(lastOF,_LO),set_rank(OG,GType,ZType,L,1,Obj), 
+% N2 is N+1,!, add_rank(OG,GType,ZType,N2,IndvS,IndvSO).
 add_rank(OG,GType,ZType,N,[L|IndvS],[Obj|IndvSO]):- % (GType = rank1(_);GType = rank2(_)),!, 
  set_rank(OG,GType,ZType,L,/*nthOF**/(N),Obj), 
  N2 is N+1,!, add_rank(OG,GType,ZType,N2,IndvS,IndvSO).

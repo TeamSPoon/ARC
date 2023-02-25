@@ -53,8 +53,22 @@ individuation_macros(do_ending, [
 
 individuation_macros(i_complete_generic(X),[X]).
 
-individuation_macros(i_complete_generic,i_complete_generic(subtractions)):-  use_subtractions.
-individuation_macros(i_complete_generic,i_complete_generic(generic_nsew_colormass)):- mass_same_io.
+individuation_macros(simple_grids,[ 
+    keypads,
+    bigger_grid_contains_other,
+    maybe_glyphic,
+    save_as_hybrid_shapes([indv_omem_points]),    
+    find_hybrid_shapes]).
+
+individuation_macros(subtractions, 
+  [simple_grids,
+   fg_intersections([generic_nsew_colormass]),
+   fg_subtractions([i_subtract_objs]),
+   i_subtract_objs]).
+
+individuation_macros(i_complete_generic,[i_complete_generic(subtractions)]):-  use_subtractions,!.
+individuation_macros(i_complete_generic,[i_complete_generic(generic_nsew_colormass)]):- mass_same_io,!.
+individuation_macros(i_complete_generic,[generic_nsew_colormass]).
 individuation_macros(generic_nsew_colormass, 
 [ simple_grids,
   nsew,
@@ -81,24 +95,10 @@ do_indivizer_number(N):-
  list_of_indivizers(L),nth_above(800,N,L,E), set_indivs_mode(E),
  with_indivs_mode(E,ndividuator).
 
-
-individuation_macros(simple_grids,[ 
-    keypads,
-    bigger_grid_contains_other,
-    maybe_glyphic,
-    save_as_hybrid_shapes([indv_omem_points]),    
-    find_hybrid_shapes]).
-
 % vm_grid_call(subst_color(black,brown)),
 
 individuation_macros(nsew_bg,[
   with_mapgrid([fgc_as_color(plain_var),bgc_as_color(zero),plain_var_as(black)],'_nsew_bg',[nsew,alone_dots,lo_dots])]).
-
-individuation_macros(subtractions, 
-  [simple_grids,
-   fg_intersections([generic_nsew_colormass]),
-   fg_subtractions([i_subtract_objs]),
-   i_subtract_objs]).
 
 
 individuation_macros(i_complete_generic333, 
@@ -997,8 +997,28 @@ is_fti_step(ensure_objects).
 ensure_objects(VM):-
  must_det_ll((
   if_t(\+ is_group(VM.objs),
-   individuate(complete,VM)))).
-
+  (individuate(complete,VM),
+   extend_obj_proplists(VM),
+   objects_into_grid(VM))))).
+/*
+% =====================================================================
+is_fti_step(grid_to_objs).
+% =====================================================================
+grid_to_objs(VM):- 
+  run_fti(VM,[complete]),
+  extend_obj_proplists(VM),
+  Objs = VM.objs,!,
+  show_indivs_side_by_side(grid_to_objs,Objs),
+  maplist(pp,Objs),
+  Objs = Grp,
+  gset(VM.objs)=Grp,
+  grid_size(Grp,H,V), gset(VM.h)=H, gset(VM.v)=V,
+  globalpoints(Grp, Points),
+  gset(VM.points)=Points,
+  points_to_grid(VM.h,VM.v,Points,Grid),
+  gset(VM.grid)=Grid,!.
+ % set_vm_grid_now(VM,Objs),!.
+*/
 % =====================================================================
 is_fti_step(objects_into_grid).
 % =====================================================================
@@ -1073,28 +1093,10 @@ sub_individuate(From,SubProgram,VM):-
 
 
 % =====================================================================
-is_fti_step(grid_to_objs).
-% =====================================================================
-grid_to_objs(VM):- 
-  run_fti(VM,[complete]),
-  extend_obj_proplists(VM),
-  Objs = VM.objs,!,
-  show_indivs_side_by_side(grid_to_objs,Objs),
-  maplist(pp,Objs),
-  Objs = Grp,
-  gset(VM.objs)=Grp,
-  grid_size(Grp,H,V), gset(VM.h)=H, gset(VM.v)=V,
-  globalpoints(Grp, Points),
-  gset(VM.points)=Points,
-  points_to_grid(VM.h,VM.v,Points,Grid),
-  gset(VM.grid)=Grid,!.
- % set_vm_grid_now(VM,Objs),!.
-
-% =====================================================================
 is_fti_step(rule).
 % =====================================================================
-
 rule(Pre,Post,VM):- 
+  ensure_objects(VM),
   OldObjs = VM.objs,
   maplist(maybe_rule(VM,Pre,Post),OldObjs,NewObjs),
   gset(VM.objs)=NewObjs,
@@ -1102,16 +1104,22 @@ rule(Pre,Post,VM):-
 
 is_fti_stepr(maybe_rule).
 maybe_rule(VM,Pre,Post,Obj,NewObj):- 
-   sub_term(E,Obj),nonvar(E),E=Pre,do_rule(VM,Pre,Post,Obj,NewObj),!.
-maybe_rule(_,_,Obj,Obj).
+   pp(rule(Pre,Post,Obj)),
+   sub_term(E,Obj),shall_count_as_same(Pre,E),ignore(Pre=E),do_rule(VM,Pre,Post,Obj,NewObj),!.
+maybe_rule(_,_,_,Obj,Obj).
 
 do_rule(_VM,Pre,Post,Obj,NewObj):-
-   global_grid(Obj,GPs),
-   obj_call(Post,GPs,GPsO),
-  print_side_by_side(rule(Pre,Post),[Obj],GPsO),!,
-   trace,
-   obj_call(Post,Obj,NewObj),
-  print_side_by_side(rule(Pre,Post),[Obj],[NewObj]),!,
+   object_grid(Obj,GPs),
+   obj_call(Post,GPs,GPsO),!,
+   globalpoints_include_bg(GPsO,LPoints),
+   loc2D(Obj,OX,OY),
+   offset_points(OX,OY,LPoints,NewGPoints),
+   must_det_ll(rebuild_from_globalpoints(Obj,NewGPoints,NewObj)),
+   print_side_by_side(rule(Pre,Post),[Obj],[NewObj]),!,
+   Obj\=@=NewObj,!.
+do_rule(_VM,Pre,Post,Obj,NewObj):-
+   obj_call(Post,Obj,NewObj),!,
+   print_side_by_side(rule(Pre,Post),[Obj],[NewObj]),!,
    Obj\=@=NewObj,!.
 
 obj_call(subst_color(fg,Color),O1,O2):- !, map_pred1(replace_term(is_fg_color,=(Color)),O1,O2).
@@ -2015,10 +2023,7 @@ unraw_inds(VM,IndvS,IndvOO):-
 
 
 run_fti(VM):- 
-  %is_rbtree(VM),
-  %guitracer,!,
-  must_det_ll(get_kov(program_i,VM,Code)),!,
-  must_det_ll(run_fti(VM,Code)).
+  run_fti(VM,VM.program_i).
 
 run_fti(_,[]):- !.
 run_fti(_,_):- arc_option(no_individuator), !.

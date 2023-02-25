@@ -150,7 +150,7 @@ not_used(X):- sub_term(E,X),compound(E),ground(E),E=info(_).
 not_used(giz(_)).
 %not_used(link(_,_,_)).
 %not_used(link(_,_)).
-%not_used(iz(contains_child(0,[]))).
+%not_used(iz(contains(0,[]))).
 not_used(shape_rep(grav,_)).
 not_used(shape_rep(grav,_,_)).
 %not_used(localpoints(_)).
@@ -1648,8 +1648,10 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- fail,
 
 */
 make_unifiable(A1,A2):- make_unifiable0(A1,O),!,A2=O.
+
 make_unifiable0(C1,_):- \+ compound(C1),fail.
 make_unifiable0(A1,A2):- var(A1),!,A2=A1.
+make_unifiable0(pg(A,B,C,_),pg(A,B,C,_)):-!.
 make_unifiable0(cc(C,_),cc(C,_)):-!.
 make_unifiable0(iz(C1),iz(C2)):- !, make_unifiable(C1,C2).
 make_unifiable0(giz(C1),giz(C2)):- !, make_unifiable(C1,C2).
@@ -1659,14 +1661,18 @@ make_unifiable0(Cmp,CmpU):-  Cmp=..[F|List1],
   unifiable_cmpd_else_var(C1,C2),!.
 make_unifiable0(C1,C2):- functor(C1,F,A),functor(C2,F,A).
 
-unifiable_cmpd_else_keep(A1,A2):- var(A1),!,A2=A1.
+%unifiable_cmpd_else_keep(A1,A2):- unifiable_cmpd_keep(A1,A2).
 unifiable_cmpd_else_keep(Num,_):- number(Num),!.
-unifiable_cmpd_else_keep(A1,A2):- compound(A1), \+ is_list(A1), make_unifiable(A1,A2),!.
 unifiable_cmpd_else_keep(A1,A1).
 
-unifiable_cmpd_else_var(A1,A2):- var(A1),!,A2=A1.
-unifiable_cmpd_else_var(A1,A2):- compound(A1), \+ is_list(A1), make_unifiable(A1,A2),!.
+unifiable_cmpd_else_var(A1,A2):- unifiable_cmpd_keep(A1,A2), \+ ground(A2).
 unifiable_cmpd_else_var(_,_).
+
+
+unifiable_cmpd_keep(A1,A2):- var(A1),!,A2=A1.
+unifiable_cmpd_keep(cc(C,_),cc(C,_)):-!.
+unifiable_cmpd_keep(A1,A2):- compound(A1), \+ is_list(A1), make_unifiable(A1,A2),!.
+
 
 make_unifiable_with_ftvars(C1,C2):- functor(C1,F,A),functor(C2,F,A),numbervars(C2).
 

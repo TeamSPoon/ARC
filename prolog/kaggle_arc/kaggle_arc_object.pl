@@ -1733,7 +1733,7 @@ is_prop_automatically_rebuilt(iz(birth(_))):-!,fail.
 is_prop_automatically_rebuilt(Prop):- sub_term(CP,Prop),(is_color(CP);is_nc_point(CP)),!.
 is_prop_automatically_rebuilt(Prop):- compound(Prop),functor(Prop,F,_),(atom_contains(F,'color');atom_contains(F,'points')),!.
 is_prop_automatically_rebuilt(Prop):-
- member(Prop,[cc(_),mass(_),mass(_),shape_rep(grav,_),rot2D(_),roll_shape(_),pen(_),grid_rep(norm,_),grid_ops(norm,_),
+ member(Prop,[cc(_),mass(_),mass(_),shape_rep(grav,_),rot2D(_),roll_shape(_),pen(_),grid_rep(_,_),grid_ops(_,_),
               iz(multicolored(_)),iz(chromatic(_,_)),
               iz(symmetry_type(_)),iz(stype(_)),iz(monochrome),
               globalpoints(_),localpoints(_)]),!.

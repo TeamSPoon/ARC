@@ -555,14 +555,15 @@ sees_dir(w,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX
 
 related_how2(sees(DirsDists),O1,O2,Ps1,Ps2,Overlap,P1L,
   SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
-  findall(cc(Dir,Dist),sees_dir(Dir,Dist,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2),DirsDists), DirsDists\==[].
+  findall(cc(Dir,Dist),(sees_dir(Dir,Dist,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2),Dist<3),DirsDists), 
+   DirsDists\==[].
 
 %related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 < SX2, SY1 < SY2, EX2 < EX1, EY2 < EY1, How = contained_by(engulfed).
 related_how2(contained_by,O1,O2,Ps1,Ps2,Overlap,P1L,
   SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   SX1 >= SX2, SY1 >= SY2, EX2 >= EX1, EY2 >= EY1.
-%related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 > SX2, SY1 > SY2, EX2 > EX1, EY2 > EY1, How = contains_child(engulfed).
-related_how2(contains_child,O1,O2,Ps1,Ps2,Overlap,P1L,
+%related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 > SX2, SY1 > SY2, EX2 > EX1, EY2 > EY1, How = contains(engulfed).
+related_how2(contains,O1,O2,Ps1,Ps2,Overlap,P1L,
   SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   SX1 =< SX2, SY1 =< SY2, EX2 =< EX1, EY2 =< EY1.
 
