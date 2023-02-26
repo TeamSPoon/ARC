@@ -1574,8 +1574,8 @@ loc2D(I,X,Y):- into_obj(I,O), indv_props(O,loc2D(X,Y)),!.
 vis_hv_term(I,size2D(X,Y)):- vis2D(I,X,Y),!.
 
 vis2D(Grid,H,V):- is_grid(Grid),!,grid_size(Grid,H,V).
-vis2D(Grid,H,V):- is_grid(Grid),!,globalpoints(Grid,Points),!,points_range(Points,LocX,LocY,HiH,HiV,_,_), H is HiH-LocX+1, V is HiV-LocY+1.
 vis2D(I,X,Y):- indv_props(I,vis2D(X,Y)),!.
+vis2D(Grid,H,V):- is_grid(Grid),!,globalpoints(Grid,Points),!,points_range(Points,LocX,LocY,HiH,HiV,_,_), H is HiH-LocX+1, V is HiV-LocY+1.
 vis2D(G,X,Y):- is_group(G),!,mapgroup(vis_hv_term,G,Offsets),sort_safe(Offsets,HighToLow),last(HighToLow,size2D(X,Y)).
 vis2D(Points,H,V):- points_range(Points,LocX,LocY,HiH,HiV,_,_), H is HiH-LocX+1, V is HiV-LocY+1.
 vis2D(NT,H,V):-  known_gridoid(NT,G),G\==NT, vis2D(G,H,V).
@@ -1583,6 +1583,36 @@ vis2D(NT,H,V):-  known_gridoid(NT,G),G\==NT, vis2D(G,H,V).
 rotSize2D(grav,I,X,Y):- indv_props(I,rotSize2D(grav,X,Y)),!.
 rotSize2D(grav,Grid,H,V):- is_grid(Grid),!,grav_roll(Grid,_RotG,RotShape),grid_size(RotShape,H,V).
 rotSize2D(grav,NT,H,V):-  into_gridoid(NT,G),G\==NT, rotSize2D(grav,G,H,V).
+
+
+%externalize_links(Obj,[link(C,A),EL|More],[link(C,A),elink(C,Ext)|LMore]):- EL\=elink(_,_),externalize_obj(Obj,Other,Ext),!,externalize_links(Obj,[EL|More],LMore).
+externalize_links(obj(Obj),obj(NewObj)):- externalize_links(obj(Obj),Obj,NewObj).
+externalize_links(Objs,NewObjs):- is_group(Objs),!,mapgroup(externalize_links,Objs,NewObjs).
+
+externalize_links(Obj,[link(C,A)|More],[link(C,Ext)|LMore]):- atom(A),externalize_obj(Obj,A,Ext),!, externalize_links(Obj,More,LMore).
+externalize_links(Obj,[A|More],[A|LMore]):-!,externalize_links(Obj,More,LMore).  
+externalize_links(_Obj,A,A).
+
+externalize_obj(A,Other,Ext):- atom(A),oid_to_obj(A,Obj),!,externalize_obj(Obj,Other,Ext).
+externalize_obj(Obj,A,Ext):- atom(A),oid_to_obj(A,Other),!,externalize_obj(Obj,Other,Ext).
+externalize_obj(Obj,Other,Ext):-
+   maplist(externalize_prop(Obj,Other),[giz(glyph),loc2D,vis2D,rot2D,iz(sid),iz(stype),colors],Ext).
+
+%[loc2D,vis2D,rot2D,iz(sid),iz(stype),colors]
+externalize_prop(Obj,Other,Prop,Ext):- 
+  indv_props_list(Obj,O1L),
+  indv_props_list(Other,O2L),
+  select_prop(Prop,O1L,P1),
+  select_prop(Prop,O2L,P2),
+  proportional(P1,P2,Ext),!.
+externalize_prop(_Obj,Other,Prop,Ext):- 
+  indv_props_list(Other,O2L),
+  select_prop(Prop,O2L,Ext),!.
+externalize_prop(_Obj,_Other,Prop,unk(Prop)). 
+   
+select_prop(Prop,O2L,P2):- atom(Prop),!,member(P2,O2L), functor(O2L,Prop,_).
+select_prop(iz(Prop),O2L,P2):- atom(Prop),!,member(iz(P2),O2L), functor(O2L,Prop,_).
+select_prop(giz(Prop),O2L,P2):- atom(Prop),!,member(iz(P2),O2L), functor(O2L,Prop,_).
 
 %vis2D(Obj,size2D(H,V)):- vis2D(Obj,H,V).
 %loc2D(Obj,loc2D(H,V)):- loc2D(Obj,H,V).

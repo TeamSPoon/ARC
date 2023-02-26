@@ -1059,9 +1059,9 @@ list_to_caret([A|More],A^B):-!,list_to_caret(More,B).
 
 print_ss(G1,G2):- print_side_by_side([G1,G2]).
 print_ss(IH,IV,NGrid):- var_or_number(IH),var_or_number(IV),!, \+ \+ print_grid(IH,IV,NGrid).
-print_ss(A,B,C):- print_side_by_side(A,B,C).
+print_ss(A,B,C):- \+ \+ print_side_by_side(A,B,C),!.
 %print_ss(Color,G1,WG,G2):- is_color(Color),var_or_number(WG),!,print_side_by_side(Color,G1,WG,G2).
-print_ss(IH,IV,Title,NGrid):- var_or_number(IH),var_or_number(IV),!,print_grid(IH,IV,Title,NGrid).
+print_ss(IH,IV,Title,NGrid):- must_det_ll((var_or_number(IH),var_or_number(IV))),!,print_grid(IH,IV,Title,NGrid).
 print_ss(A,B,C,D,E):- print_side_by_side(A,B,C,D,E).
 print_ss(A,B,C,D,E,F):- print_side_by_side(A,B,C,D,E,F).
 
@@ -1204,7 +1204,7 @@ print_side_by_side(TitleColor,G1N1,G2N2):- is_color(TitleColor),!,
   always_grid_footer(G1N1,G1,N1),
   always_grid_footer(G2N2,G2,N2),  
   print_side_by_side_pref(TitleColor,G1,N1,_LW,G2,N2).
-print_side_by_side(X,Y,Z):- (var(Y);number(Y)),!, g_out((nl_now,print_side_by_side0(X,Y,Z))),!.
+print_side_by_side(X,Y,Z):- (var(X);number(X)),!, g_out((nl_now,print_side_by_side0(X,Y,Z))),!.
 
 print_side_by_side(Info,G1N1,G2N2):- 
   print_side_by_side_msg(Info,G1N1,G2N2).

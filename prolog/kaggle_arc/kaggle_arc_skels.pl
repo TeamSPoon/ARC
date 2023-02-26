@@ -212,9 +212,12 @@ neighbor_map1(H,V,[(N-C)-P1|Ps],Points,[(N-C)-P1|Ps2]):- nonvar(C),!,
 
 neighbor_map1(H,V,[NC-P1|Ps],Points,[(N-C)-P1|Ps2]):-
   must_det_ll((
-  only_color_data(NC,C),
+  only_color_data_f(NC,C),
   nei_map(H,V,C,P1,Points,N),
   neighbor_map1(H,V,Ps,Points,Ps2))).
+
+only_color_data_f(OC,C):- only_color_data(OC,C),!.
+only_color_data_f(C,C).
 
 only_color_data_or_atom(OC,C):- only_color_data(OC,C),!.
 only_color_data_or_atom(C,C).

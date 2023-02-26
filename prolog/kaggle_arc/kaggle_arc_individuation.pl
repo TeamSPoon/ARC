@@ -30,11 +30,11 @@ individuation_macros(do_ending, [
  %combine_if_prop(and(cc(bg,1),)),
  %remove_if_prop(and(iz(stype(dot))])),
  %combine_same_globalpoints,
- reset_points,
- remove_background_only_object,
+ reset_points, 
  %gather_cached,
  remove_used_points,
  named_grid_props(post_indiv),
+ remove_background_only_object,
  find_relations,
  remove_dead_links,
  %find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
@@ -52,12 +52,13 @@ individuation_macros(do_ending, [
  %combine_objects,
  end_of_macro]).
 
+
 individuation_macros(i_complete_generic(X),[X]).
 
 individuation_macros(simple_grids,[ 
     keypads,
-    bigger_grid_contains_other,
     maybe_glyphic,
+    bigger_grid_contains_other,
     save_as_hybrid_shapes([indv_omem_points]),    
     find_hybrid_shapes]).
 
@@ -250,14 +251,6 @@ individuation_macros(i_complete_generic2, [
    find_relations,
   end_of_macro  ]). 
 
-
-
-show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):-  
-  GridIn=@=GridOfIn,!,
- must_det_ll((
-  into_iog(InC,OutC,IndvS),
-  show_individuated_nonpair(PairName,ROptions,GridIn,GridOfIn,IndvS))).
-
 /*
 show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):- 
   InC=@=OutC,!,
@@ -265,12 +258,17 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):-
   show_individuated_nonpair(PairName,ROptions,GridIn,GridOfIn,IndvS))).
 */
 
-show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):- 
+
+
+
+
+
+maybe_optimize_objects(InC00,OutC00,InCR,OutCR):-
  wots(S,
  w_section(optimize_objects, ((
  once((must_det_ll((
-                    remove_background_only_object(InC00,InC000),
-                    remove_background_only_object(OutC00,OutC000),
+  remove_background_only_object(InC00,InC000),
+  remove_background_only_object(OutC00,OutC000),
  extend_grp_proplist(InC000,InC0),
  extend_grp_proplist(OutC000,OutC0),
   maybe_fix_group(InC0,InCRFGBG),
@@ -279,20 +277,35 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):-
   mostly_fg_objs(OutCRFGBG,OutCR),
   show_changes(InC0,InCR),
   show_changes(OutC0,OutCR))))))),ran_collapsed)),
- ((InC00\=@=InCR;OutC00\=@=OutCR),(InCR\==[],OutCR\==[])),!,
-  write(S),
+   ((InC00\=@=InCR;OutC00\=@=OutCR),(InCR\==[],OutCR\==[])),!,
+  write(S).
+
+optimize_objects(InC00,OutC00,InC,OutC):-
+  (maybe_optimize_objects(InC00,OutC00,InC,OutC)->true;(InC00=InC,OutC00=OutC)).
+
+
+
+show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):-  
+  GridIn=@=GridOfIn,!,
+ must_det_ll((
+  into_iog(InC,OutC,IndvS),
+  show_individuated_nonpair(PairName,ROptions,GridIn,GridOfIn,IndvS))).
+
+show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):- 
+  maybe_optimize_objects(InC00,OutC00,InCR,OutCR),!,
   show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCR,OutCR),!.
 
 
 show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCB,OutCB):-
  must_det_ll((
-  remove_background_only_object(InCB,InC),
-  remove_background_only_object(OutCB,OutC),
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),   
  w_section(show_individuated_sections,((                          
   print_side_by_side(red,GridIn,gridIn(ROptions,ID1,PairName),_,GridOut,gridOut(ID2)),
   as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1), xfer_zeros(GridIn1,GridOut1), 
   print_side_by_side(yellow,GridIn1,ngridIn(ROptions,ID1,PairName),_,GridOut1,ngridOut(ID2)),
+  %trace,
+  remove_background_only_object(InCB,InC),remove_background_only_object(OutCB,OutC),
+  %pp(InC),
   print_side_by_side(green,InC,objs(ROptions,ID1),_,OutC,objs(ID2)),
 
   if_t( \+ nb_current(menu_key,'i'),
@@ -1641,12 +1654,13 @@ individuate_nonpair(ROptions,In,IndvSI):-
   compile_and_save_current_test([for(InG)]),!,
   individuate(ROptions,InG,IndvSI).
 
-individuate_pair(ROptions,In,Out,IndvSI,IndvSO):-
+individuate_pair(ROptions,In,Out,InC,OutC):-
  into_grid(In,InG), into_grid(Out,OutG),
  [for(out,OutG),for(in,InG)] = Why,
  compile_and_save_current_test(Why),!,
   (individuate_pair1(ROptions,In,Out,IndvSI,IndvSO)*->
-   true;individuate_pair2(ROptions,In,Out,IndvSI,IndvSO)),!.
+   true;individuate_pair2(ROptions,In,Out,IndvSI,IndvSO)),!,
+ optimize_objects(IndvSI,IndvSO,InC,OutC).
 
 individuate_pair1(ROptions,In,Out,IndvSI,IndvSO):-
  once((
@@ -2764,11 +2778,12 @@ remove_background_only_object(Objs,NewObjs,VM):-
 
 remove_background_only_object(H,V,Objs,NewObjs):-
     select(O,Objs,NewObjs),
-    vis2D(O,OH,OV), H == OH, V == OV,
+    area(O,Area),Area>3,
+    vis2D(O,OH,OV), abs(H - OH)<3, abs(V - OV)<3,
     has_prop(cc(fg,0),O),
-    must_det_ll((
     %has_prop(cc(plain_var,0),O),!,
-    print_ss(remove_background_only_object,[O],NewObjs))),!.
+    %print_ss(remove_background_only_object,[O],NewObjs),
+    !.
 remove_background_only_object(_,_,Objs,Objs):-!.
 
 % =====================================================================
@@ -3471,17 +3486,18 @@ keypads(VM):-
   grid_size(Keypad,H,V),
   print_ss(keypad(OX,OY,H,V,EX,EY),Grid,Keypad),
   H==3,V==3,
-  mass(Keypad,Mass),!,Mass==9,
+  %mass(Keypad,Mass),!,Mass==9,
   grid_to_points(Keypad,LPoints),
   writeg(keypad=Keypad),
   length(LPoints,Len),
   writeg(points(Len)=LPoints),
   offset_points0(OX,OY,LPoints,AllGpoints),
-  itrace,
+  %itrace,
   maplist(make_point_object(VM,[birth(keypads),iz(media(shaped))]),AllGpoints,IndvList),
   print_grid(AllGpoints,IndvList),
-  itrace,
-  raddObjects(VM,IndvList))),!.
+  remCPoints(VM,IndvList),
+  remGPoints(VM,IndvList),
+  addInvObjects(VM,IndvList))),!.
 
 % ======================================
 % tiny grid becomes a series of points

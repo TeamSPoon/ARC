@@ -164,7 +164,7 @@ show_indiv_object(Why, Obj):-
      if_t(DoFF,((constrain_grid(f,_TrigF,Grid,GridFF), if_t(GridFF\=@=Grid,append(_,["Find"=GridFF|_],Grids)),
        copy_term(Grid+GridFF,GG1+GridFFNV,GoalsFF), numbervars(GG1+GridFFNV+GoalsFF,10,_,[attvar(bind),singletons(false)]))))
    )),
-     append(_,[],Grids),
+     append(_,[],Grids),!,
      HH is (OH - 1) * 2, 
      call_w_pad(HH, print_side_by_side(Grids)),
 
@@ -189,7 +189,7 @@ show_indiv_object(Why, Obj):-
   WillHaveShown = [loc2D(OH,OV),center2G(CX,CY),size2D(H,V)],    
   if_t(is_object(Obj),
     (format('~N~n'),
-     if_t(menu_or_upper('i'),
+     if_t((true;menu_or_upper('i');menu_or_upper('o')),
        locally(nb_setval(debug_indiv,f),
          underline_print(show_indiv_textinfo(Why,Obj,WillHaveShown)))),
 
@@ -198,7 +198,9 @@ show_indiv_object(Why, Obj):-
 show_indiv_textinfo(AS):-show_indiv_textinfo('',AS,[]).
 show_indiv_textinfo(Why,Obj,ExceptFor):- Obj = obj(A), nonvar(A),!,show_indiv_textinfo(Why,A,ExceptFor).
 show_indiv_textinfo(Why,Props,ExceptFor):- is_open_list(Props),!,must_det_ll((append(Props,[],CProps),!,show_indiv_textinfo(Why,CProps,ExceptFor))).
-show_indiv_textinfo(Why,AS0,ExceptFor):- 
+show_indiv_textinfo(Why,AS0,ExceptFor):- catch(show_indiv_textinfo1(Why,AS0,ExceptFor),_,true),!.
+show_indiv_textinfo(Why,AS0,_ExceptFor):- pp(show_indiv_textinfo(Why)=AS0),!.
+show_indiv_textinfo1(Why,AS0,ExceptFor):- 
  must_det_ll((
   %Obj = obj(AS0),
   append(AS0,[],Props11),
@@ -226,13 +228,17 @@ show_indiv_textinfo(Why,AS0,ExceptFor):-
   
   ignore((TF==true,dash_chars)),
   sformat(S,"% ~w ~w:\t~w  ",[Why,PC,SGlyph]), format('~N~s',[S]),
+  wots(SZ,((
   print_if_non_nil(props,ExceptFor,TVSI),
   print_if_non_nil(links,ExceptFor,ISLINK),
-  print_if_non_nil(rankings,ExceptFor,Rankings),
+  print_if_non_nil(rankings,ExceptFor,Rankings)))),
+  atom_length(SZ,Len),(Len<10 -> pp(AS0);write(SZ)),
   ignore(( TF==true, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
   ignore(( fail, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
   %pp(Props),
   ignore(( TF==true,dash_chars)))),!.
+
+
 :- export(show_indiv_textinfo/3).
 :- ansi_term:import(show_indiv_textinfo/3).
 
