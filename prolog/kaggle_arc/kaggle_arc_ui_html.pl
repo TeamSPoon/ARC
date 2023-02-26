@@ -144,10 +144,12 @@ clip_string(Attr,Len,SAttr):- atom_length(Attr,SLen),clip_string(SLen,Attr,Len,S
 clip_string(SLen,Attr,Len,Attr):- SLen=<Len,!.
 clip_string(_,Attr,Len,SAttr):- sub_string(Attr, 0, Len, _After, SAttr).
 
-w_section_html(Title,Goal,Spyable,ran_collapsed):- !, w_section_html(Title,Goal,Spyable,panel_shown,false).
-w_section_html(Title,Goal,Spyable,Showing):- w_section_html(Title,Goal,Spyable,panel_shown,Showing).
 
-w_section_html(Title,Goal,_Spyable,Class,Showing):-
+w_section_html(Title,Goal,Spyable,_Showing):- flag('$w_section_depth',X,X),X>2,!, w_section_html_real(Title,Goal,Spyable,panel_hidden,false).
+w_section_html(Title,Goal,Spyable,ran_collapsed):- !, w_section_html_real(Title,Goal,Spyable,panel_shown,false).
+w_section_html(Title,Goal,Spyable,Showing):- w_section_html_real(Title,Goal,Spyable,panel_shown,Showing).
+
+w_section_html_real(Title,Goal,_Spyable,Class,Showing):-
  must_det_ll(( 
  copy_term(Goal,GoalC),
   gensym('accordian_css_',Sym),

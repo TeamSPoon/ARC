@@ -1913,8 +1913,9 @@ test_local_dyn(object_to_object).
 %test_local_dyn(why_grouped).
 test_local_dyn(cached_dictation).
 test_local_dyn(oout_associatable).
+test_local_dyn(fav).
+test_local_dyn(propcount).
 
-test_local_save(F,A):- setof(F/A,(test_local_save(F),current_predicate(F/A),A\==0),L),member(F/A,L).
 test_local_save(arc_test_property).
 test_local_save(cached_tests).
 test_local_save(cached_tests_hard).
@@ -1938,6 +1939,8 @@ test_local_save(omem).
 test_local_save(smem).
 test_local_save(test_info_cache).
 test_local_save(P):- test_local_dyn(P).
+test_local_save(F,A):- setof(F/A,(test_local_save(F),current_predicate(F/A),A\==0),L),member(F/A,L).
+
 
 training_info(TestID,InfoSet):-
  sub_atom_value(TestID,TestIDA),

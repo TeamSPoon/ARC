@@ -300,12 +300,13 @@ write_atom(S):- into_title_str(S,TS),write(TS),!.
 into_title_str(Term,Str):- string(Term),!,Str=Term.
 into_title_str(Term,Str):- plain_var(Term),sformat(Str,'~p',[Term]),!.
 into_title_str(Term,Str):- var(Term),tersify0(Term,Terse), sformat(Str,'~p',[Terse]),!.
-into_title_str(format(Fmt,Args),Str):- trace,sformat(Str,Fmt,Args),!.
 into_title_str(Term,Str):- term_is_ansi(Term), wots(Str,write_keeping_ansi_mb(Term)),!.
 into_title_str(Term,Str):- (is_codelist(Term);is_charlist(Term)),catch(sformat(Str,'~s',[Term]),_,sformat(Str,'~p',[Term])),!.
+into_title_str(Term,Str):- is_list(Term),maplist(into_title_str,Term,O3),atomics_to_string(O3," ",Str),!.
+into_title_str([H|T],Str):- into_title_str(H,A),into_title_str(T,B),atomics_to_string([A,B]," ",Str),!.
 into_title_str(Term,Str):- \+ callable(Term),sformat(Str,'~p',[Term]),!.
+into_title_str(format(Fmt,Args),Str):- sformat(Str,Fmt,Args),!.
 into_title_str(Term,""):- empty_wqs_c(Term),!.
-into_title_str(Term,Str):- is_list(Term),maplist(into_title_str,Term,O3),atomics_to_string(O3," ",Str).
 into_title_str(out,"Output").
 into_title_str(in,"Input").
 into_title_str(i,"IN").
@@ -323,16 +324,16 @@ into_title_str(tst,"EVALUATION TEST").
 into_title_str(Term,Str):- atom(Term),is_valid_linkid(Term,Kind,_),into_title_str(Kind,KS),sformat(Str,'~w (~w)',[Term,KS]),!.
 into_title_str(Term,Str):- atom(Term), atom_contains(Term,'_'), \+ atom_contains(Term,' '),  to_case_breaks(Term,T),
  include(\=(xti(_,punct)),T,O),maplist(arg(1),O,O1),maplist(toProperCamelAtom,O1,O2),
-  atomics_to_string(O2," ",Str).
+  atomics_to_string(O2," ",Str),!.
 into_title_str(Term,Str):- has_short_id(Term,Kind,ID),into_title_str(Kind,KS),sformat(Str,'~w (~w)',[ID,KS]),!.
-into_title_str(Term,Str):- tersify23(Term,Terse),Term\=@=Terse,!,into_title_str(Terse,Str).
+%into_title_str(Term,Str):- tersify23(Term,Terse),Term\=@=Terse,!,into_title_str(Terse,Str).
 into_title_str(Term,Str):- callable_arity(Term,0),is_writer_goal(Term),catch(notrace(wots(Str,call_e_dmsg(Term))),_,fail),!.
+into_title_str(Term,Str):- catch(sformat(Str,'~p',[Term]),_,term_string(Term,Str)),atom_length(Str,E50),E50<180,!.
 into_title_str(Term,Str):- compound(Term), compound_name_arguments(Term,Name,Args),
    %include(not_p1(plain_var),Args,Nonvars),
    Args=Nonvars,
-   maplist(tersify,Nonvars,ArgsT), into_title_str([Name,"(",ArgsT,")"],Str).
-
-into_title_str(Term,Str):- catch(sformat(Str,'~p',[Term]),_,term_string(Term,Str)),!.
+   maplist(tersify,Nonvars,ArgsT), into_title_str([Name,"(",ArgsT,")"],Str),!.
+into_title_str(Term,Str):- catch(sformat(Str,'~p',[Term]),_,term_string(Term,Str)).
 
 has_short_id(TestID,testid,UUID):- is_valid_testname(TestID),test_atom(TestID,UUID).
 has_short_id(Obj,object,OID):- is_object(Obj),obj_to_oid(Obj,OID).

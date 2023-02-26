@@ -74,7 +74,7 @@ show_interesting_named_props(Named,In):-
    consider_for_rank(ObjsG,Objs,_),
    w_section(print_treeified_props(Named),print_treeified_props(Named,Objs)),
    banner_lines(green,2),banner_lines(green,2),
-   w_section(hack_prop_groups(Named),hack_prop_groups(Named,Objs)),
+   hack_prop_groups(Named,Objs),
    banner_lines(green,2),banner_lines(green,2),!.
    
 
@@ -205,11 +205,14 @@ objects_names_props(SubObjs,Props):-
   findall(F-Prop,(member(O,SubObjs),object_prop(O,Prop),prop_name(Prop,F)),Props).
 
 prop_name(Prop,F):- \+ compound(Prop),!,F=Prop.
-prop_name(Prop,Name):- compound_name_arguments(Prop,F,[A|_]),
-   (number(A)-> Name =F ; compound_name_arguments(Name,F,[A])).
+prop_name(Prop,Named):- compound_name_arguments(Prop,F,[A|_]),
+   (number(A)-> Named =F ; compound_name_arguments(Named,F,[A])).
+
 
 mostly_fg_objs(OutCR,OutCR):-!.
-mostly_fg_objs(InCRFGBG,OutCR):- include(is_fg_object,InCRFGBG,OutCR),!.
+mostly_fg_objs(ObjsG,FG):- my_partition(is_fg_object,ObjsG,FG,BG),length(FG,FGL),length(BG,BGL),FGL>BGL,!.
+%mostly_fg_objs(InCRFGBG,OutCR):- include(is_fg_object,InCRFGBG,OutCR),!.
+mostly_fg_objs(OutCR,OutCR):-!.
 
 object_group_cc(Objs,GroupName,SubObjs,Count,NamesCC,ValuesCC):-
   select_subgroup(Objs,GroupName,Count,SubObjs),
@@ -307,8 +310,8 @@ hack_prop_groups(Named,Objs):-
   w_section(print_elists(Named),print_elists_hack_objs(Named,EList,Objs,HackedObjs)),
   maplist(arg(1),HackedObjs,RRR),  
   banner_lines(orange,2),
-  print_ptree(hacked(Named),RRR),
-  banner_lines(yellow,2),  
+  w_section(hack_prop_groups(Named),
+    (print_ptree(hacked(Named),RRR), banner_lines(yellow,2))),  
   ignore(skip_if_ansi(print_propset_groups(Named,Objs,EList))))).
 
 
@@ -348,7 +351,7 @@ store_splits(Named,BaseSize,CSplits,Splits):-
 
 %save_1split(Named,Six,(1-_)->[Six-CSplits]):- maplist(remember_propcounts(Named,nth(_)),[CSplits]).
 %save_1split(Named,Six,(Six-_)->List):- length_s(List,Six),maplist(p1_call(chk(=(1-_))),List),
-save_1split(Named,_,(N-Div)->CSplits):- maplist(remember_propcounts(Named,div(Div,N)),CSplits).  
+save_1split(Named,_,(N-Div)->CSplits):- maplist(remember_propcounts(Named,Div,N),CSplits).  
 %save_1split(Named,_,(1-_)->[1-CSplits]):- !.
 %save_1split(Named,_,(N)->List):- predsort(sort_on(last_type_is_value),List,Sort).
 %save_1split(Named,_,_).
@@ -388,8 +391,15 @@ made_split(N,UProp,List,Out):-sort(List,Set),List\=@=Set,!,made_split(N,UProp,Se
 made_split(_,UProp,List,((Len-UProp)->List)):- length_s(List,Len).
 sameps(UProp,_-Prop):- \+ Prop \= UProp.
 
-remember_propcounts(Named,Diversity,N-Prop):-
-  arc_assert(propcounts(Named,Diversity,N,Prop)).
+into_test_id_io(input(TestID>ExampleNum),TestID,ExampleNum,in).
+into_test_id_io(both(TestID>ExampleNum),TestID,ExampleNum,in_out).
+into_test_id_io(output(TestID>ExampleNum),TestID,ExampleNum,out).
+into_test_id_io(Named,TestID,ExampleNum,IO):- Named=..[IO,TestID>ExampleNum],!.
+into_test_id_io(Named,TestID,ExampleNum,IO):- Named=..[IO,TestID,ExampleNum],!.
+remember_propcounts(Named,Diversity,N-Prop):- into_test_id_io(Named,TestID,ExampleNum,IO),
+  arc_assert(propcounts(TestID,ExampleNum,IO,Diversity,N,Prop)).
+remember_propcounts(Named,Diversity,B,N-Prop):- into_test_id_io(Named,TestID,ExampleNum,IO),
+  arc_assert(propcounts(TestID,ExampleNum,IO,Diversity,B,N,Prop)).
 
 
 sort_obj_props(How,obj(Props),obj(Sorted)):-
@@ -522,7 +532,7 @@ group_vm_priors(VM):-
 % =====================================================================
 is_fti_step(really_group_vm_priors).
 % =====================================================================
-% really_group_vm_priors(_VM):-!.
+%really_group_vm_priors(_VM):-!.
 really_group_vm_priors(VM):-
  must_det_ll((
   ObjsG = VM.objs,
@@ -788,19 +798,19 @@ get_loc2D(P,loc2D(inf,P)).
 
 
 /*
-prior_name_by_size(VM,IndvS0,Name):- 
-  Title = save_as_obj_group(Name),
+prior_name_by_size(VM,IndvS0,Named):- 
+  Title = save_as_obj_group(Named),
   if_t((true;number(_R)),
    (length_s(IndvS0,Len),
     if_t(Len>0,
      must_det_ll((
-      %add_prior_placeholder(Name,IndvS0,IndvS1),
-      override_object(birth(Name),IndvS0,IndvS1)
+      %add_prior_placeholder(Named,IndvS0,IndvS1),
+      override_object(birth(Named),IndvS0,IndvS1)
       gset(VM.objs)=IndvS1,
      /*
-      %rank_priors(Name,IndvS1,IndvSL),
+      %rank_priors(Named,IndvS1,IndvSL),
       gset(VM.objs)=IndvSL,
-      nop((( Name == i_nsew ) -> DebugThis = full ; luser_getval(debug,DebugThis)->true; DebugThis=true)),
+      nop((( Named == i_nsew ) -> DebugThis = full ; luser_getval(debug,DebugThis)->true; DebugThis=true)),
       nop(( DebugThis\==false -> Feedback = show_indiv(Title) ; Feedback = print_info)),
       nop(ignore((DebugThis\==false, print_grid(VM.h,VM.v,Title,IndvSL)))),     
       %dash_chars,
@@ -809,17 +819,17 @@ prior_name_by_size(VM,IndvS0,Name):-
 */
 /*
 %add_prior_placeholder(_,I,I):-!.
-add_prior_placeholder(Name,IndvS0,IndvS9):- is_list(IndvS0),!,
+add_prior_placeholder(Named,IndvS0,IndvS9):- is_list(IndvS0),!,
   length_s(IndvS0,Len),
-  maplist(add_prior_placeholder(Len,Name),IndvS0,IndvS9).
+  maplist(add_prior_placeholder(Len,Named),IndvS0,IndvS9).
 
-add_prior_placeholder(_Len,Name,IndvS0,IndvS9):- 
-  override_object(birth(Name),IndvS0,IndvS9),!.
+add_prior_placeholder(_Len,Named,IndvS0,IndvS9):- 
+  override_object(birth(Named),IndvS0,IndvS9),!.
 
-add_prior_placeholder(Len,Name,IndvS0,IndvS9):- 
-  (has_prop(pg(OG,Len,_,Name),IndvS0)-> IndvS0=IndvS9 ; 
-    ((has_prop(pg(OG,Was,Other,Name),IndvS0)-> delq(IndvS0,pg(OG,Was,Other,Name),IndvS1) ; IndvS0=IndvS1),
-     override_object(pg(OG,Len,nil,Name),IndvS1,IndvS9))),!.
+add_prior_placeholder(Len,Named,IndvS0,IndvS9):- 
+  (has_prop(pg(OG,Len,_,Named),IndvS0)-> IndvS0=IndvS9 ; 
+    ((has_prop(pg(OG,Was,Other,Named),IndvS0)-> delq(IndvS0,pg(OG,Was,Other,Named),IndvS1) ; IndvS0=IndvS1),
+     override_object(pg(OG,Len,nil,Named),IndvS1,IndvS9))),!.
 */
 
 object_get_priors(X,S):- var(X),!, enum_object(X), object_get_priors(X,S).
@@ -827,7 +837,7 @@ object_get_priors(X,S):- is_object(X), !, must_det_ll((indv_props_list(X,Ps),
   findall(I,(member(P,Ps),props_object_prior(P,I)),L),L\==[],list_to_set(L,S))).
 
 get_prior_labels(Objs,PriorsWithCounts):- must_det_ll((is_list(Objs),
-  findall(Name,(member(Obj,Objs),object_get_priors(Obj,Name)),AllPriorsL),
+  findall(Named,(member(Obj,Objs),object_get_priors(Obj,Named)),AllPriorsL),
   append(AllPriorsL,AllPriors),
   sort_safe(AllPriors,PriorsSet),
   my_partition(never_prior,PriorsSet,_Unused,PriorsSetClean),
@@ -930,13 +940,13 @@ add_prior(N,Lbl,Objs,ObjsWithPrior):-
   length_s(Lbld,LL),  
   rank_priors(Lbl,Lbld,RLbldR),
   nop(print_grid(Lbl->N/LL,RLbldR)),
-  write('\t '), writeq(Lbl->N/LL),write(' <p/>\t'),
+  % write('\t '), writeq(Lbl->N/LL),write(' <p/>\t'),
   append([Unlbl,RLbldR],ObjsWithPrior).  
 
 /*
 prior_name_by_size(_VM,[],_Name):-!.
-prior_name_by_size(VM,IndvS0,Name):-  
-  rank_priors(Name,IndvS0,IndvSL),
+prior_name_by_size(VM,IndvS0,Named):-  
+  rank_priors(Named,IndvS0,IndvSL),
   addObjectOverlap(VM,IndvSL).
 */
 rank_priors(_RelivantDivide,GType,FG,SFO1):-

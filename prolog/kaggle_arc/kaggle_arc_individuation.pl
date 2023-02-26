@@ -31,6 +31,7 @@ individuation_macros(do_ending, [
  %remove_if_prop(and(iz(stype(dot))])),
  %combine_same_globalpoints,
  reset_points,
+ remove_background_only_object,
  %gather_cached,
  remove_used_points,
  named_grid_props(post_indiv),
@@ -87,6 +88,7 @@ use_subtractions:-    once(arc_common_property(containsAll(o-i));arc_common_prop
 find_indivizers(F,R):-clause(individuation_macros(F,R),Body),catch(Body,_,fail),R\==complete,nonvar(F).
 %find_indivizers(F,is_fti_stepr):- is_fti_stepr(F).
 find_indivizers(F,is_fti_step):- is_fti_step(F), atom(F), current_predicate(F/1).
+find_indivizers(F,is_item):-clause(individuation_macros(F,R),Body),catch(Body,_,fail),member(F,R).
 list_of_indivizers(S):- findall(F,find_indivizers(F,_),LS1),list_to_set(LS1,R),reverse(R,S).
 show_indivizers:- update_changes, list_of_indivizers(L),
  forall(nth_above(800,N,L,E),
@@ -267,8 +269,10 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):-
  wots(S,
  w_section(optimize_objects, ((
  once((must_det_ll((
- extend_grp_proplist(InC00,InC0),
- extend_grp_proplist(OutC00,OutC0),
+                    remove_background_only_object(InC00,InC000),
+                    remove_background_only_object(OutC00,OutC000),
+ extend_grp_proplist(InC000,InC0),
+ extend_grp_proplist(OutC000,OutC0),
   maybe_fix_group(InC0,InCRFGBG),
   maybe_fix_group(OutC0,OutCRFGBG),
   mostly_fg_objs(InCRFGBG,InCR),
@@ -280,16 +284,21 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):-
   show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCR,OutCR),!.
 
 
-show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
+show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCB,OutCB):-
  must_det_ll((
+  remove_background_only_object(InCB,InC),
+  remove_background_only_object(OutCB,OutC),
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),   
- if_wants_output_for(show_interesting_props, 
-  show_interesting_props(PairName,InC,OutC)),
  w_section(show_individuated_sections,((                          
-  print_side_by_side(red,GridIn,gridIn(ID1,PairName),_,GridOut,gridOut(ID2)),
+  print_side_by_side(red,GridIn,gridIn(ROptions,ID1,PairName),_,GridOut,gridOut(ID2)),
   as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1), xfer_zeros(GridIn1,GridOut1), 
-  print_side_by_side(yellow,GridIn1,ngridIn(ID1,PairName),_,GridOut1,ngridOut(ID2)),
-  print_side_by_side(green,InC,objs(ID1),_,OutC,objs(ID2)),
+  print_side_by_side(yellow,GridIn1,ngridIn(ROptions,ID1,PairName),_,GridOut1,ngridOut(ID2)),
+  print_side_by_side(green,InC,objs(ROptions,ID1),_,OutC,objs(ID2)),
+
+  if_t( \+ nb_current(menu_key,'i'),
+((((((
+  if_wants_output_for(show_interesting_props, 
+   show_interesting_props(PairName,InC,OutC)),
   show_indivs_side_by_side(inputs,InC),show_indivs_side_by_side(outputs,OutC),
   %w_section(show_io_groups,show_io_groups(green,ROptions,ID1,InC,ID2,OutC)),
   %show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
@@ -315,7 +324,7 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC):-
        nop(pp(Rules)),
        banner_lines(orange,2))))))))),
 
-  banner_lines(orange,4)))))),!.
+  banner_lines(orange,4))))))))))))),!.
 
 
 show_indivs_side_by_side(W,InC):- \+ wants_html,!,
@@ -1644,7 +1653,7 @@ individuate_pair1(ROptions,In,Out,IndvSI,IndvSO):-
   check_for_refreshness,
   into_grid(In,InG), into_grid(Out,OutG),
   current_test_example(TestID,ExampleNum),
- w_section(["individuate pair: ",TestID,ExampleNum],
+ w_section(["individuate pair: ",TestID,ExampleNum,g(ROptions)],
   must_det_ll(((   
    first_grid(InG,OutG,IO),
    (IO==in_out 
@@ -1753,7 +1762,7 @@ individuate_two_grids_now_X(OID_In_Out,ROptions,Grid_In,Grid_Out,VM_In,VM_Out,Gr
 
   grid_to_tid(Grid_In,ID_In), grid_to_tid(Grid_Out,ID_Out),
 
-  print_ss(yellow,Grid_InX,OID_In_Out=gridInX(ID_In),_,Grid_OutX,OID_In_Out=gridOutX(ID_Out)),
+  print_ss(yellow,Grid_InX,OID_In_Out=gridInX(ROptions,ID_In),_,Grid_OutX,OID_In_Out=gridOutX(ROptions,ID_Out)),
 
   worker_output((
   with_other_grid(Grid_OutX,do_individuate(VM_In,ROptions,Grid_InX,Objs_In)),!, 
@@ -1780,7 +1789,7 @@ individuate2(_VM,ROptions,GOID,_GridIn,IndvS):- nonvar(GOID),
   !.
 individuate2(VM,ROptions,GOID,GridIn,IndvS):-
   do_individuate(VM,ROptions,GridIn,LF),!,
-  =(LF,IndvS),
+  remove_background_only_object(LF,IndvS,VM),
   if_t(nonvar(GOID),
    (retractall_in_testid(arc_cache:individuated_cache(_,GOID,ROptions,_)), 
     length(IndvS,Len),ignore((Len>0,atom(ROptions),progress(yellow,oid_created(ROptions,GOID,len(Len),'$VAR'(Len))))),
@@ -1823,7 +1832,8 @@ guard_whole(LF,LF).
 %individuate(GH,GV,ID,whole,_Grid,Points,IndvS):-  individuate_whole(GH,GV,ID,Points,IndvS),!.
 
 individuate7(VM,ID,ROptions,GridIn,IndvS):-
-  individuate8(VM,ID,ROptions,GridIn,IndvS).
+  ignore((fix_indivs_options(ROptions,List),list_upto(4,List,Some),append(Some,['...'],Options))),
+  w_section(title(individuate(Options,ID)),individuate8(VM,ID,ROptions,GridIn,IndvS)).
 individuate8(VM,ID,ROptions,GridIn,IndvS):-
  must_det_ll((
       (var(VM) -> maybe_into_fti(ID,ROptions,GridIn,VM) ; true),
@@ -1834,6 +1844,7 @@ individuate8(VM,ID,ROptions,GridIn,IndvS):-
       set_vm(VM),
       %individuals_raw(VM,GH,GV,ID,NewOptions,Reserved,Points,Grid,IndvSRaw),
       run_fti(VM,ROptions), 
+      remove_background_only_object(VM),
       IndvSRaw = VM.objs,
   %as_debug(9,ppt((individuate=IndvSRaw))),
       make_indiv_object_list(VM,IndvSRaw,IndvS1),
@@ -2733,6 +2744,32 @@ sub_self(NewGrid,NewOther,TODO,VM,FoundObjs):- !,
  addInvObjects(VM,FoundObjs))),!.
 
 */
+% =====================================================================
+is_fti_step(remove_background_only_object).
+% =====================================================================
+remove_background_only_object(VM):-
+  Objs = VM.objs,
+  ignore((
+  is_group(Objs),length(Objs,Len),Len>1,    
+  remove_background_only_object(Objs,NewObjs,VM),
+  setObjects(NewObjs,VM))),!.
+
+setObjects(NewObjs,VM):-
+    VM.objs == NewObjs -> true ; gset(VM.objs)=NewObjs.
+
+remove_background_only_object(Objs,NewObjs):-
+  must_det_ll(grid_size(Objs,H,V)),remove_background_only_object(H,V,Objs,NewObjs).
+remove_background_only_object(Objs,NewObjs,VM):-
+  remove_background_only_object(VM.h,VM.v,Objs,NewObjs).
+
+remove_background_only_object(H,V,Objs,NewObjs):-
+    select(O,Objs,NewObjs),
+    vis2D(O,OH,OV), H == OH, V == OV,
+    has_prop(cc(fg,0),O),
+    must_det_ll((
+    %has_prop(cc(plain_var,0),O),!,
+    print_ss(remove_background_only_object,[O],NewObjs))),!.
+remove_background_only_object(_,_,Objs,Objs):-!.
 
 % =====================================================================
 is_fti_step(i_subtract_objs).
@@ -4414,21 +4451,23 @@ merge_a_b(A,B,AA):-
 
 
 
-
-individuation_macros(out, complete).
-individuation_macros(in, complete).
-
 individuation_macros(subshape_in_object, complete).
 
-individuation_macros(train_mono_in_in, complete).
-individuation_macros(train_mono_in_out, complete).
-individuation_macros(train_mono_out_out, complete).
 
-individuation_macros(in_in, complete).
-individuation_macros(out_in, complete).
-individuation_macros(out_out, complete).
-individuation_macros(in_out, complete).
+individuation_macros(out, current).
+individuation_macros(in, current).
 
+individuation_macros(train_mono_in_in, current).
+individuation_macros(train_mono_in_out, current).
+individuation_macros(train_mono_out_out, current).
+
+individuation_macros(in_in, current).
+individuation_macros(out_in, current).
+individuation_macros(out_out, current).
+individuation_macros(in_out, current).
+
+individuation_macros(current,Mode):- get_indivs_mode(Mode), \+ (Mode==current;individuation_macros(Mode, current)),!.
+individuation_macros(current,complete).
 
 % if there are 10 or less of a color dont group the whole color (It/they must be special points)
 individuation_macros(by_color, X):-
@@ -4645,6 +4684,7 @@ fast_simple :- true.
 
 individuation_macros(i_pbox,[pbox_vm_special_sizes]).
 individuation_macros(i_mono_colormass,[fg_shapes(colormass)]).
+individuation_macros(i_colormass,[colormass]).
 individuation_macros(i_mono_nsew,[fg_shapes(nsew)]).
 
 

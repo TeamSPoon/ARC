@@ -216,7 +216,7 @@ set_vm_grid_now(VM,Grp):- is_group(Grp), !,
   set_vm_grid_now(VM,Points),
   gset(VM.objs)=Grp.
 
-set_vm_grid_now(VM,Grp):- is_cpoints_list(Points), !,  
+set_vm_grid_now(VM,Points):- is_cpoints_list(Points), !,  
   gset(VM.points_o) = VM.points,
   gset(VM.points)=Points,
   points_to_grid(VM.h,VM.v,Points,Grid),

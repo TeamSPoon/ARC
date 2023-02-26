@@ -168,6 +168,7 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   :- set_prolog_flag(access_level,system).
   
   :- SL  is 2_147_483_648*8*4, set_prolog_flag(stack_limit, SL ).
+  set_display:-!.
   set_display:- ((getenv('DISPLAY',_) -> true ; setenv('DISPLAY','10.0.0.122:0.0'))).
   :- if(current_prolog_flag(xpce,true)).
   :- set_display.

@@ -92,7 +92,7 @@ menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/o
 menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changes,maybe_set_suite,print_testinfo,print_test)).
 menu_cmd1(_,'w','                  or (w)rite the test info',(update_changes,switch_pair_mode)).
 menu_cmd1(_,'X','                  or  E(X)amine the program leared by training',(cls_z_make,print_test,!,learned_test,solve_easy)).
-menu_cmd1(_,'L','                  or (L)earned program',(learned_test)).
+menu_cmd1(_,'L','                  or (L)earned Data',(learned_test)).
 menu_cmd1(_,'e',S,(Cmd)):- get_test_cmd(Cmd),
       sformat(S,"                  or (e)xecute .................. '~@'",[bold_print(color_print(cyan,Cmd))]).
 menu_cmd1(_,'x',S,(Cmd)):- get_test_cmd2(Cmd),
@@ -292,6 +292,9 @@ do_menu_key('d'):- !, dump_from_pairmode.
 do_menu_key(N):- number(N),N>=300,N=<800,set_pair_mode(entire_suite),fail.
 do_menu_key(N):- number(N),N>=300,N=<800,do_test_number(N),!.
 do_menu_key(N):- number(N),N>=800,N=<999,do_indivizer_number(N),!.
+do_menu_key(E):- list_of_indivizers(L),member(E,L), set_indivs_mode(E).
+do_menu_key(E):- list_of_pair_modes(L),member(E,L), set_pair_mode(E).
+do_menu_key(E):- test_suite_list(L),member(E,L), set_test_suite(E).
 
 do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num), number(Num), !, do_test_number(Num),!.
 do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), !, menu_goal(Body).
@@ -318,6 +321,7 @@ do_menu_key(Key):- ground(Key), Key = (TestID>ExampleNum),!,set_example_num(Exam
 do_menu_key(Key):- is_valid_testname(Key), set_current_test(Key),!,
   set_pair_mode(whole_test),skip_if_ansi(show_selected_object).
 do_menu_key(Key):- ground(Key), fix_test_name(Key,TestID),!,do_menu_key(TestID).
+
 
 
 % a Text object
@@ -508,8 +512,8 @@ ndividuator(TestID):- ensure_test(TestID),
 
 ndividuator(TestID,ExampleNum,In,Out):- get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
 ndividuator(TestID,ExampleNum,Complete,In,Out):-  
- name_the_pair(TestID,ExampleNum,In,Out,_PairName),
-  with_test_pairs(TestID,ExampleNum,In,Out, i_pair(Complete,In,Out)).
+ with_indivs_mode(Complete,((name_the_pair(TestID,ExampleNum,In,Out,_PairName),
+  with_test_pairs(TestID,ExampleNum,In,Out, i_pair(Complete,In,Out))))).
 
 show_test_pairs(TestID):- ensure_test(TestID), set_flag(indiv,0),
   with_test_pairs(TestID,ExampleNum,In,Out,
@@ -539,12 +543,13 @@ with_indivs_mode(Mode,Goal):-
 
 
 % Training modes
-first_pair_modes([single_pair,whole_test,entire_suite]).
+list_of_pair_modes([single_pair,whole_test,entire_suite]).
 
-next_pair_mode(M1,M2):- first_pair_modes(List),next_in_list(M1,List,M2).
 
-alt_pair_mode(M1,M2):- first_pair_modes([M1,M2|_]),!.
-alt_pair_mode(_,M1):- first_pair_modes([M1|_]).
+next_pair_mode(M1,M2):- list_of_pair_modes(List),next_in_list(M1,List,M2).
+
+alt_pair_mode(M1,M2):- list_of_pair_modes([M1,M2|_]),!.
+alt_pair_mode(_,M1):- list_of_pair_modes([M1|_]).
 
 was_set_pair_mode(_).
 set_pair_mode(Mode):- luser_setval('$pair_mode',Mode).
@@ -564,7 +569,7 @@ show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), luser_getval(test_suite_
 skip_entire_suite:- never_entire_suite,!,fail.
 never_entire_suite:- ignore((get_pair_mode(entire_suite),set_pair_mode(whole_test))).
 
-:- first_pair_modes([M1|_]),set_pair_mode(M1).
+:- list_of_pair_modes([M1|_]),set_pair_mode(M1).
 
 dont_set_test_cmd(Var):- var(Var),!.
 dont_set_test_cmd(print_test).
@@ -2199,12 +2204,15 @@ indicates_arg1_testid(fix_test_name).
 indicates_arg1_testid(is_valid_testname).
 indicates_arg1_testid(with_test_grids).
 
-uses_test_id(P1):- clauses_predicate(M:F/N,P), \+ indicates_arg1_testid(F),             
+uses_test_id(P1):- clauses_predicate(M:F/N,P), 
+                   once((\+ indicates_arg1_testid(F),             
                    \+ \+ (clause(M:P,GG),first_cmpd_goal(GG,G),compound(G),functor(G,GF,_),
                           \+ \+ indicates_arg1_testid(GF),
                           arg(1,P,Var1),arg(1,G,Var2),Var1==Var2),
                    N1 is N-1, functor(P1,F,N1),
-                   \+ predicate_property(M:P1,static).
+                   \+ predicate_property(M:P1,static))).
 scan_uses_test_id:- forall((uses_test_id(P1),atom(P1)),assertz_if_new(user:(P1:- with_current_test(P1)))).
-:- scan_uses_test_id.
 :- all_source_file_predicates_are_exported.
+
+:- initialization(scan_uses_test_id).
+
