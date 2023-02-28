@@ -67,6 +67,11 @@ o_minus_i(Zero):- current_pair(I,O),mapgrid(cell_minus_cell,O,I,Zero).
 mono_i_minus_o(Zero):- current_pair(I,O),mapgrid(mono_cell_minus_cell,I,O,Zero).
 mono_o_minus_i(Zero):- current_pair(I,O),mapgrid(mono_cell_minus_cell,O,I,Zero).
 
+mono_i_to_o_is_none_some_none:- 
+  mono_i_minus_o(Zero1),no_fg_mass(Zero1),
+  mono_o_minus_i(Zero2),no_fg_mass(Zero2),
+  o_minus_i_equals_some.
+
 individuation_macros(complete, ListO):- 
  must_det_ll((
    im_complete(ListC),
@@ -74,7 +79,10 @@ individuation_macros(complete, ListO):-
    list_to_set(ListM,ListS))),!,
  ListO=ListS.
 
-im_complete(i_to_o_is_none_some_some):- i_minus_o_equals_none,o_minus_i_equals_some,!.
+i_minus_o_equals_none_o_minus_i_equals_some:- i_minus_o_equals_none,o_minus_i_equals_some.
+
+im_complete(i_to_o_is_none_some_some):- i_minus_o_equals_none_o_minus_i_equals_some,!.
+im_complete(mono_i_to_o_is_none_some_none):- mono_i_to_o_is_none_some_none,!.
 im_complete(ListO):- test_config(indiv(ListO)), [i_repair_patterns]\=@= ListO,[i_repair_patterns_f]\=@= ListO,[any]\= ListO,['']\= ListO,''\= ListO,!.
 im_complete(i_complete_generic).
 %im_complete(ListO):- ListO=[nsew,all_lines,diamonds,do_ending].
@@ -89,7 +97,17 @@ mass_gtt(Two,O):- globalpoints(O,GP),length(GP,Len),Len>Two.
 % =====================================================================
 is_fti_step(i_to_o_is_none_some_some).
 % =====================================================================
+
 i_to_o_is_none_some_some(VM):-
+  is_output_vm(VM),!,
+  o_minus_i(NewGrid), 
+  set_vm_grid_now(VM,NewGrid),
+  run_fti(VM,generic_nsew_colormass).
+
+i_to_o_is_none_some_some(VM):-
+ ignore(keypads(VM)),
+ length(VM.points,LenMass),
+ if_t(LenMass>0,
   must_det_ll((
   OObjs = VM.objs,
   o_minus_i(Zero), \+ no_fg_mass(Zero),
@@ -122,7 +140,56 @@ i_to_o_is_none_some_some(VM):-
   points_to_grid(VM.h,VM.v,LeftOver,Grid),
   gset(VM.grid)=Grid,
   print_ss(afterHybrid,Grid,VM.objs),
-  run_fti(VM,generic_nsew_colormass))),!.
+  run_fti(VM,generic_nsew_colormass)))),!.
+
+
+% =====================================================================
+is_fti_step(mono_i_to_o_is_none_some_none).
+% =====================================================================
+mono_i_to_o_is_none_some_none(VM):-
+  is_output_vm(VM),!,
+  run_fti(VM,generic_nsew_colormass).
+
+mono_i_to_o_is_none_some_none(VM):-
+ ignore(keypads(VM)),
+ length(VM.points,LenMass),
+ if_t(LenMass>0,
+  must_det_ll((
+  OObjs = VM.objs,
+  o_minus_i(Zero), \+ no_fg_mass(Zero),
+  grid_to_points(Zero,Points),
+  gset(VM.grid)=Zero,% individuate(i_colormass,Zero,Library),
+  gset(VM.points)=Points,
+  gset(VM.objs)=[],
+  one_fti(VM,colormass),
+  Library1 = VM.objs,
+  gset(VM.objs)=[],
+  remove_background_only_object(Library1,Library2),
+  include(mass_gtt(2),Library2,Library),
+  pp(library=Library),
+  print_grid(library,Library),
+  (Library=[_|_]->maplist(add_shape_lib(pairs),Library);true),
+  OGrid = VM.grid_o,
+  OPoints = VM.points_o,
+  gset(VM.grid)=OGrid,
+  gset(VM.points)=OPoints,
+  print_ss(find_hybrid_shapes,Library,OGrid),
+  find_hybrid_shapes_on(Library,OGrid,RGroup),
+  trace,
+  pp(rgroup=RGroup),
+  gset(VM.objs)=OObjs,
+  trace,
+  maplist(mergeObject(VM),RGroup),
+  %addOGSObjects(VM,RGroup),
+  globalpoints(RGroup,UsedPoints),
+  intersection(OPoints,UsedPoints,_,LeftOver,_),
+  gset(VM.points) = LeftOver,
+  pp(objs = VM.objs),
+  %LeftOver = VM.points,
+  points_to_grid(VM.h,VM.v,LeftOver,Grid),
+  gset(VM.grid)=Grid,
+  print_ss(afterHybrid,Grid,VM.objs),
+  run_fti(VM,generic_nsew_colormass)))),!.
 
   
 
@@ -153,7 +220,9 @@ individuation_macros(i_colormass,[colormass]).
 
 toplevel_individuation(generic_nsew_colormass):- cant_use_intersections.
 individuation_macros(generic_nsew_colormass, 
-[ simple_grids,
+[ keypads,
+  %bigger_grid_contains_other,
+  %maybe_glyphic,
   nsew,
   black_to_zero,
   nsew,nsew_2,colormass_3,
@@ -1314,16 +1383,22 @@ ogs_size_ok(SX,SY,_Mass):- SY=2,SX=2,!.
 ogs_size_ok(_SX,_SY,Mass):- Mass>3,!.
 
 find_hybrid_shapes_on([],_,[]):-!.
+find_hybrid_shapes_on(_Set,Grid,[]):- mass(Grid,GMass), GMass<1,  !.
 find_hybrid_shapes_on(Set,Grid,RGroup):-
- ignore((
-  mass(Grid,GMass), GMass>0,  
   length(Set,Len),
   %Set
   print_grid(find_hybrid_shapes_on(Len),Grid),
-  with_ogs_trace([],
-    findall(ROHOV,
-        ((member(In,Set),maybe_ogs(ROHOV,In,Grid))),ROHOVInS)),
-  !,  ROHOVInS\==[], % unless debugging 
+
+ once((
+       if_t(var(ROHOVInS),
+        ignore((with_ogs_trace([],
+          findall(ROHOV,
+             ((member(In,Set),maybe_ogs([-rul(loose)],ROHOV,In,Grid))),ROHOVInS)),ROHOVInS\==[]))),
+       if_t(var(ROHOVInS),
+        ignore((with_ogs_trace([],
+          findall(ROHOV,
+             ((member(In,Set),maybe_ogs([],ROHOV,In,Grid))),ROHOVInS)),ROHOVInS\==[]))))),
+  ROHOVInS\==[], % unless debugging 
   must_det_ll((
   print_treeified_props(find_hybrid_shapes_on,ROHOVInS),
   if_t(ROHOVInS==[],
@@ -1332,7 +1407,8 @@ find_hybrid_shapes_on(Set,Grid,RGroup):-
 
   maplist(ogs_into_obj(Grid),ROHOVInS,OgsList),
   %globalpoints(OgsList,OgsPoints), print_grid(ogsPoints,OgsPoints), 
-  OgsList = RGroup)))).
+  OgsList = RGroup)).
+
 find_hybrid_shapes_on(_Set,_Grid,[]).
 
 make_fit(OgsList,Grid,RGroup):- 
@@ -3624,7 +3700,8 @@ keypads(VM):-
   grid_size(Keypad,H,V),
   print_ss(keypad(OX,OY,H,V,EX,EY),Grid,Keypad),
   H==3,V==3,
-  %mass(Keypad,Mass),!,Mass==9,
+  mass(Keypad,Mass),!,
+  Mass>=9,Mass=<9,
   grid_to_points(Keypad,LPoints),
   writeg(keypad=Keypad),
   length(LPoints,Len),

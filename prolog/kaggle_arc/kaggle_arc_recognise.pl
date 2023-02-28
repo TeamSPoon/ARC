@@ -122,8 +122,8 @@ all_ogs(R,In,Out):-
 maybe_ogs(ROut,In,Out):- 
    def_ogs_prog(Constr),
     maybe_ogs(Constr,RRR,In,Out),
-    simpl_ogs(RRR,ROut),
-    (member(rul(loose),ROut) -> was_loose_ok(ROut) ; true).
+    simpl_ogs(RRR,ROut).
+    
 %maybe_ogs(ROut,In,Out):- try_ogs_pass_9([plain],ROut,In,Out).
 
 maybe_ogs(Constr,R,In,Out):- var(In),!,maybe_ogs_test_i(In),maybe_ogs(Constr,R,In,Out).
@@ -175,9 +175,18 @@ maybe_ogs_pass_1(Prf,Constr,R,In,Out):- (member(allow(Idea),Constr); idea_for(In
   allowed_in(Idea,Constr), idea_io_goal(Idea,IO,Call),  
   maybe_ogs_pass_2([Idea|Prf],[disallow(Idea)|Constr],IO,Call,R,In,Out).  
 */
-maybe_ogs_pass_1(Prf,_Constr,R,In,Out):- 
-  try_ogs_pass_7(Prf,R,In,Out),
-  ignore(learn_hybrid_shape_board(ogs(R),In)).
+maybe_ogs_pass_1(Prf,Constr,ROut,In,Out):- 
+  try_ogs_pass_7(Prf,ROut,In,Out),
+  meets_contraints(Constr,ROut),
+  ignore(learn_hybrid_shape_board(ogs(ROut),In)).
+
+meets_contraints(-C,R):- !, \+ member(C,R).
+meets_contraints(+C,R):- !, member(C,R).
+meets_contraints([C|Constr],ROut):- !, meets_contraint(C,ROut),meets_contraints(Constr,ROut).
+%meets_contraints([],_ROut):-!.
+meets_contraints(_C,_R).
+
+%(member(rul(loose),ROut) -> was_loose_ok(ROut) ; true),
 
 
 maybe_ogs_pass_2(Prf,Constr,must(IO),Call,R,In,Out):- 
@@ -235,10 +244,14 @@ subst_all_fg_colors_with_vars(Cs,Vs,In,Mid):-
   subst_colors_with_vars(Cs,Vs,InC,Mid),    
   ground(Cs), % fully grounded test
   maplist(cfg,Vs), % constrain to foreground
-  maplist(dif(zero),Vs), % constrain to not zero
+  maplist(dif_violate(zero),Vs), % constrain to not zero
   !.
 
-  
+
+:- use_module(kaggle_arc_ndif).
+dif_violate(X, Y) :- ndif(X,Y).
+
+
 
 is_exit_hook(subst_all_fg_colors_with_vars(Cs,Vs,_In,_Out)):- 
   Cs\=@=Vs, % slightly differnt 
@@ -330,7 +343,7 @@ ogs_r_find(X,Y,R,In,Out):-
   copy_term(In+Out,CIn+COut),
   copy_term(In+Out,DIn+DOut), 
   ogs_11(X,Y,DIn,DOut),(find_ogs(X,Y,CIn,COut)->R=strict;R=loose),  
-  R\==loose,
+  %R\==loose,
   In=CIn,DIn=CIn,
   Out=COut,DOut=COut.
 
@@ -1034,7 +1047,7 @@ constrain_grid(CT,_Trig,[[FC]], Grid1):- CT==f, !,
   Grid1=[[NW,N0,NE],
          [W0,FC,E0],
          [SW,S0,SE]],
- maplist(dif(FC),[NE,NW,SW,SE,N0,S0,E0,W0]).
+ maplist(dif_violate(FC),[NE,NW,SW,SE,N0,S0,E0,W0]).
 /*OLD
 
 constrain_grid(CT,Trig,[[FC]], GridO):- CT==f(Rul), !,   
@@ -1046,16 +1059,16 @@ constrain_grid(CT,Trig,[[FC]], GridO):- CT==f(Rul), !,
          [_ , N1,FG,N3 ,_ ],
          [_ , SW,N2,SE ,_ ],
         [SWL, _, _, _, SEL]],
- maplist(dif(FG),[NE,NW,SW,SE]),
- nop((freeze(Trig,\+ (NE==SW, dif(FG,NE))),
- freeze(Trig,\+ (NW==SE, dif(FG,SE))),
- freeze(Trig,\+ (NW==NWL,dif(FG,NW))),
- freeze(Trig,\+ (SW==SWL,dif(FG,SW))),
- freeze(Trig,\+ (NE==NEL,dif(FG,NE))),
- freeze(Trig,\+ (SE==SEL,dif(FG,SE))),
+ maplist(dif_violate(FG),[NE,NW,SW,SE]),
+ nop((freeze(Trig,\+ (NE==SW, dif_violate(FG,NE))),
+ freeze(Trig,\+ (NW==SE, dif_violate(FG,SE))),
+ freeze(Trig,\+ (NW==NWL,dif_violate(FG,NW))),
+ freeze(Trig,\+ (SW==SWL,dif_violate(FG,SW))),
+ freeze(Trig,\+ (NE==NEL,dif_violate(FG,NE))),
+ freeze(Trig,\+ (SE==SEL,dif_violate(FG,SE))),
  freeze(GridO,(Grid2=GridO;GridO=Grid1)))),
  GridO = Grid2,
- maplist(dif(FG),[N0,N1,N2,N3]),
+ maplist(dif_violate(FG),[N0,N1,N2,N3]),
  freeze(Trig,FC=FG).
 */
 
@@ -1172,7 +1185,7 @@ constrain_dir_ele(CT, Trig,[Dir|SEW],GridIn,H,V,C1I,C1O,GridO):- luser_getval(fi
   get_color_at(H2,V2,GridIn,C2I),
   get_color_at(H2,V2,GridO,C2O),
      \+ is_spec_fg_color(C2I,_),
-     dif(C2O,C1O))),!,
+     dif_violate(C2O,C1O))),!,
   constrain_dir_ele(CT, Trig,SEW,GridIn,H,V,C1I,C1O,GridO).
 */
 
@@ -1187,7 +1200,7 @@ constrain_dir_ele(CT, Trig,[Dir|SEW],GridIn,H,V,C1I,C1O,GridO):-
      count_c_neighbors(C1I,H2,V2,SCN,GridIn),
      sort_safe(SCN,SCNS),
      o_c_n(CT,Dir,DCN,SCNS),     
-     dif(C2O,C1O))),!,
+     dif_violate(C2O,C1O))),!,
   constrain_dir_ele(CT, Trig,SEW,GridIn,H,V,C1I,C1O,GridO).
 
 % o_c_n(CT,Dir,DCN,SCN),     
