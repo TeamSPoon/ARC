@@ -1393,11 +1393,15 @@ find_hybrid_shapes_on(Set,Grid,RGroup):-
        if_t(var(ROHOVInS),
         ignore((with_ogs_trace([],
           findall(ROHOV,
-             ((member(In,Set),maybe_ogs([-rul(loose)],ROHOV,In,Grid))),ROHOVInS)),ROHOVInS\==[]))),
+             ((member(In,Set),maybe_ogs([+rul(strict),+rot2D(sameR)],ROHOV,In,Grid))),ROHOVInS)),ROHOVInS\==[]))),
        if_t(var(ROHOVInS),
         ignore((with_ogs_trace([],
           findall(ROHOV,
-             ((member(In,Set),maybe_ogs([],ROHOV,In,Grid))),ROHOVInS)),ROHOVInS\==[]))))),
+             ((member(In,Set),maybe_ogs([+rul(strict)],ROHOV,In,Grid))),ROHOVInS)),ROHOVInS\==[]))),
+       if_t(var(ROHOVInS),
+        ignore((with_ogs_trace([],
+          findall(ROHOV,
+             ((member(In,Set),maybe_ogs([+rul(loose),+rot2D(sameR)],ROHOV,In,Grid))),ROHOVInS)),ROHOVInS\==[]))))),
   ROHOVInS\==[], % unless debugging 
   must_det_ll((
   print_treeified_props(find_hybrid_shapes_on,ROHOVInS),
@@ -1406,7 +1410,8 @@ find_hybrid_shapes_on(Set,Grid,RGroup):-
       ((ignore((test_ogs_for_ans(fail,find_hybrid_shapes_on,In,Grid)))),itrace))),
 
   maplist(ogs_into_obj(Grid),ROHOVInS,OgsList),
-  %globalpoints(OgsList,OgsPoints), print_grid(ogsPoints,OgsPoints), 
+  globalpoints(OgsList,OgsPoints), 
+  print_grid(ogsPoints,OgsPoints), 
   OgsList = RGroup)).
 
 find_hybrid_shapes_on(_Set,_Grid,[]).

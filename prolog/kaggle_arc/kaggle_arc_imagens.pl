@@ -311,7 +311,7 @@ add_shape_lib(Type,Obj):- add_shape_lib0(Type,Obj).
 add_shape_lib0(Type,Obj):- mass(Obj,Mass),!,
   %dash_chars, print_grid(Obj),
   ( Mass<3 
-   -> nop(pp(too_small_for_shapelib(Type,Mass))) ; (nop(pp(add_shape_lib(Type))),learn_hybrid_shape(Type,Obj))), 
+   -> nop(pp(too_small_for_shapelib(Type,Mass))) ; (nop(pp(add_shape_lib(Type))),learn_hybrid_shape_real(Type,Obj))), 
   %dash_chars,
   !.
 

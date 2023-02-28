@@ -232,7 +232,10 @@ simplify_ornry_node_([H|T], List, U) =>
 %   On unification with a value, we recursively call ndif_c_c/3 using the
 %   existing OrNodes.
 
-attr_unify_hook(varndif(V1,V2),Other) :-
+attr_unify_hook(varndif(V1,V2),Other):-
+  attr_unify_hook_real(varndif(V1,V2),Other).
+
+attr_unify_hook_real(varndif(V1,V2),Other) :-
     (   get_attr(Other, ndif, varndif(OV1,OV2))
     ->  reverse_lookups_n(V1, Other, OrNodes1, NV1),
         ornry_one_fails(OrNodes1),
