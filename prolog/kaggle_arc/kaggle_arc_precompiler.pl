@@ -25,8 +25,8 @@ must_det_ll_maplist(P2,[HA|TA],[HB|TB]):- must_det_ll(call(P2,HA,HB)), must_det_
 
 must_det_ll(G):- arc_html,!, ignore(notrace(G)).
 %must_det_ll(X):- !,must_not_error(X).
-must_det_ll((X,Goal)):- X==trace,!,call(trace,Goal).
-must_det_ll(X):- X==trace,!,trace.
+must_det_ll((X,Goal)):- is_trace_call(X),!,call((itrace,Goal)).
+must_det_ll(X):- is_trace_call(X),!,itrace.
 must_det_ll(X):- nb_current(no_must_det_ll,t),!,call(X).
 must_det_ll(X):- \+ callable(X), !, throw(must_det_ll_not_callable(X)).
 must_det_ll((A*->X;Y)):- !,(must_not_error(A)*->must_det_ll(X);must_det_ll(Y)).
@@ -86,9 +86,9 @@ is_guitracer:- getenv('DISPLAY',_), current_prolog_flag(gui_tracer,true).
 rrtrace(P1,X):- nb_current(cant_rrtrace,t),!,nop((u_dmsg(cant_rrtrace(P1,X)))),!,fail.
 rrtrace(P1,G):- is_cgi,!, u_dmsg(arc_html(rrtrace(P1,G))),call(P1,G).
 rrtrace(P1,X):- notrace, \+ is_guitracer,!,nortrace, /*arcST, sleep(0.5), trace,*/
-   (notrace(\+ current_prolog_flag(gui_tracer,true)) -> call(P1,X); (trace,call(P1,X))).
+   (notrace(\+ current_prolog_flag(gui_tracer,true)) -> call(P1,X); (itrace,call(P1,X))).
 %rrtrace(_,X):- is_guitracer,!,notrace,nortrace,catch(call(call,gtrace),_,true),atrace,call(X).
-rrtrace(P1,X):- trace,!, call(P1,X).
+rrtrace(P1,X):- itrace,!, call(P1,X).
 
 :- meta_predicate(arc_wote(0)).
 arc_wote(G):- with_pp(ansi,wote(G)).
@@ -198,7 +198,9 @@ expand_must_det0([A|B],(AA,BB)):- assertion(callable(A)), assertion(is_list(B)),
   expand_must_det1(A,AA), expand_must_det0(B,BB).
 expand_must_det0(A,AA):- !, expand_must_det1(A,AA).
 
-prevents_expansion(A):- A == trace.
+prevents_expansion(A):- is_trace_call(A).
+is_trace_call(A):- A == trace.
+is_trace_call(A):- A == itrace.
 skip_expansion(A):- A == !.
 expand_must_det1(Var,Var):- \+ callable(Var),!.
 expand_must_det1(Cut,Cut):-  skip_expansion(Cut).

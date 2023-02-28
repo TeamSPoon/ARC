@@ -12,7 +12,7 @@
 :- discontiguous fav/2.
 fav(A,B):- nonvar_or_ci(A),nonvar_or_ci(B), cls1,mmake, asserta(fav(A,B),Ref),!, call_cleanup(arc1(A),erase(Ref)).
 
-fav(v('37d3e8b2'),[dmiles]).
+fav(v('p'),[dmiles]).
 
 fav(v('37d3e8b2'), 
  human(
@@ -20,6 +20,7 @@ fav(v('37d3e8b2'),
    rule(links_count(contains,2),subst_color(fg,red)),
    rule(links_count(contains,3),subst_color(fg,green)),
    rule(links_count(contains,4),subst_color(fg,yellow)))).
+
 fav(t('ea32f347'), 
  human(
    rule(pg(is_fg_object,RANK,_,1),subst_color(fg,blue)),
@@ -2885,7 +2886,6 @@ fav(t('44f52bb0'),[lmDSL(into_monochrome,grid_to_individual(whole),one_obj,resiz
 */
 
 fav(t('f76d97a5'),[indiv([include_black,force_by_color]),was__lmDSL([compute_max_color(C1),compute_next_color(C2),remove_color(C1),subst_color(C2,C1)])]).
-
 fav(t('25d487eb'),[indiv(colormass),ohuman([rocketship])]).
 fav(t('25d487eb'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+color_match,test_suite([train400]),draw_line_from_point,direction_guessing,color_guessing,'(3, 1)']).
 fav(v('762cd429'),[grid_size_same,ohuman(i([shape_lib(filled_squares),delete_rest,shrink_all_to_size(1),tighten_grid_arround_objects])),-rotation_match,-mask_match,+shape_match,+color_match,test_suite([eval400]),'(3, 1) ']).

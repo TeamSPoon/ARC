@@ -10,7 +10,7 @@
 my_len(X,Y):- var(X),!,length(X,Y).
 my_len(X,Y):- is_list(X),!,length(X,Y).
 my_len(X,Y):- functor([_|_],F,A),functor(X,F,A),!,length(X,Y).
-my_len(X,Y):- arcST,!,break.
+my_len(X,Y):- arcST,!,ibreak.
 */
 sort_safe(I,O):- catch(sort(I,O),_,I=O).
 
@@ -266,7 +266,7 @@ my_partition(P1,[H|L],[H|I],E):- \+ \+ p1_call(P1,H),!,
   my_partition(P1,L,I,E).
 my_partition(P1,[H|L],I,[H|E]):- 
    my_partition(P1,L,I,E),!.
-my_partition(P1,H,I,HE):- arcST,break,
+my_partition(P1,H,I,HE):- arcST,ibreak,
   my_partition(P1,[H],I,HE).
 
 my_include(P1,[H|L],O):- (p2_call(p1_call(P1),H,HH)*->(my_include(P1,L,I),O=[HH|I]);my_include(P1,L,O)).
@@ -361,11 +361,11 @@ ppawt(FA):-
 
 
 my_assertion(G):- call(G),!.
-my_assertion(G):- u_dmsg(my_assertion(G)),writeq(goal(G)),nl,!,break.
+my_assertion(G):- u_dmsg(my_assertion(G)),writeq(goal(G)),nl,!,ibreak.
 must_be_free(AllNew):- plain_var(AllNew),!.
-must_be_free(AllNew):- arcST,u_dmsg(must_be_free(AllNew)),break,fail.
+must_be_free(AllNew):- arcST,u_dmsg(must_be_free(AllNew)),ibreak,fail.
 must_be_nonvar(AllNew):- nonvar_or_ci(AllNew),!.
-must_be_nonvar(AllNew):- arcST,u_dmsg(must_be_nonvar(AllNew)),break,fail.
+must_be_nonvar(AllNew):- arcST,u_dmsg(must_be_nonvar(AllNew)),ibreak,fail.
 
 intersection([],LeftOverB,[],[],LeftOverB):-!.
 intersection(LeftOverA,[],[],LeftOverA,[]):-!.

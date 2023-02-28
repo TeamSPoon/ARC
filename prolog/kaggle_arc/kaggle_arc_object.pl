@@ -123,7 +123,7 @@ make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):-
   physical_points(LPoints0,LPoints),
 
   %writeg([gpoints0=GPoints0,lpoints=LPoints,shapePoints(RotG,OX,OY)=ShapePoints]),
-  if_t(ShapePoints==[],break),
+  if_t(ShapePoints==[],ibreak),
   make_localpoints(ShapePoints,RotG,OX,OY,PenColors,_CheckLPoints),
   %sort_safe(LPoints0,LPoints0S),
   %CheckLPoints=LPoints0S,
@@ -1158,7 +1158,7 @@ var_check(I,_):- I==[],!,fail.
 var_check(I,G):- resolve_reference(I,O),I\==O,!,subst001(G,I,O,GG),GG\==G,!,call(GG).
 var_check(I,G):- var(I),!,(enum_object(I)*->G;var_check_throw(I,G)).
 %var_check(I,G):- var(I),!,var_check_throw(I,G).
-var_check_throw(I,G):- var(I),u_dmsg(error(var(G))),!,arcST,u_dmsg(error(var(G))),break,trace_or_throw(maybe_enum_i(I,G)),call(G).
+var_check_throw(I,G):- var(I),u_dmsg(error(var(G))),!,arcST,u_dmsg(error(var(G))),ibreak,trace_or_throw(maybe_enum_i(I,G)),call(G).
 
 object_shapeW(I,X):- compound(I),I=obj(L),!,my_assertion(is_list(L)),!,member(iz(X),L ).
 object_shapeW(I,X):- indv_props(I,iz(X)).
@@ -1315,9 +1315,9 @@ object_grid(Group,List):- is_group(Group),!,override_group(object_grid(Group,Lis
 object_grid(ObjRef,List):- \+ is_object(ObjRef), into_obj(ObjRef,Obj), is_object(Obj), !,object_grid(Obj,List).
 object_grid(I,G):- object_localpoints(I,LP),vis2D(I,H,V),!,points_to_grid(H,V,LP,G),!.
 
-%object_localpoints(obj(I),_):- member(obj(_),I),!,break.
+%object_localpoints(obj(I),_):- member(obj(_),I),!,ibreak.
 /*
-object_localpoints(I,XX):- must_be_free(XX), %stack_check_or_call(3000,(dmsg(stackcheck>3000),break)),
+object_localpoints(I,XX):- must_be_free(XX), %stack_check_or_call(3000,(dmsg(stackcheck>3000),ibreak)),
  must_det_ll((indv_props_list(I,L),
    setup_call_cleanup(flag('$olp',X,X+1),(X<30,object_localpoints0(I,L,XX)),flag('$olp',_,X)),
    is_cpoints_list(XX))),!.
@@ -1586,27 +1586,28 @@ rotSize2D(grav,NT,H,V):-  into_gridoid(NT,G),G\==NT, rotSize2D(grav,G,H,V).
 
 
 %externalize_links(Obj,[link(C,A),EL|More],[link(C,A),elink(C,Ext)|LMore]):- EL\=elink(_,_),externalize_obj(Obj,Other,Ext),!,externalize_links(Obj,[EL|More],LMore).
-externalize_links(obj(Obj),obj(NewObj)):- externalize_links(obj(Obj),Obj,NewObj).
 externalize_links(Objs,NewObjs):- is_group(Objs),!,mapgroup(externalize_links,Objs,NewObjs).
+externalize_links(Obj,NewObj):- is_object(Obj),!,externalize_obj_links(Obj,NewObj),!.
+externalize_links(Objs,Objs):-!.
 
-externalize_links(Obj,[link(C,A)|More],[link(C,Ext)|LMore]):- atom(A),externalize_obj(Obj,A,Ext),!, externalize_links(Obj,More,LMore).
+externalize_obj_links(Obj,NewObj):- indv_props_list(Obj,List),
+  externalize_links(Obj,List,NewList),NewObj=obj(NewList).
+
+externalize_links(Obj,[link(C,A)|More],[elink(C,Ext)|LMore]):- atom(A),externalize_obj(Obj,A,Ext),!, externalize_links(Obj,More,LMore).
 externalize_links(Obj,[A|More],[A|LMore]):-!,externalize_links(Obj,More,LMore).  
 externalize_links(_Obj,A,A).
 
-externalize_obj(A,Other,Ext):- atom(A),oid_to_obj(A,Obj),!,externalize_obj(Obj,Other,Ext).
-externalize_obj(Obj,A,Ext):- atom(A),oid_to_obj(A,Other),!,externalize_obj(Obj,Other,Ext).
 externalize_obj(Obj,Other,Ext):-
-   maplist(externalize_prop(Obj,Other),[giz(glyph),loc2D,vis2D,rot2D,iz(sid),iz(stype),colors],Ext).
+  must_det_ll(( indv_props_list(Obj,O1L),
+   indv_props_list(Other,O2L),
+   maplist(externalize_prop(O1L,O2L),[giz(glyph),loc2D,vis2D,rot2D,iz(sid),iz(stype),colors],Ext))).
 
 %[loc2D,vis2D,rot2D,iz(sid),iz(stype),colors]
-externalize_prop(Obj,Other,Prop,Ext):- 
-  indv_props_list(Obj,O1L),
-  indv_props_list(Other,O2L),
+externalize_prop(O1L,O2L,Prop,Ext):- 
   select_prop(Prop,O1L,P1),
   select_prop(Prop,O2L,P2),
   proportional(P1,P2,Ext),!.
-externalize_prop(_Obj,Other,Prop,Ext):- 
-  indv_props_list(Other,O2L),
+externalize_prop(_O1L,O2L,Prop,Ext):- 
   select_prop(Prop,O2L,Ext),!.
 externalize_prop(_Obj,_Other,Prop,unk(Prop)). 
    

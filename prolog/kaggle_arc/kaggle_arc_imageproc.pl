@@ -369,7 +369,7 @@ set_local_po ints(C,Point,Grid,GridO):- point_t o_hvc(H,V,Old,Point), replace_lo
 %set_local_points([],Grid,Grid):- !.
 %set_local_points([H|T],Grid,GridO):- !, set_local_points(H,Grid,GridM),set_local_points(T,GridM,GridO).
 set_local_points(Point,Grid,GridO):- replace_local_points(Point,_AnyOldColor,Grid,GridO),!.
-set_local_points(Point,Grid,GridO):- arcST,ignore((rrtrace((replace_local_points(Point,_AnyOldColor,Grid,GridO))),break)),!.
+set_local_points(Point,Grid,GridO):- arcST,ignore((rrtrace((replace_local_points(Point,_AnyOldColor,Grid,GridO))),ibreak)),!.
 %set_local_points(Point,Grid,GridO):- set_local_points(,Point,Grid,GridO).
 %set_local_points(Point,Grid,Grid):-  u_dmsg(warn(skip(set_local_points(Point)))).
 

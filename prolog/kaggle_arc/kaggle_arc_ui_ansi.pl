@@ -444,7 +444,7 @@ ppt_no_nl(P):- tersify(P,Q),!,pp_no_nl(Q).
 
 is_toplevel_printing(_):- \+ is_string_output, line_position(current_output,N),  N<2, fail.
 
-pp_no_nl(P):- var(P),!,pp(var_pt(P)),nop((dumpST,break)).
+pp_no_nl(P):- var(P),!,pp(var_pt(P)),nop((dumpST,ibreak)).
 pp_no_nl(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 pp_no_nl(P):- atom(P),atom_contains(P,'~'),!,format(P).
 pp_no_nl(G):- is_vm_map(G), !, write_map(G,'pp').
@@ -453,7 +453,7 @@ pp_no_nl(P):- \+ \+ (( pt_guess_pretty(P,GP),ptw(GP))).
 %pp(P):-!,writeq(P).
 %ptw(P):- quietlyd(p_p_t_nl(P)),!.
 %ptw(_):- nl_if_needed,fail.
-ptw(P):- var(P),!,ptw(var_ptw(P)),nop((dumpST,break)).
+ptw(P):- var(P),!,ptw(var_ptw(P)),nop((dumpST,ibreak)).
 ptw(G):- is_vm_map(G), !, write_map(G,'ptw').
 ptw(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 ptw(P):- p_p_t_no_nl(P),!.
@@ -1215,7 +1215,7 @@ print_side_by_side_msg(Info,G1N1,G2N2):-
   pp_msg_color(Info,TitleColor),
   into_wqs_string(Info,String),
   print_side_by_side_pref(TitleColor,G1,String+N1,_LW,G2,N2),
-  pp(info(Info)).
+  nop(pp(info(Info))).
 
 :- meta_predicate(print_side_by_side(+,+,+,+,+)).
 print_side_by_side(TitleColor,G1,N1,G2,N2):- 
@@ -2193,7 +2193,7 @@ var_dot(63).
 bg_dot(32).
 /* 169	\u00AF 248	\u00AF 216	\u00AF  215 \u00AF  174	\u00AF   */
 %fg_dot(C):- luser_getval(fg_dot,C),integer(C),!.
-%fg_dot(_):- luser_getval(no_rdot,true),luser_setval(no_rdot,false)-> break , fail.
+%fg_dot(_):- luser_getval(no_rdot,true),luser_setval(no_rdot,false)-> ibreak , fail.
 fg_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.
 fg_dot(64).
 %fg_dot(174).

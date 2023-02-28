@@ -421,8 +421,9 @@ is_trimmable_cell(BG,Cell):- \+ \+ BG = Cell, !, BG=Cell.
 is_trimmable_cell(_BG,Cell):- \+ is_fg_color(Cell),!.
 %is_trimmable_cell(_BG,Cell):- attvar(Cell),!,fail.
 
+itrace:- !.
 itrace:- \+ current_prolog_flag(debug,true),!.
-itrace:- nop(if_thread_main(trace)),!.
+itrace:- if_thread_main(trace),!.
 ibreak:- if_thread_main(((trace,break))).
 recolor(_,_):- ibreak.
 

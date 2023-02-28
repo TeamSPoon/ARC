@@ -49,7 +49,7 @@ reduce_op1(PassNo,A^B,OPA^OPB,AA^BB):- !, reduce_op2(PassNo,B^A,OPB^OPA,BB^AA).
 get_reduction_types(Types):- nb_current(grid_reductions,Types),Types\==[],!.
 get_reduction_types([shrink]).
 
-reduce_op1(PassNo,A^B,OP,AA^BB):-  stack_check_or_call(2000,(dmsg(stackcheck>2000),break)),
+reduce_op1(PassNo,A^B,OP,AA^BB):-  stack_check_or_call(2000,(dmsg(stackcheck>2000),ibreak)),
   get_reduction_types(Types),
   reduce_op1_by_size(Types,PassNo,A,OPA,AA),is_grid(AA),
   ensure_reduction_guide(OPA,OPB),

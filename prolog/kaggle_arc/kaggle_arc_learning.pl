@@ -687,9 +687,9 @@ save_rule00(GID,TITLE,IP,OP):-
 is_obj_props(Props):- is_list(Props), Props\==[], \+ is_grid(Props), \+ is_group(Props), \+ is_points_list(Props).
 
 %extend_grp_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
-extend_grp_proplist(Grp,GrpO):- 
-  mapgroup(extend_obj_proplist(Grp),Grp,GrpM),
-  externalize_links(GrpM,GrpO).
+extend_grp_proplist(Grp,GrpO):-
+  must_det_ll((mapgroup(extend_obj_proplist(Grp),Grp,GrpM),
+  externalize_links(GrpM,GrpO))).
   
 
 

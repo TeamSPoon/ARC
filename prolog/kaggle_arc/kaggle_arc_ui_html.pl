@@ -635,7 +635,7 @@ http_debug_console:- current_prolog_flag(xpce,true),
   nodebug,notrace,
   current_output(Out),
   nl(Out),flush_output(Out),
-  attach_console,
+  %attach_console,
   current_input(In),
   current_output(Err),
   set_prolog_IO(In,Out,Err).

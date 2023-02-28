@@ -178,7 +178,7 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   checkgui_tracer:- (getenv('DISPLAY',_) -> catch(call(call,guitracer),_,true) ; catch(call(call,noguitracer),_,true)).
 
   :- if( \+ current_prolog_flag(xpce,true)).
-  :- unsetenv('DISPLAY').
+  %:- unsetenv('DISPLAY').
   :- set_prolog_flag(gui_tracer,false).
   :- endif.
   %:- checkgui_tracer.
@@ -830,7 +830,9 @@ use_gui_debugger:-
 :- luser_default(task,v('1d398264')). 
 :- luser_default(task,v('37d3e8b2')). 
 */
-:- create_group(dmiles,['ea32f347','37d3e8b2','1b60fb0c','1d398264','0d3d703e','626c0bcc','5582e5ca','ea32f347']).
+:- create_group(dmiles,['e41c6fd3','ea32f347','37d3e8b2','1b60fb0c','1d398264','0d3d703e','626c0bcc','5582e5ca','ea32f347',
+                '25d487eb',
+                '32e9702f','f8b3ba0a'  ]).
 %:- noguitracer.
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).
 

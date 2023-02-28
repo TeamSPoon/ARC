@@ -557,7 +557,7 @@ relivant_group(not_has_prop(mass(1))).
 
 unique_fg_color_count_eq_1(Obj):- unique_fg_colors(Obj,II),II=1.
 
-group_prior_objs(Why,ObjsIn,WithPriors):- 
+group_prior_objs(Why,ObjsIn,WithPriors):- fail,
  relivant_divide(RelivantDivide),
  my_partition(RelivantDivide,ObjsIn,FG,BG),
  ((FG\==[],BG\==[])), 
@@ -568,7 +568,7 @@ group_prior_objs(Why,ObjsIn,WithPriors):-
  group_prior_objs(Why,BG,BGWithPriors),
  append(FGWithPriors,BGWithPriors,WithPriors),!. 
 
-group_prior_objs(Why,ObjsIn,WithPriors):- % fail,
+group_prior_objs(Why,ObjsIn,WithPriors):- fail,
  once(combine_same_globalpoints(ObjsIn,Objs)),
  ObjsIn\=@=Objs,!,
  group_prior_objs(Why,ObjsIn,WithPriors).
@@ -856,13 +856,14 @@ ranking_pred(rank2(F1),I,Value):- Prop=..[F1,O1,O2], indv_props_list(I,Ps),membe
 ranking_pred(_F1,I,Value):- mass(I,Value).
 
 has_prop(Prop,Obj):- var(Obj),!, enum_object(Obj),has_prop(Prop,Obj).
-has_prop(Prop,Obj):- is_grid(Obj),grid_props(Obj,Props),!,member(Prop,Props).
+has_prop(Prop,Obj):- is_grid(Obj),!,grid_props(Obj,Props),!,member(Prop,Props).
 has_prop(Prop,Objs):- is_list(Objs),!,forall(member(Obj,Objs),has_prop(Prop,Obj)).
+has_prop(Props,Obj):- is_cons(Obj),!,fail.
+
 has_prop(Prop,ObjRef):- \+ is_object(ObjRef),!,atom(ObjRef),into_obj(ObjRef,Obj),!,has_prop(Prop,Obj).
 
 
 
-has_prop(Props,Obj):- is_list(Props),!,member(Q,Props),has_prop(Q,Obj).
 
 has_prop(Prop,Obj):- var(Prop), !, indv_props_list(Obj,L), member(Prop,L).
 %has_prop(Var,_Obj):- var(Var),!, fail.

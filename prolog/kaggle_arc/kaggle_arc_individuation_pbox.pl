@@ -444,7 +444,7 @@ i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,OUT):- OUT = [Size2
     (Which=@=iborder -> (IsRim=rim_of,rim_of(Inside,OBJ),OH is FX, OV is FY) ;  
      (Which=@=oborder -> (IsRim=rim_of,rim_of(Find,OBJ),OH is FX-1, OV is FY-1) ;  
       (Which=@=inside -> (IsRim=filltype(solid),OBJ=Inside,OH is FX, OV is FY) 
-      ; (writeq(Which),break, OH is FX-0, OV is FY-0)))))),*/
+      ; (writeq(Which),ibreak, OH is FX-0, OV is FY-0)))))),*/
   once(( OBJ \=@=Grid, OBJ \==[],  %CACHE.objFound = OBJ, %CACHE.which = Which, %CACHE.objMade = Obj, %append(SoFarI,[Rec],SoFarMid),
 %  fix_obj(
   OBJ\=Grid,

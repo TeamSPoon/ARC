@@ -191,7 +191,7 @@ make_default_grid(C,H,V,Grid):- ensure_make_grid(H,V,Grid),set_grid_default(C,Gr
 set_grid_default(C,Grid):- mapgrid(ignore_equal(C),Grid).
 
 make_grid(H,V,Grid):- (H<1;V<1),!,u_dmsg(make_grid(H,V,Grid)),!,
-  with_toplevel_pp(ansi,((write('<pre>'),nop(bt),nop(break)))),!,fail.
+  with_toplevel_pp(ansi,((write('<pre>'),nop(bt),nop(ibreak)))),!,fail.
 make_grid(H,V,Grid):- between(1,40,H),between(1,40,V),  % max_min(H,0,HH,_), max_min(V,0,VV,_), %max_min(HH,32,_,HHH),max_min(VV,32,_,VVV),!,    
    ensure_make_grid(H,V,G),G=Grid.
 
@@ -772,7 +772,7 @@ do_texture_hv(GID,HV1):-
 
 ensure_texture(GID):- \+ cmem(GID,_,_), ensure_cmem(GID), fail.
 
-ensure_texture(GID):- \+ cmem(GID,_,_), dmsg(cant_ensure_cmem(GID)),!,break.
+ensure_texture(GID):- \+ cmem(GID,_,_), dmsg(cant_ensure_cmem(GID)),!,ibreak.
 
 %ensure_texture(GID):- \+ ( cmem(GID,HV,_), (( \+ smem(GID,HV,_) ); \+ nmem(GID,HV,_); \+ dmem(GID,HV,_,_,_,_) )),!,
 %  dmsg(cant_ensure_texture(GID)),!. % 

@@ -36,7 +36,7 @@ learn_shapelib(PairName,In,Out,IH,IV,OH,OV):-
 learn_intruders(PairName,In,Out,IH,IV,OH,OV):- nop(learn_intruders(PairName,In,Out,IH,IV,OH,OV)).
 
 rtrace_on_error(Goal):- !, call(Goal),!.
-rtrace_on_error(Goal):- catch(quietly(Goal),E,(notrace,dmsg(E=Goal),break,1==1,rtrace(Goal))).
+rtrace_on_error(Goal):- catch(quietly(Goal),E,(notrace,dmsg(E=Goal),ibreak,1==1,rtrace(Goal))).
 
 :- multifile individuals_from_pair/9.
 :- discontiguous individuals_from_pair/9.

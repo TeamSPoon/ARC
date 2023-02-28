@@ -1847,7 +1847,7 @@ afcFacts(P,L) :- afcFacts(P,true,L).
 
 afcFacts(P,C,L) :- setof_or_nil(P,afcFact(P,C),L).
 
-brake(X) :-  X, break.
+brake(X) :-  X, ibreak.
 
 % % 
 % % 
@@ -1888,7 +1888,7 @@ afcTraceBreak(P,_S) :-
    (pretty_numbervars(P,Pcopy),
     % numbervars(Pcopy,0,_),
     afcPrintf("Breaking on afcAdd(~p)",[Pcopy]),
-    break)
+    ibreak)
    ; true.
 
 afcTraceRem('$pt$'(_,_)) :-
@@ -1904,7 +1904,7 @@ afcTraceRem(P) :-
       ; true),
   (afcSpied(P,-)
    -> (afcPrintf("Breaking on afcRem(~p)",[P]),
-       break)
+       ibreak)
    ; true).
 
 afcIsTraced(P):- afcTraced(P).
@@ -3434,14 +3434,14 @@ update_single_valued_arg(M,M:Pred,N):-!,update_single_valued_arg(M,Pred,N).
 update_single_valued_arg(_,M:Pred,N):-!,update_single_valued_arg(M,Pred,N).
 
 update_single_valued_arg(world,P,N):- !, current_prolog_flag(afc_shared_module,BaseKB), update_single_valued_arg(BaseKB,P,N).
-update_single_valued_arg(M,P,N):- break, \+ clause_b(mtHybrid(M)), trace, clause_b(mtHybrid(M2)),!,
+update_single_valued_arg(M,P,N):- ibreak, \+ clause_b(mtHybrid(M)), trace, clause_b(mtHybrid(M2)),!,
    update_single_valued_arg(M2,P,N).
 
 update_single_valued_arg(M,P,N):- 
   get_assertion_head_arg(N,P,UPDATE),
   is_relative(UPDATE),!,
   dtrace,
-  break,
+  ibreak,
   replace_arg(P,N,OLD,Q),
   must_det_l((clause_u(Q),update_value(OLD,UPDATE,NEW),\+ is_relative(NEW), replace_arg(Q,N,NEW,R))),!,
   update_single_valued_arg(M,R,N).

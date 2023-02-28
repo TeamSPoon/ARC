@@ -79,7 +79,7 @@ test_http_off:-
 menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z_make,fully_train)).
 menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),  \+ arc_html, 
   sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
-menu_cmd1(i,'i','             See the (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,f),ndividuator))).
+menu_cmd1(i,'i','             See the (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,f),each_ndividuator))).
 menu_cmd1(i,'o','                  or (o)bjects found in the input/outputs',                (clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,t),ndividuator))).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',   (cls_z_make,!,ignore(what_unique),ndividuator)).
 menu_cmd1(_,'y','                  or Wh(y) between objects in the input/outputs',   (cls_z_make,!,ndividuator)).
@@ -120,7 +120,7 @@ menu_cmd9(_,'C','(C)lear cached test info,',(clear_training,clear_test)).
 menu_cmd9(_,'r','(r)un DSL code,',(call_dsl)).
 menu_cmd9(_,'Q','(Q)uit Menu,',true).
 menu_cmd9(_,'^q','(^q)uit to shell,',halt(4)). 
-menu_cmd9(_,'D','or (D)ebug/break to interpreter.',(break)).
+menu_cmd9(_,'D','or (D)ebug/break to interpreter.',(ibreak)).
 
 
 menu_cmds(Mode,Key,Mesg,Goal):-menu_cmd1(Mode,Key,Mesg,Goal).
@@ -289,14 +289,9 @@ do_menu_key( ''):- !, fail.
 
 do_menu_key('d'):- !, dump_from_pairmode.
 
-do_menu_key(N):- number(N),N>=300,N=<800,set_pair_mode(entire_suite),fail.
-do_menu_key(N):- number(N),N>=300,N=<800,do_test_number(N),!.
-do_menu_key(N):- number(N),N>=800,N=<999,do_indivizer_number(N),!.
-do_menu_key(E):- list_of_indivizers(L),member(E,L), set_indivs_mode(E).
-do_menu_key(E):- list_of_pair_modes(L),member(E,L), set_pair_mode(E).
-do_menu_key(E):- test_suite_list(L),member(E,L), set_test_suite(E).
+do_menu_key(Numerals):- atom(Numerals), atom_number(Numerals,Num), number(Num), !, do_menu_number(Num),!.
+do_menu_key(Num):- number(Num), !, do_menu_number(Num),!.
 
-do_menu_key(Sel):- atom(Sel), atom_number(Sel,Num), number(Num), !, do_test_number(Num),!.
 do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), !, menu_goal(Body).
 do_menu_key(Key):- atom(Key), menu_cmds(_,Key,_,Body), !, menu_goal(Body).
 do_menu_key(Key):- atom(Key), atom_codes(Key,[Code]), Code<27, CCode is Code + 96, atom_codes(CKey,[94,CCode]),!,do_menu_key(CKey).
@@ -306,14 +301,14 @@ do_menu_key(Key):- atom(Key), atom_length(Key,1), \+ menu_cmd1(_,Key,_,_),
    format('~N~n'), get_pair_mode(Mode), alt_pair_mode(Mode,Alt), !,
      with_pair_mode(Alt,do_menu_key(LowerKey)).
 
-%do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), once(Codes=[27|_];Codes=[_]),format("~N % Menu: '~w' ~q ~n",[Key,Codes]),fail.
-do_menu_key(Key):- atom(Key),atom_concat(' ',Atom,Key),Atom\=='', !,do_menu_key(Atom).
-do_menu_key(Key):- atom(Key),atom_concat(Atom,' ',Key),Atom\=='', !,do_menu_key(Atom).
-do_menu_key(Key):- atom(Key),atom_concat(Atom,'\r',Key),Atom\=='', !,do_menu_key(Atom).
+do_menu_key(Name):- atom(Name), atom_length(Name,N), N>=3,do_menu_name(Name).
+
+%do_menu_key(Atom):- atom(Atom), atom_codes(Atom,Codes), once(Codes=[27|_];Codes=[_]),format("~N % Menu: '~w' ~q ~n",[Atom,Codes]),fail.
+do_menu_key(Text):- atom(Text),atom_concat(' ',Text,Text),Text\=='', !,do_menu_key(Text).
+do_menu_key(Text):- atom(Text),atom_concat(Text,' ',Text),Text\=='', !,do_menu_key(Text).
+do_menu_key(Text):- atom(Text),atom_concat(Text,'\r',Text),Text\=='', !,do_menu_key(Text).
 
 % refering to a Test Suite or Object
-do_menu_key(Key):- test_suite_list(List), member(Key,List), !, 
-  set_test_suite(Key), show_selected_object.
 do_menu_key(Key):- ground(Key), Key = (TestID>ExampleNum*_IO),!,set_example_num(ExampleNum),set_current_test(TestID),
   set_pair_mode(single_pair), click_grid(Key).
 do_menu_key(Key):- ground(Key), Key = (TestID>ExampleNum),!,set_example_num(ExampleNum),set_current_test(TestID),
@@ -321,8 +316,6 @@ do_menu_key(Key):- ground(Key), Key = (TestID>ExampleNum),!,set_example_num(Exam
 do_menu_key(Key):- is_valid_testname(Key), set_current_test(Key),!,
   set_pair_mode(whole_test),skip_if_ansi(show_selected_object).
 do_menu_key(Key):- ground(Key), fix_test_name(Key,TestID),!,do_menu_key(TestID).
-
-
 
 % a Text object
 do_menu_key(Key):- \+ atom(Key), catch(text_to_string(Key,Str),_,fail),Key\==Str,catch(atom_string(Atom,Str),_,fail),
@@ -340,6 +333,14 @@ do_menu_key(Key):- % ls   foo
   maybe_call_code(Key),!.
 
 do_menu_key(Key):- atom(Key),atom_codes(Key,Codes),!,debuffer_atom_codes(Key,Codes),!.
+
+do_menu_name(E):- list_of_indivizers(L),member(E,L),!, set_indivs_mode(E).
+do_menu_name(E):- list_of_pair_modes(L),member(E,L),!, set_pair_mode(E).
+do_menu_name(E):- test_suite_list(L),member(E,L),!, set_test_suite(E).
+
+do_menu_number(N):- N>=300,N=<800,set_pair_mode(entire_suite),fail.
+do_menu_number(N):- N>=300,N=<800,do_test_number(N),!.
+do_menu_number(N):- N>=800,N=<999,do_indivizer_number(N),!.
 
 debuffer_atom_codes(_Key,[27|Codes]):- append(Left,[27|More],Codes),
   atom_codes(Key1,[27|Left]),atom_codes(Key2,[27|More]),!,
@@ -505,10 +506,57 @@ rtty:- with_tty_raw(rtty1).
 rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 
 
+each_ndividuator(TestID):- ensure_test(TestID),
+  check_for_refreshness,
+  nop(show_test_grids), set_flag(indiv,0),
+  compile_and_save_test,
+  findall(PairGroups,
+  with_luser(use_individuated_cache,true,
+    (with_test_pairs(TestID,ExampleNum,In,Out,
+         once(each_ndividuator(TestID,ExampleNum,In,Out,PairGroups))))),
+   AllPairGroups),
+  call_list(AllPairGroups).
+
+call_list(List):-is_list(List),!,maplist(call_list,List).
+call_list(Goal):-ignore(Goal).
+
+
+get_each_ndividuator(Complete):-!,get_indivs_mode(Complete).
+get_each_ndividuator(Complete):-
+  findall(Complete,((toplevel_individuation(TL),Complete=[TL,do_ending]);get_indivs_mode(Complete)),List),
+  list_to_set(List,Set),!,member(Complete,Set).
+
+each_ndividuator(TestID,ExampleNum,In,Out, OUTPUT):- 
+ name_the_pair(TestID,ExampleNum,In,Out,PairName), 
+ findall(pair_result(PairName,Complete,InC,OutC),
+  (get_each_ndividuator(Complete),
+   with_indivs_mode(Complete,((
+    with_test_pairs(TestID,ExampleNum,In,Out, 
+     ((  w_section(individuate_pair_debug(Complete),
+          must_det_ll((
+           once(individuate_pair(Complete,In,Out,InC,OutC)))))))))))),PairGroups),
+
+  OUTPUT= [dash_chars,dash_chars,dash_chars,dash_chars,
+        print_side_by_side(each_ndividuator(PairName),In,Out),dash_chars,dash_chars|PairGroups].
+
+
+pair_result(PairName,Complete,InC,OutC):-   
+   print_side_by_side(pair_result(PairName,Complete),InC,OutC),
+   w_section(pair_result_objects(PairName,Complete),
+     (maplist(show_i(in),InC), dash_chars, maplist(show_i(out),OutC),dash_chars)),
+   !.
+
+show_i(Y,O):- 
+  global_grid(O,GG),
+  object_grid(O,OG),
+  tersify(O,OT),
+  wots(S,(write(Y),write(' '),write(OT))),
+  print_ss(S,GG,OG).
+
 ndividuator(TestID):- ensure_test(TestID),
- never_entire_suite,nop(show_test_grids), set_flag(indiv,0),
- compile_and_save_test(TestID),
- with_test_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)).
+  never_entire_suite,nop(show_test_grids), set_flag(indiv,0),
+  compile_and_save_test(TestID),
+  with_test_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)).
 
 ndividuator(TestID,ExampleNum,In,Out):- get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
 ndividuator(TestID,ExampleNum,Complete,In,Out):-  
@@ -627,10 +675,12 @@ testspec_to_pairs(TestSpec,TestID,ExampleNum,I,O):-
   ensure_test(TestID),kaggle_arc_safe(TestID,ExampleNum,I,O).
   %test_pairs(TestID,ExampleNum,I,O).
 
+for_each(Gen,Goal):-
+  Gen,(Goal*->true;true).
 
 with_test_pairs(TestID,ExampleNum,I,O,P):-
- forall(must_det_ll(test_pairs(TestID,ExampleNum,I,O)),
-   my_menu_call((
+ for_each(must_det_ll(test_pairs(TestID,ExampleNum,I,O)),
+  my_menu_call((
     ensure_test(TestID),
     set_example_num(ExampleNum),     
      set_current_pair(I,O),

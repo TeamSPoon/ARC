@@ -52,8 +52,8 @@ clsbake:- nop(clsmake).
 
 compile_and_save_test:- update_and_fail,fail.
 compile_and_save_test:- get_pair_mode(entire_suite),!,clsbake, forall_count(all_arc_test_name(TestID),time(compile_and_save_test(TestID))).
-compile_and_save_test:- get_current_test(TestID),time(compile_and_save_test(TestID)),detect_all_training_hints.
-  
+compile_and_save_test:- get_current_test(TestID),time(compile_and_save_test(TestID)),!,  
+  detect_all_training_hints,!.
 
 gen_gids:- u_dmsg(start(gen_gids)),forall(all_arc_test_name(TestID),gen_gids(TestID)),u_dmsg(end(gen_gids)).
 gen_gids(Mask):-
@@ -89,6 +89,7 @@ compile_and_save_test_now(TestID):-
       nop(individuate_pairs_from_hints(TestID)),
       %train_test(TestID,train_using_io),  
       %print_hybrid_set,
+      save_alt_grids(TestID),
       save_supertest(TestID))))).
 
 
@@ -456,20 +457,20 @@ add_xform_maybe(In1,Out1):- ignore(get_current_test(TestID)),
                                         retractall(ThatXForm),retractall(NewXForm),asserta(NewXForm))
                      ; asserta(ThisXForm)))),!.
                     
-add_hint(TestID,Hints,N):- 
-  hint_functor(Hints,F),hint_into_data(Hints,D), assert_test_property(TestID,gh(N),F,D).
+add_hint(TestID,ExampleNum,Hints):- 
+  hint_functor(Hints,F),hint_into_data(Hints,D), assert_test_property(TestID,ExampleNum,F,D).
 
-assert_test_property(TestID,GHN,Prop,Data):-
-  arc_assert(arc_test_property(TestID,GHN,Prop,Data)).
+assert_test_property(TestID,ExampleNum,Prop,Data):-
+  arc_assert(arc_test_property(TestID,ExampleNum,Prop,Data)).
   
-  % forall((kaggle_arc_io(TestID,(trn+N),in,Out1),N2 is N+1,  (kaggle_arc_io(TestID,(trn+N2),in,Out2)->true;kaggle_arc_io(TestID,(trn+0),in,Out2)),  grid_hint_recolor(i-i,Out1,Out2,Hints)),add_hint(TestID,Hints,N)).
+  % forall((kaggle_arc_io(TestID,ExampleNum,in,Out1),N2 is N+1,  (kaggle_arc_io(TestID,(trn+N2),in,Out2)->true;kaggle_arc_io(TestID,(trn+0),in,Out2)),  grid_hint_recolor(i-i,Out1,Out2,Hints)),add_hint(TestID,Hints,N)).
 
 
 /*
 compute_and_show_test_hints(TestID):- format('~N'),
-  findall(Hints-N,(kaggle_arc(TestID,(trn+N),In,Out), grid_hint_swap(i-o,In,Out,Hints)),HintsIO),
-  findall(Hints-N,(kaggle_arc_io(TestID,(trn+N),in,In1),  N2 is N+1, (kaggle_arc_io(TestID,(trn+N2),in,In2)->true;kaggle_arc_io(TestID,(trn+0),in,In2)), grid_hint_recolor(i-i,In1,In2,Hints)),HintsII),
-  findall(Hints-N,(kaggle_arc_io(TestID,(trn+N),out,Out1),N2 is N+1, (kaggle_arc_io(TestID,(trn+N2),out,Out2)->true;kaggle_arc_io(TestID,(trn+0),out,Out2)), grid_hint_recolor(o-o,Out1,Out2,Hints)),HintsOO),
+  findall(Hints-N,(kaggle_arc(TestID,ExampleNum,In,Out), grid_hint_swap(i-o,In,Out,Hints)),HintsIO),
+  findall(Hints-N,(kaggle_arc_io(TestID,ExampleNum,in,In1),  N2 is N+1, (kaggle_arc_io(TestID,(trn+N2),in,In2)->true;kaggle_arc_io(TestID,(trn+0),in,In2)), grid_hint_recolor(i-i,In1,In2,Hints)),HintsII),
+  findall(Hints-N,(kaggle_arc_io(TestID,ExampleNum,out,Out1),N2 is N+1, (kaggle_arc_io(TestID,(trn+N2),out,Out2)->true;kaggle_arc_io(TestID,(trn+0),out,Out2)), grid_hint_recolor(o-o,Out1,Out2,Hints)),HintsOO),
   append([HintsIO,HintsOO,HintsII],Hints),
   keysort(Hints,SHints),  
   maplist(aquire_hints(TestID,SHints),SHints),
@@ -489,11 +490,11 @@ compute_and_show_test_hints1(TestID):- ensure_test(TestID),format('~N'),
   format('~N').
 
 list_common_props_so_far(TestID):-
- (\+ arc_test_property(TestID,gh(_),_,_) -> compute_all_test_hints(TestID); true),
+ (\+ arc_test_property(TestID,trn+_,_,_) -> compute_all_test_hints(TestID); true),
  findall(F=Common,
-  (arc_test_property(TestID,gh(0),F,_),
+  (arc_test_property(TestID,trn+0,F,_),
     retractall(arc_test_property(TestID,common,F,_)),
-    (( findall(Data,arc_test_property(TestID,gh(_),F,Data),Commons),
+    (( findall(Data,arc_test_property(TestID,(trn+_),F,Data),Commons),
       once((some_min_unifier(Commons,Common),nonvar(Common))))),
       arc_assert(arc_test_property(TestID,common,F,Common))),FComs),
   sort_safe(FComs,SComs),
@@ -534,7 +535,7 @@ op_op(P2a,P2b,I,O):- call(P2a,I,II),call(P2a,O,OO),call(P2b,II,OO),!.
 
 v_area(I,Size):- vis2D(I,IH,IV), Size is IH * IV.
 
-%compute_all_test_hints(TestID):- arc_test_property(TestID,gh(1),PP,_),sub_var(i-i,PP),!.
+%compute_all_test_hints(TestID):- arc_test_property(TestID,(trn+1),PP,_),sub_var(i-i,PP),!.
 compute_all_test_hints(TestID):- ensure_test(TestID), in_smaller_than_out(TestID),!,
   compute_test_ii_hints(TestID),
   compute_test_oo_hints(TestID),
@@ -547,31 +548,35 @@ compute_all_test_hints(TestID):-
 
 compute_test_io_hints(TestID):- 
   forall(
-    kaggle_arc(TestID,(trn+N),In,Out), 
-     maybe_compute_test_io_hints(i-o,TestID,N,In,Out)).
+    kaggle_arc(TestID,ExampleNum,In,Out), 
+     maybe_compute_test_io_hints(i-o,TestID,ExampleNum,In,Out)).
 
-%maybe_compute_test_io_hints(_,TestID,N,_,_):- arc_test_property(TestID,_,_-N),!.
-maybe_compute_test_io_hints(IO,TestID,N,In,Out):-
+%maybe_compute_test_io_hints(_,TestID,ExampleNum,_,_):- arc_test_property(TestID,_,_-N),!.
+maybe_compute_test_io_hints(IO,TestID,ExampleNum,In,Out):-
     ignore(add_xform_maybe(In,Out)),
-      forall(grid_hint_swap_io(IO,In,Out,Hints),add_hint(TestID,Hints,N)).
+      forall(grid_hint_swap_io(IO,In,Out,Hints),add_hint(TestID,ExampleNum,Hints)).
+
+next_example_num(TestID,Example+Num,Example+Num2):- Num2 is Num+1,
+  kaggle_arc_io(TestID,Example+Num2,_,_),!.
+next_example_num(_TestID,Example+_,Example+0).
 
 compute_test_oo_hints(_):- !.
 compute_test_oo_hints(TestID):- 
   forall(
-    kaggle_arc_io(TestID,(trn+N),out,Out1), 
-     (N2 is N+1, (kaggle_arc_io(TestID,(trn+N2),out,Out2)->true;kaggle_arc_io(TestID,(trn+0),out,Out2)),
-      maybe_compute_test_oo_hints(TestID,N,Out1,Out2))),!.
+    kaggle_arc_io(TestID,ExampleNum,out,Out1), 
+     (next_example(TestID,ExampleNum,ExampleNum2), kaggle_arc_io(TestID,ExampleNum2,out,Out2),
+      maybe_compute_test_oo_hints(TestID,ExampleNum,Out1,Out2))),!.
 
-  maybe_compute_test_oo_hints(TestID,N,Out1,Out2):- forall(grid_hint_recolor(o-o,Out1,Out2,Hints),add_hint(TestID,Hints,N)).
+  maybe_compute_test_oo_hints(TestID,ExampleNum,Out1,Out2):- forall(grid_hint_recolor(o-o,Out1,Out2,Hints),add_hint(TestID,ExampleNum,Hints)).
 
 compute_test_ii_hints(_):-!.
 compute_test_ii_hints(TestID):- 
   forall(
-    kaggle_arc_io(TestID,(trn+N),in,In1), 
-     (N2 is N+1, (kaggle_arc_io(TestID,(trn+N2),in,In2)->true;kaggle_arc_io(TestID,(tst+0),in,In2)),
-      maybe_compute_test_ii_hints(TestID,N,In1,In2))),!.
+    kaggle_arc_io(TestID,ExampleNum,in,In1), 
+     (next_example(TestID,ExampleNum,ExampleNum2), kaggle_arc_io(TestID,ExampleNum2,in,In2),
+      maybe_compute_test_ii_hints(TestID,ExampleNum,In1,In2))),!.
 
-  maybe_compute_test_ii_hints(TestID,N,Out1,Out2):- forall(grid_hint_recolor(i-i,Out1,Out2,Hints),add_hint(TestID,Hints,N)).
+  maybe_compute_test_ii_hints(TestID,ExampleNum,Out1,Out2):- forall(grid_hint_recolor(i-i,Out1,Out2,Hints),add_hint(TestID,ExampleNum,Hints)).
 
 
 %ptv(T):- p_p_t_no_nl(T),!.
@@ -684,13 +689,13 @@ min_list_unifier(_,_,_):-!.
 %min_unifier(A,B,C):- is_list(B), is_list(A), length(B,L), length(A,L), length(C,L).
 
 grid_hint_swap(IO,In,Out):-
- ignore(kaggle_arc(TestID,trn+N,In,Out)),
- w_section(title(grid_hint_swap(IO,TestID>trn+N)),
- (maybe_compute_test_io_hints(IO,TestID,N,In,Out),
-   ignore(print_single_pair(TestID,trn+N,In,Out)),
+ ignore(kaggle_arc(TestID,ExampleNum,In,Out)),
+ w_section(title(grid_hint_swap(IO,TestID>ExampleNum)),
+ (maybe_compute_test_io_hints(IO,TestID,ExampleNum,In,Out),
+   ignore(print_single_pair(TestID,ExampleNum,In,Out)),
    with_li_pre(((format('~N%% ~w: ',[IO])),!,
-     forall((arc_test_property(TestID,gh(N),P,V)),
-       ptv1(magenta+cyan,P=V)))))).
+     forall((arc_test_property(TestID,ExampleNum,P,V)),
+       ignore((  ( \+ ((is_grid(V), grid_size(V,XX,YY), (XX>3;YY>3)))), ptv1(magenta+cyan,P=V)))))))).
 
 
 grid_hint_swap_io(IO,In,Out,Hints):-  grid_hint_recolor(IO,In,Out,Hints).
@@ -700,6 +705,8 @@ grid_hint_swap_io(I-O,In,Out,rev(Hints)):- I\==O,
  Hints \= mono(comp(_,o-i,value(=@=))).
 
 grid_hint_recolor(_IO,_In,_Out,is_grid_hint). 
+
+
 grid_hint_recolor(IO,In,Out,Hints):- get_black(Black), grid_hint_io(cbg(Black),IO,In,Out,Hints).
 %grid_hint_recolor(IO,In,Out,ogs_hint(IO,Hints)):-  all_ogs(Hints,Out,In), Hints\==[].
 grid_hint_recolor(IO,In,Out,mono(Hints)):- arc_option(scan_mono_hints), % fail,
@@ -1065,6 +1072,75 @@ illegal_column_data(In,Color,BorderNums):-
   nth1(NthMore,In,Row2),
   (member(C1,Row2),member(C2,Row1)),
   C1 == C2, C1 == Color,!.
+
+
+
+
+save_alt_grids(TestID):- ensure_test(TestID),
+  save_the_alt_grids(TestID).
+  
+save_the_alt_grids(TestID):- 
+  forall(kaggle_arc(TestID,ExampleNum,I,O),
+    once(save_the_alt_grids(TestID,ExampleNum,[],I,O))).
+
+save_the_alt_grids(TestID,ExampleNum):-
+  arc_test_property(TestID,ExampleNum,has_blank_alt_grid,_),!.
+save_the_alt_grids(TestID,ExampleNum):- 
+  forall(kaggle_arc(TestID,ExampleNum,I,O),
+    once(save_the_alt_grids(TestID,ExampleNum,[],I,O))).
+
+
+
+save_the_alt_grids(TestID,ExampleNum,_,_,_):- arc_test_property(TestID,ExampleNum,iro(_),_),!.
+save_the_alt_grids(TestID,ExampleNum,XForms,In,Out):-
+  same_sizes(In,Out),!,
+  maplist(save_cell_calc(TestID,ExampleNum,XForms,In,Out),
+     [fg_intersectiond,fg_intersectiond_mono,cell_minus_cell,mono_cell_minus_cell]),
+  ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!.
+save_the_alt_grids(TestID,ExampleNum,XForms,In,Out):-
+  some_norm(In,OpI,NIn), some_norm(Out,OpO,NOut), 
+  once(NIn\=@=In;NOut\=@=Out),
+  same_sizes(NIn,NOut),!,
+  save_the_alt_grids(TestID,ExampleNum,[ops(OpI,OpO)|XForms],NIn,NOut).
+save_the_alt_grids(TestID,ExampleNum,_XForms,In,Out):- 
+  assert_test_property(TestID,ExampleNum,iro(none),In),
+  assert_test_property(TestID,ExampleNum,ori(none),Out),!.
+  
+
+%32e9702f
+
+save_cell_calc(TestID,ExampleNum,XForms,In,Out,Op):-  
+  mapgrid(Op,In,Out,RIO), mapgrid(Op,Out,In,ROI),!,
+  assert_test_property(TestID,ExampleNum,iro([Op|XForms]),RIO),
+  assert_test_property(TestID,ExampleNum,ori([Op|XForms]),ROI),
+  print_ss(no(Op,TestID,ExampleNum,XForms),RIO,ROI).
+
+  
+
+same_sizes([I|In],[O|Out]):- length(I,Cols),length(O,Cols),length(In,Rows0),length(Out,Rows0).
+
+some_norm(Out,[],Out).
+some_norm(Out,[trim_to_rect|Op],NOut):- trim_to_rect(Out,Mid),Out\==Mid,some_norm(Out,Op,NOut).
+some_norm(Out,[grav_rot(Rot)|Op],NOut):- grav_rot(Out,Rot,Mid),Out\==Mid,some_norm(Out,Op,NOut).
+
+has_blank_alt_grid(TestID,ExampleNum):- blank_alt_grid_count(TestID,ExampleNum,N),N>0.
+
+blank_alt_grid_count(TestID,ExampleNum,N):-
+  arc_test_property(TestID,ExampleNum,has_blank_alt_grid,N),!.
+blank_alt_grid_count(TestID,ExampleNum,N):- 
+  save_the_alt_grids(TestID,ExampleNum),
+  findall(_,(alt_grids(TestID,ExampleNum,_,ROI),once(mass(ROI,Mass)),Mass=0),L),length(L,N),!,
+  assert_test_property(TestID,ExampleNum,has_blank_alt_grid,N),
+  ignore((N==0,
+    retractall(arc_test_property(TestID,ExampleNum,iro([_|_]),_)),
+    retractall(arc_assert_test_property(TestID,ExampleNum,ori([_|_]),_)),
+    dmsg(warn(noBlankFor(TestID,ExampleNum))))).
+
+
+alt_grids(TestID,ExampleNum,Name,ROI):- arc_test_property(TestID,ExampleNum,Name,ROI),is_grid(ROI).
+alt_grids(TestID,ExampleNum,Name,RIO,ROI):- 
+  arc_test_property(TestID,ExampleNum,iro([Name|_]),RIO),
+  arc_test_property(TestID,ExampleNum,ori([Name|_]),ROI).
 
 
 :- include(kaggle_arc_footer).
