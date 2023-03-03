@@ -165,8 +165,9 @@ arc_portray_pair_optional(Ps,K,Val,TF):-
 arc_portray(G):- is_vm(G), !, write('..VM..').
 arc_portray(G):- \+ nb_current(arc_portray,t),\+ nb_current(arc_portray,f),is_print_collapsed,!, locally(nb_setval(arc_portray,t),arc_portray(G)).
 arc_portray(G):- \+ nb_current(arc_portray,f),!, locally(nb_setval(arc_portray,t),arc_portray(G)).
-arc_portray(G):- compound(G), \+ \+ catch(((tracing->arc_portray(G,true);
-  arc_portray(G,false)),ttyflush),E,(fail,format(user_error,"~N~q~n",[E]),fail)).
+arc_portray(G):- compound(G), \+ \+ 
+  setup_call_cleanup(flag(arc_portray_current_depth,X,X+1),catch(((tracing->arc_portray(G,true);
+  arc_portray(G,false)),ttyflush),E,(fail,format(user_error,"~N~q~n",[E]),fail)),flag(arc_portray_current_depth,_,X)).
 
   
 
@@ -504,11 +505,17 @@ lock_doing(Lock,G,Goal):-
 never_let_arc_portray_again:- set_prolog_flag(never_pp_hook, true),!.
 arc_can_portray:- \+ current_prolog_flag(never_pp_hook, true), nb_current(arc_can_portray,t).
 
-user:portray(Grid):- \+ current_prolog_flag(never_pp_hook, true), nb_current(arc_can_portray,t), 
+arcp:will_arc_portray:- 
+   \+ current_prolog_flag(never_pp_hook, true), 
+   \+ nb_current(arc_can_portray,f),
+   %nb_current(arc_can_portray,t), 
    current_prolog_flag(debug,false),
-    \+ tracing,
-   \+ nb_current(arc_can_portray,nil),
-   current_predicate(bfly_startup/0), \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!, flush_output.
+   \+ tracing,
+   flag(arc_portray_current_depth,X,X),X<3,
+   current_predicate(bfly_startup/0).
+
+user:portray(Grid):-
+  arcp:will_arc_portray, \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!, flush_output.
 
 
 pp_hook_g(S):- term_is_ansi(S), !, write_keeping_ansi_mb(S).

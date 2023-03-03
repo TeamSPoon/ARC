@@ -203,7 +203,7 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   
   :- set_prolog_flag(last_call_optimisation,false).
   %:- set_prolog_flag(trace_gc,false).
-  :- set_prolog_flag(write_attributes,dots).
+  %:- set_prolog_flag(write_attributes,dots).
   :- set_prolog_flag(backtrace_depth,1000).
  
 
