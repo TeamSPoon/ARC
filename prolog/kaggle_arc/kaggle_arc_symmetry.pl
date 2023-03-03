@@ -131,7 +131,7 @@ is_grid_symmetricD(Grid):- flipSym_checks(flipD,Grid),
 vm_for_grid(Grid,VM):- vm_for_grid(Grid,_,_,VM).
 vm_for_grid(Grid,ID,Out,VM):- fail,
   peek_vm(grid,VMGrid), VMGrid == Grid,!,
-  Out = VM.grid_target, ID = VM.id.
+  Out = VM.target_grid, ID = VM.id.
 vm_for_grid(Grid,IDO,Out,VM):-
   grid_to_tid(Grid,ID),
   into_fti(ID,in_out,Grid,VM),
@@ -142,7 +142,7 @@ vm_for_grid(Grid,IDO,Out,VM):-
 
     ignore((IO==in,kaggle_arc_io_trn(TestID,Example+Num,out,Out),
             set(VM.id) = (TestID>(Example+Num)*IO),
-       nop(Example\==tst),set(VM.grid_target)=Out)))),
+       nop(Example\==tst),set(VM.target_grid)=Out)))),
   IDO = VM.id .
 
 
@@ -172,7 +172,7 @@ repair_symmetry(Grid):- is_grid(Grid),!,
   kaggle_arc_io_trn(TestID,Example+Num,IO,Grid),
   set_current_test(TestID),
   if_t(IO==in,kaggle_arc_io_trn(TestID,Example+Num,out,Out)),
-  (Example==tst->set(VM.grid_target)=_;set(VM.grid_target)=Out),
+  (Example==tst->set(VM.target_grid)=_;set(VM.target_grid)=Out),
   %\+ is_monotrim_symmetric(Grid), is_monotrim_symmetric(Out),
   format('~N'), dash_chars,
   u_dmsg(begin_test(ID)),
@@ -181,7 +181,7 @@ repair_symmetry(Grid):- is_grid(Grid),!,
   if_t(is_need(TestID),u_dmsg(is_need(TestID))),
   if_t(is_hard(TestID),u_dmsg(is_hard(TestID))),!,
   ignore(time(repair_symmetry_code(Grid,_,_))),
-  set(VM.grid_target)=_.
+  set(VM.target_grid)=_.
 
 
 test_repair_symmetry:-
@@ -494,9 +494,9 @@ glean_grid_patterns(VM):-
   localpoints_include_bg(Repaired,RepairedPoints),
   localpoints_include_bg(Grid,OriginalPoints),
   intersection(OriginalPoints,RepairedPoints,_Retained,NeededChanged,_Changes),
-  % QueuedPoints = VM.points,
+  % QueuedPoints = VM.lo_points,
   % points that NeededChanged must be processed as if something special occluded it
-  set(VM.points) = NeededChanged,
+  set(VM.lo_points) = NeededChanged,
   set(VM.grid) = Repaired,
 %  addObjects(VM,ColorObj).
   addProgramStep(VM,Steps).
@@ -684,7 +684,7 @@ is_fti_step(diff_repaired).
 % =====================================================================
 diff_repaired(RepairedResult,VM):-
  must_det_ll((
-  localpoints_include_bg(VM.grid_o,OriginalPoints),
+  localpoints_include_bg(VM.start_grid,OriginalPoints),
   localpoints_include_bg(RepairedResult,RepairedPoints),
   intersection(OriginalPoints,RepairedPoints,Unchanged,NeededChanged,ChangedPoints),  
   H = VM.h, V = VM.v,
@@ -705,8 +705,8 @@ column_or_row(Grid,Color):- rot90(Grid,Grid0),!,member(Row,Grid0), maplist(==(Co
 
 if_target(Out,Goal):- nonvar(Out),!,call(Goal).
 if_target(Out,Goal):- (peek_target(Out)->call(Goal);true).
-%peek_target(Out):- is_grid(Out), set_vm(grid_target,Out).
-peek_target(Out):- peek_vm(grid_target,Out),is_grid(Out).
+%peek_target(Out):- is_grid(Out), set_vm(target_grid,Out).
+peek_target(Out):- peek_vm(target_grid,Out),is_grid(Out).
 peek_target_or_else(Grid,Out):- peek_target(Out)->true;Grid=Out.
 contains_color(Color,Out):- unique_colors(Out,Colors),member(Color,Colors).
 
@@ -1422,8 +1422,8 @@ repair_2x2(Ordered,Steps,Grid,RepairedResult):-
 
   
 
-  gset(VM.points) = [],
-  OriginalPoints = VM.points_o,
+  gset(VM.lo_points) = [],
+  OriginalPoints = VM.start_points,
   include(was_color(Cs),OriginalPoints,NeededChanged),  
   %gset(VM.neededChanged)=NeededChanged,make_indiv_object(VM,[iz(neededChanged),iz(flag(hidden))],NeededChanged,ColorObj),!, addObjects(VM,ColorObj),
   set_vm_obj(neededChanged,[iz(media(image))],NeededChanged),  
@@ -2012,7 +2012,7 @@ all_bg(Pattern):- get_bgc(BG),is_all_color(BG,Pattern).
 is_all_color(BG,Pattern):- is_list(Pattern),!,maplist(is_all_color(BG),Pattern).
 is_all_color(BG,Pattern):- Pattern=@=BG.
 
-%fti(VM,[show_colorfull_idioms|set(VM.program_i)]):- ignore(show_colorfull_idioms(VM.grid)).
+%fti(VM,[show_colorfull_idioms|set(VM.lo_program)]):- ignore(show_colorfull_idioms(VM.grid)).
 is_fti_step(show_colorfull_idioms).
 show_colorfull_idioms(G):- ignore(find_colorfull_idioms(G)),!.
 

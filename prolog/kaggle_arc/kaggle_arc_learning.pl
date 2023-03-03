@@ -145,7 +145,7 @@ started_is_list(X):- nonvar(X), X = [_,_].
 
 not_used(Var):- var(Var),!,fail.
 not_used(/*b*/iz(indiv(_))).
-%not_used(X):- sub_term(E,X),atom(E),is_nc_point(E),!.
+%not_used(X):- sub_term(E,X),atom(E),is_ncpoint(E),!.
 not_used(X):- sub_term(E,X),compound(E),ground(E),E=info(_).
 not_used(giz(_)).
 %not_used(link(_,_,_)).
@@ -315,7 +315,7 @@ train_io_from_hint(TestID,ExampleNum,InVM):-
     kaggle_arc_io(TestID,ExampleNum,in,InGrid),
    (var(InVM) -> into_fti(TestID>ExampleNum*in,in_out,InGrid,InVM) ; true),
     gset(InVM.grid) = InGrid,
-    gset(InVM.grid_target) = ExpectedOut,
+    gset(InVM.target_grid) = ExpectedOut,
     do_sols_for(_All,"Do Training",InVM,TestID,ExampleNum))),
   confirm_train_io_from_hint(TestID,ExampleNum).
 
@@ -326,7 +326,7 @@ confirm_train_io_from_hint(TestID,ExampleNum):-
     kaggle_arc_io(TestID,ExampleNum,in,InGrid),
    (var(InVM) -> into_fti(TestID>ExampleNum*in,in_out,InGrid,InVM) ; true),
     gset(InVM.grid) = InGrid,
-   % gset(InVM.grid_target) = ExpectedOut,
+   % gset(InVM.target_grid) = ExpectedOut,
     do_sols_for(_All,"Confirm Trained",InVM,TestID,ExampleNum))).
 
 
@@ -337,9 +337,9 @@ learn_rule_o(in_in,_InVM,_OutVM):- !.
 learn_rule_o(Mode,InVM,OutVM):- is_vm_map(InVM),is_vm_map(OutVM),!,
  in_out = Mode,
  maplist(must_det_ll,[
-  InGrid = InVM.grid_o, InObjsOriginal = InVM.objs,  
-  OutGrid = OutVM.grid_o, OutObjsOriginal = OutVM.objs,
-  ignore(InVM.grid_target = OutGrid),
+  InGrid = InVM.start_grid, InObjsOriginal = InVM.objs,  
+  OutGrid = OutVM.start_grid, OutObjsOriginal = OutVM.objs,
+  ignore(InVM.target_grid = OutGrid),
   /*
   learn_rule_o(Mode,InObjsOriginal,OutObjsOriginal).
 
@@ -690,14 +690,15 @@ is_obj_props(Props):- is_list(Props), Props\==[], \+ is_grid(Props), \+ is_group
 extend_grp_proplist(Grp,GrpO):-
   must_det_ll((mapgroup(extend_obj_proplist(Grp),Grp,GrpM),
   externalize_links(GrpM,GrpO))).
-  
 
 
 extend_obj_proplist(Obj,Props):- extend_obj_proplist(_,Obj,Props).
 
 %extend_obj_proplist(Var,NewObj):- var(Var),!, enum_object(Var),extend_grp_proplist(Var,NewObj).
+extend_obj_proplist(Grp,[obj(Obj)],[obj(OUT)]):-!, extend_obj_proplist1(Grp,Obj,OUT).
 extend_obj_proplist(Grp,obj(Obj),obj(OUT)):-!, extend_obj_proplist1(Grp,Obj,OUT).
 extend_obj_proplist(Grp,L1,L2):- extend_obj_proplist1(Grp,L1,L2).
+
 
 extend_obj_proplist1(Grp,Props,OUTL):- must_det_ll(is_obj_props(Props)),
   Obj = obj(Props),
@@ -708,20 +709,13 @@ extend_obj_proplist1(Grp,Props,OUTL):- must_det_ll(is_obj_props(Props)),
   into_obj_plist(Obj1,OUTL).
 
   
-
+%lazy_prop(Prop):-  algo_list(Algo), arg(_,v(grid_ops(Algo,_NormOps),iz(algo_sid(Algo,_NormShapeID)),grid_rep(Algo,_NormGrid)),Prop).
 extend_obj_prop(Grp,Obj,Prop):- is_in_subgroup(Grp,Obj,Prop).
-extend_obj_prop(_Grp,obj(List),Prop):- algo_list(Algo),
- once((\+ member(grid_rep(Algo,_),List),
-  object_grid(obj(List),Grid),
-  algo_ops_grid(Algo,NormOps,Grid,NormGrid),
-  localpoints(NormGrid,NormLPoints),maplist(arg(2),NormLPoints,ShapeNormLPoints),  
-  shape_id(ShapeNormLPoints,NormShapeID))),
-  member(Prop,[grid_ops(Algo,NormOps),iz(algo_sid(Algo,NormShapeID)),grid_rep(Algo,NormGrid)]).
-
 extend_obj_prop(_Grp,Obj,Props):- fail,
  once((localpoints(Obj,P),vis2D(Obj,H,V),points_to_grid(H,V,P,Grid),
   grid_props(Grid,Props))).
-
+extend_obj_prop(_Grp,Obj,Prop):- compound(Obj), Obj = obj(List), 
+ missing_obj_props(Obj,List,Prop).
 
 
 %  print_g1(P2,CG):- arc_html,with_toplevel_pp(ansi,( \+ arc_html,print_g1(P2,CG))),!.
@@ -1235,7 +1229,7 @@ save_rule2(IO_DIR,TITLE,IP,OP):-
  ip_op_debug_info(IP,OP,LOCK),
  if_t(once(true;is_fg_object(IP);is_fg_object(OP)),
  (must_det_ll((
-  print_treeified_props(save_rule2,[IP,OP]),
+  show_interesting_named_props(save_rule2,[IP,OP]),
  assert_showed_mapping(IP,OP),
  make_rule_l2r_objs(Dir,[],IP,OP,II,OO,Mid), 
  %save_learnt_rule(arc_cache:object_to_object(TITLE,lhs(II),rhs(OO),Mid,LOCK),oneTwo,twoOne),
@@ -1993,7 +1987,7 @@ learn_rule(In,Out):-
 
 learn_rule(In,RuleDir,Out):- 
  get_vm(VM), 
- Target=VM.grid_target, 
+ Target=VM.target_grid, 
  is_grid(Target),!,
  Out = Target,
  get_current_test(TestID), 
@@ -2312,17 +2306,17 @@ use_test_associatable_io(I,O,Ref):- get_current_test(TestID),
 
 use_learnt_rule(In,_RuleDir,Out):- use_test_associatable(In,Out).
 
-use_learnt_rule(In,RuleDir,ROut):- %get_vm(VM), %Target=VM.grid_target, 
+use_learnt_rule(In,RuleDir,ROut):- %get_vm(VM), %Target=VM.target_grid, 
  get_current_test(TestID),
   ignore(get_vm(last_key,Key)),
   ((has_learnt_rule(TestID,In,Key,RuleDir,Out);has_learnt_rule(TestID,_,Key,RuleDir,Out);has_learnt_rule(TestID,In,_,RuleDir,Out))),
   pp(orange,using_learnt_rule(In,Key,RuleDir,Out)),
   ignore(Out = ROut).
 
-use_learnt_rule(In,RuleDir,Out):- get_vm(VM), % Target=VM.grid_target, 
+use_learnt_rule(In,RuleDir,Out):- get_vm(VM), % Target=VM.target_grid, 
  get_current_test(TestID),
   ignore(get_vm(last_key,Key)), 
-   In = VM.grid_o,
+   In = VM.start_grid,
    Head = learnt_rule(TestID0,In0,Key0,RuleDir0,Out0),
    Rule = rule(Len,In0,Key0,RuleDir0,TestID0,Out0,Ref),
    pp(searching_for=[in(In),dir(RuleDir),key(Key)]),

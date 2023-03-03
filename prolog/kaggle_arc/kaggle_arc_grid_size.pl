@@ -144,7 +144,7 @@ with_other_grid(OtherGrid,Goal):-
     (set_target_grid(OtherGrid),Goal)).
 
 other_grid(_,OtherGrid):- luser_getval(other_grid,OtherGrid),is_grid(OtherGrid),!.
-other_grid(_,OtherGrid):- peek_vm(VM), OtherGrid = VM.grid_target, is_grid(OtherGrid),!.
+other_grid(_,OtherGrid):- peek_vm(VM), OtherGrid = VM.target_grid, is_grid(OtherGrid),!.
 other_grid(Grid,OtherGrid):- is_other_grid(Grid,OtherGrid),!.
 other_grid(Grid,OtherGrid):- \+ is_grid(Grid),!, into_grid(Grid,ThisGrid),  Grid\==ThisGrid,!,other_grid(ThisGrid,OtherGrid).
 other_grid(In,OtherGrid):- get_current_test(TestID), muarc_tmp:grid_size_prediction(TestID,In,PH,PV), make_grid(PH,PV,OtherGrid).

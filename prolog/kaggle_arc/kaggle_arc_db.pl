@@ -9,6 +9,8 @@
 %:- dynamic(row_mem/34).
 :- dynamic(gid_glyph_oid/3).
 
+point_atoms :- true.
+
 :- dynamic(cindv/3).
 :- dynamic(cindv/4).
 :- dynamic(cindv/5).
@@ -177,10 +179,10 @@ term_to_oid(t(A)>(B+C)*D,Atom):- maplist(atomic,[A,B,C,D]),atomic_list_concat([t
 term_to_oid(T,A):- (compound(T)->term_to_atom(T,A);(atom(T)->T=A;term_to_atom(T,A))).
 
 point_to_hvc(Var,_,_,_):- var(Var),!,fail.
-point_to_hvc(Point,  H,V,fg):- atomic(Point),!, hv_point(H,V,Point).
+point_to_hvc(Point,  H,V,fg):- is_ncpoint(Point),!, hv_point(H,V,Point).
 %point_to_hvc(CD-Point,H,V,C):- var_or_color_data(CD,C),must(hv_point(H,V,Point)),!.
-point_to_hvc(CD-Point,H,V,CD):- atomic(Point),!, hv_point(H,V,Point),!.
-%point_to_hvc((C,D)-Point,H,V,(C,D)):- atomic(Point),!, hv_point(H,V,Point),!.
+point_to_hvc(CD-Point,H,V,CD):- is_ncpoint(Point),!, hv_point(H,V,Point),!.
+%point_to_hvc((C,D)-Point,H,V,(C,D)):- is_ncpoint(Point),!, hv_point(H,V,Point),!.
 %point_ to_hvc(H,V,_,H,V).
 %point_ to_hvc(Inf,Inf,offset_ranges(_,_,_,_)).
 var_or_color_data(CD,C):- only_color_data(CD,C),!.
@@ -293,8 +295,8 @@ hv_c_value(O,GN,H,V):- is_vm_map(O),!,hv_c_value(O.grid,GN,H,V).
 hv_c_value(ID,C,H,V):- (var(H);var(V)),!,arcST,atrace, hv_point(H,V,_),hv_c_value(ID,CC,H,V),CC=C.
 hv_c_value(O,Color,H,V):- is_object(O),!,globalpoints(O,Ps),hv_c_value(Ps,Color,H,V).
 hv_c_value(O,Color,H,V):- is_list(O), is_cpoints_list(  O),!,hv_point(H,V,Point),member(Color-Point,O).
-hv_c_value(O,FGL   ,H,V):- is_list(O), maplist(is_nc_point,O),!,hv_point(H,V,Point),member(Point,O),get_fg_label(FGL).
-hv_c_value(O,FGL   ,H,V):- is_nc_point(O),!,O=Point,hv_point(H,V,Point),!,get_fg_label(FGL).
+hv_c_value(O,FGL   ,H,V):- is_list(O), maplist(is_ncpoint,O),!,hv_point(H,V,Point),member(Point,O),get_fg_label(FGL).
+hv_c_value(O,FGL   ,H,V):- is_ncpoint(O),!,O=Point,hv_point(H,V,Point),!,get_fg_label(FGL).
 
 %hv_c_value(G,Color,H,V):- is_group(G),!,into_list(G,L),member(E,L),hv_c_value(E,Color,H,V),!.
 %hv_c_value(O,Color,H,V):- known_gridoid(O,G),!,hv_c_value(G,Color,H,V).
@@ -335,28 +337,28 @@ pgt(Obj):- pgt2(Obj).
 pgt(Obj1-Obj2):- pgt1(Obj1),pgt2(Obj2).
 pgt([Obj1]-[Obj2]):- pgt1(Obj1),pgt2(Obj2).
 pgt([Obj1,Obj2]):- pgt1(Obj1),pgt2(Obj2).
-pgt1(Obj):-
+pgt1(Obj):-  hv_point(1,1,HV0101),
   Obj = obj( [ mass(536),
-         shape_rep(grav, [ point_01_01, point_02_01]),
+         shape_rep(grav, [ HV0101, point_02_01]),
          colors_cc( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
-         localpoints( [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2D(sameR), loc2D(3, 1),
+         localpoints( [ red-HV0101, silver-point_02_01]), vis2D(3, 1), rot2D(sameR), loc2D(3, 1),
          changes([]), iz(info(combined)),
          iz(shape(rectangle)), iz(multicolored),
          iz(shape(polygon)), %obj _to_oid(v('0ad4ef5')>(trn+0)*in, 21),
-       %  globalpoints( [ red-point_01_01, silver-point_02_01]),
+       %  globalpoints( [ red-HV0101, silver-point_02_01]),
          grid_size(8, 8)]).
 
-pgt2(Obj):- Obj = 
+pgt2(Obj):- Obj = hv_point(1,1,HV0101),
       obj( [ mass(536),
-         shape_rep(grav, [ point_01_01, point_02_01]),
+         shape_rep(grav, [ HV0101, point_02_01]),
          colors_cc( [ cc(red, 190.0), cc(silver, 132.0), cc(green, 55.0), cc(cyan, 53.0),
                    cc(blue, 45.0), cc(yellow, 36.0), cc(orange, 25.0)]),
-         localpoints( [ red-point_01_01, silver-point_02_01]), vis2D(3, 1), rot2D(sameR), loc2D(2, 1),
+         localpoints( [ red-HV0101, silver-point_02_01]), vis2D(3, 1), rot2D(sameR), loc2D(2, 1),
          changes([]), iz(info(combined)),
          iz(shape(rectangle)), iz(multicolored),
          iz(shape(polygon)), %obj _to_oid(v('a1d4ef5')>(trn+0)*in, 66),
-        %  globalpoints( [ red-point_01_01, silver-point_02_01]),
+        %  globalpoints( [ red-HV0101, silver-point_02_01]),
          grid_size(8, 8)]).
 
 %hv_cg_value(ID,C,H,V):- row_mem_nth(H,ID,V,C).
@@ -451,20 +453,54 @@ hv(H,V,hv(H,V)).
 
 calc_movement(H,V):- forall((nav(Dir,HO,VO),Dir\==c), save_calc_movement(H,V,Dir,HO,VO)).
 
-save_calc_movement(H,V,Dir,HO,VO):- H2 is HO+H, V2 is VO+V,
+save_calc_movement(H,V,Dir,HO,VO):- point_atoms,!, H2 is HO+H, V2 is VO+V,
   muarc_mod(M),
   ignore((between(1,32,H2), between(1,32,V2), 
      format(atom(HV),'point_~|~`0t~d~2+_~|~`0t~d~2+',  [H,V]),
      format(atom(HV2),'point_~|~`0t~d~2+_~|~`0t~d~2+', [H2,V2]),
      %hv_point(H,V,HV),
      %hv_point(H2,V2,HV2),
-    assert_if_new(M:is_adjacent_point(HV,Dir,HV2)),
+    assert_if_new(M:is_adjacent_point_impl(HV,Dir,HV2)),
     assert_if_new(M:hv_point(H,V,HV)),
-    assert_if_new(M:is_adjacent_hv(H,V,Dir,H2,V2)))).
-  
+    true)).
+   % assert_if_new(M:is_adjacent_hv(H,V,Dir,H2,V2)))).
+save_calc_movement(_H,_V,_Dir,_HO,_VO).
+
+
+is_adjacent_point(HV,Dir,HV2):- lazy_p3(is_adjacent_point_impl,HV,Dir,HV2).
+
+is_adjacent_hv(H,V,Dir,H2,V2):- nav(Dir,HO,VO), Dir\==c, pluz(H,HO,H2), pluz(V,VO,V2).
+
+:- if(\+ point_atoms).
+hv_point(H,V,hv(H,V)).
+is_adjacent_point_impl(HV,Dir,HV2):- ground(Dir),is_adjacent_hv(H,V,Dir,H2,V2),hv_point(H,V,HV), hv_point(H2,V2,HV2),!.
+is_adjacent_point_impl(HV,Dir,HV2):- hv_point(H,V,HV), is_adjacent_hv(H,V,Dir,H2,V2), hv_point(H2,V2,HV2).
+:- endif.
+
+
+
+lazy_p3(P3,V,VO,V2):- nonvar(V),!,((nonvar(VO);nonvar(V2))->call(P3,V,VO,V2);(freeze(VO,call(P3,V,VO,V2)),freeze(V2,call(P3,V,VO,V2)))).
+lazy_p3(P3,V,VO,V2):- nonvar(V2),!,((nonvar(VO);nonvar(V))->call(P3,V,VO,V2);(freeze(VO,call(P3,V,VO,V2)),freeze(V,call(P3,V,VO,V2)))).
+lazy_p3(P3,V,VO,V2):- nonvar(VO),!,freeze(V2,call(P3,V,VO,V2)),freeze(V,call(P3,V,VO,V2)).
+lazy_p3(P3,V,VO,V2):- freeze(V2,lazy_p3(P3,V,VO,V2)),freeze(V,lazy_p3(P3,V,VO,V2)),freeze(VO,lazy_p3(P3,V,VO,V2)).
+
+:- use_module(library(clpfd)).
+pluz(V,VO,V2):- VO==0,!,V=V2.
+%pluz(V,VO,V2):- V2 #= V+VO.
+pluz(V,VO,V2):- lazy_p3(plus,V,VO,V2).
+/*
+pluz(V,VO,V2):- VO==0,!,V=V2.
+pluz(V,VO,V2):- nonvar(V),!,((nonvar(VO);nonvar(V2))->plus(V,VO,V2);(freeze(VO,plus(V,VO,V2)),freeze(V2,plus(V,VO,V2)))).
+pluz(V,VO,V2):- nonvar(V2),!,((nonvar(VO);nonvar(V))->plus(V,VO,V2);(freeze(VO,plus(V,VO,V2)),freeze(V,plus(V,VO,V2)))).
+pluz(V,VO,V2):- nonvar(VO),!,((nonvar(V2);nonvar(V))->plus(V,VO,V2);(freeze(V2,plus(V,VO,V2)),freeze(V,plus(V,VO,V2)))).
+pluz(V,VO,V2):- freeze(V2,pluz(V,VO,V2)),freeze(V,pluz(V,VO,V2)),freeze(VO,pluz(V,VO,V2)).
+*/
+
 is_adjacent_2points(HV,Dir,HV2,HV3):-  is_adjacent_point(HV,Dir,HV2),is_adjacent_point(HV2,Dir,HV3).
 
 create_points_plus:- show_time_gt_duration(0.3,create_points_plus_now).
+
+%create_points_plus_now:- \+ point_atoms,!.
 create_points_plus_now:- 
  forall(
   (between(1,30,H1),between(1,30,V1),
@@ -483,8 +519,8 @@ create_points_plus_now:-
 assert_point_plus_if_needed(HV1,HV2,HV):- point_plus(HV1,HV2,HV),!.
 assert_point_plus_if_needed(HV1,HV2,HV):- assert(is_point_plus(HV1,HV2,HV)).
 
-point_plus(point_01_01,HV,HV):- hv_point(_,_,HV).
-point_plus(HV,point_01_01,HV):- hv_point(_,_,HV).
+point_plus(HV0101,HV,HV):- hv_point(1,1,HV0101), hv_point(_,_,HV).
+point_plus(HV,HV0101,HV):- hv_point(1,1,HV0101), hv_point(_,_,HV).
 point_plus(HV1,HV2,HV):- is_point_plus(HV1,HV2,HV).
 
 point_minus(HV,HV2,HV1):- point_plus(HV1,HV2,HV).
@@ -1088,7 +1124,26 @@ write_arc_db_temp_cache:-
 load_arc_db_temp_cache:-
   load_files('muarc_cache/arc_db_temp_cache',[qcompile(auto)]).
 
+:- dynamic(is_shape_id_for/2).
+is_shape_id_for_init([hv(1,1)],sid_11).
+is_shape_id_for_init([hv(1,1),hv(2,1)],sid_12).
+is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1)],sid_13).
+is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1),hv(4,1)],sid_14).
+
+is_shape_id_for_init([],sid_0).
+
+is_shape_id_for_init([hv(1,1),hv(1,2)],sid_21).
+is_shape_id_for_init([hv(1,1),hv(2,1),hv(1,2),hv(2,2)],sid_22).
+is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1),hv(1,2),hv(2,2),hv(3,2),hv(1,3),hv(2,3),hv(3,3)],sid_33).
+is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1),hv(1,2),hv(3,2),hv(1,3),hv(2,3),hv(3,3)],sid_323).
+
+assert_sid(Ps,ID):- maplist(hv_to_point,Ps,Points),assert_if_new(is_shape_id_for(Points,ID)).
+
+hv_to_point(hv(H,V),Point):- hv_point(H,V,Point).
+create_builtin_sids:- forall(is_shape_id_for_init(Ps,ID),assert_sid(Ps,ID)).
+
 :- include(kaggle_arc_footer).
 :- initialization(create_movements).
 :- initialization(create_points_plus).
+:- initialization(create_builtin_sids).
 

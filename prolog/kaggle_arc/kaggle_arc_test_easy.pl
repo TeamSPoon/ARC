@@ -449,8 +449,8 @@ easy_solve_training(TestID,P2In):-
 
 
 :- meta_predicate(with_io_training_context(+,+,0)).
-with_io_training_context(I,O,G):- (peek_vm(PrevVM), PrevVM.grid_o  =@=I),!, set(PrevVM.grid_target)=O, with_current_pair(I,O,G).
-with_io_training_context(I,O,G):- (peek_vm(PrevVM), PrevVM.grid_o \=@=I),!,
+with_io_training_context(I,O,G):- (peek_vm(PrevVM), PrevVM.start_grid  =@=I),!, set(PrevVM.target_grid)=O, with_current_pair(I,O,G).
+with_io_training_context(I,O,G):- (peek_vm(PrevVM), PrevVM.start_grid \=@=I),!,
  call_cleanup(with_io_training_context1(I,O,G),set_vm(PrevVM)),!.
 with_io_training_context(I,O,G):- with_io_training_context1(I,O,G).
 :- meta_predicate(with_io_training_context1(+,+,0)).
@@ -461,7 +461,7 @@ with_io_training_context1(I,O,G):-
  with_current_pair(I,O,
   (grid_to_tid(I,ID), into_fti(ID,in_out,I,VM),
    set(VM.grid)=I,
-   set(VM.grid_target)=O,
+   set(VM.target_grid)=O,
    set_vm(VM),
    call(G))).
 
@@ -680,7 +680,7 @@ is_fti_step(overlay_original).
 % =====================================================================
 
 overlay_original(VM):-
-  mapgrid(overlay_onto,VM.grid_o,VM.grid,set(VM.grid)).
+  mapgrid(overlay_onto,VM.start_grid,VM.grid,set(VM.grid)).
 
 
 overlay_onto(FG,_,FG):- is_fg_color(FG),!.

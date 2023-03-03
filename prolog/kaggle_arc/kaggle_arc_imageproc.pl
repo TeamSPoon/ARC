@@ -705,7 +705,7 @@ calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,offset_ranges(ILoH,ILoV,IHiH,IHiV,IH,IV
   max_min(WLoV,ILoV,_,LoV),max_min(WHiV,IHiV,HiV,_),max_min(WV,IV,V,_),
   max_min(WLoH,ILoH,_,LoH),max_min(WHiH,IHiH,HiH,_),max_min(WH,IH,H,_),!.
 calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,Point,LoH,LoV,HiH,HiV,H,V):- 
-  point_to_hvc(Point,IH,IV,C),nonvar_or_ci(C), !,
+  point_to_hvc(Point,IH,IV,C),nop(nonvar_or_ci(C)), !,
   max_min(WLoV,IV,_,LoV),max_min(WHiV,IV,HiV,_),max_min(HiV,WV,V,_),
   max_min(WLoH,IH,_,LoH),max_min(WHiH,IH,HiH,_),max_min(HiH,WH,H,_),!.
 
@@ -739,7 +739,7 @@ calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,offset_ranges(ILoH,ILoV,IHiH,IHiV,IH,IV
   max_min(WLoV,ILoV,_,LoV),max_min(WHiV,IHiV,HiV,_),max_min(WV,IV,V,_),
   max_min(WLoH,ILoH,_,LoH),max_min(WHiH,IHiH,HiH,_),max_min(WH,IH,H,_),!.
 calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,Point,LoH,LoV,HiH,HiV,H,V):- 
-  point_to_hvc(Point,IH,IV,C),nonvar_or_ci(C), !,
+  point_to_hvc(Point,IH,IV,C),nop(nonvar_or_ci(C)), !,
   max_min(WLoV,IV,_,LoV),max_min(WHiV,IV,HiV,_),max_min(HiV,WV,V,_),
   max_min(WLoH,IH,_,LoH),max_min(WHiH,IH,HiH,_),max_min(HiH,WH,H,_),!.
 calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,C-Point,LoH,LoV,HiH,HiV,H,V):- nonvar(Point),plain_var(C),
@@ -762,7 +762,7 @@ grid_size_nd([L],H,(1)):- (plain_var(L)->between(1,36,H);true), length(L,H).
 
 %points_to_grid(Points,Grid):- is_grid(Points),Points=Grid,!.
 points_to_grid(Points,Grid):- is_grid(Points),!,must_det_ll(Grid=Points).
-points_to_grid(Points,Grid):- is_points_list(Points), !, must_det_ll(grid_size(Points,H,V)), !, points_to_grid(H,V,Points,Grid).
+%points_to_grid(Points,Grid):- is_points_list(Points), !, must_det_ll(grid_size(Points,H,V)), !, points_to_grid(H,V,Points,Grid).
 points_to_grid(Points,Grid):- must_det_ll(grid_size(Points,H,V)), !, points_to_grid(H,V,Points,Grid).
 %points_to_grid([Points|More],Grid):- is_grid(Points),grid_size(Points,H,V),dont_duplicate_term(Points,Grid),calc_add_points(H,V,Grid,More),!.
 %points_to_grid(Points,Grid):- is_points_list(Points),!,points_to_grid(30,30,Points,Grid).
@@ -798,8 +798,8 @@ calc_add_points0(OH,OV,Grid,Object):- is_object(Object),!,globalpoints_maybe_bg(
 calc_add_points0(OH,OV,Grid,Points):- is_list(Points),!,maplist(calc_add_point1(OH,OV,Grid),Points).
 calc_add_points0(OH,OV,Grid,CPoint):- calc_add_point1(OH,OV,Grid,CPoint),!.
 
-%point_symbol_color(Color-Point,Point,Symbol,Color):- is_color(Color), is_nc_point(Point),!.
-%point_symbol_color(Symbol-Color-Point,Point,Symbol,Color):- is_color(Color), is_nc_point(Point),!.
+%point_symbol_color(Color-Point,Point,Symbol,Color):- is_color(Color), is_ncpoint(Point),!.
+%point_symbol_color(Symbol-Color-Point,Point,Symbol,Color):- is_color(Color), is_ncpoint(Point),!.
 
 dsh_a_b(SCP,L1,L2):- compound(SCP),SCP=..['-',L1,L2].
 
@@ -818,7 +818,7 @@ calc_add_point1(OH,OV,Grid,Point):- point_to_hvc(Point,H,V,C),!, add_offset_h_v_
 
 
 %calc_add_points(OH,OV,_,Obj):- plain_var(Obj),arcST,trace_or_throw(var_calc_add_points(OH,OV,Obj)).
-%calc_add_points(OH,OV,Grid,Point):- is_nc_point(Point),!, HH is H -OH +1, VV is V - OV +1,  add_h_v_c(Grid,HH,VV,fg).
+%calc_add_points(OH,OV,Grid,Point):- is_ncpoint(Point),!, HH is H -OH +1, VV is V - OV +1,  add_h_v_c(Grid,HH,VV,fg).
 calc_add_point1(OH,OV,Grid,Obj):- globalpoints(Obj,Points),!,maplist(calc_add_point1(OH,OV,Grid),Points).
 %calc_add_points(_OH,_OV,_,obj(_)):-
 

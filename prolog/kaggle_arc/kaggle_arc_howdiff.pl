@@ -78,7 +78,7 @@ number_or_ratio(NR):- (number(NR);rational(NR)),!.
 atomic_type(number_or_ratio).
 atomic_type(string).
 atomic_type(is_fg_color). atomic_type(is_bg_color).
-atomic_type(is_nc_point). atomic_type(is_cpoint).
+atomic_type(is_ncpoint). atomic_type(is_cpoint).
 atomic_type(is_color).
 atomic_type(atom).
 atomic_type(is_list).
@@ -154,7 +154,7 @@ var_count(Term,N):-
  N = (FA+NCC+AC+VsL+NC+VC+GC+CC+GTerm).
 
 number_or_point(O):- number(O).
-number_or_point(O):- is_nc_point(O).
+number_or_point(O):- is_ncpoint(O).
 
 generalize_arglist2([A,B],[AA,BB]):- generalize_arg(A,AA),generalize_arg(B,BB).
 generalize_arglist2(I,O):- generalize_arglist3(I,O).
@@ -873,7 +873,7 @@ overlap_same_obj_no_diff(I,O):- compare_objs1(perfect,I,O). %diff_objects(I,O,Di
 
 overlap_same_obj(I,O):- compare_objs1(sameO,I,O).
 
-%fti(VM,[combine_objects|set(VM.program_i)]):- combine_objects(VM),!.
+%fti(VM,[combine_objects|set(VM.lo_program)]):- combine_objects(VM),!.
 is_fti_step(combine_objects).
 combine_objects(VM):- combine_objects(VM.objs,set(VM.objs)).
 combine_objects(I,I):-!.
@@ -1637,10 +1637,10 @@ proportional(N1,N2,N):- compound(N1),compound_name_arguments(N1,F,A1),compound_n
   
 proportional(L1,L2,Diff):- locally(nb_setval(diff_porportional,t),diff2_terms(L1,L2,Diff)),!.
 
-:- multifile(gvs:dot_overload_hook/4).
-:- dynamic(gvs:dot_overload_hook/4).
-:- module_transparent(gvs:dot_overload_hook/4).
-gvs:dot_overload_hook(_M,_NewName, _Memb, _Value):- fail.
+:- multifile(dictoo:dot_overload_hook/4).
+:- dynamic(dictoo:dot_overload_hook/4).
+:- module_transparent(dictoo:dot_overload_hook/4).
+dictoo:dot_overload_hook(_M,_NewName, _Memb, _Value):- fail.
 
 
 grid_props(Obj1,OOO):- \+ is_grid(Obj1),!,into_grid(Obj1,G),print_grid(G),grid_props(G,OOO).

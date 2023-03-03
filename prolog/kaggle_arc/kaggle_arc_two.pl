@@ -15,7 +15,7 @@ make_training(TestID,VMO):-
      pre_in:_, pre_out:_,
      inC:_InC,outC:_OutC,
      removed:_,added:_, kept:_,   
-     grid_in:_,grid_target:_,
+     grid_in:_,target_grid:_,
    set(VM.mappings) =[map])), !. % pp(VM),nl.
   */
 
@@ -138,9 +138,9 @@ train_for_objects_from_1pair1(Dict0,TestID,Desc,InA,OutA,Dict1):-
     into_fti(TestID>(Trn+N2)*IO2,ModeOut,Out,OutVM),!,
 
    %InVM.compare=OutVM, 
-   set(InVM.grid_target)=Out,
+   set(InVM.target_grid)=Out,
    %OutVM.compare=InVM, 
-   set(OutVM.grid_target)=In,
+   set(OutVM.target_grid)=In,
    show_pair_grid(yellow,IH,IV,OH,OV,original(InVM.id),original(OutVM.id),PairName,In,Out),!,  
    individuate_c(InVM),!,
    individuate_c(OutVM),!,
@@ -252,11 +252,11 @@ solve_test_trial(Trial,TestID,ExampleNum,TestIn,ExpectedOut):-
     flag(indiv,_,0),    
     into_fti(TestID>ExampleNum*in,in,TestIn,InVM),!,
     set(InVM.objs) = [],
-    %set(InVM.points) = [],
+    %set(InVM.lo_points) = [],
     %set(InVM.training) = Training,
     set_training(Training),
     maybe_set_vm(InVM),    
-    gset(InVM.grid_target) = ExpectedOut,
+    gset(InVM.target_grid) = ExpectedOut,
     must_det_ll((
     %print(training(Training)),nl,
     %ppt(InVM),

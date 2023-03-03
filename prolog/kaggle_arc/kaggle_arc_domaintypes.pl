@@ -436,7 +436,7 @@ data_type(O,T):- nonvar(T),data_type(O,C),T=C,!.
 
 data_type(O,plain_var):- plain_var(O),!.
 data_type(O,point(color)):- is_cpoint(O),!.
-data_type(O,point(no_color)):- is_nc_point(O),!.
+data_type(O,point(no_color)):- is_ncpoint(O),!.
 data_type(O,point(_)):- is_point(O),!.
 data_type(O,CT):- compound(O),!,data_typec(O,CT).
 data_type(O,lst(_)=0):- O==[],!.
@@ -470,16 +470,18 @@ data_typec(Out,FS):- compound_name_arity(Out,F,A),arg(A,Out,P),data_type(P,S),!,
 
 
 is_point(P):- var(P),!,fail.
-is_point(P):- is_nc_point(P),!.
+is_point(P):- is_ncpoint(P),!.
 is_point(P):- is_cpoint(P),!.
-is_point(_-P):- is_nc_point(P),!.
+is_point(_-P):- is_ncpoint(P),!.
 
 %elems_are(L,P1):- L\==[],is_list(L),maplist(P1,L).
 elems_are([E|_],P1):- !, call(P1,E),!.
 
 is_points_list(L):- elems_are(L,is_point).
 is_cpoints_list(L):- elems_are(L,is_cpoint).
-is_ncpoints_list(L):- elems_are(L,is_nc_point).
+is_ncpoints_list(L):- elems_are(L,is_ncpoint).
+
+
 
 %is_cpoints_list(P):- P==[],!.
 %is_cpoints_list(List):- is_list(List),!,is_cpoints_list(List).
@@ -508,15 +510,15 @@ is_tpoint(T/**/-P):- is_t(T),!,is_point(P).
 is_t(T):- atom(T), atom_length(T,1).
 
 is_cpoint(C):- \+ compound(C),!,fail.
-%is_cpoint(C/**/-P):- (nonvar_or_ci(C);cant_be_color(C)),!,is_nc_point(P).
+%is_cpoint(C/**/-P):- (nonvar_or_ci(C);cant_be_color(C)),!,is_ncpoint(P).
 is_cpoint(T/**/-P):- is_t(T),!,is_cpoint(P).
-is_cpoint(_/**/-P):- is_nc_point(P).
+is_cpoint(_/**/-P):- is_ncpoint(P).
 
 %is_list_of_gt0(P1,List):- is_list(List),maplist(P1,List).
 
 :- dynamic(hv_point/3).
 
-is_nc_point(P):- nonvar(P),hv_point(_,_,P).
+is_ncpoint(P):- nonvar(P),hv_point(_,_,P).
 
 is_gpoint(G):- plain_var(G),!,fail.
 is_gpoint(_/**/-G):-!,is_gpoint(G).
@@ -525,14 +527,22 @@ is_gpoint(G):- hv_point(H,_,G),!,nonvar_or_ci(H),my_assertion(number(H)).
 % Grid-oids
 is_list_of_gridoids([G|V]):- \+ is_grid([G|V]), is_gridoid(G), is_list(V), maplist(is_gridoid,V).
 
-is_1gridoid(G):- is_grid(G),!.
 is_1gridoid(G):- is_object(G),!.
+is_1gridoid(G):- is_grid(G),!.
+is_1gridoid(G):- is_list(G), member(E,G),non_gridoid_list_ele(E), !, fail.
 is_1gridoid(G):- is_points_list(G),!.
 
 is_gridoid(G):- plain_var(G),!, fail.
-is_gridoid([C|_]):- is_nc_point(C),!,fail.
 is_gridoid(G):- is_1gridoid(G),!.
+is_gridoid([C|_]):- is_ncpoint(C),!,fail.
 is_gridoid(G):- is_list_of_gridoids(G).
+
+non_gridoid_list_ele(C):- plain_var(C),!,fail.
+non_gridoid_list_ele(C):- is_color(C),!.
+non_gridoid_list_ele(ord(_,_)).
+non_gridoid_list_ele(cc(_,_)).
+non_gridoid_list_ele(_-Num):- number(Num).
+%non_gridoid_list_ele(Num-_):- number(Num).
 
 is_printable_gridoid(G):- plain_var(G),!, fail.
 is_printable_gridoid(G):- is_gridoid(G),!.
@@ -564,6 +574,7 @@ is_row_len(N,L):- is_list(L),length(L,N).
 %is_object(H):- is_list(H),is_cpoints_list(H).
 %is_grid_cell(AB):- ,!, \+ is_list(AB), sub_term(E,AB),(var(E);is_colorish(E)),!.
 is_grid_cell(C):- var(C),!.
+is_grid_cell(C):- integer(C),!.
 is_grid_cell(A):- \+ compound(A),!,is_grid_cell_e(A).
 is_grid_cell(att(_,_)):-!.
 is_grid_cell('cell'(_)):-!.
@@ -599,7 +610,7 @@ is_object_or_grid(Obj):- is_object(Obj).
 is_pointy(O):- is_object_or_grid(O);is_group(O);is_points_list(O).
 
 is_point_obj(O,Color,Point):- nonvar_or_ci(O),O= Color/**/-Point,!.
-is_point_obj(O,Color,Point):- is_object(O),vis2D(O,H,V), !, hv(H,V)==hv(1,1),
+is_point_obj(O,Color,Point):- is_object(O),vis2D(O,1,1),
   globalpoints(O,[Color/**/-Point]),!.
 
 

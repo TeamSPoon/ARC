@@ -114,13 +114,23 @@ hammer3("
 the_hammer1(BlueComplex):- the_hammer(blue,BlueComplex).
 the_hammer1(RedComplex):-  the_hammer(red,RedComplex).
 
+the_hammer(Color,ColorComplex):- fail,
+  ColorComplex = obj([mass(6), shape_rep(grav,[hv(1,1), hv(1,2), hv(1,3), hv(2,1), hv(2,2), hv(3,2)]), 
+  colors_cc([cc(Color, 6)]), localpoints([Color-hv(1,1), Color-hv(1,2), Color-hv(1,3), Color-hv(2,1), 
+  Color-hv(2,2), Color-hv(3,2)]), vis2D(3, 3), rot2D(sameR), loc2D(2, 5), 
+  changes([]), iz(shape(rectangle)), iz(hammer), 
+  globalpoints([Color-hv(2,5), Color-hv(2,6), Color-hv(2,7), Color-hv(3,5), Color-hv(3,6), Color-hv(4,6)]), 
+  grid_size(10, 10)]).
+
 the_hammer(Color,ColorComplex):- 
-  ColorComplex = obj([mass(6), shape_rep(grav,[point_01_01, point_01_02, point_01_03, point_02_01, point_02_02, point_03_02]), 
-  colors_cc([cc(Color, 6)]), localpoints([Color-point_01_01, Color-point_01_02, Color-point_01_03, Color-point_02_01, 
-  Color-point_02_02, Color-point_03_02]), vis2D(3, 3), rot2D(sameR), loc2D(2, 5), 
+  ColorComplex = obj([mass(6), colorless_points([point_01_01, point_01_02, point_01_03, point_02_01, point_02_02, point_03_02]), 
+  colors([cc(Color, 6)]), localpoints([Color-point_01_01, Color-point_01_02, Color-point_01_03, Color-point_02_01, 
+  Color-point_02_02, Color-point_03_02]), vis2D(3, 3), rot2L(sameR), loc2D(2, 5), 
   changes([]), iz(shape(rectangle)), iz(hammer), 
   globalpoints([Color-point_02_05, Color-point_02_06, Color-point_02_07, Color-point_03_05, Color-point_03_06, Color-point_04_06]), 
   grid_size(10, 10)]).
+
+
 
 the_hammer(blue, LibObj):- hammer2(Text), must_det_ll(into_g666(Text,Grid)),
    into_lib_object([blue,hammer],Grid,LibObj).
@@ -237,7 +247,7 @@ into_monochrome(FGC,BGC,Color,Mono):- is_points_list(Color),!,maplist(points_int
 %into_monochrome(FGC,BGC,Color,Mono):- is_grid(Color),!,grid_into_monochrome(FGC,BGC,Color,Mono).
 into_monochrome(FGC,BGC,Grid,Mono):- into_grid(Grid,Color),!,grid_into_monochrome(FGC,BGC,Color,Mono).
 
-points_into_monochrome(FGC,BGC,Color-Point,Mono-Point):- is_nc_point(Point),!,points_into_monochrome(FGC,BGC,Color,Mono).
+points_into_monochrome(FGC,BGC,Color-Point,Mono-Point):- is_ncpoint(Point),!,points_into_monochrome(FGC,BGC,Color,Mono).
 points_into_monochrome(FGC,BGC,Color,Mono):- is_list(Color) -> maplist(points_into_monochrome(FGC,BGC),Color,Mono) ;
                               (Color\=BGC)-> Mono = fg ; Mono = BGC.
 

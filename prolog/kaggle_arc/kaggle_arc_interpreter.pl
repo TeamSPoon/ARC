@@ -210,29 +210,29 @@ set_vm_grid_now(VM,In):- VM==In,!.
 set_vm_grid_now(VM,In):- is_vm_map(In),!,map_to_grid(_Was,In,Obj,_Grid,_Closure), Obj\=@=In, !, set_vm_grid(VM,Obj).
 
 
+set_vm_grid_now(VM,Grid):- is_grid(Grid), !,
+  gset(VM.grid)=Grid, 
+  grid_size(Grid,H,V), gset(VM.h)=H, gset(VM.v)=V, 
+%  gset(VM.start_points) = VM.lo_points,
+  localpoints_include_bg(Grid, Points),
+  gset(VM.lo_points)=Points.
+
+set_vm_grid_now(VM,Points):- is_cpoints_list(Points), !,  
+%  gset(VM.start_points) = VM.lo_points,
+  gset(VM.lo_points)=Points,
+  points_to_grid(VM.h,VM.v,Points,Grid),
+  gset(VM.grid)=Grid,!.
+
 set_vm_grid_now(VM,Grp):- is_group(Grp), !,  
   grid_size(Grp,H,V), gset(VM.h)=H, gset(VM.v)=V,
   globalpoints(Grp, Points),
   set_vm_grid_now(VM,Points),
   gset(VM.objs)=Grp.
 
-set_vm_grid_now(VM,Points):- is_cpoints_list(Points), !,  
-  gset(VM.points_o) = VM.points,
-  gset(VM.points)=Points,
-  points_to_grid(VM.h,VM.v,Points,Grid),
-  gset(VM.grid)=Grid,!.
-
 set_vm_grid_now(VM,Obj):- is_object(Obj), !,
-  gset(VM.objs)=[Obj],
-  object_grid(Obj,Grid),
-  set_vm_grid_now(VM,Grid).
-
-set_vm_grid_now(VM,Grid):- is_grid(Grid), !,
-  gset(VM.grid)=Grid, 
-  grid_size(Grid,H,V), gset(VM.h)=H, gset(VM.v)=V, 
-  gset(VM.points_o) = VM.points,
-  localpoints_include_bg(Grid, Points),
-  gset(VM.points)=Points.
+  localpoints(Obj,Points),
+  set_vm_grid_now(VM,Points),
+  gset(VM.objs)=[Obj].
 
 set_vm_grid_now(VM,In):- gset(VM.last_key) = In,!.
 
@@ -280,8 +280,8 @@ run_dsl(VM,_Mode,nb_link(Name,Val),In,Out):- !, expand_dsl_value(VM, Mode,In,Val
 run_dsl(VM,_Mode,vm_set(Name,Val),In,Out):- !, vm_grid(VM,set_vm(Name,Val),In, Out).
 run_dsl(VM,_Mode,i(Indiv),In,Out):- !, vm_grid(VM,(individuate(Indiv,In,Objs),set_vm_grid(VM,Objs)),In,Out).
 
-run_dsl(VM,_Mode,o(_Indiv),In,In):- var(VM.grid_target),!.
-run_dsl(VM,_Mode,o(Indiv),In,Out):- !, vm_grid(VM,(individuate(Indiv,VM.grid_target,Objs),set_vm_grid(VM,Objs)),In,Out).
+run_dsl(VM,_Mode,o(_Indiv),In,In):- var(VM.target_grid),!.
+run_dsl(VM,_Mode,o(Indiv),In,Out):- !, vm_grid(VM,(individuate(Indiv,VM.target_grid,Objs),set_vm_grid(VM,Objs)),In,Out).
 run_dsl(_VM,_Mode,get_in(In),Pass,Pass):- copy_term(Pass,In),!.
 run_dsl(_VM,_Mode,set_out(Out),_In,Out):-!.
 
@@ -575,7 +575,7 @@ into_obj(G,O):- is_object(G),!,G=O.
 into_obj(G,O):- is_grid(G),!,individuate(whole,G,Objs),last(Objs,O),!.
 into_obj(G,O):- no_repeats(O,known_obj0(G,O))*->true; (into_grid(G,GG),!,into_obj(GG,O)),!.
 
-  %set(VM.points)=[],!.
+  %set(VM.lo_points)=[],!.
 
 
 :- module_transparent register_obj/1.
@@ -786,7 +786,7 @@ goal_expansion_query(Goal,Out):- compound(Goal),
    call(P1,Var),expand_goal((Exp,Goal),Out).
 
 is_goal_query(Goal):- 
-  \+ source_location(_,_),luser_getval('$goal', Term), !, % writeq(Term=@=Goal),nl,
+  \+ source_location(_,_),nb_current('$goal', Term), !, % writeq(Term=@=Goal),nl,
   Goal=@=Term.
 
 goal_expansion_q(Goal,I,Out,O):- var(I), is_goal_query(Goal), (goal_expansion_query(Goal,Out)-> Goal\=@=Out),I=O.
@@ -807,19 +807,21 @@ goal_expansion(Goal,I,Out,O):-
 % ?- print_grid(gridFn(X)).
 %:- export(is_toplevel_query/2).
 %:- b_setval('$goal', []).
-:- luser_linkval('$goal', []).
+:- nb_linkval('$goal', []).
 %:- b_setval('$goal_expanded', []).
-:- luser_linkval('$goal_expanded', []).
+:- nb_linkval('$goal_expanded', []).
 expand_query(Goal, Expanded, Bindings, ExpandedBindings):- 
+  \+ current_prolog_flag(arc_term_expansion,false),
+  \+ current_prolog_flag(arc_query_expansion,false),
   current_predicate(luser_linkval/2),
     % Have vars to expand and varnames are empty
-    luser_getval('$goal', WGoal), WGoal\=@=Goal, % this prevents the loop
-    luser_linkval('$goal', Goal),
+    nb_current('$goal', WGoal), WGoal\=@=Goal, % this prevents the loop
+    nb_linkval('$goal', Goal),
     quietly((Bindings\==[],prolog_load_context(variable_names,Vs), Vs ==[])), % this prevents the loop
-    luser_linkval('$variable_names', Bindings),
+    nb_linkval('$variable_names', Bindings),
     debug(expand_query,'~q',[b_setval('$variable_names', Bindings)]),
     writeq(Goal+Bindings),nl,
     expand_query(Goal, Expanded, Bindings, ExpandedBindings),
-    luser_linkval('$goal_expanded', Expanded).    
+    nb_linkval('$goal_expanded', Expanded).    
 
 

@@ -228,7 +228,7 @@ only_color_data0(C,C):- is_color(C),!.
 only_color_data0(C,C):- is_unreal_color(C),!.
 only_color_data0(C,C):- var(C),!.
 only_color_data0(NC,NC):- \+ compound(NC),!,fail.
-only_color_data0(C-P,C):- var(C),is_nc_point(P),!.
+only_color_data0(C-P,C):- var(C),is_ncpoint(P),!.
 only_color_data0(OC,C):- sub_term(C,OC),is_colorish(C),!.
 %only_color_data(_-O,C):- only_color_data(O,C).
 

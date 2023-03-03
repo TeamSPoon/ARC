@@ -119,7 +119,7 @@ as_debug(L,G):- as_debug(L,true,G).
 as_debug(9,_,_):- !.
 as_debug(_,C,G):- ignore(catch((call(C)->wots(S,G),format('~NDEBUG: ~w~N',[S]);true),_,true)).
 
-shall_count_as_same(A,B):- same_term(A,B),!.
+shall_count_as_same(A,B):- same_term(A,B),!. % unify ok_ok cmatch
 shall_count_as_same(A,B):- plain_var(A),!,A==B.
 shall_count_as_same(A,B):- atomic(A),!, A=@=B.
 shall_count_as_same(A,B):- var(B),!,A=@=B.
@@ -359,13 +359,6 @@ ppawt(FA):-
     %portray(false), partial(true), fullstop(true),
    ignore_ops(false), quoted(true), quote_non_ascii(true), brace_terms(false)]).
 
-
-my_assertion(G):- call(G),!.
-my_assertion(G):- u_dmsg(my_assertion(G)),writeq(goal(G)),nl,!,ibreak.
-must_be_free(AllNew):- plain_var(AllNew),!.
-must_be_free(AllNew):- arcST,u_dmsg(must_be_free(AllNew)),ibreak,fail.
-must_be_nonvar(AllNew):- nonvar_or_ci(AllNew),!.
-must_be_nonvar(AllNew):- arcST,u_dmsg(must_be_nonvar(AllNew)),ibreak,fail.
 
 intersection([],LeftOverB,[],[],LeftOverB):-!.
 intersection(LeftOverA,[],[],LeftOverA,[]):-!.

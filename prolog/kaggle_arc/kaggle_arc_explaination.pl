@@ -154,12 +154,16 @@ show_indiv_object(Why, Obj):-
      (((((copy_term(Obj,CObj),object_ngrid(CObj,NGrid), append(_,["NGrid"=NGrid|_],Grids)))))),
 
      ShowQ=_,
-     (((((normalize_grid(NOps,Grid,Normalized), nop((mif_t(Normalized\=@=Grid,append(_,["NORMALIZED!!!"=Normalized|_],Grids))))))))),
+     
+     (((((normalize_grid(NOps,Grid,Normalized), 
+         if_t(Normalized\=@=Grid,(sformat(SN,'~q',['NORMALIZED!!!'(NOps)]),append(_,[SN=Normalized|_],Grids)))))))),
 
      term_variables(Normalized,RV1),
      (((((GV1\=@=RV1 ; (Normalized\=@=Grid,Normalized=[[_]])) -> ShowQ = true ; ShowQ = _)))),
 
-     compress_grid(COps,Grid,Compressed), if_t(Compressed\=@=Normalized,append(_,["Compressed!!!"=Compressed|_],Grids)),
+     if_t(nonvar(Normalized),
+       (compress_grid(COps,Normalized,Compressed), 
+         if_t(Compressed\=@=Grid,(sformat(CN,'~q',['Compressed!!!'(COps)]),append(_,[CN=Compressed|_],Grids))))),
 
      if_t(DoFF,((constrain_grid(f,_TrigF,Grid,GridFF), if_t(GridFF\=@=Grid,append(_,["Find"=GridFF|_],Grids)),
        copy_term(Grid+GridFF,GG1+GridFFNV,GoalsFF), numbervars(GG1+GridFFNV+GoalsFF,10,_,[attvar(bind),singletons(false)]))))
@@ -170,17 +174,17 @@ show_indiv_object(Why, Obj):-
 
      if_t(has_goals(GridFFNV),writeg(gridFF=GridFFNV)),
 
-     if_t((nonvar(COps),COps\==[]), 
+      if_t((nonvar(NOps)), 
+        (writeg(nops=NOps),
+         if_t((ShowQ==true;Normalized\=@=Grid;has_goals(Normalized);true), writeg(normalized=Normalized)),
+         nop((unreduce_grid(Normalized,NOps,Unnormalized), 
+         if_t(Unnormalized\=@=Grid, (ShowQ=true,writeg("Bad Unnormalized"=Unnormalized))))))),
+
+     if_t((nonvar(COps)), 
        (writeg(cops=COps), 
         nop((unreduce_grid(Compressed,COps,Uncompressed), 
-        if_t(Uncompressed\=@=Grid, (ShowQ=true,writeg("Bad Uncompressed"=Uncompressed))))))),
+        if_t(Uncompressed\=@=Normalized, (ShowQ=true,writeg("Bad Uncompressed"=Uncompressed))))))),
 
-     if_t((nonvar(NOps),NOps\==[]), 
-       (writeg(nops=NOps),
-        if_t((ShowQ==true;Normalized\=@=Grid;has_goals(Normalized);true), writeg(normalized=Normalized)),
-        nop((unreduce_grid(Normalized,NOps,Unnormalized), 
-        if_t(Unnormalized\=@=Grid, (ShowQ=true,writeg("Bad Unnormalized"=Unnormalized))))))),
-     
      if_t((ShowQ==true;has_goals(Grid)),    writeg(grid=Grid)),
      
 

@@ -14,7 +14,7 @@
 
 recalc_sizes(VM,[After|TODO]):-
    recalc_sizes(VM),
-   nop((set(VM.program_i) = [After,recalc_sizes|TODO])).
+   nop((set(VM.lo_program) = [After,recalc_sizes|TODO])).
 /*
    � mass(3) cc(blue,3.0) vis2D(1,3) loc2D(2,1) pen([]) /*b*/iz((nsew)) iz(symmetry_type(sym_hv)) center2G(2,2) layer(in) nth(21)
 %mass(3) cc(cyan,3.0) vis2D(1,3) loc2D(1,1) pen([]) /*b*/iz((nsew)) iz(symmetry_type(sym_hv)) center2G(1,2) layer(in) nth(22)

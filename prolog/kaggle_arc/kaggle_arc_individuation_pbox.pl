@@ -41,7 +41,7 @@ is_fti_step(maybe_pbox_vm).
 
 maybe_pbox_vm(VM):- VM.option_pboxes==false,!.
 maybe_pbox_vm(VM):- var(VM.option_pboxes), !, 
- (need_pboxes(VM.grid_o) -> (set(VM.option_pboxes)=true) ; (set(VM.option_pboxes)=false)),
+ (need_pboxes(VM.start_grid) -> (set(VM.option_pboxes)=true) ; (set(VM.option_pboxes)=false)),
   maybe_pbox_vm(VM).
 maybe_pbox_vm(VM):- pbox_vm(VM),!.
 
@@ -67,7 +67,7 @@ pbox_vm(VM):- !,
   GH is round(VM.h + 0), GV is round(VM.v + 0),
   %findall(size2D(H,V),(l_s_4sides(H,V),H=<GH),Sizes_L_S),
   findall(size2D(H,V),(s_l_4sides(H,V),V=<GV),Sizes_S_L),
-  GridI0=VM.grid_o,
+  GridI0=VM.start_grid,
   pbox_vm(GH,GV,GridI0,Sizes_S_L,VM))).
 
 
@@ -159,11 +159,11 @@ pbox_vm(GH,GV,GridI0,Sizes_S_L,VM):-
    %if_t(var(N),maplist(ignore_equal(black),NSEW)),
    \+ \+ ((ignore_equal_e(NSEW,['N','S','E','W']),print_side_by_side(XSG-xsg,GridI-grid))),
   localpoints_include_bg(Grid,Points),!,
-  %begin_i_pbox_l(Grid,NSEW,XSG,Points,  Points2,VM,s_l(p1),Sizes_L_S), if_t(Points\==Points2,gset(VM.points)=Points2),
-  begin_i_pbox_l(Grid,NSEW,XSG,Points,  Points1,VM,s_l(p1),Sizes_S_L), if_t(Points\==Points1,gset(VM.points)=Points1),
-  %begin_i_pbox_l(Grid,NSEW,XSG,Points1, Points2,VM,l_s(p2),Sizes_L_S), if_t(Points\==Points2,gset(VM.points)=Points2),
-  %begin_i_pbox_l(Grid,NSEW,XSG,Points,  Points3,VM,l_s(p1),Sizes_L_S), if_t(Points\==Points3,gset(VM.points)=Points3),
-  % begin_i_pbox_l(Grid,NSEW,XSG,Points3, Points9,VM,s_l(p2),Sizes_S_L), if_t(Points\==Points9,gset(VM.points)=Points9),
+  %begin_i_pbox_l(Grid,NSEW,XSG,Points,  Points2,VM,s_l(p1),Sizes_L_S), if_t(Points\==Points2,gset(VM.lo_points)=Points2),
+  begin_i_pbox_l(Grid,NSEW,XSG,Points,  Points1,VM,s_l(p1),Sizes_S_L), if_t(Points\==Points1,gset(VM.lo_points)=Points1),
+  %begin_i_pbox_l(Grid,NSEW,XSG,Points1, Points2,VM,l_s(p2),Sizes_L_S), if_t(Points\==Points2,gset(VM.lo_points)=Points2),
+  %begin_i_pbox_l(Grid,NSEW,XSG,Points,  Points3,VM,l_s(p1),Sizes_L_S), if_t(Points\==Points3,gset(VM.lo_points)=Points3),
+  % begin_i_pbox_l(Grid,NSEW,XSG,Points3, Points9,VM,s_l(p2),Sizes_S_L), if_t(Points\==Points9,gset(VM.lo_points)=Points9),
   !.
 
 begin_i_pbox_l(Grid,NSEW,XSG,Points5,Points9,VM,S_L,Sizes_S_L):-

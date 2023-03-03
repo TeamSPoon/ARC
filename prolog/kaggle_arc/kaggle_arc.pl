@@ -33,12 +33,14 @@ catch_nolog(G):- ignore(catch(notrace(G),E,nop(u_dmsg(E=G)))).
 get_user_error(UE):- stream_property(UE,file_no(2)),!.
 get_user_error(UE):- stream_property(UE,alias(user_error)),!.
 
+ufmt(G):- fmt(G)->true;writeln(G).
 u_dmsg(G):- is_list(G),!,maplist(u_dmsg,G).
-u_dmsg(M):- get_user_error(UE), \+ current_predicate(with_toplevel_pp/2),!, with_output_to(UE,fmt(M)).
-u_dmsg(M):- get_user_error(UE),!, with_toplevel_pp(ansi, with_output_to(UE,fmt(M))).
+u_dmsg(M):- get_user_error(UE), \+ current_predicate(with_toplevel_pp/2),!, with_output_to(UE,ufmt(M)).
+u_dmsg(M):- get_user_error(UE),!, with_toplevel_pp(ansi, with_output_to(UE,ufmt(M))).
 u_dmsg(M):- get_user_error(UE),  stream_property(UO,file_no(1)), current_output(CO),!,
   (UO==CO ->  dmsg(M) ; 
-   (with_toplevel_pp(ansi, with_output_to(UE,fmt(M))), with_output_to(CO,pp(M)))).
+   (with_toplevel_pp(ansi, with_output_to(UE,ufmt(M))), with_output_to(CO,pp(M)))).
+u_dmsg(G):-ufmt(G),!.
 
 %:- pack_install('https://github.com/logicmoo/logicmoo_utils.git').
 :- catch_log(pack_install(logicmoo_utils,[
@@ -48,7 +50,6 @@ u_dmsg(M):- get_user_error(UE),  stream_property(UO,file_no(1)), current_output(
 :- pack_upgrade(logicmoo_utils),!.
 % :- pack_install(dictoo).
 % :- pack_upgrade(dictoo).
-
 
 
 %:- module(system).
@@ -188,10 +189,10 @@ update_and_fail_cls:- once(cls_z),update_and_fail.
   :- set_guitracer.
   :- endif.
 
-  :- set_prolog_flag(toplevel_print_anon,false).
+  :- set_prolog_flag(toplevel_print_anon,true).
   :- set_prolog_flag(toplevel_print_factorized,true).
   
-  :- set_prolog_flag(answer_write_options, [quoted(true), portray(true), max_depth(5), attributes(portray)]).
+  :- set_prolog_flag(answer_write_options, [quoted(true), portray(true), max_depth(6), attributes(portray)]).
   :- set_prolog_flag(debugger_write_options, [quoted(true), portray(true), max_depth(5), attributes(portray)]).
   :- set_prolog_flag(print_write_options, [quoted(true), portray(true), max_depth(50), attributes(portray)]).
   
@@ -312,7 +313,7 @@ get_map_pairs(Map,is_assoc,Pairs):- is_assoc(Map), assoc_to_list(Map, Pairs).
 get_map_pairs(Map,is_rbtree,Pairs):- is_rbtree(Map), rb_visit(Map, Pairs).
 get_map_pairs(Map,is_dict(T),Pairs):- is_dict(Map), dict_pairs(Map,T,Pairs).
 
-is_vm(Tree):- is_vm_map(Tree), once(get_kov(program,Tree,_);get_kov(program_i,Tree,_)).
+is_vm(Tree):- is_vm_map(Tree), once(get_kov(program,Tree,_);get_kov(lo_program,Tree,_)).
 
 is_vm_map(Tree):- is_rbtree(Tree),!, rb_in(izmap,true,Tree).
 is_vm_map(Dict):- is_dict(Dict),!, get_dict(izmap,Dict,true).
@@ -363,7 +364,6 @@ as_if_http(Goal):- with_toplevel_pp(http,Goal).
 */
 %arc_html:- in_pp(http),!.
 %arc_html:- \+ current_output(user_output).
-
 
 :- exists_source(library(xlisting/xlisting_web)) -> system:use_module(library(xlisting/xlisting_web)) ; true.
 
@@ -445,6 +445,7 @@ luser_getval_3(N,V):- arc_user(ID), arc_user_prop(ID,N,V).
 luser_getval_3(_,_):- \+ is_cgi, !, fail.
 luser_getval_3(N,V):-  \+ main_thread, atom(N), current_predicate(get_param_sess/2),get_param_sess(N,M),url_decode_term(M,V),arc_sensical_term(V).
 %luser_getval_3(N,V):- atom(N), nb_current(N,ValV),arc_sensical_term(ValV,Val),Val=V.
+
 
 luser_getval_4(N,V):- arc_user_prop(global,N,V).
 luser_getval_4(N,V):- atom(N), current_prolog_flag(N,V).
@@ -591,10 +592,10 @@ set_vm_obj1(Prop,Or,IndvPoints):- is_points_list(IndvPoints),!,
       print_grid(VM.h,VM.v,Prop,IndvPoints))),!.
 
 
-set_vm_obj1(Prop,Or,Value):- is_object(Value),!,
+set_vm_obj1(Prop,Or,OValue):- is_object(OValue),!,
   get_vm(VM),
-  remObjects(VM,Value),
-  override_object([iz(Prop),/*b*/iz(set_vm(Prop))|Or],Value,NewObj),
+  remObjects(VM,OValue),
+  override_object([iz(Prop),/*b*/iz(set_vm(Prop))|Or],OValue,NewObj),
   addObjects(VM,NewObj),
   object_grid(NewObj,Grid),
   print_grid(Prop,Grid),!.
@@ -624,7 +625,6 @@ test_regressions:- make, forall((clause(mregression_test,Body),ppt(Body)),must_d
 :- strip_module(_,M,_), prolog_load_context(module,MM), retractall(muarc_2_mods(_,_)), asserta(muarc_2_mods(M,MM)).
 
 %:- forall(ping_indiv_grid(X),atom_concat(X,Y
-
 
 :- include(kaggle_arc_footer).
 
@@ -675,6 +675,7 @@ saved_training(TestID):- test_name_output_file(TestID,File),exists_file(File).
 %:- add_history1((cls_z,make,demo)).
 :- add_history1((noguitracer,demo)).
 :- add_history1((demo)).
+
 
 
 :- nb_setval(arc_can_expand_query,nil).
@@ -751,7 +752,7 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 :- scan_uses_test_id.
 :- store_grid_size_predictions.
 :- make_grid_cache.
-:- gen_gids.
+:- initialization(gen_gids).
 
 :- use_module(library(xlisting/xlisting_web)).
 :- use_module(library(xlisting/xlisting_console)).
@@ -759,11 +760,12 @@ test_compile_arcathon:- save_arcathon_runner_devel.
 
 :- no_web_dbg.
 
-:- test_show_colors.
+:- initialization(test_show_colors,after_load).
 :- nb_setval(arc_can_portray,t).
 :- nb_setval(arc_can_portray,nil).
 %:- load_arc_db_temp_cache.
-:- fmt('% Type ?- demo. % or press up arrow').
+demo_msg:- nl,writeln('% Type ?- demo. % or press up arrow').
+:- initialization(demo_msg,after_load).
 :- luser_default(extreme_caching,false).
 :- nb_setval(arc_can_portray,nil).
 %:- (getenv('DISPLAY',_) -> ensure_guitracer_x ; true).
@@ -830,9 +832,10 @@ use_gui_debugger:-
 :- luser_default(task,v('1d398264')). 
 :- luser_default(task,v('37d3e8b2')). 
 */
-:- create_group(dmiles,['e41c6fd3','ea32f347','37d3e8b2','1b60fb0c','1d398264','0d3d703e','626c0bcc','5582e5ca','ea32f347',
-                '25d487eb',
-                '32e9702f','f8b3ba0a'  ]).
+create_group_dmiles:- must_det_ll((create_group(dmiles,['e41c6fd3','ea32f347','37d3e8b2','1b60fb0c','1d398264','0d3d703e','626c0bcc','5582e5ca','ea32f347',
+                '25d487eb','0a2355a6',
+                '32e9702f','f8b3ba0a'  ]))).
+:- initialization(create_group_dmiles).
 %:- noguitracer.
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).
 
@@ -840,3 +843,4 @@ use_gui_debugger:-
 :- set_prolog_flag(gui_tracer, false), visible(-cut_call).
 
 %:- demo.
+:- current_prolog_flag(argv,C),(member('-l',C)->initialize;true).

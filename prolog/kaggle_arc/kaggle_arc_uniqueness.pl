@@ -6,6 +6,168 @@
 */
 :- include(kaggle_arc_header).
 
+/*
+Props [Not] Shared Between
+
+  - All Input Grids
+  - All Output Grids
+
+  - All Grids
+
+  - Pair #1 Input
+  - Pair #1 Output
+  - Pair #1 Input and Output
+
+  - Pair #2 Input
+  - Pair #2 Output
+  - Pair #2 Input and Output
+
+  - Pair #1 Input and Pair #2 Output
+
+*/
+interesting_group_name('All Input Grids',all,[input]).
+interesting_group_name('All Output Grids',all,[output]).
+interesting_group_name('All Grid I/O',all,[]).
+interesting_group_name('Pair #1 Input', [trn+0],[input]).
+interesting_group_name('Pair #1 Output',[trn+0],[output]).
+interesting_group_name('Pair #1 I/O',   [(_>(trn+0)*in),(_>(trn+0)*out)],[]).
+interesting_group_name('Pair #2 Input', [(_>(trn+1)*in)],[]).
+interesting_group_name('Pair #2 Output',[(_>(trn+1)*out)],[]).
+interesting_group_name('Pair #2 Input vs Pair #2 Output',[(_>(trn+1)*in),(_>(trn+1)*out)],[]).
+interesting_group_name('Pair #1 Input vs Pair #2 Output',[(_>(trn+0)*in),(_>(trn+1)*out)],[]).
+interesting_group_name('Pair #1 Input vs Pair #2 Input', [(_>(trn+0)*in),(_>(trn+1)*in)],[]).
+interesting_group_name('Test #1 Input vs Pair #1 Input', [(_>(trn+0)*in),(_>(tst+0)*in)],[]).
+interesting_group_name('Test #1 Input', [tst+0],[input]).
+
+select_some_objects(TestID,Trn,Num,IO,Filter,Objects):-
+  test_grouped_io(TestID,[(TestID>(Trn+Num)*IO)],[],Objs),
+  reorganize_objs(Objs,Shared,PropsUnique,PropsDistibuted),
+  named_filter_proptyple(Filter,Objs,Shared,PropsUnique,PropsDistibuted,Objects).
+
+
+pair_two_groups(TestID,Name1+Filter1,Name2+Filter2,Objs1,Objs2):-
+  select_group(TestID,Name1,Filter1,Objs1),
+  select_group(TestID,Name2,Filter2,Objs2).
+
+select_group(TestID,Name,Filter,Objects):-  
+  interesting_selectors(Name,Trn,Num,IO),
+  select_some_objects(TestID,Trn,Num,IO,Filter,Objects).
+interesting_selectors('All Input',trn,_,in).
+interesting_selectors('All Output',trn,_,out).
+interesting_selectors('Pair #1 Out',trn,0,in).
+interesting_selectors('Pair #1 In',trn,0,out).
+interesting_selectors('Pair #1 I/O',trn,0,_).
+interesting_selectors('Pair #2 Out',trn,1,in).
+interesting_selectors('Pair #2 In',trn,1,out).
+interesting_selectors('Pair #2 I/O',trn,1,_).
+interesting_selectors('Test #1 In',tst,0,in).
+
+%named_filter_proptyple(Filter,Objs,Shared,PropsUnique,PropsDistibuted,Objects).
+named_filter_proptyple(whole,Objs,_,_,_,Objs).
+named_filter_proptyple(shared,_,Objs,_,_,Objs).
+named_filter_proptyple(distribted,_,_,_,Objs,Objs).
+named_filter_proptyple(Else,_,_,L,_,[Else|Objs]):- select(Else,L,Rest), findall(Else,member(Else,Rest),Objs).
+  
+reorganize_objs([obj(O)|Objects],Shared,PropsUnique,PropsDistibuted):-!,
+  maplist(into_obj_plist,[obj(O)|Objects],RawPropLists),
+  maplist(treed_props_list,RawPropLists,PropLists),!,
+  reorganize_objs(PropLists,Shared,PropsUnique,PropsDistibuted).
+
+reorganize_objs(Objects,[Prop|Shared],PropsUnique,PropsDistibuted):-
+  maplist(variant_select,Prop,Objects,Next),
+  sort(Objects,SObjects),sort(Next,SNext), SObjects\=@=SNext,!,
+  reorganize_objs(Next,Shared,PropsUnique,PropsDistibuted).
+reorganize_objs(Objects,Shared,[alone(OID,AloneProps)|PropsUnique],PropsDistibuted):-
+  select(Obj,Objects,Rest),
+  member(oid(OID),Obj),
+  findall(Prop,
+    (member(Prop,Obj), make_unifiable(Prop,UProp), \+ ((member(RO,Rest),member(UProp,RO)))),
+     AloneProps),
+  include(not_in(AloneProps),Obj,NewObj),
+  Next = [NewObj|Rest],
+  sort(Objects,SObjects),sort(Next,SNext), SObjects\=@=SNext,!,
+  reorganize_objs(Next,Shared,PropsUnique,PropsDistibuted).
+
+reorganize_objs(Objects,Shared,[unique(OID,NewObj,Prop)|PropsUnique],PropsDistibuted):-
+  select(Obj,Objects,Rest),
+  maplist(variant_select,Prop,Rest,NewRest),
+  member(oid(OID),Obj),
+  make_unifiable(Prop,UProp), 
+  select(Obj,UProp,NewObj),
+  Next = [NewObj|NewRest],
+  sort(Objects,SObjects),sort(Next,SNext), SObjects\=@=SNext,!,
+  reorganize_objs(Next,Shared,PropsUnique,PropsDistibuted).
+reorganize_objs(Objects,Shared,[missing(OID,Prop)|PropsUnique],PropsDistibuted):-
+  select(Obj,Objects,Rest),
+  maplist(variant_select,Prop,Rest,NewRest),
+  member(oid(OID),Obj),
+  Next = [Obj|NewRest],
+  sort(Objects,SObjects),sort(Next,SNext), SObjects\=@=SNext,!,
+  reorganize_objs(Next,Shared,PropsUnique,PropsDistibuted).
+/*
+reorganize_objs(Objects,Shared,PropsUnique,[Versions|PropsDistibuted]):-
+  length(Objects,Len),member(Obj,Objects),member(Prop,Obj),  
+  variance_had(Prop,Objects,Versions,Variance), Variance = Len,
+  reorganize_objs([RestProps|Rest],Shared,PropsUnique,PropsDistibuted).
+*/
+reorganize_objs(Objects,[],[],Objects).
+
+
+
+show_groups(TestID):- ensure_test(TestID),
+  forall(interesting_group_name(Name,Ors,Ands),
+   once((show_info_about_objects(TestID,Name,Ors,Ands)))),
+  show_pair_groups(TestID).
+  
+
+show_pair_groups(TestID):-
+  forall(pair_two_groups(TestID,Name1+Filter1,Name2+Filter2,Objs1,Objs2),
+    ignore((
+      Objs1\==[],Objs2\==[],
+      Objs1\==Objs2,            
+      Filter1\==whole,Filter2\==whole,
+      (Name1==Name2->Filter1\==Filter2;true),
+      (Filter1==Filter2->Name1\==Name2;true),
+      functor(Filter1,F1,_),functor(Filter2,F2,_), %F1==F2,  
+      F1\==alone,F2\==alone,
+      append(Objs1,Objs2,OBJS),
+      pp(Name1+Filter1-Name2+Filter2
+         = Objs1->Objs2),
+      show_interesting_named_props(Name1+Filter1-Name2+Filter2,OBJS)
+      ))).
+
+rules_from(Objs1,Objs2,Objects):- Objects=(Objs1->Objs2).
+
+show_info_about_objects(TestID,Name,Ors,Ands):-
+  test_grouped_io(TestID,Ors,Ands,IO),
+  w_section(Name,show_interesting_named_props(Name,IO)).
+
+
+test_grouped_io(TestID,ExampleNum,IO,Objs):-
+  findall(Indv,
+   (is_why_grouped_g(TestID,_Count,_Why,IndvSG),
+    maplist(must_oid_to_object,IndvSG,IndvS),     
+     member(Indv,IndvS),
+    (is_list(ExampleNum)->once((member(OR,ExampleNum),sub_term(E,Indv),nonvar(E),E=OR));true),
+    \+ \+ ((forall(member(Trn,IO),sub_var(Trn,Indv))))),
+   IndvSIO),
+  list_to_set(IndvSIO,IndvSet),
+   Objs = IndvSet.
+/*
+test_grouped_io(TestID,ExampleNum,IO,Objs):-
+  Example+Num = ExampleNum,
+  is_why_grouped_g(TestID,_Count, individuate(complete,two(ID,_)),IndvSG),
+  once(testid_name_num_io(ID,TestID,Example,Num,_)),
+   maplist(must_oid_to_object,IndvSG,IndvS),
+   (var(IO)->member(IO,[in,out]);true),
+   once(include(sub_var(IO),IndvS,IndvSIO)),
+   Objs = IndvSIO.
+*/
+
+test_grouped(TestID,ExampleNum,I,O):-  
+  test_grouped_io(TestID,ExampleNum,in,I),
+  once(test_grouped_io(TestID,ExampleNum,out,O)).
+
 
 saved_group(Why,IndvS):-
   is_why_grouped(_TestID,_Count,Why,IndvS).
@@ -316,14 +478,14 @@ length_criteria(List,P):- compound(P), length(List,I), !, call(call,P,I).
 length_criteria(List,N):- length(List,N).
 
 tesT_compare_objects:- compare_objects([
-    obj([mass(1),shape_rep(grav,[point_01_01]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-point_01_01]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),
       vis2D(1,1),rot2D(sameR),loc2D(4,9),changes([]),iz(type(dots)),iz(type(dot)),iz(filltype(solid)),iz(jagged(true)),center2G(4,9),% obj_to_oid(t(af902bf9)>(tst+0)*in,37),globalpoints([yellow-point_04_09]),
       grid_size(10,10),iz(important)]),
-    obj([mass(1),shape_rep(grav,[point_01_01]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-point_01_01]),vis2D(1,1),rot2D(sameR),loc2D(4,6),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(4,6),obj_to_oid(t(af902bf9)>(tst+0)*in,39),globalpoints([yellow-point_04_06]),grid_size(10,10),iz(important)]),
-    obj([mass(1),shape_rep(grav,[point_01_01]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-point_01_01]),vis2D(1,1),rot2D(sameR),loc2D(1,6),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(1,6),obj_to_oid(t(af902bf9)>(tst+0)*in,40),globalpoints([yellow-point_01_06]),grid_size(10,10),iz(important)]),
-    obj([mass(1),shape_rep(grav,[point_01_01]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-point_01_01]),vis2D(1,1),rot2D(sameR),loc2D(10,5),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(10,5),obj_to_oid(t(af902bf9)>(tst+0)*in,41),globalpoints([yellow-point_10_05]),grid_size(10,10),iz(important)]),
-    obj([mass(1),shape_rep(grav,[point_01_01]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-point_01_01]),vis2D(1,1),rot2D(sameR),loc2D(6,5),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(6,5),obj_to_oid(t(af902bf9)>(tst+0)*in,42),globalpoints([yellow-point_06_05]),grid_size(10,10),iz(important)]),
-    obj([mass(1),shape_rep(grav,[point_01_01]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-point_01_01]),vis2D(1,1),rot2D(sameR),loc2D(10,1),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(10,1),obj_to_oid(t(af902bf9)>(tst+0)*in,43),globalpoints([yellow-point_10_01]),grid_size(10,10),iz(important)]),
-    obj([mass(1),shape_rep(grav,[point_01_01]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-point_01_01]),vis2D(1,1),rot2D(sameR),loc2D(6,1),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(6,1),obj_to_oid(t(af902bf9)>(tst+0)*in,44),globalpoints([yellow-point_06_01]),grid_size(10,10),iz(important)])],
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(4,6),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(4,6),obj_to_oid(t(af902bf9)>(tst+0)*in,39),globalpoints([yellow-point_04_06]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(1,6),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(1,6),obj_to_oid(t(af902bf9)>(tst+0)*in,40),globalpoints([yellow-point_01_06]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(10,5),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(10,5),obj_to_oid(t(af902bf9)>(tst+0)*in,41),globalpoints([yellow-point_10_05]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(6,5),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(6,5),obj_to_oid(t(af902bf9)>(tst+0)*in,42),globalpoints([yellow-point_06_05]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(10,1),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(10,1),obj_to_oid(t(af902bf9)>(tst+0)*in,43),globalpoints([yellow-point_10_01]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(6,1),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(6,1),obj_to_oid(t(af902bf9)>(tst+0)*in,44),globalpoints([yellow-point_06_01]),grid_size(10,10),iz(important)])],
     OUTPUT),
   print(OUTPUT).

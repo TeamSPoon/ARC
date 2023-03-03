@@ -117,7 +117,166 @@ trace_all_ogs(Ports,R,In,Out):-
  with_ogs_trace(Ports, all_ogs(R,In,Out)).
 all_ogs(R,In,Out):-
   findall(E,maybe_ogs(E,In,Out),R).
+
+
+align_ints([VV1,VV2|VVs]):- pluz(VV1,1,VV2),!,align_ints([VV2|VVs]).
+align_ints([_]). align_ints([]).
+
+xfer_point(C-PXY,X,Y,HH,VV,C-HHVV):- lazy_p3(hv_point,X,Y,PXY),lazy_p3(hv_point,HH,VV,HHVV).
+xfer_point(PXY,X,Y,HH,VV,HHVV):- lazy_p3(hv_point,X,Y,PXY),lazy_p3(hv_point,HH,VV,HHVV).
+
+reassign_points([CXY|Points],HHs,VVs,[CHHVV|FreePoints]):-!,
+  xfer_point(CXY,X,Y,HH,VV,CHHVV),  
+  nth0(X,HHs,HH),nth0(Y,VVs,VV),
+  reassign_points(Points,HHs,VVs,FreePoints).
+reassign_points([],_,_,[]).
+points_to_free_points_hv(Points,FreePoints):-
+   sort(Points,FPs),
+   length(HHs,32),align_ints(HHs),
+   length(VVs,32),align_ints(VVs),
+   reassign_points(FPs,HHs,VVs,FreePoints).
+
+relate_points(P1,P2,F1,F2):- point_minus(P2,P1,Dist),lazy_p3(point_plus,F1,Dist,F2),!.
+relate_points(P2,P1,F2,F1):- point_minus(P2,P1,Dist),lazy_p3(point_plus,F1,Dist,F2),!.
+relate_points(P1,P2,F1,F2):- hv_point(H1,V1,P1),hv_point(H2,V2,P2),
+   OH is H2-H1,OV is V2-V1, 
+   lazy_relate(F1,OH,OV,F2),!.
+
+lazy_relate(F1,OH,OV,F2):- freeze(F1,offset_hv(F1,OH,OV,F2)), freeze(F2,offset_hv(F1,OH,OV,F2)).
+
+offset_hv(F1,OH,OV,F2):- nonvar(F1),!,hv_point(H1,V1,F1),H2 is H1+ OH, V2 is V1+OV, hv_point(H2,V2,F2).
+offset_hv(F1,OH,OV,F2):- nonvar(F2),!,hv_point(H2,V2,F2),H1 is H2- OH, V1 is V2-OV, hv_point(H1,V1,F1).
+
+fg_or_bg_points(Points,FGPoints):- fg_points(Points,FGPoints),FGPoints\==[],!.
+fg_or_bg_points(Points,BGPoints):- maplist(bg_as(black),Points,BGPoints).
+
+bg_as(Black,I,O):- I==bg,!,O = Black.
+bg_as(_Black,I,I).
+
+into_free_points(Grid,FreePointsO):-
+ must_det_ll((
+   localpoints(Grid,Points),
+   fg_or_bg_points(Points,FGPoints),
+   points_to_free_points(FGPoints,FreePoints),
+   FreePoints=FreePointsO)),!.
+
+points_to_free_points([C1-P1|Points],OUT):-
+  must_det_ll(( points_to_free_points_pa(P1,F1,Points,FreePoints),
+  OUT = [C1-F1|FreePoints])).
+
+points_to_free_points_pa(P1,F1,[C2-P2|Points],OUT):- !,
+ must_det_ll((
+  relate_points(P1,P2,F1,F2),
+  points_to_free_points_pa(P1,F1,Points,FreePoints),
+  OUT=[C2-F2|FreePoints])).
+points_to_free_points_pa(_,_,A,A).
+
+create_shape_clones(Need,FreePoints,ExtraSet,Len,Min):-
+  length(FreePoints,Len),
+  Min is Need div Len,
+  findall(Copy,(between(1,Min,_),copy_term(FreePoints,Copy)),ExtraSet).
   
+
+random_ammount(Low,High,List,RndAmnt):-
+   Range is High - Low + 1, Ammt is Low + random(Range),
+   get_n_top(Ammt,List,RndAmnt).
+
+get_n_top(N,List,TopN):-
+   length(TopN,N),
+   append(TopN,_,List).
+
+calc_clones_needed(MinMaxPerObject,MinMaxLeftOver,[ShapeSize|More],[MaxNeeded|MMaxx],[Clones|TMore],Total):- !,
+  Clones #=< MaxNeeded, %(Clones #>= 1 #\/ Clones#=0),
+  Clones #>= 0,
+  Clones #=< MaxPO, 
+  Clones #>= MinPO,
+   MinMaxPerObject = range(MinPO-MaxPO),
+   Total  #= (ShapeSize * Clones) + Next,
+   calc_clones_needed(MinMaxPerObject,MinMaxLeftOver,More,MMaxx,TMore,Next).
+calc_clones_needed(_MinMaxPerObject,MinMaxLeftOver,[],[],[],Total):-
+  Total #>= 0,
+  Total #=< 900,
+ ignore((
+  MinMaxLeftOver = range(MinLeftOver-MaxLeftOver),
+  Total #>= MinLeftOver,
+  Total #=< MaxLeftOver)).
+
+all_different_grid_locs(All):- all_different_bindings(All).
+
+bestfit_test_grid([[green,green],[_,green]]). bestfit_test_grid([[blue,blue],[blue,blue]]).
+bestfit_test_grid([[_,red],[red,red]]). bestfit_test_grid([[yellow,_],[yellow,yellow]]).
+bestfit_test:- mmake, 
+  findall(S,bestfit_test_grid(S),Set),
+  into_grid(v('626c0bcc')>ExampleNum*in,Grid),
+  grid_size(Grid,H,V),
+  print_grid(H,V,ExampleNum,Grid),
+  MinMaxPerObject = range(1-3),
+  MinMaxLeftOver = range(_-0),
+  bestfit_hybrid_shapes_on(mono_colorhack,Set,Grid,MinMaxPerObject,MinMaxLeftOver,GoodFit),
+  print_list_of(print_grid(H,V),bestfit_test(ExampleNum),GoodFit),
+  print_grid(H,V,allInUse,GoodFit).
+
+mono_colorhack(_C1,_C2,P1,P1).
+bestfit_hybrid_shapes_on(ColorHacks,Set,Grid,MinMaxPerObject,MinMaxLeftOver,OE):-
+ %unique_fg_colors(Grid,[FG]),
+ length(Set,Len),
+  globalpoints(Grid,AvailablePoints),
+  fg_points(AvailablePoints,FGPoints),
+  length(FGPoints,Need),
+  %Need<100,
+ must_det_ll((
+  %maplist(mapgrid(bestfit_shaped(FG,bg)),OSet,MSet),
+  %list_to_set(MSet,Set),
+  print_grid(bestfit_hybrid_shapes_on(Len),Grid),
+  maplist(into_free_points,Set,FreePoints),
+
+  maplist(create_shape_clones(Need),FreePoints,ExtraSet,Sizes,Maxes),
+  flatten(ExtraSet,ES),all_different_grid_locs(ES),
+  calc_clones_needed(MinMaxPerObject,MinMaxLeftOver,Sizes,Maxes,Wants,Need))),!,
+  label(Wants),
+  writeln(Wants),
+  maplist(get_n_top,Wants,ExtraSet,SomeClones),
+  append_2(SomeClones,SomePoints),
+  equify_points_list(ColorHacks,SomePoints,FGPoints),
+  append(SomeClones,GoodFit),
+  findall(obj_loc(O,E),
+    (nth1(N,Set,O),nth1(N,SomeClones,ListClones),member(C,ListClones),member(E,GoodFit),E==C),OE).
+
+append_2(ListOfListOFLists,SomePoints):- 
+  append(ListOfListOFLists,ListOfLists),append(ListOfLists,SomePoints),!.
+
+equify_points_list(_ColorHacks,[],[]):-!.
+equify_points_list(ColorHacks,SomePoints,[C1-P1|Points]):-   
+   call(ColorHacks,C1,C2,P1,P2),
+   select(C2-P2,SomePoints,Rest),
+   %call(ColorHacks,C1,C2,P1,P2),
+   equify_points_list(ColorHacks,Rest,Points).
+
+best_fit_combos(OgsList,GridPs,ComboGroups):-
+  globalpoints(GridPs,GridPoints), 
+  =(OgsList,SmallToBig),reverse(SmallToBig,BigToSmall),
+  max_group_filling(SmallToBig,GridPoints,Smallest,LeftOverA,LeftOutA),
+  max_group_filling(BigToSmall,GridPoints,Largest,LeftOverB,LeftOutB),
+  Fits = [result(LeftOverA,LeftOutA)-Smallest,result(LeftOverB,LeftOutB)-Largest],
+  with_pre(pp(Fits)),
+  sort(Fits,ComboGroups).
+
+
+max_group_filling(SmallToBig,GridPoints,Smallest,SizeLeftOver,SizeLeftOut):-
+  remove_objs(SmallToBig,GridPoints,Smallest,LeftOverA,LeftOutA),
+  length(LeftOutA,SizeLeftOut),
+  fg_points(LeftOverA,FGs),
+  length(FGs,SizeLeftOver).
+
+remove_objs([],GridPoints,[],GridPoints,[]):-!.
+remove_objs(SmallToBig,[],[],[],SmallToBig):-!.
+remove_objs([Obj|Smallest],GridPoints,[Obj|Used],LeftOverA,LeftOutA):-
+  globalpoints(Obj,Pts), intersection(GridPoints,Pts,_,LeftOver1,[]),
+  remove_objs(Smallest,LeftOver1,Used,LeftOverA,LeftOutA),!.
+%remove_objs(LeftOutA,GridPoints,[],GridPoints,LeftOutA):- !.
+remove_objs([Obj|Smallest],GridPoints,Used,LeftOverA,[Obj|LeftOutA]):-
+  remove_objs(Smallest,GridPoints,Used,LeftOverA,LeftOutA).
+
 
 maybe_ogs(ROut,In,Out):- 
    def_ogs_prog(Constr),
@@ -440,12 +599,6 @@ is_trimmable_cell(BG,Cell):- \+ \+ BG = Cell, !, BG=Cell.
 is_trimmable_cell(_BG,Cell):- \+ is_fg_color(Cell),!.
 %is_trimmable_cell(_BG,Cell):- attvar(Cell),!,fail.
 
-itrace:- !.
-itrace:- \+ current_prolog_flag(debug,true),!.
-itrace:- if_thread_main(trace),!.
-ibreak:- if_thread_main(((trace,break))).
-recolor(_,_):- ibreak.
-
 is_exit_hook(prepare_output_hooks(CheckTypes,_)):- CheckTypes=run.
 is_exit_hook(prepare_input_hooks(CheckTypes,_)):- CheckTypes=run.
 choose_bg_color(Out,Black,Else):-
@@ -601,8 +754,6 @@ prop_lists(P,Props):- arg(2,P,Props),is_list(Props),!.
 prop_lists(P,[P]).
 
 
-
-safe_select(HAD,R,RR):- select(H,R,RR), H=@=HAD. 
 
 maybe_if_changed(P2,I,O):- grid_call(P2,I,O),notrace(((I\=@=O,mass(O,Mass),Mass>0))).
 

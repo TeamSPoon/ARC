@@ -89,7 +89,7 @@ compile_and_save_test_now(TestID):-
       nop(individuate_pairs_from_hints(TestID)),
       %train_test(TestID,train_using_io),  
       %print_hybrid_set,
-      save_alt_grids(TestID),
+      save_the_alt_grids(TestID),
       save_supertest(TestID))))).
 
 
@@ -745,8 +745,8 @@ c_proportional(I,O,R):- proportional(I,O,R).
 %grid_hint_io(MC,IO,In,Out,comp(MC,IO,to_from(InO,OutO))):- disguise_grid(In,InO),disguise_grid(Out,OutO).
 
 
-grid_hint_io_not_rev(In,Out,grav_rot(H,V,II)):- once((grav_rot(In,_,II),grav_rot(Out,_,OO))),II=@=OO,grid_size(II,H,V).
-grid_hint_io_not_rev(In,Out,reduce_grid(H,V,II)):- once((grid_to_norm(_,In,II),grid_to_norm(_,Out,OO))),II=@=OO,grid_size(II,H,V).
+grid_hint_io_not_rev(In,Out,sized_grav_rot(H,V,II)):- once((grav_rot(In,_,II),grav_rot(Out,_,OO))),II=@=OO,grid_size(II,H,V).
+grid_hint_io_not_rev(In,Out,sized_reduce_grid(H,V,II)):- once((grid_to_norm(_,In,II),grid_to_norm(_,Out,OO))),II=@=OO,grid_size(II,H,V).
 
 grid_hint_io_1(_MC,_IO,In,Out,value('=@=')):- In=@=Out,!.
 
@@ -812,7 +812,7 @@ grid_vm(G,VM):- into_grid_free(G,Grid),grid_to_gid(Grid,GID),
   ; (grid_to_tid(Grid,ID1),
      into_fti(ID1,[complete],Grid,VM), 
      other_grid(Grid,Grid2), 
-     set(VM.grid_target) = Grid2, 
+     set(VM.target_grid) = Grid2, 
      nb_setval(GID,VM))).
 
 in_to_out(in,out).
@@ -1076,12 +1076,10 @@ illegal_column_data(In,Color,BorderNums):-
 
 
 
-save_alt_grids(TestID):- ensure_test(TestID),
-  save_the_alt_grids(TestID).
-  
 save_the_alt_grids(TestID):- 
+ forall(ensure_test(TestID),
   forall(kaggle_arc(TestID,ExampleNum,I,O),
-    once(save_the_alt_grids(TestID,ExampleNum,[],I,O))).
+    once(save_the_alt_grids(TestID,ExampleNum,[],I,O)))).
 
 save_the_alt_grids(TestID,ExampleNum):-
   arc_test_property(TestID,ExampleNum,has_blank_alt_grid,_),!.
@@ -1089,23 +1087,22 @@ save_the_alt_grids(TestID,ExampleNum):-
   forall(kaggle_arc(TestID,ExampleNum,I,O),
     once(save_the_alt_grids(TestID,ExampleNum,[],I,O))).
 
-
-
 save_the_alt_grids(TestID,ExampleNum,_,_,_):- arc_test_property(TestID,ExampleNum,iro(_),_),!.
-save_the_alt_grids(TestID,ExampleNum,XForms,In,Out):-
-  same_sizes(In,Out),!,
-  maplist(save_cell_calc(TestID,ExampleNum,XForms,In,Out),
-     [fg_intersectiond,fg_intersectiond_mono,cell_minus_cell,mono_cell_minus_cell]),
-  ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!.
+save_the_alt_grids(TestID,ExampleNum,XForms,In,Out):- same_sizes(In,Out),!,
+  save_the_alt_grids_now(TestID,ExampleNum,XForms,In,Out).
 save_the_alt_grids(TestID,ExampleNum,XForms,In,Out):-
   some_norm(In,OpI,NIn), some_norm(Out,OpO,NOut), 
   once(NIn\=@=In;NOut\=@=Out),
   same_sizes(NIn,NOut),!,
-  save_the_alt_grids(TestID,ExampleNum,[ops(OpI,OpO)|XForms],NIn,NOut).
+  save_the_alt_grids_now(TestID,ExampleNum,[ops(OpI,OpO)|XForms],NIn,NOut).
 save_the_alt_grids(TestID,ExampleNum,_XForms,In,Out):- 
   assert_test_property(TestID,ExampleNum,iro(none),In),
   assert_test_property(TestID,ExampleNum,ori(none),Out),!.
   
+save_the_alt_grids_now(TestID,ExampleNum,XForms,In,Out):-
+  maplist(save_cell_calc(TestID,ExampleNum,XForms,In,Out),
+     [fg_intersectiond,fg_intersectiond_mono,cell_minus_cell,mono_cell_minus_cell]),
+  ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!.
 
 %32e9702f
 
@@ -1121,7 +1118,7 @@ same_sizes([I|In],[O|Out]):- length(I,Cols),length(O,Cols),length(In,Rows0),leng
 
 some_norm(Out,[],Out).
 some_norm(Out,[trim_to_rect|Op],NOut):- trim_to_rect(Out,Mid),Out\==Mid,some_norm(Out,Op,NOut).
-some_norm(Out,[grav_rot(Rot)|Op],NOut):- grav_rot(Out,Rot,Mid),Out\==Mid,some_norm(Out,Op,NOut).
+some_norm(Out,[grav_rot(Rot)],NOut):- grav_rot(Out,Rot,NOut),!.
 
 has_blank_alt_grid(TestID,ExampleNum):- blank_alt_grid_count(TestID,ExampleNum,N),N>0.
 

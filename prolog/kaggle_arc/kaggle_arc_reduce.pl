@@ -565,10 +565,11 @@ fix_bg(Which,OO,X):- fail, Which=@=OO,!,freeze(X,X\=(_,_)).
 %fix_bg(Which,OO,_):-OO=fg,!.
 fix_bg(_,OO,OO).
 
-compress_grid(Op,I,OO):- 
-  normalize_grid(NOp,I,II),
-  locally(nb_setval(grid_reductions,[compress]),reduce_grid(II,COp,OO)),
-  append(COp,NOp,Op).
+%compress_grid(COp,I,OO):- normalize_grid(_NOp,I,II), I\=@=II,!,compress_grid1(COp,II,OO). % really we should compleain they forgot to mnormalize first
+compress_grid(COp,I,OO):- normalize_grid(_NOp,I,II), compress_grid1(COp,II,OO),!. % really we should compleain they forgot to mnormalize first
+compress_grid(COp,I,OO):- compress_grid1(COp,I,OO),!.
+compress_grid1(COp,I,OO):- locally(nb_setval(grid_reductions,[compress]),reduce_grid(I,COp,OO)).
+  %append(COp,NOp,Op).
 %b_grid_to_norm(IOps,LGrid,LPointsNorm):- reduce_grid(LGrid^LGrid,IOps,LPointsNorm^_).
 %b_grid_to_norm([],I,I).
 

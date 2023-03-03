@@ -80,6 +80,7 @@ menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z_make,fully_t
 menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),  \+ arc_html, 
   sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
 menu_cmd1(i,'i','             See the (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,f),each_ndividuator))).
+menu_cmd1(_,'I','                  or (I)ndividuate all',(whole_ndividuator)).
 menu_cmd1(i,'o','                  or (o)bjects found in the input/outputs',                (clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,t),ndividuator))).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',   (cls_z_make,!,ignore(what_unique),ndividuator)).
 menu_cmd1(_,'y','                  or Wh(y) between objects in the input/outputs',   (cls_z_make,!,ndividuator)).
@@ -109,7 +110,6 @@ menu_cmd1(_,'~','                  or (PageUp) to begining of suite',(prev_suite
 menu_cmd1(_,'N','                  or (N)ext suite',(next_suite)).
 menu_cmd1(i,'R','             Menu to (R)un all tests noninteractively',(run_all_tests)).
 menu_cmd1(_,'l','                  or (l)ist special tests to run,',(show_tests)).
-menu_cmd1(_,'I','                  or L(I)ist special individualizations to run,',(show_indivizers)).
 menu_cmd1(r,'i','             Re-enter(i)nteractve mode.',(interact)).
 
 % How I got into fostering was I had spent about 10k dollars at Dove Lewis Animal Hospital for a cat in heart failure.  When he passed, about 3 years ago, I decided (this time) to go to a "kill" shelter to adopt another.   While was waiting for an appointment with an adoption screener I saw a flyer that said 'all medical expenses' would be paid if i became a foster volunteer. Holly shit, that sounded good.  So I started fostering 'moms with kittens' and other cats in all stages and needs.  Sometimes cats that are under protection by court orders.  T
@@ -506,6 +506,21 @@ rtty:- with_tty_raw(rtty1).
 rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 
 
+whole_ndividuator(TestID):- ensure_test(TestID),
+  check_for_refreshness,
+  nop(show_test_grids), set_flag(indiv,0),
+  compile_and_save_test,
+  with_luser(use_individuated_cache,true,
+   with_pair_mode(whole_test,
+    findall(PairGroups,
+    (kaggle_arc(TestID,ExampleNum,In,Out),%nonvar(Out),
+     once(each_ndividuator(TestID,ExampleNum,In,Out,PairGroups)),
+     ignore(call_list(PairGroups))),
+   _AllPairGroups))),
+  show_groups(TestID).
+  
+
+
 each_ndividuator(TestID):- ensure_test(TestID),
   check_for_refreshness,
   nop(show_test_grids), set_flag(indiv,0),
@@ -515,6 +530,7 @@ each_ndividuator(TestID):- ensure_test(TestID),
     (with_test_pairs(TestID,ExampleNum,In,Out,
          once(each_ndividuator(TestID,ExampleNum,In,Out,PairGroups))))),
    AllPairGroups),
+  show_groups(TestID),
   call_list(AllPairGroups).
 
 call_list(List):-is_list(List),!,maplist(call_list,List).
@@ -555,7 +571,7 @@ show_i(Y,O):-
 
 ndividuator(TestID):- ensure_test(TestID),
   never_entire_suite,nop(show_test_grids), set_flag(indiv,0),
-  compile_and_save_test(TestID),
+  each_ndividuator(TestID),
   with_test_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)).
 
 ndividuator(TestID,ExampleNum,In,Out):- get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
@@ -649,7 +665,6 @@ into_test_cmd(Cmd,Cmd).
 % Hides solution grid from code
 kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,G), if_no_peeking((((ExampleNum*IO) \= ((tst+_)*out)))).
 
-if_no_peeking(_).
 
 test_grids(TestID,G):- get_pair_mode(entire_suite), !, kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
 test_grids(TestID,G):- get_pair_mode(whole_test), !, ensure_test(TestID), kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
@@ -658,14 +673,16 @@ with_test_grids(TestID,G,P):- forall_count(test_grids(TestID,G),my_menu_call((en
 
 
 % Hides solution grid from code
-kaggle_arc_safe(TestID,ExampleNum,I,O):- kaggle_arc(TestID,ExampleNum,I,OO), if_no_peeking((((((ExampleNum+_) \= ((ptst+_)))->O=OO ; true)))).
+if_no_peeking(tst+_,_,_):-!.  if_no_peeking(_,O,O).
+kaggle_arc_safe(TestID,ExampleNum,I,O):- kaggle_arc(TestID,ExampleNum,I,OO),if_no_peeking(ExampleNum,OO,O). 
 
 test_pairs(TestID,I,O):- test_pairs(TestID,_ExampleNum,I,O).
 
-test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(entire_suite), !, ensure_test(TestID), kaggle_arc_safe(TestID,ExampleNum,I,O).
+test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(entire_suite), !,ensure_test(TestID), kaggle_arc_safe(TestID,ExampleNum,I,O).
 test_pairs(_TestID,ExampleNum,I,_O):- nonvar(ExampleNum),nonvar(I),!.
+test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(whole_test), ensure_test(TestID), !, %ignore(ExampleNum=trn+_), 
+  kaggle_arc_safe(TestID,ExampleNum,I,O).
 %test_pairs(TestSpec,ExampleNum,I,O):- compound(TestSpec),(TestSpec = (TestID>ExampleNum)),testspec_to_pairs(TestSpec,TestID,ExampleNum,I,O).
-test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(whole_test), !, ensure_test(TestID), kaggle_arc_safe(TestID,ExampleNum,I,O).
 test_pairs(TestID,ExampleNum,I,O):- ignore(ensure_test(TestID)), some_current_example_num(ExampleNum), kaggle_arc(TestID,ExampleNum,I,O).
 
 %with_test_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call((ensure_test(TestID),P))).
@@ -679,7 +696,7 @@ for_each(Gen,Goal):-
   Gen,(Goal*->true;true).
 
 with_test_pairs(TestID,ExampleNum,I,O,P):-
- for_each(must_det_ll(test_pairs(TestID,ExampleNum,I,O)),
+ for_each((test_pairs(TestID,ExampleNum,I,O)),
   my_menu_call((
     ensure_test(TestID),
     set_example_num(ExampleNum),     
@@ -2120,6 +2137,7 @@ testid_name_num_io_0(ID,Name,Example,Num,IO):- arc_atom_to_term(ID,Term,_), Term
 testid_name_num_io_0(ID,Name,_Example,_Num,_IO):- fix_id_1(ID,   Name),!. %, kaggle_arc_io(Name,Example+Num,IO,_).
 
 testid_name_num_io_gid(TestID,Example,Num,IO,GIDR):- TestID=..[V,ID],atomic_list_concat([V,ID,Example,Num,IO],'_',GIDR).
+
 
 
 
