@@ -1126,11 +1126,7 @@ overlapping_image(In,Other,OLIn):-
   colors_of(In,CsInO), 
   colors_of(Other,CsOutO),
   ExtraColors = color_set(CsInO).add(CsOutO).rem(CsIn).rem(CsOut),
-
-
-  OLIn=In.inv(unbind_color(ExtraColors)),
-
-
+  OLIn=In.inv(unbind_color(ExtraColors)).
 
 %32e9702f
 
