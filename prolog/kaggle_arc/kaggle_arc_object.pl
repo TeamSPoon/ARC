@@ -2248,11 +2248,28 @@ rot_p2(rollD). %rot_p2(rollDR).
 :- dynamic(is_why_grouped_g/4).
 :- retractall(is_why_grouped_g(_,_,_,_)).
 
+call_i1(M,O,V):- M=..[F|Args],!,MO=..[F,O|Args],call(MO,V).
+assert_i1(M,O,V):- M=..[F|Args],!,append(Args,[V],AV),MOV=..[F,O|AV],asserta_if_new(MOV).
 
-o_m_v(O,M,V):- is_grid(O),!,call(M,O,V).
-o_m_v(O,M,V):- is_object(O),!,(indv_prop_val(O,M,V)*->true;call(M,O,V)).
-o_m_v(O,M,V):- atomic(O),gid_to_grid(O,I),!,o_m_v(I,M,V).
-o_m_v(O,M,V):- g2o(O,I),!,o_m_v(I,M,V).
+o_m_v(O,M,V):- is_grid(O),!,call_i1(M,O,V).
+o_m_v(O,M,V):- is_object(O),!,(indv_prop_val(O,M,V)*->true;call_i1(M,O,V)).
+o_m_v(S,M,V):- structure_type_data(S,Type,O),!,call(Type,O,M,V).
+o_m_v(O,M,V):- must_det_ll((id_to_o(O,I),O\=@=I)),!,o_m_v(I,M,V).
+
+is_structure_type(color_set).
+structure_type_data(S,Type,O):- compound(S),S=..[Type,O],is_structure_type(Type),!.
+structure_type_data(S,Type,O):- is_list(S),Type=list_of(_),S=O.
+list_of(_Elem,List,append(Stuff),O):- append(List,Stuff,O).
+
+id_to_o(O,I):- atomic(O),gid_to_grid(O,I),!.
+id_to_o(O,I):- g2o(O,I),!.
+id_to_o(O,I):- into_gridoid(O,I),!.
+
+set_o_m_v(O,M,V):- is_grid(O),!,assert_call_i1(M,O,V).
+set_o_m_v(O,M,V):- is_object(O),!,(missing_arity(M,1)->add_prop(O,M,V);assert_call_i1(M,O,V)).
+set_o_m_v(S,M,V):- structure_type_data(S,Type,O),!,call(Type,O,set(M),V).
+set_o_m_v(O,M,V):- must_det_ll((id_to_o(O,I),O\=@=I)),!,arc_setval(I,M,V).
+
 
 :- multifile(dictoo:dot_overload_hook/4).
 :- dynamic(dictoo:dot_overload_hook/4).
@@ -2269,7 +2286,10 @@ dictoo:dot_overload_hook(M,Obj,Memb,Value):-
 :- module_transparent(dictoo:is_dot_hook/4).
 
 %dictoo:is_dot_hook(_,_,_,_):-!.
-is_hooked_obj(Self):- is_object(Self).
+is_hooked_obj(Self):- is_object(Self),!.
+is_hooked_obj(Self):- is_grid(Self),!.
+is_hooked_obj(Self):- is_list(Self),!.
+is_hooked_obj(Self):- structure_type_data(Self,_,_),!.
 is_hooked_obj(Self):- g2o(Self,_).
 is_hooked_obj(Self):- gid_to_grid(Self,_),!.
 dictoo:is_dot_hook(_M,Self,_Func,_Value):- is_hooked_obj(Self),!.

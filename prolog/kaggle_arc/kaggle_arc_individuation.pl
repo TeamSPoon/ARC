@@ -1855,13 +1855,13 @@ compile_and_save_current_test_pt_2(_TestID,_):-
    mapgrid(cell_minus_cell,O,I,OMinusI),
    print_grid(early_o_minus_i,OMinusI),!.
 
+cell_minus_cell(I,O,M):- maybe_mapgrid(cell_minus_cell,I,O,M),!.
 cell_minus_cell(I,O,M):- I=@=O, M=bg.
 cell_minus_cell(I,_,I).
 
-
+mono_cell_minus_cell(I,O,M):- maybe_mapgrid(mono_cell_minus_cell,I,O,M),!.
 mono_cell_minus_cell(I,O,M):- is_fg_color(I),is_fg_color(O), M=bg.
 mono_cell_minus_cell(I,_,I).
-
 
 lessThan(How,A,B):- call(How,A,AA),call(How,B,BB), AA < BB.
 
@@ -2610,6 +2610,7 @@ mono_shapes(Shape,VM):-
 
 into_monogrid(Orig,NewGrid):-mapgrid(mono_shaped,Orig,NewGrid).
 
+mono_shaped(G,O):- maybe_mapgrid(mono_shaped,G,O),!.
 mono_shaped(Cell,NewCell):- mono_shaped(fg,wbg,Cell,NewCell).
 mono_shaped(_FG,_BG,Cell,bg):- plain_var(Cell),!.
 mono_shaped(_FG,_BG,Cell,bg):- Cell==bg,!.
@@ -3041,6 +3042,7 @@ i_subtract_objs(VM):-
 % =====================================================================
 is_fti_step(fg_subtractions).
 % =====================================================================
+fg_subtractiond(G,M,O):- maybe_mapgrid(fg_subtractiond,G,M,O),!.
 fg_subtractiond(This,Minus,_):- This =@= Minus,!.  %fg_subtractiond(This,Minus,_):- \+ This \= Minus,!.
 fg_subtractiond(This,_,This).
 
@@ -3095,10 +3097,12 @@ vm_subst(Black,Zero,VM):-
 % =====================================================================
 is_fti_step(fg_intersections).
 % =====================================================================
+fg_intersectiond(This,That,Inter):- maybe_mapgrid(fg_intersectiond,This,That,Inter),!.
 fg_intersectiond(This,That,This):- This =@= That,!.
 fg_intersectiond(_,_,bg).
 %fg_intersectiond(_,_,Black):-  get_black(Black).
 
+fg_intersectiond_mono(This,That,Inter):- maybe_mapgrid(fg_intersectiond_mono,This,That,Inter),!.
 fg_intersectiond_mono(This,That,This):- is_fg_color(This),is_fg_color(That).
 fg_intersectiond_mono(_,_,bg).
 

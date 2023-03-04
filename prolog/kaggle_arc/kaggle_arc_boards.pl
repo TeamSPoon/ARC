@@ -1102,7 +1102,28 @@ save_the_alt_grids(TestID,ExampleNum,_XForms,In,Out):-
 save_the_alt_grids_now(TestID,ExampleNum,XForms,In,Out):-
   maplist(save_cell_calc(TestID,ExampleNum,XForms,In,Out),
      [fg_intersectiond,fg_intersectiond_mono,cell_minus_cell,mono_cell_minus_cell]),
-  ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!.
+  ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!,
+  save_the_alt_grids_now2(TestID,ExampleNum,XForms,In,Out).
+
+colors_of(O,Cs):- unique_fg_colors(O,Cs),!.
+
+save_the_alt_grids_now2(TestID,ExampleNum,XForms,In,Out):- 
+ must_det_ll((
+  colors_of(In.cell_minus_cell(Out),CsIn),
+  colors_of(Out.cell_minus_cell(In),CsOut),
+  colors_of(In,CsInO), 
+  colors_of(Out,CsOutO),
+  ExtraColors = color_set(CsInO).add(CsOutO).rem(CsIn).rem(CsOut),
+  gset(In.overlapping)=In.inv(unbind_color(ExtraColors)),
+  gset(Out.overlapping)=Out.inv(unbind_color(ExtraColors)),
+  assert_test_property(TestID,ExampleNum,ori([overlapping|XForms]),Out.overlapping),
+  assert_test_property(TestID,ExampleNum,iro([overlapping|XForms]),In.overlapping))),!.
+
+inv(I,M,O):- call(M,I,O).
+
+color_set(CsIn,add(CsOut),Result):- trace, !, append_sets(CsIn,CsOut,Result).
+color_set(CsIn,rem(CsOut),Result):- !, trace,include(not_in(CsOut),CsIn,Result).
+
 
 %32e9702f
 

@@ -1115,7 +1115,7 @@ print_side_by_side(V):- var(V),!, writeq(print_side_by_side(V)).
 print_side_by_side(g(H,V,Grid)):- nonvar(Grid),!,print_grid(H,V,Grid).
 print_side_by_side(A^B):- caret_to_list(A^B,List),print_side_by_side(List),!.
 print_side_by_side(call(P)):- !, call(P,Ret),!,print_side_by_side_l(1,Ret).
-
+print_side_by_side(List):- is_obj_props(List),!,wqs(List).
 print_side_by_side(G):- is_grid(G),!,print_grid(G).
 print_side_by_side(GF):- grid_footer(GF,G,W),is_gridoid(G),!,print_grid(W,G).
 %print_side_by_side(Title=(A^B)):- print_side_by_side((Title=A)^B).
@@ -1530,6 +1530,7 @@ uses_space(C):- code_type(C,print).
 
 into_ss_string(C, X):- var(C),!, must_det_ll(X=ss(1,["var_into_ss_string"])).
 into_ss_string(C,_):- plain_var(C),!,throw(var_into_ss_string(C)).
+into_ss_string(Props,SS):- is_obj_props(Props),!,into_ss_call(wqs(Props),SS).
 into_ss_string(print_grid(G),SS):- !,into_ss_grid(G,SS).
 into_ss_string(print_grid0(G),SS):- !,into_ss_grid(G,SS).
 into_ss_string(print_grid(X,Y,G),SS):- !, into_ss_grid(X,Y,G,SS).

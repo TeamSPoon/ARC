@@ -206,6 +206,10 @@ into_grid_or_var(G,G):- is_cons(G),!.
 into_grid_or_var(G,G):- var(G),!.
 into_grid_or_var(O,G):- cast_to_grid(O,G,_Uncast),!.
 
+maybe_mapgrid(P2,I,O):- is_grid(I),!,mapgrid(P2,I,O).
+maybe_mapgrid(P3,I,O,M):- is_grid(I),!,mapgrid(P3,I,O,M).
+maybe_mapgrid(P4,I,O,M,N):- is_grid(I),!,mapgrid(P4,I,O,M,N).
+
 mapgrid(P4,Grid,GridM,GridN,GridO):- into_grid_or_var(Grid,G1),into_grid_or_var(GridM,G2),into_grid_or_var(GridN,G3),into_grid_or_var(GridO,G4),mapg_list(P4,G1,G2,G3,G4).
 mapg_list(P4,Grid,GridM,GridN,GridO):- is_list(Grid),!,maplist(mapg_list(P4),Grid,GridM,GridN,GridO).
 mapg_list(P4,Grid,GridM,GridN,GridO):- call(P4,Grid,GridM,GridN,GridO),!.

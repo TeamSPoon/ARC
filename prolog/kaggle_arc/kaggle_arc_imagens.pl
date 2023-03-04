@@ -143,6 +143,7 @@ into_color_grid(Grid,ColorGrid):-
   into_grid(Grid,Grid0),
   mapgrid(for_color_grid,Grid0,ColorGrid).
 
+for_color_grid(Var,Color):- maybe_mapgrid(for_color_grid,Var,Color),!.
 for_color_grid(Var,Var):- is_color(Var),!.
 for_color_grid(Var,Color):- number(Var),color_name(Var,Color),!.
 for_color_grid(Var,Var):- plain_var(Var),!.

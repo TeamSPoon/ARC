@@ -457,17 +457,25 @@ unbind_color_whole(Num1,Grid,GridO):- is_list(Grid),!,maplist(unbind_color_whole
 unbind_color_whole(Num1,Num2,_):- \+ compound(Num2),!, Num1=Num2.
 unbind_color_whole(Num1,_-Num1,_).
 
+color_to_unbind(Grid,UnbindColor):-    
+    enum_real_colors(UnbindColor),
+    \+ \+ sub_var(UnbindColor,Grid).
+    %guess_to_unbind(Grid,UnbindColor), 
+    %\+ plain_var(UnbindColor), sub_var(UnbindColor,Grid). 
 
-unbind_color(UnbindColor,Grid,GridO):- plain_var(UnbindColor), 
-    \+ sub_var(UnbindColor,Grid),!,
-    must(guess_to_unbind(Grid,UnbindColor)), \+ plain_var(UnbindColor),
+
+unbind_color(UnbindColor,Grid,GridO):- plain_var(UnbindColor), \+ sub_var(UnbindColor,Grid),!,
+    color_to_unbind(Grid,UnbindColor),
     unbind_color(UnbindColor,Grid,GridO).
+unbind_color([UC1|UCL],Grid,GridO):-!, unbind_color(UC1,Grid,GridM),unbind_color(UCL,GridM,GridO).
+unbind_color([],Grid,Grid):-!.
 unbind_color(Color1,Grid,GridO):- is_grid(Grid),!,grid_color_code(Color1,Num1),unbind_color0(Num1,Grid,GridO).
 unbind_color(Color1,Grid,GridO):- color_code(Color1,Num1),subst001(Grid,Num1,_,GridO).
 
 unbind_color0(Num1,Grid,GridO):- is_list(Grid),!,maplist(unbind_color0(Num1),Grid,GridO).
 unbind_color0(Num1,Num1,_):-!.
 unbind_color0(_,Num1,Num1).
+
 
 colors_to_vars(G,GridNew):- into_grid(G,Grid),G\=@=Grid,!,colors_to_vars(Grid,GridNew).
 colors_to_vars(Grid,GridO):- colors_to_vars(_,_,Grid,GridO).

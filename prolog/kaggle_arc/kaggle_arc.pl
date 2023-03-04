@@ -325,8 +325,13 @@ arc_setval(TT,Map):- get_map_pairs(Map,_Type,Pairs),!,maplist(arc_setval(TT),Pai
 arc_setval(TT,N=V):- !, arc_setval(TT,N,V).
 arc_setval(TT,N-V):- !, arc_setval(TT,N,V).
 arc_setval(TT,NV):- arc_setval(TT,NV,t).
+
+
 arc_setval(TT,N,V):- is_dict(TT),!, nb_set_dict(N,TT,V).
-arc_setval(TT,N,V):- (nb_rb_get_node(TT,N,Node)->nb_rb_set_node_value(Node,V);nb_rb_insert(TT,N,V)).
+arc_setval(TT,N,V):- is_rb_tree(TT), (nb_rb_get_node(TT,N,Node)->nb_rb_set_node_value(Node,V);nb_rb_insert(TT,N,V)).
+arc_setval(TT,N,V):- set_o_m_v(TT,N,V).
+
+
 
 :- meta_predicate(when_in_html(0)).
 %when_in_html(Goal):- !, fail,Goal.
