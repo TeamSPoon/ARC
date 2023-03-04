@@ -272,7 +272,7 @@ grid_rollDR(Grid,RollD):-  do_rollDR(Grid,RollD),!.
 grid_rot90(Grid,Rot90):-  rot270(Grid,Rot270),rot180(Rot270,Rot90).
 grid_rot180(Grid,Rot180):- flipV(Grid,Rot90),flipH(Rot90,Rot180).
 grid_rot270(Grid,NewAnyWUpdate):- get_colums(Grid,NewAnyWUpdate),!.
-grid_flipH(Grid,FlipH):- maplist(reverse,Grid,FlipH).
+grid_flipH(Grid,FlipH):- my_maplist(reverse,Grid,FlipH).
 grid_flipV(Grid,FlipV):- reverse(Grid,FlipV).
 
 grid_flipDV(Grid,FlipHV):-flipD(Grid,FlipH),flipV(FlipH,FlipHV),!.
@@ -478,7 +478,7 @@ find_relations(VM):-
 find_relationsA(Objs,NewObjs):-
  must_det_ll((
   include(is_physical_object,Objs,Phys),
-  maplist(add_oinfo,Phys,PhysOInfo),
+  my_maplist(add_oinfo,Phys,PhysOInfo),
   find_relationsB(PhysOInfo,[],TodoLIST),
   flatten(TodoLIST,TodoLISTF),
   do_todo3(PhysOInfo,TodoLISTF,NewObjs))).

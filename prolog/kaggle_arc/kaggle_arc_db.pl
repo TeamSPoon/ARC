@@ -89,7 +89,7 @@ erase_obj(OID):-
   retractall(gid_glyph_oid(GID,_,OID)),
   retractall(gid_type_oid(GID,_,OID)).
 
-assert_id_cells(ID,Points):- maplist(assert_id_cell(ID),Points).
+assert_id_cells(ID,Points):- my_maplist(assert_id_cell(ID),Points).
 assert_id_cell(ID,-(C,HV)):- assert(cmem(ID,HV,C)).
 
 
@@ -174,8 +174,8 @@ find_test_grids(TestID,test_input,Grid):- kaggle_arc_io(TestID,tst,in,Grid).
 find_test_grids(TestID,train_input,Grid):- kaggle_arc_io(TestID,trn,in,Grid).
 find_test_grids(TestID,train_output,Grid):- kaggle_arc_io(TestID,trn,out,Grid).
 
-term_to_oid(v(A)>(B+C)*D,Atom):- maplist(atomic,[A,B,C,D]),atomic_list_concat([v,A,B,C,D],'_',Atom),!.
-term_to_oid(t(A)>(B+C)*D,Atom):- maplist(atomic,[A,B,C,D]),atomic_list_concat([t,A,B,C,D],'_',Atom),!.
+term_to_oid(v(A)>(B+C)*D,Atom):- my_maplist(atomic,[A,B,C,D]),atomic_list_concat([v,A,B,C,D],'_',Atom),!.
+term_to_oid(t(A)>(B+C)*D,Atom):- my_maplist(atomic,[A,B,C,D]),atomic_list_concat([t,A,B,C,D],'_',Atom),!.
 term_to_oid(T,A):- (compound(T)->term_to_atom(T,A);(atom(T)->T=A;term_to_atom(T,A))).
 
 point_to_hvc(Var,_,_,_):- var(Var),!,fail.
@@ -204,7 +204,7 @@ make_fresh_grid(1,1,[[_]]):-!.
 make_fresh_grid(_,0,[]):- !.
 make_fresh_grid(0,1,[[]]):-!.
 make_fresh_grid(0,N,Grid):- N>1,!, make_list([],N,Grid).
-make_fresh_grid(H,V,Grid):- length(Grid,V), maplist(make_lengths(H),Grid),!.
+make_fresh_grid(H,V,Grid):- length(Grid,V), my_maplist(make_lengths(H),Grid),!.
 
 
 % Grid vis2D/resize
@@ -221,7 +221,7 @@ insert_row(N,Row,Grid,H,_,NewGrid):- length(Row,H),length(Left,N),append(Left,Ri
 
 insert_col(N,Col,Grid,NewGrid):- grid_size(Grid,H,V), insert_col(N,Col,Grid,H,V,NewGrid).
 insert_col(N,Col,Grid,H,V,NewGrid):- N<0, NewN is H + N+1,!,insert_col(NewN,Col,Grid,H,V,NewGrid).
-insert_col(N,Col,Grid,_,V,NewGrid):- length(Col,V),maplist(insert_col_at(N),Col,Grid,NewGrid).
+insert_col(N,Col,Grid,_,V,NewGrid):- length(Col,V),my_maplist(insert_col_at(N),Col,Grid,NewGrid).
 
 
 insert_col_at(N,Col,Row,NewRow):- length(Left,N),append(Left,Right,Row),append(Left,[Col|Right],NewRow).
@@ -231,11 +231,11 @@ insert_ele(N,V,L,NL):- length(Left,N),append(Left,Right,L),append(Left,[V|Right]
 delete_row(N,Grid,NewGrid):- N < 0, length(Grid,L), DR is L+N+1,delete_row(DR,Grid,NewGrid).
 delete_row(N,Grid,NewGrid):- length(Left,N),append(Left,[_|Right],Grid),append(Left,Right,NewGrid).
 
-delete_col(N,Grid,NewGrid):- maplist(delete_row(N),Grid,NewGrid).
+delete_col(N,Grid,NewGrid):- my_maplist(delete_row(N),Grid,NewGrid).
 
 map_nth(P,N,Grid):- nth1(N,Grid,E),call(P,E).
-map_row(P,N,Grid):- map_nth(maplist(P),N,Grid).
-map_col(P,N,Grid):- maplist(map_nth(P,N),Grid).
+map_row(P,N,Grid):- map_nth(my_maplist(P),N,Grid).
+map_col(P,N,Grid):- my_maplist(map_nth(P,N),Grid).
 
 
 maybe_glyph(G,_,Glyph):- is_object(G), object_glyph(G,Glyph), !.
@@ -295,7 +295,7 @@ hv_c_value(O,GN,H,V):- is_vm_map(O),!,hv_c_value(O.grid,GN,H,V).
 hv_c_value(ID,C,H,V):- (var(H);var(V)),!,arcST,atrace, hv_point(H,V,_),hv_c_value(ID,CC,H,V),CC=C.
 hv_c_value(O,Color,H,V):- is_object(O),!,globalpoints(O,Ps),hv_c_value(Ps,Color,H,V).
 hv_c_value(O,Color,H,V):- is_list(O), is_cpoints_list(  O),!,hv_point(H,V,Point),member(Color-Point,O).
-hv_c_value(O,FGL   ,H,V):- is_list(O), maplist(is_ncpoint,O),!,hv_point(H,V,Point),member(Point,O),get_fg_label(FGL).
+hv_c_value(O,FGL   ,H,V):- is_list(O), my_maplist(is_ncpoint,O),!,hv_point(H,V,Point),member(Point,O),get_fg_label(FGL).
 hv_c_value(O,FGL   ,H,V):- is_ncpoint(O),!,O=Point,hv_point(H,V,Point),!,get_fg_label(FGL).
 
 %hv_c_value(G,Color,H,V):- is_group(G),!,into_list(G,L),member(E,L),hv_c_value(E,Color,H,V),!.
@@ -391,7 +391,7 @@ replace_global_point_color(Point,NewC,OldC,G,GO):- is_object(G), !,
     setq(G,[globalpoints(RPoints)],GO).
 replace_global_point_color(Point,NewC,OldC,G,GO):- is_grid(G),!, point_to_hvc(Point,H,V,_),my_assertion_is_color((NewC)), 
   replace_grid_point(H,V,NewC,OldC,G,GO),!.
-replace_global_point_color(Point,NewC,OldC,G,GO):- is_list(G),!, maplist(replace_global_point_color(Point,NewC,OldC),G,GO).
+replace_global_point_color(Point,NewC,OldC,G,GO):- is_list(G),!, my_maplist(replace_global_point_color(Point,NewC,OldC),G,GO).
 replace_global_point_color(Point,NewC,OldC,G,GO):- replace_local_point_color(Point,NewC,OldC,G,GO).
 
 
@@ -423,11 +423,11 @@ replace_local_points(Point,OldC,G,GO):- point_to_hvc(Point,H,V,NewC),nop(my_asse
 replace_local_points(Point,OldC,G,GO):- trace_or_throw(unknown_target_type(replace_local_points(Point,OldC,G,GO))).
 
 replace_local_point_color(Point,NewC,OldC,G,GO):- is_points_list(G),!, replace_in_points(Point,NewC,OldC,G,GO).
-replace_local_point_color(Point,NewC,OldC,G,GO):- is_list(G),!, maplist(replace_local_point_color(Point,NewC,OldC),G,GO).
+replace_local_point_color(Point,NewC,OldC,G,GO):- is_list(G),!, my_maplist(replace_local_point_color(Point,NewC,OldC),G,GO).
 replace_local_point_color(Point,NewC,OldC,G,GO):- is_object(G), !,
     localpoints(G,Points),     
     replace_in_points(Point,NewC,OldC,Points,RPoints),
-    %loc2D(G,OH,OV),offset_point(OH,OV,Point,LPoint),shape_rep(grav,G,NCPoints), maplist(replace_in_points(Point,NewC,OldC),NCPoints,RNCPoints),,shape_rep(grav,RNCPoints)
+    %loc2D(G,OH,OV),offset_point(OH,OV,Point,LPoint),shape_rep(grav,G,NCPoints), my_maplist(replace_in_points(Point,NewC,OldC),NCPoints,RNCPoints),,shape_rep(grav,RNCPoints)
     setq(G,localpoints(RPoints),GO).
 replace_local_point_color(Point,NewC,OldC,G,GO):- trace_or_throw(unknown_target_type(replace_local_point_color(Point,NewC,OldC,G,GO))).
 
@@ -627,7 +627,7 @@ show_grid_objs_typed(Grid):- true,
     grid_object_texture_points(GID,Type,Group),
   
     flatten(Group,G),G\==[]),Grids),
-  maplist(arg(2),Grids,Flatme),flatten(Flatme,All),
+  my_maplist(arg(2),Grids,Flatme),flatten(Flatme,All),
   show_grid_objs_list(GID,All,Grids).
   %print_ss([all=All|Grids]),!.
   
@@ -1137,7 +1137,7 @@ is_shape_id_for_init([hv(1,1),hv(2,1),hv(1,2),hv(2,2)],sid_22).
 is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1),hv(1,2),hv(2,2),hv(3,2),hv(1,3),hv(2,3),hv(3,3)],sid_33).
 is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1),hv(1,2),hv(3,2),hv(1,3),hv(2,3),hv(3,3)],sid_323).
 
-assert_sid(Ps,ID):- maplist(hv_to_point,Ps,Points),assert_if_new(is_shape_id_for(Points,ID)).
+assert_sid(Ps,ID):- my_maplist(hv_to_point,Ps,Points),assert_if_new(is_shape_id_for(Points,ID)).
 
 hv_to_point(hv(H,V),Point):- hv_point(H,V,Point).
 create_builtin_sids:- forall(is_shape_id_for_init(Ps,ID),assert_sid(Ps,ID)).

@@ -31,9 +31,9 @@ most_d_colors(Grid,ColorO,GridNM):-
   sort_safe(FPoints,NPSS),
   %atrace,
   % (N2-C)-P1
-  maplist(arg(1),NPSS,Colors),
+  my_maplist(arg(1),NPSS,Colors),
   clumped(Colors,CColors),
-  maplist(arg(2),CColors,Set),
+  my_maplist(arg(2),CColors,Set),
   get_black(Black),
   (Set==[]->ColorO=[Black];ColorO=Set),!.
 
@@ -63,7 +63,7 @@ make_bg_visible(In,Grid):- duplicate_term(In,In0),
 %make_bg_visible_b(In,Grid):- var(In),!,Grid=In.
 %make_bg_visible_b(In,Grid):- !, duplicate_term(In,Grid),!.
 make_bg_visible_b(In,Grid):- is_grid(In),!,mapgrid(make_bg_visible_c,In,Grid).
-make_bg_visible_b(In,Grid):- is_list(In),!,maplist(make_bg_visible_b,In,Grid).
+make_bg_visible_b(In,Grid):- is_list(In),!,my_maplist(make_bg_visible_b,In,Grid).
 make_bg_visible_b(C-P,CC-P):- !, make_bg_visible_c(C,CC).
 make_bg_visible_b(In,Grid):- make_bg_visible_c(In,Grid).
 
@@ -168,7 +168,7 @@ e_int2glyph(B,G):- atom_number(G,B).
 
 was_adjacent(LPS,SOP,_-P1):- is_adjacent_point(P1,_,P2),member(_-P2,SOP),member(CCC-P1,LPS),member(CCC-P2,LPS),!.
 
-cull_rest(Rest,GridS,GridO):- is_list(GridS),!,maplist(cull_rest(Rest),GridS,GridO).
+cull_rest(Rest,GridS,GridO):- is_list(GridS),!,my_maplist(cull_rest(Rest),GridS,GridO).
 cull_rest(Rest,GridS,0):- number(GridS),member(GridS,Rest),!.
 cull_rest(_Rest,GridS,GridS).
 

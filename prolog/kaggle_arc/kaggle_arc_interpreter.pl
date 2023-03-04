@@ -176,7 +176,7 @@ exp_call(_VM,P,(length(X,R),call(F,R,N))):- P=..[F,E,N],compound(E),E=len(X),!.
 exp_call(_VM,Expr,Value):- notrace(catch(Value is Expr,_,fail)),!.
 exp_call(VM,I,O):- compound(I),
        compound_name_arguments(I, F, Args),
-       maplist(exp_call(VM), Args, ArgsNew),
+       my_maplist(exp_call(VM), Args, ArgsNew),
        compound_name_arguments( O, F, ArgsNew ),!.
 %exp_call(_VM,P,(=(X,R),call(F,R,N))):- P=..[F,E,N],compound(E),E=val(X).
 exp_call(_,E,E).
@@ -236,7 +236,7 @@ set_vm_grid_now(VM,Obj):- is_object(Obj), !,
 
 set_vm_grid_now(VM,In):- gset(VM.last_key) = In,!.
 
-expand_dsl_value(VM, Mode,In,Val,OutValue):- is_list(Val),!, maplist(expand_dsl_value(VM, Mode,In),Val,OutValue).
+expand_dsl_value(VM, Mode,In,Val,OutValue):- is_list(Val),!, my_maplist(expand_dsl_value(VM, Mode,In),Val,OutValue).
 expand_dsl_value(VM, Mode,In,Val,OutValue):-
   run_dsl(VM, Mode,Val,In,OutValue).
 
@@ -261,7 +261,7 @@ run_dsl(VM,Mode,forall(All,Exec),In,OutO):-!,
 
 run_dsl(VM,_Mode,call(G),In,Out):-!, call_expanded(VM,G),(plain_var(Out)->Out=In; true).
 
-%run_dsl(VM, Mode,[N|V],In,OutValue):-!, vm_grid(VM, maplist(expand_dsl_value(VM, Mode,In),[N|V],OutValue),In,_Out).
+%run_dsl(VM, Mode,[N|V],In,OutValue):-!, vm_grid(VM, my_maplist(expand_dsl_value(VM, Mode,In),[N|V],OutValue),In,_Out).
 
 run_dsl(VM, Mode,Name=Val,In,Out):- nonvar(Name),run_dsl(VM, Mode,nb_set(Name,Val),In,Out).
 run_dsl(VM,_Mode,get(Name,Val),In,Out):- !, vm_grid(VM,get_vm(Name,Val),In,Out).
@@ -399,7 +399,7 @@ recast_to_grid0(Points,Grid, throw_no_conversion(Points,grid)):- compound(Points
 group_to_grid(Grp,Grid):-   
   reproduction_objs(Grp,Objs),
   grid_size(Objs,H,V),
-  maplist(globalpoints,Objs,Points),
+  my_maplist(globalpoints,Objs,Points),
   append(Points,AllPoints),
   points_to_grid(H,V,AllPoints,Grid),!.
 
@@ -515,9 +515,9 @@ set_grid_tid(Grid,ID):-
 to_assertable_grid(A,A):- ground(A),!.
 %to_assertable_grid(A,C):- copy_term(A,B),numbervars(B,0,_,[attvar(skip),singletons(true)]),B\==A,to_assertable_grid(B,C).
 to_assertable_grid(A,B):- 
-  term_attvars(A,V),maplist(get_attrs,V,ATTS),term_attvars(A+ATTS,V2),maplist(get_attrs,V2,ATTS2),
+  term_attvars(A,V),my_maplist(get_attrs,V,ATTS),term_attvars(A+ATTS,V2),my_maplist(get_attrs,V2,ATTS2),
   copy_term(A+V2+ATTS2,B+VV2+VATTS2,_),
-  maplist(save_atts,VATTS2,VV2),numbervars(B+VV2+VATTS2,0,_,[attvar(skip),singletons(true)]).
+  my_maplist(save_atts,VATTS2,VV2),numbervars(B+VV2+VATTS2,0,_,[attvar(skip),singletons(true)]).
 
 save_atts(A,'$attrs'(Attrs)):- attvar(A),!,get_attrs(A,Attrs).
 save_atts(A,'$attrs'(A)). 
@@ -666,7 +666,7 @@ into_group(GI,G):- into_group(GI,G, _ ).
 into_group(G,G,(=)) :- G==[],!.
 into_group(P,G,(=)):- is_group(P),!,G=P.
 into_group(G, G, _):- plain_var(G),!, %throw(var_into_group(G)),
-          current_group(G).
+          current_groups(G).
 into_group(VM,G,(group_to_and_from_vm(VM))):- is_vm(VM),G=VM.objs,is_group(G),!.
 into_group(VM,G,(group_to_and_from_vm(VM))):- is_vm(VM),run_fti(VM),G=VM.objs,is_group(G),!.
 into_group(G,I, into_grid):- is_grid(G),!,compute_shared_indivs(G,I).

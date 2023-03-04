@@ -106,7 +106,7 @@ individuals_from_pair(PairName,In,Out,IH,IV,OH,OV,RestOfInObjs,RestOfOutObjs):-
   %show_pair_no_i(H,V,H,V,grid_subtraction,PairName,ImO,OmI),
   unique_colors(ImO,ICs), unique_colors(OmI,OCs),
   intersection(ICs,OCs,CommonCs,IPCs,OPCs),
-  maplist(length,[ICs,IPCs,CommonCs,OPCs,OCs],[ICsL,IPCsL,CommonCsL,OPCsL,OCsL]),
+  my_maplist(length,[ICs,IPCs,CommonCs,OPCs,OCs],[ICsL,IPCsL,CommonCsL,OPCsL,OCsL]),
   individuals_from_pair_colors(PairName,In,Out,
     IH,IV,OH,OV,
     ICs,IPCs,CommonCs,OPCs,OCs,
@@ -178,11 +178,11 @@ maybe_in_out_xform(NeuralVM,PairName,StartInOut,NextStartInOut,DONE):-
  arcST,atrace,
  DONE=withStuff(SourceType,StuffType,TargetType,OverlapType,WhatWithType),
   must_det_ll((
-    maplist(call(SourceType,NeuralVM,PairName),StartInOut,FromInOut),
-    maplist(call(TargetType,NeuralVM,PairName),StartInOut,TargetInOut),
-    maplist(StuffType,FromInOut,StuffInOut),
-    maplist(call(OverlapType,TargetInOut),StuffInOut,OverlapInOut),  
-    maplist(call(WhatWithType,StuffType,OverlapInOut),TargetInOut,FromInOut,NextStartInOut)
+    my_maplist(call(SourceType,NeuralVM,PairName),StartInOut,FromInOut),
+    my_maplist(call(TargetType,NeuralVM,PairName),StartInOut,TargetInOut),
+    my_maplist(StuffType,FromInOut,StuffInOut),
+    my_maplist(call(OverlapType,TargetInOut),StuffInOut,OverlapInOut),  
+    my_maplist(call(WhatWithType,StuffType,OverlapInOut),TargetInOut,FromInOut,NextStartInOut)
   )).
 
 

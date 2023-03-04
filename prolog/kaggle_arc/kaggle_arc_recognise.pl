@@ -70,25 +70,6 @@ show_answer(Ans,In,Out):-
   print_side_by_side(Props,print_grid(GH,GV,OF),print_grid(GH,GV,[ObjO,ObjO])),!.
 
 
-to_props_and_globalpoints(ObjL,_Ans,_GOPoints):- is_grid(ObjL),!,fail.
-to_props_and_globalpoints(ObjL,Ans,GOPoints):- 
- must_det_ll((
-  once((compound(ObjL),ObjL=obj(Ans));is_list(ObjL)->ObjL=Ans),
-  globalpoints(obj(Ans),GOPoints))).
-
-like_object(Ans,Out,obj(ObjO)):- 
-  to_props_and_globalpoints(Ans,Props,GOPoints),
-  grid_to_gid(Out,GID),grid_size(Out,GH,GV), 
-  make_indiv_object_s(GID,GH,GV,Props,GOPoints,obj(ObjO)).
-/*
-like_object(Ans,Out,obj([f_grid(Grid),grid(Grid)|ObjO])):- 
-  to_props_and_globalpoints(Ans,Props,GOPoints),
-  once(member(grid(Grid),Ans);member(f_grid(Grid),Ans);object_l(grid(Grid),Ans);object_l(grid_f(Grid),Ans)),
-  grid_size(Out,GH,GV),
-  grid_to_gid(Out,GID),
-  make_indiv_object_s(GID,GH,GV,Props,GOPoints,obj(ObjO)).
-*/
-
 test_ogs_a:- 
   red_only(In),
   test_ogs_for_ans(both,test_ogs_a,In,t_1b60fb0c_trn_0_out).
@@ -148,7 +129,7 @@ offset_hv(F1,OH,OV,F2):- nonvar(F1),!,hv_point(H1,V1,F1),H2 is H1+ OH, V2 is V1+
 offset_hv(F1,OH,OV,F2):- nonvar(F2),!,hv_point(H2,V2,F2),H1 is H2- OH, V1 is V2-OV, hv_point(H1,V1,F1).
 
 fg_or_bg_points(Points,FGPoints):- fg_points(Points,FGPoints),FGPoints\==[],!.
-fg_or_bg_points(Points,BGPoints):- maplist(bg_as(black),Points,BGPoints).
+fg_or_bg_points(Points,BGPoints):- my_maplist(bg_as(black),Points,BGPoints).
 
 bg_as(Black,I,O):- I==bg,!,O = Black.
 bg_as(_Black,I,I).
@@ -225,17 +206,17 @@ bestfit_hybrid_shapes_on(ColorHacks,Set,Grid,MinMaxPerObject,MinMaxLeftOver,OE):
   length(FGPoints,Need),
   %Need<100,
  must_det_ll((
-  %maplist(mapgrid(bestfit_shaped(FG,bg)),OSet,MSet),
+  %my_maplist(mapgrid(bestfit_shaped(FG,bg)),OSet,MSet),
   %list_to_set(MSet,Set),
   print_grid(bestfit_hybrid_shapes_on(Len),Grid),
-  maplist(into_free_points,Set,FreePoints),
+  my_maplist(into_free_points,Set,FreePoints),
 
-  maplist(create_shape_clones(Need),FreePoints,ExtraSet,Sizes,Maxes),
+  my_maplist(create_shape_clones(Need),FreePoints,ExtraSet,Sizes,Maxes),
   flatten(ExtraSet,ES),all_different_grid_locs(ES),
   calc_clones_needed(MinMaxPerObject,MinMaxLeftOver,Sizes,Maxes,Wants,Need))),!,
   label(Wants),
   writeln(Wants),
-  maplist(get_n_top,Wants,ExtraSet,SomeClones),
+  my_maplist(get_n_top,Wants,ExtraSet,SomeClones),
   append_2(SomeClones,SomePoints),
   equify_points_list(ColorHacks,SomePoints,FGPoints),
   append(SomeClones,GoodFit),
@@ -382,17 +363,17 @@ release_non_mc(Grid,NonBG):-
 
 release_non_fg(Point,Point):- is_fg_color(Point),!.
 release_non_fg(Point,_):- is_color(Point),!.
-release_non_fg(List,FGList):- is_list(List),!,maplist(release_non_fg,List,FGList).
+release_non_fg(List,FGList):- is_list(List),!,my_maplist(release_non_fg,List,FGList).
 release_non_fg(Keep,NonFG):- is_grid(Keep),!,mapgrid(release_non_fg,Keep,NonFG).
-release_non_fg(Keep,NonFG):- is_cpoints_list(Keep),!,maplist(release_non_fg,Keep,NonFG).
+release_non_fg(Keep,NonFG):- is_cpoints_list(Keep),!,my_maplist(release_non_fg,Keep,NonFG).
 release_non_fg(Keep,NonFG):- map_pred1(release_non_fg,Keep,NonFG),!.
 release_non_fg(Keep,Keep).
 
 release_non_bg(Point,Point):- is_bg_color(Point),!.
 release_non_bg(Point,_):- is_color(Point),!.
 release_non_bg(Keep,NonFG):- is_grid(Keep),!,mapgrid(release_non_bg,Keep,NonFG).
-release_non_bg(Keep,NonFG):- is_cpoints_list(Keep),!,maplist(release_non_bg,Keep,NonFG).
-release_non_bg(List,FGList):- is_list(List),!,maplist(release_non_bg,List,FGList).
+release_non_bg(Keep,NonFG):- is_cpoints_list(Keep),!,my_maplist(release_non_bg,Keep,NonFG).
+release_non_bg(List,FGList):- is_list(List),!,my_maplist(release_non_bg,List,FGList).
 release_non_bg(Keep,NonBG):- map_pred1(release_non_bg,Keep,NonBG),!.
 release_non_bg(Keep,Keep).
 
@@ -401,8 +382,8 @@ subst_all_fg_colors_with_vars(Cs,Vs,In,Mid):-
   Cs\==[], % at least some colors
   subst_colors_with_vars(Cs,Vs,InC,Mid),    
   ground(Cs), % fully grounded test
-  maplist(cfg,Vs), % constrain to foreground
-  maplist(dif(zero),Vs), % constrain to not zero
+  my_maplist(cfg,Vs), % constrain to foreground
+  my_maplist(dif(zero),Vs), % constrain to not zero
   !.
 
 
@@ -412,7 +393,7 @@ is_exit_hook(subst_all_fg_colors_with_vars(Cs,Vs,_In,_Out)):-
   Cs\=@=Vs, % slightly differnt 
   list_to_set(Vs,Set), Vs=@=Set, % All differnt colors
   ground(Vs), % fully grounded results
-  maplist(same_color_class,Cs,Vs), % FG == FG ,.. BG == BG etc    
+  my_maplist(same_color_class,Cs,Vs), % FG == FG ,.. BG == BG etc    
   %\+ member(black,Vs),
   !.
 
@@ -470,8 +451,8 @@ try_ogs_pass_8b(Prf,ROut,In,Out):-
   ground(Cs), % fully grounded test
   try_ogs_pass_9(Prf,R,IIn,Out),  % do our search!
   Cs\=@=Vs, % slightly differnt 
-  maplist(cfg,Vs),
-  maplist(same_color_class,Cs,Vs), % FG == FG ,.. BG == BG etc    
+  my_maplist(cfg,Vs),
+  my_maplist(same_color_class,Cs,Vs), % FG == FG ,.. BG == BG etc    
   ground(Vs), % fully grounded results
   list_to_set(Vs,Set), Vs=@=Set, % All differnt colors
   [subst(Cs,Vs)|R]=ROut.
@@ -567,7 +548,7 @@ cbg(GG):- freeze(GG, \+ is_fg_color(GG)).
 yg_to_not_xg(G,GG):- is_grid(G),!,mapgrid(yg_to_not_xg,G,GG).
 yg_to_not_xg(G,GG):- is_group(G),!,mapgroup(yg_to_not_xg,G,GG).
 yg_to_not_xg(G,GG):- var(G),freeze(G,if_t(is_color(G), \+ is_xg_color(GG))).
-yg_to_not_xg(G,GG):- is_list(G),!,maplist(yg_to_not_xg,G,GG).
+yg_to_not_xg(G,GG):- is_list(G),!,my_maplist(yg_to_not_xg,G,GG).
 yg_to_not_xg(G,GG):- is_yg_color(G),!,freeze(GG, \+ is_xg_color(GG)).
 yg_to_not_xg(G,G). 
 */
@@ -681,7 +662,7 @@ trim_then_90(_,[],Grid,Grid):- !.
 trim_then_90(BG,[R90|More],Grid,GridO):- trim_unused_n_vert(0,BG,Grid,GridR,R90),
   rot90(GridR,Grid90),trim_then_90(BG,More,Grid90,GridO).
 
-is_trimmable_row(Row,BG):- maplist(is_trimmable_cell(BG),Row).
+is_trimmable_row(Row,BG):- my_maplist(is_trimmable_cell(BG),Row).
 
 trim_unused_n_vert(N,BG,[Row|Grid],GridO,N2):- 
   is_trimmable_row(Row,BG),!,
@@ -745,7 +726,7 @@ was_loose_ok(R):- \+ member(subst(_,_),R), \+ member(rotate(_),R), \+ member(int
 
 ogs_rotate(_Trig,[rot2D(P2)],I,O):- rotP2(P2),P2\==rollD,grid_call(P2,I,O),I\=@=O.
 
-simpl_ogs(In,Out):- maplist(prop_lists,In,Props), !, append(Props,Out).
+simpl_ogs(In,Out):- my_maplist(prop_lists,In,Props), !, append(Props,Out).
 simpl_ogs(IO,IO).
 
 prop_lists(_-P,Props):-!,prop_lists(P,Props).
@@ -916,7 +897,7 @@ test_ogs1(H,V,Match):-
   get_black(Black),
   once((constrain_grid(cntDwn,f,CheckTypes,FG,XFG))),
   
-  once((grid_detect_bg(SG,Background), maplist(cbg,Background))),
+  once((grid_detect_bg(SG,Background), my_maplist(cbg,Background))),
 
   ((ogs_11(H,V,XFG,XSG),CheckTypes=Black) *-> Match=true; Match=false),
 
@@ -936,7 +917,7 @@ test_ogs0(H,V,Match):-
   ground(UFG),
   get_black(Black),
   once((constrain_grid(CntDwn,f,CheckTypes,FG,XFG), nop(constrain_grid(CntDwn,s,CheckTypes,SG,XSG)))),
-  once((grid_detect_bg(XSG,Background), maplist(cbg,Background))),
+  once((grid_detect_bg(XSG,Background), my_maplist(cbg,Background))),
   
   ((ogs_11(H,V,XFG,XSG),CheckTypes=Black) *-> TMatch=true; TMatch=false),
 
@@ -975,7 +956,7 @@ test_ogs(H,V,Match):-
 grid_minus_grid(I,O,In):- is_grid(I),is_grid(O),!,mapgrid(cell_minus_cell,I,O,In).
 grid_minus_grid(B,A,OI):- vis2D(B,BH,BV),vis2D(A,AH,AV),(BH\==AH;BV\==AV),!,OI=B.
 grid_minus_grid(B,A,OI):- remove_global_points(A,B,OI),!.
-%grid_minus_grid(B,A,OI):- is_list(B),maplist(grid_minus_grid,B,A,OI).
+%grid_minus_grid(B,A,OI):- is_list(B),my_maplist(grid_minus_grid,B,A,OI).
 %grid_minus_grid(B,A,C):- ignore(grid_minus_grid0(B,A,C)).
 %grid_minus_grid(B,_,B):- !.
 %grid_minus_grid0(B,A,OI):- B==A,!, OI=black.
@@ -1020,7 +1001,7 @@ show_match(H,V,C,F,G):-
   nl,dash_chars,!.
 
 show_m_pair(_TF,S,H,V,F,G):- 
- maplist(must_det_ll,
+ my_maplist(must_det_ll,
  [H2 is H-3, V2 is V-3,
   offset_grid(H2,V2,F,OF),
   constrain_grid(CntDwn,f,_TrigF,OF,FF),!, 
@@ -1118,19 +1099,19 @@ grid_detect_bg(Grid1,[bg|Background]):-
 grid_label_bg(CT,GridIn,GridO):- CT=f,!,
   copy_term(GridIn,Grid1),
   grid_detect_bg(Grid1,Background),
-  maplist(to_grid_bg(CT,Grid1),Background),
+  my_maplist(to_grid_bg(CT,Grid1),Background),
   get_dc_label(BGL),
   get_bgc(BG),subst001(Grid1,BG,BGL,GridO),!.
 grid_label_bg(CT,GridIn,GridO):- CT=s,!,
   copy_term(GridIn,Grid1),
   grid_detect_bg(Grid1,Background),
-  maplist(to_grid_bg(CT,Grid1),Background),
+  my_maplist(to_grid_bg(CT,Grid1),Background),
   get_dc_label(BGL),
   get_bgc(BG),subst001(Grid1,BG,BGL,GridO),!.
 grid_label_bg(CT,GridIn,GridO):- 
   copy_term(GridIn,Grid1),
   grid_detect_bg(Grid1,Background),
-  maplist(to_grid_bg(CT,Grid1),Background),
+  my_maplist(to_grid_bg(CT,Grid1),Background),
   get_dc_label(BGL),
   get_bgc(BG),subst001(Grid1,BG,BGL,GridO),!.
 grid_label_bg(_,GridO,GridO):-!.
@@ -1155,7 +1136,7 @@ grid_label_fg(_CT,_,[]):-!.
 grid_label_fg(CT,GridIn,Foreground1):- 
   copy_term(Foreground1,ForegroundCopy),
   numbervars(ForegroundCopy,2021,_,[attvar(skip)]),
-  maplist(to_grid_fg(CT,GridIn),Foreground1,ForegroundCopy),!.
+  my_maplist(to_grid_fg(CT,GridIn),Foreground1,ForegroundCopy),!.
 
 %maybe_grid_numbervars(GridIn,GridIn):-!.
 %maybe_grid_numbervars(O,I):- is_vm_map(O),append(O.objs,[O.grid],I),!.
@@ -1207,9 +1188,9 @@ fpad_grid(CT,Before,After):-
 fpad_grid(CT,P1,O,GridO):- is_object(O),!,object_grid(O,GridIn),!,fpad_grid(CT,P1,GridIn,GridO).
 fpad_grid(_CT,P1,Grid,Grid2):-
   vis2D(Grid,H,_), H2 is H +2,
-  length(T,H2),maplist(P1,T),
-  length(B,H2),maplist(P1,B),
-  maplist(pad_sides(P1),Grid,FillRows),
+  length(T,H2),my_maplist(P1,T),
+  length(B,H2),my_maplist(P1,B),
+  my_maplist(pad_sides(P1),Grid,FillRows),
   append([T|FillRows],[B],Grid2).
 
 
@@ -1228,7 +1209,7 @@ constrain_grid(CntDwn,CT,_Trig,[[FC]], Grid1):- CT==f, !,
   Grid1=[[NW,N0,NE],
          [W0,FC,E0],
          [SW,S0,SE]],
- maplist(dif_violate(CntDwn,FC),[NE,NW,SW,SE,N0,S0,E0,W0]).
+ my_maplist(dif_violate(CntDwn,FC),[NE,NW,SW,SE,N0,S0,E0,W0]).
 /*OLD
 
 constrain_grid(CntDwn,CT,Trig,[[FC]], GridO):- CT==f(Rul), !,   
@@ -1240,7 +1221,7 @@ constrain_grid(CntDwn,CT,Trig,[[FC]], GridO):- CT==f(Rul), !,
          [_ , N1,FG,N3 ,_ ],
          [_ , SW,N2,SE ,_ ],
         [SWL, _, _, _, SEL]],
- maplist(dif_violate(CntDwn,FG),[NE,NW,SW,SE]),
+ my_maplist(dif_violate(CntDwn,FG),[NE,NW,SW,SE]),
  nop((freeze(Trig,\+ (NE==SW, dif_violate(CntDwn,FG,NE))),
  freeze(Trig,\+ (NW==SE, dif_violate(CntDwn,FG,SE))),
  freeze(Trig,\+ (NW==NWL,dif_violate(CntDwn,FG,NW))),
@@ -1249,7 +1230,7 @@ constrain_grid(CntDwn,CT,Trig,[[FC]], GridO):- CT==f(Rul), !,
  freeze(Trig,\+ (SE==SEL,dif_violate(CntDwn,FG,SE))),
  freeze(GridO,(Grid2=GridO;GridO=Grid1)))),
  GridO = Grid2,
- maplist(dif_violate(CntDwn,FG),[N0,N1,N2,N3]),
+ my_maplist(dif_violate(CntDwn,FG),[N0,N1,N2,N3]),
  freeze(Trig,FC=FG).
 */
 
@@ -1261,7 +1242,7 @@ constrain_grid(CntDwn,CT,Trig,Grid1,GridO):-
 
 
 release_bg(CT,Trig,Grid2,GridO):- must_det_ll((release_bg0(CT,Trig,Grid2,GridO))),!.
-release_bg0(CT,Trig,GridIn,GridO):- is_list(GridIn), !, maplist(release_bg0(CT,Trig),GridIn,GridO).
+release_bg0(CT,Trig,GridIn,GridO):- is_list(GridIn), !, my_maplist(release_bg0(CT,Trig),GridIn,GridO).
 release_bg0(_CT,_Trig,GridIn,GridIn):- attvar(GridIn),!.
 release_bg0(_CT,_Trig,GridIn,GridIn):- plain_var(GridIn),!.
 %release_bg0(CT,Trig,GridIn-P,GridO-P):- !, release_bg0(CT,Trig,GridIn,GridO).
@@ -1482,7 +1463,7 @@ test_make_predicate:-
   test_make_predicate([g1,g2,g4]).
 
 test_make_predicate(List):-
-  maplist(ss666,List,Grids),
+  my_maplist(ss666,List,Grids),
   gensym('newpred_',NewPred),
   Pred =.. [NewPred|Grids],
   print_ss(Grids),
@@ -1668,7 +1649,7 @@ suggest_row_cells_seps(['\n'],[]).
 
 
 detect_ascii_grid_style(Text,Style):- ensure_charlist(Text,Chars),!,detect_ascii_grid_style(Chars,Style).
-detect_ascii_grid_style(Text,Style):- append([_,['¯'],Len,['¯'],NoTopper],Text),\+ member('¯',NoTopper),maplist(==('¯'),Len),
+detect_ascii_grid_style(Text,Style):- append([_,['¯'],Len,['¯'],NoTopper],Text),\+ member('¯',NoTopper),my_maplist(==('¯'),Len),
   length([_,Len],LL),Width is floor(LL/2), Style=pttgS(Width).
 detect_ascii_grid_style(AllText,Style):-
   suggest_row_cells_seps(RowSep,CellSep),

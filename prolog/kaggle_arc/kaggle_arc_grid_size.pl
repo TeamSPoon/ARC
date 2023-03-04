@@ -43,16 +43,16 @@ predict_grid_size(TestID,In,Out):-
 
 
 add_akeys(A,A-A).
-alphabetize(List,ListA):- maplist(add_akeys,List,AKeys),keysort(AKeys,AKeysSorted),maplist(arg(2),AKeysSorted,ListA).
+alphabetize(List,ListA):- my_maplist(add_akeys,List,AKeys),keysort(AKeys,AKeysSorted),my_maplist(arg(2),AKeysSorted,ListA).
 
 
 predict_grid_size(List,IH,IV,PH,PV):-
   alphabetize(List,ListA),
   predsort_on(better_grid_size_prop,ListA,SList),
   add_info(SList,[],NewInfo),
-   %maplist(ppnl,List),dash_chars,
-   maplist(ppnl,ListA),dash_chars,
-   maplist(ppnl,NewInfo),dash_chars,
+   %my_maplist(ppnl,List),dash_chars,
+   my_maplist(ppnl,ListA),dash_chars,
+   my_maplist(ppnl,NewInfo),dash_chars,
   predict_grid_size1(ListA,NewInfo,IH,IV,PH,PV).
 predict_grid_size(_List,IH,IV,IH,IV).
 
@@ -72,24 +72,24 @@ add_info([E|More],List,NewInfo):-
 predict_grid_size1(_OList, List,IH,IV,PH,PV):- member(size2D(MH,MV),List), apply_proportional(IH,MH,PH,IV,MV,PV),!.
 predict_grid_size1( ListA, _List, _, _,PH,PV):- findall(size2D(MH,MV),
   (member(size2D(o_i_swap(ratio_of(MV,G27)),o_i_swap(ratio_of(MH,G27))),ListA),number(MH)),L),
-  L\=[],L\=[_],maplist(=(_),L),last(L,size2D(PH,PV)),!.
+  L\=[],L\=[_],my_maplist(=(_),L),last(L,size2D(PH,PV)),!.
 
 
 predict_grid_size1( ListA, _List, _, _,PH,PV):- 
   findall(size2D(MH,MV),
   (member((_->size2D(MH,MV)),ListA),number(MH)),L),
-  L\=[],L\=[_],maplist(=(_),L),last(L,size2D(PH,PV)),!.
+  L\=[],L\=[_],my_maplist(=(_),L),last(L,size2D(PH,PV)),!.
 
 predict_grid_size1( ListA, _List, _, _,PH,PV):- findall(size2D(MH,MV),
   (member(size2D(MH,MV),ListA),number(MH)),L),
-  L\=[],L\=[_],maplist(=(_),L),last(L,size2D(PH,PV)),!.
+  L\=[],L\=[_],my_maplist(=(_),L),last(L,size2D(PH,PV)),!.
 
 predict_grid_size1( ListA, _List, IH, IV,PH,PV):-  
  findall(size2D(PH,PV),
   (member((size_inv(num(_,+_,_),num(_,+_,ratio(Two)))
   ),ListA),
   integer(Two),PH = IH, PV is IV / Two, PV is floor(PV)),L),
-  L\=[],L\=[_],maplist(=(_),L),last(L,size2D(PH,PV)),!.
+  L\=[],L\=[_],my_maplist(=(_),L),last(L,size2D(PH,PV)),!.
 
 apply_proportional(IH,MH,PH,IV,MV,PV):- 
   %functor(MH,F,A), functor(MV,F,A),

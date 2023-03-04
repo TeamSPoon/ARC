@@ -272,8 +272,8 @@ title_string_to_functor(Str,_Goal,Spyable):- callable(Str),invent_key(Str,Spyabl
 
 
 string_to_functor(F,OO):- 
- to_case_breaks(F,X),include(\=(xti(_,punct)),X,O),maplist(arg(1),O,O1),
- maplist(any_to_atom,O1,O2),maplist(toLowercase,O2,O3),atomic_list_concat(O3,'_',OO),!.
+ to_case_breaks(F,X),include(\=(xti(_,punct)),X,O),my_maplist(arg(1),O,O1),
+ my_maplist(any_to_atom,O1,O2),my_maplist(toLowercase,O2,O3),atomic_list_concat(O3,'_',OO),!.
 string_to_functor(F,OO):- atom_string(OO,F),!.
 
 %header_arg(_:Term,E):-!,header_arg(Term,E).
@@ -564,7 +564,7 @@ arc_html_format(TextAndGoal):- bfly_in_out(call(call,inline_html_format(TextAndG
 
 arc_inline_html_format(Var):- var(Var),!, arc_inline_html_format(writeln(var(Var))).
 arc_inline_html_format(S):- (string(S);is_codelist(S);is_charlist(S)),!,format('~s',[S]).
-arc_inline_html_format(TextAndGoal):- is_list(TextAndGoal),!,maplist(arc_inline_html_format,TextAndGoal).
+arc_inline_html_format(TextAndGoal):- is_list(TextAndGoal),!,my_maplist(arc_inline_html_format,TextAndGoal).
 %arc_inline_html_format(Msg):- flush_output_safe, u_dmsg(call(Msg)),fail.
 arc_inline_html_format(format(H,V)):-!, format(H,V).
 arc_inline_html_format(TextAndGoal):- inline_html_format(TextAndGoal),flush_output_safe.
@@ -745,7 +745,7 @@ print_title(Var):- (var(Var);Var==[]),!.
 print_title(Title):- into_title_str(Title,Str), trim_newlines(wqs_c(Str)).
 
 % width: fit-content
-% print_table(ListOfLists):- setup_call_cleanup(write('<table style="width: fit-content;m width: 100%; border: 0px">'), maplist(html_table_row,ListOfLists), write('</table>')),!.
+% print_table(ListOfLists):- setup_call_cleanup(write('<table style="width: fit-content;m width: 100%; border: 0px">'), my_maplist(html_table_row,ListOfLists), write('</table>')),!.
 
 is_real_grid(Grid):- is_grid(Grid),!,mapgrid(can_be_cell,Grid).
 can_be_cell(Cell):-var(Cell),!.
@@ -768,10 +768,10 @@ cant_be_cell(T):- atom(T), !, \+ is_color(T).
 %print_table(Rows):- make_rows_same_length(Rows,LLRows),!, print_table_rows(LLRows).
 print_table(Rows):- print_table_rows(Rows).
 print_table_rows(Row):- \+ is_list(Row),!,print_table_rows([Row]).
-print_table_rows(Rows):- with_tag_class('table','tblo', maplist(html_table_row,Rows)).
+print_table_rows(Rows):- with_tag_class('table','tblo', my_maplist(html_table_row,Rows)).
 
 %html_table_row(Row):- \+ is_list(Row),!,html_table_row([Row]).
-html_table_row(Cols):- with_tag('tr',maplist(html_table_col,Cols)).
+html_table_row(Cols):- with_tag('tr',my_maplist(html_table_col,Cols)).
 
 html_table_col(td(H)):-with_tag('td',html_table_cell(H)).
 html_table_col(th(H)):-with_tag('th',html_table_cell(H)).
@@ -787,13 +787,13 @@ print_cell([]):- !,write_nbsp.
 print_cell(H):- print_card_n('',H).
 
 make_rows_same_length(ListOfLists,ListOfRows):-
-  maplist(length,ListOfLists,Lens),
+  my_maplist(length,ListOfLists,Lens),
   sort(Lens,ListLens),last(ListLens,Len),
-  maplist(slack_rows(Len),ListOfLists,ListOfRows).
+  my_maplist(slack_rows(Len),ListOfLists,ListOfRows).
 
 slack_rows(Len,List,Row):-length(Row,Len),slack_into_rows(List,Row).
 blank_stuff(Col):- ignore(Col="&nbsp;").
-slack_into_rows(List,Row):- append(List,Stf,Row),!,maplist(blank_stuff,Stf).
+slack_into_rows(List,Row):- append(List,Stf,Row),!,my_maplist(blank_stuff,Stf).
 slack_into_rows(List,Row):- append(Row,_DropStf,List),!.
 
 :- meta_predicate(as_html_encoded(0)).

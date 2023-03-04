@@ -135,7 +135,7 @@ the_hammer(Color,ColorComplex):-
 the_hammer(blue, LibObj):- hammer2(Text), must_det_ll(into_g666(Text,Grid)),
    into_lib_object([blue,hammer],Grid,LibObj).
 
-shape_info_props(Shapes,ShapeProps):- flatten([Shapes],Shapes0),maplist(shape_info_props0,Shapes0,ShapeProps).
+shape_info_props(Shapes,ShapeProps):- flatten([Shapes],Shapes0),my_maplist(shape_info_props0,Shapes0,ShapeProps).
 shape_info_props0(P,P):- compound(P),!.
 shape_info_props0(Shape,iz(Shape)).
 
@@ -237,26 +237,26 @@ into_mono3(_MonoP2,Color,Mono):- is_fg_color(Color), decl_many_fg_colors(Mono),!
 into_mono3(_MonoP2,Color,Mono):- \+ compound(Color), Mono=Color.
 into_mono3(MonoP2,Color,Mono):- is_group(Color),!,mapgroup(into_mono3(MonoP2),Color,Mono).
 into_mono3(MonoP2,Color,Mono):- is_grid(Color),!,mapgrid(cell_into_monochrome(MonoP2),Color,Mono).
-into_mono3(MonoP2,Color,Mono):- is_list(Color),!,maplist(into_mono3(MonoP2),Color,Mono).
+into_mono3(MonoP2,Color,Mono):- is_list(Color),!,my_maplist(into_mono3(MonoP2),Color,Mono).
 into_mono3(MonoP2,I,O):- compound(I), !, compound_name_arguments(I,F,IA), 
-  maplist(into_mono3(MonoP2),IA,OA), compound_name_arguments(O,F,OA).
+  my_maplist(into_mono3(MonoP2),IA,OA), compound_name_arguments(O,F,OA).
 into_mono3(_MonoP2,I,I).
 cell_into_monochrome(MonoP2,I,O):- into_mono3(MonoP2,I,O).
 
 /*
-into_monochrome(FGC,BGC,Color,Mono):- is_points_list(Color),!,maplist(points_into_monochrome(FGC,BGC),Color,Mono).
+into_monochrome(FGC,BGC,Color,Mono):- is_points_list(Color),!,my_maplist(points_into_monochrome(FGC,BGC),Color,Mono).
 %into_monochrome(FGC,BGC,Color,Mono):- is_grid(Color),!,grid_into_monochrome(FGC,BGC,Color,Mono).
 into_monochrome(FGC,BGC,Grid,Mono):- into_grid(Grid,Color),!,grid_into_monochrome(FGC,BGC,Color,Mono).
 
 points_into_monochrome(FGC,BGC,Color-Point,Mono-Point):- is_ncpoint(Point),!,points_into_monochrome(FGC,BGC,Color,Mono).
-points_into_monochrome(FGC,BGC,Color,Mono):- is_list(Color) -> maplist(points_into_monochrome(FGC,BGC),Color,Mono) ;
+points_into_monochrome(FGC,BGC,Color,Mono):- is_list(Color) -> my_maplist(points_into_monochrome(FGC,BGC),Color,Mono) ;
                               (Color\=BGC)-> Mono = fg ; Mono = BGC.
 
-grid_into_monochrome(FGC,BGC,Color,Mono):- is_list(Color) -> maplist(grid_into_monochrome(FGC,BGC),Color,Mono) ;
+grid_into_monochrome(FGC,BGC,Color,Mono):- is_list(Color) -> my_maplist(grid_into_monochrome(FGC,BGC),Color,Mono) ;
                               (Color\=BGC)-> Mono = fg ; Mono = BGC.
 
 
-grid_into_fg_bg_pred(FGP1,BGP1,Color,Mono):- is_list(Color) -> maplist(grid_into_fg_bg_pred(FGP1,BGP1),Color,Mono) ;
+grid_into_fg_bg_pred(FGP1,BGP1,Color,Mono):- is_list(Color) -> my_maplist(grid_into_fg_bg_pred(FGP1,BGP1),Color,Mono) ;
                               (call(FGP1,Color) -> decl_many_fg_colors(Mono) ; (call(BGP1,Color) -> decl_bg_color(Mono) ; Mono = Color)).
 */
 
@@ -268,16 +268,16 @@ decolorize(VM):- Grid = VM.grid,
   set(VM.grid) = NewGrid,
   print_side_by_side(silver,Grid,into,_,NewGrid,decolorize),
   nl,
-  maplist(ppa,NewGrid),
+  my_maplist(ppa,NewGrid),
   nl.
 
 decolorize(Color,Mono):- is_grid(Color),!,mapgrid(decolorize_cell,Color,Mono).
 decolorize(Color,Mono):- is_group(Color),!,mapgroup(decolorize,Color,Mono).
-decolorize(Color,Mono):- is_list(Color),!,maplist(decolorize,Color,Mono).
+decolorize(Color,Mono):- is_list(Color),!,my_maplist(decolorize,Color,Mono).
 decolorize(Color,Mono):- is_bg_color(Color), decl_bg_color(Mono),!, cv(Mono,Color).
 decolorize(Color,Mono):- is_fg_color(Color), decl_many_fg_colors(Mono),!, cv(Mono,Color).
 decolorize(Color,Mono):- \+ compound(Color), Mono=Color.
-decolorize(Color,Mono):- compound(Color), !, compound_name_arguments(Color,F,IA), maplist(decolorize,IA,OA), compound_name_arguments(Mono,F,OA).
+decolorize(Color,Mono):- compound(Color), !, compound_name_arguments(Color,F,IA), my_maplist(decolorize,IA,OA), compound_name_arguments(Mono,F,OA).
 decolorize(I,I).
 decolorize_cell(I,O):- decolorize(I,O).
 
@@ -355,7 +355,7 @@ box_grid(C,Grid,GridO):-
   likely_fgc(C), 
   ensure_grid(Grid),
   grid_size(Grid,H,_), H2 is H +2,
-  length(TB,H2),maplist(=(C),TB),
+  length(TB,H2),my_maplist(=(C),TB),
   mapgroup(pad_sides(=(C)),Grid,FillRows),
   gappend([TB|FillRows],[TB],D),
   restructure(D,GridO),!.
@@ -386,15 +386,15 @@ solid_rect(CEdge,H,V,Grid):-
   (plain_var(CEdge)->decl_one_color(CEdge);is_color(CEdge)),!,
   ((var(H))-> thirty_down_2(H) ; true),
   ((var(V))-> thirty_down_2(V) ; true),
-  length(Row,H),maplist(=(CEdge),Row),
-  length(Grid,V),maplist(dupe_row(Row),Grid).
+  length(Row,H),my_maplist(=(CEdge),Row),
+  length(Grid,V),my_maplist(dupe_row(Row),Grid).
 
 solid_rect(CEdge,H,V,Grid):- var(CEdge),!,
   ((var(H))-> thirty_down_2(H) ; true),
   ((var(V))-> thirty_down_2(V) ; true),
   decl_one_color(CEdge), 
-  length(Row,H),maplist(copy_term(CEdge),Row),
-  length(Grid,V),maplist(copy_term(Row),Grid).
+  length(Row,H),my_maplist(copy_term(CEdge),Row),
+  length(Grid,V),my_maplist(copy_term(Row),Grid).
 
 solid_rect(CEdge,H,V,Grid):-
   ((var(H))-> thirty_down_2(H) ; true),
@@ -428,7 +428,7 @@ hollow_rect(CEdge,CIn,H,V,Grid):-
   make_list(CEdge,H,Top), make_list(CEdge,H,Bottom),
   append([Top|Middle],[Bottom],Grid).
 
-make_row(C,L,H,R,Row):- length(Mid,H),maplist(copy_term(C),Mid),append([L|Mid],[R],Row).
+make_row(C,L,H,R,Row):- length(Mid,H),my_maplist(copy_term(C),Mid),append([L|Mid],[R],Row).
 
 make_row_n_times(H,1,C,L,R,[Row]):-!,make_row(C,L,H,R,Row).
 make_row_n_times(_,0,_,_,_,[]):-!.
@@ -443,7 +443,7 @@ box_grid_n_times(N,C,Grid,D):- !,
   make_shape(box_grid(C,Grid),G), plus(M,1,N),
   make_shape(box_grid_n_times(M,C,G),D).
 
-restructure(X,Y):- is_list(X),!,maplist(restructure,X,Y).
+restructure(X,Y):- is_list(X),!,my_maplist(restructure,X,Y).
 restructure(X,X).
 
 :- decl_sf(solid_square(fg_color,size2D)).

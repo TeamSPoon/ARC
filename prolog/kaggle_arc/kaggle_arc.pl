@@ -34,7 +34,7 @@ get_user_error(UE):- stream_property(UE,file_no(2)),!.
 get_user_error(UE):- stream_property(UE,alias(user_error)),!.
 
 ufmt(G):- fmt(G)->true;writeln(G).
-u_dmsg(G):- is_list(G),!,maplist(u_dmsg,G).
+u_dmsg(G):- is_list(G),!,my_maplist(u_dmsg,G).
 u_dmsg(M):- get_user_error(UE), \+ current_predicate(with_toplevel_pp/2),!, with_output_to(UE,ufmt(M)).
 u_dmsg(M):- get_user_error(UE),!, with_toplevel_pp(ansi, with_output_to(UE,ufmt(M))).
 u_dmsg(M):- get_user_error(UE),  stream_property(UO,file_no(1)), current_output(CO),!,
@@ -153,7 +153,7 @@ update_changes:-
     forall(prolog:make_hook(before, Reload),true),
     notrace((ignore(update_changed_files1))),
     print_message(silent, make(reload(Reload))),
-    make:maplist(reload_file, Reload),
+    make:my_maplist(reload_file, Reload),
     print_message(silent, make(done(Reload))),
     forall(prolog:make_hook(after, Reload),true).
 
@@ -264,7 +264,7 @@ process_cmdln_option(P2,E,TF):- atom_concat(O,'=true',E),process_cmdln_option(P2
 process_cmdln_option(P2,E,TF):- atom_concat('--',O,E),!,process_cmdln_option(P2,O,TF).
 process_cmdln_option(P2,E,TF):- atom_concat('use-',O,E),!,process_cmdln_option(P2,O,TF).
 process_cmdln_option(P2,E,true):- atomic_list_concat([N,V],'=',E),!,process_cmdln_option(P2,N,V).
-%process_cmdln_option(P2,E,true):- atom_contains(E,'='),!,notrace(catch((atom_to_term(E,N=V,Vs),maplist(ignore,Vs)),_,fail)),process_cmdln_option(P2,N,V).
+%process_cmdln_option(P2,E,true):- atom_contains(E,'='),!,notrace(catch((atom_to_term(E,N=V,Vs),my_maplist(ignore,Vs)),_,fail)),process_cmdln_option(P2,N,V).
 process_cmdln_option(_P2,E,V):- forall((current_prolog_flag(O,_),atom_concat(_,E,O)),(echo_option(O,V),set_prolog_flag(O,V))),fail.
 process_cmdln_option(P2,E,V):- call(P2,E,V).
 
@@ -313,23 +313,23 @@ get_map_pairs(Map,is_assoc,Pairs):- is_assoc(Map), assoc_to_list(Map, Pairs).
 get_map_pairs(Map,is_rbtree,Pairs):- is_rbtree(Map), rb_visit(Map, Pairs).
 get_map_pairs(Map,is_dict(T),Pairs):- is_dict(Map), dict_pairs(Map,T,Pairs).
 
-is_vm(Tree):- is_vm_map(Tree), once(get_kov(program,Tree,_);get_kov(lo_program,Tree,_)).
+is_vm(Tree):- is_vm_map(Tree), once(get_kov(lo_program,Tree,_)).
 
 is_vm_map(Tree):- is_rbtree(Tree),!, rb_in(izmap,true,Tree).
 is_vm_map(Dict):- is_dict(Dict),!, get_dict(izmap,Dict,true).
 
 
 
-arc_setval(TT,List):- is_list(List),!,maplist(arc_setval(TT),List).
-arc_setval(TT,Map):- get_map_pairs(Map,_Type,Pairs),!,maplist(arc_setval(TT),Pairs).
-arc_setval(TT,N=V):- !, arc_setval(TT,N,V).
-arc_setval(TT,N-V):- !, arc_setval(TT,N,V).
-arc_setval(TT,NV):- arc_setval(TT,NV,t).
+arc_setval(O,List):- is_list(List),!,my_maplist(arc_setval(O),List).
+arc_setval(O,Map):- get_map_pairs(Map,_Type,Pairs),!,my_maplist(arc_setval(O),Pairs).
+arc_setval(O,N=V):- !, arc_setval(O,N,V).
+arc_setval(O,N-V):- !, arc_setval(O,N,V).
+arc_setval(O,NV):- arc_setval(O,NV,t).
 
 
-arc_setval(TT,N,V):- is_dict(TT),!, nb_set_dict(N,TT,V).
-arc_setval(TT,N,V):- is_rb_tree(TT), (nb_rb_get_node(TT,N,Node)->nb_rb_set_node_value(Node,V);nb_rb_insert(TT,N,V)).
-arc_setval(TT,N,V):- set_o_m_v(TT,N,V).
+arc_setval(O,N,V):- is_dict(O),!, nb_set_dict(N,O,V).
+arc_setval(O,N,V):- is_rbtree(O),!, (nb_rb_get_node(O,N,Node)->nb_rb_set_node_value(Node,V);nb_rb_insert(O,N,V)).
+arc_setval(O,N,V):- set_o_m_v(O,N,V).
 
 
 

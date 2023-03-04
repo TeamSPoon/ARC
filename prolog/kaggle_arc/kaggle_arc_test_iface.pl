@@ -219,7 +219,7 @@ enter_test(Sel):-
    sformat(SSel,'~q',[Sel]),
    catch(read_term_from_atom(SSel,Name,[module(user),double_quotes(string),variable_names(Vs),singletons(Singles)]),_,
         (ppnl(['failed to read: ',Sel]),fail)),
-        maplist(ignore,Vs),maplist(ignore,Singles),
+        my_maplist(ignore,Vs),my_maplist(ignore,Singles),
         Name\==Sel,
        (fix_test_name(Name,TestID) -> true ; (ppnl(['could not read a test from: ',Sel,nl,'try again']),!,fail)),
        enter_test(TestID).
@@ -417,8 +417,8 @@ preview_suite(Name):- \+ is_list(Name),set_test_suite(Name),
  
 %preview_suite([TestID]):- invoke_arc_cmd(TestID),!.
 preview_suite([TestID]):- set_current_test(TestID),!,set_pair_mode(whole_test),show_selected_object.
-preview_suite(Set):- length(Set,L),L=<10,web_reverse(Set,Rev),!, with_pair_mode(whole_test,maplist(preview_test,Rev)).
-preview_suite(Set):- length(Set,L),L=<20,web_reverse(Set,Rev),!, with_pair_mode(single_pair,maplist(preview_test,Rev)).
+preview_suite(Set):- length(Set,L),L=<10,web_reverse(Set,Rev),!, with_pair_mode(whole_test,my_maplist(preview_test,Rev)).
+preview_suite(Set):- length(Set,L),L=<20,web_reverse(Set,Rev),!, with_pair_mode(single_pair,my_maplist(preview_test,Rev)).
 preview_suite(Set):- length(Set,L),L>100, first_ten(Set,100,Rev),with_pair_mode(single_pair,preview_test_per_page(Rev)).
 preview_suite(Set):- reverse(Set,Rev), with_pair_mode(single_pair,preview_test_per_page(Rev)).
 
@@ -428,10 +428,10 @@ first_n_of_list(_Max,List,List,[]).
 preview_test_per_page(List):- preview_test_per_page(1,20,List).
 preview_test_per_page(Strt,Max,List):- length(List,Len),Len>Max,first_n_of_list(Max,List,LeftMax,Rest),
    NStrt is Strt+Max,Thru is NStrt-1,
-   w_section(title(['Suite Tasks',Strt,"thru",Thru]),maplist(preview_test,LeftMax)),preview_test_per_page(NStrt,Max,Rest).
+   w_section(title(['Suite Tasks',Strt,"thru",Thru]),my_maplist(preview_test,LeftMax)),preview_test_per_page(NStrt,Max,Rest).
 preview_test_per_page(Strt,_,List):- length(List,Len), 
   Thru is Strt+Len-1,
-  w_section(title(['Suite Tasks',Strt,"thru",Thru]),maplist(preview_test,List)).
+  w_section(title(['Suite Tasks',Strt,"thru",Thru]),my_maplist(preview_test,List)).
 
 first_ten(Set,Ten,Rev):- length(LL,Ten),append(LL,_,Set),web_reverse(LL,Rev).
 
@@ -533,7 +533,7 @@ each_ndividuator(TestID):- ensure_test(TestID),
   show_groups(TestID),
   call_list(AllPairGroups).
 
-call_list(List):-is_list(List),!,maplist(call_list,List).
+call_list(List):-is_list(List),!,my_maplist(call_list,List).
 call_list(Goal):-ignore(Goal).
 
 
@@ -559,7 +559,7 @@ each_ndividuator(TestID,ExampleNum,In,Out, OUTPUT):-
 pair_result(PairName,Complete,InC,OutC):-   
    print_side_by_side(pair_result(PairName,Complete),InC,OutC),
    w_section(pair_result_objects(PairName,Complete),
-     (maplist(show_i(in),InC), dash_chars, maplist(show_i(out),OutC),dash_chars)),
+     (my_maplist(show_i(in),InC), dash_chars, my_maplist(show_i(out),OutC),dash_chars)),
    !.
 
 show_i(Y,O):- 
@@ -810,7 +810,7 @@ dont_sort_by_hard(test_names_by_fav). dont_sort_by_hard(all_arc_test_name). dont
 
 create_group(Name,Tests):- arc_assert(test_suite_name(Name)),arc_assert(dont_sort_by_hard(Name)),
   assert(muarc_tmp:skip_calc_suite(Name)),
-  maplist(fix_test_name,Tests,TestID),list_to_set(TestID,Set),arc_assert(muarc_tmp:cached_tests(Name,Set)),
+  my_maplist(fix_test_name,Tests,TestID),list_to_set(TestID,Set),arc_assert(muarc_tmp:cached_tests(Name,Set)),
   set_test_suite(Name).
 
 
@@ -888,7 +888,7 @@ likely_sort(X,Set,ByHard):-  pp(sorting_suite(X)), !, sort_by_hard(Set,ByHard), 
 sort_by_hard(List,NamesByHardUR):- 
   sort_safe(List,Sorted),
   findall(Hard-Name,(member(Name,Sorted),hardness_of_name(Name,Hard)),All),
-  keysort(All,AllK),  maplist(arg(2),AllK,NamesByHardU),!,
+  keysort(All,AllK),  my_maplist(arg(2),AllK,NamesByHardU),!,
   reverse(NamesByHardU,NamesByHardUR).
 
 :- dynamic(test_results/4).
@@ -1044,7 +1044,7 @@ every_pair(TestID,ExampleNum,P2):-
 
 %into_numbers(N,List):- findall(Num,(sub_term(Num,N),number(Num)),List),List\==[].
 %num_op(OP,V1,V2):- number(V1),number(V2),!,call(OP,V1,V2).
-%num_op(OP,V1,V2):- into_numbers(V1,Ns1),into_numbers(V2,Ns2),maplist(num_op(OP),Ns1,Ns2).
+%num_op(OP,V1,V2):- into_numbers(V1,Ns1),into_numbers(V2,Ns2),my_maplist(num_op(OP),Ns1,Ns2).
 
 
 
@@ -1277,7 +1277,7 @@ write_tee_link(W,TestID):-
 
 
 
-on_entering_test(TestID):- is_list(TestID),!,maplist(on_entering_test,TestID).
+on_entering_test(TestID):- is_list(TestID),!,my_maplist(on_entering_test,TestID).
 on_entering_test(TestID):- 
  must_det_ll((
   set_current_test(TestID),
@@ -1290,7 +1290,7 @@ on_entering_test(TestID):-
   load_file_dyn(PLFile))).
 
 
-on_leaving_test(TestID):- is_list(TestID),!,maplist(on_leaving_test,TestID).
+on_leaving_test(TestID):- is_list(TestID),!,my_maplist(on_leaving_test,TestID).
 on_leaving_test(TestID):-     
  must_det_ll((
   save_supertest(TestID),
@@ -1360,7 +1360,7 @@ my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).
 
 warn_skip(Goal):- nop(u_dmsg(warn_skip(Goal))).
 
-save_supertest(TestID):- is_list(TestID),!,maplist(save_supertest,TestID).
+save_supertest(TestID):- is_list(TestID),!,my_maplist(save_supertest,TestID).
 save_supertest(TestID):- ensure_test(TestID), save_supertest(TestID,_File).
 
 save_supertest(TestID,File):- var(TestID),!, forall(ensure_test(TestID), save_supertest(TestID,File)).
@@ -1373,14 +1373,14 @@ save_supertest(TestID,File):-
    setup_call_cleanup(open(File,write,O,[create([default]),encoding(text)]), 
        with_output_to(O,(
          write_intermediatre_header,
-         maplist(print_ref,Info))),
+         my_maplist(print_ref,Info))),
       close(O)), 
    nop(statistics).
 
 test_name_output_file(TestID,File):- sub_atom_value(TestID,OID),!,atomic_list_concat(['muarc_cache/',OID,'.ansi'],File).
 
 
-clear_test(TestID):- is_list(TestID),!,maplist(clear_test,TestID).
+clear_test(TestID):- is_list(TestID),!,my_maplist(clear_test,TestID).
 clear_test(TestID):- ensure_test(TestID),
    clear_training(TestID),
    warn_skip(clear_saveable_test_info(TestID)),
@@ -1391,7 +1391,7 @@ clear_saveable_test_info(TestID):-
    erase_refs(Info).
    
 
-erase_refs(Info):- maplist(erase,Info).
+erase_refs(Info):- my_maplist(erase,Info).
 
 unload_test_file(TestID):-
    test_name_output_file(TestID,File),
@@ -1709,7 +1709,7 @@ runtime_test_info(T,S):- findall(I,test_info(T,I),F),flatten([F],L),list_to_set(
   retractall(muarc_tmp:test_info_cache(T,_)),
   asserta(muarc_tmp:test_info_cache(T,S)),!.
 
-repair_info(Inf,InfO):- listify(Inf,Inf1),maplist(repair_info0,Inf1,InfO).
+repair_info(Inf,InfO):- listify(Inf,Inf1),my_maplist(repair_info0,Inf1,InfO).
 
 is_plus_minus_or_sym(+). is_plus_minus_or_sym(-).
 is_plus_minus_or_sym(F):- upcase_atom(F,UC),downcase_atom(F,UC).
@@ -1722,10 +1722,10 @@ use_atom_test(F):- no_atom_test(F),!,fail.
 use_atom_test(F):- atom_contains(F,' '),!.
 use_atom_test(F):- \+ is_plus_minus_or_sym(F), \+ atom_contains(F,'/'), nop((\+ atom_contains(F,' '))).
 
-repair_info0(Inf0,Inf):- is_list(Inf0),!,maplist(repair_info0,Inf0,Inf).
+repair_info0(Inf0,Inf):- is_list(Inf0),!,my_maplist(repair_info0,Inf0,Inf).
 repair_info0(Inf,InfO):- compound(Inf),functor(Inf,F,1),listify_args(F),!,arg(1,Inf,A),listify(A,ArgsL),InfO=..[F,ArgsL].
 repair_info0(Inf,InfO):- compound(Inf),compound_name_arguments(Inf,F,ArgsL),listify_args(F),!,InfO=..[F,ArgsL].
-repair_info0(Inf,Inf).% listify(Inf,InfM),maplist(repair_info,InfM,Info).
+repair_info0(Inf,Inf).% listify(Inf,InfM),my_maplist(repair_info,InfM,Info).
 
 was_fav(X):- nonvar_or_ci(X), clause(fav(XX,_),true),nonvar_or_ci(XX),X==XX.
 
@@ -1788,7 +1788,7 @@ test_names_ord_hard(NamesByHard):- ord_hard(NamesByHard),!.
 test_names_ord_hard(NamesByHard):- 
   pp(recreating(test_names_ord_hard)),
   findall(Hard-Name,(all_arc_test_name_unordered(Name),hardness_of_name(Name,Hard)),All),
-  keysort(All,AllK),  maplist(arg(2),AllK,NamesByHardU),!,
+  keysort(All,AllK),  my_maplist(arg(2),AllK,NamesByHardU),!,
   list_to_set(NamesByHardU,NamesByHard), 
   asserta(ord_hard(NamesByHard)).
 
@@ -1821,7 +1821,7 @@ pair_cost(TestID,Cost):- kaggle_arc(TestID,(trn+_),I,O),
  unique_colors(I,IC),grid_size(I,IH,IV),
  unique_colors(I,OC),grid_size(O,OH,OV),
  intersection(IO,OC,S,LO,RO),
- maplist(length,[S,LO,RO],[SN,LON,RON]),
+ my_maplist(length,[S,LO,RO],[SN,LON,RON]),
  Cost is (IH+OH)*(IV+OV)*(LON+1)*(RON+1).
 
 hardness_of_name(TestID,TMass):-!,
@@ -1853,7 +1853,7 @@ hardness_of_name(TestID,Hard):-
   findall(PHard,
   (kaggle_arc(TestID,ExampleNum,In,Out),
    pair_dictation(TestID,ExampleNum,In,Out,T),
-   maplist(negate_number,[T.in_specific_colors_len,T.out_specific_colors_len],[InOnlyC,OutOnlyC]),
+   my_maplist(negate_number,[T.in_specific_colors_len,T.out_specific_colors_len],[InOnlyC,OutOnlyC]),
    PHard = (TrnsL+ T.shared_colors_len + OutOnlyC + InOnlyC + T.ratio_area+ T.delta_density)),
     %(catch(Code,_,rrtrace(Code)))),
   All),
@@ -1888,8 +1888,8 @@ extra_tio_name(TestID,TIO):-
   kaggle_arc(TestID,(trn+1),In1,Out1),
   do_pair_dication(In0,In1,TI),
   do_pair_dication(Out0,Out1,TO),
-  maplist(precat_name('o0_o1_'),TO,TOM),
-  maplist(precat_name('i0_i1_'),TI,TIM),
+  my_maplist(precat_name('o0_o1_'),TO,TOM),
+  my_maplist(precat_name('i0_i1_'),TI,TIM),
   append(TIM,TOM,TIO),!.
 
 
@@ -1900,7 +1900,7 @@ make_comparison(DictIn,TestID,Prefix,In,Out,DictOut):-
  % append(Vs,[shared=[], refused=[], patterns=[], added=[], removed=[]],Vs0),
   Vs=Vs0,
   atomic_list_concat(Prefix,PrefixA),
-  maplist(precat_name(PrefixA),Vs0,VsT),
+  my_maplist(precat_name(PrefixA),Vs0,VsT),
   vars_to_dictation(VsT,DictIn,DictOut).
   
   
@@ -1944,11 +1944,11 @@ dictate_sourcecode(Content, _Vars, OutterVars, TP):-
     phrase_from_quasi_quotation(muarc:copy_qq(Chars), Content),    
     atom_to_term(Chars,Sourcecode0,Vs0),
     parse_expansions([],Vs0, Vs, Sourcecode0, Sourcecode),!,
-    maplist(share_vars(Vs),OutterVars),
-    \+ \+ ((  maplist(ignore_numvars,Vs),
+    my_maplist(share_vars(Vs),OutterVars),
+    \+ \+ ((  my_maplist(ignore_numvars,Vs),
               numbervars(TP,0,_,[attvar(bind),singletons(true)]),
               print(program=Sourcecode),nl,
-              maplist(print_prop_val,Vs))),
+              my_maplist(print_prop_val,Vs))),
     !, TP = source_buffer(Sourcecode, Vs).
 
 
@@ -1979,9 +1979,9 @@ do_pair_dication(In,Out,_Vs):-
   append([InSpecificColors,SharedColors,OutSpecificColors],AllUnsharedColors),
   dont_include(AllUnsharedColors),
   sort_safe(AllUnsharedColors,AllColors),
-  maplist(length,[InColors,OutColors,SharedColors,InSpecificColors,OutSpecificColors,AllColors],
+  my_maplist(length,[InColors,OutColors,SharedColors,InSpecificColors,OutSpecificColors,AllColors],
               [InColorsLen,OutColorsLen,SharedColorsLen,InSpecificColorsLen,OutSpecificColorsLen,AllColorsLen]),
-  %maplist(negate_number,[InColorsLen,OutColorsLen,SharedColorsLen,InSpecificColorsLen,OutSpecificColorsLen,AllColorsLen],
+  %my_maplist(negate_number,[InColorsLen,OutColorsLen,SharedColorsLen,InSpecificColorsLen,OutSpecificColorsLen,AllColorsLen],
   %            [InColorsLenNeg,OutColorsLenNeg,SharedColorsLenNeg,InSpecificColorsLenNeg,OutSpecificColorsLenNeg,AllColorsLenNeg]),
 
   ratio_for(RescaleH,OutH,InH), ratio_for(RescaleV,OutV,InV),
@@ -2060,8 +2060,8 @@ call_bool(G,TF):- (call(G)*->TF=true;TF=false).
 freeze_on([_NV],Goal):- !, call(Goal).
 freeze_on([],Goal):- !, call(Goal).
 freeze_on([NV|Vars],Goal):- nonvar(NV),!,freeze_on(Vars,Goal).
-freeze_on([_NV|Vars],Goal):- maplist(nonvar,Vars),!,call(Goal).
-freeze_on(Vars,Goal):- maplist(freeze_until(Goal,Vars),Vars).
+freeze_on([_NV|Vars],Goal):- my_maplist(nonvar,Vars),!,call(Goal).
+freeze_on(Vars,Goal):- my_maplist(freeze_until(Goal,Vars),Vars).
 freeze_until(Goal,Vars,Var):- freeze(Var,freeze_on(Vars,Goal)).
 
 i(A,B,C):- individuate(A,B,C),!.
@@ -2107,14 +2107,14 @@ testid_name_num_io(ID,TestID,Example,Num,IO):-
   ignore((fail, Modes=[+,-|_], nonvar(TestID), kaggle_arc(TestID,_,_,_), really_set_current_test(TestID))).
 
 
-track_modes(I,M):- I=..[_|L],maplist(plus_minus_modes,L,M).
+track_modes(I,M):- I=..[_|L],my_maplist(plus_minus_modes,L,M).
 plus_minus_modes(Var,-):- var(Var),!. 
 plus_minus_modes(_,+).
 
 testid_name_num_io_0(ID,_Name,_Example,_Num,_IO):- var(ID),!, fail.
 testid_name_num_io_0(X,TestID,E,N,IO):- is_grid(X),!,kaggle_arc_io(TestID,E+N,IO,G),G=@=X.
 testid_name_num_io_0(ID,_Name,_Example,_Num,_IO):- is_grid(ID),!, fail.
-testid_name_num_io_0(ID,_Name,_Example,_Num,_IO):- is_list(ID), \+ maplist(nonvar,ID),!,fail.
+testid_name_num_io_0(ID,_Name,_Example,_Num,_IO):- is_list(ID), \+ my_maplist(nonvar,ID),!,fail.
 
 testid_name_num_io_0([V,Name,Example,ANum|IOL],TestID,Example,Num,IO):- !, atom(V),VName=..[V,Name],atom_number(ANum,Num),!,
   fix_id_1(VName,TestID), freeze(IO,member(IO,[in,out])),member(IO,IOL),!.
@@ -2166,7 +2166,7 @@ atom_id_e(Tried,x(Tried)):- kaggle_arc(x(Tried),_,_,_),!.
 atom_id_e(Sel, TestID):- sformat(SSel,'~q',[Sel]),
    catch(read_term_from_atom(SSel,Name,[module(user),double_quotes(string),variable_names(Vs),singletons(Singles)]),_,
         (ppnl(['failed to read: ',Sel]),fail)),
-        maplist(ignore,Vs),maplist(ignore,Singles),
+        my_maplist(ignore,Vs),my_maplist(ignore,Singles),
         Name\==Sel,
        (fix_test_name(Name,TestID,_) -> true ; (ppnl(['could not read a test from: ',Sel,nl,'try again']),fail)).
 
@@ -2240,7 +2240,7 @@ parc11(ExampleNum,OS,TName):-
 
 %color_sym(OS,[(black='�'),(blue='�'),(red='�'),(green=''),(yellow),(silver='O'),(purple),(orange='o'),(cyan= 248	� ),(brown)]).
 color_sym(OS,C,C):- var(OS),!.
-color_sym(OS,C,Sym):- is_list(C),maplist(color_sym(OS),C,Sym),!.
+color_sym(OS,C,Sym):- is_list(C),my_maplist(color_sym(OS),C,Sym),!.
 color_sym(_,Black,' '):- get_black(B),Black=B.
 color_sym(OS,C,Sym):- color_sym(OS,4,C,Sym).
 color_sym(_,_,C,Sym):- enum_colors(C),color_int(C,I),nth1(I,`ose=xt~+*zk>`,S),name(Sym,[S]).

@@ -124,7 +124,7 @@ i_to_o_is_none_some_some_in(VM):-
   gset(VM.objs)=[],
   filter_library(Library1,Library),
   pp(library=Library),
-  (Library=[_|_]->maplist(add_shape_lib(pairs),Library);true),
+  (Library=[_|_]->my_maplist(add_shape_lib(pairs),Library);true),
   OGrid = VM.start_grid,
   OPoints = VM.start_points,
   gset(VM.grid)=OGrid,
@@ -133,7 +133,7 @@ i_to_o_is_none_some_some_in(VM):-
   find_hybrid_shapes_on(Library,OGrid,RGroup),
   pp(rgroup=RGroup),
   gset(VM.objs)=OObjs,
-  maplist(mergeObject(VM),RGroup),
+  my_maplist(mergeObject(VM),RGroup),
   %addOGSObjects(VM,RGroup),
   globalpoints(RGroup,UsedPoints),
   intersection(OPoints,UsedPoints,_,LeftOver,_),
@@ -185,7 +185,7 @@ mono_i_to_o_is_none_some_none_in(VM):-
   filter_library(Library1,Library),
   pp(library=Library),
   print_grid(library,Library),
-  (Library=[_|_]->maplist(add_shape_lib(pairs),Library);true),
+  (Library=[_|_]->my_maplist(add_shape_lib(pairs),Library);true),
   OGrid = VM.start_grid,
   OPoints = VM.start_points,
   gset(VM.grid)=OGrid,
@@ -197,7 +197,7 @@ mono_i_to_o_is_none_some_none_in(VM):-
   pp(rgroup=RGroup),
   gset(VM.objs)=OObjs,
   %trace,
-  maplist(mergeObject(VM),RGroup),
+  my_maplist(mergeObject(VM),RGroup),
   %addOGSObjects(VM,RGroup),
   globalpoints(RGroup,UsedPoints),
   intersection(OPoints,UsedPoints,_,LeftOver,_),
@@ -515,7 +515,7 @@ show_indivs_side_by_side(W,InC):- \+ wants_html,!,
 show_indivs_side_by_side(W,InC):- show_indivs_side_by_side_html(W,InC).
 
 show_indivs_side_by_side_html(W,InC):-
-  maplist(show_indiv_vert(W),InC,Vert),
+  my_maplist(show_indiv_vert(W),InC,Vert),
   print_table([Vert]).
 
 show_indiv_vert(W,Obj,TD):- wots(TD,show_indiv(W,Obj)).
@@ -648,7 +648,7 @@ ig_test_id_num_io(ROptions,GridIn,_ID,TestID,trn,Num,in,IndvS):-
 ig_test_id_num_io(ROptions,GridIn,_ID,TestID,_Example,_Num,_IO,IndvS):- 
   set_current_test(TestID),
   worker_output((individuate_nonpair(ROptions,GridIn,IndvS))),!.
-  %maplist(add_shape_lib(as_is),IndvS),  
+  %my_maplist(add_shape_lib(as_is),IndvS),  
 
 into_iog(InC,OutC,IndvS):- append(InC,OutC,IndvC),!, must_det_ll(list_to_set(IndvC,IndvS)).
 
@@ -773,7 +773,7 @@ preserve_vm(VM,Goal):-
   setup_call_cleanup(
      duplicate_term(Pairs,DPairs),
       Goal,
-    maplist(arc_setval(VM),DPairs)),
+    my_maplist(arc_setval(VM),DPairs)),
   set_vm(VM).
 
 
@@ -794,15 +794,15 @@ gather_texture(VM):-
     my_partition(is_texture([0]),FGPoints,Zeros,Rest),
     my_partition(is_texture([/*'V','<','^','v','>'*/]),Rest,Shooters,NFGPoints),
     append(BGPoints,NFGPoints,NPoints),
-    maplist(remove_texture,NPoints,LOPoints),!,
+    my_maplist(remove_texture,NPoints,LOPoints),!,
     points_to_grid(H,V,LOPoints,NewGrid0),!,
     mapgrid(assign_plain_var_with(wbg),NewGrid0,NewGrid),
     set(VM.start_points)=LOPoints,
     set(VM.grid)=NewGrid,
     as_ngrid(NewGrid,NewGMap),!,
     print_ss(green,GMap,nGrid(1),_,NewGMap,nGrid(2)),
-    maplist(make_textured_point_object(VM,[birth(texture)]),Zeros,_),
-    maplist(make_textured_point_object(VM,[birth(texture)]),Shooters,_))),!.
+    my_maplist(make_textured_point_object(VM,[birth(texture)]),Zeros,_),
+    my_maplist(make_textured_point_object(VM,[birth(texture)]),Shooters,_))),!.
 
 
 make_textured_point_object(VM,Overrides,Cell,Indv):-
@@ -821,7 +821,7 @@ two_rows(Grid,S1,R1,R2):-
   nth1(R2,Grid,Row2),
   R2>R1+1,
   [S1|Row1]==Row2,
-  maplist(==(S1),Row1).
+  my_maplist(==(S1),Row1).
 */  
 
 % =====================================================================
@@ -1045,8 +1045,8 @@ pointless(Res,VM):-
 is_fti_step(sub_indiv).
 sub_indiv(SubProgram,VM):-
   OnlyNew = VM.objs,  
-  maplist(individuate_object(VM,VM.gid,SubProgram),OnlyNew,WasInside),
-  maplist(addObjects(VM),WasInside).
+  my_maplist(individuate_object(VM,VM.gid,SubProgram),OnlyNew,WasInside),
+  my_maplist(addObjects(VM),WasInside).
 
 individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
  must_det_ll((
@@ -1214,7 +1214,7 @@ grid_to_objs(VM):-
   extend_obj_proplists(VM),
   Objs = VM.objs,!,
   show_indivs_side_by_side(grid_to_objs,Objs),
-  maplist(pp,Objs),
+  my_maplist(pp,Objs),
   Objs = Grp,
   gset(VM.objs)=Grp,
   grid_size(Grp,H,V), gset(VM.h)=H, gset(VM.v)=V,
@@ -1292,8 +1292,8 @@ sub_individuate(From,SubProgram,VM):-
   ignore(run_fti(VM,From)),
   NewObjs = VM.objs,
   intersection(NewObjs,OldObjs,_,OnlyNew,_),
-    preserve_vm(VM,maplist(individuate_object(VM, VM.gid,SubProgram),OnlyNew,WasInside)),
-  maplist(addObjects(VM),WasInside),
+    preserve_vm(VM,my_maplist(individuate_object(VM, VM.gid,SubProgram),OnlyNew,WasInside)),
+  my_maplist(addObjects(VM),WasInside),
   set_vm(VM).
 
 
@@ -1303,7 +1303,7 @@ is_fti_step(rule).
 rule(Pre,Post,VM):- 
   ensure_objects(VM),
   OldObjs = VM.objs,
-  maplist(maybe_rule(VM,Pre,Post),OldObjs,NewObjs),
+  my_maplist(maybe_rule(VM,Pre,Post),OldObjs,NewObjs),
   gset(VM.objs)=NewObjs,
   print_side_by_side(did_rule(Pre,Post),OldObjs,NewObjs),!.
 
@@ -1381,7 +1381,7 @@ enum_hybrid_shapes(Set,_VM):-
   Pair = pair,
   findall(Grid,hybrid_shape(TestID,ExampleNum,Pair,Grid),List),
   remove_shapes_redundant(List,Better),
-  maplist(release_non_mc,Better,FGList),
+  my_maplist(release_non_mc,Better,FGList),
   predsort_on(hybrid_order,FGList,Set))).
 
 remove_shapes_redundant([S1,S2|List],Better):- maybe_ogs(Found,S1,S2),Found\==[],!,
@@ -1414,8 +1414,7 @@ find_hybrid_shapes_on(_Set,_Grid,[]).
 
 multi_hybrid_shapes_on(Set,Grid,GoodFit):-
   length(Set,Len),
-  
-  print_grid(find_hybrid_shapes_on(Len),Grid),
+  print_grid(find_hybrid_shapes_on(Len),Grid),!,Len=<5,
   once((
        if_t(var(ROHOVInS),
         ignore((with_ogs_trace([],
@@ -1431,24 +1430,25 @@ multi_hybrid_shapes_on(Set,Grid,GoodFit):-
              ((member(In,Set),maybe_ogs([+rul(loose),+rot2D(sameR)],ROHOV,In,Grid))),ROHOVInS)),ROHOVInS\==[]))))),
 
   ROHOVInS\==[], % unless debugging 
-  must_det_ll((
+  ((
   print_grouped_props(find_hybrid_shapes_on,ROHOVInS),
   if_t(ROHOVInS==[],
     forall(member(In,Set),
       ((ignore((test_ogs_for_ans(fail,find_hybrid_shapes_on,In,Grid)))),itrace))),
-  maplist(ogs_into_obj(Grid),ROHOVInS,OgsList),
-  %globalpoints(OgsList,OgsPoints), 
-  print_ss(ogsList=OgsList),
-  (no_overlap(OgsList)->GoodFit=ROHOVInS;
-   ( ((MinMaxPerObject = range(0-1))),
+  my_maplist(ogs_with_location(Grid),ROHOVInS,GPointsList,_PropsList),
+  %globalpoints(OgsList,OgsPoints),   
+  (no_overlap(GPointsList)->GoodFit=ROHOVInS;
+   ( 
+     print_ss(skipOgsList=OgsList),!,fail,
+     ((MinMaxPerObject = range(0-1))),
       
      nop((mass(Grid,GMass),MinMaxLeftOver = range(0-GMass))),
      bestfit_hybrid_shapes_on(mono_colorhack,OgsList,Grid,MinMaxPerObject,MinMaxLeftOver,GoodFit))),
   print_grid(ogsPoints,GoodFit))).
 
-no_overlap(OgsList):- \+ no_overlap(OgsList).
+no_overlap(OgsList):- \+ yes_overlap(OgsList).
 yes_overlap(OgsList):- 
-  maplist(globalpoints,OgsList,CPoints),maplist(arg(2),CPoints,Points),!,
+  my_maplist(globalpoints,OgsList,CPoints),my_maplist(arg(2),CPoints,Points),!,
   two_elements(Points,Obj1,Obj2),
   member(Point,Obj1),member(Point,Obj2),!.
 
@@ -1477,25 +1477,51 @@ find_hybrid_shapes_on( Set,Grid,GoodFit):-
 localpoints(I,LPoints):- object_grid(I,Grid),localpoints(Grid,LPoints).
 object_grid(I,LPoints):- localpoints(I,LPoints),vis2D(H,V),points_to_grid(H,V,LPoints,Grid).
 */
-%ogs_into_obj(_Obj,AnsProps,Obj):-
-ogs_into_obj(_OutGrid,ObjL,Props):- \+ is_list(ObjL), into_obj_plist(ObjL,PropStart),ogs_into_obj(PropStart,Props),!.
-ogs_into_obj(_OutGrid,ObjL,Props):- is_list(ObjL), ogs_into_obj2(ObjL,Props),!.
-ogs_into_obj( OutGrid,AnsProps,Obj):- like_object(AnsProps,OutGrid,Obj),!.
+%ogs_into_obj_props(_Obj,AnsProps,Obj):-
+%ogs_with_location(_OutGrid,ObjL,Obj):- \+ is_list(ObjL), into_obj_plist(ObjL,PropStart),ogs_into_obj_props(PropStart,Obj),!.
+ogs_with_location(_OutterGrid,ObjL,GPoints,Props):- get_gpoints_and_props(ObjL,GPoints,Props),!.
+  
+get_gpoints_and_props(ReallyAdd,GPoints,Props):- var(ReallyAdd),!,throw(instaniation_error(get_gpoints_and_props(ReallyAdd,GPoints,Props))).
+get_gpoints_and_props(obj_loc(PropsM,GPointsM),GPoints,Props):- !, 
+  get_gpoints_and_props(PropsM,_,Props), get_gpoints_and_props(GPointsM,GPoints,_).
+get_gpoints_and_props(ReallyAdd,GPoints,Props):- is_grid(ReallyAdd),!, globalpoints(ReallyAdd,GPoints),Props=[].
+get_gpoints_and_props(ReallyAdd,GPoints,Props):- is_cpoints_list(ReallyAdd),!, globalpoints(ReallyAdd,GPoints),Props=[].
+%get_gpoints_and_props(ReallyAdd,GPoints,Props):- \+ is_obj_props(ReallyAdd),!,into_obj_plist(ReallyAdd,PropsList),!,get_gpoints_and_props(PropsList,GPoints,Props).
+get_gpoints_and_props(ReallyAdd,GPoints,Props):- \+ is_list(ReallyAdd),!,into_obj_plist(ReallyAdd,PropsList),!,
+  get_gpoints_and_props(PropsList,GPoints,Props).
+%get_gpoints_and_props(ReallyAdd,GPoints,Props):- compound(ReallyAdd),ReallyAdd=obj(LProps),!,get_gpoints_and_props(LProps,GPoints,Props).
+get_gpoints_and_props(ReallyAdd,GPoints,Props):- 
+  select(globalpoints(GPoints),ReallyAdd,Props),!.
 
-ogs_into_obj2(OldProps,obj([globalpoints(RGOPoints)|Props])):-
-  select(globalpoints(RGOPoints),OldProps,Props),!.
-ogs_into_obj2(   Props,obj([globalpoints(RGOPoints)|Props])):-
+get_gpoints_and_props(Props,RGOPoints,Props):-
   member(loc2D(OH,OV),Props),
   member(localpoints(LPoints),Props),!,
   offset_points(OH,OV,LPoints,GOPoints),
   include(p1_arg(1,is_real_color),GOPoints,RGOPoints).
-ogs_into_obj2(   Props,obj([globalpoints(RGOPoints)|Props])):-
-  member(loc2D(OH,OV),Props),
-  member(grid(In),Props),!,
-  globalpoints(In,LPoints),
-  offset_points(OH,OV,LPoints,GOPoints),
-  include(p1_arg(1,is_real_color),GOPoints,RGOPoints).
-%ogs_into_obj(I,GPoints):- localpoints(I,LPoints),loc2D(I,OH,OV),offset_points(OH,OV,LPoints,GPoints).
+
+get_gpoints_and_props(Props,RGOPoints,PropsO):-
+  member(grid(In),Props),localpoints(In,LPoints),!,
+  get_gpoints_and_props([localpoints(LPoints)|Props],RGOPoints,PropsO).
+
+
+/*
+to_props_and_globalpoints(ObjL,_Ans,_GOPoints):- is_grid(ObjL),!,fail.
+to_props_and_globalpoints(ObjL,Ans,GOPoints):- get_gpoints_and_props(ObjL,GOPoints,Ans).
+ogs_into_obj_props( OutGrid,AnsProps,Obj):- like_object(AnsProps,OutGrid,Obj),!.
+
+like_object(Ans,Out,ObjO)):- 
+  get_gpoints_and_props(Ans,GOPoints,Props),
+  grid_to_gid(Out,GID),grid_size(Out,GH,GV), 
+  make_indiv_object_s(GID,GH,GV,Props,GOPoints,ObjO).
+like_object(Ans,Out,obj([f_grid(Grid),grid(Grid)|ObjO])):- 
+  to_props_and_globalpoints(Ans,Props,GOPoints),
+  once(member(grid(Grid),Ans);member(f_grid(Grid),Ans);object_l(grid(Grid),Ans);object_l(grid_f(Grid),Ans)),
+  grid_size(Out,GH,GV),
+  grid_to_gid(Out,GID),
+  make_indiv_object_s(GID,GH,GV,Props,GOPoints,obj(ObjO)).
+*/
+
+%ogs_into_obj_props(I,GPoints):- localpoints(I,LPoints),loc2D(I,OH,OV),offset_points(OH,OV,LPoints,GPoints).
 
 
 hybrid_shape_from_search(Group,VM):-
@@ -1526,7 +1552,7 @@ learn_hybrid_shape(_,_).
 
 learn_hybrid_shape_real(ReColored):-
   learn_hybrid_shape_real(pair,ReColored).
-learn_hybrid_shape_real(Type,Obj):- is_list(Type),!,maplist(lambda_rev(learn_hybrid_shape_real(Obj)),Type).
+learn_hybrid_shape_real(Type,Obj):- is_list(Type),!,my_maplist(lambda_rev(learn_hybrid_shape_real(Obj)),Type).
 %learn_hybrid_shape(Type,Obj):- is_group(Obj),!,mapgroup(learn_hybrid_shape(Type),Obj).
 learn_hybrid_shape_real(Name,ReColored):-
  current_test_example(TestID,ExampleNum),
@@ -1535,7 +1561,7 @@ learn_hybrid_shape_real(Name,ReColored):-
 %learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- !, nop(learn_hybrid_shape(TestID,ExampleNum,Name,ReColored)).
 learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- is_grid(ReColored),!,learn_hybrid_shape_grid(ReColored,TestID,ExampleNum,Name,ReColored).
 learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- is_group(ReColored),!,mapgroup(learn_hybrid_shape(TestID,ExampleNum,Name),ReColored).
-learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- is_list(ReColored),!,maplist(learn_hybrid_shape(TestID,ExampleNum,Name),ReColored).
+learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- is_list(ReColored),!,my_maplist(learn_hybrid_shape(TestID,ExampleNum,Name),ReColored).
 learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- is_object(ReColored),!,object_grid(ReColored,Grid), 
   learn_hybrid_shape_grid(ReColored,TestID,ExampleNum,Name,Grid).
 learn_hybrid_shape(TestID,ExampleNum,Name,ReColored):- into_grid(ReColored,Grid),!,learn_hybrid_shape(TestID,ExampleNum,Name,Grid).
@@ -1563,7 +1589,7 @@ title_objs(Obj,Title=Grid):- is_object(Obj),object_glyph(Obj,Glyph),loc2D(Obj,X,
   object_grid(Obj,Grid),!.
 title_objs(Obj,Title=Grid):- desc_title(Obj,Title),object_grid(Obj,Grid),!.
 
-print_obj_short_props(Set):- is_list(Set),!,maplist(print_obj_short_props,Set).
+print_obj_short_props(Set):- is_list(Set),!,my_maplist(print_obj_short_props,Set).
 print_obj_short_props(Obj):- short_indv_props(Obj,Props,_),global_grid(Obj,Grid),!,print_grid(Grid),nl_if_needed,ppnl(Props).
 
 obj_short_props(Obj,Title=Grid):- short_indv_props(Obj,Title,_),global_grid(Obj,Grid),!.
@@ -1652,7 +1678,7 @@ is_fti_step(reset_objs).
 reset_objs(VM):- 
   gset(VM.objs)= [].
 
-fix_indivs_options(O,L):-is_list(O),maplist(fix_indivs_options,O,OL),my_append(OL,L).
+fix_indivs_options(O,L):-is_list(O),my_maplist(fix_indivs_options,O,OL),my_append(OL,L).
 fix_indivs_options(G,[G]):- var(G),!.
 fix_indivs_options(I,O):- atom(I),individuation_macros(I,M),!,fix_indivs_options(M,O),!.
 fix_indivs_options(macro(I),[macro(O)]):- fix_indivs_options(I,O).
@@ -1838,7 +1864,7 @@ arc_test_property(A,B,C):-
 arc_common_property(Prop):- arc_test_property(common,_,Prop).
 arc_common_property(Prop):- arc_test_property(common,Prop,O),O\==[].
 
-%compile_and_save_current_test_pt_2(TestID,Why):- is_list(Why),!,maplist(compile_and_save_current_test_pt_2(TestID),Why).
+%compile_and_save_current_test_pt_2(TestID,Why):- is_list(Why),!,my_maplist(compile_and_save_current_test_pt_2(TestID),Why).
 
 
 compile_and_save_current_test_pt_2(_TestID,_):- cant_use_intersections,!.
@@ -2060,7 +2086,7 @@ do_individuate(VM, ROptions, GridIn,LFO):- must_be_free(LF),
     individuate7(VM,ID,ROptions,Grid,LF))),!,
     guard_whole(LF,LFO),
     gset(VM.objs) = LFO,!.
-   %nop((tid_to_gid(ID,GID), maplist(assert_object_oid(GID),LF,_Glyphs,_OIDs))).
+   %nop((tid_to_gid(ID,GID), my_maplist(assert_object_oid(GID),LF,_Glyphs,_OIDs))).
   %smallest_first(mass,IndvS,SF),
   %largest_first(mass,SF,LF),
   
@@ -2145,7 +2171,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
    area:Area,
    added_points:[],
    lo_points:Points,
-   props:_,
+   props:_{},
    option_repair_grid:  _, % Automatic,  
    option_pboxes:  _, % Automatic,  
      option_Background:  _, % Automatic,                         /* The background color of scenes. */
@@ -2200,13 +2226,13 @@ into_grid_d(Grid,Grid_D):- most_d_colors(Grid,_CI,Grid_D),!.
 
 transfer_missing(ArgVM,VM):-
      dict_pairs(ArgVM,_,Pairs),
-     maplist(nb_link_pairs_if_missing(VM),Pairs).
+     my_maplist(nb_link_pairs_if_missing(VM),Pairs).
 transfer_onto_dict(ArgVM,VM):-
      dict_pairs(ArgVM,_,Pairs),
-     maplist(nb_link_pairs(VM),Pairs).
+     my_maplist(nb_link_pairs(VM),Pairs).
 force_onto_dict(ArgVM,VM):-
      dict_pairs(ArgVM,_,Pairs),
-     maplist(nb_link_pairs(VM),Pairs).
+     my_maplist(nb_link_pairs(VM),Pairs).
 
 b_set_pairs(VM,K-V):- (nonvar(V),V\==[])->my_b_set_dict(K,VM,V);true.
 nb_set_pairs(VM,K-V):- (nonvar(V),V\==[])->nb_set_dict(K,VM,V);true.
@@ -2502,7 +2528,7 @@ is_fti_step(release_objs_lighter).
 release_objs_lighter(Two,VM):-
  ignore(( fail,
   my_partition(less_mass(Two),VM.objs,Smaller,set(VM.objs)),
-  maplist(globalpoints,Smaller,Points),
+  my_maplist(globalpoints,Smaller,Points),
   append_sets([VM.lo_points|Points],set(VM.lo_points)))).
 
 less_mass(Mass,Obj):- mass(Obj,M),M<Mass.
@@ -2556,12 +2582,12 @@ solid_row_number(Grid,C,N,Row):-
     grid_size(Grid,_H,V),
     %make_list(black,H,BlankRow),
     nth1(N,Grid,Row),    
-    maplist(=(C),Row),
+    my_maplist(=(C),Row),
     \+ is_bg_color(C),
     \+ \+ (
-    ( N == 1 -> \+ (nth1(2,Grid,Row2),maplist(=(C),Row2)) ; 
-    ( N == V -> ( N1 is N - 1, \+ (nth1(N1,Grid,Row1),maplist(=(C),Row1))) ;
-    ( N1 is N - 1, \+ (nth1(N1,Grid,Row1),maplist(=(C),Row1)) , N2 is N + 1, \+ (nth1(N2,Grid,Row2),maplist(=(C),Row2)))))),    
+    ( N == 1 -> \+ (nth1(2,Grid,Row2),my_maplist(=(C),Row2)) ; 
+    ( N == V -> ( N1 is N - 1, \+ (nth1(N1,Grid,Row1),my_maplist(=(C),Row1))) ;
+    ( N1 is N - 1, \+ (nth1(N1,Grid,Row1),my_maplist(=(C),Row1)) , N2 is N + 1, \+ (nth1(N2,Grid,Row2),my_maplist(=(C),Row2)))))),    
     \+ (delete(Grid,Row,Rest), member(Row2, Rest), append(_,[C,C|_],Row2)).
 
 row_to_indiv(VM,Birth,N,Row):-
@@ -2621,7 +2647,7 @@ mono_shaped(_,_,Cell,Cell).
 recolor_object(Recolors,Old,New):- 
   %globalpoints_include_bg(Grid,Recolors),
   globalpoints_include_bg(Old,GPoints),
-  maplist(recolor_point(Recolors),GPoints,NewGPoints),  
+  my_maplist(recolor_point(Recolors),GPoints,NewGPoints),  
   must_det_ll(rebuild_from_globalpoints(Old,NewGPoints,New)),!.
 
 recolor_point(Recolors,_-Point,C-Point):- 
@@ -2683,7 +2709,7 @@ with_mapgrid(MapGrids,Sub_fg_shaped,Shape,VM):-
   with_other_grid(Other,individuate2(_,Shape,GOID,NewGrid,FoundObjs)),
   set_vm(VMS),
   globalpoints_include_bg(VM.start_grid,Recolors),
-  maplist(recolor_object(Recolors),FoundObjs,ReColored),
+  my_maplist(recolor_object(Recolors),FoundObjs,ReColored),
   learn_hybrid_shape(ReColored),
   remLOPoints(VM,ReColored),
   addObjects(VM,ReColored))),!.
@@ -2698,7 +2724,7 @@ color1_across(Grid,C):- enum_fg_colors(C),two_rows(Grid,C,_,_).
 
 two_rows(Grid,S1,R1,R2):-
   nth1(R1,Grid,[S1|Row1]),nonvar(S1),
-  maplist(==(S1),Row1),
+  my_maplist(==(S1),Row1),
   nth1(R2,Grid,Row2),
   R2>R1+1,
   [S1|Row1]==Row2.
@@ -3069,7 +3095,7 @@ i_intersect(VM):- fail,
   set(VM.lo_points)=FGPs,
   run_fti(VM,[lo_dots]).
   %black_to_zero(VM).
-  %maplist(make_point_object(VM,[birth(lo_dots),iz(stype(dot)),iz(media(shaped))]),FGPs,_IndvList),
+  %my_maplist(make_point_object(VM,[birth(lo_dots),iz(stype(dot)),iz(media(shaped))]),FGPs,_IndvList),
   %remGridPoints(VM,FGPs).
 
 i_intersect(VM):- %generic_nsew_colormass find_hybrid_shapes,nsew,colormass,lo_dots
@@ -3192,7 +3218,7 @@ bigger_grid_contains_other_i_o_2(IO,VM):-
    itrace,
    individuate(generic_nsew_colormass,R,Objs),
    print_ss(containsAll(o-i),R,Objs),
-   maplist(learn_hybrid_shape,Objs))),!.
+   my_maplist(learn_hybrid_shape,Objs))),!.
 
  */
 
@@ -3211,7 +3237,7 @@ glean_shape_lib_o(I,O,VM):-
   %print_grid(o_minus_i,R),print_grid(o_minus_r,NewO),
   individuate(generic_nsew_colormass,R,Objs),
   print_grid(containsAll(o-i),Objs),
-  maplist(add_shape_lib(as_is),Objs).
+  my_maplist(add_shape_lib(as_is),Objs).
 glean_shape_lib_i(I,O,VM):-
  arc_common_property(containsAll(i-o)),
  mapgrid(cell_minus_cell,I,O,R),
@@ -3219,7 +3245,7 @@ glean_shape_lib_i(I,O,VM):-
  %print_grid(i_minus_o,R),print_grid(i_minus_r,NewI),
  individuate(generic_nsew_colormass,R,Objs),
  print_grid(containsAll(i-o),Objs),
- maplist(add_shape_lib(as_is),Objs).
+ my_maplist(add_shape_lib(as_is),Objs).
 
 
 
@@ -3334,7 +3360,7 @@ fg_abtractions(Subtraction,VM):-
   individuate(Subtraction,NewGrid,FoundObjs),
   set_vm(VMS),
   ReColored = FoundObjs,
-  %globalpoints_include_bg(VM.start_grid,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
+  %globalpoints_include_bg(VM.start_grid,Recolors), my_maplist(recolor_object(Recolors),FoundObjs,ReColored),
   print_grid(fg_abtractions(GOID),NewGrid),
   print_ss(ReColored),
   remLOPoints(VM,ReColored),
@@ -3368,7 +3394,7 @@ drops_as_objects(Name,VM):-
   Grid = VM.grid,
   %notrace(catch(call_with_depth_limit(individuate1(_,Name,VM.start_grid,IndvS0),20_000,R),E,(u_dmsg(E)))),
   individuate1(_,Name,Grid,_IndvS0)
-  %maplist(override_object(iz(bp(Name))),IndvS0,IndvS1),
+  %my_maplist(override_object(iz(bp(Name))),IndvS0,IndvS1),
   )),!.
 
 % =====================================================================
@@ -3385,7 +3411,7 @@ check_tid_gid2(GOID,GID):-
   testid_name_num_io(GID,TestID2,Example2,Num2,IO2),
   check_tid_gid3([TestID1,Example1,Num1,IO1],[TestID2,Example2,Num2,IO2]))).
 
-check_tid_gid3(GOID,GID):- maplist(check_tid_gid4,GOID,GID).
+check_tid_gid3(GOID,GID):- my_maplist(check_tid_gid4,GOID,GID).
 check_tid_gid4(GOID,GID):- GOID=GID,!.
 %check_tid_gid4(out,in):- dumpST,!.
 %check_tid_gid4(in,out):- dumpST,!.
@@ -3406,7 +3432,7 @@ save_as_obj_group(ROptions,VM):-
   %notrace(catch(call_with_depth_limit(individuate1(_,Name,VM.start_grid,IndvS0),20_000,R),E,(u_dmsg(E)))),
     must_grid_to_gid(GridIn,GOID),
     individuate2(_,ROptions,GOID,GridIn,IndvS0),
-    maplist(add_birth_if_missing(indiv(ROptions)),IndvS0,IndvSL),
+    my_maplist(add_birth_if_missing(indiv(ROptions)),IndvS0,IndvSL),
     once((delistify_single_element(ROptions,NamedOpts), save_grouped(individuate(NamedOpts,GOID),IndvSL))),!,
     TID = VM.id,
   asserta_in_testid(arc_cache:individuated_cache(TID,GOID,ROptions,IndvSL)),
@@ -3430,14 +3456,14 @@ save_as_hybrid_shapes(ROptions,GridIn,VM):-
     VM.objs = Objs,  
   %notrace(catch(call_with_depth_limit(individuate1(_,Name,VM.start_grid,IndvS0),20_000,R),E,(u_dmsg(E)))),
     must_grid_to_gid(GridIn,GOID),
-    individuate2(_,ROptions,GOID,GridIn,IndvS0),  maplist(add_birth_if_missing(indiv(ROptions)),IndvS0,IndvSL),
+    individuate2(_,ROptions,GOID,GridIn,IndvS0),  my_maplist(add_birth_if_missing(indiv(ROptions)),IndvS0,IndvSL),
     set(VM.grid) = VM.start_grid,
     set(VM.lo_points) = VM.start_points,
     set(VM.objs) = Objs,
     learn_hybrid_shape(IndvSL))).
 
 
-add_birth_if_missing(Birth,I,O):- is_list(I),maplist(add_birth_if_missing(Birth),I,O).
+add_birth_if_missing(Birth,I,O):- is_list(I),my_maplist(add_birth_if_missing(Birth),I,O).
 %add_birth_if_missing(_,I,I):-!.
 %add_birth_if_missing(_,O,O):- has_prop(iz(birth(_)),O),!.
 add_birth_if_missing(Birth,I,O):- override_object(iz(birth(Birth)),I,O).
@@ -3534,7 +3560,7 @@ maybe_sa_dots(Points,lte(LTE),VM):-
     length(SAPs,Len),
     if_t((LTE>=Len),
     ( remLOPoints(VM,SAPs),
-     using_alone_dots(VM,(maplist(make_point_object(VM,[birth(alone_dots(lte(LTE))),iz(type(sa_dots)),iz(media(shaped))]),SAPs,IndvList),
+     using_alone_dots(VM,(my_maplist(make_point_object(VM,[birth(alone_dots(lte(LTE))),iz(type(sa_dots)),iz(media(shaped))]),SAPs,IndvList),
      nop(assumeAdded(VM,IndvList)))))))),!.
 
 % =====================================================================
@@ -3556,13 +3582,13 @@ mostly_fgp(Points,FG_POINTS):- my_partition(is_fgp,Points,FG_POINTS,_),!.
 lo_dots(VM):-  
   mostly_fgp(VM.lo_points,LO_POINTS),
   (true; VM.h=<5 ; VM.v=<5 ; (LO_POINTS \=[], length(LO_POINTS,Len), Len<12, (Len =< VM.h ; Len =< VM.v  ))),!,  
-  using_alone_dots(VM,(maplist(make_point_object(VM,[birth(lo_dots),iz(stype(dot)),iz(media(shaped))]),LO_POINTS,IndvList),
+  using_alone_dots(VM,(my_maplist(make_point_object(VM,[birth(lo_dots),iz(stype(dot)),iz(media(shaped))]),LO_POINTS,IndvList),
   assumeAdded(VM,IndvList))),
   ((set(VM.lo_points) =[])),!.
 lo_dots(VM):-  
   mostly_fgp(VM.lo_points,LO_POINTS),
    length(LO_POINTS,Len), Len<12,
-  using_alone_dots(VM,(maplist(make_point_object(VM,[birth(lo_dots),iz(stype(dot))]),LO_POINTS,IndvList),
+  using_alone_dots(VM,(my_maplist(make_point_object(VM,[birth(lo_dots),iz(stype(dot))]),LO_POINTS,IndvList),
   assumeAdded(VM,IndvList))),
   ((set(VM.lo_points) =[])),!.
 
@@ -3582,7 +3608,7 @@ is_fti_step(colormass_merger).
 colormass_merger(Size,VM):-
   Objs = VM.objs,
   my_partition(less_mass(Size),Objs,Smaller,Bigger),
-  maplist(colormass_merger(VM,Smaller),Bigger).
+  my_maplist(colormass_merger(VM,Smaller),Bigger).
 
 colormass_merger(VM,Smaller,Bigger):- 
    find_mergeable(VM,Bigger,Smaller,Touches),
@@ -3644,8 +3670,8 @@ row_not_isnt(LeftN,RightN,C,Row,NewSubRow,NewRow):-
   append([Left,SubRow,Right],Row),  
   append([[_-C1],_List,[_-C1]],SubRow),!,
   C==C1,
-  %maplist(was_color(C),List),
-  maplist(divide_colors(C),SubRow,NewSubRow,NewSubRowReplace),  
+  %my_maplist(was_color(C),List),
+  my_maplist(divide_colors(C),SubRow,NewSubRow,NewSubRowReplace),  
   append([Left,NewSubRowReplace,Right],NewRow),!.
 
 divide_colors(C,Cell,Cell,_):- was_color(C,Cell),!.
@@ -3676,7 +3702,7 @@ rectangles_from_grid(Grid,_VM):- fail,
   dif(L1,L2),
   dif(R1,L2),R2=L2,
   append([LL,[L1,L2],T,[R2,R1],_],M1),  
-  maplist(=(L2),T),
+  my_maplist(=(L2),T),
   length(LL,NL),
   length(LL2,NL),
   %L1\==L2,R1\==R2,
@@ -3697,7 +3723,7 @@ rectangles_from_grid(Grid,VM):-
   nop((nth1(N1,TexturedGrid,FirstRow), N2>N1)),
 
   append(BeforeFirstRow,[FirstRow|Rest],Retextured),  
-  %maplist(was_color(C),FirstRow),
+  %my_maplist(was_color(C),FirstRow),
 
   mustlist_until_failed(row_not_isnt(LeftN,RightN,C),[FirstRow|Rest],RowsInvolvedClipped,Replacements,Below),
   length(RowsInvolvedClipped,N),N>1,!,
@@ -3705,8 +3731,8 @@ rectangles_from_grid(Grid,VM):-
   nth1(1,RowsInvolvedClipped,First),
   last(RowsInvolvedClipped,Last),
   writeq(Last),nl,
-  nop(maplist(was_color_or_unbound(C),First)),
-  maplist(was_color_or_unbound(C),Last),!,
+  nop(my_maplist(was_color_or_unbound(C),First)),
+  my_maplist(was_color_or_unbound(C),Last),!,
   Width is H - RightN - LeftN,
   print_ss(C,TexturedGrid,texture,_,Retextured,retextured(Width,N)),
   print_ss(C,NewGrid,'grid',_,RowsInvolvedClipped,clipped(Width,N)),
@@ -3742,7 +3768,7 @@ keypads(VM):-
   writeg(points(Len)=LPoints),
   offset_points0(OX,OY,LPoints,AllGpoints),
   %itrace,
-  maplist(make_point_object(VM,[birth(keypads),iz(media(shaped))]),AllGpoints,IndvList),
+  my_maplist(make_point_object(VM,[birth(keypads),iz(media(shaped))]),AllGpoints,IndvList),
   print_grid(allGpoints,IndvList),
  % remLOPoints(VM,IndvList),
   remLOPoints(VM,IndvList),
@@ -3787,7 +3813,7 @@ one_fti(VM,glyphic):-
   VM.lo_program=Code,
   %run_fti(VM,[i_by_color]),
   set(VM.lo_program)=Code,
-  using_alone_dots(VM,(maplist(make_point_object(VM,[birth(glyphic),iz(media(shaped))]),UPoints,IndvList), assumeAdded(VM,IndvList),
+  using_alone_dots(VM,(my_maplist(make_point_object(VM,[birth(glyphic),iz(media(shaped))]),UPoints,IndvList), assumeAdded(VM,IndvList),
   save_grouped(individuate(glyphic,VM.gid),IndvList))))))).
 
 %make_point_object(VM,_Opts,Point,Indv):-
@@ -4000,7 +4026,7 @@ objs_into_single_hidden(VM):- objs_into_single_now(VM,[iz(info(combined)),iz(fla
 objs_into_single(VM):- objs_into_single_now(VM,[iz(info(combined)),iz(into_single)]).
 
 objs_into_single_now(Opts,VM):-
-    maplist(globalpoints,VM.objs,IndvPoints),
+    my_maplist(globalpoints,VM.objs,IndvPoints),
     meets_indiv_criteria(VM,into_single,IndvPoints),!,
     make_indiv_object(VM,Opts,IndvPoints,Indv),    
     assumeAdded(VM,Indv).
@@ -4062,12 +4088,10 @@ same_lcolor(LargestColor,Obj):- color(Obj,Color),nop(print_grid(Obj)),!,Color==L
 % @TODO will get sub objects later
 not_list(G):- \+ is_list(G).
 
-mapgroup(P2,G1,L2):- into_list(G1,L1),!, maplist(P2,L1,L2).
-mapgroup(P1,G1):- into_list(G1,L1), !, maplist(P1,L1).
 
 is_sort_tag(L):- nonvar(L),(L=sort(_);L=result(_,_);L=sort(_,_)).
 
-remove_sort_tag(L,G):- is_list(L),!,maplist(remove_sort_tag,L,G).
+remove_sort_tag(L,G):- is_list(L),!,my_maplist(remove_sort_tag,L,G).
 remove_sort_tag(L,G):- maybe_remove_sort_tag(L,G),!.
 remove_sort_tag(G,G).
 
@@ -4084,13 +4108,13 @@ assume_vm(_).
 :- style_check(-singleton).
 
 addPropPredInfo(VM,Prop,Pred2,Obj):- assume_vm(VM),!,into_list(Obj,List),
-  maplist(Pred2,List,ListData),
+  my_maplist(Pred2,List,ListData),
   get_kov(Prop,VM,VMProp),
   intersection(VMProp,ListData,PretendToAdd,Prev,ReallyAdd),
   my_append(VM.Prop,ReallyAdd,set(VM.Prop)).
 
 remPropPredInfo(VM,Prop,Pred2,Obj):- assume_vm(VM),!,into_list(Obj,List),
-  maplist(Pred2,List,ListData),
+  my_maplist(Pred2,List,ListData),
   get_kov(Prop,VM,VMProp),
   intersection(VMProp,ListData,ReallyRemove,Keep,PretendToRemove),
   gset(VM.Prop) = Keep.
@@ -4142,33 +4166,29 @@ addObjects(_VM,Obj):- Obj==[],!.
 addObjects(VM,Obj):- assume_vm(VM),!,into_list(Obj,List), 
   intersection(VM.objs,List,_PretendToAdd,_Prev,ReallyAdd),
   my_append(VM.objs,ReallyAdd,set(VM.objs)).
-  %maplist(mergeObject(VM),ReallyAdd).
+  %my_maplist(mergeObject(VM),ReallyAdd).
 */
 
-mergeObject(VM,GPoints):- is_cpoints_list(GPoints), !,
-  List = [],
-%  select(globalpoints(GPoints),ReallyAdd,ReallyReallyAdd),
+mergeObject(VM,ReallyAdd):- ReallyAdd==[],!.
+mergeObject(VM,ReallyAdd):- is_group_or_objects_list(ReallyAdd),!,my_maplist(mergeObject(VM),ReallyAdd).
+mergeObject(VM,ReallyAdd):- 
+  get_gpoints_and_props(ReallyAdd,GPoints,Props),!,
   (GPoints==[] -> true ;
-   (GPoints\==[] -> (make_indiv_object(VM,List,GPoints,Obj),
+   (GPoints\==[] -> (make_indiv_object(VM,Props,GPoints,Obj),assumeAdded(VM,Obj),
      nop(addObjects(VM,Obj))) ; true)).
 
-mergeObject(VM,obj_loc(obj(List),GPoints)):- !,
-%  select(globalpoints(GPoints),ReallyAdd,ReallyReallyAdd),
-  (GPoints==[] -> true ;
-   (GPoints\==[] -> (make_indiv_object(VM,List,GPoints,Obj),
-     nop(addObjects(VM,Obj))) ; true)).
+is_list_of_prop_lists(List):- List\==[], my_maplist(is_obj_props,List).
+is_group_or_objects_list(ReallyAdd):- (is_list_of_prop_lists(ReallyAdd); is_group(ReallyAdd)).
 
-mergeObject(VM,obj(ReallyAdd)):-
-  select(globalpoints(GPoints),ReallyAdd,ReallyReallyAdd),
-  (GPoints==[] -> true ;
-   (GPoints\==[] -> (make_indiv_object(VM,ReallyReallyAdd,GPoints,Obj),
-     nop(addObjects(VM,Obj))) ; true)).
+  
+  
+
 %  my_append(VM.objs,ReallyAdd,set(VM.objs)).
 
 addOGSObjects(_VM,Obj):- Obj==[],!.
 addOGSObjects(VM,Obj):- assume_vm(VM),!,into_list(Obj,List),
   intersection(VM.objs,List,_PretendToAdd,_Prev,ReallyAdd),
-  maplist(mergeObject(VM),ReallyAdd).
+  my_maplist(mergeObject(VM),ReallyAdd).
 
 
 addRepairedPoints(_VM,Obj):- Obj==[],!.
@@ -4414,7 +4434,7 @@ meets_indiv_criteria(_VM,Shape,PointL):- nop(( points_allowed(PointL,Shape,Point
 points_allowed(Nil,_Shape,_Point):- \+ Nil\=[], !.
 points_allowed(VM,Shape,PointL):- is_vm(VM),!,points_allowed(VM.start_points,Shape,PointL).
 points_allowed(VM,ShapeL,PointL):- is_list(ShapeL),member(Shape,ShapeL),points_allowed(VM,Shape,PointL),!.
-points_allowed(VM,Shape,PointL):- maplist(point_allowed0(VM,Shape),PointL).
+points_allowed(VM,Shape,PointL):- my_maplist(point_allowed0(VM,Shape),PointL).
 
 
 point_allowed(Nil,_Shape,_Point):- var(Nil),!.
@@ -4699,7 +4719,7 @@ merge_indivs(IndvA,IndvB,BetterA,BetterB,BetterC):-
   merge_indivs_cleanup(IndvA,IndvB,IndvC,BetterA,BetterB,BetterC),!.
 
 merge_indivs_cleanup(IndvA,IndvB,IndvC,_,_,_):-
-  maplist(length,[IndvA,IndvB,IndvC],Rest),
+  my_maplist(length,[IndvA,IndvB,IndvC],Rest),
   u_dmsg(len=Rest),fail.
 merge_indivs_cleanup(IndvA,IndvB,IndvC,BetterAO,BetterBO,BetterCO):-
   select(A,IndvC,IndvCRest), member(B,IndvCRest),

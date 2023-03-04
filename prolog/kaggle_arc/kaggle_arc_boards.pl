@@ -39,7 +39,7 @@ print_directive(P):- format('~N:- ~q. ~n',[P]).
 write_intermediatre_header:- 
   print_directive(encoding(iso_latin_1)),
   forall(  (test_local_save(F,A),nl),
-      maplist(print_directive,[%abolish(F/A),
+      my_maplist(print_directive,[%abolish(F/A),
                                multifile(F/A),dynamic(F/A),discontiguous(F/A),public(F/A),export(F/A),module_transparent(F/A)])).
 
 print_ref(Ref):- is_clause_ref(Ref), clause(H,B,Ref),!,print_ref((H:-B)).
@@ -396,7 +396,7 @@ obj_into_cells(VM):-
   vm_to_printable(VM,GridObj),
   globalpoints(GridObj,Row1),
   flatten([Row1],Row1F),list_to_set(Row1F,Row1S),
-  maplist(only_color_data,Row1S,ColorRow),
+  my_maplist(only_color_data,Row1S,ColorRow),
   set_vm(grid,[ColorRow]).
 
 
@@ -473,7 +473,7 @@ compute_and_show_test_hints(TestID):- format('~N'),
   findall(Hints-N,(kaggle_arc_io(TestID,ExampleNum,out,Out1),N2 is N+1, (kaggle_arc_io(TestID,(trn+N2),out,Out2)->true;kaggle_arc_io(TestID,(trn+0),out,Out2)), grid_hint_recolor(o-o,Out1,Out2,Hints)),HintsOO),
   append([HintsIO,HintsOO,HintsII],Hints),
   keysort(Hints,SHints),  
-  maplist(aquire_hints(TestID,SHints),SHints),
+  my_maplist(aquire_hints(TestID,SHints),SHints),
   format('~N'),
   nop()),
   list_common_props(TestID).
@@ -500,7 +500,7 @@ list_common_props_so_far(TestID):-
   sort_safe(FComs,SComs),
   %dash_chars,
   %print_test(TestID),
-  %wots(SS,maplist(ptv1,SComs)),
+  %wots(SS,my_maplist(ptv1,SComs)),
   w_section(title(list_common_props),ptv1(cyan+magenta,SComs)),
   !.
 
@@ -508,7 +508,7 @@ list_common_props_so_far(TestID):-
 with_li_pre(Goal):- with_tag(li,with_tag(pre,Goal)).
 %with_li_pre(Goal):- call(Goal).
 
-ptv1(Color,T):- is_list(T), !, maplist(ptv1(Color),T).
+ptv1(Color,T):- is_list(T), !, my_maplist(ptv1(Color),T).
 ptv1(_Color,_=T):- T==[],!.
 %ptv1(_Color,_=T):- compound(T), T = each_object(_),!.
 ptv1(_Color,_=T):- compound(T),compound_name_arguments(T,_,[A]),A==[],!.
@@ -632,7 +632,7 @@ min_unifier_e(_,_,_).
 
 some_min_unifier([A|List],Term):- some_min_unifier_3(A,List,Term).
 
-some_min_unifier_3(A,List,A):- maplist('=@='(A),List),!.
+some_min_unifier_3(A,List,A):- my_maplist('=@='(A),List),!.
 some_min_unifier_3(A,[B|List],O):- must_min_unifier(A,B,C), some_min_unifier_3(C,List,O).
 
 is_a_min_unifier(A,B,C):- B==strict,A==loose,!,C=A.
@@ -656,7 +656,7 @@ min_unifier(A,B,AA):- is_cons(A),is_cons(B),!,min_list_unifier(A,B,AA),!.
 %min_unifier(A,B,C):- is_list(A),sort_safe(A,AA),A\==AA,!,min_unifier(B,AA,C).
 min_unifier(A,B,R):- compound(A),compound(B),
  compound_name_arguments(A,F,AA),compound_name_arguments(B,F,BB),!,
- maplist(must_min_unifier,AA,BB,RR),compound_name_arguments(R,F,RR).
+ my_maplist(must_min_unifier,AA,BB,RR),compound_name_arguments(R,F,RR).
 min_unifier(A,B,R):- relax_hint(A,R),\+ (B \= R),!.
 min_unifier(A,B,_):- (\+ compound(A);\+ compound(B)),!.
 
@@ -762,7 +762,7 @@ grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hints)):-  \+ arc_option(grid_size_only), g
   grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hints).
 grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hints)):- not_reversed(IO), c_proportional(In,Out,Hints).
 
-disguise_grid(I,O):- maplist(disguise_row,I,M),O=..[grid|M].
+disguise_grid(I,O):- my_maplist(disguise_row,I,M),O=..[grid|M].
 disguise_row(I,O):- O=..[row|I].
 
 
@@ -857,7 +857,7 @@ grid_to_so(Grid,In,Prop):-
 grid_to_so(_Grid,Named,In):- fail,
   Named=keypad(Color,Counts),
   In=[[_X1,_X2,_X3],[_X4,_X5,_X6],[_X7,_X8,_X9]],
-  flatten(In,Flat),maplist(count_N(Color,Flat,Counts),Flat).
+  flatten(In,Flat),my_maplist(count_N(Color,Flat,Counts),Flat).
 
 ideal_rank(Named,[Obj],Obj,Named):-!.
 ideal_rank(Named,_Objs,Obj,Prop):- indv_props_list(Obj,Prop),sub_var(Named,Prop),!.
@@ -928,7 +928,7 @@ grid_hint_iso(cbg(_BGC),i-o,_In,Out,_IH,_IV,_OH,_OV,RInfo):- !,
   ((wno( findall(Info,grid_part(Out,Info),List)),flatten([List],FList),member(Info,FList), rinfo(Info,RInfo))),
                     flag(indiv,_,Was)).
 */
-termsub_to_atom(List,OO):- is_list(List),!,maplist(termsub_to_atom,List,LL),
+termsub_to_atom(List,OO):- is_list(List),!,my_maplist(termsub_to_atom,List,LL),
  atomic_list_concat(LL,'_',O),atomic_list_concat(['[',O,']'],OO).
 termsub_to_atom(T,O):- sformat(O,'~w',[T]).
 
@@ -940,7 +940,7 @@ fix_iz(Z,ZZ):- compound(Z),arg(1,Z,A),is_list(A),last(A,ZZ),!.
 fix_iz(Z,Z):-!.
 
 rinfo(obj(List0),RInfo):- 
-  maplist(must_det_ll,
+  my_maplist(must_det_ll,
   [select(ord(N),List0,List),
   atomic_list_concat([obj,N],'_',Key),
   Obj = obj(List0),
@@ -952,7 +952,7 @@ rinfo(obj(List0),RInfo):-
   Rest3 = Rest2,
   obj_to_oid(Obj,MyID),
   must_det_ll((remove_too_verbose(MyID,Rest3,TV00))),flatten([TV00],TV0),
-  must_det_ll((include(not_too_verbose,TV0,TV1),maplist(fix_iz,TV1,TV)))]),!,
+  must_det_ll((include(not_too_verbose,TV0,TV1),my_maplist(fix_iz,TV1,TV)))]),!,
   member(MrT,[oform(Shape),ogrid(Grid)|TV]),once((MrT=..MrTL, RInfoM=..[Key|MrTL],rinfo(RInfoM,RInfo))).
 rinfo(Info,RInfo):- Info=..[P,N,A|InfoL], atomic_list_concat([P,N],'_',PN),!, RInfo=..[PN,A|InfoL].
 rinfo(Info,Info):-!.
@@ -971,10 +971,10 @@ comp_o(_-o):-!.
 comp_o(_-i).
 
 entire_row([Color|Row]):- entire_row(Color,Row).
-entire_row(Color,Row):- maplist(=@=(Color),Row).
-%entire_row(black,Row):- !, maplist(=(black),Row).
+entire_row(Color,Row):- my_maplist(=@=(Color),Row).
+%entire_row(black,Row):- !, my_maplist(=(black),Row).
 mentire_row(C2,OtherRow):- entire_row(C2,OtherRow),!.
-% mentire_row(C2,OtherRow):- include(\==(C2),OtherRow,Missing),  once((length(Missing,L),L=<1,maplist(=(C2),Missing))),!.
+% mentire_row(C2,OtherRow):- include(\==(C2),OtherRow,Missing),  once((length(Missing,L),L=<1,my_maplist(=(C2),Missing))),!.
 
 type_hint_pred(grid_area/1).
 grid_area(In,Area):- grid_size(In,H,V), Area is H*V.
@@ -1021,8 +1021,8 @@ gather_chunks(Color,In,Chunks,X,Y,GX,GY,BorderNumsX,BorderNumsY):-
 
 conjoin_color(Color,Value,ord(Value,Color)).
 
-x_columns(In,Out):- into_grid(In,G), has_x_columns(G,_X,Color,BorderNums),  must_det_ll(ground(In+Color)), maplist(conjoin_color(Color),BorderNums,Out).
-y_rows(In,Out):-  into_grid(In,G), has_y_rowz(G,_X,Color,BorderNums), maplist(conjoin_color(Color),BorderNums,Out).
+x_columns(In,Out):- into_grid(In,G), has_x_columns(G,_X,Color,BorderNums),  must_det_ll(ground(In+Color)), my_maplist(conjoin_color(Color),BorderNums,Out).
+y_rows(In,Out):-  into_grid(In,G), has_y_rowz(G,_X,Color,BorderNums), my_maplist(conjoin_color(Color),BorderNums,Out).
 
 has_x_columns(In,X,Color,BorderNums):- ((rot90(In,In90), !, has_y_rows(In90,X,Color,BorderNums))).
 has_y_rows(In,Y,Color,BorderNums):- has_y_rowz(In,Y,Color,BorderNums).
@@ -1100,35 +1100,42 @@ save_the_alt_grids(TestID,ExampleNum,_XForms,In,Out):-
   assert_test_property(TestID,ExampleNum,ori(none),Out),!.
   
 save_the_alt_grids_now(TestID,ExampleNum,XForms,In,Out):-
-  maplist(save_cell_calc(TestID,ExampleNum,XForms,In,Out),
-     [fg_intersectiond,fg_intersectiond_mono,cell_minus_cell,mono_cell_minus_cell]),
-  ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!,
-  save_the_alt_grids_now2(TestID,ExampleNum,XForms,In,Out).
+  my_maplist(save_grid_calc(TestID,ExampleNum,XForms,In,Out),
+     [fg_intersectiond,fg_intersectiond_mono,cell_minus_cell,mono_cell_minus_cell,overlapping_image]),
+  ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!.
 
 colors_of(O,Cs):- unique_fg_colors(O,Cs),!.
 
+/*save_the_alt_grids_now2(TestID,ExampleNum,XForms,In,Out).
 save_the_alt_grids_now2(TestID,ExampleNum,XForms,In,Out):- 
  must_det_ll((
-  colors_of(In.cell_minus_cell(Out),CsIn),
-  colors_of(Out.cell_minus_cell(In),CsOut),
+    colors_of(In.cell_minus_cell(Out),CsIn),
+    colors_of(Out.cell_minus_cell(In),CsOut),
+    colors_of(In,CsInO), 
+    colors_of(Out,CsOutO),
+    ExtraColors = color_set(CsInO).add(CsOutO).rem(CsIn).rem(CsOut),
+    gset(In.overlapping_image)=In.inv(unbind_color(ExtraColors)),
+    gset(Out.overlapping_image)=Out.inv(unbind_color(ExtraColors)),
+    assert_test_property(TestID,ExampleNum,ori([overlapping_image|XForms]),Out.overlapping_image),
+    assert_test_property(TestID,ExampleNum,iro([overlapping_image|XForms]),In.overlapping_image))),!.*/
+
+
+overlapping_image(In,Other,OLIn):- 
+  colors_of(In.cell_minus_cell(Other),CsIn),
+  colors_of(Other.cell_minus_cell(In),CsOut),
   colors_of(In,CsInO), 
-  colors_of(Out,CsOutO),
+  colors_of(Other,CsOutO),
   ExtraColors = color_set(CsInO).add(CsOutO).rem(CsIn).rem(CsOut),
-  gset(In.overlapping)=In.inv(unbind_color(ExtraColors)),
-  gset(Out.overlapping)=Out.inv(unbind_color(ExtraColors)),
-  assert_test_property(TestID,ExampleNum,ori([overlapping|XForms]),Out.overlapping),
-  assert_test_property(TestID,ExampleNum,iro([overlapping|XForms]),In.overlapping))),!.
 
-inv(I,M,O):- call(M,I,O).
 
-color_set(CsIn,add(CsOut),Result):- trace, !, append_sets(CsIn,CsOut,Result).
-color_set(CsIn,rem(CsOut),Result):- !, trace,include(not_in(CsOut),CsIn,Result).
+  OLIn=In.inv(unbind_color(ExtraColors)),
+
 
 
 %32e9702f
 
-save_cell_calc(TestID,ExampleNum,XForms,In,Out,Op):-  
-  mapgrid(Op,In,Out,RIO), mapgrid(Op,Out,In,ROI),!,
+save_grid_calc(TestID,ExampleNum,XForms,In,Out,Op):-  
+  call(Op,In,Out,RIO), call(Op,Out,In,ROI),!,
   assert_test_property(TestID,ExampleNum,iro([Op|XForms]),RIO),
   assert_test_property(TestID,ExampleNum,ori([Op|XForms]),ROI),
   print_ss(no(Op,TestID,ExampleNum,XForms),RIO,ROI).

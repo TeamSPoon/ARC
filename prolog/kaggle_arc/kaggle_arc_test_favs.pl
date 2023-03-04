@@ -2849,7 +2849,7 @@ fav(t('d8c310e9'),[grid_size_same,-rotation_match,-mask_match,+shape_match,+colo
 fav(t('44f52bb0'),[ohuman(i(whole),first_object_bool(symmetric_type(flipH)),learn_rule)]).
 
 fav(t('40853293'),[indiv(by_color(2))]).
-%fav(t(d631b094),ohuman(globalpoints,target_grid=[get(points)],maplist(arg(1)))).
+%fav(t(d631b094),ohuman(globalpoints,target_grid=[get(points)],my_maplist(arg(1)))).
 fav(t('d631b094'),[indiv(lo_dots),ohuman(i(lo_dots),get(objs),learn_rule)]).
 fav(t('d631b094'),[-shape_match,-rotation_match,-mask_match,-color_match,test_suite([train400]),summarize,dominant_color,count_tiles,'(4, 1)']).
 

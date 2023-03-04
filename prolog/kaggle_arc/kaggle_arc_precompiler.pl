@@ -36,13 +36,13 @@ must_det_ll(X):- \+ callable(X), !, throw(must_det_ll_not_callable(X)).
 must_det_ll((A*->X;Y)):- !,(must_not_error(A)*->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((A->X;Y)):- !,(must_not_error(A)->must_det_ll(X);must_det_ll(Y)).
 must_det_ll((X,Cut)):- (Cut==(!)), !, (must_det_ll(X),!).
-must_det_ll(maplist(P1,List)):- !, must_det_ll_maplist(P1,List).
-must_det_ll(maplist(P2,ListA,ListB)):- !, must_det_ll_maplist(P2,ListA,ListB).
-must_det_ll(maplist(P3,ListA,ListB,ListC)):- !, must_det_ll_maplist(P3,ListA,ListB,ListC).
+must_det_ll(my_maplist(P1,List)):- !, must_det_ll_maplist(P1,List).
+must_det_ll(my_maplist(P2,ListA,ListB)):- !, must_det_ll_maplist(P2,ListA,ListB).
+must_det_ll(my_maplist(P3,ListA,ListB,ListC)):- !, must_det_ll_maplist(P3,ListA,ListB,ListC).
 must_det_ll((X,Cut,Y)):- (Cut==(!)), !, (must_det_ll(X),!,must_det_ll(Y)).
 must_det_ll((X,Y)):- !, (must_det_ll(X),must_det_ll(Y)),!.
 %must_det_ll(X):- notrace(catch(X,_,fail)),!.
-must_det_ll(X):- conjuncts_to_list(X,List),List\=[_],!,maplist(must_det_ll,List).
+must_det_ll(X):- conjuncts_to_list(X,List),List\=[_],!,my_maplist(must_det_ll,List).
 must_det_ll(must_det_ll(X)):- !, must_det_ll(X).
 must_det_ll(grid_call(P2,I,O)):- !, must_grid_call(P2,I,O).
 must_det_ll(call(P2,I,O)):- !, must_grid_call(P2,I,O).
@@ -166,7 +166,8 @@ set_omember(How,Member,Obj,Var):-
 
 
 
-get_kov(K,O,V):- get_kov1(K,O,V)*->true;(get_kov1(props,O,VV),get_kov1(K,VV,V)).
+get_kov(K,O,V):- dictoo:is_dot_hook(user,O,K,V),!,o_m_v(O,K,V).
+get_kov(K,O,V):- ((get_kov1(K,O,V)*->true;(get_kov1(props,O,VV),get_kov1(K,VV,V)))).
 
 get_kov1(K,O,V):- (is_hooked_obj(O),o_m_v(O,K,V))*->true;get_kov2(K,O,V).
 % (get_kov(Prop,VM,Value) -> true ; (get_kov(props,VM,Hashmap),nonvar(Hashmap),must_not_error(nb_get_value(Hashmap,Prop,ValueOOV)),get_oov_value(ValueOOV,Value))).
@@ -212,7 +213,7 @@ expand_must_det(I,_):- \+ compound(I),!,fail.
 % THIS DISABLES
 %expand_must_det(must_det_ll(GoalL),GoalL):-!.
 expand_must_det(must_det_ll(GoalL),GoalLO):- !, expand_must_det0(GoalL,GoalLO).
-expand_must_det(maplist(P1,GoalL),GoalLO):- P1 ==must_det_ll,!,
+expand_must_det(my_maplist(P1,GoalL),GoalLO):- P1 ==must_det_ll,!,
   expand_must_det0(GoalL,GoalLO).
 
 expand_must_det0(Nil,true):- Nil==[],!.
@@ -226,9 +227,9 @@ is_trace_call(A):- A == trace.
 is_trace_call(A):- A == itrace.
 skip_expansion(A):- A == !.
 expand_must_det1(Var,Var):- \+ callable(Var),!.
-expand_must_det1(maplist(P1,A),must_det_ll_maplist(P1,A)):-!.
-expand_must_det1(maplist(P2,A,B),must_det_ll_maplist(P2,A,B)):-!.
-expand_must_det1(maplist(P3,A,B,C),must_det_ll_maplist(P3,A,B,C)):-!.
+expand_must_det1(my_maplist(P1,A),must_det_ll_maplist(P1,A)):-!.
+expand_must_det1(my_maplist(P2,A,B),must_det_ll_maplist(P2,A,B)):-!.
+expand_must_det1(my_maplist(P3,A,B,C),must_det_ll_maplist(P3,A,B,C)):-!.
 expand_must_det1(Cut,Cut):-  skip_expansion(Cut).
 expand_must_det1(Goal,O):- \+ compound(Goal), !,O = must_det_ll(Goal).
 expand_must_det1((A,B),must_det_ll((A,B))):- prevents_expansion(A),!.
@@ -248,7 +249,7 @@ expand_must_det1(P, AABB) :- predicate_property(P,(meta_predicate( MP ))),
    strip_module(P,_,SP),strip_module(MP,_,SMP), kaggle_arc_1_pred(_,SP),
    \+ skippable_built_in(P),
    SP=..[F|Args],SMP=..[F|Margs],!,
-   maplist(expand_meta_predicate_arg,Margs,Args,EArgs),
+   my_maplist(expand_meta_predicate_arg,Margs,Args,EArgs),
    AABB=..[F|EArgs].  
 expand_must_det1(must_det_ll(AB), AABB):-!, expand_must_det1(AB,AABB).
 expand_must_det1( A,must_det_ll(AA)):- expand_goal(A,AA).
@@ -278,7 +279,7 @@ goal_expansion_getter(Goal,get_kov(Func,Self,Value)):-
   compound_name_arguments(Goal,'.', [Self, Func, Value]),!.
 goal_expansion_getter(Goal,Out):- 
  compound_name_arguments(Goal,F,Args),
- maplist(goal_expansion_getter,Args,ArgsOut),
+ my_maplist(goal_expansion_getter,Args,ArgsOut),
  compound_name_arguments(Out,F,ArgsOut).
 
 :- export(goal_expansion_getter/2).

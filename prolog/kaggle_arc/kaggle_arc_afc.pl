@@ -166,7 +166,7 @@ show_child_info(P,L):- list_to_set(L,S),
   ansi_format([fg(green)],'~@',[pp(P)]),
   format(" :~n",[]),
   forall((member(D,S), \+ t_l:shown_dep(P,D)),(asserta(t_l:shown_dep(P,D)),ansi_format([fg(yellow)],'~N ~@. ~n',[pp(D)]))),
-  maplist(show_child_info,S).
+  my_maplist(show_child_info,S).
 
 afc_why(X):- afc_test_why(X).
 
@@ -311,7 +311,7 @@ term_subst(tilded_negation,P,O):- !, term_subst(
 
 term_subst(Subst,P,O):- 
  compound_name_arguments(P,F,Args),
- maplist(term_subst(Subst),Args,ArgsL),
+ my_maplist(term_subst(Subst),Args,ArgsL),
  termf_subst(Subst,F,F2),
  compound_name_arguments(O,F2,ArgsL).
 
@@ -412,7 +412,7 @@ afcPost(List,S):- afcPost_rev(S,List).
 
 afcPost_rev(S,Term) :-  
   is_list(Term) 
-  -> maplist(afcPost_rev(S),Term)
+  -> my_maplist(afcPost_rev(S),Term)
   ; afcPost1(Term,S).
 
 
@@ -709,7 +709,7 @@ afcAddType(action,_Action) :- !.
 
 % afcWithdraw/1  withdraws any "direct" support for P.
 % If a list, iterates down the list
-afcWithdraw(P) :- is_list(P),!,maplist(afcWithdraw,P).
+afcWithdraw(P) :- is_list(P),!,my_maplist(afcWithdraw,P).
 afcWithdraw(P) :- matches_why_UU(UU), afcWithdraw(P,UU).
 % %  afcWithdraw(P,S) removes support S from P and checks to see if P is still supported.
 % %  If it is not, then the fact is retractred from the database and any support
@@ -732,7 +732,7 @@ afcWithdraw(P,S) :-
 
 % afcRetractAll/1  withdraws any "direct" and "indirect" support for P.
 % If a list, iterates down the list
-afcRetractAll(P) :- is_list(P),!,maplist(afcRetractAll,P).
+afcRetractAll(P) :- is_list(P),!,my_maplist(afcRetractAll,P).
 afcRetractAll(P) :- matches_why_UU(UU), afcRetractAll(P,UU).
 
 % %  afcRetractAll(P,S) removes support S from P and checks to see if P is still supported.
@@ -996,7 +996,7 @@ may_cheat:- fail.
 % %  afcFwd(X) forward chains from a fact or a list of facts X.
 % % 
 afcFwd(Fact) :- control_arg_types(Fact,Fixed),!,afcFwd(Fixed).
-afcFwd(Fact) :- is_list(List)->maplist(afcFwd1,List);afcFwd1(Fact).
+afcFwd(Fact) :- is_list(List)->my_maplist(afcFwd1,List);afcFwd1(Fact).
 
 % fc1(+P) forward chains for a single fact.
 
@@ -2392,7 +2392,7 @@ short_filename(F,FN):- F=FN,!.
 afcShowSingleJust_MFL(MFL):- MFL=mfl4(VarNameZ,_M,F,L),atom(F),short_filename(F,FN),!,varnames_load_context(VarNameZ),
    ansi_format([hfg(black)]," % [~w:~w] ",[FN,L]).
 
-afcShowSingleJust_MFL(MFL):- MFL=mfl4(V,M,F,L),maplist(var,[V,M,F,L]),!.
+afcShowSingleJust_MFL(MFL):- MFL=mfl4(V,M,F,L),my_maplist(var,[V,M,F,L]),!.
 afcShowSingleJust_MFL(MFL):- ansi_format([hfg(black)]," % [~w] ",[MFL]),!.
 
 afcAsk(Msg,Ans) :-

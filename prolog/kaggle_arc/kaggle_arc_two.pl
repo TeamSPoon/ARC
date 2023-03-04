@@ -312,7 +312,7 @@ reuse_indivs(IndvA,IndvB,BetterA,BetterB):-
   reuse_indivs_cleanup(IndvAS,IndvBS,IndvCS,BetterA,BetterB,_BetterC),!.
 
 reuse_indivs_cleanup(IndvA,IndvB,IndvC,_,_,_):-
-  maplist(length,[IndvA,IndvB,IndvC],Rest),
+  my_maplist(length,[IndvA,IndvB,IndvC],Rest),
   u_dmsg(len=Rest),fail.
 reuse_indivs_cleanup(IndvA,IndvB,IndvC,BetterAO,BetterBO,BetterCO):-
   select(A,IndvC,IndvCRest), member(B,IndvCRest),
