@@ -684,40 +684,6 @@ save_rule00(GID,TITLE,IP,OP):-
    save_rule(GID,TITLE,[A|IP],OP))))).
 */
 
-is_obj_props(Props):- is_list(Props), Props\==[], \+ is_grid(Props), \+ is_group(Props), \+ is_points_list(Props).
-
-%extend_grp_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
-extend_grp_proplist(Grp,GrpO):-
-  must_det_ll((mapgroup(extend_obj_proplist(Grp),Grp,GrpM),
-  externalize_links(GrpM,GrpO))).
-
-
-extend_obj_proplist(Obj,Props):- extend_obj_proplist(_,Obj,Props).
-
-%extend_obj_proplist(Var,NewObj):- var(Var),!, enum_object(Var),extend_grp_proplist(Var,NewObj).
-extend_obj_proplist(Grp,[obj(Obj)],[obj(OUT)]):-!, extend_obj_proplist1(Grp,Obj,OUT).
-extend_obj_proplist(Grp,obj(Obj),obj(OUT)):-!, extend_obj_proplist1(Grp,Obj,OUT).
-extend_obj_proplist(Grp,L1,L2):- extend_obj_proplist1(Grp,L1,L2).
-
-
-extend_obj_proplist1(Grp,Props,OUTL):- must_det_ll(is_obj_props(Props)),
-  Obj = obj(Props),
-  findall(P,extend_obj_prop(Grp,Obj,P),NewProps),
-  flatten(NewProps,NewPropsF),
-  override_object(NewPropsF,Props,Obj1),
-  %override_object(Props,Obj1,OUT),
-  into_obj_plist(Obj1,OUTL).
-
-  
-%lazy_prop(Prop):-  algo_list(Algo), arg(_,v(grid_ops(Algo,_NormOps),iz(algo_sid(Algo,_NormShapeID)),grid_rep(Algo,_NormGrid)),Prop).
-extend_obj_prop(Grp,Obj,Prop):- is_in_subgroup(Grp,Obj,Prop).
-extend_obj_prop(_Grp,Obj,Props):- fail,
- once((localpoints(Obj,P),vis2D(Obj,H,V),points_to_grid(H,V,P,Grid),
-  grid_props(Grid,Props))).
-extend_obj_prop(_Grp,Obj,Prop):- compound(Obj), Obj = obj(List), 
- missing_obj_props(Obj,List,Prop).
-
-
 %  print_g1(P2,CG):- arc_html,with_toplevel_pp(ansi,( \+ arc_html,print_g1(P2,CG))),!.
 show_changes(P2BeforeAfter):- P2BeforeAfter=..[_,Before,After],
  must_det_ll((
@@ -1229,7 +1195,7 @@ save_rule2(IO_DIR,TITLE,IP,OP):-
  ip_op_debug_info(IP,OP,LOCK),
  if_t(once(true;is_fg_object(IP);is_fg_object(OP)),
  (must_det_ll((
-  show_interesting_named_props(save_rule2,[IP,OP]),
+  print_grouped_props(save_rule2,[IP,OP]),
  assert_showed_mapping(IP,OP),
  make_rule_l2r_objs(Dir,[],IP,OP,II,OO,Mid), 
  %save_learnt_rule(arc_cache:object_to_object(TITLE,lhs(II),rhs(OO),Mid,LOCK),oneTwo,twoOne),

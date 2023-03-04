@@ -708,7 +708,7 @@ ansi_startup:-
    %with_pp(bfly,catch_log(menu)),
    nop((next_test,prev_test)),!.
 
-:- luser_default(example,trn+0).
+:- luser_default(example,(trn+0)).
 :- luser_default(no_diags,false).
 :- luser_default(no_individuator, f).
 :- luser_default(grid_size_only,true).

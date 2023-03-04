@@ -534,6 +534,7 @@ is_1gridoid(G):- is_points_list(G),!.
 
 is_gridoid(G):- plain_var(G),!, fail.
 is_gridoid(G):- is_1gridoid(G),!.
+%is_gridoid(G):- is_obj_props(G),contains_enough_for_print(G,_),!.
 is_gridoid([C|_]):- is_ncpoint(C),!,fail.
 is_gridoid(G):- is_list_of_gridoids(G).
 

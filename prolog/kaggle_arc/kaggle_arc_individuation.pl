@@ -640,7 +640,7 @@ do_ig(ROptions,Grid,IndvS):-
 ig_test_id_num_io(ROptions,GridIn,_ID,TestID,trn,Num,in,IndvS):- 
  must_det_ll((
   In = GridIn,
-  kaggle_arc_io(TestID,trn+Num,out,Out),!,
+  kaggle_arc_io(TestID,(trn+Num),out,Out),!,
   my_time((maybe_name_the_pair(In,Out,_PairName),
   individuate_pair(ROptions,In,Out,IndvSI,IndvSO),
   into_iog(IndvSI,IndvSO,IndvS))))).
@@ -1404,16 +1404,6 @@ ogs_size_ok(_SX,_SY,Mass):- Mass>3,!.
 
 find_hybrid_shapes_on([],_,[]):-!.
 find_hybrid_shapes_on(_Set,Grid,[]):- mass(Grid,GMass), GMass<1,  !.
-find_hybrid_shapes_on( Set,Grid,GoodFit):-
- unique_fg_colors(Grid,[_]),
-  MinMaxPerObject = range(_-_),
-  once((length(Set,Len), Len<10);
-  (globalpoints(Grid,AvailablePoints),
-    fg_points(AvailablePoints,FGPoints),length(FGPoints,Need),Need<100)),
-  MinMaxLeftOver = range(0-0),
-  length(Set,Len), Len<5,
- bestfit_hybrid_shapes_on(mono_colorhack,Set,Grid,MinMaxPerObject,MinMaxLeftOver,GoodFit),!.
-
 find_hybrid_shapes_on( Set,Grid,AllInUse):-
   once((length(Set,Len), Len<10);
   (globalpoints(Grid,AvailablePoints),
@@ -1424,6 +1414,7 @@ find_hybrid_shapes_on(_Set,_Grid,[]).
 
 multi_hybrid_shapes_on(Set,Grid,GoodFit):-
   length(Set,Len),
+  
   print_grid(find_hybrid_shapes_on(Len),Grid),
   once((
        if_t(var(ROHOVInS),
@@ -1441,41 +1432,64 @@ multi_hybrid_shapes_on(Set,Grid,GoodFit):-
 
   ROHOVInS\==[], % unless debugging 
   must_det_ll((
-  show_interesting_named_props(find_hybrid_shapes_on,ROHOVInS),
+  print_grouped_props(find_hybrid_shapes_on,ROHOVInS),
   if_t(ROHOVInS==[],
     forall(member(In,Set),
       ((ignore((test_ogs_for_ans(fail,find_hybrid_shapes_on,In,Grid)))),itrace))),
   maplist(ogs_into_obj(Grid),ROHOVInS,OgsList),
-  nop((MinMaxPerObject = range(0-1))),
-  nop((MinMaxLeftOver = range(0-10))),
-  globalpoints(OgsList,OgsPoints), 
-  bestfit_hybrid_shapes_on(mono_colorhack,OgsPoints,Grid,MinMaxPerObject,MinMaxLeftOver,GoodFit),
+  %globalpoints(OgsList,OgsPoints), 
+  print_ss(ogsList=OgsList),
+  (no_overlap(OgsList)->GoodFit=ROHOVInS;
+   ( ((MinMaxPerObject = range(0-1))),
+      
+     nop((mass(Grid,GMass),MinMaxLeftOver = range(0-GMass))),
+     bestfit_hybrid_shapes_on(mono_colorhack,OgsList,Grid,MinMaxPerObject,MinMaxLeftOver,GoodFit))),
   print_grid(ogsPoints,GoodFit))).
 
+no_overlap(OgsList):- \+ no_overlap(OgsList).
+yes_overlap(OgsList):- 
+  maplist(globalpoints,OgsList,CPoints),maplist(arg(2),CPoints,Points),!,
+  two_elements(Points,Obj1,Obj2),
+  member(Point,Obj1),member(Point,Obj2),!.
 
-
+two_elements(Points,Obj1,Obj2):- append(_,[Obj1|RPoints],Points),member(Obj2,RPoints).
+/*
 make_fit(OgsList,Grid,RGroup):- 
   best_fit_combos(OgsList,Grid,ComboGroups),
   last(ComboGroups,Group),
   remove_sort_tag(Group,RGroup).
+*/
+/*
+find_hybrid_shapes_on( Set,Grid,GoodFit):-
+ unique_fg_colors(Grid,[_]),
+  MinMaxPerObject = range(_-_),
+  once((length(Set,Len), Len<10);
+  (globalpoints(Grid,AvailablePoints),
+    fg_points(AvailablePoints,FGPoints),length(FGPoints,Need),Need<100)),
+  MinMaxLeftOver = range(0-0),
+  length(Set,Len), Len<5,
+ bestfit_hybrid_shapes_on(mono_colorhack,Set,Grid,MinMaxPerObject,MinMaxLeftOver,GoodFit),!.
+
+*/
+
 
 /*
 localpoints(I,LPoints):- object_grid(I,Grid),localpoints(Grid,LPoints).
 object_grid(I,LPoints):- localpoints(I,LPoints),vis2D(H,V),points_to_grid(H,V,LPoints,Grid).
 */
 %ogs_into_obj(_Obj,AnsProps,Obj):-
-ogs_into_obj(_OutGrid,ObjL,Props):- \+ is_list(ObjL), indiv_props_list(ObjL,PropStart),ogs_into_obj(PropStart,Props),!.
-ogs_into_obj(_OutGrid,ObjL,Props):- is_list(ObjL), ogs_into_obj(ObjL,Props),!.
+ogs_into_obj(_OutGrid,ObjL,Props):- \+ is_list(ObjL), into_obj_plist(ObjL,PropStart),ogs_into_obj(PropStart,Props),!.
+ogs_into_obj(_OutGrid,ObjL,Props):- is_list(ObjL), ogs_into_obj2(ObjL,Props),!.
 ogs_into_obj( OutGrid,AnsProps,Obj):- like_object(AnsProps,OutGrid,Obj),!.
 
-ogs_into_obj(OldProps,obj([globalpoints(RGOPoints)|Props])):-
+ogs_into_obj2(OldProps,obj([globalpoints(RGOPoints)|Props])):-
   select(globalpoints(RGOPoints),OldProps,Props),!.
-ogs_into_obj(   Props,obj([globalpoints(RGOPoints)|Props])):-
+ogs_into_obj2(   Props,obj([globalpoints(RGOPoints)|Props])):-
   member(loc2D(OH,OV),Props),
   member(localpoints(LPoints),Props),!,
   offset_points(OH,OV,LPoints,GOPoints),
   include(p1_arg(1,is_real_color),GOPoints,RGOPoints).
-ogs_into_obj(   Props,obj([globalpoints(RGOPoints)|Props])):-
+ogs_into_obj2(   Props,obj([globalpoints(RGOPoints)|Props])):-
   member(loc2D(OH,OV),Props),
   member(grid(In),Props),!,
   globalpoints(In,LPoints),

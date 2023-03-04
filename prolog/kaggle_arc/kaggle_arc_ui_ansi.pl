@@ -79,23 +79,23 @@ portray_terse:- true,!.
 
 :- discontiguous arc_portray/2. 
 
+
 arc_portray(S,_):- term_is_ansi(S), !, write_keeping_ansi_mb(S).
 arc_portray(_,_):- \+ \+ current_prolog_flag(never_pp_hook, true), nb_current(arc_can_portray,t), !, fail.
 arc_portray(Map,TF):- get_map_pairs(Map,Type,Pairs),!, arc_portray_pairs(Type,TF,Pairs). 
 
 arc_portray_t(G, _):- is_vm_map(G), !, write_map(G,'arc_portray_t').
 arc_portray_t(G, _):- is_grid(G),  !, data_type(G,W),writeq(grid(W)).
+arc_portray_t(G, _):- print(G),!.
 
 arc_portray(G, _):- is_vm_map(G),  !, write_map(G,'arc_portray').
 arc_portray(G, TF):- TF == true, portray_terse, arc_portray_t(G, TF),!.
-arc_portray(G, TF):- catch(arc_portray_nt(G, TF),_,(never_let_arc_portray_again,fail)),!.
+arc_portray(G, TF):- catch(arc_portray_nt(G, TF),E,(writeln(E),never_let_arc_portray_again,fail)),!.
 %arc_portray(G, _TF):- writeq(G),!.
 
 % Portray In Debugger
 
-arc_portray_nt(G,false):- is_grid(G), print_grid(G),!.
-
-arc_portray_nt(G0, _):- is_list(G0), length(G0,L),L>3, ppt(G0),!.
+arc_portray_nt(G, false):- is_grid(G), print_grid(G),!.
 arc_portray_nt(G0, true):- is_group(G0), ppt(G0),!.
 %arc_portray_nt(G0, false):- is_group(G0), ppt(G0),!.
 arc_portray_nt(G0, false):- is_group(G0), into_list(G0,G), length(G,L),% L>1, !,
@@ -112,13 +112,14 @@ arc_portray_nt(G,_False):- is_object(G), wots(S,ppt(G)), show_indiv(S,G).
   %neighbor_map(OG,NG), !,
   %print_grid(object_grid,NG),nl_now,
   %underline_print(print_info(G)),
-  
+
 arc_portray_nt(G,false):- via_print_grid(G),!, grid_size(G,H,V),!,H>0,V>0, print_grid(H,V,G).
 
 % Portray In tracer
 arc_portray_nt(G,true):- is_object(G),underline_print((ppt(G))).
 arc_portray_nt(G,true):- via_print_grid(G),write_nbsp,underline_print((ppt(G))),write_nbsp.
 arc_portray_nt(G,true):- tersify(G,O),write_nbsp,writeq(O),write_nbsp.
+arc_portray_nt(G0, _):- \+ is_gridoid(G0),!,print(G0).
 
 
 arc_portray_pairs(Type,TF,Pairs):- 
@@ -162,20 +163,29 @@ arc_portray_pair_optional(Ps,K,Val,TF):-
 
 
 % arc_portray(G):- \+ \+ catch((wots_hs(S,( tracing->arc_portray(G,true);arc_portray(G,false))),write(S),ttyflush),_,fail).
+arc_portray(G):- \+ compound(G),fail.
 arc_portray(G):- is_vm(G), !, write('..VM..').
-arc_portray(G):- \+ nb_current(arc_portray,t),\+ nb_current(arc_portray,f),is_print_collapsed,!, locally(nb_setval(arc_portray,t),arc_portray(G)).
-arc_portray(G):- \+ nb_current(arc_portray,f),!, locally(nb_setval(arc_portray,t),arc_portray(G)).
-arc_portray(G):- compound(G), \+ \+ 
+arc_portray(G):- \+ nb_current(arc_portray,t),\+ nb_current(arc_portray,f),is_print_collapsed,!, 
+  locally(nb_setval(arc_portray,t),arc_portray1(G)).
+arc_portray(G):- \+ nb_current(arc_portray,f),!, locally(nb_setval(arc_portray,t),arc_portray1(G)).
+arc_portray(G):- locally(nb_setval(arc_portray,f),arc_portray1(G)).
+
+arc_portray1(G):-
+ flag(arc_portray_current_depth,X,X), X < 3,
+ \+ \+ 
   setup_call_cleanup(flag(arc_portray_current_depth,X,X+1),catch(((tracing->arc_portray(G,true);
   arc_portray(G,false)),ttyflush),E,(fail,format(user_error,"~N~q~n",[E]),fail)),flag(arc_portray_current_depth,_,X)).
 
   
-
+%via_print_grid(G):- tracing,!,fail.
 via_print_grid(G):- is_points_list(G). %,!,fail,grid_size(G,H,V),number(H),number(V),H>1,V>1.
 via_print_grid(G):- is_grid(G).
+via_print_grid(G):- is_obj_props(G),!,fail.
 via_print_grid(G):- is_object(G).
 via_print_grid(G):- is_group(G).
 via_print_grid(G):- is_gridoid(G).
+
+ 
 
 terseA(_,[],[]):- !.
 terseA(_,L,'... attrs ...'(N)):- is_list(L),length(L,N),N>10,!.
@@ -1277,6 +1287,7 @@ grid_footer([GFGG],GG,GF):- compound(GFGG),(GFGG=(GF=GG)),grid_footer(GF=GG,GG,G
 grid_footer(Obj,GG,GF):- is_object(Obj), %vis2D(Obj,H,V),localpoints(Obj,Ps),points_to_grid(H,V,Ps,GG), 
   global_grid(Obj,GG),
   object_ref_desc(Obj,GF),!.
+%grid_footer(GF,GG,wqs(GF)):- is_obj_props(GF),!,contains_enough_for_print(GF,GG),!.
 grid_footer(print_grid(GF,GG),GG,GF):-!.
 grid_footer(print_grid(_,_,GF,GG),GG,GF):-!.
 grid_footer((GG-GF),GG,GF):- is_grid(GG), !.
@@ -1767,6 +1778,7 @@ print_grid0(SH,SV,EH,EV,Grid):-
   \+ \+ print_grid1(SH,SV,EH,EV,Grid),!,nl_if_needed_ansi.
 
 
+  
 not_printable_gridoid(H):- callable_arity(H,0),is_writer_goal(H),catch(call_e_dmsg(H),_,fail),!.
 not_printable_gridoid(Grid):- catch(wqs(Grid),_,writeln(\+ is_printable_gridoid(Grid))).
 

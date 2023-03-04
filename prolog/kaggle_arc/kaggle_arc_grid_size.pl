@@ -18,7 +18,7 @@ store_grid_size_predictions:- forall_count(all_arc_test_name(TestID), test_grid_
 test_grid_sizes(TestID):- 
    retractall(muarc_tmp:learned_grid_size(TestID,_)),
    retractall(muarc_tmp:grid_size_prediction(TestID,_,_,_)),
-   findall(R,(kaggle_arc(TestID,trn+_,In,Out),learn_grid_size(In,Out,R),nop((writeq(R),write('.\n')))),L), 
+   findall(R,(kaggle_arc(TestID,(trn+_),In,Out),learn_grid_size(In,Out,R),nop((writeq(R),write('.\n')))),L), 
    asserta_if_new(muarc_tmp:learned_grid_size(TestID,L)),
    forall(kaggle_arc(TestID,tst+_,In,Out),predict_grid_size(TestID,In,Out)).
 

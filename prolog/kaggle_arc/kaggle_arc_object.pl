@@ -1039,11 +1039,19 @@ metaq_1(P3,Did,Old,New,Orig,Saved):- compound(Orig),Orig=Old, call(P3,Old,New,Sa
 
 %indv_prop_val1(I,V):- indv_props(I,V).
 %indv_prop_val1(I,X):- compound(X),I=obj(List),member(X,List).
-indv_props_list(Obj,Props):- var(Obj),!,enum_object(Obj),indv_props_list(Obj,Props).
-indv_props_list(OID,NVL):- is_oid(OID),!,oid_to_objlist(OID,NVS), combine_cindv(OID,NVS,NVL).
-indv_props_list(Obj,NVL):- is_object(Obj),!,obj_to_objlist(Obj,NVS), combine_cindv(Obj,NVS,NVL).
-indv_props_list([E|OID],NVL):- is_list(OID), compound(E), \+ is_list(E), [E|OID]=NVL,!.
-indv_props_list(Obj,Props):- lock_doing(has_prop_list,Obj,has_prop_list(Obj,Props)).
+indv_props_list(Obj,Props):- var(Obj),!,enum_object(Obj),indv_props_list0(Obj,Props).
+indv_props_list(OID,NVL):- indv_props_list0(OID,NVL).
+
+indv_props_list0(OID,NVL):- is_oid(OID),!,oid_to_objlist(OID,NVS), combine_cindv(OID,NVS,NVL).
+indv_props_list0(Obj,NVL):- is_object(Obj),!,obj_to_objlist(Obj,NVS), combine_cindv(Obj,NVS,NVL).
+indv_props_list0(OProps,Props):- is_obj_props(OProps),!,Props=OProps.
+indv_props_list0([E|OID],[E|NVL]):- is_prop(E),!,indv_props_list1(OID,NVL).
+indv_props_list0(Objs,Props):- is_list(Objs),!,maplist(indv_props_list0,Objs,OProps),append(OProps,Props).
+indv_props_list0(Obj,Props):- lock_doing(has_prop_list,Obj,has_prop_list(Obj,Props)).
+
+indv_props_list1(Var,Var):- var(Var),!.
+indv_props_list1([],[]):-!.
+indv_props_list1([E|OID],[E|NVL]):- is_prop(E),!,indv_props_list1(OID,NVL).
 
 has_prop_list(Obj,Props):- findall(Prop,has_prop(Prop,Obj),Props),Props\==[],!.
 
