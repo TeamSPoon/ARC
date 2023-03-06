@@ -88,8 +88,7 @@ compile_and_save_test_now(TestID):-
       detect_all_training_hints(TestID),
       nop(individuate_pairs_from_hints(TestID)),
       %train_test(TestID,train_using_io),  
-      %print_hybrid_set,
-      save_the_alt_grids(TestID),
+      %print_hybrid_set,      
       save_supertest(TestID))))).
 
 
@@ -285,6 +284,7 @@ must_ll(G):- G*->true;throw(failed(G)).
 
 detect_all_training_hints:- get_current_test(TestID),time(detect_all_training_hints(TestID)).
 detect_all_training_hints(TestID):- ensure_test(TestID),
+  save_the_alt_grids(TestID),
   training_only_examples(ExampleNum), 
   w_section(title(detect_all_training_hints(TestID>ExampleNum)),
     ( 
@@ -461,7 +461,8 @@ add_hint(TestID,ExampleNum,Hints):-
   hint_functor(Hints,F),hint_into_data(Hints,D), assert_test_property(TestID,ExampleNum,F,D).
 
 assert_test_property(TestID,ExampleNum,Prop,Data):-
-  arc_assert(arc_test_property(TestID,ExampleNum,Prop,Data)).
+  assert_if_new(arc_test_property(TestID,ExampleNum,Prop,Data)),
+  pp(assert_test_property(TestID,ExampleNum,Prop,Data)).
   
   % forall((kaggle_arc_io(TestID,ExampleNum,in,Out1),N2 is N+1,  (kaggle_arc_io(TestID,(trn+N2),in,Out2)->true;kaggle_arc_io(TestID,(trn+0),in,Out2)),  grid_hint_recolor(i-i,Out1,Out2,Hints)),add_hint(TestID,Hints,N)).
 
@@ -496,7 +497,7 @@ list_common_props_so_far(TestID):-
     retractall(arc_test_property(TestID,common,F,_)),
     (( findall(Data,arc_test_property(TestID,(trn+_),F,Data),Commons),
       once((some_min_unifier(Commons,Common),nonvar(Common))))),
-      arc_assert(arc_test_property(TestID,common,F,Common))),FComs),
+      assert_test_property(TestID,common,F,Common)),FComs),
   sort_safe(FComs,SComs),
   %dash_chars,
   %print_test(TestID),
@@ -549,7 +550,7 @@ compute_all_test_hints(TestID):-
 compute_test_io_hints(TestID):- 
   forall(
     kaggle_arc(TestID,ExampleNum,In,Out), 
-     maybe_compute_test_io_hints(i-o,TestID,ExampleNum,In,Out)).
+     ignore(maybe_compute_test_io_hints(i-o,TestID,ExampleNum,In,Out))).
 
 %maybe_compute_test_io_hints(_,TestID,ExampleNum,_,_):- arc_test_property(TestID,_,_-N),!.
 maybe_compute_test_io_hints(IO,TestID,ExampleNum,In,Out):-
@@ -567,7 +568,8 @@ compute_test_oo_hints(TestID):-
      (next_example(TestID,ExampleNum,ExampleNum2), kaggle_arc_io(TestID,ExampleNum2,out,Out2),
       maybe_compute_test_oo_hints(TestID,ExampleNum,Out1,Out2))),!.
 
-  maybe_compute_test_oo_hints(TestID,ExampleNum,Out1,Out2):- forall(grid_hint_recolor(o-o,Out1,Out2,Hints),add_hint(TestID,ExampleNum,Hints)).
+ maybe_compute_test_oo_hints(TestID,ExampleNum,Out1,Out2):- 
+   forall(grid_hint_recolor(o-o,Out1,Out2,Hints),add_hint(TestID,ExampleNum,Hints)).
 
 compute_test_ii_hints(_):-!.
 compute_test_ii_hints(TestID):- 
