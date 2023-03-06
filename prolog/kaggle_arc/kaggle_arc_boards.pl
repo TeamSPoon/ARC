@@ -1101,7 +1101,8 @@ save_the_alt_grids(TestID,ExampleNum,_XForms,In,Out):-
   
 save_the_alt_grids_now(TestID,ExampleNum,XForms,In,Out):-
   my_maplist(save_grid_calc(TestID,ExampleNum,XForms,In,Out),
-     [fg_intersectiond,fg_intersectiond_mono,cell_minus_cell,mono_cell_minus_cell,overlapping_image]),
+     [fg_intersectiond,fg_intersectiond_mono,cell_minus_cell,mono_cell_minus_cell,overlapping_image,
+      minus_overlapping_image]),
   ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!.
 
 colors_of(O,Cs):- unique_fg_colors(O,Cs),!.
@@ -1119,8 +1120,15 @@ save_the_alt_grids_now2(TestID,ExampleNum,XForms,In,Out):-
     assert_test_property(TestID,ExampleNum,ori([overlapping_image|XForms]),Out.overlapping_image),
     assert_test_property(TestID,ExampleNum,iro([overlapping_image|XForms]),In.overlapping_image))),!.*/
 
+minus_overlapping_image(In,Other,MOI):-  overlapping_image(In,Other,OLIn), grid_minus_grid(In,OLIn,MOI).
 
-overlapping_image(In,Other,OLIn):- 
+/*
+overlapping_image(In,Other,RIO):- detect_iro(In,Other,TestID,ExampleNum,iro),
+   arc_test_property(TestID,ExampleNum,iro([overlapping_image]),RIO),!.
+overlapping_image(In,Other,ROI):- detect_ori(In,Other,TestID,ExampleNum,ori),
+   arc_test_property(TestID,ExampleNum,ori([overlapping_image]),ROI),!.
+*/
+overlapping_image(In,Other,OLIn):-
   colors_of(In.cell_minus_cell(Other),CsIn),
   colors_of(Other.cell_minus_cell(In),CsOut),
   colors_of(In,CsInO), 
@@ -1136,12 +1144,12 @@ save_grid_calc(TestID,ExampleNum,XForms,In,Out,Op):-
   assert_test_property(TestID,ExampleNum,ori([Op|XForms]),ROI),
   print_ss(no(Op,TestID,ExampleNum,XForms),RIO,ROI).
 
-  
+
 
 same_sizes([I|In],[O|Out]):- length(I,Cols),length(O,Cols),length(In,Rows0),length(Out,Rows0).
 
 some_norm(Out,[],Out).
-some_norm(Out,[trim_to_rect|Op],NOut):- trim_to_rect(Out,Mid),Out\==Mid,some_norm(Out,Op,NOut).
+some_norm(Out,[trim_to_rect|Op],NOut):- notrace((trim_to_rect(Out,Mid),Out\=@=Mid)),some_norm(Out,Op,NOut).
 some_norm(Out,[grav_rot(Rot)],NOut):- grav_rot(Out,Rot,NOut),!.
 
 has_blank_alt_grid(TestID,ExampleNum):- blank_alt_grid_count(TestID,ExampleNum,N),N>0.
