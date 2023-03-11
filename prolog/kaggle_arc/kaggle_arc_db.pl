@@ -9,8 +9,8 @@
 %:- dynamic(row_mem/34).
 :- dynamic(gid_glyph_oid/3).
 
-point_atoms :- false.
-%point_atoms :- true.
+%point_atoms :- false.
+point_atoms :- true.
 
 :- dynamic(cindv/3).
 :- dynamic(cindv/4).
