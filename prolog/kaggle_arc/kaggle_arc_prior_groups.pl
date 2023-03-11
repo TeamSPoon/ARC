@@ -478,7 +478,7 @@ show_three_interesting_groups(Named,Objs,Groups):-
 print_interesting_named_groups(Named,KUProps):- 
    w_section(title(Named),pp(KUProps)).
 
-numbered_vars(A,B):- copy_term(A,B),numbervars(B,0,_,[attvars(skip)]).
+numbered_vars(A,B):- copy_term(A,B),numbervars(B,0,_,[attvar(skip)]).
 
 %skip_ku(pg(_,_,FL,_)):- !, FL \==firstOF, FL \==lastOF. 
 
@@ -995,22 +995,29 @@ group_prior_objs0(Why,Objs,WithPriors):-
 
 add_uset_priors([],Objs,Objs):-!.
 add_uset_priors([HAD|Lbls],Objs,WithPriors):-
-  variance_had_counts(Common,HAD,Objs,_Versions,_Missing,VersionsByCount,_Variance),
-  maplist(add_prior_info(Common,VersionsByCount),Objs,NObjs),
-  add_uset_priors(Lbls,NObjs,WithPriors).
+  variance_had_counts(Common,HAD,Objs,_Versions,_Missing,VersionsByCount,Variance),!,
+  (Variance==1
+   -> add_uset_priors(Lbls,Objs,WithPriors)
+   ; (maplist(add_prior_info(Common,VersionsByCount),Objs,NObjs),
+   add_uset_priors(Lbls,NObjs,WithPriors))).
+add_uset_priors([_|Lbls],Objs,WithPriors):-
+  add_uset_priors(Lbls,Objs,WithPriors),!.
 
-add_prior_info(Common,VersionsByCount,obj(List),obj(NewList)):- !,
-  add_prior_info_1(Common,VersionsByCount,List,NewList).
-add_prior_info(Common,VersionsByCount,(List),(NewList)):- !,
-  add_prior_info_1(Common,VersionsByCount,List,NewList).
-add_prior_info_1(Common,VersionsByCount,PropList,[pg(Max,Common,N1,N2)|PropList]):- is_list(PropList),!,
+add_prior_info(Common,VersionsByCount,obj(List),obj(NewList)):-
+  add_prior_info_1(Common,VersionsByCount,List,NewList),!.
+add_prior_info(Common,VersionsByCount,(List),(NewList)):- 
+  add_prior_info_1(Common,VersionsByCount,List,NewList),!.
+
+add_prior_info_1(Common,VersionsByCount,PropList,[pg(Max,Common,N1,N2)|PropList]):- is_list(PropList),
+  length(VersionsByCount,Max), Max>1,
+  must_det_ll((
   predsort(sort_on(version_count),VersionsByCount,VersionsByOccurances),
   predsort(sort_on(version_magnitude),VersionsByCount,VersionsByMagnitude),
 %  pp(yellow,versionsByOccurances=VersionsByOccurances),
-%  pp(yellow,versionsByMagnitude=VersionsByMagnitude),
-  length(VersionsByCount,Max),
+%  pp(yellow,versionsByMagnitude=VersionsByMagnitude),  
   nth1(N1,VersionsByOccurances,Prop1),has_nprop(Prop1,PropList),
-  nth1(N2,VersionsByMagnitude,Prop2),has_nprop(Prop2,PropList).
+  nth1(N2,VersionsByMagnitude,Prop2),has_nprop(Prop2,PropList))),!.
+add_prior_info_1(_Common,_VersionsByCount,PropList,PropList).
 
 version_count(N-_,N):-!.
 version_count(_,inf):-!.

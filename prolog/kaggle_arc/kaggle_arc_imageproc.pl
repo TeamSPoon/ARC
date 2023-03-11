@@ -691,7 +691,7 @@ grid_size(I,X,Y):- notrace(is_object(I)),indv_props_list(I,L),gsize_member(E,X,Y
 %grid_size(G,H,V):- quietly(is_object(G)), !, vis2D(G,H,V).
 grid_size(Points,H,V):- is_points_list(Points),!,points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V),!.
 %grid_size(G,H,V):- is_graid(G,GG),!, grid_size(GG,H,V).
-grid_size(G,H,V):- notrace(is_vm_map(G)),H = G.h,V = G.v,!,grid_size_nd(G,H,V),!.
+grid_size(G,H,V):- notrace(is_vm_map(G)),H = G.h,V = G.v, !.
 grid_size(G,X,Y):- notrace(is_group(G)),mapgroup(grid_size_term,G,Offsets),grid_size_2d(Offsets,X,Y),!.
 grid_size(G,X,Y):- findall(size2D(X,Y),((sub_term(E,G),compound(E),gsize_member(E,X,Y))),Offsets),grid_size_2d(Offsets,X,Y),!.
 %grid_size([G|G],H,V):- is_list(G), length(G,H),length([G|G],V),!.
