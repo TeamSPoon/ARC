@@ -687,7 +687,7 @@ gsize_member(vis2D(X,Y),X,Y).
 %grid_size(Points,H,V):- is_vm_map(Points),!,Points.grid_size=grid_size(H,V).
 grid_size(NIL,1,1):- NIL==[],!.
 grid_size(ID,H,V):- is_grid_size(ID,H,V),!.
-grid_size(I,X,Y):- notrace(is_object(I)),!,indv_props_list(I,L),gsize_member(E,X,Y),member(E,L),!.
+grid_size(I,X,Y):- notrace(is_object(I)),indv_props_list(I,L),gsize_member(E,X,Y),member(E,L),!.
 %grid_size(G,H,V):- quietly(is_object(G)), !, vis2D(G,H,V).
 grid_size(Points,H,V):- is_points_list(Points),!,points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V),!.
 %grid_size(G,H,V):- is_graid(G,GG),!, grid_size(GG,H,V).
@@ -698,6 +698,8 @@ grid_size(G,X,Y):- findall(size2D(X,Y),((sub_term(E,G),compound(E),gsize_member(
 grid_size(G,H,V):- notrace(is_grid(G)),!,grid_size_nd(G,H,V),!.
 %grid_size([G|G],H,V):- is_list(G),is_list(G), grid_size_nd([G|G],H,V),!.
 %grid_size(O,_,_):- trace_or_throw(no_grid_size(O)).
+grid_size(G,X,Y):- sub_term(E,G),compound(E),E=giz(gid(GID)),nonvar(GID),gid_to_grid(GID,Grid),!,grid_size_nd(Grid,X,Y),!.
+
 grid_size(O,30,30):- arcST,itrace,dmsg(warn(grid_size(O,30,30))),!.
 
 grid_size_2d([size2D(X1,Y1)|Offsets],X,Y):- grid_size_2d(X1,Y1,Offsets,X,Y).

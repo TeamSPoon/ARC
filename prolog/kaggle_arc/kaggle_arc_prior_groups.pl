@@ -316,12 +316,12 @@ contains_enough_for_print([P|Props],G):- is_obj_props(Props),!,(contains_enough_
   (compound(P),arg(_,P,G),is_gridoid(G))).
 
 is_obj_props(Props):- is_list(Props), Props\==[], \+ is_gridoid(Props), \+ is_points_list(Props),
-  maplist(is_prop,Props).
+  maplist(is_prop1,Props).
 is_prop1(Prop):- (\+ compound(Prop); is_list(Prop) ; Prop=(_-_) ; is_gridoid(Prop) ; is_point(Prop) ; is_color(Prop); is_grid_cell(Prop)),!,fail.
 is_prop1(_).
 %is_prop1(Prop):- uprop_was(
 is_prop(Prop):- is_prop1(Prop),!.
-is_prop(Prop):- writeln(user_error,not(is_prop(Prop))),!,fail.
+is_prop(Prop):- itrace,writeln(user_error,not(is_prop(Prop))),trace,!,fail.
 
 extend_grp_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
 extend_grp_proplist(Grp,GrpO):- user:extend_grp_proplist0(Grp,GrpO),!.
@@ -984,10 +984,9 @@ group_prior_objs(Why,Objs,WithPriors):-
 group_prior_objs0(Why,Objs,WithPriors):- 
  must_det_ll((
  %print_list_of(show_indiv,group_prior_objs,Objs),!,
- maplist(indv_eprops_list,Objs,PropLists),
- append(PropLists,Flat),
+ determine_elists(Objs,Flat),
  maplist(make_unifiable_cc,Flat,UFlat),
- sort(UFlat,Lbls),
+ predsort(using_compare(numbered_vars),UFlat,Lbls),
  length_s(Lbls,Len),
  Title = Why+Len,
  w_section(title(add_priors(Title)),
@@ -996,22 +995,29 @@ group_prior_objs0(Why,Objs,WithPriors):-
 
 add_uset_priors([],Objs,Objs):-!.
 add_uset_priors([HAD|Lbls],Objs,WithPriors):-
-  variance_had_counts(Common,HAD,Objs,Versions,_Missing,_CountOfEachLO,_Variance),
-  maplist(add_prior_info(Common,Versions),Objs,NObjs),
+  variance_had_counts(Common,HAD,Objs,_Versions,_Missing,VersionsByCount,_Variance),
+  maplist(add_prior_info(Common,VersionsByCount),Objs,NObjs),
   add_uset_priors(Lbls,NObjs,WithPriors).
 
-add_prior_info(Common,SVersions,obj(List),obj(NewList)):- !,
-  add_prior_info(Common,SVersions,List,NewList).
-add_prior_info(Common,SVersions,PropList,[pg(Max,Common,N1,N2)|PropList]):- is_list(PropList),!,
-  predsort(sort_on(sversion_count),Versions,SVersionsSize),
-  predsort(sort_on(sversion_magnitude),Versions,SVersionMagnitude),
-  length(SVersions,Max),
-  nth1(N1,SVersionsSize,Prop1),has_nprop(Prop1,PropList),
-  nth1(N2,SVersionMagnitude,Prop2),has_nprop(Prop2,PropList).
+add_prior_info(Common,VersionsByCount,obj(List),obj(NewList)):- !,
+  add_prior_info_1(Common,VersionsByCount,List,NewList).
+add_prior_info(Common,VersionsByCount,(List),(NewList)):- !,
+  add_prior_info_1(Common,VersionsByCount,List,NewList).
+add_prior_info_1(Common,VersionsByCount,PropList,[pg(Max,Common,N1,N2)|PropList]):- is_list(PropList),!,
+  predsort(sort_on(version_count),VersionsByCount,VersionsByOccurances),
+  predsort(sort_on(version_magnitude),VersionsByCount,VersionsByMagnitude),
+%  pp(yellow,versionsByOccurances=VersionsByOccurances),
+%  pp(yellow,versionsByMagnitude=VersionsByMagnitude),
+  length(VersionsByCount,Max),
+  nth1(N1,VersionsByOccurances,Prop1),has_nprop(Prop1,PropList),
+  nth1(N2,VersionsByMagnitude,Prop2),has_nprop(Prop2,PropList).
 
-sversion_count(N-_,N).
-sversion_magnitude(_-Version,N):- findall(E,((sub_term(E,Version),comparable_value(E))),N).
+version_count(N-_,N):-!.
+version_count(_,inf):-!.
+version_magnitude(N2-Version,N+N2):- !, findall(E,((sub_term(E,Version),comparable_value(E))),N).
+version_magnitude(Version,N):- findall(E,((sub_term(E,Version),comparable_value(E))),N).
 
+has_nprop(_-Prop,Obj):-!,has_nprop(Prop,Obj).
 has_nprop(\+ (Prop),Obj):- is_list(Obj), !, \+ member(Prop,Obj).
 has_nprop(\+ (Prop),Obj):- !, \+ has_prop(Prop,Obj).
 has_nprop((Prop),Obj):- is_list(Obj), !,  member(Prop,Obj).
@@ -1155,17 +1161,17 @@ is_care_to_count(_).
 
 has_subterm(P1,HasNumber):- sub_term(N,HasNumber),call(P1,N),!.
 
-variance_had_counts(Common,HAD,RRR,Versions,Missing,CountOfEachLO,Variance):-
+variance_had_counts(Common,HAD,RRR,Versions,Missing,VersionsByCount,Variance):-
   make_unifiable_cc(HAD,UHAD),
-  findall(R,(member(RR,RRR), indv_props_list(RR,R), \+ member(UHAD,R)),Missing),
+  findall(RR,(member(RR,RRR), indv_props_list(RR,R), \+ member(UHAD,R)),Missing),
   length(Missing,ML),
   findall(UHAD,(member(RR,RRR), indv_props_list(RR,R), member(UHAD,R)),VersionL),
-  sort(VersionL,VersionSet),
+  predsort(using_compare(numbered_vars),VersionL,VersionSet),
   some_min_unifier(VersionSet,Common),nonvar(Common),
   count_each(VersionSet,VersionL,CountOfEachL),
   (ML == 0 -> 
-  ->(Versions = VersionSet, CountOfEachL=CountOfEachLO)
-  ; (Versions=[\+(UHAD)|VersionSet],CountOfEachLO=[ML-Missing|CountOfEachL])),
+  ->(Versions = VersionSet, CountOfEachL=VersionsByCount)
+  ; (Versions=[\+(UHAD)|VersionSet],VersionsByCount=[ML-Missing|CountOfEachL])),
   length(Versions,Variance).
 
 /*
@@ -1252,16 +1258,16 @@ subst_between(Vars,UProp,RRR,NEWRRR):-
   maplist(upropify(Vars,UProp),RRR,NEWRRR).
 
 upropify(EVars,UProp,Props,NewProps):-
-  copy_term(UProp,UUProp), term_variables(UUProp,Vars),
+  copy_term(EVars+UProp,Vars+UUProp),% term_variables(UUProp,Vars),
   select(UUProp,Props,Props1),
-  subst_vals(UProp,EVars,Vars,Props1,NVPairs,NEWRRR),
-  NEWRRR\=@=Props1,!, append([UProp|NEWRRR],[NVPairs],NewProps).
+  subst_vals(UProp,EVars,Vars,Props1,NVPairs,URProps),
+  URProps\=@=Props1,!, append([UProp|URProps],NVPairs,NewProps).
 upropify(_,_,Props,Props).
 
 
 subst_vals(_UProp,_,[],Props,[],Props).
-subst_vals(UProp,[EV|EVars],[V|Vars],Props,[uprop_was(UProp,EV=V)|More],NEWRRR):- \+ is_ftVar(V),(compound(V);atom(V)),!,
-  subst001(Props,V,EV,Mid), subst_vals(UProp,EVars,Vars,Mid,More,NEWRRR).
+subst_vals(UProp,[EV|EVars],[V|Vars],Props,[uprop_was(UProp,EV=V)|More],NEWRRR):- \+ is_ftVar(V),(compound(V);atom(V)),
+  subst001(Props,V,EV,Mid), subst_vals(UProp,EVars,Vars,Mid,More,NEWRRR),!.
 subst_vals(UProp,[_|EVars],[_|Vars],Props,More,NEWRRR):- subst_vals(UProp,EVars,Vars,Props,More,NEWRRR).
   
 
