@@ -678,22 +678,34 @@ close_color(green,cyan).
 
 grid_size_term(I,size2D(X,Y)):- grid_size(I,X,Y),!.
 
+gsize_member(giz(grid_sz(X,Y)),X,Y).
+gsize_member(grid_size(X,Y),X,Y).
+gsize_member(vis2D(X,Y),X,Y).
+
+
 :- decl_pt(grid_size(prefer_grid,_,_)).
 %grid_size(Points,H,V):- is_vm_map(Points),!,Points.grid_size=grid_size(H,V).
 grid_size(NIL,1,1):- NIL==[],!.
 grid_size(ID,H,V):- is_grid_size(ID,H,V),!.
-grid_size(I,X,Y):- notrace(is_object(I)),!,indv_props_list(I,L),(member(giz(grid_sz(X,Y)),L);member(grid_size(X,Y),L);member(vis2D(X,Y),L)),!.
+grid_size(I,X,Y):- notrace(is_object(I)),!,indv_props_list(I,L),gsize_member(E,X,Y),member(E,L),!.
 %grid_size(G,H,V):- quietly(is_object(G)), !, vis2D(G,H,V).
 grid_size(Points,H,V):- is_points_list(Points),!,points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V),!.
 %grid_size(G,H,V):- is_graid(G,GG),!, grid_size(GG,H,V).
 grid_size(G,H,V):- notrace(is_vm_map(G)),H = G.h,V = G.v,!,grid_size_nd(G,H,V),!.
-grid_size(G,X,Y):- notrace(is_group(G)),!,mapgroup(grid_size_term,G,Offsets),sort_safe(Offsets,HighToLow),last(HighToLow,size2D(X,Y)).
+grid_size(G,X,Y):- notrace(is_group(G)),mapgroup(grid_size_term,G,Offsets),grid_size_2d(Offsets,X,Y),!.
+grid_size(G,X,Y):- findall(size2D(X,Y),((sub_term(E,G),compound(E),gsize_member(E,X,Y))),Offsets),grid_size_2d(Offsets,X,Y),!.
 %grid_size([G|G],H,V):- is_list(G), length(G,H),length([G|G],V),!.
-grid_size(Points,H,V):- pmember(grid_size(H,V),Points),ground(H-V),!.
 grid_size(G,H,V):- notrace(is_grid(G)),!,grid_size_nd(G,H,V),!.
 %grid_size([G|G],H,V):- is_list(G),is_list(G), grid_size_nd([G|G],H,V),!.
 %grid_size(O,_,_):- trace_or_throw(no_grid_size(O)).
-grid_size(O,30,30):- arcST,dmsg(warn(grid_size(O,30,30))),!.
+grid_size(O,30,30):- arcST,itrace,dmsg(warn(grid_size(O,30,30))),!.
+
+grid_size_2d([size2D(X1,Y1)|Offsets],X,Y):- grid_size_2d(X1,Y1,Offsets,X,Y).
+grid_size_2d(X,Y,[],X,Y):-!.
+grid_size_2d(X1,Y1,[size2D(X2,Y2)|Offsets],X,Y):-
+  max_min(X1,X2,XM,_), max_min(Y1,Y2,YM,_),
+  grid_size_2d(XM,YM,Offsets,X,Y).
+
 
 :- system:import(grid_size/3).
 :- ansi_term:import(grid_size/3).

@@ -1148,7 +1148,7 @@ indv_props_for_noteablity(obj(L),Notes):- my_assertion(nonvar(L)),!, include(is_
 
 %indv_props(G,L):- arcST,atrace,into_obj(G,O),is_object(O),indv_props(O).
 
-pmember(E,X):- indv_props(X,E).
+%pmember(E,X):- indv_props(X,E).
 %pmember(E,X):- sub_term(EE,X),nonvar_or_ci(EE),EE=E,ground(E).
 /*pmember(E,L):- is_vm_map(Points),!,E=grid_size(H,V),!,Points.grid_size=grid_size(H,V).
 pmember(E,L):- member(EE,L),(EE=E;(is_list(EE),pmember(E,EE))).

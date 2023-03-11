@@ -317,7 +317,9 @@ contains_enough_for_print([P|Props],G):- is_obj_props(Props),!,(contains_enough_
 
 is_obj_props(Props):- is_list(Props), Props\==[], \+ is_gridoid(Props), \+ is_points_list(Props),
   maplist(is_prop,Props).
-is_prop1(Prop):- compound(Prop), \+ is_list(Prop), \+ is_gridoid(Prop),!, Prop\=(_-_),  \+ is_point(Prop),  \+ is_color(Prop), \+ is_grid_cell(Prop).
+is_prop1(Prop):- (\+ compound(Prop); is_list(Prop) ; Prop=(_-_) ; is_gridoid(Prop) ; is_point(Prop) ; is_color(Prop); is_grid_cell(Prop)),!,fail.
+is_prop1(_).
+%is_prop1(Prop):- uprop_was(
 is_prop(Prop):- is_prop1(Prop),!.
 is_prop(Prop):- writeln(user_error,not(is_prop(Prop))),!,fail.
 
@@ -490,7 +492,7 @@ skip_ku(Var):- var(Var),!,fail.
 skip_ku(Var):- atomic(Var),!,fail.
 skip_ku(S):- priority_prop(S),!,fail.
 %skip_ku(pg(_,_,_,_)).
-skip_ku(pg(is_fg_object,_,_,_)).
+%skip_ku(pg(is_fg_object,_,_,_)).
 skip_ku(link(sees([_,_|_]),_)).
 skip_ku(link(sees(_),_)).
 skip_ku(area(_)).
@@ -521,6 +523,7 @@ skip_ku(_-KU):- skip_ku(KU),!.
 
 priority_prop(Var):- var(Var),!,fail.
 priority_prop(pg(_,PG,_,_)):- priority_pg(PG),!.
+priority_prop(pg(_,_,_,_)).
 priority_prop((algo_sid(norm,_))).
 priority_prop((stype(_))).
 priority_prop(iz(P)):- priority_prop(P),!.
@@ -975,11 +978,50 @@ group_prior_objs(Why,ObjsIn,WithPriors):- fail,
  ObjsIn\=@=Objs,!,
  group_prior_objs(Why,ObjsIn,WithPriors).
 
-
 group_prior_objs(Why,Objs,WithPriors):- 
+  group_prior_objs0(Why,Objs,WithPriors),!.
+
+group_prior_objs0(Why,Objs,WithPriors):- 
  must_det_ll((
  %print_list_of(show_indiv,group_prior_objs,Objs),!,
- get_prior_labels(Objs,Lbls),
+ maplist(indv_eprops_list,Objs,PropLists),
+ append(PropLists,Flat),
+ maplist(make_unifiable_cc,Flat,UFlat),
+ sort(UFlat,Lbls),
+ length_s(Lbls,Len),
+ Title = Why+Len,
+ w_section(title(add_priors(Title)),
+  %print_tree(groupPriors=Lbls,[max_depth(200)]),
+  with_tag_class(div,nonpre,add_uset_priors(Lbls,Objs,WithPriors))))).
+
+add_uset_priors([],Objs,Objs):-!.
+add_uset_priors([HAD|Lbls],Objs,WithPriors):-
+  variance_had_counts(Common,HAD,Objs,Versions,_Missing,_CountOfEachLO,_Variance),
+  maplist(add_prior_info(Common,Versions),Objs,NObjs),
+  add_uset_priors(Lbls,NObjs,WithPriors).
+
+add_prior_info(Common,SVersions,obj(List),obj(NewList)):- !,
+  add_prior_info(Common,SVersions,List,NewList).
+add_prior_info(Common,SVersions,PropList,[pg(Max,Common,N1,N2)|PropList]):- is_list(PropList),!,
+  predsort(sort_on(sversion_count),Versions,SVersionsSize),
+  predsort(sort_on(sversion_magnitude),Versions,SVersionMagnitude),
+  length(SVersions,Max),
+  nth1(N1,SVersionsSize,Prop1),has_nprop(Prop1,PropList),
+  nth1(N2,SVersionMagnitude,Prop2),has_nprop(Prop2,PropList).
+
+sversion_count(N-_,N).
+sversion_magnitude(_-Version,N):- findall(E,((sub_term(E,Version),comparable_value(E))),N).
+
+has_nprop(\+ (Prop),Obj):- is_list(Obj), !, \+ member(Prop,Obj).
+has_nprop(\+ (Prop),Obj):- !, \+ has_prop(Prop,Obj).
+has_nprop((Prop),Obj):- is_list(Obj), !,  member(Prop,Obj).
+has_nprop((Prop),Obj):- has_prop(Prop,Obj).
+
+
+group_prior_objs1(Why,Objs,WithPriors):- 
+ must_det_ll((
+ %print_list_of(show_indiv,group_prior_objs,Objs),!,
+ get_prior_labels(Objs,_PriorsSetClean,_AllPriors,Lbls),
  keysort(Lbls,N),
  length_s(N,Len),
  Title = Why+Len,
@@ -1115,9 +1157,9 @@ has_subterm(P1,HasNumber):- sub_term(N,HasNumber),call(P1,N),!.
 
 variance_had_counts(Common,HAD,RRR,Versions,Missing,CountOfEachLO,Variance):-
   make_unifiable_cc(HAD,UHAD),
-  findall(R,(member(R,RRR), \+ member(UHAD,R)),Missing),
+  findall(R,(member(RR,RRR), indv_props_list(RR,R), \+ member(UHAD,R)),Missing),
   length(Missing,ML),
-  findall(UHAD,(member(R,RRR),member(UHAD,R)),VersionL),
+  findall(UHAD,(member(RR,RRR), indv_props_list(RR,R), member(UHAD,R)),VersionL),
   sort(VersionL,VersionSet),
   some_min_unifier(VersionSet,Common),nonvar(Common),
   count_each(VersionSet,VersionL,CountOfEachL),
@@ -1126,12 +1168,13 @@ variance_had_counts(Common,HAD,RRR,Versions,Missing,CountOfEachLO,Variance):-
   ; (Versions=[\+(UHAD)|VersionSet],CountOfEachLO=[ML-Missing|CountOfEachL])),
   length(Versions,Variance).
 
+/*
 variance_had(HAD,RRR,Versions,Variance):-
   make_unifiable_cc(HAD,UHAD),
   findall(UHAD,(member(R,RRR),member(UHAD,R)),VersionL),
   sort(VersionL,Versions),
   length(Versions,Variance).
-
+*/
 is_length(N,L):- length_s(L,N).
 
 
@@ -1484,7 +1527,7 @@ object_get_priors(X,S):- var(X),!, enum_object(X), object_get_priors(X,S).
 object_get_priors(X,S):- is_object(X), !, must_det_ll((indv_props_list(X,Ps),
   findall(I,(member(P,Ps),props_object_prior(P,I)),L),L\==[],list_to_set(L,S))).
 
-get_prior_labels(Objs,PriorsWithCounts):- must_det_ll((is_list(Objs),
+get_prior_labels(Objs,PriorsSetClean,AllPriors,PriorsWithCounts):- must_det_ll((is_list(Objs),
   findall(Named,(member(Obj,Objs),object_get_priors(Obj,Named)),AllPriorsL),
   append(AllPriorsL,AllPriors),
   sort_safe(AllPriors,PriorsSet),
@@ -1496,11 +1539,11 @@ never_prior(oid(_)).
 %never_prior(pg(_,_,_,_)).
 
 
-ranking_pred(rank1(F1),I,Value):- Prop=..[F1,Value], indv_props_list(I,Ps),member_or_iz(Prop,Ps),!.
-ranking_pred(rank1(F1),I,Value):- !, catch(call(F1,I,Value),_,fail),!.
-ranking_pred(rankA(F1),I,Value):- append_term(F1,Value,Prop), indv_props_list(I,Ps),member_or_iz(Prop,Ps),!.
-ranking_pred(rankA(F1),I,Value):- !, catch(call(F1,I,Value),_,fail),!.
-ranking_pred(rank2(F1),I,Value):- Prop=..[F1,O1,O2], indv_props_list(I,Ps),member_or_iz(Prop,Ps),!,combine_number(F1,O1,O2,Value).
+ranking_pred(rank1(F1),I,Value):- atom(F1),Prop=..[F1,Value], indv_props_list(I,Ps),member_or_iz(Prop,Ps),!.
+ranking_pred(rank1(F1),I,Value):- atom(F1),!, catch(call(F1,I,Value),_,fail),!.
+ranking_pred(rankA(F1),I,Value):- nonvar(F1),append_term(F1,Value,Prop), indv_props_list(I,Ps),member_or_iz(Prop,Ps),!.
+ranking_pred(rankA(F1),I,Value):- nonvar(F1),!, catch(call(F1,I,Value),_,fail),!.
+ranking_pred(rank2(F1),I,Value):- atom(F1),Prop=..[F1,O1,O2], indv_props_list(I,Ps),member_or_iz(Prop,Ps),!,combine_number(F1,O1,O2,Value).
 %ranking_pred(rank2(F1),I,Value):- !, catch(call(F1,I,O1,O2),_,fail),!,combine_number(F1,O1,O2,Value).
 ranking_pred(_F1,I,Value):- mass(I,Value).
 
@@ -1518,7 +1561,7 @@ has_prop(Prop,Obj):- is_grid(Obj),!,grid_props(Obj,Props),!,member(Prop,Props).
 has_prop(Prop,ObjRef):- atom(ObjRef),into_obj(ObjRef,Obj),ObjRef\=@=Obj,!,has_prop(Prop,Obj).
 has_prop(Prop,List):- is_list(List),!,member(Obj,List),has_prop(Prop,Obj).
 %has_prop(Prop,Objs):- is_list(Objs),last(Objs,O),is_object(O),!,forall(member(Obj,Objs),has_prop1(Prop,Obj)).
-has_prop(_Props,Obj):- is_cons(Obj),!,ds,fail.
+has_prop(_Props,Obj):- is_cons(Obj), \+ is_list(Obj),!,ds,fail.
 has_prop(Prop,Obj):- has_prop1(Prop,Obj).
 
 
@@ -1594,7 +1637,7 @@ add_prior(N,Lbl,Objs,ObjsWithPrior):-
   length_s(Lbld,LL),  
   rank_priors(Lbl,Lbld,RLbldR),
   nop(print_grid(Lbl->N/LL,RLbldR)),
-  % write('\t '), writeq(Lbl->N/LL),write(' <p/>\t'),
+  write('\t '), writeq(Lbl->N/LL),write(' <p/>\t'),
   append([Unlbl,RLbldR],ObjsWithPrior).  
 
 
@@ -1617,11 +1660,13 @@ rank_priors(GType,Objs,SFO):-
 
 rank_priors(GType,Objs,SFO):-
  must_det_ll((
+  % pp(rank_priors(GType)),
    %add_prior_placeholder(GType,Group,Objs),
    smallest_first(smallest_pred(GType),Objs,SF),
    ignore((relivant_group(OG), my_maplist(OG,Objs))),
    length_s(SF,SFLen),
-   nop(SFLen < 2 -> pp(red,rank_priors(GType,SFLen)); pp(green,rank_priors(GType,SFLen))),  
+   %nop
+   %(SFLen < 2 -> pp(red,rank_priors(GType,SFLen)); pp(green,rank_priors(GType,SFLen))),  
    reverse(SF,SFR),
    add_rank(OG,GType,SFLen,SFR,SFO),
    nop(maybe_show_ranking(GType,SFO)))).

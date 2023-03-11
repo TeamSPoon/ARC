@@ -549,7 +549,7 @@ write_indented_list(F,WQS):- format(F),wqs(WQS).
 
 not_too_verbose(X):- X\==(''), X\==s('').
 
-is_o3(pg(_OG,_,_,_)).
+is_o3(pg(_OG,_,_,_)):- fail.
 
 show_st_map(Obj):-
   ignore(( 
