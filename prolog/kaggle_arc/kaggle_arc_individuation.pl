@@ -1513,7 +1513,9 @@ to_props_and_globalpoints(ObjL,_Ans,_GOPoints):- is_grid(ObjL),!,fail.
 to_props_and_globalpoints(ObjL,Ans,GOPoints):- get_gpoints_and_props(ObjL,GOPoints,Ans).
 ogs_into_obj_props( OutGrid,AnsProps,Obj):- like_object(AnsProps,OutGrid,Obj),!.
 
-like_object(Ans,Out,ObjO)):- 
+*/
+
+like_object(Ans,Out,ObjO):- 
   get_gpoints_and_props(Ans,GOPoints,Props),
   grid_to_gid(Out,GID),grid_size(Out,GH,GV), 
   make_indiv_object_s(GID,GH,GV,Props,GOPoints,ObjO).
@@ -1523,7 +1525,6 @@ like_object(Ans,Out,obj([f_grid(Grid),grid(Grid)|ObjO])):-
   grid_size(Out,GH,GV),
   grid_to_gid(Out,GID),
   make_indiv_object_s(GID,GH,GV,Props,GOPoints,obj(ObjO)).
-*/
 
 %ogs_into_obj_props(I,GPoints):- localpoints(I,LPoints),loc2D(I,OH,OV),offset_points(OH,OV,LPoints,GPoints).
 

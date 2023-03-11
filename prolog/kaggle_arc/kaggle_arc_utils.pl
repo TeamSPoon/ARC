@@ -248,6 +248,8 @@ p1_call(chk(P1),E):- !, \+ \+ (p1_call(P1,E)).
 p1_call( \+ (P1),E):- !, \+ p1_call(P1,E).
 p1_call(P1,E):- !, call(P1,E).
 
+chk(X,E):- \+ \+ call(X,E).
+
 p2_call_p2(P2a,P2b,A,B):- p2_call(P2a,A,M),p2_call(P2b,M,B).
 
 p2_call(p1_call(P1),E,O):- !, p1_call(P1,E), E=O.

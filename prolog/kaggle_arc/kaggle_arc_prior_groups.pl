@@ -284,6 +284,7 @@ make_ss(RawPropList,SS):-
   member(oid(OID),RawPropList),oid_to_obj(OID,PObj),wots(SS,print_grid(OID,[PObj])),!.
 %make_ss(RawPropList,SS):- wots(SS,print(SS)).
 
+treed_props_list(RawPropLists,PropLists):- list_of_lists(RawPropLists),!,maplist(treed_props_list,RawPropLists,PropLists).
 treed_props_list(RawPropLists,PropLists):-
  must_det_ll((
   %include(p1_not(p1_arg(_,is_gridoid)),RawPropLists,RawPropLists0),
@@ -482,10 +483,14 @@ numbered_vars(A,B):- copy_term(A,B),numbervars(B,0,_,[attvars(skip)]).
 %dontmatter for in = unshared('Pair #1 In'+shared,'Pair #2 In'+shared)
 %matter for 1= 
 
+priority_pg(rank1(_)).
+%priority_pg(rankA(cc(_))).
+
 skip_ku(Var):- var(Var),!,fail.
 skip_ku(Var):- atomic(Var),!,fail.
-%skip_ku(pg(_,_,_,_)).
 skip_ku(S):- priority_prop(S),!,fail.
+%skip_ku(pg(_,_,_,_)).
+skip_ku(pg(is_fg_object,_,_,_)).
 skip_ku(link(sees([_,_|_]),_)).
 skip_ku(link(sees(_),_)).
 skip_ku(area(_)).
@@ -501,7 +506,7 @@ skip_ku(center2G(_,_)).
 skip_ku(changes(_)).
 skip_ku(o(_,_,_,_)).
 skip_ku( elink( sees(_),_)).
-%skip_ku(giz(iv(_))).
+skip_ku(giz(iv(_))).
 %skip_ku(cc(C,_)):- is_real_color(C),!.
 %skip_ku(giz(KU)):- nop(skip_ku(KU)),!.
 skip_ku(giz(KU)):- skip_ku(KU),!.
@@ -515,6 +520,7 @@ skip_ku(_-KU):- skip_ku(KU),!.
 
 
 priority_prop(Var):- var(Var),!,fail.
+priority_prop(pg(_,PG,_,_)):- priority_pg(PG),!.
 priority_prop((algo_sid(norm,_))).
 priority_prop((stype(_))).
 priority_prop(iz(P)):- priority_prop(P),!.
@@ -714,7 +720,8 @@ print_elists_hack_objs(Named,Props,Objs,HackedObjs):-
   variant_list_to_set(GroupsWithCountsWP,GroupsWithCountsWPO),
   make_splitter(GroupsWithCountsWPO,CountOfEach,SSplits),sort(SSplits,CSplits),
   store_splits(Named,BaseSize,CSplits,Splits),
-  nop(print_ptree(countOfEachU(Named),Splits)),
+  %nop
+  (print_ptree(countOfEachU(Named),Splits)),
   ignore(my_maplist(remember_propcounts(Named,diversity),GroupsWithCountsWPO)),
   replace_props_with_stats(GroupsWithCountsWPO,CountOfEach,Objs,HackedObjsM),
   my_maplist(ku_rewrite_props,HackedObjsM,Hacked),
@@ -925,7 +932,7 @@ group_vm_priors(VM):-
 % =====================================================================
 is_fti_step(really_group_vm_priors).
 % =====================================================================
-really_group_vm_priors(_VM):-!.
+%really_group_vm_priors(_VM):-!.
 really_group_vm_priors(VM):-
  must_det_ll((
   ObjsG = VM.objs,
@@ -967,6 +974,7 @@ group_prior_objs(Why,ObjsIn,WithPriors):- fail,
  once(combine_same_globalpoints(ObjsIn,Objs)),
  ObjsIn\=@=Objs,!,
  group_prior_objs(Why,ObjsIn,WithPriors).
+
 
 group_prior_objs(Why,Objs,WithPriors):- 
  must_det_ll((
@@ -1151,7 +1159,7 @@ treeify_props(Named,RRR,RR):- sort_vertically(RRR,RR),!,ignore(maybe_unite_oids(
 
 
  :- discontiguous treeify_props/4.
-
+/*
 treeify_props(Named,_DontDivOnThisNumber,RRR, OUTPUT):- is_list(RRR), fail,
   flatten(RRR,Props),
   ku_rewrite_props(Props,GSS), 
@@ -1176,26 +1184,7 @@ treeify_props(Named,DontDivOnThisNumber,RRR, remove(UProp)->OUT):- fail,
  DontDivOnThisNumber==Variance,
  my_maplist(select_safe_always(Versions,UProp),_,RRR,RR),
  treeify_props(Named,RR,OUT).
-
-
-treeify_props(Named,DontDivOnThisNumber,RRR, (EACH -> EACHOUT)):- member(SEG,[5,3,2,1]),
- EACH = each((SubEach>=SEG)*Variance*UProp),
- member(R,RRR), member(HAD,R), \+ divide_on_very_last(HAD,RRR),
- variance_had_counts(UProp,HAD,RRR,Versions,Missing,CountOfEach,Variance), 
- DontDivOnThisNumber\==Variance,
-  maplist(arg(1),CountOfEach,CountL),
-  sort(CountL,CountOfEachSorted),
- CountOfEachSorted=[SubEach], 
- SubEach>=SEG,
- term_variables(UProp,EVars),
- subst_between(EVars,UProp,RRR,NEWRRR),
- (((RRR=@=NEWRRR)) 
-   -> ( fail, treeify_versions(Named,EACH,UProp,Versions,RRR,Missing,OUT), always_attempt_min_unifier_select(EACH,OUT,EACHOUT))
-   ; ( flag(nvs,X,X),
-       numbervars(EVars,X,New,[]),
-       flag(nvs,X,New),
-       treeify_props(Named,NEWRRR,EACHOUT))).
-
+*/
 
 treeify_props(Named,DontDivOnThisNumber,RRR, (EACH -> EACHOUT)):- member(SEG,[5,3,2,1]),
  EACH = each((SubEach>=SEG)*Variance*UProp),
@@ -1209,7 +1198,7 @@ treeify_props(Named,DontDivOnThisNumber,RRR, (EACH -> EACHOUT)):- member(SEG,[5,
  term_variables(UProp,EVars),
  subst_between(EVars,UProp,RRR,NEWRRR),
  (((RRR=@=NEWRRR)) 
-   -> (treeify_versions(Named,EACH,UProp,Versions,RRR,Missing,OUT), always_attempt_min_unifier_select(EACH,OUT,EACHOUT))
+   -> ( treeify_versions(Named,EACH,UProp,Versions,RRR,Missing,OUT), always_attempt_min_unifier_select(EACH,OUT,EACHOUT))
    ; ( flag(nvs,X,X),
        numbervars(EVars,X,New,[]),
        flag(nvs,X,New),
@@ -1233,7 +1222,7 @@ subst_vals(UProp,[EV|EVars],[V|Vars],Props,[uprop_was(UProp,EV=V)|More],NEWRRR):
 subst_vals(UProp,[_|EVars],[_|Vars],Props,More,NEWRRR):- subst_vals(UProp,EVars,Vars,Props,More,NEWRRR).
   
 
-treeify_props(Named,DontDivOnThisNumber,RRR, uprop(UProp)->OUT):- 
+treeify_props(Named,DontDivOnThisNumber,RRR, uprop(UProp)->EACHOUT):- 
  member(R,RRR),
  Best = best(Variance,Counts,UProp,Versions,Missing),
  
@@ -1244,9 +1233,28 @@ treeify_props(Named,DontDivOnThisNumber,RRR, uprop(UProp)->OUT):-
    BestUProps),
   sort(BestUProps,SortedBestUProps),
   uniquest(DontDivOnThisNumber,SortedBestUProps,Best),
-  treeify_versions(Named,best(Variance,Counts),UProp,Versions,RRR,Missing,OUT).
+  term_variables(UProp,EVars),
+  subst_between(EVars,UProp,RRR,NEWRRR),
+ (((RRR=@=NEWRRR)) 
+  -> (treeify_versions(Named,best(Variance,Counts),UProp,Versions,RRR,Missing,EACHOUT))
+   ; ( flag(nvs,X,X),
+       numbervars(EVars,X,New,[]),
+       flag(nvs,X,New),
+       treeify_props(Named,NEWRRR,EACHOUT))),!.
 
+uniquest(LL,BestUProps,Best):- 
+  my_partition(chk(=(best(_,_,_,[]))),BestUProps,HasMissing,NoneMissing),
+  HasMissing\==[],NoneMissing\==[],
+  uniquest(LL,HasMissing,BestHasMissing),
+  uniquest(LL,NoneMissing,BestNoneMissing),
+  uniquest(LL,[BestHasMissing,BestNoneMissing],Best),!. 
+uniquest(LL,BestUProps,Best):- uniquest1(LL,BestUProps,Best),!.
+uniquest(_LL,[Best,_,_|_UProps],Best).
 
+uniquest1(_,[Best,best(V2,_,_,_,_)|_],Best):- Best = best(V1,_,_,_,_), V1\==V2,!.
+uniquest1(LL,[best(V1,_,_,_,_)|List],Best):- my_exclude(chk(=(best(V1,_,_,_,_))),List,Betters),!,uniquest1(LL,Betters,Best).
+
+/*
 treeify_props(Named,DontDivOnThisNumber,RRR,[ (yes0(HAD)=HL/NL/Variance)->FHAVES ,  (not0(HAD)=NL/HL/Variance)->FHAVENOTS ]):-  fail,
   
   lots_of_prop(RRR,N,HAD), N\==DontDivOnThisNumber, \+ divide_on_very_last(HAD,RRR),
@@ -1309,20 +1317,7 @@ lots_of_prop(RRR,N,HAD):-
   count_each(GS,GF,UC),
   keysort(UC,KS),
   member(N-HAD,KS).
-
-
-uniquest(LL,BestUProps,Best):- 
-  my_partition(chk(=(best(_,_,_,[]))),BestUProps,HasMissing,NoneMissing),
-  HasMissing\==[],NoneMissing\==[],
-  uniquest(LL,HasMissing,BestHasMissing),
-  uniquest(LL,NoneMissing,BestNoneMissing),
-  uniquest(LL,[BestHasMissing,BestNoneMissing],Best),!. 
-uniquest(LL,BestUProps,Best):- uniquest1(LL,BestUProps,Best),!.
-uniquest(_LL,[Best,_,_|_UProps],Best).
-
-uniquest1(_,[Best,best(V2,_,_,_,_)|_],Best):- Best = best(V1,_,_,_,_), V1\==V2,!.
-uniquest1(LL,[best(V1,_,_,_,_)|List],Best):- my_exclude(chk(=(best(V1,_,_,_,_))),List,Betters),!,uniquest1(LL,Betters,Best).
-
+*/
 
 variant_member(E,List):- member(V,List),E=@=V,!.
 

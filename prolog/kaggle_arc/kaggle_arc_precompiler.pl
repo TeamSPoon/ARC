@@ -133,7 +133,7 @@ must_be_free(Nonfree):- arcST,u_dmsg(must_be_free(Nonfree)),
 must_be_nonvar(Nonvar):- nonvar_or_ci(Nonvar),!.
 must_be_nonvar(IsVar):- arcST,u_dmsg(must_be_nonvar(IsVar)),ibreak,fail.
 
-itrace:- !.
+%itrace:- !.
 itrace:- \+ current_prolog_flag(debug,true),!.
 itrace:- if_thread_main(trace),!.
 ibreak:- if_thread_main(((trace,break))).

@@ -8,6 +8,10 @@
 
 :- include(kaggle_arc_header).
 
+:- meta_predicate(print_grid(+,+,+,+)).
+:- meta_predicate(print_grid(+,+,+)).
+
+
 %:- autoload(library(http/html_write),[html/3,print_html/1]).
 
 is_debugging(M):- \+ \+ debugging(M),!.
@@ -1718,6 +1722,7 @@ print_grid(Grid):- use_row_db, is_grid(Grid),!, grid_to_tid(Grid,TID),print_grid
 
 print_grid(Grid):- make_bg_visible(Grid,GGrid),  quietly(print_grid0(_,_,GGrid)),!.
 
+:- meta_predicate(print_grid(+,+)).
 print_grid(Str,Grid):- Grid==[],!, wots(S,wqs_c(Str)), write(nil_grid(S)).
 print_grid(Str,Grid):- Grid==[[]],!, wots(S,wqs_c(Str)), write(zero_size_grid(S)).
 
@@ -1733,6 +1738,7 @@ format_u(TitleColor,Format,Args):- quietlyd( ignore((underline_print(color_print
 %format_footer(TitleColor,Name,SS)
 format_footer(TitleColor,W1,W2):- wots(S1,wqs_c(W1)), W2==string,!,format_u(TitleColor,'~w',[S1]).
 format_footer(TitleColor,W1,W2):- wots(S1,wqs_c(W1)), format_u(TitleColor,'~w (~w)',[S1,W2]).
+
 
 print_grid(_,_,_,_):- is_print_collapsed,!.
 

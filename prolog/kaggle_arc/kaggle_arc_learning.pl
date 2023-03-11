@@ -856,7 +856,7 @@ try_each_using_training(In,ExpectedOut,Rules,Keeper,OurOut):-
   classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown),
    my_maplist(length,[In,Rules,Keeper,Rejected,Unknown],[InC,RulesC|Nums]),
    Pos is InC*RulesC,
-   fpp_wcg(in_rules_times_keepers_rejected_unknown=[InC,RulesC,Pos|Nums]),!,
+   pp_wcg(in_rules_times_keepers_rejected_unknown=[InC,RulesC,Pos|Nums]),!,
    %nop(pp_wcg(Awesome=Keeper)), nop(pp_wcg(rejected=Rejected)), nop(my_maplist(writeln,Unknown)), 
    wno_must(o_globalpoints(Keeper,GPs)),
    points_to_grid(GPs,OurOut))),!,
