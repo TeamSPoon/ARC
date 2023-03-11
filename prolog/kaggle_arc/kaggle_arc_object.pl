@@ -854,10 +854,11 @@ id_shape(ShapeID,Shape):- is_shape_id_for(Shape,ShapeID).
 iv_for(L,Iv):- copy_term(L,CT,_),numbervars(CT,0,_,[attvar(bind),singletons(true)]),term_hash(CT,Fv),
  number(Fv), Iv is (Fv rem 800) + 1,!. % (\+ is_iv_for(Iv,_) -> asserta_if_new(is_iv_for(Iv,L)) ; true).
 
-obj_iv(obj(obj(Obj)),Iv):- !, obj_iv(obj((Obj)),Iv).
+%obj_iv(obj(obj(Obj)),Iv):- !, obj_iv(obj((Obj)),Iv).
 obj_iv(Obj,Iv):- indv_props(Obj,giz(iv(Iv))),!.
 obj_iv(Obj,Iv):- indv_u_props(Obj,L),iv_for(L,Iv),!.
 obj_iv(Obj,Iv):- globalpoints(Obj,GP),gpoints_to_iv(GP,Iv),!.
+obj_iv(Obj,Iv):- pp(Obj),trace.
 
 /*
     kept(giz(g(IO))), kept(giz(testid(TestID))), kept(giz(example_num(Example+Num))),

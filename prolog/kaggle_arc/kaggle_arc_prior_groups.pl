@@ -89,8 +89,12 @@ select_filtered_group(TestID,Name,Trn+Num*IO,Filter,Objects):-
 %select_some_objects(TestID,Trn,Num,IO,whole,Objs):- !, test_grouped_io(TestID,[(TestID>(Trn+Num)*IO)],[],Objs).
 select_some_objects(TestID,Trn,Num,IO,Filter,Objects):-
   test_grouped_io(TestID,[(TestID>(Trn+Num)*IO)],[],Objs),
+  filter_objects(Objs,Filter,Objects).
+
+filter_objects(Objs,Filter,Objects):-
   reorganize_objs(Objs,Shared,PropsUnique,PropsDistibuted),
   named_filter_proptyple(Filter,Objs,Shared,PropsUnique,PropsDistibuted,Objects).
+ 
   %atom(Filter).
 %named_filter_proptyple(Filter,Objs,Shared,PropsUnique,PropsDistibuted,Objects).
 named_filter_proptyple(unshared,_,_,_,Unshared,Unshared).
@@ -180,7 +184,7 @@ show_filtered_groups(TestID):- ensure_test(TestID),
      length(Objs,Len),
      w_section(interesting_selectors(Name,Filter,Len), 
        must_det_ll((
-         ignore(((ground((Trn+Num*IO))->print_grid(Objs); (Len<10 ->print_ss(Objs); true)))),
+         ignore(((ground((Trn+Num*IO))->pp(Objs); (Len<10 ->pp(Objs); true)))),
          print_grouped_props(Name+Filter,Objs)))))))).
 
 show_pair_groups(TestID):-
@@ -278,6 +282,7 @@ make_ss(RawPropList,SS):-
   member(oid(OID),RawPropList),member(grid(Grid),RawPropList),wots(SS,print_grid(OID,Grid)),!.
 make_ss(RawPropList,SS):- 
   member(oid(OID),RawPropList),oid_to_obj(OID,PObj),wots(SS,print_grid(OID,[PObj])),!.
+%make_ss(RawPropList,SS):- wots(SS,print(SS)).
 
 treed_props_list(RawPropLists,PropLists):-
  must_det_ll((
@@ -310,16 +315,19 @@ contains_enough_for_print([P|Props],G):- is_obj_props(Props),!,(contains_enough_
   (compound(P),arg(_,P,G),is_gridoid(G))).
 
 is_obj_props(Props):- is_list(Props), Props\==[], \+ is_gridoid(Props), \+ is_points_list(Props),
-  my_maplist(is_prop,Props).
-is_prop(Prop):- compound(Prop), \+ is_list(Prop), \+ is_gridoid(Prop),!.
+  maplist(is_prop,Props).
+is_prop1(Prop):- compound(Prop), \+ is_list(Prop), \+ is_gridoid(Prop),!, Prop\=(_-_),  \+ is_point(Prop),  \+ is_color(Prop), \+ is_grid_cell(Prop).
+is_prop(Prop):- is_prop1(Prop),!.
 is_prop(Prop):- writeln(user_error,not(is_prop(Prop))),!,fail.
 
-%extend_grp_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
+extend_grp_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
 extend_grp_proplist(Grp,GrpO):- user:extend_grp_proplist0(Grp,GrpO),!.
-extend_grp_proplist0(Grp,GrpO):-
-  must_det_ll((maplist(extend_obj_proplist(Grp),Grp,GrpM),
-  externalize_links(GrpM,GrpO))).
 
+extend_grp_proplist0(Grp,GrpO):- \+ ((sub_term(E,Grp),compound(E),E=oid(_))),!,Grp=GrpO.
+extend_grp_proplist0(Grp,GrpO):-
+  must_det_ll((
+   maplist(extend_obj_proplist(Grp),Grp,GrpM),
+           externalize_links(GrpM,GrpO))).
 
 extend_obj_proplist(Obj,Props):- extend_obj_proplist(_,Obj,Props).
 
@@ -358,24 +366,74 @@ non_interesting_props(Obj):- is_object(Obj),!.
 non_interesting_props(Obj):- is_grid(Obj),!.
 non_interesting_props([Obj]):-!, non_interesting_props(Obj).
 
+into_obj_props1(I,O):- I==[],!,O=[].
+into_obj_props1(N,Out):- is_object(N),!,indv_props_list(N,Out).
+into_obj_props1(N,Out):- is_obj_props(N),!,Out=N.
+into_obj_props1(N,Out):- is_list(N),!,maplist(into_obj_props,N,Out).
+into_obj_props(N,Out):- into_obj_props1(N,Out),!.
+into_obj_props(N,Out):- prop_group_equation(N,M),into_obj_props1(M,Out).
+
+prop_group_equation(all,Out):- !,prop_group_equation(find(((_Trn+_N)*_IO)),Out).
+prop_group_equation(in,Out):- !,prop_group_equation(find((_+_)*in),Out). 
+prop_group_equation(out,Out):- !,prop_group_equation(find((_+_)*out),Out). 
+prop_group_equation(trn,Out):- !,prop_group_equation(find((trn+_)*_),Out). 
+prop_group_equation(props(N),Out):- !,into_obj_props(N,Out).
+prop_group_equation((TrnN*IO),Out):- compound(TrnN),((Trn+N)=TrnN),!,prop_group_equation(find((Trn+N)*IO),Out). 
+prop_group_equation((Trn+(NIO)),Out):- compound(NIO),((N*IO)=NIO),!,prop_group_equation(find((Trn+N)*IO),Out). 
+prop_group_equation(in(N),Out):- !,prop_group_equation(find((_+N)*in),Out). 
+prop_group_equation(tst(N),Out):- !,prop_group_equation(find((tst+N)*in),Out). 
+prop_group_equation(tst,Out):- !,prop_group_equation(find((tst+0)*in),Out). 
+prop_group_equation(out(N),Out):- !,prop_group_equation(find((_+N)*out),Out). 
+prop_group_equation(trn(N),Out):- !,prop_group_equation(find((trn+N)*_),Out). 
+prop_group_equation(flat(A),Out):- !, prop_group_equation(A,AA), flatten(AA,Out).
+prop_group_equation(set(A),Out):- !, prop_group_equation(A,AA), list_to_set(AA,Out).
+prop_group_equation(shared(Stuf),Out):- !, prop_group_equation(Stuf,Mid),
+  filter_objects(Mid,shared,Out).
+prop_group_equation(unshared(Stuf),Out):- !, prop_group_equation(Stuf,Mid),
+  filter_objects(Mid,unshared,Out).
+prop_group_equation(shared(A,B),Out):- !, prop_group_equation(A,AA), prop_group_equation(B,BB),
+  grp_intersection(AA,BB,Out,_,_).
+prop_group_equation(unshared(A,B),Out):- !, prop_group_equation(A,AA), prop_group_equation(B,BB),
+  grp_intersection(AA,BB,_,AAA,BBB),append(AAA,BBB,Out).  
+prop_group_equation(+(A,B),Out):- !, prop_group_equation(A,AA), prop_group_equation(B,BB),append(AA,BB,Out).  
+prop_group_equation(-(A,B),Out):- !, prop_group_equation(A,AA), prop_group_equation(B,BB),
+  grp_intersection(AA,BB,_,Out,_).
+prop_group_equation(find(TrnIO),Objs):- nonvar(TrnIO),
+  get_current_test(TestID),
+  test_grouped_io(TestID,[TrnIO],[TestID],Objs).
+prop_group_equation(O,OO):- is_prop1(O),!,O=OO.
+prop_group_equation(O,OO):- is_list(O),maplist(prop_group_equation,O,OO).
+prop_group_equation(O,OO):- into_obj_props1(O,OO).
+
+list_of_nonlists(L):- is_list(L), \+ (last(L,E),is_list(E)).
+list_of_lists(L):- is_list(L), \+ \+ (last(L,E),is_list(E)).
+
+grp_intersection(A,B,Shared,AA,BB):- list_of_nonlists(A),list_of_nonlists(B),!,intersection(A,B,Shared,AA,BB).
+grp_intersection(A,B,Shared,AA,BB):- list_of_nonlists(B),list_of_lists(A),!,grp_intersection(B,A,Shared,BB,AA).
+grp_intersection(A,B,Shared,AA,BB):- list_of_nonlists(A),list_of_lists(B),!,maplist(intersection(A),B,Shared,AA,BB).
+grp_intersection(A,B,FA_Shared,FB_AA,FA_BB):- list_of_lists(A),list_of_lists(B),!,
+  flatten(B,FB),grp_intersection(A,FB,_FB_Shared,FB_AA,_FB_BB),
+  flatten(A,FA),grp_intersection(FA,B,FA_Shared,_FA_AA,FA_BB),
+  !.
 
 
 print_grouped_props(Named,OProps):- non_interesting_props(OProps),!, pp(print_grouped_props(Named)->OProps).
 %print_grouped_props(Named,Obj):- \+ is_list(Obj), !, pp(print_grouped_props(Named)=Obj).
 
 print_grouped_props(Named,In):- 
-  print_grouped_props1(Named,In),!,
-  print_grouped_props2(Named,In),!.
+  extend_grp_proplist(In,Objs),
+  print_grouped_props1(Named,Objs),!,
+  print_grouped_props2(Named,Objs),!.
 
 print_grouped_props1(Named,In):-
   must_det_ll((
-   extend_obj_or_proplist(In,Objs),
+   extend_grp_proplist(In,Objs),
    print_treeified_props(Named,Objs),
    banner_lines(green,1))).
 
 print_grouped_props2(Named,In):- 
  must_det_ll((
-   extend_obj_or_proplist(In,Objs),   
+   extend_grp_proplist(In,Objs),
    must_det_ll((hack_prop_groups(Named,Objs))),
    banner_lines(green,1))),!.
 
@@ -443,7 +501,7 @@ skip_ku(center2G(_,_)).
 skip_ku(changes(_)).
 skip_ku(o(_,_,_,_)).
 skip_ku( elink( sees(_),_)).
-skip_ku(giz(iv(_))).
+%skip_ku(giz(iv(_))).
 %skip_ku(cc(C,_)):- is_real_color(C),!.
 %skip_ku(giz(KU)):- nop(skip_ku(KU)),!.
 skip_ku(giz(KU)):- skip_ku(KU),!.
