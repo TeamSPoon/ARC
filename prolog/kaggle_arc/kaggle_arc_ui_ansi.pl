@@ -323,24 +323,25 @@ into_title_str(out,"Output").
 into_title_str(in,"Input").
 into_title_str(i,"IN").
 into_title_str(o,"OUT").
+into_title_str(Term,Str):- atom(Term),is_valid_linkid(Term,Kind,_),Term\=@=Kind,into_title_str(Kind,KS),sformat(Str,'~w (~w)',[Term,KS]),!.
+into_title_str(Term,Str):- atom(Term), atom_contains(Term,'_'), \+ atom_contains(Term,' '),  to_case_breaks(Term,T),
+ include(\=(xti(_,punct)),T,O),my_maplist(arg(1),O,O1),my_maplist(toProperCamelAtom,O1,O2),
+  atomics_to_string(O2," ",Str),!.
+into_title_str(Term,Str):- has_short_id(Term,Kind,ID),Term\=@=Kind,into_title_str(Kind,KS),sformat(Str,'~w (~w)',[ID,KS]),!.
+
 into_title_str(T-U,Str):- into_title_str([some(T),"..to..",some(U)],Str).
 into_title_str(T*U,Str):- into_title_str([some(T),"(",some(U),")"],Str).
 into_title_str(T+U,Str):- into_title_str(T,S1), number(U), N is U+1, sformat(Str,'~w #~w',[S1,N]).
 into_title_str(T+U,Str):- var(U), into_title_str(T,S1), sformat(Str,'~w(s)',[S1]).
-into_title_str(title(Term),Str):- into_title_str(Term,Str),!.
+into_title_str(title(Term),Str):- !, into_title_str(Term,Str),!.
 into_title_str(some(Var),"Some"):- var(Var),!.
 into_title_str(some(Var),Str):- !, into_title_str(Var,Str).
 into_title_str(User:Term,Str):- User == user, !, into_title_str(Term,Str).
 into_title_str(trn,"Training Pair").
 into_title_str(tst,"EVALUATION TEST").
-into_title_str(Term,Str):- atom(Term),is_valid_linkid(Term,Kind,_),into_title_str(Kind,KS),sformat(Str,'~w (~w)',[Term,KS]),!.
-into_title_str(Term,Str):- atom(Term), atom_contains(Term,'_'), \+ atom_contains(Term,' '),  to_case_breaks(Term,T),
- include(\=(xti(_,punct)),T,O),my_maplist(arg(1),O,O1),my_maplist(toProperCamelAtom,O1,O2),
-  atomics_to_string(O2," ",Str),!.
-into_title_str(Term,Str):- has_short_id(Term,Kind,ID),into_title_str(Kind,KS),sformat(Str,'~w (~w)',[ID,KS]),!.
 %into_title_str(Term,Str):- tersify23(Term,Terse),Term\=@=Terse,!,into_title_str(Terse,Str).
 into_title_str(Term,Str):- callable_arity(Term,0),is_writer_goal(Term),catch(notrace(wots(Str,call_e_dmsg(Term))),_,fail),!.
-into_title_str(Term,Str):- catch(sformat(Str,'~p',[Term]),_,term_string(Term,Str)),atom_length(Str,E50),E50<180,!.
+into_title_str(Term,Str):- catch(sformat(Str,'~p',[Term]),_,term_string(Term,Str)),nonvar(Str),atom_length(Str,E50),E50<180,!.
 into_title_str(Term,Str):- compound(Term), compound_name_arguments(Term,Name,Args),
    %include(not_p1(plain_var),Args,Nonvars),
    Args=Nonvars,
@@ -1511,7 +1512,7 @@ show_pair_grid(TitleColor,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
   INFO = [grid_dim,mass,length,unique_color_count,colors_cc],
 %  print_side_by_side(U1,LW,U2),
   print_side_by_side(TitleColor,print_grid(IH,IV,In),NameInU,LW,print_grid(OH,OV,Out),NameOutU),
-  print_side_by_side(
+  print_side_by_side0(
      call(describe_feature(In,[call(ppnl(NameInU+fav(PairName)))|INFO])),LW,
     call(describe_feature(Out,[call(ppnl(NameOutU+fav(PairName)))|INFO]))),!.
 
@@ -1816,9 +1817,13 @@ print_grid_pad(O1,SH,SV,EH,EV,Grid):-
   call_w_pad(O1,print_grid2(SH,SV,EH,EV,GridI)).
   
 
+
 print_grid2(SH,SV,EH,EV,GridII):- atomic(GridII), once(into_grid(GridII,GridIII)), \+ atomic(GridIII),!,
   print_grid2(SH,SV,EH,EV,GridIII).
 
+print_grid2(SH,SV,EH,EV,ObjProps):- is_obj_props(ObjProps),!,print_grid2(SH,SV,EH,EV,[obj(ObjProps)]).
+print_grid2(SH,SV,EH,EV,[ObjProps|More]):- is_obj_props(ObjProps),!,
+  maplist(print_grid2(SH,SV,EH,EV),[ObjProps|More]).
 print_grid2(SH,SV,EH,EV,GridI):- arc_html,!,print_grid_html(SH,SV,EH,EV,GridI).
 print_grid2(SH,SV,EH,EV,GridI):- in_pp(ansi),!,ignore(print_grid_ansi(SH,SV,EH,EV,GridI)).
 print_grid2(SH,SV,EH,EV,GridI):- in_pp(bfly),!,az_ansi(ignore(print_grid_ansi(SH,SV,EH,EV,GridI))).

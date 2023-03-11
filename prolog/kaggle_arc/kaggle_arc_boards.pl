@@ -462,7 +462,7 @@ add_hint(TestID,ExampleNum,Hints):-
 
 assert_test_property(TestID,ExampleNum,Prop,Data):-
   assert_if_new(arc_test_property(TestID,ExampleNum,Prop,Data)),
-  pp(assert_test_property(TestID,ExampleNum,Prop,Data)).
+  nop(pp(assert_test_property(TestID,ExampleNum,Prop,Data))).
   
   % forall((kaggle_arc_io(TestID,ExampleNum,in,Out1),N2 is N+1,  (kaggle_arc_io(TestID,(trn+N2),in,Out2)->true;kaggle_arc_io(TestID,(trn+0),in,Out2)),  grid_hint_recolor(i-i,Out1,Out2,Hints)),add_hint(TestID,Hints,N)).
 
@@ -695,6 +695,8 @@ grid_hint_swap(IO,In,Out):-
  w_section(title(grid_hint_swap(IO,TestID>ExampleNum)),
  (maybe_compute_test_io_hints(IO,TestID,ExampleNum,In,Out),
    ignore(print_single_pair(TestID,ExampleNum,In,Out)),
+   forall((arc_test_property(TestID,ExampleNum,P,V),
+      is_grid(V),sub_var(minus_overlapping_image,P)),print_grid(P,V)),
    with_li_pre(((format('~N%% ~w: ',[IO])),!,
      forall((arc_test_property(TestID,ExampleNum,P,V)),
        ignore((  ( \+ ((is_grid(V), grid_size(V,XX,YY), (XX>3;YY>3)))), ptv1(magenta+cyan,P=V)))))))).
@@ -1103,9 +1105,9 @@ save_the_alt_grids(TestID,ExampleNum,_XForms,In,Out):-
   
 save_the_alt_grids_now(TestID,ExampleNum,XForms,In,Out):-
   my_maplist(save_grid_calc(TestID,ExampleNum,XForms,In,Out),
-     [fg_intersectiond,fg_intersectiond_mono,cell_minus_cell,mono_cell_minus_cell,overlapping_image,
-      minus_overlapping_image]),
-  ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!.
+     [fg_intersectiond,fg_intersectiond_mono,cell_minus_cell,mono_cell_minus_cell]),
+  ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!,
+  my_maplist(save_grid_calc(TestID,ExampleNum,XForms,In,Out),[minus_overlapping_image,overlapping_image]).
 
 colors_of(O,Cs):- unique_fg_colors(O,Cs),!.
 

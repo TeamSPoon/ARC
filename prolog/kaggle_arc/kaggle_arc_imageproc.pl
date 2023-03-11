@@ -317,7 +317,7 @@ remove_global_cpoints(Point,Grid,GridO):- point_to_hvc(Point,H,V,IfSame),
                                   Grid=GridO).
 
 %remove_global_cpoints(Point,Grid,GridO):- set_local _points(,Point,Grid,GridO).
-remove_global_cpoints(Point,Grid,Grid):-  nop(u_dmsg(warn(skip(remove_global_points(Point))))).
+remove_global_cpoints(Point,Grid,Grid):-  nop(warn_skip(remove_global_points(Point))).
 
 same_color(IfSame,Old):- \+ \+ IfSame = Old.
 
@@ -335,7 +335,7 @@ pred_global_cpoints(Pred7,Color,[H|T],Grid,GridO):- !, pred_global_cpoints(Pred7
 pred_global_cpoints(Pred7,FG,Point,Grid,GridO):- FG == fg, point_to_hvc(Point,H,V,C), !, hv_c_value_or(Grid,Old,H,V,_), call(Pred7,H,V,C,Old,Grid,GridO).
 pred_global_cpoints(Pred7,Color,Point,Grid,GridO):- point_to_hvc(Point, H,V,_),  hv_c_value_or(Grid,Old,H,V,_),  call(Pred7,H,V,Color,Old,Grid,GridO).
 %pred_global_cpo ints(Pred7,Color,Point,Grid,GridO):- set_local _points(Pred7,,Point,Grid,GridO).
-pred_global_cpoints(Pred7,Color,Point,Grid,Grid):-  nop(u_dmsg(warn(skip(pred_global_points(Pred7,Color,Point))))).
+pred_global_cpoints(Pred7,Color,Point,Grid,Grid):-  nop(warn_skip(((pred_global_points(Pred7,Color,Point))))).
 
 
 
@@ -356,7 +356,7 @@ add_global_cpoints(Color,[H|T],Grid,GridO):- !, add_global_cpoints(Color,H,Grid,
 add_global_cpoints(FG,Point,Grid,GridO):- get_fg_label(FGL), FG == FGL, point_to_hvc(Point, H,V,C), !, replace_global_hvc_point(H,V,C,_,Grid,GridO).
 add_global_cpoints(Color,Point,Grid,GridO):- point_to_hvc(Point, H,V,_),   replace_global_hvc_point(H,V,Color,_,Grid,GridO).
 %add_global_cpoints(Color,Po int,Grid,GridO):- set_local _points(,Point,Grid,GridO).
-add_global_cpoints(Color,Point,Grid,Grid):-  nop(u_dmsg(warn(skip(add_global_points(Color,Point))))).
+add_global_cpoints(Color,Point,Grid,Grid):-  nop(warn_skip(((add_global_points(Color,Point))))).
 
 
 
@@ -372,7 +372,7 @@ set_local_po ints(C,Point,Grid,GridO):- point_t o_hvc(H,V,Old,Point), replace_lo
 set_local_points(Point,Grid,GridO):- replace_local_points(Point,_AnyOldColor,Grid,GridO),!.
 set_local_points(Point,Grid,GridO):- arcST,ignore((rrtrace((replace_local_points(Point,_AnyOldColor,Grid,GridO))),ibreak)),!.
 %set_local_points(Point,Grid,GridO):- set_local_points(,Point,Grid,GridO).
-%set_local_points(Point,Grid,Grid):-  u_dmsg(warn(skip(set_local_points(Point)))).
+%set_local_points(Point,Grid,Grid):-  warn_skip(((set_local_points(Point)))).
 
 
 set_all_fg(C0,Grid,GridO):- color_code(C0,C),get_bgc(X),map_pred(if_not_bgc_then(X,C), Grid, GridO).

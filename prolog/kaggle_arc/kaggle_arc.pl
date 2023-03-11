@@ -88,8 +88,8 @@ decl_gf(G):- must_det_ll((nonvar(G), !, my_assertz_if_new(is_decl_gf(G)))).
 :- discontiguous(is_decl_pt/2).
 :- multifile(is_decl_pt/2).
 
-decl_pt(G):- must_det_ll((nonvar(G), !, my_assertz_if_new(is_decl_pt(plain,G)))).
-decl_pt(How,G):- must_det_ll((nonvar(How),nonvar(G), !, my_assertz_if_new(is_decl_pt(How,G)))).
+decl_pt(G):- must_det_ll((nonvar(G), !, my_assertz_if_new(is_decl_pt(plain,G)))),!.
+decl_pt(How,G):- must_det_ll((nonvar(How),nonvar(G), !, my_assertz_if_new(is_decl_pt(How,G)))),!.
 :- set_prolog_flag(color_term,true).
 %:- arc_set_stream(current_output, tty(true)).
 %:- arc_set_stream(user_output, tty(true)).

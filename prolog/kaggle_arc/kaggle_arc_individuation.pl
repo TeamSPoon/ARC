@@ -490,21 +490,23 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCB,OutCB):-
  (((
   banner_lines(orange), %visible_order(InC,InCR),
  if_t( once(true; \+ nb_current(menu_key,'i')),
+
  w_section(show_individuated_learning,must_det_ll((
    %when_in_html(if_wants_output_for(guess_some_relations,guess_some_relations(InC,OutC))),
    %when_in_html(if_wants_output_for(sort_some_relations,sort_some_relations(InC,OutC))),
-   if_wants_output_for(learn_group_mapping,(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
-   if_wants_output_for(learn_group_mapping_of_tst, (sub_var(tst,ID1),learn_group_mapping(InCR,OutCR))), 
-   if_wants_output_for(show_safe_assumed_mapped, show_safe_assumed_mapped),
+   if_wants_output_for(learn_group_mapping,        if_t(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
+   if_wants_output_for(learn_group_mapping_of_tst, if_t(sub_var(tst,ID1), learn_group_mapping(InCR,OutCR))), 
 
+
+   if_wants_output_for(show_safe_assumed_mapped, show_safe_assumed_mapped),
    if_wants_output_for(show_test_associatable_groups, 
        forall(member(In1,InC),show_test_associatable_groups(ROptions,ID1,In1,GridOut))), 
 
    if_wants_output_for(try_each_using_training,
-     forall(try_each_using_training(InC,GridOut,Rules,OurOut),
+     forall(try_each_using_training(InC,GridOut,RulesUsed,OurOut),
       ignore((
        print_grid(try_each_using_training,OurOut),
-       nop(pp(Rules)),
+       nop(pp(RulesUsed)),
        banner_lines(orange,2))))))))),
 
   banner_lines(orange,4))))))))))))),!.
@@ -532,9 +534,11 @@ arc_spyable_keyboard_key(try_each_using_training,'u').
 
 
 show_test_associatable_groups(ROptions,ID1,InC,GridOut):- 
-  print_grid(show_test_assocs(ROptions,ID1),InC),
+  print_grid(wqs(show_test_assocs(ROptions,ID1)),InC),
   forall(
-    ((use_test_associatable_group(InC,Sols)*-> show_result("Our Learned Sols", Sols,GridOut,_); arcdbg_info(red,warn("No Learned Sols")))),
+    must_det_ll1((use_test_associatable_group(InC,Sols)
+      *-> show_result("Our Learned Sols", Sols,GridOut,_)
+        ; arcdbg_info(red,warn("No Learned Sols")))),
     true).
 
 

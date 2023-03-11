@@ -290,8 +290,8 @@ do_menu_key( ''):- !, fail.
 
 do_menu_key('d'):- !, dump_from_pairmode.
 
-do_menu_key(Numerals):- atom(Numerals), atom_number(Numerals,Num), number(Num), !, do_menu_number(Num),!.
-do_menu_key(Num):- number(Num), !, do_menu_number(Num),!.
+do_menu_key(Numerals):- atom(Numerals), atom_number(Numerals,Num), number(Num), do_menu_number(Num),!.
+do_menu_key(Num):- number(Num), do_menu_number(Num),!.
 
 do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), !, menu_goal(Body).
 do_menu_key(Key):- atom(Key), menu_cmds(_,Key,_,Body), !, menu_goal(Body).
@@ -308,6 +308,10 @@ do_menu_key(Name):- atom(Name), atom_length(Name,N), N>=3,do_menu_name(Name).
 do_menu_key(Text):- atom(Text),atom_concat(' ',Text,Text),Text\=='', !,do_menu_key(Text).
 do_menu_key(Text):- atom(Text),atom_concat(Text,' ',Text),Text\=='', !,do_menu_key(Text).
 do_menu_key(Text):- atom(Text),atom_concat(Text,'\r',Text),Text\=='', !,do_menu_key(Text).
+
+
+do_menu_key(OID):- atom(OID),oid_to_obj(OID,Obj),!,show_indiv(Obj).
+
 
 % refering to a Test Suite or Object
 do_menu_key(Key):- ground(Key), Key = (TestID>ExampleNum*_IO),!,set_example_num(ExampleNum),set_current_test(TestID),
@@ -340,7 +344,7 @@ do_menu_name(E):- list_of_pair_modes(L),member(E,L),!, set_pair_mode(E).
 do_menu_name(E):- test_suite_list(L),member(E,L),!, set_test_suite(E).
 
 do_menu_number(N):- N>=300,N=<800,set_pair_mode(entire_suite),fail.
-do_menu_number(N):- N>=300,N=<800,do_test_number(N),!.
+do_menu_number(N):- N<800,do_test_number(N),!.
 do_menu_number(N):- N>=800,N=<999,do_indivizer_number(N),!.
 
 debuffer_atom_codes(_Key,[27|Codes]):- append(Left,[27|More],Codes),
@@ -404,13 +408,13 @@ set_test_suite(X,N):-
 
 preview_suite:- luser_getval(test_suite_name,X),preview_suite(X).
 
-do_suite_number(Num):- E>=300,E=<800, test_suite_list(L), nth_above(300,Num,L,SuiteX),!,set_test_suite(SuiteX),
+do_suite_number(Num):- integer(Num),test_suite_list(L), nth_above(300,Num,L,SuiteX),!,set_test_suite(SuiteX),
   preview_suite.
 
 select_suite(N):- string(N),atom_string(A,N),select_suite(A),!.
 select_suite(N):- preview_suite(N).
 
-preview_suite(Num):- number(Num),!,do_suite_number(Num).
+preview_suite(Num):- integer(Num),!,do_suite_number(Num).
 preview_suite(Name):- \+ is_list(Name),set_test_suite(Name),
  w_section(["Suite:",Name],
    (get_current_suite_testnames(Set),!,preview_suite(Set))).
@@ -440,8 +444,8 @@ web_reverse(E,E):- arc_html,!.
 web_reverse(L,R):- reverse(L,R).
 
 
-do_test_number(Num):- Num>=300,Num<800,do_suite_number(Num),!.
-do_test_number(Num):- list_of_tests(L), 
+do_test_number(Num):- do_suite_number(Num),!.
+do_test_number(Num):- integer(Num),list_of_tests(L), 
   u_dmsg(do_test_number(Num)),nth_above(100,Num,L,E),!,set_test_cmd(E),do_test_pred(E).
 
 do_test_pred(E):- 
@@ -664,7 +668,8 @@ into_test_cmd(Cmd,Cmd).
 %get_pair_cmd(Mode):- luser_getval('cmd',Mode).
 
 % Hides solution grid from code
-kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,G), if_no_peeking((((ExampleNum*IO) \= ((tst+_)*out)))).
+kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,G), 
+  (((((ExampleNum*IO) \= ((tst+_)*out))))).
 
 
 test_grids(TestID,G):- get_pair_mode(entire_suite), !, kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
@@ -1359,7 +1364,7 @@ shell_op(G):- tee_op(G).
 
 my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).
 
-warn_skip(Goal):- nop(u_dmsg(warn_skip(Goal))).
+warn_skip(Goal):- u_dmsg(warn_skip(Goal)).
 
 save_supertest(TestID):- is_list(TestID),!,my_maplist(save_supertest,TestID).
 save_supertest(TestID):- ensure_test(TestID), save_supertest(TestID,_File).

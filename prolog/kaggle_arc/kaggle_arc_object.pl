@@ -1658,6 +1658,8 @@ rotSize2D(grav,NT,H,V):-  into_gridoid(NT,G),G\==NT, rotSize2D(grav,G,H,V).
 
 
 %externalize_links(obj_grp(O1L,Grp),[link(C,A),EL|More],[link(C,A),elink(C,Ext)|LMore]):- EL\=elink(_,_),externalize_obj(Obj,Other,Ext),!,externalize_links(obj_grp(O1L,Grp),[EL|More],LMore).
+
+externalize_links(Grp,NewObjs):- Grp==[],!,NewObjs=[].
 externalize_links(Grp,NewObjs):- 
  must_det_ll((is_group_or_objects_list(Grp), 
    maplist(externalize_links(grp(Grp)),Grp,NewObjs))).

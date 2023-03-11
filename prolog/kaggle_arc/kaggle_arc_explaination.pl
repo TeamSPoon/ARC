@@ -246,7 +246,7 @@ show_indiv_textinfo2(Why,AS0,ExceptFor):-
   print_if_non_nil(gridoids,ExceptFor,ContainsGrid),
   print_if_non_nil(rankings,ExceptFor,Rankings)))),
   
-  
+  nonvar(SZ),
   atom_length(SZ,Len),(Len<10 -> pp(AS0);write(SZ)),
   ignore(( TF==true, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, localpoints(Obj,Points), print_grid(H,V,Points))),
   ignore(( fail, mass(Obj,Mass),!,Mass>4, vis2D(Obj,H,V),!,H>1,V>1, show_st_map(Obj))),
