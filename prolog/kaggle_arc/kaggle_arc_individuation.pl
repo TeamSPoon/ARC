@@ -260,9 +260,9 @@ find_indivizers(F,R):-clause(individuation_macros(F,R),Body),catch(Body,_,fail),
 %find_indivizers(F,is_fti_stepr):- is_fti_stepr(F).
 find_indivizers(F,is_fti_step):- is_fti_step(F), atom(F), current_predicate(F/1).
 find_indivizers(F,is_item):-clause(individuation_macros(F,R),Body),catch(Body,_,fail),member(F,R).
-list_of_indivizers(S):- findall(F,find_indivizers(F,_),LS1),list_to_set(LS1,R),reverse(R,S).
+list_of_indivizers(S):- findall(F+R,find_indivizers(F,R),LS1),predsort(sort_on(arg(2)),LS1,S).
 show_indivizers:- update_changes, list_of_indivizers(L),
- forall(nth_above(800,N,L,E),
+ forall(nth_above(800,N,L,E+_),
   (find_indivizers(E,R),format('~N'),sformat(S,'~t~d~t  ~w:  ~t~w',[N,E,R]),print_menu_cmd1(write(S),E),nl)).
 do_indivizer_number(N):- 
  list_of_indivizers(L),nth_above(800,N,L,E), set_indivs_mode(E),

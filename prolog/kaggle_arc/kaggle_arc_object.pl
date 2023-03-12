@@ -452,7 +452,7 @@ make_indiv_object(VM,Overrides,GOPoints,NewObj):-
  must_det_ll((
   make_indiv_object_real(VM,Overrides,GOPoints,NewObj),
   %show_indiv(make_indiv_object,NewObj),
-  itrace)).
+  nop(itrace))).
  %show_indiv_textinfo(NewObj),!.
 
 make_indiv_object_real(VM,Overrides,GOPoints,NewObj):-

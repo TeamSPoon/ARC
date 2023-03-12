@@ -141,7 +141,7 @@ find_tests(F):-
 find_f_tests(F):- quick_test_menu(F).
 find_g_tests(F):- ping_indiv_grid(F).
 %find_g_tests(F):- is_fti_stepr(F).
-%find_g_tests(F):- is_fti_step(F).
+find_g_tests(F):- uses_test_id(F).
 find_g_tests(F):- find_tests(F).
 
 list_of_tests(S):- findall(F,find_f_tests(F),L1),findall(F,find_g_tests(F),L),sort_safe(L,L2),append(L1,L2,L12),list_to_set(L12,S).

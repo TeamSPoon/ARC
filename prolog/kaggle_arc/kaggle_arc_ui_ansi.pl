@@ -238,7 +238,7 @@ tersify1(I,O):- is_vm_map(I), get_kov(pairs,I,_),!, O='$VAR'('Training').
 
 
 tersifyG(I,O):- tersifyL(I,O),numbervars(O,1,_,[attvar(bind),singletons(false)]),!.
-
+tersifyL([H|I],[HH|I]):- is_ftVar(I),!,tersify(H,HH).
 tersifyL([H|I],O):- nonvar(H), \+ is_group(I), display_length(I,N) , N>170, 
   length(I,LL),tersify(H,HH),(('...'(HH,LL,'...'(N)))=O),!.
 tersifyL(I,O):- is_list(I), my_maplist(tersifyL,I,O),!.

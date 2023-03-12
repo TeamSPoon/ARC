@@ -72,7 +72,7 @@ interesting_compares(tst+N*in, F1,  trn+N *in,F2) :- current_example_nums(tst,N,
 
 filter_pairs(shared,shared). filter_pairs(unshared,shared). filter_pairs(shared,unshared). filter_pairs(unshared,unshared).
 
-make_up_selector_name(Trn+Num*IO,Name):- 
+make_up_selector_name(Trn_num_io,Name):-  trn_num_io(Trn_num_io,Trn,Num,IO),
   interesting_selectors(NameI,Trn1,Num1,IO1), match_selector(Trn1,Trn),match_selector(IO1,IO),match_selector(Num1,Num),
   once(maybe_aformat(NameI,Name)).
 maybe_aformat(Fmt-Args,Name):- format(atom(Name),Fmt,Args),!. maybe_aformat(Name,Name).
@@ -81,7 +81,13 @@ match_selector(Trn1,Trn):- var(Trn1),var(Trn),!.
 match_selector(Trn1,Trn):- Trn1=@=Trn.
 %match_selector(Trn1,Trn):- var(Trn),Trn1=Trn.
 
-select_filtered_group(TestID,Name,Trn+Num*IO,Filter,Objects):-  
+trn_num_io(Trn_Num_IO,Trn,Num,IO):- var(Trn_Num_IO),!, Trn_Num_IO=((Trn+Num)*IO).
+trn_num_io((Trn+Num)*IO,Trn,Num,IO):-!.
+trn_num_io(Trn+Num*IO,Trn,Num,IO):-!.
+
+select_filtered_group(TestID,Name,Trn_num_io,Filter,Objects):- trn_num_io(Trn_num_io,Trn,Num,IO),
+  with_luser(use_individuated_cache,true,
+    forall(kaggle_arc_io(TestID,Trn+Num,IO,G),individuate(complete,G,_Objs))),
   select_some_objects(TestID,Trn,Num,IO,Filter,Objects),
   make_up_selector_name(Trn+Num*IO,Name).
 
@@ -187,7 +193,7 @@ show_filtered_groups(TestID):- ensure_test(TestID),
          ignore(((ground((Trn+Num*IO))->pp(Objs); (Len<10 ->pp(Objs); true)))),
          print_grouped_props(Name+Filter,Objs)))))))).
 
-show_pair_groups(TestID):-
+show_pair_groups(TestID):- ensure_test(TestID),
   forall(pair_two_groups(TestID,Name1+Filter1,Name2+Filter2,Objs1,Objs2),
     ignore((
       Objs1\==[],Objs2\==[],
@@ -1005,7 +1011,7 @@ add_uset_priors([_|Lbls],Objs,WithPriors):-
   add_uset_priors(Lbls,Objs,WithPriors),!.
 
 add_1uset_prior(Common,VersionsByCount,Objs,NObjs):- 
- predsort(sort_on(version_count),VersionsByCount,VersionsByOccurances),
+ vesion_uniqueness(VersionsByCount,VersionsByOccurances),
  predsort(sort_on(version_magnitude),VersionsByCount,VersionsByMagnitude),
  maplist(add_prior_info(Common,VersionsByOccurances,VersionsByMagnitude),Objs,NObjs).
 
@@ -1021,7 +1027,21 @@ add_prior_info_1(Common,VersionsByOccurances,VersionsByMagnitude,PropList,[pg(Ma
   ignore((call(once,((nth1(N1,VersionsByOccurances,Prop1), \+ \+ has_nprop(Prop1,PropList)))))),
   ignore((call(once,((nth1(N2,VersionsByMagnitude,Prop2), \+ \+ has_nprop(Prop2,PropList)))))))),!.
 add_prior_info_1(_Common,_VersionsByCount,PropList,PropList).
+/*
+ clumped_r([1,2,3,3],O).
+O = [1-1,1-2,2-3].
 
+*/
+select_which(CntC,Order):- keysort(CntC,Order2),maplist(arg(2),Order2,Order).
+clumped_r(Cnts,CntR):- clumped(Cnts,CntC),maplist(swap_vk,CntC,CntR).
+swap_vk(K-V,V-K).
+
+reordering(Order,I,V):- nth1(V,Order,E),E==I,!.
+reordering(_,_,inf).
+
+vesion_uniqueness(I,O):- keysort(I,KS),maplist(arg(1),KS,Cnts),clumped_r(Cnts,CntC),select_which(CntC,Order),
+   predsort(sort_on(reordering(Order)),I,O),!.
+vesion_uniqueness(I,O):- predsort(sort_on(version_count),I,O).
 version_count(N-_,N):-!.
 version_count(_,inf):-!.
 version_magnitude(N2-Version,N+N2):- !, findall(E,((sub_term(E,Version),comparable_value(E))),N).
@@ -1173,15 +1193,16 @@ has_subterm(P1,HasNumber):- sub_term(N,HasNumber),call(P1,N),!.
 
 variance_had_counts(Common,HAD,RRR,Versions,Missing,VersionsByCount,Variance):-
   make_unifiable_cc(HAD,UHAD),
-  findall(RR,(member(RR,RRR), indv_props_list(RR,R), \+ member(UHAD,R)),Missing),
+  findall(RR,(member(RR,RRR), once((indv_props_list(RR,R), \+ member(UHAD,R)))),Missing),
   length(Missing,ML),
   findall(UHAD,(member(RR,RRR), indv_props_list(RR,R), member(UHAD,R)),VersionL),
   predsort(using_compare(numbered_vars),VersionL,VersionSet),
   some_min_unifier(VersionSet,Common),nonvar(Common),
   count_each(VersionSet,VersionL,CountOfEachL),
+  
   (ML == 0 -> 
-  ->(Versions = VersionSet, CountOfEachL=VersionsByCount)
-  ; (Versions=[\+(UHAD)|VersionSet],VersionsByCount=[ML-Missing|CountOfEachL])),
+  ->(Versions = VersionSet, vesion_uniqueness(CountOfEachL,VersionsByCount))
+  ; (Versions=[\+(UHAD)|VersionSet],vesion_uniqueness([ML-Missing|CountOfEachL],VersionsByCount))),
   length(Versions,Variance).
 
 /*

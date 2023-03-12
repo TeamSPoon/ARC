@@ -843,7 +843,9 @@ create_group_dmiles:- must_det_ll((create_group(dmiles,[
               '1b60fb0c','1d398264',
               '0d3d703e','626c0bcc',
               '5582e5ca','25d487eb',
-              '32e9702f','f8b3ba0a'  ]))).
+              '32e9702f','f8b3ba0a',
+              'b230c067','a61ba2ce',
+              '29c11459','a61f2674']))).
 :- initialization(create_group_dmiles).
 %:- noguitracer.
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).
@@ -853,3 +855,5 @@ create_group_dmiles:- must_det_ll((create_group(dmiles,[
 
 %:- demo.
 :- current_prolog_flag(argv,C),(member('-l',C)->initialize;true).
+:- initialization(scan_uses_test_id).
+
