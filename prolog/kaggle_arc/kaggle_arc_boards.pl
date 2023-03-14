@@ -674,7 +674,8 @@ min_grid_unifier(_,_,_).
 min_list_unifier(A,B,A):- A=@=B,!.
 min_list_unifier(A,B,_):- \+ compound(A);\+ compound(B),!.
 min_list_unifier(A,B,AA):- is_list(A),is_list(B), sort_safe(A,AA),sort_safe(B,BB),BB=@=AA,!.
-
+min_list_unifier([A|AA],[B|BB],[A|CC]):- A=@=B,min_list_unifier(AA,BB,CC).
+min_list_unifier([A|AA],[B|BB],[C|CC]):- A\=@=B,min_list_unifier(AA,BB,CC),min_unifier(A,B,C),!.
 min_list_unifier(A,B,[EC|C]):- is_list(A),is_list(B),  select_two(A,B,E1,E2,AA,BB), min_unifier(E1,E2,EC) ,!,min_list_unifier(AA,BB,C).
 
 
@@ -774,9 +775,9 @@ disguise_row(I,O):- O=..[row|I].
 
 %ensure_how(How):- var(How),!,member(How,[whole,fg_shapes(nsew)]).
 %ensure_how(How):- var(How),!,member(How,[whole,i_pbox]).
-ensure_how(How):- var(How),!,member(How,[whole]).
+%ensure_how(How):- var(How),!,member(How,[whole,complete,i_pbox]).
 %ensure_how(How):- var(How),!,member(How,[whole,i_pbox,fg_shapes(nsew)]).
-%ensure_how(How):- var(How),!,member(How,[nsew,fg_shapes(nsew),colormass,fg_shapes(colormass),force_by_color,alone_dots]).
+ensure_how(How):- var(How),!,member(How,[nsew,fg_shapes(nsew),colormass,fg_shapes(colormass),force_by_color,alone_dots]).
 ensure_how(_How).
 
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,_,Obj),List),list_to_set(List,Objs).

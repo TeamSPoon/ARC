@@ -15,19 +15,18 @@ fav(A,B):- nonvar_or_ci(A),nonvar_or_ci(B), cls1,mmake, asserta(fav(A,B),Ref),!,
 fav(v('p'),[dmiles]).
 
 fav(v('37d3e8b2'), 
- human(
+ human_coded(
    rule(links_count(contains,1),subst_color(fg,blue)),
    rule(links_count(contains,2),subst_color(fg,red)),
    rule(links_count(contains,3),subst_color(fg,green)),
    rule(links_count(contains,4),subst_color(fg,yellow)))).
 
 fav(t('ea32f347'), 
- human(
-   rule(pg(is_fg_object,RANK,_,1),subst_color(fg,blue)),
-   rule(pg(is_fg_object,RANK,_,2),subst_color(fg,yellow)),
-   rule(pg(is_fg_object,RANK,_,3),subst_color(fg,red)) )):-
-     %RANK = rankA(cc(fg))
-      RANK = rank1(mass)
+ human_coded(
+   rule(pg(_,RANK1,_,1),subst_color(fg,blue)),
+   rule(pg(_,RANK1,_,2),subst_color(fg,yellow)),
+   rule(pg(_,RANK1,_,3),subst_color(fg,red)) )):-
+      RANK1 = mass(_)
       .
   
 

@@ -687,18 +687,21 @@ gsize_member(vis2D(X,Y),X,Y).
 %grid_size(Points,H,V):- is_vm_map(Points),!,Points.grid_size=grid_size(H,V).
 grid_size(NIL,1,1):- NIL==[],!.
 grid_size(ID,H,V):- is_grid_size(ID,H,V),!.
-grid_size(I,X,Y):- notrace(is_object(I)),indv_props_list(I,L),gsize_member(E,X,Y),member(E,L),!.
+grid_size(GID,H,V):- atom(GID),gid_to_grid(GID,Grid),!,grid_size_nd(Grid,H,V),!.
+grid_size(OID,H,V):- atom(OID),oid_to_parent_gid(OID,GID),grid_size(GID,H,V),!.
+grid_size(I,H,V):- notrace(is_object(I)),indv_props_list(I,L),gsize_member(E,H,V),member(E,L),!.
 %grid_size(G,H,V):- quietly(is_object(G)), !, vis2D(G,H,V).
 grid_size(Points,H,V):- is_points_list(Points),!,points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V),!.
 %grid_size(G,H,V):- is_graid(G,GG),!, grid_size(GG,H,V).
 grid_size(G,H,V):- notrace(is_vm_map(G)),H = G.h,V = G.v, !.
-grid_size(G,X,Y):- notrace(is_group(G)),mapgroup(grid_size_term,G,Offsets),grid_size_2d(Offsets,X,Y),!.
-grid_size(G,X,Y):- findall(size2D(X,Y),((sub_term(E,G),compound(E),gsize_member(E,X,Y))),Offsets),grid_size_2d(Offsets,X,Y),!.
+grid_size(G,H,V):- notrace(is_group(G)),mapgroup(grid_size_term,G,Offsets),grid_size_2d(Offsets,H,V),!.
+grid_size(G,H,V):- findall(size2D(H,V),((sub_term(E,G),compound(E),gsize_member(E,H,V))),Offsets),grid_size_2d(Offsets,H,V),!.
 %grid_size([G|G],H,V):- is_list(G), length(G,H),length([G|G],V),!.
 grid_size(G,H,V):- notrace(is_grid(G)),!,grid_size_nd(G,H,V),!.
 %grid_size([G|G],H,V):- is_list(G),is_list(G), grid_size_nd([G|G],H,V),!.
 %grid_size(O,_,_):- trace_or_throw(no_grid_size(O)).
-grid_size(G,X,Y):- sub_term(E,G),compound(E),E=giz(gid(GID)),nonvar(GID),gid_to_grid(GID,Grid),!,grid_size_nd(Grid,X,Y),!.
+grid_size(G,H,V):- sub_term(E,G),compound(E),E=giz(gid(GID)),nonvar(GID),grid_size(GID,H,V),!.
+grid_size(G,H,V):- sub_term(E,G),compound(E),E=oid(OID),nonvar(OID),oid_to_parent_gid(OID,GID),grid_size(GID,H,V),!.
 
 grid_size(O,30,30):- arcST,itrace,dmsg(warn(grid_size(O,30,30))),!.
 
@@ -716,6 +719,8 @@ grid_size_2d(X1,Y1,[size2D(X2,Y2)|Offsets],X,Y):-
 %  calc_range(WLoH,WLoV,WHiH,WHiV,WH,WV,Points,LoH,LoV,HiH,HiV,H,V).
 
 calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,Var,WLoH,WLoV,WHiH,WHiV,WH,WV):- plain_var(Var),!.
+calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,size2D(IH,IV),WLoH,WLoV,WHiH,WHiV,H,V):- !,
+  max_min(WV,IV,V,_),max_min(WH,IH,H,_).
 calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,grid_size(IH,IV),WLoH,WLoV,WHiH,WHiV,H,V):- !,
   max_min(WV,IV,V,_),max_min(WH,IH,H,_).
 %calc_range_old(WLoH,WLoV,WHiH,WHiV,WH,WV,v_hv(IH,IV),WLoH,WLoV,WHiH,WHiV,H,V):- !,

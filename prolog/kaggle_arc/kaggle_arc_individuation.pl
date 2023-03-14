@@ -123,7 +123,7 @@ i_to_o_is_none_some_some_in(VM):-
   Library1 = VM.objs,
   gset(VM.objs)=[],
   filter_library(Library1,Library),
-  pp(library=Library),
+  print_grid(library,Library),
   (Library=[_|_]->my_maplist(add_shape_lib(pairs),Library);true),
   OGrid = VM.start_grid,
   OPoints = VM.start_points,
@@ -138,7 +138,8 @@ i_to_o_is_none_some_some_in(VM):-
   globalpoints(RGroup,UsedPoints),
   intersection(OPoints,UsedPoints,_,LeftOver,_),
   gset(VM.lo_points) = LeftOver,
-  pp(objs = VM.objs),
+  %pp(objs = VM.objs),
+  %print_grid(objs, VM.objs),
   %LeftOver = VM.lo_points,
   points_to_grid(VM.h,VM.v,LeftOver,Grid),
   gset(VM.grid)=Grid,
@@ -183,7 +184,7 @@ mono_i_to_o_is_none_some_none_in(VM):-
   Library1 = VM.objs,
   gset(VM.objs)=[],
   filter_library(Library1,Library),
-  pp(library=Library),
+  %pp(library=Library),
   print_grid(library,Library),
   (Library=[_|_]->my_maplist(add_shape_lib(pairs),Library);true),
   OGrid = VM.start_grid,
@@ -202,7 +203,7 @@ mono_i_to_o_is_none_some_none_in(VM):-
   globalpoints(RGroup,UsedPoints),
   intersection(OPoints,UsedPoints,_,LeftOver,_),
   gset(VM.lo_points) = LeftOver,
-  pp(objs = VM.objs),
+  %print_grid(objs, VM.objs),
   %LeftOver = VM.lo_points,
   points_to_grid(VM.h,VM.v,LeftOver,Grid),
   gset(VM.grid)=Grid,
@@ -445,8 +446,8 @@ maybe_optimize_objects(InC00,OutC00,InCR,OutCR):-
   maybe_fix_group(OutC0,OutCRFGBG),
   mostly_fg_objs(InCRFGBG,InCR),
   mostly_fg_objs(OutCRFGBG,OutCR),
-  show_changes(InC0,InCR),
-  show_changes(OutC0,OutCR))))))),ran_collapsed)),
+  nop((show_changes(InC0,InCR),
+  show_changes(OutC0,OutCR))))))))),ran_collapsed)),
    ((InC00\=@=InCR;OutC00\=@=OutCR),(InCR\==[],OutCR\==[])),!,
   write(S).
 
@@ -1265,20 +1266,27 @@ nsew_2(VM):-
   nsew_2(VM),!.
 nsew_2(_).
 
+overlapping_points(PointsRest,CantHave):- member(P1,PointsRest),member(P1,CantHave).
 
 % =====================================================================
 is_fti_step(colormass_3).
 % =====================================================================
+%colormass_3(_VM):- !.
 colormass_3(VM):- 
+  globalpoints(VM.objs,CantHave),
   Points = VM.lo_points,
-  select(C-P1,Points,Points1),
+  intersection(CantHave,Points,_RemoveThese,_,KeepThese),
+  select(C-P1,KeepThese,Points1),
   member(Nsew,[s,e]),
   is_adjacent_point(P1,Nsew,P2),
   select(C-P2,Points1,PointsRest),
   FirstTwo = [C-P1,C-P2],
-  all_individuals_near(_SkipVM,Nsew,nsew,C,FirstTwo,PointsRest,LeftOver,GPoints),!,
+  %\+ overlapping_points(FirstTwo,CantHave),
+  all_individuals_near(_SkipVM,Nsew,nsew,C,FirstTwo,PointsRest,LeftOver,GPoints),
+  %\+ overlapping_points(GPoints,CantHave),!,
   append(FirstTwo,GPoints,IndivPoints),
   sort(IndivPoints,IndivPointSet),
+  print_ss(cm3,VM.objs,IndivPointSet),
   length(IndivPointSet,Len),Len>=3,
   \+ (member(C-P3,IndivPointSet),member(C-P4,LeftOver),is_adjacent_point(P3,Card,P4),n_s_e_w(Card)),
   make_indiv_object(VM,[iz(type(colormass)),iz(media(shaped)),birth(colormass_3)],IndivPointSet,NewObj),
@@ -2206,7 +2214,7 @@ into_fti(ID,ROptions,GridIn0,VM):-
    % Original copies of Grid and point representations
    start_grid:Grid, 
    ngrid:_,
-%=%   rule_dir: ROptions,
+   rule_dir: ROptions,
    start_points:Points, % repaired:[],
    % objects found in grid and object that are reserved to not be found
    objs:[],  robjs:Reserved, % objs_prev:[],
