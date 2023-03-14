@@ -1678,7 +1678,7 @@ externalize_links(grp(Grp),Obj,NewObj):-
    maplist(externalize_links(obj_grp(O1L,Grp)),O1L,NewList), 
    NewObj=obj(NewList).
 
-externalize_links(obj_grp(O1L,Grp),link(C,A),elink(C,Ext)):- !, externalize_obj(obj_grp_link(O1L,Grp,C),A,Ext).
+%externalize_links(obj_grp(O1L,Grp),link(C,A),elink(C,Ext)):- !, externalize_obj(obj_grp_link(O1L,Grp,C),A,Ext).
 externalize_links(obj_grp(_O1L,_Grp),A,A).
 
 externalize_obj(obj_grp_link(O1,_Grp, C),OID2,Ext):- 

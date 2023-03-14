@@ -1057,6 +1057,8 @@ skip_prior(HAD):- compound_name_arity(HAD,_,N),!,N>1.
 add_uset_priors([],Objs,Objs):-!.
 add_uset_priors([HAD|Lbls],Objs,WithPriors):-
   skip_prior(HAD), !, add_uset_priors(Lbls,Objs,WithPriors).
+add_uset_priors([HAD|Lbls],Objs,WithPriors):-
+  skip_prior(HAD), !, add_uset_priors(Lbls,Objs,WithPriors).
 
 add_uset_priors([HAD|Lbls],Objs,WithPriors):-  
  must_det_ll((
@@ -1081,9 +1083,10 @@ add_prior_info(Common,VersionsByOccurances,(List),(NewList)):-
 
 add_prior_info_1(_Common,VersionsByOccurances,PropList,OUT):- is_list(PropList),
   length(VersionsByOccurances,Max), Max>1,
-  must_det_ll((
-  find_version(VersionsByOccurances,Prop,N1,N2,PropList),
-  append(PropList,[pg(Max,Prop,N1,N2)],OUT))),!.
+  append(Left,[PropL|Right],PropList),
+  find_version(VersionsByOccurances,Prop,N1,N2,PropL),
+  \+ sub_compound(pg(Max,Prop,_,_),PropList),
+  append(Left,[pg(Max,Prop,N1,N2),Prop,Right],OUT),!.
 
 add_prior_info_1(_Common,_VersionsByCount,PropList,PropList).
 
@@ -1286,7 +1289,7 @@ variance_had_counts(Common,HAD,RRR,Versions,Missing,VersionsByCount,Variance):-
   length(Missing,ML),
   findall(UHAD,(member(RR,RRR), indv_props_list(RR,R), member(UHAD,R)),VersionL),
   predsort(using_compare(numbered_vars),VersionL,VersionSet),
-  some_min_unifier(VersionSet,Common),nonvar(Common),
+  some_min_unifier_cc(VersionSet,Common),nonvar(Common),
   predsort(using_compare(version_magnitude),VersionSet,VersionSetOrdered),
   lists:number_list(VersionSetOrdered,1,VersionSetNumberedVK),
   maplist(swap_vk,VersionSetNumberedVK,VersionSetNumbered),
@@ -1297,6 +1300,9 @@ variance_had_counts(Common,HAD,RRR,Versions,Missing,VersionsByCount,Variance):-
   ->(Versions = VersionSetOrdered, vesion_uniqueness2(CountOfEachNumbered,VersionsByCount))
   ; (Versions=[(\+(UHAD))|VersionSetOrdered],vesion_uniqueness2([ML-(0- \+(UHAD))|CountOfEachNumbered],VersionsByCount))),
   length(Versions,Variance))).
+
+some_min_unifier_cc([],[]):-!.
+some_min_unifier_cc(A,B):- some_min_unifier(A,B).
 
 /*
 variance_had(HAD,RRR,Versions,Variance):-
@@ -1541,6 +1547,7 @@ variant_member(E,List):- member(V,List),E=@=V,!.
 
 make_unifiable_cc(cc(C,N),cc(_,N)):- is_real_color(C),!.
 make_unifiable_cc(cc(N,_),cc(N,_)):-!.
+make_unifiable_cc(oid(_),oid(_)):-!.
 make_unifiable_cc(recolor(_,N),recolor(_,N)):-!.
 make_unifiable_cc(iz(symmetry_type(N)),iz(symmetry_type(N))):- nonvar(N),!.
 make_unifiable_cc(pg(N,G,_,_),pg(N,UG,_,_)):-!,make_unifiable_cc(G,UG).
