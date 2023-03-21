@@ -553,15 +553,16 @@ related_how(subsumed_by(Offset,OverlapP),O1,O2,Ps1,Ps2,Overlap,P1L,_P2L):- Overl
 related_how(   subsumed(Offset,OverlapP),O1,O2,Ps1,Ps2,Overlap,_P1L,P2L):- Overlap\==[],P2L==[],
   length(Ps1,Len1),length(Ps2,Len2), OverlapP = rational(Len2/Len1), object_offset(O2,O1,Offset).
 
-sees_dir(s,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SY1 >= EY2, D is SY1-EY2.
-sees_dir(n,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SY2 >= EY1, D is SY2-EY1.
-sees_dir(e,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 >= EX2, D is SX1-EX2.
-sees_dir(w,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX2 >= EX1, D is SX2-EX1.
+sees_dir(n,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SY1 >= EY2, D is SY1-EY2.
+sees_dir(s,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SY2 >= EY1, D is SY2-EY1.
+sees_dir(w,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 >= EX2, D is SX1-EX2.
+sees_dir(e,D,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX2 >= EX1, D is SX2-EX1.
 
 related_how2(sees(DirsDists),O1,O2,Ps1,Ps2,Overlap,P1L,
   SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   findall(cc(Dir,Dist),(sees_dir(Dir,Dist,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2),Dist<3),DirsDists), 
    DirsDists\==[].
+
 
 %related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 < SX2, SY1 < SY2, EX2 < EX1, EY2 < EY1, How = contained_by(engulfed).
 related_how2(contained_by,O1,O2,Ps1,Ps2,Overlap,P1L,

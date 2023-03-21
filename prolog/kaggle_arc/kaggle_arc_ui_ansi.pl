@@ -100,18 +100,26 @@ arc_portray(G, TF):- catch(arc_portray_nt(G, TF),E,(writeln(E),never_let_arc_por
 % Portray In Debugger
 
 arc_portray_nt(G, false):- is_grid(G), print_grid(G),!.
-arc_portray_nt(G0, true):- is_group(G0), ppt(G0),!.
+%arc_portray_nt([G|L],_False):- is_object(G), !, pp([G|L]).
+%arc_portray_nt(G0, true):- is_group(G0), ppt(G0),!.
 %arc_portray_nt(G0, false):- is_group(G0), ppt(G0),!.
-arc_portray_nt(G0, false):- is_group(G0), into_list(G0,G), length(G,L),% L>1, !,
-   dash_chars, 
-   once(((why_grouped(_TestID,Why,WG),WG=@=G,fail);(Why = (size2D=L)))),!,
-   print_grid(Why,G),nl_now,
-   %underline_print(writeln(Why)),
-   print_info_l(G),
-   dash_chars.
+arc_portray_nt(G0, Tracing):- is_group(G0), into_list(G0,G), length(G,L),% L>1, !,
+   maplist(tersify,G0,GG), write(GG),
+   if_t(Tracing==false,
+    in_cmt((
+     dash_chars, 
+     once(((why_grouped(_TestID,Why,WG),WG=@=G,fail);(Why = (size2D=L)))),!,
+     print_grid(Why,G),nl_now,
+     
+     %underline_print(writeln(Why)),
+     %print_info_l(G),
+     dash_chars))).
 
 
-arc_portray_nt(G,_False):- is_object(G), wots(S,ppt(G)), show_indiv(S,G).
+arc_portray_nt(G,_False):- is_object(G), wots(S,writeg(G)),
+  global_grid(G,GG),!,
+  print_grid(GG),
+  write(S),!. % show_indiv(S,G).
   %object_grid(G,OG), 
   %neighbor_map(OG,NG), !,
   %print_grid(object_grid,NG),nl_now,
@@ -1884,6 +1892,7 @@ correct_nbsp(S0,S):- replace_in_string([" &nbsp;"="&nbsp;","&nbsp; "="&nbsp;"],S
 
 %ansi_format_real(Ansi,Format,Args):- wants_html,!,sformat(S,Format,Args),!,color_print_webui(Ansi,S).
 %ansi_format_real(Ansi,Format,Args):- ansicall(Ansi,format(Format,Args)),!.
+ansi_format_real(fg(fg(Ansi)),Format,Args):- !, ansi_format(fg(Ansi),Format,Args).
 ansi_format_real(Ansi,Format,Args):- ansi_format(Ansi,Format,Args).
 
 

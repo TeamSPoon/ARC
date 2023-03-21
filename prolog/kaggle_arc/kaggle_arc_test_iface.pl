@@ -2282,7 +2282,7 @@ uses_test_id(P1):- clauses_predicate(M:F/N,P),
                    once((\+ indicates_arg1_testid(F),             
                    \+ \+ (clause(M:P,GG),first_cmpd_goal(GG,G),compound(G),functor(G,GF,_),
                           \+ \+ indicates_arg1_testid(GF),
-                          arg(1,P,Var1),arg(1,G,Var2),Var1==Var2),
+                          compound(P),arg(1,P,Var1),arg(1,G,Var2),Var1==Var2),
                    N1 is N-1, functor(P1,F,N1),
                    \+ predicate_property(M:P1,static))).
 scan_uses_test_id:- forall((uses_test_id(P1),atom(P1)),assertz_if_new(user:(P1:- with_current_test(P1)))).

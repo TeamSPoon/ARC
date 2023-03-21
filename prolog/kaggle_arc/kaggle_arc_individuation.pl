@@ -81,10 +81,16 @@ individuation_macros(complete, ListO):-
 
 i_minus_o_equals_none_o_minus_i_equals_some:- i_minus_o_equals_none,o_minus_i_equals_some.
 
-im_complete(i_to_o_is_none_some_some):- i_minus_o_equals_none_o_minus_i_equals_some,!.
-im_complete(mono_i_to_o_is_none_some_none):- mono_i_to_o_is_none_some_none,!.
-im_complete(ListO):- test_config(indiv(ListO)), [i_repair_patterns]\=@= ListO,[i_repair_patterns_f]\=@= ListO,[any]\= ListO,['']\= ListO,''\= ListO,!.
-im_complete(i_complete_generic).
+im_complete(do_im_complete).
+
+is_fti_step(do_im_complete).
+
+do_im_complete(VM):- is_im_complete(Info), run_fti(VM,Info).
+  
+is_im_complete(i_to_o_is_none_some_some):- i_minus_o_equals_none_o_minus_i_equals_some,!.
+is_im_complete(mono_i_to_o_is_none_some_none):- mono_i_to_o_is_none_some_none,!.
+is_im_complete(ListO):- test_config(indiv(ListO)), [i_repair_patterns]\=@= ListO,[i_repair_patterns_f]\=@= ListO,[any]\= ListO,['']\= ListO,''\= ListO,!.
+is_im_complete(i_complete_generic).
 %im_complete(ListO):- ListO=[nsew,all_lines,diamonds,do_ending].
 %im_complete([i_repair_patterns]):- get_current_test(TestID),is_symgrid(TestID),!.
 %im_complete(i_repair_patterns):-!.
@@ -93,7 +99,7 @@ is_output_vm(VM):- VM.id=(_>(trn+N)*out),!,integer(N).
 is_input_vm(VM):- VM.id=(_>(trn+N)*in),!,integer(N).
 
 
-mass_gtt(Two,O):- globalpoints(O,GP),length(GP,Len),Len>Two.
+fg_mass_geq(Two,O):- globalpoints(O,GP),include(is_fg_point,GP,FG), length(FG,Len),Len>=Two.
 % =====================================================================
 is_fti_step(i_to_o_is_none_some_some).
 % =====================================================================
@@ -150,31 +156,32 @@ i_to_o_is_none_some_some_in(VM):-
 % =====================================================================
 is_fti_step(mono_i_to_o_is_none_some_none).
 % =====================================================================
-mono_i_to_o_is_none_some_none(VM):-
-  is_output_vm(VM),!,
-  run_fti(VM,generic_nsew_colormass).
 
 mono_i_to_o_is_none_some_none(VM):- \+ is_output_vm(VM),!,mono_i_to_o_is_none_some_none_in(VM),!.
 mono_i_to_o_is_none_some_none(VM):-
   is_output_vm(VM),!,
+  must_det_ll((
+  current_pair(I,_O),
   o_minus_i(NewGrid), 
   set_vm_grid_now(VM,NewGrid),
   run_fti(VM,generic_nsew_colormass),
-  current_pair(I,_O),
   set_vm_grid_now(VM,I),
-  mono_i_to_o_is_none_some_none_in(VM).
+  gset(VM.grid)=I,
+  gset(VM.start_grid)=I,
+  mono_i_to_o_is_none_some_none_in(VM))).
 
 filter_library(Library1,Library):- 
-  remove_background_only_object(Library1,Library2),
-  include(mass_gtt(2),Library2,Library3),!,
-  include(is_fg_object,Library3,Library).
+  must_det_ll((remove_background_only_object(Library1,Library2),
+  include(fg_mass_geq(3),Library2,Library))),
+%  include(is_fg_object,Library3,Library).
+  !.
 
 mono_i_to_o_is_none_some_none_in(VM):-
  ignore(keypads(VM)),
  length(VM.lo_points,LenMass),
+ OObjs = VM.objs,
  if_t(LenMass>0,
   must_det_ll((
-  OObjs = VM.objs,
   o_minus_i(Zero), \+ no_fg_mass(Zero),
   grid_to_points(Zero,Points),
   gset(VM.grid)=Zero,% individuate(i_colormass,Zero,Library),
@@ -186,7 +193,7 @@ mono_i_to_o_is_none_some_none_in(VM):-
   filter_library(Library1,Library),
   %pp(library=Library),
   print_grid(library,Library),
-  (Library=[_|_]->my_maplist(add_shape_lib(pairs),Library);true),
+  nop((Library=[_|_]->my_maplist(add_shape_lib(pairs),Library);true)),
   OGrid = VM.start_grid,
   OPoints = VM.start_points,
   gset(VM.grid)=OGrid,
@@ -210,6 +217,8 @@ mono_i_to_o_is_none_some_none_in(VM):-
   print_ss(afterHybrid,Grid,VM.objs),
   run_fti(VM,generic_nsew_colormass)))),!.
 
+mono_i_to_o_is_none_some_none_in(VM):- itrace,
+  run_fti(VM,generic_nsew_colormass).
   
 
 
@@ -273,6 +282,33 @@ do_indivizer_number(N):-
 
 individuation_macros(nsew_bg,[
   with_mapgrid([fgc_as_color(plain_var),bgc_as_color(zero),plain_var_as(black)],'_nsew_bg',[nsew,alone_dots,lo_dots])]).
+
+
+indiv_how( indv_opt(Flags)):-
+      toggle_values([bground,diags,mono,shape,boxes,parts],Flags).
+toggle_values([N|Names],[V|Vars]):- toggle_values(Names,Vars), toggle_val(N,V).
+toggle_values([],[]).
+toggle_val(Lst,V):- is_list(Lst),!,member(V,Lst).
+toggle_val(N,V):- member(TF,[false,true]), V =..[N,TF].
+
+
+is_fti_step(set_indv_flags).
+set_indv_flags(X,_VM):- set_indv_flags(X),!.
+set_indv_flags(X):- is_list(X),!,maplist(set_indv_flags,X).
+set_indv_flags(NV):- NV=..[N,V],assert(indv_flag(N,V)). 
+
+is_fti_step(which_tf).
+which_tf(Name,True,False,VM):- (indv_flag(Name,true)->run_fti(VM,True);run_fti(VM,False)).
+
+is_fti_step(nop).
+
+individuation_macros(indv_opt(Flags), 
+ [set_indv_flags(Flags),which_tf(mono,fg_shapes(TODO),TODO)]):- 
+ TODO = [ %bg_shapes(nsew),
+           which_tf(shape,do_im_complete,nop),
+           which_tf(diags,colormass,nsew),
+           which_tf(boxes,pbox_vm_special_sizes,nop),
+           which_tf(bground,remove_if_prop(cc(fg,0)),nop)].
 
 
 individuation_macros(i_complete_generic333, 
@@ -475,19 +511,21 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCB,OutCB):-
   as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1), xfer_zeros(GridIn1,GridOut1), 
   print_side_by_side(yellow,GridIn1,ngridIn(ROptions,ID1,PairName),_,GridOut1,ngridOut(ID2)),
   %trace,
+  grid_size(GridIn,IX,IY),grid_size(GridOut,OX,OY),
+  print_side_by_side(green,print_grid(IX,IY,InCB),before_rm_bg(ROptions,ID1,PairName),_,print_grid(OX,OY,OutCB),before_rm_bg(ID2)),
   remove_background_only_object(InCB,InC),remove_background_only_object(OutCB,OutC),
   %pp(InC),
-  print_side_by_side(green,InC,objs(ROptions,ID1),_,OutC,objs(ID2)),
+  print_side_by_side(green,InC,after_rm_bg(ROptions,ID1),_,OutC,objs(ID2)),
 
   if_t( \+ nb_current(menu_key,'i'),
 ((((((
-  if_wants_output_for(show_interesting_props, 
-   show_interesting_props(PairName,InC,OutC)),
-  show_indivs_side_by_side(inputs,InC),show_indivs_side_by_side(outputs,OutC),
+   show_indivs_side_by_side(inputs,InC),show_indivs_side_by_side(outputs,OutC),
   %w_section(show_io_groups,show_io_groups(green,ROptions,ID1,InC,ID2,OutC)),
   %show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
   =(InCR,InC), =(OutCR,OutC),
+    print_side_by_side(green,InC,lhs(ROptions,ID1),_,OutC,rhs(ROptions,ID2)),
  true))),
+
  (((
   banner_lines(orange), %visible_order(InC,InCR),
  if_t( once(true; \+ nb_current(menu_key,'i')),
@@ -510,7 +548,10 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCB,OutCB):-
        nop(pp(RulesUsed)),
        banner_lines(orange,2))))))))),
 
-  banner_lines(orange,4))))))))))))),!.
+  banner_lines(orange,4))))))))))))),!,
+  if_wants_output_for(show_interesting_props,  show_interesting_props(PairName,InC,OutC)),!.
+  
+
 
 
 show_indivs_side_by_side(W,InC):- \+ wants_html,!,
@@ -1207,28 +1248,8 @@ is_fti_step(ensure_objects).
 ensure_objects(VM):-
  must_det_ll((
   if_t(\+ is_group(VM.objs),
-  (individuate(complete,VM),
-   extend_obj_proplists(VM),
-   objects_into_grid(VM))))).
-/*
-% =====================================================================
-is_fti_step(grid_to_objs).
-% =====================================================================
-grid_to_objs(VM):- 
-  run_fti(VM,[complete]),
-  extend_obj_proplists(VM),
-  Objs = VM.objs,!,
-  show_indivs_side_by_side(grid_to_objs,Objs),
-  my_maplist(pp,Objs),
-  Objs = Grp,
-  gset(VM.objs)=Grp,
-  grid_size(Grp,H,V), gset(VM.h)=H, gset(VM.v)=V,
-  globalpoints(Grp, Points),
-  gset(VM.lo_points)=Points,
-  points_to_grid(VM.h,VM.v,Points,Grid),
-  gset(VM.grid)=Grid,!.
- % set_vm_grid_now(VM,Objs),!.
-*/
+  (individuate(complete,VM))))).
+
 % =====================================================================
 is_fti_step(objects_into_grid).
 % =====================================================================
@@ -2126,6 +2147,11 @@ individuate8(VM,ID,ROptions,GridIn,IndvS):-
       %individuals_raw(VM,GH,GV,ID,NewOptions,Reserved,Points,Grid,IndvSRaw),
       run_fti(VM,ROptions), 
       remove_background_only_object(VM),
+      find_relations(VM),      
+      remove_dead_links(VM),
+      extend_obj_proplists(VM),
+      really_group_vm_priors(VM),
+      %remove_if_prop(cc(fg,0),VM),
       IndvSRaw = VM.objs,
   %as_debug(9,ppt((individuate=IndvSRaw))),
       make_indiv_object_list(VM,IndvSRaw,IndvS1),
@@ -3036,9 +3062,10 @@ is_fti_step(remove_background_only_object).
 remove_background_only_object(VM):-
   Objs = VM.objs,
   ignore((
-  is_group(Objs),length(Objs,Len),Len>1,    
+  is_group(Objs),length(Objs,Len),Len>1,
+  must_det_ll((
   remove_background_only_object(Objs,NewObjs,VM),
-  setObjects(NewObjs,VM))),!.
+  setObjects(NewObjs,VM))))),!.
 
 setObjects(NewObjs,VM):-
     VM.objs == NewObjs -> true ; gset(VM.objs)=NewObjs.
@@ -3048,14 +3075,19 @@ remove_background_only_object(Objs,NewObjs):-
 remove_background_only_object(Objs,NewObjs,VM):-
   remove_background_only_object(VM.h,VM.v,Objs,NewObjs).
 
+remove_background_only_object(H,V,Objs,NewObjs):- 
+   select(O,Objs,Mid),
+   contains_numberedvars(O),
+   !,remove_background_only_object(H,V,Mid,NewObjs).
+
 remove_background_only_object(H,V,Objs,NewObjs):-
-    select(O,Objs,NewObjs),
+    select(O,Objs,Mid),
     area(O,Area),Area>3,
     vis2D(O,OH,OV), abs(H - OH)<3, abs(V - OV)<3,
     has_prop(cc(fg,0),O),
     %has_prop(cc(plain_var,0),O),!,
     %print_ss(remove_background_only_object,[O],NewObjs),
-    !.
+    !,remove_background_only_object(H,V,Mid,NewObjs).
 remove_background_only_object(_,_,Objs,Objs):-!.
 
 % =====================================================================

@@ -183,7 +183,7 @@ reduce_1op(_Type,Len1,Half1,PassNo,GridIn, make_solid_object(Rect,H,V),OUT):-  f
 
 reduce_1op(_Type,Len1,Half1,PassNo,GridIn, make_solid_object(Rect,H,V),OUT):-  GridIn = [Row1|GridR], my_maplist(=@=(Row1),GridR),
   Row1= [C1|Row], my_maplist(=@=(C1),Row), grid_size(GridIn,H,V), once(H > 1 ; V > 1),!,
-    (H==V->(Rect=square,OUT=[[C1]]);(H>V->(Rect=rect,OUT=[[C1]]);(Rect=rect,OUT=[[C1]]))).
+    (H==V->(Rect=square,OUT=[[C1]]);(H>V->(Rect=rect,OUT=[[C1,C1]]);(Rect=rect,OUT=[[C1],[C1]]))).
 
 
 reduce_1op(_Type,Half,Len,_,[Row1|Grid],copy_row_ntimes(1,Times),[Row1]):- 
@@ -588,15 +588,21 @@ reduce_grid(AB,[],AB):-!.
 reverse_op(I,R):- reverse(I,R),!.
 reverse_op(I,[I]).
 
-reduce_grid_pair1(AB,OPS,ARBR):- \+ ground(AB), 
+contains_numberedvars(AB):- \+ \+ (sub_term(E,AB),compound(E), E='$VAR'(_)).
+
+
+reduce_grid_pair1(AB,OPS,ARBR):- \+ ground(AB),  
+ \+ contains_numberedvars(AB+OPS),
  must_det_ll((
-  protect_vars(AB,ABC,How),
+  protect_vars(AB,ABC,Unprotect),
   my_assertion(ground(ABC)),  
   reduce_grid_pair111(ABC,OPSP,ARBRP),
-  call(How,OPSP+ARBRP,OPS+ARBR),
-  nop((my_assertion((\+ (sub_term(E,OPS+ARBR),compound(E), E='$VAR'(_)))))))).
+  call(Unprotect,OPSP+ARBRP,OPS+ARBR),
+  my_assertion((\+ contains_numberedvars(AB+ARBR))))).
 
-reduce_grid_pair1(AB,OPS,ARBR):- reduce_grid_pair111(AB,OPS,ARBR),!.
+reduce_grid_pair1(AB,OPS,ARBR):- 
+  my_assertion(ground(AB)),
+  reduce_grid_pair111(AB,OPS,ARBR),!.
 
 reduce_grid_pair111(A^B,ROPA,AR^BR):-
   once((reduce_grid_pass(1,A^A,[A^A],ROPA,AR^AR),

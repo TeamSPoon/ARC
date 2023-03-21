@@ -14,21 +14,68 @@ fav(A,B):- nonvar_or_ci(A),nonvar_or_ci(B), cls1,mmake, asserta(fav(A,B),Ref),!,
 
 fav(v('p'),[dmiles]).
 
-fav(v('37d3e8b2'), 
- human_coded(
+fav(v('37d3e8b2'),
+ human(
    rule(links_count(contains,1),subst_color(fg,blue)),
    rule(links_count(contains,2),subst_color(fg,red)),
    rule(links_count(contains,3),subst_color(fg,green)),
    rule(links_count(contains,4),subst_color(fg,yellow)))).
+fav(v('37d3e8b2'),
+  indiv_h(colormass)).
+
+
+fav(v('0a2355a6'),
+ human(
+   rule(links_count(contains,1),subst_color(fg,blue)),
+   rule(links_count(contains,2),subst_color(fg,green)),
+   rule(links_count(contains,3),subst_color(fg,red)),
+   rule(links_count(contains,4),subst_color(fg,yellow)))).
+fav(v('0a2355a6'),
+  indiv_h(colormass)).
+
 
 fav(t('ea32f347'), 
- human_coded(
-   rule(pg(_,RANK1,_,1),subst_color(fg,blue)),
+ human(
+   rule(pg(_,RANK1,_,1),subst_color(fg,red)),
    rule(pg(_,RANK1,_,2),subst_color(fg,yellow)),
-   rule(pg(_,RANK1,_,3),subst_color(fg,red)) )):-
-      RANK1 = mass(_)
-      .
+   rule(pg(_,RANK1,_,3),subst_color(fg,blue)) )):-
+      RANK1 = mass(_).
+fav(v('ea32f347'),
+  indiv_h(colormass)).
+
+
+fav(t('a61f2674'), 
+ human(
+   rule(pg(_,RANK1,_,_),subst_color(fg,black)),
+   rule(pg(_,RANK1,_,1),subst_color(fg,red)),
+   rule(pg(N,RANK1,_,N),subst_color(fg,blue)) )):-
+      RANK1 = mass(_).
+fav(v('0a2355a6'),
+  indiv_h(colormass)).
   
+
+fav(t('b230c067'), 
+ human(
+   rule(pg(_,RANK1,_,_),subst_color(fg,black)),
+   rule(pg(_,RANK1,_,1),subst_color(fg,red)),
+   rule(pg(N,RANK1,_,N),subst_color(fg,blue)) )):-
+      RANK1 = mass(_).
+fav(v('b230c067'),
+  indiv_h(colormass)).
+
+
+
+fav(t('25d487eb'), 
+ hlearn(link_new_objs(sees,1))).
+
+fav(t('25d487eb'), 
+ human(
+   rule(pg(_,RANK1,_,_),subst_color(fg,black)),
+   rule(pg(_,RANK1,_,1),subst_color(fg,red)),
+   rule(pg(N,RANK1,_,N),subst_color(fg,blue)) )):-
+      RANK1 = mass(_).
+fav(v('25d487eb'),
+  indiv_h(colormass)).
 
 
 

@@ -1,39 +1,40 @@
 {
-  "files.exclude": {
-    "**/.git": false,
-    "**/.svn": false,
-    "**/.hg": false,
-    "**/CVS": false,
-    "**/.DS_Store": true,
-    "**/Thumbs.db": true,
-    "**/.git/objects/**": false,
-    "**/*~": false,
-    "**/*~/**": false,
-    "**/~*": false,
-    "**/~*/**": false,
-    "BFLY0": false,
-    "BFLY1": false,
-    "butterfly_web": false,
-    "prolog2": false,
-    "**/ImportantDocs": false,
-    "prolog\\kaggle_arc\\**": false,
-    "prolog/kaggle_arc/ddd": false,
-    "prolog/kaggle_arc": false
-  },
-  "editor.tabCompletion": "on",
-  "diffEditor.codeLens": true,
-  "doxide.openAI.apiKey": "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",
-  "codex.apiKey": "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",
-  "codex.completionEngineEnabled": true,
-  "r.lsp.debug": true,
-  "editor.formatOnType": true,
-  "editor.quickSuggestions": {
-    "other": "on",
-    "comments": true,
-    "strings": "off"
-  },
-  "hide-files.files": [
-    "prolog/kaggle_arc/ddd",
-    "prolog/kaggle_arc"
-  ]
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/.git/objects/**": true,
+        "**/*~": true,
+        "**/*~/**": true,
+        "**/~*": true,
+        "**/~*/**": true,
+        "BFLY0": true,
+        "BFLY1": true,
+        "butterfly_web": true,
+        "prolog2": true,
+        "**/ImportantDocs": true,
+        "prolog\\kaggle_arc\\**": true,
+        "prolog/kaggle_arc/ddd": true,
+        "prolog/kaggle_arc": true
+    },
+    "editor.tabCompletion": "on",
+    "diffEditor.codeLens": true,
+    "doxide.openAI.apiKey": "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",
+    "codex.apiKey": "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",
+    "codex.completionEngineEnabled": true,
+    "r.lsp.debug": true,
+    "editor.formatOnType": true,
+    "editor.quickSuggestions": {
+        "other": "on",
+        "comments": true,
+        "strings": "off"
+    },
+    "hide-files.files": [
+        "prolog/kaggle_arc/ddd",
+        "prolog/kaggle_arc"
+    ],
+    "workspace.isHidden": true
 }

@@ -632,6 +632,7 @@ min_unifier_e(A,B,C):- min_unifier(A,B,C),nonvar(C),!.
 %min_unifier_e(B,A,C):- compound(B),maybe_extract_values(B,BB), \+ maybe_extract_values(A,_), c_proportional(A,BB,AABB),must_min_unifier(AABB,B,C),!.
 min_unifier_e(_,_,_).
 
+some_min_unifier(X,X):- \+ compound(X),!.
 some_min_unifier([A|List],Term):- some_min_unifier_3(A,List,Term).
 
 some_min_unifier_3(A,List,A):- my_maplist('=@='(A),List),!.
@@ -777,12 +778,13 @@ disguise_row(I,O):- O=..[row|I].
 %ensure_how(How):- var(How),!,member(How,[whole,i_pbox]).
 %ensure_how(How):- var(How),!,member(How,[whole,complete,i_pbox]).
 %ensure_how(How):- var(How),!,member(How,[whole,i_pbox,fg_shapes(nsew)]).
-ensure_how(How):- var(How),!,member(How,[nsew,fg_shapes(nsew),colormass,fg_shapes(colormass),force_by_color,alone_dots]).
+ensure_how(How):- var(How),!,indiv_how(How).
 ensure_how(_How).
 
+
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,_,Obj),List),list_to_set(List,Objs).
-grid_to_objs(Grid,Objs):- ensure_grid(Grid),individuate(complete,Grid,Objs).
-grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(How),individuate(How,Grid,Objs).
+grid_to_objs(Grid,Objs):- grid_to_objs(Grid,complete,Objs).
+grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(How),in_cmt(individuate(How,Grid,Objs)).
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,complete,Obj),List),list_to_set(List,Objs).
 %grid_to_obj(Grid,Obj):- grid_to_objs(Grid,Objs),member(Obj,Objs).
 
@@ -1084,22 +1086,23 @@ illegal_column_data(In,Color,BorderNums):-
 save_the_alt_grids(TestID):- 
  forall(ensure_test(TestID),
   forall(kaggle_arc(TestID,ExampleNum,I,O),
-    once(save_the_alt_grids(TestID,ExampleNum,[],I,O)))).
+    once(save_the_alt_grids(TestID,ExampleNum,[],I,O)))),!.
 
 save_the_alt_grids(TestID,ExampleNum):-
   arc_test_property(TestID,ExampleNum,has_blank_alt_grid,_),!.
 save_the_alt_grids(TestID,ExampleNum):- 
   forall(kaggle_arc(TestID,ExampleNum,I,O),
-    once(save_the_alt_grids(TestID,ExampleNum,[],I,O))).
+    once(save_the_alt_grids(TestID,ExampleNum,[],I,O))),!.
 
 save_the_alt_grids(TestID,ExampleNum,_,_,_):- arc_test_property(TestID,ExampleNum,iro(_),_),!.
 save_the_alt_grids(TestID,ExampleNum,XForms,In,Out):- same_sizes(In,Out),!,
-  save_the_alt_grids_now(TestID,ExampleNum,XForms,In,Out).
-save_the_alt_grids(TestID,ExampleNum,XForms,In,Out):-
-  some_norm(In,OpI,NIn), some_norm(Out,OpO,NOut), 
-  once(NIn\=@=In;NOut\=@=Out),
-  same_sizes(NIn,NOut),!,
-  save_the_alt_grids_now(TestID,ExampleNum,[ops(OpI,OpO)|XForms],NIn,NOut).
+  save_the_alt_grids_now(TestID,ExampleNum,XForms,In,Out),!.
+save_the_alt_grids(TestID,ExampleNum,XForms,In,Out):- fail,
+  once((some_norm(In,OpI,NIn), print_ss(some_norm(OpI),In,NIn),
+  some_norm(Out,OpO,NOut), print_ss(some_norm(OpO),Out,NOut), 
+  same_sizes(NIn,NOut),
+  once(NIn\=@=In;NOut\=@=Out))),
+  save_the_alt_grids_now(TestID,ExampleNum,[ops(OpI,OpO)|XForms],NIn,NOut),!.
 save_the_alt_grids(TestID,ExampleNum,_XForms,In,Out):- 
   assert_test_property(TestID,ExampleNum,iro(none),In),
   assert_test_property(TestID,ExampleNum,ori(none),Out),!.
@@ -1153,9 +1156,11 @@ save_grid_calc(TestID,ExampleNum,XForms,In,Out,Op):-
 
 same_sizes([I|In],[O|Out]):- length(I,Cols),length(O,Cols),length(In,Rows0),length(Out,Rows0).
 
+
+some_norm(Out,[trim_to_rect|Op],NOut):- notrace((trim_to_rect(Out,Mid),Out\=@=Mid)),!,some_norm(Out,Op,NOut).
+some_norm(Out,[grav_rot(Rot)],NOut):- once(grav_rot(Out,Rot,NOut)),Out\=@=NOut,!.
 some_norm(Out,[],Out).
-some_norm(Out,[trim_to_rect|Op],NOut):- notrace((trim_to_rect(Out,Mid),Out\=@=Mid)),some_norm(Out,Op,NOut).
-some_norm(Out,[grav_rot(Rot)],NOut):- grav_rot(Out,Rot,NOut),!.
+
 
 has_blank_alt_grid(TestID,ExampleNum):- blank_alt_grid_count(TestID,ExampleNum,N),N>0.
 

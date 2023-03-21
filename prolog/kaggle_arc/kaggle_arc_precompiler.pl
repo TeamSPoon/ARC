@@ -27,9 +27,9 @@ must_det_ll_maplist(P2,[HA|TA],[HB|TB]):- must_det_ll(call(P2,HA,HB)), must_det_
 must_det_ll_maplist(_,[],[],[]):-!.
 must_det_ll_maplist(P3,[HA|TA],[HB|TB],[HC|TC]):- must_det_ll(call(P3,HA,HB,HC)), must_det_ll_maplist(P3,TA,TB,TC).
 
-must_det_ll(G):- !, once((notrace(G)*->true;must_det_ll_failed(G))).
+%must_det_ll(G):- !, once((notrace(G)*->true;must_det_ll_failed(G))).
 must_det_ll(G):- notrace(arc_html),!, ignore(notrace(G)),!.
-must_det_ll(G):- tracing,!, once((call(G)*->true;must_det_ll_failed(G))).
+must_det_ll(G):- tracing,!, call(G). % once((call(G)*->true;must_det_ll_failed(G))).
 %must_det_ll(X):- !,must_not_error(X).
 must_det_ll((X,Goal)):- is_trace_call(X),!,call((itrace,Goal)).
 must_det_ll(X):- is_trace_call(X),!,itrace.
@@ -68,7 +68,7 @@ must_det_ll1(X):-
 %must_not_error(G):- must(once(G)).
 
 must_not_error(G):- tracing,!,call(G).
-must_not_error(G):- is_cgi,!, catch(notrace(G),E,((u_dmsg(E=G)))).
+must_not_error(G):- is_cgi,!, catch((G),E,((u_dmsg(E=G)))).
 must_not_error(X):- \+ nb_current(cant_rrtrace,t),is_guitracer,!, call(X).
 must_not_error(X):- catch(X,E,(always_rethrow(E)-> throw(E);(/*arcST,*/writeq(E=X),pp(etrace=X),
   rrtrace(visible_rtrace([-all,+exception]),X)))).
