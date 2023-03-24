@@ -725,7 +725,8 @@ ansi_startup:-
 :- luser_default(no_diags,false).
 :- luser_default(no_individuator, f).
 :- luser_default(grid_size_only,true).
-:- luser_default(cmd,test_easy).
+%:- luser_default(cmd,test_easy).
+:- luser_default(cmd,learn_ilp).
 :- luser_default(cmd2,print_all_info_for_test).
 %:- luser_default(cmd2,test_show_grid_objs).
 :- luser_default(use_individuated_cache,true).
@@ -849,7 +850,7 @@ create_group_dmiles:- must_det_ll((create_group(dmiles,[
               'e41c6fd3','ea32f347',
               '37d3e8b2','0a2355a6',
               'a79310a0',
-              
+              '33b52de3',
               '1b60fb0c','1d398264',
               '0d3d703e','626c0bcc',
               '5582e5ca','25d487eb',

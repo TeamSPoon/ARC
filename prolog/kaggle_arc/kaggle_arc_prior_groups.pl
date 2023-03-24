@@ -245,7 +245,7 @@ test_grouped(TestID,ExampleNum,I,O):-
 
 
 :- thread_local(t_l:objs_others/4).
-show_interesting_props(Named,OutC,InC):-
+show_interesting_props(Named,InC,OutC):-
  must_det_ll((
   extend_grp_proplist(InC,ObjsI),
   extend_grp_proplist(OutC,ObjsO),
@@ -2210,169 +2210,400 @@ set_rank(OG,GType,ZType,L,N,Obj):-
 :- ignore(muarc:clear_all_caches).
 :- luser_setval(use_individuated_cache,false).
 
+
+
+read_terms_from_atom(D,Atom):-
+  open_string(Atom,Stream),
+  repeat,
+   read_term(Stream,D,[]),
+   ((D == end_of_file) -> !, fail ; true).
+
 %learn_ilp:- ensure_test(TestID),learn_ilp(TestID).
 learn_ilp(TestID):- ensure_test(TestID),
-  abolish(is_for_ilp/4),
-  dynamic(is_for_ilp/4),
-  forall(kaggle_arc(TestID,ExampleNum,I,O),
-    once(learn_ilp(TestID,ExampleNum,I,O))),!,
-  listing(is_for_ilp/4),
-  dump_ilp_files,!.
+  must_det_ll((
+    ensure_test(TestID),
+    abolish(arc_test_properties/3),
+    dynamic(arc_test_properties/3),
+    abolish(is_for_ilp/4),
+    dynamic(is_for_ilp/4),
+    %compile_and_save_test(TestID),
+    %individuate_all_pairs_from_hints(TestID),
+    with_luser(use_individuated_cache,true, 
+     forall(kaggle_arc(TestID,ExampleNum,I,O),
+      must_det_ll(learn_ilp(TestID,ExampleNum,I,O)))),!,
+    listing(is_for_ilp/4),
+    dump_ilp_files)),!.
 
 
-learn_ilp(TestID,ExampleNum,ObjsL,ObjsR):- is_grid(ObjsL),grid_to_objs(ObjsL,ObjsLL),!,learn_ilp(TestID,ExampleNum,ObjsLL,ObjsR).
-learn_ilp(TestID,ExampleNum,ObjsL,ObjsR):- is_grid(ObjsR),grid_to_objs(ObjsR,ObjsRR),!,learn_ilp(TestID,ExampleNum,ObjsL,ObjsRR).
-learn_ilp(TestID,ExampleNum,ObjsL,ObjsR):-  
-   maplist(make_ilp(TestID,ExampleNum,lhs),ObjsL),
-   maplist(make_ilp(TestID,ExampleNum,rhs),ObjsR),!.
+learn_ilp(TestID,ExampleNum,GridIn,GridOut):-  
+ ExampleNum = (trn+_),!,
+  must_det_ll((
+    set_example_num(ExampleNum),
+    individuate_pair(complete,GridIn,GridOut,InC,OutC),
+    into_ilp_int(ExampleNum,ExampleID),
+    assert_ilp(TestID,ExampleNum,liftcover_models,begin(model(ExampleID))),
+    maplist(make_ilp(TestID,ExampleNum,lhs),InC),
+    maplist(make_ilp(TestID,ExampleNum,rhs),OutC),!,
+    assert_ilp(TestID,ExampleNum,liftcover_models,end(model(ExampleID))))).
+learn_ilp(TestID,ExampleNum,GridIn,GridOut):-  
+ ExampleNum = (tst+_),!,
+ must_det_ll((
+   set_example_num(ExampleNum),
+   individuate_pair(complete,GridIn,GridOut,InC,OutC),
+   into_ilp_int(ExampleNum,ExampleID),
+   assert_ilp(TestID,ExampleNum,_,"/*"),
+   assert_ilp(TestID,ExampleNum,liftcover_models,begin(model(ExampleID))),
+   maplist(make_ilp(TestID,ExampleNum,lhs),InC),
+   maplist(make_ilp(TestID,ExampleNum,rhs),OutC),!,
+   assert_ilp(TestID,ExampleNum,liftcover_models,end(model(ExampleID))),
+   assert_ilp(TestID,ExampleNum,_,"*/"))).
 
 into_ilp_int(Int,Int):- integer(Int),!.
-into_ilp_int(_ +Int,Int):- integer(Int).
-%   atomic_list_concat([Example,Num],'_',ExampleID),
+into_ilp_int(Example+Num,ExampleID):- % integer(Int).
+   atomic_list_concat([Example,Num],'_',ExampleID),!.
 
 assert_ilp(TestID,ExampleNum,File,Term):- pp(File=Term),!, 
-  into_ilp_int(ExampleNum,Int),!,
-  assert_if_new(is_for_ilp(TestID,Int,File,Term)),!.
+  assert_if_new(is_for_ilp(TestID,ExampleNum,File,Term)),!.
 
-safe_oid(OOID,OID):- atomic_list_concat(['o',_,Iv|List],'_',OOID),atomic_list_concat(['obj',Iv|List],'_',OID).
+safe_oid(OID,OOID):- atomic_list_concat(['o',_Glyph,Iv,_TV,_UUID,_Trn,Num,IO],'_',OID),
+                     atomic_list_concat(['obj',Num,Iv,IO],'_',OOID).
 
+
+%make_ilp(_TestID,Example+_Num,_LRSide,_Obj):- Example==tst,!.
 make_ilp(TestID,Example+Num,LRSide,Obj):-
+ must_det_ll((   
    ExampleNum = Example+Num,
-   into_ilp_int(ExampleNum,ExampleID),
-   obj_to_oid(Obj,OOID),
-   safe_oid(OOID,OID),
-   pen(Obj,[cc(Color,_)]),
-   loc2D(Obj,X,Y),
-   mass(Obj,Size),
-   Side =..[LRSide,OID],
-   assert_ilp(TestID,ExampleNum,exs,pos(zendo(ExampleID))),
-   assert_ilp(TestID,ExampleNum,bk,piece(ExampleID,OID)),
-   assert_ilp(TestID,ExampleNum,bk,Side),
-   assert_ilp(TestID,ExampleNum,bk,cenGX(OID,X)),
-   assert_ilp(TestID,ExampleNum,bk,cenGY(OID,Y)),
-   assert_ilp(TestID,ExampleNum,bk,color(OID,Color)),
-   assert_ilp(TestID,ExampleNum,bk,size(OID,Size)),!.
+   obj_to_oid(Obj,OIDUS),
+   safe_oid(OIDUS,OID),
+   %id_shape(SID,LPs),next_to_32(LPs,Shape),   
+   assert_ilp_object(TestID,ExampleNum,LRSide,Obj,OID,
+       [loc2D,rot2D,pen_color,rotSize2D(grav),vis2D,mass,iz(sid)]))).
 
+into_2arg( V1,V2,A2):- V2==true,!, A2 = V1.
+into_2arg(_V1,V2,A2):- V2==false,!, A2 = V2.
+into_2arg( V1,V2,hv(V1,V2)).
+
+ilp_object_props(_Obj,Props,OID,LRhs,iz(E),V,Pred):- append_term(E,V,P), member(iz(P),Props),!,
+   functor(P,EF,_), atomic_list_concat([LRhs,'iz',EF],'_',EFIZ), Pred=..[EFIZ,OID,V].
+ilp_object_props(_Obj,Props,OID,LRhs,iz(E),A2,Pred):- append_term(E,V1,P0), append_term(P0,V2,P), member(iz(P),Props),!,
+   functor(P,EF,_), atomic_list_concat([LRhs,'iz',EF],'_',EFIZ), Pred=..[EFIZ,OID,V1,V2],into_2arg(V1,V2,A2).
+ilp_object_props(_Obj,Props,OID,LRhs,(E),V,Pred):- E\=iz(_), append_term(E,V,P), member((P),Props),!,
+   functor(P,EF,_), atomic_list_concat([LRhs,EF],'_',EFIZ), Pred=..[EFIZ,OID,V].
+ilp_object_props(_Obj,Props,OID,LRhs,(E),A2,Pred):- E\=iz(_), append_term(E,V1,P0), append_term(P0,V2,P), member((P),Props),!,
+   functor(P,EF,_),atomic_list_concat([LRhs,EF],'_',EFIZ), Pred=..[EFIZ,OID,V1,V2],into_2arg(V1,V2,A2).
+ilp_object_props(Obj,_Props,OID,LRhs,(E),V,Pred):- E\=iz(_), append_term(E,Obj,P0),append_term(P0,V,P), call(P),!,
+  functor(P,EF,_), atomic_list_concat([LRhs,EF],'_',EFIZ),
+  append_term(E,OID,P1),append_term(P1,V,PredR),
+  PredR=..[_|PredL], Pred=..[EFIZ|PredL].
+
+
+pen_color(Obj,Color):- (pen(Obj,[cc(Color,_)])->true;(pen(Obj,PenInfo),Color=pen(PenInfo))),!.
+
+
+assert_ilp_object(TestID,ExampleNum,LRSide,Obj,OID,List):-
+ must_det_ll((
+   into_ilp_int(ExampleNum,ExampleID),
+   indv_props_list(Obj,Props),
+   if_t(LRSide==lhs, assert_ilp_typed(LRSide,TestID,ExampleNum,liftcover_models,lhs_peice(ExampleID,OID))),
+   if_t(LRSide==rhs, assert_ilp_typed(LRSide,TestID,ExampleNum,liftcover_models,rhs_peice(ExampleID,OID))),
+   maplist(ilp_object_props(Obj,Props,OID,LRSide),List,Args,PredS),
+   maplist(assert_ilp_typed(LRSide,TestID,ExampleNum,liftcover_models),PredS),
+   Side =..[LRSide,ExampleID|Args],
+   if_t(LRSide==rhs, assert_ilp_typed(LRSide,TestID,ExampleNum,exs,pos(Side))),
+   if_t(LRSide==lhs, assert_ilp_typed(LRSide,TestID,ExampleNum,bk,Side)))).
+
+next_to_32(I,O):- next_to_32s(I,M),atom_chars(O,M),!.
+next_to_32s([N32|Ints],[36|Rest]):- N32==10, !,next_to_32s(Ints,Rest),!.
+%next_to_32s([N32,N|Ints],[N|Rest]):- (N32==32;N32==109), number(N), N>31,N\==95,N<128,!,next_to_32s(Ints,Rest),!.
+%next_to_32s([N|Ints],Rest):- number(N),next_to_32s(Ints,Rest),!.
+next_to_32s([N|Ints],[N|Rest]):- number(N),next_to_32s(Ints,Rest),!.
+next_to_32s([],[]).
+next_to_32s(S,N32):- string(S),with_output_to(codes(Chars),write(S)),!,next_to_32s(Chars,N32).
+next_to_32s(S,N32):- into_grid(S,G),into_ngrid(G,SS),ngrid_to_sgrid(SS,SSS),
+ numbervars(SSS,999,_,[singletons(true)]),with_output_to(codes(Chars), write(SSS)),!,
+ next_to_32s(Chars,N32).
+
+assert_ilp_typed(LRSide,TestID,ExampleNum,File,Term):- 
+  ignore(remember_types(LRSide,TestID,Term)),
+  assert_ilp(TestID,ExampleNum,File,Term).
+
+remember_types(LRSide,TestID,pos(Term)):-!, remember_types(LRSide,TestID,Term).
+remember_types(LRSide,TestID,Term):-
+ must_det_ll((
+  compound_name_arguments(Term,F,Args),
+  compound_name_arity(Term,F,A),
+  atomic_list_concat(NameL,'_',F), reverse(NameL,NameR),
+  maplist(must_guess_types(LRSide,NameR,Term),Args,Types),
+  compound_name_arguments(TypeTerm,F,Types),
+  if_t(LRSide=rhs,assert_ilp(TestID,_,determination(0),output(F/A))),
+  if_t(LRSide=lhs,assert_ilp(TestID,_,determination(1),input_cw(F/A))),
+  if_t(LRSide=rhs,assert_ilp(TestID,_,determination(2),modeh(*,TypeTerm))),
+  if_t(LRSide=lhs,assert_ilp(TestID,_,determination(3),modeb(*,TypeTerm))),
+  !)).
+
+must_guess_types(LRSide,NameR,Term,Args,Types):- must_det_ll(guess_types(LRSide,NameR,Term,Args,Types)).
+
+guess_types(_,[peice|_],T,A,+peice):- arg(2,T,O),A==O,!.
+guess_types(_,[peice|_],_,_,+scope):-!.
+guess_types(_,_,T,A,+peice):- arg(1,T,O),A==O,!.
+guess_types(_,[mass|_],_,_,nat900).
+guess_types(_,_,_,Arg,+nat30):- integer(Arg),between(1,30,Arg),!.
+guess_types(_,_,_,Arg,+(#(color))):- is_color(Arg),!.
+%guess_types(_,_,_,Arg,+pred2):- atom(Arg),!.
+%guess_types(_,_,_,Arg,+unknown(Arg)): -compound(Arg).
+guess_types(lhs,[Type|_],_,_Arg,-Type).
+guess_types(rhs,[Type|_],_,_Arg,+Type).
+
+ngrid_to_sgrid(SS,SSS):- mapgrid(into_sarg,SS,SSS).
+into_sarg(A,A):- \+ compound(A),!.
+into_sarg(A-fg,A):-!.
+into_sarg(_-bg,bg):-!.
+into_sarg(A,A).
 
 dump_ilp_files:-
+ must_det_ll((
    get_current_test_atom(TestAtom),
    sformat(S,'out/ilp/~w',[TestAtom]),
    make_directory_path(S),
    write_ilp_file(TestID,S,bias),
    write_ilp_file(TestID,S,bk),
    write_ilp_file(TestID,S,exs),!,
+   write_ilp_file(TestID,S,metagol_ex),!,
+   write_ilp_file(TestID,S,input),!,
+   write_ilp_file(TestID,S,foil_ex),!,
+   write_ilp_file(TestID,S,liftcover_ex),!,
    wdmsg(ls(S)),
-   ls(S).
+   ls(S))).
 
 write_ilp_file(TestID,Dir,Bias):-
   sformat(S,'~w/~w.pl',[Dir,Bias]),
   setup_call_cleanup(open(S,write,Out,[]),
-    (writeln(Out,':-style_check(-discontiguous).'),
      forall(get_is_for_ilp(TestID,_,Bias,Term),
-      format(Out,'~N ~q. ~n',[Term]))),
+      output_term(Out,Term)),
     close(Out)).
 
-%max_vars(3).
-%max_body(2).
-%max_clauses(3).
-%enable_pi.
-%max_vars(3).
-%max_clauses(4).
-max_vars(6).
-max_body(5).
+:- op(500,yf,in_cmt).
+
+output_term(_,Nil):- var(Nil),!.
+output_term(_,Nil):- Nil==[],!,nl.
+output_term(_, (:- Nil)):- Nil==[],!,nl.
+output_term(_, (:- Nil)):- var(Nil),!.
+output_term(Out,Term):- \+ ground(Term),!, 
+  \+ \+ (numbervars(Term,15,_,[singletons(true)]),!,output_term(Out,Term)).
+
+output_term(Out,Term):- string(Term),!,format(Out,'~N~w~n',[Term]).
+output_term(Out,Term in_cmt):- format(Out,'~N% ~q. ~n',[Term]).
+output_term(Out,Term):- format(Out,'~N~q. ~n',[Term]).
+
+get_is_for_ilp(_,_,input, :-(D) ):- 
+   member(D,
+     [
+        (style_check(-discontiguous)),
+        (use_module(library(aleph))),
+        (if(current_predicate(use_rendering/1))),
+        (use_rendering(prolog)),
+        (endif),
+        [],
+        (aleph_set(verbosity, 1)),
+        (aleph_set(interactive, false)),
+        (aleph_set(i,4)),
+        (aleph_set(nodes,10000)),
+        [],
+        (aleph),
+        []]),
+   D\==[].
 
 
+get_is_for_ilp(_,_,input, :-(D) ):- get_is_for_ilp(_,_,determination, D ).
+
+
+get_is_for_ilp(_,_,liftcover_ex,D):- read_terms_from_atom(D, '
+
+:-use_module(library(slipcover)). 
+:-if(current_predicate(use_rendering/1)). 
+:-use_rendering(prolog). 
+:-endif. 
+:-sc. 
+
+:- set_sc(verbosity,3).
+:- set_sc(depth_bound,false).
+:- set_sc(neg_ex,given).
+
+bg([]).
+
+in([]).
+
+input_cw(incr_nat30/2).
+input_cw(color_change/2).
+
+
+determination(OF/OA,IF/IA):-
+  input_cw(IF/IA),output(OF/OA).
+
+  
+
+fold(trn_0,[trn_0]).
+fold(trn_1,[trn_1]).
+fold(trn_2,[trn_2]).
+
+').
+
+get_is_for_ilp(_,_,liftcover_ex,D):-get_is_for_ilp(_,_,determination, D ).
+
+get_is_for_ilp(_,_,determination, D ):- 
+   member(D,
+     [
+        modeh(*,rhs(+state,+nat30,+nat30,+color,+nat30,+nat30,+rotation,+nat900,+shape,+list))  in_cmt,
+        modeb(*,lhs(+state,+nat30,+nat30,#(color),+nat30,+nat30,+rotation,+nat900,+shape,+list))  in_cmt,
+        modeb(*,my_geq(+nat30,-#(nat30))) in_cmt,
+        modeb(*,my_leq(+nat30,-#(nat30))) in_cmt,
+        modeb(*,my_add(+nat30,+nat30,-nat30)) in_cmt,
+        modeb(*,my_mult(+nat30,#(nat30),-nat30))  in_cmt,
+
+        [],
+        (lazy_evaluate(my_add/3)) in_cmt,
+        (lazy_evaluate(my_geq/2)) in_cmt,
+        (lazy_evaluate(my_leq/2)) in_cmt,
+        (lazy_evaluate(my_mult/3)) in_cmt,
+        [],
+        determination(rhs/10,lhs/10) in_cmt,
+        determination(rhs/10,color_change/2),
+        determination(rhs/10,incr_nat30/2),
+        determination(rhs/10,my_geq/2) in_cmt,
+        determination(rhs/10,my_leq/2) in_cmt,
+        determination(rhs/10,my_add/3) in_cmt,
+        determination(rhs/10,my_mult/3) in_cmt,
+
+        []]),
+   D\==[].
+
+get_is_for_ilp(A,B,input, D ):- get_is_for_ilp(A,B,bias,D).
+get_is_for_ilp(A,B,input, D ):- ((D = (:-begin_bg));get_is_for_ilp(A,B,bk,D);(D = (:-end_bg))).
+get_is_for_ilp(A,B,input, D ):- ((D = (:-begin_in_pos));get_is_for_ilp(A,B,exs,D);(D = (:-end_in_pos))).
+
+get_is_for_ilp(A,B,metagol_ex, D ):- get_is_for_ilp(A,B,bias,D).
+get_is_for_ilp(A,B,metagol_ex, D ):- get_is_for_ilp(A,B,bk,D).
+get_is_for_ilp(A,B,metagol_ex, D ):- get_is_for_ilp(A,B,exs,D).
+
+%get_is_for_ilp(A,B,liftcover_ex, D ):- get_is_for_ilp(A,B,input, D ).
+get_is_for_ilp(A,B,foil_ex, D ):- get_is_for_ilp(A,B,input, D ). 
 
 get_is_for_ilp(_,_,bias,D):- 
    member(D,
-          %body_pred(zendo,1).
-          %head_pred(rhs,1).
-   [ max_body(6),max_vars(8),
-     enable_pi,
-    body_pred(rhs,1),
-    head_pred(zendo,1),
-    body_pred(piece,2),
-    body_pred(child,2),
+  [ (:-style_check(-discontiguous)),
+    max_body(6),
+    max_vars(8),
+    non_magic(4),
+    %enable_pi,
+    head_pred(rhs,10),
+    body_pred(lhs,10),
+    body_pred(child,2) in_cmt,
+ /* 
     body_pred(cenGX,2),
     body_pred(cenGY,2),
-    body_pred(size,2),
+    body_pred(mass,2),
     body_pred(color,2),
-    body_pred(lhs,1),
-    body_pred(rhs,1),
     body_pred(medium,1),
     body_pred(large,1),
     body_pred(position,3),
     body_pred(rotation,2),
-    body_pred(orientation,2),
-    body_pred(contact,2),
-    
-    type(zendo,(state)),
-    type(piece,(state,piece)),
-    type(color,(piece,color)),
-    type(size,(piece,real)),
-    type(position,(piece,real,real)),
-    type(rotation,(piece,real)),
-    type(orientation,(piece,orientation)),
-    type(contact,(piece,piece)),
-    
+    body_pred(traits,2),
+    body_pred(contact,2),*/
+    %:- clause(C), #count{V : clause_var(C,V),var_type(C,V,ex)} != 1,
+    body_pred(incr_nat30_by,3) in_cmt,
+    body_pred(incr_nat30,2),
+    body_pred(color_change,2),    
+    body_pred(my_add,3), 
+    body_pred(my_geq,2), 
+    body_pred(my_leq,2),
+    body_pred(my_mult,3),
+    bounds(my_add,1,(0,29)),
+    bounds(my_geq,1,(1,30)),
+    bounds(my_leq,1,(1,30)),
+    bounds(my_mult,1,(1,10)),
+    direction(color_change,(out,out)) in_cmt, 
+    direction(incr_nat30,(out,out)) in_cmt,
+    direction(my_add,(in,in,out)) in_cmt,
+    direction(my_geq,(in,out)) in_cmt,
+    direction(my_leq,(in,out)) in_cmt,
+    direction(my_mult,(in,out,in)) in_cmt,
+/*
+    direction(large,(out)),
+    direction(medium,(out)),
+    direction(small,(out)),
 
-    magic_value_type(color),
-    magic_value_type(orientation),
-    
-    numerical_pred(geq,2),
-    numerical_pred(leq,2),
-    
-    type(geq,(real,real)),
-    type(leq,(real,real)),
-    
-    direction(geq,(in, out)),
-    direction(leq,(in, out)),
-    
-    numerical_pred(add,3),
-    type(add,(real, real, real)),
-    direction(add,(in,in,out)),
-    
-    numerical_pred(mult,3),
-    type(mult,(real, real, real)),
-    direction(mult,(in,out,in)),
-    
-    bounds(geq,1,(1,30)),
-    bounds(leq,1,(1,30)),
-    bounds(mult,1,(1,10)),
-    bounds(add,1,(0,29)),
-
-    type(zendo,(state)),
-    type(piece,(state,piece)),
-    type(child,(piece,piece)),
-    type(cenGX,(piece,real)),
-    type(cenGY,(piece,real)),
-    type(size,(piece,real)),
-    type(small,(real)),
-    type(medium,(real)),
-    type(large,(real)),
-    type(lhs,(piece)),
-    type(rhs,(piece)),
-    direction(zendo,(in)),
-    direction(piece,(in,out)),
-    direction(color,(in,out)),
-    direction(child,(in,out)),
     direction(cenGX,(in,out)),
     direction(cenGY,(in,out)),
-    direction(size,(in,out)),
-    direction(small,(in)),
-    direction(medium,(in)),
-    direction(large,(in)),
-    direction(lhs,(in)),
-    direction(rhs,(in)),
+    direction(child,(in,out)),
+    direction(color,(in,out)),
+    direction(contact,(in,out)),
+    direction(orientation,(in,out)),
+    direction(piece,(in,out)),
     direction(position,(in,out,out)),
     direction(rotation,(in,out)),
-    direction(orientation,(in,out)),
-    direction(contact,(in,out))]).
+    direction(size,(in,out)),
+*/
+    type(my_add,(nat30, nat30, nat30)),
+    type(my_mult,(nat30, nat30, nat30)),
+    type(my_geq,(nat30,nat30)),
+    type(my_leq,(nat30,nat30)),
+    type(incr_nat30,(nat30,nat30)),
+    type(color_change,(color,color)),
+    
+   /* 
+    type(large,(nat30)),
+    type(medium,(nat30)),
+    type(small,(nat30)),*/
+    %    ExampleID, OID,   X,      Y,Color,SH,SV,RotG,Size,Shape
+ 
+    direction(rhs,(in,in,in,in,in,in,in,in,in,in)) in_cmt,
+    type(rhs,(state,nat30,nat30,color,nat30,nat30,rotation,nat900,shape,list)),
+    direction(lhs,(out,out,out,out,out,out,out,out,out,out)) in_cmt,
+    type(lhs,(state,nat30,nat30,color,nat30,nat30,rotation,nat900,shape,list)),
+
+    /*
+    type(cenGX,(piece,nat30)), type(cenGY,(piece,nat30)),
+    type(color,(piece,color)),
+    type(orientation,(piece,orientation)),
+    type(rotation,(piece,rotation)),
+    type(piece,(state,piece)),
+    type(position,(piece,nat30,nat30)),    
+    type(mass,(piece,nat900)),
+    type(contact,(piece,piece)),
+    type(child,(piece,piece)),
+    
+    */
+    %type(incr_nat30_by,(nat30,nat30,nat30)),
+    %magic_value(rhs,1),
+    %magic_value(rhs,2),
+    %magic_value(rhs,3),
+    %magic_value(rhs,4),
+    %magic_value(rhs,5),
+    %magic_value(rhs,6),
+    %magic_value_all,
+    %magic_value_type(color),
+    %magic_value_type(nat30),
+    %magic_value_type(nat900),
+    %magic_value_type(piece),
+    %magic_value_type(shape),    
+    magic_type(color),
+    magic_type(nat30),
+    magic_value_type(color),
+    magic_value_type(nat30),
+    numerical_pred(my_add,3),
+    numerical_pred(my_geq,2),
+    numerical_pred(my_leq,2),
+    numerical_pred(my_mult,3),
+
+
+    []]).
 
 get_is_for_ilp(_,_,bk,D):- 
    member(D,
-   [(:- dynamic contact/2), large(10), medium(5),small(1),
-    (my_geq(A,B) :- nonvar(A), nonvar(B), !, A>=B),
+   [ %(:- dynamic contact/2), large(10), medium(5),small(1),
+    (incr_nat30(A,B) :- nonvar(A), B is A + 1),
+    (color_change(_,_)),
+    (my_geq(A,B) :- nonvar(A), nonvar(B), !, A>=B),    
     (my_leq(A,B) :- nonvar(A), nonvar(B), !, A=<B),
     (my_add(A,B,C) :- nonvar(A), nonvar(B), integer(A), integer(B), C is A+B),
     (my_add(A,B,C) :- nonvar(A), nonvar(C), integer(A), integer(C), B is C-A),
@@ -2381,8 +2612,51 @@ get_is_for_ilp(_,_,bk,D):-
     (my_mult(A,B,C) :- nonvar(A), nonvar(C), integer(A), integer(C), \+(A=0.0), \+(A=0), B is C/A),
     (my_mult(A,B,C) :- nonvar(C), nonvar(B), integer(B), integer(C), \+(A=0.0), \+(A=0), A is C/B)]).
 
+
+get_is_for_ilp(_,_,bk,D):- read_terms_from_atom(D, '
+
+:- use_module(library(clpfd)).
+
+size(30).
+
+at_left(hv(1,_)).
+
+at_top(hv(_,1)).
+
+at_bottem(hv(_,Y)):- size(Y).
+at_right(hv(X,_)):- size(X).
+
+right(hv(X1,Y),hv(X2,Y)):-
+    size(Size),
+    X1 #< Size,
+    X2 #= X1 + 1.
+
+left(hv(X1,Y),hv(X2,Y)):-
+    X1 #> 1,
+    X2 #= X1 - 1.
+
+down(hv(X,Y1),hv(X,Y2)):-
+    size(Size),
+    Y1 #< Size,
+    Y2 #= Y1 + 1.
+
+up(hv(X,Y1),hv(X,Y2)):-
+    Y1 #> 1,
+    Y2 #= Y1 - 1.
+
+').
+
+
+get_is_for_ilp(A,B,determination, D ):- get_is_for_ilp(A,B,determination(0), D ).
+get_is_for_ilp(A,B,determination, D ):- get_is_for_ilp(A,B,determination(1), D ).
+get_is_for_ilp(A,B,determination, D ):- get_is_for_ilp(A,B,determination(2), D ).
+get_is_for_ilp(A,B,determination, D ):- get_is_for_ilp(A,B,determination(3), D ).
+get_is_for_ilp(A,B,determination, D ):- get_is_for_ilp(A,B,determination(4), D ).
+get_is_for_ilp(A,B,liftcover_ex, D ):- get_is_for_ilp(A,B,bk, D ).
+get_is_for_ilp(A,B,liftcover_ex,D):- is_for_ilp(A,B,liftcover_models,D).
 get_is_for_ilp(A,B,C,D):- is_for_ilp(A,B,C,D).
-    
+
+
 
 
 

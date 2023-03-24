@@ -65,6 +65,7 @@ gpoints_to_iv_info(Cmpd,ShapePoints,LocX,LocY,PenColors,RotG,Iv,_Overrides,[C-HV
 
 gpoints_to_iv_info(GPoints,ShapePoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPoints,Grid,OX,OY,SizeX,SizeY,CentX,CentY):-
   %points_range(GPoints,LocX,LocY,HiH,HiV,_HO,_VO), once(member(vis2D(SizeX,SizeY),Overrides);(SizeX is HiH-LocX+1,SizeY is HiV-LocY+1)),
+  must_det_ll((
   po_loc2D_vis2D(GPoints,Overrides,LocX,LocY,SizeX,SizeY),  
   deoffset_points(LocX,LocY,GPoints,LPoints),
   make_grid(SizeX,SizeY,Grid),
@@ -72,11 +73,12 @@ gpoints_to_iv_info(GPoints,ShapePoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPo
   %writeg([plPoints=PLPoints,grid=Grid]),
   add_global_points(PLPoints,Grid,Grid),
   %writeg([nowgrid=Grid]),
-
+  ShapePoints=[_|_],
   grid_to_shape(Grid,RotG,OX,OY,ShapePoints,PenColors),
+  
   %writeg([then=Grid]),
   lpoints_to_iv_info(ShapePoints,LocX,LocY,PenColors,RotG,Iv),
-  gpoints_to_center(GPoints,LocX,LocY,SizeX,SizeY,CentX,CentY).
+  gpoints_to_center(GPoints,LocX,LocY,SizeX,SizeY,CentX,CentY))).
 
 lpoints_to_iv_info(ShapePoints,LocX,LocY,PenColors,RotG,Iv):- 
   L=[ shape_rep(grav,ShapePoints),  loc2D(LocX,LocY),  pen(PenColors),  rot2D(RotG)],
@@ -104,7 +106,8 @@ real_colors(GPoints,Cs):-
 
 
 :- style_check(+singleton).
-make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):- 
+make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):- 
+ fix_point_colors(GPoints00,GPoints0),
  testid_name_num_io(GID0,TestID,Example,Num,IO),
  testid_name_num_io_gid(TestID,Example,Num,IO,GIDR),
  GID0=GID,
@@ -120,7 +123,9 @@ make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):-
   physical_points(LPoints0,LPoints),
 
   %writeg([gpoints0=GPoints0,lpoints=LPoints,shapePoints(RotG,OX,OY)=ShapePoints]),
-  if_t(ShapePoints==[],ibreak),
+  if_t(ShapePoints==[],
+    (pp([make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO),lPoints=LPoints]),
+    ibreak)),
   make_localpoints(ShapePoints,RotG,OX,OY,PenColors,_CheckLPoints),
   %sort_safe(LPoints0,LPoints0S),
   %CheckLPoints=LPoints0S,
@@ -183,6 +188,9 @@ make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO):-
      close_enough_grid(Grid,GridInCopy,LocalGrid)),ShapeNamesUF),
   flatten([ShapeNamesUF],ShapeNamesU),list_to_set(ShapeNamesU,ShapeNames),
   my_maplist(append_term(iz),ShapeNames,OShapeNames),
+
+  my_assertion(LocX=<GridH),
+  my_assertion(LocY=<GridV),
 
   % rotated local points 
   /*(memberchk(rot2D(RotOut),Overrides)-> FinalLocalPoints=LPoints;
@@ -471,8 +479,10 @@ make_indiv_object(VM,Overrides,GOPoints,NewObj):-
  %show_indiv_textinfo(NewObj),!.
 
 make_indiv_object_real(VM,Overrides,GOPoints,NewObj):-
+ 
  fix_global_offset(GOPoints,OPoints),
  must_det_ll((
+  GOPoints\==[],
   globalpoints_maybe_bg(OPoints,GPoints),
   sort_points(GPoints,Points),
   Objs = VM.objs,
@@ -507,6 +517,13 @@ grav_roll(LPoints,RotG,Shape):-
 protect_black(Grid,PGrid,UndoProtect):-
   Grid=PGrid, UndoProtect = (=).
 
+fix_point_colors(RShapeA,RShapeAR):-
+  maplist(arg(1),RShapeA,Cs),list_to_set(Cs,CCS),
+  (CCS==[bg]->subst(RShapeA,bg,black,RShapeAR);RShapeA=RShapeAR),!.
+fix_point_colors(RShapeA,RShapeA):-!.
+
+grid_to_shape([[Dot]],sameR,1,1,[point_01_01],[cc(Dot,1)]):-!.
+  
 grid_to_shape(Grid,RotG,OX,OY,ShapePoints,PenColors):-
 %  writeg([grid=Grid]),
  must_det_ll((
@@ -514,13 +531,15 @@ grid_to_shape(Grid,RotG,OX,OY,ShapePoints,PenColors):-
   grav_roll(PGrid,RotG,PRotShape),
 %  writeg([pGrid2=PGrid,pRotShape=PRotShape]),
   call(UndoProtect,PRotShape,RotShape),
-  globalpoints_include_bg(RotShape,RShapeA), 
-  physical_points(RShapeA,RShape),
-  include(ground,RShape,LShape),
- % writeg([rotShape=RotShape,rShapeA=RShapeA,lShape=LShape]),
+  globalpoints_include_bg(RotShape,RShapeA),
+  fix_point_colors(RShapeA,RShapeAR),
+  physical_points(RShapeAR,RShape),
+  include(ground,RShape,LShape),  
   grid_size(RotShape,OX,OY),
   % colors_cc 
-  my_maplist(arg(2),LShape,ShapePoints), my_maplist(arg(1),LShape,Colorz),
+  writeg([rotShape=RotShape,lShape=LShape]),
+  my_maplist(arg(2),LShape,ShapePoints), 
+  my_maplist(arg(1),LShape,Colorz),
   cclumped(Colorz,PenColors0),!,
   simplify_pen(PenColors0,PenColors))).
 
@@ -825,12 +844,21 @@ physical_points(GPoints,Points):- sub_var(wfg,GPoints),!,
 physical_points(GPoints,Points):- 
    my_partition(sub_var('$VAR'('_')),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
-physical_points(GPoints,Points):- 
-   my_partition(sub_var(bg),GPoints,BGPoints,OPoints),
+
+physical_points(GPoints,Points):- numbervars(GPoints,0,_,[singletons(true),attvars(skip)]),
+   \+ (sub_compound('$VAR'(S),GPoints),S\=='_'),
+   my_partition(sub_var('$VAR'('_')),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
+
+physical_points(GPoints,OPoints):- 
+   my_partition(sub_var(bg),GPoints,BGPoints,OPoints),
+   BGPoints\==[],OPoints\==[],!.
+
+/*
 physical_points(GPoints,Points):- 
    my_partition(sub_var(fg),GPoints,FGPoints,_),
    FGPoints\==[],!, Points = FGPoints.
+*/
 physical_points(GPoints,Points):-
    my_partition(sub_var(black),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
@@ -990,7 +1018,7 @@ oid_to_obj(OID,Obj):- oid_glyph_object(OID,_,Obj).
 
 
 %obj_to_oid(Obj,_,MyID):- obj_to_oid(Obj,MyID).
-tid_to_gid(TID,GID):- is_grid(TID),!,grid_to_gid(TID,GID).
+id_to_gid(TID,GID):- is_grid(TID),!,grid_to_gid(TID,GID).
 tid_to_gid(TID,GID):- var(TID),!,current_gid(GID).
 tid_to_gid(TID,GID):- tid_to_gids(TID,GID),!.
 
@@ -1263,6 +1291,14 @@ color_spec_or_fail(Grid,C,Hi,Vi):- hv_c_value(Grid,C2,Hi,Vi),
 %never_newd(C):- compound(C),C =(_-_), dumpST,throw(never_newd(C)).
 never_newd(_).
 
+all_points_between_include_bg(_Grid,_LowH,_LowV,_GridH,GridV,_Hi,Vi,Points,Points):- Vi>GridV,!.
+all_points_between_include_bg(Grid,LowH,LowV,GridH,GridV,Hi,Vi,PointsIn,PointsO):-
+  (Hi>GridH -> (H = LowH, V is Vi+1) ; (H is Hi +1, V = Vi )),
+   all_points_between(Grid,LowH,LowV,GridH,GridV,H,V,PointsIn,Points),
+  (((once(hv_c_value(Grid,C,Hi,Vi)), hv_point(Hi,Vi,Point))) -> 
+   (PointsO = [C-Point|Points],never_newd(C)) ; PointsO = Points).
+
+/*
 % Is there an advantage to counting down?
 all_points_between_include_bg(_Grid,_LowH,_LowV,_GridH,GridV,_Hi,Vi,Points,Points):- Vi>GridV,!.
 all_points_between_include_bg(Grid,LowH,LowV,GridH,GridV,Hi,Vi,Points,PointsO):-
@@ -1272,6 +1308,7 @@ all_points_between_include_bg(Grid,LowH,LowV,GridH,GridV,Hi,Vi,Points,PointsO):-
 
    (Hi>GridH -> (H = LowH, V is Vi+1) ; (H is Hi +1, V = Vi )),!,
    all_points_between_include_bg(Grid,LowH,LowV,GridH,GridV,H,V,PointsT,PointsO).
+*/
 
 color_spec_or_fail_include_bg(Grid,C,Hi,Vi):-
   hv_c_value(Grid,C2,Hi,Vi),
@@ -1288,9 +1325,11 @@ grid_cpoint(Grid,C-Point,Hi,Vi):- hv_c_value(Grid,C2,Hi,Vi),never_newd(C),
 
 grid_to_points(Grid,Points):- grid_size(Grid,HH,HV),!, grid_to_points(Grid,HH,HV,Points).
 % Is there an advantage to counting down?
-grid_to_points(Grid,HH,HV,Points):- all_points_between(Grid,1,1,HH,HV,1,1,[],Points),!. 
+grid_to_points(Grid,HH,HV,Points):- 
+  all_points_between(Grid,1,1,HH,HV,1,1,[],Points),!. 
 % Is there an advantage to counting down?
-grid_to_points_include_bg(Grid,Points):- grid_size(Grid,HH,HV),!,all_points_between_include_bg(Grid,1,1,HH,HV,1,1,[],Points),!. 
+grid_to_points_include_bg(Grid,Points):- grid_size(Grid,HH,HV),!,
+  all_points_between_include_bg(Grid,1,1,HH,HV,1,1,[],Points),!. 
 /*
 grid_to_points(Grid,HH,HV,Points):-  trace_or_throw(all_points_between),
   findall(C-Point,(between(1,HV,V),between(1,HH,H),
@@ -1359,7 +1398,8 @@ localpoints(I,X):- trace_or_throw(unknown(localpoints(I,X))).
 must_det_11(G):- must_det_ll(call(call,(G))).
 
 localpoints_include_bg(I,X):- must_be_free(X),  \+ is_grid(I), !, must_det_11((localpoints(I,X),is_cpoints_list(X))),!.
-localpoints_include_bg(Grid,Points):- is_grid(Grid),!, must_det_11((grid_to_points_include_bg(Grid,Points),is_cpoints_list(Points))),!.
+localpoints_include_bg(Grid,Points):- is_grid(Grid),!, 
+  must_det_11((grid_to_points_include_bg(Grid,Points),is_cpoints_list(Points))),!.
 
 
 object_grid(I,G):- is_grid(I),!,G=I.

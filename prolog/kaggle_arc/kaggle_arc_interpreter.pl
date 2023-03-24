@@ -205,17 +205,23 @@ set_vm_grid(VM,In):- w_section(debug,set_vm_grid_now(VM,In)).
 set_vm_grid_now(VM,Grp):- 
   data_type(Grp,Type),
   gset(VM.type) = data_type(Type),
-  pp(yellow,set_vm_grid_now(Type)),pp(cyan,Type),fail.
+  pp(yellow,set_vm_grid_now(Type)),pp(cyan,Type),
+  fail.
+
 set_vm_grid_now(VM,In):- VM==In,!.
-set_vm_grid_now(VM,In):- is_vm_map(In),!,map_to_grid(_Was,In,Obj,_Grid,_Closure), Obj\=@=In, !, set_vm_grid(VM,Obj).
+set_vm_grid_now(VM,In):- is_vm_map(In),!,
+  map_to_grid(_Was,In,Obj,_Grid,_Closure), Obj\=@=In, !, set_vm_grid(VM,Obj).
 
 
 set_vm_grid_now(VM,Grid):- is_grid(Grid), !,
+ must_det_ll((
+  grid_size(Grid,H,V), 
+  gset(VM.h)=H, gset(VM.v)=V, 
   gset(VM.grid)=Grid, 
-  grid_size(Grid,H,V), gset(VM.h)=H, gset(VM.v)=V, 
-%  gset(VM.start_points) = VM.lo_points,
+  gset(VM.start_grid)=Grid, 
   localpoints_include_bg(Grid, Points),
-  gset(VM.lo_points)=Points.
+  gset(VM.lo_points)=Points,
+  gset(VM.start_points)=Points)).
 
 set_vm_grid_now(VM,Points):- is_cpoints_list(Points), !,  
 %  gset(VM.start_points) = VM.lo_points,

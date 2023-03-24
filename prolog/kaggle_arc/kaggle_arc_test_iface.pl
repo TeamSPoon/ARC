@@ -549,7 +549,7 @@ get_each_ndividuator(Complete):-
 
 each_ndividuator(TestID,ExampleNum,In,Out, OUTPUT):- 
  name_the_pair(TestID,ExampleNum,In,Out,PairName), 
- findall(pair_result(PairName,Complete,InC,OutC),
+ findall(show_pair_result(PairName,Complete,InC,OutC),
   (get_each_ndividuator(Complete),
    with_indivs_mode(Complete,((
     with_test_pairs(TestID,ExampleNum,In,Out, 
@@ -561,10 +561,10 @@ each_ndividuator(TestID,ExampleNum,In,Out, OUTPUT):-
         print_side_by_side(each_ndividuator(PairName),In,Out),dash_chars,dash_chars|PairGroups].
 
 
-pair_result(PairName,Complete,InC,OutC):-   
-   print_side_by_side(pair_result(PairName,Complete),InC,OutC),
-   w_section(pair_result_objects(PairName,Complete),
-     (my_maplist(show_i(in),InC), dash_chars, my_maplist(show_i(out),OutC),dash_chars)),
+show_pair_result(PairName,Complete,InC,OutC):-   
+   print_side_by_side(show_pair_result(PairName,Complete),InC,OutC),
+   nop((w_section(pair_result_objects(PairName,Complete),
+     (my_maplist(show_i(in),InC), dash_chars, my_maplist(show_i(out),OutC),dash_chars)))),
    !.
 
 show_i(Y,O):- 
@@ -1196,7 +1196,13 @@ current_test_example(TestID,ExampleNum):- get_current_test(TestID),
 get_example_num(TrnN):- \+ arc_html, nb_current(example,TrnN),ground(TrnN),TrnN\==[],!.
 get_example_num(TrnN):- luser_getval(example,TrnN),ground(TrnN),TrnN\==[],!.
 
-set_example_num(TrnN):- luser_setval(example,TrnN).
+set_example_num(_ > TrnN):- nonvar(TrnN), !, set_example_num(TrnN).
+set_example_num(TrnN * _):- nonvar(TrnN), !, set_example_num(TrnN).
+set_example_num(Trn+N):- nonvar(Trn),!,luser_setval(example,Trn+N).
+set_example_num(Atom):- must_det_ll((testid_name_num_io(Atom,_TID,Trn,N,_IO),luser_setval(example,Trn+N))),!.
+
+tid_to_id((TID>(Trn+Num)*IO),(TID>(Trn+Num)*IO)).
+tid_to_id(Atom,(TID>(Trn+Num)*IO)):- testid_name_num_io(Atom,TID,Trn,Num,IO),!.
 
 first_current_example_num(TrnN):- some_current_example_num(TrnN),ground(TrnN),TrnN\==[],get_current_test(TestID),kaggle_arc(TestID,TrnN,_,_),!.
 first_current_example_num(TrnN):- TrnN = trn+0.

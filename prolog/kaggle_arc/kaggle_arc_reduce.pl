@@ -693,7 +693,9 @@ reduce_pair_op(PassNo,Grid,NBC,[OP|More],Reduced):-
     reduce_grid_pass(PassNo,GridR,[GridR|NBC],More,Reduced),!.
 reduce_pair_op(_,NR,_,[],NR):-!.
 
-test_reduce_grid(Grid,GridO):- reduce_grid(Grid,Ops,GridO),unreduce_grid(GridO,Ops,Unred),show_sf_if_lame(Ops,Unred,Grid).
+test_reduce_grid(Grid,GridO):- 
+ reduce_grid(Grid,Ops,GridO),
+  unreduce_grid(GridO,Ops,Unred),show_sf_if_lame(Ops,Unred,Grid).
 
 
   

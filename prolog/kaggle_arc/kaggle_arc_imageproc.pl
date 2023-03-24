@@ -688,10 +688,11 @@ gsize_member(vis2D(X,Y),X,Y).
 grid_size(NIL,1,1):- NIL==[],!.
 grid_size(ID,H,V):- is_grid_size(ID,H,V),!.
 grid_size(GID,H,V):- atom(GID),gid_to_grid(GID,Grid),!,grid_size_nd(Grid,H,V),!.
+grid_size(Point,H,V):- is_point(Point),hv_point(H,V,Point),!.
 grid_size(OID,H,V):- \+compound(OID),!,atom(OID),!,oid_to_parent_gid(OID,GID),grid_size(GID,H,V),!.
 grid_size(I,H,V):- notrace(is_object(I)),indv_props_list(I,L),gsize_member(E,H,V),member(E,L),!.
 %grid_size(G,H,V):- quietly(is_object(G)), !, vis2D(G,H,V).
-grid_size(Points,H,V):- is_points_list(Points),!,points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V),!.
+grid_size(Points,H,V):- is_points_list(Points),!,must_det_ll(points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V)),!.
 %grid_size(G,H,V):- is_graid(G,GG),!, grid_size(GG,H,V).
 grid_size(G,H,V):- notrace(is_vm_map(G)),H = G.h,V = G.v, !.
 grid_size(G,H,V):- notrace(is_group(G)),mapgroup(grid_size_term,G,Offsets),grid_size_2d(Offsets,H,V),!.

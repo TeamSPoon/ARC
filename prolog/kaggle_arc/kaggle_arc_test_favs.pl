@@ -54,7 +54,7 @@ fav(v('0a2355a6'),
   indiv_h(colormass)).
   
 
-fav(t('b230c067'), 
+fav(v('b230c067'), 
  human(
    rule(pg(_,RANK1,_,_),subst_color(fg,black)),
    rule(pg(_,RANK1,_,1),subst_color(fg,red)),
@@ -66,17 +66,23 @@ fav(v('b230c067'),
 
 
 fav(t('25d487eb'), 
- hlearn(link_new_objs(sees,1))).
-
-fav(t('25d487eb'), 
  human(
-   rule(pg(_,RANK1,_,_),subst_color(fg,black)),
-   rule(pg(_,RANK1,_,1),subst_color(fg,red)),
-   rule(pg(N,RANK1,_,N),subst_color(fg,blue)) )):-
-      RANK1 = mass(_).
-fav(v('25d487eb'),
+   rule(from(mass(1),color(C)),
+     rule(from(iz(symmetry_type(sym_h_xor_v,true)),top(Point)),
+       shoot(Point,C))))).
+fav(t('25d487eb'),
   indiv_h(colormass)).
 
+
+fav(t('f8b3ba0a'), 
+ human(
+   use_output_predictor,
+   rule(from(pg(_,RANK1,_,2),color(Color2)),subst_color(fg,Color2)),
+   rule(from(pg(_,RANK1,_,3),color(Color3)),subst_color(fg,Color3)),
+   rule(from(pg(_,RANK1,_,4),color(Color4)),subst_color(fg,Color4)))):-
+     RANK1 = mass(_).       
+fav(t('f8b3ba0a'),
+  indiv_h(colormass)).
 
 
 %~ (save_supertest(v('00576224'),'muarc_cache/00576224.ansi.pl'))
