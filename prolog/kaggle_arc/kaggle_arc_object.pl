@@ -508,8 +508,8 @@ maybe_replace_object(VM,Orig,NewObj):-
        print_grid(remove_prev(OOID),Orig))),
     set(VM.objs)= [NewObj|ROBJS])))).
 
-grav_roll([[Y]],sameR,[[Y]]):-!.
 grav_roll(Shape,SameR,Shape):- SameR == sameR,!.
+%grav_roll([[Y]],sameR,[[Y]]):- nonvar(Y),!.
 grav_roll(LPoints,RotG,Shape):- 
   must_det_ll((grav_rot(LPoints,RotG,Shape),
   undo_effect(RotG,Shape,LPoints0),LPoints0=LPoints)).

@@ -2244,7 +2244,10 @@ learn_ilp(TestID,ExampleNum,GridIn,GridOut):-
     assert_ilp(TestID,ExampleNum,liftcover_models,begin(model(ExampleID))),
     maplist(make_ilp(TestID,ExampleNum,lhs),InC),
     maplist(make_ilp(TestID,ExampleNum,rhs),OutC),!,
-    assert_ilp(TestID,ExampleNum,liftcover_models,end(model(ExampleID))))).
+    assert_ilp(TestID,ExampleNum,liftcover_models,end(model(ExampleID))),
+    assert_ilp(TestID,ExampleNum,liftcover_models,[]),
+    assert_ilp(TestID,ExampleNum,liftcover_models,[]),
+  !)).
 learn_ilp(TestID,ExampleNum,GridIn,GridOut):-  
  ExampleNum = (tst+_),!,
  must_det_ll((
@@ -2391,7 +2394,9 @@ output_term(_, (:- Nil)):- var(Nil),!.
 output_term(Out,Term):- \+ ground(Term),!, 
   \+ \+ (numbervars(Term,15,_,[singletons(true)]),!,output_term(Out,Term)).
 
+output_term(Out,(:- Term)):- string(Term),!,format(Out,'~N~w~n',[Term]).
 output_term(Out,Term):- string(Term),!,format(Out,'~N~w~n',[Term]).
+output_term(Out, :- (Term in_cmt)):- format(Out,'~N% :- ~q. ~n',[Term]).
 output_term(Out,Term in_cmt):- format(Out,'~N% ~q. ~n',[Term]).
 output_term(Out,Term):- format(Out,'~N~q. ~n',[Term]).
 
@@ -2467,8 +2472,8 @@ get_is_for_ilp(_,_,determination, D ):-
         (lazy_evaluate(my_mult/3)) in_cmt,
         [],
         determination(rhs/10,lhs/10) in_cmt,
-        determination(rhs/10,color_change/2),
-        determination(rhs/10,incr_nat30/2),
+        determination(rhs/10,color_change/2) in_cmt,
+        determination(rhs/10,incr_nat30/2) in_cmt,
         determination(rhs/10,my_geq/2) in_cmt,
         determination(rhs/10,my_leq/2) in_cmt,
         determination(rhs/10,my_add/3) in_cmt,
@@ -2495,8 +2500,8 @@ get_is_for_ilp(_,_,bias,D):-
     max_vars(8),
     non_magic(4),
     %enable_pi,
-    head_pred(rhs,10),
-    body_pred(lhs,10),
+    head_pred(rhs,10)  in_cmt,
+    body_pred(lhs,10)  in_cmt,
     body_pred(child,2) in_cmt,
  /* 
     body_pred(cenGX,2),
@@ -2557,9 +2562,9 @@ get_is_for_ilp(_,_,bias,D):-
     %    ExampleID, OID,   X,      Y,Color,SH,SV,RotG,Size,Shape
  
     direction(rhs,(in,in,in,in,in,in,in,in,in,in)) in_cmt,
-    type(rhs,(state,nat30,nat30,color,nat30,nat30,rotation,nat900,shape,list)),
+    type(rhs,(state,loc2D,rot2D,color,vis2D,rotSize2D,nat900,shape)),
     direction(lhs,(out,out,out,out,out,out,out,out,out,out)) in_cmt,
-    type(lhs,(state,nat30,nat30,color,nat30,nat30,rotation,nat900,shape,list)),
+    type(lhs,(state,loc2D,rot2D,color,vis2D,rotSize2D,nat900,shape)),
 
     /*
     type(cenGX,(piece,nat30)), type(cenGY,(piece,nat30)),
@@ -2601,7 +2606,8 @@ get_is_for_ilp(_,_,bias,D):-
 get_is_for_ilp(_,_,bk,D):- 
    member(D,
    [ %(:- dynamic contact/2), large(10), medium(5),small(1),
-    (incr_nat30(A,B) :- nonvar(A), B is A + 1),
+    (:- use_module(library(clpfd))),
+    (incr_nat30(A,B) :- B #= A + 1),
     (color_change(_,_)),
     (my_geq(A,B) :- nonvar(A), nonvar(B), !, A>=B),    
     (my_leq(A,B) :- nonvar(A), nonvar(B), !, A=<B),

@@ -596,13 +596,13 @@ reduce_grid_pair1(AB,OPS,ARBR):- \+ ground(AB),
  must_det_ll((
   protect_vars(AB,ABC,Unprotect),
   my_assertion(ground(ABC)),  
-  reduce_grid_pair111(ABC,OPSP,ARBRP),
+  rrd_call(reduce_grid_pair111(ABC,OPSP,ARBRP)),
   call(Unprotect,OPSP+ARBRP,OPS+ARBR),
   my_assertion((\+ contains_numberedvars(AB+ARBR))))).
 
 reduce_grid_pair1(AB,OPS,ARBR):- 
   my_assertion(ground(AB)),
-  reduce_grid_pair111(AB,OPS,ARBR),!.
+  rrd_call(reduce_grid_pair111(AB,OPS,ARBR)),!.
 
 reduce_grid_pair111(A^B,ROPA,AR^BR):-
   once((reduce_grid_pass(1,A^A,[A^A],ROPA,AR^AR),
@@ -662,23 +662,28 @@ reductions1(AB,[],AB).
 
 reduce_two(G1,G2,Reduce,G1R,G2R):- reductions_from_two(Reduce,G1,G2,G1R,G2R).
 
-reductions_from_two(Reduce,G1,G2,G1R,G2R):- one_reduction1(Reduce,G1,G2,G1R,G2R).
+reductions_from_two(Reduce,G1,G2,G1R,G2R):- one_reduction1(Reduce,G1,G2,G1R,G2R),!.
 reductions_from_two(r_c(Reduce),G1,G2,G1RR,G2RR):- rot90(G1,G1R),rot90(G2,G2R),one_reduction1(Reduce,G1R,G2R,G1RR,G2RR),!,Reduce\==[].
 reductions_from_two(c_r(Reduce),G1,G2,G1RR,G2RR):- rot270(G1,G1R),rot270(G2,G2R),one_reduction1(Reduce,G1R,G2R,G1RR,G2RR),!,Reduce\==[].
 
+rrd_up:- flag('$reduction_recursion_depth',X,X+1).
+rrd_down:- flag('$reduction_recursion_depth',X,X-1).
+rrd_ok:- flag('$reduction_recursion_depth',X,X),X<100.
+%rrd_call(Goal):- !, call(Goal).
+rrd_call(Goal):- scce_orig(rrd_up,(rrd_ok,Goal),rrd_down).
+one_reduction1(OP,G1,G2,G1R,G2R):- rrd_call(one_reduction11(OP,G1,G2,G1R,G2R)).
+one_reduction11(Reduce,G1,G2,G1R,G2R):- var(Reduce),!,reduce_grid_pair1(G1^G2,Reduce,G1R^G2R),!.
+one_reduction11(OP,G1,G2,G1R,G2R):- nonvar(OP),OP\==[],!,one_reduction3(OP,G1,G1R),!,(G2=@=G1->G2R=G1R ; one_reduction2(OP,G2,G2R)).
 
-one_reduction1(OP,G1,G2,G1R,G2R):- nonvar(OP),OP\==[],!,one_reduction1(OP,G1,G1R),!,(G2=@=G1->G2R=G1R ; one_reduction2(OP,G2,G2R)).
-one_reduction1(Reduce,G1,G2,G1R,G2R):- var(Reduce),reduce_grid_pair1(G1^G2,Reduce,G1R^G2R).
+one_reduction2(OP,G1,G1R):- one_reduction3(OP,G1,G1R).
 
-one_reduction2(OP,G1,G1R):- one_reduction1(OP,G1,G1R).
-
-%one_reduction1(OP,G=Var,GG):- var(Var),!, one_reduction1(OP,G,GG).
-one_reduction1([],G1,G1R):- !, G1=G1R.
-one_reduction1(OPS,G1,G1RR):- nonvar(OPS), OPS=[OP|OPL], !, one_reduction1(OP,G1,G1R),
-  one_reduction1(OPL,G1R,G1RR).
-one_reduction1(reversed(OP),G1,G1R):-!, one_reduction1(OP,G1,G1R).
-one_reduction1(OP^OP,G1,G1R):-!,one_reduction1(OP,G1,G1R).
-one_reduction1((OP),G1,G1R):-!, grid_call(OP,G1,G1R). % dmsg(one_reduction1(OP,G1,G1R)).
+%one_reduction1(OP,G=Var,GG):- var(Var),!, onae_reduction1(OP,G,GG).
+one_reduction3(OP,G,GG):- var(OP),!,throw(var_one_reduction3(OP,G,GG)).
+one_reduction3(Nil,G1,G1R):- Nil==[],!, G1=G1R.
+one_reduction3(OPS,G1,G1RR):- nonvar(OPS), OPS=[OP|OPL], !, one_reduction3(OP,G1,G1R),one_reduction3(OPL,G1R,G1RR).
+one_reduction3(reversed(OP),G1,G1R):-!, one_reduction3(OP,G1,G1R).
+one_reduction3(OP^OP2,G1,G1R):- OP==OP2,!,one_reduction3(OP,G1,G1R).
+one_reduction3((OP),G1,G1R):-!, grid_call(OP,G1,G1R). % dmsg(one_reduction1(OP,G1,G1R)).
 
 
 %reduce_grid(A^B,OPA^OPB,AA^BB):- A\=@=B,nth1(N,A,EA,A0),my_maplist(=(_),EA),nth1(N,B,EB,B0),EA=@=EB,reduce_grid(A0^B0,OPA^OPB,AA^BB).

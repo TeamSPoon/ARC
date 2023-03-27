@@ -155,7 +155,7 @@ into_grid_list0([G|Grids],GridL):- into_grid_list(G,G1),into_grid_list(Grids,GS)
   append(G1,GS,GridL).
 
 
-show_single_reduction_1(G):- reduce_grid(G,Ops,R),print_ss([G,R]),writeg(Ops).
+show_single_reduction_1(G):- reduce_grid(G,Ops,R),print_ss(wqs(Ops),G,R),writeg(Ops).
 
 do_some_grids(Title,AB):- is_grid(AB),!,do_some_grids(Title,[AB]).
 do_some_grids(Title,AB):- into_grid_list(AB,GL), GL\==AB,!,do_some_grids(Title,GL).
@@ -1117,7 +1117,8 @@ save_the_alt_grids(TestID,ExampleNum):-
     once(save_the_alt_grids(TestID,ExampleNum,[],I,O))),!.
 
 save_the_alt_grids(TestID,ExampleNum,_,_,_):- arc_test_property(TestID,ExampleNum,iro(_),_),!.
-save_the_alt_grids(TestID,ExampleNum,XForms,In,Out):- same_sizes(In,Out),!,
+save_the_alt_grids(TestID,ExampleNum,XForms,In,Out):-  %same_sizes(In,Out),
+  !,
   save_the_alt_grids_now(TestID,ExampleNum,XForms,In,Out),!.
 save_the_alt_grids(TestID,ExampleNum,XForms,In,Out):- fail,
   once((some_norm(In,OpI,NIn), print_ss(some_norm(OpI),In,NIn),
@@ -1131,11 +1132,32 @@ save_the_alt_grids(TestID,ExampleNum,_XForms,In,Out):-
   
 save_the_alt_grids_now(TestID,ExampleNum,XForms,In,Out):-
   my_maplist(save_grid_calc(TestID,ExampleNum,XForms,In,Out),
-     [fg_intersectiond,fg_intersectiond_mono,cell_minus_cell,mono_cell_minus_cell]),
-  ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!,
+     [common_after_reduce,fg_intersectiond,fg_intersectiond_mono,cell_minus_cell,mono_cell_minus_cell]),
+  %ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!,
   my_maplist(save_grid_calc(TestID,ExampleNum,XForms,In,Out),[minus_overlapping_image,overlapping_image]).
 
 colors_of(O,Cs):- unique_fg_colors(O,Cs),!.
+
+common_after_reduce(In,Out,New):-  
+  reduce_grid_fixed(In,OpsIn,In2),check_ops(OpsIn,In2,In),print_ss(OpsIn,In,In2),
+  reduce_grid_fixed(Out,OpsOut,Out2),check_ops(OpsOut,Out2,Out),print_ss(OpsOut,Out,Out2),
+  print_ss(common_after_reduce,In2,Out2),
+  mapgrid(fg_intersectiond_mono,In2,Out2,New),!.
+
+reduce_grid_fixed(In,OpsIn,In3):-  
+  must_det_ll(( 
+   grav_rot(In,RotG,In1),
+   undo_p2(RotG,RotR),
+   check_ops(RotR,In1,In),
+   reduce_grid(In1,Ops,In2),
+   check_ops(Ops,In2,In1),
+   grav_rot(In2,RotG2,In3),
+   undo_p2(RotG2,RotR2),
+   append([RotR2|Ops],[RotR],OpsIn),   
+   check_ops(OpsIn,In3,In),
+   !)),!.
+
+check_ops(Ops,In2,In3):- grid_call(Ops,In2,InC), !, InC =@= In3.
 
 /*save_the_alt_grids_now2(TestID,ExampleNum,XForms,In,Out).
 save_the_alt_grids_now2(TestID,ExampleNum,XForms,In,Out):- 
@@ -1168,11 +1190,10 @@ overlapping_image(In,Other,OLIn):-
 
 %32e9702f %33b52de3
 
-save_grid_calc(TestID,ExampleNum,XForms,In,Out,Op):-  
-  call(Op,In,Out,RIO), call(Op,Out,In,ROI),!,
-  assert_test_property(TestID,ExampleNum,iro([Op|XForms]),RIO),
-  assert_test_property(TestID,ExampleNum,ori([Op|XForms]),ROI),
-  print_ss(no(Op,TestID,ExampleNum,XForms),RIO,ROI).
+save_grid_calc(TestID,ExampleNum,XForms,In,Out,Op):-   
+ ignore((on_x_rtrace(call(Op,In,Out,RIO)), assert_test_property(TestID,ExampleNum,iro([Op|XForms]),RIO))),
+ ignore((on_x_rtrace(call(Op,Out,In,ROI)), assert_test_property(TestID,ExampleNum,ori([Op|XForms]),ROI))),
+ ignore((on_x_rtrace(print_ss(no(Op,TestID,ExampleNum,XForms),RIO,ROI)))).
 
 
 
@@ -1184,7 +1205,7 @@ some_norm(Out,[grav_rot(Rot)],NOut):- once(grav_rot(Out,Rot,NOut)),Out\=@=NOut,!
 some_norm(Out,[],Out).
 
 
-has_blank_alt_grid(TestID,ExampleNum):- blank_alt_grid_count(TestID,ExampleNum,N),N>0.
+has_blank_alt_grid(TestID,ExampleNum):- blank_alt_grid_count(TestID,ExampleNum,N),!,N>0.
 
 blank_alt_grid_count(TestID,ExampleNum,N):-
   arc_test_property(TestID,ExampleNum,has_blank_alt_grid,N),!.

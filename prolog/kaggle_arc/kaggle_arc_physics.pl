@@ -62,12 +62,43 @@ flip_Once(flipDHV,X,Y):- flipDHV(X,Y).
 flip_Many(Rot,X,Y):- flip_Once(Rot,X,Y),X\=@=Y.
 flip_Many(sameR,X,X).
 
+neighbor_counts(_,_,[],_,[]):-!.
+neighbor_counts(H,V,[C-P1|Ps],Points,[(N-C)-P1|Ps2]):-
+  must_det_ll((
+  neighbor_count1(C,P1,Points,N),
+  neighbor_counts(H,V,Ps,Points,Ps2))).
+
+neighbor_count1(C,_P1,_Points,N):- is_bg_color(C),!,N=0.
+neighbor_count1(C,_P1,_Points,N):- var(C),!,N=200.
+neighbor_count1(C,P1,Points,N):- 
+ findall(Dir,(n_s_e_w(Dir),once((is_adjacent_point_m2(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),==(C,CD)))),DirsC),
+ findall(Dir,(is_diag(Dir),once((is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),==(C,CD)))),DirsD),
+ findall(Dir,(is_adjacent_point(P1,Dir,P2),member(NC-P2,Points),only_color_data(NC,CD),dif_color(C,CD)),DirsE),
+ length(DirsE,E1),
+ length(DirsC,C1),
+ length(DirsD,D1), N is E1+C1*2+D1*2.
+
+neighbor_counts(Grid,GridO):-
+ must_det_ll((
+  globalpoints_maybe_bg(Grid,Points),
+  grid_size(Grid,H,V),
+  neighbor_counts(H,V,Points,Points,CountedPointsO),
+  points_to_grid(H,V,CountedPointsO,GridO))).
 
 %grid_mass_ints(Grid,[[1]]):- Grid=@=[[_]],!. 
-grid_mass_ints(Grid,GridIII):- 
+grid_mass_ints(Grid,GridO):- 
+ must_det_ll((
   unique_fg_colors(Grid,Sorted),
   %arc_test_property(Prop),
-  mapgrid(normal_w(Sorted),Grid,GridIII),!.
+  neighbor_counts(Grid,GridWC),
+  mapgrid(normal_w(Sorted),Grid,GridIII),!,
+  mapgrid(grid_times,GridWC,GridIII,GridO),
+  writeg(GridO),
+  %trace,
+  !)).
+normal_w(A,B,C):- normal_w1(A,B,D),C is (D + 4)*2.
+
+grid_times(N-_,B,C):- C is B*N.
   /*
   %Prop = unique_colors(lst(vals([[cyan,yellow,orange,green,red,blue,black],[orange,cyan,yellow,green,black,red,blue]]),len(7),diff([orange,cyan,yellow,green,black,red,blue]=@=[cyan,yellow,orange,green,red,blue,black])))
   
@@ -78,19 +109,19 @@ grid_mass_ints(Grid,GridIII):-
 */
 %normal_w(_,CC,N):- plain_var(CC),N is -2,!.
 %normal_w(L,CC,N):- nth1(N,L,C),C==CC,!.
-normal_w(_ColorSort,Cell,Cell):- integer(Cell),!.
-normal_w(_ColorSort,Cell,-4):- Cell==bg,!.
-normal_w(_ColorSort,Cell,-3):- Cell==wbg.
-normal_w(_ColorSort,Cell,-2):- var(Cell),is_bg_color(Cell),!.
-normal_w(_ColorSort,Cell,-1):- is_bg_color(Cell),!.
-normal_w( ColorSort,Cell,Nth):- nth1(Nth,[_,_,_|ColorSort],Color),Cell==Color,!.
-normal_w(_ColorSort,Cell,0):- plain_var(Cell),!.
-normal_w(_ColorSort,Cell,1):- is_fg_color(Cell).
-normal_w(_ColorSort,Cell,1):- Cell==fg,!.
-normal_w(_ColorSort,Cell,2):- Cell==wfg,!.
-normal_w(_ColorSort,Cell,3):- var(Cell),is_fg_color(Cell),!.
+normal_w1(_ColorSort,Cell,Cell):- integer(Cell),!.
+normal_w1(_ColorSort,Cell,-4):- Cell==bg,!.
+normal_w1(_ColorSort,Cell,-3):- Cell==wbg.
+normal_w1(_ColorSort,Cell,-2):- var(Cell),is_bg_color(Cell),!.
+normal_w1(_ColorSort,Cell,-1):- is_bg_color(Cell),!.
+normal_w1( ColorSort,Cell,Nth):- nth1(Nth,[_,_,_|ColorSort],Color),Cell==Color,!.
+normal_w1(_ColorSort,Cell,0):- plain_var(Cell),!.
+normal_w1(_ColorSort,Cell,1):- is_fg_color(Cell).
+normal_w1(_ColorSort,Cell,1):- Cell==fg,!.
+normal_w1(_ColorSort,Cell,2):- Cell==wfg,!.
+normal_w1(_ColorSort,Cell,3):- var(Cell),is_fg_color(Cell),!.
 %normal_w(ColorSort,Cell,N):- color_int(Cell,N),!.
-normal_w(_ColorSort,_,0).
+normal_w1(_ColorSort,_,0).
 
 /*
 arc_test_property(Prop):-
@@ -99,44 +130,84 @@ arc_test_property(Prop):-
 
 */
 grav_rot(Grid,sameR,Grid):- \+ \+ Grid=[[_]],!.
-grav_rot(Grid,RotG,Rotated):- %must_be_free(RotG),  
-  must_det_ll((into_grid(Grid,GridII),
+grav_rot(Grid,RotG,RotatedO):- %must_be_free(RotG),  
+  must_det_ll((
+   into_grid(Grid,GridI),
+   trim_outside(GridI,GridII),
    dif(RotG,rollD),
-   best_grav_rot_grid(GridII,RotG,Rotated))).
+   best_grav_rot_grid(GridII,RotG),
+   grid_call(RotG,GridI,RotatedO))).
 
-best_grav_rot(Shape,RotG,Rotated):- must_be_free(Rotated),
-    must_det_ll((
-    cast_to_grid(Shape,Grid,Uncast),
-    best_grav_rot_grid(Grid,RotG,Final),
-    uncast(Shape,Uncast,Final,Rotated))).
+p2_add(sameR,FlipV,FlipV).
+p2_add(FlipV,sameR,FlipV).
+p2_add(flipH,flipH,sameR).
+p2_add(flipV,flipV,sameR).
+p2_add(rot180,rot180,sameR).
+p2_add(rot270,rot270,rot180).
+p2_add(rot90,rot90,rot180).
+p2_add(A,B,R):- A@>B,p2_add2(B,A,R),!.
+p2_add(A,B,R):- p2_add2(A,B,R),!.
+p2_add(A,B,[A,B]).
+p2_add2(flipH,flipV,rot180).
+p2_add2(flipH,rot90,flipH).
+p2_add2(flipH,rot180,flipV).
+%p2_add(flipV,flipH,_).
+p2_add2(flipV,rot90,rot270).
+p2_add2(flipV,rot180,flipH).
+%p2_add(rot90,flipH,_).
+%p2_add(rot90,flipV,rot180).
+%p2_add(rot180,flipH,_).
+%p2_add(rot180,flipV,_).
+%p2_add(rot180,rot90,_).
+p2_add2(rot180,rot270,rot90).
+p2_add2(rot180,rot90,rot270).
+p2_add2(rot180,rot270,rot270).
+p2_add2(rot270,rot90,sameR).
+p2_add2(rot90,rot180,rot270).
 
-best_grav_rot_grid(Grid,sameR,Grid):- \+ \+ Grid=[[_]],!.
-best_grav_rot_grid(Grid,RotG,RotatedG):- must_be_free(Rotated), 
- must_det_ll(( is_grid(Grid), 
-    grid_mass_ints(Grid,GridInts),
+
+
+
+best_grav_rot_grid(Grid,sameR):- \+ \+ Grid=[[_]],!.
+best_grav_rot_grid(Grid,RotG):- grid_mass_ints(Grid,GridInts),!, best_grav_rot_grid_ints(GridInts,RotG).
+
+best_grav_rot_grid_ints(GridInts,RotG):- grid_size(GridInts,H,V), V > H,!,
+  rot90(GridInts,XForm), best_grav_rot_grid_ints(XForm,RotG1),!, p2_add(RotG1,rot90,RotG),!.
+best_grav_rot_grid_ints(GridInts,RotG):- is_top_heavy(GridInts),!,
+  flipV(GridInts,XForm), best_grav_rot_grid_ints(XForm,RotG1),!, p2_add(RotG1,flipV,RotG),!.
+best_grav_rot_grid_ints(GridInts,RotG):- is_left_heavy(GridInts),!,
+  flipH(GridInts,XForm), best_grav_rot_grid_ints(XForm,RotG1),!, p2_add(RotG1,flipH,RotG),!.
+best_grav_rot_grid_ints(_,sameR):-!.
+
+rot_mass(X,Mass):- append(X,L),sum_list(L,Mass).
+
+is_top_heavy(Grid):- split_50_v(Grid,Top,Bottem),!,rot_mass(Top,TopM),rot_mass(Bottem,BottemM),!,BottemM<TopM.
+is_left_heavy(Grid0):- rot270(Grid0,Grid),!,is_top_heavy(Grid).
+split_50_v(Grid,Top,Bottem):- length_safe(Grid,N),H is floor(N/2), length_safe(Top,H),length_safe(Bottem,H),
+    my_append(Top,Rest,Grid),my_append(_Mid,Bottem,Rest).
+
+/*
+best_grav_rot_grid_ints(GridInts,RotG):-
+ must_det_ll((
     w(W,RotG)=Template,
     findall(Template,(flip_Many(RotG,GridInts,Rotated),rot_mass(Rotated,W)),Pos),
-    sort_safe(Pos,LPos),last(LPos,Template),call(RotG,Grid,RotatedG))).
-
-length_safe(L,N):- do_my_check_args(length(L,N)),length(L,N).
-
-do_my_check_args(P):- forall(my_check_args(P),true).
-my_check_args(length(_,N)):- nonvar(N),my_assertion(integer(N)).
-my_check_args(length(L,_)):- nonvar(L),my_assertion(is_list(L)).
-
-rot_mass(Grid,Mass):- 
+    sort_safe(Pos,LPos),last(LPos,Template))),!.
+rot_mass(Grid,MassO):- 
  into_grid(Grid,LP0), !,
  LP = [C|_],
- must_det_ll(( grid_mass_ints(LP0,LP),
-    length_safe(C,Len),map_row_size(10,Len,LP,Mass))).
+ must_det_ll(( =(LP,LP),
+    length_safe(C,Len),map_row_size(10,Len,LP,Mass))),
+ grid_size(LP0,H,V),
+ ((V>H) -> MassO is Mass ; MassO is Mass).
 
-rot_mass(Grid,OMass):- into_grid(Grid,LP0), 
+rot_mass1(Grid,OMass):- into_grid(Grid,LP0), 
  LP = [C|_],
  must_det_ll(( 
-  grid_mass_ints(LP0,LP),
+  %grid_mass_ints(LP0,LP),
+  LP0=LP,
   length_safe(C,Len),map_row_size(10,Len,LP,Mass),
-   (is_top_heavy(LP)->Bonus is -1; Bonus is 1),
-   (is_left_heavy(LP)->Bonus2 is 16 ;Bonus2 is -16),
+   (is_top_heavy(LP)->Bonus is 2; Bonus is 16),
+   (is_left_heavy(LP)->Bonus2 is 2 ;Bonus2 is 16),
    OMass is Mass*Bonus*Bonus2)).
 
 map_row_size(_,Len,[],Len):-!.
@@ -152,6 +223,15 @@ map_row_size(N,Len,[_|Rest],Mass):-
    N2 is N * Len, map_row_size(N2,Len,Rest,Mass),!.
 
 
+*/
+
+length_safe(L,N):- do_my_check_args(length(L,N)),length(L,N).
+
+do_my_check_args(P):- forall(my_check_args(P),true).
+my_check_args(length(_,N)):- nonvar(N),my_assertion(integer(N)).
+my_check_args(length(L,_)):- nonvar(L),my_assertion(is_list(L)).
+
+
 grav_mass(Grid,sameR):- iz(Grid,hv_symmetric),!.
 grav_mass(Grid,RotOut):- vis2D(Grid,H,V), !, tips_to_rot(Grid,H,V,RotOut,_).
 
@@ -160,11 +240,6 @@ tips_to_rot(Grid,H,V,[rot270|RotOut],Final):- H<V, !, rot90(Grid,Grid90),!,atrac
 tips_to_rot(Grid,H,V,[rot90|RotOut],Final):- is_top_heavy(Grid), !, rot270(Grid,Grid90), !, tips_to_rot(Grid90,V,H,RotOut,Final).
 %tips_to_rot(Grid,H,V,[rot180|RotOut]):- is_top_heavy(Grid), !, rot180(Grid,Grid90), !, tips_to_rot(Grid90,H,V,RotOut).
 tips_to_rot(Grid,_H,_V,RotOut,Final):- is_left_heavy(Grid)-> (RotOut=[rot180],rot180(Grid,Final)); (RotOut=[sameR],Final=Grid).
-
-is_top_heavy(Grid):- split_50_v(Grid,Top,Bottem),!,rot_mass(Top,TopM),rot_mass(Bottem,BottemM),!,BottemM>TopM.
-is_left_heavy(Grid0):- rot270(Grid0,Grid),!,is_top_heavy(Grid).
-split_50_v(Grid,Top,Bottem):- length_safe(Grid,N),H is floor(N/2), length_safe(Top,H),length_safe(Bottem,H),
-    my_append(Top,Rest,Grid),my_append(_Mid,Bottem,Rest).
 
 
 ensure_dir(s). ensure_dir(e). ensure_dir(w). ensure_dir(n).
