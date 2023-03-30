@@ -670,9 +670,11 @@ show_interesting_group(Named,Title-Objs):-
   w_section(title(SGroup),
     (pp(Title),nl,print_ss(Objs))).
 
+ssort(A,B):- list_to_set(A,B).
+
 show_three_interesting_groups(Named,Objs,Groups):-
   findall(Prop,(member(obj(O),Objs),member(Prop,O), not_skip_ku(Prop) ),Props),
-  sort_safe(Props,SProps),
+  ssort(Props,SProps),
   print_interesting_named_groups(props(Named),SProps),
   my_maplist(make_unifiable_cc,SProps,UProps), variant_list_to_set(UProps,SUProps),  
   print_interesting_named_groups(suprops(Named),SUProps),
@@ -772,7 +774,7 @@ objs_with_props([_-List|Props],Objs,OL,GO):-
 objs_with_props([],_,_,[]).
 
 group_quals([U|SUProps],SProps,L,[U-ListUS|KUProps]):- findall(U,member(U,SProps),ListU),
-  length_s(ListU,LUL),LUL\==L, sort_safe(ListU,ListUS),
+  length_s(ListU,LUL),LUL\==L, ssort(ListU,ListUS),
    ListUS=[_,_|_],!,group_quals(SUProps,SProps,L,KUProps).
 group_quals([_|SUProps],SProps,L,KUProps):-  group_quals(SUProps,SProps,L,KUProps).
 group_quals([],_SProps,_,[]).
@@ -987,8 +989,8 @@ print_elists_hack_objs(Named,Props0,Objs,HackedObjs):-
  % HackedObjs = Splits,
   length_s(Objs,BaseSize),
   variant_list_to_set(Props,PropsSet),
-  count_each(PropsSet,Props,CountOfEachL),
-  predsort(sort_on(arg(2)),CountOfEachL,CountOfEach0),
+  count_each(PropsSet,Props,CountOfEach0),
+  %predsort(sort_on(arg(2)),CountOfEachL,CountOfEach0),
   list_to_set(CountOfEach0,CountOfEach),
   %mpp(countOfEach=CountOfEach),
   ignore(my_maplist(remember_propcounts(Named,count),CountOfEach)),
@@ -1176,8 +1178,8 @@ write_scrollable(Goal):- with_tag_class(div,scrollable,Goal).
 
 any_have_prop(Except,Prop):- member(O,Except),has_prop(Prop,O),!.
 
-transitive_sets(P2,Obj,Set,N):- findall(n(P,List),(trans(P2,Obj,List),List\==[],length_s(List,P)),Lists),sort_safe(Lists,Set),length_s(Set,N).
-nontransitive_set(P2,Obj,Set,N):- findall(Other,p2_call(P2,Obj,Other),List),sort_safe(List,Set),length_s(Set,N).
+transitive_sets(P2,Obj,Set,N):- findall(n(P,List),(trans(P2,Obj,List),List\==[],length_s(List,P)),Lists),ssort(Lists,Set),length_s(Set,N).
+nontransitive_set(P2,Obj,Set,N):- findall(Other,p2_call(P2,Obj,Other),List),list_to_set(List,Set),length_s(Set,N).
 
 trans(P2,Obj,Out):- obj_to_oid(Obj,OID),trans_no_loop(P2,[OID],Obj,Out).
 
@@ -1457,7 +1459,7 @@ create_vis_layers(Fallback,IH,IV,LayerNum,InC,[layer(LayerNum2)=BestOrder|Rest])
   list_to_set(Fallback2,BestOrder),
   ((InHidden==[];equal_sets(InHidden,InC))-> Rest=[] ; create_vis_layers(Fallback2,IH,IV,LayerNum2,InHidden,Rest)).
 
-equal_sets(A,B):- sort_safe(A,AA),sort_safe(B,BB),AA=@=BB.
+equal_sets(A,B):- sort(A,AA),sort(B,BB),AA=@=BB.
 
 
 % sprop_piority(Class,Priority).
@@ -1525,7 +1527,7 @@ largest_pred(_,I,O):- mass(I,O).
 largest_priority(Indv,Priority):- sprop_piority(Prop,Priority), has_prop(Prop,Indv),!.
 largest_priority(_,1).
 largest_first(P2,IndvS0,IndvR):-   
- sort_safe(IndvS0,IndvS),
+ ssort(IndvS0,IndvS),
  %must_det_ll
  ((
   findall((Priority+Size)-Indv,(member(Indv,IndvS),largest_priority(Indv,NPriority),call(P2,Indv,Size),Priority is - NPriority),All),
@@ -1821,7 +1823,7 @@ treeify_props(Named,DontDivOnThisNumber,RRR,[ (yes1(HAD)=HL/NL)->FHAVES ,  (not1
 
 lots_of_prop(RRR,N,HAD):- 
   flatten(RRR,GF),
-  sort_safe(GF,GSS), 
+  ssort(GF,GSS), 
   care_to_count(GSS,GS), 
   count_each(GS,GF,UC),
   keysort(UC,KS),
@@ -2025,7 +2027,7 @@ object_get_priors(X,S):- is_object(X), !, must_det_ll((indv_props_list(X,Ps),
 get_prior_labels(Objs,PriorsSetClean,AllPriors,PriorsWithCounts):- must_det_ll((is_list(Objs),
   findall(Named,(member(Obj,Objs),object_get_priors(Obj,Named)),AllPriorsL),
   append(AllPriorsL,AllPriors),
-  sort_safe(AllPriors,PriorsSet),
+  ssort(AllPriors,PriorsSet),
   my_partition(never_prior,PriorsSet,_Unused,PriorsSetClean),
   count_each(PriorsSetClean,AllPriors,PriorsWithCounts))).
 

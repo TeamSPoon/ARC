@@ -35,8 +35,8 @@
 my_time(Goal):- time(Goal),flush_tee.
 :- export(plain_var/1).
 plain_var(V):- notrace((var(V), \+ attvar(V), \+ get_attr(V,ci,_))).
-catch_log(G):- ignore(catch(notrace(G),E,((u_dmsg(E=G))))).
 catch_nolog(G):- ignore(catch(notrace(G),E,nop(u_dmsg(E=G)))).
+catch_log(G):- ignore(catch(notrace(G),E,((writeln(E=G),catch_nolog(ds))))).
 
 get_user_error(UE):- stream_property(UE,file_no(2)),!.
 get_user_error(UE):- stream_property(UE,alias(user_error)),!.
@@ -849,7 +849,7 @@ use_gui_debugger:-
 create_group_dmiles:- must_det_ll((create_group(dmiles,[
               'e41c6fd3','ea32f347',
               '37d3e8b2','0a2355a6',
-              'a79310a0',
+              'a79310a0','103eff5b',
               '33b52de3',
               '1b60fb0c','1d398264',
               '0d3d703e','626c0bcc',

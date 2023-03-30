@@ -195,9 +195,11 @@ set_current_pair(I,O):-
   %set_target_grid(O),
   other_grid(I,OOO),nop((OOO=@=O)))),!.
 
-current_pair_io(I,O):- must_det_ll((current_test_example(TestID,ExampleNum),
-  ground(ExampleNum),
-  kaggle_arc(TestID,ExampleNum,I,O))).
+current_pair_io(I,O):- fail, current_test_example(TestID,ExampleNum),
+  ground(ExampleNum),!,
+  kaggle_arc(TestID,ExampleNum,I,O).
+current_pair_io(I,O):-  current_test_example(TestID,_),
+  kaggle_arc(TestID,_Example,I,O), set_current_pair(I,O).
 
 /*
 current_pair_io(I,O):- current_test_example(TestID,ExampleNum),

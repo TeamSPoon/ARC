@@ -218,7 +218,7 @@ mapgrid(P3,Grid,GridN,GridO):- into_grid_or_var(Grid,G1),into_grid_or_var(GridN,
 mapg_list(P3,Grid,GridN,GridO):- is_list(Grid),!,maplist(mapg_list(P3),Grid,GridN,GridO).
 mapg_list(P3,Grid,GridN,GridO):- call(P3,Grid,GridN,GridO),!.
 
-mapgrid(P2, Grid,GridN):- into_grid_or_var(Grid,G1),into_grid_or_var(GridN,G2),mapg_list(P2, G1,G2).
+mapgrid(P2, Grid,GridN):- into_grid_or_var(Grid,G1),into_grid_or_var(GridN,G2),!,mapg_list(P2, G1,G2).
 mapg_list(P2, Grid,GridN):- is_list(Grid),!,maplist(mapg_list(P2),Grid,GridN).
 mapg_list(P2, Grid,GridN):- p2_call(P2, Grid,GridN),!.
 

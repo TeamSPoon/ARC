@@ -78,6 +78,8 @@ arc_simple_rewrite(I,O):-
   b_setval(arc_can_portray,t).
 
 
+:- current_prolog_flag(never_pp_hook, true).
+
 
 portray_terse:- true,!.
 
@@ -541,7 +543,7 @@ arcp:will_arc_portray:-
    flag(arc_portray_current_depth,X,X),X<3,
    current_predicate(bfly_startup/0).
 
-user:portray(Grid):-
+user:portray(Grid):- 
   arcp:will_arc_portray, \+ \+ catch(quietly(arc_portray(Grid)),_,fail),!, flush_output.
 
 
@@ -698,19 +700,20 @@ number_vars_calc_goals(Term,TermC,[5|SGoals]):-
 
 
 
-writeg(Term):- ignore( \+ notrace(catch(once(writeg0(Term);ppa(Term)),E,(pp(E),ppa(Term))))).
+writeg(Term):- ignore( \+ notrace(catch(once(writeg0(Term);ppa(Term)),E,(pp(E),ppa(Term))))),!.
 
 writeg0(Term):- term_attvars(Term,Attvars),Attvars\==[],!,
-  (((number_vars_calc_goals(Term,TermC,Goals),
+  must_det_ll(((number_vars_calc_goals(Term,TermC,Goals),
   writeg5(TermC)),!,
   if_t(Goals\==[],(nl_if_needed, 
     write(' goals='), call_w_pad_prev(3,az_ansi(print_tree_no_nl(Goals))))))),!.
 
-writeg0(Term):- \+ ground(Term), must_det_ll((  
+writeg0(Term):- \+ ground(Term), 
+ \+ \+ must_det_ll((  
   numbervars(Term,0,_Ten1,[singletons(true),attvar(skip)]), writeg5(Term))).
 writeg0(Term):- writeg5(Term),!.
 
-writeg5(X):- is_ftVar(X),!,write_nbsp,write_nbsp,print(X).
+writeg5(X):- is_ftVar(X),!,write_nbsp,write_nbsp,print(X),write_nbsp.
 writeg5(N=V):- is_simple_2x2(V),!,print_grid(N,V),writeln(' = '),call_w_pad_prev(2,writeg9(V)).
 writeg5(N=V):- is_gridoid(V),!,print_grid(N,V),writeln(' = '),call_w_pad_prev(2,writeg9(V)).
 writeg5(N=V):- nl_if_needed,nonvar(N), pp_no_nl(N),writeln(' = '), !, call_w_pad_prev(2,writeg5(V)). 

@@ -591,17 +591,20 @@ reverse_op(I,[I]).
 contains_numberedvars(AB):- \+ \+ (sub_term(E,AB),compound(E), E='$VAR'(_)).
 
 
-reduce_grid_pair1(AB,OPS,ARBR):- \+ ground(AB),  
+reduce_grid_pair1(AB,OPS,ARBR):- fail,  \+ ground(AB),  
  \+ contains_numberedvars(AB+OPS),
  must_det_ll((
   protect_vars(AB,ABC,Unprotect),
-  my_assertion(ground(ABC)),  
-  rrd_call(reduce_grid_pair111(ABC,OPSP,ARBRP)),
+  my_assertion(ground(ABC)))),
+ reduce_grid_pair2(ABC,OPSP+ARBRP),
+ must_det_ll((
   call(Unprotect,OPSP+ARBRP,OPS+ARBR),
-  my_assertion((\+ contains_numberedvars(AB+ARBR))))).
+  my_assertion((\+ contains_numberedvars(AB+ARBR))))),!.
 
-reduce_grid_pair1(AB,OPS,ARBR):- 
-  my_assertion(ground(AB)),
+reduce_grid_pair1(AB,OPS,ARBR):- reduce_grid_pair2(AB,OPS,ARBR).
+
+reduce_grid_pair2(AB,OPS,ARBR):- 
+  %my_assertion(ground(AB)),
   rrd_call(reduce_grid_pair111(AB,OPS,ARBR)),!.
 
 reduce_grid_pair111(A^B,ROPA,AR^BR):-

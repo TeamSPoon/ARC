@@ -495,7 +495,7 @@ herbrand([Head|Tail],Cs) :-
 write1(T) :-  % Writing variable names
     numbervars(T,0,_),
     write(T), fail.
-write1(_).
+write1(_):- write('.').
 
 %-------------------------------------------------------------
 %  LILP - Lambda Inductive Logic Programming                  

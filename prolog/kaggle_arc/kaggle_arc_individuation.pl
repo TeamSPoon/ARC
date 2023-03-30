@@ -82,7 +82,7 @@ mono_i_to_o_is_none_some_none:-
   mono_o_minus_i(Zero2),no_fg_mass(Zero2),
   o_minus_i_equals_some.
 
-individuation_macros(complete, ListO):- 
+individuation_macros(i_complete, ListO):- 
  must_det_ll((
    im_complete(ListC),
    flatten([ListC,do_ending],ListM),
@@ -316,7 +316,7 @@ show_indivizers:- update_changes, list_of_indivizers(L),
  forall(nth_above(800,N,L,E+_),
   (find_indivizers(E,R),format('~N'),sformat(S,'~t~d~t  ~w:  ~t~w',[N,E,R]),print_menu_cmd1(write(S),E),nl)).
 do_indivizer_number(N):- 
- list_of_indivizers(L),nth_above(800,N,L,E), set_indivs_mode(E),
+ list_of_indivizers(L),nth_above(800,N,L,E+_), set_indivs_mode(E),
  with_indivs_mode(E,ndividuator).
 
 % vm_grid_call(subst_color(black,brown)),
@@ -324,8 +324,57 @@ do_indivizer_number(N):-
 individuation_macros(nsew_bg,[
   with_mapgrid([fgc_as_color(plain_var),bgc_as_color(zero),plain_var_as(black)],'_nsew_bg',[nsew,alone_dots,lo_dots])]).
 
+fill_in_bg(_Black,G2,GG2):- is_fg_color(G2),!,ignore(G2=GG2).
+fill_in_bg(Black,G2,GG2):- \+ G2\=Black,!,ignore(GG2=Black).
+fill_in_bg(Alt,In,Out):- only_color_data_or(Alt,In,Out),!.
+fill_in_bg(_Alt,In,In):-!.
+into_solid_grid(I,GG1):- into_grid(I,G1),mapgrid(fill_in_bg(black),G1,GG1),!.
 
-indiv_how( indv_opt(Flags)):-
+
+
+
+
+completely_represents(I,O):-
+   into_solid_grid(I,I1),into_solid_grid(O,O1),
+   (I1=@=O1-> true ;  (print_ss(not_completely_represents,I1,O1),fail)).
+
+current_how(HOW,Stuff1,Stuff2):-
+  current_pair_io(I,O), guess_how(HOW,I,O,Stuff1,Stuff2).
+
+current_how_else(HOW,Stuff1,Stuff2):-
+  current_how(HOW,I,O), guess_how_else(HOW,I,O,Stuff1,Stuff2).
+
+
+guess_how_else([HOW|HOW_ELSE],I,O,Stuff1,Stuff2):-
+  guess_how(HOW,I,O,MID1,MID2),
+  maplist(guess_how_else,how,HOW_ELSE,MID1,MID2,Stuff1,Stuff2),!.
+guess_how_else(whole,I,O,I,O).
+
+guess_how(HOW,I1,O1,Stuff1,Stuff2):-
+  once((
+  into_solid_grid(I1,I2), into_solid_grid(O1,O2))),!,
+  indiv_how(HOW),  duplicate_term(I2+O2,I+O),
+  once((
+    
+    once((individuate(HOW,I,Stuff1))),
+    once((individuate(HOW,O,Stuff2))),
+    length(Stuff1,L),length(Stuff2,L),
+    print_ss(orig,I,O),
+    ignore(completely_represents(I,Stuff1)),
+    ignore(completely_represents(O,Stuff2)),
+    print_ss(objs(HOW,L),Stuff1,Stuff2))),
+  L>1.
+
+
+
+
+individuation_macros(completely_do(This),[This,do_ending]).
+
+indiv_how(completely_do(i_colormass)).
+indiv_how(completely_do(i_mono_colormass)).
+indiv_how(completely_do(i_complete)).
+indiv_how(completely_do(maybe_lo_dots)).
+indiv_how( indv_opt(Flags)):- fail,
       toggle_values([bground,diags,mono,shape,boxes,parts],Flags).
 toggle_values([N|Names],[V|Vars]):- toggle_values(Names,Vars), toggle_val(N,V).
 toggle_values([],[]).
@@ -348,6 +397,7 @@ individuation_macros(indv_opt(Flags),
  TODO = [ %bg_shapes(nsew),
            which_tf(shape,do_im_complete,nop),
            which_tf(diags,colormass,nsew),
+           call(print(Flags)),
            which_tf(boxes,pbox_vm_special_sizes,nop),
            which_tf(bground,remove_if_prop(cc(fg,0)),nop)].
 
@@ -509,156 +559,6 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):-
 
 
 
-
-
-maybe_optimize_objects(InC00,OutC00,InCR,OutCR):-
- wots(S,
- w_section(optimize_objects, ((
- once((must_det_ll((
-  remove_background_only_object(InC00,InC000),
-  remove_background_only_object(OutC00,OutC000),
- extend_grp_proplist(InC000,InC0),
- extend_grp_proplist(OutC000,OutC0),
-  maybe_fix_group(InC0,InCRFGBG),
-  maybe_fix_group(OutC0,OutCRFGBG),
-  mostly_fg_objs(InCRFGBG,InCR),
-  mostly_fg_objs(OutCRFGBG,OutCR),
-  nop((show_changes(InC0,InCR),
-  show_changes(OutC0,OutCR))))))))),ran_collapsed)),
-   ((InC00\=@=InCR;OutC00\=@=OutCR),(InCR\==[],OutCR\==[])),!,
-  write(S).
-
-optimize_objects(InC00,OutC00,InC,OutC):-
-  (maybe_optimize_objects(InC00,OutC00,InC,OutC)->true;(InC00=InC,OutC00=OutC)).
-
-
-
-show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):-  
-  GridIn=@=GridOfIn,!,
- must_det_ll((
-  into_iog(InC,OutC,IndvS),
-  show_individuated_nonpair(PairName,ROptions,GridIn,GridOfIn,IndvS))).
-
-show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):- 
-  maybe_optimize_objects(InC00,OutC00,InCR,OutCR),!,
-  show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCR,OutCR),!.
-
-
-show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCB,OutCB):-
- must_det_ll((
-  grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),   
- w_section(show_individuated_sections,((                          
-  print_side_by_side(red,GridIn,gridIn(ROptions,ID1,PairName),_,GridOut,gridOut(ID2)),
-  as_ngrid(GridIn,GridIn1),as_ngrid(GridOut,GridOut1), xfer_zeros(GridIn1,GridOut1), 
-  print_side_by_side(yellow,GridIn1,ngridIn(ROptions,ID1,PairName),_,GridOut1,ngridOut(ID2)),
-  %trace,
-  grid_size(GridIn,IX,IY),grid_size(GridOut,OX,OY),
-  print_side_by_side(green,print_grid(IX,IY,InCB),before_rm_bg(ROptions,ID1,PairName),_,print_grid(OX,OY,OutCB),before_rm_bg(ID2)),
-  remove_background_only_object(InCB,InC),remove_background_only_object(OutCB,OutC),
-  %pp(InC),
-  print_side_by_side(green,InC,after_rm_bg(ROptions,ID1),_,OutC,objs(ID2)),
-
-  if_t( \+ nb_current(menu_key,'i'),
-((((((
-   show_indivs_side_by_side(inputs,InC),show_indivs_side_by_side(outputs,OutC),
-  %w_section(show_io_groups,show_io_groups(green,ROptions,ID1,InC,ID2,OutC)),
-  %show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
-  =(InCR,InC), =(OutCR,OutC),
-    print_side_by_side(green,InC,lhs(ROptions,ID1),_,OutC,rhs(ROptions,ID2)),
- true))),
-
- (((
-  banner_lines(orange), %visible_order(InC,InCR),
- if_t( once(true; \+ nb_current(menu_key,'i')),
-
- w_section(show_individuated_learning,must_det_ll((
-   %when_in_html(if_wants_output_for(guess_some_relations,guess_some_relations(InC,OutC))),
-   %when_in_html(if_wants_output_for(sort_some_relations,sort_some_relations(InC,OutC))),
-   if_wants_output_for(learn_group_mapping,        if_t(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
-   if_wants_output_for(learn_group_mapping_of_tst, if_t(sub_var(tst,ID1), learn_group_mapping(InCR,OutCR))), 
-
-
-   if_wants_output_for(show_safe_assumed_mapped, show_safe_assumed_mapped),
-   if_wants_output_for(show_test_associatable_groups, 
-       forall(member(In1,InC),show_test_associatable_groups(ROptions,ID1,In1,GridOut))), 
-
-   if_wants_output_for(try_each_using_training,
-     forall(try_each_using_training(InC,GridOut,RulesUsed,OurOut),
-      ignore((
-       print_grid(try_each_using_training,OurOut),
-       nop(pp(RulesUsed)),
-       banner_lines(orange,2))))))))),
-
-  banner_lines(orange,4))))))))))))),!,
-  if_wants_output_for(show_interesting_props,  show_interesting_props(PairName,InC,OutC)),!.
-  
-
-
-
-show_indivs_side_by_side(W,InC):- \+ wants_html,!,
-  print_list_of(show_indiv(W),W,InC).
-show_indivs_side_by_side(W,InC):- show_indivs_side_by_side_html(W,InC).
-
-show_indivs_side_by_side_html(W,InC):-
-  my_maplist(show_indiv_vert(W),InC,Vert),
-  print_table([Vert]).
-
-show_indiv_vert(W,Obj,TD):- wots(TD,show_indiv(W,Obj)).
-  
-
-
-arc_spyable_keyboard_key(detect_pair_hints,'g').
-arc_spyable_keyboard_key(show_interesting_props,'y').
-arc_spyable_keyboard_key(show_safe_assumed_mapped,'j').
-arc_spyable_keyboard_key(learn_group_mapping,'o').
-arc_spyable_keyboard_key(learn_group_mapping_of_tst,'o').
-arc_spyable_keyboard_key(show_test_associatable_groups,'a').
-arc_spyable_keyboard_key(try_each_using_training,'u').
-
-
-show_test_associatable_groups(ROptions,ID1,InC,GridOut):- 
-  print_grid(wqs(show_test_assocs(ROptions,ID1)),InC),
-  forall(
-    must_det_ll1((use_test_associatable_group(InC,Sols)
-      *-> show_result("Our Learned Sols", Sols,GridOut,_)
-        ; arcdbg_info(red,warn("No Learned Sols")))),
-    true).
-
-
-show_group(ID1,InC):-
- must_det_ll((
-  length(InC,IL),g_display(InC,InCSS),print_side_by_side(len(ID1,IL)=InCSS),print_grid(combined(ID1)=InC))).
-
-show_io_groups(Color,ROptions,ID1,InC0,ID2,OutC0):- 
- must_det_ll((    
-    banner_lines(Color,3),  
-    visible_order(InC0,InC), 
-    visible_order(OutC0,OutC),    
-    print_side_by_side(Color,InC,lhs(ROptions,ID1),_,OutC,rhs(ROptions,ID2)),
-    banner_lines(Color,2),
-    show_group(lhs(ID1),InC),
-    banner_lines(Color),
-    show_group(rhs(ID2),OutC),   
-    banner_lines(Color,3))),
- nop((if_t(should_not_be_io_groups(InC,OutC), ( print(InC),print(OutC),ibreak)))).
-
-should_not_be_io_groups(I,O):- I\==[],O\==[],I=@=O.
-
-visible_order_fg(InC0,InC):- is_grid(InC0),!,InC=InC0.
-visible_order_fg(InC00,InC):- is_list(InC00),!,include(is_used_fg_object,InC00,InC0),visible_order(InC0,InC).
-visible_order_fg(InC,InC).
-visible_order(InC0,InC):- is_grid(InC0),!,InC=InC0.
-visible_order(InC0,InC):- is_list(InC0),!, predsort(sort_on(most_visible),InC0,InC).
-visible_order(InC,InC).
-
-most_visible(Obj,LV):- has_prop(pixel2C(_,_,_),Obj),!, LV= (-1)^1000^1000.
-most_visible(Obj,LV):- area(Obj,1), grid_size(Obj,H,V), Area is (H-1)*(V-1), !, LV=Area^1000^1000.
-most_visible(Obj,LV):- area(Obj,Area),cmass(bg,Obj,BGMass), % cmass(fg,Obj,FGMass),
-  findall(_,doing_map_list(_,_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt, !, %, NCMass is -CMass,
-  LV = Area^BGMass^NCnt.
-most_visible(_Obj,LV):- LV= (-1)^1000^1000.
-
-
 % =========================================================
 % TESTING FOR INDIVIDUATIONS
 % =========================================================
@@ -690,11 +590,8 @@ i2(ROptions,GridSpec):- clsmake,
   into_grids(GridSpec,GridIn),
   once((into_grid(GridIn,Grid),igo(ROptions,Grid))).
 
-i_pair(ROptions,GridIn,GridOut):-
-  check_for_refreshness,
-  maybe_name_the_pair(GridIn,GridOut,PairName),
-  individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
-  show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC).
+/*
+*/
 
 %worker_output(G):- \+ menu_or_upper('B'),!, time(wots(_,arc_weto(G))).
 worker_output(G):- call(G).
@@ -964,7 +861,7 @@ remove_omem_trumped_by_boxes(VM,I,O):-
   O1\==O2, 
   globalpoints(O1,Ps1),globalpoints(O2,Ps2),
   Ps1\==Ps2,
-  area(O1,A1),area(O2,A2), (A1/4>A2),
+  area(O1,A1),area(O2,A2), ((A1/4)>A2),
   findall(C-P1,(member(C-P1,Ps1),member(C-P1,Ps2)),Overlaps),
   length(Overlaps,Len),Len>=2,
   area_contained(O1,O2),
@@ -2439,7 +2336,7 @@ fti(_,[Done|TODO]):-  ( \+ done \= Done ), !, u_dmsg(done_fti([Done|TODO])),!.
 fti(VM,_):-
   Objs = VM.objs,  
   length(Objs,Count),
-  ((member(progress,VM.options); Count > VM.objs_max_len; (statistics(cputime,X), X > (VM.timeleft)))) -> 
+  ((member(progress,VM.options); catch_log(Count > VM.objs_max_len); (statistics(cputime,X), catch_log(X > (VM.timeleft))))) -> 
    print_vm_debug_objs(VM),fail.
 
 fti(VM,[+(AddOptions)|TODO]):- !,
@@ -4494,6 +4391,11 @@ is_thing_or_connection1(jumps(_,_)).
 find_one_individual(Option,Obj,VM):- find_one_ifti3(Option,Obj,VM),!.
 %find_one_individual(Option,Obj,VM):- find_one_ifti2(Option,Obj,VM),!.
 
+include_only_between(HS,HE,VS,VE,IndvPoints0,IndvPoints):-
+   include(w_in_box(HS,HE,VS,VE),IndvPoints0,IndvPoints).
+
+w_in_box(HS,HE,VS,VE,CPoint):- hv_c_value(CPoint,_,H,V),between(HS,HE,H),between(VS,VE,V),!.
+  
 
 find_one_ifti3(Option,Obj,VM):- 
     Points = VM.lo_points,
@@ -4508,7 +4410,10 @@ find_one_ifti3(Option,Obj,VM):-
     FirstTwo=PointsFrom,
     Rest1 = ScanPoints,
     points_allowed(VM,Option,PointsFrom),
-    all_individuals_near(_SkipVM,Dir,Option,C1,PointsFrom,ScanPoints,NextScanPoints,IndvPoints),!,
+    all_individuals_near(_SkipVM,Dir,Option,C1,PointsFrom,ScanPoints,NextScanPoints,IndvPoints0),!,
+
+    include_only_between(1,VM.h,1,VM.v,IndvPoints0,IndvPoints),
+
     length(IndvPoints,Len),Len>=2,!,
     make_indiv_object(VM,[iz(ShapeType),iz(media(shaped)),birth((ShapeType))],IndvPoints,Obj),
     meets_indiv_criteria(VM,Option,IndvPoints),
@@ -5100,7 +5005,7 @@ fast_simple :- true.
 %
 
 individuation_macros(i_pbox,[pbox_vm_special_sizes]).
-individuation_macros(i_mono_colormass,[fg_shapes(colormass)]).
+individuation_macros(i_mono_colormass,[fg_shapes(colormass),generic_nsew_colormass,do_ending]).
 %individuator(i_colormass,[subshape_both(v,colormass), maybe_lo_dots]).
 individuation_macros(i_mono_nsew,[fg_shapes(nsew)]).
 
