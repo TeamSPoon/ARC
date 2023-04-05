@@ -16,11 +16,10 @@
 i_pair(WasROptions,GridIn,GridOut):- WasROptions==complete,!,
  must_det_ll((
  check_for_refreshness,
- detect_all_training_hints,!,
  ((var(GridIn);var(GridOut))-> current_pair_io(GridIn,GridOut) ; true),
  maybe_name_the_pair(GridIn,GridOut,PairName),
- guess_how(HOW,GridIn,GridOut,Stuff1,Stuff2),
- guess_how_else(HOW_ELSE,Stuff1,Stuff2,InC,OutC),
+ notrace(((((guess_how(HOW,GridIn,GridOut,Stuff1,Stuff2), 
+             guess_how_else(HOW_ELSE,Stuff1,Stuff2,InC,OutC)))))),
  INDIV = [HOW|HOW_ELSE],
  show_individuated_pair(PairName,INDIV,GridIn,GridOut,InC,OutC))).
 
@@ -82,7 +81,10 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCB,OutCB):-
 
   if_t( \+ nb_current(menu_key,'i'),
 ((((((
-   show_indivs_side_by_side(inputs,InC),show_indivs_side_by_side(outputs,OutC),
+
+   show_indivs_side_by_side(inputs,InC),
+   show_indivs_side_by_side(outputs,OutC),
+    
   %w_section(show_io_groups,show_io_groups(green,ROptions,ID1,InC,ID2,OutC)),
   %show_io_groups(green,ROptions,ID1,InC,ID2,OutC),
   =(InCR,InC), =(OutCR,OutC),

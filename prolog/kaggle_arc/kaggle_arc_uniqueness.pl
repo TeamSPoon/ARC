@@ -7,6 +7,108 @@
 :- include(kaggle_arc_header).
 
 
+count_of(G,N):- findall(G,G,L),variant_list_to_set(L,S),length(S,N).
+
+dont_notice(oid(_)).
+dont_notice(giz(_)).
+dont_notice(link(_,_)).
+dont_notice(iz(i_o(_))).
+dont_notice(P):- compound(P),arg(_,P,E),is_gridoid(E),!.
+dont_notice(P):- compound(P),!,compound_name_arity(P,F,_),!,dont_notice(F).
+dont_notice(F):- \+ atom(F),!,fail.
+dont_notice(link).
+dont_notice(oid).
+dont_notice(giz).
+dont_notice(shape_rep).
+
+counts_change(TestID,ExampleNum,X,N2,N1):- 
+   propcounts(TestID, ExampleNum, out, count, N1, X), \+ dont_notice(X),
+   (propcounts(TestID, ExampleNum, in, count, N2, X) -> true ; N2=0), N1\==N2.
+
+counts_change(TestID,ExampleNum,X,N1,N2):- 
+   propcounts(TestID, ExampleNum, in, count, N1, X), \+ dont_notice(X),
+   (propcounts(TestID, ExampleNum, out, count, N2, X) -> true ; N2=0), N1\==N2.
+
+accompany_change30(TestID,P,Same):-
+  maplist(no_repeats_var,[P]),
+  accompany_change3(TestID,P,Same).
+
+counts_change(TestID,E):- findall(P,counts_change(TestID,_,P,_,_),L),list_to_set(L,S),!,member(E,S).
+
+
+
+accompany_change3(TestID,P,Same):- 
+  findall(ac(TestID,ExampleNum1,L1),accompany_change2(TestID,ExampleNum1,L1),AC2),
+  dif(ExampleNum1,ExampleNum2),
+  dif(P,common),
+  counts_change(TestID,P),
+  freeze(L1,member(P=V1,L1)),
+  freeze(L2,member(P=V2,L2)),
+  select(ac(TestID,ExampleNum1,L1),AC2,AC3),
+  member(ac(TestID,ExampleNum2,L2),AC3),  
+  L2@>L1,
+  once((intersection(V1,V2,Same,_,_))).
+
+changing_props(X1,X2):- 
+ counts_change(TestID,X1),
+ counts_change(TestID,X2), 
+ same_functor(X1,X2), X1@>X2.
+
+
+
+accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=Intersect]):-
+ changing_props(X1,X2),
+ accompany_change(TestID,ExampleNum,X1,Props1,_NotProps1),
+ accompany_change(TestID,ExampleNum,X2,Props2,_NotProps2),
+ once((
+   intersection(Props1,Props2,Intersect,P1,P2),
+   include(has_other_val(Props2),P1,P1O),
+   include(has_other_val(Props1),P2,P2O))).
+
+has_other_val(Props1,X2):- member(X1,Props1),other_val(X1,X2),!.
+
+other_val(X1,X2):- X1\==X2, same_functor(X1,X2).
+
+accompany_change(TestID,ExampleNum,X,Props,NotProps):-
+  var(TestID),!,ensure_test(TestID),
+  accompany_change(TestID,ExampleNum,X,Props,NotProps).
+accompany_change(TestID,ExampleNum,X,Props,NotProps):-
+  var(ExampleNum),!,kaggle_arc(TestID,ExampleNum,_,_),
+  accompany_change(TestID,ExampleNum,X,Props,NotProps).
+accompany_change(TestID,ExampleNum,X,Props,NotProps):-
+  var(X),!,counts_change(TestID,X),
+  accompany_change(TestID,ExampleNum,X,Props,NotProps).
+accompany_change(TestID,ExampleNum,X,Props,NotProps):-   
+   once((counts_change(TestID,ExampleNum,X,N1,N2), N1<N2)),!,
+   %no_repeats_var(Objs), !,    
+   once((
+    obj_group(TestID,ExampleNum,out,_,Objs),
+    my_partition(has_prop(X),Objs,HasProps,NotHasProps),
+    common_props(HasProps,Common),
+    common_props(NotHasProps,NotCommon),
+    intersection(Common,NotCommon,_,Props,NotProps))).
+accompany_change(TestID,ExampleNum,X,Props,NotProps):- fail,
+   counts_change(TestID,ExampleNum,X,N1,N2),
+   N1>N2,
+   obj_group(TestID,ExampleNum,out,_,Objs),
+   once((my_partition(not_has_prop(X),Objs,HasProps,NotHasProps),
+   common_props(HasProps,Common),
+   common_props(NotHasProps,NotCommon),
+   intersection(Common,NotCommon,_,Props,NotProps))).
+
+common_props([O|Objs],Props):-
+   indv_props_list(O,List),
+   findall(P,(member(P,List),\+ dont_notice(P),forall(member(E,Objs),has_prop(P,E))),Props).
+
+
+obj_group(TestID,ExampleNum,IO,ROptions,Objs):-
+ kaggle_arc_io(TestID,ExampleNum,IO,Grid),
+  ((arc_cache:individuated_cache(TestID,TID,GOID,ROptions,Objs),
+  once((testid_name_num_io_0(TID,_,Example,Num,IO),
+        testid_name_num_io_0(GOID,_,Example,Num,IO))))*-> true ; grid_to_objs(Grid,ROptions,Objs)).
+  
+
+
 
 saved_group(Why,IndvS):-
   is_why_grouped(_TestID,_Count,Why,IndvS).

@@ -547,7 +547,8 @@ add_bg(III,II,bg):- subst(III,'$VAR'('_'),'bg',II).
 %b_grid_to_norm(I,OUT):- b_grid_to_norm(Op,I,OO),OUT=(OO-w(Op)).
 %b_grid_to_norm(Op,I,O):- Op==[],!,I=O.
 %b_grid_to_norm(Op,IO,IIOO):-  compound(IO),IO=(I^O),b_grid_to_norm(Op,I,II),!,Op\==[],b_grid_to_norm(Op2,O,OO),!,Op=Op2,IIOO=II^OO.
-normalize_grid(Op,I,GOO):-   
+normalize_grid(OpRot,I,GOO):- grav_rot(I,R1,M),I\=@=M,!,normalize_grid(Op,M,GOO),append(Op,[R1],OpRot).
+normalize_grid(R2Op,I,GOOP):-   
  must_det_ll((
   debug_c(reduce,writeg(normalize_grid=I)),
   protect_vars(I,III,How),
@@ -559,7 +560,10 @@ normalize_grid(Op,I,GOO):-
   call(How,COp,Op),
   call(How,COO,OO),
   mapgrid(fix_bg(Which),OO,GOO),
-  debug_c(reduce,writeg([un_reduce_grid=OO,un_cop=Op])))).
+  debug_c(reduce,writeg([un_reduce_grid=OO,un_cop=Op])),
+  grav_rot(GOO,R2,GOOP),
+  ((R2==sameR->R2Op=Op;R2Op=[R2|Op])))).
+
 
 fix_bg(Which,OO,X):- fail, Which=@=OO,!,freeze(X,X\=(_,_)).
 %fix_bg(Which,OO,_):-OO=fg,!.

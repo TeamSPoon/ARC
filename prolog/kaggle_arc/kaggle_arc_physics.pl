@@ -92,8 +92,7 @@ grid_mass_ints(Grid,GridIII):-
   mapgrid(normal_w(Sorted),Grid,GridIII),!.
   /*
   %Prop = unique_colors(lst(vals([[cyan,yellow,orange,green,red,blue,black],[orange,cyan,yellow,green,black,red,blue]]),len(7),diff([orange,cyan,yellow,green,black,red,blue]=@=[cyan,yellow,orange,green,red,blue,black])))
-  
-  include(is_fg_color,CC,FG),
+  dmiles  include(is_fg_color,CC,FG),
   (FG==[]->SORT=[fg,black,bg];SORT=FG),!,
   %((unique_fg_colors(Grid,FG)->FG\==[])->true;FG=[black]),
   mapgrid(normal_w(SORT),Grid,GridIII),!.
@@ -125,6 +124,7 @@ rav_rot_test([[black,black,black,black,black,black,_,_],[black,black,black,black
 %rav_rot_test(X):- never_this(X,Y),rav_rot_test(Y),into_mono(Y,Z),X=Y.
 rav_rot_test(X):- clause(rav_rot_test(Y),true),into_monochrome2(Y,Z),X=Z.
 
+/*
 show_grav_rot(X):-
  must_det_ll((
   into_grid(X,Y),!,
@@ -137,7 +137,8 @@ show_grav_rot(X):-
   \+ \+ ignore((call(R1,YY,ZZ),call(R2,YY,TT), print_ss(R1-R2,ZZ,TT))),
   
   !)))).
-  
+*/
+
 into_monorot(X,Y):- mapgrid(fg_is_fg_is_bg,X,Y), \+ avoid_mono(Y),!.
 into_monorot(X,X). 
 

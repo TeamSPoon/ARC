@@ -313,15 +313,15 @@ show_changes_and_match_template(Named,ObjsI,ObjsO):-
    nop(maplist(prop_name,VCB,VCN)),
    VCN=VNN,
    intersection(VN1,VN2,VNN,_,_),
-   pp(vnn=VNN), pp(vcn=VCN),
+   pp_saved(vnn=VNN), pp_saved(vcn=VCN),
    maplist(objs_to_which_props,[ObjsI,ObjsO],[WP1,WP2]),
    %show_changed_diffs(Named,templify_cc,WP1,WP2),
    append(WP1,WP2,WPB),
    include(equals_same_p2(prop_name,VCN),WPB,WPBT),
-   pp(wPBT=WPBT),
+   pp_saved(wPBT=WPBT),
    maplist(templify_cc,WPBT,Templ),
    variant_list_to_set(Templ,Templates),   
-   pp(templates=Templates),
+   pp_saved(templates=Templates),
    maplist(show_matching_templates(Named,VNN,WP1,WP2),Templates,Info),
    sum_list(Info,Shown),
    (Shown==0 ->
@@ -408,10 +408,16 @@ print_each_ss2(L1E,[]):-!,print_each_ss2(["Only Left"],L1E).
 print_each_ss2([],L1E):-!,print_each_ss2(["Only Right"],L1E).
 print_each_ss2(L1E,L2E):- listify(L1E,WP1), listify(L2E,WP2),print_each_ss2_2(WP1,WP2),!.
 
+pp_saved(A=B):- is_list(B),!,maplist(pp_saved_nv(A),B),pp(A=B).
+pp_saved(A=B):- pp_saved_nv(A,B),!,pp(A=B).
+pp_saved(A,B):- pp_saved_nv(A,B),pp(B).
+
+pp_saved_nv(A,B):- must_det_ll((remember_propcounts(_Named,pp_saved,A,B))).
+
 print_each_ss2_2(WP1,WP2):-
  must_det_ll((
-   wots(S1,maplist(pp,WP1)),
-   wots(S2,maplist(pp,WP2)),
+   wots(S1,maplist(pp_saved(left),WP1)),
+   wots(S2,maplist(pp_saved(right),WP2)),
    atomic_list_concat(SS10,'\n',S1),
    atomic_list_concat(SS20,'\n',S2),
    max_width(SS10,SS1,100),
@@ -484,6 +490,7 @@ print_ptree(Named,RRRR):-
   treeify_props(Named,RRR,Tree),
   remember_tree(Named,Tree),
   tersify_gridoids(Tree,TTree),
+
   with_pre(print_tree_no_nl(Named=TTree)))).
 
 tersify_gridoids(Tree,TTree):- map_pred1(replace_gridoids,Tree,TTree).
@@ -628,11 +635,13 @@ grp_intersection(A,B,FA_Shared,FB_AA,FA_BB):- is_list_of_lists(A),is_list_of_lis
   !.
 
 
-print_grouped_props(Named,OProps):- non_interesting_props(OProps),!, print(print_non_interesting_props(Named)->OProps).
+print_grouped_props(Named,OProps):- 
+  non_interesting_props(OProps),!, print(print_non_interesting_props(Named)->OProps).
 %print_grouped_props(Named,Obj):- \+ is_list(Obj), !, pp(print_grouped_props(Named)=Obj).
 
 print_grouped_props(Named,In):- 
   extend_grp_proplist(In,Objs),
+  set_test_id_io(Named),
   print_grouped_props2(Named,Objs),!,
   print_grouped_props1(Named,Objs),!.
 
@@ -931,8 +940,10 @@ indv_eprops_list(Indv,List9):-
   indv_props_list(Indv,List0),
   ku_rewrite_props(List0,List9).
 
+var_e(E,S):- E==S,!.
+var_e(E,S):- (nonvar(E);attvar(E)),!,E=@=S.
 
-variant_list_to_set([E|List],Out):- select(S,List,Rest),E=@=S,!, variant_list_to_set([E|Rest],Out).
+variant_list_to_set([E|List],Out):- select(S,List,Rest),var_e(E,S),!, variant_list_to_set([E|Rest],Out).
 variant_list_to_set([E|List],[E|Out]):- !, variant_list_to_set(List,Out).
 variant_list_to_set(H,H).
 
@@ -976,7 +987,7 @@ prop_priority([_],0-inf):-!.
 prop_priority([1-(N-_),Not1-(_-_)|_],1-N):- Not1\==1,!.
 prop_priority([1-(_-_),   1-(N-_)|_],2-N):-!.
 prop_priority(_,                     3-inf).
-   
+
 
 
 var_to_underscore(Var,_):- plain_var(Var),!.
@@ -994,6 +1005,7 @@ print_elists_hack_objs(Named,Props0,Objs,HackedObjs):-
   list_to_set(CountOfEach0,CountOfEach),
   %mpp(countOfEach=CountOfEach),
   ignore(my_maplist(remember_propcounts(Named,count),CountOfEach)),
+  remember_propcounts(Named,countE,CountOfEach,Props,PropsSet),
   my_maplist(make_unifiable_cc,PropsSet,UPropsSet),
   map_pred(var_to_underscore,UPropsSet,UPropsSetG),
   variant_list_to_set(UPropsSetG,UPropsSetGSet),
@@ -1008,8 +1020,9 @@ print_elists_hack_objs(Named,Props0,Objs,HackedObjs):-
   make_splitter(GroupsWithCountsWPO,CountOfEach,SSplits),list_to_set(SSplits,CSplits),
   store_splits(Named,BaseSize,CSplits,Splits),
   %nop
-  nop(print_ptree(countOfEachU(Named),Splits)),
+  (print_ptree(countOfEachU(Named),Splits)),
   ignore(my_maplist(remember_propcounts(Named,diversity),GroupsWithCountsWPO)),
+  remember_propcounts(Named,diversityE,GroupsWithCountsWPO),
   replace_props_with_stats(GroupsWithCountsWPO,CountOfEach,Objs,HackedObjsM),
   my_maplist(ku_rewrite_props,HackedObjsM,Hacked),
   nop(pp(hackedObjs(Named)=HackedObjs)))).
@@ -1060,32 +1073,48 @@ made_split(N,UProp,List,Out):-list_to_set(List,Set),List\=@=Set,!,made_split(N,U
 made_split(_,UProp,List,((Len-UProp)->List)):- length_s(List,Len).
 sameps(UProp,_-Prop):- \+ Prop \= UProp.
 
-into_test_id_io(Named+Filter,TestID,ExampleNum,IO+Filter):-
- into_test_id_io(Named,TestID,ExampleNum,IO),!.
-into_test_id_io(Named,TestID,(Example+Num),IO):-
- name_to_selector(Named,((Example+Num)*IO)),get_current_test(TestID),!.
-into_test_id_io(vs(Name1+Filter1,Name2+Filter2),TestID,
+set_test_id_io(Named):-
+  into_test_id_io1(Named,TestID,ExampleNum,IO),
+  nb_setval(prior_asserts,to(TestID,ExampleNum,IO)).
+into_test_id_io(Named,TestID,ExampleNum,IO):- var(Named),!, must_det_ll((nb_current(prior_asserts,to(TestID,ExampleNum,IO)))),!.
+into_test_id_io(Named,TestID,ExampleNum,IO):-
+  into_test_id_io1(Named,TestID,ExampleNum,IO),
+  nb_setval(prior_asserts,to(TestID,ExampleNum,IO)).
+
+into_test_id_io1(Named+Filter,TestID,ExampleNum,IO+Filter):- into_test_id_io1(Named,TestID,ExampleNum,IO),!.
+into_test_id_io1(Named,TestID,(Example+Num),IO):- name_to_selector(Named,((Example+Num)*IO)),get_current_test(TestID),!.
+into_test_id_io1(vs(Name1+Filter1,Name2+Filter2),TestID,
   vs(Example+Num,(Example2+Num2)),
   vs(IO,IO2,vs(Filter1,Filter2))):- 
   name_to_selector(Name1,((Example+Num)*IO)),get_current_test(TestID),
   name_to_selector(Name2,((Example2+Num2)*IO2)),!.
-into_test_id_io(input(TestID>ExampleNum),TestID,ExampleNum,in).
-into_test_id_io(both(TestID>ExampleNum),TestID,ExampleNum,in_out).
-into_test_id_io(output(TestID>ExampleNum),TestID,ExampleNum,out).
-into_test_id_io(Named,TestID,ExampleNum,IO):- Named=..[IO,TestID>ExampleNum],!.
-into_test_id_io(Named,TestID,ExampleNum,IO):- Named=..[IO,TestID,ExampleNum],!.
-into_test_id_io(Named+Filter,TestID,Named,Filter):-get_current_test(TestID),!.
-into_test_id_io(Named,TestID,Named,Named):-get_current_test(TestID),!.
-  
+into_test_id_io1(input(TestID>ExampleNum),TestID,ExampleNum,in).
+into_test_id_io1(both(TestID>ExampleNum),TestID,ExampleNum,in_out).
+into_test_id_io1(output(TestID>ExampleNum),TestID,ExampleNum,out).
+into_test_id_io1(Named,TestID,ExampleNum,IO):- Named=..[IO,TestID>ExampleNum],!.
+into_test_id_io1(Named,TestID,ExampleNum,IO):- Named=..[IO,TestID,ExampleNum],!.
+into_test_id_io1(Named+Filter,TestID,Named,Filter):-get_current_test(TestID),!.
+into_test_id_io1(Named,TestID,Named,Named):-get_current_test(TestID),!.
+
 name_to_selector(Named,((Trn+Num)*IO)):- make_up_selector_name(Trn+Num*IO,NameO),Named=NameO.
 
 
 
-remember_propcounts(Named,Diversity,N-Prop):- into_test_id_io(Named,TestID,ExampleNum,IO),
+remember_propcounts(Named,Diversity,N-Prop):- !, into_test_id_io(Named,TestID,ExampleNum,IO),
   arc_assert(propcounts(TestID,ExampleNum,IO,Diversity,N,Prop)).
-remember_propcounts(Named,Diversity,B,N-Prop):- into_test_id_io(Named,TestID,ExampleNum,IO),
-  arc_assert(propcounts(TestID,ExampleNum,IO,Diversity,B,N,Prop)).
+remember_propcounts(Named,Diversity,Prop):- into_test_id_io(Named,TestID,ExampleNum,IO),
+  arc_assert(propcounts(TestID,ExampleNum,IO,Diversity,Prop)).
 
+remember_propcounts(Named,Diversity,B,N-Prop):- !, into_test_id_io(Named,TestID,ExampleNum,IO),
+  arc_assert(propcounts(TestID,ExampleNum,IO,Diversity,B,N,Prop)).
+remember_propcounts(Named,Diversity,B,Prop):- into_test_id_io(Named,TestID,ExampleNum,IO),
+  arc_assert(propcounts(TestID,ExampleNum,IO,Diversity,B,Prop)).
+
+remember_propcounts(Named,Diversity,B,Prop,A):- into_test_id_io(Named,TestID,ExampleNum,IO),
+  arc_assert(propcounts(TestID,ExampleNum,IO,Diversity,B,Prop,A)).
+
+
+:- dynamic(propcounts/5).
 :- dynamic(propcounts/6).
 :- dynamic(propcounts/7).
 
@@ -1574,10 +1603,13 @@ variance_had_counts(Common,HAD,RRR,Versions,Missing,VersionsByCount,Variance):-
   count_each(VersionSet,VersionL,CountOfEachL),
   subst_2L(VersionSet,VersionSetNumbered,CountOfEachL,CountOfEachNumbered),
   
-  (ML == 0 -> 
-  ->(Versions = VersionSet, vesion_uniqueness2(CountOfEachNumbered,VersionsByCount))
-  ; (Versions=[(\+(UHAD))|VersionSet],vesion_uniqueness2([ML-(0- \+(UHAD))|CountOfEachNumbered],VersionsByCount))),
-  length(Versions,Variance))).
+  (ML == 0
+  ->(Versions = VersionSet, CountOfEachNumbered=CountOfEachNumberedNN)
+  ; (Versions=[(\+(UHAD))|VersionSet],CountOfEachNumberedNN=[ML-(0- \+(UHAD))|CountOfEachNumbered])),  
+ length(Versions,Variance),
+ vesion_uniqueness2(CountOfEachNumberedNN,VersionsByCount),
+ ignore(((nb_current(prior_asserts,to(TestID,ExampleNum,IO)),
+    arc_assert(propcounts(TestID,ExampleNum,IO,variance_had_count_set(Variance,ML),Common,Versions,CountOfEachNumberedNN))))))).
 
 number_from_magnitude(VersionSet,VersionSetNumbered):-
   predsort(using_compare(version_magnitude),VersionSet,VersionSetOrdered),
@@ -2473,13 +2505,13 @@ get_is_for_ilp(_,_,determination, D ):-
         (lazy_evaluate(my_leq/2)) in_cmt,
         (lazy_evaluate(my_mult/3)) in_cmt,
         [],
-        determination(rhs/10,lhs/10) in_cmt,
-        determination(rhs/10,color_change/2) in_cmt,
-        determination(rhs/10,incr_nat30/2) in_cmt,
-        determination(rhs/10,my_geq/2) in_cmt,
-        determination(rhs/10,my_leq/2) in_cmt,
-        determination(rhs/10,my_add/3) in_cmt,
-        determination(rhs/10,my_mult/3) in_cmt,
+        determination(rhs/7,lhs/7) in_cmt,
+        determination(rhs/7,color_change/2) in_cmt,
+        determination(rhs/7,incr_nat30/2) in_cmt,
+        determination(rhs/7,my_geq/2) in_cmt,
+        determination(rhs/7,my_leq/2) in_cmt,
+        determination(rhs/7,my_add/3) in_cmt,
+        determination(rhs/7,my_mult/3) in_cmt,
 
         []]),
    D\==[].
@@ -2502,8 +2534,8 @@ get_is_for_ilp(_,_,bias,D):-
     max_vars(8),
     non_magic(4),
     %enable_pi,
-    head_pred(rhs,10)  in_cmt,
-    body_pred(lhs,10)  in_cmt,
+    head_pred(rhs,7)  in_cmt,
+    body_pred(lhs,7)  in_cmt,
     body_pred(child,2) in_cmt,
  /* 
     body_pred(cenGX,2),

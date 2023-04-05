@@ -82,6 +82,7 @@ mono_i_to_o_is_none_some_none:-
   mono_o_minus_i(Zero2),no_fg_mass(Zero2),
   o_minus_i_equals_some.
 
+individuation_macros(complete, [i_complete]).
 individuation_macros(i_complete, ListO):- 
  must_det_ll((
    im_complete(ListC),
@@ -348,22 +349,25 @@ current_how_else(HOW,Stuff1,Stuff2):-
 guess_how_else([HOW|HOW_ELSE],I,O,Stuff1,Stuff2):-
   guess_how(HOW,I,O,MID1,MID2),
   maplist(guess_how_else,how,HOW_ELSE,MID1,MID2,Stuff1,Stuff2),!.
-guess_how_else(whole,I,O,I,O).
+guess_how_else([],I,O,I,O).
 
 guess_how(HOW,I1,O1,Stuff1,Stuff2):-
-  once((
+  must_det_ll((
   into_solid_grid(I1,I2), into_solid_grid(O1,O2))),!,
   indiv_how(HOW),  duplicate_term(I2+O2,I+O),
-  once((
+  must_det_ll((
     
     once((individuate(HOW,I,Stuff1))),
-    once((individuate(HOW,O,Stuff2))),
+    once((individuate(HOW,O,Stuff2))))),
+
     length(Stuff1,L),length(Stuff2,L),
+
+    must_det_ll((
     print_ss(orig,I,O),
     ignore(completely_represents(I,Stuff1)),
     ignore(completely_represents(O,Stuff2)),
     print_ss(objs(HOW,L),Stuff1,Stuff2))),
-  L>1.
+  L>0.
 
 
 
@@ -373,7 +377,7 @@ individuation_macros(completely_do(This),[This,do_ending]).
 indiv_how(completely_do(i_colormass)).
 indiv_how(completely_do(i_mono_colormass)).
 indiv_how(completely_do(i_complete)).
-indiv_how(completely_do(maybe_lo_dots)).
+%indiv_how(completely_do(maybe_lo_dots)).
 indiv_how( indv_opt(Flags)):- fail,
       toggle_values([bground,diags,mono,shape,boxes,parts],Flags).
 toggle_values([N|Names],[V|Vars]):- toggle_values(Names,Vars), toggle_val(N,V).
@@ -1773,8 +1777,8 @@ muarc:clear_arc_caches:-  \+ luser_getval(extreme_caching,true), retractall_in_t
 :- multifile(muarc:clear_all_caches/0).
 :- dynamic(muarc:clear_all_caches/0).
 muarc:clear_all_caches:-  forall(muarc:clear_arc_caches,true), fail.
-:- luser_default(use_individuated_cache,false).
-:- luser_setval(use_individuated_cache,false).
+:- luser_default(use_individuated_cache,true).
+:- luser_setval(use_individuated_cache,true).
 
 get_individuated_cache(TID,ROptions,GOID,IndvS):- nonvar(ROptions),
   ground(GOID), \+ luser_getval(use_individuated_cache,false), call_in_testid(arc_cache:individuated_cache(TID,GOID,ROptions,IndvS)),!.
@@ -2331,6 +2335,7 @@ fti(_,[]):- !.
 fti(VM,NotAList):- \+ is_list( NotAList),!, fti(VM,[NotAList]).
 fti(VM,[Step|Program]):- is_list(Step),append(Step,Program,StepProgram),!,fti(VM,StepProgram).
 fti(VM,[end_of_macro|TODO]):- !, fti(VM,TODO).
+
 fti(_,[Done|TODO]):-  ( \+ done \= Done ), !, u_dmsg(done_fti([Done|TODO])),!.
 %fti(VM,_):- VM.lo_points==[], !.
 fti(VM,_):-

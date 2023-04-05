@@ -210,9 +210,9 @@ show_reduced_inputs(TestSpec):- var_ensure_test(TestSpec,TestID),
   do_some_grids('INPUT'(TestID),Grids).
 
 show_reduced_pairs(TestID):- 
-  with_test_pairs(TestID,ExampleNum,I,O,
+  forall(with_test_pairs(TestID,ExampleNum,I,O,
     (print_side_by_side(green,I,orig_in(TestID,ExampleNum),_,O,orig_out(TestID,ExampleNum)),
-     forall(do_some_grids(TestID,I^O),true))).
+     forall(do_some_grids(TestID,I^O),true))),true).
 
 
 show_reduced_io_rarely(_):- \+ get_pair_mode(single_pair),!.
@@ -222,7 +222,7 @@ show_reduced_io_rarely(In^Out):- % ignore((nonvar(In),nonvar(Out),grid_hint_swap
 show_reduced_io_rarely(IO):- forall(show_reduced_io(IO),true).
 
 show_reduced_io(TestSpec):- var_ensure_test(TestSpec,TestID),
-    with_test_pairs(TestID,_ExampleNum,I,O,show_reduced_io(I^O)).
+    forall(with_test_pairs(TestID,_ExampleNum,I,O,show_reduced_io(I^O)),true).
 
 show_reduced_io(IO):- 
     once(show_grid_call(reduce_cutaway(_),IO,NextIO)),

@@ -576,17 +576,18 @@ show_i(Y,O):-
 
 ndividuator(TestID):- ensure_test(TestID),
   never_entire_suite,nop(show_test_grids), set_flag(indiv,0),
-  each_ndividuator(TestID),
-  with_test_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)).
+  %each_ndividuator(TestID),
+  forall(with_test_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)),true).
 
-ndividuator(TestID,ExampleNum,In,Out):- get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
+ndividuator(TestID,ExampleNum,In,Out):- 
+ get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
 ndividuator(TestID,ExampleNum,Complete,In,Out):-  
  with_indivs_mode(Complete,((name_the_pair(TestID,ExampleNum,In,Out,_PairName),
-  with_test_pairs(TestID,ExampleNum,In,Out, i_pair(Complete,In,Out))))).
+   with_test_pairs(TestID,ExampleNum,In,Out, i_pair(Complete,In,Out))))).
 
 show_test_pairs(TestID):- ensure_test(TestID), set_flag(indiv,0),
-  with_test_pairs(TestID,ExampleNum,In,Out,
-   print_side_by_side(green,In,in(show_test_pairs(TestID>ExampleNum)),_,Out,out(show_test_pairs(TestID>ExampleNum)))).
+ forall( with_test_pairs(TestID,ExampleNum,In,Out,
+   print_side_by_side(green,In,in(show_test_pairs(TestID>ExampleNum)),_,Out,out(show_test_pairs(TestID>ExampleNum)))), true).
 %show_test_grids:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,Grid,print_grid(show_test_grids(TestID),Grid)).
 
 
@@ -701,7 +702,7 @@ testspec_to_pairs(TestSpec,TestID,ExampleNum,I,O):-
 for_each(Gen,Goal):-
   Gen,(Goal*->true;true).
 
-with_test_pairs(TestID,ExampleNum,I,O,P):-
+with_test_pairs(TestID,ExampleNum,I,O,P):- 
  for_each((test_pairs(TestID,ExampleNum,I,O)),
   my_menu_call((
     ensure_test(TestID),
