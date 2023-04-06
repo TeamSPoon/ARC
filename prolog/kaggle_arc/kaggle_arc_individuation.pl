@@ -54,7 +54,7 @@ individuation_macros(do_ending, [
  extend_obj_proplists,
  really_group_vm_priors,
  %whole,
- %combine_objects,
+ %combine_objects, 
  end_of_macro]).
 
 no_fg_mass(Zero):- mass(Zero,Mass),!,Mass=0.

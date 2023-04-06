@@ -21,6 +21,8 @@ dont_notice(oid).
 dont_notice(giz).
 dont_notice(shape_rep).
 
+counts_change(TestID,E):- findall(P,counts_change(TestID,_,P,_,_),L),list_to_set(L,S),!,member(E,S).
+
 counts_change(TestID,ExampleNum,X,N2,N1):- 
    propcounts(TestID, ExampleNum, out, count, N1, X), \+ dont_notice(X),
    (propcounts(TestID, ExampleNum, in, count, N2, X) -> true ; N2=0), N1\==N2.
@@ -33,27 +35,50 @@ accompany_change30(TestID,P,Same):-
   maplist(no_repeats_var,[P]),
   accompany_change3(TestID,P,Same).
 
-counts_change(TestID,E):- findall(P,counts_change(TestID,_,P,_,_),L),list_to_set(L,S),!,member(E,S).
 
+show_scene_change(TestID):- 
+   no_repeats_var(NR),
+   NR = accompany_change3(TestID,_P,_Same),
+   forall(NR,dmsg(NR)).
 
-
-accompany_change3(TestID,P,Same):- 
-  findall(ac(TestID,ExampleNum1,L1),accompany_change2(TestID,ExampleNum1,L1),AC2),
-  dif(ExampleNum1,ExampleNum2),
-  dif(P,common),
+accompany_change3(TestID,P,NewSame):- 
+  findall(ac(TestID,X,ExampleNum,PO),
+    (accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=_Intersect]),
+     member(X=PO,[X1=P1O,X2=P2O])), AC0),
+  sort(AC0,AC1),
+  list_to_set_variant(AC1,AC2),
   counts_change(TestID,P),
-  freeze(L1,member(P=V1,L1)),
-  freeze(L2,member(P=V2,L2)),
-  select(ac(TestID,ExampleNum1,L1),AC2,AC3),
-  member(ac(TestID,ExampleNum2,L2),AC3),  
-  L2@>L1,
-  once((intersection(V1,V2,Same,_,_))).
+  findall(ac1(PO),member(ac(TestID,P,_ExampleNum,PO),AC2),AC3),
+  merge_xtra_props(AC3,Same),
+  find_peers_with_same(TestID,P,Same,NewSame).
+
+contains_same([],_):- !.
+contains_same([E|L],P):- sub_var(E,P),!,contains_same(L,P).
+
+find_peers_with_same(TestID,P,Same,NewSame):- select(S,Same,Next),S=@=P,!,find_peers_with_same(TestID,P,Next,NewSame).
+find_peers_with_same(TestID,P,Same,NewSame):- 
+   sub_term(Color,P),is_real_color(Color), sub_term(N,P),number(N),
+   my_partition(contains_same([Color]),Same,SameW,SameWO),SameW\==[], SameWO\==[],!,
+   find_peers_with_same(TestID,P,SameWO,NewSame).
+find_peers_with_same(_,_,Same,Same):-!.
+   
+   
+
+   
+
+merge_xtra_props([ac1(PO)|AC3],Same):- !, merge_xtra_props_3(PO,AC3,Same).
+merge_xtra_props_3(PO,[ac1(PO2)|MORE],OUT):-
+  intersection(PO,PO2,IPO),
+  merge_xtra_props_3(IPO,MORE,OUT).
+merge_xtra_props_3(PO,[],PO).
 
 changing_props(X1,X2):- 
  counts_change(TestID,X1),
- counts_change(TestID,X2), 
- same_functor(X1,X2), X1@>X2.
+ counts_change(TestID,X2),
+ % X1@>X2,
+ other_val(X1,X2). 
 
+other_val(X1,X2):- X1\=@=X2, same_functor(X1,X2).
 
 
 accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=Intersect]):-
@@ -67,7 +92,6 @@ accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=Intersect]):-
 
 has_other_val(Props1,X2):- member(X1,Props1),other_val(X1,X2),!.
 
-other_val(X1,X2):- X1\==X2, same_functor(X1,X2).
 
 accompany_change(TestID,ExampleNum,X,Props,NotProps):-
   var(TestID),!,ensure_test(TestID),
@@ -78,23 +102,23 @@ accompany_change(TestID,ExampleNum,X,Props,NotProps):-
 accompany_change(TestID,ExampleNum,X,Props,NotProps):-
   var(X),!,counts_change(TestID,X),
   accompany_change(TestID,ExampleNum,X,Props,NotProps).
+
 accompany_change(TestID,ExampleNum,X,Props,NotProps):-   
    once((counts_change(TestID,ExampleNum,X,N1,N2), N1<N2)),!,
-   %no_repeats_var(Objs), !,    
-   once((
-    obj_group(TestID,ExampleNum,out,_,Objs),
-    my_partition(has_prop(X),Objs,HasProps,NotHasProps),
-    common_props(HasProps,Common),
-    common_props(NotHasProps,NotCommon),
-    intersection(Common,NotCommon,_,Props,NotProps))).
+   %maplist(no_repeats_var,Out),
+  once(( 
+         obj_group(TestID,ExampleNum,out,_,Out), my_partition(has_prop(X),Out,HasPropsO,NotHasPropsO),
+         common_props(HasPropsO,Common), 
+         common_props(NotHasPropsO,NotCommon),
+         intersection(Common,NotCommon,_,Props,NotProps),Props\==[])).
 accompany_change(TestID,ExampleNum,X,Props,NotProps):- fail,
-   counts_change(TestID,ExampleNum,X,N1,N2),
-   N1>N2,
-   obj_group(TestID,ExampleNum,out,_,Objs),
-   once((my_partition(not_has_prop(X),Objs,HasProps,NotHasProps),
-   common_props(HasProps,Common),
-   common_props(NotHasProps,NotCommon),
-   intersection(Common,NotCommon,_,Props,NotProps))).
+   counts_change(TestID,ExampleNum,X,N1,N2), N1>N2,
+  once((
+   %obj_group(TestID,ExampleNum,in,_,In), my_partition(has_prop(X),In,HasPropsI,NotHasPropsI),
+  obj_group(TestID,ExampleNum,out,_,Out), my_partition(not_has_prop(X),Out,HasPropsO,NotHasPropsO),
+  common_props(HasPropsO,Common), 
+  common_props(NotHasPropsO,NotCommon),
+  intersection(Common,NotCommon,_,Props,NotProps),Props\==[])).
 
 common_props([O|Objs],Props):-
    indv_props_list(O,List),

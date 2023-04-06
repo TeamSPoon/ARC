@@ -558,7 +558,7 @@ extend_grp_member_proplist(Grp,Props,OUTL):-
   %override_object(Props,Obj1,OUT),
   indv_props_list(Obj2,OUTL).
 
-fix_dumb_props(N,Obj1,[pen([cc(Color,1)])|Obj2]):- fail, N==1,
+fix_dumb_props(N,Obj1,[pen([cc(Color,1)])|Obj2]):- N==1, fail,
   select(pen([cc(Color,1)]),Obj1,ObjM1), \+ sub_var(wfg,ObjM1),
   is_real_color(Color),is_fg_color(Color),
   subst001(ObjM1,Color,wfg,ObjM),
@@ -1101,17 +1101,17 @@ name_to_selector(Named,((Trn+Num)*IO)):- make_up_selector_name(Trn+Num*IO,NameO)
 
 
 remember_propcounts(Named,Diversity,N-Prop):- !, into_test_id_io(Named,TestID,ExampleNum,IO),
-  arc_assert(propcounts(TestID,ExampleNum,IO,Diversity,N,Prop)).
+  assert_if_new(propcounts(TestID,ExampleNum,IO,Diversity,N,Prop)).
 remember_propcounts(Named,Diversity,Prop):- into_test_id_io(Named,TestID,ExampleNum,IO),
-  arc_assert(propcounts(TestID,ExampleNum,IO,Diversity,Prop)).
+  assert_if_new(propcounts(TestID,ExampleNum,IO,Diversity,Prop)).
 
 remember_propcounts(Named,Diversity,B,N-Prop):- !, into_test_id_io(Named,TestID,ExampleNum,IO),
-  arc_assert(propcounts(TestID,ExampleNum,IO,Diversity,B,N,Prop)).
+  assert_if_new(propcounts(TestID,ExampleNum,IO,Diversity,B,N,Prop)).
 remember_propcounts(Named,Diversity,B,Prop):- into_test_id_io(Named,TestID,ExampleNum,IO),
-  arc_assert(propcounts(TestID,ExampleNum,IO,Diversity,B,Prop)).
+  assert_if_new(propcounts(TestID,ExampleNum,IO,Diversity,B,Prop)).
 
 remember_propcounts(Named,Diversity,B,Prop,A):- into_test_id_io(Named,TestID,ExampleNum,IO),
-  arc_assert(propcounts(TestID,ExampleNum,IO,Diversity,B,Prop,A)).
+  assert_if_new(propcounts(TestID,ExampleNum,IO,Diversity,B,Prop,A)).
 
 
 :- dynamic(propcounts/5).
@@ -1274,7 +1274,6 @@ unique_fg_color_count_eq_1(Obj):- unique_fg_colors(Obj,II),II=1.
 add_rankings(Objs,WithPriors):- add_rankings(cuz,Objs,WithPriors).
 
 
-add_rankings(_,Objs,Objs):-!.
 
 add_rankings(Why,ObjsIn,WithPriors):- fail,
  relivant_divide(RelivantDivide),
@@ -1292,6 +1291,7 @@ add_rankings(Why,ObjsIn,WithPriors):- fail,
  ObjsIn\=@=Objs,!, 
  add_rankings(Why,Objs,WithPriors).
 
+%add_rankings(_,Objs,Objs):-!.
 add_rankings(Why,Objs,WithPriors):- 
   add_how_simular(Objs,Simulars),
   group_prior_objs0(Why,Simulars,WithPriors),!.
@@ -1377,15 +1377,26 @@ add_prior_info_1(_Objs,ObjsLen,_Common,VbO,PropList,OUT):- is_list(PropList),
   find_version(VbO,Prop,N1,N2,PropList),
   ignore((member(Prop,PropList))),
   %prop_name(Prop,Name),  
-  R = pg(Rankers,Name,rank1,N2),
+  value_to_name(Prop,Name),
+  R = pg(Rankers,Name,rank1,N2),  
   \+ member(R,PropList),  
   rank_size(Rankers,N2,Size),
   %subst(PropList,Prop,R,PropListR),
   PropList = PropListR,
   nop(_=pg(Size,Name,rank3,Size)),
-  append(PropListR,[R,pg(ObjsLen,Name,simulars,N1)],OUT),!.
+  append(PropListR,[R,pg(ObjsLen,Name,simulars,N1)],OUTE),!,
+  include(some_pgs_and_props(PropList),OUTE,OUT).
 
 add_prior_info_1(_Objs,_ObjsLen,_Common,_VersionsByCount,PropList,PropList).
+
+use_simulars(_):- fail.
+use_rank(mass(_)).
+redundant_prop(_,nth_fg_color(N1,_)):- N1==1.
+redundant_prop(Props,unique_colors([FG])):- sub_var(pen([cc(FG,1)]),Props),!.
+redundant_prop(Props,cc(FG,_)):- is_real_fg_color(FG),sub_var(pen([cc(FG,1)]),Props),!.
+some_pgs_and_props(_,pg(_,Name,simulars,_)):- !, use_simulars(Name),!.
+some_pgs_and_props(_,pg(_,Name,rank1,_)):- !, use_rank(Name),!.
+some_pgs_and_props(PropList,Name):- \+ redundant_prop(PropList,Name).
 
 rank_size(_,1,3):-!.
 rank_size(M,N,2):- N\==M,!.
@@ -1609,7 +1620,9 @@ variance_had_counts(Common,HAD,RRR,Versions,Missing,VersionsByCount,Variance):-
  length(Versions,Variance),
  vesion_uniqueness2(CountOfEachNumberedNN,VersionsByCount),
  ignore(((nb_current(prior_asserts,to(TestID,ExampleNum,IO)),
-    arc_assert(propcounts(TestID,ExampleNum,IO,variance_had_count_set(Variance,ML),Common,Versions,CountOfEachNumberedNN))))))).
+    \+ propcounts(TestID,ExampleNum,IO, variance_had_count_set(_,_),        UHAD,_,_),
+    assert_if_new(
+       propcounts(TestID,ExampleNum,IO, variance_had_count_set(Variance,ML),Common,Versions,CountOfEachNumberedNN))))))).
 
 number_from_magnitude(VersionSet,VersionSetNumbered):-
   predsort(using_compare(version_magnitude),VersionSet,VersionSetOrdered),
@@ -1916,10 +1929,10 @@ any_to_oid(Obj,OID):-is_list(Obj),member(oid(OID),Obj).
 
 maybe_unite_oids(StoredName,Missing):- compound(Missing), Missing = (_ -> List),!, maybe_unite_oids(StoredName,List).
 maybe_unite_oids(StoredName,Missing):-
-   arc_assert(is_objgrp(StoredName,Missing)),
+   assert_in_testid(is_objgrp(StoredName,Missing)),
    oids_from(Missing,OIDS),
    length(OIDS,N),
-   arc_assert(is_oidlist(StoredName,N,OIDS)),
+   assert_in_testid(is_oidlist(StoredName,N,OIDS)),
    pp(red,is_oidlist(StoredName,N,OIDS)).
 
 
@@ -2253,7 +2266,8 @@ read_terms_from_atom(D,Atom):-
    ((D == end_of_file) -> !, fail ; true).
 
 %learn_ilp:- ensure_test(TestID),learn_ilp(TestID).
-learn_ilp(TestID):- ensure_test(TestID),
+learn_ilp(TestID):- 
+  ensure_test(TestID),
   must_det_ll((
     ensure_test(TestID),
     abolish(arc_test_properties/3),
@@ -2261,12 +2275,14 @@ learn_ilp(TestID):- ensure_test(TestID),
     abolish(is_for_ilp/4),
     dynamic(is_for_ilp/4),
     %compile_and_save_test(TestID),
-    %individuate_all_pairs_from_hints(TestID),
+    individuate_all_pairs_from_hints(TestID),    
     with_luser(use_individuated_cache,true, 
      forall(kaggle_arc(TestID,ExampleNum,I,O),
       must_det_ll(learn_ilp(TestID,ExampleNum,I,O)))),!,
     listing(is_for_ilp/4),
-    dump_ilp_files)),!.
+    dump_ilp_files(S))),!,
+  show_scene_change(TestID),
+  write_ilp_file(TestID,S,logicmoo_ex),!.
 
 
 learn_ilp(TestID,ExampleNum,GridIn,GridOut):-  
@@ -2397,10 +2413,11 @@ into_sarg(A-fg,A):-!.
 into_sarg(_-bg,bg):-!.
 into_sarg(A,A).
 
-dump_ilp_files:-
+dump_ilp_files:- dump_ilp_files(_).
+dump_ilp_files(S):-
  must_det_ll((
    get_current_test_atom(TestAtom),
-   sformat(S,'out/ilp/~w',[TestAtom]),
+   if_t(var(S),sformat(S,'out/ilp/~w',[TestAtom])),
    make_directory_path(S),
    write_ilp_file(TestID,S,bias),
    write_ilp_file(TestID,S,bk),
