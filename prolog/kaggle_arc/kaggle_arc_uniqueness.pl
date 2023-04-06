@@ -38,8 +38,11 @@ accompany_change30(TestID,P,Same):-
 
 show_scene_change(TestID):- 
    no_repeats_var(NR),
-   NR = accompany_change3(TestID,_P,_Same),
-   forall(NR,dmsg(NR)).
+   NR = accompany_change3(TestID,P,Same),
+   NRO = accompany_changed(TestID,P,Same),
+   forall(NR,
+     (%dmsg(NR),
+      assert_ilp(TestID,common,logicmoo_ex,NRO))).
 
 accompany_change3(TestID,P,NewSame):- 
   findall(ac(TestID,X,ExampleNum,PO),
@@ -48,10 +51,34 @@ accompany_change3(TestID,P,NewSame):-
   sort(AC0,AC1),
   list_to_set_variant(AC1,AC2),
   counts_change(TestID,P),
-  findall(ac1(PO),member(ac(TestID,P,_ExampleNum,PO),AC2),AC3),
-  merge_xtra_props(AC3,Same),
-  find_peers_with_same(TestID,P,Same,NewSame).
+  ac1_or_ac2(TestID,P,AC2,NewSame).
 
+ac1_or_ac2(TestID,P,AC2,NewSame):-
+  ac1_or_ac2_1(TestID,P,AC2,NewSame)*->true;ac1_or_ac2_2(TestID,P,AC2,NewSame).
+  
+ac1_or_ac2_1(TestID,P,AC2,NewSame):-   
+  findall(ac1(PO),member(ac(TestID,P,_ExampleNum,PO),AC2),AC3),
+  merge_xtra_props_ac1(AC3,Same),
+  find_peers_with_same(TestID,P,Same,NewSame),
+  NewSame\==[].
+
+ac1_or_ac2_2(TestID,P,AC2,NewSame):-
+  findall(ac2(ExampleNum,PO),(member(ac(TestID,P,ExampleNum,PO),AC2)),AC3),
+  sort(AC3,AC4),
+  merge_xtra_props_ac2(AC4,Same),
+  find_peers_with_same(TestID,P,Same,NewSame),
+  NewSame\==[].
+
+%xlisting(propcounts+variance_had_count_set+(pen([cc(yellow,1)]);links_count(contains,4))-'$spft$').
+/*
+   propcounts( TestID,
+           ExampleNum, IO,
+           variance_had_count_set(2,0),
+           P,
+           PL,
+           [ 1-(2-links_count(contains,4)),
+             1-(1-links_count(contains,3))]),
+*/
 contains_same([],_):- !.
 contains_same([E|L],P):- sub_var(E,P),!,contains_same(L,P).
 
@@ -66,11 +93,28 @@ find_peers_with_same(_,_,Same,Same):-!.
 
    
 
-merge_xtra_props([ac1(PO)|AC3],Same):- !, merge_xtra_props_3(PO,AC3,Same).
-merge_xtra_props_3(PO,[ac1(PO2)|MORE],OUT):-
+merge_xtra_props_ac1([ac1(PO)|AC3],Same):- !, merge_xtra_props_ac1_3(PO,AC3,Same), Same\==[].
+merge_xtra_props_ac1_3(PO,[ac1(PO2)|MORE],OUT):-
   intersection(PO,PO2,IPO),
-  merge_xtra_props_3(IPO,MORE,OUT).
-merge_xtra_props_3(PO,[],PO).
+  merge_xtra_props_ac1_3(IPO,MORE,OUT).
+merge_xtra_props_ac1_3(PO,[],PO).
+
+merge_xtra_props_ac2([ac2(_,Same)],Same):-!.
+merge_xtra_props_ac2(AC2,Same):-
+ select(ac2(ExampleNum,PO1),AC2,AC3),
+ select(ac2(ExampleNum,PO2),AC3,AC4),
+ intersection(PO1,PO2,Some),Some\==[],!,
+ merge_xtra_props_ac2([ac2(ExampleNum,Some)|AC4],Same).
+merge_xtra_props_ac2(AC2,Same):-
+ select(ac2(ExampleNum,PO1),AC2,AC3),
+ select(ac2(ExampleNum2,PO2),AC3,AC4),
+ ExampleNum \== ExampleNum2,
+ intersection(PO1,PO2,Some),Some\==[],!,
+ merge_xtra_props_ac2([ac2(ExampleNum,Some)|AC4],Same).
+merge_xtra_props_ac2([ac2(ExampleNum,PO1)|AC3],[ac2(ExampleNum,PO1)|Same]):-
+  merge_xtra_props_ac2(AC3,Same),!.
+merge_xtra_props_ac2(Same,Same):-!.
+
 
 changing_props(X1,X2):- 
  counts_change(TestID,X1),
@@ -105,12 +149,20 @@ accompany_change(TestID,ExampleNum,X,Props,NotProps):-
 
 accompany_change(TestID,ExampleNum,X,Props,NotProps):-   
    once((counts_change(TestID,ExampleNum,X,N1,N2), N1<N2)),!,
-   %maplist(no_repeats_var,Out),
+   %no_repeats_var(Out),
   once(( 
-         obj_group(TestID,ExampleNum,out,_,Out), my_partition(has_prop(X),Out,HasPropsO,NotHasPropsO),
-         common_props(HasPropsO,Common), 
-         common_props(NotHasPropsO,NotCommon),
-         intersection(Common,NotCommon,_,Props,NotProps),Props\==[])).
+
+         (((obj_group(TestID,ExampleNum,in,_,In),
+         length(In,L),length(OOut,L), obj_group(TestID,ExampleNum,out,_,OOut))); 
+         obj_group(TestID,ExampleNum,out,_,OOut)),
+         no_repeats_var(Out),
+         Out = OOut,
+         once((my_partition(has_prop(X),Out,HasPropsO,NotHasPropsO),
+         common_props(HasPropsO,Common),  common_props(NotHasPropsO,NotCommon),
+         intersection(Common,NotCommon,_,Props1,NotProps))),
+         include(\=@=(X),Props1,Props),
+         Props\==[])).
+
 accompany_change(TestID,ExampleNum,X,Props,NotProps):- fail,
    counts_change(TestID,ExampleNum,X,N1,N2), N1>N2,
   once((
