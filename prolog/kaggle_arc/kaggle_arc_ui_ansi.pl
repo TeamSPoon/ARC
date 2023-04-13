@@ -1147,11 +1147,12 @@ print_side_by_side(A^B):- caret_to_list(A^B,List),print_side_by_side(List),!.
 print_side_by_side(call(P)):- !, call(P,Ret),!,print_side_by_side_l(1,Ret).
 print_side_by_side(List):- is_obj_props(List),!,wqs(List).
 print_side_by_side(G):- is_grid(G),!,print_grid(G).
+print_side_by_side([G|L]):- is_grid(G),maplist(is_grid,L),!,print_side_by_side_l(1,[G|L]).
 print_side_by_side(G):- is_object(G),!,print_grid([G]).
+print_side_by_side(Title=Value):- !, format('~N'),print_title(Title),write('==>'),print_side_by_side(Value).
 print_side_by_side(GF):- grid_footer(GF,G,W),is_gridoid(G),!,print_grid(W,G).
 %print_side_by_side(Title=(A^B)):- print_side_by_side((Title=A)^B).
 
-print_side_by_side(Title=Value):- !, format('~N'),print_title(Title),write('==>'),print_side_by_side(Value).
 print_side_by_side(P):- is_list(P), print_side_by_side_l(1,P), !,nop((length(P,PL),PL>5,writeln(pss=PL))).
 print_side_by_side(P):- \+ is_list(P), !, ignore((print_side_by_side_l(1,[P]))),!.
 

@@ -13,15 +13,15 @@
 :- discontiguous individuals_from_pair/9.
 
 
-i_pair(WasROptions,GridIn,GridOut):- WasROptions==complete,!,
- must_det_ll((
+i_pair(WasROptions,GridIn,GridOut):- WasROptions==complete,
+ catch((must_det_ll((
  check_for_refreshness,
  ((var(GridIn);var(GridOut))-> current_pair_io(GridIn,GridOut) ; true),
  maybe_name_the_pair(GridIn,GridOut,PairName),
  notrace(((((guess_how(HOW,GridIn,GridOut,Stuff1,Stuff2), 
              guess_how_else(HOW_ELSE,Stuff1,Stuff2,InC,OutC)))))),
  INDIV = [HOW|HOW_ELSE],
- show_individuated_pair(PairName,INDIV,GridIn,GridOut,InC,OutC))).
+ show_individuated_pair(PairName,INDIV,GridIn,GridOut,InC,OutC)))),_,fail),!.
 
 i_pair(ROptions,GridIn,GridOut):-
  must_det_ll((  

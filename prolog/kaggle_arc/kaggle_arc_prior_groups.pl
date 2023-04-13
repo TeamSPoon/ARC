@@ -1394,6 +1394,10 @@ use_rank(mass(_)).
 redundant_prop(_,nth_fg_color(N1,_)):- N1==1.
 redundant_prop(Props,unique_colors([FG])):- sub_var(pen([cc(FG,1)]),Props),!.
 redundant_prop(Props,cc(FG,_)):- is_real_fg_color(FG),sub_var(pen([cc(FG,1)]),Props),!.
+redundant_prop(Props,center2D(_,_)):- sub_compound(loc2D(_,_),Props).
+%redundant_prop(Props,center2D(X,Y)):- sub_var(center2G(X,Y),Props).
+redundant_prop(Props,center2G(X,Y)):- sub_var(center2D(X,Y),Props).
+
 some_pgs_and_props(_,pg(_,Name,simulars,_)):- !, use_simulars(Name),!.
 some_pgs_and_props(_,pg(_,Name,rank1,_)):- !, use_rank(Name),!.
 some_pgs_and_props(PropList,Name):- \+ redundant_prop(PropList,Name).
@@ -2270,21 +2274,20 @@ learn_ilp(TestID):-
   ensure_test(TestID),
   must_det_ll((
     ensure_test(TestID),
-    abolish(arc_test_properties/3),
-    dynamic(arc_test_properties/3),
-    abolish(is_for_ilp/4),
-    dynamic(is_for_ilp/4),
+    %abolish(arc_test_properties/3), dynamic(arc_test_properties/3),
+    abolish(is_for_ilp/4), dynamic(is_for_ilp/4),
     %compile_and_save_test(TestID),
-    individuate_all_pairs_from_hints(TestID),    
+    individuate_all_pairs_from_hints(TestID),
     with_luser(use_individuated_cache,true, 
      forall(kaggle_arc(TestID,ExampleNum,I,O),
       must_det_ll(learn_ilp(TestID,ExampleNum,I,O)))),!,
     listing(is_for_ilp/4),
-    dump_ilp_files(S))),!,
-  show_scene_change(TestID),
-  write_ilp_file(TestID,S,logicmoo_ex),!.
+    dump_ilp_files(S))),
+    compute_scene_change(TestID),
+    must_det_ll(write_ilp_file(TestID,S,logicmoo_ex)),
+    solve_via_scene_change(TestID).
 
-
+:- dynamic(is_for_ilp/4).
 learn_ilp(TestID,ExampleNum,GridIn,GridOut):-  
  ExampleNum = (trn+_),!,
   must_det_ll((

@@ -28,6 +28,7 @@ must_det_ll_maplist(_,[],[],[]):-!.
 must_det_ll_maplist(P3,[HA|TA],[HB|TB],[HC|TC]):- must_det_ll(call(P3,HA,HB,HC)), must_det_ll_maplist(P3,TA,TB,TC).
 
 %must_det_ll(G):- !, once((notrace(G)*->true;must_det_ll_failed(G))).
+must_det_ll(G):- nb_current(cant_rrtrace,t),!,call(G).
 must_det_ll(G):- notrace(arc_html),!, ignore(notrace(G)),!.
 must_det_ll(G):- tracing,!, call(G). % once((call(G)*->true;must_det_ll_failed(G))).
 %must_det_ll(X):- !,must_not_error(X).
@@ -67,6 +68,7 @@ must_det_ll1(X):-
 
 %must_not_error(G):- must(once(G)).
 
+must_not_error(_):- nb_current(cant_rrtrace,t),!,fail.
 must_not_error(G):- tracing,!,call(G).
 must_not_error(G):- is_cgi,!, catch((G),E,((u_dmsg(E=G)))).
 must_not_error(X):- \+ nb_current(cant_rrtrace,t),is_guitracer,!, call(X).
@@ -81,6 +83,7 @@ always_rethrow(must_det_ll_failed(_)).
 main_debug:- main_thread,current_prolog_flag(debug,true).
 
 %must_det_ll_failed(X):- predicate_property(X,number_of_clauses(1)),clause(X,(A,B,C,Body)), (B\==!),!,must_det_ll(A),must_det_ll((B,C,Body)).
+must_det_ll_failed(_):- nb_current(cant_rrtrace,t),!,fail.
 must_det_ll_failed(G):- tracing,notrace(u_dmsg(must_det_ll_failed(G))),!,throw(must_det_ll_failed(G)).
 must_det_ll_failed(G):- main_debug,notrace(u_dmsg(must_det_ll_failed(G))),!,trace,call(G).
 must_det_ll_failed(G):- is_cgi,!, u_dmsg(arc_html(must_det_ll_failed(G))).

@@ -60,6 +60,8 @@ individuation_macros(do_ending, [
 no_fg_mass(Zero):- mass(Zero,Mass),!,Mass=0.
 i_minus_o_equals_none:- i_minus_o(Zero), no_fg_mass(Zero).
 o_minus_i_equals_some:- o_minus_i(Zero), \+ no_fg_mass(Zero).
+mono_i_minus_o_equals_none:- mono_i_minus_o(Zero), no_fg_mass(Zero).
+mono_o_minus_i_equals_some:- mono_o_minus_i(Zero), \+ no_fg_mass(Zero).
 
 i_minus_o(Zero):- current_pair_io(I,O),mapgrid(cell_minus_cell,I,O,Zero).
 o_minus_i(Zero):- current_pair_io(I,O),mapgrid(cell_minus_cell,O,I,Zero).
@@ -77,10 +79,7 @@ show_minuses:-
 show_minuses(P1,P1=G):- call(P1,G).
 
 
-mono_i_to_o_is_none_some_none:- 
-  mono_i_minus_o(Zero1),no_fg_mass(Zero1),
-  mono_o_minus_i(Zero2),no_fg_mass(Zero2),
-  o_minus_i_equals_some.
+
 
 individuation_macros(complete, [i_complete]).
 individuation_macros(i_complete, ListO):- 
@@ -90,7 +89,24 @@ individuation_macros(i_complete, ListO):-
    list_to_set(ListM,ListS))),!,
  ListO=ListS.
 
-i_minus_o_equals_none_o_minus_i_equals_some:- i_minus_o_equals_none,o_minus_i_equals_some.
+pair_test(mono_i_to_o_is_none_some_none).
+pair_test(i_to_o_is_none_some_some).
+pair_test(mono_i_to_o_is_none_some_some_not_color).
+
+
+mono_i_to_o_is_none_some_some_not_color:-
+   \+ i_to_o_is_none_some_some,
+   mono_i_minus_o_equals_none,mono_o_minus_i_equals_some.
+
+
+i_to_o_is_none_some_some:- i_minus_o_equals_none,o_minus_i_equals_some.
+
+mono_i_to_o_is_none_some_none:- 
+  mono_i_minus_o(Zero1),no_fg_mass(Zero1),
+  mono_o_minus_i(Zero2),no_fg_mass(Zero2),
+  o_minus_i_equals_some.
+
+
 
 im_complete(do_im_complete).
 
@@ -98,7 +114,7 @@ is_fti_step(do_im_complete).
 
 do_im_complete(VM):- is_im_complete(Info), run_fti(VM,Info).
   
-is_im_complete(i_to_o_is_none_some_some):- i_minus_o_equals_none_o_minus_i_equals_some,!.
+is_im_complete(i_to_o_is_none_some_some):- i_to_o_is_none_some_some,!.
 is_im_complete(mono_i_to_o_is_none_some_none):- mono_i_to_o_is_none_some_none,!.
 is_im_complete(ListO):- test_config(indiv(ListO)), [i_repair_patterns]\=@= ListO,[i_repair_patterns_f]\=@= ListO,[any]\= ListO,['']\= ListO,''\= ListO,!.
 is_im_complete(i_complete_generic).
@@ -191,7 +207,7 @@ set_example_num_vm(VM):-
 is_fti_step(mono_i_to_o_is_none_some_none).
 % =====================================================================
 
-mono_i_to_o_is_none_some_none(VM):-   set_example_num_vm(VM),
+mono_i_to_o_is_none_some_none(VM):-  set_example_num_vm(VM),
   \+ is_output_vm(VM),!,mono_i_to_o_is_none_some_none_in(VM),!.
 mono_i_to_o_is_none_some_none(VM):-
   set_example_num_vm(VM),
@@ -352,33 +368,37 @@ guess_how_else([HOW|HOW_ELSE],I,O,Stuff1,Stuff2):-
 guess_how_else([],I,O,I,O).
 
 guess_how(HOW,I1,O1,Stuff1,Stuff2):-
-  must_det_ll((
-  into_solid_grid(I1,I2), into_solid_grid(O1,O2))),!,
-  indiv_how(HOW),  duplicate_term(I2+O2,I+O),
+  must_det_ll((into_solid_grid(I1,I2),into_solid_grid(O1,O2))),!,
+  indiv_how1(HOW),
+  duplicate_term(I2+O2,I+O),
   must_det_ll((
     
     once((individuate(HOW,I,Stuff1))),
     once((individuate(HOW,O,Stuff2))))),
 
-    length(Stuff1,L),length(Stuff2,L),
-
+    length(Stuff1,L),L>0,length(Stuff2,L),
     must_det_ll((
     print_ss(orig,I,O),
     ignore(completely_represents(I,Stuff1)),
     ignore(completely_represents(O,Stuff2)),
-    print_ss(objs(HOW,L),Stuff1,Stuff2))),
-  L>0.
+    print_ss(objs(HOW,L),Stuff1,Stuff2),
+    save_how_io(HOW,HOW))).
 
 
 
 
 individuation_macros(completely_do(This),[This,do_ending]).
 
-indiv_how(completely_do(i_colormass)).
-indiv_how(completely_do(i_mono_colormass)).
-indiv_how(completely_do(i_complete)).
+is_grid_io(Grid,RealIO):- current_test(TestID),kagle_arc_io(TestID,_,RealIO,G),Grid=@=G,!.
+indiv_how(IO,How):- is_grid(IO),is_grid_io(IO,RealIO),!,indiv_how(RealIO,How).
+indiv_how(IO,How):- arc_test_property(common,indiv_how(IO),How),!.
+indiv_how(_,How):- indiv_how1(How).
+
+indiv_how1(completely_do(i_complete)).
+indiv_how1(completely_do(i_colormass)).
+indiv_how1(completely_do(i_mono_colormass)).
 %indiv_how(completely_do(maybe_lo_dots)).
-indiv_how( indv_opt(Flags)):- fail,
+indiv_how1( indv_opt(Flags)):- fail,
       toggle_values([bground,diags,mono,shape,boxes,parts],Flags).
 toggle_values([N|Names],[V|Vars]):- toggle_values(Names,Vars), toggle_val(N,V).
 toggle_values([],[]).

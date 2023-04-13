@@ -199,6 +199,9 @@ show_all_test_reductions(TestSpec):- var_ensure_test(TestSpec,TestID),
   show_reduced_pairs(TestID),
   dash_chars.
 
+
+
+show_reduced_io_fav(TestID):- var_ensure_test(TestID,I,O,show_reduced_io_fav(I^O)),!.
 show_reduced_io_fav(I^O):- get_current_test(TestID),\+ \+ do_some_grids(TestID,I^O), show_reduced_io(I^O).
 
 show_reduced_outputs(TestSpec):- var_ensure_test(TestSpec,TestID),
@@ -209,7 +212,7 @@ show_reduced_inputs(TestSpec):- var_ensure_test(TestSpec,TestID),
   findall(ExampleNum=Grid,kaggle_arc(TestID,ExampleNum,Grid,_),Grids),
   do_some_grids('INPUT'(TestID),Grids).
 
-show_reduced_pairs(TestID):- 
+show_reduced_pairs(TestSpec):- var_ensure_test(TestSpec,TestID),
   forall(with_test_pairs(TestID,ExampleNum,I,O,
     (print_side_by_side(green,I,orig_in(TestID,ExampleNum),_,O,orig_out(TestID,ExampleNum)),
      forall(do_some_grids(TestID,I^O),true))),true).
@@ -221,22 +224,21 @@ show_reduced_io_rarely(In^Out):- % ignore((nonvar(In),nonvar(Out),grid_hint_swap
 
 show_reduced_io_rarely(IO):- forall(show_reduced_io(IO),true).
 
-show_reduced_io(TestSpec):- var_ensure_test(TestSpec,TestID),
-    forall(with_test_pairs(TestID,_ExampleNum,I,O,show_reduced_io(I^O)),true).
 
+show_reduced_io(TestSpec):- var_ensure_test(TestSpec,I,O,show_reduced_io(I^O)),!.
 show_reduced_io(IO):- 
     once(show_grid_call(reduce_cutaway(_),IO,NextIO)),
   if_t(((NextIO)\=@=(IO)), show_reduced_io(NextIO)).
 
-  %show_reduced_io(I^O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
+%show_reduced_io(I^O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
 show_reduced_io(I0^O):- 
   once(( grid_size(I0,H,V), grid_size(O,OH,OV))),
-  ((H>OH;V>OV) , grid_call_alters(trim_to_rect,I0,I)),
- show_reduced_io(I^O).
+  ((H>OH;V>OV) , grid_call_alters(trim_to_rect,I0,I)), show_reduced_io(I^O).
 
 show_reduced_io(IO):-
   %OPS = [_,_|_],
-  once(show_grid_call(grid_to_norm(_),IO,NextIO)),
+  OPS = _,
+  once(show_grid_call(grid_to_norm(OPS),IO,NextIO)),
   if_t(((NextIO)\=@=(IO)), show_reduced_io(NextIO)).
 
 show_reduced_io(IO):- once(show_grid_call(mapgridish(remove_color_if_same(black),IO),IO,NextIO)),
@@ -799,13 +801,13 @@ disguise_row(I,O):- O=..[row|I].
 %ensure_how(How):- var(How),!,member(How,[whole,i_pbox]).
 %ensure_how(How):- var(How),!,member(How,[whole,complete,i_pbox]).
 %ensure_how(How):- var(How),!,member(How,[whole,i_pbox,fg_shapes(nsew)]).
-ensure_how(How):- var(How),!,indiv_how(How).
-ensure_how(_How).
+ensure_how(Grid,How):- var(How),!,indiv_how(Grid,How).
+ensure_how(_Grid,_How).
 
 
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,_,Obj),List),list_to_set(List,Objs).
 grid_to_objs(Grid,Objs):- grid_to_objs(Grid,complete,Objs).
-grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(How),in_cmt(individuate(How,Grid,Objs)).
+grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(Grid,How),in_cmt(individuate(How,Grid,Objs)).
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,complete,Obj),List),list_to_set(List,Objs).
 %grid_to_obj(Grid,Obj):- grid_to_objs(Grid,Objs),member(Obj,Objs).
 

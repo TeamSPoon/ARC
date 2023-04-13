@@ -86,6 +86,9 @@ unplus_split(II^OO,^,II,OO).
 unplus_split(II+OO,+,II,OO).
 
 show_grid_call(P2,IO,IIIOOO):- is_plus_split(IO,How,I,O),!,unplus_split(IIIOOO,How,III,OOO),
+  copy_term(P2,P22), show_grid_call(P2,I,III), show_grid_call(P22,O,OOO).
+/*
+show_grid_call(P2,IO,IIIOOO):- is_plus_split(IO,How,I,O),!,unplus_split(IIIOOO,How,III,OOO),
  must_det_ll((grid_to_gid(I,GIDI),grid_to_gid(O,GIDO),
   copy_term(P2,P22),
   grid_call_for_info(P2,I,III,S1),
@@ -94,7 +97,7 @@ show_grid_call(P2,IO,IIIOOO):- is_plus_split(IO,How,I,O),!,unplus_split(IIIOOO,H
        ((O=OOO,tersify(P22,S2),Aligned=false))))),  
   if_t(((III+OOO)\=@=(I+O)), 
      print_side_by_side(green,III,called(S1,left,from(GIDI)),_,OOO,aligned(Aligned,S2,right,from(GIDO)))))),!.
-
+*/
 show_grid_call(P2,I,III):-
   grid_call_for_info(P2,I,III,S1),
    if_t(((III)\=@=(I)), print_side_by_side(green,I,before(S1),_,III,after(S1))),!.

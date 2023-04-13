@@ -750,11 +750,11 @@ test_run_arcathon:- run_arcathon.
 test_secret_data:- u_dmsg(todo_test_secret_data).
 
 
-save_arcathon_runner:- qsave_program('logicmoo_arcathon_runner',[stand_alone(true),verbose(true),toplevel(run_arcathon),goal(run_arcathon),% class(runtime),
+save_arcathon_runner:- qsave_program('bin/logicmoo_arcathon_runner',[stand_alone(true),verbose(true),toplevel(run_arcathon),goal(run_arcathon),% class(runtime),
                                              class(runtime),obfuscate(true)]).
-save_arcathon_runner_dbg:- qsave_program('logicmoo_arcathon_runner_dbg',[stand_alone(true),verbose(true),toplevel(run_arcathon),goal(run_arcathon),% class(runtime),
+save_arcathon_runner_dbg:- qsave_program('bin/logicmoo_arcathon_runner_dbg',[stand_alone(true),verbose(true),toplevel(run_arcathon),goal(run_arcathon),% class(runtime),
                                              class(development),obfuscate(false)]).
-save_arcathon_runner_devel:- qsave_program('logicmoo_arcathon_runner_devel',[stand_alone(true),verbose(true),goal(demo),class(development),obfuscate(false)]),
+save_arcathon_runner_devel:- qsave_program('bin/logicmoo_arcathon_runner_devel',[stand_alone(true),verbose(true),goal(demo),class(development),obfuscate(false)]),
                              save_arcathon_runner_dbg, save_arcathon_runner.
 test_compile_arcathon:- save_arcathon_runner_devel.
 

@@ -658,7 +658,7 @@ common_reductions_from_two(GL,OPS,G1,G2,G1R,G2R):-
    reductions_from_two(OPS,G1,G2,G1R,G2R).
 
 
-reductions(GL,OPS,REDUCE):- into_grid_list(GL,List), reductions1(List,OPS,REDUCE),!.
+reductions(GL,OPS,REDUCE):- into_grid_list(GL,List),!, fail_over_time(6, reductions1(List,OPS,REDUCE)),!.
 %reductions([A,B],OPS,[AA,BB]):- !, reductions_from_two(OPS,A,B,AA,BB).
 reductions1(List,[Reduce|OPS],REDUCE):-
    select(G1,List,Rest0),select(G2,Rest0,Rest),

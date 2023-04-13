@@ -367,7 +367,7 @@ as_obj(O,Obj):- compound(O), O = obj(_), Obj = O. % , register_obj(L).
 enum_object(O):- var(O),!,no_repeats_cmp(=@=,O,enum_object0(O)).
 enum_object(O):- nop(ppt(enum_object(O))),!.
 
-enum_object0(Obj):- oid_glyph_object(_,_,Obj).
+%enum_object0(Obj):- oid_glyph_object(_,_,Obj).
 
 enum_object0(Obj):- % listing(obj_cache/2),
       get_current_test(TestID), obj_cache(TestID,O,_S),as_obj(O,Obj).

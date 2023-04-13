@@ -1573,8 +1573,12 @@ switch_grid_mode:- (luser_getval('$grid_mode',Dots);Dots=dots),next_grid_mode(Do
 with_next_grid_mode(Goal):- 
   (luser_getval('$grid_mode',Dots);Dots=dots),next_grid_mode(Dots,Dashes), with_luser('$grid_mode',Dashes,Goal).
 
-as_d_grid(In,In):- \+ luser_getval('$grid_mode',dashes),!.
-as_d_grid(In,In1):- as_ngrid(In,In1),!.
+as_d_grid(In,Out):- as_d_grid0(In,Out),!.
+%as_d_grid(In,Out):- apply_grid_color_order(_,In,Mid),as_d_grid0(Mid,Out),!.
+
+
+as_d_grid0(In,In):- \+ luser_getval('$grid_mode',dashes),!.
+as_d_grid0(In,In1):- as_ngrid(In,In1),!.
 as_ngrid(In,In1):- must_det_ll((change_bg_fg(In, _BG, _FG,In0), most_d_colors(In0,_CI,In1))),!.
 as_ngrid(In,In):-!.
 
@@ -1652,8 +1656,15 @@ var_ensure_test(TestID):- \+ get_pair_mode(enire_suite),!,get_current_test(TestI
 %var_ensure_test(TestID):- var(TestID), !, ensure_test(TestID).
 %var_ensure_test(TestID):- \+ ground(TestID), !, all_arc_test_name(TestID).
 
+var_ensure_test(TestID,_):- compound(TestID), TestID=(_^_),!,fail.
 var_ensure_test(TestID,OUT):- var_ensure_test(TestID),OUT=TestID,is_valid_testname(OUT).
 
+var_ensure_test(TestSpec,I,O,Goal):- 
+  var_ensure_test(TestSpec,TestID),
+  wots(Title,\+ \+ (I=(+(in)),O=(-(out)),writeln(Goal))),
+  forall(with_test_pairs(TestID,ExampleNum,I,O,
+    (print_side_by_side(green,I,orig_in(TestID,Title,ExampleNum),_,O,orig_out(TestID,Title,ExampleNum)),
+     forall(Goal,true))),true).
 
 ensure_test(TestID):- nonvar(TestID),!, ignore(( is_valid_testname(TestID), really_set_current_test(TestID))).
 ensure_test(TestID):- var(TestID), !, var_ensure_test(TestID).
@@ -2124,8 +2135,13 @@ track_modes(I,M):- I=..[_|L],my_maplist(plus_minus_modes,L,M).
 plus_minus_modes(Var,-):- var(Var),!. 
 plus_minus_modes(_,+).
 
+kaggle_arc_io_current_first(TestID,E,IO,G):- 
+  get_current_test(TestID),kaggle_arc_io(TestID,E,IO,G).
+kaggle_arc_io_current_first(TestID,E,IO,G):- 
+  get_current_test(TestID2),kaggle_arc_io(TestID,E,IO,G), TestID\==TestID2.
+
 testid_name_num_io_0(ID,_Name,_Example,_Num,_IO):- var(ID),!, fail.
-testid_name_num_io_0(X,TestID,E,N,IO):- is_grid(X),!,kaggle_arc_io(TestID,E+N,IO,G),G=@=X.
+testid_name_num_io_0(X,TestID,E,N,IO):- is_grid(X),!,kaggle_arc_io_current_first(TestID,E+N,IO,G),G=@=X.
 testid_name_num_io_0(ID,_Name,_Example,_Num,_IO):- is_grid(ID),!, fail.
 testid_name_num_io_0(ID,_Name,_Example,_Num,_IO):- is_list(ID), \+ my_maplist(nonvar,ID),!,fail.
 

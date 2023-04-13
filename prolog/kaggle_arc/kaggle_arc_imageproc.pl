@@ -489,6 +489,61 @@ colors_to_vars(Colors,Vars,Grid,GridO):- (plain_var(Colors)->unique_colors(Grid,
 subst_cvars([],[],A,A):-!. 
 subst_cvars([F|FF],[R|RR],S,D):- !, freeze(R,(\=(R,_-_))),subst001(S,F,R,M), subst_cvars(FF,RR,M,D).
 
+
+pair_color_order(Grid,Colors):- 
+  testid_name_num_io_0(Grid,TestID,E,N,_),!,
+  findall(G,kaggle_arc_io(TestID,E+N,_,G),GL),
+  grid_color_order(GL,Colors).
+
+input_color_vary(TestID):-
+  findall(G,kaggle_arc_io(TestID,trn+_,in,G),GL),
+  color_vary(GL).
+output_color_vary(TestID):-
+  findall(G,kaggle_arc_io(TestID,trn+_,out,G),GL),
+  color_vary(GL).
+output_to_input_color_vary(TestID):-
+  forall(kaggle_arc(TestID,trn+_,I,O),color_overlap(I,O)).
+
+color_vary(I,O):- \+ color_overlap(I,O).
+color_vary([I,O]):- !, color_vary(I,O).
+color_vary(List):- forall(pairs_from(List,I,O),color_vary(I,O)).
+
+pairs_from(List,I,O):- append(_,[I|Rest],List),member(O,Rest).
+
+color_overlap(I,O):- fg_color_cc(I,FG1),fg_color_cc(O,FG2),
+  color_overlap_cc(FG1,FG2).
+
+color_overlap_cc(FG1,FG2):-
+  maplist(arg_same(1),FG1,FG2).
+size_overlap_cc(FG1,FG2):-
+  maplist(arg_same(2),FG1,FG2).
+
+
+
+
+fg_color_cc(Grid,FGs):-
+  colors_cc(Grid,CCs),
+  my_include(arg1(is_real_fg_color),CCs,FGs).
+
+test_color_order(Grid,Colors):- 
+  testid_name_num_io_0(Grid,TestID,_,_,_),!,
+  findall(G,kaggle_arc_io(TestID,_,_,G),GL),
+  grid_color_order(GL,Colors).
+
+grid_color_order(Grid,Colors):-
+  fg_color_cc(Grid,FGs),
+  maplist(arg(1),FGs,Colors).
+
+apply_grid_color_order(Colors,Grid,GridO):-
+  (var(Colors)->test_color_order(Grid,Colors);true),
+  available_fg_colors(Avails),
+  mapgrid(subst_color_order(Colors,Avails),Grid,GridO),!.
+subst_color_order(Colors,Avails,Grid,GridO):- 
+  is_color(Grid),nth1(Nth,Colors,E),E=@=Grid,
+  nth1(Nth,Avails,GridO),!.
+subst_color_order(_,_,Grid,Grid).
+
+ 
 /*
 colors_to_vars(B,A,Grid,GridO):- is_list(Grid),!,my_maplist(colors_to_vars(B,A),Grid,GridO).
 colors_to_vars(F,R,S,D):- nth1(N,F,E),E==S,nth1(N,R,D),!.
