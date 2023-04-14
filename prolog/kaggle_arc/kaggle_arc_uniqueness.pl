@@ -77,7 +77,7 @@ compute_scene_change(TestID):-
   ensure_test(TestID),
   clear_accompany_changed,
    no_repeats_var(NR),
-   NR =  is_accompany_changed(TestID,P,Same),
+   NR =  is_accompany_changed_verified(TestID,P,Same),
    NRO = accompany_changed(TestID,P,Same),
   with_pair_mode(whole_test, forall(NR,
      (%dmsg(NR),
@@ -85,22 +85,23 @@ compute_scene_change(TestID):-
 
 solve_via_scene_change(TestID):-  
   ensure_test(TestID),
+  clear_accompany_changed,
   (\+ is_accompany_changed_db(TestID,_,_) -> compute_scene_change(TestID) ; true),   
-  show_scene_change_rules(TestID),
-  nop(nop((ExampleNum=tst+_,forall((obj_group_io(TestID,ExampleNum,in,ROptions,Objs),Objs\==[]),
+  
+  nop(nop((show_scene_change_rules(TestID),ExampleNum=tst+_,forall((obj_group_io(TestID,ExampleNum,in,ROptions,Objs),Objs\==[]),
     solve_obj_group(TestID,ExampleNum,in,ROptions,Objs))))),
   show_scene_change_rules(TestID),
   re_accompany_changed(TestID).
 
 show_scene_change_rules(TestID):-
-   forall(is_accompany_changed_computed(TestID,P,Same),fmt(accompany_changed(TestID,P,Same))).
+   forall(is_accompany_changed_computed(TestID,P,Same),pp(t(TestID,P)=accompany_changed(Same))).
 
 re_accompany_changed(TestID):-
    forall(is_accompany_changed_computed(TestID,P,Same),
      ignore(((recorrect_is_accompany_changed(TestID,P,Same,SL),
-       fmt(recorrect_is_accompany_changed(TestID,P,Same->SL)))))).
-recorrect_is_accompany_changed(TestID,P,Same,SL):- 
-  simplify_sames(TestID,P,Same,SL).
+        SL\=@=Same,
+       pp(P=recorrect_is_accompany_changed(aaa,Same,SL)))))).
+recorrect_is_accompany_changed(TestID,P,Same,SL):- simplify_sames(TestID,P,Same,SL).
 
 correct_is_accompany_changed(TestID,P,Same,SL):- 
   findall(S,
@@ -110,21 +111,46 @@ correct_is_accompany_changed(TestID,P,Same,SL):-
           ((P==DP)-> true; (member(DS,DSame),other_val(S,DS))))))),SL).   
 
 simplify_sames(TestID,P,Same,SameS):-
- share_level(Level), include(shared_prop(TestID,P,Level),Same,SameS),SameS\==[],!.
+ share_level(Level), 
+  include(shared_prop(TestID,P,Level),Same,SameS),SameS\==[],!.
+/*
+simplify_sames(TestID,P,Same,SameS):-
+ share_level(Level), 
+  include(shared_prop(TestID,P,Level),Same,SameS),!.
+simplify_sames(TestID,P,Same,SameS):-
+  include(shared_prop(TestID,P,_),Same,SameS),!.
+
+*/
 simplify_sames(_,_,Same,Same):-!.
 
-
 share_level(all). % share_level(5). share_level(4). 
-share_level(3). share_level(2).
+%share_level(3). share_level(2).
 
-shared_prop(TestID,P,ShareLevel,Same):- var(P),!,ensure_counts_change(P),shared_prop(TestID,P,ShareLevel,Same).
+shared_prop(TestID,P,ShareLevel,Same):- var(TestID),!,get_current_test(TestID),!,shared_prop(TestID,P,ShareLevel,Same).
 shared_prop(TestID,P,ShareLevel,Same):- var(ShareLevel),!,share_level(ShareLevel),shared_prop(TestID,P,ShareLevel,Same).
-shared_prop(TestID,_P,all,Same):- !, 
+shared_prop(TestID,P,ShareLevel,Same):- var(P),!,ensure_counts_change(P),shared_prop(TestID,P,ShareLevel,Same).
+
+shared_prop(TestID,P,ShareLevel,Same):- var(Same),!,
+  is_accompany_changed_computed(TestID,P,SameL),
+  member(Same,SameL),
+  shared_prop(TestID,P,ShareLevel,Same).
+
+shared_prop(TestID,P,_,Same):- !,
+  forall(current_example_nums(TestID,ExampleNum),
+   forall(obj_group_io(TestID,ExampleNum,out,Objs),
+    %copy_term(P,PP), copy_term(PP,PPP),
+   (findall(O,(member(O,Objs),has_prop(P,O)),OL),
+    %print_ss(ExampleNum,Objs,OL),
+    % writeq(P),    
+    forall(member(O,OL),has_prop(Same,O))))).
+
+shared_prop(TestID,_P,all,Same):- 
   forall(current_example_nums(TestID,ExampleNum), is_prop_in(TestID,ExampleNum,Same)).
 
-shared_prop(TestID,_P,ShareLevel,Same):- 
-  findall(Same,((current_example_nums(TestID,ExampleNum),
+shared_prop(TestID,_P,ShareLevel,Same):- number(ShareLevel), 
+  findall(+,((current_example_nums(TestID,ExampleNum),
      \+ \+ is_prop_in(TestID,ExampleNum,Same))),L),
+    trace,
     length(L,N),N>=ShareLevel.
 
 is_prop_in(TestID,ExampleNum,Same):-
@@ -137,7 +163,7 @@ solve_obj_group(TestID,ExampleNum,IO,ROptions,Objs):-
   print_ss(wqs(solved_obj_group(ExampleNum)),Objs,OObjs).
 
 solve_obj(TestID,_ExampleNum,_IO,_ROptions,Obj,OObj):-
- must_det_ll((findall(P,(is_accompany_changed(TestID,P,Same),member(S,Same),has_prop(S,Obj)),Ps),
+ must_det_ll((findall(P,(is_accompany_changed_verified(TestID,P,Same),member(S,Same),has_prop(S,Obj)),Ps),
  wots(SS,writeln(Ps)),
  override_object_1(Ps,Obj,OObj),!,
  print_ss(override_object(SS),[Obj],[OObj]))).
@@ -146,7 +172,7 @@ override_object_1([H|T],I,OO):-  override_object_1(H,I,M),!, override_object_1(T
 override_object_1(pen([cc(Red,N)]),Obj,OObj):- pen(Obj,[cc(Was,N)]), subst(Obj,Was,Red,OObj),!.
 override_object_1(O,I,OO):- override_object(O,I,OO),!.
 
-is_accompany_changed(TestID,P,SL):-
+is_accompany_changed_verified(TestID,P,SL):-
   is_accompany_changed_computed(TestID,P,Same),
   once((correct_is_accompany_changed(TestID,P,Same,SL))).
 
@@ -199,7 +225,7 @@ accompany_change3(TestID,P,SameS):-
 ac1_or_ac2(TestID,P,AC2,NewSame):-
   ac1_or_ac2_1(TestID,P,AC2,NewSame)*->true;ac1_or_ac2_2(TestID,P,AC2,NewSame).
   
-ac1_or_ac2_1(TestID,P,AC2,NewSame):-   
+ac1_or_ac2_1(TestID,P,AC2,NewSame):-
   findall(ac1(PO),member(ac(TestID,P,_ExampleNum,PO),AC2),AC3),
   merge_xtra_props_ac1(AC3,Same),
   find_peers_with_same(TestID,P,Same,NewSame),
@@ -317,7 +343,8 @@ common_props([O|Objs],Props):-
    indv_props_list(O,List),
    findall(P,(member(P,List),\+ dont_notice(P),forall(member(E,Objs),has_prop(P,E))),Props).
 
-current_example_nums(TestID,ExampleNum):- ExampleNum=trn+_, kaggle_arc(TestID,ExampleNum,_,_). 
+current_example_nums(TestID,ExampleNum):- 
+  get_current_test(TestID),ExampleNum=trn+_, kaggle_arc(TestID,ExampleNum,_,_). 
 
 
 
