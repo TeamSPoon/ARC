@@ -113,7 +113,8 @@ im_complete(do_im_complete).
 is_fti_step(do_im_complete).
 
 do_im_complete(VM):- is_im_complete(Info), run_fti(VM,Info).
-  
+
+%is_im_complete(colormass):- 
 is_im_complete(i_to_o_is_none_some_some):- i_to_o_is_none_some_some,!.
 is_im_complete(mono_i_to_o_is_none_some_none):- mono_i_to_o_is_none_some_none,!.
 is_im_complete(ListO):- test_config(indiv(ListO)), [i_repair_patterns]\=@= ListO,[i_repair_patterns_f]\=@= ListO,[any]\= ListO,['']\= ListO,''\= ListO,!.
@@ -394,9 +395,9 @@ indiv_how(IO,How):- is_grid(IO),is_grid_io(IO,RealIO),!,indiv_how(RealIO,How).
 indiv_how(IO,How):- arc_test_property(common,indiv_how(IO),How),!.
 indiv_how(_,How):- indiv_how1(How).
 
-indiv_how1(completely_do(i_complete)).
 indiv_how1(completely_do(i_colormass)).
-indiv_how1(completely_do(i_mono_colormass)).
+indiv_how1(completely_do(i_complete)).
+%indiv_how1(completely_do(i_mono_colormass)).
 %indiv_how(completely_do(maybe_lo_dots)).
 indiv_how1( indv_opt(Flags)):- fail,
       toggle_values([bground,diags,mono,shape,boxes,parts],Flags).

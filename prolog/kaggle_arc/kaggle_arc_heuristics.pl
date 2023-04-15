@@ -142,11 +142,11 @@ arc_spyable_keyboard_key(try_each_using_training,'u').
 
 show_test_associatable_groups(ROptions,ID1,InC,GridOut):- 
   print_grid(wqs(show_test_assocs(ROptions,ID1)),InC),
-  forall(
+  nop(nop((forall(
     must_det_ll1((use_test_associatable_group(InC,Sols)
       *-> show_result("Our Learned Sols", Sols,GridOut,_)
         ; arcdbg_info(red,warn("No Learned Sols")))),
-    true).
+    true)))).
 
 
 show_group(ID1,InC):-
