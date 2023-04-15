@@ -36,8 +36,11 @@ count_of(G,N):- findall(G,G,L),variant_list_to_set(L,S),length(S,N).
 
 dont_notice(oid(_)).
 dont_notice(giz(_)).
-dont_notice(link(_,_)).
+dont_notice(global2G(_,_)).
+dont_notice(link(sees,_)).
 dont_notice(links_count(sees,_)).
+dont_notice(occurs_in_links(contained_by,_)).
+dont_notice(occurs_in_links(sees,_)).
 dont_notice(iz(i_o(_))).
 dont_notice(P):- compound(P),arg(_,P,E),is_gridoid(E),!.
 dont_notice(P):- compound(P),!,compound_name_arity(P,F,_),!,dont_notice(F).
@@ -46,6 +49,9 @@ dont_notice(link).
 dont_notice(oid).
 dont_notice(giz).
 dont_notice(shape_rep).
+do_notice(pg(_,_,rank1,_)).
+
+ok_notice(X):- \+ \+ do_notice(X),!.
 ok_notice(X):- \+ dont_notice(X).
 
 %ensure_propcounts(_TestID):-!.
