@@ -87,7 +87,7 @@ trn_num_io((Trn+Num)*IO,Trn,Num,IO):-!.
 trn_num_io(Trn+Num*IO,Trn,Num,IO):-!.
 
 select_filtered_group(TestID,Named,Trn_num_io,Filter,Objects):- trn_num_io(Trn_num_io,Trn,Num,IO),
-  with_luser(use_individuated_cache,true,
+  with_individuated_cache(true,
     forall(kaggle_arc_io(TestID,Trn+Num,IO,G),individuate(complete,G,_Objs))),
   select_some_objects(TestID,Trn,Num,IO,Filter,Objects),
   make_up_selector_name(Trn+Num*IO,Named).
@@ -2278,7 +2278,7 @@ learn_ilp(TestID):-
     abolish(is_for_ilp/4), dynamic(is_for_ilp/4),
     %compile_and_save_test(TestID),
     individuate_all_pairs_from_hints(TestID),
-    with_luser(use_individuated_cache,true, 
+    with_individuated_cache(true, 
      forall(kaggle_arc(TestID,ExampleNum,I,O),
       must_det_ll(learn_ilp(TestID,ExampleNum,I,O)))),!,
     listing(is_for_ilp/4),
@@ -2318,6 +2318,7 @@ into_ilp_int(Int,Int):- integer(Int),!.
 into_ilp_int(Example+Num,ExampleID):- % integer(Int).
    atomic_list_concat([Example,Num],'_',ExampleID),!.
 
+assert_ilp(TestID,ExampleNum,File,Term):- ground(ExampleNum+File), clause_asserted(is_for_ilp(TestID,ExampleNum,File,Term)),!.
 assert_ilp(TestID,ExampleNum,File,Term):- pp(File=Term),!, 
   assert_if_new(is_for_ilp(TestID,ExampleNum,File,Term)),!.
 
@@ -2474,6 +2475,9 @@ get_is_for_ilp(_,_,input, :-(D) ):-
 
 
 get_is_for_ilp(_,_,input, :-(D) ):- get_is_for_ilp(_,_,determination, D ).
+
+get_is_for_ilp(TestID,common,logicmoo_ex,accompany_changed(TestID,P,Same)):- 
+  is_accompany_changed_db(TestID,P,Same).
 
 
 get_is_for_ilp(_,_,liftcover_ex,D):- read_terms_from_atom(D, '

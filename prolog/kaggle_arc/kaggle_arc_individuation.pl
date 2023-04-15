@@ -201,7 +201,7 @@ set_example_num_vm(VM):-
   get_example_num(ExampleNum2),
   ignore((o_minus_i(NewGrid))),
   %dmsg(ExampleNum->ID->ExampleNum2),
-  print_ss((ExampleNum->ID->ExampleNum2),NewGrid,VM.objs))),!.
+  print_ss(wqs(o_minus_i(ExampleNum->ID->ExampleNum2)),NewGrid,VM.objs))),!.
 
 % =====================================================================
 is_fti_step(mono_i_to_o_is_none_some_none).
@@ -389,7 +389,7 @@ guess_how(HOW,I1,O1,Stuff1,Stuff2):-
 
 individuation_macros(completely_do(This),[This,do_ending]).
 
-is_grid_io(Grid,RealIO):- current_test(TestID),kagle_arc_io(TestID,_,RealIO,G),Grid=@=G,!.
+is_grid_io(Grid,RealIO):- get_current_test(TestID),kaggle_arc_io(TestID,_,RealIO,G),Grid=@=G,!.
 indiv_how(IO,How):- is_grid(IO),is_grid_io(IO,RealIO),!,indiv_how(RealIO,How).
 indiv_how(IO,How):- arc_test_property(common,indiv_how(IO),How),!.
 indiv_how(_,How):- indiv_how1(How).

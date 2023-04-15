@@ -334,7 +334,7 @@ pred_global_cpoints(_Pred7,_Color,[],Grid,Grid):- !.
 pred_global_cpoints(Pred7,Color,[H|T],Grid,GridO):- !, pred_global_cpoints(Pred7,Color,H,Grid,GridM),pred_global_cpoints(Pred7,Color,T,GridM,GridO).
 pred_global_cpoints(Pred7,FG,Point,Grid,GridO):- FG == fg, point_to_hvc(Point,H,V,C), !, hv_c_value_or(Grid,Old,H,V,_), call(Pred7,H,V,C,Old,Grid,GridO).
 pred_global_cpoints(Pred7,Color,Point,Grid,GridO):- point_to_hvc(Point, H,V,_),  hv_c_value_or(Grid,Old,H,V,_),  call(Pred7,H,V,Color,Old,Grid,GridO).
-%pred_global_cpo ints(Pred7,Color,Point,Grid,GridO):- set_local _points(Pred7,,Point,Grid,GridO).
+%pred_global_cpo ints(Pred7,Color,Point,Grid,GridO):- set_local _points(Pred7,  ,Point,Grid,GridO).
 pred_global_cpoints(Pred7,Color,Point,Grid,Grid):-  nop(warn_skip(((pred_global_points(Pred7,Color,Point))))).
 
 

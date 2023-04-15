@@ -515,7 +515,7 @@ whole_ndividuator(TestID):- ensure_test(TestID),
   check_for_refreshness,
   nop(show_test_grids), set_flag(indiv,0),
   compile_and_save_test,
-  with_luser(use_individuated_cache,true,
+  with_individuated_cache(true,
    with_pair_mode(whole_test,
     findall(PairGroups,
     (kaggle_arc(TestID,ExampleNum,In,Out),%nonvar(Out),
@@ -531,7 +531,7 @@ each_ndividuator(TestID):- ensure_test(TestID),
   nop(show_test_grids), set_flag(indiv,0),
   compile_and_save_test,
   findall(PairGroups,
-  with_luser(use_individuated_cache,true,
+  with_individuated_cache(true,
     (with_test_pairs(TestID,ExampleNum,In,Out,
          once(each_ndividuator(TestID,ExampleNum,In,Out,PairGroups))))),
    AllPairGroups),
@@ -1184,28 +1184,29 @@ really_set_current_test(TestID):-
 
 some_current_example_num(_):- get_pair_mode(whole_test), !.
 some_current_example_num(_):- get_pair_mode(entire_suite), !.
-some_current_example_num(TrnN):- foc_current_example_num(TrnN).
+some_current_example_num(ExampleNum):- foc_current_example_num(ExampleNum).
 
-foc_current_example_num(TrnN):- get_example_num(TrnN),!.
-foc_current_example_num(TrnN):- TrnN = trn+0, set_example_num(TrnN),!.
-foc_current_example_num(TrnN):- ignore(get_example_num(TrnN)),set_example_num(TrnN),!.
+foc_current_example_num(ExampleNum):- get_example_num(ExampleNum),!.
+foc_current_example_num(ExampleNum):- ExampleNum = trn+0, set_example_num(ExampleNum),!.
+foc_current_example_num(ExampleNum):- ignore(get_example_num(ExampleNum)),set_example_num(ExampleNum),!.
 
 
 current_test_example(TestID,ExampleNum):- get_current_test(TestID),
-  must_det_ll(first_current_example_num(ExampleNum)).
+  (get_example_num(ExampleNum) -> true ; must_det_ll(first_current_example_num(ExampleNum))).
 
-get_example_num(TrnN):- \+ arc_html, nb_current(example,TrnN),ground(TrnN),TrnN\==[],!.
-get_example_num(TrnN):- luser_getval(example,TrnN),ground(TrnN),TrnN\==[],!.
+get_example_num(ExampleNum):- \+ arc_html, nb_current(example,ExampleNum),ground(ExampleNum),ExampleNum\==[],!.
+get_example_num(ExampleNum):- luser_getval(example,ExampleNum),ground(ExampleNum),ExampleNum\==[],!.
 
-set_example_num(_ > TrnN):- nonvar(TrnN), !, set_example_num(TrnN).
-set_example_num(TrnN * _):- nonvar(TrnN), !, set_example_num(TrnN).
+set_example_num(_ > ExampleNum):- nonvar(ExampleNum), !, set_example_num(ExampleNum).
+set_example_num(ExampleNum * _):- nonvar(ExampleNum), !, set_example_num(ExampleNum).
 set_example_num(Trn+N):- nonvar(Trn),!,luser_setval(example,Trn+N).
 set_example_num(Atom):- must_det_ll((testid_name_num_io(Atom,_TID,Trn,N,_IO),luser_setval(example,Trn+N))),!.
 
 tid_to_id((TID>(Trn+Num)*IO),(TID>(Trn+Num)*IO)).
 tid_to_id(Atom,(TID>(Trn+Num)*IO)):- testid_name_num_io(Atom,TID,Trn,Num,IO),!.
 
-first_current_example_num(TrnN):- some_current_example_num(TrnN),ground(TrnN),TrnN\==[],get_current_test(TestID),kaggle_arc(TestID,TrnN,_,_),!.
+first_current_example_num(TrnN):- some_current_example_num(TrnN),ground(TrnN),TrnN\==[],
+  get_current_test(TestID),kaggle_arc(TestID,TrnN,_,_),!.
 first_current_example_num(TrnN):- TrnN = trn+0.
 
 next_pair:- with_pair_mode(single_pair,next_pair0).

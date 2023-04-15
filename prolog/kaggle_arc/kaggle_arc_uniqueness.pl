@@ -27,9 +27,10 @@ So as the community sees my ARC stuff violate their beliefs, and the logicmoo st
 :- include(kaggle_arc_header).
 
 :- dynamic(is_for_ilp/4).
-clear_accompany_changed:- 
-  forall(is_for_ilp(TestID,common,logicmoo_ex,accompany_changed(TestID,P,Same)),
-     ignore(retract(is_for_ilp(TestID,common,logicmoo_ex,accompany_changed(TestID,P,Same))))).
+:- dynamic(is_accompany_changed_db/3).
+clear_scene_rules(TestID):- 
+  forall(is_accompany_changed_db(TestID,B,C),
+     ignore(retract(is_accompany_changed_db(TestID,B,C)))).
 
 count_of(G,N):- findall(G,G,L),variant_list_to_set(L,S),length(S,N).
 
@@ -49,11 +50,15 @@ ok_notice(X):- \+ dont_notice(X).
 
 %ensure_propcounts(_TestID):-!.
 ensure_propcounts(TestID):- ensure_test(TestID),ensure_propcounts1(TestID).
-ensure_propcounts1(TestID):- \+ \+ propcounts(TestID, _, out, count, _, _),!.
+ensure_propcounts1(TestID):- 
+ forall(current_example_nums(TestID,ExampleNum),
+  ( \+ \+ propcounts(TestID, ExampleNum, out, count, _, _),
+    \+ \+ propcounts(TestID, ExampleNum, in, count, _, _))),!.
 ensure_propcounts1(TestID):- with_pair_mode(whole_test,ndividuator(TestID)),
   my_assertion(propcounts(TestID, _, out, count, _, _)).
 
 counts_change(TestID,E):-
+  ensure_propcounts(TestID),
   findall(P,counts_change(TestID,_,P,_,_),L),list_to_set(L,S),!,member(E,S).
 
 counts_change(TestID,ExampleNum,X,N2,N1):- 
@@ -70,88 +75,125 @@ counts_change(TestID,ExampleNum,X,N1,N2):-
 
 accompany_change30(TestID,P,Same):-
   maplist(no_repeats_var,[P]),
-  accompany_change3(TestID,P,Same).
+  accompany_changed_compute_pass1(TestID,P,Same).
 
-
-compute_scene_change(TestID):- 
+compute_scene_change(TestID):-
   ensure_test(TestID),
-  clear_accompany_changed,
+  clear_scene_rules(TestID),  
+  compute_scene_change_pass1(TestID),
+  compute_scene_change_pass2(TestID),
+  compute_scene_change_pass3(TestID).
+
+compute_scene_change_pass1(TestID):- 
    no_repeats_var(NR),
-   NR =  is_accompany_changed_verified(TestID,P,Same),
-   NRO = accompany_changed(TestID,P,Same),
-  with_pair_mode(whole_test, forall(NR,
-     (%dmsg(NR),
-      assert_ilp(TestID,common,logicmoo_ex,NRO)))).
+   NR =  accompany_changed_compute_pass1(TestID,P,Same),
+   NRO = is_accompany_changed_db(TestID,P,Same),
+  with_pair_mode(whole_test, forall(call(NR),assert_ilp_new(NRO))).
+
+assert_ilp_new(Term):- clause_asserted(Term),!.
+assert_ilp_new(Term):- pp(assert_ilp_new=Term),!, assert_if_new(Term).
+
 
 solve_via_scene_change(TestID):-  
   ensure_test(TestID),
-  clear_accompany_changed,
+  clear_scene_rules(TestID),
   (\+ is_accompany_changed_db(TestID,_,_) -> compute_scene_change(TestID) ; true),   
   
   nop(nop((show_scene_change_rules(TestID),ExampleNum=tst+_,forall((obj_group_io(TestID,ExampleNum,in,ROptions,Objs),Objs\==[]),
     solve_obj_group(TestID,ExampleNum,in,ROptions,Objs))))),
-  show_scene_change_rules(TestID),
-  re_accompany_changed(TestID).
+  show_scene_change_rules(TestID),!.
+  
 
 show_scene_change_rules(TestID):-
    forall(is_accompany_changed_computed(TestID,P,Same),pp(t(TestID,P)=accompany_changed(Same))).
 
-re_accompany_changed(TestID):-
-   forall(is_accompany_changed_computed(TestID,P,Same),
-     ignore(((recorrect_is_accompany_changed(TestID,P,Same,SL),
-        SL\=@=Same,
-       pp(P=recorrect_is_accompany_changed(aaa,Same,SL)))))).
-recorrect_is_accompany_changed(TestID,P,Same,SL):- simplify_sames(TestID,P,Same,SL).
 
-correct_is_accompany_changed(TestID,P,Same,SL):- 
+compute_scene_change_pass2(TestID):-
+   findall(P,is_accompany_changed_db(TestID,P,_),Ps),
+   variant_list_to_set(Ps,Set),
+   maplist(compute_scene_change_pass2(TestID),Set).
+compute_scene_change_pass3(TestID):-
+   compute_scene_change_pass2(TestID).
+
+compute_scene_change_pass2(TestID,P):-
+   findall(Same,is_accompany_changed_db(TestID,P,Same),List),
+   %List=[_,_|_], 
+   flatten(List,SameF), variant_list_to_set(SameF,SameS),
+   correct_antes1(TestID,P,SameS,Kept), Kept\==[],!, % pp(P=compute_scene_change_pass2([SameS,Kept])),
+   forall(retract(is_accompany_changed_db(TestID,P,_)),true),
+   assert_ilp_new(is_accompany_changed_db(TestID,P,Kept)).
+%compute_scene_change_pass2(_,_).
+
+at_least_one_overlap(DSame,Same):-
+  member(DS,DSame),member(S,Same),
+  (DS=@=S;other_val(S,DS)),!.
+
+correct_antes1(TestID,P,Same,SL):- 
   findall(S,
    (member(S,Same),
      \+ \+ ((
-       forall(is_accompany_changed_computed(TestID,DP,DSame), 
-          ((P==DP)-> true; (member(DS,DSame),other_val(S,DS))))))),SL).   
+       forall((is_accompany_changed_db(TestID,DP,DSame),at_least_one_overlap(DSame,Same)),       
+          ((P==DP)-> true; (member(DS,DSame),other_val(S,DS))))))),
+   SL), SL\==[],!.
+correct_antes1(_TestID,_P,Same,Same).
 
-simplify_sames(TestID,P,Same,SameS):-
- share_level(Level), 
-  include(shared_prop(TestID,P,Level),Same,SameS),SameS\==[],!.
 /*
-simplify_sames(TestID,P,Same,SameS):-
+correct_antes2(TestID,P,Same,Kept):-    
+   is_accompany_changed_db(TestID,DP,DSame),
+   other_val(P,DP),
+   include(other_vals_from(DSame),Same,Kept), Kept\==[],!.
+correct_antes2(_TestID,_P,Same,Same).
+other_vals_from(DSame,E):- member(DS,DSame),other_val(E,DS),!.
+ 
+*/
+
+correct_antes3(TestID,P,Same,SameS):-
  share_level(Level), 
-  include(shared_prop(TestID,P,Level),Same,SameS),!.
-simplify_sames(TestID,P,Same,SameS):-
-  include(shared_prop(TestID,P,_),Same,SameS),!.
+  my_partition(not(shared_prop_U(TestID,P,Level)),Same,_Lost,SameS).
+  
+/*
+correct_antes3(TestID,P,Same,SameS):-
+ share_level(Level), 
+  include(shared_prop_U(TestID,P,Level),Same,SameS),!.
+correct_antes3(TestID,P,Same,SameS):-
+  include(shared_prop_U(TestID,P,_),Same,SameS),!.
 
 */
-simplify_sames(_,_,Same,Same):-!.
+correct_antes3(_,_,Same,Same):-!.
 
-share_level(all). % share_level(5). share_level(4). 
-%share_level(3). share_level(2).
+share_level(all). %share_level(5). share_level(4). 
+share_level(3). share_level(2).
 
-shared_prop(TestID,P,ShareLevel,Same):- var(TestID),!,get_current_test(TestID),!,shared_prop(TestID,P,ShareLevel,Same).
-shared_prop(TestID,P,ShareLevel,Same):- var(ShareLevel),!,share_level(ShareLevel),shared_prop(TestID,P,ShareLevel,Same).
-shared_prop(TestID,P,ShareLevel,Same):- var(P),!,ensure_counts_change(P),shared_prop(TestID,P,ShareLevel,Same).
+shared_prop_U(TestID,P,ShareLevel,Same):- var(TestID),!,get_current_test(TestID),!,shared_prop_U(TestID,P,ShareLevel,Same).
+shared_prop_U(TestID,P,ShareLevel,Same):- var(P),!,ensure_prop_change(P),shared_prop_U(TestID,P,ShareLevel,Same).
+shared_prop_U(TestID,P,ShareLevel,Same):- var(ShareLevel),!,share_level(ShareLevel),shared_prop_U(TestID,P,ShareLevel,Same).
 
-shared_prop(TestID,P,ShareLevel,Same):- var(Same),!,
+shared_prop_U(TestID,P,ShareLevel,Same):- var(Same),!,
   is_accompany_changed_computed(TestID,P,SameL),
   member(Same,SameL),
-  shared_prop(TestID,P,ShareLevel,Same).
-
-shared_prop(TestID,P,_,Same):- !,
+  shared_prop_U(TestID,P,ShareLevel,Same).
+/*
+shared_prop_U(TestID,P,_,Same):- !,
   forall(current_example_nums(TestID,ExampleNum),
-   forall(obj_group_io(TestID,ExampleNum,out,Objs),
+  (set_example_num(ExampleNum),
+   findall(O,(kaggle_arc_io(TestID,ExampleNum,out,Grid),individuate(complete,Grid,Objs), 
+     %print_ss(wqs(individuate(ExampleNum)),Grid,Objs),
+     member(O,Objs)),OL1),
     %copy_term(P,PP), copy_term(PP,PPP),
-   (findall(O,(member(O,Objs),has_prop(P,O)),OL),
-    %print_ss(ExampleNum,Objs,OL),
-    % writeq(P),    
-    forall(member(O,OL),has_prop(Same,O))))).
+  findall(O,(member(O,OL1),has_prop(P,O)),OL),
+  %print_ss(Same,OL1,OL),
+  % writeq(P),    
+   forall(member(O,OL),has_prop(Same,O)))).
+*/
 
-shared_prop(TestID,_P,all,Same):- 
+shared_prop_U(TestID,_P,all,Same):- 
   forall(current_example_nums(TestID,ExampleNum), is_prop_in(TestID,ExampleNum,Same)).
 
-shared_prop(TestID,_P,ShareLevel,Same):- number(ShareLevel), 
+shared_prop_U(TestID,_P,ShareLevel,Same):- number(ShareLevel), 
   findall(+,((current_example_nums(TestID,ExampleNum),
      \+ \+ is_prop_in(TestID,ExampleNum,Same))),L),
-    trace,
-    length(L,N),N>=ShareLevel.
+    length(L,N),%trace,
+    N>=ShareLevel.
 
 is_prop_in(TestID,ExampleNum,Same):-
    obj_group_io(TestID,ExampleNum,in,Objs),  
@@ -172,27 +214,26 @@ override_object_1([H|T],I,OO):-  override_object_1(H,I,M),!, override_object_1(T
 override_object_1(pen([cc(Red,N)]),Obj,OObj):- pen(Obj,[cc(Was,N)]), subst(Obj,Was,Red,OObj),!.
 override_object_1(O,I,OO):- override_object(O,I,OO),!.
 
-is_accompany_changed_verified(TestID,P,SL):-
-  is_accompany_changed_computed(TestID,P,Same),
-  once((correct_is_accompany_changed(TestID,P,Same,SL))).
-
-is_accompany_changed_db(TestID,P,Same):-
-   is_for_ilp(TestID,common,logicmoo_ex,accompany_changed(TestID,P,Same)).
+is_accompany_changed_verified(TestID,P,Same):-
+  is_accompany_changed_computed(TestID,P,Same), Same\==[].
 
 is_accompany_changed_computed(TestID,P,Same):-
-   is_accompany_changed_db(TestID,P,Same) *->true ; accompany_change3(TestID,P,Same). 
-
-ensure_counts_change(Prop):- 
+   is_accompany_changed_db(TestID,P,Same) *->true ; accompany_changed_compute_pass1(TestID,P,Same). 
+   
+ensure_prop_change(Prop):- 
   (var(Prop)->counts_change(_TestID,Prop);true).
 
 prop_can(Prop,Can):-
-  ensure_counts_change(Prop),
+  ensure_prop_change(Prop),
   prop_cant(Prop,Cant),
   prop_can1(Prop,Can1),
   intersection(Can1,Cant,_,Can,_).
 
+
+% Turns out due to shortage Fred Meyer doesn't have the XR now anyways .. But i confirmed they do have  have a 28 day supply of the non-XR   .. .. Go ahead and not send the XR if you haven't sent it
+
 prop_cant(Prop,Set):-
-  ensure_counts_change(Prop),
+  ensure_prop_change(Prop),
   findall(Cant,
     ((enum_object(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
       not_has_prop(Prop,O),indv_props_list(O,List),member(Cant,List),ok_notice(Cant))),Flat),
@@ -204,7 +245,7 @@ enum_object_ext(O):-
   once((obj_group_io(TestID,ExampleNum,out,Objs),Objs\==[])),member(O,Objs).
 
 prop_can1(Prop,Can):-  
-  ensure_counts_change(Prop),
+  ensure_prop_change(Prop),
   findall(O,
     ((enum_object_ext(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
       has_prop(Prop,O))),[I|L]),
@@ -212,7 +253,7 @@ prop_can1(Prop,Can):-
   findall(P,(member(P,List),ok_notice(P),forall(member(E,L),has_prop(P,E))),Can).
 
 
-accompany_change3(TestID,P,SameS):- 
+accompany_changed_compute_pass1(TestID,P,SameS):- 
   findall(ac(TestID,X,ExampleNum,PO),
     (accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=_Intersect]),
      member(X=PO,[X1=P1O,X2=P2O])), AC0),
@@ -220,7 +261,7 @@ accompany_change3(TestID,P,SameS):-
   list_to_set_variant(AC1,AC2),
   counts_change(TestID,P),
   ac1_or_ac2(TestID,P,AC2,NewSame),
-  simplify_sames(TestID,P,NewSame,SameS).
+  correct_antes3(TestID,P,NewSame,SameS).
 
 ac1_or_ac2(TestID,P,AC2,NewSame):-
   ac1_or_ac2_1(TestID,P,AC2,NewSame)*->true;ac1_or_ac2_2(TestID,P,AC2,NewSame).
@@ -343,6 +384,7 @@ common_props([O|Objs],Props):-
    indv_props_list(O,List),
    findall(P,(member(P,List),\+ dont_notice(P),forall(member(E,Objs),has_prop(P,E))),Props).
 
+current_example_nums(_TestID,ExampleNum):- ground(ExampleNum),!.
 current_example_nums(TestID,ExampleNum):- 
   get_current_test(TestID),ExampleNum=trn+_, kaggle_arc(TestID,ExampleNum,_,_). 
 
@@ -357,7 +399,7 @@ save_how_io(TestID,HowIn,HowOut):-
 
 
 obj_group_gg(TestID,ExampleNum,In,Out):-
-   no_repeats_var(Out),
+   no_repeats_var(Out),set_example_num(ExampleNum),
    obj_group5(TestID,ExampleNum,in,HowIn,In), In\==[],  length(In,L),
 
    (((obj_group5(TestID,ExampleNum,out,HowOut,OOut),length(OOut,L),save_how_io(TestID,HowIn,HowOut)))
@@ -374,15 +416,17 @@ all_io_objs(TestID,IO,Others):-
   findall(O,(current_example_nums(TestID,ExampleNum), 
    obj_group_io(TestID,ExampleNum,IO,Objs), member(O,Objs)),Others).
 
+with_individuated_cache(TF,Goal):- locally(nb_setval(use_individuated_cache,TF),Goal).
+
 obj_group_io(TestID,ExampleNum,IO,Objs):-
  arc_test_property(TestID,common,indiv_how(IO),How),!,
  current_example_nums(TestID,ExampleNum), 
- locally(nb_setval(use_individuated_cache,true),
+ with_individuated_cache(true,
    once(obj_group5(TestID,ExampleNum,IO,How,Objs))).
 
 obj_group_io(TestID,ExampleNum,IO,Objs):- 
  current_example_nums(TestID,ExampleNum),
- locally(nb_setval(use_individuated_cache,true),
+ with_individuated_cache(true,
    once(obj_group5(TestID,ExampleNum,IO,_,Objs))).
 
 obj_group5(TestID,ExampleNum,IO,ROptions,Objs):- var(TestID),
@@ -392,7 +436,8 @@ obj_group5(TestID,ExampleNum,IO,ROptions,Objs):- var(ROptions),
  obj_group5(TestID,ExampleNum,IO,ROptions,Objs).
 obj_group5(TestID,ExampleNum,IO,ROptions,Objs):-
  kaggle_arc_io(TestID,ExampleNum,IO,Grid),
-  ((arc_cache:individuated_cache(TestID,TID,GOID,ROptions,Objs), Objs\==[],
+  set_example_num(ExampleNum),
+  ((fail, arc_cache:individuated_cache(TestID,TID,GOID,ROptions,Objs), Objs\==[],
   once((testid_name_num_io_0(TID,_,Example,Num,IO),
         testid_name_num_io_0(GOID,_,Example,Num,IO))))*-> true ; grid_to_objs(Grid,ROptions,Objs)).
   

@@ -79,7 +79,7 @@ compile_and_save_test_now(TestID):-
   %ignore(retract(saved_training(TestID))),
   %ignore(retract(process_test(TestID))),
 
-  time((locally(nb_setval(use_individuated_cache,true),
+  time((with_individuated_cache(true,
      ((
       gen_gids(TestID),
       compute_all_test_hints(TestID)),
@@ -110,7 +110,7 @@ print_hybrid_grid(G):- io_side_effects,into_grid_free(G,O),grid_to_norm(Ops,O,N)
   (O\==N->print_side_by_side([ops(Ops)],G,N); print_grid(O)).
 
 individuate_all_pairs_from_hints(TestID):- 
-  with_luser(use_individuated_cache,true,
+  with_individuated_cache(true,
    with_pair_mode(whole_test,
     individuate_pairs_from_hints(TestID))).
 

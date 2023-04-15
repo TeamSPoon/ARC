@@ -726,7 +726,8 @@ ansi_startup:-
 :- luser_default(no_individuator, f).
 :- luser_default(grid_size_only,true).
 %:- luser_default(cmd,test_easy).
-:- luser_default(cmd,learn_ilp).
+%:- luser_default(cmd,learn_ilp).
+:- luser_default(cmd,solve_via_scene_change).
 :- luser_default(cmd2,print_all_info_for_test).
 %:- luser_default(cmd2,test_show_grid_objs).
 :- luser_default(use_individuated_cache,true).
@@ -845,12 +846,19 @@ use_gui_debugger:-
 :- set_current_test(v('1d398264')). 
 :- luser_default(task,v('1d398264')). 
 :- luser_default(task,v('37d3e8b2')). 
+
 */
-create_group_dmiles:- must_det_ll((create_group(dmiles,[
+create_group_dmiles:- 
+   must_det_ll((create_group(dmiles_nsn,[
+    'e41c6fd3','ea32f347','37d3e8b2','0a2355a6', 'b230c067','a61f2674','d2abd087','08ed6ac7']))),
+  %must_det_ll((create_group(dmiles_nsn2,[
+  % 'a61f2674','0a2355a6', 'a61ba2ce', 'ea32f347', 'a79310a0', '37d3e8b2', 'e41c6fd3', 'b230c067', '0d3d703e', '08ed6ac7']))),
+   must_det_ll((create_group(dmiles,[
+     
               'e41c6fd3','ea32f347',
               '37d3e8b2','0a2355a6',
               'a79310a0','103eff5b',
-              '33b52de3','d2abd087',
+              '33b52de3','d2abd087','08ed6ac7',
               '1b60fb0c','1d398264',
               '0d3d703e','626c0bcc',
               '5582e5ca','25d487eb',
