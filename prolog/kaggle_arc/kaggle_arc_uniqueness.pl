@@ -36,22 +36,16 @@ count_of(G,N):- findall(G,G,L),variant_list_to_set(L,S),length(S,N).
 
 dont_notice(oid(_)).
 dont_notice(giz(_)).
-dont_notice(global2G(_,_)).
-dont_notice(link(sees,_)).
+dont_notice(link(_,_)).
 dont_notice(links_count(sees,_)).
-dont_notice(occurs_in_links(contained_by,_)).
-dont_notice(occurs_in_links(sees,_)).
 dont_notice(iz(i_o(_))).
 dont_notice(P):- compound(P),arg(_,P,E),is_gridoid(E),!.
 dont_notice(P):- compound(P),!,compound_name_arity(P,F,_),!,dont_notice(F).
 dont_notice(F):- \+ atom(F),!,fail.
-  dont_notice(link).
+dont_notice(link).
 dont_notice(oid).
 dont_notice(giz).
 dont_notice(shape_rep).
-do_notice(pg(_,_,rank1,_)).
-
-ok_notice(X):- \+ \+ do_notice(X),!.
 ok_notice(X):- \+ dont_notice(X).
 
 %ensure_propcounts(_TestID):-!.
@@ -63,23 +57,21 @@ ensure_propcounts1(TestID):-
 ensure_propcounts1(TestID):- with_pair_mode(whole_test,ndividuator(TestID)),
   my_assertion(propcounts(TestID, _, out, count, _, _)).
 
-props_change(TestID,E,EIn):-
+counts_change(TestID,E):-
   ensure_propcounts(TestID),
-  findall(P-I_or_O,counts_change(TestID,_,I_or_O,P,_,_),L),list_to_set(L,S),!,member(E-EIn,S).
+  findall(P,counts_change(TestID,_,P,_,_),L),list_to_set(L,S),!,member(E,S).
 
-in_out_atoms(in,out).
-
-counts_change(TestID,ExampleNum,Out,X,N2,N1):- in_out_atoms(In,Out),
+counts_change(TestID,ExampleNum,X,N2,N1):- 
    ensure_propcounts(TestID),
-   propcounts(TestID, ExampleNum, Out, count, N1, X), ok_notice(X),
+   propcounts(TestID, ExampleNum, out, count, N1, X), \+ dont_notice(X),
    ExampleNum = trn+_,
-   (propcounts(TestID, ExampleNum, In, count, N2, X) -> true ; N2=0), N1\==N2.
+   (propcounts(TestID, ExampleNum, in, count, N2, X) -> true ; N2=0), N1\==N2.
 
-counts_change(TestID,ExampleNum,In,X,N1,N2):- in_out_atoms(In,Out),
+counts_change(TestID,ExampleNum,X,N1,N2):- 
    ensure_propcounts(TestID),
-   propcounts(TestID, ExampleNum, In, count, N1, X), ok_notice(X),
+   propcounts(TestID, ExampleNum, in, count, N1, X), \+ dont_notice(X),
    ExampleNum = trn+_,
-   (propcounts(TestID, ExampleNum, Out, count, N2, X) -> true ; N2=0), N1\==N2.
+   (propcounts(TestID, ExampleNum, out, count, N2, X) -> true ; N2=0), N1\==N2.
 
 accompany_change30(TestID,P,Same):-
   maplist(no_repeats_var,[P]),
@@ -120,36 +112,24 @@ show_scene_change_rules(TestID):-
   banner_lines(cyan,4),
    forall(is_accompany_changed_computed(TestID,P,Same),
      pp(show_scene_change_rules(Same)=>P)),
-   banner_lines(cyan,4).
+banner_lines(cyan,4).
 
 
 compute_scene_change_pass2(TestID):-
    findall(P,is_accompany_changed_db(TestID,P,_),Ps),
    variant_list_to_set(Ps,Set),
-   maplist(compute_scene_change_pass2a(TestID),Set),
-   maplist(compute_scene_change_pass2b(TestID),Set),
-   maplist(compute_scene_change_pass2c(TestID),Set).
-compute_scene_change_pass3(TestID):- 
+   maplist(compute_scene_change_pass2(TestID),Set).
+compute_scene_change_pass3(TestID):-
    compute_scene_change_pass2(TestID).
 
-compute_scene_change_pass2a(TestID,P):- 
+compute_scene_change_pass2(TestID,P):-
    findall(Same,is_accompany_changed_db(TestID,P,Same),List),
-   List=[_,_|_],
-   flatten(List,SameF), variant_list_to_set(SameF,SameS),
-   forall(retract(is_accompany_changed_db(TestID,P,_)),true),
-  assert_ilp_new(is_accompany_changed_db(TestID,P,SameS)).
-compute_scene_change_pass2a(_,_).
-
-compute_scene_change_pass2b(TestID,P):-
-   findall(Same,is_accompany_changed_db(TestID,P,Same),List),
+   %List=[_,_|_], 
    flatten(List,SameF), variant_list_to_set(SameF,SameS),
    correct_antes1(TestID,P,SameS,Kept), Kept\==[],!, % pp(P=compute_scene_change_pass2([SameS,Kept])),
    forall(retract(is_accompany_changed_db(TestID,P,_)),true),
-  assert_ilp_new(is_accompany_changed_db(TestID,P,Kept)).
-compute_scene_change_pass2b(_,_).
-
-compute_scene_change_pass2c(_,_).
-
+   assert_ilp_new(is_accompany_changed_db(TestID,P,Kept)).
+%compute_scene_change_pass2(_,_).
 
 at_least_one_overlap(DSame,Same):-
   member(DS,DSame),member(S,Same),
@@ -248,7 +228,7 @@ is_accompany_changed_computed(TestID,P,Same):-
    is_accompany_changed_db(TestID,P,Same) *->true ; accompany_changed_compute_pass1(TestID,P,Same). 
    
 ensure_prop_change(Prop):- 
-  (var(Prop)->props_change(_TestID,Prop,out);true).
+  (var(Prop)->counts_change(_TestID,Prop);true).
 
 prop_can(Prop,Can):-
   ensure_prop_change(Prop),
@@ -277,70 +257,16 @@ prop_can1(Prop,Can):-
     ((enum_object_ext(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
       has_prop(Prop,O))),[I|L]),
   indv_props_list(I,List),
-  findall(P,(member(P,List),ok_notice(P),P\=@=Prop,forall(member(E,L),has_prop(P,E))),Can).
-
-prop_can2(Prop,Common):-  
-  ensure_prop_change(Prop),
-  findall(O,
-    ((enum_object_ext(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
-      has_prop(Prop,O))),HasPropsO),
-  %print_grid(Prop,HasPropsO),
-  common_props(HasPropsO,Common).
+  findall(P,(member(P,List),ok_notice(P),forall(member(E,L),has_prop(P,E))),Can).
 
 
-accompany_changed_compute_pass1_new2(TestID,P,PropProps):-   
-  props_change(TestID,P,out), prop_can(P,PropProps).
-
-accompany_changed_compute_pass1_new(TestID,P,PropProps):- fail,
- findall(CommonToEProps,
- (current_example_nums(TestID,ExampleNum),
-  obj_group_io(TestID,ExampleNum,out,Objs),
-  my_partition(has_prop(P),Objs,HasPropsO,NotHasPropsO),
-  %my_partition(not_has_prop(X),Others,HasPropsOthers,NotHasPropsOthers),
-  common_props(HasPropsO,Common),
-  common_props(NotHasPropsO,NotCommon),
-  intersection(Common,NotCommon,_,CommonToEProps,_NotProps),CommonToEProps\==[]),
- FindOverlaps),
- length(FindOverlaps,_NumSets),
- find_overlaps(FindOverlaps,Props,Unshared),
- append(Props,Unshared,PropProps).
-
-find_overlaps([E],E,[]):-!.
-find_overlaps(FindOverlaps,[E|EL],Unshared):- 
- maplist(variant_select(E),FindOverlaps,Rest),!,
- find_overlaps(Rest,EL,Unshared).
-find_overlaps(FindOverlaps,EL,[UFound|Unshared]):- 
- select(O1,FindOverlaps,FO1),select(O2,FO1,_FO2),
- select(P1,O1,_OR1),select(P2,O2,_OR2),other_val(P1,P2),
- make_unifiable_u(P1,U1),
- maplist(select_variant_or_unify(U1),Founds,FindOverlaps,Rest),
- some_min_unifier(Founds,UFound),!,
- find_overlaps(Rest,EL,Unshared).
-find_overlaps(_,[],[]).
-
-accompany_changed_compute_pass1(TestID,P,SameS):- var(P),!,props_change(TestID,P,Out),Out==out,
-  accompany_changed_compute_pass1(TestID,P,SameS).
-
-accompany_changed_compute_pass1(TestID,P,SameS):- fail,
- (((accompany_changed_compute_pass1_new2(TestID,P,SameS),SameS\==[])*->true
-  ;(accompany_changed_compute_pass1_old(TestID,P,SameS),SameS\==[])*->true
-  ;(accompany_changed_compute_pass1_new(TestID,P,SameS),SameS\==[]))).
-
-accompany_changed_compute_pass1(TestID,P,SameS):-
-  (accompany_changed_compute_pass1_new2(TestID,P,SameS),SameS\==[]);
-  (accompany_changed_compute_pass1_old(TestID,P,SameS),SameS\==[]);
-  (accompany_changed_compute_pass1_new(TestID,P,SameS),SameS\==[]).
-
-
-
-accompany_changed_compute_pass1_old(TestID,P,SameS):- 
+accompany_changed_compute_pass1(TestID,P,SameS):- 
   findall(ac(TestID,X,ExampleNum,PO),
-    (current_example_nums(TestID,ExampleNum),
-     accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=_Intersect]),
+    (accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=_Intersect]),
      member(X=PO,[X1=P1O,X2=P2O])), AC0),
   sort(AC0,AC1),
   list_to_set_variant(AC1,AC2),
-  props_change(TestID,P,_),
+  counts_change(TestID,P),
   ac1_or_ac2(TestID,P,AC2,NewSame),
   correct_antes3(TestID,P,NewSame,SameS).
 
@@ -407,12 +333,9 @@ merge_xtra_props_ac2([ac2(ExampleNum,PO1)|AC3],[ac2(ExampleNum,PO1)|Same]):-
 merge_xtra_props_ac2(Same,Same):-!.
 
 
-changing_props(TestID,X1,X2):- 
- ensure_test(TestID),
- findall(X1-InOut,props_change(TestID,X1,InOut),X1L),
- variant_list_to_set(X1L,X1S),
- member(X1-IO,X1S),
- member(X2-IO,X1S),
+changing_props(X1,X2):- 
+ counts_change(TestID,X1),
+ counts_change(TestID,X2),
 % X1@>X2,
  other_val(X1,X2). 
 
@@ -423,8 +346,7 @@ same_prop_names(X1,X2):-
 make_unifiable_u(X1,U1):- make_unifiable_cc(X1,U1),!.
 
 accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=Intersect]):-
- changing_props(TestID,X1,X2),
- current_example_nums(TestID,ExampleNum),
+ changing_props(X1,X2),
  accompany_change(TestID,ExampleNum,X1,Props1,_NotProps1),
  accompany_change(TestID,ExampleNum,X2,Props2,_NotProps2),
  once((
@@ -442,11 +364,11 @@ accompany_change(TestID,ExampleNum,X,Props,NotProps):-
   var(ExampleNum),!,current_example_nums(TestID,ExampleNum),
   accompany_change(TestID,ExampleNum,X,Props,NotProps).
 accompany_change(TestID,ExampleNum,X,Props,NotProps):-
-  var(X),!,props_change(TestID,X,_),
+  var(X),!,counts_change(TestID,X),
   accompany_change(TestID,ExampleNum,X,Props,NotProps).
 
 accompany_change(TestID,ExampleNum,X,Props,NotProps):-     
-   once((counts_change(TestID,ExampleNum,_I_or_O,X,N1,N2), N1<N2)),!,
+   once((counts_change(TestID,ExampleNum,X,N1,N2), N1<N2)),!,
    %no_repeats_var(Out),
   once(( obj_group_gg(TestID,ExampleNum,_In,Out),
          once((my_partition(has_prop(X),Out,HasPropsO,NotHasPropsO),
@@ -456,7 +378,7 @@ accompany_change(TestID,ExampleNum,X,Props,NotProps):-
          Props\==[])).
 
 accompany_change(TestID,ExampleNum,X,Props,NotProps):- fail,
-   counts_change(TestID,ExampleNum,_I_or_O,X,N1,N2), N1>N2,
+   counts_change(TestID,ExampleNum,X,N1,N2), N1>N2,
   once((
    %obj_group_io(TestID,ExampleNum,in,In), my_partition(has_prop(X),In,HasPropsI,NotHasPropsI),
   %obj_group_io(TestID,ExampleNum,out,Out),
@@ -467,12 +389,10 @@ accompany_change(TestID,ExampleNum,X,Props,NotProps):- fail,
   common_props(NotHasPropsO,NotCommon),
   intersection(Common,NotCommon,_,Props,NotProps),Props\==[])).
 
-common_props([O],O):-!.
+
 common_props([O|Objs],Props):-
-   into_obj_props1(O,List),
-   %nl,maplist(writeln,[O|Objs]),
-   findall(P,(member(P,List), ok_notice(P),
-     forall(member(E,Objs),\+ \+ indv_props(E,P))),Props).
+   indv_props_list(O,List),
+   findall(P,(member(P,List),\+ dont_notice(P),forall(member(E,Objs),has_prop(P,E))),Props).
 
 current_example_nums(_TestID,ExampleNum):- ground(ExampleNum),!.
 current_example_nums(TestID,ExampleNum):- 
