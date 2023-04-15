@@ -1375,7 +1375,7 @@ add_prior_info(Objs,ObjsLen,Common,VbO,(List),(NewList)):-
 add_prior_info_1(_Objs,ObjsLen,_Common,VbO,PropList,OUT):- is_list(PropList),
   length(VbO,Rankers), %Rankers>1,
   find_version(VbO,Prop,N1,N2,PropList),
-  ignore((member(Prop,PropList))),
+  member(Prop,PropList),
   %prop_name(Prop,Name),  
   value_to_name(Prop,Name),
   R = pg(Rankers,Name,rank1,N2),  
@@ -1904,7 +1904,7 @@ make_unifiable_cc(cc(N,_),cc(N,_)):-!.
 make_unifiable_cc(oid(_),oid(_)):-!.
 make_unifiable_cc(recolor(N,_),recolor(N,_)):-!.
 make_unifiable_cc(iz(symmetry_type(N,_)),iz(symmetry_type(N,_))):-!.
-make_unifiable_cc(pg(N,G,M,_),pg(N,UG,M,_)):-!,make_unifiable_cc(G,UG).
+make_unifiable_cc(pg(_,G,M,_),pg(_,UG,M,_)):-!,make_unifiable_cc(G,UG).
 make_unifiable_cc(O,U):- make_unifiable(O,U).
 
 count_objs(B,O):- \+ is_list(B),!, O = 0.
