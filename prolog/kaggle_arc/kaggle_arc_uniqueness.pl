@@ -38,6 +38,7 @@ dont_notice(oid(_)).
 dont_notice(giz(_)).
 dont_notice(link(_,_)).
 dont_notice(links_count(sees,_)).
+dont_notice(occurs_in_links(_,_)).
 dont_notice(iz(i_o(_))).
 dont_notice(P):- compound(P),arg(_,P,E),is_gridoid(E),!.
 dont_notice(P):- compound(P),!,compound_name_arity(P,F,_),!,dont_notice(F).
@@ -46,6 +47,9 @@ dont_notice(link).
 dont_notice(oid).
 dont_notice(giz).
 dont_notice(shape_rep).
+do_notice(pg(_,_,rank1,_)).
+
+ok_notice(X):- \+ \+ do_notice(X),!.
 ok_notice(X):- \+ dont_notice(X).
 
 %ensure_propcounts(_TestID):-!.
@@ -63,13 +67,13 @@ counts_change(TestID,E):-
 
 counts_change(TestID,ExampleNum,X,N2,N1):- 
    ensure_propcounts(TestID),
-   propcounts(TestID, ExampleNum, out, count, N1, X), \+ dont_notice(X),
+   propcounts(TestID, ExampleNum, out, count, N1, X), ok_notice(X),
    ExampleNum = trn+_,
    (propcounts(TestID, ExampleNum, in, count, N2, X) -> true ; N2=0), N1\==N2.
 
 counts_change(TestID,ExampleNum,X,N1,N2):- 
    ensure_propcounts(TestID),
-   propcounts(TestID, ExampleNum, in, count, N1, X), \+ dont_notice(X),
+   propcounts(TestID, ExampleNum, in, count, N1, X), ok_notice(X),
    ExampleNum = trn+_,
    (propcounts(TestID, ExampleNum, out, count, N2, X) -> true ; N2=0), N1\==N2.
 
@@ -78,11 +82,15 @@ accompany_change30(TestID,P,Same):-
   accompany_changed_compute_pass1(TestID,P,Same).
 
 compute_scene_change(TestID):-
+ with_pair_mode(whole_test, 
+ (banner_lines(red,4),
   ensure_test(TestID),
   clear_scene_rules(TestID),  
   compute_scene_change_pass1(TestID),
+  banner_lines(yellow,4),
   compute_scene_change_pass2(TestID),
-  compute_scene_change_pass3(TestID).
+  banner_lines(blue,4),
+  compute_scene_change_pass3(TestID))).
 
 compute_scene_change_pass1(TestID):- 
    no_repeats_var(NR),
@@ -105,24 +113,39 @@ solve_via_scene_change(TestID):-
   
 
 show_scene_change_rules(TestID):-
-   forall(is_accompany_changed_computed(TestID,P,Same),pp(t(TestID,P)=accompany_changed(Same))).
+  banner_lines(cyan,4),
+   forall(is_accompany_changed_computed(TestID,P,Same),
+     pp(show_scene_change_rules(Same)=>P)),
+   banner_lines(cyan,4).
 
 
 compute_scene_change_pass2(TestID):-
    findall(P,is_accompany_changed_db(TestID,P,_),Ps),
    variant_list_to_set(Ps,Set),
-   maplist(compute_scene_change_pass2(TestID),Set).
-compute_scene_change_pass3(TestID):-
+   maplist(compute_scene_change_pass2a(TestID),Set),
+   maplist(compute_scene_change_pass2b(TestID),Set),
+   maplist(compute_scene_change_pass2c(TestID),Set).
+compute_scene_change_pass3(TestID):- 
    compute_scene_change_pass2(TestID).
 
-compute_scene_change_pass2(TestID,P):-
+compute_scene_change_pass2a(TestID,P):- 
    findall(Same,is_accompany_changed_db(TestID,P,Same),List),
-   %List=[_,_|_], 
+   List=[_,_|_],
+   flatten(List,SameF), variant_list_to_set(SameF,SameS),
+   forall(retract(is_accompany_changed_db(TestID,P,_)),true),
+  assert_ilp_new(is_accompany_changed_db(TestID,P,SameS)).
+compute_scene_change_pass2a(_,_).
+
+compute_scene_change_pass2b(TestID,P):-
+   findall(Same,is_accompany_changed_db(TestID,P,Same),List),
    flatten(List,SameF), variant_list_to_set(SameF,SameS),
    correct_antes1(TestID,P,SameS,Kept), Kept\==[],!, % pp(P=compute_scene_change_pass2([SameS,Kept])),
    forall(retract(is_accompany_changed_db(TestID,P,_)),true),
-   assert_ilp_new(is_accompany_changed_db(TestID,P,Kept)).
-%compute_scene_change_pass2(_,_).
+  assert_ilp_new(is_accompany_changed_db(TestID,P,Kept)).
+compute_scene_change_pass2b(_,_).
+
+compute_scene_change_pass2c(_,_).
+
 
 at_least_one_overlap(DSame,Same):-
   member(DS,DSame),member(S,Same),
@@ -332,8 +355,11 @@ changing_props(X1,X2):-
 % X1@>X2,
  other_val(X1,X2). 
 
-other_val(X1,X2):- X1\=@=X2, same_functor(X1,X2).
-
+other_val(X1,X2):- X1\=@=X2, same_prop_names(X1,X2),!.
+same_prop_names(X1,X2):- 
+  compound(X1),compound(X2), same_functor(X1,X2),!,
+  make_unifiable_u(X1,U1), make_unifiable_u(X2,U2),  U1 =@= U2.
+make_unifiable_u(X1,U1):- make_unifiable_cc(X1,U1),!.
 
 accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=Intersect]):-
  changing_props(X1,X2),
@@ -382,7 +408,7 @@ accompany_change(TestID,ExampleNum,X,Props,NotProps):- fail,
 
 common_props([O|Objs],Props):-
    indv_props_list(O,List),
-   findall(P,(member(P,List),\+ dont_notice(P),forall(member(E,Objs),has_prop(P,E))),Props).
+   findall(P,(member(P,List), ok_notice(P),forall(member(E,Objs),has_prop(P,E))),Props).
 
 current_example_nums(_TestID,ExampleNum):- ground(ExampleNum),!.
 current_example_nums(TestID,ExampleNum):- 
