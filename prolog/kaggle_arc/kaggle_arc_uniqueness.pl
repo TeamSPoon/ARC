@@ -60,7 +60,10 @@ ensure_propcounts1(TestID):-
  forall(current_example_nums(TestID,ExampleNum),
   ( \+ \+ propcounts(TestID, ExampleNum, out, count, _, _),
     \+ \+ propcounts(TestID, ExampleNum, in, count, _, _))),!.
-ensure_propcounts1(TestID):- with_pair_mode(whole_test,ndividuator(TestID)),
+ensure_propcounts1(TestID):- 
+  with_pair_mode(whole_test,
+    with_luser(menu_key,'O',ndividuator(TestID))),
+  show_groups(TestID),
   my_assertion(propcounts(TestID, _, out, count, _, _)).
 
 props_change(TestID,E,EIn):-

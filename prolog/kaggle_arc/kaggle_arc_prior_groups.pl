@@ -178,12 +178,12 @@ reorganize_objs(Objects,[],[],Objects):-!.
 reorganize_objs([],[],[],[]):-!.
 
 
-show_groups(_TestID):-!.
+%show_groups(_TestID):-!.
 show_groups(TestID):- ensure_test(TestID),
   show_filtered_groups(TestID),
   show_pair_groups(TestID).
   
-show_filtered_groups(_TestID):-!.
+%show_filtered_groups(_TestID):-!.
 show_filtered_groups(TestID):- ensure_test(TestID),
   forall( interesting_selectors(_,Trn,Num,IO),
    forall( member(Filter,[shared,unshared]),
@@ -195,8 +195,10 @@ show_filtered_groups(TestID):- ensure_test(TestID),
          nop(ignore(((ground((Trn+Num*IO))->print(Objs); (Len<10 ->print(Objs); true))))),
          print_grouped_props(Named+Filter,Objs)))))))).
 
+show_pair_groups(_TestID):-!.
 show_pair_groups(TestID):- ensure_test(TestID),
-  forall(no_repeats(vars(Name1+Filter1,Name2+Filter2),pair_two_groups(TestID,Name1+Filter1,Name2+Filter2,Objs1,Objs2)),
+  forall(no_repeats(vars(Name1+Filter1,Name2+Filter2),
+   pair_two_groups(TestID,Name1+Filter1,Name2+Filter2,Objs1,Objs2)),
     ignore((
       Objs1\==[],Objs2\==[],
       Objs1\==Objs2,   
@@ -210,7 +212,7 @@ show_pair_groups(TestID):- ensure_test(TestID),
       append(Objs1,Objs2,OBJS),list_to_set(OBJS,OBJSET),
       length(OBJS,WP1),length(OBJSET,WP2), WP1 == WP2,
       % pp(Name1+Filter1-Name2+Filter2 = Objs1->Objs2),
-      show_interesting_vs(vs(Name1+Filter1,Name2+Filter2),Objs1,Objs2)
+      ppt(show_interesting_vs(vs(Name1+Filter1,Name2+Filter2),Objs1,Objs2))
       ))).
 
 rules_from(Objs1,Objs2,Objects):- Objects=(Objs1->Objs2).
