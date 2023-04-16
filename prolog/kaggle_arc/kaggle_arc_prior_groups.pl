@@ -41,14 +41,20 @@ more_than_1_done(TestID):-
   is_why_grouped_g(TestID, _, individuate(_, two(I2, _O2)),_), 
   I1\==I2,!.
 
-interesting_selectors('Training I/O',trn,_,_):-  get_current_test(TestID),more_than_1_done(TestID).
-interesting_selectors('Training Input',trn,_,in):-  get_current_test(TestID),more_than_1_done(TestID).
-interesting_selectors('Training Output',trn,_,out):-  get_current_test(TestID),more_than_1_done(TestID).
-interesting_selectors('Pair #~w I/O'-[NumP1],trn,Num,_):- current_example_nums(trn,Num, NumP1).
-interesting_selectors('Pair #~w Out'-[NumP1],trn,Num,out):- current_example_nums(trn,Num, NumP1).
-interesting_selectors('Pair #~w In'-[NumP1],trn,Num,in):- current_example_nums(trn,Num, NumP1).
-interesting_selectors('All Input'-[],_,_,in).
-interesting_selectors('Test #~w Input'-[NumP1],tst,Num,in):- current_example_nums(tst,Num, NumP1).
+name_to_selector(Named,Trn,Num,IO):- interesting_selectors(Named,Trn,Num,IO).
+%  make_up_selector_name((Trn+Num)*IO,NameO),Named=NameO.
+
+interesting_selectors(Name,Tst,Num,IO):-
+  interesting_selectors0(Name0,Tst,Num,IO),
+  maybe_aformat(Name0,Name00),Name00=Name.
+interesting_selectors0('Training I/O',trn,_,_):-  get_current_test(TestID),more_than_1_done(TestID).
+interesting_selectors0('Training Input',trn,_,in):-  get_current_test(TestID),more_than_1_done(TestID).
+interesting_selectors0('Training Output',trn,_,out):-  get_current_test(TestID),more_than_1_done(TestID).
+interesting_selectors0('Pair #~w I/O'-[NumP1],trn,Num,_):- current_example_nums(trn,Num, NumP1).
+interesting_selectors0('Pair #~w Out'-[NumP1],trn,Num,out):- current_example_nums(trn,Num, NumP1).
+interesting_selectors0('Pair #~w In'-[NumP1],trn,Num,in):- current_example_nums(trn,Num, NumP1).
+interesting_selectors0('All Input'-[],_,_,in).
+interesting_selectors0('Test #~w Input'-[NumP1],tst,Num,in):- current_example_nums(tst,Num, NumP1).
 %interesting_selectors('All I/O'-[],_,_,_).
 
 /*
@@ -73,10 +79,12 @@ interesting_compares(tst+N*in, F1,  trn+N *in,F2) :- current_example_nums(tst,N,
 filter_pairs(whole,whole).
 %filter_pairs(shared,shared). filter_pairs(unshared,shared). filter_pairs(shared,unshared). filter_pairs(unshared,unshared).
 
-make_up_selector_name(Trn_num_io,Named):-  trn_num_io(Trn_num_io,Trn,Num,IO),
+make_up_selector_name(Trn_num_io,Named):-  
+  trn_num_io(Trn_num_io,Trn,Num,IO),
   interesting_selectors(NameI,Trn1,Num1,IO1), match_selector(Trn1,Trn),match_selector(IO1,IO),match_selector(Num1,Num),
   once(maybe_aformat(NameI,Named)).
-maybe_aformat(Fmt-Args,Named):- format(atom(Named),Fmt,Args),!. maybe_aformat(Named,Named).
+maybe_aformat(Fmt-Args,Named):- nonvar(Fmt), format(atom(Named),Fmt,Args),!. 
+maybe_aformat(Named,Named).
 
 match_selector(Trn1,Trn):- var(Trn1),var(Trn),!.
 match_selector(Trn1,Trn):- Trn1=@=Trn.
@@ -90,7 +98,7 @@ select_filtered_group(TestID,Named,Trn_num_io,Filter,Objects):- trn_num_io(Trn_n
   with_individuated_cache(true,
     forall(kaggle_arc_io(TestID,Trn+Num,IO,G),individuate(complete,G,_Objs))),
   select_some_objects(TestID,Trn,Num,IO,Filter,Objects),
-  make_up_selector_name(Trn+Num*IO,Named).
+  make_up_selector_name((Trn+Num)*IO,Named).
 
 
 %select_some_objects(TestID,Trn,Num,IO,whole,Objs):- !, test_grouped_io(TestID,[(TestID>(Trn+Num)*IO)],[],Objs).
@@ -714,8 +722,8 @@ skip_ku(Var):- atomic(Var),!,fail.
 skip_ku(S):- priority_prop(S),!,fail.
 %skip_ku(pg(_,_,_,_)).
 %skip_ku(pg(is_fg_object,_,_,_)).
-skip_ku(link(sees([_,_|_]),_)).
-skip_ku(link(sees(_),_)).
+%skip_ku(link(sees([_,_|_]),_)).
+%skip_ku(link(sees(_),_)).
 skip_ku(area(_)).
 skip_ku(localpoints(_)).
 skip_ku(links_count(sees,_)).
@@ -1076,29 +1084,29 @@ made_split(_,UProp,List,((Len-UProp)->List)):- length_s(List,Len).
 sameps(UProp,_-Prop):- \+ Prop \= UProp.
 
 set_test_id_io(Named):-
-  into_test_id_io1(Named,TestID,ExampleNum,IO),
-  nb_setval(prior_asserts,to(TestID,ExampleNum,IO)).
+  must_det_ll((into_test_id_io1(Named,TestID,ExampleNum,IO),
+  nb_setval(prior_asserts,to(TestID,ExampleNum,IO)))).
 into_test_id_io(Named,TestID,ExampleNum,IO):- var(Named),!, must_det_ll((nb_current(prior_asserts,to(TestID,ExampleNum,IO)))),!.
 into_test_id_io(Named,TestID,ExampleNum,IO):-
   into_test_id_io1(Named,TestID,ExampleNum,IO),
   nb_setval(prior_asserts,to(TestID,ExampleNum,IO)).
 
-into_test_id_io1(Named+Filter,TestID,ExampleNum,IO+Filter):- into_test_id_io1(Named,TestID,ExampleNum,IO),!.
-into_test_id_io1(Named,TestID,(Example+Num),IO):- name_to_selector(Named,((Example+Num)*IO)),get_current_test(TestID),!.
+into_test_id_io1(Named+_Filter,TestID,ExampleNum,IO):- into_test_id_io1(Named,TestID,ExampleNum,IO),!.
+%into_test_id_io1(Named+Filter,TestID,ExampleNum,IO+Filter):- into_test_id_io1(Named,TestID,ExampleNum,IO),!.
+into_test_id_io1(Named,TestID,Example+Num,IO):- \+ compound(Named),!, 
+ must_det_ll((name_to_selector(Named,Example,Num,IO),get_current_test(TestID))),!.
+into_test_id_io1(Named+Filter,TestID,Named,Filter):- !, get_current_test(TestID),!.
 into_test_id_io1(vs(Name1+Filter1,Name2+Filter2),TestID,
   vs(Example+Num,(Example2+Num2)),
   vs(IO,IO2,vs(Filter1,Filter2))):- 
-  name_to_selector(Name1,((Example+Num)*IO)),get_current_test(TestID),
-  name_to_selector(Name2,((Example2+Num2)*IO2)),!.
+  name_to_selector(Name1,Example,Num,IO),get_current_test(TestID),
+  name_to_selector(Name2,Example2,Num2,IO2),!.
 into_test_id_io1(input(TestID>ExampleNum),TestID,ExampleNum,in).
 into_test_id_io1(both(TestID>ExampleNum),TestID,ExampleNum,in_out).
 into_test_id_io1(output(TestID>ExampleNum),TestID,ExampleNum,out).
 into_test_id_io1(Named,TestID,ExampleNum,IO):- Named=..[IO,TestID>ExampleNum],!.
 into_test_id_io1(Named,TestID,ExampleNum,IO):- Named=..[IO,TestID,ExampleNum],!.
-into_test_id_io1(Named+Filter,TestID,Named,Filter):-get_current_test(TestID),!.
 into_test_id_io1(Named,TestID,Named,Named):-get_current_test(TestID),!.
-
-name_to_selector(Named,((Trn+Num)*IO)):- make_up_selector_name(Trn+Num*IO,NameO),Named=NameO.
 
 
 
