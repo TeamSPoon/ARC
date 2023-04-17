@@ -1882,7 +1882,7 @@ learn_rule_in_out_now(Depth,Mode,In,Out):-  is_list(In),is_list(Out),
   Depth2 is Depth+1, 
   my_maplist(learn_rule_in_out_now(Depth2,Mode),In,Out).
   %learn_rule_in_out(Depth,Mode,InS,OutS).
-learn_rule_in_out_now(_Depth,_Mode,In,Out):- nop(save_learnt_rule(test_associatable(In,Out),In,Out)).
+learn_rule_in_out_now(_Depth,_Mode,In,Out):- save_learnt_rule(test_associatable(In,Out),In,Out).
 
 %learn_rule_in_out(Depth,Mode,I,O):- save_learnt_rule(test_associatable(Mode,I,O)).
 

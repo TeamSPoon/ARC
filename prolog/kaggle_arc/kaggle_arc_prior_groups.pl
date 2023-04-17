@@ -2353,44 +2353,68 @@ safe_oid(OID,OOID):- atomic_list_concat(['o',_Glyph,Iv,_TV,_UUID,_Trn,Num,IO],'_
 
 
 %make_ilp_pred(_TestID,Example+_Num,_LRSide,_Obj):- Example==tst,!.
-make_ilp_pred(TestID,Example+Num,LRSide,Obj):-
+make_ilp_pred(TestID,Example+Num,LRSide,ObjIn):- 
  must_det_ll((   
+   into_obj(ObjIn,Obj),
    ExampleNum = Example+Num,
    obj_to_oid(Obj,OIDUS),
    safe_oid(OIDUS,OID),
    %id_shape(SID,LPs),next_to_32(LPs,Shape),   
-   assert_ilp_object(TestID,ExampleNum,LRSide,Obj,OID,
-       [loc2D,rot2D,pen_color,rotSize2D(grav),vis2D,mass,iz(sid)]))).
+   rhs_obj_format(ArgNames),
+   assert_ilp_object(TestID,ExampleNum,LRSide,Obj,OID,ArgNames))).
 
-into_2arg( V1,V2,A2):- V2==true,!, A2 = V1.
-into_2arg(_V1,V2,A2):- V2==false,!, A2 = V2.
-into_2arg( V1,V2,hv(V1,V2)).
 
-ilp_object_props(_Obj,Props,OID,LRhs,iz(E),V,Pred):- append_term(E,V,P), member(iz(P),Props),!,
+rhs_obj_format([loc2D,rot2D,pen_color,rotSize2D(grav),vis2D,mass,iz(sid)]).
+
+into_2arg(_,_, V1,V2,A2):- V2==true,!, A2 = V1.
+into_2arg(_,_,_V1,V2,A2):- V2==false,!, A2 = V2.
+into_2arg(N,_, V1,V2,A2):- into_hv(N,V1,V2,A2).
+
+into_hv(N,V1,V2,A2):- atom(N), !, A2=..[N,V1,V2].
+into_hv(N,V1,V2,A2):- A2=..[hv,N,V1,V2].
+
+ilp_object_props(Obj,Props,OID,LRhs,Named,V,Pred,Prop):-
+  must_det_ll(ilp_object_props_1(Obj,Props,OID,LRhs,Named,V,Pred,Prop)).
+
+ilp_object_props_1(_Obj,Props,OID,LRhs,iz(E),V,Pred,iz(P)):- append_term(E,V,P), member(iz(P),Props),!,
    functor(P,EF,_), atomic_list_concat([LRhs,'iz',EF],'_',EFIZ), Pred=..[EFIZ,OID,V].
-ilp_object_props(_Obj,Props,OID,LRhs,iz(E),A2,Pred):- append_term(E,V1,P0), append_term(P0,V2,P), member(iz(P),Props),!,
-   functor(P,EF,_), atomic_list_concat([LRhs,'iz',EF],'_',EFIZ), Pred=..[EFIZ,OID,V1,V2],into_2arg(V1,V2,A2).
-ilp_object_props(_Obj,Props,OID,LRhs,(E),V,Pred):- E\=iz(_), append_term(E,V,P), member((P),Props),!,
+ilp_object_props_1(_Obj,Props,OID,LRhs,iz(E),A2,Pred,iz(P)):- append_term(E,V1,P0), append_term(P0,V2,P),
+   member(iz(P),Props),!,
+   functor(P,EF,_), atomic_list_concat([LRhs,'iz',EF],'_',EFIZ), Pred=..[EFIZ,OID,V1,V2],into_2arg(E,EF,V1,V2,A2).
+ilp_object_props_1(_Obj,Props,OID,LRhs,(E),V,Pred,(P)):- E\=iz(_), append_term(E,V,P), member((P),Props),!,
    functor(P,EF,_), atomic_list_concat([LRhs,EF],'_',EFIZ), Pred=..[EFIZ,OID,V].
-ilp_object_props(_Obj,Props,OID,LRhs,(E),A2,Pred):- E\=iz(_), append_term(E,V1,P0), append_term(P0,V2,P), member((P),Props),!,
-   functor(P,EF,_),atomic_list_concat([LRhs,EF],'_',EFIZ), Pred=..[EFIZ,OID,V1,V2],into_2arg(V1,V2,A2).
-ilp_object_props(Obj,_Props,OID,LRhs,(E),V,Pred):- E\=iz(_), append_term(E,Obj,P0),append_term(P0,V,P), call(P),!,
+ilp_object_props_1(_Obj,Props,OID,LRhs,(E),A2,Pred,(P)):- E\=iz(_), append_term(E,V1,P0), append_term(P0,V2,P), member((P),Props),!,
+   functor(P,EF,_),atomic_list_concat([LRhs,EF],'_',EFIZ), Pred=..[EFIZ,OID,V1,V2],into_2arg(E,EF,V1,V2,A2).
+ilp_object_props_1(Obj,_Props,OID,LRhs,(E),V,Pred,Prop):- E\=iz(_), append_term(E,Obj,P0),append_term(P0,V,P), call(P),!,
   functor(P,EF,_), atomic_list_concat([LRhs,EF],'_',EFIZ),
-  append_term(E,OID,P1),append_term(P1,V,PredR),
+  append_term(E,OID,P1),append_term(P1,V,PredR),append_term(E,V,Prop),
   PredR=..[_|PredL], Pred=..[EFIZ|PredL].
 
+oid_to_lhs_hide(OID,NewRef):- 
+ must_det_ll((
+   into_obj(OID,Obj),
+   indv_props_list(Obj,Props),
+   lhs_obj_format(Fmt),
+   maplist(ilp_object_props(Obj,Props,OID,lhs),Fmt,_Args,_TypeSig,PropL),
+   %writeq(NewRef=TypeSig),nl,
+   %NewRef =.. [lhs|Args],!,
+   NewRef = lhs_obj(PropL))).
+
+lhs_obj_format([loc2D,rot2D,pen,rotSize2D(grav),vis2D,mass,iz(sid)]).
+
+%maplist(un_lhs(B),TypeSig,Prop)
 
 pen_color(Obj,Color):- (pen(Obj,[cc(Color,_)])->true;(pen(Obj,PenInfo),Color=pen(PenInfo))),!.
 
 
-assert_ilp_object(TestID,ExampleNum,LRSide,Obj,OID,List):-
+assert_ilp_object(TestID,ExampleNum,LRSide,Obj,OID,ArgNames):-
  must_det_ll((
    into_ilp_int(ExampleNum,ExampleID),
    indv_props_list(Obj,Props),
    if_t(LRSide==lhs, assert_ilp_typed(LRSide,TestID,ExampleNum,liftcover_models,lhs_peice(ExampleID,OID))),
    if_t(LRSide==rhs, assert_ilp_typed(LRSide,TestID,ExampleNum,liftcover_models,rhs_peice(ExampleID,OID))),
-   maplist(ilp_object_props(Obj,Props,OID,LRSide),List,Args,PredS),
-   maplist(assert_ilp_typed(LRSide,TestID,ExampleNum,liftcover_models),PredS),
+   maplist(ilp_object_props(Obj,Props,OID,LRSide),ArgNames,Args,TypeSig,_),
+   maplist(assert_ilp_typed(LRSide,TestID,ExampleNum,liftcover_models),TypeSig),
    Side =..[LRSide,ExampleID|Args],
    if_t(LRSide==rhs, assert_ilp_typed(LRSide,TestID,ExampleNum,exs,pos(Side))),
    if_t(LRSide==lhs, assert_ilp_typed(LRSide,TestID,ExampleNum,bk,Side)))).
