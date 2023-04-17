@@ -2096,7 +2096,11 @@ use_test_associatable_group_now(I,O):-
   nop(print_side_by_side(real_associatable_group,I,O)).
 
 gather_assumed_mapped(A,B):-
-  call_in_testid(arc_cache:assumed_mapped([A],[B])).
+  call_in_testid(arc_cache:assumed_mapped(AA,BB)),
+  member_or_e(A,AA),member_or_e(B,BB).
+
+member_or_e(E,L):- \+ is_list(E), is_list(L),!,member(E,L).
+member_or_e(E,L):- E=L.
 
 io_order(A,B,B,A):- has_prop(giz(g(out)),A),!.
 io_order(A,B,A,B).

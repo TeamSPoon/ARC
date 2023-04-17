@@ -2390,6 +2390,7 @@ ilp_object_props_1(Obj,_Props,OID,LRhs,(E),V,Pred,Prop):- E\=iz(_), append_term(
   append_term(E,OID,P1),append_term(P1,V,PredR),append_term(E,V,Prop),
   PredR=..[_|PredL], Pred=..[EFIZ|PredL].
 
+%oid_to_lhs(OID,NewRef):- oid_to_lhs_hide(OID,NewRef),!.
 oid_to_lhs_hide(OID,NewRef):- 
  must_det_ll((
    into_obj(OID,Obj),

@@ -40,7 +40,7 @@ dont_notice(global2G(_,_)).
 %dont_notice(link(sees,_)).
 %dont_notice(links_count(sees,_)).
 %dont_notice(occurs_in_links(sees,_)).
-%dont_notice(link).
+dont_notice(link(contains,_)).
 dont_notice(occurs_in_links(contained_by,_)).
 dont_notice(iz(i_o(_))).
 dont_notice(P):- compound(P),arg(_,P,E),is_gridoid(E),!.
@@ -49,6 +49,7 @@ dont_notice(F):- \+ atom(F),!,fail.
 dont_notice(oid).
 dont_notice(giz).
 dont_notice(shape_rep).
+
 do_notice(pg(_,_,rank1,_)).
 do_notice(pg(_,_,_,_)).
 
@@ -113,7 +114,7 @@ assert_ilp_new(Term):- pp(assert_ilp_new=Term),!, assert_if_new(Term).
 solve_via_scene_change(TestID):-  
   ensure_test(TestID),
   clear_scene_rules(TestID),
-  (\+ is_accompany_changed_db(TestID,_,_) -> compute_scene_change(TestID) ; true),   
+  (\+ is_accompany_changed_db(TestID,_,_) -> compute_scene_change(TestID) ; true),
   
   nop(nop((show_scene_change_rules(TestID),ExampleNum=tst+_,forall((obj_group_io(TestID,ExampleNum,in,ROptions,Objs),Objs\==[]),
     solve_obj_group(TestID,ExampleNum,in,ROptions,Objs))))),
@@ -121,6 +122,8 @@ solve_via_scene_change(TestID):-
   
 
 show_scene_change_rules(TestID):-
+  ensure_test(TestID),
+  (\+ is_accompany_changed_db(TestID,_,_) -> compute_scene_change(TestID) ; true),
   banner_lines(cyan,4),
    Ele = ac2(P,Same),
    findall(Ele,is_accompany_changed_computed(TestID,P,Same),List),
@@ -362,7 +365,7 @@ same_prop_names(X1,X2):-
   compound(X1),compound(X2), same_functor(X1,X2),!,
   make_unifiable_u(X1,U1), make_unifiable_u(X2,U2),  U1 =@= U2.
 
-make_unifiable_u(link(sees(L),_),link(sees(L),_)):-!.
+%make_unifiable_u(link(sees(L),A),link(sees(_),_)):-!.
 make_unifiable_u(X1,U1):- make_unifiable_cc(X1,U1),!.
 
 accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=Intersect]):-
