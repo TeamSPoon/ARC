@@ -50,6 +50,8 @@ dont_notice(oid).
 dont_notice(giz).
 dont_notice(shape_rep).
 do_notice(pg(_,_,rank1,_)).
+do_notice(link(sees(_),_)).
+
 
 ok_notice(X):- \+ \+ do_notice(X),!.
 ok_notice(X):- \+ dont_notice(X).

@@ -41,21 +41,14 @@ more_than_1_done(TestID):-
   is_why_grouped_g(TestID, _, individuate(_, two(I2, _O2)),_), 
   I1\==I2,!.
 
-name_to_selector(Named,Trn,Num,IO):- interesting_selectors(Named,Trn,Num,IO).
-%  make_up_selector_name((Trn+Num)*IO,NameO),Named=NameO.
-
-interesting_selectors(Name,Tst,Num,IO):-
-  interesting_selectors0(Name0,Tst,Num,IO),
-  maybe_aformat(Name0,Name00),Name00=Name.
-  
-interesting_selectors0('Training I/O',trn,_,_):-  get_current_test(TestID),more_than_1_done(TestID).
-interesting_selectors0('Training Input',trn,_,in):-  get_current_test(TestID),more_than_1_done(TestID).
-interesting_selectors0('Training Output',trn,_,out):-  get_current_test(TestID),more_than_1_done(TestID).
-interesting_selectors0('Pair #~w I/O'-[NumP1],trn,Num,_):- current_example_nums(trn,Num, NumP1).
-interesting_selectors0('Pair #~w Out'-[NumP1],trn,Num,out):- current_example_nums(trn,Num, NumP1).
-interesting_selectors0('Pair #~w In'-[NumP1],trn,Num,in):- current_example_nums(trn,Num, NumP1).
-interesting_selectors0('All Input'-[],_,_,in).
-interesting_selectors0('Test #~w Input'-[NumP1],tst,Num,in):- current_example_nums(tst,Num, NumP1).
+interesting_selectors('Training I/O',trn,_,_):-  get_current_test(TestID),more_than_1_done(TestID).
+interesting_selectors('Training Input',trn,_,in):-  get_current_test(TestID),more_than_1_done(TestID).
+interesting_selectors('Training Output',trn,_,out):-  get_current_test(TestID),more_than_1_done(TestID).
+interesting_selectors('Pair #~w I/O'-[NumP1],trn,Num,_):- current_example_nums(trn,Num, NumP1).
+interesting_selectors('Pair #~w Out'-[NumP1],trn,Num,out):- current_example_nums(trn,Num, NumP1).
+interesting_selectors('Pair #~w In'-[NumP1],trn,Num,in):- current_example_nums(trn,Num, NumP1).
+interesting_selectors('All Input'-[],_,_,in).
+interesting_selectors('Test #~w Input'-[NumP1],tst,Num,in):- current_example_nums(tst,Num, NumP1).
 %interesting_selectors('All I/O'-[],_,_,_).
 
 /*
@@ -204,7 +197,6 @@ show_filtered_groups(TestID):- ensure_test(TestID),
          nop(ignore(((ground((Trn+Num*IO))->print(Objs); (Len<10 ->print(Objs); true))))),
          print_grouped_props(Named+Filter,Objs)))))))).
 
-show_pair_groups(_TestID):-!.
 show_pair_groups(TestID):- ensure_test(TestID),
   forall(no_repeats(vars(Name1+Filter1,Name2+Filter2),
    pair_two_groups(TestID,Name1+Filter1,Name2+Filter2,Objs1,Objs2)),
@@ -221,7 +213,7 @@ show_pair_groups(TestID):- ensure_test(TestID),
       append(Objs1,Objs2,OBJS),list_to_set(OBJS,OBJSET),
       length(OBJS,WP1),length(OBJSET,WP2), WP1 == WP2,
       % pp(Name1+Filter1-Name2+Filter2 = Objs1->Objs2),
-      ppt(show_interesting_vs(vs(Name1+Filter1,Name2+Filter2),Objs1,Objs2))
+      show_interesting_vs(vs(Name1+Filter1,Name2+Filter2),Objs1,Objs2)
       ))).
 
 rules_from(Objs1,Objs2,Objects):- Objects=(Objs1->Objs2).
@@ -732,12 +724,12 @@ skip_ku(Var):- atomic(Var),!,fail.
 skip_ku(S):- priority_prop(S),!,fail.
 %skip_ku(pg(_,_,_,_)).
 %skip_ku(pg(is_fg_object,_,_,_)).
-%skip_ku(link(sees([_,_|_]),_)).
-%skip_ku(link(sees(_),_)).
+skip_ku(link(sees([_,_|_]),_)).
+skip_ku(link(sees(_),_)).
 skip_ku(area(_)).
 skip_ku(localpoints(_)).
-%skip_ku(links_count(sees,_)).
-%skip_ku(occurs_in_links(sees,_)).
+skip_ku(links_count(sees,_)).
+skip_ku(occurs_in_links(sees,_)).
 skip_ku(grid_rep(comp,_)).
 skip_ku(iz(media(_))).
 skip_ku(shape_rep( _,_)).
@@ -746,7 +738,7 @@ skip_ku(globalpoints(_)).
 skip_ku(center2G(_,_)).
 skip_ku(changes(_)).
 skip_ku(o(_,_,_,_)).
-%skip_ku( elink( sees(_),_)).
+skip_ku( elink( sees(_),_)).
 skip_ku(giz(iv(_))).
 %skip_ku(cc(C,_)):- is_real_color(C),!.
 %skip_ku(giz(KU)):- nop(skip_ku(KU)),!.
@@ -777,8 +769,8 @@ priority_prop(occurs_in_links(contained_by,_)).
 
 ku_rewrite_props(Var,Var):- var(Var),!.
 ku_rewrite_props(List0,List9):- is_grid(List0),!,List9=List0.
-%ku_rewrite_props(link(sees([cc(S,_)]),_),link(sees([cc(S,_)]),_)).
-%ku_rewrite_props(link(S,_),link(S,_)):-!.
+ku_rewrite_props(link(sees([cc(S,_)]),_),link(sees([cc(S,_)]),_)).
+ku_rewrite_props(link(S,_),link(S,_)):-!.
 ku_rewrite_props(S-A,S-B):- ku_rewrite_props(A,B),!.
 ku_rewrite_props(A,A):- is_prop1(A),!.
 ku_rewrite_props(Props,OUTL):- is_list_of_prop_lists(Props),!,maplist(ku_rewrite_props,Props,OUTL).
