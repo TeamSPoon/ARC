@@ -54,14 +54,17 @@ do_notice(pg(_,_,rank1,_)).
 ok_notice(X):- \+ \+ do_notice(X),!.
 ok_notice(X):- \+ dont_notice(X).
 
+has_propcounts(TestID):- 
+ forall(current_example_nums(TestID,ExampleNum),
+  ( \+ \+ (propcounts(TestID, ExampleNum, IO, count, _, _), sub_var(in,IO)),
+    \+ \+ (propcounts(TestID, ExampleNum, IO, count, _, _), sub_var(out,IO)))).
+
 %ensure_propcounts(_TestID):-!.
 ensure_propcounts(TestID):- ensure_test(TestID),ensure_propcounts1(TestID).
-ensure_propcounts1(TestID):- 
- forall(current_example_nums(TestID,ExampleNum),
-  ( \+ \+ propcounts(TestID, ExampleNum, out, count, _, _),
-    \+ \+ propcounts(TestID, ExampleNum, in, count, _, _))),!.
-ensure_propcounts1(TestID):- with_pair_mode(whole_test,ndividuator(TestID)),
-  my_assertion(propcounts(TestID, _, out, count, _, _)).
+ensure_propcounts1(TestID):- has_propcounts(TestID),!.
+ensure_propcounts1(TestID):- once((with_pair_mode(whole_test,
+    with_luser(menu_key,'o',once(ndividuator(TestID)))))),has_propcounts(TestID),!.
+ensure_propcounts1(TestID):- show_prop_counts(TestID), my_assertion(has_propcounts(TestID)),!.
 
 props_change(TestID,E,EIn):-
   ensure_propcounts(TestID),
