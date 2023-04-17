@@ -34,6 +34,39 @@ clear_scene_rules(TestID):-
 
 count_of(G,N):- findall(G,G,L),variant_list_to_set(L,S),length(S,N).
 
+skip_ku(Var):- var(Var),!,fail.
+skip_ku(Var):- atomic(Var),!,fail.
+skip_ku(S):- priority_prop(S),!,fail.
+%skip_ku(pg(_,_,_,_)).
+%skip_ku(pg(is_fg_object,_,_,_)).
+%skip_ku(link(sees([_,_|_]),_)).
+%skip_ku(link(sees(_),_)).
+skip_ku(area(_)).
+skip_ku(localpoints(_)).
+skip_ku(links_count(sees,_)).
+skip_ku(occurs_in_links(sees,_)).
+skip_ku(grid_rep(comp,_)).
+skip_ku(iz(media(_))).
+skip_ku(shape_rep( _,_)).
+skip_ku(points_rep( _,_)).
+skip_ku(globalpoints(_)).
+skip_ku(center2G(_,_)).
+skip_ku(changes(_)).
+skip_ku(o(_,_,_,_)).
+skip_ku( elink( sees(_),_)).
+skip_ku(giz(iv(_))).
+%skip_ku(cc(C,_)):- is_real_color(C),!.
+%skip_ku(giz(KU)):- nop(skip_ku(KU)),!.
+skip_ku(giz(KU)):- skip_ku(KU),!.
+skip_ku(giz(gido(_))).
+skip_ku(giz(testid_example_io(_))).
+skip_ku(giz(KU)):- \+ has_subterm(number,KU), \+ has_subterm(in_or_out,KU).
+skip_ku(iz(KU)):- skip_ku(KU),!.
+%skip_ku(iz(info(_))).
+%skip_ku(iz(_)).
+skip_ku(_-KU):- skip_ku(KU),!.
+
+
 dont_notice(oid(_)).
 dont_notice(giz(_)).
 dont_notice(global2G(_,_)).
