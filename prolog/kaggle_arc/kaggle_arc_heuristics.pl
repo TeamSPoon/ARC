@@ -52,7 +52,8 @@ maybe_optimize_objects(InC00,OutC00,InCR,OutCR):-
 optimize_objects(InC00,OutC00,InC,OutC):-
   (maybe_optimize_objects(InC00,OutC00,InC,OutC)->true;(InC00=InC,OutC00=OutC)).
 
-
+pairname_to_examplenum(PairName,Example+Num):-
+  sub_term(E,PairName),compound(E),E=(Example+Num),!.
 
 show_individuated_pair(PairName,ROptions,GridIn,GridOfIn,InC,OutC):-  
   GridIn=@=GridOfIn,!,
@@ -66,6 +67,8 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):-
 
 
 show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCB,OutCB):-
+ (var(PairName)->maybe_name_the_pair(GridIn,GridOut,PairName);true),
+ ignore((pairname_to_examplenum(PairName,ExampleNum)->set_example_num(ExampleNum);ensure_example_num(GridIn,GridOut))),
  must_det_ll((
   grid_to_tid(GridIn,ID1),  grid_to_tid(GridOut,ID2),   
  w_section(show_individuated_sections,((                          
@@ -103,6 +106,8 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCB,OutCB):-
 
 
    if_wants_output_for(show_safe_assumed_mapped, show_safe_assumed_mapped),
+   if_wants_output_for(show_assumed_mapped, show_assumed_mapped),
+
    if_wants_output_for(show_test_associatable_groups, 
        forall(member(In1,InC),show_test_associatable_groups(ROptions,ID1,In1,GridOut))), 
 
@@ -133,10 +138,10 @@ show_indiv_vert(W,Obj,TD):- wots(TD,show_indiv(W,Obj)).
 
 arc_spyable_keyboard_key(detect_pair_hints,'g').
 arc_spyable_keyboard_key(show_interesting_props,'o').
-arc_spyable_keyboard_key(show_safe_assumed_mapped,'j').
+arc_spyable_keyboard_key(show_safe_assumed_mapped,'o').
 arc_spyable_keyboard_key(learn_group_mapping,'o').
 arc_spyable_keyboard_key(learn_group_mapping_of_tst,'o').
-arc_spyable_keyboard_key(show_test_associatable_groups,'a').
+arc_spyable_keyboard_key(show_test_associatable_groups,'o').
 arc_spyable_keyboard_key(try_each_using_training,'u').
 
 

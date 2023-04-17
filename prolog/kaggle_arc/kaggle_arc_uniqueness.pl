@@ -125,12 +125,14 @@ show_scene_change_rules(TestID):-
   ensure_test(TestID),
   (\+ is_accompany_changed_db(TestID,_,_) -> compute_scene_change(TestID) ; true),
   banner_lines(cyan,4),
+  show_assumed_mapped(TestID),
+  banner_lines(cyan,4),
    Ele = ac2(P,Same),
    findall(Ele,is_accompany_changed_computed(TestID,P,Same),List),
    sort(List,SetR),reverse(SetR,Set),
    forall(member(Ele,Set),
      (list_to_conjuncts(Same,Conj),pp(P:-Conj),writeln('.'))), 
-banner_lines(cyan,4).
+  banner_lines(cyan,4).
 
 
 compute_scene_change_pass2(TestID):-

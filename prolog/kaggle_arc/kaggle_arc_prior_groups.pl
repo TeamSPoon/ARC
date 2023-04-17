@@ -981,7 +981,7 @@ hack_prop_groups(Named,Objs):-
   banner_lines(orange,2),
   nop((my_maplist(arg(1),HackedObjs,RRR),
     w_section(hack_prop_groups(Named), (print_ptree(hacked(Named),RRR), banner_lines(yellow,2))))),  
-  ignore(skip_if_ansi(print_propset_groups(Named,Objs,EList))))).
+  ignore(skip_if_ansi(nop(print_propset_groups(Named,Objs,EList)))))).
 
 obj_had_vbo(Objs,HAD,VbO):-
   variance_had_counts(_Common,HAD,Objs,_Versions,_Missing,VersionsByCount,_Variance),
