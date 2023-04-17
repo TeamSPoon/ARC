@@ -1902,6 +1902,9 @@ test_local_dyn(F,A):- setof(F/A,(test_local_dyn(F),current_predicate(F/A)),L),me
 :- dynamic(test_local_dyn/1).
 test_local_dyn(learnt_rule).
 test_local_dyn(grid_associatable).
+test_local_dyn(propcounts).
+test_local_dyn(is_for_ilp).
+test_local_dyn(is_accompany_changed_db).
 test_local_dyn(test_associatable).
 test_local_dyn(object_to_object).
 %test_local_dyn(why_grouped).
@@ -1909,6 +1912,8 @@ test_local_dyn(cached_dictation).
 test_local_dyn(oout_associatable).
 test_local_dyn(fav).
 test_local_dyn(propcount).
+test_local_dyn(showed_point_mapping).
+
 
 test_local_save(arc_test_property).
 test_local_save(cached_tests).
@@ -1933,21 +1938,25 @@ test_local_save(omem).
 test_local_save(smem).
 test_local_save(test_info_cache).
 test_local_save(P):- test_local_dyn(P).
+test_local_save(F,A):- test_local_dyn(F,A).
 test_local_save(F,A):- setof(F/A,(test_local_save(F),current_predicate(F/A),A\==0),L),member(F/A,L).
+test_local_save(F,A):- setof(F/A,(current_predicate(arc_cache:F/A),A\==0,functor(P,F,A),
+  \+ predicate_property(arc_cache:P,imported_from(_))),L),member(F/A,L).
+test_local_save(F,A):- setof(F/A,(test_local_save(F),current_predicate(arc_cache:F/A),A\==0),L),member(F/A,L).
 
 
 training_info(TestID,InfoSet):-
  sub_atom_value(TestID,TestIDA),
   findall(Ref,
   (test_local_dyn(F,A), functor(X,F,A),
-      clause(X,_,Ref),once((arg(_,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA)))),Info),
+      (clause(X,_,Ref);clause(arc_cache:X,_,Ref)),once((arg(_,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA)))),Info),
   list_to_set(Info,InfoSet).
 
 saveable_test_info(TestID,InfoSet):-
  sub_atom_value(TestID,TestIDA),
  findall(Ref,
   (test_local_save(F,A), functor(X,F,A),
-      clause(X,_,Ref),once((arg(_,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA)))),Info),
+      (clause(X,_,Ref);clause(arc_cache:X,_,Ref)),once((arg(_,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA)))),Info),
  list_to_set(Info,InfoSet).
 
 
