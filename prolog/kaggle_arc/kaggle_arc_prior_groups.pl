@@ -41,14 +41,19 @@ more_than_1_done(TestID):-
   is_why_grouped_g(TestID, _, individuate(_, two(I2, _O2)),_), 
   I1\==I2,!.
 
-interesting_selectors('Training I/O',trn,_,_):-  get_current_test(TestID),more_than_1_done(TestID).
-interesting_selectors('Training Input',trn,_,in):-  get_current_test(TestID),more_than_1_done(TestID).
-interesting_selectors('Training Output',trn,_,out):-  get_current_test(TestID),more_than_1_done(TestID).
-interesting_selectors('Pair #~w I/O'-[NumP1],trn,Num,_):- current_example_nums(trn,Num, NumP1).
-interesting_selectors('Pair #~w Out'-[NumP1],trn,Num,out):- current_example_nums(trn,Num, NumP1).
-interesting_selectors('Pair #~w In'-[NumP1],trn,Num,in):- current_example_nums(trn,Num, NumP1).
-interesting_selectors('All Input'-[],_,_,in).
-interesting_selectors('Test #~w Input'-[NumP1],tst,Num,in):- current_example_nums(tst,Num, NumP1).
+
+interesting_selectors(Name,Tst,Num,IO):-
+  interesting_selectors0(Name0,Tst,Num,IO),
+  maybe_aformat(Name0,Name00),Name00=Name.
+  
+interesting_selectors0('Training I/O',trn,_,_):-  get_current_test(TestID),more_than_1_done(TestID).
+interesting_selectors0('Training Input',trn,_,in):-  get_current_test(TestID),more_than_1_done(TestID).
+interesting_selectors0('Training Output',trn,_,out):-  get_current_test(TestID),more_than_1_done(TestID).
+interesting_selectors0('Pair #~w I/O'-[NumP1],trn,Num,_):- current_example_nums(trn,Num, NumP1).
+interesting_selectors0('Pair #~w Out'-[NumP1],trn,Num,out):- current_example_nums(trn,Num, NumP1).
+interesting_selectors0('Pair #~w In'-[NumP1],trn,Num,in):- current_example_nums(trn,Num, NumP1).
+interesting_selectors0('All Input'-[],_,_,in).
+interesting_selectors0('Test #~w Input'-[NumP1],tst,Num,in):- current_example_nums(tst,Num, NumP1).
 %interesting_selectors('All I/O'-[],_,_,_).
 
 /*
@@ -518,14 +523,16 @@ contains_enough_for_print(obj(Props),Print):- !, contains_enough_for_print(Props
 contains_enough_for_print([P|Props],G):- is_obj_props(Props),!,(contains_enough_for_print(Props,G);
   (compound(P),arg(_,P,G),is_gridoid(G))).
 
-:- dynamic(is_prop2/1).
+:- abolish(is_prop2d/1).
+:- dynamic(is_prop2d/1).
 
 is_obj_props(Props):- is_list(Props), Props\==[], maplist(is_prop1,Props).
 is_prop1(Prop):- ( \+ compound(Prop); Prop=[_|_] ; Prop=(_-_)),!,fail.
 is_prop1(Prop):- is_prop2(Prop),!.
 is_prop1(Prop):- ( is_point(Prop) ; is_color(Prop);  is_object(Prop) ; is_grid_cell(Prop)),!,fail.
-is_prop1(P):- functor(P,F,A),functor(T,F,A),asserta(is_prop2(T)),!.
+is_prop1(P):- functor(P,F,A),functor(T,F,A),asserta(is_prop2d(T)),!.
 
+is_prop2(P):- is_prop2d(P).
 is_prop2(P):- compound_name_arity(P,_,N),N>=2.
 is_prop2(grid(_)). is_prop2(f_grid(_)). is_prop2(pen(_)). is_prop2(unique_colors(_)).
 is_prop2(rul(_)). is_prop2(localpoints(_)). is_prop2(globalpoints(_)).
@@ -725,8 +732,8 @@ skip_ku(Var):- atomic(Var),!,fail.
 skip_ku(S):- priority_prop(S),!,fail.
 %skip_ku(pg(_,_,_,_)).
 %skip_ku(pg(is_fg_object,_,_,_)).
-skip_ku(link(sees([_,_|_]),_)).
-skip_ku(link(sees(_),_)).
+%skip_ku(link(sees([_,_|_]),_)).
+%skip_ku(link(sees(_),_)).
 skip_ku(area(_)).
 skip_ku(localpoints(_)).
 skip_ku(links_count(sees,_)).
@@ -770,8 +777,8 @@ priority_prop(occurs_in_links(contained_by,_)).
 
 ku_rewrite_props(Var,Var):- var(Var),!.
 ku_rewrite_props(List0,List9):- is_grid(List0),!,List9=List0.
-ku_rewrite_props(link(sees([cc(S,_)]),_),link(sees([cc(S,_)]),_)).
-ku_rewrite_props(link(S,_),link(S,_)):-!.
+%ku_rewrite_props(link(sees([cc(S,_)]),_),link(sees([cc(S,_)]),_)).
+%ku_rewrite_props(link(S,_),link(S,_)):-!.
 ku_rewrite_props(S-A,S-B):- ku_rewrite_props(A,B),!.
 ku_rewrite_props(A,A):- is_prop1(A),!.
 ku_rewrite_props(Props,OUTL):- is_list_of_prop_lists(Props),!,maplist(ku_rewrite_props,Props,OUTL).
@@ -1097,14 +1104,14 @@ into_test_id_io(Named,TestID,ExampleNum,IO):-
 %into_test_id_io1(Named+Filter,TestID,ExampleNum,IO):- into_test_id_io1(Named,TestID,ExampleNum,IO),!.
 into_test_id_io1(Named+Filter,TestID,ExampleNum,IO+Filter):- into_test_id_io1(Named,TestID,ExampleNum,IO),!.
 into_test_id_io1(Named,TestID,Example+Num,IO):- \+ compound(Named),!, 
- must_det_ll((name_to_selector(Named,Example,Num,IO),get_current_test(TestID))),!.
+ must_det_ll((interesting_selectors(Named,Example,Num,IO),get_current_test(TestID))),!.
 into_test_id_io1(Named+Filter,TestID,Named,Filter):- !, get_current_test(TestID),!.
 into_test_id_io1(Named,TestID,Example+Num,IO):- testid_name_num_io(Named,TestID,Example,Num,IO),nonvar(Num),!.
 into_test_id_io1(vs(Name1+Filter1,Name2+Filter2),TestID,
   vs(Example+Num,(Example2+Num2)),
   vs(IO,IO2,vs(Filter1,Filter2))):- 
-  name_to_selector(Name1,Example,Num,IO),get_current_test(TestID),
-  name_to_selector(Name2,Example2,Num2,IO2),!.
+  interesting_selectors(Name1,Example,Num,IO),get_current_test(TestID),
+  interesting_selectors(Name2,Example2,Num2,IO2),!.
 into_test_id_io1(input(TestID>ExampleNum),TestID,ExampleNum,in).
 into_test_id_io1(both(TestID>ExampleNum),TestID,ExampleNum,in_out).
 into_test_id_io1(output(TestID>ExampleNum),TestID,ExampleNum,out).
@@ -1127,6 +1134,10 @@ remember_propcounts(Named,Diversity,B,Prop):- into_test_id_io(Named,TestID,Examp
 remember_propcounts(Named,Diversity,B,Prop,A):- into_test_id_io(Named,TestID,ExampleNum,IO),
   assert_if_new(propcounts(TestID,ExampleNum,IO,Diversity,B,Prop,A)).
 
+
+:- abolish(propcounts/5).
+:- abolish(propcounts/6).
+:- abolish(propcounts/7).
 
 :- dynamic(propcounts/5).
 :- dynamic(propcounts/6).
@@ -2271,9 +2282,9 @@ set_rank(OG,GType,ZType,L,N,Obj):-
    II = pg(OG,GType,ZType,N), 
    override_object([II],L,Obj),!.
 
-:- retractall(arc_cache:individuated_cache(_,_,_,_,_)).
-:- ignore(muarc:clear_all_caches).
-:- luser_setval(use_individuated_cache,false).
+%:- retractall(arc_cache:individuated_cache(_,_,_,_,_)).
+%:- ignore(muarc:clear_all_caches).
+%:- luser_setval(use_individuated_cache,false).
 
 
 
@@ -2301,6 +2312,7 @@ learn_ilp(TestID):-
     must_det_ll(write_ilp_file(TestID,S,logicmoo_ex)),
     solve_via_scene_change(TestID).
 
+:- abolish(is_for_ilp/4).
 :- dynamic(is_for_ilp/4).
 learn_ilp(TestID,ExampleNum,GridIn,GridOut):-  
  ExampleNum = (trn+_),!,
@@ -2309,8 +2321,8 @@ learn_ilp(TestID,ExampleNum,GridIn,GridOut):-
     individuate_pair(complete,GridIn,GridOut,InC,OutC),
     into_ilp_int(ExampleNum,ExampleID),
     assert_ilp(TestID,ExampleNum,liftcover_models,begin(model(ExampleID))),
-    maplist(make_ilp(TestID,ExampleNum,lhs),InC),
-    maplist(make_ilp(TestID,ExampleNum,rhs),OutC),!,
+    maplist(make_ilp_pred(TestID,ExampleNum,lhs),InC),
+    maplist(make_ilp_pred(TestID,ExampleNum,rhs),OutC),!,
     assert_ilp(TestID,ExampleNum,liftcover_models,end(model(ExampleID))),
     assert_ilp(TestID,ExampleNum,liftcover_models,[]),
     assert_ilp(TestID,ExampleNum,liftcover_models,[]),
@@ -2323,8 +2335,8 @@ learn_ilp(TestID,ExampleNum,GridIn,GridOut):-
    into_ilp_int(ExampleNum,ExampleID),
    assert_ilp(TestID,ExampleNum,_,"/*"),
    assert_ilp(TestID,ExampleNum,liftcover_models,begin(model(ExampleID))),
-   maplist(make_ilp(TestID,ExampleNum,lhs),InC),
-   maplist(make_ilp(TestID,ExampleNum,rhs),OutC),!,
+   maplist(make_ilp_pred(TestID,ExampleNum,lhs),InC),
+   maplist(make_ilp_pred(TestID,ExampleNum,rhs),OutC),!,
    assert_ilp(TestID,ExampleNum,liftcover_models,end(model(ExampleID))),
    assert_ilp(TestID,ExampleNum,_,"*/"))).
 
@@ -2340,8 +2352,8 @@ safe_oid(OID,OOID):- atomic_list_concat(['o',_Glyph,Iv,_TV,_UUID,_Trn,Num,IO],'_
                      atomic_list_concat(['obj',Num,Iv,IO],'_',OOID).
 
 
-%make_ilp(_TestID,Example+_Num,_LRSide,_Obj):- Example==tst,!.
-make_ilp(TestID,Example+Num,LRSide,Obj):-
+%make_ilp_pred(_TestID,Example+_Num,_LRSide,_Obj):- Example==tst,!.
+make_ilp_pred(TestID,Example+Num,LRSide,Obj):-
  must_det_ll((   
    ExampleNum = Example+Num,
    obj_to_oid(Obj,OIDUS),

@@ -118,8 +118,11 @@ solve_via_scene_change(TestID):-
 
 show_scene_change_rules(TestID):-
   banner_lines(cyan,4),
-   forall(is_accompany_changed_computed(TestID,P,Same),
-     pp(show_scene_change_rules(Same)=>P)),
+   Ele = ac2(P,Same),
+   findall(Ele,is_accompany_changed_computed(TestID,P,Same),List),
+   sort(List,SetR),reverse(SetR,Set),
+   forall(member(Ele,Set),
+     (list_to_conjuncts(Same,Conj),pp(P:-Conj),writeln('.'))), 
 banner_lines(cyan,4).
 
 
