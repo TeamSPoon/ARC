@@ -50,18 +50,22 @@ dont_notice(oid).
 dont_notice(giz).
 dont_notice(shape_rep).
 do_notice(pg(_,_,rank1,_)).
+do_notice(pg(_,_,_,_)).
 
 ok_notice(X):- \+ \+ do_notice(X),!.
 ok_notice(X):- \+ dont_notice(X).
 
+has_propcounts(TestID):- 
+ forall(current_example_nums(TestID,ExampleNum),
+  ( \+ \+ (propcounts(TestID, ExampleNum, IO, count, _, _), sub_var(in,IO)),
+    \+ \+ (propcounts(TestID, ExampleNum, IO, count, _, _), sub_var(out,IO)))).
+
 %ensure_propcounts(_TestID):-!.
 ensure_propcounts(TestID):- ensure_test(TestID),ensure_propcounts1(TestID).
-ensure_propcounts1(TestID):- 
- forall(current_example_nums(TestID,ExampleNum),
-  ( \+ \+ propcounts(TestID, ExampleNum, out, count, _, _),
-    \+ \+ propcounts(TestID, ExampleNum, in, count, _, _))),!.
-ensure_propcounts1(TestID):- with_pair_mode(whole_test,ndividuator(TestID)),
-  my_assertion(propcounts(TestID, _, out, count, _, _)).
+ensure_propcounts1(TestID):- has_propcounts(TestID),!.
+ensure_propcounts1(TestID):- once((with_pair_mode(whole_test,
+    with_luser(menu_key,'o',once(ndividuator(TestID)))))),has_propcounts(TestID),!.
+ensure_propcounts1(TestID):- show_prop_counts(TestID), my_assertion(has_propcounts(TestID)),!.
 
 props_change(TestID,E,EIn):-
   ensure_propcounts(TestID),
@@ -357,6 +361,8 @@ other_val(X1,X2):- X1\=@=X2, same_prop_names(X1,X2),!.
 same_prop_names(X1,X2):- 
   compound(X1),compound(X2), same_functor(X1,X2),!,
   make_unifiable_u(X1,U1), make_unifiable_u(X2,U2),  U1 =@= U2.
+
+make_unifiable_u(link(sees(L),_),link(sees(L),_)):-!.
 make_unifiable_u(X1,U1):- make_unifiable_cc(X1,U1),!.
 
 accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=Intersect]):-
