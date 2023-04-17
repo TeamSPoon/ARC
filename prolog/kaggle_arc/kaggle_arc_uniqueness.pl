@@ -73,7 +73,7 @@ dont_notice(global2G(_,_)).
 %dont_notice(link(sees,_)).
 %dont_notice(links_count(sees,_)).
 %dont_notice(occurs_in_links(sees,_)).
-%dont_notice(link).
+dont_notice(link).
 dont_notice(occurs_in_links(contained_by,_)).
 dont_notice(iz(i_o(_))).
 dont_notice(P):- compound(P),arg(_,P,E),is_gridoid(E),!.
@@ -83,7 +83,10 @@ dont_notice(oid).
 dont_notice(giz).
 dont_notice(shape_rep).
 do_notice(pg(_,_,rank1,_)).
-do_notice(link(sees(_),_)).
+do_notice(pg(_,_,_,_)).
+do_notice(link(sees(List),_)):- 
+  once((\+ is_list(List));(length(List,N),N=<2)),
+  once((sub_var(1,List);sub_var(0,List))).
 
 
 ok_notice(X):- \+ \+ do_notice(X),!.
@@ -156,9 +159,12 @@ solve_via_scene_change(TestID):-
 
 show_scene_change_rules(TestID):-
   banner_lines(cyan,4),
-   forall(is_accompany_changed_computed(TestID,P,Same),
-     pp(show_scene_change_rules(Same)=>P)),
-banner_lines(cyan,4).
+   Ele = ac2(P,Same),
+   findall(Ele,is_accompany_changed_computed(TestID,P,Same),List),
+   sort(List,SetR),reverse(SetR,Set),
+   forall(member(Ele,Set),
+     (list_to_conjuncts(Same,Conj),pp(P:-Conj),writeln('.'))), 
+  banner_lines(cyan,4).
 
 
 compute_scene_change_pass2(TestID):-
@@ -392,6 +398,8 @@ other_val(X1,X2):- X1\=@=X2, same_prop_names(X1,X2),!.
 same_prop_names(X1,X2):- 
   compound(X1),compound(X2), same_functor(X1,X2),!,
   make_unifiable_u(X1,U1), make_unifiable_u(X2,U2),  U1 =@= U2.
+
+make_unifiable_u(link(sees(L),_),link(sees(L),_)):-!.
 make_unifiable_u(X1,U1):- make_unifiable_cc(X1,U1),!.
 
 accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=Intersect]):-
