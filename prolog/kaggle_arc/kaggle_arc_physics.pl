@@ -562,8 +562,10 @@ do_todo3([oinfo(O1,_Ps1,_OID1,_Todo1)|Objs],TODO,[O1|NewObjs]):-
 
 add_oinfo(Ref,oinfo(O1,Ps1,NewRef,[])):- into_obj(Ref,O1),
   obj_to_oid(O1,OID1),
-  oid_to_lhs(OID1,NewRef),
+  maybe_oid_to_lhs(OID1,NewRef),
   globalpoints(O1,Ps1),!.
+
+maybe_oid_to_lhs(OID1,NewRef):- if_defined(oid_to_lhs(OID1,NewRef),OID1=NewRef).
 
 find_relationsB([O1|Rest],TodoIN,TodoOUT):-
   find_relations2(O1,Rest,TodoIN,TodoMID),
@@ -631,7 +633,7 @@ related_how2(sees(DirsDists),O1,O2,Ps1,Ps2,Overlap,P1L,
   SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):-
   findall(cc(Dir,Dist),(sees_dir(Dir,Dist,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2),Dist<3),DirsDists), 
   \+ is_bg_object(O1), \+ is_bg_object(O2),
-  DirsDists\==[].
+   DirsDists\==[].
 
 
 %related_how(How,O1,O2,Ps1,Ps2,Overlap,P1L,SX1,SY1,EX1,EY1,P2L,SX2,SY2,EX2,EY2):- SX1 < SX2, SY1 < SY2, EX2 < EX1, EY2 < EY1, How = contained_by(engulfed).

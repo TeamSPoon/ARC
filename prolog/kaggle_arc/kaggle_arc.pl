@@ -866,7 +866,10 @@ create_group_dmiles:-
               'b230c067',
               '29c11459','a61f2674']))),
   set_current_test('0a2355a6'),
+  set_pair_mode(whole_test),
   %set_current_test('makesboxsq'),
+  
+  set_current_test('08ed6ac7'),
   !.
 :- initialization(create_group_dmiles).
 %:- noguitracer.

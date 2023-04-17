@@ -34,46 +34,13 @@ clear_scene_rules(TestID):-
 
 count_of(G,N):- findall(G,G,L),variant_list_to_set(L,S),length(S,N).
 
-skip_ku(Var):- var(Var),!,fail.
-skip_ku(Var):- atomic(Var),!,fail.
-skip_ku(S):- priority_prop(S),!,fail.
-%skip_ku(pg(_,_,_,_)).
-%skip_ku(pg(is_fg_object,_,_,_)).
-%skip_ku(link(sees([_,_|_]),_)).
-%skip_ku(link(sees(_),_)).
-skip_ku(area(_)).
-skip_ku(localpoints(_)).
-skip_ku(links_count(sees,_)).
-skip_ku(occurs_in_links(sees,_)).
-skip_ku(grid_rep(comp,_)).
-skip_ku(iz(media(_))).
-skip_ku(shape_rep( _,_)).
-skip_ku(points_rep( _,_)).
-skip_ku(globalpoints(_)).
-skip_ku(center2G(_,_)).
-skip_ku(changes(_)).
-skip_ku(o(_,_,_,_)).
-skip_ku( elink( sees(_),_)).
-skip_ku(giz(iv(_))).
-%skip_ku(cc(C,_)):- is_real_color(C),!.
-%skip_ku(giz(KU)):- nop(skip_ku(KU)),!.
-skip_ku(giz(KU)):- skip_ku(KU),!.
-skip_ku(giz(gido(_))).
-skip_ku(giz(testid_example_io(_))).
-skip_ku(giz(KU)):- \+ has_subterm(number,KU), \+ has_subterm(in_or_out,KU).
-skip_ku(iz(KU)):- skip_ku(KU),!.
-%skip_ku(iz(info(_))).
-%skip_ku(iz(_)).
-skip_ku(_-KU):- skip_ku(KU),!.
-
-
 dont_notice(oid(_)).
 dont_notice(giz(_)).
 dont_notice(global2G(_,_)).
 %dont_notice(link(sees,_)).
 %dont_notice(links_count(sees,_)).
 %dont_notice(occurs_in_links(sees,_)).
-dont_notice(link).
+%dont_notice(link).
 dont_notice(occurs_in_links(contained_by,_)).
 dont_notice(iz(i_o(_))).
 dont_notice(P):- compound(P),arg(_,P,E),is_gridoid(E),!.
@@ -83,26 +50,18 @@ dont_notice(oid).
 dont_notice(giz).
 dont_notice(shape_rep).
 do_notice(pg(_,_,rank1,_)).
-do_notice(pg(_,_,_,_)).
-do_notice(link(sees(List),_)):- 
-  once((\+ is_list(List));(length(List,N),N=<2)),
-  once((sub_var(1,List);sub_var(0,List))).
-
 
 ok_notice(X):- \+ \+ do_notice(X),!.
 ok_notice(X):- \+ dont_notice(X).
 
-has_propcounts(TestID):- 
- forall(current_example_nums(TestID,ExampleNum),
-  ( \+ \+ (propcounts(TestID, ExampleNum, IO, count, _, _), sub_var(in,IO)),
-    \+ \+ (propcounts(TestID, ExampleNum, IO, count, _, _), sub_var(out,IO)))).
-
 %ensure_propcounts(_TestID):-!.
 ensure_propcounts(TestID):- ensure_test(TestID),ensure_propcounts1(TestID).
-ensure_propcounts1(TestID):- has_propcounts(TestID),!.
-ensure_propcounts1(TestID):- once((with_pair_mode(whole_test,
-    with_luser(menu_key,'o',once(ndividuator(TestID)))))),has_propcounts(TestID),!.
-ensure_propcounts1(TestID):- show_prop_counts(TestID), my_assertion(has_propcounts(TestID)),!.
+ensure_propcounts1(TestID):- 
+ forall(current_example_nums(TestID,ExampleNum),
+  ( \+ \+ propcounts(TestID, ExampleNum, out, count, _, _),
+    \+ \+ propcounts(TestID, ExampleNum, in, count, _, _))),!.
+ensure_propcounts1(TestID):- with_pair_mode(whole_test,ndividuator(TestID)),
+  my_assertion(propcounts(TestID, _, out, count, _, _)).
 
 props_change(TestID,E,EIn):-
   ensure_propcounts(TestID),
@@ -159,12 +118,9 @@ solve_via_scene_change(TestID):-
 
 show_scene_change_rules(TestID):-
   banner_lines(cyan,4),
-   Ele = ac2(P,Same),
-   findall(Ele,is_accompany_changed_computed(TestID,P,Same),List),
-   sort(List,SetR),reverse(SetR,Set),
-   forall(member(Ele,Set),
-     (list_to_conjuncts(Same,Conj),pp(P:-Conj),writeln('.'))), 
-  banner_lines(cyan,4).
+   forall(is_accompany_changed_computed(TestID,P,Same),
+     pp(show_scene_change_rules(Same)=>P)),
+banner_lines(cyan,4).
 
 
 compute_scene_change_pass2(TestID):-
@@ -398,8 +354,6 @@ other_val(X1,X2):- X1\=@=X2, same_prop_names(X1,X2),!.
 same_prop_names(X1,X2):- 
   compound(X1),compound(X2), same_functor(X1,X2),!,
   make_unifiable_u(X1,U1), make_unifiable_u(X2,U2),  U1 =@= U2.
-
-make_unifiable_u(link(sees(L),_),link(sees(L),_)):-!.
 make_unifiable_u(X1,U1):- make_unifiable_cc(X1,U1),!.
 
 accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=Intersect]):-
