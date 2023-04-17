@@ -41,20 +41,14 @@ more_than_1_done(TestID):-
   is_why_grouped_g(TestID, _, individuate(_, two(I2, _O2)),_), 
   I1\==I2,!.
 
-name_to_selector(Named,Trn,Num,IO):- interesting_selectors(Named,Trn,Num,IO).
-%  make_up_selector_name((Trn+Num)*IO,NameO),Named=NameO.
-
-interesting_selectors(Name,Tst,Num,IO):-
-  interesting_selectors0(Name0,Tst,Num,IO),
-  maybe_aformat(Name0,Name00),Name00=Name.
-interesting_selectors0('Training I/O',trn,_,_):-  get_current_test(TestID),more_than_1_done(TestID).
-interesting_selectors0('Training Input',trn,_,in):-  get_current_test(TestID),more_than_1_done(TestID).
-interesting_selectors0('Training Output',trn,_,out):-  get_current_test(TestID),more_than_1_done(TestID).
-interesting_selectors0('Pair #~w I/O'-[NumP1],trn,Num,_):- current_example_nums(trn,Num, NumP1).
-interesting_selectors0('Pair #~w Out'-[NumP1],trn,Num,out):- current_example_nums(trn,Num, NumP1).
-interesting_selectors0('Pair #~w In'-[NumP1],trn,Num,in):- current_example_nums(trn,Num, NumP1).
-interesting_selectors0('All Input'-[],_,_,in).
-interesting_selectors0('Test #~w Input'-[NumP1],tst,Num,in):- current_example_nums(tst,Num, NumP1).
+interesting_selectors('Training I/O',trn,_,_):-  get_current_test(TestID),more_than_1_done(TestID).
+interesting_selectors('Training Input',trn,_,in):-  get_current_test(TestID),more_than_1_done(TestID).
+interesting_selectors('Training Output',trn,_,out):-  get_current_test(TestID),more_than_1_done(TestID).
+interesting_selectors('Pair #~w I/O'-[NumP1],trn,Num,_):- current_example_nums(trn,Num, NumP1).
+interesting_selectors('Pair #~w Out'-[NumP1],trn,Num,out):- current_example_nums(trn,Num, NumP1).
+interesting_selectors('Pair #~w In'-[NumP1],trn,Num,in):- current_example_nums(trn,Num, NumP1).
+interesting_selectors('All Input'-[],_,_,in).
+interesting_selectors('Test #~w Input'-[NumP1],tst,Num,in):- current_example_nums(tst,Num, NumP1).
 %interesting_selectors('All I/O'-[],_,_,_).
 
 /*
@@ -98,7 +92,7 @@ select_filtered_group(TestID,Named,Trn_num_io,Filter,Objects):- trn_num_io(Trn_n
   with_individuated_cache(true,
     forall(kaggle_arc_io(TestID,Trn+Num,IO,G),individuate(complete,G,_Objs))),
   select_some_objects(TestID,Trn,Num,IO,Filter,Objects),
-  make_up_selector_name((Trn+Num)*IO,Named).
+  make_up_selector_name(Trn+Num*IO,Named).
 
 
 %select_some_objects(TestID,Trn,Num,IO,whole,Objs):- !, test_grouped_io(TestID,[(TestID>(Trn+Num)*IO)],[],Objs).
@@ -203,7 +197,6 @@ show_filtered_groups(TestID):- ensure_test(TestID),
          nop(ignore(((ground((Trn+Num*IO))->print(Objs); (Len<10 ->print(Objs); true))))),
          print_grouped_props(Named+Filter,Objs)))))))).
 
-show_pair_groups(_TestID):-!.
 show_pair_groups(TestID):- ensure_test(TestID),
   forall(no_repeats(vars(Name1+Filter1,Name2+Filter2),
    pair_two_groups(TestID,Name1+Filter1,Name2+Filter2,Objs1,Objs2)),
@@ -220,7 +213,7 @@ show_pair_groups(TestID):- ensure_test(TestID),
       append(Objs1,Objs2,OBJS),list_to_set(OBJS,OBJSET),
       length(OBJS,WP1),length(OBJSET,WP2), WP1 == WP2,
       % pp(Name1+Filter1-Name2+Filter2 = Objs1->Objs2),
-      ppt(show_interesting_vs(vs(Name1+Filter1,Name2+Filter2),Objs1,Objs2))
+      show_interesting_vs(vs(Name1+Filter1,Name2+Filter2),Objs1,Objs2)
       ))).
 
 rules_from(Objs1,Objs2,Objects):- Objects=(Objs1->Objs2).
@@ -252,6 +245,15 @@ test_grouped_io(TestID,ExampleNum,IO,Objs):-
 test_grouped(TestID,ExampleNum,I,O):-  
   test_grouped_io(TestID,ExampleNum,in,I),
   once(test_grouped_io(TestID,ExampleNum,out,O)).
+
+show_prop_counts(TestID):-
+ ExampleNum=trn+_,
+ ROptions=complete,
+  forall(kaggle_arc(TestID,ExampleNum,GridIn,GridOut),
+  must_det_ll((
+   individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
+   print_grouped_props(TestID>ExampleNum*in,InC),
+   print_grouped_props(TestID>ExampleNum*out,OutC)))).
 
 
 :- thread_local(t_l:objs_others/4).
@@ -722,8 +724,8 @@ skip_ku(Var):- atomic(Var),!,fail.
 skip_ku(S):- priority_prop(S),!,fail.
 %skip_ku(pg(_,_,_,_)).
 %skip_ku(pg(is_fg_object,_,_,_)).
-%skip_ku(link(sees([_,_|_]),_)).
-%skip_ku(link(sees(_),_)).
+skip_ku(link(sees([_,_|_]),_)).
+skip_ku(link(sees(_),_)).
 skip_ku(area(_)).
 skip_ku(localpoints(_)).
 skip_ku(links_count(sees,_)).
@@ -1091,11 +1093,12 @@ into_test_id_io(Named,TestID,ExampleNum,IO):-
   into_test_id_io1(Named,TestID,ExampleNum,IO),
   nb_setval(prior_asserts,to(TestID,ExampleNum,IO)).
 
-into_test_id_io1(Named+_Filter,TestID,ExampleNum,IO):- into_test_id_io1(Named,TestID,ExampleNum,IO),!.
-%into_test_id_io1(Named+Filter,TestID,ExampleNum,IO+Filter):- into_test_id_io1(Named,TestID,ExampleNum,IO),!.
+%into_test_id_io1(Named+Filter,TestID,ExampleNum,IO):- into_test_id_io1(Named,TestID,ExampleNum,IO),!.
+into_test_id_io1(Named+Filter,TestID,ExampleNum,IO+Filter):- into_test_id_io1(Named,TestID,ExampleNum,IO),!.
 into_test_id_io1(Named,TestID,Example+Num,IO):- \+ compound(Named),!, 
  must_det_ll((name_to_selector(Named,Example,Num,IO),get_current_test(TestID))),!.
 into_test_id_io1(Named+Filter,TestID,Named,Filter):- !, get_current_test(TestID),!.
+into_test_id_io1(Named,TestID,Example+Num,IO):- testid_name_num_io(Named,TestID,Example,Num,IO),nonvar(Num),!.
 into_test_id_io1(vs(Name1+Filter1,Name2+Filter2),TestID,
   vs(Example+Num,(Example2+Num2)),
   vs(IO,IO2,vs(Filter1,Filter2))):- 

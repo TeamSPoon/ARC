@@ -37,15 +37,15 @@ count_of(G,N):- findall(G,G,L),variant_list_to_set(L,S),length(S,N).
 dont_notice(oid(_)).
 dont_notice(giz(_)).
 dont_notice(global2G(_,_)).
-%dont_notice(link(sees,_)).
-%dont_notice(links_count(sees,_)).
-%dont_notice(occurs_in_links(sees,_)).
-%dont_notice(link).
+dont_notice(link(sees,_)).
+dont_notice(links_count(sees,_)).
 dont_notice(occurs_in_links(contained_by,_)).
+dont_notice(occurs_in_links(sees,_)).
 dont_notice(iz(i_o(_))).
 dont_notice(P):- compound(P),arg(_,P,E),is_gridoid(E),!.
 dont_notice(P):- compound(P),!,compound_name_arity(P,F,_),!,dont_notice(F).
 dont_notice(F):- \+ atom(F),!,fail.
+dont_notice(link).
 dont_notice(oid).
 dont_notice(giz).
 dont_notice(shape_rep).
@@ -60,10 +60,7 @@ ensure_propcounts1(TestID):-
  forall(current_example_nums(TestID,ExampleNum),
   ( \+ \+ propcounts(TestID, ExampleNum, out, count, _, _),
     \+ \+ propcounts(TestID, ExampleNum, in, count, _, _))),!.
-ensure_propcounts1(TestID):- 
-  with_pair_mode(whole_test,
-    with_luser(menu_key,'O',ndividuator(TestID))),
-  show_groups(TestID),
+ensure_propcounts1(TestID):- with_pair_mode(whole_test,ndividuator(TestID)),
   my_assertion(propcounts(TestID, _, out, count, _, _)).
 
 props_change(TestID,E,EIn):-

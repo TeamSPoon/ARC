@@ -98,8 +98,8 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCB,OutCB):-
  w_section(show_individuated_learning,must_det_ll((
    %when_in_html(if_wants_output_for(guess_some_relations,guess_some_relations(InC,OutC))),
    %when_in_html(if_wants_output_for(sort_some_relations,sort_some_relations(InC,OutC))),
-   if_wants_output_for(learn_group_mapping,        if_t(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
-   if_wants_output_for(learn_group_mapping_of_tst, if_t(sub_var(tst,ID1), learn_group_mapping(InCR,OutCR))), 
+   w_section(learn_group_mapping,        if_t(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
+   w_section(learn_group_mapping_of_tst, if_t(sub_var(tst,ID1), learn_group_mapping(InCR,OutCR))), 
 
 
    if_wants_output_for(show_safe_assumed_mapped, show_safe_assumed_mapped),
@@ -132,7 +132,7 @@ show_indiv_vert(W,Obj,TD):- wots(TD,show_indiv(W,Obj)).
 
 
 arc_spyable_keyboard_key(detect_pair_hints,'g').
-arc_spyable_keyboard_key(show_interesting_props,'y').
+arc_spyable_keyboard_key(show_interesting_props,'o').
 arc_spyable_keyboard_key(show_safe_assumed_mapped,'j').
 arc_spyable_keyboard_key(learn_group_mapping,'o').
 arc_spyable_keyboard_key(learn_group_mapping_of_tst,'o').
