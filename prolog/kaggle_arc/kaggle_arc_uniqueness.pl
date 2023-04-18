@@ -112,21 +112,39 @@ assert_ilp_new(Term):- pp(assert_ilp_new=Term),!, assert_if_new(Term).
 
 
 solve_via_scene_change(TestID):-  
-  ensure_test(TestID),
-  clear_scene_rules(TestID),
-  (\+ is_accompany_changed_db(TestID,_,_) -> compute_scene_change(TestID) ; true),
+ ensure_test(TestID),
+ clear_scene_rules(TestID),
+ (\+ is_accompany_changed_db(TestID,_,_) -> compute_scene_change(TestID) ; true),
+ show_scene_change_rules(TestID),
+ %ExampleNum=_+_,
+ forall(kaggle_arc(TestID,ExampleNum,_,_),
+     ignore((solve_via_scene_change_rules(TestID,ExampleNum)))).
+
+solve_via_scene_change_rules(TestID,ExampleNum):-
+  kaggle_arc(TestID,ExampleNum,_,Expected),
+  banner_lines(green,4),
+  obj_group5(TestID,ExampleNum,in,ROptions,Objs),Objs\==[],
+  solve_obj_group(TestID,ExampleNum,in,ROptions,Objs,OObjs),
+  dash_chars,
+  print_ss(wqs(solve_via_scene_change(ExampleNum)),Objs,OObjs),
+  dash_chars,
+  into_solid_grid(OObjs,OurSolution),  
+  into_solid_grid(Expected,ExpectedOut),
+  count_difs(ExpectedOut,OurSolution,Errors),
+  print_ss(wqs(solve_via_scene_change_rules(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution),
   
-  nop(nop((show_scene_change_rules(TestID),ExampleNum=tst+_,forall((obj_group_io(TestID,ExampleNum,in,ROptions,Objs),Objs\==[]),
-    solve_obj_group(TestID,ExampleNum,in,ROptions,Objs))))),
-  show_scene_change_rules(TestID),!.
-  
+  (Errors == 0 ->  banner_lines(green,4) ; (banner_lines(red,4),show_scene_change_rules(TestID),!,fail)).
+   
+
+
+
 
 show_scene_change_rules(TestID):-
   ensure_test(TestID),
   (\+ is_accompany_changed_db(TestID,_,_) -> compute_scene_change(TestID) ; true),
   banner_lines(cyan,4),
   show_assumed_mapped(TestID),
-  banner_lines(cyan,4),
+  banner_lines(cyan,3),
    Ele = ac2(P,Same),
    findall(Ele,is_accompany_changed_computed(TestID,P,Same),List),
    sort(List,SetR),reverse(SetR,Set),
@@ -138,18 +156,39 @@ show_scene_change_rules(TestID):-
 compute_scene_change_pass2(TestID):-
    findall(P,is_accompany_changed_db(TestID,P,_),Ps),
    variant_list_to_set(Ps,Set),
-   maplist(compute_scene_change_pass2(TestID),Set).
+   maplist(compute_scene_change_pass2a(TestID),Set),
+   maplist(compute_scene_change_pass2b(TestID),Set),
+   maplist(compute_scene_change_pass2c(TestID),Set).
 compute_scene_change_pass3(TestID):-
    compute_scene_change_pass2(TestID).
 
-compute_scene_change_pass2(TestID,P):-
+compute_scene_change_pass2a(TestID,P):- 
    findall(Same,is_accompany_changed_db(TestID,P,Same),List),
-   %List=[_,_|_], 
+   List=[_,_|_],
+   flatten(List,SameF), variant_list_to_set(SameF,SameS),
+   forall(retract(is_accompany_changed_db(TestID,P,_)),true),
+  assert_ilp_new(is_accompany_changed_db(TestID,P,SameS)).
+compute_scene_change_pass2a(_,_).
+
+compute_scene_change_pass2b(TestID,P):-
+   findall(Same,is_accompany_changed_db(TestID,P,Same),List),
    flatten(List,SameF), variant_list_to_set(SameF,SameS),
    correct_antes1(TestID,P,SameS,Kept), Kept\==[],!, % pp(P=compute_scene_change_pass2([SameS,Kept])),
    forall(retract(is_accompany_changed_db(TestID,P,_)),true),
    assert_ilp_new(is_accompany_changed_db(TestID,P,Kept)).
-%compute_scene_change_pass2(_,_).
+compute_scene_change_pass2b(_,_).
+
+compute_scene_change_pass2c(TestID,P):-
+   make_unifiable_cc(P,UP),
+   is_accompany_changed_db(TestID,P,Same),
+   is_accompany_changed_db(TestID,UP,DSame),
+   P\=@=UP,
+   maplist(make_unifiable_cc,DSame,USame),
+   intersection(Same,USame,Kept,_,_),Kept\==[],
+   forall(retract(is_accompany_changed_db(TestID,P,_)),true),
+   assert_ilp_new(is_accompany_changed_db(TestID,P,Kept)).
+compute_scene_change_pass2c(_,_).
+
 
 at_least_one_overlap(DSame,Same):-
   member(DS,DSame),member(S,Same),
@@ -159,7 +198,7 @@ correct_antes1(TestID,P,Same,SL):-
   findall(S,
    (member(S,Same),
      \+ \+ ((
-       forall((is_accompany_changed_db(TestID,DP,DSame),at_least_one_overlap(DSame,Same)),       
+       forall((is_accompany_changed_db(TestID,DP,DSame),at_least_one_overlap(DSame,Same)),
           ((P==DP)-> true; (member(DS,DSame),other_val(S,DS))))))),
    SL), SL\==[],!.
 correct_antes1(_TestID,_P,Same,Same).
@@ -226,17 +265,23 @@ is_prop_in(TestID,ExampleNum,Same):-
    obj_group_io(TestID,ExampleNum,in,Objs),  
    \+ \+ (member(O,Objs),has_prop(Same,O)),!.
     
+solve_obj_group(TestID,ExampleNum,IO,ROptions,Objs,OObjs):-
+  my_maplist(solve_obj(TestID,ExampleNum,IO,ROptions),Objs,OObjs).
 
-solve_obj_group(TestID,ExampleNum,IO,ROptions,Objs):-
-  my_maplist(solve_obj(TestID,ExampleNum,IO,ROptions),Objs,OObjs),
-  print_ss(wqs(solved_obj_group(ExampleNum)),Objs,OObjs).
+solve_obj(_TestID,_ExampleNum,_IO,_ROptions,Obj,Obj):- is_bg_object(Obj),!.
+solve_obj(TestID,_ExampleNum,_IO,_ROptions,Obj,OObj):- 
+ must_det_ll((findall(P,
+   (is_accompany_changed_verified(TestID,P,Same),select(S,Same,Rest),has_prop(S,Obj),
+     forall(member(R,Rest),has_prop(R,Obj))),PsL),
+ list_to_set(PsL,Ps),
+ (Ps==[] -> Obj=OObj ; 
+   wots(SS,writeln(Ps)),
+   override_object_1(Ps,Obj,OObj),
+   into_solid_grid([OObj],SG),
+   dash_chars,
+   print_ss(override_object(SS),[Obj],SG)))).
 
-solve_obj(TestID,_ExampleNum,_IO,_ROptions,Obj,OObj):-
- must_det_ll((findall(P,(is_accompany_changed_verified(TestID,P,Same),member(S,Same),has_prop(S,Obj)),Ps),
- wots(SS,writeln(Ps)),
- override_object_1(Ps,Obj,OObj),!,
- print_ss(override_object(SS),[Obj],[OObj]))).
-
+override_object_1([],IO,IO):-!.
 override_object_1([H|T],I,OO):-  override_object_1(H,I,M),!, override_object_1(T,M,OO).
 override_object_1(pen([cc(Red,N)]),Obj,OObj):- pen(Obj,[cc(Was,N)]), subst(Obj,Was,Red,OObj),!.
 override_object_1(O,I,OO):- override_object(O,I,OO),!.
@@ -419,9 +464,9 @@ common_props([O|Objs],Props):-
    indv_props_list(O,List),
    findall(P,(member(P,List),\+ dont_notice(P),forall(member(E,Objs),has_prop(P,E))),Props).
 
-current_example_nums(_TestID,ExampleNum):- ground(ExampleNum),!.
 current_example_nums(TestID,ExampleNum):- 
-  get_current_test(TestID),ExampleNum=trn+_, kaggle_arc(TestID,ExampleNum,_,_). 
+  (var(TestID)->get_current_test(TestID);true),
+  ignore((ExampleNum=trn+_)), kaggle_arc(TestID,ExampleNum,_,_). 
 
 
 

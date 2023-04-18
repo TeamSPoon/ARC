@@ -788,9 +788,6 @@ learn_group_mapping_now(AG00,BG00):-
 
   learn_group_mapping_p3(IO_DIR,OI,AG,BG))).
 
-really_assumed_mapped(A,B):- listify(A,AL), listify(B,BL), 
-  assertz_in_testid(arc_cache:assumed_mapped_rule(AL,BL)).
-
 
 learn_group_mapping_p3(IO_DIR,OI,AG,BG):- !,
  locally(nb_setval(rule_cannot_add_more_objects,t),
@@ -2118,7 +2115,14 @@ use_test_associatable_group_now(I,O):-
 gather_assumed_mapped_o_l(A,BL):- findall(B,gather_assumed_mapped_o_o(A,B),BL).
 gather_assumed_mapped_l_o(AL,B):- findall(A,gather_assumed_mapped_o_o(A,B),AL).
 gather_assumed_mapped_l_l(AL,BL):- call_in_testid(arc_cache:assumed_mapped(AL,BL)).
+
+really_assumed_mapped(A,B):- listify(A,AL), listify(B,BL), 
+  assertz_in_testid(arc_cache:assumed_mapped_rule(AL,BL)).
+
 gather_assumed_mapped_rule(AL,BL):- call_in_testid(arc_cache:assumed_mapped_rule(AL,BL)).
+gather_assumed_mapped_rule(AL,BL):- call_in_testid(arc_cache:assumed_mapped(AL,BL)), 
+  AL=[A],BL=[B],is_assumed_unmapped_o_o(A,B),
+  \+ call_in_testid(arc_cache:assumed_mapped_rule(AL,BL)).
 
 gather_assumed_mapped_o_o(A,B):-
   gather_assumed_mapped_l_l(AL,BL),

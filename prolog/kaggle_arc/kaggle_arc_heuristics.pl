@@ -17,11 +17,11 @@ i_pair(WasROptions,GridIn,GridOut):- WasROptions==complete,
  catch((must_det_ll((
  check_for_refreshness,
  ((var(GridIn);var(GridOut))-> current_pair_io(GridIn,GridOut) ; true),
- maybe_name_the_pair(GridIn,GridOut,PairName),
+ maybe_name_the_pair(GridIn,GridOut,PairName))),
  notrace(((((guess_how(HOW,GridIn,GridOut,Stuff1,Stuff2), 
              guess_how_else(HOW_ELSE,Stuff1,Stuff2,InC,OutC)))))),
  INDIV = [HOW|HOW_ELSE],
- show_individuated_pair(PairName,INDIV,GridIn,GridOut,InC,OutC)))),_,fail),!.
+ show_individuated_pair(PairName,INDIV,GridIn,GridOut,InC,OutC)),_,fail),!.
 
 i_pair(ROptions,GridIn,GridOut):-
  must_det_ll((  
@@ -102,7 +102,7 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCB,OutCB):-
    %when_in_html(if_wants_output_for(guess_some_relations,guess_some_relations(InC,OutC))),
    %when_in_html(if_wants_output_for(sort_some_relations,sort_some_relations(InC,OutC))),
    w_section(learn_group_mapping,        if_t(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
-   w_section(learn_group_mapping_of_tst, if_t(sub_var(tst,ID1), learn_group_mapping(InCR,OutCR))), 
+   ignore((w_section(learn_group_mapping_of_tst, if_t(sub_var(tst,ID1), learn_group_mapping(InCR,OutCR))))), 
 
 
    if_wants_output_for(show_safe_assumed_mapped, show_safe_assumed_mapped),

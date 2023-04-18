@@ -811,6 +811,7 @@ next_suite:-
 :- dynamic(dir_test_suite_name/1).
 
 :- dynamic(dont_sort_by_hard/1).
+dont_sort_by_hard(S):- S \== test_names_by_hard,!.
 dont_sort_by_hard(test_names_by_fav). dont_sort_by_hard(all_arc_test_name). dont_sort_by_hard(all_arc_test_name_unordered).
 %dont_sort_by_hard(P):- atom(P), \+ atom_concat(_,'_hard',P).
 
@@ -827,6 +828,7 @@ test_suite_name(evaluation).
 test_suite_name(easy_solve_suite).
 test_suite_name(test_names_by_fav). 
 test_suite_name(human_t).
+test_suite_name(michod_solved_train).
 test_suite_name(is_symgrid).
 %test_suite_name(sol_t).
 %test_suite_name(hard_t).

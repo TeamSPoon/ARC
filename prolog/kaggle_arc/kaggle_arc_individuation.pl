@@ -3003,9 +3003,9 @@ sub_self(NewGrid,NewOther,TODO,VM,FoundObjs):-
  set(VM.grid)= NewGrid, 
  set(VM.target_grid)= NewOther,
  set(VM.start_grid)= NewGrid,
- itrace,
+ %itrace,
  run_fti(VM,TODO),
- itrace,
+ %itrace,
  FoundObjs = VM.objs,
  LOPoints = VM.lo_points,
  force_onto_dict(SavedVM,VM),
@@ -3171,7 +3171,8 @@ fg_intersections(TODO,VM):-
  mapgrid(fg_intersectiond,Grid,Other,NewGrid),
  mapgrid(plain_var_to(black),NewGrid),
  mass(NewGrid,NM), NM > 0, % mass(Grid,GM), NM\==GM,% ,!, mass(Other,OM),
- itrace,sub_self(NewGrid,Other,TODO,VM,FoundObjs),
+ %itrace,
+ sub_self(NewGrid,Other,TODO,VM,FoundObjs),
  addObjects(VM,FoundObjs).
 
 
