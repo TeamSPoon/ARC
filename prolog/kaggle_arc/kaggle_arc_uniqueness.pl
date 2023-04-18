@@ -114,7 +114,8 @@ solve_via_scene_change(TestID):-
  show_scene_change_rules(TestID),
  %ExampleNum=_+_,
  forall(kaggle_arc(TestID,ExampleNum,_,_),
-     ignore((solve_via_scene_change_rules(TestID,ExampleNum)))).
+     ignore((solve_via_scene_change_rules(TestID,ExampleNum)))),
+ show_object_dependancy(TestID).
 
 solve_via_scene_change_rules(TestID,ExampleNum):-
   kaggle_arc(TestID,ExampleNum,_,Expected),
@@ -451,13 +452,14 @@ save_how_io(TestID,HowIn,HowOut):-
 
 
 
-obj_group_gg(TestID,ExampleNum,In,Out):-
-   no_repeats_var(Out),set_example_num(ExampleNum),
-   obj_group5(TestID,ExampleNum,in,HowIn,In), In\==[],  length(In,L),
+obj_group_gg(TestID,ExampleNum,InC,OutC):-
+   current_example_nums(TestID,ExampleNum),
+   no_repeats_var(OutC),set_example_num(ExampleNum),
+   obj_group5(TestID,ExampleNum,in,HowIn,InC), InC\==[],  length(InC,L),
 
    (((obj_group5(TestID,ExampleNum,out,HowOut,OOut),length(OOut,L),save_how_io(TestID,HowIn,HowOut)))
      ;obj_group5(TestID,ExampleNum,out,_,OOut)),   
-   Out = OOut.
+   OutC = OOut.
 
 other_objs_than_group(TestID,ExampleNum,IO,Others):-
   findall(O,(current_example_nums(TestID,OExampleNum),
@@ -493,7 +495,103 @@ obj_group5(TestID,ExampleNum,IO,ROptions,Objs):-
   ((fail, arc_cache:individuated_cache(TestID,TID,GOID,ROptions,Objs), Objs\==[],
   once((testid_name_num_io_0(TID,_,Example,Num,IO),
         testid_name_num_io_0(GOID,_,Example,Num,IO))))*-> true ; grid_to_objs(Grid,ROptions,Objs)).
+
+
+
+% =============================================================
+show_object_dependancy(TestID):-  
+% =============================================================
+ ensure_test(TestID),
+ forall(kaggle_arc(TestID,ExampleNum,_,_),
+     ignore((show_object_dependancy(TestID,ExampleNum)))).
+
+show_object_dependancy(TestID,ExampleNum):-  
+  forall(obj_group_gg(TestID,ExampleNum,LHSObjs,RHSObjs),
+    show_object_dependancy(TestID,ExampleNum,LHSObjs,RHSObjs)).
+
+show_object_dependancy(TestID,ExampleNum,LHSObjs,RHSObjs):-  
+  calc_object_dependancy(LHSObjs,RHSObjs,Groups),
+  maplist(into_lst,Groups,Grps),
+  sort_by_generation(Grps,SortedByGen),
+  maplist(print_object_dependancy(TestID,ExampleNum),SortedByGen),!.
+
+print_object_dependancy(TestID,ExampleNum,[Left,Right]):-!,
+  print_ss(object_dependancy_l_r(TestID,ExampleNum),Left,Right).
+print_object_dependancy(TestID,ExampleNum,LeftRight):-!,
+  print_ss(grp_object_dependancy(TestID,ExampleNum)=LeftRight).
   
+% sort_by_generation(Grps,SortedByGen):-predsort(sort_on(by_generation),Grps,SortedByGen).
+sort_by_generation(Grps,Grps).
+
+
+calc_object_dependancy(Nil,Objs,RestLR):- Nil==[],
+   maplist(is_functor(grp),Objs),!, Objs=RestLR.
+calc_object_dependancy(Objs,Nil,RestLR):- Nil==[],
+   maplist(is_functor(grp),Objs),!, Objs=RestLR.
+calc_object_dependancy(Nil,Objs,RestLR):- Nil==[],
+   split_sorted(Objs,SplitLHS,SplitRHS),
+   SplitLHS\==[],SplitRHS\==[],!,
+   calc_object_dependancy(SplitLHS,SplitRHS,RestLR).
+calc_object_dependancy(LHSObjs,RHSObjs,RestLR):- 
+  length(LHSObjs,Left),length(RHSObjs,Right),Left>Right,calc_object_dependancy(RHSObjs,LHSObjs,RestLR).
+calc_object_dependancy(LHSObjs,RHSObjs,PairsLHSgain):- 
+   map_left_to_right(LHSObjs,RHSObjs,RestLR,Unused),
+   calc_object_dependancy(RestLR,Unused,PairsLHSgain).
+   
+map_left_to_right(LHSObjs,RHSObjs,[Pairs|RestLR],Unused):-    
+  select(Left,LHSObjs,RestLeft),
+  remove_object(RHSObjs,Left,RHSObjsMLeft),
+  find_prox_mappings(Left,map_left_to_right,RHSObjsMLeft,[Right|RestO]),
+  make_pairs(Left,Right,Pairs),
+  remove_object(RestLeft,Right,RestLeftMLeft),
+  map_left_to_right(RestLeftMLeft,RestO,RestLR,Unused).
+map_left_to_right([],RestO,[],RestO).
+
+remove_object(RHSObjs,Left,RHSObjsMI):- select(Left,RHSObjs,RHSObjsMI),!.
+remove_object(RHSObjs,_,RHSObjs).
+
+into_lst(ObjsL,[ObjsL]):-var(ObjsL),!.
+into_lst(grp(ObjsL),Lst):-!,into_lst(ObjsL,Lst).
+into_lst(ObjsL,Lst):- is_list(ObjsL),!,maplist(into_lst,ObjsL,LstL),append(LstL,Lst).
+into_lst(ObjsL,[ObjsL]).
+
+prime_factor(N, D) :-
+    find_prime_factor(N, 2, D).
+
+find_prime_factor(N, D, D) :- 0 is N mod D.
+find_prime_factor(N, D, R) :- D < N,
+    (0 is N mod D
+    -> (N1 is N/D, find_prime_factor(N1, D, R))
+    ;  (D1 is D + 1, find_prime_factor(N, D1, R))
+    ).
+
+split_sorted(Objs,SplitLHS,SplitRHS):- 
+  my_partition(is_bg_object,Objs,SplitLHS,SplitRHS), SplitLHS\==[], SplitRHS\==[].
+
+split_sorted(Objs,SplitLHS,SplitRHS):-
+ length(Objs,Len),
+ prime_factor(Len,Prime),
+ split_sorted(Objs,Len,Prime,SplitLHS,SplitRHS).
+
+split_sorted(Objs,_Len,Prime,SplitLHS,SplitRHS):- 
+ variance_counts(Objs,PropObjsounts),
+ findall(E,(member(E,PropObjsounts),sub_var(Prime,E)),EL),
+ member(E,EL),into_prop(E,P),
+ my_partition(has_prop(P),Objs,SplitLHS,SplitRHS).
+
+split_sorted(Objs, Len,Prime,SplitLHS,SplitRHS):- 
+ Half is Len div Prime,
+ count_each_value(Objs,PropObjsounts),
+ findall(E,(member(E,PropObjsounts),sub_var(Prime,Half)),EL),
+ member(E,EL),into_prop(E,P),
+ my_partition(has_prop(P),Objs,SplitLHS,SplitRHS).
+
+into_prop(CC,P):- sub_term(E,CC),compound(E),is_prop1(E),!,E=P.
+
+
+
+make_pairs(LHS,RHS,grp(Objs)):- into_lst(LHS,LHSL),into_lst(RHS,RHSL),append(LHSL,RHSL,ObjsL),list_to_set(ObjsL,Objs).
+
 
 
 
