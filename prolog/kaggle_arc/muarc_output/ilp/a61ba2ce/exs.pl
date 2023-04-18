@@ -1,0 +1,14 @@
+pos(rhs(trn_0,hv(1,1),rot180,cyan,hv(2,2),hv(2,2),3,s11261491)). 
+pos(rhs(trn_0,hv(1,3),rot270,green,hv(2,2),hv(2,2),3,s11261491)). 
+pos(rhs(trn_0,hv(3,1),rot90,red,hv(2,2),hv(2,2),3,s11261491)). 
+pos(rhs(trn_0,hv(3,3),sameR,blue,hv(2,2),hv(2,2),3,s11261491)). 
+pos(rhs(trn_1,hv(1,1),rot180,blue,hv(2,2),hv(2,2),3,s11261491)). 
+pos(rhs(trn_1,hv(1,3),rot270,yellow,hv(2,2),hv(2,2),3,s11261491)). 
+pos(rhs(trn_1,hv(3,1),rot90,cyan,hv(2,2),hv(2,2),3,s11261491)). 
+pos(rhs(trn_1,hv(3,3),sameR,red,hv(2,2),hv(2,2),3,s11261491)). 
+/*
+pos(rhs(tst_0,hv(1,1),rot180,green,hv(2,2),hv(2,2),3,s11261491)). 
+pos(rhs(tst_0,hv(1,3),rot270,blue,hv(2,2),hv(2,2),3,s11261491)). 
+pos(rhs(tst_0,hv(3,1),rot90,cyan,hv(2,2),hv(2,2),3,s11261491)). 
+pos(rhs(tst_0,hv(3,3),sameR,purple,hv(2,2),hv(2,2),3,s11261491)). 
+*/
