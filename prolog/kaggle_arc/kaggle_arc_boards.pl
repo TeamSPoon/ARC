@@ -306,10 +306,6 @@ detect_all_training_hints(TestID):- ensure_test(TestID),
 
 training_only_examples(ExampleNum):- ignore(ExampleNum=(trn+_)).
 
-detect_test_hints1:- clsbake, get_current_test(TestID),detect_test_hints1(TestID).
-detect_test_hints1(TestID):- 
- some_current_example_num(ExampleNum), training_only_examples(ExampleNum),
- forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_pair_hints(TestID,ExampleNum,In,Out)).
   
 
 color_subst([],[],[]):-!.
@@ -317,6 +313,10 @@ color_subst([O|OSC],[I|ISC],[O-I|O2I]):-
   color_subst(OSC,ISC,O2I).
 color_subst(_OSC,_ISC,[]):-!.
 
+detect_pair_hints:- clsbake, get_current_test(TestID),detect_pair_hints(TestID).
+detect_pair_hints(TestID):- 
+ some_current_example_num(ExampleNum), training_only_examples(ExampleNum),
+ forall(kaggle_arc(TestID,ExampleNum,In,Out),detect_pair_hints(TestID,ExampleNum,In,Out)).
 detect_pair_hints(TestID,ExampleNum,In,Out):- 
   ensure_test(TestID),
   must_det_ll((
@@ -1112,8 +1112,8 @@ illegal_column_data(In,Color,BorderNums):-
 
 save_the_alt_grids(TestID):- 
  forall(ensure_test(TestID),
-  forall(kaggle_arc(TestID,ExampleNum,I,O),
-    once(save_the_alt_grids(TestID,ExampleNum,[],I,O)))),!.
+  forall(kaggle_arc(TestID,ExampleNum,_,_),
+    once(save_the_alt_grids(TestID,ExampleNum)))).
 
 save_the_alt_grids(TestID,ExampleNum):-
   arc_test_property(TestID,ExampleNum,has_blank_alt_grid,_),!.
@@ -1121,6 +1121,7 @@ save_the_alt_grids(TestID,ExampleNum):-
   forall(kaggle_arc(TestID,ExampleNum,I,O),
     once(save_the_alt_grids(TestID,ExampleNum,[],I,O))),!.
 
+save_the_alt_grids(TestID,ExampleNum,_,_,_):-arc_test_property(TestID,ExampleNum,ori(_),_),!.
 save_the_alt_grids(TestID,ExampleNum,_,_,_):- arc_test_property(TestID,ExampleNum,iro(_),_),!.
 save_the_alt_grids(TestID,ExampleNum,XForms,In,Out):-  %same_sizes(In,Out),
   !,
