@@ -53,8 +53,8 @@ dont_notice(shape_rep).
 do_notice(pg(_,_,rank1,_)).
 do_notice(pg(_,_,_,_)).
 
-ok_notice(X):- \+ \+ do_notice(X),!.
-ok_notice(X):- \+ dont_notice(X).
+ok_notice(P):- \+ \+ do_notice(P),!.
+ok_notice(P):- \+ dont_notice(P).
 
 has_propcounts(TestID):- 
  forall(current_example_nums(TestID,ExampleNum),
@@ -75,17 +75,17 @@ props_change(TestID,E,EIn):-
 
 in_out_atoms(in,out).
 
-counts_change(TestID,ExampleNum,Out,X,N2,N1):- in_out_atoms(In,Out),
+counts_change(TestID,ExampleNum,Out,P,N2,N1):- in_out_atoms(In,Out),
    ensure_propcounts(TestID),
-   propcounts(TestID, ExampleNum, Out, count, N1, X), ok_notice(X),
+   propcounts(TestID, ExampleNum, Out, count, N1, P), ok_notice(P),
    ExampleNum = trn+_,
-   (propcounts(TestID, ExampleNum, In, count, N2, X) -> true ; N2=0), N1\==N2.
+   (propcounts(TestID, ExampleNum, In, count, N2, P) -> true ; N2=0), N1\==N2.
 
-counts_change(TestID,ExampleNum,In,X,N1,N2):- in_out_atoms(In,Out),
+counts_change(TestID,ExampleNum,In,P,N1,N2):- in_out_atoms(In,Out),
    ensure_propcounts(TestID),
-   propcounts(TestID, ExampleNum, In, count, N1, X), ok_notice(X),
+   propcounts(TestID, ExampleNum, In, count, N1, P), ok_notice(P),
    ExampleNum = trn+_,
-   (propcounts(TestID, ExampleNum, Out, count, N2, X) -> true ; N2=0), N1\==N2.
+   (propcounts(TestID, ExampleNum, Out, count, N2, P) -> true ; N2=0), N1\==N2.
 
 compute_scene_change(TestID):-
  time((with_pair_mode(whole_test, 
@@ -293,22 +293,22 @@ is_accompany_changed_verified(TestID,P,Same):-
 is_accompany_changed_computed(TestID,P,Same):-
    is_accompany_changed_db(TestID,P,Same) *->true ; prop_can(TestID,_Step,P,Same). 
    
-ensure_prop_change(Prop):- 
-  (var(Prop)->props_change(_TestID,Prop,_);true).
+ensure_prop_change(P):- 
+  (var(P)->props_change(_TestID,P,_);true).
 
-prop_can(TestID,Step,Prop,Can):-    
-  props_change(TestID,Prop,Step),
-  once((prop_cant(TestID,Step,Prop,Cant),
-  prop_can1(TestID,Step,Prop,Can1),
+prop_can(TestID,Step,P,Can):-    
+  props_change(TestID,P,Step),
+  once((prop_cant(TestID,Step,P,Cant),
+  prop_can1(TestID,Step,P,Can1),
   intersection(Can1,Cant,_,Can,_))).
   %(Can == [] -> (CanL=Can1,fail) ; CanL= Can).
 
 
-prop_cant(TestID,Step,Prop,Set):-
-  props_change(TestID,Prop,Step),
+prop_cant(TestID,Step,P,Set):-
+  props_change(TestID,P,Step),
   findall(Cant,
     ((enum_object(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
-      not_has_prop(Prop,O),indv_props_list(O,List),member(Cant,List),ok_notice(Cant))),Flat),
+      not_has_prop(P,O),indv_props_list(O,List),member(Cant,List),ok_notice(Cant))),Flat),
    list_to_set(Flat,Set).
 
 enum_object_ext(O):-
@@ -316,13 +316,13 @@ enum_object_ext(O):-
   current_example_nums(TestID,ExampleNum),
   once((obj_group_io(TestID,ExampleNum,out,Objs),Objs\==[])),member(O,Objs).
 
-prop_can1(TestID,Step,Prop,Can):-  
-  props_change(TestID,Prop,Step),
+prop_can1(TestID,Step,P,Can):-  
+  props_change(TestID,P,Step),
   findall(O,
     ((enum_object_ext(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
-      has_prop(Prop,O))),[I|L]),
+      has_prop(P,O))),[I|L]),
   indv_props_list(I,List),
-  findall(P,(member(P,List),P\=@=Prop,ok_notice(P),forall(member(E,L),has_prop(P,E))),Can).
+  findall(P,(member(P,List),P\=@=P,ok_notice(P),forall(member(E,L),has_prop(P,E))),Can).
 
 
 %accompany_changed_compute_pass2(TestID,P,SameS):- prop_can(TestID,Step,P,SameS).
@@ -405,34 +405,34 @@ accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=Intersect]):-
 has_other_val(Props1,X2):- member(X1,Props1),other_val(X1,X2),!.
 
 
-accompany_change(TestID,ExampleNum,X,Props,NotProps):-
+accompany_change(TestID,ExampleNum,P,Props,NotProps):-
   var(TestID),!,ensure_test(TestID),
-  accompany_change(TestID,ExampleNum,X,Props,NotProps).
-accompany_change(TestID,ExampleNum,X,Props,NotProps):-
+  accompany_change(TestID,ExampleNum,P,Props,NotProps).
+accompany_change(TestID,ExampleNum,P,Props,NotProps):-
   var(ExampleNum),!,current_example_nums(TestID,ExampleNum),
-  accompany_change(TestID,ExampleNum,X,Props,NotProps).
-accompany_change(TestID,ExampleNum,X,Props,NotProps):-
-  var(X),!,props_change(TestID,X,_),
-  accompany_change(TestID,ExampleNum,X,Props,NotProps).
+  accompany_change(TestID,ExampleNum,P,Props,NotProps).
+accompany_change(TestID,ExampleNum,P,Props,NotProps):-
+  var(P),!,props_change(TestID,P,_),
+  accompany_change(TestID,ExampleNum,P,Props,NotProps).
 
-accompany_change(TestID,ExampleNum,X,Props,NotProps):-     
-   once((counts_change(TestID,ExampleNum,_I_or_O,X,N1,N2), N1<N2)),!,
+accompany_change(TestID,ExampleNum,P,Props,NotProps):-     
+   once((counts_change(TestID,ExampleNum,_I_or_O,P,N1,N2), N1<N2)),!,
    %no_repeats_var(Out),
   once(( obj_group_gg(TestID,ExampleNum,_In,Out),
-         once((my_partition(has_prop(X),Out,HasPropsO,NotHasPropsO),
+         once((my_partition(has_prop(P),Out,HasPropsO,NotHasPropsO),
          common_props(HasPropsO,Common),  common_props(NotHasPropsO,NotCommon),
          intersection(Common,NotCommon,_,Props1,NotProps))),
-         include(\=@=(X),Props1,Props),
+         include(\=@=(P),Props1,Props),
          Props\==[])).
 
-accompany_change(TestID,ExampleNum,X,Props,NotProps):- fail,
-   counts_change(TestID,ExampleNum,_I_or_O,X,N1,N2), N1>N2,
+accompany_change(TestID,ExampleNum,P,Props,NotProps):- fail,
+   counts_change(TestID,ExampleNum,_I_or_O,P,N1,N2), N1>N2,
   once((
-   %obj_group_io(TestID,ExampleNum,in,In), my_partition(has_prop(X),In,HasPropsI,NotHasPropsI),
+   %obj_group_io(TestID,ExampleNum,in,In), my_partition(has_prop(P),In,HasPropsI,NotHasPropsI),
   %obj_group_io(TestID,ExampleNum,out,Out),
   other_objs_than_group(TestID,ExampleNum,out,Out),
-  my_partition(not_has_prop(X),Out,HasPropsO,NotHasPropsO),
-  %my_partition(not_has_prop(X),Others,HasPropsOthers,NotHasPropsOthers),
+  my_partition(not_has_prop(P),Out,HasPropsO,NotHasPropsO),
+  %my_partition(not_has_prop(P),Others,HasPropsOthers,NotHasPropsOthers),
   common_props(HasPropsO,Common),
   common_props(NotHasPropsO,NotCommon),
   intersection(Common,NotCommon,_,Props,NotProps),Props\==[])).
@@ -786,15 +786,15 @@ compare_objects(Objs,Interesting):-
   maplist(compare_values,ListOfLists,Diffs),
   include(\=([]),Diffs,Interesting).
   
-functorize_props(iz(Prop),FA):- !, functorize_props(Prop,FA).
-functorize_props(Prop,F/A):- functor(Prop,F,A).
+functorize_props(iz(P),FA):- !, functorize_props(P,FA).
+functorize_props(P,F/A):- functor(P,F,A).
 gather_props([F/A|SortedFunctors],FlatProps,[(F-Candidates)|ListOfLists]):- 
   functor(Match,F,A), findall(Match,(member(Match,FlatProps);member(iz(Match),FlatProps)),Candidates),
   gather_props(SortedFunctors,FlatProps,ListOfLists).
 gather_props([],_,[]).
 
 
-compare_values(F-X,Notable):- predsort_using_only(number_varz,X,S),length(X,N),length(S,NS),
+compare_values(F-P,Notable):- predsort_using_only(number_varz,P,S),length(P,N),length(S,NS),
   is_notable(F-NS/N,Notable).
 
 :- dynamic(repress_non_notables/0).
@@ -808,7 +808,7 @@ never_noteable(globalpoints).
 never_noteable(P):- compound(P),functor(P,F,_),never_noteable(F).
 
 is_prop_for_noteablity(P):- compound(P),functor(P,F,_),is_prop_for_noteablity(F),!.
-is_prop_for_noteablity(X):- \+ never_noteable(X),!.
+is_prop_for_noteablity(P):- \+ never_noteable(P),!.
 
 is_notable(_F-N/N,[]):- repress_non_notables, !.  
 is_notable(_F-1/_,[]):- repress_non_notables, !.
@@ -852,8 +852,8 @@ not_peerless_props(O1,Peers,PeerlessProps):-
                (select(O1,Peers,PeersU)->true;PeersU=Peers),
   include(not_peerless_prop(PeersU),Props,PeerlessProps))).
 
-is_peerless_prop(Peers,Prop):- \+ sub_var(Prop,Peers).
-not_peerless_prop(Peers,Prop):- sub_var(Prop,Peers).
+is_peerless_prop(Peers,P):- \+ sub_var(P,Peers).
+not_peerless_prop(Peers,P):- sub_var(P,Peers).
 
 
 too_unique(P):- compound(P),!,compound_name_arity(P,F,_),!,too_unique(F).
