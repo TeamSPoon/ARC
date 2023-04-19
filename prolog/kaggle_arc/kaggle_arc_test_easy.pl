@@ -22,7 +22,7 @@ forall_count(P,Q):-
     flag('$fac_t',_,W)).
   
 
-foreach_test(TestID,Goal):- var(TestID),!,foreach_count(all_suite_test_name(TestID),Goal).
+foreach_test(TestID,Goal):- var(TestID),!,foreach_count(all_suite_test_name(TestID),catch_non_abort(Goal)).
 foreach_test(TestID,Goal):- ensure_test(TestID),call(Goal).
 
 foreach_count(P,Q):- flag('$fac_t',W,W), W>0,!,P,Q,report_count(progress,so_far).

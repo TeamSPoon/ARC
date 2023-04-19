@@ -55,7 +55,9 @@ compile_and_save_test:- get_pair_mode(entire_suite),!,clsbake, forall_count(all_
 compile_and_save_test:- get_current_test(TestID),time(compile_and_save_test(TestID)),!,  
   detect_all_training_hints,!.
 
-gen_gids:- u_dmsg(start(gen_gids)),forall(all_arc_test_name(TestID),gen_gids(TestID)),u_dmsg(end(gen_gids)).
+gen_gids:- u_dmsg(start(gen_gids)),
+  forall(all_arc_test_name(TestID),gen_gids(TestID)),
+  u_dmsg(end(gen_gids)).
 gen_gids(Mask):-
   testid_name_num_io(Mask,TestID,Example,Num,IO),
   ExampleNum = Example+Num,!,
