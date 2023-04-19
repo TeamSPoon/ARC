@@ -100,7 +100,7 @@ compute_scene_change(TestID):-
 
 compute_scene_change_pass2(TestID):- 
    no_repeats_var(NR),
-   NR =  prop_can(TestID,_Step,P,Same), % accompany_changed_compute_pass2(TestID,P,Same),
+   NR =  prop_can(TestID,_IO,P,Same), % accompany_changed_compute_pass2(TestID,P,Same),
    NRO = is_accompany_changed_db(TestID,P,Same),
   with_pair_mode(whole_test, forall(call(NR),assert_ilp_new(NRO))).
 
@@ -180,10 +180,10 @@ compute_scene_change_pass3b(TestID,P):-
 compute_scene_change_pass3b(_,_). 
 
 compute_scene_change_pass3c(TestID,P):-
-   make_unifiable_u(P,UP),
+   make_unifiable_u(P,U),
    is_accompany_changed_db(TestID,P,Same),
-   is_accompany_changed_db(TestID,UP,DSame),
-   P\=@=UP,
+   is_accompany_changed_db(TestID,U,DSame),
+   P\=@=U,
    maplist(make_unifiable_u,DSame,USame),
    intersection(Same,USame,Kept,_,_),Kept\==[],
    forall(retract(is_accompany_changed_db(TestID,P,_)),true),
@@ -291,21 +291,21 @@ is_accompany_changed_verified(TestID,P,Same):-
   is_accompany_changed_computed(TestID,P,Same), Same\==[].
 
 is_accompany_changed_computed(TestID,P,Same):-
-   is_accompany_changed_db(TestID,P,Same) *->true ; prop_can(TestID,_Step,P,Same). 
+   is_accompany_changed_db(TestID,P,Same) *->true ; prop_can(TestID,_IO,P,Same). 
    
 ensure_prop_change(P):- 
   (var(P)->props_change(_TestID,P,_);true).
 
-prop_can(TestID,Step,P,Can):-    
-  props_change(TestID,P,Step),
-  once((prop_cant(TestID,Step,P,Cant),
-  prop_can1(TestID,Step,P,Can1),
+prop_can(TestID,IO,P,Can):-    
+  props_change(TestID,P,IO),
+  once((prop_cant(TestID,IO,P,Cant),
+  prop_can1(TestID,IO,P,Can1),
   intersection(Can1,Cant,_,Can,_))).
   %(Can == [] -> (CanL=Can1,fail) ; CanL= Can).
 
 
-prop_cant(TestID,Step,P,Set):-
-  props_change(TestID,P,Step),
+prop_cant(TestID,IO,P,Set):-
+  props_change(TestID,P,IO),
   findall(Cant,
     ((enum_object(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
       not_has_prop(P,O),indv_props_list(O,List),member(Cant,List),ok_notice(Cant))),Flat),
@@ -316,16 +316,16 @@ enum_object_ext(O):-
   current_example_nums(TestID,ExampleNum),
   once((obj_group_io(TestID,ExampleNum,out,Objs),Objs\==[])),member(O,Objs).
 
-prop_can1(TestID,Step,P,Can):-  
-  props_change(TestID,P,Step),
+prop_can1(TestID,IO,P,Can):-  
+  props_change(TestID,P,IO),
   findall(O,
     ((enum_object_ext(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
       has_prop(P,O))),[I|L]),
   indv_props_list(I,List),
-  findall(P,(member(P,List),P\=@=P,ok_notice(P),forall(member(E,L),has_prop(P,E))),Can).
+  findall(U,(member(U,List),U\=@=P,ok_notice(U),forall(member(E,L),has_prop(U,E))),Can).
 
 
-%accompany_changed_compute_pass2(TestID,P,SameS):- prop_can(TestID,Step,P,SameS).
+%accompany_changed_compute_pass2(TestID,P,SameS):- prop_can(TestID,IO,P,SameS).
 
 %xlisting(propcounts+variance_had_count_set+(pen([cc(yellow,1)]);links_count(contains,4))-'$spft$').
 /*
