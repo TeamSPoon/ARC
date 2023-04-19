@@ -47,7 +47,9 @@ report_count(P,Q):-
 
 
 test_easy:- once(update_and_fail_cls),fail.
-test_easy:- get_pair_mode(entire_suite),!,forall_count(all_arc_test_name(TestID),test_easy(TestID)).
+test_easy:- get_pair_mode(entire_suite),!,
+ forall_count(all_arc_test_name(TestID),
+   catch_non_abort(test_easy(TestID))).
 test_easy:- get_pair_mode(whole_test), get_current_test(TestID),!,must_det_ll(ignore(test_easy(TestID))).
 test_easy:- get_pair_mode(single_pair),
   get_current_test(TestID),some_current_example_num(ExampleNum),!,

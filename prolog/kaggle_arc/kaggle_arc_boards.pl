@@ -51,7 +51,8 @@ print_ref(G):- format('~N'),write_canonical(G),format('.~n'),!.
 clsbake:- nop(clsmake).
 
 compile_and_save_test:- update_and_fail,fail.
-compile_and_save_test:- get_pair_mode(entire_suite),!,clsbake, forall_count(all_arc_test_name(TestID),time(compile_and_save_test(TestID))).
+compile_and_save_test:- get_pair_mode(entire_suite),!,clsbake, 
+  forall_count(all_arc_test_name(TestID),time(compile_and_save_test(TestID))).
 compile_and_save_test:- get_current_test(TestID),time(compile_and_save_test(TestID)),!,  
   detect_all_training_hints,!.
 
