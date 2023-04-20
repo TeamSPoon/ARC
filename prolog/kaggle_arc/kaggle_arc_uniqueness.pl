@@ -60,7 +60,7 @@ ok_notice(P):- \+ \+ do_notice(P),!.
 ok_notice(P):- \+ dont_notice(P).
 
 
-dont_deduce(link(sees(_),_)).
+% dont_deduce(link(sees(_),_)).
 dont_deduce(giz(_)).
 dont_deduce(size2D(_)).
 dont_deduce(global2G(_,_)).
@@ -70,7 +70,7 @@ dont_deduce(P):- sub_term(G,P),compound(G),is_gridoid(P).
 dont_deduce(unique_colors_count(_)).
 dont_deduce(P):- compound(P),compound_name_arguments(P,_,[X]),number(X).
 
-
+do_deduce(link(sees(_),_)).
 do_deduce(rot2D(_)).
 do_deduce(pen(_)).
 do_deduce(iz(sid(_))).
