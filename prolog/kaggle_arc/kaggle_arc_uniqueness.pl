@@ -241,68 +241,6 @@ correct_antes2(TestID,IO,P,PSame,Kept):-
    maplist(make_unifiable_u,DSame,USame),
    intersection(PSame,USame,Kept,_,_),Kept\==[].
 correct_antes2(_TestID,_IO,_P,PSame,PSame).
-
-/*
-correct_antes2a(TestID,IO,P,PSame,Kept):-    
-   is_accompany_changed_db(TestID,IO,DP,QSame),
-   other_val(P,DP),
-   include(other_vals_frm(QSame),PSame,Kept), Kept\==[],!.
-correct_antes2a(_TestID,_P,PSame,PSame).
-other_vals_from(QSame,E):- member(DS,QSame),other_val(E,DS),!.
- 
-*/
-
-%correct_antes3(TestID,IO,P,PSame,SameS):-
-% share_level(Level), 
-%  my_partition(not(shared_prop_U(TestID,IO,P,Level)),PSame,_Lost,SameS).
-  
-/*
-correct_antes3(TestID,IO,P,PSame,SameS):-
- share_level(Level), 
-  include(shared_prop_U(TestID,IO,P,Level),PSame,SameS),!.
-correct_antes3(TestID,IO,P,PSame,SameS):-
-  include(shared_prop_U(TestID,IO,P,_),PSame,SameS),!.
-
-*/
-%correct_antes3(_,_,PSame,PSame):-!.
-
-share_level(all). %share_level(5). share_level(4). 
-share_level(3). share_level(2).
-
-shared_prop_U(TestID,P,ShareLevel,PSame):- var(TestID),!,get_current_test(TestID),!,shared_prop_U(TestID,P,ShareLevel,PSame).
-shared_prop_U(TestID,P,ShareLevel,PSame):- var(P),!,ensure_prop_change(P),shared_prop_U(TestID,P,ShareLevel,PSame).
-shared_prop_U(TestID,P,ShareLevel,PSame):- var(ShareLevel),!,share_level(ShareLevel),shared_prop_U(TestID,P,ShareLevel,PSame).
-
-shared_prop_U(TestID,P,ShareLevel,PSame):- var(PSame),!,
-  is_accompany_changed_computed(TestID,P,SameL),
-  member(PSame,SameL),
-  shared_prop_U(TestID,P,ShareLevel,PSame).
-/*
-shared_prop_U(TestID,P,_,PSame):- !,
-  forall(current_example_nums(TestID,ExampleNum),
-  (set_example_num(ExampleNum),
-   findall(O,(kaggle_arc_io(TestID,ExampleNum,out,Grid),individuate(complete,Grid,Objs), 
-     %print_ss(wqs(individuate(ExampleNum)),Grid,Objs),
-     member(O,Objs)),OL1),
-    %copy_term(P,PP), copy_term(PP,PPP),
-  findall(O,(member(O,OL1),has_prop(P,O)),OL),
-  %print_ss(PSame,OL1,OL),
-  % writeq(P),    
-   forall(member(O,OL),has_prop(PSame,O)))).
-*/
-
-shared_prop_U(TestID,_P,all,PSame):- 
-  forall(current_example_nums(TestID,ExampleNum), is_prop_in(TestID,ExampleNum,PSame)).
-
-shared_prop_U(TestID,_P,ShareLevel,PSame):- number(ShareLevel), 
-  findall(+,((current_example_nums(TestID,ExampleNum),
-     \+ \+ is_prop_in(TestID,ExampleNum,PSame))),L),
-    length(L,N),%trace,
-    N>=ShareLevel.
-
-is_prop_in(TestID,ExampleNum,PSame):-
-   obj_group_io(TestID,ExampleNum,in,Objs),  
-   \+ \+ (member(O,Objs),has_prop(PSame,O)),!.
     
 solve_obj_group(TestID,ExampleNum,IO,ROptions,Objs,OObjs):-
   my_maplist(solve_obj(TestID,ExampleNum,IO,ROptions),Objs,OObjs).
@@ -322,6 +260,7 @@ solve_obj(TestID,_ExampleNum,_IO_Start,_ROptions,Obj,OObj):-
    dash_chars,
    print_ss(override_object(SS),[Obj],SG))).
 solve_obj(_TestID,_ExampleNum,_IO,_ROptions,Obj,Obj).
+
 override_object_1([],IO,IO):-!.
 override_object_1([H|T],I,OO):-  override_object_1(H,I,M),!, override_object_1(T,M,OO).
 override_object_1(pen([cc(Red,N)]),Obj,OObj):- pen(Obj,[cc(Was,N)]), subst(Obj,Was,Red,OObj),!.
@@ -363,7 +302,7 @@ enum_object_ext(O):-
 
 
 
-%accompany_changed_compute_pass2(TestID,P,SameS):- prop_can(TestID,IO,P,SameS).
+%accompany_changed_compute_pass2(TestID,IO,P,SameS):- prop_can(TestID,IO,P,SameS).
 
 %xlisting(propcounts+variance_had_count_set+(pen([cc(yellow,1)]);links_count(contains,4))-'$spft$').
 /*
@@ -378,11 +317,11 @@ enum_object_ext(O):-
 contains_same([],_):- !.
 contains_same([E|L],P):- sub_var(E,P),!,contains_same(L,P).
 
-find_peers_with_same(TestID,P,PSame,NewSame):- select(S,PSame,Next),S=@=P,!,find_peers_with_same(TestID,P,Next,NewSame).
-find_peers_with_same(TestID,P,PSame,NewSame):- 
+find_peers_with_same(TestID,IO,P,PSame,NewSame):- select(S,PSame,Next),S=@=P,!,find_peers_with_same(TestID,IO,P,Next,NewSame).
+find_peers_with_same(TestID,IO,P,PSame,NewSame):- 
    sub_term(Color,P),is_real_color(Color), sub_term(N,P),number(N),
    my_partition(contains_same([Color]),PSame,SameW,SameWO),SameW\==[], SameWO\==[],!,
-   find_peers_with_same(TestID,P,SameWO,NewSame).
+   find_peers_with_same(TestID,IO,P,SameWO,NewSame).
 find_peers_with_same(_,_,PSame,PSame):-!.
    
    
