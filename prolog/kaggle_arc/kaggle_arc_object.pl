@@ -74,7 +74,9 @@ gpoints_to_iv_info(GPoints,ShapePoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPo
   add_global_points(PLPoints,Grid,Grid),
   %writeg([nowgrid=Grid]),
   ShapePoints=[_|_],
-  grid_to_shape(Grid,RotG,OX,OY,ShapePoints,PenColors),
+  into_solid_grid(Grid,Solid),
+  print_ss(grid_to_shape,Grid,Solid),
+  grid_to_shape(Solid,RotG,OX,OY,ShapePoints,PenColors),
   
   %writeg([then=Grid]),
   lpoints_to_iv_info(ShapePoints,LocX,LocY,PenColors,RotG,Iv),

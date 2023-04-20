@@ -32,9 +32,6 @@ clear_scene_rules(TestID):-
   forall(is_accompany_changed_db(TestID,IO,P,PSame),
      ignore(retract(is_accompany_changed_db(TestID,IO,P,PSame)))),!.
 
-is_accompany_changed_db(TestID,P,PSame):-
- is_accompany_changed_db(TestID,_,P,PSame).
-
 count_of(G,N):- findall(G,G,L),variant_list_to_set(L,S),length(S,N).
 
 dont_notice(oid(_)).
@@ -60,7 +57,7 @@ ok_notice(P):- \+ \+ do_notice(P),!.
 ok_notice(P):- \+ dont_notice(P).
 
 
-% dont_deduce(link(sees(_),_)).
+dont_deduce(link(sees(_),_)).
 dont_deduce(giz(_)).
 dont_deduce(size2D(_)).
 dont_deduce(global2G(_,_)).
@@ -147,9 +144,9 @@ compute_scene_change_pass2(TestID):-
     forall(prop_can(TestID,IO,P,PSame),
       assert_accompany_changed_db(TestID,IO,P,PSame))).
 
-assert_become_new(Term):- \+ clause_asserted(Term),!, pp_obj_to_grids(assert_become_new=Term), asserta_new(Term).
+assert_become_new(Term):- \+ clause_asserted(Term),!, pp_ilp(assert_become_new=Term), asserta_new(Term).
 assert_become_new(Term):- asserta_new(Term).
-%assert_become_new(Term):- pp_obj_to_grids(assert_become_new=Term),!, assert_if_new(Term).
+%assert_become_new(Term):- pp_ilp(assert_become_new=Term),!, assert_if_new(Term).
 
 
 solve_via_scene_change(TestID):-  
@@ -195,8 +192,10 @@ show_scene_change_rules(TestID):-
    findall(Ele,is_accompany_changed_computed(TestID,IO,P,PSame),List),
    sort(List,SetR),reverse(SetR,Set),
    forall(member(Ele,Set),
-     (list_to_conjuncts(PSame,Conj),pp((IO:P):-Conj),writeln('.'))), 
+     pp_ilp(is_accompany_changed_db(TestID,IO,P,PSame))),
   banner_lines(cyan,4).
+
+
 
 
 compute_scene_change_pass3(TestID):-
@@ -224,7 +223,7 @@ compute_scene_change_pass3b(TestID,IO-P):-
 compute_scene_change_pass3b(_,_). 
 
 compute_scene_change_pass3c(TestID,IO-P):-
-   is_accompany_changed_db(TestID,P,PSame),
+   is_accompany_changed_db(TestID,IO,P,PSame),
    correct_antes2(TestID,IO,P,PSame,Kept),
    update_accompany_changed_db(TestID,IO,P,Kept).
 compute_scene_change_pass3c(_,_).
@@ -266,25 +265,37 @@ solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,OObjs):-
 solve_obj_group(VM,TestID,ExampleNum,IO,ROptions,Objs,OObjs):-
   my_maplist(solve_obj(VM,TestID,ExampleNum,IO,ROptions),Objs,OObjs).
 
-solve_obj(_VM,_TestID,_ExampleNum,_IO,_ROptions,Obj,Obj):- is_bg_object(Obj),!.
+%solve_obj(_VM,_TestID,_ExampleNum,_IO,_ROptions,Obj,Obj):- is_bg_object(Obj),!.
 solve_obj(VM,TestID,_ExampleNum,_IO_Start,_ROptions,Obj,OObj):- 
- IO=_,
- must_det_ll((findall(P,
-   (is_accompany_changed_verified(TestID,IO,P,PSame),
-     flatten(PSame,Rest), forall(member(R,Rest),has_prop(R,Obj))),PsL),
- list_to_set(PsL,Ps))),
- Ps\==[],
+ must_det_ll((
+   Agenda = agenda(IO,P,PSame),
+   findall(Agenda,
+   (is_accompany_changed_verified(TestID,IO,P,PSame), 
+        flatten(PSame,Rest), 
+        forall(member(R,Rest),has_prop(R,Obj))),PsL),
+ list_to_set(PsL,Ps), 
+ edit_object(VM,Ps,Obj,OObj))).
+%solve_obj(VM,_TestID,_ExampleNum,_IO_Start,_ROptions,Obj,OObj):-
+%  edit_object(VM,pen([cc(black,1)]),Obj,OObj).
+
+edit_object(VM,Ps,Obj,OObj):- Ps==[],!,edit_object(VM,pen([cc(black,1)]),Obj,OObj).
+edit_object(VM,Ps,Obj,OObj):-
   must_det_ll((
    wots(SS,writeln(Ps)),
    override_object_1(VM,Ps,Obj,OObj),
    into_solid_grid([OObj],SG),
    dash_chars,
-   print_ss(override_object(SS),[Obj],SG))).
-solve_obj(_VM,_TestID,_ExampleNum,_IO,_ROptions,Obj,Obj).
+   print_ss(override_object(SS),[Obj],SG),
+   indv_props_list(Obj,PL1),
+   indv_props_list(OObj,PL2),
+   intersection(PL1,PL2,_Same,Removed,Added),
+  writeln(removed=Removed),
+  writeln(added=Added))),!.
 
 override_object_1(_VM,[],IO,IO):-!.
-override_object_1(VM,[H|T],I,OO):-  override_object_1(VM,H,I,M),!, override_object_1(VM,T,M,OO).
-override_object_1(_VM,pen([cc(Red,N)]),Obj,OObj):- pen(Obj,[cc(Was,N)]), subst(Obj,Was,Red,OObj),!.
+override_object_1(VM,[H|T],I,OO):- !, override_object_1(VM,H,I,M),!, override_object_1(VM,T,M,OO).
+override_object_1(VM,agenda(IO,P,PSame),I,O):- !, pp_ilp(IO:P-PSame), override_object_1(VM,P,I,O).
+override_object_1(_VM,pen([cc(Red,N)]),Obj,OObj):- !, pen(Obj,[cc(Was,N)]), subst(Obj,Was,Red,OObj),!.
 override_object_1(VM,loc2D(X,Y),Obj,NewObj):- loc2D(Obj,WX,WY),
   globalpoints(Obj,WPoints),deoffset_points(WX,WY,WPoints,LPoints),  
   offset_points(X,Y,LPoints,GPoints),rebuild_from_globalpoints(VM,Obj,GPoints,NewObj).
@@ -306,16 +317,19 @@ prop_can(TestID,IO,P,Can):-
 prop_can1(TestID,IO,P,Can):-  
   props_change(TestID,IO,P),
   findall(O,
-    ((enum_object_ext(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
+    ((enum_object_ext(O),obj_step(IO,O),has_prop(cc(bg,0),O),
       has_prop(P,O))),[I|L]),
   indv_props_list(I,List),
   findall(U,(member(U,List),U\=@=P,ok_notice(U),forall(member(E,L),has_prop(U,E))),Can).
 
+obj_step(in,O):- !, has_prop(giz(g(out)),O).
+obj_step(out,O):- !, has_prop(giz(g(out)),O).
+obj_step(_,_).
 
 prop_cant(TestID,IO,P,Set):-
   props_change(TestID,IO,P),
   findall(Cant,
-    ((enum_object(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
+    ((enum_object(O),obj_step(IO,O),has_prop(cc(bg,0),O),
       not_has_prop(P,O),indv_props_list(O,List),member(Cant,List),ok_notice(Cant))),Flat),
    list_to_set(Flat,Set).
 
@@ -470,7 +484,7 @@ show_object_dependancy(TestIDExampleNum,LHSObjs,RHSObjs):-
   maybe_remove_bg(LHSObjs,LHSObjs1),
   maybe_remove_bg(RHSObjs,RHSObjs1),
   calc_object_dependancy(LHSObjs1,RHSObjs1,Groups),
-  pp_obj_to_grids(show_object_dependancy(TestIDExampleNum)==>Groups).
+  pp_ilp(show_object_dependancy(TestIDExampleNum)==>Groups).
   %maplist(assert_map_groups(TestID,ExampleNum,in),Groups),!.
 
 
@@ -482,14 +496,14 @@ print_object_dependancy(TestID):-
      ignore((print_object_dependancy(TestID,ExampleNum)))).
 print_object_dependancy(TestID,ExampleNum):-  
   forall(arc_cache:map_group(TestID,ExampleNum,IO,LeftRight),
-    pp_obj_to_grids(map_group(TestID,ExampleNum,IO,LeftRight))),
+    pp_ilp(map_group(TestID,ExampleNum,IO,LeftRight))),
   forall(arc_cache:map_pairs(TestID,ExampleNum,IO,Left,Right),
-    pp_obj_to_grids(map_pairs(TestID,ExampleNum,IO,Left,Right))).
+    pp_ilp(map_pairs(TestID,ExampleNum,IO,Left,Right))).
 
-pp_obj_to_grids(WithObjs):-
-  into_solid_grid_strings(WithObjs,WithGrids),!,
-  writeln(WithGrids),!.
-pp_obj_to_grids(WithObjs):- pp(WithObjs),!.
+pp_ilp(is_accompany_changed_db(_TestID,IO,P,PSame)):- 
+ list_to_conjuncts(PSame,Conj),pp((IO:P):-Conj),writeln('.'),!.
+pp_ilp(WithObjs):- into_solid_grid_strings(WithObjs,WithGrids),writeln(WithGrids),!.
+pp_ilp(WithObjs):- pp(WithObjs),!.
 
 /*into_solid_grid_strings(WithObjs,WithGrids):-
   sub_term(Obj,WithObjs),Obj\=@=WithObjs,is_mapping(Obj),
