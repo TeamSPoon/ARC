@@ -74,12 +74,12 @@ dont_deduce(P):- compound(P),compound_name_arguments(P,_,[X]),number(X).
 do_deduce(rot2D(_)).
 do_deduce(pen(_)).
 do_deduce(iz(sid(_))).
-do_deduce(P):- compound(P),compound_name_arguments(P,_,[X,Y]),number(X),number(Y).
+%do_deduce(P):- compound(P),compound_name_arguments(P,_,[X,Y]),number(X),number(Y).
 do_deduce(rotSize2D(grav,_,_)).
 
 ok_deduce(P):- \+ \+ dont_deduce(P), !, fail.
 ok_deduce(P):- \+ \+ do_deduce(P),!.
-ok_deduce(P):- \+ \+ dont_notice(P),!,fail.
+%ok_deduce(P):- \+ \+ dont_notice(P),!,fail.
 %ok_deduce(_).
 
 
@@ -117,32 +117,37 @@ counts_change(TestID,ExampleNum,In,P,N1,N2):- in_out_atoms(In,Out),
    (propcounts(TestID, ExampleNum, Out, count, N2, P) -> true ; N2=0), N1\==N2.
 
 compute_scene_change(TestID):-
- time((with_pair_mode(whole_test, 
- (banner_lines(red,4),
+ with_pair_mode(whole_test, 
+ must_det_ll((banner_lines(red,4),
   ensure_test(TestID),
   clear_scene_rules(TestID),  
+  compute_scene_change_pass1(TestID),
+  banner_lines(orange,4),
   compute_scene_change_pass2(TestID),
   banner_lines(yellow,4),
   compute_scene_change_pass3(TestID),
   banner_lines(blue,4),
-  compute_scene_change_pass4(TestID))))).
+  compute_scene_change_pass4(TestID)))).
+
+
+compute_scene_change_pass1(TestID):- 
+  show_object_dependancy(TestID).
 
 compute_scene_change_pass2(TestID):- 
-   no_repeats_var(NR),
-   NR =  prop_can(TestID,IO,P,PSame), % accompany_changed_compute_pass2(TestID,P,PSame),
-   NRO = assert_accompany_changed_db(TestID,IO,P,PSame),
-  with_pair_mode(whole_test, forall(call(NR),NRO)).
+  forall(props_change(TestID,P,IO),
+    forall(prop_can(TestID,IO,P,PSame),
+      assert_accompany_changed_db(TestID,IO,P,PSame))).
 
-
-assert_become_new(Term):- clause_asserted(Term),!.
-assert_become_new(Term):- pp_obj_to_grids(assert_become_new=Term),!, assert_if_new(Term).
+%assert_become_new(Term):- clause_asserted(Term),!.
+assert_become_new(Term):- pp(assert_become_new=Term),!, asserta_new(Term).
+%assert_become_new(Term):- pp_obj_to_grids(assert_become_new=Term),!, assert_if_new(Term).
 
 
 solve_via_scene_change(TestID):-  
  ensure_test(TestID),
  clear_scene_rules(TestID),
  show_object_dependancy(TestID),
- (\+ is_accompany_changed_db(TestID,_,_) -> compute_scene_change(TestID) ; true),
+ (\+ is_accompany_changed_db(TestID,_,_,_) -> compute_scene_change(TestID) ; true),
  show_scene_change_rules(TestID), 
  %ExampleNum=_+_,
  forall(kaggle_arc(TestID,ExampleNum,_,_),
@@ -434,6 +439,7 @@ obj_group5(TestID,ExampleNum,IO,ROptions,Objs):-
 
 
 
+show_object_dependancy(_TestID):-  !.
 % =============================================================
 show_object_dependancy(TestID):-  
 % =============================================================
@@ -465,10 +471,10 @@ print_object_dependancy(TestID,ExampleNum):-
   forall(arc_cache:map_pairs(TestID,ExampleNum,IO,Left,Right),
     pp_obj_to_grids(map_pairs(TestID,ExampleNum,IO,Left,Right))).
 
-pp_obj_to_grids(WithObjs):- pp(WithObjs),!.
 pp_obj_to_grids(WithObjs):-
   into_solid_grid_strings(WithObjs,WithGrids),!,
   writeln(WithGrids),!.
+pp_obj_to_grids(WithObjs):- pp(WithObjs),!.
 
 /*into_solid_grid_strings(WithObjs,WithGrids):-
   sub_term(Obj,WithObjs),Obj\=@=WithObjs,is_mapping(Obj),
