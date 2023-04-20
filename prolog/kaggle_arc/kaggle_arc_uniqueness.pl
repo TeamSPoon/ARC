@@ -117,32 +117,37 @@ counts_change(TestID,ExampleNum,In,P,N1,N2):- in_out_atoms(In,Out),
    (propcounts(TestID, ExampleNum, Out, count, N2, P) -> true ; N2=0), N1\==N2.
 
 compute_scene_change(TestID):-
- time((with_pair_mode(whole_test, 
- (banner_lines(red,4),
+ with_pair_mode(whole_test, 
+ must_det_ll((banner_lines(red,4),
   ensure_test(TestID),
   clear_scene_rules(TestID),  
+  compute_scene_change_pass1(TestID),
+  banner_lines(orange,4),
   compute_scene_change_pass2(TestID),
   banner_lines(yellow,4),
   compute_scene_change_pass3(TestID),
   banner_lines(blue,4),
-  compute_scene_change_pass4(TestID))))).
+  compute_scene_change_pass4(TestID)))).
+
+
+compute_scene_change_pass1(TestID):- 
+  show_object_dependancy(TestID).
 
 compute_scene_change_pass2(TestID):- 
-   no_repeats_var(NR),
-   NR =  prop_can(TestID,IO,P,PSame), % accompany_changed_compute_pass2(TestID,P,PSame),
-   NRO = assert_accompany_changed_db(TestID,IO,P,PSame),
-  with_pair_mode(whole_test, forall(call(NR),NRO)).
+  forall(props_change(TestID,IO,P),
+    forall(prop_can(TestID,IO,P,PSame),
+      assert_accompany_changed_db(TestID,IO,P,PSame))).
 
-
-assert_become_new(Term):- clause_asserted(Term),!.
-assert_become_new(Term):- pp_obj_to_grids(assert_become_new=Term),!, assert_if_new(Term).
+assert_become_new(Term):- \+ clause_asserted(Term),!, pp_obj_to_grids(assert_become_new=Term), asserta_new(Term).
+assert_become_new(Term):- asserta_new(Term).
+%assert_become_new(Term):- pp_obj_to_grids(assert_become_new=Term),!, assert_if_new(Term).
 
 
 solve_via_scene_change(TestID):-  
  ensure_test(TestID),
  clear_scene_rules(TestID),
  show_object_dependancy(TestID),
- (\+ is_accompany_changed_db(TestID,_,_) -> compute_scene_change(TestID) ; true),
+ (\+ is_accompany_changed_db(TestID,_,_,_) -> compute_scene_change(TestID) ; true),
  show_scene_change_rules(TestID), 
  %ExampleNum=_+_,
  forall(kaggle_arc(TestID,ExampleNum,_,_),
