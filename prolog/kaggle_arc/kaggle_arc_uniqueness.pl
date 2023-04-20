@@ -117,37 +117,32 @@ counts_change(TestID,ExampleNum,In,P,N1,N2):- in_out_atoms(In,Out),
    (propcounts(TestID, ExampleNum, Out, count, N2, P) -> true ; N2=0), N1\==N2.
 
 compute_scene_change(TestID):-
- with_pair_mode(whole_test, 
- must_det_ll((banner_lines(red,4),
+ time((with_pair_mode(whole_test, 
+ (banner_lines(red,4),
   ensure_test(TestID),
   clear_scene_rules(TestID),  
-  compute_scene_change_pass1(TestID),
-  banner_lines(orange,4),
   compute_scene_change_pass2(TestID),
   banner_lines(yellow,4),
   compute_scene_change_pass3(TestID),
   banner_lines(blue,4),
-  compute_scene_change_pass4(TestID)))).
-
-
-compute_scene_change_pass1(TestID):- 
-  show_object_dependancy(TestID).
+  compute_scene_change_pass4(TestID))))).
 
 compute_scene_change_pass2(TestID):- 
-  forall(props_change(TestID,P,IO),
-    forall(prop_can(TestID,IO,P,PSame),
-      assert_accompany_changed_db(TestID,IO,P,PSame))).
+   no_repeats_var(NR),
+   NR =  prop_can(TestID,IO,P,PSame), % accompany_changed_compute_pass2(TestID,P,PSame),
+   NRO = assert_accompany_changed_db(TestID,IO,P,PSame),
+  with_pair_mode(whole_test, forall(call(NR),NRO)).
 
-%assert_become_new(Term):- clause_asserted(Term),!.
-assert_become_new(Term):- pp(assert_become_new=Term),!, asserta_new(Term).
-%assert_become_new(Term):- pp_obj_to_grids(assert_become_new=Term),!, assert_if_new(Term).
+
+assert_become_new(Term):- clause_asserted(Term),!.
+assert_become_new(Term):- pp_obj_to_grids(assert_become_new=Term),!, assert_if_new(Term).
 
 
 solve_via_scene_change(TestID):-  
  ensure_test(TestID),
  clear_scene_rules(TestID),
  show_object_dependancy(TestID),
- (\+ is_accompany_changed_db(TestID,_,_,_) -> compute_scene_change(TestID) ; true),
+ (\+ is_accompany_changed_db(TestID,_,_) -> compute_scene_change(TestID) ; true),
  show_scene_change_rules(TestID), 
  %ExampleNum=_+_,
  forall(kaggle_arc(TestID,ExampleNum,_,_),
@@ -395,7 +390,7 @@ save_how_io(TestID,HowIn,HowOut):-
 
 obj_group_gg(TestID,ExampleNum,InC,OutC):-
    current_example_nums(TestID,ExampleNum),
-   no_repeats_var(OutC),set_example_num(ExampleNum),
+   no_repeats_var(OutC), % set_example_num(ExampleNum),
    obj_group5(TestID,ExampleNum,in,HowIn,InC), InC\==[],  length(InC,L),
 
    (((obj_group5(TestID,ExampleNum,out,HowOut,OOut),length(OOut,L),save_how_io(TestID,HowIn,HowOut)))
@@ -433,10 +428,12 @@ obj_group5(TestID,ExampleNum,IO,ROptions,Objs):- var(ROptions),
 obj_group5(TestID,ExampleNum,IO,ROptions,Objs):-
  kaggle_arc_io(TestID,ExampleNum,IO,Grid),
   set_example_num(ExampleNum),
+ other_grid(Grid,Other),
+ with_other_grid(Other,
+  
   ((fail, arc_cache:individuated_cache(TestID,TID,GOID,ROptions,Objs), Objs\==[],
   once((testid_name_num_io_0(TID,_,Example,Num,IO),
-        testid_name_num_io_0(GOID,_,Example,Num,IO))))*-> true ; grid_to_objs(Grid,ROptions,Objs)).
-
+        testid_name_num_io_0(GOID,_,Example,Num,IO))))*-> true ; grid_to_objs(Grid,ROptions,Objs))).
 
 
 show_object_dependancy(_TestID):-  !.
