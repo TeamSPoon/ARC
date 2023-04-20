@@ -206,14 +206,11 @@ compute_scene_change_pass3b(TestID,IO-P):-
 compute_scene_change_pass3b(_,_). 
 
 compute_scene_change_pass3c(TestID,IO-P):-
-   make_unifiable_u(P,U),
    is_accompany_changed_db(TestID,P,PSame),
-   is_accompany_changed_db(TestID,U,DSame),
-   P\=@=U,
-   maplist(make_unifiable_u,DSame,USame),
-   intersection(PSame,USame,Kept,_,_),Kept\==[],
+   correct_antes2(TestID,IO,P,PSame,Kept),
    update_accompany_changed_db(TestID,IO,P,Kept).
 compute_scene_change_pass3c(_,_).
+
 
 
 update_accompany_changed_db(TestID,IO,P,Kept):- Kept\==[],
@@ -236,13 +233,21 @@ correct_antes1(TestID,IO,P,PSame,SL):-
           ((P==DP)-> true; (member(DS,DSame),other_val(S,DS))))))),
    SL), SL\==[],!.
 correct_antes1(_TestID,_IO,_P,PSame,PSame).
+   
+correct_antes2(TestID,IO,P,PSame,Kept):-   
+   make_unifiable_u(P,U),
+   is_accompany_changed_db(TestID,IO,U,DSame),
+   P\=@=U,
+   maplist(make_unifiable_u,DSame,USame),
+   intersection(PSame,USame,Kept,_,_),Kept\==[].
+correct_antes2(_TestID,_IO,_P,PSame,PSame).
 
 /*
-correct_antes2(TestID,IO,P,PSame,Kept):-    
+correct_antes2a(TestID,IO,P,PSame,Kept):-    
    is_accompany_changed_db(TestID,IO,DP,QSame),
    other_val(P,DP),
    include(other_vals_frm(QSame),PSame,Kept), Kept\==[],!.
-correct_antes2(_TestID,_P,PSame,PSame).
+correct_antes2a(_TestID,_P,PSame,PSame).
 other_vals_from(QSame,E):- member(DS,QSame),other_val(E,DS),!.
  
 */
@@ -303,18 +308,20 @@ solve_obj_group(TestID,ExampleNum,IO,ROptions,Objs,OObjs):-
   my_maplist(solve_obj(TestID,ExampleNum,IO,ROptions),Objs,OObjs).
 
 solve_obj(_TestID,_ExampleNum,_IO,_ROptions,Obj,Obj):- is_bg_object(Obj),!.
-solve_obj(TestID,_ExampleNum,_IO,_ROptions,Obj,OObj):- 
+solve_obj(TestID,_ExampleNum,_IO_Start,_ROptions,Obj,OObj):- 
+ IO=_,
  must_det_ll((findall(P,
-   (is_accompany_changed_verified(TestID,IO,P,PSame),select(S,PSame,Rest),has_prop(S,Obj),
-     forall(member(R,Rest),has_prop(R,Obj))),PsL),
- list_to_set(PsL,Ps),
- (Ps==[] -> Obj=OObj ; 
+   (is_accompany_changed_verified(TestID,IO,P,PSame),
+     flatten(PSame,Rest), forall(member(R,Rest),has_prop(R,Obj))),PsL),
+ list_to_set(PsL,Ps))),
+ Ps\==[],
+  must_det_ll((
    wots(SS,writeln(Ps)),
    override_object_1(Ps,Obj,OObj),
    into_solid_grid([OObj],SG),
    dash_chars,
-   print_ss(override_object(SS),[Obj],SG)))).
-
+   print_ss(override_object(SS),[Obj],SG))).
+solve_obj(_TestID,_ExampleNum,_IO,_ROptions,Obj,Obj).
 override_object_1([],IO,IO):-!.
 override_object_1([H|T],I,OO):-  override_object_1(H,I,M),!, override_object_1(T,M,OO).
 override_object_1(pen([cc(Red,N)]),Obj,OObj):- pen(Obj,[cc(Was,N)]), subst(Obj,Was,Red,OObj),!.
@@ -423,51 +430,6 @@ same_prop_names(X1,X2):-
 make_unifiable_u(Atom,U):- atomic(Atom),!,freeze(U,atomic(U)).
 make_unifiable_u(link(sees(L),A),link(sees(U),B)):- !, maplist(make_unifiable_u,[A|L],[B|U]).
 make_unifiable_u(X1,U1):- make_unifiable_cc(X1,U1),!.
-
-accompany_change2(TestID,ExampleNum,[X1=P1O,X2=P2O,common=Intersect]):-
- changing_props(TestID,X1,X2),
- accompany_change(TestID,ExampleNum,X1,Props1,_NotProps1),
- accompany_change(TestID,ExampleNum,X2,Props2,_NotProps2),
- once((
-   intersection(Props1,Props2,Intersect,P1,P2),
-   include(has_other_val(Props2),P1,P1O),
-   include(has_other_val(Props1),P2,P2O))).
-
-has_other_val(Props1,X2):- member(X1,Props1),other_val(X1,X2),!.
-
-
-accompany_change(TestID,ExampleNum,P,Props,NotProps):-
-  var(TestID),!,ensure_test(TestID),
-  accompany_change(TestID,ExampleNum,P,Props,NotProps).
-accompany_change(TestID,ExampleNum,P,Props,NotProps):-
-  var(ExampleNum),!,current_example_nums(TestID,ExampleNum),
-  accompany_change(TestID,ExampleNum,P,Props,NotProps).
-accompany_change(TestID,ExampleNum,P,Props,NotProps):-
-  var(P),!,props_change(TestID,_,P),
-  accompany_change(TestID,ExampleNum,P,Props,NotProps).
-
-accompany_change(TestID,ExampleNum,P,Props,NotProps):-     
-   once((counts_change(TestID,ExampleNum,_I_or_O,P,N1,N2), N1<N2)),!,
-   %no_repeats_var(Out),
-  once(( obj_group_gg(TestID,ExampleNum,_In,Out),
-         once((my_partition(has_prop(P),Out,HasPropsO,NotHasPropsO),
-         common_props(HasPropsO,Common),  common_props(NotHasPropsO,NotCommon),
-         intersection(Common,NotCommon,_,Props1,NotProps))),
-         include(\=@=(P),Props1,Props),
-         Props\==[])).
-
-accompany_change(TestID,ExampleNum,P,Props,NotProps):- fail,
-   counts_change(TestID,ExampleNum,_I_or_O,P,N1,N2), N1>N2,
-  once((
-   %obj_group_io(TestID,ExampleNum,in,In), my_partition(has_prop(P),In,HasPropsI,NotHasPropsI),
-  %obj_group_io(TestID,ExampleNum,out,Out),
-  objs_other_than_example(TestID,ExampleNum,out,Out),
-  my_partition(not_has_prop(P),Out,HasPropsO,NotHasPropsO),
-  %my_partition(not_has_prop(P),Others,HasPropsOthers,NotHasPropsOthers),
-  common_props(HasPropsO,Common),
-  common_props(NotHasPropsO,NotCommon),
-  intersection(Common,NotCommon,_,Props,NotProps),Props\==[])).
-
 
 common_props([O|Objs],Props):-
    indv_props_list(O,List),
