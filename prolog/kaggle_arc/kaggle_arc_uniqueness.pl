@@ -156,11 +156,13 @@ solve_via_scene_change(TestID):-
  (\+ is_accompany_changed_db(TestID,_,_,_) -> compute_scene_change(TestID) ; true),
  show_scene_change_rules(TestID), 
  %ExampleNum=_+_,
+ predict_grid_size(TestID),
  forall(kaggle_arc(TestID,ExampleNum,_,_),
      ignore(time(solve_via_scene_change_rules(TestID,ExampleNum)))), 
  !.
 
 solve_via_scene_change_rules(TestID,ExampleNum):-
+ must_det_ll((
   kaggle_arc(TestID,ExampleNum,In,Expected),
   banner_lines(green,4),
   obj_group5(TestID,ExampleNum,in,ROptions,TempObjs),TempObjs\==[],
@@ -172,10 +174,12 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
   dash_chars,
   print_ss(wqs(solve_via_scene_change(ExampleNum)),Objs,OObjs),
   dash_chars,
-  into_solid_grid(OObjs,OurSolution),  
+  into_solid_grid(OObjs,OurSolution1),
+  predict_grid_size_now(TestID,In,PH,PV),
+  resize_grid(PH,PV,OurSolution1,OurSolution),
   into_solid_grid(Expected,ExpectedOut),
   count_difs(ExpectedOut,OurSolution,Errors),
-  print_ss(wqs(solve_via_scene_change_rules(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution),
+  print_ss(wqs(solve_via_scene_change_rules(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution))),
   (Errors == 0 ->  banner_lines(green,4) ; (banner_lines(red,10),!,bt,!,write(SS),banner_lines(red,10),!,fail)).
    
 
@@ -268,7 +272,9 @@ solve_obj_group(VM,TestID,ExampleNum,IO,ROptions,Objs,OObjs):-
 %solve_obj(_VM,_TestID,_ExampleNum,_IO,_ROptions,Obj,Obj):- is_bg_object(Obj),!.
 solve_obj(VM,TestID,_ExampleNum,_IO_Start,_ROptions,Obj,OObj):- 
  must_det_ll((
-   Agenda = agenda(IO,P,PSame),
+   %Agenda = agenda(IO,P,PSame),
+   Agenda = P,
+   IO=_,
    findall(Agenda,
    (is_accompany_changed_verified(TestID,IO,P,PSame), 
         flatten(PSame,Rest), 
