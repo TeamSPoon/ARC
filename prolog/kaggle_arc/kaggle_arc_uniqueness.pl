@@ -82,6 +82,15 @@ ok_deduce(P):- \+ \+ do_deduce(P),!.
 %ok_deduce(P):- \+ \+ dont_notice(P),!,fail.
 %ok_deduce(_).
 
+other_val(X1,X2):- X1\=@=X2, same_prop_names(X1,X2),!.
+same_prop_names(X1,X2):- 
+  compound(X1),compound(X2), same_functor(X1,X2),!,
+  make_unifiable_u(X1,U1), make_unifiable_u(X2,U2),  U1 =@= U2.
+
+make_unifiable_u(Atom,U):- atomic(Atom),!,freeze(U,atomic(U)).
+make_unifiable_u(link(sees(L),A),link(sees(U),B)):- !, maplist(make_unifiable_u,[A|L],[B|U]).
+make_unifiable_u(X1,U1):- make_unifiable_cc(X1,U1),!.
+
 
 
 has_propcounts(TestID):- 
@@ -319,6 +328,7 @@ enum_object_ext(O):-
            [ 1-(2-links_count(contains,4)),
              1-(1-links_count(contains,3))]),
 */
+/*
 contains_same([],_):- !.
 contains_same([E|L],P):- sub_var(E,P),!,contains_same(L,P).
 
@@ -366,18 +376,11 @@ changing_props(TestID,X1,X2):-
 % X1@>X2,
  other_val(X1,X2). 
 
-other_val(X1,X2):- X1\=@=X2, same_prop_names(X1,X2),!.
-same_prop_names(X1,X2):- 
-  compound(X1),compound(X2), same_functor(X1,X2),!,
-  make_unifiable_u(X1,U1), make_unifiable_u(X2,U2),  U1 =@= U2.
-
-make_unifiable_u(Atom,U):- atomic(Atom),!,freeze(U,atomic(U)).
-make_unifiable_u(link(sees(L),A),link(sees(U),B)):- !, maplist(make_unifiable_u,[A|L],[B|U]).
-make_unifiable_u(X1,U1):- make_unifiable_cc(X1,U1),!.
-
 common_props([O|Objs],Props):-
    indv_props_list(O,List),
    findall(P,(member(P,List),\+ dont_notice(P),forall(member(E,Objs),has_prop(P,E))),Props).
+
+*/
 
 current_example_nums(TestID,ExampleNum):- 
   (var(TestID)->get_current_test(TestID);true),
