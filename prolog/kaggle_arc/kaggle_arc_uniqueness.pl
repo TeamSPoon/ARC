@@ -164,10 +164,14 @@ solve_via_scene_change(TestID):-
  !.
 
 solve_via_scene_change_rules(TestID,ExampleNum):-
-  kaggle_arc(TestID,ExampleNum,_,Expected),
+  kaggle_arc(TestID,ExampleNum,In,Expected),
   banner_lines(green,4),
-  obj_group5(TestID,ExampleNum,in,ROptions,Objs),Objs\==[],
-  wots(SS,solve_obj_group(TestID,ExampleNum,in,ROptions,Objs,OObjs)),
+  obj_group5(TestID,ExampleNum,in,ROptions,TempObjs),TempObjs\==[],
+  into_fti(_TID,ROptions,In,VM),
+  individuate(VM),
+  Objs = VM.objs,
+  %wots(SS,solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,OObjs)),
+  solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,OObjs),
   dash_chars,
   print_ss(wqs(solve_via_scene_change(ExampleNum)),Objs,OObjs),
   dash_chars,
@@ -255,12 +259,15 @@ correct_antes2(TestID,IO,P,PSame,Kept):-
    maplist(make_unifiable_u,DSame,USame),
    intersection(PSame,USame,Kept,_,_),Kept\==[].
 correct_antes2(_TestID,_IO,_P,PSame,PSame).
-    
-solve_obj_group(TestID,ExampleNum,IO,ROptions,Objs,OObjs):-
-  my_maplist(solve_obj(TestID,ExampleNum,IO,ROptions),Objs,OObjs).
 
-solve_obj(_TestID,_ExampleNum,_IO,_ROptions,Obj,Obj):- is_bg_object(Obj),!.
-solve_obj(TestID,_ExampleNum,_IO_Start,_ROptions,Obj,OObj):- 
+solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,OObjs):-
+ solve_obj_group(VM,TestID,ExampleNum,in,ROptions,Objs,OObjs).
+  
+solve_obj_group(VM,TestID,ExampleNum,IO,ROptions,Objs,OObjs):-
+  my_maplist(solve_obj(VM,TestID,ExampleNum,IO,ROptions),Objs,OObjs).
+
+solve_obj(_VM,_TestID,_ExampleNum,_IO,_ROptions,Obj,Obj):- is_bg_object(Obj),!.
+solve_obj(VM,TestID,_ExampleNum,_IO_Start,_ROptions,Obj,OObj):- 
  IO=_,
  must_det_ll((findall(P,
    (is_accompany_changed_verified(TestID,IO,P,PSame),
@@ -269,16 +276,19 @@ solve_obj(TestID,_ExampleNum,_IO_Start,_ROptions,Obj,OObj):-
  Ps\==[],
   must_det_ll((
    wots(SS,writeln(Ps)),
-   override_object_1(Ps,Obj,OObj),
+   override_object_1(VM,Ps,Obj,OObj),
    into_solid_grid([OObj],SG),
    dash_chars,
    print_ss(override_object(SS),[Obj],SG))).
-solve_obj(_TestID,_ExampleNum,_IO,_ROptions,Obj,Obj).
+solve_obj(_VM,_TestID,_ExampleNum,_IO,_ROptions,Obj,Obj).
 
-override_object_1([],IO,IO):-!.
-override_object_1([H|T],I,OO):-  override_object_1(H,I,M),!, override_object_1(T,M,OO).
-override_object_1(pen([cc(Red,N)]),Obj,OObj):- pen(Obj,[cc(Was,N)]), subst(Obj,Was,Red,OObj),!.
-override_object_1(O,I,OO):- override_object(O,I,OO),!.
+override_object_1(_VM,[],IO,IO):-!.
+override_object_1(VM,[H|T],I,OO):-  override_object_1(VM,H,I,M),!, override_object_1(VM,T,M,OO).
+override_object_1(_VM,pen([cc(Red,N)]),Obj,OObj):- pen(Obj,[cc(Was,N)]), subst(Obj,Was,Red,OObj),!.
+override_object_1(VM,loc2D(X,Y),Obj,NewObj):- loc2D(Obj,WX,WY),
+  globalpoints(Obj,WPoints),deoffset_points(WX,WY,WPoints,LPoints),  
+  offset_points(X,Y,LPoints,GPoints),rebuild_from_globalpoints(VM,Obj,GPoints,NewObj).
+override_object_1(_VM,O,I,OO):- override_object(O,I,OO),!.
 
 is_accompany_changed_verified(TestID,IO,P,PSame):-
   is_accompany_changed_computed(TestID,IO,P,PSame), PSame\==[].
