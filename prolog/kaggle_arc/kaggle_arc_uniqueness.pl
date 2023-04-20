@@ -74,7 +74,7 @@ dont_deduce(P):- compound(P),compound_name_arguments(P,_,[X]),number(X).
 do_deduce(rot2D(_)).
 do_deduce(pen(_)).
 do_deduce(iz(sid(_))).
-%do_deduce(P):- compound(P),compound_name_arguments(P,_,[X,Y]),number(X),number(Y).
+do_deduce(P):- compound(P),compound_name_arguments(P,_,[X,Y]),number(X),number(Y).
 do_deduce(rotSize2D(grav,_,_)).
 
 ok_deduce(P):- \+ \+ dont_deduce(P), !, fail.
