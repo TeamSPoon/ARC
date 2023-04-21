@@ -1,24 +1,21 @@
 {
     "files.exclude": {
-        "**/.git": true,
-        "**/.svn": true,
-        "**/.hg": true,
-        "**/CVS": true,
-        "**/.DS_Store": true,
-        "**/Thumbs.db": true,
-        "**/.git/objects/**": true,
-        "**/*~": true,
-        "**/*~/**": true,
-        "**/~*": true,
-        "**/~*/**": true,
-        "BFLY0": true,
-        "BFLY1": true,
-        "butterfly_web": true,
-        "prolog2": true,
-        "**/ImportantDocs": true,
-        "prolog\\kaggle_arc\\**": true,
-        "prolog/kaggle_arc/ddd": true,
-        "prolog/kaggle_arc": true
+        "**/.git": false,
+        "**/.svn": false,
+        "**/.hg": false,
+        "**/CVS": false,
+        "**/.DS_Store": false,
+        "**/Thumbs.db": false,
+        "**/.git/objects/**": false,
+        "**/*~": false,
+        "**/*~/**": false,
+        "**/~*": false,
+        "**/~*/**": false,
+        "BFLY0": false,
+        "BFLY1": false,
+        "butterfly_web": false,
+        "prolog2": false,
+        "**/ImportantDocs": false
     },
     "editor.tabCompletion": "on",
     "diffEditor.codeLens": true,
@@ -32,9 +29,7 @@
         "comments": true,
         "strings": "off"
     },
-    "hide-files.files": [
-        "prolog/kaggle_arc/ddd",
-        "prolog/kaggle_arc"
-    ],
-    "workspace.isHidden": true
+    "hide-files.files": [],
+    "workspace.isHidden": false,
+    "explorerExclude.backup": {}
 }
