@@ -172,7 +172,8 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
   kaggle_arc(TestID,ExampleNum,In,Expected),
   banner_lines(green,4),
   obj_group5(TestID,ExampleNum,in,ROptions,TempObjs),TempObjs\==[],
-  into_fti(_TID,ROptions,In,VM),
+  grid_to_tid(In,TID),
+  into_fti(TID,ROptions,In,VM),
   individuate(VM),
   Objs = VM.objs,
   %wots(SS,solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,OObjs)),
@@ -490,9 +491,14 @@ show_object_dependancy(TestID):-
  forall(kaggle_arc(TestID,ExampleNum,_,_),
      ignore((show_object_dependancy(TestID,ExampleNum)))).
 
-show_object_dependancy(TestID,ExampleNum):-  
+show_object_dependancy(TestID,ExampleNum):-
   forall(obj_group_gg(TestID,ExampleNum,LHSObjs,RHSObjs),
-    show_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs)).
+    ignore(maybe_show_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs))).
+
+maybe_show_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
+  RHSObjs\==[],LHSObjs\==[],
+  show_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
+  
 
 show_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
  must_det_ll((
@@ -652,7 +658,7 @@ maybe_remove_bg(RHSObjs,RHSObjs).
 
 is_mapping_list([O|GrpL]):- is_mapping(O),is_list(GrpL),maplist(is_mapping,GrpL).
 is_mapping(Grp):- is_functor(grp,Grp).
-get_mapping_info_list(grp(In,Fo,List),In=Fo,List).
+get_mapping_info_list(grp(In,Fo,T,List),info(In,Fo,T),List).
 
 append_LR(Prev,Mappings,RestLR):- append(Prev,Mappings,RestLR),!.
 
@@ -662,7 +668,8 @@ calc_o_d_recursively(_IsSwapped,_Step,_Ctx,Mappings,Nil,Prev,RestLR):- maplist(i
    is_mapping_list(Mappings),!, append_LR(Prev,Mappings,RestLR).
 
 calc_o_d_recursively(IsSwapped,Step,Ctx,Nil,Objs,Prev,RestLR):- maplist(is_bg_object,Nil),
-   split_sorted(Objs,SplitLHS,SplitRHS),
+   print_grid(split_sorted,Objs),
+   trace, split_sorted(Objs,SplitLHS,SplitRHS),
    SplitLHS\==[],SplitRHS\==[],!,
   incr_step(Step,IncrStep),
   incr_cntx(Ctx,IncrCtx),
@@ -680,8 +687,12 @@ calc_o_d_recursively(IsSwapped,Step,Ctx,RHSObjs,LHSObjs,Prev,PairsLHSgain):-
    calc_o_d_recursively(IsSwapped,IncrStep,IncrCtx,RestLR,Unused,Prev,PairsLHSgain).
    
 map_right_to_left(IsSwapped,Step,Ctx,Prev,RHSObjs,LHSObjs,[Pairs|RestLR],Unused):-    
-  select_pair(Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest),
-  make_pairs(IsSwapped,Step,Ctx,Prev,Right,Left,Pairs),
+  select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
+
+  remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
+  remove_object(RHSRest2, Left,RHSRest ), remove_object(LHSRest2, Left,LHSRest ),
+
+  make_pairs(Type,IsSwapped,Step,Ctx,Prev,Right,Left,Pairs),
   map_right_to_left(IsSwapped,Step,Ctx,Prev,RHSRest,LHSRest,RestLR,Unused).
 map_right_to_left(_IsSwapped,_Step,_Ctx,_Prev,[],LHSUnused,[],LHSUnused).
 
@@ -691,7 +702,7 @@ incr_cntx(Ctx,s(Ctx)).
 incr_step(Ctx,s(Ctx)).
 swap_tf(Ctx,s(Ctx)).
 
-select_pair(_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
+select_pair(perfect,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,LHSObjs,RestLeft),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
   find_prox_mappings(Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
@@ -699,7 +710,7 @@ select_pair(_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   find_prox_mappings(Right,map_right_to_left,LHSObjs,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
 
-select_pair(Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
+select_pair(need_prev,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,LHSObjs,RestLeft),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
   find_prox_mappings(Prev,Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
@@ -707,12 +718,18 @@ select_pair(Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   find_prox_mappings(Prev,Right,map_right_to_left,LHSObjs,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
 
-
-select_pair(Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
+select_pair(from_left,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,LHSObjs,RestLeft),
   remove_object(RHSObjs,Left,RHSObjsMLeft),
   find_prox_mappings(Prev,Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),!.
+
+select_pair(from_right,Prev,LHSObjs,RHSObjs,Left,Right,LHSRest,RHSRest):-
+  select(Left,LHSObjs,RestLeft),
+  remove_object(RHSObjs,Left,RHSObjsMLeft),
+  find_prox_mappings(Prev,Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  remove_object(RestLeft,Right,LHSRest),!.
+
 
 remove_object(RHSObjs,Left,RHSObjsMI):- select(Left,RHSObjs,RHSObjsMI),!.
 remove_object(RHSObjs,_,RHSObjs).
@@ -742,15 +759,16 @@ split_sorted(Objs,SplitLHS,SplitRHS):-
 split_sorted(Objs,SplitLHS,SplitRHS):-
  length(Objs,Len),
  prime_factor(Len,Prime),
- split_sorted(Objs,Len,Prime,SplitLHS,SplitRHS).
+ split_sorted_by_len(Objs,Len,Prime,SplitLHS,SplitRHS).
 
-split_sorted(Objs,_Len,Prime,SplitLHS,SplitRHS):- 
+split_sorted_by_len(Objs,_Len,Prime,SplitLHS,SplitRHS):- 
  variance_counts(Objs,PropObjsounts),
+ pp(PropObjsounts),
  findall(E,(member(E,PropObjsounts),sub_var(Prime,E)),EL),
  member(E,EL),into_prop(E,P),
  my_partition(has_prop(P),Objs,SplitLHS,SplitRHS),!.
 
-split_sorted(Objs, Len,Prime,SplitLHS,SplitRHS):- 
+split_sorted_by_len(Objs, Len,Prime,SplitLHS,SplitRHS):- 
  Half is Len div Prime,
  count_each_value(Objs,PropObjsounts),
  findall(E,(member(E,PropObjsounts),sub_var(Prime,Half)),EL),
@@ -759,10 +777,11 @@ split_sorted(Objs, Len,Prime,SplitLHS,SplitRHS):-
 
 into_prop(CC,P):- sub_term(E,CC),compound(E),is_prop1(E),!,E=P.
 
-make_pairs(s(IsSwapped),Step,Ctx,Prev,LHS,RHS,GRP):- nonvar(IsSwapped),!,make_pairs(IsSwapped,Step,Ctx,Prev,RHS,LHS,GRP).
-make_pairs(IsSwapped,Step,Ctx,Prev,LHS,RHS,GRP):- Prev\==[], !, 
-  make_pairs(IsSwapped,Step,Ctx,[],Prev,LHS,NLHS),make_pairs(IsSwapped,Step,Ctx,[],NLHS,RHS,GRP).
-make_pairs(_IsSwapped,Step,Ctx,_,LHS,RHS,grp(Step,Ctx,[RHS,LHS])).
+make_pairs(Type,s(IsSwapped),Step,Ctx,Prev,LHS,RHS,GRP):- nonvar(IsSwapped),!,
+  make_pairs(Type,IsSwapped,Step,Ctx,Prev,RHS,LHS,GRP).
+make_pairs(Type,IsSwapped,Step,Ctx,Prev,LHS,RHS,GRP):- Prev\==[], !, 
+  make_pairs(Type,IsSwapped,Step,Ctx,[],Prev,LHS,NLHS),make_pairs(Type,IsSwapped,Step,Ctx,[],NLHS,RHS,GRP).
+make_pairs(Type,_IsSwapped,Step,Ctx,_,LHS,RHS,grp(Step,Ctx,Type,[RHS,LHS])).
 
 
 
