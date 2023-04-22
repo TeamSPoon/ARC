@@ -2308,17 +2308,21 @@ color_sym(OS,C,Sym):- color_sym(OS,4,C,Sym).
 color_sym(_,_,C,Sym):- enum_colors(C),color_int(C,I),nth1(I,`ose=xt~+*zk>`,S),name(Sym,[S]).
 %color_sym(P*T,_,C,Sym):- enum_colors(C),color_int(C,I),S is P+I*T,name(Sym,[S]).
 
+with_current_test(P1):- current_predicate_human(P1/0),!,call(P1).
 with_current_test(P1):- get_pair_mode(entire_suite),!,
   forall_count(all_arc_test_name(TestID), 
            catch_non_abort(with_current_test(P1,TestID))).
+with_current_test(P1):- current_predicate(P1/1),!,call(P1,_).
 with_current_test(P1):- doall(with_current_test(P1,_TestID)).
 
 %with_current_test(P1,TestID_IN):- ensure_test(TestID_IN,TestID), with_current_test(P1,TestID).
 
 
 with_current_test(P1,TestID):- get_pair_mode(single_pair),!, with_pair_mode(whole_test,with_current_test(P1,TestID)).  
-with_current_test(P1,TestID):- current_predicate_human(P1/1),!,call(P1,TestID).
-with_current_test(P1,TestID):- doall(with_current_test(P1,TestID,_ExampleNum)).
+with_current_test(P1,TestID):- get_pair_mode(entire_suite),!,var(TestID),
+  all_arc_test_name(TestID), catch_non_abort(with_current_test(P1,TestID)).
+with_current_test(P1,TestID):- current_predicate_human(P1/1),!,ensure_test(TestID),call(P1,TestID).
+with_current_test(P1,TestID):- doall(with_current_test(P1,TestID,_)).
 
 with_current_test(P1,TestID,ExampleNum):- \+ ground(ExampleNum),get_pair_mode(single_pair),!,
   with_pair_mode(whole_test,with_current_test(P1,TestID,ExampleNum)).  
@@ -2381,32 +2385,53 @@ indicates_arg1_testid(testid_name_num_io).
 indicates_arg1_testid(fix_test_name).
 indicates_arg1_testid(is_valid_testname).
 indicates_arg1_testid(with_test_grids).
+indicates_arg1_testid(with_task_grids).
+indicates_arg1_testid(with_trn_grids).
+%indicates_arg1_testid(into_test_id_io1).
+indicates_arg1_testid(test_grids).
 
-uses_test_id(P1):- clauses_predicate(M:F/N,P), 
-                   once((\+ indicates_arg1_testid(F),             
-                   \+ \+ (clause(M:P,GG),first_cmpd_goal(GG,G),compound(G),functor(G,GF,_),
+skip_uses_test_id(into_test_id_io1).
+skip_uses_test_id(do_menu_key).
+skip_uses_test_id(set_example_num).
+skip_uses_test_id(F):- indicates_arg1_testid(F).
+
+uses_test_id(P):- clauses_predicate(M:F/N,P), 
+                   once((
+                   \+ skip_uses_test_id(F),
+                   member(N,[0,1,4]),
+                   \+ \+ ((clause(M:P,GG,_Ref),
+                          first_cmpd_goal(GG,G),compound(G),functor(G,GF,_),
                           \+ \+ indicates_arg1_testid(GF),
-                          compound(P),arg(1,P,Var1),arg(1,G,Var2),Var1==Var2),
-                   N1 is N-1, functor(P1,F,N1),
-                   nop((\+ predicate_property(M:P1,static))))).
+                          if_t(compound(P),(arg(1,P,Var1),arg(1,G,Var2),Var1==Var2)),
+                          ignore((fail,N>=0,listing((M:P))))
 
-assert_missing_skell(M,Head,Body):-
-  \+ predicate_property(M:Head,static),
-  \+ clause(M:Head,_),
-  asserta(M:(Head:- (with_current_test,Body))),!,
-  writeln(synthesized(M:Head)).
-assert_missing_skell(M,Head,_Body):- nop(writeln(skipping(M:Head))).
+                   )),
+                   ((N1 is N-1, functor(P1,F,N1),
+                     nop((\+ predicate_property(M:P1,static))))))).
 
-make_use_test_id(MP):-
- strip_module(MP,M,P),
+assert_missing_skel_mfa(M,F,A):- 
+ ignore((
+  length(Args,A),
+   Head=..[F|Args],
+   \+ predicate_property(M:Head,static),
+   \+ predicate_property(M:Head,static),
+   \+ clause(M:Head,_),
+   Body=..[with_current_test,F|Args],
+  asserta(M:(Head:- (with_current_test,Body))),
+  writeln(synthesized(M:Head)))).
+
+
+make_use_test_id(MP):- strip_module(MP,M,P),functor(P,F,_),make_use_test_id(M,F).
+make_use_test_id(M,P):- compound(P),!,functor(P,F,_),make_use_test_id(M,F).
+make_use_test_id(M,(F/A)):- !, assert_missing_skel_mfa(M,F,A).
+make_use_test_id(M,F):-
  must_det_ll((
-   functor(P,F,_),
-   P0=..[F],
-   assert_missing_skell(M,P0,with_current_test(P0)),
-   P1=..[F,TestID],
-   assert_missing_skell(M,P1,with_current_test(P0,TestID)),
-   P2=..[F,TestID,ExampleNum],
-   assert_missing_skell(M,P2,with_current_test(P0,TestID,ExampleNum)))).
+  assert_missing_skel_mfa(M,F,0),
+  assert_missing_skel_mfa(M,F,1),   
+  if_t(current_predicate_human(F/4),
+   assert_missing_skel_mfa(M,F,2)))).
+
+
 
 scan_uses_test_id:- scan_uses_test_id(uses_test_id).
 scan_uses_test_id(When):- 

@@ -6,25 +6,8 @@
 */
 
 
-% ARC challenged me to write code that i knew i could but would take me some learning to do. 
-% thought i could put off until after funding..
-% Really I thought it was more something Fabrizio could write. 
-% but evidently it is considered impressive feat
-/*
-he big joke i am working on to really sting everyone is i have told several people exactly how my code works.. and they just don't believe anyone could make it work the way i did .. my explanations are so incredulous sounding ..  but yet the system does work and does everything i say it does..
-So as the community sees my ARC stuff violate their beliefs, and the logicmoo stuff sounding so equally incredulous might be worth trusting me on (edited)
-
-*/
-
-
-% MOO mean multi user OO universe
-% OO (Object Orientated) is sort of passee now but i ideally the logicmoo meaning is based on 
-% an abstration ("OO") of a refernce to a multi-propertied thing
-% rether than defining these properties by soem instances of objects, I define them as calls to logical relations defined by situation calculus 
-% these things have simularities that make them groupable for arbitrary reasons
-
-
 :- include(kaggle_arc_header).
+
 
 :- dynamic(is_for_ilp/4).
 :- dynamic(is_accompany_changed_db/4).
