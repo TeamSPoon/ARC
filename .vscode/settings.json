@@ -31,5 +31,12 @@
     },
     "hide-files.files": [],
     "workspace.isHidden": false,
-    "explorerExclude.backup": {}
+    "explorerExclude.backup": {},
+    "chatgpt.gpt3.model": "text-davinci-003",
+    "chatgpt.response.showNotification": true,
+    "chatgpt.telemetry.disable": true,
+    "chatgpt.promptPrefix.customPrompt2": "Document this code with line by line comments",
+    "chatgpt.promptPrefix.customPrompt2-enabled": true,
+    "chatgpt.promptPrefix.customPrompt1": "Document this code with line by line comments",
+    "chatgpt.promptPrefix.customPrompt1-enabled": true
 }

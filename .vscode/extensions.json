@@ -4,6 +4,9 @@
         "echodyne.buddy",
         "jasmcaus.zed",
         "openaicodexcodeautocomplete.openaicodexcodeautocomplete",
-        "donotinstallthis.rust-osascript"
+        "donotinstallthis.rust-osascript",
+        "github.copilot-nightly",
+        "ayushsinghal.code-mate",
+        "smallcloud.codify"
     ]
 }
