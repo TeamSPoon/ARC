@@ -500,40 +500,54 @@ obj_group5(TestID,ExampleNum,IO,ROptions,Objs):-
 show_object_dependancy(TestID):-  
 % =============================================================
  ensure_test(TestID),
+ learn_object_dependancy(TestID),
+ print_object_dependancy(TestID).
+
+% =============================================================
+learn_object_dependancy(TestID):-
+% =============================================================
+ ensure_test(TestID),
  forall(kaggle_arc(TestID,ExampleNum,_,_),
-     ignore((show_object_dependancy(TestID,ExampleNum)))).
+     learn_object_dependancy(TestID,ExampleNum)).
 
-show_object_dependancy(TestID,ExampleNum):-
+learn_object_dependancy(TestID,ExampleNum):-
   forall(obj_group_gg(TestID,ExampleNum,LHSObjs,RHSObjs),
-    ignore(maybe_show_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs))).
+    ignore(maybe_learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs))).
 
-maybe_show_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
+maybe_learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
   RHSObjs\==[],LHSObjs\==[],
-  show_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
+  learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
+
+learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):- 
+ must_det_ll((
+    maybe_remove_bg(LHSObjs,LHSObjs1),
+    maybe_remove_bg(RHSObjs,RHSObjs1),
+    Step=0,Ctx=in_out,IsSwapped=false,
+    calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,RHSObjs1,LHSObjs1,[],Groups),
+    variant_list_to_set(Groups,SetOfGroups),
+    maplist(assert_map_groups(TestID,ExampleNum,in),SetOfGroups))),!.
+
   
 
 
 % The object dependancy is a list of lists of rules
-show_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
- must_det_ll((
-  learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs),
-  print_object_dependancy(TestID,ExampleNum))),!.
+
 
 % print the object dependencies for this test
 % =============================================================
 print_object_dependancy(TestID):-
 % =============================================================
- ensure_test(TestID),
- forall(kaggle_arc(TestID,ExampleNum,_,_),
-     ignore((print_object_dependancy(TestID,ExampleNum)))).
-print_object_dependancy(TestID,ExampleNum):-  
  dash_chars,
- forall(arc_cache:map_group(TestID,ExampleNum,_IO1,LeftRight), pp_ilp(LeftRight)),
+ forall(arc_cache:map_group(TestID,E,IO,Group),
+  (pp(map_group(TestID,E,IO)), pp_ilp(Group))),
  dash_chars,
+ 
 %  forall(arc_cache:map_group(TestID,ExampleNum,IO,LeftRight),
 %    pp_ilp(map_group(TestID,ExampleNum,IO,LeftRight))),
-  nop((forall(arc_cache:map_pairs(TestID,ExampleNum,_IO2,Info,List),
-    pp_ilp(grp(Info,List))))),!.
+  forall(arc_cache:map_pairs(TestID,E,_IO2,Info,Post,Pre),
+      (trace, pp(map_group(TestID,E,IO)), print_ss(Info,Pre,[Post]))),
+  dash_chars,
+  trace,!.
 
 
 
@@ -624,25 +638,6 @@ clear_object_dependancy(TestID,ExampleNum):-
     retract(arc_cache:map_pairs(TestID,ExampleNum,IO,Info,Right,Left))).
 
 
-% =============================================================
-learn_object_dependancy(TestID):-
-% =============================================================
- ensure_test(TestID),
- forall(kaggle_arc(TestID,ExampleNum,_,_),
-     ignore((learn_object_dependancy(TestID,ExampleNum)))).
-
-learn_object_dependancy(TestID,ExampleNum):-  
-  forall(obj_group_gg(TestID,ExampleNum,LHSObjs,RHSObjs),
-    learn_object_dependancy(TestID,ExampleNum,LHSObjs,RHSObjs)).
-
-learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):- 
- must_det_ll((
-    maybe_remove_bg(LHSObjs,LHSObjs1),
-    maybe_remove_bg(RHSObjs,RHSObjs1),
-    Step=0,Ctx=in_out,IsSwapped=false,
-    calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,RHSObjs1,LHSObjs1,[],Groups),
-    variant_list_to_set(Groups,SetOfGroups),
-    maplist(assert_map_groups(TestID,ExampleNum,in),SetOfGroups))),!.
 
 
 :- dynamic(arc_cache:map_pairs/6).
