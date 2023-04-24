@@ -145,9 +145,9 @@ assert_become_new(Term):- asserta_new(Term).
 
 
 solve_via_scene_change(TestID):-  
- cls, %make,
  must_det_ll((
   ensure_test(TestID),
+  cls, %make,
   clear_scene_rules(TestID),
   %detect_pair_hints(TestID),
   learn_grid_size(TestID),
@@ -640,27 +640,40 @@ in->missing
 pp_ilp(Grp):-pp_ilp(1,Grp).
 
 pp_ilp(_,_):- format('~N'),nl,fail.
+pp_ilp(D,T):-  is_ftVar(T),!,prefix_spaces(D,print(T)),!.
+pp_ilp(D,Grid):- is_grid(Grid),!,prefix_spaces(D,print_grid(Grid)),!,nl.
 
 pp_ilp(D,is_accompany_changed_db(_TestID,IO,P,PSame)):- 
  list_to_conjuncts(PSame,Conj),pp_ilp(D,((IO:P):-Conj)),!.
+
 pp_ilp(D,(H:-Conj)):- prefix_spaces(D,pp(H:-Conj)),!.
 pp_ilp(D,(H:-PSame)):- 
  list_to_conjuncts(PSame,Conj),prefix_spaces(D,(writeq(H:-Conj),writeln('.'))),!.
 
+
+
+% pp_ilp(D,Grp):- is_mapping(Grp), prefix_spaces(D,print(Grp)),!.
 pp_ilp(D,Grp):- is_mapping(Grp),
  must_det_ll((
   get_mapping_info_list(Grp,Info,In,Out),
   once(into_solid_grid_strings(In,ITerm)),
   once(into_solid_grid_strings(Out,OTerm)),
   prefix_spaces(D,(dash_chars,format('<grp ~w>\n',[Info]))),
-    pp_ilp(D+5,ITerm),
-    pp_ilp(D+5,OTerm),
+    print_io_terms(D+7,ITerm,OTerm),
   prefix_spaces(D,(write('</grp>\n'),dash_chars)))).
 
-pp_ilp(D,Grid):- is_grid(Grid),prefix_spaces(D,print_grid(Grid)),!,nl.
 pp_ilp(D,List):- is_list(List), \+ is_grid(List),maplist(pp_ilp(D+3),List).
 %pp_ilp(D,T):- into_solid_grid_strings(T,G),!, prefix_spaces(D,print(G)),!.
 pp_ilp(D,T):- prefix_spaces(D,print(T)),!.
+
+print_io_terms(D,ITerm,OTerm):-  
+    is_grid(ITerm),is_grid(OTerm),
+    prefix_spaces(D,print_ss("",ITerm,OTerm)),!.
+print_io_terms(D,loc2D(X,Y,ITerm),loc2D(OX,OY,OTerm)):- 
+    \+ is_mapping(ITerm), \+ is_mapping(OTerm),
+    prefix_spaces(D,print_ss("",ITerm,loc2D(X,Y),OTerm,loc2D(OX,OY))),!.
+print_io_terms(D,ITerm,OTerm):- 
+    prefix_spaces(D,print_ss("",call(pp_ilp(ITerm)),call(pp_ilp(OTerm)))),!.
 
 
 prefix_spaces(D,G):- DD is D, wots(Tabs,(write('\t'),print_spaces(DD),write('.\t'))),prepend_each_line(Tabs,G).
@@ -687,6 +700,8 @@ into_solid_grid_strings(T,Text):- is_ftVar(T),Text=T,!.
 %into_solid_grid_strings(g rp(T),gr p(Text)):- is_list(T), wots(Text,print_ss(T)),!.
 %into_solid_grid_strings(g rp(T),g rp(Text)):- is_list(T), maplist(into_solid_grid_strings,T,Text),!.
 %into_solid_grid_strings(g rp(T),g rp(Text)):- is_list(T), prin_to_string(T,Text),!.
+into_solid_grid_strings([T],WithGrids):- is_grid(T), !, into_solid_grid_strings(T,WithGrids).
+into_solid_grid_strings([T],WithGrids):- \+ is_grid([T]), !, into_solid_grid_strings(T,WithGrids).
 into_solid_grid_strings(T,WithGrids):-
   sub_term(Obj,T),%Obj\=@=T,
   is_object(Obj),
@@ -698,6 +713,14 @@ into_solid_grid_strings(T,WithGrids):-
   into_solid_grid_str(Obj,GridStr),Obj\=@=GridStr,!,
   subst001(T,Obj,GridStr,MidTerm),
   into_solid_grid_strings(MidTerm,WithGrids).
+/*
+into_solid_grid_strings(T,WithGrids):-
+  sub_term(Obj,T),is_mapping(Obj),
+  into_solid_grid_str(Obj,GridStr),Obj\=@=GridStr,!,
+  subst001(T,Obj,GridStr,MidTerm),
+  into_solid_grid_strings(MidTerm,WithGrids).
+*/
+%into_solid_grid_strings(MidTerm,WithGrids):- into_solid_grid_str(MidTerm,WithGrids). 
 into_solid_grid_strings(WithGrids,WithGrids).
 %  \+ arc_cache:map_group(TestID,ExampleNum,IO,LeftRight),
 
@@ -718,7 +741,7 @@ into_solid_grid_str(Obj,SS):- is_object(Obj),loc2D(Obj,X,Y),
 
 %into_solid_grid_str(Obj,SS):- is_object(Obj),loc2D(Obj,X,Y),into_solid_grid(Obj,Grid), =((loc2D(X-Y,Grid)),SS),!.
 into_solid_grid_str(Grid,GridStr):- into_solid_grid(Grid,Solid),Solid\=@=Grid,into_solid_grid_str(Grid,GridStr). %,wots(GridStr,(nl,print_grid(Grid))).
-into_solid_grid_str(Grid,(GridStr)):- as_grid_string(Grid,GridStr),!.%print_wots(GridStr,(nl,print_grid(Grid))).
+%into_solid_grid_str(Grid,(GridStr)):- as_grid_string(Grid,GridStr),!.%print_wots(GridStr,(nl,print_grid(Grid))).
 into_solid_grid_str(O,O).
 
 % =============================================================
