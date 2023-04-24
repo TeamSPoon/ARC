@@ -410,10 +410,11 @@ mapping_step(   out_out).
 
 
 
-
-post_to_pre_object(TestID,IO,_P,Post,Pre):- get_obj_pair(TestID,IO,I,O),O=@=Post,!,Pre=I.
-post_to_pre_object(TestID,IO,P,Post,Pre):- post_to_pre_object1(TestID,IO,P,Post,Pre),from_same_pair(Post,Pre).
-%post_to_pre_object(TestID,IO,P,Post,Pre):- post_to_pre_object2(TestID,IO,P,Post,Pre),from_same_pair(Post,Pre).
+p_of_post(P,Post):- indv_props_list(Post,Props),member(P,Props).
+post_to_pre_object(TestID,IO,P,Post,Pre):- post_to_pre_object2(TestID,IO,P,Post,Pre),from_same_pair(Post,Pre),p_of_post(P,Post).
+post_to_pre_object(TestID,IO,P,Post,Pre):- get_obj_pair(TestID,IO,I,O),O=@=Post,!,Pre=I,p_of_post(P,Post).
+post_to_pre_object(TestID,IO,P,Post,Pre):- post_to_pre_object1(TestID,IO,P,Post,Pre),from_same_pair(Post,Pre),p_of_post(P,Post).
+%post_to_pre_object(TestID,IO,P,Post,Pre):- post_to_pre_object4(TestID,IO,P,Post,Pre),from_same_pair(Post,Pre).
 
 post_to_pre_object1(TestID,IO,_P,Post,Pre):- 
   %rev_in_out_atoms(IO,OI),
@@ -425,14 +426,18 @@ post_to_pre_object1(TestID,IO,_P,Post,Pre):-
      find_prox_mappings(Post,post_to_pre_object,PreObjs,[Pre|_RHSRest]),!.
 
 
+post_to_pre_object2(TestID,IO,_,Post,Pre):-
+  arc_cache:map_pairs(TestID,_,IO,Info,PreObjs,PostObjs),
+  % info(0, false, in_out, perfect_in_out, t('08ed6ac7'), trn+0)
+  arg(3,Info,IO),member(Pre,PreObjs),member(Post,PostObjs).
 
-post_to_pre_object2(TestID,IO,P,Post,Pre):- var(Post),
+post_to_pre_object4(TestID,IO,P,Post,Pre):- var(Post),
   ensure_props_change(TestID,IO,P),is_post_objs_with_prop(TestID,IO,P,PostObjs),!,
   member(Post,PostObjs),post_to_pre_object(TestID,IO,P,Post,Pre).
-post_to_pre_object2(TestID,IO,P,Post,Pre):- var(P), has_prop(P,Post), 
+post_to_pre_object4(TestID,IO,P,Post,Pre):- var(P), has_prop(P,Post), 
   post_to_pre_object(TestID,IO,P,Post,Pre).
 
-post_to_pre_object2(TestID,IO,P,Post,Pre):- nonvar(Post),nonvar(Pre),!,
+post_to_pre_object4(TestID,IO,P,Post,Pre):- nonvar(Post),nonvar(Pre),!,
   %has_prop(P,Post), 
   ensure_props_change(TestID,IO,P),
   is_post_objs_with_prop(TestID,IO,P,PostObjs),!,
@@ -443,7 +448,7 @@ post_to_pre_object2(TestID,IO,P,Post,Pre):- nonvar(Post),nonvar(Pre),!,
   
 
 
-post_to_pre_object2(TestID,IO,P,Post,PreGuessed):- nonvar(Post),nonvar(PreGuessed),!,
+post_to_pre_object4(TestID,IO,P,Post,PreGuessed):- nonvar(Post),nonvar(PreGuessed),!,
   is_post_objs_with_prop(TestID,IO,P,PostObjs),
   is_pre_objs_leading_to_output_prop(TestID,IO,P,PreObjs),!,
   member(Post,PostObjs),
@@ -451,7 +456,7 @@ post_to_pre_object2(TestID,IO,P,Post,PreGuessed):- nonvar(Post),nonvar(PreGuesse
   best_choice(PreObjs,PostObjs,PreP,PostP),PostP =@= Post, 
   PreGuessed = PreP.
 
-post_to_pre_object2(TestID,IO,P,Post,Pre):- var(Pre),
+post_to_pre_object4(TestID,IO,P,Post,Pre):- var(Pre),
   is_pre_objs_with_prop(TestID,IO,_,PreObjs),!,
   member(Pre,PreObjs),post_to_pre_object(TestID,IO,P,Post,Pre).
      %find_prox_mappings(Post,post_to_pre_object,PreObjs,[Pre|_RHSRest]),!.
