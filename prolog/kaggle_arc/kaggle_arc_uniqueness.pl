@@ -770,7 +770,7 @@ calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,R
    LHSObjs==[], !, must_det_ll((incr_step(Step,IncrStep),
     calc_o_d_recursively(TestID,ExampleNum,IsSwapped,IncrStep,Ctx,Prev,Prev,RHSObjs,RestLR))).
 
-calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):-
+calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,[Pairs|RestLR]):-
  must_det_ll((
   select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
   remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
@@ -795,6 +795,7 @@ select_some(N,[A,B,C,D|More],L,R):- length(L,Max),between(4,Max,N),select_some(3
 in_to_ins(Ins,N,InsList):-
  findall(E,select_some(N,E,Ins,_),InsList).
 
+select_pair(perfect,_Prev,[A],[B],A,B,[],[]):-!.
 select_pair(perfect,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,LHSObjs,RestLeft),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
@@ -805,7 +806,7 @@ select_pair(perfect,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
 
 select_pair(perfect_combo,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-  
   last(LHSObjs,LastLHSObjs), \+ is_list(LastLHSObjs),
-  in_to_ins(LHSObjs,3,LHSObjs_Combos),
+  in_to_ins(LHSObjs,2,LHSObjs_Combos),
   select(Left,LHSObjs_Combos,LHSObjs_Combos_Rest),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),  
   find_prox_mappings(Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
