@@ -144,7 +144,7 @@ assert_become_new(Term):- asserta_new(Term).
 
 
 solve_via_scene_change(TestID):-  
- clsmake,
+ %cls, %make,
  must_det_ll((
   ensure_test(TestID),
   clear_scene_rules(TestID),
@@ -165,13 +165,15 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
   grid_to_tid(In,TID),
   into_fti(TID,ROptions,In,VM),
   individuate(VM),
-  Objs = VM.objs,
-  %wots(SS,solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,OObjs)),
-  solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,OObjs),
+  Objs = VM.objs)),
+  %wots(SS,solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,ObjsO)),
+  solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,ObjsO),
   dash_chars,
-  print_ss(wqs(solve_via_scene_change_rules(ExampleNum)),Objs,OObjs),
+
+ must_det_ll((
+  print_ss(wqs(solve_via_scene_change_rules(ExampleNum)),Objs,ObjsO),
   dash_chars,
-  into_solid_grid(OObjs,OurSolution1),
+  into_solid_grid(ObjsO,OurSolution1),
   once(((notrace((predict_grid_size_now(TestID,In,PH,PV),ground(PH+PV)))
      ->resize_grid(PH,PV,OurSolution1,OurSolution)
       ;notrace(=(OurSolution1,OurSolution));notrace(trim_outside2(OurSolution1,OurSolution))))),
@@ -263,56 +265,73 @@ correct_antes2(TestID,IO,P,PSame,Kept):-
    intersection(PSame,USame,Kept,_,_),Kept\==[].
 correct_antes2(_TestID,_IO,_P,PSame,PSame).
 
-solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,OObjs):-
+solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,ObjsO):-
  solve_obj_group(VM,TestID,ExampleNum,in,ROptions,Objs,Objs1),
+ Objs1 \==[],
  solve_obj_group(VM,TestID,ExampleNum,in_out,ROptions,Objs1,Objs2),
  solve_obj_group(VM,TestID,ExampleNum,in_out_out,ROptions,Objs2,Objs3),!,
- OObjs= Objs3.
+ ObjsO= Objs3.
 
   
-solve_obj_group(VM,TestID,ExampleNum,IO,ROptions,Objs,OObjs):-
+solve_obj_group(VM,TestID,ExampleNum,IO,ROptions,Objs,ObjsO):-
   %trace,arc_cache:map_group(TestID,ExampleNum,IO,Group),
-  GRP = grp(Info,[PreObjs,Out]),
-  findall(GRP,(arc_cache:map_pairs(TestID,_,_IO2,Info,PreObjs,Out), sub_var(IO,Info)),Group),
-  variant_list_to_set(Group,Set),
+  GRP = grp(Info,PreObjs,Out),
+  findall(GRP,(arc_cache:map_pairs(TestID,_,_IO2,Info,PreObjs,Out), sub_var(IO,Info)),Groups),
+  variant_list_to_set(Groups,Set),
+  banner_lines(blue,2),
   forall(member(GRP,Set),pp_ilp(GRP)),
-  trace,prop_can(TestID,IO,P,Preconds),
-
-  trace,my_maplist(solve_obj(VM,TestID,ExampleNum,IO,ROptions),Objs,OObjs).
+  banner_lines(blue,2),
+  %trace,prop_can(TestID,IO,P,Preconds),
+  %trace,
+  solve_obj_set(Set,VM,TestID,ExampleNum,IO,ROptions,Objs,ObjsO),
+  flatten(ObjsO,ObjsO).
 
 %solve_obj(_VM,_TestID,_ExampleNum,_IO,_ROptions,Obj,Obj):- is_bg_object(Obj),!.
-solve_obj(VM,TestID,_ExampleNum,_IO_Start,_ROptions,Obj,OObj):- 
+
+solve_obj_set([],_VM,_TestID,_ExampleNum,_IO_Start,_ROptions,Objs,Objs):-!.
+solve_obj_set([S|Set],VM,TestID,ExampleNum,IO_Start,ROptions,Objs,ObjsO):-
+  solve_obj_list(S,VM,TestID,ExampleNum,IO_Start,ROptions,Objs,ObjsM),
+  solve_obj_set(Set,VM,TestID,ExampleNum,IO_Start,ROptions,ObjsM,ObjsO).
+
+solve_obj_list(_,_VM,_TestID,_ExampleNum,_IO_Start,_ROptions,Objs,Objs):- Objs == [], !.
+solve_obj_list(S,VM,TestID,ExampleNum,IO_Start,ROptions,[Obj|Objs],[NewObj|ObjsO]):-
+  solve_obj(VM,TestID,ExampleNum,IO_Start,ROptions,Obj,NewObj),
+  solve_obj_list(S,VM,TestID,ExampleNum,IO_Start,ROptions,Objs,ObjsO).
+
+solve_obj(VM,TestID,_ExampleNum,_IO_Start,_ROptions,Obj,NewObj):-
  must_det_ll((
    %Agenda = agenda(IO,P,PSame),
    Agenda = P,
    IO=_,
    findall(Agenda,
-   (is_accompany_changed_verified(TestID,IO,P,PSame), 
+       (is_accompany_changed_verified(TestID,IO,P,PSame), 
         flatten(PSame,Rest), 
         forall(member(R,Rest),has_prop(R,Obj))),PsL),
  list_to_set(PsL,Ps), 
- edit_object(VM,Ps,Obj,OObj))).
-%solve_obj(VM,_TestID,_ExampleNum,_IO_Start,_ROptions,Obj,OObj):-
-%  edit_object(VM,pen([cc(black,1)]),Obj,OObj).
+ edit_object(VM,Ps,Obj,NewObj))).
+%solve_obj(VM,_TestID,_ExampleNum,_IO_Start,_ROptions,_Obj,[]).
+solve_obj(_VM,_TestID,_ExampleNum,_IO_Start,_ROptions,Obj,Obj).
+%  edit_object(VM,pen([cc(black,1)]),Obj,NewObj).
 
-edit_object(VM,Ps,Obj,OObj):- Ps==[],!,edit_object(VM,pen([cc(black,1)]),Obj,OObj).
-edit_object(VM,Ps,Obj,OObj):-
+edit_object(_VM,Ps,_Obj,NewObj):- Ps==[],!,NewObj=[]. %edit_object(VM,pen([cc(black,1)]),Obj,NewObj).
+edit_object(VM,Ps,Obj,NewObj):- Ps==[],!,edit_object(VM,pen([cc(black,1)]),Obj,NewObj).
+edit_object(VM,Ps,Obj,NewObj):-
   must_det_ll((
    wots(SS,writeln(Ps)),
-   override_object_1(VM,Ps,Obj,OObj),
-   into_solid_grid([OObj],SG),SG=_,
+   override_object_1(VM,Ps,Obj,NewObj),
+   into_solid_grid([NewObj],SG),SG=_,
    dash_chars,
-   print_ss(override_object(SS),[Obj],[OObj]),
+   print_ss(override_object(SS),[Obj],[NewObj]),
    indv_props_list(Obj,PL1),
-   indv_props_list(OObj,PL2),
+   indv_props_list(NewObj,PL2),
    intersection(PL1,PL2,_Same,Removed,Added),
   pp(([[removed=Removed],[added=Added]])))).
 
 override_object_1(_VM,[],IO,IO):-!.
 override_object_1(VM,[H|T],I,OO):- !, override_object_1(VM,H,I,M),!, override_object_1(VM,T,M,OO).
 override_object_1(VM,agenda(IO,P,PSame),I,O):- !, pp_ilp(IO:P-PSame), override_object_1(VM,P,I,O).
-override_object_1(_VM,pen([cc(Red,N)]),Obj,OObj):- pen(Obj,[cc(Was,N)]), !,
-  subst001(Obj,Was,Red,OObj),!.
+override_object_1(_VM,pen([cc(Red,N)]),Obj,NewObj):- pen(Obj,[cc(Was,N)]), !,
+  subst001(Obj,Was,Red,NewObj),!.
 override_object_1(VM,loc2D(X,Y),Obj,NewObj):- loc2D(Obj,WX,WY),
   globalpoints(Obj,WPoints),deoffset_points(WX,WY,WPoints,LPoints),  
   offset_points(X,Y,LPoints,GPoints),rebuild_from_globalpoints(VM,Obj,GPoints,NewObj).
@@ -504,6 +523,7 @@ show_object_dependancy(TestID):-
 % =============================================================
  ensure_test(TestID),
  learn_object_dependancy(TestID),
+ merge_object_dependancy(TestID),
  print_object_dependancy(TestID).
 
 :- dynamic(arc_cache:map_pairs/6).
@@ -533,20 +553,28 @@ learn_object_dependancy(TestID,ExampleNum,_RHSObjs,_LHSObjs):- arc_cache:map_gro
 learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):- 
  must_det_ll((
   Step=0,Ctx=in_out,IsSwapped=false,
-  calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,[],LHSObjs,RHSObjs,Groups),
+  calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,[],LHSObjs,RHSObjs,GroupsR),
+  reverse(GroupsR,Groups),
   variant_list_to_set(Groups,SetOfGroups),
   maplist(assert_map_groups(TestID,ExampleNum,in),SetOfGroups))),!.
 
 %assert_map_groups(TestID,ExampleNum,IO,LeftRight):- !, nop(assert_map_groups(TestID,ExampleNum,IO,LeftRight)),!.
 % The object dependancy is a list of lists of rules
 assert_map_groups(TestID,ExampleNum,IO,Group):- arc_cache:map_group(TestID,ExampleNum,IO,Group),!.
-assert_map_groups(TestID,ExampleNum,IO,Group):-
+assert_map_groups(TestID,ExampleNum,IO,Group):- asserta_if_new(arc_cache:map_group(TestID,ExampleNum,IO,Group)),!.
+
+merge_object_dependancy(TestID):-
+  findall(Group,arc_cache:map_group(TestID,_ExampleNum,_IO,Group),GroupS),
+  some_min_unifier(GroupS,Group),
+  pp(Group),trace.
+
+assert_map_pairs(TestID,ExampleNum,IO,Group):-
  %writeq(aSSSSSSSSSSSSSSSSSSSSSSSSSS_Sassert_map_groups(TestID,ExampleNum,IO,Group)),
  must_det_ll((
   asserta_if_new(arc_cache:map_group(TestID,ExampleNum,IO,Group)),
   forall((sub_term(Pair,Group),is_mapping(Pair)),
     once((must_det_ll((get_mapping_info_list(Pair,Info,In,Out),
-                 into_list(In,PreObjs), into_list(Out,PostObjs),!,                
+                 into_list(In,PreObjs), into_list(Out,PostObjs),                
                  asserta_if_new(arc_cache:map_pairs(TestID,ExampleNum,IO,Info,PreObjs,PostObjs))))))))).
 
 % print the object dependencies for this test
@@ -563,8 +591,7 @@ print_object_dependancy(TestID):-
   forall(arc_cache:map_pairs(TestID,E,_IO2,Info,Pre,Post),
       (dash_chars, writeln(map_pairs(TestID,E,IO,Info)),once(print_ss(Info,Pre,Post)),
         nl,writeln(map_pairs(TestID,E,IO,Info)),nl,dash_chars)),
-  dash_chars,
-  trace,!.
+  dash_chars,!.
 
 get_obj_pair(TestID,IO,I,O):- 
  arc_cache:map_pairs(TestID,_ExampleNum,_When,Info,PreObjs,PostObjs),
@@ -678,14 +705,18 @@ maybe_remove_bg(RHSObjs,RHSObjs1):- my_partition(is_fg_object,RHSObjs,RHSObjs1,R
 maybe_remove_bg(RHSObjs,RHSObjs).
 
 into_delete(_Info,Obj,Obj):- is_mapping(Obj),!.
-into_delete(Info,Obj,grp(Info,[Obj],[])).
+into_delete(_Info,_Obj,[]). % grp(Info,[Obj],[])).
 
 is_mapping_list([O|GrpL]):- is_mapping(O),is_list(GrpL),maplist(is_mapping,GrpL).
 is_mapping(Grp):- is_functor(grp,Grp).
+
 get_mapping_info_list(grp(Info,In,Out),Info,In,Out).
-get_mapping_info_list(grp(Info,In,Out),Info,InOut):-
+get_mapping_info_list(GRP,Info,InOut):-
+  get_mapping_info_list(GRP,Info,In,Out),
   into_list(In,InL),into_list(Out,OutL),!,
-  append(InL,OutL,InOut).
+  append_LR(InL,OutL,InOutL),!,
+  must_det_ll((InOutL=InOut)).
+
 
 append_LR(Prev,Mappings,RestLR):- 
   flatten([Prev,Mappings],RestLR),!.
@@ -709,8 +740,8 @@ calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,R
   remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
   remove_object(RHSRest2, Left,RHSRest ), remove_object(LHSRest2, Left,LHSRest ),
   make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,Prev,Left,Right,Pairs),
-  %append_LR(Prev,Pairs,NewPrev),
-  calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,[Pairs|LHSRest],RHSRest,RestLR))).
+  append_LR(Prev,Pairs,NewPrev),
+  calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,NewPrev,LHSRest,RHSRest,RestLR))).
  
 %incr_cntx(Ctx,NewCtx):- Ctx == in_out,!, NewCtx=out_out.
 incr_cntx(Ctx,NewCtx):- atom(Ctx),!, atom_concat(Ctx,'_out',NewCtx).
@@ -789,8 +820,9 @@ into_prop(CC,P):- sub_term(E,CC),compound(E),is_prop1(E),!,E=P.
 %make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,Prev,LHS,RHS,GRP):- Prev\==[], !, 
 %  make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,[],Prev,LHS,NLHS),
 %  make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,[],NLHS,RHS,GRP).
-make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,Prev,LHS,RHS,GRP):-
+make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,_Prev,LHS,RHS,GRP):-
   Info = info(TestID,ExampleNum,Step,IsSwapped,Ctx,Type),
+
   %append_LR(Prev,LHS,PLHS),
   GRP = grp(Info,LHS,RHS).
 
