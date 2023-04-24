@@ -602,7 +602,7 @@ pp_hook_g1(_):-  \+ in_pp(ansi),!, fail.
 
 pp_hook_g1(Grp):- is_mapping(Grp),
  must_det_ll((
-  get_mapping_info_list(Grp,Info,In,Out),
+  get_mapping_info(Grp,Info,In,Out),
   prefix_spaces(D,(dash_chars,format('<grp ~w>\n',[Info]))),
     print_io_terms(D+7,In,Out),
   prefix_spaces(D,(write('</grp>\n'),dash_chars)))).

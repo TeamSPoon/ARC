@@ -99,6 +99,9 @@ props_change(TestID,IO,P):-
 %ensure_prop_change(IO,P):- (var(P)->props_change(_TestID,IO,P);true).
 
 in_out_atoms(in,out).
+%rev_in_out_atoms(IO,OI).
+rev_in_out_atoms(O,I):- in_out_atoms(I,O).
+rev_in_out_atoms(I,O):- in_out_atoms(I,O).
 
 counts_change(TestID,ExampleNum,In,P,N2,N1):- in_out_atoms(In,Out),
    ensure_propcounts(TestID),
@@ -352,32 +355,29 @@ is_accompany_changed_computed(TestID,IO,P,PSame):-
    is_accompany_changed_db(TestID,IO,P,PSame) *->true ; prop_can(TestID,IO,P,PSame). 
    
 prop_can(TestID,IO,P,Can):-    
-  props_change(TestID,IO,P),
+  props_change(TestID,IO,P),   
   once((prop_cant(TestID,IO,P,Cant),
   prop_can1(TestID,IO,P,Can1),
   intersection(Can1,Cant,_,Can,_))).
   %(Can == [] -> (CanL=Can1,fail) ; CanL= Can).
 
-prop_can1(TestID,IO,P,Can):-  
+prop_can1(TestID,IO,P,Can):-
   props_change(TestID,IO,P),
+  rev_in_out_atoms(IO,OI),
+  %IO=IO,
      findall(O,
-       ((member(InOut,[in,out]),enum_object_ext(TestID,InOut,O),is_post_cond_obj(IO,O),has_prop(cc(bg,0),O),
+       ((member(InOut,[in,out]),enum_object_ext(TestID,InOut,O),obj_in_or_out(O,OI),has_prop(cc(bg,0),O),
          has_prop(P,O))),PostObjs),
   post_cond_obj_to_pre_cond_obj(TestID,IO,P,PostObjs,PreObjs),
   [Pre|PreRest]=PreObjs,
   indv_props_list(Pre,List),
   findall(U,(member(U,List),U\=@=P,ok_notice(U),forall(member(E,PreRest),has_prop(U,E))),Can).
 
-post_to_pre_object(TestID,IO,_P,Post,Pre):- get_obj_pair(TestID,IO,I,O),O=@=Post,!,Pre=I.
-post_to_pre_object(TestID,IO,_P,Post,Pre):- 
-    %props_change(TestID,IO,P),
-     findall(O,
-       ((member(InOut,[in,out]),enum_object_ext(TestID,InOut,O),is_pre_cond_obj(IO,O),has_prop(cc(bg,0),O)
-         )),PreObjs),
-     find_prox_mappings(Post,post_to_pre_object,PreObjs,[Pre|_RHSRest]),!.
+obj_in_or_out(Obj,IO):- has_prop(giz(g(IO)),Obj),!.
+obj_in_or_out(Obj,IO):- has_prop(iz(i_o(IO)),Obj),!.
+obj_in_or_out(Obj,IO):- is_input_object(Obj)-> IO =out ; IO =in.
 
-
-is_pre_cond_obj(IO,O):- has_prop(giz(g(IO)),O),!.
+is_pre_cond_obj(IO,O):- obj_in_or_out(O,IO).
 is_pre_cond_obj(in_out,IO):- !,is_pre_cond_obj(in,IO).
 is_pre_cond_obj(s(X),O):- nonvar(X), is_pre_cond_obj(out,O).
 
@@ -386,6 +386,13 @@ is_post_cond_obj(IO,O):- \+ is_pre_cond_obj(IO,O).
 post_cond_obj_to_pre_cond_obj(TestID,IO,P,PostObjs,PreObjs):-
   findall(Pre,(member(Post,PostObjs),post_to_pre_object(TestID,IO,P,Post,Pre)),PreObjsL),
   list_to_set(PreObjsL,PreObjs).
+post_to_pre_object(TestID,IO,_P,Post,Pre):- get_obj_pair(TestID,IO,I,O),O=@=Post,!,Pre=I.
+post_to_pre_object(TestID,IO,_P,Post,Pre):- 
+    %props_change(TestID,IO,P),
+     findall(O,
+       ((member(InOut,[in,out]),enum_object_ext(TestID,InOut,O),is_pre_cond_obj(IO,O),has_prop(cc(bg,0),O)
+         )),PreObjs),
+     find_prox_mappings(Post,post_to_pre_object,PreObjs,[Pre|_RHSRest]),!.
 
 prop_cant(TestID,IO,P,Set):-
   props_change(TestID,IO,P),
@@ -582,34 +589,38 @@ assert_map_groups(TestID,ExampleNum,IO,Group):-
 
 merge_object_dependancy(_TestID):- !.
 merge_object_dependancy(TestID):-
-  findall(Group,arc_cache:map_group(TestID,_ExampleNum,_IO,Group),GroupS),
-  pp_ilp(Group),
-  itrace,some_min_unifier(GroupS,Group),
-  trace.
+  findall(Group,arc_cache:map_group(TestID,ExampleNum,_IO,Group),GroupS),
+  %pp_ilp(GroupS),
+  %itrace,some_min_unifier(GroupS,Group),
+  findall(assert_map_pairs(TestID,ExampleNum,_IO2),GroupS).
+  
 
 assert_map_pairs(TestID,ExampleNum,IO,Group):-
  %writeq(aSSSSSSSSSSSSSSSSSSSSSSSSSS_Sassert_map_groups(TestID,ExampleNum,IO,Group)),
  must_det_ll((
-  asserta_if_new(arc_cache:map_group(TestID,ExampleNum,IO,Group)),
+  % asserta_if_new(arc_cache:map_group(TestID,ExampleNum,IO,Group)),
   forall((sub_term(Pair,Group),is_mapping(Pair)),
-    once((must_det_ll((get_mapping_info_list(Pair,Info,In,Out),
-                 into_list(In,PreObjs), into_list(Out,PostObjs),                
-                 asserta_if_new(arc_cache:map_pairs(TestID,ExampleNum,IO,Info,PreObjs,PostObjs))))))))).
+    once((must_det_ll((get_mapping_info(Pair,Info,In,Out),
+          assert_map_pair_list(TestID,ExampleNum,IO,Info,In,Out)))))))).
+
+%assert_map_pair_list(TestID,ExampleNum,IO,Info,In,Out):-!.
+assert_map_pair_list(TestID,ExampleNum,IO,Info,In,Out):- is_list(Out),!,
+   maplist(assert_map_pair_list(TestID,ExampleNum,IO,Info,In),Out),!.
+assert_map_pair_list(TestID,ExampleNum,IO,Info,In,Out):- 
+  into_list(In,InL),into_list(Out,OutL),
+  pp_ilp(grp(Info,InL,OutL)),!,
+  assert_become_new(arc_cache:map_pairs(TestID,ExampleNum,IO,Info,InL,OutL)),!.
 
 % print the object dependencies for this test
 % =============================================================
 print_object_dependancy(TestID):-
 % =============================================================
  dash_chars,
- forall(arc_cache:map_group(TestID,E,IO,Group),
-  once(((dash_chars,dash_chars,pp_ilp(Group),dash_chars,dash_chars,nop(pp(map_group(TestID,E,IO))))))),
- dash_chars,
- 
-%  forall(arc_cache:map_group(TestID,ExampleNum,IO,LeftRight),
-%    pp_ilp(map_group(TestID,ExampleNum,IO,LeftRight))),
-  forall(arc_cache:map_pairs(TestID,E,_IO2,Info,Pre,Post),
-      (dash_chars, writeln(map_pairs(TestID,E,IO,Info)),once(print_ss(Info,Pre,Post)),
-        nl,writeln(map_pairs(TestID,E,IO,Info)),nl,dash_chars)),
+  forall(arc_cache:map_group(TestID,_,_IO,Group),
+   once(((dash_chars,dash_chars,pp_ilp(Group),dash_chars,dash_chars)))),
+  dash_chars,
+  forall(arc_cache:map_pairs(TestID,_,_IO2,Info,Pre,Post),
+   once(((dash_chars,dash_chars,pp_ilp(grp(Info,Pre,Post)),dash_chars,dash_chars)))),
   dash_chars,!.
 
 get_obj_pair(TestID,IO,I,O):- 
@@ -657,7 +668,7 @@ pp_ilp(D,(H:-PSame)):-  list_to_conjuncts(PSame,Conj),prefix_spaces(D,(writeq(H:
 % pp_ilp(D,Grp):- is_mapping(Grp), prefix_spaces(D,print(Grp)),!.
 pp_ilp(D,Grp):- is_mapping(Grp),
  must_det_ll((
-  get_mapping_info_list(Grp,Info,In,Out),
+  get_mapping_info(Grp,Info,In,Out),
   prefix_spaces(D,(dash_chars,format('<grp ~w>\n',[Info]))),
     print_io_terms(D+7,In,Out),
   prefix_spaces(D,(write('</grp>\n'),dash_chars)))).
@@ -797,9 +808,9 @@ into_delete(_Info,_Obj,[]). % grp(Info,[Obj],[])).
 is_mapping_list([O|GrpL]):- is_mapping(O),is_list(GrpL),maplist(is_mapping,GrpL).
 is_mapping(Grp):- is_functor(grp,Grp).
 
-get_mapping_info_list(grp(Info,In,Out),Info,In,Out).
+get_mapping_info(grp(Info,In,Out),Info,In,Out).
 get_mapping_info_list(GRP,Info,InOut):-
-  get_mapping_info_list(GRP,Info,In,Out),
+  get_mapping_info(GRP,Info,In,Out),
   into_list(In,InL),into_list(Out,OutL),!,
   append_LR(OutL,InL,InOutL),!,
   must_det_ll((InOutL=InOut)).
@@ -947,7 +958,10 @@ into_prop(CC,P):- sub_term(E,CC),compound(E),is_prop1(E),!,E=P.
 %  make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,[],Prev,LHS,NLHS),
 %  make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,[],NLHS,RHS,GRP).
 make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,_Prev,LHS,RHS,GRP):-
-  Info = info(Step,IsSwapped,Ctx,Type,TestID,ExampleNum),
+  Info = info(Step,IsSwapped,Ctx,TypeO,TestID,ExampleNum),
+  listify(LHS,LHSL),maplist(obj_in_or_out,LHSL,LIO),atomic_list_concat(LIO,'_',LP),
+  listify(RHS,RHSL),maplist(obj_in_or_out,RHSL,RIO),atomic_list_concat([Type,LP|RIO],'_',TypeO),
+  
   %into_list(LHS,LLHS),
   %append_LR(Prev,LHS,PLHS),
   GRP = grp(Info,LHS,RHS).
@@ -1167,18 +1181,6 @@ obj_exclude(Obj,Group,Others):- select(O,Group,Others),(O==Obj *-> true; Group=O
 
   
 /*
-assert_map_pair_list(_TestID,_ExampleNum,_IO,[]):-!.
-assert_map_pair_list(TestID,ExampleNum,IO,[Right,Left]):- is_object(Left), is_object(Right), !, 
-   assert_ map _pairs(TestID,ExampleNum,IO,Right,Left),!.
-assert_map_pair_list(TestID,ExampleNum,IO,[Left|Right]):- into_lst(Left,L1),[Left]\=@=L1,
-  append(L1,Right,LR),!,assert_map_pair_list(TestID,ExampleNum,IO,LR).
-assert_map_pair_list(TestID,ExampleNum,IO,[Right,Left,M|More]):- 
-  assert_map_pair_list(TestID,ExampleNum,IO,[Right,Left]),!,
-  assert_map_pair_list(TestID,ExampleNum,IO,[Right,M|More]).
-
-assert_map_ pairs(TestID,ExampleNum,IO,Right,Left):-
-  %print_ss(map_pair(TestID,ExampleNum,IO),Right,Left),
-  assert_become_new(arc_cache:map_ pairs(TestID,ExampleNum,IO,Right,Left)),!.
 
 into_lst(ObjsL,[]):- ObjsL==[],!.
 into_lst(ObjsL,[ObjsL]):- \+ compound(ObjsL),!.
