@@ -870,35 +870,18 @@ create_group_dmiles:-
   % 'a61f2674','0a2355a6', 'a61ba2ce', 'ea32f347', 'a79310a0', '37d3e8b2', 'e41c6fd3', 'b230c067', '0d3d703e', '08ed6ac7']))),
 
    flatten([
-
-'1d398264',
-'29c11459',
-
-'25d487eb',
-
-'a61ba2ce',
-'08ed6ac7',
-'0a2355a6',
-'37d3e8b2',
-'b230c067',
-'d2abd087',        
-'ea32f347',
-
-'e41c6fd3',
-'a61f2674',
-'0d3d703e',
-'makesboxsq',
-'a79310a0',
-'32e9702f',
-        
-        'f8b3ba0a',              
-
-        '5582e5ca',
-        '33b52de3',
-        
-        '1b60fb0c',
-        '103eff5b','626c0bcc',
-        
+    % plus 1
+        '32e9702f', '1d398264', '29c11459',
+    %start (plus 1)
+        '25d487eb',
+    %copy with mod
+        'a61ba2ce', '08ed6ac7', '0a2355a6', '37d3e8b2', 'b230c067', 'd2abd087', 'ea32f347',
+    %copy with mod (harder?)
+        'e41c6fd3', 'a61f2674', '0d3d703e', 'makesboxsq', 'a79310a0',
+    %todo
+     'f8b3ba0a', '5582e5ca', '33b52de3', '1b60fb0c',
+    %recolor with a pattern from output
+     '103eff5b','626c0bcc',        
         []],Flat),
    list_to_set(Flat,SetR), reverse(SetR,Set),
    must_det_ll((create_group(dmiles,Set))),

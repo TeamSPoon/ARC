@@ -153,7 +153,7 @@ solve_via_scene_change(TestID):-
   learn_grid_size(TestID),
   ensure_scene_change_rules(TestID),
   print_scene_change_rules(TestID),
-  %ExampleNum=_+_,
+  ExampleNum=tst+_,
   forall(kaggle_arc(TestID,ExampleNum,_,_),
      ignore(time(solve_via_scene_change_rules(TestID,ExampleNum)))), 
  !)).
@@ -616,6 +616,25 @@ get_obj_pair(TestID,IO,I,O):-
  member(I,PreObjsL),member(O,PostObjsL).
 
 
+/*
+a
+b
+c
+d
+a b
+a b c
+
+*/
+
+  
+/*
+in+in->out
+in+in+in->out
+in->out
+in+out->out
+out+out->out
+in->missing
+*/
 
 
 pp_ilp(Grp):-pp_ilp(1,Grp).
@@ -766,6 +785,16 @@ incr_cntx(Ctx,s(Ctx)).
 incr_step(Ctx,s(Ctx)).
 swap_tf(Ctx,s(Ctx)).
 
+%select_some(0,[],L,L).
+select_some(1,[E],L,R):- select(E,L,R).  
+select_some(2,[A,B],L,R):- select(A,L,R1),select(B,R1,R),A@<B.
+select_some(3,[A,B,C],L,R):- select_some(2,[A,B],L,R1),select(C,R1,R),B@<C.
+select_some(N,[A,B,C,D|More],L,R):- length(L,Max),between(4,Max,N),select_some(3,[A,B,C],L,R1),
+  plus(M,3,N),select_some(M,[D|More],R1,R),C@<D.
+
+in_to_ins(Ins,N,InsList):-
+ findall(E,select_some(N,E,Ins,_),InsList).
+
 select_pair(perfect,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,LHSObjs,RestLeft),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
@@ -773,6 +802,17 @@ select_pair(perfect,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   remove_object(RestLeft,Right,LHSRest),
   find_prox_mappings(Right,map_right_to_left,LHSObjs,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
+
+select_pair(perfect_combo,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-  
+  last(LHSObjs,LastLHSObjs), \+ is_list(LastLHSObjs),
+  in_to_ins(LHSObjs,3,LHSObjs_Combos),
+  select(Left,LHSObjs_Combos,LHSObjs_Combos_Rest),
+  once((remove_object(RHSObjs,Left,RHSObjsMLeft),  
+  find_prox_mappings(Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  remove_object(LHSObjs_Combos_Rest,Right,LHSRest),
+  find_prox_mappings(Right,map_right_to_left,LHSObjs_Combos,[LeftMaybe|_]))),
+  LeftMaybe = Left,!.
+
 
 select_pair(need_prev,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,LHSObjs,RestLeft),
@@ -794,7 +834,8 @@ select_pair(from_right,Prev,LHSObjs,RHSObjs,Left,Right,LHSRest,RHSRest):-
   find_prox_mappings(Prev,Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),!.
 
-
+remove_object(RHSObjs,[Left|More],RHSObjsMI):- 
+  remove_object(RHSObjs,Left,Rest),!,remove_object(Rest,More,RHSObjsMI).
 remove_object(RHSObjs,Left,RHSObjsMI):- select(Left,RHSObjs,RHSObjsMI),!.
 remove_object(RHSObjs,_,RHSObjs).
 
