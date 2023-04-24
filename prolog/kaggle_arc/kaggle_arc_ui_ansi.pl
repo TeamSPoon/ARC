@@ -600,6 +600,13 @@ pp_hook_g1(O):-  is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
 
 pp_hook_g1(_):-  \+ in_pp(ansi),!, fail.
 
+pp_hook_g1(Grp):- is_mapping(Grp),
+ must_det_ll((
+  get_mapping_info_list(Grp,Info,In,Out),
+  prefix_spaces(D,(dash_chars,format('<grp ~w>\n',[Info]))),
+    print_io_terms(D+7,In,Out),
+  prefix_spaces(D,(write('</grp>\n'),dash_chars)))).
+
 pp_hook_g1(O):- atom(O), atom_contains(O,'o_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
   resolve_reference(O,Var), O\==Var, \+ plain_var(Var),!, 
   write_nbsp, writeq(O), write(' /* '), show_indiv(Var), write(' */ ').
@@ -1332,7 +1339,7 @@ grid_footer(G,_,_):- \+ compound(G),!,fail.
 grid_footer(GFGG:M,GG,GF:M):-grid_footer(GFGG,GG,GF),!.
 grid_footer((GF=GG),GG,GF):- !, is_gridoid(GG).
 grid_footer([GFGG],GG,GF):- compound(GFGG),(GFGG=(GF=GG)),grid_footer(GF=GG,GG,GF).
-grid_footer(Obj,GG,GF):- is_object(Obj), %vis2D(Obj,H,V),localpoints(Obj,Ps),points_to_grid(H,V,Ps,GG), 
+grid_footer(Obj,GG,GF):- fail, is_object(Obj), %vis2D(Obj,H,V),localpoints(Obj,Ps),points_to_grid(H,V,Ps,GG), 
   global_grid(Obj,GG),
   object_ref_desc(Obj,GF),!.
 %grid_footer(GF,GG,wqs(GF)):- is_obj_props(GF),!,contains_enough_for_print(GF,GG),!.

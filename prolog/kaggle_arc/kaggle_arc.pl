@@ -671,9 +671,9 @@ saved_training(TestID):- test_name_output_file(TestID,'.pl',File),exists_file(Fi
 
 
 
-:- set_prolog_flag(arc_term_expansion, true).
 
-:- ensure_loaded('kaggle_arc_fwd.pfc').
+%:- ensure_loaded('kaggle_arc_fwd.pfc').
+:- set_prolog_flag(arc_term_expansion, true).
 
 %:- set_prolog_flag(arc_term_expansion, false).
 

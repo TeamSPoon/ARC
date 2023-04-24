@@ -423,12 +423,16 @@ object_glyph_colorz(_,[fg]).
 
 object_color_glyph_long(PA, CGA):- 
  must_det_ll((
-  obj_to_oid(PA,OID),
+  object_glyph_long(PA,OID),
   object_glyph_colorz(PA,Colors),
   print_colors_on_ss(OID,Colors,CGAO),
   CGA=CGAO)).
 
-object_color_glyph_short(Obj,SGlyph):- object_color_glyph_long(Obj,SGlyph),!.
+object_glyph_long(PA, OID):- 
+ must_det_ll((
+  obj_to_oid(PA,OID))),!.
+
+%object_color_glyph_short(Obj,SGlyph):- object_color_glyph_long(Obj,SGlyph),!.
 object_color_glyph_short(Obj,SGlyph):-
  must_det_ll((
   o2g(Obj,Glyph),
