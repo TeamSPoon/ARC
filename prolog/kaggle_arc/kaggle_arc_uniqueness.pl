@@ -145,7 +145,7 @@ assert_become_new(Term):- asserta_new(Term).
 
 
 solve_via_scene_change(TestID):-  
- %cls, %make,
+ cls, %make,
  must_det_ll((
   ensure_test(TestID),
   clear_scene_rules(TestID),
@@ -373,7 +373,7 @@ post_to_pre_object(TestID,IO,_P,Post,Pre):-
      findall(O,
        ((member(InOut,[in,out]),enum_object_ext(TestID,InOut,O),is_pre_cond_obj(IO,O),has_prop(cc(bg,0),O)
          )),PreObjs),
-     find_prox_mappings([],Post,post_to_pre_object,PreObjs,[Pre|_RHSRest]),!.
+     find_prox_mappings(Post,post_to_pre_object,PreObjs,[Pre|_RHSRest]),!.
 
 
 is_pre_cond_obj(IO,O):- has_prop(giz(g(IO)),O),!.
@@ -640,6 +640,13 @@ in->missing
 pp_ilp(Grp):-pp_ilp(1,Grp).
 
 pp_ilp(_,_):- format('~N'),nl,fail.
+
+pp_ilp(D,is_accompany_changed_db(_TestID,IO,P,PSame)):- 
+ list_to_conjuncts(PSame,Conj),pp_ilp(D,((IO:P):-Conj)),!.
+pp_ilp(D,(H:-Conj)):- prefix_spaces(D,pp(H:-Conj)),!.
+pp_ilp(D,(H:-PSame)):- 
+ list_to_conjuncts(PSame,Conj),prefix_spaces(D,(writeq(H:-Conj),writeln('.'))),!.
+
 pp_ilp(D,Grp):- is_mapping(Grp),
  must_det_ll((
   get_mapping_info_list(Grp,Info,In,Out),
@@ -650,15 +657,13 @@ pp_ilp(D,Grp):- is_mapping(Grp),
     pp_ilp(D+5,OTerm),
   prefix_spaces(D,(write('</grp>\n'),dash_chars)))).
 
-pp_ilp(D,is_accompany_changed_db(_TestID,IO,P,PSame)):- 
- list_to_conjuncts(PSame,Conj),pp_ilp(D,(IO:P):-Conj),writeln('.'),!.
 pp_ilp(D,Grid):- is_grid(Grid),prefix_spaces(D,print_grid(Grid)),!,nl.
 pp_ilp(D,List):- is_list(List), \+ is_grid(List),maplist(pp_ilp(D+3),List).
-pp_ilp(D,T):- into_solid_grid_strings(T,G),!, prefix_spaces(D,print(G)),!.
+%pp_ilp(D,T):- into_solid_grid_strings(T,G),!, prefix_spaces(D,print(G)),!.
 pp_ilp(D,T):- prefix_spaces(D,print(T)),!.
 
 
-prefix_spaces(D,G):- DD is D, wots(Tabs,(print('>'),print_spaces(DD),print('.'))),prepend_each_line(Tabs,G).
+prefix_spaces(D,G):- DD is D, wots(Tabs,(write('\t'),print_spaces(DD),write('.\t'))),prepend_each_line(Tabs,G).
 
 
 /*into_solid_grid_strings(T,WithGrids):-
@@ -702,19 +707,19 @@ need_positional_context(_H,_V).
 
 
 into_solid_grid_str([Obj,Obj2],SS):- fail, is_object(Obj),is_object(Obj2),
- into_solid_grid_str(Obj,Grid1),wots(SS1,print(Grid1)),
- into_solid_grid_str(Obj2,Grid2),wots(SS2,print(Grid2)),
- wots(SS,print_side_by_side(SS1,SS2)),!.
+ into_solid_grid_str(Obj,Grid1),
+ into_solid_grid_str(Obj2,Grid2),
+ wots(SS,print_side_by_side(Grid1,Grid2)),!.
 
 into_solid_grid_str(Obj,SS):- is_object(Obj),loc2D(Obj,X,Y),
  vis2D(Obj,H,V), vis2D(Obj,H,V),has_prop(giz(g(IO)),Obj),
  (need_positional_context(H,V)->global_grid(Obj,GG);=(Obj,GG)),
-  into_solid_grid(GG,Grid), =((loc2D(IO,X-Y,Grid)),SS),!.
+  as_grid_string(GG,Grid), =((loc2D(IO,X-Y,Grid)),SS),!.
 
 %into_solid_grid_str(Obj,SS):- is_object(Obj),loc2D(Obj,X,Y),into_solid_grid(Obj,Grid), =((loc2D(X-Y,Grid)),SS),!.
-into_solid_grid_str(Obj,Grid):- into_solid_grid(Obj,Grid),Obj\==Grid,!. %,wots(GridStr,(nl,print_grid(Grid))).
-into_solid_grid_str(Obj,(GridStr)):- into_solid_grid(Obj,Grid),!,wots(GridStr,(nl,print_grid(Grid))).
-
+into_solid_grid_str(Grid,GridStr):- into_solid_grid(Grid,Solid),Solid\=@=Grid,into_solid_grid_str(Grid,GridStr). %,wots(GridStr,(nl,print_grid(Grid))).
+into_solid_grid_str(Grid,(GridStr)):- as_grid_string(Grid,GridStr),!.%print_wots(GridStr,(nl,print_grid(Grid))).
+into_solid_grid_str(O,O).
 
 % =============================================================
 clear_object_dependancy(TestID):-
@@ -750,7 +755,7 @@ get_mapping_info_list(grp(Info,In,Out),Info,In,Out).
 get_mapping_info_list(GRP,Info,InOut):-
   get_mapping_info_list(GRP,Info,In,Out),
   into_list(In,InL),into_list(Out,OutL),!,
-  append_LR(InL,OutL,InOutL),!,
+  append_LR(OutL,InL,InOutL),!,
   must_det_ll((InOutL=InOut)).
 
 
@@ -769,6 +774,13 @@ calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,R
 calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- 
    LHSObjs==[], !, must_det_ll((incr_step(Step,IncrStep),
     calc_o_d_recursively(TestID,ExampleNum,IsSwapped,IncrStep,Ctx,Prev,Prev,RHSObjs,RestLR))).
+
+calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,LHSObjs,[Right],[Pairs|RestLR]):- fail,
+ must_det_ll((
+  make_pairs(TestID,ExampleNum,assumed,IsSwapped,Step,Ctx,[],[Prev,LHSObjs],Right,Pairs),
+  append_LR(Prev,Pairs,NewPrev),
+  calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,NewPrev,LHSObjs,[],RestLR))).
+
 
 calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,[Pairs|RestLR]):-
  must_det_ll((
@@ -881,9 +893,9 @@ into_prop(CC,P):- sub_term(E,CC),compound(E),is_prop1(E),!,E=P.
 %  make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,[],NLHS,RHS,GRP).
 make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,_Prev,LHS,RHS,GRP):-
   Info = info(TestID,ExampleNum,Step,IsSwapped,Ctx,Type),
-
+  into_list(LHS,LLHS),
   %append_LR(Prev,LHS,PLHS),
-  GRP = grp(Info,LHS,RHS).
+  GRP = grp(Info,LLHS,RHS).
 
 
 

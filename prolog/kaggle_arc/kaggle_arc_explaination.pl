@@ -110,6 +110,7 @@ print_info(A):- pp(A),!.
 
 
 
+show_indiv(Grid):- is_grid(Grid),!,print_grid(Grid),nl.
 show_indiv(Grid):- show_indiv('',Grid),!.
 :- discontiguous show_indiv/2.
 show_indiv(Why,R):- atom(R), atom_contains(R,'_'), pp_parent([LF|_]), \+ (LF==sf;LF==objFn), 

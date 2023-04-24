@@ -562,6 +562,7 @@ mass_gt1(O1):- into_obj(O1,O2),mass(O2,M),!,M>1.
 % Pretty printing
 pp_hook_g10(G):- \+ plain_var(G), current_predicate(pp_hook_g1/1), lock_doing(in_pp_hook_g10,G,pp_hook_g1(G)).
 
+%as_grid_string(O,SSS):- is_grid(O),wots_vs(S,print_grid(O)), sformat(SSS,'{  ~w}',[S]).
 as_grid_string(O,SSS):- wots_vs(S,show_indiv(O)), sformat(SSS,'{  ~w}',[S]).
 as_pre_string(O,SS):- wots_hs(S,show_indiv(O)), strip_vspace(S,SS).
 
