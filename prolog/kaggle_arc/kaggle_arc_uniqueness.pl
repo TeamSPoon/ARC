@@ -109,11 +109,6 @@ ensure_propcounts(TestID):- show_prop_counts(TestID), my_assertion(has_propcount
 %  arc_cache:each_object_dependancy(TestID,ExampleNum,OD),
 
 
-pair_info(TestID,ExampleNum,Ctx,Step,Info,A,B,USame,UPA2,UPB2):-
- Info = info(Step,_IsSwapped,Ctx,_TypeO,TestID,ExampleNum),
-  arc_cache:map_pairs(TestID,_,_,Info,A,B),
-  once((diff_l_r(A,B,Same,PA2,PB2),
-  unnumbervars((FG1='$VAR'(0),BG1='$VAR'('_'),Same,PA2,PB2),(FG1=FG1,BG1=BG1,USame,UPA2,UPB2)))).
 
 use_pair_info.
 no_pair_info:- fail.
@@ -122,17 +117,51 @@ gather_set(Ctx,Goal):-
   no_repeats_var(NRV), !, 
   call(Copy),Ctx=NRV.
 
-pair_info_io(TestID,ExampleNum,Step,IO,P):- IO = in, Ctx = in_out,
-  kaggle_arc(TestID,ExampleNum,_,_),
-  %gather_set(Ctx,pair_info(TestID,ExampleNum,Ctx,Step,Info,A,B,USame,UPA2,UPB2)),
-  gather_set(Step,pair_info(TestID,ExampleNum,Ctx,Step,Info,A,B,USame,UPA2,UPB2)),
-  %gather_set(P,(pair_info(TestID,ExampleNum,Ctx,Step,Info,A,B,USame,UPA2,UPB2),member(P,PB2))).
-  gather_set(P,(pair_info(TestID,ExampleNum,Ctx,Step,Info,A,B,USame,UPA2,UPB2),member(P,UPB2))).
-  
+p_to_utbs(TestID,Ctx,P,UTBLists):-
+ findall(UPB2,
+  gather_set(UPB2,(map_pairs_info_io(TestID,ExampleNum,Ctx,Step,Info,A,B,USame,UPA2,UPB2),member(P,UPB2))),UTBLists).
 
+:- use_module(library(ordsets)).
+
+% common_members(+ListOfLists, -Common)
+common_members([FirstList|Rest], Common) :-
+    maplist(list_to_ord_set, [FirstList|Rest], OrdSets),
+    foldl(ord_intersection, OrdSets, FirstList, Common).
+
+% list_to_ord_set(+List, -OrdSet)
+%list_to_ord_set(List, OrdSet) :- sort(List, OrdSet).
+
+% Example query:
+% ?- common_members([[1, 2, 3], [2, 3, 4], [1, 2, 3, 4, 5]], Common).
+% Common = [2, 3].
+
+
+map_pairs_info(TestID,Ctx,P):-
+  ensure_propcounts(TestID),
+  (var(Ctx)->gather_set(Ctx,map_pairs_info_io(TestID,ExampleNum,Ctx,Step,Info,A,B,USame,UPA2,UPB2));true),
+  %IO = in, Ctx = in_out,
+  %gather_set(P,(map_pairs_info_io(TestID,ExampleNum,Ctx,Step,Info,A,B,USame,UPA2,UPB2),member(P,PB2))).
+  gather_set(P,(map_pairs_info_io(TestID,ExampleNum,Ctx,Step,Info,A,B,USame,UPA2,UPB2),member(P,UPB2))),
+  p_to_utbs(TestID,Ctx,P,UTBLists),  
+  common_members(UTBLists,Members),
+  member(P,Members). 
+
+map_pairs_info_io(TestID,ExampleNum,Ctx,Step,Info,A,B,USame,UPA2,UPB2):-
+ Info = info(Step,_IsSwapped,Ctx,_TypeO,TestID,ExampleNum),
+  arc_cache:map_pairs(TestID,_,_,Info,A,B),
+  once((diff_l_r(A,B,Same,PA2,PB2),
+  unnumbervars(('$VAR'(0),'$VAR'('_'),Same,PA2,PB2),UNV))),
+  UNV = (_FG1,_BG1,USame,UPA2,UPB2).
+
+
+io_to_cntx(in,in_out).
+io_to_cntx(in,in_out_out).
+io_to_cntx(out,in_out_out).
+io_to_cntx(out,s(_)).
 
 ensure_props_change(TestID,IO,P):- 
-  use_pair_info,!,pair_info(TestID,_ExampleNum,IO,_Step,_Info,_In,_Out,_Same,_PA2,PB2),member(P,PB2).
+  use_pair_info,!,io_to_cntx(IO,Ctx),map_pairs_info(TestID,Ctx,P).
+
 ensure_props_change(_TestID,IO,P):- ground(IO),ground(P),!.
 ensure_props_change(TestID,IO,P):-
   ensure_propcounts(TestID),
