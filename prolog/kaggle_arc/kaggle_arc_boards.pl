@@ -85,14 +85,23 @@ create_individuations:-
   forall_count(all_arc_test_name(TestID),time(create_individuations(TestID))),
   save_individuations.
 
-create_individuations(TestID):-
+create_individuations(TestID):-  ensure_test(TestID), test_name_output_file(TestID,'.pl',File),  
+  catch(create_individuations(TestID,File),_,true),!.
+
+create_individuations(TestID,File):- ensure_test(TestID), var(File), test_name_output_file(TestID,'.pl',File),  !, create_individuations(TestID,File).
+create_individuations(_TestID,File):-  exists_file(File),  size_file(File,Size), Size > 300_000,!, writeln(size_file(File,Size)),!.
+create_individuations(_TestID,File):-  exists_file(File), !, writeln(exists_file(File)),!.
+create_individuations(TestID,File):-
   ensure_test(TestID),
- time(((
+  must_det_ll((
+  sformat(S,'touch "~w"',[File]),
+  shell(S),
   compile_and_save_hints(TestID),
   learn_grid_size(TestID),
-  ensure_individuals(TestID),
+  %ensure_individuals(TestID),
   ensure_propcounts(TestID),
-  save_test_hints(TestID)))).
+  %show_object_dependancy(TestID),
+  save_test_hints_now(TestID,File))).
   
 
 load_individuations:- consult(indivduations).

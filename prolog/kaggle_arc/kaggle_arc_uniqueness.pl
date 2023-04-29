@@ -104,9 +104,11 @@ has_propcounts(TestID):-
 %ensure_propcounts(_TestID):-!.
 ensure_propcounts(TestID):- ensure_test(TestID),ensure_propcounts1(TestID).
 ensure_propcounts1(TestID):- has_propcounts(TestID),!.
-ensure_propcounts1(TestID):- once((with_pair_mode(whole_test,
+ensure_propcounts1(TestID):- 
+  once((with_pair_mode(whole_test,
     with_luser(menu_key,'o',once(ndividuator(TestID)))))),has_propcounts(TestID),!.
-ensure_propcounts1(TestID):- show_prop_counts(TestID), my_assertion(has_propcounts(TestID)),!.
+ensure_propcounts1(TestID):- show_prop_counts(TestID), has_propcounts(TestID),!.
+ensure_propcounts1(_).
 
 props_change(TestID,IO,P):- map_pairs_info(TestID,IO,P,_Step).
 props_change2(TestID,IO,P):- 

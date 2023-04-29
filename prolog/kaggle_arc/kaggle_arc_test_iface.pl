@@ -1433,15 +1433,17 @@ my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).
 
 warn_skip(Goal):- u_dmsg(warn_skip(Goal)).
 
+
+
 save_test_hints(TestID):- is_list(TestID),!,my_maplist(save_test_hints,TestID).
 save_test_hints(TestID_IN):- ensure_test(TestID_IN,TestID), save_test_hints(TestID,_File).
 
 save_test_hints(TestID,File):- var(TestID),!, forall(ensure_test(TestID), save_test_hints(TestID,File)).
 save_test_hints(TestID,File):- var(File),!,test_name_output_file(TestID,'.pl',File), save_test_hints(TestID,File).
 save_test_hints(TestID,File):- maybe_append_file_extension(File,'.pl',NewName),!,save_test_hints(TestID,NewName).
+save_test_hints(TestID,File):- !, warn_skip(save_test_hints(TestID,File)).
 
-%save_test_hints(TestID,File):- !, warn_skip(save_test_hints(TestID,File)).
-save_test_hints(TestID,File):-
+save_test_hints_now(TestID,File):-
    setup_call_cleanup(open(File,write,O,[create([default]),encoding(text)]), 
        with_output_to(O,print_test_file_hints(TestID)),
       close(O)), 
