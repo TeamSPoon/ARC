@@ -1923,50 +1923,54 @@ learn_grid_local(_Mode,P,O):- ignore((\+ is_grid(P),is_grid(O),assert_visually(g
 
 test_local_dyn(F,A):- setof(F/A,(test_local_dyn(F),current_predicate(F/A)),L),member(F/A,L),A\==0.
 :- dynamic(test_local_dyn/1).
-test_local_dyn(learnt_rule).
-test_local_dyn(grid_associatable).
-test_local_dyn(propcounts).
-test_local_dyn(is_for_ilp).
-test_local_dyn(is_accompany_changed_db).
-test_local_dyn(test_associatable).
-test_local_dyn(object_to_object).
-%test_local_dyn(why_grouped).
-test_local_dyn(cached_dictation).
-test_local_dyn(oout_associatable).
 test_local_dyn(fav).
-test_local_dyn(propcount).
-test_local_dyn(showed_point_mapping).
+%test_local_dyn(why_grouped).
 
-
+test_local_save(P):- test_local_dyn(P).
 test_local_save(arc_test_property).
+test_local_save(assumed_mapped).
+test_local_save(assumed_unmapped).
+test_local_save(cached_dictation).
 test_local_save(cached_tests).
 test_local_save(cached_tests_hard).
 test_local_save(cindv).
 test_local_save(cmem).
 test_local_save(cmem_hv).
+test_local_save(did_map).
+test_local_save(each_object_dependancy).
 test_local_save(g_2_o).
 test_local_save(gid_glyph_oid).
-test_local_save(did_map).
-test_local_save(object_atomslist).
-test_local_save(assumed_mapped).
-test_local_save(assumed_unmapped).
-test_local_save(object_to_object).
+test_local_save(grid_associatable).
 test_local_save(individuated_cache).
+test_local_save(is_accompany_changed_db).
+test_local_save(is_for_ilp).
 test_local_save(is_grid_obj_count).
 test_local_save(is_grid_size).
 test_local_save(is_gridmass).
 test_local_save(is_why_grouped_g).
+test_local_save(learnt_rule).
 test_local_save(note).
+test_local_save(object_atomslist).
+test_local_save(object_dependancy).
+test_local_save(object_to_object).
 test_local_save(oid_glyph_object).
 test_local_save(omem).
+test_local_save(oout_associatable).
+test_local_save(propcount).
+test_local_save(propcounts).
+test_local_save(prop_dep).
+test_local_save(showed_point_mapping).
 test_local_save(smem).
+test_local_save(test_associatable).
 test_local_save(test_info_cache).
-test_local_save(P):- test_local_dyn(P).
-test_local_save(F,A):- test_local_dyn(F,A).
-test_local_save(F,A):- setof(F/A,(test_local_save(F),current_predicate(F/A),A\==0),L),member(F/A,L).
-test_local_save(F,A):- setof(F/A,(current_predicate(arc_cache:F/A),A\==0,functor(P,F,A),
+
+test_local_save1(F,A):- test_local_dyn(F,A).
+test_local_save1(F,A):- setof(F/A,(test_local_save(F),current_predicate(F/A),A\==0),L),member(F/A,L).
+test_local_save1(F,A):- setof(F/A,(current_predicate(arc_cache:F/A),A\==0,functor(P,F,A),
   \+ predicate_property(arc_cache:P,imported_from(_))),L),member(F/A,L).
-test_local_save(F,A):- setof(F/A,(test_local_save(F),current_predicate(arc_cache:F/A),A\==0),L),member(F/A,L).
+test_local_save1(F,A):- setof(F/A,(test_local_save(F),current_predicate(arc_cache:F/A),A\==0),L),member(F/A,L).
+
+test_local_save(F,A):- findall_vset(F/A,test_local_save1(F,A),List),member(F/A,List).
 
 
 training_info(TestID,InfoSet):-

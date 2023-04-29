@@ -319,7 +319,7 @@ ensure_individuals(TestID):- has_individuals(TestID),!.
 ensure_individuals(TestID):- 
  time((with_individuated_cache(true,
   once((with_pair_mode(whole_test, ensure_individuals1(TestID))))))), 
-   must_det_ll(has_individuals(TestID)),!.
+   has_individuals(TestID),!.
 
 ensure_individuals1(TestID):- has_individuals(TestID),!.
 ensure_individuals1(TestID):- 

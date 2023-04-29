@@ -40,7 +40,7 @@ write_intermediatre_header:-
   print_directive(encoding(iso_latin_1)),
   forall(  (test_local_save(F,A),nl),
       my_maplist(print_directive,[%abolish(F/A),
-                               multifile(F/A),dynamic(F/A),discontiguous(F/A),public(F/A),export(F/A),module_transparent(F/A)])).
+      multifile(F/A),dynamic(F/A),discontiguous(F/A),public(F/A),export(F/A),module_transparent(F/A)])).
 
 print_ref(Ref):- is_clause_ref(Ref), clause(H,B,Ref),!,print_ref((H:-B)).
 print_ref((X:-True)):- True == true,!, print_ref(X).
@@ -77,6 +77,30 @@ once_with_workflow_status(Goal):-
   (call(Goal)-> assert_in_testid(arc_cache:workflow_status(Goal,success)) ; assert_in_testid(arc_cache:workflow_status(Goal,failed))).
 
 compile_and_save_hints(TestID):- once_with_workflow_status(compile_and_save_hints_now(TestID)).
+
+
+
+create_individuations:- 
+ set_pair_mode(entire_suite),!,clsbake, 
+  forall_count(all_arc_test_name(TestID),time(create_individuations(TestID))),
+  save_individuations.
+
+create_individuations(TestID):-
+  ensure_test(TestID),
+ time(((
+  compile_and_save_hints(TestID),
+  learn_grid_size(TestID),
+  ensure_individuals(TestID),
+  ensure_propcounts(TestID),
+  save_test_hints(TestID)))).
+  
+
+load_individuations:- consult(indivduations).
+save_individuations:-
+  tell(indivduations),
+  listing(arc_cache:individuated_cache),
+  told.
+
 
 compile_and_save_hints_now(TestID):- var(TestID),!,all_arc_test_name(TestID),compile_and_save_hints_now(TestID).
 compile_and_save_hints_now(Mask):- fix_test_name(Mask,TestID),  Mask\=@=TestID,!,compile_and_save_hints_now(TestID).

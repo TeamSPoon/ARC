@@ -1440,25 +1440,29 @@ save_test_hints(TestID,File):- var(TestID),!, forall(ensure_test(TestID), save_t
 save_test_hints(TestID,File):- var(File),!,test_name_output_file(TestID,'.pl',File), save_test_hints(TestID,File).
 save_test_hints(TestID,File):- maybe_append_file_extension(File,'.pl',NewName),!,save_test_hints(TestID,NewName).
 
-save_test_hints(TestID,File):- !, warn_skip(save_test_hints(TestID,File)).
+%save_test_hints(TestID,File):- !, warn_skip(save_test_hints(TestID,File)).
 save_test_hints(TestID,File):-
- saveable_test_info(TestID,Info),
    setup_call_cleanup(open(File,write,O,[create([default]),encoding(text)]), 
-       with_output_to(O,(
-         write_intermediatre_header,
-         my_maplist(print_ref,Info))),
+       with_output_to(O,print_test_file_hints(TestID)),
       close(O)), 
    nop(statistics).
 
+print_test_file_hints(TestID):- 
+  ensure_test(TestID),
+  write_intermediatre_header,
+  saveable_test_info(TestID,Info),
+  my_maplist(print_ref,Info).
 
 
 clear_test(TestID):- is_list(TestID),!,my_maplist(clear_test,TestID).
+clear_test(TestID):- warn_skip(clear_test(TestID)).
 clear_test(TestID):- ensure_test(TestID),
    clear_training(TestID),
    %warn_skip
    (clear_saveable_test_info(TestID)),
    unload_test_file(TestID).
 
+clear_saveable_test_info(TestID):- warn_skip(clear_saveable_test_info(TestID)),!.
 clear_saveable_test_info(TestID):- 
    saveable_test_info(TestID,Info),
    erase_refs(Info).
@@ -1491,6 +1495,7 @@ clear_test_training(TestID):-
       unload_file(File),
       (exists_file(File)->delete_file(File);true))),
 */
+clear_training(TestID):- warn_skip(clear_training(TestID)),!.
 clear_training(TestID):- ensure_test(TestID),
   %retractall(arc_cache:individuated_cache(_,_,_)),
   set_bgc(_),
