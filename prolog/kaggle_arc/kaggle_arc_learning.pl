@@ -588,17 +588,13 @@ find_prox_mappings(Bonus,A,GID,Candidates,Objs):-
     !,
     findall(Why,
     (      
-     member(B,Candidates),obj_grp_atomslist(GID,B,PB,PBP),
-     PA\==PB,
-     B\==A,
-     \+ is_whole_grid(B),
-     must_det_ll((
+    member(B,Candidates),
+        B\==A,
+        \+ is_whole_grid(B),
+        obj_grp_atomslist(GID,B,PB,PBP),
+        PA\==PB,
+        memo_op(PAP,PBP,O,Joins,_J,NJ,JO)),
      % maybe_allow_pair(PA,PB), allow_pair(PA,PB),  
-       intersection(PAP,PBP,Joins,OtherA,OtherB),     
-       flatten([OtherA,OtherB],Other),
-       length(Joins,J),length(Other,O),
-       NJ is -J,
-       JO is - rationalize(J/(O+1))))),
      Pairs), 
    sort_safe(Pairs,RPairs),!,
    %list_upto(3,RPairs,Some),
@@ -625,8 +621,20 @@ find_prox_mappings(A,GID,Objs):-
    %list_upto(3,RPairs,Some),
    my_maplist(arg(4),RPairs,Objs).
 */
+memo_op(PAP,PBP,O,Joins,J,NJ,JO):- PAP@>PBP->memo_op_1(PBP,PAP,O,Joins,J,NJ,JO);memo_op_1(PAP,PBP,O,Joins,J,NJ,JO).
 
+:- abolish(memo_op_then/7).
+:- dynamic(memo_op_then/7).
+memo_op_1(PAP,PBP,O,Joins,J,NJ,JO):- memo_op_then(PAP,PBP,O,Joins,J,NJ,JO),!.
+memo_op_1(PAP,PBP,O,Joins,J,NJ,JO):- memo_op_now(PAP,PBP,O,Joins,J,NJ,JO), asserta(memo_op_then(PAP,PBP,O,Joins,J,NJ,JO)),!.
 
+memo_op_now(PAP,PBP,O,Joins,J,NJ,JO):-
+       intersection(PAP,PBP,Joins,OtherA,OtherB),!,
+       %append([OtherA,OtherB],Other),
+       length(Joins,J),length(OtherA,OA),length(OtherB,OB),
+       O is OA+OB,
+       NJ is -J,
+       JO is - rationalize(J/(O+1)),!.
 
 maybe_exclude_whole([I],[I]).
 maybe_exclude_whole(I,I):- \+ (member(Obj,I), is_fg_object(Obj), \+ is_whole_grid(Obj)),!.

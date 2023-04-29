@@ -408,4 +408,3 @@ remove_colors([C|IPLs],In,Out):-
 
 
 :- include(kaggle_arc_footer).
-
