@@ -27,10 +27,11 @@ dont_notice(link(contains,_)).
 dont_notice(occurs_in_links(contained_by,_)).
 dont_notice(pg(_851136,pen(_851146),rankLS,_)).
 dont_notice(iz(i_o(_))).
+dont_notice(pg(_,iz(_),rankLS,_)).
+dont_notice(iz(stype(_))).
 dont_notice(P):- compound(P),arg(_,P,E),is_gridoid(E),!.
 dont_notice(P):- compound(P),!,compound_name_arity(P,F,_),!,dont_notice(F).
 dont_notice(F):- \+ atom(F),!,fail.
-dont_notice(pg(_,iz(_),rankLS,_)).
 dont_notice(oid).
 dont_notice(giz).
 dont_notice(shape_rep).
@@ -427,7 +428,9 @@ compute_scene_change_pass3(TestID):-
   set_of_changes(TestID,compute_scene_change_pass3a(TestID)),
   print_scene_change_rules(pass3a,TestID),
   set_of_changes(TestID,compute_scene_change_pass3b(TestID,correct_antes1)),
+  set_of_changes(TestID,compute_scene_change_pass3c(TestID)),
   print_scene_change_rules(pass3b1,TestID),
+  set_of_changes(TestID,compute_scene_change_pass3c(TestID)),
   set_of_changes(TestID,compute_scene_change_pass3b(TestID,correct_antes2)),
   print_scene_change_rules(pass3b2,TestID),
   set_of_changes(TestID,compute_scene_change_pass3b(TestID,correct_antes3)),
@@ -835,7 +838,7 @@ other_map_pre_object(TestID,IN_OUT,P,_,I):- use_pair_info,!,
   map_pairs_info_io(TestID,_ExampleNum,Ctx,_Step,_TypeO,PreObjsL,PostObjsL,_USame,_UPA2,_UPB2),   
   member(O,PostObjsL),not_has_prop(O,P),member(I,PreObjsL).
 
-map_pre_object(TestID,IN_OUT,P,O,I):- use_pair_info,!,
+map_pre_object(TestID,IN_OUT,P,O,I):- %use_pair_info,!,
   ensure_props_change(TestID,IN_OUT,P),
   io_to_cntx(IN_OUT,Ctx),
   map_pairs_info_io(TestID,_ExampleNum,Ctx,_Step,_TypeO,PreObjsL,PostObjsL,_USame,_UPA2,UPB2),   
@@ -937,6 +940,48 @@ enum_object_ext(TestID,IN_OUT,O):-
   current_example_nums(TestID,ExampleNum),
   once((obj_group_io(TestID,ExampleNum,IN_OUT,Objs),Objs\==[])),member(O,Objs).
 
+
+%prop_will(TestID,IN_OUT,P,PSame):- use_pair_info,!,prop_to_can(TestID,IN_OUT,P,_O,_Can1,_Cant,PSame).
+prop_will(TestID,IN_OUT,P,PSame):- prop_can(TestID,IN_OUT,P,PSame).
+
+prop_can(TestID,Ctx,P,Can):-
+  ensure_props_change(TestID,Ctx,P),
+  %sok_deduce(P),
+  prop_cant(TestID,Ctx,P,Cant),
+  prop_can1(TestID,Ctx,P,Can1),
+  intersection(Can1,Cant,_,Can,_),Can\==[].
+
+
+% Turns out due to shortage Fred Meyer doesn't have the XR now anyways .. But i confirmed they do have  have a 28 day supply of the non-XR   .. .. Go ahead and not send the XR if you haven't sent it
+
+prop_cant(TestID,IN_OUT,P,Set):-
+  ensure_props_change(TestID,IN_OUT,P),
+  findall(Cant,
+     ((%enum_object_ext(TestID,IN_OUT,O),%has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
+       map_pre_object(TestID,IN_OUT,P,O,I),
+      not_has_prop(P,O),indv_props_list(I,List),member(Cant,List),ok_notice(Cant))),Flat),
+   list_to_set(Flat,Set).
+
+enum_object_ext(O):-
+  ensure_test(TestID),
+  current_example_nums(TestID,ExampleNum),
+  once((obj_group_io(TestID,ExampleNum,out,Objs),Objs\==[])),member(O,Objs).
+
+prop_can1(TestID,IN_OUT,P,Can):-  
+  ensure_props_change(TestID,IN_OUT,P),
+  findall(IN,
+    ((%enum_object_ext(TestID,IN_OUT,I,O),%has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
+      map_pre_object(TestID,IN_OUT,P,O,IN),
+      has_prop(P,O))),[I|L]),
+  indv_props_list(I,List),
+  findall(U,(member(U,List),ok_notice(U),forall(member(E,L),has_prop(P,E))),Can).
+
+
+%accompany_changed_compute_pass2(TestID,IN_OUT,P,SameS):- prop_can(TestID,IN_OUT,P,SameS).
+
+%xlisting(propcounts+variance_had_count_set+(pen([cc(yellow,1)]);links_count(contains,4))-'$spft$').
+/*
+
 prop_cant(TestID,IN_OUT,P,Set):- prop_cant2(TestID,IN_OUT,P,Set).
 prop_cant1(TestID,IN_OUT,P,Set):-
   ensure_props_change(TestID,IN_OUT,P),
@@ -958,8 +1003,6 @@ prop_cant2(TestID,IN_OUT,P,Set):-
     ((member(O,PostObjs),indv_props_list(O,List),member(Cant,List),ok_notice(Cant))),Flat),
   list_to_set(Flat,Set).
 
-%prop_will(TestID,IN_OUT,P,PSame):- use_pair_info,!,prop_to_can(TestID,IN_OUT,P,_O,_Can1,_Cant,PSame).
-prop_will(TestID,IN_OUT,P,PSame):- prop_can(TestID,IN_OUT,P,PSame).
 
 prop_can(TestID,IN_OUT,P,Can):- use_pair_info,!,prop_to_can(TestID,IN_OUT,P,_O,_Can1,_Cant,Can).
 prop_can(TestID,IN_OUT,P,Can):-    
@@ -1031,10 +1074,8 @@ prop_can1_counts(TestID,IN_OUT,P,Can):-
 
 
 
-%accompany_changed_compute_pass2(TestID,IN_OUT,P,SameS):- prop_can(TestID,IN_OUT,P,SameS).
 
-%xlisting(propcounts+variance_had_count_set+(pen([cc(yellow,1)]);links_count(contains,4))-'$spft$').
-/*
+
    propcounts( TestID,
            ExampleNum, IN_OUT,
            variance_had_count_set(2,0),
