@@ -810,16 +810,15 @@ show_object_dependancy(TestID):-
  learn_object_dependancy(TestID),
  print_object_dependancy(TestID).
 
-:- dynamic(arc_cache:map_pairs/6).
 :- dynamic(arc_cache:prop_dep/9).
-:- dynamic(arc_cache:causes/5).
 
-pair_obj_props(TestID,ExampleNum,Ctx,Step,TypeO,A,B,USame,InFlatProps,OutFlatProps):-
+pair_obj_props(TestID,ExampleNum,Ctx,Step,TypeO,LHS,RHS,USame,InFlatProps,OutFlatProps):-
   Info = info(Step,_IsSwapped,Ctx,TypeO,TestID,ExampleNum),
-  arc_cache:prop_dep(TestID,_,_,Info,A,B,USame,InFlatProps,OutFlatProps).
+  arc_cache:prop_dep(TestID,_,_,Info,LHS,RHS,USame,InFlatProps,OutFlatProps).
 
-pair_obj_info(TestID,ExampleNum,Ctx,Info,A,B):-
-  arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,A,B,_USame,_UPA2,_UPB2).
+pair_obj_info(TestID,ExampleNum,Ctx,Info,LHS,RHS):-
+  Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,ExampleNum),
+  arc_cache:prop_dep(TestID,_,_,Info,LHS,RHS,_USame,_InFlatProps,_OutFlatProps).
 
 
 
@@ -829,8 +828,6 @@ learn_object_dependancy(TestID):-
  ensure_test(TestID),
   must_det_ll((
   ensure_individuals(TestID),
- ignore((ExampleNum=trn+_)),
-	retractall(arc_cache:causes(TestID,_,_,_,_)),
  forall(kaggle_arc(TestID,ExampleNum,_,_),
 	learn_object_dependancy(TestID,ExampleNum)))).
 learn_object_dependancy(TestID,ExampleNum):-
@@ -857,8 +854,7 @@ assert_map_pairs(TestID,ExampleNum,Ctx,grp(Info,In,Out)):-
   once((diff_l_r(InL,OutL,Same,InPFlat,OutPFlat),
    unnumbervars(('$VAR'(0),'$VAR'('_'),Same,InPFlat,OutPFlat),UNV))),
    UNV = (_FG1,_BG1,USame,InFlatProps,OutFlatProps),
-  %pp_ilp(grp(Info,InL,OutL)),!,
-  assertz_new(arc_cache:map_pairs(TestID,ExampleNum,Ctx,Info,InL,OutL)),
+  %pp_ilp(grp(Info,InL,OutL)),!,  
   assertz_new(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,InL,OutL,USame,InFlatProps,OutFlatProps)),!.
 assert_map_pairs(_TestID,_ExampleNum,_Ctx,call(Rule)):-!,must_det_ll(Rule),!.
 
@@ -866,15 +862,8 @@ assert_map_pairs(_TestID,_ExampleNum,_Ctx,call(Rule)):-!,must_det_ll(Rule),!.
 % =============================================================
 print_object_dependancy(TestID):-
 % =============================================================
-  /*if_t(( \+ arc_cache:map_pairs(TestID,_,_,_,_,_)),
-   ( dash_chars,forall(arc_cache:map_group(TestID,_,_IN_OUT,Group),
-    once(((dash_chars,dash_chars,pp_ilp(Group),dash_chars,dash_chars)))))),
-  dash_chars,*/
- findall_vset(grp(Info,Pre,Post),arc_cache:map_pairs(TestID,_,_IN_OUT2,Info,Pre,Post),Set1),
- maplist(pp_ilp,Set1),
  dash_chars,dash_chars,
  findall_vset(grp(Info,Pre,Post),pair_obj_info(TestID,_,_,Info,Pre,Post),Set2),
- if_t(Set1 =@= Set2,  wdmsg('Set 2 the same')),
  if_t(Set1 \=@= Set2,  maplist(pp_ilp,Set2)),
  dash_chars,dash_chars.
 
@@ -1057,7 +1046,7 @@ clear_object_dependancy(TestID):-
      ignore((clear_object_dependancy(TestID,ExampleNum)))).
 clear_object_dependancy(TestID,ExampleNum):-  
  forall(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,Right,Left,A,B,C),
-    retract(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,Right,Left,A,B,C))),!.
+    retract(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,Right,Left,A,B,C))).
 
 
 
