@@ -248,7 +248,8 @@ pfcAddF(P):-
 :- set_prolog_flag(no_sandbox,true).
 
 
-:- set_prolog_flag(use_arc_www,true).
+:- set_prolog_flag(use_arc_www,false).
+:- set_prolog_flag(use_arc_tee,false).
 :- set_prolog_flag(use_arc_swish,false).
 :- set_prolog_flag(use_arc_bfly,false).
 :- set_prolog_flag(http_port,1766).

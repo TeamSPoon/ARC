@@ -139,8 +139,10 @@ bts:-
   stream_property(S,file_no(1)), prolog_stack:print_prolog_backtrace(S, Stack),
   ignore((fail, current_output(Out), \+ stream_property(Out,file_no(1)), print_prolog_backtrace(Out, Stack))),!.
 
-my_assertion(G):- call(G),!.
-my_assertion(G):- u_dmsg(my_assertion(G)),writeq(goal(G)),nl,!,ibreak.
+my_assertion(G):- my_assertion(call(G),G).
+
+my_assertion(_,G):- call(G),!.
+my_assertion(Why,G):- u_dmsg(my_assertion(Why,G)),writeq(Why=goal(G)),nl,!,ibreak.
 
 must_be_free(Free):- plain_var(Free),!.
 must_be_free(Free):- \+ nonvar_or_ci(Free),!.

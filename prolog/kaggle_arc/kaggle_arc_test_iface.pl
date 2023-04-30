@@ -1327,14 +1327,20 @@ call_file_goal(S,encoding(Enc)):- arc_set_stream(S,encoding(Enc)),!.
 call_file_goal(_, discontiguous(_)):- !.
 call_file_goal(_,Goal):- call(Goal),!.
 
-load_file_dyn(TestID):- var(TestID),!,ensure_test(TestID),load_file_dyn(TestID).
 load_file_dyn(TestID):- once(\+ atom(TestID); \+ exists_file(TestID)),
-  once(test_name_output_file(TestID,'.pl',NewName)),NewName\=@=TestID,!,load_file_dyn(NewName).
+  once(test_name_output_file(TestID,'.pl',NewName)),NewName\=@=TestID,!,load_file_dyn_pfc(NewName).
+load_file_dyn(File):- warn_skip(load_file_dyn_pfc(File)),!.
 
-load_file_dyn(File):- \+ exists_file(File), !, wdmsg(\+ exists_file(File)).
-load_file_dyn(File):- load_file_dyn_pfc(File),!.
+
+:- dynamic(has_loaded_file_dyn_pfc/1).
+
+load_file_dyn_pfc(TestID):- var(TestID),!,ensure_test(TestID),load_file_dyn_pfc(TestID).
+load_file_dyn_pfc(File):- has_loaded_file_dyn_pfc(File),!. 
+load_file_dyn_pfc(TestID):- once(\+ atom(TestID); \+ exists_file(TestID)),
+  once(test_name_output_file(TestID,'.pl',NewName)),NewName\=@=TestID,!,load_file_dyn_pfc(NewName).
+load_file_dyn_pfc(File):- \+ exists_file(File), !, wdmsg(\+ exists_file(File)).
 %load_file_dyn(File):- consult(File),!.
-load_file_dyn_pfc(File):- 
+load_file_dyn_pfc(File):- asserta(has_loaded_file_dyn_pfc(File)),
  writeln(load_file_dyn_pfc(File)),
  setup_call_cleanup(open(File,read,I),
      catch(load_dyn_stream(I),E,(print(E),catch(close(I),_,true),delete_file(File))),

@@ -95,9 +95,10 @@ cache_suite(SuiteX):-
  with_pair_mode(entire_suite,
   forall_count(all_suite_test_name(TestID),time(cache_devel(TestID)))).
 
-cache_devel:- with_pair_mode(entire_suite, forall_count(all_arc_test_name_unordered(TestID),time(cache_devel(TestID)))).
-cache_devel(TestID):-  ensure_test(TestID), test_name_output_file(TestID,'.pl',File),  
-  catch(cant_rrtrace(notrace(cache_devel(TestID,File))),E,wdmsg(cache_devel(TestID,File)=E)),!.
+cache_devel:- with_pair_mode(entire_suite, forall(all_arc_test_name_unordered(TestID),time(cache_devel(TestID)))).
+%cache_devel(TestID):-  ensure_test(TestID), test_name_output_file(TestID,'.pl',File),  
+%  catch(cant_rrtrace(notrace(cache_devel(TestID,File))),E,wdmsg(cache_devel(TestID,File)=E)),!.
+cache_devel(TestID):-  ensure_test(TestID), test_name_output_file(TestID,'.pl',File),  cant_rrtrace(notrace(cache_devel(TestID,File))).
 
 cache_devel( TestID,File):- ensure_test(TestID), var(File), test_name_output_file(TestID,'.pl',File),  !, cache_devel(TestID,File).
 cache_devel(_TestID,File):- exists_file(File), size_file(File,Size), Size > 300_000,!, writeln(size_file(File,Size)),!.
@@ -242,6 +243,7 @@ do_as_pairs(F,[_|More],I,O):- do_as_pairs(F,More,I,O).
 
 %show_all_test_reductions(TestSpec):- var(TestSpec),!,show_all_test_reductions.
 show_all_test_reductions(TestSpec):- var_ensure_test(TestSpec,TestID),
+  load_file_dyn_pfc(TestID),
   u_dmsg(?-show_reduced_test(TestID)),  
   dash_chars,
   show_reduced_inputs(TestID),
@@ -587,6 +589,7 @@ v_area(I,Size):- vis2D(I,IH,IV), Size is IH * IV.
 detect_all_training_hints(TestID):- detect_pair_hints(TestID).
 
 detect_pair_hints(TestID):- ensure_test(TestID),
+  load_file_dyn_pfc(TestID),
   w_section(title(detect_pair_hints(TestID>ExampleNum)),
     ( 
      training_only_examples(ExampleNum),
@@ -1170,8 +1173,9 @@ ensure_the_alt_grids(TestID,ExampleNum):-
    with_current_test(ensure_the_alt_grids,TestID,ExampleNum).
 ensure_the_alt_grids(TestID,ExampleNum,In,Out):- 
   with_trn_pairs(TestID,ExampleNum,In,Out,ensure_the_alt_grids(TestID,ExampleNum,[],In,Out)).
+
 ensure_the_alt_grids(TestID,ExampleNum,_,_,_):- arc_test_property(TestID,ExampleNum,ori(_),_),!.
-ensure_the_alt_grids(TestID,ExampleNum,_,_,_):- arc_test_property(TestID,ExampleNum,iro(_),_),!.
+ensure_the_alt_grids(TestID,ExampleNum,_,_,_):- load_file_dyn_pfc(TestID), arc_test_property(TestID,ExampleNum,iro(_),_),!.
 ensure_the_alt_grids(TestID,ExampleNum,XForms,In,Out):-  same_sizes(In,Out),
   !, save_the_alt_grids_now(TestID,ExampleNum,XForms,In,Out),!.
 ensure_the_alt_grids(TestID,ExampleNum,XForms,In,Out):- fail,
