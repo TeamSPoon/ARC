@@ -28,7 +28,7 @@ must_det_ll_maplist(_,[],[],[]):-!.
 must_det_ll_maplist(P3,[HA|TA],[HB|TB],[HC|TC]):- must_det_ll(call(P3,HA,HB,HC)), must_det_ll_maplist(P3,TA,TB,TC).
 
 %must_det_ll(G):- !, once((notrace(G)*->true;must_det_ll_failed(G))).
-must_det_ll(G):- never_rrtrace,!,call(G).
+must_det_ll(G):- never_rrtrace,!,once(G).
 must_det_ll(G):- notrace(arc_html),!, ignore(notrace(G)),!.
 must_det_ll(G):- tracing,!, call(G). % once((call(G)*->true;must_det_ll_failed(G))).
 %must_det_ll(X):- !,must_not_error(X).
@@ -402,3 +402,5 @@ dte(set(E.v)):- set(E.that)=v.
 :- disable_arc_expansion.
 :- listing(dte).
 :- endif.
+
+

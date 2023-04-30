@@ -67,7 +67,7 @@ show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC00,OutC00):-
 
 
 show_individuated_pair(PairName,ROptions,GridIn,GridOut,InCB,OutCB):-
- ensure_test(TestID),
+ %ensure_test(TestID),
  (var(PairName)->maybe_name_the_pair(GridIn,GridOut,PairName);true),
  ignore((pairname_to_examplenum(PairName,ExampleNum)->set_example_num(ExampleNum);ensure_example_num(GridIn,GridOut))),
  must_det_ll((

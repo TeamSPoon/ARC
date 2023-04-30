@@ -547,6 +547,7 @@ is_detatched_thread:- is_cgi,!.
 is_detatched_thread:- \+ (thread_self(Main) -> Main == main ; main==0),!.
 
 cls_z:- tracing,!.
+cls_z:- get_pair_mode(Mode),Mode==entire_suite,!.
 cls_z:- is_detatched_thread,!,flush_tee.
 cls_z:- if_thread_main((catch(really_cls,_,true), flush_tee, nop((clear_tee,clear_test_html)))).
 

@@ -104,6 +104,8 @@ has_propcounts(TestID):-
 %ensure_propcounts(_TestID):-!.
 ensure_propcounts(TestID):- ensure_test(TestID),ensure_propcounts1(TestID).
 ensure_propcounts1(TestID):- has_propcounts(TestID),!.
+ensure_propcounts1(TestID):- calc_propcounts(TestID),has_propcounts(TestID),!.
+
 ensure_propcounts1(TestID):- 
   once((with_pair_mode(whole_test,
     with_luser(menu_key,'o',once(ndividuator(TestID)))))),has_propcounts(TestID),!.
@@ -202,12 +204,12 @@ assert_become_new(Term):- asserta_new(Term).
 
 solve_via_scene_change(TestID):-  
  must_det_ll((
-  ensure_test(TestID),
-  cls, %make,
+  ensure_test(TestID), %make,
   clear_scene_rules(TestID),
   %detect_pair_hints(TestID),
   time(learn_grid_size(TestID)),
   ensure_scene_change_rules(TestID),
+  save_test_hints_now(TestID),
   ExampleNum=tst+_,
   forall(kaggle_arc(TestID,ExampleNum,_,_),
      ignore(time(solve_via_scene_change_rules(TestID,ExampleNum)))), 
@@ -1252,6 +1254,10 @@ split_sorted_by_len(Objs, Len,Prime,SplitLHS,SplitRHS):-
 
 into_prop(CC,P):- sub_term(E,CC),compound(E),is_prop1(E),!,E=P.
 
+cto_aa(A,AA):- atom(A),!,AA=A.
+cto_aa(s(A),AA):- nonvar(A), !, cto_aa(A,AAA),atom_concat(s_,AAA,AA).
+cto_aa(A,AA):- format(atom(AA),'~w',[A]).
+
 %make_pairs(TestID,ExampleNum,Type,s(IsSwapped),Step,Ctx,Prev,LHS,RHS,GRP):- nonvar(IsSwapped),!,
 %  make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,Prev,RHS,LHS,GRP).
 %make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,Prev,LHS,RHS,GRP):- Prev\==[], !, 
@@ -1259,13 +1265,13 @@ into_prop(CC,P):- sub_term(E,CC),compound(E),is_prop1(E),!,E=P.
 %  make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,[],NLHS,RHS,GRP).
 make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,_Prev,LHS,RHS,GRP):-
   Info = info(Step,IsSwapped,Ctx,TypeO,TestID,ExampleNum),
-  listify(LHS,LHSL),maplist(obj_in_or_out,LHSL,LCtx),atomic_list_concat(LCtx,'_',LP),
-  listify(RHS,RHSL),maplist(obj_in_or_out,RHSL,RCtx),atomic_list_concat([Type,LP|RCtx],'_',TypeO),
+  must_det_ll((
+ listify(LHS,LHSL),maplist(obj_in_or_out,LHSL,LCtx),maplist(cto_aa,LCtx,LCtxA),atomic_list_concat(LCtxA,'_',LP),
+ listify(RHS,RHSL),maplist(obj_in_or_out,RHSL,RCtx),maplist(cto_aa,[Type,LP|RCtx],AA),atomic_list_concat(AA,'_',TypeO))),
   
   %into_list(LHS,LLHS),
   %append_LR(Prev,LHS,PLHS),
   GRP = grp(Info,LHS,RHS).
-
 
 
 

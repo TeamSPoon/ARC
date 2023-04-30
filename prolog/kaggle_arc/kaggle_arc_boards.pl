@@ -79,36 +79,51 @@ once_with_workflow_status(Goal):-
 compile_and_save_hints(TestID):- once_with_workflow_status(compile_and_save_hints_now(TestID)).
 
 
+  
+cache_suites:- 
+ forall(devel_suite(SuiteX),cache_suite(SuiteX)).
+devel_suite(dmiles).
+devel_suite(is_symgrid).
+devel_suite(evaluation).
+devel_suite('MiniARC').
+devel_suite(easy_solve_suite).
+devel_suite(eval400).
+devel_suite(train400).
+devel_suite(test_names_by_hard). 
+cache_suite(SuiteX):- 
+ set_test_suite(SuiteX),
+ with_pair_mode(entire_suite,
+  forall_count(all_suite_test_name(TestID),time(cache_devel(TestID)))).
 
-create_individuations:- 
- set_pair_mode(entire_suite),!,clsbake, 
-  forall_count(all_arc_test_name(TestID),time(create_individuations(TestID))),
-  save_individuations.
+cache_devel:- with_pair_mode(entire_suite, forall_count(all_arc_test_name_unordered(TestID),time(cache_devel(TestID)))).
+cache_devel(TestID):-  ensure_test(TestID), test_name_output_file(TestID,'.pl',File),  
+  catch(cant_rrtrace(notrace(cache_devel(TestID,File))),E,wdmsg(cache_devel(TestID,File)=E)),!.
 
-create_individuations(TestID):-  ensure_test(TestID), test_name_output_file(TestID,'.pl',File),  
-  catch(create_individuations(TestID,File),_,true),!.
-
-create_individuations(TestID,File):- ensure_test(TestID), var(File), test_name_output_file(TestID,'.pl',File),  !, create_individuations(TestID,File).
-create_individuations(_TestID,File):-  exists_file(File),  size_file(File,Size), Size > 300_000,!, writeln(size_file(File,Size)),!.
-create_individuations(_TestID,File):-  exists_file(File), !, writeln(exists_file(File)),!.
-create_individuations(TestID,File):-
+cache_devel( TestID,File):- ensure_test(TestID), var(File), test_name_output_file(TestID,'.pl',File),  !, cache_devel(TestID,File).
+cache_devel(_TestID,File):- exists_file(File), size_file(File,Size), Size > 300_000,!, writeln(size_file(File,Size)),!.
+cache_devel(_TestID,File):- exists_file(File), !, writeln(exists_file(File)),!.
+cache_devel( TestID,File):-
   ensure_test(TestID),
-  must_det_ll((
-  sformat(S,'touch "~w"',[File]),
-  shell(S),
-  compile_and_save_hints(TestID),
+  nl,writeq(starting(cache_devel( TestID,File))),nl,
+  sformat(S,'touch "~w"',[File]), shell(S),
+  call_with_time_limit(180.0,cache_devel_1(TestID)),
+  if_t(has_individuals(TestID),
+  ((writeln(save_test_hints(TestID,File)),
+    save_test_hints_now(TestID,File),
+    writeln(finised_saving(TestID,File))))).
+
+cache_devel_1(TestID):- 
   learn_grid_size(TestID),
-  %ensure_individuals(TestID),
-  ensure_propcounts(TestID),
+  compile_and_save_hints(TestID),
+  ensure_individuals(TestID),writeq(finished(ensure_individuals( TestID))),nl,
+  %ensure_propcounts(TestID),writeq(finished(ensure_propcounts( TestID))),nl,
   %show_object_dependancy(TestID),
-  save_test_hints_now(TestID,File))).
+  %asserta(should_save_test_hints_now(TestID,File)),
+  !.
   
 
 load_individuations:- consult(indivduations).
-save_individuations:-
-  tell(indivduations),
-  listing(arc_cache:individuated_cache),
-  told.
+save_individuations:- tell(indivduations), listing(arc_cache:individuated_cache), told.
 
 
 compile_and_save_hints_now(TestID):- var(TestID),!,all_arc_test_name(TestID),compile_and_save_hints_now(TestID).
