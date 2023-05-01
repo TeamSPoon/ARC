@@ -1337,16 +1337,16 @@ load_file_dyn_pfc(TestID):- once(\+ atom(TestID); \+ exists_file(TestID)),
   once(test_name_output_file(TestID,'.pl',NewName)),NewName\=@=TestID,!,load_file_dyn_pfc(TestID,NewName).
 /*
 load_file_dyn_pfc(TestID,TestID):- var(TestID),!,ensure_test(TestID),load_file_dyn_pfc(TestID,TestID).
-load_file_dyn_pfc(TestID,File):- has_loaded_file_dyn_pfc(File),!. 
 load_file_dyn_pfc(TestID,TestID):- once(\+ atom(TestID); \+ exists_file(TestID)),
   once(test_name_output_file(TestID,'.pl',NewName)),NewName\=@=TestID,!,load_file_dyn_pfc(TestID,NewName).
-load_file_dyn_pfc(TestID,File):- \+ exists_file(File), !, wdmsg(\+ exists_file(File)).
 %load_file_dyn(File):- consult(File),!.
 */
-load_file_dyn_pfc(TestID,File):- asserta(has_loaded_file_dyn_pfc(File)),
+load_file_dyn_pfc(_TestID,File):- has_loaded_file_dyn_pfc(File),!. 
+load_file_dyn_pfc(_TestID,File):- \+ exists_file(File), !, wdmsg(\+ exists_file(File)).
+load_file_dyn_pfc( TestID,File):- asserta(has_loaded_file_dyn_pfc(File)),
  writeln(load_file_dyn_pfc(TestID,File)),
  setup_call_cleanup(open(File,read,I),
-     catch(load_dyn_stream(I),E,(print(E),catch(close(I),_,true),delete_file(File))),
+     catch(load_dyn_stream(I),E,(print(E),catch(close(I),_,true),delete_file(File),retractall(has_loaded_file_dyn_pfc(File)))),
      catch(close(I),_,true)),!,
  retractall(is_accompany_changed_db(TestID,_,_,_)).
 

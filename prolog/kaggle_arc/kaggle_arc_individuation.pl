@@ -731,7 +731,6 @@ show_individuated_nonpair(PairName,ROptions,GridIn,Grid,InC):-
   print_ss(green,GridIn,show_individuated_nonpair(PairName),_,InC,indvs(ROptions,PairName)))).
   
  
-flatten_set(F,S):- flatten(F,L),list_to_set(L,BF),!,BF=S.
 
 
  
@@ -4423,8 +4422,8 @@ is_thing_or_connection1(merge_shapes(_,_)).
 is_thing_or_connection1(jumps(_,_)).
 
 
-find_one_individual(Option,Obj,VM):- find_one_ifti3(Option,Obj,VM),!.
-%find_one_individual(Option,Obj,VM):- find_one_ifti2(Option,Obj,VM),!.
+find_one_individual(Option,Obj,VM):- find_one_ifti2(Option,Obj,VM),!.
+%find_one_individual(Option,Obj,VM):- find_one_ifti3(Option,Obj,VM),!.
 
 include_only_between(HS,HE,VS,VE,IndvPoints0,IndvPoints):-
    include(w_in_box(HS,HE,VS,VE),IndvPoints0,IndvPoints).

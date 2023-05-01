@@ -577,8 +577,12 @@ sorted_by_closeness(In,Sorted,Objs,List):-
   asserta(saved_sorted_by_closeness(In,Sorted,Objs,List)),!.
 
 
-sort_by_jaccard(A,Candidates,Objs):-
+find_prox_mappings(A,GroupID,Candidates,Objs):-
+  bonus_sort_by_jaccard([],A,GroupID,Candidates,Objs).
+
+find_prox_mappings(A,Candidates,Objs):-
   bonus_sort_by_jaccard([],A,sort_by_jaccard,Candidates,Objs).
+
 
 sort_by_jaccard(A,GroupID,Candidates,Objs):-
   bonus_sort_by_jaccard([],A,GroupID,Candidates,Objs).
@@ -586,7 +590,9 @@ sort_by_jaccard(A,GroupID,Candidates,Objs):-
 bonus_sort_by_jaccard(Bonus,A,Candidates,Objs):-
   bonus_sort_by_jaccard(Bonus,A,sort_by_jaccard,Candidates,Objs).
 
+bonus_sort_by_jaccard(_,_,_,[Obj],[Obj]):-!.
 bonus_sort_by_jaccard(Bonus,A,GroupID,Candidates,Objs):-
+ must_det_ll((
     obj_grp_atomslist(GroupID,A,PA,PAP0),
     obj_atoms(Bonus,BonusAtoms),
     append(PAP0,BonusAtoms,PAP),
@@ -595,16 +601,16 @@ bonus_sort_by_jaccard(Bonus,A,GroupID,Candidates,Objs):-
     findall(Why,
     (      
     member(B,Candidates),
-        B\==A,
-        \+ is_whole_grid(B),
+%        B\==A,
+%        \+ is_whole_grid(B),
         obj_grp_atomslist(GroupID,B,PB,PBP),
-        PA\==PB,
+       % PA\==PB,
         memo_op(PAP,PBP,O,Joins,_J,NJ,JO)),
      % maybe_allow_pair(PA,PB), allow_pair(PA,PB),  
      Pairs), 
-   sort_safe(Pairs,RPairs),!,
+   sort_safe(Pairs,RPairs),
    %list_upto(3,RPairs,Some),
-   my_maplist(arg(4),RPairs,Objs).
+   my_maplist(arg(4),RPairs,Objs))).
 
 
 memo_op(PAP,PBP,O,Joins,J,NJ,JO):- PAP@>PBP->memo_op_1(PBP,PAP,O,Joins,J,NJ,JO);memo_op_1(PAP,PBP,O,Joins,J,NJ,JO).

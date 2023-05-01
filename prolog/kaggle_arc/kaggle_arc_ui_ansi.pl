@@ -2413,15 +2413,17 @@ i_glyph(_,Glyph):- bg_dot(Code), name_safe(Glyph,[Code]),!.
 %i_glyph(N,Glyph):- i_glyph0(N,Glyph),!.%:- atrace,i_glyph0(N,Glyph),atom(Glyph),!.
 
 name_safe(Glyph,Codes):- catch(name(Glyph,Codes),_,fail).
-i_glyph0(NIL,'?'):- NIL==nil,!.
-i_glyph0(N,Glyph):- bg_sym_ui(BG), BG==N, bg_dot(Code), name_safe(Glyph,[Code]),!.
-i_glyph0(N,Glyph):- atom(N),name_safe(N,[_111,95,Code|_])->name_safe(Glyph,[Code]),!.
-i_glyph0(N,Glyph):- atom(N),atom_number(N,Num),i_glyph(Num,Glyph),!.
-i_glyph0(N,Glyph):- atom(N),name_safe(N,[Code])->name_safe(Glyph,[Code]),!.
-i_glyph0(Code,Glyph):- integer(Code), Code> 255, name_safe(Glyph,[Code]),!.
-i_glyph0(N,Glyph):- integer(N),quietly((i_sym(N,Code),name_safe(Glyph,[Code]))),!.
-i_glyph0(N,Glyph):- plain_var(N),format(chars(Codes),'~p',[N]),last(Codes,Glyph),!.
-i_glyph0(N,Glyph):- number(N), N>10, integer(N),N3 is N div 3, i_glyph0(N3,Glyph),!.
+
+i_glyph0(N,C):-i_glyph1(N,Glyph),!,atom_chars(Glyph,[C|_]).
+i_glyph1(NIL,'?'):- NIL==nil,!.
+i_glyph1(N,Glyph):- bg_sym_ui(BG), BG==N, bg_dot(Code), name_safe(Glyph,[Code]),!.
+i_glyph1(Code,Glyph):- integer(Code), Code> 255, name_safe(Glyph,[Code]),!.
+i_glyph1(N,Glyph):- integer(N),quietly((i_sym(N,Code),name_safe(Glyph,[Code]))),!.
+i_glyph1(N,Glyph):- number(N), N>10, integer(N),N3 is N div 3, i_glyph1(N3,Glyph),!.
+i_glyph1(N,Glyph):- plain_var(N),format(chars(Codes),'~p',[N]),last(Codes,Glyph),!.
+i_glyph1(N,Glyph):- atom(N),name_safe(N,[_111,95,Code|_])->name_safe(Glyph,[Code]),!.
+i_glyph1(N,Glyph):- atom(N),atom_number(N,Num),i_glyph(Num,Glyph),!.
+i_glyph1(N,Glyph):- atom(N),name_safe(N,[Code])->name_safe(Glyph,[Code]),!.
 %i_glyph(N,Glyph):- atom(N),atom_chars(N,Chars),last(Chars,LGlyph),upcase_atom(LGlyph,Glyph).
                                                                             
 i_sym(N2,Code):- integer(N2),!, N is N2+160, change_code(N,NN), iss:i_syms(Codes),nth0(NN,Codes,Code),!.

@@ -108,14 +108,14 @@ cache_devel(_TestID,File):- exists_file(File), size_file(File,Size), Size > 300_
 %cache_devel(_TestID,File):- exists_file(File), !, writeln(exists_file(File)),!.
 cache_devel( TestID,File):- 
   ensure_test(TestID),
-  alarm(180, halt(666), Id, [install(true),remove(false)]),
+  alarm(300, halt(0), Id, [install(true),remove(false)]),
   nl,writeq(starting(cache_devel( TestID,File))),nl,
- % sformat(S,'touch "~w"',[File]), shell(S), 
+ sformat(S,'touch "~w"',[File]), shell(S), 
   cache_devel_1(TestID),
-  if_t(has_individuals(TestID),
-  ((writeln(save_test_hints(TestID,File)),
+  writeln(save_test_hints(TestID,File)),
+  remove_alarm(Id),
     save_test_hints_now(TestID,File),
-    writeln(finised_saving(TestID,File))))).
+    writeln(finised_saving(TestID,File)).
 
 cache_devel_1(TestID):- 
   learn_grid_size(TestID),
