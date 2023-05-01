@@ -204,7 +204,8 @@ enter_solve_obj(VM,TestID,ExampleNum,ROptions,Objs,ObjsO):-
  ObjsO \==[],!.
 
 score_rule(Ways,Obj,Rule,Score):- is_object(Rule), \+ is_object(Obj),!,score_rule(Ways,Rule,Obj,Score).
-score_rule(Ways,Obj,implies(obj_atoms(PCond),edit(P)),Score):- 
+score_rule(Ways,Obj,Rule,Score):- 
+ (Rule = (_Ctx:edit(P):- obj_atoms(PCond))),
  indv_props_list(Obj,Props), \+ member(P,Props),
  %\+ \+ ((member(E,Props),member(E,PCond))),
  once( ( \+ is_bg_object(Obj) ); sub_var(black,PCond)),
@@ -283,7 +284,7 @@ apply_rules_to_objects(_Ways,_Mapping,_Rules,_Objs,[]).
 
 
 solve_obj_group(VM,TestID,_ExampleNum,_ROptions,Ctx,Objs,ObjsO):-
-  Rule = implies(obj_atoms(PCond),edit(P)),
+  (Rule = (Ctx:edit(P):- obj_atoms(PCond))),
   io_to_cntx(IO_,Ctx), 
   findall_vset(Rule,(is_accompany_changed_db(TestID,IO_,P,PSame), list_to_set(PSame,PCond)), Rules),
   member(Ways-Strategy,[exact-_,two_way-one_to_one,_-_]), 
