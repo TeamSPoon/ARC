@@ -1005,7 +1005,7 @@ flat_props(Objs,EList):-
   flatten(PropLists,List), %list_to_set(List,Set),
   include(not_skip_ku,List,EList).
 
-hack_prop_groups(Named,Objs):-
+hack_prop_groups(Named,Objs):- ds, break,
  must_det_ll((
   flat_props(Objs,EList),
   w_section(print_elists(Named),

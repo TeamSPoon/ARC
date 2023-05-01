@@ -23,7 +23,7 @@ learned_test(TName):-
     ptc(orange,format('~N~n% Observed: ~w  Learned: ~w~n~n',[TILen,LLen])),!,
     if_t((TILen==0,LLen==0),xlisting([TestID-(cached_tests)])),
     print_object_dependancy(TestID),
-    print_scene_change_rules(TestID),!.
+    print_scene_change_rules(learned_test,TestID),!.
 
 
 
@@ -573,15 +573,21 @@ sorted_by_closeness(In,Sorted,Objs,List):- once(var(In);var(Objs)),!,enum_in_obj
 sorted_by_closeness(In,Sorted,Objs,List):- var(Sorted), my_maplist(obj_to_oid,Objs,OIDS), sort_safe(OIDS,Sorted),!,sorted_by_closeness(In,Sorted,Objs,List).
 sorted_by_closeness(In,Sorted,Objs,List):- saved_sorted_by_closeness(In,Sorted,Objs,List),!.
 sorted_by_closeness(In,Sorted,Objs,List):- 
-  find_prox_mappings(In,_,Objs,List),
+  sort_by_jaccard(In,_,Objs,List),
   asserta(saved_sorted_by_closeness(In,Sorted,Objs,List)),!.
 
 
-find_prox_mappings(A,GID,Candidates,Objs):-
-  find_prox_mappings([],A,GID,Candidates,Objs).
+sort_by_jaccard(A,Candidates,Objs):-
+  bonus_sort_by_jaccard([],A,sort_by_jaccard,Candidates,Objs).
 
-find_prox_mappings(Bonus,A,GID,Candidates,Objs):-
-    obj_grp_atomslist(GID,A,PA,PAP0),
+sort_by_jaccard(A,GroupID,Candidates,Objs):-
+  bonus_sort_by_jaccard([],A,GroupID,Candidates,Objs).
+
+bonus_sort_by_jaccard(Bonus,A,Candidates,Objs):-
+  bonus_sort_by_jaccard(Bonus,A,sort_by_jaccard,Candidates,Objs).
+
+bonus_sort_by_jaccard(Bonus,A,GroupID,Candidates,Objs):-
+    obj_grp_atomslist(GroupID,A,PA,PAP0),
     obj_atoms(Bonus,BonusAtoms),
     append(PAP0,BonusAtoms,PAP),
     ord(NJ/O+JO+Joins,[PA,A],[PB,B],B) = Why,
@@ -591,7 +597,7 @@ find_prox_mappings(Bonus,A,GID,Candidates,Objs):-
     member(B,Candidates),
         B\==A,
         \+ is_whole_grid(B),
-        obj_grp_atomslist(GID,B,PB,PBP),
+        obj_grp_atomslist(GroupID,B,PB,PBP),
         PA\==PB,
         memo_op(PAP,PBP,O,Joins,_J,NJ,JO)),
      % maybe_allow_pair(PA,PB), allow_pair(PA,PB),  
@@ -599,28 +605,8 @@ find_prox_mappings(Bonus,A,GID,Candidates,Objs):-
    sort_safe(Pairs,RPairs),!,
    %list_upto(3,RPairs,Some),
    my_maplist(arg(4),RPairs,Objs).
-/*
-find_prox_mappings(A,GID,Objs):-
-    obj_grp_atomslist(_,A,PA,PAP),
-    ord(NJ/O+JO+Joins,[PA,A],[PB,B],B) = Why,
-    findall(Why,
-    (      
-     obj_grp_atomslist(GID,B,PB,PBP),
-     PA\==PB,
-     B\==A,
-     \+ is_whole_grid(B),
-     must_det_ll((
-     % maybe_allow_pair(PA,PB), allow_pair(PA,PB),  
-       intersection(PAP,PBP,Joins,OtherA,OtherB),     
-       flatten([OtherA,OtherB],Other),
-       length(Joins,J),length(Other,O),
-       NJ is -J,
-       JO is - rationalize(J/(O+1))))),
-     Pairs), 
-   sort_safe(Pairs,RPairs),!,
-   %list_upto(3,RPairs,Some),
-   my_maplist(arg(4),RPairs,Objs).
-*/
+
+
 memo_op(PAP,PBP,O,Joins,J,NJ,JO):- PAP@>PBP->memo_op_1(PBP,PAP,O,Joins,J,NJ,JO);memo_op_1(PAP,PBP,O,Joins,J,NJ,JO).
 
 :- abolish(memo_op_then/7).
@@ -766,11 +752,11 @@ learn_group_mapping_now1(AG00,BG00):-
   my_maplist(obj_grp_atoms(OI),BG,_BGG),
 
   forall(member(B,BG),
-    ((find_prox_mappings(B,OI,AG,Objs),
+    ((sort_by_jaccard(B,OI,AG,Objs),
      save_rule1(OI,"ordered In <- Out", Objs,[B])))),
 
   forall(member(A,AG),
-    ((find_prox_mappings(A,IO_DIR,BG,Objs),
+    ((sort_by_jaccard(A,IO_DIR,BG,Objs),
      save_rule1(IO_DIR,"In -> ordered Out",[A],Objs)))).
 
      
@@ -792,11 +778,11 @@ learn_group_mapping_now(AG00,BG00):-
   my_maplist(obj_grp_atoms(OI),BG,_BGG))),
 
   forall(member(B,BG),
-    ((find_prox_mappings(B,OI,AG,Objs),
+    ((sort_by_jaccard(B,OI,AG,Objs),
      assert_doing_map(OI,B,Objs)))),
 
   forall(member(A,AG),
-    ((find_prox_mappings(A,IO_DIR,BG,Objs),
+    ((sort_by_jaccard(A,IO_DIR,BG,Objs),
      assert_doing_map(IO_DIR,A,Objs)))),
 
   must_det_ll((  
@@ -891,7 +877,7 @@ classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):-
   must_det_ll(classify_rules_0(In,ExpectedOut,Rules,Keeper,Rejected,Unknown)).
 
 classify_rules_0(In,ExpectedOut,Rules,[PAIR],[],[]):- fail,
-  select(I,In,_IIn), find_prox_mappings(I,ri,Rules,[R|_Sorted]),
+  select(I,In,_IIn), sort_by_jaccard(I,Rules,[R|_Sorted]),
   copy_term(R,RR),  
   PAIR = result(I,R,RR,GPs,Matches,untested),
   matches_input(I,RR,Matches),
@@ -900,7 +886,7 @@ classify_rules_0(In,ExpectedOut,Rules,[PAIR],[],[]):- fail,
   nop((pp_wcg(matches(classify_rules_0)=Matches), pp_wcg(rule(classify_rules_0)=R))).
 
 classify_rules_0(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):-
-  select(I,In,IIn), find_prox_mappings(I,ri,Rules,Sorted),!,
+  select(I,In,IIn), sort_by_jaccard(I,Rules,Sorted),!,
   classify_rules_1([I|IIn],ExpectedOut,Sorted,[],Keeper,Rejected,Unknown).
 
 classify_rules_1(In,ExpectedOut,Rules,PairsUsed,Keeper,Rejected,Unknown):- 

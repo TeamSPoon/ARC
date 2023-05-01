@@ -95,19 +95,22 @@ cache_suite(SuiteX):-
  with_pair_mode(entire_suite,
   forall_count(all_suite_test_name(TestID),time(cache_devel(TestID)))).
 
-cache_devel:- with_pair_mode(entire_suite, forall(all_arc_test_name_unordered(TestID),time(cache_devel(TestID)))).
+cache_devel:- with_pair_mode(entire_suite, 
+ forall_count(all_arc_test_name_unordered(TestID),
+  ((test_name_output_file(TestID,'.pl',File), ( exists_file(File)-> true; cache_devel(TestID)))))).
 %cache_devel(TestID):-  ensure_test(TestID), test_name_output_file(TestID,'.pl',File),  
 %  catch(cant_rrtrace(notrace(cache_devel(TestID,File))),E,wdmsg(cache_devel(TestID,File)=E)),!.
 cache_devel(TestID):-  ensure_test(TestID), test_name_output_file(TestID,'.pl',File),  cant_rrtrace(notrace(cache_devel(TestID,File))).
 
-cache_devel( TestID,File):- ensure_test(TestID), var(File), test_name_output_file(TestID,'.pl',File),  !, cache_devel(TestID,File).
+cache_devel( TestID,File):- var(TestID),!,ensure_test(TestID),cache_devel( TestID,File).
+cache_devel( TestID,File):- var(File),!,test_name_output_file(TestID,'.pl',File),  !, cache_devel(TestID,File).
 cache_devel(_TestID,File):- exists_file(File), size_file(File,Size), Size > 300_000,!, writeln(size_file(File,Size)),!.
-cache_devel(_TestID,File):- exists_file(File), !, writeln(exists_file(File)),!.
-cache_devel( TestID,File):-
+%cache_devel(_TestID,File):- exists_file(File), !, writeln(exists_file(File)),!.
+cache_devel( TestID,File):- 
   ensure_test(TestID),
   nl,writeq(starting(cache_devel( TestID,File))),nl,
-  sformat(S,'touch "~w"',[File]), shell(S),
-  call_with_time_limit(180.0,cache_devel_1(TestID)),
+  sformat(S,'touch "~w"',[File]), shell(S), 
+  call_with_time_limit(180.0,time(cache_devel_1(TestID))),
   if_t(has_individuals(TestID),
   ((writeln(save_test_hints(TestID,File)),
     save_test_hints_now(TestID,File),

@@ -874,13 +874,13 @@ create_group_dmiles:-
 
    flatten([
     % plus 1
-        '32e9702f', '1d398264', '29c11459',
+        '32e9702f', '1d398264', '29c11459', '3c9b0459',
     %start (plus 1)
-        '25d487eb',
+        '25d487eb','780d0b14',
     %copy with mod
-        '08ed6ac7', 'ea32f347',  '0a2355a6', '37d3e8b2', 'a61ba2ce', 'b230c067',  'd2abd087', 
+        '08ed6ac7', 'ea32f347',  '0a2355a6', '37d3e8b2', 'a61ba2ce', 'b230c067',  'd2abd087', '6e82a1ae',
     %copy with mod (harder?)
-        'e41c6fd3', 'a61f2674', '0d3d703e', 'makesboxsq', 'a79310a0',
+        'e41c6fd3', 'a61f2674', '0d3d703e', 'makesboxsq', 'a79310a0', '27a77e38',
     %todo
      'f8b3ba0a', '5582e5ca', '33b52de3', '1b60fb0c',
     %recolor with a pattern from output

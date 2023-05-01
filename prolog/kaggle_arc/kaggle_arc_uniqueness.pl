@@ -15,9 +15,6 @@ clear_scene_rules(TestID):-
      ignore(retract(is_accompany_changed_db(TestID,Ctx,P,PSame)))),!,
   clear_object_dependancy(TestID).
 
-is_accompany_changed_db(TestID,P,PSame):-
- is_accompany_changed_db(TestID,_,P,PSame).
-
 
 % Define predicates that shouldn't be noticed
 dont_notice(oid(_)).
@@ -96,42 +93,7 @@ ok_deduce(_).
 
 
 
-has_propcounts(TestID):- 
- forall(current_example_nums(TestID,ExampleNum),
-  ( \+ \+ (propcounts(TestID, ExampleNum, IO, count, _, _), sub_var(in,IO)),
-    \+ \+ (propcounts(TestID, ExampleNum, IO, count, _, _), sub_var(out,IO)))).
-
-ensure_propcounts(TestID):- ensure_test(TestID),ensure_propcounts1(TestID).
-ensure_propcounts1(TestID):- has_propcounts(TestID),!.
-ensure_propcounts1(TestID):- ensure_individuals(TestID),!.
-ensure_propcounts1(TestID):- calc_propcounts(TestID),has_propcounts(TestID),!.
-
-ensure_propcounts1(TestID):- 
-  once((with_pair_mode(whole_test,
-    with_luser(menu_key,'o',once(ndividuator(TestID)))))),has_propcounts(TestID),!.
-ensure_propcounts1(TestID):- show_prop_counts(TestID), has_propcounts(TestID),!.
-ensure_propcounts1(_).
-
-props_change(TestID,IO,P):- map_pairs_info(TestID,IO,P,_Step).
-props_change2(TestID,IO,P):-
-%  ensure_propcounts(TestID),
-  %ensure_prop_change(E),
-  findall(Q-I_or_O,counts_change(TestID,_,I_or_O,Q,_,_),L),list_to_set(L,S),!,member(P-IO,S),ok_deduce(P).
-%ensure_prop_change(IO,P):- (var(P)->props_change(_TestID,IO,P);true).
-
 in_out_atoms(in,out).
-
-counts_change(TestID,ExampleNum,In,P,N2,N1):- in_out_atoms(In,Out),
-   ensure_propcounts(TestID),
-   propcounts(TestID, ExampleNum, Out, count, N1, P), ok_deduce(P),
-   ExampleNum = trn+_,
-   (propcounts(TestID, ExampleNum, In, count, N2, P) -> true ; N2=0), N1\==N2.
-
-counts_change(TestID,ExampleNum,Out,P,N1,N2):- in_out_atoms(In,Out),
-   ensure_propcounts(TestID),
-   propcounts(TestID, ExampleNum, In, count, N1, P), ok_deduce(P),
-   ExampleNum = trn+_,
-   (propcounts(TestID, ExampleNum, Out, count, N2, P) -> true ; N2=0), N1\==N2.
 
 
 
@@ -169,34 +131,6 @@ io_to_cntx(out,s(_)).
 io_to_cntx(X,X).
 
 
-ensure_scene_change_rules(TestID):-
- ensure_test(TestID),
- (\+ is_accompany_changed_db(TestID,_,_,_) -> compute_scene_change(TestID) ; true).
-
-
-
-compute_scene_change(TestID):-
- ensure_test(TestID),
- with_pair_mode(whole_test,  
- must_det_ll((
-  clear_scene_rules(TestID),
-  banner_lines(orange,4),
-  compute_scene_change_pass1(TestID),  
-  banner_lines(orange,4),
-  compute_scene_change_pass2(TestID),
-  banner_lines(yellow,4),  
-  compute_scene_change_pass3(TestID),
-  banner_lines(blue,4),
-
-  /*
-  compute_scene_change_pass4(TestID),*/
-  !))).
-
-
-compute_scene_change_pass1(TestID):- 
-  show_object_dependancy(TestID),!.
-  %learn_object_dependancy(TestID).
-
 %assert_become_new(Term):- \+ clause_asserted(Term),!, pp_ilp(assert_become_new=Term), asserta_new(Term).
 assert_become_new(Term):- asserta_new(Term).
 %assert_become_new(Term):- pp_ilp(assert_become_new=Term),!, assert_if_new(Term).
@@ -208,7 +142,7 @@ solve_via_scene_change(TestID):-
   clear_scene_rules(TestID),
   %detect_pair_hints(TestID),
   time(learn_grid_size(TestID)),
-  ensure_scene_change_rules(TestID),
+  %%ensure_scene_change_rules(TestID),
   save_test_hints_now(TestID),
   ExampleNum=tst+_,
   forall(kaggle_arc(TestID,ExampleNum,_,_),
@@ -217,7 +151,7 @@ solve_via_scene_change(TestID):-
 
 solve_via_scene_change_rules(TestID,ExampleNum):-
  must_det_ll((
- ensure_scene_change_rules(TestID),
+ %%ensure_scene_change_rules(TestID),
   kaggle_arc(TestID,ExampleNum,In,Expected),
   banner_lines(green,4),
   % predict_grid_size_now(TestID,In,PX,PY),
@@ -226,8 +160,9 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
   into_fti(TID,ROptions,In,VM),
   individuate(VM),
   Objs = VM.objs,
-  print_object_dependancy(TestID),
-  print_scene_change_rules(solve_via_scene_change_rules,TestID),
+  %print_object_dependancy(TestID),
+  show_object_dependancy(TestID),
+ %% print_scene_change_rules(solve_via_scene_change_rules,TestID),
   print_ss(wqs(expected_answer(ExampleNum)),Objs,Expected),
   dash_chars)),!,
 
@@ -257,154 +192,6 @@ resize_our_solution(PX,PY,OurSolution1,OurSolution):-
 
 maybe_resize_our_solution(TestID,In,OurSolution1,OurSolution):-
   predict_grid_size_now(TestID,In,PX,PY),resize_our_solution(PX,PY,OurSolution1,OurSolution),!.
-
-
-print_scene_change_rules(Why,TestID):-
- ensure_test(TestID),
- must_det_ll((
-  banner_lines(cyan,4),
-  print_set(Why,is_accompany_changed_db),
-  banner_lines(cyan,4))).
-
-
-print_set(Why,P3):-
-  Ele = is_accompany_changed_db(TestID,IN_OUT,P,PSame),
-  findall(Ele,call(P3,TestID,IN_OUT,P,PSame),List),
-  sort(List,SetR),reverse(SetR,Set), 
-  pp_ilp(Why),
-  dash_chars,
-  maplist(pp_ilp,Set),!.
-
-
-compute_scene_change_pass4(TestID):-
-   compute_scene_change_pass3(TestID).
-
-compute_scene_change_pass2(TestID):- 
-  forall(ensure_props_change(TestID,Ctx,P),
-    forall(prop_can(TestID,Ctx,P,PSame),
-      assert_accompany_changed_db(TestID,Ctx,P,PSame))).
-
-compute_scene_change_pass3(TestID):-
- must_det_ll((
-  print_scene_change_rules(pass2,TestID),
-  set_of_changes(TestID,compute_scene_change_pass3a(TestID)),
-  print_scene_change_rules(pass3a,TestID),
-  set_of_changes(TestID,compute_scene_change_pass3b(TestID,correct_antes1)),
-  set_of_changes(TestID,compute_scene_change_pass3c(TestID)),
-  print_scene_change_rules(pass3b1,TestID),
-  set_of_changes(TestID,compute_scene_change_pass3b(TestID,correct_antes2)),
-  print_scene_change_rules(pass3b2,TestID),
-  set_of_changes(TestID,compute_scene_change_pass3b(TestID,correct_antes3)),
-  print_scene_change_rules(pass3b3,TestID),
-  set_of_changes(TestID,compute_scene_change_pass3b(TestID,correct_antes4)),
-  print_scene_change_rules(pass3b4,TestID),
-  set_of_changes(TestID,compute_scene_change_pass3c(TestID)),
-  print_scene_change_rules(pass3c,TestID))),!.
-
-
-set_of_changes(TestID,P1):-
-  findall_vset(IN_OUT-P,ensure_props_change(TestID,IN_OUT,P),Ps),
-  maplist(P1,Ps).
-
-compute_scene_change_pass3a(TestID,IN_OUT-P):- 
-   findall(PSame,is_accompany_changed_db(TestID,IN_OUT,P,PSame),List),
-   List=[_,_|_],
-   flatten(List,SameF), variant_list_to_set(SameF,SameS),
-   update_accompany_changed_db(TestID,IN_OUT,P,SameS).
-compute_scene_change_pass3a(_,_).
-
-compute_scene_change_pass3b(TestID,P4,IN_OUT-P):-
-   findall(PSame,is_accompany_changed_db(TestID,IN_OUT,P,PSame),List),
-   flatten(List,SameF), variant_list_to_set(SameF,SameS),
-   call(P4,TestID,IN_OUT,P,SameS,Kept), Kept\==[],!,
-  update_accompany_changed_db(TestID,IN_OUT,P,Kept).
-compute_scene_change_pass3b(_,_,_). 
-
-compute_scene_change_pass3c(_,_):-!.
-compute_scene_change_pass3c(TestID,IN_OUT-P):-
-  is_accompany_changed_db(TestID,IN_OUT,P,PSame),
-  findall(DSame,
-     (is_accompany_changed_db(TestID,IN_OUT,DP,DSame), 
-      once(other_val(DP,P);DP=P),at_least_one_overlap(DSame,PSame)),
-   SL),  SL = [_,_|_],
-  common_members(SL,Commons),
-  forall((is_accompany_changed_db(TestID,IN_OUT,DP,DSame),once(other_val(DP,P);DP=P)),
-      (intersection(DSame,Commons,_,Kept,_),
-        ignore((Kept\==[],update_accompany_changed_db(TestID,IN_OUT,P,Kept))))).
-compute_scene_change_pass3c(_,_).
-
-
-update_accompany_changed_db(TestID,IN_OUT,P,Kept):- Kept\==[],
-   forall(retract(is_accompany_changed_db(TestID,IN_OUT,P,_)),true),
-   assert_accompany_changed_db(TestID,IN_OUT,P,Kept).
-   
-assert_accompany_changed_db(_TestID,_IN_OUT,_P,Kept):- Kept==[],!.
-assert_accompany_changed_db(TestID,IN_OUT,P,Kept):- 
-   assert_become_new(is_accompany_changed_db(TestID,IN_OUT,P,Kept)).
-
-at_least_one_overlap(DSame,PSame):-
-  member(DS,DSame),member(S,PSame),
-  (DS=@=S;other_val(S,DS)),!.
-
-correct_antes1(TestID,IN_OUT,P,PSame,SL):- 
-  %rev_in_out_atoms(OI,IN_OUT),
-  findall(S,
-   (member(S,PSame),
-     \+ \+ ((
-       forall((is_accompany_changed_db(TestID,IN_OUT,DP,DSame),at_least_one_overlap(DSame,PSame)),
-          ((P==DP)-> true; (member(DS,DSame),  \+ negated_s_lit(S,_), other_val(S,DS))))))),
-   SL), SL\==[],!.
-correct_antes1(_TestID,_IN_OUT,_P,PSame,PSame).
-
-correct_antes2(TestID,IN_OUT,P,PSame,Kept):- 
-  %rev_in_out_atoms(OI,IN_OUT),
-  findall( ( \+ S),
-   ((is_accompany_changed_db(TestID,IN_OUT,DP,DSame), 
-     other_val(P,DP), at_least_one_overlap(DSame,PSame),
-     member(S,DSame),  \+ negated_s_lit(S,_), make_unifiable_u(S,SU), \+ member(SU,PSame))), SL),
-  SL\==[],
-  append(PSame,SL,Kept),Kept\==[],!.
-correct_antes2(_TestID,_IN_OUT,_P,PSame,PSame).
-
-correct_antes3(_TestID,_IN_OUT,P,PSame,Kept):- 
-  %rev_in_out_atoms(OI,IN_OUT),
-  findall(S,
-     (member(S,PSame),\+ once(other_val(P,S);S=@=P)),
-   Kept), Kept\==[],!.
-correct_antes3(_TestID,_IN_OUT,_P,PSame,PSame).
-
-
-correct_antes4(_TestID,_IN_OUT,_P,PSame,Kept):- 
-  %rev_in_out_atoms(OI,IN_OUT),
-  findall(S,
-      (member(E,PSame), ensure_xformed(E,S)),
-   Kept), Kept\==[],!.
-correct_antes4(_TestID,_IN_OUT,_P,PSame,PSame).
-
-negated_s_lit(N,P):- compound(N), N = ( \+ P ). 
-
-correct_antes5(TestID,IN_OUT,P,PSame,Kept):-   
-   make_unifiable_u(P,U),
-   is_accompany_changed_computed(TestID,IN_OUT,U,DSame),
-   P\=@=U,
-   maplist(make_unifiable_u,DSame,USame),
-   pred_intersection(other_val,PSame,USame,Kept,_,_,_),Kept\==[].
-correct_antes5(_TestID,_IN_OUT,_P,PSame,PSame).
-
-ensure_xformed(pg(_,A,B,C),pg(_,A,B,C)):-!.
-ensure_xformed(A,A).
-
-/*
-solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,ObjsO):-
- forall(kaggle_arc(TestID,trn+N,_,_),
-  ( findall(Out,((arc_cache:map_pairs(TestID,_,trn+N,info(Step,_,in_out,perfect_in_out,_,trn+N),PreObjs,Out),
-      indv_props_list(Out,PropsO),
-       closest_object(Out,PreObjs,PreObj),
-       rewrite_rules_for(PreObj,Out,Sames,Diffs),
-       ,OutL),
-    findall(PreObjs,arc_cache:map_pairs(TestID,_,trn+N,info(0,_,in_out,_,_,trn+N),PreObjs,Out),PreObjs),
-  homogenize(OutL,Sames,Diffs),
-*/
 
 
 enter_solve_obj(VM,TestID,ExampleNum,ROptions,Objs,ObjsO):-
@@ -445,8 +232,8 @@ two_way_mapping(Ways,Obj,_Objs,Rules,Rule,Rules):-
 
 two_way_mapping(Ways,Obj,Objs,Rules,Rule,RulesRest):-
   \+ match_ok(Ways,exact),
-   once((find_prox_mappings(Obj,obj_to_rule,Rules,[Rule|RulesRest]),
-   find_prox_mappings(Rule,rule_to_objs,Objs,[PickedObj|_ObjsRest]))), 
+   once((sort_by_jaccard(Obj,Rules,[Rule|RulesRest]),
+   sort_by_jaccard(Rule,Objs,[PickedObj|_ObjsRest]))), 
     ((PickedObj == Obj)-> nop(match_ok(Ways,two_ways)) ; match_ok(Ways,one_way)),
   write_atoms_info(Ways,PickedObj),
   write_atoms_info(paired2,Rule),
@@ -554,10 +341,10 @@ maybe_apply(CLS,Objs,NewObj):-
 %copy_obj(Rules,Objs,_TestID,_ExampleNum,_IN_OUT,_ROptions,Obj,Obj):- is_bg_object(Obj),!.
 copy_obj(Rules,Objs,VM,_TestID,_EN,_Ctx,_ROptions,Obj,OObj):- 
  must_det_ll(( %print_grid(copy_obj,Obj),
-    find_prox_mappings(Obj,obj_to_rule,Rules,[Rule|_]),
+    sort_by_jaccard(Obj,Rules,[Rule|_]),
     pp_ilp(Rule),
     print_grid(Obj),
-    find_prox_mappings(Rule,rule_to_objs,Objs,[_PickedObj|_]),
+    sort_by_jaccard(Rule,Objs,[_PickedObj|_]),
     edit_object(VM,Rule,Obj,OObj))).
     %print_grid(copy_obj(Rules,Objs,Ps),Obj,OObj))),!.
 %copy_obj(Rules,Objs,_VM,_TestID,_ExampleNum,_Ctx,_ROptions,Obj,Obj).
@@ -645,91 +432,6 @@ is_post_cond_obj(Obj,in):- is_post_cond_obj(Obj,in_out).
 
 
 
-
-
-is_accompany_changed_verified(TestID,IO,P,PSame):-
-  is_accompany_changed_computed(TestID,IO,P,PSame), PSame\==[].
-
-is_accompany_changed_computed(TestID,IO,P,PSame):-
-   is_accompany_changed_db(TestID,IO,P,PSame) *->true ; prop_can(TestID,IO,P,PSame). 
-   
-prop_can(TestID,IO,P,Can):-    
-  props_change(TestID,IO,P),
-  once((prop_cant(TestID,IO,P,Cant),
-  prop_can1(TestID,IO,P,Can1),
-  intersection(Can1,Cant,_,Can,_))).
-  %(Can == [] -> (CanL=Can1,fail) ; CanL= Can).
-
-prop_can1(TestID,IO,P,Can):-  
-  props_change(TestID,IO,P),
-  findall(O,
-    ((enum_object_ext(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
-      has_prop(P,O))),[I|L]),
-  indv_props_list(I,List),
-  findall(U,(member(U,List),U\=@=P,ok_notice(U),forall(member(E,L),has_prop(U,E))),Can).
-
-
-prop_cant(TestID,IO,P,Set):-
-  props_change(TestID,IO,P),
-  findall(Cant,
-    ((enum_object(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
-      not_has_prop(P,O),indv_props_list(O,List),member(Cant,List),ok_notice(Cant))),Flat),
-   list_to_set(Flat,Set).
-
-enum_object_ext(O):-
-  ensure_test(TestID),
-  current_example_nums(TestID,ExampleNum),
-  once((obj_group_io(TestID,ExampleNum,out,Objs),Objs\==[])),member(O,Objs).
-
-
-contains_same([],_):- !.
-contains_same([E|L],P):- sub_var(E,P),!,contains_same(L,P).
-
-find_peers_with_same(TestID,IO,P,PSame,NewSame):- select(S,PSame,Next),S=@=P,!,find_peers_with_same(TestID,IO,P,Next,NewSame).
-find_peers_with_same(TestID,IO,P,PSame,NewSame):- 
-   sub_term(Color,P),is_real_color(Color), sub_term(N,P),number(N),
-   my_partition(contains_same([Color]),PSame,SameW,SameWO),SameW\==[], SameWO\==[],!,
-   find_peers_with_same(TestID,IO,P,SameWO,NewSame).
-find_peers_with_same(_,_,PSame,PSame):-!.
-   
-   
-
-   
-
-merge_xtra_props_ac1([ac1(PO)|AC3],PSame):- !, merge_xtra_props_ac1_3(PO,AC3,PSame), PSame\==[].
-merge_xtra_props_ac1_3(PO,[ac1(PO2)|MORE],OUT):-
-  intersection(PO,PO2,IPO),
-  merge_xtra_props_ac1_3(IPO,MORE,OUT).
-merge_xtra_props_ac1_3(PO,[],PO).
-
-merge_xtra_props_ac2([ac2(_,PSame)],PSame):-!.
-merge_xtra_props_ac2(AC2,PSame):-
- select(ac2(ExampleNum,PO1),AC2,AC3),
- select(ac2(ExampleNum,PO2),AC3,AC4),
- intersection(PO1,PO2,Some),Some\==[],!,
- merge_xtra_props_ac2([ac2(ExampleNum,Some)|AC4],PSame).
-merge_xtra_props_ac2(AC2,PSame):-
- select(ac2(ExampleNum,PO1),AC2,AC3),
- select(ac2(ExampleNum2,PO2),AC3,AC4),
- ExampleNum \== ExampleNum2,
- intersection(PO1,PO2,Some),Some\==[],!,
- merge_xtra_props_ac2([ac2(ExampleNum,Some)|AC4],PSame).
-
-merge_xtra_props_ac2([ac2(ExampleNum,PO1)|AC3],[ac2(ExampleNum,PO1)|PSame]):-
-  merge_xtra_props_ac2(AC3,PSame),!.
-merge_xtra_props_ac2(PSame,PSame):-!.
-
-
-changing_props(TestID,X1,X2):- 
- ensure_test(TestID),
- findall(X1-InOut,props_change(TestID,InOut,X1),X1L),
- variant_list_to_set(X1L,X1S),
- member(X1-IO,X1S),
- member(X2-IO,X1S),
-% X1@>X2,
- other_val(X1,X2). 
-
-
 common_props([O|Objs],Props):-
    indv_props_list(O,List),
    findall(P,(member(P,List),\+ dont_notice(P),forall(member(E,Objs),has_prop(P,E))),Props).
@@ -810,17 +512,6 @@ show_object_dependancy(TestID):-
  learn_object_dependancy(TestID),
  print_object_dependancy(TestID).
 
-:- dynamic(arc_cache:prop_dep/9).
-
-pair_obj_props(TestID,ExampleNum,Ctx,Step,TypeO,LHS,RHS,USame,InFlatProps,OutFlatProps):-
-  Info = info(Step,_IsSwapped,Ctx,TypeO,TestID,ExampleNum),
-  arc_cache:prop_dep(TestID,_,_,Info,LHS,RHS,USame,InFlatProps,OutFlatProps).
-
-pair_obj_info(TestID,ExampleNum,Ctx,Info,LHS,RHS):-
-  Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,ExampleNum),
-  arc_cache:prop_dep(TestID,_,_,Info,LHS,RHS,_USame,_InFlatProps,_OutFlatProps).
-
-
 
 % =============================================================
 learn_object_dependancy(TestID):-
@@ -828,6 +519,8 @@ learn_object_dependancy(TestID):-
  ensure_test(TestID),
   must_det_ll((
   ensure_individuals(TestID),
+ ignore((ExampleNum=trn+_)),
+	retractall(arc_cache:causes(TestID,_,_,_,_)),
  forall(kaggle_arc(TestID,ExampleNum,_,_),
 	learn_object_dependancy(TestID,ExampleNum)))).
 learn_object_dependancy(TestID,ExampleNum):-
@@ -845,8 +538,37 @@ maybe_learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
 learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):- 
  must_det_ll((
   Step=0,Ctx=in_out,IsSwapped=false,
-  calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,[],LHSObjs,RHSObjs,Groups),
+  
+  sort_by_jaccard(one(RHSObjs),LHSObjs,LHSObjsOrdered),
+  sort_by_jaccard(one(LHSObjs),RHSObjs,RHSObjsOrdered),
+  %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
+  calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,[],LHSObjsOrdered,RHSObjsOrdered,Groups),
   assert_map_pairs(TestID,ExampleNum,Ctx,Groups))).
+
+prinnt_sbs_call([],[]):- dash_chars,!.
+prinnt_sbs_call([G1|WP1],[G2|WP2]):- !,
+  length(WP1,L1),length(WP2,L2),
+   print_ss(blue,G1,L1,G2,L2),
+   prinnt_sbs_call(WP1,WP2),!.
+prinnt_sbs_call(R,[]):- !, dash_chars,!, wdmsg(input), print_side_by_side_l(1,R),!,dash_chars,dash_chars.
+prinnt_sbs_call([],R):- !, dash_chars,!, wdmsg(output), print_side_by_side_l(1,R),!,dash_chars,dash_chars.
+  
+
+prinnt_sbs_call(WP1,WP2):- 
+ must_det_ll((
+    wots(S1,maplist(print_grid_nl,WP1)),
+    wots(S2,maplist(print_grid_nl,WP2)),
+    atomic_list_concat(SS10,'\n',S1),
+    atomic_list_concat(SS20,'\n',S2),
+    max_width(SS10,SS1,100), 
+    max_width(SS20,SS2,100),
+    %SS10=SS1,SS20=SS2,
+    make_longest_len(SS1,SS2,SSS1,SSS2),
+    print_to_string11(write,0,SSS1,SSS1A,Lad1),Lad is Lad1,
+    maplist(print_to_string_using_up(Lad,''),SSS1A,SSS1B), 
+    print_side_by_side0(SSS1B,_,SSS2))).
+
+print_grid_nl(G):- nl,print_grid(G),nl.
 
 assert_map_pairs(TestID,ExampleNum,Ctx,Group):- is_list(Group),!,maplist(assert_map_pairs(TestID,ExampleNum,Ctx),Group).
 assert_map_pairs(TestID,ExampleNum,Ctx,grp(Info,In,Out)):-
@@ -854,21 +576,105 @@ assert_map_pairs(TestID,ExampleNum,Ctx,grp(Info,In,Out)):-
   once((diff_l_r(InL,OutL,Same,InPFlat,OutPFlat),
    unnumbervars(('$VAR'(0),'$VAR'('_'),Same,InPFlat,OutPFlat),UNV))),
    UNV = (_FG1,_BG1,USame,InFlatProps,OutFlatProps),
-  %pp_ilp(grp(Info,InL,OutL)),!,  
-  assertz_new(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,InL,OutL,USame,InFlatProps,OutFlatProps)),!.
+  %pp_ilp(grp(Info,InL,OutL)),!,
+  assertz_new(arc_cache:map_pairs(TestID,ExampleNum,Ctx,Info,InL,OutL)),
+  maplist(obj_to_oid,InL,InLOID),
+  maplist(obj_to_oid,OutL,OutLOID),
+  assertz_new(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,InLOID,OutLOID,USame,InFlatProps,OutFlatProps)),!.
 assert_map_pairs(_TestID,_ExampleNum,_Ctx,call(Rule)):-!,must_det_ll(Rule),!.
 
 % print the object dependencies for this test
 % =============================================================
 print_object_dependancy(TestID):-
 % =============================================================
+  /*if_t(( \+ arc_cache:map_pairs(TestID,_,_,_,_,_)),
+   ( dash_chars,forall(arc_cache:map_group(TestID,_,_IN_OUT,Group),
+    once(((dash_chars,dash_chars,pp_ilp(Group),dash_chars,dash_chars)))))),
+  dash_chars,*/
+% findall_vset(grp(Info,Pre,Post),arc_cache:map_pairs(TestID,_,_IN_OUT2,Info,Pre,Post),Set1),
+% maplist(pp_ilp,Set1),
  dash_chars,dash_chars,
- findall_vset(grp(Info,Pre,Post),pair_obj_info(TestID,_,_,Info,Pre,Post),Set2),
- if_t(Set1 \=@= Set2,  maplist(pp_ilp,Set2)),
+ %pp_ilp_vset(grp(Info,Pre,Post),pair_obj_info(TestID,_,_,Info,Pre,Post)),
+
+ More = call(show_cp_diff(USame,InPFlat,OutPFlat)),
+ pp_ilp_vset(grp(Info,LHS,RHS)+More,
+   (pair_obj_props321(TestID,_ExampleNum,_Ctx,Info,_Step,_TypeO,LHS,RHS,USame,InPFlat,OutPFlat))),
+ %if_t(Set1 =@= Set2,  wdmsg('Set 2 the same')),
+ %if_t(Set1 \=@= Set2,
  dash_chars,dash_chars.
 
+pp_ilp_vset(T,G):- findall(T,G,L),list_to_set(L,S),maplist(pp_ilp,S).
+:- dynamic(arc_cache:map_pairs/6).
+:- dynamic(arc_cache:prop_dep/9).
+:- dynamic(arc_cache:causes/5).
+
+pair_obj_props(TestID,ExampleNum,Ctx,Info,Step,TypeO,LHS,RHS,USame,InFlatProps,OutFlatProps):-
+  Info = info(Step,_IsSwapped,Ctx,TypeO,TestID,ExampleNum),
+  arc_cache:prop_dep(TestID,_,_,Info,LHS,RHS,USame,InFlatProps,OutFlatProps).
+
+pair_obj_info(TestID,ExampleNum,Ctx,Info,LHS,RHS):-
+  Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,ExampleNum),
+  arc_cache:prop_dep(TestID,_,_,Info,LHS,RHS,_USame,_InFlatProps,_OutFlatProps).
+
+ok_intersect(L1,L2):-
+  member(E1,L1),member(E2,L2),
+  other_val(E1,E2),!,fail.
+ok_intersect(_,_).
+
+pair_obj_props321(TestID,Ex,Ctx,Info,Step,Type,LHSO,RHSO,S,L,R):- 
+ (pair_obj_props4(TestID,Ex,Ctx,Info,Step,Type,LHS,RHS,S,L,R)*->true;
+  (pair_obj_props3(TestID,Ex,Ctx,Info,Step,Type,LHS,RHS,S,L,R)*->true;
+  (pair_obj_props2(TestID,Ex,Ctx,Info,Step,Type,LHS,RHS,S,L,R)*->true;
+    pair_obj_props1(TestID,Ex,Ctx,Info,Step,Type,LHS,RHS,S,L,R)))),
+  into_solid_objs(LHS,LHSO),into_solid_objs(RHS,RHSO).
+
+into_solid_objs(RHS,RHSO):- flatten([RHS],RHSM), maplist(into_solid_grid_strings,RHSM,RHSO).
 
 
+pair_obj_props1(TestID,Ex,Ctx,Info,Step,Type,LHS,RHS,[z_c1(1,2,3,4,5)|S],L,R):-
+  Info = info(Step,_IsSwapped,Ctx,Type,TestID,Ex),
+  pair_obj_props(TestID,Ex,Ctx,Info,Step,Type,LHS,RHS,S,L,R).
+
+pair_obj_props3(TestID,Ex,Ctx,Info,Step2,Type,LHS,RHS,[z_z_z_c3(1,2,3,4,5)|S],L,R):-
+  Info = info(Step1,_IsSwapped,Ctx,Type,TestID,Ex2),
+  dif(Ex1,Ex2),dif(Ex,Ex2),dif(Ex1,Ex),
+  pair_obj_props1(TestID,Ex1,Ctx,_Info1,Step1,Type1,LHS1,RHS1,S1,L1,R1),
+  pair_obj_props2(TestID,Ex2,Ctx,_Info2,Step2,Type2,LHS2,RHS2,S2,L2,R2),
+  ignore(Step1=Step2), ok_intersect(R1,R2), something_common(R1,R2),
+  once((maplist(merge_vals,[Type1,LHS1,RHS1],[Type2,LHS2,RHS2],[Type,LHS,RHS]))),
+  the_min_unifier(R1,R2,R),the_min_unifier(S1,S2,S),append_sets(L1,L2,L).
+
+pair_obj_props4(TestID,Ex,Ctx,Info,Step2,Type,LHS,RHS,[z_z_z_z_c4(1,2,3,4,5)|S],L,R):-
+  Info = info(Step1,_IsSwapped,Ctx,Type,TestID,Ex2),
+  dif(Ex1,Ex2),dif(Ex,Ex2),dif(Ex1,Ex),
+  pair_obj_props1(TestID,Ex1,Ctx,_Info1,Step1,Type1,LHS1,RHS1,S1,L1,R1),
+  pair_obj_props3(TestID,Ex2,Ctx,_Info2,Step2,Type2,LHS2,RHS2,S2,L2,R2),
+  ignore(Step1=Step2), ok_intersect(R1,R2), something_common(R1,R2),
+  once((maplist(merge_vals,[Type1,LHS1,RHS1],[Type2,LHS2,RHS2],[Type,LHS,RHS]))),
+  the_min_unifier(R1,R2,R),the_min_unifier(S1,S2,S),append_sets(L1,L2,L).
+
+pair_obj_props2(TestID,Ex,Ctx,Info,Step1,Type,LHS,RHS,[z_z_c2(1,2,3,4,5)|S],L,R):-
+  Info = info(Step2,_IsSwapped,Ctx,Type,TestID,Ex2),
+  dif(Ex1,Ex2),dif(Ex,Ex2),dif(Ex1,Ex),
+  pair_obj_props1(TestID,Ex1,Ctx,_Info1,Step1,Type1,LHS1,RHS1,S1,L1,R1),
+  pair_obj_props1(TestID,Ex2,Ctx,_Info2,Step2,Type2,LHS2,RHS2,S2,L2,R2),
+  ignore(Step1=Step2), ok_intersect(R1,R2), something_common(R1,R2),
+  once((maplist(merge_vals,[Type1,LHS1,RHS1],[Type2,LHS2,RHS2],[Type,LHS,RHS]))),
+  the_min_unifier(R1,R2,R),the_min_unifier(S1,S2,S),append_sets(L1,L2,L).
+
+merge_vals(A,B,C):-flatten_set([A,B],C),!. 
+
+something_common(R1,R2):- good_for_rhs(E1), member(E1,R1), member(E1,R2),!.
+
+good_for_rhs(pen(_)).
+good_for_rhs(loc2D(_,_)).
+good_for_rhs(rot2D(_)).
+good_for_rhs(iz(sid(_))).
+
+the_min_unifier(S1,S2,[E|S]):- select(E1,S1,S1R),make_unifiable(E1,E2),select(E2,S2,S2R),
+   min_unifier(E1,E2,E),!,
+   the_min_unifier(S1R,S2R,S).
+the_min_unifier(S1,S2,S):- append(S1,S2,S).
 /*
 show_cp_diff(PA,[PB]):- !, show_cp_diff(PA,PB).
 show_cp_diff([PA],PB):- !, show_cp_diff(PA,PB).
@@ -879,12 +685,15 @@ show_cp_diff(A,B):-
  must_det_ll((
   flat_props([A],PA), flat_props([B],PB),
   diff_l_r(PA,PB,Same,InPFlat,OutPFlat),  
+  show_cp_diff(Same,InPFlat,OutPFlat))).
+
+show_cp_diff(Same,InPFlat,OutPFlat):-
   %flat_props([B],PB), intersection(Same,PB,S,SS,_), append(S,SS,SSame),
   %maplist(print_diffs(1),Same),
-  length(Same,SL), pp_ilp(sames=SL),  
-  if_t(SL>0,
-  (length(InPFlat,LenA),pp_ilp(removed(LenA)=InPFlat),
-   length(OutPFlat,LenB),pp_ilp(added(LenB)=OutPFlat))),
+ must_det_ll((
+  (length(InPFlat,LenA), pp_ilp(removed(LenA)=InPFlat),
+   length(Same,SL),      pp_ilp(sames(SL)=Same),
+   length(OutPFlat,LenB),pp_ilp(added(LenB)=OutPFlat)),
   !)).
 
 
@@ -902,6 +711,16 @@ pp_ilp(D,Grp):- is_mapping(Grp), !,
     prefix_spaces(D+8,show_cp_diff(In,Out)),
   prefix_spaces(D,(write('</grp>\n'),dash_chars)))).
 
+pp_ilp(D,Grp):- compound(Grp), 
+  (In-Out = Grp), Info=lr,!,
+ must_det_ll((
+  get_mapping_info(Grp,Info,In,Out),
+  prefix_spaces(D,(dash_chars,format('<grp  ~w >\n',[Info]))),
+    print_io_terms(D+7,In,Out),
+    prefix_spaces(D+8,show_cp_diff(In,Out)),
+  prefix_spaces(D,(write('</grp>\n'),dash_chars)))).
+
+
 pp_ilp(D,X=Y):- !, 
   must_det_ll((
    prefix_spaces(D, (print(X),write(' = '))),nl,
@@ -910,19 +729,15 @@ pp_ilp(D,X=Y):- !,
 pp_ilp(D,apply(implies(C,P),Obj)):- !, pp_ilp(D,grp(implies(C,P),[],Obj)).
   
 
-pp_ilp(D,Grid):- is_group(Grid),!, 
+pp_ilp(D,Grid):- is_obj_props(Grid),!,sort(Grid,R),reverse(R,S),prefix_spaces(D,pp(S)).
+
+pp_ilp(D,Grid):- is_group(Grid),!,
   must_det_ll((length(Grid,Len),
    prefix_spaces(D,(format('<group ~w>\n',[len=Len]))),
    prefix_spaces(D,mapgroup(pp_ilp(D+7),Grid)),!,nl,
    prefix_spaces(D,(format('</group>\n',[]))))),!.
 
-
-pp_ilp(D,Grid):- is_group(Grid),!, 
-  must_det_ll((length(Grid,Len),
-   prefix_spaces(D,(format('<group ~w>\n',[len=Len]))),
-   prefix_spaces(D,mapgroup(pp_ilp(D+7),Grid)),!,nl,
-   prefix_spaces(D,(format('</group>\n',[]))))),!.
-
+pp_ilp(D,A+B):-  !, prefix_spaces(D,(pp_ilp(A),nl,pp_ilp(B))).
 pp_ilp(D,Grid):- is_grid(Grid),!,prefix_spaces(D,print_grid(Grid)),!,nl.
 pp_ilp(D,Grid):- is_object(Grid),!,prefix_spaces(D,print_grid([Grid])),!,nl.
 
@@ -953,13 +768,14 @@ print_io_terms(D,In,Out):-
   once(into_solid_grid_strings_1(Out,OTerm)),
   once(ITerm\=@=In;Out\=@=OTerm),!, print_io_terms(D,ITerm,OTerm).
 
-print_io_terms(D,loc2D(X,Y,ITerm),loc2D(OX,OY,OTerm)):- 
-    \+ is_mapping(ITerm), \+ is_mapping(OTerm),
-    prefix_spaces(D,print_ss("",ITerm,loc2D(X,Y),OTerm,loc2D(OX,OY))),!.
-
 print_io_terms(D,ITerm,OTerm):-  
     is_grid_or_group(ITerm),is_grid_or_group(OTerm),
     prefix_spaces(D,print_ss("",ITerm,OTerm)),!.
+
+print_io_terms(D,loc2D(X,Y,IITerm),loc2D(OX,OY,OOTerm)):- 
+    \+ is_mapping(IITerm), \+ is_mapping(OOTerm),
+    into_obj(IITerm,ITerm),  into_obj(OOTerm,OTerm),
+    prefix_spaces(D,print_ss("",ITerm,loc2D(X,Y),OTerm,loc2D(OX,OY))),!.
 
 print_io_terms(D,ITerm,OTerm):-
     prefix_spaces(D,pp_ilp(ITerm)),
@@ -985,6 +801,7 @@ prin_to_string(T,Text):- term_contains_ansi(T),Text=T,!.
 prin_to_string(T,Text):- wots(Text,print(T)). 
 
 into_solid_grid_strings(T,Text):- is_ftVar(T),Text=T,!.
+into_solid_grid_strings(A,Y):-atom(A),into_obj(A,X),!,into_solid_grid_strings(X,Y).
 %into_solid_grid_strings(T,Text):- \+ compound(T),T=Text,!.
 %into_solid_grid_strings(T,Text):- term_contains_ansi(T),Text=T,!.
 %into_solid_grid_strings(T,Text):- as_is(T),T=Text,!.
@@ -1046,7 +863,7 @@ clear_object_dependancy(TestID):-
      ignore((clear_object_dependancy(TestID,ExampleNum)))).
 clear_object_dependancy(TestID,ExampleNum):-  
  forall(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,Right,Left,A,B,C),
-    retract(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,Right,Left,A,B,C))).
+    retract(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,Right,Left,A,B,C))),!.
 
 
 
@@ -1079,6 +896,112 @@ get_mapping_info_list(GRP,Info,InOut):-
   append_LR(OutL,InL,InOutL),!,
   must_det_ll((InOutL=InOut)).
 
+best_match_rl(RHS,Left,grp(lr,Left,Right)):-
+  sort_by_jaccard(Left,RHS,[Right|_RRest]).
+best_match_lr(LHS,Right,grp(lr,Left,Right)):-
+  sort_by_jaccard(Right,LHS,[Left|_RRest]).
+% Generate all pairs of objects from two sets
+% pairs(+Set1, +Set2, -Pairs)
+
+pairs_agree(LHS,RHS,PairsR):-
+   maplist(best_match_lr(RHS),LHS,PairsR),
+   maplist(best_match_rl(LHS),RHS,PairsL),
+   PairsR=PairsL.
+
+pairs_agree_or_select(LHS,RHS,PairsR) :- 
+  pairs_agree(LHS,RHS,PairsR)*->true;pairs_of_any(LHS,RHS,PairsR).
+
+n_or_more(3,[_,_,_|_]).
+n_or_more(2,[_,_|_]).
+n_or_more(1,[_|_]).
+
+pairs_of_any([LG1,LG2],RHS,SoFar,PairsR) :- 
+    n_or_more(3,RHS),
+    append(RG1,RG2,RHS), n_or_more(1,RG1),n_or_more(1,RG2),
+    pairs_agree([[LG1],[LG2]],[RG1,RG2],[grp(lr,L1,R1),grp(lr,L2,R2)]),
+    pairs_of_any(L1,R1,LR1), pairs_of_any(L2,R2,LR2),
+    append_LR([SoFar,LR1,LR2],PairsR).
+
+pairs_of_any(LHS,RHS,SoFar,PairsR) :- n_or_more(2,LHS),n_or_more(2,RHS),
+    append(LG1,LG2,LHS), n_or_more(1,LG1),n_or_more(1,LG2),
+    append(RG1,RG2,RHS), n_or_more(1,RG1),n_or_more(1,RG2),
+    pairs_agree([LG1,LG2],[RG1,RG2],[grp(lr,L1,R1),grp(lr,L2,R2)]),
+    pairs_of_any(L1,R1,LR1), pairs_of_any(L2,R2,LR2),
+    append_LR([SoFar,LR1,LR2],PairsR).
+
+pairs_of_any(LHS,RHS,SoFar,PairLR):-
+  pairs_agree_l_r(LHS,RHS,Agreed,RemainingL,RemainingR),
+  append_LR(Agreed,SoFar,AgreedSoFar),
+  pairs_of_any(RemainingL,RemainingR,AgreedSoFar,PairLR).
+
+pairs_of_any([],RHS,SoFar,PairLR):- 
+  pairs_of_any(SoFar,RHS,SoFar,PairLR).
+
+pairs_of_any(LHSObjs,[],SoFar,PairLR):- 
+  flatten(LHSObjs,LHSObjsF),
+  my_partition(is_mapping,LHSObjsF,Mappings,Objects),
+  into_list([SoFar|Mappings],Kept),
+  intersection(Kept,Objects,_,_,DeletedObjs),
+  append_LR([Kept,grp(delete,DeletedObjs,[])],PairLR).
+
+pair_combinations([], _, []).
+pair_combinations([H1|T1], List2, Pairs) :-
+    pair_combinations(T1, List2, RemainingPairs),
+    findall([H1, H2], (member(H2, List2), \+ member([H2, H1], RemainingPairs)), CurrentPairs),
+    append(CurrentPairs, RemainingPairs, Pairs).
+
+
+pairs_lr(LHS,RHS,PairsLR):- maplist(best_match_rl(RHS),LHS,PairsLR).
+
+
+
+
+/*
+In Prolog: I have two groups of objects where each object is denoted by `obj([center2D(2,6),mass(8),occurs_in_links(contains,1),pen([cc(blue,1)]),shape([square])])`
+Each object looks at the other group of objects and keeps what its most simular to.. whenever an object from each group picks each other it forms a new pair .. remove those objects and keep going
+there is no more objecs on one side any previous matches get added back and a new set of pairs .. this goes on until there is no opbjects remaining on either side.
+sometimes if there are an exact dividable number of objects on one side from the other try permutations of groups from the larger side
+*/
+
+% Predicate to find the most similar object in the other group for each object
+most_similar(_, [], -1).
+most_similar(Obj, [Other|Rest], MostSimilar) :-
+    similarity(Obj, Other, Sim),
+    most_similar(Obj, Rest, MostSimilarRest),
+  (Sim > MostSimilarRest -> MostSimilar = Sim ; MostSimilar = MostSimilarRest).
+
+
+
+%?- pair_combinations([o1, o2, o3], [o4, o5, o6], Pairs).
+%Pairs = [[o1, o4], [o1, o5], [o1, o6], [o2, o4], [o2, o5], [o2, o6], [o3, o4], [o3, o5], [o3, o6]].
+
+
+pairs_agree_l_r(LHS,RHS,Agreed,RemainingL,RemainingR):-
+   maplist(best_match_rl(RHS),LHS,PairsR),
+   maplist(best_match_lr(LHS),RHS,PairsL),
+   once((
+   intersection(PairsL,PairsR,Agreed,PairsLOnly,PairsROnly),
+   Agreed \==[],
+   %maplist(length,[Agreed,PairsLOnly,PairsROnly],[NAgreed,NPairsLOnly,NPairsROnly]),
+   %NAgreed>NPairsLOnly,%NPairsLOnly>RPairsLOnly,
+   %NAgreed>NPairsROnly,
+   maplist(arg(1),PairsROnly,RemainingR),
+   maplist(arg(1),PairsLOnly,RemainingL))).
+
+combine_training(TestID,A,B,In012,Out012):-   
+  obj_group_pair(TestID,_+A,In0,Out0),
+  obj_group_pair(TestID,_+B,In1,Out1), A<B,
+  pairs_agree_or_select(In0,In1,In01),
+  pairs_agree_or_select(Out0,Out1,Out01),
+  dif(C,A),dif(C,B), 
+  dif(D,A),dif(D,B), dif(D,C),
+  ignore((obj_group_pair(TestID,_+C,In2,_),pairs_agree_or_select(In01,In2,In012))),
+  ignore((obj_group_pair(TestID,_+D,_,Out2), pairs_agree_or_select(Out01,Out2,Out012))),  
+  ignore(In012=In01),ignore(Out012=Out01).
+
+
+
+
 
 append_LR(Prev,Mappings,RestLR):- 
   flatten([Prev,Mappings],RestLR),!.
@@ -1098,17 +1021,36 @@ calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,R
     must_det_ll((maplist(into_delete(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,Info),
      LHSObjs,Mappings),append_LR(Prev,[call(assert_test_property(TestID,ExampleNum,deps,ignore_rest(Info))),Mappings],RestLR))).
 
+calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,LHSObjsNil,RHSObjs,RestLR):- 
+   LHSObjsNil==[], !, 
+    incr_cntx(Ctx,IncrCtx),
+    incr_step(Step,IncrStep),
+    %incr_step(Step,IncrStep),
+    into_list(Prev,PrevObjs),
+    my_partition(is_input_object,PrevObjs,PrevLHS,PrevRHS),
+    member(Type=LHSObjs,[perfect_combo=PrevLHS,perfect_combo=PrevRHS]),
+      select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
+      must_det_ll((
+      remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
+      remove_object(RHSRest2, Left,RHSRest ), remove_object(LHSRest2, Left,LHSRest ),
+      make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,IncrCtx,Prev,Left,Right,Pairs),
+      append_LR(Prev,Pairs,NewPrev),
+      
+      calc_o_d_recursively(TestID,ExampleNum,IsSwapped,IncrStep,IncrCtx,NewPrev,LHSRest,RHSRest,RestLR))).
+
+/*
 calc_o_d_recursively(TestID,ExampleNum,IsSwapped,_Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- 
    LHSObjs==[], !, must_det_ll((
     incr_cntx(Ctx,IncrCtx),
     %incr_step(Step,IncrStep),
-    calc_o_d_recursively(TestID,ExampleNum,IsSwapped,10,IncrCtx,Prev,Prev,RHSObjs,RestLR))).
-
-calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,LHSObjs,[Right],[Pairs|RestLR]):- fail,
- must_det_ll((
-  make_pairs(TestID,ExampleNum,assumed,IsSwapped,Step,Ctx,[],[Prev,LHSObjs],Right,Pairs),
+    into_list(Prev,NewLHS),
+    calc_o_d_recursively(TestID,ExampleNum,IsSwapped,10,IncrCtx,Prev,NewLHS,RHSObjs,RestLR))).
+*/
+calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,LHSObjs,[Right],RestLR):- 
+  sort_by_jaccard(Right,LHSObjs,[A,B|C]),
+  make_pairs(TestID,ExampleNum,assumed,IsSwapped,Step,Ctx,[],[B,A],Right,Pairs),
   append_LR(Prev,Pairs,NewPrev),
-  calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,NewPrev,LHSObjs,[],RestLR))).
+  calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,NewPrev,C,[],RestLR),!.
 
 
 calc_o_d_recursively(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,[Pairs|RestLR]):-
@@ -1156,18 +1098,18 @@ select_pair(perfect,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,LHSObjs,RestLeft),
   \+ is_mapping(Left),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
-  find_prox_mappings(Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  sort_by_jaccard(Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),
-  find_prox_mappings(Right,map_right_to_left,LHSObjs,[LeftMaybe|_]))),
+  sort_by_jaccard(Right,LHSObjs,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
 
 select_pair(perfect_w_prev,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,[Prev|LHSObjs],RestLeft),
   \+ is_mapping(Left),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
-  find_prox_mappings(Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  sort_by_jaccard(Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),
-  find_prox_mappings(Right,map_right_to_left,LHSObjs,[LeftMaybe|_]))),
+  sort_by_jaccard(Right,LHSObjs,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
 
 select_pair(perfect_combo,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-  
@@ -1175,30 +1117,30 @@ select_pair(perfect_combo,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   in_to_ins(LHSObjsSet,2,LHSObjs_Combos),
   select(Left,LHSObjs_Combos,LHSObjs_Combos_Rest),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),  
-  find_prox_mappings(Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  sort_by_jaccard(Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(LHSObjs_Combos_Rest,Right,LHSRest),
-  find_prox_mappings(Right,map_right_to_left,LHSObjs_Combos,[LeftMaybe|_]))),
+  sort_by_jaccard(Right,LHSObjs_Combos,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
 
 
 select_pair(need_prev,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,LHSObjs,RestLeft),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
-  find_prox_mappings(Prev,Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  bonus_sort_by_jaccard(Prev,Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),
-  find_prox_mappings(Prev,Right,map_right_to_left,LHSObjs,[LeftMaybe|_]))),
+  bonus_sort_by_jaccard(Prev,Right,LHSObjs,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
 
 select_pair(from_left,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,LHSObjs,RestLeft),
   remove_object(RHSObjs,Left,RHSObjsMLeft),
-  find_prox_mappings(Prev,Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  bonus_sort_by_jaccard(Prev,Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),!.
 
 select_pair(from_right,Prev,LHSObjs,RHSObjs,Left,Right,LHSRest,RHSRest):-
   select(Left,LHSObjs,RestLeft),
   remove_object(RHSObjs,Left,RHSObjsMLeft),
-  find_prox_mappings(Prev,Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  bonus_sort_by_jaccard(Prev,Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),!.
 
 remove_object(RHSObjs,[Left|More],RHSObjsMI):- 
@@ -1498,31 +1440,34 @@ solve_obj_list(S,VM,TestID,ExampleNum,IN_OUT_Start,ROptions,[Obj|Objs],[NewObj|O
 
 */
 
-has_individuals(TestID):- var(TestID), !, ensure_test(TestID), has_individuals(TestID).
-has_individuals(TestID):-  
+has_individuals(TestID):- var(TestID), !, ensure_test(TestID), has_individuals_real(TestID).
+has_individuals(TestID):- has_individuals_real(TestID),!.
+has_individuals(TestID):- warn_skip(has_individuals(TestID)),!.
+has_individuals_real(TestID):-  
  forall(current_example_nums(TestID,ExampleNum),
   (arc_cache:individuated_cache(TestID,TID,GID,_,Objs), sub_var(ExampleNum,(TID,GID)), Objs\==[])),!.
  
-
-
 ensure_individuals(TestID):- var(TestID),!,ensure_test(TestID),ensure_individuals(TestID).
-ensure_individuals(TestID):- has_individuals(TestID),!.
-ensure_individuals(TestID):- load_file_dyn_pfc(TestID),has_individuals(TestID),!.
+ensure_individuals(TestID):- has_individuals_real(TestID),!.
+ensure_individuals(TestID):- load_file_dyn_pfc(TestID),has_individuals_real(TestID),!.
 ensure_individuals(TestID):- 
  time((with_individuated_cache(true,
   once((with_pair_mode(whole_test, ensure_individuals1(TestID))))))), 
  save_test_hints_now(TestID).
 
 % ensure_individuals1 tries the ensure_individuals2 
-ensure_individuals1(TestID):- has_individuals(TestID),!.
+ensure_individuals1(TestID):- has_individuals_real(TestID),!.
 ensure_individuals1(TestID):- 
   ensure_test(TestID),
-    once((with_pair_mode(whole_test, 
-          ensure_individuals2(TestID)),has_individuals(TestID))),!.
+    ignore(once((with_pair_mode(whole_test, 
+          ensure_individuals2(TestID)),
+    has_individuals_real(TestID)))),!.
  
 ensure_individuals2(TestID):- ignore((ExampleNum=trn+_)),
   print_collapsed(200, forall( kaggle_arc(TestID,ExampleNum,GridIn,GridOut),
            individuate_pair(complete,GridIn,GridOut,_InC,_OutC))).
+ensure_individuals2(TestID):- warn_skip(ensure_individuals2(TestID)),!.
+
 ensure_individuals2(TestID):- once(with_luser(menu_key,'i',once(ndividuator(TestID)))).
 ensure_individuals2(TestID):- once(with_luser(menu_key,'o',once(ndividuator(TestID)))).
 ensure_individuals2(TestID):- calc_propcounts(TestID).
@@ -1609,7 +1554,7 @@ map_pairs_info_io(TestID,ExampleNum,Ctx,Step,TypeO,InL,OutL,USame,UPA2,UPB2):-
 
 diff_l_r(InL,OutL,Same,InPFlat,OutPFlat):-
  must_det_ll((
-  (( \+ length(InL,1), OutL=[Out] ) -> find_prox_mappings(Out,map_right_to_left,InL,[UseL|_]);UseL=InL),
+  (( \+ length(InL,1), OutL=[Out] ) -> sort_by_jaccard(Out,InL,[UseL|_]);UseL=InL),
   flat_props([UseL],PA), flat_props([OutL],PB),
   noteable_propdiffs(PA,PB,Same,InPFlat,OutPFlat))).
 
@@ -1647,7 +1592,7 @@ hide_propchange2(In,Out):- \+ compound(In),!,Out=In.
 hide_propchange2(link(PA,_),link(PA,_)).
 hide_propchange2(pg(_,P,rank1,N),pg(_,P,rank1,N)).
 hide_propchange2(occurs_in_links(PA,_),occurs_in_links(PA,_)).
-hide_propchange2(links_count(PA,_),links_count(PA,_)).
+%hide_propchange2(links_count(PA,_),links_count(PA,_)).
 hide_propchange2(giz(example_num(ExampleNum)),giz(example_num(ExampleNum))).
 hide_propchange2(giz(gid(_)),giz(gid(_))).
 hide_propchange2(giz(InL),giz(OutL)):- make_unifiable_u(InL,OutL).
@@ -1660,23 +1605,353 @@ hide_propchange2(IN_OUT,IN_OUT).
 
 hide_propchange1(iz(symmetry_type(_,False))):- False == false.
 hide_propchange1(iz(symmetry_type(_,False))):- False == true.
-hide_propchange1(pg(_,_,_,_)).
+%hide_propchange1(pg(_,_,_,_)).
 hide_propchange1(line(sees(_),_)).
 hide_propchange1(pg(_,_,rankLS,_)).
 hide_propchange1(iz(P)):-!,hide_propchange1(P).
 hide_propchange1(P):- \+ ok_notice(P),!.
-hide_propchange1(P):- make_unifiable_u(P,U),!,P=@=U,!.
+%hide_propchange1(P):- make_unifiable_u(P,U),!,P=@=U,!.
 
 hide_propchange(PA,PB):- hide_propchange2(PA,PA1),PA\=@=PA1,!,hide_propchange(PA1,PB).
 hide_propchange(PA,PA).
 
+remove_o_giz(OID,Out):- atom(OID),!,indv_props_list(OID,In),remove_o_giz(In,Out),!.
 remove_o_giz(In,Out):- \+ compound(In),!,Out=In.
-remove_o_giz(obj(In),obj(Out)):- nonvar(In),!,remove_o_giz(In,Out),!.
-remove_o_giz(In,Out):- is_group(In),mapgroup(remove_o_giz,In,Mid),In\=@=Mid,!,remove_o_giz(Mid,Out).
+remove_o_giz(obj(In),Out):- nonvar(In),!,remove_o_giz(In,Out),!.
+remove_o_giz(In,Out):- is_group(In),mapgroup(remove_o_giz,In,MidF),flatten(MidF,Mid),In\=@=Mid,!,remove_o_giz(Mid,Out).
 remove_o_giz(In,Out):- my_exclude(hide_propchange1,In,Mid),In\=@=Mid,!,remove_o_giz(Mid,Out).
-remove_o_giz(In,Out):-    maplist(hide_propchange,In,Mid),In\=@=Mid,!,remove_o_giz(Mid,Out).
+remove_o_giz(In,Out):- m_unifiers(In,MidF),o_unifiers(MidF,Mid),In\=@=Mid,!,remove_o_giz(Mid,Out).
+remove_o_giz(In,Out):- maplist(hide_propchange,In,Mid),In\=@=Mid,!,remove_o_giz(Mid,Out).
 %remove_o_giz(In,Out):- remove_giz(In,Out),!.
 remove_o_giz(Out,Out).
 
+m_unifiers(In,Out):- select(E,In,More),is_prop1(E),make_unifiable(E,U),select(U,More,UMore),other_val(E,U),the_min_unifier(U,E,S),!,m_unifiers([S|UMore],Out).
+m_unifiers(IO,IO).
+o_unifiers(In,Out):- select(E,In,More),is_prop1(E),make_unifiable(E,U),select(U,More,UMore),other_val(E,U),the_or_unifier(U,E,S),!,o_unifiers([S|UMore],Out).
+o_unifiers(IO,IO). 
+the_or_unifier(U,E,(U;E)).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+is_accompany_changed_verified(TestID,IO,P,PSame):-
+  is_accompany_changed_computed(TestID,IO,P,PSame), PSame\==[].
+
+is_accompany_changed_computed(TestID,IO,P,PSame):-
+   is_accompany_changed_db(TestID,IO,P,PSame) *->true ; prop_can(TestID,IO,P,PSame). 
+   
+prop_can(TestID,IO,P,Can):-    
+  props_change(TestID,IO,P),
+  once((prop_cant(TestID,IO,P,Cant),
+  prop_can1(TestID,IO,P,Can1),
+  intersection(Can1,Cant,_,Can,_))).
+  %(Can == [] -> (CanL=Can1,fail) ; CanL= Can).
+
+prop_can1(TestID,IO,P,Can):-  
+  props_change(TestID,IO,P),
+  findall(O,
+    ((enum_object_ext(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
+      has_prop(P,O))),[I|L]),
+  indv_props_list(I,List),
+  findall(U,(member(U,List),U\=@=P,ok_notice(U),forall(member(E,L),has_prop(U,E))),Can).
+
+
+prop_cant(TestID,IO,P,Set):-
+  props_change(TestID,IO,P),
+  findall(Cant,
+    ((enum_object(O),has_prop(giz(g(out)),O),has_prop(cc(bg,0),O),
+      not_has_prop(P,O),indv_props_list(O,List),member(Cant,List),ok_notice(Cant))),Flat),
+   list_to_set(Flat,Set).
+
+enum_object_ext(O):-
+  ensure_test(TestID),
+  current_example_nums(TestID,ExampleNum),
+  once((obj_group_io(TestID,ExampleNum,out,Objs),Objs\==[])),member(O,Objs).
+
+
+contains_same([],_):- !.
+contains_same([E|L],P):- sub_var(E,P),!,contains_same(L,P).
+
+find_peers_with_same(TestID,IO,P,PSame,NewSame):- select(S,PSame,Next),S=@=P,!,find_peers_with_same(TestID,IO,P,Next,NewSame).
+find_peers_with_same(TestID,IO,P,PSame,NewSame):- 
+   sub_term(Color,P),is_real_color(Color), sub_term(N,P),number(N),
+   my_partition(contains_same([Color]),PSame,SameW,SameWO),SameW\==[], SameWO\==[],!,
+   find_peers_with_same(TestID,IO,P,SameWO,NewSame).
+find_peers_with_same(_,_,PSame,PSame):-!.
+   
+   
+
+   
+
+merge_xtra_props_ac1([ac1(PO)|AC3],PSame):- !, merge_xtra_props_ac1_3(PO,AC3,PSame), PSame\==[].
+merge_xtra_props_ac1_3(PO,[ac1(PO2)|MORE],OUT):-
+  intersection(PO,PO2,IPO),
+  merge_xtra_props_ac1_3(IPO,MORE,OUT).
+merge_xtra_props_ac1_3(PO,[],PO).
+
+merge_xtra_props_ac2([ac2(_,PSame)],PSame):-!.
+merge_xtra_props_ac2(AC2,PSame):-
+ select(ac2(ExampleNum,PO1),AC2,AC3),
+ select(ac2(ExampleNum,PO2),AC3,AC4),
+ intersection(PO1,PO2,Some),Some\==[],!,
+ merge_xtra_props_ac2([ac2(ExampleNum,Some)|AC4],PSame).
+merge_xtra_props_ac2(AC2,PSame):-
+ select(ac2(ExampleNum,PO1),AC2,AC3),
+ select(ac2(ExampleNum2,PO2),AC3,AC4),
+ ExampleNum \== ExampleNum2,
+ intersection(PO1,PO2,Some),Some\==[],!,
+ merge_xtra_props_ac2([ac2(ExampleNum,Some)|AC4],PSame).
+
+merge_xtra_props_ac2([ac2(ExampleNum,PO1)|AC3],[ac2(ExampleNum,PO1)|PSame]):-
+  merge_xtra_props_ac2(AC3,PSame),!.
+merge_xtra_props_ac2(PSame,PSame):-!.
+
+
+changing_props(TestID,X1,X2):- 
+ ensure_test(TestID),
+ findall(X1-InOut,props_change(TestID,InOut,X1),X1L),
+ variant_list_to_set(X1L,X1S),
+ member(X1-IO,X1S),
+ member(X2-IO,X1S),
+% X1@>X2,
+ other_val(X1,X2). 
+
+print_scene_change_rules(Why,TestID):-
+ ensure_test(TestID),
+ must_det_ll((
+  banner_lines(cyan,4),
+  print_set(Why,is_accompany_changed_db),
+  banner_lines(cyan,4))).
+
+
+print_set(Why,P3):-
+  Ele = is_accompany_changed_db(TestID,IN_OUT,P,PSame),
+  findall(Ele,call(P3,TestID,IN_OUT,P,PSame),List),
+  sort(List,SetR),reverse(SetR,Set), 
+  trace,pp_ilp(Why),
+  dash_chars,
+  maplist(pp_ilp,Set),!.
+
+
+
+
+
+
+
+
+
+has_propcounts(TestID):- 
+ forall(current_example_nums(TestID,ExampleNum),
+  ( \+ \+ (propcounts(TestID, ExampleNum, IO, count, _, _), sub_var(in,IO)),
+    \+ \+ (propcounts(TestID, ExampleNum, IO, count, _, _), sub_var(out,IO)))).
+
+ensure_propcounts(TestID):- ensure_test(TestID),ensure_propcounts1(TestID).
+ensure_propcounts1(TestID):- has_propcounts(TestID),!.
+ensure_propcounts1(_TestID):-!.
+ensure_propcounts1(TestID):- ensure_individuals(TestID),!.
+ensure_propcounts1(TestID):- calc_propcounts(TestID),has_propcounts(TestID),!.
+ensure_propcounts1(TestID):- 
+  once((with_pair_mode(whole_test,
+    with_luser(menu_key,'o',once(ndividuator(TestID)))))),has_propcounts(TestID),!.
+ensure_propcounts1(TestID):- show_prop_counts(TestID), has_propcounts(TestID),!.
+ensure_propcounts1(_).
+
+props_change(TestID,IO,P):- map_pairs_info(TestID,IO,P,_Step).
+props_change2(TestID,IO,P):-
+%  ensure_propcounts(TestID),
+  %ensure_prop_change(E),
+  findall(Q-I_or_O,counts_change(TestID,_,I_or_O,Q,_,_),L),list_to_set(L,S),!,member(P-IO,S),ok_deduce(P).
+%ensure_prop_change(IO,P):- (var(P)->props_change(_TestID,IO,P);true).
+
+counts_change(TestID,ExampleNum,In,P,N2,N1):- in_out_atoms(In,Out),
+   ensure_propcounts(TestID),
+   propcounts(TestID, ExampleNum, Out, count, N1, P), ok_deduce(P),
+   ExampleNum = trn+_,
+   (propcounts(TestID, ExampleNum, In, count, N2, P) -> true ; N2=0), N1\==N2.
+
+counts_change(TestID,ExampleNum,Out,P,N1,N2):- in_out_atoms(In,Out),
+   ensure_propcounts(TestID),
+   propcounts(TestID, ExampleNum, In, count, N1, P), ok_deduce(P),
+   ExampleNum = trn+_,
+   (propcounts(TestID, ExampleNum, Out, count, N2, P) -> true ; N2=0), N1\==N2.
+
+
+ensure_scene_change_rules(TestID):-
+ ensure_test(TestID),
+ nop(\+ is_accompany_changed_db(TestID,_,_,_) -> compute_scene_change(TestID) ; true).
+
+
+
+compute_scene_change(TestID):-
+ ensure_test(TestID),
+ with_pair_mode(whole_test,  
+ must_det_ll((
+  clear_scene_rules(TestID),
+  banner_lines(orange,4),
+  compute_scene_change_pass1(TestID),  
+  banner_lines(orange,4),
+  compute_scene_change_pass2(TestID),
+  banner_lines(yellow,4),  
+  compute_scene_change_pass3(TestID),
+  banner_lines(blue,4),
+
+  /*
+  compute_scene_change_pass4(TestID),*/
+  !))).
+
+
+compute_scene_change_pass1(TestID):- 
+  show_object_dependancy(TestID),!.
+  %learn_object_dependancy(TestID).
+
+compute_scene_change_pass2(TestID):- 
+  forall(ensure_props_change(TestID,Ctx,P),
+    forall(prop_can(TestID,Ctx,P,PSame),
+      assert_accompany_changed_db(TestID,Ctx,P,PSame))).
+
+compute_scene_change_pass3(TestID):-
+ must_det_ll((
+  print_scene_change_rules(pass2,TestID),
+  set_of_changes(TestID,compute_scene_change_pass3a(TestID)),
+  print_scene_change_rules(pass3a,TestID),
+  set_of_changes(TestID,compute_scene_change_pass3b(TestID,correct_antes1)),
+  set_of_changes(TestID,compute_scene_change_pass3c(TestID)),
+  print_scene_change_rules(pass3b1,TestID),
+  set_of_changes(TestID,compute_scene_change_pass3b(TestID,correct_antes2)),
+  print_scene_change_rules(pass3b2,TestID),
+  set_of_changes(TestID,compute_scene_change_pass3b(TestID,correct_antes3)),
+  print_scene_change_rules(pass3b3,TestID),
+  set_of_changes(TestID,compute_scene_change_pass3b(TestID,correct_antes4)),
+  print_scene_change_rules(pass3b4,TestID),
+  set_of_changes(TestID,compute_scene_change_pass3c(TestID)),
+  print_scene_change_rules(pass3c,TestID))),!.
+
+compute_scene_change_pass3a(TestID,IN_OUT-P):- 
+   findall(PSame,is_accompany_changed_db(TestID,IN_OUT,P,PSame),List),
+   List=[_,_|_],
+   flatten(List,SameF), variant_list_to_set(SameF,SameS),
+   update_accompany_changed_db(TestID,IN_OUT,P,SameS).
+compute_scene_change_pass3a(_,_).
+
+compute_scene_change_pass3b(TestID,P4,IN_OUT-P):-
+   findall(PSame,is_accompany_changed_db(TestID,IN_OUT,P,PSame),List),
+   flatten(List,SameF), variant_list_to_set(SameF,SameS),
+   call(P4,TestID,IN_OUT,P,SameS,Kept), Kept\==[],!,
+  update_accompany_changed_db(TestID,IN_OUT,P,Kept).
+compute_scene_change_pass3b(_,_,_). 
+
+compute_scene_change_pass3c(_,_):-!.
+compute_scene_change_pass3c(TestID,IN_OUT-P):-
+  is_accompany_changed_db(TestID,IN_OUT,P,PSame),
+  findall(DSame,
+     (is_accompany_changed_db(TestID,IN_OUT,DP,DSame), 
+      once(other_val(DP,P);DP=P),at_least_one_overlap(DSame,PSame)),
+   SL),  SL = [_,_|_],
+  common_members(SL,Commons),
+  forall((is_accompany_changed_db(TestID,IN_OUT,DP,DSame),once(other_val(DP,P);DP=P)),
+      (intersection(DSame,Commons,_,Kept,_),
+        ignore((Kept\==[],update_accompany_changed_db(TestID,IN_OUT,P,Kept))))).
+compute_scene_change_pass3c(_,_).
+
+
+compute_scene_change_pass4(TestID):-
+   compute_scene_change_pass3(TestID).
+
+set_of_changes(TestID,P1):-
+  findall_vset(IN_OUT-P,ensure_props_change(TestID,IN_OUT,P),Ps),
+  maplist(P1,Ps).
+
+
+update_accompany_changed_db(TestID,IN_OUT,P,Kept):- Kept\==[],
+   forall(retract(is_accompany_changed_db(TestID,IN_OUT,P,_)),true),
+   assert_accompany_changed_db(TestID,IN_OUT,P,Kept).
+   
+assert_accompany_changed_db(_TestID,_IN_OUT,_P,Kept):- Kept==[],!.
+assert_accompany_changed_db(TestID,IN_OUT,P,Kept):- 
+   assert_become_new(is_accompany_changed_db(TestID,IN_OUT,P,Kept)).
+
+at_least_one_overlap(DSame,PSame):-
+  member(DS,DSame),member(S,PSame),
+  (DS=@=S;other_val(S,DS)),!.
+
+correct_antes1(TestID,IN_OUT,P,PSame,SL):- 
+  %rev_in_out_atoms(OI,IN_OUT),
+  findall(S,
+   (member(S,PSame),
+     \+ \+ ((
+       forall((is_accompany_changed_db(TestID,IN_OUT,DP,DSame),at_least_one_overlap(DSame,PSame)),
+          ((P==DP)-> true; (member(DS,DSame),  \+ negated_s_lit(S,_), other_val(S,DS))))))),
+   SL), SL\==[],!.
+correct_antes1(_TestID,_IN_OUT,_P,PSame,PSame).
+
+correct_antes2(TestID,IN_OUT,P,PSame,Kept):- 
+  %rev_in_out_atoms(OI,IN_OUT),
+  findall( ( \+ S),
+   ((is_accompany_changed_db(TestID,IN_OUT,DP,DSame), 
+     other_val(P,DP), at_least_one_overlap(DSame,PSame),
+     member(S,DSame),  \+ negated_s_lit(S,_), make_unifiable_u(S,SU), \+ member(SU,PSame))), SL),
+  SL\==[],
+  append(PSame,SL,Kept),Kept\==[],!.
+correct_antes2(_TestID,_IN_OUT,_P,PSame,PSame).
+
+correct_antes3(_TestID,_IN_OUT,P,PSame,Kept):- fail,
+  %rev_in_out_atoms(OI,IN_OUT),
+  findall(S,
+     (member(S,PSame),\+ once(other_val(P,S);S=@=P)),
+   Kept), Kept\==[],!.
+correct_antes3(_TestID,_IN_OUT,_P,PSame,PSame).
+
+
+correct_antes4(_TestID,_IN_OUT,_P,PSame,Kept):- 
+  %rev_in_out_atoms(OI,IN_OUT),
+  findall(S,
+      (member(E,PSame), ensure_xformed(E,S)),
+   Kept), Kept\==[],!.
+correct_antes4(_TestID,_IN_OUT,_P,PSame,PSame).
+
+negated_s_lit(N,P):- compound(N), N = ( \+ P ). 
+
+correct_antes5(TestID,IN_OUT,P,PSame,Kept):-   
+   make_unifiable_u(P,U),
+   is_accompany_changed_computed(TestID,IN_OUT,U,DSame),
+   P\=@=U,
+   maplist(make_unifiable_u,DSame,USame),
+   pred_intersection(other_val,PSame,USame,Kept,_,_,_),Kept\==[].
+correct_antes5(_TestID,_IN_OUT,_P,PSame,PSame).
+
+ensure_xformed(pg(_,A,B,C),pg(_,A,B,C)):-!.
+ensure_xformed(A,A).
+
+/*
+solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,ObjsO):-
+ forall(kaggle_arc(TestID,trn+N,_,_),
+  ( findall(Out,((arc_cache:map_pairs(TestID,_,trn+N,info(Step,_,in_out,perfect_in_out,_,trn+N),PreObjs,Out),
+      indv_props_list(Out,PropsO),
+       closest_object(Out,PreObjs,PreObj),
+       rewrite_rules_for(PreObj,Out,Sames,Diffs),
+       ,OutL),
+    findall(PreObjs,arc_cache:map_pairs(TestID,_,trn+N,info(0,_,in_out,_,_,trn+N),PreObjs,Out),PreObjs),
+  homogenize(OutL,Sames,Diffs),
+*/
 
 

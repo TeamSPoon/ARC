@@ -206,7 +206,6 @@ final_alignment(_,_,AA,BB,AA,BB):-!.
 obj_grp_atoms(IO,A,[A,PA|Atoms]):- obj_grp_atomslist(IO,A,PA,Atoms).
 
 
-
 obj_grp_atomslist(IO,A,PA,Atoms):- \+ \+ see_object_atomslist(IO,A,PA,Atoms), !, see_object_atomslist(IO,A,PA,Atoms).
 obj_grp_atomslist(IO,A,PA,Atoms):- 
   obj_grp_atoms_deep(A,PA,Atoms),
@@ -335,13 +334,12 @@ diff_groups(A0,B0,DD):-
   diff_groups1(A2,B2,DD).
 
 obj_atoms(PA,PAP):- PA==[],!,PAP=[].
-obj_atoms(PA,PAP):- must_det_ll((nonvar(PA))),is_grid(PA),globalpoints(PA,GP),!,subobj_atoms(points(GP),PAP).
 obj_atoms(PA,PAP):- sub_term(E,PA),compound(E),E=obj_atoms(UU),!,subobj_atoms(UU,PAP).
+obj_atoms(PA,PAP):- must_det_ll((nonvar(PA))),is_grid(PA),globalpoints(PA,GP),!,subobj_atoms(points(GP),PAP).
 obj_atoms(PA,PAP):- is_list(PA),maplist(obj_atoms,PA,LPA),append(LPA,PAP),!.
 obj_atoms(PA,PAP):- is_object(PA),must_det_ll((indv_props_list(PA,MF),subobj_atoms(MF,PAP),PAP\==[])).
 obj_atoms(PA,PAP):- into_obj_props1(PA,MF),must_subobj_atoms(MF,PAP),!.
-obj_atoms(PA,PAP):-must_subobj_atoms(PA,PAP),!.
-
+obj_atoms(PA,PAP):- must_subobj_atoms(PA,PAP),!.
 
 %never_matom(localpoints(_)).
 %never_matom(shape_rep(grav,_)).
@@ -353,10 +351,16 @@ verbatum_matom(pg(_,_,_,_)).
 relaxed_matom(pg(_,A,B,C),pg(r,A,B,C)).
 relaxed_matom(link(A,r),link(A,r)).
 
-must_subobj_atoms(PA,PAP):- must_det_l((subobj_atoms(PA,PAP),PAP\==[])),!.
+must_subobj_atoms(PA,PAP):- subobj_atoms(PA,PAP),PAP\==[],!.
+must_subobj_atoms(PA,PAP):- findall(E,(all_sub_terms(E,PA),nonvar(E)),PAP),!.
+
+all_sub_terms(S,T):- is_list(T),!,member(E,T),all_sub_terms(S,E).
+all_sub_terms(S,T):- T=S.
+all_sub_terms(S,T):- compound(T),functor(T,F,A),((arg(_,T,E),all_sub_terms(S,E));S=F/A).
 
 subobj_atoms(PA,PAP):- PA==[],!,PAP=[].
-subobj_atoms(PA,PAP):- is_grid(PA),globalpoints(PA,GP),!,subobj_atoms(GP,PAP).
+%subobj_atoms(PA,PAP):- is_grid(PA),globalpoints(PA,GP),!,subobj_atoms(GP,PAP).
+subobj_atoms(PA,PAP):- is_grid(PA),globalpoints(PA,GP),!,sub_obj_atom(points(GP),PAP).
 subobj_atoms(PA,PAP):- must_det_ll((nonvar(PA),flatten([PA],M), 
   findall(E,(member(SE,M),sub_obj_atom(E,SE)),PAP))),!.
 
