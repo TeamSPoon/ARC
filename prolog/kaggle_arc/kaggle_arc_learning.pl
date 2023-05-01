@@ -577,19 +577,17 @@ sorted_by_closeness(In,Sorted,Objs,List):-
   asserta(saved_sorted_by_closeness(In,Sorted,Objs,List)),!.
 
 
-find_prox_mappings(A,GroupID,Candidates,Objs):-
-  bonus_sort_by_jaccard([],A,GroupID,Candidates,Objs).
 
-find_prox_mappings(A,Candidates,Objs):-
-  bonus_sort_by_jaccard([],A,sort_by_jaccard,Candidates,Objs).
+%find_prox_mappings(A,Candidates,Objs):- sort_by_jaccard(A,Candidates,Objs).
+sort_by_jaccard(A,Candidates,Objs):- bonus_sort_by_jaccard([],A,sort_by_jaccard,Candidates,Objs).
 
-
-sort_by_jaccard(A,GroupID,Candidates,Objs):-
-  bonus_sort_by_jaccard([],A,GroupID,Candidates,Objs).
+find_prox_mappings(A,GroupID,Candidates,Objs):- sort_by_jaccard(A,GroupID,Candidates,Objs).
+sort_by_jaccard(A,GroupID,Candidates,Objs):- bonus_sort_by_jaccard([],A,GroupID,Candidates,Objs).
 
 bonus_sort_by_jaccard(Bonus,A,Candidates,Objs):-
   bonus_sort_by_jaccard(Bonus,A,sort_by_jaccard,Candidates,Objs).
 
+find_prox_mappings(Bonus,A,GroupID,Candidates,Objs):- bonus_sort_by_jaccard(Bonus,A,GroupID,Candidates,Objs).
 bonus_sort_by_jaccard(_,_,_,[Obj],[Obj]):-!.
 bonus_sort_by_jaccard(Bonus,A,GroupID,Candidates,Objs):-
  must_det_ll((

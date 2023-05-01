@@ -234,8 +234,8 @@ two_way_mapping(Ways,Obj,_Objs,Rules,Rule,Rules):-
 
 two_way_mapping(Ways,Obj,Objs,Rules,Rule,RulesRest):-
   \+ match_ok(Ways,exact),
-   once((sort_by_jaccard(Obj,obj_to_rule,Rules,[Rule|RulesRest]),
-   sort_by_jaccard(Rule,rule_to_objs,Objs,[PickedObj|_ObjsRest]))), 
+   once((sort_by_jaccard(Obj,Rules,[Rule|RulesRest]),
+   sort_by_jaccard(Rule,Objs,[PickedObj|_ObjsRest]))), 
     ((PickedObj == Obj)-> nop(match_ok(Ways,two_ways)) ; match_ok(Ways,one_way)),
   write_atoms_info(Ways,PickedObj),
   write_atoms_info(paired2,Rule),
@@ -1157,18 +1157,18 @@ select_pair(perfect,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,LHSObjs,RestLeft),
   \+ is_mapping(Left),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
-  sort_by_jaccard(Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  sort_by_jaccard(Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),
-  sort_by_jaccard(Right,map_right_to_left,LHSObjs,[LeftMaybe|_]))),
+  sort_by_jaccard(Right,LHSObjs,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
 
 select_pair(perfect_w_prev,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,[Prev|LHSObjs],RestLeft),
   \+ is_mapping(Left),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
-  sort_by_jaccard(Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  sort_by_jaccard(Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),
-  sort_by_jaccard(Right,map_right_to_left,LHSObjs,[LeftMaybe|_]))),
+  sort_by_jaccard(Right,LHSObjs,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
 
 select_pair(perfect_combo,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-  
@@ -1176,30 +1176,30 @@ select_pair(perfect_combo,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   in_to_ins(LHSObjsSet,2,LHSObjs_Combos),
   select(Left,LHSObjs_Combos,LHSObjs_Combos_Rest),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),  
-  sort_by_jaccard(Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  sort_by_jaccard(Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(LHSObjs_Combos_Rest,Right,LHSRest),
-  sort_by_jaccard(Right,map_right_to_left,LHSObjs_Combos,[LeftMaybe|_]))),
+  sort_by_jaccard(Right,LHSObjs_Combos,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
 
 
 select_pair(need_prev,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,LHSObjs,RestLeft),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
-  sort_by_jaccard(Prev,Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  bonus_sort_by_jaccard(Prev,Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),
-  sort_by_jaccard(Prev,Right,map_right_to_left,LHSObjs,[LeftMaybe|_]))),
+  bonus_sort_by_jaccard(Prev,Right,LHSObjs,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
 
 select_pair(from_left,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,LHSObjs,RestLeft),
   remove_object(RHSObjs,Left,RHSObjsMLeft),
-  sort_by_jaccard(Prev,Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  bonus_sort_by_jaccard(Prev,Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),!.
 
 select_pair(from_right,Prev,LHSObjs,RHSObjs,Left,Right,LHSRest,RHSRest):-
   select(Left,LHSObjs,RestLeft),
   remove_object(RHSObjs,Left,RHSObjsMLeft),
-  sort_by_jaccard(Prev,Left,map_right_to_left,RHSObjsMLeft,[Right|RHSRest]),
+  bonus_sort_by_jaccard(Prev,Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),!.
 
 remove_object(RHSObjs,[Left|More],RHSObjsMI):- 
@@ -1610,39 +1610,9 @@ map_pairs_info_io(TestID,ExampleNum,Ctx,Step,TypeO,InL,OutL,USame,UPA2,UPB2):-
 % old code
 diff_l_r(InL,OutL,Same,InPFlat,OutPFlat):-
  must_det_ll((
-  (( \+ length(InL,1), OutL=[Out] ) -> sort_by_jaccard(Out,map_right_to_left,InL,[UseL|_]);UseL=InL),
+  (( \+ length(InL,1), OutL=[Out] ) -> sort_by_jaccard(Out,InL,[UseL|_]);UseL=InL),
   flat_props([UseL],PA), flat_props([OutL],PB),
-  noteable_propdiffs(PA,PB,Same,InPFlat,OutPFlat))).
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  noteable_propdiffs(PA,PB,Same,InPFlat,OutPFlat))),!.
 
 noteable_propdiffs(PA,PB,Same,InPFlat,OutPFlat):- 
   remove_o_giz(PA,PA1),remove_o_giz(PB,PB1),
@@ -1678,7 +1648,7 @@ hide_propchange2(In,Out):- \+ compound(In),!,Out=In.
 hide_propchange2(link(PA,_),link(PA,_)).
 hide_propchange2(pg(_,P,rank1,N),pg(_,P,rank1,N)).
 hide_propchange2(occurs_in_links(PA,_),occurs_in_links(PA,_)).
-%hide_propchange2(links_count(PA,_),links_count(PA,_)).
+hide_propchange2(links_count(PA,_),links_count(PA,_)).
 hide_propchange2(giz(example_num(ExampleNum)),giz(example_num(ExampleNum))).
 hide_propchange2(giz(gid(_)),giz(gid(_))).
 hide_propchange2(giz(InL),giz(OutL)):- make_unifiable_u(InL,OutL).
@@ -1691,39 +1661,23 @@ hide_propchange2(IO_,IO_).
 
 hide_propchange1(iz(symmetry_type(_,False))):- False == false.
 hide_propchange1(iz(symmetry_type(_,False))):- False == true.
-%hide_propchange1(pg(_,_,_,_)).
+hide_propchange1(pg(_,_,_,_)).
 hide_propchange1(line(sees(_),_)).
 hide_propchange1(pg(_,_,rankLS,_)).
 hide_propchange1(iz(P)):-!,hide_propchange1(P).
 hide_propchange1(P):- \+ ok_notice(P),!.
-%hide_propchange1(P):- make_unifiable_u(P,U),!,P=@=U,!.
+hide_propchange1(P):- make_unifiable_u(P,U),!,P=@=U,!.
 
 hide_propchange(PA,PB):- hide_propchange2(PA,PA1),PA\=@=PA1,!,hide_propchange(PA1,PB).
 hide_propchange(PA,PA).
 
-remove_o_giz(OID,Out):- atom(OID),!,indv_props_list(OID,In),remove_o_giz(In,Out),!.
 remove_o_giz(In,Out):- \+ compound(In),!,Out=In.
-remove_o_giz(obj(In),Out):- nonvar(In),!,remove_o_giz(In,Out),!.
-remove_o_giz(In,Out):- m_unifiers(In,MidF),o_unifiers(MidF,Mid),In\=@=Mid,!,remove_o_giz(Mid,Out).
-remove_o_giz(In,Out):- is_group(In),mapgroup(remove_o_giz,In,MidF),flatten(MidF,Mid),In\=@=Mid,!,remove_o_giz(Mid,Out).
+remove_o_giz(obj(In),obj(Out)):- nonvar(In),!,remove_o_giz(In,Out),!.
+remove_o_giz(In,Out):- is_group(In),mapgroup(remove_o_giz,In,Mid),In\=@=Mid,!,remove_o_giz(Mid,Out).
 remove_o_giz(In,Out):- my_exclude(hide_propchange1,In,Mid),In\=@=Mid,!,remove_o_giz(Mid,Out).
 remove_o_giz(In,Out):-    maplist(hide_propchange,In,Mid),In\=@=Mid,!,remove_o_giz(Mid,Out).
 %remove_o_giz(In,Out):- remove_giz(In,Out),!.
 remove_o_giz(Out,Out).
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1827,14 +1781,6 @@ print_set(Why,P3):-
   pp_ilp(Why),
   dash_chars,
   maplist(pp_ilp,Set),!.
-
-
-
-
-
-
-
-
 
 has_propcounts(TestID):- 
  forall(current_example_nums(TestID,ExampleNum),
