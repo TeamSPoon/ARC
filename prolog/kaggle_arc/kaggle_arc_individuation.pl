@@ -346,7 +346,7 @@ fill_in_bg(_Black,G2,GG2):- is_fg_color(G2),!,ignore(G2=GG2).
 fill_in_bg(Black,G2,GG2):- \+ G2\=Black,!,ignore(GG2=Black).
 fill_in_bg(Alt,In,Out):- only_color_data_or(Alt,In,Out),!.
 fill_in_bg(_Alt,In,In):-!.
-into_solid_grid(I,GG):- must_det_ll((into_grid(I,G1),mapgrid(fill_in_bg(black),G1,GG1))),!,GG=GG1.
+into_solid_grid(I,GG1):- into_grid(I,G1),mapgrid(fill_in_bg(black),G1,GG1),!.
 
 
 
@@ -731,6 +731,7 @@ show_individuated_nonpair(PairName,ROptions,GridIn,Grid,InC):-
   print_ss(green,GridIn,show_individuated_nonpair(PairName),_,InC,indvs(ROptions,PairName)))).
   
  
+flatten_set(F,S):- flatten(F,L),list_to_set(L,BF),!,BF=S.
 
 
  
@@ -4148,7 +4149,7 @@ maybe_remove_sort_tag(L-G,G):- is_sort_tag(L).
 
 into_list(G,[]):- G==[],!.
 into_list(G,[G]):- \+ compound(G),!.
-into_list(G,L):- is_rule_mapping(G), get_mapping_info_list(G,_,List),!,into_list(List,L).
+into_list(G,L):- is_mapping(G), get_mapping_info_list(G,_,List),!,into_list(List,L).
 into_list(G,[G]):- is_grid(G),!.
 into_list(G,[G]):- is_object(G),!.
 into_list(G,L):- maybe_remove_sort_tag(G,LL),!,into_list(LL,L).
@@ -4422,8 +4423,8 @@ is_thing_or_connection1(merge_shapes(_,_)).
 is_thing_or_connection1(jumps(_,_)).
 
 
-find_one_individual(Option,Obj,VM):- find_one_ifti2(Option,Obj,VM),!.
-%find_one_individual(Option,Obj,VM):- find_one_ifti3(Option,Obj,VM),!.
+find_one_individual(Option,Obj,VM):- find_one_ifti3(Option,Obj,VM),!.
+%find_one_individual(Option,Obj,VM):- find_one_ifti2(Option,Obj,VM),!.
 
 include_only_between(HS,HE,VS,VE,IndvPoints0,IndvPoints):-
    include(w_in_box(HS,HE,VS,VE),IndvPoints0,IndvPoints).

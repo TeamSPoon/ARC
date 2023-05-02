@@ -83,7 +83,7 @@ menu_cmd1(i,'i','             See the (i)ndividuation correspondences in the inp
 menu_cmd1(_,'I','                  or (I)ndividuate all',(whole_ndividuator)).
 menu_cmd1(i,'o','                  or (o)bjects found in the input/outputs',                (clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,t),ndividuator))).
 menu_cmd1(_,'u','                  or (u)niqueness between objects in the input/outputs',   (cls_z_make,!,ignore(what_unique),ndividuator)).
-menu_cmd1(_,'y','                  or Wh(y) between objects in the input/outputs',   ((cls_z_make,!,ndividuator))).
+menu_cmd1(_,'y','                  or Wh(y) between objects in the input/outputs',   ((cls_z_make,!,why_io))).
 menu_cmd1(_,'a','                  or (a)ll between objects',   (cls_z_make,!,ndividuator)).
 menu_cmd1(_,'j','                  or (j)unctions between objects',   (cls_z_make,!,ndividuator)).
 menu_cmd1(_,'k','                  or (k)ill/clear all test data.',(update_changes,clear_test)).
@@ -117,7 +117,7 @@ menu_cmd1(r,'i','             Re-enter(i)nteractve mode.',(interact)).
 
 menu_cmd9(_,'m','recomple this progra(m),',(clear_tee,update_changes,threads)).
 menu_cmd9(_,'c','(c)lear the scrollback buffer,',(force_full_tee,really_cls)).
-menu_cmd9(_,'C','(C)lear cached test info,',(clear_training_now,clear_test_now)).
+menu_cmd9(_,'C','(C)lear cached test info,',(clear_training_now,clear_test_now,force_clear_test)).
 menu_cmd9(_,'r','(r)un DSL code,',(call_dsl)).
 menu_cmd9(_,'Q','(Q)uit Menu,',true).
 menu_cmd9(_,'^q','(^q)uit to shell,',halt(4)). 
@@ -600,6 +600,12 @@ show_task_pairs(TestID):- ensure_test(TestID), set_flag(indiv,0),
    print_side_by_side(green,In,in(show_task_pairs(TestID>ExampleNum)),_,Out,out(show_task_pairs(TestID>ExampleNum)))), true).
 %show_test_grids:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,Grid,print_grid(show_test_grids(TestID),Grid)).
 
+why_io:- 
+ maplist(ignore,[
+  ndividuator,  
+  show_object_dependancy,
+  ensure_scene_change_rules,
+  print_scene_change_rules]).
 
 first_indivs_modes([complete,pbox_vm,i_repair_pattern]).
 
@@ -1329,9 +1335,9 @@ call_file_goal(_,Goal):- call(Goal),!.
 
 load_file_dyn(TestID):- once(\+ atom(TestID); \+ exists_file(TestID)), 
   once(test_name_output_file(TestID,'.pl',NewName)),NewName\=@=TestID,!,load_file_dyn(TestID,NewName).
-load_file_dyn(File):- not_warn_skip(load_file_dyn_pfc(File)).
+load_file_dyn(File):- warn_skip(load_file_dyn_pfc(File)).
 
-load_file_dyn(TestID,NewName):- not_warn_skip(load_file_dyn_pfc(TestID,NewName)). 
+load_file_dyn(TestID,NewName):- warn_skip(load_file_dyn_pfc(TestID,NewName)). 
 
 
 
@@ -1472,7 +1478,7 @@ save_test_hints(TestID_IN):- ensure_test(TestID_IN,TestID), save_test_hints(Test
 save_test_hints(TestID,File):- var(TestID),!, forall(ensure_test(TestID), save_test_hints(TestID,File)).
 save_test_hints(TestID,File):- var(File),!,test_name_output_file(TestID,'.pl',File), save_test_hints(TestID,File).
 save_test_hints(TestID,File):- maybe_append_file_extension(File,'.pl',NewName),!,save_test_hints(TestID,NewName).
-save_test_hints(TestID,File):- not_warn_skip(save_test_hints_now(TestID,File)).
+save_test_hints(TestID,File):- warn_skip(save_test_hints_now(TestID,File)).
 
 save_test_hints_now(TestID):- test_name_output_file(TestID,'.pl',File), save_test_hints_now(TestID,File),!.
 save_test_hints_now(TestID,File):- var(File),!,test_name_output_file(TestID,'.pl',File), save_test_hints_now(TestID,File).
@@ -1490,13 +1496,18 @@ print_test_file_hints(TestID):-
   saveable_test_info(TestID,Info),
   my_maplist(print_ref,Info).
 
+force_clear_test(TestID):-
+  ensure_test(TestID),
+  clear_test_now(TestID),
+  save_test_hints_now(TestID).
+
 
 clear_test(TestID):- is_list(TestID),!,my_maplist(clear_test,TestID).
 clear_test(TestID):- ensure_test(TestID),warn_skip(clear_test(TestID)).
 clear_test_now(TestID):- ensure_test(TestID),
    clear_training_now(TestID),
    %warn_skip
-   (clear_saveable_test_info_now(TestID)),
+   clear_saveable_test_info_now(TestID),
    unload_test_file(TestID).
 
 clear_saveable_test_info(TestID):- ensure_test(TestID),warn_skip(clear_saveable_test_info(TestID)),!.
