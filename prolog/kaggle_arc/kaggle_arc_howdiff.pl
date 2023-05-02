@@ -706,8 +706,7 @@ not_giz(_).
 %not_giz(_):-!,fail.
 
 
-prop_type(T,P):- type_prop(T,P).
-prop_type(pen(_),repaint).
+prop_type(P,T):- type_prop(T,P).
 
 prop_type_type(reposition).
 prop_type_type(rotate).

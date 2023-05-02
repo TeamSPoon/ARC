@@ -1549,7 +1549,7 @@ transfer_prop(rotOffG,rotOffset2G(_,_)).
 
 transfer_prop(rotations,rot2D(_)).
 
-%transfer_prop(Type,How):- prop_type(Type,How).
+%transfer_prop(Type,How):- prop_type(How,Type).
 
 no_process_props_f(holes).
 no_process_props(P):- no_process(P); (compound(P),compound_name_arity(P,F,_),no_process_props_f(F)).

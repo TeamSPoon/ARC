@@ -864,6 +864,7 @@ prop_pairs(O1,O2,Type,Same,P):-
    
 into_lhs(OID,Out):- atom(OID),!,indv_props_list(OID,In),into_lhs(In,Out),!.
 into_lhs(In,Out):- \+ compound(In),!,Out=In.
+into_lhs(rule(_RuleType,_SortKey,In),Out):- nonvar(In),!,into_lhs(In,Out),!.
 into_lhs(obj(In),Out):- nonvar(In),!,into_lhs(In,Out),!.
 into_lhs(In,Out):- \+ is_list(In),!,Out=In.
 into_lhs(In,Out):- flatten([In],InF),into_lhs1(InF,LHSF),flatten(LHSF,LHSV),variant_list_to_set(LHSV,Out),!.
