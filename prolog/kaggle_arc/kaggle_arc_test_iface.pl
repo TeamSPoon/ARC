@@ -1327,9 +1327,12 @@ call_file_goal(S,encoding(Enc)):- arc_set_stream(S,encoding(Enc)),!.
 call_file_goal(_, discontiguous(_)):- !.
 call_file_goal(_,Goal):- call(Goal),!.
 
-load_file_dyn(TestID):- once(\+ atom(TestID); \+ exists_file(TestID)),
-  once(test_name_output_file(TestID,'.pl',NewName)),NewName\=@=TestID,!,load_file_dyn_pfc(TestID,NewName).
-load_file_dyn(File):- warn_skip(load_file_dyn_pfc(File)),!.
+load_file_dyn(TestID):- once(\+ atom(TestID); \+ exists_file(TestID)), 
+  once(test_name_output_file(TestID,'.pl',NewName)),NewName\=@=TestID,!,load_file_dyn(TestID,NewName).
+load_file_dyn(File):- not_warn_skip(load_file_dyn_pfc(File)).
+
+load_file_dyn(TestID,NewName):- not_warn_skip(load_file_dyn_pfc(TestID,NewName)). 
+
 
 
 :- dynamic(has_loaded_file_dyn_pfc/1).
@@ -1351,9 +1354,9 @@ load_file_dyn_pfc( TestID,File):- asserta(has_loaded_file_dyn_pfc(File)),
  retractall(is_accompany_changed_db(TestID,_,_,_)).
 
 load_dyn_stream(I):-  
- repeat,read_term(I,Term,[]),
+ repeat,read_term(I,Term,[]),unwonk_ansi(Term,TT),
            (Term = end_of_file -> ! ; 
-       (fail_compliants(load_file_term(I,Term)),fail)),!.
+       (fail_compliants(load_file_term(I,TT)),fail)),!.
 /*
 load_dyn_stream(I):-  
  repeat,fail_compliants(read_term(I,Term,[])),
@@ -1459,6 +1462,7 @@ shell_op(G):- tee_op(G).
 my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).
 
 warn_skip(Goal):- u_dmsg(warn_skip(Goal)).
+not_warn_skip(Goal):- u_dmsg(warn(Goal)),!,call(Goal),!.
 
 
 
@@ -1468,7 +1472,7 @@ save_test_hints(TestID_IN):- ensure_test(TestID_IN,TestID), save_test_hints(Test
 save_test_hints(TestID,File):- var(TestID),!, forall(ensure_test(TestID), save_test_hints(TestID,File)).
 save_test_hints(TestID,File):- var(File),!,test_name_output_file(TestID,'.pl',File), save_test_hints(TestID,File).
 save_test_hints(TestID,File):- maybe_append_file_extension(File,'.pl',NewName),!,save_test_hints(TestID,NewName).
-save_test_hints(TestID,File):- !, warn_skip(save_test_hints(TestID,File)).
+save_test_hints(TestID,File):- not_warn_skip(save_test_hints_now(TestID,File)).
 
 save_test_hints_now(TestID):- test_name_output_file(TestID,'.pl',File), save_test_hints_now(TestID,File),!.
 save_test_hints_now(TestID,File):- var(File),!,test_name_output_file(TestID,'.pl',File), save_test_hints_now(TestID,File).

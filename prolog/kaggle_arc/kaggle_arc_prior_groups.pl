@@ -1677,7 +1677,7 @@ variance_had_counts(Common,HAD,RRR,Versions,Missing,VersionsByCount,Variance):-
   length(Missing,ML),
   findall(UHAD,(member(RR,RRR), indv_props_list(RR,R), member(UHAD,R)),VersionL),
   variant_list_to_set(VersionL,VersionSet),
-  some_min_unifier(VersionSet,Common),nonvar(Common),
+  once((call((some_min_unifier(VersionSet,Common),nonvar(Common))))),
   number_from_magnitude(VersionSet,VersionSetNumbered),
   count_each(VersionSet,VersionL,CountOfEachL),
   subst_2L(VersionSet,VersionSetNumbered,CountOfEachL,CountOfEachNumbered),
