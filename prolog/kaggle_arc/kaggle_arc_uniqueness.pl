@@ -13,6 +13,7 @@
 :- dynamic(ac_unit/4).
 clear_scene_rules(TestID):-   
   abolish(ac_unit/4),dynamic(ac_unit/4),
+  abolish(trans_rule_db/4),dynamic(trans_rule_db/4),
   %forall(ac_unit(TestID,Ctx,P,PSame),ignore(retract(ac_unit(TestID,Ctx,P,PSame)))),!,
   clear_object_dependancy(TestID).
 
@@ -640,32 +641,21 @@ show_super_rules(TestID):-
   %with_vset(arc_cache:prop_dep_rule(TestID,_ExampleNum1,_Ctx2,TransRule), pp(TransRule)),
 
   findall_vset(TransRule,arc_cache:prop_dep_rule(TestID,_ExampleNum1,_Ctx2,TransRule),Rules),
-  
   pp_ilp(rules=Rules),
-  combined_rules(Rules,Merged),
-  pp_ilp(merged=Merged),
+  
+  combine_trans_rules(Rules,Merged), pp_ilp(merged=Merged),
 
   %get_scene_change_rules(TestID,pass2_rule_new,Rules),pp_ilp(Rules),
   !.
-
-combined_rules([R1|Rules], CombinedRules):- select(R2,Rules,RulesN), combine_rule(R1,R2,R), R\=@=R,!, 
-  combined_rules([R|RulesN], CombinedRules).
-combined_rules([R|Rules], [R|CombinedRules]):- 
-  combined_rules(Rules, CombinedRules).
-
-pair_obj_rule(TestID,Ctx,Combined):-
-  findall_vset(TransRule,arc_cache:prop_dep_rule(TestID,_ExampleNum1,Ctx,TransRule),Rules),
-  combined_rules(Rules, Combined).
-
 
 /*
 pair_obj_one_rule(TestID,Ctx,id(Ex,Step),Rule):- 
   Rule = r(Type,LHS,RHS,S,L,R, Ex, Step),
   pair_obj_props(TestID,Ex,Ctx,_Info,Step,Type,LHS,RHS,S,L,R).
 
-pair_obj_rule(TestID,Ctx,Combined):-
+trans_rules_combined(TestID,Ctx,Combined):-
   findall(Rule1,pair_obj_one_rule(TestID,Ctx,_RuleID1,Rule1),Rules),
-  combined_rules(Rules,CombinedRules),
+  combine_trans_rules(Rules,CombinedRules),
   member(Combined,CombinedRules).
 
 
@@ -688,7 +678,9 @@ assert_map_pairs(TestID,ExampleNum,Ctx,grp(Info,In,Out)):-!,
   assertz_new(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,InL,OutL,USame,InFlatProps,OutFlatProps)),!.
 assert_map_pairs(_TestID,_ExampleNum,_Ctx,call(Rule)):-!,must_det_ll(Rule),!.
 assert_map_pairs(TestID,ExampleNum,Ctx,TransRule):-
-   assertz_new(arc_cache:prop_dep_rule(TestID,ExampleNum,Ctx,TransRule)),!.
+   assertz_new(arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,TransRule)),!.
+
+:- dynamic(arc_cache:trans_rule_db/4).
 
 % print the object dependencies for this test
 % =============================================================
@@ -744,7 +736,7 @@ ok_intersect(_,_).
 
 pair_obj_props54321(TestID,Ex,Ctx,Info,Step,Type,LHS,RHS,S,L,R):- 
  ensure_test(TestID),
-  pair_obj_rule(TestID,Ctx,Combined),
+  trans_rules_combined(TestID,Ctx,Combined),
   r(Type,LHS,RHS,S,L,R, Ex, Step) = Combined,
   Info = info(Step,_IsSwapped,Ctx,Type,TestID,Ex, Ex).
 
@@ -842,6 +834,10 @@ combine_rule(DoRequires,
 
 something_common(R1,R2):- \+ \+ ((member(E1,R1), good_for_rhs(E1),  member(E2,R2), E1=@=E2)).
 
+merge_vals(A,B,C):- atom(A),!,A==B,C=A.
+merge_vals(A,B,C):- A=@=B,!,C=A.
+merge_vals(A,B,C):- A==[],!,B=C.
+merge_vals(A,B,C):- B==[],!,A=C.
 merge_vals(A,B,C):- 
   A =  info(Step1,IsSwapped,Ctx,Type1,TestID, Ex1, ExList1),
   B =  info(Step2,IsSwapped,Ctx,Type2,TestID, Ex2, ExList2),!,
@@ -850,10 +846,16 @@ merge_vals(A,B,C):-
   ignore(Step1=Step2), ignore(Step=Step2), 
   C =  info(Step,IsSwapped,Ctx,Type1,TestID, _, ExList),!.
 
-merge_vals(A,B,C):- atom(A),!,A==B,C=A.
-merge_vals(A,B,C):- A=@=B,!,C=A.
-merge_vals(A,B,C):- A==[],!,B=C.
-merge_vals(A,B,C):- B==[],!,A=C.
+merge_vals(Rule1,Rule2,NewRule):-
+  r(Type1,LHS1,RHS1,S1,L1,R1, Ex1, Step1) = Rule1,
+  r(Type2,LHS2,RHS2,S2,L2,R2, Ex2, Step2) = Rule2,
+  combine_rule(do_requires,
+              Step1,Type1,LHS1,RHS1,S1,L1,R1, 
+              Step2,Type2,LHS2,RHS2,S2,L2,R2,    
+              Step, Type, LHS, RHS, S ,L ,R  ),!,
+  r(Type,LHS,RHS,S ,L ,R ,Ex1+Ex2,Step) = NewRule.
+
+merge_vals(rhs(A),rhs(B),rhs(C)):- !, A=@=B,!,C=A.
 merge_vals(A,B,C):- is_obj_props(A),is_obj_props(B),!,merge_props(A,B,C).
 merge_vals([A1,A2],[B],[C1,C2]):- !, merge_vals(A1,B,C1),merge_vals(A2,B,C2).
 merge_vals([A|AA],[B|BB],[C|CC]):- !, merge_vals(A,B,C), merge_vals(AA,BB,CC).
@@ -862,7 +864,6 @@ merge_vals(A,B,C):- compound(A),compound(B),var(C),
   maplist(merge_vals,AA,BB,CC),!, compound_name_arguments(C,F,CC).
 %merge_vals(obj(A),obj(B),obj(C)):- is_list(A),is_list(B),!,merge_props(A,B,C).
 merge_vals(A,B,C):-  flatten_sets([A,B],C),!. 
-
 
 
 /*
@@ -1141,7 +1142,7 @@ pp_ilp(D,List):- is_list(List), !,
 
 
 %pp_ilp(D,T):- into_solid_grid_strings(T,G),!, prefix_spaces(D,print(G)),!.
-pp_ilp(D,T):- prefix_spaces(D,print(T)),!.
+pp_ilp(D,T):- prefix_spaces(D,pp(T)),!.
 
 
 is_grid_or_group(Grid):- is_grid(Grid),!.
@@ -1254,7 +1255,11 @@ clear_object_dependancy(TestID):-
      ignore((clear_object_dependancy(TestID,ExampleNum)))).
 clear_object_dependancy(TestID,ExampleNum):-  
  forall(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,Right,Left,A,B,C),
-    retract(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,Right,Left,A,B,C))).
+    retract(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,Right,Left,A,B,C))),
+ forall(arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,Info), 
+   retract(arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,Info))),
+ !.
+
 
 
 
@@ -1997,6 +2002,15 @@ trans_rule(Info,[],Out,Rules):- listify(Out,OutL),
  findall(create_object(lhs(Preconds),Info,rhs(create(Out))),
    ((member(Out,OutL),into_lhs(Out,Preconds))),Rules).
 
+% 2 preconds
+trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2),
+  noteable_propdiffs(In1,Out,Same1,DontCare1,New1),
+  noteable_propdiffs(In2,Out,Same2,DontCare2,New2),
+  merge_vals(Same1,Same2,Same),
+  merge_vals(DontCare1,DontCare2,DC),
+  merge_vals(New1,New2,New),
+  TransRule = create_object(Info,rhs(create(Out)),lhs([iz(info(dc_new(DC,New)))|Same])).
+
 % mutiple preconds
 trans_rule(Info,[In,In2|InL],OutL,TransRule):- is_object(In),is_object(In2),
   trans_rule(Info,[In2|InL],OutL,TransRuleM),
@@ -2023,7 +2037,6 @@ trans_rule(Info,[In],[Out],Rules):-
   into_lhs(Same,LHS),
   findall(edit_copy(Type,Change,lhs(LHS),Info,rhs(edit(P))),
     (prop_pairs(In,Out,Type,Change,P),Change\==same,good_for_rhs(P)),Rules).
-
 
 
 
@@ -2248,10 +2261,29 @@ get_scene_change_rules(TestID,P3,Rules):-
   findall_vset(ac_db(TestID,IO,P,PSame),
     call(P3,TestID,IO,P,PSame),Rules).
 
+trans_rules_combined(TestID,Ctx,Combined):-
+  findall_vset(TransRule,arc_cache:trans_rule_db(TestID,_ExampleNum1,Ctx,TransRule),Rules),
+  combine_trans_rules(Rules, Combined).
+
+/*
+trans_rules_combined(TestID,Ctx,Combined):-
+  findall_vset(TransRule,arc_cache:prop_dep_rule(TestID,_ExampleNum1,Ctx,TransRule),Rules),
+  combine_trans_rules(Rules, Combined).
+*/
+
+
+combine_trans_rules([R1|Rules], CombinedRules):- select(R2,Rules,RulesN), 
+  merge_vals(R1,R2,R), R\=@=R,!, 
+  combine_trans_rules([R|RulesN], CombinedRules).
+combine_trans_rules([R|Rules], [R|CombinedRules]):- 
+  combine_trans_rules(Rules, CombinedRules).
+combine_trans_rules([],[]).
+
 print_scene_change_rules(Why,TestID):-
  ensure_test(TestID),
  P3 = ac_db,
   must_det_ll((
+   trans_rules_combined(TestID,_Ctx,Combined), pp_ilp(merged(Why)=Combined),
    get_scene_change_rules(TestID,P3,Rules),
    nb_setval(last_P3,Rules),
    banner_lines(cyan,4),
@@ -2328,11 +2360,7 @@ compute_scene_change(TestID):-
   banner_lines(yellow,4),  
   compute_scene_change_pass3(TestID),
   banner_lines(blue,4),
-  compute_scene_change_pass4(TestID),
-
-  /*
-  ,*/
-  !))).
+  compute_scene_change_pass4(TestID)))),!.
 
 
 compute_scene_change_pass1(TestID):- 
@@ -2390,7 +2418,7 @@ compute_scene_change_pass3c(_,_).
 
 
 compute_scene_change_pass4(TestID):-
-   compute_scene_change_pass3(TestID).
+   compute_scene_change_pass3(TestID),!.
 
 set_of_changes(TestID,P1):-
   ((findall_vset(Ctx-P1,
