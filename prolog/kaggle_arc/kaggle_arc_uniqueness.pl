@@ -146,9 +146,9 @@ io_to_cntx1(X,X).
 
 solve_via_scene_change(TestID):-  
  must_det_ll((
-  cls,
   ensure_test(TestID), %make,
   %detect_pair_hints(TestID),
+  cls_z,
   time(learn_grid_size(TestID)),
   clear_scene_rules(TestID),
   ensure_propcounts(TestID),

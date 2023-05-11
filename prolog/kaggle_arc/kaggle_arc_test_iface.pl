@@ -155,9 +155,6 @@ print_menu_list(L):- forall(nth_above(100,N,L,E),format('~N~@',[print_menu_cmd1(
 
 
 
-
-
-
 % ignore((read_line_to_string(user_input,Sel),atom_number(Sel,Num))),
 
 ui_menu_call(G):- ignore(catch(must_not_error(G),E,u_dmsg(E))).
