@@ -159,6 +159,7 @@ print_menu_list(L):- forall(nth_above(100,N,L,E),format('~N~@',[print_menu_cmd1(
 % ignore((read_line_to_string(user_input,Sel),atom_number(Sel,Num))),
 
 ui_menu_call(G):- ignore(catch(must_not_error(G),E,u_dmsg(E))).
+%ui_menu_call(G):- rtrace(G).
 %ui_menu_call(G):- when_in_html(catch(ignore((G)),E,u_dmsg(E))) ->true ; catch(ignore((G)),E,u_dmsg(E)).
   
 my_menu_call(E):- locally(set_prolog_flag(gc,true),ui_menu_call(E)).
@@ -1797,7 +1798,8 @@ matches(InfoS,InfoM):- member(InfoS,InfoM).
 :- abolish(muarc_tmp:test_info_cache,2).
 :- dynamic(muarc_tmp:test_info_cache/2).
 
-print_testinfo(TestID):- ensure_test(TestID), forall(test_info_recache(TestID,F),pp(fav(TestID,F))),
+print_testinfo(TestID):- 
+ ensure_test(TestID), !, forall(test_info_recache(TestID,F),pp(fav(TestID,F))),
   nop(test_show_grid_objs(TestID)),
   findall(III,runtime_test_info(TestID,III),LL),pp(LL).
 

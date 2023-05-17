@@ -155,7 +155,7 @@ solve_via_scene_change(TestID):-
   save_test_hints_now(TestID),
   ExampleNum=tst+_,
   forall(kaggle_arc(TestID,ExampleNum,_,_),
-     ignore(time(solve_via_scene_change_rules(TestID,ExampleNum)))), 
+     ignore((solve_via_scene_change_rules(TestID,ExampleNum)))), 
  !)).
 
 solve_via_scene_change_rules(TestID,ExampleNum):-
@@ -470,7 +470,7 @@ from_same_pair(Post,Pre):-
   has_prop(giz(example_num(trn+N)),Pre).
      
      
-obj_in_or_out(Pair,IO_):- is_mapping(Pair),!,
+obj_in_or_out(Pair,IO_):- is_mapping(Pair),!, my_assertion(compound(Info)),
     get_mapping_info(Pair,Info,_In,_Out),arg(3,Info,IO_).
 obj_in_or_out(Obj,IO_):- must_det_ll(is_object(Obj)),has_prop(giz(g(I_O)),Obj),!,I_O=IO_.
 obj_in_or_out(Obj,IO_):- has_prop(iz(i_o(I_O)),Obj),!,I_O=IO_.
@@ -1277,7 +1277,7 @@ into_solid_grid_strings([T],WithGrids):- is_grid(T), !, into_solid_grid_strings(
 into_solid_grid_strings([T],WithGrids):- \+ is_grid([T]), !, into_solid_grid_strings(T,WithGrids).
 into_solid_grid_strings(T,WithGrids):-
   sub_term(TObj,T), compound(TObj), \+ is_list(TObj),
-  arg(_,TObj,Obj), is_object(Obj), 
+   my_assertion(compound(TObj)),arg(_,TObj,Obj), is_object(Obj), 
   into_solid_grid_str(Obj,GridStr),Obj\=@=GridStr,!,
   subst001(T,Obj,GridStr,MidTerm),
   into_solid_grid_strings(MidTerm,WithGrids).
