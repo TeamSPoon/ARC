@@ -1139,7 +1139,7 @@ show_cp_dff_rem_keep_add(TransRule):-   %flat_props([B],PB), intersection(Same,P
   length(OutPFlat,LenB),pp_ilp(added(LenB)=OutPFlat),
   dash_chars.
 
-
+must_det_ll36(G):- call(G).
 pp_ilp(Grp):-pp_ilp(1,Grp),!.
 
 pp_ilp(D,T):-  T==[],!,prefix_spaces(D,write('[] ')),!.
@@ -1553,8 +1553,10 @@ calc_o_d_recursively(TestID,ExampleNum,_TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSOb
 calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,[Right],RestLR):- 
   LHSObjs == [],
   into_list(Prev,PrevObjs), PrevObjs\==[],
+  
   my_partition(is_input_object,PrevObjs,PrevLHS,PrevRHS),
   once((PrevRHS = [A,B|C] ; PrevLHS = [A,B|C])),
+  %sort_by_jaccard(obj([Right]),[A,B|C],Stuff),!,
   sort_by_jaccard(Right,[A,B|C],Stuff),!,
   reverse(Stuff,[AA,BB|_Rest]),
   make_pairs(TestID,ExampleNum,assumed,IsSwapped,Step,Ctx,[],[BB,AA],Right,Pairs),

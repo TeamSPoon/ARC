@@ -230,6 +230,7 @@ ok_deduce(P):- \+ \+ do_deduce(P),!.
 %ok_deduce(P):- \+ \+ dont_notice(P),!,fail.
 %ok_deduce(_).
 
+
 diff_l_r(A,B,Same,InPFlat,OutPFlat):-
  must_det_ll((
   flat_props([A],PA), flat_props([B],PB),

@@ -506,8 +506,8 @@ xfer_mappings(TITLE,AG,BG,BGG,APA):-
      ; showdiff_arg1(TITLE,AG,A,BG,B)))).
   %showdiff_objects(PA,PB),!.
 
-nearest_by_not_simular(A,B,R):- A == B,!, R = inf.
-nearest_by_not_simular(_,B,R):- is_whole_grid(B), !, R = inf.
+nearest_by_not_simular(A,B,R):- A == B,!, R = inf+1.
+nearest_by_not_simular(_,B,R):- is_whole_grid(B), !, R = inf+1.
 nearest_by_not_simular(A,B,R):- distance(A,B,R).
 
 distance(A,B,R):- loc2D(A,X1,Y1),loc2D(B,X2,Y2), R is sqrt(abs(X1-X2)*abs(Y1-Y2)).
@@ -547,10 +547,10 @@ sort_by_distance(Bonus,A,GroupID,Candidates,Objs):-
      sort(Results,SortedR),sort(SortedR,Sorted),
      tie_break_sbd(Bonus,A,GroupID,Sorted,Objs).
 
-tie_break_sbd(Bonus,A,GroupID,[W1,W2|Sorted],[S1,S2|Sorted]):-
+tie_break_sbd(Bonus,A,GroupID,[W1,W2|Sorted],[S1,S2|Sorted]):- compound(W1),compound(W2),
      arg(1,W1,W1a),arg(1,W2,W2a), arg(2,W2,W1b),arg(2,W2,W2b), W1a=:=W2a,W1b=:=W2b,
      bonus_sort_by_jaccard0(Bonus,A,GroupID,[W1,W2],[S1,S2]),!.
-tie_break_sbd(_,_,_,Sorted,Sorted).     
+tie_break_sbd(_,_,_,Sorted,Sorted):- trace.     
 
 
 dist(X1,Y1,X2,Y2,Dist):-
@@ -566,7 +566,7 @@ is_adjacent_same_color(R1,R2,1):- object_points(R1,R2,P1,P2), is_adjacent_point(
 is_adjacent_same_color(R1,R2,2):- object_points(R1,R2,P1,P2), is_adjacent_point(P1,Dir,PM), \+ is_diag(Dir), is_adjacent_point(PM,Dir,P2).
 is_adjacent_same_color(R1,R2,2):- object_points(R1,R2,P1,P2), is_adjacent_point(P1,Dir,P2), is_diag(Dir).
 
-distance(A,_AP,_X1,_Y1,B,Res):- A=@=B,!, Res=inf.
+distance(A,_AP,_X1,_Y1,B,Res):- A=@=B,!, Res = dist(Close,A,B), Close=inf.
 distance(_A,AP,_X1,_Y1,B,Res):- 
  must_det_ll((
   Res = dist(Close,R,B),
@@ -1391,7 +1391,8 @@ guess_some_relations(IL,OL):-
   write('</div>').
 
 %sort_il(A,BG,BGS):- predsort(sort_on(nearest_by_not_simular(A)),BG,BGS).
-sort_il(A,BG,BGSR):- predsort(sort_on(relation_value(A)),BG,BGS),reverse(BGS,BGSR).
+sort_il(A,BG,BGSR):- predsort(sort_on(relation_value(A)),BG,BGS),
+  reverse(BGS,BGSR).
 
 
 
