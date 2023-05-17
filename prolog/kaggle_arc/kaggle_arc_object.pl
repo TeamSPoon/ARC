@@ -788,13 +788,31 @@ aggregates(link(_,_)).
 aggregates(insideOf(_)).
 
 is_rule_mapping(Obj):- current_predicate(is_mapping/1), is_mapping(Obj),!.
+
+
 %is_bg_object(Obj):- get_black(Black),has_prop(pen(  [cc(Black,_)]),Obj).
 is_bg_object(Obj):- is_rule_mapping(Obj),!,fail.
-is_bg_object(Obj):- sub_var(cc(fg,0),Obj),!, \+ is_whole_grid(Obj).
-is_bg_object(Obj):- \+ is_object(Obj),sub_var(cc(fg,0),Obj),!.
+is_bg_object(Obj):- is_whole_grid(Obj),!,fail.
+is_bg_object(Obj):- is_edge_object(Obj),is_bg_object_really(Obj),!.
+is_bg_object(Obj):- is_bg_object_really(Obj),!.
 
-is_fg_object(Obj):- sub_var(cc(bg,0),Obj),!.
+is_bg_object_really(Obj):- \+ is_object(Obj),!,sub_var(cc(fg,0),Obj),!.
+is_bg_object_really(Obj):- \+ sub_var(cc(bg,0),Obj), sub_var(cc(fg,0),Obj).
+
+old_is_bg_object(Obj):- sub_var(cc(fg,0),Obj).
+
+is_edge_object(Obj):- must_det_ll((grid_size(Obj,X,Y),globalpoints(Obj,Points))),!,
+  include(is_edge_point(X,Y),Points,Edges),!,Edges\==[].
+
+is_edge_point(X,Y,Point):- point_to_hvc(Point,H,V,_),!,is_edge_hv(X,Y,H,V).
+is_edge_hv(_,_,1,_):-!.
+is_edge_hv(_,_,_,1):-!.
+is_edge_hv(N,_,N,_):-!.
+is_edge_hv(_,N,_,_,N):-!.
+
 is_fg_object(Obj):- is_whole_grid(Obj),!.
+is_fg_object(Obj):- sub_var(cc(bg,0),Obj),!.
+%is_fg_object(Obj):- is_rule_mapping(Obj),!,fail.
 is_fg_object(Obj):- \+ is_bg_object(Obj),!.
 
 is_used_fg_object(Obj):- has_prop(cc(fg,FG),Obj),FG>0, \+ is_whole_grid(Obj). 

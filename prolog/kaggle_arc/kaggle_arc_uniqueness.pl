@@ -147,8 +147,8 @@ io_to_cntx1(X,X).
 solve_via_scene_change(TestID):-  
  must_det_ll((
   ensure_test(TestID), %make,
-  %detect_pair_hints(TestID),
   cls_z,
+  %detect_pair_hints(TestID),
   time(learn_grid_size(TestID)),
   clear_scene_rules(TestID),
   ensure_propcounts(TestID),
@@ -162,6 +162,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
  must_det_ll((
  ensure_scene_change_rules(TestID),
   kaggle_arc(TestID,ExampleNum,In,Expected),
+  duplicate_term(In,InOrig),
   banner_lines(green,4),
   % predict_grid_size_now(TestID,In,PX,PY),
   obj_group5(TestID,ExampleNum,in,ROptions,TempObjs),TempObjs\==[],
@@ -194,6 +195,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
       show_time_of_failure(TestID),
       banner_lines(red,10),
       print_scene_change_rules(rules_at_time_of_failure,TestID),
+      print_grid(in,InOrig),
       print_ss(wqs(solve_via_scene_change(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution),
       banner_lines(red,1),
       %if_t((findall(_,ac_rules(_,_,_,_),L), L == []), (get_scene_change_rules(TestID,pass2_rule_new,Rules),pp_ilp(Rules))),banner_lines(red,5),
@@ -221,7 +223,7 @@ score_rule(Ways,Obj,Rule,Score):- is_object(Rule), \+ is_object(Obj),!,score_rul
 score_rule(Ways,Obj,Rule,Score):- 
   into_lhs(Rule,PCond), into_rhs(Rule,P), 
   % indv_props_list(Obj,Props), \+ member(P,Props), %\+ \+ ((member(E,Props),member(E,PCond))),
-   once( ( \+ is_bg_object(Obj) ); sub_var(black,PCond)),
+ %  once( ( \+ is_bg_object(Obj) ); sub_var(black,PCond)),
     score_rule(Ways,Obj,PCond,P,Score).
 
 score_rule(exact,Obj,PCond,_P,Score):-  score_all_props(PCond,Obj,S0),S0>0.3,!,Score=1000.
@@ -324,7 +326,8 @@ apply_rules_to_objects(_Ways,_Mapping,_Rules,_Objs,[]).
 
 
 
-solve_obj_group(VM,TestID,_ExampleNum,_ROptions,Ctx,Objs,ObjsO):-
+solve_obj_group(VM,TestID,_ExampleNum,_ROptions,Ctx,ObjsIn,ObjsO):-
+  my_exclude(is_bg_object_really,ObjsIn,Objs),
   (Rule = (Ctx:rhs(P):- obj_atoms(PCond))),
   %io_to_cntx(IO_,Ctx), 
   findall_vset_R(Rule,(ac_rules(TestID,Ctx,P,PCond)), Rules),
@@ -1332,9 +1335,60 @@ clear_object_dependancy(TestID,ExampleNum):-
 
 
 
+/*
+
+Rule Generation (AQ Learning): First, you would need to implement AQ learning to generate a set of rules from your data. This might involve predicates for generating potential rules, testing them against your data, and selecting the best ones. The resulting rules would be a set of Prolog rules that can classify instances based on their attributes.
+
+Causal Inference (Mill's Methods): Once you have your rules, you could then apply Mill's methods to them. This would involve creating predicates that implement the logic of each of Mill's methods, and then applying these predicates to your rules to infer potential causal relationships.
+
+We wrote a program that can read the output into objects 
+
+The program is such that is is able to regenerate those grids uisng object notation
+
+We run that program on the input and gernate a set of objects. 
+
+Like before, we can regerenate the orignal grids
+
+We now write a transformation programs that maps the two object notations together
+
+we do this for each example pair
+
+trying to find the mappings that make the most sense per object pairs
+
+we now poke holes onto the object notations (any time there was a source level conflict between examples) 
+ this is sijmular to the the AQ-algorythem
 
 
 
+until it becomes clear what the special transforem was for the 
+
+
+
+
+
+
+
+
+pg(4,mass(_),rank1,1).
+pg(4,mass(10),count,2).
+cc(fg,nz).
+
+Scene
+
+TheWholeGridObjects
+Objects
+
+7e0986d6 is a good example why a "search" might be expensive approach
+
+
+Properties
+
+Object->Object mapping
+
+
+CountOfProperty
+
+*/
   
 % sort_by_generation(Grps,SortedByGen):-predsort(sort_on(by_generation),Grps,SortedByGen).
 sort_by_generation(Grps,Grps).
@@ -1476,11 +1530,13 @@ append_LR(Prev,Mappings,RestLR):-
 append_LR(Mappings,RestLR):- 
   flatten([Mappings],RestLR),!.
 
+sometimes_when_lost(Goal):-!,fail,call(Goal).
 :- discontiguous calc_o_d_recursively/10. 
 
-calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):-
-  maybe_remove_bg(RHSObjs,RHSObjs1), \=@=(RHSObjs,RHSObjs1),!,
-  must_det_ll((calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs1,RestLR))).
+
+calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- fail,
+  sometimes_when_lost((maybe_remove_bg(RHSObjs,RHSObjs1), \=@=(RHSObjs,RHSObjs1), RHSObjs1\==[])), !,
+  calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs1,RestLR).
 
 calc_o_d_recursively(TestID,ExampleNum,_TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):-
   LHSObjs==[], RHSObjs == [], !, 
@@ -1664,8 +1720,10 @@ find_prime_factor(N, D, R) :- D < N,
     ;  (D1 is D + 1, find_prime_factor(N, D1, R))
     ).
 
-split_sorted(Objs,SplitLHS,SplitRHS):- 
+split_sorted_bg(Objs,SplitLHS,SplitRHS):- 
   my_partition(is_bg_object,Objs,SplitLHS,SplitRHS), SplitLHS\==[], SplitRHS\==[].
+split_sorted_bg_real(Objs,SplitLHS,SplitRHS):- 
+  my_partition(split_sorted_bg_real,Objs,SplitLHS,SplitRHS), SplitLHS\==[], SplitRHS\==[].
 
 split_sorted(Objs,SplitLHS,SplitRHS):-
  length(Objs,Len),

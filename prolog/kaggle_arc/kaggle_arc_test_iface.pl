@@ -89,6 +89,7 @@ menu_cmd1(_,'j','                  or (j)unctions between objects',   (cls_z_mak
 menu_cmd1(_,'k','                  or (k)ill/clear all test data.',(update_changes,clear_test)).
 menu_cmd1(_,'B','                  or (B)oxes test.',(update_changes,pbox_indivs)).
 menu_cmd1(_,'R','                  or (R)epairs test.',(update_changes,repair_symmetry)).
+menu_cmd1(_,'G','                  or (G)ridcells between objects in the input/outputs',(cls_z_make,!,maplist(ignore,[clear_training_now,clear_test_now,force_clear_test,compute_and_show_test_hints,compile_and_save_hints]))).
 menu_cmd1(_,'g','                  or (g)ridcells between objects in the input/outputs',(cls_z_make,!,compute_and_show_test_hints,compile_and_save_hints)).
 menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_changes,maybe_set_suite,print_testinfo,print_test)).
 menu_cmd1(_,'w','                  or (w)rite the test info',(update_changes,switch_pair_mode)).
@@ -1623,6 +1624,7 @@ print_single_pair(TName):-
        print_single_pair(TestID,ExampleNum,In,Out)),
      write('%= '), parcCmt(TestID))),!.
 
+print_test:- get_current_test(TestID),print_test(TestID).
 print_test(TName):- (is_cgi ; arc_html),!,preview_test(TName).
 print_test(TName):-    
   fix_test_name(TName,TestID,ExampleNum1),  
@@ -1784,8 +1786,7 @@ ensure_test(TestID):- var(TestID), !, var_ensure_test(TestID).
 %ensure_test(TestID):- all_arc_test_name(TestID).
 
 all_arc_test_name(TestID):- get_current_test(Test),!,
- (((TestID=Test);(all_suite_test_name(TestID),TestID\=Test);(set_current_test(Test),!,fail))).
-
+ (((TestID=Test);(all_suite_test_name(TestID),TestID\=Test,set_current_test(TestID));(set_current_test(Test),!,fail))).
 all_arc_test_name_unordered(TestID):- kaggle_arc(TestID,trn+0,_,_).
 
 all_suite_test_name(TestID):- get_current_suite_testnames(Set),!,member(TestID,Set).
@@ -2394,11 +2395,11 @@ color_sym(OS,C,Sym):- color_sym(OS,4,C,Sym).
 color_sym(_,_,C,Sym):- enum_colors(C),color_int(C,I),nth1(I,`ose=xt~+*zk>`,S),name(Sym,[S]).
 %color_sym(P*T,_,C,Sym):- enum_colors(C),color_int(C,I),S is P+I*T,name(Sym,[S]).
 
-with_current_test(P1):- current_predicate_human(P1/0),!,call(P1).
 with_current_test(P1):- get_pair_mode(entire_suite),!,
   forall_count(all_arc_test_name(TestID), 
-           catch_non_abort(with_current_test(P1,TestID))).
+           catch_non_abort(call(P1,TestID))).
 with_current_test(P1):- current_predicate(P1/1),!,call(P1,_).
+with_current_test(P1):- current_predicate_human(P1/0),!,call(P1).
 with_current_test(P1):- doall(with_current_test(P1,_TestID)).
 
 %with_current_test(P1,TestID_IN):- ensure_test(TestID_IN,TestID), with_current_test(P1,TestID).
