@@ -148,15 +148,10 @@ solve_via_scene_change(TestID):-
  must_det_ll((
   ensure_test(TestID), %make,
   cls_z,
-  %detect_pair_hints(TestID),
-  time(learn_grid_size(TestID)),
-  clear_scene_rules(TestID),
-  ensure_propcounts(TestID),
-  save_test_hints_now(TestID),
-  ExampleNum=tst+_,
+  time(learn_solve_via_grid_change(TestID)),
+  ExampleNum=tst+_)),
   forall(kaggle_arc(TestID,ExampleNum,_,_),
-     ignore((solve_via_scene_change_rules(TestID,ExampleNum)))), 
- !)).
+     solve_via_scene_change_rules(TestID,ExampleNum)).
 
 solve_via_scene_change_rules(TestID,ExampleNum):-
  must_det_ll((
@@ -190,7 +185,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
    (banner_lines(green,4),
     print_ss(wqs(solve_via_scene_change(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution),
     print_scene_change_rules(rules_at_time_of_success,TestID),
-    banner_lines(green,4))
+    banner_lines(green,4),force_report_count_plus(1))
     ;(banner_lines(red,10),!,
       show_time_of_failure(TestID),
       banner_lines(red,10),
@@ -198,9 +193,11 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
       print_grid(in,InOrig),
       print_ss(wqs(solve_via_scene_change(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution),
       banner_lines(red,1),
+      force_report_count,!,
       %if_t((findall(_,ac_rules(_,_,_,_),L), L == []), (get_scene_change_rules(TestID,pass2_rule_new,Rules),pp_ilp(Rules))),banner_lines(red,5),
       %print_object_dependancy(TestID),
-      !,fail)).
+      % only really fail for tests
+      (ExampleNum == tst+_) -> (!,fail); true)).
 
 resize_our_solution(PX,PY,OurSolution1,OurSolution):-
   once(ground(PX+PY)
@@ -434,10 +431,8 @@ edit_object(VM,Ps,Obj):-
    dash_chars,
    print_ss(override_object(SS),[Obj],[NewObj]),
    nop((
-   indv_props_list(Obj,PL1),
-   indv_props_list(NewObj,PL2),
-   intersection(PL1,PL2,_Same,Removed,Added),
-    pp_ilp(([[removed=Removed],[added=Added]])))))).
+    show_prop_diffs(Obj,NewObj))))).
+
 
 override_object_1(_VM,[],IO,IO):-!.
 override_object_1(VM,[H|T],I,OO):- !, override_object_1(VM,H,I,M),!, override_object_1(VM,T,M,OO).
@@ -470,8 +465,8 @@ from_same_pair(Post,Pre):-
   has_prop(giz(example_num(trn+N)),Pre).
      
      
-obj_in_or_out(Pair,IO_):- is_mapping(Pair),!, my_assertion(compound(Info)),
-    get_mapping_info(Pair,Info,_In,_Out),arg(3,Info,IO_).
+obj_in_or_out(Pair,IO_):- is_mapping(Pair),!, 
+    get_mapping_info(Pair,Info,_In,_Out),my_assertion(compound(Info)),arg(3,Info,IO_).
 obj_in_or_out(Obj,IO_):- must_det_ll(is_object(Obj)),has_prop(giz(g(I_O)),Obj),!,I_O=IO_.
 obj_in_or_out(Obj,IO_):- has_prop(iz(i_o(I_O)),Obj),!,I_O=IO_.
 %obj_in_or_out(Obj,I_O):- is_input_object(Obj)-> IO_ =out ; IO_ =in.
@@ -1043,11 +1038,14 @@ how_are_differnt(O1,O2,Set):-
   findall(Type=Same,prop_pairs(O1,O2,Type,Same,_P),List),
   vsr_set(List,Set).
 
-prop_pairs(O1,O2,Type,Same,P):- 
+prop_pairs(O1,O2,Type,Change,P):- 
   flat_props(O1,F1),flat_props(O2,F2),!,
   member(P2,F2),make_unifiable_u(P2,P1),
- (once((member(P1,F1),(other_val(P2,P1)->Same=different;Same=same)))-> min_unifier(P2,P1,P); (Same=adding,P=P2)),
- prop_type(P2,Type).
+ (once((member(P1,F1),(other_val(P2,P1)->Change=different;Change=same)))-> 
+   min_unifier(P2,P1,P); ((Change=adding,P=P2))),
+ prop_type(P2,Type),
+\+ignore_prop_when(Change,P).   
+
    
 into_lhs(OID,Out):- atom(OID),!,indv_props_list(OID,In),into_lhs(In,Out),!.
 into_lhs(In,Out):- \+ compound(In),!,Out=In.
@@ -1132,11 +1130,13 @@ show_cp_dff_rem_keep_add(TransRule):-   %flat_props([B],PB), intersection(Same,P
   two_prop_sets(TransRule,E1,E2),  
   dash_chars,
   if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
-  flat_props(E1,FP1),flat_props(E2,FP2),
-  intersection(FP1,FP2,Same,InFlatP,OutPFlat),
-  length(InFlatP,LenA), pp_ilp(removed(LenA)=InFlatP),
+  show_prop_diffs(E1,E2).
+
+show_prop_diffs(E1,E2):-
+  noteable_propdiffs(E1,E2,Same,InFlatP,OutPFlat),
+  length(InFlatP,LenA), pp_ilp(removing(LenA)=InFlatP),
    length(Same,SL),      pp_ilp(sames(SL)=Same),
-  length(OutPFlat,LenB),pp_ilp(added(LenB)=OutPFlat),
+  length(OutPFlat,LenB),pp_ilp(adding(LenB)=OutPFlat),
   dash_chars.
 
 must_det_ll36(G):- call(G).
@@ -1481,7 +1481,7 @@ pairs_lr(LHS,RHS,PairsLR):- maplist(best_match_rl(RHS),LHS,PairsLR).
 /*
 In Prolog: I have two groups of objects where each object is denoted by `obj([center2D(2,6),mass(8),occurs_in_links(contains,1),pen([cc(blue,1)]),shape([square])])`
 Each object looks at the other group of objects and keeps what its most simular to.. whenever an object from each group picks each other it forms a new pair .. remove those objects and keep going
-there is no more objecs on one side any previous matches get added back and a new set of pairs .. this goes on until there is no opbjects remaining on either side.
+there is no more objecs on one side any previous matches get adding back and a new set of pairs .. this goes on until there is no opbjects remaining on either side.
 sometimes if there are an exact dividable number of objects on one side from the other try permutations of groups from the larger side
 */
 
@@ -1557,9 +1557,9 @@ calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,[Right
   my_partition(is_input_object,PrevObjs,PrevLHS,PrevRHS),
   once((PrevRHS = [A,B|C] ; PrevLHS = [A,B|C])),
   %sort_by_jaccard(obj([Right]),[A,B|C],Stuff),!,
-  sort_by_jaccard(Right,[A,B|C],Stuff),!,
+  sort_by_jaccard(Right,[A,B|C],Stuff),
   reverse(Stuff,[AA,BB|_Rest]),
-  make_pairs(TestID,ExampleNum,assumed,IsSwapped,Step,Ctx,[],[BB,AA],Right,Pairs),
+  make_pairs(TestID,ExampleNum,assumed,IsSwapped,Step,Ctx,[],[BB,AA],Right,Pairs),!,
   append_LR(Prev,Pairs,NewPrev),
   calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,NewPrev,[],[],RestLR),!.
 
@@ -2130,11 +2130,32 @@ diff_l_r(InL,OutL,Same,InFlatP,OutPFlat):- OutL\==[],InL\==[],!,
 
 append_vsets(I,O):- flatten([I],M),variant_list_to_set(M,O),!.
 
+
+ignore_prop_when(removing,P):- ignore_prop_when(adding,P).
+ignore_prop_when(adding,link(contains,_)).
+ignore_prop_when(adding,occurs_in_links(contains,_)).
+ignore_prop_when(adding,pg(_,_,rankLS,_)).
+
+noteable_propdiffs2(E1,E2,Same,InFlatP,OutPFlat):- 
+  flat_props(E1,FP1),flat_props(E2,FP2),
+  noteable_propdiffs1(FP1,FP2,Same0,InFlatP0,OutPFlat0),
+  my_exclude(ignore_prop_when(removing),InFlatP0,InFlatP),
+  my_exclude(ignore_prop_when(adding),OutPFlat0,OutPFlat),
+  my_exclude(ignore_prop_when(sames),Same0,Same),!.
+
 noteable_propdiffs(PA,PB,Same,InFlatP,OutPFlat):- 
+  noteable_propdiffs1(PA,PB,Same0,InFlatP0,OutPFlat0),
+  my_exclude(ignore_prop_when(removing),InFlatP0,InFlatP),
+  my_exclude(ignore_prop_when(adding),OutPFlat0,OutPFlat),
+  my_exclude(ignore_prop_when(sames),Same0,Same),!.
+  
+  
+noteable_propdiffs1(PA,PB,Same,InFlatP,OutPFlat):- 
   remove_o_giz(PA,PA1),remove_o_giz(PB,PB1),
   %=(PA,PA1),=(PB,PB1),
   pred_intersection(propchange_unnoticable,PA1,PB1,_,Same,InFlatP,OutPFlat),!.
-noteable_propdiffs(PA,PB,Same,InFlatP,OutPFlat):- 
+
+noteable_propdiffs1(PA,PB,Same,InFlatP,OutPFlat):- 
   remove_o_giz(PA,PA1),remove_o_giz(PB,PB1),
   intersection(PA1,PB1,Same,InFlatP,OutPFlat),!.
 
@@ -2366,6 +2387,14 @@ counts_change(TestID,ExampleNum,Out,P,N1,N2):- in_out_atoms(In,Out),
 
 
 
+learn_solve_via_grid_change(TestID):- 
+ must_det_ll((
+  %detect_pair_hints(TestID),
+  learn_grid_size(TestID),
+  clear_scene_rules(TestID),
+  ensure_propcounts(TestID),
+  save_test_hints_now(TestID),
+  ensure_scene_change_rules(TestID))).
 
 ensure_scene_change_rules(TestID):-
  ensure_test(TestID),

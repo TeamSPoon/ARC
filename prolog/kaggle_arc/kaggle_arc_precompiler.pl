@@ -80,8 +80,8 @@ always_rethrow(E):- never_rrtrace,!,throw(E).
 always_rethrow('$aborted').
 always_rethrow(must_det_ll_failed(_)).
 
-catch_non_abort(Goal):- cant_rrtrace(Goal).
-%catch_non_abort(Goal):- catch(cant_rrtrace(Goal),E,rethrow_abort(E)),!.
+%catch_non_abort(Goal):- cant_rrtrace(Goal).
+catch_non_abort(Goal):- catch(cant_rrtrace(Goal),E,rethrow_abort(E)),!.
 rethrow_abort(E):- format(user_error,'~N~q~n',[catch_non_abort_or_abort(E)]),fail.
 rethrow_abort(time_limit_exceeded):-!.
 rethrow_abort('$aborted'):- !, throw('$aborted'),!,forall(between(1,700,_),sleep(0.01)),writeln(timeout),!,fail.
