@@ -1472,6 +1472,7 @@ extra_rank_prop(ObjsLen,Name,_,pg(ObjsLen,Name,rankLS,mediumest)).
 
 use_simulars(_):- fail.
 use_rank(mass(_)).
+use_rank(link_count(contains,_)).
 %redundant_prop(_,_):-!,fail.
 redundant_prop(_,nth_fg_color(N1,_)):- N1==1.
 redundant_prop(Props,unique_colors([FG])):- sub_var(pen([cc(FG,1)]),Props),!.

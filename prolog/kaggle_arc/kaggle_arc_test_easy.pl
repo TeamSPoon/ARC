@@ -10,38 +10,67 @@ make_keypad([[_,_,_],[_,_,_],[_,_,_]]).
 %key_pad_tests(TestID):-  kaggle_arc(TestID,tst+0,In,Out), once((make_keypad(In), make_keypad(Out))).
 %key_pad_tests(TestID):-  kaggle_arc(TestID,tst+0,In,Out), once((make_keypad(Out), \+ make_keypad(In))).
 %key_pad_tests(TestID):-  kaggle_arc(TestID,tst+0,In,Out), once((make_keypad(In), \+ make_keypad(Out))).
+fail_ok(G):- catch_non_abort((G->true;(banner_lines(red,2),maybe_report_count(0),banner_lines(red,8),!))).
 
-forall_count(P,Q):- flag('$fac_t',W,W), W>0,!,forall(P,Q),report_count(progress,so_far).
+
+maybe_report_count(PlusBonus):- get_time(Now), 
+ ((nb_current('$last_report_time',Was),number(Was))->true;Was=0),
+  maybe_report_count(Now,Was,PlusBonus),!.
+%maybe_report_count(Now,Was):- \+ integer(Was),nb_setval('$last_report_time',Now),!.
+maybe_report_count(Now,Was,_PlusBonus):- Was+7 > Now,!.
+maybe_report_count(_Now,_Was,PlusBonus):- force_report_count(PlusBonus),!.
+ 
+%force_report_count:- report_count(progress,so_far),!.
+force_report_count(PlusBonus):-report_count_plus(progress,so_far,PlusBonus).
+
+:- set_flag('$fac_t',0).
+:- set_flag('$fac_p',0).
+
+%forall_count(P,Q):- flag('$fac_t',W,W), W>0,!,forall(P,fail_ok(Q)).
 forall_count(P,Q):-
-  get_time(Now),luser_setval(report_count_time,Now),
+  get_time(Now),
+  nb_setval('$last_report_time',Now), !,
+  luser_setval(report_count_time,Now),
+  
   setup_call_cleanup(flag('$fac_t',W,0),
     setup_call_cleanup(flag('$fac_p',W2,0),
-      time(forall((P,flag('$fac_t',X,X+1)),
-        ignore(once((Q,flag('$fac_p',Y,Y+1)))))),     
-      (report_count(P,Q),flag('$fac_p',_,W2))),
+
+      (forall((P,maybe_report_count(0),flag('$fac_t',X,X+1)), fail_ok((once((Q,flag('$fac_p',Y,Y+1))))))),
+
+      (report_count_plus(P,Q,0),flag('$fac_p',_,W2))),
     flag('$fac_t',_,W)).
   
 
 foreach_test(TestID,Goal):- var(TestID),!,foreach_count(all_suite_test_name(TestID),catch_non_abort(Goal)).
 foreach_test(TestID,Goal):- ensure_test(TestID),call(Goal).
 
-foreach_count(P,Q):- flag('$fac_t',W,W), W>0,!,P,Q,report_count(progress,so_far).
+%foreach_count(P,Q):- flag('$fac_t',W,W), W>0,!,P,fail_ok(Q).
 foreach_count(P,Q):-
   get_time(Now),luser_setval(report_count_time,Now),
   setup_call_cleanup(flag('$fac_t',W,0),
     setup_call_cleanup(flag('$fac_p',W2,0),
-      (((P,flag('$fac_t',X,X+1)),
-        (((Q,flag('$fac_p',Y,Y+1)))))),     
-      (report_count(P,Q),flag('$fac_p',_,W2))),
+
+       (((P, maybe_report_count(0),flag('$fac_t',X,X+1)), fail_ok(((Q,flag('$fac_p',Y,Y+1)))))),
+
+      ((report_count_plus(P,Q,0)),flag('$fac_p',_,W2))),
     flag('$fac_t',_,W)).
 
-report_count(P,Q):-
+%report_count(P,Q):- report_count_plus(P,Q,0).
+report_count_plus(P,Q,PlusBonus):-
  section_break,
- flag('$fac_t',ET,ET),flag('$fac_p',EP,EP),luser_getval(report_count_time,Was),
- get_time(Now),Diff is Now - Was,
-  (ET<2 -> true ;
-   (Percent is round(EP/ET*10_000)/100,
-    format('~N % Success ~p% (~q) for ~p in ~w seconds ~n',[Percent,EP/ET,report_count(P,Q),Diff]))).
+ flag('$fac_t',ET,ET),flag('$fac_p',EP0,EP0),luser_getval(report_count_time,Was),
+ EP is EP0+PlusBonus,
+ get_time(Now),Time is Now - Was,
+ report_count_info(P,Q,EP,ET,Time),!.
+
+report_count_info(P,Q,EP,ET,Time):- number(ET), ET =:= 0, \+ (EP =:= 0),!,report_count_info(P,Q,EP,EP,Time).
+report_count_info(P,Q,EP,ET,Time):- number(ET), ET =:= 0, report_count_info(P,Q,EP,1,Time).
+report_count_info(P,Q,EP,ET,Time):- ET<2, \+ atom(Q),!, report_count_format(P,Q,EP,ET,Time,(ET<2)).
+report_count_info(P,Q,EP,ET,Time):- Percent is round(EP/ET*10_000) / 100, !,report_count_format(P,Q,EP,ET,Time,Percent).  
+
+report_count_format(P,Q,EP,ET,Time,Percent):-
+  get_time(Now), nb_setval('$last_report_time',Now), !,
+  format('~N % Success ~p% (~q) for ~p in ~w seconds ~n',[Percent,EP/ET,report_count(P,Q),Time]),!.
   
 
 
@@ -59,7 +88,7 @@ test_easy:- get_pair_mode(single_pair),
      test_easy_solve_test_pair(TestID,ExampleNum,I,O))).
 test_easy:- test_p2(test_easy_solve_pair).
 
-:- luser_default(cmd,test_easy). 
+%:- luser_default(cmd,test_easy). 
 
 test_easy_solve_pair(I,O):- %set_current_test(I),
  (kaggle_arc(TestID,ExampleNum,I,O) *-> test_easy_solve_test_pair(TestID,ExampleNum,I,O) ; 

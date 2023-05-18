@@ -1798,6 +1798,10 @@ matches(InfoS,InfoM):- member(InfoS,InfoM).
 :- abolish(muarc_tmp:test_info_cache,2).
 :- dynamic(muarc_tmp:test_info_cache/2).
 
+print_testinfo:-
+  get_current_test(TestID),
+  print_testinfo(TestID).
+
 print_testinfo(TestID):- 
  ensure_test(TestID), !, forall(test_info_recache(TestID,F),pp(fav(TestID,F))),
   nop(test_show_grid_objs(TestID)),

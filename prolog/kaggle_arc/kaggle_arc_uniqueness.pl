@@ -148,7 +148,8 @@ solve_via_scene_change(TestID):-
  must_det_ll((
   ensure_test(TestID), %make,
   cls_z,
-  time(learn_solve_via_grid_change(TestID)),
+  print_test(TestID),
+  time(compute_scene_change(TestID)),
   ExampleNum=tst+_)),
   forall(kaggle_arc(TestID,ExampleNum,_,_),
      solve_via_scene_change_rules(TestID,ExampleNum)).
@@ -185,7 +186,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
    (banner_lines(green,4),
     print_ss(wqs(solve_via_scene_change(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution),
     print_scene_change_rules(rules_at_time_of_success,TestID),
-    banner_lines(green,4),force_report_count_plus(1))
+    banner_lines(green,4),force_report_count(1))
     ;(banner_lines(red,10),!,
       show_time_of_failure(TestID),
       banner_lines(red,10),
@@ -193,7 +194,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
       print_grid(in,InOrig),
       print_ss(wqs(solve_via_scene_change(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution),
       banner_lines(red,1),
-      force_report_count,!,
+      force_report_count(0),!,
       %if_t((findall(_,ac_rules(_,_,_,_),L), L == []), (get_scene_change_rules(TestID,pass2_rule_new,Rules),pp_ilp(Rules))),banner_lines(red,5),
       %print_object_dependancy(TestID),
       % only really fail for tests
@@ -2386,16 +2387,6 @@ counts_change(TestID,ExampleNum,Out,P,N1,N2):- in_out_atoms(In,Out),
    (propcounts(TestID, ExampleNum, Out, count, N2, P) -> true ; N2=0), N1\==N2.
 
 
-
-learn_solve_via_grid_change(TestID):- 
- must_det_ll((
-  %detect_pair_hints(TestID),
-  learn_grid_size(TestID),
-  clear_scene_rules(TestID),
-  ensure_propcounts(TestID),
-  save_test_hints_now(TestID),
-  ensure_scene_change_rules(TestID))).
-
 ensure_scene_change_rules(TestID):-
  ensure_test(TestID),
  (\+ ac_unit(TestID,_,_,_) -> compute_scene_change(TestID) ; true).
@@ -2406,6 +2397,9 @@ compute_scene_change(TestID):-
  ensure_test(TestID),
  with_pair_mode(whole_test,  
  must_det_ll((
+  save_test_hints_now(TestID),
+  learn_grid_size(TestID),
+  warn_skip(ensure_propcounts(TestID)),
   clear_scene_rules(TestID),
   banner_lines(orange,4),
   compute_scene_change_pass1(TestID),  
