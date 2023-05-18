@@ -40,6 +40,7 @@ maybe_optimize_objects(InC00,OutC00,InCR,OutCR):-
   remove_background_only_object(OutC00,OutC000),
  ensure_grp_proplist(InC000,InC0),
  ensure_grp_proplist(OutC000,OutC0),
+
   maybe_fix_group(InC0,InCRFGBG),
   maybe_fix_group(OutC0,OutCRFGBG),
   mostly_fg_objs(InCRFGBG,InCR),

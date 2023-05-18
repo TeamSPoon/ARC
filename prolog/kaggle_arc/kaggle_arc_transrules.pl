@@ -277,7 +277,7 @@ trans_rule(Info,E1,E2,Rules):-
   %intersection(FP1,FP2,Same,InFlatP,OutPFlat),
   %pp_ilp(removed=InFlatP), pp_ilp(sames=Same), pp_ilp(added=OutPFlat),
   pp_ilp(info=Info),
-  pp_ilp(nremoved=NL), pp_ilp(sames=Same), pp_ilp(nadded=NR),
+  pp_ilp(removed=NL), pp_ilp(sames=Same), pp_ilp(added=NR),
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
   dash_chars,
   Rules = [ 

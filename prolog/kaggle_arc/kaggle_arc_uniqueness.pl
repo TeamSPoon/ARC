@@ -48,6 +48,7 @@ dont_notice(grid_rep).
 % Define predicates that should be noticed
 do_notice(pg(_,_,rank1,_)).
 do_notice(pg(_,_,_,_)).
+do_notice(simularz(_,_)).
 
 % Predicate to check if P should be noticed
 ok_notice(P):- \+ \+ do_notice(P),!.
@@ -66,7 +67,7 @@ dont_deduce(P):- \+ compound(P),!,fail.
 dont_deduce(P):- sub_term(G,P),compound(G),is_grid(G),!.
 dont_deduce(P):- sub_term(G,P),compound(G),is_object(G),!.
 dont_deduce(grid(_)).
-dont_deduce(iz(_)).
+%dont_deduce(iz(_)).
 
 %dont_deduce(P):- compound(P),compound_name_arguments(P,_,[X]),number(X).
 dont_deduce(grid_ops(comp,_)). 
@@ -86,7 +87,7 @@ do_deduce(rot2D(_)).
 do_deduce(pen(_)).
 do_deduce(iz(sid(_))).
 do_deduce(iz(X)):- !,do_deduce(X),!.
-do_deduce(P):- compound(P),compound_name_arguments(P,_,[X,Y]),number(X),number(Y).
+do_deduce(P):- compound(P),compound_name_arguments(P,_,[X,Y]),comparable_value(X),comparable_value(Y).
 do_deduce(rotSize2D(grav,_,_)).
 do_deduce(grid_rep(norm,_)). % pen([cc(blue,1)]),pg(_1489874,mass(_1489884),rank1,4).
 do_deduce(grid_ops(norm,_)). % pen([cc(blue,1)]),pg(_1489874,mass(_1489884),rank1,4).
@@ -1148,11 +1149,11 @@ pp_ilp(_,_):- format('~N'),nl,fail.
 pp_ilp(D,T):-  is_ftVar(T),!,prefix_spaces(D,print(T)),!.
 pp_ilp(D,X=Y):- is_list(Y),length(Y,L),
   must_det_ll((
-   prefix_spaces(D, (print(X),write('('),write(L),write(') = '))),nl,
+   prefix_spaces(D, (print(X),write('('),write(L),write(') = '))),
    prefix_spaces(D+2,pp_ilp(Y)))).
 pp_ilp(D,X=Y):- 
   must_det_ll((
-   prefix_spaces(D, (print(X),write(' = '))),nl,
+   prefix_spaces(D, (print(X),write(' = '))),
    prefix_spaces(D+2,pp_ilp(Y)))).
 pp_ilp(D,call(T)):- !, prefix_spaces(D,call(T)).
 % pp_ilp(D,Grp):- is_mapping(Grp), prefix_spaces(D,print(Grp)),!.
@@ -1922,7 +1923,7 @@ not_peerless_props(O1,Peers,PeerlessProps):-
 
 is_peerless_prop(Peers,P):- \+ sub_var(P,Peers).
 not_peerless_prop(Peers,P):- sub_var(P,Peers).
-
+\
 
 too_unique(P):- compound(P),!,compound_name_arity(P,F,_),!,too_unique(F).
 %too_unique(obj_to_oid).
