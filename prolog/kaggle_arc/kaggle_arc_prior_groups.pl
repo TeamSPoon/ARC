@@ -279,11 +279,12 @@ calc_propcounts(TestID):-
 calc_skip_display:- nb_current(skip_display,calc),!.
 
 
+
 :- thread_local(t_l:objs_others/4).
 show_interesting_props(Named,InC,OutC):-
  must_det_ll((
-  extend_grp_proplist(InC,ObjsI),
-  extend_grp_proplist(OutC,ObjsO),
+  ensure_grp_proplist(InC,ObjsI),
+  ensure_grp_proplist(OutC,ObjsO),
   banner_lines(cyan,4),
   w_section('INPUT PROPS',
     locally(t_l:objs_others(inputs,ObjsI,ObjsO,outputs),
@@ -602,8 +603,18 @@ is_fti_step(extend_obj_proplists).
 % =====================================================================
 extend_obj_proplists(VM):- extend_grp_proplist(VM.objs,set(VM.objs)).
 
+% called when we think the proplist is already extended
+avoid_grp_proplist(I,I).
+
+ensure_grp_proplist(I,AG0):- ( \+ \+ sub_compound(pg(_,_,_,_),I) ; \+ \+ sub_compound(links_count(_,_,_,_),I)),!,I=AG0.
+ensure_grp_proplist(I,AG0):- extend_grp_proplist(I,AG0),!.
+ensure_grp_proplist(I,I).
+
 extend_grp_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
-extend_grp_proplist(Grp,GrpO):- user:extend_grp_proplist0(Grp,GrpO),!.
+extend_grp_proplist(Grp,GrpO):-
+ must_det_ll((
+  user:extend_grp_proplist0(Grp,GrpM),!,
+  group_prior_objs1(cuz,GrpM,GrpO))).
 
 %extend_grp_member_proplist(Var,NewObj):- var(Var),!, enum_object(Var),extend_grp_proplist(Var,NewObj).
 dont_extend_proplist(Grp):- \+ compound(Grp),!.
@@ -711,26 +722,26 @@ print_grouped_props(Named,OProps):-
 %print_grouped_props(Named,Obj):- \+ is_list(Obj), !, mpp(print_grouped_props(Named)=Obj).
 
 print_grouped_props(Named,In):- 
-  extend_grp_proplist(In,Objs),
+  ensure_grp_proplist(In,Objs),
   set_test_id_io(Named),
   print_grouped_props2(Named,Objs),!,
   print_grouped_props1(Named,Objs),!.
 
 print_grouped_props1(Named,In):-
   must_det_ll((
-   extend_grp_proplist(In,Objs),
+   ensure_grp_proplist(In,Objs),
    print_treeified_props(Named,Objs),
    banner_lines(green,1))).
 
 print_grouped_props2(Named,In):- 
  must_det_ll((
-   extend_grp_proplist(In,Objs),
+   ensure_grp_proplist(In,Objs),
    must_det_ll((hack_prop_groups(Named,Objs))),
    banner_lines(green,1))),!.
 
 print_grouped_props3(Named,In):-
  must_det_ll((
-   extend_grp_proplist(In,ObjsG),
+   ensure_grp_proplist(In,ObjsG),
    consider_for_rank(ObjsG,Objs,_),
    %hack_prop_groups(Named,Objs),
    show_three_interesting_groups(Named,Objs,Groups),
@@ -1321,7 +1332,9 @@ is_fti_step(really_group_vm_priors).
 %really_group_vm_priors(_VM):-!.
 really_group_vm_priors(VM):-
  must_det_ll((
-  ObjsG = VM.objs,
+  ObjsG0 = VM.objs,
+  ObjsG0 = ObjsG,
+  %extend_link_props(VM,ObjsG0,ObjsG),
   %print_list_of(ppnl,ObjsG),
   TID_GID=tid_gid(VM.id,VM.gid),
   check_tid_gid(TID_GID,VM.start_grid),
@@ -1329,6 +1342,22 @@ really_group_vm_priors(VM):-
   add_rankings(TID_GID,FG,Objs),  
   append(Objs,BG,FGBG),
   gset(VM.objs) = FGBG)).
+
+/*
+extend_link_props(_VM,ObjsG0,ObjsG):- sub_compound(links_count(_,_),ObjsG0),!,ObjsG=ObjsG0.
+extend_link_props(VM,ObjsG0,ObjsG):-
+  \+ sub_compound(link(_,_),ObjsG0),!,
+  find_relations(VM),
+  Objs = VM.objs,
+  find_relationsA(Objs,NewObjs),
+  %my_assertion(sub_compound(link(_,_),NewObjs)),!,
+  extend_link_props(VM,NewObjs,ObjsG).
+extend_link_props(VM,_,ObjsG):-
+  extend_obj_proplists(VM),
+  ObjsG=VM.objs,!,
+  my_assertion(sub_compound(links_count(_,_),ObjsG)).
+*/
+  
 
 consider_for_rank(ObjsG,FG,BG):- my_partition(is_fg_object,ObjsG,FG,BG),
  FG\==[],BG\==[].
@@ -1373,7 +1402,7 @@ add_rankings(Why,Objs,WithPriors):-
 
 group_prior_objs0(Why,Objs,WithPriors):- 
  must_det_ll(group_prior_objs1(Why,Objs,WithPriors)),!,
- (Objs=@=WithPriors -> wdmsg(group_prior_objs0_same) ; wdmsg(group_prior_objs0_DIFFF)),
+ (Objs=@=WithPriors -> wdmsg(group_prior_objs0_same(Why)) ; wdmsg(group_prior_objs0_DIFFF(Why))),
  !.
 
 add_how_simular(ObjsIn,ObjsIn):-!.
@@ -1447,32 +1476,36 @@ add_prior_info(Objs,ObjsLen,Common,VbO,obj(List),obj(NewList)):-
 add_prior_info(Objs,ObjsLen,Common,VbO,(List),(NewList)):- 
   add_prior_info_1(Objs,ObjsLen,Common,VbO,List,NewList),!.
 
-add_prior_info_1(_Objs,ObjsLen,_Common,VbO,PropList,OUT):- is_list(PropList),
+add_prior_info_1(Objs,ObjsLen,_Common,VbO,PropList,OUT):- is_list(PropList),
   length(VbO,Rankers), %Rankers>1,
   find_version(VbO,Prop,N1,N2,PropList),
-  Prop\=pen(_),
+  %Prop\=pen(_),
+  %Prop\=pg(_,_,_,_),
   member(Prop,PropList),
   %prop_name(Prop,Name),  
   value_to_name(Prop,Name),
   R = pg(Rankers,Name,rank1,N2),  
   \+ member(R,PropList),  
-  rank_size(Rankers,N2,Size),
   %subst(PropList,Prop,R,PropListR),
   PropList = PropListR,
-  nop(_=pg(Size,Name,rank3,Size)),
-  extra_rank_prop(ObjsLen,Name,N1,ExtraProp),
-  append(PropListR,[R,ExtraProp,pg(ObjsLen,Name,simulars,N1)],OUTE),!,
+  must_det_ll((findall(Obj,(member(Obj,Objs),sub_term(OProp,Obj), (OProp =@= Prop)),[_|Identicals]),
+  length(Identicals,IL),
+  rank_size(ObjsLen,Name,N1,ExtraProp),
+  append(PropListR,[R,ExtraProp,
+         pg(ObjsLen,Prop,sames,IL),
+         pg(ObjsLen,Name,simulars,N1)],OUTE))),!,
   include(some_pgs_and_props(PropList),OUTE,OUT).
 
 add_prior_info_1(_Objs,_ObjsLen,_Common,_VersionsByCount,PropList,PropList).
 
-extra_rank_prop(ObjsLen,Name,N1,pg(ObjsLen,Name,rankLS,largest)):- ObjsLen==N1,!.
-extra_rank_prop(ObjsLen,Name,1,pg(ObjsLen,Name,rankLS,smallest)):-!.
-extra_rank_prop(ObjsLen,Name,_,pg(ObjsLen,Name,rankLS,mediumest)).
+rank_size(ObjsLen,Name,N1,pg(ObjsLen,Name,rankLS,largest)):- ObjsLen==N1,!.
+rank_size(ObjsLen,Name,1,pg(ObjsLen,Name,rankLS,smallest)):-!.
+rank_size(ObjsLen,Name,_,pg(ObjsLen,Name,rankLS,mediumest)).
 
-use_simulars(_):- fail.
-use_rank(mass(_)).
-use_rank(link_count(contains,_)).
+use_simulars(_):- true.
+use_rank1(mass(_)).
+use_rank1(links_count(contains,_)).
+use_rank1(links_count(_,_)).
 %redundant_prop(_,_):-!,fail.
 redundant_prop(_,nth_fg_color(N1,_)):- N1==1.
 redundant_prop(Props,unique_colors([FG])):- sub_var(pen([cc(FG,1)]),Props),!.
@@ -1482,12 +1515,9 @@ redundant_prop(Props,center2D(_,_)):- sub_compound(loc2D(_,_),Props).
 %redundant_prop(Props,center2G(X,Y)):- sub_var(center2D(X,Y),Props).
 
 some_pgs_and_props(_,pg(_,Name,simulars,_)):- !, use_simulars(Name),!.
-some_pgs_and_props(_,pg(_,Name,rank1,_)):- !, use_rank(Name),!.
+some_pgs_and_props(_,pg(_,Name,rank1,_)):- !, use_rank1(Name),!.
 some_pgs_and_props(PropList,Name):- \+ redundant_prop(PropList,Name).
 
-rank_size(_,1,3):-!.
-rank_size(M,N,2):- N\==M,!.
-rank_size(N,N,1):-!.
 
 find_version(VbO,Prop,N1,N2,PropList):-
   member(Version,VbO),deepest_kv(Version,N2,Prop),has_nprop(Prop,PropList),arg(1,Version,N1),!.
