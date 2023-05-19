@@ -148,6 +148,7 @@ solve_via_scene_change(TestID):-
  must_det_ll((
   ensure_test(TestID), %make,
   cls_z,
+  clear_test_now(TestID),
   print_test(TestID),
   time(compute_scene_change(TestID)),
   ExampleNum=tst+_)),
