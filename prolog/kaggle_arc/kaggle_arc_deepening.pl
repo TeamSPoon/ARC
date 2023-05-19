@@ -184,12 +184,12 @@ dont_notice(global2G(_,_)).
 %dont_notice(occurs_in_links(sees,_)).
 dont_notice(link(contains,_)).
 dont_notice(occurs_in_links(contained_by,_)).
-%dont_notice(pg(_851136,pen(_851146),rankLS,_)).
+dont_notice(pg(_851136,pen(_851146),rankLS,_)).
 dont_notice(iz(i_o(_))).
 dont_notice(P):- compound(P),arg(_,P,E),is_gridoid(E),!.
 dont_notice(P):- compound(P),!,compound_name_arity(P,F,_),!,dont_notice(F).
 dont_notice(F):- \+ atom(F),!,fail.
-%dont_notice(pg(_,iz(_),rankLS,_)).
+dont_notice(pg(_,iz(_),rankLS,_)).
 dont_notice(oid).
 dont_notice(giz).
 dont_notice(shape_rep).
@@ -197,7 +197,6 @@ dont_notice(shape_rep).
 % Define predicates that should be noticed
 do_notice(pg(_,_,rank1,_)).
 do_notice(pg(_,_,_,_)).
-do_notice(iz(sid(_))).
 
 % Predicate to check if P should be noticed
 ok_notice(P):- \+ \+ do_notice(P),!.

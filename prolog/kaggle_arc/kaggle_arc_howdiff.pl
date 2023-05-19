@@ -540,25 +540,17 @@ dist_to(X1,Y1,HVP,Dist):- center2D(HVP,X2,Y2),dist(X1,Y1,X2,Y2,Dist).
 dist_to(P1,P2,Dist):- center2D(P1,X1,Y1), center2D(P2,X2,Y2),dist(X1,Y1,X2,Y2,Dist).
 
 
-sort_by_distance(Bonus,A,GroupID,Candidates,ObjsO):-
+sort_by_distance(Bonus,A,GroupID,Candidates,Objs):-
      center2D(A,X1,Y1),
      globalpoints(A,AP),
      maplist(distance(A,AP,X1,Y1),Candidates,Results),
      sort(Results,SortedR),sort(SortedR,Sorted),
-     tie_break_sbd(Bonus,A,GroupID,Sorted,Objs),
-     maplist(undist_objs,Objs,ObjsO).
-
-undist_objs(Obj,Obj):- is_object(Obj),!.
-undist_objs(Obj,Obj):- \+ compound(Obj),!.
-undist_objs(dist(_,_,Obj),Obj):-!.
-undist_objs(pair4(_A,_PA,Obj,_PB),Obj):-!.
-undist_objs(Objs,ObjsO):- functor(Objs,_,A),arg(A,Objs,ObjsO),is_object(ObjsO),!.
-undist_objs(Obj,Obj).
+     tie_break_sbd(Bonus,A,GroupID,Sorted,Objs).
 
 tie_break_sbd(Bonus,A,GroupID,[W1,W2|Sorted],[S1,S2|Sorted]):- compound(W1),compound(W2),
      arg(1,W1,W1a),arg(1,W2,W2a), arg(2,W2,W1b),arg(2,W2,W2b), W1a=:=W2a,W1b=:=W2b,
      bonus_sort_by_jaccard0(Bonus,A,GroupID,[W1,W2],[S1,S2]),!.
-tie_break_sbd(_,_,_,Sorted,Sorted). % :- trace.     
+tie_break_sbd(_,_,_,Sorted,Sorted):- trace.     
 
 
 dist(X1,Y1,X2,Y2,Dist):-

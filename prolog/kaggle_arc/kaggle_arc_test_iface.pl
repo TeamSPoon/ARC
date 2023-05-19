@@ -258,34 +258,23 @@ i_key(SelMax,Key):-
 
 clear_pending_input:- is_input_null_stream,!.
 clear_pending_input:- read_pending_codes(user_input,_Ignored1,[]).
-
 menu_goal(Goal):-  
   clear_pending_input,
   pp(calling(Goal)),!, 
   ignore(once((time(((catch(my_menu_call(Goal),'$aborted',fail))))*->!;(!,fail,atrace,arcST,rrtrace(Goal))))),!,
   clear_pending_input,!.
 
-:- public(invoke_arc_cmd/1).
-:- export(invoke_arc_cmd/1).
-  
 :- public(do_web_menu_key/1).
 :- export(do_web_menu_key/1).
 
-invoke_n_v(Key):- fix_test_name(Key,TestID),is_valid_testname(TestID),ensure_test(TestID),!, do_web_menu_key('e').
-invoke_n_v(NV):- compound(NV),functor(NV,F,2), atom_length(F,1), NV =..[_,Char,TestAtom], invoke_n_v(Char,TestAtom),!.
-invoke_n_v(NV):- atom(NV),invoke_n_v('e',NV),!.
-invoke_n_v(Char,TestAtom):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),ensure_test(TestID),!, do_web_menu_key(Char).
-invoke_n_v(TestAtom,Char):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),ensure_test(TestID),!, do_web_menu_key(Char).
-
-invoke_arc_cmd(Key):- invoke_n_v(Key),!.
+invoke_arc_cmd(Key):- \+ arc_sensical_term(Key),!.
 invoke_arc_cmd(Key):- arc_atom_to_term(Key,Prolog,Vs),Vs==[], Prolog\=@=Key,!,invoke_arc_cmd(Prolog).
-invoke_arc_cmd(Key):- Key \= (_-_), \+ arc_sensical_term(Key),!.
+  
 invoke_arc_cmd(Goal):- \+ missing_arity(Goal,0),!, 
   write('<pre style="color: white">'),
   weto(ignore(Goal)),
   write('</pre>'),!.
 invoke_arc_cmd(Key):- do_web_menu_key(Key).
-
 
 
 do_web_menu_key(Key):-
@@ -1327,8 +1316,6 @@ test_name_ansi_output_file(TestID,File):- \+ atom(TestID),
 test_name_ansi_output_file(TestID,File):- arc_sub_path(TestID,File),!.
 
 
-maybe_testid_to_filename(TestID,NewName):- 
-  once(test_name_output_file(TestID,'.pl',NewName)),NewName\=@=TestID.
 test_name_output_file(TestID,Ext,ExtFile):- 
   test_name_ansi_output_file(TestID,File),
   ensure_file_extension(File,Ext,ExtFile),!.
@@ -1346,19 +1333,20 @@ call_file_goal(_, discontiguous(_)):- !.
 call_file_goal(_,Goal):- call(Goal),!.
 
 load_file_dyn(TestID):- once(\+ atom(TestID); \+ exists_file(TestID)), 
-  maybe_testid_to_filename(TestID,NewName),!,load_file_dyn(TestID,NewName).
+  once(test_name_output_file(TestID,'.pl',NewName)),NewName\=@=TestID,!,load_file_dyn(TestID,NewName).
 load_file_dyn(File):- warn_skip(load_file_dyn_pfc(File)).
 
 load_file_dyn(TestID,NewName):- warn_skip(load_file_dyn_pfc(TestID,NewName)). 
 
 
+
 :- dynamic(has_loaded_file_dyn_pfc/1).
 load_file_dyn_pfc(TestID):- once(\+ atom(TestID); \+ exists_file(TestID)),
-  maybe_testid_to_filename(TestID,NewName),!,load_file_dyn_pfc(TestID,NewName).
+  once(test_name_output_file(TestID,'.pl',NewName)),NewName\=@=TestID,!,load_file_dyn_pfc(TestID,NewName).
 /*
 load_file_dyn_pfc(TestID,TestID):- var(TestID),!,ensure_test(TestID),load_file_dyn_pfc(TestID,TestID).
 load_file_dyn_pfc(TestID,TestID):- once(\+ atom(TestID); \+ exists_file(TestID)),
-  maybe_testid_to_filename(TestID,NewName),!,load_file_dyn_pfc(TestID,NewName).
+  once(test_name_output_file(TestID,'.pl',NewName)),NewName\=@=TestID,!,load_file_dyn_pfc(TestID,NewName).
 %load_file_dyn(File):- consult(File),!.
 */
 load_file_dyn_pfc(_TestID,File):- has_loaded_file_dyn_pfc(File),!. 
@@ -1495,9 +1483,7 @@ save_test_hints_now(TestID):- test_name_output_file(TestID,'.pl',File), save_tes
 save_test_hints_now(TestID,File):- var(File),!,test_name_output_file(TestID,'.pl',File), save_test_hints_now(TestID,File).
 save_test_hints_now(TestID,File):- maybe_append_file_extension(File,'.pl',NewName),!,save_test_hints_now(TestID,NewName).
 
-save_test_hints_now(TestID,File):- warn_skip(save_test_hints_now_really(TestID,File)).
-
-save_test_hints_now_really(TestID,File):-
+save_test_hints_now(TestID,File):-
    setup_call_cleanup(open(File,write,O,[create([default]),encoding(text)]), 
        with_output_to(O,print_test_file_hints(TestID)),
       close(O)), 
@@ -1534,11 +1520,9 @@ erase_refs(Info):- my_maplist(erase,Info).
 
 unload_test_file(TestID):- unload_file_dyn(TestID).
 
-unload_file_dyn(File):- maybe_testid_to_filename(File,NewName),!,unload_file_dyn(NewName).
+unload_file_dyn(File):- test_name_output_file(File,'.pl',NewName),NewName\=@=File,!,unload_file_dyn(NewName).
 unload_file_dyn(File):- \+ exists_file(File), !.
-unload_file_dyn(File):- 
-  forall(retract(has_loaded_file_dyn_pfc(File)),fail),
-  unload_file_dyn_pfc(File), unload_file(File),!.
+unload_file_dyn(File):- unload_file_dyn_pfc(File), unload_file(File),!.
 
 unload_file_dyn_pfc(File):-  
  open(File,read,I),
