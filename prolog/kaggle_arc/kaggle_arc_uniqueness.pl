@@ -1148,11 +1148,11 @@ pp_ilp(_,_):- format('~N'),nl,fail.
 pp_ilp(D,T):-  is_ftVar(T),!,prefix_spaces(D,print(T)),!.
 pp_ilp(D,X=Y):- is_list(Y),length(Y,L),
   must_det_ll((
-   prefix_spaces(D, (print(X),write('('),write(L),write(') = '))),nl,
+   prefix_spaces(D, (print(X),write('('),write(L),write(') = '))),
    prefix_spaces(D+2,pp_ilp(Y)))).
 pp_ilp(D,X=Y):- 
   must_det_ll((
-   prefix_spaces(D, (print(X),write(' = '))),nl,
+   prefix_spaces(D, (print(X),write(' = '))),
    prefix_spaces(D+2,pp_ilp(Y)))).
 pp_ilp(D,call(T)):- !, prefix_spaces(D,call(T)).
 % pp_ilp(D,Grp):- is_mapping(Grp), prefix_spaces(D,print(Grp)),!.
