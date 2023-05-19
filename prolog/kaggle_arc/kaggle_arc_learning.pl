@@ -669,8 +669,9 @@ fix_groups(AG00,BG00,AG,BG):-
   maybe_fix_group(AG00,AG),
   maybe_fix_group(BG00,BG).
 
+
 maybe_fix_group(I,OO):-
-  avoid_grp_proplist(I,AG0),
+  extend_grp_proplist(I,AG0),
   predsort(sort_on(mapping_order),AG0,AG01),
   remove_singles_unneeded(AG01,AG1),
   maybe_exclude_whole(AG1,AG2),
@@ -679,7 +680,7 @@ maybe_fix_group(I,OO):-
   (Retained==[]-> OO = AG1 ; OO = AG1).  % yeah for now doesnt change anything
 
 fix_group(AG00,AG):- 
-  ensure_grp_proplist(AG00,AG0),  
+  extend_grp_proplist(AG00,AG0),  
   predsort(sort_on(mapping_order),AG0,AG1),
   maybe_exclude_whole(AG1,AG2),
  filter_redundant(AG2,AG).

@@ -40,7 +40,7 @@ ac_info(TestID,rules,P->Ctx->combined,LHS):- fail,
   trans_rules_combined(TestID,Ctx,Rules),member(R,Rules),
   rule_to_pcp(R,P,LHS).
 
-show_time_of_failure(_TestID):- !.
+show_time_of_failure(TestID):- !.
 show_time_of_failure(TestID):- 
     print_scene_change_rules(show_time_of_failure,
        ac_info,TestID).
@@ -268,16 +268,19 @@ trans_rule(Info,In,Out,Rules):-
     (member(P,R),prop_pairs(In,Out,Type,Change,P),Change\==same,good_for_rhs(P)),Rules),Rules\==[].
 
 trans_rule(Info,E1,E2,Rules):-
-  noteable_propdiffs2(E1,E2,Same,NL,NR),
+  noteable_propdiffs(E1,E2,NSame,NL,NR),
   pp_ilp(grp(Info,E1,E2)),
   dash_chars,
   if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
-  %noteable_propdiffs2(E1,E2,Same,InFlatP,OutPFlat),
-  %flat_props(E1,FP1),flat_props(E2,FP2),
-  %intersection(FP1,FP2,Same,InFlatP,OutPFlat),
-  %pp_ilp(removed=InFlatP), pp_ilp(sames=Same), pp_ilp(added=OutPFlat),
+  flat_props(E1,FP1),flat_props(E2,FP2),
+  intersection(FP1,FP2,Same,InFlatP,OutPFlat),
+  pp_ilp(removed=InFlatP),
+  pp_ilp(sames=Same),
+  pp_ilp(added=OutPFlat),
   pp_ilp(info=Info),
-  pp_ilp(removed=NL), pp_ilp(sames=Same), pp_ilp(added=NR),
+  pp_ilp(nremoved=NL),
+  pp_ilp(nsames=NSame),
+  pp_ilp(nadded=NR),
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
   dash_chars,
   Rules = [ 

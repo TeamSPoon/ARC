@@ -20,7 +20,7 @@ maybe_report_count(PlusBonus):- get_time(Now),
 maybe_report_count(Now,Was,_PlusBonus):- Was+7 > Now,!.
 maybe_report_count(_Now,_Was,PlusBonus):- force_report_count(PlusBonus),!.
  
-%force_report_count:- report_count(progress,so_far),!.
+force_report_count:- force_report_count(0).
 force_report_count(PlusBonus):-report_count_plus(progress,so_far,PlusBonus).
 
 :- set_flag('$fac_t',0).
