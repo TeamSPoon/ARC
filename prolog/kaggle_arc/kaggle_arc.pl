@@ -872,6 +872,7 @@ create_group_dmiles:-
   %must_det_ll((create_group(dmiles_nsn2,[
   % 'a61f2674','0a2355a6', 'a61ba2ce', 'ea32f347', 'a79310a0', '37d3e8b2', 'e41c6fd3', 'b230c067', '0d3d703e', '08ed6ac7']))),
 
+   %'b230c067 d2abd087 6e82a1ae'
    flatten([
     % plus 1
         %'32e9702f',
@@ -898,7 +899,9 @@ create_group_dmiles:-
   %set_current_test('makesboxsq'),
   %
   %set_current_test('25d487eb'),
-  set_current_test('08ed6ac7'),
+  %set_current_test('08ed6ac7'),
+  set_current_test('6e82a1ae'),
+  
   !.
 :- initialization(create_group_dmiles).
 %:- noguitracer.

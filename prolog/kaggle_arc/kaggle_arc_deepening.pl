@@ -151,13 +151,6 @@ system:goal_expansion(G,O,GE,O):- compound(G),current_predicate(if_arc_expanded_
 
 end_of_file.
 
-end_of_file.
-end_of_file.
-
-
-sdfsdf 
-sdfsdfs   sdfdf
-
 
 
 
@@ -230,7 +223,6 @@ ok_deduce(P):- \+ \+ do_deduce(P),!.
 %ok_deduce(P):- \+ \+ dont_notice(P),!,fail.
 %ok_deduce(_).
 
-
 diff_l_r(A,B,Same,InPFlat,OutPFlat):-
  must_det_ll((
   flat_props([A],PA), flat_props([B],PB),
@@ -268,8 +260,8 @@ number_fg_colors(InOut,InOut).
 hide_propchange2(In,Out):- \+ compound(In),!,Out=In.
 hide_propchange2(link(PA,_),link(PA,_)).
 hide_propchange2(pg(_,P,rank1,N),pg(_,P,rank1,N)).
-%hide_propchange2(occurs_in_links(PA,_),occurs_in_links(PA,_)).
-%hide_propchange2(links_count(PA,_),links_count(PA,_)).
+hide_propchange2(occurs_in_links(PA,_),occurs_in_links(PA,_)).
+hide_propchange2(links_count(PA,_),links_count(PA,_)).
 hide_propchange2(giz(example_num(ExampleNum)),giz(example_num(ExampleNum))).
 hide_propchange2(giz(gid(_)),giz(gid(_))).
 hide_propchange2(giz(A),giz(B)):- make_unifiable_u(A,B).
@@ -951,6 +943,7 @@ learn_object_dependancy(TestID):-
   must_det_ll((
   ensure_individuals(TestID),
   ignore((ExampleNum=trn+_)),
+  retractall(arc_cache:causes(TestID,_,_,_,_)),
  forall(kaggle_arc(TestID,ExampleNum,_,_),
      learn_object_dependancy(TestID,ExampleNum)),
   induction_update(TestID,in_out),

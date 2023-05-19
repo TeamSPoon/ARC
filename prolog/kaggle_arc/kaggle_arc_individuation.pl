@@ -348,10 +348,6 @@ fill_in_bg(Alt,In,Out):- only_color_data_or(Alt,In,Out),!.
 fill_in_bg(_Alt,In,In):-!.
 into_solid_grid(I,GG1):- into_grid(I,G1),mapgrid(fill_in_bg(black),G1,GG1),!.
 
-non_fg_to_black(_Black,G2,G2):- is_fg_color(G2).
-non_fg_to_black(Black,_,GG2):- ignore(GG2=Black).
-non_fg_to_black(I,GG1):- into_grid(I,G1),mapgrid(non_fg_to_black(black),G1,GG1),!.
-
 
 
 

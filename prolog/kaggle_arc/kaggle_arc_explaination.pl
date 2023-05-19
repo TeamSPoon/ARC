@@ -215,7 +215,7 @@ show_indiv_textinfo2(Why,AS0,ExceptFor):-
 
 
   % pp(vAS0=AS0),
-  ensure_grp_proplist([obj(Props11)],[obj(Props)]),
+  extend_grp_proplist([obj(Props11)],[obj(Props)]),
 
   %ignore((o2g(Obj,GGG), nonvar(GGG),set_glyph_to_object(GGG,Obj))),
  % will_show_grid(Obj,TF),
