@@ -156,9 +156,6 @@ print_menu_list(L):- forall(nth_above(100,N,L,E),format('~N~@',[print_menu_cmd1(
 
 
 
-
-
-
 % ignore((read_line_to_string(user_input,Sel),atom_number(Sel,Num))),
 
 ui_menu_call(G):- ignore(catch(must_not_error(G),E,u_dmsg(E))).
@@ -167,7 +164,7 @@ ui_menu_call(G):- ignore(catch(must_not_error(G),E,u_dmsg(E))).
   
 my_menu_call(E):- locally(set_prolog_flag(gc,true),ui_menu_call(E)).
 
-my_submenu_call(G):- current_predicate(_,G), \+ is_list(G),!, locally(set_prolog_flag(nogc,false),ui_menu_call(G)),!.
+my_submenu_call(G):- current_predicate(_,G), \+ is_list(G),!, locally(set_prolog_flag(gc,false),ui_menu_call(G)),!.
 my_submenu_call0(E):- peek_vm(VM),!, ui_menu_call(run_dsl(VM,E,VM.grid,Out)), set(VM.grid) = Out.
 
 key_read_borked(PP):- fail, in_pp(PP), PP\==ansi,PP\==bfly.
@@ -1801,10 +1798,6 @@ matches(InfoS,InfoM):- member(InfoS,InfoM).
 :- abolish(muarc_tmp:test_info_cache,2).
 :- dynamic(muarc_tmp:test_info_cache/2).
 
-print_testinfo:-
-  get_current_test(TestID),
-  print_testinfo(TestID).
-
 print_testinfo(TestID):- 
  ensure_test(TestID), !, forall(test_info_recache(TestID,F),pp(fav(TestID,F))),
   nop(test_show_grid_objs(TestID)),
@@ -2396,7 +2389,7 @@ parc11(ExampleNum,OS,TName):-
     print_side_by_side(I,O),!, format('").\n'),
   ignore((write('%= '), parcCmt(TestID),nl,nl))))).
 
-%color_sym(OS,[(black='ï¿½'),(blue='ï¿½'),(red='ï¿½'),(green=''),(yellow),(silver='O'),(purple),(orange='o'),(cyan= 248	ï¿½ ),(brown)]).
+%color_sym(OS,[(black='�'),(blue='�'),(red='�'),(green=''),(yellow),(silver='O'),(purple),(orange='o'),(cyan= 248	� ),(brown)]).
 color_sym(OS,C,C):- var(OS),!.
 color_sym(OS,C,Sym):- is_list(C),my_maplist(color_sym(OS),C,Sym),!.
 color_sym(_,Black,' '):- get_black(B),Black=B.

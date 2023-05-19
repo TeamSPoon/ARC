@@ -348,6 +348,10 @@ fill_in_bg(Alt,In,Out):- only_color_data_or(Alt,In,Out),!.
 fill_in_bg(_Alt,In,In):-!.
 into_solid_grid(I,GG1):- into_grid(I,G1),mapgrid(fill_in_bg(black),G1,GG1),!.
 
+non_fg_to_black(_Black,G2,G2):- is_fg_color(G2).
+non_fg_to_black(Black,_,GG2):- ignore(GG2=Black).
+non_fg_to_black(I,GG1):- into_grid(I,G1),mapgrid(non_fg_to_black(black),G1,GG1),!.
+
 
 
 
@@ -2083,7 +2087,7 @@ into_points_grid(GridIn,Points,Grid):-
    into_grid(GridIn,Grid),!.
 
 do_individuate(VM, ROptions, GridIn,LFO):- must_be_free(LF), 
- locally(set_prolog_flag(nogc,false),
+ locally(set_prolog_flag(gc,false),
    (into_grid(GridIn,Grid),  grid_to_tid(Grid,ID), %my_assertion(\+ is_grid(ID)),
     individuate7(VM,ID,ROptions,Grid,LF))),!,
     guard_whole(LF,LFO),

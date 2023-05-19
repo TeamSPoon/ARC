@@ -69,6 +69,7 @@ must_det_ll1(X):-
 %must_not_error(G):- must(once(G)).
 
 must_not_error(G):- (tracing;never_rrtrace),!,call(G).
+must_not_error(G):- !, call(G).
 must_not_error(G):- is_cgi,!, catch((G),E,((u_dmsg(E=G)))).
 must_not_error(X):- is_guitracer,!, call(X).
 must_not_error(X):- catch(X,E,(rethrow_abort(E);(/*arcST,*/writeq(E=X),pp(etrace=X),
