@@ -142,6 +142,12 @@ io_to_cntx1(out,in_out_out).
 io_to_cntx1(out,s(_)).
 io_to_cntx1(X,X).
 
+solve_via_scene_change:-  get_pair_mode(entire_suite),!, cls,
+ forall_count(all_arc_test_name(TestID),
+   solve_via_scene_change(TestID)).
+
+solve_via_scene_change:-  cls_z, ensure_test(TestID), %make,
+ solve_via_scene_change_API(TestID).
 
 
 solve_via_scene_change(TestID):-  
@@ -2138,6 +2144,14 @@ diff_l_r(InL,OutL,Same,InFlatP,OutPFlat):- OutL\==[],InL\==[],!,
 
 append_vsets(I,O):- flatten([I],M),variant_list_to_set(M,O),!.
 
+ignore_prop_when(removing,P):- ignore_prop_when(adding,P).
+ignore_prop_when(adding,link(contains,_)).
+ignore_prop_when(adding,occurs_in_links(contains,_)).
+%ignore_prop_when(adding,pg(_,_,rankLS,_)).
+ignore_prop_when(adding,pg(_,_,_,_)).
+ignore_prop_when(adding,simularz(_,_)).
+ignore_prop_when(removing,cc(fg,_)).
+ignore_prop_when(removing,mass(_)).
 noteable_propdiffs(PA,PB,Same,InFlatP,OutPFlat):- 
   remove_o_giz(PA,PA1),remove_o_giz(PB,PB1),
   %=(PA,PA1),=(PB,PB1),
@@ -2295,9 +2309,8 @@ changing_props(TestID,X1,X2):-
 
 
 
-
- %print_scene_change_rules(TestID):- ensure_test(TestID),
-%  print_scene_change_rules(print_scene_change_rules,TestID).
+print_scene_change_rules(TestID):- ensure_test(TestID),
+  print_scene_change_rules(print_scene_change_rules,TestID).
 
 get_scene_change_rules(TestID,P4db,Rules):-
  ensure_test(TestID),
@@ -2377,6 +2390,10 @@ counts_change(TestID,ExampleNum,Out,P,N1,N2):- in_out_atoms(In,Out),
 
 
 
+learn_solve_via_grid_change(TestID):- 
+ must_det_ll((
+  clear_scene_rules(TestID),
+ensure_scene_change_rules(TestID))).
 
 ensure_scene_change_rules(TestID):-
  ensure_test(TestID),
@@ -2388,6 +2405,10 @@ compute_scene_change(TestID):-
  ensure_test(TestID),
  with_pair_mode(whole_test,  
  must_det_ll((
+  detect_pair_hints(TestID),  
+  save_test_hints_now(TestID),
+  learn_grid_size(TestID),
+  not_warn_skip(ensure_propcounts(TestID)),  
   clear_scene_rules(TestID),  
   compute_scene_change_pass1(TestID),  
   compute_scene_change_pass2(TestID),
