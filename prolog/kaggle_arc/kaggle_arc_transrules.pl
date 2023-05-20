@@ -267,11 +267,13 @@ trans_rule(Info,In,Out,Rules):-
   noteable_propdiffs(In,Out,_Same,_L,R),
   into_lhs(In,LHS),  
   findall(edit_copy(Info,rhs(edit(Type,Change,P)),lhs(LHS)),
-    (member(P,R),prop_pairs(In,Out,Type,Change,P),Change\==same,good_for_rhs(P)),Rules),Rules\==[],!.
+    (member(P,R),prop_pairs(In,Out,Type,Change,P),
+      Change\==same,
+      good_for_rhs(P)),Rules),Rules\==[],!.
 
 trans_rule(Info,E1,E2,Rules):-
   noteable_propdiffs(E1,E2,NSame,NL,NR),
-  pp_ilp(grp(Info,E1,E2)),
+  %pp_ilp(grp(Info,E1,E2)),
   dash_chars,
   if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
   flat_props(E1,FP1),flat_props(E2,FP2),
