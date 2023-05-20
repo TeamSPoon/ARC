@@ -847,13 +847,16 @@ prop_type_type(reorder).
 
 type_prop(reposition,loc2D(_,_)).
 type_prop(reposition,center2G(_,_)).
+type_prop(reposition,center2D(_,_)).
 %type_prop(reposition,loc2G(_,_)).
 type_prop(reposition,iz(locX(_))).
 type_prop(reposition,iz(cenGX(_))).
 type_prop(reposition,iz(locY(_))).
 type_prop(reposition,iz(cenGY(_))).
+
 type_prop(reposition,edge(_,_)).
 type_prop(reposition,link(_,_)).
+
 type_prop(rotate,rotG(_)).
 type_prop(rotate,rot2D(_)).
 type_prop(rotate,rotSize2D(_,_,_)).

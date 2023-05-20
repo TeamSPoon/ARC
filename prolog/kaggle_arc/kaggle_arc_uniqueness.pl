@@ -90,7 +90,7 @@ do_deduce(iz(sid(_))).
 do_deduce(iz(X)):- !,do_deduce(X),!.
 do_deduce(P):- compound(P),compound_name_arguments(P,_,[X,Y]),number(X),number(Y).
 %do_deduce(P):- compound(P),compound_name_arguments(P,_,[X,Y]),comparable_value(X),comparable_value(Y).
-do_deduce(rotSize2D(grav,_,_)).
+%do_deduce(rotSize2D(grav,_,_)).
 do_deduce(grid_rep(norm,_)). % pen([cc(blue,1)]),pg(_1489874,mass(_1489884),rank1,4).
 do_deduce(grid_ops(norm,_)). % pen([cc(blue,1)]),pg(_1489874,mass(_1489884),rank1,4).
 
@@ -111,9 +111,12 @@ ok_deduce(P):- good_for_rhs(P),!.
 
 % Check if two values have the same property names but are not equal
 
-%into_rhs(edit(_,_,R),P):- !, into_rhs(R,P).
-maybe_deref_value(X1,E1):- compound(X1), X1=edit(_,_,E1),!.
-maybe_deref_value(X1,E1):- compound(X1), once(into_rhs(X1,E1)), E1\=@=X1.
+%into_rhs(edit(_,_,_,R),P):- !, into_rhs(R,P).
+maybe_deref_value(X1,Y1):- compound(X1), X1=edit(_,_,_,E1),!,ensure_deref_value(E1,Y1).
+maybe_deref_value(X1,Y1):- compound(X1), once(into_rhs(X1,E1)), E1\=@=X1,!,ensure_deref_value(E1,Y1).
+
+ensure_deref_value(X1,E1):- maybe_deref_value(X1,E1),!.
+ensure_deref_value(X1,X1).
 
 other_val(X1,X2):- maybe_deref_value(X1,E1), !, other_val(E1,X2).
 other_val(X2,X1):- maybe_deref_value(X1,E1), !, other_val(X2,E1).
@@ -177,7 +180,8 @@ when_entire_suite(Goal,_Goal2):- get_pair_mode(entire_suite),!, call(Goal).
 when_entire_suite(_Goal,Goal2):- call(Goal2).
 
 maybe_repress_output(Goal):- call(Goal).
-repress_output(Goal):- wots(_,Goal).
+%repress_output(Goal):- wots(_,Goal).
+repress_output(Goal):- call(Goal).
 %repress_some_output(Goal):- when_entire_suite(with_pair_mode(whole_test,repress_output(Goal)),Goal).
 repress_some_output(Goal):- call(Goal).
 
@@ -190,7 +194,7 @@ learn_solve_via_grid_change(TestID):-
  repress_some_output((
   must_det_ll(( 
   not_warn_skip(ensure_propcounts(TestID)),  
-  clear_scene_rules(TestID),
+  clear_scene_rules(TestID), 
    time(compute_scene_change(TestID)))))).
 
 solve_via_scene_change_rules(TestID,ExampleNum):-
@@ -374,7 +378,7 @@ apply_rules_to_objects(Ways,Mapping,Rules,[_|Objs],More):-
 apply_rules_to_objects(_Ways,_Mapping,_Rules,_Objs,[]).
 
 
-
+unwonk_ansi_maybe(A,B):- unwonk_ansi(A,B).
 
 solve_obj_group(VM,TestID,_ExampleNum,_ROptions,Ctx,ObjsIn,ObjsO):-
   my_exclude(is_bg_object_really,ObjsIn,Objs),
@@ -384,12 +388,13 @@ solve_obj_group(VM,TestID,_ExampleNum,_ROptions,Ctx,ObjsIn,ObjsO):-
   member(Ways-Strategy,[exact-_,two_way-one_to_one,_-_]), 
   apply_rules_to_objects(Ways,Strategy,Rules,Objs,Todo), Todo\==[],
   maplist(into_solid_grid_strings,Todo,PStr),
-  unwonk_ansi(PStr,PPStr),
+  unwonk_ansi_maybe(PStr,PPStr),
   pp_ilp((see_Strategy(Ways-Strategy)=PPStr)), Todo\==[],
+  maplist(pp_ilp(3),Todo),
   run_todo_output(VM,Todo,ObjsO),ObjsO\==[],!.
 
 
-solve_obj_group(VM,TestID,_ExampleNum,_ROptions,Ctx,ObjsIn,ObjsO):-
+solve_obj_group(VM,TestID,_ExampleNum,_ROptions,Ctx,ObjsIn,ObjsO):- trace,
   my_exclude(is_bg_object_really,ObjsIn,Objs),
   (Rule = (Ctx:rhs(P):- obj_atoms(PCond))),
   %io_to_cntx(IO_,Ctx), 
@@ -397,7 +402,7 @@ solve_obj_group(VM,TestID,_ExampleNum,_ROptions,Ctx,ObjsIn,ObjsO):-
   member(Ways-Strategy,[exact-_,two_way-one_to_one,_-_]), 
   apply_rules_to_objects(Ways,Strategy,Rules,Objs,Todo), Todo\==[],
   maplist(into_solid_grid_strings,Todo,PStr),
-  unwonk_ansi(PStr,PPStr),
+  unwonk_ansi_maybe(PStr,PPStr),
   pp_ilp((see_Strategy(Ways-Strategy)=PPStr)), Todo\==[],
   run_todo_output(VM,Todo,ObjsO),ObjsO\==[],!.
 
@@ -512,8 +517,8 @@ override_object_1(VM,loc2D(X,Y),Obj,NewObj):- loc2D(Obj,WX,WY),
   offset_points(X,Y,LPoints,GPoints),rebuild_from_globalpoints(VM,Obj,GPoints,NewObj).
 override_object_1(VM,Term,I,O):- sub_compound(rhs(P),Term), !,  override_object_1(VM,P,I,O).
 override_object_1(VM,Term,I,O):- sub_compound(edit(P),Term), !,  override_object_1(VM,P,I,O).
-override_object_1(VM,Term,I,O):- sub_compound(edit(_,_,P),Term), !, override_object_1(VM,P,I,O).
-%override_object_1(VM,Term,I,O):- sub_term(Sub,Term), compound(Sub),Sub=edit(_,_,P),  !, pp_ilp(Term), I=O,!. %override_object_1(VM,P,I,O).
+override_object_1(VM,Term,I,O):- sub_compound(edit(_,_,_,P),Term), !, override_object_1(VM,P,I,O).
+%override_object_1(VM,Term,I,O):- sub_term(Sub,Term), compound(Sub),Sub=edit(_,_,_,P),  !, pp_ilp(Term), I=O,!. %override_object_1(VM,P,I,O).
 
 
 override_object_1(_VM,O,I,OO):- override_object(O,I,OO),!.
@@ -1022,9 +1027,30 @@ same_rhs_operation(A,B):-
   maplist(same_rhs_operation,AA,BB),!.
 
 
+not_good_for_rhs(iz(fg_or_bg(_))).
+not_good_for_rhs(unique_colors_count(_)).
+not_good_for_rhs(iz(Colormass)):- atom(Colormass),!.
+not_good_for_rhs(iz(i_o(_))).
+not_good_for_rhs(iz(info(birth(_Colormass)))).
 
 
-%good_for_rhs(iz(sid(_))).
+good_for_rhs(delete(_)).
+good_for_rhs(edit(_)).
+good_for_rhs(edit(_,_,_,_)).
+good_for_rhs(create(_)).
+good_for_rhs(rhs(_)).
+
+good_for_rhs(rot2D(_)). 
+good_for_rhs(center2G(_3,_4)).
+good_for_rhs(grid_ops(_,_)).
+%good_for_rhs(grid_ops( norm, [ rot180,c_r(copy_row_ntimes(1,2)), as_rot(rollD,rollDR,copy_row_ntimes(1,2)),flipV])),
+
+good_for_rhs(obj(_)).
+good_for_rhs(loc2D(_,_)).
+good_for_rhs(pen(_)).
+good_for_rhs(iz(sid(_))).
+
+%
 %good_for_rhs(mass(_)).
 %good_for_rhs(iz(cenGX(_))).
 %good_for_rhs(iz(cenGY(_))).
@@ -1038,15 +1064,6 @@ good_for_rhs(iz(algo_sid(norm,_))).
 good_for_rhs(grid_ops(norm,_)).
 good_for_rhs(grid_rep(norm,_)).
 */
-good_for_rhs(loc2D(_,_)).
-good_for_rhs(pen(_)).
-
-good_for_rhs(delete(_)).
-good_for_rhs(edit(_)).
-good_for_rhs(edit(_,_,_)).
-good_for_rhs(create(_)).
-good_for_rhs(rhs(_)).
-good_for_rhs(obj(_)).
 
 good_for_lhs(P):- \+ ok_notice(P),!,fail.
 %good_for_lhs(P):- make_unifiable(P,U),P=@=U,!,fail.
@@ -1117,7 +1134,7 @@ prop_pairs2(O1,O2,Type,Change,P):-
   flat_props(O1,F1),flat_props(O2,F2),!,
   member(P2,F2),make_unifiable_u(P2,P1),
  (once((member(P1,F1),(other_val(P2,P1)->Change=different;Change=same)))-> 
-   min_unifier(P2,P1,P); ((Change=adding,P=P2))),
+   min_unifier(P2,P1,P); ((Change=adding(P),P=P2))),
  prop_type(P2,Type),
 \+ignore_prop_when(Change,P).   
 
@@ -1219,7 +1236,12 @@ pp_ilp(Grp):-pp_ilp(1,Grp),!.
 
 pp_ilp(D,T):-  T==[],!,prefix_spaces(D,write('[] ')),!.
 pp_ilp(_,_):- format('~N'),nl,fail.
+
 pp_ilp(D,T):-  is_ftVar(T),!,prefix_spaces(D,print(T)),!.
+pp_ilp(D,A+B):-  !, prefix_spaces(D,(pp_ilp(A),nl,pp_ilp(B))).
+pp_ilp(D,Grid):- is_grid(Grid),!,prefix_spaces(D,print_grid(Grid)),!,nl.
+pp_ilp(D,Grid):- is_object(Grid),!,prefix_spaces(D,print_grid([Grid])),!,nl.
+pp_ilp(D,apply((RHS:- obj_atoms(PCond)),Obj)):- !,  pp_grp(D,RHS,PCond,Obj).
 pp_ilp(D,X=Y):- is_list(Y),length(Y,L),
   must_det_ll((
    prefix_spaces(D, (print(X),write('('),write(L),write(') = '))),
@@ -1245,13 +1267,6 @@ pp_ilp(D,Grp):- compound(Grp),
     %prefix_spaces(D+8,show_code_diff(Info,In,Out)),
   prefix_spaces(D,(write('</grp-hyphen>\n'),dash_chars)))).
 
-
-pp_ilp(D,apply(Rule,Obj)):- !, pp_ilp(D,grp(apply(Rule),[],Obj)).
-
-
-pp_ilp(D,A+B):-  !, prefix_spaces(D,(pp_ilp(A),nl,pp_ilp(B))).
-pp_ilp(D,Grid):- is_grid(Grid),!,prefix_spaces(D,print_grid(Grid)),!,nl.
-pp_ilp(D,Grid):- is_object(Grid),!,prefix_spaces(D,print_grid([Grid])),!,nl.
 
 pp_ilp(D,(H:-Conj)):- 
   prefix_spaces(D,(print((H)),nl,
@@ -1288,7 +1303,7 @@ pp_ilp(D,Grid):- is_obj_props(Grid),!,sort(Grid,R),reverse(R,S), prefix_spaces(D
 pp_ilp(D,List):- is_list(List), !,
  must_det_ll((
   prefix_spaces(D,write('[')),
-  maplist(pp_ilp(D+3),List),
+  maplist(pp_ilp(D+1),List),
   prefix_spaces(D,write(']')))).
 
 
@@ -2693,8 +2708,9 @@ correct_antes4(_TestID,_IO_,_P,PSame,PSame).
 
 
 % Remove Redundant Overlap
-correct_antes4a(TestID,IO_,P,PSame,SLPSame):- 
+correct_antes4a(TestID,IO_,VP,PSame,SLPSame):- 
   %rev_in_out_atoms(OI,IO_),
+  ensure_deref_value(VP,P),
   \+ \+ ((ac_rules(TestID,IO_,DP,_),other_val(P,DP))),
   findall(mv4a(info(changes_from(S,P))),
        ((member(S,PSame), \+ negated_s_lit(S,_), S\= mv4a(info(_)),
@@ -2707,8 +2723,9 @@ correct_antes4a(_TestID,_IO_,_P,PSame,PSame).
 
 
 % Remove Single Chhangers
-correct_antes4b(TestID,IO_,P,PSame,SLPSame):- 
+correct_antes4b(TestID,IO_,VP,PSame,SLPSame):- 
   %rev_in_out_atoms(OI,IO_),
+  ensure_deref_value(VP,P),
   \+ \+ ((ac_rules(TestID,IO_,DP,_),other_val(P,DP))),
   findall(mv4b(info(changes_into(S,P))),
        ((member(S,PSame), \+ negated_s_lit(S,_), S\= mv4b(info(_)), other_val(S,P),
