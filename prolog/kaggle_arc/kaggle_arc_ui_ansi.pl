@@ -1381,8 +1381,8 @@ print_side_by_side0(C1-A,LW,C2-B):- nonvar(A),!,
   ignore(max_min(LW1,LW2,LW,_)).
 */
 
-print_side_by_side0(Nil,Lw,G2):- Nil==[],!,print_side_by_side0([[_nil]],Lw,G2).
-print_side_by_side0(G1,Lw,Nil):- Nil==[],!,print_side_by_side0(G1,Lw,[[_nil]]).
+print_side_by_side0(Nil,Lw,G2):- Nil==[],!,print_side_by_side0([[_Nil1]],Lw,G2).
+print_side_by_side0(G1,Lw,Nil):- Nil==[],!,print_side_by_side0(G1,Lw,[[_Nil1]]).
 
 print_side_by_side0(C1,LW,C2):- var(LW), fail, gridoid_size(C1,H1,V1),gridoid_size(C2,H2,V2),!,    
     ((V2 > V1) -> LW is -(H2 * 2 + 12) ; LW is (H1 * 2 + 12)),!, print_side_by_side0(C1,LW,C2).

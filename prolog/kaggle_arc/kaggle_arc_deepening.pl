@@ -159,6 +159,65 @@ sdfsdf
 sdfsdfs   sdfdf
 
 
+end_of_file.
+
+end_of_file.
+end_of_file.
+
+
+sdfsdf 
+sdfsdfs   sdfdf
+
+end_of_file.
+
+end_of_file.
+end_of_file.
+
+
+sdfsdf 
+sdfsdfs   sdfdf
+end_of_file.
+
+end_of_file.
+end_of_file.
+
+
+sdfsdf 
+sdfsdfs   sdfdf
+end_of_file.
+
+end_of_file.
+end_of_file.
+
+
+sdfsdf 
+sdfsdfs   sdfdf
+end_of_file.
+
+end_of_file.
+end_of_file.
+
+
+sdfsdf 
+sdfsdfs   sdfdf
+end_of_file.
+
+end_of_file.
+end_of_file.
+
+
+sdfsdf 
+sdfsdfs   sdfdf
+end_of_file.
+
+end_of_file.
+end_of_file.
+
+
+sdfsdf 
+sdfsdfs   sdfdf
+
+
 
 
 
@@ -229,7 +288,6 @@ ok_deduce(P):- \+ \+ dont_deduce(P), !, fail.
 ok_deduce(P):- \+ \+ do_deduce(P),!.
 %ok_deduce(P):- \+ \+ dont_notice(P),!,fail.
 %ok_deduce(_).
-
 
 diff_l_r(A,B,Same,InPFlat,OutPFlat):-
  must_det_ll((
@@ -1606,4 +1664,44 @@ solve_obj_list(S,VM,TestID,ExampleNum,IO_Start,ROptions,[Obj|Objs],[NewObj|ObjsO
   solve_obj_list(S,VM,TestID,ExampleNum,IO_Start,ROptions,Objs,ObjsO).
 
 
-*/
+*/end_of_file.
+
+end_of_file.
+end_of_file.
+
+
+sdfsdf 
+sdfsdfs   sdfdf
+end_of_file.
+
+end_of_file.
+end_of_file.
+
+
+sdfsdf 
+sdfsdfs   sdfdf
+end_of_file.
+
+end_of_file.
+end_of_file.
+
+
+sdfsdf 
+sdfsdfs   sdfdf
+end_of_file.
+
+end_of_file.
+end_of_file.
+
+
+sdfsdf 
+sdfsdfs   sdfdf
+end_of_file.
+
+end_of_file.
+end_of_file.
+
+
+sdfsdf 
+sdfsdfs   sdfdf
+
