@@ -494,7 +494,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
  must_det_ll((
  ensure_scene_change_rules(TestID),
   kaggle_arc(TestID,ExampleNum,In,Expected),
-  banner_lines(green,4),
+  banner  _lines(green,4),
   % predict_grid_size_now(TestID,In,PX,PY),
   obj_group5(TestID,ExampleNum,in,ROptions,TempObjs),TempObjs\==[],
   grid_to_tid(In,TID),
@@ -518,7 +518,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
   count_difs(ExpectedOut,OurSolution,Errors),
   print_ss(wqs(solve_via_scene_change(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution))),
   (Errors == 0 ->  
-    banner_lines(green,4) 
+    banner_li nes(green,4) 
     ;(banner_lines(red,10),!,%bt,
      !,banner_lines(red,1),
       %print_scene_change_rules(TestID),banner_lines(red,1), 
