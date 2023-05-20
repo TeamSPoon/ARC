@@ -2630,8 +2630,8 @@ into_rhs(ac_db(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
 into_rhs(ac_unit_db(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
 into_rhs(ac_rules(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
 into_rhs(ac_listing(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
-into_rhs(edit(_,_,_,R),P):- !, into_rhs(R,P).
-into_rhs(edit(_,_,R),P):- !, into_rhs(R,P).
+%into_rhs(edit(_,_,_,R),P):- !, into_rhs(R,P).
+%into_rhs(edit(_,_,R),P):- !, into_rhs(R,P).
 into_rhs(edit(R),P):- !, into_rhs(R,P).
 into_rhs(create(R),P):- !, into_rhs(R,P).
 into_rhs(delete(R),P):- !, into_rhs(R,P).
