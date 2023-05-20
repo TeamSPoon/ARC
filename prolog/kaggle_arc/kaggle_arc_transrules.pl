@@ -14,19 +14,24 @@ not_assumed(P):- \+ assume_prop(P).
 
 ac_rules(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
 ac_rules(TestID,Ctx,P,PSame):- 
-  ac_db(TestID,Ctx,P,Same),
-  %include(not_assumed,Same,PSame), 
-  Same=PSame,
+  ac_unit_db(TestID,Ctx,P,Same),
+  include(not_assumed,Same,PSame), 
+  %Same=PSame,
   PSame\==[].
 
+not_debug_info(P):- not_assumed(P),!.
 
-ac_db(TestID,Ctx,P,PSame):- (ac_unit_db(TestID,Ctx,P,PSame)*->true;pass2_rule(TestID,Ctx,P,PSame)).
+remove_debug_info(List,NoDebug):- \+ compound(List),!,NoDebug=List.
+remove_debug_info(List,NoDebug):- is_list(List), is_obj_props(List),!,include(not_debug_info,List,NoDebug).
+remove_debug_info(List,NoDebug):- is_list(List), !, maplist(remove_debug_info,List,NoDebug).
+remove_debug_info(List,NoDebug):- compound_name_arguments(List,F,AA),
+  maplist(remove_debug_info,AA,CC),!, compound_name_arguments(NoDebug,F,CC).
 
-ac_unit_db(TestID,Ctx,P,PSame):- ac_listing(TestID,Ctx,P,Same),include(not_assumed,Same,PSame), PSame\==[].
+ac_unit_db(TestID,Ctx,P,Same):- ac_listing(TestID,Ctx,P,Same),include(not_assumed,Same,PSame), PSame\==[].
 
 ac_listing(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
 %ac_listing(TestID,Ctx,P->ac_unit_db,PSame):- ac_unit_db(TestID,Ctx,P,PSame).
-ac_listing(TestID,Ctx,P,PSame):- ac_unit(TestID,Ctx,P,PSame).
+ac_listing(TestID,Ctx,P,PSame):- ac_unit(TestID,Ctx,P,PSame)*->true;pass2_rule(TestID,Ctx,P,PSame).
 %ac_listing(TestID,Ctx,P,[iz(info(prop_can))|PSame]):- prop_can(TestID,Ctx,P,PSame).
 %ac_listing(TestID,Ctx,P,[pass2|PSame]):- pass2_rule(TestID,Ctx,P,PSame), \+ ac_rules(TestID,Ctx,P,PSame).
 

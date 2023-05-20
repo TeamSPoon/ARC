@@ -737,13 +737,13 @@ print_grouped_props1(Named,In):-
   must_det_ll((
    ensure_grp_proplist(In,Objs),
    print_treeified_props(Named,Objs),
-   banner_lines(green,1))).
+   banner_lines(blue,1))).
 
 print_grouped_props2(Named,In):- 
  must_det_ll((
    ensure_grp_proplist(In,Objs),
    must_det_ll((hack_prop_groups(Named,Objs))),
-   banner_lines(green,1))),!.
+   banner_lines(blue,1))),!.
 
 print_grouped_props3(Named,In):-
  must_det_ll((
@@ -832,7 +832,7 @@ skip_ku( elink( sees(_),_)).
 priority_prop(Var):- var(Var),!,fail.
 priority_prop(pg(_,PG,_,_)):- priority_pg(PG),!.
 priority_prop(pg(_,_,_,_)).
-priority_prop((algo_sid(norm,_))).
+priority_prop((algo_sid(_,_))).
 priority_prop((stype(_))).
 priority_prop(iz(P)):- !, priority_prop(P),!.
 priority_prop(giz(P)):- !, priority_prop(P),!.
@@ -1488,15 +1488,17 @@ add_prior_info(Objs,ObjsLen,Common,VbO,(List),(NewList)):-
   add_prior_info_1(Objs,ObjsLen,Common,VbO,List,NewList),!.
 
 add_prior_info_1(Objs,ObjsLen,_Common,VbO,PropList,OUT):- is_list(PropList),ObjsLen>1, chk_from_same_grid(Objs),  
+  length(VbO,Rankers), Rankers>1,
   find_version(VbO,Prop,N1,N2,PropList),
-  %Prop\=pen(_),
+  Prop\=pg(_,_,_,_), % Prop\=pen(_),
   member(Prop,PropList),
   %prop_name(Prop,Name),  
   value_to_name(Prop,Name),
-  Prop\=pg(_,_,_,_),
-  R = pg(Rankers,Name,rank1, RA),  
+  
+  R = pg(PGRankers,Name,rank1, RA),  
   \+ member(R,PropList),  
-  length(VbO,Rankers), %Rankers>1,
+  
+  ObjsLen = PGRankers,
   %subst(PropList,Prop,R,PropListR),
   PropList = PropListR,
   must_det_ll((findall(Obj,(member(Obj,Objs),sub_term(OProp,Obj), (OProp =@= Prop)),Identicals),
@@ -1516,7 +1518,8 @@ add_prior_info_1(_Objs,_ObjsLen,_Common,_VersionsByCount,PropList,PropList).
 
 rank_size(ObjsLen,Name,1,pg(ObjsLen,Name,rankLS,smallest)):-!.
 rank_size(ObjsLen,Name,N2,pg(ObjsLen,Name,rankLS,largest)):- ObjsLen==N2,!.
-rank_size(ObjsLen,Name,_,pg(ObjsLen,Name,rankLS,middlest)).
+%rank_size(ObjsLen,Name,_,pg(ObjsLen,Name,rankLS,middlest)).
+rank_size(_ObjsLen,_Name,_,[]).
 
 use_simulars(_):- true.
 use_rank1(mass(_)).
@@ -1528,11 +1531,11 @@ use_rank1(_).
 redundant_prop(_,nth_fg_color(N1,_)):- N1==1.
 redundant_prop(Props,unique_colors([FG])):- sub_var(pen([cc(FG,1)]),Props),!.
 redundant_prop(Props,cc(FG,_)):- is_real_fg_color(FG),sub_var(pen([cc(FG,1)]),Props),!.
-%redundant_prop(Props,pg(_, iz(_), rankLS, Var)):- 
+redundant_prop(_Props,pg(_, iz(_), rankLS, Var)):- var(Var),!.
 redundant_prop(Props,center2D(_,_)):- sub_compound(loc2D(_,_),Props).
 %redundant_prop(Props,center2D(X,Y)):- sub_var(center2G(X,Y),Props).
 %redundant_prop(Props,center2G(X,Y)):- sub_var(center2D(X,Y),Props).
-
+some_pgs_and_props(_,[]):-!,fail.
 some_pgs_and_props(_,pg(_,Name,simulars,_)):- !, use_simulars(Name),!.
 some_pgs_and_props(_,pg(_,Name,rank1,_)):- !, use_rank1(Name),!.
 some_pgs_and_props(PropList,Name):- \+ redundant_prop(PropList,Name),!.
@@ -2650,7 +2653,7 @@ get_is_for_ilp(_,_,input, :-(D) ):-
 get_is_for_ilp(_,_,input, :-(D) ):- get_is_for_ilp(_,_,determination, D ).
 
 get_is_for_ilp(TestID,common,logicmoo_ex,is_accompany_changed_db(TestID,IO,P,Same)):-
-  is_accompany_changed_db(TestID,IO,P,Same).
+  ac_listing(TestID,IO,P,Same).
 
 
 get_is_for_ilp(_,_,liftcover_ex,D):- read_terms_from_atom(D, '

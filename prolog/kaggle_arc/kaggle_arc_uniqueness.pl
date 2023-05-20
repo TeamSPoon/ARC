@@ -149,15 +149,15 @@ solve_via_scene_change:-  get_pair_mode(entire_suite),!, cls,
  forall_count(all_arc_test_name(TestID),
    solve_via_scene_change(TestID)).
 
-solve_via_scene_change:-  cls_z, ensure_test(TestID), %make,
+solve_via_scene_change:-  clsmake, ensure_test(TestID), %make,
  solve_via_scene_change(TestID).
 
 
 solve_via_scene_change(TestID):-  
  must_det_ll((
+  print_test(TestID),
   force_clear_test(TestID),
   clear_scene_rules(TestID),
-  print_test(TestID),
   repress_some_output(scene_change_test_prep(TestID)),
   ExampleNum=tst+_)),
   forall(kaggle_arc(TestID,ExampleNum,_,_),
@@ -246,7 +246,7 @@ score_rule(Ways,Obj,Rule,Score):-
     score_rule(Ways,Obj,PCond,P,Score).
 
 score_rule(exact,Obj,PCond,_P,Score):-  score_all_props(PCond,Obj,S0),S0>0.3,!,Score=1000.
-score_rule(_Ways,Obj,PCond,_P,Score):-
+score_rule(_Ways,Obj,PCond,_P,Score):- %fail,
    obj_atoms(Obj,A),
    obj_atoms(PCond,B),
      intersection(A,B,Good,_Extra,_Bad),
@@ -256,8 +256,14 @@ has_all_props(CanL,Obj):- maplist(inv_has_prop(Obj),CanL).
 score_all_props(CanL,Obj,Score):- maplist(inv_has_prop_score(Obj),CanL,ScoreL),sumlist(ScoreL,Score),!.
 
 assume_prop(P):- \+ \+ assume_prop1(P),!.
-assume_prop(P):- \+ \+ assume_prop2(P).
-assume_prop1(iz(info(_))).
+assume_prop(P):- \+ \+ assume_prop2(P),!.
+assume_prop(P):- \+ \+ is_debug_info(P).
+
+is_debug_info(Var):- \+ compound(Var),!,fail.
+is_debug_info(info(_)).
+is_debug_info(iz(P)):-!,is_debug_info(P).
+
+
 assume_prop1(P):- dont_notice(P).
 assume_prop2(giz(_)).
 assume_prop2(grid_sz(_)).
@@ -274,7 +280,9 @@ max_prop_score(_,0.7).
 
 inv_has_prop(Obj,Prop):- has_prop(Prop,Obj),!.
 inv_has_prop(Obj,Prop):- inv_has_prop_score(Obj,Prop,Score),Score>0.
+
 inv_has_prop_score(Obj,Prop, Score):- max_prop_score(Prop,Score), inv_has_prop2(Obj,Prop).
+
 inv_has_prop2(_O,P):- \+ \+ assume_prop(P),!.
 inv_has_prop2(Obj,pg(A,B,C,D)):- !, has_prop(Obj,pg(A,B,C,D)).
 inv_has_prop2(Obj, \+ Prop):- !, \+ inv_has_prop(Obj,Prop).
@@ -343,6 +351,20 @@ apply_rules_to_objects(Ways,Mapping,Rules,[_|Objs],More):-
 
 apply_rules_to_objects(_Ways,_Mapping,_Rules,_Objs,[]).
 
+
+
+
+solve_obj_group(VM,TestID,_ExampleNum,_ROptions,Ctx,ObjsIn,ObjsO):-
+  my_exclude(is_bg_object_really,ObjsIn,Objs),
+  (Rule = (Ctx:rhs(P):- obj_atoms(PCond))),
+  %io_to_cntx(IO_,Ctx), 
+  findall_vset_R(Rule,(ac_rules(TestID,Ctx,P,PCond)), Rules),
+  member(Ways-Strategy,[exact-_,two_way-one_to_one,_-_]), 
+  apply_rules_to_objects(Ways,Strategy,Rules,Objs,Todo), Todo\==[],
+  maplist(into_solid_grid_strings,Todo,PStr),
+  unwonk_ansi(PStr,PPStr),
+  pp_ilp((see_Strategy(Ways-Strategy)=PPStr)), Todo\==[],
+  run_todo_output(VM,Todo,ObjsO),ObjsO\==[],!.
 
 
 solve_obj_group(VM,TestID,_ExampleNum,_ROptions,Ctx,ObjsIn,ObjsO):-
@@ -920,36 +942,39 @@ merge_vals(T+A,T+B,C):-!,must_det_ll((C=(T+A+B))).
 merge_vals(A,B,A):- functor(A,F,_),must_be_identical(F),!,A=@=B.
 
 merge_vals(info(A),info(B),info(C)):- !, merge_list_vals(A,B,C).
-  
+
+merge_vals(A,B,C):- is_valid_testname(A),!,A=B,A=C.
+%merge_vals(A,B,C):- good__rhs(A),!,same_rhs_operation(A,B),A=C.
 %info([step(Step),is_swapped_lr(IsSwapped),ctx(Ctx),why(TypeO),testid(TestID),example(ExampleNum)])
 merge_vals(A,B,C):-
   A =  ac_unit(TestID, IO, P1, PSame1),
   B =  ac_unit(TestID, IO, P2, PSame2),!,
-  P1=@=P2,
+  same_rhs_operation(P1,P2),
   merge_props(PSame1,PSame2,PSame),!,
   C =  ac_unit(TestID, IO, P1, PSame).
 
 merge_vals(A,B,C):-
-  A =  ac_db(TestID, IO, P1, PSame1),
-  B =  ac_db(TestID, IO, P2, PSame2),!,
-  P1=@=P2,
+  A =  ac_unit_db(TestID, IO, P1, PSame1),
+  B =  ac_unit_db(TestID, IO, P2, PSame2),!,
+  same_rhs_operation(P1,P2),
   merge_props(PSame1,PSame2,PSame),!,
-  C =  ac_db(TestID, IO, P1, PSame).
+  C =  ac_unit_db(TestID, IO, P1, PSame).
 
 merge_vals(A,B,C):-
   A =  ac_rules(TestID, IO, P1, PSame1),
   B =  ac_rules(TestID, IO, P2, PSame2),!,
-  P1=@=P2,
+  same_rhs_operation(P1,P2),
   merge_props(PSame1,PSame2,PSame),!,
   C =  ac_rules(TestID, IO, P1, PSame).
 
 merge_vals(A,B,C):-
   A =  ac_listing(TestID, IO, P1, PSame1),
   B =  ac_listing(TestID, IO, P2, PSame2),!,
-  P1=@=P2,
+  same_rhs_operation(P1,P2),
   merge_props(PSame1,PSame2,PSame),!,
   C =  ac_listing(TestID, IO, P1, PSame).
 
+/*
 merge_vals(Rule1,Rule2,NewRule):-
   r(Type1,LHS1,RHS1,S1,L1,R1, Ex1, Step1) = Rule1,
   r(Type2,LHS2,RHS2,S2,L2,R2, Ex2, Step2) = Rule2,
@@ -958,6 +983,7 @@ merge_vals(Rule1,Rule2,NewRule):-
               Step2,Type2,LHS2,RHS2,S2,L2,R2,    
               Step, Type, LHS, RHS, S ,L ,R  ),!,
   r(Type,LHS,RHS,S ,L ,R ,Ex1+Ex2,Step) = NewRule.
+*/
 
 merge_vals(rhs(A),rhs(B),rhs(C)):- !, same_rhs_operation(A,B),!,merge_vals(A,B,C).
 
@@ -1083,7 +1109,7 @@ into_lhs(R,P):- sub_compound(lhs(E),R),!, into_lhs(E,P).
 into_lhs(rule(_RuleType,_SortKey,In),Out):- nonvar(In),!,into_lhs(In,Out),!.
 into_lhs(obj(In),Out):- nonvar(In),!,into_lhs(In,Out),!.
 into_lhs(ac_unit(_Tst,_IO,_P,PConds),Out):- into_lhs(PConds,Out).
-into_lhs(ac_db(_Tst,_IO,_P,PConds),Out):- into_lhs(PConds,Out).
+into_lhs(ac_unit_db(_Tst,_IO,_P,PConds),Out):- into_lhs(PConds,Out).
 into_lhs(ac_listing(_Tst,_IO,_P,PConds),Out):- into_lhs(PConds,Out).
 into_lhs(ac_rules(_Tst,_IO,_P,PConds),Out):- into_lhs(PConds,Out).
 into_lhs(In,Out):- \+ is_list(In),!,Out=In.
@@ -1115,7 +1141,7 @@ o_unifiers(IO,IO).
 the_or_unifier(U,E,(U;E)).
 
 
-merge_props(S1,S2,S):- my_partition(assume_prop,S1,SP1,SO1),my_partition(assume_prop,S2,SP2,SO2),
+merge_props(S1,S2,S):- my_partition(is_debug_info,S1,SP1,SO1),my_partition(is_debug_info,S2,SP2,SO2),
   the_min_unifier0(SO1,SO2,SO),append_vsets([SO,SP1,SP2],S).
 
 the_min_unifier0(S1,S2,S):- the_min_unifier1(S1,S2,SA),
@@ -2367,21 +2393,15 @@ changing_props(TestID,X1,X2):-
 print_scene_change_rules(TestID):- ensure_test(TestID),
   print_scene_change_rules(print_scene_change_rules,TestID).
 
-get_scene_change_rules(TestID,P4db,Rules):-
- ensure_test(TestID),
-  findall_vset_R(ac_rules(TestID,IO,P,PSame),
-    call(P4db,TestID,IO,P,PSame),Rules).
-
 print_scene_change_rules(Why,TestID):- 
-   print_scene_change_rules(Why,ac_unit_db,TestID).
+   print_scene_change_rules3(Why,ac_listing,TestID).
 
-maybe_color_this(Why,Color):- sub_term(Color,Why),is_color(Color),!.
-
-print_scene_change_rules(Why,P4db,TestID):- 
+print_scene_change_rules3(Why,P4db,TestID):- 
  ensure_test(TestID),
   must_det_ll((
    get_scene_change_rules(TestID,P4db,Rules),
-   nb_setval(last_P3,Rules),
+   remove_debug_info(Rules,NoDebug),
+   nb_setval('$last_rules_printed_nodebug',NoDebug),
    if_t(maybe_color_this(Why,Color),banner_lines(Color,4)),
    %trans_rules_combined(TestID,_Ctx,CombinedR),reverse(CombinedR,Combined), pp_ilp(merged(Why)=Combined),
    /*
@@ -2391,18 +2411,27 @@ print_scene_change_rules(Why,P4db,TestID):-
    must_det_ll(( \+ (member(R,[2|Combined]), is_list(R)))).
    */
    if_t(maybe_color_this(Why,Color),banner_lines(Color,2)),
-   pp_ilp(rules(Why,P4db)=Rules),
+   dash_chars,pp_ilp(rules(Why,P4db)=Rules),
    if_t(maybe_color_this(Why,Color),banner_lines(Color,4)))).
 
-print_scene_change_rules_if_differnt(Why,P4db,TestID):-
-  nb_current(last_P3,Prev),
-  get_scene_change_rules(TestID,P4db,Rules),  
+print_scene_change_rules_if_different(Why,P4db,TestID):-
+  (nb_current('$last_rules_printed_nodebug',Prev);Prev=[]),!,
+  get_scene_change_rules(TestID,P4db,Rules),
+  remove_debug_info(Rules,NoDebug),
+  if_t(Prev =@= NoDebug,banner_lines(yellow,1)),
  ignore((
-  Prev \=@= Rules,
-   nb_setval(last_P3,Rules),
+   Prev \=@= NoDebug,
+   nb_setval('$last_rules_printed_nodebug',NoDebug),
    banner_lines(cyan,4),
    pp_ilp(updated(Why,P4db)=Rules),
    banner_lines(cyan,4))).
+
+maybe_color_this(Why,Color):- sub_term(Color,Why),is_color(Color),!.
+get_scene_change_rules(TestID,P4db,Rules):-
+ ensure_test(TestID),
+  findall_vset_R(ac_rules(TestID,IO,P,PSame),
+    call(P4db,TestID,IO,P,PSame),Rules).
+
 
 
 
@@ -2503,7 +2532,7 @@ compute_scene_change_pass3a(_,_).
 
 compute_scene_change_pass3b(TestID,P4,IO_-P):-
   findall_vset_R(PSame,ac_unit(TestID,IO_,P,PSame),SameS1),
-  my_partition(assume_prop,SameS1,Skip,SameS),
+  my_partition(is_debug_info,SameS1,Skip,SameS),
   call(P4,TestID,IO_,P,SameS,KeptS), KeptS\==[],!,
   if_t(SameS\=@=KeptS,
      (append(KeptS,Skip,Kept),
@@ -2513,7 +2542,7 @@ compute_scene_change_pass3b(_,_,_).
 compute_scene_change_pass3c(_,_):-!.
 compute_scene_change_pass3c(TestID,IO_-P):-
   ac_unit(TestID,IO_,P,PSame1),
-  my_partition(assume_prop,PSame1,Skip,PSame),
+  my_partition(is_debug_info,PSame1,Skip,PSame),
   findall(DSame,
      (ac_unit_db(TestID,IO_,DP,DSame), 
       same_rhs_property(DP,P),at_least_one_overlap(DSame,PSame)),
@@ -2523,7 +2552,7 @@ compute_scene_change_pass3c(TestID,IO_-P):-
       (intersection(DSame,Commons,_,Kept,_),
         ignore((Kept\==[],append(Kept,Skip,Save),update_accompany_changed_db(TestID,IO_,P,Save))))),
 
-  print_scene_change_rules_if_differnt(compute_scene_change_pass3c,ac_unit,TestID),
+  print_scene_change_rules_if_different(compute_scene_change_pass3c,ac_unit,TestID),
   !.
 compute_scene_change_pass3c(_,_).
 
@@ -2542,11 +2571,11 @@ set_of_changes(TestID,P1):-
   set_of_ps(TestID,Ps),
   %findall_vset_R(IO_-P,(ac_rules(TestID,IO_,P,_)), Ps),
   maplist(P1,Ps),
-  print_scene_change_rules(P1,ac_unit_db,TestID).
+  print_scene_change_rules_if_different(P1,ac_unit_db,TestID).
 
 into_rhs(P,P):- \+ compound(P),!.
 into_rhs(ac_unit(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
-into_rhs(ac_db(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
+into_rhs(ac_unit_db(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
 into_rhs(ac_rules(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
 into_rhs(ac_listing(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
 into_rhs(P,E):- sub_compound(rhs(E),P),!. %into_rhs(rhs(R),P):- !, into_rhs(R,P).

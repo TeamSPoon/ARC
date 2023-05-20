@@ -1558,7 +1558,7 @@ add_color([C1-P|L],C,[C1-P|XX]):- !, add_color(L,C,XX).
 add_color([P|L],C,[C-P|XX]):- !, add_color(L,C,XX).
 
 shape_rep(grav,I,X):- is_object(I),!, indv_props_list(I,L),(member(shape_rep(grav,X),L)->true; (member(iz(sid(ShapeID)),L),is_shape_id_for(X,ShapeID))).
-shape_rep(grav,G,X):- is_group(G),!,mapgroup(colorlesspoints,G,Points),append_sets(Points,X).
+shape_rep(Grav,G,X):- is_group(G),!,mapgroup(shape_rep(Grav),G,Points),append_sets(Points,X).
 % returns the objects decolorize localpoints
 shape_rep(grav,I,ShapePoints):- into_grid(I,Grid),grid_to_shape(Grid,_RotG,_SH,_SV,ShapePoints,_PenColors).
   %localpoints(I,Points), grid_to_shape(Points,X).
