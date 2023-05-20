@@ -204,7 +204,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
       print_ss(wqs(solve_via_scene_change(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution),
       banner_lines(red,10),
       force_report_count_plus(-1),!,
-      when_entire_suite(print_test(TestID),true),
+      %when_entire_suite(print_test(TestID),true),
       banner_lines(red,1),!,fail,
       %if_t((findall(_,ac_rules(_,_,_,_),L), L == []), (get_scene_change_rules(TestID,pass2_rule_new,Rules),pp_ilp(Rules))),banner_lines(red,5),
       %print_object_dependancy(TestID),

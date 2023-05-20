@@ -15,16 +15,17 @@ fail_ok(G):- catch_non_abort((G->true;(banner_lines(red,2),maybe_report_count(0)
 
 %
 
-maybe_report_count(PlusBonus):- get_time(Now), 
+maybe_report_count(Skew):- get_time(Now), 
  ((nb_current('$last_report_time',Was),number(Was))->true;Was=0),
-  maybe_report_count(Now,Was,PlusBonus),!.
+  maybe_report_count(Now,Was,Skew),!.
 %maybe_report_count(Now,Was):- \+ integer(Was),nb_setval('$last_report_time',Now),!.
-maybe_report_count(Now,Was,_PlusBonus):- Was+7 > Now,!.
-maybe_report_count(_Now,_Was,PlusBonus):- force_report_count(PlusBonus),!.
+maybe_report_count(Now,Was,_Skew):- Was+7 > Now,!.
+maybe_report_count(_Now,_Was,Skew):- force_report_count(Skew),!.
  
 force_report_count:- force_report_count(0).
-force_report_count(PlusBonus):- report_count_plus(progress,so_far,PlusBonus).
-force_report_count_plus(PlusBonus):- flag('$fac_p',W,W+PlusBonus), report_count_plus(progress,so_far,0).
+force_report_count(Skew):- report_count_plus(progress,so_far,Skew).
+
+force_report_count_plus(Change):- flag('$fac_p',W,W+Change), force_report_count.
 
 
 :- set_flag('$fac_t',0).
@@ -60,10 +61,10 @@ foreach_count(P,Q):-
     flag('$fac_t',_,W)).
 
 %report_count(P,Q):- report_count_plus(P,Q,0).
-report_count_plus(P,Q,PlusBonus):-
+report_count_plus(P,Q,Skew):-
  section_break,
  flag('$fac_t',ET,ET),flag('$fac_p',EP0,EP0),luser_getval(report_count_time,Was),
- EP is EP0+PlusBonus,
+ EP is EP0+Skew,
  get_time(Now),Time is Now - Was,
  report_count_info(P,Q,EP,ET,Time),!.
 
