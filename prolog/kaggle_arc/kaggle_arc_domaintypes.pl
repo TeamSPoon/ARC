@@ -461,6 +461,7 @@ data_typec(lst(vals([N|_]),_,_),Type):- nonvar(N),!,data_type(N,Type).
 data_typec(O,object):- is_object(O),!.
 data_typec(iz(O),iz(T)):- !, data_type(O,T).
 data_typec(diff(_->O),T):- nonvar(O),!, data_type(O,T).
+data_typec(O,is_prop1):- is_prop1(O),!.
 data_typec(O,dict(L)):- is_vm_map(O),get_kov(objs,O,Value),!,data_type(Value,L).
 data_typec(O,group(N)):- is_group(O),into_list(O,L),!,length(L,N).
 data_typec(Out,grid(H,V)):- is_grid(Out),!,grid_size(Out,H,V).

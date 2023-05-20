@@ -585,6 +585,8 @@ pp_hook_g1(O):-  attvar(O), !, is_colorish(O), data_type(O,DT), writeq('...'(DT)
 pp_hook_g1(S):-  term_is_ansi(S), !, write_nbsp, write_keeping_ansi_mb(S).
 %pp_hook_g1(S):-  term_contains_ansi(S), !, fail, write_nbsp, write_keeping_ansi_mb(S).
 pp_hook_g1(rhs(O)):- write_nbsp,nl,bold_print(print(r_h_s(O))),!.
+
+pp_hook_g1(iz(O)):- compound(O), O = info(_),underline_print(print(izz(O))),!.
 pp_hook_g1(O):-  is_grid(O), /* \+ (sub_term(E,O),compound(E),E='$VAR'(_)), */ pretty_grid(O).
 
 

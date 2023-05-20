@@ -1029,11 +1029,13 @@ obj_link_count(Obj,Functor,Count):-
 %is_in_subgroup(Grp,_,all).
 not_skip_ku(P):- \+ skip_ku(P).
 
+indv_eprops_list(Grid,Props):- is_grid(Grid),!,grid_props(Grid,Props).
 indv_eprops_list(Indv,List9):- is_prop1(Indv),!,List9=[Indv].
 indv_eprops_list(Indv,List9):- 
   indv_props_list(Indv,List0),
   ku_rewrite_props(List0,List9).
 
+flat_props(Grid,Props):- is_grid(Grid),!,grid_props(Grid,Props).
 flat_props(PropLists,OUTL):- is_list_of_prop_lists(PropLists),!,flatten(PropLists,OUTL).
 flat_props(Objs,EList):- \+ is_list(Objs),!,flat_props([Objs],EList).
 flat_props(Objs,EList):-

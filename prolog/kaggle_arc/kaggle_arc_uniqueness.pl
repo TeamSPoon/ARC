@@ -158,20 +158,24 @@ solve_via_scene_change(TestID):-
   print_test(TestID),
   force_clear_test(TestID),
   clear_scene_rules(TestID),
-  repress_some_output(scene_change_test_prep(TestID)),
+  repress_some_output(learn_solve_via_grid_change(TestID)),
   ExampleNum=tst+_)),
   forall(kaggle_arc(TestID,ExampleNum,_,_),
      solve_via_scene_change_rules(TestID,ExampleNum)).
 
 when_entire_suite(Goal,_Goal2):- get_pair_mode(entire_suite),!, call(Goal).
 when_entire_suite(_Goal,Goal2):- call(Goal2).
-repress_some_output(Goal):- when_entire_suite(with_pair_mode(whole_test,wots(_,Goal)),Goal).
+%repress_some_output(Goal):- when_entire_suite(with_pair_mode(whole_test,wots(_,Goal)),Goal).
+repress_some_output(Goal):- call(Goal).
 
-scene_change_test_prep(TestID):-
+learn_solve_via_grid_change(TestID):- 
+ must_det_ll((
+  detect_pair_hints(TestID),  
   save_test_hints_now(TestID),
   learn_grid_size(TestID),
-  ensure_propcounts(TestID),
-  time(compute_scene_change(TestID)).
+  not_warn_skip(ensure_propcounts(TestID)),  
+  clear_scene_rules(TestID),
+  time(compute_scene_change(TestID)))).
 
 solve_via_scene_change_rules(TestID,ExampleNum):-
  must_det_ll((
@@ -186,7 +190,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
   Objs = VM.objs,
   ensure_scene_change_rules(TestID),
   print_object_dependancy(TestID),
-  repress_some_output(print_scene_change_rules(solve_via_scene_change_rules,TestID)),
+  repress_some_output(print_scene_change_rules_if_different(solve_via_scene_change_rules,ac_listing,TestID)),
   print_ss(wqs(expected_answer(ExampleNum)),Objs,Expected),
   dash_chars)),!,
 
@@ -263,6 +267,8 @@ is_debug_info(Var):- \+ compound(Var),!,fail.
 is_debug_info(info(_)).
 is_debug_info(iz(P)):-!,is_debug_info(P).
 
+%not_assumed(P):- is_unbound_prop(P),!.
+%not_assumed(P):- \+ assume_prop(P).
 
 assume_prop1(P):- dont_notice(P).
 assume_prop2(giz(_)).
@@ -1086,15 +1092,11 @@ pass2_rule_R(TestID,Rule):-
 has_a_value(P):- make_unifiable_u(P,U),P\=@=U.
 
 how_are_differnt(O1,O2,Set):-
-  findall(Type=Same,prop_pairs(O1,O2,Type,Same,_P),List),
+  findall(Type=Same,prop_pairs2(O1,O2,Type,Same,_P),List),
   vsr_set(List,Set).
 
-prop_pairs(O1,O2,Type,Same,P):- 
-  flat_props(O1,F1),flat_props(O2,F2),!,
-  member(P2,F2),make_unifiable_u(P2,P1),
- (once((member(P1,F1),(other_val(P2,P1)->Same=different;Same=same)))-> min_unifier(P2,P1,P); (Same=adding,P=P2)),
- prop_type(P2,Type).
-   
+prop_pairs(O1,O2,Type,Same,P):- prop_pairs2(O1,O2,Type,Same,P).
+
 prop_pairs2(O1,O2,Type,Change,P):- 
   flat_props(O1,F1),flat_props(O2,F2),!,
   member(P2,F2),make_unifiable_u(P2,P1),
@@ -1167,12 +1169,6 @@ show_code_diff(Info,[PA],PB):- !, show_code_diff(Info,PA,PB).
 show_code_diff(Info,[],_).
 show_code_diff(Info,[P|A],PB):- !, show_code_diff(Info,P,PB),show_code_diff(Info,A,PB).
 */
-show_code_diff(Info,In,Out):-
- must_det_ll((
-  into_list(In,InL),into_list(Out,OutL),
-  trans_rule(Info,InL,OutL,TransRule),
-  pp_ilp(TransRule),
-  show_cp_dff_rem_keep_add(TransRule))).
 
 propset_getter(is_group).
 propset_getter(is_object).
@@ -1180,18 +1176,27 @@ propset_getter(is_obj_props).
 two_prop_sets(TransRule,E1,E2):-
  sub_term(E1,TransRule),propset_getter(P1),call(P1,E1),subst(TransRule,E1,gone,RuleRest),
  sub_term(E2, RuleRest),propset_getter(Q1),call(Q1,E2).
+show_code_diff(Info,In,Out):-
+  into_list(In,InL),into_list(Out,OutL),
+  trans_rule(Info,InL,OutL,TransRule),!,
+  pp_ilp(TransRule).
+show_code_diff(_Info,In,Out):- show_cp_dff_rem_keep_add(In,Out),!.
 
 show_cp_dff_rem_keep_add([]):-!.
 show_cp_dff_rem_keep_add(TransRule):-   %flat_props([B],PB), intersection(Same,PB,S,SS,_), append(S,SS,SSame),
   two_prop_sets(TransRule,E1,E2),  
+  show_cp_dff_rem_keep_add(E1,E2).
+
+show_cp_dff_rem_keep_add(E1,E2):-
   dash_chars,
-  if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
-  flat_props(E1,FP1),flat_props(E2,FP2),
-  intersection(FP1,FP2,Same,InFlatP,OutPFlat),
-  length(InFlatP,LenA), pp_ilp(removed(LenA)=InFlatP),
-   length(Same,SL),      pp_ilp(sames(SL)=Same),
-  length(OutPFlat,LenB),pp_ilp(added(LenB)=OutPFlat),
+  if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),    
+  noteable_propdiffs2(E1,E2,Same,InFlatP,OutPFlat),
+  pp_ilp(sames=Same),
+  pp_ilp(removed=InFlatP),
+  pp_ilp(added=OutPFlat),
   dash_chars.
+
+
 
 
 pp_ilp(Grp):-pp_ilp(1,Grp),!.
@@ -1209,13 +1214,11 @@ pp_ilp(D,X=Y):-
    prefix_spaces(D+2,pp_ilp(Y)))).
 pp_ilp(D,call(T)):- !, prefix_spaces(D,call(T)).
 % pp_ilp(D,Grp):- is_mapping(Grp), prefix_spaces(D,print(Grp)),!.
+
 pp_ilp(D,Grp):- is_mapping(Grp), !,
  must_det_ll((
   get_mapping_info(Grp,Info,In,Out),
-  prefix_spaces(D,(dash_chars,format('<grp  ~w >\n',[Info]))),
-    print_io_terms(D+7,In,Out),
-    %prefix_spaces(D+8,show_code_diff(Info,In,Out)),
-  prefix_spaces(D,(write('</grp>\n'),dash_chars)))).
+  pp_grp(D,Info,In,Out))).
 
 pp_ilp(D,Grp):- compound(Grp), 
   (In-Out = Grp), Info=lr,!,
@@ -1227,7 +1230,7 @@ pp_ilp(D,Grp):- compound(Grp),
   prefix_spaces(D,(write('</grp-hyphen>\n'),dash_chars)))).
 
 
-pp_ilp(D,apply(Rule,Obj)):- !, pp_ilp(D,grp(Rule,[],Obj)).
+pp_ilp(D,apply(Rule,Obj)):- !, pp_ilp(D,grp(apply(Rule),[],Obj)).
 
 
 pp_ilp(D,A+B):-  !, prefix_spaces(D,(pp_ilp(A),nl,pp_ilp(B))).
@@ -1235,16 +1238,21 @@ pp_ilp(D,Grid):- is_grid(Grid),!,prefix_spaces(D,print_grid(Grid)),!,nl.
 pp_ilp(D,Grid):- is_object(Grid),!,prefix_spaces(D,print_grid([Grid])),!,nl.
 
 pp_ilp(D,(H:-Conj)):- 
-  prefix_spaces(D,(print((H)),
-     prefix_spaces(D+15,(portray_clause((:-Conj)))))),!.
+  prefix_spaces(D,(print((H)),nl,
+     prefix_spaces(D+15,
+      (portray_clause(current_output, 
+       (:- Conj),
+       [portray_goal(portray_ilp)]))))),!.
 
 pp_ilp(D,ac_rules(_TestID,IO,P,PSame)):- !,
+ my_partition(not_debug_info,PSame,NoDebug,Debug),
  must_det_ll((
   %once((nonvar(IO),io_to_cntx(IO,CTX));IO=CTX),
-  once(list_to_conjuncts(PSame,Conj);PSame=Conj),
-  pp_ilp(D,((IO:P):- Conj)))).
+  once(list_to_conjuncts(NoDebug,Conj);NoDebug=Conj),
+  pp_ilp(D,(((IO:P):- Conj))),
+  pp_ilp_cmt(D,Debug))).
 
-  
+
 
 %pp_ilp(D,(H:-Conj)):- prefix_spaces(D,pp_ilp(H:-Conj)),!.
 
@@ -1271,14 +1279,40 @@ pp_ilp(D,List):- is_list(List), !,
 %pp_ilp(D,T):- into_solid_grid_strings(T,G),!, prefix_spaces(D,print(G)),!.
 pp_ilp(D,T):- prefix_spaces(D,pp(T)),!.
 
+%pp_ilp_cmt(D,Debug):- is_list(Debug),!,maplist(pp_ilp_cmt(D),Debug).
+%pp_ilp_cmt(D,Debug):- prefix_spaces(D+1,(color_print(green,call((write('% % '),write(Debug)))))).
+pp_ilp_cmt(D,Debug):- prefix_spaces(D+1,(color_print(green,call(ppt(Debug))))).
 
+%portray_ilp(T,_Options):- pp_ilp(T),!.
+portray_ilp(O,_Options):- compound(O), O = info(_),underline_print(print(izz(O))),!.
+portray_ilp(T,_Options):- portray(T),!.
+portray_ilp(T,_Options):- portray_clause(T),!.
+portray_ilp(T,Options):- write_term(T,Options).
+
+ 
 is_grid_or_group(Grid):- is_grid(Grid),!.
 is_grid_or_group(Grid):- is_group(Grid),!.
+
+pp_grp(D,Info,In,Out):- 
+  prefix_spaces(D,(dash_chars,format('<grp  ~w >\n',[Info]))),
+  print_io_terms(D+7,In,Out),
+  show_cp_dff_rem_keep_add(In,Out),
+  show_code_diff(Info,In,Out),
+  %prefix_spaces(D+8,show_code_diff(Info,In,Out)),
+  prefix_spaces(D,(write('</grp>\n'),dash_chars)).
+
+type_change(ITerm,In):- first_type(ITerm,T1), first_type(In,T2),!, T1\=@=T2.
+  
+first_type(In,T2):- is_grid(In),!,data_type(In,T2).
+first_type(In,T2):- is_object(In),!,data_type(In,T2).
+first_type(In,T2):- data_type(In,DT),why_last(DT,T2).
 
 print_io_terms(D,In,Out):-
   once(into_solid_grid_strings_1(In,ITerm)),
   once(into_solid_grid_strings_1(Out,OTerm)),
-  once(ITerm\=@=In;Out\=@=OTerm),!, print_io_terms(D,ITerm,OTerm).
+  once(ITerm\=@=In;Out\=@=OTerm),!, print_io_terms(D,ITerm,OTerm),
+  if_t( (type_change(ITerm,In);type_change(ITerm,In)),
+    show_cp_dff_rem_keep_add(ITerm,OTerm)).
 /*
 print_io_terms(D,ITerm,OTerm):-  
     is_grid_or_group(ITerm),is_grid_or_group(OTerm),
@@ -1292,7 +1326,8 @@ print_io_terms(D,loc2D(X,Y,IITerm),loc2D(OX,OY,OOTerm)):-
 print_io_terms(D,ITerm,OTerm):-
     prefix_spaces(D,pp_ilp(ITerm)),
     prefix_spaces(D+10,dash_chars),
-    prefix_spaces(D,pp_ilp(OTerm)),!.
+    prefix_spaces(D,pp_ilp(OTerm)).
+    
 
 print_io_terms(D,ITerm,OTerm):- prefix_spaces(D,print_ss("",call(pp_ilp(ITerm)),call(pp_ilp(OTerm)))),!.
 
@@ -2038,19 +2073,6 @@ length_criteria(List,P):- compound(P), P=..[F,L], C=..[F,I,L],length(List,I),!,c
 length_criteria(List,P):- compound(P), length(List,I), !, call(call,P,I).
 length_criteria(List,N):- length(List,N).
 
-tesT_compare_objects:- compare_objects([
-    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),
-      vis2D(1,1),rot2D(sameR),loc2D(4,9),changes([]),iz(type(dots)),iz(type(dot)),iz(filltype(solid)),iz(jagged(true)),center2G(4,9),% obj_to_oid(t(af902bf9)>(tst+0)*in,37),globalpoints([yellow-point_04_09]),
-      grid_size(10,10),iz(important)]),
-    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(4,6),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(4,6),obj_to_oid(t(af902bf9)>(tst+0)*in,39),globalpoints([yellow-point_04_06]),grid_size(10,10),iz(important)]),
-    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(1,6),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(1,6),obj_to_oid(t(af902bf9)>(tst+0)*in,40),globalpoints([yellow-point_01_06]),grid_size(10,10),iz(important)]),
-    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(10,5),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(10,5),obj_to_oid(t(af902bf9)>(tst+0)*in,41),globalpoints([yellow-point_10_05]),grid_size(10,10),iz(important)]),
-    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(6,5),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(6,5),obj_to_oid(t(af902bf9)>(tst+0)*in,42),globalpoints([yellow-point_06_05]),grid_size(10,10),iz(important)]),
-    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(10,1),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(10,1),obj_to_oid(t(af902bf9)>(tst+0)*in,43),globalpoints([yellow-point_10_01]),grid_size(10,10),iz(important)]),
-    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(6,1),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(6,1),obj_to_oid(t(af902bf9)>(tst+0)*in,44),globalpoints([yellow-point_06_01]),grid_size(10,10),iz(important)])],
-    OUTPUT),
-  print(OUTPUT).
-
 is_fti_step(most_unique).
 most_unique(symmetry_type,VM):-
   List = VM.objs,
@@ -2233,6 +2255,7 @@ noteable_propdiffs2(E1,E2,Same,InFlatP,OutPFlat):-
   my_exclude(ignore_prop_when(removing),InFlatP0,InFlatP),
   my_exclude(ignore_prop_when(adding),OutPFlat0,OutPFlat),
   my_exclude(ignore_prop_when(sames),Same0,Same),!.
+
 noteable_propdiffs(PA,PB,Same,InFlatP,OutPFlat):- 
   remove_o_giz(PA,PA1),remove_o_giz(PB,PB1),
   %=(PA,PA1),=(PB,PB1),
@@ -2418,13 +2441,13 @@ print_scene_change_rules_if_different(Why,P4db,TestID):-
   (nb_current('$last_rules_printed_nodebug',Prev);Prev=[]),!,
   get_scene_change_rules(TestID,P4db,Rules),
   remove_debug_info(Rules,NoDebug),
-  if_t(Prev =@= NoDebug,banner_lines(yellow,1)),
+  if_t(Prev =@= NoDebug,dash_chars),
  ignore((
    Prev \=@= NoDebug,
    nb_setval('$last_rules_printed_nodebug',NoDebug),
-   banner_lines(cyan,4),
+   nop(banner_lines(cyan,4)),
    pp_ilp(updated(Why,P4db)=Rules),
-   banner_lines(cyan,4))).
+   nop(banner_lines(cyan,4)))).
 
 maybe_color_this(Why,Color):- sub_term(Color,Why),is_color(Color),!.
 get_scene_change_rules(TestID,P4db,Rules):-
@@ -2474,10 +2497,6 @@ counts_change(TestID,ExampleNum,Out,P,N1,N2):- in_out_atoms(In,Out),
 
 
 
-learn_solve_via_grid_change(TestID):- 
- must_det_ll((
-  clear_scene_rules(TestID),
-ensure_scene_change_rules(TestID))).
 
 ensure_scene_change_rules(TestID):-
  ensure_test(TestID),
@@ -2489,10 +2508,6 @@ compute_scene_change(TestID):-
  ensure_test(TestID),
  with_pair_mode(whole_test,  
  must_det_ll((
-  detect_pair_hints(TestID),  
-  save_test_hints_now(TestID),
-  learn_grid_size(TestID),
-  not_warn_skip(ensure_propcounts(TestID)),  
   clear_scene_rules(TestID),  
   compute_scene_change_pass1(TestID),  
   compute_scene_change_pass2(TestID),
@@ -2569,9 +2584,15 @@ set_of_ps(TestID,Ps):-
 
 set_of_changes(TestID,P1):-
   set_of_ps(TestID,Ps),
+  why_last(P1,Why),
   %findall_vset_R(IO_-P,(ac_rules(TestID,IO_,P,_)), Ps),
   maplist(P1,Ps),
-  print_scene_change_rules_if_different(P1,ac_unit_db,TestID).
+  print_scene_change_rules_if_different(Why,ac_unit_db,TestID).
+
+why_last(A,E):- \+ compound(A),!, (atom(A);string(A)),A=E.
+why_last([H|T],E):- ((T\==[],why_last(T,E));why_last(H,E)),!.
+why_last(C,E):- compound_name_arguments(C,F,A),why_last([F|A],E),!.
+why_last(E,E).
 
 into_rhs(P,P):- \+ compound(P),!.
 into_rhs(ac_unit(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
@@ -2688,3 +2709,18 @@ solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,ObjsO):-
     findall(PreObjs,arc_cache:map_pairs(TestID,_,trn+N,info(0,_,in_out,_,_,trn+N),PreObjs,Out),PreObjs),
   homogenize(OutL,Sames,Diffs),
 */
+
+
+tesT_compare_objects:- compare_objects([
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),
+      vis2D(1,1),rot2D(sameR),loc2D(4,9),changes([]),iz(type(dots)),iz(type(dot)),iz(filltype(solid)),iz(jagged(true)),center2G(4,9),% obj_to_oid(t(af902bf9)>(tst+0)*in,37),globalpoints([yellow-point_04_09]),
+      grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(4,6),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(4,6),obj_to_oid(t(af902bf9)>(tst+0)*in,39),globalpoints([yellow-point_04_06]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(1,6),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(1,6),obj_to_oid(t(af902bf9)>(tst+0)*in,40),globalpoints([yellow-point_01_06]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(10,5),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(10,5),obj_to_oid(t(af902bf9)>(tst+0)*in,41),globalpoints([yellow-point_10_05]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(6,5),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(6,5),obj_to_oid(t(af902bf9)>(tst+0)*in,42),globalpoints([yellow-point_06_05]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(10,1),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(10,1),obj_to_oid(t(af902bf9)>(tst+0)*in,43),globalpoints([yellow-point_10_01]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(6,1),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(6,1),obj_to_oid(t(af902bf9)>(tst+0)*in,44),globalpoints([yellow-point_06_01]),grid_size(10,10),iz(important)])],
+    OUTPUT),
+  print(OUTPUT).
+

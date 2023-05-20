@@ -9,17 +9,14 @@
 rhs_ground(G):- ground(G),!.
 rhs_ground(G):- nop(writeln(G)),!.
 
-not_assumed(P):- is_unbound_prop(P),!.
-not_assumed(P):- \+ assume_prop(P).
-
 ac_rules(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
 ac_rules(TestID,Ctx,P,PSame):- 
   ac_unit_db(TestID,Ctx,P,Same),
-  include(not_assumed,Same,PSame), 
+  include(not_debug_info,Same,PSame), 
   %Same=PSame,
   PSame\==[].
 
-not_debug_info(P):- not_assumed(P),!.
+not_debug_info(P):- \+ is_debug_info(P),!.
 
 remove_debug_info(List,NoDebug):- \+ compound(List),!,NoDebug=List.
 remove_debug_info(List,NoDebug):- is_list(List), is_obj_props(List),!,include(not_debug_info,List,NoDebug).
@@ -27,7 +24,7 @@ remove_debug_info(List,NoDebug):- is_list(List), !, maplist(remove_debug_info,Li
 remove_debug_info(List,NoDebug):- compound_name_arguments(List,F,AA),
   maplist(remove_debug_info,AA,CC),!, compound_name_arguments(NoDebug,F,CC).
 
-ac_unit_db(TestID,Ctx,P,Same):- ac_listing(TestID,Ctx,P,Same),include(not_assumed,Same,PSame), PSame\==[].
+ac_unit_db(TestID,Ctx,P,Same):- ac_listing(TestID,Ctx,P,Same),include(not_debug_info,Same,PSame), PSame\==[].
 
 ac_listing(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
 %ac_listing(TestID,Ctx,P->ac_unit_db,PSame):- ac_unit_db(TestID,Ctx,P,PSame).
@@ -47,7 +44,7 @@ ac_info(TestID,rules,P->Ctx->combined,LHS):- fail,
 
 show_time_of_failure(_TestID):- !.
 show_time_of_failure(TestID):- 
-    print_scene_change_rules(show_time_of_failure,
+    print_scene_change_rules3(show_time_of_failure,
        ac_info,TestID).
 
 rule_to_pcp(R,P,LHS):- 

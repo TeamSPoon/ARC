@@ -85,7 +85,7 @@ menu_cmd1(i,'o','                  or (o)bjects found in the input/outputs',    
 menu_cmd1(_,'u','                  or (u)se scene change solver between objects in the input/outputs',   (cls_z_make,!,ndividuator,ignore(solve_via_scene_change))).
 menu_cmd1(_,'y','                  or Wh(y) between objects in the input/outputs',   ((cls_z_make,!,why_io))).
 menu_cmd1(_,'a','                  or (a)ll between objects',   (cls_z_make,!,ndividuator)).
-menu_cmd1(_,'j','                  or (j)unctions between objects',   (cls_z_make,!,show_object_dependancy,print_scene_change_rules)).
+menu_cmd1(_,'j','                  or (j)unctions between objects',   (cls_z_make,!,show_object_dependancy)).
 menu_cmd1(_,'k','                  or (k)ill/clear all test data.',(update_changes,clear_test)).
 menu_cmd1(_,'B','                  or (B)oxes test.',(update_changes,pbox_indivs)).
 menu_cmd1(_,'R','                  or (R)epairs test.',(update_changes,repair_symmetry)).
@@ -611,8 +611,8 @@ show_task_pairs(TestID):- ensure_test(TestID), set_flag(indiv,0),
 
 why_io:- 
  maplist(ignore,[
-  ndividuator,  
-  show_object_dependancy,
+  nop(ndividuator),  
+  %show_object_dependancy,
   ensure_scene_change_rules,
   print_scene_change_rules]).
 
