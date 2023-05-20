@@ -202,7 +202,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
   count_difs(ExpectedOut,OurSolution,Errors))),
  !,
   (Errors == 0 ->  
-   (when_entire_suite(banner_lines(cyan,1),banner_lines(green,4)),
+   (nop((when_entire_suite(banner_lines(cyan,1),banner_lines(green,4)))),
     print_ss(wqs(solve_via_scene_change(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution),
     print_scene_change_rules(rules_at_time_of_success(green),TestID),force_report_count(1))
     ;(banner_lines(red,10),!,
@@ -1175,11 +1175,11 @@ pp_ilp(_,_):- format('~N'),nl,fail.
 pp_ilp(D,T):-  is_ftVar(T),!,prefix_spaces(D,print(T)),!.
 pp_ilp(D,X=Y):- is_list(Y),length(Y,L),
   must_det_ll((
-   prefix_spaces(D, (print(X),write('('),write(L),write(') = '))),nl,
+   prefix_spaces(D, (print(X),write('('),write(L),write(') = '))),
    prefix_spaces(D+2,pp_ilp(Y)))).
 pp_ilp(D,X=Y):- 
   must_det_ll((
-   prefix_spaces(D, (print(X),write(' = '))),nl,
+   prefix_spaces(D, (print(X),write(' = '))),
    prefix_spaces(D+2,pp_ilp(Y)))).
 pp_ilp(D,call(T)):- !, prefix_spaces(D,call(T)).
 % pp_ilp(D,Grp):- is_mapping(Grp), prefix_spaces(D,print(Grp)),!.
@@ -1431,7 +1431,7 @@ fg_to_bgc(FG,FG):- \+ compound(FG),!.
 
 into_delete(_TestID,_ExampleNum,_IsSwapped,_Step,_Ctx,_Prev,_Info,Obj,Obj):- is_mapping(Obj),!.
 into_delete(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,_Info,Obj,Pairs):- map_pred(fg_to_bgc, Obj,NewObj),
-  make_pairs(TestID,ExampleNum,Ctx,IsSwapped,Step,in_out,Prev,Obj,NewObj,Pairs),
+  make_pairs(TestID,ExampleNum,delete,IsSwapped,Step,Ctx,Prev,Obj,NewObj,Pairs),
   !. %edit_object(pen([cc(black,1)]))  % grp(Info,[Obj],[])).
 
 is_mapping_list([O|GrpL]):- is_mapping(O),is_list(GrpL),maplist(is_mapping,GrpL).
@@ -1509,7 +1509,7 @@ pairs_lr(LHS,RHS,PairsLR):- maplist(best_match_rl(RHS),LHS,PairsLR).
 /*
 In Prolog: I have two groups of objects where each object is denoted by `obj([center2D(2,6),mass(8),occurs_in_links(contains,1),pen([cc(blue,1)]),shape([square])])`
 Each object looks at the other group of objects and keeps what its most simular to.. whenever an object from each group picks each other it forms a new pair .. remove those objects and keep going
-there is no more objecs on one side any previous matches get added back and a new set of pairs .. this goes on until there is no opbjects remaining on either side.
+there is no more objecs on one side any previous matches get adding back and a new set of pairs .. this goes on until there is no opbjects remaining on either side.
 sometimes if there are an exact dividable number of objects on one side from the other try permutations of groups from the larger side
 */
 
@@ -1560,6 +1560,10 @@ append_LR(Mappings,RestLR):-
 
 sometimes_when_lost(Goal):-!,fail,call(Goal).
 :- discontiguous calc_o_d_recursively/10. 
+
+calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):-
+  maybe_remove_bg(RHSObjs,RHSObjs1), \=@=(RHSObjs,RHSObjs1),!,
+  must_det_ll((calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs1,RestLR))).
 
 
 calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- fail,
@@ -1678,6 +1682,10 @@ calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObj
   append_LR(Prev,Pairs,NewPrev),
   incr_step(Step,IncrStep),
   calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,LHSRest,RHSRest,RestLR))).
+
+%calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- LHSObjs==[],!,
+%  must_det_ll(calc_o_d_recursively_lhs_z(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR)).
+
 
 calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,[Pairs|RestLR]):-
  must_det_ll((
@@ -1814,10 +1822,12 @@ make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,_Prev,LHS,RHS,GRP):-
   must_det_ll((
  listify(LHS,LHSL),maplist(obj_in_or_out,LHSL,LCtx),maplist(cto_aa,LCtx,LCtxA),atomic_list_concat(LCtxA,'_',LP),
  listify(RHS,RHSL),maplist(obj_in_or_out,RHSL,RCtx),maplist(cto_aa,[Type,LP|RCtx],AA),atomic_list_concat(AA,'_',TypeO))),
+   (Type==delete -> true ; (TypeO\==in_out_out_out, TypeO\=in_out_in_in)),
   
   %into_list(LHS,LLHS),
   %append_LR(Prev,LHS,PLHS),
-  GRP = grp(Info,LHS,RHS).
+  GRP = grp(Info,LHS,RHS),
+  once(pp_ilp(make_pairs=GRP)).
 
 
 
