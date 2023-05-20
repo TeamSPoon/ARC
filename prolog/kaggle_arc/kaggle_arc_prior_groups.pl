@@ -1534,14 +1534,12 @@ redundant_prop(_,nth_fg_color(N1,_)):- N1==1.
 redundant_prop(Props,unique_colors([FG])):- sub_var(pen([cc(FG,1)]),Props),!.
 redundant_prop(Props,cc(FG,_)):- is_real_fg_color(FG),sub_var(pen([cc(FG,1)]),Props),!.
 redundant_prop(_Props,pg(_, iz(_), rankLS, Var)):- var(Var),!.
-%redundant_prop(_Props,pg(_, iz(sizeGX(_)), rank1,_)).
 redundant_prop(Props,center2D(_,_)):- sub_compound(loc2D(_,_),Props).
 %redundant_prop(Props,center2D(X,Y)):- sub_var(center2G(X,Y),Props).
 %redundant_prop(Props,center2G(X,Y)):- sub_var(center2D(X,Y),Props).
 some_pgs_and_props(_,[]):-!,fail.
 some_pgs_and_props(_,pg(_,Name,simulars,_)):- !, use_simulars(Name),!.
 some_pgs_and_props(_,pg(_,Name,rank1,_)):- !, use_rank1(Name),!.
-some_pgs_and_props(_,pg(_, iz(_), rank1,_)):-!,fail.
 some_pgs_and_props(PropList,Name):- \+ redundant_prop(PropList,Name),!.
 
 
