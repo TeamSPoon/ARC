@@ -675,7 +675,7 @@ learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
     %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
   TM = _{rhs:RHSObjsOrdered, lhs:LHSObjsOrdered},
   calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,[],LHSObjsOrdered,RHSObjsOrdered,Groups),
-  pp_ilp(groups=Groups),
+  %pp_ilp(groups=Groups),
   assert_map_pairs(TestID,ExampleNum,Ctx,Groups))).
 
 normalize_objects_for_dependancy(_TestID,_ExampleNum,RHSObjs,LHSObjs,RHSObjsOrdered,LHSObjsOrdered):-
@@ -1207,7 +1207,7 @@ pp_ilp(D,T):-  is_ftVar(T),!,prefix_spaces(D,print(T)),!.
 pp_ilp(D,X=Y):- is_list(Y),length(Y,L),
   must_det_ll((
    prefix_spaces(D, (print(X),write('('),write(L),write(') = '))),
-   prefix_spaces(D+2,pp_ilp(Y)))).
+   (L==0->write(' ');prefix_spaces(D+2,pp_ilp(Y))))).
 pp_ilp(D,X=Y):- 
   must_det_ll((
    prefix_spaces(D, (print(X),write(' = '))),
