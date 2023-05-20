@@ -23,8 +23,10 @@ maybe_report_count(Now,Was,_PlusBonus):- Was+7 > Now,!.
 maybe_report_count(_Now,_Was,PlusBonus):- force_report_count(PlusBonus),!.
  
 force_report_count:- force_report_count(0).
-force_report_count(PlusBonus):-force_report_count_plus(PlusBonus).
-force_report_count_plus(PlusBonus):- report_count_plus(progress,so_far,PlusBonus).
+force_report_count(PlusBonus):- report_count_plus(progress,so_far,PlusBonus).
+force_report_count_plus(PlusBonus):- flag('$fac_p',W,W+PlusBonus), report_count_plus(progress,so_far,0).
+
+
 :- set_flag('$fac_t',0).
 :- set_flag('$fac_p',0).
 

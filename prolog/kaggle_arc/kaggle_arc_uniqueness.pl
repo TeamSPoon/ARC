@@ -146,25 +146,29 @@ io_to_cntx1(X,X).
 
 solve_via_scene_change(TestID):-  
  must_det_ll((
-  ensure_test(TestID), %make,
-  cls_z,
-  force_clear_test,
-  %detect_pair_hints(TestID),
-  time(learn_grid_size(TestID)),
+  force_clear_test(TestID),
   clear_scene_rules(TestID),
-  ensure_propcounts(TestID),
-  save_test_hints_now(TestID),
-  ExampleNum=tst+_,
+  print_test(TestID),
+  repress_some_output(scene_change_test_prep(TestID)),
+  ExampleNum=tst+_)),
   forall(kaggle_arc(TestID,ExampleNum,_,_),
-     ignore(time(solve_via_scene_change_rules(TestID,ExampleNum)))), 
- !)).
+     solve_via_scene_change_rules(TestID,ExampleNum)).
+
+when_entire_suite(Goal,_Goal2):- get_pair_mode(entire_suite),!, call(Goal).
+when_entire_suite(_Goal,Goal2):- call(Goal2).
+repress_some_output(Goal):- when_entire_suite(with_pair_mode(whole_test,wots(_,Goal)),Goal).
+
+scene_change_test_prep(TestID):-
+  save_test_hints_now(TestID),
+  learn_grid_size(TestID),
+  ensure_propcounts(TestID),
+  time(compute_scene_change(TestID)).
 
 solve_via_scene_change_rules(TestID,ExampleNum):-
  must_det_ll((
- repress_some_output(ensure_scene_change_rules(TestID)),
+  repress_some_output((ensure_scene_change_rules(TestID))),
   kaggle_arc(TestID,ExampleNum,In,Expected),
-  duplicate_term(In,InOrig),
-  banner_lines(green,4),
+  duplicate_term(In,InOrig),  
   % predict_grid_size_now(TestID,In,PX,PY),
   obj_group5(TestID,ExampleNum,in,ROptions,TempObjs),TempObjs\==[],
   grid_to_tid(In,TID),
@@ -172,12 +176,12 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
   individuate(VM),
   Objs = VM.objs,
   ensure_scene_change_rules(TestID),
-  repress_some_output(print_object_dependancy(TestID)),
-  print_scene_change_rules(solve_via_scene_change_rules,TestID),
+  print_object_dependancy(TestID),
+  repress_some_output(print_scene_change_rules(solve_via_scene_change_rules,TestID)),
   print_ss(wqs(expected_answer(ExampleNum)),Objs,Expected),
   dash_chars)),!,
 
-  once(enter_solve_obj(VM,TestID,ExampleNum,ROptions,Objs,ObjsO)),
+ repress_some_output( once(enter_solve_obj(VM,TestID,ExampleNum,ROptions,Objs,ObjsO))),
 
  must_det_ll((
   dash_chars,
@@ -187,21 +191,26 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
   maybe_resize_our_solution(TestID,In,OurSolution1,OurSolution),
   into_solid_grid(Expected,ExpectedOut),
   count_difs(ExpectedOut,OurSolution,Errors))),
+ !,
   (Errors == 0 ->  
-   (banner_lines(green,4),
+   (when_entire_suite(banner_lines(cyan,1),banner_lines(green,4)),
     print_ss(wqs(solve_via_scene_change(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution),
-    print_scene_change_rules(rules_at_time_of_success,TestID),
-    banner_lines(green,4))
+    print_scene_change_rules(rules_at_time_of_success(green),TestID),force_report_count(1))
     ;(banner_lines(red,10),!,
-      show_time_of_failure(TestID),
+      %show_time_of_failure(TestID),
       banner_lines(red,10),
-      print_scene_change_rules(rules_at_time_of_failure,TestID),
+      print_scene_change_rules(rules_at_time_of_failure(red),TestID),
       print_grid(in,InOrig),
       print_ss(wqs(solve_via_scene_change(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution),
-      banner_lines(red,1),
+      banner_lines(red,10),
+      force_report_count_plus(-1),!,
+      when_entire_suite(print_test(TestID),true),
+      banner_lines(red,1),!,fail,
       %if_t((findall(_,ac_rules(_,_,_,_),L), L == []), (get_scene_change_rules(TestID,pass2_rule_new,Rules),pp_ilp(Rules))),banner_lines(red,5),
       %print_object_dependancy(TestID),
-      !,fail)).
+      % only really fail for tests
+      (ExampleNum == tst+_) -> (!,fail); true)).
+      
 
 resize_our_solution(PX,PY,OurSolution1,OurSolution):-
   once(ground(PX+PY)
@@ -2286,7 +2295,8 @@ changing_props(TestID,X1,X2):-
 
 
 
-%print_scene_change_rules(TestID):- ensure_test(TestID),
+
+ %print_scene_change_rules(TestID):- ensure_test(TestID),
 %  print_scene_change_rules(print_scene_change_rules,TestID).
 
 get_scene_change_rules(TestID,P4db,Rules):-
@@ -2378,14 +2388,10 @@ compute_scene_change(TestID):-
  ensure_test(TestID),
  with_pair_mode(whole_test,  
  must_det_ll((
-  clear_scene_rules(TestID),
-  banner_lines(orange,4),
+  clear_scene_rules(TestID),  
   compute_scene_change_pass1(TestID),  
-  banner_lines(orange,4),
   compute_scene_change_pass2(TestID),
-  banner_lines(yellow,4),  
   compute_scene_change_pass3(TestID),
-  banner_lines(blue,4),
   compute_scene_change_pass4(TestID)))),!.
 
 
