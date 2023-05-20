@@ -66,6 +66,7 @@ dont_deduce(P):- \+ compound(P),!,fail.
 dont_deduce(P):- sub_term(G,P),compound(G),is_grid(G),!.
 dont_deduce(P):- sub_term(G,P),compound(G),is_object(G),!.
 dont_deduce(grid(_)).
+%dont_deduce(iz(_)).
 dont_deduce(iz(_)).
 
 %dont_deduce(P):- compound(P),compound_name_arguments(P,_,[X]),number(X).
@@ -87,6 +88,7 @@ do_deduce(pen(_)).
 do_deduce(iz(sid(_))).
 do_deduce(iz(X)):- !,do_deduce(X),!.
 do_deduce(P):- compound(P),compound_name_arguments(P,_,[X,Y]),number(X),number(Y).
+%do_deduce(P):- compound(P),compound_name_arguments(P,_,[X,Y]),comparable_value(X),comparable_value(Y).
 do_deduce(rotSize2D(grav,_,_)).
 do_deduce(grid_rep(norm,_)). % pen([cc(blue,1)]),pg(_1489874,mass(_1489884),rank1,4).
 do_deduce(grid_ops(norm,_)). % pen([cc(blue,1)]),pg(_1489874,mass(_1489884),rank1,4).
@@ -142,12 +144,13 @@ io_to_cntx1(out,in_out_out).
 io_to_cntx1(out,s(_)).
 io_to_cntx1(X,X).
 
-solve_via_scene_change:-  get_pair_mode(entire_suite),!, cls,
+
+solve_via_scene_change:-  get_pair_mode(entire_suite),!, cls, 
  forall_count(all_arc_test_name(TestID),
    solve_via_scene_change(TestID)).
 
 solve_via_scene_change:-  cls_z, ensure_test(TestID), %make,
- solve_via_scene_change_API(TestID).
+ solve_via_scene_change(TestID).
 
 
 solve_via_scene_change(TestID):-  
@@ -459,6 +462,7 @@ override_object_1(_VM,[],IO,IO):-!.
 override_object_1(VM,[H|T],I,OO):- !, override_object_1(VM,H,I,M),!, override_object_1(VM,T,M,OO).
 override_object_1(_VM,pen([cc(Red,N)]),Obj,NewObj):- pen(Obj,[cc(Was,N)]), !,
   subst001(Obj,Was,Red,NewObj),!.
+override_object_1(_VM,loc2D(X,Y),Obj,Obj):- (X>3;Y>4),!.
 override_object_1(VM,loc2D(X,Y),Obj,NewObj):- loc2D(Obj,WX,WY),  
   globalpoints(Obj,WPoints),deoffset_points(WX,WY,WPoints,LPoints),  
   offset_points(X,Y,LPoints,GPoints),rebuild_from_globalpoints(VM,Obj,GPoints,NewObj).
@@ -1065,6 +1069,14 @@ prop_pairs(O1,O2,Type,Same,P):-
  (once((member(P1,F1),(other_val(P2,P1)->Same=different;Same=same)))-> min_unifier(P2,P1,P); (Same=adding,P=P2)),
  prop_type(P2,Type).
    
+prop_pairs2(O1,O2,Type,Change,P):- 
+  flat_props(O1,F1),flat_props(O2,F2),!,
+  member(P2,F2),make_unifiable_u(P2,P1),
+ (once((member(P1,F1),(other_val(P2,P1)->Change=different;Change=same)))-> 
+   min_unifier(P2,P1,P); ((Change=adding,P=P2))),
+ prop_type(P2,Type),
+\+ignore_prop_when(Change,P).   
+
 into_lhs(OID,Out):- atom(OID),!,indv_props_list(OID,In),into_lhs(In,Out),!.
 into_lhs(In,Out):- \+ compound(In),!,Out=In.
 into_lhs(R,P):- sub_compound(lhs(E),R),!, into_lhs(E,P).
@@ -1630,6 +1642,32 @@ calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,[Right
   append_LR(Prev,Pairs,NewPrev),
   calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,NewPrev,C,[],RestLR),!.
 
+new_object_splitter:-false.
+
+calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,[Pairs|RestLR]):-
+ new_object_splitter,
+ Type = perfect,
+ select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
+ \+ has_prop(iz(info(faked(Ctx))),Right),
+ must_det_ll((
+  remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
+  remove_object(RHSRest2, Left,RHSRest ), remove_object(LHSRest2, Left,LHSRest ),
+  make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,Prev,Left,Right,Pairs),
+  append_LR(Prev,Pairs,NewPrev),
+  incr_step(Step,IncrStep),
+
+
+((  left_over_props(Left,Right,PropsMissing), PropsMissing=[_,_|_],
+  pp_ilp(left_over_props=PropsMissing),
+  obj_to_oid(Right,OID),
+  obj_in_or_out(Right,IO),
+  FakeObj = obj([was_oid(OID),iz(i_o(IO)),iz(info(faked(Ctx)))|PropsMissing])) -> 
+      calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,[Right,Left|LHSRest],[FakeObj|RHSRest],RestLR);
+
+      calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,[Right,Left|LHSRest],RHSRest,RestLR)))).
+
+left_over_props(L,R,LO):- 
+  noteable_propdiffs2(L,R,_,_,LO).
 
 calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,[Pairs|RestLR]):-
  select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
@@ -2152,6 +2190,13 @@ ignore_prop_when(adding,pg(_,_,_,_)).
 ignore_prop_when(adding,simularz(_,_)).
 ignore_prop_when(removing,cc(fg,_)).
 ignore_prop_when(removing,mass(_)).
+
+noteable_propdiffs2(E1,E2,Same,InFlatP,OutPFlat):- 
+  flat_props(E1,FP1),flat_props(E2,FP2),
+  noteable_propdiffs(FP1,FP2,Same0,InFlatP0,OutPFlat0),
+  my_exclude(ignore_prop_when(removing),InFlatP0,InFlatP),
+  my_exclude(ignore_prop_when(adding),OutPFlat0,OutPFlat),
+  my_exclude(ignore_prop_when(sames),Same0,Same),!.
 noteable_propdiffs(PA,PB,Same,InFlatP,OutPFlat):- 
   remove_o_giz(PA,PA1),remove_o_giz(PB,PB1),
   %=(PA,PA1),=(PB,PB1),

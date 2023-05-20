@@ -25,7 +25,7 @@ maybe_report_count(_Now,_Was,Skew):- force_report_count(Skew),!.
 force_report_count:- force_report_count(0).
 force_report_count(Skew):- report_count_plus(progress,so_far,Skew).
 
-force_report_count_plus(Change):- flag('$fac_p',W,W+Change), force_report_count.
+force_report_count_plus(Change):- nop(flag('$fac_p',W,W+Change)), force_report_count.
 
 
 :- set_flag('$fac_t',0).
@@ -63,19 +63,19 @@ foreach_count(P,Q):-
 %report_count(P,Q):- report_count_plus(P,Q,0).
 report_count_plus(P,Q,Skew):-
  section_break,
- flag('$fac_t',ET,ET),flag('$fac_p',EP0,EP0),luser_getval(report_count_time,Was),
- EP is EP0+Skew,
+ flag('$fac_t',TotalAttempted,TotalAttempted),flag('$fac_p',EP0,EP0),luser_getval(report_count_time,Was),
+ Passed is EP0+Skew,
  get_time(Now),Time is Now - Was,
- report_count_info(P,Q,EP,ET,Time),!.
+ report_count_info(P,Q,Passed,TotalAttempted,Time),!.
 
-report_count_info(P,Q,EP,ET,Time):- number(ET), ET =:= 0, \+ (EP =:= 0),!,report_count_info(P,Q,EP,EP,Time).
-report_count_info(P,Q,EP,ET,Time):- number(ET), ET =:= 0, report_count_info(P,Q,EP,1,Time).
-report_count_info(P,Q,EP,ET,Time):- ET<2, \+ atom(Q),!, report_count_format(P,Q,EP,ET,Time,(ET<2)).
-report_count_info(P,Q,EP,ET,Time):- Percent is round(EP/ET*10_000) / 100, !,report_count_format(P,Q,EP,ET,Time,Percent).  
+%report_count_info(P,Q,Passed,TotalAttempted,Time):- number(TotalAttempted), TotalAttempted =:= 0, \+ (Passed =:= 0),!,report_count_info(P,Q,Passed,Passed,Time).
+report_count_info(P,Q,Passed,TotalAttempted,Time):- number(TotalAttempted), TotalAttempted =:= 0, report_count_info(P,Q,Passed,1,Time).
+report_count_info(P,Q,Passed,TotalAttempted,Time):- TotalAttempted<2, \+ atom(Q),!, report_count_format(P,Q,Passed,TotalAttempted,Time,(TotalAttempted<2)).
+report_count_info(P,Q,Passed,TotalAttempted,Time):- Percent is round(Passed/TotalAttempted*10_000) / 100, !,report_count_format(P,Q,Passed,TotalAttempted,Time,Percent).  
 
-report_count_format(P,Q,EP,ET,Time,Percent):-
+report_count_format(P,Q,Passed,TotalAttempted,Time,Percent):-
   get_time(Now), nb_setval('$last_report_time',Now), !,
-  format('~N % Success ~p% (~q) for ~p in ~w seconds ~n',[Percent,EP/ET,report_count(P,Q),Time]),!.
+  format('~N % Success ~p% (~q) for ~p in ~w seconds ~n',[Percent,Passed/TotalAttempted,report_count(P,Q),Time]),!.
   
 
 

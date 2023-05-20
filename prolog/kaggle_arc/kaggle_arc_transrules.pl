@@ -20,9 +20,9 @@ ac_rules(TestID,Ctx,P,PSame):-
   PSame\==[].
 
 
-ac_db(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
 ac_db(TestID,Ctx,P,PSame):- (ac_unit_db(TestID,Ctx,P,PSame)*->true;pass2_rule(TestID,Ctx,P,PSame)).
-ac_unit_db(TestID,Ctx,P,PSame):- ac_unit(TestID,Ctx,P,Same),include(not_assumed,Same,PSame), PSame\==[].
+
+ac_unit_db(TestID,Ctx,P,PSame):- ac_listing(TestID,Ctx,P,Same),include(not_assumed,Same,PSame), PSame\==[].
 
 ac_listing(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
 %ac_listing(TestID,Ctx,P->ac_unit_db,PSame):- ac_unit_db(TestID,Ctx,P,PSame).
@@ -40,7 +40,7 @@ ac_info(TestID,rules,P->Ctx->combined,LHS):- fail,
   trans_rules_combined(TestID,Ctx,Rules),member(R,Rules),
   rule_to_pcp(R,P,LHS).
 
-show_time_of_failure(TestID):- !.
+show_time_of_failure(_TestID):- !.
 show_time_of_failure(TestID):- 
     print_scene_change_rules(show_time_of_failure,
        ac_info,TestID).
@@ -208,16 +208,16 @@ map_pairs_info_io(TestID,ExampleNum,Ctx,Step,TypeO,InL,OutL,USame,UPA2,UPB2):-
 % delete
 trans_rule(Info,In,[],Rules):- listify(In,InL),
  findall(delete_object(Info,rhs(delete(In)),lhs(Preconds)),
-   (member(In,InL),into_lhs(In,Preconds)),Rules), Rules\==[].
+   (member(In,InL),into_lhs(In,Preconds)),Rules), Rules\==[],!.
 
 % mutiple postconds
 trans_rule(Info,In,[Out,Out2|OutL],TransRule):- is_object(Out),is_object(Out2),
-  maplist(trans_rule(Info,In),[Out,Out2|OutL],TransRule), TransRule\==[].
+  maplist(trans_rule(Info,In),[Out,Out2|OutL],TransRule), TransRule\==[],!.
 
 % create
 trans_rule(Info,[],Out,Rules):- listify(Out,OutL),
  findall(create_object(Info,rhs(create(Out)),lhs(Preconds)),
-   ((member(Out,OutL),into_lhs(Out,Preconds))),Rules), Rules\==[].
+   ((member(Out,OutL),into_lhs(Out,Preconds))),Rules), Rules\==[],!.
 
 % 2 preconds
 %trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2),
@@ -237,7 +237,7 @@ trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2), % fa
   %make_common(RHSO,LHS1,NewOut1,NewLHS1),
   %make_common(NewOut1,LHS2,NewOut,NewLHS2),
   TransRule = [create_object1(Info,rhs(creation_step1(Step,Type,New1)), lhs(Precond1)),
-               create_object2(Info,rhs(creation_step2(Step,Type,New2)), lhs(Precond2))].
+               create_object2(Info,rhs(creation_step2(Step,Type,New2)), lhs(Precond2))],!.
 
 % mutiple preconds
 trans_rule(Info,[In,In2|InL],OutL,TransRule):- is_object(In),is_object(In2),
@@ -245,19 +245,19 @@ trans_rule(Info,[In,In2|InL],OutL,TransRule):- is_object(In),is_object(In2),
   sub_compound(lhs(Precond),TransRuleM),
   noteable_propdiffs(In,OutL,Same,_L,_R),
   append_vsets([Precond,Same],NewPrecond),
-  subst(TransRuleM,lhs(Precond),lhs(NewPrecond),TransRule).
+  subst(TransRuleM,lhs(Precond),lhs(NewPrecond),TransRule),!.
 
 % just copy an object
 trans_rule(Info,[In],[Out],Rules):- 
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
   noteable_propdiffs(In,Out,Same,L,R),L==[],R==[],
-  Rules = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ].
+  Rules = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
 
 % just copy an object
 trans_rule(Info,In,Out,Rules):- 
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
   noteable_propdiffs(In,Out,Same,L,R),L==[],R==[],
-  Rules = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ].
+  Rules = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
 
 
 % copy/transform 
@@ -265,7 +265,7 @@ trans_rule(Info,In,Out,Rules):-
   noteable_propdiffs(In,Out,_Same,_L,R),
   into_lhs(In,LHS),  
   findall(edit_copy(Info,rhs(edit(Type,Change,P)),lhs(LHS)),
-    (member(P,R),prop_pairs(In,Out,Type,Change,P),Change\==same,good_for_rhs(P)),Rules),Rules\==[].
+    (member(P,R),prop_pairs(In,Out,Type,Change,P),Change\==same,good_for_rhs(P)),Rules),Rules\==[],!.
 
 trans_rule(Info,E1,E2,Rules):-
   noteable_propdiffs(E1,E2,NSame,NL,NR),
@@ -284,7 +284,7 @@ trans_rule(Info,E1,E2,Rules):-
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
   dash_chars,
   Rules = [ 
-    create_object_step(Info,rhs(create3c(Step,TypeO,E2)),lhs(Same)) ].
+    create_object_step(Info,rhs(create3c(Step,TypeO,E2)),lhs(Same)) ],!.
     %copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ].
 
 
