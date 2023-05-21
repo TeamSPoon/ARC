@@ -1198,11 +1198,12 @@ show_code_diff(Info,[P|A],PB):- !, show_code_diff(Info,P,PB),show_code_diff(Info
 %show_code_diff(_Info,O1,O2):- (is_grid(O1), is_grid(O2)),!, nop((flat_props(O1,E1),flat_props(O2,E2), show_cp_dff_rem_keep_add(E1,E2))),!.
 %show_code_diff(_Info,O1,O2):- (is_grid(O1); is_grid(O2)),!, nop((flat_props(O1,E1),flat_props(O2,E2), show_cp_dff_rem_keep_add(E1,E2))),!.
 show_code_diff(Info,O1,O2):- 
-  must_det_ll((\+ is_grid(O1);\+ is_grid(O2))),
-  into_list(O1,InL),into_list(O2,OutL),
-  flat_props(InL,E1),flat_props(OutL,E2), show_cp_dff_rem_keep_add(E1,E2),
+ if_t((\+ is_grid(O1);\+ is_grid(O2)),
+ (into_list(O1,InL),into_list(O2,OutL),
+  flat_props(InL,E1),flat_props(OutL,E2), 
+  show_cp_dff_rem_keep_add(E1,E2),
   trans_rule(Info,InL,OutL,TransRule),!,
-  pp_ilp(TransRule).
+  pp(TransRule))).
 
 /*
 show_cp_dff_rem_keep_add([]):-!.
