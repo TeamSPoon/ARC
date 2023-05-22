@@ -305,9 +305,10 @@ trans_rule(Info,In,Out,Rules):-
   findall(edit_copy(Info,rhs(edit(Type,Change,P)),lhs(LHS)),
     (member(P,R),prop_pairs(In,Out,Type,Change,P),
       Change\==same,
-      good_for_rhs(P)),Rules),Rules\==[],!.
+      good_for_rhs(P),
+      P\=pen([cc(black,1)])),Rules),Rules\==[],!.
 
-trans_rule(Info,E1,E2,Rules):-
+trans_rule(Info,E1,E2,Rules):- fail,
   noteable_propdiffs(E1,E2,NSame,NL,NR),
   %pp_ilp(l2r(Info,E1,E2)),
   dash_chars,

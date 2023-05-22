@@ -24,7 +24,6 @@ dont_notice(giz(_)).
 dont_notice(iz(i_o(_))).
 dont_notice(iz(stype(_))).
 dont_notice(global2G(_,_)).
-%dont_notice(sym_counts(_,_)).
 dont_notice(iz(symmetry_type(rollD, _))).
 dont_notice(link(contains,_)).
 dont_notice(links_count(sees, _)).
@@ -33,7 +32,8 @@ dont_notice(occurs_in_links(sees,_)).
 dont_notice(oid(_)).
 dont_notice(pg(_,pen(_), rankLS ,_)).
 dont_notice(pg(_,iz(_),rankLS,_)).
-dont_notice(pg(_,iz((_)), rank1, _)).
+dont_notice(pg(_,empty_area(_),rankLS,_)).
+
 %dont_notice(pg(_, iz(_), rankLS, largest)).
 %dont_notice(link(sees(_),_)).
 %dont_notice(links_count(sees,_)).
@@ -49,7 +49,8 @@ dont_notice(grid_rep).
 
 % Define predicates that should be noticed
 do_notice(pg(_,_,rank1,_)).
-do_notice(sym_count(_,_)).
+do_notice(pg(_,_,_,_)).
+do_notice(sym_counts(_,_)).
 
 % Predicate to check if P should be noticed
 ok_notice(P):- \+ \+ do_notice(P),!.
@@ -69,7 +70,7 @@ dont_deduce(P):- sub_term(G,P),compound(G),is_grid(G),!.
 dont_deduce(P):- sub_term(G,P),compound(G),is_object(G),!.
 dont_deduce(grid(_)).
 %dont_deduce(iz(_)).
-%dont_deduce(iz(_)).
+dont_deduce(iz(_)).
 
 %dont_deduce(P):- compound(P),compound_name_arguments(P,_,[X]),number(X).
 dont_deduce(grid_ops(comp,_)). 
@@ -191,10 +192,11 @@ solve_via_scene_change:-  clsmake, ensure_test(TestID), %make,
 solve_via_scene_change(TestID):-  
  must_det_ll((
   print_test(TestID),
-  %force_clear_test(TestID),
+  force_clear_test(TestID),
   clear_scene_rules(TestID),
   repress_some_output(learn_solve_via_grid_change(TestID)),
-  ExampleNum=tst+_)),
+  %ExampleNum=tst+_,
+  true)),
   forall(kaggle_arc(TestID,ExampleNum,_,_),
      solve_via_scene_change_rules(TestID,ExampleNum)).
 
@@ -202,8 +204,8 @@ when_entire_suite(Goal,_Goal2):- get_pair_mode(entire_suite),!, call(Goal).
 when_entire_suite(_Goal,Goal2):- call(Goal2).
 
 maybe_repress_output(Goal):- call(Goal).
-%repress_output(Goal):- wots(_,Goal).
-repress_output(Goal):- call(Goal).
+repress_output(Goal):- with_output_to(atom(_),Goal).
+%repress_output(Goal):- call(Goal).
 %repress_some_output(Goal):- when_entire_suite(with_pair_mode(whole_test,repress_output(Goal)),Goal).
 repress_some_output(Goal):- call(Goal).
 
@@ -219,24 +221,32 @@ learn_solve_via_grid_change(TestID):-
    clear_scene_rules(TestID),
    time(compute_scene_change(TestID)))))).
 
+
+
+into_input_objects(TestID,ExampleNum,In,Objs,VM):-
+  must_det_ll((
+        once((obj_group5(TestID,ExampleNum,in,ROptions,TempObjs),TempObjs\==[])),
+        grid_to_tid(In,TID),
+        into_fti(TID,ROptions,In,VM),
+        individuate(VM),
+        Objs = VM.objs)).
+
 solve_via_scene_change_rules(TestID,ExampleNum):-
  must_det_ll((
   maybe_repress_output((ensure_scene_change_rules(TestID))),
   kaggle_arc(TestID,ExampleNum,In,Expected),
   duplicate_term(In,InOrig),  
+  into_input_objects(TestID,ExampleNum,In,Objs,VM),
   % predict_grid_size_now(TestID,In,PX,PY),
-  obj_group5(TestID,ExampleNum,in,ROptions,TempObjs),TempObjs\==[],
-  grid_to_tid(In,TID),
-  into_fti(TID,ROptions,In,VM),
-  individuate(VM),
-  Objs = VM.objs,
   ensure_scene_change_rules(TestID),
-  print_object_dependancy(TestID),
+  print_object_dependancy(TestID))),
+
+ must_det_ll((
   repress_some_output(print_scene_change_rules_if_different(solve_via_scene_change_rules,ac_listing,TestID)),
   print_ss(wqs(expected_answer(ExampleNum)),Objs,Expected),
   dash_chars)),!,
 
- repress_some_output( once(enter_solve_obj(VM,TestID,ExampleNum,ROptions,Objs,ObjsO))),
+ repress_some_output( once(enter_solve_obj(VM,TestID,ExampleNum,Objs,ObjsO))),
 
  must_det_ll((
   dash_chars,
@@ -266,7 +276,6 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
       % only really fail for tests
       (ExampleNum == tst+_) -> (!,fail); true)).
       
-
 resize_our_solution(PX,PY,OurSolution1,OurSolution):-
   once(ground(PX+PY)
      ->resize_grid(PX,PY,OurSolution1,OurSolution)
@@ -276,12 +285,12 @@ maybe_resize_our_solution(TestID,In,OurSolution1,OurSolution):-
   predict_grid_size_now(TestID,In,PX,PY),resize_our_solution(PX,PY,OurSolution1,OurSolution),!.
 
 
-enter_solve_obj(VM,TestID,ExampleNum,ROptions,Objs,ObjsO):- solve_obj_group(VM,TestID,ExampleNum,ROptions,in_out,Objs,ObjsO),!.
+enter_solve_obj(VM,TestID,ExampleNum,Objs,ObjsO):- solve_obj_group(VM,TestID,ExampleNum,in_out,Objs,ObjsO),!.
 
-enter_solve_obj(VM,TestID,ExampleNum,ROptions,Objs,ObjsO):- 
-  solve_obj_group(VM,TestID,ExampleNum,ROptions,in_out,Objs,ObjsM1),
-  solve_obj_group(VM,TestID,ExampleNum,ROptions,in_out_out,ObjsM1,ObjsM2),
-  solve_obj_group(VM,TestID,ExampleNum,ROptions,s(_),ObjsM2,ObjsO), ObjsO \==[],!.
+enter_solve_obj(VM,TestID,ExampleNum,Objs,ObjsO):- 
+  solve_obj_group(VM,TestID,ExampleNum,in_out,Objs,ObjsM1),
+  solve_obj_group(VM,TestID,ExampleNum,in_out_out,ObjsM1,ObjsM2),
+  solve_obj_group(VM,TestID,ExampleNum,s(_),ObjsM2,ObjsO), ObjsO \==[],!.
 
 score_rule(Ways,Obj,Rule,Score):- is_object(Rule), \+ is_object(Obj),!,score_rule(Ways,Rule,Obj,Score).
 
@@ -305,6 +314,7 @@ assume_prop(P):- \+ \+ assume_prop1(P),!.
 assume_prop(P):- \+ \+ assume_prop2(P),!.
 assume_prop(P):- \+ \+ is_debug_info(P).
 
+
 is_debug_info(Var):- \+ compound(Var),!,fail.
 is_debug_info(info(_)).
 is_debug_info(iz(P)):-!,is_debug_info(P).
@@ -314,6 +324,8 @@ is_debug_info(iz(P)):-!,is_debug_info(P).
 
 assume_prop1(P):- dont_notice(P).
 assume_prop2(giz(_)).
+assume_prop2(mv4b(_)).
+assume_prop2(mv4a(_)).
 assume_prop2(grid_sz(_)).
 assume_prop2(global2G(_,_)).
 assume_prop2(was_oid(_)).
@@ -402,21 +414,20 @@ apply_rules_to_objects(_Ways,_Mapping,_Rules,_Objs,[]).
 
 
 
-solve_obj_group(VM,TestID,_ExampleNum,_ROptions,Ctx,ObjsIn,ObjsO):-
+solve_obj_group(VM,TestID,_ExampleNum,Ctx,ObjsIn,ObjsO):-!,
   my_exclude(is_bg_object_really,ObjsIn,Objs),
   (Rule = (Ctx:rhs(P):- obj_atoms(PCond))),
   %io_to_cntx(IO_,Ctx), 
   findall_vset_R(Rule,(ac_rules(TestID,Ctx,P,PCond)), Rules),
   member(Ways-Strategy,[exact-_,two_way-one_to_one,_-_]), 
   apply_rules_to_objects(Ways,Strategy,Rules,Objs,Todo), Todo\==[],
-  maplist(into_solid_grid_strings,Todo,PStr),
-  unwonk_ansi(PStr,PPStr),
-  pp_ilp((see_Strategy(Ways-Strategy)=PPStr)), Todo\==[],
-  maplist(pp_ilp(3),Todo),
+  %maplist(into_solid_grid_strings,Todo,PStr), unwonk_ansi(PStr,PPStr),pp_ilp((see_Strategy(Ways-Strategy)=PPStr)), 
+  Todo\==[],
+  %maplist(pp_ilp(3),Todo),
   run_todo_output(VM,Todo,ObjsO),ObjsO\==[],!.
 
 
-solve_obj_group(VM,TestID,_ExampleNum,_ROptions,Ctx,ObjsIn,ObjsO):-
+solve_obj_group(VM,TestID,_ExampleNum,Ctx,ObjsIn,ObjsO):-
   my_exclude(is_bg_object_really,ObjsIn,Objs),
   (Rule = (Ctx:rhs(P):- obj_atoms(PCond))),
   %io_to_cntx(IO_,Ctx), 
@@ -429,7 +440,7 @@ solve_obj_group(VM,TestID,_ExampleNum,_ROptions,Ctx,ObjsIn,ObjsO):-
   run_todo_output(VM,Todo,ObjsO),ObjsO\==[],!.
 
 /*
-solve_obj_group(_VM,TestID,_ExampleNum,Ctx,_ROptions,Objs,ObjsO):-
+solve_obj_group(_VM,TestID,_ExampleNum,Ctx,Objs,ObjsO):-
  must_det_ll((
   %PreObjsL,PostObjsL,_USame,_UPA2,_UPB2
   %map_pairs_info_io(TestID,_ExampleNum,Ctx,_Step,_TypeO,PreObjsL,PostObjsL,_USame,_UPA2,_UPB2),   
@@ -438,7 +449,7 @@ solve_obj_group(_VM,TestID,_ExampleNum,Ctx,_ROptions,Objs,ObjsO):-
   maplist(apply_to_objs(Ctx,Objs),FwdRules,ObjsOFL),append(ObjsOFL,ObjsOF),
   flatten([ObjsOF],ObjsO),
   print_ss(Ctx,Objs,ObjsO))), ObjsO \==[],!.*/
-solve_obj_group(_VM,_TestID,_ExampleNum,_Ctx,_ROptions,Objs,Objs).
+solve_obj_group(_VM,_TestID,_ExampleNum,_Ctx,Objs,Objs).
 /*
 apply_to_objs(Ctx,Objs,CLS1,ObjsO):-
  must_det_ll((
@@ -781,7 +792,9 @@ assert_map_pairs(TestID,ExampleNum,Ctx,l2r(Info,In,Out)):- fail, !,
 assert_map_pairs(TestID,ExampleNum,Ctx,l2r(Info,In,Out)):-!,
  must_det_ll((
  assertz_new(arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,l2r(Info,In,Out))),
- ((   into_list(In,InL),into_list(Out,OutL),trans_rule(Info,InL,OutL,TransRules), TransRules \==[],
+ into_list(In,InL),into_list(Out,OutL),
+ must_det_ll((   
+   once((trans_rule(Info,InL,OutL,TransRules), TransRules \==[])),
    
    assert_map_pairs(TestID,ExampleNum,Ctx,TransRules),
   once((diff_l_r(InL,OutL,Same,InFlatP,OutPFlat),
@@ -1096,7 +1109,7 @@ good_for_lhs(iz(stype(_))).
 good_for_lhs(link(sees(_),_)):-!,fail.
 good_for_lhs(link(NS, _)):- !, NS\=sees(_).
 good_for_lhs(links_count(_, _)).
-good_for_lhs(sym_count(_, _)).
+good_for_lhs(sym_counts(_, _)).
 good_for_lhs(loc2D(_, _)).
 good_for_lhs(mass(_)).
 good_for_lhs(pen(_)).
@@ -1544,6 +1557,7 @@ fg_to_bgc(FG,FG):- \+ compound(FG),!.
 
 
 into_delete(_TestID,_ExampleNum,_IsSwapped,_Step,_Ctx,_Prev,_Info,Obj,Obj):- is_mapping(Obj),!.
+%into_delete(_TestID,_ExampleNum,_IsSwapped,_Step,_Ctx,_Prev,_Info,Obj,Obj):-!.
 into_delete(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,_Info,Obj,Pairs):- map_pred(fg_to_bgc, Obj,NewObj),
   make_pairs(TestID,ExampleNum,delete,IsSwapped,Step,Ctx,Prev,Obj,NewObj,Pairs),
   !. %edit_object(pen([cc(black,1)]))  % l2r(Info,[Obj],[])).
@@ -1691,7 +1705,7 @@ calc_o_d_recursively(TestID,ExampleNum,_TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSOb
 
 calc_o_d_recursively(TestID,ExampleNum,_TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- 
    Info = info(Step,IsSwapped,Ctx,leftover,TestID,ExampleNum,_),
-   RHSObjs==[], !, 
+   RHSObjs==[], !,
     must_det_ll((maplist(into_delete(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,Info),
      LHSObjs,Mappings),append_LR(Prev,[call(assert_test_property(TestID,ExampleNum,deps,ignore_rest(Info))),Mappings],RestLR))).
 
@@ -2762,7 +2776,7 @@ correct_antes4a(_TestID,_IO_,_P,PSame,PSame).
 
 
 % Remove Single Chhangers
-correct_antes4b(TestID,IO_,VP,PSame,SLPSame):- 
+correct_antes4b(TestID,IO_,VP,PSame,SLPSame):-  fail,
   %rev_in_out_atoms(OI,IO_),
   ensure_deref_value(VP,P),
   \+ \+ ((ac_rules(TestID,IO_,DP,_),other_val(P,DP))),
