@@ -594,7 +594,7 @@ pp_hook_g1(O):- is_object(O), into_solid_grid(O,G), wots(SS,pretty_grid(G)),writ
 
 pp_hook_g1(shape_rep(grav,O)):- is_points_list(O), as_grid_string(O,S), wotsq(O,Q), print(shape_rep(grav,S,Q)),!.
 pp_hook_g1(vals(O)):- !, writeq(vals(O)),!.
-%pp_hook_g1(grp(O)):- into_solid_grid_strings(grp(O),Str),Str\=@=grp(O),print_term_no_nl(Str),!.
+%pp_hook_g1(l2r(O)):- into_solid_grid_strings(l2r(O),Str),Str\=@=l2r(O),print_term_no_nl(Str),!.
 pp_hook_g1(localpoints(O)):- is_points_list(O), as_grid_string(O,S), wotsq(O,Q), print(localpoints(S,Q)),!.
 pp_hook_g1(C):- compound(C), compound_name_arguments(C,F,[O]),is_points_list(O), length(O,N),N>2, as_grid_string(O,S), compound_name_arguments(CO,F,[S]), print(CO),!.
 

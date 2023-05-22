@@ -357,6 +357,8 @@ remove_o_giz(Out,Out).
 
 
 % Check if two values have the same property names but are not equal
+
+
 other_val(X1,X2):- X1\=@=X2, same_prop_names(X1,X2),!.
 same_prop_names(X1,X2):- 
   compound(X1),compound(X2), same_functor(X1,X2),!,
@@ -612,7 +614,7 @@ solve_obj_group(VM,TestID,ExampleNum,IO,ROptions,Objs,OObjs):- IO == in,!,
 
 solve_obj_group(VM,TestID,ExampleNum,IO,ROptions,Objs,ObjsO):-
   %trace,arc_cache:map_group(TestID,ExampleNum,IO,Group),
-  GRP = grp(Info,PreObjs,Out),
+  GRP = l2r(Info,PreObjs,Out),
   findall(GRP,(pair_obj_info(TestID,_,_IO2,Info,PreObjs,Out), sub_var(IO,Info)),Groups),
   variant_list_to_set(Groups,Set),
   banner_lines(blue,2),
@@ -1037,12 +1039,12 @@ learn_object_dependancy(TestID,ExampleNum,LHSObjs,RHSObjs):-
   assert_map_pairs(TestID,ExampleNum,IO,Groups))).
 
 assert_map_pairs(TestID,ExampleNum,IO,Group):- is_list(Group),!,maplist(assert_map_pairs(TestID,ExampleNum,IO),Group).
-assert_map_pairs(TestID,ExampleNum,IO,grp(Info,In,Out)):-
+assert_map_pairs(TestID,ExampleNum,IO,l2r(Info,In,Out)):-
   into_list(In,InL),into_list(Out,OutL),
   once((diff_l_r(InL,OutL,Same,InPFlat,OutPFlat),
    unnumbervars(('$VAR'(0),'$VAR'('_'),Same,InPFlat,OutPFlat),UNV))),
    UNV = (_FG1,_BG1,USame,InFlatProps,OutFlatProps),
-  %pp_ilp(grp(Info,InL,OutL)),!,
+  %pp_ilp(l2r(Info,InL,OutL)),!,
   assertz_new(arc_cache:prop_dep(TestID,ExampleNum,IO,Info,InL,OutL,USame,InFlatProps,OutFlatProps)),!.
 
 % print the object dependencies for this test
@@ -1056,7 +1058,7 @@ print_object_dependancy(TestID):-
  retractall(arc_cache:causes(TestID,_,_,_,ignore(_,_))),
  listing(arc_cache:causes/5),
  dash_chars,dash_chars,
- findall_vset(grp(Info,Pre,Post),pair_obj_info(TestID,_,_,Info,Pre,Post),Set),
+ findall_vset(l2r(Info,Pre,Post),pair_obj_info(TestID,_,_,Info,Pre,Post),Set),
  maplist(pp_ilp,Set),
  dash_chars,dash_chars.
 
@@ -1088,10 +1090,10 @@ pp_ilp(D,call(T)):- !, prefix_spaces(D,call(T)).
 pp_ilp(D,Grp):- is_mapping(Grp), !,
  must_det_ll((
   get_mapping_info(Grp,Info,In,Out),
-  prefix_spaces(D,(dash_chars,format('<grp ~w>\n',[Info]))),
+  prefix_spaces(D,(dash_chars,format('<l2r ~w>\n',[Info]))),
     print_io_terms(D+7,In,Out),
     prefix_spaces(D+8,show_cp_diff(In,Out)),
-  prefix_spaces(D,(write('</grp>\n'),dash_chars)))).
+  prefix_spaces(D,(write('</l2r>\n'),dash_chars)))).
 
 pp_ilp(D,Grid):- is_group(Grid),!, 
   must_det_ll((length(Grid,Len),
@@ -1239,17 +1241,17 @@ fg_to_bgc(FG,black):- is_fg_color(FG),!.
 fg_to_bgc(FG,FG):- \+ compound(FG),!.
 
 into_delete(_Info,Obj,Obj):- is_mapping(Obj),!.
-into_delete(_Info,_Obj,[]). % grp(Info,[Obj],[])).
+into_delete(_Info,_Obj,[]). % l2r(Info,[Obj],[])).
 
 into_delete(_TestID,_ExampleNum,_IsSwapped,_Step,_Ctx,_Prev,_Info,Obj,Obj):- is_mapping(Obj),!.
 into_delete(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,_Info,Obj,Pairs):- map_pred(fg_to_bgc, Obj,NewObj),
   make_pairs(TestID,ExampleNum,Ctx,IsSwapped,Step,in_out,Prev,Obj,NewObj,Pairs),
-  !. %edit_object(pen([cc(black,1)]))  % grp(Info,[Obj],[])).
+  !. %edit_object(pen([cc(black,1)]))  % l2r(Info,[Obj],[])).
 
 is_mapping_list([O|GrpL]):- is_mapping(O),is_list(GrpL),maplist(is_mapping,GrpL).
-is_mapping(Grp):- is_functor(grp,Grp).
+is_mapping(Grp):- is_functor(l2r,Grp).
 
-get_mapping_info(grp(Info,In,Out),Info,In,Out).
+get_mapping_info(l2r(Info,In,Out),Info,In,Out).
 get_mapping_info_list(GRP,Info,InOutO):-
   get_mapping_info(GRP,Info,In,Out),
   into_list(In,InL),into_list(Out,OutL),!,
@@ -1424,7 +1426,7 @@ make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,_Prev,LHS,RHS,GRP):-
   
   %into_list(LHS,LLHS),
   %append_LR(Prev,LHS,PLHS),
-  GRP = grp(Info,LHS,RHS).
+  GRP = l2r(Info,LHS,RHS).
 
 
 

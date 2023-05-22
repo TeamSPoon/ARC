@@ -558,7 +558,7 @@ undist_objs(Obj,Obj).
 tie_break_sbd(Bonus,A,GroupID,[W1,W2|Sorted],[S1,S2|Sorted]):- compound(W1),compound(W2),
      arg(1,W1,W1a),arg(1,W2,W2a), arg(2,W2,W1b),arg(2,W2,W2b), W1a=:=W2a,W1b=:=W2b,
      bonus_sort_by_jaccard0(Bonus,A,GroupID,[W1,W2],[S1,S2]),!.
-tie_break_sbd(_,_,_,Sorted,Sorted):- trace.     
+tie_break_sbd(_,_,_,Sorted,Sorted):- nop(trace).
 
 
 dist(X1,Y1,X2,Y2,Dist):-
@@ -853,7 +853,7 @@ type_prop(reposition,iz(cenGX(_))).
 type_prop(reposition,iz(locY(_))).
 type_prop(reposition,iz(cenGY(_))).
 type_prop(reposition,edge(_,_)).
-type_prop(reposition,link(_,_)).
+%type_prop(rerelate,link(_,_)).
 type_prop(rotate,rotG(_)).
 type_prop(rotate,rot2D(_)).
 type_prop(rotate,rotSize2D(_,_,_)).
@@ -872,14 +872,14 @@ type_prop(reshape,iz(algo_sid(_, _))).
 type_prop(reshape,iz(filltype(_))).
 type_prop(reshape,iz(symmetry_type(_,_))).
 type_prop(reshape,grid_rep(norm,_)).
-type_prop(reorder,pg(_Peers,_OG,_Type,_Ord)).
-type_prop(reorder,link_count(_,_)).
-type_prop(reorder,occurs_in_links(_,_)).
 type_prop(repaint,colors_cc(_)).
 type_prop(repaint,pen(_)).
 type_prop(repaint,cc(_,_)).
 type_prop(repaint,grid_rep(norm,_)).
 
+type_prop(reorder,pg(_Peers,_OG,_Type,_Ord)).
+type_prop(reorder,link_count(_,_)).
+type_prop(reorder,occurs_in_links(_,_)).
 
 changed_by(colorlesspoints,reshape).
 changed_by(loc2D,move).

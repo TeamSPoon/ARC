@@ -563,7 +563,7 @@ contains_enough_for_print([P|Props],G):- is_obj_props(Props),!,(contains_enough_
 never_is_prop(obj(_)).
 never_is_prop(edit_copy(_,_,_,_)).
 never_is_prop(edit_copy(_,_,_)).
-never_is_prop(grp(_,_,_)).
+never_is_prop(l2r(_,_,_)).
 never_is_prop((_+_)).
 never_is_prop((_>_)).
 never_is_prop((_*_)).
