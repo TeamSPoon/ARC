@@ -120,9 +120,16 @@ fg_grid_syms(_-BG,_):- is_bg_color(BG),!.
 %fg_grid_syms(FG,FG):- is_fg_color(FG),!.
 fg_grid_syms(S,S).
   
+add_extra_propz(obj(Obj),obj(ObjL)):- add_extra_propz_l(Obj,ObjL),!.
+
+add_extra_propz_l(ObjO,ObjO).
+
+make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
+  make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjM),
+  add_extra_propz(ObjM,ObjO).
 
 :- style_check(+singleton).
-make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):- 
+make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):- 
  fix_point_colors(GPoints00,GPoints0),
  must_be_nonvar(GID0),
  testid_name_num_io(GID0,TestID,Example,Num,IO),

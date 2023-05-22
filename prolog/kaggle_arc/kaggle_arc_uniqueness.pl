@@ -191,7 +191,7 @@ solve_via_scene_change:-  clsmake, ensure_test(TestID), %make,
 solve_via_scene_change(TestID):-  
  must_det_ll((
   print_test(TestID),
-  force_clear_test(TestID),
+  %force_clear_test(TestID),
   clear_scene_rules(TestID),
   repress_some_output(learn_solve_via_grid_change(TestID)),
   ExampleNum=tst+_)),
@@ -210,8 +210,8 @@ repress_some_output(Goal):- call(Goal).
 learn_solve_via_grid_change(TestID):- 
  repress_output((
   must_det_ll((
-   detect_pair_hints(TestID),  
-   save_test_hints_now(TestID),
+ %  detect_pair_hints(TestID),  
+ %  save_test_hints_now(TestID),
    learn_grid_size(TestID))))),
  repress_some_output((
   must_det_ll(( 
@@ -1941,7 +1941,7 @@ make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,_Prev,LHS,RHS,GRP):-
   %into_list(LHS,LLHS),
   %append_LR(Prev,LHS,PLHS),
   GRP = l2r(Info,LHS,RHS),
-  once(pp_ilp(make_pairs=GRP)).
+  nop(once(pp_ilp(make_pairs=GRP))).
 
 
 
