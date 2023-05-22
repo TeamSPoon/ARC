@@ -1693,20 +1693,22 @@ object_ngrid(Obj,GNGridFG):- object_grid(Obj,Grid), into_ngrid(Grid,GNGrid),mapg
 
 object_ngrid_symbols(Obj,Syms):- object_ngrid(Obj,NGrid), ngrid_syms(NGrid,Syms).
 
+ngrid_syms(NGrid,NSymCounts):- fix_tt_juctions(NGrid,TGrid90),
+ subst_syms(bg,TGrid90,GFlatSyms),get_ccs(GFlatSyms,Syms),
+ create_sym_vectors(Syms,NSymCounts).
+
+/*
 ngrid_syms(NGrid,[Extra]):- !,
  fix_tt_juctions(NGrid,TGrid90),
  subst_syms(bg,TGrid90,GFlatSyms),get_ccs(GFlatSyms,Syms),
  ignore(member(cc('*',Stars),Syms)), ignore(member(cc('+',Plusses),Syms)), ignore(Plusses=0),ignore(Stars=0),
  PS is 10* Plusses+Stars,
  Extra= sym_count('+*',PS).
- 
-ngrid_syms(NGrid,NSymCounts):- fix_tt_juctions(NGrid,TGrid90),
- subst_syms(bg,TGrid90,GFlatSyms),get_ccs(GFlatSyms,Syms),
- create_sym_vectors(Syms,NSymCounts).
-
+*/ 
 create_sym_vectors(Syms,Counts):-
   findall(sym_counts(Sym,Count),
-    (vector_pairs(List),atomic_list_concat([sym|List],'_',Sym),
+    (vector_pairs(ListU),
+     sort(ListU,List),atomic_list_concat([sym|List],'_',Sym),
      total_ccs(1,List,Syms,Count)),Counts).
 
 total_ccs(_,[],_,0).
@@ -1717,19 +1719,21 @@ total_ccs(N,[S|List],Syms,Count):-
 
 into_sym_count(cc(Sym,Count),iz(sym_count(Sym,Count))).
 
-vector_pairs([A,B]):- find_syms(T,A),find_syms(T,B),A@<B.
-vector_pairs([S]):- find_syms(S).
-vector_pairs([S]):- find_syms(_,S).
+%vector_pairs([A,B]):- find_syms(T,A),find_syms(T,B),A@<B.
+%vector_pairs([S]):- find_syms(S).
+%vector_pairs([S]):- find_syms(_,S).
+vector_pairs(SS):- findall_vset(T,find_syms(T,_),TT),member(T,TT),findall(S,find_syms(T,S),SS).
 
-find_syms(node,'x'). find_syms(node,'+'). find_syms(node,'*'). find_syms(node,'.').
+find_syms(node,'@'). find_syms(node,'+'). find_syms(node,'*'). find_syms(node,'~').
 find_syms(dir,'<'). find_syms(dir,'>'). find_syms(dir,'v'). find_syms(dir,'^').
-find_syms(extend,'-'). find_syms(extend,'|'). find_syms(extend,'\\'). find_syms(extend,'/').
-
+find_syms(extend,'-'). find_syms(extend,'|'). 
+find_syms(extend,'\\'). find_syms(extend,'/').
+/*
 find_syms('~'). find_syms('0').
 find_syms('='). find_syms('!'). 
 find_syms('X'). find_syms('#').
 find_syms('7'). find_syms('`').
-
+*/
 subst_syms(IBGC,List, L) :-
  must_det_ll(( flatten([List],L1),   
    my_maplist(cell_syms(IBGC),L1, L2),

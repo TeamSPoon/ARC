@@ -24,6 +24,7 @@ dont_notice(giz(_)).
 dont_notice(iz(i_o(_))).
 dont_notice(iz(stype(_))).
 dont_notice(global2G(_,_)).
+%dont_notice(sym_counts(_,_)).
 dont_notice(iz(symmetry_type(rollD, _))).
 dont_notice(link(contains,_)).
 dont_notice(links_count(sees, _)).
@@ -779,16 +780,15 @@ assert_map_pairs(TestID,ExampleNum,Ctx,l2r(Info,In,Out)):- fail, !,
   assertz_new(arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,l2r(Info,In,Out))),!.
 assert_map_pairs(TestID,ExampleNum,Ctx,l2r(Info,In,Out)):-!,
  must_det_ll((
-  into_list(In,InL),into_list(Out,OutL),
-  assertz_new(arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,l2r(Info,In,Out))),
-  trans_rule(Info,InL,OutL,TransRules), TransRules \==[],
+ assertz_new(arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,l2r(Info,In,Out))),
+ ((   into_list(In,InL),into_list(Out,OutL),trans_rule(Info,InL,OutL,TransRules), TransRules \==[],
    
    assert_map_pairs(TestID,ExampleNum,Ctx,TransRules),
   once((diff_l_r(InL,OutL,Same,InFlatP,OutPFlat),
    unnumbervars(v5('$VAR'(0),'$VAR'('_'),Same,InFlatP,OutPFlat),UNV))),
                     must_det_ll((UNV = v5(_FG1,_BG1,USame,InFlatProps,OutFlatProps))),
   %pp_ilp(l2r(Info,InL,OutL)),!,  
-  assertz_new(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,InL,OutL,USame,InFlatProps,OutFlatProps)))).
+  assertz_new(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,InL,OutL,USame,InFlatProps,OutFlatProps)))))).
 assert_map_pairs(_TestID,_ExampleNum,_Ctx,call(Rule)):-!,must_det_ll(Rule),!.
 assert_map_pairs(TestID,ExampleNum,Ctx,TransRule):-
    assertz_new(arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,TransRule)),!.
@@ -2569,6 +2569,16 @@ compute_scene_change(TestID):-
   compute_scene_change_pass3(TestID),
   compute_scene_change_pass4(TestID)))),!.
 
+compute_scene_change_pass_out(TestID,Rules, Combined):-
+  retractall(ac_unit(TestID,_,_,_)),!,
+  forall(member(R,Rules),
+    must_det_ll((rule_to_pcp(TestID,R,P,Ctx,LHS),assert_accompany_changed_db(TestID,Ctx,P,LHS)))),!,
+  nl,nl,
+  set_of_ps(TestID,Ps),!,
+  print(set_of_ps(TestID,Ps)),
+  compute_scene_change_pass3(TestID),!,
+  findall(R,(ac_unit(TestID,Ctx,P,LHS),pcp_to_rule(TestID,Ctx,P,LHS,R)),Combined).
+
 
 compute_scene_change_pass1(TestID):- 
   show_object_dependancy(TestID),!.
@@ -2594,6 +2604,7 @@ compute_scene_change_pass3(TestID):-
   set_of_changes(TestID,compute_scene_change_pass3b(TestID,correct_antes5)),
   set_of_changes(TestID,compute_scene_change_pass3b(TestID,correct_antes6)),
   set_of_changes(TestID,compute_scene_change_pass3c(TestID)))),!.
+
 
 
 compute_scene_change_pass3a(TestID,IO_-P):- 

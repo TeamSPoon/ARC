@@ -47,11 +47,18 @@ show_time_of_failure(TestID):-
     print_scene_change_rules3(show_time_of_failure,
        ac_info,TestID).
 
-rule_to_pcp(R,P,LHS):- 
+rule_to_pcp(TestID,R,Ctx,P,LHS):-
+  is_list(R),!,member(E,R),rule_to_pcp(TestID,E,Ctx,P,LHS).
+rule_to_pcp(_TestID,R,Ctx,P,LHS):- 
   must_det_ll((
-  find_rhs(R,P),find_lhs(R,Conds),
+  find_rhs(R,P),
+  find_lhs(R,Conds),
   subst(R,P,p,RR), subst(RR,Conds,conds,RRR),
-  append(Conds,[iz(info(RRR))],LHS))).
+  append(Conds,[iz(info(RRR))],LHS),
+  ignore((sub_compound(ctx(Ctx),R))))).
+
+pcp_to_rule(TestID,Ctx,P,LHS,rule(TestID,Ctx,P,LHS)).
+
 
 %ac_rules(TestID,P,PSame):- ac_rules(TestID,_,P,PSame).
 
@@ -75,7 +82,7 @@ pass2_rule1(TestID,Ctx,RHS,LHS):- fail,
   %Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,_ExampleNum,_),
   %arg(_,Rule,Info),
   must_det_ll((
-  rule_to_pcp(Rule,RHS,LHS))).
+  rule_to_pcp(TestID,Rule,Ctx,RHS,LHS))).
 
 pass2_rule2(TestID,Ctx,RHS,LHS):- 
  ensure_test(TestID),
@@ -83,7 +90,7 @@ pass2_rule2(TestID,Ctx,RHS,LHS):-
   %Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,_ExampleNum,_),
   %arg(_,Rule,Info),
   must_det_ll((
-  rule_to_pcp(Rule,RHS,LHS))).
+  rule_to_pcp(TestID,Rule,Ctx,RHS,LHS))).
 
 
 pass2_rule3(TestID,Ctx,edit(Type,different,P),[iz(info(propcan(true,Ctx)))|PSame]):- fail,
@@ -101,19 +108,39 @@ pass2_rule3(TestID,Ctx,edit(Type,different,P),[iz(info(propcan(true,Ctx)))|PSame
   rhs_ground(RHS).
 */
 
+trans_rules_current_members1(TestID,Ctx,Rules):-
+  ensure_test(TestID),
+  ignore((ExampleNum=trn+_)),
+  kaggle_arc(TestID,ExampleNum,_,_),
 
-
+  obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs), RHSObjs\==[],LHSObjs\==[],
+  Step=0,Ctx=in_out,IsSwapped=false,
+  normalize_objects_for_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsOrdered,LHSObjsOrdered),
+    %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
+  TM = _{rhs:RHSObjsOrdered, lhs:LHSObjsOrdered},
+  calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,[],LHSObjsOrdered,RHSObjsOrdered,Groups),
+  %pp_ilp(groups=Groups),
+  member(l2r(Info,In,Out),Groups),
+  into_list(In,InL),into_list(Out,OutL),trans_rule(Info,InL,OutL,TransRules), 
+  member(Rules,TransRules).
+  
 trans_rules_current_members(TestID,Ctx,Rules):-
-  arc_cache:trans_rule_db(TestID,_ExampleNum1,Ctx,Rules),Rules\=l2r(_,_,_).
+  ((fail,arc_cache:trans_rule_db(TestID,_ExampleNum1,Ctx,Rules),Rules\=l2r(_,_,_))*->true;
+    trans_rules_current_members1(TestID,Ctx,Rules)).
 
 trans_rules_combined_members(TestID,Ctx,CombinedM):-
-  findall(Rule,trans_rules_current_members(TestID,Ctx,Rule),Rules),
-  must_det_ll(( \+ (member(R,[1|Rules]), is_list(R)))),
-  combine_trans_rules(Rules, Combined), must_det_ll(( \+ (member(R,[2|Combined]), is_list(R)))),
-  !,
+ ensure_test(TestID),
+ must_det_ll((findall(Rule,trans_rules_current_members(TestID,Ctx,Rule),Rules),
+  % must_det_ll(( \+ (member(R,[1|Rules]), is_list(R)))),!,
+  combine_trans_rules(TestID,Rules, Combined))),
+  % must_det_ll(( \+ (member(R,[2|Combined]), is_list(R)))),
   member(CombinedM,Combined).
 
-combine_trans_rules1(R1,Rules,R,RulesN):- 
+combine_trans_rules( TestID,Rules, CombinedRules):-  compute_scene_change_pass_out(TestID,Rules, CombinedRules),!.
+combine_trans_rules(_TestID,Rules, CombinedRules):-
+  combine_trans_rules1(Rules, CombinedRules).
+
+combine_trans_rules_textually(R1,Rules,R,RulesN):- 
   into_rhs(R1,RHS1),
   same_functor(R1,R2),
   select(R2,Rules,RulesN), % my_assertion(r1, \+ is_list(R1)), my_assertion(r2, \+ is_list(R2)),
@@ -122,13 +149,12 @@ combine_trans_rules1(R1,Rules,R,RulesN):-
   RHS1=@=RHS2,
   merge_vals(R1,R2,R) % my_assertion(r, \+ is_list(R)),
   .
-
-combine_trans_rules([],[]):-!.
-
-combine_trans_rules([R1|Rules], CombinedRules):-
-  combine_trans_rules1(R1,Rules,R,RulesN),!, combine_trans_rules([R|RulesN], CombinedRules).
-combine_trans_rules([R|Rules], [R|CombinedRules]):- 
-  combine_trans_rules(Rules, CombinedRules).
+combine_trans_rules1([],[]):-!.
+combine_trans_rules1([R],[R]):-!.
+combine_trans_rules1([R1|Rules], CombinedRules):-
+  combine_trans_rules_textually(R1,Rules,R,RulesN),!, combine_trans_rules1([R|RulesN], CombinedRules).
+combine_trans_rules1([R|Rules], [R|CombinedRules]):- 
+  combine_trans_rules1(Rules, CombinedRules).
 
 
 
