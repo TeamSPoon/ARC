@@ -276,6 +276,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
       % only really fail for tests
       (ExampleNum == tst+_) -> (!,fail); true)).
       
+
 resize_our_solution(PX,PY,OurSolution1,OurSolution):-
   once(ground(PX+PY)
      ->resize_grid(PX,PY,OurSolution1,OurSolution)
@@ -313,7 +314,6 @@ score_all_props(CanL,Obj,Score):- maplist(inv_has_prop_score(Obj),CanL,ScoreL),s
 assume_prop(P):- \+ \+ assume_prop1(P),!.
 assume_prop(P):- \+ \+ assume_prop2(P),!.
 assume_prop(P):- \+ \+ is_debug_info(P).
-
 
 is_debug_info(Var):- \+ compound(Var),!,fail.
 is_debug_info(info(_)).
@@ -1705,7 +1705,7 @@ calc_o_d_recursively(TestID,ExampleNum,_TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSOb
 
 calc_o_d_recursively(TestID,ExampleNum,_TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- 
    Info = info(Step,IsSwapped,Ctx,leftover,TestID,ExampleNum,_),
-   RHSObjs==[], !,
+   RHSObjs==[], !, 
     must_det_ll((maplist(into_delete(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,Info),
      LHSObjs,Mappings),append_LR(Prev,[call(assert_test_property(TestID,ExampleNum,deps,ignore_rest(Info))),Mappings],RestLR))).
 

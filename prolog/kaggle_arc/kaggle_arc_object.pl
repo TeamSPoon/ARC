@@ -120,10 +120,9 @@ fg_grid_syms(_-BG,_):- is_bg_color(BG),!.
 %fg_grid_syms(FG,FG):- is_fg_color(FG),!.
 fg_grid_syms(S,S).
   
-add_extra_propz(obj(Obj),obj(ObjL)):- add_extra_propz_l(Obj,Obj,ObjL),!.
+add_extra_propz(obj(Obj),obj(ObjL)):- add_extra_propz_l(Obj,ObjL),!.
 
-%add_extra_propz_l(Obj,ObjO,[sym_counts(m4(TF),1)|ObjO]):- mass(Obj,Mass),into_true_false(Mass>4,TF).
-add_extra_propz_l(_,O,O).
+add_extra_propz_l(ObjO,ObjO).
 
 make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
   make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjM),
@@ -263,6 +262,7 @@ make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
    
     loc2D(LocX,LocY), 
     iz(ngrid(NormNGrid)),
+    iz(orderX(LocX)),
     NSymCounts,
     unkept(loc2G(LocXG,LocYG)),
     kept(center2D(CentX,CentY)),
