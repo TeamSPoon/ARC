@@ -1116,7 +1116,8 @@ consider_other_grid(VM):-
       %print_ss([Obj|Grid]-wqs(maybe_ogs(R,OH,OV))), %  atrace,  
       %print_grid(maybe_ogs(R,OH,OV),[Obj|Grid]), %  atrace,  
       remLOPoints(VM,GOPoints),
-      remLOPoints(VM,UsedByObj))))))).
+      remLOPoints(VM,UsedByObj))))))),
+ !.
 
 
 % =====================================================================

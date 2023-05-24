@@ -1681,6 +1681,7 @@ maybe_print_pre_pended_L(Out,Pre,[H|L]):- write(Out,H),nl(Out),!,write(Out,Pre),
 %pre_pend_each_line(_,Goal):- !,ignore(Goal).
 :- meta_predicate(pre_pend_each_line(+,0)).
 pre_pend_each_line(Pre,Goal):- write(Pre),pre_pend_each_line0(Pre,Goal).
+%pre_pend_each_line0(Pre,Goal):- !, call(Goal).
 pre_pend_each_line0(Pre,Goal):-
   current_output(Out),
   current_predicate(predicate_streams:new_predicate_output_stream/2),!,

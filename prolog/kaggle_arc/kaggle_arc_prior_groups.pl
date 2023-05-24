@@ -909,7 +909,22 @@ prop_first_value(List,Value):- is_list(List),!,member(Prop,List),prop_first_valu
 prop_first_value(Value,Value).
 
 prop_name(Prop,Named):- nonvar(Named),prop_name(Prop,Var),!,Named=Var.
+prop_name(Prop,Named):- make_prop_name(Prop,Named),!.
 prop_name(Prop,Named):- prop_first_value(Prop,Value), value_to_name(Value,Named),!.
+
+
+make_prop_name(X,Y):- \+ compound(X),!,X=Y.
+make_prop_name(simularz(Prop, _),simularz(Named)):- !, make_prop_name(Prop,Named).
+make_prop_name(pg(_,X,R,_),pg(X,R)):-!.
+make_prop_name(iz(Prop),iz(Named)):- !, make_prop_name(Prop,Named).
+make_prop_name(giz(Prop),giz(Named)):- !, make_prop_name(Prop,Named).
+make_prop_name(Prop,Free):- make_unifiable_cc(Prop,Named),remove_free_args(Named,Free),!.
+make_prop_name(Prop,Named):- functor(Prop,Named,_).
+remove_free_args(Named,Free):-  copy_term(Named,Free),term_variables(Free,Vs),numbervars(Vs,666,_,[singletons(true)]).
+%remove_free_args(Named,Free):- Named=..[F|Args],include(nonvar,Args,NArgs),Free=..[F|NArgs].
+
+
+
 
 value_to_name(Value,Named):- nonvar(Named),value_to_name(Value,Named2),!,Named2=Named.
 value_to_name(Value,Named):- \+ compound(Value),!,Value=Named.
@@ -2050,7 +2065,7 @@ make_unifiable_cc(recolor(N,_),recolor(N,_)):-!.
 make_unifiable_cc(rotSize2D(grav,_,_),rotSize2D(grav,_,_)):-!.
 %make_unifiable_cc(grid_ops(comp,_),grid_ops(comp,_)):-!.
 make_unifiable_cc(iz(symmetry_type(N,_)),iz(symmetry_type(N,_))):-!.
-make_unifiable_cc(pg(_,G,M,_),pg(_,UG,M,_)):-!,make_unifiable_cc(G,UG).
+make_unifiable_cc(pg(_,G,M,V),pg(_,UG,M,VV)):-!,make_unifiable_cc(G,UG),make_unifiable_cc(V,VV).
 make_unifiable_cc(O,U):- make_unifiable(O,U).
 
 count_objs(B,O):- \+ is_list(B),!, O = 0.
