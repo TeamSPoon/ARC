@@ -15,7 +15,7 @@ o1 to o1
 
 */
 :- encoding(iso_latin_1).
-:- include(kaggle_arc_header).
+:- include(kaggle_arc_header). 
 
 /*
 Props [Not] Shared Between
@@ -909,7 +909,22 @@ prop_first_value(List,Value):- is_list(List),!,member(Prop,List),prop_first_valu
 prop_first_value(Value,Value).
 
 prop_name(Prop,Named):- nonvar(Named),prop_name(Prop,Var),!,Named=Var.
+prop_name(Prop,Named):- make_prop_name(Prop,Named),!.
 prop_name(Prop,Named):- prop_first_value(Prop,Value), value_to_name(Value,Named),!.
+
+
+make_prop_name(X,Y):- \+ compound(X),!,X=Y.
+make_prop_name(simularz(Prop, _),simularz(Named)):- !, make_prop_name(Prop,Named).
+make_prop_name(pg(_,X,R,_),pg(X,R)):-!.
+make_prop_name(iz(Prop),iz(Named)):- !, make_prop_name(Prop,Named).
+make_prop_name(giz(Prop),giz(Named)):- !, make_prop_name(Prop,Named).
+make_prop_name(Prop,Free):- make_unifiable_cc(Prop,Named),remove_free_args(Named,Free),!.
+make_prop_name(Prop,Named):- functor(Prop,Named,_).
+remove_free_args(Named,Free):-  copy_term(Named,Free),term_variables(Free,Vs),numbervars(Vs,666,_,[singletons(true)]).
+%remove_free_args(Named,Free):- Named=..[F|Args],include(nonvar,Args,NArgs),Free=..[F|NArgs].
+
+
+
 
 value_to_name(Value,Named):- nonvar(Named),value_to_name(Value,Named2),!,Named2=Named.
 value_to_name(Value,Named):- \+ compound(Value),!,Value=Named.
@@ -1339,7 +1354,7 @@ group_vm_priors(VM):-
 % =====================================================================
 is_fti_step(really_group_vm_priors).
 % =====================================================================
-%really_group_vm_priors(_VM):-!.
+really_group_vm_priors(_VM):-!.
 really_group_vm_priors(VM):-
  must_det_ll((
   ObjsG0 = VM.objs,
@@ -1406,40 +1421,50 @@ add_rankings(Why,ObjsIn,WithPriors):- fail,
  add_rankings(Why,Objs,WithPriors).
 
 %add_rankings(_,Objs,Objs):-!.
-add_rankings(Why,Objs,WithPriors):- 
-  add_how_simular(Objs,Simulars),
-  group_prior_objs0(Why,Simulars,WithPriors),!.
+add_rankings(Why,ObjsIn,ObjOut):-
+  once(add_how_simular_once(ObjsIn,Simulars)),ObjsIn\=@=Simulars,!,
+  add_rankings(s(Why),Simulars,ObjOut).
+add_rankings(_,ObjsIn,ObjsIn).
+
+%add_rankings(Why,Objs,Simulars):- 
+%  group_prior_objs0(Why,Objs,Simulars).
 
 group_prior_objs0(Why,Objs,WithPriors):- 
  must_det_ll(group_prior_objs1(Why,Objs,WithPriors)),!,
  (Objs=@=WithPriors -> wdmsg(group_prior_objs0_same(Why)) ; wdmsg(group_prior_objs0_DIFFF(Why))),
  !.
 
-add_how_simular(ObjsIn,ObjsIn):-!.
-add_how_simular(ObjsIn,Simulars):-
-  add_how_simular(ObjsIn,ObjsIn,Simulars).
-
-add_how_simular([],_,[]):-!.
-add_how_simular([obj(O)|Objs],ObjsIn,[obj(OO)|Simulars]):- 
-  select(obj(O),ObjsIn,Rest),
-  add_how_common(O,Rest,OO),
-  add_how_simular(Objs,ObjsIn,Simulars).
-
-add_how_common([],_,[]):-!.
-add_how_common([Prop|O],Rest,[Prop,simularz(Prop,N)|OO]):- 
-  Prop\=giz(_), Prop\=simularz(_,_), Prop\=link(_,_),
-  Prop\=oid(_),
-  \+ (compound_name_arity(Prop,_,A),A>2),
-  % \+ ( arg(2,Prop,E),number(E) ),
-  % Prop\=pg(_,_,_,_),
-  findall(_,(sub_term(E,Rest),E==Prop),L),length(L,N),
-  %prop_name(Prop,Name),!,
-  add_how_common(O,Rest,OO).
-add_how_common([Prop|O],Rest,[Prop|OO]):-
-  add_how_common(O,Rest,OO).
   
 
-group_prior_objs1(Why,Objs,WithPriors):-   
+has_peer_simularz(Objs):- sub_compound(simularz(S,_),Objs),compound(S),S=simularz(_),!.
+
+%add_how_simular(Lbls,ObjsIn,ObjsIn):- !.
+%add_how_simular(Lbls,ObjsIn,ObjsIn):- has_peer_simularz(ObjsIn),!.
+
+add_how_simular_once(Objs,WithPriors):-
+  group_prior_objs0(add_how_simular_once,Objs,WithPriors).
+
+add_how_simular(_Lbls,[],_,[]):-!.
+add_how_simular(Lbls,[OBJ|Objs],ObjsIn,[obj(OO)|Simulars]):-  OBJ = obj(O),
+  select(OBJ,ObjsIn,Rest),
+  add_how_common(Lbls,OBJ,O,Rest,OO),
+  add_how_simular(Lbls,Objs,ObjsIn,Simulars).
+
+add_how_common(_Lbls,_Self,[],_,[]):-!.
+add_how_common(Lbls,Self,[Prop|O],Rest,[Prop,New|OO]):-   
+  \+ assume_prop(Prop), Prop\=link(_,_), 
+  Prop \= simularz(simularz(_),_),
+  Prop \= simularz(_,_),
+  %\+ (compound_name_arity(Prop,_,A), A>2), % \+ ( arg(2,Prop,E),number(E) ), % Prop\=pg(_,_,_,_),
+  prop_name(Prop,Name), 
+  New = simularz(Name,N),
+  \+ member(New,O), !,
+  findall(E,(member(obj(R),Rest), \+ \+ (member(E,R),E=@=Prop)),L),length(L,N), %prop_name(Prop,Name),!,
+  add_how_common(Lbls,Self,O,Rest,OO),!.
+add_how_common(Lbls,Self,[Prop|O],Rest,[Prop|OO]):-
+  add_how_common(Lbls,Self,O,Rest,OO).
+
+group_prior_objs1(Why,Objs,WithPriorsOut):- 
  must_det_ll((
  %print_list_of(show_indiv,add_rankings,Objs),!,
  flat_props(Objs,Flat),
@@ -1452,7 +1477,8 @@ group_prior_objs1(Why,Objs,WithPriors):-
  w_section(title(add_priors(Title)),
   %print_tree(groupPriors=Lbls,[max_depth(200)]),
   with_tag_class(div,nonpre,
-     add_uset_priors(ObjsLen,[iz(sid(_))|Lbls],Objs,WithPriors))))).
+     ((add_uset_priors(ObjsLen,[iz(sid(_))|Lbls],Objs,WithPriors),
+       add_how_simular(Lbls,WithPriors,WithPriors,WithPriorsOut))))))).
 
 skip_prior(HAD):- \+ compound(HAD),!.
 %skip_prior(HAD):- HAD=simularz(_,_),!,fail.
@@ -1489,31 +1515,32 @@ add_prior_info(Objs,ObjsLen,Common,VbO,obj(List),obj(NewList)):-
 add_prior_info(Objs,ObjsLen,Common,VbO,(List),(NewList)):- 
   add_prior_info_1(Objs,ObjsLen,Common,VbO,List,NewList),!.
 
-add_prior_info_1(Objs,ObjsLen,_Common,VbO,PropList,OUT):- is_list(PropList),ObjsLen>1, chk_from_same_grid(Objs),  
+  
+  
+add_prior_info_1(Objs,ObjsLen,Common,VbO,PropList,OUT):- is_list(PropList),chk_from_same_grid(Objs),  
   length(VbO,Rankers), Rankers>1,
   find_version(VbO,Prop,N1,N2,PropList),
   Prop\=pg(_,_,_,_), % Prop\=pen(_),
   member(Prop,PropList),
   %prop_name(Prop,Name),  
-  value_to_name(Prop,Name),
+  prop_name(Prop,Name),
   
   R = pg(PGRankers,Name,rank1, RA),  
   \+ member(R,PropList),  
+  nop(PGRankers = Rankers),
   
-  ObjsLen = PGRankers,
-  %subst(PropList,Prop,R,PropListR),
+  nop((print(vbo(prop(Prop),name(Name),common(Common),vbo(VbO),n1(N1),rankers(Rankers),n2(N2),objs(ObjsLen))),nl)),
+  %ObjsLen =  %subst(PropList,Prop,R,PropListR),
   PropList = PropListR,
-  must_det_ll((findall(Obj,(member(Obj,Objs),sub_term(OProp,Obj), (OProp =@= Prop)),Identicals),
-  length(Identicals,IL),
-  RA = N2, % order(N2)^n1(N1)^uniq(IL)^val(Prop)^supr(A4),
-  rank_size(ObjsLen,Name,N2,ExtraProp),
-  %arg(4,ExtraProp,A4),
-  %pg(ObjsLen,sames(Prop,_),rank1,RR),
+  %must_det_ll((findall(Obj,(member(Obj,Objs),sub_term(OProp,Obj), (OProp =@= Prop)),Identicals), %length(Identicals,IL),
+  RA = Rankers/N2, % /Rankers, % order(N2)^n1(N1)^uniq(IL)^val(Prop)^supr(A4),
+  %RA is rationalize(N2/Rankers), % /Rankers, % order(N2)^n1(N1)^uniq(IL)^val(Prop)^supr(A4),
+  rank_size(Rankers,Name,N2,ExtraProp),
+  %arg(4,ExtraProp,A4), %pg(ObjsLen,sames(Prop,_),rank1,RR),
   append(PropListR,[R ,ExtraProp %,simularz(Name,N1,IL)
-     /*,
-         pg(ObjsLen,Prop,sames,IL),
+     /*, pg(ObjsLen,Prop,sames,IL),
          
-         pg(ObjsLen,Name,simulars,N1)*/],OUTE))),!,
+         pg(ObjsLen,Name,simulars,N1)*/],OUTE),!,
   include(some_pgs_and_props(PropList),OUTE,OUT).
 
 add_prior_info_1(_Objs,_ObjsLen,_Common,_VersionsByCount,PropList,PropList).
@@ -1538,7 +1565,7 @@ redundant_prop(Props,center2D(_,_)):- sub_compound(loc2D(_,_),Props).
 %redundant_prop(Props,center2D(X,Y)):- sub_var(center2G(X,Y),Props).
 %redundant_prop(Props,center2G(X,Y)):- sub_var(center2D(X,Y),Props).
 some_pgs_and_props(_,[]):-!,fail.
-some_pgs_and_props(_,pg(_,Name,simulars,_)):- !, use_simulars(Name),!.
+%some_pgs_and_props(_,pg(_,Name,simulars,_)):- !, use_simulars(Name),!.
 some_pgs_and_props(_,pg(_,Name,rank1,_)):- !, use_rank1(Name),!.
 some_pgs_and_props(PropList,Name):- \+ redundant_prop(PropList,Name),!.
 
@@ -2050,7 +2077,7 @@ make_unifiable_cc(recolor(N,_),recolor(N,_)):-!.
 make_unifiable_cc(rotSize2D(grav,_,_),rotSize2D(grav,_,_)):-!.
 %make_unifiable_cc(grid_ops(comp,_),grid_ops(comp,_)):-!.
 make_unifiable_cc(iz(symmetry_type(N,_)),iz(symmetry_type(N,_))):-!.
-make_unifiable_cc(pg(_,G,M,_),pg(_,UG,M,_)):-!,make_unifiable_cc(G,UG).
+make_unifiable_cc(pg(_,G,M,V),pg(_,UG,M,VV)):-!,make_unifiable_cc(G,UG),make_unifiable_cc(V,VV).
 make_unifiable_cc(O,U):- make_unifiable(O,U).
 
 count_objs(B,O):- \+ is_list(B),!, O = 0.

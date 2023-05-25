@@ -4,7 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- include(kaggle_arc_header).
+:- include(kaggle_arc_header). 
 
 :- ensure_loaded(library(logicmoo/typesystem/mpred_type_constraints)).
 :- use_module(library(wfs)).
@@ -889,7 +889,7 @@ goal_expansion_q(Goal,I,Out,O):- var(I), is_goal_query(Goal), (goal_expansion_qu
 :- export(thread_httpd:http_process/4).
 :- system:import(thread_httpd:http_process/4).
 
-:- include(kaggle_arc_footer).
+:- include(kaggle_arc_footer). 
 
 :- multifile(goal_expansion/4).
 :- dynamic(goal_expansion/4).

@@ -4,7 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- include(kaggle_arc_header).
+:- include(kaggle_arc_header). 
 
 
 
@@ -2228,7 +2228,7 @@ clear_arc_learning:-
   retractall_in_testid(arc_cache:object_atomslist(_,_,_,_)))),!.
 prolog:make_hook(after, Some):- any_arc_files(Some), forall(clear_arc_learning,true), fail.
 
-%:- clear_arc_learning.
+%:- clear_arc_learning. 
 
 use_test_associatable_obj(In,Sol):-
  ((
@@ -2675,6 +2675,6 @@ learned_color_inner_shape(Name,Color,Fill,Grid,GrowthChart):-
 
  
 
-:- include(kaggle_arc_footer).
+:- include(kaggle_arc_footer). 
 
 

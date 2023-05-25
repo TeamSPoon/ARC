@@ -4,7 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- include(kaggle_arc_header).
+:- include(kaggle_arc_header). 
 
 :- use_module(library(pengines)).
 
@@ -1662,13 +1662,12 @@ run_next_test:- notrace(next_test), fully_test.
 www_demo:- as_if_webui(demo).
 
 info(Info):- nonvar(Info),u_dmsg(Info).
-system:demo:- 
-  catch_log(reverse_suite),
-  update_changes,!,clear_tee,
-  begin_tee,interact.
-
+demo:- user:interact.
+demo:- 
+  catch_log(user:reverse_suite),
+  user:update_changes,!,user:clear_tee,
+  begin_tee,user:interact.
 :- export(demo/0).
-system:demo:-demo.
 rat:- info("Run all tests"), run_all_tests.
 noninteractive_test(X):- my_time(ignore(forall(arc1(true,X),true))).
 

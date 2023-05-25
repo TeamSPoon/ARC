@@ -4,7 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- include(kaggle_arc_header).
+:- include(kaggle_arc_header). 
 
 /*  
 
@@ -32,6 +32,7 @@ mask_to_fullnames(Mask,FullNames):-
   
 
 :- export(load_json_files/3).
+
 load_json_files(SuiteX,F,Mask):- 
   asserta_if_new(dir_test_suite_name(SuiteX)),
   locally(t_l:local_test_props([test_suite=SuiteX,loadmask=Mask]),

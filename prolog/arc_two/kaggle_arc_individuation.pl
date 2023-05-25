@@ -15,7 +15,7 @@ o1 to o1
 
 
 */
-:- include(kaggle_arc_header).
+:- include(kaggle_arc_header). 
 :- multifile is_fti_step/1.
 :- discontiguous is_fti_step/1.
 :- discontiguous is_fti_stepr/1.
@@ -1116,7 +1116,8 @@ consider_other_grid(VM):-
       %print_ss([Obj|Grid]-wqs(maybe_ogs(R,OH,OV))), %  atrace,  
       %print_grid(maybe_ogs(R,OH,OV),[Obj|Grid]), %  atrace,  
       remLOPoints(VM,GOPoints),
-      remLOPoints(VM,UsedByObj))))))).
+      remLOPoints(VM,UsedByObj))))))),
+ !.
 
 
 % =====================================================================
@@ -1192,7 +1193,8 @@ combine_objects(Why,I,O,New,VM):-
    Objs = VM.objs,
    select(I,Objs,Objs1),
    select(O,Objs1,Objs2),
-   gset(VM.objs)=Objs2)).
+   gset(VM.objs)=Objs2)),
+ show_bad_objs(combine_objects,Objs2).
 
 
 
@@ -2087,7 +2089,7 @@ into_points_grid(GridIn,Points,Grid):-
    into_grid(GridIn,Grid),!.
 
 do_individuate(VM, ROptions, GridIn,LFO):- must_be_free(LF), 
- locally(set_prolog_flag(nogc,false),
+ locally(set_prolog_flag(gc,false),
    (into_grid(GridIn,Grid),  grid_to_tid(Grid,ID), %my_assertion(\+ is_grid(ID)),
     individuate7(VM,ID,ROptions,Grid,LF))),!,
     guard_whole(LF,LFO),
@@ -2132,6 +2134,7 @@ individuate8(VM,ID,ROptions,GridIn,IndvS):-
       combine_same_globalpoints(IndvS1,IndvS),
       print_ss(indvS,ObjsB,IndvS),
       %list_to_set(IndvS1,IndvS),
+      show_bad_objs(individuate8,IndvS),
       nop(print_info(IndvS)))).  
 
 
@@ -4113,7 +4116,7 @@ leftover_as_one(VM):-
    Points = VM.lo_points,
    ignore((Points\==[],
    u_dmsg(leftover_as_one=Points),
-   make_indiv_object(VM,[iz(info(combined)),iz(info(leftover_as_one))],Points,LeftOverObj), verify_object(LeftOverObj),
+   make_indiv_object(VM,[iz(info(combined)),iz(info(leftover_as_one))],Points,LeftOverObj), verify_object(leftovers,LeftOverObj),
    assumeAdded(VM,LeftOverObj))),
    VM.lo_points=[].
 
@@ -4126,7 +4129,7 @@ current_as_one(VM):-
    Points\==[],
    %set_html_stream_encoding, 
    u_dmsg(current_as_one=Points),
-   make_indiv_object(VM,[iz(info(combined)),birth(current_as_one)],Points,LeftOverObj), verify_object(LeftOverObj),
+   make_indiv_object(VM,[iz(info(combined)),birth(current_as_one)],Points,LeftOverObj), verify_object(as_one,LeftOverObj),
    assumeAdded(VM,LeftOverObj),
    set(VM.lo_points) = Points)).
    
@@ -4814,10 +4817,6 @@ merge_a_b(A,B,AA):-
     (progress(same_object(GlyphA,GlyphB,How))))).
 
 
-
-
-
-
 individuation_macros(subshape_in_object, complete).
 
 
@@ -5247,6 +5246,6 @@ individuation_macros(unused, [
   ]). 
 
 
-:- include(kaggle_arc_footer).
+:- include(kaggle_arc_footer). 
 
 

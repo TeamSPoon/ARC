@@ -5,7 +5,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- include(kaggle_arc_header).
+:- include(kaggle_arc_header). 
 
 :- multifile(decl_pt/1).
 :- discontiguous(decl_pt/1).
@@ -120,9 +120,17 @@ fg_grid_syms(_-BG,_):- is_bg_color(BG),!.
 %fg_grid_syms(FG,FG):- is_fg_color(FG),!.
 fg_grid_syms(S,S).
   
+add_extra_propz(obj(Obj),obj(ObjL)):- add_extra_propz_l(Obj,Obj,ObjL),!.
+
+add_extra_propz_l(Obj,ObjO,[sym_counts(m4(TF),1)|ObjO]):- mass(Obj,Mass),into_true_false(Mass>4,TF),!.
+add_extra_propz_l(_,O,O).
+
+make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):- 
+  make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjM),
+  add_extra_propz(ObjM,ObjO).
 
 :- style_check(+singleton).
-make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):- 
+make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):- 
  fix_point_colors(GPoints00,GPoints0),
  must_be_nonvar(GID0),
  testid_name_num_io(GID0,TestID,Example,Num,IO),
@@ -307,9 +315,9 @@ make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
   %make_localpoints(ShapePoints,RotG,OX,OY,PenColors,XX), assertion((XX == LPoints)),
 
   with_objprops(override,NewOverrides,Ps,OUT1),
-  sort_obj_props(OUT1,OUT),!,as_obj(OUT,Obj),verify_object(Obj),!,
+  sort_obj_props(OUT1,OUT),!,as_obj(OUT,Obj),  
   remove_gridoid_props(Obj,ObjM),
- must_det_ll((ObjM = ObjO)))).
+ must_det_ll(((ObjM = ObjO),verify_object(make(NewOverrides,Ps),ObjO))))).
 
 not_bad_prop(P):- bad_prop(P),!,fail.
 not_bad_prop(_).
@@ -369,7 +377,16 @@ grid_to_individual(GridIn,Obj):-
   grid_size(Grid,H,V),
   grid_to_points(Grid,H,V,Points),
   (Points==[]-> empty_grid_to_individual(H,V,Obj); 
-  (make_indiv_object(VM,[iz(grid)],Points,Obj))).
+  (make_indiv_object(VM,[iz(grid),iz(whole_grid)],Points,Obj))).
+
+
+grid_to_single_object(ID,GridIn,Obj):-   
+ must_det_ll((  
+  into_grid(GridIn,Grid),
+  grid_size(Grid,H,V),
+  grid_to_points(Grid,H,V,Points),
+  make_indiv_object_no_vm(ID,H,V,[iz(grid),iz(whole_grid)],Points,Obj))).
+
 
 empty_grid_to_individual(H,V,Obj):-
   Iv is H + V*34,
@@ -447,13 +464,23 @@ sort_points(P0,P2):-
 
 %same_globalpoints(O1,O2):-  globalpoints_include_bg(O1,P1),same_globalpoints_ps_obj(P1,O2).
 
+same_globalpoints2(I,O):- 
+   globalpoints(I,II), globalpoints(O,OO),!,
+   pred_intersection(=@=,II,OO,_,_,IL,OL),!,
+   IL==[],OL==[].
 same_globalpoints_and_window(I,O):-
   %get_loc2D_vis2D(I,P1,H1,V1,OH1,OV1),
   %get_loc2D_vis2D(O,P2,H2,V2,OH2,OV2),!,  
   %P1=@=P2,H1=H2,V1=V2, OH1=OH2,OV1=OV2,
+  
   loc2D(I,X1,Y1),loc2D(O,X2,Y2),X1=X2,Y1=Y2,
   vis2D(I,X1a,Y1a),vis2D(O,X2a,Y2a),X1a=X2a,Y1a=Y2a,
-  shape_rep(grav,I,P1),shape_rep(grav,O,P2), P1=@=P2.
+  shape_rep(grav,I,P1),shape_rep(grav,O,P2),
+  P1=@=P2,
+  ignore((\+ (same_globalpoints2(I,O),
+     globalpoints(I,II), globalpoints(O,OO),
+     print_ss(same_globalpoints_and_window,II,OO)))).
+  
  
 same_globalpoints_ovrs_ps_obj(Overrides,P1,O2):-
   po_loc2D_vis2D(P1,Overrides,H1,V1,OH1,OV1),
@@ -758,15 +785,16 @@ add_shape_info0([Info|L],I,O):-!,add_shape_info0(Info,I,M),add_shape_info0(L,M,O
 add_shape_info0([],I,I):-!.
 add_shape_info0(Info,I,O):- with_object(override,iz(Info),I,O).
 
-verify_object(Obj):-
+verify_object(Info,Obj):-
  % my_assertion(localpoints(Obj,_LP)),
  % my_assertion(globalpoints(Obj,_GP)),
+ ignore(show_bad_objs(Info,Obj)),
   nop(assertion((iz(Obj,symmetry_type(What)), nonvar(What)))).
 
 override_object([],I,I):-!.
 override_object(E,I,O):- with_object(override,E,I,O).
 
-with_object(Op,E,obj(List),O):- !, with_objprops(Op,E,List,MidList),O=obj(MidList),!,verify_object(O).
+with_object(Op,E,I,O):- I= obj(List), !, with_objprops(Op,E,List,MidList),O=obj(MidList),!,verify_object(with_object(Op,E,I),O).
 with_object(Op,E,I,O):- is_group(I), mapgroup(with_object(Op,E),I,O).
 % with_object(Op,E,I,O):- is_list(I), !, with_objprops(Op,E,I,O).
 with_object(Op,E,     I,     O):- with_objprops(Op,E,I,O).
@@ -809,7 +837,7 @@ with_objprops2(override,E,List,NewList):-
 aggregates(iz(_)).
 aggregates(occurs_in_links(_,_)).
 aggregates(links_count(_,_)).
-aggregates(sym_count(_,_)).
+aggregates(sym_counts(_,_)).
 aggregates(creates_object(_,_)).
 aggregates(links_to_object(_,_)).
 
@@ -847,13 +875,35 @@ is_edge_hv(_,N,_,_,N):-!.
 
 is_fg_object(Obj):- is_whole_grid(Obj),!.
 is_fg_object(Obj):- sub_var(cc(bg,0),Obj),!.
+is_fg_object(Obj):- sub_var(iz(fg_or_bg(iz_fg)),Obj),!.
+is_fg_object(Obj):- fail, \+ sub_var(black,Obj), \+ sub_var(iz(fg_or_bg(iz_bg)),Obj),
+  is_object(Obj), \+ is_bg_object(Obj).
 %is_fg_object(Obj):- is_rule_mapping(Obj),!,fail.
-is_fg_object(Obj):- \+ is_bg_object(Obj),!.
+%is_fg_object(Obj):- \+ is_bg_object(Obj),!.
+
+
 
 is_used_fg_object(Obj):- has_prop(cc(fg,FG),Obj),FG>0, \+ is_whole_grid(Obj). 
 
 is_whole_grid(B):- has_prop(iz(stype(whole)),B), \+ has_prop(iz(stype(part)),B),!.
 
+
+
+
+merge_objs(I,O,OUT):-
+  indv_props_list(I,IProps),
+  indv_props_list(I,OProps),
+  print_ss(combine_same_globalpoints_really,I,O),
+  %wots(SI,writeg(I)), wots(SO,writeg(O)), print_ss(combine_same_globalpoints_really,SI,SO),
+  my_partition(props_not_black_bg,IProps,_,Include1),
+  my_partition(props_not_black_bg,OProps,_,Include2),
+  % iz(merged(cgp))
+  append_sets(Include1,Include2,IO),!,
+  (member(globalpoints(_),IO)
+     ->OUT=obj(IO)
+     ;override_object(IO,I,OUT)).
+%props_not_black_bg(P):- props_not_for_merge(P),!.
+props_not_black_bg(P):- sub_var(black,P).
 
 
 merge_objs(_VM,Bigger,[],_IPROPS,Bigger):-!.
@@ -1703,12 +1753,12 @@ ngrid_syms(NGrid,[Extra]):- !,
  subst_syms(bg,TGrid90,GFlatSyms),get_ccs(GFlatSyms,Syms),
  ignore(member(cc('*',Stars),Syms)), ignore(member(cc('+',Plusses),Syms)), ignore(Plusses=0),ignore(Stars=0),
  PS is 10* Plusses+Stars,
- Extra= sym_count('+*',PS).
+ Extra= sym_counts('+*',PS).
 */ 
 create_sym_vectors(Syms,Counts):-
   findall(sym_counts(Sym,Count),
-    (vector_pairs(ListU),
-     sort(ListU,List),atomic_list_concat([sym|List],'_',Sym),
+    (vector_pairs(T,ListU),
+     sort(ListU,List),atomic_list_concat([sym,T|List],'_',Sym),
      total_ccs(1,List,Syms,Count)),Counts).
 
 total_ccs(_,[],_,0).
@@ -1717,12 +1767,12 @@ total_ccs(N,[S|List],Syms,Count):-
  total_ccs(N2,List,Syms,CT),!,
  (member(cc(S,C),Syms)->(Count is (CT + (C*N))); Count=CT).
 
-into_sym_count(cc(Sym,Count),iz(sym_count(Sym,Count))).
+into_sym_count(cc(Sym,Count),sym_counts(Sym,Count)).
 
 %vector_pairs([A,B]):- find_syms(T,A),find_syms(T,B),A@<B.
 %vector_pairs([S]):- find_syms(S).
 %vector_pairs([S]):- find_syms(_,S).
-vector_pairs(SS):- findall_vset(T,find_syms(T,_),TT),member(T,TT),findall(S,find_syms(T,S),SS).
+vector_pairs(T,SS):- findall_vset(T,find_syms(T,_),TT),member(T,TT),findall(S,find_syms(T,S),SS).
 
 find_syms(node,'@'). find_syms(node,'+'). find_syms(node,'*'). find_syms(node,'~').
 find_syms(dir,'<'). find_syms(dir,'>'). find_syms(dir,'v'). find_syms(dir,'^').
@@ -1933,7 +1983,7 @@ rebuild_from_localpoints(Obj,WithPoints,NewObj):-
   indv_props_list(Obj,Props),my_partition(is_prop_automatically_rebuilt,Props,_,PropsRetained),
   remObjects(VM,Obj),
   make_indiv_object(VM,[loc2D(X,Y),globalpoints(GPoints),localpoints(Points)|PropsRetained],GPoints,NewObj))))),
-   verify_object(NewObj),
+   verify_object(rebuilt_local,NewObj),
    assumeAdded(VM,NewObj),
   !.
 
@@ -2019,7 +2069,7 @@ rebuild_from_globalpoints(VM,Obj,GPoints,NewObj):-
   assumeAdded(VM,NewObj),
   %ppa(propsRetained=PropsRetained),
   %ppa(after=NewObj),
-    verify_object(NewObj))),
+    verify_object(rebuilt_global,NewObj))),
  !.
 
 
@@ -2508,5 +2558,5 @@ dictoo:is_dot_hook(M,Self,Func,Value):- M\==thread_util,M\==shell, \+ is_dict(Se
 
 
 
-:- include(kaggle_arc_footer).
+:- include(kaggle_arc_footer). 
 

@@ -4,7 +4,7 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
-:- include(kaggle_arc_header).
+:- include(kaggle_arc_header). 
 
 showdiff(A,B):- is_group(A), is_group(B), showdiff_groups(A,B),!.
 showdiff(A,B):- is_object(A), is_object(B), dmsg((showdiff_objects(A,B))),!.
@@ -1112,19 +1112,19 @@ is_fti_step(combine_same_globalpoints).
 combine_same_globalpoints(VM):- combine_same_globalpoints(VM.objs,set(VM.objs)).
 
   
-combine_same_globalpoints(IndvS,IndvSO):- 
+combine_same_globalpoints_really(IndvS,IndvSO):- 
   append(NoDupes,[I|Rest],IndvS),
   select(O,Rest,IndvS2),  \+ is_whole_grid(O),
   %merge_2objs(VM,I,O,[],IO),
   %must_det_ll(indv_props_list(O,OProps)),
-  must_det_ll(indv_props_list(I,IProps)),
   same_globalpoints_and_window(I,O),
-  my_partition(props_not_for_merge,IProps,_Exclude,Include),
-  % iz(merged(cgp))
-  must_det_ll(override_object(Include,O,IO)),
-  must_det_ll(combine_same_globalpoints([IO|IndvS2],NoMoreDupes)),
-  must_det_ll(append(NoDupes,NoMoreDupes,IndvSO)),!.
-combine_same_globalpoints(IndvSO,IndvSO).
+  must_det_ll((merge_objs(I,O,IO),
+  combine_same_globalpoints_really([IO|IndvS2],NoMoreDupes),
+  append(NoDupes,NoMoreDupes,IndvSO))),!.
+combine_same_globalpoints_really(IndvS,IndvS).
+
+combine_same_globalpoints(IndvS,IndvSO):- combine_same_globalpoints_really(IndvS,IndvSO),!.
+combine_same_globalpoints(IndvS,IndvSO):- duplicate_term(IndvS,IndvSO),IndvS=IndvSO.
 
 
 %overlap_same_obj_no_diff(I,O):- compare_objs1(perfect,I,O). %diff_objects(I,O,Diff),Diff==[]. 
@@ -2020,7 +2020,7 @@ prefer_grid(G):- is_object_or_grid(G).
 
 
 
-:- include(kaggle_arc_footer).
+:- include(kaggle_arc_footer). 
 
 
 
