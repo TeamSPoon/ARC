@@ -1662,11 +1662,11 @@ run_next_test:- notrace(next_test), fully_test.
 www_demo:- as_if_webui(demo).
 
 info(Info):- nonvar(Info),u_dmsg(Info).
-demo:- user:interact.
-demo:- 
-  catch_log(user:reverse_suite),
-  user:update_changes,!,user:clear_tee,
-  begin_tee,user:interact.
+system:demo:- 
+  catch_log(reverse_suite),
+  update_changes,!,clear_tee,
+  begin_tee,interact.
+
 :- export(demo/0).
 rat:- info("Run all tests"), run_all_tests.
 noninteractive_test(X):- my_time(ignore(forall(arc1(true,X),true))).

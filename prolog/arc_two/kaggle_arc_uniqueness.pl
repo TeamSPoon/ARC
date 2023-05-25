@@ -703,31 +703,25 @@ obj_group5(TestID,ExampleNum,InOut,ROptions,Objs):-
 show_object_dependancy(TestID):-  
 % =============================================================
  ensure_test(TestID),
- clear_object_dependancy(TestID),
- learn_object_dependancy(TestID),
+ %clear_object_dependancy(TestID),
+ ensure_object_dependancy(TestID),
  print_object_dependancy(TestID).
 
 % =============================================================
-learn_object_dependancy(TestID):-
+ensure_object_dependancy(TestID):-
 % =============================================================
  ensure_test(TestID),
   must_det_ll((
   ensure_individuals(TestID),
  ignore((ExampleNum=trn+_)),
  forall(kaggle_arc(TestID,ExampleNum,_,_),
-	  learn_object_dependancy(TestID,ExampleNum)),
+	  ensure_object_dependancy(TestID,ExampleNum)),
   merge_object_dependancy(TestID))).
 
-learn_object_dependancy(TestID,ExampleNum):-
+ensure_object_dependancy(TestID,ExampleNum):-
  %current_example_nums( TestID,ExampleNum),
  must_det_ll(( obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs),
-   maybe_learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs))).
-
-maybe_learn_object_dependancy(TestID,ExampleNum,_RHSObjs,_LHSObjs):-
-  arc_cache:prop_dep(TestID,ExampleNum,_,_,_,_,_,_,_), arc_cache:trans_rule_db(TestID,ExampleNum,_,_), !.
-
-maybe_learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
-  learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
+   ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs))).
 
 print_grid_pp(O):- global_grid(O,G),!,print_grid(G),nl,pp(O).
 
@@ -746,9 +740,31 @@ show_bad_objs(G,O):- fail,
   !.
 show_bad_objs(_G,_O).
 
-learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):- 
+ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
+  (var(TestID),var(RHSObjs),var(LHSObjs)),ensure_test(TestID),!,
+  my_assertion(nonvar(TestID)),!,
+  ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
+
+ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
+  (var(ExampleNum),var(RHSObjs),var(LHSObjs),nonvar(TestID)),!,
+  kaggle_arc(TestID,ExampleNum,_,_),
+  my_assertion(nonvar(ExampleNum)),
+  ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
+
+ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
+  (var(RHSObjs);var(LHSObjs)), !, 
+  obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs),
+  my_assertion(((nonvar(RHSObjs),nonvar(LHSObjs)))),
+  ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
+
+ensure_object_dependancy(TestID,ExampleNum,_RHSObjs,_LHSObjs):- % arc_cache:prop_dep(TestID,ExampleNum,_,_,_,_,_,_,_), 
+ \+ \+ arc_cache:trans_rule_db(TestID,ExampleNum,_,_), !.
+
+ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):- 
  into_object_dependancy_r_l(TestID,ExampleNum,Ctx,RHSObjs,LHSObjs,Groups),
- assert_map_pairs(TestID,ExampleNum,Ctx,Groups),!.  
+   pp_ilp(ctx(Ctx)=Groups),
+   assert_map_pairs(TestID,ExampleNum,Ctx,Groups).  
+
 
 normalize_objects_for_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsO,LHSObjsO):- 
   different_lengths(LHSObjs,RHSObjs),
@@ -865,7 +881,8 @@ combine_more(Excluded,TestID,Ctx,Rule1,Combined):-
    combine_more([RuleID2|Excluded],TestID,Ctx,NewRule,Combined).
 combine_more(_Excluded,_TestID,_Ctx,Combined,Combined).
 */
-assert_map_pairs(TestID,ExampleNum,Ctx,Group):- is_list(Group),!,maplist(assert_map_pairs(TestID,ExampleNum,Ctx),Group).
+assert_map_pairs(TestID,ExampleNum,Ctx,Group):- is_list(Group),!,
+  maplist(assert_map_pairs(TestID,ExampleNum,Ctx),Group).
 /*
 assert_map_pairs(TestID,ExampleNum,Ctx,l2r(Info,In,Out)):-!,
   assertz_new(arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,l2r(Info,In,Out))),!.
@@ -903,7 +920,9 @@ print_object_dependancy(TestID):-
    ( dash_chars,forall(arc_cache:map_group(TestID,_,_IO_,Group),
     once(((dash_chars,dash_chars,pp_ilp(Group),dash_chars,dash_chars)))))),
   dash_chars,*/
-% findall_vset_R(l2r(Info,Pre,Post),arc_cache:map_pairs(TestID,_,_IO_2,Info,Pre,Post),Set1),
+  findall_vset_R(l2r(Info,Pre,Post),arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,l2r(Info,Pre,Post)),Set1),
+  pp_ilp(deps=Set1),
+  nop((
 % maplist(pp_ilp,Set1),
  nop((dash_chars,dash_chars,
  %pp_ilp_vset(l2r(Info,Pre,Post),pair_obj_info(TestID,_,_,Info,Pre,Post)),
@@ -913,10 +932,22 @@ print_object_dependancy(TestID):-
  dash_chars,dash_chars,
   with_vset(
     arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,l2r(Info,In,Out)),
-        pp_ilp(l2r(Info,In,Out))),
- !.
+       pp_obj_tree(3,Info,In,Out)))).
+
+        %%pp_ilp(print_io_terms(D+7,In,Out),l2r(Info,In,Out))),
+ 
  %if_t(Set1 =@= Set2,  wdmsg('Set 2 the same')),
  %if_t(Set1 \=@= Set2,
+pp_obj_tree(D,Info,In,Out):-  
+  once(into_solid_grid_strings_1(In,ITerm)),
+  once(into_solid_grid_strings_1(Out,OTerm)),
+  prefix_spaces(D,print(Info)),
+  prefix_spaces(D+2,pp_ilp(ITerm)),
+  prefix_spaces(D+10,dash_chars),
+  prefix_spaces(D+2,pp_ilp(OTerm)),!.
+
+
+
 
 findall_vset_R(T,G,R):- findall_vset(T,G,S), vsr_set(S,R). %,reverse(R,L).
 vsr_set(L,P):- flatten([L],F),vs_set(F,R),reverse(R,P).
@@ -1456,7 +1487,7 @@ pp_grp(D,Info,In,Out):-
   prefix_spaces(D,(dash_chars,format('<l2r  ~@ >\n',[print(Info)]))),
   print_io_terms(D+7,In,Out),
   %show_cp_dff_rem_keep_add1(In,Out),
-  show_cp_dff_rem_keep_add(In,Out),
+  %show_cp_dff_rem_keep_add(In,Out),
   %prefix_spaces(D+8,show_code_diff(Info,In,Out)),
   prefix_spaces(D,(write('</l2r>\n'),dash_chars)).
   %flat_props(InL,E1),flat_props(OutL,E2),show_cp_dff_rem_keep_add(E1,E2),
@@ -1751,11 +1782,13 @@ pairs_of_any(RelaxLvl,Info,LHSObjs,RHSObjs,SoFar,PairsR) :- n_or_more(2,LHSObjs)
   pairs_of_any(RelaxLvl,Info,LHSObjsM,RHSObjsM,SoFar,SoFarMN),
   pairs_of_any(RelaxLvl,Info,LHSObjsN,RHSObjsN,SoFarMN,PairsR),!.
 
+  /*
 pairs_of_any(RelaxLvl,Info,LHSObjs,RHSObjs,SoFar,PairsR) :- LHSObjs\==[],RHSObjs\==[],
   Type = perfect_combo,
   select_pair(Type,[],RHSObjs,LHSObjs,Right,Left,RestR,RestL),
   merge_vals(info([type(Type)]),Info,PInfo), incr_step(Info,NInfo),
   pairs_of_any(RelaxLvl,NInfo,RestL,RestR,[l2r(PInfo,Left,Right)|SoFar], PairsR).
+*/
 
 pairs_of_any(RelaxLvl,Info,LHS,[Right|RHS],SoFar,PairsR) :- LHS\==[],
   sort_by_jaccard(Right,LHS,[Left|RestL]),
@@ -2636,7 +2669,8 @@ compute_scene_change_pass_out(TestID,Rules, Combined):-
 
 
 compute_scene_change_pass1(TestID):- 
-  learn_object_dependancy(TestID),
+  clear_object_dependancy(TestID),
+  ensure_object_dependancy(TestID),
   print_object_dependancy(TestID),!.
 
 

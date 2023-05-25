@@ -108,24 +108,53 @@ pass2_rule3(TestID,Ctx,edit(Type,different,P),[iz(info(propcan(true,Ctx)))|PSame
   rhs_ground(RHS).
 */
 
+/*
+into_object_dependancy_r_l(TestID,ExampleNum,Ctx,RHSObjs,LHSObjs,Groups):-
+ nop((
+
+  RHSObjs\==[],LHSObjs\==[],
+  print_ss(normalize_objects_for_dependancy,LHSObjs,RHSObjs),
+  
+  if_t(different_lengths(RHSObjs,LHSObjs),(kaggle_arc(TestID,ExampleNum,I,O),show_bad_objs(I,LHSObjs),show_bad_objs(O,RHSObjs))),
+  normalize_objects_for_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs,RHSO,LHSO),
+  %prinnt_sbs_call(LHSO,RHSO),  
+  % TM = _{rhs:RHSO, lhs:LHSO},
+  print_ss(learn_object_dependancy,LHSO,RHSO),
+
+  if_t(different_lengths(LHSO,RHSO), (print_list_of(print_grid,lhs,LHSO), print_test(TestID>ExampleNum), 
+    print_list_of(print_grid,rhs,RHSO))))),
+
+  %maplist(tPairs),
+  if_t(different_lengths(LHSO,RHSO), (pp_ilp(dep_tree=Groups))).
+*/
+into_object_dependancy_r_l(TestID,ExampleNum,Ctx,RHSO,LHSO,Groups):-
+  Step=0,Ctx=in_out,IsSwapped=false,
+  Info = info([step(Step),ctx(Ctx),testid(TestID),is_swapped(IsSwapped),example(ExampleNum)]),
+  ((arg(_,v([],[delete],[all]),RelaxLvl),
+    pairs_of_any(RelaxLvl,Info,LHSO,RHSO,[],Groups))),!,
+  print_ss(into_object_dependancy_r_l,LHSO,RHSO),
+  pp_ilp(r_l=Groups),!.
+
+
 trans_rules_current_members1(TestID,Ctx,Rules):-
   ensure_test(TestID),
   ignore((ExampleNum=trn+_)),
   kaggle_arc(TestID,ExampleNum,_,_),
 
-  obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs), RHSObjs\==[],LHSObjs\==[],
-  Step=0,Ctx=in_out,IsSwapped=false,
-  normalize_objects_for_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsOrdered,LHSObjsOrdered),
-    %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
-  TM = _{rhs:RHSObjsOrdered, lhs:LHSObjsOrdered},
-  calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,[],LHSObjsOrdered,RHSObjsOrdered,Groups),
-  %pp_ilp(groups=Groups),
+  obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs), %% RHSObjs\==[],LHSObjs\==[],
+
+  into_object_dependancy_r_l(TestID,ExampleNum,Ctx,RHSObjs,LHSObjs,Groups),
+
   member(l2r(Info,In,Out),Groups),
-  into_list(In,InL),into_list(Out,OutL),trans_rule(Info,InL,OutL,TransRules), 
+
+  into_list(In,InL),into_list(Out,OutL),
+  trans_rule(Info,InL,OutL,TransRules), 
+
   member(Rules,TransRules).
   
 trans_rules_current_members(TestID,Ctx,Rules):-
-  ((fail,arc_cache:trans_rule_db(TestID,_ExampleNum1,Ctx,Rules),Rules\=l2r(_,_,_))*->true;
+  ensure_test(TestID),
+  ((fail, arc_cache:trans_rule_db(TestID,_ExampleNum1,Ctx,Rules),Rules\=l2r(_,_,_))*->true;
     trans_rules_current_members1(TestID,Ctx,Rules)).
 
 trans_rules_combined_members(TestID,Ctx,CombinedM):-
@@ -263,8 +292,8 @@ trans_rule(Info,[],Out,Rules):- listify(Out,OutL),
 
 % 2 preconds
 trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2), % fail,
-   noteable_propdiffs(In1, Out,_Same1,_DontCare1,New1), 
-   noteable_propdiffs(In2,New1,_Same2,_DontCare2,New2),
+   noteable_propdiffs2(In1, Out,_Same1,_DontCare1,New1), 
+   noteable_propdiffs2(In2,New1,_Same2,_DontCare2,New2),
    %remove_o_giz(Out,RHSO), 
    remove_o_giz(In1,Precond1), remove_o_giz(In2,Precond2),
    %sub_comInfo = info(Step,_IsSwapped,_Ctx,TypeO,_,_,_),
@@ -310,10 +339,11 @@ trans_rule(Info,In,Out,Rules):-
 trans_rule(Info,E1,E2,Rules):-
   noteable_propdiffs(E1,E2,NSame,NL,NR),
   %pp_ilp(l2r(Info,E1,E2)),
-  dash_chars,
-  if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
   flat_props(E1,FP1),flat_props(E2,FP2),
   intersection(FP1,FP2,Same,InFlatP,OutPFlat),
+  nop((
+   dash_chars,
+   if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
   pp_ilp(removed=InFlatP),
   pp_ilp(sames=Same),
   pp_ilp(added=OutPFlat),
@@ -321,8 +351,8 @@ trans_rule(Info,E1,E2,Rules):-
   pp_ilp(nremoved=NL),
   pp_ilp(nsames=NSame),
   pp_ilp(nadded=NR),
+  dash_chars)),
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
-  dash_chars,
   Rules = [ 
     create_object_step(Info,rhs(create3c(Step,TypeO,E2)),lhs(Same)) ],!.
     %copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ].
@@ -330,6 +360,7 @@ trans_rule(Info,E1,E2,Rules):-
 
 
 
+end_of_file.
 
 
 

@@ -20,7 +20,6 @@
 %:- break.
 
 
-% Docker VM shoudl contain a /data directory
 mask_to_fullnames(Mask,FullNames):- absolute_file_name(Mask,AbsMask,[relative_to('/data')]), 
   expand_file_name(AbsMask,FullNames),FullNames\==[].
 mask_to_fullnames(Mask,FullNames):- AbsMask = Mask, expand_file_name(AbsMask,Nonmask),Nonmask\==[],
@@ -63,22 +62,12 @@ load_json_file(F, FName):- load_json_file_abs(F, FName),!.
 */
 %load_json_file(F, FName):-  pp(load_json_file(F)=FName),fail.
 load_json_file(F, FName):- is_list(FName),!,my_maplist(load_json_file(F), FName).
-
-
+load_json_file(F, FName):- \+ exists_file(FName), expand_file_name(FName,FullNames),FullNames\=@=[FName],last(FullNames,Exist),exists_file(Exist),!,load_json_file(F, FullNames).
 load_json_file(F,PathMasked):- atomic(PathMasked),directory_file_path(Dir,Mask,PathMasked),
   arc_sub_path(Dir,RealDir), exists_directory(RealDir),
   directory_file_path(RealDir,Mask,NewMask),
   NewMask\==PathMasked,!, 
   load_json_file(F,NewMask).
-
-load_json_file(F,Mask):- atomic(Mask), exists_directory(Mask),
-  directory_file_path(Mask,'*.json',NewMask),!,load_json_file(F,NewMask).
-
-load_json_file(F, FName):- atomic(FName), \+ exists_file(FName), 
-  expand_file_name(FName,FullNames),FullNames\=@=[FName],
-  last(FullNames,Exist),exists_file(Exist),!,
-  load_json_file(F, FullNames).
-
 %load_json_file(F, FName):- exists_file(FName),\+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\==ABSName,!,load_json_file2(F, ABSName).
 load_json_file(F, FName):- \+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\=@=ABSName,!,load_json_file2(F, ABSName),!.
 load_json_file(F, FName):- load_json_file2(F, FName),!.
@@ -234,16 +223,12 @@ json_to_colors(Out,Color):- grid_color_code(Out,Color).
 
 
 :- dynamic(muarc_tmp:arc_directory/1).
-muarc_tmp:arc_directory(ARC_DIR):- muarc_tmp:arc_directory_sugggest(ARC_DIR),exists_directory(ARC_DIR).
-
-muarc_tmp:arc_directory_sugggest(ARC_DIR):- getenv('ARC_DIR',ARC_DIR).
-muarc_tmp:arc_directory_sugggest('../kaggle_arc/').
+muarc_tmp:arc_directory(ARC_DIR):- getenv('ARC_DIR',ARC_DIR), exists_directory(ARC_DIR),!.
 
 :- multifile (user:file_search_path/2).
 user:file_search_path(arc,  AbsolutePath):- arc_sub_path('.',AbsolutePath).
 
-:-(\+ \+ ((muarc_tmp:arc_directory(ARC_DIR),  exists_directory(ARC_DIR))) -> true ;
-   prolog_load_context(directory,ARC_DIR), asserta(muarc_tmp:arc_directory_sugggest(ARC_DIR))).
+:- prolog_load_context(directory,ARC_DIR), asserta(muarc_tmp:arc_directory(ARC_DIR)).
 
 %test_name_ansi_output_file(TestID,File):- absolute_file_name(TestID,File,[access(read),file_errors(fail)]),!.
 %test_name_ansi_output_file(TestID,File):- absolute_file_name(TestID,File,[access(create),file_errors(fail)]),!.
@@ -321,7 +306,7 @@ get_raw_input_outputs(TestID,ExampleNums,Ins,Outs):-
   findall(In,kaggle_arc_raw(TestID,ExampleNum,In,Out),Ins),
   findall(Out,kaggle_arc_raw(TestID,ExampleNum,In,Out),Outs).
 
-%:- ensure_loaded('./logical_ml/muarc_dmiles').
+:- ensure_loaded('./logical_ml/muarc_dmiles').
 %kaggle_arc(TestID,ExampleNum,In,Out):- !, kaggle_arc_raw(TestID,ExampleNum,In,Out).
 kaggle_arc(TestID,ExampleNum,In,Out):-
   kaggle_arc_raw(TestID,ExampleNum,In0,Out0),

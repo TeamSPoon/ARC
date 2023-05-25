@@ -1668,7 +1668,6 @@ system:demo:-
   begin_tee,interact.
 
 :- export(demo/0).
-system:demo:-demo.
 rat:- info("Run all tests"), run_all_tests.
 noninteractive_test(X):- my_time(ignore(forall(arc1(true,X),true))).
 

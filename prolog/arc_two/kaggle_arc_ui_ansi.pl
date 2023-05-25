@@ -2539,9 +2539,14 @@ get_glyph(Point,Glyph):-
 */
 :- include(kaggle_arc_footer). 
 
-arc_ui_ansi_test_show_color_on_reload:- prolog_load_context(reloading,true)-> test_show_colors ; true.
+test_show_color_on_reload:- 
+prolog_load_context(reloading,true)-> test_show_colors ; true.
+
+arc_ui_ansi_test_show_color_on_reload:- 
+ prolog_load_context(reloading,true)-> test_show_colors ; true.
 :- export(arc_ui_ansi_test_show_color_on_reload/0).
 
+:- initialization(test_show_color_on_reload,now).
 %:- fixup_module_exports_now.
 /*
 12545 = |? ? ? ? ? |

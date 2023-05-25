@@ -2527,7 +2527,10 @@ check_dot_spacing:- iss:i_syms(CCC),my_maplist(check_dot_spacing,CCC),!.
 isc:- ignore(save_codes).
 :- initialization(isc).
 
-test_show_color_on_reload:- prolog_load_context(reloading,true)-> test_show_colors ; true.
+arc_ui_ansi_isc:- ignore(save_codes).
+:- export(user:arc_ui_ansi_isc/0).
+% % :- initialization(arc_ui_ansi_isc).
+  
 
 
 /*
@@ -2535,6 +2538,13 @@ get_glyph(Point,Glyph):-
   get_grid_num(Point,N),i_glyph(N,Glyph).
 */
 :- include(kaggle_arc_footer).
+
+test_show_color_on_reload:- 
+prolog_load_context(reloading,true)-> test_show_colors ; true.
+
+arc_ui_ansi_test_show_color_on_reload:- 
+ prolog_load_context(reloading,true)-> test_show_colors ; true.
+:- export(arc_ui_ansi_test_show_color_on_reload/0).
 
 :- initialization(test_show_color_on_reload,now).
 %:- fixup_module_exports_now.

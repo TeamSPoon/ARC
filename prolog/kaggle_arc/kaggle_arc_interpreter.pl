@@ -430,7 +430,7 @@ back_to_map(Was,Dict,Prev,Grid,Closure,New, Ret):-
 
 :- if( \+ current_predicate(any_to_ace_str/2)).
 %:- include('../kaggle_arc/pfc_3_0/pfc_3_0_0').
-:- include((kaggle_arc_pfc)).
+:- include(kaggle_arc_pfc).
 %:- use_module(library(pfc_lib)).
 :- endif.
 

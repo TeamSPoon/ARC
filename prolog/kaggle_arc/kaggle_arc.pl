@@ -163,7 +163,8 @@ update_changes:-
     print_message(silent, make(reload(Reload))),
     make:maplist(reload_file, Reload),
     print_message(silent, make(done(Reload))),
-    forall(prolog:make_hook(after, Reload),true).
+    forall(prolog:make_hook(after, Reload),true),!.
+update_changes.
 
 
 cls_z_make:- if_thread_main(notrace((ignore(cls_z),ignore(update_and_fail)))).
@@ -934,5 +935,6 @@ create_group_dmiles:-
 %:- consult('./induction/h_muarc_aleph').
 %:- tmp:loading_arc_from(M),'$set_source_module'(M).
 
-% 
+%:- initialization(arc_ui_ansi_test_show_color_on_reload,now).
+ 
 

@@ -81,8 +81,6 @@
 :- discontiguous(individuator/2).
 :- multifile(individuator/2).
 
-:- if( \+ current_prolog_flag(skip_arc_header_footer,true)).
-
 :- system:use_module(library(quasi_quotations)).
 :- system:use_module(library(hashtable)).
 :- system:use_module(library(gensym)).
@@ -142,8 +140,6 @@
 
 :- if(current_module(trill)).
 :- set_prolog_flag_until_eof(trill_term_expansion,false).
-:- endif.
-
 :- endif.
 
 

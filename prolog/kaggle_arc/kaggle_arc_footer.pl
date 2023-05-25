@@ -2,7 +2,6 @@
 :- set_prolog_flag_until_eof(trill_term_expansion,false).
 :- endif.
 
-:- if( \+ current_prolog_flag(skip_arc_header_footer,true)).
 
 :- enable_arc_expansion.
 
@@ -46,8 +45,6 @@
 
 :- set_prolog_flag(verbose_load,false).
 :- set_prolog_flag(verbose_autoload,false).
-
-:- endif.
 
 :- fixup_module_exports_now.
 :- fixup_exports.
