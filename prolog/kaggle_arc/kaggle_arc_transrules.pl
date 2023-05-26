@@ -26,6 +26,8 @@ remove_debug_info(List,NoDebug):- compound_name_arguments(List,F,AA),
 
 ac_unit_db(TestID,Ctx,P,Same):- ac_listing(TestID,Ctx,P,Same),include(not_debug_info,Same,PSame), PSame\==[].
 
+ac_rules(TestID,Ctx,P,PSame):- ac_listing(TestID,Ctx,P,PSame).
+ac_listing(List,Ctx,P,PSame):- !, ac_unit(List,Ctx,P,PSame).
 ac_listing(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
 %ac_listing(TestID,Ctx,P->ac_unit_db,PSame):- ac_unit_db(TestID,Ctx,P,PSame).
 ac_listing(TestID,Ctx,P,PSame):- ac_unit(TestID,Ctx,P,PSame)*->true;pass2_clause(TestID,Ctx,P,PSame).
@@ -269,8 +271,8 @@ trans_rule(Info,[],Out,Clauses):- listify(Out,OutL),
 
 % 2 preconds
 trans_rule(Info,[In1,In2],[Out],TransClause):- is_object(In1),is_object(In2), % fail,
-   noteable_propdiffs(In1, Out,_Same1,_DontCare1,New1), 
-   noteable_propdiffs(In2,New1,_Same2,_DontCare2,New2),
+   noteable_propdiffs2(In1, Out,_Same1,_DontCare1,New1), 
+   noteable_propdiffs2(In2,New1,_Same2,_DontCare2,New2),
    %remove_o_giz(Out,RHSO), 
    remove_o_giz(In1,Precond1), remove_o_giz(In2,Precond2),
    %sub_comInfo = info(Step,_IsSwapped,_Ctx,TypeO,_,_,_),
@@ -287,48 +289,45 @@ trans_rule(Info,[In1,In2],[Out],TransClause):- is_object(In1),is_object(In2), % 
 trans_rule(Info,[In,In2|InL],OutL,TransClause):- is_object(In),is_object(In2),
   trans_rule(Info,[In2|InL],OutL,TransClauseM), TransClauseM\==[],
   sub_compound(lhs(Precond),TransClauseM),
-  noteable_propdiffs(In,OutL,Same,_L,_R),
+  noteable_propdiffs2(In,OutL,Same,_L,_R),
   append_vsets([Precond,Same],NewPrecond),
   subst(TransClauseM,lhs(Precond),lhs(NewPrecond),TransClause),!.
 
 % just copy an object
 trans_rule(Info,[In],[Out],Clauses):- 
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
-  noteable_propdiffs(In,Out,Same,L,R),L==[],R==[],
+  noteable_propdiffs2(In,Out,Same,L,R),L==[],R==[],
   Clauses = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
 
 % just copy an object
 trans_rule(Info,In,Out,Clauses):- 
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
-  noteable_propdiffs(In,Out,Same,L,R),L==[],R==[],
+  noteable_propdiffs2(In,Out,Same,L,R),L==[],R==[],
   Clauses = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
 
 
 % copy/transform 
 trans_rule(Info,In,Out,Clauses):- 
-  noteable_propdiffs(In,Out,_Same,_L,R),
+  noteable_propdiffs2(In,Out,_Same,_L,R),
   into_lhs(In,LHS),  
   findall(edit_copy(Info,rhs(edit(Type,Change,P)),lhs(LHS)),
     (member(P,R),prop_pairs(In,Out,Type,Change,P),
       Change\==same,
       good_for_rhs(P)),Clauses),Clauses\==[],!.
 
-trans_rule(Info,E1,E2,Clauses):- 
-  noteable_propdiffs(E1,E2,NSame,NL,NR),
+trans_rule(Info,E1,E2,Clauses):-
+  noteable_propdiffs2(E1,E2,Same,NL,NR),
   %pp_ilp(l2r(Info,E1,E2)),
-  flat_props(E1,FP1),flat_props(E2,FP2),
-  intersection(FP1,FP2,Same,InFlatP,OutPFlat),
-  nop((
+  prefix_spaces(D,
+  ((
+   pp_obj_tree(D+1,Info,E1,E2),
+  
+  
   dash_chars,
   if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
-  pp_ilp(removed=InFlatP),
-  pp_ilp(sames=Same),
-  pp_ilp(added=OutPFlat),
-  pp_ilp(info=Info),
-  pp_ilp(nremoved=NL),
-  pp_ilp(nsames=NSame),
-  pp_ilp(nadded=NR),
-  dash_chars)),
+  % flat_props(E1,FP1),flat_props(E2,FP2), intersection(FP1,FP2,Same,InFlatP,OutPFlat),pp_ilp(added=OutPFlat),pp_ilp(removed=InFlatP),pp_ilp(sames=Same),
+  pp_ilp(info=Info), pp_ilp(nremoved=NL), pp_ilp(nsames=Same), pp_ilp(nadded=NR),
+  dash_chars))),
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
   Clauses = [ 
     create_object_step(Info,rhs(create3c(Step,TypeO,E2)),lhs(Same)) ],!.

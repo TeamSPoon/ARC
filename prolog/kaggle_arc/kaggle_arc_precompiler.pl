@@ -289,7 +289,7 @@ expand_must_det1( A, AA):- expand_goal(A,AA),!.
 
 expand_must_not_error(C,CC):- CC=must_not_error(C).
 
-remove_must_det.
+remove_must_det:- fail.
 
 kaggle_arc_1_pred(M,P):- 
   predicate_property(M:P,file(F)),
