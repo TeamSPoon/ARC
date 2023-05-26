@@ -1116,8 +1116,7 @@ consider_other_grid(VM):-
       %print_ss([Obj|Grid]-wqs(maybe_ogs(R,OH,OV))), %  atrace,  
       %print_grid(maybe_ogs(R,OH,OV),[Obj|Grid]), %  atrace,  
       remLOPoints(VM,GOPoints),
-      remLOPoints(VM,UsedByObj))))))),
- !.
+      remLOPoints(VM,UsedByObj))))))).
 
 
 % =====================================================================
@@ -1193,8 +1192,7 @@ combine_objects(Why,I,O,New,VM):-
    Objs = VM.objs,
    select(I,Objs,Objs1),
    select(O,Objs1,Objs2),
-   gset(VM.objs)=Objs2)),
- show_bad_objs(combine_objects,Objs2).
+   gset(VM.objs)=Objs2)).
 
 
 
@@ -2134,7 +2132,6 @@ individuate8(VM,ID,ROptions,GridIn,IndvS):-
       combine_same_globalpoints(IndvS1,IndvS),
       print_ss(indvS,ObjsB,IndvS),
       %list_to_set(IndvS1,IndvS),
-      show_bad_objs(individuate8,IndvS),
       nop(print_info(IndvS)))).  
 
 
@@ -4116,7 +4113,7 @@ leftover_as_one(VM):-
    Points = VM.lo_points,
    ignore((Points\==[],
    u_dmsg(leftover_as_one=Points),
-   make_indiv_object(VM,[iz(info(combined)),iz(info(leftover_as_one))],Points,LeftOverObj), verify_object(leftovers,LeftOverObj),
+   make_indiv_object(VM,[iz(info(combined)),iz(info(leftover_as_one))],Points,LeftOverObj), verify_object(LeftOverObj),
    assumeAdded(VM,LeftOverObj))),
    VM.lo_points=[].
 
@@ -4129,7 +4126,7 @@ current_as_one(VM):-
    Points\==[],
    %set_html_stream_encoding, 
    u_dmsg(current_as_one=Points),
-   make_indiv_object(VM,[iz(info(combined)),birth(current_as_one)],Points,LeftOverObj), verify_object(as_one,LeftOverObj),
+   make_indiv_object(VM,[iz(info(combined)),birth(current_as_one)],Points,LeftOverObj), verify_object(LeftOverObj),
    assumeAdded(VM,LeftOverObj),
    set(VM.lo_points) = Points)).
    

@@ -95,7 +95,7 @@ menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_
 menu_cmd1(_,'w','                  or (w)rite the test info',(update_changes,switch_pair_mode)).
 menu_cmd1(_,'X','                  or  E(X)amine the program leared by training',(cls_z_make,print_test,!,learned_test,solve_easy)).
 menu_cmd1(_,'L','                  or (L)earned Data',(learned_test)).
-menu_cmd1(_,'E','                  or (E)earned Data',(force_clear_test,solve_via_scene_change)).
+menu_cmd1(_,'E','                  or (E)earned Data',(force_clear_test,solve_via_scene_change_API)).
 menu_cmd1(_,'e',S,(Cmd)):- get_test_cmd(Cmd),
       sformat(S,"                  or (e)xecute .................. '~@'",[bold_print(color_print(cyan,Cmd))]).
 menu_cmd1(_,'x',S,(Cmd)):- get_test_cmd2(Cmd),

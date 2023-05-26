@@ -164,7 +164,7 @@ update_changes:-
     make:maplist(reload_file, Reload),
     print_message(silent, make(done(Reload))),
     forall(prolog:make_hook(after, Reload),true),!.
-update_changes.
+update_changes:- make.
 
 
 cls_z_make:- if_thread_main(notrace((ignore(cls_z),ignore(update_and_fail)))).
@@ -566,6 +566,8 @@ run_arc_io(TestID,ExampleNum):-
   time(train_test(TestID)),
   time(solve_test(TestID,ExampleNum)).
 
+:- set_prolog_flag(arc_term_expansion, true).
+
 get_training(Training):- luser_getval('$training_vm',Training),compound(Training),!.
 get_training(Tree):- list_to_rbtree([p-q],T),!,ignore(Tree=T),!.
 get_training(Training):- must_det_ll(((
@@ -574,6 +576,8 @@ get_training(Training):- must_det_ll(((
 set_training(Training):- luser_linkval('$training_vm',Training).
 set_training(Prop,Value):- get_training(Training), gset(Training.Prop)=Value.
 get_training(Prop,Value):- get_training(Training), get_kov(Prop,Training,Value).
+
+:- set_prolog_flag(arc_term_expansion, false).
 
 set_vm(VM):- luser_linkval('$grid_vm',VM).
 
@@ -935,6 +939,5 @@ create_group_dmiles:-
 %:- consult('./induction/h_muarc_aleph').
 %:- tmp:loading_arc_from(M),'$set_source_module'(M).
 
-%:- initialization(arc_ui_ansi_test_show_color_on_reload,now).
- 
+% 
 

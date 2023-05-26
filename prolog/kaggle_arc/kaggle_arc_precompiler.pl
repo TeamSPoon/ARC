@@ -242,14 +242,16 @@ expand_must_det(I,_):- \+ compound(I),!,fail.
 % THIS DISABLES
 %expand_must_det(must_det_ll(GoalL),GoalL):-!.
 expand_must_det(must_det_ll(GoalL),GoalLO):- !, expand_must_det0(GoalL,GoalLO).
+expand_must_det(maplist(P1,GoalL),GoalLO):- P1 ==must_det_ll,!,
+  expand_must_det0(GoalL,GoalLO).
 expand_must_det(my_maplist(P1,GoalL),GoalLO):- P1 ==must_det_ll,!,
   expand_must_det0(GoalL,GoalLO).
 
 expand_must_det0(Nil,true):- Nil==[],!.
 expand_must_det0(Var,Var):- \+ callable(Var),!.
-expand_must_det0([A|B],(AA,BB)):- assertion(callable(A)), assertion(is_list(B)), !, 
+expand_must_det0([A|B],(AA,BB)):- callable(A), is_list(B), !, 
   expand_must_det1(A,AA), expand_must_det0(B,BB).
-expand_must_det0(A,AA):- !, expand_must_det1(A,AA).
+expand_must_det0(A,AA):- expand_must_det1(A,AA).
 
 prevents_expansion(A):- is_trace_call(A).
 is_trace_call(A):- A == trace.
@@ -260,28 +262,34 @@ expand_must_det1(my_maplist(P1,A),must_det_ll_maplist(P1,A)):-!.
 expand_must_det1(my_maplist(P2,A,B),must_det_ll_maplist(P2,A,B)):-!.
 expand_must_det1(my_maplist(P3,A,B,C),must_det_ll_maplist(P3,A,B,C)):-!.
 expand_must_det1(Cut,Cut):-  skip_expansion(Cut).
-expand_must_det1(Goal,O):- \+ compound(Goal), !,O = must_det_ll(Goal).
+%expand_must_det1(Goal,O):- \+ compound(Goal), !,O = must_det_ll(Goal).
+expand_must_det1((A,B),((A,B))):- remove_must_det, prevents_expansion(A),!.
 expand_must_det1((A,B),must_det_ll((A,B))):- prevents_expansion(A),!.
-expand_must_det1((A,B),(AA,BB)):- !, expand_must_det1(A,AA), expand_must_det1(B,BB).
-expand_must_det1((C*->A;B),(must_not_error(C)*->AA;BB)):- !, expand_must_det1(A,AA), expand_must_det1(B,BB).
-expand_must_det1((C->A;B),(must_not_error(C)->AA;BB)):- !, expand_must_det1(A,AA), expand_must_det1(B,BB).
-expand_must_det1((C;B),(must_not_error(C)->true;BB)):- !, expand_must_det1(B,BB).
+expand_must_det1((A,B),(AA,BB)):- !, expand_must_det(A,AA), expand_must_det(B,BB).
+expand_must_det1((C*->A;B),(CC*->AA;BB)):- !, expand_must_det(A,AA), expand_must_det(B,BB), expand_must_not_error(C,CC).
+expand_must_det1((C->A;B),(CC->AA;BB)):- !, expand_must_det(A,AA), expand_must_det(B,BB), expand_must_not_error(C,CC).
+expand_must_det1((C;B),(CC->true;BB)):- !, expand_must_det(B,BB), expand_must_not_error(C,CC).
 
-expand_must_det1(locally(C,A),locally(C,AA)):- !, expand_must_det1(A,AA).
+expand_must_det1(locally(C,A),locally(C,AA)):- !, expand_must_det(A,AA).
 
-expand_must_det1(call_cleanup(A,B),call_cleanup(AA,BB)):- !, expand_must_det1(A,AA), expand_must_det1(B,BB).
+expand_must_det1(call_cleanup(A,B),call_cleanup(AA,BB)):- !, expand_must_det(A,AA), expand_must_det(B,BB).
 expand_must_det1(setup_call_cleanup(C,A,B),setup_call_cleanup(CC,AA,BB)):- !, 
-  expand_must_det1(C,CC),expand_must_det1(A,AA), expand_must_det1(B,BB).
+  expand_must_det(C,CC),expand_must_det(A,AA), expand_must_det(B,BB).
 
-expand_must_det1(M:P, M:AABB):-!,expand_must_det1(P, AABB).
+expand_must_det1(M:P, M:AABB):-!,expand_must_det(P, AABB).
 expand_must_det1(P, AABB) :- predicate_property(P,(meta_predicate( MP ))),
    strip_module(P,_,SP),strip_module(MP,_,SMP), kaggle_arc_1_pred(_,SP),
    \+ skippable_built_in(P),
    SP=..[F|Args],SMP=..[F|Margs],!,
    my_maplist(expand_meta_predicate_arg,Margs,Args,EArgs),
    AABB=..[F|EArgs].  
-expand_must_det1(must_det_ll(AB), AABB):-!, expand_must_det1(AB,AABB).
-expand_must_det1( A,must_det_ll(AA)):- expand_goal(A,AA).
+expand_must_det1(must_det_ll(AB), AABB):-!, expand_must_det(AB,AABB).
+expand_must_det1( A,must_det_ll(AA)):- \+ remove_must_det, !, expand_goal(A,AA),!.
+expand_must_det1( A, AA):- expand_goal(A,AA),!.
+
+expand_must_not_error(C,CC):- CC=must_not_error(C).
+
+remove_must_det.
 
 kaggle_arc_1_pred(M,P):- 
   predicate_property(M:P,file(F)),
