@@ -185,9 +185,18 @@ solve_via_scene_change:-  get_pair_mode(entire_suite),!, cls,
  forall_count(all_arc_test_name(TestID),
    solve_via_scene_change(TestID)).
 
-solve_via_scene_change:-  clsmake, ensure_test(TestID), %make,
+solve_via_scene_change:-  \+ get_pair_mode(whole_test),!,
+ clsmake, ensure_test(TestID), 
+ fresh_solve_via_scene_change(TestID).
+
+solve_via_scene_change:-  clsmake, ensure_test(TestID), 
  solve_via_scene_change(TestID).
 
+fresh_solve_via_scene_change(TestID):-  
+  force_clear_test(TestID),
+  %detect_pair_hints(TestID),
+  %save_test_hints_now(TestID),
+ solve_via_scene_change(TestID).
 
 solve_via_scene_change(TestID):-  
  must_det_ll((
@@ -195,7 +204,7 @@ solve_via_scene_change(TestID):-
   force_clear_test(TestID),
   clear_scene_rules(TestID),
   repress_some_output(learn_solve_via_grid_change(TestID)),
-  %ExampleNum=tst+_,
+  ExampleNum=tst+_,
   true)),
   forall(kaggle_arc(TestID,ExampleNum,_,_),
      solve_via_scene_change_rules(TestID,ExampleNum)).
@@ -696,7 +705,7 @@ obj_group5(TestID,ExampleNum,InOut,ROptions,Objs):-
 show_object_dependancy(TestID):-  
 % =============================================================
  ensure_test(TestID),
- clear_object_dependancy(TestID),
+ %clear_object_dependancy(TestID),
  ensure_object_dependancy(TestID),
  print_object_dependancy(TestID).
 
@@ -714,17 +723,41 @@ ensure_object_dependancy(TestID):-
 ensure_object_dependancy(TestID,ExampleNum):-
  %current_example_nums( TestID,ExampleNum),
  must_det_ll(( obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs),
-   maybe_ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs))).
+   ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs))).
 
-maybe_ensure_object_dependancy(TestID,ExampleNum,_RHSObjs,_LHSObjs):-
-  arc_cache:prop_dep(TestID,ExampleNum,_,_,_,_,_,_,_),
-  arc_cache:trans_rule_db(TestID,ExampleNum,_,_),
-  !.
 
-maybe_ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
+
+ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
+  (var(TestID),var(RHSObjs),var(LHSObjs)),ensure_test(TestID),!,
+  my_assertion(nonvar(TestID)),!,
   ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
 
-ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):- 
+ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
+  (var(ExampleNum),var(RHSObjs),var(LHSObjs),nonvar(TestID)),!,
+  kaggle_arc(TestID,ExampleNum,_,_),
+  my_assertion(nonvar(ExampleNum)),
+  ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
+
+ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
+  (var(RHSObjs);var(LHSObjs)), !, 
+  obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs),
+  my_assertion(((nonvar(RHSObjs),nonvar(LHSObjs)))),
+  ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
+
+ensure_object_dependancy(TestID,ExampleNum,_RHSObjs,_LHSObjs):- % arc_cache:prop_dep(TestID,ExampleNum,_,_,_,_,_,_,_), 
+ \+ \+ arc_cache:trans_rule_db(TestID,ExampleNum,_,_), !.
+
+ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
+  ensure_object_dependancy1(TestID,ExampleNum,RHSObjs,LHSObjs),!.
+ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
+  ensure_object_dependancy2(TestID,ExampleNum,RHSObjs,LHSObjs),!.
+  
+ensure_object_dependancy1(TestID,ExampleNum,RHSObjs,LHSObjs):- 
+ into_object_dependancy_r_l(TestID,ExampleNum,Ctx,RHSObjs,LHSObjs,Groups),
+   pp_ilp(ctx(Ctx)=Groups),
+   assert_map_pairs(TestID,ExampleNum,Ctx,Groups).  
+
+ensure_object_dependancy2(TestID,ExampleNum,RHSObjs,LHSObjs):- 
  must_det_ll((
               RHSObjs\==[],LHSObjs\==[],
   Step=0,Ctx=in_out,IsSwapped=false,
@@ -735,12 +768,91 @@ ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
   %pp_ilp(groups=Groups),
   assert_map_pairs(TestID,ExampleNum,Ctx,Groups))).
 
-normalize_objects_for_dependancy(_TestID,_ExampleNum,RHSObjs,LHSObjs,RHSObjsOrdered,LHSObjsOrdered):-
-  include(is_fg_object,LHSObjs,LHSObjsO),
-  include(is_fg_object,RHSObjs,RHSObjsO),
-  sort_by_jaccard(one(RHSObjsO),LHSObjsO,LHSObjsOrdered),
-  sort_by_jaccard(one(LHSObjsO),RHSObjsO,RHSObjsOrdered),
+
+normalize_objects_for_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsO,LHSObjsO):- 
+  different_lengths(LHSObjs,RHSObjs),
+  member(Filter,[iz(fg_or_bg(iz_fg)),   cc(bg,0)]),
+  include(has_prop(Filter),LHSObjs,LHSObjsM), LHSObjsM\==[], include(has_prop(Filter),RHSObjs,RHSObjsM), RHSObjsM\==[],
+  \+ different_lengths(LHSObjsM,RHSObjsM), !,
+  normalize_objects_for_dependancy(TestID,ExampleNum,RHSObjsM,LHSObjsM,RHSObjsO,LHSObjsO).
+
+normalize_objects_for_dependancy(_TestID,_ExampleNum,RHSObjs,LHSObjs,RHSO,LHSO):- fail,
+  include(is_fg_object_really,LHSObjs,LHSObjsO), include(is_fg_object_really,RHSObjs,RHSObjsO),
+  sort_by_jaccard(one(RHSObjsO),LHSObjsO,LHSO),
+  sort_by_jaccard(one(LHSObjsO),RHSObjsO,RHSO),
   !.
+normalize_objects_for_dependancy(_,_,L,R,L,R):-!.
+
+
+different_lengths(LHSObjsO,RHSObjsO):-
+  length(LHSObjsO,L21), length(RHSObjsO,L22), !, L21\==L22,!.
+
+print_grid_pp(O):- global_grid(O,G),!,print_grid(G),nl,pp(O).
+
+
+show_bad_objs(G,O):- is_list(O),!,maplist(show_bad_objs(G),O).
+show_bad_objs(_,O):- is_object(O), \+ sub_var(black,O),!.
+show_bad_objs(G,O):- fail,
+  %globalpoints(O,SomeBlack),sub_var(black,SomeBlack),
+  enum_fg_real_colors(FG), sub_var(FG,O),!,
+  show_indiv_object(show_bad_objs,O),
+  %print_ss(show_bad_objs,SomeBlack,NGrid),nl,
+  print(G),nl,writeg(O),nl,writeg(FG),
+  itrace,
+  %bt,
+  %print_ss(show_bad_objs,SomeBlack,O),nl,itrace.
+  !.
+show_bad_objs(_G,_O).
+
+
+/*
+task_id
+example_task_grids
+create_grid_task_object
+create_grid_single_objects
+task_objs
+copy_input_objs_to_output_perfectly
+copy_input_objs_to_output_perfectly_changing_single_props
+copy_input_objs_to_output_perfectly_changing_two_props
+mark_input_objs_for_delete_ignore
+copy_output_objs_to_output_perfectly_changing_single_props
+copy_output_objs_to_output_perfectly_changing_two_props
+
+copy_
+*/
+
+testid_to_pairs(TestID,Start):-
+  testid_to_pairs_start(TestID,Start).
+testid_to_pairs(TestID,Next):-
+  testid_to_pairs(TestID,Start),
+  testid_to_pairs_next(TestID,Start,Next).
+
+testid_to_pairs_start(TestID,L2R):-
+   ensure_test(TestID),
+   kaggle_arc(TestID,ExampleNum,LHS,RHS),
+   once((Info = info([testid(TestID),example(ExampleNum)]),
+   into_oid((TestID>ExampleNum*in),GID1),grid_to_single_object(GID1,LHS,In),
+   into_oid((TestID>ExampleNum*out),GID2),grid_to_single_object(GID2,RHS,Out))),
+   L2R=l2r(Info,[In],[Out]).
+
+testid_to_pairs_next(_TestID,Start,Next):- pair_next(Start,Next).
+
+pair_next( l2r(info([type(grid)]),LHSGrid,RHSGrid),
+           l2r(info([type(group)]),LHSObjs,RHSObjs)):-
+   individuate_pair(complete,LHSGrid,RHSGrid,LHSObjs,RHSObjs).
+
+/*
+next(l2r(Info1,LHSGrid,RHSGrid), l2r(Info2,LHSObjs,RHSObjs)):- is_grid(LHSGrid),is_grid(RHSGrid),
+  merge_vals(Info1,[(TestID>ExampleNum*in)])
+  
+  grid_to_single_object(Info1,LHSGrid,LHSObjs),  
+  grid_to_single_object(Info1,LHSGrid,RHSObjs),
+  GID2 = (TestID,ExampleNum,out),
+  individuate_pair(complete,LHSGrid,RHSGrid,LHSObjs,RHSObjs).
+
+*/
+
+  
 
 
 prinnt_sbs_call([],[]):- dash_chars,!.
@@ -788,9 +900,12 @@ combine_more(Excluded,TestID,Ctx,Rule1,Combined):-
    combine_more([RuleID2|Excluded],TestID,Ctx,NewRule,Combined).
 combine_more(_Excluded,_TestID,_Ctx,Combined,Combined).
 */
-assert_map_pairs(TestID,ExampleNum,Ctx,Group):- is_list(Group),!,maplist(assert_map_pairs(TestID,ExampleNum,Ctx),Group).
+assert_map_pairs(TestID,ExampleNum,Ctx,Group):- is_list(Group),!,
+  maplist(assert_map_pairs(TestID,ExampleNum,Ctx),Group).
+
 assert_map_pairs(TestID,ExampleNum,Ctx,l2r(Info,In,Out)):- fail, !, 
   assertz_new(arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,l2r(Info,In,Out))),!.
+/*  
 assert_map_pairs(TestID,ExampleNum,Ctx,l2r(Info,In,Out)):-!,
  must_det_ll((
  assertz_new(arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,l2r(Info,In,Out))),
@@ -804,6 +919,7 @@ assert_map_pairs(TestID,ExampleNum,Ctx,l2r(Info,In,Out)):-!,
                     must_det_ll((UNV = v5(_FG1,_BG1,USame,InFlatProps,OutFlatProps))),
   %pp_ilp(l2r(Info,InL,OutL)),!,  
   assertz_new(arc_cache:prop_dep(TestID,ExampleNum,Ctx,Info,InL,OutL,USame,InFlatProps,OutFlatProps)))))).
+*/
 assert_map_pairs(_TestID,_ExampleNum,_Ctx,call(Rule)):-!,must_det_ll(Rule),!.
 assert_map_pairs(TestID,ExampleNum,Ctx,TransRule):-
    assertz_new(arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,TransRule)),!.
@@ -1257,8 +1373,16 @@ show_code_diff(Info,[PA],PB):- !, show_code_diff(Info,PA,PB).
 show_code_diff(Info,[],_).
 show_code_diff(Info,[P|A],PB):- !, show_code_diff(Info,P,PB),show_code_diff(Info,A,PB).
 */
-%show_code_diff(_Info,O1,O2):- (is_grid(O1), is_grid(O2)),!, nop((flat_props(O1,E1),flat_props(O2,E2), show_cp_dff_rem_keep_add(E1,E2))),!.
-%show_code_diff(_Info,O1,O2):- (is_grid(O1); is_grid(O2)),!, nop((flat_props(O1,E1),flat_props(O2,E2), show_cp_dff_rem_keep_add(E1,E2))),!.
+show_code_diff(_Info,O1,O2):- (is_grid(O1), is_grid(O2)),!, 
+  ((flat_props(O1,E1),flat_props(O2,E2), show_cp_dff_rem_keep_add(E1,E2))),!.
+show_code_diff(_Info,O1,O2):- (is_grid(O1); is_grid(O2)),!, 
+ ((flat_props(O1,E1),flat_props(O2,E2), show_cp_dff_rem_keep_add(E1,E2))),!.
+show_code_diff(_Info,O1,O2):- (\+ is_grid(O1); \+ is_grid(O2)),!, 
+ ((flat_props(O1,E1),flat_props(O2,E2), show_cp_dff_rem_keep_add(E1,E2))),!.
+show_code_diff(Info,O1,O2):- (\+ is_grid(O1); \+ is_grid(O2)),!,
+  into_list(O1,InL),into_list(O2,OutL), 
+  trans_rule(Info,InL,OutL,TransRule),!, pp_ilp(trans_rules=TransRule).
+/*
 show_code_diff(Info,O1,O2):- 
  if_t((\+ is_grid(O1);\+ is_grid(O2)),
  (into_list(O1,InL),into_list(O2,OutL),
@@ -1267,6 +1391,8 @@ show_code_diff(Info,O1,O2):-
   trans_rule(Info,InL,OutL,TransRule),!,
   pp(TransRule))).
 
+*/
+
 /*
 show_cp_dff_rem_keep_add([]):-!.
 show_cp_dff_rem_keep_add(TransRule):-   %flat_props([B],PB), intersection(Same,PB,S,SS,_), append(S,SS,SSame),
@@ -1274,18 +1400,23 @@ show_cp_dff_rem_keep_add(TransRule):-   %flat_props([B],PB), intersection(Same,P
   show_cp_dff_rem_keep_add(E1,E2).
 */
 show_cp_dff_rem_keep_add(E1,E2):-  
-  dash_chars,
   if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),    
   noteable_propdiffs2(E1,E2,Same,InFlatP,OutPFlat),
-  pp_ilp(sames=Same),
+  if_t(Same==[],pp_ilp(sames=Same)),
+  length(Same,LSame),
+  pp_ilp(sames=LSame),
   pp_ilp(removed=InFlatP),
   pp_ilp(added=OutPFlat),
   dash_chars.
 
 
+ac_rules_unit(AC_RULES_UNIT,_,_,_):- \+ compound(AC_RULES_UNIT),!,fail.
+ac_rules_unit(ac_unit(_,IO,P,PSame),IO,P,PSame).
+ac_rules_unit(ac_rules(_,IO,P,PSame),IO,P,PSame).
+ac_rules_unit(ac_listing(_,IO,P,PSame),IO,P,PSame).
 
 
-pp_ilp(Grp):-pp_ilp(1,Grp),!.
+pp_ilp(Grp):- must_det_ll(pp_ilp(1,Grp)),!.
 
 pp_ilp(D,T):-  T==[],!,prefix_spaces(D,write('[] ')),!.
 pp_ilp(_,_):- format('~N'),nl,fail.
@@ -1323,6 +1454,11 @@ pp_ilp(D,A+B):-  !, prefix_spaces(D,(pp_ilp(A),nl,pp_ilp(B))).
 pp_ilp(D,Grid):- is_grid(Grid),!,prefix_spaces(D,print_grid(Grid)),!,nl.
 pp_ilp(D,Grid):- is_object(Grid),!,prefix_spaces(D,print_grid([Grid])),!,nl.
 
+pp_ilp(D,(HH:-HConj)):- 
+  must_det_ll((often_solid_str(HH,H), often_solid_str(HConj,Conj))),
+  prefix_spaces(D,(print((H)),nl,
+     print_conjs(D+15,Conj))),!.
+
 pp_ilp(D,(H:-Conj)):- 
   prefix_spaces(D,(print((H)),nl,
      prefix_spaces(D+15,
@@ -1338,6 +1474,13 @@ pp_ilp(D,ac_rules(_TestID,IO,P,PSame)):- !,
   pp_ilp(D,(((IO:P):- Conj))),
   pp_ilp_cmt(D,Debug))).
 
+pp_ilp(D,AC_RULES_UNIT):-  ac_rules_unit(AC_RULES_UNIT,IO,P,PSame), is_list(PSame),!, 
+ must_det_ll((
+  my_partition(not_debug_info,PSame,NoDebug,Debug),
+  %once((nonvar(IO),io_to_cntx(IO,CTX));IO=CTX),
+  once(list_to_conjuncts(NoDebug,Conj);NoDebug=Conj),
+  pp_ilp(D,(((IO:P):- Conj))),
+  pp_ilp_cmt(D,Debug))).
 
 
 %pp_ilp(D,(H:-Conj)):- prefix_spaces(D,pp_ilp(H:-Conj)),!.
@@ -1369,23 +1512,34 @@ pp_ilp(D,T):- prefix_spaces(D,pp(T)),!.
 %pp_ilp_cmt(D,Debug):- prefix_spaces(D+1,(color_print(green,call((write('% % '),write(Debug)))))).
 pp_ilp_cmt(D,Debug):- prefix_spaces(D+1,(color_print(green,call(ppt(Debug))))).
 
+print_conjs(D,Conj):- prefix_spaces(D, print_conjs(Conj)).
+print_conjs(Conj):- 
+  portray_clause(current_output, (:- Conj), [portray_goal(user:portray_ilp)]).
+
 %portray_ilp(T,_Options):- pp_ilp(T),!.
-portray_ilp(O,_Options):- compound(O), O = info(_),underline_print(print(izz(O))),!.
-portray_ilp(T,_Options):- portray(T),!.
-portray_ilp(T,_Options):- portray_clause(T),!.
-portray_ilp(T,Options):- write_term(T,Options).
+portray_ilp(T,_):- \+ compound(T),!,pcR(T).
+portray_ilp(T,_):- functor(T,F,_),upcase_atom(F,U),U==F,!,pcR(T).
+portray_ilp(T,O):- is_debug_info(T),!,underline_print(user:wt(T,O)).
+portray_ilp(T,O):- is_unbound_prop(T),!,underline_print(user:wt(T,O)).
+portray_ilp(T,_):- pcR(T).
+pcR(T):- fail, portray(T).
+%portray_ilp(T,_Options):- portray(T),!.
+%portray_ilp(T,_Options):- portray_clause(T),!.
+wt(T,_Options):- writeq(T),!.
+%wt(T,Options):- write_term(T,Options).
 
  
 is_grid_or_group(Grid):- is_grid(Grid),!.
 is_grid_or_group(Grid):- is_group(Grid),!.
 
 pp_grp(D,Info,In,Out):- 
-  prefix_spaces(D,(dash_chars,format('<l2r  ~w >\n',[Info]))),
+  prefix_spaces(D,(dash_chars,format('<l2r  ~@ >\n',[print(Info)]))),
   print_io_terms(D+7,In,Out),
   %show_cp_dff_rem_keep_add1(In,Out),
   show_code_diff(Info,In,Out),
   %prefix_spaces(D+8,show_code_diff(Info,In,Out)),
   prefix_spaces(D,(write('</l2r>\n'),dash_chars)).
+  %flat_props(InL,E1),flat_props(OutL,E2),show_cp_dff_rem_keep_add(E1,E2),
 
 type_change(ITerm,In):- first_type(ITerm,T1), first_type(In,T2),!, T1\=@=T2.
   
@@ -1397,9 +1551,14 @@ first_type(In,T2):- data_type(In,T2),!.
 print_io_terms(D,In,Out):-
   once(into_solid_grid_strings_1(In,ITerm)),
   once(into_solid_grid_strings_1(Out,OTerm)),
-  once(ITerm\=@=In;Out\=@=OTerm),!, print_io_terms(D,ITerm,OTerm),
-  if_t( (type_change(ITerm,In);type_change(ITerm,In)),
-    nop((show_cp_dff_rem_keep_add1(ITerm,OTerm)))).
+  once(ITerm\=@=In;Out\=@=OTerm),!, 
+  print_io_terms(D,ITerm,OTerm),
+
+  nop((if_t( (type_change(ITerm,In);type_change(ITerm,In)),
+    nop((show_cp_dff_rem_keep_add1(ITerm,OTerm)))))).
+
+%flat_props(InL,E1),flat_props(OutL,E2), show_cp_dff_rem_keep_add(E1,E2),
+
 /*
 print_io_terms(D,ITerm,OTerm):-  
     is_grid_or_group(ITerm),is_grid_or_group(OTerm),
@@ -1413,14 +1572,40 @@ print_io_terms(D,loc2D(X,Y,IITerm),loc2D(OX,OY,OOTerm)):-
 print_io_terms(D,ITerm,OTerm):-
     prefix_spaces(D,pp_ilp(ITerm)),
     prefix_spaces(D+10,dash_chars),
-    prefix_spaces(D,pp_ilp(OTerm)).
+    prefix_spaces(D,pp_ilp(OTerm)),!.
     
-
-print_io_terms(D,ITerm,OTerm):- prefix_spaces(D,print_ss("",call(pp_ilp(ITerm)),call(pp_ilp(OTerm)))),!.
+print_io_terms(D,ITerm,OTerm):-
+  prefix_spaces(D,print_ss("",call(pp_ilp(ITerm)),call(pp_ilp(OTerm)))),!.
 
 %prefix_spaces(D,G):- fail, DD is D, wots(Tabs,(write('\t'),print_spaces(DD),write('.\t'))), wots(SS,G),!, print_prepended(Tabs,SS).
 prefix_spaces(D,G):- DD is D, wots(Tabs,(write('\t'),print_spaces(DD),write('\t'))),prepend_each_line(Tabs,G).
 
+sometimes_soild_str(Obj,_):- var(Obj),!,fail.
+sometimes_soild_str(Obj,_):- is_object(Obj),!,fail.%global_grid(Obj,Grid),into_solid_grid(Grid,Solid).
+%sometimes_soild_str(Lst,Solid):- tersify23(Lst,Solid),!.
+%sometimes_soild_str(Lst,Solid):- mostly_grids(Lst,Solid).
+mostly_grids(Lst,Grid):- is_object(Lst),!,global_grid(Lst,Grid).
+mostly_grids(Lst,Grid):- is_list(Lst),!,is_points_list(Lst),length(Lst,Len),Len>3,into_grid(Lst,Grid).
+mostly_grids(oid(OID),oid(Grid)):- atom(OID), oid_to_obj(OID,Obj),object_ngrid(Obj,Grid).
+mostly_grids(was_oid(OID),was_oid(Grid)):- atom(OID), oid_to_obj(OID,Obj),object_ngrid(Obj,Grid).
+
+%into_solid_grid_ref(G,S):- wots(S,print_grid(G)).
+into_solid_grid_ref(G,S):- as_grid_string(G,S),!.
+
+
+often_solid_str(T,WithGrids):- fail,
+  sub_term(Obj,T),nonvar(Obj),once(mostly_grids(Obj,Solid)),Obj\=@=Solid,
+  once(subst001(T,Obj,Solid,MidTerm)),MidTerm\=@=T,!,often_solid_str(MidTerm,WithGrids).
+often_solid_str(T,WithGrids):- T=WithGrids,!.
+
+into_solid_grid_strings_2(T,WithGrids):-
+  sub_term(Obj,T),once((mostly_grids(Obj,Grid),into_solid_grid(Grid,Solid),
+  subst001(T,Obj,Solid,MidTerm))),MidTerm\=@=T,!,into_solid_grid_strings_1(MidTerm,WithGrids).
+    
+into_solid_grid_strings_2(X,Y):- into_solid_grid_strings(X,Y),!.
+
+
+    
 into_solid_grid_strings_1(T,WithGrids):-
   sub_term(Obj,T),is_object(Obj),global_grid(Obj,Grid),into_solid_grid(Grid,Solid),
   subst001(T,Obj,Solid,MidTerm),MidTerm\=@=T,!,into_solid_grid_strings_1(MidTerm,WithGrids).
@@ -1593,6 +1778,22 @@ get_mapping_info_list(GRP,Info,InOut):-
   append_LR(OutL,InL,InOutL),!,
   must_det_ll((InOutL=InOut)).
 
+
+
+
+
+into_object_dependancy_r_l(TestID,ExampleNum,Ctx,RHSObjs,LHSObjs,Groups):-
+  normalize_objects_for_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs,RHSO,LHSO),!,
+
+  Step=0,Ctx=in_out,IsSwapped=false,
+  Info = info([step(Step),ctx(Ctx),testid(TestID),is_swapped(IsSwapped),example(ExampleNum)]),
+  ((arg(_,v([],[delete],[all]),RelaxLvl),
+    pairs_of_any(RelaxLvl,Info,LHSO,RHSO,[],Groups))),!,
+  print_ss(into_object_dependancy_r_l,LHSO,RHSO),
+  pp_ilp(r_l=Groups),!.
+
+
+
 best_match_rl(RHS,Left,l2r(lr,Left,Right)):-
   sort_by_jaccard(Left,RHS,[Right|_RRest]).
 best_match_lr(LHS,Right,l2r(lr,Left,Right)):-
@@ -1613,7 +1814,7 @@ n_or_more(2,[_,_|_]).
 n_or_more(1,[_|_]).
 
 
-member_of_relax(E,List):- \+ \+ member(E,List).
+member_of_relax(E,List):- \+ \+ member(E,List),!.
 
 pairs_of_any(RelaxLvl,Info,LHS,RHS,PairsR):- pairs_of_any(RelaxLvl,Info,LHS,RHS,[],PairsR).
 
@@ -1633,11 +1834,11 @@ pairs_of_any(RelaxLvl,Info,LHSObjs,[],SoFar,PairLR):- fail,
   append_LR([Kept,l2r(delete,DeletedObjs,[])],PairLR).
 */
 pairs_of_any(RelaxLvl,Info,LHS,RHS,SoFar,PairsR) :- notrace((LHS\==[],RHS\==[])),
-  member_of_relax(perfect,RelaxLvl), 
+  %member_of_relax(perfect,RelaxLvl), 
   member(Right,RHS),
   sort_by_jaccard(Right,LHS,[Left|RestL]),
   sort_by_jaccard(Left,RHS,[LeftPicked|RestR]),
-  LeftPicked=@=Right,
+  LeftPicked=@=Right,!,
   merge_vals(info([type(perfect)]),Info,PInfo), incr_step(Info,NInfo),
   pairs_of_any(RelaxLvl,NInfo,RestL,RestR,[l2r(PInfo,Left,Right)|SoFar], PairsR).
 
@@ -1650,7 +1851,7 @@ pairs_of_any(RelaxLvl,Info,LHSObjs,RHSObjs,SoFar,PairsR) :- fail, n_or_more(2,LH
   pairs_of_any(RelaxLvl,Info,LHSObjsM,RHSObjsM,SoFar,SoFarMN),
   pairs_of_any(RelaxLvl,Info,LHSObjsN,RHSObjsN,SoFarMN,PairsR),!.
 
-pairs_of_any(RelaxLvl,Info,LHSObjs,RHSObjs,SoFar,PairsR) :- LHSObjs\==[],RHSObjs\==[],
+pairs_of_any(RelaxLvl,Info,LHSObjs,RHSObjs,SoFar,PairsR) :- fail, LHSObjs\==[],RHSObjs\==[],
   Type = perfect_combo,
   select_pair(Type,[],RHSObjs,LHSObjs,Right,Left,RestR,RestL),
   merge_vals(info([type(Type)]),Info,PInfo), incr_step(Info,NInfo),
@@ -1892,13 +2093,16 @@ calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObj
   incr_step(Step,IncrStep),
   calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,LHSRest,RHSRest,RestLR))).
 
-
-
 %incr_cntx(Ctx,NewCtx):- atom(Ctx),!, atom_concat(Ctx,'_out',NewCtx).
+incr_cntx(info(Ctx),info(Next)):- is_list(Ctx),!,incr_cntx(Ctx,Next).
 incr_cntx(Ctx,Next):- number(Ctx),!, plus(Ctx,1,Next).
 incr_cntx(Ctx,Next):- Ctx == in_out,!, Next=in_out_out.
+incr_cntx(Ctx,Next):- is_list(Ctx),select(ctx(C),Ctx,Rest),incr_cntx(C,CC),Next=[ctx(CC)|Rest],!.
 incr_cntx(W+Ctx,W+Next):- incr_cntx(Ctx,Next).
 incr_cntx(Ctx,s(Ctx)).
+
+incr_step(info(Ctx),info(Next)):- !,incr_step(Ctx,Next).
+incr_step(Ctx,Next):- is_list(Ctx),select(step(C),Ctx,Rest),incr_step(C,CC),Next=[step(CC)|Rest],!.
 incr_step(Ctx,Next):- incr_cntx(Ctx,Next).
 swap_tf(Ctx,s(Ctx)).
 
@@ -2730,8 +2934,8 @@ compute_scene_change_pass4(TestID):-
 
 set_of_ps(TestID,Ps):-
   ((findall_vset_R(Ctx-P1,
-    ((ac_unit(TestID,IO_,P,_)
-     ;ensure_props_change(TestID,IO_,P)
+    ((ac_unit(TestID,IO_,P,_)*->true
+     %;ensure_props_change(TestID,IO_,P)
      ;pass2_rule(TestID,IO_,P,_)),
     io_to_cntx(IO_,Ctx),into_rhs(P,P1)), Ps))).
 

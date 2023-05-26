@@ -1302,6 +1302,12 @@ sub_individuate(From,SubProgram,VM):-
   set_vm(VM).
 
 
+check_vm(VM):- 
+    GGrid = VM.grid,
+    if_t( \+ is_grid(GGrid), 
+    (dict_pairs(VM,_,Pairs),with_output_to(user_error,maplist(pp,Pairs)))),
+    my_assertion(is_grid(GGrid)).
+
 % =====================================================================
 is_fti_step(rule).
 % =====================================================================
@@ -2375,10 +2381,14 @@ fti(VM,[end_of_macro|TODO]):- !, fti(VM,TODO).
 
 fti(_,[Done|TODO]):-  ( \+ done \= Done ), !, u_dmsg(done_fti([Done|TODO])),!.
 %fti(VM,_):- VM.lo_points==[], !.
-fti(VM,_):-
+fti(VM,_):- fail,
   Objs = VM.objs,  
   length(Objs,Count),
-  ((member(progress,VM.options); catch_log(Count > VM.objs_max_len); (statistics(cputime,X), catch_log(X > (VM.timeleft))))) -> 
+  number(Count),
+  ((member(progress,VM.options)
+     ; catch_log((number(VM.objs_max_len),Count > VM.objs_max_len))
+     ; (statistics(cputime,X), number(VM.timeleft),
+     catch_log(X > (VM.timeleft))))) ->  
    print_vm_debug_objs(VM),fail.
 
 fti(VM,[+(AddOptions)|TODO]):- !,
@@ -2417,8 +2427,10 @@ fti(VM,[Routine|set(VM.lo_program)]):-  fail,
 
 fti(VM,[-(DelOptions)|TODO]):-
   listify(DelOptions,OList),
-  my_partition(option_matches(OList),VM.options,_,set(VM.options)),
-  my_partition(option_matches(OList),TODO,_,set(VM.lo_program)).
+  my_partition(option_matches(OList),VM.options,_,S1), 
+  set(VM.options)=S1,
+  my_partition(option_matches(OList),TODO,_,S2),
+  set(VM.lo_program)= S2.
 
 option_matches(List,Arg):- member(E,List),E==Arg.
 
@@ -2499,7 +2511,7 @@ is_same_oids(O1,O2):- obj_to_oid(O1,OID1),obj_to_oid(O2,OID2),OID1=@=OID2.
 
 %fti(VM,[Step|Program]):- callable_arity(Step,0), !, set(VM.lo_program) = Program, my_submenu_call(call(Step)).
 
-fti(VM,_):- 
+fti(VM,_):- fail,
   Objs = VM.objs,
   length(Objs,Count),
   (fail;(member(progress,VM.options); Count > VM.objs_max_len; (statistics(cputime,X), X > (VM.timeleft)))) -> 
