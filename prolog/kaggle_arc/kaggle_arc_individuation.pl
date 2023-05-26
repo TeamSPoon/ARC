@@ -4153,7 +4153,7 @@ leftover_as_one(VM):-
    Points = VM.lo_points,
    ignore((Points\==[],
    u_dmsg(leftover_as_one=Points),
-   make_indiv_object(VM,[iz(info(combined)),iz(info(leftover_as_one))],Points,LeftOverObj), verify_object(LeftOverObj),
+   make_indiv_object(VM,[iz(info(combined)),iz(info(leftover_as_one))],Points,LeftOverObj), verify_object(leftovers,LeftOverObj),
    assumeAdded(VM,LeftOverObj))),
    VM.lo_points=[].
 
@@ -4249,6 +4249,7 @@ remLOPoints(VM,Obj):- assume_vm(VM),!,globalpoints(Obj,List),
 
 remGridPoints(VM,Obj):- assume_vm(VM),!,globalpoints(Obj,List), 
   Grid = VM.grid,
+  check_vm(VM),
   remove_global_points(List,Grid,StartGrid),
   set(VM.grid) = StartGrid.
 

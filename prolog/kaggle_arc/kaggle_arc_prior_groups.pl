@@ -252,6 +252,7 @@ test_grouped(TestID,ExampleNum,I,O):-
   test_grouped_io(TestID,ExampleNum,in,I),
   once(test_grouped_io(TestID,ExampleNum,out,O)).
 
+show_prop_counts(TestID):- warn_skip(show_prop_counts(TestID)),!.
 show_prop_counts(TestID):-
  ExampleNum=trn+_,
  ROptions=complete,
@@ -261,6 +262,7 @@ show_prop_counts(TestID):-
     print_grouped_props(TestID>ExampleNum*in,InC),
     print_grouped_props(TestID>ExampleNum*out,OutC)))).
 
+calc_propcounts(TestID):- warn_skip(calc_propcounts(TestID)),!.
 calc_propcounts(TestID):-
  ExampleNum=trn+_,
  ROptions=complete,
@@ -280,6 +282,7 @@ calc_skip_display:- nb_current(skip_display,calc),!.
 
 
 :- thread_local(t_l:objs_others/4).
+show_interesting_props(Named,InC,OutC):- nop(warn_skip(show_interesting_props(Named,InC,OutC))),!.
 show_interesting_props(Named,InC,OutC):-
  must_det_ll((
   ensure_grp_proplist(InC,ObjsI),
@@ -1562,6 +1565,8 @@ redundant_prop(_,nth_fg_color(N1,_)):- N1==1.
 redundant_prop(Props,unique_colors([FG])):- sub_var(pen([cc(FG,1)]),Props),!.
 redundant_prop(Props,cc(FG,_)):- is_real_fg_color(FG),sub_var(pen([cc(FG,1)]),Props),!.
 redundant_prop(_Props,pg(_, iz(_), rankLS, Var)):- var(Var),!.
+
+redundant_prop(_Props,pg(_, _, rankLS, _Var)):- !.
 redundant_prop(Props,center2D(_,_)):- sub_compound(loc2D(_,_),Props).
 %redundant_prop(Props,center2D(X,Y)):- sub_var(center2G(X,Y),Props).
 %redundant_prop(Props,center2G(X,Y)):- sub_var(center2D(X,Y),Props).

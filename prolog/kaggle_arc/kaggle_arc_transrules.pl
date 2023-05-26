@@ -9,8 +9,8 @@
 rhs_ground(G):- ground(G),!.
 rhs_ground(G):- nop(writeln(G)),!.
 
-ac_rules(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
-ac_rules(TestID,Ctx,P,PSame):- 
+ac_clauses(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
+ac_clauses(TestID,Ctx,P,PSame):- 
   ac_unit_db(TestID,Ctx,P,Same),
   include(not_debug_info,Same,PSame), 
   %Same=PSame,
@@ -28,28 +28,28 @@ ac_unit_db(TestID,Ctx,P,Same):- ac_listing(TestID,Ctx,P,Same),include(not_debug_
 
 ac_listing(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
 %ac_listing(TestID,Ctx,P->ac_unit_db,PSame):- ac_unit_db(TestID,Ctx,P,PSame).
-ac_listing(TestID,Ctx,P,PSame):- ac_unit(TestID,Ctx,P,PSame)*->true;pass2_rule(TestID,Ctx,P,PSame).
+ac_listing(TestID,Ctx,P,PSame):- ac_unit(TestID,Ctx,P,PSame)*->true;pass2_clause(TestID,Ctx,P,PSame).
 %ac_listing(TestID,Ctx,P,[iz(info(prop_can))|PSame]):- prop_can(TestID,Ctx,P,PSame).
-%ac_listing(TestID,Ctx,P,[pass2|PSame]):- pass2_rule(TestID,Ctx,P,PSame), \+ ac_rules(TestID,Ctx,P,PSame).
+%ac_listing(TestID,Ctx,P,[pass2|PSame]):- pass2_clause(TestID,Ctx,P,PSame), \+ ac_clauses(TestID,Ctx,P,PSame).
 
 
-ac_info(TestID,rules,P->Ctx->current,LHS):- 
+ac_info(TestID,clauses,P->Ctx->current,LHS):- 
   member(Ctx,[in_out,in_out_out,s(_)]),
-  trans_rules_current_members(TestID,Ctx,R),
-  rule_to_pcp(R,P,LHS).
-ac_info(TestID,rules,P->Ctx->combined,LHS):- fail,
+  trans_clauses_current_members(TestID,Ctx,R),
+  clause_to_pcp(R,P,LHS).
+ac_info(TestID,clauses,P->Ctx->combined,LHS):- fail,
   member(Ctx,[in_out,in_out_out,s(_)]),
-  trans_rules_combined_members(TestID,Ctx,R),
-  rule_to_pcp(R,P,LHS).
+  trans_clauses_combined_members(TestID,Ctx,R),
+  clause_to_pcp(R,P,LHS).
 
 show_time_of_failure(_TestID):- !.
 show_time_of_failure(TestID):- 
-    print_scene_change_rules3(show_time_of_failure,
+    print_scene_change_clauses3(show_time_of_failure,
        ac_info,TestID).
 
-rule_to_pcp(TestID,R,Ctx,P,LHS):-
-  is_list(R),!,member(E,R),rule_to_pcp(TestID,E,Ctx,P,LHS).
-rule_to_pcp(_TestID,R,Ctx,P,LHS):- 
+clause_to_pcp(TestID,R,Ctx,P,LHS):-
+  is_list(R),!,member(E,R),clause_to_pcp(TestID,E,Ctx,P,LHS).
+clause_to_pcp(_TestID,R,Ctx,P,LHS):- 
   must_det_ll((
   find_rhs(R,P),
   find_lhs(R,Conds),
@@ -57,144 +57,130 @@ rule_to_pcp(_TestID,R,Ctx,P,LHS):-
   append(Conds,[iz(info(RRR))],LHS),
   ignore((sub_compound(ctx(Ctx),R))))).
 
-pcp_to_rule(TestID,Ctx,P,LHS,rule(TestID,Ctx,P,LHS)).
+pcp_to_clause(TestID,Ctx,P,LHS,clause(TestID,Ctx,P,LHS)).
 
 
-%ac_rules(TestID,P,PSame):- ac_rules(TestID,_,P,PSame).
+%ac_clauses(TestID,P,PSame):- ac_clauses(TestID,_,P,PSame).
 
-%pass2_rule(TestID,Ctx,P,PSame):- pass2_rule_old(TestID,Ctx,P,PSame).
-%pass2_rule(TestID,Ctx,P,PSame):- pass2_rule_new(TestID,Ctx,P,PSame).
+%pass2_clause(TestID,Ctx,P,PSame):- pass2_clause_old(TestID,Ctx,P,PSame).
+%pass2_clause(TestID,Ctx,P,PSame):- pass2_clause_new(TestID,Ctx,P,PSame).
 
-pass2_rule(TestID,Ctx,RHS,LHS):-   
-  pass2_rule1(TestID,Ctx,RHS,LHS)*->true;
-  pass2_rule2(TestID,Ctx,RHS,LHS)*->true;
-  pass2_rule3(TestID,Ctx,RHS,LHS)*->true.
+pass2_clause(TestID,Ctx,RHS,LHS):-   
+  pass2_clause1(TestID,Ctx,RHS,LHS)*->true;
+  pass2_clause2(TestID,Ctx,RHS,LHS)*->true;
+  pass2_clause3(TestID,Ctx,RHS,LHS)*->true.
 /*
-pass2_rule(TestID,Ctx,RHS,LHS):-
-  findall_vset(Ctx-RHS,(pass2_rule1(TestID,Ctx,RHS,LHS);pass2_rule2(TestID,Ctx,RHS,LHS)),List),
+pass2_clause(TestID,Ctx,RHS,LHS):-
+  findall_vset(Ctx-RHS,(pass2_clause1(TestID,Ctx,RHS,LHS);pass2_clause2(TestID,Ctx,RHS,LHS)),List),
   member(Ctx-RHS,List),
-  (pass2_rule1(TestID,Ctx,RHS,LHS)*->true;pass2_rule2(TestID,Ctx,RHS,LHS)).
+  (pass2_clause1(TestID,Ctx,RHS,LHS)*->true;pass2_clause2(TestID,Ctx,RHS,LHS)).
 */
 
-pass2_rule1(TestID,Ctx,RHS,LHS):- fail,
+pass2_clause1(TestID,Ctx,RHS,LHS):- fail,
  ensure_test(TestID),
-  trans_rules_combined_members(TestID,Ctx,Rule),
+  trans_clauses_combined_members(TestID,Ctx,Clause),
   %Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,_ExampleNum,_),
-  %arg(_,Rule,Info),
+  %arg(_,Clause,Info),
   must_det_ll((
-  rule_to_pcp(TestID,Rule,Ctx,RHS,LHS))).
+  clause_to_pcp(TestID,Clause,Ctx,RHS,LHS))).
 
-pass2_rule2(TestID,Ctx,RHS,LHS):- 
+pass2_clause2(TestID,Ctx,RHS,LHS):- 
  ensure_test(TestID),
-  trans_rules_current_members(TestID,Ctx,Rule),
+  trans_clauses_current_members(TestID,Ctx,Clause),
   %Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,_ExampleNum,_),
-  %arg(_,Rule,Info),
+  %arg(_,Clause,Info),
   must_det_ll((
-  rule_to_pcp(TestID,Rule,Ctx,RHS,LHS))).
+  clause_to_pcp(TestID,Clause,Ctx,RHS,LHS))).
 
 
-pass2_rule3(TestID,Ctx,edit(Type,different,P),[iz(info(propcan(true,Ctx)))|PSame]):- fail,
+pass2_clause3(TestID,Ctx,edit(Type,different,P),[iz(info(propcan(true,Ctx)))|PSame]):- fail,
   ensure_test(TestID), ensure_props_change(TestID,Ctx,P),
   prop_can(TestID,IO,P,PSame), once((io_to_cntx(IO,Ctx),prop_type(P,Type))).
 
-/*pass2_rule(TestID,Ctx,RHS,[iz(info(Info))|LHS]):- 
+/*pass2_clause(TestID,Ctx,RHS,[iz(info(Info))|LHS]):- 
  ensure_test(TestID),
-  trans_rules_combined(TestID,_Ctx,Combined),
-  member(Rule,Combined),
-  arg(_,Rule,Info),
+  trans_clauses_combined(TestID,_Ctx,Combined),
+  member(Clause,Combined),
+  arg(_,Clause,Info),
   must_det_ll((
-  arg(_,Rule,rhs(RHS)),
-  arg(_,Rule,lhs(LHS)))),
+  arg(_,Clause,rhs(RHS)),
+  arg(_,Clause,lhs(LHS)))),
   rhs_ground(RHS).
 */
 
 
 
+trans_clauses_mappings(TestID,ExampleNum,Ctx,Mappings):- 
+  var(ExampleNum),!,current_example_scope(TestID,ExampleNum),
+  trans_clauses_mappings(TestID,ExampleNum,Ctx,Mappings).
 
-
-
-
-/*
-into_object_dependancy_r_l(TestID,ExampleNum,Ctx,RHSObjs,LHSObjs,Groups):-
-  normalize_objects_for_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs,RHSO,LHSO),!,
-
-  Step=0,Ctx=in_out,IsSwapped=false,
-  Info = info([step(Step),ctx(Ctx),testid(TestID),is_swapped(IsSwapped),example(ExampleNum)]),
-  ((arg(_,v([],[delete],[all]),RelaxLvl),
-    pairs_of_any(RelaxLvl,Info,LHSO,RHSO,[],Groups))),!,
-  print_ss(into_object_dependancy_r_l,LHSO,RHSO),
-  pp_ilp(r_l=Groups),!.
-*/
-
-
-trans_rules_current_members1(TestID,Ctx,Rules):-
-  ensure_test(TestID),
-  ignore((ExampleNum=trn+_)),
-  kaggle_arc(TestID,ExampleNum,_,_),
-
-  obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs), %% RHSObjs\==[],LHSObjs\==[],
-
-  into_object_dependancy_r_l(TestID,ExampleNum,Ctx,RHSObjs,LHSObjs,Groups),
-
-  member(l2r(Info,In,Out),Groups),
-
-  into_list(In,InL),into_list(Out,OutL),
-  trans_rule(Info,InL,OutL,TransRules), 
-
-  member(Rules,TransRules).
+trans_clauses_mappings(TestID,ExampleNum,Ctx,Mappings):- 
+ ((arc_cache:trans_rule_db(TestID,ExampleNum,Ctx,Mappings),fail)*->true;
+   (obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs),
+    into_object_dependancy_r_l(TestID,ExampleNum,Ctx,RHSObjs,LHSObjs,Mappings))).
   
-trans_rules_current_members(TestID,Ctx,Rules):-
-  ensure_test(TestID),
-  ((fail,arc_cache:trans_rule_db(TestID,_ExampleNum1,Ctx,Rules),Rules\=l2r(_,_,_))*->true;
-    trans_rules_current_members1(TestID,Ctx,Rules)).
+trans_clauses_current_members1(TestID,Ctx,Clauses):-  
+  current_example_scope(TestID,ExampleNum),
+  trans_clauses_mappings(TestID,ExampleNum,Ctx,Mappings),
+  mappings_to_clauses(Mappings,Clauses).
 
-trans_rules_combined_members(TestID,Ctx,CombinedM):-
+mappings_to_clauses(Mappings,Clauses):- 
+  member(l2r(Info,In,Out),Mappings),
+  into_list(In,InL),into_list(Out,OutL),
+  trans_rule(Info,InL,OutL,TransClauses), 
+  member(Clauses,TransClauses).
+  
+trans_clauses_current_members(TestID,Ctx,Clauses):-
+  ensure_test(TestID),
+  ((fail,arc_cache:trans_rule_db(TestID,_ExampleNum1,Ctx,Clauses),Clauses\=l2r(_,_,_))*->true;
+    trans_clauses_current_members1(TestID,Ctx,Clauses)).
+
+trans_clauses_combined_members(TestID,Ctx,CombinedM):-
  ensure_test(TestID),
- must_det_ll((findall(Rule,trans_rules_current_members(TestID,Ctx,Rule),Rules),
-  % must_det_ll(( \+ (member(R,[1|Rules]), is_list(R)))),!,
-  combine_trans_rules(TestID,Rules, Combined))),
+ must_det_ll((findall(Clause,trans_clauses_current_members(TestID,Ctx,Clause),Clauses),
+  % must_det_ll(( \+ (member(R,[1|Clauses]), is_list(R)))),!,
+  combine_trans_clauses(TestID,Clauses, Combined))),
   % must_det_ll(( \+ (member(R,[2|Combined]), is_list(R)))),
   member(CombinedM,Combined).
 
-combine_trans_rules( TestID,Rules, CombinedRules):-  compute_scene_change_pass_out(TestID,Rules, CombinedRules),!.
-combine_trans_rules(_TestID,Rules, CombinedRules):-
-  combine_trans_rules1(Rules, CombinedRules).
+combine_trans_clauses( TestID,Clauses, CombinedClauses):- compute_scene_change_pass_out(TestID,Clauses, CombinedClauses),!.
+combine_trans_clauses(_TestID,Clauses, CombinedClauses):- combine_trans_clauses1(Clauses, CombinedClauses).
 
-combine_trans_rules_textually(R1,Rules,R,RulesN):- 
+combine_trans_clauses_textually(R1,Clauses,R,ClausesN):- 
   into_rhs(R1,RHS1),
   same_functor(R1,R2),
-  select(R2,Rules,RulesN), % my_assertion(r1, \+ is_list(R1)), my_assertion(r2, \+ is_list(R2)),
+  select(R2,Clauses,ClausesN), % my_assertion(r1, \+ is_list(R1)), my_assertion(r2, \+ is_list(R2)),
   into_rhs(R2,RHS2),
   %into_step(R2,RHS2),
   RHS1=@=RHS2,
   merge_vals(R1,R2,R) % my_assertion(r, \+ is_list(R)),
   .
-combine_trans_rules1([],[]):-!.
-combine_trans_rules1([R],[R]):-!.
-combine_trans_rules1([R1|Rules], CombinedRules):-
-  combine_trans_rules_textually(R1,Rules,R,RulesN),!, combine_trans_rules1([R|RulesN], CombinedRules).
-combine_trans_rules1([R|Rules], [R|CombinedRules]):- 
-  combine_trans_rules1(Rules, CombinedRules).
+combine_trans_clauses1([],[]):-!.
+combine_trans_clauses1([R],[R]):-!.
+combine_trans_clauses1([R1|Clauses], CombinedClauses):-
+  combine_trans_clauses_textually(R1,Clauses,R,ClausesN),!, combine_trans_clauses1([R|ClausesN], CombinedClauses).
+combine_trans_clauses1([R|Clauses], [R|CombinedClauses]):- 
+  combine_trans_clauses1(Clauses, CombinedClauses).
 
 
 
 
 /*
-pass2_rule(TestID,IO,P,OutputRule):-
+pass2_clause(TestID,IO,P,OutputClause):-
   ensure_test(TestID),
-  RuleType = edit_copy(IO,ReType,P), 
+  ClauseType = edit_copy(IO,ReType,P), 
   SortKey = P,
-  OutputRule = rule(RuleType,SortKey,SuperPreconds),
-  KeyedRule = rule(RuleType,SortKey,Precond),
-  Rule = rule(RuleType,P,LHS),
-  findall(Rule,pass2_rule_R(TestID,Rule),Rules),
-  maplist(arg(1),Rules,Keyz),vsr_set(Keyz,Keys),
-  member(RuleType,Keys),
-  findall(KeyedRule,
-    (prop_type(P,ReType),findall(LHS,member(Rule,Rules),LHSList),flatten(LHSList,FFound),
-      into_lhs(FFound,Precond)),KeyedRules),
-  maplist(arg(3),KeyedRules,Preconds),into_lhs(Preconds,SuperPreconds),
-  member(KeyedRule,KeyedRules),
+  OutputClause = clause(ClauseType,SortKey,SuperPreconds),
+  KeyedClause = clause(ClauseType,SortKey,Precond),
+  Clause = clause(ClauseType,P,LHS),
+  findall(Clause,pass2_clause_R(TestID,Clause),Clauses),
+  maplist(arg(1),Clauses,Keyz),vsr_set(Keyz,Keys),
+  member(ClauseType,Keys),
+  findall(KeyedClause,
+    (prop_type(P,ReType),findall(LHS,member(Clause,Clauses),LHSList),flatten(LHSList,FFound),
+      into_lhs(FFound,Precond)),KeyedClauses),
+  maplist(arg(3),KeyedClauses,Preconds),into_lhs(Preconds,SuperPreconds),
+  member(KeyedClause,KeyedClauses),
   %include(has_a_value,SuperPreconds,UsedPrconds),
   true.
 */
@@ -264,25 +250,25 @@ map_pairs_info_io(TestID,ExampleNum,Ctx,Step,TypeO,InL,OutL,USame,UPA2,UPB2):-
 
 
 % delete
-trans_rule(Info,In,[],Rules):- listify(In,InL),
+trans_rule(Info,In,[],Clauses):- listify(In,InL),
  findall(delete_object(Info,rhs(delete(In)),lhs(Preconds)),
-   (member(In,InL),into_lhs(In,Preconds)),Rules), Rules\==[],!.
+   (member(In,InL),into_lhs(In,Preconds)),Clauses), Clauses\==[],!.
 
 % mutiple postconds
-trans_rule(Info,In,[Out,Out2|OutL],TransRule):- is_object(Out),is_object(Out2),
-  maplist(trans_rule(Info,In),[Out,Out2|OutL],TransRule), TransRule\==[],!.
+trans_rule(Info,In,[Out,Out2|OutL],TransClause):- is_object(Out),is_object(Out2),
+  maplist(trans_rule(Info,In),[Out,Out2|OutL],TransClause), TransClause\==[],!.
 
 % create
-trans_rule(Info,[],Out,Rules):- listify(Out,OutL),
+trans_rule(Info,[],Out,Clauses):- listify(Out,OutL),
  findall(create_object(Info,rhs(create(Out)),lhs(Preconds)),
-   ((member(Out,OutL),into_lhs(Out,Preconds))),Rules), Rules\==[],!.
+   ((member(Out,OutL),into_lhs(Out,Preconds))),Clauses), Clauses\==[],!.
 
 % 2 preconds
-%trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2),
-%  TransRule = create_object2(Info,rhs(create_obj(Out)),lhs(into_new(In1,In2))),!.
+%trans_rule(Info,[In1,In2],[Out],TransClause):- is_object(In1),is_object(In2),
+%  TransClause = create_object2(Info,rhs(create_obj(Out)),lhs(into_new(In1,In2))),!.
 
 % 2 preconds
-trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2), % fail,
+trans_rule(Info,[In1,In2],[Out],TransClause):- is_object(In1),is_object(In2), % fail,
    noteable_propdiffs(In1, Out,_Same1,_DontCare1,New1), 
    noteable_propdiffs(In2,New1,_Same2,_DontCare2,New2),
    %remove_o_giz(Out,RHSO), 
@@ -294,40 +280,40 @@ trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2), % fa
  % append_sets(Same,New,NewObj),
   %make_common(RHSO,LHS1,NewOut1,NewLHS1),
   %make_common(NewOut1,LHS2,NewOut,NewLHS2),
-  TransRule = [create_object1(Info,rhs(creation_step1(Step,Type,New1)), lhs(Precond1)),
+  TransClause = [create_object1(Info,rhs(creation_step1(Step,Type,New1)), lhs(Precond1)),
                create_object2(Info,rhs(creation_step2(Step,Type,New2)), lhs(Precond2))],!.
 
 % mutiple preconds
-trans_rule(Info,[In,In2|InL],OutL,TransRule):- is_object(In),is_object(In2),
-  trans_rule(Info,[In2|InL],OutL,TransRuleM), TransRuleM\==[],
-  sub_compound(lhs(Precond),TransRuleM),
+trans_rule(Info,[In,In2|InL],OutL,TransClause):- is_object(In),is_object(In2),
+  trans_rule(Info,[In2|InL],OutL,TransClauseM), TransClauseM\==[],
+  sub_compound(lhs(Precond),TransClauseM),
   noteable_propdiffs(In,OutL,Same,_L,_R),
   append_vsets([Precond,Same],NewPrecond),
-  subst(TransRuleM,lhs(Precond),lhs(NewPrecond),TransRule),!.
+  subst(TransClauseM,lhs(Precond),lhs(NewPrecond),TransClause),!.
 
 % just copy an object
-trans_rule(Info,[In],[Out],Rules):- 
+trans_rule(Info,[In],[Out],Clauses):- 
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
   noteable_propdiffs(In,Out,Same,L,R),L==[],R==[],
-  Rules = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
+  Clauses = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
 
 % just copy an object
-trans_rule(Info,In,Out,Rules):- 
+trans_rule(Info,In,Out,Clauses):- 
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
   noteable_propdiffs(In,Out,Same,L,R),L==[],R==[],
-  Rules = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
+  Clauses = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
 
 
 % copy/transform 
-trans_rule(Info,In,Out,Rules):- 
+trans_rule(Info,In,Out,Clauses):- 
   noteable_propdiffs(In,Out,_Same,_L,R),
   into_lhs(In,LHS),  
   findall(edit_copy(Info,rhs(edit(Type,Change,P)),lhs(LHS)),
     (member(P,R),prop_pairs(In,Out,Type,Change,P),
       Change\==same,
-      good_for_rhs(P)),Rules),Rules\==[],!.
+      good_for_rhs(P)),Clauses),Clauses\==[],!.
 
-trans_rule(Info,E1,E2,Rules):-
+trans_rule(Info,E1,E2,Clauses):- 
   noteable_propdiffs(E1,E2,NSame,NL,NR),
   %pp_ilp(l2r(Info,E1,E2)),
   flat_props(E1,FP1),flat_props(E2,FP2),
@@ -344,7 +330,7 @@ trans_rule(Info,E1,E2,Rules):-
   pp_ilp(nadded=NR),
   dash_chars)),
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
-  Rules = [ 
+  Clauses = [ 
     create_object_step(Info,rhs(create3c(Step,TypeO,E2)),lhs(Same)) ],!.
     %copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ].
 

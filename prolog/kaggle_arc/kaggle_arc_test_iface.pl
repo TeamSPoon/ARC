@@ -1055,13 +1055,15 @@ test_suite_name_by_call_1(F):- clauses_predicate_cmpd_goal(F/1,F2),member(F2,[en
 %test_suite_name_by_call_1(F):- clauses_predicate_cmpd_goal(F/1,every_grid).
 test_suite_name_by_call_1(no_pair(P1)):-every_pair(P1). 
 test_suite_name_by_call_1(every_pair(P1)):-every_pair(P1). 
+test_suite_name_by_call_1(P1P1):- suite_by_call_f(F1),P1P1=..[F1,P1],
+  is_monadic_grid_predicate(P1).
 
-test_suite_name_by_call_1(no_grid(P1)):-is_monadic_grid_predicate(P1). 
-test_suite_name_by_call_1(every_grid(P1)):-is_monadic_grid_predicate(P1). 
-test_suite_name_by_call_1(no_input_grid(P1)):-is_monadic_grid_predicate(P1). 
-test_suite_name_by_call_1(every_input_grid(P1)):-is_monadic_grid_predicate(P1). 
-test_suite_name_by_call_1(no_output_grid(P1)):-is_monadic_grid_predicate(P1). 
-test_suite_name_by_call_1(every_output_grid(P1)):-is_monadic_grid_predicate(P1). 
+suite_by_call_f(no_grid).
+suite_by_call_f(every_grid).
+suite_by_call_f(no_input_grid).
+suite_by_call_f(every_input_grid).
+suite_by_call_f(no_output_grid).
+suite_by_call_f(every_output_grid).
 
 
 is_monadic_grid_predicate(F):-  clauses_predicate_cmpd_goal(F/1,Into_Grid),member(Into_Grid,[ensure_grid,into_grid]).
@@ -1292,7 +1294,11 @@ foc_current_example_num(ExampleNum):- get_example_num(ExampleNum),!.
 foc_current_example_num(ExampleNum):- ExampleNum = trn+0, set_example_num(ExampleNum),!.
 foc_current_example_num(ExampleNum):- ignore(get_example_num(ExampleNum)),set_example_num(ExampleNum),!.
 
-
+with_example_num(ExampleNum,Goal):-
+  current_test_example(_TestID,Was),
+   set_example_num(ExampleNum),
+    call_cleanup(Goal,set_example_num(Was)).
+     
 current_test_example(TestID,ExampleNum):- get_current_test(TestID),
   (get_example_num(ExampleNum) -> true ; must_det_ll(first_current_example_num(ExampleNum))).
 
@@ -1956,9 +1962,32 @@ print_testinfo:-
   print_testinfo(TestID).
 
 print_testinfo(TestID):- 
- ensure_test(TestID), !, forall(test_info_recache(TestID,F),pp(fav(TestID,F))),
+ ensure_test(TestID), !, forall(test_info_recache(TestID,F),nop(pp(fav(TestID,F)))),
   nop(test_show_grid_objs(TestID)),
-  findall(III,runtime_test_info(TestID,III),LL),pp(LL).
+  findall(III,repair_runtime_test_info(TestID,III),LL),  
+  flatten(LL,FL),variant_list_to_set(FL,FLS),
+  repair_info(FLS,ASET),
+  my_partition(atom,ASET,TSA,SET),
+  my_partition(some_test_suite_name_test_prop,SET,SuiteL,Props),
+  sort(SuiteL,SuiteLS),
+  sort(TSA,STSA),
+  sort(Props,PropLS),
+  pp(fav(TestID,[test_suite(SuiteLS),test_suite(STSA)|PropLS])).
+
+some_test_suite__f(+).
+some_test_suite__f(-).
+some_test_suite__f(no_pair).
+some_test_suite__f(ever_pair).
+some_test_suite__f(F):- suite_by_call_f(F).
+
+some_test_suite_name_test_prop(Atom):- atom(Atom).
+some_test_suite_name_test_prop(V):- \+ compound(V),!,fail.
+some_test_suite_name_test_prop(P):- functor(P,F,1),some_test_suite__f(F).
+%some_test_suite_name_test_prop(Atom):- test_suite_name_by_call_1(Atom).
+some_test_suite_name_test_prop(Atom):- some_test_suite_name(Atom).
+
+repair_runtime_test_info(TestID,Info):- runtime_test_info(TestID,III),
+  flatten([III],FFF), repair_info(FFF,Info).
 
 test_info_no_loop(TestID,Sol):- var(TestID),!,all_arc_test_name_unordered(TestID),test_info_no_loop(TestID,Sol).
 test_info_no_loop(TestID,Sol):- muarc_tmp:test_info_cache(TestID,Sol),!. % test_info
@@ -1990,23 +2019,37 @@ some_test_info(TestID,III):- muarc_tmp:test_info_cache(TestID,Inf0),repair_info(
 :- dynamic(muarc_tmp:some_test_info_prop/2).
 
 %some_test_info_1(TestID,Sol):- nonvar(TestID),test_info_recache(TestID,Sol),!.
+%some_test_info_1(TestID,EEE):- var(TestID),!,kaggle_arc(TestID,trn+0,_,_),some_test_info_1(TestID,EEE).
 some_test_info_1(TestID,III):- more_test_info(TestID,III).
 %some_test_info(X,[keypad]):- key_pad_tests(X). 
 some_test_info_1(TestID,III):- fav(TestID,III).
 some_test_info_1(TestID,III):- fav_less(TestID,III).
 some_test_info_1(TestID,III):- muarc_tmp:some_test_info_prop(TestID,III).
+%some_test_info_1(TestID,[test_suite(SuiteX)]):- test_suite_info_1(SuiteX,TestID).
 
+
+all_test_info(TestID,Sol):- var(TestID),!,all_arc_test_name_unordered(TestID),all_test_info(TestID,Sol).
 all_test_info(TestID,III):- some_test_info(TestID,III).
-all_test_info(TestID,SuiteX):- nonvar(SuiteX),some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
+all_test_info(TestID,SuiteX):- nonvar(SuiteX),!,some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
+%all_test_info(TestID,SuiteX):- var(SuiteX),some_test_suite_name(SuiteX),test_suite_info(SuiteX,TestID).
 
 runtime_test_info(TestID,[test_suite(SuiteSet)]):- 
   findall(SuiteX,((some_test_suite_name(SuiteX),test_suite_info_1(SuiteX,TestID))),SuiteS),
   sort_safe(SuiteS,SuiteSet).
-runtime_test_info(T,S):- findall(I,test_info(T,I),F),flatten([F],L),list_to_set(L,S),
+
+runtime_test_info(T,S):- 
+  findall(I,test_info(T,I),F),flatten([F],L),list_to_set(L,S),
+  retractall(muarc_tmp:test_info_cache(T,_)),
+  asserta(muarc_tmp:test_info_cache(T,S)),!.
+  
+runtime_test_info(T,S):- fail, findall(I,all_test_info(T,I),F),flatten([F],L),list_to_set(L,S),
   retractall(muarc_tmp:test_info_cache(T,_)),
   asserta(muarc_tmp:test_info_cache(T,S)),!.
 
-repair_info(Inf,InfO):- listify(Inf,Inf1),my_maplist(repair_info0,Inf1,InfO).
+repair_info(Inf,InfO):- 
+  listify(Inf,InfM0),
+  flatten([InfM0],InfM),
+  repair_info0(InfM,InfMO),!,repair_info0(InfMO,InfO).
 
 is_plus_minus_or_sym(+). is_plus_minus_or_sym(-).
 is_plus_minus_or_sym(F):- upcase_atom(F,UC),downcase_atom(F,UC).
@@ -2019,7 +2062,13 @@ use_atom_test(F):- no_atom_test(F),!,fail.
 use_atom_test(F):- atom_contains(F,' '),!.
 use_atom_test(F):- \+ is_plus_minus_or_sym(F), \+ atom_contains(F,'/'), nop((\+ atom_contains(F,' '))).
 
-repair_info0(Inf0,Inf):- is_list(Inf0),!,my_maplist(repair_info0,Inf0,Inf).
+% flatten([Inf],Inf1),   my_maplist(repair_info0,Inf1,InfO),
+
+repair_info0(Inf,InfO):- fail, is_list(Inf),select(test_suite(List1),Inf,Inf0),
+  select(test_suite(List2),Inf0,Inf1),append(List1,List2,SList),
+  repair_info0([test_suite(SList)|Inf1],InfO).
+repair_info0(Inf,InfO):- compound(Inf),Inf=test_suite(InfO),!.
+repair_info0(Inf0,Inf):- is_list(Inf0),!,my_maplist(repair_info0,Inf0,InfM),flatten(InfM,Inf).
 repair_info0(Inf,InfO):- compound(Inf),functor(Inf,F,1),listify_args(F),!,arg(1,Inf,A),listify(A,ArgsL),InfO=..[F,ArgsL].
 repair_info0(Inf,InfO):- compound(Inf),compound_name_arguments(Inf,F,ArgsL),listify_args(F),!,InfO=..[F,ArgsL].
 repair_info0(Inf,Inf).% listify(Inf,InfM),my_maplist(repair_info,InfM,Info).
@@ -2471,7 +2520,8 @@ atom_id(Atom,TriedV):- downcase_atom(Atom,Tried),Atom\==Tried,atom_id(Tried,Trie
 atom_id_e(Tried,t(Tried)):- kaggle_arc(t(Tried),_,_,_),!.
 atom_id_e(Tried,v(Tried)):- kaggle_arc(v(Tried),_,_,_),!.
 atom_id_e(Tried,x(Tried)):- kaggle_arc(x(Tried),_,_,_),!.
-atom_id_e(Sel, TestID):- sformat(SSel,'~q',[Sel]),
+%atom_id_es(Sel, TestID):- atom_id_es(Sel, TestID).
+atom_id_es(Sel, TestID):- sformat(SSel,'~q',[Sel]),
    catch(read_term_from_atom(SSel,Name,[module(user),double_quotes(string),variable_names(Vs),singletons(Singles)]),_,
         (ppnl(['failed to read: ',Sel]),fail)),
         my_maplist(ignore,Vs),my_maplist(ignore,Singles),

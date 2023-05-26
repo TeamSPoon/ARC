@@ -2171,20 +2171,7 @@ show_safe_assumed_mapped:-
         g_display(A,AA),g_display(B,BB),
          dash_chars,print_ss(SWHYS,AA,BB)))))))),
  dash_chars,!.
-
-show_assumed_mapped(TestID):-
-  ensure_test(TestID),
-% pp_wcg(show_safe_assumed_mapped),
- SAME = sam(A,B),
- findall(SAME,gather_assumed_mapped_rule(A,B),SAML),
- sort(SAML,SAMS),
-   forall(member(SAME,SAMS),
-      (dash_chars, print_ss(A,B))),
- dash_chars,!.
-
-
-
-  
+ 
 
 
 arc_cache:doing_map(Out,B,A):-    doing_map_list(Out,B,[A|_]).

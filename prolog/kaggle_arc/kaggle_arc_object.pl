@@ -378,7 +378,16 @@ grid_to_individual(GridIn,Obj):-
   grid_size(Grid,H,V),
   grid_to_points(Grid,H,V,Points),
   (Points==[]-> empty_grid_to_individual(H,V,Obj); 
-  (make_indiv_object(VM,[iz(grid)],Points,Obj))).
+  (make_indiv_object(VM,[iz(grid),iz(whole_grid)],Points,Obj))).
+
+
+grid_to_single_object(ID,GridIn,Obj):-   
+ must_det_ll((  
+  into_grid(GridIn,Grid),
+  grid_size(Grid,H,V),
+  grid_to_points(Grid,H,V,Points),
+  make_indiv_object_no_vm(ID,H,V,[iz(grid),iz(whole_grid)],Points,Obj))).
+
 
 empty_grid_to_individual(H,V,Obj):-
   Iv is H + V*34,
@@ -456,13 +465,23 @@ sort_points(P0,P2):-
 
 %same_globalpoints(O1,O2):-  globalpoints_include_bg(O1,P1),same_globalpoints_ps_obj(P1,O2).
 
+same_globalpoints2(I,O):- 
+   globalpoints(I,II), globalpoints(O,OO),!,
+   pred_intersection(=@=,II,OO,_,_,IL,OL),!,
+   IL==[],OL==[].
 same_globalpoints_and_window(I,O):-
   %get_loc2D_vis2D(I,P1,H1,V1,OH1,OV1),
   %get_loc2D_vis2D(O,P2,H2,V2,OH2,OV2),!,  
   %P1=@=P2,H1=H2,V1=V2, OH1=OH2,OV1=OV2,
+  
   loc2D(I,X1,Y1),loc2D(O,X2,Y2),X1=X2,Y1=Y2,
   vis2D(I,X1a,Y1a),vis2D(O,X2a,Y2a),X1a=X2a,Y1a=Y2a,
-  shape_rep(grav,I,P1),shape_rep(grav,O,P2), P1=@=P2.
+  shape_rep(grav,I,P1),shape_rep(grav,O,P2),
+  P1=@=P2,
+  ignore((\+ (same_globalpoints2(I,O),
+     globalpoints(I,II), globalpoints(O,OO),
+     print_ss(same_globalpoints_and_window,II,OO)))).
+  
  
 same_globalpoints_ovrs_ps_obj(Overrides,P1,O2):-
   po_loc2D_vis2D(P1,Overrides,H1,V1,OH1,OV1),
@@ -782,7 +801,7 @@ verify_object(Info,Obj):-
 override_object([],I,I):-!.
 override_object(E,I,O):- with_object(override,E,I,O).
 
-with_object(Op,E,obj(List),O):- !, with_objprops(Op,E,List,MidList),O=obj(MidList),!,verify_object(O).
+with_object(Op,E,I,O):- I= obj(List), !, with_objprops(Op,E,List,MidList),O=obj(MidList),!,verify_object(with_object(Op,E,I),O).
 with_object(Op,E,I,O):- is_group(I), mapgroup(with_object(Op,E),I,O).
 % with_object(Op,E,I,O):- is_list(I), !, with_objprops(Op,E,I,O).
 with_object(Op,E,     I,     O):- with_objprops(Op,E,I,O).
@@ -863,13 +882,35 @@ is_edge_hv(_,N,_,_,N):-!.
 
 is_fg_object(Obj):- is_whole_grid(Obj),!.
 is_fg_object(Obj):- sub_var(cc(bg,0),Obj),!.
+is_fg_object(Obj):- sub_var(iz(fg_or_bg(iz_fg)),Obj),!.
+is_fg_object(Obj):- fail, \+ sub_var(black,Obj), \+ sub_var(iz(fg_or_bg(iz_bg)),Obj),
+  is_object(Obj), \+ is_bg_object(Obj).
 %is_fg_object(Obj):- is_rule_mapping(Obj),!,fail.
-is_fg_object(Obj):- \+ is_bg_object(Obj),!.
+%is_fg_object(Obj):- \+ is_bg_object(Obj),!.
+
+
 
 is_used_fg_object(Obj):- has_prop(cc(fg,FG),Obj),FG>0, \+ is_whole_grid(Obj). 
 
 is_whole_grid(B):- has_prop(iz(stype(whole)),B), \+ has_prop(iz(stype(part)),B),!.
 
+
+
+
+merge_objs(I,O,OUT):-
+  indv_props_list(I,IProps),
+  indv_props_list(I,OProps),
+  print_ss(combine_same_globalpoints_really,I,O),
+  %wots(SI,writeg(I)), wots(SO,writeg(O)), print_ss(combine_same_globalpoints_really,SI,SO),
+  my_partition(props_not_black_bg,IProps,_,Include1),
+  my_partition(props_not_black_bg,OProps,_,Include2),
+  % iz(merged(cgp))
+  append_sets(Include1,Include2,IO),!,
+  (member(globalpoints(_),IO)
+     ->OUT=obj(IO)
+     ;override_object(IO,I,OUT)).
+%props_not_black_bg(P):- props_not_for_merge(P),!.
+props_not_black_bg(P):- sub_var(black,P).
 
 
 merge_objs(_VM,Bigger,[],_IPROPS,Bigger):-!.

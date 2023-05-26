@@ -292,20 +292,20 @@ my_partition(P1,H,I,HE):- arcST,ibreak,
   my_partition(P1,[H],I,HE).
 
 
-mapgroup(P2,G1,L2):- into_list(G1,L1),!, with_group(L1,maplist(P2,L1,L2)).
-mapgroup(P1,G1):- into_list(G1,L1), !, with_group(L1,maplist(P1,L1)).
+mapgroup(P2,G1,L2):- into_list(G1,L1),!, with_my_group(L1,maplist(P2,L1,L2)).
+mapgroup(P1,G1):- into_list(G1,L1), !, with_my_group(L1,maplist(P1,L1)).
 
 selected_group(Grp):- nb_current('$outer_group',Grp),!.
 selected_group([]).
 
-%with_group([O|Grp],Goal):- compound(O),O=obj(_),!, locally(nb_setval('$outer_group',[O|Grp]),Goal).
-with_group(_,Goal):- call(Goal).
+%with_my_group([O|Grp],Goal):- compound(O),O=obj(_),!, locally(nb_setval('$outer_group',[O|Grp]),Goal).
+with_my_group(_,Goal):- call(Goal).
 
 into_mlist(L,L).
-my_maplist(P4,G1,L2,L3,L4):- into_mlist(G1,L1),!, with_group(L1,maplist(P4,L1,L2,L3,L4)).
-my_maplist(P3,G1,L2,L3):- into_mlist(G1,L1),!, with_group(L1,maplist(P3,L1,L2,L3)).
-my_maplist(P2,G1,L2):- into_mlist(G1,L1),!, with_group(L1,maplist(P2,L1,L2)).
-my_maplist(P1,G1):- into_mlist(G1,L1), !, with_group(L1,maplist(P1,L1)).
+my_maplist(P4,G1,L2,L3,L4):- into_mlist(G1,L1),!, with_my_group(L1,maplist(P4,L1,L2,L3,L4)).
+my_maplist(P3,G1,L2,L3):- into_mlist(G1,L1),!, with_my_group(L1,maplist(P3,L1,L2,L3)).
+my_maplist(P2,G1,L2):- into_mlist(G1,L1),!, with_my_group(L1,maplist(P2,L1,L2)).
+my_maplist(P1,G1):- into_mlist(G1,L1), !, with_my_group(L1,maplist(P1,L1)).
 
 
 my_include(P1,L,I):- include(p1_call(P1),L,I).
