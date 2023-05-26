@@ -586,7 +586,6 @@ set_training(Training):- luser_linkval('$training_vm',Training).
 set_training(Prop,Value):- get_training(Training), gset(Training.Prop)=Value.
 get_training(Prop,Value):- get_training(Training), get_kov(Prop,Training,Value).
 
-:- set_prolog_flag(arc_term_expansion, false).
 
 set_vm(VM):- luser_linkval('$grid_vm',VM).
 
@@ -653,6 +652,11 @@ set_vm_obj_nil(Prop,Or):- u_dmsg(set_vm_obj_nil(Prop,Or)).
 
 
 get_vm(Key,Value):-  get_vm(VM), get_kov(Key,VM,Value).
+
+
+:- set_prolog_flag(arc_term_expansion, false).
+
+
 
 test_regressions:- make, forall((clause(mregression_test,Body),ppt(Body)),must_det_ll(Body)).
 :- arc_history1(test_regressions).

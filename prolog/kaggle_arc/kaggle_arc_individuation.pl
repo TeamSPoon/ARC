@@ -986,22 +986,22 @@ interlink_overlapping_black_lines(VM):-
 
 
 interlink_overlapping_black_lines(VM,Objs,[Obj1|New]):-
-  CellL = [_],
+  BlackL = [_],
   select(Obj1,Objs,Rest0),
-  ( \+ has_prop(iz(type((border_frame(_,_,CellL),_))),Obj1) ;
-    \+ has_prop(unique_colors(CellL),Obj1)),!,
+  ( \+ has_prop(iz(type((border_frame(_,_,BlackL),_))),Obj1) ;
+    \+ has_prop(unique_colors(BlackL),Obj1)),!,
   interlink_overlapping_black_lines(VM,Rest0,New).
 
 interlink_overlapping_black_lines(VM,Objs,New):-
-  CellL = [_],
+  BlackL = [_],
   select(Obj1,Objs,Rest0),
-  has_prop(iz(type((border_frame(H,V,CellL),PassNum))),Obj1),
-  has_prop(unique_colors(CellL),Obj1),
+  has_prop(iz(type((border_frame(H,V,BlackL),PassNum))),Obj1),
+  has_prop(unique_colors(BlackL),Obj1),
   globalpoints(Obj1,P1s),
 
   select(Obj2,Rest0,Rest),
-  has_prop(iz(type((border_frame(H,V,CellL),_))),Obj2),
-  has_prop(unique_colors(CellL),Obj2),
+  has_prop(iz(type((border_frame(H,V,BlackL),_))),Obj2),
+  has_prop(unique_colors(BlackL),Obj2),
   globalpoints(Obj2,P2s),
 
   intersection(P1s,P2s,Overlap,_,_),
@@ -1009,7 +1009,7 @@ interlink_overlapping_black_lines(VM,Objs,New):-
   append(P1s,P2s,P12s),!,
 
   sort_safe(P12s,Points),
-  make_indiv_object(VM,[iz(info(combined)),iz(type((border_frame(H,V,CellL),PassNum))),
+  make_indiv_object(VM,[iz(info(combined)),iz(type((border_frame(H,V,BlackL),PassNum))),
     iz(type(frame_group)),birth(merge_frame_group)],Points,NewObj),
   assumeAdded(VM,NewObj),
   interlink_overlapping_black_lines(VM,[NewObj|Rest],New).
@@ -1170,12 +1170,12 @@ indv_omem_points(VM):-
 % =====================================================================
 is_fti_step(remove_if_prop).
 % =====================================================================
-remove_if_prop(Prop,VM):- my_partition(has_prop(Prop),VM.objs,_With,gset(VM.objs)).
+remove_if_prop(Prop,VM):- my_partition(has_prop(Prop),VM.objs,_With,SET), gset(VM.objs)=SET.
 
 % =====================================================================
 is_fti_step(keep_if_prop).
 % =====================================================================
-keep_if_prop(Prop,VM):- my_partition(has_prop(Prop),VM.objs,gset(VM.objs),_With).
+keep_if_prop(Prop,VM):- my_partition(has_prop(Prop),VM.objs,SET,_With), gset(VM.objs)=SET.
 
 % =====================================================================
 is_fti_step(combine_if_prop).

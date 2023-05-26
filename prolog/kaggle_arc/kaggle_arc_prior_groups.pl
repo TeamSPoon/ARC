@@ -1453,6 +1453,7 @@ add_how_simular(Lbls,[OBJ|Objs],ObjsIn,[obj(OO)|Simulars]):-  OBJ = obj(O),
 add_how_common(_Lbls,_Self,[],_,[]):-!.
 add_how_common(Lbls,Self,[Prop|O],Rest,[Prop,New|OO]):-   
   \+ assume_prop(Prop), Prop\=link(_,_), 
+  Prop = iz(sid(_)),
   Prop \= simularz(simularz(_),_),
   Prop \= simularz(_,_),
   %\+ (compound_name_arity(Prop,_,A), A>2), % \+ ( arg(2,Prop,E),number(E) ), % Prop\=pg(_,_,_,_),
