@@ -1880,7 +1880,68 @@ pairs_of_any(RelaxLvl,Info,LHS,RHS,SoFar,PairLR):-
   pairs_agree_l_r(LHS,RHS,Agreed,RemainingL,RemainingR),
   append_LR(Agreed,SoFar,AgreedSoFar),
   pairs_of_any(RelaxLvl,Info,RemainingL,RemainingR,AgreedSoFar,PairLR).
+
+is_adjacent_same_color(R1,R2,NewLHS,RHSObjs,RHSRest):- member(R1,NewLHS), select(R2,RHSObjs,RHSRest), is_adjacent_same_color(R1,R2,0),!.
+is_adjacent_same_color(R1,R2,NewLHS,RHSObjs,RHSRest):- member(R1,NewLHS), select(R2,RHSObjs,RHSRest), is_adjacent_same_color(R1,R2,1),!.
+is_adjacent_same_color(R1,R2,NewLHS,RHSObjs,RHSRest):- member(R1,NewLHS), select(R2,RHSObjs,RHSRest), is_adjacent_same_color(R1,R2,2),!.
+
+calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- 
+   LHSObjs==[], 
+    into_list(Prev,PrevObjs),
+    my_partition(is_input_object,PrevObjs,PrevLHS,PrevRHS),
+    append_LR(PrevRHS,PrevLHS,NewLHS),
+    is_adjacent_same_color(R1,R2,NewLHS,RHSObjs,RHSRest),
+    incr_step(Step,IncrStep),
+    make_pairs(TestID,ExampleNum,is_adjacent_same_color,IsSwapped,Step,Ctx,Prev,R1,R2,Pairs),
+    %once((PrevRHS = [A,B|C] ; PrevLHS = [A,B|C])), %append_LR(PrevRHS,PrevLHS,NewLHS), %NewLHS=PrevLHS,    
+    !, must_det_ll((calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,[Pairs|Prev],LHSObjs,RHSRest,RestLR))).
+
+
+calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjsNil,RHSObjs,RestLR):- 
+   LHSObjsNil==[], !, 
+    incr_cntx(Ctx,IncrCtx),
+    incr_step(Step,IncrStep), %incr_step(Step,IncrStep),
+    into_list(Prev,PrevObjs),
+    my_partition(is_input_object,PrevObjs,PrevLHS,PrevRHS),
+    member(Type=LHSObjs,[perfect_combo=PrevLHS,perfect_combo=PrevRHS]),
+      select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
+      must_det_ll((
+      remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
+      remove_object(RHSRest2, Left,RHSRest ), remove_object(LHSRest2, Left,LHSRest ),
+      make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,IncrCtx,Prev,Left,Right,Pairs),
+      append_LR(Prev,Pairs,NewPrev),
+      
+      calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,IncrCtx,NewPrev,LHSRest,RHSRest,RestLR))).
+
+new_object_splitter:-false.
+
+calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,[Pairs|RestLR]):-
+ new_object_splitter,
+ Type = two_way,
+ select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
+ \+ has_prop(iz(info(faked(Ctx))),Right),
+ must_det_ll((
+  remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
+  remove_object(RHSRest2, Left,RHSRest ), remove_object(LHSRest2, Left,LHSRest ),
+  make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,Prev,Left,Right,Pairs),
+  append_LR(Prev,Pairs,NewPrev),
+  incr_step(Step,IncrStep),
+
+
+((  left_over_props(Left,Right,PropsMissing), PropsMissing=[_,_|_],
+  pp_ilp(left_over_props=PropsMissing),
+  obj_to_oid(Right,OID),
+  obj_in_or_out(Right,IO),
+  FakeObj = obj([was_oid(OID),iz(i_o(IO)),iz(info(faked(Ctx)))|PropsMissing])) -> 
+      calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,[Right,Left|LHSRest],[FakeObj|RHSRest],RestLR);
+
+      calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,[Right,Left|LHSRest],RHSRest,RestLR)))).
+
+left_over_props(L,R,LO):- 
+  noteable_propdiffs2(L,R,_,_,LO).
 */
+
+
 
 
 pair_combinations([], _, []).
@@ -1939,151 +2000,12 @@ combine_training(TestID,A,B,In012,Out012):-
 
 
 
-
-
 append_LR(Prev,Mappings,RestLR):- 
   flatten([Prev,Mappings],RestLR),!.
 append_LR(Mappings,RestLR):- 
   flatten([Mappings],RestLR),!.
 
 sometimes_when_lost(Goal):-!,fail,call(Goal).
-:- discontiguous calc_o_d_recursively/11. 
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):-
-  maybe_remove_bg(RHSObjs,RHSObjs1), \=@=(RHSObjs,RHSObjs1),!,
-  must_det_ll((calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs1,RestLR))).
-
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- fail,
-  sometimes_when_lost((maybe_remove_bg(RHSObjs,RHSObjs1), \=@=(RHSObjs,RHSObjs1), RHSObjs1\==[])), !,
-  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs1,RestLR).
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,_TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):-
-  LHSObjs==[], RHSObjs == [], !, 
-  Info = info(Step,IsSwapped,Ctx,leftover,TestID,ExampleNum,_),
-  append_LR([call(assert_test_property(TestID,ExampleNum,deps,perfect_balance(Info)))],Prev,RestLR).
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,_TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- 
-   Info = info(Step,IsSwapped,Ctx,leftover,TestID,ExampleNum,_),
-   RHSObjs==[], !, 
-    must_det_ll((maplist(into_delete(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,Info),
-     LHSObjs,Mappings),append_LR(Prev,[call(assert_test_property(TestID,ExampleNum,deps,ignore_rest(Info))),Mappings],RestLR))).
-
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,[Right],RestLR):- fail,
-  LHSObjs == [],
-  into_list(Prev,PrevObjs), PrevObjs\==[],
-  my_partition(is_input_object,PrevObjs,PrevLHS,PrevRHS),
-  once((PrevRHS = [A,B|C] ; PrevLHS = [A,B|C])),
-  sort_by_jaccard(Right,[A,B|C],Stuff),!,
-  reverse(Stuff,[AA,BB|_Rest]),
-  make_pairs(TestID,ExampleNum,assumed,IsSwapped,Step,Ctx,[],[BB,AA],Right,Pairs),
-  append_LR(Prev,Pairs,NewPrev),
-  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,NewPrev,[],[],RestLR),!.
-
-
-is_adjacent_same_color(R1,R2,NewLHS,RHSObjs,RHSRest):- member(R1,NewLHS), select(R2,RHSObjs,RHSRest), is_adjacent_same_color(R1,R2,0),!.
-is_adjacent_same_color(R1,R2,NewLHS,RHSObjs,RHSRest):- member(R1,NewLHS), select(R2,RHSObjs,RHSRest), is_adjacent_same_color(R1,R2,1),!.
-is_adjacent_same_color(R1,R2,NewLHS,RHSObjs,RHSRest):- member(R1,NewLHS), select(R2,RHSObjs,RHSRest), is_adjacent_same_color(R1,R2,2),!.
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- 
-   LHSObjs==[], 
-    into_list(Prev,PrevObjs),
-    my_partition(is_input_object,PrevObjs,PrevLHS,PrevRHS),
-    append_LR(PrevRHS,PrevLHS,NewLHS),
-    is_adjacent_same_color(R1,R2,NewLHS,RHSObjs,RHSRest),
-    incr_step(Step,IncrStep),
-    make_pairs(TestID,ExampleNum,is_adjacent_same_color,IsSwapped,Step,Ctx,Prev,R1,R2,Pairs),
-    %once((PrevRHS = [A,B|C] ; PrevLHS = [A,B|C])), %append_LR(PrevRHS,PrevLHS,NewLHS), %NewLHS=PrevLHS,    
-    !, must_det_ll((calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,[Pairs|Prev],LHSObjs,RHSRest,RestLR))).
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- 
-   LHSObjs==[], !, must_det_ll((
-    into_list(Prev,PrevObjs),
-    my_partition(is_input_object,PrevObjs,PrevLHS,_PrevRHS),
-    %once((PrevRHS = [A,B|C] ; PrevLHS = [A,B|C])), %append_LR(PrevRHS,PrevLHS,NewLHS), %NewLHS=PrevLHS,
-    incr_step(Step,IncrStep),
-    calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,Prev,PrevLHS,RHSObjs,RestLR))).
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjsNil,RHSObjs,RestLR):- 
-   LHSObjsNil==[], !, 
-    incr_cntx(Ctx,IncrCtx),
-    incr_step(Step,IncrStep), %incr_step(Step,IncrStep),
-    into_list(Prev,PrevObjs),
-    my_partition(is_input_object,PrevObjs,PrevLHS,PrevRHS),
-    member(Type=LHSObjs,[perfect_combo=PrevLHS,perfect_combo=PrevRHS]),
-      select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
-      must_det_ll((
-      remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
-      remove_object(RHSRest2, Left,RHSRest ), remove_object(LHSRest2, Left,LHSRest ),
-      make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,IncrCtx,Prev,Left,Right,Pairs),
-      append_LR(Prev,Pairs,NewPrev),
-      
-      calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,IncrCtx,NewPrev,LHSRest,RHSRest,RestLR))).
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,_Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- 
-   LHSObjs==[], !, must_det_ll((
-    incr_cntx(Ctx,IncrCtx),
-    %incr_step(Step,IncrStep),
-    into_list(Prev,NewLHS),
-    calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,10,IncrCtx,Prev,NewLHS,RHSObjs,RestLR))).
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,[Right],RestLR):- fail, LHSObjs=[_,_|_],
-  sort_by_jaccard(Right,LHSObjs,[A,B|C]),
-  make_pairs(TestID,ExampleNum,assumed,IsSwapped,Step,Ctx,[],[B,A],Right,Pairs),
-  append_LR(Prev,Pairs,NewPrev),
-  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,NewPrev,C,[],RestLR),!.
-
-new_object_splitter:-false.
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,[Pairs|RestLR]):-
- new_object_splitter,
- Type = two_way,
- select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
- \+ has_prop(iz(info(faked(Ctx))),Right),
- must_det_ll((
-  remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
-  remove_object(RHSRest2, Left,RHSRest ), remove_object(LHSRest2, Left,LHSRest ),
-  make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,Prev,Left,Right,Pairs),
-  append_LR(Prev,Pairs,NewPrev),
-  incr_step(Step,IncrStep),
-
-
-((  left_over_props(Left,Right,PropsMissing), PropsMissing=[_,_|_],
-  pp_ilp(left_over_props=PropsMissing),
-  obj_to_oid(Right,OID),
-  obj_in_or_out(Right,IO),
-  FakeObj = obj([was_oid(OID),iz(i_o(IO)),iz(info(faked(Ctx)))|PropsMissing])) -> 
-      calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,[Right,Left|LHSRest],[FakeObj|RHSRest],RestLR);
-
-      calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,[Right,Left|LHSRest],RHSRest,RestLR)))).
-
-left_over_props(L,R,LO):- 
-  noteable_propdiffs2(L,R,_,_,LO).
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,[Pairs|RestLR]):-
- select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
- must_det_ll((
-  remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
-  remove_object(RHSRest2, Left,RHSRest ), remove_object(LHSRest2, Left,LHSRest ),
-  make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,Prev,Left,Right,Pairs),
-  append_LR(Prev,Pairs,NewPrev),
-  incr_step(Step,IncrStep),
-  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,LHSRest,RHSRest,RestLR))).
-
-%calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- LHSObjs==[],!,
-%  must_det_ll(calc_o_d_recursively_lhs_z(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR)).
-
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,[Pairs|RestLR]):-
- must_det_ll((
-  select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
-  remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
-  remove_object(RHSRest2, Left,RHSRest ), remove_object(LHSRest2, Left,LHSRest ),
-  make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,Prev,Left,Right,Pairs),
-  append_LR(Prev,Pairs,NewPrev),
-  incr_step(Step,IncrStep),
-  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,LHSRest,RHSRest,RestLR))).
 
 %incr_cntx(Ctx,NewCtx):- atom(Ctx),!, atom_concat(Ctx,'_out',NewCtx).
 incr_cntx(info(Ctx),info(Next)):- is_list(Ctx),!,incr_cntx(Ctx,Next).
