@@ -230,7 +230,8 @@ do_some_grids(Title,GL):-
  dash_chars.
 do_some_grids(_Title,GL):- forall(member(G,GL),show_single_reduction_1(G)),!.
 
-print_common_reduction_result(TestID,OPS,Reduced):- pp(ops(TestID)=OPS), print_ss(all_common_reductions(TestID)=Reduced).
+print_common_reduction_result(TestID,OPS,Reduced):- 
+  pp(ops(TestID)=OPS), print_ss(all_common_reductions(TestID)=Reduced).
 
 
 pause:- !.
@@ -1211,13 +1212,15 @@ save_the_alt_grids_now(TestID,ExampleNum,XForms,In,Out):-
   %ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!,
   my_maplist(save_grid_calc(TestID,ExampleNum,XForms,In,Out),[minus_overlapping_image,overlapping_image]).
 
+
+
 colors_of(O,Cs):- unique_fg_colors(O,Cs),!.
 
 common_after_reduce(In,Out,New):-  
   reduce_grid_fixed(In,OpsIn,In2),check_ops(OpsIn,In2,In),print_ss(OpsIn,In,In2),
   reduce_grid_fixed(Out,OpsOut,Out2),check_ops(OpsOut,Out2,Out),print_ss(OpsOut,Out,Out2),
   print_ss(common_after_reduce,In2,Out2),
-  mapgrid(fg_intersectiond_mono,In2,Out2,New),!.
+  mapgrid(fg_intersectiond_mono1,In2,Out2,New),!.
 
 reduce_grid_fixed(In,OpsIn,In3):-  
   must_det_ll(( 
@@ -1256,8 +1259,10 @@ overlapping_image(In,Other,ROI):- detect_ori(In,Other,TestID,ExampleNum,ori),
    arc_test_property(TestID,ExampleNum,ori([overlapping_image]),ROI),!.
 */
 overlapping_image(In,Other,OLIn):-
-  colors_of(In.cell_minus_cell(Other),CsIn),
-  colors_of(Other.cell_minus_cell(In),CsOut),
+  %colors_of(In.cell_minus_cell(Other),CsIn),
+  cell_minus_cell(In,Other,OO), colors_of(OO,CsIn),
+  cell_minus_cell(Other,In,Other1),
+  colors_of(Other1,CsOut),
   colors_of(In,CsInO), 
   colors_of(Other,CsOutO),
   ExtraColors = color_set(CsInO).add(CsOutO).rem(CsIn).rem(CsOut),

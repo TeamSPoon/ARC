@@ -153,7 +153,16 @@ ansi_main:- thread_self(main),nop(is_cgi),!.
 main_thread:- thread_self(main),!.
 if_thread_main(G):- main_thread->call(G);true.
 
+not_really_modified(['/opt/logicmoo_workspace/lib/swipl/library/prolog_xref.pl','/opt/logicmoo_workspace/lib/swipl/library/pldoc/doc_html.pl','/opt/logicmoo_workspace/lib/swipl/library/prolog_colour.pl']).
+actually_modified_files(Files):- 
+    findall(File, make:modified_file(File), Reload0),
+    list_to_set(Reload0, Reload),
+    not_really_modified(List),
+    intersection(List,Reload,_,_,Files).
+
+
 update_changes:- \+ thread_self(main),!.
+update_changes:- actually_modified_files(Reload),Reload==[],!.
 update_changes:- 
     '$update_library_index',
     findall(File, make:modified_file(File), Reload0),
@@ -164,7 +173,7 @@ update_changes:-
     make:maplist(reload_file, Reload),
     print_message(silent, make(done(Reload))),
     forall(prolog:make_hook(after, Reload),true),!.
-update_changes:- make.
+update_changes:- make,!.
 
 
 cls_z_make:- if_thread_main(notrace((ignore(cls_z),ignore(update_and_fail)))).

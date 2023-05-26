@@ -1106,10 +1106,19 @@ o2g_f(Obj,Glyph):- obj_to_oid(Obj,OID),oid_glyph_object(OID,Glyph,Obj),!.
 %obj_to_oid(I,ID,Iv):- trace_or_throw(missing(obj_to_oid(I,ID,Iv))).
 %obj_to_oid(_,ID,_Iv):- luser_getval(test_pairname,ID).
 
+grid_mass(I,Count):- append(I,Cs),!,cell_mass(Cs,Count),!.
+
+cell_mass(C,1):- is_fg_color(C),!.
+cell_mass(C,0):- \+ compound(C),!.
+cell_mass(_-C,M):- cell_mass(C,M).
+
+cells_mass(C,0):- \+ compound(C),!.
+cells_mass([Cell|Cells],Count):- cell_mass(Cell,Count),cells_mass(Cells,Count).
+
 
 mass(C,1):- is_fg_color(C),!.
 mass(C,0):- (is_bg_color(C);var(C);C==[]),!.
-mass(I,Count):- is_grid(I),!,append(I,Cs),!,mass(Cs,Count),!.
+mass(I,Count):- is_grid(I),!,grid_mass(I,Count).
 mass([G|Grid],Points):- (is_group(Grid);(is_list(Grid),is_group(G))),!,mapgroup(mass,[G|Grid],MPoints),sum_list(MPoints,Points).
 mass([G|Grid],Points):- my_maplist(mass,[G|Grid],MPoints),sum_list(MPoints,Points),!.
 mass(Point,Mass):- is_point(Point),!,(is_fg_point(Point)->Mass=1;Mass=0).

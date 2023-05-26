@@ -565,7 +565,8 @@ vm_obj(VM,O):- member(O,VM.objs).
 is_grid(G):- \+ \+  quietly(fast_is_grid(G)).
 %is_grid(G):- nonvar(G), \+ \+  quietly(is_grid_of(is_grid_cell,G)).
 
-fast_is_grid(List):- nonvar(List), List\==[], maplist(fast_is_row(_LenMinus1),List).
+fast_is_grid(List):- nonvar(List), List\==[], maplist(fast_is_row(_LenMinus1),List),
+  is_grid_of(is_grid_cell,List).
 fast_is_row(LenMinus1,[C|List]):- is_list(List), is_grid_cell(C), !, length(List,LenMinus1),!.
 
 is_grid_of(P1,[[C|H]|R]):- 
@@ -601,8 +602,9 @@ is_object(O):- compound(O), O = obj(_).
 
 %is_object_group([G|V]):- is_object(G),is_list(V),maplist(is_object,V).
 %is_group(Dict):- is_vm_map(Dict),!,get_kov(objs,Dict,_).
+is_group(Grp):- is_rule_mapping(Grp),!,fail.
 is_group([G|V]):- is_object_group([G|V]),!. % is_object_or_grid(G),is_list(V),maplist(is_object_or_grid,V),!.
-is_group(Grp):- is_rule_mapping(Grp),!.
+%is_group(Grp):- is_rule_mapping(Grp),!.
 
 :- ansi_term:import(is_group/1).
 

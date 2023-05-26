@@ -95,7 +95,7 @@ menu_cmd1(_,'p','                  or (p)rint the test (textured grid)',(update_
 menu_cmd1(_,'w','                  or (w)rite the test info',(update_changes,switch_pair_mode)).
 menu_cmd1(_,'X','                  or  E(X)amine the program leared by training',(cls_z_make,print_test,!,learned_test,solve_easy)).
 menu_cmd1(_,'L','                  or (L)earned Data',(learned_test)).
-menu_cmd1(_,'E','                  or (E)earned Data',(force_clear_test,solve_via_scene_change_API)).
+menu_cmd1(_,'E','                  or (E)arned Data',(force_clear_test,solve_via_scene_change)).
 menu_cmd1(_,'e',S,(Cmd)):- get_test_cmd(Cmd),
       sformat(S,"                  or (e)xecute .................. '~@'",[bold_print(color_print(cyan,Cmd))]).
 menu_cmd1(_,'x',S,(Cmd)):- get_test_cmd2(Cmd),
@@ -793,9 +793,14 @@ dump_suite1:-
 
 %dump_suite1(Set):- arc_html,!,with_pair_mode(single_pair, forall_count(member(S,Set),print_ctest(S))).
 dump_suite1(Set):- is_cgi,!,
-   with_luser(alt_grid_dot,'_',with_pair_mode(single_pair, forall_count(member(S,Set),print_ctest(S)))).
+   with_luser(alt_grid_dot,'_',
+     with_pair_mode(single_pair, forall_count(member(S,Set),print_ctest(S)))).
+dump_suite1(Set):- !,
+   with_luser(alt_grid_dot,169,
+     with_pair_mode(single_pair, forall_count(member(S,Set),print_ctest(S)))).
 dump_suite1(Set):-
-   with_luser(alt_grid_dot,color_number,with_pair_mode(single_pair, forall_count(member(S,Set),print_ctest(S)))).
+   with_luser(alt_grid_dot,color_number,
+     with_pair_mode(single_pair, forall_count(member(S,Set),print_ctest(S)))).
 
 dump_suite:-   
    get_current_suite_testnames(Set),
@@ -1740,27 +1745,105 @@ print_single_pair_pt2(TestID,ExampleNum,In1,Out1):-
    in_out_name(ExampleNum,NameIn0,NameOut),!,%easy_diff_idea(TestID,ExampleNum,In1,Out1,LIST),!,
   sformat(NameIn,'~w  "~w" ',[NameIn0,TestAtom]),
    format('~Ntestcase(~q,"\n',[TestID>ExampleNum]),
-   call_cleanup(ignore(print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut)),write('").\n\n')),
+   call_cleanup(print_single_pair_pt3(TestID,ExampleNum,In1,NameIn,Out1,NameOut),write('").\n\n')),
    format('~N'),
    %ignore((grid_hint_swap(i-o,In,Out))),
    format('~N'),
    ignore(show_reduced_io_rarely(In1^Out1)),!.
 
+print_single_pair_pt3(_TestID,_ExampleNum,In1,NameIn,Out1,NameOut):-   
+  \+ luser_getval('$grid_mode',informative_pairs), !, print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut).
+
+print_single_pair_pt3(TestID,ExampleNum,In1,NameIn,Out1,NameOut):-    
+  %rot90(In1,In),rot90(Out1,Out),print_side_by_side(cyan,In,NameIn,_,Out,NameOut),
+  call_for_common_pair(as_ngrid_3,In1,Out1,RIO1,ROI1,_),
+  nb_setval(alt_grid_dot,[]),
+  ignore(show_the_alt_grids_now(TestID,ExampleNum,RIO1,ROI1)),
+  nb_setval(alt_grid_dot,[]),
+   print_side_by_side(cyan,RIO1,ngrid(NameIn),_,ROI1,ngrid(NameOut)),
+  nb_setval(alt_grid_dot,[]),
+   print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut),
+  !.
+
+show_the_alt_grids_now(_TestID,_ExampleNum,In,Out):-
+  nb_setval(did_ss,In+Out),
+  globalpoints_list(In+Out,XX),
+  findall(print_ss_new(RIO,ROI,NewOp),
+   (member(Op,
+     [
+
+     do_nothing_3,
+     fg_intersectiond_mono,
+     minus_overlapping_image,
+     fg_intersectiond,
+     cell_minus_cell,
+     mono_cell_minus_cell,
+     overlapping_image]),call_for_common_pair(Op,In,Out,RIO,ROI,NewOp)),Possibles),
+   predsort(sort_on(diff_size(In,Out,XX)),Possibles,Sorted),%reverse(SortedR,Sorted),
+   maplist(call,Sorted).
+
+call_for_common_pair(Op,In,Out,RIO,ROI,NewOp):-
+  call_for_common(Op,In,Out,RIO,NewOp1),
+  call_for_common(Op,Out,In,ROI,NewOp2),
+  combine_maybe(NewOp1,NewOp2,NewOp),!.
+
+combine_maybe(NewOp1,NewOp2,NewOp):- NewOp1==NewOp2,!,NewOp=NewOp1.
+combine_maybe(NewOp1,NewOp2,ops(NewOp1,NewOp2)):-!.
+
+call_for_common(Op,Out,In,ROI,Op):- call(Op,Out,In,ROI1),!,non_fg_to_black(ROI1,ROI).
+call_for_common(Op,Out,In,ROI,pre_do(OpsIn,OpsOut,Op)):-
+  reduce_grid_fixed(In,OpsIn,In2),%check_ops(OpsIn,In2,In),%print_ss(OpsIn,In,In2),
+  reduce_grid_fixed(Out,OpsOut,Out2),%check_ops(OpsOut,Out2,Out),%print_ss(OpsOut,Out,Out2),
+  call(Op,Out2,In2,ROI1),!,non_fg_to_black(ROI1,ROI).
+
+as_ngrid_3(I,_,O):- into_ngrid(I,O).
+do_nothing_3(I,_,I).
+
+diff_size(In, _Out,X,Y,Count):- nonvar(In),sub_term(E,Y),nonvar(E),E=@=In,!,diff_size(_,_,X,Y,NCount),Count is -NCount.
+diff_size(_In, Out,X,Y,Count):- nonvar(Out),sub_term(E,Y),nonvar(E),E=@=Out,!,diff_size(_,_,X,Y,NCount),Count is -NCount.
+diff_size(_In,_Out,X,Y,Count):- globalpoints_list(X,XX),globalpoints_list(Y,YY), overlap_size(XX,YY,Count).
+overlap_size(XX,YY,Count):- count_has(XX,YY,XC),count_has(YY,XX,YC), Count is XC+YC.
+
+count_has([X|XX],YY,XC):- member(Y,YY),X=@=Y, !, count_has(XX,YY,XCC),XC is XCC+1.
+count_has([_|XX],YY,XC):- !, count_has(XX,YY,XC).
+count_has(_,_,0).
+
+globalpoints_list(E,E):- is_points_list(E),!.
+globalpoints_list(Y,Points):- sub_term(E,Y),is_grid(E),subst(Y,E,counted,M),!,globalpoints_list(M,Ps2),solid_globalpoints(E,Ps),append(Ps,Ps2,Points).
+globalpoints_list(Y,Points):- sub_term(E,Y),is_cpoints_list(E),subst(Y,E,counted,M),!,globalpoints_list(M,Ps2),append(E,Ps2,Points).
+globalpoints_list(_,[]).
+
+solid_globalpoints(E,Ps):- is_grid(E),!,into_solid_grid(E,G),globalpoints(G,Ps),!.
+
+/*
+ ignore(( fail,
+   reduce_by_blur(ROI,ROI2),
+   reduce_by_blur(RIO,RIO2),
+   if_t((RIO2\==RIO;ROI2\==ROI),
+   on_x_rtrace(print_ss(blur(Op,TestID,ExampleNum,XForms),RIO2,ROI2))))))).
+*/
+print_ss_new(RIO,ROI,Title):- nb_current(did_ss,SS),SS=@=RIO+ROI,!,pp(next_same(Title)).
+print_ss_new(RIO,ROI,Title):- mass(RIO,M1),mass(ROI,M2),Mass is M1 + M2, Mass=0,!,pp(empty(Title)).
+print_ss_new(RIO1,ROI1,Title):-   
+  call_for_common_pair(as_ngrid_3,RIO1,ROI1,RIO,ROI,_),
+  print_ss(Title,RIO,ROI),!,nb_setval(did_ss,RIO1+ROI1).
+  
 
 
-next_grid_mode(dots,dashes):-!.
-next_grid_mode(_,dots).
-switch_grid_mode:- (luser_getval('$grid_mode',Dots);Dots=dots),next_grid_mode(Dots,Dashes),luser_setval('$grid_mode',Dashes).
+next_grid_mode(simple_dots,informative_pairs):-!.
+next_grid_mode(_,simple_dots).
+switch_grid_mode:- (luser_getval('$grid_mode',Dots);Dots=simple_dots),next_grid_mode(Dots,Dashes),luser_setval('$grid_mode',Dashes).
 
 with_next_grid_mode(Goal):- 
-  (luser_getval('$grid_mode',Dots);Dots=dots),next_grid_mode(Dots,Dashes), with_luser('$grid_mode',Dashes,Goal).
+  (luser_getval('$grid_mode',Dots);Dots=simple_dots),next_grid_mode(Dots,Dashes), with_luser('$grid_mode',Dashes,Goal).
 
 as_d_grid(In,Out):- as_d_grid0(In,Out),!.
 %as_d_grid(In,Out):- apply_grid_color_order(_,In,Mid),as_d_grid0(Mid,Out),!.
 
+as_d_grid0(In,In):-!.
+%as_d_grid0(In,In):- \+ luser_getval('$grid_mode',informative_pairs),!.
+%as_d_grid0(In,In1):- as_ngrid(In,In1),!.
 
-as_d_grid0(In,In):- \+ luser_getval('$grid_mode',dashes),!.
-as_d_grid0(In,In1):- as_ngrid(In,In1),!.
 as_ngrid(In,In1):- must_det_ll((change_bg_fg(In, _BG, _FG,In0), most_d_colors(In0,_CI,In1))),!.
 as_ngrid(In,In):-!.
 
@@ -1776,10 +1859,10 @@ available_fg_colors(Avails):- findall(Color,enum_fg_colors(Color),Avails).
 %print_test(TName):- !, parcCmt(TName).
 print_qtest:- get_current_test(TestID),print_qtest(TestID).
 
-:- luser_default('$grid_mode',dots).
-%print_qtest(TestID):- \+ luser_getval('$grid_mode',dots),!,print_test(TestID).
-%print_qtest(TestID):- \+ luser_getval('$grid_mode',dashes),!,print_test(TestID).
-print_qtest(TestID):- ensure_test(TestID), \+ get_pair_mode(single_pair), !, print_test(TestID),!.
+:- luser_default('$grid_mode',simple_dots).
+%print_qtest(TestID):- \+ luser_getval('$grid_mode',simple_dots),!,print_test(TestID).
+%print_qtest(TestID):- \+ luser_getval('$grid_mode',informative_pairs),!,print_test(TestID).
+print_qtest(TestID):- var(TestID),ensure_test(TestID), \+ get_pair_mode(single_pair), !, print_test(TestID),!.
 print_qtest(TestID):- print_single_pair(TestID),!.
 
 print_single_pair:-
@@ -1848,6 +1931,9 @@ var_ensure_test(TestSpec,I,O,Goal):-
   forall(with_task_pairs(TestID,ExampleNum,I,O,
     (print_side_by_side(green,I,orig_in(TestID,Title,ExampleNum),_,O,orig_out(TestID,Title,ExampleNum)),
      forall(Goal,true))),true).
+
+ensure_current_test(TestID):- nonvar(TestID),!, ignore(( is_valid_testname(TestID), really_set_current_test(TestID))).
+ensure_current_test(TestID):- var(TestID), !, var_ensure_test(TestID).
 
 ensure_test(TestID):- nonvar(TestID),!, ignore(( is_valid_testname(TestID), really_set_current_test(TestID))).
 ensure_test(TestID):- var(TestID), !, var_ensure_test(TestID).

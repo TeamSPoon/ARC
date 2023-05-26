@@ -342,14 +342,18 @@ do_indivizer_number(N):-
 individuation_macros(nsew_bg,[
   with_mapgrid([fgc_as_color(plain_var),bgc_as_color(zero),plain_var_as(black)],'_nsew_bg',[nsew,alone_dots,lo_dots])]).
 
-fill_in_bg(_Black,G2,GG2):- is_fg_color(G2),!,ignore(G2=GG2).
-fill_in_bg(Black,G2,GG2):- \+ G2\=Black,!,ignore(GG2=Black).
+has_sym(SymC,Sym,C):- compound(SymC),!,SymC=(Sym-C).
+
+fill_in_bg(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,fill_in_bg(Cell,C,O).
+fill_in_bg(_Cell,G2,GG2):- is_fg_color(G2),!,ignore(G2=GG2).
+fill_in_bg(Cell,G2,GG2):- \+ G2\=Cell,!,ignore(GG2=Cell).
 fill_in_bg(Alt,In,Out):- only_color_data_or(Alt,In,Out),!.
 fill_in_bg(_Alt,In,In):-!.
 into_solid_grid(I,GG1):- into_grid(I,G1),mapgrid(fill_in_bg(black),G1,GG1),!.
 
-non_fg_to_black(_Black,G2,G2):- is_fg_color(G2).
-non_fg_to_black(Black,_,GG2):- ignore(GG2=Black).
+non_fg_to_black(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,non_fg_to_black(Cell,C,O).
+non_fg_to_black(_Cell,G2,G2):- is_fg_color(G2).
+non_fg_to_black(Cell,_,GG2):- ignore(GG2=Cell).
 non_fg_to_black(I,GG1):- into_grid(I,G1),mapgrid(non_fg_to_black(black),G1,GG1),!.
 
 
@@ -982,22 +986,22 @@ interlink_overlapping_black_lines(VM):-
 
 
 interlink_overlapping_black_lines(VM,Objs,[Obj1|New]):-
-  BlackL = [_],
+  CellL = [_],
   select(Obj1,Objs,Rest0),
-  ( \+ has_prop(iz(type((border_frame(_,_,BlackL),_))),Obj1) ;
-    \+ has_prop(unique_colors(BlackL),Obj1)),!,
+  ( \+ has_prop(iz(type((border_frame(_,_,CellL),_))),Obj1) ;
+    \+ has_prop(unique_colors(CellL),Obj1)),!,
   interlink_overlapping_black_lines(VM,Rest0,New).
 
 interlink_overlapping_black_lines(VM,Objs,New):-
-  BlackL = [_],
+  CellL = [_],
   select(Obj1,Objs,Rest0),
-  has_prop(iz(type((border_frame(H,V,BlackL),PassNum))),Obj1),
-  has_prop(unique_colors(BlackL),Obj1),
+  has_prop(iz(type((border_frame(H,V,CellL),PassNum))),Obj1),
+  has_prop(unique_colors(CellL),Obj1),
   globalpoints(Obj1,P1s),
 
   select(Obj2,Rest0,Rest),
-  has_prop(iz(type((border_frame(H,V,BlackL),_))),Obj2),
-  has_prop(unique_colors(BlackL),Obj2),
+  has_prop(iz(type((border_frame(H,V,CellL),_))),Obj2),
+  has_prop(unique_colors(CellL),Obj2),
   globalpoints(Obj2,P2s),
 
   intersection(P1s,P2s,Overlap,_,_),
@@ -1005,7 +1009,7 @@ interlink_overlapping_black_lines(VM,Objs,New):-
   append(P1s,P2s,P12s),!,
 
   sort_safe(P12s,Points),
-  make_indiv_object(VM,[iz(info(combined)),iz(type((border_frame(H,V,BlackL),PassNum))),
+  make_indiv_object(VM,[iz(info(combined)),iz(type((border_frame(H,V,CellL),PassNum))),
     iz(type(frame_group)),birth(merge_frame_group)],Points,NewObj),
   assumeAdded(VM,NewObj),
   interlink_overlapping_black_lines(VM,[NewObj|Rest],New).
@@ -1065,7 +1069,7 @@ sub_indiv(SubProgram,VM):-
 individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
  must_det_ll((
    object_grid(OnlyNew,OGrid),
-   get_black(Black),mapgrid(assign_plain_var_with(Black),OGrid,Grid),
+   get_black(Cell),mapgrid(assign_plain_var_with(Cell),OGrid,Grid),
    object_glyph(OnlyNew,Glyph),
    loc2D(OnlyNew,X,Y),
    atomic_list_concat([GID,'_',Glyph,'_sub'],NewGID),
@@ -1886,13 +1890,22 @@ compile_and_save_current_test_pt_2(_TestID,_):-
    mapgrid(cell_minus_cell,O,I,OMinusI),
    print_grid(early_o_minus_i,OMinusI),!.
 
-cell_minus_cell(I,O,M):- is_grid(I),!,mapgrid(cell_minus_cell,I,O,M),!.
-cell_minus_cell(I,O,M):- I=@=O, M=bg.
-cell_minus_cell(I,_,I).
+cell_minus_cell(I,O,M):- is_grid(I),!,mapgrid(cell_minus_cell1,I,O,M),!.
+cell_minus_cell(I,O,M):- cell_minus_cell1(I,O,M),!.
 
-mono_cell_minus_cell(I,O,M):- is_grid(I),!,mapgrid(mono_cell_minus_cell,I,O,M),!.
-mono_cell_minus_cell(I,O,M):- is_fg_color(I),is_fg_color(O), M=bg.
-mono_cell_minus_cell(I,_,I).
+cell_minus_cell1(I,O,M):- I=@=O, M=bg.
+cell_minus_cell1(SymC,Cell,Sym-O):- has_sym(SymC,Sym,C),!,cell_minus_cell1(C,Cell,O).
+cell_minus_cell1(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,cell_minus_cell1(Cell,C,O).
+cell_minus_cell1(I,_,I).
+
+mono_cell_minus_cell(I,O,M):- is_grid(I),!,mapgrid(mono_cell_minus_cell1,I,O,M),!.
+mono_cell_minus_cell(I,O,M):- mono_cell_minus_cell1(I,O,M),!.
+
+
+mono_cell_minus_cell1(I,O,M):- is_fg_color(I),is_fg_color(O), M=bg.
+mono_cell_minus_cell1(SymC,Cell,Sym-O):- has_sym(SymC,Sym,C),!,mono_cell_minus_cell1(C,Cell,O).
+mono_cell_minus_cell1(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,mono_cell_minus_cell1(Cell,C,O).
+mono_cell_minus_cell1(I,_,I).
 
 lessThan(How,A,B):- call(How,A,AA),call(How,B,BB), AA < BB.
 
@@ -2686,8 +2699,8 @@ fg_shaped(_BGCs,_Cell,black).
 fg_shapes(Shape,VM):-
   Grid = VM.grid,
   colors_across(Grid,Silvers),
-  get_black(Black),
-  BGCs = [Black,wbg,bg|Silvers],
+  get_black(Cell),
+  BGCs = [Cell,wbg,bg|Silvers],
   with_mapgrid(fg_shaped(BGCs),'_fg_shaped',Shape,VM).
 
 % =====================================================================
@@ -3096,9 +3109,14 @@ i_subtract_objs(VM):-
 % =====================================================================
 is_fti_step(fg_subtractions).
 % =====================================================================
-fg_subtractiond(G,M,O):- is_grid(G),!,mapgrid(fg_subtractiond,G,M,O),!.
-fg_subtractiond(This,Minus,_):- This =@= Minus,!.  %fg_subtractiond(This,Minus,_):- \+ This \= Minus,!.
-fg_subtractiond(This,_,This).
+fg_subtractiond(G,M,O):- is_grid(G),!,mapgrid(fg_subtractiond1,G,M,O),!.
+
+%fg_subtractiond1(This,Minus,_):- This =@= Minus,!.  %fg_subtractiond(This,Minus,_):- \+ This \= Minus,!.
+
+fg_subtractiond1(This,That,_):- This =@= That,!.
+fg_subtractiond1(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,fg_subtractiond1(Cell,C,O).
+fg_subtractiond1(SymC,Cell,Sym-O):- has_sym(SymC,Sym,C),!,fg_subtractiond1(C,Cell,O).
+fg_subtractiond1(This,_,This).
 
 fg_subtractions(_TODO,_VM):- cant_use_intersections,!.
 fg_subtractions(TODO,VM):-
@@ -3137,8 +3155,8 @@ black_to_zero(VM):- may_use_zero -> vm_subst(zero,black,VM) ; true.
 zero_to_black(VM):- may_use_zero -> vm_subst(black,zero,VM) ; true.
 
 
-vm_subst(Black,Zero,VM):-
-  subst001(VM,Black,Zero,NewVM),
+vm_subst(Cell,Zero,VM):-
+  subst001(VM,Cell,Zero,NewVM),
   set(VM.grid)=NewVM.grid,
   set(VM.start_grid)=NewVM.start_grid,
   set(VM.objs)=NewVM.objs,
@@ -3151,14 +3169,24 @@ vm_subst(Black,Zero,VM):-
 % =====================================================================
 is_fti_step(fg_intersections).
 % =====================================================================
-fg_intersectiond(This,That,Inter):- is_grid(This),!,mapgrid(fg_intersectiond,This,That,Inter),!.
-fg_intersectiond(This,That,This):- This =@= That,!.
-fg_intersectiond(Cell,_,bg):- \+ is_grid(Cell).
-%fg_intersectiond(_,_,Black):-  get_black(Black).
+fg_intersectiond(This,That,Inter):- is_grid(This),!,mapgrid(fg_intersectiond1,This,That,Inter),!.
+fg_intersectiond(This,That,Inter):- fg_intersectiond1(This,That,Inter).
 
-fg_intersectiond_mono(This,That,Inter):- is_grid(This),!,mapgrid(fg_intersectiond_mono,This,That,Inter),!.
-fg_intersectiond_mono(This,That,This):- is_fg_color(This),is_fg_color(That).
-fg_intersectiond_mono(Cell,_,bg):- \+ is_grid(Cell).
+fg_intersectiond1(This,That,This):- This =@= That,!.
+fg_intersectiond1(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,fg_intersectiond1(Cell,C,O).
+fg_intersectiond1(SymC,Cell,Sym-O):- has_sym(SymC,Sym,C),!,fg_intersectiond1(C,Cell,O).
+fg_intersectiond1(_,_,bg).
+%fg_intersectiond(_,_,Cell):-  get_black(Cell).
+
+
+fg_intersectiond_mono(This,That,Inter):- is_grid(This),!,mapgrid(fg_intersectiond_mono1,This,That,Inter),!.
+fg_intersectiond_mono(This,That,Inter):- fg_intersectiond_mono1(This,That,Inter).
+
+fg_intersectiond_mono1(This,That,This):- This =@= That,!.
+fg_intersectiond_mono1(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,fg_intersectiond_mono1(Cell,C,O).
+fg_intersectiond_mono1(SymC,Cell,Sym-O):- has_sym(SymC,Sym,C),!,fg_intersectiond_mono1(C,Cell,O).
+fg_intersectiond_mono1(This,That,This):- is_fg_color(This),is_fg_color(That).
+fg_intersectiond_mono1(_,_,bg).
 
 
 cant_use_intersections:- 
@@ -3365,8 +3393,8 @@ use_each_ogs_i(VM,TODO,This,Other,Hint):-
 is_fti_step(fg_abtractions).
 % =====================================================================
 %fg_abtractiond(Cell,Cell):- is_bg_color(Cell),!.
-fg_abtractiond(This,Target,This):- get_black(Black), \+ Target \= Black,!.
-fg_abtractiond(_,_,Black):- get_black(Black).
+fg_abtractiond(This,Target,This):- get_black(Cell), \+ Target \= Cell,!.
+fg_abtractiond(_,_,Cell):- get_black(Cell).
 %fg_abtractiond(Cell,NewCell):- is_fg_color(Cell),!,decl_many_fg_colors(NewCell),NewCell=Cell.
 
 fg_abtractions(Subtraction,VM):-
@@ -3935,7 +3963,7 @@ remove_used_points(VM):-
   gset(VM.grid)=[[black]].
   %gset(VM.grid) = Grid.
 
-plain_var_to(Black,Var):- plain_var(Var),!,Var=Black.
+plain_var_to(Cell,Var):- plain_var(Var),!,Var=Cell.
 plain_var_to(_,_).
 % =====================================================================
 is_fti_step(colormass_subshapes).
@@ -5104,7 +5132,7 @@ individuation_macros(i_repair_patterns_f,[repair_in_vm(find_symmetry_code)]).
 /*
 
 */
-%individuation_macros(i_repair_repeats,[repair_in_vm(repair_repeats(Black))]):- get_black(Black).
+%individuation_macros(i_repair_repeats,[repair_in_vm(repair_repeats(Cell))]):- get_black(Cell).
 /*
 individuator(i_nsew,[subshape_both(h,nsew), maybe_lo_dots]).
 %individuator(i_maybe_glypic,[whole]):- doing_pair.

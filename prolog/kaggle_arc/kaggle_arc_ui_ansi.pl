@@ -2272,11 +2272,11 @@ bg_dot(32).
 /* 169	\u00AF 248	\u00AF 216	\u00AF  215 \u00AF  174	\u00AF   */
 %fg_dot(C):- luser_getval(fg_dot,C),integer(C),!.
 %fg_dot(_):- luser_getval(no_rdot,true),luser_setval(no_rdot,false)-> ibreak , fail.
-fg_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.
+fg_dot(C):- luser_getval(alt_grid_dot,C),C\==[],C\==unset,!.
 fg_dot(64).
 %fg_dot(174).
 cant_be_dot(183).
-grid_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.
+grid_dot(C):- luser_getval(alt_grid_dot,C),C\==[],C\==unset,!.
 grid_dot(169).
 
 %print_g(H,V,C0,_,_,_,_):- cant_be_color(C0),cant_be_color(C0,C),!,  ansi_format_arc([bold,fg('#ff8c00')],'~@',[(write('c'),user:print_g1(H,V,C))]).

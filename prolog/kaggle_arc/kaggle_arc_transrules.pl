@@ -310,10 +310,11 @@ trans_rule(Info,In,Out,Rules):-
 trans_rule(Info,E1,E2,Rules):-
   noteable_propdiffs(E1,E2,NSame,NL,NR),
   %pp_ilp(l2r(Info,E1,E2)),
-  dash_chars,
-  if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
   flat_props(E1,FP1),flat_props(E2,FP2),
   intersection(FP1,FP2,Same,InFlatP,OutPFlat),
+  nop((
+  dash_chars,
+  if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
   pp_ilp(removed=InFlatP),
   pp_ilp(sames=Same),
   pp_ilp(added=OutPFlat),
@@ -321,8 +322,8 @@ trans_rule(Info,E1,E2,Rules):-
   pp_ilp(nremoved=NL),
   pp_ilp(nsames=NSame),
   pp_ilp(nadded=NR),
+  dash_chars)),
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
-  dash_chars,
   Rules = [ 
     create_object_step(Info,rhs(create3c(Step,TypeO,E2)),lhs(Same)) ],!.
     %copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ].
