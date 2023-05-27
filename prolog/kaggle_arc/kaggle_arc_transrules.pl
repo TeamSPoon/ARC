@@ -57,7 +57,7 @@ clause_to_pcp(_TestID,R,Ctx,P,LHS):-
   find_lhs(R,Conds),
   subst(R,P,p,RR), subst(RR,Conds,conds,RRR),
   append(Conds,[iz(info(RRR))],LHS),
-  ignore((sub_compound(ctx(Ctx),R))))).
+  ignore((sub_cmpd(ctx(Ctx),R))))).
 
 pcp_to_clause(TestID,Ctx,P,LHS,clause(TestID,Ctx,P,LHS)).
 
@@ -205,7 +205,7 @@ map_pairs_info2(TestID,IO,P,_Step):-
   ac_unit(TestID,IO,P,_).
 map_pairs_info2(TestID,Ctx,P,Step):- 
   arc_cache:prop_dep(TestID,_ExampleNum,Ctx,Info,_InL,_OutL,_USame,_InFlatProps,OutFlatProps),
-  sub_compound(step(Step),Info),
+  sub_cmpd(step(Step),Info),
   member(P,OutFlatProps).
 
 /*
@@ -276,7 +276,7 @@ trans_rule(Info,[In1,In2],[Out],TransClause):- is_object(In1),is_object(In2), % 
    %remove_o_giz(Out,RHSO), 
    remove_o_giz(In1,Precond1), remove_o_giz(In2,Precond2),
    %sub_comInfo = info(Step,_IsSwapped,_Ctx,TypeO,_,_,_),
-   sub_compound(step(Step),Info), sub_compound(why(Type),Info),
+   sub_cmpd(step(Step),Info), sub_cmpd(why(Type),Info),
    Type \== assumed_in_in_out,
  % append_sets(Same1,Same2,Same), append_sets(DontCare1,DontCare2,DC), append_sets(New1,New2,New),
  % append_sets(Same,New,NewObj),
@@ -288,20 +288,20 @@ trans_rule(Info,[In1,In2],[Out],TransClause):- is_object(In1),is_object(In2), % 
 % mutiple preconds
 trans_rule(Info,[In,In2|InL],OutL,TransClause):- is_object(In),is_object(In2),
   trans_rule(Info,[In2|InL],OutL,TransClauseM), TransClauseM\==[],
-  sub_compound(lhs(Precond),TransClauseM),
+  sub_cmpd(lhs(Precond),TransClauseM),
   noteable_propdiffs2(In,OutL,Same,_L,_R),
   append_vsets([Precond,Same],NewPrecond),
   subst(TransClauseM,lhs(Precond),lhs(NewPrecond),TransClause),!.
 
 % just copy an object
 trans_rule(Info,[In],[Out],Clauses):- 
-  sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
+  sub_cmpd(step(Step),Info), sub_cmpd(why(TypeO),Info),
   noteable_propdiffs2(In,Out,Same,L,R),L==[],R==[],
   Clauses = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
 
 % just copy an object
 trans_rule(Info,In,Out,Clauses):- 
-  sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
+  sub_cmpd(step(Step),Info), sub_cmpd(why(TypeO),Info),
   noteable_propdiffs2(In,Out,Same,L,R),L==[],R==[],
   Clauses = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
 
@@ -328,7 +328,7 @@ trans_rule(Info,E1,E2,Clauses):-
   % flat_props(E1,FP1),flat_props(E2,FP2), intersection(FP1,FP2,Same,InFlatP,OutPFlat),pp_ilp(added=OutPFlat),pp_ilp(removed=InFlatP),pp_ilp(sames=Same),
   pp_ilp(info=Info), pp_ilp(nremoved=NL), pp_ilp(nsames=Same), pp_ilp(nadded=NR),
   dash_chars))),
-  sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
+  sub_cmpd(step(Step),Info), sub_cmpd(why(TypeO),Info),
   Clauses = [ 
     create_object_step(Info,rhs(create3c(Step,TypeO,E2)),lhs(Same)) ],!.
     %copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ].

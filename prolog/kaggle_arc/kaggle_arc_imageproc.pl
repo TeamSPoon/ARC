@@ -757,29 +757,35 @@ gsize_member(giz(grid_sz(X,Y)),X,Y).
 gsize_member(grid_size(X,Y),X,Y).
 gsize_member(vis2D(X,Y),X,Y).
 
+row_len(H,Row):- is_list(Row),length(Row,H).
+
+grid_size(ID,HH,VV):- grid_size_0(ID,H,V),HH=H,VV=V.
+%grid_size_00(O,30,30):- arcST,itrace,dmsg(warn(grid_size_00(O,30,30))),!.
+grid_size_0(ID,H,V):- grid_size_00(ID,H,V)*->true;(trace,grid_size_00(ID,H,V)).
 
 :- decl_pt(grid_size(prefer_grid,_,_)).
 %grid_size(Points,H,V):- is_vm_map(Points),!,Points.grid_size=grid_size(H,V).
-grid_size(NIL,1,1):- NIL==[],!.
-grid_size(ID,H,V):- is_grid_size(ID,H,V),!.
-grid_size(GID,H,V):- atom(GID),gid_to_grid(GID,Grid),!,grid_size_nd(Grid,H,V),!.
-grid_size(Point,H,V):- is_point(Point),hv_point(H,V,Point),!.
-grid_size(OID,H,V):- \+compound(OID),!,atom(OID),!,oid_to_parent_gid(OID,GID),grid_size(GID,H,V),!.
-grid_size(I,H,V):- notrace(is_object(I)),indv_props_list(I,L),gsize_member(E,H,V),member(E,L),!.
-%grid_size(G,H,V):- quietly(is_object(G)), !, vis2D(G,H,V).
-grid_size(Points,H,V):- is_points_list(Points),!,must_det_ll(points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V)),!.
-%grid_size(G,H,V):- is_graid(G,GG),!, grid_size(GG,H,V).
-grid_size(G,H,V):- notrace(is_vm_map(G)),H = G.h,V = G.v, !.
-grid_size(G,H,V):- notrace(is_group(G)),mapgroup(grid_size_term,G,Offsets),grid_size_2d(Offsets,H,V),!.
-grid_size(G,H,V):- findall(size2D(H,V),((sub_compound(E,G),gsize_member(E,H,V))),Offsets),grid_size_2d(Offsets,H,V),!.
-%grid_size([G|G],H,V):- is_list(G), length(G,H),length([G|G],V),!.
-grid_size(G,H,V):- notrace(is_grid(G)),!,grid_size_nd(G,H,V),!.
-%grid_size([G|G],H,V):- is_list(G),is_list(G), grid_size_nd([G|G],H,V),!.
-%grid_size(O,_,_):- trace_or_throw(no_grid_size(O)).
-grid_size(G,H,V):- sub_compound(E,G),E=giz(gid(GID)),nonvar(GID),grid_size(GID,H,V),!.
-grid_size(G,H,V):- sub_compound(E,G),E=oid(OID),nonvar(OID),oid_to_parent_gid(OID,GID),grid_size(GID,H,V),!.
+grid_size_00(ID,H,V):- is_grid_size(ID,H,V),!.
+grid_size_00(GID,H,V):- atom(GID),gid_to_grid(GID,Grid),!,grid_size_nd(Grid,H,V),!.
 
-grid_size(O,30,30):- arcST,itrace,dmsg(warn(grid_size(O,30,30))),!.
+grid_size_00(OID,H,V):- \+compound(OID),!,atom(OID),!,oid_to_parent_gid(OID,GID),grid_size_00(GID,H,V),!.
+%grid_size_00(NIL,1,1):- NIL=[[_]].
+grid_size_00(G,H,V):- notrace(is_grid(G)),!,grid_size_nd(G,H,V),!.
+%grid_size_00(List,HH,VV):- is_list(List),length(List,V),maplist(row_len(H),List),!,HH=H,VV=V.
+grid_size_00(I,H,V):- notrace(is_object(I)),indv_props_list(I,L),gsize_member(E,H,V),member(E,L),!.
+% % grid_size_00(Point,H,V):- is_point(Point),hv_point(H,V,Point),!.
+%grid_size_00(G,H,V):- quietly(is_object(G)), !, vis2D(G,H,V).
+grid_size_00(Points,H,V):- is_points_list(Points),!,must_det_ll(points_range(Points,_LoH,_LoV,_HiH,_HiV,H,V)),!.
+%grid_size_00(G,H,V):- is_graid(G,GG),!, grid_size_00(GG,H,V).
+grid_size_00(G,H,V):- notrace(is_vm_map(G)),H = G.h,V = G.v, !.
+grid_size_00(G,H,V):- notrace(is_group(G)),mapgroup(grid_size_term,G,Offsets),grid_size_2d(Offsets,H,V),!.
+grid_size_00(G,H,V):- findall(size2D(H,V),((sub_cmpd(E,G),gsize_member(E,H,V))),Offsets),grid_size_2d(Offsets,H,V),!.
+%grid_size_00([G|G],H,V):- is_list(G), length(G,H),length([G|G],V),!.
+%grid_size_00([G|G],H,V):- is_list(G),is_list(G), grid_size_nd([G|G],H,V),!.
+%grid_size_00(O,_,_):- trace_or_throw(no_grid_size(O)).
+grid_size_00(G,H,V):- sub_cmpd(E,G),E=giz(gid(GID)),nonvar(GID),grid_size_00(GID,H,V),!.
+grid_size_00(G,H,V):- sub_cmpd(E,G),E=oid(OID),nonvar(OID),oid_to_parent_gid(OID,GID),grid_size_00(GID,H,V),!.
+
 
 grid_size_2d([size2D(X1,Y1)|Offsets],X,Y):- grid_size_2d(X1,Y1,Offsets,X,Y).
 grid_size_2d(X,Y,[],X,Y):-!.

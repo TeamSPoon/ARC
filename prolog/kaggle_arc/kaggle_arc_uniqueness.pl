@@ -557,10 +557,10 @@ override_object_1(_VM,loc2D(X,Y),Obj,Obj):- (X>3;Y>4),!.
 override_object_1(VM,loc2D(X,Y),Obj,NewObj):- loc2D(Obj,WX,WY),  
   globalpoints(Obj,WPoints),deoffset_points(WX,WY,WPoints,LPoints),  
   offset_points(X,Y,LPoints,GPoints),rebuild_from_globalpoints(VM,Obj,GPoints,NewObj).
-override_object_1(VM,Term,I,O):- sub_compound(rhs(P),Term), !,  override_object_1(VM,P,I,O).
-override_object_1(VM,Term,I,O):- sub_compound(edit(P),Term), !,  override_object_1(VM,P,I,O).
-override_object_1(VM,Term,I,O):- sub_compound(edit(_,_,P),Term), !, override_object_1(VM,P,I,O).
-override_object_1(VM,Term,I,O):- sub_compound(edit(_,_,_,P),Term), !, override_object_1(VM,P,I,O).
+override_object_1(VM,Term,I,O):- sub_cmpd(rhs(P),Term), !,  override_object_1(VM,P,I,O).
+override_object_1(VM,Term,I,O):- sub_cmpd(edit(P),Term), !,  override_object_1(VM,P,I,O).
+override_object_1(VM,Term,I,O):- sub_cmpd(edit(_,_,P),Term), !, override_object_1(VM,P,I,O).
+override_object_1(VM,Term,I,O):- sub_cmpd(edit(_,_,_,P),Term), !, override_object_1(VM,P,I,O).
 %override_object_1(VM,Term,I,O):- sub_term(Sub,Term), compound(Sub),Sub=edit(_,_,_,P),  !, pp_ilp(Term), I=O,!. %override_object_1(VM,P,I,O).
 
 
@@ -1297,7 +1297,7 @@ prop_pairs2(O1,O2,Type,Change,P):-
 
 
 
-find_lhs(R,P):- sub_compound(lhs(E),R),!, into_lhs(E,P).
+find_lhs(R,P):- sub_cmpd(lhs(E),R),!, into_lhs(E,P).
 find_lhs(ac_unit(_Tst,_IO,_P,PConds),Out):- into_lhs(PConds,Out).
 find_lhs(ac_unit_db(_Tst,_IO,_P,PConds),Out):- into_lhs(PConds,Out).
 find_lhs(ac_listing(_Tst,_IO,_P,PConds),Out):- into_lhs(PConds,Out).
@@ -2892,7 +2892,7 @@ find_rhs(ac_db(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
 find_rhs(ac_unit_db(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
 find_rhs(ac_rules(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
 find_rhs(ac_listing(_Tst,_IO,P,_PConds),Out):- into_rhs(P,Out).
-find_rhs(P,E):- sub_compound(rhs(E),P),!.
+find_rhs(P,E):- sub_cmpd(rhs(E),P),!.
 %into_rhs(edit(_,_,_,R),P):- !, into_rhs(R,P).
 %into_rhs(edit(_,_,R),P):- !, into_rhs(R,P).
 into_rhs(P,P):- \+ compound(P),!.

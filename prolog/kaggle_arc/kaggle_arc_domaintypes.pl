@@ -582,7 +582,7 @@ is_grid_cell(C):- var(C),!.
 is_grid_cell(C):- integer(C),!.
 is_grid_cell(A):- \+ compound(A),!,is_grid_cell_e(A).
 is_grid_cell(att(_,_)):-!.
-is_grid_cell('cell'(_)):-!.
+is_grid_cell(C):- functor(C,cell,_),!.
 is_grid_cell('{}'(_)):-!.
 is_grid_cell('$VAR'(_)):-!.
 is_grid_cell((A-B)):- !,(is_grid_cell_e(B);is_grid_cell_e(A)).

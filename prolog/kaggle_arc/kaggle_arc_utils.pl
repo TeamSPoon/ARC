@@ -298,6 +298,18 @@ mapgroup(P1,G1):- into_list(G1,L1), !, with_my_group(L1,maplist(P1,L1)).
 selected_group(Grp):- nb_current('$outer_group',Grp),!.
 selected_group([]).
 
+sub_cmpd(_, LF) :- \+ compound(LF), !, fail.
+sub_cmpd(X, X).
+sub_cmpd(X, Term) :-
+    (   is_list(Term)
+    ->  member(E, Term),
+        sub_cmpd(X, E)
+    ;   arg(_, Term, Arg),
+        sub_cmpd(X, Arg)
+    ).
+
+
+
 %with_my_group([O|Grp],Goal):- compound(O),O=obj(_),!, locally(nb_setval('$outer_group',[O|Grp]),Goal).
 with_my_group(_,Goal):- call(Goal).
 

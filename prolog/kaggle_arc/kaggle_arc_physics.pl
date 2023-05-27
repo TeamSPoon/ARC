@@ -252,13 +252,17 @@ gravity_1_n_0([Row1|Grid],[Row1|GridNew]):- gravity_1_n_0(Grid,GridNew).
 
 :- decl_pt(any_xform(p2,prefer_grid,prefer_grid)).
 
-any_xform(Rot90,Any,NewAny):- var(Any),nonvar(NewAny),undo_p2(Rot90,Rot270),!, any_xform(Rot270,NewAny,Any).
-any_xform(Rot90,Any,NewAny):- 
-  cast_to_grid(Any,RealGrid,UnconvertClosure),!,
+
+
+any_xform(Rot90,Any,NewAny):- nonvar(NewAny),var(Any),undo_p2(Rot90,Rot270),!,any_xform(Rot270,NewAny,Any).
+
+any_xform(Rot90,Any,NewAny):- is_grid(Any), !, grid_size(Any,X,Y),make_grid(X,Y,GG),grid_xform(Rot90,GG,NewAny),!,Any=GG.
+%any_xform(Rot90,Any,NewAny):- is_grid(Any),!,grid_xform(Rot90,RealGrid,NewRealGrid),Any=RealGrid,!,NewRealGrid=NewAny.
+any_xform_casted(Rot90,Any,NewAny):- 
+  cast_to_grid(Any,RealGrid,UnconvertClosure),
   grid_xform(Rot90,RealGrid,NewRealGrid),
   uncast(Any,UnconvertClosure,NewRealGrid,NewAnyWUpdate),
-  record_object_change(Rot90,NewAnyWUpdate,NewAny).
-
+  record_object_change(Rot90,NewAnyWUpdate,NewAny),!.
 
 
 
@@ -274,12 +278,14 @@ xform_cache(rot45,5,5,[ [ A, B, C, D, E],
                             [ F, L, Q, R, X],
                             [ K, P, U, V, W]]).
 
-grid_xform(Rot90,Grid,NewAnyWUpdate):- 
+grid_xform(Name,Grid,O):- 
   grid_size(Grid,H,V),
-  apply_transformer(Rot90,H,V,Grid,NewAnyWUpdate).
-apply_transformer(Name,H,V,G,O):-
+%  apply_transformer(Rot90,H,V,Grid,NewAnyWUpdate).
+%apply_transformer(Name,H,V,G,O):-
+  make_grid(H,V,In),
   get_spatial_xformer(Name,H,V,In,Out),!,
-  G=In,O=Out.
+  %print_ss(Name,In,Out),
+  Grid=In,O=Out.
 
 %get_spatial_xformer(_Name,1,1,In,In):- !.
 get_spatial_xformer(Name,H,V,In,Out):- xform_cache(Name,H,V,In,Out),!.
@@ -296,12 +302,15 @@ test_rot:- test_p2(rot270),test_p2(rot90).
 %srot90V,flipV
 %rot90(A,B):- A==[],!,B=[].
 %rot90(I,O):- grid_rot90(I,O).
-rot90(I,O):-any_xform(grid_rot90,I,O).
-rot180(I,O):- any_xform(grid_rot180,I,O).
-rot270(I,O):- any_xform(grid_rot270,I,O).
-flipH(I,O):- any_xform(grid_flipH,I,O).
-flipV(I,O):- any_xform(grid_flipV,I,O).
-flipD(I,O):- any_xform(grid_flipD,I,O).
+
+safe_rot(Rot90,G,Out):- grid_size(G,X,Y),make_grid(X,Y,GG),any_xform(Rot90,GG,Out),GG=G.
+
+rot90(I,O):- safe_rot(grid_rot90,I,O).
+rot180(I,O):- safe_rot(grid_rot180,I,O).
+rot270(I,O):- safe_rot(grid_rot270,I,O).
+flipH(I,O):- safe_rot(grid_flipH,I,O).
+flipV(I,O):- safe_rot(grid_flipV,I,O).
+flipD(I,O):- safe_rot(grid_flipD,I,O).
 % rot90? 
 flipDV(I,O):- any_xform(grid_flipDV,I,O).
 flipDH(I,O):- any_xform(grid_flipDH,I,O).

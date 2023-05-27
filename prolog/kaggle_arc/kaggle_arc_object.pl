@@ -965,7 +965,7 @@ physical_points(GPoints,Points):-
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
 
 physical_points(GPoints,Points):- numbervars(GPoints,0,_,[singletons(true),attvars(skip)]),
-   \+ (sub_compound('$VAR'(S),GPoints),S\=='_'),
+   \+ (sub_cmpd('$VAR'(S),GPoints),S\=='_'),
    my_partition(sub_var('$VAR'('_')),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
 
@@ -1018,7 +1018,7 @@ iv_for(L,Iv):- copy_term(L,CT,_),numbervars(CT,0,_,[attvar(bind),singletons(true
 
 %obj_iv(obj(obj(Obj)),Iv):- !, obj_iv(obj((Obj)),Iv).
 obj_iv(Obj,Iv):- indv_props(Obj,giz(iv(Iv))),!.
-obj_iv(Obj,Iv):- sub_compound(oid(OID),Obj),nonvar(OID),oid_to_iv(OID,Iv),!.
+obj_iv(Obj,Iv):- sub_cmpd(oid(OID),Obj),nonvar(OID),oid_to_iv(OID,Iv),!.
 obj_iv(Obj,Iv):- indv_u_props(Obj,L),iv_for(L,Iv),!.
 obj_iv(Obj,Iv):- globalpoints(Obj,GP),gpoints_to_iv(GP,Iv),!.
 obj_iv(Obj,_Iv):- arcST,pp(Obj),trace.
@@ -1039,7 +1039,7 @@ is_oid(OID):- oid_glyph_object(OID,_,_).
 is_oid(OID):- gid_type_oid(_,_,OID), \+ oid_glyph_object(OID,_,_).
 
 obj_to_decl_oid(L,OID):-
-((sub_compound(obj_to_oid(OID),L);sub_compound(was_oid(OID),L);sub_compound(oid(OID),L);sub_compound(omem_oid(OID),L)),atom(OID)),!.
+((sub_cmpd(obj_to_oid(OID),L);sub_cmpd(was_oid(OID),L);sub_cmpd(oid(OID),L);sub_cmpd(omem_oid(OID),L)),atom(OID)),!.
 /*
 obj_to_oid(I,X):- var_check(I,obj_to_oid(I,X))*->!;
  (indv_props(I,L),((member(obj_to_oid(X),L);member(oid(X),L)),!,
@@ -1870,7 +1870,7 @@ loc2D(Grid,H,V):- is_grid(Grid),!,H=1,V=1.
 loc2D(G,X,Y):- is_group(G),!,mapgroup(loc_term,G,Offsets),sort_safe(Offsets,[loc2D(X,Y)|_]). % lowest loc2D
 %loc2D(Grid,H,V):- is_grid(Grid),!,globalpoints(Grid,Points),!,points_range(Points,LocX,LocY,_,_,_,_), H is LocX, V is LocY.
 loc2D(I,X,Y):- is_object(I), indv_props(I,loc2D(X,Y)),!.
-loc2D(I,X,Y):- sub_compound(I,loc2D(X,Y)).
+loc2D(I,X,Y):- sub_cmpd(I,loc2D(X,Y)).
 loc2D(I,X,Y):- into_obj(I,O), indv_props(O,loc2D(X,Y)),!.
 %loc2D(NT,H,V):- atrace, known_gridoid(NT,G),loc2D(G,H,V).
     

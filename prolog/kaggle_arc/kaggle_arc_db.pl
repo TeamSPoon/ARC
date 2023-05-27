@@ -196,7 +196,7 @@ set_grid_default(C,Grid):- mapgrid(ignore_equal(C),Grid).
 make_grid(H,V,Grid):- (H<1;V<1),!,u_dmsg(make_grid(H,V,Grid)),!,
   with_toplevel_pp(ansi,((write('<pre>'),arcST,ibreak))),!,fail.
 make_grid(H,V,Grid):- between(1,40,H),between(1,40,V),  % max_min(H,0,HH,_), max_min(V,0,VV,_), %max_min(HH,32,_,HHH),max_min(VV,32,_,VVV),!,    
-   ensure_make_grid(H,V,G),G=Grid.
+   ensure_make_grid(H,V,G),!,G=Grid.
 
 ensure_make_grid(H,V,Grid):- make_grid_cache(H,V,Grid),!. 
 ensure_make_grid(H,V,Grid):- make_fresh_grid(H,V,Grid), assertz(make_grid_cache(H,V,Grid)).
@@ -607,6 +607,11 @@ tmem(GID,HV2,Type):- omem(GID,HV2,OID), gid_type_oid(GID,Type,OID).
 
 ensure_indv_type(Type):- member(Type,[countz,nsew(6),colormass(6),colormass(1),fg(4)]).
 
+exists_v(V,VO,Goal):- call(Goal)->V=VO;(V=VO,asserta(Goal)).
+
+
+cell(G,XY,C,T,O,S):- cmem(G,XY,C),exists_v(O,VO,omem(G,XY,VO)),exists_v(S,VS,smem(G,XY,VS)),exists_v(T,VT,tmem(G,XY,VT)).
+cell_dir(G,XY,C,Dir,NW,C2):- cmem(G,XY,C),is_adjacent_point(XY,Dir,NW),cmem(G,NW,C2).
 
 test_show_grid_objs(TestID):- ensure_test(TestID), 
   show_test_objs(TestID).
@@ -651,6 +656,47 @@ gid_object_points(GID,Type,Groups):-
   findall(Points,(gid_type_oid(GID,Type,OID),oid_to_points(OID,Points),Points\==[]),Groups).
 
 oid_to_points(OID,Points):- findall(C-HV,(omem(GID,HV,OID),cmem(GID,HV,C)),Points).
+gid_to_points(GID,Points):- findall(C-HV,(cmem(GID,HV,C)),Points).
+
+%points_onto_row(Y,SX,EX,Points)
+
+%points_onto_grid(X,Y,EX,EY,Points):- 
+points_onto_grid(SX,SY,EX,EY,Points):- 
+  findall(HV,((between(SX,EX,X),between(SY,EY,Y),hv_point(X,Y,HV))),Points).
+
+points_onto_grid(EX,EY,Points):- points_onto_grid(1,1,EX,EY,Points).
+
+
+
+make_row(LowX,N,Point):- make_row(1,LowX,N,Point),!.
+%make_row(1,N,[Point]):- !, hv_point(LowX,N,Point).
+make_row(LowX,LowX,N,[Point]):- !, hv_point(LowX,N,Point),!.
+make_row(LowX,HighX,N,[Point|More]):- hv_point(LowX,N,Point),NextX is LowX+1, make_row(NextX,HighX,N,More).
+
+mpg(X):- X=
+ [ [ point_01_01,point_02_01],
+   [ point_01_02,point_02_02]].
+
+make_p_grid(X,Y,[R|Grid]):- 
+    make_grid(X,Y,[R|Grid]), !,
+      fill_row(1,1,R),must_det_ll(fill_grid(1,2,Grid)),!.
+
+
+
+%fill_grid(_,_,[[]]):-!.
+fill_grid(_,_,[]):-!.
+fill_grid(X,Y,[Row|MoreRows]):- fill_row(X,Y,Row), YY is Y + 1, fill_grid(1,YY,MoreRows).
+fill_row(X,Y,[Cell|Row]):- hv_cell(X,Y,Cell), XX is X+1, fill_row(XX,Y,Row).
+fill_row(_,_,[]):- !.
+
+hv_cell(H,V,cell(H,V,'+',blue,fg,_,Point)):- hv_point(H,V,Point).
+%fill_grid(X,1,[Row]):- !,make_row(X,1,Row).
+%fill_grid(X,Y,Grid):- make_row(1,X,Y,RowY),Ym1 is Y -1,make_Pgrid(X,Ym1,Rows),append(Rows,[RowY],Grid).
+
+%make_rows(LowX,MaxX,N,[Point|More]):- hv_point(LowX,N,Point),NextX is LowX+1, make_row(LowX,MaxX,N,More).
+
+
+%rotate(Grid,Rot,Grid2):- hv_to_grid(5,5,Points),
 
 grid_object_glyph_points(Grid,Type,Groups):-
   ensure_gid(Grid,GID),

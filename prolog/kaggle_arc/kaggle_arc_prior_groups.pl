@@ -564,6 +564,7 @@ contains_enough_for_print([P|Props],G):- is_obj_props(Props),!,(contains_enough_
 :- dynamic(is_prop2d/1).
 
 never_is_prop(obj(_)).
+never_is_prop(Cell):- functor(Cell,cell,_),!.
 never_is_prop(edit_copy(_,_,_,_)).
 never_is_prop(edit_copy(_,_,_)).
 never_is_prop(l2r(_,_,_)).
@@ -614,8 +615,8 @@ skip_extending_proplist(I):- \+ compound(I),!.
 skip_extending_proplist([_]).
 skip_extending_proplist(I):- \+ is_group(I),!.
 skip_extending_proplist(I):- is_group(I), \+ chk_from_same_grid(I),!.
-skip_extending_proplist(I):- sub_compound(pg(_,simularz(_,_),_,_),I),!.
-%skip_extending_proplist(I):- sub_compound(links_count(_,_),I).
+skip_extending_proplist(I):- sub_cmpd(pg(_,simularz(_,_),_,_),I),!.
+%skip_extending_proplist(I):- sub_cmpd(links_count(_,_),I).
 
 ensure_grp_proplist(I,AG0):- skip_extending_proplist(I),!,AG0=I.
 ensure_grp_proplist(I,AG0):- extend_grp_proplist(I,AG0),!.
@@ -1372,18 +1373,18 @@ really_group_vm_priors(VM):-
   gset(VM.objs) = FGBG)).
 
 /*
-extend_link_props(_VM,ObjsG0,ObjsG):- sub_compound(links_count(_,_),ObjsG0),!,ObjsG=ObjsG0.
+extend_link_props(_VM,ObjsG0,ObjsG):- sub_cmpd(links_count(_,_),ObjsG0),!,ObjsG=ObjsG0.
 extend_link_props(VM,ObjsG0,ObjsG):-
-  \+ sub_compound(link(_,_),ObjsG0),!,
+  \+ sub_cmpd(link(_,_),ObjsG0),!,
   find_relations(VM),
   Objs = VM.objs,
   find_relationsA(Objs,NewObjs),
-  %my_assertion(sub_compound(link(_,_),NewObjs)),!,
+  %my_assertion(sub_cmpd(link(_,_),NewObjs)),!,
   extend_link_props(VM,NewObjs,ObjsG).
 extend_link_props(VM,_,ObjsG):-
   extend_obj_proplists(VM),
   ObjsG=VM.objs,!,
-  my_assertion(sub_compound(links_count(_,_),ObjsG)).
+  my_assertion(sub_cmpd(links_count(_,_),ObjsG)).
 */
   
 
@@ -1439,7 +1440,7 @@ group_prior_objs0(Why,Objs,WithPriors):-
 
   
 
-has_peer_simularz(Objs):- sub_compound(simularz(S,_),Objs),compound(S),S=simularz(_),!.
+has_peer_simularz(Objs):- sub_cmpd(simularz(S,_),Objs),compound(S),S=simularz(_),!.
 
 %add_how_simular(Lbls,ObjsIn,ObjsIn):- !.
 %add_how_simular(Lbls,ObjsIn,ObjsIn):- has_peer_simularz(ObjsIn),!.
@@ -1567,7 +1568,7 @@ redundant_prop(Props,cc(FG,_)):- is_real_fg_color(FG),sub_var(pen([cc(FG,1)]),Pr
 redundant_prop(_Props,pg(_, iz(_), rankLS, Var)):- var(Var),!.
 
 redundant_prop(_Props,pg(_, _, rankLS, _Var)):- !.
-redundant_prop(Props,center2D(_,_)):- sub_compound(loc2D(_,_),Props).
+redundant_prop(Props,center2D(_,_)):- sub_cmpd(loc2D(_,_),Props).
 %redundant_prop(Props,center2D(X,Y)):- sub_var(center2G(X,Y),Props).
 %redundant_prop(Props,center2G(X,Y)):- sub_var(center2D(X,Y),Props).
 some_pgs_and_props(_,[]):-!,fail.
@@ -1623,7 +1624,7 @@ version_magnitude(Version,R):- findall(E,((sub_term(E,Version),comparable_value(
 
 has_nprop(F,Obj):- compound(F), (F= (_-Prop)),!,has_nprop(Prop,Obj).
 has_nprop(\+ (Prop),Obj):- \+ has_nprop(Prop,Obj).
-has_nprop(Prop,Obj):- sub_compound(Prop,Obj),!.
+has_nprop(Prop,Obj):- sub_cmpd(Prop,Obj),!.
 %has_nprop(Prop,Obj):- is_object(Obj),!,has_prop(Prop,Obj).
 
 %has_nprop(\+ (Prop),Obj):- !, \+ has_prop(Prop,Obj).
@@ -1832,7 +1833,7 @@ treeify_props(_Named,[One],One):-!.
 treeify_props(Named,RRR,HAD -> RO):- member(R,RRR),member(HAD,R), 
  my_maplist(variant_select(HAD),RRR,RR),treeify_props(Named,RR,RO).
 
-%treeify_props(Named,RRR, R):- is_list_of_prop_lists(RRR), \+ sub_compound(pg(_,_,_,_),RRR), once(add_rankings(RRR,RR)),RRR\=@=RR,!,treeify_props(Named,RR, R).
+%treeify_props(Named,RRR, R):- is_list_of_prop_lists(RRR), \+ sub_cmpd(pg(_,_,_,_),RRR), once(add_rankings(RRR,RR)),RRR\=@=RR,!,treeify_props(Named,RR, R).
 treeify_props(Named,RRR, R):- length(RRR,DontDivOnThisNumber), 
   treeify_props(Named,DontDivOnThisNumber,RRR, R),!,
   ignore(maybe_unite_oids(Named,R)).

@@ -1812,10 +1812,15 @@ print_grid0(H,V,D):- is_vm_map(D),ignore(H = D.h),ignore(V = D.v),
 print_grid0(H,V,Grid):- \+ callable(Grid),!,write('not grid: '),
   GG= nc_print_grid(H,V,Grid), pp(GG),!,nop(trace_or_throw(GG)).
 
+print_grid0(H,V,G):- once((is_list(G), member(Row,G),is_list(Row),member(E,Row),compound(E),
+ functor(E,cell,_),nl)),once(writeg(G)),nl,!,
+  print_grid2(1,1,H,V,G).
+
 print_grid0(H,V,G):- compound(G), G=(GG-PP),is_grid(GG),!,print_grid(H,V,PP,GG).
 print_grid0(H,V,SIndvOut):- compound(SIndvOut),SIndvOut=(G-GP), \+ is_ncpoint(GP),!, 
   with_glyph_index(G,with_color_index(GP,print_grid0(H,V,G))),!.
 %print_grid0(H,V,Grid):- is_points_list(Grid), points_to_grid(H,V,Grid,PGrid),!,print_grid0(H,V,PGrid).
+
 print_grid0(H,V,G):- is_empty_grid(G), %atrace, arcST,
  u_dmsg(is_empty_grid(H,V)),!,
  make_grid(H,V,Empty),
