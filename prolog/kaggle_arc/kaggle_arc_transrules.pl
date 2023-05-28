@@ -270,13 +270,13 @@ trans_rule(Info,[],Out,Clauses):- listify(Out,OutL),
 %  TransClause = create_object2(Info,rhs(create_obj(Out)),lhs(into_new(In1,In2))),!.
 
 % 2 preconds
-trans_rule(Info,[In1,In2],[Out],TransClause):- is_object(In1),is_object(In2), % fail,
-   noteable_propdiffs2(In1, Out,_Same1,_DontCare1,New1), 
-   noteable_propdiffs2(In2,New1,_Same2,_DontCare2,New2),
+trans_rule(Info,[In1,In2],[Out],TransClause):-  is_object(In1),is_object(In2), % fail,
+   noteable_propdiffs(In1, Out,_Same1,_DontCare1,New1), 
+   noteable_propdiffs(In2,New1,_Same2,_DontCare2,New2),
    %remove_o_giz(Out,RHSO), 
    remove_o_giz(In1,Precond1), remove_o_giz(In2,Precond2),
    %sub_comInfo = info(Step,_IsSwapped,_Ctx,TypeO,_,_,_),
-   sub_cmpd(step(Step),Info), sub_cmpd(why(Type),Info),
+   sub_cmpd(step(Step),Info), sub_cmpd(type(Type),Info),
    Type \== assumed_in_in_out,
  % append_sets(Same1,Same2,Same), append_sets(DontCare1,DontCare2,DC), append_sets(New1,New2,New),
  % append_sets(Same,New,NewObj),
@@ -289,54 +289,143 @@ trans_rule(Info,[In1,In2],[Out],TransClause):- is_object(In1),is_object(In2), % 
 trans_rule(Info,[In,In2|InL],OutL,TransClause):- is_object(In),is_object(In2),
   trans_rule(Info,[In2|InL],OutL,TransClauseM), TransClauseM\==[],
   sub_cmpd(lhs(Precond),TransClauseM),
-  noteable_propdiffs2(In,OutL,Same,_L,_R),
+  noteable_propdiffs(In,OutL,Same,_L,_R),
   append_vsets([Precond,Same],NewPrecond),
   subst(TransClauseM,lhs(Precond),lhs(NewPrecond),TransClause),!.
-
-% just copy an object
-trans_rule(Info,[In],[Out],Clauses):- 
-  sub_cmpd(step(Step),Info), sub_cmpd(why(TypeO),Info),
-  noteable_propdiffs2(In,Out,Same,L,R),L==[],R==[],
-  Clauses = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
-
-% just copy an object
-trans_rule(Info,In,Out,Clauses):- 
-  sub_cmpd(step(Step),Info), sub_cmpd(why(TypeO),Info),
-  noteable_propdiffs2(In,Out,Same,L,R),L==[],R==[],
-  Clauses = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
 
 
 % copy/transform 
 trans_rule(Info,In,Out,Clauses):- 
-  noteable_propdiffs2(In,Out,_Same,_L,R),
+  noteable_propdiffs(In,Out,_Same,_L,R), R\==[],
   into_lhs(In,LHS),  
   findall(edit_copy(Info,rhs(edit(Type,Change,P)),lhs(LHS)),
     (member(P,R),prop_pairs(In,Out,Type,Change,P),
       Change\==same,
       good_for_rhs(P)),Clauses),Clauses\==[],!.
 
+% just copy an object
+trans_rule(Info,In,Out,Clauses):- 
+  noteable_propdiffs(In,Out,_Same,_L,R), R==[],
+  into_lhs(In,LHS),  
+  Clauses = [edit_copy(Info,rhs(edit(instance,copy,same)),lhs(LHS))],!.
+
+
+
 trans_rule(Info,E1,E2,Clauses):-
-  noteable_propdiffs2(E1,E2,Same,NL,NR),
+  noteable_propdiffs(E1,E2,Same,NL,NR),
   %pp_ilp(l2r(Info,E1,E2)),
+  D=1,
   prefix_spaces(D,
   ((
    pp_obj_tree(D+1,Info,E1,E2),
-  
-  
-  dash_chars,
-  if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
-  % flat_props(E1,FP1),flat_props(E2,FP2), intersection(FP1,FP2,Same,InFlatP,OutPFlat),pp_ilp(added=OutPFlat),pp_ilp(removed=InFlatP),pp_ilp(sames=Same),
-  pp_ilp(info=Info), pp_ilp(nremoved=NL), pp_ilp(nsames=Same), pp_ilp(nadded=NR),
-  dash_chars))),
-  sub_cmpd(step(Step),Info), sub_cmpd(why(TypeO),Info),
+     dash_chars,
+      if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
+      % flat_props(E1,FP1),flat_props(E2,FP2), intersection(FP1,FP2,Same,InFlatP,OutPFlat),pp_ilp(added=OutPFlat),pp_ilp(removing=InFlatP),pp_ilp(sames=Same),
+      pp_ilp(info=Info), pp_ilp(removing=NL), pp_ilp(nsames=Same), pp_ilp(adding=NR),
+      dash_chars))),
+  sub_cmpd(step(Step),Info), 
+  sub_cmpd(type(TypeO),Info),
   Clauses = [ 
     create_object_step(Info,rhs(create3c(Step,TypeO,E2)),lhs(Same)) ],!.
     %copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ].
 
+trans_rule(Info,[In],Out,Clauses):- 
+  %noteable_propdiffs(In,Out,Same,L,R),
+ must_det_ll((into_lhs(In,LHS))),
+  must_det_ll((sub_cmpd(step(Step),Info))), 
+  must_det_ll((sub_cmpd(type(TypeO),Info))),
+  must_det_ll((Clauses = [edit_copy(Info,rhs(create3c(Step,TypeO,Out)),lhs(LHS))])),!.
 
 
 
+% Specific to general induction algorithm
+% run_specific():-Calls specific_to_general with both H and N initialized to []
 
+run_specific :- specific_to_general([],[]).
+% specific_to_general(List_of_hypotheses, List_of_negatives) :- 
+%	This is the top level control loop. It reads in a new positive or
+% 	negative instance and calls process to update List_of_hypotheses
+%	and List_of_negatives. 
+
+specific_to_general(H, N) :-
+	write("H = "), write(H),nl,
+	write("N = "), write(N),nl,
+	write("Enter Instance "),
+	read(Instance),
+	process(Instance, H, N, Updated_H, Updated_N),
+	specific_to_general(Updated_H, Updated_N).
+
+% process(Instance, List_of_hypotheses, List_of_negatives, 
+%	Updated_hypotheses, Updated_negatives) :-
+%	updates List_of_hypotheses and List_of_negatives in response to
+%	Instance.  
+
+process(positive(Instance), [], N, [Instance], N). 
+% Initialize H
+process(positive(Instance), H, N, Updated_H, N) :- 
+	generalize_set(H,Gen_H, Instance),
+	delete(X, Gen_H, (member(Y, Gen_H), more_general(X, Y)), Pruned_H),
+	delete(X, Pruned_H, (member(Y, N), covers(X, Y)), Updated_H).	
+
+process(negative(Instance), H, N, Updated_H, [Instance|N]) :- 
+		delete(X, H, covers(X, Instance), Updated_H).
+
+process(Input, H, N, H, N):- 
+	Input \= positive(_),
+	Input \= negative(_),
+	write("Enter either positive(Instance) or negative(Instance) "), nl.
+
+% 
+
+generalize_set([], [], _).
+
+generalize_set([Hypothesis|Rest],Updated_H,Instance):-	
+	not(covers(Hypothesis, Instance)),
+	(bagof(X, generalize(Hypothesis, Instance, X), Updated_head); Updated_head = []),
+	generalize_set(Rest,Updated_rest, Instance),
+	append(Updated_head, Updated_rest, Updated_H).
+
+generalize_set([Hypothesis|Rest],[Hypothesis|Updated_rest],Instance):-
+	covers(Hypothesis, Instance),
+	generalize_set(Rest,Updated_rest, Instance).
+	
+%
+
+generalize([],[],[]).	
+generalize([Feature|Rest], [Inst_prop|Rest_inst], [Feature|Rest_gen]) :-
+	not(Feature \= Inst_prop),
+	generalize(Rest, Rest_inst, Rest_gen).
+generalize([Feature|Rest], [Inst_prop|Rest_inst], [_|Rest_gen]) :-
+	Feature \= Inst_prop,
+	generalize(Rest, Rest_inst, Rest_gen).
+
+% more_general(Feature_vector_1, Feature_vector_2) :- succeeds if
+%	Feature_vector_1 is strictly more general than Feature_vector_2
+more_general(X, Y) :-  not(covers(Y, X)), covers(X, Y).
+
+% covers(Feature_list_1, Feature_list_2) :- Succeeds if Feature_list_1
+%	covers Feature_list_2.  Note that covers, unlike unification is
+%	not symmetric: variables in Feature_list_2 will not match constants
+%	in Feature_list_1.
+
+covers([],[]).
+covers([H1|T1], [H2|T2]) :-
+	var(H1), var(H2), 
+	covers(T1, T2).
+covers([H1|T1], [H2|T2]) :-
+	var(H1), atom(H2), 
+	covers(T1, T2).	
+covers([H1|T1], [H2|T2]) :-
+	atom(H1), atom(H2), H1 = H2,
+	covers(T1, T2).
+
+% delete(Element, List1, Goal, List2) :- List2 contains all bindings
+%	of Element to a member of List1 except those that cause 
+%	Goal to succeed
+
+delete(X, L, Goal, New_L) :-
+	(bagof(X, (member(X, L), not(Goal)), New_L);New_L = []).
+  
 
 
 

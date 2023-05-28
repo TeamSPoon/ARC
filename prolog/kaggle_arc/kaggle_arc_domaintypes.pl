@@ -351,7 +351,9 @@ allow_dir_list(s_e,[s,e]). %s,e,n,w
 allow_dir_list(n_e,[n,e]). %s,e,n,w 
 allow_dir_list(n_w,[n,w]). %s,e,n,w 
 allow_dir_list(s_w,[s,w]). %s,e,n,w 
-allow_dir_list(dir_list(List),List). 
+allow_dir_list(dir_list(List),List).
+allow_dir_list(skip_some,[n,s,e,w,nw,sw,se,ne,skip(1,_,_)]). %s,e,n,w 
+
 allow_dir_list(ne_sw,[ne,sw]). %s,e,n,w 
 allow_dir_list(nw_se,[nw,se]). %s,e,n,w 
 %allow_dir_list(rectangles,[s,e]). 

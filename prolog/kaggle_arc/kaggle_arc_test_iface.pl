@@ -79,8 +79,9 @@ test_http_off:-
 menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z_make,fully_train)).
 menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),  \+ arc_html, 
   sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
-menu_cmd1(i,'i','             See the (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,f),each_ndividuator))).
-menu_cmd1(_,'I','                  or (I)ndividuate all',(whole_ndividuator)).
+menu_cmd1(i,'i','             See the (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,f),print_individuals))).
+menu_cmd1(_,'I','                  or (I)ndividuate all',(clear_tee,cls_z_make,!,clear_test,locally(nb_setval(show_indiv,f),print_individuals))).
+
 menu_cmd1(i,'o','                  or (o)bjects found in the input/outputs',                (clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,t),ndividuator))).
 menu_cmd1(_,'u','                  or (u)se scene change solver between objects in the input/outputs',   (cls_z_make,!,ndividuator,ignore(solve_via_scene_change))).
 menu_cmd1(_,'y','                  or Wh(y) between objects in the input/outputs',   ((cls_z_make,!,why_io))).
@@ -528,86 +529,19 @@ run_all_tests:-
 rtty:- with_tty_raw(rtty1).
 rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 
-
-whole_ndividuator(TestID):- ensure_test(TestID),
-  check_for_refreshness,
-  nop(show_test_grids), set_flag(indiv,0),
-  compile_and_save_hints,
-  with_individuated_cache(true,
-   with_pair_mode(whole_test,
-    findall(PairGroups,
-    (kaggle_arc(TestID,ExampleNum,In,Out),%nonvar(Out),
-     once(each_ndividuator(TestID,ExampleNum,In,Out,PairGroups)),
-     ignore(call_list(PairGroups))),
-   _AllPairGroups))),
-  show_groups(TestID).
-  
-
-
-each_ndividuator(TestID):- ensure_test(TestID),
-  check_for_refreshness,
-  nop(show_test_grids), set_flag(indiv,0),
-  compile_and_save_hints,
-  findall(PairGroups,
-  with_individuated_cache(true,
-    (with_task_pairs(TestID,ExampleNum,In,Out,
-         once(each_ndividuator(TestID,ExampleNum,In,Out,PairGroups))))),
-   AllPairGroups),
-  show_groups(TestID),
-  call_list(AllPairGroups).
-
-call_list(List):-is_list(List),!,my_maplist(call_list,List).
-call_list(Goal):-ignore(Goal).
-
-
-get_each_ndividuator(Complete):-!,get_indivs_mode(Complete).
-get_each_ndividuator(Complete):-
-  findall(Complete,((toplevel_individuation(TL),Complete=[TL,do_ending]);get_indivs_mode(Complete)),List),
-  list_to_set(List,Set),!,member(Complete,Set).
-
-each_ndividuator(TestID,ExampleNum,In,Out, OUTPUT):- 
- name_the_pair(TestID,ExampleNum,In,Out,PairName), 
- findall(show_pair_result(PairName,Complete,InC,OutC),
-  (get_each_ndividuator(Complete),
-   with_indivs_mode(Complete,((
-    with_task_pairs(TestID,ExampleNum,In,Out, 
-     ((  w_section(individuate_pair_debug(Complete),
-          must_det_ll((
-           once(individuate_pair(Complete,In,Out,InC,OutC)))))))))))),PairGroups),
-
-  OUTPUT= [dash_chars,dash_chars,dash_chars,dash_chars,
-        print_side_by_side(each_ndividuator(PairName),In,Out),dash_chars,dash_chars|PairGroups].
-
-
-show_pair_result(PairName,Complete,InC,OutC):-   
-   print_side_by_side(show_pair_result(PairName,Complete),InC,OutC),
-   nop((w_section(pair_result_objects(PairName,Complete),
-     (my_maplist(show_i(in),InC), dash_chars, my_maplist(show_i(out),OutC),dash_chars)))),
-   !.
-
-show_i(Y,O):- 
-  global_grid(O,GG),
-  object_grid(O,OG),
-  tersify(O,OT),
-  wots(S,(write(Y),write(' '),write(OT))),
-  print_ss(S,GG,OG).
-
-ndividuator(TestID):- ensure_test(TestID),
-  never_entire_suite,nop(show_test_grids), set_flag(indiv,0),
-  %each_ndividuator(TestID),
-  compute_and_show_test_hints(TestID),
-  forall(with_task_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)),true).
+ndividuator(TestID):- 
+  ensure_test(TestID),
+  never_entire_suite,set_flag(indiv,0),compute_and_show_test_hints(TestID),
+  forall(with_task_pairs(TestID,ExampleNum,In,Out,
+    ndividuator(TestID,ExampleNum,In,Out)),true).
 
 ndividuator(TestID,ExampleNum,In,Out):- 
- get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
-ndividuator(TestID,ExampleNum,Complete,In,Out):-  
- with_indivs_mode(Complete,((name_the_pair(TestID,ExampleNum,In,Out,_PairName),
-   with_task_pairs(TestID,ExampleNum,In,Out, i_pair(Complete,In,Out))))).
-
-show_task_pairs(TestID):- ensure_test(TestID), set_flag(indiv,0),
- forall( with_task_pairs(TestID,ExampleNum,In,Out,
-   print_side_by_side(green,In,in(show_task_pairs(TestID>ExampleNum)),_,Out,out(show_task_pairs(TestID>ExampleNum)))), true).
-%show_test_grids:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,Grid,print_grid(show_test_grids(TestID),Grid)).
+ get_indivs_mode(IndvSMode), ndividuator(TestID,ExampleNum,IndvSMode,In,Out).
+ndividuator(TestID,ExampleNum,IndvSMode,In,Out):-  
+ gid_of_tid(GID1,TestID,ExampleNum,in),
+ gid_of_tid(GID2,TestID,ExampleNum,out),
+ with_indivs_mode(IndvSMode,((name_the_pair(TestID,ExampleNum,In,Out,_PairName),
+   with_task_pairs(TestID,ExampleNum,In,Out, i_pair(GID1,GID2,IndvSMode,In,Out))))).
 
 why_io:- 
  maplist(ignore,[
@@ -1920,8 +1854,6 @@ arc_grid(IO,Grid):-
   arc_pair_id(TestID,ExampleNum),
   kaggle_arc_io(TestID,ExampleNum,IO,Grid).
 
-ensure_test(TestID,RealTestID):- fix_test_name(TestID,RealTestID),!,ensure_test(RealTestID).
-
 var_ensure_test(TestID):- ground(TestID), !, is_valid_testname(TestID).
 var_ensure_test(TestID):- get_pair_mode(enire_suite),!, all_arc_test_name(TestID).
 var_ensure_test(TestID):- \+ get_pair_mode(enire_suite),!,get_current_test(TestID).
@@ -1943,6 +1875,8 @@ ensure_current_test(TestID):- var(TestID), !, var_ensure_test(TestID).
 
 ensure_test(TestID):- nonvar(TestID),!, ignore(( is_valid_testname(TestID), really_set_current_test(TestID))).
 ensure_test(TestID):- var(TestID), !, var_ensure_test(TestID).
+ensure_test(TestID,RealTestID):- fix_test_name(TestID,RealTestID),!,ensure_test(RealTestID).
+
 %ensure_test(TestID):- all_arc_test_name(TestID).
 
 all_arc_test_name(TestID):- get_current_test(Test),!,

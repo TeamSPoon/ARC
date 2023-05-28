@@ -240,7 +240,7 @@ invent_key(Term,Spyable):- \+ compound(Term),!, must_det_ll((
 invent_key(Term,Spyable):- invent_key2(Term,Spyable).
 invent_key2(_:Term,Spyable):- !, must_det_ll(invent_key(Term,Spyable)).
 %invent_key2((Term,_),Spyable):- !, invent_key(Term,Spyable).
-invent_key2(Term,DT):- copy_term(Term,Copy),must_det_ll(invent_key3(Copy,DT)),!.
+invent_key2(Term,DT):- copy_term_nat(Term,Copy),must_det_ll(invent_key3(Copy,DT)),!.
 invent_key3(Term,DT):- sub_term(E,Term), compound(E), \+ overly_plain_functor(E), one_invent_key(E,DT),!.
 invent_key3(Term,DT):- one_invent_key(Term,DT).
 
@@ -253,6 +253,7 @@ one_invent_key(Term,Spyable):- compound_name_arguments(Term,F,Args),
 cant_re_arity(S):- is_list(S),!.
 cant_re_arity(format(_,_)).
 
+is_simple_title_arg(V):- plain_var(V),!,fail.
 is_simple_title_arg(X):- \+ compound(X),!, \+ is_gridoid(X),!.
 is_simple_title_arg(Map):- is_vm_map(Map),!,fail.
 is_simple_title_arg(_>_):-!.

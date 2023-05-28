@@ -12,7 +12,7 @@
 :- discontiguous learn_shapelib/7.
 :- discontiguous individuals_from_pair/9.
 
-
+/*
 i_pair(WasROptions,GridIn,GridOut):- fail, WasROptions==complete, % TODO unfail this
  catch((must_det_ll((
  check_for_refreshness,
@@ -22,11 +22,11 @@ i_pair(WasROptions,GridIn,GridOut):- fail, WasROptions==complete, % TODO unfail 
              guess_how_else(HOW_ELSE,Stuff1,Stuff2,InC,OutC)))))),
  INDIV = [HOW|HOW_ELSE],
  show_individuated_pair(PairName,INDIV,GridIn,GridOut,InC,OutC)),_,fail),!.
-
-i_pair(ROptions,GridIn,GridOut):-
+*/
+i_pair(GID1,GID2,ROptions,GridIn,GridOut):-
  must_det_ll((    
   check_for_refreshness,
-  individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
+  individuate_pair(GID1,GID2,ROptions,GridIn,GridOut,InC,OutC),
   maybe_name_the_pair(GridIn,GridOut,PairName),
   show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC))).
 

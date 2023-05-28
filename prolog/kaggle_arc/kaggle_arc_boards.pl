@@ -1038,8 +1038,8 @@ fix_iz(Z,ZZ):- compound(Z),arg(1,Z,A),is_list(A),last(A,ZZ),!.
 fix_iz(Z,Z):-!.
 
 rinfo(obj(List0),RInfo):- 
-  my_maplist(must_det_ll,
-  [select(ord(N),List0,List),
+ must_det_ll((
+  select(ord(N),List0,List),
   atomic_list_concat([obj,N],'_',Key),
   Obj = obj(List0),
   localpoints_include_bg(Obj,LocalPoints),
@@ -1050,7 +1050,7 @@ rinfo(obj(List0),RInfo):-
   Rest3 = Rest2,
   obj_to_oid(Obj,MyID),
   must_det_ll((remove_too_verbose(MyID,Rest3,TV00))),flatten([TV00],TV0),
-  must_det_ll((include(not_too_verbose,TV0,TV1),my_maplist(fix_iz,TV1,TV)))]),!,
+  must_det_ll((include(not_too_verbose,TV0,TV1),my_maplist(fix_iz,TV1,TV))))),!,
   member(MrT,[oform(Shape),ogrid(Grid)|TV]),once((MrT=..MrTL, RInfoM=..[Key|MrTL],rinfo(RInfoM,RInfo))).
 rinfo(Info,RInfo):- Info=..[P,N,A|InfoL], atomic_list_concat([P,N],'_',PN),!, RInfo=..[PN,A|InfoL].
 rinfo(Info,Info):-!.

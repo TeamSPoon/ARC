@@ -110,7 +110,7 @@ arc_portray_nt(G0, Tracing):- is_group(G0), into_list(G0,G), length(G,L),% L>1, 
    if_t(Tracing==false,
     in_cmt((
      dash_chars, 
-     once(((why_grouped(_TestID,Why,WG),WG=@=G,fail);(Why = (size2D=L)))),!,
+     once(((why_grouped(_TestID,_ExampleNum,Why,WG),WG=@=G,fail);(Why = (size2D=L)))),!,
      print_grid(Why,G),nl_now,
      
      %underline_print(writeln(Why)),

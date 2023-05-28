@@ -759,18 +759,19 @@ gsize_member(vis2D(X,Y),X,Y).
 
 row_len(H,Row):- is_list(Row),length(Row,H).
 
-grid_size(ID,HH,VV):- grid_size_0(ID,H,V),HH=H,VV=V.
+grid_size(ID,HH,VV):- nonvar(ID),grid_size_0(ID,H,V),HH=H,VV=V.
 %grid_size_00(O,30,30):- arcST,itrace,dmsg(warn(grid_size_00(O,30,30))),!.
+grid_size_0(ID,1,1):- is_point(ID),!.
 grid_size_0(ID,H,V):- grid_size_00(ID,H,V)*->true;(trace,grid_size_00(ID,H,V)).
 
 :- decl_pt(grid_size(prefer_grid,_,_)).
 %grid_size(Points,H,V):- is_vm_map(Points),!,Points.grid_size=grid_size(H,V).
-grid_size_00(ID,H,V):- is_grid_size(ID,H,V),!.
+grid_size_00(NIL,1,1):- NIL==[],!.
+grid_size_00(ID,H,V):- nonvar(ID),is_grid_size(ID,H,V),!.
 grid_size_00(GID,H,V):- atom(GID),gid_to_grid(GID,Grid),!,grid_size_nd(Grid,H,V),!.
-
 grid_size_00(OID,H,V):- \+compound(OID),!,atom(OID),!,oid_to_parent_gid(OID,GID),grid_size_00(GID,H,V),!.
-%grid_size_00(NIL,1,1):- NIL=[[_]].
 grid_size_00(G,H,V):- notrace(is_grid(G)),!,grid_size_nd(G,H,V),!.
+
 %grid_size_00(List,HH,VV):- is_list(List),length(List,V),maplist(row_len(H),List),!,HH=H,VV=V.
 grid_size_00(I,H,V):- notrace(is_object(I)),indv_props_list(I,L),gsize_member(E,H,V),member(E,L),!.
 % % grid_size_00(Point,H,V):- is_point(Point),hv_point(H,V,Point),!.

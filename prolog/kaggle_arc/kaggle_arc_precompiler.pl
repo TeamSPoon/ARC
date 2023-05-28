@@ -6,6 +6,14 @@
 */
 :- encoding(iso_latin_1).
 
+%remove_must_det:- !.
+remove_must_det:- !,fail.
+remove_must_det:- nb_current(remove_must_det,TF),!,TF==true.
+remove_must_det:- \+ false.
+
+:- multifile(user:message_hook/3). 
+:- dynamic(user:message_hook/3).
+%user:message_hook(Term, Kind, Lines):- silent\==Kind,  wdmsg(user:message_hook(Term, Kind, Lines)),fail.
 
 :- meta_predicate(must_det_ll(0)).
 :- meta_predicate(must_det_ll1(0)).
@@ -28,6 +36,7 @@ must_det_ll_maplist(_,[],[],[]):-!.
 must_det_ll_maplist(P3,[HA|TA],[HB|TB],[HC|TC]):- must_det_ll(call(P3,HA,HB,HC)), must_det_ll_maplist(P3,TA,TB,TC).
 
 %must_det_ll(G):- !, once((notrace(G)*->true;must_det_ll_failed(G))).
+must_det_ll(G):- remove_must_det,!,call(G).
 must_det_ll(G):- never_rrtrace,!,once(G).
 must_det_ll(G):- notrace(arc_html),!, ignore(notrace(G)),!.
 must_det_ll(G):- tracing,!, call(G). % once((call(G)*->true;must_det_ll_failed(G))).
@@ -160,13 +169,8 @@ ibreak:- if_thread_main(((trace,break))).
 %recolor(_,_):- ibreak.
 
 
-remove_must_dets(G,GGG):- compound(G), G = must_det_ll(GG),!,expand_goal(GG,GGG),!.
-remove_must_dets(G,GGG):- compound(G), G = must_det_l(GG),!,expand_goal(GG,GGG),!.
-
-
 % goal_expansion(must_det_l(G),I,must_det_ll(G),O):- nonvar(I),source_location(_,_), nonvar(G),I=O.
 
-%goal_expansion(G,I,GG,O):- nonvar(I),source_location(_,_), compound(G), remove_must_dets(G,GG),I=O.
 
 %:- system:ensure_loaded(library(pfc_lib)).
 %:- expects_dialect(pfc).
@@ -287,9 +291,8 @@ expand_must_det1(must_det_ll(AB), AABB):-!, expand_must_det(AB,AABB).
 expand_must_det1( A,must_det_ll(AA)):- \+ remove_must_det, !, expand_goal(A,AA),!.
 expand_must_det1( A, AA):- expand_goal(A,AA),!.
 
+expand_must_not_error(C,C):- remove_must_det,!.
 expand_must_not_error(C,CC):- CC=must_not_error(C).
-
-remove_must_det:- fail.
 
 kaggle_arc_1_pred(M,P):- 
   predicate_property(M:P,file(F)),
@@ -322,8 +325,21 @@ goal_expansion_getter(Goal,Out):-
 :- export(goal_expansion_getter/2).
 :- system:import(goal_expansion_getter/2).
 
+removed_term(G,GGGG):- G = must_det_l(GGGG).
+removed_term(G,GGGG):- G = must_det_ll(GGGG).
+removed_term(G,GGGG):- G = catch_log(GGGG).
+removed_term(G,GGGG):- G = catch_nolog(GGGG).
+
+%remove_must_dets(GG,GO):- sub_term(G,GG),compound(G),removed_term(G,GGGG),subst001(GG,G,GGGG,GGG),remove_must_dets(GGG,GO).
+
+remove_must_dets(G,GG):- compound(G),removed_term(G,GO),expand_goal(GO,GG).
+
 
 goal_expansion_setter(Goal,_):- \+ compound(Goal), !, fail.
+
+
+goal_expansion_setter(G,GO):- remove_must_det, !,remove_must_dets(G,GG),goal_expansion_setter(GG,GO).
+%goal_expansion_setter(GG,GO):- remove_must_det, sub_term(G,GG),compound(G),G = must_det_ll(GGGG),subst001(GG,G,GGGG,GGG),!,goal_expansion_setter(GGG,GO).
 %goal_expansion_setter((G1,G2),(O1,O2)):- !, expand_goal(G1,O1), expand_goal(G2,O2),!.
 goal_expansion_setter(set_omember(A,B,C,D),set_omember(A,B,C,D)):-!.
 goal_expansion_setter(set_omember(A,B,C),set_omember(b,A,B,C)):-!.
@@ -371,8 +387,6 @@ arc_term_expansion1((system:term_expansion((Head:-Body),I,Out,O):-
 %user:goal_expansion(Goal,I,Out,O):- compound(Goal),goal_expansion_getter(Goal,Out),Goal\==Out,I=O,!, 
 %  ((print(goal_expansion_getter(Goal-->Out)),nl)).
 
-:- multifile(goal_expansion/4).
-:- dynamic(goal_expansion/4).
 arc_term_expansion1((goal_expansion(Goal,I,Out,O):-  
    goal_expansion_setter(Goal,Out),Goal\==Out,I=O,!, 
   nop((print(goal_expansion_setter(Goal-->Out)),nl)))).
@@ -393,6 +407,10 @@ enable_arc_expansion:-
 disable_arc_expansion:-
  forall(arc_term_expansions(Rule),forall(retract(Rule),true)),
  set_prolog_flag(arc_term_expansion, false).
+
+:- multifile(goal_expansion/4).
+:- dynamic(goal_expansion/4).
+goal_expansion(G,I,GG,O):- nonvar(I),source_location(_,_), compound(G), remove_must_det, remove_must_dets(G,GG),I=O.
 
 
 /*

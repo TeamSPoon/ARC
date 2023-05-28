@@ -175,6 +175,8 @@ find_test_grids(TestID,test_input,Grid):- kaggle_arc_io(TestID,tst,in,Grid).
 find_test_grids(TestID,train_input,Grid):- kaggle_arc_io(TestID,trn,in,Grid).
 find_test_grids(TestID,train_output,Grid):- kaggle_arc_io(TestID,trn,out,Grid).
 
+gid_of_tid(GID,TestID,Example+Num,IO):- freeze(Example,freeze(Num,term_to_oid((TestID>(Example+Num)*IO),GID))).
+
 term_to_oid(v(A)>(B+C)*D,Atom):- my_maplist(atomic,[A,B,C,D]),atomic_list_concat([v,A,B,C,D],'_',Atom),!.
 term_to_oid(t(A)>(B+C)*D,Atom):- my_maplist(atomic,[A,B,C,D]),atomic_list_concat([t,A,B,C,D],'_',Atom),!.
 term_to_oid(T,A):- (compound(T)->term_to_atom(T,A);(atom(T)->T=A;term_to_atom(T,A))).
@@ -461,11 +463,39 @@ save_calc_movement(H,V,Dir,HO,VO):- point_atoms,!, H2 is HO+H, V2 is VO+V,
      format(atom(HV2),'point_~|~`0t~d~2+_~|~`0t~d~2+', [H2,V2]),
      %hv_point(H,V,HV),
      %hv_point(H2,V2,HV2),
-    assert_if_new(M:is_adjacent_point_impl(HV,Dir,HV2)),
+    assert_if_new(M:is_adjacent_point_1(HV,Dir,HV2)),
     assert_if_new(M:hv_point(H,V,HV)),
     true)).
    % assert_if_new(M:is_adjacent_hv(H,V,Dir,H2,V2)))).
 save_calc_movement(_H,_V,_Dir,_HO,_VO).
+
+:- dynamic(is_adjacent_point_impl/3).
+
+is_adjacent_point_d2(P1,P2):- is_adjacent_point_1(P1,Dia,M),is_diag(Dia),is_adjacent_point_1(M,Dia,P2). 
+
+is_adjacent_point_impl(P1,Dir,P2):- is_adjacent_point_1(P1,Dir,P2).
+is_adjacent_point_impl(P1,Offset,P2):- is_adjacent_point_impl_offset(P1,Offset,P2).
+
+is_adjacent_point_impl_offset(P1,skip(1,D1,D2),P2):- is_adjacent_point_1(P1,D1,M),\+ is_diag(D1),is_adjacent_point_1(M,D2,P2), 
+  \+ (is_adjacent_point_1(P1,_,P2)), \+ (is_adjacent_point_d2(P1,P2)), P1\=P2.
+
+/*
+is_adjacent_point_impl_offset(P1,skip(2),P2):- is_adjacent_point(P1,skip(1),S1),is_adjacent_point(S1,_,P2),
+  \+ (is_adjacent_point(P1,A,P2),atom(A)),
+  \+ (is_adjacent_point(P1,skip(1),P2)).
+*/
+
+/*
+is_adjacent_point_impl(P1,Offset,P2):- is_adjacent_point_impl_offset(P1,Offset,P2).
+is_adjacent_point_impl_offset(P1,offset_dist(DX,DY,DXY),P2):- 
+ hv_point(X1,Y1,P1),
+ hv_point(X2,Y2,P2), 
+ is_adj_point_nsew(P1,S1),
+ is_adj_point_nsew(P1,S1),
+ %freeze(P2,freeze(Y2,freeze(X2,hv_point(X2,Y2,P2)))),
+ DX #= X2-X1, DY #= Y2-Y1, (DXYL #=< abs(DX)+abs(DY)), (DXYH #>= abs(DX)+abs(DY)),
+ \+ is_adj_point_nsew(P1,P2), \+ is_adj_point_d(P2,P1).
+*/
 
 
 is_adjacent_point(HV,Dir,HV2):- lazy_p3(is_adjacent_point_impl,HV,Dir,HV2).
