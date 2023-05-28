@@ -225,6 +225,7 @@ solve_via_scene_change(TestID):-
  must_det_ll((
   print_test(TestID),
  % print_informative_pairs(TestID),
+  print_individuals(TestID),
   learn_via_grid_change(TestID),
   %rtrace,
   ExampleNum=tst+_,

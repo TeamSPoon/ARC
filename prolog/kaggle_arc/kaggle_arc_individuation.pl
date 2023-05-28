@@ -316,7 +316,7 @@ individuation_macros(generic_nsew_colormass,
   colormass,
   black_to_zero,alone_dots(lte(25)),zero_to_black,
   print_vm_info(post_generic_nsew_colormass),
-  lo_dots,
+  maybe_lo_dots,
   print_vm_info(post_lo_dots)]).
 
 
@@ -340,7 +340,7 @@ do_indivizer_number(N):-
 % vm_grid_call(subst_color(black,brown)),
 
 individuation_macros(nsew_bg,[
-  with_mapgrid([fgc_as_color(plain_var),bgc_as_color(zero),plain_var_as(black)],'_nsew_bg',[nsew,alone_dots,lo_dots])]).
+  with_mapgrid([fgc_as_color(plain_var),bgc_as_color(zero),plain_var_as(black)],'_nsew_bg',[nsew,alone_dots,maybe_lo_dots])]).
 
 has_sym(SymC,Sym,C):- compound(SymC),!,SymC=(Sym-C).
 
@@ -1262,6 +1262,34 @@ nsew_2(VM):-
 nsew_2(_).
 
 overlapping_points(PointsRest,CantHave):- member(P1,PointsRest),member(P1,CantHave).
+
+
+% =====================================================================
+is_fti_step(skip_some).
+% =====================================================================
+%skip_some(_VM):- !.
+skip_some(VM):- 
+  globalpoints(VM.objs,CantHave),
+  Points = VM.lo_points,
+  intersection(CantHave,Points,_RemoveThese,_,KeepThese),
+  select(C-P1,KeepThese,Points1),
+  member(Nsew,[skip(1,_,_)]),
+  is_adjacent_point(P1,Nsew,P2),
+  select(C-P2,Points1,PointsRest),
+  FirstTwo = [C-P1,C-P2],
+  %\+ overlapping_points(FirstTwo,CantHave),
+  all_individuals_near(_SkipVM,_,skip_some,C,FirstTwo,PointsRest,LeftOver,GPoints),
+  %\+ overlapping_points(GPoints,CantHave),!,
+  append(FirstTwo,GPoints,IndivPoints),
+  sort(IndivPoints,IndivPointSet),
+  print_ss(cm3,VM.objs,IndivPointSet),
+  length(IndivPointSet,Len),Len>=3,
+  \+ (member(C-P3,IndivPointSet),member(C-P4,LeftOver),is_adjacent_point(P3,Card,P4),n_s_e_w(Card)),
+  make_indiv_object(VM,[iz(type(skip_some)),iz(media(shaped)),birth(skip_some)],IndivPointSet,NewObj),
+  set(VM.lo_points)=LeftOver,
+  assumeAdded(VM,NewObj),
+  skip_some(VM),!.
+skip_some(_).
 
 % =====================================================================
 is_fti_step(colormass_3).
@@ -3116,7 +3144,7 @@ i_subtract_objs(VM):- fail,
   FGPs\==[],
   length(FGPs,PsL),PsL<25,!,
   %zero_to_black(VM),
-  run_fti(VM,[pbox_vm_special_sizes,lo_dots]).
+  run_fti(VM,[pbox_vm_special_sizes,maybe_lo_dots]).
 
 i_subtract_objs(VM):- VM.lo_points==[],!,
   writeg(VM.grid).
@@ -3125,7 +3153,7 @@ i_subtract_objs(VM):-
   points_to_grid(VM.h,VM.v,VM.lo_points,Grid),
   print_grid(i_subtract_objs(points),Grid),
   print_grid(i_subtract_objs(grid),VM.grid),
-  run_fti(VM,[find_hybrid_shapes,colormass,pbox_vm_special_sizes,nsew,lo_dots]).
+  run_fti(VM,[find_hybrid_shapes,colormass,pbox_vm_special_sizes,nsew,maybe_lo_dots]).
   
 % =====================================================================
 is_fti_step(fg_subtractions).
@@ -3160,12 +3188,12 @@ i_intersect(VM):- fail,
   FGPs\==[],
   length(FGPs,PsL),PsL=<15,!,
   set(VM.lo_points)=FGPs,
-  run_fti(VM,[lo_dots]).
+  run_fti(VM,[maybe_lo_dots]).
   %black_to_zero(VM).
   %my_maplist(make_point_object(VM,[birth(lo_dots),iz(stype(dot)),iz(media(shaped))]),FGPs,_IndvList),
   %remGridPoints(VM,FGPs).
 
-i_intersect(VM):- %generic_nsew_colormass find_hybrid_shapes,nsew,colormass,lo_dots
+i_intersect(VM):- %generic_nsew_colormass find_hybrid_shapes,nsew,colormass,maybe_lo_dots
   fti(VM,[generic_nsew_colormass]).
 
 % =====================================================================
@@ -3645,11 +3673,14 @@ maybe_sa_dots(Points,lte(LTE),VM):-
 % =====================================================================
 is_fti_step(maybe_lo_dots).
 % =====================================================================
-maybe_lo_dots(VM):-
+lo_dots(VM):-
   current_as_one(VM),
   %length(VM.lo_points,Len), (VM.h>=Len ; VM.v>=Len), 
-  lo_dots(VM).
-maybe_lo_dots(_):-!.
+  mostly_fgp(VM.lo_points,LO_POINTS),
+  using_alone_dots(VM,(my_maplist(make_point_object(VM,[birth(lo_dots),iz(stype(dot)),iz(media(shaped))]),LO_POINTS,IndvList),
+  assumeAdded(VM,IndvList))),
+  ((set(VM.lo_points) =[])),!.
+lo_dots(_):-!.
 
 % =====================================================================
 is_fti_step(lo_dots).
@@ -3658,19 +3689,15 @@ is_fti_step(lo_dots).
 mostly_fgp(Points,LO_POINTS):- length(Points,Len), Len =< 49,!, Points=LO_POINTS.
 mostly_fgp(Points,FG_POINTS):- my_partition(is_fgp,Points,FG_POINTS,_),!.
 
-lo_dots(VM):-  
+maybe_lo_dots(VM):-  
   mostly_fgp(VM.lo_points,LO_POINTS),
-  (true; VM.h=<5 ; VM.v=<5 ; (LO_POINTS \=[], length(LO_POINTS,Len), Len<12, (Len =< VM.h ; Len =< VM.v  ))),!,  
-  using_alone_dots(VM,(my_maplist(make_point_object(VM,[birth(lo_dots),iz(stype(dot)),iz(media(shaped))]),LO_POINTS,IndvList),
-  assumeAdded(VM,IndvList))),
-  ((set(VM.lo_points) =[])),!.
-lo_dots(VM):-  
+  (VM.h=<5 ; VM.v=<5 ; (LO_POINTS \=[], length(LO_POINTS,Len), Len<12, (Len =< VM.h ; Len =< VM.v  ))),!,
+  lo_dots(VM),!.
+maybe_lo_dots(VM):-  
   mostly_fgp(VM.lo_points,LO_POINTS),
    length(LO_POINTS,Len), Len<12,
-  using_alone_dots(VM,(my_maplist(make_point_object(VM,[birth(lo_dots),iz(stype(dot))]),LO_POINTS,IndvList),
-  assumeAdded(VM,IndvList))),
-  ((set(VM.lo_points) =[])),!.
-
+  lo_dots(VM),!.
+maybe_lo_dots(VM):- leftover_as_one(VM),!.
 
 /*
 fti(VM,[colormass_merger(Size)|TODO]):-
