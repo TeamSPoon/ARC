@@ -188,12 +188,13 @@ io_to_cntx1(X,X).
 when_entire_suite(Goal,_Goal2):- get_pair_mode(entire_suite),!, call(Goal).
 when_entire_suite(_Goal,Goal2):- call(Goal2).
 
-maybe_repress_output(Goal):- call(Goal).
-%repress_output(Goal):- with_output_to(atom(_),Goal).
-repress_output(Goal):- call(Goal).
+repress_some_output(Goal):- 
+  when_entire_suite(with_pair_mode(whole_test,repress_output(Goal)),Goal).
+repress_output(Goal):- menu_or_upper('I'), !, call(Goal).
+repress_output(Goal):- print_collapsed(200, wots(_,Goal)).
+
+
 %repress_output(Goal):- call(Goal).
-%repress_some_output(Goal):- when_entire_suite(with_pair_mode(whole_test,repress_output(Goal)),Goal).
-repress_some_output(Goal):- call(Goal).
 
 
 solve_via_scene_change:-  get_pair_mode(entire_suite),!, cls, 
@@ -265,41 +266,104 @@ ensure_individuals(TestID,ExampleNum):- \+ ground(ExampleNum),!,
   forall( kaggle_arc(TestID,ExampleNum,_,_),
     ensure_individuals(TestID,ExampleNum)).
 ensure_individuals(TestID,ExampleNum):- 
-  \+ \+ arc_cache:individuated_cache(TestID,TestID>ExampleNum*_,_,[must_indv_omem_points,leftover_as_one,do_ending],_Out),!.
+  \+ \+ arc_cache:individuated_cache(TestID,TestID>ExampleNum*_,_,[_,do_ending],_Out),!.
 ensure_individuals(TestID,ExampleNum):- 
-  time((with_individuated_cache(true,
+  time(with_individuated_cache(true,
      forall( kaggle_arc(TestID,ExampleNum,GridIn0,GridOut0),
       (duplicate_term(GridIn0+GridOut0,GridIn+GridOut),
+        ensure_individuals(TestID,ExampleNum,GridIn,GridOut))))).
+
+
+ensure_individuals(TestID,ExampleNum,GridIn,GridOut):- 
        name_the_pair(TestID,ExampleNum,GridIn,GridOut,_PairName),
-       grid_to_gid(GridIn,_GIDIN),grid_to_gid(GridOut,_GIDOUT),
+  gid_of_tid(GID1,TestID,ExampleNum,in),
+  gid_of_tid(GID2,TestID,ExampleNum,out),
        forall(get_each_ndividuator(IndvSMode),
-          (with_indivs_mode(IndvSMode,(( %ndividuator(TestID,ExampleNum,IndvSMode,GridIn,GridOut),
+    (with_indivs_mode(IndvSMode,(( 
               with_task_pairs(TestID,ExampleNum,GridIn,GridOut, 
-                 individuate_pair(IndvSMode,GridIn,GridOut,_InC,_OutC))))))),
-      individuate_pair(complete,GridIn,GridOut,_,_)))))),!.
+           %repress_output
+           (duplicate_term(GridIn+GridOut,GridIn0+GridOut0),
+            individuate_pair(IndvSMode,GridIn0,GridOut0,InC,OutC),
+            sformat(Title,'~q',[individuate_pair(GID1,GID2,IndvSMode)]),
+            print_ss(Title,InC,OutC)))))))),
+  %get_indivs_mode(IndvSMode), %ndividuator(TestID,ExampleNum,IndvSMode,GridIn,GridOut),
+    FinalIndvSMode = complete,
+     repress_output(individuate_pair(FinalIndvSMode,GridIn,GridOut,_,_)),!.
 
 
 
 print_individuals(TestID):-
+ must_det_ll((
  ensure_test(TestID),
- never_entire_suite,set_flag(indiv,0),%compute_and_show_test_hints(TestID),
- forall(kaggle_arc(TestID,ExampleNum,_,_), ensure_individuals(TestID,ExampleNum)),
+   ignore((never_entire_suite,set_flag(indiv,0))),%compute_and_show_test_hints(TestID),
+   forall(kaggle_arc(TestID,ExampleNum,_,_), 
+      ignore(ensure_individuals(TestID,ExampleNum))),
+   banner_lines(orange,10),
  forall(kaggle_arc(TestID,ExampleNum,_,_),
-   print_individuals(TestID,ExampleNum)),!.
+      ignore(print_individuals(TestID,ExampleNum))),
+   banner_lines(blue,10),
+   forall(kaggle_arc(TestID,ExampleNum,_,_), 
+      ignore(print_individual_objects(TestID,ExampleNum))),
+   banner_lines(blue,10))).
 
 print_individuals(TestID,ExampleNum):-
+ must_det_ll((
+              gid_of_tid(GID1,TestID,ExampleNum,in),
+              gid_of_tid(GID2,TestID,ExampleNum,out),
+%   ignore(ensure_individuals(TestID,ExampleNum)),
+   findall(wqs([Len,ROptions,GID1])=In,
+     (arc_cache:individuated_cache(TestID,TestID>ExampleNum*in,GID1,ROptions,In),
+      length(In,Len)),InL),sort(InL,InS),
+   findall(wqs([Len,ROptions,GID2])=Out,
+      (arc_cache:individuated_cache(TestID,TestID>ExampleNum*out,GID2,ROptions,Out),
+       length(Out,Len)),OutL),sort(OutL,OutS),!,
+   print_individuals_paired(InS,OutS),
+   dash_chars)).
 
- %ensure_individuals(TestID,ExampleNum),
- print_collapsed(200, wots(_,ensure_individuals(TestID,ExampleNum))),
+print_individual_objects(TestID,ExampleNum):-
+%   ignore(ensure_individuals(TestID,ExampleNum)),
+   findall(Obj, objects_of(TestID,ExampleNum,in,_,_,Obj),InL),mass_sort(InL,InS),
+   findall(Obj, objects_of(TestID,ExampleNum,out,_,_,Obj),OutL),mass_sort(OutL,OutS),!,
+   print_ss(allobjects,InS,OutS),
+   objects_into_grids(InS,GridsIn),
+   objects_into_grids(OutS,GridsOut),
+   print_individuals_paired(GridsIn,GridsOut),
+   dash_chars.
 
- findall(wqs([Len,ROptions,GOIDIn])=In,
-   (arc_cache:individuated_cache(TestID,TestID>ExampleNum*in,GOIDIn,ROptions,In),
-    length(In,Len)),InL),sort(InL,InS),
- findall(wqs([Len,ROptions,GOIDOut])=Out,
-    (arc_cache:individuated_cache(TestID,TestID>ExampleNum*out,GOIDOut,ROptions,Out),
-     length(Out,Len)),OutL),sort(OutL,OutS),!,
- dash_chars,
- print_individuals_paired(InS,OutS).
+mass_sort(L,S):- predsort(sort_on(mass_for_sort),L,S).
+
+mass_for_sort(Obj,Mass):- mass(Obj,M),vis2D(Obj,H,V),mass_for_sort(Obj,H,V,M,Mass),!.
+
+mass_for_sort(Obj, H,V,Mass, 4+Area+Mass):- is_bg_object(Obj),!,Area is H*V.
+mass_for_sort( _,  H,V,   1, 2+   1+Area):- Area is H*V.
+mass_for_sort(Obj, H,V,Mass, 1+Area+Nass):- Nass is -Mass, is_fg_object(Obj),Area is H*V.
+
+
+
+objects_into_grids([],[]):-!.
+objects_into_grids(InL,[GridObjs|GridL]):-
+  gather_one_grid(InL,[],RemainingObjs,GridObjs),
+  objects_into_grids(RemainingObjs,GridL),!.
+objects_into_grids(Objs,Objs).
+
+gather_one_grid([I|InR],CurGrid,RemainingObjs,[I|GridObjs]):-
+   once((globalpoints(I,Ps), include(is_fg_point,Ps,FGP))),
+   \+ (member(P1,FGP),member(P1,CurGrid)), !,
+  append(Ps,CurGrid,MoreGrid),
+  gather_one_grid(InR,MoreGrid,RemainingObjs,GridObjs).
+gather_one_grid(InL,CurGrid,RemainingObjs,[I|GridObjs]):- InL\==[],
+  select(I,InL,InR), once((globalpoints(I,Ps), include(is_fg_point,Ps,FGP))),
+   \+ (member(P1,FGP),member(P1,CurGrid)), !,
+  append(Ps,CurGrid,MoreGrid),
+  gather_one_grid(InR,MoreGrid,RemainingObjs,GridObjs).
+gather_one_grid(RemainingObjs,_GridPoints,RemainingObjs,[]).
+
+
+
+objects_of(TestID,ExampleNum,IO,GID,ROptions,Obj):-
+ is_why_grouped_g(TestID,_Len,individuate(GID, ROptions),OutC),
+ member(Out,OutC),once(into_obj(Out,Obj)),
+ \+ \+ sub_var(g(IO),Obj), \+ \+ sub_var(ExampleNum,Obj).
 
 print_wio(I=In,O=Out):-  print_side_by_side(yellow,In,I,_,Out,O).
 print_individuals_paired([In],[Out]):- !, print_wio(In,Out).
@@ -810,9 +874,16 @@ ensure_object_dependancy(TestID):-
 	  ensure_object_dependancy(TestID,ExampleNum)),
   merge_object_dependancy(TestID))).
 
+/*
 ensure_object_dependancy(TestID,ExampleNum):-
  %current_example_scope( TestID,ExampleNum),
    one_or_multiple(obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs),
+     ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs)).
+
+*/
+ensure_object_dependancy(TestID,ExampleNum):-
+ %current_example_scope( TestID,ExampleNum),
+   forall(obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs),
      ensure_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs)).
 
 
@@ -1040,6 +1111,7 @@ print_object_dependancy(TestID):-
  %if_t(Set1 =@= Set2,  wdmsg('Set 2 the same')),
  %if_t(Set1 \=@= Set2,
 pp_obj_tree(D,Info,In,Out):-  
+  maplist(must_be(nonvar),[Info,In,Out]),
   once(into_solid_grid_strings_1(In,ITerm)),
   once(into_solid_grid_strings_1(Out,OTerm)),
   dash_chars,
@@ -1092,7 +1164,7 @@ pair_obj_props54321(TestID,Ex,Ctx,Info,Step,Type,LHS,RHS,S,L,R):-
   trans_rules_combined(TestID,Ctx,Combined),
   r(Type,LHS,RHS,S,L,R, Ex, Step) = Combined,
   Info = info(Step,_IsSwapped,Ctx,Type,TestID,Ex, Ex).
-*/
+
 pair_obj_props54321(TestID,Ex,Ctx,Info,Step,Type,LHS,RHS,S,L,R):-
  ensure_test(TestID),
   (pair_obj_props5(TestID,Ex,Ctx,Info,Step,Type,LHS,RHS,S,L,R)*->true;
@@ -1101,7 +1173,7 @@ pair_obj_props54321(TestID,Ex,Ctx,Info,Step,Type,LHS,RHS,S,L,R):-
   (pair_obj_props2(TestID,Ex,Ctx,Info,Step,Type,LHS,RHS,S,L,R)*->true;
    pair_obj_props1(TestID,Ex,Ctx,Info,Step,Type,LHS,RHS,S,L,R))))).
 
-
+*/
 into_solid_objs(RHS,RHSO):- flatten([RHS],RHSM),
   maplist(into_obj,RHSM,RHSO).
 
@@ -1937,8 +2009,9 @@ pairs_of_any(RelaxLvl,Info,LHSObjs,RHSObjs,SoFar,PairsR) :- fail, n_or_more(2,LH
 
 
 
-pairs_of_any(RelaxLvl,Info,LHS,[Right|RHS],SoFar,PairsR) :- LHS\==[],
+pairs_of_any(RelaxLvl,Info,LHS,[Right|RHS],SoFar,PairsR) :- LHS\==[], nonvar(Right),
   sort_by_jaccard(Right,LHS,[Left|RestL]),
+  
   merge_vals(info([type(r_to_l_1)]),Info,PInfo), incr_step(Info,NInfo),
   pairs_of_any(RelaxLvl,NInfo,RestL, RHS,[l2r(PInfo,Left,Right)|SoFar], PairsR),!.
 
@@ -2104,6 +2177,7 @@ incr_cntx(Ctx,Next):- number(Ctx),!, plus(Ctx,1,Next).
 incr_cntx(Ctx,Next):- Ctx == in_out,!, Next=in_out_out.
 incr_cntx(Ctx,Next):- is_list(Ctx),select(ctx(C),Ctx,Rest),incr_cntx(C,CC),Next=[ctx(CC)|Rest],!.
 incr_cntx(W+Ctx,W+Next):- incr_cntx(Ctx,Next).
+incr_cntx(Ctx,Ctx):- compound(Ctx),!.
 incr_cntx(Ctx,s(Ctx)).
 
 incr_step(info(Ctx),info(Next)):- !,incr_step(Ctx,Next).
@@ -2130,8 +2204,12 @@ select_pair(spatial_overlap,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):- 
   (LLO==[];RLO==[];OverLap\==[]),!.
 
 select_pair(two_way,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
+  (var(RHSObjs);var(LHSObjs)),!,fail.
+select_pair(two_way,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):- 
+  nonvar(RHSObjs),nonvar(LHSObjs),
   select(Left,LHSObjs,RestLeft),
   \+ is_mapping(Left),
+  nonvar(Left),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
   sort_by_jaccard(Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),
@@ -2604,14 +2682,16 @@ ignore_prop_when(adding,grid_rep(_,_)).
 ignore_prop_when(adding,simularz(_,_)).
 ignore_prop_when(removing,cc(fg,_)).
 ignore_prop_when(removing,mass(_)).
+ignore_prop_when(removing,links_count(_,_)).
+ignore_prop_when(removing,iz(info(_))).
 
-noteable_propdiffs2(E1,E2,Same,InFlatP,OutPFlat):- 
-  noteable_propdiffs(E1,E2,Same0,InFlatP0,OutPFlat0),
+noteable_propdiffs(E1,E2,Same,InFlatP,OutPFlat):- 
+  noteable_propdiffs1(E1,E2,Same0,InFlatP0,OutPFlat0),
   my_exclude(ignore_prop_when(removing),InFlatP0,InFlatP),
   my_exclude(ignore_prop_when(adding),OutPFlat0,OutPFlat),
   my_exclude(ignore_prop_when(sames),Same0,Same),!.
 
-noteable_propdiffs(PA,PB,Same,InFlatP,OutPFlat):- 
+noteable_propdiffs1(PA,PB,Same,InFlatP,OutPFlat):- 
   remove_o_giz(PA,PA1),remove_o_giz(PB,PB1),
   %=(PA,PA1),=(PB,PB1),
   pred_intersection(propchange_unnoticable,PA1,PB1,_,Same,InFlatP,OutPFlat),!.
@@ -2895,12 +2975,12 @@ compute_scene_change_passes(TestID):-
 compute_scene_change_pass_out(TestID,Rules, Combined):-
   retractall(ac_unit(TestID,_,_,_)),!,
   forall(member(R,Rules),
-    must_det_ll((rule_to_pcp(TestID,R,P,Ctx,LHS),assert_accompany_changed_db(TestID,Ctx,P,LHS)))),!,
+    must_det_ll((clause_to_pcp(TestID,R,P,Ctx,LHS),assert_accompany_changed_db(TestID,Ctx,P,LHS)))),!,
   nl,nl,
   set_of_ps(TestID,Ps),!,
   print(set_of_ps(TestID,Ps)),
   compute_scene_change_pass3(TestID),!,
-  findall(R,(ac_unit(TestID,Ctx,P,LHS),pcp_to_rule(TestID,Ctx,P,LHS,R)),Combined).
+  findall(R,(ac_unit(TestID,Ctx,P,LHS),pcp_to_clause(TestID,Ctx,P,LHS,R)),Combined).
 
 
 compute_scene_change_pass1(TestID):- 
