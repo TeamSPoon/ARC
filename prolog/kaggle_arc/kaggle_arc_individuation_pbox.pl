@@ -254,7 +254,7 @@ pbox_io(TestID,ExampleNum,IO,G0):-
   ignore(kaggle_arc_io(TestID,ExampleNum,IO,GG)),
   set_current_test(TestID),
   debug_m(indiv(pbox),?- pbox_io(TestID,ExampleNum,IO)),
-  my_time((i_pbox(GG,Objs),
+  ((i_pbox(GG,Objs),
   pbox_io_result(TestID,ExampleNum,IO,GG,Objs))).
 
 pbox_io_result(TestID,ExampleNum,IO,G,[]):- !,

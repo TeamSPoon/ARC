@@ -1352,7 +1352,7 @@ load_file_dyn_pfc( TestID,File):- asserta(has_loaded_file_dyn_pfc(File)),
  setup_call_cleanup(open(File,read,I),
      catch(load_dyn_stream(I),E,(print(E),catch(close(I),_,true),delete_file(File),retractall(has_loaded_file_dyn_pfc(File)))),
      catch(close(I),_,true)),!,
- retractall(is_accompany_changed_db(TestID,_,_,_)).
+ retractall(ac_unit(TestID,_,_,_,_)).
 
 load_dyn_stream(I):-  
  repeat,read_term(I,Term,[]),unwonk_ansi(Term,TT),
@@ -2075,7 +2075,7 @@ test_names_ord_hard(NamesByHard):-
 :- dynamic(ord_favs/1).
 test_names_ord_favs(FavListS):- ord_favs(FavListS),!.
 test_names_ord_favs(FavListS):- 
- my_time((
+ ((
   pp(recreating(test_names_ord_favs)), 
   findall(Name,fav(Name),FavList),list_to_set(FavList,FavListS),
   pp(done_recreating(test_names_ord_favs)),  

@@ -571,6 +571,7 @@ never_is_prop(obj(_)).
 never_is_prop(Cell):- functor(Cell,cell,_),!.
 never_is_prop(edit_copy(_,_,_,_)).
 never_is_prop(edit_copy(_,_,_)).
+never_is_prop(edit_copy(_,_)).
 never_is_prop(l2r(_,_,_)).
 never_is_prop((_+_)).
 never_is_prop((_>_)).
@@ -579,8 +580,7 @@ never_is_prop((_-_)).
 never_is_prop((_:-_)).
 never_is_prop((_/_)).
 never_is_prop(into_new(_,_,_)). 
-never_is_prop(ac_db(_,_,_,_)).
-never_is_prop(ac_rules(_,_,_,_)).
+never_is_prop(ac_unit(_,_,_,_)).
 never_is_prop(rhs(_)).
 
 
@@ -816,6 +816,7 @@ numbered_vars(A,B):- copy_term(A,B),numbervars(B,0,_,[attvar(skip)]).
 priority_pg(rank1(_)).
 %priority_pg(rankA(cc(_))).
 
+skip_ku(_):- !,fail.
 skip_ku(Var):- var(Var),!,fail.
 skip_ku(Var):- atomic(Var),!,fail.
 skip_ku(S):- priority_prop(S),!,fail.
@@ -1065,12 +1066,16 @@ obj_link_count(Obj,Functor,Count):-
 %is_in_subgroup(Grp,_,all).
 not_skip_ku(P):- \+ skip_ku(P).
 
+indv_eprops_list(Indv,List9):- plain_var(Indv),!,List9=[Indv].
 indv_eprops_list(Grid,Props):- is_grid(Grid),!,grid_props(Grid,Props).
 indv_eprops_list(Indv,List9):- is_prop1(Indv),!,List9=[Indv].
 indv_eprops_list(Indv,List9):- 
   indv_props_list(Indv,List0),
   ku_rewrite_props(List0,List9).
 
+flat_props(Objs,Props):- is_mapping(Objs),get_mapping_info(Objs,_Info,In,Out),!,
+  flat_props(In,InProps),flat_props(Out,OutProps),
+  append(InProps,OutProps,Props).
 flat_props(Grid,Props):- is_grid(Grid),!,grid_props(Grid,Props).
 flat_props(PropLists,OUTL):- is_list_of_prop_lists(PropLists),!,flatten(PropLists,OUTL).
 flat_props(Objs,EList):- \+ is_list(Objs),!,flat_props([Objs],EList).
@@ -1199,6 +1204,8 @@ made_split(N,UProp,List,Out):-variant_list_to_set(List,Set),List\=@=Set,!,made_s
 made_split(N,UProp,List,Out):-list_to_set(List,Set),List\=@=Set,!,made_split(N,UProp,Set,Out).
 made_split(_,UProp,List,((Len-UProp)->List)):- length_s(List,Len).
 sameps(UProp,_-Prop):- \+ Prop \= UProp.
+
+
 
 set_test_id_io(Named):-
   must_det_ll((into_test_id_io1(Named,TestID,ExampleNum,IO),
@@ -2709,8 +2716,9 @@ get_is_for_ilp(_,_,input, :-(D) ):-
 
 get_is_for_ilp(_,_,input, :-(D) ):- get_is_for_ilp(_,_,determination, D ).
 
-get_is_for_ilp(TestID,common,logicmoo_ex,is_accompany_changed_db(TestID,IO,P,Same)):-
-  ac_listing(TestID,IO,P,Same).
+get_is_for_ilp(TestID,common,logicmoo_ex,
+  ac_unit(TestID,Info,IO,P,Same)):-
+  ac_unit(TestID,Info,IO,P,Same).
 
 
 get_is_for_ilp(_,_,liftcover_ex,D):- read_terms_from_atom(D, '

@@ -9,13 +9,6 @@
 rhs_ground(G):- ground(G),!.
 rhs_ground(G):- nop(writeln(G)),!.
 
-ac_clauses(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
-ac_clauses(TestID,Ctx,P,PSame):- 
-  ac_unit_db(TestID,Ctx,P,Same),
-  include(not_debug_info,Same,PSame), 
-  %Same=PSame,
-  PSame\==[].
-
 not_debug_info(P):- \+ is_debug_info(P),!.
 
 remove_debug_info(List,NoDebug):- \+ compound(List),!,NoDebug=List.
@@ -24,15 +17,18 @@ remove_debug_info(List,NoDebug):- is_list(List), !, maplist(remove_debug_info,Li
 remove_debug_info(List,NoDebug):- compound_name_arguments(List,F,AA),
   maplist(remove_debug_info,AA,CC),!, compound_name_arguments(NoDebug,F,CC).
 
-ac_unit_db(TestID,Ctx,P,Same):- ac_listing(TestID,Ctx,P,Same),include(not_debug_info,Same,PSame), PSame\==[].
 
-ac_rules(TestID,Ctx,P,PSame):- ac_listing(TestID,Ctx,P,PSame).
-ac_listing(List,Ctx,P,PSame):- !, ac_unit(List,Ctx,P,PSame).
-ac_listing(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
-%ac_listing(TestID,Ctx,P->ac_unit_db,PSame):- ac_unit_db(TestID,Ctx,P,PSame).
-ac_listing(TestID,Ctx,P,PSame):- ac_unit(TestID,Ctx,P,PSame)*->true;pass2_clause(TestID,Ctx,P,PSame).
-%ac_listing(TestID,Ctx,P,[iz(info(prop_can))|PSame]):- prop_can(TestID,Ctx,P,PSame).
-%ac_listing(TestID,Ctx,P,[pass2|PSame]):- pass2_clause(TestID,Ctx,P,PSame), \+ ac_clauses(TestID,Ctx,P,PSame).
+ac_unit(  List,Ctx,P,PSame):- is_list(List),!,member(R,List),R=..[_,_,Ctx,P,PSame].
+ac_unit(TestID,Ctx,P,PSame):- ac_db_unit(TestID,Ctx,P,PSame)*->true;pass2_clause(TestID,SS),SS=ac_unit(TestID,Ctx,P,PSame).
+%ac_unit(TestID,Ctx,P,[iz(info(prop_can))|PSame]):- prop_can(TestID,Ctx,P,PSame).
+%ac_unit(TestID,Ctx,P,[pass2|PSame]):- pass2_clause(TestID,Ctx,P,PSame), \+ ac_unit(TestID,Ctx,P,PSame).
+%ac_unit(TestID,Ctx,P->ac_unit,PSame):- ac_unit(TestID,Ctx,P,PSame).
+%ac_unit(TestID,Ctx,P,PSame):- ac_unit(TestID,Ctx,P,PSame)*->true;pass2_clause(TestID,Ctx,P,PSame).
+%ac_unit(TestID,Ctx,P,[iz(info(prop_can))|PSame]):- prop_can(TestID,Ctx,P,PSame).
+%ac_unit(TestID,Ctx,P,[pass2|PSame]):- pass2_clause(TestID,Ctx,P,PSame), \+ ac_unit(TestID,Ctx,P,PSame).
+
+%ac_unit(TestID,Ctx,P,Same):- ac_unit(TestID,Ctx,P,Same),include(not_debug_info,Same,PSame), PSame\==[].
+
 
 
 ac_info(TestID,clauses,P->Ctx->current,LHS):- 
@@ -49,55 +45,43 @@ show_time_of_failure(TestID):-
     print_scene_change_clauses3(show_time_of_failure,
        ac_info,TestID).
 
+
+/*clause_to_pcp(_TestID,R,Ctx,P,LHS):- 
+  must_det_ll((
+  find_rhs(R,P),
+  find_lhs(R,Conds),
+  
+  subst(R,P,p,RR), subst(RR,Conds,conds,Info),
+  
+  append(Conds,[iz(info(Info))],LHS),
+  ignore((sub_cmpd(ctx(Ctx),R))))).
+*/
+/*
 clause_to_pcp(TestID,R,Ctx,P,LHS):-
   is_list(R),!,member(E,R),clause_to_pcp(TestID,E,Ctx,P,LHS).
-clause_to_pcp(_TestID,R,Ctx,P,LHS):- 
+clause_to_pcp(_TestID,R,Ctx,P,LHS):-   
   must_det_ll((
   find_rhs(R,P),
   find_lhs(R,Conds),
   subst(R,P,p,RR), subst(RR,Conds,conds,RRR),
   append(Conds,[iz(info(RRR))],LHS),
   ignore((sub_cmpd(ctx(Ctx),R))))).
+*/
 
-pcp_to_clause(TestID,Ctx,P,LHS,clause(TestID,Ctx,P,LHS)).
-
-
-%ac_clauses(TestID,P,PSame):- ac_clauses(TestID,_,P,PSame).
+%ac_unit(TestID,P,PSame):- ac_unit(TestID,_,P,PSame).
 
 %pass2_clause(TestID,Ctx,P,PSame):- pass2_clause_old(TestID,Ctx,P,PSame).
 %pass2_clause(TestID,Ctx,P,PSame):- pass2_clause_new(TestID,Ctx,P,PSame).
 
-pass2_clause(TestID,Ctx,RHS,LHS):-   
-  pass2_clause1(TestID,Ctx,RHS,LHS)*->true;
-  pass2_clause2(TestID,Ctx,RHS,LHS)*->true;
-  pass2_clause3(TestID,Ctx,RHS,LHS)*->true.
+
 /*
-pass2_clause(TestID,Ctx,RHS,LHS):-
-  findall_vset(Ctx-RHS,(pass2_clause1(TestID,Ctx,RHS,LHS);pass2_clause2(TestID,Ctx,RHS,LHS)),List),
+pass2_clause(TestID,Ctx,Clause):-
+  findall_vset(Ctx-RHS,(pass2_clause1(TestID,Ctx,Clause);pass2_clause2(TestID,Ctx,Clause)),List),
   member(Ctx-RHS,List),
-  (pass2_clause1(TestID,Ctx,RHS,LHS)*->true;pass2_clause2(TestID,Ctx,RHS,LHS)).
+  (pass2_clause1(TestID,Ctx,Clause)*->true;pass2_clause2(TestID,Ctx,Clause)).
 */
 
-pass2_clause1(TestID,Ctx,RHS,LHS):- fail,
- ensure_test(TestID),
-  trans_clauses_combined_members(TestID,Ctx,Clause),
-  %Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,_ExampleNum,_),
-  %arg(_,Clause,Info),
-  must_det_ll((
-  clause_to_pcp(TestID,Clause,Ctx,RHS,LHS))).
 
-pass2_clause2(TestID,Ctx,RHS,LHS):- 
- ensure_test(TestID),
-  trans_clauses_current_members(TestID,Ctx,Clause),
-  %Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,_ExampleNum,_),
-  %arg(_,Clause,Info),
-  must_det_ll((
-  clause_to_pcp(TestID,Clause,Ctx,RHS,LHS))).
-
-
-pass2_clause3(TestID,Ctx,edit(Type,different,P),[iz(info(propcan(true,Ctx)))|PSame]):- fail,
-  ensure_test(TestID), ensure_props_change(TestID,Ctx,P),
-  prop_can(TestID,IO,P,PSame), once((io_to_cntx(IO,Ctx),prop_type(P,Type))).
 
 /*pass2_clause(TestID,Ctx,RHS,[iz(info(Info))|LHS]):- 
  ensure_test(TestID),
@@ -131,11 +115,19 @@ mappings_to_clauses(Mappings,Clauses):-
   into_list(In,InL),into_list(Out,OutL),
   trans_rule(Info,InL,OutL,TransClauses), 
   member(Clauses,TransClauses).
-  
+
 trans_clauses_current_members(TestID,Ctx,Clauses):-
   ensure_test(TestID),
   ((fail,arc_cache:trans_rule_db(TestID,_ExampleNum1,Ctx,Clauses),Clauses\=l2r(_,_,_))*->true;
     trans_clauses_current_members1(TestID,Ctx,Clauses)).
+
+pass2_clause(TestID,Clause):- 
+ ensure_test(TestID),
+  trans_clauses_current_members(TestID,_Ctx,Clause).
+
+pass2_clause(TestID,Clause):- fail,
+ ensure_test(TestID),
+  trans_clauses_combined_members(TestID,_Ctx,Clause).
 
 trans_clauses_combined_members(TestID,Ctx,CombinedM):-
  ensure_test(TestID),
@@ -163,8 +155,6 @@ combine_trans_clauses1([R1|Clauses], CombinedClauses):-
   combine_trans_clauses_textually(R1,Clauses,R,ClausesN),!, combine_trans_clauses1([R|ClausesN], CombinedClauses).
 combine_trans_clauses1([R|Clauses], [R|CombinedClauses]):- 
   combine_trans_clauses1(Clauses, CombinedClauses).
-
-
 
 
 /*
@@ -248,42 +238,87 @@ map_pairs_info_io(TestID,ExampleNum,Ctx,Step,TypeO,InL,OutL,USame,UPA2,UPB2):-
  pair_obj_props(TestID,ExampleNum,Ctx,Step,TypeO,InL,OutL,USame,UPA2,UPB2).
 
 */
+into_info_list(Info,InfoL):- is_list(Info),!,InfoL=Info.
+into_info_list(I,[var(I)]):- var(I),!.
+into_info_list(Info,InfoL):- \+ compound(Info),!,InfoL=[Info].
+into_info_list(iz(Info),InfoL):- into_info_list(Info,InfoL),!.
+into_info_list(info(Info),InfoL):- into_info_list(Info,InfoL),!.
+into_info_list(Info,[Info]).
 
+trans_rule(Info,In,Out,Clauses):- \+ is_list(In),!,trans_rule(Info,[In],Out,Clauses).
+trans_rule(Info,In,Out,Clauses):- \+ is_list(Out),!,trans_rule(Info,In,[Out],Clauses).
+trans_rule(Info,In,Out,Clauses):- once(into_info_list(Info,InfoL)),Info\=@=InfoL,!,trans_rule(InfoL,In,Out,Clauses).
+
+trans_rule(Info,In,Out,Clauses):- 
+  ( \+ sub_cmpd(oin(_),Info); \+ sub_cmpd(oout(_),Info)),
+  into_oids(In,OIDIns),into_oids(Out,OIDOuts),!,
+  append_sets(Info,[oin(OIDIns),oout(OIDOuts)],InfM),
+  trans_rule(InfM,In,Out,Clauses).
+
+
+
+% just copy an object
+trans_rule(Info,[In],[Out],Clauses):- 
+  noteable_propdiffs(In,Out,_Same,_L,R), R==[],!,
+  into_lhs(In,LHS),  
+  Clauses = [ac_unit(_,_,edit(different(_),_),[iz(info(Info))|LHS])].
+
+% copy/transform 
+trans_rule(Info,[In],[Out],Clauses):- 
+  noteable_propdiffs(In,Out,_Same,_L,R), R\==[],
+  into_lhs(In,LHS),  
+  findall(ac_unit(_,_,edit(ChangeType,P),[iz(info(Info))|LHS]),
+    (prop_pairs(In,Out,Type,Change,P),
+      Change\==same,ChangeType =.. [Change,Type],
+      good_for_rhs(P),member(P,R)),Clauses),
+  Clauses\==[],!.
 
 
 % delete
-trans_rule(Info,In,[],Clauses):- listify(In,InL),
- findall(delete_object(Info,rhs(delete(In)),lhs(Preconds)),
-   (member(In,InL),into_lhs(In,Preconds)),Clauses), Clauses\==[],!.
+trans_rule(Info,[In|More],[],Rules):- 
+ into_lhs(In,Preconds),
+ sub_cmpd(step(Step),Info), 
+ Unit = ac_unit(_,_,delete_object(Step),[iz(info(Info))|Preconds]),!,
+ (More==[]->Rules=[Unit]; (trans_rule(Info,More,[],Clauses),Rules=[Unit|Clauses])).
+
 
 % mutiple postconds
 trans_rule(Info,In,[Out,Out2|OutL],TransClause):- is_object(Out),is_object(Out2),
   maplist(trans_rule(Info,In),[Out,Out2|OutL],TransClause), TransClause\==[],!.
 
 % create
-trans_rule(Info,[],Out,Clauses):- listify(Out,OutL),
- findall(create_object(Info,rhs(create(Out)),lhs(Preconds)),
-   ((member(Out,OutL),into_lhs(Out,Preconds))),Clauses), Clauses\==[],!.
+trans_rule(Info,[],[Out|More],Rules):- 
+ into_rhs(Out,Preconds),
+ sub_cmpd(step(Step),Info), 
+ Unit = ac_unit(_,_,create_object(Step),[iz(info(Info))|Preconds]),!,
+ (More==[]->Rules=[Unit]; (trans_rule(Info,[],More,Clauses),Rules=[Unit|Clauses])).
+
+% 2 preconds 1 output
+trans_rule(Info,[In1,In2],[Out],TransClause):-  is_object(In1),is_object(In2), % fail,
+
+   flat_props([In1,In2],InProps),
+   into_lhs(In1,LHS1),into_lhs(In2,LHS2),
+   flat_props([Out],OutProps),
+   
+   noteable_propdiffs(In1, Out,Same1,ExtraIn1,Need1), 
+   noteable_propdiffs(In2, Out,Same2,ExtraIn2,Need2),
+
+   noteable_propdiffs(InProps, OutProps,_Same3,ExtraIn,Missing), 
+   noteable_propdiffs(In2, Need1,_Same4,ExtraIn4,Missing2),
+
+   %remove_o_giz(Out,RHSO), 
+   into_lhs(In1,Precond1), into_lhs(In2,Precond2),
+   %sub_comInfo = info(Step,_IsSwapped,_Ctx,TypeO,_,_,_),
+   sub_cmpd(step(Step),Info), sub_cmpd(type(Type),Info),
+   % Type \== assumed_in_in_out,
+   TransClause = [ac_unit(_,_,compose_object(Step,Type,Out,dontReuse(Missing)),
+    [iz(info(Info)),
+      from_object(1,Same1,LHS1), 
+      from_object(2,Same2,LHS2)])],!.
 
 % 2 preconds
 %trans_rule(Info,[In1,In2],[Out],TransClause):- is_object(In1),is_object(In2),
 %  TransClause = create_object2(Info,rhs(create_obj(Out)),lhs(into_new(In1,In2))),!.
-
-% 2 preconds
-trans_rule(Info,[In1,In2],[Out],TransClause):-  is_object(In1),is_object(In2), % fail,
-   noteable_propdiffs(In1, Out,_Same1,_DontCare1,New1), 
-   noteable_propdiffs(In2,New1,_Same2,_DontCare2,New2),
-   %remove_o_giz(Out,RHSO), 
-   remove_o_giz(In1,Precond1), remove_o_giz(In2,Precond2),
-   %sub_comInfo = info(Step,_IsSwapped,_Ctx,TypeO,_,_,_),
-   sub_cmpd(step(Step),Info), sub_cmpd(type(Type),Info),
-   Type \== assumed_in_in_out,
- % append_sets(Same1,Same2,Same), append_sets(DontCare1,DontCare2,DC), append_sets(New1,New2,New),
- % append_sets(Same,New,NewObj),
-  %make_common(RHSO,LHS1,NewOut1,NewLHS1),
-  %make_common(NewOut1,LHS2,NewOut,NewLHS2),
-  TransClause = [create_object1(Info,rhs(creation_step1(Step,Type,New1)), lhs(Precond1)),
-               create_object2(Info,rhs(creation_step2(Step,Type,New2)), lhs(Precond2))],!.
 
 % mutiple preconds
 trans_rule(Info,[In,In2|InL],OutL,TransClause):- is_object(In),is_object(In2),
@@ -291,23 +326,8 @@ trans_rule(Info,[In,In2|InL],OutL,TransClause):- is_object(In),is_object(In2),
   sub_cmpd(lhs(Precond),TransClauseM),
   noteable_propdiffs(In,OutL,Same,_L,_R),
   append_vsets([Precond,Same],NewPrecond),
+
   subst(TransClauseM,lhs(Precond),lhs(NewPrecond),TransClause),!.
-
-
-% copy/transform 
-trans_rule(Info,In,Out,Clauses):- 
-  noteable_propdiffs(In,Out,_Same,_L,R), R\==[],
-  into_lhs(In,LHS),  
-  findall(edit_copy(Info,rhs(edit(Type,Change,P)),lhs(LHS)),
-    (member(P,R),prop_pairs(In,Out,Type,Change,P),
-      Change\==same,
-      good_for_rhs(P)),Clauses),Clauses\==[],!.
-
-% just copy an object
-trans_rule(Info,In,Out,Clauses):- 
-  noteable_propdiffs(In,Out,_Same,_L,R), R==[],
-  into_lhs(In,LHS),  
-  Clauses = [edit_copy(Info,rhs(edit(instance,copy,same)),lhs(LHS))],!.
 
 
 

@@ -658,7 +658,7 @@ ig_test_id_num_io(ROptions,GridIn,_ID,TestID,trn,Num,in,IndvS):-
  must_det_ll((
   In = GridIn,
   kaggle_arc_io(TestID,(trn+Num),out,Out),!,
-  my_time((maybe_name_the_pair(In,Out,_PairName),
+  ((maybe_name_the_pair(In,Out,_PairName),
   individuate_pair(ROptions,In,Out,IndvSI,IndvSO),
   into_iog(IndvSI,IndvSO,IndvS))))).
 
@@ -1954,6 +1954,8 @@ individuate_nonpair(ROptions,In0,IndvSI):-
   duplicate_term(InG0,InG),
   individuate(ROptions,InG,IndvSI).
 
+individuate_pair(_GID1,_GID2,ROptions,In0,Out0,InC,OutC):-
+  individuate_pair(ROptions,In0,Out0,InC,OutC).
 individuate_pair(ROptions,In0,Out0,InC,OutC):-
  duplicate_term(In0+Out0,In+Out),
  into_grid(In0,InG0), into_grid(Out0,OutG0),

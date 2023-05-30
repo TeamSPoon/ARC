@@ -25,7 +25,7 @@ i_pair(WasROptions,GridIn,GridOut):- fail, WasROptions==complete, % TODO unfail 
 */
 i_pair(GID1,GID2,ROptions,GridIn,GridOut):-
  must_det_ll((    
-  check_for_refreshness,
+  %check_for_refreshness,
   individuate_pair(GID1,GID2,ROptions,GridIn,GridOut,InC,OutC),
   maybe_name_the_pair(GridIn,GridOut,PairName),
   show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC))).

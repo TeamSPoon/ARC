@@ -278,7 +278,7 @@ do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
      ignore(((
       once((pp(cyan,trial=Trial),
        ppt(cyan,run_dsl(TestID>ExampleNum,Trial,SolutionProgram)),!,
-       (my_time((
+       (((
               maybe_set_vm(InVM),
               kaggle_arc_io(TestID,ExampleNum,in,TestIn),
               gset(InVM.grid) = TestIn,

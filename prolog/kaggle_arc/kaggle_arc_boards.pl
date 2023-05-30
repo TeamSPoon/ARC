@@ -547,12 +547,12 @@ show_common_test_hints(TestID):-
     (ptv1s(cyan+magenta,SComs),
     with_li_pre(listing(io_xform(TestID,_,_))))))).
 
-my_sub_compound(_,C):- \+ compound(C),!,fail.
-my_sub_compound(S,C):- my_sub_compound_0(E,C),S=E.
-my_sub_compound_0(C,C).
-my_sub_compound_0(E,L):- is_list(L),!,member(EE,L),compound(EE),my_sub_compound_0(E,EE).
-my_sub_compound_0(E,[_|T]):- !, fail, compound(T),!,my_sub_compound_0(E,T).
-my_sub_compound_0(E,C):- arg(_,C,EE),compound(EE),my_sub_compound_0(E,EE).
+my_sub_cmpd(_,C):- \+ compound(C),!,fail.
+my_sub_cmpd(S,C):- my_sub_cmpd_0(E,C),S=E.
+my_sub_cmpd_0(C,C).
+my_sub_cmpd_0(E,L):- is_list(L),!,member(EE,L),compound(EE),my_sub_cmpd_0(E,EE).
+my_sub_cmpd_0(E,[_|T]):- !, fail, compound(T),!,my_sub_cmpd_0(E,T).
+my_sub_cmpd_0(E,C):- arg(_,C,EE),compound(EE),my_sub_cmpd_0(E,EE).
 
 with_li_pre(Goal):- with_tag(li,with_tag(pre,Goal)).
 %with_li_pre(Goal):- call(Goal).
@@ -565,7 +565,7 @@ ptv1(_Color,_=T):- T==[],!.
 %ptv1(_Color,_=T):- compound(T),compound_name_arguments(T,_,[A]),A==[],!.
 %ptv1(_Color,_=T):- compound(T), T = each_object(_),!.
 
-ptv1(Color,G):- my_sub_compound([H|T],G),
+ptv1(Color,G):- my_sub_cmpd([H|T],G),
   \+ \+ ((append(T,[],_)->is_grid([H|T]),print_grid([H|T]))),!,
   subst(G,[H|T],printed_grid,GG),!,ptv1(Color,GG).
 

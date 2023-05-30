@@ -1597,6 +1597,7 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- fail,
 make_unifiable(A1,A2):- make_unifiable0(A1,O),!,A2=O.
 
 make_unifiable0(C1,_):- \+ compound(C1),fail.
+make_unifiable0(A1,A2):- nonvar(A2),!,make_unifiable0(A1,AA),A2=AA,!.
 make_unifiable0(A1,A2):- var(A1),!,A2=A1.
 make_unifiable0(pg(A,B,C,_),pg(A,B,C,_)):-!.
 make_unifiable0(cc(C,_),cc(C,_)):-!.
@@ -1604,7 +1605,7 @@ make_unifiable0(iz(C1),iz(C2)):- !, make_unifiable(C1,C2).
 make_unifiable0(giz(C1),giz(C2)):- !, make_unifiable(C1,C2).
 make_unifiable0(Cmp,CmpU):-  Cmp=..[F|List1], 
   append(Left1,[C1],List1),append(Left2,[C2],List2), CmpU=..[F|List2],
-  my_maplist(unifiable_cmpd_else_keep,Left1,Left2),
+  maplist(unifiable_cmpd_else_keep,Left1,Left2),
   unifiable_cmpd_else_var(C1,C2),!.
 make_unifiable0(C1,C2):- functor(C1,F,A),functor(C2,F,A).
 
@@ -1875,7 +1876,7 @@ test_local_save(g_2_o).
 test_local_save(gid_glyph_oid).
 test_local_save(grid_associatable).
 test_local_save(individuated_cache).
-test_local_save(is_accompany_changed_db).
+test_local_save(ac_db_unit).
 test_local_save(is_for_ilp).
 test_local_save(is_grid_gid).
 test_local_save(is_grid_obj_count).
