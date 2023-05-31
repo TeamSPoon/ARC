@@ -618,7 +618,7 @@ reachable_a(_IP,OP,A):- member(FF,OP),doing_map_list(_,FF,List),member(A,List).
 
 
 input_atoms_list(List):- 
- findall(PAP,obj_grp_atomslist(in,_,_,PAP),ListList),flatten(ListList,List).
+ findall(PAP,obj_l2r_atomslist(in,_,_,PAP),ListList),flatten(ListList,List).
 
 save_rule00(GID,TITLE,IP,OP):-
   save_rule1(GID,TITLE,IP,OP). /*
@@ -632,7 +632,7 @@ save_rule00(GID,TITLE,IP,OP):-
  ((ShouldFind==[];nb_current(rule_cannot_add_more_objects,t)) -> save_rule1(GID,TITLE,IP,OP)
  ;(
    call(call(call),((reachable_a(IP,OP,A), 
-   obj_grp_atomslist(in,A,_PA,PAP),
+   obj_l2r_atomslist(in,A,_PA,PAP),
    member(S,ShouldFind),
    member(S,PAP)))),
    save_rule(GID,TITLE,[A|IP],OP))))).
@@ -671,7 +671,7 @@ fix_groups(AG00,BG00,AG,BG):-
 
 
 maybe_fix_group(I,OO):-
-  extend_grp_proplist(I,AG0),
+  extend_l2r_proplist(I,AG0),
   predsort(sort_on(mapping_order),AG0,AG01),
   remove_singles_unneeded(AG01,AG1),
   maybe_exclude_whole(AG1,AG2),
@@ -680,7 +680,7 @@ maybe_fix_group(I,OO):-
   (Retained==[]-> OO = AG1 ; OO = AG1).  % yeah for now doesnt change anything
 
 fix_group(AG00,AG):- 
-  extend_grp_proplist(AG00,AG0),  
+  extend_l2r_proplist(AG00,AG0),  
   predsort(sort_on(mapping_order),AG0,AG1),
   maybe_exclude_whole(AG1,AG2),
  filter_redundant(AG2,AG).
@@ -694,9 +694,9 @@ learn_group_mapping_now1(AG00,BG00):-
   save_rule2(in,"all I<-->O",AG,BG),!,  
   other_io(IO_DIR,OI),
 
-  my_maplist(obj_grp_atoms(IO_DIR),AG,_AGG),
+  my_maplist(obj_l2r_atoms(IO_DIR),AG,_AGG),
 
-  my_maplist(obj_grp_atoms(OI),BG,_BGG),
+  my_maplist(obj_l2r_atoms(OI),BG,_BGG),
 
   forall(member(B,BG),
     ((sort_by_jaccard(B,OI,AG,Objs),
@@ -720,9 +720,9 @@ learn_group_mapping_now(AG00,BG00):-
  must_det_ll((  
   other_io(IO_DIR,OI),
 
-  my_maplist(obj_grp_atoms(IO_DIR),AG,_AGG),
+  my_maplist(obj_l2r_atoms(IO_DIR),AG,_AGG),
 
-  my_maplist(obj_grp_atoms(OI),BG,_BGG))),
+  my_maplist(obj_l2r_atoms(OI),BG,_BGG))),
 
   forall(member(B,BG),
     ((sort_by_jaccard(B,OI,AG,Objs),

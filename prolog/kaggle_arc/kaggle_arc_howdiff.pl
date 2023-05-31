@@ -202,13 +202,13 @@ final_alignment(_,_,AA,BB,AA,BB):-!.
 
 :- abolish(arc_cache:object_atomslist/5).
 :- dynamic(arc_cache:object_atomslist/5).
-%obj_grp_atoms(IO,A,[A,PA|Atoms]):- nonvar(IO),!,into_gid(IO,GID),obj_grp_atoms0(GID,A,[A,PA|Atoms]).
-obj_grp_atoms(IO,A,[A,PA|Atoms]):- obj_grp_atomslist(IO,A,PA,Atoms).
+%obj_l2r_atoms(IO,A,[A,PA|Atoms]):- nonvar(IO),!,into_gid(IO,GID),obj_l2r_atoms0(GID,A,[A,PA|Atoms]).
+obj_l2r_atoms(IO,A,[A,PA|Atoms]):- obj_l2r_atomslist(IO,A,PA,Atoms).
 
 
-obj_grp_atomslist(IO,A,PA,Atoms):- \+ \+ see_object_atomslist(IO,A,PA,Atoms), !, see_object_atomslist(IO,A,PA,Atoms).
-obj_grp_atomslist(IO,A,PA,Atoms):- 
-  obj_grp_atoms_deep(A,PA,Atoms),
+obj_l2r_atomslist(IO,A,PA,Atoms):- \+ \+ see_object_atomslist(IO,A,PA,Atoms), !, see_object_atomslist(IO,A,PA,Atoms).
+obj_l2r_atomslist(IO,A,PA,Atoms):- 
+  obj_l2r_atoms_deep(A,PA,Atoms),
   assert_in_testid(arc_cache:object_atomslist(IO,A,PA,Atoms)).
 
 dref_match(Var,_):- var(Var),u_dmsg(dref_match(Var)),!,fail.
@@ -221,9 +221,9 @@ dref_match(obj(LHS),PA):- !, dref_match(LHS,PA).
 dref_match(List,PA):- is_list(List), flatten(List,ListF),List\=@=ListF,!,dref_match(ListF,PA).
 dref_match(PA,PA).
 
-obj_grp_atoms_deep(A,PA,Atoms):- A=obj(_),is_object(A),!,obj_grp_comparable(A,PA),obj_atoms(PA,Atoms).
-obj_grp_atoms_deep(A,PA,Atoms):- dref_match(A,DA),A\=@=DA,!,obj_grp_atoms_deep(DA,PA,Atoms).
-obj_grp_atoms_deep(A,PA,Atoms):- PA=A,obj_atoms(PA,Atoms).
+obj_l2r_atoms_deep(A,PA,Atoms):- A=obj(_),is_object(A),!,obj_l2r_comparable(A,PA),obj_atoms(PA,Atoms).
+obj_l2r_atoms_deep(A,PA,Atoms):- dref_match(A,DA),A\=@=DA,!,obj_l2r_atoms_deep(DA,PA,Atoms).
+obj_l2r_atoms_deep(A,PA,Atoms):- PA=A,obj_atoms(PA,Atoms).
 
 see_object_atomslist(IO,A,PA,Atoms):- call_in_testid(arc_cache:object_atomslist(IO,A,PA,Atoms)).
 
@@ -235,9 +235,9 @@ other_io(I,O):-
   uncast(_,UC,Other,O).
 
 find_obj_mappings(A,BG,OO):-
-  obj_grp_atoms(IO,A,AINFO),
+  obj_l2r_atoms(IO,A,AINFO),
   other_io(IO,OI),
-  maplist(obj_grp_atoms(OI),BG,BBR),
+  maplist(obj_l2r_atoms(OI),BG,BBR),
   find_obj_mappings2(AINFO,BBR,OO).
 
 
@@ -291,8 +291,8 @@ showdiff_groups(AG,BG):- showdiff_groups_new(AG,BG),!.
 showdiff_groups(AG,BG):- showdiff_groups_old(AG,BG),!.   
 
 showdiff_groups_old(AG,BG):-
-  maplist(obj_grp_comparable,AG,A3),
-  maplist(obj_grp_comparable,BG,B3),
+  maplist(obj_l2r_comparable,AG,A3),
+  maplist(obj_l2r_comparable,BG,B3),
   final_alignment(AG,BG,A3,B3,A4,B4),
   length(A3,LenA3),length(A4,LenA4),
   length(B3,LenB3),length(B4,LenB4),
@@ -329,8 +329,8 @@ diff_groups0(A3,B3,DD):- diff_groups2(A3,B3,DD).
 diff_groups0(A3,B3,DD):- diff_groups1(A3,B3,DD).
 
 diff_groups(A0,B0,DD):- 
-  maplist(obj_grp_comparable,A0,A2),
-  maplist(obj_grp_comparable,B0,B2),
+  maplist(obj_l2r_comparable,A0,A2),
+  maplist(obj_l2r_comparable,B0,B2),
   diff_groups1(A2,B2,DD).
 
 obj_atoms(PA,PAP):- PA==[],!,PAP=[].
@@ -481,8 +481,8 @@ showdiff_groups_new(AG,BG):-
   retractall_in_testid(arc_cache:did_map(_,_,_,_)),   
   retractall_in_testid(arc_cache:object_atomslist(IO,_,_,_)),
   retractall_in_testid(arc_cache:object_atomslist(OI,_,_,_)),
-  maplist(obj_grp_atoms(IO),AG,_AGG),
-  maplist(obj_grp_atoms(OI),BG,_BGG),  
+  maplist(obj_l2r_atoms(IO),AG,_AGG),
+  maplist(obj_l2r_atoms(OI),BG,_BGG),  
    print_list_of(xfer_mappings("IN  -> OUT",AG,BG,BGG),  inputOutputMap,AGG),
    %print_list_of(prox_mappings("OUT -> OUT",BG,BG,BGG), outputOutputMap,BGG),   
    print_list_of(xfer_mappings("IN  <- OUT",BG,AG,AGG),  outputInputMap,BGG),   
@@ -598,15 +598,15 @@ bonus_sort_by_jaccard(Bonus,A,GroupID,Candidates,Objs):- \+ \+ member(A,Candidat
 bonus_sort_by_jaccard(Bonus,A,GroupID,Candidates,Objs):- bonus_sort_by_jaccard0(Bonus,A,GroupID,Candidates,Objs).
 
 simularity(B,A,Number):- 
-  obj_grp_atomslist(simularity,B,PB,PBP),
-  obj_grp_atomslist(simularity,A,PA,PAP),
+  obj_l2r_atomslist(simularity,B,PB,PBP),
+  obj_l2r_atomslist(simularity,A,PA,PAP),
   memo_op(PAP,PBP,O,Joins,_J,NJ,JO),
   ord(NJ/O+JO+Joins,[PA,A],[PB,B],B) = Number.
 
 
 bonus_sort_by_jaccard0(Bonus,A,GroupID,Candidates,ObjsO):-
  must_det_ll((
-    obj_grp_atomslist(GroupID,A,PA,PAP0),
+    obj_l2r_atomslist(GroupID,A,PA,PAP0),
     obj_atoms(Bonus,BonusAtoms),
     append(PAP0,BonusAtoms,PAP),
     (ord((NJ/O+JO+Joins),[PA,A],[PB,B],B) = Why),
@@ -615,7 +615,7 @@ bonus_sort_by_jaccard0(Bonus,A,GroupID,Candidates,ObjsO):-
      (member(B,Candidates),
         B\==A,
         \+ is_whole_grid(B),
-        obj_grp_atomslist(GroupID,B,PB,PBP),
+        obj_l2r_atomslist(GroupID,B,PB,PBP),
        % PA\==PB,
         memo_op(PAP,PBP,O,Joins,_J,NJ,JO)),
      % maybe_allow_pair(PA,PB), allow_pair(PA,PB),  
@@ -956,7 +956,7 @@ unused_diff_groups0(AAR,BBR,DD):-
   diff_groups1(AA,BB,D),
   combine_diffs(D1,D , DD).
 
-obj_grp_comparable(I,obj(O)):- obj_make_comparable(I,M),
+obj_l2r_comparable(I,obj(O)):- obj_make_comparable(I,M),
   my_partition(uncomparable(group),M,_,O).
   
 

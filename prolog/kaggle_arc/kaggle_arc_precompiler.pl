@@ -6,7 +6,7 @@
 */
 :- encoding(iso_latin_1).
 
-%remove_must_det:- !.
+remove_must_det:- !.
 remove_must_det:- !,fail.
 remove_must_det:- nb_current(remove_must_det,TF),!,TF==true.
 remove_must_det:- \+ false.

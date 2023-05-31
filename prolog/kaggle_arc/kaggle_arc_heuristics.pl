@@ -23,10 +23,12 @@ i_pair(WasROptions,GridIn,GridOut):- fail, WasROptions==complete, % TODO unfail 
  INDIV = [HOW|HOW_ELSE],
  show_individuated_pair(PairName,INDIV,GridIn,GridOut,InC,OutC)),_,fail),!.
 */
-i_pair(GID1,GID2,ROptions,GridIn,GridOut):-
+i_pair(_GID1,_GID2,ROptions,GridIn,GridOut):-
+  i_pair(ROptions,GridIn,GridOut).
+i_pair(ROptions,GridIn,GridOut):-
  must_det_ll((    
-  %check_for_refreshness,
-  individuate_pair(GID1,GID2,ROptions,GridIn,GridOut,InC,OutC),
+  check_for_refreshness,
+  individuate_pair(ROptions,GridIn,GridOut,InC,OutC),
   maybe_name_the_pair(GridIn,GridOut,PairName),
   show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC))).
 
@@ -38,8 +40,8 @@ maybe_optimize_objects(InC00,OutC00,InCR,OutCR):-
  once((must_det_ll((
   remove_background_only_object(InC00,InC000),
   remove_background_only_object(OutC00,OutC000),
- extend_grp_proplist(InC000,InC0),
- extend_grp_proplist(OutC000,OutC0),
+ extend_l2r_proplist(InC000,InC0),
+ extend_l2r_proplist(OutC000,OutC0),
   maybe_fix_group(InC0,InCRFGBG),
   maybe_fix_group(OutC0,OutCRFGBG),
   mostly_fg_objs(InCRFGBG,InCR),
@@ -93,7 +95,7 @@ show_individuated_pair_cont(PairName,ROptions,GridIn,GridOut,InC,OutC):-
    show_indivs_side_by_side(outputs,OutC),!,
    show_individuated_pair_cont2(PairName,ROptions,GridIn,GridOut,InC,OutC))),!.
 
-show_individuated_pair_cont2(PairName,_ROptions,_GridIn,GridOut,InC,OutC):- 
+show_individuated_pair_cont2(PairName,ROptions,_GridIn,GridOut,InC,OutC):- 
  must_det_ll((
   if_t( \+ nb_current(menu_key,'i'),
 ((((((
@@ -121,14 +123,17 @@ show_individuated_pair_cont2(PairName,_ROptions,_GridIn,GridOut,InC,OutC):-
    w_section(learn_group_mapping,        if_t(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
    ignore((w_section(learn_group_mapping_of_tst, if_t(sub_var(tst,ID1), learn_group_mapping(InCR,OutCR))))), 
    if_wants_output_for(show_safe_assumed_mapped, show_safe_assumed_mapped),
-   if_wants_output_for(show_object_dependancy, show_object_dependancy),
+   if_wants_output_for(show_assumed_mapped, show_assumed_mapped),
+
+   if_wants_output_for(show_test_associatable_groups, 
+       forall(member(In1,InC),show_test_associatable_groups(ROptions,ID1,In1,GridOut)))), 
 
    if_wants_output_for(try_each_using_training,
      forall(try_each_using_training(InC,GridOut,RulesUsed,OurOut),
       ignore((
        print_grid(try_each_using_training,OurOut),
        nop(pp(RulesUsed)),
-       banner_lines(orange,2)))))))))))),
+       banner_lines(orange,2))))))))))),
 
   banner_lines(orange,4)))))))))),!,
   if_wants_output_for(show_interesting_props,  show_interesting_props(PairName,InC,OutC)),!.
@@ -153,9 +158,17 @@ arc_spyable_keyboard_key(show_interesting_props,'o').
 arc_spyable_keyboard_key(show_safe_assumed_mapped,'o').
 arc_spyable_keyboard_key(learn_group_mapping,'o').
 arc_spyable_keyboard_key(learn_group_mapping_of_tst,'o').
+arc_spyable_keyboard_key(show_test_associatable_groups,'o').
 arc_spyable_keyboard_key(try_each_using_training,'u').
 
 
+show_test_associatable_groups(ROptions,ID1,InC,GridOut):- 
+  print_grid(wqs(show_test_assocs(ROptions,ID1)),InC),
+  nop(nop((forall(
+    must_det_ll1((use_test_associatable_group(InC,Sols)
+      *-> show_result("Our Learned Sols", Sols,GridOut,_)
+        ; arcdbg_info(red,warn("No Learned Sols")))),
+    true)))).
 
 
 show_group(ID1,InC):-

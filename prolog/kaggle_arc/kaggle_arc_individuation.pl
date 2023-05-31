@@ -4232,19 +4232,21 @@ remove_sort_tag(G,G).
 
 maybe_remove_sort_tag(L-G,G):- is_sort_tag(L).
 
-into_list(G,[]):- G==[],!.
-into_list(G,[G]):- \+ compound(G),!.
-into_list(G,[G]):- is_grid(G),!.
-into_list(G,L):- is_mapping(G), get_mapping_info_list(G,_,List),!,into_list(List,L).
-into_list(G,[G]):- is_object(G),!.
-into_list(G,L):- maybe_remove_sort_tag(G,LL),!,into_list(LL,L).
-%into_list(G,L):- is_group(G),mapgroup(into_list,G,GG),!,flatten(GG,L).
-into_list(G,L):- is_list(G),!,maplist(into_list,G,GG),!,flatten(GG,L).
-into_list(G,L):- is_vm_map(G),!,L = G.objs,my_assertion(is_list(L)).
-into_list(G,[obj(G)]):- is_obj_props(G),!.
-into_list(G,L):- listify(G,L),!.
-%into_list(G,Lst):- arg(_,G,List),is_list(List),!,into_list(List,Lst).
-%into_list(G,[G]).
+into_list(O,L):- nonvar(L),into_list_0(O,F),!,pp(f=F),pp(l=L),trace,!,F=L.
+into_list(O,L):- into_list_0(O,L),!.
+into_list_0(G,[]):- G==[],!.
+into_list_0(G,[G]):- \+ compound(G),!.
+into_list_0(G,[G]):- is_grid(G),!.
+into_list_0(G,L):- is_mapping(G), get_mapping_info_list(G,_,List),!,into_list_0(List,L).
+into_list_0(G,[G]):- is_object(G),!.
+into_list_0(G,L):- maybe_remove_sort_tag(G,LL),!,into_list_0(LL,L).
+%into_list_0(G,L):- is_group(G),mapgroup(into_list_0,G,GG),!,flatten(GG,L).
+into_list_0(G,[obj(G)]):- is_obj_props(G),!.
+into_list_0(G,L):- is_list(G),!,maplist(into_list_0,G,GG),!,flatten(GG,L).
+into_list_0(G,L):- is_vm_map(G),L = G.objs,my_assertion(is_list(L)),!.
+into_list_0(G,L):- listify(G,L),!.
+%into_list_0(G,Lst):- arg(_,G,List),is_list(List),!,into_list_0(List,Lst).
+into_list_0(G,[G]).
 
 
 
@@ -4770,12 +4772,12 @@ meets_size(Len,Points):- mass(Points,L),!,L>=Len.
 
 remove_bgs(IndvS,IndvL,BGIndvS):- partition(is_bg_indiv,IndvS,BGIndvS,IndvL).
 
-finish_grp(C,Grp,Point2,Dir,Rest,NewGroup,RRest):- 
+finish_l2r(C,Grp,Point2,Dir,Rest,NewGroup,RRest):- 
    \+ (is_diag(Dir),is_bg_color(C)),
    is_adjacent_point(Point2,Dir,Point3),
    single_point(C-Point3,Rest,Rest1),
-   finish_grp(C,[C-Point3|Grp],Point3,Dir,Rest1,NewGroup,RRest).
-finish_grp(_C,Grp,_From,_Dir,Rest,Grp,Rest).
+   finish_l2r(C,[C-Point3|Grp],Point3,Dir,Rest1,NewGroup,RRest).
+finish_l2r(_C,Grp,_From,_Dir,Rest,Grp,Rest).
 
 
 single_point(C-Point,IndvS,Rest1):- maybe_multivar(C),
@@ -4811,10 +4813,10 @@ unraw_inds2(VM,Options,IndvS,IndvO):-
   single_point(C-Point2,Rest1,Rest2),
   is_adjacent_point(Point2,Dir,Point3),
   single_point(C-Point3,Rest2,Rest),
-  finish_grp(C,[C-Point3,C-Point2,iz(diagonal),C-Point1],Point3,Dir,Rest,NewGroup1,RRest),
+  finish_l2r(C,[C-Point3,C-Point2,iz(diagonal),C-Point1],Point3,Dir,Rest,NewGroup1,RRest),
   reverse(NewGroup1,NewGroupR),
   reverse_nav(Dir,RevDir),
-  finish_grp(C,NewGroupR,Point1,RevDir,RRest,NewGroup,RRestO),
+  finish_l2r(C,NewGroupR,Point1,RevDir,RRest,NewGroup,RRestO),
   % minimum 4 findall(C-CP,member(C-CP,NewGroup),LL),LL=[_,_,_,_|_],
   unraw_inds2(VM,Options,[NewGroup|RRestO],IndvO).
 */
@@ -4825,10 +4827,10 @@ unraw_inds2(VM,Options,IndvS,IndvO):-  % fail,
   is_diag(Dir),fail,
   is_adjacent_point(Point1,Dir,Point2),
   single_point(C-Point2,Rest1,Rest2),
-  finish_grp(C,[C-Point2,iz(diagonal),C-Point1],Point2,Dir,Rest2,NewGroup1,RRest),
+  finish_l2r(C,[C-Point2,iz(diagonal),C-Point1],Point2,Dir,Rest2,NewGroup1,RRest),
   reverse(NewGroup1,NewGroupR),
   reverse_nav(Dir,RevDir),
-  finish_grp(C,NewGroupR,Point1,RevDir,RRest,NewGroup,RRestO),
+  finish_l2r(C,NewGroupR,Point1,RevDir,RRest,NewGroup,RRestO),
   unraw_inds2(VM,Options,[NewGroup|RRestO],IndvO).
 
 
