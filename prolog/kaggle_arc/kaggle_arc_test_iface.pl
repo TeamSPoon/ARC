@@ -529,15 +529,97 @@ run_all_tests:-
 rtty:- with_tty_raw(rtty1).
 rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 
-ndividuator(TestID):- 
+
+whole_ndividuator(TestID):- ensure_test(TestID),
+  check_for_refreshness,
+  nop(show_test_grids), set_flag(indiv,0),
+  compile_and_save_hints,
+  with_individuated_cache(true,
+   with_pair_mode(whole_test,
+    findall(PairGroups,
+    (kaggle_arc(TestID,ExampleNum,In,Out),%nonvar(Out),
+     once(each_ndividuator(TestID,ExampleNum,In,Out,PairGroups)),
+     ignore(call_list(PairGroups))),
+   _AllPairGroups))),
+  show_groups(TestID).
+  
+
+
+each_ndividuator(TestID):- ensure_test(TestID),
+  check_for_refreshness,
+  nop(show_test_grids), set_flag(indiv,0),
+  compile_and_save_hints,
+  findall(PairGroups,
+  with_individuated_cache(true,
+    (with_task_pairs(TestID,ExampleNum,In,Out,
+         once(each_ndividuator(TestID,ExampleNum,In,Out,PairGroups))))),
+   AllPairGroups),
+  show_groups(TestID),
+  call_list(AllPairGroups).
+
+call_list(List):-is_list(List),!,my_maplist(call_list,List).
+call_list(Goal):-ignore(Goal).
+
+
+get_each_ndividuator(Complete):-!,get_indivs_mode(Complete).
+get_each_ndividuator(Complete):-
+  findall(Complete,((toplevel_individuation(TL),Complete=[TL,do_ending]);get_indivs_mode(Complete)),List),
+  list_to_set(List,Set),!,member(Complete,Set).
+
+each_ndividuator(TestID,ExampleNum,In,Out, OUTPUT):- 
+ name_the_pair(TestID,ExampleNum,In,Out,PairName), 
+ findall(show_pair_result(PairName,Complete,InC,OutC),
+  (get_each_ndividuator(Complete),
+   with_indivs_mode(Complete,((
+    with_task_pairs(TestID,ExampleNum,In,Out, 
+     ((  w_section(individuate_pair_debug(Complete),
+          must_det_ll((
+           once(individuate_pair(Complete,In,Out,InC,OutC)))))))))))),PairGroups),
+
+  OUTPUT= [dash_chars,dash_chars,dash_chars,dash_chars,
+        print_side_by_side(each_ndividuator(PairName),In,Out),dash_chars,dash_chars|PairGroups].
+
+
+show_pair_result(PairName,Complete,InC,OutC):-   
+   print_side_by_side(show_pair_result(PairName,Complete),InC,OutC),
+   nop((w_section(pair_result_objects(PairName,Complete),
+     (my_maplist(show_i(in),InC), dash_chars, my_maplist(show_i(out),OutC),dash_chars)))),
+   !.
+
+show_i(Y,O):- 
+  global_grid(O,GG),
+  object_grid(O,OG),
+  tersify(O,OT),
+  wots(S,(write(Y),write(' '),write(OT))),
+  print_ss(S,GG,OG).
+
+ndividuator(TestID):- ensure_test(TestID),
+  never_entire_suite,nop(show_test_grids), set_flag(indiv,0),
+  %each_ndividuator(TestID),
+  compute_and_show_test_hints(TestID),
+  forall(with_task_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)),true).
+
+ndividuator(TestID,ExampleNum,In,Out):-   %%%
+ get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
+ndividuator(TestID,ExampleNum,Complete,In,Out):-  
+ with_indivs_mode(Complete,((name_the_pair(TestID,ExampleNum,In,Out,_PairName),
+   with_task_pairs(TestID,ExampleNum,In,Out, i_pair(Complete,In,Out))))).
+
+show_task_pairs(TestID):- ensure_test(TestID), set_flag(indiv,0),
+ forall( with_task_pairs(TestID,ExampleNum,In,Out,
+   print_side_by_side(green,In,in(show_task_pairs(TestID>ExampleNum)),_,Out,out(show_task_pairs(TestID>ExampleNum)))), true).
+%show_test_grids:- get_current_test(TestID),set_flag(indiv,0),with_test_grids(TestID,Grid,print_grid(show_test_grids(TestID),Grid)).
+
+
+ndividuator_logicmoo(TestID):- 
   ensure_test(TestID),
   never_entire_suite,set_flag(indiv,0),compute_and_show_test_hints(TestID),
   forall(with_task_pairs(TestID,ExampleNum,In,Out,
     ndividuator(TestID,ExampleNum,In,Out)),true).
 
-ndividuator(TestID,ExampleNum,In,Out):- 
+ndividuator_logicmoo(TestID,ExampleNum,In,Out):- 
  get_indivs_mode(IndvSMode), ndividuator(TestID,ExampleNum,IndvSMode,In,Out).
-ndividuator(TestID,ExampleNum,IndvSMode,In,Out):-  
+ndividuator_logicmoo(TestID,ExampleNum,IndvSMode,In,Out):-  
  gid_of_tid(GID1,TestID,ExampleNum,in),
  gid_of_tid(GID2,TestID,ExampleNum,out),
  with_indivs_mode(IndvSMode,((name_the_pair(TestID,ExampleNum,In,Out,_PairName),
@@ -1232,7 +1314,7 @@ with_example_num(ExampleNum,Goal):-
   current_test_example(_TestID,Was),
    set_example_num(ExampleNum),
     call_cleanup(Goal,set_example_num(Was)).
-     
+
 current_test_example(TestID,ExampleNum):- get_current_test(TestID),
   (get_example_num(ExampleNum) -> true ; must_det_ll(first_current_example_num(ExampleNum))).
 
@@ -1352,7 +1434,7 @@ load_file_dyn_pfc( TestID,File):- asserta(has_loaded_file_dyn_pfc(File)),
  setup_call_cleanup(open(File,read,I),
      catch(load_dyn_stream(I),E,(print(E),catch(close(I),_,true),delete_file(File),retractall(has_loaded_file_dyn_pfc(File)))),
      catch(close(I),_,true)),!,
- retractall(ac_unit(TestID,_,_,_,_)).
+ retractall(ac_unit(TestID,_,_,_)).
 
 load_dyn_stream(I):-  
  repeat,read_term(I,Term,[]),unwonk_ansi(Term,TT),
@@ -1462,7 +1544,7 @@ shell_op(G):- tee_op(G).
 
 my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).
 
-warn_skip(Goal):- u_dmsg(warn_skip(Goal)).
+warn_skip(Goal):- nop(u_dmsg(warn_skip(Goal))).
 not_warn_skip(Goal):- u_dmsg(warn(Goal)),!,call(Goal),!.
 
 
@@ -1767,7 +1849,7 @@ print_ss_new(RIO,ROI,Title):- mass(RIO,M1),mass(ROI,M2),Mass is M1 + M2, Mass=0,
 print_ss_new(RIO1,ROI1,Title):-   
   call_for_common_pair(as_ngrid_3,RIO1,ROI1,RIO,ROI,_),
   print_ss(Title,RIO,ROI),!,nb_setval(did_ss,RIO1+ROI1).
-  
+
 
 
 next_grid_mode(simple_dots,informative_pairs):-!.
@@ -1783,6 +1865,7 @@ as_d_grid(In,Out):- as_d_grid0(In,Out),!.
 as_d_grid0(In,In):-!.
 %as_d_grid0(In,In):- \+ luser_getval('$grid_mode',informative_pairs),!.
 %as_d_grid0(In,In1):- as_ngrid(In,In1),!.
+
 
 as_ngrid(In,In1):- must_det_ll((change_bg_fg(In, _BG, _FG,In0), most_d_colors(In0,_CI,In1))),!.
 as_ngrid(In,In):-!.
@@ -1853,6 +1936,8 @@ arc_grid(Grid):- arc_grid(_In,Grid).
 arc_grid(IO,Grid):-
   arc_pair_id(TestID,ExampleNum),
   kaggle_arc_io(TestID,ExampleNum,IO,Grid).
+
+ensure_test(TestID,RealTestID):- fix_test_name(TestID,RealTestID),!,ensure_test(RealTestID).
 
 var_ensure_test(TestID):- ground(TestID), !, is_valid_testname(TestID).
 var_ensure_test(TestID):- get_pair_mode(enire_suite),!, all_arc_test_name(TestID).
@@ -1975,7 +2060,7 @@ runtime_test_info(T,S):-
   findall(I,test_info(T,I),F),flatten([F],L),list_to_set(L,S),
   retractall(muarc_tmp:test_info_cache(T,_)),
   asserta(muarc_tmp:test_info_cache(T,S)),!.
-  
+
 runtime_test_info(T,S):- fail, findall(I,all_test_info(T,I),F),flatten([F],L),list_to_set(L,S),
   retractall(muarc_tmp:test_info_cache(T,_)),
   asserta(muarc_tmp:test_info_cache(T,S)),!.
@@ -2454,7 +2539,7 @@ atom_id(Atom,TriedV):- downcase_atom(Atom,Tried),Atom\==Tried,atom_id(Tried,Trie
 atom_id_e(Tried,t(Tried)):- kaggle_arc(t(Tried),_,_,_),!.
 atom_id_e(Tried,v(Tried)):- kaggle_arc(v(Tried),_,_,_),!.
 atom_id_e(Tried,x(Tried)):- kaggle_arc(x(Tried),_,_,_),!.
-%atom_id_es(Sel, TestID):- atom_id_es(Sel, TestID).
+atom_id_e(Sel, TestID):- atom_id_es(Sel, TestID).
 atom_id_es(Sel, TestID):- sformat(SSel,'~q',[Sel]),
    catch(read_term_from_atom(SSel,Name,[module(user),double_quotes(string),variable_names(Vs),singletons(Singles)]),_,
         (ppnl(['failed to read: ',Sel]),fail)),

@@ -239,17 +239,12 @@ json_to_colors(Out,Color):- grid_color_code(Out,Color).
 
 
 :- dynamic(muarc_tmp:arc_directory/1).
-muarc_tmp:arc_directory(ARC_DIR):- muarc_tmp:arc_directory_sugggest(ARC_DIR),exists_directory(ARC_DIR).
-
-:- dynamic(muarc_tmp:arc_directory_sugggest/1).
-muarc_tmp:arc_directory_sugggest(ARC_DIR):- getenv('ARC_DIR',ARC_DIR),ARC_DIR\==''.
-muarc_tmp:arc_directory_sugggest('../kaggle_arc/').
+muarc_tmp:arc_directory(ARC_DIR):- getenv('ARC_DIR',ARC_DIR), exists_directory(ARC_DIR),!.
 
 :- multifile (user:file_search_path/2).
 user:file_search_path(arc,  AbsolutePath):- arc_sub_path('.',AbsolutePath).
 
-:- (\+ \+ ((muarc_tmp:arc_directory(ARC_DIR),  exists_directory(ARC_DIR))) -> true ;
-   prolog_load_context(directory,ARC_DIR), asserta(muarc_tmp:arc_directory_sugggest(ARC_DIR))).
+:- prolog_load_context(directory,ARC_DIR), asserta(muarc_tmp:arc_directory(ARC_DIR)).
 
 %test_name_ansi_output_file(TestID,File):- absolute_file_name(TestID,File,[access(read),file_errors(fail)]),!.
 %test_name_ansi_output_file(TestID,File):- absolute_file_name(TestID,File,[access(create),file_errors(fail)]),!.
@@ -327,7 +322,7 @@ get_raw_input_outputs(TestID,ExampleNums,Ins,Outs):-
   findall(In,kaggle_arc_raw(TestID,ExampleNum,In,Out),Ins),
   findall(Out,kaggle_arc_raw(TestID,ExampleNum,In,Out),Outs).
 
-%:- ensure_loaded('./logical_ml/muarc_dmiles').
+:- ensure_loaded('../kaggle_arc/logical_ml/muarc_dmiles').
 %kaggle_arc(TestID,ExampleNum,In,Out):- !, kaggle_arc_raw(TestID,ExampleNum,In,Out).
 kaggle_arc(TestID,ExampleNum,In,Out):-
   kaggle_arc_raw(TestID,ExampleNum,In0,Out0),

@@ -6,9 +6,6 @@
 */
 :- include(kaggle_arc_header).
 
-into_cgrid(NGrid,CGrid):- is_grid(NGrid),mapgrid(var_or_color_data,NGrid,CGrid),!.
-
-into_ngrid(G,NN):- is_grid(G),into_cgrid(G,CGrid),CGrid\=@=G,!,into_ngrid(CGrid,NN).
 into_ngrid(Points,NN):-  vis2D(Points,H,V),into_ngrid(Points,H,V,NGrid),fix_tt_juctions(NGrid,NN).
 into_ngrid(Obj,H,V,NGrid):-
   localpoints_include_bg(Obj,Points),
@@ -25,7 +22,6 @@ guess_bgc(Grid,BGC):- most_d_colors(Grid,[BGC|_],_).
 D=fill_area
 */
 :- decl_pt(most_d_colors(grid,color,grid)).
-most_d_colors(G,C,NN):- is_grid(G),into_cgrid(G,CGrid),CGrid\=@=G,!,most_d_colors(CGrid,C,NN).
 most_d_colors(Grid,ColorO,GridNM):-
   %atrace,
  
@@ -394,11 +390,10 @@ map_neib_ex(_,[s,se],'-').
 
 map_neib_ex(_,[n,ne],'-').
 map_neib_ex(_,[n,nw],'-').
-map_neib_ex(_,[nw,ne],'-').
 
 map_neib_ex(_,[ne],U):- curvDD(U).
 map_neib_ex(_,[nw],U):- curvDU(U).
-map_neib_ex(_,[se],U):- curvDU(U).
+map_neib_ex(_,[se],U):- curvDU2(U).
 map_neib_ex(_,[sw],U):- curvDD(U).
 
 
@@ -449,21 +444,17 @@ map_neib_ex([_,sw],_,U):- curvDU(U).
 
 same_sets(S1,S2):- sort_safe(S1,SS1),sort_safe(S2,SS2),SS1==SS2.
 
-map_neib([],_,'0'):-!.
-map_neib(Has,Not,R):- map_neib0(Has,Not,R),nop(if_t(R=='/',writeln(map_neib0(Has,Not,R)))).
-
 map_neib_u1([n,s,e,w],[ne,se,nw,sw],'@').
 
-
-map_neib0(Has,Not,R):- 
+map_neib(Has,Not,R):- 
   map_neib_u1(CHas,CNot,R),
   respect_set(CHas,Has,Not),
   respect_set(CNot,Not,Has),!.
-map_neib0(Has,Not,R):-
+map_neib(Has,Not,R):-
   map_neib_ex(CHas,CNot,R),
   (if_t(nonvar(CHas),same_sets(Has,CHas)),
    if_t(nonvar(CNot),same_sets(Not,CNot))),!.
-map_neib0(Has,Not,R):- 
+map_neib(Has,Not,R):- 
   map_neib_u2(CHas,CNot,R),
   respect_set(CHas,Has,Not),
   respect_set(CNot,Not,Has),!.
@@ -489,7 +480,6 @@ map_neib_u2([e,w],[s],'*'). % |
 
 
 map_neib_u2([ne,nw],len(5),'V').
-map_neib_u2([se,sw],len(5),'A').
 map_neib_u2(only([ne,sw]),_,'/').
 map_neib_u2(only([nw,se]),_,'\\').
 
@@ -529,7 +519,7 @@ map_neib_u2([nw,n,ne],[sw,s,se],'v'). % |
 
 map_neib_u2([ne,sw],[n,s,e,w],'/'). %:- \+ failD,!.
 map_neib_u2([nw,se],[n,s,e,w],'\\'). %:- \+ failD,!.
-map_neib_u2([ne,sw],_,U):- curvDU(U).
+map_neib_u2([ne,sw],_,U):- curvDU2(U).
 map_neib_u2([nw,se],_,U):- curvDD(U).
 %map_neib_u2(only([w,s,sw]),_,'A').
 
@@ -586,7 +576,6 @@ map_neibw9(Has,Not,_,_,_,_,_,S,S):- length(Has,L),L=4, map_neib(Has,Not,S),!.
 map_neibw9(Has,Not,_,_,_,_,_,S,S):- map_neib(Has,Not,S),!.
 map_neibw9(Has,_Not,_C,_,_,_,_,NSM,PS):- !, length(Has,NSM),PS=NSM.
 %map_neibw9(Has,_Not,C,DirsE,_,DirsC,DirsD,NSM,PS):- length(Has,N), NSM is N+1,PS=NSM.
-
 
 map_neibw(_EAll,[n,s,e,w,sw,se,nw],_,_,_,_,_,'/',U):- curvDU1(U).
 map_neibw(_EAll,[n,s,e,w,ne,se,nw],_,_,_,_,_,'/',U):- curvDU1(U).

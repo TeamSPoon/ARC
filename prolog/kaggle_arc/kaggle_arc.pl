@@ -653,13 +653,9 @@ set_vm_obj_nil(Prop,Or):- u_dmsg(set_vm_obj_nil(Prop,Or)).
 
 get_vm(Key,Value):-  get_vm(VM), get_kov(Key,VM,Value).
 
-
-:- set_prolog_flag(arc_term_expansion, false).
-
-
-
 test_regressions:- make, forall((clause(mregression_test,Body),ppt(Body)),must_det_ll(Body)).
 :- arc_history1(test_regressions).
+:- set_prolog_flag(arc_term_expansion, false).
 
 :- dynamic(muarc_2_mods/2).
 :- strip_module(_,M,_), prolog_load_context(module,MM), retractall(muarc_2_mods(_,_)), asserta(muarc_2_mods(M,MM)).

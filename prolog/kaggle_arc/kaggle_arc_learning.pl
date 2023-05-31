@@ -618,7 +618,7 @@ reachable_a(_IP,OP,A):- member(FF,OP),doing_map_list(_,FF,List),member(A,List).
 
 
 input_atoms_list(List):- 
- findall(PAP,obj_l2r_atomslist(in,_,_,PAP),ListList),flatten(ListList,List).
+ findall(PAP,obj_group_atomslist(in,_,_,PAP),ListList),flatten(ListList,List).
 
 save_rule00(GID,TITLE,IP,OP):-
   save_rule1(GID,TITLE,IP,OP). /*
@@ -632,7 +632,7 @@ save_rule00(GID,TITLE,IP,OP):-
  ((ShouldFind==[];nb_current(rule_cannot_add_more_objects,t)) -> save_rule1(GID,TITLE,IP,OP)
  ;(
    call(call(call),((reachable_a(IP,OP,A), 
-   obj_l2r_atomslist(in,A,_PA,PAP),
+   obj_group_atomslist(in,A,_PA,PAP),
    member(S,ShouldFind),
    member(S,PAP)))),
    save_rule(GID,TITLE,[A|IP],OP))))).
@@ -671,7 +671,7 @@ fix_groups(AG00,BG00,AG,BG):-
 
 
 maybe_fix_group(I,OO):-
-  extend_l2r_proplist(I,AG0),
+  extend_group_proplist(I,AG0),
   predsort(sort_on(mapping_order),AG0,AG01),
   remove_singles_unneeded(AG01,AG1),
   maybe_exclude_whole(AG1,AG2),
@@ -680,7 +680,7 @@ maybe_fix_group(I,OO):-
   (Retained==[]-> OO = AG1 ; OO = AG1).  % yeah for now doesnt change anything
 
 fix_group(AG00,AG):- 
-  extend_l2r_proplist(AG00,AG0),  
+  extend_group_proplist(AG00,AG0),  
   predsort(sort_on(mapping_order),AG0,AG1),
   maybe_exclude_whole(AG1,AG2),
  filter_redundant(AG2,AG).
@@ -694,9 +694,9 @@ learn_group_mapping_now1(AG00,BG00):-
   save_rule2(in,"all I<-->O",AG,BG),!,  
   other_io(IO_DIR,OI),
 
-  my_maplist(obj_l2r_atoms(IO_DIR),AG,_AGG),
+  my_maplist(obj_group_atoms(IO_DIR),AG,_AGG),
 
-  my_maplist(obj_l2r_atoms(OI),BG,_BGG),
+  my_maplist(obj_group_atoms(OI),BG,_BGG),
 
   forall(member(B,BG),
     ((sort_by_jaccard(B,OI,AG,Objs),
@@ -720,9 +720,9 @@ learn_group_mapping_now(AG00,BG00):-
  must_det_ll((  
   other_io(IO_DIR,OI),
 
-  my_maplist(obj_l2r_atoms(IO_DIR),AG,_AGG),
+  my_maplist(obj_group_atoms(IO_DIR),AG,_AGG),
 
-  my_maplist(obj_l2r_atoms(OI),BG,_BGG))),
+  my_maplist(obj_group_atoms(OI),BG,_BGG))),
 
   forall(member(B,BG),
     ((sort_by_jaccard(B,OI,AG,Objs),
@@ -1597,7 +1597,6 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- fail,
 make_unifiable(A1,A2):- make_unifiable0(A1,O),!,A2=O.
 
 make_unifiable0(C1,_):- \+ compound(C1),fail.
-make_unifiable0(A1,A2):- nonvar(A2),!,make_unifiable0(A1,AA),A2=AA,!.
 make_unifiable0(A1,A2):- var(A1),!,A2=A1.
 make_unifiable0(pg(A,B,C,_),pg(A,B,C,_)):-!.
 make_unifiable0(cc(C,_),cc(C,_)):-!.
@@ -1605,7 +1604,7 @@ make_unifiable0(iz(C1),iz(C2)):- !, make_unifiable(C1,C2).
 make_unifiable0(giz(C1),giz(C2)):- !, make_unifiable(C1,C2).
 make_unifiable0(Cmp,CmpU):-  Cmp=..[F|List1], 
   append(Left1,[C1],List1),append(Left2,[C2],List2), CmpU=..[F|List2],
-  maplist(unifiable_cmpd_else_keep,Left1,Left2),
+  my_maplist(unifiable_cmpd_else_keep,Left1,Left2),
   unifiable_cmpd_else_var(C1,C2),!.
 make_unifiable0(C1,C2):- functor(C1,F,A),functor(C2,F,A).
 
@@ -1876,7 +1875,7 @@ test_local_save(g_2_o).
 test_local_save(gid_glyph_oid).
 test_local_save(grid_associatable).
 test_local_save(individuated_cache).
-test_local_save(ac_db_unit).
+test_local_save(is_accompany_changed_db).
 test_local_save(is_for_ilp).
 test_local_save(is_grid_gid).
 test_local_save(is_grid_obj_count).
@@ -2172,7 +2171,20 @@ show_safe_assumed_mapped:-
         g_display(A,AA),g_display(B,BB),
          dash_chars,print_ss(SWHYS,AA,BB)))))))),
  dash_chars,!.
- 
+
+show_assumed_mapped(TestID):-
+  ensure_test(TestID),
+% pp_wcg(show_safe_assumed_mapped),
+ SAME = sam(A,B),
+ findall(SAME,gather_assumed_mapped_rule(A,B),SAML),
+ sort(SAML,SAMS),
+   forall(member(SAME,SAMS),
+      (dash_chars, print_ss(A,B))),
+ dash_chars,!.
+
+
+
+  
 
 
 arc_cache:doing_map(Out,B,A):-    doing_map_list(Out,B,[A|_]).
@@ -2229,7 +2241,7 @@ use_test_associatable_obj(In,Sol):-
    matches_close_prop(In,giz(g(out)),OutList),
    if_t(OutList\==[],
         (member(F2,OutList), 
-         print_side_by_side('<-'(in ,out),In,F2))),
+         print_side_by_side((in<-out),In,F2))),
   
    ignore(Sol=F1),
    ignore(Sol=F2))).

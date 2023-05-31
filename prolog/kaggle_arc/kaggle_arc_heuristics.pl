@@ -40,8 +40,8 @@ maybe_optimize_objects(InC00,OutC00,InCR,OutCR):-
  once((must_det_ll((
   remove_background_only_object(InC00,InC000),
   remove_background_only_object(OutC00,OutC000),
- extend_l2r_proplist(InC000,InC0),
- extend_l2r_proplist(OutC000,OutC0),
+ extend_group_proplist(InC000,InC0),
+ extend_group_proplist(OutC000,OutC0),
   maybe_fix_group(InC0,InCRFGBG),
   maybe_fix_group(OutC0,OutCRFGBG),
   mostly_fg_objs(InCRFGBG,InCR),

@@ -199,8 +199,7 @@ await_ain_pool:- is_ain_pool_empty->true;(repeat, sleep(0.005), is_ain_pool_empt
 
 ain_in_thread(MAIN):- strip_module(MAIN,M,AIN), call_in_thread(M:afcAdd(AIN)).
 
-call_in_thread(MG):- strip_module(MG,M,G), notrace((copy_term(M:G,GG,_),numbervars(GG,0,_,[attvar(skip),singletons(true)]),
- term_to_atom(GG,TN))), 
+call_in_thread(MG):- strip_module(MG,M,G), notrace((copy_term(M:G,GG,_),numbervars(GG,0,_,[attvar(skip),singletons(true)]),term_to_atom(GG,TN))), 
  call_in_thread(TN,M,G),
   dmsg_pretty(call_in_thread(TN,M,G)).
 

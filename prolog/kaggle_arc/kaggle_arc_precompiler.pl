@@ -6,7 +6,7 @@
 */
 :- encoding(iso_latin_1).
 
-remove_must_det:- !.
+%remove_must_det:- !.
 remove_must_det:- !,fail.
 remove_must_det:- nb_current(remove_must_det,TF),!,TF==true.
 remove_must_det:- \+ false.
@@ -169,8 +169,13 @@ ibreak:- if_thread_main(((trace,break))).
 %recolor(_,_):- ibreak.
 
 
+remove_must_dets(G,GGG):- compound(G), G = must_det_ll(GG),!,expand_goal(GG,GGG),!.
+remove_must_dets(G,GGG):- compound(G), G = must_det_l(GG),!,expand_goal(GG,GGG),!.
+
+
 % goal_expansion(must_det_l(G),I,must_det_ll(G),O):- nonvar(I),source_location(_,_), nonvar(G),I=O.
 
+%goal_expansion(G,I,GG,O):- nonvar(I),source_location(_,_), compound(G), remove_must_dets(G,GG),I=O.
 
 %:- system:ensure_loaded(library(pfc_lib)).
 %:- expects_dialect(pfc).
@@ -253,9 +258,9 @@ expand_must_det(my_maplist(P1,GoalL),GoalLO):- P1 ==must_det_ll,!,
 
 expand_must_det0(Nil,true):- Nil==[],!.
 expand_must_det0(Var,Var):- \+ callable(Var),!.
-expand_must_det0([A|B],(AA,BB)):- callable(A), is_list(B), !, 
+expand_must_det0([A|B],(AA,BB)):- assertion(callable(A)), assertion(is_list(B)), !, 
   expand_must_det1(A,AA), expand_must_det0(B,BB).
-expand_must_det0(A,AA):- expand_must_det1(A,AA).
+expand_must_det0(A,AA):- !, expand_must_det1(A,AA).
 
 prevents_expansion(A):- is_trace_call(A).
 is_trace_call(A):- A == trace.
@@ -331,9 +336,7 @@ removed_term(G,GGGG):- G = catch_log(GGGG).
 removed_term(G,GGGG):- G = catch_nolog(GGGG).
 
 %remove_must_dets(GG,GO):- sub_term(G,GG),compound(G),removed_term(G,GGGG),subst001(GG,G,GGGG,GGG),remove_must_dets(GGG,GO).
-
 remove_must_dets(G,GG):- compound(G),removed_term(G,GO),expand_goal(GO,GG).
-
 
 goal_expansion_setter(Goal,_):- \+ compound(Goal), !, fail.
 
@@ -410,7 +413,9 @@ disable_arc_expansion:-
 
 :- multifile(goal_expansion/4).
 :- dynamic(goal_expansion/4).
-goal_expansion(G,I,GG,O):- nonvar(I),source_location(_,_), compound(G), remove_must_det, remove_must_dets(G,GG),I=O.
+
+goal_expansion(G,I,GG,O):- nonvar(I),source_location(_,_), 
+    compound(G), remove_must_det, remove_must_dets(G,GG),I=O.
 
 
 /*

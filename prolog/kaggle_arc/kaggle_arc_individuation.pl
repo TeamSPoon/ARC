@@ -52,7 +52,8 @@ individuation_macros(do_ending, [
  %remove_if_prop(and(giz(g(out)),cc(fg,0))),
  %remove_dead_links,
  %combine_same_globalpoints,  
- % extend_obj_proplists, really_group_vm_priors,
+ extend_obj_proplists,
+ really_group_vm_priors,
  %whole,
  %combine_objects, 
  end_of_macro]).
@@ -341,7 +342,8 @@ do_indivizer_number(N):-
 
 individuation_macros(nsew_bg,[
   with_mapgrid([fgc_as_color(plain_var),bgc_as_color(zero),plain_var_as(black)],'_nsew_bg',[nsew,alone_dots,maybe_lo_dots])]).
-has_sym(SymC,Sym,C):-compound(SymC),!,SymC=(Sym-C).
+
+has_sym(SymC,Sym,C):- compound(SymC),!,SymC=(Sym-C).
 
 fill_in_bg(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,fill_in_bg(Cell,C,O).
 fill_in_bg(_Cell,G2,GG2):- is_fg_color(G2),!,ignore(G2=GG2).
@@ -1142,7 +1144,7 @@ must_indv_omem_points(VM):-
 
   Grid = VM.start_grid,
   with_luser(generate_gids,true,
-   must_det_ll((
+   ((
     grid_to_gid(Grid,GID),    
     ensure_gid(Grid,GID),
     erase_objects(GID),
@@ -4014,7 +4016,7 @@ remove_used_points(VM):-
   gset(VM.grid)=[[black]].
   %gset(VM.grid) = Grid.
 
-plain_var_to(Cell,Var):- plain_var(Var),!,Var=Cell.
+plain_var_to(Black,Var):- plain_var(Var),!,Var=Black.
 plain_var_to(_,_).
 % =====================================================================
 is_fti_step(colormass_subshapes).
@@ -4212,7 +4214,7 @@ current_as_one(VM):-
    set(VM.lo_points) = Points)).
    
 
-ignore_rest(VM):- set(VM.lo_points)=[].
+ignore_rest(VM):- gset(VM.lo_points)=[].
 
 
 same_lcolor(LargestColor,Obj):- color(Obj,Color),nop(print_grid(Obj)),!,Color==LargestColor.
@@ -4232,21 +4234,19 @@ remove_sort_tag(G,G).
 
 maybe_remove_sort_tag(L-G,G):- is_sort_tag(L).
 
-into_list(O,L):- nonvar(L),into_list_0(O,F),!,pp(f=F),pp(l=L),trace,!,F=L.
-into_list(O,L):- into_list_0(O,L),!.
-into_list_0(G,[]):- G==[],!.
-into_list_0(G,[G]):- \+ compound(G),!.
-into_list_0(G,[G]):- is_grid(G),!.
-into_list_0(G,L):- is_mapping(G), get_mapping_info_list(G,_,List),!,into_list_0(List,L).
-into_list_0(G,[G]):- is_object(G),!.
-into_list_0(G,L):- maybe_remove_sort_tag(G,LL),!,into_list_0(LL,L).
-%into_list_0(G,L):- is_group(G),mapgroup(into_list_0,G,GG),!,flatten(GG,L).
-into_list_0(G,[obj(G)]):- is_obj_props(G),!.
-into_list_0(G,L):- is_list(G),!,maplist(into_list_0,G,GG),!,flatten(GG,L).
-into_list_0(G,L):- is_vm_map(G),L = G.objs,my_assertion(is_list(L)),!.
-into_list_0(G,L):- listify(G,L),!.
-%into_list_0(G,Lst):- arg(_,G,List),is_list(List),!,into_list_0(List,Lst).
-into_list_0(G,[G]).
+into_list(G,[]):- G==[],!.
+into_list(G,[G]):- \+ compound(G),!.
+into_list(G,[G]):- is_grid(G),!.
+into_list(G,L):- is_mapping(G), get_mapping_info_list(G,_,List),!,into_list(List,L).
+into_list(G,[G]):- is_object(G),!.
+into_list(G,L):- maybe_remove_sort_tag(G,LL),!,into_list(LL,L).
+%into_list(G,L):- is_group(G),mapgroup(into_list,G,GG),!,flatten(GG,L).
+into_list(G,L):- is_list(G),!,maplist(into_list,G,GG),!,flatten(GG,L).
+into_list(G,L):- is_vm_map(G),!,L = G.objs,my_assertion(is_list(L)).
+into_list(G,[obj(G)]):- is_obj_props(G),!.
+into_list(G,L):- listify(G,L),!.
+%into_list(G,Lst):- arg(_,G,List),is_list(List),!,into_list(List,Lst).
+%into_list(G,[G]).
 
 
 
@@ -4772,12 +4772,12 @@ meets_size(Len,Points):- mass(Points,L),!,L>=Len.
 
 remove_bgs(IndvS,IndvL,BGIndvS):- partition(is_bg_indiv,IndvS,BGIndvS,IndvL).
 
-finish_l2r(C,Grp,Point2,Dir,Rest,NewGroup,RRest):- 
+finish_group(C,Grp,Point2,Dir,Rest,NewGroup,RRest):- 
    \+ (is_diag(Dir),is_bg_color(C)),
    is_adjacent_point(Point2,Dir,Point3),
    single_point(C-Point3,Rest,Rest1),
-   finish_l2r(C,[C-Point3|Grp],Point3,Dir,Rest1,NewGroup,RRest).
-finish_l2r(_C,Grp,_From,_Dir,Rest,Grp,Rest).
+   finish_group(C,[C-Point3|Grp],Point3,Dir,Rest1,NewGroup,RRest).
+finish_group(_C,Grp,_From,_Dir,Rest,Grp,Rest).
 
 
 single_point(C-Point,IndvS,Rest1):- maybe_multivar(C),
@@ -4813,10 +4813,10 @@ unraw_inds2(VM,Options,IndvS,IndvO):-
   single_point(C-Point2,Rest1,Rest2),
   is_adjacent_point(Point2,Dir,Point3),
   single_point(C-Point3,Rest2,Rest),
-  finish_l2r(C,[C-Point3,C-Point2,iz(diagonal),C-Point1],Point3,Dir,Rest,NewGroup1,RRest),
+  finish_group(C,[C-Point3,C-Point2,iz(diagonal),C-Point1],Point3,Dir,Rest,NewGroup1,RRest),
   reverse(NewGroup1,NewGroupR),
   reverse_nav(Dir,RevDir),
-  finish_l2r(C,NewGroupR,Point1,RevDir,RRest,NewGroup,RRestO),
+  finish_group(C,NewGroupR,Point1,RevDir,RRest,NewGroup,RRestO),
   % minimum 4 findall(C-CP,member(C-CP,NewGroup),LL),LL=[_,_,_,_|_],
   unraw_inds2(VM,Options,[NewGroup|RRestO],IndvO).
 */
@@ -4827,10 +4827,10 @@ unraw_inds2(VM,Options,IndvS,IndvO):-  % fail,
   is_diag(Dir),fail,
   is_adjacent_point(Point1,Dir,Point2),
   single_point(C-Point2,Rest1,Rest2),
-  finish_l2r(C,[C-Point2,iz(diagonal),C-Point1],Point2,Dir,Rest2,NewGroup1,RRest),
+  finish_group(C,[C-Point2,iz(diagonal),C-Point1],Point2,Dir,Rest2,NewGroup1,RRest),
   reverse(NewGroup1,NewGroupR),
   reverse_nav(Dir,RevDir),
-  finish_l2r(C,NewGroupR,Point1,RevDir,RRest,NewGroup,RRestO),
+  finish_group(C,NewGroupR,Point1,RevDir,RRest,NewGroup,RRestO),
   unraw_inds2(VM,Options,[NewGroup|RRestO],IndvO).
 
 
@@ -5190,6 +5190,7 @@ individuation_macros(i_repair_patterns_f,[repair_in_vm(find_symmetry_code)]).
 */
 %individuation_macros(i_repair_repeats,[repair_in_vm(repair_repeats(Cell))]):- get_black(Cell).
 /*
+individuator(i_nsew,[subshape_both(h,nsew), maybe_lo_dots]).
 %individuator(i_maybe_glypic,[whole]):- doing_pair.
 individuator(i_mono,[save_as_obj_group(mono_shapes([subshape_both(h,nsew)])),
                           save_as_obj_group(mono_shapes([subshape_both(v,colormass)]))]).

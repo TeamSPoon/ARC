@@ -538,7 +538,7 @@ luser_default(N,V):- luser_setval(global,N,V).
 
 luser_linkval(N,V):- arc_user(ID),luser_linkval(ID,N,V),!.
 luser_linkval(ID,N,V):- \+ var(V), \+ (arc_sensical_term(N),arc_sensical_term(V)),  
- trace,
+ %trace,
  warn_skip(not_arc_sensical_term(luser_linkval(ID,N,V))).
 luser_linkval(ID,N,V):- 
   (atom(N)->nb_linkval(N,V);true), 

@@ -288,8 +288,8 @@ calc_skip_display:- nb_current(skip_display,calc),!.
 show_interesting_props(Named,InC,OutC):- nop(warn_skip(show_interesting_props(Named,InC,OutC))),!.
 show_interesting_props(Named,InC,OutC):-
  must_det_ll((
-  ensure_l2r_proplist(InC,ObjsI),
-  ensure_l2r_proplist(OutC,ObjsO),
+  ensure_group_proplist(InC,ObjsI),
+  ensure_group_proplist(OutC,ObjsO),
   banner_lines(cyan,4),
   w_section('INPUT PROPS',
     locally(t_l:objs_others(inputs,ObjsI,ObjsO,outputs),
@@ -423,8 +423,8 @@ changed_by_sides(Pred2,PropS1,PropS2,LeftOnly,RightOnly,A1O,A2O):-
  must_det_ll((
   maplist(Pred2,PropS1,ArgPropS1), maplist(Pred2,PropS2,ArgPropS2),
   append(ArgPropS1,ArgPropS2,ArgPropS),variant_list_to_set(ArgPropS,ArgPropSort),
-  maplist(l2r_by(Pred2,PropS1),ArgPropSort,A1L),
-  maplist(l2r_by(Pred2,PropS2),ArgPropSort,A2L),
+  maplist(group_objs_by(Pred2,PropS1),ArgPropSort,A1L),
+  maplist(group_objs_by(Pred2,PropS2),ArgPropSort,A2L),
   maplist(into_kv,A1L,A2L,OLairs),
   findall(K,member(K-[],OLairs),LeftOnly),
   findall(K,member([]-K,OLairs),RightOnly),
@@ -432,7 +432,7 @@ changed_by_sides(Pred2,PropS1,PropS2,LeftOnly,RightOnly,A1O,A2O):-
   maplist(from_kv,Both,A1O,A2O))).
 
 
-l2r_by(P2,PPS1,AE,L):- 
+group_objs_by(P2,PPS1,AE,L):- 
   findall(A,(member(A,PPS1),call(P2,A,AE)),L).
 
 first_number(A,AE):- nonvar(AE),first_number(A,AE1),!,AE1=AE.
@@ -618,42 +618,42 @@ is_prop(Prop):- writeln(user_error,not(is_prop(Prop))),itrace,!,fail.
 is_fti_step(extend_obj_proplists).
 % =====================================================================
 extend_obj_proplists(VM):- 
- if_t(VM.objs\==[],extend_l2r_proplist(VM.objs,set(VM.objs))).
+ if_t(VM.objs\==[],extend_group_proplist(VM.objs,set(VM.objs))).
 
 % called when we think the proplist is already extended
-avoid_l2r_proplist(I,I).
+avoid_group_proplist(I,I).
 
 skip_extending_proplist(I):- \+ compound(I),!.
 skip_extending_proplist([_]).
 skip_extending_proplist(I):- \+ is_group(I),!.
 skip_extending_proplist(I):- is_group(I), \+ chk_from_same_grid(I),!.
-skip_extending_proplist(I):- sub_cmpd(pg(_,simularz(_,_),_,_),I),!.
-%skip_extending_proplist(I):- sub_cmpd(links_count(_,_),I).
+skip_extending_proplist(I):- sub_compound(pg(_,simularz(_,_),_,_),I),!.
+%skip_extending_proplist(I):- sub_compound(links_count(_,_),I).
 
-ensure_l2r_proplist(I,AG0):- skip_extending_proplist(I),!,AG0=I.
-ensure_l2r_proplist(I,AG0):- extend_l2r_proplist(I,AG0),!.
-ensure_l2r_proplist(I,I).
+ensure_group_proplist(I,AG0):- skip_extending_proplist(I),!,AG0=I.
+ensure_group_proplist(I,AG0):- extend_group_proplist(I,AG0),!.
+ensure_group_proplist(I,I).
 
-extend_l2r_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
-extend_l2r_proplist(Grp,GrpO):- user:extend_l2r_proplist0(Grp,GrpO),!.
-extend_l2r_proplist(Grp,GrpO):- user:extend_l2r_proplist0(Grp,GrpM), group_prior_objs1(cuz,GrpM,GrpO),!.
+extend_group_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
+extend_group_proplist(Grp,GrpO):- user:extend_group_proplist0(Grp,GrpO),!.
+extend_group_proplist(Grp,GrpO):- must_det_ll(( user:extend_group_proplist0(Grp,GrpM), group_prior_objs1(cuz,GrpM,GrpO))),!.
 
-%extend_l2r_member_proplist(Var,NewObj):- var(Var),!, enum_object(Var),extend_l2r_proplist(Var,NewObj).
+%extend_group_member_proplist(Var,NewObj):- var(Var),!, enum_object(Var),extend_group_proplist(Var,NewObj).
 dont_extend_proplist(Grp):- \+ compound(Grp),!.
 dont_extend_proplist(Grp):- \+ ((sub_term(E,Grp),compound(E),E=oid(_))),!.
 dont_extend_proplist(Grp):- \+ \+ ((sub_term(E,Grp),compound(E),E=links_count(_,_))),!.
-extend_l2r_proplist0(Grp,GrpO):- dont_extend_proplist(Grp),!,GrpO=Grp.
-extend_l2r_proplist0(Grp,GrpO):-
+extend_group_proplist0(Grp,GrpO):- dont_extend_proplist(Grp),!,GrpO=Grp.
+extend_group_proplist0(Grp,GrpO):-
   must_det_ll((
-   maplist(extend_l2r_member_proplist(Grp),Grp,GrpM),
+   maplist(extend_group_member_proplist(Grp),Grp,GrpM),
            externalize_links(GrpM,GrpO))).
 
-extend_l2r_member_proplist(Grp,Props,OUTL):- is_list_of_prop_lists(Props),!,maplist(extend_l2r_member_proplist(Grp),Props,OUTL).
-extend_l2r_member_proplist(Grp,[obj(Obj)],[obj(OUT)]):- extend_l2r_member_proplist(Grp,Obj,OUT),!.
-extend_l2r_member_proplist(Grp,obj(Obj),obj(OUT)):-!, extend_l2r_member_proplist(Grp,Obj,OUT).
+extend_group_member_proplist(Grp,Props,OUTL):- is_list_of_prop_lists(Props),!,maplist(extend_group_member_proplist(Grp),Props,OUTL).
+extend_group_member_proplist(Grp,[obj(Obj)],[obj(OUT)]):- extend_group_member_proplist(Grp,Obj,OUT),!.
+extend_group_member_proplist(Grp,obj(Obj),obj(OUT)):-!, extend_group_member_proplist(Grp,Obj,OUT).
 
-extend_l2r_member_proplist(_Grp,Props,OUTL):- is_obj_props(Props), length(Props,Len), Len==1,!,Props=OUTL.
-extend_l2r_member_proplist(Grp,Props,OUTL):- 
+extend_group_member_proplist(_Grp,Props,OUTL):- is_obj_props(Props), length(Props,Len), Len==1,!,Props=OUTL.
+extend_group_member_proplist(Grp,Props,OUTL):- 
   Obj = obj(Props),
   findall(P,extend_obj_prop(Grp,Obj,P),NewProps),
   flatten(NewProps,NewPropsF),
@@ -675,11 +675,11 @@ fix_dumb_props(_,Obj1,Obj1).
 extend_obj_prop(_Grp,Obj,Prop):- compound(Obj), Obj = obj(List), missing_obj_props(Obj,List,Prop).
 extend_obj_prop(Grp,Obj,Prop):- is_in_subgroup(Grp,Obj,Prop).
 
-%extend_obj_or_proplist(In,PLists):- is_list(In), last(In,Obj),is_object(Obj),!,must_det_ll((extend_l2r_proplist(In,Objs), maplist(indv_props_list,Objs,PLists))).
+%extend_obj_or_proplist(In,PLists):- is_list(In), last(In,Obj),is_object(Obj),!,must_det_ll((extend_group_proplist(In,Objs), maplist(indv_props_list,Objs,PLists))).
 %extend_obj_or_proplist(In,PLists):- is_list(In), last(In,Obj),is_list(Obj),!, must_det_ll((maplist(indv_props_list,In,PLists))).
 %extend_obj_or_proplist(In,In).
 
-%%%indv_props_list(PA,PAP):- must_det_ll((extend_l2r_proplist(PA,Obj), indv_props_list(Obj,PAP))),!.
+%%%indv_props_list(PA,PAP):- must_det_ll((extend_group_proplist(PA,Obj), indv_props_list(Obj,PAP))),!.
  
 
 non_interesting_props(OProps):- var(OProps),!.
@@ -714,12 +714,12 @@ prop_group_equation(shared(Stuf),Out):- !, prop_group_equation(Stuf,Mid),
 prop_group_equation(unshared(Stuf),Out):- !, prop_group_equation(Stuf,Mid),
   filter_objects(Mid,unshared,Out).
 prop_group_equation(shared(A,B),Out):- !, prop_group_equation(A,AA), prop_group_equation(B,BB),
-  l2r_intersection(AA,BB,Out,_,_).
+  group_intersection(AA,BB,Out,_,_).
 prop_group_equation(unshared(A,B),Out):- !, prop_group_equation(A,AA), prop_group_equation(B,BB),
-  l2r_intersection(AA,BB,_,AAA,BBB),append(AAA,BBB,Out).  
+  group_intersection(AA,BB,_,AAA,BBB),append(AAA,BBB,Out).  
 prop_group_equation(+(A,B),Out):- !, prop_group_equation(A,AA), prop_group_equation(B,BB),append(AA,BB,Out).  
 prop_group_equation(-(A,B),Out):- !, prop_group_equation(A,AA), prop_group_equation(B,BB),
-  l2r_intersection(AA,BB,_,Out,_).
+  group_intersection(AA,BB,_,Out,_).
 prop_group_equation(find(TrnIO),Objs):- nonvar(TrnIO),
   get_current_test(TestID),
   test_grouped_io(TestID,[TrnIO],[TestID],Objs).
@@ -730,12 +730,12 @@ prop_group_equation(O,OO):- into_obj_props1(O,OO).
 is_list_of_nonlists(L):- is_list(L), \+ (last(L,E),is_list(E)).
 is_list_of_lists(L):- is_list(L), \+ \+ (last(L,E),is_list(E)).
 
-l2r_intersection(A,B,Shared,AA,BB):- is_list_of_nonlists(A),is_list_of_nonlists(B),!,intersection(A,B,Shared,AA,BB).
-l2r_intersection(A,B,Shared,AA,BB):- is_list_of_nonlists(B),is_list_of_lists(A),!,l2r_intersection(B,A,Shared,BB,AA).
-l2r_intersection(A,B,Shared,AA,BB):- is_list_of_nonlists(A),is_list_of_lists(B),!,maplist(intersection(A),B,Shared,AA,BB).
-l2r_intersection(A,B,FA_Shared,FB_AA,FA_BB):- is_list_of_lists(A),is_list_of_lists(B),!,
-  flatten(B,FB),l2r_intersection(A,FB,_FB_Shared,FB_AA,_FB_BB),
-  flatten(A,FA),l2r_intersection(FA,B,FA_Shared,_FA_AA,FA_BB),
+group_intersection(A,B,Shared,AA,BB):- is_list_of_nonlists(A),is_list_of_nonlists(B),!,intersection(A,B,Shared,AA,BB).
+group_intersection(A,B,Shared,AA,BB):- is_list_of_nonlists(B),is_list_of_lists(A),!,group_intersection(B,A,Shared,BB,AA).
+group_intersection(A,B,Shared,AA,BB):- is_list_of_nonlists(A),is_list_of_lists(B),!,maplist(intersection(A),B,Shared,AA,BB).
+group_intersection(A,B,FA_Shared,FB_AA,FA_BB):- is_list_of_lists(A),is_list_of_lists(B),!,
+  flatten(B,FB),group_intersection(A,FB,_FB_Shared,FB_AA,_FB_BB),
+  flatten(A,FA),group_intersection(FA,B,FA_Shared,_FA_AA,FA_BB),
   !.
 
 
@@ -744,26 +744,26 @@ print_grouped_props(Named,OProps):-
 %print_grouped_props(Named,Obj):- \+ is_list(Obj), !, mpp(print_grouped_props(Named)=Obj).
 
 print_grouped_props(Named,In):- 
-  ensure_l2r_proplist(In,Objs),
+  ensure_group_proplist(In,Objs),
   set_test_id_io(Named),
   print_grouped_props2(Named,Objs),!,
   print_grouped_props1(Named,Objs),!.
 
 print_grouped_props1(Named,In):-
   must_det_ll((
-   ensure_l2r_proplist(In,Objs),
+   ensure_group_proplist(In,Objs),
    print_treeified_props(Named,Objs),
    banner_lines(blue,1))).
 
 print_grouped_props2(Named,In):- 
  must_det_ll((
-   ensure_l2r_proplist(In,Objs),
+   ensure_group_proplist(In,Objs),
    must_det_ll((hack_prop_groups(Named,Objs))),
    banner_lines(blue,1))),!.
 
 print_grouped_props3(Named,In):-
  must_det_ll((
-   ensure_l2r_proplist(In,ObjsG),
+   ensure_group_proplist(In,ObjsG),
    consider_for_rank(ObjsG,Objs,_),
    %hack_prop_groups(Named,Objs),
    show_three_interesting_groups(Named,Objs,Groups),
@@ -811,7 +811,6 @@ numbered_vars(A,B):- copy_term(A,B),numbervars(B,0,_,[attvar(skip)]).
 priority_pg(rank1(_)).
 %priority_pg(rankA(cc(_))).
 
-%skip_ku(_):- !,fail.
 skip_ku(Var):- var(Var),!,fail.
 skip_ku(Var):- atomic(Var),!,fail.
 skip_ku(S):- priority_prop(S),!,fail.
@@ -1451,9 +1450,7 @@ group_prior_objs0(Why,Objs,WithPriors):-
  (Objs=@=WithPriors -> wdmsg(group_prior_objs0_same(Why)) ; wdmsg(group_prior_objs0_DIFFF(Why))),
  !.
 
-has_peer_simularz(Objs):- sub_compound(simularz(S,_),Objs),nop(S=simularz(_)),!.
-
-add_how_simular(ObjsIn,ObjsIn):- has_peer_simularz(ObjsIn),!.
+add_how_simular(ObjsIn,ObjsIn):-!.
 add_how_simular(ObjsIn,Simulars):-
   add_how_simular(ObjsIn,ObjsIn,Simulars).
 
@@ -1464,10 +1461,10 @@ add_how_simular([obj(O)|Objs],ObjsIn,[obj(OO)|Simulars]):-
   add_how_simular(Objs,ObjsIn,Simulars).
 
 add_how_common([],_,[]):-!.
-add_how_common([Prop|O],Rest,[Prop,simularz(Name,N)|OO]):-   
-  Prop\=giz(_), Prop\=simularz(_,_), Prop\=oid(_),  Prop\=link(_,_),
+add_how_common([Prop|O],Rest,[Prop,simularz(Prop,N)|OO]):- 
+  Prop\=giz(_), Prop\=simularz(_,_), Prop\=link(_,_),
+  Prop\=oid(_),
   \+ (compound_name_arity(Prop,_,A),A>2),
-  prop_name(Prop,Name),
   % \+ ( arg(2,Prop,E),number(E) ),
   % Prop\=pg(_,_,_,_),
   findall(_,(sub_term(E,Rest),E==Prop),L),length(L,N),
@@ -1628,7 +1625,7 @@ version_magnitude(Version,R):- findall(E,((sub_term(E,Version),comparable_value(
 
 has_nprop(F,Obj):- compound(F), (F= (_-Prop)),!,has_nprop(Prop,Obj).
 has_nprop(\+ (Prop),Obj):- \+ has_nprop(Prop,Obj).
-has_nprop(Prop,Obj):- sub_compound(Prop,Obj),!.
+has_nprop(Prop,Obj):- sub_cmpd(Prop,Obj),!.
 %has_nprop(Prop,Obj):- is_object(Obj),!,has_prop(Prop,Obj).
 
 %has_nprop(\+ (Prop),Obj):- !, \+ has_prop(Prop,Obj).
@@ -2088,7 +2085,7 @@ make_unifiable_cc(recolor(N,_),recolor(N,_)):-!.
 make_unifiable_cc(rotSize2D(grav,_,_),rotSize2D(grav,_,_)):-!.
 %make_unifiable_cc(grid_ops(comp,_),grid_ops(comp,_)):-!.
 make_unifiable_cc(iz(symmetry_type(N,_)),iz(symmetry_type(N,_))):-!.
-make_unifiable_cc(pg(_,G,M,V),pg(_,UG,M,VV)):-!,make_unifiable_cc(G,UG),make_unifiable_cc(V,VV).
+make_unifiable_cc(pg(_,G,M,_),pg(_,UG,M,_)):-!,make_unifiable_cc(G,UG).
 make_unifiable_cc(O,U):- make_unifiable(O,U).
 
 count_objs(B,O):- \+ is_list(B),!, O = 0.
@@ -2117,7 +2114,7 @@ any_to_oid(Obj,OID):-is_list(Obj),member(oid(OID),Obj).
 
 maybe_unite_oids(StoredName,Missing):- compound(Missing), Missing = (_ -> List),!, maybe_unite_oids(StoredName,List).
 maybe_unite_oids(StoredName,Missing):-
-   assert_in_testid(is_objl2r(StoredName,Missing)),
+   assert_in_testid(is_objgroup(StoredName,Missing)),
    oids_from(Missing,OIDS),
    length(OIDS,N),
    assert_in_testid(is_oidlist(StoredName,N,OIDS)),
@@ -2692,8 +2689,7 @@ get_is_for_ilp(_,_,input, :-(D) ):-
 
 get_is_for_ilp(_,_,input, :-(D) ):- get_is_for_ilp(_,_,determination, D ).
 
-get_is_for_ilp(TestID,common,logicmoo_ex,
-  is_accompany_changed_db(TestID,IO,P,Same)):-
+get_is_for_ilp(TestID,common,logicmoo_ex,is_accompany_changed_db(TestID,IO,P,Same)):-
   ac_listing(TestID,IO,P,Same).
 
 

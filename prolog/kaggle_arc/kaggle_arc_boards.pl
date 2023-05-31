@@ -230,8 +230,7 @@ do_some_grids(Title,GL):-
  dash_chars.
 do_some_grids(_Title,GL):- forall(member(G,GL),show_single_reduction_1(G)),!.
 
-print_common_reduction_result(TestID,OPS,Reduced):- 
-  pp(ops(TestID)=OPS), print_ss(all_common_reductions(TestID)=Reduced).
+print_common_reduction_result(TestID,OPS,Reduced):- pp(ops(TestID)=OPS), print_ss(all_common_reductions(TestID)=Reduced).
 
 
 pause:- !.
@@ -547,12 +546,12 @@ show_common_test_hints(TestID):-
     (ptv1s(cyan+magenta,SComs),
     with_li_pre(listing(io_xform(TestID,_,_))))))).
 
-my_sub_cmpd(_,C):- \+ compound(C),!,fail.
-my_sub_cmpd(S,C):- my_sub_cmpd_0(E,C),S=E.
-my_sub_cmpd_0(C,C).
-my_sub_cmpd_0(E,L):- is_list(L),!,member(EE,L),compound(EE),my_sub_cmpd_0(E,EE).
-my_sub_cmpd_0(E,[_|T]):- !, fail, compound(T),!,my_sub_cmpd_0(E,T).
-my_sub_cmpd_0(E,C):- arg(_,C,EE),compound(EE),my_sub_cmpd_0(E,EE).
+my_sub_compound(_,C):- \+ compound(C),!,fail.
+my_sub_compound(S,C):- my_sub_compound_0(E,C),S=E.
+my_sub_compound_0(C,C).
+my_sub_compound_0(E,L):- is_list(L),!,member(EE,L),compound(EE),my_sub_compound_0(E,EE).
+my_sub_compound_0(E,[_|T]):- !, fail, compound(T),!,my_sub_compound_0(E,T).
+my_sub_compound_0(E,C):- arg(_,C,EE),compound(EE),my_sub_compound_0(E,EE).
 
 with_li_pre(Goal):- with_tag(li,with_tag(pre,Goal)).
 %with_li_pre(Goal):- call(Goal).
@@ -565,7 +564,7 @@ ptv1(_Color,_=T):- T==[],!.
 %ptv1(_Color,_=T):- compound(T),compound_name_arguments(T,_,[A]),A==[],!.
 %ptv1(_Color,_=T):- compound(T), T = each_object(_),!.
 
-ptv1(Color,G):- my_sub_cmpd([H|T],G),
+ptv1(Color,G):- my_sub_compound([H|T],G),
   \+ \+ ((append(T,[],_)->is_grid([H|T]),print_grid([H|T]))),!,
   subst(G,[H|T],printed_grid,GG),!,ptv1(Color,GG).
 
@@ -1038,8 +1037,8 @@ fix_iz(Z,ZZ):- compound(Z),arg(1,Z,A),is_list(A),last(A,ZZ),!.
 fix_iz(Z,Z):-!.
 
 rinfo(obj(List0),RInfo):- 
- must_det_ll((
-  select(ord(N),List0,List),
+  my_maplist(must_det_ll,
+  [select(ord(N),List0,List),
   atomic_list_concat([obj,N],'_',Key),
   Obj = obj(List0),
   localpoints_include_bg(Obj,LocalPoints),
@@ -1050,7 +1049,7 @@ rinfo(obj(List0),RInfo):-
   Rest3 = Rest2,
   obj_to_oid(Obj,MyID),
   must_det_ll((remove_too_verbose(MyID,Rest3,TV00))),flatten([TV00],TV0),
-  must_det_ll((include(not_too_verbose,TV0,TV1),my_maplist(fix_iz,TV1,TV))))),!,
+  must_det_ll((include(not_too_verbose,TV0,TV1),my_maplist(fix_iz,TV1,TV)))]),!,
   member(MrT,[oform(Shape),ogrid(Grid)|TV]),once((MrT=..MrTL, RInfoM=..[Key|MrTL],rinfo(RInfoM,RInfo))).
 rinfo(Info,RInfo):- Info=..[P,N,A|InfoL], atomic_list_concat([P,N],'_',PN),!, RInfo=..[PN,A|InfoL].
 rinfo(Info,Info):-!.
@@ -1212,8 +1211,6 @@ save_the_alt_grids_now(TestID,ExampleNum,XForms,In,Out):-
   %ignore(( \+ has_blank_alt_grid(TestID,ExampleNum))),!,
   my_maplist(save_grid_calc(TestID,ExampleNum,XForms,In,Out),[minus_overlapping_image,overlapping_image]).
 
-
-
 colors_of(O,Cs):- unique_fg_colors(O,Cs),!.
 
 common_after_reduce(In,Out,New):-  
@@ -1259,10 +1256,8 @@ overlapping_image(In,Other,ROI):- detect_ori(In,Other,TestID,ExampleNum,ori),
    arc_test_property(TestID,ExampleNum,ori([overlapping_image]),ROI),!.
 */
 overlapping_image(In,Other,OLIn):-
-  %colors_of(In.cell_minus_cell(Other),CsIn),
-  cell_minus_cell(In,Other,OO), colors_of(OO,CsIn),
-  cell_minus_cell(Other,In,Other1),
-  colors_of(Other1,CsOut),
+  colors_of(In.cell_minus_cell(Other),CsIn),
+  colors_of(Other.cell_minus_cell(In),CsOut),
   colors_of(In,CsInO), 
   colors_of(Other,CsOutO),
   ExtraColors = color_set(CsInO).add(CsOutO).rem(CsIn).rem(CsOut),

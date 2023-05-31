@@ -596,8 +596,6 @@ into_gridnameA(G,Name):- known_grid(Name,G).
 :- dynamic(is_grid_tid/2).
 :- dynamic(is_grid_gid/2).
 set_grid_tid(Grid,ID):-
-  %numbervars(ID,0,_,[]),
-  %print_grid(set_grid_tid(ID),Grid),
   my_assertion((ground(ID),nonvar_or_ci(Grid))),
   my_assertion(\+ is_grid(ID)),
   luser_setval(grid_name,ID),
@@ -620,7 +618,6 @@ to_assertable(A,'$VAR'(N)):- plain_var(A),!,format(atom(N),'~q',[A]).
 
 grid_to_tid(Grid,TID):- var(Grid),!,known_gridoid(TID,Grid).
 grid_to_tid(obj(_),_):- !,fail.
-grid_to_tid(Grid,TID):- get_current_test(TestID), kaggle_arc_io(TestID,Trn+Num,IO,Grid), name_num_io_id(TestID,Trn,Num,IO,TIDO),!,TIDO=TID.
 %grid_to_tid(Grid,TID):- atom(Grid),!,TID=Grid.
 grid_to_tid(Grid,TID):- nonvar(TID),!,grid_to_tid(Grid,TID),must_det_ll(TID=TID).
 grid_to_tid(Grid,TID):- \+ ground(Grid), to_assertable_grid(Grid,GGrid),!,grid_to_tid(GGrid,TID).
@@ -629,7 +626,7 @@ grid_to_tid(Grid,TID):- must_be_free(TID),makeup_gridname(Grid,TID), set_grid_ti
 
 grid_to_etid(Grid,_ID):- assertion(nonvar(Grid)),fail.
 grid_to_etid(Grid,TID):- is_grid_tid(Grid,TID),!.
-grid_to_etid(Grid,TID):- get_current_test(TestID), kaggle_arc_io(TestID,Trn+Num,IO,Grid), name_num_io_id(TestID,Trn,Num,IO,TIDO),TID=TIDO.
+grid_to_etid(Grid,TID):- get_current_test(TestID), kaggle_arc_io(TestID,Trn+Num,IO,Grid), name_num_io_id(TestID,Trn,Num,IO,TID),!.
 grid_to_etid(Grid,TID):- kaggle_arc_io(TestID,Trn+Num,IO,Grid), name_num_io_id(TestID,Trn,Num,IO,TID),!.
 %grid_to_etid(Grid,TID):- was_grid_gid(Grid,TID),!.
 grid_to_etid(Grid,TID):- known_grid0(TID,GVar),Grid=@=GVar,!.
@@ -748,18 +745,18 @@ known_obj0(G,O):- is_grid(G),!,grid_to_individual(G,O).
 known_obj0(G,O):- is_group(G),into_group(G,OL),OL=[_],must([O|_]=OL).
 
 % this is bad  ?- into_grid('E',ID),grid_to_tid(G,ID).  ?- into_grid('Z',ID),grid_to_tid(G,ID).
-/*
+
 current_group(G):- why_grouped(_Why, G)*->true;current_group1(G).
 current_group1(G):-   
-     arc_grid_pair(In,Out),individuate_pair(GID1,GID2,complete,In,Out,InC,OutC),append(InC,OutC,Objs),
+     arc_grid_pair(In,Out),individuate_pair(complete,In,Out,InC,OutC),append(InC,OutC,Objs),
  % tries again
       (why_grouped(_Why, G)*->true; G=Objs).
-*/
+
 into_group(GI,G):- into_group(GI,G, _ ).
 
 into_group(G,G,(=)) :- G==[],!.
 into_group(P,G,(=)):- is_group(P),!,G=P.
-into_group(G, G, _):- plain_var(G),!, throw(var_into_group(G)), nop(why_grouped(_Why, G)).
+into_group(G, G, _):- plain_var(G),!, throw(var_into_group(G)), nop(current_groups(G)).
 into_group(VM,G,(group_to_and_from_vm(VM))):- is_vm(VM),G=VM.objs,is_group(G),!.
 into_group(VM,G,(group_to_and_from_vm(VM))):- is_vm(VM),run_fti(VM),G=VM.objs,is_group(G),!.
 into_group(G,I, into_grid):- is_grid(G),!,compute_shared_indivs(G,I).

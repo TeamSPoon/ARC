@@ -241,11 +241,9 @@ pbox_indivs:-
   with_task_pairs(TestID,ExampleNum,I,O,pbox_pair(TestID,ExampleNum,I,O)).
 
 pbox_pair(TestID,ExampleNum,GridIn,GridOut):-
-  gid_of_tid(GID1,TestID,ExampleNum,in),
-  gid_of_tid(GID2,TestID,ExampleNum,out),
   with_debugging(indiv(pbox),
     (debug_m(indiv(pbox),?- test_p2(pbox_pair(TestID,ExampleNum))),
-      i_pair(GID1,GID2,i_pbox,GridIn,GridOut))).
+      i_pair(i_pbox,GridIn,GridOut))).
 
 pbox_io(TestID,ExampleNum,IO,G0):-
   kaggle_arc_io(TestID,ExampleNum,IO,_),
@@ -254,7 +252,7 @@ pbox_io(TestID,ExampleNum,IO,G0):-
   ignore(kaggle_arc_io(TestID,ExampleNum,IO,GG)),
   set_current_test(TestID),
   debug_m(indiv(pbox),?- pbox_io(TestID,ExampleNum,IO)),
-  ((i_pbox(GG,Objs),
+  my_time((i_pbox(GG,Objs),
   pbox_io_result(TestID,ExampleNum,IO,GG,Objs))).
 
 pbox_io_result(TestID,ExampleNum,IO,G,[]):- !,

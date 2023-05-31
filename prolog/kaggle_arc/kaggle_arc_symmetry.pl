@@ -102,7 +102,6 @@ rp_test1(Y):- rp_test0(X),rot90(X,Y).
 
 /*
 */
-into_fg_bg_as(FG,BG,SymC,Sym-O):- has_sym(SymC,Sym,C),!,into_fg_bg_as(FG,BG,C,O).
 into_fg_bg_as(FG,_,Color,FG):- is_fg_color(Color),!.
 into_fg_bg_as(_,BG,Color,BG):- is_bg_color(Color),!.
 into_fg_bg_as(_,_,Color,Color).

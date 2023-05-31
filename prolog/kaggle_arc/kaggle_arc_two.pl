@@ -69,15 +69,14 @@ train_only_from_pairs(TestID):- clear_training(TestID), train_test(TestID,train_
 
 train_using_io(TestID,DictIn,DictOut):- train_using_io(TestID,trn,0,DictIn,DictOut),!.
 train_using_io(TestID,Trn,N1,DictIn,DictOut):-  
-  ID1=(TestID>(Trn+N1)*in),
-  ID2=(TestID>(Trn+N2)*out),
   kaggle_arc(TestID,(Trn+N1),In,Out),!,
+
   with_trn_pairs(TestID,(Trn+N1),In,Out,
   must_det_ll((
   %detect_pair_hints(TestID,(Trn+N1),In,Out),
   pp(train_for_objects_from_1pair(DictIn,TestID,[Trn,'i',N1,'o',N1],In,Out,DictMid)),
   DictMid=DictIn,
-  i_pair(ID1,ID2,complete,In,Out),
+  i_pair(complete,In,Out),
   N2 is N1 + 1,
   train_using_io(TestID,Trn,N2,DictMid,DictOut)))).
 train_using_io(_TestID,_Trn,_,DictInOut,DictInOut):-!.
@@ -278,7 +277,7 @@ do_sols_for(Trial,Why,InVM,TestID,ExampleNum) :-
      ignore(((
       once((pp(cyan,trial=Trial),
        ppt(cyan,run_dsl(TestID>ExampleNum,Trial,SolutionProgram)),!,
-       (((
+       (my_time((
               maybe_set_vm(InVM),
               kaggle_arc_io(TestID,ExampleNum,in,TestIn),
               gset(InVM.grid) = TestIn,
@@ -340,4 +339,4 @@ reuse_a_b(A,B,AA):-
   ignore((How ==[]-> nop(pp(shared_object(GlyphB->GlyphA))); 
     (pp(same_object(GlyphA,GlyphB,How))))).
 
-:- ensure_loaded('../kaggle_arc/arc-dsl/dsl_solvers.pl').
+:- ensure_loaded('arc-dsl/dsl_solvers.pl').

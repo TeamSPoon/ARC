@@ -351,7 +351,7 @@ allow_dir_list(s_e,[s,e]). %s,e,n,w
 allow_dir_list(n_e,[n,e]). %s,e,n,w 
 allow_dir_list(n_w,[n,w]). %s,e,n,w 
 allow_dir_list(s_w,[s,w]). %s,e,n,w 
-allow_dir_list(dir_list(List),List).
+allow_dir_list(dir_list(List),List). 
 allow_dir_list(skip_some,[n,s,e,w,nw,sw,se,ne,skip(1,_,_)]). %s,e,n,w 
 
 allow_dir_list(ne_sw,[ne,sw]). %s,e,n,w 
@@ -567,8 +567,7 @@ vm_obj(VM,O):- member(O,VM.objs).
 is_grid(G):- \+ \+  quietly(fast_is_grid(G)).
 %is_grid(G):- nonvar(G), \+ \+  quietly(is_grid_of(is_grid_cell,G)).
 
-fast_is_grid(List):- nonvar(List), List\==[], maplist(fast_is_row(_LenMinus1),List),
-  is_grid_of(is_grid_cell,List).
+fast_is_grid(List):- nonvar(List), List\==[], maplist(fast_is_row(_LenMinus1),List).
 fast_is_row(LenMinus1,[C|List]):- is_list(List), is_grid_cell(C), !, length(List,LenMinus1),!.
 
 is_grid_of(P1,[[C|H]|R]):- 
@@ -584,7 +583,7 @@ is_grid_cell(C):- var(C),!.
 is_grid_cell(C):- integer(C),!.
 is_grid_cell(A):- \+ compound(A),!,is_grid_cell_e(A).
 is_grid_cell(att(_,_)):-!.
-is_grid_cell(C):- functor(C,cell,_),!.
+is_grid_cell('cell'(_)):-!.
 is_grid_cell('{}'(_)):-!.
 is_grid_cell('$VAR'(_)):-!.
 is_grid_cell((A-B)):- !,(is_grid_cell_e(B);is_grid_cell_e(A)).
