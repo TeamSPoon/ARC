@@ -999,7 +999,7 @@ pp_obj_tree(D,Info,In,Out):-
   once(into_solid_grid_strings_1(In,ITerm)),
   once(into_solid_grid_strings_1(Out,OTerm)),
   dash_chars,
-  prefix_spaces(D,print(Info)),
+  prefix_spaces(D,pp_no_nl(Info)),
   prefix_spaces(D+2,pp_ilp(ITerm)),
   prefix_spaces(D+10,dash_chars),
   prefix_spaces(D+2,pp_ilp(OTerm)),!,

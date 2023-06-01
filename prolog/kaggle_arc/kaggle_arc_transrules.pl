@@ -116,10 +116,10 @@ trans_rules_current_members1(TestID,Ctx,Rules):-
 
   obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs), RHSObjs\==[],LHSObjs\==[],
   Step=0,Ctx=in_out,IsSwapped=false,
-  normalize_objects_for_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsOrdered,LHSObjsOrdered),
+  normalize_objects_for_dependancy(RelaxLvl,TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsOrdered,LHSObjsOrdered),
     %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
   TM = _{rhs:RHSObjsOrdered, lhs:LHSObjsOrdered},
-  calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,[],LHSObjsOrdered,RHSObjsOrdered,Groups),
+  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,[],LHSObjsOrdered,RHSObjsOrdered,Groups),
   %pp_ilp(groups=Groups),
   member(l2r(Info,In,Out),Groups),
   into_list(In,InL),into_list(Out,OutL),trans_rule(Info,InL,OutL,TransRules), 
@@ -242,6 +242,15 @@ map_pairs_info_io(TestID,ExampleNum,Ctx,Step,TypeO,InL,OutL,USame,UPA2,UPB2):-
 
 */
 
+% adds debugging to info/1
+trans_rule(Info,In,Out,Rules):- sub_cmpd(info(InfoL),Info),!,trans_rule(InfoL,In,Out,Rules).
+trans_rule(Info,In,Out,Clauses):- \+ is_list(In),!,trans_rule(Info,[In],Out,Clauses).
+trans_rule(Info,In,Out,Clauses):- \+ is_list(Out),!,trans_rule(Info,In,[Out],Clauses).
+trans_rule(Info,In,Out,Rules):- 
+  ( \+ sub_cmpd(oin(_),Info); \+ sub_cmpd(oout(_),Info)),
+  into_oids(In,OIDIns),into_oids(Out,OIDOuts),
+  append_sets(Info,[oin(OIDIns),oout(OIDOuts)],InfM),!,
+  trans_rule(InfM,In,Out,Rules).
 
 
 % delete
@@ -315,13 +324,14 @@ trans_rule(Info,E1,E2,Rules):-
   if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
   flat_props(E1,FP1),flat_props(E2,FP2),
   intersection(FP1,FP2,Same,InFlatP,OutPFlat),
-  pp_ilp(removed=InFlatP),
-  pp_ilp(sames=Same),
-  pp_ilp(added=OutPFlat),
   pp_ilp(info=Info),
-  pp_ilp(nremoved=NL),
-  pp_ilp(nsames=NSame),
   pp_ilp(nadded=NR),
+  pp_ilp(added=OutPFlat),
+  pp_ilp(nremoved=NL),
+  pp_ilp(removed=InFlatP),
+  pp_ilp(nsames=NSame),
+  pp_ilp(sames=Same),
+  
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
   dash_chars,
   Rules = [ 
