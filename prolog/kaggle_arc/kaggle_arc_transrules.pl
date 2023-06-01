@@ -11,7 +11,7 @@ rhs_ground(G):- nop(writeln(G)),!.
 
 ac_rules(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
 ac_rules(TestID,Ctx,P,PSame):- 
-  ac_unit_db(TestID,Ctx,P,Same),
+  ac_unit(TestID,Ctx,P,Same),
   include(not_debug_info,Same,PSame), 
   %Same=PSame,
   PSame\==[].
@@ -24,15 +24,15 @@ remove_debug_info(List,NoDebug):- is_list(List), !, maplist(remove_debug_info,Li
 remove_debug_info(List,NoDebug):- compound_name_arguments(List,F,AA),
   maplist(remove_debug_info,AA,CC),!, compound_name_arguments(NoDebug,F,CC).
 
-ac_unit_db(TestID,Ctx,P,Same):- ac_listing(TestID,Ctx,P,Same),include(not_debug_info,Same,PSame), PSame\==[].
+ac_unit(TestID,Ctx,P,Same):- ac_listing(TestID,Ctx,P,Same).
 
 ac_listing(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
-%ac_listing(TestID,Ctx,P->ac_unit_db,PSame):- ac_unit_db(TestID,Ctx,P,PSame).
-ac_listing(TestID,Ctx,P,PSame):- ac_unit(TestID,Ctx,P,PSame)*->true;pass2_rule(TestID,Ctx,P,PSame).
+%ac_listing(TestID,Ctx,P->ac_db_unit,PSame):- ac_db_unit(TestID,Ctx,P,PSame).
+ac_listing(TestID,Ctx,P,PSame):- ac_db_unit(TestID,Ctx,P,PSame)*->true;pass2_rule(TestID,Ctx,P,PSame).
 %ac_listing(TestID,Ctx,P,[iz(info(prop_can))|PSame]):- prop_can(TestID,Ctx,P,PSame).
 %ac_listing(TestID,Ctx,P,[pass2|PSame]):- pass2_rule(TestID,Ctx,P,PSame), \+ ac_rules(TestID,Ctx,P,PSame).
 
-
+/*
 ac_info(TestID,rules,P->Ctx->current,LHS):- 
   member(Ctx,[in_out,in_out_out,s(_)]),
   trans_rules_current_members(TestID,Ctx,R),
@@ -41,23 +41,23 @@ ac_info(TestID,rules,P->Ctx->combined,LHS):- fail,
   member(Ctx,[in_out,in_out_out,s(_)]),
   trans_rules_combined_members(TestID,Ctx,R),
   rule_to_pcp(R,P,LHS).
-
+*/
 show_time_of_failure(_TestID):- !.
 show_time_of_failure(TestID):- 
     print_scene_change_rules3(show_time_of_failure,
        ac_info,TestID).
 
-rule_to_pcp(TestID,R,Ctx,P,LHS):-
-  is_list(R),!,member(E,R),rule_to_pcp(TestID,E,Ctx,P,LHS).
-rule_to_pcp(_TestID,R,Ctx,P,LHS):- 
+rule_to_pcp5(TestID,R,Ctx,P,LHS):- is_list(R),!,
+ member(E,R),rule_to_pcp(TestID,E,Ctx,P,LHS).
+rule_to_pcp5(_TestID,R,Ctx,P0,LHS):- 
   must_det_ll((
   find_rhs(R,P),
-  find_lhs(R,Conds),
-  subst(R,P,p,RR), subst(RR,Conds,conds,RRR),
+  find_lhs(R,Conds0),listify(Conds0,Conds),
+  subst001(R,P,p,RR), subst001(RR,Conds,conds,RRR),
   append(Conds,[iz(info(RRR))],LHS),
-  ignore((sub_compound(ctx(Ctx),R))))).
+  ignore((sub_compound(ctx(Ctx),R))))),!,P0=P.
 
-pcp_to_rule(TestID,Ctx,P,LHS,rule(TestID,Ctx,P,LHS)).
+%pcp_to_rule(TestID,Ctx,P,LHS,rule(TestID,Ctx,P,LHS)).
 
 
 %ac_rules(TestID,P,PSame):- ac_rules(TestID,_,P,PSame).
@@ -82,15 +82,16 @@ pass2_rule1(TestID,Ctx,RHS,LHS):- fail,
   %Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,_ExampleNum,_),
   %arg(_,Rule,Info),
   must_det_ll((
-  rule_to_pcp(TestID,Rule,Ctx,RHS,LHS))).
+  rule_to_pcp5(TestID,Rule,Ctx,RHS,LHS))).
 
-pass2_rule2(TestID,Ctx,RHS,LHS):- 
+pass2_rule2(TestID,Ctx,RHS0,LHS0):- 
  ensure_test(TestID),
   trans_rules_current_members(TestID,Ctx,Rule),
   %Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,_ExampleNum,_),
   %arg(_,Rule,Info),
   must_det_ll((
-  rule_to_pcp(TestID,Rule,Ctx,RHS,LHS))).
+  rule_to_pcp5(TestID,Rule,Ctx,RHS,LHS))),
+  RHS0=RHS, LHS0=LHS.
 
 
 pass2_rule3(TestID,Ctx,edit(Type,different,P),[iz(info(propcan(true,Ctx)))|PSame]):- fail,
@@ -115,11 +116,10 @@ trans_rules_current_members1(TestID,Ctx,Rules):-
 
   obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs), RHSObjs\==[],LHSObjs\==[],
   Step=0,Ctx=in_out,IsSwapped=false,
-  relaxed_levels(RelaxLvL),
-  normalize_objects_for_dependancy(RelaxLvL,TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsOrdered,LHSObjsOrdered),
+  normalize_objects_for_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsOrdered,LHSObjsOrdered),
     %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
   TM = _{rhs:RHSObjsOrdered, lhs:LHSObjsOrdered},
-  calc_o_d_recursively(RelaxLvL,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,[],LHSObjsOrdered,RHSObjsOrdered,Groups),
+  calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,[],LHSObjsOrdered,RHSObjsOrdered,Groups),
   %pp_ilp(groups=Groups),
   member(l2r(Info,In,Out),Groups),
   into_list(In,InL),into_list(Out,OutL),trans_rule(Info,InL,OutL,TransRules), 
@@ -194,8 +194,8 @@ map_pairs_info(TestID,IO,P,Step):-
 %  ((var(P),has_propcounts(TestID))->props_change2(TestID,IO,P);true),
 map_pairs_info2(TestID,IO,P,_Step):- props_change2(TestID,IO,P).
 map_pairs_info2(TestID,IO,P,_Step):- 
- var(P), \+ \+ ac_unit(TestID,IO,_,_), %!,
-  ac_unit(TestID,IO,P,_).
+ var(P), \+ \+ ac_db_unit(TestID,IO,_,_), %!,
+  ac_db_unit(TestID,IO,P,_).
 map_pairs_info2(TestID,Ctx,P,Step):- 
   arc_cache:prop_dep(TestID,_ExampleNum,Ctx,Info,_InL,_OutL,_USame,_InFlatProps,OutFlatProps),
   sub_compound(step(Step),Info),

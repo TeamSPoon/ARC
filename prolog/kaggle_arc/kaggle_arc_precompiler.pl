@@ -11,6 +11,16 @@ remove_must_det:- !,fail.
 remove_must_det:- nb_current(remove_must_det,TF),!,TF==true.
 remove_must_det:- \+ false.
 
+remove_must_dets(G,GGG):- compound(G), G = must_det_ll(GG),!,expand_goal(GG,GGG),!.
+remove_must_dets(G,GGG):- compound(G), G = must_det_l(GG),!,expand_goal(GG,GGG),!.
+%remove_must_dets(GG,GO):- sub_term(G,GG),compound(G),removed_term(G,GGGG),subst001(GG,G,GGGG,GGG),remove_must_dets(GGG,GO).
+remove_must_dets(G,GG):- compound(G),removed_term(G,GO),expand_goal(GO,GG).
+
+removed_term(G,GGGG):- G = must_det_l(GGGG).
+removed_term(G,GGGG):- G = must_det_ll(GGGG).
+removed_term(G,GGGG):- G = catch_log(GGGG).
+removed_term(G,GGGG):- G = catch_nolog(GGGG).
+
 :- multifile(user:message_hook/3). 
 :- dynamic(user:message_hook/3).
 %user:message_hook(Term, Kind, Lines):- silent\==Kind,  wdmsg(user:message_hook(Term, Kind, Lines)),fail.
@@ -168,9 +178,6 @@ itrace:- if_thread_main(trace),!.
 ibreak:- if_thread_main(((trace,break))).
 %recolor(_,_):- ibreak.
 
-
-remove_must_dets(G,GGG):- compound(G), G = must_det_ll(GG),!,expand_goal(GG,GGG),!.
-remove_must_dets(G,GGG):- compound(G), G = must_det_l(GG),!,expand_goal(GG,GGG),!.
 
 
 % goal_expansion(must_det_l(G),I,must_det_ll(G),O):- nonvar(I),source_location(_,_), nonvar(G),I=O.
@@ -330,13 +337,7 @@ goal_expansion_getter(Goal,Out):-
 :- export(goal_expansion_getter/2).
 :- system:import(goal_expansion_getter/2).
 
-removed_term(G,GGGG):- G = must_det_l(GGGG).
-removed_term(G,GGGG):- G = must_det_ll(GGGG).
-removed_term(G,GGGG):- G = catch_log(GGGG).
-removed_term(G,GGGG):- G = catch_nolog(GGGG).
 
-%remove_must_dets(GG,GO):- sub_term(G,GG),compound(G),removed_term(G,GGGG),subst001(GG,G,GGGG,GGG),remove_must_dets(GGG,GO).
-remove_must_dets(G,GG):- compound(G),removed_term(G,GO),expand_goal(GO,GG).
 
 goal_expansion_setter(Goal,_):- \+ compound(Goal), !, fail.
 

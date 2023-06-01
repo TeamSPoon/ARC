@@ -1125,7 +1125,6 @@ combine_same_globalpoints(IndvS,IndvSO):-
   must_det_ll(combine_same_globalpoints([IO|IndvS2],NoMoreDupes)),
   must_det_ll(append(NoDupes,NoMoreDupes,IndvSO)),!.
 */
-combine_same_globalpoints(IndvSO,IndvSO).
   
 combine_same_globalpoints_really(IndvS,IndvSO):- 
   append(NoDupes,[I|Rest],IndvS),
@@ -1140,6 +1139,7 @@ combine_same_globalpoints_really(IndvS,IndvS).
 
 combine_same_globalpoints(IndvS,IndvSO):- combine_same_globalpoints_really(IndvS,IndvSO),!.
 combine_same_globalpoints(IndvS,IndvSO):- duplicate_term(IndvS,IndvSO),IndvS=IndvSO.
+combine_same_globalpoints(IndvSO,IndvSO).
 
 
 %overlap_same_obj_no_diff(I,O):- compare_objs1(perfect,I,O). %diff_objects(I,O,Diff),Diff==[]. 

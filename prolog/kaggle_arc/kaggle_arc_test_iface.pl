@@ -529,6 +529,17 @@ run_all_tests:-
 rtty:- with_tty_raw(rtty1).
 rtty1:- repeat,get_single_char(C),dmsg(c=C),fail.
 
+ndividuator(TestID):- ensure_test(TestID),
+  never_entire_suite,nop(show_test_grids), set_flag(indiv,0),
+  %each_ndividuator(TestID),
+  compute_and_show_test_hints(TestID),
+  forall(with_task_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)),true).
+
+ndividuator(TestID,ExampleNum,In,Out):-   %%%
+ get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
+ndividuator(TestID,ExampleNum,Complete,In,Out):-  
+ with_indivs_mode(Complete,((name_the_pair(TestID,ExampleNum,In,Out,_PairName),
+   with_task_pairs(TestID,ExampleNum,In,Out, i_pair(Complete,In,Out))))).
 
 whole_ndividuator(TestID):- ensure_test(TestID),
   check_for_refreshness,
@@ -560,11 +571,12 @@ each_ndividuator(TestID):- ensure_test(TestID),
 call_list(List):-is_list(List),!,my_maplist(call_list,List).
 call_list(Goal):-ignore(Goal).
 
-
+/*
 get_each_ndividuator(Complete):-!,get_indivs_mode(Complete).
 get_each_ndividuator(Complete):-
   findall(Complete,((toplevel_individuation(TL),Complete=[TL,do_ending]);get_indivs_mode(Complete)),List),
   list_to_set(List,Set),!,member(Complete,Set).
+*/
 
 each_ndividuator(TestID,ExampleNum,In,Out, OUTPUT):- 
  name_the_pair(TestID,ExampleNum,In,Out,PairName), 
@@ -593,17 +605,6 @@ show_i(Y,O):-
   wots(S,(write(Y),write(' '),write(OT))),
   print_ss(S,GG,OG).
 
-ndividuator(TestID):- ensure_test(TestID),
-  never_entire_suite,nop(show_test_grids), set_flag(indiv,0),
-  %each_ndividuator(TestID),
-  compute_and_show_test_hints(TestID),
-  forall(with_task_pairs(TestID,ExampleNum,In,Out,ndividuator(TestID,ExampleNum,In,Out)),true).
-
-ndividuator(TestID,ExampleNum,In,Out):-   %%%
- get_indivs_mode(Complete), ndividuator(TestID,ExampleNum,Complete,In,Out).
-ndividuator(TestID,ExampleNum,Complete,In,Out):-  
- with_indivs_mode(Complete,((name_the_pair(TestID,ExampleNum,In,Out,_PairName),
-   with_task_pairs(TestID,ExampleNum,In,Out, i_pair(Complete,In,Out))))).
 
 show_task_pairs(TestID):- ensure_test(TestID), set_flag(indiv,0),
  forall( with_task_pairs(TestID,ExampleNum,In,Out,
@@ -849,6 +850,7 @@ reverse_suite:-
    luser_getval(test_suite_name,SuiteX), 
    retract(muarc_tmp:cached_tests(SuiteX,ByHard)),
    reverse(ByHard,NewSet), asserta_new(muarc_tmp:cached_tests(SuiteX,NewSet)),!.
+
 reverse_suite:-
    luser_getval(test_suite_name,SuiteX), get_by_hard(SuiteX,ByHard), reverse(ByHard,NewSet),
    retractall(muarc_tmp:cached_tests(SuiteX,_)),
@@ -1937,7 +1939,6 @@ arc_grid(IO,Grid):-
   arc_pair_id(TestID,ExampleNum),
   kaggle_arc_io(TestID,ExampleNum,IO,Grid).
 
-ensure_test(TestID,RealTestID):- fix_test_name(TestID,RealTestID),!,ensure_test(RealTestID).
 
 var_ensure_test(TestID):- ground(TestID), !, is_valid_testname(TestID).
 var_ensure_test(TestID):- get_pair_mode(enire_suite),!, all_arc_test_name(TestID).
@@ -1961,6 +1962,7 @@ ensure_current_test(TestID):- var(TestID), !, var_ensure_test(TestID).
 ensure_test(TestID):- nonvar(TestID),!, ignore(( is_valid_testname(TestID), really_set_current_test(TestID))).
 ensure_test(TestID):- var(TestID), !, var_ensure_test(TestID).
 ensure_test(TestID,RealTestID):- fix_test_name(TestID,RealTestID),!,ensure_test(RealTestID).
+% ensure_test(TestID,RealTestID):- fix_test_name(TestID,RealTestID),!,ensure_test(RealTestID).
 
 %ensure_test(TestID):- all_arc_test_name(TestID).
 
