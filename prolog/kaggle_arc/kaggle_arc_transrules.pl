@@ -49,6 +49,7 @@ show_time_of_failure(TestID):-
 
 rule_to_pcp5(TestID,R,Ctx,P,LHS):- is_list(R),!,
  member(E,R),rule_to_pcp(TestID,E,Ctx,P,LHS).
+rule_to_pcp5(_TestID,R,Ctx,P0,LHS):- R =..[ac_unit|Rest],append(_,[Ctx,P0,LHS],Rest),!.
 rule_to_pcp5(_TestID,R,Ctx,P0,LHS):- 
   must_det_ll((
   find_rhs(R,P),
@@ -252,6 +253,9 @@ trans_rule(Info,In,Out,Rules):-
   append_sets(Info,[oin(OIDIns),oout(OIDOuts)],InfM),!,
   trans_rule(InfM,In,Out,Rules).
 
+trans_rule(Info,[],[],[ac_unit(_,Ctx,happy_ending(Type),Info)]):-
+   ignore((sub_compound(ctx(Ctx),Info))),
+   ignore((sub_compound(type(Type),Info))).
 
 % delete
 trans_rule(Info,In,[],Rules):- listify(In,InL),
@@ -315,6 +319,7 @@ trans_rule(Info,In,Out,Rules):-
   findall(edit_copy(Info,rhs(edit(Type,Change,P)),lhs(LHS)),
     (member(P,R),prop_pairs(In,Out,Type,Change,P),
       Change\==same,
+      P\==pen([cc(black,1)]),
       good_for_rhs(P)),Rules),Rules\==[],!.
 
 trans_rule(Info,E1,E2,Rules):-

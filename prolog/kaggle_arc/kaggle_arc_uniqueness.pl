@@ -190,8 +190,9 @@ solve_via_scene_change:-  clsmake, ensure_test(TestID), %make,
 solve_via_scene_change(TestID):-  
  must_det_ll((
   print_test(TestID),
-  force_clear_test(TestID),
+  %force_clear_test(TestID),
   clear_scene_rules(TestID),
+  clear_object_dependancy(TestID),
   repress_some_output(learn_solve_via_grid_change(TestID)),
   ExampleNum=tst+_,
   true)),
@@ -202,8 +203,8 @@ when_entire_suite(Goal,_Goal2):- get_pair_mode(entire_suite),!, call(Goal).
 when_entire_suite(_Goal,Goal2):- call(Goal2).
 
 maybe_repress_output(Goal):- call(Goal).
-repress_output(Goal):- with_output_to(atom(_),Goal).
-%repress_output(Goal):- call(Goal).
+%repress_output(Goal):- with_output_to(atom(_),Goal).
+repress_output(Goal):- call(Goal).
 %repress_some_output(Goal):- when_entire_suite(with_pair_mode(whole_test,repress_output(Goal)),Goal).
 repress_some_output(Goal):- call(Goal).
 
@@ -217,7 +218,7 @@ learn_solve_via_grid_change(TestID):-
  repress_some_output((
   must_det_ll(( 
    not_warn_skip(ensure_propcounts(TestID)),  
-   clear_scene_rules(TestID),
+   %clear_scene_rules(TestID),
    time(compute_scene_change(TestID)))))).
 
 
@@ -541,9 +542,13 @@ edit_object(VM,Ps,Obj):-
 
 override_object_1(_VM,[],IO,IO):-!.
 override_object_1(VM,[H|T],I,OO):- !, override_object_1(VM,H,I,M),!, override_object_1(VM,T,M,OO).
+
+override_object_1(_VM,loc2D(X,Y),Obj,Obj):- (X>3;Y>4),!.
+override_object_1(_VM,pen([cc(black,1)]),Obj,Obj).
+
+
 override_object_1(_VM,pen([cc(Red,N)]),Obj,NewObj):- pen(Obj,[cc(Was,N)]), !,
   subst001(Obj,Was,Red,NewObj),!.
-override_object_1(_VM,loc2D(X,Y),Obj,Obj):- (X>3;Y>4),!.
 override_object_1(VM,loc2D(X,Y),Obj,NewObj):- loc2D(Obj,WX,WY),  
   globalpoints(Obj,WPoints),deoffset_points(WX,WY,WPoints,LPoints),  
   offset_points(X,Y,LPoints,GPoints),rebuild_from_globalpoints(VM,Obj,GPoints,NewObj).
@@ -692,8 +697,7 @@ obj_group5(TestID,ExampleNum,InOut,ROptions,Objs):-
 % =============================================================
 show_object_dependancy(TestID):-  
 % =============================================================
- ensure_test(TestID),
- clear_object_dependancy(TestID),
+ ensure_test(TestID), 
  learn_object_dependancy(TestID),
  print_object_dependancy(TestID).
 
@@ -714,7 +718,7 @@ learn_object_dependancy(TestID,ExampleNum):-
    maybe_learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs))).
 
 maybe_learn_object_dependancy(TestID,ExampleNum,_RHSObjs,_LHSObjs):-
-  arc_cache:prop_dep(TestID,ExampleNum,_,_,_,_,_,_,_),
+  %arc_cache:prop_dep(TestID,ExampleNum,_,_,_,_,_,_,_),
   arc_cache:trans_rule_db(TestID,ExampleNum,_,_),
   !.
 
@@ -722,28 +726,47 @@ maybe_learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
   learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
 
 relaxed_levels([ending(balanced(_))]). 
-relaxed_levels(RelaxLvl):- arg(_,v([],[delete],[all]),RelaxLvl).
+%relaxed_levels([]).
+%relaxed_levels(RelaxLvl):- arg(_,v([],[delete],[all]),RelaxLvl).
+member_of_relax(S,RelaxLvl):- make_unifiable(S,P), !, \+ (( member(P,RelaxLvl), P\=S)), ignore(P=S).
 
 
 learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):- 
- must_det_ll((
-              RHSObjs\==[],LHSObjs\==[],
+ must_det_ll((RHSObjs\==[],LHSObjs\==[],
   Step=0,Ctx=in_out,IsSwapped=false,
+  TM = _, %_{rhs:RHSObjsOrdered, lhs:LHSObjsOrdered},
   relaxed_levels(RelaxLvl),
-  normalize_objects_for_dependancy(RelaxLvl,TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsOrdered,LHSObjsOrdered),
+  time((once((normalize_objects_for_dependancy(RelaxLvl,TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsOrdered,LHSObjsOrdered),
     %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
-  TM = _{rhs:RHSObjsOrdered, lhs:LHSObjsOrdered},
-  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,[],LHSObjsOrdered,RHSObjsOrdered,Groups),
+  calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,[],LHSObjsOrdered,RHSObjsOrdered,Groups))))),!,
   %pp_ilp(groups=Groups),
   assert_map_pairs(TestID,ExampleNum,Ctx,Groups))).
 
-normalize_objects_for_dependancy(_RelaxLvl, _TestID,_ExampleNum,RHSObjs,LHSObjs,RHSObjsOrdered,LHSObjsOrdered):-
-  include(is_fg_object,LHSObjs,LHSObjsO),
-  include(is_fg_object,RHSObjs,RHSObjsO),
-  sort_by_jaccard(one(RHSObjsO),LHSObjsO,LHSObjsOrdered),
-  sort_by_jaccard(one(LHSObjsO),RHSObjsO,RHSObjsOrdered),
-  !.
-normalize_objects_for_dependancy(_RelaxLvl,_,_,L,R,L,R):-!.
+is_object_wo_black(X):- \+ sub_var(black,X).
+
+normalize_objects_for_dependancy(_RelaxLvL,_TestID,_ExampleNum,RHSObjs,LHSObjs,RHSO,LHSO):- 
+  %member(can(fg_only),RelaxLvL), 
+  %include(is_fg_object_really,LHSObjs,LHSObjsO), include(is_fg_object_really,RHSObjs,RHSObjsO),
+  include(is_object_wo_black,LHSObjs,LHSObjsO), include(is_object_wo_black,RHSObjs,RHSObjsO),!,
+  sort_by_jaccard(one(RHSObjsO),LHSObjsO,LHSO), sort_by_jaccard(one(LHSObjsO),RHSObjsO,RHSO),!.
+
+% maybe trim away backgroud
+normalize_objects_for_dependancy(RelaxLvl,TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsO,LHSObjsO):- 
+  different_lengths(LHSObjs,RHSObjs),
+  member(Filter,[iz(fg_or_bg(iz_fg)),cc(bg,0)]),
+  include(has_prop(Filter),LHSObjs,LHSObjsM), LHSObjsM\==[], 
+  include(has_prop(Filter),RHSObjs,RHSObjsM), LHSObjsM\==[],
+  \+ different_lengths(LHSObjsM,RHSObjsM), !,
+  normalize_objects_for_dependancy2(RelaxLvl,TestID,ExampleNum,RHSObjsM,LHSObjsM,RHSObjsO,LHSObjsO),!.
+% make finding pairs faster
+normalize_objects_for_dependancy(RelaxLvl, TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsO,LHSObjsO):-
+  sort_by_jaccard(one(RHSObjs),LHSObjs,LHSObjsM),
+  sort_by_jaccard(one(LHSObjs),RHSObjs,RHSObjsM),
+  (LHSObjsM\=LHSObjs ; RHSObjsM\=RHSObjs),!,
+  normalize_objects_for_dependancy2(RelaxLvl,TestID,ExampleNum,RHSObjsM,LHSObjsM,RHSObjsO,LHSObjsO),!.
+normalize_objects_for_dependancy(_RelaxLvl,_,_,R,L,R,L):-!.
+
+normalize_objects_for_dependancy2(_RelaxLvl,_TestID,_ExampleNum,RHSObjs,LHSObjs,RHSObjs,LHSObjs).
 
 different_lengths(LHSObjsO,RHSObjsO):-
   length(LHSObjsO,L21), length(RHSObjsO,L22), !, L21\==L22,!.
@@ -1240,6 +1263,8 @@ two_prop_sets(TransRule,E1,E2):-
  
 is_grid_or_group(Grid):- is_grid(Grid),!.
 is_grid_or_group(Grid):- is_group(Grid),!.
+is_grid_or_group(Grid):- is_grid(Grid),!.
+is_grid_or_group(Grid):- is_group(Grid),!.
 
 prin_to_string(T,Text):- term_contains_ansi(T),Text=T,!.
 prin_to_string(T,Text):- wots(Text,print(T)). 
@@ -1512,30 +1537,51 @@ append_LR(Mappings,RestLR):-
   flatten([Mappings],RestLR),!.
 
 sometimes_when_lost(Goal):-!,fail,call(Goal).
+
+
+pp_w_objs(P):- into_solid_grid_strings_3(P,[is_object=object_grid],Q), !, 
+  pp_ilp(Q),!.
+
+
+calc_o_d_recursively(_RelaxLvl,_TestID,_ExampleNum,_TM,_IsSwapped,_Step,_Ctx,Prev,LHSObjs,RHSObjs,Prev):-
+  RHSObjs == [], LHSObjs==[], !.
+calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):-
+  once(pp_ilp(calc_o_d_recurse=[rlx=RelaxLvl,in=call(print_grid(LHSObjs)),out=call(print_grid(RHSObjs))])),
+  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR).
+  
+
 :- discontiguous calc_o_d_recursively/11. 
 
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):-
-  maybe_remove_bg(RHSObjs,RHSObjs1), \=@=(RHSObjs,RHSObjs1),!,
-  must_det_ll((calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs1,RestLR))).
+% HAPPY ENDINGS
+calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,_TM,IsSwapped,Step,Ctx,Prev,MLHSObjs,RHSObjs,RestLR):-
+  my_partition(is_mapping,MLHSObjs,_Mappings,LHSObjs),
+  RHSObjs == [], LHSObjs==[], !, member_of_relax(ending(Ending),RelaxLvl), Ending = balanced(perfect),
+  Info = info([type(ending(Ending)),step(Step),is_swapped_lr(IsSwapped),ctx(Ctx),example(ExampleNum),testid(TestID)]),
+  append_LR([l2r(Info,[],[]),call(assert_test_property(TestID,ExampleNum,ending,ending(Info,RelaxLvl)))],Prev,RestLR).
 
+calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- fail,
+  maybe_remove_bg(RHSObjs,RHSObjs1), \=@=(RHSObjs,RHSObjs1),!,
+  must_det_ll((calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs1,RestLR))).
 
 calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- fail,
   sometimes_when_lost((maybe_remove_bg(RHSObjs,RHSObjs1), \=@=(RHSObjs,RHSObjs1), RHSObjs1\==[])), !,
-  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs1,RestLR).
+  calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs1,RestLR),!.
 
-calc_o_d_recursively(_RelaxLvl,TestID,ExampleNum,_TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):-
+calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,_TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):-
   LHSObjs==[], RHSObjs == [], !, 
-  Info = info(Step,IsSwapped,Ctx,leftover,TestID,ExampleNum,_),
-  append_LR([call(assert_test_property(TestID,ExampleNum,deps,perfect_balance(Info)))],Prev,RestLR).
+  Ending = ending(perfect_balance),
+  Info = info([why(Ending),step(Step),relax(RelaxLvl),is_swapped_lr(IsSwapped),ctx(Ctx),example(ExampleNum),testid(TestID)]),
+  append_LR([call(assert_test_property(TestID,ExampleNum,ending,ending(Info)))],Prev,RestLR),!.
 
-calc_o_d_recursively(_RelaxLvl,TestID,ExampleNum,_TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- 
-   Info = info(Step,IsSwapped,Ctx,leftover,TestID,ExampleNum,_),
-   RHSObjs==[], !, 
+calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,_TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- 
+  RHSObjs==[], !, 
+  Ending = ending(left_over),
+  Info = info([why(Ending),step(Step),relax(RelaxLvl),is_swapped_lr(IsSwapped),ctx(Ctx),example(ExampleNum),testid(TestID)]),
     must_det_ll((maplist(into_delete(TestID,ExampleNum,IsSwapped,Step,Ctx,Prev,Info),
-     LHSObjs,Mappings),append_LR(Prev,[call(assert_test_property(TestID,ExampleNum,deps,ignore_rest(Info))),Mappings],RestLR))).
+     LHSObjs,Mappings),append_LR(Prev,[call(assert_test_property(TestID,ExampleNum,ending,ending(Info))),Mappings],RestLR))),!.
 
 
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,[Right],RestLR):- 
+calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,[Right],RestLR):- fail,
   LHSObjs == [],
   into_list(Prev,PrevObjs), PrevObjs\==[],
   my_partition(is_input_object,PrevObjs,PrevLHS,PrevRHS),
@@ -1544,7 +1590,7 @@ calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSOb
   reverse(Stuff,[AA,BB|_Rest]),
   make_pairs(TestID,ExampleNum,assumed,IsSwapped,Step,Ctx,[],[BB,AA],Right,Pairs),
   append_LR(Prev,Pairs,NewPrev),
-  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,NewPrev,[],[],RestLR),!.
+  calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,NewPrev,[],[],RestLR),!.
 
 
 is_adjacent_same_color(R1,R2,NewLHS,RHSObjs,RHSRest):- member(R1,NewLHS), select(R2,RHSObjs,RHSRest), is_adjacent_same_color(R1,R2,0),!.
@@ -1560,7 +1606,7 @@ calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSOb
     incr_step(Step,IncrStep),
     make_pairs(TestID,ExampleNum,is_adjacent_same_color,IsSwapped,Step,Ctx,Prev,R1,R2,Pairs),
     %once((PrevRHS = [A,B|C] ; PrevLHS = [A,B|C])), %append_LR(PrevRHS,PrevLHS,NewLHS), %NewLHS=PrevLHS,    
-    !, must_det_ll((calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,[Pairs|Prev],LHSObjs,RHSRest,RestLR))).
+    !, must_det_ll((calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,[Pairs|Prev],LHSObjs,RHSRest,RestLR))).
 
 calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- 
    LHSObjs==[], !, must_det_ll((
@@ -1568,7 +1614,7 @@ calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSOb
     my_partition(is_input_object,PrevObjs,PrevLHS,_PrevRHS),
     %once((PrevRHS = [A,B|C] ; PrevLHS = [A,B|C])), %append_LR(PrevRHS,PrevLHS,NewLHS), %NewLHS=PrevLHS,
     incr_step(Step,IncrStep),
-    calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,Prev,PrevLHS,RHSObjs,RestLR))).
+    calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,Prev,PrevLHS,RHSObjs,RestLR))).
 
 calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjsNil,RHSObjs,RestLR):- 
    LHSObjsNil==[], !, 
@@ -1576,7 +1622,7 @@ calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSOb
     incr_step(Step,IncrStep), %incr_step(Step,IncrStep),
     into_list(Prev,PrevObjs),
     my_partition(is_input_object,PrevObjs,PrevLHS,PrevRHS),
-    member(Type=LHSObjs,[perfect_combo=PrevLHS,perfect_combo=PrevRHS]),
+    member(Type=LHSObjs,[perfect=PrevLHS,perfect_combo=PrevLHS,perfect_combo=PrevRHS]),
       select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
       must_det_ll((
       remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
@@ -1584,20 +1630,20 @@ calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSOb
       make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,IncrCtx,Prev,Left,Right,Pairs),
       append_LR(Prev,Pairs,NewPrev),
       
-      calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,IncrCtx,NewPrev,LHSRest,RHSRest,RestLR))).
+      calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,IncrCtx,NewPrev,LHSRest,RHSRest,RestLR))).
 
 calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,_Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- 
    LHSObjs==[], !, must_det_ll((
     incr_cntx(Ctx,IncrCtx),
     %incr_step(Step,IncrStep),
     into_list(Prev,NewLHS),
-    calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,10,IncrCtx,Prev,NewLHS,RHSObjs,RestLR))).
+    calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,10,IncrCtx,Prev,NewLHS,RHSObjs,RestLR))).
 
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,[Right],RestLR):- LHSObjs=[_,_|_],
+calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,[Right],RestLR):- fail, LHSObjs=[_,_|_],
   sort_by_jaccard(Right,LHSObjs,[A,B|C]),
   make_pairs(TestID,ExampleNum,assumed,IsSwapped,Step,Ctx,[],[B,A],Right,Pairs),
   append_LR(Prev,Pairs,NewPrev),
-  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,NewPrev,C,[],RestLR),!.
+  calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,NewPrev,C,[],RestLR),!.
 
 new_object_splitter:-false.
 
@@ -1619,28 +1665,24 @@ calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSOb
   obj_to_oid(Right,OID),
   obj_in_or_out(Right,IO),
   FakeObj = obj([was_oid(OID),iz(i_o(IO)),iz(info(faked(Ctx)))|PropsMissing])) -> 
-      calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,[Right,Left|LHSRest],[FakeObj|RHSRest],RestLR);
+      calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,[Right,Left|LHSRest],[FakeObj|RHSRest],RestLR);
 
-      calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,[Right,Left|LHSRest],RHSRest,RestLR)))).
+      calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,[Right,Left|LHSRest],RHSRest,RestLR)))).
 
 left_over_props(L,R,LO):- 
   noteable_propdiffs2(L,R,_,_,LO).
 
 calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,[Pairs|RestLR]):-
  select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
- must_det_ll((
+ once((must_det_ll((
   remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
   remove_object(RHSRest2, Left,RHSRest ), remove_object(LHSRest2, Left,LHSRest ),
   make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,Prev,Left,Right,Pairs),
   append_LR(Prev,Pairs,NewPrev),
   incr_step(Step,IncrStep),
-  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,LHSRest,RHSRest,RestLR))).
+  calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,LHSRest,RHSRest,RestLR))))),!.
 
-%calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- LHSObjs==[],!,
-%  must_det_ll(calc_o_d_recursively_lhs_z(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR)).
-
-
-calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,[Pairs|RestLR]):-
+calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,[Pairs|RestLR]):- fail,
  must_det_ll((
   select_pair(Type,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest1,LHSRest1),
   remove_object(RHSRest1,Right,RHSRest2), remove_object(LHSRest1,Right,LHSRest2),
@@ -1648,7 +1690,13 @@ calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSOb
   make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,Prev,Left,Right,Pairs),
   append_LR(Prev,Pairs,NewPrev),
   incr_step(Step,IncrStep),
-  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,LHSRest,RHSRest,RestLR))).
+  calc_o_d_recurse(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,IncrStep,Ctx,NewPrev,LHSRest,RHSRest,RestLR))),!.
+
+
+%calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR):- LHSObjs==[],!,
+%  must_det_ll(calc_o_d_recursively_lhs_z(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,Prev,LHSObjs,RHSObjs,RestLR)).
+
+
 
 
 
@@ -1671,7 +1719,11 @@ in_to_ins(Ins,N,InsList):-
  findall(E,select_some(N,E,Ins,_),InsList).
 
 %select_pair(perfect,_Prev,[A],[B],A,B,[],[]):-!.
-select_pair(perfect,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
+select_pair(_,_Prev,RHSObjs,LHSObjs,_Right,_Left,_RHSRest,_LHSRest):- \+ (RHSObjs\=[],LHSObjs\=[]),!,fail.
+
+  
+
+select_pair(two_way(perfect),_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   select(Left,LHSObjs,RestLeft),
   \+ is_mapping(Left),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
@@ -1680,7 +1732,7 @@ select_pair(perfect,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   sort_by_jaccard(Right,LHSObjs,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
 
-select_pair(perfect_w_prev,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
+select_pair(two_way(perfect_w_prev),Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):- fail,
   select(Left,[Prev|LHSObjs],RestLeft),
   \+ is_mapping(Left),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
@@ -1689,7 +1741,7 @@ select_pair(perfect_w_prev,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   sort_by_jaccard(Right,LHSObjs,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
 
-select_pair(perfect_combo,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-  
+select_pair(two_way(perfect_combo),_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-  
   into_list(LHSObjs,LHSObjsL),variant_list_to_set(LHSObjsL,LHSObjsSet),
   in_to_ins(LHSObjsSet,2,LHSObjs_Combos),
   select(Left,LHSObjs_Combos,LHSObjs_Combos_Rest),
@@ -1700,7 +1752,7 @@ select_pair(perfect_combo,_Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   LeftMaybe = Left,!.
 
 
-select_pair(need_prev,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
+select_pair(need_prev,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):- 
   select(Left,LHSObjs,RestLeft),
   once((remove_object(RHSObjs,Left,RHSObjsMLeft),
   bonus_sort_by_jaccard(Prev,Left,RHSObjsMLeft,[Right|RHSRest]),
@@ -1708,17 +1760,18 @@ select_pair(need_prev,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
   bonus_sort_by_jaccard(Prev,Right,LHSObjs,[LeftMaybe|_]))),
   LeftMaybe = Left,!.
 
-select_pair(from_left,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):-
+select_pair(from_right,Prev,LHSObjs,RHSObjs,Left,Right,LHSRest,RHSRest):- 
   select(Left,LHSObjs,RestLeft),
   remove_object(RHSObjs,Left,RHSObjsMLeft),
   bonus_sort_by_jaccard(Prev,Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),!.
 
-select_pair(from_right,Prev,LHSObjs,RHSObjs,Left,Right,LHSRest,RHSRest):-
+select_pair(from_left,Prev,RHSObjs,LHSObjs,Right,Left,RHSRest,LHSRest):- 
   select(Left,LHSObjs,RestLeft),
   remove_object(RHSObjs,Left,RHSObjsMLeft),
   bonus_sort_by_jaccard(Prev,Left,RHSObjsMLeft,[Right|RHSRest]),
   remove_object(RestLeft,Right,LHSRest),!.
+
 
 remove_object(RHSObjs,[Left|More],RHSObjsMI):- 
   remove_object(RHSObjs,Left,Rest),!,remove_object(Rest,More,RHSObjsMI).
@@ -1762,7 +1815,8 @@ split_sorted_by_len(Objs, Len,Prime,SplitLHS,SplitRHS):-
 into_prop(CC,P):- sub_term(E,CC),compound(E),is_prop1(E),!,E=P.
 
 cto_aa(A,AA):- atom(A),!,AA=A.
-cto_aa(s(A),AA):- nonvar(A), !, cto_aa(A,AAA),atom_concat(s_,AAA,AA).
+cto_aa(List,AA):- is_list(List),!,maplist(cto_aa,List,AAA),atomic_list_concat(AAA,'_',AA).
+cto_aa(F,AA):- compound(F), F=..List, !, maplist(cto_aa,List,AAA),atomic_list_concat(AAA,'_',AA).
 cto_aa(A,AA):- format(atom(AA),'~w',[A]).
 
 %make_pairs(TestID,ExampleNum,Type,s(IsSwapped),Step,Ctx,Prev,LHS,RHS,GRP):- nonvar(IsSwapped),!,
@@ -1780,7 +1834,7 @@ make_pairs(TestID,ExampleNum,Type,IsSwapped,Step,Ctx,_Prev,LHS,RHS,GRP):-
   %into_list(LHS,LLHS),
   %append_LR(Prev,LHS,PLHS),
   GRP = l2r(Info,LHS,RHS),
-  nop(once(pp_ilp(make_pairs=GRP))).
+  once(pp_ilp(make_pairs=GRP)).
 
 
 

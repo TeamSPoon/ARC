@@ -964,6 +964,25 @@ pp_ilp(Grp):- must_det_ll(pp_ilp(1,Grp)),!.
 pp_ilp(D,T):-  T==[],!,prefix_spaces(D,write('[] ')),!.
 pp_ilp(D,_):-  D > 0, format('~N'),fail.
 pp_ilp(D,T):-  is_ftVar(T),!,prefix_spaces(D,print(T)),!.
+pp_ilp(D,apply(Rule,Obj)):- !, pp_ilp(D,l2r(apply(Rule),[],Obj)).
+%pp_ilp(D,A+B):-  !, prefix_spaces(D,(pp_ilp(A),nl,pp_ilp(B))).
+pp_ilp(D,A+B):-  !, pp_ilp(D,A),pp_ilp(D,B).
+pp_ilp(D,Grid):- is_grid(Grid),!,prefix_spaces(D,print_grid(Grid)),!,nl.
+pp_ilp(D,Grid):- is_object(Grid),!,prefix_spaces(D,print_grid([Grid])),!,nl.
+pp_ilp(D,List):- is_list(List), !,
+ must_det_ll((
+  %prefix_spaces(D,write('[')),
+  maplist(pp_ilp(D+3),List),
+  %prefix_spaces(D,write(']'))
+  true)).
+pp_ilp(D,Call):- compound(Call),Call=call(Goal),!, prefix_spaces(D,call(Goal)).
+pp_ilp(D,X=Y):- !,
+  must_det_ll((
+   prefix_spaces(D, (print(X),write(' = '))),
+   (Y==[]->write(' [] ')
+   ;((is_list(Y)->(length(Y,L),format(' (~w)~n',[L]));true),
+      pp_ilp(D+2,Y))))).
+
 
 
 pp_ilp(D,AC_RULES_UNIT):- compound(AC_RULES_UNIT),
@@ -981,12 +1000,6 @@ pp_ilp(D,X=Y):- is_list(Y),length(Y,L),
   must_det_ll((
    prefix_spaces(D, (print(X),write('('),write(L),write(') = '))),
    (L==0->write(' [] ');(prefix_spaces(D+2, maplist(pp_ilp,Y)))))).*/
-pp_ilp(D,X=Y):- 
-  must_det_ll((
-   prefix_spaces(D, (print(X),write(' = '))),
-   (Y==[]->write(' [] ')
-   ;((is_list(Y)->(length(Y,L),format(' (~w)~n',[L]));true),prefix_spaces(D+2,pp_ilp(Y)))))).
-pp_ilp(D,call(T)):- !, prefix_spaces(D,call(T)).
 % pp_ilp(D,Grp):- is_mapping(Grp), prefix_spaces(D,print(Grp)),!.
 
 pp_ilp(D,Grp):- is_mapping(Grp), !,
@@ -1004,13 +1017,6 @@ pp_ilp(D,Grp):- compound(Grp),
   prefix_spaces(D,(write('</l2r-hyphen>\n'),dash_chars)))).
 
 
-pp_ilp(D,apply(Rule,Obj)):- !, pp_ilp(D,l2r(apply(Rule),[],Obj)).
-
-
-pp_ilp(D,A+B):-  !, prefix_spaces(D,(pp_ilp(A),nl,pp_ilp(B))).
-pp_ilp(D,Grid):- is_grid(Grid),!,prefix_spaces(D,print_grid(Grid)),!,nl.
-pp_ilp(D,Grid):- is_object(Grid),!,prefix_spaces(D,print_grid([Grid])),!,nl.
-pp_ilp(D,G1):- is_prop1(G1), prefix_spaces(D,print_unit(G1)),!.
 
 
 pp_ilp(D,(H:-Conj)):- 
@@ -1056,13 +1062,8 @@ pp_ilp(D,Grid):- is_group(Grid),!,
 
 pp_ilp(D,Grid):- is_obj_props(Grid),!,sort(Grid,R),reverse(R,S), prefix_spaces(D,pp(S)).
 %pp_ilp(D,List):- is_list(List), \+ is_grid(List),write('['),maplist(pp_ilp(D+3),List),write(']').
-pp_ilp(D,List):- is_list(List), !,
- must_det_ll((
-  %prefix_spaces(D,write('[')),
-  maplist(pp_ilp(D+3),List),
-  %prefix_spaces(D,write(']'))
-  true)).
 
+pp_ilp(D,G1):- is_prop1(G1), prefix_spaces(D,print_unit(G1)),!.
 
 %pp_ilp(D,T):- into_solid_grid_strings(T,G),!, prefix_spaces(D,print(G)),!.
 pp_ilp(D,T):- prefix_spaces(D,pp_no_nl(T)),!.
@@ -1249,23 +1250,24 @@ show_code_diff(Info,PA,[PB]):- !, show_code_diff(Info,PA,PB).
 show_code_diff(Info,[PA],PB):- !, show_code_diff(Info,PA,PB).
 show_code_diff(Info,[],_).
 show_code_diff(Info,[P|A],PB):- !, show_code_diff(Info,P,PB),show_code_diff(Info,A,PB).
-*/
 show_code_diff(_Info,O1,O2):- (is_grid(O1), is_grid(O2)),!, 
   ((flat_props(O1,E1),flat_props(O2,E2), show_cp_dff_rem_keep_add(E1,E2))),!.
-show_code_diff(_Info,O1,O2):- (is_grid(O1); is_grid(O2)),!, 
- ((flat_props(O1,E1),flat_props(O2,E2), show_cp_dff_rem_keep_add(E1,E2))),!.
 show_code_diff(_Info,O1,O2):- (\+ is_grid(O1); \+ is_grid(O2)),!, 
  ((flat_props(O1,E1),flat_props(O2,E2), show_cp_dff_rem_keep_add(E1,E2))),!.
 show_code_diff(Info,O1,O2):- (\+ is_grid(O1); \+ is_grid(O2)),!,
   into_list(O1,InL),into_list(O2,OutL), 
   trans_rule(Info,InL,OutL,TransRule),!, pp_ilp(trans_rules=TransRule).
-show_code_diff(Info,O1,O2):- 
+*/
+show_code_diff(_Info,O1,O2):- (is_grid(O1); is_grid(O2)),!, 
+ ((flat_props(O1,E1),flat_props(O2,E2), show_cp_dff_rem_keep_add(E1,E2))),!.
+show_code_diff(_Info,O1,O2):- 
  if_t((\+ is_grid(O1);\+ is_grid(O2)),
  (into_list(O1,InL),into_list(O2,OutL),
   flat_props(InL,E1),flat_props(OutL,E2), 
-  show_cp_dff_rem_keep_add(E1,E2),
+  show_cp_dff_rem_keep_add(E1,E2))),!.
+  /*
   trans_rule(Info,InL,OutL,TransRule),!,
-  pp_ilp(TransRule))).
+  pp_ilp(TransRule))).*/
 
 /*
 show_cp_dff_rem_keep_add([]):-!.
@@ -1276,7 +1278,7 @@ show_cp_dff_rem_keep_add(TransRule):-   %flat_props([B],PB), intersection(Same,P
 
 show_cp_dff_rem_keep_add(E1,E2):-  
   dash_chars,
-  if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),    
+  if_t(how_are_differnt(E1,E2,Set),pp(how_are_differnt=Set)),    
   noteable_propdiffs(E1,E2,Same,InFlatP,OutPFlat),
   if_t(Same==[],pp_ilp(sames=Same)),
   length(Same,LSame),
@@ -1287,12 +1289,12 @@ show_cp_dff_rem_keep_add(E1,E2):-
 
 
 pp_l2r(D,Info,In,Out):- 
-  prefix_spaces(D,(dash_chars,format('<l2r  ~@ >\n',[print(Info)]))),
-  print_io_terms(D+7,In,Out),
+  \+ \+ prefix_spaces(D,(dash_chars,format('<l2r  ~@ >\n',[print(Info)]))),
+  \+ \+ print_io_terms(D+7,In,Out),
   %show_cp_dff_rem_keep_add1(In,Out),
-  show_code_diff(Info,In,Out),
+  %show_code_diff(Info,In,Out),
   %prefix_spaces(D+8,show_code_diff(Info,In,Out)),
-  prefix_spaces(D,(write('</l2r>\n'),dash_chars)).
+  \+ \+ prefix_spaces(D,(write('</l2r>\n'),dash_chars)).
   %flat_props(InL,E1),flat_props(OutL,E2),show_cp_dff_rem_keep_add(E1,E2),
 
 type_change(ITerm,In):- first_type(ITerm,T1), first_type(In,T2),!, T1\=@=T2.
@@ -1328,8 +1330,8 @@ print_io_terms(D,ITerm,OTerm):-
     prefix_spaces(D+10,dash_chars),
     prefix_spaces(D,pp_ilp(OTerm)),!.
     
-print_io_terms(D,ITerm,OTerm):-
-  prefix_spaces(D,print_ss("",call(pp_ilp(ITerm)),call(pp_ilp(OTerm)))),!.
+%print_io_terms(D,ITerm,OTerm):-
+%  prefix_spaces(D,print_ss("",call(pp_ilp(ITerm)),call(pp_ilp(OTerm)))),!.
 
 print_io_terms(D,ITerm,OTerm):- prefix_spaces(D,print_ss("",call(pp_ilp(ITerm)),call(pp_ilp(OTerm)))),!.
 
@@ -1379,6 +1381,12 @@ into_solid_grid_strings_1(T,WithGrids):-
   subst001(T,Obj,Solid,MidTerm),MidTerm\=@=T,!,into_solid_grid_strings_1(MidTerm,WithGrids).
     
 into_solid_grid_strings_1(X,Y):- into_solid_grid_strings(X,Y),!.
+
+into_solid_grid_strings_3(T,ListOfThings,WithGrids):-
+  member(P1=P2,ListOfThings),sub_term(Obj,T),once((call(P1,Obj)->call(P2,Obj,Grid))),Obj\=@=Grid,
+  subst001(T,Obj,Grid,MidTerm),MidTerm\=@=T,!,into_solid_grid_strings_3(MidTerm,ListOfThings,WithGrids).
+into_solid_grid_strings_3(X,_,X).
+
 
 /*into_solid_grid_strings(T,WithGrids):-
   sub_term(Obj,T),Obj\=@=T,is_mapping(Obj),
