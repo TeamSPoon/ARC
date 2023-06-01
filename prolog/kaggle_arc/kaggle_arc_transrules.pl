@@ -110,18 +110,14 @@ pass2_rule3(TestID,Ctx,edit(Type,different,P),[iz(info(propcan(true,Ctx)))|PSame
   rhs_ground(RHS).
 */
 
-trans_rules_current_members1(TestID,Ctx,Rules):-
+trans_rules_current_members1(TestID,_Ctx,Rules):-
   ensure_test(TestID),
   ignore((ExampleNum=trn+_)),
   kaggle_arc(TestID,ExampleNum,_,_),
 
   obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs), RHSObjs\==[],LHSObjs\==[],
-  Step=0,Ctx=in_out,IsSwapped=false,
-  normalize_objects_for_dependancy(RelaxLvl,TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsOrdered,LHSObjsOrdered),
-    %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
-  TM = _{rhs:RHSObjsOrdered, lhs:LHSObjsOrdered},
-  calc_o_d_recursively(RelaxLvl,TestID,ExampleNum,TM,IsSwapped,Step,Ctx,[],LHSObjsOrdered,RHSObjsOrdered,Groups),
-  %pp_ilp(groups=Groups),
+  once(get_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs,Groups)),   %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
+  %pp_ilp(trans_rules_current_members1=Groups),
   member(l2r(Info,In,Out),Groups),
   into_list(In,InL),into_list(Out,OutL),trans_rule(Info,InL,OutL,TransRules), 
   member(Rules,TransRules).
@@ -132,9 +128,9 @@ trans_rules_current_members(TestID,Ctx,Rules):-
 
 trans_rules_combined_members(TestID,Ctx,CombinedM):-
  ensure_test(TestID),
- must_det_ll((findall(Rule,trans_rules_current_members(TestID,Ctx,Rule),Rules),
+ time(must_det_ll((findall(Rule,trans_rules_current_members(TestID,Ctx,Rule),Rules),
   % must_det_ll(( \+ (member(R,[1|Rules]), is_list(R)))),!,
-  combine_trans_rules(TestID,Rules, Combined))),
+  combine_trans_rules(TestID,Rules, Combined)))),
   % must_det_ll(( \+ (member(R,[2|Combined]), is_list(R)))),
   member(CombinedM,Combined).
 
