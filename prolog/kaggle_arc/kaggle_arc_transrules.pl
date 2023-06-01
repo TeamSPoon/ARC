@@ -253,19 +253,21 @@ trans_rule(Info,[],[],[ac_unit(_,Ctx,happy_ending(Type),Info)]):-
    ignore((sub_compound(ctx(Ctx),Info))),
    ignore((sub_compound(type(Type),Info))).
 
+
 % delete
-trans_rule(Info,In,[],Rules):- listify(In,InL),
- findall(delete_object(Info,rhs(delete(In)),lhs(Preconds)),
-   (member(In,InL),into_lhs(In,Preconds)),Rules), Rules\==[],!.
+trans_rule(Info,[In],[],[Unit]):-
+ into_lhs(In,Preconds),into_rhs(Info,InfoR), 
+ Unit = ac_unit(_,_,delete_object(InfoR,In),[iz(info(Info))|Preconds]),!.
+
+
+% create
+trans_rule(Info,[],[Out],[Unit]):-
+ into_lhs(Out,Preconds),into_rhs(Info,InfoR), 
+ Unit = ac_unit(_,_,create_object(InfoR,Out),[iz(info(Info))|Preconds]),!.
 
 % mutiple postconds
 trans_rule(Info,In,[Out,Out2|OutL],TransRule):- is_object(Out),is_object(Out2),
   maplist(trans_rule(Info,In),[Out,Out2|OutL],TransRule), TransRule\==[],!.
-
-% create
-trans_rule(Info,[],Out,Rules):- listify(Out,OutL),
- findall(create_object(Info,rhs(create(Out)),lhs(Preconds)),
-   ((member(Out,OutL),into_lhs(Out,Preconds))),Rules), Rules\==[],!.
 
 % 2 preconds
 %trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2),

@@ -1850,27 +1850,27 @@ rotSize2D(grav,Grid,H,V):- is_grid(Grid),!,grav_roll(Grid,_RotG,RotShape),grid_s
 rotSize2D(grav,NT,H,V):-  into_gridoid(NT,G),G\==NT, rotSize2D(grav,G,H,V).
 
 
-%externalize_links(obj_grp(O1L,Grp),[link(C,A),EL|More],[link(C,A),elink(C,Ext)|LMore]):- EL\=elink(_,_),externalize_obj(Obj,Other,Ext),!,externalize_links(obj_grp(O1L,Grp),[EL|More],LMore).
+%externalize_links(obj_group(O1L,Grp),[link(C,A),EL|More],[link(C,A),elink(C,Ext)|LMore]):- EL\=elink(_,_),externalize_obj(Obj,Other,Ext),!,externalize_links(obj_group(O1L,Grp),[EL|More],LMore).
 
-externalize_links(Grp,NewObjs):- Grp==[],!,NewObjs=[].
+%externalize_links(Grp,NewObjs):- Grp==[],NewObjs=[].
 externalize_links(Grp,Grp):-!.
 /*
 externalize_links(Grp,NewObjs):- 
  must_det_ll((is_group_or_objects_list(Grp), 
    maplist(externalize_links((Grp)),Grp,NewObjs))).
-%externalize_links(obj_grp(O1L,Grp),NewObj):- is_object(Obj),!,externalize_obj_links(Obj,NewObj),!.
-%externalize_links(obj_grp(O1L,Grp),Objs):-!.
+%externalize_links(obj_group(O1L,Grp),NewObj):- is_object(Obj),!,externalize_obj_links(Obj,NewObj),!.
+%externalize_links(obj_group(O1L,Grp),Objs):-!.
 
 externalize_links((Grp),Obj,NewObj):-
    indv_props_list(Obj,O1L), 
-   maplist(externalize_links(obj_grp(O1L,Grp)),O1L,NewList), 
+   maplist(externalize_links(obj_group(O1L,Grp)),O1L,NewList), 
    NewObj=obj(NewList).
-%externalize_links(obj_grp(O1L,Grp),link(C,A),elink(C,Ext)):- !, externalize_obj(obj_grp_link(O1L,Grp,C),A,Ext).
+%externalize_links(obj_group(O1L,Grp),link(C,A),elink(C,Ext)):- !, externalize_obj(obj_group_link(O1L,Grp,C),A,Ext).
 */
 /*
-externalize_links(obj_grp(_O1L,_Grp),A,A).
+externalize_links(obj_group(_O1L,_Grp),A,A).
 
-externalize_obj(obj_grp_link(O1,_Grp, C),OID2,Ext):- 
+externalize_obj(obj_group_link(O1,_Grp, C),OID2,Ext):- 
  must_det_ll((
    indv_props_list(O1,O1L), 
    indv_props_list(OID2,O2L),

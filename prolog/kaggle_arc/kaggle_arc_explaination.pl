@@ -809,9 +809,9 @@ which_members_vary([_|L1],RRR,VariedMembers):-
 
 
 get_each_ndividuator(IndvSMode):- get_indivs_mode(IndvSMode), IndvSMode\==complete,!.
-get_each_ndividuator(IndvSMode):-
+get_each_ndividuator(IndvSMode):- %fail,
   findall(IndvSMode,(
-           (toplevel_individuation(TL),IndvSMode=[TL,leftover_as_one,do_ending])
+           (toplevel_individuation(TL),IndvSMode=[TL,do_ending])
             ;get_indivs_mode(IndvSMode)),List),
   list_to_set(List,Set),!,member(IndvSMode,Set).
 
@@ -819,10 +819,11 @@ get_each_ndividuator(IndvSMode):-
 :- multifile toplevel_individuation/1. 
 toplevel_individuation(IndvSMode):-
    member(IndvSMode,[
-     leftover_as_one,
-     %must_indv_omem_points,
-     skip_some,
      i_pbox,
+     skip_some,     
+     %leftover_as_one,
+     %must_indv_omem_points,     
+    
      find_hybrid_shapes]).
 
 ensure_individuals(TestID,ExampleNum):- \+ ground(ExampleNum),!,
@@ -855,9 +856,9 @@ ensure_individuals(TestID,ExampleNum,GridIn,GridOut):-
 
 
 
-print_individuals(_TestID):-!.
+%print_individuals(_TestID):-!.
 print_individuals(TestID):-
- must_det_ll((
+ ((
  ensure_test(TestID),
    ignore((never_entire_suite,set_flag(indiv,0))),%compute_and_show_test_hints(TestID),
    forall(kaggle_arc(TestID,ExampleNum,_,_), 
@@ -870,25 +871,30 @@ print_individuals(TestID):-
       ignore(print_individual_objects(TestID,ExampleNum))),
    banner_lines(blue,10))).
 
+print_individuals(TestID,ExampleNum):- \+ ground(TestID),get_current_test(TestID),!,print_individuals(TestID,ExampleNum).
+print_individuals(TestID,ExampleNum):- \+ ground(ExampleNum),!,
+  kaggle_arc(TestID,ExampleNum,_,_),ground(ExampleNum),print_individuals(TestID,ExampleNum).
 print_individuals(TestID,ExampleNum):-
- must_det_ll((
-              gid_of_tid(GID1,TestID,ExampleNum,in),
-              gid_of_tid(GID2,TestID,ExampleNum,out),
-%   ignore(ensure_individuals(TestID,ExampleNum)),
+  kaggle_arc(TestID,ExampleNum,_,_),
+ ((
+         %     gid_of_tid(GID1,TestID,ExampleNum,in),
+         %     gid_of_tid(GID2,TestID,ExampleNum,out),
+   ignore(ensure_individuals(TestID,ExampleNum)),
    findall(wqs([Len,ROptions,GID1])=In,
-     (arc_cache:individuated_cache(TestID,TestID>ExampleNum*in,GID1,ROptions,In),
+     (kaggle_arc(TestID,ExampleNum,_,_),arc_cache:individuated_cache(TestID,TestID>ExampleNum*in,GID1,ROptions,In),
       length(In,Len)),InL),sort(InL,InS),
    findall(wqs([Len,ROptions,GID2])=Out,
-      (arc_cache:individuated_cache(TestID,TestID>ExampleNum*out,GID2,ROptions,Out),
+      (kaggle_arc(TestID,ExampleNum,_,_),arc_cache:individuated_cache(TestID,TestID>ExampleNum*out,GID2,ROptions,Out),
        length(Out,Len)),OutL),sort(OutL,OutS),!,
    print_individuals_paired(InS,OutS),
    dash_chars)).
 
 print_individual_objects(TestID,ExampleNum):-
+  kaggle_arc(TestID,ExampleNum,_,_),
 %   ignore(ensure_individuals(TestID,ExampleNum)),
    findall(Obj, objects_of(TestID,ExampleNum,in,_,_,Obj),InL),mass_sort(InL,InS),
    findall(Obj, objects_of(TestID,ExampleNum,out,_,_,Obj),OutL),mass_sort(OutL,OutS),!,
-   print_ss(allobjects,InS,OutS),
+  % print_ss(allobjects,InS,OutS),
    objects_into_grids(InS,GridsIn),
    objects_into_grids(OutS,GridsOut),
    print_individuals_paired(GridsIn,GridsOut),
@@ -902,7 +908,7 @@ mass_for_sort(Obj, H,V,Mass, 4+Area+Mass):- is_bg_object(Obj),!,Area is H*V.
 mass_for_sort( _,  H,V,   1, 2+   1+Area):- Area is H*V.
 mass_for_sort(Obj, H,V,Mass, 1+Area+Nass):- Nass is -Mass, is_fg_object(Obj),Area is H*V.
 
-
+object_fg_points(I,FGP):- once((globalpoints(I,Ps), include(is_fg_point,Ps,FGP))).
 
 objects_into_grids([],[]):-!.
 objects_into_grids(InL,[GridObjs|GridL]):-
@@ -910,24 +916,21 @@ objects_into_grids(InL,[GridObjs|GridL]):-
   objects_into_grids(RemainingObjs,GridL),!.
 objects_into_grids(Objs,Objs).
 
-gather_one_grid([I|InR],CurGrid,RemainingObjs,[I|GridObjs]):-
-   once((globalpoints(I,Ps), include(is_fg_point,Ps,FGP))),
-   \+ (member(P1,FGP),member(P1,CurGrid)), !,
-  append(Ps,CurGrid,MoreGrid),
-  gather_one_grid(InR,MoreGrid,RemainingObjs,GridObjs).
-gather_one_grid(InL,CurGrid,RemainingObjs,[I|GridObjs]):- InL\==[],
-  select(I,InL,InR), once((globalpoints(I,Ps), include(is_fg_point,Ps,FGP))),
-   \+ (member(P1,FGP),member(P1,CurGrid)), !,
-  append(Ps,CurGrid,MoreGrid),
-  gather_one_grid(InR,MoreGrid,RemainingObjs,GridObjs).
+gather_one_grid(IInR,CurGrid,RemainingObjs,[I|GridObjs]):-
+   select(I,IInR,InR),
+   object_fg_points(I,FGP),
+   \+ (member(P1,FGP),member(P1,CurGrid)),!,
+   append(FGP,CurGrid,MoreGrid),
+   gather_one_grid(InR,MoreGrid,RemainingObjs,GridObjs).
 gather_one_grid(RemainingObjs,_GridPoints,RemainingObjs,[]).
 
 
 
-objects_of(TestID,ExampleNum,IO,GID,ROptions,Obj):-
- is_why_grouped_g(TestID,_Len,individuate(GID, ROptions),OutC),
- member(Out,OutC),once(into_obj(Out,Obj)),
- \+ \+ sub_var(g(IO),Obj), \+ \+ sub_var(ExampleNum,Obj).
+objects_of(TestID,Example+Num,IO,GID,ROptions,Obj):-
+ is_why_grouped_g(TestID,_Len,Which,OutC),
+ Which = individuate(ROptions,GID),
+ member(OID,OutC),once(into_obj(OID,Obj)),
+ once((sub_cmpd(g(IO),Obj), sub_cmpd(Example+Num,Obj))).
 
 print_wio(I=In,O=Out):-  print_side_by_side(yellow,In,I,_,Out,O).
 print_individuals_paired([In],[Out]):- !, print_wio(In,Out).

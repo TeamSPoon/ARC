@@ -3676,10 +3676,11 @@ maybe_sa_dots(Points,lte(LTE),VM):-
      nop(assumeAdded(VM,IndvList)))))))),!.
 
 % =====================================================================
-is_fti_step(maybe_lo_dots).
+is_fti_step(lo_dots).
 % =====================================================================
 lo_dots(VM):-
-  current_as_one(VM),
+  keypads(VM),
+  %current_as_one(VM),
   %length(VM.lo_points,Len), (VM.h>=Len ; VM.v>=Len), 
   mostly_fgp(VM.lo_points,LO_POINTS),
   using_alone_dots(VM,(my_maplist(make_point_object(VM,[birth(lo_dots),iz(stype(dot)),iz(media(shaped))]),LO_POINTS,IndvList),
@@ -3688,19 +3689,20 @@ lo_dots(VM):-
 lo_dots(_):-!.
 
 % =====================================================================
-is_fti_step(lo_dots).
+is_fti_step(maybe_lo_dots).
 % =====================================================================
 % lo_dots may have adjacent points of the equal color (because we are in 'lo_dots' mode)
 mostly_fgp(Points,LO_POINTS):- length(Points,Len), Len =< 49,!, Points=LO_POINTS.
 mostly_fgp(Points,FG_POINTS):- my_partition(is_fgp,Points,FG_POINTS,_),!.
 
-maybe_lo_dots(VM):-  
+maybe_lo_dots(VM):-
+  keypads(VM),
   mostly_fgp(VM.lo_points,LO_POINTS),
-  (VM.h=<5 ; VM.v=<5 ; (LO_POINTS \=[], length(LO_POINTS,Len), Len<12, (Len =< VM.h ; Len =< VM.v  ))),!,
+  (VM.h=<5 ; VM.v=<5 ; (LO_POINTS \=[], length(LO_POINTS,Len), Len=<36, (Len =< VM.h ; Len =< VM.v  ))),!,
   lo_dots(VM),!.
 maybe_lo_dots(VM):-  
   mostly_fgp(VM.lo_points,LO_POINTS),
-   length(LO_POINTS,Len), Len<12,
+   length(LO_POINTS,Len), Len=<36,
   lo_dots(VM),!.
 maybe_lo_dots(VM):- leftover_as_one(VM),!.
 
@@ -3871,7 +3873,30 @@ keypads(VM):-
   print_ss(keypad(OX,OY,H,V,EX,EY),Grid,Keypad),
   H==3,V==3,
   mass(Keypad,Mass),
-  Mass>=9,Mass=<9,
+  %Mass>=9,
+  Mass=<9,
+  must_det_ll((
+  grid_to_points(Keypad,LPoints),
+  writeg(keypad=Keypad),
+  length(LPoints,Len),
+  writeg(points(Len)=LPoints),
+  offset_points0(OX,OY,LPoints,AllGpoints),
+  %itrace,
+  my_maplist(make_point_object(VM,[birth(keypads),iz(media(shaped))]),AllGpoints,IndvList),
+  print_grid(allGpoints,IndvList),
+ % remLOPoints(VM,IndvList),
+  remLOPoints(VM,IndvList))),!.
+  %addObjects(VM,IndvList)
+
+keypads(VM):- 
+  Grid = VM.grid,
+  trim_to_rect4(OX,OY,EX,EY,Grid,Keypad),
+  grid_size(Keypad,H,V),
+  print_ss(keypad(OX,OY,H,V,EX,EY),Grid,Keypad),
+  H==3,V==3,
+  mass(Keypad,Mass),
+  %Mass>=9,
+  Mass=<36,
   must_det_ll((
   grid_to_points(Keypad,LPoints),
   writeg(keypad=Keypad),
@@ -4203,6 +4228,7 @@ leftover_as_one(VM):-
 is_fti_step(current_as_one).
 % =====================================================================
 current_as_one(VM):-
+   keypads(VM),
    Points0 = VM.lo_points,
    include(is_fg_point,Points0,Points),
    ignore((

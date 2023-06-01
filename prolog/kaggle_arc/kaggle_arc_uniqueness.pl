@@ -193,6 +193,9 @@ solve_via_scene_change(TestID):-
   %force_clear_test(TestID),
   clear_scene_rules(TestID),
   clear_object_dependancy(TestID),
+  %print_individuals(TestID),
+  %forall(kaggle_arc(TestID,ExampleNum,_,_),ignore(print_individuals(TestID,ExampleNum))),
+
   repress_some_output(learn_solve_via_grid_change(TestID)),
   ExampleNum=tst+_,
   true)),
@@ -314,11 +317,11 @@ score_all_props(CanL,Obj,Score):- maplist(inv_has_prop_score(Obj),CanL,ScoreL),s
 assume_prop(P):- \+ \+ assume_prop1(P),!.
 assume_prop(P):- \+ \+ assume_prop2(P),!.
 assume_prop(P):- \+ \+ is_debug_info(P).
-
+/*
 is_debug_info(Var):- \+ compound(Var),!,fail.
 is_debug_info(info(_)).
 is_debug_info(iz(P)):-!,is_debug_info(P).
-
+*/
 %not_assumed(P):- is_unbound_prop(P),!.
 %not_assumed(P):- \+ assume_prop(P).
 
@@ -708,8 +711,8 @@ learn_object_dependancy(TestID):-
   must_det_ll((
   ensure_individuals(TestID),
  ignore((ExampleNum=trn+_)),
- forall(kaggle_arc(TestID,ExampleNum,_,_),
-	  learn_object_dependancy(TestID,ExampleNum)),
+  forall(kaggle_arc(TestID,ExampleNum,_,_),
+     learn_object_dependancy(TestID,ExampleNum)),
   merge_object_dependancy(TestID))).
 
 learn_object_dependancy(TestID,ExampleNum):-
@@ -1261,10 +1264,8 @@ two_prop_sets(TransRule,E1,E2):-
  sub_term(E1,TransRule),propset_getter(P1),call(P1,E1),subst(TransRule,E1,gone,RuleRest),
  sub_term(E2, RuleRest),propset_getter(Q1),call(Q1,E2).
  
-is_grid_or_group(Grid):- is_grid(Grid),!.
-is_grid_or_group(Grid):- is_group(Grid),!.
-is_grid_or_group(Grid):- is_grid(Grid),!.
-is_grid_or_group(Grid):- is_group(Grid),!.
+%is_grid_or_group(Grid):- is_grid(Grid),!.
+%is_grid_or_group(Grid):- is_group(Grid),!.
 
 prin_to_string(T,Text):- term_contains_ansi(T),Text=T,!.
 prin_to_string(T,Text):- wots(Text,print(T)). 
@@ -1558,10 +1559,36 @@ calc_o_d_recursively(RelaxLvl,CurrentInfo,Prev,MLHSObjs,RHSObjs,RestLR):-
   RHSObjs == [], LHSObjs==[], !, 
   member_of_relax(ending(Ending),RelaxLvl), Ending = balanced(perfect),
   must_det_ll((
-  Info = [type(ending(Ending))|CurrentInfo],
-  sub_cmpd(testid(TestID),CurrentInfo),
-  sub_cmpd(example(ExampleNum),CurrentInfo),
+  Info = [type(ending(Ending))|CurrentInfo], sub_cmpd(testid(TestID),CurrentInfo),sub_cmpd(example(ExampleNum),CurrentInfo),
   append_LR([l2r(Info,[],[]),call(assert_test_property(TestID,ExampleNum,ending,ending(Info,RelaxLvl)))],Prev,RestLR))).
+
+calc_o_d_recursively(RelaxLvl,CurrentInfo,Prev,MLHSObjs,RHSObjs,RestLR):- 
+  my_partition(is_mapping,MLHSObjs,_Mappings,LHSObjsFGBG),
+  my_partition(is_bg_object,LHSObjsFGBG,_LBGObjs,LFGObjs),
+  RHSObjs == [], LFGObjs\==[], !, member_of_relax(ending(Ending),RelaxLvl), Ending = delete_leftover,
+  Info = [type(ending(Ending))|CurrentInfo], sub_cmpd(testid(TestID),CurrentInfo),sub_cmpd(example(ExampleNum),CurrentInfo),
+  append_LR([l2r(Info,LFGObjs,[]),l2r(Info,[],[]),call(assert_test_property(TestID,ExampleNum,ending,ending(Info,RelaxLvl)))],Prev,RestLR).
+
+calc_o_d_recursively(RelaxLvl,CurrentInfo,Prev,MLHSObjs,RHSObjs,RestLR):- 
+  my_partition(is_mapping,MLHSObjs,_Mappings,LHSObjsFGBG),
+  my_partition(is_bg_object,LHSObjsFGBG,LBGObjs,LFGObjs),
+  RHSObjs == [], LFGObjs==[], LBGObjs\==[], !, member_of_relax(ending(Ending),RelaxLvl), Ending = balanced(with_bg_l),
+  Info = [type(ending(Ending))|CurrentInfo], sub_cmpd(testid(TestID),CurrentInfo),sub_cmpd(example(ExampleNum),CurrentInfo),
+  append_LR([l2r(Info,LBGObjs,[]),l2r(Info,[],[]),call(assert_test_property(TestID,ExampleNum,ending,ending(Info,RelaxLvl)))],Prev,RestLR).
+
+calc_o_d_recursively(RelaxLvl,CurrentInfo,Prev,LHSObjs,MRHSObjs,RestLR):- 
+  my_partition(is_bg_object,MRHSObjs,RBGObjs,RFGObjs),
+  RFGObjs == [], LHSObjs==[], !, member_of_relax(ending(Ending),RelaxLvl), Ending = balanced(with_bg_r),
+  Info = [type(ending(Ending))|CurrentInfo], sub_cmpd(testid(TestID),CurrentInfo),sub_cmpd(example(ExampleNum),CurrentInfo),
+  append_LR([l2r(Info,[],RBGObjs),l2r(Info,[],[]),call(assert_test_property(TestID,ExampleNum,ending,ending(Info,RelaxLvl)))],Prev,RestLR).
+
+calc_o_d_recursively(RelaxLvl,CurrentInfo,Prev,MLHSObjs,MRHSObjs,RestLR):- 
+  my_partition(is_bg_object,MRHSObjs,RBGObjs,RFGObjs), my_partition(is_bg_object,MLHSObjs,LBGObjs,LFGObjs),
+  RFGObjs == [], LFGObjs==[], !, member_of_relax(ending(Ending),RelaxLvl), Ending = balanced(with_bg_l_r),
+  Info = [type(ending(Ending))|CurrentInfo], sub_cmpd(testid(TestID),CurrentInfo),sub_cmpd(example(ExampleNum),CurrentInfo),
+  append_LR([l2r(Info,LBGObjs,[]),l2r(Info,[],RBGObjs),call(assert_test_property(TestID,ExampleNum,ending,ending(Info,RelaxLvl)))],Prev,RestLR).
+
+
 
 calc_o_d_recursively(RelaxLvl,CurrentInfo,Prev,LHSObjs,RHSObjs,RestLR):- fail,
   maybe_remove_bg(RHSObjs,RHSObjs1), \=@=(RHSObjs,RHSObjs1),!,
