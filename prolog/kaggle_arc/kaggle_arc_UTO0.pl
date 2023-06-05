@@ -650,7 +650,6 @@ scope_training(ExampleNum):-
       ignore(ExampleNum = UExampleNum))).
   
 
-
 common_props([O|Objs],Props):-
    indv_props_list(O,List),
    findall(P,(member(P,List),\+ dont_notice(P),forall(member(E,Objs),has_prop(P,E))),Props).

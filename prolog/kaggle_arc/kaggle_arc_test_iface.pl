@@ -160,7 +160,7 @@ print_menu_list(L):- forall(nth_above(100,N,L,E),format('~N~@',[print_menu_cmd1(
 
 % ignore((read_line_to_string(user_input,Sel),atom_number(Sel,Num))),
 
-ui_menu_call(G):- ignore(catch(must_not_error(G),E,u_dmsg(E))).
+ui_menu_call(G):- must_not_error(ignore(catch((G),E,u_dmsg(E)))).
 %ui_menu_call(G):- rtrace(G).
 %ui_menu_call(G):- when_in_html(catch(ignore((G)),E,u_dmsg(E))) ->true ; catch(ignore((G)),E,u_dmsg(E)).
   
@@ -629,7 +629,7 @@ ndividuator_logicmoo(TestID,ExampleNum,IndvSMode,In,Out):-
 why_io:- 
  maplist(ignore,[
   nop(ndividuator),  
-  %show_object_dependancy,
+  show_object_dependancy,
   ensure_scene_change_rules,
   print_scene_change_rules]).
 
@@ -1110,8 +1110,13 @@ is_size_3x3(Grid):- ensure_grid(Grid), mgrid_size(Grid,3,3).
 is_size_lte_3x3(Grid):- ensure_grid(Grid), mgrid_size(Grid,H,V),H=<3,V=<3.
 %is_size_lte_10x10(Grid):- ensure_grid(Grid), mgrid_size(Grid,H,V),H=<10,V=<10.
 is_size_gte_20x20(Grid):- ensure_grid(Grid), mgrid_size(Grid,H,V),H>=20,V>=20.
+
+is_mass_gte_200(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass>=200.
+
 is_mass_lte_25(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass=<25.
+is_mass_lte_50(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass=<50.
 is_mass_lte_100(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass=<100.
+is_mass_lte_300(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass=<300.
 %is_mass_gte_600(Grid):- ensure_grid(Grid), mmass(Grid,Mass),Mass>=600.
 
 is_colors_adjacent(Grid):- ensure_gid(Grid,GID), ensure_cmem(GID),

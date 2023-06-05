@@ -832,7 +832,7 @@ ensure_individuals(TestID,ExampleNum):- \+ ground(ExampleNum),!,
 ensure_individuals(TestID,ExampleNum):- 
   \+ \+ arc_cache:individuated_cache(TestID,TestID>ExampleNum*_,_,[_,do_ending],_Out),!.
 ensure_individuals(TestID,ExampleNum):- 
-  time(with_individuated_cache(true,
+  (with_individuated_cache(true,
      forall( kaggle_arc(TestID,ExampleNum,GridIn0,GridOut0),
       (duplicate_term(GridIn0+GridOut0,GridIn+GridOut),
         ensure_individuals(TestID,ExampleNum,GridIn,GridOut))))).

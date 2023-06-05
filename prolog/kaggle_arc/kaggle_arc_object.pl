@@ -868,7 +868,7 @@ is_whole_grid(B):- has_prop(iz(stype(whole)),B), \+ has_prop(iz(stype(part)),B),
 merge_objs(I,O,OUT):-
   indv_props_list(I,IProps),
   indv_props_list(I,OProps),
-  print_ss(combine_same_globalpoints_really,I,O),
+  nop(print_ss(combine_same_globalpoints_really,I,O)),
   %wots(SI,writeg(I)), wots(SO,writeg(O)), print_ss(combine_same_globalpoints_really,SI,SO),
   my_partition(props_not_black_bg,IProps,_,Include1),
   my_partition(props_not_black_bg,OProps,_,Include2),
@@ -930,16 +930,13 @@ physical_points(GPoints,Points):- sub_var(wfg,GPoints),!,
 physical_points(GPoints,Points):- 
    my_partition(sub_var('$VAR'('_')),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
-
 physical_points(GPoints,Points):- numbervars(GPoints,0,_,[singletons(true),attvars(skip)]),
    \+ (sub_compound('$VAR'(S),GPoints),S\=='_'),
    my_partition(sub_var('$VAR'('_')),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
-
 physical_points(GPoints,OPoints):- 
    my_partition(sub_var(bg),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!.
-
 /*
 physical_points(GPoints,Points):- 
    my_partition(sub_var(fg),GPoints,FGPoints,_),
@@ -949,14 +946,13 @@ physical_points(GPoints,Points):-
    my_partition(sub_var(black),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
 physical_points(Points,Points).
-
 physical_colorless_points(CPoints,Points):- is_ncpoints_list(CPoints),!,Points=CPoints.
 physical_colorless_points(CPoints,Points):- is_cpoints_list(CPoints),!,
   physical_points(CPoints,PhysicalPoints),my_maplist(arg(2),PhysicalPoints,Points).
 physical_colorless_points(Other,Points):- localpoints(Other,CPoints),!,physical_colorless_points(CPoints,Points).
 
-
-
+%=================================================
+%=================================================
 local_shape_id(NormGrid,NormShapeID):- 
  physical_colorless_points(NormGrid,NormLPoints),
  shape_id(NormLPoints,NormShapeID).
@@ -1122,6 +1118,21 @@ o2g_f(Obj,Glyph):- obj_to_oid(Obj,OID),oid_glyph_object(OID,Glyph,Obj),!.
 %obj_to_oid(I,ID,Iv):- trace_or_throw(missing(obj_to_oid(I,ID,Iv))).
 %obj_to_oid(_,ID,_Iv):- luser_getval(test_pairname,ID).
 
+amass(I,Count):- acmass(I,Count).
+
+acmass(I,Count):- is_grid(I),!,globalpoints(I,Points), length(Points,Count),!.
+acmass(I,X):- var_check(I,acmass(I,X)).
+acmass([G|Grid],Points):- (is_group(Grid);(is_list(Grid),is_group(G))),!,mapgroup(acmass,[G|Grid],MPoints),sum_list(MPoints,Points).
+acmass(I,X):- indv_props(I,L),member(acmass(X),L),!.
+acmass(I,XX):- is_object(I),!,must_det_ll((localpoints(I,L), length(L,X))),!,XX=X.
+%acmass(I,X):- is_object(I),!,must_det_ll((indv_props(I,L), member(acmass(X),L))).
+acmass(Points,Count):- is_list(Points),length(Points,Count),!.
+acmass(I,Count):- globalpoints(I,Points),!,length(Points,Count),!.
+acmass(C-_,1):- nonvar_or_ci(C),!.
+%acmass(I,Count):- globalpoints(I,Points), length(Points,Count),!.
+
+omass(I,X):- indv_props(I,L),member(mass(X),L),!.
+omass(I,XX):- is_object(I),!,must_det_ll((localpoints(I,L), mass(L,X))),!,XX=X.
 
 mass(C,1):- is_fg_color(C),!.
 mass(C,0):- (is_bg_color(C);var(C);C==[]),!.
@@ -1210,7 +1221,8 @@ indv_props_list_e(Obj,NV):- obj_to_oid(Obj,OID),!,cindv(OID,NV).
 %indv_props(I,_):- atom(I),my_assertion(is_oid(I)),fail.
 %indv_props(I,Prop):- (atom(I);var(I)),indv_props_list_e(I,Prop).
 indv_props(I,Props):- var(I),!,enum_object(I),indv_props(I,Props).
-indv_props(I,NV):-  must_be(compound,NV), cindv(I,NV).
+indv_props(I,NV):-  compound(NV), \+ is_list(NV),!, cindv(I,NV).
+indv_props(I,NV):- indv_props_list(I,NV).
 %indv_props(I,Props):- atom(I), \+ \+ cindv(I,_,_), var(Props),!,indv_props_list(I,Props).
 %indv_props(obj(L),Prop):- is_list(L),!,member(Prop,L ).
 %indv_props(C,LL):- \+ compound(C),nonvar(C),g2o(C,I),!,indv_props(I,LL).

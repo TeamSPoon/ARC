@@ -28,11 +28,11 @@
 :- dynamic('$messages':to_list/2).
 :- multifile('$messages':to_list/2).
 :- asserta(('$messages':to_list(In, List) :- ((is_list(In)-> List = In ; List = [In])),!)).
-%my_time(Goal):- !,call(Goal).
+%/*my_time*/(Goal):- !,call(Goal).
 
 :- use_module(library(statistics)).
 :- import(prolog_statistics:time/1).
-my_time(Goal):- time(Goal),flush_tee.
+/*my_time*/(Goal):- time(Goal),flush_tee.
 :- export(plain_var/1).
 plain_var(V):- notrace((var(V), \+ attvar(V), \+ get_attr(V,ci,_))).
 catch_nolog(G):- ignore(catch(notrace(G),E,once(true;nop(u_dmsg(E=G))))).

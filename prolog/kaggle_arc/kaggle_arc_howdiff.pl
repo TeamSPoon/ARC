@@ -287,7 +287,7 @@ showdiff_groups(AG,BG):- not_list(BG),into_list(BG,BGL),!,showdiff_groups(AG,BGL
 
 showdiff_groups(AG,BG):- ignore((once((proportional_how(AG,BG,DD), pp(cyan,proportional(DD)))))),fail.
 
-showdiff_groups(AG,BG):- showdiff_groups_new(AG,BG),!.   
+%showdiff_groups(AG,BG):- showdiff_groups_new(AG,BG),!.   
 showdiff_groups(AG,BG):- showdiff_groups_old(AG,BG),!.   
 
 showdiff_groups_old(AG,BG):-
@@ -333,10 +333,12 @@ diff_groups(A0,B0,DD):-
   maplist(obj_group_comparable,B0,B2),
   diff_groups1(A2,B2,DD).
 
+
 obj_atoms(PA,PAP):- PA==[],!,PAP=[].
 obj_atoms(PA,PAP):- sub_term(E,PA),compound(E),E=obj_atoms(UU),!,subobj_atoms(UU,PAP).
 obj_atoms(PA,PAP):- must_det_ll((nonvar(PA))),is_grid(PA),globalpoints(PA,GP),!,subobj_atoms(points(GP),PAP).
 obj_atoms(PA,PAP):- is_list(PA),maplist(obj_atoms,PA,LPA),append(LPA,PAP),!.
+obj_atoms(oc(_,PA),PAP):- !,obj_atoms(PA,PAP).
 obj_atoms(PA,PAP):- is_object(PA),must_det_ll((indv_props_list(PA,MF),subobj_atoms(MF,PAP),PAP\==[])).
 obj_atoms(PA,PAP):- into_obj_props1(PA,MF),must_subobj_atoms(MF,PAP),!.
 obj_atoms(PA,PAP):- must_subobj_atoms(PA,PAP),!.
@@ -474,7 +476,7 @@ indiv_show_pairs_output(Peers,_Shown,List,Indv):-
   (best_mates(Indv,List,Mate)->showdiff_arg1("I<>O",Peers,Indv,List,Mate);dg(Indv)).
 
 
-showdiff_groups_new(AG,BG):- learn_group_mapping(AG,BG),!.
+%showdiff_groups_new(AG,BG):- learn_group_mapping(AG,BG),!.
 showdiff_groups_new(AG,BG):- 
  must_det_ll((
   other_io(IO,OI),
@@ -508,9 +510,8 @@ xfer_mappings(TITLE,AG,BG,BGG,APA):-
 
 nearest_by_not_simular(A,B,R):- A == B,!, R = inf+1.
 nearest_by_not_simular(_,B,R):- is_whole_grid(B), !, R = inf+1.
-nearest_by_not_simular(A,B,R):- distance(A,B,R).
+nearest_by_not_simular(A,B,R):- central_dist(A,B,R).
 
-distance(A,B,R):- loc2D(A,X1,Y1),loc2D(B,X2,Y2), R is sqrt(abs(X1-X2)*abs(Y1-Y2)).
 
 sort_by_closeness(In,Objs,List):- sorted_by_closeness(In,_Sorted,Objs,List).
 :- dynamic(saved_sorted_by_closeness/4).
@@ -534,24 +535,42 @@ bonus_sort_by_jaccard(Bonus,A,Candidates,Objs):-
 
 find_prox_mappings(Bonus,A,GroupID,Candidates,Objs):- bonus_sort_by_jaccard(Bonus,A,GroupID,Candidates,Objs).
 
-points_by_distance_to_center(I,GGP):- center2D(I,X,Y), globalpoints(I,GP), predsort_on(dist_to(X,Y),GP,GGP).
 
-dist_to(X1,Y1,HVP,Dist):- center2D(HVP,X2,Y2),dist(X1,Y1,X2,Y2,Dist).
-dist_to(P1,P2,Dist):- center2D(P1,X1,Y1), center2D(P2,X2,Y2),dist(X1,Y1,X2,Y2,Dist).
+central_dist(A,B,Dist):- center2D(A,X1,Y1),dist_from(X1,Y1,B,Dist).
+dist_from(X1,Y1,HVP,Dist):- center2D(HVP,X2,Y2),euclidian_dist(X1,Y1,X2,Y2,Dist).
+points_by_distance_to_center(I,GGP):- center2D(I,X,Y), globalpoints(I,GP), predsort_on(dist_from(X,Y),GP,GGP).
+euclidian_dist(X1,Y1,X2,Y2,Dist):-
+  DiffX is X1 - X2,
+  DiffY is Y1 - Y2,
+  Dist is sqrt((DiffX * DiffX) + (DiffY * DiffY)).
 
 
 sort_by_distance(Bonus,A,GroupID,Candidates,ObjsO):-
-     center2D(A,X1,Y1),
-     globalpoints(A,AP),
-     maplist(distance(A,AP,X1,Y1),Candidates,Results),
-     sort(Results,SortedR),sort(SortedR,Sorted),
-     tie_break_sbd(Bonus,A,GroupID,Sorted,Objs),
-     maplist(undist_objs,Objs,ObjsO).
+   center2D(A,X1,Y1),
+   globalpoints(A,AP),  
+   maplist(closest_points(A,AP,X1,Y1),Candidates,Results),
+   sort(Results,SortedR),reverse(SortedR,Sorted),
+   tie_break_sbd(Bonus,A,GroupID,Sorted,Objs),
+   maplist(undist_objs,Objs,ObjsO).
+
+closest_points(A,_AP,_X1,_Y1,B,dist(inf,inf,B)):- A=@=B,!.
+closest_points(_A,AP,X1,Y1,B,Res):- 
+ must_det_ll((
+  center2D(B,X2,Y2),
+  euclidian_dist(X1,Y1,X2,Y2,CentralDist),
+  Res = dist(ClosestPoint,CentralDist,B),
+  %center2D(B,X2,Y2),
+  %euclidian_dist(X1,Y1,X2,Y2,R),  
+  globalpoints(B,BP),
+  maplist(adjacent_closeness(AP),BP,N),
+  sort(N,[ClosestPoint|_]))).
+
+adjacent_closeness(A,B,Dist):- center2D(A,X1,Y1),center2D(B,X2,Y2), euclidian_dist(X1,Y1,X2,Y2,Dist).
 
 undist_objs(Obj,Obj):- is_object(Obj),!.
 undist_objs(Obj,Obj):- \+ compound(Obj),!.
-undist_objs(dist(_,_,Obj),Obj):-!.
 undist_objs(pair4(_A,_PA,Obj,_PB),Obj):-!.
+undist_objs(dist(_,_,Obj),Obj):-!.
 undist_objs(Objs,ObjsO):- functor(Objs,_,A),arg(A,Objs,ObjsO),is_object(ObjsO),!.
 undist_objs(Obj,Obj).
 
@@ -561,10 +580,6 @@ tie_break_sbd(Bonus,A,GroupID,[W1,W2|Sorted],[S1,S2|Sorted]):- compound(W1),comp
 tie_break_sbd(_,_,_,Sorted,Sorted):- nop(trace).
 
 
-dist(X1,Y1,X2,Y2,Dist):-
-  DiffX is X1 - X2,
-  DiffY is Y1 - Y2,
-  Dist is sqrt(DiffX * DiffX + DiffY * DiffY).
 
 object_points(R1,R2,P1,P2):- globalpoints(R1,CP1),globalpoints(R2,CP2),!,member(C-P1,CP1), member(C-P2,CP2).
 
@@ -573,23 +588,6 @@ is_adjacent_same_color(R1,R2,0):- object_points(R1,R2,P,P).
 is_adjacent_same_color(R1,R2,1):- object_points(R1,R2,P1,P2), is_adjacent_point(P1,Dir,P2), \+ is_diag(Dir).
 is_adjacent_same_color(R1,R2,2):- object_points(R1,R2,P1,P2), is_adjacent_point(P1,Dir,PM), \+ is_diag(Dir), is_adjacent_point(PM,Dir,P2).
 is_adjacent_same_color(R1,R2,2):- object_points(R1,R2,P1,P2), is_adjacent_point(P1,Dir,P2), is_diag(Dir).
-
-distance(A,_AP,_X1,_Y1,B,Res):- A=@=B,!, Res = dist(Close,A,B), Close=inf.
-distance(_A,AP,_X1,_Y1,B,Res):- 
- must_det_ll((
-  Res = dist(Close,R,B),
-  %center2D(B,X2,Y2),
-  %dist(X1,Y1,X2,Y2,R),
-  R = 1,
-  globalpoints(B,BP),
-  maplist(is_adjacent_closeness(AP),BP,N),
-  sumlist(N,Sum),
-  Close is R*Sum)).
-
-is_adjacent_closeness(AP,B,Sum):- maplist(is_adjacent_close(B),AP,N), sumlist(N,Sum).
-
-is_adjacent_close(A,B,Diff):- is_adjacent_point(A,Dir,B),!, (\+ is_diag(Dir) ->  Diff = -2 ; Diff = -1).
-is_adjacent_close(A,B,Diff):- center2D(A,X1,Y1),center2D(B,X2,Y2), dist(X1,Y1,X2,Y2,Dist),Diff is Dist+1.
 
 
 bonus_sort_by_jaccard(_,_,_,[Obj],[Obj]):-!.

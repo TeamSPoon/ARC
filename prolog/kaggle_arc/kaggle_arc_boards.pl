@@ -6,6 +6,8 @@
 */
 :- include(kaggle_arc_header).
 
+:- reconsult(kaggle_arc_boards_dpg).
+
 :- use_module(library(nb_set)).
 :- use_module(library(lists)).
 
@@ -99,7 +101,7 @@ cache_devel:- with_pair_mode(entire_suite,
  forall(all_arc_test_name_unordered(TestID),
   ((test_name_output_file(TestID,'.pl',File), ( exists_file(File)-> true; cache_devel(TestID)))))).
 %cache_devel(TestID):-  ensure_test(TestID), test_name_output_file(TestID,'.pl',File),  
-%  catch(cant_rrtrace(notrace(cache_devel(TestID,File))),E,wdmsg(cache_devel(TestID,File)=E)),!.
+%  catch(cant_rrtrace(notrace(cache_devel(TestID,File))),E,u_dmsg(cache_devel(TestID,File)=E)),!.
 cache_devel(TestID):-  ensure_test(TestID), test_name_output_file(TestID,'.pl',File),  cant_rrtrace(notrace(cache_devel(TestID,File))).
 
 cache_devel( TestID,File):- var(TestID),!,ensure_test(TestID),cache_devel( TestID,File).
@@ -137,7 +139,7 @@ compile_and_save_hints_now(TestID):-
   %ignore(retract(saved_training(TestID))),
   %ignore(retract(process_test(TestID))),
 
-  time((with_individuated_cache(true,
+  ((with_individuated_cache(true,
      ((
       gen_gids(TestID),
       detect_pair_hints(TestID),
@@ -830,8 +832,6 @@ keep_flipD(I,O):- grid_size(I,H,V),make_grid(V,H,O),
       (X>=Y,get_color_at(X,Y,I,C),
        nb_set_local_point(Y,X,C,O)))).
 
-:- include(kaggle_arc_reduce).
-:- include(kaggle_arc_skels).
 
 not_reversed(IO):- (IO \== o-i).
 
@@ -988,7 +988,50 @@ input_expands_into_output(TestID):-
   \+ \+ (select(ogs(Trim,Whole,Strict,[loc2D(_,_)|_]),List,Rest),
          member(ogs(Trim,Whole,Strict,[loc2D(_,_)|_]),Rest))))).
 
+/*
+% grid_to_obj(Grid,[colormass,fg_shapes(colormass)],Obj),print_side_by_side(Grid,Obj).
 
+trim_for_offset_1_1(II,In,OX,OY):- 
+  trim_to_rect2(II,In), !, II\=@=In,
+  % print_side_by_side(II,In),
+  once(ogs_11(OX,OY,In,II);(OX=OY,OX=1)).
+
+all_ogs1(II,Out,XY):-
+  findall(ogs(trim,whole,R,loc2D(XX,YY)),
+     (trim_for_offset_1_1(II,In,OX,OY),maybe_ogs(R,X,Y,In,Out),XX is X-OX+1, YY is Y-OY+1),XY),!.
+
+all_ogs2(In,Out,XY):- findall(ogs(notrim,whole,R,loc2D(XX,YY)),maybe_ogs(R,XX,YY,In,Out),XY),!.
+
+all_ogs3(Grid,Out,XY):-
+  findall(ogs(notrim,Named,R,loc2D(XX,YY)),(fail,grid_to_so(Grid,Named,In),maybe_ogs(R,XX,YY,In,Out)),XY).
+
+all_ogs(In,Out,Set):- %member(R,[strict,loose]),
+  all_ogs1(In,Out,XY1),
+  all_ogs2(In,Out,XY2),
+  all_ogs3(In,Out,XY3),  
+  flatten([XY1,XY2,XY3],XY),
+  list_to_set(XY,Set).
+
+%maybe_ogs(R,X,Y,In,Out):-  find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R=loose).
+maybe_ogs(R,X,Y,In,Out):- maybe_ogs_color(R,X,Y,In,Out).
+maybe_ogs(call_ogs(P2,R),X,Y,In,Out):-  no_repeats(IIN,(pre_ogs_alter(P2),once(grid_call_alters(P2,In,IIN)))), maybe_ogs_color(R,X,Y,IIN,Out).
+
+%pre_ogs_alter(maybe_unbind_bg).
+pre_ogs_alter([maybe_unbind_bg,maybe_fg_to_bg]).
+pre_ogs_alter(P2):- rot_ogs(P2).
+
+maybe_unbind_bg(In,NewIn):- get_black(BGC), unbind_color(BGC,In,NewIn),!,In\=@=NewIn.
+maybe_fg_to_bg(In,NewIn):- get_black(Black), \+ sub_var(Black,In), unique_colors(In,UCs),
+ include(is_real_fg_color,UCs,FGC),!,FGC=[FG],subst(In,FG,Black,NewIn),!, In\==NewIn.
+
+rot_ogs(trim_to_rect).
+rot_ogs(P2):- rotP0(P2).
+rot_ogs([trim_to_rect,P2]):- rotP2(P2).
+ 
+
+maybe_ogs_color(R,X,Y,In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)),learn_hybrid_shape_board(ogs(R),In).
+maybe_ogs_color(R,X,Y,In,Out):- ogs_11(X,Y,In,Out),(find_ogs(X,Y,In,Out)->R=strict;R=loose),learn_hybrid_shape_board(ogs(R),In).
+*/
 
 %grid_hint_iso(MC,IO,In,_Out,_IH,_IV,OH,OV,is_xy_columns):- once(has_xy_columns(In,_Color,OH,OV,)).
 

@@ -2166,6 +2166,9 @@ guard_whole(LF,LF).
 %individuate(GH,GV,ID,ROptions,_Grid,Points,IndvS):- \+ is_list(ROptions), is_glyphic(Points,GH,GV), individuate_glyphic(GH,GV,ID,Points,IndvS),!.
 %individuate(GH,GV,ID,whole,_Grid,Points,IndvS):-  individuate_whole(GH,GV,ID,Points,IndvS),!.
 
+list_upto(Size,List,Some):- length(List,L),(L=<Size ->Some=List ; (length(Some,Size),append(Some,_,List))).
+
+
 individuate7(VM,ID,ROptions,GridIn,IndvS):-
   ignore((fix_indivs_options(ROptions,List),list_upto(4,List,Some),append(Some,['...'],Options))),
   w_section(title(individuate(Options,ID)),individuate8(VM,ID,ROptions,GridIn,IndvS)).
@@ -2241,7 +2244,9 @@ into_fti(TID,ROptions,GridIn0,VM):-
      %compare:_, 
    target_grid:_,  last_key:_,  
    % Options and TODO List (are actually equal things)
-   lo_program:Options, options:OOptions, start_options:ROptions, %todo_prev:[],
+   lo_program:Options, options:OOptions, 
+   start_options:ROptions,
+   expanded_start_options:Options, %todo_prev:[],
    % how much time is left before we turn on debugger
    timeleft:Timeleft, objs_max_len:Max, objs_min_mass:_, objs_max_mass:_,
    % Grid and point representations
@@ -4216,28 +4221,27 @@ add_missing(X,X).
 is_fti_step(leftover_as_one).
 % =====================================================================
 leftover_as_one(VM):-
-   Points0 = VM.lo_points,
-   include(is_fg_point,Points0,Points),
+   mostly_fgp(VM.lo_points,Points),
    ignore((Points\==[],
-   u_dmsg(leftover_as_one=Points),
+           SP = VM.expanded_start_options,
+           with_output_to(user_error,print_grid(VM.h,VM.v,leftover_as_one,Points)),u_dmsg(leftover_as_one_indiv(SP)=Points), 
    make_indiv_object(VM,[iz(info(combined)),iz(info(leftover_as_one))],Points,LeftOverObj), verify_object(leftovers,LeftOverObj),
    assumeAdded(VM,LeftOverObj))),
    ignore_rest(VM).
 
+verify_object(_,_).
 % =====================================================================
 is_fti_step(current_as_one).
 % =====================================================================
 current_as_one(VM):-
-   keypads(VM),
-   Points0 = VM.lo_points,
-   include(is_fg_point,Points0,Points),
+   mostly_fgp(VM.lo_points,Points),
    ignore((
    Points\==[],
    %set_html_stream_encoding, 
-   u_dmsg(current_as_one=Points),
+   SP = VM.expanded_start_options,
+   with_output_to(user_error,print_grid(VM.h,VM.v,current_as_one_indiv,Points)),u_dmsg(current_as_one_indiv(SP)=Points), 
    make_indiv_object(VM,[iz(info(combined)),birth(current_as_one)],Points,LeftOverObj), verify_object(LeftOverObj),
-   assumeAdded(VM,LeftOverObj),
-   set(VM.lo_points) = Points)).
+   assumeAdded(VM,LeftOverObj))).
    
 
 ignore_rest(VM):- gset(VM.lo_points)=[].

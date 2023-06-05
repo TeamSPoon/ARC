@@ -66,6 +66,100 @@ orpt(G):- !, \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), nl_if_ne
 %wcg(O,G):- pp(O,(call(pp_wcg(G)))),!.
 wcg(O,G):- pp(O,G),!.
 
+can_unify(I,O):- \+ (I \= O).
+
+
+test_local_dyn(F,A):- setof(F/A,(test_local_dyn(F),current_predicate(F/A)),L),member(F/A,L),A\==0.
+:- dynamic(test_local_dyn/1).
+test_local_dyn(fav).
+%test_local_dyn(why_grouped).
+
+test_local_save(P):- test_local_dyn(P).
+test_local_save(arc_test_property).
+test_local_save(assumed_mapped).
+test_local_save(assumed_unmapped).
+test_local_save(cached_dictation).
+test_local_save(cached_tests).
+test_local_save(cached_tests_hard).
+test_local_save(cindv).
+test_local_save(cmem).
+test_local_save(cmem_hv).
+test_local_save(did_map).
+test_local_save(each_object_dependancy).
+test_local_save(g_2_o).
+test_local_save(gid_glyph_oid).
+test_local_save(grid_associatable).
+test_local_save(individuated_cache).
+test_local_save(is_accompany_changed_db).
+test_local_save(is_for_ilp).
+test_local_save(is_grid_gid).
+test_local_save(is_grid_obj_count).
+test_local_save(is_grid_size).
+test_local_save(is_grid_tid).
+test_local_save(is_gridmass).
+test_local_save(is_why_grouped_g).
+test_local_save(kaggle_arc_answers).
+test_local_save(learnt_rule).
+test_local_save(note).
+test_local_save(obj_cache).
+test_local_save(object_atomslist).
+test_local_save(object_dependancy).
+test_local_save(object_to_object).
+test_local_save(oid_glyph_object).
+test_local_save(omem).
+test_local_save(oout_associatable).
+test_local_save(prop_dep).
+test_local_save(propcount).
+test_local_save(propcounts).
+test_local_save(showed_point_mapping).
+test_local_save(smem).
+test_local_save(test_associatable).
+test_local_save(test_info_cache).
+
+test_local_save1(F,A):- test_local_dyn(F,A).
+test_local_save1(F,A):- setof(F/A,(test_local_save(F),current_predicate(F/A),A\==0),L),member(F/A,L).
+test_local_save1(F,A):- setof(F/A,(current_predicate(arc_cache:F/A),A\==0,functor(P,F,A),
+  \+ predicate_property(arc_cache:P,imported_from(_))),L),member(F/A,L).
+test_local_save1(F,A):- setof(F/A,(test_local_save(F),current_predicate(arc_cache:F/A),A\==0),L),member(F/A,L).
+
+test_local_save(F,A):- findall_vset(F/A,test_local_save1(F,A),List),member(F/A,List).
+
+
+training_info(TestID,InfoSet):-
+ test_id_atom(TestID,TestIDA),
+  findall(Ref,
+  (test_local_dyn(F,A), functor(X,F,A),
+      (clause(X,_,Ref);clause(arc_cache:X,_,Ref)),once((arg(_,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA)))),Info),
+  list_to_set(Info,InfoSet).
+
+saveable_test_info(TestID,InfoSet):-
+ test_id_atom(TestID,TestIDA),
+ findall(Ref,
+  (test_local_save(F,A), functor(X,F,A),
+      (clause(X,_,Ref);clause(arc_cache:X,_,Ref)),once((arg(_,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA)))),Info),
+ list_to_set(Info,InfoSet).
+
+
+assertz_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,assertz_if_new(TestIDGoal).
+asserta_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,asserta_if_new(TestIDGoal).
+assert_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,assert_if_new(TestIDGoal).
+call_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,call(TestIDGoal).
+retractall_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),retractall(TestIDGoal).
+
+dress_in_testid(M:Goal,M:TestIDGoal):- !, dress_in_testid(Goal,TestIDGoal).
+dress_in_testid(Goal,TestIDGoal):- Goal=..[F,A|Args], get_current_test(TestID), (A==TestID-> TestIDGoal=Goal; TestIDGoal=..[F,TestID,A|Args]).
+
+assert_visually(H:-B):- !,unnumbervars((H:-B),(HH:-BB)), assert_visually1(HH,BB).
+assert_visually( H  ):- unnumbervars(H,HH),assert_visually1(HH,true).
+
+assert_visually1(H,B):- get_current_test(TestID), arg(1,H,W),W\==TestID,!, H=..[F|Args],GG=..[F,TestID|Args],assert_visually2(GG,B).
+assert_visually1(H,B):- assert_visually2(H,B).
+
+assert_visually2(H,B):- fail, copy_term((H:-B),(HH:-BB)),clause(HH,BB,Ref), clause(RH,RB,Ref),(H:-B)=@=(RH:-RB) ,!,(pp(cyan,known_exact(H:-B))).
+assert_visually2(H,B):- fail, copy_term((H),(HH)),clause(HH,_,Ref), clause(RH,_,Ref),(H)=@=(RH) ,!,pp(cyan,known(H:-B)).
+assert_visually2(H,B):- functor(H,F,_), my_asserta_if_new(test_local_dyn(F)), print_rule(F,(H:-B)), my_asserta_if_new((H:-B)).
+
+if_learn_ok(G):- call(G).
 
 
 %orpt(P):- colorize_oterms(p_g_s,P,G), format('~N',[]), print_term(G,[write_options([ numbervars(true),quoted(false),portray(true),portray_goal(user:s_p_g)])]),!.
@@ -684,7 +778,480 @@ fix_group(AG00,AG):-
   predsort(sort_on(mapping_order),AG0,AG1),
   maybe_exclude_whole(AG1,AG2),
  filter_redundant(AG2,AG).
+
+make_unifiable(A1,A2):- make_unifiable0(A1,O),!,A2=O.
+
+make_unifiable0(C1,_):- \+ compound(C1),fail.
+make_unifiable0(A1,A2):- var(A1),!,A2=A1.
+make_unifiable0(pg(A,B,C,_),pg(A,B,C,_)):-!.
+make_unifiable0(cc(C,_),cc(C,_)):-!.
+make_unifiable0(iz(C1),iz(C2)):- !, make_unifiable(C1,C2).
+make_unifiable0(giz(C1),giz(C2)):- !, make_unifiable(C1,C2).
+make_unifiable0(Cmp,CmpU):-  Cmp=..[F|List1], 
+  append(Left1,[C1],List1),append(Left2,[C2],List2), CmpU=..[F|List2],
+  my_maplist(unifiable_cmpd_else_keep,Left1,Left2),
+  unifiable_cmpd_else_var(C1,C2),!.
+make_unifiable0(C1,C2):- functor(C1,F,A),functor(C2,F,A).
+
+%unifiable_cmpd_else_keep(A1,A2):- unifiable_cmpd_keep(A1,A2).
+unifiable_cmpd_else_keep(Num,_):- number(Num),!.
+unifiable_cmpd_else_keep(A1,A1).
+
+unifiable_cmpd_else_var(A1,A2):- unifiable_cmpd_keep(A1,A2), \+ ground(A2).
+unifiable_cmpd_else_var(_,_).
+
+
+unifiable_cmpd_keep(A1,A2):- var(A1),!,A2=A1.
+unifiable_cmpd_keep(cc(C,_),cc(C,_)):-!.
+unifiable_cmpd_keep(A1,A2):- compound(A1), \+ is_list(A1), make_unifiable(A1,A2),!.
+
+
+make_unifiable_with_ftvars(C1,C2):- functor(C1,F,A),functor(C2,F,A),numbervars(C2).
+
+
+
+print_ss_rest(IO_DIR,N,[A,B|Objs]):-  print_ss(IO_DIR+N,A,B),N2 is N + 2,print_ss_rest(IO_DIR,N2,Objs).
+print_ss_rest(IO_DIR,N,[R]):- print_grid(IO_DIR+N,R).
+print_ss_rest(_,_,[]).
+
+mapping_order(I,O):- most_visible(I,O),!.
+mapping_order(Obj,MO):- area(Obj,Area),cmass(fg,Obj,CMass),
+  findall(_,doing_map_list(_,_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt,NCMass is -CMass,
+  MO = NCnt+NCMass+Area.
+cmass(FG,Obj,CMass):- has_prop(cc(FG,CMass),Obj).
+
+
+
+into_title(IO_DIR,OI,TITLE):-
+  upcase_atom(IO_DIR,A), upcase_atom(OI,B),
+  sformat(TITLE,"~w  -->  ~w",[A,B]),!.
+
+is_fg_bg_objects(AL,BL):- is_bg_object(BL) -> is_fg_object(AL) ; \+ is_fg_object(AL).
+same_values(Prop,AL,BL):- one_has_prop(Prop,AL),one_has_prop(Prop,BL).
+
+obj_oids(Obj,OIDZ):- is_object(Obj),!,obj_to_oid(Obj,OIDZ).
+obj_oids(Objs,OIDZ):- into_group(Objs,Grp),my_maplist(obj_to_oid,Grp,OIDS),delistify_single_element(OIDS,OIDZ).
+one_has_prop(P,L):- is_list(L),!,member(E,L),has_prop(P,E).
+one_has_prop(P,O):- has_prop(P,O).
+
+is_oid_or_gid(V,_):-var(V),!,fail.
+is_oid_or_gid(OID,OID):- atom(OID),is_oid(OID),!.
+is_oid_or_gid(oid(OID),OID):- !, atom(OID).
+is_oid_or_gid(gid(GID),GID):- !, atom(GID).
+is_oid_or_gid(glyph(GID),GID):- !, atom(GID).
+
+overly_oided(M,EE=Var,MM):- sub_term(E,M),is_oid_or_gid(E,EE),subst001(M,EE,Var,MM).
+remove_oids(M,O,[E|EL]):- overly_oided(M,E,MM),remove_oids(MM,O,EL).
+remove_oids(M,M,[]).
+
+
+
+matchlen([],[],0):-!.
+matchlen([A|List1],[B|List2],Len):- fitness(A,B,Fit),!,
+   matchlen(List1,List2,Len2), Len is Fit+Len2.
+
+fitness(A,B,1.1):- A=B,!.
+fitness(A,B,Fit):- is_list(A),is_list(B), length(A,L),matchlen(A,B,F), \+ is_grid(A), Fit is F/L,!.
+fitness(_,_,0.01):- !.
+
+%row_to_row
+%row_to_column
+%dot_to_
+
+was_once(_,_).
+
+
+upcase_atom_var(Num,VAR):- uc_av(Num,Name),VAR='$VAR'(Name),!.
+upcase_atom_var(Num,'$VAR'(Num)):-!.
+upcase_atom_var(_,_).
+
+uc_av(Var,Name):- var(Var),!,p_n_atom1(Var,Name).
+uc_av(Int,Name):- integer(Int),atom_concat('INT_',Int,Name).
+uc_av(Num,Name):- number(Num),atom_concat('FLOAT_',Num,DotName),replace_in_string(['.'-'_dot_'],DotName,Name).
+uc_av(List,Name):- List==[],!,Name='ListNil'.
+uc_av(List,Name):- is_list(List),my_maplist(uc_av,List,Names),atomic_list_concat(Names,'_',Name),!.
+%uc_av(Atom,Name):- atom(Atom),upcase_atom(Atom,Name).
+uc_av(Atom,Name):- p_n_atom1(Atom,Name).
+
+labels_for(obj(I),obj(O),Labels):- findall(EI,(member(EI,I),member(EO,O),EI=@=EO),Labels),length(Labels,N),N>5,!.
+labels_for(InGoal,OutGoal,Labels):-
+  labels_for1(InGoal,OutGoal,Labels1),
+  labels_for2(InGoal,OutGoal,Labels2),
+  append(Labels1,Labels2,Labels),!.
+
+labels_for1(InGoal,OutGoal,Labels):- 
+  findall(Atom,(sub_label(Atom,InGoal,OutGoal),maybe_unbind_label(Atom)),Atoms), 
+  list_to_set(Atoms,Set),
+  include(two_or_more(Atoms),Set,Labels).
+
+labels_for2(obj(I),obj(O),Labels):- !, findall(EI,(member(EI,I),member(EO,O),EI=@=EO),Labels).
+labels_for2(InGoal,OutGoal,Labels):- labels_for1(InGoal,OutGoal,Labels).
+
+
+two_or_more(Atoms,Label):- select(Label,Atoms,Rest),member(Label,Rest).
+
+sub_label(X, X, OutGoal):- sub_var(X,OutGoal).
+sub_label(X, Term, OutGoal) :-
+    compound(Term),
+    %is_list(Term),
+    \+ never_labels_in(Term),
+    arg(_, Term, Arg),
+    sub_label(X, Arg, OutGoal).
+
+never_labels_in(iz(_)).
+never_labels_in(shape_rep(grav,_)).
+never_labels_in(mass(1)).
+never_labels_in(mass(1)).
+never_labels_in(loc2D(_,_)).
+
+
+never_unbind_label(G):- var(G),!.
+never_unbind_label(Int):- integer(Int), Int > 7 ; Int == 1 ; Int == 0.
+never_unbind_label(true).
+never_unbind_label(false).
+never_unbind_label(G):- \+ atom(G),!,fail.
+never_unbind_label(G):- display_length(G,N),N<3,!.
+never_unbind_label(G):- downcase_atom(G,D), upcase_atom(G,D).
+never_unbind_label(G):- atom_chars(G,Cs),member(C,Cs),char_type(C,digit),!.
+
+maybe_unbind_label(G):- var(G),!,fail.
+maybe_unbind_label(iz(_)):- !,fail.
+%maybe_unbind_label(G):- too_non_unique(G).
+maybe_unbind_label(G):- never_unbind_label(G),!,fail.
+maybe_unbind_label(G):- skip_for_now, integer(G),G<1.
+maybe_unbind_label(G):- \+ atom(G),!,fail.
+maybe_unbind_label(G):- skip_for_now, is_real_fg_color(G),!.
+%maybe_unbind_label(G):- downcase_atom(G,D),\+ upcase_atom(G,D).
+
+skip_for_now:- fail.
+
+subst_rvars([],[],A,A):-!. 
+subst_rvars([F|FF],[R|RR],S,D):- ignore(debug_var(F,R)),subst_rvars_1(F,R,S,M), subst_rvars(FF,RR,M,D).
+
+map_find_onto_replace(Var,Var):-var(Var),!.
+map_find_onto_replace('$VAR'(X),'$VAR'(X)):-!.
+map_find_onto_replace(iz(Find),iz(Replace)):- compound(Find), Find\='$VAR'(_), !, map_find_onto_replace(Find,Replace).
+map_find_onto_replace(iz(Find),iz(Find)):- atom(Find),!.
+map_find_onto_replace(iz(Find),iz(Find)):- !.
+map_find_onto_replace(Find,Replace):- functor(Find,F,A),functor(Replace,F,A),
+  ignore((arg(A,Replace,E),upcase_atom_var(F,E))).
+
+subst_rvars_1(Find, Replace, Term, NewTerm ) :- var(Replace), compound(Find), 
+  map_find_onto_replace(Find,Replace),nonvar(Replace),!,subst_rvars_1(Find, Replace, Term, NewTerm ).
+subst_rvars_1(Find, Replace, Term, NewTerm ) :-
+ (Find==Term -> Replace=NewTerm ;
+  (is_list(Term)-> my_maplist(subst_rvars_1(Find, Replace), Term, NewTerm );
+   (( \+ compound(Term); Term='$VAR'(_); never_labels_in(Term))->Term=NewTerm;
+     ((compound_name_arguments(Term, F, Args),
+       my_maplist(subst_rvars_1(Find, Replace), Args, ArgsNew),
+        compound_name_arguments( NewTerm, F, ArgsNew )))))),!.
+
+
+rot_in_incr_90(X,Y):- freeze(X,rot90(X,Y)).
+rot_in_incr_90(X,Y):- freeze(X,rot180(X,Y)).
+rot_in_incr_90(X,Y):- freeze(X,rot270(X,Y)).
+
+rot_by_90_v1(List):- between_each(dif,List),between_each(rot_in_incr_90,List).
+
+between_each(_P2,[]):- !.
+between_each(_P2,[_]):- !.
+between_each(P2,[X, Y]):- !, call(P2, X, Y).
+between_each(P2,[X, Y, Z]):- !, call(P2, X, Y), call(P2, X, Z), call(P2, Z, Y).
+between_each(P2,[X|Text]):- mapgroup(dif(X), Text), between_each(P2,Text).
+
+
+rot_by_90([A,B,C,D]):- rot_by_90_0([A,B,C,D,A,B,C]).
+
+rot_by_90_0([A,B]):- rot90(A,B),!.
+rot_by_90_0([A,B|List]):- rot90(A,B),rot_by_90_0([B|List]).
+  
+subtractGrid(Out,In,Alien):- plain_var(Alien), remove_global_points(In,Out,Alien),!.
+subtractGrid(Out,In,Alien):- plain_var(Out),!,add_global_points(Alien,In,Out).
+subtractGrid(Out,In,Alien):- plain_var(In),!,remove_global_points(Alien,Out,In).
+
+find_by_shape(Grid,_Find,_Founds):- Grid==[],!,fail.
+find_by_shape(Grid,Find,Founds):- 
+ get_vm(VM),
+ vis2D(Find,GH,GV),
+ decolorize(Find,F), 
+ Prog = 
+  (all_rotations(F,F1),
+   %print_grid(F1),!,
+   find_ogs(H,V,F1,Grid),% atrace,
+
+   grid_to_points(F1,GH,GV,Points),
+   pp(Points),
+   make_indiv_object(VM,[iz(find_by_shape),F1,loc2D(H,V),alt_grid_size(GH,GV)],Points,F2)),
+ findall(F2,Prog,Matches),
+ align_founds(Matches,Founds).
+
+align_founds(Founds,Founds).
+
+in_out(In,Out):-
+  luser_getval(test_pairname,PairName),
+  into_gridnameA(In,PairName*in),
+  into_gridnameA(Out,PairName*out).
+
+lrn0:-    
+   in_out(In,Out),
+   subtractGrid(Out,In,Alien),
+   rot_by_90([Alien,A,B,C]),
+   find_by_shape(In,Alien,[A,B,C]),
+   find_by_shape(Out,Alien,[A,B,C,Alien]).
+
+lrn:- forall(lrn1, true).
+lrn1:- learn_arc(_).
+
+tst:- forall(tst1, true).
+tst1:- test_arc(_).
+
+learn_arc(TestID):- with_arc(learn,TestID).
+
+test_arc(TestID):- with_arc(solve,TestID).
+
+with_arc(Action,TestID):- plain_var(TestID),!, findall(Name,fav(Name),L),
+  list_to_set(L,S), member(TestID,S), with_arc(Action,TestID).
+
+with_arc(Action,arc):- !, findall(Name,kaggle_arc_io(Name,(_+_),_,_),L),
+  list_to_set(L,S), member(TestID,S), with_arc(Action,TestID).
+
+with_arc(Action,TestName):-
+  fix_test_name(TestName,TestID,_Type),TestName\==TestID,!,
+  with_arc(Action,TestID).
+
+with_arc(solve,TestID):- !, 
+  with_arc(learn,TestID),
+  forall(between(0,6,Num),with_pair(preview,TestID,trn,Num)),
+  forall(between(0,6,Num),with_pair(solve,TestID,tst,Num)).
+
+with_arc(test,TestID):- !, 
+  with_arc(learn,TestID),
+  forall(between(0,6,Num),with_pair(solve,TestID,trn,Num)),
+  forall(between(0,6,Num),with_pair(solve,TestID,tst,Num)).
+
+with_arc(preview,TestID):- !, 
+  forall(between(0,6,Num),with_pair(preview,TestID,trn,Num)),
+  forall(between(0,6,Num),with_pair(preview,TestID,tst,Num)).
+
+with_arc(Action,TestID):-
+  forall(between(0,6,Num),with_pair(Action,TestID,trn,Num)).
+
+with_pair(Action,TestID,Type,Num):-
+  kaggle_arc_io(TestID,Type+Num,in,In),
+  kaggle_arc_io(TestID,Type+Num,out,Out),
+  with_pair(Action,TestID,Type,Num,In,Out),!.
+
+with_pair(Action,TestID,Type,Num,In,Out):- !,
+  name_the_pair(TestID,Type,Num,In,Out,PairName),  
+  with_named_pair(Action,TestID,PairName,In,Out).
+
+with_named_pair(preview,TestID,PairName,In,Out):- !,
+  dash_chars(60,"|"),nl,nl,nop((ppnl(arc1(TestID)),nl)),
+  grid_size(In,IH,IV), grid_size(Out,OH,OV),
+  show_pair_grid(red,IH,IV,OH,OV,in,out,PairName,In,Out).
+
+with_named_pair(solve,TestID,PairName,In,Out):- !,
+  with_named_pair(cheat,TestID,PairName,In,Out).
+
+with_named_pair(cheat,TestID,PairName,In,Out):- !,
+  ignore(catch(solve_test(TestID,PairName,In,Out),E,(u_dmsg(E),fail))),!.
+
+with_named_pair(learn,TestID,PairName,In,Out):- !,
+  nop((ppnl(learning(TestID=PairName)),nl)),
+  grid_size(In,IH,IV), grid_size(Out,OH,OV),
+  %ccs(In,InCC),
+  %ccs(Out,OutCC),
+  compute_unshared_indivs(In,UnsharedIn),
+  compute_unshared_indivs(Out,UnsharedOut),
+  show_pair_diff(IH,IV,OH,OV,in(unshared),out(unshared),PairName,UnsharedIn,UnsharedOut),
+  %merge_indivs(UnsharedIn,UnsharedOut,BetterA,BetterB,BetterC), 
+  %show_pair_i(IH,IV,OH,OV,better,PairName,BetterA,BetterB),
+  %show_pair_i(IH,IV,OH,OV,iz(info(combined)),PairName,BetterC,Out),
+  compute_shared_indivs(In,SharedIn),
+  compute_shared_indivs(Out,SharedOut),
+  show_pair_diff(IH,IV,OH,OV,shared_in,shared_out,PairName,SharedIn,SharedOut),!,
+  ((wqnl(learning_diff(TestID=PairName)),nl)),
+  showdiff(SharedOut,SharedIn),
+  ((wqnl(learned(TestID=PairName)),nl)).
+
+name_the_pair(TestID,Type,Num,In,Out,PairName):- 
+  name_the_pair(TestID,Type+Num,In,Out,PairName).
+
+name_the_pair(TestID,ExampleNum,In,Out,PairName):- 
+  PairName= (TestID>ExampleNum),
+  get_current_test(CName),!,
+  new_test_pair(PairName),
+  GridNameIn= PairName*in,
+  GridNameOut= PairName*out,
+  if_t(nonvar(Out),set_grid_tid(In,GridNameIn)),
+  if_t(nonvar(In),set_grid_tid(Out,GridNameOut)),!,
+  nop(name_the_pair_reset(CName,TestID,ExampleNum)).
+
+name_the_pair_reset(CName,TestID,ExampleNum):- 
+  /*must_det_ll*/((
+   ignore((CName\==TestID, 
+        set_current_test(TestID),
+        dash_chars(60,"A"),nl,dash_chars(60,"|"),dash_chars(6,"\n"),nl,
+        dash_chars(60,"|"),nl,dash_chars(60,"V"),nl,
+        nl,ppnl(arc1(TestID)),nl,nl,dash_chars(60,"A"),nl)),   
+  forall(runtime_test_info(TestID,Info), pp_wcg(fav(TestID,Info)=ExampleNum)),nl)),!.
+
+
+compute_unshared_indivs(In,Unshared):-
+   get_grid_and_name(In,Grid,GN),
+   compute_unshared_indivs(GN,Grid,Unshared),!.
+
+compute_unshared_indivs(_GN,Grid,Unshared):-
+   individuate(complete,Grid,Unshared).
+
+compute_shared_indivs(In,SharedIndvs):-
+   get_grid_and_name(In,Grid,GN),
+   compute_shared_indivs(GN,Grid,SharedIndvs).
+compute_shared_indivs(GN,Grid,SharedIndvs):-
+   grid_shared_with(GN,With),into_grid(With,OtherGrid),
+   compute_unshared_indivs(With,OtherGrid,Unshared),
+   individuate(Unshared,Grid,SharedIndvs).
+
+grid_shared_with(TestName>ExampleNum*in,TestName>ExampleNum*out):-!.
+grid_shared_with(TestName>ExampleNum*out,TestName>ExampleNum*in):-!.
+
+get_grid_and_name(In,Grid,GN):- is_grid(In),!,grid_to_tid(Grid,GN).
+get_grid_and_name(In,Grid,GN):- into_grid(In,Grid),!,grid_to_tid(Grid,GN).
+
+ensure_unshared_indivs(In,Unshared):-
+   get_grid_and_name(In,Grid,GN),
+   ensure_unshared_indivs(GN,Grid,Unshared).
+ensure_unshared_indivs(GN,Grid,Unshared):-
+   is_unshared_saved(GN,Unshared)-> true;
+   individuate(complete,Grid,Unshared),
+   arc_assert(is_unshared_saved(GN,Unshared)).
+
+ensure_shared_indivs(In,SharedIndvs):-
+   get_grid_and_name(In,Grid,GN),
+   ensure_shared_indivs(GN,Grid,SharedIndvs).
+ensure_shared_indivs(GN,Grid,SharedIndvs):-
+   is_shared_saved(GN,SharedIndvs)-> true;
+   grid_shared_with(GN,With),into_grid(With,OtherGrid),
+   ensure_unshared_indivs(With,OtherGrid,Unshared),
+   individuate(Unshared,Grid,SharedIndvs),
+   arc_assert(is_shared_saved(GN,SharedIndvs)).
+
+
+/*
+
+! 
+_
+/
+\
+
+
+ 1 1 1 1 2  -> 2
+ 1 1 1 -> 1 \
+ 2 2  -> 2  / _
+ 1 2 3 4 5  -> _
+ 2 2 2 2 2  -> 2
+ _ _ _ _ 4  -> _
+
+*/
+  
+growthchart_to_grid(GrowthChart,Color,Fill,BGrid):-
+  bg_sym(BG), 
+  subst_each(GrowthChart,[
+   ' '=BG, ','=Fill, '.'=Fill, '/'=Color, '|'=Color, '-'=Color,
+   '_'=Color, '='=Color, '\\'=Color, 'o'=Color], BGrid).
+
+learned_color_inner_shape(Name,Color,Fill,Grid,GrowthChart):-
+   l_shape(Name,Ascii),
+   ascii_to_growthchart(Ascii,GrowthChart),
+   growthchart_to_grid(GrowthChart,Color,Fill,GridIn),
+   to_real_grid(GridIn,Grid),
+   \+ \+ ((nop((
+     Color = green, Fill = red,        
+     grid_size(Grid,H,V),
+     print_grid(H,V,Grid),     
+     ppnl(learned(Name)))))).
+
+%learn_shapes:- forall(l_shape(Name,Ascii), learn_shape(Name,Ascii)).
+
  
+clear_arc_learning:- !.
+clear_arc_learning:- 
+  abolish(arc_cache:object_to_object/6),dynamic(arc_cache:object_to_object/6),
+  dmsg(clear_arc_learning),
+  must_det_ll((
+  retractall_in_testid(arc_cache:did_map(_,_,_,_)),   
+  retractall_in_testid(arc_cache:doing_map(_,_,_)),
+  retractall_in_testid(arc_cache:object_atomslist(_,_,_,_)),
+  retractall_in_testid(arc_cache:object_to_object(_,_,_,_,_)),
+  retractall_in_testid(arc_cache:assumed_mapped(_,_)),
+  retractall_in_testid(arc_cache:assumed_unmapped(_,_)),
+  retractall_in_testid(arc_cache:assumed_mapped_rule(_,_)),
+  retractall_in_testid(arc_cache:object_atomslist(_,_,_,_)))),!.
+prolog:make_hook(after, Some):- any_arc_files(Some), forall(clear_arc_learning,true), fail.
+
+
+ignore_equal_e(InSet,InVars):- my_maplist(ignore_equal,InSet,InVars).
+ignore_equal(X,Y):- ignore(X=Y).  
+cur_obj(Obj):- oid_glyph_object(_,_,Obj).
+prop_group(Prop,Objs):-
+  ensure_group_prop(Prop),findall(Obj,(cur_obj(Obj),has_prop(Prop,Obj)),Objs).
+
+
+
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 learn_group_mapping1(AG00,BG00):-
  wdmsg(warn_unused(learn_group_mapping_now1(AG00,BG00))).
 
@@ -1078,31 +1645,7 @@ assert_doing_map(IO_DIR,A,[B|Objs]):-
    (dash_chars, pp_wcg(IO_DIR), dash_chars,
      print_ss(IO_DIR,A,B),print_ss_rest(IO_DIR,2,Objs),dash_chars)).
 
-print_ss_rest(IO_DIR,N,[A,B|Objs]):-  print_ss(IO_DIR+N,A,B),N2 is N + 2,print_ss_rest(IO_DIR,N2,Objs).
-print_ss_rest(IO_DIR,N,[R]):- print_grid(IO_DIR+N,R).
-print_ss_rest(_,_,[]).
 
-mapping_order(I,O):- most_visible(I,O),!.
-mapping_order(Obj,MO):- area(Obj,Area),cmass(fg,Obj,CMass),
-  findall(_,doing_map_list(_,_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt,NCMass is -CMass,
-  MO = NCnt+NCMass+Area.
-
-cmass(FG,Obj,CMass):- has_prop(cc(FG,CMass),Obj).
-
-
-
-into_title(IO_DIR,OI,TITLE):-
-  upcase_atom(IO_DIR,A), upcase_atom(OI,B),
-  sformat(TITLE,"~w  -->  ~w",[A,B]),!.
-
-is_fg_bg_objects(AL,BL):- is_bg_object(BL) -> is_fg_object(AL) ; \+ is_fg_object(AL).
-same_values(Prop,AL,BL):- one_has_prop(Prop,AL),one_has_prop(Prop,BL).
-one_has_prop(P,L):- is_list(L),!,member(E,L),has_prop(P,E).
-one_has_prop(P,O):- has_prop(P,O).
-
-
-obj_oids(Obj,OIDZ):- is_object(Obj),!,obj_to_oid(Obj,OIDZ).
-obj_oids(Objs,OIDZ):- into_group(Objs,Grp),my_maplist(obj_to_oid,Grp,OIDS),delistify_single_element(OIDS,OIDZ).
 
 ip_op_debug_info([IP],OP,LOCK):- nonvar(IP), !, ip_op_debug_info(IP,OP,LOCK).
 ip_op_debug_info(IP,[OP],LOCK):- nonvar(IP), !, ip_op_debug_info(IP,OP,LOCK).
@@ -1253,15 +1796,7 @@ make_rule_l2r_until_no_changes1(Dir,Shared,II,OO,IIII,OOOO,NewShared):-
     -> (III=IIII,OOO=OOOO,Shared=NewShared);
     make_rule_l2r_until_no_changes1(Dir,SharedMid,III,OOO,IIII,OOOO,NewShared)).
 
-is_oid_or_gid(V,_):-var(V),!,fail.
-is_oid_or_gid(OID,OID):- atom(OID),is_oid(OID),!.
-is_oid_or_gid(oid(OID),OID):- !, atom(OID).
-is_oid_or_gid(gid(GID),GID):- !, atom(GID).
-is_oid_or_gid(glyph(GID),GID):- !, atom(GID).
 
-overly_oided(M,EE=Var,MM):- sub_term(E,M),is_oid_or_gid(E,EE),subst001(M,EE,Var,MM).
-remove_oids(M,O,[E|EL]):- overly_oided(M,E,MM),remove_oids(MM,O,EL).
-remove_oids(M,M,[]).
 
 % offset 2D
 % make_rule_l2r(Dir,Shared,II,OO,III,OOO,[remove_io(RemoveI,RemoveO)|SharedMid]):- % 3 is random(2),
@@ -1594,34 +2129,6 @@ make_rule_l2r(Dir,Shared,II,OO,III,OOO,SharedMid):- fail,
   make_rule_l2r(Dir,Shared,I_I_I_I,[lookup(NewO)|O_O_O],III,OOO,SharedMid).
 
 */
-make_unifiable(A1,A2):- make_unifiable0(A1,O),!,A2=O.
-
-make_unifiable0(C1,_):- \+ compound(C1),fail.
-make_unifiable0(A1,A2):- var(A1),!,A2=A1.
-make_unifiable0(pg(A,B,C,_),pg(A,B,C,_)):-!.
-make_unifiable0(cc(C,_),cc(C,_)):-!.
-make_unifiable0(iz(C1),iz(C2)):- !, make_unifiable(C1,C2).
-make_unifiable0(giz(C1),giz(C2)):- !, make_unifiable(C1,C2).
-make_unifiable0(Cmp,CmpU):-  Cmp=..[F|List1], 
-  append(Left1,[C1],List1),append(Left2,[C2],List2), CmpU=..[F|List2],
-  my_maplist(unifiable_cmpd_else_keep,Left1,Left2),
-  unifiable_cmpd_else_var(C1,C2),!.
-make_unifiable0(C1,C2):- functor(C1,F,A),functor(C2,F,A).
-
-%unifiable_cmpd_else_keep(A1,A2):- unifiable_cmpd_keep(A1,A2).
-unifiable_cmpd_else_keep(Num,_):- number(Num),!.
-unifiable_cmpd_else_keep(A1,A1).
-
-unifiable_cmpd_else_var(A1,A2):- unifiable_cmpd_keep(A1,A2), \+ ground(A2).
-unifiable_cmpd_else_var(_,_).
-
-
-unifiable_cmpd_keep(A1,A2):- var(A1),!,A2=A1.
-unifiable_cmpd_keep(cc(C,_),cc(C,_)):-!.
-unifiable_cmpd_keep(A1,A2):- compound(A1), \+ is_list(A1), make_unifiable(A1,A2),!.
-
-
-make_unifiable_with_ftvars(C1,C2):- functor(C1,F,A),functor(C2,F,A),numbervars(C2).
 
 % simple purportionals
 simplify_l2r(_Dir,I,C1,VC1,I_I,O,C2,VC2,O_O,Info):- fail,
@@ -1854,99 +2361,6 @@ learn_rule_ee(Mode,P,Others):- forall(member(O,Others),learn_grid_local(Mode,P,O
 learn_grid_local(Mode,P,O):- P @< O, !, learn_grid_local(Mode,O,P).
 learn_grid_local(_Mode,P,O):- ignore((\+ is_grid(P),is_grid(O),assert_visually(grid_associatable(P,O)))).
 
-test_local_dyn(F,A):- setof(F/A,(test_local_dyn(F),current_predicate(F/A)),L),member(F/A,L),A\==0.
-:- dynamic(test_local_dyn/1).
-test_local_dyn(fav).
-%test_local_dyn(why_grouped).
-
-test_local_save(P):- test_local_dyn(P).
-test_local_save(arc_test_property).
-test_local_save(assumed_mapped).
-test_local_save(assumed_unmapped).
-test_local_save(cached_dictation).
-test_local_save(cached_tests).
-test_local_save(cached_tests_hard).
-test_local_save(cindv).
-test_local_save(cmem).
-test_local_save(cmem_hv).
-test_local_save(did_map).
-test_local_save(each_object_dependancy).
-test_local_save(g_2_o).
-test_local_save(gid_glyph_oid).
-test_local_save(grid_associatable).
-test_local_save(individuated_cache).
-test_local_save(is_accompany_changed_db).
-test_local_save(is_for_ilp).
-test_local_save(is_grid_gid).
-test_local_save(is_grid_obj_count).
-test_local_save(is_grid_size).
-test_local_save(is_grid_tid).
-test_local_save(is_gridmass).
-test_local_save(is_why_grouped_g).
-test_local_save(kaggle_arc_answers).
-test_local_save(learnt_rule).
-test_local_save(note).
-test_local_save(obj_cache).
-test_local_save(object_atomslist).
-test_local_save(object_dependancy).
-test_local_save(object_to_object).
-test_local_save(oid_glyph_object).
-test_local_save(omem).
-test_local_save(oout_associatable).
-test_local_save(prop_dep).
-test_local_save(propcount).
-test_local_save(propcounts).
-test_local_save(showed_point_mapping).
-test_local_save(smem).
-test_local_save(test_associatable).
-test_local_save(test_info_cache).
-
-test_local_save1(F,A):- test_local_dyn(F,A).
-test_local_save1(F,A):- setof(F/A,(test_local_save(F),current_predicate(F/A),A\==0),L),member(F/A,L).
-test_local_save1(F,A):- setof(F/A,(current_predicate(arc_cache:F/A),A\==0,functor(P,F,A),
-  \+ predicate_property(arc_cache:P,imported_from(_))),L),member(F/A,L).
-test_local_save1(F,A):- setof(F/A,(test_local_save(F),current_predicate(arc_cache:F/A),A\==0),L),member(F/A,L).
-
-test_local_save(F,A):- findall_vset(F/A,test_local_save1(F,A),List),member(F/A,List).
-
-
-training_info(TestID,InfoSet):-
- test_id_atom(TestID,TestIDA),
-  findall(Ref,
-  (test_local_dyn(F,A), functor(X,F,A),
-      (clause(X,_,Ref);clause(arc_cache:X,_,Ref)),once((arg(_,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA)))),Info),
-  list_to_set(Info,InfoSet).
-
-saveable_test_info(TestID,InfoSet):-
- test_id_atom(TestID,TestIDA),
- findall(Ref,
-  (test_local_save(F,A), functor(X,F,A),
-      (clause(X,_,Ref);clause(arc_cache:X,_,Ref)),once((arg(_,X,E),sub_atom_value(E,AV),atom_contains(AV,TestIDA)))),Info),
- list_to_set(Info,InfoSet).
-
-
-assertz_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,assertz_if_new(TestIDGoal).
-asserta_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,asserta_if_new(TestIDGoal).
-assert_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,assert_if_new(TestIDGoal).
-call_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),!,call(TestIDGoal).
-retractall_in_testid(Goal):- dress_in_testid(Goal,TestIDGoal),retractall(TestIDGoal).
-
-dress_in_testid(M:Goal,M:TestIDGoal):- !, dress_in_testid(Goal,TestIDGoal).
-dress_in_testid(Goal,TestIDGoal):- Goal=..[F,A|Args], get_current_test(TestID), (A==TestID-> TestIDGoal=Goal; TestIDGoal=..[F,TestID,A|Args]).
-
-assert_visually(H:-B):- !,unnumbervars((H:-B),(HH:-BB)), assert_visually1(HH,BB).
-assert_visually( H  ):- unnumbervars(H,HH),assert_visually1(HH,true).
-
-assert_visually1(H,B):- get_current_test(TestID), arg(1,H,W),W\==TestID,!, H=..[F|Args],GG=..[F,TestID|Args],assert_visually2(GG,B).
-assert_visually1(H,B):- assert_visually2(H,B).
-
-assert_visually2(H,B):- fail, copy_term((H:-B),(HH:-BB)),clause(HH,BB,Ref), clause(RH,RB,Ref),(H:-B)=@=(RH:-RB) ,!,(pp(cyan,known_exact(H:-B))).
-assert_visually2(H,B):- fail, copy_term((H),(HH)),clause(HH,_,Ref), clause(RH,_,Ref),(H)=@=(RH) ,!,pp(cyan,known(H:-B)).
-assert_visually2(H,B):- functor(H,F,_), my_asserta_if_new(test_local_dyn(F)), print_rule(F,(H:-B)), my_asserta_if_new((H:-B)).
-
-if_learn_ok(G):- call(G).
-
-
  
 
 learn_rule(In,Out):-
@@ -1967,14 +2381,9 @@ learn_rule(In,RuleDir,Out):-
 
 learn_rule(In,RuleDir,ROut):- nop(use_learnt_rule(In,RuleDir,ROut)).
 
-ignore_equal_e(InSet,InVars):- my_maplist(ignore_equal,InSet,InVars).
-ignore_equal(X,Y):- ignore(X=Y).  
 
 rev_key0(C-P,P-C).
 
-cur_obj(Obj):- oid_glyph_object(_,_,Obj).
-prop_group(Prop,Objs):-
-  ensure_group_prop(Prop),findall(Obj,(cur_obj(Obj),has_prop(Prop,Obj)),Objs).
 
 
 /*
@@ -2036,7 +2445,6 @@ out_prop(Prop,N,NHP,OHasProp,HasPropUnif,OUT):- OUT = prop(Prop,N,NHP,OHasProp),
   my_maplist(arg(2),HasPropUnif,ONotHasProp),
   nop(once(shared_prop(_Unif,ONotHasProp,_PP))).
 
-can_unify(I,O):- \+ (I \= O).
 same_prop(P,P-_).
 
 enum_groups(G):- enum_groups0(G),length(G,L),between(2,30,L).
@@ -2213,20 +2621,6 @@ safe_assumed_mapped(priorities(LenA,LenB),A,B):- findall(v(APB,A,LenA,B,LenB),
 safe_assumed_mapped(A,LenA,B,LenB):- gather_assumed_mapped_o_o(A,B),
   gather_assumed_mapped_o_l(A,BL),length(BL,LenA), gather_assumed_mapped_l_o(AL,B),length(AL,LenB).
 
-clear_arc_learning:- !.
-clear_arc_learning:- 
-  abolish(arc_cache:object_to_object/6),dynamic(arc_cache:object_to_object/6),
-  dmsg(clear_arc_learning),
-  must_det_ll((
-  retractall_in_testid(arc_cache:did_map(_,_,_,_)),   
-  retractall_in_testid(arc_cache:doing_map(_,_,_)),
-  retractall_in_testid(arc_cache:object_atomslist(_,_,_,_)),
-  retractall_in_testid(arc_cache:object_to_object(_,_,_,_,_)),
-  retractall_in_testid(arc_cache:assumed_mapped(_,_)),
-  retractall_in_testid(arc_cache:assumed_unmapped(_,_)),
-  retractall_in_testid(arc_cache:assumed_mapped_rule(_,_)),
-  retractall_in_testid(arc_cache:object_atomslist(_,_,_,_)))),!.
-prolog:make_hook(after, Some):- any_arc_files(Some), forall(clear_arc_learning,true), fail.
 
 %:- clear_arc_learning.
 
@@ -2345,335 +2739,6 @@ use_learnt_rule(In,RuleDir,Out):- get_vm(VM), % Target=VM.target_grid,
    %\+ \+ my_maplist(print_rule(sort_safe),Matches),
    \+ \+ print_rule(using_learnt_rule=Len,ref(Ref)),!.
 
-
-matchlen([],[],0):-!.
-matchlen([A|List1],[B|List2],Len):- fitness(A,B,Fit),!,
-   matchlen(List1,List2,Len2), Len is Fit+Len2.
-
-fitness(A,B,1.1):- A=B,!.
-fitness(A,B,Fit):- is_list(A),is_list(B), length(A,L),matchlen(A,B,F), \+ is_grid(A), Fit is F/L,!.
-fitness(_,_,0.01):- !.
-
-%row_to_row
-%row_to_column
-%dot_to_
-
-was_once(_,_).
-
-
-upcase_atom_var(Num,VAR):- uc_av(Num,Name),VAR='$VAR'(Name),!.
-upcase_atom_var(Num,'$VAR'(Num)):-!.
-upcase_atom_var(_,_).
-
-uc_av(Var,Name):- var(Var),!,p_n_atom1(Var,Name).
-uc_av(Int,Name):- integer(Int),atom_concat('INT_',Int,Name).
-uc_av(Num,Name):- number(Num),atom_concat('FLOAT_',Num,DotName),replace_in_string(['.'-'_dot_'],DotName,Name).
-uc_av(List,Name):- List==[],!,Name='ListNil'.
-uc_av(List,Name):- is_list(List),my_maplist(uc_av,List,Names),atomic_list_concat(Names,'_',Name),!.
-%uc_av(Atom,Name):- atom(Atom),upcase_atom(Atom,Name).
-uc_av(Atom,Name):- p_n_atom1(Atom,Name).
-
-labels_for(obj(I),obj(O),Labels):- findall(EI,(member(EI,I),member(EO,O),EI=@=EO),Labels),length(Labels,N),N>5,!.
-labels_for(InGoal,OutGoal,Labels):-
-  labels_for1(InGoal,OutGoal,Labels1),
-  labels_for2(InGoal,OutGoal,Labels2),
-  append(Labels1,Labels2,Labels),!.
-
-labels_for1(InGoal,OutGoal,Labels):- 
-  findall(Atom,(sub_label(Atom,InGoal,OutGoal),maybe_unbind_label(Atom)),Atoms), 
-  list_to_set(Atoms,Set),
-  include(two_or_more(Atoms),Set,Labels).
-
-labels_for2(obj(I),obj(O),Labels):- !, findall(EI,(member(EI,I),member(EO,O),EI=@=EO),Labels).
-labels_for2(InGoal,OutGoal,Labels):- labels_for1(InGoal,OutGoal,Labels).
-
-
-two_or_more(Atoms,Label):- select(Label,Atoms,Rest),member(Label,Rest).
-
-sub_label(X, X, OutGoal):- sub_var(X,OutGoal).
-sub_label(X, Term, OutGoal) :-
-    compound(Term),
-    %is_list(Term),
-    \+ never_labels_in(Term),
-    arg(_, Term, Arg),
-    sub_label(X, Arg, OutGoal).
-
-never_labels_in(iz(_)).
-never_labels_in(shape_rep(grav,_)).
-never_labels_in(mass(1)).
-never_labels_in(mass(1)).
-never_labels_in(loc2D(_,_)).
-
-
-never_unbind_label(G):- var(G),!.
-never_unbind_label(Int):- integer(Int), Int > 7 ; Int == 1 ; Int == 0.
-never_unbind_label(true).
-never_unbind_label(false).
-never_unbind_label(G):- \+ atom(G),!,fail.
-never_unbind_label(G):- display_length(G,N),N<3,!.
-never_unbind_label(G):- downcase_atom(G,D), upcase_atom(G,D).
-never_unbind_label(G):- atom_chars(G,Cs),member(C,Cs),char_type(C,digit),!.
-
-maybe_unbind_label(G):- var(G),!,fail.
-maybe_unbind_label(iz(_)):- !,fail.
-%maybe_unbind_label(G):- too_non_unique(G).
-maybe_unbind_label(G):- never_unbind_label(G),!,fail.
-maybe_unbind_label(G):- skip_for_now, integer(G),G<1.
-maybe_unbind_label(G):- \+ atom(G),!,fail.
-maybe_unbind_label(G):- skip_for_now, is_real_fg_color(G),!.
-%maybe_unbind_label(G):- downcase_atom(G,D),\+ upcase_atom(G,D).
-
-skip_for_now:- fail.
-
-subst_rvars([],[],A,A):-!. 
-subst_rvars([F|FF],[R|RR],S,D):- ignore(debug_var(F,R)),subst_rvars_1(F,R,S,M), subst_rvars(FF,RR,M,D).
-
-map_find_onto_replace(Var,Var):-var(Var),!.
-map_find_onto_replace('$VAR'(X),'$VAR'(X)):-!.
-map_find_onto_replace(iz(Find),iz(Replace)):- compound(Find), Find\='$VAR'(_), !, map_find_onto_replace(Find,Replace).
-map_find_onto_replace(iz(Find),iz(Find)):- atom(Find),!.
-map_find_onto_replace(iz(Find),iz(Find)):- !.
-map_find_onto_replace(Find,Replace):- functor(Find,F,A),functor(Replace,F,A),
-  ignore((arg(A,Replace,E),upcase_atom_var(F,E))).
-
-subst_rvars_1(Find, Replace, Term, NewTerm ) :- var(Replace), compound(Find), 
-  map_find_onto_replace(Find,Replace),nonvar(Replace),!,subst_rvars_1(Find, Replace, Term, NewTerm ).
-subst_rvars_1(Find, Replace, Term, NewTerm ) :-
- (Find==Term -> Replace=NewTerm ;
-  (is_list(Term)-> my_maplist(subst_rvars_1(Find, Replace), Term, NewTerm );
-   (( \+ compound(Term); Term='$VAR'(_); never_labels_in(Term))->Term=NewTerm;
-     ((compound_name_arguments(Term, F, Args),
-       my_maplist(subst_rvars_1(Find, Replace), Args, ArgsNew),
-        compound_name_arguments( NewTerm, F, ArgsNew )))))),!.
-
-
-rot_in_incr_90(X,Y):- freeze(X,rot90(X,Y)).
-rot_in_incr_90(X,Y):- freeze(X,rot180(X,Y)).
-rot_in_incr_90(X,Y):- freeze(X,rot270(X,Y)).
-
-rot_by_90_v1(List):- between_each(dif,List),between_each(rot_in_incr_90,List).
-
-between_each(_P2,[]):- !.
-between_each(_P2,[_]):- !.
-between_each(P2,[X, Y]):- !, call(P2, X, Y).
-between_each(P2,[X, Y, Z]):- !, call(P2, X, Y), call(P2, X, Z), call(P2, Z, Y).
-between_each(P2,[X|Text]):- mapgroup(dif(X), Text), between_each(P2,Text).
-
-
-rot_by_90([A,B,C,D]):- rot_by_90_0([A,B,C,D,A,B,C]).
-
-rot_by_90_0([A,B]):- rot90(A,B),!.
-rot_by_90_0([A,B|List]):- rot90(A,B),rot_by_90_0([B|List]).
-  
-subtractGrid(Out,In,Alien):- plain_var(Alien), remove_global_points(In,Out,Alien),!.
-subtractGrid(Out,In,Alien):- plain_var(Out),!,add_global_points(Alien,In,Out).
-subtractGrid(Out,In,Alien):- plain_var(In),!,remove_global_points(Alien,Out,In).
-
-find_by_shape(Grid,_Find,_Founds):- Grid==[],!,fail.
-find_by_shape(Grid,Find,Founds):- 
- get_vm(VM),
- vis2D(Find,GH,GV),
- decolorize(Find,F), 
- Prog = 
-  (all_rotations(F,F1),
-   %print_grid(F1),!,
-   find_ogs(H,V,F1,Grid),% atrace,
-
-   grid_to_points(F1,GH,GV,Points),
-   pp(Points),
-   make_indiv_object(VM,[iz(find_by_shape),F1,loc2D(H,V),alt_grid_size(GH,GV)],Points,F2)),
- findall(F2,Prog,Matches),
- align_founds(Matches,Founds).
-
-align_founds(Founds,Founds).
-
-in_out(In,Out):-
-  luser_getval(test_pairname,PairName),
-  into_gridnameA(In,PairName*in),
-  into_gridnameA(Out,PairName*out).
-
-lrn0:-    
-   in_out(In,Out),
-   subtractGrid(Out,In,Alien),
-   rot_by_90([Alien,A,B,C]),
-   find_by_shape(In,Alien,[A,B,C]),
-   find_by_shape(Out,Alien,[A,B,C,Alien]).
-
-lrn:- forall(lrn1, true).
-lrn1:- learn_arc(_).
-
-tst:- forall(tst1, true).
-tst1:- test_arc(_).
-
-learn_arc(TestID):- with_arc(learn,TestID).
-
-test_arc(TestID):- with_arc(solve,TestID).
-
-with_arc(Action,TestID):- plain_var(TestID),!, findall(Name,fav(Name),L),
-  list_to_set(L,S), member(TestID,S), with_arc(Action,TestID).
-
-with_arc(Action,arc):- !, findall(Name,kaggle_arc_io(Name,(_+_),_,_),L),
-  list_to_set(L,S), member(TestID,S), with_arc(Action,TestID).
-
-with_arc(Action,TestName):-
-  fix_test_name(TestName,TestID,_Type),TestName\==TestID,!,
-  with_arc(Action,TestID).
-
-with_arc(solve,TestID):- !, 
-  with_arc(learn,TestID),
-  forall(between(0,6,Num),with_pair(preview,TestID,trn,Num)),
-  forall(between(0,6,Num),with_pair(solve,TestID,tst,Num)).
-
-with_arc(test,TestID):- !, 
-  with_arc(learn,TestID),
-  forall(between(0,6,Num),with_pair(solve,TestID,trn,Num)),
-  forall(between(0,6,Num),with_pair(solve,TestID,tst,Num)).
-
-with_arc(preview,TestID):- !, 
-  forall(between(0,6,Num),with_pair(preview,TestID,trn,Num)),
-  forall(between(0,6,Num),with_pair(preview,TestID,tst,Num)).
-
-with_arc(Action,TestID):-
-  forall(between(0,6,Num),with_pair(Action,TestID,trn,Num)).
-
-with_pair(Action,TestID,Type,Num):-
-  kaggle_arc_io(TestID,Type+Num,in,In),
-  kaggle_arc_io(TestID,Type+Num,out,Out),
-  with_pair(Action,TestID,Type,Num,In,Out),!.
-
-with_pair(Action,TestID,Type,Num,In,Out):- !,
-  name_the_pair(TestID,Type,Num,In,Out,PairName),  
-  with_named_pair(Action,TestID,PairName,In,Out).
-
-with_named_pair(preview,TestID,PairName,In,Out):- !,
-  dash_chars(60,"|"),nl,nl,nop((ppnl(arc1(TestID)),nl)),
-  grid_size(In,IH,IV), grid_size(Out,OH,OV),
-  show_pair_grid(red,IH,IV,OH,OV,in,out,PairName,In,Out).
-
-with_named_pair(solve,TestID,PairName,In,Out):- !,
-  with_named_pair(cheat,TestID,PairName,In,Out).
-
-with_named_pair(cheat,TestID,PairName,In,Out):- !,
-  ignore(catch(solve_test(TestID,PairName,In,Out),E,(u_dmsg(E),fail))),!.
-
-with_named_pair(learn,TestID,PairName,In,Out):- !,
-  nop((ppnl(learning(TestID=PairName)),nl)),
-  grid_size(In,IH,IV), grid_size(Out,OH,OV),
-  %ccs(In,InCC),
-  %ccs(Out,OutCC),
-  compute_unshared_indivs(In,UnsharedIn),
-  compute_unshared_indivs(Out,UnsharedOut),
-  show_pair_diff(IH,IV,OH,OV,in(unshared),out(unshared),PairName,UnsharedIn,UnsharedOut),
-  %merge_indivs(UnsharedIn,UnsharedOut,BetterA,BetterB,BetterC), 
-  %show_pair_i(IH,IV,OH,OV,better,PairName,BetterA,BetterB),
-  %show_pair_i(IH,IV,OH,OV,iz(info(combined)),PairName,BetterC,Out),
-  compute_shared_indivs(In,SharedIn),
-  compute_shared_indivs(Out,SharedOut),
-  show_pair_diff(IH,IV,OH,OV,shared_in,shared_out,PairName,SharedIn,SharedOut),!,
-  ((wqnl(learning_diff(TestID=PairName)),nl)),
-  showdiff(SharedOut,SharedIn),
-  ((wqnl(learned(TestID=PairName)),nl)).
-
-name_the_pair(TestID,Type,Num,In,Out,PairName):- 
-  name_the_pair(TestID,Type+Num,In,Out,PairName).
-
-name_the_pair(TestID,ExampleNum,In,Out,PairName):- 
-  PairName= (TestID>ExampleNum),
-  get_current_test(CName),!,
-  new_test_pair(PairName),
-  GridNameIn= PairName*in,
-  GridNameOut= PairName*out,
-  if_t(nonvar(Out),set_grid_tid(In,GridNameIn)),
-  if_t(nonvar(In),set_grid_tid(Out,GridNameOut)),!,
-  nop(name_the_pair_reset(CName,TestID,ExampleNum)).
-
-name_the_pair_reset(CName,TestID,ExampleNum):- 
-  /*must_det_ll*/((
-   ignore((CName\==TestID, 
-        set_current_test(TestID),
-        dash_chars(60,"A"),nl,dash_chars(60,"|"),dash_chars(6,"\n"),nl,
-        dash_chars(60,"|"),nl,dash_chars(60,"V"),nl,
-        nl,ppnl(arc1(TestID)),nl,nl,dash_chars(60,"A"),nl)),   
-  forall(runtime_test_info(TestID,Info), pp_wcg(fav(TestID,Info)=ExampleNum)),nl)),!.
-
-
-compute_unshared_indivs(In,Unshared):-
-   get_grid_and_name(In,Grid,GN),
-   compute_unshared_indivs(GN,Grid,Unshared),!.
-
-compute_unshared_indivs(_GN,Grid,Unshared):-
-   individuate(complete,Grid,Unshared).
-
-compute_shared_indivs(In,SharedIndvs):-
-   get_grid_and_name(In,Grid,GN),
-   compute_shared_indivs(GN,Grid,SharedIndvs).
-compute_shared_indivs(GN,Grid,SharedIndvs):-
-   grid_shared_with(GN,With),into_grid(With,OtherGrid),
-   compute_unshared_indivs(With,OtherGrid,Unshared),
-   individuate(Unshared,Grid,SharedIndvs).
-
-grid_shared_with(TestName>ExampleNum*in,TestName>ExampleNum*out):-!.
-grid_shared_with(TestName>ExampleNum*out,TestName>ExampleNum*in):-!.
-
-get_grid_and_name(In,Grid,GN):- is_grid(In),!,grid_to_tid(Grid,GN).
-get_grid_and_name(In,Grid,GN):- into_grid(In,Grid),!,grid_to_tid(Grid,GN).
-
-ensure_unshared_indivs(In,Unshared):-
-   get_grid_and_name(In,Grid,GN),
-   ensure_unshared_indivs(GN,Grid,Unshared).
-ensure_unshared_indivs(GN,Grid,Unshared):-
-   is_unshared_saved(GN,Unshared)-> true;
-   individuate(complete,Grid,Unshared),
-   arc_assert(is_unshared_saved(GN,Unshared)).
-
-ensure_shared_indivs(In,SharedIndvs):-
-   get_grid_and_name(In,Grid,GN),
-   ensure_shared_indivs(GN,Grid,SharedIndvs).
-ensure_shared_indivs(GN,Grid,SharedIndvs):-
-   is_shared_saved(GN,SharedIndvs)-> true;
-   grid_shared_with(GN,With),into_grid(With,OtherGrid),
-   ensure_unshared_indivs(With,OtherGrid,Unshared),
-   individuate(Unshared,Grid,SharedIndvs),
-   arc_assert(is_shared_saved(GN,SharedIndvs)).
-
-
-/*
-
-! 
-_
-/
-\
-
-
- 1 1 1 1 2  -> 2
- 1 1 1 -> 1 \
- 2 2  -> 2  / _
- 1 2 3 4 5  -> _
- 2 2 2 2 2  -> 2
- _ _ _ _ 4  -> _
-
-*/
-  
-growthchart_to_grid(GrowthChart,Color,Fill,BGrid):-
-  bg_sym(BG), 
-  subst_each(GrowthChart,[
-   ' '=BG, ','=Fill, '.'=Fill, '/'=Color, '|'=Color, '-'=Color,
-   '_'=Color, '='=Color, '\\'=Color, 'o'=Color], BGrid).
-
-learned_color_inner_shape(Name,Color,Fill,Grid,GrowthChart):-
-   l_shape(Name,Ascii),
-   ascii_to_growthchart(Ascii,GrowthChart),
-   growthchart_to_grid(GrowthChart,Color,Fill,GridIn),
-   to_real_grid(GridIn,Grid),
-   \+ \+ ((nop((
-     Color = green, Fill = red,        
-     grid_size(Grid,H,V),
-     print_grid(H,V,Grid),     
-     ppnl(learned(Name)))))).
-
-%learn_shapes:- forall(l_shape(Name,Ascii), learn_shape(Name,Ascii)).
-
- 
 
 :- include(kaggle_arc_footer).
 

@@ -23,7 +23,7 @@ removed_term(G,GGGG):- G = catch_nolog(GGGG).
 
 :- multifile(user:message_hook/3). 
 :- dynamic(user:message_hook/3).
-%user:message_hook(Term, Kind, Lines):- silent\==Kind,  wdmsg(user:message_hook(Term, Kind, Lines)),fail.
+user:message_hook(Term, Kind, Lines):- error==Kind,  wdmsg(user:message_hook(Term, Kind, Lines)),fail.
 
 :- meta_predicate(must_det_ll(0)).
 :- meta_predicate(must_det_ll1(0)).
@@ -77,7 +77,12 @@ must_det_ll(\+ (X, \+ Y)):- !, must_det_ll(forall(must_not_error(X),must_not_err
 must_det_ll((X;Y)):- !, ((must_not_error(X);must_not_error(Y))->true;must_det_ll_failed(X;Y)).
 must_det_ll(\+ (X)):- !, (\+ must_not_error(X) -> true ; must_det_ll_failed(\+ X)).
 %must_det_ll((M:Y)):- nonvar(M), !, M:must_det_ll(Y).
-must_det_ll(X):- must_det_ll1(X),!.
+must_det_ll(X):- 
+ catch(must_det_ll1(X),
+  must_det_ll_failed(G,N), % <- ExceptionTerm
+   % bubble up and start running 
+  ((M is N -1, M>0)->throw(must_det_ll_failed(G,M));(ftrace(X),throw('$aborted')))),!.
+%must_det_ll(X):- must_det_ll1(X),!.
 
 must_det_ll1(X):- tracing,!,must_not_error(X),!.
 must_det_ll1(once(A)):- !, once(must_det_ll(A)).
@@ -114,10 +119,10 @@ main_debug:- main_thread,current_prolog_flag(debug,true).
 cant_rrtrace:- nb_setval(cant_rrtrace,t).
 can_rrtrace:- nb_setval(cant_rrtrace,f).
 %must_det_ll_failed(X):- predicate_property(X,number_of_clauses(1)),clause(X,(A,B,C,Body)), (B\==!),!,must_det_ll(A),must_det_ll((B,C,Body)).
-must_det_ll_failed(G):- never_rrtrace,!,notrace,notrace(u_dmsg(must_det_ll_failed(G))),!,throw(must_det_ll_failed(G)).
+must_det_ll_failed(G):- never_rrtrace,!,notrace,notrace(u_dmsg(must_det_ll_failed(G))),!,throw(must_det_ll_failed(G,2)).
 must_det_ll_failed(_):- never_rrtrace,!,fail.
-must_det_ll_failed(G):- tracing,notrace(u_dmsg(must_det_ll_failed(G))),!,throw(must_det_ll_failed(G)).
-must_det_ll_failed(G):- main_debug,notrace(u_dmsg(must_det_ll_failed(G))),!,trace,call(G).
+must_det_ll_failed(G):- tracing,notrace(u_dmsg(must_det_ll_failed(G))),!,fail. 
+must_det_ll_failed(G):- main_debug,notrace(u_dmsg(must_det_ll_failed(G))),!,throw(must_det_ll_failed(G,2)).
 must_det_ll_failed(G):- is_cgi,!, u_dmsg(arc_html(must_det_ll_failed(G))).
 must_det_ll_failed(X):- notrace,is_guitracer,u_dmsg(failed(X))/*,arcST*/,nortrace,atrace, call(X).
 must_det_ll_failed(X):-  u_dmsg(failed(X))/*,arcST*/,nortrace,atrace,

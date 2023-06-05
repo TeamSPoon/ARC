@@ -2473,6 +2473,7 @@ code_not_bfly(Code):- between(170,inf,Code).
 
 html_utf(utf8).
 
+save_codes:- save_codes(42600).
 save_codes(Max):- 
  %stream_property(File,file_no(1)),
  html_utf(UTF8),
@@ -2497,6 +2498,7 @@ save_codes(Max):-
    % ignore((0 is Code mod 50, format(File,'\n\n~d:',[Code]), put_code(File,Code))),
   ),put_code(Code))))),
   sort_safe(CCC,CCCO),
+  retractall(iss:i_syms(_)),
   assertz(iss:i_syms(CCCO))))).
 
 is_single_char_ifiable_quiet(Code):- with_output_to(string(S),put(Code)),sformat(SS,'~q',[S]),!, display_length(SS,3),!.
@@ -2513,7 +2515,6 @@ test_is_single_char_ifiable:-
 is_html_ifiable(Code):- sformat(S,'~@',[as_html_encoded(put_code(Code))]), display_length(S,1),!.
 is_html_ifiable(Code):- format('~@',[as_html_encoded(put_code(Code))]),!,fail.
 
-save_codes:- save_codes(42600).
 
 check_dot_spacing(CCC):- 
  html_utf(UTF8),
@@ -2522,7 +2523,7 @@ check_dot_spacing(CCC):-
 
 check_dot_spacing:- iss:i_syms(CCC),my_maplist(check_dot_spacing,CCC),!.
 
-:- retractall(iss:i_syms(_)).
+%:- retractall(iss:i_syms(_)).
 isc:- ignore(save_codes).
 :- initialization(isc).
 
@@ -2533,7 +2534,7 @@ test_show_color_on_reload:- prolog_load_context(reloading,true)-> test_show_colo
 get_glyph(Point,Glyph):-  
   get_grid_num(Point,N),i_glyph(N,Glyph).
 */
-:- include(kaggle_arc_footer).
+%:- include(kaggle_arc_footer).
 
 :- initialization(test_show_color_on_reload,now).
 %:- fixup_module_exports_now.

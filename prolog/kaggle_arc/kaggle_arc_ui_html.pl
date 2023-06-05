@@ -18,7 +18,7 @@
   ]
 ).
 */
-:- include(kaggle_arc_header).
+%:- include(kaggle_arc_header).
 :- use_module(library(xlisting/xlisting_web)).
 :- use_module(library(debug)).
 %:- use_module(library(thread_pool)).
@@ -122,6 +122,9 @@ w_section_4(title(Title),Goal,Spyable,Showing):- nonvar(Title),!, w_section_4(Ti
 w_section_4(Title,Goal,Spyable,Showing):- wants_html, !, w_section_html(Title,Goal,Spyable,Showing).
 w_section_4(Title,Goal,Spyable,Showing):- w_section_ansi(Title,Goal,Spyable,Showing).
 
+convert_to_first_n_chars(Input,  N, Output) :-
+    sub_string(Input, 0, N, _, Output),!.
+convert_to_first_n_chars(Input, _N, Input).
 
 w_section_ansi(Title0,Goal,Spyable,_Showing):- 
  must_det_ll((
@@ -129,10 +132,13 @@ w_section_ansi(Title0,Goal,Spyable,_Showing):-
   nl_if_needed,dash_chars,
   MU = '', % was 'mu'
   once(nb_current('$w_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),
-  setup_call_cleanup(must_det_ll((format('~N~w~w!~w! ~@ |~n',[MU,Ident, Spyable, write(Str)]))),  
+
+  wots(SpyableS,write(Spyable)), convert_to_first_n_chars(SpyableS,30,SpyableStr),
+
+  setup_call_cleanup(must_det_ll((format('~N~w~w!~w! ~@ |~n',[MU,Ident, SpyableStr, write(Str)]))),  
                      locally(b_setval('$w_section',[c(Spyable)|Was]),
                                       ignore(once(tabbed_print_im(Depth+2,in_w_section_depth(Goal))))), 
-                     must_det_ll((format('~N~w\u00A1~w~w\u00A1 ',[Ident, MU,Spyable])))))).
+                     must_det_ll((format('~N~w\u00A1~w~w\u00A1 ',[Ident, MU,SpyableStr])))))).
 
 in_w_section_depth(Goal):- 
    setup_call_cleanup(

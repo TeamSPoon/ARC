@@ -117,7 +117,7 @@ show_individuated_pair_cont2(PairName,ROptions,_GridIn,GridOut,InC,OutC):-
    %when_in_html(if_wants_output_for(sort_some_relations,sort_some_relations(InC,OutC))),
 
   % (sub_var(trn,ID1)->show_object_dependancy(TestID,ExampleNum,InC,OutC);show_object_dependancy(TestID)),
- if_t( true,((
+ if_t( false,((
 
 
    w_section(learn_group_mapping,        if_t(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),

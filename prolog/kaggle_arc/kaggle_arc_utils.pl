@@ -7,13 +7,26 @@
 :- include(kaggle_arc_header).
 
 /*
+:- export(plain_var/1).
+plain_var(V):- notrace((var(V), \+ attvar(V), \+ get_attr(V,ci,_))).
+
+my_assertion(G):- call(G),!.
+my_assertion(G):- wdmsg(my_assertion(G)),writeq(goal(G)),nl,!,break.
+must_be_free(AllNew):- plain_var(AllNew),!.
+must_be_free(AllNew):- arcST,wdmsg(must_be_free(AllNew)),break,fail.
+must_be_nonvar(AllNew):- nonvar_or_ci(AllNew),!.
+must_be_nonvar(AllNew):- arcST,wdmsg(must_be_nonvar(AllNew)),break,fail.
+
 my_len(X,Y):- var(X),!,length(X,Y).
 my_len(X,Y):- is_list(X),!,length(X,Y).
 my_len(X,Y):- functor([_|_],F,A),functor(X,F,A),!,length(X,Y).
 my_len(X,Y):- arcST,!,ibreak.
 */
+is_map(G):- is_vm_map(G),!.
+%arc_webui:- false.
 sort_safe(I,O):- catch(sort(I,O),_,I=O).
-
+my_append(A,B):- append(A,B).
+my_append(A,B,C):- append(A,B,C).
 with_tty_false(Goal):- with_set_stream(current_output,tty(false),Goal).
 with_tty_true(Goal):- with_set_stream(current_output,tty(true),Goal).
 

@@ -837,8 +837,8 @@ skip_ku(localpoints(_)).
 skip_ku(links_count(sees,_)).
 skip_ku(occurs_in_links(sees,_)).
 skip_ku(grid_rep(comp,_)).
-skip_ku(shape_rep( _,_)).
-skip_ku(points_rep( _,_)).
+skip_ku(shape_rep( NotNorm,_)):- NotNorm\==norm.
+skip_ku(points_rep( NotNorm,_)):- NotNorm\==norm.
 skip_ku(globalpoints(_)).
 skip_ku( elink( sees(_),_)).
 
@@ -1069,12 +1069,17 @@ obj_link_count(Obj,Functor,Count):-
 not_skip_ku(P):- \+ skip_ku(P).
 
 indv_eprops_list(Indv,List9):- plain_var(Indv),!,List9=[Indv].
-indv_eprops_list(Grid,Props):- is_grid(Grid),!,grid_props(Grid,Props).
-indv_eprops_list(Indv,List9):- is_prop1(Indv),!,List9=[Indv].
-indv_eprops_list(Indv,List9):- 
-  indv_props_list(Indv,List0),
-  ku_rewrite_props(List0,List9).
+indv_eprops_list(Indv,List9):- indv_eprops_list1(Indv,List0),!,ku_rewrite_props(List0,List9).
 
+indv_eprops_list1(Grid,Props):- is_grid(Grid),!,grid_props(Grid,Props).
+indv_eprops_list1(Grid,Props):- is_object(Grid),!,indv_props_list(Grid,Props).
+indv_eprops_list1(Indv,List9):- is_prop1(Indv),!,List9=[Indv].
+indv_eprops_list1(Indv,List9):- atom(Indv),oid_to_obj(Indv,Obj),is_object(Obj),!,indv_eprops_list1(Obj,List9).
+indv_eprops_list1(Indv,List9):- atom(Indv),gid_to_grid(Indv,Obj),is_grid(Obj),!,indv_eprops_list1(Obj,List9).
+indv_eprops_list1(Indv,List9):- \+ atom(Indv), \+ is_object(Indv),tid_to_gids(Indv,Obj),!,indv_eprops_list1(Obj,List9).
+indv_eprops_list1(Indv,List9):- indv_props_list(Indv,List9).
+
+flat_props(Objs,Props):- Objs==[],!,Props=[].
 flat_props(Objs,Props):- is_mapping(Objs),get_mapping_info(Objs,_Info,In,Out),!,
   flat_props(In,InProps),flat_props(Out,OutProps),
   append(InProps,OutProps,Props).
@@ -2882,11 +2887,13 @@ get_is_for_ilp(_,_,bias,D):-
 
     []]).
 
+:- use_module(library(clpfd)).
+
 get_is_for_ilp(_,_,bk,D):- 
    member(D,
    [ %(:- dynamic contact/2), large(10), medium(5),small(1),
     (:- use_module(library(clpfd))),
-    (incr_nat30(A,B) :- B #= A + 1),
+    (incr_nat30(A,B) :- '#='(B, +(A , 1))),
     (color_change(_,_)),
     (my_geq(A,B) :- nonvar(A), nonvar(B), !, A>=B),    
     (my_leq(A,B) :- nonvar(A), nonvar(B), !, A=<B),

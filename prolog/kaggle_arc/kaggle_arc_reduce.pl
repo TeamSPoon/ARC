@@ -10,6 +10,10 @@
 :- use_module(library(nb_set)).
 :- use_module(library(lists)).
 
+:- dynamic(reduce_1op/7). 
+:- multifile(reduce_1op/7). 
+:- discontiguous(reduce_1op/7).
+
 split_list(N1,Left,Grid,Right):- length(Left,N1),append(Left,Right,Grid).
 
 :- decl_pt(unreduce_grid(infoR,grid)).
@@ -164,7 +168,6 @@ improvement_v(I,O,soild_lines):- solid_lines(I,_,IC),solid_lines(O,_,OC),OC>IC,!
 solid_lines(Grid,Ns,C):- findall(N1,(nth1(N1,Grid,Row1),entire_row(Row1)),Ns),length(Ns,C).
 
 
-:- discontiguous(reduce_1op/7).
 
 too_small_reduce(H,_L,Two):- H=<Two. %X=<N,Y=<N,!.
 

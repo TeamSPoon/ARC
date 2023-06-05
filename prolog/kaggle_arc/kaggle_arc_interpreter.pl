@@ -879,7 +879,8 @@ is_goal_query(Goal):-
   \+ source_location(_,_),nb_current('$goal', Term), !, % writeq(Term=@=Goal),nl,
   Goal=@=Term.
 
-goal_expansion_q(Goal,I,Out,O):- var(I), is_goal_query(Goal), (goal_expansion_query(Goal,Out)-> Goal\=@=Out),I=O.
+goal_expansion_q(Goal,I,Out,O):- var(I), is_goal_query(Goal),
+   (goal_expansion_query(Goal,Out)-> Goal\=@=Out),I=O.
 
 :- export(thread_httpd:http_process/4).
 :- system:import(thread_httpd:http_process/4).
@@ -890,10 +891,12 @@ goal_expansion_q(Goal,I,Out,O):- var(I), is_goal_query(Goal), (goal_expansion_qu
 :- dynamic(goal_expansion/4).
 goal_expansion(Goal,I,Out,O):- 
    nb_current(arc_can_expand_query,t),
+   \+ current_prolog_flag(arc_query_expansion,false),
    \+ current_prolog_flag(arc_term_expansion,false),
    current_predicate(goal_expansion_q/4),
    goal_expansion_q(Goal,I,Out,O).
 
+:- set_prolog_flag(arc_query_expansion,false).
 % ?- print_grid(gridFn(X)).
 %:- export(is_toplevel_query/2).
 %:- b_setval('$goal', []).

@@ -209,7 +209,7 @@ maybe_repress_output(Goal):- call(Goal).
 %repress_output(Goal):- with_output_to(atom(_),Goal).
 repress_output(Goal):- call(Goal).
 %repress_some_output(Goal):- when_entire_suite(with_pair_mode(whole_test,repress_output(Goal)),Goal).
-repress_some_output(Goal):- call(Goal).
+repress_some_output(Goal):- locally(set_prolog_flag(gc,false),Goal).
 
   
 learn_solve_via_grid_change(TestID):- 
@@ -610,15 +610,6 @@ is_post_cond_obj(Obj,in):- is_post_cond_obj(Obj,in_out).
 
 
 
-common_props([O|Objs],Props):-
-   indv_props_list(O,List),
-   findall(P,(member(P,List),\+ dont_notice(P),forall(member(E,Objs),has_prop(P,E))),Props).
-
-current_example_nums(TestID,ExampleNum):- 
-  (var(TestID)->get_current_test(TestID);true),
-  ignore((ExampleNum=trn+_)), kaggle_arc(TestID,ExampleNum,_,_). 
-
-
 
 save_how_io(HowIn,HowOut):- 
   get_current_test(TestID),save_how_io(TestID,HowIn,HowOut).
@@ -682,7 +673,7 @@ obj_group5(TestID,ExampleNum,InOut,ROptions,Objs):- var(ROptions),
  obj_group5(TestID,ExampleNum,InOut,ROptions,Objs).
 
 obj_group5(TestID,ExampleNum,InOut,ROptions,Objs):-
-  arc_cache:individuated_cache(TestID,TID,_GOID,ROptions,Objs), 
+  from_individuated_cache(TestID,TID,_GOID,ROptions,Objs),
   once((sub_var(ExampleNum,TID),sub_var(InOut,TID))),!.
 
 obj_group5(TestID,ExampleNum,InOut,ROptions,Objs):-
@@ -691,9 +682,260 @@ obj_group5(TestID,ExampleNum,InOut,ROptions,Objs):-
  other_grid(Grid,Other),
  with_other_grid(Other,
   
-                 ((fail, arc_cache:individuated_cache(TestID,TID,GOID,ROptions,Objs), Objs\==[],
+                 ((fail, from_individuated_cache(TestID,TID,GOID,ROptions,Objs), Objs\==[],
   once((testid_name_num_io_0(TID,_,Example,Num,InOut),
         testid_name_num_io_0(GOID,_,Example,Num,InOut))))*-> true ; grid_to_objs(Grid,ROptions,Objs))).
+
+individuated_cache_group(TestID,ExampleNum,Dir1,FROptions1,Info1,SObjs1):-
+  kaggle_arc(TestID,ExampleNum,_,_),
+  Template = cg_individuated_cache_group(Info,Dir,FROptions,SObjs),
+  Result = cg_individuated_cache_group(Info1,Dir1,FROptions1,SObjs1),
+  findall(Template,
+             each_individuated_cache_group(TestID,ExampleNum,Dir,FROptions,Info,SObjs),
+             List),
+  sort(List,Set),
+  member(Result,Set).
+
+best_obj_group_pair(TestID,ExampleNum,InC,OutC):-
+  obj_group_pair(TestID,ExampleNum,InC,OutC).
+
+
+each_individuated_cache_group(TestID,ExampleNum,Dir,FROptions,Info,SObjs):- 
+   from_individuated_cache(TestID,FTID,FGOID,FROptions,Objs),
+   once((
+   length(Objs,ObjCount),ObjCount>=1,visible_order(Objs,SObjs),
+   ignore(testid_name_num_io(FTID,TestIDA,ExampleA,NumA,InOutA)),
+   ignore(testid_name_num_io(FGOID,TestIDB,ExampleB,NumB,InOutB)),
+   InOutA=InOutB,NumA=NumB,TestIDB=TestIDA,ExampleB=ExampleA,ExampleNum=(ExampleA+NumA),%InOutB = IO,
+   Info = [first_mass(FMass),mass_percent(Percent),all_percent(TPercent),          
+           fgo_n(NFG),bgo_n(NBG), overlap(OLPn,OLP), differnce(DOLPn,DOLP), example(ExampleNum),dir(Dir), roptions(FROptions),testid(TestID),tid(FTID)],
+   my_partition(is_input_object,SObjs,Ins,Outs))),
+   member(Dir=SIObjs,[in=Ins,out=Outs]),
+   nth0(0,SObjs,First),mass(First,FMass),
+   once((kaggle_arc_io(TestID,ExampleNum,Dir,Grid), mass(Grid,FG_G_Mass),area(Grid,Area),BG_G_Mass is Area-FG_G_Mass)),
+   once((my_partition(is_bg_object,SIObjs,BGO,FGO),length(FGO,NFG),length(BGO,NBG),mass(FGO,FGMass),mass(BGO,BGMass))),
+   if_t(FGMass>0,(FGMass=:=FG_G_Mass;FGMass>9)),
+   if_t(FG_G_Mass>0,TPercent is (FGMass/FG_G_Mass*100)),
+   if_t(var(TPercent),TPercent is (BGMass/BG_G_Mass*100)),
+   if_t(FG_G_Mass>0, Percent is (First/FG_G_Mass*100)),
+   if_t(var(TPercent),Percent is (First/BG_G_Mass*100)),
+   if_t(FGMass==0, if_t(BGMass>0,BGMass=:=BG_G_Mass)),
+   overlapped_fg_props(FGO,OLP),length(OLP,OLPn),
+   all_differnt_fg_props(FGO,DOLP),length(DOLP,DOLPn),
+   once(NBG>=2;NFG>=1).
+
+
+overlapped_fg_props(FGO, OLP) :-
+   maplist(indv_props_list, FGO, [F|GP]),
+   include({GP}/[Prop]>>(forall(member(O,GP), member(Prop, O))), F, OLP).
+
+
+all_differnt_fg_props(FGO, OLP) :-
+   maplist(indv_props_list, FGO, [F|GP]), 
+   length(FGO,Len), 
+   include(include_all_differnt(Len,[F|GP]),F,OLP).
+
+include_all_different(Len, FGO, Prop) :-
+    make_unifiable(Prop, UHAD),
+    findall(V, (
+        member(R, FGO),
+        (member(UHAD, R) -> V = UHAD; V = (\+ UHAD))
+    ), List),
+    variant_list_to_set(List, Set),
+    length(Set, SetL),
+    SetL = Len.
+
+
+% Define cells
+pointset_data(o1, [cell(1,1,red), cell(2,3,blue), cell(3,4,green), cell(4,5,red), 
+                   cell(6,7,blue), cell(7,8,green)]).
+
+pointset_data(o2, [cell(9,10,blue), cell(10,11,green), cell(11,12,red), cell(12,13,blue),
+                   cell(14,15,red), cell(15,16,blue), cell(16,17,green), cell(17,18,red)]).
+
+pointset_data(o3, [cell(19,20,red), cell(20,21,blue), cell(21,22,green), cell(22,23,red), 
+                   cell(24,25,blue), cell(25,26,green), cell(26,27,red), cell(27,28,blue)]).
+
+pointset_data(o4, [cell(28,29,blue), cell(29,30,green), cell(30,1,red), cell(1,2,blue),
+                   cell(2,3,red), cell(3,4,blue), cell(4,5,green), cell(5,6,red), 
+                   cell(6,7,blue), cell(7,8,red)]).
+
+pointset_data(o5, [cell(8,9,red), cell(9,10,blue), cell(10,11,green), 
+                   cell(11,12,blue), cell(12,13,green), cell(13,14,red)]).
+
+pointset_data(o6, [cell(14,15,blue), cell(15,16,green), cell(16,17,red), cell(17,18,blue),
+                   cell(18,19,red), cell(19,20,blue), cell(20,21,green), cell(21,22,red), 
+                   cell(22,23,blue), cell(23,24,green)]).
+
+% Extract x, y and color from a cell
+cell_x(cell(X,_,_), X).
+cell_y(cell(_,Y,_), Y).
+cell_color(cell(_,_,Color), Color).
+
+% Calculate average distance between cells in two sets
+avg_distance(Set1, Set2, AvgDistance) :-
+    findall(Distance, (
+        member(Cell1, Set1),
+        cell_x(Cell1, X1),
+        cell_y(Cell1, Y1),
+        member(Cell2, Set2),
+        cell_x(Cell2, X2),
+        cell_y(Cell2, Y2),
+        Distance is sqrt(abs(X1-X2)*abs(Y1-Y2))
+    ), Distances),
+    sort(Distances,SDistances),
+    length(SDistances, Length),
+    NumDistances is Length // 3 + 1,
+    length(Smaller, NumDistances), 
+    append(Smaller, _, SDistances),
+    sumlist(Smaller, FirstDistance),
+    AvgDistance is FirstDistance / NumDistances.
+   
+% Calculate distance bonus. Higher for sets of cells that are closer.
+distance_bonus(Set1, Set2, DistanceBonus) :-
+    avg_distance(Set1, Set2, AvgDistance),
+    DistanceBonus is 1 / (1 + AvgDistance).
+
+% Calculate color bonus. 1 if there are shared colors, 0 otherwise.
+color_bonus(Set1, Set2, ColorBonus) :-
+    findall(Color, (
+        member(Cell1, Set1),
+        cell_color(Cell1, Color),
+        member(Cell2, Set2),
+        cell_color(Cell2, Color)
+    ), SharedColors),
+    length(SharedColors, NumSharedColors),
+    (NumSharedColors > 0 -> ColorBonus is 1 ; ColorBonus is 0).
+
+% Calculate the Jaccard similarity with bonuses for closer cells and same colors
+jaccard_similarity(OC1, OC2, Similarity) :-
+    oc_set(OC1, Set1), oc_set(OC2, Set2),
+    intersection(Set1, Set2, Intersection),
+    union(Set1, Set2, Union),
+    length(Intersection, IntersectionLength),
+    length(Union, UnionLength),
+    Bonus is IntersectionLength / UnionLength,
+    distance_bonus(Set1, Set2, DistanceBonus),
+    color_bonus(Set1, Set2, ColorBonus),
+    Similarity is Bonus + DistanceBonus + ColorBonus.
+
+% Add the oc functor to the objects
+add_oc(OC, OC) :- functor(OC, oc, 2), !.
+add_oc(Obj, oc(Obj, ComparableSet)) :- pointset_data(Obj, ComparableSet),!.
+add_oc(Obj, oc(Obj, ComparableSet)) :- obj_atoms(Obj, ComparableSet),!.
+
+% Extracts the cached comparable pointset
+oc_set(oc(_, Set), Set).
+
+% Pair up two sets based on best similarity
+pair_up_by_best_similarity([], _, []).
+pair_up_by_best_similarity(_, [], []).
+pair_up_by_best_similarity([Set|Sets1], Sets2, [[Set,BestPair]|Groups]) :-
+    find_best_pair(Set, Sets2, BestPair),
+    delete(Sets2, BestPair, RemainingSets),
+    pair_up_by_best_similarity(Sets1, RemainingSets, Groups).
+
+% Find the best pair for a given set
+find_best_pair(Set, Sets, BestPair) :-
+    findall(Similarity-pair(Set, OtherSet), (
+        member(OtherSet, Sets),
+        jaccard_similarity(Set, OtherSet, Similarity)
+    ), Pairs),
+    sort(2, @>=, Pairs, [_-pair(_, BestPair)|_]).
+
+% Partition objects into groups based on best similarity
+partition_objects_C1(Objects1, Objects2, Groups) :-
+    maplist(add_oc, Objects1, OC1s),
+    maplist(add_oc, Objects2, OC2s),
+    pair_up_by_best_similarity(OC1s, OC2s, Groups).
+
+% Predicate to partition objects into groups based on best similarity
+% Takes the unpaired sets from previous iterations, combines them into superobjects
+% and then tries to pair these with the remaining sets.
+partition_objects_Cn([], Groups, Groups):- !.
+partition_objects_Cn(Groups, [], Groups):- !.
+partition_objects_Cn(Objects1, Objects2, FinalGroups) :-
+    maplist(add_oc, Objects1, OC1s),
+    maplist(add_oc, Objects2, OC2s),
+    pair_up_by_best_similarity(OC1s, OC2s, InitialPairings),
+    flatten(InitialPairings,RemoveThese),
+    subtract(OC2s, RemoveThese, UnpairedElements),
+    ( UnpairedElements == [] -> 
+     FinalGroups = InitialPairings ;
+     ( maplist(combine_groups,InitialPairings, SuperObjects),
+      partition_objects_Cn(SuperObjects, UnpairedElements, FinalGroups))).
+
+% Combines the sets in a group into a single set, allowing the group to be treated
+% as a single object in subsequent iterations of the pairing algorithm.
+combine_groups(OCList, oc(Os,SetOfCells)):-
+   maplist(arg(1),OCList,Os),
+   maplist(arg(2),OCList,Cs),
+   flatten(Cs,List),list_to_set(List,SetOfCells).
+
+
+% Test query
+%?- partition_objects_Cn([o1,o2],[o3,o4,o5,o6], Groups).
+
+
+
+/*
+
+overlapped_fg_props(FGO,OLP):- 
+   maplist(indv_props_list,FGO,[F|GP]),
+   include(all_have(FGO),F,OLP).
+
+all_have(FGO,Prop):- forall(member(O,FGO),has_prop(Prop,O)).
+*/
+
+print_pair_groups(TestID):-
+  forall(current_example_nums(TestID,ExampleNum),
+    print_pair_groups(TestID,ExampleNum)).
+
+print_pair_groups(TestID,ExampleNum):-
+   findall(oc(Info,Objs),individuated_cache_group(TestID,ExampleNum,in,_,Info,Objs),InS),
+   findall(oc(Info,Objs),individuated_cache_group(TestID,ExampleNum,out,_,Info,Objs),OutS),
+   partition_objects_Cn(InS, OutS, Groups),
+   pp_ilp(Groups),!.
+
+/*
+
+show_pairs(InS,OutS,pair(oc(ObjsI,InfoI),oc(ObjsO,InfoO))):- 
+   print_ss(Closeness,ObjsI,ObjsO),nl,
+   my_include(arg_not(1,is_group),InfoI,StatsI),
+   my_include(arg_not(1,is_group),InfoO,StatsO),
+   print(StatsI),nl,
+   print(StatsO),nl.
+*/
+
+print_groups(TestID):-
+  forall(current_example_nums(TestID,ExampleNum),
+    print_groups(TestID,ExampleNum)).
+
+print_groups(TestID,ExampleNum):-
+  forall(individuated_cache_group(TestID,ExampleNum,Dir,ROptions,Info,Objs),
+   (print_grid(wqs([Dir,ROptions]),Objs),nl,
+    my_include(arg_not(1,is_group),Info,Stats),
+    print(Stats),nl)).
+
+
+/*
+
+best_individuated_cache(TestID,FTID,FGOID,FROptions,Nums,Objs1,Objs2):-
+  best_individuated_cache_group(TestID,ExampleNum1,Dir1,FGOID1,FROptions1,NFG1+NBG1,SIObjs1,Info1), 
+  best_individuated_cache_group(TestID,ExampleNum2,Dir2,FGOID2,FROptions2,NFG2+NBG2,SIObjs2,Info2),
+  merge_vals(TestID,ExampleNum2,Dir2,FGOID2,FROptions2,NFG2+NBG2,SIObjs2,Info2
+  
+*/
+
+from_individuated_cache(TestID,FTID,FGOID,FROptions,Objs):-
+  (arc_cache:individuated_cache(TestID,TID,GOID,ROptions,Objs)
+  ;arc_cache:individuated_cache(TID,GOID,ROptions,Objs)
+  ;saved_group(individuate(ROptions,GOID),Objs)), 
+  (nonvar(FTID)-> \+ \+ sub_var(FGOID,(FTID,GOID,ROptions,Objs)) ; FTID=TID),
+  (nonvar(FGOID)-> \+ \+ sub_var(FGOID,(TID,GOID,ROptions,Objs)) ; FGOID=GOID),
+  (nonvar(FROptions)-> \+ \+ sub_var(FGOID,(TID,GOID,ROptions,Objs)) ; ROptions=FROptions),
+  ((var(FTID),nonvar(GOID))-> (testid_name_num_io_0(GOID,TestIDG,Example,Num,InOut),(FTID=(TestIDG>(Example+Num)*InOut)));true),
+  ((var(TestID),nonvar(GOID))-> (testid_name_num_io_0(GOID,TestID,_Example,_Num,_InOut)) ; true).
 
 
 %show_object_dependancy(_TestID):-  !.
@@ -701,8 +943,31 @@ obj_group5(TestID,ExampleNum,InOut,ROptions,Objs):-
 show_object_dependancy(TestID):-  
 % =============================================================
  ensure_test(TestID), 
+   %print_groups(TestID),
+  %print_pair_groups(TestID),
  learn_object_dependancy(TestID),
  print_object_dependancy(TestID).
+
+scope_training(ExampleNum):- 
+  ignore((ExampleNum=(trn+_))),
+  ignore((
+    luser_getval(example,UExampleNum), 
+      ignore(ExampleNum = UExampleNum))).
+  
+
+common_props([O|Objs],Props):-
+   indv_props_list(O,List),
+   findall(P,(member(P,List),\+ dont_notice(P),forall(member(E,Objs),has_prop(P,E))),Props).
+
+current_example_scope(TestID,ExampleNum):- 
+  (var(TestID)->get_current_test(TestID);true),!,
+  scope_training(ExampleNum), 
+  kaggle_arc(TestID,ExampleNum,_,_),
+  (get_pair_mode(single_pair)->!;true).
+
+current_example_nums(TestID,ExampleNum):- 
+  (var(TestID)->get_current_test(TestID);true),
+  scope_training(ExampleNum), kaggle_arc(TestID,ExampleNum,_,_). 
 
 % =============================================================
 learn_object_dependancy(TestID):-
@@ -710,15 +975,16 @@ learn_object_dependancy(TestID):-
  ensure_test(TestID),
   must_det_ll((
   ensure_individuals(TestID),
- ignore((ExampleNum=trn+_)),
+  scope_training(ExampleNum),
   forall(kaggle_arc(TestID,ExampleNum,_,_),
      learn_object_dependancy(TestID,ExampleNum)),
   merge_object_dependancy(TestID))).
 
 learn_object_dependancy(TestID,ExampleNum):-
  %current_example_nums( TestID,ExampleNum),
- must_det_ll(( obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs),
+ must_det_ll(( best_obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs),
    maybe_learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs))).
+
 
 maybe_learn_object_dependancy(TestID,ExampleNum,_RHSObjs,_LHSObjs):-
   %arc_cache:prop_dep(TestID,ExampleNum,_,_,_,_,_,_,_),
@@ -732,6 +998,23 @@ relaxed_levels([ending(balanced(_))]).
 %relaxed_levels([]).
 %relaxed_levels(RelaxLvl):- arg(_,v([],[delete],[all]),RelaxLvl).
 member_of_relax(S,RelaxLvl):- make_unifiable(S,P), !, \+ (( member(P,RelaxLvl), P\=S)), ignore(P=S).
+
+learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
+  (var(TestID),var(RHSObjs),var(LHSObjs)),ensure_test(TestID),!,
+  my_assertion(nonvar(TestID)),!,
+  learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
+
+learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
+  (var(ExampleNum),var(RHSObjs),var(LHSObjs),nonvar(TestID)),!,
+  current_example_scope(TestID,ExampleNum),
+  learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
+
+
+learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-  
+  var(RHSObjs),var(LHSObjs),best_obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs),
+  nonvar(RHSObjs),nonvar(LHSObjs),!,
+  learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs).
+
 
 learn_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs):-
   get_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs,Groups), %pp_ilp(groups=Groups),
@@ -2107,7 +2390,7 @@ has_individuals(TestID):- has_individuals_real(TestID),!.
 has_individuals(TestID):- warn_skip(has_individuals(TestID)),!.
 has_individuals_real(TestID):-  
  forall(current_example_nums(TestID,ExampleNum),
-  (arc_cache:individuated_cache(TestID,TID,GID,_,Objs), sub_var(ExampleNum,(TID,GID)), Objs\==[])),!.
+  (from_individuated_cache(TestID,TID,GID,_,Objs), sub_var(ExampleNum,(TID,GID)), Objs\==[])),!.
  
 
 
@@ -2127,9 +2410,12 @@ ensure_individuals1(TestID):-
           ensure_individuals2(TestID)),
     has_individuals_real(TestID)))),!.
  
-ensure_individuals2(TestID):- ignore((ExampleNum=trn+_)),
-  print_collapsed(200, forall( kaggle_arc(TestID,ExampleNum,GridIn,GridOut),
-           individuate_pair(complete,GridIn,GridOut,_InC,_OutC))).
+ensure_individuals2(TestID):- scope_training(ExampleNum),
+  forall( kaggle_arc(TestID,ExampleNum,GridIn,GridOut),
+           individuate_pair(complete,GridIn,GridOut,_InC,_OutC)).
+%ensure_individuals2(TestID):- ignore((ExampleNum=trn+_)),
+%  print_collapsed(200, forall( kaggle_arc(TestID,ExampleNum,GridIn,GridOut),
+%           individuate_pair(complete,GridIn,GridOut,_InC,_OutC))).
 ensure_individuals2(TestID):- warn_skip(ensure_individuals2(TestID)),!.
 
 ensure_individuals2(TestID):- once(with_luser(menu_key,'i',once(ndividuator(TestID)))).

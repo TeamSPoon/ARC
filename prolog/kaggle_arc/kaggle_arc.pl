@@ -662,7 +662,49 @@ test_regressions:- make, forall((clause(mregression_test,Body),ppt(Body)),must_d
 
 %:- forall(ping_indiv_grid(X),atom_concat(X,Y
 
-:- include(kaggle_arc_footer).
+
+:- enable_arc_expansion.
+
+%:- set_prolog_flag(verbose_load,true).  
+%:- set_prolog_flag(verbose_autoload,true).
+%:- prolog_load_context(source,SF),ufmt(prolog_load_context(source,SF)).
+
+%:- learn_shapes.
+:- ensure_loaded(kaggle_arc_utils).
+:- ensure_loaded(kaggle_arc_ui_html).
+:- ensure_loaded(kaggle_arc_ui_ansi).
+:- ensure_loaded(kaggle_arc_deepening).
+:- ensure_loaded(kaggle_arc_typecheck).
+:- ensure_loaded(kaggle_arc_interpreter).
+:- ensure_loaded(kaggle_arc_test_favs).
+
+:- ensure_loaded(kaggle_arc_test_loader).
+
+:- ensure_loaded(kaggle_arc_domaintypes).
+:- ensure_loaded(kaggle_arc_test_iface).
+:- ensure_loaded(kaggle_arc_explaination).
+:- ensure_loaded(kaggle_arc_howdiff).
+:- ensure_loaded(kaggle_arc_imageproc).
+:- ensure_loaded(kaggle_arc_physics).
+:- ensure_loaded(kaggle_arc_heuristics).
+:- ensure_loaded(kaggle_arc_intruder).
+:- ensure_loaded(kaggle_arc_test_cache).
+:- ensure_loaded(kaggle_arc_individuation_dpg).
+:- ensure_loaded(kaggle_arc_transrules).
+:- ensure_loaded(kaggle_arc_generalization).
+:- ensure_loaded(kaggle_arc_reduce).
+:- ensure_loaded(kaggle_arc_skels).
+
+
+:- ensure_loaded(kaggle_arc_object).
+:- ensure_loaded(kaggle_arc_boards).
+:- ensure_loaded(kaggle_arc_learning).
+:- ensure_loaded(kaggle_arc_imagens).
+:- ensure_loaded(kaggle_arc_recognise).
+:- ensure_loaded(kaggle_arc_uniqueness).
+:- ensure_loaded(kaggle_arc_test_easy).
+:- ensure_loaded(kaggle_arc_test_old). 
+:- ensure_loaded(kaggle_arc_db).
 
 
 
@@ -792,6 +834,9 @@ load_from_main:-
   catch_log(load_json_files),
   catch_log(load_task_states),
   catch_log(devaluation),
+  catch_log(gen_gids),
+  catch_log(create_group_dmiles),
+  catch_log(test_show_colors),
   !.
 
 :- initialization(load_from_main).
@@ -811,7 +856,15 @@ load_from_main:-
 :- nb_setval(arc_can_portray,t).
 :- nb_setval(arc_can_portray,nil).
 %:- load_arc_db_temp_cache.
-demo_msg:- nl,writeln('% Type ?- demo. % or press up arrow').
+demo_msg:- nl,writeln('% Type ?-   
+  load_from_main   ,
+  catch_log(load_json_files)      ,
+  catch_log(load_task_states)     ,
+  catch_log(devaluation)          ,
+  catch_log(gen_gids)             ,
+  catch_log(create_group_dmiles)  ,
+  catch_log(test_show_colors)     , 
+  demo. % or press up arrow').
 :- initialization(demo_msg,after_load).
 :- luser_default(extreme_caching,false).
 :- nb_setval(arc_can_portray,nil).
@@ -869,6 +922,8 @@ use_gui_debugger:-
 :- endif.
 :- set_prolog_flag(autoload,true).
 :- dynamic(is_buggy_pair/2).
+
+
 %is_buggy_pair(v(fd096ab6)>(trn+0), "BUG: System Crash").
 %is_buggy_pair(t('3631a71a')>(tst+0),"segv").
 %is_buggy_pair(t('27a28665')>(tst+2), "BUG: Re-Searcher gets stuck!").
@@ -912,10 +967,12 @@ create_group_dmiles:-
 
   create_group(dmiles_fast,'bd14c3bf 08ed6ac7 ea32f347  0a2355a6 37d3e8b2 a61ba2ce b230c067 d2abd087 6e82a1ae 0d3d703e a61f2674 e509e548 810b9b61 aedd82e4 817e6c09  ae58858e fea12743'),
 
-  create_group(dmiles_cc_1,[t('find-the-color-of-the-gray-pixels-l6afriful4bel4379yo'), t(ea32f347),t('6e82a1ae'),%v('626c0bcc'),
+  
+  create_group(dmiles_cc_1,[t(ea32f347),t('6e82a1ae'),%v('626c0bcc'),
                                                          t('08ed6ac7'),%t('150deff5'),%v(a8610ef7),
                                                          t(e509e548),t(b230c067),t(d2abd087),
                                                          %t('0uduqqj6f'),
+                                                         %t('find-the-color-of-the-gray-pixels-l6afriful4bel4379yo')
                                                          %t(b6afb2da),
                                                          v('0a2355a6'),
                                                          v('37d3e8b2'),%v('639f5a19')
@@ -938,7 +995,9 @@ create_group_dmiles:-
   set_current_test('6e82a1ae'),
   %set_current_test('bd14c3bf'),
   !.
-:- initialization(create_group_dmiles).
+
+
+%:- initialization(create_group_dmiles).
 %:- noguitracer.
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).
 
@@ -947,10 +1006,17 @@ create_group_dmiles:-
 
 %:- demo.
 :- current_prolog_flag(argv,C),(member('-l',C)->initialize;true).
+
+:- reconsult(kaggle_arc_individuation_dpg).
+:- reconsult(kaggle_arc_prior_groups).
+%:- reconsult(kaggle_arc_ui_ansi_dpg).
+%:- reconsult(kaggle_arc_ui_html).
+
 :- initialization(scan_uses_test_id(main_file_complete)).
 %:- use_module('./induction/h_muarc_alephlib').
 %:- consult('./induction/h_muarc_aleph').
 %:- tmp:loading_arc_from(M),'$set_source_module'(M).
 
-% 
+% %:- initialization(load_from_main).
+% :- initialization(test_show_colors,after_load).
 

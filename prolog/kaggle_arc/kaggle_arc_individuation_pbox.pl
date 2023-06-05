@@ -1,9 +1,12 @@
+% :- encoding(iso_latin_1).
 /*
   this is part of (H)MUARC  https://logicmoo.org/xwiki/bin/view/Main/ARC/
 
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
+
+end_of_file.
 
 is_real_color_or_wfg(SX):- (SX == fg; SX == wbg),!.
 is_real_color_or_wfg(SX):- is_real_color(SX),!.
@@ -135,8 +138,6 @@ near_size(_,_,List,size2D(H,V)):- (near_size1(List,H,V);near_size1(List,V,H)),!.
 near_size(GH,GV,_,size2D(H,V)):- factor_of(H,GH),factor_of(V,GV).
 near_size1(List,H,V):- within1of(H,HH),within1of(V,VV), member(size2D(HH,VV),List).
 within1of(H,HH):- freeze(HH, ( D is abs(H-HH), D =< 1 )).
-
-list_upto(Size,List,Some):- length(List,L),(L=<Size ->Some=List ; (length(Some,Size),append(Some,_,List))).
 
 pbox_vm(GH,GV,GridI0,Sizes_S_L,VM):-
    % \+ \+ (length(Sizes_S_L,A),list_upto(20,Sizes_S_L,Some),u_dmsg(use_sizes(A)),print(Some)),
