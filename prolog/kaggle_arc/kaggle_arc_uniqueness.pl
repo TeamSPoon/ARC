@@ -18,6 +18,19 @@ clear_scene_rules(TestID):-
 
 % Define predicates that shouldn't be noticed
 %dont_notice(global2G(_, _)).
+dont_notice(rotSize2D(grav,_,_)).
+dont_notice(iz(algo_sid(comp,_))).
+dont_notice(pg(_,mass(_),rank1,_)).
+dont_notice(changes(_)).
+dont_notice(pg(_,cc(bg,_),rank1,1)).
+dont_notice(iz(media(_))).
+dont_notice(iz(type(_))).
+dont_notice(grid_ops(comp,_)).
+dont_notice(pg(_,iz(info(birth(_))),_,_)).
+dont_notice(pg(_,cc(bg,_),rankLS,_)).
+dont_notice(pg(_,occurs_in_links(contained_by,_),_,_)).
+dont_notice(pg(_,pen(_),rank1,_)).
+dont_notice(iz(fg_or_bg(_))).
 dont_notice(giz(_)).
 dont_notice(iz(i_o(_))).
 dont_notice(iz(stype(_))).
@@ -333,6 +346,9 @@ assume_prop2(grid_sz(_)).
 assume_prop2(global2G(_, _)).
 assume_prop2(was_oid(_)).
 assume_prop2(oid(_)).
+assume_prop2(cc(bg,0)).
+assume_prop2(unique_colors_count(1)).
+assume_prop2(iz(algo_sid(comp,sid_323))).
 
 
 max_prop_score(P, 0.1):- assume_prop1(P), !.
@@ -346,8 +362,11 @@ inv_has_prop(Obj, Prop):- inv_has_prop_score(Obj, Prop, Score), Score>0.
 
 inv_has_prop_score(Obj, Prop, Score):- max_prop_score(Prop, Score), inv_has_prop2(Obj, Prop).
 
+inv_has_prop2(_O, P):- P==[],!.
 inv_has_prop2(_O, P):- \+ \+ assume_prop(P), !.
-inv_has_prop2(Obj, pg(A, B, C, D)):- !, has_prop(Obj, pg(A, B, C, D)).
+
+inv_has_prop2(Obj, [P|T]):- !, inv_has_prop2(Obj, P), inv_has_prop2(Obj, T).
+inv_has_prop2(Obj, pg(_, B, C, D)):- has_prop(pg(_, B, C, D), Obj),!.
 inv_has_prop2(Obj, \+ Prop):- !, \+ inv_has_prop(Obj, Prop).
 inv_has_prop2(Obj, grid_ops(norm, Props)):- !, has_prop(grid_ops(norm, VProps), Obj), !, Props=@=VProps.
 inv_has_prop2(Obj, grid_rep(norm, Props)):- !, has_prop(grid_rep(norm, VProps), Obj), !, Props=@=VProps.
@@ -415,7 +434,32 @@ apply_rules_to_objects(Ways, Mapping, Rules, [_|Objs], More):-
 apply_rules_to_objects(_Ways, _Mapping, _Rules, _Objs, []).
 
 
+never_use_horn_rhs(P):- var(P),!,fail.
+never_use_horn_rhs(rhs(P)):- !, never_use_horn_rhs(P).
+never_use_horn_rhs(create3c(_,_,_)).
 
+apply_rules(VM, TestID, ExampleNum, Ctx, Rules, [O|Objs], [NO|NewObjs]):-
+  apply_rules1(VM, TestID, ExampleNum, Ctx, Rules, O, NO),!,
+  apply_rules(VM, TestID, ExampleNum, Ctx, Rules, Objs, NewObjs).
+apply_rules(_VM, _TestID, _ExampleNum, _Ctx, _Rules, Objs, Objs).
+
+apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, NewObj):-
+ (Rule = (_:rhs(P):- obj_atoms(PCond))),    
+  member(Rule,Rules), inv_has_prop2(Obj, PCond),
+  must_det_ll((override_object_1(VM, P, Obj, NewObj))),
+  print_ss(override_object(Rule), [Obj], [NewObj]),!.
+apply_rules1(_VM, _TestID, _ExampleNum, _Ctx, _Rules, Obj, Obj):-
+  indv_props_list(Obj,Props), my_partition(assume_prop,Props,_,Needed),pp(skipped_obj=Needed),!.
+
+    
+
+solve_obj_group(VM, TestID, ExampleNum, Ctx, ObjsIn, ObjsO):-
+  my_exclude(is_bg_object_really, ObjsIn, Objs),
+  (Rule = (Ctx:rhs(P):- obj_atoms(PCond))),
+  findall_vset_R(Rule, (ac_rules(TestID, Ctx, P, PCond)), Rules),
+  apply_rules(VM, TestID, ExampleNum, Ctx, Rules, Objs, ObjsO),  ObjsO\==[], !.
+
+/*
 
 solve_obj_group(VM, TestID, _ExampleNum, Ctx, ObjsIn, ObjsO):-!,
   my_exclude(is_bg_object_really, ObjsIn, Objs),
@@ -430,7 +474,7 @@ solve_obj_group(VM, TestID, _ExampleNum, Ctx, ObjsIn, ObjsO):-!,
   run_todo_output(VM, Todo, ObjsO), ObjsO\==[], !.
 
 
-solve_obj_group(VM, TestID, _ExampleNum, Ctx, ObjsIn, ObjsO):-
+solve_obj_group(VM, _TestID, _ExampleNum, Ctx, ObjsIn, ObjsO):-
   my_exclude(is_bg_object_really, ObjsIn, Objs),
   (Rule = (Ctx:rhs(P):- obj_atoms(PCond))),
   %io_to_cntx(IO_, Ctx),
@@ -441,7 +485,7 @@ solve_obj_group(VM, TestID, _ExampleNum, Ctx, ObjsIn, ObjsO):-
   unwonk_ansi(PStr, PPStr),
   pp_ilp((see_Strategy(Ways-Strategy)=PPStr)), Todo\==[],
   run_todo_output(VM, Todo, ObjsO), ObjsO\==[], !.
-
+*/
 /*
 solve_obj_group(_VM, TestID, _ExampleNum, Ctx, Objs, ObjsO):-
  must_det_ll((
@@ -694,7 +738,7 @@ how_generic_simularity(TestID, ExampleNum, HowInL, HowOutL, HowIn, HowOut):-
      Pairs)),
   must_det_ll(sort(Pairs, Sorted)),
   must_det_ll(maplist(arg(2), Sorted, HowPairs)),
-  pp(howPairs=HowPairs),
+  %pp(howPairs=HowPairs),
   must_det_ll(best_how_pairs(HowPairs, BestPair)),
   pp(bestPair=BestPair),
   sub_cmpd(how(in, HowIn), BestPair),
@@ -893,8 +937,19 @@ generic_propset_simularity(PropSet1, PropSet2, Similarity, ExtraInfo):-
     into_subcells(PropSet2,SubPropSet2),
     distance_bonus(SubPropSet1, SubPropSet2, DistanceBonus),
     color_bonus(SubPropSet1, SubPropSet2, ColorBonus),
+    propset_name(PropSet1,PropSet1Name),
+    propset_name(PropSet2,PropSet2Name),
     Similarity is (IntersectionLen / UnionLength) + DistanceBonus + ColorBonus,
-    wdmsg(Similarity is (IntersectionLen / UnionLength) + DistanceBonus + ColorBonus))).
+    wdmsg(simularity(PropSet1Name, PropSet2Name,Similarity is (IntersectionLen / UnionLength) + DistanceBonus + ColorBonus)))).
+
+propset_name(PropSet2,PropSet2Name):- maplist(first_atom_or_value,PropSet2,PropSet2Name).
+
+first_atom_or_value(C,C):- \+ compound(C),!.
+first_atom_or_value(C,FA):- C=..[_|Args],sub_term(A,Args),atom(A),!,FA=A,!.
+first_atom_or_value(C,FA):- C=..[_,A],atomic(A),!,FA=C.
+first_atom_or_value(C,A):- sub_term(A,C),number(A),!.
+first_atom_or_value(C,A):- sub_term(A,C),atomic(A),!.
+first_atom_or_value(C,C).
 
 %generic_propset_simularity(_PropSet1, _PropSet2, 0, []):- !.
 
@@ -1645,7 +1700,7 @@ pass2_rule_R(TestID, Rule):-
 has_a_value(P):- make_unifiable_u(P, U), P\=@=U.
 
 how_are_differnt(O1, O2, Set):-
-  findall(Type=Same, prop_pairs2(O1, O2, Type, Same, _P), List),
+  findall(Type=Same, (prop_pairs2(O1, O2, Type, Same, _P),Same\==same), List),
   vsr_set(List, Set).
 
 prop_pairs(O1, O2, Type, Same, P):- prop_pairs2(O1, O2, Type, Same, P).
@@ -1956,7 +2011,7 @@ sometimes if there are an exact dividable number of objects on one side from the
 % Predicate to find the most similar object in the other group for each object
 most_similar(_, [], -1).
 most_similar(Obj, [Other|Rest], MostSimilar) :-
-    similarity(Obj, Other, Sim),
+    jaccard_similarity(Obj, Other, Sim),
     most_similar(Obj, Rest, MostSimilarRest),
   (Sim > MostSimilarRest -> MostSimilar = Sim ; MostSimilar = MostSimilarRest).
 
@@ -2703,19 +2758,20 @@ ignore_prop_when(adding, grid_rep(_, _)).
 ignore_prop_when(adding, simularz(_, _)).
 ignore_prop_when(removing, cc(fg, _)).
 ignore_prop_when(removing, mass(_)).
+ignore_prop_when(_, P):- assume_prop(P).
 
-noteable_propdiffs2(E1, E2, Same, InFlatP, OutPFlat):-
+noteable_propdiffs(E1, E2, Same, InFlatP, OutPFlat):-
   flat_props(E1, FP1), flat_props(E2, FP2),
-  noteable_propdiffs(FP1, FP2, Same0, InFlatP0, OutPFlat0),
+  noteable_propdiffs1(FP1, FP2, Same0, InFlatP0, OutPFlat0),
   my_exclude(ignore_prop_when(removing), InFlatP0, InFlatP),
   my_exclude(ignore_prop_when(adding), OutPFlat0, OutPFlat),
   my_exclude(ignore_prop_when(sames), Same0, Same), !.
 
-noteable_propdiffs(PA, PB, Same, InFlatP, OutPFlat):-
+noteable_propdiffs1(PA, PB, Same, InFlatP, OutPFlat):-
   remove_o_giz(PA, PA1), remove_o_giz(PB, PB1),
   %=(PA, PA1), =(PB, PB1),
   pred_intersection(propchange_unnoticable, PA1, PB1, _, Same, InFlatP, OutPFlat), !.
-noteable_propdiffs(PA, PB, Same, InFlatP, OutPFlat):-
+noteable_propdiffs1(PA, PB, Same, InFlatP, OutPFlat):-
   remove_o_giz(PA, PA1), remove_o_giz(PB, PB1),
   intersection(PA1, PB1, Same, InFlatP, OutPFlat), !.
 

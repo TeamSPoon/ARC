@@ -11,7 +11,7 @@ rhs_ground(G):- nop(writeln(G)),!.
 
 ac_rules(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
 ac_rules(TestID,Ctx,P,PSame):- 
-  ac_unit(TestID,Ctx,P,Same),
+  ac_unit(TestID,Ctx,P,Same), \+ never_use_horn_rhs(P),
   include(not_debug_info,Same,PSame), 
   %Same=PSame,
   PSame\==[].
@@ -28,7 +28,7 @@ ac_unit(TestID,Ctx,P,Same):- ac_listing(TestID,Ctx,P,Same).
 
 ac_listing(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
 %ac_listing(TestID,Ctx,P->ac_db_unit,PSame):- ac_db_unit(TestID,Ctx,P,PSame).
-ac_listing(TestID,Ctx,P,PSame):- ac_db_unit(TestID,Ctx,P,PSame)*->true;pass2_rule(TestID,Ctx,P,PSame).
+ac_listing(TestID,Ctx,P,PSame):- (ac_db_unit(TestID,Ctx,P,PSame)*->true;pass2_rule(TestID,Ctx,P,PSame)), \+ never_use_horn_rhs(P).
 %ac_listing(TestID,Ctx,P,[iz(info(prop_can))|PSame]):- prop_can(TestID,Ctx,P,PSame).
 %ac_listing(TestID,Ctx,P,[pass2|PSame]):- pass2_rule(TestID,Ctx,P,PSame), \+ ac_rules(TestID,Ctx,P,PSame).
 
@@ -69,7 +69,7 @@ rule_to_pcp5(_TestID,R,Ctx,P0,LHS):-
 pass2_rule(TestID,Ctx,RHS,LHS):-   
   pass2_rule1(TestID,Ctx,RHS,LHS)*->true;
   pass2_rule2(TestID,Ctx,RHS,LHS)*->true;
-  pass2_rule3(TestID,Ctx,RHS,LHS)*->true.
+  fail.
 /*
 pass2_rule(TestID,Ctx,RHS,LHS):-
   findall_vset(Ctx-RHS,(pass2_rule1(TestID,Ctx,RHS,LHS);pass2_rule2(TestID,Ctx,RHS,LHS)),List),
@@ -95,9 +95,7 @@ pass2_rule2(TestID,Ctx,RHS0,LHS0):-
   RHS0=RHS, LHS0=LHS.
 
 
-pass2_rule3(TestID,Ctx,edit(Type,different,P),[iz(info(propcan(true,Ctx)))|PSame]):- fail,
-  ensure_test(TestID), ensure_props_change(TestID,Ctx,P),
-  prop_can(TestID,IO,P,PSame), once((io_to_cntx(IO,Ctx),prop_type(P,Type))).
+%pass2_rule3(TestID,Ctx,edit(Type,different,P),[iz(info(propcan(true,Ctx)))|PSame]):- fail,ensure_test(TestID), ensure_props_change(TestID,Ctx,P).
 
 /*pass2_rule(TestID,Ctx,RHS,[iz(info(Info))|LHS]):- 
  ensure_test(TestID),
@@ -300,8 +298,15 @@ trans_rule(Info,[In,In2|InL],OutL,TransRule):- is_object(In),is_object(In2),
 % just copy an object
 trans_rule(Info,[In],[Out],Rules):- 
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
-  noteable_propdiffs(In,Out,Same,L,R),L==[],R==[],
+  noteable_propdiffs(In,Out,Same,_L,R),R==[],
   Rules = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
+
+% just copy an object
+trans_rule(Info,[In],[Out],Rules):- 
+  how_are_differnt(In,Out,Diff),Diff==[],
+  into_lhs(In,LHS),
+  %%must_det_ll((sub_compound(step(Step),Info), sub_compound(why(TypeO),Info))),
+  Rules = [ copy_if_match(Info,rhs(copy_step),lhs(LHS)) ],!.
 
 % just copy an object
 trans_rule(Info,In,Out,Rules):- 
@@ -322,7 +327,8 @@ trans_rule(Info,In,Out,Rules):-
 
 trans_rule(Info,E1,E2,Rules):-
   noteable_propdiffs(E1,E2,NSame,NL,NR),
-  %pp_ilp(l2r(Info,E1,E2)),
+  dash_chars,
+  pp_ilp(l2r(Info,E1,E2)),
   dash_chars,
   if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
   flat_props(E1,FP1),flat_props(E2,FP2),
@@ -334,7 +340,7 @@ trans_rule(Info,E1,E2,Rules):-
   pp_ilp(removed=InFlatP),
   pp_ilp(nsames=NSame),
   pp_ilp(sames=Same),
-  
+  itrace,
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
   dash_chars,
   Rules = [ 

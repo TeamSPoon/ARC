@@ -376,7 +376,7 @@ birth_info(ifti(Birth),2+InfoLen):- !, display_length(Birth,InfoLen).
 birth_info(indiv(Birth),0+InfoLen):- !, display_length(Birth,InfoLen).
 birth_info(Birth,1+InfoLen):- display_length(Birth,InfoLen).
 
-object_short_props(PA,OUT):- mass(PA,Mass), Mass=1,!,
+object_short_props(PA,OUT):- fail, mass(PA,Mass), Mass=1,!,
   loc2D(PA,X,Y),
   object_birth_desc(PA,Birth),
   localpoints(PA,[C-_]),
@@ -816,7 +816,7 @@ merge_list_values([M|InfoAboutSimulars],Out):-
 differents_must_differents([A],[A]).
 differents_must_differents([L1|ListOfLists],O):-   
   [L1|ListOfLists]=L1ListOfLists,length(L1ListOfLists,Expected),
-  which_members_vary(L1,Expected,ListOfLists,VariedMembers),
+  which_members_vary_n(L1,Expected,ListOfLists,VariedMembers),
   maplist(only_these_members_or_negation(VariedMembers),L1ListOfLists,O).
 
 only_these_members_or_negation([V|VariedMembers],I,[P|O]):- 
@@ -825,6 +825,10 @@ only_these_members_or_negation([V|VariedMembers],I,[P|O]):-
 only_these_members_or_negation([V|VariedMembers],I,[ ( \+ V)| O]):- 
   only_these_members_or_negation(VariedMembers,I,O).
 only_these_members_or_negation([],_,[]).
+
+which_members_vary_n(L1,ExpectedCount,RRR,VariedMembers):-
+  which_members_vary(L1,RRR,VariedMembers),length(VariedMembers,VL),!,
+   D is abs(ExpectedCount-VL), D=<1.
 
 which_members_vary([HAD|L1],RRR,[UProp|VariedMembers]):-
  trace, make_unifiable_cc(HAD,UProp),
@@ -892,10 +896,14 @@ ensure_individuals(TestID,ExampleNum,GridIn,GridOut):-
 
 
 
-%print_individuals(_TestID):-!.
+print_individuals(TestID):-
+    ensure_test(TestID),
+      deduce_individuator(TestID),!.
 print_individuals(TestID):-
  ((
- ensure_test(TestID),
+   ensure_test(TestID),
+     deduce_individuator(TestID),
+ banner_lines(blue,4),
    ignore((never_entire_suite,set_flag(indiv,0))),%compute_and_show_test_hints(TestID),
    forall(kaggle_arc(TestID,ExampleNum,_,_), 
       ignore(ensure_individuals(TestID,ExampleNum))),
@@ -1585,7 +1593,7 @@ merge_list_values([M|InfoAboutSimulars],Out):-
 differents_must_differents([A],[A]).
 differents_must_differents([L1|ListOfLists],O):-   
   [L1|ListOfLists]=L1ListOfLists,length(L1ListOfLists,Expected),
-  which_members_vary(L1,Expected,ListOfLists,VariedMembers),
+  which_members_vary_n(L1,Expected,ListOfLists,VariedMembers),
   maplist(only_these_members_or_negation(VariedMembers),L1ListOfLists,O).
 
 only_these_members_or_negation([V|VariedMembers],I,[P|O]):- 

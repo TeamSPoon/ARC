@@ -273,12 +273,13 @@ menu_goal(Goal):-
 :- export(do_web_menu_key/1).
 
 invoke_n_v(Key):- fix_test_name(Key,TestID),is_valid_testname(TestID),ensure_test(TestID),!, do_web_menu_key('e').
-invoke_n_v(NV):- compound(NV),functor(NV,F,2), atom_length(F,1), NV =..[_,Char,TestAtom], invoke_n_v(Char,TestAtom),!.
-invoke_n_v(NV):- atom(NV),invoke_n_v('e',NV),!.
+invoke_n_v(NV):- compound(NV),functor(NV,F,2), atom_length(F,1), F\=='>', F\=='+', NV =..[_,Char,TestAtom], invoke_n_v(Char,TestAtom),!.
+%invoke_n_v(NV):- atom(NV), invoke_n_v('e',NV),!.
 invoke_n_v(Char,TestAtom):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),ensure_test(TestID),!, do_web_menu_key(Char).
 invoke_n_v(TestAtom,Char):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),ensure_test(TestID),!, do_web_menu_key(Char).
-  
-invoke_arc_cmd(Key):- invoke_n_v(Key),!.
+
+invoke_arc_cmd(Key):- once(dmsg(invoke_arc_cmd(Key))),fail.
+invoke_arc_cmd(Key):- invoke_n_v(Key),!,dmsg(invoke_n_v(Key)),!.
 invoke_arc_cmd(Key):- arc_atom_to_term(Key,Prolog,Vs),Vs==[], Prolog\=@=Key,!,invoke_arc_cmd(Prolog).
 invoke_arc_cmd(Key):- Key \= (_-_), \+ arc_sensical_term(Key),!.
 invoke_arc_cmd(Goal):- \+ missing_arity(Goal,0),!, 
