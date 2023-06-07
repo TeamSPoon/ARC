@@ -1467,6 +1467,9 @@ globalpoints(obj(L),O):- object_l(globalpoints(O),L),!.
 globalpoints(CP,[CP]):- is_point(CP),!.
 globalpoints(I,X):-  (var_check(I,globalpoints(I,X)), deterministic(TF), true), (TF==true-> ! ; true).
 globalpoints([],[]):-!.
+globalpoints(cell(X,Y,C),[C-P1]):- hv_point(X,Y,P1).
+globalpoints(cell(X,Y,C,T),[C-T-P1]):- hv_point(X,Y,P1).
+
 globalpoints(G,[G]):- is_cpoint(G),!.
 globalpoints(C-P,[C-P]):-!.
 globalpoints(G,G):- is_cpoints_list(G).

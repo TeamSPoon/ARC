@@ -883,19 +883,31 @@ generic_propset_simularity(PropSet1, PropSet2, Similarity, ExtraInfo):-
   if_t((sub_cmpd(fgo_n(FGLen1), PropSet1), sub_cmpd(fgo_n(FGLen2), PropSet2)), compatible_numbers(FGLen1, FGLen2, HowFGLen)),
   must_det_ll((
 
-   wdmsg(lhs), print_long_set(PropSet1),
-   wdmsg(rhs), print_long_set(PropSet2),
+%   wdmsg(lhs), print_long_set(PropSet1),
+%   wdmsg(rhs), print_long_set(PropSet2),
     intersection(PropSet1, PropSet2, Intersection),
     union(PropSet1, PropSet2, Union),
     length(Intersection, IntersectionLen),
     length(Union, UnionLength),
-    Bonus is IntersectionLen / UnionLength,
-   % distance_bonus(PropSet1, PropSet2, DistanceBonus),
-   % color_bonus(PropSet1, PropSet2, ColorBonus),
-    Similarity is Bonus /* + DistanceBonus + ColorBonus*/,
-    wdmsg( Bonus is IntersectionLen / UnionLength))).
+    into_subcells(PropSet1,SubPropSet1),
+    into_subcells(PropSet2,SubPropSet2),
+    distance_bonus(SubPropSet1, SubPropSet2, DistanceBonus),
+    color_bonus(SubPropSet1, SubPropSet2, ColorBonus),
+    Similarity is (IntersectionLen / UnionLength) + DistanceBonus + ColorBonus,
+    wdmsg(Similarity is (IntersectionLen / UnionLength) + DistanceBonus + ColorBonus))).
 
 %generic_propset_simularity(_PropSet1, _PropSet2, 0, []):- !.
+
+into_subcells(O2,Set2):- into_subcells0(O2,List2),!,list_to_set(List2,Set2).
+into_subcells0(NC,Set):- atom(NC),oid_to_obj(NC,Obj),!,into_subcells0(Obj,Set).
+into_subcells0(NC,Set):- atom(NC),gid_to_grid(NC,Obj),!,into_subcells0(Obj,Set).
+into_subcells0(NC,[]):- \+ compound(NC),!.
+into_subcells0(O2,[O2]):- functor(O2,cell,_),!.
+into_subcells0(oc(_,O2),Set2):- !, into_subcells0(O2,Set2).
+into_subcells0(O2,Set2):- is_gridoid(O2),globalpoints(O2,Set2),!.
+into_subcells0(O2,Set2):- is_list(O2),maplist(into_subcells0,O2,Set1),flatten(Set1,Set2).
+into_subcells0(_,[]).
+
 
 best_how_pairs(HowPairs, BestPair):-
    member(BestPair, HowPairs), !.
@@ -944,12 +956,15 @@ cell_y(Term, Y):- arg(2, Term, Y), !.
 cell_color(Term, C):- arg(3, Term, C), !.
 
 % Calculate average distance between cells in two sets
-avg_distance(Set1, Set2, AvgDistance) :-
+avg_distance(O1,O2, AvgDistance) :-
+    into_subcells(O1,Set1),
+    into_subcells(O2,Set2),
     findall(Distance, (
         member(Cell1, Set1),
         center2D(Cell1, X1, Y1),
         member(Cell2, Set2),
         center2D(Cell2, X2, Y2),
+        %special_distance(X1, Y1, X2, Y2, Distance)
         DX is X1-X2, DY is Y1-Y2,
         Distance is sqrt(DX*DX+DY*DY)
     ), Distances),
@@ -962,31 +977,20 @@ avg_distance(Set1, Set2, AvgDistance) :-
     AvgDistance is FirstDistance / NumDistances.
 
 % Calculate distance bonus. Higher for sets of cells that are closer.
-
-distance_bonus(Set1, Set2, 100):-
-    member(C-P1, Set1),
-    is_adjacent_point(P1, _, P2),
-    member(C-P2, Set2), !.
-
-distance_bonus(Set1, Set2, 50):-
-    member(C-P1, Set1),
-    is_cpoint(P1),
-    member(C-P1, Set2), !.
-
 distance_bonus(Set1, Set2, DistanceBonus) :-
     avg_distance(Set1, Set2, AvgDistance),
     DistanceBonus is 1 / (1 + AvgDistance).
 
-% Calculate color bonus. 1 if there are shared colors, 0 otherwise.
+% Calculate color bonus. 
 color_bonus(Set1, Set2, ColorBonus) :-
-    findall(Color, (
-        member(Cell1, Set1),
-        cell_color(Cell1, Color),
-        member(Cell2, Set2),
-        cell_color(Cell2, Color)
+    findall(Bonus, (
+         member(Cell1, Set1), once((sub_term(Color,Cell1), atom(Color))),
+         (((member(Cell2, Set2), sub_var(Color,Cell2))) -> Bonus =0 ; Bonus=1)
     ), SharedColors),
-    length(SharedColors, NumSharedColors),
-    (NumSharedColors > 0 -> ColorBonus is 1 ; ColorBonus is 0).
+    length(SharedColors, NumColors),
+    sumlist(SharedColors,Shared),
+    ColorBonus is Shared/NumColors.
+
 
 % Calculate the Jaccard similarity with bonuses for closer cells and same colors
 jaccard_similarity(OC1, OC2, Similarity) :-
@@ -1023,7 +1027,7 @@ pair_up_by_best_similarity( P4, ObjectSet1, ObjectSet2, Groups) :- true, % new w
      (member(Object1, ObjectSet1),
       member(Object2, ObjectSet2),
       call(P4, Object1, Object2, Similarity, ExtraInfo)), Pairs),
-    sort(2, @>=, Pairs, Sorted),
+    sort(Pairs, Sorted),
     maplist(arg(2), Sorted, Groups))).
 
 % Find the best pair for a given set
@@ -1032,7 +1036,7 @@ find_best_pair(P4, Object1, ObjectSet2, BestObject2, ExtraInfo) :-
         member(Object2, ObjectSet2),
         call(P4, Object1, Object2, Similarity, ExtraInfo)
     ), Pairs),
-    sort(2, @>=, Pairs, [_-pair(_, BestObject2, ExtraInfo)|_]).
+    sort(Pairs,[_-pair(_, BestObject2, ExtraInfo)|_]).
 
 % Partition objects into groups based on best similarity
 partition_objects_C1(P4, Objects1, Objects2, Groups) :-
