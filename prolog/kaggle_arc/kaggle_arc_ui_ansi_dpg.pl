@@ -88,7 +88,7 @@ arc_portray_nt(G0, false):- is_group(G0), into_list(G0,G), length(G,L),% L>1, !,
    dash_chars.
 
 
-arc_portray_nt(G,_False):- is_object(G), wots(S,ppt(G)), debug_as_grid(S,G).
+arc_portray_nt(G,_False):- is_object(G), wots(S,ppt(G)), debug_indiv(S,G).
   %object_grid(G,OG), 
   %neighbor_map(OG,NG), !,
   %print_grid(object_grid,NG),nl,
@@ -325,8 +325,8 @@ mass_gt1(O1):- into_obj(O1,O2),mass(O2,M),!,M>1.
 
 % Pretty printing
 
-as_grid_string(O,SSS):- wots_vs(S,debug_as_grid(O)), sformat(SSS,'{  ~w}',[S]).
-as_pre_string(O,SS):- wots(S,debug_as_grid(O)), strip_vspace(S,SS).
+as_grid_string(O,SSS):- wots_vs(S,debug_indiv(O)), sformat(SSS,'{  ~w}',[S]).
+as_pre_string(O,SS):- wots(S,debug_indiv(O)), strip_vspace(S,SS).
 
 pp_hook_g1(O):-  plain_var(O), !, fail.
 pp_hook_g1(O):-  attvar(O), !, is_colorish(O), data_type(O,DT), writeq('...'(DT)),!.
@@ -348,7 +348,7 @@ pp_hook_g1(_):-  \+ in_pp(ansi),!, fail.
 
 pp_hook_g1(O):- atom(O), atom_contains(O,'o_'), pp_parent([LF|_]), \+ (LF==lf;LF==objFn), 
   resolve_reference(O,Var), O\==Var, \+ plain_var(Var),!, 
-  write(' '), writeq(O), write(' /* '), debug_as_grid(Var), write(' */ ').
+  write(' '), writeq(O), write(' /* '), debug_indiv(Var), write(' */ ').
 
 pp_hook_g1(O):-  is_object(O),pp_no_nl(O), !.
 pp_hook_g1(O):-  is_group(O),pp_no_nl(O), !.
@@ -356,7 +356,7 @@ pp_hook_g1(O):-  is_group(O),pp_no_nl(O), !.
 %pp_hook_g1(change_obj(N,O1,O2,Sames,Diffs)):-  showdiff_objects5(N,O1,O2,Sames,Diffs),!.
 
 pp_hook_g1(O):-  is_map(O),data_type(O,DT), writeq('..map.'(DT)),!.
-pp_hook_g1(O):-  is_really_gridoid(O),debug_as_grid(O), !.
+pp_hook_g1(O):-  is_really_gridoid(O),debug_indiv(O), !.
 %pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  with_tagged('h5',collapsible_section(object,[O1, O2],pp(O))).
 %pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff), collapsible_section(object,showdiff_objects(O1,O2)),!.
 %pp_hook_g1(O):-  O = change_obj( O1, O2, _Same, _Diff),  collapsible_section(object,[O1, O2],with_tagged('h5',pp(O))).
@@ -932,7 +932,7 @@ toUpperC(A,AU):- term_to_atom(A,AU).
 show_pair_diff(IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out):-
   toUpperC(NameIn,NameInU),toUpperC(NameOut,NameOutU),
   show_pair_grid(cyan,IH,IV,OH,OV,NameIn,NameOut,PairName,In,Out),
-  locally(nb_setval(debug_as_grid,t),
+  locally(nb_setval(debug_indiv,t),
    ((is_group(In),is_group(Out))-> once(showdiff(In,Out));
     ((ignore((is_group(In), desc(wqnl(NameInU+fav(PairName)), debug_indiv(In)))),
       ignore((is_group(Out),desc(wqnl(NameOutU+fav(PairName)), debug_indiv(Out)))))))),!.

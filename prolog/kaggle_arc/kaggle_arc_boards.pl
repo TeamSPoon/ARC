@@ -151,6 +151,27 @@ compile_and_save_hints_now(TestID):-
       nop(save_test_hints(TestID))))))).
 
 
+has_sym(SymC,Sym,C):- compound(SymC),!,SymC=(Sym-C).
+
+fill_in_bg(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,fill_in_bg(Cell,C,O).
+fill_in_bg(_Cell,G2,GG2):- is_fg_color(G2),!,ignore(G2=GG2).
+fill_in_bg(Cell,G2,GG2):- \+ G2\=Cell,!,ignore(GG2=Cell).
+fill_in_bg(Alt,In,Out):- only_color_data_or(Alt,In,Out),!.
+fill_in_bg(_Alt,In,In):-!.
+
+into_solid_grid(I,GG1):- into_grid(I,G1),mapgrid(fill_in_bg(black),G1,GG1),!.
+
+non_fg_to_black(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,non_fg_to_black(Cell,C,O).
+non_fg_to_black(_Cell,G2,G2):- is_fg_color(G2).
+non_fg_to_black(Cell,_,GG2):- ignore(GG2=Cell).
+non_fg_to_black(I,GG1):- into_grid(I,G1),mapgrid(non_fg_to_black(black),G1,GG1),!.
+
+completely_represents(I,O):-
+   into_solid_grid(I,I1),into_solid_grid(O,O1),
+   (I1=@=O1-> true ;  (print_ss(not_completely_represents,I1,O1),fail)).
+
+
+
 deduce_shapes(TestID):-
   with_test_grids(TestID,Grid,test_deduce_grid_shapes(Grid)).
 

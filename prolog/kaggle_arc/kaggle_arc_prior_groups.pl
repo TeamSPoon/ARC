@@ -1602,7 +1602,7 @@ deepest_kv(_-(K-V),O,VV):- nonvar(K), !, deepest_kv(K-V,O,VV).
 deepest_kv(O-V,O,V).
 deepest_kv(V,_,V).
 
-%:- reconsult(kaggle_arc_individuation).
+:- reconsult(kaggle_arc_individuation).
 
 /*
  clumped_r([1,2,3,3],O).

@@ -625,6 +625,19 @@ non_original_value(Var):- sub_term(E,Var), compound(E), E='$VAR'(_).
 
 :- dynamic(arc_cache:doing_map/4).
 
+reachable_a(IP,_OP,A):- member(FF,IP),doing_map_list(_,FF,List),member(A,List).
+reachable_a(_IP,OP,A):- member(FF,OP),doing_map_list(_,FF,List),member(A,List).
+mapping_order(I,O):- most_visible(I,O),!.
+mapping_order(Obj,MO):- area(Obj,Area),cmass(fg,Obj,CMass),
+  findall(_,doing_map_list(_,_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt,NCMass is -CMass,
+  MO = NCnt+NCMass+Area.
+cmass(FG,Obj,CMass):- has_prop(cc(FG,CMass),Obj).
+
+
+input_atoms_list(List):- 
+ findall(PAP,obj_group_atomslist(in,_,_,PAP),ListList),flatten(ListList,List).
+
+
 learn_rule_i_o(Mode,In,Out):- 
   forall(learn_rule_in_out(Mode,In,Out),true).
 
@@ -706,13 +719,6 @@ save_rule0(GID,TITLE1,IP,OP):-
  pp_wcg(TITLE),
  save_rule00(GID,TITLE,IP,OP))).
 
-
-reachable_a(IP,_OP,A):- member(FF,IP),doing_map_list(_,FF,List),member(A,List).
-reachable_a(_IP,OP,A):- member(FF,OP),doing_map_list(_,FF,List),member(A,List).
-
-
-input_atoms_list(List):- 
- findall(PAP,obj_group_atomslist(in,_,_,PAP),ListList),flatten(ListList,List).
 
 save_rule00(GID,TITLE,IP,OP):-
   save_rule1(GID,TITLE,IP,OP). /*
@@ -814,11 +820,6 @@ print_ss_rest(IO_DIR,N,[A,B|Objs]):-  print_ss(IO_DIR+N,A,B),N2 is N + 2,print_s
 print_ss_rest(IO_DIR,N,[R]):- print_grid(IO_DIR+N,R).
 print_ss_rest(_,_,[]).
 
-mapping_order(I,O):- most_visible(I,O),!.
-mapping_order(Obj,MO):- area(Obj,Area),cmass(fg,Obj,CMass),
-  findall(_,doing_map_list(_,_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt,NCMass is -CMass,
-  MO = NCnt+NCMass+Area.
-cmass(FG,Obj,CMass):- has_prop(cc(FG,CMass),Obj).
 
 
 
@@ -1197,7 +1198,7 @@ prop_group(Prop,Objs):-
   ensure_group_prop(Prop),findall(Obj,(cur_obj(Obj),has_prop(Prop,Obj)),Objs).
 
 
-
+/*
 end_of_file.
 end_of_file.
 end_of_file.
@@ -1239,7 +1240,7 @@ end_of_file.
 end_of_file.
 end_of_file.
 
-
+*/
 
 
 
@@ -2592,8 +2593,6 @@ show_assumed_mapped(TestID):-
 
 
 
-  
-
 
 arc_cache:doing_map(Out,B,A):-    doing_map_list(Out,B,[A|_]).
 
@@ -2601,6 +2600,8 @@ doing_map_sc(Out,A,B):-   doing_map_list(Out,B,List),member(A,List),(is_bg_objec
 
 :- dynamic(cant_pair/2).
 
+doing_map_list(_,_,_):- !,% fail,
+  trace,fail.
 doing_map_list(Out,C,D):- call_in_testid(arc_cache:doing_map(Out,C,D)).
 
 can_pair(A,B):- 

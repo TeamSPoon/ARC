@@ -85,7 +85,7 @@ deduce_shapes(TestID):-
   with_test_grids(TestID,Grid,test_deduce_grid_shapes(Grid)).
 
 test_deduce_grid_shapes(Grid):-
-  forall(grid_to_obj(Grid,O),debug_as_grid(O)),
+  forall(grid_to_obj(Grid,O),debug_indiv(O)),
   print_hybrid_set.
 
 
@@ -513,7 +513,7 @@ ptv(T):-
 
 ptv(T,_):- var(T),!, ptv2(T).
 ptv(T,_):- \+ compound(T), !, ptv2(T).
-ptv(T,_):- is_object(T),!,  debug_as_grid(T),!.
+ptv(T,_):- is_object(T),!,  debug_indiv(T),!.
 %ptv(T,_):- T = showdiff( O1, O2), !, showdiff(O1, O2).
 %ptv(T,_):- T = change_obj( O1, O2, Diffs), !, showdiff(O1, O2), writeq(Diffs),!.
 %ptv(T,_):- pp(T),!.

@@ -367,27 +367,63 @@ object_color_desc(PA,PenColors):-
   ((PenL=<ColorsL) -> PenColors=pen(Pen);PenColors=colors_cc(Colors)).
 
 object_birth_desc(PA,Birth):-
-  indv_props_list(PA,Props),findall(B,member(iz(B),Props),BBs),
-  predsort_on(birth_info,BBs,ByDL),last(ByDL,Birth).
+  indv_props_list(PA,Props),findall(Birth,(member(iz(B),Props),
+   compound(B), B\=flag(_), B\=sid(_), B\=ngrid(_), B\=algo_sid(_,_),
+   sub_term(Birth,B),atom(Birth)),BBs),
+  predsort_on(birth_info,BBs,ByDL),last(ByDL,Birth),!.
 
 birth_info(ifti(Birth),2+InfoLen):- !, display_length(Birth,InfoLen).
 birth_info(indiv(Birth),0+InfoLen):- !, display_length(Birth,InfoLen).
 birth_info(Birth,1+InfoLen):- display_length(Birth,InfoLen).
 
-
-object_ref_desc(Obj, OUTS):- 
-  into_obj(Obj,PA),
-  object_color_glyph_long(PA,GA),% mass(PA,Mass),
+object_short_props(PA,OUT):- mass(PA,Mass), Mass=1,!,
+  loc2D(PA,X,Y),
+  object_birth_desc(PA,Birth),
+  localpoints(PA,[C-_]),
+  OUT=[cell2D(X,Y,C,Birth)],!.
+   
+object_short_props(PA,OUT):-   
   shape_rep(grav,PA,Shape),loc2D(PA,X,Y), rot2D(PA,ROT), vis2D(PA,XX,YY),
   shape_id(Shape,ShapeID),
   object_birth_desc(PA,Birth),
   object_color_desc(PA,PenColors),
-  OUT = objFn(GA,[b(Birth),loc2D(X,Y),rot2D(ROT),vis2D(XX,YY),sid(ShapeID),PenColors]),
-  colorize_oterms(OUT,OT),
-  %trace,
-  OUTS = OT,!.
-  %wots(SS,write(OT)),!,
-  %OUTS = SS.
+  mass(PA,Mass),
+  center2D(PA,GX,GY),
+  algo_ops_grid(PA,norm,NormOps,NormGrid),
+  local_shape_id(NormGrid,NormSID),
+  OUT = [mass(Mass),loc2D(X,Y),center2D(GX,GY),rot2D(ROT),
+  b(Birth),sid(ShapeID),vis2D(XX,YY),
+  norm_sid(NormOps,NormSID),PenColors],
+         !.
+
+object_ref_desc_nc(Obj,OUTS):-
+  into_obj(Obj,PA), object_short_props(Obj,OUT),
+  obj_to_oid(PA,OID),
+  OUTS = objFn(OID,OUT),!.
+
+object_oc(Obj,OUTS):-
+  into_obj(Obj,PA), object_short_props(Obj,OUT),
+  obj_to_oid(PA,OID),
+  object_ngrid(PA,NGrid),
+  object_grid(PA,Grid),
+  globalpoints(NGrid,NGPs),
+  globalpoints(Grid,GPs),
+  physical_points(GPs,PPs),
+  physical_points(NGPs,NPPs),
+  %loc2D(PA,H,V),
+  maplist(into_cells(1,1),PPs,NPPs,CPs),
+  append(OUT,CPs,OOUT),
+  OUTS = oc(OID,OOUT),!.
+
+into_cells(OX,OY,C-P1,T-P1,cell(X,Y,C,T)):- hv_point(LX,LY,P1), !, X is LX + OX -1,Y is LY + OY -1.
+%into_cells(OX,OY,C-P1,cell(X,Y,C,_)):- hv_point(LX,LY,P1), !, X is LX + OX -1,Y is LY + OY -1.
+
+object_ref_desc(Obj, OUTS):- 
+  into_obj(Obj,PA), object_short_props(Obj,OUT),
+  object_color_glyph_long(PA,GA),  
+  colorize_oterms(OUT,OT),!,
+  OUTS = objFn(GA,OT).
+
 object_ref_desc(PA,objFn(GA)):- object_color_glyph_short(PA,GA),!.
 object_ref_desc(PA,objFn(GA)):- object_color_glyph_long(PA,GA),!.
 
@@ -864,12 +900,14 @@ print_individuals(TestID):-
    forall(kaggle_arc(TestID,ExampleNum,_,_), 
       ignore(ensure_individuals(TestID,ExampleNum))),
    banner_lines(orange,10),
+
+ print_groups(TestID),
  forall(kaggle_arc(TestID,ExampleNum,_,_),
       ignore(print_individuals(TestID,ExampleNum))),
-   banner_lines(blue,10),
+   banner_lines(blue,7),
    forall(kaggle_arc(TestID,ExampleNum,_,_), 
       ignore(print_individual_objects(TestID,ExampleNum))),
-   banner_lines(blue,10))).
+   banner_lines(blue,1))).
 
 print_individuals(TestID,ExampleNum):- \+ ground(TestID),get_current_test(TestID),!,print_individuals(TestID,ExampleNum).
 print_individuals(TestID,ExampleNum):- \+ ground(ExampleNum),!,
@@ -927,8 +965,7 @@ gather_one_grid(RemainingObjs,_GridPoints,RemainingObjs,[]).
 
 
 objects_of(TestID,Example+Num,IO,GID,ROptions,Obj):-
- is_why_grouped_g(TestID,_Len,Which,OutC),
- Which = individuate(ROptions,GID),
+ from_individuated_cache(TestID,(TestID>(Example+Num)*IO),GID,ROptions,OutC),
  member(OID,OutC),once(into_obj(OID,Obj)),
  once((sub_cmpd(g(IO),Obj), sub_cmpd(Example+Num,Obj))).
 
@@ -968,6 +1005,7 @@ pp_ilp(D,T):-  T==[],!,prefix_spaces(D,write('[] ')),!.
 pp_ilp(D,_):-  D > 0, format('~N'),fail.
 pp_ilp(D,T):-  is_ftVar(T),!,prefix_spaces(D,print(T)),!.
 pp_ilp(D,apply(Rule,Obj)):- !, pp_ilp(D,l2r(apply(Rule),[],Obj)).
+pp_ilp(D,print_grid(Desc,Grid)):- !, prefix_spaces(D,print_grid(Desc,Grid)).
 %pp_ilp(D,A+B):-  !, prefix_spaces(D,(pp_ilp(A),nl,pp_ilp(B))).
 pp_ilp(D,A+B):-  !, pp_ilp(D,A),pp_ilp(D,B).
 pp_ilp(D,Grid):- is_grid(Grid),!,prefix_spaces(D,print_grid(Grid)),!,nl.
@@ -1381,7 +1419,9 @@ into_solid_grid_strings_2(X,Y):- into_solid_grid_strings(X,Y),!.
 
 into_solid_grid_strings_1(T,WithGrids):-
   sub_term(Obj,T),is_object(Obj),global_grid(Obj,Grid),into_solid_grid(Grid,Solid),
-  subst001(T,Obj,Solid,MidTerm),MidTerm\=@=T,!,into_solid_grid_strings_1(MidTerm,WithGrids).
+  object_ref_desc_nc(Obj,Desc),
+  SolidR = print_grid(wqs(Desc),Solid),
+  subst001(T,Obj,SolidR,MidTerm),MidTerm\=@=T,!,into_solid_grid_strings_1(MidTerm,WithGrids).
     
 into_solid_grid_strings_1(X,Y):- into_solid_grid_strings(X,Y),!.
 

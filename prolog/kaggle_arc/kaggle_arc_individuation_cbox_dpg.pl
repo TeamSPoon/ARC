@@ -133,7 +133,7 @@ i_cbox(GridIn,Objs):-
   ROptions=cbox_vm,
   do_ig(ROptions,GridIn,IndvS),
   into_grid(GridIn,Grid),
-  locally(nb_setval(debug_as_grid,t),
+  locally(nb_setval(debug_indiv,t),
    locally(nb_setval(individuated_cache,false),
     show_individuated_nonpair(igo,ROptions,GridIn,Grid,IndvS))),
   maybe_subdiv(IndvS,Objs).

@@ -13,6 +13,7 @@
 
 :- dynamic(decl_pt/1).
 
+
 :- thread_local(t_l:id_cells/2).
 
 redress_override(L,L):- var(L),!.
@@ -1924,7 +1925,7 @@ center2D(I,X,Y):- is_cpoint(I),!,I=(_-P),hv_point(X,Y,P),!.
 center2D(I,X,Y):- is_point(I),!,hv_point(X,Y,I),!.
 center2D(I,X,Y):- indv_props(I,center2D(XX,YY)),nonvar(XX),nonvar(YY),!,XX=X,YY=Y.
 center2D(I,X,Y):- is_grid(I), !, grid_size(I,H,V),X is floor(H/2),Y is floor(V/2).
-center2D([], inf, inf):-!.
+center2D([], _1000, _2000):-!,fail.
 center2D(I,X,Y):- \+ is_list(I),!, must_det_ll((globalpoints(I,Points),center2D(Points,XX,YY))),!,XX=X,YY=Y.
 center2D(Points, CenterX, CenterY) :- maplist(center2D,Points,X,Y),
    length(Points,Count), sumlist(X,SumX),sumlist(Y,SumY),

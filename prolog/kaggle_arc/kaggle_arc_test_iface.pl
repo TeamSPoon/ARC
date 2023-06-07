@@ -79,13 +79,13 @@ test_http_off:-
 menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z_make,fully_train)).
 menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),  \+ arc_html, 
   sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
-menu_cmd1(i,'i','             See the (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,f),print_individuals))).
+menu_cmd1(i,'i','             See the (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,t),print_individuals))).
 menu_cmd1(_,'I','                  or (I)ndividuate all',(clear_tee,cls_z_make,!,clear_test,locally(nb_setval(show_indiv,f),print_individuals))).
 
 menu_cmd1(i,'o','                  or (o)bjects found in the input/outputs',                (clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,t),ndividuator))).
 menu_cmd1(_,'u','                  or (u)se scene change solver between objects in the input/outputs',   (cls_z_make,!,ndividuator,ignore(solve_via_scene_change))).
 menu_cmd1(_,'y','                  or Wh(y) between objects in the input/outputs',   ((cls_z_make,!,why_io))).
-menu_cmd1(_,'a','                  or (a)ll between objects',   (cls_z_make,!,ndividuator)).
+% menu_cmd1(_,'a','                  or (a)ll between objects',   (cls_z_make,!,ndividuator)).
 menu_cmd1(_,'j','                  or (j)unctions between objects',   (cls_z_make,!,show_object_dependancy)).
 menu_cmd1(_,'k','                  or (k)ill/clear all test data.',(update_changes,clear_test)).
 menu_cmd1(_,'B','                  or (B)oxes test.',(update_changes,pbox_indivs)).
@@ -166,7 +166,7 @@ ui_menu_call(G):- must_not_error(ignore(catch((G),E,u_dmsg(E)))).
   
 my_menu_call(E):- locally(set_prolog_flag(gc,true),ui_menu_call(E)).
 
-my_submenu_call(G):- current_predicate(_,G), \+ is_list(G),!, locally(set_prolog_flag(gc,false),ui_menu_call(G)),!.
+my_submenu_call(G):- current_predicate(_,G), \+ is_list(G),!, locally(set_prolog_flag(nogc,false),ui_menu_call(G)),!.
 my_submenu_call0(E):- peek_vm(VM),!, ui_menu_call(run_dsl(VM,E,VM.grid,Out)), set(VM.grid) = Out.
 
 key_read_borked(PP):- fail, in_pp(PP), PP\==ansi,PP\==bfly.
@@ -366,10 +366,10 @@ debuffer_atom_codes(_Key,[C|Codes]):- C\==27, Codes\==[],
   (do_menu_key(Key1)->true;do_menu_key(Key2)). 
 debuffer_atom_codes(Key,Codes):- format("~N % Menu did understand '~w' ~q ~n",[Key,Codes]).
 
-arc_atom_to_term(Key,Prolog,Vs):- atom(Key),notrace(catch(atom_to_term(Key,Prolog,Vs),_,fail)), arc_sensical_term(Prolog).
+arc_atom_to_term(Key,Prolog,Vs):- atom(Key),/*notrace*/(catch(atom_to_term(Key,Prolog,Vs),_,fail)), arc_sensical_term(Prolog).
 
 maybe_call_code(Key):- \+ atom(Key),
- notrace(catch(text_to_string(Key,Str),_,fail)),Key\==Str,catch(atom_string(Atom,Str),_,fail),!,maybe_call_code(Atom).
+ /*notrace*/(catch(text_to_string(Key,Str),_,fail)),Key\==Str,catch(atom_string(Atom,Str),_,fail),!,maybe_call_code(Atom).
 
 maybe_call_code(Key):- atom(Key), 
   arc_atom_to_term(Key,Term,Vs), nonvar(Term), Term\=@=Key,
@@ -414,7 +414,7 @@ set_test_suite(N):-
 set_test_suite(X,N):-
    if_t(X\==N,
    (set_test_suite_silently(N),
-    notrace((restart_suite)),
+    /*notrace*/((restart_suite)),
     was_set_pair_mode(entire_suite))).
 
 preview_suite:- luser_getval(test_suite_name,X),preview_suite(X).
@@ -1249,7 +1249,7 @@ as_test_prop(Prop,F):- compound(Prop),compound_name_arity(Prop,F,_), use_atom_te
 
 
 prev_test:-  must_det_ll((get_current_test(TestID), get_prev_test(TestID,NextID), set_current_test(NextID))).
-next_test:- get_current_test(TestID), notrace((get_next_test(TestID,NextID), set_current_test(NextID))),!.
+next_test:- get_current_test(TestID), /*notrace*/((get_next_test(TestID,NextID), set_current_test(NextID))),!.
 next_random_test:-  randomize_suite, next_test.
 is_valid_testname(TestID):- nonvar(TestID), kaggle_arc(TestID,_,_,_).
 is_valid_atom_testname(TestID):- nonvar(TestID), once(kaggle_arc(t(TestID),_,_,_);kaggle_arc(v(TestID),_,_,_)).
@@ -1282,12 +1282,12 @@ prev_in_list(TestID,List,PrevID):-  once(append(_,[PrevID,TestID|_],List); last(
 :- export(load_last_test_name/0).
 system:load_last_test_name:- 
   muarc:arc_settings_filename(Filename),
-  notrace((exists_file(Filename),setup_call_cleanup(open(Filename,read,O),ignore((read_term(O,TestID,[]),luser_setval(task,TestID))),close(O)))),!.
+  /*notrace*/((exists_file(Filename),setup_call_cleanup(open(Filename,read,O),ignore((read_term(O,TestID,[]),luser_setval(task,TestID))),close(O)))),!.
 system:load_last_test_name:- set_current_test(v(fe9372f3)).
 
-system:save_last_test_name:- notrace(catch(save_last_test_name_now,_,true)),!.
+system:save_last_test_name:- /*notrace*/(catch(save_last_test_name_now,_,true)),!.
 system:save_last_test_name_now:- muarc:arc_settings_filename(Filename),
-  ignore(notrace((luser_getval(task,TestID), tell(Filename),format('~n~q.~n',[TestID]),told))).
+  ignore(/*notrace*/((luser_getval(task,TestID), tell(Filename),format('~n~q.~n',[TestID]),told))).
 
 muarc:arc_settings_filename(Filename):- muarc:arc_settings_filename1(File), 
   (exists_file(File) -> (Filename=File) ; absolute_file_name(File,Filename,[access(append),file_errors(fail),expand(true)])).
@@ -1534,7 +1534,7 @@ clear_test_html :- tee_op((tee_to_html('muarc_tmp/null'))). % was /dev/null
 clear_tee:- force_full_tee, tee_op((shell('cat muarc_tmp/null > muarc_tmp/tee.ansi'))).
 exit_tee:-  get_current_test(TestID),on_leaving_test(TestID).
 
-write_test_links_file:- tee_op((notrace((setup_call_cleanup(tell('muarc_tmp/test_links'), write_test_links, told))))).
+write_test_links_file:- tee_op((/*notrace*/((setup_call_cleanup(tell('muarc_tmp/test_links'), write_test_links, told))))).
 write_test_links:-  
  format('~N'), ensure_test(TestID), 
  tee_op((
@@ -1546,7 +1546,7 @@ write_test_links:-
   format('~N<pre>'))).
 
 tee_op(_):- no_tee_file,!.
-tee_op(G):- ignore(notrace(catch(call(G),E,u_dmsg(G=E)))).
+tee_op(G):- ignore(/*notrace*/(catch(call(G),E,u_dmsg(G=E)))).
 shell_op(G):- tee_op(G).
 
 my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).
@@ -1691,7 +1691,7 @@ human_test:- solve_test_trial(human).
 
 fully_train:- print_test,train_test.
 fully_test:- fully_train, !, solve_test, !.
-run_next_test:- notrace(next_test), fully_test.
+run_next_test:- /*notrace*/(next_test), fully_test.
 
 www_demo:- as_if_webui(demo).
 

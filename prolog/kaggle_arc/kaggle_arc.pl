@@ -36,7 +36,8 @@ my_time(Goal):- time(Goal),flush_tee.
 :- export(plain_var/1).
 plain_var(V):- notrace((var(V), \+ attvar(V), \+ get_attr(V,ci,_))).
 catch_nolog(G):- ignore(catch(notrace(G),E,once(true;nop(u_dmsg(E=G))))).
-catch_log(G):- ignore(catch(notrace(G),E,((writeln(E=G),catch_nolog(ds))))).
+catch_log(G):- ignore(catch(notrace(G),E,((u_dmsg(E=G),ftrace(G))))).
+% catch_log(G):- ignore(catch(notrace(G),E,((writeln(E=G),catch_nolog(ds))))).
 
 get_user_error(UE):- stream_property(UE,file_no(2)),!.
 get_user_error(UE):- stream_property(UE,alias(user_error)),!.
@@ -51,6 +52,8 @@ u_dmsg(M):- get_user_error(UE),  stream_property(UO,file_no(1)), current_output(
 u_dmsg(G):-ufmt(G),!.
 
 %:- pack_install('https://github.com/logicmoo/logicmoo_utils.git').
+
+/*
 :- catch_log(pack_install(logicmoo_utils,[
   %url('https://github.com/logicmoo/logicmoo_utils.git'),
   interactive(false),
@@ -59,7 +62,7 @@ u_dmsg(G):-ufmt(G),!.
 % :- pack_install(dictoo).
 % :- pack_upgrade(dictoo).
 
-
+*/
 %:- module(system).
 
 :- set_prolog_flag(arc_term_expansion, false).
@@ -1007,7 +1010,7 @@ create_group_dmiles:-
 %:- demo.
 :- current_prolog_flag(argv,C),(member('-l',C)->initialize;true).
 
-:- reconsult(kaggle_arc_individuation_dpg).
+% :- reconsult(kaggle_arc_individuation_dpg).
 :- reconsult(kaggle_arc_prior_groups).
 %:- reconsult(kaggle_arc_ui_ansi_dpg).
 %:- reconsult(kaggle_arc_ui_html).

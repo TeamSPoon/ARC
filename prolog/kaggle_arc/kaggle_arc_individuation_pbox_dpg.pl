@@ -199,7 +199,7 @@ i_pbox(GridIn,Objs):-
   locally(nb_setval(individuated_cache,false),
   ((do_ig(ROptions,GridIn,IndvS),
   into_grid(GridIn,Grid),
-  locally(nb_setval(debug_as_grid,t),
+  locally(nb_setval(debug_indiv,t),
     show_individuated_nonpair(PairName,ROptions,GridIn,Grid,IndvS))),
    maybe_subdiv(IndvS,Objs))).
 
@@ -366,12 +366,12 @@ i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):-
       (Which=@=inside -> (IsRim=solid,OBJ=Inside,OH is FH, OV is FV) 
       ; (writeq(Which),break, OH is FH-0, OV is FV-0)))))),*/
   once(( OBJ \=@=Grid, OBJ \==[],  %CACHE.objFound = OBJ, %CACHE.which = Which, %CACHE.objMade = Obj, %append(SoFarI,[Rec],SoFarMid),
-  obj_gpoints(OBJ,OH,OV,GOPoints),
+  obj_gpoints(OBJ,OH,OV,GOPointsI),
+  once((my_partition(is_fg_point,GOPointsI,FG0,BG0), (FG0==[] -> GOPoints = BG0 ; GOPoints = FG0))),
   intersection(Points,GOPoints,Intersection,LeftOver,Unknown))),
   nop(Intersection\==[]),!, nop(Unknown==[]),
   %format('~N~q.~n',[USING]),  
  must_det_ll((
-  make_indiv_object(VM,[birth(pbox(WHY,L_S)),iz(i(pbox)),iz(always_keep),iz(shape),iz(image),iz(dont_reduce),loc2D(OH,OV),vis2D(HH,VV)],GOPoints,Obj),
   ((\+ \+ ((
      ignore_equal_e(NSEW,['N','S','E','W']),
     %grid_size(OBJ,HH,VV), EH is OH+HH-1,EV is OV+VV-1, clip(OH,OV,EH,EV,Grid,OGrid), print_side_by_side(cyan,OGrid,Y,_,OBJ,F),
@@ -379,8 +379,11 @@ i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,[Size2D|Sizes]):-
      centerS=CenterS,insideS=InsideS,findS=FindS,iborderS=IBorderS,oborderS=OBorderS,
      nsew=NSEW),
    pp(cpmt(USING))),
-   print_side_by_side([Find,OBJ,Obj])))),
+   print_side_by_side([Find,OBJ])))),
    %OHM1 is OH -1,OVM1 is OV -1, EHP1 is OH+HH, EVP1 is OV+VV,  clip(OHM1,OVM1,EHP1,EVP1,Grid,SGrid))),
+  make_indiv_object(VM,[birth(pbox(WHY,L_S)),iz(i(pbox)),iz(always_keep),iz(shape),iz(image),iz(dont_reduce),loc2D(OH,OV),vis2D(HH,VV)],GOPoints,Obj),
+  \+ \+ print_grid(made_pbox,[Obj]),nl,nl,
+  dash_chars,
   i_pbox_l([Rec|SoFarI],SoFarOut,Grid,NSEW,XSG,LeftOver,Points9,VM,L_S,[Size2D|Sizes]))). 
 
 i_pbox_l(SoFarI,SoFarO,Grid,NSEW,XSG,Points,Points9,VM,L_S,[_|Sizes]):- i_pbox_l(SoFarI,SoFarO,Grid,NSEW,XSG,Points,Points9,VM,L_S,Sizes).

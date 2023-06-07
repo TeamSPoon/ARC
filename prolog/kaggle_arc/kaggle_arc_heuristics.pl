@@ -200,7 +200,9 @@ visible_order(InC,InC).
 most_visible(Obj,LV):- has_prop(pixel2C(_,_,_),Obj),!, LV= (-1)^1000^1000.
 most_visible(Obj,LV):- area(Obj,1), grid_size(Obj,H,V), Area is (H-1)*(V-1), !, LV=Area^1000^1000.
 most_visible(Obj,LV):- area(Obj,Area),cmass(bg,Obj,BGMass), % cmass(fg,Obj,FGMass),
-  findall(_,doing_map_list(_,_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt, !, %, NCMass is -CMass,
+  %findall(_,doing_map_list(_,_,[Obj|_]),L),length(L,Cnt),
+  Cnt = 1,
+  NCnt is -Cnt, !, %, NCMass is -CMass,
   LV = Area^BGMass^NCnt.
 most_visible(_Obj,LV):- LV= (-1)^1000^1000.
 

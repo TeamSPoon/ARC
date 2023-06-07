@@ -23,6 +23,7 @@ o1 to o1
 :- multifile toplevel_individuation/1. 
 
 
+:- ensure_loaded(kaggle_arc_individuation_pbox_dpg).
 
 
 individuation_macros(do_ending, [
@@ -343,27 +344,6 @@ do_indivizer_number(N):-
 individuation_macros(nsew_bg,[
   with_mapgrid([fgc_as_color(plain_var),bgc_as_color(zero),plain_var_as(black)],'_nsew_bg',[nsew,alone_dots,maybe_lo_dots])]).
 
-has_sym(SymC,Sym,C):- compound(SymC),!,SymC=(Sym-C).
-
-fill_in_bg(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,fill_in_bg(Cell,C,O).
-fill_in_bg(_Cell,G2,GG2):- is_fg_color(G2),!,ignore(G2=GG2).
-fill_in_bg(Cell,G2,GG2):- \+ G2\=Cell,!,ignore(GG2=Cell).
-fill_in_bg(Alt,In,Out):- only_color_data_or(Alt,In,Out),!.
-fill_in_bg(_Alt,In,In):-!.
-into_solid_grid(I,GG1):- into_grid(I,G1),mapgrid(fill_in_bg(black),G1,GG1),!.
-
-non_fg_to_black(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,non_fg_to_black(Cell,C,O).
-non_fg_to_black(_Cell,G2,G2):- is_fg_color(G2).
-non_fg_to_black(Cell,_,GG2):- ignore(GG2=Cell).
-non_fg_to_black(I,GG1):- into_grid(I,G1),mapgrid(non_fg_to_black(black),G1,GG1),!.
-
-
-
-
-
-completely_represents(I,O):-
-   into_solid_grid(I,I1),into_solid_grid(O,O1),
-   (I1=@=O1-> true ;  (print_ss(not_completely_represents,I1,O1),fail)).
 
 current_how(HOW,Stuff1,Stuff2):-
   current_pair_io(I,O), guess_how(HOW,I,O,Stuff1,Stuff2).
@@ -1274,6 +1254,7 @@ is_fti_step(skip_some).
 skip_some(VM):- 
   globalpoints(VM.objs,CantHave),
   Points = VM.lo_points,
+  dif(C,black),
   intersection(CantHave,Points,_RemoveThese,_,KeepThese),
   select(C-P1,KeepThese,Points1),
   member(Nsew,[skip(1,_,_)]),
@@ -2148,7 +2129,7 @@ into_points_grid(GridIn,Points,Grid):-
    into_grid(GridIn,Grid),!.
 
 do_individuate(VM, ROptions, GridIn,LFO):- must_be_free(LF), 
- locally(set_prolog_flag(gc,false),
+ locally(set_prolog_flag(nogc,false),
    (into_grid(GridIn,Grid),  grid_to_tid(Grid,ID), %my_assertion(\+ is_grid(ID)),
     individuate7(VM,ID,ROptions,Grid,LF))),!,
     guard_whole(LF,LFO),
@@ -4224,7 +4205,8 @@ leftover_as_one(VM):-
    mostly_fgp(VM.lo_points,Points),
    ignore((Points\==[],
            SP = VM.expanded_start_options,
-           with_output_to(user_error,print_grid(VM.h,VM.v,leftover_as_one,Points)),u_dmsg(leftover_as_one_indiv(SP)=Points), 
+           with_output_to(user_error,print_grid(VM.h,VM.v,leftover_as_one,Points)),
+           u_dmsg(leftover_as_one_indiv(SP)=Points), 
    make_indiv_object(VM,[iz(info(combined)),iz(info(leftover_as_one))],Points,LeftOverObj), verify_object(leftovers,LeftOverObj),
    assumeAdded(VM,LeftOverObj))),
    ignore_rest(VM).
