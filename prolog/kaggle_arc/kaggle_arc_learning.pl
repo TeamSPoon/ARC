@@ -522,14 +522,14 @@ banner_grids(Color,I,Message1,O,Message2):-
 arcdbg_info(Color, Info):- banner_lines(Color), arcdbg(Info), banner_lines(Color).
 
 confirm_learned(In,ExpectedOut):-
-  individuate(complete,In,Objs),
+  individuate_3(complete,In,Objs),
   (     use_test_associatable_group(Objs,Sols) -> 
    show_result("Our Learned Sols", Sols,ExpectedOut,_)
    ; arcdbg_info(red,warn("No Learned Sols"))).
 
 
 show_proof(In,ExpectedOut):-
-  individuate(complete,In,Objs),
+  individuate_3(complete,In,Objs),
   (test_associatable_proof(Objs,Sols) -> 
    show_result("Our Proved Sols", Sols,ExpectedOut,_Errors)
    ; arcdbg_info(red,warn("No Proved Sols"))).
@@ -1103,7 +1103,7 @@ compute_unshared_indivs(In,Unshared):-
    compute_unshared_indivs(GN,Grid,Unshared),!.
 
 compute_unshared_indivs(_GN,Grid,Unshared):-
-   individuate(complete,Grid,Unshared).
+   individuate_3(complete,Grid,Unshared).
 
 compute_shared_indivs(In,SharedIndvs):-
    get_grid_and_name(In,Grid,GN),
@@ -1111,7 +1111,7 @@ compute_shared_indivs(In,SharedIndvs):-
 compute_shared_indivs(GN,Grid,SharedIndvs):-
    grid_shared_with(GN,With),into_grid(With,OtherGrid),
    compute_unshared_indivs(With,OtherGrid,Unshared),
-   individuate(Unshared,Grid,SharedIndvs).
+   individuate_3(Unshared,Grid,SharedIndvs).
 
 grid_shared_with(TestName>ExampleNum*in,TestName>ExampleNum*out):-!.
 grid_shared_with(TestName>ExampleNum*out,TestName>ExampleNum*in):-!.
@@ -1124,7 +1124,7 @@ ensure_unshared_indivs(In,Unshared):-
    ensure_unshared_indivs(GN,Grid,Unshared).
 ensure_unshared_indivs(GN,Grid,Unshared):-
    is_unshared_saved(GN,Unshared)-> true;
-   individuate(complete,Grid,Unshared),
+   individuate_3(complete,Grid,Unshared),
    arc_assert(is_unshared_saved(GN,Unshared)).
 
 ensure_shared_indivs(In,SharedIndvs):-
@@ -1134,7 +1134,7 @@ ensure_shared_indivs(GN,Grid,SharedIndvs):-
    is_shared_saved(GN,SharedIndvs)-> true;
    grid_shared_with(GN,With),into_grid(With,OtherGrid),
    ensure_unshared_indivs(With,OtherGrid,Unshared),
-   individuate(Unshared,Grid,SharedIndvs),
+   individuate_3(Unshared,Grid,SharedIndvs),
    arc_assert(is_shared_saved(GN,SharedIndvs)).
 
 
@@ -1360,7 +1360,7 @@ try_using_training(In,ExpectedOut):-
    (Errors==0->pp_wcg(Rules);true).
 
 try_each_using_training(In,ExpectedOut,Keeper,OurOut):-
-   is_grid(In),individuate(complete,In,InC),!,
+   is_grid(In),individuate_3(complete,In,InC),!,
    must_det_ll(try_each_using_training(InC,ExpectedOut,Keeper,OurOut)),!.
 
 try_each_using_training(In,ExpectedOut,Keeper,OurOut):- 
@@ -1386,7 +1386,7 @@ classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):- \+ is_points_list
  must_det_ll((globalpoints(ExpectedOut,Out),ExpectedOut\=@=Out,
  classify_rules(In,Out,Rules,Keeper,Rejected,Unknown))).
 classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):- \+ is_group(In),!,
- must_det_ll((is_grid(In),individuate(complete,In,InC),
+ must_det_ll((is_grid(In),individuate_3(complete,In,InC),
    classify_rules_0(InC,ExpectedOut,Rules,Keeper,Rejected,Unknown))).
 classify_rules(In,ExpectedOut,Rules,Keeper,Rejected,Unknown):-
   must_det_ll(classify_rules_0(In,ExpectedOut,Rules,Keeper,Rejected,Unknown)).
@@ -2404,8 +2404,8 @@ we'll see thr there are extra possible correct associations (which may end up ac
 Luckily the system produces a formal proof for it's answers (explainablity) 
 */
 properties_that_changed(Grid1,Grid2,Props):-
-  individuate(complete,Grid1,Props1),
-  individuate(complete,Grid2,Props2),
+  individuate_3(complete,Grid1,Props1),
+  individuate_3(complete,Grid2,Props2),
   diff_terms(Props1,Props2,Props).
 
 has_learnt_rule(TestID,In,Key,RuleDir,Out):- clause(learnt_rule(TestID,In,Key,RuleDir,Out),was_once(InSet,InVars)),

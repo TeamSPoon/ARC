@@ -99,7 +99,7 @@ trn_num_io(Trn+Num*IO,Trn,Num,IO):-!.
 
 select_filtered_group(TestID,Named,Trn_num_io,Filter,Objects):- trn_num_io(Trn_num_io,Trn,Num,IO),
   with_individuated_cache(true,
-    forall(kaggle_arc_io(TestID,Trn+Num,IO,G),individuate(complete,G,_Objs))),
+    forall(kaggle_arc_io(TestID,Trn+Num,IO,G),individuate_3(complete,G,_Objs))),
   select_some_objects(TestID,Trn,Num,IO,Filter,Objects),
   make_up_selector_name(Trn+Num*IO,Named).
 
@@ -244,7 +244,7 @@ test_grouped_io(TestID,Ors,Ands,Objs):-
 /*
 test_grouped_io(TestID,ExampleNum,IO,Objs):-
   Example+Num = ExampleNum,
-  is_why_grouped_g(TestID,_Count, individuate(complete,two(ID,_)),IndvSG),
+  is_why_grouped_g(TestID,_Count, individuate_3(complete,two(ID,_)),IndvSG),
   once(testid_name_num_io(ID,TestID,Example,Num,_)),
    my_maplist(must_oid_to_object,IndvSG,IndvS),
    (var(IO)->member(IO,[in,out]);true),

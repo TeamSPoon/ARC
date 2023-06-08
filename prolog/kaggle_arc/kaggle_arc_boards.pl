@@ -894,11 +894,11 @@ ensure_how(_Grid,_How).
 
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,_,Obj),List),list_to_set(List,Objs).
 grid_to_objs(Grid,Objs):- grid_to_objs(Grid,complete,Objs).
-grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(Grid,How),in_cmt(individuate(How,Grid,Objs)).
+grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(Grid,How),in_cmt(individuate_3(How,Grid,Objs)).
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,complete,Obj),List),list_to_set(List,Objs).
 %grid_to_obj(Grid,Obj):- grid_to_objs(Grid,Objs),member(Obj,Objs).
 
-%grid_to_objs(Grid,How,Objs):- (nonvar(Grid)->true;test_grids(_,Grid)), ensure_how(How), individuate(How,Grid,Objs).
+%grid_to_objs(Grid,How,Objs):- (nonvar(Grid)->true;test_grids(_,Grid)), ensure_how(How), individuate_3(How,Grid,Objs).
 
 % one way to match or find an outlier is compressing things in sets minus one object.. the set that is second to the largest tells you what single object os the most differnt 
 objs_shapes(Objs,In):- ensure_test(TestID),test_shapes(TestID,Objs,In).

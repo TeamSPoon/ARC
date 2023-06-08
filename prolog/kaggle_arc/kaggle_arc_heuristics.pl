@@ -324,9 +324,9 @@ individuals_from_pair_colors(PairName,In,Out,IH,IV,OH,OV,
     add_shape_lib(in,NoiseObject),
     remove_global_points(NoiseObject,In,NoiseFreeIn),
     show_pair_no_i(IH,IV,IH,IV,noise_objects_removed,PairName,NoiseObject,NoiseFreeIn),
-    individuate(defaults,NoiseFreeIn,RestOfInObjs),
+    individuate_3(defaults,NoiseFreeIn,RestOfInObjs),
     add_shape_lib(pair,RestOfInObjs),
-    individuate(defaults,Out,RestOfOutObjs),
+    individuate_3(defaults,Out,RestOfOutObjs),
     ShapesI = [NoiseObject|RestOfInObjs], 
     RestOfOutObjs = ShapesO.
 /*
@@ -405,7 +405,7 @@ learn_color_individuals_lib_one_way(PairName,In,Out,IH,IV,OH,OV,
      do_action(add_shape_lib(pair,NoiseObject)))),
 
   ignore((IMass>0, OMass==0, 
-    individuate([options([by_color(IPCs)])],ImO,NewImO),    
+    individuate_3([options([by_color(IPCs)])],ImO,NewImO),    
     add_shape_lib(pair,NewImO))),
 
    true)).

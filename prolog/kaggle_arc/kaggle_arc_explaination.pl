@@ -996,7 +996,7 @@ into_input_objects(TestID,ExampleNum,IO,In,Objs,VM):-
         once((obj_group5(TestID,ExampleNum,IO,ROptions,TempObjs),TempObjs\==[])),
         grid_to_tid(In,TID),
         into_fti(TID,ROptions,In,VM),
-        individuate(VM),
+        individuate_1(VM),
         Objs = VM.objs)).
 
 

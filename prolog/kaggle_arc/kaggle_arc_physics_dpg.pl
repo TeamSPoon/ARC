@@ -597,7 +597,7 @@ find_contained_points(H,V,ID,[Found|Sofar],[Found|SofarInsteadM],NextScanPoints,
   /*must_det_ll*/((
   % points_to_grid(H,V,ContainedPoints,Grid),
   %once(obj_to_oid(Found,ID,_);grid_to_tid(Grid,ID)),
-  individuate(subshape_in_object,ContainedPoints,NewInside),
+  individuate_3(subshape_in_object,ContainedPoints,NewInside),
   mapgroup(mention_inside(Found),NewInside,NewInsideM))),
   ignore((length_safe(ContainedPoints,N),N>1,quietly(print_grid(H,V,"find_contained_points",[Found|NewInsideM])))),
   find_contained_points(H,V,ID,Sofar,SofarInstead,ScanPointsInstead,NextScanPointsInstead),

@@ -374,7 +374,7 @@ has_short_id(Grid,grid,GID):- is_grid(Grid),grid_to_gid(Grid,GID).
 is_valid_linkid(ID,testid,TestID):- atom_id(ID,TestID),is_valid_testname(TestID),!.
 is_valid_linkid(ID,object,Obj):- known_object(ID,Obj),!.
 is_valid_linkid(ID,grid,Grid):- known_grid(ID,Grid),!.
-% individuate(complete, two(v_1d398264_trn_0_in, v_1d398264_trn_0_out))
+% individuate_3(complete, two(v_1d398264_trn_0_in, v_1d398264_trn_0_out))
 is_valid_linkid(ID,group,Grp):- get_current_test(TestID),is_why_grouped_g(TestID,_Count,ID,Grp).
 
 

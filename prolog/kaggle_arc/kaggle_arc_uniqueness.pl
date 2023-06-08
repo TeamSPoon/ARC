@@ -244,7 +244,7 @@ into_input_objects(TestID, ExampleNum, In, Objs, VM):-
         once((obj_group_io_5(TestID, ExampleNum, in, ROptions, TempObjs), TempObjs\==[])),
         grid_to_tid(In, TID),
         into_fti(TID, ROptions, In, VM),
-        individuate(VM),
+        individuate_1(VM),
         Objs = VM.objs)).
 
 solve_via_scene_change_rules(TestID, ExampleNum):-
@@ -592,6 +592,8 @@ override_object_1(VM, [H|T], I, OO):- !, override_object_1(VM, H, I, M), !, over
 
 override_object_1(_VM, loc2D(X, Y), Obj, Obj):- (X>3;Y>4), !.
 override_object_1(_VM, pen([cc(black, 1)]), Obj, Obj).
+
+override_object_1(_VM, copy_step, Obj, Obj):-!.
 
 
 override_object_1(_VM, pen([cc(Red, N)]), Obj, NewObj):- pen(Obj, [cc(Was, N)]), !,
@@ -1163,7 +1165,7 @@ best_individuated_cache(TestID, FTID, FGOID, FROptions, Nums, Objs1, Objs2):-
 from_individuated_cache(TestID, FTID, FGOID, FROptions, Objs):-
   (arc_cache:individuated_cache(TestID, TID, GOID, ROptions, Objs)
   ;arc_cache:individuated_cache(TID, GOID, ROptions, Objs)
-  ;saved_group(individuate(ROptions, GOID), Objs)),
+  ;saved_group(individuate_3(ROptions, GOID), Objs)),
   (nonvar(FTID)-> \+ \+ sub_var(FGOID, (FTID, GOID, ROptions, Objs)) ; FTID=TID),
   (nonvar(FGOID)-> \+ \+ sub_var(FGOID, (TID, GOID, ROptions, Objs)) ; FGOID=GOID),
   (nonvar(FROptions)-> \+ \+ sub_var(FGOID, (TID, GOID, ROptions, Objs)) ; ROptions=FROptions),

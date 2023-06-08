@@ -12,14 +12,22 @@
 
 :- use_module(library(clpfd)).
 
-vm_opts(VM,Shapes,NF,Mono,Nsew,IncludeBG):-
+
+
+
+vm_opts_some(VM,Shapes,NF,Mono,Nsew,IncludeBG):-
   SegOptions = vm_opts(Shapes,NF,Mono,Nsew,IncludeBG),
   GPoints = VM.lo_points,
   filter_points(SegOptions,GPoints,Points),
   once(color_masses(VM.h,VM.v,VM.start_points,Points,SegOptions,Segs)),
   maplist(make_indiv_object(VM,[iz(birth(SegOptions))]),Segs,Objs),
-  assumeAdded(VM,Objs),!,
-  run_fti(VM,[do_ending]).
+  assumeAdded(VM,Objs),!.
+
+vm_opts(VM,Shapes,NF,Mono,Nsew,IncludeBG):-
+  vm_opts_some(VM,Shapes,NF,Mono,Nsew,IncludeBG),
+  run_fti(VM,[do_ending]),
+  post_individuate_8(VM,IndvS),
+  gset(VM.objs) = IndvS.
 
 seg_options(Opt):-
  member(Opt,
@@ -28,7 +36,7 @@ seg_options(Opt):-
       vm_opts(no_shapes,NF,color,nsew,false),      
       vm_opts(no_shapes,NF,color,diag_ok,false),
       vm_opts(no_shapes,NF,color,nsew,true),
-      vm_opts(no_shapes,false,color,diag_ok,true),
+      %vm_opts(no_shapes,false,color,diag_ok,true),
       vm_opts(no_shapes,NF,color,points,false),    
       vm_opts(no_shapes,false,mono,diag_ok,true),
       vm_opts(no_shapes,false,mono,nsew,true),
@@ -104,21 +112,21 @@ deduce_individuator(TestID):-
  assert_test_property(TestID, common, indiv_how(in), OptsIn),
  assert_test_property(TestID, common, indiv_how(out), OptsOut),!,
  show_individuators(TestID,OptsIn,OptsOut).
-
+deduce_individuator(TestID):-deduce_individuator2(TestID).
 
 
 show_individuators(TestID,OptsIn,OptsOut):-
  forall(kaggle_arc(TestID,ExampleNum,In,Out),
-     once(
-      (individuate(OptsIn,In,InC),
-       individuate(OptsOut,Out,OutC),
+     with_individuated_cache(true,once(
+      (individuate_3(OptsIn,In,InC),
+       individuate_3(OptsOut,Out,OutC),
        length(InC,CI),length(OutC,CO),
-       print_ss(wqs([TestID,ExampleNum,in_out(OptsIn,OptsOut,CI,CO)]),InC,OutC)))).
+       print_ss(wqs([TestID,ExampleNum,in_out(OptsIn,OptsOut,CI,CO)]),InC,OutC))))).
 
 guess_individuator(TestID,OptsIn,OptsOut):- 
   seg_options(ObjsCountEquation,OptsIn,OptsOut), 
   ensure_objscount_equation(ObjsCountEquation),
-  once((kaggle_arc(TestID,trn+N,In0,Out0),co_segs_in_out(In0,Out0,OptsIn,OptsOut,ObjsCountEquation,_Overlap))),
+  ((kaggle_arc(TestID,trn+N,In0,Out0),co_segs_in_out(In0,Out0,OptsIn,OptsOut,ObjsCountEquation,_Overlap))),
   forall((kaggle_arc(TestID,trn+M,In,Out),N\=M), 
      co_segs_in_out(In,Out,OptsIn,OptsOut,ObjsCountEquation,_Overlap2)),
   nop((forall(kaggle_arc(TestID,ExampleNum,In,Out),
@@ -315,14 +323,14 @@ try_easy_io(Name,I,O):-
 grid_w_obj(Grid,Why,Objs):-
   (var(Grid)->arc_grid(Grid);true),
   ROptions = complete,
-  individuate(ROptions,Grid,_IndvS),  
+  individuate_3(ROptions,Grid,_IndvS),  
   why_grouped(Why,GS),
   member(Objs,GS).
 
 grid_grouped(Grid,Why,Objs):- 
  (var(Grid)->arc_grid(Grid);true),
   ROptions = complete,
-  individuate(ROptions,Grid,IndvS),
+  individuate_3(ROptions,Grid,IndvS),
   regroups(IndvS,Why,Objs).
 
 group_same_props(IndvS0,Ps):-  guard_invs(IndvS0,IndvS),
@@ -365,7 +373,7 @@ guard_invs(IndvS0,IndvS):- var(IndvS0), !, no_repeats(IndvS,gen_group(IndvS)),In
 guard_invs(IndvS0,IndvS):- into_group(IndvS0,IndvS).
 
 gen_group(IndvS):-
-arc_grid(_,Grid), \+ \+ individuate(complete,Grid,_),
+arc_grid(_,Grid), \+ \+ individuate_3(complete,Grid,_),
   why_grouped(_Why,IndvS),IndvS\==[].
 
 group_diff_props(IndvS0,Ps):- guard_invs(IndvS0,IndvS),
@@ -440,7 +448,7 @@ grid_part(Grid,Info):- var(Grid), get_current_test(TestID), some_current_example
 
 %grid_part(Grid,InfoR):- nth1(X,Grid,Info),VInfo=..[v|Info],InfoR=..[row,X,VInfo].
 %grid_part(Grid,InfoR):- rot90(Grid,Grid90),nth1(X,Grid90,Info),VInfo=..[v|Info],InfoR=..[col,X,VInfo].
-%grid_part(Grid,NObjs):- wno(individuate(complete,Grid,Objs)), maplist_n(1,number_obj,Objs,NObjs).
+%grid_part(Grid,NObjs):- wno(individuate_3(complete,Grid,Objs)), maplist_n(1,number_obj,Objs,NObjs).
 
 %cheapest_desc(Grid
 

@@ -102,7 +102,7 @@ ig_test_id_num_io(ROptions,GridIn,_ID,TestID,trn,Num,in,IndvS):-
 
 ig_test_id_num_io(ROptions,GridIn,_ID,TestID,_Example,_Num,_IO,IndvS):- 
   set_current_test(TestID),
-  my_time(individuate(ROptions,GridIn,IndvS)),!.
+  my_time(individuate_3(ROptions,GridIn,IndvS)),!.
   %maplist(add_shape_lib(as_is),IndvS),  
 
 into_iog(InC,OutC,IndvS):- append(InC,OutC,IndvC),!, must_det_ll(list_to_set(IndvC,IndvS)).
@@ -792,7 +792,7 @@ is_fti_step(ensure_objects).
 ensure_objects(VM):-
  must_det_ll((
   if_t(\+ is_group(VM.objs),
-   individuate(complete,VM)))).
+   individuate_3(complete,VM)))).
 
 % =====================================================================
 is_fti_step(objects_into_grid).
@@ -1125,8 +1125,8 @@ maybe_1_3rd_mass(VM):-
    assumeAdded(VM,ColorObj)))).
 
 
-:- decl_pt(detect_indvs(group,group,-)).
-detect_indvs(In,Out,Grid):- individuate(In,Grid,Out).
+%:- decl_pt(detect_indvs(group,group,-)).
+%detect_indvs(In,Out,Grid):- individuate_3(InHow,Grid,Out).
 
 individuation_reserved_options(ROptions,Reserved,Options):- 
    fix_indivs_options(ROptions,ReservedOptions),
@@ -1141,7 +1141,7 @@ individuation_reserved_options(ROptions,Reserved,Options):-
       (progress(blue,fix_indivs_options(ro=ROptions,r=Reserved,o=Options))))).
 
 
-%individuate_second_pass(Grid,IndvS):- individuate([second_pass],Grid,IndvS).
+%individuate_second_pass(Grid,IndvS):- individuate_3([second_pass],Grid,IndvS).
 %?- i(v(e41c6fd3)>(trn+0)*in).
 
 :- multifile(prolog:make_hook/2).
@@ -1161,19 +1161,20 @@ get_individuated_cache(_TID,ROptions,GOID,IndvS):- nonvar(ROptions),
   ground(GOID), \+ luser_getval(individuated_cache,false), individuated_cache(_,GOID,ROptions,IndvS),!.
 
 get_individuated_cache(_TID,ROptions,GOID,IndvS):- nonvar(ROptions),
-  ground(GOID), \+ luser_getval(individuated_cache,false), saved_group(individuate(ROptions,GOID),IndvS),!.
+  ground(GOID), \+ luser_getval(individuated_cache,false), saved_group(individuate_3(ROptions,GOID),IndvS),!.
 
-individuate(VM):- individuate1(VM,VM.start_options,VM.grid,InC),set(VM.objs)=InC,!.
+individuate_1(VM):- individuate1(VM,VM.start_options,VM.grid,InC),set(VM.objs)=InC,!.
+%individuate_1(VM):-  individuate_2(VM.start_options, VM),!.
 individuate_c(VM):- individuate1(VM,complete,VM.grid,InC),set(VM.objs)=InC,!.
-%individuate(VM):-  individuate(VM.start_options, VM),!.
 
-individuate(ROptions,VM):-  individuate(ROptions,VM,_),!.
-individuate(_ROptions,Grid,IndvS):- Grid==[],!,IndvS=[].
-individuate([ROption],GridIn,IndvS):- !,nonvar(ROption), individuate1(_,ROption,GridIn,IndvS).
-%individuate(complete,GridIn,List):- !,  findall(IndvS,(individuator(Some),individuate1(Some,GridIn,IndvS)),List),
-individuate(ROptions,GridIn,IndvS):- individuate1(_,ROptions,GridIn,IndvS).
+individuate_2(ROptions,VM):-  individuate_3(ROptions,VM,_),!.
 
-%individuate(ROptions,GridIn,IndvS):- individuation_macros(ROptions,R), atom(R),R\==ROptions,!,individuate1(_,R,GridIn,IndvS).
+individuate_3(_ROptions,Grid,IndvS):- Grid==[],!,IndvS=[].
+individuate_3([ROption],GridIn,IndvS):- !,nonvar(ROption), individuate1(_,ROption,GridIn,IndvS).
+%individuate_3(complete,GridIn,List):- !,  findall(IndvS,(individuator(Some),individuate1(Some,GridIn,IndvS)),List),
+individuate_3(ROptions,GridIn,IndvS):- individuate1(_,ROptions,GridIn,IndvS).
+
+%individuate_3(ROptions,GridIn,IndvS):- individuation_macros(ROptions,R), atom(R),R\==ROptions,!,individuate1(_,R,GridIn,IndvS).
 
 individuate1(_, ROptions,VM,LF):- is_map(VM),!, individuate1(VM, ROptions, VM.grid, LF).
 individuate1(VM,ROptions,GridIn,IndvS):- \+ is_grid(GridIn), into_grid(GridIn,Grid),!,individuate1(VM,ROptions,Grid,IndvS).
@@ -1181,7 +1182,7 @@ individuate1(VM,ROptions,GridIn,IndvS):-
   must_grid_to_gid(GridIn,GOID), !,
   individuate2(VM,ROptions,GOID,GridIn,IndvS),
   once((delistify_single_element(ROptions,NamedOpts),
-        save_grouped(individuate(NamedOpts,GOID),IndvS))).
+        maybe_save_grouped(individuate(GOID,NamedOpts),IndvS))).
 
 must_grid_to_gid(GridIn,GOID):- must_det_ll(grid_to_gid(GridIn,GOID)).
 
@@ -1222,18 +1223,18 @@ individuate_two_grids(ROptions,GridIn,GridOut,IndvSI,IndvSO):-
     individuate_two_grids_once(two(OIDIn,OIDOut),NamedOpts,GridIn,GridOut,IndvSI,IndvSO)).
 
 /*
-individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):- saved_group(individuate(ROptions,OID_In_Out),IndvS),!,into_gio(IndvS,IndvSI,IndvSO),!.
+individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):- saved_group(individuate_3(ROptions,OID_In_Out),IndvS),!,into_gio(IndvS,IndvSI,IndvSO),!.
 individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):- 
     individuate_two_grids_now(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO),
-    ignore((into_iog(IndvSI,IndvSO,IndvS),save_grouped(individuate(ROptions,OID_In_Out),IndvS))).
+    ignore((into_iog(IndvSI,IndvSO,IndvS),maybe_save_grouped(individuate(ROptions,OID_In_Out),IndvS))).
 */
 
 individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):- 
-  %wdmsg(individuate(ROptions,OID_In_Out,IndvSI,IndvSO)),
-  (saved_group(individuate(ROptions,OID_In_Out),IndvS)
+  %wdmsg(individuate_3(ROptions,OID_In_Out,IndvSI,IndvSO)),
+  (saved_group(individuate_3(ROptions,OID_In_Out),IndvS)
     -> into_gio(IndvS,IndvSI,IndvSO)
     ; ((individuate_two_grids_now(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO),
-         into_iog(IndvSI,IndvSO,IndvS),save_grouped(individuate(ROptions,OID_In_Out),IndvS)))).
+         into_iog(IndvSI,IndvSO,IndvS),maybe_save_grouped(individuate(OID_In_Out,ROptions),IndvS)))).
 
 
 %:- retractall(is_why_grouped(_,_,_,_)).
@@ -1319,7 +1320,7 @@ individuate_two_grids_now_X(OID_In_Out,ROptions,Grid_In,Grid_Out,VM_In,VM_Out,Gr
   with_other_grid(Grid_In,individuate2(VM_OutX,ROptions,OID_Out,Grid_OutX,Objs_OutX)),!,
 
   into_iog(Objs_InX,Objs_OutX,IndvS),
-  save_grouped(individuate(ROptions,OID_In_Out),IndvS))).
+  maybe_save_grouped(individuate(OID_In_Out,ROptions),IndvS))).
 
 individuate2(VM,[ROptions],GOID,Grid,IndvS):- nonvar(ROptions), !, individuate2(VM,ROptions,GOID,Grid,IndvS).
 
@@ -1339,8 +1340,8 @@ individuate2(VM,ROptions,GOID,GridIn,IndvS):-
 
 oid_created(ROptions,GOID,Len,IndvS):- oid_cached(ROptions,GOID,Len,IndvS).
 
-oid_cached(ROptions,G,len(Len),IndvS):- must_grid_to_gid(G,GOID), saved_group(individuate(ROptions,GOID),IndvS),check_len(Len,IndvS).
-oid_cached(ROptions,G,len(Len),IndvS):- into_grid(G,GOID), individuate(ROptions,GOID,IndvS),check_len(Len,IndvS).
+oid_cached(ROptions,G,len(Len),IndvS):- must_grid_to_gid(G,GOID), saved_group(individuate_3(ROptions,GOID),IndvS),check_len(Len,IndvS).
+oid_cached(ROptions,G,len(Len),IndvS):- into_grid(G,GOID), individuate_3(ROptions,GOID,IndvS),check_len(Len,IndvS).
 check_len(Len,IndvS):- \+ \+ ((is_list(IndvS),number(Len),length(IndvS,LenS),LenS>=Len)),!.
 
 
@@ -2189,7 +2190,7 @@ fg_subtractions(Subtraction,VM):-
   must_be_free(GOID),atomic_list_concat([VMGID,'_fg_subtractiond'],GOID), assert_grid_gid(NewGrid,GOID),
   get_vm(VMS), 
   %individuate2(_,Subtraction,GOID,NewGrid,FoundObjs),
-  with_other_grid(Other,individuate(Subtraction,NewGrid,FoundObjs)),
+  with_other_grid(Other,individuate_3(Subtraction,NewGrid,FoundObjs)),
   set_vm(VMS),
   ReColored = FoundObjs,
   %globalpoints_include_bg(VM.start_grid,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
@@ -2229,7 +2230,7 @@ fg_intersections(Intersection,VM):-
   must_be_free(GOID),atomic_list_concat([VMGID,'_fg_intersectiond'],GOID), assert_grid_gid(NewGrid,GOID),
   get_vm(VMS), 
   %individuate2(_,Intersection,GOID,NewGrid,FoundObjs),
-  with_other_grid(Other,individuate(Intersection,NewGrid,FoundObjs)),
+  with_other_grid(Other,individuate_3(Intersection,NewGrid,FoundObjs)),
   set_vm(VMS),
   ReColored = FoundObjs,
   %globalpoints_include_bg(VM.start_grid,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
@@ -2264,7 +2265,7 @@ fg_abtractions(Subtraction,VM):-
   must_be_free(GOID),atomic_list_concat([VMGID,'_fg_abtractiond'],GOID), assert_grid_gid(NewGrid,GOID),
   get_vm(VMS), 
   %individuate2(_,Subtraction,GOID,NewGrid,FoundObjs),
-  individuate(Subtraction,NewGrid,FoundObjs),
+  individuate_3(Subtraction,NewGrid,FoundObjs),
   set_vm(VMS),
   ReColored = FoundObjs,
   %globalpoints_include_bg(VM.start_grid,Recolors), maplist(recolor_object(Recolors),FoundObjs,ReColored),
@@ -2704,11 +2705,11 @@ find_mergeable(VM,Found,[_|ScanPoints],Engulfed):-
 %individuate_points(Grid,How,Results):- globalpoints(Grid,Points), grid_size(Grid,H,V),individuate_points0(H,V,Grid,Points,How,Results).
 %individuate_points0(H,V,Grid,Points,How,Results):- How = by_row,Results = Grid,member(
 %individuate_points0(H,V,Grid,Points,How,Results):- How = by_col, rot90(Grid,Grid90), Results = Grid.
-%individuateR(Grid,complete,Objs):- individuate(complete,Grid,Objs).
+%individuateR(Grid,complete,Objs):- individuate_3(complete,Grid,Objs).
 %individuateR(Grid,Name,Objs):- var(Grid),!,arc_grid(Grid),individuateR(Grid,Name,Objs).
 %individuateR(Grid,Name,Objs):- 
 %  no_repeats(Name+DirS,(allow_dir_list(Name,Dirs),sort(Dirs,DirS))),
-%  individuate(Name,Grid,Objs),Objs\==[].
+%  individuate_3(Name,Grid,Objs),Objs\==[].
 
 %one_fti_step(Name)
 
@@ -2861,7 +2862,7 @@ one_fti(VM,glyphic):-
   run_fti(VM,[i_by_color]),
   set(VM.lo_program)=Code,
   using_alone_dots(VM,(maplist(make_point_object(VM,[birth(glyphic),iz(shaped)]),UPoints,IndvList), assumeAdded(VM,IndvList),
-  save_grouped(individuate(glyphic,VM.gid),IndvList))))))).
+  maybe_save_grouped(individuate(VM.gid,glyphic),IndvList))))))).
 
 %make_point_object(VM,_Opts,Point,Indv):-
 %    member(Point=Indv, VM.allocated_points),!.
@@ -2897,7 +2898,7 @@ whole_into_obj(VM,Grid,Whole):-
   delete(Props0,sometimes_grid_edges(_),Props),
   if_t(Len>0,
     (make_indiv_object(VM,[amass(Len),vis2D(H,V),birth(whole),iz(always_keep),loc2D(1,1),iz(always_keep),iz(image)|Props],Points,Whole),assumeAdded(VM,Whole),
-       save_grouped(individuate(whole,VM.gid),[Whole]),learn_hybrid_shape(pair,Whole))),
+       maybe_save_grouped(individuate(VM.gid,whole),[Whole]),learn_hybrid_shape(pair,Whole))),
   localpoints(Grid,LPoints),
   length(LPoints,CLen),if_t((CLen=<144,CLen>0),    
     (make_indiv_object(VM,[birth(whole),iz(shaped),loc2D(1,1)],LPoints,Whole2),assumeAdded(VM,Whole2))).

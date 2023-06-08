@@ -2027,8 +2027,8 @@ calc_ratio(Ratio,Out,In):- catch(NRatio is rationalize(In/Out),error(evaluation_
 %:- decl_pt(prop_g,each_object(is_grid, set)).
 
 %each_object(_Grid,[]):-!.
-each_object(Grid,ListO):- \+ arc_option(grid_size_only), arc_memoized(individuate(complete,Grid,List)),!, simplify_objs(List,ListO).
-%each_object(Grid,ListO):- print_collapsed(100,memoized(individuate(complete,Grid,List))),!, simplify_objs(List,ListO).
+each_object(Grid,ListO):- \+ arc_option(grid_size_only), arc_memoized(individuate_3(complete,Grid,List)),!, simplify_objs(List,ListO).
+%each_object(Grid,ListO):- print_collapsed(100,memoized(individuate_3(complete,Grid,List))),!, simplify_objs(List,ListO).
 
 simplify_objs(I,O):-is_list(I),!,maplist(simplify_objs,I,O).
 simplify_objs(obj(I),obj(O)):-!,simplify_objs_l(I,O).

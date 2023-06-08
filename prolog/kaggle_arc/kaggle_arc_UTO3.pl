@@ -207,7 +207,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
   obj_group5(TestID,ExampleNum,in,ROptions,TempObjs),TempObjs\==[],
   grid_to_tid(In,TID),
   into_fti(TID,ROptions,In,VM),
-  individuate(VM),
+  individuate_1(VM),
   Objs = VM.objs,
   ensure_scene_change_rules(TestID),
   print_object_dependancy(TestID),

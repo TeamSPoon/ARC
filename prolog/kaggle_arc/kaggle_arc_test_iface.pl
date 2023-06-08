@@ -2437,7 +2437,7 @@ freeze_on([_NV|Vars],Goal):- my_maplist(nonvar,Vars),!,call(Goal).
 freeze_on(Vars,Goal):- my_maplist(freeze_until(Goal,Vars),Vars).
 freeze_until(Goal,Vars,Var):- freeze(Var,freeze_on(Vars,Goal)).
 
-i(A,B,C):- individuate(A,B,C),!.
+i(A,B,C):- individuate_3(A,B,C),!.
 
 :- dynamic(is_db/2).
 db_value(value:Color,_,Color).
