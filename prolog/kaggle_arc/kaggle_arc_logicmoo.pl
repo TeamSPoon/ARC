@@ -14,6 +14,50 @@
 :- multifile is_fti_step/1.
 :- discontiguous is_fti_step/1.
 
+solve_via_scene_change:-  get_pair_mode(entire_suite), !, cls,
+ forall_count(all_arc_test_name(TestID),
+   solve_via_scene_change(TestID)).
+
+solve_via_scene_change:-  clsmake, ensure_test(TestID), %make,
+ solve_via_scene_change(TestID).
+
+
+solve_via_scene_change(TestID):-
+ must_det_ll((
+  print_test(TestID),
+  %force_clear_test(TestID),
+  % % %clear_scene_rules(TestID),
+  % % %clear_object_dependancy(TestID),
+  %print_individuals(TestID),
+  %forall(kaggle_arc(TestID, ExampleNum, _, _), ignore(print_individuals(TestID, ExampleNum))),
+
+  %repress_some_output(learn_solve_via_grid_change(TestID)),
+  ExampleNum=tst+_,
+  true)),
+  forall(kaggle_arc(TestID, ExampleNum, _, _),
+     solve_via_scene_change_rules(TestID, ExampleNum)).
+
+when_entire_suite(Goal, _Goal2):- get_pair_mode(entire_suite), !, call(Goal).
+when_entire_suite(_Goal, Goal2):- call(Goal2).
+
+maybe_repress_output(Goal):- call(Goal).
+%repress_output(Goal):- with_output_to(atom(_), Goal).
+repress_output(Goal):- call(Goal).
+%repress_some_output(Goal):- when_entire_suite(with_pair_mode(whole_test, repress_output(Goal)), Goal).
+repress_some_output(Goal):- locally(set_prolog_flag(nogc, false), Goal).
+
+
+learn_solve_via_grid_change(TestID):-
+ repress_output((
+  must_det_ll((
+ %  detect_pair_hints(TestID),
+ %  save_test_hints_now(TestID),
+   learn_grid_size(TestID))))),
+ repress_some_output((
+  must_det_ll((
+   %not_warn_skip(ensure_propcounts(TestID)),
+   % % %clear_scene_rules(TestID),
+   compute_scene_change(TestID))))).
 
 % =====================================================================
 is_fti_step(vm_opts_some).
@@ -298,15 +342,34 @@ synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,
   %synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,Rules),
   get_object_dependancy(TestID,ExampleNum,ActionGroup,ActionGroupOut,RHSObjs,LHSObjs,Groups))),   
   %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
-  findall(Rule,expand_rules(Groups,Rule), RulesL),
+  groups_to_rules(Groups,RulesL),
   merge_rules(TestID,RulesL,Rules),
   pp_ilp(synth_program_from_one_example=Rules),!.
 
+groups_to_rules(Groups,RulesL):- 
+ flatten([Groups],GroupsF),
+ findall(Rule,expand_rules(GroupsF,Rule), RulesRR),
+ flatten([RulesRR],RulesRF),
+ filter_rules(RulesRF,RulesL).
+
+filter_rules(RulesR,RulesL):- include(is_functor(ac_unit),RulesR,RulesL).
+
 expand_rules(R,Rule):- is_list(R),!,member(E,R),expand_rules(E,Rule).
+expand_rules(exists(_),[]):- !.
 expand_rules(l2r(Info,In,Out),Rule):- !, trans_rule(Info,In,Out,Rules),expand_rules(Rules,Rule).
 expand_rules(rule(Info,LHS,P),ac_unit(_,Ctx,P,Body)):- !, flatten([LHS,Info,iz(info(Info))],Body),ignore(sub_cmpd(ctx(Ctx),Info)).
+expand_rules(ac_unit(_,Ctx,P0,LHS),ac_unit(_,Ctx,P0,LHS)):- !.
+expand_rules(R,ac_unit(_,Ctx,P0,LHS)):- 
+  must_det_ll((
+  find_rhs(R,P),
+  find_lhs(R,Conds0),listify(Conds0,Conds),
+  subst001(R,P,p,RR), subst001(RR,Conds,conds,RRR),
+  append(Conds,[iz(info(RRR))],LHS),
+  ignore((sub_compound(ctx(Ctx),R))))),!,P0=P.
 expand_rules(R,R).
 
+		
+		
 get_object_dependancy(TestID, ExampleNum, ActionGroupIn, ActionGroupOut, RHSObjs, LHSObjs, Groups):-
  ((RHSObjs\==[], LHSObjs\==[],
       Step=0, Ctx=in_out,
@@ -363,7 +426,8 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, ActionGro
   true)), !.
 
 
-calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):-
+calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
+   ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):-
 ((
   narrative_element(copy_object_two_changes(_,_),ActionGroupIn,ActionGroupOut),
   select(Left,LHSObjs,LHSOut),
@@ -896,54 +960,6 @@ trans_rule(Info,E1,E2,Rules):- print((Info,E1,E2)), !, fail,
 
 
 
-
-
-
-
-solve_via_scene_change:-  get_pair_mode(entire_suite), !, cls,
- forall_count(all_arc_test_name(TestID),
-   solve_via_scene_change(TestID)).
-
-solve_via_scene_change:-  clsmake, ensure_test(TestID), %make,
- solve_via_scene_change(TestID).
-
-
-solve_via_scene_change(TestID):-
- must_det_ll((
-  print_test(TestID),
-  %force_clear_test(TestID),
-  % % %clear_scene_rules(TestID),
-  % % %clear_object_dependancy(TestID),
-  %print_individuals(TestID),
-  %forall(kaggle_arc(TestID, ExampleNum, _, _), ignore(print_individuals(TestID, ExampleNum))),
-
-  %repress_some_output(learn_solve_via_grid_change(TestID)),
-  ExampleNum=tst+_,
-  true)),
-  forall(kaggle_arc(TestID, ExampleNum, _, _),
-     solve_via_scene_change_rules(TestID, ExampleNum)).
-
-when_entire_suite(Goal, _Goal2):- get_pair_mode(entire_suite), !, call(Goal).
-when_entire_suite(_Goal, Goal2):- call(Goal2).
-
-maybe_repress_output(Goal):- call(Goal).
-%repress_output(Goal):- with_output_to(atom(_), Goal).
-repress_output(Goal):- call(Goal).
-%repress_some_output(Goal):- when_entire_suite(with_pair_mode(whole_test, repress_output(Goal)), Goal).
-repress_some_output(Goal):- locally(set_prolog_flag(nogc, false), Goal).
-
-
-learn_solve_via_grid_change(TestID):-
- repress_output((
-  must_det_ll((
- %  detect_pair_hints(TestID),
- %  save_test_hints_now(TestID),
-   learn_grid_size(TestID))))),
- repress_some_output((
-  must_det_ll((
-   %not_warn_skip(ensure_propcounts(TestID)),
-   % % %clear_scene_rules(TestID),
-   compute_scene_change(TestID))))).
 
 into_input_objects(TestID, ExampleNum, In, Objs, VM):-
   grid_vm(In,VM),
