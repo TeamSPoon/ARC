@@ -845,10 +845,10 @@ which_members_vary([_|L1],RRR,VariedMembers):-
 
 
 
-
-get_each_ndividuator(Dir,How):- get_current_test(TestID), 
+get_each_ndividuator(_Dir,How):- nonvar(How),!.
+get_each_ndividuator( Dir,How):- get_current_test(TestID), 
   (arc_test_property(TestID, common, indiv_how(Dir), How), deterministic(TF)), (TF==true -> !; true).
-get_each_ndividuator(_Dir,Opts):- !, seg_options(Opts).
+get_each_ndividuator(_Dir,simple(Opts)):- !, seg_options(Opts).
 get_each_ndividuator(_Dir,IndvSMode):- !, get_indivs_mode(IndvSMode), IndvSMode\==complete,!.
 get_each_ndividuator(_Dir,IndvSMode):- %fail,
   findall(IndvSMode,(
@@ -1038,14 +1038,23 @@ pp_ilp(D,X=Y):- !,
 
 
 
-pp_ilp(D,AC_RULES_UNIT):- compound(AC_RULES_UNIT),
- AC_RULES_UNIT=..List, append(_,[_,IO,P,PSame],List),
+pp_ilp(D,AC_RULES_UNIT):- compound(AC_RULES_UNIT), ac_unit_visitor(AC_RULES_UNIT,IO,P,PSame),
  is_list(PSame),
  dash_chars,nl,
  must_det_ll((%once((nonvar(IO),io_to_cntx(IO,CTX));IO=CTX),
   Head = (IO:P), if_t(sub_cmpd(oout(OIDs),AC_RULES_UNIT),ignore(maplist(oid_to_obj,OIDs,Objs))),
    prefix_spaces(D,(print_rhs(Head),if_t(nonvar(Objs),print_grid(Objs)), 
      print_body(D+1,Head,(:- PSame)))))),!.
+
+pp_ilp(D,AC_RULES_UNIT):-  fail,ac_unit_visitor(AC_RULES_UNIT,IO,P,PSame), %is_list(PSame), 
+ must_det_ll((
+  my_partition(not_debug_info,PSame,NoDebug,Debug),
+  %once((nonvar(IO),io_to_cntx(IO,CTX));IO=CTX),
+  once(list_to_conjuncts(NoDebug,Conj);NoDebug=Conj),
+  pp_ilp(D,(((IO:P):- Conj))),
+  pp_ilp_cmt(D,Debug))),!.
+
+
  %if_t(\+ sub_var(Info,PSame),pp_ilp_cmt(Info)).
 
 /*
@@ -1090,14 +1099,6 @@ pp_ilp(D,(H:-Conj)):-
        (:- Conj),
        [portray_goal(portray_ilp)]))))),!.
 */
-
-pp_ilp(D,AC_RULES_UNIT):-  fail,ac_unit_visitor(AC_RULES_UNIT,IO,P,PSame), %is_list(PSame), 
- must_det_ll((
-  my_partition(not_debug_info,PSame,NoDebug,Debug),
-  %once((nonvar(IO),io_to_cntx(IO,CTX));IO=CTX),
-  once(list_to_conjuncts(NoDebug,Conj);NoDebug=Conj),
-  pp_ilp(D,(((IO:P):- Conj))),
-  pp_ilp_cmt(D,Debug))),!.
 
 
 %pp_ilp(D,(H:-Conj)):- prefix_spaces(D,pp_ilp(H:-Conj)),!.
@@ -1454,21 +1455,23 @@ into_oids(Objs,OIDs):- is_list(Objs),!, maplist(obj_to_oid,Objs,OIDs).
 into_oids(Obj,[OID]):- obj_to_oid_u(Obj,OID),!. 
 
 
-
-should_replace(
-               _Info1,IO1,P1,_Kept1,
-               _Info2,IO2,P2,_Kept2):- P1==P2, IO1==IO2,!.
+/*
+should_replace(_Info1,IO1,P1,_Kept1,_Info2,IO2,P2,_Kept2):- P1==P2, IO1==IO2,!.
 % 2-4: IO,P,Kept
 should_replace(Rule,AltRule):-
-  Rule=..[_,_,Info1,IO1,P1,Kept1],AltRule=..[_,_,Info2,IO2,P2,Kept2],
-  \+ \+ should_replace(
-               Info1,IO1,P1,Kept1,
-               Info2,IO2,P2,Kept2).
-nb_append(List,Rule):- member(AltRule,List),should_replace(Rule,AltRule), functor(Rule,_,A),
-  forall(between(1,A,N),(arg(N,Rule,Arg),nb_setarg(N,AltRule,Arg))),!.
-nb_append(List,Rule):- setarg(1,List,OH),arg(2,List,OT),NewTail=[OH|OT],nb_setarg(2,List,NewTail),nb_setarg(1,List,Rule).
+  Rule=..[_,_,IO1,P1,Kept1],AltRule=..[_,_,IO2,P2,Kept2],
+  \+ \+ should_replace(Info1,IO1,P1,Kept1, Info2,IO2,P2,Kept2).
+*/
+%nb_list_append(List,Rule):- member(AltRule,List),should_replace(Rule,AltRule), functor(Rule,_,A),
+%  forall(between(1,A,N),(arg(N,Rule,Arg),nb_setarg(N,AltRule,Arg))),!.
+nb_list_append(List,Rule):- arg(1,List,OH),arg(2,List,OT),NewTail=[OH|OT],nb_setarg(2,List,NewTail),
+ duplicate_term(Rule,DRule),nb_setarg(1,List,DRule).
+%nb_list_append(List,Rule):- member(AltRule,List),should_replace(Rule,AltRule), functor(Rule,_,A), forall(between(1,A,N),(arg(N,Rule,Arg),nb_setarg(N,AltRule,Arg))),!.
+%nb_list_append(List,Rule):- setarg(1,List,OH),arg(2,List,OT),NewTail=[OH|OT],nb_setarg(2,List,NewTail),nb_setarg(1,List,Rule).
 
-
+nb_list_delete([],_):-!.
+nb_list_delete(List,Rule):- arg(1,List,OH), \+ OH \= Rule, OT=[H|T], !, arg(2,List,OT), nb_setarg(2,List,T),nb_setarg(1,List,H).
+nb_list_delete([_|List],Rule):- nb_list_delete(List,Rule),!.
 
 show_if_changing(Why,_TestID,_Ctx,PP,Was,P,Kept):- 
  \+ \+ ignore((
@@ -1484,12 +1487,25 @@ show_if_changing(Why,_TestID,_Ctx,PP,Was,P,Kept):-
         !)).
 
 
+update_accompany_changed_db(Why,TestID,IO_,P,Kept):- is_list(TestID),!, Kept\==[],       
+ sort([head(P)|Kept],KeptS),
+ forall(io_to_cntx(IO_,Ctx),
+   (((if_t(menu_or_upper('E'),
+      (findall_vset([head(PP)|Was],(ac_db_unit(TestID,Ctx,PP,Was),PP=@=P),PropsWasF),
+       flatten(PropsWasF,PropsWas),sort(PropsWas,PropsWasS),  
+       if_t(PropsWasS\=@=KeptS,show_if_changing(Why,TestID,Ctx,P,PropsWasS,P,KeptS))))),
+    forall(
+      ((ac_db_unit(TestID,Ctx,PP,Was),PP=@=P)),
+          nb_list_delete(TestID,ac_db_unit(TestID,Ctx,PP,Was)))))),
+ assert_accompany_changed_db(Why,TestID,IO_,P,Kept).
+
+
 update_accompany_changed_db(Why,TestID,IO_,P,Kept):- Kept\==[],       
  sort([head(P)|Kept],KeptS),
 
  forall(io_to_cntx(IO_,Ctx),
    (if_t(menu_or_upper('E'),
-      (findall_vset([head(PP)|Was],(clause(ac_db_unit(TestID,Ctx,PP,Was),true,Ref),PP=@=P),PropsWasF),
+      (findall_vset([head(PP)|Was],(ac_db_unit(TestID,Ctx,PP,Was),PP=@=P),PropsWasF),
        flatten(PropsWasF,PropsWas),sort(PropsWas,PropsWasS),  
        if_t(PropsWasS\=@=KeptS,show_if_changing(Why,TestID,Ctx,P,PropsWasS,P,KeptS)))),
     forall(
@@ -1503,7 +1519,7 @@ assert_accompany_changed_db(_Why,TestID,IO_,P,Kept):-
    assert_accompany_changed_db(TestID,ac_unit(TestID,Ctx,P,Kept)).
 
 assert_accompany_changed_db(TestID,List):- is_list(List),maplist(assert_accompany_changed_db(TestID),List).
-assert_accompany_changed_db(List,Rule):- is_list(List),nb_append(List,Rule). % ac_unit(TestID,Ctx,P,Kept)
+assert_accompany_changed_db(List,Rule):- is_list(List),nb_list_append(List,Rule). % ac_unit(TestID,Ctx,P,Kept)
 assert_accompany_changed_db(TestID,Rule):- Rule=..[_,_,IO,P,Kept], 
   io_to_cntx(IO,Ctx),  assert_ilp_b(ac_db_unit(TestID,Ctx,P,Kept)).
 

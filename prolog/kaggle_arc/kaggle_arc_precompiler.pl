@@ -27,6 +27,7 @@ user:message_hook(Term, Kind, Lines):- error==Kind,
   itrace,wdmsg(user:message_hook(Term, Kind, Lines)),trace,fail.
 
 :- meta_predicate(must_det_ll(0)).
+:- meta_predicate(must_ll(0)).
 :- meta_predicate(must_det_ll1(1,0)).
 :- meta_predicate(md_failed(1,0)).
 :- meta_predicate(must_not_error(0)).
@@ -48,7 +49,7 @@ md_maplist(P3,[HA|TA],[HB|TB],[HC|TC]):- must_det_ll(call(P3,HA,HB,HC)), md_mapl
 
 %must_det_ll(G):- !, once((/*notrace*/(G)*->true;md_failed(P1,G))).
 
-must_det_ll(X):- md(call,X).
+must_det_ll(X):- md(once,X).
 must_ll(X):- md(call,X).
 
 
@@ -59,7 +60,7 @@ md(P1,G):- tracing,!, call(P1,G). % once((call(G)*->true;md_failed(P1,G))).
 %md(P1,X):- !,must_not_error(X).
 md(P1,(X,Goal)):- is_trace_call(X),!,call((itrace,call(P1,Goal))).
 md(_, X):- is_trace_call(X),!,itrace.
-md(_, X):- nb_current(no_must_det_ll,t),!,call(X),!.
+md(_, X):- nb_current(no_must_det_ll,t),!,call(X).
 md(P1,X):- \+ callable(X), !, throw(md_not_callable(P1,X)).
 md(P1,(A*->X;Y)):- !,(must_not_error(A)*->md(P1,X);md(P1,Y)).
 md(P1,(A->X;Y)):- !,(must_not_error(A)->md(P1,X);md(P1,Y)).
@@ -287,8 +288,12 @@ prevents_expansion(A):- is_trace_call(A).
 is_trace_call(A):- A == trace.
 is_trace_call(A):- A == itrace.
 skip_expansion(A):- A == !.
+skip_expansion(A):- A == fail.
+skip_expansion(A):- A == true.
+skip_expansion(A):- A == false.
 
 expand_must_det1(Var,Var):- \+ callable(Var),!.
+expand_must_det1(must_det_ll(AB), AABB):-!, expand_must_det(AB,AABB).
 expand_must_det1(maplist(P1,A),md_maplist(P1,A)):-!.
 expand_must_det1(maplist(P2,A,B),md_maplist(P2,A,B)):-!.
 expand_must_det1(maplist(P3,A,B,C),md_maplist(P3,A,B,C)):-!.
@@ -315,7 +320,6 @@ expand_must_det1(P, AABB) :- predicate_property(P,(meta_predicate( MP ))),
    maplist(expand_meta_predicate_arg,Margs,Args,EArgs),
    AABB=..[F|EArgs].  
 
-expand_must_det1(must_det_ll(AB), AABB):-!, expand_must_det(AB,AABB).
 expand_must_det1( A,must_det_ll(AA)):- \+ remove_must_det, !, expand_goal(A,AA),!.
 expand_must_det1( A, AA):- expand_goal(A,AA),!.
 

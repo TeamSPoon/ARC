@@ -5,6 +5,7 @@
   unless permission or license is granted (contact at business@logicmoo.org)
 */
 
+end_of_file.
 
 rhs_ground(G):- ground(G),!.
 rhs_ground(G):- nop(writeln(G)),!.
@@ -107,82 +108,6 @@ pass2_rule2(TestID,Ctx,RHS0,LHS0):-
   arg(_,Rule,lhs(LHS)))),
   rhs_ground(RHS).
 */
-starter_narratives(ActionGroup):- 
- ActionGroup=
-     [copy_object_perfect(_),
-      copy_object_one_change(_),
-      copy_object_two_changes(_),
-      add_dependant_scenery(_),
-      in_out_out(_),
-      add_independant_scenery(_),
-      balanced_or_delete_leftovers(_)].
-
-possible_program(TestID,ActionGroupOut,How,NewRules):-
- starter_narratives(ActionGroup),
- get_each_ndividuator(in,HowIn),
- How = in_out(HowIn,_HowOut),
- GNR = group_narrative_rules(How,ActionGroupOut,Rules),
- synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,_RulesOnce),
- findall(GNR,
-    (kaggle_arc(TestID,ExampleNum,_,_), 
-      synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,Rules)), HNRL),
- maplist(arg(3),HNRL,RulesL),
- append(RulesL,RulesF),
- combine_trans_rules(TestID,RulesF,NewRules).
-
-
-synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,Rules):-
- (var(ActionGroup)->starter_narratives(ActionGroup);true),
-  ensure_test(TestID),
-  starter_narratives(ActionGroup),
-  get_each_ndividuator(in,HowIn),
-  How = in_out(HowIn,_HowOut),
-  _GNR = group_narrative_rules(How,ActionGroupOut,Rules),
-  ignore((ExampleNum=trn+_)),
-  kaggle_arc(TestID,ExampleNum,_,_),
-  best_obj_group_pair(TestID,ExampleNum,How,LHSObjs,RHSObjs), RHSObjs\==[],LHSObjs\==[],
-  trace,synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,Rules),
-  get_object_dependancy(TestID,ExampleNum,ActionGroup,ActionGroupOut,RHSObjs,LHSObjs,Groups),   
-  %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
-  %pp_ilp(synth_program_from_one_example=Groups),
-  findall(Rule,
-    (member(l2r(Info,In,Out),Groups),
-     into_list(In,InL),into_list(Out,OutL),trans_rule(Info,InL,OutL,TransRules), 
-     member(Rule,TransRules)), 
-   Rules).
-
-  
-synth_program_from_one_example(TestID,Ctx,Rules):-
-  ((fail,arc_cache:trans_rule_db(TestID,_ExampleNum1,Ctx,Rules),Rules\=l2r(_,_,_))*->true;
-    synth_program_from_one_example(TestID,Ctx,Rules)).
-
-trans_rules_combined_members(TestID,Ctx,CombinedM):-
- ensure_test(TestID),
- time(findall(Rule,synth_program_from_one_example(TestID,Ctx,Rule),Rules)),
-  % must_det_ll(( \+ (member(R,[1|Rules]), is_list(R)))),!,
-  combine_trans_rules(TestID,Rules, Combined),
-  % must_det_ll(( \+ (member(R,[2|Combined]), is_list(R)))),
-  member(CombinedM,Combined).
-
-combine_trans_rules( TestID,Rules, CombinedRules):-  compute_scene_change_pass_out(TestID,Rules, CombinedRules),!.
-combine_trans_rules(_TestID,Rules, CombinedRules):-
-  combine_trans_rules1(Rules, CombinedRules).
-
-combine_trans_rules_textually(R1,Rules,R,RulesN):- 
-  into_rhs(R1,RHS1),
-  same_functor(R1,R2),
-  select(R2,Rules,RulesN), % my_assertion(r1, \+ is_list(R1)), my_assertion(r2, \+ is_list(R2)),
-  into_rhs(R2,RHS2),
-  %into_step(R2,RHS2),
-  RHS1=@=RHS2,
-  merge_vals(R1,R2,R) % my_assertion(r, \+ is_list(R)),
-  .
-combine_trans_rules1([],[]):-!.
-combine_trans_rules1([R],[R]):-!.
-combine_trans_rules1([R1|Rules], CombinedRules):-
-  combine_trans_rules_textually(R1,Rules,R,RulesN),!, combine_trans_rules1([R|RulesN], CombinedRules).
-combine_trans_rules1([R|Rules], [R|CombinedRules]):- 
-  combine_trans_rules1(Rules, CombinedRules).
 
 
 
@@ -392,4 +317,4 @@ trans_rule(Info,E1,E2,Rules):-
 
 
 
-
+:- consult(kaggle_arc_logicmoo).

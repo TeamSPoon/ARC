@@ -588,7 +588,7 @@ grid_object(Grid,mass(N),object(Points,Color)):-
 
 
 
-
+:- consult(kaggle_arc_logicmoo).
 
 :- include(kaggle_arc_footer).
 
