@@ -33,11 +33,11 @@ ac_listing(TestID,Ctx,P,PSame):- (ac_db_unit(TestID,Ctx,P,PSame)*->true;pass2_ru
 %ac_listing(TestID,Ctx,P,[pass2|PSame]):- pass2_rule(TestID,Ctx,P,PSame), \+ ac_rules(TestID,Ctx,P,PSame).
 
 /*
-ac_info(TestID,rules,P->Ctx->current,LHS):- 
+ac_listing(TestID,rules,P->Ctx->current,LHS):- 
   member(Ctx,[in_out,in_out_out,s(_)]),
-  trans_rules_current_members(TestID,Ctx,R),
+  synth_program_from_one_example(TestID,Ctx,R),
   rule_to_pcp(R,P,LHS).
-ac_info(TestID,rules,P->Ctx->combined,LHS):- fail,
+ac_listing(TestID,rules,P->Ctx->combined,LHS):- fail,
   member(Ctx,[in_out,in_out_out,s(_)]),
   trans_rules_combined_members(TestID,Ctx,R),
   rule_to_pcp(R,P,LHS).
@@ -45,7 +45,7 @@ ac_info(TestID,rules,P->Ctx->combined,LHS):- fail,
 show_time_of_failure(_TestID):- !.
 show_time_of_failure(TestID):- 
     print_scene_change_rules3(show_time_of_failure,
-       ac_info,TestID).
+       ac_listing,TestID).
 
 rule_to_pcp5(TestID,R,Ctx,P,LHS):- is_list(R),!,
  member(E,R),rule_to_pcp(TestID,E,Ctx,P,LHS).
@@ -87,7 +87,7 @@ pass2_rule1(TestID,Ctx,RHS,LHS):- fail,
 
 pass2_rule2(TestID,Ctx,RHS0,LHS0):- 
  ensure_test(TestID),
-  trans_rules_current_members(TestID,Ctx,Rule),
+  synth_program_from_one_example(TestID,Ctx,Rule),
   %Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,_ExampleNum,_),
   %arg(_,Rule,Info),
   must_det_ll((
@@ -107,28 +107,60 @@ pass2_rule2(TestID,Ctx,RHS0,LHS0):-
   arg(_,Rule,lhs(LHS)))),
   rhs_ground(RHS).
 */
+starter_narratives(ActionGroup):- 
+ ActionGroup=
+     [copy_object_perfect(_),
+      copy_object_one_change(_),
+      copy_object_two_changes(_),
+      add_dependant_scenery(_),
+      in_out_out(_),
+      add_independant_scenery(_),
+      balanced_or_delete_leftovers(_)].
 
-trans_rules_current_members1(TestID,_Ctx,Rules):-
+possible_program(TestID,ActionGroupOut,How,NewRules):-
+ starter_narratives(ActionGroup),
+ get_each_ndividuator(in,HowIn),
+ How = in_out(HowIn,_HowOut),
+ GNR = group_narrative_rules(How,ActionGroupOut,Rules),
+ synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,_RulesOnce),
+ findall(GNR,
+    (kaggle_arc(TestID,ExampleNum,_,_), 
+      synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,Rules)), HNRL),
+ maplist(arg(3),HNRL,RulesL),
+ append(RulesL,RulesF),
+ combine_trans_rules(TestID,RulesF,NewRules).
+
+
+synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,Rules):-
+ (var(ActionGroup)->starter_narratives(ActionGroup);true),
   ensure_test(TestID),
+  starter_narratives(ActionGroup),
+  get_each_ndividuator(in,HowIn),
+  How = in_out(HowIn,_HowOut),
+  _GNR = group_narrative_rules(How,ActionGroupOut,Rules),
   ignore((ExampleNum=trn+_)),
   kaggle_arc(TestID,ExampleNum,_,_),
+  best_obj_group_pair(TestID,ExampleNum,How,LHSObjs,RHSObjs), RHSObjs\==[],LHSObjs\==[],
+  trace,synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,Rules),
+  get_object_dependancy(TestID,ExampleNum,ActionGroup,ActionGroupOut,RHSObjs,LHSObjs,Groups),   
+  %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
+  %pp_ilp(synth_program_from_one_example=Groups),
+  findall(Rule,
+    (member(l2r(Info,In,Out),Groups),
+     into_list(In,InL),into_list(Out,OutL),trans_rule(Info,InL,OutL,TransRules), 
+     member(Rule,TransRules)), 
+   Rules).
 
-  obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs), RHSObjs\==[],LHSObjs\==[],
-  once(get_object_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs,Groups)),   %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
-  %pp_ilp(trans_rules_current_members1=Groups),
-  member(l2r(Info,In,Out),Groups),
-  into_list(In,InL),into_list(Out,OutL),trans_rule(Info,InL,OutL,TransRules), 
-  member(Rules,TransRules).
   
-trans_rules_current_members(TestID,Ctx,Rules):-
+synth_program_from_one_example(TestID,Ctx,Rules):-
   ((fail,arc_cache:trans_rule_db(TestID,_ExampleNum1,Ctx,Rules),Rules\=l2r(_,_,_))*->true;
-    trans_rules_current_members1(TestID,Ctx,Rules)).
+    synth_program_from_one_example(TestID,Ctx,Rules)).
 
 trans_rules_combined_members(TestID,Ctx,CombinedM):-
  ensure_test(TestID),
- time(must_det_ll((findall(Rule,trans_rules_current_members(TestID,Ctx,Rule),Rules),
+ time(findall(Rule,synth_program_from_one_example(TestID,Ctx,Rule),Rules)),
   % must_det_ll(( \+ (member(R,[1|Rules]), is_list(R)))),!,
-  combine_trans_rules(TestID,Rules, Combined)))),
+  combine_trans_rules(TestID,Rules, Combined),
   % must_det_ll(( \+ (member(R,[2|Combined]), is_list(R)))),
   member(CombinedM,Combined).
 
@@ -303,7 +335,7 @@ trans_rule(Info,[In],[Out],Rules):-
 
 % just copy an object
 trans_rule(Info,[In],[Out],Rules):- 
-  how_are_differnt(In,Out,Diff),Diff==[],
+  how_are_different(In,Out,_TypeChanges,Diff),Diff==[],
   into_lhs(In,LHS),
   %%must_det_ll((sub_compound(step(Step),Info), sub_compound(why(TypeO),Info))),
   Rules = [ copy_if_match(Info,rhs(copy_step),lhs(LHS)) ],!.
@@ -330,7 +362,7 @@ trans_rule(Info,E1,E2,Rules):-
   dash_chars,
   pp_ilp(l2r(Info,E1,E2)),
   dash_chars,
-  if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
+  if_t(how_are_different(E1,E2,Set),pp_ilp(how_are_different=Set)),
   flat_props(E1,FP1),flat_props(E2,FP2),
   intersection(FP1,FP2,Same,InFlatP,OutPFlat),
   pp_ilp(info=Info),

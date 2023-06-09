@@ -573,8 +573,8 @@ call_list(List):-is_list(List),!,my_maplist(call_list,List).
 call_list(Goal):-ignore(Goal).
 
 /*
-get_each_ndividuator(Complete):-!,get_indivs_mode(Complete).
-get_each_ndividuator(Complete):-
+get_each_ndividuator(Dir,Complete):-!,get_indivs_mode(Complete).
+get_each_ndividuator(Dir,Complete):-
   findall(Complete,((toplevel_individuation(TL),Complete=[TL,do_ending]);get_indivs_mode(Complete)),List),
   list_to_set(List,Set),!,member(Complete,Set).
 */
@@ -582,7 +582,7 @@ get_each_ndividuator(Complete):-
 each_ndividuator(TestID,ExampleNum,In,Out, OUTPUT):- 
  name_the_pair(TestID,ExampleNum,In,Out,PairName), 
  findall(show_pair_result(PairName,Complete,InC,OutC),
-  (get_each_ndividuator(Complete),
+  (get_each_ndividuator(_,Complete),
    with_indivs_mode(Complete,((
     with_task_pairs(TestID,ExampleNum,In,Out, 
      ((  w_section(individuate_pair_debug(Complete),

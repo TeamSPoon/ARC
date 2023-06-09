@@ -846,13 +846,14 @@ which_members_vary([_|L1],RRR,VariedMembers):-
 
 
 
-
-
-get_each_ndividuator(IndvSMode):- get_indivs_mode(IndvSMode), IndvSMode\==complete,!.
-get_each_ndividuator(IndvSMode):- %fail,
+get_each_ndividuator(Dir,How):- get_current_test(TestID), 
+  (arc_test_property(TestID, common, indiv_how(Dir), How), deterministic(TF)), (TF==true -> !; true).
+get_each_ndividuator(_Dir,Opts):- !, seg_options(Opts).
+get_each_ndividuator(_Dir,IndvSMode):- !, get_indivs_mode(IndvSMode), IndvSMode\==complete,!.
+get_each_ndividuator(_Dir,IndvSMode):- %fail,
   findall(IndvSMode,(
            (toplevel_individuation(TL),IndvSMode=[TL,do_ending])
-            ;get_indivs_mode(IndvSMode)),List),
+            ;(false,get_indivs_mode(IndvSMode))),List),
   list_to_set(List,Set),!,member(IndvSMode,Set).
 
 :- discontiguous toplevel_individuation/1. 
@@ -866,6 +867,9 @@ toplevel_individuation(IndvSMode):-
     
      find_hybrid_shapes]).
 
+ensure_individuals(TestID,ExampleNum):- 
+ var(TestID),!,ensure_test(TestID),
+ ensure_individuals(TestID,ExampleNum).
 ensure_individuals(TestID,ExampleNum):- \+ ground(ExampleNum),!,
   forall( kaggle_arc(TestID,ExampleNum,_,_),
     ensure_individuals(TestID,ExampleNum)).
@@ -882,7 +886,7 @@ ensure_individuals(TestID,ExampleNum,GridIn,GridOut):-
        name_the_pair(TestID,ExampleNum,GridIn,GridOut,_PairName),
   gid_of_tid(GID1,TestID,ExampleNum,in),
   gid_of_tid(GID2,TestID,ExampleNum,out),
-       forall(get_each_ndividuator(IndvSMode),
+       forall(get_each_ndividuator(io,IndvSMode),
     (with_indivs_mode(IndvSMode,(( 
               with_task_pairs(TestID,ExampleNum,GridIn,GridOut, 
            %repress_output
@@ -895,13 +899,13 @@ ensure_individuals(TestID,ExampleNum,GridIn,GridOut):-
      repress_output(individuate_pair(FinalIndvSMode,GridIn,GridOut,_,_)),!.
 
 
-
-print_individuals(TestID):-
+print_individuals(TestID):- 
     ensure_test(TestID),
-      deduce_individuator(TestID),!.
+    print_best_individuals(TestID),!.
+
+print_individuals(TestID):- ensure_test(TestID), deduce_individuator(TestID),!.
 print_individuals(TestID):-
- ((
-   ensure_test(TestID),
+ ((ensure_test(TestID),
      deduce_individuator(TestID),
  banner_lines(blue,4),
    ignore((never_entire_suite,set_flag(indiv,0))),%compute_and_show_test_hints(TestID),
@@ -973,7 +977,7 @@ gather_one_grid(RemainingObjs,_GridPoints,RemainingObjs,[]).
 
 
 objects_of(TestID,Example+Num,IO,GID,ROptions,Obj):-
- from_individuated_cache(TestID,(TestID>(Example+Num)*IO),GID,ROptions,OutC),
+ from_individuated_cache(TestID,(TestID>(Example+Num)*IO),GID,IO,ROptions,OutC),
  member(OID,OutC),once(into_obj(OID,Obj)),
  once((sub_cmpd(g(IO),Obj), sub_cmpd(Example+Num,Obj))).
 

@@ -2786,11 +2786,11 @@ ac_listing(TestID,Ctx,P,PSame):- ac_unit(TestID,Ctx,P,PSame)*->true;pass2_rule(T
 %ac_listing(TestID,Ctx,P,[pass2|PSame]):- pass2_rule(TestID,Ctx,P,PSame), \+ ac_rules(TestID,Ctx,P,PSame).
 
 
-ac_info(TestID,rules,P->Ctx->current,LHS):- 
+ac_listing(TestID,rules,P->Ctx->current,LHS):- 
   member(Ctx,[in_out,in_out_out,s(_)]),
   trans_rules_current(TestID,Ctx,Rules),member(R,Rules),
   rule_to_pcp(R,P,LHS).
-ac_info(TestID,rules,P->Ctx->combined,LHS):- fail,
+ac_listing(TestID,rules,P->Ctx->combined,LHS):- fail,
   member(Ctx,[in_out,in_out_out,s(_)]),
   trans_rules_combined(TestID,Ctx,Rules),member(R,Rules),
   rule_to_pcp(R,P,LHS).
@@ -2798,7 +2798,7 @@ ac_info(TestID,rules,P->Ctx->combined,LHS):- fail,
 show_time_of_failure(_TestID):- !.
 show_time_of_failure(TestID):- 
     print_scene_change_rules3(show_time_of_failure,
-       ac_info,TestID).
+       ac_listing,TestID).
 
 rule_to_pcp(R,P,LHS):- 
   must_det_ll((

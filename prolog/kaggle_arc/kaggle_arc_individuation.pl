@@ -16,6 +16,10 @@ o1 to o1
 
 */
 :- include(kaggle_arc_header).
+
+
+:- set_prolog_flag(arc_term_expansion, true).
+
 :- multifile is_fti_step/1.
 :- discontiguous is_fti_step/1.
 :- discontiguous is_fti_stepr/1.
@@ -1278,7 +1282,7 @@ skip_some(_).
 % =====================================================================
 is_fti_step(colormass_3).
 % =====================================================================
-colormass_3(VM):- vm_opts_some(VM,no_shapes,_NF,color,diag_ok,false),!.
+colormass_3(VM):- vm_opts_some(shapes(none),count_equ(_NF),colors(color),dirs(diags_nsew),incl_bg(false),VM),!.
 colormass_3(VM):- 
   globalpoints(VM.objs,CantHave),
   Points = VM.lo_points,
@@ -1983,7 +1987,7 @@ individuate_two_grids(ROptions,GridIn,GridOut,IndvSI,IndvSO):-
       individuate_two_grids_once(two(OIDIn,OIDOut),NamedOpts,GridIn,GridOut,IndvSI,IndvSO))).
 
 /*
-individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):- saved_group(individuate_3(ROptions,OID_In_Out),IndvS),!,into_gio(IndvS,IndvSI,IndvSO),!.
+individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):- saved_group(individuate(OID_In_Out,ROptions),IndvS),!,into_gio(IndvS,IndvSI,IndvSO),!.
 individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):- 
     individuate_two_grids_now(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO),
     ignore((into_iog(IndvSI,IndvSO,IndvS),maybe_save_grouped(individuate(OID_In_Out,ROptions),IndvS))).
@@ -1991,7 +1995,7 @@ individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):-
 
 individuate_two_grids_once(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO):- 
   %u_dmsg(individuate_3(ROptions,OID_In_Out,IndvSI,IndvSO)),
-  ((saved_group(individuate_3(ROptions,OID_In_Out),IndvS),IndvS\==[])
+  ((saved_group(individuate(OID_In_Out,ROptions),IndvS),IndvS\==[])
     -> into_gio(IndvS,IndvSI,IndvSO)
     ; ((individuate_two_grids_now(OID_In_Out,ROptions,GridIn,GridOut,IndvSI,IndvSO),
          into_iog(IndvSI,IndvSO,IndvS),maybe_save_grouped(individuate(OID_In_Out,ROptions),IndvS)))).
@@ -2100,7 +2104,7 @@ individuate2(VM,[ROptions],GOID,Grid,IndvS):- nonvar(ROptions), !, individuate2(
 
 
 individuate2(_VM,ROptions,GOID,_GridIn,IndvS):- nonvar(GOID), 
-  get_individuated_cache(_TID,ROptions,GOID,IndvS),!,
+  get_individuated_cache(_TID,ROptions,GOID,IndvS),IndvS\==[],!,
   length(IndvS,Len),ignore((Len>=0,progress(yellow,oid_cached(ROptions,GOID,len(Len),'$VAR'(Len))))),
   !.
 individuate2(VM,ROptions,GOID,GridIn,IndvS):-
@@ -2117,7 +2121,7 @@ individuate2(VM,ROptions,GOID,GridIn,IndvS):-
 
 oid_created(ROptions,GOID,Len,IndvS):- oid_cached(ROptions,GOID,Len,IndvS).
 
-oid_cached(ROptions,G,len(Len),IndvS):- must_grid_to_gid(G,GOID), saved_group(individuate_3(ROptions,GOID),IndvS),check_len(Len,IndvS).
+oid_cached(ROptions,G,len(Len),IndvS):- must_grid_to_gid(G,GOID), saved_group(individuate(GOID,ROptions),IndvS),check_len(Len,IndvS).
 oid_cached(ROptions,G,len(Len),IndvS):- into_grid(G,GOID), individuate_3(ROptions,GOID,IndvS),check_len(Len,IndvS).
 check_len(Len,IndvS):- \+ \+ ((is_list(IndvS),number(Len),length(IndvS,LenS),LenS>=Len)),!.
 
@@ -2180,7 +2184,7 @@ post_individuate_8(VM,IndvS):-
       make_indiv_object_list(VM,IndvSRaw,IndvS1),
       %combine_objects(IndvS1,IndvS2),
       combine_same_globalpoints(IndvS1,IndvS),
-      print_ss(indvS,ObjsB,IndvS),
+      %print_ss(indvS,ObjsB,IndvS),
       %gset(VM.objs) = IndvS,
       %list_to_set(IndvS1,IndvS),
       nop(print_info(IndvS)))).  
@@ -2197,6 +2201,7 @@ into_fti(TID,ROptions,GridIn0,VM):-
    ignore((ROptions \= Options,
      is_list(ROptions), sub_var(complete,ROptions), 
      (progress(blue,fix_indivs_options(ro=ROptions,r=Reserved,o=Options))))),
+
   statistics(cputime,X),Timeleft is X+30,
   %rtrace,
    %rtrace,
@@ -2292,6 +2297,7 @@ into_fti(TID,ROptions,GridIn0,VM):-
    progress(yellow,igo(ROptions,ID)=(H,V)),
    !.
 
+:- listing(into_fti).
 
 into_grid_d(Grid,Grid_D):- most_d_colors(Grid,_CI,Grid_D),!.
 %must_det_ll((subst001(Grid,black,wbg,TexturedGrid), most_d_colors(TexturedGrid,_CI,Grid_D))),
@@ -2388,7 +2394,7 @@ run_fti(VM,[recalc_sizes|TODO]):- !, must_det_ll(run_fti(VM,TODO)).
 %run_fti(VM,[H|T]):- !, must_det_ll((fti(VM,H),run_fti(VM,T))),!.
 run_fti(VM,[F|TODO]):- 
   %must_det_ll(fti(VM,[F|TODO])),!, 
-  show_vm_changes(VM,F, must_det_ll(fti(VM,[F|TODO]))),!,
+  show_vm_changes(VM,F, ignore(fti(VM,[F|TODO]))),!,
   must_det_ll(get_kov(lo_program,VM,Code)),!,    
   must_det_ll(([F|TODO]=@=Code -> 
     (% progress(blue,fti=[F|TODO]), progress(blue,code=Code), 
@@ -3128,7 +3134,7 @@ remove_background_only_object(H,V,Objs,NewObjs):-
     vis2D(O,OH,OV), abs(H - OH)<3, abs(V - OV)<3,
     has_prop(cc(fg,0),O),
     %has_prop(cc(plain_var,0),O),!,
-    print_ss(remove_background_only_object,[O],NewObjs),
+    %print_ss(remove_background_only_object,[O],NewObjs),
     !,remove_background_only_object(H,V,Mid,NewObjs).
 remove_background_only_object(_,_,Objs,Objs):-!.
 

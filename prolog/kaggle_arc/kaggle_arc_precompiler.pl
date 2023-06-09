@@ -48,7 +48,7 @@ md_maplist(P3,[HA|TA],[HB|TB],[HC|TC]):- must_det_ll(call(P3,HA,HB,HC)), md_mapl
 
 %must_det_ll(G):- !, once((/*notrace*/(G)*->true;md_failed(P1,G))).
 
-must_det_ll(X):- md(once,X).
+must_det_ll(X):- md(call,X).
 must_ll(X):- md(call,X).
 
 
@@ -237,10 +237,8 @@ get_oov_value(ValueOOV,Value):- compound(ValueOOV),ValueOOV=oov(Value),!.
 get_oov_value(Value,Value).
 
 
-
-
-term_expansion_setter(I,O):- compound(I), expand_must_det(I,O).
-
+term_expansion_setter(I,O):- maybe_expand_must_det(I,O),I\=@=O,!.
+term_expansion_setter(I,O):- maybe_expand_must_det(I,M),I\=@=M,!,term_expansion_setter(M,O).
 term_expansion_setter((Head:-Body),Out):- 
    get_setarg_p1(setarg,I,Head,P1), is_setter_syntax(I,Obj,Member,Var,How),
    call(P1,Var),
@@ -265,38 +263,43 @@ is_setter_syntax(hset(How,ObjMember),Obj,Member,_Var,How):- obj_member_syntax(Ob
 
 obj_member_syntax(ObjMember,Obj,Member):-compound(ObjMember), compound_name_arguments(ObjMember,'.',[Obj,Member]),!.
 
-expand_must_det(I,_):- \+ compound(I),!,fail.
-%expand_must_det(I,_):- compound(I),!,fail. % THIS DISABLES
+maybe_expand_must_det(I,_):- \+ compound(I),!,fail.
+%maybe_expand_must_det(I,_):- compound(I),!,fail. % THIS DISABLES
 % THIS DISABLES
-%expand_must_det(must_det_ll(GoalL),GoalL):-!.
-expand_must_det(must_det_ll(GoalL),GoalLO):- !, expand_must_det0(GoalL,GoalLO).
-expand_must_det(maplist(P1,GoalL),GoalLO):- P1 ==must_det_ll,!,
-  expand_must_det0(GoalL,GoalLO).
-expand_must_det(maplist(P1,GoalL),GoalLO):- P1 ==must_det_ll,!,
-  expand_must_det0(GoalL,GoalLO).
+%maybe_expand_must_det(must_det_ll(GoalL),GoalL):-!.
+maybe_expand_must_det(must_det_ll(GoalL),GoalLO):- !, expand_must_det(GoalL,GoalLO).
+maybe_expand_must_det(maplist(P1,GoalL),GoalLO):- P1 ==must_det_ll,!,
+  expand_must_det(GoalL,GoalLO).
+maybe_expand_must_det(maplist(P1,GoalL),GoalLO):- P1 ==must_det_ll,!,
+  expand_must_det(GoalL,GoalLO).
+%maybe_expand_must_det(I,O):- sub_term(S,I),compound(S),S=must_det_ll(G),
+%  once(expand_must_det(S,M)),M\=S,
+  
 
-expand_must_det0(Nil,true):- Nil==[],!.
-expand_must_det0(Var,Var):- \+ callable(Var),!.
-expand_must_det0([A|B],(AA,BB)):- assertion(callable(A)), assertion(is_list(B)), !, 
-  expand_must_det1(A,AA), expand_must_det0(B,BB).
-expand_must_det0(A,AA):- !, expand_must_det1(A,AA).
+
+expand_must_det(Nil,true):- Nil==[],!.
+expand_must_det(Var,Var):- \+ callable(Var),!.
+expand_must_det([A|B],(AA,BB)):- assertion(callable(A)), assertion(is_list(B)), !, 
+  expand_must_det1(A,AA), expand_must_det(B,BB).
+expand_must_det(A,AA):- !, expand_must_det1(A,AA).
 
 prevents_expansion(A):- is_trace_call(A).
 is_trace_call(A):- A == trace.
 is_trace_call(A):- A == itrace.
 skip_expansion(A):- A == !.
+
 expand_must_det1(Var,Var):- \+ callable(Var),!.
 expand_must_det1(maplist(P1,A),md_maplist(P1,A)):-!.
 expand_must_det1(maplist(P2,A,B),md_maplist(P2,A,B)):-!.
 expand_must_det1(maplist(P3,A,B,C),md_maplist(P3,A,B,C)):-!.
 expand_must_det1(Cut,Cut):-  skip_expansion(Cut).
 %expand_must_det1(Goal,O):- \+ compound(Goal), !,O = must_det_ll(Goal).
-expand_must_det1((A,B),((A,B))):- remove_must_det, prevents_expansion(A),!.
-expand_must_det1((A,B),must_det_ll((A,B))):- prevents_expansion(A),!.
+%expand_must_det1((A,B),((A,B))):- remove_must_det, prevents_expansion(A),!.
+%expand_must_det1((A,B),must_det_ll((A,B))):- prevents_expansion(A),!.
 expand_must_det1((A,B),(AA,BB)):- !, expand_must_det(A,AA), expand_must_det(B,BB).
 expand_must_det1((C*->A;B),(CC*->AA;BB)):- !, expand_must_det(A,AA), expand_must_det(B,BB), expand_must_not_error(C,CC).
 expand_must_det1((C->A;B),(CC->AA;BB)):- !, expand_must_det(A,AA), expand_must_det(B,BB), expand_must_not_error(C,CC).
-expand_must_det1((C;B),(CC->true;BB)):- !, expand_must_det(B,BB), expand_must_not_error(C,CC).
+expand_must_det1((C;B),(CC;BB)):- !, expand_must_det(B,BB), expand_must_not_error(C,CC).
 
 expand_must_det1(locally(C,A),locally(C,AA)):- !, expand_must_det(A,AA).
 
@@ -311,6 +314,7 @@ expand_must_det1(P, AABB) :- predicate_property(P,(meta_predicate( MP ))),
    SP=..[F|Args],SMP=..[F|Margs],!,
    maplist(expand_meta_predicate_arg,Margs,Args,EArgs),
    AABB=..[F|EArgs].  
+
 expand_must_det1(must_det_ll(AB), AABB):-!, expand_must_det(AB,AABB).
 expand_must_det1( A,must_det_ll(AA)):- \+ remove_must_det, !, expand_goal(A,AA),!.
 expand_must_det1( A, AA):- expand_goal(A,AA),!.
@@ -339,7 +343,8 @@ expand_meta_predicate_arg(*,A,AA):- !,expand_must_det1(A,AA).
 expand_meta_predicate_arg(_,A,A).
 
 goal_expansion_getter(Goal,O):- \+ compound(Goal), !,O = Goal.
-goal_expansion_getter(I,O):- expand_must_det(I,O).
+goal_expansion_getter(I,O):- maybe_expand_must_det(I,O),I\=@=O,!.
+goal_expansion_getter(I,O):- maybe_expand_must_det(I,M),I\=@=M,!,goal_expansion_getter(M,O).
 goal_expansion_getter(Goal,get_kov(Func,Self,Value)):-
   compound_name_arguments(Goal,'.', [Self, Func, Value]),!.
 goal_expansion_getter(Goal,Out):- 
@@ -355,14 +360,15 @@ goal_expansion_getter(Goal,Out):-
 goal_expansion_setter(Goal,_):- \+ compound(Goal), !, fail.
 
 
+goal_expansion_setter(I,O):- maybe_expand_must_det(I,O),I\=@=O,!.
 goal_expansion_setter(G,GO):- remove_must_det, !,remove_must_dets(G,GG),goal_expansion_setter(GG,GO).
 %goal_expansion_setter(GG,GO):- remove_must_det, sub_term(G,GG),compound(G),G = must_det_ll(GGGG),subst001(GG,G,GGGG,GGG),!,goal_expansion_setter(GGG,GO).
 %goal_expansion_setter((G1,G2),(O1,O2)):- !, expand_goal(G1,O1), expand_goal(G2,O2),!.
 goal_expansion_setter(set_omember(A,B,C,D),set_omember(A,B,C,D)):-!.
 goal_expansion_setter(set_omember(A,B,C),set_omember(b,A,B,C)):-!.
 goal_expansion_setter(Goal,get_kov(Func,Self,Value)):- compound(Goal), compound_name_arguments(Goal,'.',[ Self, Func, Value]).
+goal_expansion_setter(I,O):- maybe_expand_must_det(I,M),I\=@=M,!,goal_expansion_setter(M,O).
 
-goal_expansion_setter(I,O):- expand_must_det(I,O).
 
 goal_expansion_setter(Goal,Out):- 
    predicate_property(Goal,meta_predicate(_)),!,fail,

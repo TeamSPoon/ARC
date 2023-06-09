@@ -285,7 +285,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
       pp_ilp(rules_at_time_of_failure(red)=RulesToF),
       %print_scene_change_rules(rules_at_time_of_failure(red),TestID),
       print_ss(wqs(input(TestID,ExampleNum,errors=Errors)),InOrig,Objs),
-      once(obj_group_pair(TestID,ExampleNum,_,OutC)->true;OutC=ExpectedOut),
+      once(best_obj_group_pair(TestID,ExampleNum,_,OutC)->true;OutC=ExpectedOut),
       print_ss(wqs(expected(TestID,ExampleNum,errors=Errors)),OutC,ObjsO),
       print_ss(wqs(objects(TestID,ExampleNum,errors=Errors)),OurSolution,ExpectedOut),
       banner_lines(red,10),
@@ -299,7 +299,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
 
 rules_no_assumed(TestID,RulesToF):- 
   findall_vset_R(ac_unit(TestID,IO,P,Preconds),
-    (ac_info_unit(TestID,IO,P,_,Conds),include(not_assume_prop,Conds,Preconds)),RulesToF).
+    (ac_rules(TestID,IO,P,_,Conds),include(not_assume_prop,Conds,Preconds)),RulesToF).
 
 not_assume_prop(P):- \+ assume_prop(P),!.
 
@@ -3047,7 +3047,7 @@ correct_antes1(TestID,IO_,P,PSame,SL):-
   findall(S,
    (member(S,PSame),
      \+ \+ ((
-       forall((ac_info_unit(TestID,IO_,DP,_,DSame),at_least_one_overlap(DSame,PSame)),
+       forall((ac_rules(TestID,IO_,DP,_,DSame),at_least_one_overlap(DSame,PSame)),
           ((P==DP)-> true; (member(DS,DSame),  
              \+ negated_s_lit(S,_), other_val(S,DS))))))),
    SL), SL\==[],!.
@@ -3103,9 +3103,9 @@ is_info_prop(iz(Info)):- compound(Info),Info = info(_).
 correct_pipe2c(IO,P1,Rules,Out):- trace,%mfail,
  must_det_ll((  
   my_partition(is_rule_about_same(IO,P1),Rules,AboutSame,AboutSimular),
-  findall(LHS,ac_info_unit(AboutSame,IO,_,_,LHS),RulesAboutSames),flatten(RulesAboutSames,RulesAboutSamesFlat),
+  findall(LHS,ac_rules(AboutSame,IO,_,_,LHS),RulesAboutSames),flatten(RulesAboutSames,RulesAboutSamesFlat),
     sames_must_have_sames(RulesAboutSamesFlat,BetterRulesAboutSames),BetterRulesAboutSames\==[],
-  findall(Info,ac_info_unit(AboutSame,IO,_,Info,_),InfoAboutSames),flatten(InfoAboutSames,InfoAboutSamesFlat),
+  findall(Info,ac_rules(AboutSame,IO,_,Info,_),InfoAboutSames),flatten(InfoAboutSames,InfoAboutSamesFlat),
     merge_vals(InfoAboutSamesFlat,BetterInfoAboutSames),
   append(AboutSimular,[ac_unit(_,IO,P1,[iz(info(BetterInfoAboutSames))|BetterRulesAboutSames])],Out))).
 correct_pass2c(_IO_,_P,Kept,Kept).
@@ -3113,9 +3113,9 @@ correct_pass2c(_IO_,_P,Kept,Kept).
 correct_pass2d(IO,P1,Rules,Out):- %mfail, %trace,
  must_det_ll((
   my_partition(is_rule_about(IO,P1),Rules,AboutSame,AboutSimular),
-  findall(LHS,ac_info_unit(AboutSimular,IO,_,_,LHS),RulesAboutSimulars),
+  findall(LHS,ac_rules(AboutSimular,IO,_,_,LHS),RulesAboutSimulars),
             differents_must_differents(RulesAboutSimulars,BetterRulesAboutSimulars),BetterRulesAboutSimulars\==[],
-  findall(Info,ac_info_unit(AboutSimular,IO,_,Info,_),InfoAboutSimulars),
+  findall(Info,ac_rules(AboutSimular,IO,_,Info,_),InfoAboutSimulars),
        merge_list_values(InfoAboutSimulars,InfoAboutSimularsFlat), merge_vals(InfoAboutSimularsFlat,BetterInfoAboutSimulars),
   append(AboutSame,[ac_unit(_,IO,P1,[iz(info(BetterInfoAboutSimulars))|BetterRulesAboutSimulars])],Out))).
 correct_pass2d(_IO_,_P,Kept,Kept).
@@ -3236,7 +3236,7 @@ remove_debug_info(List,NoDebug):- compound_name_arguments(List,F,AA),
 ac_unit(  List,Ctx,P,PSame):- is_list(List),!,member(R,List),R=..[_,_,Ctx,P,PSame].
 ac_unit(TestID,Ctx,P,PSame):- ac_db_unit(TestID,Ctx,P,PSame)*->true;(pass2_clause(TestID,SS),SS=ac_unit(TestID,Ctx,P,PSame)).
 
-ac_info_unit(TestID,Ctx,P,Info,NoDebug):- ac_unit(TestID,Ctx,P,PSame), my_partition(not_debug_info,PSame,NoDebug,Info).
+ac_rules(TestID,Ctx,P,Info,NoDebug):- ac_unit(TestID,Ctx,P,PSame), my_partition(not_debug_info,PSame,NoDebug,Info).
 %ac_unit(TestID,Ctx,P,[iz(info(prop_can))|PSame]):- prop_can(TestID,Ctx,P,PSame).
 %ac_unit(TestID,Ctx,P,[pass2|PSame]):- pass2_clause(TestID,Ctx,P,PSame), \+ ac_unit(TestID,Ctx,P,PSame).
 %ac_unit(TestID,Ctx,P->ac_unit,PSame):- ac_unit(TestID,Ctx,P,PSame).
@@ -3248,11 +3248,11 @@ ac_info_unit(TestID,Ctx,P,Info,NoDebug):- ac_unit(TestID,Ctx,P,PSame), my_partit
 
 
 
-ac_info(TestID,clauses,P->Ctx->current,LHS):- 
+ac_listing(TestID,clauses,P->Ctx->current,LHS):- 
   member(Ctx,[in_out,in_out_out,s(_)]),
   trans_clauses_current_members(TestID,Ctx,R),
   clause_to_pcp(R,P,LHS).
-ac_info(TestID,clauses,P->Ctx->combined,LHS):- fail,
+ac_listing(TestID,clauses,P->Ctx->combined,LHS):- fail,
   member(Ctx,[in_out,in_out_out,s(_)]),
   trans_clauses_combined_members(TestID,Ctx,R),
   clause_to_pcp(R,P,LHS).
@@ -3260,7 +3260,7 @@ ac_info(TestID,clauses,P->Ctx->combined,LHS):- fail,
 show_time_of_failure(_TestID):- !.
 show_time_of_failure(TestID):- 
     print_scene_change_clauses3(show_time_of_failure,
-       ac_info,TestID).
+       ac_listing,TestID).
 
 
 /*clause_to_pcp(_TestID,R,Ctx,P,LHS):- 

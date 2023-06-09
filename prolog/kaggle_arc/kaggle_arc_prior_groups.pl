@@ -1487,20 +1487,19 @@ add_how_common([Prop|O],Rest,[Prop|OO]):-
   add_how_common(O,Rest,OO).
   
 
-group_prior_objs1(Why,Objs,WithPriors):-   
+group_prior_objs1(_Why,Objs,WithPriors):-   
  must_det_ll((
  %print_list_of(show_indiv,add_rankings,Objs),!,
  flat_props(Objs,Flat),
  my_maplist(make_unifiable_cc,Flat,UFlat),
  variant_list_to_set(UFlat,Lbls),
- length_s(Lbls,Len),
- Title = Why+Len,
  length(Objs,ObjsLen),
-
- w_section(title(add_priors(Title)),
+ %Title = length_s(Lbls,Len),Why+Len,w_section(title(add_priors(Title)),
   %print_tree(groupPriors=Lbls,[max_depth(200)]),
-  with_tag_class(div,nonpre,
-     add_uset_priors(ObjsLen,[iz(sid(_))|Lbls],Objs,WithPriors))))).
+  %with_tag_class(div,nonpre,
+     add_uset_priors(ObjsLen,[iz(sid(_))|Lbls],Objs,WithPriors)
+   %  ))
+ )).
 
 skip_prior(HAD):- \+ compound(HAD),!.
 %skip_prior(HAD):- HAD=simularz(_,_),!,fail.

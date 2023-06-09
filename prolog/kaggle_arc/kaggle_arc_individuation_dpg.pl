@@ -2933,7 +2933,7 @@ one_fti(VM,by_color(Min,C)):-
    length(ThisGroup,Len),  Len >= Min,
    set(VM.lo_points)=LeftOver,
    meets_indiv_criteria(VM,birth(by_color),ThisGroup),
-   make_indiv_object(VM,[birth(by_color),iz(image),iz(shaped)],ThisGroup,ColorObj),
+   make_indiv_object(VM,[birth(by_color),iz(media(image)),iz(media(shaped))],ThisGroup,ColorObj),
    assumeAdded(VM,ColorObj)))).
 
 one_fti(VM,by_color(Min)):- 
@@ -2953,7 +2953,7 @@ try_shapelib(VM,Method,LibName,Reserved):-
   ignore((RL>30,progress(shape_lib_direct(LibName)=RL))),
   %smallest_first
   %largest_first(mass,Reserved,ReservedSL),
-  %debug_indiv(Reserved),
+  %print_info(Reserved),
   use_shapelib(VM,Method,LibName,Reserved),
   %intersection(SofarOut,Sofar,_Intersected,Found,_LeftOverB), as_debug(8,print_grid(H,V,'shape_lib'+VM.id,Found)),
   !.
@@ -2980,8 +2980,8 @@ try_shape(VM,Method,LibName,Shape):-
    show_match(OH,OV,OGrid,Grid),
  %  Grid = VM.grid,
    %print_ss(,OGrid),
-   localpoints_include_bg(Shape,OPoints),
-   offset_points(OH,OV,OPoints,ObjPoints),
+   localpoints_include_bg(Shape,LPoints),
+   offset_points(OH,OV,LPoints,ObjPoints),
    %Points = VM.lo_points,
    %intersection(ObjPoints,Points,Intersected,NeedAsWell,RestOfPoints),
    %Sofar = VM.robjs,
@@ -2998,7 +2998,7 @@ try_shape(VM,Method,LibName,Shape):-
    make_indiv_object(VM,[birth(shape_lib(Method,LibName)),vis2D(SH,SV),loc2D(OH,OV)|Include],ObjPoints,Indiv),  %obj_to_oid(Shape,_,Iv), %override_object(obj_to_oid(VM.id,Iv),Indiv0,Indiv),  %make_indiv_object(VM,Use,Indiv),
    %nop(points_to_grid(RestOfPoints,set(VM.grid))),  %print_grid(Indiv),
    %assumeAdded(VM,Indiv),
-   nop(debug_indiv(Indiv)))).
+   nop(print_info(Indiv)))).
    
 
 /*  
