@@ -693,12 +693,9 @@ grid_indv_versions(TestID, ExampleNum, Dir, LHOInS):-
 
 best_obj_group_pair(TestID, ExampleNum, How, InC, OutC):-
   GPL = best_ogp(TestID, ExampleNum, How, InC, OutC),
-  arc_test_property(TestID,common,ogpl,OGPL),!,
-  member(GPL,OGPL).
-best_obj_group_pair(TestID, ExampleNum, How, InC, OutC):-
-  GPL = best_ogp(TestID, ExampleNum, How, InC, OutC),
-  time(findall(GPL,best_obj_group_pair1(TestID, ExampleNum, How, InC, OutC), OGPL)),
-  assert_test_property(TestID,common,ogpl,OGPL),
+  (arc_test_property(TestID,ExampleNum,best_obj_group_pairs,OGPL)-> true ;
+   (time(findall(GPL,best_obj_group_pair1(TestID, ExampleNum, How, InC, OutC), OGPL)),
+     assert_test_property(TestID,ExampleNum,best_obj_group_pairs,OGPL))),
   member(GPL,OGPL).
  
 best_obj_group_pair1(TestID, ExampleNum, How, InC, OutC):-  
