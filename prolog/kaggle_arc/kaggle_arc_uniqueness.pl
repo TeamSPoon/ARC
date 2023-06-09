@@ -691,7 +691,17 @@ grid_indv_versions(TestID, ExampleNum, Dir, LHOInS):-
     length(InC,CI), CI=<50, objs_to_spoints(InC,InPSS)), LHOIn),
    sort(LHOIn,LHOInS),!.
 
-best_obj_group_pair(TestID, ExampleNum, How, InC, OutC):-  
+best_obj_group_pair(TestID, ExampleNum, How, InC, OutC):-
+  GPL = best_ogp(TestID, ExampleNum, How, InC, OutC),
+  arc_test_property(TestID,common,ogpl,OGPL),!,
+  member(GPL,OGPL).
+best_obj_group_pair(TestID, ExampleNum, How, InC, OutC):-
+  GPL = best_ogp(TestID, ExampleNum, How, InC, OutC),
+  time(findall(GPL,best_obj_group_pair1(TestID, ExampleNum, How, InC, OutC), OGPL)),
+  assert_test_property(TestID,common,ogpl,OGPL),
+  member(GPL,OGPL).
+ 
+best_obj_group_pair1(TestID, ExampleNum, How, InC, OutC):-  
   current_example_scope(TestID, ExampleNum),
   kaggle_arc(TestID, ExampleNum,_,_),
  time(((
@@ -700,9 +710,9 @@ best_obj_group_pair(TestID, ExampleNum, How, InC, OutC):-
   NRVarI= io(InPSS, OutPSS),
   How = in_out(HowIn,HowOut),
   no_repeats_var(NRVar)))),!,
-  ((member(lho(S,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),S=<50);
-   (member(lho(A,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),A<S);
-   (member(lho(S,InPSS,HowIn,InC),LHOInS),member(lho(A,OutPSS,HowOut,OutC),LHOOutS),A<S)),
+  ((member(lho(S,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),S=<80);
+   (member(lho(A,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),A<S,S=<80);
+   (member(lho(S,InPSS,HowIn,InC),LHOInS),member(lho(A,OutPSS,HowOut,OutC),LHOOutS),A<S,S=<80)),
   (NRVar=NRVarI-> nop(pp(nrVarI=NRVarI)); nop(wdmsg(duplicated(How))),fail).
 
 
