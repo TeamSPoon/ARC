@@ -311,10 +311,9 @@ possible_program(TestID,ActionGroupFinal,How,RulesOut):-
  GNR = group_narrative_rules(How,ActionGroupOut,Rules),
  ignore((ExampleNum=(trn+_))),
  starter_narratives(Starter))),
-
  must_ll((
    get_each_ndividuator(in,HowIn),
-   synth_program_from_one_example(TestID,ExampleNum,How,Starter,FirstNarrative,_)
+   synth_program_from_one_example(TestID,_ExampleNum0,How,Starter,FirstNarrative,_Rules0)
  )),
  findall(GNR,
     (kaggle_arc(TestID,ExampleNum,_,_), 
@@ -322,12 +321,14 @@ possible_program(TestID,ActionGroupFinal,How,RulesOut):-
  pp_ilp(hNRL=HNRL),
   maplist(arg(1),HNRL,HowL),some_min_unifier(HowL,How),
   maplist(arg(2),HNRL,AGL), some_min_unifier(AGL,ActionGroupFinal),
- maplist(arg(3),HNRL,RulesL),append(RulesL,RulesF),
+  maplist(arg(3),HNRL,RulesL),append(RulesL,RulesF),
+ pp_ilp(rulesF=RulesF),
  combine_trans_rules(TestID,RulesF,RulesOut).
 
 combine_trans_rules(_TestID,RulesOut,RulesOut).
 
-synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,Rules):-
+synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,RulesL):-
+  ExampleNum = (trn+_),
   ensure_test(TestID),
   starter_narratives(ActionGroup),
   %How = in_out(_HowIn,_HowOut),
@@ -410,21 +411,49 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   how_are_different(Left,Right,TypeSet,_PropSet), TypeSet=[], % no changes
   sub_compound(step(Step),Info),
   noteable_propdiffs(Left,Right,Same,_L,R),R==[],
-  append_LR(PrevRules, [rule(Info,Same,copy_object_perfect(Step))], RulesOut),
+  append_LR(PrevRules, [exists(left(Left)),rule(Info,Same,copy_object_perfect(Step))], RulesOut),
   incr_step(Info, InfoOut),
   true)), !.
 
-calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):-
+calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
+                      ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):- fail,
 ((
   narrative_element(copy_object_one_change(_,_),ActionGroupIn,ActionGroupOut),
   select(Left,LHSObjs,LHSOut),
   select(Right,RHSObjs,RHSOut),
   how_are_different(Left,Right,TypeSet,PropSet), TypeSet=[_], % no changes
   noteable_propdiffs(Left,Right,Same,_L,R),
-  append_LR(PrevRules, [rule(Info,Same,copy_object_one_change(PropSet,R))], RulesOut),
+  append_LR([Same],LHS),
+  append_LR(PrevRules, [exists(left(Left)),rule(Info,LHS,copy_object_one_change(PropSet,R))], RulesOut),
+  incr_step(Info, InfoOut),
+  true)), !.
+  
+calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
+                    ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):-
+((
+  narrative_element(copy_object_one_change(_,_),ActionGroupIn,ActionGroupOut),
+  select(Left,LHSObjs,LHSOut),
+  select(Right,RHSObjs,RHSOut),
+  how_are_different(Left,Right,TypeSet,PropSet), TypeSet=[_], % no changes
+  noteable_propdiffs(Left,Right,Same,_L,R),
+  into_list(PrevRules,Possibles),
+  maplist(find_relative_r(Info,Left,Right,Possibles),R,NewR,PreConds,NewRules),
+
+  append_LR(NewRules,NewRulesF),
+  append_LR([Same,PreConds],LHS),
+
+  subst_2L(R,NewR,Left,NewLeft),
+  append_LR(PrevRules, [exists(left(NewLeft)),NewRulesF,rule(Info,LHS,copy_object_one_change(PropSet,NewR))], RulesOut),
   incr_step(Info, InfoOut),
   true)), !.
 
+find_relative_r(Info,Left,Right,Possibles,R,NewR,[prop_of(NewR,R,Info)],[ac_unit(_,_,prop_of(NewR,R,_),LHS)]):- 
+  make_unifiable_u(R,E),  
+  member(P,Possibles),P\==Left,P\==Right,is_object(P),indv_props_list(P,Props),member(E,Props),E=@=R,
+  make_unifiable_u(E,NewR),
+  subst001(P,E,NewR,NewP),
+  into_lhs(NewP,LHS). 
+find_relative_r(_Info,_,_,_,R,R,[],[]):-!.
 
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
    ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):-
