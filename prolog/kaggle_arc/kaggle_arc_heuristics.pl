@@ -286,6 +286,13 @@ individualizer_heuristics(PairName,In,Out,IH,IV,OH,OV):-
   forall(clause(individuals_from_pair(PairName,In,Out,IH,IV,OH,OV,ShapesI,ShapesO),Body),
     (rtrace_on_error(once(Body)),rtrace_on_error(show_pair_no_i(IH,IV,OH,OV,shared,PairName,ShapesI,ShapesO)))).
 
+
+igo_pair(ROptions,GridIn,GridOut):-
+  my_time((maybe_name_the_pair(GridIn,GridOut,PairName),
+  individuate_pair(ROptions,GridIn,GridOut,InC,OutC),  
+  locally(nb_setval(debug_indiv,t),
+          show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC)))).
+
 /*
 individuals_from_pair(PairName,In,Out,IH,IV,OH,OV,ShapesI,ShapesO):-
   forall(clause(learn_shapelib(PairName,In,Out,IH,IV,OH,OV),Body),rtrace_on_error(once(Body))),

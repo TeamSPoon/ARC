@@ -81,10 +81,10 @@ i_opts(Shapes,count_equ(NF),Mono,Nsew,IncludeBG,VM):-
 seg_options(Opt):- nonvar(Opt),!.
 seg_options(Opt):-
  member(Opt,
-     [i_opts(shapes(none),count_equ(NF),colors(mono),dirs(diags_nsew),incl_bg(false)),
+     [i_opts(shapes(none),count_equ(NF),colors(each),dirs(diags_nsew),incl_bg(false)),
+      i_opts(shapes(none),count_equ(NF),colors(each),dirs(nsew),incl_bg(false)),            
+      i_opts(shapes(none),count_equ(NF),colors(mono),dirs(diags_nsew),incl_bg(false)),
       i_opts(shapes(none),count_equ(NF),colors(mono),dirs(nsew),incl_bg(false)),
-      i_opts(shapes(none),count_equ(NF),colors(each),dirs(nsew),incl_bg(false)),      
-      i_opts(shapes(none),count_equ(NF),colors(each),dirs(diags_nsew),incl_bg(false)),
       i_opts(shapes(none),count_equ(NF),colors(each),dirs(nsew),incl_bg(true)),
       %i_opts(shapes(none),count_equ(false),colors(each),dirs(diags_nsew),incl_bg(true)),
       i_opts(shapes(none),count_equ(NF),colors(each),dirs(points),incl_bg(false)),    
@@ -323,11 +323,11 @@ possible_program(TestID,ActionGroupFinal,How,RulesOut):-
   maplist(arg(2),HNRL,AGL), some_min_unifier(AGL,ActionGroupFinal),
   maplist(arg(3),HNRL,RulesL),append(RulesL,RulesF),
  pp_ilp(rulesF=RulesF),
- combine_trans_rules(TestID,RulesF,RulesOut).
+ merge_rules(TestID,RulesF,RulesOut).
 
-combine_trans_rules(_TestID,RulesOut,RulesOut).
+combine_trans_rules(TestID,RulesOut,RulesOut):-merge_rules(TestID,RulesOut,RulesOut).
 
-synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,RulesL):-
+synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,Rules):-
   ExampleNum = (trn+_),
   ensure_test(TestID),
   starter_narratives(ActionGroup),
@@ -373,11 +373,12 @@ expand_rules(R,R).
 		
 get_object_dependancy(TestID, ExampleNum, ActionGroupIn, ActionGroupOut, RHSObjs, LHSObjs, Groups):-
  ((RHSObjs\==[], LHSObjs\==[],
-      Step=0, Ctx=in_out,
       relaxed_levels(RelaxLvl),
-      ((once((normalize_objects_for_dependancy(RelaxLvl, TestID, ExampleNum, RHSObjs, LHSObjs, RHSObjsOrdered, LHSObjsOrdered),
-      InfoOut = [step(Step), relax(RelaxLvl), ctx(Ctx), example(ExampleNum), testid(TestID)],
-      calc_o_d_recursive(ActionGroupIn, InfoOut, [], LHSObjsOrdered, RHSObjsOrdered, ActionGroupOut, Groups))))))), !.
+      wots(RelaxLvlS,write(RelaxLvl)),
+      print_ss(get_object_dependancy(relax(RelaxLvlS)),RHSObjs, LHSObjs),
+    ((once((normalize_objects_for_dependancy(RelaxLvl, TestID, ExampleNum, RHSObjs, LHSObjs, RHSObjsOrdered, LHSObjsOrdered),
+      InfoIn = [step(0), relax(RelaxLvl), ctx(in_out), example(ExampleNum), testid(TestID)],
+      calc_o_d_recursive(ActionGroupIn, InfoIn, [], LHSObjsOrdered, RHSObjsOrdered, ActionGroupOut, Groups))))))), !.
 
 calc_o_d_recursive([],              _Info, PrevRules,     _,      _,             [], PrevRules):-!.
 calc_o_d_recursive(ActionGroupOut,  _Info, PrevRules,    [],      [],  ActionGroupOut, PrevRules).
@@ -387,13 +388,18 @@ calc_o_d_recursive(ActionGroupIn,     Info, PrevRules, LHSObjs, RHSObjs, ActionG
    length(PrevRules,PR),
    CI=<3,
    length(RHSObjs,CO),
-   pp_ilp([info=InfoOut,
-        prevRules=PR,
+   pp_ilp([info=Info,
+        prevRules=count(PR),
         narrativeIn = ActionGroupIn,
         in(CI)=call(print_grid(LHSObjs)), 
         out(CO)=call(print_grid(RHSObjs))])))),
   calc_o_d_recursively(ActionGroupIn,       Info, PrevRules, LHSObjs, RHSObjs, 
-                       ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut),
+                       ActionGroupOut, InfoMid, RulesOut, LHSOut, RHSOut),
+  intersection(RulesOut,PrevRules,_,RulesNew,_),
+  my_partition(is_functor(exists),RulesNew,_,RulesNewEww),
+  reverse(RulesNewEww,RulesNewer),
+  pp_ilp(new=RulesNewer), 
+  (Info==InfoMid-> incr_step(InfoMid, InfoOut) ; InfoMid=InfoOut),
   calc_o_d_recursive(ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut, ActionGroupFinal, Groups).
 
 calc_o_d_recursive([Skip|ActionGroupIn], Info, PrevRules, LHSObjs, RHSObjs, [Skip|ActionGroupFinal], Groups):- wdmsg(no_more(Skip)), 
@@ -447,12 +453,13 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   incr_step(Info, InfoOut),
   true)), !.
 
-find_relative_r(Info,Left,Right,Possibles,R,NewR,[prop_of(NewR,R,Info)],[ac_unit(_,_,prop_of(NewR,R,_),LHS)]):- 
+find_relative_r(Info,Left,Right,Possibles,R,NewR,[always(Expression),iz(info(Expression))],[ac_unit(_,_,Expression,[iz(info(Info)),iz(info(Expression))|LHS])]):- 
   make_unifiable_u(R,E),  
   member(P,Possibles),P\==Left,P\==Right,is_object(P),indv_props_list(P,Props),member(E,Props),E=@=R,
   make_unifiable_u(E,NewR),
-  subst001(P,E,NewR,NewP),
-  into_lhs(NewP,LHS). 
+  subst001(P,E,always(NewR),NewP),
+  into_lhs(NewP,LHS),
+  Expression=prop_of(_,NewR,R),!.
 find_relative_r(_Info,_,_,_,R,R,[],[]):-!.
 
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
@@ -1074,6 +1081,8 @@ score_rule(_Ways, Obj, PCond, _P, Score):- %fail,
 has_all_props(CanL, Obj):- maplist(inv_has_prop(Obj), CanL).
 score_all_props(CanL, Obj, Score):- maplist(inv_has_prop_score(Obj), CanL, ScoreL), sumlist(ScoreL, Score), !.
 
+assume_prop(P):- \+ compound(P),!,fail.
+assume_prop(always(_)):- !, fail.
 assume_prop(P):- \+ \+ assume_prop1(P), !.
 assume_prop(P):- \+ \+ assume_prop2(P), !.
 assume_prop(P):- \+ \+ is_debug_info(P).
@@ -1085,6 +1094,8 @@ is_debug_info(iz(P)):-!, is_debug_info(P).
 %not_assumed(P):- is_unbound_prop(P), !.
 %not_assumed(P):- \+ assume_prop(P).
 
+assume_prop1(P):- \+ compound(P),!,fail.
+assume_prop1(always(_)):- !, fail.
 assume_prop1(P):- dont_notice(P).
 assume_prop2(giz(_)).
 assume_prop2(mv4b(_)).
@@ -1114,6 +1125,7 @@ inv_has_prop2(_O, P):- \+ \+ assume_prop(P), !.
 
 inv_has_prop2(Obj, [P|T]):- !, inv_has_prop2(Obj, P), inv_has_prop2(Obj, T).
 inv_has_prop2(Obj, pg(_, B, C, D)):- has_prop(pg(_, B, C, D), Obj),!.
+inv_has_prop2(Obj, always(Prop)):- !, has_prop(Prop, Obj), !.
 inv_has_prop2(Obj, \+ Prop):- !, \+ inv_has_prop(Obj, Prop).
 inv_has_prop2(Obj, grid_ops(norm, Props)):- !, has_prop(grid_ops(norm, VProps), Obj), !, Props=@=VProps.
 inv_has_prop2(Obj, grid_rep(norm, Props)):- !, has_prop(grid_rep(norm, VProps), Obj), !, Props=@=VProps.
@@ -2173,7 +2185,7 @@ good_for_rhs(grid_rep(norm, _)).
 */
 good_for_rhs(loc2D(_, _)).
 good_for_rhs(pen(_)).
-
+good_for_rhs(prop_of(_,_,_)).
 good_for_rhs(delete(_)).
 good_for_rhs(edit(_)).
 good_for_rhs(edit(_, _, _)).
@@ -2187,6 +2199,8 @@ good_for_rhs(obj(_)).
 good_for_lhs(cc(bg, _)).
 good_for_lhs(cc(fg, _)).
 good_for_lhs(cc(_, 0)).
+good_for_lhs(always(_)).
+good_for_lhs(prop_of(_,_,_)).
 good_for_lhs(cc(FG, _)):- is_real_color(FG), !.
 %good_for_lhs(cc(_, _)):- !, fail.
 good_for_lhs(center2D(_, _)).

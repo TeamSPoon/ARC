@@ -69,11 +69,6 @@ igo(ROptions,GridIn):-
   into_grid(GridIn,Grid),
   locally(nb_setval(debug_indiv,t),show_individuated_nonpair(ig,ROptions,Grid,GridIn,IndvS)).
 
-igo_pair(ROptions,GridIn,GridOut):-
-  my_time((maybe_name_the_pair(GridIn,GridOut,PairName),
-  individuate_pair(ROptions,GridIn,GridOut,InC,OutC),  
-  locally(nb_setval(debug_indiv,t),
-          show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC)))).
 
 maybe_name_the_pair(In,Out,PairName):-
   ignore((kaggle_arc(TestID,ExampleNum,In,Out),

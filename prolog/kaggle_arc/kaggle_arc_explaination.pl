@@ -1006,8 +1006,10 @@ into_input_objects(TestID,ExampleNum,IO,In,Objs,VM):-
 
 ac_unit_visitor(AC_RULES_UNIT,_,_,_):- \+ compound(AC_RULES_UNIT),!,fail.
 ac_unit_visitor(ac_unit(_,IO,P,PSame),IO,P,PSame).
+ac_unit_visitor(ac_db_unit(_,IO,P,PSame),IO,P,PSame).
 ac_unit_visitor(((IO:P):- PSame),IO,P,PSame).
-ac_unit_visitor(ac_unit(_,IO,P,PSame),IO,P,PSame).
+ac_unit_visitor(ac_unit(IO,P,PSame),IO,P,PSame).
+ac_unit_visitor(ac_unit(P,PSame),_IO,P,PSame).
 ac_unit_visitor(ac_rules(_,IO,P,PSame),IO,P,PSame).
 ac_unit_visitor(ac_listing(_,IO,P,PSame),IO,P,PSame).
 
