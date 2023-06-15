@@ -81,10 +81,10 @@ i_opts(Shapes,count_equ(NF),Mono,Nsew,IncludeBG,VM):-
 seg_options(Opt):- nonvar(Opt),!.
 seg_options(Opt):-
  member(Opt,
-     [i_opts(shapes(none),count_equ(NF),colors(each),dirs(diags_nsew),incl_bg(false)),
-      i_opts(shapes(none),count_equ(NF),colors(each),dirs(nsew),incl_bg(false)),            
-      i_opts(shapes(none),count_equ(NF),colors(mono),dirs(diags_nsew),incl_bg(false)),
+     [i_opts(shapes(none),count_equ(NF),colors(mono),dirs(diags_nsew),incl_bg(false)),
       i_opts(shapes(none),count_equ(NF),colors(mono),dirs(nsew),incl_bg(false)),
+      i_opts(shapes(none),count_equ(NF),colors(each),dirs(nsew),incl_bg(false)),      
+      i_opts(shapes(none),count_equ(NF),colors(each),dirs(diags_nsew),incl_bg(false)),
       i_opts(shapes(none),count_equ(NF),colors(each),dirs(nsew),incl_bg(true)),
       %i_opts(shapes(none),count_equ(false),colors(each),dirs(diags_nsew),incl_bg(true)),
       i_opts(shapes(none),count_equ(NF),colors(each),dirs(points),incl_bg(false)),    
@@ -323,14 +323,14 @@ possible_program(TestID,ActionGroupFinal,How,RulesOut):-
   maplist(arg(2),HNRL,AGL), some_min_unifier(AGL,ActionGroupFinal),
   maplist(arg(3),HNRL,RulesL),append(RulesL,RulesF),
  pp_ilp(rulesF=RulesF),
- merge_rules(TestID,RulesF,RulesOut).
+ combine_trans_rules(TestID,RulesF,RulesOut).
 
-combine_trans_rules(TestID,RulesOut,RulesOut):-merge_rules(TestID,RulesOut,RulesOut).
+combine_trans_rules(TestID,RulesOutL,RulesOut):-merge_rules(TestID,RulesOutL,RulesOut).
 
-synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,Rules):-
-  ExampleNum = (trn+_),
+synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,RulesL):-
+  ignore(ExampleNum = (trn+_)),
   ensure_test(TestID),
-  starter_narratives(ActionGroup),
+  ignore(starter_narratives(ActionGroup)),
   %How = in_out(_HowIn,_HowOut),
   _GNR = group_narrative_rules(How,ActionGroupOut,Rules),
 
@@ -357,9 +357,10 @@ filter_rules(RulesR,RulesL):- include(is_functor(ac_unit),RulesR,RulesL).
 
 expand_rules(R,Rule):- is_list(R),!,member(E,R),expand_rules(E,Rule).
 expand_rules(exists(_),[]):- !.
+expand_rules(group_narrative_rules(_,_,R),Out):-!,expand_rules(R,Out).
 expand_rules(l2r(Info,In,Out),Rule):- !, trans_rule(Info,In,Out,Rules),expand_rules(Rules,Rule).
 expand_rules(rule(Info,LHS,P),ac_unit(_,Ctx,P,Body)):- !, flatten([LHS,Info,iz(info(Info))],Body),ignore(sub_cmpd(ctx(Ctx),Info)).
-expand_rules(ac_unit(_,Ctx,P0,LHS),ac_unit(_,Ctx,P0,LHS)):- !.
+expand_rules(AC_RULES_UNIT,ac_unit(_,IO,P,PSame)):- ac_unit_visitor(AC_RULES_UNIT,IO,P,PSame),!. 
 expand_rules(R,ac_unit(_,Ctx,P0,LHS)):- 
   must_det_ll((
   find_rhs(R,P),
@@ -373,12 +374,11 @@ expand_rules(R,R).
 		
 get_object_dependancy(TestID, ExampleNum, ActionGroupIn, ActionGroupOut, RHSObjs, LHSObjs, Groups):-
  ((RHSObjs\==[], LHSObjs\==[],
+      Step=0, Ctx=in_out,
       relaxed_levels(RelaxLvl),
-      wots(RelaxLvlS,write(RelaxLvl)),
-      print_ss(get_object_dependancy(relax(RelaxLvlS)),RHSObjs, LHSObjs),
-    ((once((normalize_objects_for_dependancy(RelaxLvl, TestID, ExampleNum, RHSObjs, LHSObjs, RHSObjsOrdered, LHSObjsOrdered),
-      InfoIn = [step(0), relax(RelaxLvl), ctx(in_out), example(ExampleNum), testid(TestID)],
-      calc_o_d_recursive(ActionGroupIn, InfoIn, [], LHSObjsOrdered, RHSObjsOrdered, ActionGroupOut, Groups))))))), !.
+      ((once((normalize_objects_for_dependancy(RelaxLvl, TestID, ExampleNum, RHSObjs, LHSObjs, RHSObjsOrdered, LHSObjsOrdered),
+      InfoOut = [step(Step), relax(RelaxLvl), ctx(Ctx), example(ExampleNum), testid(TestID)],
+      calc_o_d_recursive(ActionGroupIn, InfoOut, [], LHSObjsOrdered, RHSObjsOrdered, ActionGroupOut, Groups))))))), !.
 
 calc_o_d_recursive([],              _Info, PrevRules,     _,      _,             [], PrevRules):-!.
 calc_o_d_recursive(ActionGroupOut,  _Info, PrevRules,    [],      [],  ActionGroupOut, PrevRules).
@@ -388,18 +388,13 @@ calc_o_d_recursive(ActionGroupIn,     Info, PrevRules, LHSObjs, RHSObjs, ActionG
    length(PrevRules,PR),
    CI=<3,
    length(RHSObjs,CO),
-   pp_ilp([info=Info,
-        prevRules=count(PR),
+   pp_ilp([info=InfoOut,
+        prevRules=PR,
         narrativeIn = ActionGroupIn,
         in(CI)=call(print_grid(LHSObjs)), 
         out(CO)=call(print_grid(RHSObjs))])))),
   calc_o_d_recursively(ActionGroupIn,       Info, PrevRules, LHSObjs, RHSObjs, 
-                       ActionGroupOut, InfoMid, RulesOut, LHSOut, RHSOut),
-  intersection(RulesOut,PrevRules,_,RulesNew,_),
-  my_partition(is_functor(exists),RulesNew,_,RulesNewEww),
-  reverse(RulesNewEww,RulesNewer),
-  pp_ilp(new=RulesNewer), 
-  (Info==InfoMid-> incr_step(InfoMid, InfoOut) ; InfoMid=InfoOut),
+                       ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut),
   calc_o_d_recursive(ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut, ActionGroupFinal, Groups).
 
 calc_o_d_recursive([Skip|ActionGroupIn], Info, PrevRules, LHSObjs, RHSObjs, [Skip|ActionGroupFinal], Groups):- wdmsg(no_more(Skip)), 
@@ -453,13 +448,12 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   incr_step(Info, InfoOut),
   true)), !.
 
-find_relative_r(Info,Left,Right,Possibles,R,NewR,[always(Expression),iz(info(Expression))],[ac_unit(_,_,Expression,[iz(info(Info)),iz(info(Expression))|LHS])]):- 
+find_relative_r(Info,Left,Right,Possibles,R,NewR,[prop_of(NewR,R,Info)],[ac_unit(_,_,prop_of(NewR,R,_),LHS)]):- 
   make_unifiable_u(R,E),  
   member(P,Possibles),P\==Left,P\==Right,is_object(P),indv_props_list(P,Props),member(E,Props),E=@=R,
   make_unifiable_u(E,NewR),
-  subst001(P,E,always(NewR),NewP),
-  into_lhs(NewP,LHS),
-  Expression=prop_of(_,NewR,R),!.
+  subst001(P,E,NewR,NewP),
+  into_lhs(NewP,LHS). 
 find_relative_r(_Info,_,_,_,R,R,[],[]):-!.
 
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
@@ -2659,7 +2653,7 @@ save_grouped(Why, G):-
   mapgroup(register_obj, GS),
   maplist(obj_to_oid_u, GS, GGG),
   %maplist(obj_to_oid, GS, OIDs),
-  my_asserta_if_out(is_why_grouped_g(TestID, Len, Why, GGG)).
+  my_asserta_if_new(is_why_grouped_g(TestID, Len, Why, GGG)).
 
 obj_to_oid_u(Obj, OID):- obj_to_oid(Obj, OID).
 
@@ -3211,7 +3205,7 @@ print_scene_change_rules_if_different(Why, P4db, TestID):-
 maybe_color_this(Why, Color):- sub_term(Color, Why), is_color(Color), !.
 get_scene_change_rules(TestID, P4db, Rules):-
  ensure_test(TestID),
-  findall_vset_R(ac_rules(TestID, IO, P, PSame),
+  findall_vset_R(ac_rules(_, IO, P, PSame),
     call(P4db, TestID, IO, P, PSame), Rules).
 
 
@@ -3279,6 +3273,7 @@ why_last(E, E).
 find_rhs(ac_unit(_Tst, _IO, P, _PConds), Out):- into_rhs(P, Out).
 find_rhs(l2r(_Tst, _IO, P), Out):- into_rhs(P, Out).
 find_rhs(ac_db(_Tst, _IO, P, _PConds), Out):- into_rhs(P, Out).
+find_rhs(call(P), call(P)):- !.
 find_rhs(ac_db_unit(_Tst, _IO, P, _PConds), Out):- into_rhs(P, Out).
 find_rhs(ac_rules(_Tst, _IO, P, _PConds), Out):- into_rhs(P, Out).
 find_rhs(ac_listing(_Tst, _IO, P, _PConds), Out):- into_rhs(P, Out).
