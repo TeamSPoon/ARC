@@ -9,5 +9,20 @@
         "strings": "off"
     },
     "prolog.executablePath": "C:/Program Files/swipl/bin/swipl.exe",
-    "prolog.linter.enableMsgInOutput": true
+    "prolog.linter.enableMsgInOutput": true,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/.git/objects/**": true,
+        "**/*~": true,
+        "**/*~/**": true,
+        "**/~*": true,
+        "**/~*/**": true
+    },
+    "hide-files.files": [],
+    "workspace.isHidden": true
 }

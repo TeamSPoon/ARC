@@ -2087,6 +2087,8 @@ templify_cc(N-WP1,N-WP2):- !, templify_cc(WP1,WP2).
 
 
 make_unifiable_cc(WP1,WP2):- \+ compound(WP1),!,WP2=WP1.
+make_unifiable_cc(A1,A2):- var(A1),!,A2=A1.
+make_unifiable_cc(X1,X2):- verbatum_unifiable(X1),!,X2=X1.
 make_unifiable_cc(N-WP1,N-_):- \+ is_list(WP1),!.
 make_unifiable_cc(N-WP1,N-WP2):- !, make_unifiable_cc(WP1,WP2).
 make_unifiable_cc([H|T],[HH|TT]):- !, make_unifiable_cc(H,HH),make_unifiable_cc(T,TT).

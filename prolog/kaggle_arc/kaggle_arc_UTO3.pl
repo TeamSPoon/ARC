@@ -67,7 +67,7 @@ dont_deduce(P):- sub_term(G,P),compound(G),is_grid(G),!.
 dont_deduce(P):- sub_term(G,P),compound(G),is_object(G),!.
 dont_deduce(grid(_)).
 %dont_deduce(iz(_)).
-dont_deduce(iz(_)).
+%dont_deduce(iz(_)).
 
 %dont_deduce(P):- compound(P),compound_name_arguments(P,_,[X]),number(X).
 dont_deduce(grid_ops(comp,_)). 
@@ -3327,7 +3327,7 @@ make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
 
     loc2D(LocX,LocY), 
     iz(ngrid(NormNGrid)),
-    iz(orderX(LocX)),
+    iz(locX(LocX)),
     NSymCounts,
     unkept(loc2G(LocXG,LocYG)),
     kept(center2D(CentX,CentY)),

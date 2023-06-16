@@ -2234,6 +2234,7 @@ into_fti(TID,ROptions,GridIn0,VM):-
    % parent VM
    %training:_,
      %compare:_, 
+    rules:[],rules_p0:[],rules_p1:[],rules_p2 :[],
    target_grid:_,  last_key:_,  
    % Options and TODO List (are actually equal things)
    lo_program:Options, options:OOptions, 

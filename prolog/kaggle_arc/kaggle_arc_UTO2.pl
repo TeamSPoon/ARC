@@ -3939,7 +3939,7 @@ make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
    
     loc2D(LocX,LocY), 
     iz(ngrid(NormNGrid)),
-    iz(orderX(LocX)),
+    iz(locX(LocX)),
     NSymCounts,
     unkept(loc2G(LocXG,LocYG)),
     kept(center2D(CentX,CentY)),

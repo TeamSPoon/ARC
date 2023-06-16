@@ -660,8 +660,8 @@ too_verbose(norm_grid).
 %too_verbose(link).
 too_verbose(rotated_grid).
 %too_verbose(wide). too_verbose(tall).
-too_verbose(locX).
-too_verbose(locY).
+%too_verbose(locX).
+%too_verbose(locY).
 too_verbose(cenGX).
 too_verbose(cenGY).
 
@@ -901,6 +901,7 @@ ensure_individuals(TestID,ExampleNum,GridIn,GridOut):-
 
 print_individuals(TestID):- 
     ensure_test(TestID),
+    calc_best_individuals(TestID),
     print_best_individuals(TestID),!.
 
 print_individuals(TestID):- ensure_test(TestID), deduce_individuator(TestID),!.
@@ -1014,6 +1015,8 @@ ac_unit_visitor(ac_rules(_,IO,P,PSame),IO,P,PSame).
 ac_unit_visitor(ac_listing(_,IO,P,PSame),IO,P,PSame).
 
 pp_ilp(Grp):- must_det_ll(pp_ilp(1,Grp)),!.
+
+pp_ilp(D,T):- is_cgi, \+ in_pre,!,with_pre(pp_ilp(D,T)).
 
 pp_ilp(D,T):-  T==[],!,prefix_spaces(D,write('[] ')),!.
 pp_ilp(D,_):-  D > 0, format('~N'),fail.

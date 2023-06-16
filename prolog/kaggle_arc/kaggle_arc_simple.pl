@@ -17,145 +17,170 @@
 :- discontiguous is_fti_step/1.
 
 
-% =====================================================================
-is_fti_step(vm_opts_some).
-% =====================================================================
-vm_opts_some(Shapes,count_equ(NF),Mono,Nsew,IncludeBG,VM):-
-  SegOptions = i_opts(Shapes,count_equ(NF),Mono,Nsew,IncludeBG),
-  GPoints = VM.lo_points,
-  %filter_points(SegOptions,GPoints,Points),
-  must_det_ll(once(color_masses(VM.h,VM.v,VM.start_points,GPoints,SegOptions,Segs))),
-  gset(VM.lo_points) = [],
-  maplist(make_indiv_object(VM,[iz(birth(SegOptions))]),Segs,Objs),
-  assumeAdded(VM,Objs),!.
-
-% =====================================================================
-is_fti_step(i_opts).
-% =====================================================================
-i_opts(Shapes,count_equ(NF),Mono,Nsew,IncludeBG,VM):-
-  vm_opts_some(Shapes,count_equ(NF),Mono,Nsew,IncludeBG,VM).
-
-
-seg_options(Opt):- nonvar(Opt),!.
-seg_options(Opt):-
- member(Opt,
-     [i_opts(shapes(none),count_equ(NF),colors(mono),dirs(diags_nsew),incl_bg(false)),
-      i_opts(shapes(none),count_equ(NF),colors(mono),dirs(nsew),incl_bg(false)),
-      i_opts(shapes(none),count_equ(NF),colors(each),dirs(nsew),incl_bg(false)),      
-      i_opts(shapes(none),count_equ(NF),colors(each),dirs(diags_nsew),incl_bg(false)),
-      i_opts(shapes(none),count_equ(NF),colors(each),dirs(nsew),incl_bg(true)),
-      %i_opts(shapes(none),count_equ(false),colors(each),dirs(diags_nsew),incl_bg(true)),
-      i_opts(shapes(none),count_equ(NF),colors(each),dirs(points),incl_bg(false)),    
-      i_opts(shapes(none),count_equ(false),colors(mono),dirs(diags_nsew),incl_bg(true)),
-      i_opts(shapes(none),count_equ(false),colors(mono),dirs(nsew),incl_bg(true)),
-      i_opts(shapes(none),count_equ(false),colors(each),dirs(points),incl_bg(true))]),dif(count_equ(NF),false ).
-filter_points(i_opts(_,_,_Mono,_Diag,incl_bg(true)),Points,Points).
-filter_points(i_opts(_,_,_Mono,_Diag,incl_bg(false)),GPoints,Points):- my_partition(is_fg_point,GPoints,Points,_).
-dir_ok(_,i_opts(shapes(none),_,_,dirs(points),_)):-!,fail.
-dir_ok(D,i_opts(shapes(none),_,_,dirs(nsew),_)):-!, n_s_e_w(D).
-dir_ok(D,i_opts(shapes(none),_,_,dirs(diags_nsew),_)):-!, (n_s_e_w(D);is_diag(D)).
-dir_ok(_,i_opts(shapes(none),_,_,any,_)).
-color_dir_kk(_  ,Color):- is_fg_color(Color),!.
-color_dir_kk(Dir,Color):- is_bg_color(Color),!, \+ is_diag(Dir).
-colors_joinable(i_opts(shapes(none),_,colors(mono),_,_),C1,C2):- is_fg_color(C1),is_fg_color(C2).
-colors_joinable(i_opts(shapes(none),_,colors(each),_,_),C1,C1):- is_fg_color(C1).
-colors_joinable(i_opts(shapes(none),_,colors(black),_,_),C1,C1):- is_bg_color(C1).
-colors_joinable(i_opts(shapes(none),_,_,_,incl_bg(true)),C1,C1):- is_bg_color(C1).
-
-/*
-simple_individuators(TestID):-
- ensure_test(TestID),
-  dash_chars, 
-  NRVarI= io(InC, OutC),
-  no_repeats_var(NRVar),
-  forall(kaggle_arc(TestID,ExampleNum,In,Out),
-    forall(seg_options(Opt),
-      (textured_points_of(In,Opt,CI,InC),
-       textured_points_of(Out,Opt,CO,OutC),
-       (NRVar=NRVarI-> 
-       (dash_chars,print_ss(wqs(TestID >ExampleNum,ci_co(CI,CO)),InC,OutC),nl,
-        write('       '),wqs(Opt));
-        (write('\n% DUP       '),wqs(Opt)))))).
-*/
-objs_to_spoints(InC,InPSS):-
-  maplist(globalpoints,InC,InP),maplist(sort,InP,InPS),sort(InPS,InPSS).
-
-print_simple_individuals(TestID):-
- ensure_test(TestID),
-  dash_chars, 
-  NRVarI= io(InPSS, OutPSS),
-  no_repeats_var(NRVar),
-  forall(kaggle_arc(TestID,ExampleNum,In,Out),
-    forall(seg_options(Opt),
-      ignore(
-      (objects_of(In,Opt,CI,InC),
-       objects_of(Out,Opt,CO,OutC),
-       objs_to_spoints(InC,InPSS),
-       objs_to_spoints(OutC,OutPSS),
-       (NRVar=NRVarI-> 
-       (dash_chars,print_ss(wqs(TestID >ExampleNum,ci_co(CI,CO)),InC,OutC),nl,
-        write('       '),wqs(Opt));
-        (write('\n% DUP       '),wqs(Opt))))))).
-
-
-rest_are_points([P|PointsRest],[[P]|More]):-
-  rest_are_points(PointsRest,More),!.
-rest_are_points([],[]).
-
-color_masses(_H,_V,_Orig,Points,_SegOptions,[]):- Points==[],!.
-
-% into_grid('37d3e8b2',G),seg_options(Opt),individuate_3(Opt,G,InC),print_grid(Opt,InC)
-color_masses(_H,_V,_Orig,[P|PointsRest],SegOptions,[[P]|More]):-
-  SegOptions = i_opts(_,_,_,D,incl_bg(true)),D=dirs(points),!,
-  rest_are_points(PointsRest,More),!.
-
-color_masses(H,V,Orig,PointsRest,SegOptions,More):-
-   SegOptions = i_opts(A,B,C,D,incl_bg(true)),
-   my_partition(is_fg_point,PointsRest,FGPoints,BGPoints),
-   NewOpts = i_opts(A,B,colors(black),dirs(nsew),incl_bg(false)),
-   color_masses(H,V,Orig,BGPoints,NewOpts,BlackObjs),
-   NextOpts = i_opts(A,B,C,D,incl_bg(false)),
-   color_masses(H,V,Orig,FGPoints,NextOpts,FGObjs),
-   append(FGObjs,BlackObjs,More).
-
-color_masses(H,V,Orig,Points,SegOptions,[GPoints|More]):-   
-  select(C1-HV1,Points,Points2),
-  is_adjacent_point(HV1,Dir1,HV2),Dir1\==c,
-  select(C2-HV2,Points2,PointsRest),colors_joinable(SegOptions,C1,C2),
-  dir_ok(Dir1,SegOptions),color_dir_kk(Dir1,C1), % PointsFrom,ScanPoints,NextScanPoints,IndvPoints
-  all_points_near(Orig,SegOptions,[C1-HV1,C2-HV2],PointsRest,LeftOver,GPoints),!,
-  color_masses(H,V,Orig,LeftOver,SegOptions,More).
-
-color_masses(H,V,Orig,Points,SegOptions,[GPoints|More]):-   
-  select(C1-HV1,Points,PointsRest), 
-  all_points_near(Orig,SegOptions,[C1-HV1],PointsRest,LeftOver,GPoints),
-  color_masses(H,V,Orig,LeftOver,SegOptions,More).
-
-%
-
-color_masses(H,V,Orig,[P|PointsRest],SegOptions,[[P]|More]):-
-  color_masses(H,V,Orig,PointsRest,SegOptions,  More),!.
 
 
 
 
-seg_options(OptsIn, OptsIn):- seg_options(OptsIn).
-seg_options(OptsIn,OptsOut):- seg_options(OptsIn),seg_options(OptsOut), OptsIn\=@=OptsOut.
-seg_options(Equation,OptsIn,OptsOut):-seg_options(OptsIn,OptsOut), arg(1,OptsIn,Equation).
-ensure_objscount_equation(equals).
-ensure_objscount_equation(input_times_n(_)).
-ensure_objscount_equation(input_div_n(_)).
-ensure_objscount_equation(input_minus_n(_)).
-ensure_objscount_equation(input_plus_n(_)).
-ensure_objscount_equation(becomes(_)).
-ensure_objscount_equation(false ).
-objscount_equation(equals,ObjsCountIn,ObjsCountOut):- ObjsCountIn=ObjsCountOut,ObjsCountIn>=2.
-objscount_equation(input_times_n(N),ObjsCountIn,ObjsCountOut):- ObjsCountIn * N #= ObjsCountOut, N #>=2.
-objscount_equation(input_div_n(N),ObjsCountIn,ObjsCountOut):- ObjsCountIn #= N * ObjsCountOut, N #>=2.
-objscount_equation(input_minus_n(N),ObjsCountIn,ObjsCountOut):- ObjsCountIn #= N + ObjsCountOut, N #>=2.
-objscount_equation(input_plus_n(N),ObjsCountIn,ObjsCountOut):- ObjsCountIn + N #= ObjsCountOut, N #>=2.
-objscount_equation(becomes(2),_ObjsCountIn,2).
-objscount_equation(false,_,_).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 segs_overlap(TestID,FAO):-
@@ -236,8 +261,6 @@ deduce_individuator2(TestID):-
     textured_points_of(Out,OptsOut,CO,PointsOut),
     print_ss(wqs([TestID,ExampleNum,in_out(SI-OptsIn,SO-OptsOut,CI,CO)]),PointsIn,PointsOut)))).
 
-
-
  
 pairs_of_common_seg_1(TestID,IO,OptsIn,Simularity):-
  ensure_test(TestID),
@@ -285,47 +308,6 @@ sobjs_of(Grid,SegOptions,ObjsCount,Objs):-
   segs_of(Grid,SegOptions,ObjsCount,Segs),
   maplist(into_sobjs,Segs,Objs).
 
-objects_of(Grid,SegOptions,ObjsCount,IndvS):-
-  segs_of(Grid,SegOptions,ObjsCount,Segs),
-  segs_to_objects(Grid,SegOptions,Segs,IndvS).
-
-segs_to_objects(Grid,SegOptions,Segs,IndvS):- 
-  into_fti(_,[SegOptions,do_ending],Grid,VM),
-  gset(VM.lo_points)=[],
-  gset(VM.lo_program)=[],
-  maplist(make_indiv_object(VM,[iz(birth(SegOptions))]),Segs,_Objs),
-  post_individuate_8(VM,IndvS),!.
-  %maplist(print_info,IndvS),
-  %length(IndvS,ObjsCount),
-  
-
-textured_points_of(Grid,SegOptions,ObjsCount,Points):-
-  seg_options(SegOptions),
-  segs_of(Grid,SegOptions,ObjsCount,Segs),
-  segs_into_points(Segs,Points).
-
-segs_into_points(Segs,Points):-
-   segs_into_n_points(1,Segs,Points).
- 
-segs_into_n_points(N,[S|Segs],PPoints):-
-   segs_into_plist(N,S,P), M is N+1,
-   segs_into_n_points(M,Segs,Points),
-   append(P,Points,PPoints).
-segs_into_n_points(_,[],[]).
-
-segs_into_plist(N,S,P):- M is N+300, int2glyph(M,G), maplist(segs_into_p(G),S,P).
-segs_into_p(N,C-P,N-C-P):-!. segs_into_p(N,P,N-P).
- 
-segs_of(In,SegOptions,ObjsCount,Objs):- 
- seg_options(SegOptions),
- (var(In)->into_grid(_,In);true),
-  vis2D(In,H,V),
-  once(globalpoints(In,GPoints)),
-  filter_points(SegOptions,GPoints,Points),
-  once(color_masses(H,V,GPoints,Points,SegOptions,Objs)),
-  length(Objs,ObjsCount), ObjsCount=<80.
-
-
 
 into_sobjs(Points,[
   mass(Mass),center2D(CX,CY),vis2D(SX,SY), color_cc(CC),globalpoints(Points),
@@ -353,28 +335,6 @@ min_max([H|T], MinSoFar, MaxSoFar, Min, Max) :-
     NewMax is max(H, MaxSoFar),
     min_max(T, NewMin, NewMax, Min, Max).
   
-
-all_points_near(_Orig,_SegOptions,NewSet,[],        [],         NewSet):-!.
-all_points_near( Orig,SegOptions,Indv, ScanPoints,NewScanPoints,NewSet):-
-   points_near(SegOptions,Indv,ScanPoints,New,NextScanPoints),
-   (New == [] -> (NewSet = Indv, NewScanPoints = NextScanPoints)
-    ; (append(Indv,New,IndvNew),
-        all_points_near(Orig,SegOptions,IndvNew,NextScanPoints,NewScanPoints,NewSet))),!.
-
-points_near(_SegOptions,_From,[],[],[]):-!.
-points_near(SegOptions,From,[E|ScanPoints],[E|Nears],NextScanPoints):- 
-  nearby_one(SegOptions,E,From),
-  points_near(SegOptions,[E|From],ScanPoints,Nears,NextScanPoints).
-points_near(SegOptions,From,[E|ScanPoints],Nears,[E|NextScanPoints]):- 
-    points_near(SegOptions,From,ScanPoints,Nears,NextScanPoints).
-
-nearby_one(SegOptions,C1-E1,List):- is_adjacent_point(E1,Dir,E2),Dir\==c,
-  dir_ok(Dir,SegOptions),color_dir_kk(Dir,C1),
-  member(C2-E2,List),colors_joinable(SegOptions,C1,C2).
-
- 
-
-
 
 
 solve_easy:- get_current_test(Name),solve_easy(Name).
@@ -587,8 +547,7 @@ grid_object(Grid,mass(N),object(Points,Color)):-
   findall(HV4,(member(ColorHV4,Rest),is_adjacent_point(HV1,_,HV5),is_adjacent_point(HV5,_,HV4)),AdjRest).
 
 
+:- include(kaggle_arc_footer).
 
 :- consult(kaggle_arc_logicmoo).
-
-:- include(kaggle_arc_footer).
 

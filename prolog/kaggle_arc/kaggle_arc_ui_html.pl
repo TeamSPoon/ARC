@@ -405,7 +405,7 @@ save_in_luser(N,V):- decode_luser(V,VV),save_in_luser2(N,VV).
 
 save_in_luser2(task,V):- !, set_current_test(V),get_current_test(CT),dmsg(current_test(V-->CT)).
 save_in_luser2(test_suite_name,V):- !, nop(maybe_set_suite(V)).
-%save_in_luser2(cmd,V):-  !, ignore(set_test_cmd(V)),!.
+%save_in_luser2(webcmd,V):-  !, ignore(set_test_cmd(V)),!.
 save_in_luser2(N,V):- luser_setval(N,V), luser_default(N,V), 
   ignore((is_list(V),last(V,E),compound(E),save_in_luser(V))).
 
@@ -1154,7 +1154,7 @@ write_http_link(Info,Goal):- nonvar(Goal), %toplevel_pp(PP), %first_current_exam
   get_current_test_atom(TestAtom), %get_current_test(TestID), term_to_www_encoding(TestID,TestAtom), %in_pp(PP),  
   term_to_www_encoding(Goal,CmdAtom),
   into_title_str(Info,Info1),
-  sformat(SO,'<a href="?cmd=~w" target="_top">~w</a>~n',[CmdAtom,TestAtom,Info1]),!,
+  sformat(SO,'<a href="?webcmd=~w" target="_top">~w</a>~n',[CmdAtom,TestAtom,Info1]),!,
   our_pengine_output(SO),!.
 
 arcproc_iframe(Request):- 
@@ -1259,7 +1259,7 @@ nop((format_s(`
   sccs(true,arcproc_now_main, write_arc_end(Where)).
 
 % ansi
-arcproc_now_main :- call_current_arc_cmd(cmd),!.
+arcproc_now_main :- call_current_arc_cmd(webcmd),!.
 arcproc_now_main :- show_selected_object,!.
 
 arcproc_right(Request):- 
@@ -1405,12 +1405,12 @@ get_now_cmd(Cmd,Prolog):- get_param_req(Cmd,Call),url_decode_term(Call,Prolog).
 
 call_current_arc_cmds_pp:- with_toplevel_pp(http,call_current_arc_cmds).
 
-%call_current_arc_cmds:- get_now_cmd('cmd',Prolog), dmsg(call_current_arc_cmds(cmd)=Prolog), trace, !,invoke_arc_cmd(Prolog).
-call_current_arc_cmds:- luser_getval('cmd',Prolog), dmsg(call_current_arc_cmds(cmd)=Prolog), !,invoke_arc_cmd(Prolog).
+%call_current_arc_cmds:- get_now_cmd('webcmd',Prolog), dmsg(call_current_arc_cmds(webcmd)=Prolog), trace, !,invoke_arc_cmd(Prolog).
+call_current_arc_cmds:- luser_getval('webcmd',Prolog), dmsg(call_current_arc_cmds(webcmd)=Prolog), !,invoke_arc_cmd(Prolog).
 call_current_arc_cmds:- print_test,!. %,print_all_info_for_test,do_web_menu_key('t'),!.
 /*
 call_current_arc_cmds:- 
- call_current_arc_cmd(cmd),
+ call_current_arc_cmd(webcmd),
  call_current_arc_cmd(cmd2),
  call_current_arc_cmd(footer_cmd).
 */
@@ -1540,15 +1540,15 @@ arc_script_header2:-
 arc_weto(G):- call_e_dmsg(G).
 
 
-%:- luser_default(cmd,print_test).
-:- luser_default(cmd,ndividuator). 
+%:- luser_default(webcmd,print_test).
+:- luser_default(webcmd,ndividuator). 
 :- luser_default(footer_cmd,statistics).
 
-current_arc_cmd(Prolog):- current_arc_cmd('cmd',Prolog).
-%current_arc_cmd(cmd,Prolog):- luser_getval(cmd,Prolog).
-%current_arc_cmd(cmd,Prolog):- luser_getval(cmd,Prolog).
+current_arc_cmd(Prolog):- current_arc_cmd('webcmd',Prolog).
+%current_arc_cmd(webcmd,Prolog):- luser_getval(webcmd,Prolog).
+%current_arc_cmd(webcmd,Prolog):- luser_getval(webcmd,Prolog).
 current_arc_cmd(V,Prolog):- luser_getval(V,Prolog).
-%current_arc_cmd(footer_cmd,Prolog):- (\+ current_arc_cmd(cmd,menu) -> luser_getval(footer_cmd,Prolog,menu) ; luser_getval(footer_cmd,Prolog,edit1term)).
+%current_arc_cmd(footer_cmd,Prolog):- (\+ current_arc_cmd(webcmd,menu) -> luser_getval(footer_cmd,Prolog,menu) ; luser_getval(footer_cmd,Prolog,edit1term)).
 
 
 %muarc:test_arcui

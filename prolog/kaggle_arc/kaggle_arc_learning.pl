@@ -789,6 +789,7 @@ make_unifiable(A1,A2):- make_unifiable0(A1,O),!,A2=O.
 
 make_unifiable0(C1,_):- \+ compound(C1),fail.
 make_unifiable0(A1,A2):- var(A1),!,A2=A1.
+make_unifiable0(X1,X2):- verbatum_unifiable(X1),!,X2=X1.
 make_unifiable0(pg(A,B,C,_),pg(A,B,C,_)):-!.
 make_unifiable0(cc(C,_),cc(C,_)):-!.
 make_unifiable0(iz(C1),iz(C2)):- !, make_unifiable(C1,C2).
