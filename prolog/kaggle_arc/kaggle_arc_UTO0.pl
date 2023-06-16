@@ -153,8 +153,7 @@ specific_value(X,V):- sub_term(V,X),V\=X,comparable_value(V).
 
 same_prop_names(X1,X2):- maybe_deref_value(X1,E1), !, same_prop_names(E1,X2).
 same_prop_names(X2,X1):- maybe_deref_value(X1,E1), !, same_prop_names(X2,E1).
-same_prop_names(X1,X2):- (verbatum_unifiable(X1);verbatum_unifiable(X2)),!,fail.
-same_prop_names(X1,X2):-
+same_prop_names(X1,X2):- 
   compound(X1),compound(X2), same_functor(X1,X2),!,
   make_unifiable_u(X1,U1), make_unifiable_u(X2,U2),!,  U1 =@= U2.
 
@@ -162,16 +161,12 @@ same_prop_names(X1,X2):-
 make_unifiable_u(X1,X2):- maybe_deref_value(X1,E1), !, make_unifiable_u(E1,X2).
 make_unifiable_u(P,U):- copy_term(P,PP),make_unifiable_u1(PP,U),!.
 make_unifiable_u1(Atom,U):- is_ftVar(Atom),!,Atom=U.
-make_unifiable_u1(X1,X1):- verbatum_unifiable(X1),!.
 make_unifiable_u1(Atom,U):- atomic(Atom),!,freeze(U,atomic(U)).
 make_unifiable_u1(link(sees(L),A),link(sees(U),B)):- !, maplist(make_unifiable_u,[A|L],[B|U]),!.
 
 make_unifiable_u1(P,U):- assume_prop(P),!,P=U.
 make_unifiable_u1(X1,U1):- make_unifiable_cc(X1,U1),!.
 make_unifiable_u1(X1,X1).
-
-verbatum_unifiable(Var):-var(Var),fail.
-verbatum_unifiable(always(_)).
 
 make_unifiable_ov(I,O):- make_unifiable_u(I,O),!.
 
@@ -3943,7 +3938,8 @@ make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
    
     loc2D(LocX,LocY), 
     iz(ngrid(NormNGrid)),
-    %iz(locX(CentX)), iz(locY(CentY)),
+    iz(orderX(CentX)),
+    iz(orderY(CentY)),
     NSymCounts,
     unkept(loc2G(LocXG,LocYG)),
     kept(center2D(CentX,CentY)),

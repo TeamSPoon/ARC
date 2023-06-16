@@ -80,7 +80,7 @@ function clickGrid(name) {
             return;
         navToParams({
             grid: name,
-            webcmd: "click_grid"
+            cmd: "click_grid"
         });
     }
 }
@@ -269,7 +269,7 @@ function everyoneScrollLeftFrame() {
 function navCmd(target) {
     console.log("navCmd(" + target + ")");
     navToParams({
-        webcmd: target
+        cmd: target
     });
 
     return false;
@@ -584,7 +584,7 @@ function getFormDicts() {
 
 function ignoredData(key) {
     if (key == null || key == undefined || key == [] || key == {} || key == 'nothing') return true;
-    if (key == 'undefined' || key === "" || key == " " || key === "icmd" || key === "webcmd") return true;
+    if (key == 'undefined' || key === "" || key == " " || key === "icmd" || key === "cmd") return true;
     if ((typeof key === 'string') && key.includes("accord")) return true;
     return false;
 }
@@ -724,7 +724,7 @@ function navToParams(jsonDict) {
             continue;
         console.log(`old ${key}: ${value}`);
     }
-    oldSrch.delete("webcmd");
+    oldSrch.delete("cmd");
     oldSrch.delete("grid");
     for (const [key, value] of oldSrch.entries()) {
         if (ignoredData(key))
@@ -1084,7 +1084,7 @@ function correctCmd(sessCmd) {
 
     let oldSrch = new URLSearchParams(top.window.location.search);
     oldSrch.delete("icmd");
-    oldSrch.delete("webcmd");
+    oldSrch.delete("cmd");
     for (const [key, value] of oldSrch.entries()) {
         if (ignoredData(key))
             continue;
@@ -1465,7 +1465,7 @@ function interceptClickEvent(e) {
                 }
                 navToParams(href);
                 return;
-            } else if (href.includes("webcmd=")) {
+            } else if (href.includes("cmd=")) {
                 var i = href.indexOf('?');
                 if (i > 0) {
                     href = href.substring(i);

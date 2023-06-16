@@ -871,12 +871,12 @@ prop_type_type(repaint).
 prop_type_type(reorder).
 
 
-%type_prop(reposition,loc2G(_,_)).
 type_prop(reposition,loc2D(_,_)).
-type_prop(reposition,iz(locX(_))).
-type_prop(reposition,iz(locY(_))).
 type_prop(reposition,center2G(_,_)).
+%type_prop(reposition,loc2G(_,_)).
+type_prop(reposition,iz(locX(_))).
 type_prop(reposition,iz(cenGX(_))).
+type_prop(reposition,iz(locY(_))).
 type_prop(reposition,iz(cenGY(_))).
 type_prop(reposition,edge(_,_)).
 %type_prop(rerelate,link(_,_)).
@@ -898,10 +898,10 @@ type_prop(reshape,iz(algo_sid(_, _))).
 type_prop(reshape,iz(filltype(_))).
 type_prop(reshape,iz(symmetry_type(_,_))).
 type_prop(reshape,grid_rep(norm,_)).
-%type_prop(repaint,colors_cc(_)).
+type_prop(repaint,colors_cc(_)).
 type_prop(repaint,pen(_)).
 type_prop(repaint,cc(_,_)).
-%type_prop(repaint,grid_rep(norm,_)).
+type_prop(repaint,grid_rep(norm,_)).
 
 type_prop(reorder,pg(_Peers,_OG,_Type,_Ord)).
 type_prop(reorder,link_count(_,_)).
@@ -912,7 +912,7 @@ changed_by(loc2D,move).
 changed_by(mass,grow).
 changed_by(localpoints,reshape_and_recolor).
 changed_by(rot2D,rotate).
-%changed_by(colors_cc,repaint).
+changed_by(colors_cc,repaint).
 changed_by(vis2D,copy).
 
 link_prop_types(Loc,O1,O2,Ps):-

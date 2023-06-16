@@ -450,7 +450,7 @@
                 var row = tableMySideNavL.insertRow(-1);
                 var cell1 = row.insertCell(0);
                 var cell2 = row.insertCell(1);
-                cell2.innerHTML = `<a target='lm_xref' href="?webcmd=preview_suite('${key}')">${key}</a>`;
+                cell2.innerHTML = `<a target='lm_xref' href="?cmd=preview_suite('${key}')">${key}</a>`;
                 cell1.innerHTML = `${suite_menu[key]}`;
             }
         </script>
@@ -466,46 +466,46 @@
             <ul id="test_commands_menu" class="nav nav-pills" style="font-size: 12px; white-space: normal; color: white">
                 <ul id="test_command_items" class="nav nav-pills" style="font-size: 10px; white-space: nowrap"></ul>
                 With selected test: ....
-                <li class="nav-item"><a class="nav-link" href="?webcmd=t">You may fully (t)rain from examples</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=i">See the (i)ndividuation correspondences in the input/outputs</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=t">You may fully (t)rain from examples</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=i">See the (i)ndividuation correspondences in the input/outputs</a></li>
 
-                <li class="nav-item"><a class="nav-link" href="?webcmd=I">FULL (I)ndividuation</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=o">&nbsp;(o)bjects found in the input/outputs</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=u">&nbsp;(u)niqueness between objects in the input/outputs</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=I">FULL (I)ndividuation</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=o">&nbsp;(o)bjects found in the input/outputs</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=u">&nbsp;(u)niqueness between objects in the input/outputs</a></li>
 
-                <li class="nav-item"><a class="nav-link" href="?webcmd=y">Wh(y) between objects in the input/outputs</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=a">&nbsp;(a)ll between objects</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=j">&nbsp;(j)unctions between objects</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=k">&nbsp;(k)ill/clear all test data.</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=B">&nbsp;(B)oxes test.</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=R">&nbsp;(R)epairs test.</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=g">&nbsp;(g)ridcells between objects in the input/outputs</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=p">&nbsp;(p)rint the test (textured grid)</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=w">&nbsp;(w)rite the test info</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=X">E(X)amine the program leared by training</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=L">&nbsp;(L)earned program</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=e">&nbsp;(e)xecute .................. '<font color="cyan" style="color: cyan">306</font>'</a></li>
-                <li class="nav-item"><a class="nav-link" href="?webcmd=x">e(x)ecute .................. '<font color="blue" style="color: blue">print_all_info_for_test</font>'</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=y">Wh(y) between objects in the input/outputs</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=a">&nbsp;(a)ll between objects</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=j">&nbsp;(j)unctions between objects</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=k">&nbsp;(k)ill/clear all test data.</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=B">&nbsp;(B)oxes test.</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=R">&nbsp;(R)epairs test.</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=g">&nbsp;(g)ridcells between objects in the input/outputs</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=p">&nbsp;(p)rint the test (textured grid)</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=w">&nbsp;(w)rite the test info</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=X">E(X)amine the program leared by training</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=L">&nbsp;(L)earned program</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=e">&nbsp;(e)xecute .................. '<font color="cyan" style="color: cyan">306</font>'</a></li>
+                <li class="nav-item"><a class="nav-link" href="?cmd=x">e(x)ecute .................. '<font color="blue" style="color: blue">print_all_info_for_test</font>'</a></li>
                 <p>
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=clear_training%2cclear_test">&nbsp;(C)lear cached test info,</a></li> &nbsp;
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=s">Try to (s)olve based on training</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=S">&nbsp;(S)olve confirming it works on training pairs</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=h">&nbsp;(h)uman proposed solution</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=r">Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and (s)olve !</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=A">&nbsp;(A)dvance to the next test and (r)un it</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=n">&nbsp;(n)ext test (skipping this one)</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=b">&nbsp;(b)ack to previous test</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=f">&nbsp;(f)orce a favorite test.</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=~">&nbsp;(PageUp) to begining of suite</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=N">&nbsp;(N)ext suite</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=R">Menu to (R)un all tests noninteractively</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=l">&nbsp;(l)ist special tests to run,</a></li> &nbsp;
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=clear_tee%2cupdate_changes">recomple this progra(m),</a></li> &nbsp;
-                    <!--li class="nav-item"><a class="nav-link" href="?webcmd=force_full_tee%2creally_cls">&nbsp;(c)lear the scrollback buffer,</a></li-->
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=call_dsl">&nbsp;(r)un DSL code,</a></li> &nbsp;
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=true">&nbsp;(Q)uit Menu,</a></li> &nbsp;
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=halt%284%29">&nbsp;(^q)uit to shell,</a></li> &nbsp;
-                    <li class="nav-item"><a class="nav-link" href="?webcmd=break">or (D)ebug/break to interpreter.</a></li>
+                    <li class="nav-item"><a class="nav-link" href="?cmd=clear_training%2cclear_test">&nbsp;(C)lear cached test info,</a></li> &nbsp;
+                    <li class="nav-item"><a class="nav-link" href="?cmd=s">Try to (s)olve based on training</a></li>
+                    <li class="nav-item"><a class="nav-link" href="?cmd=S">&nbsp;(S)olve confirming it works on training pairs</a></li>
+                    <li class="nav-item"><a class="nav-link" href="?cmd=h">&nbsp;(h)uman proposed solution</a></li>
+                    <li class="nav-item"><a class="nav-link" href="?cmd=r">Maybe (r)un some of the above: (p)rint, (t)rain, (e)xamine and (s)olve !</a></li>
+                    <li class="nav-item"><a class="nav-link" href="?cmd=A">&nbsp;(A)dvance to the next test and (r)un it</a></li>
+                    <li class="nav-item"><a class="nav-link" href="?cmd=n">&nbsp;(n)ext test (skipping this one)</a></li>
+                    <li class="nav-item"><a class="nav-link" href="?cmd=b">&nbsp;(b)ack to previous test</a></li>
+                    <li class="nav-item"><a class="nav-link" href="?cmd=f">&nbsp;(f)orce a favorite test.</a></li>
+                    <li class="nav-item"><a class="nav-link" href="?cmd=~">&nbsp;(PageUp) to begining of suite</a></li>
+                    <li class="nav-item"><a class="nav-link" href="?cmd=N">&nbsp;(N)ext suite</a></li>
+                    <li class="nav-item"><a class="nav-link" href="?cmd=R">Menu to (R)un all tests noninteractively</a></li>
+                    <li class="nav-item"><a class="nav-link" href="?cmd=l">&nbsp;(l)ist special tests to run,</a></li> &nbsp;
+                    <li class="nav-item"><a class="nav-link" href="?cmd=clear_tee%2cupdate_changes">recomple this progra(m),</a></li> &nbsp;
+                    <!--li class="nav-item"><a class="nav-link" href="?cmd=force_full_tee%2creally_cls">&nbsp;(c)lear the scrollback buffer,</a></li-->
+                    <li class="nav-item"><a class="nav-link" href="?cmd=call_dsl">&nbsp;(r)un DSL code,</a></li> &nbsp;
+                    <li class="nav-item"><a class="nav-link" href="?cmd=true">&nbsp;(Q)uit Menu,</a></li> &nbsp;
+                    <li class="nav-item"><a class="nav-link" href="?cmd=halt%284%29">&nbsp;(^q)uit to shell,</a></li> &nbsp;
+                    <li class="nav-item"><a class="nav-link" href="?cmd=break">or (D)ebug/break to interpreter.</a></li>
             </ul>
             <ul id="global_command_menu" class="nav nav-pills" style="font-size: 12px; white-space: pre-line;">
                 <ul id="global_command_items" class="nav nav-pills" style="font-size: 8px; white-space: nowrap"></ul>

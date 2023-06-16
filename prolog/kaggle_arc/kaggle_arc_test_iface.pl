@@ -260,7 +260,7 @@ i_key(SelMax,Key):-
 
 clear_pending_input:- is_input_null_stream,!.
 clear_pending_input:- read_pending_codes(user_input,_Ignored1,[]).
-menu_goal(Goal):-  \+ fix_test_name(Goal,_),
+menu_goal(Goal):-  
   clear_pending_input,
   pp(calling(Goal)),!, 
   ignore(once((time(((catch(my_menu_call(Goal),'$aborted',fail))))*->!;(!,fail,atrace,arcST,rrtrace(Goal))))),!,
@@ -272,14 +272,11 @@ menu_goal(Goal):-  \+ fix_test_name(Goal,_),
 :- public(do_web_menu_key/1).
 :- export(do_web_menu_key/1).
 
-%invoke_n_v(Key):- fix_test_name(Key,TestID),is_valid_testname(TestID),ensure_test(TestID),!,do_web_menu_key('e').
-invoke_n_v(NV):- compound(NV),functor(NV,F,2), atom_length(F,1), F\=='>', F\=='+', NV =..[_,Char,TestAtom], 
-  invoke_n_v(Char,TestAtom),!.
-invoke_n_v(NV):- atom(NV), invoke_n_v('solve_via_scene_change',NV),!.
-invoke_n_v(Char,TestAtom):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),!,ensure_test(TestID),!, 
-  do_menu_key(Char).
-invoke_n_v(TestAtom,Char):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),!,ensure_test(TestID),!,
-  do_menu_key(Char).
+invoke_n_v(Key):- fix_test_name(Key,TestID),is_valid_testname(TestID),ensure_test(TestID),!, do_web_menu_key('e').
+invoke_n_v(NV):- compound(NV),functor(NV,F,2), atom_length(F,1), F\=='>', F\=='+', NV =..[_,Char,TestAtom], invoke_n_v(Char,TestAtom),!.
+%invoke_n_v(NV):- atom(NV), invoke_n_v('e',NV),!.
+invoke_n_v(Char,TestAtom):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),ensure_test(TestID),!, do_web_menu_key(Char).
+invoke_n_v(TestAtom,Char):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),ensure_test(TestID),!, do_web_menu_key(Char).
 
 invoke_arc_cmd(Key):- once(dmsg(invoke_arc_cmd(Key))),fail.
 invoke_arc_cmd(Key):- invoke_n_v(Key),!,dmsg(invoke_n_v(Key)),!.
@@ -293,7 +290,7 @@ invoke_arc_cmd(Key):- do_web_menu_key(Key).
 
 
 do_web_menu_key(Key):-
-  locally(nb_setval(menu_key,Key),ignore((do_menu_key(Key)))),!.
+  locally(nb_setval(menu_key,Key),ignore((do_menu_key(Key)))).
 
 do_menu_key(-1):- !, arc_assert(wants_exit_menu). 
 do_menu_key('Q'):-!,format('~N returning to prolog.. to restart type ?- demo. '), asserta_if_new(wants_exit_menu).
@@ -308,7 +305,7 @@ do_menu_key('d'):- !, dump_from_pairmode.
 do_menu_key(Numerals):- atom(Numerals), atom_number(Numerals,Num), number(Num), do_menu_number(Num),!.
 do_menu_key(Num):- number(Num), do_menu_number(Num),!.
 
-do_menu_key(Key):- atom(Key), atom_codes(Key,EscCodes), EscCodes= [27|_], clause(do_esc_codes(EscCodes),Body), !, menu_goal(call(Body)).
+do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), !, menu_goal(Body).
 do_menu_key(Key):- atom(Key), menu_cmds(_,Key,_,Body), !, menu_goal(Body).
 do_menu_key(Key):- atom(Key), atom_codes(Key,[Code]), Code<27, CCode is Code + 96, atom_codes(CKey,[94,CCode]),!,do_menu_key(CKey).
 
@@ -478,43 +475,43 @@ maybe_test(E,G):- igo(E,G).
 get_current_grid(G):- get_current_test(T),kaggle_arc_io(T,_,_,G).
 
 % home
-do_esc_codes([27,91,49,126]):- !, sort_suite, restart_suite, print_qtest.
+do_menu_codes([27,91,49,126]):- !, sort_suite, restart_suite, print_qtest.
 % end
-do_esc_codes([27,91,52,126]):- !, reverse_suite, restart_suite, print_qtest.
+do_menu_codes([27,91,52,126]):- !, reverse_suite, restart_suite, print_qtest.
 % insert
-do_esc_codes([27,91,50,126]):- !, report_suites, print_qtest.
+do_menu_codes([27,91,50,126]):- !, report_suites, print_qtest.
 % delete
-do_esc_codes([27,91,51,126]):- !, randomize_suite, print_qtest.
+do_menu_codes([27,91,51,126]):- !, randomize_suite, print_qtest.
 
 
 % crl left arrow
-do_esc_codes([27,79,68]):- !, prev_test, print_test.
+do_menu_codes([27,79,68]):- !, prev_test, print_test.
 % ctrl right arrow
-do_esc_codes([27,79,67]):- !, next_test, print_test.
+do_menu_codes([27,79,67]):- !, next_test, print_test.
 
 
 % alt left arrow
-do_esc_codes([27,27,91,68]):- !, prev_test, print_test.
+do_menu_codes([27,27,91,68]):- !, prev_test, print_test.
 % alt right arrow
-do_esc_codes([27,27,91,67]):- !, next_test, print_test.
+do_menu_codes([27,27,91,67]):- !, next_test, print_test.
 
 
 % page up
-do_esc_codes([27,91,53,126]):- !, prev_suite,prev_test, was_set_pair_mode(entire_suite).
+do_menu_codes([27,91,53,126]):- !, prev_suite,prev_test, was_set_pair_mode(entire_suite).
 % page down
-do_esc_codes([27,91,54,126]):- !, was_set_pair_mode(entire_suite), next_suite,print_single_pair.
+do_menu_codes([27,91,54,126]):- !, was_set_pair_mode(entire_suite), next_suite,print_single_pair.
 % up arrow
-do_esc_codes([27,91,65]):- !, was_set_pair_mode(single_pair),prev_pair.
+do_menu_codes([27,91,65]):- !, was_set_pair_mode(single_pair),prev_pair.
 % down arrow
-do_esc_codes([27,91,66]):- !, was_set_pair_mode(single_pair),next_pair.
+do_menu_codes([27,91,66]):- !, was_set_pair_mode(single_pair),next_pair.
 % left arrow
-do_esc_codes([27,91,68]):- !, was_set_pair_mode(whole_test), maybe_cls, prev_test, report_suite_test_count, print_qtest.
+do_menu_codes([27,91,68]):- !, was_set_pair_mode(whole_test), maybe_cls, prev_test, report_suite_test_count, print_qtest.
 % right arrow
-do_esc_codes([27,91,67]):- !, was_set_pair_mode(whole_test), maybe_cls, next_test, report_suite_test_count, print_qtest.
+do_menu_codes([27,91,67]):- !, was_set_pair_mode(whole_test), maybe_cls, next_test, report_suite_test_count, print_qtest.
 
-%back_test:- do_esc_codes([27,91,68]),!.
+%back_test:- do_menu_codes([27,91,68]),!.
 back_test:- format('~N'),prev_test,print_single_pair,!.
-%forward_test:- do_esc_codes([27,91,67]).
+%forward_test:- do_menu_codes([27,91,67]).
 forward_test:- next_test, print_single_pair,!.
 %forward_test:- next_random_test,print_single_pair.
 
@@ -2471,7 +2468,7 @@ kaggle_arc(v(Name), TypeI, In, Out):-
 */
 fix_test_name(Try, TestID):- is_valid_testname(Try),!,TestID=Try.
 fix_test_name(Try, TestID):- fix_id_1(Try,   TestID),!.
-fix_test_name(Try, TestID):- testid_name_num_io(Try,TestID,_Example,_Num,_IO),!.
+fix_test_name(Try, TestID):- testid_name_num_io(Try,TestID,_Example,_Num,_IO).
 
 gfix_test_name(G,T,E):- is_grid(G),!, kaggle_arc_io(T,E,_,GO),GO=@=G.
 fix_test_name(V,VV,_):- var(V),!,VV=V.
@@ -2550,7 +2547,6 @@ atom_id(Atom,TriedV):- downcase_atom(Atom,Tried),Atom\==Tried,atom_id(Tried,Trie
 atom_id_e(Tried,t(Tried)):- kaggle_arc(t(Tried),_,_,_),!.
 atom_id_e(Tried,v(Tried)):- kaggle_arc(v(Tried),_,_,_),!.
 atom_id_e(Tried,x(Tried)):- kaggle_arc(x(Tried),_,_,_),!.
-atom_id_e(Tried,(Tried)):- kaggle_arc((Tried),_,_,_),!.
 atom_id_e(Sel, TestID):- atom_id_es(Sel, TestID).
 atom_id_es(Sel, TestID):- sformat(SSel,'~q',[Sel]),
    catch(read_term_from_atom(SSel,Name,[module(user),double_quotes(string),variable_names(Vs),singletons(Singles)]),_,
