@@ -2234,6 +2234,7 @@ into_fti(TID,ROptions,GridIn0,VM):-
    % parent VM
    %training:_,
      %compare:_, 
+    rules:[],rules_p0:[],rules_p1:[],rules_p2 :[],
    target_grid:_,  last_key:_,  
    % Options and TODO List (are actually equal things)
    lo_program:Options, options:OOptions, 
@@ -5358,7 +5359,26 @@ individuation_macros(unused, [
   % line(_),dg_line(_), % release_points, all, %into_single_hidden,oldway %retain(filltype(solid)(nsew)), % shapes, %into_single_hidden,
   ]). 
 
+:- if( \+ current_predicate(individuate_3/3)).
+individuate_3(ROptions,ContainedPoints,NewInside):-
+  individuate(ROptions,ContainedPoints,NewInside).
+:- endif.
 
-:- include(kaggle_arc_footer).
+:- if( \+ current_predicate(individuate/3)).
+individuate(ROptions,ContainedPoints,NewInside):-
+  individuate_3(ROptions,ContainedPoints,NewInside).
+:- endif.
+
+:- if( \+ current_predicate(individuate_2/2)).
+individuate_2(ContainedPoints,NewInside):-
+  individuate(ContainedPoints,NewInside).
+:- endif.
+
+:- if( \+ current_predicate(individuate/2)).
+individuate(ContainedPoints,NewInside):-
+  individuate_2(ContainedPoints,NewInside).
+:- endif.
+
+
 
 

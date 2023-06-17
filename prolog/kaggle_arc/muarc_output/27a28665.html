@@ -10,103 +10,12 @@
 .body_background { background-color: #000000; }
 .inv_foreground { color: #000000; }
 .inv_background { background-color: #AAAAAA; }
-.ansi1 { font-weight: bold; }
-.ansi2 { font-weight: lighter; }
-.ansi33 { color: #aa5500; }
-.ansi35 { color: #E850A8; }
-.ansi91 { color: #ff0000; }
-.ansi93 { color: #ffff00; }
-.ansi95 { color: #ff00ff; }
-.ansi96 { color: #00ffff; }
 </style>
 </head>
 <body class="body_foreground body_background" style="font-size: normal;" >
 <pre class="ansi2html-content">
-<p/> <a href="00576224.html">Prev 00576224.html</a> <p/> <a href="27a28665.html">This 27a28665.html</a> <p/> <a href="423a55dc.html">Next 423a55dc.html</a> 
-<pre>program=[ grid_size(In,InH,InV), 
-          grid_size(Out,OutH,OutV), 
-          InArea is InH*InV, 
-          OutArea is OutH*OutV, 
-          ratio_for(RatioArea,OutArea,InArea), 
-          max_min(OutArea,InArea,BothMaxArea,BothMinArea), 
-          amass(In,InMass), 
-          amass(Out,OutMass), 
-          ratio_for(DeltaMass,OutMass,InMass), 
-          unique_color_count(In,InColorLen), 
-          unique_color_count(Out,OutColorLen), 
-          ratio_for(RatioColorLen,OutColorLen,InColorLen), 
-          unique_colors(In,InColors), 
-          unique_colors(Out,OutColors), 
-          intersection( InColors, 
-            OutColors, SharedColors,InSpecificColors, 
-            OutSpecificColors), 
-          append( [InSpecificColors,SharedColors,OutSpecificColors], 
-            Include_Append_AllColors), 
-          nop(dont_include(Include_Append_AllColors)), 
-          sort(Include_Append_AllColors,AllColors), 
-          maplist( length, 
-            [ InColors, OutColors,SharedColors, 
-                 InSpecificColors, OutSpecificColors, AllColors], 
-            [ InColorsLen, OutColorsLen,SharedColorsLen, 
-                     InSpecificColorsLen, OutSpecificColorsLen, AllColorsLen]), 
-          ratio_for(RescaleH,OutH,InH), 
-          ratio_for(RescaleV,OutV,InV), 
-          ratio_for(InDensity,InMass,InArea), 
-          ratio_for(OutDensity,OutMass,OutArea), 
-          ratio_for(DeltaDensity,OutDensity,InDensity), 
-          max_min(OutH,OutV,OutMaxHV,Min_OutMaxHV), 
-          max_min(InH,InV,InMaxHV,Min_MaxHV), 
-          OutMaxHVArea is OutMaxHV*OutMaxHV, 
-          InMaxHVArea is InMaxHV*InMaxHV, 
-          ratio_for(RatioMaxHVArea,OutMaxHVArea,InMaxHVArea), 
-          max_min(InMaxHVArea,OutMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin), 
-          ratio_for(RatioBothMaxHVArea,BothMaxHVAreaMax,BothMaxHVAreaMin)]
-		in=In
-		in_h=InH
-		in_v=InV
-		out=Out
-		out_h=OutH
-		out_v=OutV
-		in_area=InArea
-		out_area=OutArea
-		ratio_area=RatioArea
-		both_max_area=BothMaxArea
-		both_min_area=BothMinArea
-		in_mass=InMass
-		out_mass=OutMass
-		delta_mass=DeltaMass
-		in_color_len=InColorLen
-		out_color_len=OutColorLen
-		ratio_color_len=RatioColorLen
-		in_colors=InColors
-		out_colors=OutColors
-		shared_colors=SharedColors
-		in_specific_colors=InSpecificColors
-		out_specific_colors=OutSpecificColors
-		all_colors=AllColors
-		in_colors_len=InColorsLen
-		out_colors_len=OutColorsLen
-		shared_colors_len=SharedColorsLen
-		in_specific_colors_len=InSpecificColorsLen
-		out_specific_colors_len=OutSpecificColorsLen
-		all_colors_len=AllColorsLen
-		rescale_h=RescaleH
-		rescale_v=RescaleV
-		in_density=InDensity
-		out_density=OutDensity
-		delta_density=DeltaDensity
-		out_max_hv=OutMaxHV
-		in_max_hv=InMaxHV
-		out_max_hv_area=OutMaxHVArea
-		in_max_hv_area=InMaxHVArea
-		ratio_max_hv_area=RatioMaxHVArea
-		both_max_hv_area_max=BothMaxHVAreaMax
-		both_max_hv_area_min=BothMaxHVAreaMin
-		ratio_both_max_hv_area=RatioBothMaxHVArea
-  <span class="ansi2"></span><span class="ansi2 ansi93"></span><span class="ansi2 ansi93"></span><span class="ansi2 ansi93"> single_pair: </span>  "<span class="ansi33">'evaluation' (100)</span>"  <span class="ansi1"></span><span class="ansi1 ansi96"></span><span class="ansi1 ansi96"></span><span class="ansi1 ansi96"> indiv:</span>  "<span class="ansi1"></span><span class="ansi2"></span><span class="ansi2"></span><span class="ansi2"></span><span class="ansi2">complete</span>"  <span class="ansi2"></span><span class="ansi2 ansi91"></span><span class="ansi2 ansi91"></span><span class="ansi2 ansi91"> selected test: </span>  "<span class="ansi1"></span><span class="ansi2"></span><span class="ansi2 ansi95"></span><span class="ansi2 ansi95"></span><span class="ansi2 ansi95">t('27a28665')>trn+0</span>"  <span class="ansi2"></span><span class="ansi2 ansi35"></span><span class="ansi2 ansi35"></span><span class="ansi2 ansi35">.......... (e)xecute: </span>  "<span class="ansi1"></span>test_easy"
- Your menu(?) selection: '\x1B\[A'
-calling((!,set_pair_mode(single_pair),prev_pair))
-<p/> <a href="00576224.html">Prev 00576224.html</a> <p/> <a href="27a28665.html">This 27a28665.html</a> <p/> <a href="423a55dc.html">Next 423a55dc.html</a> 
+<p/> <a href="cad67732.html">Prev cad67732.html</a> <p/> <a href="27a28665.html">This 27a28665.html</a> <p/> <a href="d8c310e9.html">Next d8c310e9.html</a> 
+<pre><p/> <a href="cad67732.html">Prev cad67732.html</a> <p/> <a href="27a28665.html">This 27a28665.html</a> <p/> <a href="d8c310e9.html">Next d8c310e9.html</a> 
 <pre>
 
 </pre>
