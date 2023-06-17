@@ -21,6 +21,11 @@ The ARC project is designed to solve a wide range of visual reasoning tasks, inc
 :- include(kaggle_arc_header).
 :- include(kaggle_arc_footer).
 
+:- abolish(arc_cache:trans_rule_db/4).
+:- dynamic(arc_cache:trans_rule_db/4).
+:- abolish(ac_db_unit/4).
+:- dynamic(ac_db_unit/4).
+
 :- ensure_loaded(kaggle_arc_grid_size).
 
 :- use_module(library(clpfd)).
@@ -32,6 +37,185 @@ The ARC project is designed to solve a wide range of visual reasoning tasks, inc
 
 % must_det_ll/1 is a predicate that enforces determinism and logical purity and prints a warning if it fails.
 % it is loaded from the kaggle_arc_header.pl file
+
+
+
+
+% Define predicates that shouldn't be noticed
+%dont_notice(global2G(_, _)).
+dont_notice(rotSize2D(grav,_,_)).
+dont_notice(iz(algo_sid(comp,_))).
+dont_notice(pg(_,mass(_),rank1,_)).
+dont_notice(changes(_)).
+dont_notice(pg(_,cc(bg,_),rank1,1)).
+dont_notice(iz(media(_))).
+dont_notice(iz(type(_))).
+dont_notice(grid_ops(comp,_)).
+dont_notice(pg(_,iz(info(birth(_))),_,_)).
+dont_notice(pg(_,cc(bg,_),rankLS,_)).
+dont_notice(pg(_,occurs_in_links(contained_by,_),_,_)).
+dont_notice(pg(_,pen(_),rank1,_)).
+dont_notice(iz(fg_or_bg(_))).
+dont_notice(giz(_)).
+dont_notice(iz(i_o(_))).
+dont_notice(iz(stype(_))).
+dont_notice(global2G(_, _)).
+dont_notice(iz(symmetry_type(rollD, _))).
+dont_notice(link(contains, _)).
+dont_notice(links_count(sees, _)).
+dont_notice(occurs_in_links(contained_by, _)).
+dont_notice(occurs_in_links(sees, _)).
+dont_notice(oid(_)).
+dont_notice(pg(_, pen(_), rankLS , _)).
+dont_notice(pg(_, iz(_), rankLS, _)).
+dont_notice(pg(_, empty_area(_), rankLS, _)).
+
+%dont_notice(pg(_, iz(_), rankLS, largest)).
+%dont_notice(link(sees(_), _)).
+%dont_notice(links_count(sees, _)).
+%dont_notice(occurs_in_links(sees, _)).
+dont_notice(P):- compound(P), arg(_, P, E), is_gridoid(E), !.
+dont_notice(P):- compound(P), !, compound_name_arity(P, F, _), !, dont_notice(F).
+dont_notice(P):- compound(P), arg(_, P, E), E==norm, !, fail.
+dont_notice(F):- \+ atom(F), !, fail.
+dont_notice(oid).
+dont_notice(giz).
+dont_notice(shape_rep).
+dont_notice(grid_rep).
+
+% Define predicates that should be noticed
+do_notice(pg(_, _, rank1, _)).
+do_notice(pg(_, _, _, _)).
+do_notice(sym_counts(_, _)).
+
+% Predicate to check if P should be noticed
+ok_notice(P):- \+ \+ do_notice(P), !.
+ok_notice(P):- \+ dont_notice(P).
+
+
+dont_deduce(link(sees(_), _)).
+%dont_deduce(giz(_)).
+%dont_deduce(pg(_, _, _, _)).
+dont_deduce(pg(_, iz(_), rankLS, _)).
+dont_deduce(pg(_, _, rankLS, _)).
+%dont_deduce(size2D(_)).
+%dont_deduce(global2G(_, _)).
+%dont_deduce(vis2D(_, _)).
+dont_deduce(P):- \+ compound(P), !, fail.
+dont_deduce(P):- sub_term(G, P), compound(G), is_grid(G), !.
+dont_deduce(P):- sub_term(G, P), compound(G), is_object(G), !.
+dont_deduce(grid(_)).
+%dont_deduce(iz(_)).
+%dont_deduce(iz(_)).
+
+%dont_deduce(P):- compound(P), compound_name_arguments(P, _, [X]), number(X).
+dont_deduce(grid_ops(comp, _)).
+%dont_deduce(iz(stype(_))).
+dont_deduce(iz(symmetry_type(_, _))). % rot2D(rot90), grid_ops(comp, []), changes([]), iz(fg_or_bg(iz_fg)), links_count(contained_by, 0), links_count(contains, 0), cc(plain_var, 0), cc(bg, 0), global2G(9, 9), iz(sizeGX(1)), unique_colors_count(1), empty_area(0), iz(algo_sid(comp, sid_12)), iz(algo_sid(norm, sid_12)), iz(symmetry_type(flipDHV, false)), iz(symmetry_type(rot180, true)), iz(symmetry_type(flipV, true)), iz(symmetry_type(flipH, true)), iz(symmetry_type(rot270, false)), iz(symmetry_type(rot90, false)), iz(symmetry_type(sym_h_xor_v, false)), iz(symmetry_type(sym_hv, true)), iz(filltype(solid)), iz(colormass), iz(media(shaped)), iz(info(birth(colormass))), pg(_1477530, mass(_1477540), rankLS, largest), pg(_1477550, iz(sizeGX(_1477564)), rankLS, smallest), pg(_1477574, iz(sizeGY(_1477588)), rankLS, largest), pg(_1477598, iz(cenGX(_1477612)), rankLS, largest), pg(_1477622, iz(cenGY(_1477636)), rankLS, largest), pg(_1477646, unique_colors_count(_1477656), rankLS, smallest), pg(_1477666, empty_area(_1477676), rankLS, smallest).
+%dont_deduce(mass(2)). % center2G(2, 9), vis2D(1, 2), loc2D(2, 8), grid_ops(norm, [rot90]), link(sees([cc(e, 2)]), o_?_459_t_08ed6ac7_trn_1_out), cc(fg, 2), iz(sizeGY(2)), iz(cenGY(9)), rotSize2D(grav, 2, 1), area(2), iz(sid(sid_12)), \+link(sees([cc(w, 2)]), o_i_109_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_641_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_337_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_Z_24_t_08ed6ac7_trn_1_out), \+link(sees([cc(w, 2)]), o_?_459_t_08ed6ac7_trn_1_out).
+dont_deduce(oid(_)). % center2G(2, 9), vis2D(1, 2), loc2D(2, 8), mass(2), grid_ops(norm, [rot90]), link(sees([cc(e, 2)]), o_?_459_t_08ed6ac7_trn_1_out), cc(fg, 2), iz(sizeGY(2)), iz(cenGY(9)), rotSize2D(grav, 2, 1), area(2), iz(sid(sid_12)), \+link(sees([cc(w, 2)]), o_i_109_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_641_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_337_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_532_t_08ed6ac7_trn_1_out), \+link(sees([cc(w, 2)]), o_Z_24_t_08ed6ac7_trn_1_out), \+link(sees([cc(w, 2)]), o_?_459_t_08ed6ac7_trn_1_out).
+dont_deduce(cc(plain_var, 0)).
+dont_deduce(links_count(_, _)).
+dont_deduce(empty_area(_)).
+dont_deduce(unique_colors_count(_)).
+
+
+% Define predicates that should be deduced
+do_deduce(link(sees(_), _)).
+do_deduce(rot2D(_)).
+do_deduce(pen(_)).
+do_deduce(iz(sid(_))).
+do_deduce(iz(cenGX(_))).
+do_deduce(iz(locY(_))).
+do_deduce(iz(X)):- !, do_deduce(X), !.
+do_deduce(P):- compound(P), compound_name_arguments(P, _, [X, Y]), number(X), number(Y).
+%do_deduce(P):- compound(P), compound_name_arguments(P, _, [X, Y]), comparable_value(X), comparable_value(Y).
+do_deduce(rotSize2D(grav, _, _)).
+do_deduce(grid_rep(norm, _)). % pen([cc(blue, 1)]), pg(_1489874, mass(_1489884), rank1, 4).
+do_deduce(grid_ops(norm, _)). % pen([cc(blue, 1)]), pg(_1489874, mass(_1489884), rank1, 4).
+
+% Predicate to check if P should be deduced
+ok_deduce(obj(L)):- nonvar(L), !.
+ok_deduce(P):- \+ \+ dont_deduce(P), !, fail.
+ok_deduce(P):- \+ \+ do_deduce(P), !.
+ok_deduce(P):- good_for_rhs(P), !.
+%ok_deduce(P):- \+ \+ dont_notice(P), !, fail.
+
+
+% Check if two values have the same property names but are not equal
+
+%into_rhs(edit(_, _, _, R), P):- !, into_rhs(R, P).
+maybe_deref_value(X1, _):- \+ compound(X1), !, fail.
+maybe_deref_value(edit(_, _, E1), Y1):- ensure_deref_value(E1, Y1).
+maybe_deref_value(edit(_, _, _, E1), Y1):- ensure_deref_value(E1, Y1).
+%maybe_deref_value(X1, Y1):- compound(X1), once(into_rhs(X1, E1)), E1\=@=X1, !, ensure_deref_value(E1, Y1).
+
+ensure_deref_value(X1, E1):- maybe_deref_value(X1, E1), !.
+ensure_deref_value(X1, X1).
+
+other_val(X1, X2):- maybe_deref_value(X1, E1), !, other_val(E1, X2).
+other_val(X2, X1):- maybe_deref_value(X1, E1), !, other_val(X2, E1).
+
+other_val(X1, X2):- negated_s_lit(X1, P1),
+  ( negated_s_lit(X2, P2) -> other_val(P1, P2) ; other_val(X2, P1)).
+
+other_val(X1, X2):- \+ same_prop_names(X1, X2), !, fail.
+other_val(X1, X2):- X1=@=X2, !, fail.
+other_val(X1, X2):- once((selfless_type(X1, V1), selfless_type(X2, V2))), \=@=(V1, V2), !, fail.
+other_val(X1, X2):- is_color_prop(X1), is_color_prop(X2), once((specific_value(X1, V1), specific_value(X2, V2))), \+ other_val_same_types(V1, V2), !, fail.
+other_val(_, _).
+
+is_color_prop(X1):- fail, compound(X1), X1=pen(_).
+
+other_val_same_types(X1, X2):- once((selfless_type(X1, V1), selfless_type(X2, V2))), \=@=(V1, V2), !, fail.
+other_val_same_types(X1, X2):- X1=@=X2, !, fail.
+other_val_same_types(_, _).
+
+selfless_type(V1, T1):- data_type(V1, T), subst(T, V1, v, T1).
+
+
+specific_value(X, V):- sub_term(V, X), V\=X, comparable_value(V).
+
+
+same_prop_names(X1, X2):- maybe_deref_value(X1, E1), !, same_prop_names(E1, X2).
+same_prop_names(X2, X1):- maybe_deref_value(X1, E1), !, same_prop_names(X2, E1).
+same_prop_names(X1, X2):-
+  compound(X1), compound(X2), same_functor(X1, X2), !,
+  make_unifiable_u(X1, U1), make_unifiable_u(X2, U2), !,  U1 =@= U2.
+
+% Helper predicate to create a unifiable version of a term
+make_unifiable_u(X1, X2):- maybe_deref_value(X1, E1), !, make_unifiable_u(E1, X2).
+make_unifiable_u(P, U):- copy_term(P, PP), make_unifiable_u1(PP, U), !.
+make_unifiable_u1(Atom, U):- is_ftVar(Atom), !, Atom=U.
+make_unifiable_u1(X1,X2):- verbatum_unifiable(X1),!,X2=X1.
+make_unifiable_u1(Atom, U):- atomic(Atom), !, freeze(U, atomic(U)).
+make_unifiable_u1(link(sees(L), A), link(sees(U), B)):- !, maplist(make_unifiable_u, [A|L], [B|U]), !.
+
+make_unifiable_u1(P, U):- assume_prop(P), !, P=U.
+make_unifiable_u1(X1, U1):- make_unifiable_cc(X1, U1), !.
+make_unifiable_u1(X1, X1).
+
+make_unifiable_ov(I, O):- make_unifiable_u(I, O), !.
+
+make_unifiable_f(I, O):- make_unifiable_ov(I, O).
+make_unifiable_f(I, O):- same_functor(I, O), !.
+
+
+same_context(IO, Ctx):- nonvar(Ctx), !, io_to_cntx1(Out, In_Out_Out), once(Ctx==In_Out_Out;Ctx==Out), !, (once(IO=In_Out_Out;IO=Out)).
+same_context(IO, Ctx):- nonvar(IO), !, io_to_cntx1(Out, In_Out_Out), once(IO==In_Out_Out;IO ==Out), !, (once(Ctx=In_Out_Out;Ctx=Out)).
+same_context(IO, Ctx):- freeze(IO, same_context(IO, Ctx)), freeze(Ctx, same_context(IO, Ctx)).
+
+io_to_cntx(IO, Ctx):- io_to_cntx1(IO, Ctx).
+io_to_cntx1(in, in_out).
+%io_to_cntx1(in, in_out_out).
+io_to_cntx1(out, in_out_out).
+io_to_cntx1(out, s(_)).
+io_to_cntx1(X, X).
+
+
+
+
+sometimes_when_lost(Goal):-!, fail, call(Goal).
 
 
 solve_via_scene_change:-  get_pair_mode(entire_suite), !, cls,
@@ -372,7 +556,7 @@ synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,
   %get_each_ndividuator(in,HowIn),
   best_obj_group_pair(TestID,ExampleNum,How,LHSObjs,RHSObjs), RHSObjs\==[],LHSObjs\==[])),
   pp(how=How),
-  InfoStart=[iz(info(how(How)))],
+  InfoStart=[how(How)],
   %synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,Rules),
   get_object_dependancy(InfoStart,TestID,ExampleNum,ActionGroup,ActionGroupOut,RHSObjs,LHSObjs,Groups))),   
   %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
@@ -400,7 +584,7 @@ expand_rules(R,ac_unit(_,Ctx,P0,LHS)):-
   find_lhs(R,Conds0),listify(Conds0,Conds),
   subst001(R,P,p,RR), subst001(RR,Conds,conds,RRR),
   append(Conds,[iz(info(RRR))],LHS),
-  ignore((sub_compound(ctx(Ctx),R))))),!,P0=P.
+  ignore((sub_cmpd(ctx(Ctx),R))))),!,P0=P.
 expand_rules(R,R).
 
 		
@@ -422,6 +606,7 @@ calc_o_d_recursive(VM,ActionGroupIn,     Info, PrevRules, LHSObjs, RHSObjs, Acti
    length(PrevRules,PR),
    CI=<4,
    length(RHSObjs,CO),
+   dash_chars,
    pp_ilp([info=Info,
         prevRules=count(PR),
         narrativeIn = ActionGroupIn,
@@ -438,7 +623,12 @@ calc_o_d_recursive(VM,ActionGroupIn,     Info, PrevRules, LHSObjs, RHSObjs, Acti
   (Info==InfoMid-> incr_step(InfoMid, InfoOut) ; InfoMid=InfoOut),
   calc_o_d_recursive(VM,ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut, ActionGroupFinal, Groups).
 
-calc_o_d_recursive(VM,[Skip|ActionGroupIn], Info, PrevRules, LHSObjs, RHSObjs, [Skip|ActionGroupFinal], Groups):- wdmsg(no_more(Skip)), 
+calc_o_d_recursive(VM,[Skip|ActionGroupIn], Info, PrevRules, LHSObjs, RHSObjs, AGF, Groups):- 
+ dash_chars,
+  wdmsg(no_more(Skip)), 
+  dash_chars,
+   Skip=..[_|Args], last(Args,Was),
+    (Was = 0 -> AGF = ActionGroupFinal ; AGF = [Skip|ActionGroupFinal]),
      calc_o_d_recursive(VM,ActionGroupIn,   Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups).
 
 
@@ -447,17 +637,18 @@ calc_o_d_recursive(VM,[Skip|ActionGroupIn], Info, PrevRules, LHSObjs, RHSObjs, [
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                   ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):-
 ((
-  narrative_element(copy_object_perfect(_),ActionGroupIn,ActionGroupOut),
+  narrative_element(copy_object_perfect(N),ActionGroupIn,ActionGroupOut),
   select(Left,LHSObjs,LHSOut),
   select(Right,RHSObjs,RHSOut),
   how_are_different(Left,Right,TypeSet,_PropSet), TypeSet=[], % no changes
-  sub_compound(step(Step),Info),
+  sub_cmpd(step(Step),Info),
   noteable_propdiffs(Left,Right,Same,_L,R),R==[],
-  append_LR(PrevRules, [exists(left(Left)),rule(Info,Same,copy_object_perfect(Step))], RulesOut),
+  append_LR(PrevRules, [exists(left(Left)),rule(Info,Same,copy_object_perfect(N,Step))], RulesOut),
   incr_step(Info, InfoOut),
   true)), !.
 
 
+/*
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                     ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):- 
 ((
@@ -477,6 +668,41 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   append_LR(PrevRules, [exists(left(NewLeft)),NewRulesF,rule([propset(PropSet)|Info],LHS,copy_object_one_change(TypeSet,NewR))], RulesOut),
   incr_step(Info, InfoOut),
   true)), !.
+*/
+
+calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
+                    ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):- 
+((
+  narrative_element(copy_object_n_changes(N,_),ActionGroupIn,ActionGroupOut),
+  select(Left,LHSObjs,LHSOut),
+  select(Right,RHSObjs,RHSOut),
+  how_are_different(Left,Right,TypeSet,PropSet), 
+  length(TypeSet,Len), Len =< N,
+  dash_chars,nl,
+  noteable_propdiffs(Left,Right,Same,LL,R0),
+  for_rhs(R0,R),
+  pp_ilp(3,[ps(N)=PropSet,ts=TypeSet]),
+  print_ss(copy_object_n_changes(N),Left,Right),
+  pp_ilp(3,[left=LL,
+            right=R,
+            same=Same]),
+  maplist(find_relative_r(Info,Left,Right,PrevRules),R,NewR,PreConds,NewRules),
+  append_LR(NewRules,NewRulesF),
+  append_LR([Same,PreConds],LHS),
+  subst_2L_sometimes(R,NewR,Left,NewLeft),
+  append_LR(PrevRules, [exists(left(NewLeft)),NewRulesF,rule([propset(PropSet)|Info],LHS,copy_object_n_changes(N,TypeSet,NewR))], RulesOut),
+  incr_step(Info, InfoOut),
+  dash_chars,nl,
+  true)), !.
+
+for_rhs(R0,R):-((include(good_for_rhs,R0,R),R\==[])->true;R0=R),!.
+
+subst_2L_sometimes([],_,IO,IO):-!.
+subst_2L_sometimes(_,[],IO,IO):-!.
+subst_2L_sometimes([HF|TF],[HR|TR],In,Out):- !,
+  subst_2L_sometimes(HF,TF,In,Mid),
+  subst_2L_sometimes(HR,TR,Mid,Out).
+subst_2L_sometimes(HF,TF,In,Mid):- subst0011(HF,TF,In,Mid).
 
 maybe_dont_keep(NewR,NewR):- maplist(ground,NewR),!.
 maybe_dont_keep(NewR0,NewR):- include(p1_not(ground),NewR0,NewR),NewR\==[],!.
@@ -487,11 +713,37 @@ simplify_R(1,[_,R1,R2],[R1,R2]):-!.
 simplify_R(_,R,R).
 
 verbatum_unifiable(Var):-var(Var),fail.
+verbatum_unifiable(C):- sub_term(E,C),compound(E),E='$VAR'(_),!.
 verbatum_unifiable(of_obj(_)).
 verbatum_unifiable(of_obj(_,_)).
 verbatum_unifiable(of_obj(_,_,_)).
+verbatum_unifiable(of_obj(_,_,_,_)).
 verbatum_unifiable(always(_)).
 
+%find_relative_r(Info,Left,Right,Possibles,loc2D(_,_),[],[],[]):-!.
+find_relative_r(Info,Left,Right,Possibles,R,NewR,PreCond, XtraRule):- 
+  fail, %DMILES TODO
+
+
+ append_LR([always(OF_OBJ),iz(info(OF_OBJ))],PreCond),
+ make_unifiable_u(R,NewR),
+
+ % findall(XtraRule,
+  ((make_unifiable_u(R,E),make_unifiable_u(E,GetR),
+  iz_arg(1,R,ValR),number(ValR), iz_arg(1,E,ValE), iz_arg(1,NewR,ValNewR), iz_arg(1,GetR,ValGetR),
+  (sub_term(P,Possibles);P=Left),P\==Right,is_object(P),indv_props_list(P,Props),member(E,Props),
+   into_lhs(Props,LHS1), subst001(LHS1,E,always(GetR),LHS),
+   make_conversion(ValE,ValR,ValGetR,ValNewR,Convertor),
+
+    noteable_propdiffs(P,Right,_,LL,_),
+
+
+   XtraRule = [ac_unit(_,_,OF_OBJ,[iz(info(Info)),iz(info(OF_OBJ))|LHS])])),
+  % XtraRuleL),
+  
+   flag('VAR_',VV,VV+0), numbervars(v(ValE,ValR,ValGetR,ValNewR,Convertor),VV,NEWVV,[]), set_flag('VAR_',NEWVV), 
+
+  OF_OBJ=of_obj(NewR,Convertor,LL),!.
 
 find_relative_r(Info,Left,Right,Possibles,R,NewR,[always(Expression),iz(info(Expression))], 
   [ac_unit(_,_,Expression,[iz(info(Info)),iz(info(Expression))|LHS])]):- 
@@ -504,6 +756,20 @@ find_relative_r(Info,Left,Right,Possibles,R,NewR,[always(Expression),iz(info(Exp
   set_flag('VAR_',NEWVV),
   Expression=of_obj(NewR),!.
 find_relative_r(_Info,_,_,_,R,R,[],[]):-!.
+/*
+  make_unifiable_u(E,GetR), 
+  new_r(GetR,R,E,NewR,SubExpr),
+  */
+make_conversion(ValE,ValR,ValGetR,ValNewR,Convertor):-
+  Convertor = (ValNewR #= ValGetR + (ValR-ValE)).
+  
+
+new_r(GetR,R,E,NewR,NewR=GetR):- E=@=R,NewR=GetR.
+new_r(GetR,R,_E,NewR,Expr):- iz_arg(1,GetR,ValE),iz_arg(1,R,ValR),number(ValE),number(ValR), Dif is ValE - ValR, 
+  make_unifiable(GetR,NewR),iz_arg(1,NewR,ValNewR), Expr = (ValNewR #= ValE + Dif).
+
+iz_arg(N,FA,A):- FA=..[_,T], compound(T),!, iz_arg(N,T,A).
+iz_arg(N,T,A):- arg(N,T,A),!.
 
 
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
@@ -598,8 +864,9 @@ left_over_props(L, R, LO):-
 starter_narratives(ActionGroup):- nonvar(ActionGroup),!.
 starter_narratives(ActionGroup):- 
  ActionGroup=
-     [copy_object_perfect(_), copy_object_one_change(_,_), %copy_object_two_changes(_,_),
-      %add_dependant_scenery(_), %in_out_out(_), %add_independant_scenery(_),
+     [copy_object_perfect(s,0), copy_object_n_changes(1,0), copy_object_n_changes(2,0), copy_object_n_changes(3,0), 
+      add_dependant_scenery(0), %in_out_out(_), 
+      add_independant_scenery(0),
       balanced_or_delete_leftovers(_)].
 
 
@@ -616,18 +883,30 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
 
 % Scenery
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
-                ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):-
+                ActionGroupOut, InfoOut, RulesOut, LHSObjs, RHSOut):-
   narrative_element(add_dependant_scenery(_),ActionGroupIn,ActionGroupOut),
-   LHSObjs==[],
+   %LHSObjs==[],
+    into_list(PrevRules, PrevObjs),
+    my_partition(is_input_object, PrevObjs, PrevLHS, _),
+    append_LR(PrevLHS, LHSObjs, LHSMid),
+    use_adjacent_same_color(R1, R2, LHSMid, RHSObjs, RHSOut),
+    incr_step(Info, InfoOut),
+    make_pairs(InfoOut, is_adjacent_same_color, PrevRules, R1, R2, RulesOut).
+
+% Scenery
+calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
+                ActionGroupOut, InfoOut, RulesOut, LHSObjs, RHSOut):-
+  narrative_element(add_independant_scenery(_),ActionGroupIn,ActionGroupOut),
+   %LHSObjs==[],
     into_list(PrevRules, PrevObjs),
     my_partition(is_input_object, PrevObjs, PrevLHS, PrevRHS),
-    append_LR(PrevRHS, PrevLHS, LHSOut),
-    is_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut),
+    append_LR(PrevLHS, PrevRHS, LHSMid),
+    use_adjacent_same_color(R1, R2, LHSMid, RHSObjs, RHSOut),
     incr_step(Info, InfoOut),
     make_pairs(InfoOut, is_adjacent_same_color, PrevRules, R1, R2, RulesOut).
 
 % recycles
-calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
+calc_o_d_recursive_recycle(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                   ActionGroupOut, InfoOut, PrevRules, ['recycled'|PrevLHS], RHSObjs):-
     narrative_element(recycle(_),ActionGroupIn,ActionGroupOut),
    LHSObjs==[], !, ((
@@ -636,7 +915,7 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
     %once((PrevRHS = [A, B|C] ; PrevLHS = [A, B|C])), %append_LR(PrevRHS, PrevLHS, LHSOut), %LHSOut=PrevLHS,
     incr_step(Info, InfoOut))).
 
-calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjsNil, RHSObjs, 
+calc_o_d_recursive_recycle(ActionGroupIn, Info, PrevRules, LHSObjsNil, RHSObjs, 
                  ActionGroupOut, InfoOut, RulesOut, ['recycled'|LHSOut], RHSOut):-
   narrative_element(recycle(_),ActionGroupIn,ActionGroupOut),
    LHSObjsNil==[], !,
@@ -651,7 +930,7 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjsNil, RHSObjs,
       remove_object(RHSOut2, Left, RHSOut ), remove_object(LHSOut2, Left, LHSOut ),
       make_pairs(InfoOut, PrevRules, Left, Right, RulesOut))).
 
-calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
+calc_o_d_recursive_recycle(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                     ActionGroupOut, InfoOut, PrevRules, ['recycled'|LHSOut], RHSObjs):-
   narrative_element(recycle(_),ActionGroupIn,ActionGroupOut),
    LHSObjs==[], !, ((
@@ -892,8 +1171,8 @@ trans_rule(Info,In,Out,Rules):-
   trans_rule(InfM,In,Out,Rules).
 
 trans_rule(Info,[],[],[ac_unit(_,Ctx,happy_ending(Type),Info)]):-
-   ignore((sub_compound(ctx(Ctx),Info))),
-   ignore((sub_compound(type(Type),Info))).
+   ignore((sub_cmpd(ctx(Ctx),Info))),
+   ignore((sub_cmpd(type(Type),Info))).
 
 
 % delete
@@ -922,7 +1201,7 @@ trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2), % fa
    %remove_o_giz(Out,RHSO), 
    remove_o_giz(In1,Precond1), remove_o_giz(In2,Precond2),
    %sub_comInfo = info(Step,_IsSwapped,_Ctx,TypeO,_,_,_),
-   sub_compound(step(Step),Info), sub_compound(why(Type),Info),
+   sub_cmpd(step(Step),Info), sub_cmpd(why(Type),Info),
    Type \== assumed_in_in_out,
  % append_sets(Same1,Same2,Same), append_sets(DontCare1,DontCare2,DC), append_sets(Out1,Out2,Out),
  % append_sets(Same,Out,NewObj),
@@ -934,14 +1213,14 @@ trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2), % fa
 % mutiple preconds
 trans_rule(Info,[In,In2|InL],OutL,TransRule):- is_object(In),is_object(In2),
   trans_rule(Info,[In2|InL],OutL,TransRuleM), TransRuleM\==[],
-  sub_compound(lhs(Precond),TransRuleM),
+  sub_cmpd(lhs(Precond),TransRuleM),
   noteable_propdiffs(In,OutL,Same,_L,_R),
   append_vsets([Precond,Same],OutPrecond),
   subst(TransRuleM,lhs(Precond),lhs(OutPrecond),TransRule),!.
 
 % just copy an object
 trans_rule(Info,[In],[Out],Rules):- 
-  sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
+  sub_cmpd(step(Step),Info), sub_cmpd(why(TypeO),Info),
   noteable_propdiffs(In,Out,Same,_L,R),R==[],
   Rules = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
 
@@ -949,12 +1228,12 @@ trans_rule(Info,[In],[Out],Rules):-
 trans_rule(Info,[In],[Out],Rules):- 
   how_are_different(In,Out,_TypeChanges,Diff),Diff==[],
   into_lhs(In,LHS),
-  %%must_det_ll((sub_compound(step(Step),Info), sub_compound(why(TypeO),Info))),
+  %%must_det_ll((sub_cmpd(step(Step),Info), sub_cmpd(why(TypeO),Info))),
   Rules = [ copy_if_match(Info,rhs(copy_step),lhs(LHS)) ],!.
 
 % just copy an object
 trans_rule(Info,In,Out,Rules):- 
-  sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
+  sub_cmpd(step(Step),Info), sub_cmpd(why(TypeO),Info),
   noteable_propdiffs(In,Out,Same,L,R),L==[],R==[],
   Rules = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
 
@@ -985,7 +1264,7 @@ trans_rule(Info,E1,E2,Rules):- print((Info,E1,E2)), !, fail,
   pp_ilp(nsames=NSame),
   pp_ilp(sames=Same),
   %itrace,
-  sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
+  sub_cmpd(step(Step),Info), sub_cmpd(why(TypeO),Info),
   dash_chars,
   Rules = [ 
     create_object_step(Info,rhs(create3c(Step,TypeO,E2)),lhs(Same)) ],!.
@@ -1261,11 +1540,12 @@ override_object_1(_VM, pen([cc(Red, N)]), Obj, NewObj):- pen(Obj, [cc(Was, N)]),
 override_object_1(VM, loc2D(X, Y), Obj, NewObj):- loc2D(Obj, WX, WY),
   globalpoints(Obj, WPoints), deoffset_points(WX, WY, WPoints, LPoints),
   offset_points(X, Y, LPoints, GPoints), rebuild_from_globalpoints(VM, Obj, GPoints, NewObj).
-override_object_1(VM, Term, I, O):- sub_compound(rhs(P), Term), !,  override_object_1(VM, P, I, O).
-override_object_1(VM, Term, I, O):- sub_compound(copy_object_one_change(_,P), Term), !,  override_object_1(VM, P, I, O).
-override_object_1(VM, Term, I, O):- sub_compound(edit(P), Term), !,  override_object_1(VM, P, I, O).
-override_object_1(VM, Term, I, O):- sub_compound(edit(_, _, P), Term), !, override_object_1(VM, P, I, O).
-override_object_1(VM, Term, I, O):- sub_compound(edit(_, _, _, P), Term), !, override_object_1(VM, P, I, O).
+override_object_1(VM, Term, I, O):- sub_cmpd(rhs(P), Term), !,  override_object_1(VM, P, I, O).
+override_object_1(VM, Term, I, O):- sub_cmpd(copy_object_one_change(_,P), Term), !,  override_object_1(VM, P, I, O).
+override_object_1(VM, Term, I, O):- sub_cmpd(copy_object_n_changes(_,_,P), Term), !,  override_object_1(VM, P, I, O).
+override_object_1(VM, Term, I, O):- sub_cmpd(edit(P), Term), !,  override_object_1(VM, P, I, O).
+override_object_1(VM, Term, I, O):- sub_cmpd(edit(_, _, P), Term), !, override_object_1(VM, P, I, O).
+override_object_1(VM, Term, I, O):- sub_cmpd(edit(_, _, _, P), Term), !, override_object_1(VM, P, I, O).
 %override_object_1(VM, Term, I, O):- sub_term(Sub, Term), compound(Sub), Sub=edit(_, _, _, P),  !, pp_ilp(Term), I=O, !. %override_object_1(VM, P, I, O).
 
 
@@ -2226,7 +2506,7 @@ pass2_rule_R(TestID, Rule):-
 
 
 
-find_lhs(R, P):- sub_compound(lhs(E), R), !, into_lhs(E, P).
+find_lhs(R, P):- sub_cmpd(lhs(E), R), !, into_lhs(E, P).
 find_lhs(ac_unit(_Tst, _IO, _P, PConds), Out):- into_lhs(PConds, Out).
 find_lhs(ac_db_unit(_Tst, _IO, _P, PConds), Out):- into_lhs(PConds, Out).
 find_lhs(ac_listing(_Tst, _IO, _P, PConds), Out):- into_lhs(PConds, Out).
@@ -3316,7 +3596,7 @@ find_rhs(call(P), call(P)):- !.
 find_rhs(ac_db_unit(_Tst, _IO, P, _PConds), Out):- into_rhs(P, Out).
 find_rhs(ac_rules(_Tst, _IO, P, _PConds), Out):- into_rhs(P, Out).
 find_rhs(ac_listing(_Tst, _IO, P, _PConds), Out):- into_rhs(P, Out).
-find_rhs(P, E):- sub_compound(rhs(E), P), !.
+find_rhs(P, E):- sub_cmpd(rhs(E), P), !.
 %into_rhs(edit(_, _, _, R), P):- !, into_rhs(R, P).
 %into_rhs(edit(_, _, R), P):- !, into_rhs(R, P).
 into_rhs(P, P):- \+ compound(P), !.
@@ -3373,7 +3653,11 @@ prop_pairs2(O1, O2, Type, Change, P):-
 
 narrative_element(Ele,ActionGroupIn,ActionGroupOut):- 
   ActionGroupIn = [Ele|ActionGroup],
-  ActionGroupOut = [Ele|ActionGroup].
+  must_det_ll((
+  Ele=..[F|Args], append(LArgs,[Was],Args),  
+  Was2 is Was +1, append(LArgs,[Was2],Args2),
+  Ele2 =.. [F|Args2],
+  ActionGroupOut = [Ele2|ActionGroup])).
 
 
 
@@ -3382,185 +3666,6 @@ clear_scene_rules(TestID):-
   forall(ac_db_unit(TestID, Ctx, P, PSame), ignore(retract(ac_db_unit(TestID, Ctx, P, PSame)))),
   forall(arc_cache:trans_rule_db(TestID, ExampleNum, Ctx, Rule),
      ignore((/*Rule \= l2r(_, _, _),*/retract(arc_cache:trans_rule_db(TestID, ExampleNum, Ctx, Rule))))).
-
-
-% Define predicates that shouldn't be noticed
-%dont_notice(global2G(_, _)).
-dont_notice(rotSize2D(grav,_,_)).
-dont_notice(iz(algo_sid(comp,_))).
-dont_notice(pg(_,mass(_),rank1,_)).
-dont_notice(changes(_)).
-dont_notice(pg(_,cc(bg,_),rank1,1)).
-dont_notice(iz(media(_))).
-dont_notice(iz(type(_))).
-dont_notice(grid_ops(comp,_)).
-dont_notice(pg(_,iz(info(birth(_))),_,_)).
-dont_notice(pg(_,cc(bg,_),rankLS,_)).
-dont_notice(pg(_,occurs_in_links(contained_by,_),_,_)).
-dont_notice(pg(_,pen(_),rank1,_)).
-dont_notice(iz(fg_or_bg(_))).
-dont_notice(giz(_)).
-dont_notice(iz(i_o(_))).
-dont_notice(iz(stype(_))).
-dont_notice(global2G(_, _)).
-dont_notice(iz(symmetry_type(rollD, _))).
-dont_notice(link(contains, _)).
-dont_notice(links_count(sees, _)).
-dont_notice(occurs_in_links(contained_by, _)).
-dont_notice(occurs_in_links(sees, _)).
-dont_notice(oid(_)).
-dont_notice(pg(_, pen(_), rankLS , _)).
-dont_notice(pg(_, iz(_), rankLS, _)).
-dont_notice(pg(_, empty_area(_), rankLS, _)).
-
-%dont_notice(pg(_, iz(_), rankLS, largest)).
-%dont_notice(link(sees(_), _)).
-%dont_notice(links_count(sees, _)).
-%dont_notice(occurs_in_links(sees, _)).
-dont_notice(P):- compound(P), arg(_, P, E), is_gridoid(E), !.
-dont_notice(P):- compound(P), !, compound_name_arity(P, F, _), !, dont_notice(F).
-dont_notice(P):- compound(P), arg(_, P, E), E==norm, !, fail.
-dont_notice(F):- \+ atom(F), !, fail.
-dont_notice(oid).
-dont_notice(giz).
-dont_notice(shape_rep).
-dont_notice(grid_rep).
-
-% Define predicates that should be noticed
-do_notice(pg(_, _, rank1, _)).
-do_notice(pg(_, _, _, _)).
-do_notice(sym_counts(_, _)).
-
-% Predicate to check if P should be noticed
-ok_notice(P):- \+ \+ do_notice(P), !.
-ok_notice(P):- \+ dont_notice(P).
-
-
-dont_deduce(link(sees(_), _)).
-%dont_deduce(giz(_)).
-%dont_deduce(pg(_, _, _, _)).
-dont_deduce(pg(_, iz(_), rankLS, _)).
-dont_deduce(pg(_, _, rankLS, _)).
-%dont_deduce(size2D(_)).
-%dont_deduce(global2G(_, _)).
-%dont_deduce(vis2D(_, _)).
-dont_deduce(P):- \+ compound(P), !, fail.
-dont_deduce(P):- sub_term(G, P), compound(G), is_grid(G), !.
-dont_deduce(P):- sub_term(G, P), compound(G), is_object(G), !.
-dont_deduce(grid(_)).
-%dont_deduce(iz(_)).
-%dont_deduce(iz(_)).
-
-%dont_deduce(P):- compound(P), compound_name_arguments(P, _, [X]), number(X).
-dont_deduce(grid_ops(comp, _)).
-%dont_deduce(iz(stype(_))).
-dont_deduce(iz(symmetry_type(_, _))). % rot2D(rot90), grid_ops(comp, []), changes([]), iz(fg_or_bg(iz_fg)), links_count(contained_by, 0), links_count(contains, 0), cc(plain_var, 0), cc(bg, 0), global2G(9, 9), iz(sizeGX(1)), unique_colors_count(1), empty_area(0), iz(algo_sid(comp, sid_12)), iz(algo_sid(norm, sid_12)), iz(symmetry_type(flipDHV, false)), iz(symmetry_type(rot180, true)), iz(symmetry_type(flipV, true)), iz(symmetry_type(flipH, true)), iz(symmetry_type(rot270, false)), iz(symmetry_type(rot90, false)), iz(symmetry_type(sym_h_xor_v, false)), iz(symmetry_type(sym_hv, true)), iz(filltype(solid)), iz(colormass), iz(media(shaped)), iz(info(birth(colormass))), pg(_1477530, mass(_1477540), rankLS, largest), pg(_1477550, iz(sizeGX(_1477564)), rankLS, smallest), pg(_1477574, iz(sizeGY(_1477588)), rankLS, largest), pg(_1477598, iz(cenGX(_1477612)), rankLS, largest), pg(_1477622, iz(cenGY(_1477636)), rankLS, largest), pg(_1477646, unique_colors_count(_1477656), rankLS, smallest), pg(_1477666, empty_area(_1477676), rankLS, smallest).
-%dont_deduce(mass(2)). % center2G(2, 9), vis2D(1, 2), loc2D(2, 8), grid_ops(norm, [rot90]), link(sees([cc(e, 2)]), o_?_459_t_08ed6ac7_trn_1_out), cc(fg, 2), iz(sizeGY(2)), iz(cenGY(9)), rotSize2D(grav, 2, 1), area(2), iz(sid(sid_12)), \+link(sees([cc(w, 2)]), o_i_109_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_641_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_337_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_Z_24_t_08ed6ac7_trn_1_out), \+link(sees([cc(w, 2)]), o_?_459_t_08ed6ac7_trn_1_out).
-dont_deduce(oid(_)). % center2G(2, 9), vis2D(1, 2), loc2D(2, 8), mass(2), grid_ops(norm, [rot90]), link(sees([cc(e, 2)]), o_?_459_t_08ed6ac7_trn_1_out), cc(fg, 2), iz(sizeGY(2)), iz(cenGY(9)), rotSize2D(grav, 2, 1), area(2), iz(sid(sid_12)), \+link(sees([cc(w, 2)]), o_i_109_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_641_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_337_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_532_t_08ed6ac7_trn_1_out), \+link(sees([cc(w, 2)]), o_Z_24_t_08ed6ac7_trn_1_out), \+link(sees([cc(w, 2)]), o_?_459_t_08ed6ac7_trn_1_out).
-dont_deduce(cc(plain_var, 0)).
-dont_deduce(links_count(_, _)).
-dont_deduce(empty_area(_)).
-dont_deduce(unique_colors_count(_)).
-
-
-% Define predicates that should be deduced
-do_deduce(link(sees(_), _)).
-do_deduce(rot2D(_)).
-do_deduce(pen(_)).
-do_deduce(iz(sid(_))).
-do_deduce(iz(cenGX(_))).
-do_deduce(iz(locY(_))).
-do_deduce(iz(X)):- !, do_deduce(X), !.
-do_deduce(P):- compound(P), compound_name_arguments(P, _, [X, Y]), number(X), number(Y).
-%do_deduce(P):- compound(P), compound_name_arguments(P, _, [X, Y]), comparable_value(X), comparable_value(Y).
-do_deduce(rotSize2D(grav, _, _)).
-do_deduce(grid_rep(norm, _)). % pen([cc(blue, 1)]), pg(_1489874, mass(_1489884), rank1, 4).
-do_deduce(grid_ops(norm, _)). % pen([cc(blue, 1)]), pg(_1489874, mass(_1489884), rank1, 4).
-
-% Predicate to check if P should be deduced
-ok_deduce(obj(L)):- nonvar(L), !.
-ok_deduce(P):- \+ \+ dont_deduce(P), !, fail.
-ok_deduce(P):- \+ \+ do_deduce(P), !.
-ok_deduce(P):- good_for_rhs(P), !.
-%ok_deduce(P):- \+ \+ dont_notice(P), !, fail.
-
-
-% Check if two values have the same property names but are not equal
-
-%into_rhs(edit(_, _, _, R), P):- !, into_rhs(R, P).
-maybe_deref_value(X1, _):- \+ compound(X1), !, fail.
-maybe_deref_value(edit(_, _, E1), Y1):- ensure_deref_value(E1, Y1).
-maybe_deref_value(edit(_, _, _, E1), Y1):- ensure_deref_value(E1, Y1).
-%maybe_deref_value(X1, Y1):- compound(X1), once(into_rhs(X1, E1)), E1\=@=X1, !, ensure_deref_value(E1, Y1).
-
-ensure_deref_value(X1, E1):- maybe_deref_value(X1, E1), !.
-ensure_deref_value(X1, X1).
-
-other_val(X1, X2):- maybe_deref_value(X1, E1), !, other_val(E1, X2).
-other_val(X2, X1):- maybe_deref_value(X1, E1), !, other_val(X2, E1).
-
-other_val(X1, X2):- negated_s_lit(X1, P1),
-  ( negated_s_lit(X2, P2) -> other_val(P1, P2) ; other_val(X2, P1)).
-
-other_val(X1, X2):- \+ same_prop_names(X1, X2), !, fail.
-other_val(X1, X2):- X1=@=X2, !, fail.
-other_val(X1, X2):- once((selfless_type(X1, V1), selfless_type(X2, V2))), \=@=(V1, V2), !, fail.
-other_val(X1, X2):- is_color_prop(X1), is_color_prop(X2), once((specific_value(X1, V1), specific_value(X2, V2))), \+ other_val_same_types(V1, V2), !, fail.
-other_val(_, _).
-
-is_color_prop(X1):- fail, compound(X1), X1=pen(_).
-
-other_val_same_types(X1, X2):- once((selfless_type(X1, V1), selfless_type(X2, V2))), \=@=(V1, V2), !, fail.
-other_val_same_types(X1, X2):- X1=@=X2, !, fail.
-other_val_same_types(_, _).
-
-selfless_type(V1, T1):- data_type(V1, T), subst(T, V1, v, T1).
-
-
-specific_value(X, V):- sub_term(V, X), V\=X, comparable_value(V).
-
-
-same_prop_names(X1, X2):- maybe_deref_value(X1, E1), !, same_prop_names(E1, X2).
-same_prop_names(X2, X1):- maybe_deref_value(X1, E1), !, same_prop_names(X2, E1).
-same_prop_names(X1, X2):-
-  compound(X1), compound(X2), same_functor(X1, X2), !,
-  make_unifiable_u(X1, U1), make_unifiable_u(X2, U2), !,  U1 =@= U2.
-
-% Helper predicate to create a unifiable version of a term
-make_unifiable_u(X1, X2):- maybe_deref_value(X1, E1), !, make_unifiable_u(E1, X2).
-make_unifiable_u(P, U):- copy_term(P, PP), make_unifiable_u1(PP, U), !.
-make_unifiable_u1(Atom, U):- is_ftVar(Atom), !, Atom=U.
-make_unifiable_u1(X1,X2):- verbatum_unifiable(X1),!,X2=X1.
-make_unifiable_u1(Atom, U):- atomic(Atom), !, freeze(U, atomic(U)).
-make_unifiable_u1(link(sees(L), A), link(sees(U), B)):- !, maplist(make_unifiable_u, [A|L], [B|U]), !.
-
-make_unifiable_u1(P, U):- assume_prop(P), !, P=U.
-make_unifiable_u1(X1, U1):- make_unifiable_cc(X1, U1), !.
-make_unifiable_u1(X1, X1).
-
-make_unifiable_ov(I, O):- make_unifiable_u(I, O), !.
-
-make_unifiable_f(I, O):- make_unifiable_ov(I, O).
-make_unifiable_f(I, O):- same_functor(I, O), !.
-
-
-same_context(IO, Ctx):- nonvar(Ctx), !, io_to_cntx1(Out, In_Out_Out), once(Ctx==In_Out_Out;Ctx==Out), !, (once(IO=In_Out_Out;IO=Out)).
-same_context(IO, Ctx):- nonvar(IO), !, io_to_cntx1(Out, In_Out_Out), once(IO==In_Out_Out;IO ==Out), !, (once(Ctx=In_Out_Out;Ctx=Out)).
-same_context(IO, Ctx):- freeze(IO, same_context(IO, Ctx)), freeze(Ctx, same_context(IO, Ctx)).
-
-io_to_cntx(IO, Ctx):- io_to_cntx1(IO, Ctx).
-io_to_cntx1(in, in_out).
-%io_to_cntx1(in, in_out_out).
-io_to_cntx1(out, in_out_out).
-io_to_cntx1(out, s(_)).
-io_to_cntx1(X, X).
-
-
-
-
-sometimes_when_lost(Goal):-!, fail, call(Goal).
-
-
 
 % HAPPY ENDINGS
 calc_o_d_recursive_end(ActionGroupIn, InfoOut, PrevRules, MLHSObjs, RHSObjs,

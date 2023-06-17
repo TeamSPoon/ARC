@@ -1,3 +1,5 @@
+end_of_file.
+
 /*
   this is part of (H)MUARC  https://logicmoo.org/xwiki/bin/view/Main/ARC/
 
@@ -2988,7 +2990,6 @@ diff_l_r(InL, OutL, Same, InFlatP, OutPFlat):- OutL\==[], InL\==[], !,
 append_vsets(I, O):- flatten([I], M), variant_list_to_set(M, O), !.
 
 ignore_prop_when(ARS, P):- compound(ARS), !, functor(ARS, F, _), !, ignore_prop_when(F, P).
-ignore_prop_when(removing, P):- ignore_prop_when(adding, P).
 ignore_prop_when(adding, link(contains, _)).
 ignore_prop_when(adding, occurs_in_links(contains, _)).
 %ignore_prop_when(adding, pg(_, _, rankLS, _)).
@@ -2997,7 +2998,9 @@ ignore_prop_when(adding, grid_rep(_, _)).
 ignore_prop_when(adding, simularz(_, _)).
 ignore_prop_when(removing, cc(fg, _)).
 ignore_prop_when(removing, mass(_)).
+ignore_prop_when(adding, P):- nonvar(P), good_for_rhs(P),!, fail.
 ignore_prop_when(_, P):- assume_prop(P).
+ignore_prop_when(removing, P):- ignore_prop_when(adding, P).
 
 noteable_propdiffs(E1, E2, Same, InFlatP, OutPFlat):-
   flat_props(E1, FP1), flat_props(E2, FP2),
