@@ -925,7 +925,7 @@ trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2), % fa
    sub_compound(step(Step),Info), sub_compound(why(Type),Info),
    Type \== assumed_in_in_out,
  % append_sets(Same1,Same2,Same), append_sets(DontCare1,DontCare2,DC), append_sets(Out1,Out2,Out),
- % append_sets(Same,Out,OutObj),
+ % append_sets(Same,Out,NewObj),
   %make_common(RHSO,LHS1,OutOut1,LHSOut1),
   %make_common(OutOut1,LHS2,OutOut,LHSOut2),
   TransRule = [create_object1(Info,rhs(creation_step1(Step,Type,Out1)), lhs(Precond1)),
@@ -1177,43 +1177,43 @@ solve_obj_group(VM, TestID, ExampleNum, Ctx, ObjsIn, ObjsO):-
 solve_obj_group(_VM, _TestID, _ExampleNum, _Ctx, Objs, Objs).
 
 
-apply_rules0(VM, _TestID, _ExampleNum, Ctx, [Rules], [Obj], [OutObj]):- !,
+apply_rules0(VM, _TestID, _ExampleNum, Ctx, [Rules], [Obj], [NewObj]):- !,
  must_det_ll(((
  unnumbervars(Rules,URules),
  (Rule = (Ctx:rhs(P):- obj_atoms(PCond))), 
   member(Rule,[URules]), 
   ignore(vm_has_obj_prop(VM,Obj,PCond)),
   wots(S,print(Rule)),
-  must_det_ll((override_object_1(VM, P, Obj, OutObj))),
-  gset(VM.robjs) = [OutObj|VM.robjs],
-  print_ss(wqs([override_object(S)]), [Obj], [OutObj])))),!.
+  must_det_ll((override_object_1(VM, P, Obj, NewObj))),
+  gset(VM.robjs) = [NewObj|VM.robjs],
+  print_ss(wqs([override_object(S)]), [Obj], [NewObj])))),!.
 
  
 
 apply_rules0(VM, TestID, ExampleNum, Ctx, Rules, Objs, ObjsO):-
   apply_rules(VM, TestID, ExampleNum, Ctx, Rules, Objs, ObjsO),!.
 
-apply_rules(VM, TestID, ExampleNum, Ctx, Rules, [O|Objs], [NO|OutObjs]):-
+apply_rules(VM, TestID, ExampleNum, Ctx, Rules, [O|Objs], [NO|NewObjs]):-
   apply_rules1(VM, TestID, ExampleNum, Ctx, Rules, O, NO),!,
-  apply_rules(VM, TestID, ExampleNum, Ctx, Rules, Objs, OutObjs).
+  apply_rules(VM, TestID, ExampleNum, Ctx, Rules, Objs, NewObjs).
 apply_rules(_VM, _TestID, _ExampleNum, _Ctx, _Rules, Objs, Objs).
 
-apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, OutObj):-
+apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, NewObj):-
  unnumbervars(Rules,URules),
  (Rule = (_:rhs(P):- obj_atoms(PCond))), 
   member(Rule,URules), 
 
   vm_has_obj_prop(VM,Obj,PCond),
   wots(S,print(Rule)),
-  must_det_ll((override_object_1(VM, P, Obj, OutObj))),
-  gset(VM.robjs) = [OutObj|VM.robjs],
-  print_ss(wqs([override_object(S)]), [Obj], [OutObj]),!.
+  must_det_ll((override_object_1(VM, P, Obj, NewObj))),
+  gset(VM.robjs) = [NewObj|VM.robjs],
+  print_ss(wqs([override_object(S)]), [Obj], [NewObj]),!.
 
-apply_rules1(VM, _TestID, _ExampleNum, _Ctx, _Rules, Obj, OutObj):-
+apply_rules1(VM, _TestID, _ExampleNum, _Ctx, _Rules, Obj, NewObj):-
   %(Rule = (_:rhs(P):- obj_atoms(PCond))), forall(member(Rule,Rules), pp(failed(Rule))),
   %indv_props_list(Obj,Props), my_partition(assume_prop,Props,_,Needed),
   pp(skipped_obj=Obj),
-  override_object_1(VM, pen([cc(brown,1)]), Obj, OutObj),!.
+  override_object_1(VM, pen([cc(brown,1)]), Obj, NewObj),!.
 
 
 vm_has_obj_prop(VM,Obj,always(of_obj(Prop))):- 
@@ -1230,20 +1230,20 @@ edit_object(_VM, Ps, _Obj):- Ps==[], !.
 edit_object(VM, [H|T], Obj):- !, edit_object(VM, H, Obj), edit_object(VM, T, Obj).
 edit_object(VM, copy_step(_, perfect_in_out), Obj):- addRObjects(VM, Obj).
 edit_object(VM, creation_step(_, _, Props), Obj):-
-  clone_object(Obj, OutObj), edit_object(VM, Props, OutObj).
+  clone_object(Obj, NewObj), edit_object(VM, Props, NewObj).
 edit_object(VM, Ps, Obj):-
   must_det_ll((
    wots(SS, print(Ps)),
-   override_object_1(VM, Ps, Obj, OutObj),
+   override_object_1(VM, Ps, Obj, NewObj),
    remObjects(VM, Obj),
-   addOGSObjects(VM, OutObj),
-   addObjects(VM, OutObj),
-   into_solid_grid([OutObj], SG), SG=_,
+   addOGSObjects(VM, NewObj),
+   addObjects(VM, NewObj),
+   into_solid_grid([NewObj], SG), SG=_,
    dash_chars,
-   print_ss(override_object(SS), [Obj], [OutObj]),
+   print_ss(override_object(SS), [Obj], [NewObj]),
    nop((
    indv_props_list(Obj, PL1),
-   indv_props_list(OutObj, PL2),
+   indv_props_list(NewObj, PL2),
    intersection(PL1, PL2, _Same, Removed, Added),
     pp_ilp(([[removed=Removed], [added=Added]])))))).
 
@@ -1256,11 +1256,11 @@ override_object_1(_VM, pen([cc(black, 1)]), Obj, Obj).
 override_object_1(_VM, copy_step, Obj, Obj):-!.
 
 
-override_object_1(_VM, pen([cc(Red, N)]), Obj, OutObj):- pen(Obj, [cc(Was, N)]), !,
-  subst001(Obj, Was, Red, OutObj), !.
-override_object_1(VM, loc2D(X, Y), Obj, OutObj):- loc2D(Obj, WX, WY),
+override_object_1(_VM, pen([cc(Red, N)]), Obj, NewObj):- pen(Obj, [cc(Was, N)]), !,
+  subst001(Obj, Was, Red, NewObj), !.
+override_object_1(VM, loc2D(X, Y), Obj, NewObj):- loc2D(Obj, WX, WY),
   globalpoints(Obj, WPoints), deoffset_points(WX, WY, WPoints, LPoints),
-  offset_points(X, Y, LPoints, GPoints), rebuild_from_globalpoints(VM, Obj, GPoints, OutObj).
+  offset_points(X, Y, LPoints, GPoints), rebuild_from_globalpoints(VM, Obj, GPoints, NewObj).
 override_object_1(VM, Term, I, O):- sub_compound(rhs(P), Term), !,  override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_compound(copy_object_one_change(_,P), Term), !,  override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_compound(edit(P), Term), !,  override_object_1(VM, P, I, O).
@@ -2435,8 +2435,8 @@ fg_to_bgc(FG, FG):- \+ compound(FG), !.
 
 %into_delete(_TestID, _Ctx, _Prev, _Info, Obj, Obj):- is_mapping(Obj), !.
 %into_delete(_TestID, _ExampleNum, _IsSwapped, _Step, _Ctx, _Prev, _Info, Obj, Obj):-!.
-%into_delete(TestID, Ctx, PrevRules, _Info, Obj, Rules):- map_pred(fg_to_bgc, Obj, OutObj),
-%  make_pairs(InfoOut, delete, PrevRules, Obj, OutObj, Rules),
+%into_delete(TestID, Ctx, PrevRules, _Info, Obj, Rules):- map_pred(fg_to_bgc, Obj, NewObj),
+%  make_pairs(InfoOut, delete, PrevRules, Obj, NewObj, Rules),
 %  !. %edit_object(pen([cc(black, 1)]))  % l2r(Info, [Obj], [])).
 
 is_mapping_list([O|GrpL]):- is_mapping(O), is_list(GrpL), maplist(is_mapping, GrpL).
@@ -2888,8 +2888,8 @@ solve_obj_set([S|Set], VM, TestID, ExampleNum, IO__Start, ROptions, Objs, ObjsO)
   solve_obj_set(Set, VM, TestID, ExampleNum, IO__Start, ROptions, ObjsM, ObjsO).
 
 solve_obj_list(_, _VM, _TestID, _ExampleNum, IO_, _ROptions, Objs, Objs):- Objs == [], !.
-solve_obj_list(S, VM, TestID, ExampleNum, IO__Start, ROptions, [Obj|Objs], [OutObj|ObjsO]):-
-  solve_obj(VM, TestID, ExampleNum, IO__Start, ROptions, Obj, OutObj),
+solve_obj_list(S, VM, TestID, ExampleNum, IO__Start, ROptions, [Obj|Objs], [NewObj|ObjsO]):-
+  solve_obj(VM, TestID, ExampleNum, IO__Start, ROptions, Obj, NewObj),
   solve_obj_list(S, VM, TestID, ExampleNum, IO__Start, ROptions, Objs, ObjsO).
 
 
