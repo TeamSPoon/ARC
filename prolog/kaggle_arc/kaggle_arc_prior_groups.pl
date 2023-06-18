@@ -1464,6 +1464,8 @@ group_prior_objs0(Why,Objs,WithPriors):-
  !.
 
 add_how_simular(ObjsIn,ObjsIn):-!.
+add_how_simular([],[]):-!.
+add_how_simular([ObjsIn],[ObjsIn]):-!.
 add_how_simular(ObjsIn,Simulars):-
   add_how_simular(ObjsIn,ObjsIn,Simulars).
 

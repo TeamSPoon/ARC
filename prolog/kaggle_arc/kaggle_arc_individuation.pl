@@ -238,7 +238,7 @@ filter_library(Library1,Library):-
 %  include(is_fg_object,Library3,Library).
   !.
 
-pp_i(X):- pp(X),!.
+pp_i(X):- pp_ilp(X),!.
 
 mono_i_to_o_is_none_some_none_in(VM):-
  set_example_num_vm(VM),
@@ -277,9 +277,11 @@ mono_i_to_o_is_none_some_none_in(VM):-
   gset(VM.lo_points) = LeftOver,
   %print_grid(objs, VM.objs),
   %LeftOver = VM.lo_points,
-  points_to_grid(VM.h,VM.v,LeftOver,Grid),
-  gset(VM.grid)=Grid,
-  print_ss(afterHybrid,Grid,VM.objs),
+  points_to_grid(VM.h,VM.v,LeftOver,NewGrid),
+  CGrid=VM.grid,
+  if_t(CGrid\=@=NewGrid,  
+      print_ss(afterHybrid,NewGrid,VM.objs)),
+  gset(VM.grid)=NewGrid,
   run_fti(VM,generic_nsew_colormass)))),!.
 
 mono_i_to_o_is_none_some_none_in(VM):- 
@@ -3417,9 +3419,32 @@ suggest_r1([my_release_bg,subst_color(red,_)]).
  %decolorize(Objs,MObjs),
  =(Objs,MObjs),
  
- pp_i(all_ogs(o,R1)=HintO),
- pp_i(all_ogs(i,R2)=HintI),!.
+ pp_ilp(all_ogs(o,R1)=HintO),
+ pp_ilp(all_ogs(i,R2)=HintI),!.
 */ 
+%existingObject(VM,GOPoints):- 
+%  member_ls(O,VM.objs),globalpoints_include_bg(O,Ps),
+%  GOPoints==Ps,!.
+:- dynamic(special_sizes/2).
+
+obj_gpoints(Grid,OBJ,OH,OV,GOPoints):-
+   grid_size(OBJ,H,V),
+   obj_gpoints(Grid,OBJ,OH,OV,H,V,GOPoints).
+
+obj_gpoints(_Grid,OBJ,OH,OV,H,V,GOPoints):- is_grid(OBJ),!,
+   HH is OH+H-1,VV is OV+V-1,
+   hv_point(HH,VV,HV2),
+   hv_point(1,1,HV1),
+  localpoints_include_bg(OBJ,OPoints), 
+ ((member(W-HV1,OPoints),is_fg_color(W)) -> OPoints=OOPoints ; OOPoints=[black-HV1|OPoints]),
+ ((member(W-HV2,OOPoints),is_fg_color(W)) -> OOPoints=OOOOPoints ; OOOOPoints=[black-HV2|OOPoints]),
+   offset_points(OH,OV,OOOOPoints,GOPoints).
+
+obj_gpoints(Grid,OBJ,OH,OV,H,V,GOPoints):- 
+  EX is OH+H-1, EY is OV+V-1,
+  clip(OH,OV,EX,EY,Grid,OBJ),!,
+  obj_gpoints(Grid,OBJ,OH,OV,H,V,GOPoints).
+
 
 
 % =====================================================================
