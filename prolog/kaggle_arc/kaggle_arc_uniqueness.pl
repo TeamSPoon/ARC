@@ -693,7 +693,7 @@ calc_o_d_recursive(VM,ActionGroupIn,     Info, PrevRules, LHSObjs, RHSObjs, Acti
   ( LHSObjs==[] -> NLHSObjs=VM.objs ; NLHSObjs=LHSObjs ),
   calc_o_d_recursively(ActionGroupIn,    Info, PrevRules, NLHSObjs, RHSObjs, 
                        ActionGroupOut, InfoMid, RulesOut, LHSOut, RHSOut),
-  intersection_eq(RulesOut,PrevRules,_,RulesNew,_),
+  intersection(RulesOut,PrevRules,_,RulesNew,_),
   my_partition(is_functor(exists),RulesNew,_,RulesNewEww),
   reverse(RulesNewEww,RulesNewer),
   pp_ilp(new=RulesNewer), 
@@ -778,8 +778,10 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   maplist(find_relative_r(Info,Left,Right,PrevRules),R,NewR,PreConds,NewRules),
   append_LR(NewRules,NewRulesF),
   append_LR([Same,PreConds],LHS),
+  NewRRule1 = rule([propset(PropSet)|Info],LHS,copy_object_n_changes(/*N,*/TypeSet,NewR)),
+  (R\==NewR -> NewRRule2 = rule([propset(PropSet)|Info],Same,copy_object_n_changes(/*N,*/TypeSet,R)) ; NewRRule2=[]),
   subst_2L_sometimes(R,NewR,Left,NewLeft),
-  append_LR(PrevRules, [exists(left(NewLeft)),NewRulesF,rule([propset(PropSet)|Info],LHS,copy_object_n_changes(/*N,*/TypeSet,NewR))], RulesOut),
+  append_LR(PrevRules, [exists(left(NewLeft)),NewRulesF,NewRRule1,NewRRule2], RulesOut),
   incr_step(Info, InfoOut),
   dash_chars,nl,
   true)), !.
@@ -802,41 +804,20 @@ verbatum_unifiable(of_obj(_,_,_,_)).
 verbatum_unifiable(always(_)).
 
 %find_relative_r(Info,Left,Right,Possibles,loc2D(_,_),[],[],[]):-!.
-find_relative_r(Info,Left,Right,Possibles,R,NewR,PreCond, XtraRule):- 
-  %fail, %DMILES TODO
-
-
- % findall(XtraRule,
+find_relative_r(Info,Left,Right,Possibles,R,NewR,PreCond, XtraRule):- fail,
   ((make_unifiable_u(R,E),make_unifiable_u(E,GetR),make_unifiable_u(R,NewR),
   iz_arg(1,R,ValR),number(ValR), iz_arg(1,E,ValE), iz_arg(1,NewR,ValNewR), iz_arg(1,GetR,ValGetR),
   (sub_term(P,Possibles);P=Left),P\==Right,is_object(P),indv_props_list(P,Props),member(E,Props),
-    subst(LL,E,true,LLG),
+    noteable_propdiffs(P,Right,_,LL,_),
+    into_lhs(Right,LHS1),subst001(LHS1,E,always(GetR),LHS),
+    subst001(LL,E,true,LLG),
     OF_OBJ=of_obj(NewR,Convertor,LLG),
+    subst001(OF_OBJ,NewR,GetR,OF_OBJ_GET),
     append_LR([always(OF_OBJ_GET),iz(info(OF_OBJ_GET))],PreCond), 
-
-   into_lhs(Props,LHS1), 
-   subst001(LHS1,E,always(GetR),LHS),
-   make_conversion(ValE,ValR,ValGetR,ValNewR,Convertor),
-   subst001(OF_OBJ,NewR,GetR,OF_OBJ_GET),
-   nop(pp_ilp(lHS=LHS)),
-   noteable_propdiffs(P,Right,_,LL,_),
-
-
-   XtraRule = [ac_unit(_,_,OF_OBJ,[iz(info(Info)),iz(info(OF_OBJ))|LHS])])),
-  % XtraRuleL),
-  
+    make_conversion(ValE,ValR,ValGetR,ValNewR,Convertor),
+    XtraRule = [ac_unit(_,_,OF_OBJ,[iz(info(Info)),iz(info(OF_OBJ))|LHS])])),
    flag('VAR_',VV,VV+0), numbervars(v(ValE,ValR,ValGetR,ValNewR,Convertor),VV,NEWVV,[]), set_flag('VAR_',NEWVV),!.
 
-find_relative_r(Info,Left,Right,Possibles,R,NewR,[always(Expression),iz(info(Expression))], 
-  [ac_unit(_,_,Expression,[iz(info(Info)),iz(info(Expression))|LHS])]):- 
-  make_unifiable_u(R,E),  
-  member(P,Possibles),P\==Left,P\==Right,is_object(P),indv_props_list(P,Props),member(E,Props),E=@=R,
-  make_unifiable_u(E,NewR),
-  into_lhs(P,LHS1), subst001(LHS1,E,always(of_obj(NewR)),LHS),
-  flag('VAR_',VV,VV+0),
-  numbervars(NewR,VV,NEWVV,[]),
-  set_flag('VAR_',NEWVV),
-  Expression=of_obj(NewR),!.
 find_relative_r(_Info,_,_,_,R,R,[],[]):-!.
 /*
   make_unifiable_u(E,GetR), 
@@ -1046,7 +1027,7 @@ compute_scene_change_pass3b(RulesList, P4, IO_-P):-
   call(P4, RulesList, IO_, P, SameS, KeptS), warn_and_fail_if_empty(KeptS), !,
   if_t(SameS\=@=KeptS,
      (append(KeptS, Skip, Kept),
-      intersection_eq(SameS,KeptS,_,Missing,New),
+      intersection(SameS,KeptS,_,Missing,New),
       update_accompany_changed_db_now(Why, RulesList, IO_, P, iz(info(reduced(Why,Missing->New))), Kept))).
 compute_scene_change_pass3b(_, _, _).
 
@@ -1065,7 +1046,7 @@ compute_scene_change_pass3c(RulesList, IO_-P):-
    SL),  SL = [_, _|_],
   common_members(SL, Commons),
   forall((ac_db_unit(RulesList, IO_, DP, DSame), same_rhs_property(DP, P)),
-      (intersection_eq(DSame, Commons, _, Kept, _),
+      (intersection(DSame, Commons, _, Kept, _),
         ignore((warn_and_fail_if_empty(Kept), append(Kept, Skip, Save), update_accompany_changed_db(pass3c, RulesList, IO_, P, Save))))),
 
   print_scene_change_rules_if_different(pass3c, ac_db_unit, RulesList),
@@ -1123,7 +1104,7 @@ correct_antes2a(TestID,IN_OUT,P,PSame,Kept):-   fail,
    ac_rules(TestID,IN_OUT,U,DSame),
    P\=@=U, 
    maplist(make_unifiable_u,DSame,USame),
-   intersection_eq(PSame,USame,Kept,_,_),warn_and_fail_if_empty(Kept).
+   intersection(PSame,USame,Kept,_,_),warn_and_fail_if_empty(Kept).
 correct_antes2a(_TestID,_IN_OUT,_P,PSame,PSame).
 
 % Make sure each arguement is transformed corretly
@@ -1338,7 +1319,7 @@ trans_rule(Info,E1,E2,Rules):- print((Info,E1,E2)), !, fail,
   dash_chars,
   if_t(how_are_different(E1,E2,Set),pp_ilp(how_are_different=Set)),
   flat_props(E1,FP1),flat_props(E2,FP2),
-  intersection_eq(FP1,FP2,Same,InFlatP,OutPFlat),
+  intersection(FP1,FP2,Same,InFlatP,OutPFlat),
   pp_ilp(info=Info),
   pp_ilp(nadded=NR),
   pp_ilp(added=OutPFlat),
@@ -1445,7 +1426,7 @@ score_rule(exact, Obj, PConds, _P, Score):-  score_all_props(PConds, Obj, S0), S
 score_rule(_Ways, Obj, PConds, _P, Score):- %fail,
    obj_atoms(Obj, A),
    obj_atoms(PConds, B),
-     intersection_eq(A, B, Good, _Extra, _Bad),
+     intersection(A, B, Good, _Extra, _Bad),
      length(Good, Score).
 
 has_all_props(CanL, Obj):- maplist(inv_has_prop(Obj), CanL).
@@ -1550,10 +1531,10 @@ apply_rules0(VM, _TestID, _ExampleNum, Ctx, [Rule], [Obj], [NewObj]):- !,
  must_det_ll(((
   rule_units(Rule,Ctx,P,PConds), 
   ignore(vm_has_obj_prop(VM,Obj,PConds)),
-  wots(S,print(Rule)),
+  wots(SS,write((Ctx:P):-PConds)),
   must_det_ll((override_object_1(VM, P, Obj, NewObj))),
   gset(VM.robjs) = [NewObj|VM.robjs],
-  print_ss(wqs([override_object(S)]), [Obj], [NewObj])))),!.
+  print_ss(wqs([ar0(SS)]), [Obj], [NewObj])))),!.
 
 apply_rules0(VM, TestID, ExampleNum, Ctx, Rules, Objs, ObjsO):-
   apply_rules(VM, TestID, ExampleNum, Ctx, Rules, Objs, ObjsO),!.
@@ -1566,10 +1547,11 @@ apply_rules(_VM, _TestID, _ExampleNum, _Ctx, _Rules, Objs, Objs).
 apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, NewObj):-
   member(Rule,Rules), rule_units(Rule ,_,P,PConds), 
   vm_has_obj_prop(VM,Obj,PConds),
-  wots(S,print(Rule)),
+  wots(S,write(P:-PConds)),
   must_det_ll((override_object_1(VM, P, Obj, NewObj))),
   gset(VM.robjs) = [NewObj|VM.robjs],
-  print_ss(wqs([override_object(S)]), [Obj], [NewObj]),!.
+  globalpoints(NewObj,GPoints),
+  print_ss(wqs([ar1(S)]), [Obj], print_grid(VM.h,VM.v,GPoints)),!.
 
 apply_rules1(VM, _TestID, _ExampleNum, _Ctx, _Rules, Obj, NewObj):-
   %(rule_units(Rule ,_,P,PConds)), forall(member(Rule,Rules), pp(failed(Rule))),
@@ -1609,18 +1591,18 @@ edit_object(VM, creation_step(_, _, Props), Obj):-
   clone_object(Obj, NewObj), edit_object(VM, Props, NewObj).
 edit_object(VM, Ps, Obj):-
   must_det_ll((
-   wots(SS, print(Ps)),
+   wots(SS, write(Ps)),
    override_object_1(VM, Ps, Obj, NewObj),
    remObjects(VM, Obj),
    addOGSObjects(VM, NewObj),
    addObjects(VM, NewObj),
    into_solid_grid([NewObj], SG), SG=_,
    dash_chars,
-   print_ss(override_object(SS), [Obj], [NewObj]),
+   print_ss(oo(SS), [Obj], [NewObj]),
    nop((
    indv_props_list(Obj, PL1),
    indv_props_list(NewObj, PL2),
-   intersection_eq(PL1, PL2, _Same, Removed, Added),
+   intersection(PL1, PL2, _Same, Removed, Added),
     pp_ilp(([[removed=Removed], [added=Added]])))))).
 
 override_object_1(_VM, [], IO, IO):-!.
@@ -1634,21 +1616,22 @@ override_object_1(_VM, pen([cc(black, 1)]), Obj, Obj).
 override_object_1(_VM, pen([cc(Red, N)]), Obj, NewObj):- pen(Obj, [cc(Was, N)]), !,
   subst001(Obj, Was, Red, NewObj), !.
 
-override_object_1(_VM, loc2D(X, Y), Obj, Obj):- (X>3;Y>4), !.
+%override_object_1(_VM, loc2D(X, Y), Obj, Obj):- (X>3;Y>4), !.
+/*
 override_object_1(VM, Pos, Obj, NewObj):- type_prop(reposition,Pos),
-  make_unifiable_u(Pos,UPos),indv_prop(UPos,Obj),
+  must_det_ll((make_unifiable_u(Pos,UPos),indv_props(Obj,UPos),
   calc_relative_2d(UPos,Pos,OX,OY),globalpoints(Obj, OGPoints), 
-  deoffset_points(OX, OY, OGPoints, GPoints), rebuild_from_globalpoints(VM, Obj, GPoints, NewObj).
+  offset_points(OX, OY, OGPoints, GPoints), rebuild_from_globalpoints(VM, Obj, GPoints, NewObj))).*/
 
 /*override_object_1(VM, loc2D(X, Y), Obj, NewObj):- loc2D(Obj, WX, WY),
   globalpoints(Obj, WPoints), deoffset_points(WX, WY, WPoints, LPoints),
   offset_points(X, Y, LPoints, GPoints), rebuild_from_globalpoints(VM, Obj, GPoints, NewObj).
 */
+override_object_1(VM, Term, I, O):- I=obj(List),functor(Term,F,A),functor(UTerm,F,A), \+ member(UTerm,List),
+  arg(A,Term,Arg),compound(Arg),!,override_object_1(VM, Arg, I, O).
 
 override_object_1(_VM, Term, I, O):- I=obj(List),functor(Term,F,A),functor(UTerm,F,A), member(UTerm,List), 
   override_object(Term, I, O), !.
-override_object_1(VM, Term, I, O):- I=obj(List),functor(Term,F,A),functor(UTerm,F,A), \+ member(UTerm,List),
-  arg(A,Term,Arg),compound(Arg),!,override_object_1(VM, Arg, I, O).
 /*
 override_object_1(VM, Term, I, O):- sub_cmpd(rhs(P), Term), !,  override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_cmpd(copy_object_one_change(_,P), Term), !,  override_object_1(VM, P, I, O).
@@ -1968,7 +1951,7 @@ generic_propset_simularity(PropSet1, PropSet2, Similarity, ExtraInfo):-
 
 %   wdmsg(lhs), print_long_set(PropSet1),
 %   wdmsg(rhs), print_long_set(PropSet2),
-    intersection_eq(PropSet1, PropSet2, Intersection),
+    intersection(PropSet1, PropSet2, Intersection),
     union(PropSet1, PropSet2, Union),
     length(Intersection, IntersectionLen),
     length(Union, UnionLength),
@@ -2089,7 +2072,7 @@ color_bonus(Set1, Set2, ColorBonus) :-
 % Calculate the Jaccard similarity with bonuses for closer cells and same colors
 jaccard_similarity(OC1, OC2, Similarity) :-
     oc_set(OC1, Set1), oc_set(OC2, Set2),
-    intersection_eq(Set1, Set2, Intersection, _,_),
+    intersection(Set1, Set2, Intersection, _,_),
     union(Set1, Set2, Union),
     length(Intersection, IntersectionLen),
     length(Union, UnionLength),
@@ -2885,7 +2868,7 @@ pairs_agree_l_r(LHS, RHS, Agreed, RemainingL, RemainingR):-
    maplist(best_match_rl(RHS), LHS, PairsR),
    maplist(best_match_lr(LHS), RHS, PairsL),
    once((
-   intersection_eq(PairsL, PairsR, Agreed, PairsLOnly, PairsROnly),
+   intersection(PairsL, PairsR, Agreed, PairsLOnly, PairsROnly),
    Agreed \==[],
    %maplist(length, [Agreed, PairsLOnly, PairsROnly], [NAgreed, NPairsLOnly, NPairsROnly]),
    %NAgreed>NPairsLOnly, %NPairsLOnly>RPairsLOnly,
@@ -3393,7 +3376,7 @@ diff_l_r(InL, OutL, Same, InFlatP, OutPFlat):- fail,
 % -copy/transform  1-to-1
 diff_l_r([InL], [OutL], PA, [], OutFlat):- OutL\==[], !,
   must_det_ll((flat_props([InL], PA), flat_props([OutL], PB),
-  intersection_eq(PA, PB, _Shared, _L, OutFlat))).
+  intersection(PA, PB, _Shared, _L, OutFlat))).
 
 % -copy/transform
 diff_l_r([InL], OutL, PA1, [], OutFlat):- OutL\==[], !,
@@ -3449,7 +3432,7 @@ noteable_propdiffs1(PA, PB, Same, InFlatP, OutPFlat):-
   pred_intersection(propchange_unnoticable, PA1, PB1, _, Same, InFlatP, OutPFlat), !.
 noteable_propdiffs1(PA, PB, Same, InFlatP, OutPFlat):-
   remove_o_giz(PA, PA1), remove_o_giz(PB, PB1),
-  intersection_eq(PA1, PB1, Same, InFlatP, OutPFlat), !.
+  intersection(PA1, PB1, Same, InFlatP, OutPFlat), !.
 
 propchange_unnoticable(InL, OutL):- InL=@=OutL, !.
 propchange_unnoticable(InL, OutL):- make_unifiable_u(InL, AU), make_unifiable_u(OutL, BU), AU\=@=BU, !, fail.
@@ -3525,7 +3508,7 @@ prop_can(TestID, IO, P, Can):-
   props_change(TestID, IO, P),
   once((prop_cant(TestID, IO, P, Cant),
   prop_can1(TestID, IO, P, Can1),
-  intersection_eq(Can1, Cant, _, Can, _))).
+  intersection(Can1, Cant, _, Can, _))).
   %(Can == [] -> (CanL=Can1, fail) ; CanL= Can).
 
 prop_can1(TestID, IO, P, Can):-
@@ -3567,7 +3550,7 @@ find_peers_with_same(_, _, PSame, PSame):-!.
 
 merge_xtra_props_ac1([ac1(PO)|AC3], PSame):- !, merge_xtra_props_ac1_3(PO, AC3, PSame), PSame\==[].
 merge_xtra_props_ac1_3(PO, [ac1(PO2)|MORE], OUT):-
-  intersection_eq(PO, PO2, IPO),
+  intersection(PO, PO2, IPO),
   merge_xtra_props_ac1_3(IPO, MORE, OUT).
 merge_xtra_props_ac1_3(PO, [], PO).
 
@@ -3575,13 +3558,13 @@ merge_xtra_props_ac2([ac2(_, PSame)], PSame):-!.
 merge_xtra_props_ac2(AC2, PSame):-
  select(ac2(ExampleNum, PO1), AC2, AC3),
  select(ac2(ExampleNum, PO2), AC3, AC4),
- intersection_eq(PO1, PO2, Some), Some\==[], !,
+ intersection(PO1, PO2, Some), Some\==[], !,
  merge_xtra_props_ac2([ac2(ExampleNum, Some)|AC4], PSame).
 merge_xtra_props_ac2(AC2, PSame):-
  select(ac2(ExampleNum, PO1), AC2, AC3),
  select(ac2(ExampleNum2, PO2), AC3, AC4),
  ExampleNum \== ExampleNum2,
- intersection_eq(PO1, PO2, Some), Some\==[], !,
+ intersection(PO1, PO2, Some), Some\==[], !,
  merge_xtra_props_ac2([ac2(ExampleNum, Some)|AC4], PSame).
 
 merge_xtra_props_ac2([ac2(ExampleNum, PO1)|AC3], [ac2(ExampleNum, PO1)|PSame]):-
@@ -3762,7 +3745,7 @@ prop_pairs(O1, O2, Type, Same, P):- prop_pairs2(O1, O2, Type, Same, P).
 
 prop_pairs2(O1, O2, Type, Change, P):-
   flat_props(O1, FF1), flat_props(O2, FF2), !,
-  intersection_eq(FF1,FF2,_,F1,F2),
+  intersection(FF1,FF2,_,F1,F2),
   member(P2, F2), make_unifiable_u(P2, P1),
  (once((member(P1, F1), (other_val(P2, P1)->Change=different(P,P1/P2);Change=same)))->
    min_unifier(P2, P1, P); ((Change=adding(P), P=P2))),

@@ -803,6 +803,16 @@ with_objprops2(override,-E,List,NewList):-
     append(Left,[R|Right],List), E =@= R,
     append(Left,Right,NewList),!.
 
+with_objprops2(override,Pos,List, List):- member(E,List),E=@=Pos,!.
+with_objprops2(override,Pos,List,NewList):- type_prop(reposition,Pos),
+  make_unifiable_u(Pos,UPos), member(UPos,List),!,
+  must_det_ll((
+   Obj = obj(List), globalpoints(Obj, OGPoints), 
+   calc_relative_2d(UPos,Pos,OX,OY), offset_points(OX, OY, OGPoints, GPoints), 
+   rebuild_from_globalpoints(_VM, Obj, GPoints, NewObj),
+  NewObj = obj(NewList))),!.
+
+
 with_objprops2(override,E,List,NewList):- \+ aggregates(E), my_assertion(compound(E)), functor(E,F,A),functor(R,F,A),
     append(Left,[R|Right],List), % E \=@= R,
     append(Left,[E|Right],NewList),!.
@@ -2066,6 +2076,7 @@ rebuild_from_globalpoints(VM,Obj,GPoints,NewObj):-
 
 
 is_prop_automatically_rebuilt(iz(birth(_))):-!,fail.
+is_prop_automatically_rebuilt(Prop):- type_prop(reposition,Prop),!.
 is_prop_automatically_rebuilt(Prop):- sub_term(CP,Prop),(is_color(CP);is_ncpoint(CP)),!.
 is_prop_automatically_rebuilt(Prop):- compound(Prop),functor(Prop,F,_),(atom_contains(F,'color');atom_contains(F,'points')),!.
 is_prop_automatically_rebuilt(Prop):-
