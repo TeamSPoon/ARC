@@ -475,29 +475,6 @@ i_pbox_l(SoFarI,SoFarO,Grid,NSEW,XSG,Points,Points9,VM,L_S,[_|Sizes]):- i_pbox_l
 
 
 
-existingObject(VM,GOPoints):- 
-  member_ls(O,VM.objs),globalpoints_include_bg(O,Ps),
-  GOPoints==Ps,!.
-
-obj_gpoints(Grid,OBJ,OH,OV,GOPoints):-
-   grid_size(OBJ,H,V),
-   obj_gpoints(Grid,OBJ,OH,OV,H,V,GOPoints).
-
-obj_gpoints(_Grid,OBJ,OH,OV,H,V,GOPoints):- is_grid(OBJ),!,
-   HH is OH+H-1,VV is OV+V-1,
-   hv_point(HH,VV,HV2),
-   hv_point(1,1,HV1),
-  localpoints_include_bg(OBJ,OPoints), 
- ((member(W-HV1,OPoints),is_fg_color(W)) -> OPoints=OOPoints ; OOPoints=[black-HV1|OPoints]),
- ((member(W-HV2,OOPoints),is_fg_color(W)) -> OOPoints=OOOOPoints ; OOOOPoints=[black-HV2|OOPoints]),
-   offset_points(OH,OV,OOOOPoints,GOPoints).
-
-obj_gpoints(Grid,OBJ,OH,OV,H,V,GOPoints):- 
-  EX is OH+H-1, EY is OV+V-1,
-  clip(OH,OV,EX,EY,Grid,OBJ),!,
-  obj_gpoints(Grid,OBJ,OH,OV,H,V,GOPoints).
-
-
 rim_of(Find,HeadNewMidFooter):- 
   append([Top|OldMid],[Bot],Find), 
   rot90(OldMid,OldMid90),
@@ -583,12 +560,6 @@ is_sub_grid_object(CACHE,FX,FY,SX,SY,TGX,TGY,OGX,OGY,[iz(media(image)),subgrid(I
   0 is (FX-1) rem OGX, 0 is (FY-1) rem OGY, % fits prefectly
   IX is ((FX-1)/OGX)+1, IY is ((FY-1)/OGY)+1,!, %make up a index for it
   subgrid_hv(SX,SY)\==subgrid_hv(10,10).
-
-
-this_grid_is_multiple_of_other(CACHE):-
-  CACHE.h=TGX,CACHE.v=TGY,CACHE.ogx=OGX,CACHE.ogy=OGY,
-    (TGX > OGX ; TGX > OGY), !, % this grid is larger in some way
-  0 is TGX rem OGX, 0 is TGX rem OGY. % This grid size is multiple of other grid
 
 
 found_box(Grid,L_S,NSEW,FX,FY,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS,   inside, Why):- 

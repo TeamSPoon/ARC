@@ -1,5 +1,6 @@
 
 %:- ensure_loaded('solvers.pl').
+run_dsl(Len,DSL):- throw(run_dsl(Len,DSL)).
 
 michod_solved_names(TestID):-
   list_715(List),member((TestAtom,_),List),once(fix_test_name(TestAtom,TestID)).

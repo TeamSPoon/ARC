@@ -1065,6 +1065,13 @@ individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
    set_vm(VM))),
    addObjects(VM,WasInside).
 
+
+this_grid_is_multiple_of_other(CACHE):-
+  CACHE.h=TGX,CACHE.v=TGY,CACHE.ogx=OGX,CACHE.ogy=OGY,
+    (TGX > OGX ; TGY > OGY), !, % this grid is larger in some way
+  0 is TGX rem OGX, 0 is TGX rem OGY. % This grid size is multiple of other grid
+
+
 % =====================================================================
 is_fti_step(consider_other_grid).
 % =====================================================================
@@ -1309,7 +1316,7 @@ colormass_3(VM):-
   %\+ overlapping_points(GPoints,CantHave),!,
   append(FirstTwo,GPoints,IndivPoints),
   sort(IndivPoints,IndivPointSet),
-  print_ss(cm3,VM.objs,IndivPointSet),
+  %print_ss(cm3,VM.objs,IndivPointSet),
   length(IndivPointSet,Len),Len>=3,
   \+ (member(C-P3,IndivPointSet),member(C-P4,LeftOver),is_adjacent_point(P3,Card,P4),n_s_e_w(Card)),
   make_indiv_object(VM,[iz(type(colormass)),iz(media(shaped)),birth(colormass_3)],IndivPointSet,NewObj),
@@ -3401,6 +3408,29 @@ suggest_r1([my_release_bg,subst_color(red,_)]).
  pp(all_ogs(o,R1)=HintO),
  pp(all_ogs(i,R2)=HintI),!.
 */ 
+%existingObject(VM,GOPoints):- 
+%  member_ls(O,VM.objs),globalpoints_include_bg(O,Ps),
+%  GOPoints==Ps,!.
+:- dynamic(special_sizes/2).
+
+obj_gpoints(Grid,OBJ,OH,OV,GOPoints):-
+   grid_size(OBJ,H,V),
+   obj_gpoints(Grid,OBJ,OH,OV,H,V,GOPoints).
+
+obj_gpoints(_Grid,OBJ,OH,OV,H,V,GOPoints):- is_grid(OBJ),!,
+   HH is OH+H-1,VV is OV+V-1,
+   hv_point(HH,VV,HV2),
+   hv_point(1,1,HV1),
+  localpoints_include_bg(OBJ,OPoints), 
+ ((member(W-HV1,OPoints),is_fg_color(W)) -> OPoints=OOPoints ; OOPoints=[black-HV1|OPoints]),
+ ((member(W-HV2,OOPoints),is_fg_color(W)) -> OOPoints=OOOOPoints ; OOOOPoints=[black-HV2|OOPoints]),
+   offset_points(OH,OV,OOOOPoints,GOPoints).
+
+obj_gpoints(Grid,OBJ,OH,OV,H,V,GOPoints):- 
+  EX is OH+H-1, EY is OV+V-1,
+  clip(OH,OV,EX,EY,Grid,OBJ),!,
+  obj_gpoints(Grid,OBJ,OH,OV,H,V,GOPoints).
+
 
 
 % =====================================================================
@@ -3424,7 +3454,7 @@ each_ogs_object(TODO,VM):-
   is_grid(Other),
   all_ogs_123(StartGrid,Other,Hints))),
   %copy_term(VM.grid,This),  
-  must_det_ll_maplist(use_each_ogs(VM,TODO,StartGrid,Other),Hints).
+  md_maplist(use_each_ogs(VM,TODO,StartGrid,Other),Hints).
 
 all_ogs_123(StartGrid,Other,Hints):- 
   all_ogs(StartGrid,Other,Hints1),

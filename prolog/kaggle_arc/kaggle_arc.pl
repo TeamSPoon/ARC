@@ -409,7 +409,7 @@ ld_logicmoo_webui:-
 
 logicmoo_use_swish:-
   set_prolog_flag(use_arc_swish,true),
-  ld_logicmoo_webui,webui_start_swish_and_clio,
+  ld_logicmoo_webui,call(call,webui_start_swish_and_clio),
   http_handler('/swish', http_redirect(moved, '/swish/'), []).
 
 arc_user(Nonvar):- nonvar(Nonvar),!,arc_user(Var),!,Nonvar=Var.

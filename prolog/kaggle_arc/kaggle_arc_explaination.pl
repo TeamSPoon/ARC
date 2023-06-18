@@ -794,8 +794,8 @@ correct_pipe2a(IO,P1,Rules,Out):- trace,%mfail,
   findall(LHS,ac_info_unit(AboutSame,_,IO,_,LHS),RulesAboutSames),flatten(RulesAboutSames,RulesAboutSamesFlat),
     sames_must_have_sames(RulesAboutSamesFlat,BetterRulesAboutSames),BetterRulesAboutSames\==[],
   findall(Info,ac_info_unit(AboutSame,Info,IO,_,_),InfoAboutSames),flatten(InfoAboutSames,InfoAboutSamesFlat),
-    merge_vals(InfoAboutSamesFlat,BetterInfoAboutSames),
-  append(AboutSimular,[ac_unit(IO,BetterInfoAboutSames,P1,BetterRulesAboutSames)],Out))).
+    merge_list_values(InfoAboutSamesFlat,BetterInfo),
+  append(AboutSimular,[ac_unit(IO,BetterInfo,P1,BetterRulesAboutSames)],Out))).
 
 correct_pipe2b(IO,P1,Rules,Out):- %mfail,
  trace,
@@ -804,8 +804,8 @@ correct_pipe2b(IO,P1,Rules,Out):- %mfail,
   findall(LHS,(rtrace,ac_info_unit(AboutSimular,_,IO,_,LHS)),RulesAboutSimulars),
             differents_must_differents(RulesAboutSimulars,BetterRulesAboutSimulars),BetterRulesAboutSimulars\==[],
   findall(Info,ac_info_unit(AboutSimular,Info,IO,_,_),InfoAboutSimulars),
-       merge_list_values(InfoAboutSimulars,InfoAboutSimularsFlat), merge_vals(InfoAboutSimularsFlat,BetterInfoAboutSimulars),
-  append(AboutSame,[ac_unit(IO,BetterInfoAboutSimulars,P1,BetterRulesAboutSimulars)],Out))).
+       merge_list_values(InfoAboutSimulars,InfoAboutSimularsFlat), merge_list_values(InfoAboutSimularsFlat,BetterInfoAS),
+  append(AboutSame,[ac_unit(IO,BetterInfoAS,P1,BetterRulesAboutSimulars)],Out))).
 
 merge_list_values([A,B],Out):- merge_vals([A],[B],Out),!.
 merge_list_values([A],[A]):-!.
@@ -994,7 +994,7 @@ print_individuals_paired(InS,OutS):-
   print_wio(In,Out),!,
   print_individuals_paired(InR,OutR).
 
-
+/*
 into_input_objects(TestID,ExampleNum,IO,In,Objs,VM):-
   must_det_ll((
         once((obj_group5(TestID,ExampleNum,IO,ROptions,TempObjs),TempObjs\==[])),
@@ -1002,7 +1002,7 @@ into_input_objects(TestID,ExampleNum,IO,In,Objs,VM):-
         into_fti(TID,ROptions,In,VM),
         individuate_1(VM),
         Objs = VM.objs)).
-
+*/
 
 ac_unit_visitor(AC_RULES_UNIT,_,_,_):- \+ compound(AC_RULES_UNIT),!,fail.
 ac_unit_visitor(ac_unit(_,IO,P,PSame),IO,P,PSame).
@@ -1249,7 +1249,7 @@ is_debug_info(iz(P)):-!,is_debug_info(P).
 is_grid_or_group(Grid):- is_grid(Grid),!.
 is_grid_or_group(Grid):- is_group(Grid),!.
 
-
+/*
 % Make sure each arguement is transformed corretly
 correct_pass2a(_TestID,_IO_,_P,PSame,Kept):- 
   my_partition(is_giz_prop,PSame,Giz,NonGiz),
@@ -1264,7 +1264,7 @@ correct_pass2b(_TestID,_IO_,_P,PSame,Kept):-
   my_partition(is_info_prop,PSame,Giz,NonGiz),
   append_set_level(Giz,UGiz),append(UGiz,NonGiz,Kept),!.
 correct_pass2b(_TestID,_IO_,_P,Kept,Kept).
-
+*/
 is_info_prop(iz(Info)):- compound(Info),Info = info(_).
 
 
@@ -1275,8 +1275,8 @@ correct_pipe2c(IO,P1,Rules,Out):- %trace,%mfail,
   findall(LHS,ac_info_unit(AboutSame,IO,_,_,LHS),RulesAboutSames),flatten(RulesAboutSames,RulesAboutSamesFlat),
     sames_must_have_sames(RulesAboutSamesFlat,BetterRulesAboutSames),BetterRulesAboutSames\==[],
   findall(Info,ac_info_unit(AboutSame,IO,_,Info,_),InfoAboutSames),flatten(InfoAboutSames,InfoAboutSamesFlat),
-    merge_vals(InfoAboutSamesFlat,BetterInfoAboutSames),
-  append(AboutSimular,[ac_unit(_,IO,P1,[iz(info(BetterInfoAboutSames))|BetterRulesAboutSames])],Out))).
+    merge_list_values(InfoAboutSamesFlat,BetterInfo),
+  append(AboutSimular,[ac_unit(_,IO,P1,[iz(info(BetterInfo))|BetterRulesAboutSames])],Out))).
 correct_pass2c(_IO_,_P,Kept,Kept).
 
 correct_pass2d(IO,P1,Rules,Out):- %mfail, %trace,
@@ -1285,8 +1285,8 @@ correct_pass2d(IO,P1,Rules,Out):- %mfail, %trace,
   findall(LHS,ac_info_unit(AboutSimular,IO,_,_,LHS),RulesAboutSimulars),
             differents_must_differents(RulesAboutSimulars,BetterRulesAboutSimulars),BetterRulesAboutSimulars\==[],
   findall(Info,ac_info_unit(AboutSimular,IO,_,Info,_),InfoAboutSimulars),
-       merge_list_values(InfoAboutSimulars,InfoAboutSimularsFlat), merge_vals(InfoAboutSimularsFlat,BetterInfoAboutSimulars),
-  append(AboutSame,[ac_unit(_,IO,P1,[iz(info(BetterInfoAboutSimulars))|BetterRulesAboutSimulars])],Out))).
+       merge_list_values(InfoAboutSimulars,InfoAboutSimularsFlat), merge_list_values(InfoAboutSimularsFlat,BetterInfoAS),
+  append(AboutSame,[ac_unit(_,IO,P1,[iz(info(BetterInfoAS))|BetterRulesAboutSimulars])],Out))).
 correct_pass2d(_IO_,_P,Kept,Kept).
 
 pp_obj_tree(D,Info,In,Out):-  
@@ -1593,8 +1593,8 @@ correct_pipe2a(IO,P1,Rules,Out):- trace,%mfail,
   findall(LHS,ac_info_unit(AboutSame,_,IO,_,LHS),RulesAboutSames),flatten(RulesAboutSames,RulesAboutSamesFlat),
     sames_must_have_sames(RulesAboutSamesFlat,BetterRulesAboutSames),BetterRulesAboutSames\==[],
   findall(Info,ac_info_unit(AboutSame,Info,IO,_,_),InfoAboutSames),flatten(InfoAboutSames,InfoAboutSamesFlat),
-    merge_vals(InfoAboutSamesFlat,BetterInfoAboutSames),
-  append(AboutSimular,[ac_unit(IO,BetterInfoAboutSames,P1,BetterRulesAboutSames)],Out))).
+    merge_vals_list(InfoAboutSamesFlat,BetterInfo),
+  append(AboutSimular,[ac_unit(IO,BetterInfo,P1,BetterRulesAboutSames)],Out))).
 
 correct_pipe2b(IO,P1,Rules,Out):- %mfail,
  trace,
@@ -1603,8 +1603,8 @@ correct_pipe2b(IO,P1,Rules,Out):- %mfail,
   findall(LHS,(rtrace,ac_info_unit(AboutSimular,_,IO,_,LHS)),RulesAboutSimulars),
             differents_must_differents(RulesAboutSimulars,BetterRulesAboutSimulars),BetterRulesAboutSimulars\==[],
   findall(Info,ac_info_unit(AboutSimular,Info,IO,_,_),InfoAboutSimulars),
-       merge_list_values(InfoAboutSimulars,InfoAboutSimularsFlat), merge_vals(InfoAboutSimularsFlat,BetterInfoAboutSimulars),
-  append(AboutSame,[ac_unit(IO,BetterInfoAboutSimulars,P1,BetterRulesAboutSimulars)],Out))).
+       merge_list_values(InfoAboutSimulars,InfoAboutSimularsFlat), merge_list_values(InfoAboutSimularsFlat,BetterInfoAS),
+  append(AboutSame,[ac_unit(IO,BetterInfoAS,P1,BetterRulesAboutSimulars)],Out))).
 
 merge_list_values([A,B],Out):- merge_vals([A],[B],Out),!.
 merge_list_values([A],[A]):-!.
