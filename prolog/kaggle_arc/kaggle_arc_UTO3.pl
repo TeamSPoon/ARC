@@ -1121,7 +1121,7 @@ pass2_rule_R(TestID,Rule):-
 
 has_a_value(P):- make_unifiable_u(P,U),P\=@=U.
 
-how_are_differnt(O1,O2,Set):-
+how_are_different(O1,O2,Set):-
   findall(Type=Same,prop_pairs2(O1,O2,Type,Same,_P),List),
   vsr_set(List,Set).
 
@@ -1219,7 +1219,7 @@ show_cp_dff_rem_keep_add(TransRule):-   %flat_props([B],PB), intersection(Same,P
 */
 show_cp_dff_rem_keep_add(E1,E2):-  
   dash_chars,
-  if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),    
+  if_t(how_are_different(E1,E2,Set),pp_ilp(how_are_different=Set)),    
   noteable_propdiffs2(E1,E2,Same,InFlatP,OutPFlat),
   pp_ilp(sames=Same),
   pp_ilp(removed=InFlatP),
@@ -3032,7 +3032,7 @@ trans_rule(Info,E1,E2,Rules):-
   noteable_propdiffs(E1,E2,NSame,NL,NR),
   %pp_ilp(l2r(Info,E1,E2)),
   dash_chars,
-  if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
+  if_t(how_are_different(E1,E2,Set),pp_ilp(how_are_different=Set)),
   flat_props(E1,FP1),flat_props(E2,FP2),
   intersection(FP1,FP2,Same,InFlatP,OutPFlat),
   pp_ilp(removed=InFlatP),

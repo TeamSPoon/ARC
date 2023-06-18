@@ -1211,6 +1211,9 @@ remove_debug_info(List,NoDebug):- compound_name_arguments(List,F,AA),
 
 ac_unit(TestID,Ctx,P,Same):- ac_listing(TestID,Ctx,P,Same).
 
+ac_info_unit(TestID,Info,Ctx,P,NoDebug):- ac_listing(TestID,Ctx,P,List),
+  my_partition(not_debug_info,List,NoDebug,Info).
+
 ac_listing(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),ctx_p_conds(Stuff,Ctx,P,PSame).
 %ac_listing(TestID,Ctx,P->ac_db_unit,PSame):- ac_db_unit(TestID,Ctx,P,PSame).
 ac_listing(TestID,Ctx,P,PSame):- (ac_db_unit(TestID,Ctx,P,PSame)*->true;pass2_rule(TestID,Ctx,P,PSame)), \+ never_use_horn_rhs(P).
@@ -1762,7 +1765,7 @@ how_generic_simularity(TestID, ExampleNum, HowInL, HowOutL, HowIn, HowOut):-
  current_example_nums(TestID, ExampleNum),
  kaggle_arc(TestID, ExampleNum, GridIn, GridOut),
   (var(HowInL)-> gather_objs_info_list(TestID, ExampleNum, in, GridIn, HowInL) ; true),
-  (var(HowOutL)-> gather_objs_outfo_list(TestID, ExampleNum, out, GridOut, HowOutL) ; true),
+  (var(HowOutL)-> gather_objs_info_list(TestID, ExampleNum, out, GridOut, HowOutL) ; true),
  must_det_ll(
     findall(Similarity-pair(Object1, Object2, ExtraInfo),
      (member(Object1, HowInL),

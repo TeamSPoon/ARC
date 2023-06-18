@@ -1209,7 +1209,7 @@ is_fti_step(ensure_objects).
 ensure_objects(VM):-
  must_det_ll((
   if_t(\+ is_group(VM.objs),
-  (individuate_3(complete,VM))))).
+  (individuate_2(complete,VM))))).
 
 % =====================================================================
 is_fti_step(objects_into_grid).

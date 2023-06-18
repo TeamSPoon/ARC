@@ -791,9 +791,9 @@ correct_pipe2a(IO,P1,Rules,Out):- trace,%mfail,
  must_det_ll((
   
   my_partition(is_rule_about_same(IO,P1),Rules,AboutSame,AboutSimular),
-  findall(LHS,ac_unit(AboutSame,_,IO,_,LHS),RulesAboutSames),flatten(RulesAboutSames,RulesAboutSamesFlat),
+  findall(LHS,ac_info_unit(AboutSame,_,IO,_,LHS),RulesAboutSames),flatten(RulesAboutSames,RulesAboutSamesFlat),
     sames_must_have_sames(RulesAboutSamesFlat,BetterRulesAboutSames),BetterRulesAboutSames\==[],
-  findall(Info,ac_unit(AboutSame,Info,IO,_,_),InfoAboutSames),flatten(InfoAboutSames,InfoAboutSamesFlat),
+  findall(Info,ac_info_unit(AboutSame,Info,IO,_,_),InfoAboutSames),flatten(InfoAboutSames,InfoAboutSamesFlat),
     merge_vals(InfoAboutSamesFlat,BetterInfoAboutSames),
   append(AboutSimular,[ac_unit(IO,BetterInfoAboutSames,P1,BetterRulesAboutSames)],Out))).
 
@@ -801,9 +801,9 @@ correct_pipe2b(IO,P1,Rules,Out):- %mfail,
  trace,
  must_det_ll((
   my_partition(is_rule_about(IO,P1),Rules,AboutSame,AboutSimular),
-  findall(LHS,(rtrace,ac_unit(AboutSimular,_,IO,_,LHS)),RulesAboutSimulars),
+  findall(LHS,(rtrace,ac_info_unit(AboutSimular,_,IO,_,LHS)),RulesAboutSimulars),
             differents_must_differents(RulesAboutSimulars,BetterRulesAboutSimulars),BetterRulesAboutSimulars\==[],
-  findall(Info,ac_unit(AboutSimular,Info,IO,_,_),InfoAboutSimulars),
+  findall(Info,ac_info_unit(AboutSimular,Info,IO,_,_),InfoAboutSimulars),
        merge_list_values(InfoAboutSimulars,InfoAboutSimularsFlat), merge_vals(InfoAboutSimularsFlat,BetterInfoAboutSimulars),
   append(AboutSame,[ac_unit(IO,BetterInfoAboutSimulars,P1,BetterRulesAboutSimulars)],Out))).
 
@@ -1334,7 +1334,7 @@ show_cp_dff_rem_keep_add(TransRule):-   %flat_props([B],PB), intersection(Same,P
 
 show_cp_dff_rem_keep_add(E1,E2):-  
   dash_chars,
-  if_t(how_are_differnt(E1,E2,Set),pp(how_are_differnt=Set)),    
+  if_t(how_are_different(E1,E2,Set),pp(how_are_different=Set)),    
   noteable_propdiffs(E1,E2,Same,InFlatP,OutPFlat),
   if_t(Same==[],pp_ilp(sames=Same)),
   length(Same,LSame),
@@ -1553,10 +1553,10 @@ compute_scene_change_each_pipe(In,[Step|More],Out):-
 %compute_scene_change_step(In,call_p2(Step),Out):- call(Step,In,Out),!.
 %compute_scene_change_step(Same,call(Step),Same):- !, ignore(Step).
 %compute_scene_change_step(In,whole(Step),Out):- !,
-% findall_vset_R(IO-P,ac_unit(In,_Info,IO,P,_PSame),PList),
+% findall_vset_R(IO-P,ac_info_unit(In,_Info,IO,P,_PSame),PList),
 % do_in_plist_high(PList,Step,In,Out).
 compute_scene_change_step(In,Step,Out):-
- must_det_ll((findall_vset_R(IO-P,ac_unit(In,_Info,IO,P,_PSame),PList),
+ must_det_ll((findall_vset_R(IO-P,ac_info_unit(In,_Info,IO,P,_PSame),PList),
   do_in_plist_low(PList,Step,In,Out))).
 
 do_in_plist_high([IO-P|PList],Step,In,Out):-
@@ -1590,9 +1590,9 @@ correct_pipe2a(IO,P1,Rules,Out):- trace,%mfail,
  must_det_ll((
   
   my_partition(is_rule_about_same(IO,P1),Rules,AboutSame,AboutSimular),
-  findall(LHS,ac_unit(AboutSame,_,IO,_,LHS),RulesAboutSames),flatten(RulesAboutSames,RulesAboutSamesFlat),
+  findall(LHS,ac_info_unit(AboutSame,_,IO,_,LHS),RulesAboutSames),flatten(RulesAboutSames,RulesAboutSamesFlat),
     sames_must_have_sames(RulesAboutSamesFlat,BetterRulesAboutSames),BetterRulesAboutSames\==[],
-  findall(Info,ac_unit(AboutSame,Info,IO,_,_),InfoAboutSames),flatten(InfoAboutSames,InfoAboutSamesFlat),
+  findall(Info,ac_info_unit(AboutSame,Info,IO,_,_),InfoAboutSames),flatten(InfoAboutSames,InfoAboutSamesFlat),
     merge_vals(InfoAboutSamesFlat,BetterInfoAboutSames),
   append(AboutSimular,[ac_unit(IO,BetterInfoAboutSames,P1,BetterRulesAboutSames)],Out))).
 
@@ -1600,9 +1600,9 @@ correct_pipe2b(IO,P1,Rules,Out):- %mfail,
  trace,
  must_det_ll((
   my_partition(is_rule_about(IO,P1),Rules,AboutSame,AboutSimular),
-  findall(LHS,(rtrace,ac_unit(AboutSimular,_,IO,_,LHS)),RulesAboutSimulars),
+  findall(LHS,(rtrace,ac_info_unit(AboutSimular,_,IO,_,LHS)),RulesAboutSimulars),
             differents_must_differents(RulesAboutSimulars,BetterRulesAboutSimulars),BetterRulesAboutSimulars\==[],
-  findall(Info,ac_unit(AboutSimular,Info,IO,_,_),InfoAboutSimulars),
+  findall(Info,ac_info_unit(AboutSimular,Info,IO,_,_),InfoAboutSimulars),
        merge_list_values(InfoAboutSimulars,InfoAboutSimularsFlat), merge_vals(InfoAboutSimularsFlat,BetterInfoAboutSimulars),
   append(AboutSame,[ac_unit(IO,BetterInfoAboutSimulars,P1,BetterRulesAboutSimulars)],Out))).
 
@@ -1641,7 +1641,7 @@ which_members_vary([_|L1],RRR,VariedMembers):-
 
 /*
 update_scene_now(TestID,IO,P,RulesIn,RulesOut):-
-  ac_unit(TestID,Info,IO_,P,PSame1),
+  ac_info_unit(TestID,Info,IO_,P,PSame1),
   my_partition(is_debug_info,PSame1,Skip,PSame),
   findall(DSame,
      (ac_db_unit(RulesIn,Ref,IO_,DP,DSame), 
