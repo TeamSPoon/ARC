@@ -1282,7 +1282,19 @@ skip_some(_).
 % =====================================================================
 is_fti_step(colormass_3).
 % =====================================================================
-colormass_3(VM):- vm_opts_some(shapes(none),count_equ(_NF),colors(color),dirs(diags_nsew),incl_bg(false),VM),!.
+colormass_3(VM):- SegOptions = i_opts(shapes(none),count_equ(_NF),colors(each),dirs(diags_nsew),incl_bg(false)),
+  globalpoints(VM.objs,CantHave),
+  Points = VM.lo_points,
+  intersection(CantHave,Points,_RemoveThese,_,KeepThese),
+  my_partition(is_fg_point,KeepThese,GPoints,BGPoints),
+  GPoints = VM.lo_points,
+  %filter_points(SegOptions,GPoints,Points),
+  must_det_ll(once(color_masses(VM.h,VM.v,VM.start_points,GPoints,SegOptions,Segs,LO))),  
+  maplist(make_indiv_object(VM,[iz(birth(SegOptions)),iz(type(colormass)),iz(media(shaped)),birth(colormass_3)]),Segs,Objs),
+  append(LO,BGPoints,NewLOPoints),
+  set(VM.lo_points) = NewLOPoints,
+  assumeAdded(VM,Objs).
+
 colormass_3(VM):- 
   globalpoints(VM.objs,CantHave),
   Points = VM.lo_points,

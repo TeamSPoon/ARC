@@ -291,9 +291,13 @@ best_obj_group_pair(TestID, ExampleNum, How, InC, OutC):-
   grid_indv_versions(TestID, ExampleNum, out, LHOOutS),
   no_repeats_var(NRVar)))),!,
   ((member(lho(S,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),S=<80);
-   (member(lho(A,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),A<S,S=<80);
-   (member(lho(S,InPSS,HowIn,InC),LHOInS),member(lho(A,OutPSS,HowOut,OutC),LHOOutS),A<S,S=<80)),
-  (NRVar=NRVarI-> nop(pp(nrVarI=NRVarI)); nop(wdmsg(duplicated(How))),fail).
+   (member(lho(A,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),A=S,S=<80);
+   (member(lho(A,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),A<S,A>1,S=<80);
+   (member(lho(A,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),A<S,A>1,S=<80);
+   (member(lho(A,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),A<S,A=1,S=<80);
+   (member(lho(S,InPSS,HowIn,InC),LHOInS),member(lho(A,OutPSS,HowOut,OutC),LHOOutS),A<S,A=1,S=<80)),
+  (NRVar=NRVarI-> nop(pp(nrVarI=NRVarI)); nop(wdmsg(duplicated(How))),fail),
+  ignore(How = in_out(HowIn,HowOut)).
 
 % =============================================================
 learn_object_dependancy(TestID,How,RulesOut):-

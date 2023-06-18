@@ -69,7 +69,10 @@ dont_notice(oid(_)).
 dont_notice(pg(_, pen(_), rankLS , _)).
 dont_notice(pg(_, iz(_), rankLS, _)).
 dont_notice(pg(_, empty_area(_), rankLS, _)).
-
+dont_notice(center2D(_,_)).
+dont_notice(loc2D(_,_)).
+dont_notice(vis2D(_,_)).
+dont_notice(empty_area(_)).
 %dont_notice(pg(_, iz(_), rankLS, largest)).
 %dont_notice(link(sees(_), _)).
 %dont_notice(links_count(sees, _)).
@@ -263,14 +266,13 @@ learn_solve_via_grid_change(TestID):-
    % % %clear_scene_rules(TestID),
    compute_scene_change(TestID))))).
 
+
 % =====================================================================
-is_fti_step(vm_opts_some).
+is_fti_step(simple).
 % =====================================================================
-vm_opts_some(Shapes,count_equ(NF),Mono,Nsew,IncludeBG,VM):-
-  SegOptions = i_opts(Shapes,count_equ(NF),Mono,Nsew,IncludeBG),
+simple(SegOptions,VM):-
   GPoints = VM.lo_points,
-  %filter_points(SegOptions,GPoints,Points),
-  must_det_ll(once(color_masses(VM.h,VM.v,VM.start_points,GPoints,SegOptions,Segs))),
+  must_det_ll(once(indv_color_masses(VM.h,VM.v,VM.start_points,GPoints,SegOptions,Segs))),
   gset(VM.lo_points) = [],
   maplist(make_indiv_object(VM,[iz(birth(SegOptions))]),Segs,Objs),
   assumeAdded(VM,Objs),!.
@@ -279,7 +281,8 @@ vm_opts_some(Shapes,count_equ(NF),Mono,Nsew,IncludeBG,VM):-
 is_fti_step(i_opts).
 % =====================================================================
 i_opts(Shapes,count_equ(NF),Mono,Nsew,IncludeBG,VM):-
-  vm_opts_some(Shapes,count_equ(NF),Mono,Nsew,IncludeBG,VM).
+  SegOptions = i_opts(Shapes,count_equ(NF),Mono,Nsew,IncludeBG),
+  simple(SegOptions,VM).
 
 
 
@@ -288,9 +291,7 @@ seg_options(Opt):-
  member(Opt,
      [
       i_opts(shapes(none),count_equ(NF),colors(each),dirs(diags_nsew),incl_bg(false)),
-
       i_opts(shapes(none),count_equ(NF),colors(each),dirs(nsew),incl_bg(false)),      
-
       i_opts(shapes(none),count_equ(NF),colors(mono),dirs(diags_nsew),incl_bg(false)),
       i_opts(shapes(none),count_equ(NF),colors(mono),dirs(nsew),incl_bg(false)),
 
@@ -302,16 +303,16 @@ seg_options(Opt):-
       i_opts(shapes(none),count_equ(false),colors(each),dirs(points),incl_bg(true))]),dif(count_equ(NF),false ).
 filter_points(i_opts(_,_,_Mono,_Diag,incl_bg(true)),Points,Points).
 filter_points(i_opts(_,_,_Mono,_Diag,incl_bg(false)),GPoints,Points):- my_partition(is_fg_point,GPoints,Points,_).
-dir_ok(_,i_opts(shapes(none),_,_,dirs(points),_)):-!,fail.
-dir_ok(D,i_opts(shapes(none),_,_,dirs(nsew),_)):-!, n_s_e_w(D).
-dir_ok(D,i_opts(shapes(none),_,_,dirs(diags_nsew),_)):-!, (n_s_e_w(D);is_diag(D)).
-dir_ok(_,i_opts(shapes(none),_,_,any,_)).
-color_dir_kk(_  ,Color):- is_fg_color(Color),!.
+dir_ok(_,i_opts(_,_,_,dirs(points),_)):-!,fail.
+dir_ok(D,i_opts(_,_,_,dirs(nsew),_)):-!, n_s_e_w(D).
+dir_ok(D,i_opts(_,_,_,dirs(diags_nsew),_)):-!, (n_s_e_w(D);is_diag(D)),!.
+dir_ok(_,i_opts(_,_,_,any,_)).
 color_dir_kk(Dir,Color):- is_bg_color(Color),!, \+ is_diag(Dir).
-colors_joinable(i_opts(shapes(none),_,colors(mono),_,_),C1,C2):- is_fg_color(C1),is_fg_color(C2).
-colors_joinable(i_opts(shapes(none),_,colors(each),_,_),C1,C1):- is_fg_color(C1).
-colors_joinable(i_opts(shapes(none),_,colors(black),_,_),C1,C1):- is_bg_color(C1).
-colors_joinable(i_opts(shapes(none),_,_,_,incl_bg(true)),C1,C1):- is_bg_color(C1).
+color_dir_kk(_  ,Color):- is_fg_color(Color),!.
+colors_joinable(i_opts(_,_,colors(mono),_,_),C1,C2):- is_fg_color(C1),is_fg_color(C2).
+colors_joinable(i_opts(_,_,colors(each),_,_),C1,C1):- is_fg_color(C1).
+colors_joinable(i_opts(_,_,colors(black),_,_),C1,C1):- is_bg_color(C1).
+colors_joinable(i_opts(_,_,_,_,incl_bg(true)),C1,C1):- is_bg_color(C1).
 
 %?- into_grid('37d3e8b2',G),seg_options(Opt),individuate_3(Opt,G,InC),print_grid(Opt,InC)
 
@@ -321,38 +322,63 @@ objs_to_spoints(InC,InPSS):-
   maplist(globalpoints,InC,InP),maplist(sort,InP,InPS),sort(InPS,InPSS).
 
 
-rest_are_points([P|PointsOut],[[P]|More]):-
-  rest_are_points(PointsOut,More),!.
+rest_are_points([P|PointsRest],[[P]|More]):-
+  rest_are_points(PointsRest,More),!.
 rest_are_points([],[]).
 
-color_masses(_H,_V,_Orig,Points,_SegOptions,[]):- Points==[],!.
-color_masses(_H,_V,_Orig,[P|PointsOut],SegOptions,[[P]|More]):-
-  SegOptions = i_opts(_,_,_,D,incl_bg(true)),D=dirs(points),!,
-  rest_are_points(PointsOut,More),!.
-color_masses(H,V,Orig,PointsOut,SegOptions,More):-
-   SegOptions = i_opts(A,B,C,D,incl_bg(true)),
-   my_partition(is_fg_point,PointsOut,FGPoints,BGPoints),
-   OutOpts = i_opts(A,B,colors(black),dirs(nsew),incl_bg(false)),
-   color_masses(H,V,Orig,BGPoints,OutOpts,BlackObjs),
-   OutOpts = i_opts(A,B,C,D,incl_bg(false)),
-   color_masses(H,V,Orig,FGPoints,OutOpts,FGObjs),
-   append(FGObjs,BlackObjs,More).
+is_adjacent_to_one(FGPoints,_-P1):-
+  is_adjacent_point(P1,Dir,P2),  Dir\==c, \+ \+ member(_-P2,FGPoints),!.
 
-color_masses(H,V,Orig,Points,SegOptions,[GPoints|More]):-   
+indv_color_masses(H,V,Orig,PointsRest,SegOptions,More):-
+  var(SegOptions),!,seg_options(SegOptions),indv_color_masses(H,V,Orig,PointsRest,SegOptions,More).
+/*
+indv_color_masses(H,V,Orig,PointsRest,SegOptions,More):- SegOptions = i_opts(A,B,C,D,incl_bg(edges)),!,
+   my_partition(is_fg_point,PointsRest,FGPoints,BGPoints0),
+   include(is_adjacent_to_one(FGPoints),BGPoints0,BGPoints),
+   BGOpts = i_opts(A,B,colors(each),dirs(nsew),incl_bg(true)),
+   %subst001(BGPoints,'black','wfg',BGPointsFG), print_grid(H,V,wfg,BGPointsFG),
+   color_masses(H,V,Orig,BGPoints,BGOpts,BlackObjs),
+   FGOpts = i_opts(A,B,C,D,incl_bg(false)),
+   color_masses(H,V,Orig,FGPoints,FGOpts,FGObjs),
+   append(FGObjs,BlackObjs,More),!.
+*/
+indv_color_masses(H,V,Orig,PointsRest,SegOptions,More):- SegOptions = i_opts(A,B,C,D,incl_bg(true)),!,
+   my_partition(is_fg_point,PointsRest,FGPoints,BGPoints),
+   BGOpts = i_opts(A,B,colors(black),dirs(nsew),incl_bg(true)),
+   %subst001(BGPoints,'black','wfg',BGPointsFG), print_grid(H,V,wfg,BGPointsFG),
+   all_color_masses(H,V,Orig,BGPoints,BGOpts,BlackObjs),
+   FGOpts = i_opts(A,B,C,D,incl_bg(false)),
+   all_color_masses(H,V,Orig,FGPoints,FGOpts,FGObjs),
+   append(FGObjs,BlackObjs,More),!.
+
+indv_color_masses(_H,_V,_Orig,PointsRest,SegOptions,More):-
+  sub_var(dirs(points),SegOptions),!, rest_are_points(PointsRest,More),!.
+
+indv_color_masses(H,V,Orig,PointsRest,SegOptions,More):-
+  all_color_masses(H,V,Orig,PointsRest,SegOptions,More).
+
+all_color_masses(H,V,Orig,FGPoints,RestOpts,Objs):-
+  color_masses(H,V,Orig,FGPoints,RestOpts,Segs,LO),!,
+  rest_are_points(LO,PointSegs),
+  append(Segs,PointSegs,Objs).
+
+
+color_masses(_H,_V,_Orig,Points,_SegOptions,[],[]):- Points==[],!.
+color_masses(H,V,Orig,Points,SegOptions,[GPoints|More],LO):-   
   select(C1-HV1,Points,Points2),
   is_adjacent_point(HV1,Dir1,HV2),Dir1\==c,
-  select(C2-HV2,Points2,PointsOut),colors_joinable(SegOptions,C1,C2),
-  dir_ok(Dir1,SegOptions),color_dir_kk(Dir1,C1), % PointsFrom,ScanPoints,OutScanPoints,IndvPoints
-  all_points_near(Orig,SegOptions,[C1-HV1,C2-HV2],PointsOut,LeftOver,GPoints),!,
-  color_masses(H,V,Orig,LeftOver,SegOptions,More).
+  select(C2-HV2,Points2,PointsRest),colors_joinable(SegOptions,C1,C2),
+  dir_ok(Dir1,SegOptions),color_dir_kk(Dir1,C1), % PointsFrom,ScanPoints,RestScanPoints,IndvPoints
+  all_points_near(Orig,SegOptions,[C1-HV1,C2-HV2],PointsRest,LeftOver,GPoints),!,
+  color_masses(H,V,Orig,LeftOver,SegOptions,More,LO),!.
+color_masses(_H,_V,_Orig,PointsRest,_SegOptions,[],PointsRest).
+/*
+color_masses(H,V,Orig,[C1-HV1|PointsRest],SegOptions,[GPoints|More]):-   
+  all_points_near(Orig,SegOptions,[C1-HV1],PointsRest,LeftOver,GPoints),!,
+  color_masses(H,V,Orig,LeftOver,SegOptions,More),!.
+*/
 
-color_masses(H,V,Orig,Points,SegOptions,[GPoints|More]):-   
-  select(C1-HV1,Points,PointsOut), 
-  all_points_near(Orig,SegOptions,[C1-HV1],PointsOut,LeftOver,GPoints),
-  color_masses(H,V,Orig,LeftOver,SegOptions,More).
 
-color_masses(H,V,Orig,[P|PointsOut],SegOptions,[[P]|More]):-
-  color_masses(H,V,Orig,PointsOut,SegOptions,  More),!.
 
 %seg_options(in_out(I,O)):- seg_options(I,O).
   
@@ -410,24 +436,24 @@ segs_of(In,SegOptions,ObjsCount,Objs):-
   vis2D(In,H,V),
   once(globalpoints(In,GPoints)),
   filter_points(SegOptions,GPoints,Points),
-  once(color_masses(H,V,GPoints,Points,SegOptions,Objs)),
+  once(indv_color_masses(H,V,GPoints,Points,SegOptions,Objs)),
   length(Objs,ObjsCount), ObjsCount=<80.
   
-all_points_near(_Orig,_SegOptions,OutSet,[],        [],         OutSet):-!.
-all_points_near( Orig,SegOptions,Indv, ScanPoints,OutScanPoints,OutSet):-
-   points_near(SegOptions,Indv,ScanPoints,Out,OutScanPoints),
-   (Out == [] -> (OutSet = Indv, OutScanPoints = OutScanPoints)
-    ; (append(Indv,Out,IndvOut),
-        all_points_near(Orig,SegOptions,IndvOut,OutScanPoints,OutScanPoints,OutSet))),!.
+all_points_near(_Orig,_SegOptions,RestSet,[],        [],         RestSet):-!.
+all_points_near( Orig,SegOptions,CurrentIndv, ScanPoints,RestScanPoints,RestSet):-
+   points_near(SegOptions,CurrentIndv,ScanPoints,Found,LOScanPoints),
+   (Found == [] -> (RestSet = CurrentIndv, RestScanPoints = ScanPoints)
+    ; (append(CurrentIndv,Found,NewIndv),
+        all_points_near(Orig,SegOptions,NewIndv,LOScanPoints,RestScanPoints,RestSet))),!.
 
+points_near(SegOptions,Current,[E|ScanPoints],[E|Nears],RestScanPoints):- 
+  nearby_one_point(SegOptions,Current,E),!,
+  points_near(SegOptions,[E|Current],ScanPoints,Nears,RestScanPoints).
+points_near(SegOptions,From,[E|ScanPoints],Nears,[E|RestScanPoints]):- !,
+    points_near(SegOptions,From,ScanPoints,Nears,RestScanPoints).
 points_near(_SegOptions,_From,[],[],[]):-!.
-points_near(SegOptions,From,[E|ScanPoints],[E|Nears],OutScanPoints):- 
-  nearby_one_point(SegOptions,E,From),
-  points_near(SegOptions,[E|From],ScanPoints,Nears,OutScanPoints).
-points_near(SegOptions,From,[E|ScanPoints],Nears,[E|OutScanPoints]):- 
-    points_near(SegOptions,From,ScanPoints,Nears,OutScanPoints).
 
-nearby_one_point(SegOptions,C1-E1,List):- is_adjacent_point(E1,Dir,E2),Dir\==c,
+nearby_one_point(SegOptions,List,C1-E1):- is_adjacent_point(E1,Dir,E2),Dir\==c,
   dir_ok(Dir,SegOptions),color_dir_kk(Dir,C1),
   member(C2-E2,List),colors_joinable(SegOptions,C1,C2).
 
@@ -455,11 +481,11 @@ grid_indv_versions(TestID, ExampleNum, Dir, LHOInS):-
     assert_test_property(TestID, ExampleNum, grid_indv_versions(Dir), LHOInS))).
 */
 :- dynamic(cached_arc_test_property/4).
-grid_indv_versions(TestID, ExampleNum, Dir, LHOInS):-
+grid_indv_versions(TestID, ExampleNum, Dir, LHOInS):- fail, !,
  (cached_arc_test_property(TestID, ExampleNum, grid_indv_versions(Dir), LHOInS)*-> true;
  (grid_indv_versions1(TestID, ExampleNum, Dir, LHOInS), 
    assert(cached_arc_test_property(TestID, ExampleNum, grid_indv_versions(Dir), LHOInS)))).
-grid_indv_versions(TestID, ExampleNum, Dir, LHOInS):- fail,
+grid_indv_versions(TestID, ExampleNum, Dir, LHOInS):- 
   (arc_cache:trans_rule_db(TestID, ExampleNum, grid_indv_versions(Dir), LHOInS)*-> true;
    (grid_indv_versions1(TestID, ExampleNum, Dir, LHOInS),
     assert_test_property(TestID, ExampleNum, grid_indv_versions(Dir), LHOInS))).
@@ -469,12 +495,26 @@ grid_indv_versions1(TestID, ExampleNum, Dir, LHOInS):- simple_over_best,!,
   ignore((ExampleNum=(trn+_))),
   current_example_scope(TestID, ExampleNum),
     findall(lho(CI,InPSS,HowIn,InC),
-    (kaggle_arc_io(TestID,ExampleNum,Dir,In),
+      (kaggle_arc(TestID,ExampleNum,_,_),grid_indv_version_lho(TestID,ExampleNum,Dir,CI,InPSS,HowIn,InC)), LHOIn),
+   sort(LHOIn,LHOInS),!.
+
+
+grid_indv_version_lho(TestID,ExampleNum,Dir,CI,InPSS,HowIn,InC):-  
+     kaggle_arc_io(TestID,ExampleNum,Dir,In), 
+     get_each_ndividuator_extended(Dir,HowIn),
+     individuate_3(HowIn,In,InC),
+     length(InC,CI), 
+     objs_to_spoints(InC,InPSS).
+grid_indv_version_lho(TestID,ExampleNum,Dir,CI,InPSS,HowIn,InC):-
+     kaggle_arc_io(TestID,ExampleNum,Dir,In),
      seg_options(Opt),
      HowIn=simple(Opt),
      objects_of(In,Opt,CI,InC),
-     objs_to_spoints(InC,InPSS)), LHOIn),
-   sort(LHOIn,LHOInS),!.
+     objs_to_spoints(InC,InPSS).
+
+get_each_ndividuator_extended(_,complete).
+%get_each_ndividuator_extended(_,simple(Opt)):-seg_options(Opt).
+%get_each_ndividuator_extended(Dir,How):- get_each_ndividuator(Dir,How).
 /*
 grid_indv_versions(TestID, ExampleNum, Dir, LHOInS):-
   findall(lho(CI,InPSS,HowIn,InC),  
@@ -491,6 +531,37 @@ best_obj_group_pair(TestID, ExampleNum, How, InC, OutC):-
   member(OGP,OGPL).
 */
  
+calc_best_individuals(TestID):-  
+ current_example_scope(TestID, ExampleNum),
+ forall(kaggle_arc(TestID, ExampleNum,_,_),
+  (grid_indv_versions(TestID, ExampleNum, in, _LHOInS),
+   grid_indv_versions(TestID, ExampleNum, out, _LHOOutS))),
+ guess_io_opts(TestID,in,InOpts),
+ guess_io_opts(TestID,out,OutOpts),
+ print(pre_best=in_out(InOpts,OutOpts)),!.
+
+guess_io_opts(TestID,IO,HowIn):- 
+ current_example_scope(TestID, ExampleNum),
+ findall(hi(HowIn,s(Sizes-S)),
+  (kaggle_arc(TestID, ExampleNum,_,_),
+   grid_indv_versions(TestID, ExampleNum, IO, LHOInS),
+   member(lho(S,InPSS,HowIn,_),LHOInS),   
+   
+   maplist(length,InPSS,Sizes),
+   Sizes \= [_,1|_], Sizes\= [c_] ),  
+  SizeList),
+ maplist(count_peers(SizeList),SizeList,SLPeers),
+ reverse_sort(SLPeers,Sorted),
+ pp_ilp(s(IO)=Sorted),
+ Sorted=[hi(_,HowIn,s(_))|_].
+
+reverse_sort(InputList, OutputList) :-
+    sort(InputList, Sorted),
+    reverse(Sorted, OutputList).
+
+count_peers(CP,hi(HowIn,s(Sizes)),hi(N,HowIn,s(Sizes))):- findall_count(_,sub_var(s(Sizes),CP),N).
+
+
 best_obj_group_pair(TestID, ExampleNum, How, InC, OutC):-  
   NRVarI= io(InPSS, OutPSS),
   %seg_options(HowIn,HowOut),
@@ -500,11 +571,11 @@ best_obj_group_pair(TestID, ExampleNum, How, InC, OutC):-
   grid_indv_versions(TestID, ExampleNum, in, LHOInS),
   grid_indv_versions(TestID, ExampleNum, out, LHOOutS),
   no_repeats_var(NRVar)))),!,
-  ((member(lho(S,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),S=<80);
-   (member(lho(A,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),A=S,S=<80);
+  ((member(lho(S,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),S>1,S=<80);
    (member(lho(A,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),A<S,A>1,S=<80);
    (member(lho(A,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),A<S,A>1,S=<80);
    (member(lho(A,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),A<S,A=1,S=<80);
+   (member(lho(S,InPSS,HowIn,InC),LHOInS),member(lho(S,OutPSS,HowOut,OutC),LHOOutS),S=1);
    (member(lho(S,InPSS,HowIn,InC),LHOInS),member(lho(A,OutPSS,HowOut,OutC),LHOOutS),A<S,A=1,S=<80)),
   (NRVar=NRVarI-> nop(pp(nrVarI=NRVarI)); nop(wdmsg(duplicated(How))),fail),
   ignore(How = in_out(HowIn,HowOut)).
@@ -526,7 +597,8 @@ possible_program(TestID,ActionGroupFinal,How,RulesOut):-
  How = in_out(HowIn,_HowOut),
  GNR = group_narrative_rules(How,ActionGroupOut,Rules),
  ignore((ExampleNum=(trn+_))),
- starter_narratives(Starter))),
+ starter_narratives(Starter0))),
+ subst(Starter0,nth,0,Starter),
  must_ll((
    get_each_ndividuator(in,HowIn),
    synth_program_from_one_example(TestID,_ExampleNum0,How,Starter,FirstNarrative,_Rules0)
@@ -599,7 +671,7 @@ get_object_dependancy(InfoStart,TestID, ExampleNum, ActionGroupIn, ActionGroupOu
       calc_o_d_recursive(LHSObjs,ActionGroupIn, InfoIn, [], LHSObjsOrdered, RHSObjsOrdered, ActionGroupOut, Groups))))))), !.
 
 calc_o_d_recursive(_VM,[],              _Info, PrevRules,     _,      _,             [], PrevRules):-!.
-calc_o_d_recursive(_VM,ActionGroupOut,  _Info, PrevRules,    [],      [],  ActionGroupOut, PrevRules).
+%calc_o_d_recursive(_VM,ActionGroupOut,  _Info, PrevRules,    [],      [],  ActionGroupOut, PrevRules).
 calc_o_d_recursive(VM,ActionGroupIn,     Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups):-
   ignore(((
    length(LHSObjs,CI),
@@ -642,31 +714,40 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   select(Right,RHSObjs,RHSOut),
   how_are_different(Left,Right,TypeSet,_PropSet), TypeSet=[], % no changes
   sub_cmpd(step(Step),Info),
-  noteable_propdiffs(Left,Right,Same,_L,R),R==[],
-  append_LR(PrevRules, [exists(left(Left)),rule(Info,Same,copy_object_perfect(N,Step))], RulesOut),
+  noteable_propdiffs(Left,Right,Same,_L,R),R==[], nop(s=(N,Step)),
+  append_LR(PrevRules, [exists(left(Left)),rule(Info,Same,copy_object_perfect(s))], RulesOut),
   incr_step(Info, InfoOut),
   true)), !.
 
 
 /*
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
-                    ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):- 
+                    ActionGroupOut, InfoOut, RulesOut, [Right|LHSOut], RHSOut):- 
 ((
-  narrative_element(copy_object_one_change(_,_),ActionGroupIn,ActionGroupOut),
+  narrative_element(copy_object_n_changes(N,_),ActionGroupIn,ActionGroupOut),
   select(Left,LHSObjs,LHSOut),
   select(Right,RHSObjs,RHSOut),
-  how_are_different(Left,Right,TypeSet,PropSet), 
-   TypeSet=[_], % no changes
-  pp([ps_1=PropSet,ts=TypeSet,left=Left,right=Right]),
-  noteable_propdiffs(Left,Right,Same,_L,R),
-  into_list(PrevRules,Possibles),
-  maplist(find_relative_r(Info,Left,Right,Possibles),R,NewR0,PreConds,NewRules),
-  maybe_dont_keep(NewR0,NewR),
+  how_are_different(Left,Right,TypeSetL,PropSetL), 
+  length(TypeSetL,Len), Len =< N, N>1,
+  dash_chars,nl,
+  TypeSet =[_],
+  R =[_],  
+  noteable_propdiffs(Left,Right,Same,L,RL),
+append(TypeSet,_,TypeSetL),
+append(R,_,RL),
+  pp_ilp(3,[ps(N-minus1)=PropSetL,ts=TypeSet]),
+  print_ss(copy_object_n_changes(N),Left,Right),
+  pp_ilp(3,[left=L,
+            right=R,
+            same=Same]),
+  maplist(find_relative_r(Info,Left,Right,PrevRules),R,NewR,PreConds,NewRules),
   append_LR(NewRules,NewRulesF),
-  append_LR([Same,PreConds],LHS),
-  subst_2L(R,NewR,Left,NewLeft),
-  append_LR(PrevRules, [exists(left(NewLeft)),NewRulesF,rule([propset(PropSet)|Info],LHS,copy_object_one_change(TypeSet,NewR))], RulesOut),
+  append_LR([Same,L,PreConds],LHS),
+  subst_2L_sometimes(R,NewR,Left,NewLeft),
+  append_LR(PrevRules, [exists(left(NewLeft)),NewRulesF,rule([propset(PropSetL)|Info],LHS,
+    copy_object_n_changes_keep_left(N,TypeSet,NewR))], RulesOut),
   incr_step(Info, InfoOut),
+  dash_chars,nl,
   true)), !.
 */
 
@@ -677,11 +758,12 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   select(Left,LHSObjs,LHSOut),
   select(Right,RHSObjs,RHSOut),
   how_are_different(Left,Right,TypeSet,PropSet), 
+  % \+ sub_var(repaint,TypeSet),
   length(TypeSet,Len), Len =< N,
   dash_chars,nl,
   noteable_propdiffs(Left,Right,Same,LL,R0),
   for_rhs(R0,R),
-  pp_ilp(3,[ps(N)=PropSet,ts=TypeSet]),
+  pp_ilp(3,[ps(N)=PropSet,ts=TypeSet]),  
   print_ss(copy_object_n_changes(N),Left,Right),
   pp_ilp(3,[left=LL,
             right=R,
@@ -690,7 +772,7 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   append_LR(NewRules,NewRulesF),
   append_LR([Same,PreConds],LHS),
   subst_2L_sometimes(R,NewR,Left,NewLeft),
-  append_LR(PrevRules, [exists(left(NewLeft)),NewRulesF,rule([propset(PropSet)|Info],LHS,copy_object_n_changes(N,TypeSet,NewR))], RulesOut),
+  append_LR(PrevRules, [exists(left(NewLeft)),NewRulesF,rule([propset(PropSet)|Info],LHS,copy_object_n_changes(/*N,*/TypeSet,NewR))], RulesOut),
   incr_step(Info, InfoOut),
   dash_chars,nl,
   true)), !.
@@ -704,14 +786,6 @@ subst_2L_sometimes([HF|TF],[HR|TR],In,Out):- !,
   subst_2L_sometimes(HR,TR,Mid,Out).
 subst_2L_sometimes(HF,TF,In,Mid):- subst0011(HF,TF,In,Mid).
 
-maybe_dont_keep(NewR,NewR):- maplist(ground,NewR),!.
-maybe_dont_keep(NewR0,NewR):- include(p1_not(ground),NewR0,NewR),NewR\==[],!.
-maybe_dont_keep(NewR,NewR).
-
-simplify_R(1,[_,R],[R]):-!.
-simplify_R(1,[_,R1,R2],[R1,R2]):-!.
-simplify_R(_,R,R).
-
 verbatum_unifiable(Var):-var(Var),fail.
 verbatum_unifiable(C):- sub_term(E,C),compound(E),E='$VAR'(_),!.
 verbatum_unifiable(of_obj(_)).
@@ -722,7 +796,7 @@ verbatum_unifiable(always(_)).
 
 %find_relative_r(Info,Left,Right,Possibles,loc2D(_,_),[],[],[]):-!.
 find_relative_r(Info,Left,Right,Possibles,R,NewR,PreCond, XtraRule):- 
-  fail, %DMILES TODO
+  %fail, %DMILES TODO
 
 
  append_LR([always(OF_OBJ),iz(info(OF_OBJ))],PreCond),
@@ -772,52 +846,11 @@ iz_arg(N,FA,A):- FA=..[_,T], compound(T),!, iz_arg(N,T,A).
 iz_arg(N,T,A):- arg(N,T,A),!.
 
 
-calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
-                    ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):- 
-((
-  narrative_element(copy_object_two_changes(_,_),ActionGroupIn,ActionGroupOut),
-  select(Left,LHSObjs,LHSOut),
-  select(Right,RHSObjs,RHSOut),
-  how_are_different(Left,Right,TypeSet,PropSet), 
-  TypeSet=[_,_], % no changes
-  pp([ps_2=PropSet,ts=TypeSet,left=Left,right=Right]),
-  noteable_propdiffs(Left,Right,Same,_L,R0),
-  simplify_R(2,R0,R),
-  into_list(PrevRules,Possibles),
-  maplist(find_relative_r(Info,Left,Right,Possibles),R,NewR,PreConds,NewRules),
-  append_LR(NewRules,NewRulesF),
-  append_LR([Same,PreConds],LHS),
-  subst_2L(R,NewR,Left,NewLeft),
-  append_LR(PrevRules, [exists(left(NewLeft)),NewRulesF,rule([propset(PropSet)|Info],LHS,copy_object_two_changes(TypeSet,NewR))], RulesOut),
-  incr_step(Info, InfoOut),
-  true)), !.
-
-
-calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
-                    ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):- 
-((
-  narrative_element(copy_object_three_changes(_,_),ActionGroupIn,ActionGroupOut),
-  select(Left,LHSObjs,LHSOut),
-  select(Right,RHSObjs,RHSOut),
-  how_are_different(Left,Right,TypeSet,PropSet), 
-  TypeSet=[_,_,_], % no changes
-  pp([ps_3=PropSet,ts=TypeSet,left=Left,right=Right]),
-  noteable_propdiffs(Left,Right,Same,_L,R0),
-  simplify_R(3,R0,R),
-  into_list(PrevRules,Possibles),
-  maplist(find_relative_r(Info,Left,Right,Possibles),R,NewR,PreConds,NewRules),
-  append_LR(NewRules,NewRulesF),
-  append_LR([Same,PreConds],LHS),
-  subst_2L(R,NewR,Left,NewLeft),
-  append_LR(PrevRules, [exists(left(NewLeft)),NewRulesF,rule([propset(PropSet)|Info],LHS,copy_object_three_changes(TypeSet,NewR))], RulesOut),
-  incr_step(Info, InfoOut),
-  true)), !.
-
 /*
 out_object_splitter:-false.
 
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
-                    ActionGroupIn, InfoOut, RulesOut, LHSOut, RHSOut):-
+                    ActionGroupIn, InfoIn, RulesOut, LHSOut, RHSOut):-
  out_object_splitter,
  Type = perfect,
  select_pair(Info, Type, PrevRules, RHSObjs, LHSObjs, Right, Left, RHSOut1, LHSOut1),
@@ -825,7 +858,7 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
  ((
   remove_object(RHSOut1, Right, RHSOut2), remove_object(LHSOut1, Right, LHSOut2),
   remove_object(RHSOut2, Left, RHSOut ), remove_object(LHSOut2, Left, LHSOut ),
-  make_pairs(InfoOut, Type, PrevRules, Left, Right, Rules),
+  make_pairs(InfoIn, Type, PrevRules, Left, Right, Rules),
   append_LR(PrevRules, Rules, RulesOut),
   incr_step(Info, InfoOut),
 
@@ -835,23 +868,23 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   obj_to_oid(Right, OID),
   obj_in_or_out(Right, IO),
   FakeObj = obj([was_oid(OID), iz(i_o(IO)), iz(info(faked(_Ctx2)))|PropsMissing])) ->
-      calc_o_d_recursive(VM,ActionGroupIn, InfoOut, RulesOut, [Right, Left|LHSOut], [FakeObj|RHSOut], RulesOut);
+      calc_o_d_recursive(VM,ActionGroupIn, InfoIn, RulesOut, [Right, Left|LHSOut], [FakeObj|RHSOut], RulesOut);
 
-      calc_o_d_recursive(VM,ActionGroupIn, InfoOut, RulesOut, [Right, Left|LHSOut], RHSOut, RulesOut)))).
-calc_o_d_recursively(ActionGroupIn, InfoOut, PrevRules, LHSObjs, [Right], ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):- fail, LHSObjs=[_, _|_],
+      calc_o_d_recursive(VM,ActionGroupIn, InfoIn, RulesOut, [Right, Left|LHSOut], RHSOut, RulesOut)))).
+calc_o_d_recursively(ActionGroupIn, InfoIn, PrevRules, LHSObjs, [Right], ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):- fail, LHSObjs=[_, _|_],
   sort_by_jaccard(Right, LHSObjs, [A, B|C]),
-  make_pairs(InfoOut, assumed, [], [B, A], Right, Rules),
+  make_pairs(InfoIn, assumed, [], [B, A], Right, Rules),
   append_LR(PrevRules, Rules, RulesOut),
   calc_o_d_recursive(VM,ActionGroupOut,ActionGroupOut,RelaxLvl, InfoOut, RulesOut, C, [], RulesOut), !.
 
-calc_o_d_recursively(ActionGroupIn, InfoOut, PrevRules, LHSObjs, [Right], ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):- fail,
+calc_o_d_recursively(ActionGroupIn, InfoIn, PrevRules, LHSObjs, [Right], ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):- fail,
   LHSObjs == [],
   into_list(PrevRules, PrevObjs), PrevObjs\==[],
   my_partition(is_input_object, PrevObjs, PrevLHS, PrevRHS),
   once((PrevRHS = [A, B|C] ; PrevLHS = [A, B|C])),
   sort_by_jaccard(Right, [A, B|C], Stuff), !,
   reverse(Stuff, [AA, BB|_Out]),
-  make_pairs(InfoOut, assumed, [], [BB, AA], Right, Rules),
+  make_pairs(InfoIn, assumed, [], [BB, AA], Right, Rules),
   append_LR(PrevRules, Rules, RulesOut),
   calc_o_d_recursive(VM,ActionGroupOut,ActionGroupOut,RelaxLvl, InfoOut, RulesOut, [], [], RulesOut), !.
 
@@ -864,22 +897,29 @@ left_over_props(L, R, LO):-
 starter_narratives(ActionGroup):- nonvar(ActionGroup),!.
 starter_narratives(ActionGroup):- 
  ActionGroup=
-     [copy_object_perfect(s,0), copy_object_n_changes(1,0), copy_object_n_changes(2,0), copy_object_n_changes(3,0), 
-      add_dependant_scenery(0), %in_out_out(_), 
-      add_independant_scenery(0),
-      balanced_or_delete_leftovers(_)].
+     [copy_object_perfect(nth), 
+      copy_object_n_changes(0,nth), 
+      copy_object_n_changes(1,nth), 
+      copy_object_n_changes(2,nth), 
+      copy_object_n_changes(3,nth), 
+        add_dependant_scenery(nth), 
+      add_independant_scenery(nth),
+      balanced_or_delete_leftovers(_,_)].
 
 
-
-is_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), select(R2, RHSObjs, RHSOut), is_adjacent_same_color(R1, R2, 0), !.
-is_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), select(R2, RHSObjs, RHSOut), is_adjacent_same_color(R1, R2, 1), !.
-is_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), select(R2, RHSObjs, RHSOut), is_adjacent_same_color(R1, R2, 2), !.
+use_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), select(R2, RHSObjs, RHSOut), 
+  is_adjacent_same_color(R1, R2, 0), !.
+use_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), select(R2, RHSObjs, RHSOut), 
+  is_adjacent_same_color(R1, R2, 1), !.
+use_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), select(R2, RHSObjs, RHSOut), 
+  is_adjacent_same_color(R1, R2, 2), !.
 
 % Endings
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                 ActionGroupOut, InfoOut, RulesOut, [], []):- 
   calc_o_d_recursive_end(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
-                ActionGroupOut, InfoOut, RulesOut),!.
+                ActionGroupOut, InfoOut, RulesOut),!,
+  pp_ilp(calc_o_d_recursive_end=RulesOut),!.
 
 % Scenery
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
@@ -891,7 +931,7 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
     append_LR(PrevLHS, LHSObjs, LHSMid),
     use_adjacent_same_color(R1, R2, LHSMid, RHSObjs, RHSOut),
     incr_step(Info, InfoOut),
-    make_pairs(InfoOut, is_adjacent_same_color, PrevRules, R1, R2, RulesOut).
+    make_pairs(Info, is_adjacent_same_color, PrevRules, R1, R2, RulesOut).
 
 % Scenery
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
@@ -903,7 +943,7 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
     append_LR(PrevLHS, PrevRHS, LHSMid),
     use_adjacent_same_color(R1, R2, LHSMid, RHSObjs, RHSOut),
     incr_step(Info, InfoOut),
-    make_pairs(InfoOut, is_adjacent_same_color, PrevRules, R1, R2, RulesOut).
+    make_pairs(Info, is_adjacent_same_color, PrevRules, R1, R2, RulesOut).
 
 % recycles
 calc_o_d_recursive_recycle(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
@@ -928,7 +968,7 @@ calc_o_d_recursive_recycle(ActionGroupIn, Info, PrevRules, LHSObjsNil, RHSObjs,
       must_det_ll((
       remove_object(RHSOut1, Right, RHSOut2), remove_object(LHSOut1, Right, LHSOut2),
       remove_object(RHSOut2, Left, RHSOut ), remove_object(LHSOut2, Left, LHSOut ),
-      make_pairs(InfoOut, PrevRules, Left, Right, RulesOut))).
+      make_pairs(Info, PrevRules, Left, Right, RulesOut))).
 
 calc_o_d_recursive_recycle(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                     ActionGroupOut, InfoOut, PrevRules, ['recycled'|LHSOut], RHSObjs):-
@@ -976,19 +1016,33 @@ assert_ac_db(Gensym,R):-
   ctx_p_conds(R,Ctx,P,PSame),assert_ilp_b(ac_db_unit(Gensym,Ctx,P,PSame)).
 
 compute_scene_change_pass3a(RulesList, IO_-P):-
-   findall_vset_R(PSame, ac_db_unit(RulesList, IO_, P, PSame), List),
+  Why = pass3a,
+   findall(PSame, ac_db_unit(RulesList, IO_, P, PSame), ListF),
+   append(ListF,List),
+   dash_chars,   
+   pp_ilp(IO_-P=ListF),
    m_unifiers(List, ListR),
-   update_accompany_changed_db(pass3a, RulesList, IO_, P, ListR).
+   warn_and_fail_if_empty(ListR),
+   pred_intersection(=@=,List, ListR,_,_,Missing,New),
+   pp_ilp(listR(IO_-P)=ListR),
+   update_accompany_changed_db_now(Why, RulesList, IO_, P,iz(info(reduced(Why,Missing->New))), ListR).
 compute_scene_change_pass3a(_, _).
 
 compute_scene_change_pass3b(RulesList, P4, IO_-P):-
   findall_vset_R(PSame, ac_db_unit(RulesList, IO_, P, PSame), SameS1),
+  Why = P4-pass3,
   my_partition(is_debug_info, SameS1, Skip, SameS),
-  call(P4, RulesList, IO_, P, SameS, KeptS), KeptS\==[], !,
+  call(P4, RulesList, IO_, P, SameS, KeptS), warn_and_fail_if_empty(KeptS), !,
   if_t(SameS\=@=KeptS,
      (append(KeptS, Skip, Kept),
-      update_accompany_changed_db(P4-pass3b, RulesList, IO_, P, Kept))).
+      intersection(SameS,KeptS,_,Missing,New),
+      update_accompany_changed_db_now(Why, RulesList, IO_, P, iz(info(reduced(Why,Missing->New))), Kept))).
 compute_scene_change_pass3b(_, _, _).
+
+update_accompany_changed_db_now(P4, RulesList, IO_, P, More, Kept):- More\=iz(info(reduced(_,([]->[])))),
+  append_LR([More,Kept],MoreKept),
+  update_accompany_changed_db(P4, RulesList, IO_, P, MoreKept),!.
+update_accompany_changed_db_now(P4, RulesList, IO_, P, _, Kept):- update_accompany_changed_db(P4, RulesList, IO_, P, Kept).
 
 compute_scene_change_pass3c(_, _):-!.
 compute_scene_change_pass3c(RulesList, IO_-P):-
@@ -1001,7 +1055,7 @@ compute_scene_change_pass3c(RulesList, IO_-P):-
   common_members(SL, Commons),
   forall((ac_db_unit(RulesList, IO_, DP, DSame), same_rhs_property(DP, P)),
       (intersection(DSame, Commons, _, Kept, _),
-        ignore((Kept\==[], append(Kept, Skip, Save), update_accompany_changed_db(pass3c, RulesList, IO_, P, Save))))),
+        ignore((warn_and_fail_if_empty(Kept), append(Kept, Skip, Save), update_accompany_changed_db(pass3c, RulesList, IO_, P, Save))))),
 
   print_scene_change_rules_if_different(pass3c, ac_db_unit, RulesList),
   !.
@@ -1026,23 +1080,39 @@ set_of_changes(RulesList, P1):-
   maplist(P1, Ps),
   print_scene_change_rules_if_different(Why, ac_db_unit, RulesList))).
 
+ac_db_unit_unv(TestID,Ctx,P,PSame):- 
+  ac_db_unit(TestID,Ctx,PU,PSameU),
+  unnumbervars2a(PU+PSameU,P+PSame).
+
 
 
 % Retain Overlap
 correct_antes1(RulesList, IO_, P, PSame, SL):-
+  %make_unifiable_u(P,DP),
   %rev_in_out_atoms(OI, IO_),
   findall(S,
    (member(S, PSame),
-     \+ \+ ((
-       forall((ac_rules(RulesList, IO_, DP, DSame), at_least_one_overlap(DSame, PSame)),
-          ((P==DP)-> true; (member(DS, DSame),
-             \+ negated_s_lit(S, _), other_val(S, DS))))))),
-   SL), SL\==[], !.
+     \+ \+ (verbatum_unifiable(S); negated_s_lit(S, _); sub_var(S,P) ; ((
+       forall((ac_rules(RulesList, IO_, DP, DSame), %same_rhs_property(P, DP), 
+          at_least_one_overlap(DSame, PSame)),
+          ((P==DP)-> true; 
+            (make_unifiable_u(S,DS), member(DS, DSame), other_val(S, DS))
+            )))))),
+   SL), warn_and_fail_if_empty(SL), !.
 correct_antes1(_RulesList, _IO_, _P, PSame, PSame).
 
 is_unbound_prop(S):- var(S),!,fail.
 is_unbound_prop(S):- verbatum_unifiable(S),!,fail.
 is_unbound_prop(S):- make_unifiable(S, DS), S=@=DS, !.
+
+
+correct_antes2a(TestID,IN_OUT,P,PSame,Kept):-   fail,
+   make_unifiable_u(P,U),
+   ac_rules(TestID,IN_OUT,U,DSame),
+   P\=@=U, 
+   maplist(make_unifiable_u,DSame,USame),
+   intersection(PSame,USame,Kept,_,_),warn_and_fail_if_empty(Kept).
+correct_antes2a(_TestID,_IN_OUT,_P,PSame,PSame).
 
 % Make sure each arguement is transformed corretly
 correct_antes2(_RulesList, _IO_, _P, PSame, Kept):-  maplist(ensure_xformed, PSame, Kept), !.
@@ -1051,7 +1121,7 @@ ensure_xformed(A, A).
 
 % Remove Redundant Overlap
 correct_antes3(_RulesList, _IO_, _P, PSame, SL):-
-  findall(S, ( member(S, PSame), \+ is_unbound_prop(S)), SL), SL\==[], !.
+  findall(S, ( member(S, PSame), \+ is_unbound_prop(S)), SL), warn_and_fail_if_empty(SL), !.
 correct_antes3(_RulesList, _IO_, _P, PSame, PSame).
 
 
@@ -1066,7 +1136,7 @@ correct_antes4(RulesList, IO_, P, PSame, SL):-
             (member(DS, DSame), DS=@=S)))))),
    SL),
 
-  SL\==[], !.
+  warn_and_fail_if_empty(SL), !.
 correct_antes4(_RulesList, _IO_, _P, PSame, PSame).
 
 
@@ -1081,7 +1151,7 @@ correct_antes4a(RulesList, IO_, VP, PSame, SLPSame):- fail,
   findall(mv4a(info(changes_from(S, P))),
        ((member(S, PSame), \+ negated_s_lit(S, _), S\= mv4a(info(_)),
          other_val(S, P))),
-     SL), SL\==[], !,
+     SL), warn_and_fail_if_empty(SL), !,
   append(PSame, SL, SLPSame).
 
 correct_antes4a(_RulesList, _IO_, _P, PSame, PSame).
@@ -1097,7 +1167,7 @@ correct_antes4b(RulesList, IO_, VP, PSame, SLPSame):-  fail,
        ((member(S, PSame), \+ negated_s_lit(S, _), S\= mv4b(info(_)), other_val(S, P),
          forall((ac_rules(RulesList, IO_, DP, DSame), other_val(P, DP)),
            \+ \+ (member(DS, DSame), other_val(S, DS), \+ negated_s_lit(DS, _))))),
-     SL), SL\==[], !,
+     SL), warn_and_fail_if_empty(SL), !,
   append(PSame, SL, SLPSame).
 correct_antes4b(_RulesList, _IO_, _P, PSame, PSame).
 
@@ -1113,14 +1183,15 @@ correct_antes_neg(RulesList, IO_, P, PSame, Kept):-
      ac_rules(RulesList, IO_, DP, DSame),
      other_val(P, DP), %at_least_one_overlap(DSame, PSame),
      member(DS, DSame), \+ negated_s_lit(DS, _), \+ is_unbound_prop(DS),
-       \+ member(\+ DS, PSame))), SL), SL\==[],
-  append(PSame, SL, Kept), Kept\==[], !.
+       \+ member(\+ DS, PSame))), SL),  
+  append(PSame, SL, Kept), 
+  warn_and_fail_if_empty(Kept), !.
 correct_antes_neg(_RulesList, _IO_, _P, PSame, PSame).
 
 
 % DISABLED not really a loops
 correct_antes6(_RulesList, _IO_, P, PSame, Kept):- fail,
-  findall(S, (member(S, PSame), \+ same_rhs_property(P, S)), Kept), Kept\==[], !.
+  findall(S, (member(S, PSame), \+ same_rhs_property(P, S)), Kept), warn_and_fail_if_empty(Kept), !.
 correct_antes6(_RulesList, _IO_, _P, PSame, PSame).
 
 
@@ -1192,31 +1263,31 @@ trans_rule(Info,In,[Out,Out2|OutL],TransRule):- is_object(Out),is_object(Out2),
 
 % 2 preconds
 %trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2),
-%  TransRule = create_object2(Info,rhs(create_obj(Out)),lhs(into_out(In1,In2))),!.
+%  TransRule = create_object2(Info,rhs(create_obj(Out)),lhs(into_new(In1,In2))),!.
 
 % 2 preconds
 trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2), % fail,
-   noteable_propdiffs(In1, Out,_Same1,_DontCare1,Out1), 
-   noteable_propdiffs(In2,Out1,_Same2,_DontCare2,Out2),
+   noteable_propdiffs(In1, Out,_Same1,_DontCare1,New1), 
+   noteable_propdiffs(In2,New1,_Same2,_DontCare2,New2),
    %remove_o_giz(Out,RHSO), 
    remove_o_giz(In1,Precond1), remove_o_giz(In2,Precond2),
-   %sub_comInfo = info(Step,_IsSwapped,_Ctx,TypeO,_,_,_),
+   %sub_comInfoOut =  info(Step,_IsSwapped,_Ctx,TypeO,_,_,_),
    sub_cmpd(step(Step),Info), sub_cmpd(why(Type),Info),
    Type \== assumed_in_in_out,
- % append_sets(Same1,Same2,Same), append_sets(DontCare1,DontCare2,DC), append_sets(Out1,Out2,Out),
- % append_sets(Same,Out,NewObj),
-  %make_common(RHSO,LHS1,OutOut1,LHSOut1),
-  %make_common(OutOut1,LHS2,OutOut,LHSOut2),
-  TransRule = [create_object1(Info,rhs(creation_step1(Step,Type,Out1)), lhs(Precond1)),
-               create_object2(Info,rhs(creation_step2(Step,Type,Out2)), lhs(Precond2))],!.
+ % append_sets(Same1,Same2,Same), append_sets(DontCare1,DontCare2,DC), append_sets(New1,New2,New),
+ % append_sets(Same,New,NewObj),
+  %make_common(RHSO,LHS1,NewOut1,NewLHS1),
+  %make_common(NewOut1,LHS2,NewOut,NewLHS2),
+  TransRule = [create_object1(Info,rhs(creation_step1(Step,Type,New1)), lhs(Precond1)),
+               create_object2(Info,rhs(creation_step2(Step,Type,New2)), lhs(Precond2))],!.
 
 % mutiple preconds
 trans_rule(Info,[In,In2|InL],OutL,TransRule):- is_object(In),is_object(In2),
   trans_rule(Info,[In2|InL],OutL,TransRuleM), TransRuleM\==[],
   sub_cmpd(lhs(Precond),TransRuleM),
   noteable_propdiffs(In,OutL,Same,_L,_R),
-  append_vsets([Precond,Same],OutPrecond),
-  subst(TransRuleM,lhs(Precond),lhs(OutPrecond),TransRule),!.
+  append_vsets([Precond,Same],NewPrecond),
+  subst(TransRuleM,lhs(Precond),lhs(NewPrecond),TransRule),!.
 
 % just copy an object
 trans_rule(Info,[In],[Out],Rules):- 
@@ -1328,7 +1399,7 @@ solve_via_scene_change_rules(TestID, ExampleNum):-
       force_report_count_plus(-1), !,
       %when_entire_suite(print_test(TestID), true),
       banner_lines(red, 1), !, fail,
-      %if_t((findall(_, ac_rules(_, _, _, _), L), L == []), (get_scene_change_rules(TestID, pass2_rule_out, Rules), pp_ilp(Rules))), banner_lines(red, 5),
+      %if_t((findall(_, ac_rules(_, _, _, _), L), L == []), (get_scene_change_rules(TestID, pass2_rule_new, Rules), pp_ilp(Rules))), banner_lines(red, 5),
       %print_object_dependancy(TestID),
       % only really fail for tests
       (ExampleNum == tst+_) -> (!, fail); true)).
@@ -1369,6 +1440,7 @@ has_all_props(CanL, Obj):- maplist(inv_has_prop(Obj), CanL).
 score_all_props(CanL, Obj, Score):- maplist(inv_has_prop_score(Obj), CanL, ScoreL), sumlist(ScoreL, Score), !.
 
 assume_prop(P):- \+ compound(P),!,fail.
+assume_prop(P):- verbatum_unifiable(P),!, fail.
 assume_prop(P):- \+ \+ assume_prop1(P), !.
 assume_prop(P):- \+ \+ assume_prop2(P), !.
 assume_prop(P):- \+ \+ is_debug_info(P).
@@ -1400,13 +1472,16 @@ assume_prop2(was_oid(_)).
 assume_prop2(oid(_)).
 assume_prop2(cc(bg,0)).
 assume_prop2(unique_colors_count(1)).
-assume_prop2(iz(algo_sid(comp,sid_323))).
+%assume_prop2(iz(algo_sid(comp,sid_323))).
+assume_prop2(pg(_,empty_area(_),rank1,_)).
+assume_prop2(sym_counts(_,0)).
+assume_prop2(iz(locX(3))).
 
 
 %assume_prop2(pg(_,iz(locY(_)),rank1,_)).
 assume_prop2(pg(_,iz(cenGY(_)),rank1,_)).
 
-%assume_prop2(P):- relax_level_gt(1), assume_prop3(P).
+assume_prop2(P):- relax_level_gt(1), assume_prop3(P).
 
 relax_level_gt(1).
 
@@ -1449,25 +1524,25 @@ never_use_horn_rhs(create3c(_,_,_)).
 
 solve_obj_group(VM, TestID, ExampleNum, Ctx, ObjsIn, ObjsO):-   
   my_exclude(is_bg_object_really, ObjsIn, Objs),
-  (Rule = (Ctx:rhs(P):- obj_atoms(PCond))),
+  (rule_units(Rule ,Ctx,P,PCond)),
   findall_vset_R(Rule, (ac_rules(TestID, Ctx, P, PCond)), Rules),
   gset(VM.rules)=Rules,  
   apply_rules0(VM, TestID, ExampleNum, Ctx, Rules, Objs, ObjsO), ObjsO\==[], !.
 solve_obj_group(_VM, _TestID, _ExampleNum, _Ctx, Objs, Objs).
 
 
+rule_units(ac_unit(_,Ctx,P,PCond),Ctx,P,PCond).
+
 apply_rules0(VM, _TestID, _ExampleNum, Ctx, [Rules], [Obj], [NewObj]):- !,
  must_det_ll(((
- unnumbervars(Rules,URules),
- (Rule = (Ctx:rhs(P):- obj_atoms(PCond))), 
+ unnumbervars2a(Rules,URules),
+ (rule_units(Rule ,Ctx,P,PCond)), 
   member(Rule,[URules]), 
   ignore(vm_has_obj_prop(VM,Obj,PCond)),
   wots(S,print(Rule)),
   must_det_ll((override_object_1(VM, P, Obj, NewObj))),
   gset(VM.robjs) = [NewObj|VM.robjs],
   print_ss(wqs([override_object(S)]), [Obj], [NewObj])))),!.
-
- 
 
 apply_rules0(VM, TestID, ExampleNum, Ctx, Rules, Objs, ObjsO):-
   apply_rules(VM, TestID, ExampleNum, Ctx, Rules, Objs, ObjsO),!.
@@ -1478,8 +1553,8 @@ apply_rules(VM, TestID, ExampleNum, Ctx, Rules, [O|Objs], [NO|NewObjs]):-
 apply_rules(_VM, _TestID, _ExampleNum, _Ctx, _Rules, Objs, Objs).
 
 apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, NewObj):-
- unnumbervars(Rules,URules),
- (Rule = (_:rhs(P):- obj_atoms(PCond))), 
+ unnumbervars2a(Rules,URules),
+ (rule_units(Rule ,_,P,PCond)), 
   member(Rule,URules), 
 
   vm_has_obj_prop(VM,Obj,PCond),
@@ -1489,16 +1564,33 @@ apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, NewObj):-
   print_ss(wqs([override_object(S)]), [Obj], [NewObj]),!.
 
 apply_rules1(VM, _TestID, _ExampleNum, _Ctx, _Rules, Obj, NewObj):-
-  %(Rule = (_:rhs(P):- obj_atoms(PCond))), forall(member(Rule,Rules), pp(failed(Rule))),
+  %(rule_units(Rule ,_,P,PCond)), forall(member(Rule,Rules), pp(failed(Rule))),
   %indv_props_list(Obj,Props), my_partition(assume_prop,Props,_,Needed),
   pp(skipped_obj=Obj),
   override_object_1(VM, pen([cc(brown,1)]), Obj, NewObj),!.
 
 
+
+vm_has_obj_prop(VM,Obj,always(of_obj(Prop,G,LL))):- 
+
+  must_det_ll(( Rule = ac_unit(_,_,of_obj(_,_,_),_),
+  URule = ac_unit(_,_,of_obj(Prop,G,LL),PCond),
+  member(Rule,VM.rules),
+  unnumbervars2a(Rule,URule))),
+
+  (member(O,VM.robjs);member(O,VM.objs)),
+  (O \== Obj, inv_has_prop2(O, PCond)),call(G).
+
+vm_has_obj_prop(VM,Obj,always(of_obj(Prop,Call,_LL))):- 
+ copy_term(Prop,CProp),
+  (member(O,VM.robjs);member(O,VM.objs)),
+  (O \== Obj, inv_has_prop2(O, Prop)),Prop\=@=CProp,!,
+  call(Call).
 vm_has_obj_prop(VM,Obj,always(of_obj(Prop))):- 
  copy_term(Prop,CProp),
   (member(O,VM.robjs);member(O,VM.objs)),
-  (O \== Obj, inv_has_prop2(O, Prop)),Prop\=CProp,!.
+  (O \== Obj, inv_has_prop2(O, Prop)),Prop\=CProp,!.  
+
 vm_has_obj_prop(VM,Obj, [P|T]):- !, vm_has_obj_prop(VM,Obj, P), vm_has_obj_prop(VM,Obj, T).
 vm_has_obj_prop(_VM,Obj, PCond):- inv_has_prop2(Obj, PCond).
 
@@ -1542,7 +1634,10 @@ override_object_1(VM, loc2D(X, Y), Obj, NewObj):- loc2D(Obj, WX, WY),
   offset_points(X, Y, LPoints, GPoints), rebuild_from_globalpoints(VM, Obj, GPoints, NewObj).
 override_object_1(VM, Term, I, O):- sub_cmpd(rhs(P), Term), !,  override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_cmpd(copy_object_one_change(_,P), Term), !,  override_object_1(VM, P, I, O).
+override_object_1(VM, Term, I, O):- sub_cmpd(copy_object_n_changes(_,P), Term), !,  override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_cmpd(copy_object_n_changes(_,_,P), Term), !,  override_object_1(VM, P, I, O).
+override_object_1(_VM, Term, I, O):- sub_cmpd(copy_object_perfect(_,_), Term), !, I=O,!.
+override_object_1(_VM, Term, I, O):- sub_cmpd(copy_object_perfect(_), Term), !, I=O,!.
 override_object_1(VM, Term, I, O):- sub_cmpd(edit(P), Term), !,  override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_cmpd(edit(_, _, P), Term), !, override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_cmpd(edit(_, _, _, P), Term), !, override_object_1(VM, P, I, O).
@@ -1670,14 +1765,14 @@ how_generic_simularity(TestID, ExampleNum, HowInL, HowOutL, HowIn, HowOut):-
      (member(Object1, HowInL),
       member(Object2, HowOutL),
       call(generic_simularity, Object1, Object2, Similarity, ExtraInfo)), 
-     Rules)),
-  must_det_ll(sort(Rules, Sorted)),
-  must_det_ll(maplist(arg(2), Sorted, HowRules)),
-  %pp(howRules=HowRules),
-  best_how_pairs(HowRules, BestRule),
-  pp(bestRule=BestRule),
-  sub_cmpd(how(in, HowIn), BestRule),
-  sub_cmpd(how(out, HowOut), BestRule),
+     Pairs)),
+  must_det_ll(sort(Pairs, Sorted)),
+  must_det_ll(maplist(arg(2), Sorted, HowPairs)),
+  %pp(howPairs=HowPairs),
+  must_det_ll(best_how_pairs(HowPairs, BestPair)),
+  pp(bestPair=BestPair),
+  sub_cmpd(how(in, HowIn), BestPair),
+  sub_cmpd(how(out, HowOut), BestPair),
   save_how_io(TestID, HowIn, HowOut),!.
 
 
@@ -1749,7 +1844,7 @@ individuated_cache_group(TestID, ExampleNum, Dir1, FROptions1, Info1, SObjs1):-
 
 
 each_individuated_cache_group(TestID, ExampleNum, Dir, FROptions, Info, SObjs):-
- RuleInfo = [example(ExampleNum), dir(Dir), roptions(FROptions), testid(TestID), tid(FTID)],
+ RuleInfo =  [example(ExampleNum), dir(Dir), roptions(FROptions), testid(TestID), tid(FTID)],
  from_individuated_cache(TestID, FTID, FGOID, Dir, FROptions, Objs),
  once((
   maplist(ignore,
@@ -1777,7 +1872,7 @@ if_number_negate(Info, NegInfo):- compound(Info), !, compound_name_arguments(Inf
 if_number_negate(Info, Info).
 
 neg_fg_obj_counts(TestID, ExampleNum, Dir, Grid, ROptions, ObjsIn, OutNegInfo):- %rtrace,
-  Info = [fgo_n(NFG), bgo_n(NBG), len(Len), mass_percent(Percent), first_mass(FMass), all_percent(TPercent), 
+  Info =  [fgo_n(NFG), bgo_n(NBG), len(Len), mass_percent(Percent), first_mass(FMass), all_percent(TPercent), 
    fake_percents(Fake), roption(ROptions), example(ExampleNum), dir(Dir), testid(TestID)],
   include(has_prop(giz(testid_example_io(TestID>ExampleNum*Dir))), ObjsIn, Objs),
   visible_order(Objs, SObjs),
@@ -1846,7 +1941,7 @@ generic_simularity(Object1, Object2, Similarity, ExtraInfo) :-
   generic_propset_simularity(PropSet1, PropSet2, Similarity, ExtraInfo), !.
 
 generic_propset_simularity(PropSet1, PropSet2, Similarity, ExtraInfo):-
-  ExtraInfo = [how_len(HowLen), how_fg_len(HowFGLen)],
+  ExtraInfo =  [how_len(HowLen), how_fg_len(HowFGLen)],
   if_t((sub_cmpd(len(Len1), PropSet1), sub_cmpd(len(Len2), PropSet2)), compatible_numbers(Len1, Len2, HowLen)),
   if_t((sub_cmpd(fgo_n(FGLen1), PropSet1), sub_cmpd(fgo_n(FGLen2), PropSet2)), compatible_numbers(FGLen1, FGLen2, HowFGLen)),
   must_det_ll((
@@ -1888,8 +1983,8 @@ into_subcells0(O2,Set2):- is_list(O2),maplist(into_subcells0,O2,Set1),flatten(Se
 into_subcells0(_,[]).
 
 
-best_how_pairs(HowRules, BestRule):-
-   member(BestRule, HowRules).
+best_how_pairs(HowPairs, BestPair):-
+   member(BestPair, HowPairs),!.
 
 
 all_different_fg_props(FGO, OLP) :-
@@ -2031,12 +2126,12 @@ partition_objects_Cn(_P4, Groups, [], Groups):- !.
 partition_objects_Cn(P4, Objects1, Objects2, FinalGroups) :-
     maplist(add_oc, Objects1, OC1s),
     maplist(add_oc, Objects2, OC2s),
-    pair_up_by_best_similarity(P4, OC1s, OC2s, InitialRuleings),
-    flatten(InitialRuleings, RemoveThese),
+    pair_up_by_best_similarity(P4, OC1s, OC2s, InitialPairings),
+    flatten(InitialPairings, RemoveThese),
     subtract(OC2s, RemoveThese, UnpairedElements),
     ( UnpairedElements == [] ->
-     FinalGroups = InitialRuleings ;
-     ( maplist(combine_groups, InitialRuleings, SuperObjects),
+     FinalGroups = InitialPairings ;
+     ( maplist(combine_groups, InitialPairings, SuperObjects),
       partition_objects_Cn(P4, SuperObjects, UnpairedElements, FinalGroups))).
 
 % Combines the sets in a group into a single set, allowing the group to be treated
@@ -2231,7 +2326,7 @@ assert_map_pairs(TestID, ExampleNum, Ctx, l2r(Info, In, Out)):-!,
 
    assert_map_pairs(TestID, ExampleNum, Ctx, TransRules),
   once((diff_l_r(InL, OutL, Same, InFlatP, OutPFlat),
-   unnumbervars(v5('$VAR'(0), '$VAR'('_'), Same, InFlatP, OutPFlat), UNV))),
+   unnumbervars2a(v5('$VAR'(0), '$VAR'('_'), Same, InFlatP, OutPFlat), UNV))),
                     must_det_ll((UNV = v5(_FG1, _BG1, USame, InFlatProps, OutFlatProps))),
   %pp_ilp(l2r(Info, InL, OutL)), !,
   nop((assertz_new(arc_cache:prop_dep(TestID, ExampleNum, Ctx, Info, InL, OutL, USame, InFlatProps, OutFlatProps)))))))).
@@ -2290,7 +2385,7 @@ pair_obj_props54321(TestID, Ex, Ctx, Info, Step, Type, LHS, RHS, S, L, R):-
  ensure_test(TestID),
   trans_rules_combined(TestID, Ctx, Combined),
   r(Type, LHS, RHS, S, L, R, Ex, Step) = Combined,
-  Info = Step, _IsSwapped, Ctx, Type, TestID, Ex, Ex).
+  InfoOut =  Step, _IsSwapped, Ctx, Type, TestID, Ex, Ex).
 */
 pair_obj_props54321(TestID, Ex, Ctx, Info, Step, Type, LHS, RHS, S, L, R):-
  ensure_test(TestID),
@@ -2503,7 +2598,8 @@ pass2_rule_R(TestID, Rule):-
   prop_type(P, ReType), io_to_cntx(IO, Ctx))).
 */
 
-
+warn_and_fail_if_empty(Skip):- Skip\==[],!.
+warn_and_fail_if_empty(Skip):- trace,Skip\==[],!.
 
 
 find_lhs(R, P):- sub_cmpd(lhs(E), R), !, into_lhs(E, P).
@@ -2530,8 +2626,7 @@ into_lhs1(In, Out):- include(good_for_lhs, In, Mid), In\=@=Mid, !, into_lhs1(Mid
 into_lhs1(Out, Out).
 
 %m_unifiers(In, Out):- \+ is_list(In), Out=In.
-
-
+m_unifiers(In, Out):- In==[],Out=[],!.
 m_unifiers(In, Out):- my_partition(assume_prop, In, Skip, DontSkip), Skip\==[],
   m_unifiers(DontSkip, Mid), append_sets([Mid, Skip], Out), !.
 
@@ -2539,7 +2634,7 @@ m_unifiers(In, Out):- my_partition(assume_prop, In, Skip, DontSkip), Skip\==[],
 %  min_unifier(U, E, S), !, m_unifiers([S|UMore], Out), !.
 
 m_unifiers(In, Out):- is_list(In), select(E, In, More), is_prop1(E), make_unifiable_u(E, U), select(U, More, UMore),
-  min_unifier(U, E, S), !, m_unifiers([S|UMore], Out), !.
+  min_unifier(U, E, S), !, m_unifiers([S|UMore], Out), warn_and_fail_if_empty(Out),!.
 %m_unifiers(In, Out):- select(E, In, More), is_prop1(E), make_unifiable_u(E, U), select(U, More, UMore), other_val(E, U), merge_props(U, E, S), !, m_unifiers([S|UMore], Out).
 m_unifiers(IO, IO).
 %o_unifiers(In, Out):- select(E, In, More), is_prop1(E), make_unifiable(E, U), select(U, More, UMore), other_val(E, U), the_or_unifier(U, E, S), !, o_unifiers([S|UMore], Out).
@@ -2716,7 +2811,7 @@ fg_to_bgc(FG, FG):- \+ compound(FG), !.
 %into_delete(_TestID, _Ctx, _Prev, _Info, Obj, Obj):- is_mapping(Obj), !.
 %into_delete(_TestID, _ExampleNum, _IsSwapped, _Step, _Ctx, _Prev, _Info, Obj, Obj):-!.
 %into_delete(TestID, Ctx, PrevRules, _Info, Obj, Rules):- map_pred(fg_to_bgc, Obj, NewObj),
-%  make_pairs(InfoOut, delete, PrevRules, Obj, NewObj, Rules),
+%  make_pairs(InfoIn, delete, PrevRules, Obj, NewObj, Rules),
 %  !. %edit_object(pen([cc(black, 1)]))  % l2r(Info, [Obj], [])).
 
 is_mapping_list([O|GrpL]):- is_mapping(O), is_list(GrpL), maplist(is_mapping, GrpL).
@@ -2733,21 +2828,21 @@ get_mapping_info_list(GRP, Info, Dir):-
 n_or_more(3, [_, _, _|_]).
 n_or_more(2, [_, _|_]).
 n_or_more(1, [_|_]).
-pairs_of_any(LHS, RHS, RulesR):-
-  pairs_of_any(LHS, RHS, [], RulesR).
+pairs_of_any(LHS, RHS, PairsR):-
+  pairs_of_any(LHS, RHS, [], PairsR).
 
 
 
 
-pairs_lr(LHS, RHS, RulesLR):- maplist(best_match_rl(RHS), LHS, RulesLR).
+pairs_lr(LHS, RHS, PairsLR):- maplist(best_match_rl(RHS), LHS, PairsLR).
 
 
 
 
 /*
 In Prolog: I have two groups of objects where each object is denoted by `obj([center2D(2, 6), mass(8), occurs_in_links(contains, 1), pen([cc(blue, 1)]), shape([square])])`
-Each object looks at the other group of objects and keeps what its most simular to.. whenever an object from each group picks each other it forms a out pair .. remove those objects and keep going
-there is no more objecs on one side any previous matches get adding back and a out set of pairs .. this goes on until there is no opbjects remaining on either side.
+Each object looks at the other group of objects and keeps what its most simular to.. whenever an object from each group picks each other it forms a new pair .. remove those objects and keep going
+there is no more objecs on one side any previous matches get adding back and a new set of pairs .. this goes on until there is no opbjects remaining on either side.
 sometimes if there are an exact dividable number of objects on one side from the other try permutations of groups from the larger side
 */
 
@@ -2760,22 +2855,22 @@ most_similar(Obj, [Other|Out], MostSimilar) :-
 
 
 
-%?- pair_combinations([o1, o2, o3], [o4, o5, o6], Rules).
-%Rules = [[o1, o4], [o1, o5], [o1, o6], [o2, o4], [o2, o5], [o2, o6], [o3, o4], [o3, o5], [o3, o6]].
+%?- pair_combinations([o1, o2, o3], [o4, o5, o6], Pairs).
+%Pairs = [[o1, o4], [o1, o5], [o1, o6], [o2, o4], [o2, o5], [o2, o6], [o3, o4], [o3, o5], [o3, o6]].
 
-
-pairs_agree_l_r(LHS, RHS, Agreed, RemainingL, RemainingR):-
-   maplist(best_match_rl(RHS), LHS, RulesR),
-   maplist(best_match_lr(LHS), RHS, RulesL),
-   once((
-   intersection(RulesL, RulesR, Agreed, RulesLOnly, RulesROnly),
-   Agreed \==[],
-   %maplist(length, [Agreed, RulesLOnly, RulesROnly], [NAgreed, NRulesLOnly, NRulesROnly]),
-   %NAgreed>NRulesLOnly, %NRulesLOnly>RRulesLOnly,
-   %NAgreed>NRulesROnly,
-   maplist(arg(1), RulesROnly, RemainingR),
-   maplist(arg(1), RulesLOnly, RemainingL))).
 /*
+pairs_agree_l_r(LHS, RHS, Agreed, RemainingL, RemainingR):-
+   maplist(best_match_rl(RHS), LHS, PairsR),
+   maplist(best_match_lr(LHS), RHS, PairsL),
+   once((
+   intersection(PairsL, PairsR, Agreed, PairsLOnly, PairsROnly),
+   Agreed \==[],
+   %maplist(length, [Agreed, PairsLOnly, PairsROnly], [NAgreed, NPairsLOnly, NPairsROnly]),
+   %NAgreed>NPairsLOnly, %NPairsLOnly>RPairsLOnly,
+   %NAgreed>NPairsROnly,
+   maplist(arg(1), PairsROnly, RemainingR),
+   maplist(arg(1), PairsLOnly, RemainingL))).
+
 combine_training(TestID, A, B, In012, Out012):-
   best_obj_group_pair(TestID, _+A, In0, Out0),
   best_obj_group_pair(TestID, _+B, In1, Out1), A<B,
@@ -2802,18 +2897,19 @@ pp_w_objs(P):- into_solid_grid_strings_3(P, [is_object=object_grid], Q), !,
 
 
 
-%incr_cntx(Ctx, OutCtx):- atom(Ctx), !, atom_concat(Ctx, '_out', OutCtx).
-incr_cntx(info(Ctx), info(Out)):- is_list(Ctx), !, incr_cntx(Ctx, Out).
-incr_cntx(Ctx, Out):- number(Ctx), !, plus(Ctx, 1, Out).
-incr_cntx(Ctx, Out):- Ctx == in_out, !, Out=in_out_out.
-incr_cntx(Ctx, Out):- is_list(Ctx), select(ctx(C), Ctx, Out), incr_cntx(C, CC), Out=[ctx(CC)|Out], !.
-incr_cntx(W+Ctx, W+Out):- incr_cntx(Ctx, Out).
+
+%incr_cntx(Ctx, NewCtx):- atom(Ctx), !, atom_concat(Ctx, '_out', NewCtx).
+incr_cntx(info(Ctx), info(Next)):- is_list(Ctx), !, incr_cntx(Ctx, Next).
+incr_cntx(Ctx, Next):- number(Ctx), !, plus(Ctx, 1, Next).
+incr_cntx(Ctx, Next):- Ctx == in_out, !, Next=in_out_out.
+incr_cntx(Ctx, Next):- is_list(Ctx), select(ctx(C), Ctx, Out), incr_cntx(C, CC), Next=[ctx(CC)|Out], !.
+incr_cntx(W+Ctx, W+Next):- incr_cntx(Ctx, Next).
 incr_cntx(Ctx, Ctx):- compound(Ctx), !.
 incr_cntx(Ctx, s(Ctx)).
 
-incr_step(info(Ctx), info(Out)):- !, incr_step(Ctx, Out).
-incr_step(Ctx, Out):- is_list(Ctx), select(step(C), Ctx, Out), incr_step(C, CC), Out=[step(CC)|Out], !.
-incr_step(Ctx, Out):- incr_cntx(Ctx, Out).
+incr_step(info(Ctx), info(Next)):- !, incr_step(Ctx, Next).
+incr_step(Ctx, Next):- is_list(Ctx), select(step(C), Ctx, Out), incr_step(C, CC), Next=[step(CC)|Out], !.
+incr_step(Ctx, Next):- incr_cntx(Ctx, Next).
 swap_tf(Ctx, s(Ctx)).
 
 %select_some(0, [], L, L).
@@ -2849,7 +2945,7 @@ select_pair(two_way(perfect_w_prev), PrevRules, RHSObjs, LHSObjs, Right, Left, R
   sort_by_jaccard(Right, LHSObjs, [LeftMaybe|_]))),
   LeftMaybe = Left, !.
 
-select_pair(two_way(perfect_combo), _Prev, RHSObjs, LHSObjs, Right, Left, RHSOut, LHSOut):-
+select_pair(two_way(perfect_combo), _PrevRules, RHSObjs, LHSObjs, Right, Left, RHSOut, LHSOut):-
   into_list(LHSObjs, LHSObjsL), variant_list_to_set(LHSObjsL, LHSObjsSet),
   in_to_ins(LHSObjsSet, 2, LHSObjs_Combos),
   select(Left, LHSObjs_Combos, LHSObjs_Combos_Out),
@@ -2927,13 +3023,13 @@ cto_aa(List, AA):- is_list(List), !, maplist(cto_aa, List, AAA), atomic_list_con
 cto_aa(F, AA):- compound(F), F=..List, !, maplist(cto_aa, List, AAA), atomic_list_concat(AAA, '_', AA).
 cto_aa(A, AA):- format(atom(AA), '~w', [A]).
 
-%make_pairs(InfoOut, Type, s(IsSwapped), PrevRules, LHS, RHS, GRP):- nonvar(IsSwapped), !,
-%  make_pairs(InfoOut, Type, PrevRules, RHS, LHS, GRP).
-%make_pairs(InfoOut, Type, PrevRules, LHS, RHS, GRP):- PrevRules\==[], !,
-%  make_pairs(InfoOut, Type, [], PrevRules, LHS, NLHS),
-%  make_pairs(InfoOut, Type, [], NLHS, RHS, GRP).
-make_pairs(InfoOut, Type, _Prev, LHS, RHS, GRP):-
-  Info = [type(Type), why(TypeO)|InfoOut],
+%make_pairs(InfoIn, Type, s(IsSwapped), PrevRules, LHS, RHS, GRP):- nonvar(IsSwapped), !,
+%  make_pairs(InfoIn, Type, PrevRules, RHS, LHS, GRP).
+%make_pairs(InfoIn, Type, PrevRules, LHS, RHS, GRP):- PrevRules\==[], !,
+%  make_pairs(InfoIn, Type, [], PrevRules, LHS, NLHS),
+%  make_pairs(InfoIn, Type, [], NLHS, RHS, GRP).
+make_pairs(InfoIn, Type, _PrevRules, LHS, RHS, GRP):-
+  Info =  [type(Type), why(TypeO)|InfoIn],
   must_det_ll((
  listify(LHS, LHSL), maplist(obj_in_or_out, LHSL, LCtx), maplist(cto_aa, LCtx, LCtxA), atomic_list_concat(LCtxA, '_', LP),
  listify(RHS, RHSL), maplist(obj_in_or_out, RHSL, RCtx), maplist(cto_aa, [Type, LP|RCtx], AA), atomic_list_concat(AA, '_', TypeO))),
@@ -3029,14 +3125,14 @@ select_group0(TestID, Group, obj_cache):- findall(O, obj_cache(TestID, O, _), Gr
 
 
 compare_objects([], []):-!.
-compare_objects(Objs, Inteouting):-
+compare_objects(Objs, Interesting):-
   maplist(indv_props_for_noteablity, Objs, ObjProps),
   flatten(ObjProps, FlatProps),
   maplist(functorize_props, FlatProps, Functors),
   sort_safe(Functors, SortedFunctors),
   gather_props(SortedFunctors, FlatProps, ListOfLists),
   maplist(compare_values, ListOfLists, Diffs),
-  include(\=([]), Diffs, Inteouting).
+  include(\=([]), Diffs, Interesting).
 
 functorize_props(iz(P), FA):- !, functorize_props(P, FA).
 functorize_props(P, F/A):- functor(P, F, A).
@@ -3243,12 +3339,12 @@ common_members([FirstList|Out], Common) :-
 %  is_post_objs(TestID, IO_, PostObjs), include(has_prop(P), PostObjs, PostObjsO).
 
 
-make_common(OutOut1, LHS1, [E|OutOut], [E|LHSOut]):-
-   select(O, OutOut1, OutOut2),
+make_common(NewOut1, LHS1, [E|NewOut], [E|LHSOut]):-
+   select(O, NewOut1, NewOut2),
    make_unifiable_u(O, I),
    select(I, LHS1, LHS2),
    I=@=O, make_unifiable_u(I, E), !,
-   make_common(OutOut2, LHS2, OutOut, LHSOut).
+   make_common(NewOut2, LHS2, NewOut, LHSOut).
 make_common(I, O, I, O).
 
 % old code
@@ -3283,7 +3379,7 @@ diff_l_r([InL], OutL, PA1, [], OutFlat):- OutL\==[], !,
   remove_o_giz(PA, PA1), remove_o_giz(PB, PB1),
   pred_intersection(propchange_unnoticable, PA1, PB1, _, _Same, _InFlatP, OutFlat))).
 
-% create out
+% create new
 diff_l_r([], OutL, [], [], OutL):- OutL\==[], !.
 
 % -delete some
@@ -3436,11 +3532,11 @@ contains_same([], _):- !.
 contains_same([E|L], P):- sub_var(E, P), !, contains_same(L, P).
 
 /*
-find_peers_with_same(TestID, IO, P, PSame, OutSame):- select(S, PSame, Out), S=@=P, !, find_peers_with_same(TestID, IO, P, Out, OutSame).
-find_peers_with_same(TestID, IO, P, PSame, OutSame):-
+find_peers_with_same(TestID, IO, P, PSame, NewSame):- select(S, PSame, Next), S=@=P, !, find_peers_with_same(TestID, IO, P, Next, NewSame).
+find_peers_with_same(TestID, IO, P, PSame, NewSame):-
    sub_term(Color, P), is_real_color(Color), sub_term(N, P), number(N),
    my_partition(contains_same([Color]), PSame, SameW, SameWO), SameW\==[], SameWO\==[], !,
-   find_peers_with_same(TestID, IO, P, SameWO, OutSame).
+   find_peers_with_same(TestID, IO, P, SameWO, NewSame).
 find_peers_with_same(_, _, PSame, PSame):-!.
 
 
@@ -3524,7 +3620,7 @@ print_scene_change_rules_if_different(Why, P4db, TestID):-
 maybe_color_this(Why, Color):- sub_term(Color, Why), is_color(Color), !.
 get_scene_change_rules(TestID, P4db, Rules):-
  ensure_test(TestID),
-  findall_vset_R(ac_rules(_, IO, P, PSame),
+  findall_vset_R(ac_rules(TestID, IO, P, PSame),
     call(P4db, TestID, IO, P, PSame), Rules).
 
 
@@ -3608,7 +3704,7 @@ into_rhs([R], P):- !, into_rhs(R, P).
 into_rhs(P, P).
 
 /*
-update_accompany_changed_db(TestID, IO_, P, Kept):- Kept\==[],
+update_accompany_changed_db(TestID, IO_, P, Kept):- warn_and_fail_if_empty(Kept),
  forall(io_to_cntx(IO_, Ctx), forall(retract(ac_db_unit(TestID, Ctx, P, _)), true)),
  assert_accompany_changed_db(TestID, IO_, P, Kept).
 
@@ -3651,11 +3747,15 @@ prop_pairs2(O1, O2, Type, Change, P):-
  prop_type(P2, Type),
  \+ ignore_prop_when(Change, P).
 
+narrative_element_once(Ele,ActionGroupIn,ActionGroupOut):- 
+  ActionGroupIn = [Ele|ActionGroupOut],!.
+
 narrative_element(Ele,ActionGroupIn,ActionGroupOut):- 
   ActionGroupIn = [Ele|ActionGroup],
   must_det_ll((
-  Ele=..[F|Args], append(LArgs,[Was],Args),  
-  Was2 is Was +1, append(LArgs,[Was2],Args2),
+  Ele=..[F|Args], append(LArgs,[Was],Args), 
+  (number(Was)-> Was2 is Was +1 ; Was2=Was),
+  append(LArgs,[Was2],Args2),
   Ele2 =.. [F|Args2],
   ActionGroupOut = [Ele2|ActionGroup])).
 
@@ -3668,71 +3768,72 @@ clear_scene_rules(TestID):-
      ignore((/*Rule \= l2r(_, _, _),*/retract(arc_cache:trans_rule_db(TestID, ExampleNum, Ctx, Rule))))).
 
 % HAPPY ENDINGS
-calc_o_d_recursive_end(ActionGroupIn, InfoOut, PrevRules, MLHSObjs, RHSObjs,
+calc_o_d_recursive_end(ActionGroupIn, InfoIn, PrevRules, MLHSObjs, RHSObjs,
                     ActionGroupOut, InfoOut, RulesOut):- 
-  narrative_element(balanced_or_delete_leftovers(Ending),ActionGroupIn,ActionGroupOut),
+  narrative_element_once(balanced_or_delete_leftovers(Ending,Ending),ActionGroupIn,ActionGroupOut),
   my_partition(is_mapping, MLHSObjs, _Mappings, LHSObjs),
   RHSObjs == [], LHSObjs==[], !,
-  member_of_relax(ending(Ending), InfoOut), Ending = balanced(perfect),
+  member_of_relax(ending(Ending), InfoIn), Ending = balanced(perfect),
   must_det_ll((
-  Info = [type(ending(Ending))|InfoOut], sub_cmpd(testid(TestID), InfoOut), sub_cmpd(example(ExampleNum), InfoOut),
-  append_LR(PrevRules,[l2r(Info, [], []), 
-  call(assert_test_property(TestID, ExampleNum, ending, ending(Ending)))], RulesOut))).
+  InfoOut =  [type(ending(Ending))|InfoIn], 
+    sub_cmpd(testid(TestID), InfoIn), sub_cmpd(example(ExampleNum), InfoIn),
+    append_LR(PrevRules,[l2r(InfoOut, [], []), 
+    call(assert_test_property(TestID, ExampleNum, ending, ending(Ending)))], RulesOut))).
 
-calc_o_d_recursive_end(ActionGroupIn, InfoOut, PrevRules, MLHSObjs, RHSObjs, 
+calc_o_d_recursive_end(ActionGroupIn, InfoIn, PrevRules, MLHSObjs, RHSObjs, 
                     ActionGroupOut, InfoOut, RulesOut):- 
-  narrative_element(balanced_or_delete_leftovers(Ending),ActionGroupIn,ActionGroupOut),
+  narrative_element_once(balanced_or_delete_leftovers(Ending,Ending),ActionGroupIn,ActionGroupOut),
   my_partition(is_mapping, MLHSObjs, _Mappings, LHSObjsFGBG),
   my_partition(is_bg_object, LHSObjsFGBG, _LBGObjs, LFGObjs),
-  RHSObjs == [], LFGObjs\==[], !, member_of_relax(ending(Ending), InfoOut),!, Ending = leftover(delete),
-  Info = [type(ending(Ending))|InfoOut], sub_cmpd(testid(TestID), InfoOut), sub_cmpd(example(ExampleNum), InfoOut),
+  RHSObjs == [], LFGObjs\==[], !, member_of_relax(ending(Ending), InfoIn),!, Ending = leftover(delete),
+  InfoOut =  [type(ending(Ending))|InfoIn], sub_cmpd(testid(TestID), InfoIn), sub_cmpd(example(ExampleNum), InfoIn),
   append_LR(PrevRules, [l2r(Info, LFGObjs, []), l2r(Info, [], []), 
   call(assert_test_property(TestID, ExampleNum, ending, ending(Ending)))], RulesOut).
 
-calc_o_d_recursive_end(ActionGroupIn, InfoOut, PrevRules, MLHSObjs, RHSObjs, 
+calc_o_d_recursive_end(ActionGroupIn, InfoIn, PrevRules, MLHSObjs, RHSObjs, 
                     ActionGroupOut, InfoOut, RulesOut):- 
-  narrative_element(balanced_or_delete_leftovers(Ending),ActionGroupIn,ActionGroupOut),
+  narrative_element_once(balanced_or_delete_leftovers(Ending,Ending),ActionGroupIn,ActionGroupOut),
   my_partition(is_mapping, MLHSObjs, _Mappings, LHSObjsFGBG),
   my_partition(is_bg_object, LHSObjsFGBG, LBGObjs, LFGObjs),
-  RHSObjs == [], LFGObjs==[], LBGObjs\==[], !, member_of_relax(ending(Ending), InfoOut), Ending = balanced(with_bg_l),
-  Info = [type(ending(Ending))|InfoOut], sub_cmpd(testid(TestID), InfoOut), sub_cmpd(example(ExampleNum), InfoOut),
+  RHSObjs == [], LFGObjs==[], LBGObjs\==[], !, member_of_relax(ending(Ending), InfoIn), Ending = balanced(with_bg_l),
+  InfoOut =  [type(ending(Ending))|InfoIn], sub_cmpd(testid(TestID), InfoIn), sub_cmpd(example(ExampleNum), InfoIn),
   append_LR(PrevRules, [l2r(Info, LBGObjs, []), l2r(Info, [], []), call(assert_test_property(TestID, ExampleNum, ending, ending(Ending)))], RulesOut).
 
-calc_o_d_recursive_end(ActionGroupIn, InfoOut, PrevRules, LHSObjs, MRHSObjs, 
+calc_o_d_recursive_end(ActionGroupIn, InfoIn, PrevRules, LHSObjs, MRHSObjs, 
                    ActionGroupOut, InfoOut, RulesOut):- 
-  narrative_element(balanced_or_delete_leftovers(Ending),ActionGroupIn,ActionGroupOut),
+  narrative_element_once(balanced_or_delete_leftovers(Ending,Ending),ActionGroupIn,ActionGroupOut),
   my_partition(is_bg_object, MRHSObjs, RBGObjs, RFGObjs),
-  RFGObjs == [], LHSObjs==[], !, member_of_relax(ending(Ending), InfoOut), Ending = balanced(with_bg_r),
-  Info = [type(ending(Ending))|InfoOut], sub_cmpd(testid(TestID), InfoOut), sub_cmpd(example(ExampleNum), InfoOut),
+  RFGObjs == [], LHSObjs==[], !, member_of_relax(ending(Ending), InfoIn), Ending = balanced(with_bg_r),
+  InfoOut =  [type(ending(Ending))|InfoIn], sub_cmpd(testid(TestID), InfoIn), sub_cmpd(example(ExampleNum), InfoIn),
   append_LR(PrevRules, [l2r(Info, [], RBGObjs), l2r(Info, [], []), call(assert_test_property(TestID, ExampleNum, ending, ending(Ending)))], RulesOut).
 
-calc_o_d_recursive_end(ActionGroupIn, InfoOut, PrevRules, MLHSObjs, MRHSObjs, 
+calc_o_d_recursive_end(ActionGroupIn, InfoIn, PrevRules, MLHSObjs, MRHSObjs, 
                      ActionGroupOut, InfoOut, RulesOut):- 
-  narrative_element(balanced_or_delete_leftovers(Ending),ActionGroupIn,ActionGroupOut),
+  narrative_element_once(balanced_or_delete_leftovers(Ending,Ending),ActionGroupIn,ActionGroupOut),
   my_partition(is_bg_object, MRHSObjs, RBGObjs, RFGObjs), my_partition(is_bg_object, MLHSObjs, LBGObjs, LFGObjs),
-  RFGObjs == [], LFGObjs==[], !, member_of_relax(ending(Ending), InfoOut), Ending = balanced(with_bg_l_r),
-  Info = [type(ending(Ending))|InfoOut], sub_cmpd(testid(TestID), InfoOut), sub_cmpd(example(ExampleNum), InfoOut),
+  RFGObjs == [], LFGObjs==[], !, member_of_relax(ending(Ending), InfoIn), Ending = balanced(with_bg_l_r),
+  InfoOut =  [type(ending(Ending))|InfoIn], sub_cmpd(testid(TestID), InfoIn), sub_cmpd(example(ExampleNum), InfoIn),
   append_LR(PrevRules, [l2r(Info, LBGObjs, []), l2r(Info, [], RBGObjs), call(assert_test_property(TestID, ExampleNum, ending, ending(Ending)))], RulesOut).
 
-calc_o_d_recursive_end(ActionGroupIn, InfoOut, PrevRules, LHSObjs, RHSObjs, 
+calc_o_d_recursive_end(ActionGroupIn, InfoIn, PrevRules, LHSObjs, RHSObjs, 
                      ActionGroupOut, InfoOut, RulesOut):- 
-  narrative_element(balanced_or_delete_leftovers(Ending),ActionGroupIn,ActionGroupOut),
+  narrative_element_once(balanced_or_delete_leftovers(Ending,Ending),ActionGroupIn,ActionGroupOut),
   LHSObjs==[], RHSObjs == [], !,
-  member_of_relax(ending(Ending), InfoOut), Ending = balanced(perfect_balance),
+  member_of_relax(ending(Ending), InfoIn), Ending = balanced(perfect_balance),
   must_det_ll((
-  sub_cmpd(testid(TestID), InfoOut), sub_cmpd(example(ExampleNum), InfoOut),
+  sub_cmpd(testid(TestID), InfoIn), sub_cmpd(example(ExampleNum), InfoIn),
+  InfoOut =  [type(ending(Ending))|InfoIn],
   append_LR(PrevRules, [call(assert_test_property(TestID, ExampleNum, ending, ending(Ending)))], RulesOut))), !.
 
-calc_o_d_recursive_end(ActionGroupIn, InfoOut, PrevRules, MLHSObjs, RHSObjs, 
+calc_o_d_recursive_end(ActionGroupIn, InfoIn, PrevRules, MLHSObjs, RHSObjs, 
                    ActionGroupOut, InfoOut, RulesOut):- 
-  narrative_element(balanced_or_delete_leftovers(Ending),ActionGroupIn,ActionGroupOut),
+  narrative_element_once(balanced_or_delete_leftovers(Ending,Ending),ActionGroupIn,ActionGroupOut),
   RHSObjs==[], !,
   my_partition(is_mapping, MLHSObjs, _Mappings, LHSObjs),
-  member_of_relax(ending(Ending), InfoOut), Ending = ending(left_over),
+  member_of_relax(ending(Ending), InfoIn), Ending = ending(left_over),
   must_det_ll((
-  Info = [type(ending(Ending)), why(Ending)|InfoOut],
-  sub_cmpd(testid(TestID), InfoOut), sub_cmpd(example(ExampleNum), InfoOut),
-    must_det_ll((maplist(into_delete(TestID, ExampleNum, PrevRules, Info), LHSObjs, Mappings), 
+  InfoOut =  [type(ending(Ending)), why(Ending)|InfoIn], sub_cmpd(testid(TestID), InfoIn), sub_cmpd(example(ExampleNum), InfoIn),
+    must_det_ll((maplist(into_delete(TestID, ExampleNum, PrevRules, InfoOut), LHSObjs, Mappings), 
     append_LR(PrevRules, [call(assert_test_property(TestID, ExampleNum, ending, ending(Ending))), Mappings], RulesOut))))), !.
 
 
@@ -3744,7 +3845,7 @@ correct_antes5(TestID, IO_, P, PSame, Kept):-
    is_accompany_changed_computed(TestID, IO_, U, DSame),
    P\=@=U,
    maplist(make_unifiable_u, DSame, USame),
-   pred_intersection(other_val, PSame, USame, Kept, _, _, _), Kept\==[].
+   pred_intersection(other_val, PSame, USame, Kept, _, _, _), warn_and_fail_if_empty(Kept).
 correct_antes5(_TestID, _IO_, _P, PSame, PSame).
 
 
