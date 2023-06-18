@@ -806,15 +806,18 @@ find_relative_r(Info,Left,Right,Possibles,R,NewR,PreCond, XtraRule):-
   %fail, %DMILES TODO
 
 
- append_LR([always(OF_OBJ),iz(info(OF_OBJ))],PreCond),
- make_unifiable_u(R,NewR),
-
  % findall(XtraRule,
-  ((make_unifiable_u(R,E),make_unifiable_u(E,GetR),
+  ((make_unifiable_u(R,E),make_unifiable_u(E,GetR),make_unifiable_u(R,NewR),
   iz_arg(1,R,ValR),number(ValR), iz_arg(1,E,ValE), iz_arg(1,NewR,ValNewR), iz_arg(1,GetR,ValGetR),
   (sub_term(P,Possibles);P=Left),P\==Right,is_object(P),indv_props_list(P,Props),member(E,Props),
-   into_lhs(Props,LHS1), subst001(LHS1,E,always(GetR),LHS),
+    subst(LL,E,true,LLG),
+    OF_OBJ=of_obj(NewR,Convertor,LLG),
+    append_LR([always(OF_OBJ_GET),iz(info(OF_OBJ_GET))],PreCond), 
+
+   into_lhs(Props,LHS1), 
+   subst001(LHS1,E,always(GetR),LHS),
    make_conversion(ValE,ValR,ValGetR,ValNewR,Convertor),
+   subst001(OF_OBJ,NewR,GetR,OF_OBJ_GET),
    nop(pp_ilp(lHS=LHS)),
    noteable_propdiffs(P,Right,_,LL,_),
 
@@ -822,9 +825,7 @@ find_relative_r(Info,Left,Right,Possibles,R,NewR,PreCond, XtraRule):-
    XtraRule = [ac_unit(_,_,OF_OBJ,[iz(info(Info)),iz(info(OF_OBJ))|LHS])])),
   % XtraRuleL),
   
-   flag('VAR_',VV,VV+0), numbervars(v(ValE,ValR,ValGetR,ValNewR,Convertor),VV,NEWVV,[]), set_flag('VAR_',NEWVV), 
-
-  OF_OBJ=of_obj(NewR,Convertor,LL),!.
+   flag('VAR_',VV,VV+0), numbervars(v(ValE,ValR,ValGetR,ValNewR,Convertor),VV,NEWVV,[]), set_flag('VAR_',NEWVV),!.
 
 find_relative_r(Info,Left,Right,Possibles,R,NewR,[always(Expression),iz(info(Expression))], 
   [ac_unit(_,_,Expression,[iz(info(Info)),iz(info(Expression))|LHS])]):- 
@@ -841,6 +842,9 @@ find_relative_r(_Info,_,_,_,R,R,[],[]):-!.
   make_unifiable_u(E,GetR), 
   new_r(GetR,R,E,NewR,SubExpr),
   */
+make_conversion(ValE,ValR,ValGetR,ValNewR,Convertor):- number(ValR), number(ValE),
+  Dif is (ValR-ValE),
+  Convertor = (ValNewR #= ValGetR + Dif).
 make_conversion(ValE,ValR,ValGetR,ValNewR,Convertor):-
   Convertor = (ValNewR #= ValGetR + (ValR-ValE)).
   
@@ -1087,10 +1091,11 @@ set_of_changes(RulesList, P1):-
   maplist(P1, Ps),
   print_scene_change_rules_if_different(Why, ac_db_unit, RulesList))).
 
+/*
 ac_db_unit_unv(TestID,Ctx,P,PSame):- 
   ac_db_unit(TestID,Ctx,PU,PSameU),
   unnumbervars2a(PU+PSameU,P+PSame).
-
+*/
 
 
 % Retain Overlap
@@ -1431,15 +1436,15 @@ enter_solve_obj(VM, TestID, ExampleNum, Objs, ObjsO):-
 score_rule(Ways, Obj, Rule, Score):- is_object(Rule), \+ is_object(Obj), !, score_rule(Ways, Rule, Obj, Score).
 
 score_rule(Ways, Obj, Rule, Score):-
-  into_lhs(Rule, PCond), into_rhs(Rule, P),
-  % indv_props_list(Obj, Props), \+ member(P, Props), %\+ \+ ((member(E, Props), member(E, PCond))),
- %  once( ( \+ is_bg_object(Obj) ); sub_var(black, PCond)),
-    score_rule(Ways, Obj, PCond, P, Score).
+  into_lhs(Rule, PConds), into_rhs(Rule, P),
+  % indv_props_list(Obj, Props), \+ member(P, Props), %\+ \+ ((member(E, Props), member(E, PConds))),
+ %  once( ( \+ is_bg_object(Obj) ); sub_var(black, PConds)),
+    score_rule(Ways, Obj, PConds, P, Score).
 
-score_rule(exact, Obj, PCond, _P, Score):-  score_all_props(PCond, Obj, S0), S0>0.3, !, Score=1000.
-score_rule(_Ways, Obj, PCond, _P, Score):- %fail,
+score_rule(exact, Obj, PConds, _P, Score):-  score_all_props(PConds, Obj, S0), S0>0.3, !, Score=1000.
+score_rule(_Ways, Obj, PConds, _P, Score):- %fail,
    obj_atoms(Obj, A),
-   obj_atoms(PCond, B),
+   obj_atoms(PConds, B),
      intersection_eq(A, B, Good, _Extra, _Bad),
      length(Good, Score).
 
@@ -1532,21 +1537,19 @@ never_use_horn_rhs(create3c(_,_,_)).
 
 solve_obj_group(VM, TestID, ExampleNum, Ctx, ObjsIn, ObjsO):-   
   my_exclude(is_bg_object_really, ObjsIn, Objs),
-  (rule_units(Rule ,Ctx,P,PCond)),
-  findall_vset_R(Rule, (ac_rules(TestID, Ctx, P, PCond)), Rules),
-  gset(VM.rules)=Rules,  
-  apply_rules0(VM, TestID, ExampleNum, Ctx, Rules, Objs, ObjsO), ObjsO\==[], !.
+  findall_vset_R(Rule, (ac_rules(TestID, Ctx, P, PConds),rule_units(Rule,Ctx,P,PConds)), Rules),
+  unnumbervars2a(Rules,URules),
+  gset(VM.rules)=URules,  
+  apply_rules0(VM, TestID, ExampleNum, Ctx, URules, Objs, ObjsO), ObjsO\==[], !.
 solve_obj_group(_VM, _TestID, _ExampleNum, _Ctx, Objs, Objs).
 
 
-rule_units(ac_unit(_,Ctx,P,PCond),Ctx,P,PCond).
+rule_units(ac_unit(_,Ctx,P,PConds),Ctx,P,PConds).
 
-apply_rules0(VM, _TestID, _ExampleNum, Ctx, [Rules], [Obj], [NewObj]):- !,
+apply_rules0(VM, _TestID, _ExampleNum, Ctx, [Rule], [Obj], [NewObj]):- !,
  must_det_ll(((
- unnumbervars2a(Rules,URules),
- (rule_units(Rule ,Ctx,P,PCond)), 
-  member(Rule,[URules]), 
-  ignore(vm_has_obj_prop(VM,Obj,PCond)),
+  rule_units(Rule,Ctx,P,PConds), 
+  ignore(vm_has_obj_prop(VM,Obj,PConds)),
   wots(S,print(Rule)),
   must_det_ll((override_object_1(VM, P, Obj, NewObj))),
   gset(VM.robjs) = [NewObj|VM.robjs],
@@ -1561,18 +1564,15 @@ apply_rules(VM, TestID, ExampleNum, Ctx, Rules, [O|Objs], [NO|NewObjs]):-
 apply_rules(_VM, _TestID, _ExampleNum, _Ctx, _Rules, Objs, Objs).
 
 apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, NewObj):-
- unnumbervars2a(Rules,URules),
- (rule_units(Rule ,_,P,PCond)), 
-  member(Rule,URules), 
-
-  vm_has_obj_prop(VM,Obj,PCond),
+  member(Rule,Rules), rule_units(Rule ,_,P,PConds), 
+  vm_has_obj_prop(VM,Obj,PConds),
   wots(S,print(Rule)),
   must_det_ll((override_object_1(VM, P, Obj, NewObj))),
   gset(VM.robjs) = [NewObj|VM.robjs],
   print_ss(wqs([override_object(S)]), [Obj], [NewObj]),!.
 
 apply_rules1(VM, _TestID, _ExampleNum, _Ctx, _Rules, Obj, NewObj):-
-  %(rule_units(Rule ,_,P,PCond)), forall(member(Rule,Rules), pp(failed(Rule))),
+  %(rule_units(Rule ,_,P,PConds)), forall(member(Rule,Rules), pp(failed(Rule))),
   %indv_props_list(Obj,Props), my_partition(assume_prop,Props,_,Needed),
   pp(skipped_obj=Obj),
   override_object_1(VM, pen([cc(brown,1)]), Obj, NewObj),!.
@@ -1580,27 +1580,24 @@ apply_rules1(VM, _TestID, _ExampleNum, _Ctx, _Rules, Obj, NewObj):-
 
 
 vm_has_obj_prop(VM,Obj,always(of_obj(Prop,G,LL))):- 
-
-  must_det_ll(( Rule = ac_unit(_,_,of_obj(_,_,_),_),
-  URule = ac_unit(_,_,of_obj(Prop,G,LL),PCond),
-  member(Rule,VM.rules),
-  unnumbervars2a(Rule,URule))),
-
+  member(Rule,VM.rules), rule_units(Rule,_Ctx,P,PConds),
+  P =@= of_obj(Prop,G,LL),
   (member(O,VM.robjs);member(O,VM.objs)),
-  (O \== Obj, inv_has_prop2(O, PCond)),call(G).
+  (O \== Obj, inv_has_prop2(O, PConds)),call(G).
 
 vm_has_obj_prop(VM,Obj,always(of_obj(Prop,Call,_LL))):- 
  copy_term(Prop,CProp),
   (member(O,VM.robjs);member(O,VM.objs)),
   (O \== Obj, inv_has_prop2(O, Prop)),Prop\=@=CProp,!,
   call(Call).
+
 vm_has_obj_prop(VM,Obj,always(of_obj(Prop))):- 
  copy_term(Prop,CProp),
   (member(O,VM.robjs);member(O,VM.objs)),
   (O \== Obj, inv_has_prop2(O, Prop)),Prop\=CProp,!.  
 
 vm_has_obj_prop(VM,Obj, [P|T]):- !, vm_has_obj_prop(VM,Obj, P), vm_has_obj_prop(VM,Obj, T).
-vm_has_obj_prop(_VM,Obj, PCond):- inv_has_prop2(Obj, PCond).
+vm_has_obj_prop(_VM,Obj, PConds):- inv_has_prop2(Obj, PConds).
 
 clone_object(I, O):- duplicate_term(I, O).
 
@@ -1629,31 +1626,46 @@ edit_object(VM, Ps, Obj):-
 override_object_1(_VM, [], IO, IO):-!.
 override_object_1(VM, [H|T], I, OO):- !, override_object_1(VM, H, I, M), !, override_object_1(VM, T, M, OO).
 
-override_object_1(_VM, loc2D(X, Y), Obj, Obj):- (X>3;Y>4), !.
-override_object_1(_VM, pen([cc(black, 1)]), Obj, Obj).
-
+override_object_1(_VM, Term, I, O):- compound(Term),functor(Term,copy_object_perfect,_),!,I=O,!. 
 override_object_1(_VM, copy_step, Obj, Obj):-!.
 
+override_object_1(_VM, pen([cc(black, 1)]), Obj, Obj).
 
 override_object_1(_VM, pen([cc(Red, N)]), Obj, NewObj):- pen(Obj, [cc(Was, N)]), !,
   subst001(Obj, Was, Red, NewObj), !.
-override_object_1(VM, loc2D(X, Y), Obj, NewObj):- loc2D(Obj, WX, WY),
+
+override_object_1(_VM, loc2D(X, Y), Obj, Obj):- (X>3;Y>4), !.
+override_object_1(VM, Pos, Obj, NewObj):- type_prop(reposition,Pos),
+  make_unifiable_u(Pos,UPos),indv_prop(UPos,Obj),
+  calc_relative_2d(UPos,Pos,OX,OY),globalpoints(Obj, OGPoints), 
+  deoffset_points(OX, OY, OGPoints, GPoints), rebuild_from_globalpoints(VM, Obj, GPoints, NewObj).
+
+/*override_object_1(VM, loc2D(X, Y), Obj, NewObj):- loc2D(Obj, WX, WY),
   globalpoints(Obj, WPoints), deoffset_points(WX, WY, WPoints, LPoints),
   offset_points(X, Y, LPoints, GPoints), rebuild_from_globalpoints(VM, Obj, GPoints, NewObj).
+*/
+
+override_object_1(_VM, Term, I, O):- I=obj(List),functor(Term,F,A),functor(UTerm,F,A), member(UTerm,List), 
+  override_object(Term, I, O), !.
+override_object_1(VM, Term, I, O):- I=obj(List),functor(Term,F,A),functor(UTerm,F,A), \+ member(UTerm,List),
+  arg(A,Term,Arg),compound(Arg),!,override_object_1(VM, Arg, I, O).
+/*
 override_object_1(VM, Term, I, O):- sub_cmpd(rhs(P), Term), !,  override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_cmpd(copy_object_one_change(_,P), Term), !,  override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_cmpd(copy_object_n_changes(_,P), Term), !,  override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_cmpd(copy_object_n_changes(_,_,P), Term), !,  override_object_1(VM, P, I, O).
-override_object_1(_VM, Term, I, O):- sub_cmpd(copy_object_perfect(_,_), Term), !, I=O,!.
-override_object_1(_VM, Term, I, O):- sub_cmpd(copy_object_perfect(_), Term), !, I=O,!.
 override_object_1(VM, Term, I, O):- sub_cmpd(edit(P), Term), !,  override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_cmpd(edit(_, _, P), Term), !, override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_cmpd(edit(_, _, _, P), Term), !, override_object_1(VM, P, I, O).
 %override_object_1(VM, Term, I, O):- sub_term(Sub, Term), compound(Sub), Sub=edit(_, _, _, P),  !, pp_ilp(Term), I=O, !. %override_object_1(VM, P, I, O).
-
+*/
 
 override_object_1(_VM, O, I, OO):- override_object(O, I, OO), !.
 
+calc_relative_2d(iz(UPos),iz(Pos),OX,OY):- !, calc_relative_2d(UPos,Pos,OX,OY).
+calc_relative_2d(UPos,Pos,OX,OY):- Pos=..[F,X,Y],UPos=..[F,UX,UY],OX is X-UX+1,OY is Y-UY+1.
+calc_relative_2d(UPos,Pos,OX,1):- Pos=..[F,X],UPos=..[F,UX],atom_contains(F,'X'), OX is X-UX+1.
+calc_relative_2d(UPos,Pos,1,OY):- Pos=..[F,Y],UPos=..[F,UY],atom_contains(F,'Y'), OY is Y-UY+1.
 
 mapping_step(    in_out).
 mapping_step( in_in_out).
