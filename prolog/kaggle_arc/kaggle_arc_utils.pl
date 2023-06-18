@@ -424,18 +424,22 @@ ppawt(FA):-
     %portray(false), partial(true), fullstop(true),
    ignore_ops(false), quoted(true), quote_non_ascii(true), brace_terms(false)]).
 
-
-intersection_eq([],LeftOverB,[],[],LeftOverB):-!.
-intersection_eq(LeftOverA,[],[],LeftOverA,[]):-!.
-intersection_eq([A|APoints],BPoints,[A|Intersected],LeftOverA,LeftOverB):-
-  select(B,BPoints,BPointsMinusA),(var(A)->A==B;B=@=A),!,
-  intersection_eq(APoints,BPointsMinusA,Intersected,LeftOverA,LeftOverB).
-intersection_eq([A|APoints],BPoints,Intersected,[A|LeftOverA],LeftOverB):-
-  intersection_eq(APoints,BPoints,Intersected,LeftOverA,LeftOverB).
-
 intersection(APoints,BPoints,Intersected,LeftOverA,LeftOverB):-
-  intersection_eq(APoints,BPoints,Intersected,LeftOverA,LeftOverB),!.
+  intersection_univ(APoints,BPoints,Intersected,LeftOverA,LeftOverB),!.
 
+same_univ(A,B):- (plain_var(A)->A==B;(B=@=A->true; (fail, \+ (A \=B )))).
+
+intersection_univ(APoints,BPoints,Intersected):-
+  intersection_univ(APoints,BPoints,Intersected,_,_),!.
+intersection_univ(APoints,BPoints,Intersected,LeftOverA,LeftOverB):-
+  pred_intersection(same_univ,APoints,BPoints,Intersected,_,LeftOverA,LeftOverB).
+
+intersection_eq(APoints,BPoints,Intersected):-
+  intersection_eq(APoints,BPoints,Intersected,_,_),!.
+intersection_eq(APoints,BPoints,Intersected,LeftOverA,LeftOverB):-
+  pred_intersection(same_univ,APoints,BPoints,Intersected,_,LeftOverA,LeftOverB).
+
+/*
 intersection_u([],LeftOverB,[],[],LeftOverB):-!.
 intersection_u(LeftOverA,[],[],LeftOverA,[]):-!.
 intersection_u([A|APoints],BPoints,[A|Intersected],LeftOverA,LeftOverB):-
@@ -443,6 +447,7 @@ intersection_u([A|APoints],BPoints,[A|Intersected],LeftOverA,LeftOverB):-
   intersection_u(APoints,BPointsMinusA,Intersected,LeftOverA,LeftOverB).
 intersection_u([A|APoints],BPoints,Intersected,[A|LeftOverA],LeftOverB):-
   intersection_u(APoints,BPoints,Intersected,LeftOverA,LeftOverB).
+*/
 
 :- meta_predicate(each_obj(?,?,0)).
 each_obj([],_,_):-!.
