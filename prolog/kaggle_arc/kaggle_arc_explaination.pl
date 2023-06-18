@@ -795,7 +795,7 @@ correct_pipe2a(IO,P1,Rules,Out):- trace,%mfail,
     sames_must_have_sames(RulesAboutSamesFlat,BetterRulesAboutSames),BetterRulesAboutSames\==[],
   findall(Info,ac_info_unit(AboutSame,Info,IO,_,_),InfoAboutSames),flatten(InfoAboutSames,InfoAboutSamesFlat),
     merge_list_values(InfoAboutSamesFlat,BetterInfo),
-  append(AboutSimular,[ac_unit(IO,BetterInfo,P1,BetterRulesAboutSames)],Out))).
+  append(AboutSimular,[ac_unit(_,IO,P1,[iz(info(BetterInfo))|BetterRulesAboutSames])],Out))).
 
 correct_pipe2b(IO,P1,Rules,Out):- %mfail,
  trace,
@@ -1594,7 +1594,7 @@ correct_pipe2a(IO,P1,Rules,Out):- trace,%mfail,
     sames_must_have_sames(RulesAboutSamesFlat,BetterRulesAboutSames),BetterRulesAboutSames\==[],
   findall(Info,ac_info_unit(AboutSame,Info,IO,_,_),InfoAboutSames),flatten(InfoAboutSames,InfoAboutSamesFlat),
     merge_vals_list(InfoAboutSamesFlat,BetterInfo),
-  append(AboutSimular,[ac_unit(IO,BetterInfo,P1,BetterRulesAboutSames)],Out))).
+  append(AboutSimular,[ac_unit(IO,P1,[iz(info(BetterInfo))|BetterRulesAboutSames])],Out))).
 
 correct_pipe2b(IO,P1,Rules,Out):- %mfail,
  trace,

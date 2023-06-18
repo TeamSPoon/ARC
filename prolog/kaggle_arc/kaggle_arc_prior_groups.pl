@@ -1132,7 +1132,7 @@ prop_priority(_,                     3-inf).
 var_to_underscore(Var,_):- plain_var(Var),!.
 print_elists_hack_objs(Named,Props0,Objs,HackedObjs):-
  HackedObjs = Hacked,
- must_det_ll((
+ ignore((
   care_to_count(Props0,Props),
   into_test_id_io(Named,TestID,ExampleNum,IO),
   mpp(into_test_id_io(Named,TestID,ExampleNum,IO)),
@@ -1213,7 +1213,7 @@ made_split(_,UProp,List,((Len-UProp)->List)):- length_s(List,Len).
 sameps(UProp,_-Prop):- \+ Prop \= UProp.
 
 set_test_id_io(Named):-
-  must_det_ll((into_test_id_io1(Named,TestID,ExampleNum,IO),
+  ignore((into_test_id_io1(Named,TestID,ExampleNum,IO),
   nb_setval(prior_asserts,to(TestID,ExampleNum,IO)))).
 into_test_id_io(Named,TestID,ExampleNum,IO):- var(Named),!, must_det_ll((nb_current(prior_asserts,to(TestID,ExampleNum,IO)))),!.
 into_test_id_io(Named,TestID,ExampleNum,IO):-
@@ -1223,7 +1223,7 @@ into_test_id_io(Named,TestID,ExampleNum,IO):-
 %into_test_id_io1(Named+Filter,TestID,ExampleNum,IO):- into_test_id_io1(Named,TestID,ExampleNum,IO),!.
 into_test_id_io1(Named+Filter,TestID,ExampleNum,IO+Filter):- into_test_id_io1(Named,TestID,ExampleNum,IO),!.
 into_test_id_io1(Named,TestID,Example+Num,IO):- \+ compound(Named),!, 
- must_det_ll((interesting_selectors(Named,Example,Num,IO),get_current_test(TestID))),!.
+ once((interesting_selectors(Named,Example,Num,IO),get_current_test(TestID))),!.
 into_test_id_io1(Named+Filter,TestID,Named,Filter):- !, get_current_test(TestID),!.
 into_test_id_io1(Named,TestID,Example+Num,IO):- testid_name_num_io(Named,TestID,Example,Num,IO),nonvar(Num),!.
 into_test_id_io1(vs(Name1+Filter1,Name2+Filter2),TestID,
@@ -1463,7 +1463,10 @@ group_prior_objs0(Why,Objs,WithPriors):-
  (Objs=@=WithPriors -> wdmsg(group_prior_objs0_same(Why)) ; wdmsg(group_prior_objs0_DIFFF(Why))),
  !.
 
-add_how_simular(ObjsIn,ObjsIn):-!.
+%add_how_simular(ObjsIn,ObjsIn):-!.
+
+add_how_simular([],[]):-!.
+add_how_simular([ObjsIn],[ObjsIn]):-!.
 add_how_simular(ObjsIn,Simulars):-
   add_how_simular(ObjsIn,ObjsIn,Simulars).
 
@@ -1482,7 +1485,7 @@ add_how_common([Prop|O],Rest,[Prop,simularz(Prop,N)|OO]):-
   % Prop\=pg(_,_,_,_),
   findall(_,(sub_term(E,Rest),E==Prop),L),length(L,N),
   %prop_name(Prop,Name),!,
-  add_how_common(O,Rest,OO).
+  add_how_common(O,Rest,OO),!.
 add_how_common([Prop|O],Rest,[Prop|OO]):-
   add_how_common(O,Rest,OO).
   
