@@ -1766,7 +1766,7 @@ into_sym_count(cc(Sym,Count),sym_counts(Sym,Count)).
 vector_pairs(T,SS):- findall_vset(T,find_syms(T,_),TT),member(T,TT),findall(S,find_syms(T,S),SS).
 
 find_syms(node,'@'). find_syms(node,'+'). find_syms(node,'*'). find_syms(node,'~').
-find_syms(dir,'<'). find_syms(dir,'>'). find_syms(dir,'v'). find_syms(dir,'^').
+%find_syms(dir,'<'). find_syms(dir,'>'). find_syms(dir,'v'). find_syms(dir,'^').
 find_syms(extend,'-'). find_syms(extend,'|'). 
 find_syms(extend,'\\'). find_syms(extend,'/').
 /*

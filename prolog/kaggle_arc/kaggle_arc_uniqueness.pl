@@ -633,8 +633,9 @@ synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,
   get_object_dependancy(InfoStart,TestID,ExampleNum,ActionGroup,ActionGroupOut,RHSObjs,LHSObjs,Groups))),   
   %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
   groups_to_rules(Groups,RulesL),
-  merge_rules(TestID,RulesL,Rules),
-  pp_ilp(synth_program_from_one_example=Rules),!.
+  nop(merge_rules(TestID,RulesL,Rules)),
+  pp_ilp([narrative_out=ActionGroupOut,rulesL=RulesL,narrative_out=ActionGroupOut]),
+  nop(pp_ilp(synth_program_from_one_example=Rules)),!.
 
 groups_to_rules(Groups,RulesL):- 
  flatten([Groups],GroupsF),
@@ -642,10 +643,11 @@ groups_to_rules(Groups,RulesL):-
  flatten([RulesRR],RulesRF),
  filter_rules(RulesRF,RulesL).
 
-filter_rules(RulesR,RulesL):- include(is_functor(ac_unit),RulesR,RulesL).
+filter_rules(RulesR,RulesL):- my_include(is_functor(ac_unit),RulesR,RulesL).
 
 expand_rules(R,Rule):- is_list(R),!,member(E,R),expand_rules(E,Rule).
 expand_rules(exists(_),[]):- !.
+expand_rules(call(G),[]):- !, call(G), !.
 expand_rules(group_narrative_rules(_,_,R),Out):-!,expand_rules(R,Out).
 expand_rules(l2r(Info,In,Out),Rule):- !, trans_rule(Info,In,Out,Rules),expand_rules(Rules,Rule).
 expand_rules(rule(Info,LHS,P),ac_unit(_,Ctx,P,Body)):- !, flatten([LHS,iz(info(Info))],Body),ignore(sub_cmpd(ctx(Ctx),Info)).
@@ -657,21 +659,24 @@ expand_rules(R,ac_unit(_,Ctx,P0,LHS)):-
   subst001(R,P,p,RR), subst001(RR,Conds,conds,RRR),
   append(Conds,[iz(info(RRR))],LHS),
   ignore((sub_cmpd(ctx(Ctx),R))))),!,P0=P.
-expand_rules(R,R).
+
+expand_rules(R,ac_unit(_,ctx,er(R),[el(R)])).
+%expand_rules(R,R).
 
 		
 		
 get_object_dependancy(InfoStart,TestID, ExampleNum, ActionGroupIn, ActionGroupOut, RHSObjs, LHSObjs, Groups):-
  ((RHSObjs\==[], LHSObjs\==[],
+      VM = _{objs:LHSObjs,robjs:RHSObjs,rules:[],solution:[]},
       relaxed_levels(RelaxLvl),
       wots(RelaxLvlS,write([relax(RelaxLvl)|InfoStart])),
       print_ss(get_object_dependancy(RelaxLvlS),RHSObjs, LHSObjs),
       ((once((normalize_objects_for_dependancy(RelaxLvl, TestID, ExampleNum, RHSObjs, LHSObjs, RHSObjsOrdered, LHSObjsOrdered),
       InfoIn = [step(0), relax(RelaxLvl), ctx(in_out), example(ExampleNum), testid(TestID)|InfoStart],
-      calc_o_d_recursive(LHSObjs,ActionGroupIn, InfoIn, [], LHSObjsOrdered, RHSObjsOrdered, ActionGroupOut, Groups))))))), !.
+      
+      calc_o_d_recursive(VM,ActionGroupIn, InfoIn, [], LHSObjsOrdered, RHSObjsOrdered, ActionGroupOut, Groups))))))), !.
 
 calc_o_d_recursive(_VM,[],              _Info, PrevRules,     _,      _,             [], PrevRules):-!.
-%calc_o_d_recursive(_VM,ActionGroupOut,  _Info, PrevRules,    [],      [],  ActionGroupOut, PrevRules).
 calc_o_d_recursive(VM,ActionGroupIn,     Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups):-
   ignore(((
    length(LHSObjs,CI),
@@ -693,7 +698,7 @@ calc_o_d_recursive(VM,ActionGroupIn,     Info, PrevRules, LHSObjs, RHSObjs, Acti
   reverse(RulesNewEww,RulesNewer),
   pp_ilp(new=RulesNewer), 
   (Info==InfoMid-> incr_step(InfoMid, InfoOut) ; InfoMid=InfoOut),
-  calc_o_d_recursive(VM,ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut, ActionGroupFinal, Groups).
+  calc_o_d_recursive(VM,ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut, ActionGroupFinal, Groups),!.
 
 calc_o_d_recursive(VM,[Skip|ActionGroupIn], Info, PrevRules, LHSObjs, RHSObjs, AGF, Groups):- 
  dash_chars,
@@ -701,7 +706,9 @@ calc_o_d_recursive(VM,[Skip|ActionGroupIn], Info, PrevRules, LHSObjs, RHSObjs, A
   dash_chars,
    Skip=..[_|Args], last(Args,Was),
     (Was = 0 -> AGF = ActionGroupFinal ; AGF = [Skip|ActionGroupFinal]),
-     calc_o_d_recursive(VM,ActionGroupIn,   Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups).
+     calc_o_d_recursive(VM,ActionGroupIn,   Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups),!.
+
+calc_o_d_recursive(_VM,ActionGroupOut,  _Info, PrevRules,    [],      [],  ActionGroupOut, PrevRules).
 
 
 
@@ -812,7 +819,7 @@ find_relative_r(Info,Left,Right,Possibles,R,NewR,PreCond, XtraRule):-
    noteable_propdiffs(P,Right,_,LL,_),
 
 
-   XtraRule = [ac_unit(_,_,OF_OBJ,[iz(info(Info)),always(GetR),iz(info(OF_OBJ))|LL])])),
+   XtraRule = [ac_unit(_,_,OF_OBJ,[iz(info(Info)),iz(info(OF_OBJ))|LHS])])),
   % XtraRuleL),
   
    flag('VAR_',VV,VV+0), numbervars(v(ValE,ValR,ValGetR,ValNewR,Convertor),VV,NEWVV,[]), set_flag('VAR_',NEWVV), 
@@ -1119,8 +1126,8 @@ correct_antes2(_RulesList, _IO_, _P, PSame, Kept):-  maplist(ensure_xformed, PSa
 ensure_xformed(pg(_, A, B, C), pg(_, A, B, C)):-!.
 ensure_xformed(A, A).
 
-% Remove Redundant Overlap
-correct_antes3(_RulesList, _IO_, _P, PSame, SL):-
+% Remove Unbound Props
+correct_antes3(_RulesList, _IO_, _P, PSame, SL):- fail,
   findall(S, ( member(S, PSame), \+ is_unbound_prop(S)), SL), warn_and_fail_if_empty(SL), !.
 correct_antes3(_RulesList, _IO_, _P, PSame, PSame).
 
@@ -1241,7 +1248,7 @@ trans_rule(Info,In,Out,Rules):-
   append_sets(Info,[oin(OIDIns),oout(OIDOuts)],InfM),!,
   trans_rule(InfM,In,Out,Rules).
 
-trans_rule(Info,[],[],[ac_unit(_,Ctx,happy_ending(Type),Info)]):-
+trans_rule(Info,[],[],[ac_unit(_,Ctx,happy_ending(Type),[e(1)|Info])]):-
    ignore((sub_cmpd(ctx(Ctx),Info))),
    ignore((sub_cmpd(type(Type),Info))).
 
@@ -1472,9 +1479,10 @@ assume_prop2(was_oid(_)).
 assume_prop2(oid(_)).
 assume_prop2(cc(bg,0)).
 assume_prop2(unique_colors_count(1)).
-%assume_prop2(iz(algo_sid(comp,sid_323))).
 assume_prop2(pg(_,empty_area(_),rank1,_)).
 assume_prop2(sym_counts(_,0)).
+%assume_prop2(iz(algo_sid(comp,sid_323))).
+/*
 assume_prop2(iz(locX(3))).
 
 
@@ -1482,7 +1490,7 @@ assume_prop2(iz(locX(3))).
 assume_prop2(pg(_,iz(cenGY(_)),rank1,_)).
 
 assume_prop2(P):- relax_level_gt(1), assume_prop3(P).
-
+*/
 relax_level_gt(1).
 
 
@@ -2599,7 +2607,9 @@ pass2_rule_R(TestID, Rule):-
 */
 
 warn_and_fail_if_empty(Skip):- Skip\==[],!.
-warn_and_fail_if_empty(Skip):- trace,Skip\==[],!.
+warn_and_fail_if_empty(Skip):-
+  wdmsg(warn_and_fail_if_empty(Skip)),
+  Skip\==[],!.
 
 
 find_lhs(R, P):- sub_cmpd(lhs(E), R), !, into_lhs(E, P).
@@ -2626,7 +2636,7 @@ into_lhs1(In, Out):- include(good_for_lhs, In, Mid), In\=@=Mid, !, into_lhs1(Mid
 into_lhs1(Out, Out).
 
 %m_unifiers(In, Out):- \+ is_list(In), Out=In.
-m_unifiers(In, Out):- In==[],Out=[],!.
+m_unifiers(In, Out):- In==[],!,Out=[].
 m_unifiers(In, Out):- my_partition(assume_prop, In, Skip, DontSkip), Skip\==[],
   m_unifiers(DontSkip, Mid), append_sets([Mid, Skip], Out), !.
 
@@ -2886,8 +2896,8 @@ combine_training(TestID, A, B, In012, Out012):-
 
 
 
-append_LR(PrevRules, Mappings, RulesOut):- flatten([PrevRules, Mappings], RulesOut), !. 
-append_LR(PrevRules, RulesOut):- flatten([PrevRules], RulesOut), !. 
+append_LR(PrevRules, Mappings, RulesOut):- append_LR([PrevRules, Mappings], RulesOut), !. 
+append_LR(PrevRules, RulesSet):- flatten([PrevRules], RulesOut), !, list_to_set(RulesOut,RulesSet).
 
 
 pp_w_objs(P):- into_solid_grid_strings_3(P, [is_object=object_grid], Q), !,
@@ -3776,16 +3786,18 @@ calc_o_d_recursive_end(ActionGroupIn, InfoIn, PrevRules, MLHSObjs, RHSObjs,
   member_of_relax(ending(Ending), InfoIn), Ending = balanced(perfect),
   must_det_ll((
   InfoOut =  [type(ending(Ending))|InfoIn], 
-    sub_cmpd(testid(TestID), InfoIn), sub_cmpd(example(ExampleNum), InfoIn),
-    append_LR(PrevRules,[l2r(InfoOut, [], []), 
-    call(assert_test_property(TestID, ExampleNum, ending, ending(Ending)))], RulesOut))).
+  sub_cmpd(testid(TestID), InfoIn), sub_cmpd(example(ExampleNum), InfoIn),
+  append_LR(PrevRules,
+     [l2r(InfoOut, [], []), call(assert_test_property(TestID, ExampleNum, ending, ending(Ending)))], 
+     RulesOut))).
 
 calc_o_d_recursive_end(ActionGroupIn, InfoIn, PrevRules, MLHSObjs, RHSObjs, 
                     ActionGroupOut, InfoOut, RulesOut):- 
   narrative_element_once(balanced_or_delete_leftovers(Ending,Ending),ActionGroupIn,ActionGroupOut),
   my_partition(is_mapping, MLHSObjs, _Mappings, LHSObjsFGBG),
   my_partition(is_bg_object, LHSObjsFGBG, _LBGObjs, LFGObjs),
-  RHSObjs == [], LFGObjs\==[], !, member_of_relax(ending(Ending), InfoIn),!, Ending = leftover(delete),
+  length(LFGObjs,N),
+  RHSObjs == [], LFGObjs\==[], !, member_of_relax(ending(Ending), InfoIn),!, Ending = leftover(delete(N)),
   InfoOut =  [type(ending(Ending))|InfoIn], sub_cmpd(testid(TestID), InfoIn), sub_cmpd(example(ExampleNum), InfoIn),
   append_LR(PrevRules, [l2r(Info, LFGObjs, []), l2r(Info, [], []), 
   call(assert_test_property(TestID, ExampleNum, ending, ending(Ending)))], RulesOut).
