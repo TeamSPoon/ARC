@@ -108,7 +108,7 @@ test_local_save(object_to_object).
 test_local_save(oid_glyph_object).
 test_local_save(omem).
 test_local_save(oout_associatable).
-%test_local_save(prop_dep).
+test_local_save(prop_dep).
 test_local_save(propcount).
 test_local_save(propcounts).
 test_local_save(showed_point_mapping).

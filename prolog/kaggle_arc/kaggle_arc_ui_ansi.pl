@@ -1253,6 +1253,9 @@ into_wqs(M,wqs(C,ppt(M))):- pp_msg_color(M,C),!.
 into_wqs_string(S,S):- term_is_ansi(S), !.
 into_wqs_string(N1,NS1):- compound(N1), N1 = (A + B), !, into_wqs_string(A,AS),into_wqs_string(B,BS),sformat(NS1,'~w ~w',[AS,BS]).
 into_wqs_string(N1,NS1):- string(N1),!,NS1=N1.
+into_wqs_string(N1,NS1):- \+ compound(N1),!,wots_vs(NS1,write(N1)).
+into_wqs_string(N1,NS1):- N1=..[F,S|_],string(S), \+ is_wqs_f(F),!,wots_vs(NS1,write(N1)).
+%into_wqs_string(N1,NS1):- N1=..[F,S|_],string(S),is_wqs_f(F),!,wots_vs(NS1,call(N1)).
 into_wqs_string(N1,NS1):- into_wqs(N1,WQS1),wots_vs(NS1,call(WQS1)).
 
 add_grid_label(I,M,IM):- into_wqs_string(M,WQS),IM=..[-,I,WQS]. 

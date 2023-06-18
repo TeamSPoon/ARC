@@ -1463,10 +1463,7 @@ group_prior_objs0(Why,Objs,WithPriors):-
  (Objs=@=WithPriors -> wdmsg(group_prior_objs0_same(Why)) ; wdmsg(group_prior_objs0_DIFFF(Why))),
  !.
 
-%add_how_simular(ObjsIn,ObjsIn):-!.
-
-add_how_simular([],[]):-!.
-add_how_simular([ObjsIn],[ObjsIn]):-!.
+add_how_simular(ObjsIn,ObjsIn):-!.
 add_how_simular(ObjsIn,Simulars):-
   add_how_simular(ObjsIn,ObjsIn,Simulars).
 
@@ -1477,14 +1474,14 @@ add_how_simular([obj(O)|Objs],ObjsIn,[obj(OO)|Simulars]):-
   add_how_simular(Objs,ObjsIn,Simulars).
 
 add_how_common([],_,[]):-!.
-add_how_common([Prop|O],Rest,[Prop,simularz(Prop,N)|OO]):- 
+add_how_common([Prop|O],Rest,[Prop,simularz(Name,N)|OO]):- 
   Prop\=giz(_), Prop\=simularz(_,_), Prop\=link(_,_),
   Prop\=oid(_),
   \+ (compound_name_arity(Prop,_,A),A>2),
   % \+ ( arg(2,Prop,E),number(E) ),
   % Prop\=pg(_,_,_,_),
   findall(_,(sub_term(E,Rest),E==Prop),L),length(L,N),
-  %prop_name(Prop,Name),!,
+  prop_name(Prop,Name),!,
   add_how_common(O,Rest,OO),!.
 add_how_common([Prop|O],Rest,[Prop|OO]):-
   add_how_common(O,Rest,OO).

@@ -137,6 +137,21 @@ pass2_rule(TestID,IO,P,OutputRule):-
 %map_pairs_info(TestID,Ctx,P,Step):- !, map_pairs_info_io(TestID,_ExampleNum,Ctx,Step,_TypeO,_A,_B,_USame,_InFlatProps,UPB2),member(P,UPB2),nop(ok_deduce(P)).
 ensure_props_change(TestID,IO,P):-  props_change(TestID,IO,P).
 
+map_pairs_info(TestID,IO,P,Step):-
+  no_repeats_var(IOP),
+  map_pairs_info2(TestID,IO,P,Step),
+  ground(P),
+  IOP=(IO+P).
+
+%  ((var(P),has_propcounts(TestID))->props_change2(TestID,IO,P);true),
+map_pairs_info2(TestID,IO,P,_Step):- props_change2(TestID,IO,P).
+map_pairs_info2(TestID,IO,P,_Step):- 
+ var(P), \+ \+ ac_db_unit(TestID,IO,_,_), %!,
+  ac_db_unit(TestID,IO,P,_).
+map_pairs_info2(TestID,Ctx,P,Step):- 
+  arc_cache:prop_dep(TestID,_ExampleNum,Ctx,Info,_InL,_OutL,_USame,_InFlatProps,OutFlatProps),
+  sub_compound(step(Step),Info),
+  member(P,OutFlatProps).
 
 /*
 

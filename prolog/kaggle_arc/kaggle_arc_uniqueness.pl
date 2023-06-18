@@ -883,7 +883,7 @@ calc_o_d_recursively(ActionGroupIn, InfoIn, PrevRules, LHSObjs, [Right], ActionG
 
 */
 left_over_props(L, R, LO):-
-  noteable_propdiffs(L, R, _, _, LO).
+  noteable_propdiffs2(L, R, _, _, LO).
 
 
 starter_narratives(ActionGroup):- nonvar(ActionGroup),!.
@@ -960,7 +960,7 @@ calc_o_d_recursive_recycle(ActionGroupIn, Info, PrevRules, LHSObjsNil, RHSObjs,
       must_det_ll((
       remove_object(RHSOut1, Right, RHSOut2), remove_object(LHSOut1, Right, LHSOut2),
       remove_object(RHSOut2, Left, RHSOut ), remove_object(LHSOut2, Left, LHSOut ),
-      make_pairs(Info, recycle, PrevRules, Left, Right, RulesOut))).
+      make_pairs(Info, PrevRules, Left, Right, RulesOut))).
 
 calc_o_d_recursive_recycle(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                     ActionGroupOut, InfoOut, PrevRules, ['recycled'|LHSOut], RHSObjs):-
@@ -1210,9 +1210,6 @@ remove_debug_info(List,NoDebug):- compound_name_arguments(List,F,AA),
   maplist(remove_debug_info,AA,CC),!, compound_name_arguments(NoDebug,F,CC).
 
 ac_unit(TestID,Ctx,P,Same):- ac_listing(TestID,Ctx,P,Same).
-
-ac_info_unit(TestID,Info,Ctx,P,NoDebug):- ac_listing(TestID,Ctx,P,List),
-  my_partition(not_debug_info,List,NoDebug,Info).
 
 ac_listing(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),ctx_p_conds(Stuff,Ctx,P,PSame).
 %ac_listing(TestID,Ctx,P->ac_db_unit,PSame):- ac_db_unit(TestID,Ctx,P,PSame).
@@ -1765,7 +1762,7 @@ how_generic_simularity(TestID, ExampleNum, HowInL, HowOutL, HowIn, HowOut):-
  current_example_nums(TestID, ExampleNum),
  kaggle_arc(TestID, ExampleNum, GridIn, GridOut),
   (var(HowInL)-> gather_objs_info_list(TestID, ExampleNum, in, GridIn, HowInL) ; true),
-  (var(HowOutL)-> gather_objs_info_list(TestID, ExampleNum, out, GridOut, HowOutL) ; true),
+  (var(HowOutL)-> gather_objs_outfo_list(TestID, ExampleNum, out, GridOut, HowOutL) ; true),
  must_det_ll(
     findall(Similarity-pair(Object1, Object2, ExtraInfo),
      (member(Object1, HowInL),
@@ -2393,7 +2390,6 @@ pair_obj_props54321(TestID, Ex, Ctx, Info, Step, Type, LHS, RHS, S, L, R):-
   r(Type, LHS, RHS, S, L, R, Ex, Step) = Combined,
   InfoOut =  Step, _IsSwapped, Ctx, Type, TestID, Ex, Ex).
 */
-/*
 pair_obj_props54321(TestID, Ex, Ctx, Info, Step, Type, LHS, RHS, S, L, R):-
  ensure_test(TestID),
   (pair_obj_props5(TestID, Ex, Ctx, Info, Step, Type, LHS, RHS, S, L, R)*->true;
@@ -2401,7 +2397,7 @@ pair_obj_props54321(TestID, Ex, Ctx, Info, Step, Type, LHS, RHS, S, L, R):-
   (pair_obj_props3(TestID, Ex, Ctx, Info, Step, Type, LHS, RHS, S, L, R)*->true;
   (pair_obj_props2(TestID, Ex, Ctx, Info, Step, Type, LHS, RHS, S, L, R)*->true;
    pair_obj_props1(TestID, Ex, Ctx, Info, Step, Type, LHS, RHS, S, L, R))))).
-*/
+
 
 into_solid_objs(RHS, RHSO):- flatten([RHS], RHSM),
   maplist(into_obj, RHSM, RHSO).
@@ -2637,16 +2633,15 @@ into_lhs1(Out, Out).
 %m_unifiers(In, Out):- \+ is_list(In), Out=In.
 m_unifiers(In, Out):- In==[],!,Out=[].
 m_unifiers(In, Out):- my_partition(assume_prop, In, Skip, DontSkip), Skip\==[],
-  m_unifiers1(DontSkip, Mid), append_sets([Mid, Skip], Out), !.
+  m_unifiers(DontSkip, Mid), append_sets([Mid, Skip], Out), !.
 
 %m_unifiers(In, Out):- is_list(In), select(E, In, More), is_prop1(E), is_unbound_prop(E), make_unifiable_u(E, U), select(U, More, UMore),
 %  min_unifier(U, E, S), !, m_unifiers([S|UMore], Out), !.
-m_unifiers(In,Out):-m_unifiers1(In,Out).
 
-m_unifiers1(In, Out):- is_list(In), select(E, In, More), is_prop1(E), make_unifiable_u(E, U), select(U, More, UMore),
-  min_unifier(U, E, S), !, m_unifiers([S|UMore], Out),!,warn_and_fail_if_empty(Out).
+m_unifiers(In, Out):- is_list(In), select(E, In, More), is_prop1(E), make_unifiable_u(E, U), select(U, More, UMore),
+  min_unifier(U, E, S), !, m_unifiers([S|UMore], Out), warn_and_fail_if_empty(Out),!.
 %m_unifiers(In, Out):- select(E, In, More), is_prop1(E), make_unifiable_u(E, U), select(U, More, UMore), other_val(E, U), merge_props(U, E, S), !, m_unifiers([S|UMore], Out).
-m_unifiers1(IO, IO).
+m_unifiers(IO, IO).
 %o_unifiers(In, Out):- select(E, In, More), is_prop1(E), make_unifiable(E, U), select(U, More, UMore), other_val(E, U), the_or_unifier(U, E, S), !, o_unifiers([S|UMore], Out).
 o_unifiers(IO, IO).
 the_or_unifier(U, E, (U;E)).
@@ -2814,7 +2809,15 @@ maybe_remove_bg(RHSObjs, RHSObjs1):- my_partition(is_fg_object, RHSObjs, RHSObjs
 %maybe_remove_bg(RHSObjs, RHSObjs1):- include(is_fg_object, RHSObjs, RHSObjs1), RHSObjs1\=@=RHSObjs, !.
 maybe_remove_bg(RHSObjs, RHSObjs).
 
+fg_to_bgc(FG, black):- is_fg_color(FG), !.
+fg_to_bgc(FG, FG):- \+ compound(FG), !.
 
+
+%into_delete(_TestID, _Ctx, _Prev, _Info, Obj, Obj):- is_mapping(Obj), !.
+%into_delete(_TestID, _ExampleNum, _IsSwapped, _Step, _Ctx, _Prev, _Info, Obj, Obj):-!.
+%into_delete(TestID, Ctx, PrevRules, _Info, Obj, Rules):- map_pred(fg_to_bgc, Obj, NewObj),
+%  make_pairs(InfoIn, delete, PrevRules, Obj, NewObj, Rules),
+%  !. %edit_object(pen([cc(black, 1)]))  % l2r(Info, [Obj], [])).
 
 is_mapping_list([O|GrpL]):- is_mapping(O), is_list(GrpL), maplist(is_mapping, GrpL).
 is_mapping(Grp):- is_functor(l2r, Grp).
@@ -2830,37 +2833,18 @@ get_mapping_info_list(GRP, Info, Dir):-
 n_or_more(3, [_, _, _|_]).
 n_or_more(2, [_, _|_]).
 n_or_more(1, [_|_]).
+pairs_of_any(LHS, RHS, PairsR):-
+  pairs_of_any(LHS, RHS, [], PairsR).
+
+
+
+
+pairs_lr(LHS, RHS, PairsLR):- maplist(best_match_rl(RHS), LHS, PairsLR).
+
+
 
 
 /*
-map_pairs_info(TestID,IO,P,Step):-
-  no_repeats_var(IOP),
-  map_pairs_info2(TestID,IO,P,Step),
-  ground(P),
-  IOP=(IO+P).
-
-%  ((var(P),has_propcounts(TestID))->props_change2(TestID,IO,P);true),
-map_pairs_info2(TestID,IO,P,_Step):- props_change2(TestID,IO,P).
-map_pairs_info2(TestID,IO,P,_Step):- 
- var(P), \+ \+ ac_db_unit(TestID,IO,_,_), %!,
-  ac_db_unit(TestID,IO,P,_).
-map_pairs_info2(TestID,Ctx,P,Step):- 
-  arc_cache:prop_dep(TestID,_ExampleNum,Ctx,Info,_InL,_OutL,_USame,_InFlatProps,OutFlatProps),
-  sub_compound(step(Step),Info),
-  member(P,OutFlatProps).
-*/
-/*
-%pairs_of_any(LHS, RHS, PairsR):-
-%  pairs_of_any(LHS, RHS, [], PairsR).
-
-
-
-
-%pairs_lr(LHS, RHS, PairsLR):- maplist(best_match_rl(RHS), LHS, PairsLR).
-
-
-
-
 In Prolog: I have two groups of objects where each object is denoted by `obj([center2D(2, 6), mass(8), occurs_in_links(contains, 1), pen([cc(blue, 1)]), shape([square])])`
 Each object looks at the other group of objects and keeps what its most simular to.. whenever an object from each group picks each other it forms a new pair .. remove those objects and keep going
 there is no more objecs on one side any previous matches get adding back and a new set of pairs .. this goes on until there is no opbjects remaining on either side.
@@ -3520,13 +3504,49 @@ remove_o_giz(Out, Out).
 %is_accompany_changed_computed(TestID, IO, P, PSame):-
 %   ac_rules(TestID, IO, P, PSame) *->true ; prop_can(TestID, IO, P, PSame).
 
+prop_can(TestID, IO, P, Can):-
+  props_change(TestID, IO, P),
+  once((prop_cant(TestID, IO, P, Cant),
+  prop_can1(TestID, IO, P, Can1),
+  intersection(Can1, Cant, _, Can, _))).
+  %(Can == [] -> (CanL=Can1, fail) ; CanL= Can).
 
+prop_can1(TestID, IO, P, Can):-
+  props_change(TestID, IO, P),
+  findall(O,
+    ((enum_object_ext(O), has_prop(giz(g(out)), O), has_prop(cc(bg, 0), O),
+      has_prop(P, O))), [I|L]),
+  indv_props_list(I, List),
+  findall(U, (member(U, List), U\=@=P, ok_notice(U), forall(member(E, L), has_prop(U, E))), Can).
+
+
+prop_cant(TestID, IO, P, Set):-
+  props_change(TestID, IO, P),
+  findall(Cant,
+    ((enum_object(O), has_prop(giz(g(out)), O), has_prop(cc(bg, 0), O),
+      not_has_prop(P, O), indv_props_list(O, List), member(Cant, List), ok_notice(Cant))), Flat),
+   list_to_set(Flat, Set).
+
+enum_object_ext(O):-
+  ensure_test(TestID),
+  current_example_nums(TestID, ExampleNum),
+  once((obj_group_io(TestID, ExampleNum, out, Objs), Objs\==[])), member(O, Objs).
 
 
 contains_same([], _):- !.
 contains_same([E|L], P):- sub_var(E, P), !, contains_same(L, P).
 
 /*
+find_peers_with_same(TestID, IO, P, PSame, NewSame):- select(S, PSame, Next), S=@=P, !, find_peers_with_same(TestID, IO, P, Next, NewSame).
+find_peers_with_same(TestID, IO, P, PSame, NewSame):-
+   sub_term(Color, P), is_real_color(Color), sub_term(N, P), number(N),
+   my_partition(contains_same([Color]), PSame, SameW, SameWO), SameW\==[], SameWO\==[], !,
+   find_peers_with_same(TestID, IO, P, SameWO, NewSame).
+find_peers_with_same(_, _, PSame, PSame):-!.
+
+
+
+
 
 merge_xtra_props_ac1([ac1(PO)|AC3], PSame):- !, merge_xtra_props_ac1_3(PO, AC3, PSame), PSame\==[].
 merge_xtra_props_ac1_3(PO, [ac1(PO2)|MORE], OUT):-
@@ -3552,6 +3572,14 @@ merge_xtra_props_ac2([ac2(ExampleNum, PO1)|AC3], [ac2(ExampleNum, PO1)|PSame]):-
 merge_xtra_props_ac2(PSame, PSame):-!.
 */
 
+changing_props(TestID, X1, X2):-
+ ensure_test(TestID),
+ findall(X1-Dir, props_change(TestID, Dir, X1), X1L),
+ variant_list_to_set(X1L, X1S),
+ member(X1-IO, X1S),
+ member(X2-IO, X1S),
+% X1@>X2,
+ other_val(X1, X2).
 
 
 
@@ -3619,60 +3647,12 @@ ensure_propcounts1(TestID):-
 ensure_propcounts1(TestID):- show_prop_counts(TestID), has_propcounts(TestID), !.
 ensure_propcounts1(_).
 
-/*
-
-changing_props(TestID, X1, X2):-
- ensure_test(TestID),
- findall(X1-Dir, props_change(TestID, Dir, X1), X1L),
- variant_list_to_set(X1L, X1S),
- member(X1-IO, X1S),
- member(X2-IO, X1S),
-% X1@>X2,
- other_val(X1, X2).
-
-prop_can(TestID, IO, P, Can):-
-  props_change(TestID, IO, P),
-  once((prop_cant(TestID, IO, P, Cant),
-  prop_can1(TestID, IO, P, Can1),
-  intersection(Can1, Cant, _, Can, _))).
-  %(Can == [] -> (CanL=Can1, fail) ; CanL= Can).
-
-prop_can1(TestID, IO, P, Can):-
-  props_change(TestID, IO, P),
-  findall(O,
-    ((enum_object_ext(O), has_prop(giz(g(out)), O), has_prop(cc(bg, 0), O),
-      has_prop(P, O))), [I|L]),
-  indv_props_list(I, List),
-  findall(U, (member(U, List), U\=@=P, ok_notice(U), forall(member(E, L), has_prop(U, E))), Can).
-
-
-prop_cant(TestID, IO, P, Set):-
-  props_change(TestID, IO, P),
-  findall(Cant,
-    ((enum_object(O), has_prop(giz(g(out)), O), has_prop(cc(bg, 0), O),
-      not_has_prop(P, O), indv_props_list(O, List), member(Cant, List), ok_notice(Cant))), Flat),
-   list_to_set(Flat, Set).
-
-enum_object_ext(O):-
-  ensure_test(TestID),
-  current_example_nums(TestID, ExampleNum),
-  once((obj_group_io(TestID, ExampleNum, out, Objs), Objs\==[])), member(O, Objs).
-
-find_peers_with_same(TestID, IO, P, PSame, NewSame):- select(S, PSame, Next), S=@=P, !, find_peers_with_same(TestID, IO, P, Next, NewSame).
-find_peers_with_same(TestID, IO, P, PSame, NewSame):-
-   sub_term(Color, P), is_real_color(Color), sub_term(N, P), number(N),
-   my_partition(contains_same([Color]), PSame, SameW, SameWO), SameW\==[], SameWO\==[], !,
-   find_peers_with_same(TestID, IO, P, SameWO, NewSame).
-find_peers_with_same(_, _, PSame, PSame):-!.
-
-
 props_change(TestID, IO, P):- map_pairs_info(TestID, IO, P, _Step), good_for_rhs(P).
 props_change2(TestID, IO, P):-
 % -  ensure_propcounts(TestID),
   %ensure_prop_change(E),
   findall(Q-I_or_O, counts_change(TestID, _, I_or_O, Q, _, _), L), list_to_set(L, S), !, member(P-IO, S), ok_deduce(P).
 %ensure_prop_change(IO, P):- (var(P)->props_change(_TestID, IO, P);true).
-*/
 
 in_out_atoms(in, out).
 
@@ -3863,15 +3843,7 @@ calc_o_d_recursive_end(ActionGroupIn, InfoIn, PrevRules, MLHSObjs, RHSObjs,
     must_det_ll((maplist(into_delete(TestID, ExampleNum, PrevRules, InfoOut), LHSObjs, Mappings), 
     append_LR(PrevRules, [call(assert_test_property(TestID, ExampleNum, ending, ending(Ending))), Mappings], RulesOut))))), !.
 
-fg_to_bgc(FG, black):- is_fg_color(FG), !.
-fg_to_bgc(FG, FG):- \+ compound(FG), !.
 
-
-into_delete(_TestID, _Ctx, _Prev, _Info, Obj, Obj):- is_mapping(Obj), !.
-%into_delete(_TestID, _Ctx, _Prev, _Info, Obj, Obj):-!.
-into_delete(_TestID, _Ctx, PrevRules, Info, Obj, Rules):- map_pred(fg_to_bgc, Obj, NewObj),
-  make_pairs(Info, delete, PrevRules, Obj, NewObj, Rules),
-  !. %edit_object(pen([cc(black, 1)]))  % l2r(Info, [Obj], [])).
 
 
 /*
