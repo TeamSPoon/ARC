@@ -4035,11 +4035,18 @@ one_fti(VM,glyphic):-
 %    member(Point=Indv, VM.added_points),!.
 
 
-named_grid_props(Name,VM):- one_fti(VM,named_grid_props(Name)),!.
-
+% =========================================================
 is_fti_step(named_grid_props(name)).
+% =========================================================
+named_grid_props(Name,VM):- one_fti(VM,named_grid_props(Name)),!.
 one_fti(VM,named_grid_props(Name)):- nop(named_grid_props(Name,VM)).
-/*
+
+% =========================================================
+is_fti_step(grid_props).
+% =========================================================
+grid_props(VM):- one_fti(VM,grid_props),!.
+one_fti(VM,grid_props):-
+ must_det_ll((
   H=VM.h,V=VM.v,
   Grid= VM.start_grid,
   hv_point_value(1,1,Grid,PointNW),
@@ -4047,12 +4054,16 @@ one_fti(VM,named_grid_props(Name)):- nop(named_grid_props(Name,VM)).
   hv_point_value(H,1,Grid,PointNE),
   hv_point_value(H,V,Grid,PointSE),
   grid_props(Grid,Props),
-  append(Props,[mass(0),vis2D(H,V),birth(named_grid_props),loc2D(1,1),iz(flag(always_keep)),iz(media(image)),iz(flag(hidden))],AllProps),
-  make_indiv_object(VM,AllProps,[PointNW,PointSW,PointNE,PointSE],_),!.
-*/
-hv_point_value(H,V,Grid,C-Point):- hv_point(H,V,Point),point_c_value(Point,C,Grid).
+  append(Props,[vis2D(H,V),birth(grid_props),loc2D(1,1),iz(always_keep),iz(image),iz(hidden)],AllProps),
+  make_indiv_object(VM,AllProps,[PointNW,PointSW,PointNE,PointSE],_))),!.
 
+hv_point_value(H,V,Grid,C-Point):- 
+ must_det_ll((hv_point(H,V,Point),point_c_value(Point,C,Grid))).
+
+
+% =========================================================
 is_fti_step(whole).
+% =========================================================
 whole(VM):- one_fti(VM,whole),!.
 
 one_fti(VM,whole):-

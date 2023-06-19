@@ -2862,20 +2862,6 @@ one_fti(VM,glyphic):-
 %make_point_object(VM,_Opts,Point,Indv):-
 %    member(Point=Indv, VM.allocated_points),!.
 
-is_fti_step(grid_props).
-grid_props(VM):- one_fti(VM,grid_props),!.
-one_fti(VM,grid_props):-
-  H=VM.h,V=VM.v,
-  Grid= VM.start_grid,
-  hv_point_value(1,1,Grid,PointNW),
-  hv_point_value(1,V,Grid,PointSW),
-  hv_point_value(H,1,Grid,PointNE),
-  hv_point_value(H,V,Grid,PointSE),
-  grid_props(Grid,Props),
-  append(Props,[amass(0),amass(0),vis2D(H,V),birth(grid_props),loc2D(1,1),iz(always_keep),iz(image),iz(hidden)],AllProps),
-  make_indiv_object(VM,AllProps,[PointNW,PointSW,PointNE,PointSE],_),!.
-
-hv_point_value(H,V,Grid,C-Point):- hv_point(H,V,Point),point_c_value(Point,C,Grid).
 
 is_fti_step(whole).
 whole(VM):- one_fti(VM,whole),!.

@@ -1366,17 +1366,51 @@ trans_rule(Info,E1,E2,Rules):- print((Info,E1,E2)), !, fail,
 
 
 
+into_io_whole_objects(TestID, ExampleNum, InG, OutG):-
+  (var(TestID)->get_current_test(TestID);true),
+   kaggle_arc(TestID, ExampleNum, In, Out),
+   into_output_objects(TestID, ExampleNum, Out, OutC, _VMOut),
+   into_input_objects(TestID, ExampleNum, In, InC, _VM),
+   must_det_ll((
+     once((member(OutG,OutC),has_prop(iz(stype(whole)),OutG))),
+     once((member(InG,InC),has_prop(iz(stype(whole)),InG))))).
 
+/*
+into_io_objects(TestID, ExampleNum, InC, OutC, VM, VMOut):-
+   into_output_objects(TestID, ExampleNum, _Out, OutC, VMOut),
+   into_input_objects(TestID, ExampleNum, _In, InC, VM).
+*/
 
+into_input_objects(TestID, ExampleNum, In, InC, VM):-
+ (var(ExampleNum)->ExampleNum=(tst+_);true),
+  into_dir_objects(TestID, ExampleNum, in, In, InC, VM).
 
+into_output_objects(TestID, ExampleNum, Out, OutC, VMOut):-
+ (var(ExampleNum)->ExampleNum=(trn+_);true),
+  into_dir_objects(TestID, ExampleNum, out, Out, OutC, VMOut).
 
+into_dir_objects(TestID, ExampleNum, Dir, Grid, Objs, VM):-
+  no_repeats_var(NRVar),
+ (var(TestID)->get_current_test(TestID);true),
+  kaggle_arc_io(TestID, ExampleNum, Dir, Grid),
+  best_obj_group_pair(TestID, ExampleNum, How, InC, OutC),
+  (Dir ==in -> GridC = InC ; GridC = OutC),
+  objs_to_spoints(GridC,GridPSS),%length(GridC,CI), 
+  NRVar = GridPSS,
+  must_det_ll((
+  (Dir ==in -> How = in_out(ROptions,_HowOut);How = in_out(_,ROptions)),
+  ID = (TestID>(ExampleNum)*(Dir)),
+  into_fti(ID,ROptions,Grid,VM),
+  gset(VM.start_grid)=Grid,
+  %grid_props(VM),
+  whole_into_obj(VM,Grid,Whole),
+  GObjs = [Whole], %VM.objs,
+  pp(gobjs=GObjs),
+  append(GridC,GObjs,Objs),
+  %once((((ExampleNum=trn+_)->Expected=Out;Out=_), gset(VM.target_grid)=Out)),
+  gset(VM.grid)=Grid,
+  gset(VM.objs)=Objs)).
 
-
-
-
-into_input_objects(TestID, ExampleNum, In, Objs, VM):-
-  grid_vm(In,VM),
-  best_obj_group_pair(TestID, ExampleNum, _, Objs, _OutC).
 
 solve_via_scene_change_rules(TestID, ExampleNum):-
  must_det_ll((
