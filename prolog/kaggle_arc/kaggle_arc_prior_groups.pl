@@ -1567,10 +1567,10 @@ add_prior_info_1(Objs,ObjsLen,_Common,VbO,PropList,OUT):- is_list(PropList),Objs
 
 add_prior_info_1(_Objs,_ObjsLen,_Common,_VersionsByCount,PropList,PropList).
 
-rank_size(ObjsLen,Name,1,pg(ObjsLen,Name,rankLS,smallest)):-!.
-rank_size(ObjsLen,Name,N2,pg(ObjsLen,Name,rankLS,largest)):- ObjsLen==N2,!.
+%rank_size(ObjsLen,Name,1,pg(ObjsLen,Name,rankLS,smallest)):-!.
+rank_size(ObjsLen,Name,N2,pg(_,Name,rankLS,N)):- N is ObjsLen-N2+1,!.
 %rank_size(ObjsLen,Name,_,pg(ObjsLen,Name,rankLS,middlest)).
-rank_size(_ObjsLen,_Name,_,[]).
+%rank_size(_ObjsLen,_Name,_,[]).
 
 use_simulars(_):- true.
 use_rank1(mass(_)).

@@ -1252,15 +1252,16 @@ as_test_prop(Prop,F):- compound(Prop),compound_name_arity(Prop,F,_), use_atom_te
 prev_test:-  must_det_ll((get_current_test(TestID), get_prev_test(TestID,NextID), set_current_test(NextID))).
 next_test:- get_current_test(TestID), /*notrace*/((get_next_test(TestID,NextID), set_current_test(NextID))),!.
 next_random_test:-  randomize_suite, next_test.
-is_valid_testname(TestID):- nonvar(TestID), kaggle_arc(TestID,_,_,_).
+is_valid_testname(TestID):- nonvar(TestID), kaggle_test_id(TestID),!.
 is_valid_atom_testname(TestID):- nonvar(TestID), once(kaggle_arc(t(TestID),_,_,_);kaggle_arc(v(TestID),_,_,_)).
+kaggle_test_id(TestID):- kaggle_arc(TestID,trn+0,_,_).
 
 report_test:- report_suite_test_count, print_qtest.
 
 get_current_test(TestID):- luser_getval(task,TestID),is_valid_testname(TestID),!.
 get_current_test(TestID):- get_next_test(TestID,_),!.
-get_current_test(TestID):- get_current_test_fb(TestID),kaggle_arc(TestID,_,_,_),!.
-get_current_test(TestID):- kaggle_arc(TestID,_,_,_),!.
+get_current_test(TestID):- get_current_test_fb(TestID),kaggle_test_id(TestID),!.
+get_current_test(TestID):- kaggle_test_id(TestID),!.
 get_current_test_fb(t('00d62c1b')).
 get_current_test_fb(v(fe9372f3)).
 
@@ -2213,7 +2214,7 @@ hardness_of_name(TestID,TMass+TArea+Sum+Dif):-
  %findall(Cost,pair_cost(TestID,Cost),List),sumlist(List,Sum),!.
 /*
 hardness_of_name(TestID,Sum):-
-  kaggle_arc(TestID,(trn+0),_,_),
+  kaggle_test_id(TestID),
  findall(Cost,pair_cost(TestID,Cost),List),sumlist(List,Sum),!.
 */
 /*
@@ -2475,11 +2476,11 @@ fix_test_name(V,VV,_):- var(V),!,VV=V.
 fix_test_name(ID,Fixed,Example+Num):- testid_name_num_io(ID,Tried,Example,Num,_), fix_test_name(Tried,Fixed).
 
 testid_name_num_io(ID,ID,_Example,_Num,_IO):- ID==v(p),!,break.
-testid_name_num_io(ID,ID,_Example,_Num,_IO):- compound(ID), \+ \+ kaggle_arc(ID,_,_,_),!.
+testid_name_num_io(ID,ID,_Example,_Num,_IO):- compound(ID), \+ \+ kaggle_test_id(ID),!.
 testid_name_num_io(ID,TestID,Example,Num,IO):- 
   track_modes(testid_name_num_io(ID,TestID,Example,Num,IO),Modes),
   testid_name_num_io_0(ID,TestID,Example,Num,IO),
-  ignore((fail, Modes=[+,-|_], nonvar(TestID), kaggle_arc(TestID,_,_,_), really_set_current_test(TestID))).
+  ignore((fail, Modes=[+,-|_], nonvar(TestID), kaggle_test_id(TestID), really_set_current_test(TestID))).
 
 track_modes(I,M):- I=..[_|L],my_maplist(plus_minus_modes,L,M).
 plus_minus_modes(Var,-):- var(Var),!. 
@@ -2544,9 +2545,9 @@ atom_id(Tried,TriedV):- atom_concat(Atom,'.json',Tried),!,atom_id(Atom,TriedV),!
 atom_id(Atom,TriedV):- atom_id_e(Atom,TriedV),!.
 atom_id(Atom,TriedV):- downcase_atom(Atom,Tried),Atom\==Tried,atom_id(Tried,TriedV).
 %fix_test_name(Tried,Fixed):- !, fail,compound(Tried),!,arg(_,Tried,E),nonvar_or_ci(E),fix_test_name(E,Fixed),!.
-atom_id_e(Tried,t(Tried)):- kaggle_arc(t(Tried),_,_,_),!.
-atom_id_e(Tried,v(Tried)):- kaggle_arc(v(Tried),_,_,_),!.
-atom_id_e(Tried,x(Tried)):- kaggle_arc(x(Tried),_,_,_),!.
+atom_id_e(Tried,t(Tried)):- kaggle_test_id(t(Tried)),!.
+atom_id_e(Tried,v(Tried)):- kaggle_test_id(v(Tried)),!.
+atom_id_e(Tried,x(Tried)):- kaggle_test_id(x(Tried)),!.
 atom_id_e(Sel, TestID):- atom_id_es(Sel, TestID).
 atom_id_es(Sel, TestID):- sformat(SSel,'~q',[Sel]),
    catch(read_term_from_atom(SSel,Name,[module(user),double_quotes(string),variable_names(Vs),singletons(Singles)]),_,
@@ -2554,8 +2555,6 @@ atom_id_es(Sel, TestID):- sformat(SSel,'~q',[Sel]),
         my_maplist(ignore,Vs),my_maplist(ignore,Singles),
         Name\==Sel,
        (fix_test_name(Name,TestID,_) -> true ; (ppnl(['could not read a test from: ',Sel,nl,'try again']),fail)).
-
-
 
 
 

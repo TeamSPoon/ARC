@@ -37,21 +37,41 @@ mask_to_fullnames(Mask,FullNames):-
   
 
 :- export(load_json_files/3).
+load_json_files(SuiteX,F,Mask):-
+  (SuiteX=='';var(SuiteX)),
+  dir_to_suitename(Mask,SuiteName),
+  SuiteName\==SuiteX,!,
+  load_json_files(SuiteName,F,Mask).
+
 load_json_files(SuiteX,F,Mask):- 
+  Info = [test_suite=SuiteX,loadmask=Mask],
   asserta_if_new(dir_test_suite_name(SuiteX)),
-  locally(t_l:local_test_props([test_suite=SuiteX,loadmask=Mask]),
-     load_json_file(F,Mask)).
+  %wdmsg(Info),
+  locally(t_l:local_test_props(Info), 
+    load_json_files(F,Mask)).
 
 /*:- export(load_json_files/2).
 load_json_files(F,Mask):- 
   mask_to_fullnames(Mask,FullNames),  FullNames\==[],
   u_dmsg(load_json_files(F,Mask)),
-  my_maplist(load_json_file(F),FullNames),!.
+  my_maplist(load_json_files(F),FullNames),!.
 */
 no_uscore(UBaseName,BaseName):- 
   atomic_list_concat(List,'_',UBaseName),
   atomic_list_concat(List,'-',BaseName).
 
+dir_to_suitename(Mask,SuiteName):- 
+  split_string(Mask, "\s\t\n\\/.", "\s\t\n\\/.", L),
+  %wdmsg(dir_to_suitename(Mask->L)),
+  my_include(interesting_pathname,L,IP),
+  atomic_list_concat(IP,'-',SuiteName).
+interesting_pathname(S):- string(S), atom_string(A,S),!,interesting_pathname(A).
+interesting_pathname(N):- \+ dumb_pathname(N).
+dumb_pathname('*'). dumb_pathname('.').  dumb_pathname('json').
+dumb_pathname('corpus'). dumb_pathname('data'). dumb_pathname(''). dumb_pathname('/').
+dumb_pathname('Data'). dumb_pathname('*.json').
+dumb_pathname('opt'). dumb_pathname('logicmoo_workspace'). dumb_pathname('packs_sys').
+dumb_pathname('logicmoo_agi'). dumb_pathname('prolog'). dumb_pathname('kaggle_arc').
 /*
 expand_to_abs_file_name_list(FName,ABSFullNames):- 
   \+ exists_file(FName), expand_file_name(FName,FullNames),FullNames\=@=[FName],
@@ -59,43 +79,71 @@ expand_to_abs_file_name_list(FName,ABSFullNames):-
   last(ABSFullNames,Exist),
   exists_file(Exist),!.
 afn_maybe(A,A).
-load_json_file(F, FName):-  pp(load_json_file(F)=FName),fail.
-load_json_file(F, FName):- is_list(FName),!,my_maplist(load_json_file(F), FName).
-load_json_file(F, FName):- \+ exists_file(FName), !, expand_to_abs_file_name_list(FName,FullNames),load_json_file(F, FullNames).
-%load_json_file(F, FName):- exists_file(FName),\+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\==ABSName,!,load_json_file_abs(F, ABSName).
-load_json_file(F, FName):- \+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\=@=ABSName,!,load_json_file_abs(F, ABSName).
-load_json_file(F, FName):- load_json_file_abs(F, FName),!.
+load_json_files(F, FName):-  pp(load_json_files(F)=FName),fail.
+load_json_files(F, FName):- is_list(FName),!,my_maplist(load_json_files(F), FName).
+load_json_files(F, FName):- \+ exists_file(FName), !, expand_to_abs_file_name_list(FName,FullNames),load_json_files(F, FullNames).
+%load_json_files(F, FName):- exists_file(FName),\+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\==ABSName,!,load_json_file_abs(F, ABSName).
+load_json_files(F, FName):- \+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\=@=ABSName,!,load_json_file_abs(F, ABSName).
+load_json_files(F, FName):- load_json_file_abs(F, FName),!.
 */
-%load_json_file(F, FName):-  pp(load_json_file(F)=FName),fail.
-load_json_file(F, FName):- is_list(FName),!,my_maplist(load_json_file(F), FName).
+%load_json_files(F, FName):-  pp(load_json_files(F)=FName),fail.
 
+:- abolish(is_expanded_file_name/2).
+:- dynamic(is_expanded_file_name/2).
+expand_json_files(_F,PathMasked):- 
+  is_expanded_file_name(PathMasked,FullNames),!,
+  length(FullNames,Len),
+  nop(wdmsg(already_did(PathMasked=Len))),!.
+expand_json_files(F,PathMasked):-
+  expand_file_name(PathMasked,FullNames),FullNames\=@=[PathMasked],!,
+  assert(is_expanded_file_name(PathMasked,FullNames)),
+  my_partition(file_not_dir,FullNames,Files,Dirs),
+  length(Files,NFiles),length(Dirs,NDirs),
+  if_t(NFiles\==0, wdmsg(files(PathMasked)=NFiles)),
+  nop((if_t(NDirs\==0, wdmsg(dirs(PathMasked)=NDirs)))),
+  (FullNames==[] -> true ; load_json_files(F, FullNames)),!.
 
-load_json_file(F,PathMasked):- atomic(PathMasked),directory_file_path(Dir,Mask,PathMasked),
+file_not_dir(File):- atom(File), \+ exists_directory(File),exists_file(File).
+load_json_files(F, FName):- is_list(FName),!,my_maplist(load_json_files(F), FName).
+load_json_files(F, File):- atomic(File), exists_file(File), !, load_json_file(F,File).
+load_json_files(F,Dir):- atomic(Dir), exists_directory(Dir),!,
+  dir_to_suitename(Dir,SuiteName), 
+  directory_file_path(Dir,'*',NewMask),
+  load_json_files(SuiteName,F,NewMask).
+
+load_json_files(F,PathMasked):- atomic(PathMasked), atom_contains(PathMasked,'*'), 
+  atomic_list_concat([Node|Nodes],'*',PathMasked),directory_file_path(Dir,ShortedFileMask,Node),
+  \+ exists_directory(Dir),
   arc_sub_path(Dir,RealDir), exists_directory(RealDir),
-  directory_file_path(RealDir,Mask,NewMask),
-  NewMask\==PathMasked,!, 
-  load_json_file(F,NewMask).
+  directory_file_path(RealDir,ShortedFileMask,NewShortedFileMask),
+  atomic_list_concat([NewShortedFileMask|Nodes],'*',FullNewMask),
+  FullNewMask\==PathMasked,!, expand_json_files(F,FullNewMask).
 
-load_json_file(F,Mask):- atomic(Mask), exists_directory(Mask),
-  directory_file_path(Mask,'*.json',NewMask),!,load_json_file(F,NewMask).
+load_json_files(F, PathMasked):- (\+ atomic(PathMasked); \+ exists_file(PathMasked); atom_contains(PathMasked,'*')), !,
+  expand_json_files(F,PathMasked).
 
-load_json_file(F, FName):- (\+ atomic(FName); \+ exists_file(FName)), 
-  expand_file_name(FName,FullNames),FullNames\=@=[FName],
-  last(FullNames,Exist),exists_file(Exist),!,
-  load_json_file(F, FullNames).
+%load_json_files(F, FName):- exists_file(FName),\+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\==ABSName,!,load_json_file(F, ABSName).
+load_json_files(F, FName):- load_json_file(F, FName),!.
 
-%load_json_file(F, FName):- exists_file(FName),\+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\==ABSName,!,load_json_file2(F, ABSName).
-load_json_file(F, FName):- \+ is_absolute_file_name(FName), absolute_file_name(FName,ABSName),FName\=@=ABSName,!,load_json_file2(F, ABSName),!.
-load_json_file(F, FName):- load_json_file2(F, FName),!.
 
-load_json_file2(F, FullName):- 
-  %pp(load_json_file2(F)=FullName),!,
+%load_json_file(F, FName):- atomic(FName), \+ is_absolute_file_name(FName), 
+%  absolute_file_name(FName,ABSName),FName\=@=ABSName,!,load_json_file(F, ABSName),!.
+
+%load_json_file(F, PathMasked):- (\+ atomic(PathMasked); \+ exists_file(PathMasked); atom_contains(PathMasked,'*')), 
+%  expand_json_files(F,PathMasked).
+
+
+load_json_file(_F,PathMasked):- atomic(PathMasked), \+ atom_concat(_,'.json',PathMasked),!,
+  wdmsg(skipping_file(PathMasked)),!.
+ 
+load_json_file(F, FullName):- 
+  %pp(load_json_file(F)=FullName),!,
   must_det_ll((
   file_base_name(FullName,FileBaseName),
   file_name_extension(UName,_,FileBaseName),
   no_uscore(UName,Name), 
   Testname=..[F,Name], 
-  % dmsg(load_json_file=FullName),
+  % dmsg(load_json_files=FullName),
 
   setup_call_cleanup(open(FullName,read,In), json:json_read(In,Term,[]), close(In)),
 
@@ -108,12 +156,14 @@ load_json_file2(F, FullName):-
 
 
 add_testfile_name(Testname,FullName):- 
-  ignore((  
-  split_string(FullName, "\\/",'./',L),append(_,[Dir,_],L),
-  atom_string(ADir,Dir),!,
-  ADir\==[],
-  add_test_info_prop(Testname,test_suite,ADir),
-  (ADir==solution -> true ; asserta_if_new(dir_test_suite_name(ADir))))).
+  ignore(( 
+  directory_file_path(Dir,_,FullName),
+  dir_to_suitename(Dir,SuiteName),
+  %split_string(FullName, "\\/",'./',L),append(_,[Dir,_],L),
+  %atom_string(ADir,Dir),!,
+  %ADir\==[],
+  add_test_info_prop(Testname,test_suite,SuiteName),
+  (SuiteName==solution -> true ; asserta_if_new(dir_test_suite_name(SuiteName))))).
 
 
 add_test_info(Name):- forall(t_l:local_test_props(Props),add_test_info_props(Name,Props)).
@@ -130,6 +180,10 @@ add_test_info_props(Name,TV):- assert_if_new(some_test_info_prop(Name,TV)),u_dms
 add_test_info_prop(Name,F,V):- var(V),!,u_dmsg(var_add_test_info_prop(Name,F,V)).
 add_test_info_prop(Name,F,[]):- NV=..[F,_], \+ \+ muarc_tmp:some_test_info_prop(Name,NV),!.
 add_test_info_prop(Name,F,[V]):- !,add_test_info_prop(Name,F,V).
+
+%add_test_info_prop(Testname,test_suite,ADir):- 
+% wdmsg(add_test_info_prop(Testname,test_suite,ADir)),fail.
+  
 add_test_info_prop(Name,F,V):-  
   must_det_ll((
     NV=..[F,[]],ignore(retract(muarc_tmp:some_test_info_prop(Name,NV))), 
@@ -275,8 +329,10 @@ load_json_files1:- load_json_files(train400,t,'./data/training/*.json').
 load_json_files1:- load_json_files(eval400,v,'./data/devaluation/*.json').
 %:- load_json_files(v,'./data/test_100/*.json').
 %:- load_json_files(t,'./data/test_nar_10x10/*.json').
-load_json_files1:- load_json_files('1D_testset',t,'./data/1D_testset/*.json').
-load_json_files1:- load_json_files('MyTrainingData',t,'./dbigham/Data/MyTrainingData/*.json').
+load_json_files1:- load_json_files(t,'./data/1D_testset/').
+load_json_files1:- load_json_files(t,'./dbigham/Data/MyTrainingData/').
+%load_json_files1:- load_json_files(t,'./data/ConceptARC/corpus/*/*/').
+load_json_files1:- load_json_files(t,'./data/ConceptARC/corpus/').
 
 %load_json_files1:- load_json_files('object_modifications_schema',t,'./object_modifications_schema/tasks/*.json').
 %:- load_json_files(v,'../../secret_data/solu**66/*.json').

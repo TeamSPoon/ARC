@@ -1488,6 +1488,7 @@ assume_prop2(cc(bg,0)).
 assume_prop2(unique_colors_count(1)).
 assume_prop2(pg(_,empty_area(_),rank1,_)).
 assume_prop2(sym_counts(_,0)).
+assume_prop2(sym_counts('sym_extend_-_/_\\_|',_)).
 %assume_prop2(iz(algo_sid(comp,sid_323))).
 /*
 assume_prop2(iz(locX(3))).
@@ -1560,6 +1561,7 @@ apply_rules0(VM, _TestID, _ExampleNum, Ctx, [Rule], [Obj], [NewObj]):- !,
 apply_rules0(VM, TestID, ExampleNum, Ctx, Rules, Objs, ObjsO):-
   apply_rules(VM, TestID, ExampleNum, Ctx, Rules, Objs, ObjsO),!.
 
+apply_rules(_VM, _TestID, _ExampleNum, _Ctx, _Rules, [], []):-!.
 apply_rules(VM, TestID, ExampleNum, Ctx, Rules, [O|Objs], [NO|NewObjs]):-
   apply_rules1(VM, TestID, ExampleNum, Ctx, Rules, O, NO),!,
   apply_rules(VM, TestID, ExampleNum, Ctx, Rules, Objs, NewObjs).
@@ -1574,12 +1576,13 @@ apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, NewObj):-
   globalpoints(NewObj,GPoints),
   print_ss(wqs([ar1(S)]), [Obj], print_grid(VM.h,VM.v,GPoints)),!.
 
+
 apply_rules1(VM, _TestID, _ExampleNum, _Ctx, _Rules, Obj, NewObj):-
   %(rule_units(Rule ,_,P,PConds)), forall(member(Rule,Rules), pp(failed(Rule))),
   %indv_props_list(Obj,Props), my_partition(assume_prop,Props,_,Needed),
   pp(skipped_obj=Obj),
   override_object_1(VM, pen([cc(brown,1)]), Obj, NewObj),!.
-
+apply_rules1(_VM, _TestID, _ExampleNum, _Ctx, _Rules, Objs, Objs).
 
 
 vm_has_obj_prop(VM,Obj,always(of_obj(Prop,G,LL))):- 
