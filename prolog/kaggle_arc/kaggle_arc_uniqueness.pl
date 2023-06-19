@@ -52,7 +52,7 @@ dont_notice(iz(media(_))).
 dont_notice(iz(type(_))).
 dont_notice(grid_ops(comp,_)).
 dont_notice(pg(_,iz(info(birth(_))),_,_)).
-dont_notice(pg(_,cc(bg,_),rankLS,_)).
+%dont_notice(pg(_,cc(bg,_),rankLS,_)).
 dont_notice(pg(_,occurs_in_links(contained_by,_),_,_)).
 dont_notice(pg(_,pen(_),rank1,_)).
 dont_notice(iz(fg_or_bg(_))).
@@ -67,12 +67,12 @@ dont_notice(occurs_in_links(contained_by, _)).
 dont_notice(occurs_in_links(sees, _)).
 dont_notice(oid(_)).
 dont_notice(pg(_, pen(_), rankLS , _)).
-dont_notice(pg(_, iz(_), rankLS, _)).
-dont_notice(pg(_, empty_area(_), rankLS, _)).
+%dont_notice(pg(_, iz(_), rankLS, _)).
+%dont_notice(pg(_, empty_area(_), rankLS, _)).
 dont_notice(center2D(_,_)).
 dont_notice(loc2D(_,_)).
 dont_notice(vis2D(_,_)).
-dont_notice(empty_area(_)).
+%dont_notice(empty_area(_)).
 %dont_notice(pg(_, iz(_), rankLS, largest)).
 %dont_notice(link(sees(_), _)).
 %dont_notice(links_count(sees, _)).
@@ -96,31 +96,32 @@ ok_notice(P):- \+ \+ do_notice(P), !.
 ok_notice(P):- \+ dont_notice(P).
 
 
-dont_deduce(link(sees(_), _)).
-%dont_deduce(giz(_)).
-%dont_deduce(pg(_, _, _, _)).
-dont_deduce(pg(_, iz(_), rankLS, _)).
-dont_deduce(pg(_, _, rankLS, _)).
-%dont_deduce(size2D(_)).
-%dont_deduce(global2G(_, _)).
-%dont_deduce(vis2D(_, _)).
-dont_deduce(P):- \+ compound(P), !, fail.
-dont_deduce(P):- sub_term(G, P), compound(G), is_grid(G), !.
-dont_deduce(P):- sub_term(G, P), compound(G), is_object(G), !.
-dont_deduce(grid(_)).
-%dont_deduce(iz(_)).
-%dont_deduce(iz(_)).
+dont_induce(link(sees(_), _)).
+%dont_induce(giz(_)).
+%dont_induce(pg(_, _, _, _)).
+dont_induce(pg(_, iz(_), rankLS, _)).
+dont_induce(pg(_, _, rankLS, _)).
+dont_induce(pg(_, _, _, _)).
+%dont_induce(size2D(_)).
+%dont_induce(global2G(_, _)).
+%dont_induce(vis2D(_, _)).
+dont_induce(P):- \+ compound(P), !, fail.
+dont_induce(P):- sub_term(G, P), compound(G), is_grid(G), !.
+dont_induce(P):- sub_term(G, P), compound(G), is_object(G), !.
+dont_induce(grid(_)).
+%dont_induce(iz(_)).
+%dont_induce(iz(_)).
 
-%dont_deduce(P):- compound(P), compound_name_arguments(P, _, [X]), number(X).
-dont_deduce(grid_ops(comp, _)).
-%dont_deduce(iz(stype(_))).
-dont_deduce(iz(symmetry_type(_, _))). % rot2D(rot90), grid_ops(comp, []), changes([]), iz(fg_or_bg(iz_fg)), links_count(contained_by, 0), links_count(contains, 0), cc(plain_var, 0), cc(bg, 0), global2G(9, 9), iz(sizeGX(1)), unique_colors_count(1), empty_area(0), iz(algo_sid(comp, sid_12)), iz(algo_sid(norm, sid_12)), iz(symmetry_type(flipDHV, false)), iz(symmetry_type(rot180, true)), iz(symmetry_type(flipV, true)), iz(symmetry_type(flipH, true)), iz(symmetry_type(rot270, false)), iz(symmetry_type(rot90, false)), iz(symmetry_type(sym_h_xor_v, false)), iz(symmetry_type(sym_hv, true)), iz(filltype(solid)), iz(colormass), iz(media(shaped)), iz(info(birth(colormass))), pg(_1477530, mass(_1477540), rankLS, largest), pg(_1477550, iz(sizeGX(_1477564)), rankLS, smallest), pg(_1477574, iz(sizeGY(_1477588)), rankLS, largest), pg(_1477598, iz(cenGX(_1477612)), rankLS, largest), pg(_1477622, iz(cenGY(_1477636)), rankLS, largest), pg(_1477646, unique_colors_count(_1477656), rankLS, smallest), pg(_1477666, empty_area(_1477676), rankLS, smallest).
-%dont_deduce(mass(2)). % center2G(2, 9), vis2D(1, 2), loc2D(2, 8), grid_ops(norm, [rot90]), link(sees([cc(e, 2)]), o_?_459_t_08ed6ac7_trn_1_out), cc(fg, 2), iz(sizeGY(2)), iz(cenGY(9)), rotSize2D(grav, 2, 1), area(2), iz(sid(sid_12)), \+link(sees([cc(w, 2)]), o_i_109_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_641_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_337_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_Z_24_t_08ed6ac7_trn_1_out), \+link(sees([cc(w, 2)]), o_?_459_t_08ed6ac7_trn_1_out).
-dont_deduce(oid(_)). % center2G(2, 9), vis2D(1, 2), loc2D(2, 8), mass(2), grid_ops(norm, [rot90]), link(sees([cc(e, 2)]), o_?_459_t_08ed6ac7_trn_1_out), cc(fg, 2), iz(sizeGY(2)), iz(cenGY(9)), rotSize2D(grav, 2, 1), area(2), iz(sid(sid_12)), \+link(sees([cc(w, 2)]), o_i_109_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_641_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_337_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_532_t_08ed6ac7_trn_1_out), \+link(sees([cc(w, 2)]), o_Z_24_t_08ed6ac7_trn_1_out), \+link(sees([cc(w, 2)]), o_?_459_t_08ed6ac7_trn_1_out).
-dont_deduce(cc(plain_var, 0)).
-dont_deduce(links_count(_, _)).
-dont_deduce(empty_area(_)).
-dont_deduce(unique_colors_count(_)).
+%dont_induce(P):- compound(P), compound_name_arguments(P, _, [X]), number(X).
+dont_induce(grid_ops(comp, _)).
+%dont_induce(iz(stype(_))).
+dont_induce(iz(symmetry_type(_, _))). % rot2D(rot90), grid_ops(comp, []), changes([]), iz(fg_or_bg(iz_fg)), links_count(contained_by, 0), links_count(contains, 0), cc(plain_var, 0), cc(bg, 0), global2G(9, 9), iz(sizeGX(1)), unique_colors_count(1), empty_area(0), iz(algo_sid(comp, sid_12)), iz(algo_sid(norm, sid_12)), iz(symmetry_type(flipDHV, false)), iz(symmetry_type(rot180, true)), iz(symmetry_type(flipV, true)), iz(symmetry_type(flipH, true)), iz(symmetry_type(rot270, false)), iz(symmetry_type(rot90, false)), iz(symmetry_type(sym_h_xor_v, false)), iz(symmetry_type(sym_hv, true)), iz(filltype(solid)), iz(colormass), iz(media(shaped)), iz(info(birth(colormass))), pg(_1477530, mass(_1477540), rankLS, largest), pg(_1477550, iz(sizeGX(_1477564)), rankLS, smallest), pg(_1477574, iz(sizeGY(_1477588)), rankLS, largest), pg(_1477598, iz(cenGX(_1477612)), rankLS, largest), pg(_1477622, iz(cenGY(_1477636)), rankLS, largest), pg(_1477646, unique_colors_count(_1477656), rankLS, smallest), pg(_1477666, empty_area(_1477676), rankLS, smallest).
+%dont_induce(mass(2)). % center2G(2, 9), vis2D(1, 2), loc2D(2, 8), grid_ops(norm, [rot90]), link(sees([cc(e, 2)]), o_?_459_t_08ed6ac7_trn_1_out), cc(fg, 2), iz(sizeGY(2)), iz(cenGY(9)), rotSize2D(grav, 2, 1), area(2), iz(sid(sid_12)), \+link(sees([cc(w, 2)]), o_i_109_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_641_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_337_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_Z_24_t_08ed6ac7_trn_1_out), \+link(sees([cc(w, 2)]), o_?_459_t_08ed6ac7_trn_1_out).
+dont_induce(oid(_)). % center2G(2, 9), vis2D(1, 2), loc2D(2, 8), mass(2), grid_ops(norm, [rot90]), link(sees([cc(e, 2)]), o_?_459_t_08ed6ac7_trn_1_out), cc(fg, 2), iz(sizeGY(2)), iz(cenGY(9)), rotSize2D(grav, 2, 1), area(2), iz(sid(sid_12)), \+link(sees([cc(w, 2)]), o_i_109_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_641_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_337_t_08ed6ac7_trn_0_out), \+link(sees([cc(w, 2)]), o_?_532_t_08ed6ac7_trn_1_out), \+link(sees([cc(w, 2)]), o_Z_24_t_08ed6ac7_trn_1_out), \+link(sees([cc(w, 2)]), o_?_459_t_08ed6ac7_trn_1_out).
+dont_induce(cc(plain_var, 0)).
+dont_induce(links_count(_, _)).
+dont_induce(empty_area(_)).
+dont_induce(unique_colors_count(_)).
 
 
 % Define predicates that should be deduced
@@ -139,7 +140,7 @@ do_deduce(grid_ops(norm, _)). % pen([cc(blue, 1)]), pg(_1489874, mass(_1489884),
 
 % Predicate to check if P should be deduced
 ok_deduce(obj(L)):- nonvar(L), !.
-ok_deduce(P):- \+ \+ dont_deduce(P), !, fail.
+ok_deduce(P):- \+ \+ dont_induce(P), !, fail.
 ok_deduce(P):- \+ \+ do_deduce(P), !.
 ok_deduce(P):- good_for_rhs(P), !.
 %ok_deduce(P):- \+ \+ dont_notice(P), !, fail.
@@ -290,12 +291,13 @@ seg_options(Opt):- nonvar(Opt),!.
 seg_options(Opt):-
  member(Opt,
      [
+      i_opts(shapes(none),count_equ(NF),colors(each),dirs(nsew),incl_bg(edges)),
       i_opts(shapes(none),count_equ(NF),colors(each),dirs(diags_nsew),incl_bg(false)),
       i_opts(shapes(none),count_equ(NF),colors(each),dirs(nsew),incl_bg(false)),      
       i_opts(shapes(none),count_equ(NF),colors(mono),dirs(diags_nsew),incl_bg(false)),
       i_opts(shapes(none),count_equ(NF),colors(mono),dirs(nsew),incl_bg(false)),
 
-      i_opts(shapes(none),count_equ(NF),colors(each),dirs(nsew),incl_bg(true)),
+      
       %i_opts(shapes(none),count_equ(false),colors(each),dirs(diags_nsew),incl_bg(true)),
       i_opts(shapes(none),count_equ(NF),colors(each),dirs(points),incl_bg(false)),    
       i_opts(shapes(none),count_equ(false),colors(mono),dirs(diags_nsew),incl_bg(true)),
@@ -326,22 +328,25 @@ rest_are_points([P|PointsRest],[[P]|More]):-
   rest_are_points(PointsRest,More),!.
 rest_are_points([],[]).
 
-is_adjacent_to_one(FGPoints,_-P1):-
+is_adjacent_to_one(_,FGPoints,_-P1):- !,
   is_adjacent_point(P1,Dir,P2),  Dir\==c, \+ \+ member(_-P2,FGPoints),!.
+is_adjacent_to_one(2,FGPoints,_-P1):- !,
+  is_adjacent_point(P1,Dir1,P12),Dir1\==c, is_adjacent_point(P12,Dir2,P2),  Dir2\==c, \+ \+ member(_-P2,FGPoints),!.
 
 indv_color_masses(H,V,Orig,PointsRest,SegOptions,More):-
   var(SegOptions),!,seg_options(SegOptions),indv_color_masses(H,V,Orig,PointsRest,SegOptions,More).
-/*
+
 indv_color_masses(H,V,Orig,PointsRest,SegOptions,More):- SegOptions = i_opts(A,B,C,D,incl_bg(edges)),!,
-   my_partition(is_fg_point,PointsRest,FGPoints,BGPoints0),
-   include(is_adjacent_to_one(FGPoints),BGPoints0,BGPoints),
-   BGOpts = i_opts(A,B,colors(each),dirs(nsew),incl_bg(true)),
+   must_det_ll((my_partition(is_fg_point,PointsRest,FGPoints,BGPoints0),
+   MaxDist = 2,
+   my_include(is_adjacent_to_one(MaxDist,FGPoints),BGPoints0,BGPoints),
+   BGOpts = i_opts(A,B,colors(black),dirs(nsew),incl_bg(true)),
    %subst001(BGPoints,'black','wfg',BGPointsFG), print_grid(H,V,wfg,BGPointsFG),
-   color_masses(H,V,Orig,BGPoints,BGOpts,BlackObjs),
+   all_color_masses(H,V,Orig,BGPoints,BGOpts,BlackObjs),
    FGOpts = i_opts(A,B,C,D,incl_bg(false)),
-   color_masses(H,V,Orig,FGPoints,FGOpts,FGObjs),
-   append(FGObjs,BlackObjs,More),!.
-*/
+   all_color_masses(H,V,Orig,FGPoints,FGOpts,FGObjs),
+   append(FGObjs,BlackObjs,More))),!.
+
 indv_color_masses(H,V,Orig,PointsRest,SegOptions,More):- SegOptions = i_opts(A,B,C,D,incl_bg(true)),!,
    my_partition(is_fg_point,PointsRest,FGPoints,BGPoints),
    BGOpts = i_opts(A,B,colors(black),dirs(nsew),incl_bg(true)),
@@ -1486,7 +1491,7 @@ assume_prop2(was_oid(_)).
 assume_prop2(oid(_)).
 assume_prop2(cc(bg,0)).
 assume_prop2(unique_colors_count(1)).
-assume_prop2(pg(_,empty_area(_),rank1,_)).
+%assume_prop2(pg(_,empty_area(_),rank1,_)).
 assume_prop2(sym_counts(_,0)).
 assume_prop2(sym_counts('sym_extend_-_/_\\_|',_)).
 %assume_prop2(iz(algo_sid(comp,sid_323))).

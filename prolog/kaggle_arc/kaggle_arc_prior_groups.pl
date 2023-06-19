@@ -1455,7 +1455,8 @@ add_rankings(Why,ObjsIn,WithPriors):- fail,
 
 %add_rankings(_,Objs,Objs):-!.
 add_rankings(Why,Objs,WithPriors):- 
-  add_how_simular(Objs,Simulars),
+  add_how_simular(Objs,ESimulars),
+  externalize_links(ESimulars,Simulars),
   group_prior_objs0(Why,Simulars,WithPriors),!.
 
 group_prior_objs0(Why,Objs,WithPriors):- 
@@ -1549,7 +1550,8 @@ add_prior_info_1(Objs,ObjsLen,_Common,VbO,PropList,OUT):- is_list(PropList),Objs
   R = pg(PGRankers,Name,rank1, RA),  
   \+ member(R,PropList),  
   
-  ObjsLen = PGRankers,
+  %ObjsLen = PGRankers,
+  PGRankers=_,
   %subst(PropList,Prop,R,PropListR),
   PropList = PropListR,
   must_det_ll((findall(Obj,(member(Obj,Objs),sub_term(OProp,Obj), (OProp =@= Prop)),Identicals),

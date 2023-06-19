@@ -3062,7 +3062,7 @@ hide_propchange1(iz(symmetry_type(_, False))):- False == false.
 hide_propchange1(iz(symmetry_type(_, False))):- False == true.
 %hide_propchange1(pg(_, _, _, _)).
 hide_propchange1(link(sees(_), _)).
-hide_propchange1(pg(_, _, rankLS, _)).
+%hide_propchange1(pg(_, _, rankLS, _)).
 hide_propchange1(iz(P)):-!, hide_propchange1(P).
 %hide_propchange1(P):- \+ ok_notice(P), !.
 hide_propchange1(P):- dont_notice(P), !.

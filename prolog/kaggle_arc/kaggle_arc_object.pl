@@ -24,6 +24,7 @@ redress_override(birth(I),iz(info(birth(I)))):-!.
 redress_override(iz(birth(I)),iz(info(birth(I)))):-!.
 redress_override(iz(I),iz(IT)):- iz_type(I,IT),!.
 redress_override(iz(I),iz(info(I))):- atom(I),!.
+redress_override(iz(F),F):- compound(F),!.
 redress_override(info(I),iz(info(I))):-!.
 %redress_override(I,iz(IT)):- iz_type(I,IT),!.
 redress_override(I,I).
@@ -84,7 +85,7 @@ gpoints_to_iv_info(GPoints,ShapePoints,LocX,LocY,PenColors,RotG,Iv,Overrides,LPo
   gpoints_to_center(GPoints,LocX,LocY,SizeX,SizeY,CentX,CentY))).
 
 lpoints_to_iv_info(ShapePoints,LocX,LocY,PenColors,RotG,Iv):- 
-  L=[ shape_rep(grav,ShapePoints),  loc2D(LocX,LocY),  pen(PenColors),  rot2D(RotG)],
+  L=[ shape_rep(grav,ShapePoints), locX(LocX) , locY(LocY),  pen(PenColors),  rot2D(RotG)],
   iv_for(L,Iv).
 
 %fg_shape_grid(RC,_):- plain_var(RC).
@@ -254,17 +255,17 @@ make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
   %grav_rot(Grid,NormOps,NormGrid),
   my_maplist(ignore,[GIDOMem==GID,IvOMem=Iv,GlyphOMem=Glyph,OIDOMem=OID]),
   (PenColors == [cc(Wfg,1)] -> PenColorsR = [cc(FG1,1)] ; PenColorsR = PenColors),
+  duplicate_term(PropL,PropLT),
   flatten(
-  [ PropL,
+  [ PropLT,
     shape_rep(grav,ShapePoints),    
     pen(PenColorsR),
     rot2D(RotG),
     rotSize2D(grav,OX,OY),
    
     loc2D(LocX,LocY), 
+    iz(locX(LocX)), iz(locY(LocY)),
     iz(ngrid(NormNGrid)),
-    iz(locX(LocX)),
-    iz(locY(LocY)),
     NSymCounts,
     unkept(loc2G(LocXG,LocYG)),
     kept(center2D(CentX,CentY)),
@@ -274,7 +275,8 @@ make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
     vis2D(SizeX,SizeY), 
     %kept(iz(vis2G(SizeXG))), %
     iz(sizeGY(SizeYG)),iz(sizeGX(SizeXG)),
-
+    unique_colors_1(UniqueColors),
+    unique_colors(UniqueColors),
     global2G(GlobalXG,GlobalYG),
   % RE=ADD=PHASE2 iz(mono_algo_sid(norm,MonoNormShapeID)),    
     iz(sid(ShapeID)),
@@ -329,11 +331,12 @@ bad_prop(P):- P= iz(symmetry_type(_,_)).
 bad_prop(center2G(_,_)).
 bad_prop(iz(stype(_))).
 bad_prop(cc(plain_var,0)).
+/*
 bad_prop(iz(cenGY(_))).
 bad_prop(iz(cenGX(_))).
 bad_prop(iz(sizeGY(_))).
 bad_prop(iz(sizeGX(_))).
-
+*/
 
 remove_gridoid_props(O,O):- !.
 remove_gridoid_props(O,O):- \+ compound(O),!.
@@ -725,6 +728,8 @@ prop_of(size2D,vis2D(_,_)).
 prop_of(mass,mass(_)).
 
 prop_of(loc2D,center2G(_,_)).
+%prop_of(loc2D,iz(cenGX(_))).
+%prop_of(loc2D,iz(cenGY(_))).
 prop_of(rot2D,rot2D(_)).
 prop_of(visually,pen(_)).
 prop_of(colorlesspoints,shape_rep(grav,_)).
@@ -930,7 +935,7 @@ transfer_props_l([_|L],Functors,List,NewList):-
 
 
 %indv_u_props(I,[localpoints(Ps),loc2D(X,Y),pen(Pen),vis2D(H,V),rot2D(Rot)]):- loc2D(I,X,Y),shape_rep(grav,I,Ps),pen(I,Pen),vis2D(I,H,V),rot2D(I,Rot),!.
-indv_u_props(I,[ shape_rep(grav,C),  loc2D(X,Y),  pen(Ps),  rot2D(Rot)]):-  
+indv_u_props(I,[ shape_rep(grav,C), locX(X),locY(Y),  pen(Ps),  rot2D(Rot)]):-  
   shape_rep(grav,I,C),loc2D(I,X,Y),pen(I,Ps),rot2D(I,Rot),!.
 %indv_u_props(I,[ shape_rep(grav,C),  center2G(X,Y),  pen(Ps),  rot2D(Rot)]):- shape_rep(grav,I,C),center2G(I,X,Y),pen(I,Ps),rot2D(I,Rot),!.
 %indv_u_props(I,[shape_rep(grav,Ps),center2G(X,Y),pen(Pen),vis2D(H,V),rot2D(Rot)]):- center2G(I,X,Y),shape_rep(grav,I,Ps),pen(I,Pen),vis2D(I,H,V),rot2D(I,Rot),!.
@@ -1621,14 +1626,7 @@ maybe_undo_effect_points(OX,OY,RotLCLPoints,RotG,LPoints):-
  must_det_ll((points_to_grid(OX,OY,RotLCLPoints,Grid),   
    undo_effect(RotG,Grid,Grid90),localpoints_include_bg(Grid90,LPoints))).
 
-/*
 
-          _______
-         |   @   |
-         | @ @   |
-         |       |
-          ¯¯¯¯¯¯¯
-*/
 
 combine_pen(A,B,C,D):- nonvar(D),!,combine_pen(A,B,C,V),!,V=D.
 combine_pen([],_,_,[]):-!.
@@ -1877,25 +1875,41 @@ rotSize2D(grav,Grid,H,V):- is_grid(Grid),!,grav_roll(Grid,_RotG,RotShape),grid_s
 rotSize2D(grav,NT,H,V):-  into_gridoid(NT,G),G\==NT, rotSize2D(grav,G,H,V).
 
 
-%externalize_links(obj_group(O1L,Grp),[link(C,A),EL|More],[link(C,A),elink(C,Ext)|LMore]):- EL\=elink(_,_),externalize_obj(Obj,Other,Ext),!,externalize_links(obj_group(O1L,Grp),[EL|More],LMore).
+%externalize_links(Obj,obj_group(O1L,Grp),[link(C,A),EL|More],[link(C,A),elink(C,Ext)|LMore]):- EL\=elink(_,_),externalize_obj(Obj,Other,Ext),!,externalize_links(Obj,obj_group(O1L,Grp),[EL|More],LMore).
 
-%externalize_links(Grp,NewObjs):- Grp==[],NewObjs=[].
-externalize_links(Grp,Grp):-!.
+externalize_links(Grp,NewObjs):- var(Grp),!,NewObjs=Grp.
+externalize_links(Grp,NewObjs):- Grp==[],NewObjs=[].
+externalize_links(Grp,NewObjs):- is_group_or_objects_list(Grp),  maplist(externalize_links,Grp,NewObjs).
+externalize_links(obj(Obj),obj(Props)):- !, maplist(externalize_olinks(obj(Obj)),Obj,Props).
+externalize_links(O,O).
+
+indv_link_props(I,[ grid_ops(norm,NormOps),iz(algo_sid(norm,NormSID)), 
+  iz(cenGX(CGX)),iz(cenGX(CGY)), pen(Ps),  rot2D(Rot)]):-  
+  grid_ops(I,norm,NormOps), indv_props(I,iz(algo_sid(norm,NormSID))),
+  center2G(I,CGX,CGY),pen(I,Ps),rot2D(I,Rot),!.
+
+
+externalize_olinks(_SObj,link(Grp,OID),elink(Grp,OProps)):- atom(OID), oid_to_obj(OID,Obj), !, indv_link_props(Obj,OProps).
+externalize_olinks(_SObj,O,O).
 /*
-externalize_links(Grp,NewObjs):- 
- must_det_ll((is_group_or_objects_list(Grp), 
-   maplist(externalize_links((Grp)),Grp,NewObjs))).
-%externalize_links(obj_group(O1L,Grp),NewObj):- is_object(Obj),!,externalize_obj_links(Obj,NewObj),!.
-%externalize_links(obj_group(O1L,Grp),Objs):-!.
-
-externalize_links((Grp),Obj,NewObj):-
-   indv_props_list(Obj,O1L), 
-   maplist(externalize_links(obj_group(O1L,Grp)),O1L,NewList), 
-   NewObj=obj(NewList).
-%externalize_links(obj_group(O1L,Grp),link(C,A),elink(C,Ext)):- !, externalize_obj(obj_group_link(O1L,Grp,C),A,Ext).
+relative_props([OProp|ORest],SProps,[Prop|Was]):- make_unifiable(OProp,SProp), member(SProp,SProps),!,
+  relative_props(OProp,SProp,Prop), relative_props(ORest,SProps,Was).
+relative_props([OProp|ORest],SProps,[OProp|Was]):- 
+  relative_props(OProp,SProp,Prop), relative_props(ORest,SProps,Was).
+relative_props(OProp,SProp,Pro):- c_proportional(OProp,SProp,Pro).
 */
 /*
-externalize_links(obj_group(_O1L,_Grp),A,A).
+%externalize_links(Obj,obj_group(O1L,Grp),NewObj):- is_object(Obj),!,externalize_obj_links(Obj,NewObj),!.
+%externalize_links(Obj,obj_group(O1L,Grp),Objs):-!.
+
+externalize_links(Obj,(Grp),Obj,NewObj):-
+   indv_props_list(Obj,O1L), 
+   maplist(externalize_links(Obj,obj_group(O1L,Grp)),O1L,NewList), 
+   NewObj=obj(NewList).
+%externalize_links(Obj,obj_group(O1L,Grp),link(C,A),elink(C,Ext)):- !, externalize_obj(obj_group_link(O1L,Grp,C),A,Ext).
+*/
+/*
+externalize_links(Obj,obj_group(_O1L,_Grp),A,A).
 
 externalize_obj(obj_group_link(O1,_Grp, C),OID2,Ext):- 
  must_det_ll((

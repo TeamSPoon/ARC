@@ -660,10 +660,12 @@ too_verbose(norm_grid).
 %too_verbose(link).
 too_verbose(rotated_grid).
 %too_verbose(wide). too_verbose(tall).
+/*
 too_verbose(locX).
 too_verbose(locY).
 too_verbose(cenGX).
 too_verbose(cenGY).
+*/
 
 print_info(_,_,X,_):- too_verbose(X),!.
 print_info(Obj,_,F,[A]):- is_cpoints_list(A),!,
