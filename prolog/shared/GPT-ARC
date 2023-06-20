@@ -1,0 +1,20 @@
+Write a prolog program that will:
+
+Construct and edit arbitrary numbers lists.
+Let us store 4 pairs of numbers lists under a task name.
+When given a task name, print out those pairs.
+Extracts and stores all properties common to all left side of the pairs. 
+There are several methods to extract properties which will be used later for a two-way conversion. Start out writing at least five methods and make sure you record which methods are used to extract properties.  Write a way to convert between number lists and this properties.  All four pairs should use the same properties methods of each other. 
+Now the same with the right side. The right side properties will always use a differnt method than the left. This needs to be recorded as well.  Next write a predicate that will extract rules that translate between left and right propetries. Store rules that would convert from left properties to the right side properties. 
+Write a predicate that will display the properties by taskname.  Write a predicate that will confirm those rules would convert the left properties to the right properties.
+Now write a predicate that will allow any of right side of the four pairs deduced if it was missing.
+
+
+
+With the left and rule side properties create rules that describe how to take the left properties and convert to the right side properties. 
+Do the same for the right side of the pairs.
+
+
+from the  left sides and  
+
+will use the 3 pairs and extract properties common between the left side of the pair and also extract properties common between the right side so that rules can be formed that convert the left side commonalities to the right side commonalities and store them under the task name.    next  write a predicate that will take a task name and a bit string and extract properties from it that are common to the left side of the pair.. it will apply the rules saved previously to those properties to convert to right side properties. Those properties can be used to generate the bit sting that would be the right side of the pair

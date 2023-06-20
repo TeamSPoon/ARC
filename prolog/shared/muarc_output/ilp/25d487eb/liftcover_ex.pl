@@ -1,0 +1,284 @@
+:-use_module(library(slipcover)). 
+:-if(current_predicate(use_rendering/1)). 
+:-use_rendering(prolog). 
+:-endif. 
+:-sc. 
+:-set_sc(verbosity,3). 
+:-set_sc(depth_bound,false). 
+:-set_sc(neg_ex,given). 
+bg([]). 
+in([]). 
+input_cw(incr_nat30/2). 
+input_cw(color_change/2). 
+determination(P/Q,R/S):-input_cw(R/S),output(P/Q). 
+fold(trn_0,[trn_0]). 
+fold(trn_1,[trn_1]). 
+fold(trn_2,[trn_2]). 
+% modeh(*,rhs(+state,+nat30,+nat30,+color,+nat30,+nat30,+rotation,+nat900,+shape,+list)). 
+% modeb(*,lhs(+state,+nat30,+nat30,#(color),+nat30,+nat30,+rotation,+nat900,+shape,+list)). 
+% modeb(*,my_geq(+nat30,-#(nat30))). 
+% modeb(*,my_leq(+nat30,-#(nat30))). 
+% modeb(*,my_add(+nat30,+nat30,-nat30)). 
+% modeb(*,my_mult(+nat30,#(nat30),-nat30)). 
+% lazy_evaluate(my_add/3). 
+% lazy_evaluate(my_geq/2). 
+% lazy_evaluate(my_leq/2). 
+% lazy_evaluate(my_mult/3). 
+% determination(rhs/10,lhs/10). 
+% determination(rhs/10,color_change/2). 
+% determination(rhs/10,incr_nat30/2). 
+% determination(rhs/10,my_geq/2). 
+% determination(rhs/10,my_leq/2). 
+% determination(rhs/10,my_add/3). 
+% determination(rhs/10,my_mult/3). 
+output(rhs_peice/2). 
+output(rhs_loc2D/3). 
+output(rhs_rot2D/2). 
+output(rhs_pen_color/2). 
+output(rhs_rotSize2D/3). 
+output(rhs_vis2D/3). 
+output(rhs_mass/2). 
+output(rhs_iz_sid/2). 
+output(rhs/8). 
+/*
+*/
+input_cw(lhs_peice/2). 
+input_cw(lhs_loc2D/3). 
+input_cw(lhs_rot2D/2). 
+input_cw(lhs_pen_color/2). 
+input_cw(lhs_rotSize2D/3). 
+input_cw(lhs_vis2D/3). 
+input_cw(lhs_mass/2). 
+input_cw(lhs_iz_sid/2). 
+input_cw(lhs/8). 
+/*
+*/
+modeh(*,rhs_peice(+scope,+peice)). 
+modeh(*,rhs_loc2D(+peice,+nat30,+nat30)). 
+modeh(*,rhs_rot2D(+peice,+rot2D)). 
+modeh(*,rhs_pen_color(+peice,+ #(color))). 
+modeh(*,rhs_rotSize2D(+peice,+nat30,+nat30)). 
+modeh(*,rhs_vis2D(+peice,+nat30,+nat30)). 
+modeh(*,rhs_mass(+peice,nat900)). 
+modeh(*,rhs_iz_sid(+peice,+sid)). 
+modeh(*,rhs(+peice,+rhs,+rhs,+ #(color),+rhs,+rhs,+nat30,+rhs)). 
+/*
+*/
+modeb(*,lhs_peice(+scope,+peice)). 
+modeb(*,lhs_loc2D(+peice,+nat30,+nat30)). 
+modeb(*,lhs_rot2D(+peice,-rot2D)). 
+modeb(*,lhs_pen_color(+peice,+ #(color))). 
+modeb(*,lhs_rotSize2D(+peice,+nat30,+nat30)). 
+modeb(*,lhs_vis2D(+peice,+nat30,+nat30)). 
+modeb(*,lhs_mass(+peice,nat900)). 
+modeb(*,lhs_iz_sid(+peice,-sid)). 
+modeb(*,lhs(+peice,-lhs,-lhs,+ #(color),-lhs,-lhs,+nat30,-lhs)). 
+/*
+*/
+/*
+*/
+/*
+*/
+:-use_module(library(clpfd)). 
+incr_nat30(P,Q):-Q#=P+1. 
+color_change(_,_). 
+my_geq(P,Q):-nonvar(P),nonvar(Q),!,P>=Q. 
+my_leq(P,Q):-nonvar(P),nonvar(Q),!,P=<Q. 
+my_add(P,Q,R):-nonvar(P),nonvar(Q),integer(P),integer(Q),R is P+Q. 
+my_add(P,Q,R):-nonvar(P),nonvar(R),integer(P),integer(R),Q is R-P. 
+my_add(P,Q,R):-nonvar(R),nonvar(Q),integer(Q),integer(R),P is R-Q. 
+my_mult(P,Q,R):-nonvar(P),nonvar(Q),integer(P),integer(Q),R is P*Q. 
+my_mult(P,Q,R):-nonvar(P),nonvar(R),integer(P),integer(R),\+P=0.0,\+P=0,Q is R/P. 
+my_mult(P,Q,R):-nonvar(R),nonvar(Q),integer(Q),integer(R),\+P=0.0,\+P=0,P is R/Q. 
+:-use_module(library(clpfd)). 
+size(30). 
+at_left(hv(1,_)). 
+at_top(hv(_,1)). 
+at_bottem(hv(_,P)):-size(P). 
+at_right(hv(P,_)):-size(P). 
+right(hv(P,Q),hv(R,Q)):-size(S),P#<S,R#=P+1. 
+left(hv(P,Q),hv(R,Q)):-P#>1,R#=P-1. 
+down(hv(P,Q),hv(P,R)):-size(S),Q#<S,R#=Q+1. 
+up(hv(P,Q),hv(P,R)):-Q#>1,R#=Q-1. 
+lhs(trn_0,hv(4,3),rot90,red,hv(5,3),hv(3,5),8,s2395001). 
+lhs(trn_0,hv(4,5),sameR,blue,hv(1,1),hv(1,1),1,sid_11). 
+lhs(trn_1,hv(4,6),sameR,cyan,hv(7,4),hv(7,4),15,s8952751). 
+lhs(trn_1,hv(7,9),sameR,green,hv(1,1),hv(1,1),1,sid_11). 
+lhs(trn_2,hv(3,3),sameR,green,hv(5,3),hv(5,3),8,s2395001). 
+lhs(trn_2,hv(5,3),sameR,red,hv(1,1),hv(1,1),1,sid_11). 
+/*
+lhs(tst_0,hv(2,12),sameR,yellow,hv(7,4),hv(7,4),15,s8952751). 
+lhs(tst_0,hv(5,15),sameR,cyan,hv(1,1),hv(1,1),1,sid_11). 
+*/
+begin(model(trn_0)). 
+lhs_peice(trn_0,obj_0_17_in). 
+lhs_loc2D(obj_0_17_in,4,3). 
+lhs_rot2D(obj_0_17_in,rot90). 
+lhs_pen_color(obj_0_17_in,red). 
+lhs_rotSize2D(obj_0_17_in,5,3). 
+lhs_vis2D(obj_0_17_in,3,5). 
+lhs_mass(obj_0_17_in,8). 
+lhs_iz_sid(obj_0_17_in,s2395001). 
+lhs_peice(trn_0,obj_0_113_in). 
+lhs_loc2D(obj_0_113_in,4,5). 
+lhs_rot2D(obj_0_113_in,sameR). 
+lhs_pen_color(obj_0_113_in,blue). 
+lhs_rotSize2D(obj_0_113_in,1,1). 
+lhs_vis2D(obj_0_113_in,1,1). 
+lhs_mass(obj_0_113_in,1). 
+lhs_iz_sid(obj_0_113_in,sid_11). 
+rhs_peice(trn_0,obj_0_609_out). 
+rhs_loc2D(obj_0_609_out,7,5). 
+rhs_rot2D(obj_0_609_out,sameR). 
+rhs_pen_color(obj_0_609_out,blue). 
+rhs_rotSize2D(obj_0_609_out,9,1). 
+rhs_vis2D(obj_0_609_out,9,1). 
+rhs_mass(obj_0_609_out,9). 
+rhs_iz_sid(obj_0_609_out,s13578114). 
+rhs_peice(trn_0,obj_0_17_out). 
+rhs_loc2D(obj_0_17_out,4,3). 
+rhs_rot2D(obj_0_17_out,rot90). 
+rhs_pen_color(obj_0_17_out,red). 
+rhs_rotSize2D(obj_0_17_out,5,3). 
+rhs_vis2D(obj_0_17_out,3,5). 
+rhs_mass(obj_0_17_out,8). 
+rhs_iz_sid(obj_0_17_out,s2395001). 
+rhs_peice(trn_0,obj_0_113_out). 
+rhs_loc2D(obj_0_113_out,4,5). 
+rhs_rot2D(obj_0_113_out,sameR). 
+rhs_pen_color(obj_0_113_out,blue). 
+rhs_rotSize2D(obj_0_113_out,1,1). 
+rhs_vis2D(obj_0_113_out,1,1). 
+rhs_mass(obj_0_113_out,1). 
+rhs_iz_sid(obj_0_113_out,sid_11). 
+end(model(trn_0)). 
+begin(model(trn_1)). 
+lhs_peice(trn_1,obj_1_77_in). 
+lhs_loc2D(obj_1_77_in,4,6). 
+lhs_rot2D(obj_1_77_in,sameR). 
+lhs_pen_color(obj_1_77_in,cyan). 
+lhs_rotSize2D(obj_1_77_in,7,4). 
+lhs_vis2D(obj_1_77_in,7,4). 
+lhs_mass(obj_1_77_in,15). 
+lhs_iz_sid(obj_1_77_in,s8952751). 
+lhs_peice(trn_1,obj_1_451_in). 
+lhs_loc2D(obj_1_451_in,7,9). 
+lhs_rot2D(obj_1_451_in,sameR). 
+lhs_pen_color(obj_1_451_in,green). 
+lhs_rotSize2D(obj_1_451_in,1,1). 
+lhs_vis2D(obj_1_451_in,1,1). 
+lhs_mass(obj_1_451_in,1). 
+lhs_iz_sid(obj_1_451_in,sid_11). 
+rhs_peice(trn_1,obj_1_609_out). 
+rhs_loc2D(obj_1_609_out,7,5). 
+rhs_rot2D(obj_1_609_out,sameR). 
+rhs_pen_color(obj_1_609_out,blue). 
+rhs_rotSize2D(obj_1_609_out,9,1). 
+rhs_vis2D(obj_1_609_out,9,1). 
+rhs_mass(obj_1_609_out,9). 
+rhs_iz_sid(obj_1_609_out,s13578114). 
+rhs_peice(trn_1,obj_1_17_out). 
+rhs_loc2D(obj_1_17_out,4,3). 
+rhs_rot2D(obj_1_17_out,rot90). 
+rhs_pen_color(obj_1_17_out,red). 
+rhs_rotSize2D(obj_1_17_out,5,3). 
+rhs_vis2D(obj_1_17_out,3,5). 
+rhs_mass(obj_1_17_out,8). 
+rhs_iz_sid(obj_1_17_out,s2395001). 
+rhs_peice(trn_1,obj_1_113_out). 
+rhs_loc2D(obj_1_113_out,4,5). 
+rhs_rot2D(obj_1_113_out,sameR). 
+rhs_pen_color(obj_1_113_out,blue). 
+rhs_rotSize2D(obj_1_113_out,1,1). 
+rhs_vis2D(obj_1_113_out,1,1). 
+rhs_mass(obj_1_113_out,1). 
+rhs_iz_sid(obj_1_113_out,sid_11). 
+end(model(trn_1)). 
+begin(model(trn_2)). 
+lhs_peice(trn_2,obj_2_430_in). 
+lhs_loc2D(obj_2_430_in,3,3). 
+lhs_rot2D(obj_2_430_in,sameR). 
+lhs_pen_color(obj_2_430_in,green). 
+lhs_rotSize2D(obj_2_430_in,5,3). 
+lhs_vis2D(obj_2_430_in,5,3). 
+lhs_mass(obj_2_430_in,8). 
+lhs_iz_sid(obj_2_430_in,s2395001). 
+lhs_peice(trn_2,obj_2_276_in). 
+lhs_loc2D(obj_2_276_in,5,3). 
+lhs_rot2D(obj_2_276_in,sameR). 
+lhs_pen_color(obj_2_276_in,red). 
+lhs_rotSize2D(obj_2_276_in,1,1). 
+lhs_vis2D(obj_2_276_in,1,1). 
+lhs_mass(obj_2_276_in,1). 
+lhs_iz_sid(obj_2_276_in,sid_11). 
+rhs_peice(trn_2,obj_2_609_out). 
+rhs_loc2D(obj_2_609_out,7,5). 
+rhs_rot2D(obj_2_609_out,sameR). 
+rhs_pen_color(obj_2_609_out,blue). 
+rhs_rotSize2D(obj_2_609_out,9,1). 
+rhs_vis2D(obj_2_609_out,9,1). 
+rhs_mass(obj_2_609_out,9). 
+rhs_iz_sid(obj_2_609_out,s13578114). 
+rhs_peice(trn_2,obj_2_17_out). 
+rhs_loc2D(obj_2_17_out,4,3). 
+rhs_rot2D(obj_2_17_out,rot90). 
+rhs_pen_color(obj_2_17_out,red). 
+rhs_rotSize2D(obj_2_17_out,5,3). 
+rhs_vis2D(obj_2_17_out,3,5). 
+rhs_mass(obj_2_17_out,8). 
+rhs_iz_sid(obj_2_17_out,s2395001). 
+rhs_peice(trn_2,obj_2_113_out). 
+rhs_loc2D(obj_2_113_out,4,5). 
+rhs_rot2D(obj_2_113_out,sameR). 
+rhs_pen_color(obj_2_113_out,blue). 
+rhs_rotSize2D(obj_2_113_out,1,1). 
+rhs_vis2D(obj_2_113_out,1,1). 
+rhs_mass(obj_2_113_out,1). 
+rhs_iz_sid(obj_2_113_out,sid_11). 
+end(model(trn_2)). 
+/*
+begin(model(tst_0)). 
+lhs_peice(tst_0,obj_0_424_in). 
+lhs_loc2D(obj_0_424_in,2,12). 
+lhs_rot2D(obj_0_424_in,sameR). 
+lhs_pen_color(obj_0_424_in,yellow). 
+lhs_rotSize2D(obj_0_424_in,7,4). 
+lhs_vis2D(obj_0_424_in,7,4). 
+lhs_mass(obj_0_424_in,15). 
+lhs_iz_sid(obj_0_424_in,s8952751). 
+lhs_peice(tst_0,obj_0_396_in). 
+lhs_loc2D(obj_0_396_in,5,15). 
+lhs_rot2D(obj_0_396_in,sameR). 
+lhs_pen_color(obj_0_396_in,cyan). 
+lhs_rotSize2D(obj_0_396_in,1,1). 
+lhs_vis2D(obj_0_396_in,1,1). 
+lhs_mass(obj_0_396_in,1). 
+lhs_iz_sid(obj_0_396_in,sid_11). 
+rhs_peice(tst_0,obj_0_367_out). 
+rhs_loc2D(obj_0_367_out,5,1). 
+rhs_rot2D(obj_0_367_out,rot90). 
+rhs_pen_color(obj_0_367_out,cyan). 
+rhs_rotSize2D(obj_0_367_out,11,1). 
+rhs_vis2D(obj_0_367_out,1,11). 
+rhs_mass(obj_0_367_out,11). 
+rhs_iz_sid(obj_0_367_out,s15356158). 
+rhs_peice(tst_0,obj_0_424_out). 
+rhs_loc2D(obj_0_424_out,2,12). 
+rhs_rot2D(obj_0_424_out,sameR). 
+rhs_pen_color(obj_0_424_out,yellow). 
+rhs_rotSize2D(obj_0_424_out,7,4). 
+rhs_vis2D(obj_0_424_out,7,4). 
+rhs_mass(obj_0_424_out,15). 
+rhs_iz_sid(obj_0_424_out,s8952751). 
+rhs_peice(tst_0,obj_0_396_out). 
+rhs_loc2D(obj_0_396_out,5,15). 
+rhs_rot2D(obj_0_396_out,sameR). 
+rhs_pen_color(obj_0_396_out,cyan). 
+rhs_rotSize2D(obj_0_396_out,1,1). 
+rhs_vis2D(obj_0_396_out,1,1). 
+rhs_mass(obj_0_396_out,1). 
+rhs_iz_sid(obj_0_396_out,sid_11). 
+end(model(tst_0)). 
+*/
+/*
+*/
