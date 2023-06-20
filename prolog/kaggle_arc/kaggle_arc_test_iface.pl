@@ -1701,7 +1701,7 @@ info(Info):- nonvar(Info),u_dmsg(Info).
 system:demo:- 
   catch_log(reverse_suite),
   update_changes,!,clear_tee,
-  begin_tee,interact.
+  begin_tee,print_test,interact.
 
 :- export(demo/0).
 rat:- info("Run all tests"), run_all_tests.

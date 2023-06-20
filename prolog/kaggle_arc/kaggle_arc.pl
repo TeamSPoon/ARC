@@ -938,8 +938,8 @@ use_gui_debugger:-
 :- luser_default(task,v('37d3e8b2')). 
 
 */
-
 create_group_dmiles:- 
+  load_last_test_name,
   get_current_test(Tst),print(get_current_test(Tst)),
    must_det_ll((create_group(dmiles_nsn,[
     'e41c6fd3','ea32f347','37d3e8b2','0a2355a6', 'b230c067','a61f2674','d2abd087','08ed6ac7']))),
@@ -955,7 +955,7 @@ create_group_dmiles:-
         '25d487eb','780d0b14', 
     %copy with mod
         '7e0986d6', '136b0064',
-        '08ed6ac7', 'ea32f347',  '0a2355a6', '37d3e8b2', 'a61ba2ce', 'b230c067',  'd2abd087',
+        '08ed6ac7', 'ea32f347',  '0a2355a6', '37d3e8b2', 'a61ba2ce', 'b230c067',  'd2abd087', 
       '42a15761', Tst,   '6e82a1ae',
     %copy with mod (harder?)
        '705a3229', 'e41c6fd3', 'a61f2674', '0d3d703e', 'makesboxsq', 'a79310a0', '27a77e38', 'f45f5ca7','fc754716',
@@ -986,8 +986,9 @@ create_group_dmiles:-
 
   create_group(dmiles_lr,'009d5c81, 00d62c1b, 0a2355a6, 2281f1f4, 25d8a9c8, 32597951, 332efdb3, 3618c87e, 37d3e8b2, 4258a5f9, 50cb2852, 543a7ed5, 67385a82, 67a3c6ac, 69889d6e, 6c434453, 6d75e8bb, 6e82a1ae, 6f8cd79b, 810b9b61, 84f2aca1, 903d1b4a, 95990924, a699fb00, a9f96cdd, ae58858e, aedd82e4, b1948b0a, b2862040, b60334d2, b6afb2da, bb43febb, c0f76784, c8f0f002, ce039d91, ce22a75a, d2abd087, d364b489, d406998b, e0fb7511, e8593010'),
 % 42a15761
+  %     find-the-5-and-1-l6ae9ses9zaejs6idai 
+    % Importance-of-social-distance-l6afc1q0dm28z9i6egn find-the-color-of-the-gray-pixels-l6afriful4bel4379yo
   create_group(dmiles,'bd14c3bf 08ed6ac7 ea32f347  0a2355a6 37d3e8b2 a61ba2ce b230c067 d2abd087 6e82a1ae 0d3d703e a61f2674 e509e548 810b9b61 aedd82e4
-    find-the-5-and-1-l6ae9ses9zaejs6idai Importance-of-social-distance-l6afc1q0dm28z9i6egn find-the-color-of-the-gray-pixels-l6afriful4bel4379yo
     817e6c09  ae58858e fea12743  ea32f347'),
 
   must_det_ll((create_group(dmiles_all,Set))),
@@ -999,6 +1000,7 @@ create_group_dmiles:-
   %set_current_test('25d487eb'),
   %set_current_test('08ed6ac7'),
   set_current_test('6e82a1ae'),
+  set_current_test(Tst),  
   %set_current_test('bd14c3bf'),
   !.
 

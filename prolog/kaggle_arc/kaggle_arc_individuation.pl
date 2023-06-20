@@ -232,6 +232,7 @@ mono_i_to_o_is_none_some_none(VM):-
   gset(VM.start_grid)=I,
   mono_i_to_o_is_none_some_none_in(VM))).
 
+filter_library(_Library1,[]):-!.
 filter_library(Library1,Library):- 
   must_det_ll((remove_background_only_object(Library1,Library2),
   include(fg_mass_geq(3),Library2,Library))),
@@ -574,7 +575,7 @@ individuation_macros(i_complete_generic2, [
   %combine_same_globalpoints,
   %really_group_vm_priors,
   %combine_objects,
-   find_relations,
+   % % _8() find_relations,
   end_of_macro  ]). 
 
 /*
@@ -1404,7 +1405,7 @@ grid_to_obj_other(VM):-
   forall(grid_to_obj_other(Grid,VM,_O),true).
 
 % =====================================================================
-:- ensure_loaded(kaggle_arc_individuation_pbox).
+%:- ensure_loaded(kaggle_arc_individuation_pbox).
 :- ensure_loaded(kaggle_arc_prior_groups).
 % =====================================================================
 
@@ -4035,18 +4036,11 @@ one_fti(VM,glyphic):-
 %    member(Point=Indv, VM.added_points),!.
 
 
-% =========================================================
-is_fti_step(named_grid_props(name)).
-% =========================================================
 named_grid_props(Name,VM):- one_fti(VM,named_grid_props(Name)),!.
-one_fti(VM,named_grid_props(Name)):- nop(named_grid_props(Name,VM)).
 
-% =========================================================
-is_fti_step(grid_props).
-% =========================================================
-grid_props(VM):- one_fti(VM,grid_props),!.
-one_fti(VM,grid_props):-
- must_det_ll((
+is_fti_step(named_grid_props(name)).
+one_fti(VM,named_grid_props(Name)):- nop(named_grid_props(Name,VM)).
+/*
   H=VM.h,V=VM.v,
   Grid= VM.start_grid,
   hv_point_value(1,1,Grid,PointNW),
@@ -4054,12 +4048,10 @@ one_fti(VM,grid_props):-
   hv_point_value(H,1,Grid,PointNE),
   hv_point_value(H,V,Grid,PointSE),
   grid_props(Grid,Props),
-  append(Props,[vis2D(H,V),birth(grid_props),loc2D(1,1),iz(always_keep),iz(image),iz(hidden)],AllProps),
-  make_indiv_object(VM,AllProps,[PointNW,PointSW,PointNE,PointSE],_))),!.
-
-hv_point_value(H,V,Grid,C-Point):- 
- must_det_ll((hv_point(H,V,Point),point_c_value(Point,C,Grid))).
-
+  append(Props,[mass(0),vis2D(H,V),birth(named_grid_props),loc2D(1,1),iz(flag(always_keep)),iz(media(image)),iz(flag(hidden))],AllProps),
+  make_indiv_object(VM,AllProps,[PointNW,PointSW,PointNE,PointSE],_),!.
+*/
+hv_point_value(H,V,Grid,C-Point):- hv_point(H,V,Point),point_c_value(Point,C,Grid).
 
 % =========================================================
 is_fti_step(whole).

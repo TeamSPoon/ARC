@@ -305,8 +305,8 @@ my_partition(P1,H,I,HE):- arcST,ibreak,
   my_partition(P1,[H],I,HE).
 
 
-mapgroup(P2,G1,L2):- into_list(G1,L1),!, with_my_group(L1,maplist(P2,L1,L2)).
-mapgroup(P1,G1):- into_list(G1,L1), !, with_my_group(L1,maplist(P1,L1)).
+mapgroup(P2,G1,L2):- my_assertion(\+ is_grid(G1)),into_list(G1,L1),!, with_my_group(L1,maplist(P2,L1,L2)).
+mapgroup(P1,G1):- my_assertion(\+ is_grid(G1)), into_list(G1,L1), !, with_my_group(L1,maplist(P1,L1)).
 
 selected_group(Grp):- nb_current('$outer_group',Grp),!.
 selected_group([]).

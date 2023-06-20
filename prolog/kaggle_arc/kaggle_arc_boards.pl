@@ -924,13 +924,13 @@ grid_to_obj(Grid,O):- var(Grid),!,ensure_grid(Grid),grid_to_obj(Grid,O).
 grid_to_obj(Grid,O):- grid_to_obj_other(_VM,Grid,O).
 grid_to_obj(Grid,Obj):- grid_to_objs(Grid,Objs),member(Obj,Objs).
 
-grid_vm(G,VM):- 
- into_grid_free(G,Grid),grid_to_gid(Grid,GID),
+grid_vm(G,VM):- into_grid_free(G,Grid),grid_to_gid(Grid,GID),
  ((nb_current(GID,VM),is_vm(VM))
   -> true
   ; (grid_to_tid(Grid,ID1),
      into_fti(ID1,[complete],Grid,VM), 
-     if_t(other_grid(Grid,Grid2), set(VM.target_grid) = Grid2), 
+     other_grid(Grid,Grid2), 
+     set(VM.target_grid) = Grid2, 
      nb_setval(GID,VM))).
 
 in_to_out(in,out).

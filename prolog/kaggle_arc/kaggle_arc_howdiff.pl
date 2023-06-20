@@ -835,7 +835,7 @@ maybe_good_prop(A,A):- maybe_good_prop1(A).
 maybe_good_prop(pg(OG,How,_,_),pg(OG,How,_,_)).
 
 maybe_good_prop1(vis2D(_,_)).
-%maybe_good_prop1(loc2D(_,_)).
+maybe_good_prop1(loc2D(_,_)).
 maybe_good_prop1(iz(type(_))).
 maybe_good_prop1(/*b*/iz(_)).
 maybe_good_prop1(iz(locY(_))).
@@ -902,10 +902,10 @@ type_prop(reshape,iz(algo_sid(_, _))).
 type_prop(reshape,iz(filltype(_))).
 type_prop(reshape,iz(symmetry_type(_,_))).
 type_prop(reshape,grid_rep(norm,_)).
-%type_prop(repaint,colors_cc(_)).
+type_prop(repaint,colors_cc(_)).
 type_prop(repaint,pen(_)).
 type_prop(repaint,cc(_,_)).
-%type_prop(repaint,grid_rep(norm,_)).
+type_prop(repaint,grid_rep(norm,_)).
 
 type_prop(reorder,pg(_Peers,_OG,_Type,_Ord)).
 type_prop(reorder,link_count(_,_)).
@@ -916,7 +916,7 @@ changed_by(loc2D,move).
 changed_by(mass,grow).
 changed_by(localpoints,reshape_and_recolor).
 changed_by(rot2D,rotate).
-%changed_by(colors_cc,repaint).
+changed_by(colors_cc,repaint).
 changed_by(vis2D,copy).
 
 link_prop_types(Loc,O1,O2,Ps):-
@@ -1022,7 +1022,7 @@ uncomparable2(colorlesspoints,localpoints).
 never_show_diff(V):- var(V),!,fail.
 never_show_diff(_):- nb_current(diff_porportional,t),!,fail.
 %never_show_diff(o).
-% % NOWWW  TODO never_show_diff(link).
+never_show_diff(link).
 %never_show_diff(iz(A)):- atomic(A).
 never_show_diff(iz(g(_))).
 never_show_diff(obj_to_oid).
@@ -1155,6 +1155,8 @@ combine_same_globalpoints(IndvS,IndvSO):-
   must_det_ll(combine_same_globalpoints([IO|IndvS2],NoMoreDupes)),
   must_det_ll(append(NoDupes,NoMoreDupes,IndvSO)),!.
 */
+combine_same_globalpoints_really(IndvS,IndvSO):-
+  my_partition(bad_obj,IndvS,Exclude,IndvSO),Exclude\==[],!.
   
 combine_same_globalpoints_really(IndvS,IndvSO):- 
   append(NoDupes,[I|Rest],IndvS),
@@ -1168,7 +1170,7 @@ combine_same_globalpoints_really(IndvS,IndvSO):-
 combine_same_globalpoints_really(IndvS,IndvS).
 
 combine_same_globalpoints(IndvS,IndvSO):- combine_same_globalpoints_really(IndvS,IndvSO),!.
-combine_same_globalpoints(IndvS,IndvSO):- duplicate_term(IndvS,IndvSO),IndvS=IndvSO.
+combine_same_globalpoints(IndvS,IndvSO):- duplicate_term(IndvS,IndvSO),IndvS=IndvSO,!.
 combine_same_globalpoints(IndvSO,IndvSO).
 
 

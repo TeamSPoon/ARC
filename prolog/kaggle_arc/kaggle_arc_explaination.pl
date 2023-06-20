@@ -901,12 +901,9 @@ ensure_individuals(TestID,ExampleNum,GridIn,GridOut):-
      repress_output(individuate_pair(FinalIndvSMode,GridIn,GridOut,_,_)),!.
 
 
-print_individuals(TestID):- 
-    ensure_test(TestID),
-    print_best_individuals(TestID),!.
-
-print_individuals(TestID):- ensure_test(TestID), deduce_individuator(TestID),!.
-print_individuals(TestID):-
+ print_individuals(TestID):- ensure_test(TestID), print_best_individuals(TestID),!.
+print_individuals1(TestID):- ensure_test(TestID), deduce_individuator(TestID),!.
+print_individuals2(TestID):-
  ((ensure_test(TestID),
      deduce_individuator(TestID),
  banner_lines(blue,4),

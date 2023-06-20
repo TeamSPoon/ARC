@@ -141,6 +141,8 @@ right(hv(P,Q),hv(R,Q)):-size(S),P#<S,R#=P+1.
 left(hv(P,Q),hv(R,Q)):-P#>1,R#=P-1. 
 down(hv(P,Q),hv(P,R)):-size(S),Q#<S,R#=Q+1. 
 up(hv(P,Q),hv(P,R)):-Q#>1,R#=Q-1. 
+
+
 lhs(trn_0,hv(4,2),rot90,blue,hv(8,6),hv(6,8),22,s10646592). 
 lhs(trn_1,hv(7,4),sameR,black,hv(2,2),hv(2,2),4,sid_22). 
 lhs(trn_1,hv(7,7),sameR,black,hv(2,2),hv(2,2),4,sid_22). 

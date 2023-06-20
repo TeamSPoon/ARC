@@ -24,7 +24,7 @@ redress_override(birth(I),iz(info(birth(I)))):-!.
 redress_override(iz(birth(I)),iz(info(birth(I)))):-!.
 redress_override(iz(I),iz(IT)):- iz_type(I,IT),!.
 redress_override(iz(I),iz(info(I))):- atom(I),!.
-redress_override(iz(F),F):- compound(F),!.
+redress_override(iz(F),iz(F)):- compound(F),!.
 redress_override(info(I),iz(info(I))):-!.
 %redress_override(I,iz(IT)):- iz_type(I,IT),!.
 redress_override(I,I).
@@ -264,7 +264,7 @@ make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
     rotSize2D(grav,OX,OY),
    
     loc2D(LocX,LocY), 
-    iz(locX(LocX)), iz(locY(LocY)),
+    iz(locX(LocX)),iz(locY(LocY)),    
     iz(ngrid(NormNGrid)),
     NSymCounts,
     unkept(loc2G(LocXG,LocYG)),
@@ -275,8 +275,7 @@ make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
     vis2D(SizeX,SizeY), 
     %kept(iz(vis2G(SizeXG))), %
     iz(sizeGY(SizeYG)),iz(sizeGX(SizeXG)),
-    unique_colors_1(UniqueColors),
-    unique_colors(UniqueColors),
+
     global2G(GlobalXG,GlobalYG),
   % RE=ADD=PHASE2 iz(mono_algo_sid(norm,MonoNormShapeID)),    
     iz(sid(ShapeID)),
@@ -728,8 +727,6 @@ prop_of(size2D,vis2D(_,_)).
 prop_of(mass,mass(_)).
 
 prop_of(loc2D,center2G(_,_)).
-%prop_of(loc2D,iz(cenGX(_))).
-%prop_of(loc2D,iz(cenGY(_))).
 prop_of(rot2D,rot2D(_)).
 prop_of(visually,pen(_)).
 prop_of(colorlesspoints,shape_rep(grav,_)).
@@ -879,9 +876,14 @@ is_used_fg_object(Obj):- has_prop(cc(fg,FG),Obj),FG>0, \+ is_whole_grid(Obj).
 
 is_whole_grid(B):- has_prop(iz(stype(whole)),B), \+ has_prop(iz(stype(part)),B),!.
 
+bad_obj(I):-
+  indv_props_list(I,L),
+  member(pen([cc(C1,1)]),L),
+  member(localpoints([C2-_|_]),L),!,
+  C1\==C2.
 
-
-
+merge_objs(I,O,OUT):-bad_obj(I),!,OUT=O.
+merge_objs(O,I,OUT):-bad_obj(I),!,OUT=O.
 merge_objs(I,O,OUT):-
   indv_props_list(I,IProps),
   indv_props_list(I,OProps),
@@ -1626,7 +1628,14 @@ maybe_undo_effect_points(OX,OY,RotLCLPoints,RotG,LPoints):-
  must_det_ll((points_to_grid(OX,OY,RotLCLPoints,Grid),   
    undo_effect(RotG,Grid,Grid90),localpoints_include_bg(Grid90,LPoints))).
 
+/*
 
+          _______
+         |   @   |
+         | @ @   |
+         |       |
+          ¯¯¯¯¯¯¯
+*/
 
 combine_pen(A,B,C,D):- nonvar(D),!,combine_pen(A,B,C,V),!,V=D.
 combine_pen([],_,_,[]):-!.
@@ -1879,6 +1888,7 @@ rotSize2D(grav,NT,H,V):-  into_gridoid(NT,G),G\==NT, rotSize2D(grav,G,H,V).
 
 externalize_links(Grp,NewObjs):- var(Grp),!,NewObjs=Grp.
 externalize_links(Grp,NewObjs):- Grp==[],NewObjs=[].
+externalize_links(Grp,Grp):-!. % @TODO remove this 
 externalize_links(Grp,NewObjs):- is_group_or_objects_list(Grp),  maplist(externalize_links,Grp,NewObjs).
 externalize_links(obj(Obj),obj(Props)):- !, maplist(externalize_olinks(obj(Obj)),Obj,Props).
 externalize_links(O,O).
@@ -1889,7 +1899,7 @@ indv_link_props(I,[ grid_ops(norm,NormOps),iz(algo_sid(norm,NormSID)),
   center2G(I,CGX,CGY),pen(I,Ps),rot2D(I,Rot),!.
 
 
-externalize_olinks(_SObj,link(Grp,OID),elink(Grp,OProps)):- atom(OID), oid_to_obj(OID,Obj), !, indv_link_props(Obj,OProps).
+externalize_olinks(_SObj,link(Grp,OID),elink(Grp,OProps)):- atom(OID), oid_to_obj(OID,Obj), indv_link_props(Obj,OProps),!.
 externalize_olinks(_SObj,O,O).
 /*
 relative_props([OProp|ORest],SProps,[Prop|Was]):- make_unifiable(OProp,SProp), member(SProp,SProps),!,

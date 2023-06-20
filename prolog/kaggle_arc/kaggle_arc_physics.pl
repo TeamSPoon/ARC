@@ -541,6 +541,7 @@ find_overlaps(_).
 find_touches(VM):- find_relations(VM).
 find_sees(_).
 
+% ==============================================
 is_fti_step(find_relations).
 % ==============================================
 find_relations(VM):- 

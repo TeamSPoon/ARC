@@ -379,12 +379,33 @@ get_raw_input_outputs(TestID,ExampleNums,Ins,Outs):-
   findall(Out,kaggle_arc_raw(TestID,ExampleNum,In,Out),Outs).
 
 :- ensure_loaded('../kaggle_arc/logical_ml/muarc_dmiles').
-%kaggle_arc(TestID,ExampleNum,In,Out):- !, kaggle_arc_raw(TestID,ExampleNum,In,Out).
+kaggle_arc(TestID,ExampleNum,In,Out):- kaggle_arc_raw(TestID,ExampleNum,In,Out).
+/*kaggle_arc(TestID,ExampleNum,In,Out):- var(In),var(Out),!,
+  kaggle_arc_raw(TestID,ExampleNum,In0,Out0),
+  duplicate_term(In0,In),
+  duplicate_term(Out0,Out).
+  */
+/*  
+kaggle_arc(TestID,ExampleNum,In,Out):- nonvar(In),var(Out),!,
+  duplicate_term(In,In0),
+  kaggle_arc_raw(TestID,ExampleNum,In0,Out0),  
+  duplicate_term(Out0,Out).
+kaggle_arc(TestID,ExampleNum,In,Out):- var(In),nonvar(Out),!,
+  duplicate_term(Out,Out0),
+  kaggle_arc_raw(TestID,ExampleNum,In0,Out0),  
+  duplicate_term(In0,In).
+kaggle_arc(TestID,ExampleNum,In,Out):- nonvar(In),nonvar(Out),!,
+  duplicate_term(In,In0),
+  duplicate_term(Out,Out0),
+  kaggle_arc_raw(TestID,ExampleNum,In0,Out0).
+*/
+
+/*
 kaggle_arc(TestID,ExampleNum,In,Out):-
   kaggle_arc_raw(TestID,ExampleNum,In0,Out0),
   % in private impl of muarc_dmiles
   maybe_reencode(TestID,ExampleNum,In0,Out0,In1,Out1), In1=In, Out1=Out.
-
+*/
 maybe_reencode(TestID,ExampleNum,In0,Out0,In,Out):-
  (t_l:encoder(Enc)->Enc\==raw),!,call(Enc,TestID,ExampleNum,In0,Out0,In,Out).
 maybe_reencode(_TName,_ExampleNum,In,Out,In,Out).

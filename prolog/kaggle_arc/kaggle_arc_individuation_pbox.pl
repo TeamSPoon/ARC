@@ -6,7 +6,6 @@
   unless permission or license is granted (contact at business@logicmoo.org)
 */
 
-end_of_file.
 
 is_real_color_or_wfg(SX):- (SX == fg; SX == wbg),!.
 is_real_color_or_wfg(SX):- is_real_color(SX),!.
