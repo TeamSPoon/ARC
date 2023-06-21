@@ -292,13 +292,28 @@ json_to_colors(Out,Color):- is_list(Out),!,my_maplist(json_to_colors,Out,Color).
 json_to_colors(Out,Color):- grid_color_code(Out,Color).
 
 
-:- dynamic(muarc_tmp:arc_directory/1).
-muarc_tmp:arc_directory(ARC_DIR):- getenv('ARC_DIR',ARC_DIR), exists_directory(ARC_DIR),!.
+:- dynamic(muarc_tmp:arc_code_directory/1).
+
+enum_arc_directory(ARC_DIR):- 
+  no_repeats_var(NRDIR),
+  enum_arc_directory_1(DIR),exists_directory(DIR),
+  once((absolute_file_name(DIR,ABSDIR),NRDIR=ABSDIR,ARC_DIR=ABSDIR)).
+
+enum_arc_directory_1(ARC_DIR):- getenv('ARC_DIR',ARC_DIR), ARC_DIR\==''. 
+enum_arc_directory_1(ARC_DIR):- muarc_tmp:arc_code_directory(CODE_DIR),
+    absolute_file_name('../shared/',ARC_DIR,[relative_to(CODE_DIR),access(read),file_errors(fail),
+      expand(true), file_type(directory),solutions(first)]).
+enum_arc_directory_1(ARC_DIR):- member(Rel,['/data','.']), 
+  absolute_file_name('.',AbsMask,[relative_to(Rel)]),
+  expand_file_name(AbsMask,FullNames),member(ARC_DIR,FullNames).
+enum_arc_directory_1(ARC_DIR):- muarc_tmp:arc_code_directory(ARC_DIR).
+enum_arc_directory_1(ARC_DIR):- working_directory(ARC_DIR,ARC_DIR).
+enum_arc_directory_1('/').
 
 :- multifile (user:file_search_path/2).
 user:file_search_path(arc,  AbsolutePath):- arc_sub_path('.',AbsolutePath).
 
-:- prolog_load_context(directory,ARC_DIR), asserta(muarc_tmp:arc_directory(ARC_DIR)).
+:- prolog_load_context(directory,ARC_DIR), asserta(muarc_tmp:arc_code_directory(ARC_DIR)).
 
 %test_name_ansi_output_file(TestID,File):- absolute_file_name(TestID,File,[access(read),file_errors(fail)]),!.
 %test_name_ansi_output_file(TestID,File):- absolute_file_name(TestID,File,[access(create),file_errors(fail)]),!.
@@ -318,8 +333,17 @@ absolute_dir_or_file_name(ARC_DIR,Subdir,AbsolutePath):-
   absolute_file_name(Subdir,AbsolutePath,[relative_to(ARC_DIR),expand(true),
     file_type(regular),solutions(first),file_errors(fail),access(none)]).
 
-arc_sub_path(Subdir,AbsolutePath):- muarc_tmp:arc_directory(ARC_DIR),
-  absolute_dir_or_file_name(ARC_DIR,Subdir,AbsolutePath),!.
+existing_arc_sub_paths(Subdir,AbsolutePath):- 
+  no_repeats_var(NRAbsolutePath),
+  enum_arc_directory(ARC_DIR), 
+    once(absolute_dir_or_file_name(ARC_DIR,Subdir,AbsolutePathTry)), exists_file_or_dir(AbsolutePathTry),
+    NRAbsolutePath = AbsolutePathTry, AbsolutePath=AbsolutePathTry.
+
+arc_sub_path(Subdir,AbsolutePath):-
+ no_repeats_var(NRAbsolutePath),
+  ((existing_arc_sub_paths(Subdir,AbsolutePathTry)*->true;
+  once((enum_arc_directory(ARC_DIR), absolute_dir_or_file_name(ARC_DIR,Subdir,AbsolutePathTry))))),
+  NRAbsolutePath = AbsolutePathTry, AbsolutePath=AbsolutePathTry.
 
 :- export(arc_sub_path/2).
 
@@ -380,6 +404,7 @@ get_raw_input_outputs(TestID,ExampleNums,Ins,Outs):-
 
 :- ensure_loaded('../kaggle_arc/logical_ml/muarc_dmiles').
 kaggle_arc(TestID,ExampleNum,In,Out):- kaggle_arc_raw(TestID,ExampleNum,In,Out).
+
 /*kaggle_arc(TestID,ExampleNum,In,Out):- var(In),var(Out),!,
   kaggle_arc_raw(TestID,ExampleNum,In0,Out0),
   duplicate_term(In0,In),
@@ -422,9 +447,9 @@ kaggle_arc1(TestID,ExampleNum,In,Out):- nonvar(ExampleNum),
    
 
 
-%adisallow_test_out(trn+_,OO,OO):-!.
-%disallow_test_out(tst+_, O,OO):- grid_size(O,H,V),make_grid(H,V,OO).
-not_disallow_test_out(_,OO,OO).
+not_disallow_test_out(trn+_,OO,OO):-!.
+not_disallow_test_out(tst+_, O,OO):- grid_size(O,H,V),make_grid(H,V,OO),!.
+not_disallow_test_out(_,OO,OO):- allow_peeking,!.
 
 tasks_split(ID,String):- split_string(String,",[] \n\r\t\s",",[] \n\r\t\s",L),member(S,L),atom_string(E,S),atom_id_e(E,ID).
 

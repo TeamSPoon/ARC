@@ -725,8 +725,10 @@ into_test_cmd(Cmd,Cmd).
 
 % Hides solution grid from code
 kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,G), 
-  (((((ExampleNum*IO) \= ((tst+_)*out))))).
+  (allow_peeking -> true ; (((((ExampleNum*IO) \= ((tst+_)*out)))))).
 
+
+allow_peeking:-true.
 
 test_grids(TestID,G):- get_pair_mode(entire_suite), !, kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
 test_grids(TestID,G):- get_pair_mode(whole_test), !, ensure_test(TestID), kaggle_arc_io_safe(TestID,_ExampleNum,_IO,G).
@@ -735,7 +737,9 @@ with_test_grids(TestID,G,P):- forall_count(test_grids(TestID,G),my_menu_call((en
 
 
 % Hides solution grid from code
-if_no_peeking(tst+_,_,_):-!.  if_no_peeking(_,O,O).
+if_no_peeking(tst+_,_,_):- \+ allow_peeking,!.
+     if_no_peeking(_,O,O).
+
 kaggle_arc_safe(TestID,ExampleNum,I,O):- kaggle_arc(TestID,ExampleNum,I,OO),if_no_peeking(ExampleNum,OO,O). 
 
 test_pairs(TestID,I,O):- test_pairs(TestID,_ExampleNum,I,O).
@@ -1288,8 +1292,13 @@ system:load_last_test_name:-
 system:load_last_test_name:- set_current_test(v(fe9372f3)).
 
 system:save_last_test_name:- /*notrace*/(catch(save_last_test_name_now,_,true)),!.
-system:save_last_test_name_now:- muarc:arc_settings_filename(Filename),
-  ignore(/*notrace*/((luser_getval(task,TestID), tell(Filename),format('~n~q.~n',[TestID]),told))).
+system:save_last_test_name_now:- 
+  ignore(((luser_getval(last_test_name,TestID);luser_getval(task,TestID)),is_valid_testname(TestID),!,
+           save_last_test_name(TestID))).
+     
+system:save_last_test_name(TestID):- /*notrace*/(catch(save_last_test_name_now(TestID),_,true)),!.
+system:save_last_test_name_now(TestID):- muarc:arc_settings_filename(Filename),!,
+  ignore(/*notrace*/( is_valid_testname(TestID), tell(Filename),format('~n~q.~n',[TestID]),told)).
 
 muarc:arc_settings_filename(Filename):- muarc:arc_settings_filename1(File), 
   (exists_file(File) -> (Filename=File) ; absolute_file_name(File,Filename,[access(append),file_errors(fail),expand(true)])).
@@ -1304,8 +1313,9 @@ set_current_test(Name):-
     ignore((nonvar(Example),set_example_num(Example+NumE))))).
 
 really_set_current_test(TestID):-
-  once(luser_getval(task,WTestID);WTestID=[]),
-  ignore((WTestID\==TestID,luser_setval(task,TestID), test_id_atom(TestID,Atom),set_html_component(task,Atom))),
+  once(luser_getval(task,WTestID);WTestID=[]),  
+  ignore((WTestID\==TestID,luser_setval(task,TestID),save_last_test_name(TestID),
+        test_id_atom(TestID,Atom),set_html_component(task,Atom))),
   once(luser_getval(last_test_name,WasTestID);WasTestID=[]),
   ignore((WasTestID\==TestID, new_current_test_info(WasTestID,TestID))).
 
@@ -1380,13 +1390,12 @@ new_current_test_info(WasTestID,TestID):-
   %luser_getval(task,TestID),
   %pp(fav(TestID,[])),
   %set_example_num(tst+0),
-  luser_setval(last_test_name,TestID))),
-  save_last_test_name,
+  luser_setval(last_test_name,TestID))),  
   luser_setval(prev_test_name,WasTestID),
   forall(on_entering_test(TestID),true),
   maybe_set_suite(TestID).
 
-maybe_set_suite(TestID):-   luser_getval(test_suite_name,Suite),test_suite_info_1(Suite,TestID),!.
+maybe_set_suite(TestID):-   save_last_test_name(TestID),luser_getval(test_suite_name,Suite),test_suite_info_1(Suite,TestID),!.
 maybe_set_suite(TestID):-   some_test_suite_name(Suite), test_suite_info_1(Suite,TestID),!,set_test_suite_silently(Suite).
 %maybe_set_suite(TestID):-   some_test_suite_name_good(Suite), muarc_tmp:cached_tests(Suite,Set),member(TestID,Set),!,set_test_suite(Suite).
 maybe_set_suite(_TestID).
@@ -1771,22 +1780,34 @@ print_single_pair_pt2(TestID,ExampleNum,In,Out):- is_cgi,!,
  print_ss_html_pair(cyan, 
    NameIn,navCmd((TestID>ExampleNum)),ID1,In,wqs('Input'),
    TestAtom,navCmd((TestAtom)),ID2,Out,RightTitle))),!.
+
 print_single_pair_pt2(TestID,ExampleNum,In1,Out1):- 
    test_id_atom(TestID,TestAtom),
    in_out_name(ExampleNum,NameIn0,NameOut),!,%easy_diff_idea(TestID,ExampleNum,In1,Out1,LIST),!,
   sformat(NameIn,'~w  "~w" ',[NameIn0,TestAtom]),
    format('~Ntestcase(~q,"\n',[TestID>ExampleNum]),
    call_cleanup(print_single_pair_pt3(TestID,ExampleNum,In1,NameIn,Out1,NameOut),write('").\n\n')),
+   print_outShouldBe(TestID,ExampleNum,Out1),
    format('~N'),
    %ignore((grid_hint_swap(i-o,In,Out))),
    format('~N'),
    ignore(show_reduced_io_rarely(In1^Out1)),!.
 
-print_single_pair_pt3(_TestID,_ExampleNum,In1,NameIn,Out1,NameOut):-   
-  \+ luser_getval('$grid_mode',informative_pairs), !, print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut).
+print_outShouldBe(TestID,ExampleNum,Out1):- 
+  if_t(kaggle_arc(TestID,ExampleNum,_,OutShouldBe), 
+   ((if_t( (\+ is_grid(OutShouldBe); mass(OutShouldBe,0)), wdmsg((cant_tell_what_outShouldBe))),
+     if_t(is_grid(OutShouldBe),
+      if_t(Out1\=@=OutShouldBe, 
+         print_grid(outShouldBe,OutShouldBe)))))).
+
+print_single_pair_pt3(TestID,ExampleNum, In1,NameIn,Out1,NameOut):-   
+  \+ luser_getval('$grid_mode',informative_pairs), !, 
+   print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut),
+   print_outShouldBe(TestID,ExampleNum,Out1).
 
 print_single_pair_pt3(TestID,ExampleNum,In1,NameIn,Out1,NameOut):-    
   %rot90(In1,In),rot90(Out1,Out),print_side_by_side(cyan,In,NameIn,_,Out,NameOut),
+  print_outShouldBe(TestID,ExampleNum,Out1),
   call_for_common_pair(as_ngrid_3,In1,Out1,RIO1,ROI1,_),
   nb_setval(alt_grid_dot,[]),
   ignore(show_the_alt_grids_now(TestID,ExampleNum,RIO1,ROI1)),
@@ -1894,7 +1915,7 @@ print_qtest:- get_current_test(TestID),print_qtest(TestID).
 :- luser_default('$grid_mode',simple_dots).
 %print_qtest(TestID):- \+ luser_getval('$grid_mode',simple_dots),!,print_test(TestID).
 %print_qtest(TestID):- \+ luser_getval('$grid_mode',informative_pairs),!,print_test(TestID).
-print_qtest(TestID):- var(TestID),ensure_test(TestID), \+ get_pair_mode(single_pair), !, print_test(TestID),!.
+print_qtest(TestID):- ensure_test(TestID), \+ get_pair_mode(single_pair), !, print_whole_test(TestID),!.
 print_qtest(TestID):- print_single_pair(TestID),!.
 
 print_single_pair:-
@@ -2139,7 +2160,7 @@ write_ansi_file(F):- call(F,Set),
   ensure_file_extension(F,'.vt100',FN),
   setup_call_cleanup(open(FN,write,O,[create([default]),encoding(iso_latin_1)]),
   forall(member(T,Set), 
-    (wots(S,print_test(T)), write(O,S),write(S))),close(O)).
+    (wots(S,print_whole_test(T)), write(O,S),write(S))),close(O)).
 
 
 test_names_by_hard(Name):- 
