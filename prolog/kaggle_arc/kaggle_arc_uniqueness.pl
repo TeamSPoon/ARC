@@ -601,8 +601,8 @@ possible_program(TestID,ActionGroupFinal,How,RulesOut):-
  How = in_out(HowIn,_HowOut),
  GNR = group_narrative_rules(How,ActionGroupOut,Rules),
  ignore((ExampleNum=(trn+_))),
- starter_narratives(Starter0))),
- subst(Starter0,nth,0,Starter),
+ starter_narratives(TestID,Starter0))),
+ subst_1L([nth-0,himax-inf],Starter0,Starter),
  must_ll((
    get_each_ndividuator(in,HowIn),
    synth_program_from_one_example(TestID,_ExampleNum0,How,Starter,FirstNarrative,_Rules0)
@@ -695,7 +695,8 @@ calc_o_d_recursive(VM,ActionGroupIn,     Info, PrevRules, LHSObjs, RHSObjs, Acti
         in(CI)=call(print_grid(LHSObjs)), 
         out(CO)=call(print_grid(RHSObjs))])))),
 
-  ( LHSObjs==[] -> NLHSObjs=VM.objs ; NLHSObjs=LHSObjs ),
+  %( LHSObjs==[] -> NLHSObjs=VM.objs ; NLHSObjs=LHSObjs ),
+  NLHSObjs=LHSObjs,
   calc_o_d_recursively(ActionGroupIn,    Info, PrevRules, NLHSObjs, RHSObjs, 
                        ActionGroupOut, InfoMid, RulesOut, LHSOut, RHSOut),
   intersection(RulesOut,PrevRules,_,RulesNew,_),
@@ -705,8 +706,8 @@ calc_o_d_recursive(VM,ActionGroupIn,     Info, PrevRules, LHSObjs, RHSObjs, Acti
   (Info==InfoMid-> incr_step(InfoMid, InfoOut) ; InfoMid=InfoOut),
   calc_o_d_recursive(VM,ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut, ActionGroupFinal, Groups),!.
 
-calc_o_d_recursive(_VM, [Skip], _Info, PrevRules, _LHSObjs, _RHSObjs, [Skip], PrevRules):- 
-  balanced_or_delete_leftovers(_,_)=Skip,!.
+%calc_o_d_recursive(_VM, [Skip], _Info, PrevRules, _LHSObjs, _RHSObjs, [Skip], PrevRules):- 
+%  balanced_or_delete_leftovers(_,_)=Skip,!.
 
 calc_o_d_recursive(VM,[Skip|ActionGroupIn], Info, PrevRules, LHSObjs, RHSObjs, AGF, Groups):- 
  dash_chars,
@@ -726,13 +727,13 @@ calc_o_d_recursive(_VM,ActionGroupOut,  _Info, PrevRules,    [],      [],  Actio
 % Endings
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                 ActionGroupOut, InfoOut, RulesOut, [], []):- 
-  End = balanced_or_delete_leftovers(Ending,_), 
+  End = balanced_or_delete_leftovers(Ending,_),
   ActionGroupIn=[End|ActionGroup],!,
-  %ActionGroupOut=[End|ActionGroup],!,
-  ActionGroupOut = ActionGroup,!,
-  calc_o_d_recursive_end(Ending, Info, PrevRules, LHSObjs, RHSObjs, 
-                InfoOut, RulesOut),!,
+  ActionGroupOut=[End|ActionGroup],!,
+  ((calc_o_d_recursive_end(Ending, Info, PrevRules, LHSObjs, RHSObjs, 
+                InfoOut, RulesOut))),!,
   pp_ilp(calc_o_d_recursive_end=RulesOut),!.
+  
 
 
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
@@ -886,20 +887,27 @@ starter_narratives(TestID,ActionGroup):- starter_narrative(TestID,ActionGroup),!
 starter_narratives(_,ActionGroup):- generic_starter_narratives(ActionGroup).
 
 :- dynamic(starter_narrative/2).
+
+
+starter_narrative(t('25d487eb'),[
+   copy_object_perfect(2,nth), % copy up to two objects perfectly
+   add_dependant_scenery(2,1,nth),  % from two output objects, create one output object
+   balanced_or_delete_leftovers(balanced(_),nth) ]). % there should not be any unprocessed input objects
+
 starter_narrative(v(e41c6fd3),[
-   copy_object_perfect(1,nth), 
-   copy_object_n_changes(1,inf,nth),
-   balanced_or_delete_leftovers(balanced(_)) ]).
+   copy_object_perfect(1,nth), % copy up to one object perfectly
+   copy_object_n_changes(1,4,nth), % copy up to four objects that contain a single property change
+   balanced_or_delete_leftovers(balanced(_),nth) ]). % there should not be any unprocessed input objects
 
 generic_starter_narratives(ActionGroup):- 
  ActionGroup=
-     [copy_object_perfect(nomax,nth), 
-      copy_object_n_changes(0,nomax,nth), 
-      copy_object_n_changes(1,nomax,nth), 
-      copy_object_n_changes(2,nomax,nth), 
-      copy_object_n_changes(3,nomax,nth), 
-        add_dependant_scenery(nomax,nth), 
-      add_independant_scenery(nomax,nth),
+     [copy_object_perfect(himax,nth), 
+      copy_object_n_changes(0,himax,nth), 
+      copy_object_n_changes(1,himax,nth), 
+      copy_object_n_changes(2,himax,nth), 
+      copy_object_n_changes(3,himax,nth), 
+        add_dependant_scenery(himax,nth), 
+      add_independant_scenery(himax,nth),
       balanced_or_delete_leftovers(_,nth)].
 
 
@@ -913,7 +921,7 @@ use_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), s
 % Scenery
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                 ActionGroupOut, InfoOut, RulesOut, LHSObjs, RHSOut):-
-  narrative_element(add_dependant_scenery(_),ActionGroupIn,ActionGroupOut),
+  narrative_element(add_dependant_scenery(_,_),ActionGroupIn,ActionGroupOut),
    %LHSObjs==[],
     into_list(PrevRules, PrevObjs),
     my_partition(is_input_object, PrevObjs, PrevLHS, _),
@@ -925,7 +933,7 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
 % Scenery
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                 ActionGroupOut, InfoOut, RulesOut, LHSObjs, RHSOut):-
-  narrative_element(add_independant_scenery(_),ActionGroupIn,ActionGroupOut),
+  narrative_element(add_independant_scenery(_,_),ActionGroupIn,ActionGroupOut),
    %LHSObjs==[],
     into_list(PrevRules, PrevObjs),
     my_partition(is_input_object, PrevObjs, PrevLHS, PrevRHS),
@@ -937,7 +945,7 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
 % recycles
 calc_o_d_recursive_recycle(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                   ActionGroupOut, InfoOut, PrevRules, ['recycled'|PrevLHS], RHSObjs):-
-    narrative_element(recycle(_),ActionGroupIn,ActionGroupOut),
+    narrative_element(recycle(_,_),ActionGroupIn,ActionGroupOut),
    LHSObjs==[], !, ((
     into_list(PrevRules, PrevObjs),
     my_partition(is_input_object, PrevObjs, PrevLHS, _PrevRHS),
@@ -946,7 +954,7 @@ calc_o_d_recursive_recycle(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
 
 calc_o_d_recursive_recycle(ActionGroupIn, Info, PrevRules, LHSObjsNil, RHSObjs, 
                  ActionGroupOut, InfoOut, RulesOut, ['recycled'|LHSOut], RHSOut):-
-  narrative_element(recycle(_),ActionGroupIn,ActionGroupOut),
+  narrative_element(recycle(_,_),ActionGroupIn,ActionGroupOut),
    LHSObjsNil==[], !,
     incr_cntx(Info, PrevCurrentInfo1),
     incr_step(PrevCurrentInfo1, InfoOut), %incr_step(Info, InfoOut),
@@ -961,7 +969,7 @@ calc_o_d_recursive_recycle(ActionGroupIn, Info, PrevRules, LHSObjsNil, RHSObjs,
 
 calc_o_d_recursive_recycle(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                     ActionGroupOut, InfoOut, PrevRules, ['recycled'|LHSOut], RHSObjs):-
-  narrative_element(recycle(_),ActionGroupIn,ActionGroupOut),
+  narrative_element(recycle(_,_),ActionGroupIn,ActionGroupOut),
    LHSObjs==[], !, ((
     incr_cntx(Info, PrevCurrentInfo1),
     select(step(_), PrevCurrentInfo1, PrevCurrentInfo2), InfoOut=[step(30)|PrevCurrentInfo2],
