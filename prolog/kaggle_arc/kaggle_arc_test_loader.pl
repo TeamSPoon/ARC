@@ -325,14 +325,14 @@ arc_sub_path(Subdir,AbsolutePath):- muarc_tmp:arc_directory(ARC_DIR),
 
 load_deval:- fail.
 
-load_json_files1:- load_json_files(train400,t,'./data/training/*.json').
-load_json_files1:- load_json_files(eval400,v,'./data/devaluation/*.json').
-%:- load_json_files(v,'./data/test_100/*.json').
-%:- load_json_files(t,'./data/test_nar_10x10/*.json').
-load_json_files1:- load_json_files(t,'./data/1D_testset/').
-load_json_files1:- load_json_files(t,'./dbigham/Data/MyTrainingData/').
-%load_json_files1:- load_json_files(t,'./data/ConceptARC/corpus/*/*/').
-load_json_files1:- load_json_files(t,'./data/ConceptARC/corpus/').
+load_json_files1:- load_json_files(train400,t,'../shared/data/training/*.json').
+load_json_files1:- load_json_files(eval400,v,'../shared/data/devaluation/*.json').
+%:- load_json_files(v,'../shared/data/test_100/*.json').
+%:- load_json_files(t,'../shared/data/test_nar_10x10/*.json').
+load_json_files1:- load_json_files(t,'../shared/data/1D_testset/').
+load_json_files1:- load_json_files(t,'../ARC-Others/dbigham/Data/MyTrainingData/').
+%load_json_files1:- load_json_files(t,'../shared/data/ConceptARC/corpus/*/*/').
+load_json_files1:- load_json_files(t,'../shared/data/ConceptARC/corpus/').
 
 %load_json_files1:- load_json_files('object_modifications_schema',t,'./object_modifications_schema/tasks/*.json').
 %:- load_json_files(v,'../../secret_data/solu**66/*.json').
@@ -342,12 +342,12 @@ load_json_files1:- load_json_files(t,'./data/ConceptARC/corpus/').
 % % % load_json_files1:- load_json_files('secret_data_solution',v,'/data/solution/*.json').
 
 %load_json_files2:- load_json_files(michod,t,'./arc-task-generator/conditional_transforms_schema/tasks/0*.json').
-load_json_files1:- load_json_files('MiniARC',t,'./MINI-ARC/data/MiniARC/*.json').
+load_json_files1:- load_json_files('MiniARC',t,'../ARC-Others/MINI-ARC/data/MiniARC/*.json').
 
 load_json_files:- 
   forall(load_json_files1,true).
 
-%:- load_json_files(v,'./data/test/*.json').
+%:- load_json_files(v,'../shared/data/test/*.json').
 :- export(kaggle_arc/4).
 
 :- thread_local(t_l:encoder/1).

@@ -622,9 +622,9 @@ combine_trans_rules(TestID,RulesOutL,RulesOut):-merge_rules(TestID,RulesOutL,Rul
 synth_program_from_one_example(TestID,ExampleNum,How,ActionGroup,ActionGroupOut,RulesL):-
   ignore(ExampleNum = (trn+_)),
   ensure_test(TestID),
-  ignore(starter_narratives(ActionGroup)),
+  ignore(starter_narratives(TestID,ActionGroup)),
   %How = in_out(_HowIn,_HowOut),
-  _GNR = group_narrative_rules(How,ActionGroupOut,Rules),
+  _GNR = group_narrative_rules(How,ActionGroupOut,RulesL),
 
   kaggle_arc(TestID,ExampleNum,_,_),
 
@@ -667,7 +667,8 @@ expand_rules(R,ac_unit(_,Ctx,P0,LHS)):-
 expand_rules(R,ac_unit(_,ctx,er(R),[el(R)])).
 %expand_rules(R,R).
 
-		
+
+
 		
 get_object_dependancy(InfoStart,TestID, ExampleNum, ActionGroupIn, ActionGroupOut, RHSObjs, LHSObjs, Groups):-
  ((RHSObjs\==[], LHSObjs\==[],
@@ -737,7 +738,8 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                   ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):-
 ((
-  narrative_element(copy_object_perfect(N),ActionGroupIn,ActionGroupOut),
+  narrative_element(copy_object_perfect(Max,Nth),ActionGroupIn,ActionGroupOut),!,
+  Nth<Max,
   select(Left,LHSObjs,LHSOut),
   select(Right,RHSObjs,RHSOut),
   how_are_different(Left,Right,TypeSet,_PropSet), TypeSet=[], % no changes
@@ -748,41 +750,11 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   true)), !.
 
 
-/*
-calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
-                    ActionGroupOut, InfoOut, RulesOut, [Right|LHSOut], RHSOut):- 
-((
-  narrative_element(copy_object_n_changes(N,_),ActionGroupIn,ActionGroupOut),
-  select(Left,LHSObjs,LHSOut),
-  select(Right,RHSObjs,RHSOut),
-  how_are_different(Left,Right,TypeSetL,PropSetL), 
-  length(TypeSetL,Len), Len =< N, N>1,
-  dash_chars,nl,
-  TypeSet =[_],
-  R =[_],  
-  noteable_propdiffs(Left,Right,Same,L,RL),
-append(TypeSet,_,TypeSetL),
-append(R,_,RL),
-  pp_ilp(3,[ps(N-minus1)=PropSetL,ts=TypeSet]),
-  print_ss(copy_object_n_changes(N),Left,Right),
-  pp_ilp(3,[left=L,
-            right=R,
-            same=Same]),
-  maplist(find_relative_r(Info,Left,Right,PrevRules),R,NewR,PreConds,NewRules),
-  append_LR(NewRules,NewRulesF),
-  append_LR([Same,L,PreConds],LHS),
-  subst_2L_sometimes(R,NewR,Left,NewLeft),
-  append_LR(PrevRules, [exists(left(NewLeft)),NewRulesF,rule([propset(PropSetL)|Info],LHS,
-    copy_object_n_changes_keep_left(N,TypeSet,NewR))], RulesOut),
-  incr_step(Info, InfoOut),
-  dash_chars,nl,
-  true)), !.
-*/
-
 calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs, 
                     ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):- 
 ((
-  narrative_element(copy_object_n_changes(N,_),ActionGroupIn,ActionGroupOut),
+  narrative_element(copy_object_n_changes(N,Max,Nth),ActionGroupIn,ActionGroupOut),!,
+  Nth<Max,
   select(Left,LHSObjs,LHSOut),
   select(Right,RHSObjs,RHSOut),
   how_are_different(Left,Right,TypeSet,PropSet), 
@@ -792,15 +764,15 @@ calc_o_d_recursively(ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   noteable_propdiffs(Left,Right,Same,LL,R0),
   for_rhs(R0,R),
   pp_ilp(3,[ps(N)=PropSet,ts=TypeSet]),  
-  print_ss(copy_object_n_changes(N),Left,Right),
+  print_ss(copy_object_n_changes(N,Max,Nth),Left,Right),
   pp_ilp(3,[left=LL,
             right=R,
             same=Same]),
   maplist(find_relative_r(Info,Left,Right,PrevRules),R,NewR,PreConds,NewRules),
   append_LR(NewRules,NewRulesF),
   append_LR([Same,PreConds],LHS),
-  NewRRule1 = rule([propset(PropSet)|Info],LHS,copy_object_n_changes(/*N,*/TypeSet,NewR)),
-  (R\==NewR -> NewRRule2 = rule([propset(PropSet)|Info],Same,copy_object_n_changes(/*N,*/TypeSet,R)) ; NewRRule2=[]),
+  NewRRule1 = rule([propset(PropSet)|Info],LHS,copy_object_n_changes(/*N,Max,Nth,*/TypeSet,NewR)),
+  (R\==NewR -> NewRRule2 = rule([propset(PropSet)|Info],Same,copy_object_n_changes(/*N,Max,Nth,*/TypeSet,R)) ; NewRRule2=[]),
   subst_2L_sometimes(R,NewR,Left,NewLeft),
   append_LR(PrevRules, [exists(left(NewLeft)),NewRulesF,NewRRule1,NewRRule2], RulesOut),
   incr_step(Info, InfoOut),
@@ -907,16 +879,27 @@ left_over_props(L, R, LO):-
   noteable_propdiffs(L, R, _, _, LO).
 
 
-starter_narratives(ActionGroup):- nonvar(ActionGroup),!.
-starter_narratives(ActionGroup):- 
+
+
+starter_narratives(_,ActionGroup):- nonvar(ActionGroup),!.
+starter_narratives(TestID,ActionGroup):- starter_narrative(TestID,ActionGroup),!.
+starter_narratives(_,ActionGroup):- generic_starter_narratives(ActionGroup).
+
+:- dynamic(starter_narrative/2).
+starter_narrative(v(e41c6fd3),[
+   copy_object_perfect(1,nth), 
+   copy_object_n_changes(1,inf,nth),
+   balanced_or_delete_leftovers(balanced(_)) ]).
+
+generic_starter_narratives(ActionGroup):- 
  ActionGroup=
-     [copy_object_perfect(nth), 
-      copy_object_n_changes(0,nth), 
-      copy_object_n_changes(1,nth), 
-      copy_object_n_changes(2,nth), 
-      copy_object_n_changes(3,nth), 
-        add_dependant_scenery(nth), 
-      add_independant_scenery(nth),
+     [copy_object_perfect(nomax,nth), 
+      copy_object_n_changes(0,nomax,nth), 
+      copy_object_n_changes(1,nomax,nth), 
+      copy_object_n_changes(2,nomax,nth), 
+      copy_object_n_changes(3,nomax,nth), 
+        add_dependant_scenery(nomax,nth), 
+      add_independant_scenery(nomax,nth),
       balanced_or_delete_leftovers(_,nth)].
 
 

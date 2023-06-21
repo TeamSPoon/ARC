@@ -1340,6 +1340,7 @@ unsized_grid(A):- \+ is_gridoid(A),!.
 
 grid_footer(G,_,_):- \+ compound(G),!,fail.
 grid_footer(GFGG:M,GG,GF:M):-grid_footer(GFGG,GG,GF),!.
+grid_footer(Header,GG,Header):- Header = gridOpFn(_,_),!,unreduce_grid(Header,GG),!.
 grid_footer((GF=GG),GG,GF):- !, is_gridoid(GG).
 grid_footer([GFGG],GG,GF):- compound(GFGG),(GFGG=(GF=GG)),grid_footer(GF=GG,GG,GF).
 grid_footer(Obj,GG,GF):- fail, is_object(Obj), %vis2D(Obj,H,V),localpoints(Obj,Ps),points_to_grid(H,V,Ps,GG), 

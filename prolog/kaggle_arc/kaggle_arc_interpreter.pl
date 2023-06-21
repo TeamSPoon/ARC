@@ -437,7 +437,7 @@ back_to_map(Was,Dict,Prev,Grid,Closure,New, Ret):-
 into_grids(P,G):- no_repeats(G,quietly(cast_to_grid(P,G, _))).
 
 :- decl_pt(into_grid(+(prefer_grid),-grid)).
-into_grid(P,G):- var(P),!,ignore(get_current_test(TestID)),test_grids(TestID,G),grid_to_tid(G,P).
+into_grid(P,G):- var(P),!,ignore(get_current_test(TestID)),test_grids(TestID,G),once(grid_to_tid(G,P)).
 into_grid(A^B,AA^BB):- atrace, nonvar(A), !, cast_to_grid(A,AA, _),cast_to_grid(B,BB, _).
 into_grid(P,G):- cast_to_grid(P,G, _).
 

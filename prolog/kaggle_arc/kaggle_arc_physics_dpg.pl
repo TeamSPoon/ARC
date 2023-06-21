@@ -64,9 +64,11 @@ grid_mass_ints(Grid,GridIII):-
   include(is_fg_color,CC,FG),
   mapgrid(normal_w(FG),Grid,GridIII),!.
 
+
+grav_rot(Grid,RotG,Rotated):- \+ is_grid(Grid),!, into_grid(Grid,GridII),grav_rot(GridII,RotG,Rotated).
 grav_rot(Grid,sameR,Grid):- \+ \+ Grid=[[_]],!.
-grav_rot(Grid,RotG,Rotated):-
-  must_det_ll((into_grid(Grid,GridII),
+grav_rot(GridII,RotG,Rotated):- 
+  must_det_ll((
    grid_mass_ints(GridII,GridIII),
    best_grav_rot(GridIII,RotG,_),
    call(RotG,GridII,Rotated))),!.

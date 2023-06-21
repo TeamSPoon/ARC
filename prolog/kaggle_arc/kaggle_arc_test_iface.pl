@@ -1293,7 +1293,7 @@ system:save_last_test_name_now:- muarc:arc_settings_filename(Filename),
 
 muarc:arc_settings_filename(Filename):- muarc:arc_settings_filename1(File), 
   (exists_file(File) -> (Filename=File) ; absolute_file_name(File,Filename,[access(append),file_errors(fail),expand(true)])).
-muarc:arc_settings_filename1('muarc_tmp/current_test').
+muarc:arc_settings_filename1('../shared/muarc_tmp/current_test').
 muarc:arc_settings_filename1('~/.arc_current_test').
 muarc:arc_settings_filename1('/tmp/.arc_current_test').
 
@@ -1496,12 +1496,12 @@ on_leaving_test(TestID):-
 test_html_file_name(FN):- 
   get_current_test(TestID),
   test_html_file(TestID,This),
-  (This == [] -> FN = [] ; format(atom(FN),'muarc_output/~w',[This])).
+  (This == [] -> FN = [] ; format(atom(FN),'../shared/muarc_output/~w',[This])).
 
 %worth_saving(FN):- \+ exists_file(FN),!.
 worth_saving:- test_html_file_name(FN), \+ exists_file(FN), !.
 worth_saving:- test_html_file_name(FN), size_file(FN,Size), Size < 10_000,!.
-worth_saving:- size_file('muarc_tmp/tee.ansi',Size), Size > 20_000.
+worth_saving:- size_file('../shared/muarc_tmp/tee.ansi',Size), Size > 20_000.
 
 :- set_prolog_flag(nogc,false).
 
@@ -1515,13 +1515,13 @@ flush_tee_maybe:- force_full_tee.
 
 flush_tee:- tee_op(ignore((worth_saving -> force_flush_tee ; true))).
 force_flush_tee:- tee_op((
-   my_shell_format('tail -20000 muarc_tmp/tee.ansi > muarc_tmp/tee1000.ansi',[]),
-   tee_to_html('muarc_tmp/tee1000.ansi'))).
+   my_shell_format('tail -20000 ../shared/muarc_tmp/tee.ansi > ../shared/muarc_tmp/tee1000.ansi',[]),
+   tee_to_html('../shared/muarc_tmp/tee1000.ansi'))).
 
 force_full_tee:-   
   tee_op((
-   my_shell_format('cat muarc_tmp/tee.ansi > muarc_tmp/tee1000.ansi',[]),
-   tee_to_html('muarc_tmp/tee1000.ansi'))).
+   my_shell_format('cat ../shared/muarc_tmp/tee.ansi > ../shared/muarc_tmp/tee1000.ansi',[]),
+   tee_to_html('../shared/muarc_tmp/tee1000.ansi'))).
 
 
 tee_to_html(Tee1000):-
@@ -1529,14 +1529,14 @@ tee_to_html(Tee1000):-
   test_html_file_name(FN),% -W -a
   ignore((FN \== [], 
    my_shell_format('cat kaggle_arc_header.html > ~w',[FN]),
-   my_shell_format('cat muarc_tmp/test_links ~w muarc_tmp/test_links | ansi2html -u -a >> ~w',[Tee1000,FN]),
+   my_shell_format('cat ../shared/muarc_tmp/test_links ~w ../shared/muarc_tmp/test_links | ansi2html -u -a >> ~w',[Tee1000,FN]),
    my_shell_format('cat kaggle_arc_footer.html >> ~w',[FN]))))).
 
-clear_test_html :- tee_op((tee_to_html('muarc_tmp/null'))). % was /dev/null
-clear_tee:- force_full_tee, tee_op((shell('cat muarc_tmp/null > muarc_tmp/tee.ansi'))).
+clear_test_html :- tee_op((tee_to_html('../shared/muarc_tmp/null'))). % was /dev/null
+clear_tee:- force_full_tee, tee_op((shell('cat ../shared/muarc_tmp/null > ../shared/muarc_tmp/tee.ansi'))).
 exit_tee:-  get_current_test(TestID),on_leaving_test(TestID).
 
-write_test_links_file:- tee_op((/*notrace*/((setup_call_cleanup(tell('muarc_tmp/test_links'), write_test_links, told))))).
+write_test_links_file:- tee_op((/*notrace*/((setup_call_cleanup(tell('../shared/muarc_tmp/test_links'), write_test_links, told))))).
 write_test_links:-  
  format('~N'), ensure_test(TestID), 
  tee_op((
