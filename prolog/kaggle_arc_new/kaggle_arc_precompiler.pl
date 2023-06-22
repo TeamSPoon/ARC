@@ -77,7 +77,7 @@ md(_,grid_call(P2,I,O)):- !, must_grid_call(P2,I,O).
 %md(P1,call(P2,I,O)):- !, must_grid_call(P2,I,O).
 %md(P1,(X,Y,Z)):- !, (md(P1,X)->md(P1,Y)->md(P1,Z)).
 %md(P1,(X,Y)):- !, (md(P1,X)->md(P1,Y)).
-md(P1,if_t(X,Y)):- !, if_t(must_not_error(X),md(P1,Y)).
+%md(P1,if_t(X,Y)):- !, if_t(must_not_error(X),md(P1,Y)).
 md(P1,forall(X,Y)):- !, md(P1,forall(must_not_error(X),must_not_error(Y))).
 md(P1,\+ (X, \+ Y)):- !, md(P1,forall(must_not_error(X),must_not_error(Y))).
 
@@ -358,7 +358,6 @@ goal_expansion_getter(Goal,Out):-
 
 :- export(goal_expansion_getter/2).
 :- system:import(goal_expansion_getter/2).
-
 
 
 goal_expansion_setter(Goal,_):- \+ compound(Goal), !, fail.

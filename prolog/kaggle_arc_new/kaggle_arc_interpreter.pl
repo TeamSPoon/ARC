@@ -428,9 +428,13 @@ back_to_map(Was,Dict,Prev,Grid,Closure,New, Ret):-
   gset(Dict.Was) = NewPrev ,
   Ret = Dict.
 
-:- if( \+ current_predicate(any_to_ace_str/2)).
-:- include(pfc_3_0/pfc_3_0_0).
+:- if( \+ current_predicate(arc_assert/1)).
+:- include('../pfc_3_0/pfc_3_0_0').
 %:- use_module(library(pfc_lib)).
+:- endif.
+
+:- if( \+ current_predicate(arc_assert/1)).
+arc_assert(G):- asserta_if_new(G).
 :- endif.
 
 :- decl_pt(into_grids(+(prefer_grid),-mv(grid))).

@@ -2547,6 +2547,7 @@ testid_name_num_io_gid(TestID,Example,Num,IO,GIDR):-
 
 
 
+fix_id_1(NonAtom,TriedV):- string(NonAtom),!,atom_string(Tried,NonAtom),atom_id(Tried,TriedV).
 fix_id_1(Tried,   Tried):- var(Tried),!.
 fix_id_1(X,_):- is_cpoint(X),!,fail.
 fix_id_1(X,_):- is_cpoints_list(X),!,fail.
@@ -2558,24 +2559,29 @@ fix_id_1(v(Tried),   TriedV):- !, atom_id(Tried,TriedV),!.
 fix_id_1(t(Tried),   TriedV):- !, atom_id(Tried,TriedV),!.
 fix_id_1(Tried,   TriedV):- atom_id(Tried,TriedV),!.
 
-%DD2401ED
+
 atom_id(NonAtom,TriedV):- \+ atom(NonAtom),string(NonAtom),!,atom_string(Tried,NonAtom),atom_id(Tried,TriedV).
-%0934a4d8 %07654321
+%07654321
 atom_id(NonAtom,_TriedV):- \+ atom(NonAtom),!,number(NonAtom), fail. %, todo.
-atom_id(Tried,TriedV):- atom_concat(Atom,'.json',Tried),!,atom_id(Atom,TriedV),!.
+%a934a4da
 atom_id(Atom,TriedV):- atom_id_e(Atom,TriedV),!.
-atom_id(Atom,TriedV):- downcase_atom(Atom,Tried),Atom\==Tried,atom_id(Tried,TriedV).
-%fix_test_name(Tried,Fixed):- !, fail,compound(Tried),!,arg(_,Tried,E),nonvar_or_ci(E),fix_test_name(E,Fixed),!.
-atom_id_e(Tried,t(Tried)):- kaggle_test_id(t(Tried)),!.
-atom_id_e(Tried,v(Tried)):- kaggle_test_id(v(Tried)),!.
-atom_id_e(Tried,x(Tried)):- kaggle_test_id(x(Tried)),!.
-atom_id_e(Sel, TestID):- atom_id_es(Sel, TestID).
-atom_id_es(Sel, TestID):- sformat(SSel,'~q',[Sel]),
+%'0934a4da0'
+atom_id(Sel, TestID):- sformat(SSel,'~q',[Sel]),
    catch(read_term_from_atom(SSel,Name,[module(user),double_quotes(string),variable_names(Vs),singletons(Singles)]),_,
         (ppnl(['failed to read: ',Sel]),fail)),
         my_maplist(ignore,Vs),my_maplist(ignore,Singles),
         Name\==Sel,
-       (fix_test_name(Name,TestID,_) -> true ; (ppnl(['could not read a test from: ',Sel,nl,'try again']),fail)).
+       (atom_id_e(Name,TestID) -> true ; (ppnl(['could not read a test from: ',Sel,nl,'try again']),fail)).
+%fix_test_name(Tried,Fixed):- !, fail,compound(Tried),!,arg(_,Tried,E),nonvar_or_ci(E),fix_test_name(E,Fixed),!.
+
+%DD2401ED
+atom_id_e(Atom,TriedV):- downcase_atom(Atom,Tried),Atom\==Tried,atom_id_e(Tried,TriedV).
+%0934a4d8.json
+atom_id_e(Tried,TriedV):- atom_concat(Atom,'.json',Tried),!,atom_id_e(Atom,TriedV),!.
+atom_id_e(Tried,t(Tried)):- kaggle_test_id(t(Tried)),!.
+atom_id_e(Tried,v(Tried)):- kaggle_test_id(v(Tried)),!.
+atom_id_e(Tried,x(Tried)):- kaggle_test_id(x(Tried)),!.
+%atom_id_e(Sel, TestID):- atom_id_es(Sel, TestID).
 
 
 
@@ -2777,8 +2783,8 @@ make_use_test_id(M,F):-
  must_det_ll((
   assert_missing_skel_mfa(M,F,0),
   assert_missing_skel_mfa(M,F,1),   
-  nop((if_t(current_predicate_human(F/4),
-   assert_missing_skel_mfa(M,F,2)))))).
+  if_t(current_predicate_human(F/4),
+   assert_missing_skel_mfa(M,F,2)))).
 
 
 

@@ -368,7 +368,7 @@ maybe_easy(A,AR,ROPA):- reduce_grid_pass(1,A^A,[A^A],ROPA,AR^AR).
 maybe_easy(I,II,Code):- maybe_try_something1(I,II,Code),!.
 maybe_easy(I,I,==):- !.
     
-must_ll(G):- G*->true;throw(failed(G)).
+%must_ll(G):- G*->true;throw(failed(G)).
 
 
   

@@ -265,7 +265,6 @@ assert_kaggle_arc_json_now(Name,Type,In,Out):-
   assert_if_new(kaggle_arc_json(Name,Type,InS,OutS)),
   add_test_info(Name).
 
-:- dynamic(kaggle_arc_answers/4).
 
 :- multifile(dir_test_suite_name/1).
 :- dynamic(dir_test_suite_name/1).
@@ -304,11 +303,11 @@ enum_arc_directory_1(ARC_DIR):- getenv('ARC_DIR',ARC_DIR), ARC_DIR\==''.
 enum_arc_directory_1(ARC_DIR):- muarc_tmp:arc_code_directory(CODE_DIR),
     absolute_file_name('../shared/',ARC_DIR,[relative_to(CODE_DIR),access(read),file_errors(fail),
       expand(true), file_type(directory),solutions(first)]).
+enum_arc_directory_1(ARC_DIR):- muarc_tmp:arc_code_directory(ARC_DIR).
+enum_arc_directory_1(ARC_DIR):- working_directory(ARC_DIR,ARC_DIR).
 enum_arc_directory_1(ARC_DIR):- member(Rel,['/data','.']), 
   absolute_file_name('.',AbsMask,[relative_to(Rel)]),
   expand_file_name(AbsMask,FullNames),member(ARC_DIR,FullNames).
-enum_arc_directory_1(ARC_DIR):- muarc_tmp:arc_code_directory(ARC_DIR).
-enum_arc_directory_1(ARC_DIR):- working_directory(ARC_DIR,ARC_DIR).
 enum_arc_directory_1('/').
 
 :- multifile (user:file_search_path/2).
@@ -351,7 +350,7 @@ arc_sub_path(Subdir,AbsolutePath):-
 load_deval:- fail.
 
 load_json_files1:- load_json_files(train400,t,'../shared/data/training/*.json').
-load_json_files1:- load_json_files(eval400,v,'../shared/data/devaluation/*.json').
+%load_json_files1:- load_json_files(eval400,v,'../shared/data/devaluation/*.json').
 %:- load_json_files(v,'../shared/data/test_100/*.json').
 %:- load_json_files(t,'../shared/data/test_nar_10x10/*.json').
 load_json_files1:- load_json_files(t,'../shared/data/1D_testset/').
@@ -403,7 +402,7 @@ get_raw_input_outputs(TestID,ExampleNums,Ins,Outs):-
   findall(In,kaggle_arc_raw(TestID,ExampleNum,In,Out),Ins),
   findall(Out,kaggle_arc_raw(TestID,ExampleNum,In,Out),Outs).
 
-:- ensure_loaded('../logical_ml/muarc_dmiles').
+:- ensure_loaded('../kaggle_arc/logical_ml/muarc_dmiles').
 kaggle_arc(TestID,ExampleNum,In,Out):- kaggle_arc_raw(TestID,ExampleNum,In,Out).
 
 /*kaggle_arc(TestID,ExampleNum,In,Out):- var(In),var(Out),!,
@@ -449,9 +448,8 @@ kaggle_arc1(TestID,ExampleNum,In,Out):- nonvar(ExampleNum),
 
 
 not_disallow_test_out(trn+_,OO,OO):-!.
+not_disallow_test_out(tst+_, O,OO):- grid_size(O,H,V),make_grid(H,V,OO),!.
 not_disallow_test_out(_,OO,OO):- allow_peeking,!.
-not_disallow_test_out(tst+_, O,OO):- grid_size(O,H,V),make_grid(H,V,OO),mapgrid(=(black),OO).
-
 
 tasks_split(ID,String):- split_string(String,",[] \n\r\t\s",",[] \n\r\t\s",L),member(S,L),atom_string(E,S),atom_id_e(E,ID).
 
