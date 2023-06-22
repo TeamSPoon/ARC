@@ -652,7 +652,7 @@ makeup_gridname(Grid,TID):- get_current_test(TestID),
  must_det_ll((
    flag('$makeup_gridname',F,F+1),
    current_example_num_io(Example,Num,IO),
-   ignore(IO=io),
+   %ignore(IO=io),
    format(atom(HH),'~w_~w_~w_~w',[Example,Num,subgrid,IO]),
    name_num_io_id(TestID,HH,F,IO,TID),
    assert_grid_tid(Grid,TID), nop(dumpST), 

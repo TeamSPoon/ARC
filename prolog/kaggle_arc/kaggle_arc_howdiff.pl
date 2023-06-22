@@ -1119,12 +1119,11 @@ combine_same_globalpoints(IndvS,IndvSO):-
   %must_det_ll(indv_props_list(O,OProps)),
   must_det_ll(indv_props_list(I,IProps)),
   same_globalpoints_and_window(I,O),
-  must_det_ll((
   my_partition(props_not_for_merge,IProps,_Exclude,Include),
   % iz(merged(cgp))
-  override_object(Include,O,IO),
-  combine_same_globalpoints([IO|IndvS2],NoMoreDupes),
-  append(NoDupes,NoMoreDupes,IndvSO))),!.
+  must_det_ll(override_object(Include,O,IO)),
+  must_det_ll(combine_same_globalpoints([IO|IndvS2],NoMoreDupes)),
+  must_det_ll(append(NoDupes,NoMoreDupes,IndvSO)),!.
 combine_same_globalpoints(IndvSO,IndvSO).
 
 

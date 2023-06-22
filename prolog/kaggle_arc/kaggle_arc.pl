@@ -898,8 +898,7 @@ create_group_dmiles:-
 
   create_group(dmiles_fast,'bd14c3bf 08ed6ac7 ea32f347  0a2355a6 37d3e8b2 a61ba2ce b230c067 d2abd087 6e82a1ae 0d3d703e a61f2674 e509e548 810b9b61 aedd82e4 817e6c09  ae58858e fea12743'),
 
-  create_group(dmiles_cc_1,[%t('find-the-color-of-the-gray-pixels-l6afriful4bel4379yo'), 
-    t(ea32f347),t('6e82a1ae'),%v('626c0bcc'),
+  create_group(dmiles_cc_1,[t('find-the-color-of-the-gray-pixels-l6afriful4bel4379yo'), t(ea32f347),t('6e82a1ae'),%v('626c0bcc'),
                                                          t('08ed6ac7'),%t('150deff5'),%v(a8610ef7),
                                                          t(e509e548),t(b230c067),t(d2abd087),
                                                          %t('0uduqqj6f'),
@@ -908,11 +907,9 @@ create_group_dmiles:-
                                                          v('37d3e8b2'),%v('639f5a19')
                                                          []]),
 
-   % find-the-5-and-1-l6ae9ses9zaejs6idai Importance-of-social-distance-l6afc1q0dm28z9i6egn find-the-color-of-the-gray-pixels-l6afriful4bel4379yo
-   create_group(dmiles,'bd14c3bf 08ed6ac7 ea32f347  0a2355a6 37d3e8b2 a61ba2ce b230c067 d2abd087 6e82a1ae 0d3d703e a61f2674 e509e548 810b9b61 aedd82e4
-   
+  create_group(dmiles,'bd14c3bf 08ed6ac7 ea32f347  0a2355a6 37d3e8b2 a61ba2ce b230c067 d2abd087 6e82a1ae 0d3d703e a61f2674 e509e548 810b9b61 aedd82e4
+    find-the-5-and-1-l6ae9ses9zaejs6idai Importance-of-social-distance-l6afc1q0dm28z9i6egn find-the-color-of-the-gray-pixels-l6afriful4bel4379yo
     817e6c09  ae58858e fea12743'),
-
 
   %set_current_test('0a2355a6'),
   set_pair_mode(whole_test),

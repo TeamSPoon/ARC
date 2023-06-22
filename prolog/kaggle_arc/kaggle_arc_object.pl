@@ -120,12 +120,11 @@ fg_grid_syms(_-BG,_):- is_bg_color(BG),!.
 %fg_grid_syms(FG,FG):- is_fg_color(FG),!.
 fg_grid_syms(S,S).
   
-add_extra_propz(obj(Obj),obj(ObjL)):- add_extra_propz_l(Obj,Obj,ObjL),!.
+add_extra_propz(obj(Obj),obj(ObjL)):- add_extra_propz_l(Obj,ObjL),!.
 
-add_extra_propz_l(Obj,ObjO,[sym_counts(m4(TF),1)|ObjO]):- mass(Obj,Mass),into_true_false(Mass>4,TF),!.
-add_extra_propz_l(_,O,O).
+add_extra_propz_l(ObjO,ObjO).
 
-make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):- 
+make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
   make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjM),
   add_extra_propz(ObjM,ObjO).
 
@@ -817,7 +816,7 @@ with_objprops2(override,E,List,NewList):-
 aggregates(iz(_)).
 aggregates(occurs_in_links(_,_)).
 aggregates(links_count(_,_)).
-aggregates(sym_counts(_,_)).
+aggregates(sym_count(_,_)).
 aggregates(creates_object(_,_)).
 aggregates(links_to_object(_,_)).
 
@@ -1711,12 +1710,12 @@ ngrid_syms(NGrid,[Extra]):- !,
  subst_syms(bg,TGrid90,GFlatSyms),get_ccs(GFlatSyms,Syms),
  ignore(member(cc('*',Stars),Syms)), ignore(member(cc('+',Plusses),Syms)), ignore(Plusses=0),ignore(Stars=0),
  PS is 10* Plusses+Stars,
- Extra= sym_counts('+*',PS).
+ Extra= sym_count('+*',PS).
 */ 
 create_sym_vectors(Syms,Counts):-
   findall(sym_counts(Sym,Count),
-    (vector_pairs(T,ListU),
-     sort(ListU,List),atomic_list_concat([sym,T|List],'_',Sym),
+    (vector_pairs(ListU),
+     sort(ListU,List),atomic_list_concat([sym|List],'_',Sym),
      total_ccs(1,List,Syms,Count)),Counts).
 
 total_ccs(_,[],_,0).
@@ -1725,12 +1724,12 @@ total_ccs(N,[S|List],Syms,Count):-
  total_ccs(N2,List,Syms,CT),!,
  (member(cc(S,C),Syms)->(Count is (CT + (C*N))); Count=CT).
 
-into_sym_count(cc(Sym,Count),sym_counts(Sym,Count)).
+into_sym_count(cc(Sym,Count),iz(sym_count(Sym,Count))).
 
 %vector_pairs([A,B]):- find_syms(T,A),find_syms(T,B),A@<B.
 %vector_pairs([S]):- find_syms(S).
 %vector_pairs([S]):- find_syms(_,S).
-vector_pairs(T,SS):- findall_vset(T,find_syms(T,_),TT),member(T,TT),findall(S,find_syms(T,S),SS).
+vector_pairs(SS):- findall_vset(T,find_syms(T,_),TT),member(T,TT),findall(S,find_syms(T,S),SS).
 
 find_syms(node,'@'). find_syms(node,'+'). find_syms(node,'*'). find_syms(node,'~').
 find_syms(dir,'<'). find_syms(dir,'>'). find_syms(dir,'v'). find_syms(dir,'^').

@@ -1116,8 +1116,7 @@ consider_other_grid(VM):-
       %print_ss([Obj|Grid]-wqs(maybe_ogs(R,OH,OV))), %  atrace,  
       %print_grid(maybe_ogs(R,OH,OV),[Obj|Grid]), %  atrace,  
       remLOPoints(VM,GOPoints),
-      remLOPoints(VM,UsedByObj))))))),
- !.
+      remLOPoints(VM,UsedByObj))))))).
 
 
 % =====================================================================
@@ -2088,7 +2087,7 @@ into_points_grid(GridIn,Points,Grid):-
    into_grid(GridIn,Grid),!.
 
 do_individuate(VM, ROptions, GridIn,LFO):- must_be_free(LF), 
- locally(set_prolog_flag(gc,false),
+ locally(set_prolog_flag(nogc,false),
    (into_grid(GridIn,Grid),  grid_to_tid(Grid,ID), %my_assertion(\+ is_grid(ID)),
     individuate7(VM,ID,ROptions,Grid,LF))),!,
     guard_whole(LF,LFO),
