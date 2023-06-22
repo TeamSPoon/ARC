@@ -10,6 +10,9 @@
 :- use_module(library(nb_set)).
 :- use_module(library(lists)).
 
+:- dynamic(reduce_1op/7). 
+:- multifile(reduce_1op/7). 
+:- discontiguous(reduce_1op/7).
 split_list(N1,Left,Grid,Right):- length(Left,N1),append(Left,Right,Grid).
 
 :- decl_pt(unreduce_grid(infoR,grid)).
@@ -164,7 +167,6 @@ improvement_v(I,O,soild_lines):- solid_lines(I,_,IC),solid_lines(O,_,OC),OC>IC,!
 solid_lines(Grid,Ns,C):- findall(N1,(nth1(N1,Grid,Row1),entire_row(Row1)),Ns),length(Ns,C).
 
 
-:- discontiguous(reduce_1op/7).
 
 too_small_reduce(H,_L,Two):- H=<Two. %X=<N,Y=<N,!.
 
@@ -483,11 +485,13 @@ copy_insert(N1,[N2|N22],G,GOO):- copy_insert(N1,N2,G,GO), copy_insert(N1,N22,GO,
 mat_grid(A^B,AA^BB):-!, mat_grid(A,AA),mat_grid(B,BB).
 mat_grid(GO,GOO):- mapgrid(=,GO,GOO).
 
-into_grid_io(A^B,AA^BB):- !, into_grid_io(A,AA),!,into_grid_io(B,BB).
-into_grid_io(A,B):-A=[],!,B=[].
+%into_grid_io(A,B):- var(A),!,into_grid(A,B).
+into_grid_io(A^B,AA^BB):- (nonvar(A);nonvar(B)),!, into_grid_io(A,AA),into_grid_io(B,BB).
+into_grid_io(A,B):-A==[],!,B=[].
 into_grid_io(A,B):- into_grid(A,B).
 
-maybe_into_grid_io(A,B):- into_grid_io(A,B),!,A\=@=B.
+maybe_into_grid_io(A,B):- var(A),!,into_grid(_,A),A=B.
+maybe_into_grid_io(A,B):- into_grid_io(A,B),A\=@=B.
 
 
 %ungrav_rot(G,sameR,G):-!.
@@ -578,12 +582,26 @@ fix_bg(_,OO,OO).
 compress_grid(COp,I,OO):- normalize_grid(_NOp,I,II), compress_grid1(COp,II,OO),!. % really we should compleain they forgot to mnormalize first
 compress_grid(COp,I,OO):- compress_grid1(COp,I,OO),!.
 compress_grid1(COp,I,OO):- locally(nb_setval(grid_reductions,[compress]),reduce_grid(I,COp,OO)).
+
+:- decl_pt(compress_grid(grid,infoR)).
+compress_grid(G,O):- (maybe_into_grid_io(G,GG),deterministic(TF),true), compress_grid(GG,O), (TF==true-> ! ; true).
+compress_grid(Grid,gridOpFn(GridR,OP)):- compress_grid(OP,Grid,GridR),OP\==[],!.
+compress_grid(Grid,Grid).
+
+
+%reuse(R,Goal):- findall(R,call(Goal),RL),
+ 
+:- decl_pt(normalize_grid(grid,infoR)).
+normalize_grid(G,O):- (maybe_into_grid_io(G,GG),deterministic(TF),true), normalize_grid(GG,O), (TF==true-> ! ; true).
+normalize_grid(Grid,gridOpFn(GridR,OP)):- normalize_grid(OP,Grid,GridR),OP\==[],!.
+normalize_grid(Grid,Grid).
+
   %append(COp,NOp,Op).
 %b_grid_to_norm(IOps,LGrid,LPointsNorm):- reduce_grid(LGrid^LGrid,IOps,LPointsNorm^_).
 %b_grid_to_norm([],I,I).
 
 :- decl_pt(reduce_grid(grid,infoR)).
-reduce_grid(G,O):- maybe_into_grid_io(G,GG),!,reduce_grid(GG,O).
+reduce_grid(G,O):- (maybe_into_grid_io(G,GG),deterministic(TF),true), reduce_grid(GG,O), (TF==true-> ! ; true).
 reduce_grid(Grid,gridOpFn(GridR,OP)):- reduce_grid(Grid,OP,GridR),OP\==[],!.
 reduce_grid(Grid,Grid).
 
