@@ -850,7 +850,7 @@ which_members_vary([_|L1],RRR,VariedMembers):-
 get_each_ndividuator(_Dir,How):- nonvar(How),!.
 get_each_ndividuator( Dir,How):- get_current_test(TestID), 
   (arc_test_property(TestID, common, indiv_how(Dir), How), deterministic(TF)), (TF==true -> !; true).
-get_each_ndividuator(_Dir,simple(Opts)):- !, seg_options(Opts).
+get_each_ndividuator(_Dir,simple(Opts)):- !, indv_options(Opts).
 get_each_ndividuator(_Dir,IndvSMode):- !, get_indivs_mode(IndvSMode), IndvSMode\==complete,!.
 get_each_ndividuator(_Dir,IndvSMode):- %fail,
   findall(IndvSMode,(
@@ -900,12 +900,12 @@ ensure_individuals(TestID,ExampleNum,GridIn,GridOut):-
     FinalIndvSMode = complete,
      repress_output(individuate_pair(FinalIndvSMode,GridIn,GridOut,_,_)),!.
 
-
  print_individuals(TestID):- ensure_test(TestID), print_best_individuals(TestID),!.
-print_individuals1(TestID):- ensure_test(TestID), deduce_individuator(TestID),!.
+%print_individuals1(TestID):- ensure_test(TestID), deduce_individuator(TestID),!.
+
 print_individuals2(TestID):-
  ((ensure_test(TestID),
-     deduce_individuator(TestID),
+     nop(deduce_individuator(TestID)),
  banner_lines(blue,4),
    ignore((never_entire_suite,set_flag(indiv,0))),%compute_and_show_test_hints(TestID),
    forall(kaggle_arc(TestID,ExampleNum,_,_), 

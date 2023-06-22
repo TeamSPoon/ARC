@@ -239,6 +239,7 @@ print_best_individuals(TestID):-
             (write('\n% DUP       '),wqs(How)))))).
 
 
+
 simple_over_best.
 
 /*

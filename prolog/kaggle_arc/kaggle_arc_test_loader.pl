@@ -448,8 +448,9 @@ kaggle_arc1(TestID,ExampleNum,In,Out):- nonvar(ExampleNum),
 
 
 not_disallow_test_out(trn+_,OO,OO):-!.
-not_disallow_test_out(tst+_, O,OO):- grid_size(O,H,V),make_grid(H,V,OO),!.
 not_disallow_test_out(_,OO,OO):- allow_peeking,!.
+not_disallow_test_out(tst+_, O,OO):- grid_size(O,H,V),make_grid(H,V,OO),mapgrid(=(black),OO).
+
 
 tasks_split(ID,String):- split_string(String,",[] \n\r\t\s",",[] \n\r\t\s",L),member(S,L),atom_string(E,S),atom_id_e(E,ID).
 

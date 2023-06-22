@@ -835,7 +835,7 @@ devaluation:- catch_log(load_json_files(eval400,v,'./data/devaluation/*.json')).
 :- arc_sub_path('./muarc_cache/test_state/',Test_State),make_directory_path(Test_State),!.
 load_from_main:- 
   catch_log(load_json_files),
-  catch_log(devaluation),
+  %catch_log(devaluation),
   catch_log(load_task_states),
   catch_log(gen_gids),
   catch_log(create_group_dmiles),

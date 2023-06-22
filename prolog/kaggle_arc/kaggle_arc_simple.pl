@@ -12,6 +12,7 @@
 
 :- use_module(library(clpfd)).
 
+/*
 
 :- multifile is_fti_step/1.
 :- discontiguous is_fti_step/1.
@@ -61,7 +62,7 @@ colors_joinable(i_opts(shapes(none),_,colors(mono),_,_),C1,C2):- is_fg_color(C1)
 colors_joinable(i_opts(shapes(none),_,colors(each),_,_),C1,C1):- is_fg_color(C1).
 colors_joinable(i_opts(shapes(none),_,colors(black),_,_),C1,C1):- is_bg_color(C1).
 colors_joinable(i_opts(shapes(none),_,_,_,incl_bg(true)),C1,C1):- is_bg_color(C1).
-
+*/
 /*
 simple_individuators(TestID):-
  ensure_test(TestID),
@@ -77,26 +78,12 @@ simple_individuators(TestID):-
         write('       '),wqs(Opt));
         (write('\n% DUP       '),wqs(Opt)))))).
 */
+/*
 objs_to_spoints(InC,InPSS):-
   maplist(globalpoints,InC,InP),maplist(sort,InP,InPS),sort(InPS,InPSS).
+*/
 
-print_simple_individuals(TestID):-
- ensure_test(TestID),
-  dash_chars, 
-  NRVarI= io(InPSS, OutPSS),
-  no_repeats_var(NRVar),
-  forall(kaggle_arc(TestID,ExampleNum,In,Out),
-    forall(seg_options(Opt),
-      ignore(
-      (objects_of(In,Opt,CI,InC),
-       objects_of(Out,Opt,CO,OutC),
-       objs_to_spoints(InC,InPSS),
-       objs_to_spoints(OutC,OutPSS),
-       (NRVar=NRVarI-> 
-       (dash_chars,print_ss(wqs(TestID >ExampleNum,ci_co(CI,CO)),InC,OutC),nl,
-        write('       '),wqs(Opt));
-        (write('\n% DUP       '),wqs(Opt))))))).
-
+/*
 
 rest_are_points([P|PointsRest],[[P]|More]):-
   rest_are_points(PointsRest,More),!.
@@ -372,7 +359,7 @@ nearby_one(SegOptions,C1-E1,List):- is_adjacent_point(E1,Dir,E2),Dir\==c,
   dir_ok(Dir,SegOptions),color_dir_kk(Dir,C1),
   member(C2-E2,List),colors_joinable(SegOptions,C1,C2).
 
- 
+*/
 
 
 

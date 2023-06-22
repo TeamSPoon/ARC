@@ -45,9 +45,10 @@ individuation_macros(do_ending, [
  %gather_cached,
  remove_used_points,
  named_grid_props(post_indiv),
- remove_background_only_object,
- find_relations,
- remove_dead_links,
+
+% % _8() remove_background_only_object,
+% % _8() find_relations,
+% % _8() remove_dead_links,
  %find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
  %find_subsumes,
  %find_overlaps,
@@ -57,8 +58,8 @@ individuation_macros(do_ending, [
  %remove_if_prop(and(giz(g(out)),cc(fg,0))),
  %remove_dead_links,
  %combine_same_globalpoints,  
- extend_obj_proplists,
- really_group_vm_priors,
+% % _8() extend_obj_proplists,
+% % _8() really_group_vm_priors,
  %whole,
  %combine_objects, 
  end_of_macro]).
