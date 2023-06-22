@@ -412,30 +412,14 @@ ppawt(FA):-
     %portray(false), partial(true), fullstop(true),
    ignore_ops(false), quoted(true), quote_non_ascii(true), brace_terms(false)]).
 
-intersection(APoints,BPoints,Intersected,LeftOverA,LeftOverB):-
-  intersection_univ(APoints,BPoints,Intersected,LeftOverA,LeftOverB),!.
 
-same_univ(A,B):- (plain_var(A)->A==B;(B=@=A->true; (fail, \+ (A \=B )))).
-
-intersection_univ(APoints,BPoints,Intersected):-
-  intersection_univ(APoints,BPoints,Intersected,_,_),!.
-intersection_univ(APoints,BPoints,Intersected,LeftOverA,LeftOverB):-
-  pred_intersection(same_univ,APoints,BPoints,Intersected,_,LeftOverA,LeftOverB).
-
-intersection_eq(APoints,BPoints,Intersected):-
-  intersection_eq(APoints,BPoints,Intersected,_,_),!.
-intersection_eq(APoints,BPoints,Intersected,LeftOverA,LeftOverB):-
-  pred_intersection(same_univ,APoints,BPoints,Intersected,_,LeftOverA,LeftOverB).
-
-/*
-intersection_u([],LeftOverB,[],[],LeftOverB):-!.
-intersection_u(LeftOverA,[],[],LeftOverA,[]):-!.
-intersection_u([A|APoints],BPoints,[A|Intersected],LeftOverA,LeftOverB):-
+intersection([],LeftOverB,[],[],LeftOverB):-!.
+intersection(LeftOverA,[],[],LeftOverA,[]):-!.
+intersection([A|APoints],BPoints,[A|Intersected],LeftOverA,LeftOverB):-
   select(A,BPoints,BPointsMinusA),!,
-  intersection_u(APoints,BPointsMinusA,Intersected,LeftOverA,LeftOverB).
-intersection_u([A|APoints],BPoints,Intersected,[A|LeftOverA],LeftOverB):-
-  intersection_u(APoints,BPoints,Intersected,LeftOverA,LeftOverB).
-*/
+  intersection(APoints,BPointsMinusA,Intersected,LeftOverA,LeftOverB).
+intersection([A|APoints],BPoints,Intersected,[A|LeftOverA],LeftOverB):-
+  intersection(APoints,BPoints,Intersected,LeftOverA,LeftOverB).
 
 :- meta_predicate(each_obj(?,?,0)).
 each_obj([],_,_):-!.
@@ -544,6 +528,14 @@ ignore_numvars(Name='$VAR'(Name)).
 
 :- include(kaggle_arc_footer).
 
+verbatum_unifiable(Var):-var(Var), fail.
+verbatum_unifiable(C):- sub_term(E, C), compound(E), E='$VAR'(_), !.
+verbatum_unifiable(of_obj(_)).
+verbatum_unifiable(of_obj(_, _)).
+verbatum_unifiable(of_obj(_, _, _)).
+verbatum_unifiable(of_obj(_, _, _, _)).
+verbatum_unifiable(always(_)).
+
 
 end_of_file.
 
@@ -551,3 +543,5 @@ end_of_file.
    hv_c_value(G,V,2,2),dif(V,Z),hv_c_value(G,Z,3,3),Z=blue,
    print_grid(G),
    all_rotations(G,R).
+
+
