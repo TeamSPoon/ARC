@@ -31,6 +31,7 @@ dont_notice(links_count(sees, _)).
 dont_notice(occurs_in_links(contained_by,_)).
 dont_notice(occurs_in_links(sees,_)).
 dont_notice(oid(_)).
+dont_notice(iz(symmetry_type(_, _))).
 dont_notice(pg(_,pen(_), rankLS ,_)).
 dont_notice(pg(_,iz(_),rankLS,_)).
 dont_notice(pg(_,iz((_)), rank1, _)).
