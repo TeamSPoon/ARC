@@ -1148,7 +1148,7 @@ clear_arc_caches:- retractall(individuated_cache(_,_,_,_)).
 :- dynamic(individuated_cache/4).
 :- retractall(individuated_cache(_,_,_,_)).
 prolog:make_hook(before, Some):- Some \==[], forall(clear_arc_caches,true), fail.
-:- luser_default(individuated_cache,true).
+:- set_luser_default(individuated_cache,true).
 
 :- luser_setval(individuated_cache,true).
 
@@ -3504,7 +3504,7 @@ shape_min_points(_VM,Shape,MinShapeO):-shape_min_points0(Shape,MinShapeO).
 shape_min_points0(_,_).
 %  shape_min_points(VM,_,_).
 
-:- luser_default(color_mode,monochrome).
+:- set_luser_default(color_mode,monochrome).
 
 ok_color_with(C1,C1).
 /*

@@ -2171,25 +2171,26 @@ same_rhs_operation(A, B):-
   maplist(same_rhs_operation, AA, BB), !.
 
 
-
-
-%good_for_rhs(iz(sid(_))).
-%good_for_rhs(mass(_)).
-%good_for_rhs(iz(cenGX(_))).
-%good_for_rhs(iz(cenGY(_))).
-%good_for_rhs(iz(sizeGX(_))).
-%good_for_rhs(iz(sizeGY(_))).
-/*good_for_rhs(vis2D(_, _)).
-good_for_rhs(center2D(_, _)).
-good_for_rhs(center2G(_, _)).
-good_for_rhs(rot2D(_)).
+good_for_rhs(pen(_)).
+good_for_rhs(iz(sid(_))).
+good_for_rhs(mass(_)).
+good_for_rhs(iz(locY(_))).
+good_for_rhs(iz(locX(_))).
+good_for_rhs(iz(cenGX(_))).
+good_for_rhs(iz(cenGY(_))).
+good_for_rhs(iz(sizeGX(_))).
+good_for_rhs(iz(sizeGY(_))).
 good_for_rhs(iz(algo_sid(norm, _))).
 good_for_rhs(grid_ops(norm, _)).
 good_for_rhs(grid_rep(norm, _)).
+good_for_rhs(rot2D(_)).
+/*good_for_rhs(vis2D(_, _)).
+good_for_rhs(center2D(_, _)).
+good_for_rhs(center2G(_, _)).
 */
-good_for_rhs(loc2D(_, _)).
-good_for_rhs(pen(_)).
 good_for_rhs(prop_of(_,_,_)).
+good_for_rhs(prop_of(_,_)).
+good_for_rhs(prop_of(_,)).
 good_for_rhs(delete(_)).
 good_for_rhs(edit(_)).
 good_for_rhs(edit(_, _, _)).
@@ -2235,7 +2236,6 @@ good_for_lhs(\+ P):- !, good_for_lhs(P).
 good_for_lhs(grid_ops(norm, _)).
 good_for_lhs(iz(algo_sid(comp, _))).
 good_for_lhs(iz(algo_sid(norm, _))).
-good_for_lhs(iz(cenGX(_))).
 good_for_lhs(iz(cenGX(_))).
 good_for_lhs(iz(cenGY(_))).
 good_for_lhs(_).

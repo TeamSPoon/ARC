@@ -6,7 +6,9 @@
 */
 :- include(kaggle_arc_header).
 
+:- if(exists_source(kaggle_arc_boards_dpg)).
 :- reconsult(kaggle_arc_boards_dpg).
+:- endif.
 
 :- use_module(library(nb_set)).
 :- use_module(library(lists)).

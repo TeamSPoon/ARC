@@ -234,7 +234,7 @@ get_bgc(BGC):- !,BGC = black.
 get_bgc(BGC):- luser_getval(grid_bgc,BGC),!.
 get_bgc(BGC):- get_black(BGC).
 :- nb_delete(grid_bgc).
-:- luser_default(grid_bgc,bgc).
+:- set_luser_default(grid_bgc,bgc).
 
 grid_bgc(_IO,BGC):- get_bgc(BGC).
 
@@ -249,7 +249,7 @@ get_black(BGC):- !,BGC = black.
 get_black(BGC):- luser_getval(grid_black,BGC),!.
 get_black(black).
 :- nb_delete(grid_black).
-:- luser_default(grid_black,black).
+:- set_luser_default(grid_black,black).
 
 
 is_color_no_bgc(X):- \+ is_bg_color(X), is_color(X).

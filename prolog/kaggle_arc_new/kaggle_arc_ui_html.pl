@@ -210,8 +210,8 @@ expandable_inlines:- expandable_mode(javascript).
 expandable_mode(How):- var(How),!,luser_getval(expansion,How).
 expandable_mode(How):- luser_getval(expansion,V),!,How==V.
 
-:- luser_default(expansion,javascript).
-:- luser_default(expansion,bfly).
+:- set_luser_default(expansion,javascript).
+:- set_luser_default(expansion,bfly).
 
 
 :- meta_predicate(call_maybe_det(0,-)).
@@ -406,7 +406,7 @@ save_in_luser(N,V):- decode_luser(V,VV),save_in_luser2(N,VV).
 save_in_luser2(task,V):- !, set_current_test(V),get_current_test(CT),dmsg(current_test(V-->CT)).
 save_in_luser2(test_suite_name,V):- !, nop(maybe_set_suite(V)).
 %save_in_luser2(cmd,V):-  !, ignore(set_test_cmd(V)),!.
-save_in_luser2(N,V):- luser_setval(N,V), luser_default(N,V), 
+save_in_luser2(N,V):- luser_setval(N,V), set_luser_default(N,V), 
   ignore((is_list(V),last(V,E),compound(E),save_in_luser(V))).
 
 decode_luser(V,O):- url_decode_term(V,VV,_),VV\==V,decode_luser(VV,O),!.
@@ -1540,9 +1540,9 @@ arc_script_header2:-
 arc_weto(G):- call_e_dmsg(G).
 
 
-%:- luser_default(cmd,print_test).
-:- luser_default(cmd,ndividuator). 
-:- luser_default(footer_cmd,statistics).
+%:- set_luser_default(cmd,print_test).
+:- set_luser_default(cmd,ndividuator). 
+:- set_luser_default(footer_cmd,statistics).
 
 current_arc_cmd(Prolog):- current_arc_cmd('cmd',Prolog).
 %current_arc_cmd(cmd,Prolog):- luser_getval(cmd,Prolog).

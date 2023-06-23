@@ -1303,7 +1303,7 @@ skip_some(_).
 % =====================================================================
 is_fti_step(colormass_3).
 % =====================================================================
-colormass_3(VM):- SegOptions = i_opts(shapes(none),count_equ(_NF),colors(each),dirs(diags_nsew),incl_bg(false)),
+colormass_0(VM):- SegOptions = i_opts(shapes(none),count_equ(_NF),colors(each),dirs(diags_nsew),incl_bg(false)),
   globalpoints(VM.objs,CantHave),
   Points = VM.lo_points,
   intersection(CantHave,Points,_RemoveThese,_,KeepThese),
@@ -1860,12 +1860,12 @@ individuation_reserved_options(ROptions,Reserved,Options):-
 :- retractall(arc_cache:individuated_cache(_,_,_,_,_)).
 muarc:clear_arc_caches:-  \+ luser_getval(extreme_caching,true), retractall_in_testid(arc_cache:individuated_cache(_,_,_,_)).
 
-:- luser_default(extreme_caching,false).
+:- set_luser_default(extreme_caching,false).
 
 :- multifile(muarc:clear_all_caches/0).
 :- dynamic(muarc:clear_all_caches/0).
 muarc:clear_all_caches:-  forall(muarc:clear_arc_caches,true), fail.
-:- luser_default(use_individuated_cache,true).
+:- set_luser_default(use_individuated_cache,true).
 :- luser_setval(use_individuated_cache,true).
 
 get_individuated_cache(TID,ROptions,GOID,IndvS):- nonvar(ROptions),
@@ -3470,7 +3470,7 @@ each_ogs_object(TODO,VM):-
   is_grid(Other),
   all_ogs_123(StartGrid,Other,Hints))),
   %copy_term(VM.grid,This),  
-  md_maplist(use_each_ogs(VM,TODO,StartGrid,Other),Hints).
+  maplist(use_each_ogs(VM,TODO,StartGrid,Other),Hints).
 
 all_ogs_123(StartGrid,Other,Hints):- 
   all_ogs(StartGrid,Other,Hints1),
@@ -4754,7 +4754,7 @@ shape_min_points(_VM,Shape,MinShapeO):-shape_min_points0(Shape,MinShapeO).
 shape_min_points0(_,_).
 %  shape_min_points(VM,_,_).
 
-:- luser_default(color_mode,monochrome).
+:- set_luser_default(color_mode,monochrome).
 
 ok_color_with(C1,C1).
 /*

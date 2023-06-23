@@ -62,6 +62,8 @@ dont_notice(giz(_)).
 dont_notice(iz(i_o(_))).
 dont_notice(iz(stype(_))).
 dont_notice(global2G(_, _)).
+dont_notice(iz(sizeGX(_))).
+dont_notice(iz(sizeGY(_))).
 dont_notice(iz(symmetry_type(rollD, _))).
 dont_notice(link(contains, _)).
 dont_notice(links_count(sees, _)).
@@ -136,7 +138,9 @@ do_deduce(link(sees(_), _)).
 do_deduce(rot2D(_)).
 do_deduce(pen(_)).
 do_deduce(iz(sid(_))).
-do_deduce(iz(cenGX(_))).
+do_deduce(iz(cenX(_))).
+do_deduce(iz(cenY(_))).
+do_deduce(iz(locX(_))).
 do_deduce(iz(locY(_))).
 do_deduce(iz(X)):- !, do_deduce(X), !.
 do_deduce(P):- compound(P), compound_name_arguments(P, _, [X, Y]), number(X), number(Y).
@@ -673,13 +677,13 @@ best_obj_group_pair(TestID, ExampleNum, HowIO, InC, OutC):-
 
 
   ((member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A=S, S>1, S=<43);
-   %(member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A<S, A>1, S=<43);
-   %(member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A<S, A>1, S=<43);
-   %(member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A<S, A=1, S=<43);
-   %(member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A=S, S=1);
-   %(member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A>S, S=1, A=<43);
+   (member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A<S, A>1, S=<43);
+   (member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A<S, A>1, S=<43);
+   (member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A<S, A=1, S=<43);
+   (member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A=S, S=1);
+   (member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A>S, S=1, A=<43);
    fail),
-  (Diff is abs(A-S), Diff=0),
+  (Diff is abs(A-S), Diff<30),
   (NRVar=NRVarI-> nop(pp(nrVarI=NRVarI)); (wdmsg(duplicated(HowIO))), fail),
   HowIO = in_out(HowIn, HowOut).
 
@@ -697,15 +701,9 @@ learn_object_dependancy(TestID, HowIO, RulesOut):-
 
 possible_program(TestID, ActionGroupFinal, HowIO, RulesOut):-
  must_det_ll((
- at_least_once((
-  % HowIO = in_out(HowIn, _HowOut),
-   GNR = group_narrative_rules(HowIO, ActionGroupOut, ExampleRules),
-   ignore((ExampleNum=(trn+_))),
-   starter_narratives(TestID, Starter0))),
-
- subst_1L([nth-0, lowmin-0, himax-inf], Starter0, Starter),
-
- nop(( 
+ starter_narratives(TestID, Starter),
+ 
+ (((fail,
    %(var(HowIn)->get_each_ndividuator(in, HowIn);true),
     ((synth_program_from_one_example(TestID, trn+0, HowIO, Starter, FirstNarrative0, Rules0), Rules0\==[])),
 
@@ -713,9 +711,11 @@ possible_program(TestID, ActionGroupFinal, HowIO, RulesOut):-
     Rules1\==[],
     some_min_unifier([FirstNarrative0, FirstNarrative1], FirstNarrative),
     nonvar(FirstNarrative)
- )),
+ ))*->true;Starter = FirstNarrative),
 
- Starter = FirstNarrative,
+ ignore((ExampleNum=(trn+_))),
+ %Starter = FirstNarrative,
+ GNR = group_narrative_rules(HowIO, ActionGroupOut, ExampleRules),
  findall(GNR,
     (kaggle_arc(TestID, ExampleNum, _, _),
       synth_program_from_one_example(TestID, ExampleNum, HowIO, FirstNarrative, ActionGroupOut, ExampleRules)), HNRL),
@@ -727,6 +727,8 @@ possible_program(TestID, ActionGroupFinal, HowIO, RulesOut):-
  combine_trans_rules(TestID, RulesF, RulesOut))).
 
 combine_trans_rules(TestID, RulesOutL, RulesOut):-merge_rules(TestID, RulesOutL, RulesOut).
+
+:- listing(possible_program).
 
 synth_program_from_one_example(TestID, ExampleNum, HowIO, ActionGroup, ActionGroupOut, RulesL):-
   current_example_scope(TestID, ExampleNum),
@@ -808,7 +810,7 @@ calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, Acti
   intersection(RulesOut, PrevRules, _, RulesNew, _),
   my_partition(is_functor(exists), RulesNew, _, RulesNewEww),
   reverse(RulesNewEww, RulesNewer),
-  pp_ilp(new=RulesNewer),
+  pp_ilp(new=RulesNewer),!,
   (Info==InfoMid-> incr_step(InfoMid, InfoOut) ; InfoMid=InfoOut),
   calc_o_d_recursive(VM, ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut, ActionGroupFinal, Groups), !.
 
@@ -841,27 +843,44 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
                 InfoOut, RulesOut))), !,
   pp_ilp(calc_o_d_recursive_end=RulesOut), !.
 
+show_last_chance(Why,LHSObjs,RHSObjs):- 
+ dash_chars,dash_chars,dash_chars,dash_chars,
+ wdmsg(show_last_chance(Why)),
+ if_debugging((
 
+ forall(member(Left, LHSObjs), 
+     forall(member(Right, RHSObjs), print_ss(Why,Left,Right))),
+ dash_chars,dash_chars,dash_chars,dash_chars,
+  locally(nb_setval(without_comment,t),
+   forall(member(Left, LHSObjs), 
+     forall(member(Right, RHSObjs),
+     ( dash_chars,dash_chars,
+       wdmsg(last_chance(Why)),
+       dash_chars,dash_chars,
+       print_ss(Why,Left,Right),
+      % pp_obj_tree(1,Why,Left,Right),
+       show_cp_dff_rem_keep_add(Left,Right))))))).
 
-calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
-                  ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):-
+if_debugging(G):- once(G),break.
+
+calc_o_d_recursively(_VM, ActionGroupIn, InfoInOut, PrevRules, LHSObjs, RHSObjs,
+                  ActionGroupOut, InfoInOut, RulesOut, LHSOut, RHSOut):-
 ((
-  narrative_element(copy_object_perfect(_Min, _Max, _Nth), ActionGroupIn, ActionGroupOut), !,
-  /*at_least_once*/((select(Left, LHSObjs, LHSOut), select(Right, RHSObjs, RHSOut),
-  how_are_different(Left, Right, TypeSet, _PropSet), TypeSet=[],
-  noteable_propdiffs(Left, Right, Same, _L, R), Same\==[], R==[])),
+  narrative_element(copy_object_perfect(Min, Max, Nth), ActionGroupIn, ActionGroupOut), !,
 
-  %nop(s=(N, Step)), nop(sub_cmpd(step(Step), Info)),
-  append_LR(PrevRules, [exists(left(Left)), rule(Info, Same, copy_object_perfect(s))], RulesOut),
+  (((select(Left, LHSObjs, LHSOut), select(Right, RHSObjs, RHSOut), 
+    how_are_different(Left, Right, _TypeSet, PropSet),
+    into_lhs(Left,LHS),
+    PropSet==[]))
+  *-> true ; (show_last_chance(copy_object_perfect(Min, Max, Nth),LHSObjs,RHSObjs),!,fail)),
 
-  incr_step(Info, InfoOut),
-  true)).
+  append_LR(PrevRules, [exists(left(Left)), rule(InfoInOut, LHS, copy_object_perfect(Min..Max, s))], RulesOut))).
 
 
 calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
                     ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):-
 ((
-  narrative_element(copy_object_n_changes(N, _Min, Max, Nth), ActionGroupIn, ActionGroupOut), !,
+  narrative_element(copy_object_n_changes(N, Min, Max, Nth), ActionGroupIn, ActionGroupOut), !,
   %Nth<Max,
   select(Left, LHSObjs, LHSOut),
   select(Right, RHSObjs, RHSOut),
@@ -880,11 +899,13 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   maplist(find_relative_r(Info, Left, Right, PrevRules), R, NewR, PreConds, NewRules),
   append_LR(NewRules, NewRulesF),
   append_LR([Same, PreConds], LHS),
-  NewRRule1 = rule([propset(PropSet)|Info], LHS, copy_object_n_changes(N,/*N, Max, Nth, */TypeSet, NewR)),
-  (R\==NewR -> NewRRule2 = rule([propset(PropSet)|Info], Same, copy_object_n_changes(N,/* Max, Nth, */TypeSet, R)) ; NewRRule2=[]),
+  NewRRule1 = rule([propset(PropSet)|Info], LHS, copy_object_n_changes(N, Min..Max, TypeSet, NewR)),
+  (R\==NewR 
+    -> NewRRule2 = rule([propset(PropSet)|Info], Same, copy_object_n_changes(N, Min..Max, TypeSet, R)) 
+    ; NewRRule2=[]),
   subst_2L_sometimes(R, NewR, Left, NewLeft),
   append_LR(PrevRules, [exists(left(NewLeft)), NewRulesF, NewRRule1, NewRRule2], RulesOut),
-  incr_step(Info, InfoOut),
+  =(Info, InfoOut),
   dash_chars, nl,
   true)), !.
 
@@ -991,20 +1012,23 @@ left_over_props(L, R, LO):-
 
 
 starter_narratives(_, ActionGroup):- nonvar(ActionGroup), !.
-starter_narratives(TestID, ActionGroup):- starter_narrative(TestID, ActionGroup), !.
-starter_narratives(_, ActionGroup):- generic_starter_narratives(ActionGroup).
+starter_narratives(TestID, Starter):-  starter_narratives0(TestID, Starter0), 
+  once(subst_1L([nth-0, lowmin-0, himax-inf], Starter0, Starter)).
+
+starter_narratives0(TestID, ActionGroup):- starter_narrative(TestID, ActionGroup), !.
+starter_narratives0(_, ActionGroup):- generic_starter_narratives(ActionGroup).
 
 :- dynamic(starter_narrative/2).
 
 
 starter_narrative(t('25d487eb'), [
-   copy_object_perfect(2, nth), % copy up to two objects perfectly
-   add_dependant_scenery(2, 1, nth), % from two output objects, create one output object
+   copy_object_perfect(2, 2, nth), % copy two objects perfectly
+   add_dependant_scenery(2, 1, 1, nth), % from two output objects, create one output object
    balanced_or_delete_leftovers(balanced(_), nth) ]). % there should not be any unprocessed input objects
 
 starter_narrative(v(e41c6fd3), [
-   copy_object_perfect(1, nth), % copy up to one object perfectly
-   copy_object_n_changes(1, 4, nth), % copy up to four objects that contain a single property change
+   copy_object_perfect(1, 1, nth), % copy one object perfectly
+   copy_object_n_changes(1, 2, 4, nth), % copy 2-4 objects that contain a single property change
    balanced_or_delete_leftovers(balanced(_), nth) ]). % there should not be any unprocessed input objects
 
 generic_starter_narratives(ActionGroup):-
@@ -1109,14 +1133,18 @@ compute_scene_change(TestID):-
  ensure_test(TestID),
  with_pair_mode(whole_test,
  ((must_det_ll((
-  learn_object_dependancy(TestID, HowIO, RulesList),
+   learn_object_dependancy(TestID, HowIO, RulesList),
+   is_list(RulesList),
    merge_rules(TestID, RulesList, NewRulesList))),
   forall(member(R, NewRulesList), assert_ac_db(TestID, R)),
   pp_ilp(rulesList(HowIO)=NewRulesList)))), !.
 
+:- listing(compute_scene_change/1).
 
 merge_rules(TestID, RulesList, NewRulesList):-
  must_det_ll((
+  var(NewRulesList),
+  is_list(RulesList),
   gensym(newTestID, GenSym),
   forall(member(R, RulesList), assert_ac_db(Gensym, R)),
   set_of_changes(GenSym, compute_scene_change_pass3a(GenSym)),
@@ -1531,6 +1559,8 @@ solve_via_scene_change_rules(TestID, ExampleNum):-
       %show_time_of_failure(TestID),
       banner_lines(red, 10),
       print_scene_change_rules(rules_at_time_of_failure(red), TestID),
+      locally(nb_setval(without_comment,t),
+       print_scene_change_rules(rules_at_time_of_failure(yellow),TestID)),
       print_grid(in, InOrig),
       print_ss(wqs(solve_via_scene_change(TestID, ExampleNum, errors=Errors)), ExpectedOut, OurSolution),
       banner_lines(red, 10),
@@ -2657,28 +2687,30 @@ same_rhs_operation(A, B):-
 
 
 
-
-%good_for_rhs(iz(sid(_))).
-%good_for_rhs(mass(_)).
-%good_for_rhs(iz(cenGX(_))).
-%good_for_rhs(iz(cenGY(_))).
-%good_for_rhs(iz(sizeGX(_))).
-%good_for_rhs(iz(sizeGY(_))).
-/*good_for_rhs(vis2D(_, _)).
-good_for_rhs(center2D(_, _)).
-good_for_rhs(center2G(_, _)).
-good_for_rhs(rot2D(_)).
+good_for_rhs(P):- verbatum_unifiable(P), !.
+good_for_rhs(P):- dont_notice(P),!,fail.
+good_for_rhs(pen(_)).
+good_for_rhs(iz(sid(_))).
+good_for_rhs(mass(_)).
+%good_for_rhs(loc2D(_, _)).
+good_for_rhs(iz(locY(_))).
+good_for_rhs(iz(locX(_))).
+%good_for_rhs(center2D(_, _)).
+%good_for_rhs(center2G(_, _)).
+good_for_rhs(iz(cenX(_))).
+good_for_rhs(iz(cenY(_))).
+%good_for_rhs(vis2D(_, _)).
+good_for_rhs(iz(sizeGX(_))).
+good_for_rhs(iz(sizeGY(_))).
 good_for_rhs(iz(algo_sid(norm, _))).
 good_for_rhs(grid_ops(norm, _)).
 good_for_rhs(grid_rep(norm, _)).
-*/
-good_for_rhs(loc2D(_, _)):- !, fail.
-good_for_rhs(pen(_)).
-good_for_rhs(iz(locY(_))).
-good_for_rhs(iz(locX(_))).
-good_for_rhs(iz(sid(_))).
+good_for_rhs(rot2D(_)).
+
+good_for_rhs(prop_of(_,_,_)).
+good_for_rhs(prop_of(_,_)).
+good_for_rhs(prop_of(_)).
 good_for_rhs(delete(_)).
-good_for_rhs(P):- verbatum_unifiable(P), !.
 good_for_rhs(edit(_)).
 good_for_rhs(edit(_, _, _)).
 good_for_rhs(edit(_, _, _, _)).
@@ -2724,8 +2756,9 @@ good_for_lhs(iz(algo_sid(comp, _))).
 good_for_lhs(iz(algo_sid(norm, _))).
 good_for_lhs(iz(locX(_))).
 good_for_lhs(iz(locY(_))).
-good_for_lhs(iz(cenGX(_))).
-good_for_lhs(iz(cenGY(_))).
+good_for_lhs(iz(cenX(_))).
+good_for_lhs(iz(cenY(_))).
+good_for_lhs(P):- good_for_rhs(P),!.
 good_for_lhs(_).
 
 
@@ -3577,6 +3610,18 @@ ignore_prop_when(adding, P):- nonvar(P), good_for_rhs(P), !, fail.
 ignore_prop_when(_, P):- assume_prop(P).
 ignore_prop_when(removing, P):- ignore_prop_when(adding, P).
 
+noteable_propdiffs(E1, E2, S, L, R):-
+  indv_eprops_list(E1, FP1), indv_eprops_list(E2, FP2),
+  intersection(FP1, FP2, S, L, R),!.
+
+noteable_propdiffs(E1, E2, Same, LHS, RHS):-
+  indv_eprops_list(E1, FP1), indv_eprops_list(E2, FP2),
+  intersection(FP1, FP2, S, L, R),
+  include(good_for_lhs,S,Same),
+  include(good_for_lhs,L,LHS),
+  include(good_for_rhs,R,RHS),!.
+
+
 noteable_propdiffs(E1, E2, Same, InFlatP, OutPFlat):-
   flat_props(E1, FP1), flat_props(E2, FP2),
   noteable_propdiffs1(FP1, FP2, Same0, InFlatP0, OutPFlat0),
@@ -3584,7 +3629,7 @@ noteable_propdiffs(E1, E2, Same, InFlatP, OutPFlat):-
   my_exclude(ignore_prop_when(adding), OutPFlat0, OutPFlat),
   my_exclude(ignore_prop_when(sames), Same0, Same), !.
 
-noteable_propdiffs1(PA, PB, Same, InFlatP, OutPFlat):-
+noteable_propdiffs1(PA, PB, Same, InFlatP, OutPFlat):- fail,
   remove_o_giz(PA, PA1), remove_o_giz(PB, PB1),
   %=(PA, PA1), =(PB, PB1),
   pred_intersection(propchange_unnoticable, PA1, PB1, _, Same, InFlatP, OutPFlat), !.
@@ -3909,7 +3954,7 @@ prop_pairs2(O1, O2, Type, Change, P):-
   flat_props(O1, FF1), flat_props(O2, FF2), !,
   intersection(FF1, FF2, _, F1, F2),
   member(P2, F2), make_unifiable_u(P2, P1),
- (once((member(P1, F1), (other_val(P2, P1)->Change=different(P, P1/P2);Change=same)))->
+ (once((member(P1, F1), (other_val(P2, P1)->Change=different(P, P1, P2);Change=same)))->
    min_unifier(P2, P1, P); ((Change=adding(P), P=P2))),
  prop_type(P2, Type),
  \+ ignore_prop_when(Change, P).
@@ -4058,5 +4103,4 @@ tesT_compare_objects:- compare_objects([
 
 
 %:- consult(kaggle_arc_logicmoo).
-
 

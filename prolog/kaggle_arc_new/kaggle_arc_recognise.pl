@@ -1612,7 +1612,7 @@ ascii_to_growthchart(Text,G):- maybe_fix_ascii(Text,Ascii0), !, ascii_to_growthc
 ascii_to_growthchart(Text,GrowthChart):-  
   atomics_to_string(Rows1,'\n',Text),Rows1=[_|Rows],mapgroup(atom_chars,Rows,GrowthChart),!.
 
-:- luser_default(find_rule,regular).
+:- set_luser_default(find_rule,regular).
 % ?- h666(X),text_to_grid(X,G).
 
 

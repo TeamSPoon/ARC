@@ -1035,7 +1035,7 @@ pp_ilp(D,X=Y):- !,
    prefix_spaces(D, (print(X),write(' = '))),
    (Y==[]->write(' [] ')
    ;((is_list(Y)->(length(Y,L),format(' (~w)~n',[L]));true),
-      pp_ilp(D+2,Y))))).
+      pp_ilp(D+6,Y))))).
 
 
 
@@ -1209,10 +1209,11 @@ is_gps((OID),print_global_ngrid(OID)):- atom(OID),oid_to_obj(OID,_),!.
 %is_gps(localpoints(Ps),Ps):- nonvar(Ps).
 
 print_unit(_D,_H,G1):- print_unit(G1),!. 
-print_unit(G1):- is_gps(G1,Call),!,format('~N'),call(Call).
-print_unit(G):- print_unit1(G),!.
+print_unit(G):-  nb_current(without_comment,t),wots(_,print_unit1(G)),!.
+print_unit(G):-  print_unit1(G),!.
 print_unit(G1):- pp_no_nl(G1).
 
+print_unit1(G1):- is_gps(G1,Call),!,format('~N'),call(Call).
 print_unit1(G):- first_of(G1,G),is_debug_info(G1),!, color_print(green,call((pp_no_nl(G)))).
 print_unit1(G):- first_of(G1,G),assume_prop(G1),!, color_print(blue,call((writeg(G)))).
 print_unit1(G):- first_of(G1,G),is_unbound_prop(G1),!, color_print(blue,call((pp_no_nl(G)))).
@@ -1334,14 +1335,20 @@ show_cp_dff_rem_keep_add(TransRule):-   %flat_props([B],PB), intersection(Same,P
 show_cp_dff_rem_keep_add(E1,E2):-  
   dash_chars,
   if_t(how_are_different(E1,E2,Set),pp(how_are_different=Set)),    
-  noteable_propdiffs(E1,E2,Same,InFlatP,OutPFlat),
-  if_t(Same==[],pp_ilp(sames=Same)),
-  length(Same,LSame),
-  pp_ilp(sames=LSame),
-  pp_ilp(removing=InFlatP),
-  pp_ilp(adding=OutPFlat),
+  noteable_propdiffs(E1,E2,Same0,LHS,RHS),
+  ensure_comment_filter(Same0,Same),
+  %if_t(Same==[],pp_ilp(sames=Same)),
+  %length(Same,LSame),
+  pp_ilp(sames=Same),
+  ensure_comment_filter(LHS,LHSF),
+  pp_ilp(removing=LHSF),
+  ensure_comment_filter(RHS,RHSF),
+  pp_ilp(adding=RHSF),
   dash_chars.
 
+ensure_comment_filter(RHS,RHSF):- 
+  nb_current(without_comment,t),!,include(p1_not(assume_prop),RHS,RHSF),!.
+ensure_comment_filter(RHS,RHS).
 
 pp_l2r(D,Info,In,Out):- 
   \+ \+ prefix_spaces(D,(dash_chars,format('<l2r  ~@ >\n',[print(Info)]))),

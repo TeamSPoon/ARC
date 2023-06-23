@@ -432,8 +432,9 @@ luser_setval(ID,N,V):-
 luser_unsetval(N):- ignore(nb_delete(N)), arc_user(ID),luser_unsetval(ID,N),!.
 luser_unsetval(ID,N):- retractall(arc_user_prop(ID,N,_)).
 
-luser_default(N,V):- var(V),!,luser_getval(N,V).
-luser_default(N,V):- luser_setval(global,N,V).
+
+set_luser_default(N,V):- luser_setval(global,N,V).
+luser_default(N,V):- set_luser_default(N,V).
 
 luser_linkval(N,V):- arc_user(ID),luser_linkval(ID,N,V),!.
 luser_linkval(ID,N,V):- \+ var(V), \+ (arc_sensical_term(N),arc_sensical_term(V)),  
@@ -459,13 +460,12 @@ with_luser(N,V,Goal):-
 % caches the valuetemp on this thread
 luser_getval(N,V):-  luser_getval_0(N,VV),VV=V,arc_sensical_term(V),!.
 
-
 luser_getval_0(arc_user,V):- arc_user(V).
 luser_getval_0(N,V):- luser_getval_1(N,V).
 
 luser_getval_1(N,V):- luser_getval_2(N,V).
 luser_getval_1(N,V):- luser_getval_3(N,V), \+ (luser_getval_2(N,VV), nop(VV\=V)).
-luser_getval_1(N,V):- luser_getval_4(N,V), \+ (luser_getval_3(N,VV), nop(VV\=V)), \+ (luser_getval_2(N,VV), nop(VV\=V)).
+luser_getval_1(N,V):- get_luser_default(N,V), \+ (luser_getval_3(N,VV), nop(VV\=V)), \+ (luser_getval_2(N,VV), nop(VV\=V)).
 
 %luser_getval_0(N,V):- luser_getval_2(N,V), \+ luser_getval_1(N,_).
 %luser_getval_0(N,V):- luser_getval_3(N,V), \+ luser_getval_2(N,_), \+ luser_getval_1(N,_).
@@ -479,8 +479,8 @@ luser_getval_3(N,V):-  \+ main_thread, atom(N), current_predicate(get_param_sess
 %luser_getval_3(N,V):- atom(N), nb_current(N,ValV),arc_sensical_term(ValV,Val),Val=V.
 
 
-luser_getval_4(N,V):- arc_user_prop(global,N,V).
-luser_getval_4(N,V):- atom(N), current_prolog_flag(N,V).
+get_luser_default(N,V):- arc_user_prop(global,N,VV),VV=V,arc_sensical_term(V),!.
+get_luser_default(N,V):- atom(N), current_prolog_flag(N,VV),VV=V,arc_sensical_term(V),!.
 %luser_getval(ID,N,V):- thread_self(ID),nb_current(N,V),!.
 %luser_getval(ID,N,V):- !, ((arc_user_prop(ID,N,V);nb_current(N,V))*->true;arc_user_prop(global,N,V)).
 
@@ -690,7 +690,7 @@ test_regressions:- make, forall((clause(mregression_test,Body),ppt(Body)),must_d
 :- ensure_loaded(kaggle_arc_heuristics).
 :- ensure_loaded(kaggle_arc_intruder).
 :- ensure_loaded(kaggle_arc_test_cache).
-:- ensure_loaded(kaggle_arc_individuation_dpg).
+:- ensure_loaded(kaggle_arc_individuation).
 :- ensure_loaded(kaggle_arc_transrules).
 :- ensure_loaded(kaggle_arc_generalization).
 :- ensure_loaded(kaggle_arc_reduce).
@@ -788,16 +788,16 @@ ansi_startup:-
    %with_pp(bfly,catch_log(menu)),
    nop((next_test,prev_test)),!.
 
-:- luser_default(example,(trn+0)).
-:- luser_default(no_diags,false).
-:- luser_default(no_individuator, f).
-:- luser_default(grid_size_only,true).
-%:- luser_default(cmd,test_easy).
-%:- luser_default(cmd,learn_ilp).
-:- luser_default(cmd,solve_via_scene_change).
-:- luser_default(cmd2,print_all_info_for_test).
-%:- luser_default(cmd2,test_show_grid_objs).
-:- luser_default(use_individuated_cache,true).
+:- set_luser_default(example,(trn+0)).
+:- set_luser_default(no_diags,false).
+:- set_luser_default(no_individuator, f).
+:- set_luser_default(grid_size_only,true).
+%:- set_luser_default(cmd,test_easy).
+%:- set_luser_default(cmd,learn_ilp).
+:- set_luser_default(cmd,solve_via_scene_change).
+:- set_luser_default(cmd2,print_all_info_for_test).
+%:- set_luser_default(cmd2,test_show_grid_objs).
+:- set_luser_default(use_individuated_cache,true).
 
 :- current_prolog_flag(argv,C),forall(member(E,C),process_cmdln_option(luser_default,E,true)).
 
@@ -867,7 +867,7 @@ demo_msg:- nl,writeln('% Type ?-
   catch_log(test_show_colors)     , 
   demo. % or press up arrow').
 :- initialization(demo_msg,after_load).
-:- luser_default(extreme_caching,false).
+:- set_luser_default(extreme_caching,false).
 :- nb_setval(arc_can_portray,nil).
 %:- (getenv('DISPLAY',_) -> ensure_guitracer_x ; true).
 
@@ -932,8 +932,8 @@ use_gui_debugger:-
 
 
 :- set_current_test(v('1d398264')). 
-:- luser_default(task,v('1d398264')). 
-:- luser_default(task,v('37d3e8b2')). 
+:- set_luser_default(task,v('1d398264')). 
+:- set_luser_default(task,v('37d3e8b2')). 
 
 */
 create_group_dmiles:- 
@@ -1007,7 +1007,7 @@ create_group_dmiles:-
 %:- noguitracer.
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).
 
-%:- luser_default(task,v('1b60fb0c')). %626c0bcc
+%:- set_luser_default(task,v('1b60fb0c')). %626c0bcc
 :- set_prolog_flag(gui_tracer, false), visible(-cut_call).
 
 %:- demo.
