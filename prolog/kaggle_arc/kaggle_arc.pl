@@ -51,6 +51,8 @@ u_dmsg(M):- get_user_error(UE),  stream_property(UO,file_no(1)), current_output(
 u_dmsg(G):-ufmt(G),!.
 
 %:- pack_install('https://github.com/logicmoo/logicmoo_utils.git').
+
+/*
 :- catch_log(pack_install(logicmoo_utils,[
   %url('https://github.com/logicmoo/logicmoo_utils.git'),
   interactive(false),
@@ -59,7 +61,7 @@ u_dmsg(G):-ufmt(G),!.
 % :- pack_install(dictoo).
 % :- pack_upgrade(dictoo).
 
-
+*/
 %:- module(system).
 
 :- set_prolog_flag(arc_term_expansion, false).
@@ -110,8 +112,6 @@ arc_set_stream(S,P):- ignore((nonvar(S),nonvar(P),catch(set_stream(S,P),_,fail))
 %:- stream_property(S,file_no(2)), arc_set_stream(S,tty(true)).
 %:- stream_property(S,file_no(1)), arc_set_stream(S,tty(true)).
 
-:- meta_predicate(if_t(0,0)).
-if_t(IF, THEN) :- (   call(IF) ->  call(THEN) ;   true ).
 :- meta_predicate(quietlyd(0)).
 :- export(quietlyd/1).
 quietlyd(G):- quietly(G),!.

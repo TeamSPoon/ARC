@@ -183,7 +183,7 @@ io_to_cntx1(out,in_out_out).
 io_to_cntx1(out,s(_)).
 io_to_cntx1(X,X).
 
-print_individuals:- ensure_test(TestID), with_individuated_cache(true,print_individuals(TestID)). 
+%print_individuals:- ensure_test(TestID), with_individuated_cache(true,print_individuals(TestID)). 
 print_individuals(TestID):- 
   ensure_test(TestID), 
   ensure_individuals(TestID),!,
@@ -683,17 +683,208 @@ obj_group5(TestID,ExampleNum,InOut,ROptions,Objs):-
   arc_cache:individuated_cache(TestID,TID,_GOID,ROptions,Objs), 
   once((sub_var(ExampleNum,TID),sub_var(InOut,TID))),!.
 
-obj_group5(TestID,ExampleNum,InOut,ROptions,Objs):-
- kaggle_arc_io(TestID,ExampleNum,InOut,Grid),
+obj_group_io_5(TestID, ExampleNum, Dir, ROptions, Objs):- var(ExampleNum), !,
+  current_example_scope(TestID, ExampleNum),
+  obj_group_io_5(TestID, ExampleNum, Dir, ROptions, Objs).
+
+obj_group_io_5(TestID, ExampleNum, Dir, ROptions, Objs):- var(Dir), !,
+  member(Dir, [out, in]),
+  obj_group_io_5(TestID, ExampleNum, Dir, ROptions, Objs).
+
+obj_group_io_5(TestID, ExampleNum, Dir, ROptions, Objs):- var(ROptions), !,
+ get_each_ndividuator(Dir, ROptions),
+ obj_group_io_5(TestID, ExampleNum, Dir, ROptions, Objs).
+
+obj_group_io_5(TestID, ExampleNum, Dir, ROptions, Objs):-
+ kaggle_arc_io(TestID, ExampleNum, Dir, Grid),
+ kaggle_arc(TestID, ExampleNum, I, O),
+ (Grid==I->Other=O;Other=I),
   set_example_num(ExampleNum),
- other_grid(Grid,Other),
  with_other_grid(Other,
+     individuate_3(ROptions, Grid, Objs)).
+
+/*obj_group_io_6(TestID, ExampleNum, Dir, ROptions, Grid, Objs):-
+ current_example_nums(TestID, ExampleNum),
+ kaggle_arc_io(TestID, ExampleNum, Dir, Grid),
+ once(grid_to_objs(Grid, ROptions, Objs)).*/
+obj_group_io_6(TestID, Example+Num, Dir, ROptions, Grid, Objs):-
+  ((from_individuated_cache(TestID, TID, GOID, Dir, ROptions, Objs), Objs\==[],
+  once((testid_name_num_io_0(TID, _, Example, Num, Dir),
+        testid_name_num_io_0(GOID, _, Example, Num, Dir))))*-> true ;
+    individuate_3(ROptions, Grid, Objs)).
+
+individuated_cache_group(TestID, ExampleNum, Dir1, FROptions1, Info1, SObjs1):-
+  kaggle_arc(TestID, ExampleNum, _, _),
+  Template = cg_individuated_cache_group(Info, Dir, FROptions, SObjs),
+  Result = cg_individuated_cache_group(Info1, Dir1, FROptions1, SObjs1),
+  findall(Template,
+             each_individuated_cache_group(TestID, ExampleNum, Dir, FROptions, Info, SObjs),
+             List),
+  sort(List, Set),
+  member(Result, Set).
+
+
   
-                 ((fail, arc_cache:individuated_cache(TestID,TID,GOID,ROptions,Objs), Objs\==[],
-  once((testid_name_num_io_0(TID,_,Example,Num,InOut),
-        testid_name_num_io_0(GOID,_,Example,Num,InOut))))*-> true ; grid_to_objs(Grid,ROptions,Objs))).
 
 
+each_individuated_cache_group(TestID, ExampleNum, Dir, FROptions, Info, SObjs):-
+ RuleInfo =  [example(ExampleNum), dir(Dir), roptions(FROptions), testid(TestID), tid(FTID)],
+ from_individuated_cache(TestID, FTID, FGOID, Dir, FROptions, Objs),
+ once((
+  maplist(ignore,
+  [ignore(testid_name_num_io(FTID, TestIDA, ExampleA, NumA, DirA)),
+   ignore(testid_name_num_io(FGOID, TestIDB, ExampleB, NumB, DirB)),
+   DirA=DirB, NumA=NumB, TestIDB=TestIDA, ExampleB=ExampleA,
+   (ExampleNum=(ExampleA+NumA)), DirB = Dir,
+   kaggle_arc_io(TestID, ExampleNum, Dir, Grid)]),
+  my_partition(is_input_object, Objs, Ins, Outs))),
+  member(Dir=SObjs, [in=Ins, out=Outs]),
+  once((SObjs\==[],
+  neg_fg_obj_counts(TestID, ExampleNum, Dir, Grid, FROptions, SObjs, SObjInfo))),
+  append(SObjInfo, RuleInfo, Info).
+
+
+
+overlapped_fg_props(FGO, OLP) :-
+   maplist(indv_props_list, FGO, [F|GP]),
+   include({GP}/[Prop]>>(forall(member(O, GP), member(Prop, O))), F, OLP).
+
+if_number_negate(Info, NegInfo):- number(Info), NegInfo is - Info.
+if_number_negate(Info, NegInfo):- is_list(Info), !, maplist(if_number_negate, Info, NegInfo).
+if_number_negate(Info, NegInfo):- compound(Info), !, compound_name_arguments(Info, F, [A|Out]),
+  if_number_negate(A, B), compound_name_arguments(NegInfo, F, [B|Out]).
+if_number_negate(Info, Info).
+
+neg_fg_obj_counts(TestID, ExampleNum, Dir, Grid, ROptions, ObjsIn, OutNegInfo):- %rtrace,
+  Info =  [fgo_n(NFG), bgo_n(NBG), len(Len), mass_percent(Percent), first_mass(FMass), all_percent(TPercent),
+   fake_percents(Fake), roption(ROptions), example(ExampleNum), dir(Dir), testid(TestID)],
+  include(has_prop(giz(testid_example_io(TestID>ExampleNum*Dir))), ObjsIn, Objs),
+  visible_order(Objs, SObjs),
+  length(SObjs, Len),
+  once((my_partition(is_bg_object, SObjs, BGO, FGO), length(FGO, NFG), length(BGO, NBG))),
+  once(NBG>=2;NFG>=2),
+   %must_det_ll((
+   mass(FGO, FGMass), mass(BGO, BGMass),
+  (var(Grid)->(into_solid_grid(SObjs, Grid), Fake=true);Fake=false),
+   %nth0(0, SObjs, First),
+   mass(Grid, FG_G_Mass), area(Grid, Area), BG_G_Mass is Area-FG_G_Mass,
+  ((member(First, FGO), mass(First, FMass), FMass>1, FMass<FG_G_Mass)->true;
+  ((member(First, FGO), mass(First, FMass), FMass>0, FMass<FG_G_Mass)->true;
+  ((member(First, BGO), mass(First, FMass), FMass>1, FMass<FG_G_Mass)->true;
+  ((member(First, BGO), mass(First, FMass), FMass>0, FMass<FG_G_Mass)->true;
+   (member(First, FGO), mass(First, FMass)))))), !,
+
+
+  once((must_not_error((
+   if_t(FGMass>0.0, (FGMass=:=FG_G_Mass ; FGMass>9)),
+
+   if_t(FG_G_Mass>0.2, Percent is -(FMass/FG_G_Mass*100)),
+   if_t(var(Percent), Percent is -(FMass/BG_G_Mass*100)),
+
+
+   if_t(FG_G_Mass>0.1, TPercent is (FGMass/FG_G_Mass*100)),
+   if_t(var(TPercent), TPercent is (BGMass/BG_G_Mass*100)),
+
+
+   if_t(FGMass==0, if_t( BGMass>0.3 , BGMass=:=BG_G_Mass)),
+
+   %overlapped_fg_props(FGO, OLP), length(OLP, OLPn),
+   %all_different_fg_props(FGO, DOLP), length(DOLP, DOLPn), !,
+
+   %pp([overlap(OLPn, OLP), differnce(DOLPn, DOLP)]),
+   maplist(if_number_negate, Info, NegInfo), !,
+   maplist(object_oc, FGO, FGG),
+   maplist(object_oc, BGO, BGG),
+   append(FGG, BGG, OGG),
+   %obj_atoms(FGO, Atoms), !, nop(obj_atoms(Atoms)),
+   %append(NegInfo, [ogg(OGG)], OutNegInfo))
+   append(NegInfo, OGG, OutNegInfo))))).
+
+global_oid_equals_grid(Obj, OID=globalpoints(Grid)):- obj_to_oid(Obj, OID), globalpoints(Obj, Grid), !.
+%global_oid_equals_mass(Obj, oid(OID, mass(Mass)):- obj_to_oid(Obj, OID), mass(Obj, Mass), iz(sid(Obj, Mass)), mass(Obj, Mass), !.
+
+print_long_set(Set1):- is_list(Set1), length(S, 20), append(S, R, Set1), print(S), nl, !, print_long_set(R).
+print_long_set(Set1):- print(Set1), nl.
+
+%compatible_numbers(L, R, _):- (L#>0;R#>0), !, fail.
+%compatible_numbers(L, R, equal):- L=R, !.
+compatible_numbers(L, R, l_r_factor(0, 0, 1)):- !, L=R.
+compatible_numbers(L, R, l_r_factor(OffsetL, OffsetR, Factor)):-
+  L#>0, R#>0,
+  OffsetL in -1..4,
+  OffsetR in  OffsetL..1,
+  L-OffsetL#>0,
+  R-OffsetR#>0,
+  %(OffsetR #=< OffsetL #\/ OffsetR #=0 #\/ OffsetR #= -1),
+ (R-OffsetR #= Factor * (L-OffsetL)).
+
+%print_term(lhs:-Set1, [nl(true), fullstop(true)]),
+% Calculate the Jaccard similarity with bonuses for closer cells and same colors
+generic_simularity(Object1, Object2, Similarity, ExtraInfo) :-
+  oc_set(Object1, PropSet1), oc_set(Object2, PropSet2), !,
+  generic_propset_simularity(PropSet1, PropSet2, Similarity, ExtraInfo), !.
+
+generic_propset_simularity(PropSet1, PropSet2, Similarity, ExtraInfo):-
+  ExtraInfo =  [how_len(HowLen), how_fg_len(HowFGLen)],
+  if_t((sub_cmpd(len(Len1), PropSet1), sub_cmpd(len(Len2), PropSet2)), compatible_numbers(Len1, Len2, HowLen)),
+  if_t((sub_cmpd(fgo_n(FGLen1), PropSet1), sub_cmpd(fgo_n(FGLen2), PropSet2)), compatible_numbers(FGLen1, FGLen2, HowFGLen)),
+  must_det_ll((
+
+%   wdmsg(lhs), print_long_set(PropSet1),
+%   wdmsg(rhs), print_long_set(PropSet2),
+    intersection(PropSet1, PropSet2, Intersection),
+    union(PropSet1, PropSet2, Union),
+    length(Intersection, IntersectionLen),
+    length(Union, UnionLength),
+    into_subcells(PropSet1, SubPropSet1),
+    into_subcells(PropSet2, SubPropSet2),
+    distance_bonus(SubPropSet1, SubPropSet2, DistanceBonus),
+    color_bonus(SubPropSet1, SubPropSet2, ColorBonus),
+    propset_name(PropSet1, PropSet1Name),
+    propset_name(PropSet2, PropSet2Name),
+    Similarity is (IntersectionLen / UnionLength) + DistanceBonus + ColorBonus,
+    wdmsg(simularity(PropSet1Name, PropSet2Name, Similarity is (IntersectionLen / UnionLength) + DistanceBonus + ColorBonus)))).
+
+propset_name(PropSet2, PropSet2Name):- maplist(first_atom_or_value, PropSet2, PropSet2Name).
+
+first_atom_or_value(C, C):- \+ compound(C), !.
+first_atom_or_value(C, FA):- C=..[_|Args], sub_term(A, Args), atom(A), !, FA=A, !.
+first_atom_or_value(C, FA):- C=..[_, A], atomic(A), !, FA=C.
+first_atom_or_value(C, A):- sub_term(A, C), number(A), !.
+first_atom_or_value(C, A):- sub_term(A, C), atomic(A), !.
+first_atom_or_value(C, C).
+
+%generic_propset_simularity(_PropSet1, _PropSet2, 0, []):- !.
+
+into_subcells(O2, Set2):- into_subcells0(O2, List2), !, list_to_set(List2, Set2).
+into_subcells0(NC, Set):- atom(NC), oid_to_obj(NC, Obj), !, into_subcells0(Obj, Set).
+into_subcells0(NC, Set):- atom(NC), gid_to_grid(NC, Obj), !, into_subcells0(Obj, Set).
+into_subcells0(NC, []):- \+ compound(NC), !.
+into_subcells0(O2, [O2]):- functor(O2, cell, _), !.
+into_subcells0(oc(_, O2), Set2):- !, into_subcells0(O2, Set2).
+into_subcells0(O2, Set2):- is_gridoid(O2), globalpoints(O2, Set2), !.
+into_subcells0(O2, Set2):- is_list(O2), maplist(into_subcells0, O2, Set1), flatten(Set1, Set2).
+into_subcells0(_, []).
+
+
+best_how_pairs(HowPairs, BestPair):-
+   member(BestPair, HowPairs), !.
+
+
+all_different_fg_props(FGO, OLP) :-
+   maplist(indv_props_list, FGO, [F|GP]),
+   length(FGO, Len),
+   include(include_all_different(Len, [F|GP]), F, OLP).
+
+include_all_different(Len, FGO, Prop) :-
+    make_unifiable(Prop, UHAD),
+    findall(V, (
+        member(R, FGO),
+        (member(UHAD, R) -> V = UHAD; V = (\+ UHAD))
+    ), List),
+    variant_list_to_set(List, Set),
+    length(Set, SetL),
+    SetL = Len.
 %show_object_dependancy(_TestID):-  !.
 % =============================================================
 show_object_dependancy(TestID):-  

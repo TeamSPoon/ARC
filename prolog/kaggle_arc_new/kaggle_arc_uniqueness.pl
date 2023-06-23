@@ -47,7 +47,9 @@ dont_notice(rotSize2D(grav, _, _)).
 dont_notice(iz(algo_sid(comp, _))).
 dont_notice(pg(_, mass(_), rank1, _)).
 dont_notice(changes(_)).
-dont_notice(pg(_, cc(bg, _), rank1, 1)).
+dont_notice(pg(_, cc(bg, _), rank1, _)).
+dont_notice(pg(_, cc(fg, _), rank1, _)).
+dont_notice(sym_counts('sym_node_*_+_@_~',_)).
 dont_notice(iz(media(_))).
 dont_notice(iz(type(_))).
 dont_notice(grid_ops(comp, _)).
@@ -437,7 +439,7 @@ objects_of_g(Grid, SegOptions, ObjsCount, IndvS):-
   objects_of_g(Grid, SegOptions, ObjsCount, IndvS).
 
 objects_of_g(Grid, SegOptions, ObjsCount, IndvS):-
-  must_ll(segs_of(Grid, SegOptions, ObjsCount, Segs)),
+  at_least_once(segs_of(Grid, SegOptions, ObjsCount, Segs)),
   must_det_ll(segs_to_objects(Grid, SegOptions, Segs, IndvS)).
 
 segs_to_objects(Grid, SegOptions, ObjsCount, IndvS):-
@@ -450,8 +452,13 @@ segs_to_objects(Grid, SegOptions, Segs, IndvS):-
   gset(VM.lo_program)=[],
   gset(VM.start_options)=[],
   gset(VM.expanded_start_options)=[],
-  maplist(make_indiv_object(VM, [iz(birth(SegOptions))]), Segs, _Objs),
-  post_individuate_8(VM, IndvS))), !.
+  Props = [iz(birth(SegOptions))],
+  maplist(create_indiv_object(VM,Props), Segs, _),  
+  post_individuate_8(VM, IndvS))).
+
+create_indiv_object(VM, Props, Segs, Obj):-
+  make_indiv_object_real(VM, Props, Segs, Obj).
+
 
 textured_points_of(Grid, SegOptions, ObjsCount, Points):-
   indv_options(SegOptions),
@@ -576,7 +583,7 @@ grid_indv_versions1(TestID, ExampleNum, Dir, LHOInS):-
 grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):-
      kaggle_arc_io(TestID, ExampleNum, Dir, In0),
      duplicate_term(In0, In),
-     must_ll(indv_options(HowIn)),
+     at_least_once(indv_options(HowIn)),
      %HowIn=simple(Opt),
      must_det_ll((
        objects_of_g(In, HowIn, CI, InC),
@@ -586,12 +593,20 @@ grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):-
 grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):-
      kaggle_arc_io(TestID, ExampleNum, Dir, In0),
      duplicate_term(In0, In),
-     must_ll(get_each_ndividuator_extended(Dir, HowIn)),
+     at_least_once(get_each_ndividuator_extended(Dir, HowIn)),
      must_det_ll((
        individuate_3(HowIn, In, InC),
        %include(is_fg_object, InC, FGObjs),
        length(InC, CI),
        objs_to_spoints(InC, InPSS))).
+grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):-
+     kaggle_arc_io(TestID, ExampleNum, Dir, _),
+     /*at_least_once*/((
+       obj_group_io_5(TestID, ExampleNum, Dir, HowIn, InC),
+       %include(is_fg_object, InC, FGObjs),
+       length(InC, CI),
+       objs_to_spoints(InC, InPSS))).       
+      
 
 get_each_ndividuator_extended(_, complete).
 %get_each_ndividuator_extended(_, i_pbox).
@@ -672,7 +687,7 @@ best_obj_group_pair(TestID, ExampleNum, HowIO, InC, OutC):-
 learn_object_dependancy(TestID, HowIO, RulesOut):-
 % =============================================================
  ensure_test(TestID),
-  must_det_ll((
+  at_least_once((
   %ensure_individuals(TestID),
   %scope_training(ExampleNum),
   possible_program(TestID, ActionGroupFinal, HowIO, RulesOut),
@@ -682,16 +697,17 @@ learn_object_dependancy(TestID, HowIO, RulesOut):-
 
 possible_program(TestID, ActionGroupFinal, HowIO, RulesOut):-
  must_det_ll((
+ at_least_once((
   % HowIO = in_out(HowIn, _HowOut),
    GNR = group_narrative_rules(HowIO, ActionGroupOut, ExampleRules),
    ignore((ExampleNum=(trn+_))),
    starter_narratives(TestID, Starter0))),
 
- subst_1L([nth-0, lowmin=0, himax-inf], Starter0, Starter),
+ subst_1L([nth-0, lowmin-0, himax-inf], Starter0, Starter),
 
- must_ll((
+ nop(( 
    %(var(HowIn)->get_each_ndividuator(in, HowIn);true),
-    must_ll((synth_program_from_one_example(TestID, trn+0, HowIO, Starter, FirstNarrative0, Rules0), Rules0\==[])),
+    ((synth_program_from_one_example(TestID, trn+0, HowIO, Starter, FirstNarrative0, Rules0), Rules0\==[])),
 
     synth_program_from_one_example(TestID, trn+1, HowIO, Starter, FirstNarrative1, Rules1),
     Rules1\==[],
@@ -699,6 +715,7 @@ possible_program(TestID, ActionGroupFinal, HowIO, RulesOut):-
     nonvar(FirstNarrative)
  )),
 
+ Starter = FirstNarrative,
  findall(GNR,
     (kaggle_arc(TestID, ExampleNum, _, _),
       synth_program_from_one_example(TestID, ExampleNum, HowIO, FirstNarrative, ActionGroupOut, ExampleRules)), HNRL),
@@ -707,7 +724,7 @@ possible_program(TestID, ActionGroupFinal, HowIO, RulesOut):-
   maplist(arg(2), HNRL, AGL), some_min_unifier(AGL, ActionGroupFinal),
   maplist(arg(3), HNRL, RulesL), append(RulesL, RulesF),
  pp_ilp(rulesF=RulesF),
- combine_trans_rules(TestID, RulesF, RulesOut).
+ combine_trans_rules(TestID, RulesF, RulesOut))).
 
 combine_trans_rules(TestID, RulesOutL, RulesOut):-merge_rules(TestID, RulesOutL, RulesOut).
 
@@ -716,10 +733,11 @@ synth_program_from_one_example(TestID, ExampleNum, HowIO, ActionGroup, ActionGro
 %  HowIO = in_out(HowIn, _HowOut),
 %  _GNR = group_narrative_rules(HowIO, ActionGroupOut, RulesL),
  %(var(HowIn)->get_each_ndividuator(in, HowIn);true),
-  must_ll((
-    best_obj_group_pair(TestID, ExampleNum, HowIO, LHSObjs, RHSObjs), RHSObjs\==[], LHSObjs\==[],
+ once((
+  best_obj_group_pair(TestID, ExampleNum, HowIO, LHSObjs, RHSObjs), RHSObjs\==[], LHSObjs\==[],
   starter_narratives(TestID, ActionGroup),
-  InfoStart=[how(HowIO)], pp(how=HowIO),
+  InfoStart=[how(HowIO)], 
+  pp(how=HowIO),
   get_object_dependancy(InfoStart, TestID, ExampleNum, ActionGroup, ActionGroupOut, RHSObjs, LHSObjs, Groups),
   groups_to_rules(TestID, Groups, RulesL),
   pp_ilp([narrative_out=ActionGroupOut, rulesL=RulesL, narrative_out=ActionGroupOut]))),
@@ -829,7 +847,7 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
                   ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):-
 ((
   narrative_element(copy_object_perfect(_Min, _Max, _Nth), ActionGroupIn, ActionGroupOut), !,
-  must_ll((select(Left, LHSObjs, LHSOut), select(Right, RHSObjs, RHSOut),
+  /*at_least_once*/((select(Left, LHSObjs, LHSOut), select(Right, RHSObjs, RHSOut),
   how_are_different(Left, Right, TypeSet, _PropSet), TypeSet=[],
   noteable_propdiffs(Left, Right, Same, _L, R), Same\==[], R==[])),
 
@@ -862,8 +880,8 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   maplist(find_relative_r(Info, Left, Right, PrevRules), R, NewR, PreConds, NewRules),
   append_LR(NewRules, NewRulesF),
   append_LR([Same, PreConds], LHS),
-  NewRRule1 = rule([propset(PropSet)|Info], LHS, copy_object_n_changes(/*N, Max, Nth, */TypeSet, NewR)),
-  (R\==NewR -> NewRRule2 = rule([propset(PropSet)|Info], Same, copy_object_n_changes(/*N, Max, Nth, */TypeSet, R)) ; NewRRule2=[]),
+  NewRRule1 = rule([propset(PropSet)|Info], LHS, copy_object_n_changes(N,/*N, Max, Nth, */TypeSet, NewR)),
+  (R\==NewR -> NewRRule2 = rule([propset(PropSet)|Info], Same, copy_object_n_changes(N,/* Max, Nth, */TypeSet, R)) ; NewRRule2=[]),
   subst_2L_sometimes(R, NewR, Left, NewLeft),
   append_LR(PrevRules, [exists(left(NewLeft)), NewRulesF, NewRRule1, NewRRule2], RulesOut),
   incr_step(Info, InfoOut),
@@ -3903,9 +3921,9 @@ narrative_element(Ele, ActionGroupIn, ActionGroupOut):-
   ActionGroupIn = [EleIn|ActionGroup],
    EleIn=..[F|ArgsIn], append(LArgs, [Min, Max, Was], ArgsIn),
    Ele=..[F|Args], append(LArgs, [Min, Max, WasOut], Args),
-   ((number(Was), number(Max))-> Max>Was ; true),
+   ((number(Was), number(Max))-> (Max>Was) ; true),
     (number(Was)-> WasOut is Was +1 ; WasOut=Was),
-   (Min, Max==WasOut
+   (Max==WasOut
       -> ActionGroupOut= ActionGroup
       ; must_det_ll((
        append(LArgs, [Min, Max, WasOut], ArgsOut), EleOut =.. [F|ArgsOut],

@@ -149,9 +149,9 @@ make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
   physical_points(LPoints0,LPoints),
 
   %writeg([gpoints0=GPoints0,lpoints=LPoints,shapePoints(RotG,OX,OY)=ShapePoints]),
-  if_t(ShapePoints==[],
+  ignore((ShapePoints==[],
     (pp([make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints0,ObjO),lPoints=LPoints]),
-    ibreak)),
+    ibreak))),
   make_localpoints(ShapePoints,RotG,OX,OY,PenColors,_CheckLPoints),
   %sort_safe(LPoints0,LPoints0S),
   %CheckLPoints=LPoints0S,
@@ -540,13 +540,13 @@ make_indiv_object_real(VM,Overrides,GOPoints,NewObj):-
     -> must_det_ll((override_object(Overrides,Orig,NewObj), ROBJS = Rest))
     ; must_det_ll((make_indiv_object_s(VM.gid,VM.h,VM.v,Overrides,Points,NewObj), ROBJS = Objs)))),!,
 
-  if_t(NewObj\=@=Orig,
+  ignore((NewObj\=@=Orig,
    (if_t(is_object(Orig),
       nop((obj_to_oid(Orig,OOID),
        retract_object(VM.gid,OOID,Orig),
        print_grid(remove_prev(OOID),Orig)))),
     NEW = [NewObj|ROBJS],
-    set(VM.objs)=NEW)))).
+    set(VM.objs)=NEW))))).
 
 maybe_replace_object(VM,Orig,NewObj):- 
   if_t(NewObj\=@=Orig,
@@ -1054,12 +1054,12 @@ assert_object_oid(_TID,Obj,Glyph,OID):-
    obj_to_parent_gid(Obj,GID),  
    %(nonvar(GID)->tid_to_gid(TID,GID);true),
 
-   if_t((nonvar(OID),var(GID)),
+   ignore((nonvar(OID),var(GID),
     (atomic_list_concat(['o',Glyph,Iv|GIDLst],'_',OID),
-     atomic_list_concat(GIDLst,'_',GID))),
+     atomic_list_concat(GIDLst,'_',GID)))),
 
-   if_t((nonvar(GID),var(OID)),
-    (atomic_list_concat(['o',Glyph,Iv,GID],'_',OID))),
+   ignore((nonvar(GID),var(OID),
+    (atomic_list_concat(['o',Glyph,Iv,GID],'_',OID)))),
 
    retractall(oid_glyph_object(OID,_,_)),
    retractall(gid_glyph_oid(GID,Glyph,_)), 
