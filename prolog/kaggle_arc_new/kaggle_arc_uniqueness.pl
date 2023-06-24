@@ -39,6 +39,8 @@ The ARC project is designed to solve a wide range of visual reasoning tasks, inc
 % it is loaded from the kaggle_arc_header.pl file
 
 
+dont_notice(iz(algo_sid(norm,_))).
+dont_notice(iz(sid(_))).
 
 
 % Define predicates that shouldn't be noticed
@@ -103,6 +105,8 @@ do_notice(sym_counts(_, _)).
 % Predicate to check if P should be noticed
 ok_notice(P):- \+ \+ do_notice(P), !.
 ok_notice(P):- \+ dont_notice(P).
+
+
 
 
 dont_induce(link(sees(_), _)).
@@ -709,7 +713,7 @@ possible_program(TestID, ActionGroupFinal, HowIO, RulesOut):-
 
     synth_program_from_one_example(TestID, trn+1, HowIO, Starter, FirstNarrative1, Rules1),
     Rules1\==[],
-    some_min_unifier([FirstNarrative0, FirstNarrative1], FirstNarrative),
+    some_min_unifier_allow_nil([FirstNarrative0, FirstNarrative1], FirstNarrative),
     nonvar(FirstNarrative)
  ))*->true;Starter = FirstNarrative),
 
@@ -720,11 +724,15 @@ possible_program(TestID, ActionGroupFinal, HowIO, RulesOut):-
     (kaggle_arc(TestID, ExampleNum, _, _),
       synth_program_from_one_example(TestID, ExampleNum, HowIO, FirstNarrative, ActionGroupOut, ExampleRules)), HNRL),
  pp_ilp(hNRL=HNRL),
-  maplist(arg(1), HNRL, HowL), some_min_unifier(HowL, HowIO),
-  maplist(arg(2), HNRL, AGL), some_min_unifier(AGL, ActionGroupFinal),
+  maplist(arg(1), HNRL, HowL), some_min_unifier_allow_nil(HowL, HowIO),
+  maplist(arg(2), HNRL, AGL), some_min_unifier_allow_nil(AGL, ActionGroupFinal),
   maplist(arg(3), HNRL, RulesL), append(RulesL, RulesF),
  pp_ilp(rulesF=RulesF),
  combine_trans_rules(TestID, RulesF, RulesOut))).
+
+some_min_unifier_allow_nil(MUL,Out):-
+  include(\==([]),MUL,MULL),
+  some_min_unifier(MULL,Out).
 
 combine_trans_rules(TestID, RulesOutL, RulesOut):-merge_rules(TestID, RulesOutL, RulesOut).
 
