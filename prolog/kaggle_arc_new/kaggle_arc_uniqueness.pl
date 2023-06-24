@@ -39,8 +39,8 @@ The ARC project is designed to solve a wide range of visual reasoning tasks, inc
 % it is loaded from the kaggle_arc_header.pl file
 
 
-dont_notice(iz(algo_sid(norm,_))).
-dont_notice(iz(sid(_))).
+%dont_notice(iz(algo_sid(norm,_))).
+%dont_notice(iz(sid(_))).
 
 
 % Define predicates that shouldn't be noticed
@@ -299,7 +299,6 @@ is_fti_step(i_opts).
 i_opts(Shapes, count_equ(NF), Mono, Nsew, IncludeBG, VM):-
   SegOptions = i_opts(Shapes, count_equ(NF), Mono, Nsew, IncludeBG),
   simple(SegOptions, VM).
-
 
 
 indv_options(Opt):- nonvar(Opt), !, (Opt=simple(SOpts)->indv_options(SOpts);true).
@@ -726,17 +725,21 @@ possible_program(TestID, ActionGroupFinal, HowIO, RulesOut):-
  pp_ilp(hNRL=HNRL),
   maplist(arg(1), HNRL, HowL), some_min_unifier_allow_nil(HowL, HowIO),
   maplist(arg(2), HNRL, AGL), some_min_unifier_allow_nil(AGL, ActionGroupFinal),
-  maplist(arg(3), HNRL, RulesL), append(RulesL, RulesF),
- pp_ilp(rulesF=RulesF),
- combine_trans_rules(TestID, RulesF, RulesOut))).
+  maplist(arg(3), HNRL, RulesL), 
+ pp_ilp(rulesF=RulesL),
+ combine_trans_rules(TestID, RulesL, RulesOut))).
 
 some_min_unifier_allow_nil(MUL,Out):-
   include(\==([]),MUL,MULL),
   some_min_unifier(MULL,Out).
 
-combine_trans_rules(TestID, RulesOutL, RulesOut):-merge_rules(TestID, RulesOutL, RulesOut).
+combine_trans_rules(TestID, RulesOutL, RulesOut):-
+  maplist(merge_rules(ex,TestID),RulesOutL,RulesOutLL),
+  flatten(RulesOutLL, RulesOutLLF),
+  merge_rules(prog,TestID, RulesOutLLF, RulesOut).
 
-:- listing(possible_program).
+% for troubshooter term expansion
+%:- listing(possible_program).
 
 synth_program_from_one_example(TestID, ExampleNum, HowIO, ActionGroup, ActionGroupOut, RulesL):-
   current_example_scope(TestID, ExampleNum),
@@ -751,8 +754,7 @@ synth_program_from_one_example(TestID, ExampleNum, HowIO, ActionGroup, ActionGro
   get_object_dependancy(InfoStart, TestID, ExampleNum, ActionGroup, ActionGroupOut, RHSObjs, LHSObjs, Groups),
   groups_to_rules(TestID, Groups, RulesL),
   pp_ilp([narrative_out=ActionGroupOut, rulesL=RulesL, narrative_out=ActionGroupOut]))),
-  nop(merge_rules(TestID, RulesL, Rules)),
-  nop(pp_ilp(synth_program_from_one_example=Rules)), !.
+  nop((merge_rules(ex,TestID, RulesL, Rules), pp_ilp(synth_program_from_one_example=Rules))), !.
 
 groups_to_rules(TestID, Groups, RulesL):-
  flatten([Groups], GroupsF),
@@ -827,8 +829,10 @@ calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, Acti
 
 calc_o_d_recursive(VM, [Skip|ActionGroupIn], Info, PrevRules, LHSObjs, RHSObjs, AGF, Groups):-
  dash_chars,
-  wdmsg(no_more(Skip)),
- Skip=..[_|ArgsIn], append(_, [Min, _Max, Nth], ArgsIn), !, Nth>=Min,
+ wdmsg(no_more(Skip)), 
+ Skip=..[_|ArgsIn], append(_, [Min, Max, Nth], ArgsIn), !, 
+ ((Nth>=Min, Nth=<Max)-> true ; (show_last_chance(no_more(Skip),LHSObjs,RHSObjs),!,fail)),
+
  dash_chars,
    Skip=..[_|Args], last(Args, Was),
     (Was = 0 -> AGF = ActionGroupFinal ; AGF = [Skip|ActionGroupFinal]),
@@ -880,7 +884,7 @@ calc_o_d_recursively(_VM, ActionGroupIn, InfoInOut, PrevRules, LHSObjs, RHSObjs,
     how_are_different(Left, Right, _TypeSet, PropSet),
     into_lhs(Left,LHS),
     PropSet==[]))
-  *-> true ; (show_last_chance(copy_object_perfect(Min, Max, Nth),LHSObjs,RHSObjs),!,fail)),
+  *-> true ; (fail,show_last_chance(copy_object_perfect(Min, Max, Nth),LHSObjs,RHSObjs),!,fail)),
 
   append_LR(PrevRules, [exists(left(Left)), rule(InfoInOut, LHS, copy_object_perfect(Min..Max, s))], RulesOut))).
 
@@ -890,32 +894,34 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
 ((
   narrative_element(copy_object_n_changes(N, Min, Max, Nth), ActionGroupIn, ActionGroupOut), !,
   %Nth<Max,
-  select(Left, LHSObjs, LHSOut),
-  select(Right, RHSObjs, RHSOut),
-  how_are_different(Left, Right, TypeSet, PropSet),
-  TypeSet\==[],
-  % \+ sub_var(repaint, TypeSet),
-  (number(N) -> (length(TypeSet, Len), Len =< N) ; true),
+  select(Left, LHSObjs, LHSOut), select(Right, RHSObjs, RHSOut),
+  how_are_different(Left, Right, TypeOfDiffs, SetOfDiffs),
+  how_are_same(Left, Right, TypeOfSames, SetOfSames),
+  (var(N) -> length(TypeOfDiffs, N) ;  (number(N) -> (length(TypeOfDiffs, Len), Len = N) ; true)),!,
   dash_chars, nl,
-  noteable_propdiffs(Left, Right, Same, LL, R0),
-  for_rhs(R0, R),
-  pp_ilp(3, [ps(N)=PropSet, ts=TypeSet]),
+  must_det_ll((
+  %noteable_propdiffs(Left, Right, SameProps, LL, R0),
+  maplist(arg(2),SetOfDiffs,SetOfDiffs2),maplist(arg(3),SetOfDiffs2,DiffProps),
+  maplist(arg(2),SetOfSames,SetOfSames2),maplist(arg(3),SetOfSames2,SameProps),
+  SameProps\==[], % have to have something in common
   print_ss(copy_object_n_changes(N, Max, Nth), Left, Right),
-  pp_ilp(3, [left=LL,
-            right=R,
-            same=Same]),
-  maplist(find_relative_r(Info, Left, Right, PrevRules), R, NewR, PreConds, NewRules),
+  pp_ilp(3, [diffs=TypeOfDiffs, diffprops=SetOfDiffs]),
+  pp_ilp(3, [sames=TypeOfSames, sameprops=SetOfSames]),
+  maplist(find_relative_r(Info, Left, Right, PrevRules), DiffProps, NewRSet, PreConds, NewRules),
+  append_LR([SameProps, PreConds], NewRLHS),
   append_LR(NewRules, NewRulesF),
-  append_LR([Same, PreConds], LHS),
-  NewRRule1 = rule([propset(PropSet)|Info], LHS, copy_object_n_changes(N, Min..Max, TypeSet, NewR)),
-  (R\==NewR 
-    -> NewRRule2 = rule([propset(PropSet)|Info], Same, copy_object_n_changes(N, Min..Max, TypeSet, R)) 
-    ; NewRRule2=[]),
-  subst_2L_sometimes(R, NewR, Left, NewLeft),
+  subst_2L_sometimes(DiffProps, NewRSet, Left, NewLeft),
+  
+  RuleInfo = [diffs_sames(SetOfDiffs,SetOfSames)|Info],
+  NewRRule1 = rule(RuleInfo, NewRLHS, copy_object_n_changes(N, Min..Max, TypeOfDiffs, NewRSet)),
+ % (DiffProps\=@=NewRSet 
+ %   -> NewRRule2 = [] % rule(RuleInfo, SameProps, copy_object_n_changes_else(N, Min..Max, TypeOfDiffs, DiffProps)) 
+ %   ; NewRRule2=[]),
+  NewRRule2=[],
   append_LR(PrevRules, [exists(left(NewLeft)), NewRulesF, NewRRule1, NewRRule2], RulesOut),
-  =(Info, InfoOut),
+  InfoOut = Info,
   dash_chars, nl,
-  true)), !.
+  true)))), !.
 
 for_rhs(R0, R):-((include(good_for_rhs, R0, R), R\==[])->true;R0=R), !.
 
@@ -934,36 +940,62 @@ verbatum_unifiable(of_obj(_, _, _)).
 verbatum_unifiable(of_obj(_, _, _, _)).
 verbatum_unifiable(always(_)).
 
-%find_relative_r(Info, Left, Right, Possibles, loc2D(_, _), [], [], []):-!.
-find_relative_r(Info, Left, Right, Possibles, R, NewR, PreCond, XtraRule):- fail,
-  ((make_unifiable_u(R, E), make_unifiable_u(E, GetR), make_unifiable_u(R, NewR),
-  iz_arg(1, R, ValR), number(ValR), iz_arg(1, E, ValE), iz_arg(1, NewR, ValNewR), iz_arg(1, GetR, ValGetR),
-  (sub_term(P, Possibles);P=Left), P\==Right, is_object(P), indv_props_list(P, Props), member(E, Props),
-    noteable_propdiffs(P, Right, _, LL, _),
-    into_lhs(Right, LHS1), subst001(LHS1, E, always(GetR), LHS),
-    subst001(LL, E, true, LLG),
-    OF_OBJ=of_obj(NewR, Convertor, LLG),
-    subst001(OF_OBJ, NewR, GetR, OF_OBJ_GET),
-    append_LR([always(OF_OBJ_GET), iz(info(OF_OBJ_GET))], PreCond),
-    make_conversion(ValE, ValR, ValGetR, ValNewR, Convertor),
-    XtraRule = [ac_unit(_, OF_OBJ, [iz(info(Info)), iz(info(OF_OBJ))|LHS])])),
-   flag('VAR_', VV, VV+0), numbervars(v(ValE, ValR, ValGetR, ValNewR, Convertor), VV, NEWVV, []), set_flag('VAR_', NEWVV), !.
 
+
+%find_relative_r(Info, Left, Right, Possibles, loc2D(_, _), [], [], []):-!.
+
+find_relative_sr(Same, Info, Left, Right, Possibles, R, NewRSet, PreCond, XtraRule):-
+  ((make_unifiable_u(R, E), make_unifiable_u(E, GetR), make_unifiable_u(R, NewRSet),
+  iz_arg(1, R, ValR), iz_arg(1, E, ValE), iz_arg(1, NewRSet, ValNewR), iz_arg(1, GetR, ValGetR),
+
+    if_t((Same == same,number(ValR)),     (ValE#=ValR)),
+    if_t((Same == diff,number(ValR)),     (ValE#\=ValR)),
+    if_t((Same == same, \+ number(ValR)), (ValE=ValR)),
+    if_t((Same == diff, \+ number(ValR)), (dif(ValE,ValR))),
+
+  ((sub_term(P, Possibles),is_object(P));(fail,P=Left)), 
+    P\==Right, indv_props_list(P, Props), member(E, Props),
+    into_lhs(P, LHS1), subst001(LHS1, E, always(GetR), PLHS),
+    %noteable_propdiffs(P,Left, _, PL, _),    
+    noteable_propdiffs(P, Right, _, PR, _), subst001(PR, E, true, PRG),
+    OF_OBJ=of_obj(NewRSet, Convertor, PRG),
+    subst001(OF_OBJ, NewRSet, GetR, OF_OBJ_GET),
+    append_LR([always(OF_OBJ_GET), iz(info(OF_OBJ_GET))], PreCond),    
+    make_conversion(Same, ValE, ValR, ValGetR, ValNewR, Convertor),
+    XtraRule = [ac_unit(_, OF_OBJ, [iz(info(Info)), iz(info(OF_OBJ))|PLHS])])),
+   flag('VAR_', VV, VV+0), numbervars(v(ValE, ValR, ValGetR, ValNewR, Convertor), VV, NEWVV, [attvar(bind)]), set_flag('VAR_', NEWVV), !.
+
+find_relative_r(Info, Left, Right, Possibles, R, NewRSet, PreCond, XtraRule):- 
+  find_relative_sr(same,Info, Left, Right, Possibles, R, NewRSet, PreCond, XtraRule),!.
+find_relative_r(Info, Left, Right, Possibles, R, NewRSet, PreCond, XtraRule):- 
+  find_relative_sr(diff,Info, Left, Right, Possibles, R, NewRSet, PreCond, XtraRule),!.
 find_relative_r(_Info, _, _, _, R, R, [], []):-!.
 /*
   make_unifiable_u(E, GetR),
-  new_r(GetR, R, E, NewR, SubExpr),
+  new_r(GetR, R, E, NewRSet, SubExpr),
   */
-make_conversion(ValE, ValR, ValGetR, ValNewR, Convertor):- number(ValR), number(ValE),
+make_conversion(same,ValE, ValR, ValGetR, ValNewR, Convertor):- number(ValR), !,
+  ignore(catch_log(ValR = ValE)),
+  ignore(catch_log(ValNewR = ValGetR)),
+  Convertor = true. % ( ValR#=ValE, ValNewR #= ValGetR).
+  
+make_conversion(diff,ValE, ValR, ValGetR, ValNewR, Convertor):- number(ValR), number(ValE),!,
   Dif is (ValR-ValE),
-  Convertor = (ValNewR #= ValGetR + Dif).
-make_conversion(ValE, ValR, ValGetR, ValNewR, Convertor):-
-  Convertor = (ValNewR #= ValGetR + (ValR-ValE)).
+  Convertor = (Dif #= (ValR-ValE),ValNewR #= ValGetR + Dif).
 
+make_conversion(diff,ValE, ValR, ValGetR, ValNewR, Convertor):- number(ValR), !,
+  Convertor = (Dif #= (ValR-ValE),ValNewR #= ValGetR + Dif).
 
-new_r(GetR, R, E, NewR, NewR=GetR):- E=@=R, NewR=GetR.
-new_r(GetR, R, _E, NewR, Expr):- iz_arg(1, GetR, ValE), iz_arg(1, R, ValR), number(ValE), number(ValR), Dif is ValE - ValR,
-  make_unifiable(GetR, NewR), iz_arg(1, NewR, ValNewR), Expr = (ValNewR #= ValE + Dif).
+make_conversion(diff,ValE, ValR, ValGetR, ValNewR, Convertor):- 
+  Convertor = relates_between(ValE = ValR, ValNewR = ValGetR).
+make_conversion(diff,ValE, ValR, ValGetR, ValNewR, Convertor):-
+  Convertor = (dif(ValE,ValR),dif(ValNewR,ValGetR)).
+
+relates_between([X1],X2,Y1,Y2):- X1=X2,Y1=Y2,!.
+
+new_r(GetR, R, E, NewRSet, NewRSet=GetR):- E=@=R, NewRSet=GetR.
+new_r(GetR, R, _E, NewRSet, Expr):- iz_arg(1, GetR, ValE), iz_arg(1, R, ValR), number(ValE), number(ValR), Dif is ValE - ValR,
+  make_unifiable(GetR, NewRSet), iz_arg(1, NewRSet, ValNewR), Expr = (ValNewR #= ValE + Dif).
 
 iz_arg(N, FA, A):- FA=..[_, T], compound(T), !, iz_arg(N, T, A).
 iz_arg(N, T, A):- arg(N, T, A), !.
@@ -1036,8 +1068,10 @@ starter_narrative(t('25d487eb'), [
 
 starter_narrative(v(e41c6fd3), [
    copy_object_perfect(1, 1, nth), % copy one object perfectly
+   %copy_object_n_changes(0, 1, 1, nth), % copy one object perfectly
    copy_object_n_changes(1, 2, 4, nth), % copy 2-4 objects that contain a single property change
-   balanced_or_delete_leftovers(balanced(_), nth) ]). % there should not be any unprocessed input objects
+   balanced_or_delete_leftovers(balanced(_), nth) ]):- % there should not be any unprocessed input objects
+  fail.
 
 generic_starter_narratives(ActionGroup):-
  ActionGroup=
@@ -1141,15 +1175,34 @@ compute_scene_change(TestID):-
  ensure_test(TestID),
  with_pair_mode(whole_test,
  ((must_det_ll((
-   learn_object_dependancy(TestID, HowIO, RulesList),
-   is_list(RulesList),
-   merge_rules(TestID, RulesList, NewRulesList))),
-  forall(member(R, NewRulesList), assert_ac_db(TestID, R)),
-  pp_ilp(rulesList(HowIO)=NewRulesList)))), !.
+   learn_object_dependancy(TestID, HowIO, Rules),
+   is_list(Rules),
+   forall(member(R, Rules), 
+     assert_ac_db(TestID, R)),
+  pp_ilp(rulesList(HowIO)=Rules)))))), !.
 
-:- listing(compute_scene_change/1).
+% for troubshooting term expansion
+%:- listing(compute_scene_change/1).
+/*  Should look like this:
 
-merge_rules(TestID, RulesList, NewRulesList):-
+:- module_transparent compute_scene_change/1.
+
+compute_scene_change(TestID) :-
+    ensure_test(TestID),
+    with_pair_mode(whole_test,
+                   ( must_det_ll(learn_object_dependancy(TestID,
+                                                         HowIO,
+                                                         Rules)),
+                     must_det_ll(is_list(Rules)),
+                     must_det_ll(\+ (member(R, Rules), \+assert_ac_db(TestID, R))),
+                     must_det_ll(pp_ilp(rulesList(HowIO)=Rules))
+                   )),
+    !.
+
+*/
+
+merge_rules(ex,_TestID, RulesList, RulesList):-!.
+merge_rules(_,TestID, RulesList, NewRulesList):-
  must_det_ll((
   var(NewRulesList),
   is_list(RulesList),
@@ -3618,6 +3671,14 @@ ignore_prop_when(adding, P):- nonvar(P), good_for_rhs(P), !, fail.
 ignore_prop_when(_, P):- assume_prop(P).
 ignore_prop_when(removing, P):- ignore_prop_when(adding, P).
 
+noteable_propdiffs(Left, Right, SameProps, LeftProps, RightProps):-!,
+  how_are_different(Left, Right, _TypeOfDiffs, SetOfDiffs),
+  how_are_same(Left, Right, _TypeOfSames, SetOfSames),
+  maplist(arg(2),SetOfDiffs,SetOfDiffs2),
+  maplist(arg(2),SetOfDiffs2,LeftProps),
+  maplist(arg(3),SetOfDiffs2,RightProps),
+  maplist(arg(2),SetOfSames,SetOfSames2),maplist(arg(3),SetOfSames2,SameProps),!.
+
 noteable_propdiffs(E1, E2, S, L, R):-
   indv_eprops_list(E1, FP1), indv_eprops_list(E2, FP2),
   intersection(FP1, FP2, S, L, R),!.
@@ -3952,20 +4013,28 @@ has_a_value(P):- make_unifiable_u(P, U), P\=@=U.
 how_are_different(O1, O2, PropSet):-
   how_are_different(O1, O2, _TypeSet, PropSet).
 how_are_different(O1, O2, TypeSet, PropSet):-
-  findall(Type=Same, (prop_pairs2(O1, O2, Type, Same, _P), Same\==same, Type\==reorder), List),
+  findall(Type=Same, (prop_pairs2(O1, O2, Type, Same, _P), Same\=same(_,_,_), Type\==reorder), List),
   maplist(arg(1), List, TypeL), vsr_set(TypeL, TypeSet),
   vsr_set(List, PropSet).
+
+how_are_same(O1, O2, PropSet):-
+  how_are_same(O1, O2, _TypeSet, PropSet).
+how_are_same(O1, O2, TypeSet, PropSet):-
+  findall(Type=Same, (prop_pairs2(O1, O2, Type, Same, _P), Same\=different(_,_,_), Type\==reorder), List),
+  maplist(arg(1), List, TypeL), vsr_set(TypeL, TypeSet),
+  vsr_set(List, PropSet).
+
 
 prop_pairs(O1, O2, Type, Same, P):- prop_pairs2(O1, O2, Type, Same, P).
 
 prop_pairs2(O1, O2, Type, Change, P):-
-  flat_props(O1, FF1), flat_props(O2, FF2), !,
-  intersection(FF1, FF2, _, F1, F2),
-  member(P2, F2), make_unifiable_u(P2, P1),
- (once((member(P1, F1), (other_val(P2, P1)->Change=different(P, P1, P2);Change=same)))->
-   min_unifier(P2, P1, P); ((Change=adding(P), P=P2))),
- prop_type(P2, Type),
- \+ ignore_prop_when(Change, P).
+  flat_props(O1, F1), flat_props(O2, F2), !,
+  %intersection(FF1, FF2, _, F1, F2),
+  prop_type(P1, Type), member(P1, F1), make_unifiable_u(P1, P2),
+ (once((member(P2, F2), 
+       (other_val(P1, P2)->Change=different(P, P1, P2);Change=same(P, P1, P2))))->
+   min_unifier(P1, P2, P); ((fail,Change=adding(P), P=P1))),
+ nop((\+ ignore_prop_when(Change, P))).
 
 narrative_element_once(Ele, ActionGroupIn, ActionGroupOut):-
   ActionGroupIn = [Ele|ActionGroupOut], !.

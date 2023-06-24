@@ -1335,6 +1335,7 @@ show_cp_dff_rem_keep_add(TransRule):-   %flat_props([B],PB), intersection(Same,P
 show_cp_dff_rem_keep_add(E1,E2):-  
   dash_chars,
   if_t(how_are_different(E1,E2,Set),pp(how_are_different=Set)),    
+  if_t(how_are_same(E1,E2,Set2),pp(how_are_same=Set2)),    
   noteable_propdiffs(E1,E2,Same0,LHS,RHS),
   ensure_comment_filter(Same0,Same),
   %if_t(Same==[],pp_ilp(sames=Same)),

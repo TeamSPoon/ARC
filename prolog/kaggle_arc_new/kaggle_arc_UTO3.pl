@@ -1124,6 +1124,9 @@ has_a_value(P):- make_unifiable_u(P,U),P\=@=U.
 how_are_different(O1,O2,Set):-
   findall(Type=Same,prop_pairs2(O1,O2,Type,Same,_P),List),
   vsr_set(List,Set).
+how_are_same(O1,O2,Set):-
+  findall(Type=Same,prop_pairs2(O1,O2,Type,Same,_P),List),
+  vsr_set(List,Set).
 
 prop_pairs(O1,O2,Type,Same,P):- prop_pairs2(O1,O2,Type,Same,P).
 

@@ -620,8 +620,20 @@ is_fti_step(extend_obj_proplists).
 extend_obj_proplists(VM):- 
  if_t(VM.objs\==[],extend_group_proplist(VM.objs,set(VM.objs))).
 
-:- listing(extend_obj_proplists/1).
+% for troubshooter term expansion
+%:- listing(extend_obj_proplists/1).
+/*  Should look like this:
 
+extend_obj_proplists(VM) :-
+    if_t(( '.'(VM, objs, A),
+           A\==[]
+         ),
+         ( get_kov(objs, VM, B),
+           extend_group_proplist(B, C),
+           set_omember(b, objs, VM, C)
+         )).
+
+*/
 % called when we think the proplist is already extended
 avoid_group_proplist(I,I).
 

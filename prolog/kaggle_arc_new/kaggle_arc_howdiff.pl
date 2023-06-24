@@ -882,7 +882,7 @@ type_prop(reshape,iz(stype(_))).
 type_prop(reshape,iz(sid(_))).
 type_prop(reshape,iz(filltype(_))).
 type_prop(reshape,iz(algo_sid(_, _))).
-type_prop(reshape,grid_rep(norm,_)).
+% % TODO type_prop(reshape,grid_rep(norm,_)).
 
 %type_prop(rescale,grid_rep(norm,_)).
 %type_prop(rescale,vis2D(_,_)).
@@ -906,7 +906,7 @@ type_prop(reposition,iz(cenX(_))).
 type_prop(reposition,edge(_,_)).
 
 type_prop(repaint,pen(_)).
-type_prop(repaint,grid_rep(norm,_)).
+% % TODO type_prop(repaint,grid_rep(norm,_)).
 type_prop(repaint,colors_cc(_)).
 %type_prop(repaint,cc(_,_)).
 

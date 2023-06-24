@@ -2333,7 +2333,8 @@ into_fti(TID,ROptions,GridIn0,VM):-
    progress(yellow,igo(ROptions,ID)=(H,V)),
    !.
 
-:- listing(into_fti).
+% for troubshooter term expansion
+%:- listing(into_fti).
 
 into_grid_d(Grid,Grid_D):- most_d_colors(Grid,_CI,Grid_D),!.
 %must_det_ll((subst001(Grid,black,wbg,TexturedGrid), most_d_colors(TexturedGrid,_CI,Grid_D))),
