@@ -217,13 +217,15 @@ show_indiv_textinfo2(Why,AS0,ExceptFor):-
 
 
   % pp(vAS0=AS0),
-  extend_group_proplist([obj(Props11)],[obj(Props)]),
+  extend_group_proplist([obj(Props11)],ObjL),
+
 
   %ignore((o2g(Obj,GGG), nonvar(GGG),set_glyph_to_object(GGG,Obj))),
  % will_show_grid(Obj,TF),
   TF = false,
  % obj_to_oid(Obj,MyOID),
   %o2ansi(MyOID,MissGlyph),
+  ObjL = [Obj],
   Obj = obj(Props), 
 
   %pp(props=Props),
@@ -1012,7 +1014,7 @@ ac_unit_visitor(ac_unit(P,PSame),_IO,P,PSame).
 ac_unit_visitor(ac_rules(_,IO,P,PSame),IO,P,PSame).
 ac_unit_visitor(ac_listing(_,IO,P,PSame),IO,P,PSame).
 
-pp_ilp(Grp):- must_det_ll(pp_ilp(1,Grp)),!.
+pp_ilp(Grp):- notrace((must_det_ll(pp_ilp(1,Grp)))),!.
 
 pp_ilp(D,T):-  T==[],!,prefix_spaces(D,write('[] ')),!.
 pp_ilp(D,_):-  D > 0, format('~N'),fail.

@@ -2207,7 +2207,7 @@ individuate8(VM,ID,ROptions,GridIn,IndvS):-
 
 post_individuate_8(VM,IndvS):-
   must_det_ll((
-      ObjsB = VM.objs,
+      %ObjsB = VM.objs,
       remove_background_only_object(VM),
       find_relations(VM),      
       remove_dead_links(VM),
@@ -2218,12 +2218,64 @@ post_individuate_8(VM,IndvS):-
   %as_debug(9,ppt((individuate=IndvSRaw))),
       make_indiv_object_list(VM,IndvSRaw,IndvS1),
       %combine_objects(IndvS1,IndvS2),
+      add_meta_objs(VM),
       combine_same_globalpoints(IndvS1,IndvS),
       %print_ss(indvS,ObjsB,IndvS),
       %gset(VM.objs) = IndvS,
       %list_to_set(IndvS1,IndvS),
       nop(print_info(IndvS)))).  
 
+
+add_meta_objs(VM):- 
+  Grid = VM.start_grid,
+  other_grid(Grid,Other),
+  if_t(fits_inside(Grid,Other), 
+  (whole_into_obj(VM,Grid,Whole),
+   addObjects(VM,Whole))).
+
+fits_inside(Grid,Other):-
+  vis2D(Grid,H1,V1),
+  vis2D(Other,H2,V2),!,
+  H1=<H2,V1=<V2.
+
+shared_into_obj(VM,Grid,Whole):-
+ must_det_ll((
+  Grid= VM.start_grid,
+  H=VM.h, V=VM.v,
+  ignore(grid_size(Grid,H,V)),  
+  localpoints(Grid,Points),
+  %Area is H * V,
+  hv_point_value(1,1,Grid,PointNW),
+  hv_point_value(1,V,Grid,PointSW),
+  hv_point_value(H,1,Grid,PointNE),
+  hv_point_value(H,V,Grid,PointSE),
+  grid_props(Grid,Props),
+  APoints = [PointNW,PointSW,PointNE,PointSE],
+  recolor_bg_or_fg(APoints,FGBGPoints),
+  append(Props,
+   [mass(0),vis2D(H,V),birth(named_grid_props),loc2D(1,1),
+    iz(stype(part)),globalpoints(Points),localpoints(FGBGPoints), 
+    iz(flag(always_keep)),iz(media(image)),
+    iz(flag(hidden))],Props0),
+  delete(Props0,sometimes_grid_edges(_),AllProps),
+  make_indiv_object(VM,AllProps,FGBGPoints,Whole), assumeAdded(VM,Whole),
+  maybe_save_grouped(individuate(VM.gid,add_meta_objs),[Whole]),
+  learn_hybrid_shape(pair,Whole))).
+
+recolor_bg_or_fg(Var,Var):- var(Var),!.
+recolor_bg_or_fg(C1-P1,C2-P2):- !, recolor_bg_or_fg(C1,C2),recolor_bg_or_fg(P1,P2).
+recolor_bg_or_fg(I,O):- is_fg_color(I),!,O=fg.
+recolor_bg_or_fg(I,O):- is_bg_color(I),!,O=bg.
+recolor_bg_or_fg(I,O):- is_texture(I),!, I=O.
+recolor_bg_or_fg(I,O):- is_color(I),!,I=O.
+recolor_bg_or_fg(I,O):- is_ncpoint(I),!,I=O.
+recolor_bg_or_fg(I,O):- is_grid_cell(I),!,I=O.
+recolor_bg_or_fg(I,O):- is_grid(I),!,mapgrid(recolor_bg_or_fg,I,O).
+recolor_bg_or_fg(I,O):- is_group(I),!,mapgroup(recolor_bg_or_fg,I,O).
+recolor_bg_or_fg(I,O):- is_list(I),!,maplist(recolor_bg_or_fg,I,O).
+recolor_bg_or_fg(I,O):- is_object(I),!,maptree(recolor_bg_or_fg,I,O).
+recolor_bg_or_fg(I,O):- is_gridoid(I),!,maptree(recolor_bg_or_fg,I,O).
+recolor_bg_or_fg(I,O):- maptree(recolor_bg_or_fg,I,O).
 
 maybe_into_fti(ID_In,[ROptions],Grid_In,VM_In):- nonvar(ROptions),!,maybe_into_fti(ID_In,ROptions,Grid_In,VM_In). 
 %maybe_into_fti(ID_In,ROptions,Grid_In,VM_In):- ROptions==complete,grid_vm(Grid_In,VM_In),!,gset(VM_In.id) = ID_In.
