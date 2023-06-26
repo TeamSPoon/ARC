@@ -926,7 +926,8 @@ calc_o_d_recursively(_VM, ActionGroupIn, InfoInOut, PrevRules, LHSObjs, RHSObjs,
     into_lhs(Left,LHS)))
   *-> true ; (fail,show_last_chance(copy_object_perfect(Min, Max, Nth),LHSObjs,RHSObjs),!,fail)),
 
-  append_LR(PrevRules, [exists(left(Left)), rule(InfoInOut, LHS, copy_object_perfect(Min..Max, s))], RulesOut))).
+  append_LR(PrevRules, [exists(left(Left)), rule(InfoInOut, LHS, copy_object_perfect(Min..Max, Nth))], RulesOut))).
+
 
 
 calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
@@ -935,6 +936,9 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   narrative_element(copy_object_n_changes(N, Min, Max, Nth), ActionGroupIn, ActionGroupOut), !,
   %Nth<Max,
   select(Left, LHSObjs, LHSOut), select(Right, RHSObjs, RHSOut),
+
+          % n_closest(Right,NObjs,L,LeftOverNeeds,RHSObjsX,Results),
+
   is_visible_object(Left),is_visible_object(Right),
   how_are_different(Left, Right, TypeOfDiffs, SetOfDiffs),
   how_are_same(Left, Right, TypeOfSames, SetOfSames),
@@ -1132,25 +1136,44 @@ generic_starter_narratives(ActionGroup):-
 
 n_closest(_Right,Z,LON,LON,_RHSObjsX,[]):- LON=[],!,ignore(Z is 0).
 n_closest(_Right,0,LON,LON,_RHSObjsX,[]):-!.
+
+        
+
 n_closest(Right,NObjs,Needs,LON,RHSObjsX,[needs_are_met(SetOfSameP,LHS)|Results]):- 
+ length(Needs,TotalNeedsCount),
  (var(NObjs)-> freeze(NObjs2,(NObjs is NObjs2+1)) ; (NObjs2 is NObjs -1)),
+  between(0,TotalNeedsCount,AllowNeedRemaining),
   select(Left,RHSObjsX,RHSObjsXRest),
   how_are_same(Left, Right, TypeOfSames, SetOfSames),
   intersection(TypeOfSames,Needs,Overlap,_,NeedsRemaining),
-  NeedsRemaining\==Needs, Overlap\==[],
+  Overlap\==[], length(NeedsRemaining,NRCount), NRCount=<AllowNeedRemaining,
   n_closest(Right,NObjs2,NeedsRemaining,LON,RHSObjsXRest,Results),
   into_lhs(Left,LHS),
   maplist(arg(2),SetOfSames,SetOfSameL),maplist(arg(3),SetOfSameL,SetOfSameP).
+
+
 n_closest(Right,NObjs,Needs,LON,RHSObjsX,[needs_are_close(SetOfCloseP,LHS)|Results]):- 
+ length(Needs,TotalNeedsCount),
  (var(NObjs)-> freeze(NObjs2,(NObjs is NObjs2+1)) ; (NObjs2 is NObjs -1)),
+  between(0,TotalNeedsCount,AllowNeedRemaining),
   select(Left,RHSObjsX,RHSObjsXRest),
   how_are_close(Left, Right, TypeOfCloseness, SetOfCloseness),
   intersection(TypeOfCloseness,Needs,Overlap,_,NeedsRemaining),
-  NeedsRemaining\==Needs, Overlap\==[],
+  Overlap\==[], length(NeedsRemaining,NRCount), NRCount=<AllowNeedRemaining,
   n_closest(Right,NObjs2,NeedsRemaining,LON,RHSObjsXRest,Results),
   into_lhs(Left,LHS),
   maplist(arg(2),SetOfCloseness,SetOfCloseL),maplist(arg(3),SetOfCloseL,SetOfCloseP).
-
+/*
+n_closest(Right,NObjs,Needs,LON,RHSObjsX,[needs_are_close(SetOfCloseP,LHS)|Results]):- 
+ (var(NObjs)-> freeze(NObjs2,(NObjs is NObjs2+1)) ; (NObjs2 is NObjs -1)),
+  select(Left,RHSObjsX,RHSObjsXRest),
+  how_are_close(Left, Right, _TypeOfCloseness, SetOfCloseness),
+  %intersection(TypeOfCloseness,Needs,Overlap,_,NeedsRemaining),
+  %NeedsRemaining\==Needs, Overlap\==[],
+  n_closest(Right,NObjs2,Needs,LON,RHSObjsXRest,Results),
+  into_lhs(Left,LHS),
+  maplist(arg(2),SetOfCloseness,SetOfCloseL),maplist(arg(3),SetOfCloseL,SetOfCloseP).
+*/
 
 
 
