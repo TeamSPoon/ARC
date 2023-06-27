@@ -268,15 +268,17 @@ make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
     iz(ngrid(NormNGrid)),
     NSymCounts,
     unkept(loc2G(LocXG,LocYG)),
-    kept(center2D(CentX,CentY)),
-    kept(center2G(CentXG,CentYG)),
-    iz(cenGY(CentYG)),iz(cenGX(CentXG)),  
+    %kept(center2D(CentX,CentY)),
+    %kept(center2G(CentXG,CentYG)),
+    %iz(cenGY(CentYG)),iz(cenGX(CentXG)),  
+    iz(cenY(CentY)),iz(cenX(CentX)),  
     unkept(bottem2D(BottemX,BottemY)),unkept(bottem2G(BottemXG,BottemYG)),
     vis2D(SizeX,SizeY), 
     %kept(iz(vis2G(SizeXG))), %
-    iz(sizeGY(SizeYG)),iz(sizeGX(SizeXG)),
+    %iz(sizeGY(SizeYG)),iz(sizeGX(SizeXG)),
+    iz(sizeY(SizeY)),iz(sizeX(SizeX)),
 
-    global2G(GlobalXG,GlobalYG),
+    %global2G(GlobalXG,GlobalYG),
   % RE=ADD=PHASE2 iz(mono_algo_sid(norm,MonoNormShapeID)),    
     iz(sid(ShapeID)),
     %ngrid(NGrid),
@@ -1888,15 +1890,15 @@ rotSize2D(grav,NT,H,V):-  into_gridoid(NT,G),G\==NT, rotSize2D(grav,G,H,V).
 
 externalize_links(Grp,NewObjs):- var(Grp),!,NewObjs=Grp.
 externalize_links(Grp,NewObjs):- Grp==[],NewObjs=[].
-externalize_links(Grp,Grp):-!. % @TODO remove this 
+%externalize_links(Grp,Grp):-!. % @TODO remove this 
 externalize_links(Grp,NewObjs):- is_group_or_objects_list(Grp),  maplist(externalize_links,Grp,NewObjs).
 externalize_links(obj(Obj),obj(Props)):- !, maplist(externalize_olinks(obj(Obj)),Obj,Props).
 externalize_links(O,O).
 
 indv_link_props(I,[ grid_ops(norm,NormOps),iz(algo_sid(norm,NormSID)), 
-  iz(cenGX(CGX)),iz(cenGX(CGY)), pen(Ps),  rot2D(Rot)]):-  
+  iz(cenX(CGX)),iz(cenY(CGY)), pen(Ps), mass(Mass), rot2D(Rot)]):-  
   grid_ops(I,norm,NormOps), indv_props(I,iz(algo_sid(norm,NormSID))),
-  center2G(I,CGX,CGY),pen(I,Ps),rot2D(I,Rot),!.
+  center2D(I,CGX,CGY),pen(I,Ps),rot2D(I,Rot),mass(I,Mass),!.
 
 
 externalize_olinks(_SObj,link(Grp,OID),elink(Grp,OProps)):- atom(OID), oid_to_obj(OID,Obj), indv_link_props(Obj,OProps),!.

@@ -64,6 +64,8 @@ dont_notice(giz(_)).
 dont_notice(iz(i_o(_))).
 dont_notice(iz(stype(_))).
 dont_notice(global2G(_, _)).
+dont_notice(iz(locX(_))).
+dont_notice(iz(locY(_))).
 dont_notice(iz(sizeGX(_))).
 dont_notice(iz(sizeGY(_))).
 dont_notice(iz(symmetry_type(rollD, _))).
@@ -833,12 +835,17 @@ get_object_dependancy(InfoStart, TestID, ExampleNum, ActionGroupIn, ActionGroupO
 
       calc_o_d_recursive(VM, ActionGroupIn, InfoIn, [], LHSObjsOrdered, RHSObjsOrdered, ActionGroupOut, Groups))))))), !.
 
-calc_o_d_recursive(_VM, [],             _Info, PrevRules,    _,     _,            [], PrevRules):-!.
 
+needs_arrange(IndvS,IndvR):- once((largest_first(mass,IndvS,Indv),reverse(Indv,IndvR))).
+needs_arrange(IndvS,IndvR):- once((fix_dupes(IndvS,IndvR))).
+
+
+
+calc_o_d_recursive(_VM, [],             _Info, PrevRules,    _,     _,            [], PrevRules):-!.
 calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups):-
-    once(fix_dupes(LHSObjs,LHS)), LHSObjs\=@=LHS,!, calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHS, RHSObjs, ActionGroupFinal, Groups).
+    needs_arrange(LHSObjs,LHS), LHSObjs\=@=LHS,!, calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHS, RHSObjs, ActionGroupFinal, Groups).
 calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups):-
-    once(fix_dupes(RHSObjs,RHS)), RHSObjs\=@=RHS,!, calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHS, ActionGroupFinal, Groups).
+    needs_arrange(RHSObjs,RHS), RHSObjs\=@=RHS,!, calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHS, ActionGroupFinal, Groups).
 
 calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups):-
   ignore(((   
@@ -971,6 +978,118 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   InfoOut = Info,
   dash_chars, nl,
   true)))), !.
+
+
+% Scenery
+calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
+                ActionGroupOut, InfoOut, RulesOut, LHSObjs, RHSObjsRest):-
+  narrative_element(add_dependant_scenery(NObjsL..NObjsH,MadeUpLenL..MadeupLenH,Min..Max, Nth), ActionGroupIn, ActionGroupOut),!,
+   %LHSObjs==[],
+    into_list(PrevRules, PrevObjs),
+    my_partition(is_input_object, PrevObjs, PrevLeft, ExtraRHS),
+
+    enum_prop_type_required(L),
+    select(Right, RHSObjs, RHSObjsRest),
+    
+    is_visible_object(Right),    
+    CodeMust = ((
+      append_LR([ExtraRHS, PrevLeft, LHSObjs], RHSObjsX),
+      %rtrace,
+      must_det_ll((
+        n_closest(Right,NObjs,L,LeftOverNeeds,RHSObjsX,Results),
+        length(LeftOverNeeds,LONL),
+        % into_lhs(Results,LHS),
+        maplist(arg(1),Results,RHSide),
+        maplist(get_type_prop(Right),LeftOverNeeds,FilledInNeeds2))),
+      append_LR([RHSide,FilledInNeeds2],RuleNeeds),
+
+      indv_link_props(Right,RuleRHS),
+      %LONL=<MadeupLenH,
+      Info = InfoOut,
+      append_LR([iz(info(Info)),always(Results),RuleNeeds,Results],RuleLHS),
+      append_LR([PrevRules,ac_unit(add_dependant_scenery(NObjsL..NObjsH,NObjs,MadeUpLenL..MadeupLenH,Min..Max,RuleRHS),
+         RuleLHS)],RulesOut))),
+    (Nth<Min->must_det_ll(CodeMust);must_det_ll(CodeMust)),
+    nop((Nth>=Min, Nth=<Max)).
+
+% Scenery
+calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
+                  ActionGroupOut, InfoOut, RulesOut, LHSObjs, RHSOut):- fail,
+  narrative_element(add_independant_scenery(_, _), ActionGroupIn, ActionGroupOut),
+  select(Right,RHSObjs,RHSOut),
+  enum_prop_type_required(LeftOverNeeds),
+  maplist(get_type_prop(Right),LeftOverNeeds,Needs),
+  indv_link_props(Right,RuleRHS),
+  into_lhs(Right,LHS),
+  incr_step(Info, InfoOut),
+  append_LR([PrevRules,
+      ac_unit(add_independant_scenery(Needs),RuleRHS),
+      ac_unit(add_independant_scenery(RuleRHS),LHS)
+      ],RulesOut).
+  
+
+
+enum_prop_type_required(L):-findall(R,prop_type_required(R),L).
+get_type_prop(Right,Type,Prop):- type_prop(Type,Prop),sub_cmpd(Prop,Right).
+n_closest(_Right,Z,LON,LON,_RHSObjsX,[]):- LON=[],!,ignore(Z is 0).
+n_closest(_Right,0,LON,LON,_RHSObjsX,[]):-!.
+n_closest(Right,NObjs,Needs,LON,RHSObjsX,[needs_are_met(SetOfSameP,LHS)|Results]):- 
+ length(Needs,TotalNeedsCount),
+ (var(NObjs)-> freeze(NObjs2,(NObjs is NObjs2+1)) ; (NObjs2 is NObjs -1)),
+  between(0,TotalNeedsCount,AllowNeedRemaining),
+  select(Left,RHSObjsX,RHSObjsXRest),
+  how_are_same(Left, Right, TypeOfSames, SetOfSames),
+  intersection(TypeOfSames,Needs,Overlap,_,NeedsRemaining),
+  Overlap\==[], length(NeedsRemaining,NRCount), NRCount=<AllowNeedRemaining,
+  n_closest(Right,NObjs2,NeedsRemaining,LON,RHSObjsXRest,Results),
+  object_into_lhs(Left,LHS),
+  maplist(arg(2),SetOfSames,SetOfSameL),maplist(arg(3),SetOfSameL,SetOfSameP).
+
+n_closest(Right,NObjs,Needs,LON,RHSObjsX,[needs_are_close(SetOfCloseP,LHS)|Results]):- 
+ length(Needs,TotalNeedsCount),
+ (var(NObjs)-> freeze(NObjs2,(NObjs is NObjs2+1)) ; (NObjs2 is NObjs -1)),
+  between(0,TotalNeedsCount,AllowNeedRemaining),
+  select(Left,RHSObjsX,RHSObjsXRest),
+  how_are_close(Left, Right,TypeOfCloseness, SetOfCloseness),
+  intersection(TypeOfCloseness,Needs,Overlap,_,NeedsRemaining),
+  Overlap\==[], length(NeedsRemaining,NRCount), NRCount=<AllowNeedRemaining,
+  n_closest(Right,NObjs2,NeedsRemaining,LON,RHSObjsXRest,Results),
+  object_into_lhs(Left,LHS),
+  maplist(arg(2),SetOfCloseness,SetOfCloseP). %,maplist(arg(3),SetOfCloseL,SetOfCloseP).
+
+/*
+n_closest(Right,NObjs,[N|Needs],[N|LON],RHSObjsX,[needs_are_close(SetOfCloseP,LHS)|Results]):- 
+ %length(Needs,TotalNeedsCount),
+ (var(NObjs)-> freeze(NObjs2,(NObjs is NObjs2+1)) ; (NObjs2 is NObjs -1)),
+  %between(0,TotalNeedsCount,AllowNeedRemaining),
+  select(Left,RHSObjsX,RHSObjsXRest),
+  how_are_close(Left, Right, [N], SetOfCloseness),
+  %intersection(TypeOfCloseness,Needs,Overlap,_,NeedsRemaining),
+  %Overlap\==[], length(NeedsRemaining,NRCount), NRCount=<AllowNeedRemaining,
+  n_closest(Right,NObjs2,Needs,LON,RHSObjsXRest,Results),
+  object_into_lhs(Left,LHS),
+  maplist(arg(2),SetOfCloseness,SetOfCloseL),maplist(arg(3),SetOfCloseL,SetOfCloseP).*/
+/*
+n_closest(Right,NObjs,Needs,LON,RHSObjsX,[needs_are_close(SetOfCloseP,LHS)|Results]):- 
+ (var(NObjs)-> freeze(NObjs2,(NObjs is NObjs2+1)) ; (NObjs2 is NObjs -1)),
+  select(Left,RHSObjsX,RHSObjsXRest),
+  how_are_close(Left, Right, _TypeOfCloseness, SetOfCloseness),
+  %intersection(TypeOfCloseness,Needs,Overlap,_,NeedsRemaining),
+  %NeedsRemaining\==Needs, Overlap\==[],
+  n_closest(Right,NObjs2,Needs,LON,RHSObjsXRest,Results),
+  into_lhs(Left,LHS),
+  maplist(arg(2),SetOfCloseness,SetOfCloseL),maplist(arg(3),SetOfCloseL,SetOfCloseP).
+*/
+n_closest(Right,NObjs,[N|Needs],[N|LON],RHSObjsX,Out):-
+  n_closest(Right,NObjs,Needs,LON,RHSObjsX,Out).
+
+short_distance(Right1, Right2, 2):-
+  globalpoints(Right1, GPoints1),
+  globalpoints(Right2, GPoints2),
+  member(_-P1, GPoints1),
+  member(_-P2, GPoints2),
+  is_adjacent_point(P1, Dir1, P12), Dir1\==c, is_adjacent_point(P12, Dir2, P2), Dir2\==c.
+
 
 for_rhs(R0, R):-((include(good_for_rhs, R0, R), R\==[])->true;R0=R), !.
 
@@ -1148,84 +1267,6 @@ use_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), s
   is_adjacent_same_color(R1, R2, 1), !.
 use_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), select(R2, RHSObjs, RHSOut),
   is_adjacent_same_color(R1, R2, 2), !.
-
-% Scenery
-calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
-                ActionGroupOut, InfoOut, RulesOut, LHSObjs, RHSObjsRest):-
-  narrative_element(add_dependant_scenery(NObjsL..NObjsH,MadeUpLenL..MadeupLenH,Min..Max, Nth), ActionGroupIn, ActionGroupOut),!,
-   %LHSObjs==[],
-    into_list(PrevRules, PrevObjs),
-    my_partition(is_input_object, PrevObjs, PrevLeft, ExtraRHS),
-
-    enum_prop_type_required(L),
-    select(Right, RHSObjs, RHSObjsRest),
-    is_visible_object(Right),
-    CodeMust = ((
-      append_LR([ExtraRHS, PrevLeft, LHSObjs], RHSObjsX),
-      %rtrace,
-      must_det_ll((
-        n_closest(Right,NObjs,L,LeftOverNeeds,RHSObjsX,Results),
-        length(LeftOverNeeds,LONL),
-        % into_lhs(Results,LHS),
-        maplist(get_type_prop(Right),LeftOverNeeds,FilledInNeeds))),
-
-      %LONL=<MadeupLenH,
-      Info = InfoOut,
-      append_LR([iz(info(Info)),Results],RuleLHS),
-      append_LR([PrevRules,ac_unit(add_dependant_scenery(NObjsL..NObjsH,NObjs,MadeUpLenL..MadeupLenH,FilledInNeeds,Min..Max),RuleLHS)],RulesOut))),
-    (Nth<Min->must_det_ll(CodeMust);must_det_ll(CodeMust)),
-    nop((Nth>=Min, Nth=<Max)).
-
-enum_prop_type_required(L):-findall(R,prop_type_required(R),L).
-get_type_prop(Right,Type,Prop):- type_prop(Type,Prop),sub_cmpd(Prop,Right).
-n_closest(_Right,Z,LON,LON,_RHSObjsX,[]):- LON=[],!,ignore(Z is 0).
-n_closest(_Right,0,LON,LON,_RHSObjsX,[]):-!.
-n_closest(Right,NObjs,Needs,LON,RHSObjsX,[needs_are_met(SetOfSameP,LHS)|Results]):- 
- length(Needs,TotalNeedsCount),
- (var(NObjs)-> freeze(NObjs2,(NObjs is NObjs2+1)) ; (NObjs2 is NObjs -1)),
-  between(0,TotalNeedsCount,AllowNeedRemaining),
-  select(Left,RHSObjsX,RHSObjsXRest),
-  how_are_same(Left, Right, TypeOfSames, SetOfSames),
-  intersection(TypeOfSames,Needs,Overlap,_,NeedsRemaining),
-  Overlap\==[], length(NeedsRemaining,NRCount), NRCount=<AllowNeedRemaining,
-  n_closest(Right,NObjs2,NeedsRemaining,LON,RHSObjsXRest,Results),
-  object_into_lhs(Left,LHS),
-  maplist(arg(2),SetOfSames,SetOfSameL),maplist(arg(3),SetOfSameL,SetOfSameP).
-n_closest(Right,NObjs,[N|Needs],[N|LON],RHSObjsX,Out):-
-  n_closest(Right,NObjs,Needs,LON,RHSObjsX,Out).
-
-/*
-n_closest(Right,NObjs,[N|Needs],[N|LON],RHSObjsX,[needs_are_close(SetOfCloseP,LHS)|Results]):- 
- %length(Needs,TotalNeedsCount),
- (var(NObjs)-> freeze(NObjs2,(NObjs is NObjs2+1)) ; (NObjs2 is NObjs -1)),
-  %between(0,TotalNeedsCount,AllowNeedRemaining),
-  select(Left,RHSObjsX,RHSObjsXRest),
-  how_are_close(Left, Right, [N], SetOfCloseness),
-  %intersection(TypeOfCloseness,Needs,Overlap,_,NeedsRemaining),
-  %Overlap\==[], length(NeedsRemaining,NRCount), NRCount=<AllowNeedRemaining,
-  n_closest(Right,NObjs2,Needs,LON,RHSObjsXRest,Results),
-  object_into_lhs(Left,LHS),
-  maplist(arg(2),SetOfCloseness,SetOfCloseL),maplist(arg(3),SetOfCloseL,SetOfCloseP).*/
-/*
-n_closest(Right,NObjs,Needs,LON,RHSObjsX,[needs_are_close(SetOfCloseP,LHS)|Results]):- 
- (var(NObjs)-> freeze(NObjs2,(NObjs is NObjs2+1)) ; (NObjs2 is NObjs -1)),
-  select(Left,RHSObjsX,RHSObjsXRest),
-  how_are_close(Left, Right, _TypeOfCloseness, SetOfCloseness),
-  %intersection(TypeOfCloseness,Needs,Overlap,_,NeedsRemaining),
-  %NeedsRemaining\==Needs, Overlap\==[],
-  n_closest(Right,NObjs2,Needs,LON,RHSObjsXRest,Results),
-  into_lhs(Left,LHS),
-  maplist(arg(2),SetOfCloseness,SetOfCloseL),maplist(arg(3),SetOfCloseL,SetOfCloseP).
-*/
-
-
-
-short_distance(Right1, Right2, 2):-
-  globalpoints(Right1, GPoints1),
-  globalpoints(Right2, GPoints2),
-  member(_-P1, GPoints1),
-  member(_-P2, GPoints2),
-  is_adjacent_point(P1, Dir1, P12), Dir1\==c, is_adjacent_point(P12, Dir2, P2), Dir2\==c.
 
 % Scenery
 calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
@@ -1408,10 +1449,11 @@ set_of_ps(RulesList, Ps):-
 
 set_of_changes(RulesList, P1):-
  ((
-  set_of_ps(RulesList, Ps),
+  set_of_ps(RulesList, Ps),  
   why_last(P1, Why),
+  my_exclude(is_functor(add_dependant_scenery),Ps,PsP1),
   %findall_vset_R(IO_-P, (ac_rules(RulesList, IO_, P, _)), Ps),
-  maplist(P1, Ps),
+  maplist(P1, PsP1),
   print_scene_change_rules_if_different(Why, ac_db_unit, RulesList))).
 
 /*
@@ -2944,8 +2986,7 @@ good_for_rhs(pen(_)).
 good_for_rhs(iz(sid(_))).
 good_for_rhs(mass(_)).
 %good_for_rhs(loc2D(_, _)).
-good_for_rhs(iz(locX(_))).
-good_for_rhs(iz(locY(_))).
+good_for_rhs(iz(locX(_))). good_for_rhs(iz(locY(_))).
 %good_for_rhs(center2D(_, _)).
 %good_for_rhs(center2G(_, _)).
 good_for_rhs(iz(cenX(_))).

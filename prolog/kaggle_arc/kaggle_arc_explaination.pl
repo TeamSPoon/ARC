@@ -1164,22 +1164,29 @@ print_body(D,Head, (:- Conj)):- !, conjuncts_to_list(Conj,List),
     catch_log(maybe_show_body_shapes(D+1,Head,Conj)),
     print_body(D+2,Head,List))).
 
-print_body(D,H,List):- select(Gps,List,Rest), is_gps(Gps,Call),!,format('~N'),call(Call),print_body(D,H,Rest).
-print_body(_D,_,[]):- !,write('.').
-print_body(D,H,[G1]):- prefix_spaces(D+1,(print_unit(D,H,G1),write('.'))).
-print_body(D,H,Conj):- compound(Conj),Conj = (G1,Body),
-  prefix_spaces(D+1,(print_unit(D,H,G1),write(','))), 
-  print_body(D,H,Body).
+print_body(D,H,List):- once(my_partition(is_debug_info,List,Skip,PSame)),Skip\==[],PSame\==[],!,
+  if_t(\+ nb_current(without_comment,t), pp(green,Skip)),
+  print_body(D,H,PSame).
+print_body(D,H,List):- once(my_partition(assume_prop,List,Skip,PSame)),Skip\==[],PSame\==[],!,
+  if_t(\+ nb_current(without_comment,t), pp(blue,Skip)), print_body(D,H,PSame).
+print_body(D,H,List):- notrace(print_body1(D,H,List)),!.
 
-print_body(D,H,[G1|Body]):- make_unifiable(G1,U1),
+print_body1(D,H,List):- select(Gps,List,Rest), is_gps(Gps,Call),!,format('~N'),call(Call),print_body1(D,H,Rest).
+print_body1(_D,_,[]):- !,write('.').
+print_body1(D,H,[G1]):- prefix_spaces(D+1,(print_unit(D,H,G1),write('.'))).
+print_body1(D,H,Conj):- compound(Conj),Conj = (G1,Body),
+  prefix_spaces(D+1,(print_unit(D,H,G1),write(','))), 
+  print_body1(D,H,Body).
+
+print_body1(D,H,[G1|Body]):- make_unifiable(G1,U1),
   my_partition(can_unify(U1),Body,Here,Rest), Here=[_,_|_],!,
   prefix_spaces(D+1,(print_unit(D,H,[G1|Here]),write(','))), 
-  print_body(D,H,Rest).
+  print_body1(D,H,Rest).
 
-print_body(D,H,[G1|Body]):-  
+print_body1(D,H,[G1|Body]):-  
   prefix_spaces(D+1,(print_unit(D,H,G1),write(','))), 
-  print_body(D,H,Body).
-print_body(D,H,G1):- prefix_spaces(D+1,(print_unit(D,H,G1),write('.'))).
+  print_body1(D,H,Body).
+print_body1(D,H,G1):- prefix_spaces(D+1,(print_unit(D,H,G1),write('.'))).
 
 print_rhs(G1):- \+ sub_var(gps,G1),sub_term(R,G1),is_gps(R,Gps),subst(G1,R,gps,RR),G1\=@=RR,!,print_rhs(RR),call(Gps).
 print_rhs(G1):- pp_no_nl(G1),!.
