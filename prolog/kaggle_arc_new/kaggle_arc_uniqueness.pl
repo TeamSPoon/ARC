@@ -868,9 +868,9 @@ calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, Acti
 %  balanced_or_delete_leftovers(_, _)=Skip, !.
 
 calc_o_d_recursive(VM, [Skip|ActionGroupIn], Info, PrevRules, LHSObjs, RHSObjs, AGF, Groups):-
- dash_chars,
+ dash_chars, 
  wdmsg(no_more(Skip)), 
- Skip=..[_|ArgsIn], append(_, [Min, Max, Nth], ArgsIn), !, 
+ Skip=..[_|ArgsIn], append(_, [Min..Max, Nth], ArgsIn), !, 
  ((Nth>=Min, Nth=<Max)-> true ; (show_last_chance(no_more(Skip),LHSObjs,RHSObjs),!,fail)),
 
  dash_chars,
@@ -918,7 +918,7 @@ if_debugging(G):- once(G),break.
 calc_o_d_recursively(_VM, ActionGroupIn, InfoInOut, PrevRules, LHSObjs, RHSObjs,
                   ActionGroupOut, InfoInOut, RulesOut, LHSOut, RHSOut):-
 ((
-  narrative_element(copy_object_perfect(Min, Max, Nth), ActionGroupIn, ActionGroupOut), !,
+  narrative_element(copy_object_perfect(Min..Max, Nth), ActionGroupIn, ActionGroupOut), !,
 
   (((select(Left, LHSObjs, LHSOut), select(Right, RHSObjs, RHSOut), 
     is_visible_object(Left),is_visible_object(Right),
@@ -928,7 +928,7 @@ calc_o_d_recursively(_VM, ActionGroupIn, InfoInOut, PrevRules, LHSObjs, RHSObjs,
     intersection(TypeSetSame,L,_Satisfied,_,Missing),
     Missing==[],
     into_lhs(Left,LHS)))
-  *-> true ; (fail,show_last_chance(copy_object_perfect(Min, Max, Nth),LHSObjs,RHSObjs),!,fail)),
+  *-> true ; (fail,show_last_chance(copy_object_perfect(Min..Max, Nth),LHSObjs,RHSObjs),!,fail)),
 
   append_LR(PrevRules, [exists(left(Left)), rule(InfoInOut, LHS, copy_object_perfect(Min..Max, Nth))], RulesOut))).
 
@@ -937,7 +937,7 @@ calc_o_d_recursively(_VM, ActionGroupIn, InfoInOut, PrevRules, LHSObjs, RHSObjs,
 calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
                     ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):-
 ((
-  narrative_element(copy_object_n_changes(N, Min, Max, Nth), ActionGroupIn, ActionGroupOut), !,
+  narrative_element(copy_object_n_changes(1..1,N, Min..Max, Nth), ActionGroupIn, ActionGroupOut), !,
   %Nth<Max,
   select(Left, LHSObjs, LHSOut), select(Right, RHSObjs, RHSOut),
 
@@ -953,7 +953,7 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   maplist(arg(2),SetOfDiffs,SetOfDiffs2),maplist(arg(3),SetOfDiffs2,DiffProps),
   maplist(arg(2),SetOfSames,SetOfSames2),maplist(arg(3),SetOfSames2,SameProps),
   SameProps\==[], % have to have something in common
-  print_ss(copy_object_n_changes(N, Max, Nth), Left, Right),
+  print_ss(copy_object_n_changes(1..1,N, Min..Max, Nth), Left, Right),
   pp_ilp(3, [diffs=TypeOfDiffs, diffprops=SetOfDiffs]),
   pp_ilp(3, [sames=TypeOfSames, sameprops=SetOfSames]),
   maplist(find_relative_r(Info, Left, Right, PrevRules), DiffProps, NewRSet, PreConds, NewRules),
@@ -962,7 +962,7 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   subst_2L_sometimes(DiffProps, NewRSet, Left, NewLeft),
   
   RuleInfo = [diffs_sames(SetOfDiffs,SetOfSames)|Info],
-  NewRRule1 = rule(RuleInfo, NewRLHS, copy_object_n_changes(N, Min..Max, TypeOfDiffs, NewRSet)),
+  NewRRule1 = rule(RuleInfo, NewRLHS, copy_object_n_changes(1..1,N, Min..Max, TypeOfDiffs, NewRSet)),
  % (DiffProps\=@=NewRSet 
  %   -> NewRRule2 = [] % rule(RuleInfo, SameProps, copy_object_n_changes_else(N, Min..Max, TypeOfDiffs, DiffProps)) 
  %   ; NewRRule2=[]),
@@ -1120,36 +1120,66 @@ starter_narratives0(_, ActionGroup):- generic_starter_narratives(ActionGroup).
 
 
 starter_narrative(t('25d487eb'), [
-   copy_object_perfect(2, 2, nth), % copy two objects perfectly
-   add_dependant_scenery(3, 2, 1, 1, nth), % from two output objects, create one output object with up to 3 made up props
+   copy_object_perfect(2..2, nth), % copy two objects perfectly
+   add_dependant_scenery(2..2, 2..4, 1..1, nth), % from two output objects, create one output object with up 2 to 4 made up props
    balanced_or_delete_leftovers(balanced(_), nth) ]). % there should not be any unprocessed input objects
 
 starter_narrative(v(e41c6fd3), [
-   copy_object_perfect(1, 1, nth), % copy one object perfectly
-   %copy_object_n_changes(0, 1, 1, nth), % copy one object perfectly
-   copy_object_n_changes(1, 2, 4, nth), % copy 2-4 objects that contain a single property change
+   copy_object_perfect(1..1, nth), % copy one object perfectly
+   copy_object_n_changes(1..1, 1, 2..4, nth), % copy 2-4 objects that contain a single property change
    balanced_or_delete_leftovers(balanced(_), nth) ]):- % there should not be any unprocessed input objects
   true. % fail.
 
 generic_starter_narratives(ActionGroup):-
  ActionGroup=
-     [copy_object_perfect(lowmin, himax, nth),
-      copy_object_n_changes(1, lowmin, himax, nth),
-      copy_object_n_changes(2, lowmin, himax, nth),
-      copy_object_n_changes(3, lowmin, himax, nth),
-      copy_object_n_changes(4, lowmin, himax, nth),
-      copy_object_n_changes(5, lowmin, himax, nth),
-      copy_object_n_changes(6, lowmin, himax, nth),
-        add_dependant_scenery(_Any1,_Any2,lowmin, himax, nth),
-      add_independant_scenery(lowmin, himax, nth),
+     [copy_object_perfect(lowmin..himax, nth),
+      copy_object_n_changes(1..1,1, lowmin..himax, nth),
+      copy_object_n_changes(1..1,2, lowmin..himax, nth),
+      copy_object_n_changes(1..1,3, lowmin..himax, nth),
+      copy_object_n_changes(1..1,4, lowmin..himax, nth),
+      copy_object_n_changes(1..1,5, lowmin..himax, nth),
+        add_dependant_scenery(1..3,1..5,lowmin..himax, nth),
+      add_independant_scenery(lowmin..himax, nth),
       balanced_or_delete_leftovers(_, nth)].
 
+use_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), select(R2, RHSObjs, RHSOut),
+  is_adjacent_same_color(R1, R2, 0), !.
+use_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), select(R2, RHSObjs, RHSOut),
+  is_adjacent_same_color(R1, R2, 1), !.
+use_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), select(R2, RHSObjs, RHSOut),
+  is_adjacent_same_color(R1, R2, 2), !.
 
+% Scenery
+calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
+                ActionGroupOut, InfoOut, RulesOut, LHSObjs, RHSObjsRest):-
+  narrative_element(add_dependant_scenery(NObjsL..NObjsH,MadeUpLenL..MadeupLenH,Min..Max, Nth), ActionGroupIn, ActionGroupOut),!,
+   %LHSObjs==[],
+    into_list(PrevRules, PrevObjs),
+    my_partition(is_input_object, PrevObjs, PrevLeft, ExtraRHS),
+
+    enum_prop_type_required(L),
+    select(Right, RHSObjs, RHSObjsRest),
+    is_visible_object(Right),
+    CodeMust = ((
+      append_LR([ExtraRHS, PrevLeft, LHSObjs], RHSObjsX),
+      %rtrace,
+      must_det_ll((
+        n_closest(Right,NObjs,L,LeftOverNeeds,RHSObjsX,Results),
+        length(LeftOverNeeds,LONL),
+        % into_lhs(Results,LHS),
+        maplist(get_type_prop(Right),LeftOverNeeds,FilledInNeeds))),
+
+      %LONL=<MadeupLenH,
+      Info = InfoOut,
+      append_LR([iz(info(Info)),Results],RuleLHS),
+      append_LR([PrevRules,ac_unit(add_dependant_scenery(NObjsL..NObjsH,NObjs,MadeUpLenL..MadeupLenH,FilledInNeeds,Min..Max),RuleLHS)],RulesOut))),
+    (Nth<Min->must_det_ll(CodeMust);must_det_ll(CodeMust)),
+    nop((Nth>=Min, Nth=<Max)).
+
+enum_prop_type_required(L):-findall(R,prop_type_required(R),L).
+get_type_prop(Right,Type,Prop):- type_prop(Type,Prop),sub_cmpd(Prop,Right).
 n_closest(_Right,Z,LON,LON,_RHSObjsX,[]):- LON=[],!,ignore(Z is 0).
 n_closest(_Right,0,LON,LON,_RHSObjsX,[]):-!.
-
-        
-
 n_closest(Right,NObjs,Needs,LON,RHSObjsX,[needs_are_met(SetOfSameP,LHS)|Results]):- 
  length(Needs,TotalNeedsCount),
  (var(NObjs)-> freeze(NObjs2,(NObjs is NObjs2+1)) ; (NObjs2 is NObjs -1)),
@@ -1159,21 +1189,23 @@ n_closest(Right,NObjs,Needs,LON,RHSObjsX,[needs_are_met(SetOfSameP,LHS)|Results]
   intersection(TypeOfSames,Needs,Overlap,_,NeedsRemaining),
   Overlap\==[], length(NeedsRemaining,NRCount), NRCount=<AllowNeedRemaining,
   n_closest(Right,NObjs2,NeedsRemaining,LON,RHSObjsXRest,Results),
-  into_lhs(Left,LHS),
+  object_into_lhs(Left,LHS),
   maplist(arg(2),SetOfSames,SetOfSameL),maplist(arg(3),SetOfSameL,SetOfSameP).
+n_closest(Right,NObjs,[N|Needs],[N|LON],RHSObjsX,Out):-
+  n_closest(Right,NObjs,Needs,LON,RHSObjsX,Out).
 
-
-n_closest(Right,NObjs,Needs,LON,RHSObjsX,[needs_are_close(SetOfCloseP,LHS)|Results]):- 
- length(Needs,TotalNeedsCount),
+/*
+n_closest(Right,NObjs,[N|Needs],[N|LON],RHSObjsX,[needs_are_close(SetOfCloseP,LHS)|Results]):- 
+ %length(Needs,TotalNeedsCount),
  (var(NObjs)-> freeze(NObjs2,(NObjs is NObjs2+1)) ; (NObjs2 is NObjs -1)),
-  between(0,TotalNeedsCount,AllowNeedRemaining),
+  %between(0,TotalNeedsCount,AllowNeedRemaining),
   select(Left,RHSObjsX,RHSObjsXRest),
-  how_are_close(Left, Right, TypeOfCloseness, SetOfCloseness),
-  intersection(TypeOfCloseness,Needs,Overlap,_,NeedsRemaining),
-  Overlap\==[], length(NeedsRemaining,NRCount), NRCount=<AllowNeedRemaining,
-  n_closest(Right,NObjs2,NeedsRemaining,LON,RHSObjsXRest,Results),
-  into_lhs(Left,LHS),
-  maplist(arg(2),SetOfCloseness,SetOfCloseL),maplist(arg(3),SetOfCloseL,SetOfCloseP).
+  how_are_close(Left, Right, [N], SetOfCloseness),
+  %intersection(TypeOfCloseness,Needs,Overlap,_,NeedsRemaining),
+  %Overlap\==[], length(NeedsRemaining,NRCount), NRCount=<AllowNeedRemaining,
+  n_closest(Right,NObjs2,Needs,LON,RHSObjsXRest,Results),
+  object_into_lhs(Left,LHS),
+  maplist(arg(2),SetOfCloseness,SetOfCloseL),maplist(arg(3),SetOfCloseL,SetOfCloseP).*/
 /*
 n_closest(Right,NObjs,Needs,LON,RHSObjsX,[needs_are_close(SetOfCloseP,LHS)|Results]):- 
  (var(NObjs)-> freeze(NObjs2,(NObjs is NObjs2+1)) ; (NObjs2 is NObjs -1)),
@@ -1186,47 +1218,6 @@ n_closest(Right,NObjs,Needs,LON,RHSObjsX,[needs_are_close(SetOfCloseP,LHS)|Resul
   maplist(arg(2),SetOfCloseness,SetOfCloseL),maplist(arg(3),SetOfCloseL,SetOfCloseP).
 */
 
-
-
-enum_prop_type_required(L):-findall(R,prop_type_required(R),L).
-
-
-use_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), select(R2, RHSObjs, RHSOut),
-  is_adjacent_same_color(R1, R2, 0), !.
-use_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), select(R2, RHSObjs, RHSOut),
-  is_adjacent_same_color(R1, R2, 1), !.
-use_adjacent_same_color(R1, R2, LHSOut, RHSObjs, RHSOut):- member(R1, LHSOut), select(R2, RHSObjs, RHSOut),
-  is_adjacent_same_color(R1, R2, 2), !.
-
-% Scenery
-calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
-                ActionGroupOut, InfoOut, RulesOut, LHSObjs, RHSObjsRest):-
-  narrative_element(add_dependant_scenery(MadeUpLen,NObjs, Min, Max, Nth), ActionGroupIn, ActionGroupOut),!,
-   %LHSObjs==[],
-    into_list(PrevRules, PrevObjs),
-    my_partition(is_input_object, PrevObjs, PrevLeft, ExtraRHS),
-
-    enum_prop_type_required(L),
-    select(Right, RHSObjs, RHSObjsRest),
-    is_visible_object(Right),
-
-    CodeMust = ((
-      append_LR([ExtraRHS, PrevLeft, LHSObjs], RHSObjsX),
-      %rtrace,
-      must_det_ll((
-        n_closest(Right,NObjs,L,LeftOverNeeds,RHSObjsX,Results),
-        length(LeftOverNeeds,LONL),
-        % into_lhs(Results,LHS),
-        maplist(get_type_prop(Right),LeftOverNeeds,FilledInNeeds))),
-      LONL=<MadeUpLen,
-      Info = InfoOut,
-      append_LR([iz(info(Info)),Results],RuleLHS),
-      append_LR([PrevRules,ac_unit(add_dependant_scenery(MadeUpLen,NObjs,FilledInNeeds),RuleLHS)],RulesOut))),
-    (Nth<Min->must_det_ll(CodeMust);CodeMust),
-    nop((Nth>=Min, Nth=<Max)).
-
-
-get_type_prop(Right,Type,Prop):- type_prop(Type,Prop),sub_cmpd(Prop,Right).
 
 
 short_distance(Right1, Right2, 2):-
@@ -1934,8 +1925,10 @@ apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, NewObj):-
 apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, NewObj):-
   member(URule, Rules),copy_term(URule,Rule),rule_units(Rule , _, P, PConds), P\=happy_ending(_),
   P\=happy_ending(_),
-  wots(S, write(P:-PConds)),
-  print_grid(S,Obj),nl,
+  print_grid(Obj),nl,
+  pp(P), 
+  print(':-'), pp(PConds), nl,
+ % add_dependant_scenery
   trace,vm_has_obj_prop(VM, Obj, PConds),
   must_det_ll((override_object_1(VM, P, Obj, NewObj))),
   gset(VM.robjs) = [NewObj|VM.robjs],
@@ -2002,8 +1995,8 @@ override_object_1(VM, Term, I, O):- sub_compound(edit(P), Term), !, override_obj
 override_object_1(VM, Term, I, O):- sub_compound(edit(_, _, P), Term), !, override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_compound(edit(_, _, _, P), Term), !, override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_compound(copy_object_one_change(_, P), Term), !, override_object_1(VM, P, I, O).
-override_object_1(VM, Term, I, O):- sub_compound(copy_object_n_changes(_, P), Term), !, override_object_1(VM, P, I, O).
-override_object_1(VM, Term, I, O):- sub_compound(copy_object_n_changes(_, _, P), Term), !, override_object_1(VM, P, I, O).
+override_object_1(VM, Term, I, O):- sub_compound(copy_object_n_changes(1..1,_, P), Term), !, override_object_1(VM, P, I, O).
+override_object_1(VM, Term, I, O):- sub_compound(copy_object_n_changes(1..1,_, _, P), Term), !, override_object_1(VM, P, I, O).
 
 override_object_1(_VM, Term, I, O):- compound(Term), functor(Term, copy_object_perfect, _), !, I=O, !.
 override_object_1(_VM, copy_step, Obj, Obj):-!.
@@ -2951,19 +2944,23 @@ good_for_rhs(pen(_)).
 good_for_rhs(iz(sid(_))).
 good_for_rhs(mass(_)).
 %good_for_rhs(loc2D(_, _)).
-good_for_rhs(iz(locY(_))).
 good_for_rhs(iz(locX(_))).
+good_for_rhs(iz(locY(_))).
 %good_for_rhs(center2D(_, _)).
 %good_for_rhs(center2G(_, _)).
 good_for_rhs(iz(cenX(_))).
 good_for_rhs(iz(cenY(_))).
 %good_for_rhs(vis2D(_, _)).
-good_for_rhs(iz(sizeGX(_))).
-good_for_rhs(iz(sizeGY(_))).
+good_for_rhs(iz(sizeX(_))).
+good_for_rhs(iz(sizeY(_))).
+
 good_for_rhs(iz(algo_sid(norm, _))).
 good_for_rhs(grid_ops(norm, _)).
 good_for_rhs(grid_rep(norm, _)).
 good_for_rhs(rot2D(_)).
+
+good_for_rhs(iz(sizeGX(_))).
+good_for_rhs(iz(sizeGY(_))).
 
 good_for_rhs(prop_of(_,_,_)).
 good_for_rhs(prop_of(_,_)).
@@ -2990,6 +2987,7 @@ good_for_lhs(global2G(_, _)).
 %good_for_lhs(grid_ops(comp, _)).
 %good_for_lhs(iz(fg_or_bg(_))).
 %good_for_lhs(iz(filltype(_))).
+good_for_lhs(oid(_)).
 good_for_lhs(iz(info(_))).
 good_for_lhs(iz(sid(_))).
 good_for_lhs(iz(sizeGX(_))).
@@ -3017,7 +3015,8 @@ good_for_lhs(iz(locY(_))).
 good_for_lhs(iz(cenX(_))).
 good_for_lhs(iz(cenY(_))).
 good_for_lhs(P):- good_for_rhs(P),!.
-good_for_lhs(_).
+good_for_lhs(P):- \+ dont_notice(P),!.
+%good_for_lhs(_).
 
 
 /*
@@ -3052,7 +3051,12 @@ find_lhs(ac_rules(_Tst, _IO, _P, PConds), Out):- into_lhs(PConds, Out).
 find_lhs(l2r(_Tst, P, _), Out):- find_lhs(P, Out).
 find_lhs(R, R).
 
-into_lhs(OID, Out):- atom(OID), !, indv_props_list(OID, In), into_lhs(In, Out), !.
+object_into_lhs(Obj,LHS):-
+  into_lhs(Obj,LHS0),
+  include(is_for_object_lhs,LHS0,LHS).
+is_for_object_lhs(P):- \+ \+ good_for_lhs(P),!.
+
+into_lhs(OID, Out):- atom(OID), !, indv_props_list(OID, In), include(is_for_object_lhs,In,Out), !.
 into_lhs(In, Out):- \+ compound(In), !, Out=In.
 into_lhs(R, Out):- \+ is_list(R), functor(R,F,A), arg(A,R,In),has_lhs_f(F),is_list(In), !, into_lhs(In, Out), !.
 into_lhs(In, Out):- \+ is_list(In), !, Out=In.
@@ -3063,7 +3067,7 @@ into_lhs1(In, Out):- m_unifiers(In, MidF), o_unifiers(MidF, Mid), In\=@=Mid, !, 
 %into_lhs1(In, Out):-    maplist(hide_propchange, In, Mid), In\=@=Mid, !, into_lhs1(Mid, Out).
 %into_lhs1(In, Out):- remove_giz(In, Out), !.
 into_lhs1(In, Out):- maplist(into_lhs, In, LHSF), flatten(LHSF, Mid), In\=@=Mid, !, into_lhs1(Mid, Out).
-into_lhs1(In, Out):- include(good_for_lhs, In, Mid), In\=@=Mid, !, into_lhs1(Mid, Out).
+into_lhs1(In, Out):- include(is_for_object_lhs, In, Mid), In\=@=Mid, !, into_lhs1(Mid, Out).
 into_lhs1(Out, Out).
 
 %m_unifiers(In, Out):- \+ is_list(In), Out=In.
@@ -3882,9 +3886,9 @@ noteable_propdiffs(E1, E2, S, L, R):-
 noteable_propdiffs(E1, E2, Same, LHS, RHS):-
   indv_eprops_list(E1, FP1), indv_eprops_list(E2, FP2),
   intersection(FP1, FP2, S, L, R),
-  include(good_for_lhs,S,Same),
-  include(good_for_lhs,L,LHS),
-  include(good_for_rhs,R,RHS),!.
+  include(is_for_object_lhs,S,Same),
+  include(is_for_object_lhs,L,LHS),
+  include(is_for_object_lhs,R,RHS),!.
 
 
 noteable_propdiffs(E1, E2, Same, InFlatP, OutPFlat):-
@@ -4223,7 +4227,7 @@ how_are_same(O1, O2, TypeSet, PropSet):-
 how_are_close(O1, O2, PropSet):-
   how_are_close(O1, O2, _TypeSet, PropSet).
 how_are_close(O1, O2, TypeSet, PropSet):-
-  findall(Type=Close, (prop_pairs2(O1, O2, Type, Close, _P), Close\=same(_,_,_), Type\==reorder), List),
+  findall(Type=Close, (prop_pairs2(O1, O2, Type, Close, _P), true, Type\==reorder), List),
   maplist(arg(1), List, TypeL), vsr_set(TypeL, TypeSet),
   vsr_set(List, PropSet).
 
@@ -4244,14 +4248,14 @@ narrative_element_once(Ele, ActionGroupIn, ActionGroupOut):-
 
 narrative_element(Ele, ActionGroupIn, ActionGroupOut):-
   ActionGroupIn = [EleIn|ActionGroup],
-   EleIn=..[F|ArgsIn], append(LArgs, [Min, Max, Was], ArgsIn),
-   Ele=..[F|Args], append(LArgs, [Min, Max, WasOut], Args),
+   EleIn=..[F|ArgsIn], append(LArgs, [Min..Max, Was], ArgsIn),
+   Ele=..[F|Args], append(LArgs, [Min..Max, WasOut], Args),
    ((number(Was), number(Max))-> (Max>Was) ; true),
     (number(Was)-> WasOut is Was +1 ; WasOut=Was),
    (Max==WasOut
       -> ActionGroupOut= ActionGroup
       ; must_det_ll((
-       append(LArgs, [Min, Max, WasOut], ArgsOut), EleOut =.. [F|ArgsOut],
+       append(LArgs, [Min..Max, WasOut], ArgsOut), EleOut =.. [F|ArgsOut],
       ActionGroupOut = [EleOut|ActionGroup]))).
 
 

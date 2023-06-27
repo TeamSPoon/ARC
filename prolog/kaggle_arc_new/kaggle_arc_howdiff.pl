@@ -871,11 +871,11 @@ prop_type_type(repaint).
 prop_type_type(reorder).
 
 
+prop_type_required(repaint).
 prop_type_required(reposition).
 prop_type_required(rotate).
 prop_type_required(reshape).
-prop_type_required(repaint).
-prop_type_not_required(rescale).
+prop_type_required(rescale).
 prop_type_not_required(reorder).
 
 
