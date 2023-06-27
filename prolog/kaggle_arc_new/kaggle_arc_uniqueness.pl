@@ -793,8 +793,9 @@ expand_rules(TestID, R, ac_unit(TestID, ctx, er(R), [el(R)])).
 fix_dupes(LHS,LHSO):- 
  select(A,LHS,  LHS00),
  select(B,LHS00,LHS01),
- sub_cmpd(iv(AO),A),
- sub_cmpd(iv(BO),B), AO=BO,
+ sub_cmpd(iv(AO),A), sub_cmpd(iv(BO),B), AO=BO,
+ globalpoints(A,APs), globalpoints(B,BPs),APs=@=BPs,
+ !,
  show_how_dif(A,B,O),
  fix_dupes([O|LHS01],LHSO).
 fix_dupes(LHS,LHS).
@@ -807,14 +808,17 @@ show_how_dif(_).
 show_how_dif(A,B,obj(New)):- 
   sub_cmpd(iv(AO),A),
   sub_cmpd(iv(BO),B),!,
-  ignore((AO==BO,
+  AO==BO,
+  globalpoints(A,APs),
+  globalpoints(B,BPs),!,
+  BPs=@=APs,
   indv_props_list(A,AL),
   indv_props_list(B,BL),
   intersection(AL,BL,S,L,R),
   %pp_ilp(sames=S),
   append_LR([L,R,S],New),
   if_t(L\==[],pp_ilp(removing=L)),
-  if_t(R\==[],(pp_ilp(adding=R),trace)))).
+  if_t(R\==[],(pp_ilp(adding=R),trace)).
 
 
 		
@@ -1014,12 +1018,16 @@ find_relative_sr(Same, Info, Left, Right, Possibles, R, NewRSet, PreCond, XtraRu
      VV=27,
      numbervars(v(ValE, ValR, ValGetR, ValNewR, Convertor), VV, NEWVV, [attvar(bind)]), set_flag('VAR_', NEWVV), !.
 
-find_relative_r(Info, Left, Right, Possibles, R, NewRSet, PreCond, XtraRule):- 
+find_relative_r(Info, Left, Right, Possibles, R, NewRSet, PreCond, XtraRule):- if_arc_expanded,
   find_relative_sr(same,Info, Left, Right, Possibles, R, NewRSet, PreCond, XtraRule),!.
-find_relative_r(Info, Left, Right, Possibles, R, NewRSet, PreCond, XtraRule):- 
+find_relative_r(Info, Left, Right, Possibles, R, NewRSet, PreCond, XtraRule):- if_arc_expanded,
   find_relative_sr(diff,Info, Left, Right, Possibles, R, NewRSet, PreCond, XtraRule),!.
 find_relative_r(_Info, _, _, _, R, R, [], []):-!.
+
+if_arc_expanded:- fail.
+
 /*
+
   make_unifiable_u(E, GetR),
   new_r(GetR, R, E, NewRSet, SubExpr),
   */
@@ -1129,6 +1137,9 @@ generic_starter_narratives(ActionGroup):-
       copy_object_n_changes(1, lowmin, himax, nth),
       copy_object_n_changes(2, lowmin, himax, nth),
       copy_object_n_changes(3, lowmin, himax, nth),
+      copy_object_n_changes(4, lowmin, himax, nth),
+      copy_object_n_changes(5, lowmin, himax, nth),
+      copy_object_n_changes(6, lowmin, himax, nth),
         add_dependant_scenery(_Any1,_Any2,lowmin, himax, nth),
       add_independant_scenery(lowmin, himax, nth),
       balanced_or_delete_leftovers(_, nth)].
@@ -1911,9 +1922,21 @@ apply_rules(VM, TestID, ExampleNum, Ctx, Rules, [O|Objs], [NO|NewObjs]):- !,
 apply_rules(_VM, _TestID, _ExampleNum, _Ctx, _Rules, Objs, Objs).
 
 apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, NewObj):-
-  member(Rule, Rules), rule_units(Rule , _, P, PConds),
+  member(URule, Rules),copy_term(URule,Rule),rule_units(Rule , _, P, PConds), P\=happy_ending(_),
+  
   vm_has_obj_prop(VM, Obj, PConds),
   wots(S, write(P:-PConds)),
+  must_det_ll((override_object_1(VM, P, Obj, NewObj))),
+  gset(VM.robjs) = [NewObj|VM.robjs],
+  globalpoints(NewObj, GPoints),
+  print_ss(wqs([ar1(S)]), [Obj], print_grid(VM.h, VM.v, GPoints)), !.
+
+apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, NewObj):-
+  member(URule, Rules),copy_term(URule,Rule),rule_units(Rule , _, P, PConds), P\=happy_ending(_),
+  P\=happy_ending(_),
+  wots(S, write(P:-PConds)),
+  print_grid(S,Obj),nl,
+  trace,vm_has_obj_prop(VM, Obj, PConds),
   must_det_ll((override_object_1(VM, P, Obj, NewObj))),
   gset(VM.robjs) = [NewObj|VM.robjs],
   globalpoints(NewObj, GPoints),
