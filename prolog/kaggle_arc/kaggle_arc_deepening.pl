@@ -26,7 +26,6 @@
             debug_arc_if_fail/1,
             if_arc_expanded/2,
             if_arc_expanded_ge/2,
-            if_arc_expanded/0,
             if_arc_expanded/1)).
 
 
@@ -38,7 +37,6 @@ when_arc_expanding(Goal):- nop(Goal).
 :- dynamic(pdtmp:arc_expands/3).
 :- thread_local(pdtmp:expand_enabled/3).
 
-if_arc_expanded:-fail,if_arc_expanded(1,unknown).
 if_arc_expanded(N):- if_arc_expanded(N,unknown).
 %if_arc_expanded(N,_):- N>5, !, fail.
 %if_arc_expanded(_,_):- !, fail.
@@ -142,10 +140,6 @@ term_loc_atom(T,A):- \+ compound(T), term_to_atom(T,A).
 term_loc_atom(_:H,T):- !, term_loc_atom(H,T).
 term_loc_atom(H:-_,T):- !, term_loc_atom(H,T).
 term_loc_atom(P,F):- functor(P,F,_).
-
-if_arc_expanded_ge(if_arc_expanded,if_arc_expanded(0,T)):- 
-  source_loc_key(T),!,source_location(S,L),
-  assert_if_new(pdtmp:arc_expands(T,S,L)).
 
 if_arc_expanded_ge(if_arc_expanded(N),if_arc_expanded(N,T)):- 
   source_loc_key(T),!,source_location(S,L),

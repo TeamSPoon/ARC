@@ -1,9 +1,10 @@
-/*
+f/*
   this is part of (H)MUARC  https://logicmoo.org/xwiki/bin/view/Main/ARC/
 
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
+
 :- include(kaggle_arc_header).
 
 :- use_module(library(pengines)).
@@ -262,7 +263,10 @@ clear_pending_input:- is_input_null_stream,!.
 clear_pending_input:- read_pending_codes(user_input,_Ignored1,[]).
 menu_goal(Goal):-  
   clear_pending_input,
-  pp(calling(Goal)),!, 
+  (atom(Goal)-> \+ missing_arity(Goal, 0) ; true),
+  pp(calling(Goal)),surely_menu_goal(Goal).
+
+surely_menu_goal(Goal):-
   ignore(once((time(((catch(my_menu_call(Goal),'$aborted',fail))))*->!;(!,fail,atrace,arcST,rrtrace(Goal))))),!,
   clear_pending_input,!.
 
@@ -272,12 +276,13 @@ menu_goal(Goal):-
 :- public(do_web_menu_key/1).
 :- export(do_web_menu_key/1).
 
-invoke_n_v(Key):- fix_test_name(Key,TestID),is_valid_testname(TestID),ensure_test(TestID),!, do_web_menu_key('e').
+invoke_n_v(Key):- fix_test_name(Key,TestID),is_valid_testname(TestID),set_current_test(TestID),!, call_test_cmd.
 invoke_n_v(NV):- compound(NV),functor(NV,F,2), atom_length(F,1), F\=='>', F\=='+', NV =..[_,Char,TestAtom], invoke_n_v(Char,TestAtom),!.
 %invoke_n_v(NV):- atom(NV), invoke_n_v('e',NV),!.
-invoke_n_v(Char,TestAtom):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),ensure_test(TestID),!, do_web_menu_key(Char).
-invoke_n_v(TestAtom,Char):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),ensure_test(TestID),!, do_web_menu_key(Char).
-  
+invoke_n_v(Char,TestAtom):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),set_current_test(TestID),!, do_web_menu_key(Char).
+invoke_n_v(TestAtom,Char):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),set_current_test(TestID),!, do_web_menu_key(Char).
+
+invoke_arc_cmd(Key):- fix_test_name(Key,TestID),is_valid_testname(TestID),set_current_test(TestID),!, call_test_cmd.
 invoke_arc_cmd(Key):- once(dmsg(invoke_arc_cmd(Key))),fail.
 invoke_arc_cmd(Key):- invoke_n_v(Key),!,dmsg(invoke_n_v(Key)),!.
 invoke_arc_cmd(Key):- arc_atom_to_term(Key,Prolog,Vs),Vs==[], Prolog\=@=Key,!,invoke_arc_cmd(Prolog).
@@ -299,15 +304,15 @@ do_menu_key('M'):- !, clear_tee, make, u_dmsg('Recompiled'),real_list_undefined,
 do_menu_key('W'):- !, report_suites.
 do_menu_key('P'):- !, switch_grid_mode,print_test.
 do_menu_key( ''):- !, fail.
+do_menu_key(Key):- atom(Key), menu_cmds(_,Key,_,Body), !, surely_menu_goal(Body).
 
 do_menu_key('d'):- !, dump_from_pairmode.
 
 do_menu_key(Numerals):- atom(Numerals), atom_number(Numerals,Num), number(Num), do_menu_number(Num),!.
 do_menu_key(Num):- number(Num), do_menu_number(Num),!.
 
-do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), !, menu_goal(Body).
-do_menu_key(Key):- atom(Key), menu_cmds(_,Key,_,Body), !, menu_goal(Body).
 do_menu_key(Key):- atom(Key), atom_codes(Key,[Code]), Code<27, CCode is Code + 96, atom_codes(CKey,[94,CCode]),!,do_menu_key(CKey).
+do_menu_key(Key):- atom(Key), atom_codes(Key,Codes), clause(do_menu_codes(Codes),Body), !, surely_menu_goal(Body).
 
 do_menu_key(Key):- atom(Key), atom_length(Key,1), \+ menu_cmd1(_,Key,_,_),
    char_type(Key,to_upper(LowerKey)),LowerKey\==Key, \+ \+ menu_cmd1(_,LowerKey,_,_),
@@ -647,6 +652,8 @@ get_indivs_mode(Mode):- test_config(indiv(Mode)).
 %get_indivs_mode(IndivMode):- get_current_test(TestID),test_info(Name,InfoL),!,contains_nonvar(This,InfoL).
 %
 get_indivs_mode(Mode):- once(luser_getval('$indivs_mode',Mode);next_indivs_mode(Mode,_)).
+
+:- meta_predicate(with_indivs_mode(+,0)).
 with_indivs_mode(Mode,Goal):- 
   get_indivs_mode(WasMode),
   setup_call_cleanup(set_indivs_mode(Mode),
@@ -668,6 +675,8 @@ was_set_pair_mode(_).
 set_pair_mode(Mode):- luser_setval('$pair_mode',Mode).
 get_pair_mode(Mode):- nonvar(Mode),get_pair_mode(TMode),!,TMode==Mode.
 get_pair_mode(Mode):- once(luser_getval('$pair_mode',Mode);next_pair_mode(Mode,_)).
+
+:- meta_predicate(with_pair_mode(+,0)).
 with_pair_mode(Mode,Goal):- get_pair_mode(OldMode), trusted_redo_call_cleanup( set_pair_mode(Mode), Goal, set_pair_mode(OldMode)). 
 switch_pair_mode:- get_pair_mode(Mode),next_pair_mode(Mode,NextMode),!,set_pair_mode(NextMode).
 show_pair_mode:- get_pair_mode(Mode),get_test_cmd(Cmd), luser_getval(test_suite_name,Suite), get_indivs_mode(IndivMode),
@@ -710,7 +719,9 @@ in_iface_file(P):-predicate_property(P,file(File)),atom_contains(File,iface).
 
 set_test_cmd(Mode):- \+ \+ dont_set_test_cmd(Mode),!.
 set_test_cmd(Mode):- into_test_cmd(Mode,Cmd),luser_setval('cmd',Cmd).
-get_test_cmd(Mode):- luser_getval('cmd',Mode).
+
+call_test_cmd:- get_test_cmd(Mode),!,call(Mode).
+get_test_cmd(Mode):- luser_getval('cmd',Mode),callable(Mode)->true;arc_user_prop(global,'cmd',Mode).
 
 set_test_cmd2(Mode):- \+ \+ dont_set_test_cmd(Mode),!.
 set_test_cmd2(Mode):- into_test_cmd(Mode,Cmd),luser_setval('cmd2',Cmd).
@@ -767,14 +778,17 @@ testspec_to_pairs(TestSpec,TestID,ExampleNum,I,O):-
 for_each(Gen,Goal):-
   Gen,(Goal*->true;true).
 
+:- meta_predicate(with_trn_pairs(?,?,?,?,0)).
 with_trn_pairs(TestID,ExampleNum,In,Out,Goal):- 
   ignore(ExampleNum=trn+_),
   with_task_pairs(TestID,ExampleNum,In,Out,Goal).
 
+:- meta_predicate(with_test_pairs(?,?,?,?,0)).
 with_test_pairs(TestID,ExampleNum,In,Out,Goal):- 
   ignore(ExampleNum=tst+_),
   with_task_pairs(TestID,ExampleNum,In,Out,Goal).
 
+:- meta_predicate(with_task_pairs(?,?,?,?,0)).
 with_task_pairs(TestID,ExampleNum,I,O,P):- 
  for_each((test_pairs(TestID,ExampleNum,I,O)),
   my_menu_call((
@@ -855,6 +869,7 @@ reverse_suite:-
    luser_getval(test_suite_name,SuiteX), 
    retract(muarc_tmp:cached_tests(SuiteX,ByHard)),
    reverse(ByHard,NewSet), asserta_new(muarc_tmp:cached_tests(SuiteX,NewSet)),!.
+
 reverse_suite:-
    luser_getval(test_suite_name,SuiteX), get_by_hard(SuiteX,ByHard), reverse(ByHard,NewSet),
    retractall(muarc_tmp:cached_tests(SuiteX,_)),
@@ -941,7 +956,7 @@ return_sorted(P1,Goal):- findall(P1,Goal,List),sort_safe(List,Set),member(P1,Set
 
 :- dynamic(muarc_tmp:cached_tests/2).
 %:- retractall(muarc_tmp:cached_tests(_,_)).
-:- test_suite_name(Name)->luser_default(test_suite_name,Name).
+:- test_suite_name(Name)->set_luser_default(test_suite_name,Name).
 
 get_current_suite_testnames(Set):-
   luser_getval(test_suite_name,X),
@@ -1312,7 +1327,7 @@ set_current_test(Name):-
     ignore((nonvar(Example),set_example_num(Example+NumE))))).
 
 really_set_current_test(TestID):-
-  once(luser_getval(task,WTestID);WTestID=[]),
+  once(luser_getval(task,WTestID);WTestID=[]),  
   ignore((WTestID\==TestID,luser_setval(task,TestID),save_last_test_name(TestID),
         test_id_atom(TestID,Atom),set_html_component(task,Atom))),
   once(luser_getval(last_test_name,WasTestID);WasTestID=[]),
@@ -1389,7 +1404,7 @@ new_current_test_info(WasTestID,TestID):-
   %luser_getval(task,TestID),
   %pp(fav(TestID,[])),
   %set_example_num(tst+0),
-  luser_setval(last_test_name,TestID))),
+  luser_setval(last_test_name,TestID))),  
   luser_setval(prev_test_name,WasTestID),
   forall(on_entering_test(TestID),true),
   maybe_set_suite(TestID).
@@ -1469,8 +1484,8 @@ load_file_term(S,(:- Goal)):- !, call_file_goal(S,Goal).
 load_file_term(_,Term):- assertz_new(Term),!.
 %load_file_term(Term):- arc_assert(Term),!.
 %load_file_term(Term):- pfcAdd(Term).
-:- luser_default(prev_test_name,'.').
-:- luser_default(next_test_name,'.').
+:- set_luser_default(prev_test_name,'.').
+:- set_luser_default(next_test_name,'.').
 
 test_html_file('.','.'):-!.
 test_html_file(Nil,'.'):- Nil == [], !.
@@ -1779,6 +1794,7 @@ print_single_pair_pt2(TestID,ExampleNum,In,Out):- is_cgi,!,
  print_ss_html_pair(cyan, 
    NameIn,navCmd((TestID>ExampleNum)),ID1,In,wqs('Input'),
    TestAtom,navCmd((TestAtom)),ID2,Out,RightTitle))),!.
+
 print_single_pair_pt2(TestID,ExampleNum,In1,Out1):- 
    test_id_atom(TestID,TestAtom),
    in_out_name(ExampleNum,NameIn0,NameOut),!,%easy_diff_idea(TestID,ExampleNum,In1,Out1,LIST),!,
@@ -1910,7 +1926,7 @@ available_fg_colors(Avails):- findall(Color,enum_fg_colors(Color),Avails).
 %print_test(TName):- !, parcCmt(TName).
 print_qtest:- get_current_test(TestID),print_qtest(TestID).
 
-:- luser_default('$grid_mode',simple_dots).
+:- set_luser_default('$grid_mode',simple_dots).
 %print_qtest(TestID):- \+ luser_getval('$grid_mode',simple_dots),!,print_test(TestID).
 %print_qtest(TestID):- \+ luser_getval('$grid_mode',informative_pairs),!,print_test(TestID).
 print_qtest(TestID):- ensure_test(TestID), \+ get_pair_mode(single_pair), !, print_whole_test(TestID),!.
@@ -2577,8 +2593,6 @@ atom_id_es(Sel, TestID):- sformat(SSel,'~q',[Sel]),
 
 
 
-
-
 print_trainer0:- arc(t('25d487eb')).
 print_eval0:- arc(v('009d5c81')).
 
@@ -2777,8 +2791,8 @@ make_use_test_id(M,F):-
  must_det_ll((
   assert_missing_skel_mfa(M,F,0),
   assert_missing_skel_mfa(M,F,1),   
-  if_t(current_predicate_human(F/4),
-   assert_missing_skel_mfa(M,F,2)))).
+  nop((if_t(current_predicate_human(F/4),
+   assert_missing_skel_mfa(M,F,2)))))).
 
 
 

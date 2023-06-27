@@ -8,33 +8,35 @@
 
 :- meta_predicate(if_t(0,0)).
 if_t(IF, THEN) :- call(call,ignore((((IF,THEN))))).
-:- meta_predicate(at_least_once(0)).
-must_ll(G):- call(G)*->true;throw(not_at_least_once(G)).
+:- meta_predicate(must_ll(0)).
+must_ll(G):- md(call,G)*->true;throw(not_at_least_once(G)).
 :- meta_predicate(at_least_once(0)).
 at_least_once(G):- call(G)*->true;throw(not_at_least_once(G)).
 
-%remove_must_det:- !.
-remove_must_det:- !,fail.
-remove_must_det:- nb_current(remove_must_det,TF),!,TF==true.
-remove_must_det:- \+ false.
+md_like(must_det_ll).
+%remove_must_det(MD):- !.
+remove_must_det(_):- !,fail.
+%remove_must_det(MD):- nb_current(remove_must_det(MD),TF),!,TF==true.
+%remove_must_det(MD):- \+ false.
 
-remove_must_dets(G,GGG):- compound(G), G = must_det_ll(GG),!,expand_goal(GG,GGG),!.
-remove_must_dets(G,GGG):- compound(G), G = must_det_l(GG),!,expand_goal(GG,GGG),!.
-%remove_must_dets(GG,GO):- sub_term(G,GG),compound(G),removed_term(G,GGGG),subst001(GG,G,GGGG,GGG),remove_must_dets(GGG,GO).
-remove_must_dets(G,GG):- compound(G),removed_term(G,GO),expand_goal(GO,GG).
+%remove_mds(MD,G,GGG):- compound(G), G = must_det_ll(GG),!,expand_goal(GG,GGG),!.
+%remove_mds(MD,G,GGG):- compound(G), G = must_det_l(GG),!,expand_goal(GG,GGG),!.
+remove_mds(MD,GG,GO):- sub_term(G,GG),compound(G),compound_name_arg(G,MD,GGGG),subst001(GG,G,GGGG,GGG),remove_mds(MD,GGG,GO).
+remove_mds(_,GG,GG).
+%remove_mds(MD,G,GG):- compound(G), G = ..[MD,AA], compound(G),removed_term(G,GO),expand_goal(GO,GG).
 
-removed_term(G,GGGG):- G = must_det_l(GGGG).
-removed_term(G,GGGG):- G = must_det_ll(GGGG).
-removed_term(G,GGGG):- G = catch_log(GGGG).
-removed_term(G,GGGG):- G = catch_nolog(GGGG).
+compound_name_arg(G,MD,Goal):- var(G),!,atom(MD),G=..[MD,Goal].
+compound_name_arg(G,MD,Goal):- compound(G),!, compound_name_arguments(G,MD,[Goal]).
+
 
 :- multifile(user:message_hook/3). 
 :- dynamic(user:message_hook/3).
+%user:message_hook(Term, Kind, Lines):- error==Kind, itrace,wdmsg(user:message_hook(Term, Kind, Lines)),trace,fail.
 user:message_hook(Term, Kind, Lines):- error==Kind,  wdmsg(user:message_hook(Term, Kind, Lines)),fail.
 
 :- meta_predicate(must_det_ll(0)).
-:- meta_predicate(must_det_ll1(0)).
-:- meta_predicate(must_det_ll_failed(0)).
+:- meta_predicate(must_det_ll1(1,0)).
+:- meta_predicate(md_failed(1,0)).
 :- meta_predicate(must_not_error(0)).
 %:- meta_predicate(must_det_l(0)).
 
@@ -43,73 +45,79 @@ user:message_hook(Term, Kind, Lines):- error==Kind,  wdmsg(user:message_hook(Ter
 
 wno_must(G):- locally(nb_setval(no_must_det_ll,t),locally(nb_setval(cant_rrtrace,t),call(G))).
 
-must_det_ll_maplist(_,[]):-!.
-must_det_ll_maplist(P1,[H|T]):- must_det_ll(call(P1,H)), must_det_ll_maplist(P1,T).
+md_maplist(_MD,_,[]):-!.
+md_maplist(MD,P1,[H|T]):- call(MD,call(P1,H)), md_maplist(MD,P1,T).
 
-must_det_ll_maplist(_,[],[]):-!.
-must_det_ll_maplist(P2,[HA|TA],[HB|TB]):- must_det_ll(call(P2,HA,HB)), must_det_ll_maplist(P2,TA,TB).
+md_maplist(_MD,_,[],[]):-!.
+md_maplist(MD,P2,[HA|TA],[HB|TB]):- call(MD,call(P2,HA,HB)), md_maplist(MD,P2,TA,TB).
 
-must_det_ll_maplist(_,[],[],[]):-!.
-must_det_ll_maplist(P3,[HA|TA],[HB|TB],[HC|TC]):- must_det_ll(call(P3,HA,HB,HC)), must_det_ll_maplist(P3,TA,TB,TC).
+md_maplist(_MD,_,[],[],[]):-!.
+md_maplist(MD,P3,[HA|TA],[HB|TB],[HC|TC]):- call(MD,call(P3,HA,HB,HC)), md_maplist(MD,P3,TA,TB,TC).
 
-%must_det_ll(G):- !, once((notrace(G)*->true;must_det_ll_failed(G))).
-must_det_ll(G):- remove_must_det,!,call(G).
-must_det_ll(G):- never_rrtrace,!,once(G).
-must_det_ll(G):- notrace(arc_html),!, ignore(notrace(G)),!.
-must_det_ll(G):- tracing,!, call(G). % once((call(G)*->true;must_det_ll_failed(G))).
-%must_det_ll(X):- !,must_not_error(X).
-must_det_ll((X,Goal)):- is_trace_call(X),!,call((itrace,Goal)).
-must_det_ll(X):- is_trace_call(X),!,itrace.
-must_det_ll(X):- nb_current(no_must_det_ll,t),!,call(X),!.
-must_det_ll(X):- \+ callable(X), !, throw(must_det_ll_not_callable(X)).
-must_det_ll((A*->X;Y)):- !,(must_not_error(A)*->must_det_ll(X);must_det_ll(Y)).
-must_det_ll((A->X;Y)):- !,(must_not_error(A)->must_det_ll(X);must_det_ll(Y)).
-must_det_ll((X,Cut)):- (Cut==(!)), !, (must_det_ll(X),!).
-must_det_ll(my_maplist(P1,List)):- !, must_det_ll_maplist(P1,List).
-must_det_ll(my_maplist(P2,ListA,ListB)):- !, must_det_ll_maplist(P2,ListA,ListB).
-must_det_ll(my_maplist(P3,ListA,ListB,ListC)):- !, must_det_ll_maplist(P3,ListA,ListB,ListC).
-must_det_ll((X,Cut,Y)):- (Cut==(!)), !, (must_det_ll(X),!,must_det_ll(Y)).
-must_det_ll((X,Y)):- !, (must_det_ll(X),!,must_det_ll(Y)).
-%must_det_ll(X):- notrace(catch(X,_,fail)),!.
-must_det_ll(X):- conjuncts_to_list(X,List),List\=[_],!,my_maplist(must_det_ll,List).
-must_det_ll(must_det_ll(X)):- !, must_det_ll(X).
-must_det_ll(grid_call(P2,I,O)):- !, must_grid_call(P2,I,O).
-must_det_ll(call(P2,I,O)):- !, must_grid_call(P2,I,O).
-%must_det_ll((X,Y,Z)):- !, (must_det_ll(X)->must_det_ll(Y)->must_det_ll(Z)).
-%must_det_ll((X,Y)):- !, (must_det_ll(X)->must_det_ll(Y)).
-must_det_ll(if_t(X,Y)):- !, if_t(must_not_error(X),must_det_ll(Y)).
-must_det_ll(forall(X,Y)):- !, must_det_ll(forall(must_not_error(X),must_not_error(Y))).
-must_det_ll(\+ (X, \+ Y)):- !, must_det_ll(forall(must_not_error(X),must_not_error(Y))).
+%must_det_ll(G):- !, once((/*notrace*/(G)*->true;md_failed(P1,G))).
 
-must_det_ll((X;Y)):- !, ((must_not_error(X);must_not_error(Y))->true;must_det_ll_failed(X;Y)).
-must_det_ll(\+ (X)):- !, (\+ must_not_error(X) -> true ; must_det_ll_failed(\+ X)).
-%must_det_ll((M:Y)):- nonvar(M), !, M:must_det_ll(Y).
-must_det_ll(X):- 
- catch(must_det_ll1(X),
-  must_det_ll_failed(G,N), % <- ExceptionTerm
+must_det_ll(X):- md(once,X).
+
+wraps_each(must_det_ll,once).
+
+md(P1,G):- remove_must_det(MD), wraps_each(MD,P1),!,call(G).
+md(P1,G):- never_rrtrace,!, call(P1,G).
+md(P1,G):- /*notrace*/(arc_html),!, ignore(/*notrace*/(call(P1,G))),!.
+md(P1,G):- tracing,!, call(P1,G). % once((call(G)*->true;md_failed(P1,G))).
+%md(P1,X):- !,must_not_error(X).
+md(P1,(X,Goal)):- is_trace_call(X),!,call((itrace,call(P1,Goal))).
+md(_, X):- is_trace_call(X),!,itrace.
+md(P1, X):- nb_current(no_must_det_ll,t),!,call(P1,X).
+md(P1,X):- \+ callable(X), !, throw(md_not_callable(P1,X)).
+md(P1,(A*->X;Y)):- !,(must_not_error(A)*->md(P1,X);md(P1,Y)).
+md(P1,(A->X;Y)):- !,(must_not_error(A)->md(P1,X);md(P1,Y)).
+md(P1,(X,Cut)):- (Cut==(!)),md(P1,X),!.
+md(MD,maplist(P1,List)):- !, call(MD,md_maplist(MD,P1,List)).
+md(MD,maplist(P2,ListA,ListB)):- !, call(MD,md_maplist(MD,P2,ListA,ListB)).
+md(MD,maplist(P3,ListA,ListB,ListC)):- !, call(MD,md_maplist(MD,P3,ListA,ListB,ListC)).
+md(P1,(X,Cut,Y)):- (Cut==(!)), !, (md(P1,X),!,md(P1,Y)).
+md(P1,(X,Y)):- !, (md(P1,X),md(P1,Y)).
+%md(P1,X):- /*notrace*/(catch(X,_,fail)),!.
+%md(P1,X):- conjuncts_to_list(X,List),List\=[_],!,maplist(must_det_ll,List).
+md(_,must_det_ll(X)):- !, must_det_ll(X).
+md(_,grid_call(P2,I,O)):- !, must_grid_call(P2,I,O).
+%md(P1,call(P2,I,O)):- !, must_grid_call(P2,I,O).
+%md(P1,(X,Y,Z)):- !, (md(P1,X)->md(P1,Y)->md(P1,Z)).
+%md(P1,(X,Y)):- !, (md(P1,X)->md(P1,Y)).
+%md(P1,if_t(X,Y)):- !, if_t(must_not_error(X),md(P1,Y)).
+md(P1,forall(X,Y)):- !, md(P1,forall(must_not_error(X),must_not_error(Y))).
+md(P1,\+ (X, \+ Y)):- !, md(P1,forall(must_not_error(X),must_not_error(Y))).
+
+md(P1,(X;Y)):- !, ((must_not_error(X);must_not_error(Y))->true;md_failed(P1,X;Y)).
+md(P1,\+ (X)):- !, (\+ must_not_error(X) -> true ; md_failed(P1,\+ X)).
+%md(P1,(M:Y)):- nonvar(M), !, M:md(P1,Y).
+md(P1,X):- 
+ catch(must_det_ll1(P1,X),
+  md_failed(P1,G,N), % <- ExceptionTerm
    % bubble up and start running 
-  ((M is N -1, M>0)->throw(must_det_ll_failed(G,M));(ftrace(X),throw('$aborted')))),!.
-%must_det_ll(X):- must_det_ll1(X),!.
+  ((M is N -1, M>0)->throw(md_failed(P1,G,M));(ftrace(X),throw('$aborted')))),!.
+%must_det_ll(X):- must_det_ll1(P1,X),!.
 
-must_det_ll1(X):- tracing,!,must_not_error(X),!.
-must_det_ll1(once(A)):- !, once(must_det_ll(A)).
-must_det_ll1(X):- 
-  strip_module(X,M,P),functor(P,F,A),setup_call_cleanup(nop(trace(M:F/A,+fail)),(must_not_error(X)*->true;must_det_ll_failed(X)),
+must_det_ll1(P1,X):- tracing,!,must_not_error(call(P1,X)),!.
+must_det_ll1(P1,once(A)):- !, once(md(P1,A)).
+must_det_ll1(P1,X):- 
+  strip_module(X,M,P),functor(P,F,A),setup_call_cleanup(nop(trace(M:F/A,+fail)),(must_not_error(call(P1,X))*->true;md_failed(P1,X)),
     nop(trace(M:F/A,-fail))),!.
 
 %must_not_error(G):- must(once(G)).
 
 must_not_error(G):- (tracing;never_rrtrace),!,call(G).
-must_not_error(G):- !, call(G).
-must_not_error(G):- is_cgi,!, catch((G),E,((u_dmsg(E=G)))).
-must_not_error(X):- is_guitracer,!, call(X).
+must_not_error(G):- notrace(is_cgi),!, catch((G),E,((u_dmsg(E=G)))).
+%must_not_error(X):- is_guitracer,!, call(X).
+%must_not_error(G):- !, call(G).
+must_not_error(X):- !,catch(X,E,(wdmsg(E=X),trace,ftrace(X))).
 must_not_error(X):- catch(X,E,(rethrow_abort(E);(/*arcST,*/writeq(E=X),pp(etrace=X),
   trace,
   rrtrace(visible_rtrace([-all,+exception]),X)))).
 
 always_rethrow(E):- never_rrtrace,!,throw(E).
 always_rethrow('$aborted').
-always_rethrow(must_det_ll_failed(_)).
+always_rethrow(md_failed(_,_,_)).
 
 %catch_non_abort(Goal):- cant_rrtrace(Goal).
 catch_non_abort(Goal):- catch(cant_rrtrace(Goal),E,rethrow_abort(E)),!.
@@ -125,14 +133,14 @@ cant_rrtrace(Goal):- setup_call_cleanup(cant_rrtrace,Goal,can_rrtrace).
 main_debug:- main_thread,current_prolog_flag(debug,true).
 cant_rrtrace:- nb_setval(cant_rrtrace,t).
 can_rrtrace:- nb_setval(cant_rrtrace,f).
-%must_det_ll_failed(X):- predicate_property(X,number_of_clauses(1)),clause(X,(A,B,C,Body)), (B\==!),!,must_det_ll(A),must_det_ll((B,C,Body)).
-must_det_ll_failed(G):- never_rrtrace,!,notrace,notrace(u_dmsg(must_det_ll_failed(G))),!,throw(must_det_ll_failed(G,2)).
-must_det_ll_failed(_):- never_rrtrace,!,fail.
-must_det_ll_failed(G):- tracing,notrace(u_dmsg(must_det_ll_failed(G))),!,fail. 
-must_det_ll_failed(G):- main_debug,notrace(u_dmsg(must_det_ll_failed(G))),!,throw(must_det_ll_failed(G,2)).
-must_det_ll_failed(G):- is_cgi,!, u_dmsg(arc_html(must_det_ll_failed(G))).
-must_det_ll_failed(X):- notrace,is_guitracer,u_dmsg(failed(X))/*,arcST*/,nortrace,atrace, call(X).
-must_det_ll_failed(X):-  u_dmsg(failed(X))/*,arcST*/,nortrace,atrace,
+%md_failed(P1,X):- predicate_property(X,number_of_clauses(1)),clause(X,(A,B,C,Body)), (B\==!),!,must_det_ll(A),must_det_ll((B,C,Body)).
+md_failed(P1,G):- never_rrtrace,!,notrace,/*notrace*/(u_dmsg(md_failed(P1,G))),!,throw(md_failed(P1,G,2)).
+md_failed(_,_):- never_rrtrace,!,fail.
+md_failed(P1,G):- tracing,/*notrace*/(u_dmsg(md_failed(P1,G))),!,fail. 
+md_failed(P1,G):- main_debug,/*notrace*/(u_dmsg(md_failed(P1,G))),!,throw(md_failed(P1,G,2)).
+md_failed(P1,G):- is_cgi,!, u_dmsg(arc_html(md_failed(P1,G))).
+md_failed(P1,X):- notrace,is_guitracer,u_dmsg(failed(X))/*,arcST*/,nortrace,atrace, call(P1,X).
+md_failed(P1,X):-  u_dmsg(failed(P1,X))/*,arcST*/,nortrace,atrace,
  trace,visible_rtrace([-all,+fail,+call,+exception],X).
 % must_det_ll(X):- must_det_ll(X),!.
 
@@ -167,7 +175,7 @@ bts:-
  ensure_loaded(library(prolog_stack)),
  prolog_stack:export(prolog_stack:get_prolog_backtrace_lc/3),
  use_module(library(prolog_stack),[print_prolog_backtrace/2,get_prolog_backtrace_lc/3]),
-  notrace(prolog_stack:call(call,get_prolog_backtrace_lc,8000, Stack, [goal_depth(600)])),
+  /*notrace*/(prolog_stack:call(call,get_prolog_backtrace_lc,8000, Stack, [goal_depth(600)])),
   stream_property(S,file_no(1)), prolog_stack:print_prolog_backtrace(S, Stack),
   ignore((fail, current_output(Out), \+ stream_property(Out,file_no(1)), print_prolog_backtrace(Out, Stack))),!.
 
@@ -194,7 +202,7 @@ ibreak:- if_thread_main(((trace,break))).
 
 % goal_expansion(must_det_l(G),I,must_det_ll(G),O):- nonvar(I),source_location(_,_), nonvar(G),I=O.
 
-%goal_expansion(G,I,GG,O):- nonvar(I),source_location(_,_), compound(G), remove_must_dets(G,GG),I=O.
+%goal_expansion(G,I,GG,O):- nonvar(I),source_location(_,_), compound(G), remove_mds(MD,G,GG),I=O.
 
 %:- system:ensure_loaded(library(pfc_lib)).
 %:- expects_dialect(pfc).
@@ -237,9 +245,10 @@ get_oov_value(ValueOOV,Value):- compound(ValueOOV),ValueOOV=oov(Value),!.
 get_oov_value(Value,Value).
 
 
-
-
-term_expansion_setter(I,O):- compound(I), expand_must_det(I,O).
+term_expansion_setter(I,O):- maybe_expand_md(must_det_ll,I,O),I\=@=O,!.
+term_expansion_setter(I,O):- maybe_expand_md(must_det_ll,I,M),I\=@=M,!,term_expansion_setter(M,O).
+term_expansion_setter(Goal,get_kov(Func,Self,Value)):- compound(Goal), 
+  compound_name_arguments(Goal,'.',[ Self, Func, Value]),var(Value).
 
 term_expansion_setter((Head:-Body),Out):- 
    get_setarg_p1(setarg,I,Head,P1), is_setter_syntax(I,Obj,Member,Var,How),
@@ -265,58 +274,82 @@ is_setter_syntax(hset(How,ObjMember),Obj,Member,_Var,How):- obj_member_syntax(Ob
 
 obj_member_syntax(ObjMember,Obj,Member):-compound(ObjMember), compound_name_arguments(ObjMember,'.',[Obj,Member]),!.
 
-expand_must_det(I,_):- \+ compound(I),!,fail.
-%expand_must_det(I,_):- compound(I),!,fail. % THIS DISABLES
+maybe_expand_md(_MD,I,_):- \+ compound(I),!,fail.
+%maybe_expand_md(MD,I,_):- compound(I),!,fail. % THIS DISABLES
 % THIS DISABLES
-%expand_must_det(must_det_ll(GoalL),GoalL):-!.
-expand_must_det(must_det_ll(GoalL),GoalLO):- !, expand_must_det0(GoalL,GoalLO).
-expand_must_det(maplist(P1,GoalL),GoalLO):- P1 ==must_det_ll,!,
-  expand_must_det0(GoalL,GoalLO).
-expand_must_det(my_maplist(P1,GoalL),GoalLO):- P1 ==must_det_ll,!,
-  expand_must_det0(GoalL,GoalLO).
+%maybe_expand_md(MD,must_det_ll(GoalL),GoalL):-!.
+maybe_expand_md(MD,MDGoal,GoalLO):- compound_name_arg(MDGoal,MD,Goal),!, expand_md(MD,Goal,GoalLO).
+maybe_expand_md(MD,maplist(P1,GoalL),GoalLO):- P1 ==MD,!,
+  expand_md(MD,GoalL,GoalLO).
+maybe_expand_md(MD,maplist(P1,GoalL),GoalLO):- P1 ==MD,!,
+  expand_md(MD,GoalL,GoalLO).
+maybe_expand_md(MD,I,O):- sub_term(C,I),compound(C), compound_name_arg(C,MD,Goal),
+   compound(Goal),Goal=(_,_),
+   once((expand_md(MD,Goal,GoalO),subst(I,C,GoalO,O))),I\=@=O.
 
-expand_must_det0(Nil,true):- Nil==[],!.
-expand_must_det0(Var,Var):- \+ callable(Var),!.
-expand_must_det0([A|B],(AA,BB)):- assertion(callable(A)), assertion(is_list(B)), !, 
-  expand_must_det1(A,AA), expand_must_det0(B,BB).
-expand_must_det0(A,AA):- !, expand_must_det1(A,AA).
+  
+%maybe_expand_md(MD,I,O):- sub_term(S,I),compound(S),S=must_det_ll(G),
+%  once(expand_md(MD,S,M)),M\=S,
+  
+
+
+expand_md(_MD,Nil,true):- Nil==[],!.
+expand_md(_MD,Var,Var):- \+ callable(Var),!.
+expand_md(MD,[A|B],(AA,BB)):- assertion(callable(A)), assertion(is_list(B)), !, 
+  expand_md1(MD,A,AA), expand_md(MD,B,BB).
+expand_md(MD,A,AA):- !, expand_md1(MD,A,AA).
 
 prevents_expansion(A):- is_trace_call(A).
 is_trace_call(A):- A == trace.
 is_trace_call(A):- A == itrace.
-skip_expansion(A):- A == !.
-expand_must_det1(Var,Var):- \+ callable(Var),!.
-expand_must_det1(my_maplist(P1,A),must_det_ll_maplist(P1,A)):-!.
-expand_must_det1(my_maplist(P2,A,B),must_det_ll_maplist(P2,A,B)):-!.
-expand_must_det1(my_maplist(P3,A,B,C),must_det_ll_maplist(P3,A,B,C)):-!.
-expand_must_det1(Cut,Cut):-  skip_expansion(Cut).
-%expand_must_det1(Goal,O):- \+ compound(Goal), !,O = must_det_ll(Goal).
-expand_must_det1((A,B),((A,B))):- remove_must_det, prevents_expansion(A),!.
-expand_must_det1((A,B),must_det_ll((A,B))):- prevents_expansion(A),!.
-expand_must_det1((A,B),(AA,BB)):- !, expand_must_det(A,AA), expand_must_det(B,BB).
-expand_must_det1((C*->A;B),(CC*->AA;BB)):- !, expand_must_det(A,AA), expand_must_det(B,BB), expand_must_not_error(C,CC).
-expand_must_det1((C->A;B),(CC->AA;BB)):- !, expand_must_det(A,AA), expand_must_det(B,BB), expand_must_not_error(C,CC).
-expand_must_det1((C;B),(CC->true;BB)):- !, expand_must_det(B,BB), expand_must_not_error(C,CC).
 
-expand_must_det1(locally(C,A),locally(C,AA)):- !, expand_must_det(A,AA).
+skip_expansion(A):- var(A),!,fail.
+skip_expansion(!).
+skip_expansion(false).
+skip_expansion(true).
+skip_expansion(C):- compound(C),functor(C,F,A),skip_fa_expansion(F,A).
+skip_fa_expansion(once,1).
+skip_fa_expansion(call,_).
+skip_fa_expansion(if_t,2).
 
-expand_must_det1(call_cleanup(A,B),call_cleanup(AA,BB)):- !, expand_must_det(A,AA), expand_must_det(B,BB).
-expand_must_det1(setup_call_cleanup(C,A,B),setup_call_cleanup(CC,AA,BB)):- !, 
-  expand_must_det(C,CC),expand_must_det(A,AA), expand_must_det(B,BB).
+expand_md1(_MD,Var,Var):- \+ callable(Var),!.
+expand_md1(_MD,Cut,Cut):-  skip_expansion(Cut),!.
+expand_md1(MD,MDAB, AABB):- compound(MDAB), compound_name_arg(MDAB,MD,AB),!, expand_md(MD,AB,AABB).
+expand_md1(MD,maplist(P1,A),md_maplist(MD,P1,A)):-!.
+expand_md1(MD,maplist(P2,A,B),md_maplist(MD,P2,A,B)):-!.
+expand_md1(MD,maplist(P3,A,B,C),md_maplist(MD,P3,A,B,C)):-!.
+expand_md1(MD,my_maplist(P1,A),md_maplist(MD,P1,A)):-!.
+expand_md1(MD,my_maplist(P2,A,B),md_maplist(MD,P2,A,B)):-!.
+expand_md1(MD,my_maplist(P3,A,B,C),md_maplist(MD,P3,A,B,C)):-!.
+%expand_md1(MD,Goal,O):- \+ compound(Goal), !,O = must_det_ll(Goal).
+%expand_md1(MD,(A,B),((A,B))):- remove_must_det(MD), prevents_expansion(A),!.
+%expand_md1(MD,(A,B),must_det_ll((A,B))):- prevents_expansion(A),!.
+expand_md1(MD,(A,B),(AA,BB)):- !, expand_md(MD,A,AA), expand_md(MD,B,BB).
+expand_md1(MD,(C*->A;B),(CC*->AA;BB)):- !, expand_md(MD,A,AA), expand_md(MD,B,BB), expand_must_not_error(C,CC).
+expand_md1(MD,(C->A;B),(CC->AA;BB)):- !, expand_md(MD,A,AA), expand_md(MD,B,BB), expand_must_not_error(C,CC).
+expand_md1(MD,(C;B),(CC;BB)):- !, expand_md(MD,B,BB), expand_must_not_error(C,CC).
 
-expand_must_det1(M:P, M:AABB):-!,expand_must_det(P, AABB).
-expand_must_det1(P, AABB) :- predicate_property(P,(meta_predicate( MP ))),
+expand_md1(MD,locally(C,A),locally(C,AA)):- !, expand_md(MD,A,AA).
+
+expand_md1(MD,call_cleanup(A,B),call_cleanup(AA,BB)):- !, expand_md(MD,A,AA), expand_md(MD,B,BB).
+expand_md1(MD,setup_call_cleanup(C,A,B),setup_call_cleanup(CC,AA,BB)):- !, 
+  expand_md(MD,C,CC),expand_md(MD,A,AA), expand_md(MD,B,BB).
+
+expand_md1(MD,M:P, M:AABB):-!,expand_md(MD,P, AABB).
+
+expand_md1(MD,P, AABB) :- predicate_property(P,(meta_predicate( MP ))),
    strip_module(P,_,SP),strip_module(MP,_,SMP), kaggle_arc_1_pred(_,SP),
    \+ skippable_built_in(P),
    SP=..[F|Args],SMP=..[F|Margs],!,
-   my_maplist(expand_meta_predicate_arg,Margs,Args,EArgs),
+   maplist(expand_meta_predicate_arg(MD),Margs,Args,EArgs),
    AABB=..[F|EArgs].  
-expand_must_det1(must_det_ll(AB), AABB):-!, expand_must_det(AB,AABB).
-expand_must_det1( A,must_det_ll(AA)):- \+ remove_must_det, !, expand_goal(A,AA),!.
-expand_must_det1( A, AA):- expand_goal(A,AA),!.
 
-expand_must_not_error(C,C):- remove_must_det,!.
-expand_must_not_error(C,CC):- CC=must_not_error(C).
+expand_md1(MD, A, MDAA):- \+ remove_must_det(MD), !, expand_goal(A,AA),!,compound_name_arg(MDAA,MD,AA).
+expand_md1(_MD, A, AA):- expand_goal(A,AA),!.
+
+expand_must_not_error(C,C):- remove_must_det(must_not_error),!.
+expand_must_not_error(C,CC):- \+ predicate_property(C,meta_predicate(_)),!, CC = must_not_error(C),!.
+expand_must_not_error(C,CC):- expand_md(must_not_error, C, CC). 
 
 kaggle_arc_1_pred(M,P):- 
   predicate_property(M:P,file(F)),
@@ -329,39 +362,45 @@ kaggle_arc_1_pred(M,P):-
 
 %meta_builtin(P):- var(P),meta_builtin(P).
 %meta_builtin(P):- predicate_property(P,interpreted),predicate_property(P,static).
-skippable_built_in(MP):- strip_module(MP,_,P), predicate_property(system:P,built_in),once(predicate_property(system:P,iso);predicate_property(system:P,notrace)).
-%meta_builtin(P):- predicate_property(P,notrace), \+ predicate_property(P,nodebug). 
+skippable_built_in(MP):- strip_module(MP,_,P), predicate_property(system:P,built_in),
+  once(predicate_property(system:P,iso);predicate_property(system:P,notrace)).
+%meta_builtin(P):- predicate_property(P,/*notrace*/), \+ predicate_property(P,nodebug). 
 
-expand_meta_predicate_arg(':',A,AA):- !,expand_must_det1(A,AA).
-expand_meta_predicate_arg(0,A,AA):- !,expand_must_det1(A,AA).
-expand_meta_predicate_arg(*,A,AA):- !,expand_must_det1(A,AA).
-expand_meta_predicate_arg(_,A,A).
+expand_meta_predicate_arg(_MD,'?',A,A):-!.
+expand_meta_predicate_arg(_MD,'+',A,A):-!.
+expand_meta_predicate_arg(_MD,'-',A,A):-!.
+expand_meta_predicate_arg(MD, ':',A,AA):- !,expand_md1(MD,A,AA).
+expand_meta_predicate_arg(MD,  0,A,AA):- !,expand_md1(MD,A,AA).
+%expand_meta_predicate_arg(MD,*,A,AA):- !,expand_md1(MD,A,AA).
+expand_meta_predicate_arg(_MD,_,A,A).
 
 goal_expansion_getter(Goal,O):- \+ compound(Goal), !,O = Goal.
-goal_expansion_getter(I,O):- expand_must_det(I,O).
-goal_expansion_getter(Goal,get_kov(Func,Self,Value)):-
-  compound_name_arguments(Goal,'.', [Self, Func, Value]),!.
+goal_expansion_getter(I,O):- md_like(MD),maybe_expand_md(MD,I,O),I\=@=O,!.
+goal_expansion_getter(I,O):- md_like(MD),maybe_expand_md(MD,I,M),I\=@=M,!,goal_expansion_getter(M,O).
+goal_expansion_getter(Goal,get_kov(Func,Self,Value)):- compound(Goal), 
+  compound_name_arguments(Goal,'.',[ Self, Func, Value]),var(Value).
 goal_expansion_getter(Goal,Out):- 
  compound_name_arguments(Goal,F,Args),
- my_maplist(goal_expansion_getter,Args,ArgsOut),
+ maplist(goal_expansion_getter,Args,ArgsOut),
  compound_name_arguments(Out,F,ArgsOut).
 
 :- export(goal_expansion_getter/2).
 :- system:import(goal_expansion_getter/2).
 
 
-
 goal_expansion_setter(Goal,_):- \+ compound(Goal), !, fail.
 
 
-goal_expansion_setter(G,GO):- remove_must_det, !,remove_must_dets(G,GG),goal_expansion_setter(GG,GO).
-%goal_expansion_setter(GG,GO):- remove_must_det, sub_term(G,GG),compound(G),G = must_det_ll(GGGG),subst001(GG,G,GGGG,GGG),!,goal_expansion_setter(GGG,GO).
+goal_expansion_setter(I,O):- md_like(MD),maybe_expand_md(MD,I,O),I\=@=O,!.
+goal_expansion_setter(G,GO):- remove_must_det(MD), !,remove_mds(MD,G,GG),goal_expansion_setter(GG,GO).
+%goal_expansion_setter(GG,GO):- remove_must_det(MD), sub_term(G,GG),compound(G),G = must_det_ll(GGGG),subst001(GG,G,GGGG,GGG),!,goal_expansion_setter(GGG,GO).
 %goal_expansion_setter((G1,G2),(O1,O2)):- !, expand_goal(G1,O1), expand_goal(G2,O2),!.
 goal_expansion_setter(set_omember(A,B,C,D),set_omember(A,B,C,D)):-!.
 goal_expansion_setter(set_omember(A,B,C),set_omember(b,A,B,C)):-!.
-goal_expansion_setter(Goal,get_kov(Func,Self,Value)):- compound(Goal), compound_name_arguments(Goal,'.',[ Self, Func, Value]).
+goal_expansion_setter(Goal,get_kov(Func,Self,Value)):- compound(Goal), 
+  compound_name_arguments(Goal,'.',[ Self, Func, Value]),var(Value).
+goal_expansion_setter(I,O):- md_like(MD),maybe_expand_md(MD,I,M),I\=@=M,!,goal_expansion_setter(M,O).
 
-goal_expansion_setter(I,O):- expand_must_det(I,O).
 
 goal_expansion_setter(Goal,Out):- 
    predicate_property(Goal,meta_predicate(_)),!,fail,
@@ -428,7 +467,8 @@ disable_arc_expansion:-
 :- dynamic(goal_expansion/4).
 
 goal_expansion(G,I,GG,O):- nonvar(I),source_location(_,_), 
-    compound(G), remove_must_det, remove_must_dets(G,GG),I=O.
+    compound(G), 
+     (remove_must_det(MD)->remove_mds(MD,G,GG);(md_like(MD),maybe_expand_md(MD,G,GG))),I=O.
 
 
 /*

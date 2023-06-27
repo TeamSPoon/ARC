@@ -18,7 +18,7 @@
   ]
 ).
 */
-:- include(kaggle_arc_header).
+%:- include(kaggle_arc_header).
 :- use_module(library(xlisting/xlisting_web)).
 :- use_module(library(debug)).
 %:- use_module(library(thread_pool)).
@@ -122,6 +122,9 @@ w_section_4(title(Title),Goal,Spyable,Showing):- nonvar(Title),!, w_section_4(Ti
 w_section_4(Title,Goal,Spyable,Showing):- wants_html, !, w_section_html(Title,Goal,Spyable,Showing).
 w_section_4(Title,Goal,Spyable,Showing):- w_section_ansi(Title,Goal,Spyable,Showing).
 
+convert_to_first_n_chars(Input,  N, Output) :-
+    sub_string(Input, 0, N, _, Output),!.
+convert_to_first_n_chars(Input, _N, Input).
 
 w_section_ansi(Title0,Goal,Spyable,_Showing):- 
  must_det_ll((
@@ -129,10 +132,13 @@ w_section_ansi(Title0,Goal,Spyable,_Showing):-
   nl_if_needed,dash_chars,
   MU = '', % was 'mu'
   once(nb_current('$w_section',Was);Was=[]), length(Was,Depth),!,wots(Ident,dash_chars(Depth,' ')),
-  setup_call_cleanup(must_det_ll((format('~N~w~w!~w! ~@ |~n',[MU,Ident, Spyable, write(Str)]))),  
+
+  wots(SpyableS,write(Spyable)), convert_to_first_n_chars(SpyableS,30,SpyableStr),
+
+  setup_call_cleanup(must_det_ll((format('~N~w~w!~w! ~@ |~n',[MU,Ident, SpyableStr, write(Str)]))),  
                      locally(b_setval('$w_section',[c(Spyable)|Was]),
                                       ignore(once(tabbed_print_im(Depth+2,in_w_section_depth(Goal))))), 
-                     must_det_ll((format('~N~w\u00A1~w~w\u00A1 ',[Ident, MU,Spyable])))))).
+                     must_det_ll((format('~N~w\u00A1~w~w\u00A1 ',[Ident, MU,SpyableStr])))))).
 
 in_w_section_depth(Goal):- 
    setup_call_cleanup(
@@ -204,8 +210,8 @@ expandable_inlines:- expandable_mode(javascript).
 expandable_mode(How):- var(How),!,luser_getval(expansion,How).
 expandable_mode(How):- luser_getval(expansion,V),!,How==V.
 
-:- luser_default(expansion,javascript).
-:- luser_default(expansion,bfly).
+:- set_luser_default(expansion,javascript).
+:- set_luser_default(expansion,bfly).
 
 
 :- meta_predicate(call_maybe_det(0,-)).
@@ -400,7 +406,7 @@ save_in_luser(N,V):- decode_luser(V,VV),save_in_luser2(N,VV).
 save_in_luser2(task,V):- !, set_current_test(V),get_current_test(CT),dmsg(current_test(V-->CT)).
 save_in_luser2(test_suite_name,V):- !, nop(maybe_set_suite(V)).
 %save_in_luser2(cmd,V):-  !, ignore(set_test_cmd(V)),!.
-save_in_luser2(N,V):- luser_setval(N,V), luser_default(N,V), 
+save_in_luser2(N,V):- luser_setval(N,V), set_luser_default(N,V), 
   ignore((is_list(V),last(V,E),compound(E),save_in_luser(V))).
 
 decode_luser(V,O):- url_decode_term(V,VV,_),VV\==V,decode_luser(VV,O),!.
@@ -1534,9 +1540,9 @@ arc_script_header2:-
 arc_weto(G):- call_e_dmsg(G).
 
 
-%:- luser_default(cmd,print_test).
-:- luser_default(cmd,ndividuator). 
-:- luser_default(footer_cmd,statistics).
+%:- set_luser_default(cmd,print_test).
+:- set_luser_default(cmd,ndividuator). 
+:- set_luser_default(footer_cmd,statistics).
 
 current_arc_cmd(Prolog):- current_arc_cmd('cmd',Prolog).
 %current_arc_cmd(cmd,Prolog):- luser_getval(cmd,Prolog).

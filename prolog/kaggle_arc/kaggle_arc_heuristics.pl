@@ -12,7 +12,7 @@
 :- discontiguous learn_shapelib/7.
 :- discontiguous individuals_from_pair/9.
 
-
+/*
 i_pair(WasROptions,GridIn,GridOut):- fail, WasROptions==complete, % TODO unfail this
  catch((must_det_ll((
  check_for_refreshness,
@@ -22,7 +22,9 @@ i_pair(WasROptions,GridIn,GridOut):- fail, WasROptions==complete, % TODO unfail 
              guess_how_else(HOW_ELSE,Stuff1,Stuff2,InC,OutC)))))),
  INDIV = [HOW|HOW_ELSE],
  show_individuated_pair(PairName,INDIV,GridIn,GridOut,InC,OutC)),_,fail),!.
-
+*/
+i_pair(_GID1,_GID2,ROptions,GridIn,GridOut):-
+  i_pair(ROptions,GridIn,GridOut).
 i_pair(ROptions,GridIn,GridOut):-
  must_det_ll((    
   check_for_refreshness,
@@ -38,8 +40,8 @@ maybe_optimize_objects(InC00,OutC00,InCR,OutCR):-
  once((must_det_ll((
   remove_background_only_object(InC00,InC000),
   remove_background_only_object(OutC00,OutC000),
- extend_grp_proplist(InC000,InC0),
- extend_grp_proplist(OutC000,OutC0),
+ extend_group_proplist(InC000,InC0),
+ extend_group_proplist(OutC000,OutC0),
   maybe_fix_group(InC0,InCRFGBG),
   maybe_fix_group(OutC0,OutCRFGBG),
   mostly_fg_objs(InCRFGBG,InCR),
@@ -115,7 +117,7 @@ show_individuated_pair_cont2(PairName,ROptions,_GridIn,GridOut,InC,OutC):-
    %when_in_html(if_wants_output_for(sort_some_relations,sort_some_relations(InC,OutC))),
 
   % (sub_var(trn,ID1)->show_object_dependancy(TestID,ExampleNum,InC,OutC);show_object_dependancy(TestID)),
- if_t( true,((
+ if_t( false,((
 
 
    w_section(learn_group_mapping,        if_t(sub_var(trn,ID1), learn_group_mapping(InCR,OutCR))),
@@ -198,7 +200,9 @@ visible_order(InC,InC).
 most_visible(Obj,LV):- has_prop(pixel2C(_,_,_),Obj),!, LV= (-1)^1000^1000.
 most_visible(Obj,LV):- area(Obj,1), grid_size(Obj,H,V), Area is (H-1)*(V-1), !, LV=Area^1000^1000.
 most_visible(Obj,LV):- area(Obj,Area),cmass(bg,Obj,BGMass), % cmass(fg,Obj,FGMass),
-  findall(_,doing_map_list(_,_,[Obj|_]),L),length(L,Cnt),NCnt is -Cnt, !, %, NCMass is -CMass,
+  %findall(_,doing_map_list(_,_,[Obj|_]),L),length(L,Cnt),
+  Cnt = 1,
+  NCnt is -Cnt, !, %, NCMass is -CMass,
   LV = Area^BGMass^NCnt.
 most_visible(_Obj,LV):- LV= (-1)^1000^1000.
 
@@ -282,6 +286,13 @@ individualizer_heuristics(PairName,In,Out,IH,IV,OH,OV):-
   forall(clause(individuals_from_pair(PairName,In,Out,IH,IV,OH,OV,ShapesI,ShapesO),Body),
     (rtrace_on_error(once(Body)),rtrace_on_error(show_pair_no_i(IH,IV,OH,OV,shared,PairName,ShapesI,ShapesO)))).
 
+
+igo_pair(ROptions,GridIn,GridOut):-
+  my_time((maybe_name_the_pair(GridIn,GridOut,PairName),
+  individuate_pair(ROptions,GridIn,GridOut,InC,OutC),  
+  locally(nb_setval(debug_indiv,t),
+          show_individuated_pair(PairName,ROptions,GridIn,GridOut,InC,OutC)))).
+
 /*
 individuals_from_pair(PairName,In,Out,IH,IV,OH,OV,ShapesI,ShapesO):-
   forall(clause(learn_shapelib(PairName,In,Out,IH,IV,OH,OV),Body),rtrace_on_error(once(Body))),
@@ -320,9 +331,9 @@ individuals_from_pair_colors(PairName,In,Out,IH,IV,OH,OV,
     add_shape_lib(in,NoiseObject),
     remove_global_points(NoiseObject,In,NoiseFreeIn),
     show_pair_no_i(IH,IV,IH,IV,noise_objects_removed,PairName,NoiseObject,NoiseFreeIn),
-    individuate(defaults,NoiseFreeIn,RestOfInObjs),
+    individuate_3(defaults,NoiseFreeIn,RestOfInObjs),
     add_shape_lib(pair,RestOfInObjs),
-    individuate(defaults,Out,RestOfOutObjs),
+    individuate_3(defaults,Out,RestOfOutObjs),
     ShapesI = [NoiseObject|RestOfInObjs], 
     RestOfOutObjs = ShapesO.
 /*
@@ -401,7 +412,7 @@ learn_color_individuals_lib_one_way(PairName,In,Out,IH,IV,OH,OV,
      do_action(add_shape_lib(pair,NoiseObject)))),
 
   ignore((IMass>0, OMass==0, 
-    individuate([options([by_color(IPCs)])],ImO,NewImO),    
+    individuate_3([options([by_color(IPCs)])],ImO,NewImO),    
     add_shape_lib(pair,NewImO))),
 
    true)).

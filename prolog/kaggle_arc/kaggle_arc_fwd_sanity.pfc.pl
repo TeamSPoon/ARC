@@ -84,7 +84,7 @@ a(1).
 
 (default_01a((P ==> Q))/mpred_literal(Q)) ==> (P, \+( ~Q) ==> Q).
 
-%:- set_prolog_flag(gc,false).
+%:- set_prolog_flag(nogc,false).
 
 %
 

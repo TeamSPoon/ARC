@@ -37,7 +37,7 @@ mask_to_fullnames(Mask,FullNames):-
   
 
 :- export(load_json_files/3).
-load_json_files(SuiteX,F,Mask):- 
+load_json_files(SuiteX,F,Mask):-
   (SuiteX=='';var(SuiteX)),
   dir_to_suitename(Mask,SuiteName),
   SuiteName\==SuiteX,!,
@@ -156,7 +156,7 @@ load_json_file(F, FullName):-
 
 
 add_testfile_name(Testname,FullName):- 
-  ignore((  
+  ignore(( 
   directory_file_path(Dir,_,FullName),
   dir_to_suitename(Dir,SuiteName),
   %split_string(FullName, "\\/",'./',L),append(_,[Dir,_],L),

@@ -36,7 +36,8 @@ my_time(Goal):- time(Goal),flush_tee.
 :- export(plain_var/1).
 plain_var(V):- notrace((var(V), \+ attvar(V), \+ get_attr(V,ci,_))).
 catch_nolog(G):- ignore(catch(notrace(G),E,once(true;nop(u_dmsg(E=G))))).
-catch_log(G):- ignore(catch(notrace(G),E,((writeln(E=G),catch_nolog(ds))))).
+catch_log(G):- ignore(catch(notrace(G),E,((u_dmsg(E=G),ftrace(G))))).
+% catch_log(G):- ignore(catch(notrace(G),E,((writeln(E=G),catch_nolog(ds))))).
 
 get_user_error(UE):- stream_property(UE,file_no(2)),!.
 get_user_error(UE):- stream_property(UE,alias(user_error)),!.
@@ -153,7 +154,16 @@ ansi_main:- thread_self(main),nop(is_cgi),!.
 main_thread:- thread_self(main),!.
 if_thread_main(G):- main_thread->call(G);true.
 
+not_really_modified(['/opt/logicmoo_workspace/lib/swipl/library/prolog_xref.pl','/opt/logicmoo_workspace/lib/swipl/library/pldoc/doc_html.pl','/opt/logicmoo_workspace/lib/swipl/library/prolog_colour.pl']).
+actually_modified_files(Files):- 
+    findall(File, make:modified_file(File), Reload0),
+    list_to_set(Reload0, Reload),
+    not_really_modified(List),
+    intersection(List,Reload,_,_,Files).
+
+
 update_changes:- \+ thread_self(main),!.
+update_changes:- actually_modified_files(Reload),Reload==[],!.
 update_changes:- 
     '$update_library_index',
     findall(File, make:modified_file(File), Reload0),
@@ -163,7 +173,8 @@ update_changes:-
     print_message(silent, make(reload(Reload))),
     make:maplist(reload_file, Reload),
     print_message(silent, make(done(Reload))),
-    forall(prolog:make_hook(after, Reload),true).
+    forall(prolog:make_hook(after, Reload),true),!.
+update_changes:- make,!.
 
 
 cls_z_make:- if_thread_main(notrace((ignore(cls_z),ignore(update_and_fail)))).
@@ -396,7 +407,7 @@ ld_logicmoo_webui:-
 
 logicmoo_use_swish:-
   set_prolog_flag(use_arc_swish,true),
-  ld_logicmoo_webui,webui_start_swish_and_clio,
+  ld_logicmoo_webui,call(call,webui_start_swish_and_clio),
   http_handler('/swish', http_redirect(moved, '/swish/'), []).
 
 arc_user(Nonvar):- nonvar(Nonvar),!,arc_user(Var),!,Nonvar=Var.
@@ -421,8 +432,9 @@ luser_setval(ID,N,V):-
 luser_unsetval(N):- ignore(nb_delete(N)), arc_user(ID),luser_unsetval(ID,N),!.
 luser_unsetval(ID,N):- retractall(arc_user_prop(ID,N,_)).
 
-luser_default(N,V):- var(V),!,luser_getval(N,V).
-luser_default(N,V):- luser_setval(global,N,V).
+
+set_luser_default(N,V):- luser_setval(global,N,V).
+luser_default(N,V):- set_luser_default(N,V).
 
 luser_linkval(N,V):- arc_user(ID),luser_linkval(ID,N,V),!.
 luser_linkval(ID,N,V):- \+ var(V), \+ (arc_sensical_term(N),arc_sensical_term(V)),  
@@ -448,13 +460,12 @@ with_luser(N,V,Goal):-
 % caches the valuetemp on this thread
 luser_getval(N,V):-  luser_getval_0(N,VV),VV=V,arc_sensical_term(V),!.
 
-
 luser_getval_0(arc_user,V):- arc_user(V).
 luser_getval_0(N,V):- luser_getval_1(N,V).
 
 luser_getval_1(N,V):- luser_getval_2(N,V).
 luser_getval_1(N,V):- luser_getval_3(N,V), \+ (luser_getval_2(N,VV), nop(VV\=V)).
-luser_getval_1(N,V):- luser_getval_4(N,V), \+ (luser_getval_3(N,VV), nop(VV\=V)), \+ (luser_getval_2(N,VV), nop(VV\=V)).
+luser_getval_1(N,V):- get_luser_default(N,V), \+ (luser_getval_3(N,VV), nop(VV\=V)), \+ (luser_getval_2(N,VV), nop(VV\=V)).
 
 %luser_getval_0(N,V):- luser_getval_2(N,V), \+ luser_getval_1(N,_).
 %luser_getval_0(N,V):- luser_getval_3(N,V), \+ luser_getval_2(N,_), \+ luser_getval_1(N,_).
@@ -468,8 +479,8 @@ luser_getval_3(N,V):-  \+ main_thread, atom(N), current_predicate(get_param_sess
 %luser_getval_3(N,V):- atom(N), nb_current(N,ValV),arc_sensical_term(ValV,Val),Val=V.
 
 
-luser_getval_4(N,V):- arc_user_prop(global,N,V).
-luser_getval_4(N,V):- atom(N), current_prolog_flag(N,V).
+get_luser_default(N,V):- arc_user_prop(global,N,VV),VV=V,arc_sensical_term(V),!.
+get_luser_default(N,V):- atom(N), current_prolog_flag(N,VV),VV=V,arc_sensical_term(V),!.
 %luser_getval(ID,N,V):- thread_self(ID),nb_current(N,V),!.
 %luser_getval(ID,N,V):- !, ((arc_user_prop(ID,N,V);nb_current(N,V))*->true;arc_user_prop(global,N,V)).
 
@@ -565,6 +576,8 @@ run_arc_io(TestID,ExampleNum):-
   time(train_test(TestID)),
   time(solve_test(TestID,ExampleNum)).
 
+:- set_prolog_flag(arc_term_expansion, true).
+
 get_training(Training):- luser_getval('$training_vm',Training),compound(Training),!.
 get_training(Tree):- list_to_rbtree([p-q],T),!,ignore(Tree=T),!.
 get_training(Training):- must_det_ll(((
@@ -573,6 +586,7 @@ get_training(Training):- must_det_ll(((
 set_training(Training):- luser_linkval('$training_vm',Training).
 set_training(Prop,Value):- get_training(Training), gset(Training.Prop)=Value.
 get_training(Prop,Value):- get_training(Training), get_kov(Prop,Training,Value).
+
 
 set_vm(VM):- luser_linkval('$grid_vm',VM).
 
@@ -642,13 +656,56 @@ get_vm(Key,Value):-  get_vm(VM), get_kov(Key,VM,Value).
 
 test_regressions:- make, forall((clause(mregression_test,Body),ppt(Body)),must_det_ll(Body)).
 :- arc_history1(test_regressions).
+:- set_prolog_flag(arc_term_expansion, false).
 
 :- dynamic(muarc_2_mods/2).
 :- strip_module(_,M,_), prolog_load_context(module,MM), retractall(muarc_2_mods(_,_)), asserta(muarc_2_mods(M,MM)).
 
 %:- forall(ping_indiv_grid(X),atom_concat(X,Y
 
-:- include(kaggle_arc_footer).
+
+:- enable_arc_expansion.
+
+%:- set_prolog_flag(verbose_load,true).  
+%:- set_prolog_flag(verbose_autoload,true).
+%:- prolog_load_context(source,SF),ufmt(prolog_load_context(source,SF)).
+
+%:- learn_shapes.
+:- ensure_loaded(kaggle_arc_utils).
+:- ensure_loaded(kaggle_arc_ui_html).
+:- ensure_loaded(kaggle_arc_ui_ansi).
+:- ensure_loaded(kaggle_arc_deepening).
+:- ensure_loaded(kaggle_arc_typecheck).
+:- ensure_loaded(kaggle_arc_interpreter).
+:- ensure_loaded(kaggle_arc_test_favs).
+
+:- ensure_loaded(kaggle_arc_test_loader).
+
+:- ensure_loaded(kaggle_arc_domaintypes).
+:- ensure_loaded(kaggle_arc_test_iface).
+:- ensure_loaded(kaggle_arc_explaination).
+:- ensure_loaded(kaggle_arc_howdiff).
+:- ensure_loaded(kaggle_arc_imageproc).
+:- ensure_loaded(kaggle_arc_physics).
+:- ensure_loaded(kaggle_arc_heuristics).
+:- ensure_loaded(kaggle_arc_intruder).
+:- ensure_loaded(kaggle_arc_test_cache).
+:- ensure_loaded(kaggle_arc_individuation).
+:- ensure_loaded(kaggle_arc_transrules).
+:- ensure_loaded(kaggle_arc_generalization).
+:- ensure_loaded(kaggle_arc_reduce).
+:- ensure_loaded(kaggle_arc_skels).
+
+
+:- ensure_loaded(kaggle_arc_object).
+:- ensure_loaded(kaggle_arc_boards).
+:- ensure_loaded(kaggle_arc_learning).
+:- ensure_loaded(kaggle_arc_imagens).
+:- ensure_loaded(kaggle_arc_recognise).
+:- ensure_loaded(kaggle_arc_uniqueness).
+:- ensure_loaded(kaggle_arc_test_easy).
+:- ensure_loaded(kaggle_arc_test_old). 
+:- ensure_loaded(kaggle_arc_db).
 
 
 
@@ -731,16 +788,16 @@ ansi_startup:-
    %with_pp(bfly,catch_log(menu)),
    nop((next_test,prev_test)),!.
 
-:- luser_default(example,(trn+0)).
-:- luser_default(no_diags,false).
-:- luser_default(no_individuator, f).
-:- luser_default(grid_size_only,true).
-%:- luser_default(cmd,test_easy).
-%:- luser_default(cmd,learn_ilp).
-:- luser_default(cmd,solve_via_scene_change).
-:- luser_default(cmd2,print_all_info_for_test).
-%:- luser_default(cmd2,test_show_grid_objs).
-:- luser_default(use_individuated_cache,true).
+:- set_luser_default(example,(trn+0)).
+:- set_luser_default(no_diags,false).
+:- set_luser_default(no_individuator, f).
+:- set_luser_default(grid_size_only,true).
+%:- set_luser_default(cmd,test_easy).
+%:- set_luser_default(cmd,learn_ilp).
+:- set_luser_default(cmd,solve_via_scene_change).
+:- set_luser_default(cmd2,print_all_info_for_test).
+%:- set_luser_default(cmd2,test_show_grid_objs).
+:- set_luser_default(use_individuated_cache,true).
 
 :- current_prolog_flag(argv,C),forall(member(E,C),process_cmdln_option(luser_default,E,true)).
 
@@ -776,8 +833,11 @@ devaluation:- catch_log(load_json_files(eval400,v,'./data/devaluation/*.json')).
 :- arc_sub_path('./muarc_cache/test_state/',Test_State),make_directory_path(Test_State),!.
 load_from_main:- 
   catch_log(load_json_files),
+  %catch_log(devaluation),
   catch_log(load_task_states),
-  catch_log(devaluation),
+  catch_log(gen_gids),
+  catch_log(create_group_dmiles),
+  catch_log(test_show_colors),
   !.
 
 :- initialization(load_from_main).
@@ -797,9 +857,17 @@ load_from_main:-
 :- nb_setval(arc_can_portray,t).
 :- nb_setval(arc_can_portray,nil).
 %:- load_arc_db_temp_cache.
-demo_msg:- nl,writeln('% Type ?- demo. % or press up arrow').
+demo_msg:- nl,writeln('% Type ?-   
+  load_from_main   ,
+  catch_log(load_json_files)      ,
+  catch_log(load_task_states)     ,
+  catch_log(devaluation)          ,
+  catch_log(gen_gids)             ,
+  catch_log(create_group_dmiles)  ,
+  catch_log(test_show_colors)     , 
+  demo. % or press up arrow').
 :- initialization(demo_msg,after_load).
-:- luser_default(extreme_caching,false).
+:- set_luser_default(extreme_caching,false).
 :- nb_setval(arc_can_portray,nil).
 %:- (getenv('DISPLAY',_) -> ensure_guitracer_x ; true).
 
@@ -855,6 +923,8 @@ use_gui_debugger:-
 :- endif.
 :- set_prolog_flag(autoload,true).
 :- dynamic(is_buggy_pair/2).
+
+
 %is_buggy_pair(v(fd096ab6)>(trn+0), "BUG: System Crash").
 %is_buggy_pair(t('3631a71a')>(tst+0),"segv").
 %is_buggy_pair(t('27a28665')>(tst+2), "BUG: Re-Searcher gets stuck!").
@@ -862,11 +932,13 @@ use_gui_debugger:-
 
 
 :- set_current_test(v('1d398264')). 
-:- luser_default(task,v('1d398264')). 
-:- luser_default(task,v('37d3e8b2')). 
+:- set_luser_default(task,v('1d398264')). 
+:- set_luser_default(task,v('37d3e8b2')). 
 
 */
 create_group_dmiles:- 
+  load_last_test_name,
+  get_current_test(Tst),print(get_current_test(Tst)),
    must_det_ll((create_group(dmiles_nsn,[
     'e41c6fd3','ea32f347','37d3e8b2','0a2355a6', 'b230c067','a61f2674','d2abd087','08ed6ac7']))),
   %must_det_ll((create_group(dmiles_nsn2,[
@@ -881,7 +953,8 @@ create_group_dmiles:-
         '25d487eb','780d0b14', 
     %copy with mod
         '7e0986d6', '136b0064',
-        '08ed6ac7', 'ea32f347',  '0a2355a6', '37d3e8b2', 'a61ba2ce', 'b230c067',  'd2abd087', '6e82a1ae',
+        '08ed6ac7', 'ea32f347',  '0a2355a6', '37d3e8b2', 'a61ba2ce', 'b230c067',  'd2abd087', 
+      '42a15761', Tst,   '6e82a1ae',
     %copy with mod (harder?)
        '705a3229', 'e41c6fd3', 'a61f2674', '0d3d703e', 'makesboxsq', 'a79310a0', '27a77e38', 'f45f5ca7','fc754716',
 
@@ -893,23 +966,30 @@ create_group_dmiles:-
      '103eff5b','626c0bcc',        
         []],Flat),
    list_to_set(Flat,SetR), reverse(SetR,Set),
-   must_det_ll((create_group(dmiles_all,Set))),
 
 
   create_group(dmiles_fast,'bd14c3bf 08ed6ac7 ea32f347  0a2355a6 37d3e8b2 a61ba2ce b230c067 d2abd087 6e82a1ae 0d3d703e a61f2674 e509e548 810b9b61 aedd82e4 817e6c09  ae58858e fea12743'),
 
-  create_group(dmiles_cc_1,[t('find-the-color-of-the-gray-pixels-l6afriful4bel4379yo'), t(ea32f347),t('6e82a1ae'),%v('626c0bcc'),
+  
+  create_group(dmiles_cc_1,[t(ea32f347),t('6e82a1ae'),%v('626c0bcc'),
                                                          t('08ed6ac7'),%t('150deff5'),%v(a8610ef7),
                                                          t(e509e548),t(b230c067),t(d2abd087),
                                                          %t('0uduqqj6f'),
+                                                         %t('find-the-color-of-the-gray-pixels-l6afriful4bel4379yo')
                                                          %t(b6afb2da),
                                                          v('0a2355a6'),
                                                          v('37d3e8b2'),%v('639f5a19')
                                                          []]),
 
+
+  create_group(dmiles_lr,'009d5c81, 00d62c1b, 0a2355a6, 2281f1f4, 25d8a9c8, 32597951, 332efdb3, 3618c87e, 37d3e8b2, 4258a5f9, 50cb2852, 543a7ed5, 67385a82, 67a3c6ac, 69889d6e, 6c434453, 6d75e8bb, 6e82a1ae, 6f8cd79b, 810b9b61, 84f2aca1, 903d1b4a, 95990924, a699fb00, a9f96cdd, ae58858e, aedd82e4, b1948b0a, b2862040, b60334d2, b6afb2da, bb43febb, c0f76784, c8f0f002, ce039d91, ce22a75a, d2abd087, d364b489, d406998b, e0fb7511, e8593010'),
+% 42a15761
+  %     find-the-5-and-1-l6ae9ses9zaejs6idai 
+    % Importance-of-social-distance-l6afc1q0dm28z9i6egn find-the-color-of-the-gray-pixels-l6afriful4bel4379yo
   create_group(dmiles,'bd14c3bf 08ed6ac7 ea32f347  0a2355a6 37d3e8b2 a61ba2ce b230c067 d2abd087 6e82a1ae 0d3d703e a61f2674 e509e548 810b9b61 aedd82e4
-    find-the-5-and-1-l6ae9ses9zaejs6idai Importance-of-social-distance-l6afc1q0dm28z9i6egn find-the-color-of-the-gray-pixels-l6afriful4bel4379yo
-    817e6c09  ae58858e fea12743'),
+    817e6c09  ae58858e fea12743  ea32f347'),
+
+  must_det_ll((create_group(dmiles_all,Set))),
 
   %set_current_test('0a2355a6'),
   set_pair_mode(whole_test),
@@ -918,21 +998,31 @@ create_group_dmiles:-
   %set_current_test('25d487eb'),
   %set_current_test('08ed6ac7'),
   set_current_test('6e82a1ae'),
+  set_current_test(Tst),  
   %set_current_test('bd14c3bf'),
   !.
-:- initialization(create_group_dmiles).
+
+
+%:- initialization(create_group_dmiles).
 %:- noguitracer.
 % :- set_current_test(t('0d3d703e')).  % :- set_current_test(t('5582e5ca')).
 
-%:- luser_default(task,v('1b60fb0c')). %626c0bcc
+%:- set_luser_default(task,v('1b60fb0c')). %626c0bcc
 :- set_prolog_flag(gui_tracer, false), visible(-cut_call).
 
 %:- demo.
 :- current_prolog_flag(argv,C),(member('-l',C)->initialize;true).
+
+% :- reconsult(kaggle_arc_individuation_dpg).
+:- reconsult(kaggle_arc_prior_groups).
+%:- reconsult(kaggle_arc_ui_ansi_dpg).
+%:- reconsult(kaggle_arc_ui_html).
+
 :- initialization(scan_uses_test_id(main_file_complete)).
 %:- use_module('./induction/h_muarc_alephlib').
 %:- consult('./induction/h_muarc_aleph').
 %:- tmp:loading_arc_from(M),'$set_source_module'(M).
 
-% 
+% %:- initialization(load_from_main).
+% :- initialization(test_show_colors,after_load).
 

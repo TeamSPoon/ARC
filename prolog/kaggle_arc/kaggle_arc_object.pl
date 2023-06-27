@@ -13,6 +13,7 @@
 
 :- dynamic(decl_pt/1).
 
+
 :- thread_local(t_l:id_cells/2).
 
 redress_override(L,L):- var(L),!.
@@ -948,16 +949,13 @@ physical_points(GPoints,Points):- sub_var(wfg,GPoints),!,
 physical_points(GPoints,Points):- 
    my_partition(sub_var('$VAR'('_')),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
-
 physical_points(GPoints,Points):- numbervars(GPoints,0,_,[singletons(true),attvars(skip)]),
    \+ (sub_compound('$VAR'(S),GPoints),S\=='_'),
    my_partition(sub_var('$VAR'('_')),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
-
 physical_points(GPoints,OPoints):- 
    my_partition(sub_var(bg),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!.
-
 /*
 physical_points(GPoints,Points):- 
    my_partition(sub_var(fg),GPoints,FGPoints,_),
@@ -967,7 +965,6 @@ physical_points(GPoints,Points):-
    my_partition(sub_var(black),GPoints,BGPoints,OPoints),
    BGPoints\==[],OPoints\==[],!,physical_points(OPoints,Points).
 physical_points(Points,Points).
-
 physical_colorless_points(CPoints,Points):- is_ncpoints_list(CPoints),!,Points=CPoints.
 physical_colorless_points(CPoints,Points):- is_cpoints_list(CPoints),!,
   physical_points(CPoints,PhysicalPoints),my_maplist(arg(2),PhysicalPoints,Points).
