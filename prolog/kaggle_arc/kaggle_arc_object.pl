@@ -846,7 +846,7 @@ aggregates(link(_,_,_)).
 aggregates(link(_,_)).
 aggregates(insideOf(_)).
 
-is_rule_mapping(Obj):- current_predicate(is_mapping/1), is_mapping(Obj),!.
+is_rule_mapping(Obj):- fail, current_predicate(is_mapping/1), is_mapping(Obj),!.
 
 
 %is_bg_object(Obj):- get_black(Black),has_prop(pen(  [cc(Black,_)]),Obj).
@@ -1155,15 +1155,18 @@ acmass(C-_,1):- nonvar_or_ci(C),!.
 omass(I,X):- indv_props(I,L),member(mass(X),L),!.
 omass(I,XX):- is_object(I),!,must_det_ll((localpoints(I,L), mass(L,X))),!,XX=X.
 
+
+cmass(Cs,Count):- include(nonvar,Cs,NV),include(is_fgp,NV,FG),length(FG,Count).
+
 mass(C,1):- is_fg_color(C),!.
 mass(C,0):- (is_bg_color(C);var(C);C==[]),!.
-mass(I,Count):- is_grid(I),!,append(I,Cs),!,mass(Cs,Count),!.
-mass([G|Grid],Points):- (is_group(Grid);(is_list(Grid),is_group(G))),!,mapgroup(mass,[G|Grid],MPoints),sum_list(MPoints,Points).
-mass([G|Grid],Points):- my_maplist(mass,[G|Grid],MPoints),sum_list(MPoints,Points),!.
 mass(Point,Mass):- is_point(Point),!,(is_fg_point(Point)->Mass=1;Mass=0).
-mass(I,X):- is_object_or_oid(I),indv_props(I,mass(X)),!.
-mass(I,X):- var_check(I,mass(I,X)),!.
+mass(I,Count):- is_grid(I),!,append(I,Cs),!,cmass(Cs,Count),!.
+%mass([G|Grid],Points):- (is_group(Grid);(is_list(Grid),is_group(G))),!,mapgroup(mass,[G|Grid],MPoints),sum_list(MPoints,Points).
+mass([G|Grid],Points):- maplist(mass,[G|Grid],MPoints),sum_list(MPoints,Points),!.
 mass(I,Count):- globalpoints(I,Points),mass(Points,Count),!.
+mass(I,X):- var_check(I,mass(I,X)),!.
+mass(I,X):- is_object_or_oid(I),indv_props(I,mass(X)),!.
 
 is_object_or_oid(I):- once((is_object(I) ; is_oid(I))).
 
@@ -1369,7 +1372,14 @@ isz(I,X):- var_check(I,isz(I,X))*->true;(indv_props(I,iz(X))).
 
 vm_to_printable(D,R) :- Objs = D.objs,!, (Objs\==[] -> R = Objs; R = D.grid ).
 
-resolve_reference(R,Var):- is_vm_map(R),!,Objs = R.objs,!, (Objs\==[] -> Var=Objs; Var = R.grid).
+is_non_reference(R):- plain_var(R),!.
+is_non_reference(_-_).
+is_non_reference(R):- is_color(R),!.
+is_non_reference(R):- is_point(R),!.
+is_non_reference(R):- \+ compound(R),!,fail.
+
+resolve_reference(R,_):- is_non_reference(R),!,fail.
+resolve_reference(R,Var):- !, is_vm_map(R),!,Objs = R.objs,!, (Objs\==[] -> Var=Objs; Var = R.grid).
 resolve_reference(R,Var):- compound(R),arc_expand_arg(R,Var,Goal),!,call(Goal).
 resolve_reference(R,Var):- arc_expand_atom(R,Var),!.
 resolve_reference(R,Var):- nonvar(R),R\=obj(_),known_gridoid(R,Var),!.

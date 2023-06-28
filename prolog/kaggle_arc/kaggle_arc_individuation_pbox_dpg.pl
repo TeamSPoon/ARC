@@ -5,6 +5,10 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
+end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
 
 is_real_color_or_wfg(X):- (X == fg; X == wbg),!.
 is_real_color_or_wfg(X):- is_real_color(X),!.
@@ -164,7 +168,7 @@ quick_test_menu(test_pbox).
 
 
 pbox_indivs:- 
-  with_test_pairs(TestID,ExampleNum,I,O,pbox_pair(TestID,ExampleNum,I,O)).
+  with_task_pairs(TestID,ExampleNum,I,O,pbox_pair(TestID,ExampleNum,I,O)).
 
 pbox_pair(TestID,ExampleNum,GridIn,GridOut):-
    u_dmsg(?- test_p2(pbox_pair(TestID,ExampleNum))),

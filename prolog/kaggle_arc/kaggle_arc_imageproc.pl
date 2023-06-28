@@ -7,7 +7,7 @@
 :- include(kaggle_arc_header).
 
 :- ensure_loaded(kaggle_arc_symmetry).
-%tell(s),ignore((nl,nl,test_pairs(Name,ExampleNum,In,Out),format('~N~q.~n',[test_pairs_cache(Name,ExampleNum,In,Out)]),fail)),told.
+%tell(s),ignore((nl,nl,task_pairs(Name,ExampleNum,In,Out),format('~N~q.~n',[test_pairs_cache(Name,ExampleNum,In,Out)]),fail)),told.
 
 :- dynamic(backfill/1).
 

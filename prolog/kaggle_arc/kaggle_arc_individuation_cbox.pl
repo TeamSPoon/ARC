@@ -100,7 +100,7 @@ quick_test_menu(test_cbox).
 :- set_test_cmd2(print_all_info_for_test).
 
 cbox_indivs:- 
-  with_test_pairs(TestID,ExampleNum,I,O,cbox_pair(TestID,ExampleNum,I,O)).
+  with_task_pairs(TestID,ExampleNum,I,O,cbox_pair(TestID,ExampleNum,I,O)).
 
 cbox_pair(TestID,ExampleNum,I,O):-
    wdmsg(?- test_p2(cbox_pair(TestID,ExampleNum))),

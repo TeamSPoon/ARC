@@ -5,6 +5,11 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
+
+end_of_file.
+end_of_file.
+end_of_file.
+
 :- include(kaggle_arc_header).
 
 :- multifile(decl_pt/1).

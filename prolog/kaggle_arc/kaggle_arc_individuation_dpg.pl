@@ -6,6 +6,12 @@
 */
 
 end_of_file.
+end_of_file.
+end_of_file.
+end_of_file.
+
+
+end_of_file.
 
 end_of_file.
 
@@ -3607,87 +3613,6 @@ meets_size(Len,Points):- amass(Points,L),!,L>=Len.
 remove_bgs(IndvS,IndvL,BGIndvS):- partition(is_bg_indiv,IndvS,BGIndvS,IndvL).
 
 
-% sprop_piority(Class,Priority).
-
-%sprop_piority(o(_,_,0),0).
-%sprop_piority(birth(i3(_)),0).
-%sprop_piority(birth(i2(_)),0).
-sprop_piority(iz(hidden),9).
-sprop_piority(iz(shaped),0).
-sprop_piority(iz(combined),1).
-sprop_piority(iz(image),2).
-sprop_piority(birth(by_color),3).
-sprop_piority(birth(glyphic),2).
-
-
-resize_inf(X,N):- is_list(X),!,length(X,N).
-resize_inf(X,X).
-
-member_or_iz(Prop,Ps):- member(Prop,Ps).
-member_or_iz(Prop,Ps):- member(iz(Prop),Ps).
-member_or_iz(Prop,Ps):- member(birth(Prop),Ps).
-member_or_iz(Prop,Ps):- member(giz(Prop),Ps).
-
-ranking_pred(rank1(F1),I,O):- Prop=..[F1,O], indv_props(I,Ps),member_or_iz(Prop,Ps),!.
-ranking_pred(rank1(F1),I,O):- !, catch(call(F1,I,O),_,fail),!.
-ranking_pred(rank2(F1),I,O):- Prop=..[F1,O1,O2], indv_props(I,Ps),member_or_iz(Prop,Ps),!,combine_number(F1,O1,O2,O).
-ranking_pred(rank2(F1),I,O):- !, catch(call(F1,I,O1,O2),_,fail),!,combine_number(F1,O1,O2,O).
-ranking_pred(_F1,I,O):- mass(I,O).
-
-combine_number(_F1,O1,O2,O):- O is ((abs(O1-O2)+1)*O1)+(O2*30).
-%combine_number(_F1,O1,O2,O):- O is (abs(O1-O2)+1)*O1+(O2*30).
-
-
-visible_first(IndvS0,IndvO):- predsort_two_p2(visible_priority,visible_first_order,IndvS0,IndvO).
-%visible_pred(F1,I,O):- ranking_pred(F1,I,O),!.
-visible_first_order(I,VArea):-  vis_area(I,Area), globalpoints(I,Ps),length(Ps,L), VArea is Area/L.
-visible_priority(Indv,Priority):- mass(Indv,1),!,Priority=7.
-visible_priority(Indv,Priority):- mass(Indv,0),!,Priority=8.
-visible_priority(Indv,Priority):- sprop_piority(Prop,Priority), has_prop(Prop,Indv),!.
-visible_priority(_,1):-!.
-predsort_two_p2(P2a,P2b,IndvS,IndvO):-
-  findall((SortOn1+SortOn2)-Indv,(member(Indv,IndvS),call(P2a,Indv,SortOn1),call(P2b,Indv,MSize),resize_inf(MSize,SortOn2)),All),
-  keysort(All,AllK),
-  maplist(arg(2),AllK,IndvO).  
-
-orule_first(IndvS0,IndvO):- predsort_two_p2(orule_priority,orule_first_order,IndvS0,IndvO).
-%orule_pred(F1,I,O):- ranking_pred(F1,I,O),!.
-orule_first_order(I,VArea):-  hybrid_order(I,VArea).
-orule_priority(Indv,Priority):- has_prop(cc(fg,0),Indv),!,Priority=9.
-orule_priority(Indv,Priority):- area(Indv,1),!,Priority=6.
-orule_priority(Indv,Priority):- has_prop(cc(fg,1),Indv),!,Priority=5.
-orule_priority(Indv,Priority):- sub_var(iz(i(pbox)),Indv),Priority=1.
-%orule_priority(Indv,Priority):- sprop_piority(Prop,Priority), has_prop(Prop,Indv),!.
-orule_priority(_,3).
-
-
-
-smallest_first(IndvS0,IndvO):- smallest_first(mass,IndvS0,IndvO).
-smallest_pred(F1,I,O):- ranking_pred(F1,I,O),!.
-smallest_pred(_,I,O):- mass(I,O).
-smallest_priority(Indv,Priority):- sprop_piority(Prop,Priority), has_prop(Prop,Indv),!.
-smallest_priority(_,1).
-smallest_first(P2,IndvS0,IndvO):- predsort_two_p2(P2,smallest_priority,IndvS0,IndvO).
-
-largest_first(IndvS0,IndvO):- largest_first(mass,IndvS0,IndvO).
-largest_pred(F1,I,O):- ranking_pred(F1,I,O),!.
-largest_pred(_,I,O):- mass(I,O).
-largest_priority(Indv,Priority):- sprop_piority(Prop,Priority), has_prop(Prop,Indv),!.
-largest_priority(_,1).
-largest_first(P2,IndvS0,IndvR):-   
- sort(IndvS0,IndvS),
- %must_det_ll
- ((
-  findall((Priority+Size)-Indv,(member(Indv,IndvS),largest_priority(Indv,NPriority),call(P2,Indv,Size),Priority is - NPriority),All),
-  keysort(All,AllK),
-  maplist(arg(2),AllK,IndvO),
-  reverse(IndvO,IndvR))).
-
-largest_first_nonbg(IndvS,IndvOB):-  
-  largest_first(mass,IndvS,IndvO),
-  remove_bgs(IndvO,IndvL,BGIndvS),
-  append(IndvL,BGIndvS,IndvOB).
-
 finish_grp(C,Grp,Point2,Dir,Rest,NewGroup,RRest):- 
    \+ (is_diag(Dir),is_bg_color(C)),
    is_adjacent_point(Point2,Dir,Point3),
@@ -3819,5 +3744,85 @@ merge_a_b(A,B,AA):-
 
 %:- include(kaggle_arc_footer).
 
+% sprop_piority(Class,Priority).
+
+%sprop_piority(o(_,_,0),0).
+%sprop_piority(birth(i3(_)),0).
+%sprop_piority(birth(i2(_)),0).
+sprop_piority(iz(hidden),9).
+sprop_piority(iz(shaped),0).
+sprop_piority(iz(combined),1).
+sprop_piority(iz(image),2).
+sprop_piority(birth(by_color),3).
+sprop_piority(birth(glyphic),2).
+
+
+resize_inf(X,N):- is_list(X),!,length(X,N).
+resize_inf(X,X).
+
+member_or_iz(Prop,Ps):- member(Prop,Ps).
+member_or_iz(Prop,Ps):- member(iz(Prop),Ps).
+member_or_iz(Prop,Ps):- member(birth(Prop),Ps).
+member_or_iz(Prop,Ps):- member(giz(Prop),Ps).
+
+ranking_pred(rank1(F1),I,O):- Prop=..[F1,O], indv_props(I,Ps),member_or_iz(Prop,Ps),!.
+ranking_pred(rank1(F1),I,O):- !, catch(call(F1,I,O),_,fail),!.
+ranking_pred(rank2(F1),I,O):- Prop=..[F1,O1,O2], indv_props(I,Ps),member_or_iz(Prop,Ps),!,combine_number(F1,O1,O2,O).
+ranking_pred(rank2(F1),I,O):- !, catch(call(F1,I,O1,O2),_,fail),!,combine_number(F1,O1,O2,O).
+ranking_pred(_F1,I,O):- mass(I,O).
+
+combine_number(_F1,O1,O2,O):- O is ((abs(O1-O2)+1)*O1)+(O2*30).
+%combine_number(_F1,O1,O2,O):- O is (abs(O1-O2)+1)*O1+(O2*30).
+
+
+visible_first(IndvS0,IndvO):- predsort_two_p2(visible_priority,visible_first_order,IndvS0,IndvO).
+%visible_pred(F1,I,O):- ranking_pred(F1,I,O),!.
+visible_first_order(I,VArea):-  vis_area(I,Area), globalpoints(I,Ps),length(Ps,L), VArea is Area/L.
+visible_priority(Indv,Priority):- mass(Indv,1),!,Priority=7.
+visible_priority(Indv,Priority):- mass(Indv,0),!,Priority=8.
+visible_priority(Indv,Priority):- sprop_piority(Prop,Priority), has_prop(Prop,Indv),!.
+visible_priority(_,1):-!.
+predsort_two_p2(P2a,P2b,IndvS,IndvO):-
+  findall((SortOn1+SortOn2)-Indv,(member(Indv,IndvS),call(P2a,Indv,SortOn1),call(P2b,Indv,MSize),resize_inf(MSize,SortOn2)),All),
+  keysort(All,AllK),
+  maplist(arg(2),AllK,IndvO).  
+
+orule_first(IndvS0,IndvO):- predsort_two_p2(orule_priority,orule_first_order,IndvS0,IndvO).
+%orule_pred(F1,I,O):- ranking_pred(F1,I,O),!.
+orule_first_order(I,VArea):-  hybrid_order(I,VArea).
+orule_priority(Indv,Priority):- has_prop(cc(fg,0),Indv),!,Priority=9.
+orule_priority(Indv,Priority):- area(Indv,1),!,Priority=6.
+orule_priority(Indv,Priority):- has_prop(cc(fg,1),Indv),!,Priority=5.
+orule_priority(Indv,Priority):- sub_var(iz(i(pbox)),Indv),Priority=1.
+%orule_priority(Indv,Priority):- sprop_piority(Prop,Priority), has_prop(Prop,Indv),!.
+orule_priority(_,3).
+
+
+
+smallest_first(IndvS0,IndvO):- smallest_first(mass,IndvS0,IndvO).
+smallest_pred(F1,I,O):- ranking_pred(F1,I,O),!.
+smallest_pred(_,I,O):- mass(I,O).
+smallest_priority(Indv,Priority):- sprop_piority(Prop,Priority), has_prop(Prop,Indv),!.
+smallest_priority(_,1).
+smallest_first(P2,IndvS0,IndvO):- predsort_two_p2(P2,smallest_priority,IndvS0,IndvO).
+
+largest_first(IndvS0,IndvO):- largest_first(mass,IndvS0,IndvO).
+largest_pred(F1,I,O):- ranking_pred(F1,I,O),!.
+largest_pred(_,I,O):- mass(I,O).
+largest_priority(Indv,Priority):- sprop_piority(Prop,Priority), has_prop(Prop,Indv),!.
+largest_priority(_,1).
+largest_first(P2,IndvS0,IndvR):-   
+ sort(IndvS0,IndvS),
+ %must_det_ll
+ ((
+  findall((Priority+Size)-Indv,(member(Indv,IndvS),largest_priority(Indv,NPriority),call(P2,Indv,Size),Priority is - NPriority),All),
+  keysort(All,AllK),
+  maplist(arg(2),AllK,IndvO),
+  reverse(IndvO,IndvR))).
+
+largest_first_nonbg(IndvS,IndvOB):-  
+  largest_first(mass,IndvS,IndvO),
+  remove_bgs(IndvO,IndvL,BGIndvS),
+  append(IndvL,BGIndvS,IndvOB).
 
 :- endif.

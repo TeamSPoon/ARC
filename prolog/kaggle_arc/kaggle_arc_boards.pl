@@ -7,7 +7,7 @@
 :- include(kaggle_arc_header).
 
 :- if(exists_source(kaggle_arc_boards_dpg)).
-:- reconsult(kaggle_arc_boards_dpg).
+%:- ensure_loaded(kaggle_arc_boards_dpg).
 :- endif.
 
 :- use_module(library(nb_set)).
@@ -638,7 +638,7 @@ detect_pair_hints(TestID,ExampleNum,In,Out):-
   ignore((training_only_examples(ExampleNum))),
   Call = detect_pair_hints(TestID,ExampleNum,In,Out),
   \+ ground(Call),!,
-  with_pair_mode(whole_test,(test_pairs(TestID,ExampleNum,In,Out), with_trn_pairs(TestID,ExampleNum,In,Out,Call))).
+  with_pair_mode(whole_test,(task_pairs(TestID,ExampleNum,In,Out), with_trn_pairs(TestID,ExampleNum,In,Out,Call))).
 detect_pair_hints(TestID,ExampleNum,In,Out):- 
   ensure_test(TestID), 
   ignore((training_only_examples(ExampleNum))),
@@ -1283,7 +1283,8 @@ common_after_reduce(In,Out,New):-
   reduce_grid_fixed(In,OpsIn,In2),check_ops(OpsIn,In2,In),print_ss(OpsIn,In,In2),
   reduce_grid_fixed(Out,OpsOut,Out2),check_ops(OpsOut,Out2,Out),print_ss(OpsOut,Out,Out2),
   print_ss(common_after_reduce,In2,Out2),
-  mapgrid(fg_intersectiond_mono1,In2,Out2,New),!.
+  find_bgc(In+Out,BG),
+  mapgrid(fg_intersectiond_mono1(BG),In2,Out2,New),!.
 
 reduce_grid_fixed(In,OpsIn,In3):-  
   must_det_ll(( 

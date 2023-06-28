@@ -437,6 +437,7 @@ maybe_reencode(TestID,ExampleNum,In0,Out0,In,Out):-
 maybe_reencode(_TName,_ExampleNum,In,Out,In,Out).
 
 
+kaggle_arc_raw(TestID,ExampleNum,In,Out):- !, kaggle_arc_json(TestID,ExampleNum,In,Out).
 kaggle_arc_raw(TestID,ExampleNum,In,Out):- kaggle_arc0(TestID,ExampleNum,In,Out)*-> true ; kaggle_arc1(TestID,ExampleNum,In,Out).
 kaggle_arc_raw(Name,tst+AnswerID,In,Grid):- kaggle_arc_answers(Name,ID,AnswerID,Grid), kaggle_arc0(Name,tst+ID,In,_Out).
 
@@ -446,10 +447,9 @@ kaggle_arc1(TestID,ExampleNum,In,Out):- nonvar(ExampleNum),
   ignore((\+ \+ nb_current(example,ExampleNum),  nb_setval(example,NewExample))).
 
    
-
-
-not_disallow_test_out(trn+_,OO,OO):-!.
 not_disallow_test_out(_,OO,OO):- allow_peeking,!.
+not_disallow_test_out(_,OO,OO):- !.
+not_disallow_test_out(trn+_,OO,OO):-!.
 not_disallow_test_out(tst+_, O,OO):- grid_size(O,H,V),make_grid(H,V,OO),mapgrid(=(black),OO).
 
 

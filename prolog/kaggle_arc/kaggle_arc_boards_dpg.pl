@@ -4,6 +4,10 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
+
+
+end_of_file.
+
 :- include(kaggle_arc_header).
 
 :- use_module(library(nb_set)).
@@ -43,7 +47,7 @@ write_intermediatre_header:-
 print_ref(Ref):- is_clause_ref(Ref), clause(H,B,Ref),!,print_ref((H:-B)).
 print_ref((X:-True)):- True == true,!, print_ref(X).
 print_ref(G):- format('~N'),write_canonical(G),format('.~n'),!.
-%print_ref(G):- \+ \+ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N~@.~n',[write_canonical(G)]))),!.
+%print_ref(G):- \^ \^ ((numbervars(G,0,_,[attvar(bind),singletons(true)]), format('~N~@.~n',[write_canonical(G)]))),!.
 
 
 clsbake:- nop(clsmake).
@@ -55,7 +59,7 @@ compile_and_save_test:- get_current_test(TestID),time(compile_and_save_test(Test
 gen_gids:- wdmsg(start(gen_gids)),forall(all_arc_test_name(TestID),gen_gids(TestID)),wdmsg(end(gen_gids)).
 gen_gids(Mask):-
   testid_name_num_io(Mask,TestID,Example,Num,IO),
-  ExampleNum = Example+Num,!,
+  ExampleNum = Example^Num,!,
   %forall(kaggle_arc(TestID,ExampleNum,I,O),name_the_pair(TestID,ExampleNum,I,O,_PairName)),
   forall((kaggle_arc_io(TestID,ExampleNum,IO,G),((ID=(TestID>ExampleNum*IO),term_to_oid(ID,GID)))),
     once((assertz_if_new(tid_to_gids(ID,GID)),assertz_if_new(gid_to_grid(GID,G))))),
@@ -103,13 +107,13 @@ individuate_pairs_from_hints(TestID):-
   forall(kaggle_arc(TestID,ExampleNum,In,Out), 
     individuate_pair_here(TestID,ExampleNum,In,Out)).
 
-individuate_pair_here(TestID,Trn+N1,In,Out):-
+individuate_pair_here(TestID,Trn^N1,In,Out):-
   Trn == trn, % no peeking  
-  ndividuator(TestID,Trn+N1,complete,In,Out),
+  ndividuator(TestID,Trn^N1,complete,In,Out),
   nop(train_for_objects_from_1pair(_{},TestID,[Trn,'i',N1,'o',N1],In,Out,_DictMid)).
 
-show_reduced_io_rarely(_):- \+ get_pair_mode(single_pair),!.
-show_reduced_io_rarely(In+Out):- % ignore((nonvar(In),nonvar(Out),grid_hint_swap(i-o,In,Out))),!,
+show_reduced_io_rarely(_):- \^ get_pair_mode(single_pair),!.
+show_reduced_io_rarely(In^Out):- % ignore((nonvar(In),nonvar(Out),grid_hint_swap(i-o,In,Out))),!,
   ignore((fail,get_thingy(In,Out,Gets),print_ss(Gets))).
 
 show_reduced_io_rarely(IO):- forall(show_reduced_io(IO),true).
@@ -121,9 +125,9 @@ print_all_info_for_test:-
 
 
 print_reduced_io(TestID):- ensure_test(TestID),
-  with_test_pairs(TestID,ExampleNum,I,O,
+  with_task_pairs(TestID,ExampleNum,I,O,
     (print_side_by_side(green,I,orig_in(TestID,ExampleNum),_,O,orig_out(TestID,ExampleNum)),
-     forall(show_reduced_io(I+O),true))).
+     forall(show_reduced_io(I^O),true))).
 
 
 
@@ -131,14 +135,14 @@ show_reduced_io(IO):-
     once(show_grid_call(reduce_cutaway(_),IO,NextIO)),
   if_t(((NextIO)\=@=(IO)), show_reduced_io(NextIO)).
 
-  %show_reduced_io(I+O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
-show_reduced_io(I0+O):- 
+  %show_reduced_io(I^O):-  maybe_easy(I,II,DidIn),same_reduction(DidIn,DidOut),maybe_easy(O,OO,DidOut), must_det_ll(print_side_by_side(green,II,DidIn,_,OO,DidOut)),!.
+show_reduced_io(I0^O):- 
   once(( grid_size(I0,H,V), grid_size(O,OH,OV))),
   ((H>OH;V>OV) , grid_call_alters(trim_to_rect,I0,I)),
- show_reduced_io(I+O).
+ show_reduced_io(I^O).
 
-%show_reduced_io(I+O):- once(show_grid_call(reduce_grids_io(OPS),(I*O),(II*OO))),
-%  if_t(((I*O)\==(II*OO)), show_reduced_io((II+OO))).
+%show_reduced_io(I^O):- once(show_grid_call(reduce_grids_io(OPS),(I*O),(II*OO))),
+%  if_t(((I*O)\==(II*OO)), show_reduced_io((II^OO))).
 
 show_reduced_io(IO):-
   %OP = [_,_|_],
@@ -154,47 +158,47 @@ show_reduced_io(_).
 
 op_grid_to_norm((Op),I,OO):- op_grid_to_norm1(Op,I,OO),!.
 op_grid_to_norm(([]),I,I).
-op_grid_to_norm1((Op),IO,IIOO):-  compound(IO),IO=(I+O),op_grid_to_norm((Op),I,II),!,Op\==[],op_grid_to_norm((Op2),O,OO),!,Op=Op2,IIOO=II+OO.
+op_grid_to_norm1((Op),IO,IIOO):-  compound(IO),IO=(I^O),op_grid_to_norm((Op),I,II),!,Op\==[],op_grid_to_norm((Op2),O,OO),!,Op=Op2,IIOO=II^OO.
 op_grid_to_norm1((Op),I,OO):- (var(Op)->Op=[_|_];true),reduce_grid(I,Op,OO).
 %op_grid_to_norm([],I,I).
 
-mapgridish(P3,I+O,In,Out):- In==I-> mapgrid(P3,O,I,Out) ; mapgrid(P3,I,O,Out).
+mapgridish(P3,I^O,In,Out):- In==I-> mapgrid(P3,O,I,Out) ; mapgrid(P3,I,O,Out).
 
 
-reduce_grids_io(OPS,I+O,III+OOO):- area(I,IArea),area(O,OArea),reduce_grids_area_io(I+O,IArea+OArea,OPS,III+OOO).
-reduce_grids_io(OPS,I*O,III*OOO):- area(I,IArea),area(O,OArea),reduce_grids_area_io(I+O,IArea+OArea,OPS,III+OOO).
+reduce_grids_io(OPS,I^O,III^OOO):- area(I,IArea),area(O,OArea),reduce_grids_area_io(I^O,IArea^OArea,OPS,III^OOO).
+reduce_grids_io(OPS,I*O,III*OOO):- area(I,IArea),area(O,OArea),reduce_grids_area_io(I^O,IArea^OArea,OPS,III^OOO).
 
 interesting_ops(OPS):- OPS==[],!,fail.
 interesting_ops(OPS):- OPS=[unrotate(_)|More],!,interesting_ops(More).
 interesting_ops(_).
 
-reduce_grids_area_io(I+O,_IArea_OArea,[io(OPS)],II+OO):- reduce_grid(I+O,OPS,II+OO), interesting_ops(OPS),!.
-reduce_grids_area_io(I+O,_IArea_OArea,[oi(OPS)],II+OO):- reduce_grid(O+I,OPS,OO+II), interesting_ops(OPS),!.
-%reduce_grids_area_io(I+O,IArea+OArea,[i(OPS)],II+O):- IArea>OArea, reduce_grid(I+I,OPS,II+_), interesting_ops(OPS).
-%reduce_grids_area_io(I+O,IArea+OArea,[o(OPS)],I+OO):- IArea>OArea, reduce_grid(O+O,OPS,OO+_), interesting_ops(OPS).
-%reduce_grids_area_io(I+O,_IArea_OArea,[io(OPS)],II+OO):- reduce_grid(I+O,OPS,II+OO), interesting_ops(OPS).
-%reduce_grids_area_io(I+O,_IArea_OArea,[i(OPS)],II+O):- reduce_grid(I+I,OPS,II+_), interesting_ops(OPS).
+reduce_grids_area_io(I^O,_IArea_OArea,[io(OPS)],II^OO):- reduce_grid(I^O,OPS,II^OO), interesting_ops(OPS),!.
+reduce_grids_area_io(I^O,_IArea_OArea,[oi(OPS)],II^OO):- reduce_grid(O^I,OPS,OO^II), interesting_ops(OPS),!.
+%reduce_grids_area_io(I^O,IArea^OArea,[i(OPS)],II^O):- IArea>OArea, reduce_grid(I^I,OPS,II^_), interesting_ops(OPS).
+%reduce_grids_area_io(I^O,IArea^OArea,[o(OPS)],I^OO):- IArea>OArea, reduce_grid(O^O,OPS,OO^_), interesting_ops(OPS).
+%reduce_grids_area_io(I^O,_IArea_OArea,[io(OPS)],II^OO):- reduce_grid(I^O,OPS,II^OO), interesting_ops(OPS).
+%reduce_grids_area_io(I^O,_IArea_OArea,[i(OPS)],II^O):- reduce_grid(I^I,OPS,II^_), interesting_ops(OPS).
 
-%reduce_grids_area_io(I+O,IArea+OArea,[o(OPS)],I+OO):- IArea<OArea, reduce_grid(O+O,OPS,OO+OO), interesting_ops(OPS).
+%reduce_grids_area_io(I^O,IArea^OArea,[o(OPS)],I^OO):- IArea<OArea, reduce_grid(O^O,OPS,OO^OO), interesting_ops(OPS).
 /*
-reduce_grids_area_io(I+O,_IArea_OArea,OPS,III+OOO):- 
-  reduce_grid(I+I,II_Ops,II+II),
-  reduce_grid(O+O,OO_Ops,OO+OO),
-  reduce_grid(II+OO,IO_Ops,III+OOO),
+reduce_grids_area_io(I^O,_IArea_OArea,OPS,III^OOO):- 
+  reduce_grid(I^I,II_Ops,II^II),
+  reduce_grid(O^O,OO_Ops,OO^OO),
+  reduce_grid(II^OO,IO_Ops,III^OOO),
   (interesting_ops(IO_Ops) ; interesting_ops(OO_Ops) ; interesting_ops(II_Ops)),
   [i(II_Ops),o(OO_Ops),io(IO_Ops)] = OPS,
   !.
-reduce_grids_area_io(I+O,_IArea_OArea,OPS,III+OOO):- 
-  reduce_grid(I+O,IO_Ops,II+OO),
-  reduce_grid(II+II,II_Ops,III+III),
-  reduce_grid(OO+OO,OO_Ops,OOO+OOO),
+reduce_grids_area_io(I^O,_IArea_OArea,OPS,III^OOO):- 
+  reduce_grid(I^O,IO_Ops,II^OO),
+  reduce_grid(II^II,II_Ops,III^III),
+  reduce_grid(OO^OO,OO_Ops,OOO^OOO),
   (interesting_ops(IO_Ops) ; interesting_ops(OO_Ops) ; interesting_ops(II_Ops)),
-  OPS = [io(IO_Ops)+i(II_Ops)+o(OO_Ops)],
+  OPS = [io(IO_Ops)^i(II_Ops)^o(OO_Ops)],
   !.
 */
 
 
-maybe_easy(A,AR,ROPA):- reduce_grid_pass(1,A+A,[A+A],ROPA,AR+AR).
+maybe_easy(A,AR,ROPA):- reduce_grid_pass(1,A^A,[A^A],ROPA,AR^AR).
 maybe_easy(I,II,Code):- maybe_try_something1(I,II,Code),!.
 maybe_easy(I,I,==):- !.
     
@@ -208,7 +212,7 @@ detect_all_training_hints(TestID):- ensure_test(TestID),
   forall(kaggle_arc(TestID,ExampleNum,In,Out),must_det_ll(detect_pair_hints(TestID,ExampleNum,In,Out))),
   color_print(magenta,call(((must_det_ll(compute_and_show_test_hints(TestID)))))).
 
-training_only_examples(ExampleNum):- ignore(ExampleNum=(trn+_)).
+training_only_examples(ExampleNum):- ignore(ExampleNum=(trn^_)).
 
 detect_test_hints1:- clsbake, get_current_test(TestID),detect_test_hints1(TestID).
 detect_test_hints1(TestID):- 
@@ -229,7 +233,7 @@ detect_pair_hints(TestID,ExampleNum,In,Out):-
   detect_supergrid_tt_pair(TestID,ExampleNum,In,Out,_TT),  
   % guess_board(TT),
   %print(TT),
-  %ignore(show_reduced_io(In+Out)),
+  %ignore(show_reduced_io(In^Out)),
   grid_hint_swap(i-o,In,Out),
   dash_chars)),!.
 
@@ -242,7 +246,7 @@ detect_supergrid_tt_pair(TestID,ExampleNum,In0,Out0,TT):-
   dmsg(detect_supergrid_tt_pair(TestID,ExampleNum)),
   grid_to_gid(In0,InID),
   print_side_by_side(cyan,In0,?-grid_props(InID,'$VAR'('InProps')),_,Out0,task_out(ExampleNum)),  
-  %forall(show_reduced_io(In0+Out0),true),
+  %forall(show_reduced_io(In0^Out0),true),
   nop((show_recolor(TestID,ExampleNum,In0,Out0,TT)))))),!,
  TT = _{} .
 
@@ -342,28 +346,28 @@ save_grid_hints:-  forall(ensure_test(TestID),compute_and_show_test_hints(TestID
 
 
 
-hint_functor(cg(IO,Hint),cg(IO,F)):- !, hint_functor(Hint,F).
-%hint_functor(comp(MC,i-o,Hint),F):- !, hint_functor(Hint,F).
-hint_functor(comp(MC,IO,Hint),comp(MC,IO,F)):- hint_functor(Hint,F).
-hint_functor(rev(Hint),rev(F)):- !, hint_functor(Hint,F).
-hint_functor(mono(Hint),mono(F)):- !, hint_functor(Hint,F).
-hint_functor(vis_hv_term(Hint),(F)):- !, hint_functor(Hint,F).
-hint_functor(Hint,F):- functor(Hint,F,_).
+hint_functor(cg(IO,Hints),cg(IO,F)):- !, hint_functor(Hints,F).
+%hint_functor(comp(MC,i-o,Hints),F):- !, hint_functor(Hints,F).
+hint_functor(comp(MC,IO,Hints),comp(MC,IO,F)):- hint_functor(Hints,F).
+hint_functor(rev(Hints),rev(F)):- !, hint_functor(Hints,F).
+hint_functor(mono(Hints),mono(F)):- !, hint_functor(Hints,F).
+hint_functor(vis_hv_term(Hints),(F)):- !, hint_functor(Hints,F).
+hint_functor(Hints,F):- functor(Hints,F,_).
 
 
-hint_into_data(cg(_IO,Hint),F):- !, hint_into_data(Hint,F).
-hint_into_data(comp(_MC,_IO,Hint),F):- !, hint_into_data(Hint,F).
-hint_into_data(rev(Hint),F):- !, hint_into_data(Hint,F).
-hint_into_data(vis_hv_term(Hint),(F)):- !, hint_into_data(Hint,F).
-hint_into_data(mono(Hint),(F)):- !, hint_into_data(Hint,F).
+hint_into_data(cg(_IO,Hints),F):- !, hint_into_data(Hints,F).
+hint_into_data(comp(_MC,_IO,Hints),F):- !, hint_into_data(Hints,F).
+hint_into_data(rev(Hints),F):- !, hint_into_data(Hints,F).
+hint_into_data(vis_hv_term(Hints),(F)):- !, hint_into_data(Hints,F).
+hint_into_data(mono(Hints),(F)):- !, hint_into_data(Hints,F).
 hint_into_data(Data,Data).
 
 
-relax_hint(G,G):- (\+ compound(G)) -> !; true.
+relax_hint(G,G):- (\^ compound(G)) -> !; true.
 relax_hint(rev(G),rev(GG)):- !, relax_hint(G,GG).
 relax_hint(mono(G),mono(GG)):- !, relax_hint(G,GG).
 relax_hint(cg(W,G),cg(W,GG)):- !, relax_hint(G,GG).
-relax_hint(G,GG):- duplicate_term(G,GG),arg(N,G,E),relax_arg(E,Hint),nb_setarg(N,GG,Hint).
+relax_hint(G,GG):- duplicate_term(G,GG),arg(N,G,E),relax_arg(E,Hints),nb_setarg(N,GG,Hints).
 %relax_hint(G,GG):- functor(G,F,A),functor(GG,F,A).
 
 relax_arg(E,C):- is_color(E),!,relax_color_arg(E,C).
@@ -382,20 +386,20 @@ add_xform_maybe(In1,Out1):- ignore(get_current_test(TestID)),
                                         retractall(ThatXForm),retractall(NewXForm),asserta(NewXForm))
                      ; asserta(ThisXForm)))),!.
                     
-add_hint(TestID,Hint,N):- 
-  hint_functor(Hint,F),hint_into_data(Hint,D), assert_test_property(TestID,gh(N),F,D).
+add_hint(TestID,Hints,N):- 
+  hint_functor(Hints,F),hint_into_data(Hints,D), assert_test_property(TestID,gh(N),F,D).
 
 assert_test_property(TestID,GHN,Prop,Data):-
   arc_assert(arc_test_property(TestID,GHN,Prop,Data)).
   
-  % forall((kaggle_arc_io(TestID,(trn+N),in,Out1),N2 is N+1,  (kaggle_arc_io(TestID,(trn+N2),in,Out2)->true;kaggle_arc_io(TestID,(trn+0),in,Out2)),  grid_hint_recolor(i-i,Out1,Out2,Hint)),add_hint(TestID,Hint,N)).
+  % forall((kaggle_arc_io(TestID,(trn^N),in,Out1),N2 is N^1,  (kaggle_arc_io(TestID,(trn^N2),in,Out2)->true;kaggle_arc_io(TestID,(trn^0),in,Out2)),  grid_hint_recolor(i-i,Out1,Out2,Hints)),add_hint(TestID,Hints,N)).
 
 
 /*
 compute_and_show_test_hints(TestID):- format('~N'),
-  findall(Hint-N,(kaggle_arc(TestID,(trn+N),In,Out), grid_hint_swap(i-o,In,Out,Hint)),HintsIO),
-  findall(Hint-N,(kaggle_arc_io(TestID,(trn+N),in,In1),  N2 is N+1, (kaggle_arc_io(TestID,(trn+N2),in,In2)->true;kaggle_arc_io(TestID,(trn+0),in,In2)), grid_hint_recolor(i-i,In1,In2,Hint)),HintsII),
-  findall(Hint-N,(kaggle_arc_io(TestID,(trn+N),out,Out1),N2 is N+1, (kaggle_arc_io(TestID,(trn+N2),out,Out2)->true;kaggle_arc_io(TestID,(trn+0),out,Out2)), grid_hint_recolor(o-o,Out1,Out2,Hint)),HintsOO),
+  findall(Hints-N,(kaggle_arc(TestID,(trn^N),In,Out), grid_hint_swap(i-o,In,Out,Hints)),HintsIO),
+  findall(Hints-N,(kaggle_arc_io(TestID,(trn^N),in,In1),  N2 is N^1, (kaggle_arc_io(TestID,(trn^N2),in,In2)->true;kaggle_arc_io(TestID,(trn^0),in,In2)), grid_hint_recolor(i-i,In1,In2,Hints)),HintsII),
+  findall(Hints-N,(kaggle_arc_io(TestID,(trn^N),out,Out1),N2 is N^1, (kaggle_arc_io(TestID,(trn^N2),out,Out2)->true;kaggle_arc_io(TestID,(trn^0),out,Out2)), grid_hint_recolor(o-o,Out1,Out2,Hints)),HintsOO),
   append([HintsIO,HintsOO,HintsII],Hints),
   keysort(Hints,SHints),  
   maplist(aquire_hints(TestID,SHints),SHints),
@@ -412,7 +416,7 @@ compute_and_show_test_hints(TestID):- ensure_test(TestID),format('~N'),
   format('~N').
 
 list_common_props_so_far(TestID):-
- (\+ arc_test_property(TestID,gh(_),_,_) -> compute_all_test_hints(TestID); true),
+ (\^ arc_test_property(TestID,gh(_),_,_) -> compute_all_test_hints(TestID); true),
  findall(F=Common,
   (arc_test_property(TestID,gh(0),F,_),
     retractall(arc_test_property(TestID,common,F,_)),
@@ -422,7 +426,7 @@ list_common_props_so_far(TestID):-
   sort(FComs,SComs),  
   print_test(TestID),
   %wots(SS,maplist(ptv1,SComs)),
-  call((format('~N % ~w:: ~@.~n',[list_common_props,ptv1(cyan+magenta,SComs)]))),
+  call((format('~N % ~w:: ~@.~n',[list_common_props,ptv1(cyan^magenta,SComs)]))),
   !.
 
 ptv1(Color,T):- is_list(T), !, maplist(ptv1(Color),T).
@@ -435,7 +439,7 @@ ptv1(C1C2,T):- ptv11(C1C2,T),!.
 
 needs_bold(C):- compound(C),sub_term(E,C),compound(E),functor(E,ogs,_).
 
-ptv11(C1+C2,T):- !, format('~N'),wots(S,writeq(T)),
+ptv11(C1^C2,T):- !, format('~N'),wots(S,writeq(T)),
   (has_spec_value(T) -> color_print(C1,call(bold_print(write(S)))) ; color_print(C2,call(write(S)))).
 ptv11(Color,T):- format('~N'),(has_spec_value(T) -> color_print(cyan,call(bold_print(print_tree(T)))) ; color_print(Color,call(print_tree(T)))).
 
@@ -446,7 +450,7 @@ has_spec_value(T):- sub_term(E,T),number(E),!.
 has_spec_value(T):- sub_term(E1,T),atomic(E1),sub_term(E2,T),atomic(E2),E1\==E2.
 
 
-in_smaller_than_out(TestID):- forall(kaggle_arc(TestID,trn+_,I,O), op_op(v_area,I,O,(<))).
+in_smaller_than_out(TestID):- forall(kaggle_arc(TestID,trn^_,I,O), op_op(v_area,I,O,(<))).
 
 op_op(P2a,I,O,P2b):- call(P2a,I,II),call(P2a,O,OO),call(P2b,II,OO),!.
 
@@ -465,41 +469,41 @@ compute_all_test_hints(TestID):-
 
 compute_test_io_hints(TestID):- 
   forall(
-    kaggle_arc(TestID,(trn+N),In,Out), 
+    kaggle_arc(TestID,(trn^N),In,Out), 
      maybe_compute_test_io_hints(i-o,TestID,N,In,Out)).
 
 %maybe_compute_test_io_hints(_,TestID,N,_,_):- arc_test_property(TestID,_,_-N),!.
 maybe_compute_test_io_hints(IO,TestID,N,In,Out):-
     ignore(add_xform_maybe(In,Out)),
-      forall(grid_hint_swap_io(IO,In,Out,Hint),add_hint(TestID,Hint,N)).
+      forall(grid_hint_swap_io(IO,In,Out,Hints),add_hint(TestID,Hints,N)).
 
 compute_test_oo_hints(_):- !.
 compute_test_oo_hints(TestID):- 
   forall(
-    kaggle_arc_io(TestID,(trn+N),out,Out1), 
-     (N2 is N+1, (kaggle_arc_io(TestID,(trn+N2),out,Out2)->true;kaggle_arc_io(TestID,(trn+0),out,Out2)),
+    kaggle_arc_io(TestID,(trn^N),out,Out1), 
+     (N2 is N^1, (kaggle_arc_io(TestID,(trn^N2),out,Out2)->true;kaggle_arc_io(TestID,(trn^0),out,Out2)),
       maybe_compute_test_oo_hints(TestID,N,Out1,Out2))),!.
 
-  maybe_compute_test_oo_hints(TestID,N,Out1,Out2):- forall(grid_hint_recolor(o-o,Out1,Out2,Hint),add_hint(TestID,Hint,N)).
+  maybe_compute_test_oo_hints(TestID,N,Out1,Out2):- forall(grid_hint_recolor(o-o,Out1,Out2,Hints),add_hint(TestID,Hints,N)).
 
 compute_test_ii_hints(_):-!.
 compute_test_ii_hints(TestID):- 
   forall(
-    kaggle_arc_io(TestID,(trn+N),in,In1), 
-     (N2 is N+1, (kaggle_arc_io(TestID,(trn+N2),in,In2)->true;kaggle_arc_io(TestID,(tst+0),in,In2)),
+    kaggle_arc_io(TestID,(trn^N),in,In1), 
+     (N2 is N^1, (kaggle_arc_io(TestID,(trn^N2),in,In2)->true;kaggle_arc_io(TestID,(tst^0),in,In2)),
       maybe_compute_test_ii_hints(TestID,N,In1,In2))),!.
 
-  maybe_compute_test_ii_hints(TestID,N,Out1,Out2):- forall(grid_hint_recolor(i-i,Out1,Out2,Hint),add_hint(TestID,Hint,N)).
+  maybe_compute_test_ii_hints(TestID,N,Out1,Out2):- forall(grid_hint_recolor(i-i,Out1,Out2,Hints),add_hint(TestID,Hints,N)).
 
 
 %ptv(T):- p_p_t_no_nl(T),!.
 ptv(T):- 
   copy_term(T,CT,Goals),Goals\==[],!,
-  \+ \+ 
- ((numbervars(CT+Goals,10,_,[attvar(bind),singletons(true)]),
+  \^ \^ 
+ ((numbervars(CT^Goals,10,_,[attvar(bind),singletons(true)]),
   ptv(CT), write('\n/*\n'),ptv(Goals),write('\n*/'))).
 /*ptv(T):- copy_term(FF,FA,GF), GF \==[],
-  numbervars(FA+GF,0,_,[attvar(bind),singletons(true)]),
+  numbervars(FA^GF,0,_,[attvar(bind),singletons(true)]),
   sort(GF,GS),write(' '),
   locally(b_setval(arc_can_portray,nil),
       ptv(FA)),format('~N'),
@@ -508,11 +512,11 @@ ptv(T):-
 ptv(T):- is_list(T), !, print_tree_no_nl(T),write(' ').
 ptv(T):-
   locally(b_setval('$portraying',[]), 
-   \+ \+  ((numbervars(T,0,_,[attvars(skip),singletons(true)]), must_det_ll((ptv(T,_)))))),write(' ').
+   \^ \^  ((numbervars(T,0,_,[attvars(skip),singletons(true)]), must_det_ll((ptv(T,_)))))),write(' ').
 
 
 ptv(T,_):- var(T),!, ptv2(T).
-ptv(T,_):- \+ compound(T), !, ptv2(T).
+ptv(T,_):- \^ compound(T), !, ptv2(T).
 ptv(T,_):- is_object(T),!,  debug_indiv(T),!.
 %ptv(T,_):- T = showdiff( O1, O2), !, showdiff(O1, O2).
 %ptv(T,_):- T = change_obj( O1, O2, Diffs), !, showdiff(O1, O2), writeq(Diffs),!.
@@ -523,24 +527,24 @@ ptv(T,_):-
    ; locally(b_setval('$portraying',[T]),ptv0(T)).
 
 ptv0(T):-
-  \+ \+ ((prolog_pretty_print_term(T,[quoted(true),portray(true),
+  \^ \^ ((prolog_pretty_print_term(T,[quoted(true),portray(true),
   portray_goal(ptv),numbervars(true),singletons(true),blobs(portray),
   quote_non_ascii(true),brace_terms(false),ignore_ops(true)]))).
 
 ptv2(T):- p_p_t_no_nl(T),!.
 ptv2(T):- 
-  \+ \+ ((numbervars(T,0,_,[]),prolog_pretty_print_term(T,[quoted(true),portray(true),
+  \^ \^ ((numbervars(T,0,_,[]),prolog_pretty_print_term(T,[quoted(true),portray(true),
   numbervars(true),singletons(true),blobs(portray),
   quote_non_ascii(true),brace_terms(false),ignore_ops(true)]))).
 
 must_min_unifier(A,B,D):- must_det_ll(min_unifier_e(A,B,D)).
-%min_unifier_e(A,B,C):- compound(B),maybe_extract_value(B,BB), \+ maybe_extract_values(A,_), c_proportional(A,BB,AABB),min_unifier(AABB,B,C),!.
-%min_unifier_e(B,A,C):- compound(B),maybe_extract_value(B,BB), \+ maybe_extract_values(A,_), c_proportional(A,BB,AABB),min_unifier(AABB,B,C),!.
-min_unifier_e(A,B,C):- maybe_extract_value(B,BB), \+ maybe_extract_value(A,_), min_unifier(A,BB,C).
-min_unifier_e(B,A,C):- maybe_extract_value(B,BB), \+ maybe_extract_value(A,_), min_unifier(BB,A,C).
+%min_unifier_e(A,B,C):- compound(B),maybe_extract_value(B,BB), \^ maybe_extract_values(A,_), c_proportional(A,BB,AABB),min_unifier(AABB,B,C),!.
+%min_unifier_e(B,A,C):- compound(B),maybe_extract_value(B,BB), \^ maybe_extract_values(A,_), c_proportional(A,BB,AABB),min_unifier(AABB,B,C),!.
+min_unifier_e(A,B,C):- maybe_extract_value(B,BB), \^ maybe_extract_value(A,_), min_unifier(A,BB,C).
+min_unifier_e(B,A,C):- maybe_extract_value(B,BB), \^ maybe_extract_value(A,_), min_unifier(BB,A,C).
 min_unifier_e(A,B,C):- min_unifier(A,B,C),nonvar(C),!.
-%min_unifier_e(A,B,C):- compound(B),maybe_extract_values(B,BB), \+ maybe_extract_values(A,_), c_proportional(A,BB,AABB),must_min_unifier(AABB,B,C),!.
-%min_unifier_e(B,A,C):- compound(B),maybe_extract_values(B,BB), \+ maybe_extract_values(A,_), c_proportional(A,BB,AABB),must_min_unifier(AABB,B,C),!.
+%min_unifier_e(A,B,C):- compound(B),maybe_extract_values(B,BB), \^ maybe_extract_values(A,_), c_proportional(A,BB,AABB),must_min_unifier(AABB,B,C),!.
+%min_unifier_e(B,A,C):- compound(B),maybe_extract_values(B,BB), \^ maybe_extract_values(A,_), c_proportional(A,BB,AABB),must_min_unifier(AABB,B,C),!.
 min_unifier_e(_,_,_).
 
 some_min_unifier([A|List],Term):- some_min_unifier_3(A,List,Term).
@@ -570,28 +574,28 @@ min_unifier(A,B,AA):- is_cons(A),is_cons(B),!,min_list_unifier(A,B,AA),!.
 min_unifier(A,B,R):- compound(A),compound(B),
  compound_name_arguments(A,F,AA),compound_name_arguments(B,F,BB),!,
  maplist(must_min_unifier,AA,BB,RR),compound_name_arguments(R,F,RR).
-min_unifier(A,B,R):- relax_hint(A,R),\+ (B \= R),!.
-min_unifier(A,B,_):- (\+ compound(A);\+ compound(B)),!.
+min_unifier(A,B,R):- relax_hint(A,R),\^ (B \= R),!.
+min_unifier(A,B,_):- (\^ compound(A);\^ compound(B)),!.
 
 is_cons(A):- compound(A),A=[_|_].
 
 
-min_grid_unifier(A,B,_):- (\+ is_list(A) ; \+ is_list(B)),!.
+min_grid_unifier(A,B,_):- (\^ is_list(A) ; \^ is_list(B)),!.
 min_grid_unifier(A,B,[E1|C]):- select(E1,A,AA),select(E2,B,BB), E1=@=E2 ,!,min_grid_unifier(AA,BB,C).
 min_grid_unifier(A,B,[E |C]):- select(E1,A,AA),select(E2,B,BB),min_unifier(E1,E2,E),!,min_grid_unifier(AA,BB,C).
 min_grid_unifier(_,_,_).
 
 
 min_list_unifier(A,B,A):- A=@=B,!.
-min_list_unifier(A,B,_):- \+ compound(A);\+ compound(B),!.
+min_list_unifier(A,B,_):- \^ compound(A);\^ compound(B),!.
 min_list_unifier(A,B,AA):- is_list(A),is_list(B), sort(A,AA),sort(B,BB),BB=@=AA,!.
 
 min_list_unifier(A,B,[EC|C]):- is_list(A),is_list(B),  select_two(A,B,E1,E2,AA,BB), min_unifier(E1,E2,EC) ,!,min_list_unifier(AA,BB,C).
 
 
-min_list_unifier(A,_,_):- (\+ is_list(A), \+ is_cons(A)),!.
-min_list_unifier(_,A,_):- (\+ is_list(A), \+ is_cons(A)),!.
-min_list_unifier(A,B,_):- (\+ is_list(A) ; \+ is_list(B)),!.
+min_list_unifier(A,_,_):- (\^ is_list(A), \^ is_cons(A)),!.
+min_list_unifier(_,A,_):- (\^ is_list(A), \^ is_cons(A)),!.
+min_list_unifier(A,B,_):- (\^ is_list(A) ; \^ is_list(B)),!.
 
 %min_list_unifier([E1|AA],[E2|BB],[EC|C]):- min_unifier(E1,E2,EC) ,!,min_unifier(AA,BB,C).
 min_list_unifier(A,B,[E1|C]):- nonvar(A),nonvar(B), select(E1,A,AA),nonvar(E1),select(E2,B,BB),nonvar(E2), E1=@=E2 ,!,min_list_unifier(AA,BB,C).
@@ -602,31 +606,31 @@ min_list_unifier(_,_,_):-!.
 %min_unifier(A,B,C):- is_list(B), is_list(A), length(B,L), length(A,L), length(C,L).
 
 grid_hint_swap(IO,In,Out):-
- ignore(kaggle_arc(TestID,trn+N,In,Out)),
+ ignore(kaggle_arc(TestID,trn^N,In,Out)),
  maybe_compute_test_io_hints(IO,TestID,N,In,Out),
  format('~N%% ~w: ',[IO]),!,
-   forall((arc_test_property(TestID,gh(N),P,V)),ptv1(magenta+cyan,P=V)).
+   forall((arc_test_property(TestID,gh(N),P,V)),ptv1(magenta^cyan,P=V)).
 
 
-grid_hint_swap_io(IO,In,Out,Hint):-  grid_hint_recolor(IO,In,Out,Hint).
-grid_hint_swap_io(I-O,In,Out,rev(Hint)):- I\==O, 
- nop(show_grid_call(trim_to_rect,In+Out,_)),
- grid_hint_recolor(O-I,Out,In,Hint),
- Hint \= mono(comp(_,o-i,value(=@=))).
+grid_hint_swap_io(IO,In,Out,Hints):-  grid_hint_recolor(IO,In,Out,Hints).
+grid_hint_swap_io(I-O,In,Out,rev(Hints)):- I\==O, 
+ nop(show_grid_call(trim_to_rect,In^Out,_)),
+ grid_hint_recolor(O-I,Out,In,Hints),
+ Hints \= mono(comp(_,o-i,value(=@=))).
 
-grid_hint_recolor(IO,In,Out,Hint):- get_black(Black), grid_hint_io(cbg(Black),IO,In,Out,Hint).
-grid_hint_recolor(IO,In,Out,mono(Hint)):- arc_option(scan_mono_hints), % fail,
+grid_hint_recolor(IO,In,Out,Hints):- get_black(Black), grid_hint_io(cbg(Black),IO,In,Out,Hints).
+grid_hint_recolor(IO,In,Out,mono(Hints)):- arc_option(scan_mono_hints), % fail,
  once((into_monogrid(In,InM),into_monogrid(Out,OutM))),
-  (In\==InM;Out\==OutM),grid_hint_io(cbg(wbg),IO,InM,OutM,Hint).
-grid_hint_recolor(IO,In,Out,color_ord(Hint)):- fail,
+  (In\==InM;Out\==OutM),grid_hint_io(cbg(wbg),IO,InM,OutM,Hints).
+grid_hint_recolor(IO,In,Out,color_ord(Hints)):- fail,
  once((into_color_ord(In,InM),into_color_ord(Out,OutM))),
-  (In\==InM;Out\==OutM),grid_hint_io(cbg(bg),IO,InM,OutM,Hint).
+  (In\==InM;Out\==OutM),grid_hint_io(cbg(bg),IO,InM,OutM,Hints).
 /*
-grid_hint_recolor(IO,In,Out,mono(Hint)):- % fail,
+grid_hint_recolor(IO,In,Out,mono(Hints)):- % fail,
  once((into_monogrid(In,InM),into_monogrid(Out,OutM))),
   In\==InM,Out\==OutM,
-  grid_hint_io(cbg(wbg),IO,InM,OutM,Hint), 
-  \+ grid_hint_recolor1(IO,In,Out,_Hint).
+  grid_hint_io(cbg(wbg),IO,InM,OutM,Hints), 
+  \^ grid_hint_recolor1(IO,In,Out,_Hint).
 */
 
 
@@ -654,19 +658,19 @@ grid_hint_io_not_rev(In,Out,reduce_grid(H,V,II)):- once((grid_to_norm(In,_,II),g
 
 grid_hint_io_1(_MC,_IO,In,Out,value('=@=')):- In=@=Out,!.
 
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- grid_hint_io_1(MC,IO,In,Out,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hints)):- grid_hint_io_1(MC,IO,In,Out,Hints).
 /*
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs1(Hint))):-  all_ogs1(In,Out,Hint).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs2(Hint))):-  all_ogs2(In,Out,Hint).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs3(Hint))):-  all_ogs3(In,Out,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs1(Hints))):-  all_ogs1(In,Out,Hints).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs2(Hints))):-  all_ogs2(In,Out,Hints).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs3(Hints))):-  all_ogs3(In,Out,Hints).
 */
-%grid_hint_io(MC,IO,In,Out,comp(MC,IO,rev_ogs3(Hint))):-  all_ogs3(Out,In,Hint).
+%grid_hint_io(MC,IO,In,Out,comp(MC,IO,rev_ogs3(Hints))):-  all_ogs3(Out,In,Hints).
 
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs(Hint))):- not_reversed(IO), all_ogs(In,Out,Hint).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs_rev(Hint))):- not_reversed(IO), all_ogs(Out,In,Hint).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):-  \+ arc_option(grid_size_only), grid_size(In,IH,IV),grid_size(Out,OH,OV), 
-  grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hint).
-grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hint)):- not_reversed(IO), c_proportional(In,Out,Hint).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs(Hints))):- not_reversed(IO), all_ogs(In,Out,Hints).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,ogs_rev(Hints))):- not_reversed(IO), all_ogs(Out,In,Hints).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hints)):-  \^ arc_option(grid_size_only), grid_size(In,IH,IV),grid_size(Out,OH,OV), 
+  grid_hint_iso(MC,IO,In,Out,IH,IV,OH,OV,Hints).
+grid_hint_io(MC,IO,In,Out,comp(MC,IO,Hints)):- not_reversed(IO), c_proportional(In,Out,Hints).
 
 disguise_grid(I,O):- maplist(disguise_row,I,M),O=..[grid|M].
 disguise_row(I,O):- O=..[row|I].
@@ -776,10 +780,10 @@ ideal_prop(o(Sz,1,_)):- Sz\=sf(1).
 
 
 count_N(Color,Flat,Count,Var):- freeze(Var,count_C(Color,Flat,Count)).
-count_C(Color,Flat,S+D):- member(Color,Flat),nonvar(Color),!,my_partition(cmatch(Color),Flat,Sames,Diffs),length(Sames,S),length(Diffs,D).
+count_C(Color,Flat,S^D):- member(Color,Flat),nonvar(Color),!,my_partition(cmatch(Color),Flat,Sames,Diffs),length(Sames,S),length(Diffs,D).
 
 ensure_arc_test_properties(TestID):- ignore(get_current_test(TestID)),
- ignore(( \+ arc_test_property(TestID,common,_,_), compile_and_save_test(TestID))).
+ ignore(( \^ arc_test_property(TestID,common,_,_), compile_and_save_test(TestID))).
 
 :- decl_pt(test_prop,input_objects_first(testID)).
 input_objects_first(TestID):- 
@@ -791,7 +795,7 @@ input_expands_into_output(TestID):-
   ensure_arc_test_properties(TestID), 
   get_black(Black),
   arc_test_property(TestID,common,comp(cbg(Black),i-o,ogs),ogs(List)),
-  \+ \+ (select(ogs(trim,whole,strict,loc2D(_,_)),List,Rest),
+  \^ \^ (select(ogs(trim,whole,strict,loc2D(_,_)),List,Rest),
          member(ogs(trim,whole,strict,loc2D(_,_)),Rest)),!.
 
  
@@ -804,7 +808,7 @@ trim_for_offset_1_1(II,In,OX,OY):-
 
 all_ogs1(II,Out,XY):-
   findall(ogs(trim,whole,R,loc2D(XX,YY)),
-     (trim_for_offset_1_1(II,In,OX,OY),maybe_ogs(R,X,Y,In,Out),XX is X-OX+1, YY is Y-OY+1),XY),!.
+     (trim_for_offset_1_1(II,In,OX,OY),maybe_ogs(R,X,Y,In,Out),XX is X-OX^1, YY is Y-OY^1),XY),!.
 
 all_ogs2(In,Out,XY):- findall(ogs(notrim,whole,R,loc2D(XX,YY)),maybe_ogs(R,XX,YY,In,Out),XY),!.
 
@@ -827,7 +831,7 @@ pre_ogs_alter([maybe_unbind_bg,maybe_fg_to_bg]).
 pre_ogs_alter(P2):- rot_ogs(P2).
 
 maybe_unbind_bg(In,NewIn):- get_black(BGC), unbind_color(BGC,In,NewIn),!,In\=@=NewIn.
-maybe_fg_to_bg(In,NewIn):- get_black(Black), \+ sub_var(Black,In), unique_colors(In,UCs),
+maybe_fg_to_bg(In,NewIn):- get_black(Black), \^ sub_var(Black,In), unique_colors(In,UCs),
  include(is_real_fg_color,UCs,FGC),!,FGC=[FG],subst(In,FG,Black,NewIn),!, In\==NewIn.
 
 rot_ogs(trim_to_rect).
@@ -847,16 +851,16 @@ into_color_ord(G,GO):- G=GO.
 %grid_hint_iso(cbg(_BGC),_-O,_In,Out,_IH,_IV,OH,OV,has_x_columns(O,Y,Color)):- Area is OH*OV, Area>24, maybe_fail_over_time(10.2,has_x_columns(Out,Y,Color,_)), Y>1.
 %grid_hint_iso(cbg(_BGC),_-O,_In,Out,_IH,_IV,OH,OV,has_y_rows(O,Y,Color)):- Area is OH*OV, Area>24, maybe_fail_over_time(10.2,has_y_rows(Out,Y,Color,_)), Y>1.
 
-grid_hint_iso(cbg(BGC),IO,Out,In,GH,GV,GH,GV,Hint):-   
+grid_hint_iso(cbg(BGC),IO,Out,In,GH,GV,GH,GV,Hints):-   
    mapgrid(remove_color_if_same(BGC),Out,In,NewIn),
    mass(NewIn,Mass), unique_colors(In,Colors),unique_colors(NewIn,LeftOver), LeftOver\==Colors,
    (Mass==0 -> 
-     ( Hint=containsAll(IO),learn_hybrid_shape_board(subtraction,In)) ; 
-     ( Hint=containsAllExceptFor(IO,LeftOver),learn_hybrid_shape_board(subtraction,NewIn))),!.
+     ( Hints=containsAll(IO),learn_hybrid_shape_board(subtraction,In)) ; 
+     ( Hints=containsAllExceptFor(IO,LeftOver),learn_hybrid_shape_board(subtraction,NewIn))),!.
   
 
 % NewIn\=@=In,print_grid('leftover',NewIn).
-%grid_hint_iso(cbg(BGC),IO,In,Out,_IH,_IV,_OH,_OV,cg(IO,Hint)):- comp_o(IO), grid_color_hint(In,Out,Hint).
+%grid_hint_iso(cbg(BGC),IO,In,Out,_IH,_IV,_OH,_OV,cg(IO,Hints)):- comp_o(IO), grid_color_hint(In,Out,Hints).
 %grid_hint_iso(_,IO,_In,_Out,IH,IV,  OH,OV,comp(MC,IO,size_r(H,V))):- comp_o(IO), V is rationalize(IV/OV), H is rationalize(IH/OH).
 %grid_hint_iso(cbg(_BGC),IO,In,Out,_IH,_IV,_OH,_OV,cg(IO,mass_r(Mass))):- comp_o(IO), mass(In,IMass),mass(Out,OMass), IMass\==0,Mass is rationalize(OMass/IMass),Mass\==1.
 /*
@@ -903,13 +907,13 @@ rinfo(obj(List0),RInfo):-
 rinfo(Info,RInfo):- Info=..[P,N,A|InfoL], atomic_list_concat([P,N],'_',PN),!, RInfo=..[PN,A|InfoL].
 rinfo(Info,Info):-!.
 
-grid_color_hint(In,Out,Hint):-
+grid_color_hint(In,Out,Hints):-
     once((unique_colors(In,IColor0),unique_colors(Out,OColor0),
     include(is_color,IColor0,IColor),
     include(is_color,OColor0,OColor),
     intersection(IColor,OColor,Shared,IOnlyC,OOnlyC))),
     sort(Shared,SharedS),
-    member(Hint,[shared_color(SharedS),lhs_only(IOnlyC),rhs_only(OOnlyC)]).
+    member(Hints,[shared_color(SharedS),lhs_only(IOnlyC),rhs_only(OOnlyC)]).
 
 
 
@@ -951,8 +955,8 @@ gather_chunks(Color,In,Chunks,X,Y,GX,GY,BorderNumsX,BorderNumsY):-
   nth1(Y,Chunks,Row),nth1(X,Row,Cell),
   nth1(X,BorderNumsX,SX,RX),nth1(X,RX,EX),
   nth1(Y,BorderNumsY,SY,RY),nth1(Y,RY,EY),
-  SX1 is SX + 1, 
-  SY1 is SY + 1,
+  SX1 is SX ^ 1, 
+  SY1 is SY ^ 1,
   EX1 is EX - 1,
   EY1 is EY - 1,
   clip(SX1,SY1,EX1,EY1,In,Clip),
@@ -960,13 +964,13 @@ gather_chunks(Color,In,Chunks,X,Y,GX,GY,BorderNumsX,BorderNumsY):-
   % once(Clip = [_,[_,Cell|_]|_];Clip = [[Cell|_]|_]),  
   get_black(Black),
   once(((Clip = [_,[_,C|_]|_];Clip = [[C|_]|_];(member(CR,Clip),member(C,CR))),C\==Color,C\==Black,Cell=C);Cell=Clip),
-  (GX =< X -> (Yi is Y + 1, Xi is 1) ; (Xi is X+1, Yi is Y)),
+  (GX =< X -> (Yi is Y ^ 1, Xi is 1) ; (Xi is X^1, Yi is Y)),
   gather_chunks(Color,In,Chunks,Xi,Yi,GX,GY,BorderNumsX,BorderNumsY).
 
 
 conjoin_color(Color,Value,ord(Value,Color)).
 
-x_columns(In,Out):- into_grid(In,G), has_x_columns(G,_X,Color,BorderNums),  must_det_ll(ground(In+Color)), maplist(conjoin_color(Color),BorderNums,Out).
+x_columns(In,Out):- into_grid(In,G), has_x_columns(G,_X,Color,BorderNums),  must_det_ll(ground(In^Color)), maplist(conjoin_color(Color),BorderNums,Out).
 y_rows(In,Out):-  into_grid(In,G), has_y_rowz(G,_X,Color,BorderNums), maplist(conjoin_color(Color),BorderNums,Out).
 
 has_x_columns(In,X,Color,BorderNums):- ((rot90(In,In90), !, has_y_rows(In90,X,Color,BorderNums))).
@@ -976,28 +980,28 @@ has_y_rows(In,Y,Color,BorderNums):- has_y_rowz(In,Y,Color,BorderNums).
 has_y_rowz(In,Y,Color,BorderNums):- plain_var(Color), !, unique_colors(In,Colors),reverse(Colors,ColorsR),!,
   member(Color,ColorsR),is_color(Color), has_y_rowz(In,Y,Color,BorderNums).
 
-has_y_rowz(In,Y,Color,BorderNums):- must_det_ll(ground(In+Color)),
+has_y_rowz(In,Y,Color,BorderNums):- must_det_ll(ground(In^Color)),
   has_y_columns1(In,Y,Color,BorderNums),
   must_det_ll(is_color(Color)),
-  nop(\+ illegal_column_data1(In,Color,BorderNums)),
-  \+ ((append(_,[RowBefore,RowNext|_],In), entire_row(Color,RowBefore), entire_row(Color,RowNext))).
+  nop(\^ illegal_column_data1(In,Color,BorderNums)),
+  \^ ((append(_,[RowBefore,RowNext|_],In), entire_row(Color,RowBefore), entire_row(Color,RowNext))).
 
 has_y_columns1(In,Y,Color,BorderNums):- 
   append([First|_],[Last],In), mentire_row(Color,First),mentire_row(Color,Last),!,  
   findall(Nth,(nth1(Nth,In,Row),entire_row(Color,Row)),BorderNums),
   length(BorderNums,YM1),YM1>2, Y is YM1 - 1.
 
-has_y_columns1(In,Y,Color,Out):-   must_det_ll(ground(In+Color)),
+has_y_columns1(In,Y,Color,Out):-   must_det_ll(ground(In^Color)),
   append([First|_],[Last],In),
-  \+ mentire_row(Color,Last), \+ mentire_row(Color,First),!,
+  \^ mentire_row(Color,Last), \^ mentire_row(Color,First),!,
   findall(Nth,(nth1(Nth,In,Row),entire_row(Color,Row)),BorderNums), BorderNums \==[],
-  length(BorderNums,YM1),Y is YM1 + 1,
-  length(In,GY1),GY is GY1 + 1,
+  length(BorderNums,YM1),Y is YM1 ^ 1,
+  length(In,GY1),GY is GY1 ^ 1,
   append([0|BorderNums],[GY],Out).
 
 % bleeding of this color
 illegal_column_data1(In,Color,BorderNums):- 
-  nth1(Nth,In,OtherRow),\+ member(Nth,BorderNums),
+  nth1(Nth,In,OtherRow),\^ member(Nth,BorderNums),
   append(_,[C1,C2|_],OtherRow),C1 == C2, C1 == Color,!.
 
 illegal_column_data1(In,Color,_):- 
@@ -1005,14 +1009,14 @@ illegal_column_data1(In,Color,_):-
 
 % completely differnt colored border
 illegal_column_data1(In,Color,BorderNums):-  fail,
-  nth1(Nth,In,OtherRow),\+ member(Nth,BorderNums),
+  nth1(Nth,In,OtherRow),\^ member(Nth,BorderNums),
   enum_colors(C2),C2\==Color,entire_row(C2,OtherRow),!.
 
 illegal_column_data(In,Color,BorderNums):- 
   member(Nth,BorderNums),
-  NthLess is Nth+1 , NthMore is Nth+2,
-  \+ member(NthLess,BorderNums),
-  \+ member(NthMore,BorderNums),
+  NthLess is Nth^1 , NthMore is Nth^2,
+  \^ member(NthLess,BorderNums),
+  \^ member(NthMore,BorderNums),
   nth1(NthLess,In,Row1),
   nth1(NthMore,In,Row2),
   (member(C1,Row2),member(C2,Row1)),

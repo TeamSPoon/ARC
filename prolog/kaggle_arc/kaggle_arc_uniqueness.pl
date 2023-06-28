@@ -255,8 +255,8 @@ solve_via_scene_change(TestID):-
   dynamic(arc_test_property/4),
   clear_object_dependancy(TestID),
   print_test(TestID),
-  do_menu_key('i'),
-  %print_individuals(TestID),
+  %do_menu_key('i'),
+  print_individuals(TestID),
   %forall(kaggle_arc(TestID, ExampleNum, _, _), ignore(print_individuals(TestID, ExampleNum))),
 
   %repress_some_output(learn_solve_via_grid_change(TestID)),
@@ -311,7 +311,7 @@ indv_options(Opt):-
  %no_repeats_var(Opt),
  member(Opt,
      [
-      i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(false)),
+      i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(edge)),
       %i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(edge)),
       %i_opts(shapes(none), count_equ(NF), colors(mono), dirs(diags_nsew), incl_bg(edge)),
 
@@ -836,9 +836,8 @@ get_object_dependancy(InfoStart, TestID, ExampleNum, ActionGroupIn, ActionGroupO
       calc_o_d_recursive(VM, ActionGroupIn, InfoIn, [], LHSObjsOrdered, RHSObjsOrdered, ActionGroupOut, Groups))))))), !.
 
 
-needs_arrange(IndvS,IndvR):- once((largest_first(mass,IndvS,Indv),reverse(Indv,IndvR))).
-needs_arrange(IndvS,IndvR):- once((fix_dupes(IndvS,IndvR))).
-
+needs_arrange(IndvS,IndvR):- once((largest_first(mass,IndvS,Indv),reverse(Indv,IndvR))),IndvR\==[].
+needs_arrange(IndvS,IndvR):- once((fix_dupes(IndvS,IndvR))),IndvR\==[].
 
 
 calc_o_d_recursive(_VM, [],             _Info, PrevRules,    _,     _,            [], PrevRules):-!.
@@ -848,17 +847,17 @@ calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, Acti
     needs_arrange(RHSObjs,RHS), RHSObjs\=@=RHS,!, calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHS, ActionGroupFinal, Groups).
 
 calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups):-
-  ignore(((   
-   length(PrevRules, PR),
-   dash_chars,
-   pp_ilp([Info,
-        prevRules=count(PR),
-        narrativeIn = ActionGroupIn]),
-   length(LHSObjs, CI),
-   (CI=<10-> pp_ilp(in=LHSObjs);pp_ilp(in(CI)=call(print_grid(LHSObjs)))),
-   length(RHSObjs, CO),
-   (CO=<10-> pp_ilp(out=RHSObjs);pp_ilp(out(CO)=call(print_grid(RHSObjs))))))),
+  
 
+ \+ \+ ignore(((
+  (LHSObjs\==[];RHSObjs\==[]),
+   length(PrevRules, PR), dash_chars,
+   \+ \+ pp_ilp([Info, prevRules=count(PR), narrativeIn = ActionGroupIn]),
+   length(LHSObjs, CI), length(RHSObjs, CO), 
+   print_ss(wqs(step_ci_co(CI, CO)), LHSObjs, RHSObjs),
+   if_t(CI<10,pp_ilp(in=LHSObjs)), 
+   if_t(CO<10,pp_ilp(out=RHSObjs))))),
+   
   %( LHSObjs==[] -> NLHSObjs=VM.objs ; NLHSObjs=LHSObjs ),
   NLHSObjs=LHSObjs,
   calc_o_d_recursively(VM, ActionGroupIn,   Info, PrevRules, NLHSObjs, RHSObjs,
@@ -892,12 +891,26 @@ calc_o_d_recursive(_VM, ActionGroupOut, _Info, PrevRules,   [],     [], ActionGr
 :- discontiguous calc_o_d_recursively/11.
 
 
-% Endings
+% Endings RHS==[]
 calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
-                ActionGroupOut, InfoOut, RulesOut, [], []):-
+                ActionGroupOut, InfoOut, RulesOut, [], []):- 
+  RHSObjs==[],!,
   End = balanced_or_delete_leftovers(Ending, _),
   ActionGroupIn=[End|ActionGroup], !,
   ActionGroupOut= ActionGroup, !,
+
+  ((calc_o_d_recursive_end(Ending, Info, PrevRules, LHSObjs, RHSObjs,
+                InfoOut, RulesOut))), !,
+  pp_ilp(calc_o_d_recursive_end=RulesOut), !.
+
+
+% Endings
+calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
+                ActionGroupOut, InfoOut, RulesOut, [], []):-  
+  End = balanced_or_delete_leftovers(Ending, _),
+  ActionGroupIn=[End|ActionGroup], !,
+  ActionGroupOut= ActionGroup, !,
+
   ((calc_o_d_recursive_end(Ending, Info, PrevRules, LHSObjs, RHSObjs,
                 InfoOut, RulesOut))), !,
   pp_ilp(calc_o_d_recursive_end=RulesOut), !.
@@ -1027,7 +1040,6 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
       ac_unit(add_independant_scenery(RuleRHS),LHS)
       ],RulesOut).
   
-
 
 enum_prop_type_required(L):-findall(R,prop_type_required(R),L).
 get_type_prop(Right,Type,Prop):- type_prop(Type,Prop),sub_cmpd(Prop,Right).
@@ -2690,7 +2702,7 @@ identical_props([Ex|ExampleObjs],P):-
          (member(E,OProps),E=@=O)).
 
 
-each_has_more_than_one_non_assumable(LR,P,ExampleObjs):- 
+each_has_more_than_one_non_assumable(LR,P,ExampleObjs):- happy_ending(_)\=P,
   forall(member(O,ExampleObjs),has_more_than_one_non_assumable(O)),
   \+ \+ once((member(O,ExampleObjs),into_lhs(O,LHS), non_assumables(LHS,NonDebug),pp_ilp(non_assumables(LR,P)=NonDebug))),
   trace,!.
@@ -3294,7 +3306,7 @@ maybe_remove_bg(RHSObjs, RHSObjs).
 
 
 is_mapping_list([O|GrpL]):- is_mapping(O), is_list(GrpL), maplist(is_mapping, GrpL).
-is_mapping(Grp):- is_functor(l2r, Grp).
+is_mapping(Grp):- fail, is_functor(l2r, Grp).
 
 get_mapping_info(l2r(Info, In, Out), Info, In, Out).
 get_mapping_info_list(GRP, Info, Dir):-
@@ -4310,6 +4322,19 @@ clear_scene_rules(TestID):-
   forall(arc_cache:trans_rule_db(TestID, ExampleNum, Ctx, Rule),
      ignore((/*Rule \= l2r(_, _, _), */retract(arc_cache:trans_rule_db(TestID, ExampleNum, Ctx, Rule))))).
 
+out_is_one_in:- arc_common_property(rev(comp(cbg(black),o-i,X))),!,X=ogs.
+
+calc_o_d_recursive_end(Ending, InfoIn, PrevRules, MLHSObjs, RHSObjs,
+                    InfoOut, RulesOut):- out_is_one_in,!,
+    
+  my_partition(is_mapping, MLHSObjs, _Mappings, LHSObjsFGBG),
+  my_partition(is_bg_object, LHSObjsFGBG, _LBGObjs, LFGObjs),
+  length(LFGObjs, N),
+  RHSObjs == [], LFGObjs\==[], !, member_of_relax(ending(Ending), InfoIn), !, Ending = leftover(delete(N)),
+  InfoOut =  [type(ending(Ending))|InfoIn], sub_cmpd(testid(TestID), InfoIn), sub_cmpd(example(ExampleNum), InfoIn),
+  append_LR(PrevRules, [l2r(Info, LFGObjs, []), l2r(Info, [], []),
+  call(assert_test_property(TestID, ExampleNum, ending, ending(Ending)))], RulesOut).
+
 % HAPPY ENDINGS
 calc_o_d_recursive_end(Ending, InfoIn, PrevRules, MLHSObjs, RHSObjs,
                     InfoOut, RulesOut):-
@@ -4324,16 +4349,6 @@ calc_o_d_recursive_end(Ending, InfoIn, PrevRules, MLHSObjs, RHSObjs,
      [l2r(InfoOut, [], []), call(assert_test_property(TestID, ExampleNum, ending, ending(Ending)))],
      RulesOut))).
 
-calc_o_d_recursive_end(Ending, InfoIn, PrevRules, MLHSObjs, RHSObjs,
-                    InfoOut, RulesOut):-
-
-  my_partition(is_mapping, MLHSObjs, _Mappings, LHSObjsFGBG),
-  my_partition(is_bg_object, LHSObjsFGBG, _LBGObjs, LFGObjs),
-  length(LFGObjs, N),
-  RHSObjs == [], LFGObjs\==[], !, member_of_relax(ending(Ending), InfoIn), !, Ending = leftover(delete(N)),
-  InfoOut =  [type(ending(Ending))|InfoIn], sub_cmpd(testid(TestID), InfoIn), sub_cmpd(example(ExampleNum), InfoIn),
-  append_LR(PrevRules, [l2r(Info, LFGObjs, []), l2r(Info, [], []),
-  call(assert_test_property(TestID, ExampleNum, ending, ending(Ending)))], RulesOut).
 
 calc_o_d_recursive_end(Ending, InfoIn, PrevRules, MLHSObjs, RHSObjs,
                     InfoOut, RulesOut):-

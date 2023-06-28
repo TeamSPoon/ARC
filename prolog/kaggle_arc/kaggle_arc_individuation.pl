@@ -27,7 +27,8 @@ o1 to o1
 :- multifile toplevel_individuation/1. 
 
 
-:- ensure_loaded(kaggle_arc_individuation_pbox_dpg).
+%:- ensure_loaded(kaggle_arc_individuation_pbox_dpg).
+:- ensure_loaded(kaggle_arc_individuation_pbox).
 
 
 individuation_macros(do_ending, [
@@ -551,6 +552,7 @@ special_sizes_v_h_sorted_l_s(VM,H,V):-
 
 special_sizes_v_h_sorted_s_l(VM,H,V):- 
   gather_special_sizes_v_h_sorted_s_to_l(VM,SizesR),member(size2D(H,V),SizesR),H>0,V>0.
+
 
 
 
@@ -1080,11 +1082,11 @@ individuate_object(VM,GID,SubProgram,OnlyNew,WasInside):-
    addObjects(VM,WasInside).
 
 
-this_grid_is_multiple_of_other(CACHE):-
+/*this_grid_is_multiple_of_other(CACHE):-
   CACHE.h=TGX,CACHE.v=TGY,CACHE.ogx=OGX,CACHE.ogy=OGY,
     (TGX > OGX ; TGY > OGY), !, % this grid is larger in some way
   0 is TGX rem OGX, 0 is TGX rem OGY. % This grid size is multiple of other grid
-
+*/
 
 % =====================================================================
 is_fti_step(consider_other_grid).
@@ -1951,22 +1953,27 @@ compile_and_save_current_test_pt_2(_TestID,_):-
    mapgrid(cell_minus_cell,O,I,OMinusI),
    print_grid(early_o_minus_i,OMinusI),!.
 
-cell_minus_cell(I,O,M):- is_grid(I),!,mapgrid(cell_minus_cell1,I,O,M),!.
-cell_minus_cell(I,O,M):- cell_minus_cell1(I,O,M),!.
+cell_minus_cell(I,O,M):- is_grid(I),!,find_bgc(I+O,BG),mapgrid(cell_minus_cell1(BG),I,O,M),!.
+cell_minus_cell(I,O,M):- cell_minus_cell1(_BG,I,O,M),!.
 
-cell_minus_cell1(I,O,M):- I=@=O, M=bg.
-cell_minus_cell1(SymC,Cell,Sym-O):- has_sym(SymC,Sym,C),!,cell_minus_cell1(C,Cell,O).
-cell_minus_cell1(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,cell_minus_cell1(Cell,C,O).
-cell_minus_cell1(I,_,I).
+cell_minus_cell1(BG,I,O,Sym-M):- I=@=O,   has_sym(I,Sym,C),!, (is_bg_color(C)-> M = C ; M=BG).
+cell_minus_cell1(BG,I,O,M):- I=@=O,(is_bg_color(I)-> (BG=I,M = I) ; M = BG),!.
+cell_minus_cell1(BG,SymC,Cell,Sym-O):- has_sym(SymC,Sym,C),!,cell_minus_cell1(BG,C,Cell,O).
+cell_minus_cell1(BG,Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,cell_minus_cell1(BG,Cell,C,O).
+%cell_minus_cell1(BG,I,_,I):- var(BG), is_bg_color(I), !,I=BG.
+%cell_minus_cell1(BG,I,O,I):- var(BG), is_bg_color(O), !,I=BG.
+cell_minus_cell1(_,I,_,I).
 
-mono_cell_minus_cell(I,O,M):- is_grid(I),!,mapgrid(mono_cell_minus_cell1,I,O,M),!.
-mono_cell_minus_cell(I,O,M):- mono_cell_minus_cell1(I,O,M),!.
+mono_cell_minus_cell(I,O,M):- is_grid(I),!,find_bgc(I+O,BG),mapgrid(mono_cell_minus_cell1(BG),I,O,M),!.
+mono_cell_minus_cell(I,O,M):- mono_cell_minus_cell1(_BG,I,O,M),!.
 
 
-mono_cell_minus_cell1(I,O,M):- is_fg_color(I),is_fg_color(O), M=bg.
-mono_cell_minus_cell1(SymC,Cell,Sym-O):- has_sym(SymC,Sym,C),!,mono_cell_minus_cell1(C,Cell,O).
-mono_cell_minus_cell1(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,mono_cell_minus_cell1(Cell,C,O).
-mono_cell_minus_cell1(I,_,I).
+mono_cell_minus_cell1(BG,I,O,M):- is_fg_color(I),is_fg_color(O), M=BG.
+mono_cell_minus_cell1(BG,SymC,Cell,Sym-O):- has_sym(SymC,Sym,C),!,mono_cell_minus_cell1(BG,C,Cell,O).
+mono_cell_minus_cell1(BG,Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,mono_cell_minus_cell1(BG,Cell,C,O).
+%mono_cell_minus_cell1(BG,I,_,I):- var(BG),is_bg_color(I),!,I=BG.
+%mono_cell_minus_cell1(BG,I,O,I):- var(BG),is_bg_color(O),!,O=BG.
+mono_cell_minus_cell1(_,I,_,I).
 
 lessThan(How,A,B):- call(How,A,AA),call(How,B,BB), AA < BB.
 
@@ -3306,28 +3313,31 @@ vm_subst(Cell,Zero,VM):-
   !.
 
 
-
+find_bgc_else(That,BG,Else):- 
+  find_bgc(That,BG),
+  ignore((Else=BG)).
+find_bgc(That,BG):- ignore((sub_term(BG,That ),is_bg_color(BG))),!.
 % =====================================================================
 is_fti_step(fg_intersections).
 % =====================================================================
-fg_intersectiond(This,That,Inter):- is_grid(This),!,mapgrid(fg_intersectiond1,This,That,Inter),!.
-fg_intersectiond(This,That,Inter):- fg_intersectiond1(This,That,Inter).
+fg_intersectiond(This,That,Inter):- is_grid(This),!,find_bgc(This+That,BG),mapgrid(fg_intersectiond1(BG),This,That,Inter),!,ignore(BG=black).
+fg_intersectiond(This,That,Inter):- fg_intersectiond1(BG,This,That,Inter),ignore(BG=black).
 
-fg_intersectiond1(This,That,This):- This =@= That,!.
-fg_intersectiond1(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,fg_intersectiond1(Cell,C,O).
-fg_intersectiond1(SymC,Cell,Sym-O):- has_sym(SymC,Sym,C),!,fg_intersectiond1(C,Cell,O).
-fg_intersectiond1(_,_,bg).
+fg_intersectiond1(_,This,That,This):- This =@= That,!.
+fg_intersectiond1(BG,Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,fg_intersectiond1(BG,Cell,C,O).
+fg_intersectiond1(BG,SymC,Cell,Sym-O):- has_sym(SymC,Sym,C),!,fg_intersectiond1(BG,C,Cell,O).
+fg_intersectiond1(BG,_,_,BG).
 %fg_intersectiond(_,_,Cell):-  get_black(Cell).
 
 
-fg_intersectiond_mono(This,That,Inter):- is_grid(This),!,mapgrid(fg_intersectiond_mono1,This,That,Inter),!.
-fg_intersectiond_mono(This,That,Inter):- fg_intersectiond_mono1(This,That,Inter).
+fg_intersectiond_mono(This,That,Inter):- is_grid(This),!, find_bgc(This+That,BG),mapgrid(fg_intersectiond_mono1(BG),This,That,Inter),!.
+fg_intersectiond_mono(This,That,Inter):- fg_intersectiond_mono1(_BG,This,That,Inter).
 
-fg_intersectiond_mono1(This,That,This):- This =@= That,!.
-fg_intersectiond_mono1(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,fg_intersectiond_mono1(Cell,C,O).
-fg_intersectiond_mono1(SymC,Cell,Sym-O):- has_sym(SymC,Sym,C),!,fg_intersectiond_mono1(C,Cell,O).
-fg_intersectiond_mono1(This,That,This):- is_fg_color(This),is_fg_color(That).
-fg_intersectiond_mono1(_,_,bg).
+fg_intersectiond_mono1(_BG,This,That,This):- This =@= That,!.
+fg_intersectiond_mono1(BG,Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,fg_intersectiond_mono1(BG,Cell,C,O).
+fg_intersectiond_mono1(BG,SymC,Cell,Sym-O):- has_sym(SymC,Sym,C),!,fg_intersectiond_mono1(BG,C,Cell,O).
+fg_intersectiond_mono1(_,This,This,That):- is_fg_color(This),is_fg_color(That).
+fg_intersectiond_mono1(BG,_,_,BG).
 
 
 cant_use_intersections:- 
@@ -3529,8 +3539,6 @@ all_ogs_123(StartGrid,Other,Hints):-
   all_ogs(StartGrid,Other,Hints1),
   all_ogs(Other,StartGrid,Hints2),
   append(Hints1,Hints2,Hints).
-
-
 
 about_i_or_o(_-OorT,OorT):-!. about_i_or_o(TrimIO,OorT):- arg(1,TrimIO,IO),!,about_i_or_o(IO,OorT). about_i_or_o(_,t).
 
@@ -5037,7 +5045,6 @@ merge_a_b(A,B,AA):-
   object_glyph(B,GlyphB),
   ignore((How ==[]-> nop(progress(shared_object(GlyphB->GlyphA))); 
     (progress(same_object(GlyphA,GlyphB,How))))).
-
 
 
 

@@ -2431,7 +2431,7 @@ compute_scene_change_pass1(TestID):-
 
 
 compute_scene_change_pass2(TestID):- 
-  retractall(ac_unit(TestID,_,_,_)),
+  retractall(ac_db_unit(TestID,_,_,_)),
     forall(pass2_rule(TestID,Ctx,P,PSame),
       assert_accompany_changed_db(TestID,Ctx,P,PSame)),
   print_scene_change_rules(compute_scene_change_pass2,TestID).

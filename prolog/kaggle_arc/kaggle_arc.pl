@@ -847,6 +847,8 @@ load_from_main:-
 :- initialization(make_grid_cache).
 :- initialization(gen_gids).
 
+%:- initialization(init_pbox).
+ 
 :- use_module(library(xlisting/xlisting_web)).
 :- use_module(library(xlisting/xlisting_console)).
 :- use_module(library(xlisting)).

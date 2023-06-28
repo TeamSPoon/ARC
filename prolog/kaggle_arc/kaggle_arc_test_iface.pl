@@ -748,32 +748,32 @@ with_test_grids(TestID,G,P):- forall_count(test_grids(TestID,G),my_menu_call((en
 
 
 % Hides solution grid from code
-if_no_peeking(tst+_,_,_):- \+ allow_peeking,!.
-     if_no_peeking(_,O,O).
+%if_no_peeking(tst+_,_,_):- \+ allow_peeking,!.
+if_no_peeking(_,O,O).
 
 kaggle_arc_safe(TestID,ExampleNum,I,O):- kaggle_arc(TestID,ExampleNum,I,OO),if_no_peeking(ExampleNum,OO,O). 
 
-test_pairs(TestID,I,O):- test_pairs(TestID,_ExampleNum,I,O).
+task_pairs(TestID,I,O):- task_pairs(TestID,_ExampleNum,I,O).
 
-test_pairs(TestID,ExampleNum,I,O):- get_pair_mode(entire_suite), !,ensure_test(TestID), kaggle_arc_safe(TestID,ExampleNum,I,O).
-test_pairs(_TestID,ExampleNum,I,_O):- nonvar(ExampleNum),nonvar(I),!.
+task_pairs(TestID,ExampleNum,I,O):- get_pair_mode(entire_suite), !,ensure_test(TestID), kaggle_arc_safe(TestID,ExampleNum,I,O).
+task_pairs(_TestID,ExampleNum,I,_O):- nonvar(ExampleNum),nonvar(I),!.
 
-test_pairs(TestID_IN,ExampleNum,I,O):- get_pair_mode(whole_test), ensure_test(TestID_IN,TestID),!, %ignore(ExampleNum=trn+_), 
+task_pairs(TestID_IN,ExampleNum,I,O):- get_pair_mode(whole_test), ensure_test(TestID_IN,TestID),!, %ignore(ExampleNum=trn+_), 
   kaggle_arc_safe(TestID,ExampleNum,I,O).
-%test_pairs(TestSpec,ExampleNum,I,O):- compound(TestSpec),(TestSpec = (TestID>ExampleNum)),testspec_to_pairs(TestSpec,TestID,ExampleNum,I,O).
+%task_pairs(TestSpec,ExampleNum,I,O):- compound(TestSpec),(TestSpec = (TestID>ExampleNum)),testspec_to_pairs(TestSpec,TestID,ExampleNum,I,O).
 
-%test_pairs(TestID_IN,ExampleNum,I,O):- get_pair_mode(whole_test), ensure_test(TestID_IN,TestID),!,kaggle_arc_safe(TestID,ExampleNum,I,O).
-%test_pairs(TestID_IN,ExampleNum,I,O):- get_pair_mode(single_pair), ensure_test(TestID_IN,TestID),!,kaggle_arc_safe(TestID,ExampleNum,I,O).
+%task_pairs(TestID_IN,ExampleNum,I,O):- get_pair_mode(whole_test), ensure_test(TestID_IN,TestID),!,kaggle_arc_safe(TestID,ExampleNum,I,O).
+%task_pairs(TestID_IN,ExampleNum,I,O):- get_pair_mode(single_pair), ensure_test(TestID_IN,TestID),!,kaggle_arc_safe(TestID,ExampleNum,I,O).
 
-test_pairs(TestID,ExampleNum,I,O):- ignore(ensure_test(TestID)), some_current_example_num(ExampleNum),
+task_pairs(TestID,ExampleNum,I,O):- ignore(ensure_test(TestID)), some_current_example_num(ExampleNum),
   kaggle_arc(TestID,ExampleNum,I,O).
 
-%with_task_pairs(TestID,I,O,P):- forall(test_pairs(TestID,I,O),my_menu_call((ensure_test(TestID),P))).
-testspec_to_pairs(Var,TestID,ExampleNum,I,O):- var(Var),!,test_pairs(TestID,ExampleNum,I,O).
+%with_task_pairs(TestID,I,O,P):- forall(task_pairs(TestID,I,O),my_menu_call((ensure_test(TestID),P))).
+testspec_to_pairs(Var,TestID,ExampleNum,I,O):- var(Var),!,task_pairs(TestID,ExampleNum,I,O).
 testspec_to_pairs(TestSpec,TestID,ExampleNum,I,O):- 
   testid_name_num_io(TestSpec,TestID,Example,Num,_IO), ExampleNum = Example+Num,!,
   ensure_test(TestID),kaggle_arc_safe(TestID,ExampleNum,I,O).
-  %test_pairs(TestID,ExampleNum,I,O).
+  %task_pairs(TestID,ExampleNum,I,O).
 
 for_each(Gen,Goal):-
   Gen,(Goal*->true;true).
@@ -790,7 +790,7 @@ with_test_pairs(TestID,ExampleNum,In,Out,Goal):-
 
 :- meta_predicate(with_task_pairs(?,?,?,?,0)).
 with_task_pairs(TestID,ExampleNum,I,O,P):- 
- for_each((test_pairs(TestID,ExampleNum,I,O)),
+ for_each((task_pairs(TestID,ExampleNum,I,O)),
   my_menu_call((
     ensure_test(TestID),
     set_example_num(ExampleNum),     
@@ -1466,7 +1466,7 @@ load_file_dyn_pfc( TestID,File):- asserta(has_loaded_file_dyn_pfc(File)),
  setup_call_cleanup(open(File,read,I),
      catch(load_dyn_stream(I),E,(print(E),catch(close(I),_,true),delete_file(File),retractall(has_loaded_file_dyn_pfc(File)))),
      catch(close(I),_,true)),!,
- retractall(ac_unit(TestID,_,_,_)).
+ retractall(ac_db_unit(TestID,_,_,_)).
 
 load_dyn_stream(I):-  
  repeat,read_term(I,Term,[]),unwonk_ansi(Term,TT),
@@ -1611,6 +1611,7 @@ force_clear_test:- get_current_test(TestID),force_clear_test(TestID).
 force_clear_test(TestID):-
   ensure_test(TestID),
   clear_training_now(TestID),
+  clear_test_now(TestID),
   clear_saveable_test_info_now(TestID),
   unload_test_file(TestID),
   delete_test_file(TestID).
@@ -1628,9 +1629,11 @@ clear_test_now(TestID):- ensure_test(TestID),
    clear_saveable_test_info_now(TestID),
    unload_test_file(TestID).
 
-clear_saveable_test_info(TestID):- ensure_test(TestID),warn_skip(clear_saveable_test_info(TestID)),!.
+clear_saveable_test_info(TestID):- ensure_test(TestID),clear_saveable_test_info(TestID),!.
 clear_saveable_test_info_now(TestID):- 
    ensure_test(TestID),
+   retractall(arc_test_property(TestID,_,_,_)),
+   retractall(arc_cache:individuated_cache(TestID,_,_,_,_)),
    saveable_test_info(TestID,Info),
    erase_refs(Info).
    
@@ -2427,7 +2430,7 @@ test_p2a(P2):-
   (get_pair_mode(single_pair);get_pair_mode(whole_test)),!,
   append_termlist(P2,[N1,'$VAR'('Result')],N2), 
   put_attr(G2,expect_p2,Expected),
-  forall_count(test_pairs(_,G1,Expected),     
+  forall_count(task_pairs(_,G1,Expected),     
      forall((set_current_test(G1),call(P2,G1,G2)),
        ((grid_to_gid(G1,N1),
        once(ignore((grid_arg(G2,GR,Rest),print_side_by_side(red,G1,N1-Rest,_LW,GR,(?-(N2))),
@@ -2684,8 +2687,8 @@ with_current_test(P1,TestID):- doall(with_current_test(P1,TestID,_)).
 with_current_test(P1,TestID,ExampleNum):- \+ ground(ExampleNum),get_pair_mode(single_pair),!,
   with_pair_mode(whole_test,with_current_test(P1,TestID,ExampleNum)).  
 with_current_test(P1,TestID,ExampleNum):-  Call = with_current_test(P1,TestID),
-  \+ ground(Call), \+ \+ ((test_pairs(TestID,ExampleNum,_,_), ground(Call))),!,
-  test_pairs(TestID,ExampleNum,_,_),
+  \+ ground(Call), \+ \+ ((task_pairs(TestID,ExampleNum,_,_), ground(Call))),!,
+  task_pairs(TestID,ExampleNum,_,_),
   call(Call). 
 with_current_test(P1,TestID,ExampleNum):- var(TestID),!,ensure_test(TestID),with_current_test(P1,TestID,ExampleNum).
 with_current_test(P1,TestID,ExampleNum):- var(ExampleNum),!,with_task_pairs(TestID,ExampleNum,_I,_O, with_current_test(P1,TestID,ExampleNum)).
@@ -2700,7 +2703,7 @@ with_current_test(P1,TestID,ExampleNum,I,O):- \+ ground(ExampleNum),get_pair_mod
 
 with_current_test(P1,TestID,ExampleNum,I,O):- 
   Call = with_current_test(P1,TestID,ExampleNum,I,O),
-  \+ ground(Call), test_pairs(TestID,ExampleNum,I,O), ground(Call),call(Call). 
+  \+ ground(Call), task_pairs(TestID,ExampleNum,I,O), ground(Call),call(Call). 
 
 with_current_test(P1,TestID,ExampleNum,I,O):- var(TestID),!,ensure_test(TestID),with_current_test(P1,TestID,ExampleNum,I,O).
 %with_current_test(P1,TestID,ExampleNum,I,O):- var(ExampleNum),!,with_task_pairs(TestID,ExampleNum,_I,_O, with_current_test(P1,TestID,ExampleNum,I,O)).

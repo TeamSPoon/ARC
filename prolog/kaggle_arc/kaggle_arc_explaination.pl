@@ -902,21 +902,26 @@ ensure_individuals(TestID,ExampleNum,GridIn,GridOut):-
     FinalIndvSMode = complete,
      repress_output(individuate_pair(FinalIndvSMode,GridIn,GridOut,_,_)),!.
 
- print_individuals(TestID):- ensure_test(TestID), print_best_individuals(TestID),!.
+%print_individuals(TestID):- ensure_test(TestID), print_best_individuals(TestID),!.
 %print_individuals1(TestID):- ensure_test(TestID), deduce_individuator(TestID),!.
 
-print_individuals2(TestID):-
- ((ensure_test(TestID),
+print_individuals(TestID):-
+ must_det_ll((
+
+   ensure_test(TestID),
      nop(deduce_individuator(TestID)),
- banner_lines(blue,4),
+   banner_lines(blue,4),
    ignore((never_entire_suite,set_flag(indiv,0))),%compute_and_show_test_hints(TestID),
+  
    forall(kaggle_arc(TestID,ExampleNum,_,_), 
       ignore(ensure_individuals(TestID,ExampleNum))),
+  
    banner_lines(orange,10),
-
- print_groups(TestID),
- forall(kaggle_arc(TestID,ExampleNum,_,_),
-      ignore(print_individuals(TestID,ExampleNum))),
+  
+   print_groups(TestID),
+   forall(kaggle_arc(TestID,ExampleNum,_,_),
+        ignore(print_individuals(TestID,ExampleNum))),
+  
    banner_lines(blue,7),
    forall(kaggle_arc(TestID,ExampleNum,_,_), 
       ignore(print_individual_objects(TestID,ExampleNum))),
