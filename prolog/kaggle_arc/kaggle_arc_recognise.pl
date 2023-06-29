@@ -1004,16 +1004,16 @@ show_match(H,V,C,F,G):-
   nl,dash_chars,!.
 
 show_m_pair(_TF,S,H,V,F,G):- 
- must_det_ll((
-  H2 is H-3, V2 is V-3,
+ my_maplist(must_det_ll,
+ [H2 is H-3, V2 is V-3,
   offset_grid(H2,V2,F,OF),
-  constrain_grid(CntDwn,f,_TrigF,OF,FF),
+  constrain_grid(CntDwn,f,_TrigF,OF,FF),!, 
   print_grid("find",FF),
   writeg(FF),
   dash_chars(60,' '),ignore(call(S)),nl,
-  constrain_grid(CntDwn,s,_TrigG,G,CG),
-  print_grid("find on",CG),
-  writeg(CG))).
+  constrain_grid(CntDwn,s,_TrigG,G,CG),!,
+  print_grid("find on",CG)]),!,
+  writeg(CG).
 
 
 print_fgrid(GH,GV,F):- ((\+ \+ ((constrain_grid(cntDwn,f,_Trig,F,_FG),print_grid(GH,GV,F),nl)))),!.
@@ -1612,7 +1612,7 @@ ascii_to_growthchart(Text,G):- maybe_fix_ascii(Text,Ascii0), !, ascii_to_growthc
 ascii_to_growthchart(Text,GrowthChart):-  
   atomics_to_string(Rows1,'\n',Text),Rows1=[_|Rows],mapgroup(atom_chars,Rows,GrowthChart),!.
 
-:- set_luser_default(find_rule,regular).
+:- luser_default(find_rule,regular).
 % ?- h666(X),text_to_grid(X,G).
 
 

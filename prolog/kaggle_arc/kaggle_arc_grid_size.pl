@@ -12,124 +12,6 @@
 :- dynamic(muarc_tmp:grid_size_prediction/4).
 
 
-predict_output_size(TestID):- 
-  all_arc_test_name(TestID),add_training_grids(Constraints,TestID), 
-  once((term_variables(Constraints,Vs), 
-   print_test(TestID),forall(limit(1,(label(Vs))),pp(Constraints)))).
-
-add_training_grids(Constraints,TestID):- \+ \+ kaggle_arc(TestID,_,_,_),!,
-  findall(i_o(IX,IY,IM,OX,OY,OM),
-   (kaggle_arc(TestID,trn+_,I,O), once((grid_size(I,IX,IY),grid_size(O,OX,OY),mass(I,IM),mass(O,OM)))),List),!,
-  add_training_grids(Constraints,List).
-add_training_grids(Constraints,List):- is_list(List),!,maplist(add_training_grids(Constraints),List).
-%add_training_grids(Constraints,i_o(I,O)):- grid_size(I,IX,IY),grid_size(O,OX,OY),!, add_training_grids(Constraints,i_o(IX,IY,OX,OY)).
-
-
-add_training_grids(Constraints,i_o(X,Y,M,OX,OY,OM)):- !,
-  once((
-        (Constraints = 
-           [
-            ProofX,
-            ProofY,
-            om is ((im - YR) * YT // YD + YP),
-            %ProofM,
-            []]),
-
-        Thirty #= 30,
-        NThirty #= -1*Thirty,
-        LPF #= 13, % largest prime factor that fits under 30
-
-
-        make_converts_xy(wide,OX,X,LPF,1,Thirty,ProofX),
-        make_converts_xy(tall,OY,Y,LPF,1,Thirty,ProofY),
-
-        Y in 1..Thirty,
-        OY in 1..Thirty,
-        YR in NThirty..Thirty, 
-        YR in 0..LPF, 
-        YT in 0..LPF, 
-        YD in 0..LPF, 
-        (YT#=0 #==>  YD#=1),
-        (YT #\= YD #\/ YD#=1),
-        YP in NThirty..Thirty, 
-        OY #= ((Y - YR) * YT // YD + YP),
-
-        
-        Area #= X*Y,
-        OArea #= OX*OY,
-        OM in 0..OArea, 
-        NArea #= -1*Area,
-        OM #= ((M - MR) * MT // MD + MP),
-
-        M in 0..Area,
-        MR in NArea..Area, 
-        MR in 0..LPF, 
-        MT in 0..LPF, 
-        MD in 0..LPF, 
-       (MT#=0 #==>  MD#=1),
-       (MT #\= MD #\/ MD#=1),
-        MP in NArea..Area, 
-        make_converts_mass(mass,OM,M,LPF,0,Area,OArea,ProofM),
-    true)).
-
-/*
-
-
-add_training_grids(Constraints,i_o(X,Y,M,OX,OY,OM)):-
- once((
-   (Constraints =  [ProofX, ProofY, ProofM]),
-
-    Thirty is 30, Low1 = 1,
-    LPF is 13, % largest prime factor that fits under 30
-    make_converts_xy(wide,OX,X,LPF,Low1,Thirty,ProofX),
-    make_converts_xy(tall,OY,Y,LPF,Low1,Thirty,ProofY),
-    Area is X*Y, OArea is OX*OY,
-    nop(make_converts_mass(mass,OM,M,LPF,0,Area,OArea,ProofM)))).
-*/
-make_converts_mass(S,OM,M,LPF,Low0,Area,OArea,Proof):-
-    NArea #= -1*Area,
-    MP in NArea..Area, 
-    Proof = (S is ((i(S) - MR) * MT // MD + MP)),
-    OM in Low0..OArea,    
-    M in Low0..Area,
-    MR in NArea..Area, 
-    MR in 0..LPF, 
-    MT in 0..LPF, 
-    MD in 0..LPF, 
-  % (MT#=0 #==> MD#=1),
-   (MT #\= MD #\/ MD#=1),
-   OM #= ((M - MR) * MT // MD + MP),
-  Area #= X*Y,
-  OArea #= OX*OY,
-  OM in 0..OArea, 
-  NArea #= -1*Area,
-  OM #= ((M - MR) * MT // MD + MP),
-
-  M in 0..Area,
-  MR in NArea..Area, 
-  MR in 0..LPF, 
-  MT in 0..LPF, 
-  MD in 0..LPF, 
- (MT#=0 #==>  MD#=1),
- (MT #\= MD #\/ MD#=1),
-  MP in NArea..Area.
-
-
-make_converts_xy(S,OX,X,LPF,Low1,Thirty,Proof):-
-  %Proof = (((S) is (in(S) - XR) * XT // XD + XP),low1=Low1,NThirty #= -1*Thirty),
-  Proof = (((S) is (in(S) - XR) * XT // XD + XP)),
-       NThirty #= -1*Thirty,
-        X in Low1..Thirty,
-        OX in Low1..Thirty,
-        XR in NThirty..Thirty, 
-        XR in 0..LPF, 
-        XT in 0..LPF, 
-        XD in 0..LPF,
-        (XT#=0 #==>  XD#=1),
-        ((XT#=0 #/\ XD#=1) #\/ (XT #\= XD #\/ XD#=1)),
-        XP in NThirty..Thirty, 
-        OX #= ((X - XR) * XT // XD + XP).
-
 store_grid_size_predictions:- forall_count(all_arc_test_name(TestID), learn_grid_size(TestID)). 
 
 test_grid_size_prediction:- forall_count(all_arc_test_name(TestID), test_predict_grid_size(TestID)). 
@@ -292,11 +174,7 @@ with_other_grid(OtherGrid,Goal):-
   locally(nb_setval(other_grid,OtherGrid),
     (set_target_grid(OtherGrid),Goal)).
 
-
 other_grid(_,OtherGrid):- luser_getval(other_grid,OtherGrid),is_grid(OtherGrid),!.
-other_grid(In,OtherGrid):- get_current_test(TestID),
-  kaggle_arc(TestID,_ExampleNum,I,O),!,
-  (In == I -> OtherGrid=O ; OtherGrid=I).
 other_grid(_,OtherGrid):- peek_vm(VM), OtherGrid = VM.target_grid, is_grid(OtherGrid),!.
 other_grid(Grid,OtherGrid):- is_other_grid(Grid,OtherGrid),!.
 other_grid(Grid,OtherGrid):- \+ is_grid(Grid),!, into_grid(Grid,ThisGrid),  Grid\==ThisGrid,!,other_grid(ThisGrid,OtherGrid).

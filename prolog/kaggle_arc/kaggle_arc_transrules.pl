@@ -5,14 +5,13 @@
   unless permission or license is granted (contact at business@logicmoo.org)
 */
 
-end_of_file.
 
 rhs_ground(G):- ground(G),!.
 rhs_ground(G):- nop(writeln(G)),!.
 
 ac_rules(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
 ac_rules(TestID,Ctx,P,PSame):- 
-  ac_unit(TestID,Ctx,P,Same), \+ never_use_horn_rhs(P),
+  ac_unit_db(TestID,Ctx,P,Same),
   include(not_debug_info,Same,PSame), 
   %Same=PSame,
   PSame\==[].
@@ -25,41 +24,40 @@ remove_debug_info(List,NoDebug):- is_list(List), !, maplist(remove_debug_info,Li
 remove_debug_info(List,NoDebug):- compound_name_arguments(List,F,AA),
   maplist(remove_debug_info,AA,CC),!, compound_name_arguments(NoDebug,F,CC).
 
-ac_unit(TestID,Ctx,P,Same):- ac_listing(TestID,Ctx,P,Same).
+ac_unit_db(TestID,Ctx,P,Same):- ac_listing(TestID,Ctx,P,Same),include(not_debug_info,Same,PSame), PSame\==[].
 
 ac_listing(List,Ctx,P,PSame):- is_list(List),!,member(Stuff,List),Stuff=..[_,Ctx,P,PSame].
-%ac_listing(TestID,Ctx,P->ac_db_unit,PSame):- ac_db_unit(TestID,Ctx,P,PSame).
-ac_listing(TestID,Ctx,P,PSame):- (ac_db_unit(TestID,Ctx,P,PSame)*->true;pass2_rule(TestID,Ctx,P,PSame)), \+ never_use_horn_rhs(P).
+%ac_listing(TestID,Ctx,P->ac_unit_db,PSame):- ac_unit_db(TestID,Ctx,P,PSame).
+ac_listing(TestID,Ctx,P,PSame):- ac_unit(TestID,Ctx,P,PSame)*->true;pass2_rule(TestID,Ctx,P,PSame).
 %ac_listing(TestID,Ctx,P,[iz(info(prop_can))|PSame]):- prop_can(TestID,Ctx,P,PSame).
 %ac_listing(TestID,Ctx,P,[pass2|PSame]):- pass2_rule(TestID,Ctx,P,PSame), \+ ac_rules(TestID,Ctx,P,PSame).
 
-/*
-ac_listing(TestID,rules,P->Ctx->current,LHS):- 
+
+ac_info(TestID,rules,P->Ctx->current,LHS):- 
   member(Ctx,[in_out,in_out_out,s(_)]),
-  synth_program_from_one_example(TestID,Ctx,R),
+  trans_rules_current_members(TestID,Ctx,R),
   rule_to_pcp(R,P,LHS).
-ac_listing(TestID,rules,P->Ctx->combined,LHS):- fail,
+ac_info(TestID,rules,P->Ctx->combined,LHS):- fail,
   member(Ctx,[in_out,in_out_out,s(_)]),
   trans_rules_combined_members(TestID,Ctx,R),
   rule_to_pcp(R,P,LHS).
-*/
+
 show_time_of_failure(_TestID):- !.
 show_time_of_failure(TestID):- 
     print_scene_change_rules3(show_time_of_failure,
-       ac_listing,TestID).
+       ac_info,TestID).
 
-rule_to_pcp5(TestID,R,Ctx,P,LHS):- is_list(R),!,
- member(E,R),rule_to_pcp(TestID,E,Ctx,P,LHS).
-rule_to_pcp5(_TestID,R,Ctx,P0,LHS):- R =..[ac_unit|Rest],append(_,[Ctx,P0,LHS],Rest),!.
-rule_to_pcp5(_TestID,R,Ctx,P0,LHS):- 
+rule_to_pcp(TestID,R,Ctx,P,LHS):-
+  is_list(R),!,member(E,R),rule_to_pcp(TestID,E,Ctx,P,LHS).
+rule_to_pcp(_TestID,R,Ctx,P,LHS):- 
   must_det_ll((
   find_rhs(R,P),
-  find_lhs(R,Conds0),listify(Conds0,Conds),
-  subst001(R,P,p,RR), subst001(RR,Conds,conds,RRR),
+  find_lhs(R,Conds),
+  subst(R,P,p,RR), subst(RR,Conds,conds,RRR),
   append(Conds,[iz(info(RRR))],LHS),
-  ignore((sub_compound(ctx(Ctx),R))))),!,P0=P.
+  ignore((sub_compound(ctx(Ctx),R))))).
 
-%pcp_to_rule(TestID,Ctx,P,LHS,rule(TestID,Ctx,P,LHS)).
+pcp_to_rule(TestID,Ctx,P,LHS,rule(TestID,Ctx,P,LHS)).
 
 
 %ac_rules(TestID,P,PSame):- ac_rules(TestID,_,P,PSame).
@@ -70,7 +68,7 @@ rule_to_pcp5(_TestID,R,Ctx,P0,LHS):-
 pass2_rule(TestID,Ctx,RHS,LHS):-   
   pass2_rule1(TestID,Ctx,RHS,LHS)*->true;
   pass2_rule2(TestID,Ctx,RHS,LHS)*->true;
-  fail.
+  pass2_rule3(TestID,Ctx,RHS,LHS)*->true.
 /*
 pass2_rule(TestID,Ctx,RHS,LHS):-
   findall_vset(Ctx-RHS,(pass2_rule1(TestID,Ctx,RHS,LHS);pass2_rule2(TestID,Ctx,RHS,LHS)),List),
@@ -84,19 +82,20 @@ pass2_rule1(TestID,Ctx,RHS,LHS):- fail,
   %Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,_ExampleNum,_),
   %arg(_,Rule,Info),
   must_det_ll((
-  rule_to_pcp5(TestID,Rule,Ctx,RHS,LHS))).
+  rule_to_pcp(TestID,Rule,Ctx,RHS,LHS))).
 
-pass2_rule2(TestID,Ctx,RHS0,LHS0):- 
+pass2_rule2(TestID,Ctx,RHS,LHS):- 
  ensure_test(TestID),
-  synth_program_from_one_example(TestID,Ctx,Rule),
+  trans_rules_current_members(TestID,Ctx,Rule),
   %Info = info(_Step,_IsSwapped,Ctx,_TypeO,TestID,_ExampleNum,_),
   %arg(_,Rule,Info),
   must_det_ll((
-  rule_to_pcp5(TestID,Rule,Ctx,RHS,LHS))),
-  RHS0=RHS, LHS0=LHS.
+  rule_to_pcp(TestID,Rule,Ctx,RHS,LHS))).
 
 
-%pass2_rule3(TestID,Ctx,edit(Type,different,P),[iz(info(propcan(true,Ctx)))|PSame]):- fail,ensure_test(TestID), ensure_props_change(TestID,Ctx,P).
+pass2_rule3(TestID,Ctx,edit(Type,different,P),[iz(info(propcan(true,Ctx)))|PSame]):- fail,
+  ensure_test(TestID), ensure_props_change(TestID,Ctx,P),
+  prop_can(TestID,IO,P,PSame), once((io_to_cntx(IO,Ctx),prop_type(P,Type))).
 
 /*pass2_rule(TestID,Ctx,RHS,[iz(info(Info))|LHS]):- 
  ensure_test(TestID),
@@ -108,6 +107,54 @@ pass2_rule2(TestID,Ctx,RHS0,LHS0):-
   arg(_,Rule,lhs(LHS)))),
   rhs_ground(RHS).
 */
+
+trans_rules_current_members1(TestID,Ctx,Rules):-
+  ensure_test(TestID),
+  ignore((ExampleNum=trn+_)),
+  kaggle_arc(TestID,ExampleNum,_,_),
+
+  obj_group_pair(TestID,ExampleNum,LHSObjs,RHSObjs), RHSObjs\==[],LHSObjs\==[],
+  Step=0,Ctx=in_out,IsSwapped=false,
+  normalize_objects_for_dependancy(TestID,ExampleNum,RHSObjs,LHSObjs,RHSObjsOrdered,LHSObjsOrdered),
+    %prinnt_sbs_call(LHSObjsOrdered,RHSObjsOrdered),  
+  TM = _{rhs:RHSObjsOrdered, lhs:LHSObjsOrdered},
+  calc_o_d_recursively(TestID,ExampleNum,TM,IsSwapped,Step,Ctx,[],LHSObjsOrdered,RHSObjsOrdered,Groups),
+  %pp_ilp(groups=Groups),
+  member(l2r(Info,In,Out),Groups),
+  into_list(In,InL),into_list(Out,OutL),trans_rule(Info,InL,OutL,TransRules), 
+  member(Rules,TransRules).
+  
+trans_rules_current_members(TestID,Ctx,Rules):-
+  ((fail,arc_cache:trans_rule_db(TestID,_ExampleNum1,Ctx,Rules),Rules\=l2r(_,_,_))*->true;
+    trans_rules_current_members1(TestID,Ctx,Rules)).
+
+trans_rules_combined_members(TestID,Ctx,CombinedM):-
+ ensure_test(TestID),
+ must_det_ll((findall(Rule,trans_rules_current_members(TestID,Ctx,Rule),Rules),
+  % must_det_ll(( \+ (member(R,[1|Rules]), is_list(R)))),!,
+  combine_trans_rules(TestID,Rules, Combined))),
+  % must_det_ll(( \+ (member(R,[2|Combined]), is_list(R)))),
+  member(CombinedM,Combined).
+
+combine_trans_rules( TestID,Rules, CombinedRules):-  compute_scene_change_pass_out(TestID,Rules, CombinedRules),!.
+combine_trans_rules(_TestID,Rules, CombinedRules):-
+  combine_trans_rules1(Rules, CombinedRules).
+
+combine_trans_rules_textually(R1,Rules,R,RulesN):- 
+  into_rhs(R1,RHS1),
+  same_functor(R1,R2),
+  select(R2,Rules,RulesN), % my_assertion(r1, \+ is_list(R1)), my_assertion(r2, \+ is_list(R2)),
+  into_rhs(R2,RHS2),
+  %into_step(R2,RHS2),
+  RHS1=@=RHS2,
+  merge_vals(R1,R2,R) % my_assertion(r, \+ is_list(R)),
+  .
+combine_trans_rules1([],[]):-!.
+combine_trans_rules1([R],[R]):-!.
+combine_trans_rules1([R1|Rules], CombinedRules):-
+  combine_trans_rules_textually(R1,Rules,R,RulesN),!, combine_trans_rules1([R|RulesN], CombinedRules).
+combine_trans_rules1([R|Rules], [R|CombinedRules]):- 
+  combine_trans_rules1(Rules, CombinedRules).
 
 
 
@@ -137,6 +184,21 @@ pass2_rule(TestID,IO,P,OutputRule):-
 %map_pairs_info(TestID,Ctx,P,Step):- !, map_pairs_info_io(TestID,_ExampleNum,Ctx,Step,_TypeO,_A,_B,_USame,_InFlatProps,UPB2),member(P,UPB2),nop(ok_deduce(P)).
 ensure_props_change(TestID,IO,P):-  props_change(TestID,IO,P).
 
+map_pairs_info(TestID,IO,P,Step):-
+  no_repeats_var(IOP),
+  map_pairs_info2(TestID,IO,P,Step),
+  ground(P),
+  IOP=(IO+P).
+
+%  ((var(P),has_propcounts(TestID))->props_change2(TestID,IO,P);true),
+map_pairs_info2(TestID,IO,P,_Step):- props_change2(TestID,IO,P).
+map_pairs_info2(TestID,IO,P,_Step):- 
+ var(P), \+ \+ ac_unit(TestID,IO,_,_), %!,
+  ac_unit(TestID,IO,P,_).
+map_pairs_info2(TestID,Ctx,P,Step):- 
+  arc_cache:prop_dep(TestID,_ExampleNum,Ctx,Info,_InL,_OutL,_USame,_InFlatProps,OutFlatProps),
+  sub_compound(step(Step),Info),
+  member(P,OutFlatProps).
 
 /*
 
@@ -179,35 +241,21 @@ map_pairs_info_io(TestID,ExampleNum,Ctx,Step,TypeO,InL,OutL,USame,UPA2,UPB2):-
 
 */
 
-% adds debugging to info/1
-trans_rule(Info,In,Out,Rules):- sub_cmpd(info(InfoL),Info),!,trans_rule(InfoL,In,Out,Rules).
-trans_rule(Info,In,Out,Clauses):- \+ is_list(In),!,trans_rule(Info,[In],Out,Clauses).
-trans_rule(Info,In,Out,Clauses):- \+ is_list(Out),!,trans_rule(Info,In,[Out],Clauses).
-trans_rule(Info,In,Out,Rules):- 
-  ( \+ sub_cmpd(oin(_),Info); \+ sub_cmpd(oout(_),Info)),
-  into_oids(In,OIDIns),into_oids(Out,OIDOuts),
-  append_sets(Info,[oin(OIDIns),oout(OIDOuts)],InfM),!,
-  trans_rule(InfM,In,Out,Rules).
-
-trans_rule(Info,[],[],[ac_unit(_,Ctx,happy_ending(Type),Info)]):-
-   ignore((sub_compound(ctx(Ctx),Info))),
-   ignore((sub_compound(type(Type),Info))).
 
 
 % delete
-trans_rule(Info,[In],[],[Unit]):-
- into_lhs(In,Preconds),into_rhs(Info,InfoR), 
- Unit = ac_unit(_,_,delete_object(InfoR,In),[iz(info(Info))|Preconds]),!.
-
-
-% create
-trans_rule(Info,[],[Out],[Unit]):-
- into_lhs(Out,Preconds),into_rhs(Info,InfoR), 
- Unit = ac_unit(_,_,create_object(InfoR,Out),[iz(info(Info))|Preconds]),!.
+trans_rule(Info,In,[],Rules):- listify(In,InL),
+ findall(delete_object(Info,rhs(delete(In)),lhs(Preconds)),
+   (member(In,InL),into_lhs(In,Preconds)),Rules), Rules\==[],!.
 
 % mutiple postconds
 trans_rule(Info,In,[Out,Out2|OutL],TransRule):- is_object(Out),is_object(Out2),
   maplist(trans_rule(Info,In),[Out,Out2|OutL],TransRule), TransRule\==[],!.
+
+% create
+trans_rule(Info,[],Out,Rules):- listify(Out,OutL),
+ findall(create_object(Info,rhs(create(Out)),lhs(Preconds)),
+   ((member(Out,OutL),into_lhs(Out,Preconds))),Rules), Rules\==[],!.
 
 % 2 preconds
 %trans_rule(Info,[In1,In2],[Out],TransRule):- is_object(In1),is_object(In2),
@@ -240,15 +288,8 @@ trans_rule(Info,[In,In2|InL],OutL,TransRule):- is_object(In),is_object(In2),
 % just copy an object
 trans_rule(Info,[In],[Out],Rules):- 
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
-  noteable_propdiffs(In,Out,Same,_L,R),R==[],
+  noteable_propdiffs(In,Out,Same,L,R),L==[],R==[],
   Rules = [ copy_if_match(Info,rhs(copy_step(Step,TypeO)),lhs(Same)) ],!.
-
-% just copy an object
-trans_rule(Info,[In],[Out],Rules):- 
-  how_are_different(In,Out,_TypeChanges,Diff),Diff==[],
-  into_lhs(In,LHS),
-  %%must_det_ll((sub_compound(step(Step),Info), sub_compound(why(TypeO),Info))),
-  Rules = [ copy_if_match(Info,rhs(copy_step),lhs(LHS)) ],!.
 
 % just copy an object
 trans_rule(Info,In,Out,Rules):- 
@@ -264,25 +305,22 @@ trans_rule(Info,In,Out,Rules):-
   findall(edit_copy(Info,rhs(edit(Type,Change,P)),lhs(LHS)),
     (member(P,R),prop_pairs(In,Out,Type,Change,P),
       Change\==same,
-      P\==pen([cc(black,1)]),
       good_for_rhs(P)),Rules),Rules\==[],!.
 
 trans_rule(Info,E1,E2,Rules):-
   noteable_propdiffs(E1,E2,NSame,NL,NR),
+  %pp_ilp(l2r(Info,E1,E2)),
   dash_chars,
-  pp_ilp(l2r(Info,E1,E2)),
-  dash_chars,
-  if_t(how_are_different(E1,E2,Set),pp_ilp(how_are_different=Set)),
+  if_t(how_are_differnt(E1,E2,Set),pp_ilp(how_are_differnt=Set)),
   flat_props(E1,FP1),flat_props(E2,FP2),
   intersection(FP1,FP2,Same,InFlatP,OutPFlat),
-  pp_ilp(info=Info),
-  pp_ilp(nadded=NR),
-  pp_ilp(added=OutPFlat),
-  pp_ilp(nremoved=NL),
   pp_ilp(removed=InFlatP),
-  pp_ilp(nsames=NSame),
   pp_ilp(sames=Same),
-  itrace,
+  pp_ilp(added=OutPFlat),
+  pp_ilp(info=Info),
+  pp_ilp(nremoved=NL),
+  pp_ilp(nsames=NSame),
+  pp_ilp(nadded=NR),
   sub_compound(step(Step),Info), sub_compound(why(TypeO),Info),
   dash_chars,
   Rules = [ 
@@ -302,4 +340,4 @@ trans_rule(Info,E1,E2,Rules):-
 
 
 
-:- consult(kaggle_arc_logicmoo).
+

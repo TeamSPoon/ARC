@@ -7,26 +7,13 @@
 :- include(kaggle_arc_header).
 
 /*
-:- export(plain_var/1).
-plain_var(V):- notrace((var(V), \+ attvar(V), \+ get_attr(V,ci,_))).
-
-my_assertion(G):- call(G),!.
-my_assertion(G):- wdmsg(my_assertion(G)),writeq(goal(G)),nl,!,break.
-must_be_free(AllNew):- plain_var(AllNew),!.
-must_be_free(AllNew):- arcST,wdmsg(must_be_free(AllNew)),break,fail.
-must_be_nonvar(AllNew):- nonvar_or_ci(AllNew),!.
-must_be_nonvar(AllNew):- arcST,wdmsg(must_be_nonvar(AllNew)),break,fail.
-
 my_len(X,Y):- var(X),!,length(X,Y).
 my_len(X,Y):- is_list(X),!,length(X,Y).
 my_len(X,Y):- functor([_|_],F,A),functor(X,F,A),!,length(X,Y).
 my_len(X,Y):- arcST,!,ibreak.
 */
-is_map(G):- is_vm_map(G),!.
-%arc_webui:- false.
 sort_safe(I,O):- catch(sort(I,O),_,I=O).
-my_append(A,B):- append(A,B).
-my_append(A,B,C):- append(A,B,C).
+
 with_tty_false(Goal):- with_set_stream(current_output,tty(false),Goal).
 with_tty_true(Goal):- with_set_stream(current_output,tty(true),Goal).
 
@@ -197,7 +184,7 @@ kaggle_arc_train('00d62c1b', trn, [[0,0,0,0,0,0,0,0,0,0], [0,0, 3, 3, 3, 3,0,0,0
 kaggle_arc_train('00d62c1b', trn, [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0, 3,0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0, 3, 3, 3, 3,0, 3, 3,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0, 3,0, 3,0,0,0,0,0,0,0, 3,0], [0,0,0,0,0,0,0,0, 3, 3, 3, 3, 3, 3, 3, 3,0,0,0,0], [0,0,0,0,0,0,0,0, 3,0,0,0,0,0,0, 3,0,0,0,0], [0,0,0,0, 3,0,0,0, 3,0,0,0,0,0,0, 3,0,0,0,0], [0,0,0,0,0,0,0,0, 3,0,0,0,0,0,0, 3,0,0,0,0], [0,0,0,0,0,0,0,0, 3,0,0,0,0,0,0, 3,0,0,0,0], [0,0, 3,0,0,0,0,0, 3, 3, 3, 3, 3, 3, 3, 3,0,0,0,0], [0,0,0,0,0,0,0,0, 3,0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0, 3, 3, 3,0,0,0,0, 3,0, 3,0,0], [0,0,0,0,0,0, 3, 3,0,0, 3,0,0, 3,0,0,0,0,0,0], [0,0,0,0,0,0,0, 3,0,0, 3, 3,0,0, 3,0,0, 3,0,0], [0,0,0,0,0,0,0, 3, 3, 3, 3,0, 3,0,0, 3, 3, 3,0,0], [0,0,0,0,0,0,0,0,0,0, 3,0,0,0,0, 3,0, 3,0,0], [0,0,0,0,0,0,0,0,0,0,0,0, 3,0,0, 3, 3, 3,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0, 3,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]], [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0, 3,0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0, 3, 3, 3, 3, 4, 3, 3,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0, 3, 4, 3,0,0,0,0,0,0,0, 3,0], [0,0,0,0,0,0,0,0, 3, 3, 3, 3, 3, 3, 3, 3,0,0,0,0], [0,0,0,0,0,0,0,0, 3, 4, 4, 4, 4, 4, 4, 3,0,0,0,0], [0,0,0,0, 3,0,0,0, 3, 4, 4, 4, 4, 4, 4, 3,0,0,0,0], [0,0,0,0,0,0,0,0, 3, 4, 4, 4, 4, 4, 4, 3,0,0,0,0], [0,0,0,0,0,0,0,0, 3, 4, 4, 4, 4, 4, 4, 3,0,0,0,0], [0,0, 3,0,0,0,0,0, 3, 3, 3, 3, 3, 3, 3, 3,0,0,0,0], [0,0,0,0,0,0,0,0, 3,0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0, 3, 3, 3,0,0,0,0, 3,0, 3,0,0], [0,0,0,0,0,0, 3, 3, 4, 4, 3,0,0, 3,0,0,0,0,0,0], [0,0,0,0,0,0,0, 3, 4, 4, 3, 3,0,0, 3,0,0, 3,0,0], [0,0,0,0,0,0,0, 3, 3, 3, 3,0, 3,0,0, 3, 3, 3,0,0], [0,0,0,0,0,0,0,0,0,0, 3,0,0,0,0, 3, 4, 3,0,0], [0,0,0,0,0,0,0,0,0,0,0,0, 3,0,0, 3, 3, 3,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0, 3,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]).
 kaggle_arc_train('00d62c1b', tst, [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [0,0, 3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [0, 3,0, 3, 3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [0,0, 3,0, 3, 3, 3, 3, 3,0, 3, 3,0,0,0,0,0,0,0,0], [0,0,0,0, 3,0,0,0,0, 3,0,0, 3,0,0,0,0,0,0,0], [0,0,0,0, 3, 3, 3, 3, 3,0, 3, 3, 3,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0, 3, 3, 3, 3, 3,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0, 3,0,0,0, 3,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0, 3,0,0,0, 3,0,0], [0,0,0,0,0,0,0,0,0, 3, 3, 3, 3, 3,0,0,0, 3,0,0], [0,0,0,0,0,0,0,0,0, 3,0,0,0, 3,0,0,0, 3,0,0], [0,0,0,0,0,0,0,0, 3, 3, 3, 3, 3, 3,0,0,0, 3,0,0], [0,0,0,0,0,0, 3, 3,0, 3,0,0,0, 3, 3, 3, 3, 3,0,0], [0,0, 3,0,0,0,0,0, 3, 3,0,0,0,0,0,0,0,0,0,0], [0, 3,0, 3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [0,0, 3,0, 3,0, 3, 3, 3, 3, 3, 3,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0, 3,0,0,0, 3,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0, 3,0,0,0, 3,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0, 3, 3, 3, 3, 3,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]], [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [0,0, 3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [0, 3, 4, 3, 3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [0,0, 3,0, 3, 3, 3, 3, 3,0, 3, 3,0,0,0,0,0,0,0,0], [0,0,0,0, 3, 4, 4, 4, 4, 3, 4, 4, 3,0,0,0,0,0,0,0], [0,0,0,0, 3, 3, 3, 3, 3,0, 3, 3, 3,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0, 3, 3, 3, 3, 3,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0, 3, 4, 4, 4, 3,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0, 3, 4, 4, 4, 3,0,0], [0,0,0,0,0,0,0,0,0, 3, 3, 3, 3, 3, 4, 4, 4, 3,0,0], [0,0,0,0,0,0,0,0,0, 3, 4, 4, 4, 3, 4, 4, 4, 3,0,0], [0,0,0,0,0,0,0,0, 3, 3, 3, 3, 3, 3, 4, 4, 4, 3,0,0], [0,0,0,0,0,0, 3, 3, 4, 3,0,0,0, 3, 3, 3, 3, 3,0,0], [0,0, 3,0,0,0,0,0, 3, 3,0,0,0,0,0,0,0,0,0,0], [0, 3, 4, 3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], [0,0, 3,0, 3,0, 3, 3, 3, 3, 3, 3,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0, 3, 4, 4, 4, 3,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0, 3, 4, 4, 4, 3,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0, 3, 3, 3, 3, 3,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]).
 */
-%tell(s), ignore((nl, nl, task_pairs(Name, ExampleNum, In, Out), format('~N~q.~n', [test_pairs_cache(Name, ExampleNum, In, Out)]), fail)), told.
+%tell(s), ignore((nl, nl, test_pairs(Name, ExampleNum, In, Out), format('~N~q.~n', [test_pairs_cache(Name, ExampleNum, In, Out)]), fail)), told.
 map_pred(Pred, P, X) :- map_pred([],Pred, P, X).
 %map_pred(NoCycles,_Pred, P, X) :- member(E,NoCycles), E==P,!, X = P.
 map_pred(NoCycles,Pred, P, X) :- p2_call(Pred, P, X)*->true;map_pred0(NoCycles,Pred, P, X).
@@ -278,15 +265,14 @@ chk(X,E):- \+ \+ call(X,E).
 
 p2_call_p2(P2a,P2b,A,B):- p2_call(P2a,A,M),p2_call(P2b,M,B).
 
-p2_call(P2,A,B):- P2==[],!,A=B.
 p2_call(p1_call(P1),E,O):- !, p1_call(P1,E), E=O.
 p2_call([P2],Grid,GridN):- !, p2_call(P2, Grid,GridN).
 p2_call([P2|P2L],Grid,GridN):- !, p2_call(P2, Grid,GridM),p2_call(P2L,GridM,GridN).
 p2_call(ignore(P2),A,B):- p2_call(P2,A,B)*->true;A=B.
 p2_call(type(Type,P2),A,B):- into_type(Type,A,AA),p2_call(P2,AA,B).
-p2_call(or(P2,Q2),A,B):- nop(must_be(callable,P2)),!, (p2_call(P2,A,B);p2_call(Q2,A,B)).
-p2_call(and(P2,Q2),A,B):- nop(must_be(callable,P2)),!, (p2_call(P2,A,AB),p2_call(Q2,AB,B)).
-p2_call(P2,A,B):- must_be(callable,P2), call(P2,A,B).
+p2_call(or(P2,Q2),A,B):- must_be(callable,P2),!, (p2_call(P2,A,B);p2_call(Q2,A,B)).
+p2_call(and(P2,Q2),A,B):- must_be(callable,P2),!, (p2_call(P2,A,AB),p2_call(Q2,AB,B)).
+p2_call(P2,A,B):- call(P2,A,B).
 
 
 p1_or(P1A,P1B,X):- p1_call(P1A,X)->true;p1_call(P1B,X).
@@ -306,32 +292,20 @@ my_partition(P1,H,I,HE):- arcST,ibreak,
   my_partition(P1,[H],I,HE).
 
 
-mapgroup(P2,G1,L2):- into_list(G1,L1),!, with_my_group(L1,maplist(P2,L1,L2)).
-mapgroup(P1,G1):- into_list(G1,L1), !, with_my_group(L1,maplist(P1,L1)).
+mapgroup(P2,G1,L2):- into_list(G1,L1),!, with_group(L1,maplist(P2,L1,L2)).
+mapgroup(P1,G1):- into_list(G1,L1), !, with_group(L1,maplist(P1,L1)).
 
 selected_group(Grp):- nb_current('$outer_group',Grp),!.
 selected_group([]).
 
-sub_cmpd(_, LF) :- \+ compound(LF), !, fail.
-sub_cmpd(X, X).
-sub_cmpd(X, Term) :-
-    (   is_list(Term)
-    ->  member(E, Term),
-        sub_cmpd(X, E)
-    ;   arg(_, Term, Arg),
-        sub_cmpd(X, Arg)
-    ).
-
-
-
-%with_my_group([O|Grp],Goal):- compound(O),O=obj(_),!, locally(nb_setval('$outer_group',[O|Grp]),Goal).
-with_my_group(_,Goal):- call(Goal).
+%with_group([O|Grp],Goal):- compound(O),O=obj(_),!, locally(nb_setval('$outer_group',[O|Grp]),Goal).
+with_group(_,Goal):- call(Goal).
 
 into_mlist(L,L).
-my_maplist(P4,G1,L2,L3,L4):- into_mlist(G1,L1),!, with_my_group(L1,maplist(P4,L1,L2,L3,L4)).
-my_maplist(P3,G1,L2,L3):- into_mlist(G1,L1),!, with_my_group(L1,maplist(P3,L1,L2,L3)).
-my_maplist(P2,G1,L2):- into_mlist(G1,L1),!, with_my_group(L1,maplist(P2,L1,L2)).
-my_maplist(P1,G1):- into_mlist(G1,L1), !, with_my_group(L1,maplist(P1,L1)).
+my_maplist(P4,G1,L2,L3,L4):- into_mlist(G1,L1),!, with_group(L1,maplist(P4,L1,L2,L3,L4)).
+my_maplist(P3,G1,L2,L3):- into_mlist(G1,L1),!, with_group(L1,maplist(P3,L1,L2,L3)).
+my_maplist(P2,G1,L2):- into_mlist(G1,L1),!, with_group(L1,maplist(P2,L1,L2)).
+my_maplist(P1,G1):- into_mlist(G1,L1), !, with_group(L1,maplist(P1,L1)).
 
 
 my_include(P1,L,I):- include(p1_call(P1),L,I).
@@ -425,30 +399,14 @@ ppawt(FA):-
     %portray(false), partial(true), fullstop(true),
    ignore_ops(false), quoted(true), quote_non_ascii(true), brace_terms(false)]).
 
-intersection(APoints,BPoints,Intersected,LeftOverA,LeftOverB):-
-  intersection_univ(APoints,BPoints,Intersected,LeftOverA,LeftOverB),!.
 
-same_univ(A,B):- (plain_var(A)->A==B;(B=@=A->true; (fail, \+ (A \=B )))).
-
-intersection_univ(APoints,BPoints,Intersected):-
-  intersection_univ(APoints,BPoints,Intersected,_,_),!.
-intersection_univ(APoints,BPoints,Intersected,LeftOverA,LeftOverB):-
-  pred_intersection(same_univ,APoints,BPoints,Intersected,_,LeftOverA,LeftOverB).
-
-intersection_eq(APoints,BPoints,Intersected):-
-  intersection_eq(APoints,BPoints,Intersected,_,_),!.
-intersection_eq(APoints,BPoints,Intersected,LeftOverA,LeftOverB):-
-  pred_intersection(same_univ,APoints,BPoints,Intersected,_,LeftOverA,LeftOverB).
-
-/*
-intersection_u([],LeftOverB,[],[],LeftOverB):-!.
-intersection_u(LeftOverA,[],[],LeftOverA,[]):-!.
-intersection_u([A|APoints],BPoints,[A|Intersected],LeftOverA,LeftOverB):-
+intersection([],LeftOverB,[],[],LeftOverB):-!.
+intersection(LeftOverA,[],[],LeftOverA,[]):-!.
+intersection([A|APoints],BPoints,[A|Intersected],LeftOverA,LeftOverB):-
   select(A,BPoints,BPointsMinusA),!,
-  intersection_u(APoints,BPointsMinusA,Intersected,LeftOverA,LeftOverB).
-intersection_u([A|APoints],BPoints,Intersected,[A|LeftOverA],LeftOverB):-
-  intersection_u(APoints,BPoints,Intersected,LeftOverA,LeftOverB).
-*/
+  intersection(APoints,BPointsMinusA,Intersected,LeftOverA,LeftOverB).
+intersection([A|APoints],BPoints,Intersected,[A|LeftOverA],LeftOverB):-
+  intersection(APoints,BPoints,Intersected,LeftOverA,LeftOverB).
 
 :- meta_predicate(each_obj(?,?,0)).
 each_obj([],_,_):-!.

@@ -7,7 +7,7 @@
 :- include(kaggle_arc_header).
 
 :- ensure_loaded(kaggle_arc_symmetry).
-%tell(s),ignore((nl,nl,task_pairs(Name,ExampleNum,In,Out),format('~N~q.~n',[test_pairs_cache(Name,ExampleNum,In,Out)]),fail)),told.
+%tell(s),ignore((nl,nl,test_pairs(Name,ExampleNum,In,Out),format('~N~q.~n',[test_pairs_cache(Name,ExampleNum,In,Out)]),fail)),told.
 
 :- dynamic(backfill/1).
 
@@ -761,7 +761,6 @@ gsize_member(vis2D(X,Y),X,Y).
 :- decl_pt(grid_size(prefer_grid,_,_)).
 %grid_size(Points,H,V):- is_vm_map(Points),!,Points.grid_size=grid_size(H,V).
 grid_size(NIL,1,1):- NIL==[],!.
-grid_size(G,H,V):- plain_var(G),!,grid_size_nd(G,H,V).
 grid_size(ID,H,V):- is_grid_size(ID,H,V),!.
 grid_size(GID,H,V):- atom(GID),gid_to_grid(GID,Grid),!,grid_size_nd(Grid,H,V),!.
 grid_size(Point,H,V):- is_point(Point),hv_point(H,V,Point),!.
@@ -772,18 +771,15 @@ grid_size(Points,H,V):- is_points_list(Points),!,must_det_ll(points_range(Points
 %grid_size(G,H,V):- is_graid(G,GG),!, grid_size(GG,H,V).
 grid_size(G,H,V):- notrace(is_vm_map(G)),H = G.h,V = G.v, !.
 grid_size(G,H,V):- notrace(is_group(G)),mapgroup(grid_size_term,G,Offsets),grid_size_2d(Offsets,H,V),!.
-
+grid_size(G,H,V):- findall(size2D(H,V),((sub_compound(E,G),gsize_member(E,H,V))),Offsets),grid_size_2d(Offsets,H,V),!.
 %grid_size([G|G],H,V):- is_list(G), length(G,H),length([G|G],V),!.
 grid_size(G,H,V):- notrace(is_grid(G)),!,grid_size_nd(G,H,V),!.
-grid_size([G|Grid],H,V):- !,grid_size_nd([G|Grid],H,V).
 %grid_size([G|G],H,V):- is_list(G),is_list(G), grid_size_nd([G|G],H,V),!.
 %grid_size(O,_,_):- trace_or_throw(no_grid_size(O)).
-grid_size(G,H,V):- sub_compound(E,f2(G)),E=giz(gid(GID)),nonvar(GID),grid_size(GID,H,V),!.
-grid_size(G,H,V):- sub_compound(E,f3(G)),E=oid(OID),nonvar(OID),oid_to_parent_gid(OID,GID),grid_size(GID,H,V),!.
-grid_size(G,H,V):- findall(size2D(H,V),((sub_compound(E,G),compound(E),gsize_member(E,H,V))),Offsets),
-   grid_size_2d(Offsets,H,V),!.
+grid_size(G,H,V):- sub_compound(E,G),E=giz(gid(GID)),nonvar(GID),grid_size(GID,H,V),!.
+grid_size(G,H,V):- sub_compound(E,G),E=oid(OID),nonvar(OID),oid_to_parent_gid(OID,GID),grid_size(GID,H,V),!.
 
-grid_size(O,30,30):- !, fail,dmsg(warn(grid_size(O,30,30))),!,fail.
+grid_size(O,30,30):- arcST,itrace,dmsg(warn(grid_size(O,30,30))),!.
 
 grid_size_2d([size2D(X1,Y1)|Offsets],X,Y):- grid_size_2d(X1,Y1,Offsets,X,Y).
 grid_size_2d(X,Y,[],X,Y):-!.
@@ -857,9 +853,8 @@ calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,C-Point,LoH,LoV,HiH,HiV,H,V):- nonvar(P
 calc_range_new(WLoH,WLoV,WHiH,WHiV,WH,WV,_,WLoH,WLoV,WHiH,WHiV,WH,WV):- !.
 
 
-%grid_size_nd(L,_,_):- \+ var(L), \+ is_grid(L), !, fail.
-%grid_size_nd(GGG,H,V):- is_list(GGG),member(F,GGG), \+ is_list(F),member(GG,GGG),is_list(GG),is_length(Cols,GG),!, maplist(is_length(Cols),GG),!,grid_size(GGG,H,V).
-grid_size_nd(Grid,H,V):- length(Grid,V),V>0,select(G,Grid,Rest),is_list(G),length(G,H),H>0,my_maplist(make_lengths(H),Rest).
+grid_size_nd(L,_,_):- \+ var(L), \+ is_grid(L), !, fail.
+grid_size_nd([G|Grid],H,V):- is_list(G), length(G,H),length([G|Grid],V),!.
 grid_size_nd([C,R|Rows],H,V):- 
    (plain_var(Rows)->between(2,36,V);!), 
    length([C,R|Rows],V),

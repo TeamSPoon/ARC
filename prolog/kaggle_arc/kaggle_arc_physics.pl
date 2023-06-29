@@ -7,7 +7,6 @@
 :- encoding(iso_latin_1).
 :- include(kaggle_arc_header).
 
-:- consult(kaggle_arc_physics_dpg).
 
 area(Obj,Area):- vis2D(Obj,H,V), Area is H * V.
 
@@ -529,19 +528,12 @@ is_physical_object(_).
 %is_physical_object(O):- has_prop(mass(Mass),O),Mass>0.
 
 % ==============================================
+  %%find_subsumes,
+  %%find_engulfs, % objects the toplevel subshapes detector found but neglacted containment on     
+  %%find_overlaps,
+  %%find_touches,
+  %%find_sees,
 
-is_fti_step(find_subsumes).
-is_fti_step(find_engulfs).
-is_fti_step(find_overlaps).
-is_fti_step(find_touches).
-is_fti_step(find_sees).
-find_subsumes(_).
-find_engulfs(_). % objects the toplevel subshapes detector found but neglacted containment on     
-find_overlaps(_).
-find_touches(VM):- find_relations(VM).
-find_sees(_).
-
-% ==============================================
 is_fti_step(find_relations).
 % ==============================================
 find_relations(VM):- 
@@ -728,7 +720,7 @@ find_contained_points(H,V,ID,[Found|Sofar],[Found|SofarInsteadM],NextScanPoints,
   /*must_det_ll*/((
   % points_to_grid(H,V,ContainedPoints,Grid),
   %once(obj_to_oid(Found,ID,_);grid_to_tid(Grid,ID)),
-  individuate_3(subshape_in_object,ContainedPoints,NewInside),
+  individuate(subshape_in_object,ContainedPoints,NewInside),
   mapgroup(mention_inside(Found),NewInside,NewInsideM))),
   ignore((length_safe(ContainedPoints,N),N>1,quietly(print_grid(H,V,"find_contained_points",[Found|NewInsideM])))),
   find_contained_points(H,V,ID,Sofar,SofarInstead,ScanPointsInstead,NextScanPointsInstead),

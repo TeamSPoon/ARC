@@ -374,7 +374,7 @@ has_short_id(Grid,grid,GID):- is_grid(Grid),grid_to_gid(Grid,GID).
 is_valid_linkid(ID,testid,TestID):- atom_id(ID,TestID),is_valid_testname(TestID),!.
 is_valid_linkid(ID,object,Obj):- known_object(ID,Obj),!.
 is_valid_linkid(ID,grid,Grid):- known_grid(ID,Grid),!.
-% individuate_3(complete, two(v_1d398264_trn_0_in, v_1d398264_trn_0_out))
+% individuate(complete, two(v_1d398264_trn_0_in, v_1d398264_trn_0_out))
 is_valid_linkid(ID,group,Grp):- get_current_test(TestID),is_why_grouped_g(TestID,_Count,ID,Grp).
 
 
@@ -1253,9 +1253,6 @@ into_wqs(M,wqs(C,ppt(M))):- pp_msg_color(M,C),!.
 into_wqs_string(S,S):- term_is_ansi(S), !.
 into_wqs_string(N1,NS1):- compound(N1), N1 = (A + B), !, into_wqs_string(A,AS),into_wqs_string(B,BS),sformat(NS1,'~w ~w',[AS,BS]).
 into_wqs_string(N1,NS1):- string(N1),!,NS1=N1.
-into_wqs_string(N1,NS1):- \+ compound(N1),!,wots_vs(NS1,write(N1)).
-into_wqs_string(N1,NS1):- N1=..[F,S|_],string(S), \+ is_wqs_f(F),!,wots_vs(NS1,write(N1)).
-%into_wqs_string(N1,NS1):- N1=..[F,S|_],string(S),is_wqs_f(F),!,wots_vs(NS1,call(N1)).
 into_wqs_string(N1,NS1):- into_wqs(N1,WQS1),wots_vs(NS1,call(WQS1)).
 
 add_grid_label(I,M,IM):- into_wqs_string(M,WQS),IM=..[-,I,WQS]. 
@@ -1340,7 +1337,6 @@ unsized_grid(A):- \+ is_gridoid(A),!.
 
 grid_footer(G,_,_):- \+ compound(G),!,fail.
 grid_footer(GFGG:M,GG,GF:M):-grid_footer(GFGG,GG,GF),!.
-grid_footer(Header,GG,Header):- Header = gridOpFn(_,_),!,unreduce_grid(Header,GG),!.
 grid_footer((GF=GG),GG,GF):- !, is_gridoid(GG).
 grid_footer([GFGG],GG,GF):- compound(GFGG),(GFGG=(GF=GG)),grid_footer(GF=GG,GG,GF).
 grid_footer(Obj,GG,GF):- fail, is_object(Obj), %vis2D(Obj,H,V),localpoints(Obj,Ps),points_to_grid(H,V,Ps,GG), 
@@ -2276,11 +2272,11 @@ bg_dot(32).
 /* 169	\u00AF 248	\u00AF 216	\u00AF  215 \u00AF  174	\u00AF   */
 %fg_dot(C):- luser_getval(fg_dot,C),integer(C),!.
 %fg_dot(_):- luser_getval(no_rdot,true),luser_setval(no_rdot,false)-> ibreak , fail.
-fg_dot(C):- luser_getval(alt_grid_dot,C),C\==[],C\==unset,!.
+fg_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.
 fg_dot(64).
 %fg_dot(174).
 cant_be_dot(183).
-grid_dot(C):- luser_getval(alt_grid_dot,C),C\==[],C\==unset,!.
+grid_dot(C):- luser_getval(alt_grid_dot,C),C\==[],!.
 grid_dot(169).
 
 %print_g(H,V,C0,_,_,_,_):- cant_be_color(C0),cant_be_color(C0,C),!,  ansi_format_arc([bold,fg('#ff8c00')],'~@',[(write('c'),user:print_g1(H,V,C))]).
@@ -2477,7 +2473,6 @@ code_not_bfly(Code):- between(170,inf,Code).
 
 html_utf(utf8).
 
-save_codes:- save_codes(42600).
 save_codes(Max):- 
  %stream_property(File,file_no(1)),
  html_utf(UTF8),
@@ -2502,7 +2497,6 @@ save_codes(Max):-
    % ignore((0 is Code mod 50, format(File,'\n\n~d:',[Code]), put_code(File,Code))),
   ),put_code(Code))))),
   sort_safe(CCC,CCCO),
-  retractall(iss:i_syms(_)),
   assertz(iss:i_syms(CCCO))))).
 
 is_single_char_ifiable_quiet(Code):- with_output_to(string(S),put(Code)),sformat(SS,'~q',[S]),!, display_length(SS,3),!.
@@ -2519,6 +2513,7 @@ test_is_single_char_ifiable:-
 is_html_ifiable(Code):- sformat(S,'~@',[as_html_encoded(put_code(Code))]), display_length(S,1),!.
 is_html_ifiable(Code):- format('~@',[as_html_encoded(put_code(Code))]),!,fail.
 
+save_codes:- save_codes(42600).
 
 check_dot_spacing(CCC):- 
  html_utf(UTF8),
@@ -2527,7 +2522,7 @@ check_dot_spacing(CCC):-
 
 check_dot_spacing:- iss:i_syms(CCC),my_maplist(check_dot_spacing,CCC),!.
 
-%:- retractall(iss:i_syms(_)).
+:- retractall(iss:i_syms(_)).
 isc:- ignore(save_codes).
 :- initialization(isc).
 
@@ -2538,7 +2533,7 @@ test_show_color_on_reload:- prolog_load_context(reloading,true)-> test_show_colo
 get_glyph(Point,Glyph):-  
   get_grid_num(Point,N),i_glyph(N,Glyph).
 */
-%:- include(kaggle_arc_footer).
+:- include(kaggle_arc_footer).
 
 :- initialization(test_show_color_on_reload,now).
 %:- fixup_module_exports_now.

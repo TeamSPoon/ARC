@@ -93,7 +93,7 @@ test_easy:- get_pair_mode(single_pair),
      test_easy_solve_test_pair(TestID,ExampleNum,I,O))).
 test_easy:- test_p2(test_easy_solve_pair).
 
-%:- set_luser_default(cmd,test_easy). 
+%:- luser_default(cmd,test_easy). 
 
 test_easy_solve_pair(I,O):- %set_current_test(I),
  (kaggle_arc(TestID,ExampleNum,I,O) *-> test_easy_solve_test_pair(TestID,ExampleNum,I,O) ; 
