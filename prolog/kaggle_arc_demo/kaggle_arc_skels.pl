@@ -6,7 +6,8 @@
 */
 :- include(kaggle_arc_header).
 
-into_ngrid(Points,NN):-  vis2D(Points,H,V),into_ngrid(Points,H,V,NGrid),fix_tt_juctions(NGrid,NN).
+into_ngrid(Points,NN):-  vis2D(Points,H,V),into_ngrid(Points,H,V,NGrid),
+  fix_tt_juctions(NGrid,NN).
 into_ngrid(Obj,H,V,NGrid):-
   localpoints_include_bg(Obj,Points),
   neighbor_map1(H,V,Points,Points,CountedPoints),!,
@@ -72,7 +73,35 @@ make_bg_visible_c(In,wbg):- plain_var(In),!.
 make_bg_visible_c(In,In):- var(In),!.
 make_bg_visible_c(In,Grid):- get_black(Black),subst001(In,Black,'#201020',Grid).
 
+
+%t_j('<','-'). t_j('>','-'). 
+%t_j('!','|'). 
+t_j(['|','-','+'],['|', '>','+']).
+t_j(['+','-','|'],['+', '<','|']).
+t_j(['|'-C,'-'-C,'+'-C],['|'-C,'>'-C,'+'-C]):- enum_sym_real_colors(C).
+t_j(['+'-C,'-'-C,'|'-C],['+'-C,'<'-C,'|'-C]):- enum_sym_real_colors(C).
+
+
+t_j90(['+','|','-'],  ['+','^','-']).
+t_j90(['-','|','+'],  ['-','v','+']).
+t_j90(['+'-C,'|'-C,'-'-C],['+'-C, '^'-C,'-'-C]):- enum_sym_real_colors(C).
+t_j90(['_'-C,'|'-C,'+'-C],['-'-C, 'v'-C,'+'-C]):- enum_sym_real_colors(C).
+
+enum_sym_real_colors(C):- enum_fg_real_colors(C).
+enum_sym_real_colors(fg).
+enum_sym_real_colors(bg).
+enum_sym_real_colors(wbg).
+
 fix_tt_juctions(X,X):-!.
+fix_tt_juctions(NGrid,Out):- 
+ fix_t_juctions(t_j,NGrid,TSyms),
+ rot90(TSyms,NGrid90),
+ fix_t_juctions(t_j90,NGrid90,TGrid90),
+ rot270(TGrid90,Out),!.
+
+fix_t_juctions(P2,I,O):- call(P2,F,R), subst(I,F,R,M),M\=@=I,!,fix_t_juctions(P2,M,O).
+fix_t_juctions(_,I,I).
+
 
 
 get_fill_points(In,UNFP,GridOO):-
@@ -607,7 +636,7 @@ map_neibw(_EAll,_Missing,_,_,_,[n,s,e,w],[_,_,_],'*','7').
 
 /*
 map_neibw(_EAll,_Missing,_,_,c,[n],[],'!','2').
-map_neibw(_EAll,_Missing,_,_,c,[s],[],'!','2').
+map_neibw(_EAll,_Missing,_,_,c,[s],[],'!','2'). 
 map_neibw(_EAll,_Missing,_,_,c,[e],[],'=','2').
 map_neibw(_EAll,_Missing,_,_,c,[w],[],'=','2').
 

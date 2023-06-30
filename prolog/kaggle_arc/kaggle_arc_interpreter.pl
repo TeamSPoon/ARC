@@ -369,10 +369,10 @@ run_dsl(VM,_Mode,b_set(Name,Val),In,Out):- !, expand_dsl_value(VM, Mode,In,Val,O
 run_dsl(VM,_Mode,nb_set(Name,Val),In,Out):- !, expand_dsl_value(VM, Mode,In,Val,OutValue),run_dsl(VM,Mode,vm_set(Name,OutValue),In,Out).
 run_dsl(VM,_Mode,nb_link(Name,Val),In,Out):- !, expand_dsl_value(VM, Mode,In,Val,OutValue),run_dsl(VM,Mode,vm_set(Name,OutValue),In,Out).
 run_dsl(VM,_Mode,vm_set(Name,Val),In,Out):- !, vm_grid(VM,set_vm(Name,Val),In, Out).
-run_dsl(VM,_Mode,i(Indiv),In,Out):- !, vm_grid(VM,(individuate(Indiv,In,Objs),set_vm_grid(VM,Objs)),In,Out).
+run_dsl(VM,_Mode,i(Indiv),In,Out):- !, vm_grid(VM,(individuate_3(Indiv,In,Objs),set_vm_grid(VM,Objs)),In,Out).
 
 run_dsl(VM,_Mode,o(_Indiv),In,In):- var(VM.target_grid),!.
-run_dsl(VM,_Mode,o(Indiv),In,Out):- !, vm_grid(VM,(individuate(Indiv,VM.target_grid,Objs),set_vm_grid(VM,Objs)),In,Out).
+run_dsl(VM,_Mode,o(Indiv),In,Out):- !, vm_grid(VM,(individuate_3(Indiv,VM.target_grid,Objs),set_vm_grid(VM,Objs)),In,Out).
 run_dsl(_VM,_Mode,get_in(In),Pass,Pass):- copy_term(Pass,In),!.
 run_dsl(_VM,_Mode,set_out(Out),_In,Out):-!.
 
@@ -420,7 +420,7 @@ uncast_grid_to_object(Orig,Grid,NewObj):-
   (( LocalPoints==[]) -> (arcST,writeq(LocalPoints),atrace ); true),
   rebuild_from_localpoints(Orig,LocalPoints,NewObj))).
 
-closure_grid_to_group(Orig,Grid,Group):- individuate(Orig,Grid,Group).
+closure_grid_to_group(Orig,Grid,Group):- individuate_3(Orig,Grid,Group).
 
 back_to_map(Was,Dict,Prev,Grid,Closure,New, Ret):-
   ppt(back_to_map(Was,Dict,Prev,Grid,Closure,New)),
@@ -428,16 +428,20 @@ back_to_map(Was,Dict,Prev,Grid,Closure,New, Ret):-
   gset(Dict.Was) = NewPrev ,
   Ret = Dict.
 
-:- if( \+ current_predicate(any_to_ace_str/2)).
-:- include(pfc_3_0/pfc_3_0_0).
+:- if( \+ current_predicate(arc_assert/1)).
+:- include('../pfc_3_0/pfc_3_0_0').
 %:- use_module(library(pfc_lib)).
+:- endif.
+
+:- if( \+ current_predicate(arc_assert/1)).
+arc_assert(G):- asserta_if_new(G).
 :- endif.
 
 :- decl_pt(into_grids(+(prefer_grid),-mv(grid))).
 into_grids(P,G):- no_repeats(G,quietly(cast_to_grid(P,G, _))).
 
 :- decl_pt(into_grid(+(prefer_grid),-grid)).
-into_grid(P,G):- var(P),!,ignore(get_current_test(TestID)),test_grids(TestID,G),grid_to_tid(G,P).
+into_grid(P,G):- var(P),!,ignore(get_current_test(TestID)),test_grids(TestID,G),once(grid_to_tid(G,P)).
 into_grid(A^B,AA^BB):- atrace, nonvar(A), !, cast_to_grid(A,AA, _),cast_to_grid(B,BB, _).
 into_grid(P,G):- cast_to_grid(P,G, _).
 
@@ -559,17 +563,20 @@ oid_to_gridoid(ID,G):- atom(ID),
 
 
 
+bad_cell(Var):- var(Var),fail.
+bad_cell(_-_).
+
+known_grid0(OID, Grid):- atom(OID),oid_to_gridoid(OID,Grid),!.
 known_grid0(ID,_):- var(ID),!,fail.
+known_grid0(ID,G):- was_grid_gid(G,ID),!.
+known_grid0(BC,_):- bad_cell(BC),!,fail.
 known_grid0(ID,G):- is_grid(ID),!,G=ID.
 known_grid0(ID,_):- is_list(ID),!,fail.
-known_grid0(OID, Grid):- atom(OID),oid_to_gridoid(OID,Grid),!.
 known_grid0(ID,_):- is_object(ID),!,fail.
 known_grid0(_,ID):- is_object(ID),!,fail.
 known_grid0(ID,G):- true,testid_name_num_io(ID,TestID,Trn,Num,IO),ExampleNum=Trn+Num,!,(kaggle_arc_io(TestID,ExampleNum,IO,G),deterministic(YN),true),(YN==true-> ! ; true).
 known_grid0(ID,G):- is_grid_tid(G,ID),!.
-known_grid0(ID,G):- was_grid_gid(G,ID),!.
-known_grid0(ID,G):- true,fix_test_name(ID,Name,ExampleNum),!,
-  (kaggle_arc_io(Name,ExampleNum,_IO,G),deterministic(YN),true), (YN==true-> ! ; true).
+known_grid0(ID,G):- true,fix_test_name(ID,Name,ExampleNum),!,(kaggle_arc_io(Name,ExampleNum,_IO,G),deterministic(YN),true), (YN==true-> ! ; true).
 known_grid0(ID,G):- learned_color_inner_shape(ID,magenta,BG,G,_),get_bgc(BG).
 known_grid0(ID,G):- compound(ID),ID=(_>(Trn+Num)*IO),!,fix_test_name(ID,Name,Trn+Num),!,(kaggle_arc_io(Name,Trn+Num,IO,G),deterministic(YN),true), (YN==true-> ! ; true).
 known_grid0(ID,G):- compound(ID),ID=(_>_),fix_test_name(ID,Name,ExampleNum),!,(kaggle_arc_io(Name,ExampleNum,_IO,G),deterministic(YN),true), (YN==true-> ! ; true).
@@ -596,8 +603,10 @@ into_gridnameA(G,Name):- known_grid(Name,G).
 :- dynamic(is_grid_tid/2).
 :- dynamic(is_grid_gid/2).
 set_grid_tid(Grid,ID):-
-  my_assertion((ground(ID),nonvar_or_ci(Grid))),
   my_assertion(\+ is_grid(ID)),
+  numbervars(ID,1,_),
+  my_assertion((nop(ground(ID)),nonvar_or_ci(Grid))),
+  
   luser_setval(grid_name,ID),
   ignore(( \+ into_gridnameA(Grid,ID),
   copy_term(Grid,GGrid),numbervars(GGrid,1,_),
@@ -648,6 +657,7 @@ makeup_gridname(Grid,TID):- get_current_test(TestID),
  must_det_ll((
    flag('$makeup_gridname',F,F+1),
    current_example_num_io(Example,Num,IO),
+   ignore(IO=io),
    format(atom(HH),'~w_~w_~w_~w',[Example,Num,subgrid,IO]),
    name_num_io_id(TestID,HH,F,IO,TID),
    assert_grid_tid(Grid,TID), nop(dumpST), 
@@ -663,7 +673,7 @@ into_obj(G,O):- var(G),var(O),!,enum_object(O),G=O.
 into_obj(G,O):- atom(G),oid_to_obj(G,O),!.
 into_obj(G,O):- atom(G),g2o(G,O),!.
 into_obj(G,O):- is_object(G),!,G=O.
-into_obj(G,O):- is_grid(G),!,individuate(whole,G,Objs),last(Objs,O),!.
+into_obj(G,O):- is_grid(G),!,individuate_3(whole,G,Objs),last(Objs,O),!.
 into_obj(G,O):- no_repeats(O,known_obj0(G,O))*->true; (into_grid(G,GG),!,into_obj(GG,O)),!.
 
   %set(VM.lo_points)=[],!.
@@ -879,7 +889,8 @@ is_goal_query(Goal):-
   \+ source_location(_,_),nb_current('$goal', Term), !, % writeq(Term=@=Goal),nl,
   Goal=@=Term.
 
-goal_expansion_q(Goal,I,Out,O):- var(I), is_goal_query(Goal), (goal_expansion_query(Goal,Out)-> Goal\=@=Out),I=O.
+goal_expansion_q(Goal,I,Out,O):- var(I), is_goal_query(Goal),
+   (goal_expansion_query(Goal,Out)-> Goal\=@=Out),I=O.
 
 :- export(thread_httpd:http_process/4).
 :- system:import(thread_httpd:http_process/4).
@@ -890,10 +901,12 @@ goal_expansion_q(Goal,I,Out,O):- var(I), is_goal_query(Goal), (goal_expansion_qu
 :- dynamic(goal_expansion/4).
 goal_expansion(Goal,I,Out,O):- 
    nb_current(arc_can_expand_query,t),
+   \+ current_prolog_flag(arc_query_expansion,false),
    \+ current_prolog_flag(arc_term_expansion,false),
    current_predicate(goal_expansion_q/4),
    goal_expansion_q(Goal,I,Out,O).
 
+:- set_prolog_flag(arc_query_expansion,false).
 % ?- print_grid(gridFn(X)).
 %:- export(is_toplevel_query/2).
 %:- b_setval('$goal', []).

@@ -6,6 +6,10 @@
 */
 :- include(kaggle_arc_header).
 
+:- if(exists_source(kaggle_arc_boards_dpg)).
+%:- ensure_loaded(kaggle_arc_boards_dpg).
+:- endif.
+
 :- use_module(library(nb_set)).
 :- use_module(library(lists)).
 
@@ -99,7 +103,7 @@ cache_devel:- with_pair_mode(entire_suite,
  forall(all_arc_test_name_unordered(TestID),
   ((test_name_output_file(TestID,'.pl',File), ( exists_file(File)-> true; cache_devel(TestID)))))).
 %cache_devel(TestID):-  ensure_test(TestID), test_name_output_file(TestID,'.pl',File),  
-%  catch(cant_rrtrace(notrace(cache_devel(TestID,File))),E,wdmsg(cache_devel(TestID,File)=E)),!.
+%  catch(cant_rrtrace(notrace(cache_devel(TestID,File))),E,u_dmsg(cache_devel(TestID,File)=E)),!.
 cache_devel(TestID):-  ensure_test(TestID), test_name_output_file(TestID,'.pl',File),  cant_rrtrace(notrace(cache_devel(TestID,File))).
 
 cache_devel( TestID,File):- var(TestID),!,ensure_test(TestID),cache_devel( TestID,File).
@@ -137,7 +141,7 @@ compile_and_save_hints_now(TestID):-
   %ignore(retract(saved_training(TestID))),
   %ignore(retract(process_test(TestID))),
 
-  time((with_individuated_cache(true,
+  ((with_individuated_cache(true,
      ((
       gen_gids(TestID),
       detect_pair_hints(TestID),
@@ -147,6 +151,27 @@ compile_and_save_hints_now(TestID):-
       %train_test(TestID,train_using_io),  
       %print_hybrid_set,      
       nop(save_test_hints(TestID))))))).
+
+
+has_sym(SymC,Sym,C):- compound(SymC),!,SymC=(Sym-C).
+
+fill_in_bg(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,fill_in_bg(Cell,C,O).
+fill_in_bg(_Cell,G2,GG2):- is_fg_color(G2),!,ignore(G2=GG2).
+fill_in_bg(Cell,G2,GG2):- \+ G2\=Cell,!,ignore(GG2=Cell).
+fill_in_bg(Alt,In,Out):- only_color_data_or(Alt,In,Out),!.
+fill_in_bg(_Alt,In,In):-!.
+
+into_solid_grid(I,GG1):- into_grid(I,G1),mapgrid(fill_in_bg(black),G1,GG1),!.
+
+non_fg_to_black(Cell,SymC,Sym-O):- has_sym(SymC,Sym,C),!,non_fg_to_black(Cell,C,O).
+non_fg_to_black(_Cell,G2,G2):- is_fg_color(G2).
+non_fg_to_black(Cell,_,GG2):- ignore(GG2=Cell).
+non_fg_to_black(I,GG1):- into_grid(I,G1),mapgrid(non_fg_to_black(black),G1,GG1),!.
+
+completely_represents(I,O):-
+   into_solid_grid(I,I1),into_solid_grid(O,O1),
+   (I1=@=O1-> true ;  (print_ss(not_completely_represents,I1,O1),fail)).
+
 
 
 deduce_shapes(TestID):-
@@ -345,7 +370,7 @@ maybe_easy(A,AR,ROPA):- reduce_grid_pass(1,A^A,[A^A],ROPA,AR^AR).
 maybe_easy(I,II,Code):- maybe_try_something1(I,II,Code),!.
 maybe_easy(I,I,==):- !.
     
-must_ll(G):- G*->true;throw(failed(G)).
+%must_ll(G):- G*->true;throw(failed(G)).
 
 
   
@@ -613,7 +638,7 @@ detect_pair_hints(TestID,ExampleNum,In,Out):-
   ignore((training_only_examples(ExampleNum))),
   Call = detect_pair_hints(TestID,ExampleNum,In,Out),
   \+ ground(Call),!,
-  with_pair_mode(whole_test,(test_pairs(TestID,ExampleNum,In,Out), with_trn_pairs(TestID,ExampleNum,In,Out,Call))).
+  with_pair_mode(whole_test,(task_pairs(TestID,ExampleNum,In,Out), with_trn_pairs(TestID,ExampleNum,In,Out,Call))).
 detect_pair_hints(TestID,ExampleNum,In,Out):- 
   ensure_test(TestID), 
   ignore((training_only_examples(ExampleNum))),
@@ -830,8 +855,6 @@ keep_flipD(I,O):- grid_size(I,H,V),make_grid(V,H,O),
       (X>=Y,get_color_at(X,Y,I,C),
        nb_set_local_point(Y,X,C,O)))).
 
-:- include(kaggle_arc_reduce).
-:- include(kaggle_arc_skels).
 
 not_reversed(IO):- (IO \== o-i).
 
@@ -873,11 +896,11 @@ ensure_how(_Grid,_How).
 
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,_,Obj),List),list_to_set(List,Objs).
 grid_to_objs(Grid,Objs):- grid_to_objs(Grid,complete,Objs).
-grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(Grid,How),in_cmt(individuate(How,Grid,Objs)).
+grid_to_objs(Grid,How,Objs):- ensure_grid(Grid),ensure_how(Grid,How),in_cmt(individuate_3(How,Grid,Objs)).
 %grid_to_objs(Grid,Objs):- findall(Obj,grid_to_objs(Grid,complete,Obj),List),list_to_set(List,Objs).
 %grid_to_obj(Grid,Obj):- grid_to_objs(Grid,Objs),member(Obj,Objs).
 
-%grid_to_objs(Grid,How,Objs):- (nonvar(Grid)->true;test_grids(_,Grid)), ensure_how(How), individuate(How,Grid,Objs).
+%grid_to_objs(Grid,How,Objs):- (nonvar(Grid)->true;test_grids(_,Grid)), ensure_how(How), individuate_3(How,Grid,Objs).
 
 % one way to match or find an outlier is compressing things in sets minus one object.. the set that is second to the largest tells you what single object os the most differnt 
 objs_shapes(Objs,In):- ensure_test(TestID),test_shapes(TestID,Objs,In).
@@ -988,7 +1011,50 @@ input_expands_into_output(TestID):-
   \+ \+ (select(ogs(Trim,Whole,Strict,[loc2D(_,_)|_]),List,Rest),
          member(ogs(Trim,Whole,Strict,[loc2D(_,_)|_]),Rest))))).
 
+/*
+% grid_to_obj(Grid,[colormass,fg_shapes(colormass)],Obj),print_side_by_side(Grid,Obj).
 
+trim_for_offset_1_1(II,In,OX,OY):- 
+  trim_to_rect2(II,In), !, II\=@=In,
+  % print_side_by_side(II,In),
+  once(ogs_11(OX,OY,In,II);(OX=OY,OX=1)).
+
+all_ogs1(II,Out,XY):-
+  findall(ogs(trim,whole,R,loc2D(XX,YY)),
+     (trim_for_offset_1_1(II,In,OX,OY),maybe_ogs(R,X,Y,In,Out),XX is X-OX+1, YY is Y-OY+1),XY),!.
+
+all_ogs2(In,Out,XY):- findall(ogs(notrim,whole,R,loc2D(XX,YY)),maybe_ogs(R,XX,YY,In,Out),XY),!.
+
+all_ogs3(Grid,Out,XY):-
+  findall(ogs(notrim,Named,R,loc2D(XX,YY)),(fail,grid_to_so(Grid,Named,In),maybe_ogs(R,XX,YY,In,Out)),XY).
+
+all_ogs(In,Out,Set):- %member(R,[strict,loose]),
+  all_ogs1(In,Out,XY1),
+  all_ogs2(In,Out,XY2),
+  all_ogs3(In,Out,XY3),  
+  flatten([XY1,XY2,XY3],XY),
+  list_to_set(XY,Set).
+
+%maybe_ogs(R,X,Y,In,Out):-  find_ogs(X,Y,In,Out)*->R=strict;(ogs_11(X,Y,In,Out),R=loose).
+maybe_ogs(R,X,Y,In,Out):- maybe_ogs_color(R,X,Y,In,Out).
+maybe_ogs(call_ogs(P2,R),X,Y,In,Out):-  no_repeats(IIN,(pre_ogs_alter(P2),once(grid_call_alters(P2,In,IIN)))), maybe_ogs_color(R,X,Y,IIN,Out).
+
+%pre_ogs_alter(maybe_unbind_bg).
+pre_ogs_alter([maybe_unbind_bg,maybe_fg_to_bg]).
+pre_ogs_alter(P2):- rot_ogs(P2).
+
+maybe_unbind_bg(In,NewIn):- get_black(BGC), unbind_color(BGC,In,NewIn),!,In\=@=NewIn.
+maybe_fg_to_bg(In,NewIn):- get_black(Black), \+ sub_var(Black,In), unique_colors(In,UCs),
+ include(is_real_fg_color,UCs,FGC),!,FGC=[FG],subst(In,FG,Black,NewIn),!, In\==NewIn.
+
+rot_ogs(trim_to_rect).
+rot_ogs(P2):- rotP0(P2).
+rot_ogs([trim_to_rect,P2]):- rotP2(P2).
+ 
+
+maybe_ogs_color(R,X,Y,In,Out):- nonvar(R),!,(R==strict->find_ogs(X,Y,In,Out);ogs_11(X,Y,In,Out)),learn_hybrid_shape_board(ogs(R),In).
+maybe_ogs_color(R,X,Y,In,Out):- ogs_11(X,Y,In,Out),(find_ogs(X,Y,In,Out)->R=strict;R=loose),learn_hybrid_shape_board(ogs(R),In).
+*/
 
 %grid_hint_iso(MC,IO,In,_Out,_IH,_IV,OH,OV,is_xy_columns):- once(has_xy_columns(In,_Color,OH,OV,)).
 
@@ -1217,7 +1283,8 @@ common_after_reduce(In,Out,New):-
   reduce_grid_fixed(In,OpsIn,In2),check_ops(OpsIn,In2,In),print_ss(OpsIn,In,In2),
   reduce_grid_fixed(Out,OpsOut,Out2),check_ops(OpsOut,Out2,Out),print_ss(OpsOut,Out,Out2),
   print_ss(common_after_reduce,In2,Out2),
-  mapgrid(fg_intersectiond_mono,In2,Out2,New),!.
+  find_bgc(In+Out,BG),
+  mapgrid(fg_intersectiond_mono1(BG),In2,Out2,New),!.
 
 reduce_grid_fixed(In,OpsIn,In3):-  
   must_det_ll(( 

@@ -217,7 +217,8 @@ show_indiv_textinfo2(Why,AS0,ExceptFor):-
 
 
   % pp(vAS0=AS0),
-  extend_grp_proplist([obj(Props11)],[obj(Props)]),
+  extend_group_proplist([obj(Props11)],ObjL),
+
 
   %ignore((o2g(Obj,GGG), nonvar(GGG),set_glyph_to_object(GGG,Obj))),
  % will_show_grid(Obj,TF),
@@ -382,7 +383,7 @@ object_short_props(PA,OUT):- fail, mass(PA,Mass), Mass=1,!,
   object_birth_desc(PA,Birth),
   localpoints(PA,[C-_]),
   OUT=[cell2D(X,Y,C,Birth)],!.
-
+   
 object_short_props(PA,OUT):-   
   shape_rep(grav,PA,Shape),loc2D(PA,X,Y), rot2D(PA,ROT), vis2D(PA,XX,YY),
   shape_id(Shape,ShapeID),
@@ -1550,6 +1551,11 @@ assert_ilp_b(Term):- asserta_new(Term).
 %assert_ilp_b(Term):- pp_ilp(assert_ilp_b=Term),!, assert_if_new(Term).
 
 
+end_of_file.
+
+end_of_file.
+
+end_of_file.
 
 end_of_file.
 

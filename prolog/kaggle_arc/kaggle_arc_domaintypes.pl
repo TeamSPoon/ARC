@@ -1,3 +1,4 @@
+%:- encoding(iso_latin_1).
 /*
   this is part of (H)MUARC  https://logicmoo.org/xwiki/bin/view/Main/ARC/
 
@@ -233,7 +234,7 @@ get_bgc(BGC):- !,BGC = black.
 get_bgc(BGC):- luser_getval(grid_bgc,BGC),!.
 get_bgc(BGC):- get_black(BGC).
 :- nb_delete(grid_bgc).
-:- luser_default(grid_bgc,bgc).
+:- set_luser_default(grid_bgc,bgc).
 
 grid_bgc(_IO,BGC):- get_bgc(BGC).
 
@@ -248,7 +249,7 @@ get_black(BGC):- !,BGC = black.
 get_black(BGC):- luser_getval(grid_black,BGC),!.
 get_black(black).
 :- nb_delete(grid_black).
-:- luser_default(grid_black,black).
+:- set_luser_default(grid_black,black).
 
 
 is_color_no_bgc(X):- \+ is_bg_color(X), is_color(X).
@@ -352,6 +353,8 @@ allow_dir_list(n_e,[n,e]). %s,e,n,w
 allow_dir_list(n_w,[n,w]). %s,e,n,w 
 allow_dir_list(s_w,[s,w]). %s,e,n,w 
 allow_dir_list(dir_list(List),List). 
+allow_dir_list(skip_some,[n,s,e,w,nw,sw,se,ne,skip(1,_,_)]). %s,e,n,w 
+
 allow_dir_list(ne_sw,[ne,sw]). %s,e,n,w 
 allow_dir_list(nw_se,[nw,se]). %s,e,n,w 
 %allow_dir_list(rectangles,[s,e]). 
@@ -601,8 +604,9 @@ is_object(O):- compound(O), O = obj(_).
 
 %is_object_group([G|V]):- is_object(G),is_list(V),maplist(is_object,V).
 %is_group(Dict):- is_vm_map(Dict),!,get_kov(objs,Dict,_).
+is_group(Grp):- is_rule_mapping(Grp),!,fail.
 is_group([G|V]):- is_object_group([G|V]),!. % is_object_or_grid(G),is_list(V),maplist(is_object_or_grid,V),!.
-is_group(Grp):- is_rule_mapping(Grp),!.
+%is_group(Grp):- is_rule_mapping(Grp),!.
 
 :- ansi_term:import(is_group/1).
 

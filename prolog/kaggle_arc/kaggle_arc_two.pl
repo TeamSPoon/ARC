@@ -339,4 +339,4 @@ reuse_a_b(A,B,AA):-
   ignore((How ==[]-> nop(pp(shared_object(GlyphB->GlyphA))); 
     (pp(same_object(GlyphA,GlyphB,How))))).
 
-:- ensure_loaded('arc-dsl/dsl_solvers.pl').
+:- ensure_loaded('../ARC-Others/arc-dsl/dsl_solvers.pl').

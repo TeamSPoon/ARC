@@ -6,7 +6,8 @@
 */
 :- include(kaggle_arc_header).
 
-into_ngrid(Points,NN):-  vis2D(Points,H,V),into_ngrid(Points,H,V,NGrid),fix_tt_juctions(NGrid,NN).
+into_ngrid(Points,NN):-  vis2D(Points,H,V),into_ngrid(Points,H,V,NGrid),
+  fix_tt_juctions(NGrid,NN).
 into_ngrid(Obj,H,V,NGrid):-
   localpoints_include_bg(Obj,Points),
   neighbor_map1(H,V,Points,Points,CountedPoints),!,
@@ -68,11 +69,42 @@ make_bg_visible_b(In,Grid):- is_list(In),!,my_maplist(make_bg_visible_b,In,Grid)
 make_bg_visible_b(C-P,CC-P):- !, make_bg_visible_c(C,CC).
 make_bg_visible_b(In,Grid):- make_bg_visible_c(In,Grid).
 
-make_bg_visible_c(In,wbg):- plain_var(In),!.
+make_bg_visible_c(In,bg):- plain_var(In),!.
+%make_bg_visible_c(In,wbg):- is_bg_color(In),!.
+%make_bg_visible_c(In,In):- var(In),!.
 make_bg_visible_c(In,In):- var(In),!.
 make_bg_visible_c(In,Grid):- get_black(Black),subst001(In,Black,'#201020',Grid).
 
+
+%t_j('<','-'). t_j('>','-'). 
+%t_j('!','|'). 
+t_j(['|','-','+'],['|', '>','+']).
+t_j(['+','-','|'],['+', '<','|']).
+t_j(['|'-C,'-'-C,'+'-C],['|'-C,'>'-C,'+'-C]):- enum_sym_real_colors(C).
+t_j(['+'-C,'-'-C,'|'-C],['+'-C,'<'-C,'|'-C]):- enum_sym_real_colors(C).
+
+
+t_j90(['+','|','-'],  ['+','^','-']).
+t_j90(['-','|','+'],  ['-','v','+']).
+t_j90(['+'-C,'|'-C,'-'-C],['+'-C, '^'-C,'-'-C]):- enum_sym_real_colors(C).
+t_j90(['_'-C,'|'-C,'+'-C],['-'-C, 'v'-C,'+'-C]):- enum_sym_real_colors(C).
+
+%enum_sym_real_colors(C):- var(C),!,fail.
+enum_sym_real_colors(C):- enum_fg_real_colors(C).
+enum_sym_real_colors(fg).
+enum_sym_real_colors(bg).
+enum_sym_real_colors(wbg).
+
 fix_tt_juctions(X,X):-!.
+fix_tt_juctions(NGrid,Out):- 
+ fix_t_juctions(t_j,NGrid,TSyms),
+ rot90(TSyms,NGrid90),
+ fix_t_juctions(t_j90,NGrid90,TGrid90),
+ rot270(TGrid90,Out),!.
+
+fix_t_juctions(P2,I,O):- call(P2,F,R), subst(I,F,R,M),M\=@=I,!,fix_t_juctions(P2,M,O).
+fix_t_juctions(_,I,I).
+
 
 
 get_fill_points(In,UNFP,GridOO):-
@@ -282,18 +314,22 @@ map_neib1(C,DirsE,Edge,DirsC,DirsD,N):- fail,
   %must_det_ll((DL>CL -> map_neib1(C,DirsE,Edge,DirsC,[],N); map_neib1(C,DirsE,Edge,[],DirsD,N))).
 
 map_neib1(C,DirsE,Edge,DirsC,DirsD,N):- 
-  append([DirsC,DirsD],AllDirs),
+  must_det_ll((append([DirsC,DirsD],AllDirs),
   subtract(AllDirs,DirsE,Has),
-  subtract([n,s,e,w,ne,sw,se,nw],Has,Not),!,
-  map_neibw9(Has,Not,C,DirsE,Edge,DirsC,DirsD,NSM,PS),!,map_ns(NSM,NS), ((fail,PS=='+')-> N=PS; N=NS),!.
+  subtract([n,s,e,w,ne,sw,se,nw],Has,Not),
+  map_neibw9(Has,Not,C,DirsE,Edge,DirsC,DirsD,NSM,PS),
+  map_ns(NSM,NS), ((fail,PS=='+')-> N=PS; N=NS))),!.
 
 %map_ns('j','+').
 map_ns(NS,NS).
 
-map_neib_ex(_,[D],'*'):- is_diag(D).
+can_star:- fail.
 
-map_neib_ex([nw,sw,se,ne],_,'X').
+map_neib_ex(_,[D],'*'):- is_diag(D), can_star.
 
+map_neib_ex([nw,sw,se,ne],_,'X'):- can_star.
+
+/*
 map_neib_ex(_,[n,e],'+').
 map_neib_ex(_,[n,w],'+').
 map_neib_ex(_,[s,e],'+').
@@ -303,6 +339,7 @@ map_neib_ex([s,e,se],_,'+').
 map_neib_ex([s,w,sw],_,'+').
 map_neib_ex([n,e,ne],_,'+').
 map_neib_ex([n,w,nw],_,'+').
+*/
 
 map_neib_ex([n,s,sw,se],_,'^').
 map_neib_ex([e,w,sw,nw],_,'>').
@@ -424,7 +461,7 @@ map_neib_ex(_,[e,w,sw,nw],'|').
 map_neib_ex(_,[n,s,sw,se],'-').
 map_neib_ex(_,[n,s,ne,nw],'-').
 map_neib_ex(_,[D],'~'):- is_diag(D),!.
-map_neib_ex(_,[D],'*'):- \+ is_diag(D),!.
+map_neib_ex(_,[D],'*'):- \+ is_diag(D),can_star,!.
 
 map_neib_ex(_,[],'~').
 
@@ -450,15 +487,16 @@ map_neib(Has,Not,R):-
   map_neib_u1(CHas,CNot,R),
   respect_set(CHas,Has,Not),
   respect_set(CNot,Not,Has),!.
-map_neib(Has,Not,R):-
-  map_neib_ex(CHas,CNot,R),
-  (if_t(nonvar(CHas),same_sets(Has,CHas)),
-   if_t(nonvar(CNot),same_sets(Not,CNot))),!.
 map_neib(Has,Not,R):- 
   map_neib_u2(CHas,CNot,R),
   respect_set(CHas,Has,Not),
   respect_set(CNot,Not,Has),!.
+map_neib_fb(Has,Not,R):-
+  map_neib_ex(CHas,CNot,R),
+  (if_t(nonvar(CHas),same_sets(Has,CHas)),
+   if_t(nonvar(CNot),same_sets(Not,CNot))),!.
 
+respect_set(_CSet,Set,_Other):- must_be(ground,Set),fail.
 respect_set(CSet,_Set,_Other):- var(CSet),!.
 respect_set(not(Spec),Set,Other):- !, \+ respect_set(Spec,Set,Other).
 respect_set(len(N),Set,_Other):- !, length(Set,Len),Len=N.
@@ -468,14 +506,14 @@ respect_set(only(Spec),Set,_Other):- !, forall(member(C,Set), member(C,Spec)), f
 respect_set(none_of(Spec),Set,_Other):- !, forall(member(C,Set),\+ member(C,Spec)).
 respect_set(some_of(Spec),Set,_Other):- !, member(C,Set), member(C,Spec),!.
 respect_set(Spec,Set,_Other):- is_list(Spec),!,forall(member(C,Spec),member(C,Set)).
-  
+
 
 map_neib_u2([n,s],[e,w],'|'). % |
-map_neib_u2([n,s],[e],'*'). % -
-map_neib_u2([n,s],[w],'*'). % -
+map_neib_u2([n,s],[e],'*'):- can_star. % -
+map_neib_u2([n,s],[w],'*'):- can_star. % -
 map_neib_u2([e,w],[n,s],'-'). % |
-map_neib_u2([e,w],[n],'*'). % |
-map_neib_u2([e,w],[s],'*'). % |
+map_neib_u2([e,w],[n],'*'):- can_star. % |
+map_neib_u2([e,w],[s],'*'):- can_star. % |
 
 
 
@@ -574,8 +612,13 @@ map_neibw9(Has,Not,C,DirsE,[Edge],DirsC,DirsD,NSM,PS):-!,map_neibw9(Has,Not,C,Di
 %map_neibw9(EAll,_Not,C,[O],E,[],[],NS,PS):- map_neibw(EAll,_Not,C,[],E,[],[O],NS,PS),!.
 map_neibw9(Has,Not,_,_,_,_,_,S,S):- length(Has,L),L=4, map_neib(Has,Not,S),!.
 map_neibw9(Has,Not,_,_,_,_,_,S,S):- map_neib(Has,Not,S),!.
-map_neibw9(Has,_Not,_C,_,_,_,_,NSM,PS):- !, length(Has,NSM),PS=NSM.
+map_neibw9(Has,Not,_,_,_,_,_,S,S):- map_neib_fb(Has,Not,S),S\='^',!.
+map_neibw9(Has,_Not,_C,_,_,_,_,PS,PS):- !, length(Has,NSM),neih_syms(NSM,PS),!.
 %map_neibw9(Has,_Not,C,DirsE,_,DirsC,DirsD,NSM,PS):- length(Has,N), NSM is N+1,PS=NSM.
+
+:- dynamic(neih_syms/2).
+:- forall((between(0,8,N),NN is N*N, int2glyph(NN,N2)), assert_if_new(neih_syms(N,N2))).
+
 
 map_neibw(_EAll,[n,s,e,w,sw,se,nw],_,_,_,_,_,'/',U):- curvDU1(U).
 map_neibw(_EAll,[n,s,e,w,ne,se,nw],_,_,_,_,_,'/',U):- curvDU1(U).
@@ -707,8 +750,8 @@ map_neibw(_EAll,_Missing,_,_,_,[s,w],[ne],'J','j').
 map_neibw(_EAll,_Missing,_,_,_,[_,_,_,_],[_],5,'.').
 map_neibw(_EAll,_Missing,_,_,_,[_],[_,_,_,_],'X','X').
 map_neibw(_EAll,_Missing,_,_,_,[_],[_,_,_,_],4,'X').
-map_neibw(_EAll,_Missing,_,_,_,[_],[],2,'*').
-map_neibw(_EAll,_Missing,_,_,_,[],[_],1,'*').
+map_neibw(_EAll,_Missing,_,_,_,[_],[],2,'*'):- can_star.
+map_neibw(_EAll,_Missing,_,_,_,[],[_],1,'*'):- can_star.
 %map_neibw(_EAll,_Missing,_,_,_,NonNil1,NonNil2,'a','.'):- NonNil1\==[],NonNil2\==[],!.
 map_neibw(_EAll,_Missing,_,_,_,_,NonNil,'A','.'):- NonNil\==[],!.
 map_neibw(_EAll,_Missing,_,_,_,NonNil,_,'%','.'):- NonNil\==[],!.
