@@ -1409,7 +1409,7 @@ grid_to_obj_other(VM):-
 
 % =====================================================================
 %:- ensure_loaded(kaggle_arc_individuation_pbox).
-:- ensure_loaded(kaggle_arc_prior_groups).
+%:- ensure_loaded(kaggle_arc_prior_groups).
 % =====================================================================
 
 % =====================================================================
@@ -2279,9 +2279,11 @@ recolor_bg_or_fg(Var,Var):- var(Var),!.
 recolor_bg_or_fg(C1-P1,C2-P2):- !, recolor_bg_or_fg(C1,C2),recolor_bg_or_fg(P1,P2).
 recolor_bg_or_fg(I,O):- is_fg_color(I),!,O=fg.
 recolor_bg_or_fg(I,O):- is_bg_color(I),!,O=bg.
-recolor_bg_or_fg(I,O):- is_texture(I),!, I=O.
+%recolor_bg_or_fg(I,O):- is_texture(I),!, I=O.
 recolor_bg_or_fg(I,O):- is_color(I),!,I=O.
 recolor_bg_or_fg(I,O):- is_ncpoint(I),!,I=O.
+recolor_bg_or_fg(I,O):- number(I),!,I=O.
+recolor_bg_or_fg(I,O):- atomic(I),!,I=O.
 recolor_bg_or_fg(I,O):- is_grid_cell(I),!,I=O.
 recolor_bg_or_fg(I,O):- is_grid(I),!,mapgrid(recolor_bg_or_fg,I,O).
 recolor_bg_or_fg(I,O):- is_group(I),!,mapgroup(recolor_bg_or_fg,I,O).

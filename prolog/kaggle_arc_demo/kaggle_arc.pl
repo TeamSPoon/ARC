@@ -981,7 +981,7 @@ create_group_dmiles:-
 :- current_prolog_flag(argv,C),(member('-l',C)->initialize;true).
 
 % :- reconsult(kaggle_arc_individuation_dpg).
-:- reconsult(kaggle_arc_prior_groups).
+%:- reconsult(kaggle_arc_prior_groups).
 %:- reconsult(kaggle_arc_ui_ansi_dpg).
 %:- reconsult(kaggle_arc_ui_html).
 

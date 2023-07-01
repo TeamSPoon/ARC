@@ -23,18 +23,20 @@ clear_scene_rules(TestID):-
 
 % Define predicates that shouldn't be noticed
 %dont_notice(global2G(_,_)).
+dont_notice(Var):- var(Var),!,fail.
 dont_notice(giz(_)).
 dont_notice(iz(i_o(_))).
 dont_notice(iz(stype(_))).
 
-dont_notice(simularz(_,_)).
+
+dont_notice(simularz(P,_)):- do_notice(P),!,fail.
 dont_notice(global2G(_,_)).
 dont_notice(iz(symmetry_type(rollD, _))).
 dont_notice(link(contains,_)).
 dont_notice(links_count(sees, _)).
 dont_notice(occurs_in_links(contained_by,_)).
 dont_notice(occurs_in_links(sees,_)).
-dont_notice(oid(_)).
+%dont_notice(oid(_)).
 dont_notice(pg(_,pen(_), rankLS ,_)).
 dont_notice(pg(_,iz(_),rankLS,_)).
 dont_notice(pg(_,empty_area(_),rankLS,_)).

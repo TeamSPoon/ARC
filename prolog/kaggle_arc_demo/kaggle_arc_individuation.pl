@@ -139,7 +139,7 @@ fg_mass_geq(Two,O):- globalpoints(O,GP),include(is_fg_point,GP,FG), length(FG,Le
 % =====================================================================
 is_fti_step(i_to_o_is_none_some_some).
 % =====================================================================
-
+i_to_o_is_none_some_some(VM):- sub_var(tst,VM),!,run_fti(VM,generic_nsew_colormass).
 i_to_o_is_none_some_some(VM):- \+ is_output_vm(VM),!,i_to_o_is_none_some_some_in(VM),!.
 i_to_o_is_none_some_some(VM):-    is_output_vm(VM),!,
   set_example_num_vm(VM),
@@ -216,6 +216,7 @@ set_example_num_vm(VM):-
 is_fti_step(mono_i_to_o_is_none_some_none).
 % =====================================================================
 
+mono_i_to_o_is_none_some_none(VM):- sub_var(tst,VM),!,run_fti(VM,generic_nsew_colormass).
 mono_i_to_o_is_none_some_none(VM):-  set_example_num_vm(VM),
   \+ is_output_vm(VM),!,mono_i_to_o_is_none_some_none_in(VM),!.
 mono_i_to_o_is_none_some_none(VM):-
@@ -1408,7 +1409,7 @@ grid_to_obj_other(VM):-
 
 % =====================================================================
 %:- ensure_loaded(kaggle_arc_individuation_pbox).
-:- ensure_loaded(kaggle_arc_prior_groups).
+%:- ensure_loaded(kaggle_arc_prior_groups).
 % =====================================================================
 
 % =====================================================================
@@ -1882,7 +1883,8 @@ individuate_2(ROptions,VM):-  individuate_3(ROptions,VM,_),!.
 individuate_3(_ROptions,Grid,IndvS):- Grid==[],!,IndvS=[].
 individuate_3([ROption],GridIn,IndvS):- !,nonvar(ROption), individuate1(_,ROption,GridIn,IndvS).
 %individuate_3(complete,GridIn,List):- !,  findall(IndvS,(individuator(Some),individuate1(Some,GridIn,IndvS)),List),
-individuate_3(ROptions,GridIn,IndvS):- individuate1(_,ROptions,GridIn,IndvS).
+individuate_3(ROptions,GridIn,IndvS):- % ds,break,
+  individuate1(_,ROptions,GridIn,IndvS).
 
 %individuate_3(ROptions,GridIn,IndvS):- individuation_macros(ROptions,R), atom(R),R\==ROptions,!,individuate1(_,R,GridIn,IndvS).
 
@@ -1986,6 +1988,7 @@ individuate_nonpair(ROptions,In0,IndvSI):-
 individuate_pair(_GID1,_GID2,ROptions,In0,Out0,InC,OutC):-
   individuate_pair(ROptions,In0,Out0,InC,OutC).
 individuate_pair(ROptions,In0,Out0,InC,OutC):-
+ %ds,break,
  duplicate_term(In0+Out0,In+Out),
  into_grid(In0,InG0), into_grid(Out0,OutG0),
  duplicate_term(InG0+OutG0,InG+OutG),
@@ -2001,7 +2004,7 @@ individuate_pair1(ROptions,In,Out,IndvSI,IndvSO):-
   check_for_refreshness,
   into_grid(In,InG), into_grid(Out,OutG),
   current_test_example(TestID,ExampleNum),
- w_section(["individuate pair: ",TestID,ExampleNum,g(ROptions)],
+ w_section_w(["individuate pair: ",TestID,ExampleNum,g(ROptions)],
   must_det_ll(((   
    first_grid(InG,OutG,IO),
    (IO==in_out 
@@ -2009,6 +2012,7 @@ individuate_pair1(ROptions,In,Out,IndvSI,IndvSO):-
               ; individuate_two_grids(IO,OutG,InG,IndvSO,IndvSI)))))))),
  (IndvSO\==[],IndvSI\==[]).
 
+w_section_w(_,X):- call(X).
 individuate_pair2(ROptions,In,Out,IndvSI,IndvSO):-
  must_be_free(IndvSI),must_be_free(IndvSO),
   check_for_refreshness,
@@ -2021,6 +2025,7 @@ individuate_pair2(ROptions,In,Out,IndvSI,IndvSO):-
 doing_pair:- nb_current(doing_pair,t).
 
 individuate_two_grids(ROptions,GridIn,GridOut,IndvSI,IndvSO):- 
+  %ds,break,
   delistify_single_element(ROptions,NamedOpts),
   must_grid_to_gid(GridIn,OIDIn), must_grid_to_gid(GridOut,OIDOut),
   locally(nb_setval(doing_pair,t),
@@ -2196,8 +2201,8 @@ list_upto(Size,List,Some):- length(List,L),(L=<Size ->Some=List ; (length(Some,S
 
 
 individuate7(VM,ID,ROptions,GridIn,IndvS):-
-  ignore((fix_indivs_options(ROptions,List),list_upto(4,List,Some),append(Some,['...'],Options))),
-  w_section(title(individuate(Options,ID)),individuate8(VM,ID,ROptions,GridIn,IndvS)).
+  ignore((fix_indivs_options(ROptions,List),list_upto(4,List,Some),nop(append(Some,['...'],_Options)))),
+  individuate8(VM,ID,ROptions,GridIn,IndvS), !. %w_section(title(individuate(Options,ID)),).
 individuate8(VM,ID,ROptions,GridIn,IndvS):-
  must_det_ll((
       (var(VM) -> maybe_into_fti(ID,ROptions,GridIn,VM) ; true),
@@ -2232,11 +2237,13 @@ post_individuate_8(VM,IndvS):-
 
 
 add_meta_objs(VM):- 
+ must_det_ll((
+ % forall(get_grid_objects(VM, Meta),addObjects(VM,Meta)),
   Grid = VM.start_grid,
   other_grid(Grid,Other),
   if_t(fits_inside(Grid,Other), 
   (whole_into_obj(VM,Grid,Whole),
-   addObjects(VM,Whole))).
+   addObjects(VM,Whole))))).
 
 fits_inside(Grid,Other):-
   vis2D(Grid,H1,V1),
@@ -5499,6 +5506,15 @@ individuate(ContainedPoints,NewInside):-
   individuate_2(ContainedPoints,NewInside).
 :- endif.
 
+:- if( \+ current_predicate(individuate_1/1)).
+individuate_1(NewInside):-
+  individuate(NewInside).
+:- endif.
+
+:- if( \+ current_predicate(individuate/1)).
+individuate(NewInside):-
+  individuate_1(NewInside).
+:- endif.
 
 
 

@@ -32,6 +32,7 @@
 :- ensure_loaded(kaggle_arc_heuristics).
 :- ensure_loaded(kaggle_arc_intruder).
 :- ensure_loaded(kaggle_arc_test_cache).
+:- ensure_loaded(kaggle_arc_prior_groups).
 :- ensure_loaded(kaggle_arc_individuation).
 :- ensure_loaded(kaggle_arc_transrules).
 :- ensure_loaded(kaggle_arc_generalization).

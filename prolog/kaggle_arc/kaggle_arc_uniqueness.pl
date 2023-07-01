@@ -46,7 +46,7 @@ The ARC project is designed to solve a wide range of visual reasoning tasks, inc
 % Define predicates that shouldn't be noticed
 %dont_notice(global2G(_,_)).
 dont_notice(P):- var(P),!,fail.
-dont_notice(simularz(_,_)).
+dont_notice(simularz(P,_)):- do_notice(P),!,fail.
 dont_notice(global2G(_,_)).
 dont_notice(iz(symmetry_type(rollD, _))).
 dont_notice(\+ P):- !, dont_notice(P).
@@ -319,11 +319,11 @@ indv_options(Opt):-
  %no_repeats_var(Opt),
  member(Opt,
      [
-      i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(edge)),
+      i_opts(shapes(none), count_equ(NF), colors(each), dirs(diags_nsew), incl_bg(edge)),
       %i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(edge)),
       %i_opts(shapes(none), count_equ(NF), colors(mono), dirs(diags_nsew), incl_bg(edge)),
-
-      i_opts(shapes(none), count_equ(NF), colors(each), dirs(diags_nsew), incl_bg(edge)),
+      i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(edge)),
+      
       %i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(false)), 
       %i_opts(shapes(none), count_equ(NF), colors(mono), dirs(diags_nsew), incl_bg(false)),
       %i_opts(shapes(none), count_equ(NF), colors(mono), dirs(nsew), incl_bg(false)),
