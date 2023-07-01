@@ -369,9 +369,9 @@ rest_are_points([P|PointsRest], [[P]|More]):-
 rest_are_points([], []).
 
 is_adjacent_to_one(_, FGPoints, _-P1):-
-  is_adjacent_point(P1, Dir, P2), Dir\==c, \+ \+ member(_-P2, FGPoints), !.
+  is_adjacent_point_no_c(P1, Dir, P2), Dir\==c, \+ \+ member(_-P2, FGPoints), !.
 is_adjacent_to_one(2, FGPoints, _-P1):- !,
-  is_adjacent_point(P1, Dir1, P12), Dir1\==c, is_adjacent_point(P12, Dir2, P2), Dir2\==c, \+ \+ member(_-P2, FGPoints), !.
+  is_adjacent_point_no_c(P1, Dir1, P12),  Dir1\==c, is_adjacent_point_no_c(P12, Dir2, P2),  Dir2\==c, \+ \+ member(_-P2, FGPoints), !.
 
 indv_color_masses(H, V, Orig, PointsRest, SegOptions, More):-
   var(SegOptions), !, indv_options(SegOptions), nonvar(SegOptions),
@@ -1148,7 +1148,7 @@ short_distance(Right1, Right2, 2):-
   globalpoints(Right2, GPoints2),
   member(_-P1, GPoints1),
   member(_-P2, GPoints2),
-  is_adjacent_point(P1, Dir1, P12), Dir1\==c, is_adjacent_point(P12, Dir2, P2), Dir2\==c.
+  is_adjacent_point_no_c(P1, Dir1, P12), Dir1\==c, is_adjacent_point_no_c(P12, Dir2, P2), Dir2\==c.
 
 
 for_rhs(R0, R):-((include(good_for_rhs, R0, R), R\==[])->true;R0=R), !.
@@ -1587,12 +1587,13 @@ trans_rule(Info, E1, E2, Rules):- print((Info, E1, E2)), !, fail,
 
 
 
+get_how_indv_options(HowIn):- indv_options(HowIn).
 
 
-
-into_input_objects(TestID,ExampleNum,In,Objs,VM):-
-  grid_vm(In, VM),
-  best_obj_group_pair(TestID, ExampleNum, _, Objs, _OutC).
+into_input_objects(_TestID,_ExampleNum, In, IndvS, VM):-
+   get_how_indv_options(HowIn),
+   at_least_once(segs_of(In, HowIn, _ObjsCount, Segs)),
+   segs_to_objects(VM, In, HowIn, Segs, IndvS).
 
 solve_via_scene_change_rules(TestID,ExampleNum):-
  must_det_ll((
@@ -1702,8 +1703,6 @@ is_debug_info(Var):- \+ compound(Var),!,fail.
 is_debug_info(info(_)).
 is_debug_info(iz(P)):-!,is_debug_info(P).
 */
-%not_assumed(P):- is_unbound_prop(P),!.
-%not_assumed(P):- \+ assume_prop(P).
 
 assume_prop1(P):- \+ compound(P), !, fail.
 assume_prop1(P):- verbatum_unifiable(P), !, fail.
