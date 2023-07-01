@@ -464,28 +464,39 @@ objects_of_g(Grid, SegOptions, ObjsCount, IndvS):-
 
 objects_of_g(Grid, SegOptions, ObjsCount, IndvS):-
   at_least_once(segs_of(Grid, SegOptions, ObjsCount, Segs)),
-  must_det_ll(segs_to_objects(Grid, SegOptions, Segs, IndvS)).
+  %vis2D(Grid,H,V),maplist(print_grid(H,V),Segs),
+  %ObjsCount>0,ObjsCount<43,
+  must_det_ll(segs_to_objects(Grid, SegOptions, Segs, IndvS)),
+  nop(length(IndvS,ObjsCount)).
 
-segs_to_objects(Grid, SegOptions, ObjsCount, IndvS):-
-  var(SegOptions), !, indv_options(SegOptions),
-  segs_to_objects(Grid, SegOptions, ObjsCount, IndvS).
+
+segs_to_objects(Grid, SegOptions, ObjsCount, IndvS):-  must_be_free(IndvS),
+  var(SegOptions), !, at_least_once(indv_options(SegOptions)),
+  must_det_ll(segs_to_objects(Grid, SegOptions, ObjsCount, IndvS)).
+
 segs_to_objects(Grid, SegOptions, Segs, IndvS):-
+  segs_to_objects(_VM, Grid, SegOptions, Segs, IndvS).
+segs_to_objects(VM, Grid, SegOptions, Segs, IndvS):-   must_be_free(IndvS),
  must_det_ll((
-  into_fti(_, [SegOptions, do_ending], Grid, VM),
+  %get_current_test(TestID),    
+  %once((was_grid_gid(Grid,TID),nop(sub_var(TestID,TID)))),
+  into_fti(_TID, [SegOptions, do_ending], Grid, VM),
+  pp(gid=VM.gid),
   gset(VM.lo_points)=[],
+  %gset(VM.id)=TID,
   gset(VM.lo_program)=[],
   gset(VM.start_options)=[],
   gset(VM.expanded_start_options)=[],
-  Props = [iz(birth(SegOptions))],
+  Props = [iz(birth(SegOptions))])),
   maplist(create_indiv_object(VM,Props), Segs, _),  
-  post_individuate_8(VM, IndvS))).
+  must_det_ll((post_individuate_8(VM, IndvS))).
 
 create_indiv_object(VM, Props, Segs, Obj):-
-  make_indiv_object_real(VM, Props, Segs, Obj).
+  must_det_ll(make_indiv_object_real(VM, Props, Segs, Obj)).
 
 
 textured_points_of(Grid, SegOptions, ObjsCount, Points):-
-  indv_options(SegOptions),
+  at_least_once(indv_options(SegOptions)),
   segs_of(Grid, SegOptions, ObjsCount, Segs),
   segs_into_points(Segs, Points).
 
@@ -982,23 +993,24 @@ calc_o_d_recursively(_VM, ActionGroupIn, InfoInOut, PrevRules, LHSObjs, RHSObjs,
 calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
                     ActionGroupOut, InfoOut, RulesOut, LHSOut, RHSOut):-
 ((
-  narrative_element(copy_object_n_changes(1..1,N, Min..Max, Nth), ActionGroupIn, ActionGroupOut), !,
+  narrative_element(copy_object_n_changes(MinObjs..MaxObjs, N, Min..Max, Nth), ActionGroupIn, ActionGroupOut), !,
   %Nth<Max,
+  if_t(nonvar(MinObjs),once(between(MinObjs,MaxObjs,_ExpectedObjs))),
   select(Left, LHSObjs, LHSOut), select(Right, RHSObjs, RHSOut),
-
-          % n_closest(Right,NObjs,L,LeftOverNeeds,RHSObjsX,Results),
-
   is_visible_object(Left),is_visible_object(Right),
+          % n_closest(Right,NObjs,L,LeftOverNeeds,RHSObjsX,Results),
   how_are_different(Left, Right, TypeOfDiffs, SetOfDiffs),
+  (var(N) -> length(TypeOfDiffs, N) ;  
+    (number(N) -> (length(TypeOfDiffs, Len), Len = N) ; true)),
+  
   how_are_same(Left, Right, TypeOfSames, SetOfSames),
-  (var(N) -> length(TypeOfDiffs, N) ;  (number(N) -> (length(TypeOfDiffs, Len), Len = N) ; true)),!,
   dash_chars, nl,
   must_det_ll((
   %noteable_propdiffs(Left, Right, SameProps, LL, R0),
   maplist(arg(2),SetOfDiffs,SetOfDiffs2),maplist(arg(3),SetOfDiffs2,DiffProps),
   maplist(arg(2),SetOfSames,SetOfSames2),maplist(arg(3),SetOfSames2,SameProps),
   SameProps\==[], % have to have something in common
-  print_ss(copy_object_n_changes(1..1,N, Min..Max, Nth), Left, Right),
+  print_ss(copy_object_n_changes(MinObjs..MaxObjs,N, Min..Max, Nth), Left, Right),
   pp_ilp(3, [diffs=TypeOfDiffs, diffprops=SetOfDiffs]),
   pp_ilp(3, [sames=TypeOfSames, sameprops=SetOfSames]),
   into_lhs(Left,LHSOverSpec),
@@ -1008,7 +1020,7 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   subst_2L_sometimes(DiffProps, NewRSet, Left, NewLeft),
   
   RuleInfo = [diffs_sames(SetOfDiffs,SetOfSames)|Info],
-  NewRRule1 = rule(RuleInfo, NewRLHS, copy_object_n_changes(1..1,N, Min..Max, TypeOfDiffs, NewRSet)),
+  NewRRule1 = rule(RuleInfo, NewRLHS, copy_object_n_changes(MinObjs..MaxObjs,N, Min..Max, TypeOfDiffs, NewRSet)),
  % (DiffProps\=@=NewRSet 
  %   -> NewRRule2 = [] % rule(RuleInfo, SameProps, copy_object_n_changes_else(N, Min..Max, TypeOfDiffs, DiffProps)) 
  %   ; NewRRule2=[]),
@@ -1022,7 +1034,7 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
 % Scenery
 calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
                 ActionGroupOut, InfoOut, RulesOut, LHSObjs, RHSObjsRest):-
-  narrative_element(add_dependant_scenery(NObjsL..NObjsH,MadeUpLenL..MadeupLenH,Min..Max, Nth), ActionGroupIn, ActionGroupOut),!,
+  narrative_element(add_dependant_scenery(MinObjs..MaxObjs,MadeUpLenL..MadeupLenH,Min..Max, Nth), ActionGroupIn, ActionGroupOut),!,
    %LHSObjs==[],
     into_list(PrevRules, PrevObjs),
     my_partition(is_input_object, PrevObjs, PrevLeft, ExtraRHS),
@@ -1046,7 +1058,7 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
       %LONL=<MadeupLenH,
       Info = InfoOut,
       append_LR([iz(info(Info)),always(Results),RuleNeeds,Results],RuleLHS),
-      append_LR([PrevRules,ac_unit(add_dependant_scenery(NObjsL..NObjsH,NObjs,MadeUpLenL..MadeupLenH,Min..Max,RuleRHS),
+      append_LR([PrevRules,ac_unit(add_dependant_scenery(MinObjs..MaxObjs,NObjs,MadeUpLenL..MadeupLenH,Min..Max,RuleRHS),
          RuleLHS)],RulesOut))),
     (Nth<Min->must_det_ll(CodeMust);must_det_ll(CodeMust)),
     nop((Nth>=Min, Nth=<Max)).
@@ -1611,6 +1623,7 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
       %show_time_of_failure(TestID),
       banner_lines(red,10),
       print_scene_change_rules(rules_at_time_of_failure(red),TestID),
+      pp_ilp(in=Objs),
       locally(nb_setval(without_comment,t),
        print_scene_change_rules(rules_at_time_of_failure(yellow),TestID)),
       print_grid(in,InOrig),
@@ -1662,6 +1675,8 @@ score_all_props(CanL,Obj,Score):- maplist(inv_has_prop_score(Obj),CanL,ScoreL),s
 assume_prop(P):- \+ compound(P), !, fail.
 assume_prop(P):- verbatum_unifiable(P), !, fail.
 assume_prop(P):- \+ \+ assume_prop1(P),!.
+assume_prop(P):- \+ \+ dont_notice(P),!.
+assume_prop(simularz(_,_)).
 assume_prop(P):- \+ \+ assume_prop2(P),!.
 assume_prop(P):- \+ \+ is_debug_info(P).
 assume_prop(P):- get_current_test(TestID), arc_test_property(TestID, _, assume_prop(_,_), P),!.
