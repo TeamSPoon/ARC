@@ -48,7 +48,6 @@ The ARC project is designed to solve a wide range of visual reasoning tasks, inc
 dont_notice(P):- var(P),!,fail.
 dont_notice(_):- keep_all_props, !, fail.
 %dont_notice(simularz(P,_)):- \+ dont_notice(P),!,fail.
-dont_notice(P):- clause(good_for_lhs(P),true),!,fail.
 dont_notice(simularz(_,_)).
 dont_notice(global2G(_,_)).
 dont_notice(iz(symmetry_type(rollD, _))).
@@ -58,8 +57,8 @@ dont_notice(sym_counts(_,N)):- number(N), N < 100000000000000000.
 dont_notice(Comp):- sub_var(comp, Comp).
 dont_notice(iz(algo_sid(comp, _))).
 dont_notice(rotSize2D(grav, _, _)).
-dont_notice(pg(_, mass(_), rank1, _)).
 dont_notice(changes(_)).
+%dont_notice(pg(_, mass(_), rank1, _)).
 dont_notice(pg(_, cc(bg, _), rank1, _)).
 dont_notice(pg(_, cc(fg, _), rank1, _)).
 %dont_notice(sym_counts('sym_node_*_+_@_~',_)).
@@ -70,6 +69,7 @@ dont_notice(pg(_, cc(bg, _), rankLS, _)).
 dont_notice(pg(_, occurs_in_links(contained_by, _), _, _)).
 dont_notice(pg(_, pen(_), rank1, _)).
 dont_notice(iz(fg_or_bg(_))).
+dont_notice(P):- clause(good_for_lhs(P),true),!,fail.
 dont_notice(giz(_)).
 dont_notice(iz(i_o(_))).
 dont_notice(iz(stype(_))).
@@ -698,8 +698,11 @@ best_obj_group_pair(TestID, ExampleNum, HowIO, InC, OutC):-
   NRVarI= io(InPSS, OutPSS),
   %indv_options(HowIn, HowOut),
   current_example_scope(TestID, ExampleNum),
-  kaggle_arc(TestID, ExampleNum, _, _),
- wdmsg(best_obj_group_pair=howIO(HowIO)),
+  kaggle_arc(TestID, ExampleNum, I, O),
+ once(name_the_pair(TestID,ExampleNum,I,O,PairName)),
+ wdmsg(best_obj_group_pair(PairName)=howIO(HowIO)),
+ \+ \+ ensure_now_tid_gids(I,TestID>ExampleNum*in,_),
+ \+ \+ ensure_now_tid_gids(O,TestID>ExampleNum*out,_),
  with_individuated_cache(true,
   must_det_ll(((
   grid_indv_versions(TestID, ExampleNum, in, LHOInS), (var(HowIO)->LHOInS\==[];true),
