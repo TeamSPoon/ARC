@@ -46,11 +46,11 @@ The ARC project is designed to solve a wide range of visual reasoning tasks, inc
 % Define predicates that shouldn't be noticed
 %dont_notice(global2G(_,_)).
 dont_notice(P):- var(P),!,fail.
-dont_notice(simularz(P,_)):- do_notice(P),!,fail.
+dont_notice(simularz(_,_)).
 dont_notice(global2G(_,_)).
 dont_notice(iz(symmetry_type(rollD, _))).
 dont_notice(\+ P):- !, dont_notice(P).
-dont_notice(sym_counts(_,N)):- number(N), N < 100000000000000000.
+dont_notice(sym_counts(_,N)):- number(N), N < 10.
 dont_notice(Comp):- sub_var(comp, Comp).
 dont_notice(iz(algo_sid(comp, _))).
 dont_notice(rotSize2D(grav, _, _)).
@@ -319,18 +319,18 @@ indv_options(Opt):-
  %no_repeats_var(Opt),
  member(Opt,
      [
-      i_opts(shapes(none), count_equ(NF), colors(each), dirs(diags_nsew), incl_bg(edge)),
+      i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(edge)),
       %i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(edge)),
       %i_opts(shapes(none), count_equ(NF), colors(mono), dirs(diags_nsew), incl_bg(edge)),
-      i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(edge)),
-      
+
+      %i_opts(shapes(none), count_equ(NF), colors(each), dirs(diags_nsew), incl_bg(false)),
       %i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(false)), 
       %i_opts(shapes(none), count_equ(NF), colors(mono), dirs(diags_nsew), incl_bg(false)),
       %i_opts(shapes(none), count_equ(NF), colors(mono), dirs(nsew), incl_bg(false)),
 
       %i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(true)),
       %i_opts(shapes(none), count_equ(false), colors(each), dirs(diags_nsew), incl_bg(true)),
-      i_opts(shapes(none), count_equ(NF), colors(each), dirs(points), incl_bg(false)),
+      %i_opts(shapes(none), count_equ(NF), colors(each), dirs(points), incl_bg(false)),
       %i_opts(shapes(none), count_equ(false), colors(mono), dirs(diags_nsew), incl_bg(true)),
       %i_opts(shapes(none), count_equ(false), colors(mono), dirs(nsew), incl_bg(true)),
       %i_opts(shapes(none), count_equ(false), colors(each), dirs(points), incl_bg(true)),
@@ -338,12 +338,12 @@ indv_options(Opt):-
      compound(Opt),
      nop(dif(NF, false)).
 
-%filter_points(i_opts(_, _, _Mono, _Diag, incl_bg(false)), GPoints, Points):- !, my_partition(is_fg_point, GPoints, Points, _).
+filter_points(i_opts(_, _, _Mono, _Diag, incl_bg(false)), GPoints, Points):- !, my_partition(is_fg_point, GPoints, Points, _).
 filter_points(i_opts(_, _, _Mono, _Diag, incl_bg(_)), Points, Points).
 
 dir_ok(_, i_opts(_, _, _, dirs(points), _)):-!, fail.
 dir_ok(D, i_opts(_, _, _, dirs(nsew), _)):-!, n_s_e_w(D).
-dir_ok(_, i_opts(_, _, _, dirs(diags_nsew), _)):- !. %, (n_s_e_w(D);is_diag(D)).
+dir_ok(D, i_opts(_, _, _, dirs(diags_nsew), _)):-!, (n_s_e_w(D);is_diag(D)), !.
 dir_ok(_, i_opts(_, _, _, any, _)).
 color_dir_kk(Dir, Color):- is_bg_color(Color), !, \+ is_diag(Dir).
 color_dir_kk(_  , Color):- is_fg_color(Color), !.
@@ -365,9 +365,9 @@ rest_are_points([P|PointsRest], [[P]|More]):-
 rest_are_points([], []).
 
 is_adjacent_to_one(_, FGPoints, _-P1):-
-  is_adjacent_point_no_c(P1, Dir, P2), Dir\==c, \+ \+ member(_-P2, FGPoints), !.
+  is_adjacent_point(P1, Dir, P2), Dir\==c, \+ \+ member(_-P2, FGPoints), !.
 is_adjacent_to_one(2, FGPoints, _-P1):- !,
-  is_adjacent_point_no_c(P1, Dir1, P12),  Dir1\==c, is_adjacent_point_no_c(P12, Dir2, P2),  Dir2\==c, \+ \+ member(_-P2, FGPoints), !.
+  is_adjacent_point(P1, Dir1, P12), Dir1\==c, is_adjacent_point(P12, Dir2, P2), Dir2\==c, \+ \+ member(_-P2, FGPoints), !.
 
 indv_color_masses(H, V, Orig, PointsRest, SegOptions, More):-
   var(SegOptions), !, indv_options(SegOptions), nonvar(SegOptions),
@@ -411,7 +411,7 @@ indv_color_masses(H, V, Orig, PointsRest, SegOptions, More):-
 
 all_color_masses(H, V, Orig, FGPoints, RestOpts, Objs):-
  must_det_ll((
-  color_masses(H, V, Orig, FGPoints, RestOpts, Segs, LO),
+  color_masses(H, V, Orig, FGPoints, RestOpts, Segs, LO), !,
   rest_are_points(LO, PointSegs),
   append(Segs, PointSegs, Objs))).
 
@@ -419,12 +419,11 @@ all_color_masses(H, V, Orig, FGPoints, RestOpts, Objs):-
 color_masses(_H, _V, _Orig, Points, _SegOptions, [], []):- Points==[], !.
 color_masses(H, V, Orig, Points, SegOptions, [GPoints|More], LO):-
   select(C1-HV1, Points, Points2),
-  is_adjacent_point_no_c(HV1, Dir1, HV2), Dir1\==c,
-  \+ \+ (dir_ok(Dir1, SegOptions), color_dir_kk(Dir1, C1)),
+  is_adjacent_point(HV1, Dir1, HV2), Dir1\==c,
   select(C2-HV2, Points2, PointsRest), colors_joinable(SegOptions, C1, C2),
-   % PointsFrom, ScanPoints, RestScanPoints, IndvPoints
+  dir_ok(Dir1, SegOptions), color_dir_kk(Dir1, C1), % PointsFrom, ScanPoints, RestScanPoints, IndvPoints
   all_points_near(Orig, SegOptions, [C1-HV1, C2-HV2], PointsRest, LeftOver, GPoints), !,
-  color_masses(H, V, Orig, LeftOver, SegOptions, More, LO).
+  color_masses(H, V, Orig, LeftOver, SegOptions, More, LO), !.
 color_masses(_H, _V, _Orig, PointsRest, _SegOptions, [], PointsRest).
 /*
 color_masses(H, V, Orig, [C1-HV1|PointsRest], SegOptions, [GPoints|More]):-
@@ -455,45 +454,34 @@ objscount_equation(becomes(2), _ObjsCountIn, 2).
 objscount_equation(false, _, _).
 
 
-objects_of_g(Grid, SegOptions, ObjsCount, IndvS):- must_be_free(IndvS),
-  var(SegOptions), !, at_least_once(indv_options(SegOptions)),
-  at_least_once(objects_of_g(Grid, SegOptions, ObjsCount, IndvS)).
+objects_of_g(Grid, SegOptions, ObjsCount, IndvS):-
+  var(SegOptions), !, indv_options(SegOptions),
+  objects_of_g(Grid, SegOptions, ObjsCount, IndvS).
 
 objects_of_g(Grid, SegOptions, ObjsCount, IndvS):-
   at_least_once(segs_of(Grid, SegOptions, ObjsCount, Segs)),
-  %vis2D(Grid,H,V),maplist(print_grid(H,V),Segs),
-  ObjsCount>0,ObjsCount<43,
-  must_det_ll(segs_to_objects(Grid, SegOptions, Segs, IndvS)),
-  nop(length(IndvS,ObjsCount)).
+  must_det_ll(segs_to_objects(Grid, SegOptions, Segs, IndvS)).
 
-
-segs_to_objects(Grid, SegOptions, ObjsCount, IndvS):-  must_be_free(IndvS),
-  var(SegOptions), !, at_least_once(indv_options(SegOptions)),
-  must_det_ll(segs_to_objects(Grid, SegOptions, ObjsCount, IndvS)).
-
-segs_to_objects(Grid, SegOptions, Segs, IndvS):- 
-  segs_to_objects(_VM, Grid, SegOptions, Segs, IndvS).
-segs_to_objects(VM, Grid, SegOptions, Segs, IndvS):-   must_be_free(IndvS),
+segs_to_objects(Grid, SegOptions, ObjsCount, IndvS):-
+  var(SegOptions), !, indv_options(SegOptions),
+  segs_to_objects(Grid, SegOptions, ObjsCount, IndvS).
+segs_to_objects(Grid, SegOptions, Segs, IndvS):-
  must_det_ll((
-  %get_current_test(TestID),    
-  %once((was_grid_gid(Grid,TID),nop(sub_var(TestID,TID)))),
-  into_fti(_TID, [SegOptions, do_ending], Grid, VM),
-  pp(gid=VM.gid),
+  into_fti(_, [SegOptions, do_ending], Grid, VM),
   gset(VM.lo_points)=[],
-  %gset(VM.id)=TID,
   gset(VM.lo_program)=[],
   gset(VM.start_options)=[],
   gset(VM.expanded_start_options)=[],
-  Props = [iz(birth(SegOptions))])),
+  Props = [iz(birth(SegOptions))],
   maplist(create_indiv_object(VM,Props), Segs, _),  
-  must_det_ll((post_individuate_8(VM, IndvS))).
+  post_individuate_8(VM, IndvS))).
 
 create_indiv_object(VM, Props, Segs, Obj):-
-  must_det_ll(make_indiv_object_real(VM, Props, Segs, Obj)).
+  make_indiv_object_real(VM, Props, Segs, Obj).
 
 
 textured_points_of(Grid, SegOptions, ObjsCount, Points):-
-  at_least_once(indv_options(SegOptions)),
+  indv_options(SegOptions),
   segs_of(Grid, SegOptions, ObjsCount, Segs),
   segs_into_points(Segs, Points).
 
@@ -510,7 +498,7 @@ segs_into_plist(N, S, P):- M is N+300, int2glyph(M, G), maplist(segs_into_p(G), 
 segs_into_p(N, C-P, N-C-P):-!. segs_into_p(N, P, N-P).
 
 segs_of(Grid, SegOptions, ObjsCount, IndvS):-
-  var(SegOptions), !, at_least_once(indv_options(SegOptions)),
+  var(SegOptions), !, indv_options(SegOptions),
   segs_of(Grid, SegOptions, ObjsCount, IndvS).
 
 segs_of(In, SegOptions, ObjsCount, Objs):-
@@ -520,7 +508,7 @@ segs_of(In, SegOptions, ObjsCount, Objs):-
   once(globalpoints(In, GPoints)),
   filter_points(SegOptions, GPoints, Points),
   once(indv_color_masses(H, V, GPoints, Points, SegOptions, Objs)),
-  length(Objs, ObjsCount). % ObjsCount=<43.
+  length(Objs, ObjsCount), ObjsCount=<43.
 
 all_points_near(_Orig, _SegOptions, RestSet, [],       [],        RestSet):-!.
 all_points_near( Orig, SegOptions, CurrentIndv, ScanPoints, RestScanPoints, RestSet):-
@@ -540,8 +528,8 @@ i_a_p_dir(Dir):-  n_s_e_w(Dir);is_diag(Dir).
 
 is_adjacent_point_no_c(E1, Dir, E2):- is_adjacent_point(E1, Dir, E2), i_a_p_dir(Dir).
 
-nearby_one_point(SegOptions, List, C1-E1):- is_adjacent_point_no_c(E1, Dir, E2),
-  \+ \+ (dir_ok(Dir, SegOptions), color_dir_kk(Dir, C1)),
+nearby_one_point(SegOptions, List, C1-E1):- is_adjacent_point(E1, Dir, E2), Dir\==c,
+  dir_ok(Dir, SegOptions), color_dir_kk(Dir, C1),
   member(C2-E2, List), colors_joinable(SegOptions, C1, C2).
 
 print_best_individuals(TestID):-
@@ -618,17 +606,15 @@ grid_indv_versions1(TestID, ExampleNum, Dir, LHOInS):-
 
 grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):-
      kaggle_arc_io(TestID, ExampleNum, Dir, In0),
-     %must_det_ll((%other_grid(In0,Other),
-     %print_ss("other_grid",In0,Other),
      duplicate_term(In0, In),
-     %ensure_other_grid(In,Other),
      at_least_once(indv_options(HowIn)),
      %HowIn=simple(Opt),
+     must_det_ll((
        objects_of_g(In, HowIn, CI, InC),
        InC\==[],
        %include(is_fg_object, InC, FGObjs), length(FGObjs, CI),
-       objs_to_spoints(InC, InPSS).
-grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):- fail,
+       objs_to_spoints(InC, InPSS))).
+grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):-
      kaggle_arc_io(TestID, ExampleNum, Dir, In0),
      duplicate_term(In0, In),
      at_least_once(get_each_ndividuator_extended(Dir, HowIn)),
@@ -637,7 +623,7 @@ grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):- fail,
        %include(is_fg_object, InC, FGObjs),
        length(InC, CI),
        objs_to_spoints(InC, InPSS))).
-grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):- fail,
+grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):-
      kaggle_arc_io(TestID, ExampleNum, Dir, _),
      /*at_least_once*/((
        obj_group_io_5(TestID, ExampleNum, Dir, HowIn, InC),
@@ -646,8 +632,8 @@ grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):- fail,
        objs_to_spoints(InC, InPSS))).       
       
 
-%get_each_ndividuator_extended(_, complete).
-get_each_ndividuator_extended(_, i_pbox).
+get_each_ndividuator_extended(_, complete).
+%get_each_ndividuator_extended(_, i_pbox).
 %get_each_ndividuator_extended(_, simple(Opt)):-indv_options(Opt).
 %get_each_ndividuator_extended(Dir, HowIO):- get_each_ndividuator(Dir, HowIO).
 /*
@@ -701,11 +687,8 @@ best_obj_group_pair(TestID, ExampleNum, HowIO, InC, OutC):-
   NRVarI= io(InPSS, OutPSS),
   %indv_options(HowIn, HowOut),
   current_example_scope(TestID, ExampleNum),
-  kaggle_arc(TestID, ExampleNum, I, O),
+  kaggle_arc(TestID, ExampleNum, _, _),
  wdmsg(best_obj_group_pair=howIO(HowIO)),
- once(name_the_pair(TestID,ExampleNum,I,O,_PairName)),
- \+ \+ ensure_now_tid_gids(I,TestID>ExampleNum*in,_),
- \+ \+ ensure_now_tid_gids(O,TestID>ExampleNum*out,_),
  with_individuated_cache(true,
   must_det_ll(((
   grid_indv_versions(TestID, ExampleNum, in, LHOInS), (var(HowIO)->LHOInS\==[];true),
@@ -859,28 +842,11 @@ get_object_dependancy(InfoStart, TestID, ExampleNum, ActionGroupIn, ActionGroupO
       relaxed_levels(RelaxLvl),
       wots(RelaxLvlS, write([relax(RelaxLvl)|InfoStart])),
       print_ss(get_object_dependancy(RelaxLvlS), LHSObjs, RHSObjs),
-      ((once((
-       must_det_ll((normalize_objects_for_dependancy(RelaxLvl, TestID, ExampleNum, RHSObjs, LHSObjs, 
-        RHSObjsOrdered, LHSObjsOrdered))),
+      ((once((normalize_objects_for_dependancy(RelaxLvl, TestID, ExampleNum, RHSObjs, LHSObjs, RHSObjsOrdered, LHSObjsOrdered),
       InfoIn = [step(0), relax(RelaxLvl), ctx(in_out), example(ExampleNum), testid(TestID)|InfoStart],
-
-      must_det_ll((LHSObjsOrdered\==[];RHSObjsOrdered\==[])),
-
-      show_step(40,ActionGroupIn,InfoIn, LHSObjsOrdered, RHSObjsOrdered),
-
 
       calc_o_d_recursive(VM, ActionGroupIn, InfoIn, [], LHSObjsOrdered, RHSObjsOrdered, ActionGroupOut, Groups))))))), !.
 
-show_step(Max,ActionGroupIn,Info, LHSObjs, RHSObjs):-
-  (LHSObjs\==[];RHSObjs\==[]),
- must_det_ll(((
-   dash_chars,
-   \+ \+ pp_ilp([Info, narrativeIn = ActionGroupIn]),
-   length(LHSObjs, CI), length(RHSObjs, CO), 
-   print_ss(wqs(step_ci_co(CI, CO)), LHSObjs, RHSObjs),
-   if_t(Max=<20,pp_ilp(in=LHSObjs)), 
-   if_t(Max=<20,pp_ilp(out=RHSObjs))))),!.
-   
 
 needs_arrange(IndvS,IndvR):- once((largest_first(mass,IndvS,Indv),reverse(Indv,IndvR))),IndvR\==[].
 needs_arrange(IndvS,IndvR):- once((fix_dupes(IndvS,IndvR))),IndvR\==[].
@@ -894,8 +860,15 @@ calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, Acti
 
 calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups):-
   
- % Show max of 10 objs
- show_step(10, ActionGroupIn,Info, LHSObjs, RHSObjs),
+
+ \+ \+ ignore(((
+  (LHSObjs\==[];RHSObjs\==[]),
+   length(PrevRules, PR), dash_chars,
+   \+ \+ pp_ilp([Info, prevRules=count(PR), narrativeIn = ActionGroupIn]),
+   length(LHSObjs, CI), length(RHSObjs, CO), 
+   print_ss(wqs(step_ci_co(CI, CO)), LHSObjs, RHSObjs),
+   if_t(CI<10,pp_ilp(in=LHSObjs)), 
+   if_t(CO<10,pp_ilp(out=RHSObjs))))),
    
   %( LHSObjs==[] -> NLHSObjs=VM.objs ; NLHSObjs=LHSObjs ),
   NLHSObjs=LHSObjs,
@@ -915,16 +888,13 @@ calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, Acti
 calc_o_d_recursive(VM, [Skip|ActionGroupIn], Info, PrevRules, LHSObjs, RHSObjs, AGF, Groups):-
  dash_chars, 
  wdmsg(no_more(Skip)), 
-% rtrace,
-
- setup_call_cleanup(true,((
- Skip=..[_|ArgsIn], append(_, [MinMax, Nth], ArgsIn), !, 
- ((var(MinMax);(MinMax=Min .. Max, Nth>=Min, Nth=<Max))-> true ; (show_last_chance(no_more(Skip),LHSObjs,RHSObjs),!,fail)),
+ Skip=..[_|ArgsIn], append(_, [Min..Max, Nth], ArgsIn), !, 
+ ((Nth>=Min, Nth=<Max)-> true ; (show_last_chance(no_more(Skip),LHSObjs,RHSObjs),!,fail)),
 
  dash_chars,
    Skip=..[_|Args], last(Args, Was),
     (Was = 0 -> AGF = ActionGroupFinal ; AGF = [Skip|ActionGroupFinal]),
-     notrace,calc_o_d_recursive(VM, ActionGroupIn,  Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups))), notrace),!.
+     calc_o_d_recursive(VM, ActionGroupIn,  Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups), !.
 
 calc_o_d_recursive(_VM, ActionGroupOut, _Info, PrevRules,   [],     [], ActionGroupOut, PrevRules).
 
@@ -1143,7 +1113,7 @@ short_distance(Right1, Right2, 2):-
   globalpoints(Right2, GPoints2),
   member(_-P1, GPoints1),
   member(_-P2, GPoints2),
-  is_adjacent_point_no_c(P1, Dir1, P12), Dir1\==c, is_adjacent_point_no_c(P12, Dir2, P2), Dir2\==c.
+  is_adjacent_point(P1, Dir1, P12), Dir1\==c, is_adjacent_point(P12, Dir2, P2), Dir2\==c.
 
 
 for_rhs(R0, R):-((include(good_for_rhs, R0, R), R\==[])->true;R0=R), !.
@@ -1581,13 +1551,12 @@ trans_rule(Info, E1, E2, Rules):- print((Info, E1, E2)), !, fail,
 
 
 
-get_how_indv_options(HowIn):- indv_options(HowIn).
 
 
-into_input_objects(_TestID,_ExampleNum, In, IndvS, VM):-
-   get_how_indv_options(HowIn),
-   at_least_once(segs_of(In, HowIn, _ObjsCount, Segs)),
-   segs_to_objects(VM, In, HowIn, Segs, IndvS).
+
+into_input_objects(TestID,ExampleNum,In,Objs,VM):-
+  grid_vm(In, VM),
+  best_obj_group_pair(TestID, ExampleNum, _, Objs, _OutC).
 
 solve_via_scene_change_rules(TestID,ExampleNum):-
  must_det_ll((
@@ -1628,7 +1597,6 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
       %show_time_of_failure(TestID),
       banner_lines(red,10),
       print_scene_change_rules(rules_at_time_of_failure(red),TestID),
-      pp_ilp(in=Objs),
       locally(nb_setval(without_comment,t),
        print_scene_change_rules(rules_at_time_of_failure(yellow),TestID)),
       print_grid(in,InOrig),

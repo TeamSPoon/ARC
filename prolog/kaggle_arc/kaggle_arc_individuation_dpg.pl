@@ -1208,7 +1208,7 @@ first_grid1(In,Out,IO):-
 %first_grid(In,Out,IO):- first_grid_same_areas(In,Out,IO).
 first_grid1(_In,_Out,in_out).
 
-individuate_pair(ROptions,In,Out,IndvSI,IndvSO):- break,
+individuate_pair(ROptions,In,Out,IndvSI,IndvSO):-
   into_grid(In,InG), into_grid(Out,OutG),
   must_det_ll((first_grid(InG,OutG,IO),
    (IO==in_out -> individuate_two_grids(ROptions,InG,OutG,IndvSI,IndvSO); 
