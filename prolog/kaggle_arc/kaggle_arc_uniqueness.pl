@@ -46,11 +46,15 @@ The ARC project is designed to solve a wide range of visual reasoning tasks, inc
 % Define predicates that shouldn't be noticed
 %dont_notice(global2G(_,_)).
 dont_notice(P):- var(P),!,fail.
+dont_notice(_):- keep_all_props, !, fail.
+%dont_notice(simularz(P,_)):- \+ dont_notice(P),!,fail.
+dont_notice(P):- clause(good_for_lhs(P),true),!,fail.
 dont_notice(simularz(_,_)).
 dont_notice(global2G(_,_)).
 dont_notice(iz(symmetry_type(rollD, _))).
 dont_notice(\+ P):- !, dont_notice(P).
 dont_notice(sym_counts(_,N)):- number(N), N < 10.
+dont_notice(sym_counts(_,N)):- number(N), N < 100000000000000000.
 dont_notice(Comp):- sub_var(comp, Comp).
 dont_notice(iz(algo_sid(comp, _))).
 dont_notice(rotSize2D(grav, _, _)).
@@ -523,10 +527,6 @@ points_near(SegOptions, Current, [E|ScanPoints], [E|Nears], RestScanPoints):-
 points_near(SegOptions, From, [E|ScanPoints], Nears, [E|RestScanPoints]):- !,
     points_near(SegOptions, From, ScanPoints, Nears, RestScanPoints).
 points_near(_SegOptions, _From, [], [], []):-!.
-
-i_a_p_dir(Dir):-  n_s_e_w(Dir);is_diag(Dir).
-
-is_adjacent_point_no_c(E1, Dir, E2):- is_adjacent_point(E1, Dir, E2), i_a_p_dir(Dir).
 
 nearby_one_point(SegOptions, List, C1-E1):- is_adjacent_point(E1, Dir, E2), Dir\==c,
   dir_ok(Dir, SegOptions), color_dir_kk(Dir, C1),
@@ -1265,12 +1265,12 @@ starter_narratives0(_, ActionGroup):- generic_starter_narratives(ActionGroup).
 
 starter_narrative(t('25d487eb'), [
    copy_object_perfect(2..2, nth), % copy two objects perfectly
-   add_dependant_scenery(2..2, 2..4, 1..1, nth), % from two output objects, create one output object with up 2 to 4 made up props
+   add_dependant_scenery(2..2, 2..4, MinObjs..MaxObjs, nth), % from two output objects, create one output object with up 2 to 4 made up props
    balanced_or_delete_leftovers(balanced(_), nth) ]). % there should not be any unprocessed input objects
 
 starter_narrative(v(e41c6fd3), [
-   copy_object_perfect(1..1, nth), % copy one object perfectly
-   copy_object_n_changes(1..1, 1, 2..4, nth), % copy 2-4 objects that contain a single property change
+   copy_object_perfect(MinObjs..MaxObjs, nth), % copy one object perfectly
+   copy_object_n_changes(MinObjs..MaxObjs, 1, 2..4, nth), % copy 2-4 objects that contain a single property change
    balanced_or_delete_leftovers(balanced(_), nth) ]):- % there should not be any unprocessed input objects
   true. % fail.
 
@@ -1278,11 +1278,11 @@ generic_starter_narratives(ActionGroup):-
  ActionGroup=
      [copy_object_perfect(lowmin..himax, nth),
       copy_object_n_changes(1..1,1, lowmin..himax, nth),
-      copy_object_n_changes(1..1,2, lowmin..himax, nth),
-      copy_object_n_changes(1..1,3, lowmin..himax, nth),
-      copy_object_n_changes(1..1,4, lowmin..himax, nth),
-      copy_object_n_changes(1..1,5, lowmin..himax, nth),
-        add_dependant_scenery(1..3,1..5,lowmin..himax, nth),
+     % copy_object_n_changes(1..1,2, lowmin..himax, nth),
+     % copy_object_n_changes(1..1,3, lowmin..himax, nth),
+     % copy_object_n_changes(1..1,4, lowmin..himax, nth),
+     % copy_object_n_changes(1..1,5, lowmin..himax, nth),
+     %   add_dependant_scenery(1..3,1..5,lowmin..himax, nth),
       add_independant_scenery(lowmin..himax, nth),
       balanced_or_delete_leftovers(_, nth)].
 
@@ -1408,7 +1408,8 @@ ac_info_unit(TestID, Info, Ctx, P, NoDebug):- ac_listing(TestID, Ctx, P, List),
 
 ac_listing(List, Ctx, P, PSame):- is_list(List), !, member(Stuff, List), ctx_p_conds(Stuff, Ctx, P, PSame).
 %ac_listing(TestID,Ctx,P->ac_db_unit,PSame):- ac_db_unit(TestID,Ctx,P,PSame).
-ac_listing(TestID, Ctx, P, PSame):- (ac_db_unit(TestID, Ctx, P, PSame)*->true;pass2_rule(TestID, Ctx, P, PSame)), \+ never_use_horn_rhs(P).
+ac_listing(TestID, Ctx, P, PSame):- (ac_db_unit(TestID, Ctx, P, PSame)*->true;pass2_rule(TestID, Ctx, P, PSame)), 
+ \+ never_use_horn_rhs(P).
 %ac_listing(TestID,Ctx,P,[iz(info(prop_can))|PSame]):- prop_can(TestID,Ctx,P,PSame).
 %ac_listing(TestID,Ctx,P,[pass2|PSame]):- pass2_rule(TestID,Ctx,P,PSame), \+ ac_rules(TestID,Ctx,P,PSame).
 pass2_rule(List, Ctx, P, PSame):- is_list(List), !, member(Stuff, List), ctx_p_conds(Stuff, Ctx, P, PSame).
@@ -1653,9 +1654,11 @@ assume_prop(P):- \+ \+ is_debug_info(P).
 assume_prop(P):- get_current_test(TestID), arc_test_property(TestID, _, assume_prop(_,_), P),!.
 assume_prop(P):- get_current_test(TestID), \+ \+ arc_test_property(TestID, _,assume_prop(_,P),_).
 
-non_assumables(LHS,NonDebug):- include(not_assume_prop,LHS,NonDebug).
+non_assumables(LHS,NonDebug):- include(keep_prop,LHS,NonDebug).
 
-not_assume_prop(P):- \+ \+ assume_prop(P).
+keep_all_props:-fail.
+
+keep_prop(P):- \+ assume_prop(P).
 /*
 is_debug_info(Var):- \+ compound(Var),!,fail.
 is_debug_info(info(_)).
@@ -1851,8 +1854,8 @@ override_object_1(VM, Term, I, O):- sub_compound(edit(P), Term), !, override_obj
 override_object_1(VM, Term, I, O):- sub_compound(edit(_, _, P), Term), !, override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_compound(edit(_, _, _, P), Term), !, override_object_1(VM, P, I, O).
 override_object_1(VM, Term, I, O):- sub_compound(copy_object_one_change(_, P), Term), !, override_object_1(VM, P, I, O).
-override_object_1(VM, Term, I, O):- sub_compound(copy_object_n_changes(1..1,_, P), Term), !, override_object_1(VM, P, I, O).
-override_object_1(VM, Term, I, O):- sub_compound(copy_object_n_changes(1..1,_, _, P), Term), !, override_object_1(VM, P, I, O).
+override_object_1(VM, Term, I, O):- sub_compound(copy_object_n_changes(_,_, P), Term), !, override_object_1(VM, P, I, O).
+override_object_1(VM, Term, I, O):- sub_compound(copy_object_n_changes(_,_, _, P), Term), !, override_object_1(VM, P, I, O).
 
 override_object_1(_VM, Term, I, O):- compound(Term), functor(Term, copy_object_perfect, _), !, I=O, !.
 override_object_1(_VM, copy_step, Obj, Obj):-!.
