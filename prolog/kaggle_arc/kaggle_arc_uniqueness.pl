@@ -415,7 +415,7 @@ indv_color_masses(H, V, Orig, PointsRest, SegOptions, More):-
 
 all_color_masses(H, V, Orig, FGPoints, RestOpts, Objs):-
  must_det_ll((
-  color_masses(H, V, Orig, FGPoints, RestOpts, Segs, LO), !,
+  color_masses(H, V, Orig, FGPoints, RestOpts, Segs, LO),
   rest_are_points(LO, PointSegs),
   append(Segs, PointSegs, Objs))).
 
@@ -423,11 +423,12 @@ all_color_masses(H, V, Orig, FGPoints, RestOpts, Objs):-
 color_masses(_H, _V, _Orig, Points, _SegOptions, [], []):- Points==[], !.
 color_masses(H, V, Orig, Points, SegOptions, [GPoints|More], LO):-
   select(C1-HV1, Points, Points2),
-  is_adjacent_point(HV1, Dir1, HV2), Dir1\==c,
+  is_adjacent_point_no_c(HV1, Dir1, HV2), Dir1\==c,
+  \+ \+ (dir_ok(Dir1, SegOptions), color_dir_kk(Dir1, C1)),
   select(C2-HV2, Points2, PointsRest), colors_joinable(SegOptions, C1, C2),
-  dir_ok(Dir1, SegOptions), color_dir_kk(Dir1, C1), % PointsFrom, ScanPoints, RestScanPoints, IndvPoints
+   % PointsFrom, ScanPoints, RestScanPoints, IndvPoints
   all_points_near(Orig, SegOptions, [C1-HV1, C2-HV2], PointsRest, LeftOver, GPoints), !,
-  color_masses(H, V, Orig, LeftOver, SegOptions, More, LO), !.
+  color_masses(H, V, Orig, LeftOver, SegOptions, More, LO).
 color_masses(_H, _V, _Orig, PointsRest, _SegOptions, [], PointsRest).
 /*
 color_masses(H, V, Orig, [C1-HV1|PointsRest], SegOptions, [GPoints|More]):-
@@ -458,9 +459,9 @@ objscount_equation(becomes(2), _ObjsCountIn, 2).
 objscount_equation(false, _, _).
 
 
-objects_of_g(Grid, SegOptions, ObjsCount, IndvS):-
-  var(SegOptions), !, indv_options(SegOptions),
-  objects_of_g(Grid, SegOptions, ObjsCount, IndvS).
+objects_of_g(Grid, SegOptions, ObjsCount, IndvS):- must_be_free(IndvS),
+  var(SegOptions), !, at_least_once(indv_options(SegOptions)),
+  at_least_once(objects_of_g(Grid, SegOptions, ObjsCount, IndvS)).
 
 objects_of_g(Grid, SegOptions, ObjsCount, IndvS):-
   at_least_once(segs_of(Grid, SegOptions, ObjsCount, Segs)),
@@ -513,7 +514,7 @@ segs_into_plist(N, S, P):- M is N+300, int2glyph(M, G), maplist(segs_into_p(G), 
 segs_into_p(N, C-P, N-C-P):-!. segs_into_p(N, P, N-P).
 
 segs_of(Grid, SegOptions, ObjsCount, IndvS):-
-  var(SegOptions), !, indv_options(SegOptions),
+  var(SegOptions), !, at_least_once(indv_options(SegOptions)),
   segs_of(Grid, SegOptions, ObjsCount, IndvS).
 
 segs_of(In, SegOptions, ObjsCount, Objs):-
@@ -523,7 +524,7 @@ segs_of(In, SegOptions, ObjsCount, Objs):-
   once(globalpoints(In, GPoints)),
   filter_points(SegOptions, GPoints, Points),
   once(indv_color_masses(H, V, GPoints, Points, SegOptions, Objs)),
-  length(Objs, ObjsCount), ObjsCount=<43.
+  length(Objs, ObjsCount). % ObjsCount=<43.
 
 all_points_near(_Orig, _SegOptions, RestSet, [],       [],        RestSet):-!.
 all_points_near( Orig, SegOptions, CurrentIndv, ScanPoints, RestScanPoints, RestSet):-
@@ -539,8 +540,12 @@ points_near(SegOptions, From, [E|ScanPoints], Nears, [E|RestScanPoints]):- !,
     points_near(SegOptions, From, ScanPoints, Nears, RestScanPoints).
 points_near(_SegOptions, _From, [], [], []):-!.
 
-nearby_one_point(SegOptions, List, C1-E1):- is_adjacent_point(E1, Dir, E2), Dir\==c,
-  dir_ok(Dir, SegOptions), color_dir_kk(Dir, C1),
+i_a_p_dir(Dir):-  n_s_e_w(Dir);is_diag(Dir).
+
+is_adjacent_point_no_c(E1, Dir, E2):- is_adjacent_point(E1, Dir, E2), i_a_p_dir(Dir).
+
+nearby_one_point(SegOptions, List, C1-E1):- is_adjacent_point_no_c(E1, Dir, E2),
+  \+ \+ (dir_ok(Dir, SegOptions), color_dir_kk(Dir, C1)),
   member(C2-E2, List), colors_joinable(SegOptions, C1, C2).
 
 print_best_individuals(TestID):-
@@ -617,14 +622,16 @@ grid_indv_versions1(TestID, ExampleNum, Dir, LHOInS):-
 
 grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):-
      kaggle_arc_io(TestID, ExampleNum, Dir, In0),
+     %must_det_ll((%other_grid(In0,Other),
+     %print_ss("other_grid",In0,Other),
      duplicate_term(In0, In),
+     %ensure_other_grid(In,Other),
      at_least_once(indv_options(HowIn)),
      %HowIn=simple(Opt),
-     must_det_ll((
        objects_of_g(In, HowIn, CI, InC),
        InC\==[],
        %include(is_fg_object, InC, FGObjs), length(FGObjs, CI),
-       objs_to_spoints(InC, InPSS))).
+       objs_to_spoints(InC, InPSS).
 grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):-
      kaggle_arc_io(TestID, ExampleNum, Dir, In0),
      duplicate_term(In0, In),
