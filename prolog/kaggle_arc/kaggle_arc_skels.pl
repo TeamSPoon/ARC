@@ -612,9 +612,10 @@ map_neibw9(Has,Not,C,DirsE,[Edge],DirsC,DirsD,NSM,PS):-!,map_neibw9(Has,Not,C,Di
 %map_neibw9(EAll,_Not,C,[O],E,[],[],NS,PS):- map_neibw(EAll,_Not,C,[],E,[],[O],NS,PS),!.
 map_neibw9(Has,Not,_,_,_,_,_,S,S):- length(Has,L),L=4, map_neib(Has,Not,S),!.
 map_neibw9(Has,Not,_,_,_,_,_,S,S):- map_neib(Has,Not,S),!.
-map_neibw9(Has,Not,_,_,_,_,_,S,S):- map_neib_fb(Has,Not,S),S\='^',!.
-map_neibw9(Has,_Not,_C,_,_,_,_,PS,PS):- !, length(Has,NSM),neih_syms(NSM,PS),!.
+%emap_neibw9(Has,Not,_,_,_,_,_,S,S):- map_neib_fb(Has,Not,S),S\='^',!.
+map_neibw9(Has,_Not,_C,_,_,_,_,PS,PS):- intersection(Has,[n,s,e,w],IS), IS\==[], !, length(IS,NSM),neih_syms(NSM,PS),!.
 %map_neibw9(Has,_Not,C,DirsE,_,DirsC,DirsD,NSM,PS):- length(Has,N), NSM is N+1,PS=NSM.
+map_neibw9(Has,Not,_,_,_,_,_,S,S):- map_neib_fb(Has,Not,S),!.
 
 :- dynamic(neih_syms/2).
 :- forall((between(0,8,N),NN is N*N, int2glyph(NN,N2)), assert_if_new(neih_syms(N,N2))).
@@ -768,4 +769,109 @@ dir_num(_,_,Diag,0):- is_diag(Diag),!.
 dir_num(C,C,_,2).
 dir_num(_,Black,_,0):- sometimes_bg(Black).
 dir_num(_,_,_,0).
+
+
+
+unknown_color_hv_point(H, V, unk-Point) :- hv_point(H, V, Point).
+
+locX(Obj1, X) :- 
+    indv_props_list(Obj1, Desc),
+    member(globalpoints(Points), Desc),
+    findall(X, (member(_-Point, Points),hv_point(X,_,Point)), Xs),
+    min_list(Xs, X).
+locX(Obj1, X) :-
+    member(obj(Descriptor), [Obj1]),
+    member(centX(CentX), Descriptor),
+    member(sizeX(SizeX), Descriptor),
+    X is CentX - ((SizeX - 1) div 2).
+
+locY(Obj1, Y) :- 
+    indv_props_list(Obj1, Desc),
+    member(globalpoints(Points), Desc),
+    findall(Y, (member(_-Point, Points),hv_point(_,Y,Point)), Ys),
+    min_list(Ys, Y).
+locY(Obj1, Y) :-
+    member(obj(Descriptor), [Obj1]),
+    member(centY(CentY), Descriptor),
+    member(sizeY(SizeY), Descriptor),
+    Y is CentY - ((SizeY - 1) div 2).
+
+
+maxX(Obj1, X) :- 
+    indv_props_list(Obj1, Desc),
+    member(centX(CentX), Desc),
+    member(sizeX(SizeX), Desc),
+    X is CentX + ((SizeX - 1) div 2).
+maxX(Obj1, X) :- 
+    indv_props_list(Obj1, Desc),
+    member(globalpoints(Points), Desc),
+    findall(X, (member(_-Point, Points),hv_point(X,_,Point)), Xs),
+    max_list(Xs, X).
+
+maxY(Obj1, Y) :- 
+    indv_props_list(Obj1, Desc),
+    member(centY(CentY), Desc),
+    member(sizeY(SizeY), Desc),
+    Y is CentY + ((SizeY - 1) div 2).
+maxY(Obj1, Y) :- 
+    indv_props_list(Obj1, Desc),
+    member(globalpoints(Points), Desc),
+    findall(Y, (member(_-Point, Points),hv_point(_,Y,Point)), Ys),
+    max_list(Ys, Y).
+
+
+center_of_dist(Len, Cent):-  Cent is ((Len + 1) div 2).
+
+% Define the point object
+meta_point(Object, Height, Width, obj([iv(Object), sizeX(SizeX), sizeY(SizeY), centX(X), centY(Y), mass(Mass), globalpoints(Points), iz(flag(virtual)), iz(shape(dot)), grid_sz(Height, Width)])) :-
+    member(Object, [virt_center, virt_corner_nw, virt_corner_sw, virt_corner_ne, virt_corner_se]),
+    (Object == virt_center -> 
+        (center_of_dist(Width, X), center_of_dist(Height, Y),
+         SizeX is 1 + Width mod 2, SizeY is 1 + Height mod 2, 
+         Mass is SizeX * SizeY, 
+         MaxH is X + SizeX, MaxV is Y + SizeY, 
+         findall(Point, (between(X, MaxH, H), between(Y, MaxV, V), unknown_color_hv_point(H, V, Point)), Points));
+     Object == virt_corner_nw -> (X is 1, Y is 1, SizeX is 1, SizeY is 1, Mass is 1, unknown_color_hv_point(X, Y, Point), Points = [Point]);
+     Object == virt_corner_sw -> (X is 1, Y is Height, SizeX is 1, SizeY is 1, Mass is 1, unknown_color_hv_point(X, Y, Point), Points = [Point]);
+     Object == virt_corner_ne -> (X is Width, Y is 1, SizeX is 1, SizeY is 1, Mass is 1, unknown_color_hv_point(X, Y, Point), Points = [Point]);
+     Object == virt_corner_se -> (X is Width, Y is Height, SizeX is 1, SizeY is 1, Mass is 1, unknown_color_hv_point(X, Y, Point), Points = [Point])).
+
+% Define the line object
+meta_line(Object, Height, Width, obj([iv(Object), sizeX(SizeX), sizeY(SizeY), centX(CentX), centY(CentY), mass(Mass), globalpoints(Points), iz(flag(virtual)), iz(shape(line)), grid_sz(Height, Width)])) :-
+    center_of_dist(Width, WidthCenter),
+    center_of_dist(Height, HeightCenter),
+    member(Object, [virt_edge_n, virt_edge_s, virt_edge_w, virt_edge_e]),
+    (Object == virt_edge_n ->
+        (SizeX is Width, SizeY is 1, CentX is WidthCenter, CentY is 1, Mass is Width,
+         findall(Point, (between(1, Width, H), unknown_color_hv_point(H, 1, Point)), Points)
+        );
+     Object == virt_edge_s ->
+        (SizeX is Width, SizeY is 1, CentX is WidthCenter, CentY is Height, Mass is Width,
+         findall(Point, (between(1, Width, H), unknown_color_hv_point(H, Height, Point)), Points)
+        );
+     Object == virt_edge_w ->
+        (SizeX is 1, SizeY is Height, CentX is 1, CentY is HeightCenter, Mass is Height,
+         findall(Point, (between(1, Height, V), unknown_color_hv_point(1, V, Point)), Points)
+        );
+     Object == virt_edge_e ->
+        (SizeX is 1, SizeY is Height, CentX is Width, CentY is HeightCenter, Mass is Height,
+         findall(Point, (between(1, Height, V), unknown_color_hv_point(Width, V, Point)), Points))).
+      
+   
+
+
+% Get all grid objects
+get_grid_objects1(Height, Width, ObjectDesc) :-
+    (meta_point(_, Height, Width, ObjectDesc) ; meta_line(_, Height, Width, ObjectDesc)).
+
+
+get_grid_objects(VM, Obj) :-
+   peek_vm(VM),
+   get_grid_objects1(VM.h, VM.v, ObjectDesc),
+   select(globalpoints(Points),ObjectDesc,ObjectDesc0),
+   %select(iv(Waht),ObjectDesc0,ObjectDesc1),
+   %atomic_list_concat(['o',Waht,VM.gid],'_',NewOID),
+   make_indiv_object(VM,ObjectDesc0,Points,Obj).
+
+
 

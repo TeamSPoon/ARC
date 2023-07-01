@@ -735,8 +735,9 @@ into_test_cmd(Cmd,Cmd).
 %get_pair_cmd(Mode):- luser_getval('cmd',Mode).
 
 % Hides solution grid from code
-kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,G), 
-  (allow_peeking -> true ; (((((ExampleNum*IO) \= ((tst+_)*out)))))).
+kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,G).
+%kaggle_arc_io_safe(TestID,ExampleNum,IO,G):- kaggle_arc_io(TestID,ExampleNum,IO,G), 
+%  (allow_peeking -> true ; (((((ExampleNum*IO) \= ((tst+_)*out)))))).
 
 
 allow_peeking:-true.
@@ -751,7 +752,7 @@ with_test_grids(TestID,G,P):- forall_count(test_grids(TestID,G),my_menu_call((en
 %if_no_peeking(tst+_,_,_):- \+ allow_peeking,!.
 if_no_peeking(_,O,O).
 
-kaggle_arc_safe(TestID,ExampleNum,I,O):- kaggle_arc(TestID,ExampleNum,I,OO),if_no_peeking(ExampleNum,OO,O). 
+kaggle_arc_safe(TestID,ExampleNum,I,O):- kaggle_arc(TestID,ExampleNum,I,O). %,if_no_peeking(ExampleNum,OO,O). 
 
 task_pairs(TestID,I,O):- task_pairs(TestID,_ExampleNum,I,O).
 

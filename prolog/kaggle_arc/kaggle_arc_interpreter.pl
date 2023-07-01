@@ -534,9 +534,9 @@ grid_to_gid(Grid,GID):- grid_to_etid(Grid,ID),!,ensure_now_tid_gids(Grid,ID,GID)
 grid_to_gid(Grid,GID):- grid_to_tid(Grid,ID),!,ensure_now_tid_gids(Grid,ID,GID).
 
 ensure_now_tid_gids(Grid,ID,GID):- 
-  (clause(tid_to_gids(ID,GID),true)*-> true ; term_to_oid(ID,GID)),
+  must_det_ll(((clause(tid_to_gids(ID,GID),true)*-> true ; term_to_oid(ID,GID)),
   assert_grid_tid(Grid,ID),
-  assert_grid_gid(Grid,GID),!.
+  assert_grid_gid(Grid,GID))),!.
 
 % be03b35f
 

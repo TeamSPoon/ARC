@@ -902,10 +902,10 @@ ensure_individuals(TestID,ExampleNum,GridIn,GridOut):-
     FinalIndvSMode = complete,
      repress_output(individuate_pair(FinalIndvSMode,GridIn,GridOut,_,_)),!.
 
-%print_individuals(TestID):- ensure_test(TestID), print_best_individuals(TestID),!.
+print_individuals(TestID):- ensure_test(TestID), print_best_individuals(TestID).
 %print_individuals1(TestID):- ensure_test(TestID), deduce_individuator(TestID),!.
 
-print_individuals(TestID):-
+print_individuals(TestID):- fail,
  must_det_ll((
 
    ensure_test(TestID),
@@ -1019,6 +1019,9 @@ ac_unit_visitor(ac_unit(P,PSame),_IO,P,PSame).
 ac_unit_visitor(ac_rules(_,IO,P,PSame),IO,P,PSame).
 ac_unit_visitor(ac_listing(_,IO,P,PSame),IO,P,PSame).
 
+%print_ogrid(Obj):- print_grid(OID,[Obj]),!.
+print_ogrid(Obj):- indv_u_props(Obj,[_|OID]),print_grid(OID,[Obj]).
+
 pp_ilp(Grp):- notrace((must_det_ll(pp_ilp(1,Grp)))),!.
 
 pp_ilp(D,T):-  T==[],!,prefix_spaces(D,write('[] ')),!.
@@ -1029,7 +1032,7 @@ pp_ilp(D,print_grid(Desc,Grid)):- !, prefix_spaces(D,print_grid(Desc,Grid)).
 %pp_ilp(D,A+B):-  !, prefix_spaces(D,(pp_ilp(A),nl,pp_ilp(B))).
 pp_ilp(D,A+B):-  !, pp_ilp(D,A),pp_ilp(D,B).
 pp_ilp(D,Grid):- is_grid(Grid),!,prefix_spaces(D,print_grid(Grid)),!,nl.
-pp_ilp(D,Grid):- is_object(Grid),!,prefix_spaces(D,print_grid([Grid])),!,nl.
+pp_ilp(D,Grid):- is_object(Grid),!,prefix_spaces(D,print_ogrid(Grid)),!,nl.
 pp_ilp(D,List):- is_list(List), !,
  must_det_ll((
   %prefix_spaces(D,write('[')),

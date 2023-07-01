@@ -475,7 +475,7 @@ save_calc_movement(_H,_V,_Dir,_HO,_VO).
 is_adjacent_point_d2(P1,P2):- is_adjacent_point_1(P1,Dia,M),is_diag(Dia),is_adjacent_point_1(M,Dia,P2). 
 
 is_adjacent_point_impl(P1,Dir,P2):- is_adjacent_point_1(P1,Dir,P2).
-is_adjacent_point_impl(P1,Offset,P2):- is_adjacent_point_impl_offset(P1,Offset,P2).
+%is_adjacent_point_impl(P1,Offset,P2):- is_adjacent_point_impl_offset(P1,Offset,P2).
 
 is_adjacent_point_impl_offset(P1,skip(1,D1,D2),P2):- is_adjacent_point_1(P1,D1,M),\+ is_diag(D1),is_adjacent_point_1(M,D2,P2), 
   \+ (is_adjacent_point_1(P1,_,P2)), \+ (is_adjacent_point_d2(P1,P2)), P1\=P2.

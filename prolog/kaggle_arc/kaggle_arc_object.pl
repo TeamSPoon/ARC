@@ -232,7 +232,8 @@ make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
  % RE=ADD=PHASE2 
   normalize_grid(NormOps,Grid,NormGrid),local_shape_id(NormGrid,NormSID),
   into_fg_ngrid(NormGrid,NormNGrid), ngrid_syms(NormNGrid,NSymCounts),
-  print_ss(into_norm_fg_ngrid(RotG,NormOps),Grid,NormNGrid),nl,writeg(NormNGrid),nl,
+  %print_ss(into_norm_fg_ngrid(RotG,NormOps),Grid,NormNGrid),nl,
+  %writeg(NormNGrid),nl,
 
   compress_grid(CompOps,NormGrid,CompGrid),local_shape_id(CompGrid,CompSID),
   %writeg([normgrid=NormGrid]), 
@@ -1578,7 +1579,8 @@ object_l(localpoints(O),L):- must_det_ll((object_l(grid(In),L),!,release_some_c(
 %grid_to_points(LocalGrid,O))
 object_l(grid(O),L):-
  once((
-    (member(f_grid(In),L),include(p1_arg(1,is_real_color),In,O))
+     (member(globalpoints(LPoints),L), points_to_grid(LPoints,O))
+    ;(member(f_grid(In),L),include(p1_arg(1,is_real_color),In,O))
     ;(member(grid_rep(Norm,NormGrid),L),member(grid_ops(Norm,Ops),L), unreduce_grid(NormGrid,Ops,O))
     ;(object_l(localpoints(LPoints),L), points_to_grid(LPoints,O))
     ;(object_l(grid(grav,SCGrid),L), object_l(rot2D(RotG),L), grid_call(RotG,SCGrid,O)))),!.
@@ -1771,7 +1773,7 @@ object_ngrid_symbols(Obj,Syms):- object_ngrid(Obj,NGrid), ngrid_syms(NGrid,Syms)
 
 ngrid_syms(NGrid,NSymCounts):- fix_tt_juctions(NGrid,TGrid90),
   subst_syms(bg,TGrid90,GFlatSyms),get_ccs(GFlatSyms,Syms),
-  writeln(syms(TGrid90+GFlatSyms+Syms)),
+  %writeln(syms(TGrid90+GFlatSyms+Syms)),
  create_sym_vectors(Syms,NSymCounts).
 
 /*

@@ -1079,14 +1079,15 @@ name_the_pair(TestID,Type,Num,In,Out,PairName):-
   name_the_pair(TestID,Type+Num,In,Out,PairName).
 
 name_the_pair(TestID,ExampleNum,In,Out,PairName):- 
+ must_det_ll((
   PairName= (TestID>ExampleNum),
-  get_current_test(CName),!,
+  get_current_test(CName),
   new_test_pair(PairName),
   GridNameIn= PairName*in,
   GridNameOut= PairName*out,
   if_t(nonvar(Out),set_grid_tid(In,GridNameIn)),
   if_t(nonvar(In),set_grid_tid(Out,GridNameOut)),!,
-  nop(name_the_pair_reset(CName,TestID,ExampleNum)).
+  nop(name_the_pair_reset(CName,TestID,ExampleNum)))).
 
 name_the_pair_reset(CName,TestID,ExampleNum):- 
   /*must_det_ll*/((

@@ -5,6 +5,116 @@
   unless permission or license is granted (contact at business@logicmoo.org)
 */
 
+  
+/*
+
+into_lst(ObjsL,[]):- ObjsL==[],!.
+into_lst(ObjsL,[ObjsL]):- \+ compound(ObjsL),!.
+into_lst(ObjsL,[ObjsL]):-is_gridoid(ObjsL),!.
+into_lst(ObjsL,[ObjsL]):-is_grid(ObjsL),!.
+into_lst(ObjsL,Lst):- is_list(ObjsL),!,maplist(into_lst,ObjsL,LstL),append(LstL,Lst).
+into_lst(Grp,Lst):- is_mapping(Grp), get_mapping_info_list(Grp,_,List),!,into_lst(List,Lst).
+into_lst(Grp,Lst):- arg(_,Grp,List),is_list(List),!,into_lst(List,Lst).
+into_lst(ObjsL,[ObjsL]).
+
+%solve_obj(_VM,_TestID,_ExampleNum,_IO_,_ROptions,Obj,Obj):- is_bg_object(Obj),!.
+
+solve_obj_set([],_VM,_TestID,_ExampleNum,IO_,_ROptions,Objs,Objs):-!.
+solve_obj_set([S|Set],VM,TestID,ExampleNum,IO__Start,ROptions,Objs,ObjsO):-
+  solve_obj_list(S,VM,TestID,ExampleNum,IO__Start,ROptions,Objs,ObjsM),
+  solve_obj_set(Set,VM,TestID,ExampleNum,IO__Start,ROptions,ObjsM,ObjsO).
+
+solve_obj_list(_,_VM,_TestID,_ExampleNum,IO_,_ROptions,Objs,Objs):- Objs == [], !.
+solve_obj_list(S,VM,TestID,ExampleNum,IO__Start,ROptions,[Obj|Objs],[NewObj|ObjsO]):-
+  solve_obj(VM,TestID,ExampleNum,IO__Start,ROptions,Obj,NewObj),
+  solve_obj_list(S,VM,TestID,ExampleNum,IO__Start,ROptions,Objs,ObjsO).
+
+
+*/
+
+/*
+correct_antes5(TestID,IO_,P,PSame,Kept):-   
+   make_unifiable_u(P,U),
+   is_accompany_changed_computed(TestID,IO_,U,DSame),
+   P\=@=U,
+   maplist(make_unifiable_u,DSame,USame),
+   pred_intersection(other_val, PSame, USame, Kept, _, _, _), warn_and_fail_if_empty(Kept).
+correct_antes5(_TestID,_IO_,_P,PSame,PSame).
+
+
+solve_obj_group(VM,TestID,ExampleNum,ROptions,Objs,ObjsO):-
+ forall(kaggle_arc(TestID,trn+N,_,_),
+  ( findall(Out,((arc_cache:map_pairs(TestID,_,trn+N,info(Step,_,in_out,perfect_in_out,_,trn+N),PreObjs,Out),
+      indv_props_list(Out,PropsO),
+       closest_object(Out,PreObjs,PreObj),
+       rewrite_rules_for(PreObj,Out,Sames,Diffs),
+       ,OutL),
+    findall(PreObjs,arc_cache:map_pairs(TestID,_,trn+N,info(0,_,in_out,_,_,trn+N),PreObjs,Out),PreObjs),
+  homogenize(OutL,Sames,Diffs),
+*/
+
+
+tesT_compare_objects:- compare_objects([
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),
+      vis2D(1,1),rot2D(sameR),loc2D(4,9),changes([]),iz(type(dots)),iz(type(dot)),iz(filltype(solid)),iz(jagged(true)),center2G(4,9),% obj_to_oid(t(af902bf9)>(tst+0)*in,37),globalpoints([yellow-point_04_09]),
+      grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(4,6),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(4,6),obj_to_oid(t(af902bf9)>(tst+0)*in,39),globalpoints([yellow-point_04_06]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(1,6),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(1,6),obj_to_oid(t(af902bf9)>(tst+0)*in,40),globalpoints([yellow-point_01_06]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(10,5),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(10,5),obj_to_oid(t(af902bf9)>(tst+0)*in,41),globalpoints([yellow-point_10_05]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(6,5),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(6,5),obj_to_oid(t(af902bf9)>(tst+0)*in,42),globalpoints([yellow-point_06_05]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(10,1),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(10,1),obj_to_oid(t(af902bf9)>(tst+0)*in,43),globalpoints([yellow-point_10_01]),grid_size(10,10),iz(important)]),
+    obj([mass(1),shape_rep(grav,[hv(1,1)]),colors_cc([cc(yellow,1.0)]),localpoints([yellow-hv(1,1)]),vis2D(1,1),rot2D(sameR),loc2D(6,1),changes([]),iz(type(dots)),iz(shape_rep(grav,dot)),iz(filltype(solid)),iz(jagged(true)),center2G(6,1),obj_to_oid(t(af902bf9)>(tst+0)*in,44),globalpoints([yellow-point_06_01]),grid_size(10,10),iz(important)])],
+    OUTPUT),
+  print(OUTPUT).
+  
+/*
+grid_indv_versions(TestID, ExampleNum, Dir, LHOInS):-
+  findall(lho(CI, InPSS, HowIn, InC),
+    (get_each_ndividuator(Dir, HowIn),
+    obj_group_io_5(TestID, ExampleNum, Dir, HowIn, InC),
+    length(InC, CI), CI=<50, objs_to_spoints(InC, InPSS)), LHOIn),
+   sort(LHOIn, LHOInS), !.
+best_obj_group_pair(TestID, ExampleNum, HowIO, InC, OutC):-
+  OGP = best_ogp(TestID, ExampleNum, HowIO, InC, OutC),
+  (arc_cache:trans_rule_db(TestID, ExampleNum, best_obj_group_pairs, OGPL)*-> true ;
+   (time(findall(OGP, best_obj_group_pair1(TestID, ExampleNum, HowIO, InC, OutC), OGPL)),
+     assert_test_property(TestID, ExampleNum, best_obj_group_pairs, OGPL))),
+
+  member(OGP, OGPL).
+*/
+/*
+calc_best_individuals(TestID):-
+ current_example_scope(TestID, ExampleNum),
+ forall(kaggle_arc(TestID, ExampleNum, _, _),
+  (grid_indv_versions(TestID, ExampleNum, in, _LHOInS),
+   grid_indv_versions(TestID, ExampleNum, out, _LHOOutS))),
+ guess_io_opts(TestID, in, InOpts),
+ guess_io_opts(TestID, out, OutOpts),
+ print(pre_best=in_out(InOpts, OutOpts)), !.
+
+guess_io_opts(TestID, IO, HowIn):-
+ current_example_scope(TestID, ExampleNum),
+ findall(hi(HowIn, s(Sizes-S)),
+  (kaggle_arc(TestID, ExampleNum, _, _),
+   grid_indv_versions(TestID, ExampleNum, IO, LHOInS),
+   member(lho(S, InPSS, HowIn, _), LHOInS),
+
+   maplist(length, InPSS, Sizes),
+   Sizes \= [_, 1|_], Sizes\= [c_] ),
+  SizeList),
+ maplist(count_peers(SizeList), SizeList, SLPeers),
+ reverse_sort(SLPeers, Sorted),
+ pp_ilp(s(IO)=Sorted),
+ Sorted=[hi(_, HowIn, s(_))|_].
+
+reverse_sort(InputList, OutputList) :-
+    sort(InputList, Sorted),
+    reverse(Sorted, OutputList).
+
+count_peers(CP, hi(HowIn, s(Sizes)), hi(N, HowIn, s(Sizes))):- findall_count(_, sub_var(s(Sizes), CP), N).
+*/
+
+
 end_of_file.
 
 rhs_ground(G):- ground(G),!.

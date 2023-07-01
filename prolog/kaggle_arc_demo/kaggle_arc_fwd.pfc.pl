@@ -81,7 +81,7 @@ startAll_4 ==> (all_arc_test_name(ID) ==>process_test(ID)).
 ((process_test(TestID)/find_test_gids(TestID,Type,GID))==> test_to_gid(TestID,Type,GID)).
 ((process_oid(GID)/find_test_gids(TestID,Type,GID))==> test_to_gid(TestID,Type,GID)).
 
-((test_to_gid(TestID,train_input,GID),process_test(TestID))==>{assert_id_grid_cells(GID),individuate(complete,GID,_)}).
+((test_to_gid(TestID,train_input,GID),process_test(TestID))==>{assert_id_grid_cells(GID),individuate_3(complete,GID,_)}).
 
 (((test_to_gid(TestID,visible,GID),(process_test(TestID)/(unique_colors(GID,Colors),member(Color,Colors)))))==>color_of(TestID,Color)).
 

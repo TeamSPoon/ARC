@@ -108,8 +108,10 @@ real_colors(GPoints,Cs):-
  findall(C,(sub_term(C,GPoints),is_real_color(C),is_fg_color(C)),L),list_to_set(L,S),!,Cs=S.
 
 into_fg_ngrid(NormGrid,NormNGridFG):-
-  mapgrid(into_fg_bg_as(fg,bg),NormGrid,MonoNorm),
-  into_ngrid(MonoNorm,NormNGrid),mapgrid(fg_grid_syms,NormNGrid,NormNGridFG),!.
+  mapgrid(into_fg_bg_as(wfg,bg),NormGrid,MonoNorm),
+  into_ngrid(MonoNorm,NormNGrid),
+  %print_ss("into_ngrid",MonoNorm,NormNGrid),
+  mapgrid(fg_grid_syms,NormNGrid,NormNGridFG),!.
 
 fg_grid_syms(BG,_):- is_bg_color(BG),!.
 fg_grid_syms(BG,_):- var(BG),!.
@@ -125,7 +127,7 @@ add_extra_propz(obj(Obj),obj(ObjL)):- add_extra_propz_l(Obj,ObjL),!.
 
 add_extra_propz_l(ObjO,ObjO).
 
-make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
+make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):- 
   make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjM),
   add_extra_propz(ObjM,ObjO).
 
@@ -230,6 +232,7 @@ make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
  % RE=ADD=PHASE2 
   normalize_grid(NormOps,Grid,NormGrid),local_shape_id(NormGrid,NormSID),
   into_fg_ngrid(NormGrid,NormNGrid), ngrid_syms(NormNGrid,NSymCounts),
+  print_ss(into_norm_fg_ngrid(RotG,NormOps),Grid,NormNGrid),nl,writeg(NormNGrid),nl,
 
   compress_grid(CompOps,NormGrid,CompGrid),local_shape_id(CompGrid,CompSID),
   %writeg([normgrid=NormGrid]), 
@@ -267,15 +270,17 @@ make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):-
     iz(ngrid(NormNGrid)),
     NSymCounts,
     unkept(loc2G(LocXG,LocYG)),
-    kept(center2D(CentX,CentY)),
-    kept(center2G(CentXG,CentYG)),
-    iz(cenGY(CentYG)),iz(cenGX(CentXG)),  
+    %kept(center2D(CentX,CentY)),
+    %kept(center2G(CentXG,CentYG)),
+    %iz(cenGY(CentYG)),iz(cenGX(CentXG)),  
+    iz(cenY(CentY)),iz(cenX(CentX)),  
     unkept(bottem2D(BottemX,BottemY)),unkept(bottem2G(BottemXG,BottemYG)),
     vis2D(SizeX,SizeY), 
     %kept(iz(vis2G(SizeXG))), %
-    iz(sizeGY(SizeYG)),iz(sizeGX(SizeXG)),
+    %iz(sizeGY(SizeYG)),iz(sizeGX(SizeXG)),
+    iz(sizeY(SizeY)),iz(sizeX(SizeX)),
 
-    global2G(GlobalXG,GlobalYG),
+    %global2G(GlobalXG,GlobalYG),
   % RE=ADD=PHASE2 iz(mono_algo_sid(norm,MonoNormShapeID)),    
     iz(sid(ShapeID)),
     %ngrid(NGrid),
@@ -843,7 +848,7 @@ aggregates(link(_,_,_)).
 aggregates(link(_,_)).
 aggregates(insideOf(_)).
 
-is_rule_mapping(Obj):- current_predicate(is_mapping/1), is_mapping(Obj),!.
+is_rule_mapping(Obj):- fail, current_predicate(is_mapping/1), is_mapping(Obj),!.
 
 
 %is_bg_object(Obj):- get_black(Black),has_prop(pen(  [cc(Black,_)]),Obj).
@@ -1156,15 +1161,18 @@ acmass(C-_,1):- nonvar_or_ci(C),!.
 omass(I,X):- indv_props(I,L),member(mass(X),L),!.
 omass(I,XX):- is_object(I),!,must_det_ll((localpoints(I,L), mass(L,X))),!,XX=X.
 
+
+cmass(Cs,Count):- include(nonvar,Cs,NV),include(is_fgp,NV,FG),length(FG,Count).
+
 mass(C,1):- is_fg_color(C),!.
 mass(C,0):- (is_bg_color(C);var(C);C==[]),!.
-mass(I,Count):- is_grid(I),!,append(I,Cs),!,mass(Cs,Count),!.
-mass([G|Grid],Points):- (is_group(Grid);(is_list(Grid),is_group(G))),!,mapgroup(mass,[G|Grid],MPoints),sum_list(MPoints,Points).
-mass([G|Grid],Points):- my_maplist(mass,[G|Grid],MPoints),sum_list(MPoints,Points),!.
 mass(Point,Mass):- is_point(Point),!,(is_fg_point(Point)->Mass=1;Mass=0).
-mass(I,X):- is_object_or_oid(I),indv_props(I,mass(X)),!.
-mass(I,X):- var_check(I,mass(I,X)),!.
+mass(I,Count):- is_grid(I),!,append(I,Cs),!,cmass(Cs,Count),!.
+%mass([G|Grid],Points):- (is_group(Grid);(is_list(Grid),is_group(G))),!,mapgroup(mass,[G|Grid],MPoints),sum_list(MPoints,Points).
+mass([G|Grid],Points):- maplist(mass,[G|Grid],MPoints),sum_list(MPoints,Points),!.
 mass(I,Count):- globalpoints(I,Points),mass(Points,Count),!.
+mass(I,X):- var_check(I,mass(I,X)),!.
+mass(I,X):- is_object_or_oid(I),indv_props(I,mass(X)),!.
 
 is_object_or_oid(I):- once((is_object(I) ; is_oid(I))).
 
@@ -1370,7 +1378,14 @@ isz(I,X):- var_check(I,isz(I,X))*->true;(indv_props(I,iz(X))).
 
 vm_to_printable(D,R) :- Objs = D.objs,!, (Objs\==[] -> R = Objs; R = D.grid ).
 
-resolve_reference(R,Var):- is_vm_map(R),!,Objs = R.objs,!, (Objs\==[] -> Var=Objs; Var = R.grid).
+is_non_reference(R):- plain_var(R),!.
+is_non_reference(_-_).
+is_non_reference(R):- is_color(R),!.
+is_non_reference(R):- is_point(R),!.
+is_non_reference(R):- \+ compound(R),!,fail.
+
+resolve_reference(R,_):- is_non_reference(R),!,fail.
+resolve_reference(R,Var):- !, is_vm_map(R),!,Objs = R.objs,!, (Objs\==[] -> Var=Objs; Var = R.grid).
 resolve_reference(R,Var):- compound(R),arc_expand_arg(R,Var,Goal),!,call(Goal).
 resolve_reference(R,Var):- arc_expand_atom(R,Var),!.
 resolve_reference(R,Var):- nonvar(R),R\=obj(_),known_gridoid(R,Var),!.
@@ -1755,7 +1770,8 @@ object_ngrid(Obj,GNGridFG):- object_grid(Obj,Grid), into_ngrid(Grid,GNGrid),mapg
 object_ngrid_symbols(Obj,Syms):- object_ngrid(Obj,NGrid), ngrid_syms(NGrid,Syms).
 
 ngrid_syms(NGrid,NSymCounts):- fix_tt_juctions(NGrid,TGrid90),
- subst_syms(bg,TGrid90,GFlatSyms),get_ccs(GFlatSyms,Syms),
+  subst_syms(bg,TGrid90,GFlatSyms),get_ccs(GFlatSyms,Syms),
+  writeln(syms(TGrid90+GFlatSyms+Syms)),
  create_sym_vectors(Syms,NSymCounts).
 
 /*
@@ -1768,15 +1784,16 @@ ngrid_syms(NGrid,[Extra]):- !,
 */ 
 create_sym_vectors(Syms,Counts):-
   findall(sym_counts(Sym,Count),
-    (vector_pairs(T,ListU),
-     sort(ListU,List),atomic_list_concat([sym,T|List],'_',Sym),
-     total_ccs(1,List,Syms,Count)),Counts).
+    (vector_pairs(T,ListU),sort(ListU,List),
+     atomic_list_concat([sym,T|List],'_',Sym),
+     total_ccs(10,List,Syms,Count)),Counts).
 
 total_ccs(_,[],_,0).
 total_ccs(N,[S|List],Syms,Count):- 
  N2 is N * 10, 
  total_ccs(N2,List,Syms,CT),!,
- (member(cc(S,C),Syms)->(Count is (CT + (C*N))); Count=CT).
+ (((member(cc(S,C),Syms),nonvar(C))->true;
+   findall_count(_,member(S,Syms),C))-> (Count is (CT + (C*N))); Count=CT).
 
 into_sym_count(cc(Sym,Count),sym_counts(Sym,Count)).
 
@@ -1785,10 +1802,21 @@ into_sym_count(cc(Sym,Count),sym_counts(Sym,Count)).
 %vector_pairs([S]):- find_syms(_,S).
 vector_pairs(T,SS):- findall_vset(T,find_syms(T,_),TT),member(T,TT),findall(S,find_syms(T,S),SS).
 
+
 find_syms(node,'@'). find_syms(node,'+'). find_syms(node,'*'). find_syms(node,'~').
 %find_syms(dir,'<'). find_syms(dir,'>'). find_syms(dir,'v'). find_syms(dir,'^').
-find_syms(extend,'-'). find_syms(extend,'|'). 
-find_syms(extend,'\\'). find_syms(extend,'/').
+find_syms(extend,'-'). find_syms(extend,'|'). find_syms(extend,'\\'). find_syms(extend,'/').
+
+/*
+find_syms(corners,N2):- name(N2,[355]). %0
+find_syms(corners,N2):- name(N2,[356]). 
+find_syms(corners,N2):- name(N2,[357]). 
+find_syms(corners,N2):- name(N2,[358]). 
+find_syms(corners,N2):- name(N2,[359]). 
+find_syms(corners,N2):- name(N2,[360]). %5
+*/
+find_syms(corners,N2):- neih_syms(_,N2).
+
 /*
 find_syms('~'). find_syms('0').
 find_syms('='). find_syms('!'). 
@@ -1807,6 +1835,7 @@ cell_syms(_IBGC,Cell,''):- plain_var(Cell),!.
 cell_syms( IBGC,Cell,''):- sub_var(IBGC,Cell).
 cell_syms(_IBGC,Cell,'@'):- is_color(Cell),!.
 cell_syms(_IBGC,Sym,Sym):- atom(Sym),atom_length(Sym,1),!.
+cell_syms(_IBGC,Sym,Sym):- number(Sym),!.
 cell_syms(_IBGC,Cell,Cell):- \+ compound(Cell),!.
 cell_syms(IBGC,Cell-_,Sym):- cell_syms(IBGC,Cell,Sym),!.
 
@@ -1891,15 +1920,15 @@ rotSize2D(grav,NT,H,V):-  into_gridoid(NT,G),G\==NT, rotSize2D(grav,G,H,V).
 
 externalize_links(Grp,NewObjs):- var(Grp),!,NewObjs=Grp.
 externalize_links(Grp,NewObjs):- Grp==[],NewObjs=[].
-externalize_links(Grp,Grp):-!. % @TODO remove this 
+%externalize_links(Grp,Grp):-!. % @TODO remove this 
 externalize_links(Grp,NewObjs):- is_group_or_objects_list(Grp),  maplist(externalize_links,Grp,NewObjs).
 externalize_links(obj(Obj),obj(Props)):- !, maplist(externalize_olinks(obj(Obj)),Obj,Props).
 externalize_links(O,O).
 
 indv_link_props(I,[ grid_ops(norm,NormOps),iz(algo_sid(norm,NormSID)), 
-  iz(cenGX(CGX)),iz(cenGX(CGY)), pen(Ps),  rot2D(Rot)]):-  
+  iz(cenX(CGX)),iz(cenY(CGY)), pen(Ps), mass(Mass), rot2D(Rot)]):-  
   grid_ops(I,norm,NormOps), indv_props(I,iz(algo_sid(norm,NormSID))),
-  center2G(I,CGX,CGY),pen(I,Ps),rot2D(I,Rot),!.
+  center2D(I,CGX,CGY),pen(I,Ps),rot2D(I,Rot),mass(I,Mass),!.
 
 
 externalize_olinks(_SObj,link(Grp,OID),elink(Grp,OProps)):- atom(OID), oid_to_obj(OID,Obj), indv_link_props(Obj,OProps),!.

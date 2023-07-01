@@ -1465,6 +1465,7 @@ group_prior_objs0(Why,Objs,WithPriors):-
 
 has_peer_simularz(Objs):- sub_cmpd(simularz(S,_),Objs),nop(S=simularz(_)),!.
 
+add_how_simular(ObjsIn,ObjsIn):-!.
 add_how_simular(ObjsIn,ObjsIn):- has_peer_simularz(ObjsIn),!.
 add_how_simular(ObjsIn,Simulars):-
   add_how_simular(ObjsIn,ObjsIn,Simulars).
