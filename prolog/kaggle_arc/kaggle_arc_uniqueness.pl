@@ -842,11 +842,28 @@ get_object_dependancy(InfoStart, TestID, ExampleNum, ActionGroupIn, ActionGroupO
       relaxed_levels(RelaxLvl),
       wots(RelaxLvlS, write([relax(RelaxLvl)|InfoStart])),
       print_ss(get_object_dependancy(RelaxLvlS), LHSObjs, RHSObjs),
-      ((once((normalize_objects_for_dependancy(RelaxLvl, TestID, ExampleNum, RHSObjs, LHSObjs, RHSObjsOrdered, LHSObjsOrdered),
+      ((once((
+       must_det_ll((normalize_objects_for_dependancy(RelaxLvl, TestID, ExampleNum, RHSObjs, LHSObjs, 
+        RHSObjsOrdered, LHSObjsOrdered))),
       InfoIn = [step(0), relax(RelaxLvl), ctx(in_out), example(ExampleNum), testid(TestID)|InfoStart],
+
+      must_det_ll((LHSObjsOrdered\==[];RHSObjsOrdered\==[])),
+
+      show_step(40,ActionGroupIn,InfoIn, LHSObjsOrdered, RHSObjsOrdered),
+
 
       calc_o_d_recursive(VM, ActionGroupIn, InfoIn, [], LHSObjsOrdered, RHSObjsOrdered, ActionGroupOut, Groups))))))), !.
 
+show_step(Max,ActionGroupIn,Info, LHSObjs, RHSObjs):-
+  (LHSObjs\==[];RHSObjs\==[]),
+ must_det_ll(((
+   dash_chars,
+   \+ \+ pp_ilp([Info, narrativeIn = ActionGroupIn]),
+   length(LHSObjs, CI), length(RHSObjs, CO), 
+   print_ss(wqs(step_ci_co(CI, CO)), LHSObjs, RHSObjs),
+   if_t(Max=<20,pp_ilp(in=LHSObjs)), 
+   if_t(Max=<20,pp_ilp(out=RHSObjs))))),!.
+   
 
 needs_arrange(IndvS,IndvR):- once((largest_first(mass,IndvS,Indv),reverse(Indv,IndvR))),IndvR\==[].
 needs_arrange(IndvS,IndvR):- once((fix_dupes(IndvS,IndvR))),IndvR\==[].
@@ -860,15 +877,8 @@ calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, Acti
 
 calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups):-
   
-
- \+ \+ ignore(((
-  (LHSObjs\==[];RHSObjs\==[]),
-   length(PrevRules, PR), dash_chars,
-   \+ \+ pp_ilp([Info, prevRules=count(PR), narrativeIn = ActionGroupIn]),
-   length(LHSObjs, CI), length(RHSObjs, CO), 
-   print_ss(wqs(step_ci_co(CI, CO)), LHSObjs, RHSObjs),
-   if_t(CI<10,pp_ilp(in=LHSObjs)), 
-   if_t(CO<10,pp_ilp(out=RHSObjs))))),
+ % Show max of 10 objs
+ show_step(10, ActionGroupIn,Info, LHSObjs, RHSObjs),
    
   %( LHSObjs==[] -> NLHSObjs=VM.objs ; NLHSObjs=LHSObjs ),
   NLHSObjs=LHSObjs,
@@ -888,13 +898,16 @@ calc_o_d_recursive(VM, ActionGroupIn,    Info, PrevRules, LHSObjs, RHSObjs, Acti
 calc_o_d_recursive(VM, [Skip|ActionGroupIn], Info, PrevRules, LHSObjs, RHSObjs, AGF, Groups):-
  dash_chars, 
  wdmsg(no_more(Skip)), 
- Skip=..[_|ArgsIn], append(_, [Min..Max, Nth], ArgsIn), !, 
- ((Nth>=Min, Nth=<Max)-> true ; (show_last_chance(no_more(Skip),LHSObjs,RHSObjs),!,fail)),
+% rtrace,
+
+ setup_call_cleanup(true,((
+ Skip=..[_|ArgsIn], append(_, [MinMax, Nth], ArgsIn), !, 
+ ((var(MinMax);(MinMax=Min .. Max, Nth>=Min, Nth=<Max))-> true ; (show_last_chance(no_more(Skip),LHSObjs,RHSObjs),!,fail)),
 
  dash_chars,
    Skip=..[_|Args], last(Args, Was),
     (Was = 0 -> AGF = ActionGroupFinal ; AGF = [Skip|ActionGroupFinal]),
-     calc_o_d_recursive(VM, ActionGroupIn,  Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups), !.
+     notrace,calc_o_d_recursive(VM, ActionGroupIn,  Info, PrevRules, LHSObjs, RHSObjs, ActionGroupFinal, Groups))), notrace),!.
 
 calc_o_d_recursive(_VM, ActionGroupOut, _Info, PrevRules,   [],     [], ActionGroupOut, PrevRules).
 
@@ -1788,7 +1801,8 @@ apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, NewObj):-
   pp_ilp(srules=SRules),
  % add_dependant_scenery
   member(':-'(P,PConds),SRules),
-  trace,vm_has_obj_prop(VM, Obj, PConds),  
+  %trace,
+  vm_has_obj_prop(VM, Obj, PConds),  
   must_det_ll((override_object_1(VM, P, Obj, NewObj))),
   gset(VM.robjs) = [NewObj|VM.robjs],
   globalpoints(NewObj, GPoints),
