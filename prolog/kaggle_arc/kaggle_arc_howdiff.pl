@@ -857,9 +857,9 @@ type_prop(reposition,loc2D(_,_)).
 type_prop(reposition,center2G(_,_)).
 %type_prop(reposition,loc2G(_,_)).
 type_prop(reposition,iz(locX(_))).
-type_prop(reposition,iz(cenGX(_))).
+type_prop(reposition,iz(cenX(_))).
 type_prop(reposition,iz(locY(_))).
-type_prop(reposition,iz(cenGY(_))).
+type_prop(reposition,iz(cenY(_))).
 type_prop(reposition,edge(_,_)).
 %type_prop(rerelate,link(_,_)).
 type_prop(rotate,rotG(_)).
@@ -870,7 +870,7 @@ type_prop(rescale,vis2D(_,_)).
 type_prop(rescale,iz(sizeGX(_))).
 type_prop(rescale,iz(sizeGY(_))).
 type_prop(rescale,rotSize2D(_,_,_)).
-type_prop(rescale,mass(_)).
+%type_prop(rescale,mass(_)).
 %type_prop(rescale,cc(fg,_)).
 type_prop(rescale,grid_rep(norm,_)).
 type_prop(reshape,shape_rep(grav,_)).
@@ -882,8 +882,8 @@ type_prop(reshape,iz(symmetry_type(_,_))).
 type_prop(reshape,grid_rep(norm,_)).
 type_prop(repaint,colors_cc(_)).
 type_prop(repaint,pen(_)).
-type_prop(repaint,cc(_,_)).
-type_prop(repaint,grid_rep(norm,_)).
+%type_prop(repaint,cc(_,_)).
+%type_prop(repaint,grid_rep(norm,_)).
 
 type_prop(reorder,pg(_Peers,_OG,_Type,_Ord)).
 type_prop(reorder,link_count(_,_)).

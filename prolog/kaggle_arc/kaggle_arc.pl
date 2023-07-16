@@ -138,6 +138,12 @@ quietlyd(G):- quietly(G),!.
 :- catch((assert(('$autoload'(_,_,_):- fail))),_,true).
 %'$autoload'(_,_,_):- fail.
 
+/*
+:- multifile(prolog_stack:option/2).
+:- dynamic(prolog_stack:option/2).
+:- multifile(option/2).
+:- dynamic(option/2).
+*/
 
 :- dynamic(em_html/0).
 
@@ -935,7 +941,7 @@ create_group_dmiles:-
    list_to_set(Flat,SetR), reverse(SetR,Set),
 
 
-  create_group(dmiles_fast,'bd14c3bf 08ed6ac7 ea32f347  0a2355a6 37d3e8b2 a61ba2ce b230c067 d2abd087 6e82a1ae 0d3d703e a61f2674 e509e548 810b9b61 aedd82e4 817e6c09  ae58858e fea12743'),
+  create_group(dmiles_fast,'bd14c3bf 08ed6ac7 ea32f347  0a2355a6 37d3e8b2 a61ba2ce b230c067 d2abd087 6e82a1ae 0d3d703e a61f2674 e509e548 810b9b61 aedd82e4 817e6c09  ae58858e'),
 
   
   create_group(dmiles_cc_1,[t(ea32f347),t('6e82a1ae'),%v('626c0bcc'),
@@ -954,8 +960,22 @@ create_group_dmiles:-
   %     find-the-5-and-1-l6ae9ses9zaejs6idai 
     % Importance-of-social-distance-l6afc1q0dm28z9i6egn find-the-color-of-the-gray-pixels-l6afriful4bel4379yo
   create_group(dmiles,'bd14c3bf 08ed6ac7 ea32f347  0a2355a6 37d3e8b2 a61ba2ce b230c067 d2abd087 6e82a1ae 0d3d703e a61f2674 e509e548 810b9b61 aedd82e4
-    817e6c09  ae58858e fea12743  ea32f347'),
+    817e6c09  ae58858e  ea32f347'), % fea12743
 
+create_group(dmiles_h,
+ ['16b78196',
+ '184a9768',
+ '351d6448',
+ '3ed85e70',
+ '40f6cd08',
+ '696d4842',
+ '79fb03f4',
+ '9b365c51',
+ 'b0722778',
+ 'b0f4d537',
+ 'b942fd60',
+ 'd017b73f',
+ 'da515329']),
   must_det_ll((create_group(dmiles_all,Set))),
   %set_current_test('0a2355a6'),
   set_pair_mode(whole_test),

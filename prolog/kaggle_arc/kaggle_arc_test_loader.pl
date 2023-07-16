@@ -405,7 +405,10 @@ get_raw_input_outputs(TestID,ExampleNums,Ins,Outs):-
 
 :- ensure_loaded('../logical_ml/muarc_dmiles').
 %kaggle_arc(TestID,ExampleNum,In,Out):- kaggle_arc_raw(TestID,ExampleNum,In,Out).
-kaggle_arc(TestID,ExampleNum,In,Out):- kaggle_arc_json(TestID,ExampleNum,In,Out).
+kaggle_arc(TestID,ExampleNum,In,Out):- kaggle_arc_json(TestID,ExampleNum,In,OutM),
+  check_output_grid(TestID,ExampleNum,In,OutM,Out).
+
+check_output_grid(TestID,ExampleNum,In,OutM,Out):- is_grid(OutM),Out=OutM.
 
 /*kaggle_arc(TestID,ExampleNum,In,Out):- var(In),var(Out),!,
   kaggle_arc_raw(TestID,ExampleNum,In0,Out0),

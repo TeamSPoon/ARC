@@ -293,28 +293,36 @@ with_other_grid(OtherGrid,Goal):-
     (set_target_grid(OtherGrid),Goal)).
 
 
+:- dynamic(is_decl_other_grid/2).
+ensure_other_grid(ThisGrid,OtherGrid):- other_grid(ThisGrid,OtherGrid),!.
+ensure_other_grid(ThisGrid,OtherGrid):- asserta_if_new(is_decl_other_grid(ThisGrid,OtherGrid)).
+
+other_grid(ThisGrid,OtherGrid):- is_decl_other_grid(ThisGrid,OtherGrid),!.
+other_grid(ThisGrid,OtherGrid):- is_decl_other_grid(OtherGrid,ThisGrid),!.
+other_grid(ID,OtherGrid):- \+ is_grid(ID),
+  once((testid_name_num_io(ID,TestID,Example,Num,IO),ExampleNum = Example+Num,
+  ground(ExampleNum),
+  in_to_out(IO,OI), ignore(ExampleNum \= tst+_), 
+  kaggle_arc_io(TestID,ExampleNum,OI,OtherGrid))).
+
+other_grid(Grid,OtherGrid):- \+ is_grid(Grid),!, into_grid(Grid,ThisGrid),  Grid\==ThisGrid,!,other_grid(ThisGrid,OtherGrid).
+other_grid(ThisGrid,OtherGrid):-
+  once((kaggle_arc_io(TestID,ExampleNum,IO,ThisGrid), 
+  in_to_out(IO,OI), ignore(ExampleNum \= tst+_), 
+  kaggle_arc_io(TestID,ExampleNum,OI,OtherGrid))).
+  
 other_grid(_,OtherGrid):- luser_getval(other_grid,OtherGrid),is_grid(OtherGrid),!.
+  
 other_grid(In,OtherGrid):- 
   get_current_test(TestID), kaggle_arc(TestID,_ExampleNum,I,O),
   (In == I -> OtherGrid=O ; In==O -> OtherGrid=I),!.
 other_grid(_,OtherGrid):- peek_vm(VM), OtherGrid = VM.target_grid, is_grid(OtherGrid),!.
-other_grid(Grid,OtherGrid):- is_other_grid(Grid,OtherGrid),!.
-other_grid(Grid,OtherGrid):- \+ is_grid(Grid),!, into_grid(Grid,ThisGrid),  Grid\==ThisGrid,!,other_grid(ThisGrid,OtherGrid).
 other_grid(In,OtherGrid):- get_current_test(TestID), muarc_tmp:grid_size_prediction(TestID,In,PH,PV), make_grid(PH,PV,OtherGrid).
 
-:- dynamic(is_decl_other_grid/2).
-ensure_other_grid(ThisGrid,OtherGrid):- is_other_grid(ThisGrid,OtherGrid),!.
-ensure_other_grid(ThisGrid,OtherGrid):- asserta_if_new(is_decl_other_grid(ThisGrid,OtherGrid)).
 
-is_other_grid(ThisGrid,OtherGrid):- is_decl_other_grid(ThisGrid,OtherGrid),!.
-is_other_grid(ThisGrid,OtherGrid):- is_decl_other_grid(OtherGrid,ThisGrid),!.
-is_other_grid(ThisGrid,OtherGrid):-
-  once((kaggle_arc_io(TestID,ExampleNum,IO,ThisGrid), 
-  in_to_out(IO,OI), ignore(ExampleNum \= tst+_), 
-  kaggle_arc_io(TestID,ExampleNum,OI,OtherGrid))).
 
 other_grid_size(_Grid,PH,PV):- luser_getval(other_grid_size,size2D(PH,PV)),!.
-other_grid_size( Grid,PH,PV):- must_det_ll((other_grid(Grid,OtherGrid),grid_size(OtherGrid,PH,PV))).
+other_grid_size( Grid,PH,PV):- must_det_ll((other_grid(Grid,OtherGrid)->grid_size(OtherGrid,PH,PV))).
 other_grid_size(   In,PH,PV):- get_current_test(TestID), muarc_tmp:grid_size_prediction(TestID,In,PH,PV).
 
 

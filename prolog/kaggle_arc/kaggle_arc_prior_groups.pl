@@ -488,6 +488,7 @@ wp_s_up(S,_):- write(S),!. wp_n_sp(N):- N>0,!,write(' '),Nm1 is N -1,wp_n_sp(Nm1
 
 
 
+
 print_treeified_props(Objs):-
   print_treeified_props(treeified_props,Objs),!.
 print_treeified_props(Named,Objs):-
@@ -598,7 +599,7 @@ is_prop2(grid(_)). is_prop2(f_grid(_)). is_prop2(pen(_)). is_prop2(unique_colors
 is_prop2(rul(_)). is_prop2(localpoints(_)). is_prop2(globalpoints(_)).
 is_prop2(iz(_)).  is_prop2(giz(_)).  is_prop2(oid(_)). 
 is_prop2(mass(_)). is_prop2(rot2D(_)). 
-is_prop2(simularz(_,_)). is_prop2(link(_,_)).
+is_prop2(samez(_,_)). is_prop2(link(_,_)).
 is_prop2(pg(_,_,_,_)).
 %is_prop2(center2D(_,_)). %is_prop2(rotSize2D(_,_)). %is_prop2(grid_ops(_,_)). 
 % is_prop2(grid_rep(_,_)). is_prop2(points_rep(_,_)).
@@ -635,7 +636,7 @@ skip_extending_proplist(I):- \+ compound(I),!.
 skip_extending_proplist([_]).
 skip_extending_proplist(I):- \+ is_group(I),!.
 skip_extending_proplist(I):- is_group(I), \+ chk_from_same_grid(I),!.
-skip_extending_proplist(I):- sub_cmpd(pg(_,simularz(_,_),_,_),I),!.
+skip_extending_proplist(I):- sub_cmpd(pg(_,samez(_,_),_,_),I),!.
 %skip_extending_proplist(I):- sub_cmpd(links_count(_,_),I).
 
 ensure_group_proplist(I,AG0):- skip_extending_proplist(I),!,AG0=I.
@@ -938,7 +939,7 @@ prop_name(Prop,Named):- prop_first_value(Prop,Value), value_to_name(Value,Named)
 
 
 make_prop_name(X,Y):- \+ compound(X),!,X=Y.
-make_prop_name(simularz(Prop, _),simularz(Named)):- !, make_prop_name(Prop,Named).
+make_prop_name(samez(Prop, _),samez(Named)):- !, make_prop_name(Prop,Named).
 make_prop_name(pg(_,X,R,_),pg(X,R)):-!.
 make_prop_name(iz(Prop),iz(Named)):- !, make_prop_name(Prop,Named).
 make_prop_name(giz(Prop),giz(Named)):- !, make_prop_name(Prop,Named).
@@ -1459,12 +1460,14 @@ add_rankings(Why,Objs,WithPriors):-
   group_prior_objs0(Why,Simulars,WithPriors),!.
 
 group_prior_objs0(Why,Objs,WithPriors):- 
- must_det_ll(group_prior_objs1(Why,Objs,WithPriors)),!,
+ must_det_ll(group_prior_objs1(Why,Objs,WithPriors)),!, 
  (Objs=@=WithPriors -> wdmsg(group_prior_objs0_same(Why)) ; wdmsg(group_prior_objs0_DIFFF(Why))),
+ if_t(Why = tid_gid(_>(tst+_)*out,_),nop((ds,break))),
  !.
 
-has_peer_simularz(Objs):- sub_cmpd(simularz(S,_),Objs),nop(S=simularz(_)),!.
+has_peer_simularz(Objs):- sub_cmpd(samez(S,_),Objs),nop(S=samez(_)),!.
 
+add_how_simular(ObjsIn,ObjsIn):- !.
 add_how_simular(ObjsIn,ObjsIn):- has_peer_simularz(ObjsIn),!.
 add_how_simular(ObjsIn,Simulars):-
   add_how_simular(ObjsIn,ObjsIn,Simulars).
@@ -1476,13 +1479,15 @@ add_how_simular([obj(O)|Objs],ObjsIn,[obj(OO)|Simulars]):-
   add_how_simular(Objs,ObjsIn,Simulars).
 
 add_how_common([],_,[]):-!.
-add_how_common([Prop|O],Rest,[Prop,simularz(Name,N)|OO]):-   
-  Prop\=giz(_), Prop\=simularz(_,_), Prop\=oid(_),  Prop\=link(_,_),
-  \+ (compound_name_arity(Prop,_,A),A>2),
+add_how_common([Prop|O],Rest,[Prop,samez(Name,N)|OO]):-   
+  Prop\=giz(_), Prop\=samez(_,_), Prop\=oid(_),  Prop\=link(_,_),
+  % \+ (compound_name_arity(Prop,_,A),A>2), 
+  Prop\=pg(_,_,_,_),
   prop_name(Prop,Name),
   % \+ ( arg(2,Prop,E),number(E) ),
+
   % Prop\=pg(_,_,_,_),
-  findall(_,(sub_term(E,Rest),E==Prop),L),length(L,N),
+  include(has_prop_variant(Prop),Rest,L),length(L,N),
   %prop_name(Prop,Name),!,
   add_how_common(O,Rest,OO).
 add_how_common([Prop|O],Rest,[Prop|OO]):-
@@ -1505,7 +1510,7 @@ group_prior_objs1(Why,Objs,WithPriors):-
      add_uset_priors(ObjsLen,[iz(sid(_))|Lbls],Objs,WithPriors))))).
 
 skip_prior(HAD):- \+ compound(HAD),!.
-%skip_prior(HAD):- HAD=simularz(_,_),!,fail.
+%skip_prior(HAD):- HAD=samez(_,_),!,fail.
 skip_prior(HAD):- \+ \+ not_care_to_count(HAD),!.
 skip_prior(HAD):- priority_prop(HAD),!,fail.
 skip_prior(HAD):- compound_name_arity(HAD,_,N),!,N>1.
@@ -1539,7 +1544,7 @@ add_prior_info(Objs,ObjsLen,Common,VbO,obj(List),obj(NewList)):-
 add_prior_info(Objs,ObjsLen,Common,VbO,(List),(NewList)):- 
   add_prior_info_1(Objs,ObjsLen,Common,VbO,List,NewList),!.
 
-add_prior_info_1(Objs,ObjsLen,_Common,VbO,PropList,OUT):- is_list(PropList),ObjsLen>1, chk_from_same_grid(Objs),  
+add_prior_info_1(Objs,ObjsLen,_Common,VbO,PropList,OUT):- ObjsLen<40, is_list(PropList),ObjsLen>1, chk_from_same_grid(Objs),  
   length(VbO,Rankers), Rankers>1,
   find_version(VbO,Prop,N1,N2,PropList),
   Prop\=pg(_,_,_,_), % Prop\=pen(_),
@@ -1559,7 +1564,7 @@ add_prior_info_1(Objs,ObjsLen,_Common,VbO,PropList,OUT):- is_list(PropList),Objs
   rank_size(ObjsLen,Name,N2,ExtraProp),
   %arg(4,ExtraProp,A4),
   %pg(ObjsLen,sames(Prop,_),rank1,RR),
-  append(PropListR,[R ,ExtraProp %,simularz(Name,N1,IL)
+  append(PropListR,[R ,ExtraProp %,samez(Name,N1,IL)
      /*,
          pg(ObjsLen,Prop,sames,IL),
          
@@ -1575,7 +1580,7 @@ rank_size(ObjsLen,Name,N2,pg(_,Name,rankLS,N)):- N is ObjsLen-N2+1,!.
 
 use_simulars(_):- true.
 use_rank1(mass(_)).
-use_rank1(simularz(_,_)).
+use_rank1(samez(_,_)).
 use_rank1(links_count(contains,_)).
 use_rank1(links_count(_,_)).
 use_rank1(_).
@@ -1794,7 +1799,7 @@ has_subterm(P1,HasNumber):- sub_term(N,HasNumber),call(P1,N),!.
 
 variance_had_counts(Common,HAD,RRR,Versions,Missing,VersionsByCount,Variance):-
  ignore(show_failure(always,chk_from_same_grid(RRR))),
- %HAD\=simularz(_,_),
+ %HAD\=samez(_,_),
  must_det_ll((  
   make_unifiable_cc(HAD,UHAD),
   findall(RR,(member(RR,RRR), once((indv_props_list(RR,R), \+ member(UHAD,R)))),Missing),
@@ -2289,6 +2294,7 @@ ranking_pred(rank2(F1),I,Value):- atom(F1),Prop=..[F1,O1,O2], indv_props_list(I,
 %ranking_pred(rank2(F1),I,Value):- !, catch(call(F1,I,O1,O2),_,fail),!,combine_number(F1,O1,O2,Value).
 ranking_pred(_F1,I,Value):- mass(I,Value).
 
+has_prop_variant(P,obj(L)):- member(E,L),E=@=P,!.
 
 indv_props_list_one(L,[Obj]):- is_prop1(L),!,Obj=L.
 indv_props_list_one(Obj,L):- indv_props_list(Obj,L).

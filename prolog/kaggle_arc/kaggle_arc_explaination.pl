@@ -1033,6 +1033,9 @@ pp_ilp(D,print_grid(Desc,Grid)):- !, prefix_spaces(D,print_grid(Desc,Grid)).
 pp_ilp(D,A+B):-  !, pp_ilp(D,A),pp_ilp(D,B).
 pp_ilp(D,Grid):- is_grid(Grid),!,prefix_spaces(D,print_grid(Grid)),!,nl.
 pp_ilp(D,Grid):- is_object(Grid),!,prefix_spaces(D,print_ogrid(Grid)),!,nl.
+
+pp_ilp(D,[P1|PL]):- is_prop1(P1),is_obj_props(PL),!,print_proplist(D,'h',[P1|PL]).
+
 pp_ilp(D,List):- is_list(List), !,
  must_det_ll((
   %prefix_spaces(D,write('[')),
@@ -1128,6 +1131,9 @@ pp_ilp(D,Grid):- is_group(Grid),!,
 pp_ilp(D,Grid):- is_obj_props(Grid),!,sort(Grid,R),reverse(R,S), prefix_spaces(D,pp(S)).
 %pp_ilp(D,List):- is_list(List), \+ is_grid(List),write('['),maplist(pp_ilp(D+3),List),write(']').
 
+pp_ilp(D,G1):- G1=rule(Info,PConds,P),!,pp_ilp(D,ac_unit(rule(P,Info),PConds)).
+pp_ilp(D,G1):- G1=exists( left( obj(List))),!,pp_ilp(D,ac_unit(exists( left( obj)),List)).
+
 pp_ilp(D,G1):- is_prop1(G1), prefix_spaces(D,print_unit(G1)),!.
 
 %pp_ilp(D,T):- into_solid_grid_strings(T,G),!, prefix_spaces(D,print(G)),!.
@@ -1165,36 +1171,56 @@ maybe_show_body_shapes(_D1,Head,Conj):-
               maplist(print_global_ngrid,AllOIDs))))))),!.
 
 
-
+list_or_conjuncts_to_list(Conj,List):- is_list(Conj),!, Conj=List.
+list_or_conjuncts_to_list(Conj,List):- conjuncts_to_list(Conj,List).
 %print_body(D,_,Conj):-   prefix_spaces(D,  portray_clause(current_output, (:- Conj), [portray_goal(user:portray_ilp)])).
-print_body(D,Head, (:- Conj)):- !, conjuncts_to_list(Conj,List),  
+print_body(D,Head, (:- Conj)):- !, list_or_conjuncts_to_list(Conj,List),  
   prefix_spaces(D, (writeln(':- '),
     catch_log(maybe_show_body_shapes(D+1,Head,Conj)),
-    print_body(D+2,Head,List))).
+    print_proplist(D+2,Head,List),
+    write('.'))).
 
-print_body(D,H,List):- once(my_partition(is_debug_info,List,Skip,PSame)),Skip\==[],PSame\==[],!,
+% debug info
+print_proplist(D,H,List):- once(my_partition(is_debug_info,List,Skip,PSame)),Skip\==[],PSame\==[],!,
   if_t(\+ nb_current(without_comment,t), pp(green,Skip)),
-  print_body(D,H,PSame).
-print_body(D,H,List):- once(my_partition(assume_prop,List,Skip,PSame)),Skip\==[],PSame\==[],!,
-  if_t(\+ nb_current(without_comment,t), pp(blue,Skip)), print_body(D,H,PSame).
-print_body(D,H,List):- notrace(print_body1(D,H,List)),!.
+  print_proplist(D,H,PSame).
+% assumed
+print_proplist(D,H,List):- once(my_partition(assume_prop_not_e,List,Skip,PSame)),Skip\==[],!,
+  if_t(\+ nb_current(without_comment,t), pp(blue,Skip)), print_proplist(D,H,PSame).
+% unbound props
+print_proplist(D,H,List):- my_partition(is_unbound_prop,List,Skip,PSame),Skip\==[],!,
+  print_proplist(D,H,PSame),
+  pp(blue,Skip).
+% shared thus assumed
+print_proplist(D,H,List):- once(my_partition(assume_prop_e,List,Skip,PSame)),Skip\==[],!,
+  pp(cyan,Skip), print_proplist(D,H,PSame).
+% samez/2
+print_proplist(D,H,List):- my_partition(is_functor(samez),List,Skip,PSame),Skip\==[],!,
+  predsort(sort_on(arg(2)),Skip,SkipL),
+   pp(yellow,SkipL), print_proplist(D,H,PSame).
+% pg/4
+print_proplist(D,H,List):- my_partition(is_functor(pg),List,Skip,PSame),Skip\==[],!,
+   predsort(sort_on(arg(4)),Skip,SkipL),
+   pp(orange,SkipL), print_proplist(D,H,PSame).
+print_proplist(D,H,List):- notrace(print_proplist1(D,H,List)),!.
 
-print_body1(D,H,List):- select(Gps,List,Rest), is_gps(Gps,Call),!,format('~N'),call(Call),print_body1(D,H,Rest).
-print_body1(_D,_,[]):- !,write('.').
-print_body1(D,H,[G1]):- prefix_spaces(D+1,(print_unit(D,H,G1),write('.'))).
-print_body1(D,H,Conj):- compound(Conj),Conj = (G1,Body),
+print_proplist1(D,H,List):- select(Gps,List,Rest), is_gps(Gps,Call),!,format('~N'),call(Call),print_proplist1(D,H,Rest).
+print_proplist1(_D,_,[]):- !.
+print_proplist1(D,H,[G1]):- prefix_spaces(D+1,(print_unit(D,H,G1),write('.'))).
+print_proplist1(D,H,Conj):- compound(Conj),Conj = (G1,Body),
   prefix_spaces(D+1,(print_unit(D,H,G1),write(','))), 
-  print_body1(D,H,Body).
+  print_proplist1(D,H,Body).
 
-print_body1(D,H,[G1|Body]):- make_unifiable(G1,U1),
+print_proplist1(D,H,[G1|Body]):- make_unifiable(G1,U1),
   my_partition(can_unify(U1),Body,Here,Rest), Here=[_,_|_],!,
   prefix_spaces(D+1,(print_unit(D,H,[G1|Here]),write(','))), 
-  print_body1(D,H,Rest).
+  print_proplist1(D,H,Rest).
 
-print_body1(D,H,[G1|Body]):-  
+print_proplist1(D,H,[G1|Body]):-  
   prefix_spaces(D+1,(print_unit(D,H,G1),write(','))), 
-  print_body1(D,H,Body).
-print_body1(D,H,G1):- prefix_spaces(D+1,(print_unit(D,H,G1),write('.'))).
+  print_proplist1(D,H,Body).
+print_proplist1(D,H,G1):- prefix_spaces(D+1,(print_unit(D,H,G1),write('.'))).
+
 
 print_rhs(G1):- \+ sub_var(gps,G1),sub_term(R,G1),is_gps(R,Gps),subst(G1,R,gps,RR),G1\=@=RR,!,print_rhs(RR),call(Gps).
 print_rhs(G1):- pp_no_nl(G1),!.

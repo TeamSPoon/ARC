@@ -837,7 +837,8 @@ meta_point(Object, Height, Width, obj([iv(Object), sizeX(SizeX), sizeY(SizeY), c
      Object == virt_corner_se -> (X is Width, Y is Height, SizeX is 1, SizeY is 1, Mass is 1, unknown_color_hv_point(X, Y, Point), Points = [Point])).
 
 % Define the line object
-meta_line(Object, Height, Width, obj([iv(Object), sizeX(SizeX), sizeY(SizeY), centX(CentX), centY(CentY), mass(Mass), globalpoints(Points), iz(flag(virtual)), iz(shape(line)), grid_sz(Height, Width)])) :-
+meta_line(Object, Height, Width, obj([iv(Object), sizeX(SizeX), sizeY(SizeY), centX(CentX), centY(CentY), mass(Mass),
+    globalpoints(Points), iz(flag(virtual)), iz(shape(line)), grid_sz(Height, Width)])) :-
     center_of_dist(Width, WidthCenter),
     center_of_dist(Height, HeightCenter),
     member(Object, [virt_edge_n, virt_edge_s, virt_edge_w, virt_edge_e]),
@@ -865,7 +866,7 @@ get_grid_objects1(Height, Width, ObjectDesc) :-
     (meta_point(_, Height, Width, ObjectDesc) ; meta_line(_, Height, Width, ObjectDesc)).
 
 
-get_grid_objects(VM, Obj) :-
+vm_virtual_objects(VM, Obj) :-
    peek_vm(VM),
    get_grid_objects1(VM.h, VM.v, ObjectDesc),
    select(globalpoints(Points),ObjectDesc,ObjectDesc0),

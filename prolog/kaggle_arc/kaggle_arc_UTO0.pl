@@ -29,7 +29,7 @@ dont_notice(iz(i_o(_))).
 dont_notice(iz(stype(_))).
 
 
-dont_notice(simularz(P,_)):- do_notice(P),!,fail.
+dont_notice(samez(P,_)):- do_notice(P),!,fail.
 dont_notice(global2G(_,_)).
 dont_notice(iz(symmetry_type(rollD, _))).
 dont_notice(link(contains,_)).
@@ -362,7 +362,7 @@ assume_prop2(grid_sz(_)).
 assume_prop2(global2G(_,_)).
 assume_prop2(was_oid(_)).
 assume_prop2(oid(_)).
-assume_prop2(P):- compound(P),P=simularz(simularz(_),_).
+assume_prop2(P):- compound(P),P=samez(samez(_),_).
 
 
 max_prop_score(P,0.1):- assume_prop1(P),!.
@@ -2611,7 +2611,7 @@ ignore_prop_when(adding,occurs_in_links(contains,_)).
 %ignore_prop_when(adding,pg(_,_,rankLS,_)).
 ignore_prop_when(adding,pg(_,_,_,_)).
 ignore_prop_when(adding,grid_rep(_,_)).
-ignore_prop_when(adding,simularz(_,_)).
+ignore_prop_when(adding,samez(_,_)).
 ignore_prop_when(removing,cc(fg,_)).
 ignore_prop_when(removing,mass(_)).
 ignore_prop_when(removing,links_count(_,_)).

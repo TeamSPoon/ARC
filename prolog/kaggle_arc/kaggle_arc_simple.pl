@@ -40,12 +40,12 @@ try_easy_io(Name,I,O):-
 
 
 
-grid_w_obj(Grid,Why,Objs):-
+grid_w_obj(Grid,Why,Obj):-
   (var(Grid)->arc_grid(Grid);true),
   ROptions = complete,
   individuate(ROptions,Grid,_IndvS),  
   why_grouped(Why,GS),
-  member(Objs,GS).
+  member(Obj,GS).
 
 grid_grouped(Grid,Why,Objs):- 
  (var(Grid)->arc_grid(Grid);true),
@@ -161,6 +161,7 @@ propset_indivs(PropsSet,OtherProps,IndvS,Why,Grp):-
 
 haz_prop(P,O):- has_prop(P,O).
 
+/*
 :- export(grid_part/2).
 grid_part(Grid,Info):- var(Grid), get_current_test(TestID), some_current_example_num(ExampleNum),!,
   kaggle_arc_io(TestID,ExampleNum,_,Grid),
@@ -169,7 +170,7 @@ grid_part(Grid,Info):- var(Grid), get_current_test(TestID), some_current_example
 %grid_part(Grid,InfoR):- nth1(X,Grid,Info),VInfo=..[v|Info],InfoR=..[row,X,VInfo].
 %grid_part(Grid,InfoR):- rot90(Grid,Grid90),nth1(X,Grid90,Info),VInfo=..[v|Info],InfoR=..[col,X,VInfo].
 %grid_part(Grid,NObjs):- wno(individuate(complete,Grid,Objs)), maplist_n(1,number_obj,Objs,NObjs).
-
+*/
 %cheapest_desc(Grid
 
 number_obj(N,obj(List),obj([ord(N)|List])).

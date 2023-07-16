@@ -2219,6 +2219,7 @@ individuate8(VM,ID,ROptions,GridIn,IndvS):-
 post_individuate_8(VM,IndvS):-
   must_det_ll((
       %ObjsB = VM.objs,
+      add_virt_objs(VM),
       remove_background_only_object(VM),
       find_relations(VM),      
       remove_dead_links(VM),
@@ -2237,10 +2238,14 @@ post_individuate_8(VM,IndvS):-
       nop(print_info(IndvS)))).  
 
 
+add_virt_objs(VM):- 
+  must_det_ll((
+  forall(vm_virtual_objects(VM, Meta),addObjects(VM,Meta)))).
+
 add_meta_objs(VM):- 
  must_det_ll((
- % forall(get_grid_objects(VM, Meta),addObjects(VM,Meta)),
   Grid = VM.start_grid,
+  forall(vm_virtual_objects(VM, Meta),addObjects(VM,Meta)),
   other_grid(Grid,Other),
   if_t(fits_inside(Grid,Other), 
   (whole_into_obj(VM,Grid,Whole),

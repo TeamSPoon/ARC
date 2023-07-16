@@ -2147,7 +2147,7 @@ ignore_prop_when(adding,occurs_in_links(contains,_)).
 %ignore_prop_when(adding,pg(_,_,rankLS,_)).
 ignore_prop_when(adding,pg(_,_,_,_)).
 ignore_prop_when(adding,grid_rep(_,_)).
-ignore_prop_when(adding,simularz(_,_)).
+ignore_prop_when(adding,samez(_,_)).
 %ignore_prop_when(removing,cc(fg,_)).
 %ignore_prop_when(removing,mass(_)).
 
