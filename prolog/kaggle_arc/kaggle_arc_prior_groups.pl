@@ -601,6 +601,8 @@ is_prop2(iz(_)).  is_prop2(giz(_)).  is_prop2(oid(_)).
 is_prop2(mass(_)). is_prop2(rot2D(_)). 
 is_prop2(samez(_,_)). is_prop2(link(_,_)).
 is_prop2(pg(_,_,_,_)).
+is_prop2(center2D(_,_)). 
+is_prop2(rot2D(_)). 
 %is_prop2(center2D(_,_)). %is_prop2(rotSize2D(_,_)). %is_prop2(grid_ops(_,_)). 
 % is_prop2(grid_rep(_,_)). is_prop2(points_rep(_,_)).
 %is_prop2(nth_fg_color(_,_)).  %is_prop2(uprop_was(_,_)).  %is_prop2(links_count(_,_)).
@@ -1255,9 +1257,11 @@ remember_propcounts(Named,Diversity,B,Prop,A):- into_test_id_io(Named,TestID,Exa
   assert_if_new(propcounts(TestID,ExampleNum,IO,Diversity,B,Prop,A)).
 
 
+/*
 :- abolish(propcounts/5).
 :- abolish(propcounts/6).
 :- abolish(propcounts/7).
+*/
 
 :- dynamic(propcounts/5).
 :- dynamic(propcounts/6).
@@ -1454,7 +1458,7 @@ add_rankings(Why,ObjsIn,WithPriors):- fail,
  ObjsIn\=@=Objs,!, 
  add_rankings(Why,Objs,WithPriors).
 
-%add_rankings(_,Objs,Objs):-!.
+add_rankings(_,Objs,Objs):- sub_cmpd(pg(_,_,_,_),Objs),!.
 add_rankings(Why,Objs,WithPriors):- 
   add_how_simular(Objs,Simulars),
   group_prior_objs0(Why,Simulars,WithPriors),!.
@@ -1546,20 +1550,21 @@ add_prior_info(Objs,ObjsLen,Common,VbO,(List),(NewList)):-
 
 add_prior_info_1(Objs,ObjsLen,_Common,VbO,PropList,OUT):- ObjsLen<40, is_list(PropList),ObjsLen>1, chk_from_same_grid(Objs),  
   length(VbO,Rankers), Rankers>1,
-  find_version(VbO,Prop,N1,N2,PropList),
+  find_version(VbO,Prop,_N1,N2,PropList),
   Prop\=pg(_,_,_,_), % Prop\=pen(_),
   member(Prop,PropList),
   %prop_name(Prop,Name),  
   value_to_name(Prop,Name),
   
-  R = pg(PGRankers,Name,rank1, RA),  
+  R = pg(_,Name,rank1, RA),  
   \+ member(R,PropList),  
-  
+  PGRankers = _,
   ObjsLen = PGRankers,
   %subst(PropList,Prop,R,PropListR),
   PropList = PropListR,
-  must_det_ll((findall(Obj,(member(Obj,Objs),sub_term(OProp,Obj), (OProp =@= Prop)),Identicals),
-  length(Identicals,IL),
+  must_det_ll((
+  %findall(Obj,(member(Obj,Objs),sub_term(OProp,Obj), (OProp =@= Prop)),Identicals),
+  %length(Identicals,IL),
   RA = N2, % order(N2)^n1(N1)^uniq(IL)^val(Prop)^supr(A4),
   rank_size(ObjsLen,Name,N2,ExtraProp),
   %arg(4,ExtraProp,A4),
@@ -2477,23 +2482,26 @@ read_terms_from_atom(D,Atom):-
    read_term(Stream,D,[]),
    ((D == end_of_file) -> !, fail ; true).
 
+%:- abolish(is_for_ilp/4).
 %learn_ilp:- ensure_test(TestID),learn_ilp(TestID).
 learn_ilp(TestID):- 
   ensure_test(TestID),
   must_det_ll((
     ensure_test(TestID),
     %abolish(arc_test_properties/3), dynamic(arc_test_properties/3),
-    abolish(is_for_ilp/4), dynamic(is_for_ilp/4),
     %compile_and_save_hints(TestID),
-    individuate_all_pairs_from_hints(TestID),
+    %individuate_all_pairs_from_hints(TestID),
     with_individuated_cache(true, 
      forall(kaggle_arc(TestID,ExampleNum,I,O),
       must_det_ll(learn_ilp(TestID,ExampleNum,I,O)))),!,
+    dynamic(is_for_ilp/4),
     listing(is_for_ilp/4),
-    dump_ilp_files(S))),
-    compute_scene_change(TestID),
+    dump_ilp_files(TestID,S),
+   nop(( compute_scene_change(TestID),
     must_det_ll(write_ilp_file(TestID,S,logicmoo_ex)),
-    solve_via_scene_change(TestID).
+    solve_via_scene_change(TestID))))).
+
+
 
 :- abolish(is_for_ilp/4).
 :- dynamic(is_for_ilp/4).
@@ -2501,7 +2509,7 @@ learn_ilp(TestID,ExampleNum,GridIn,GridOut):-
  ExampleNum = (trn+_),!,
   must_det_ll((
     set_example_num(ExampleNum),
-    individuate_pair(complete,GridIn,GridOut,InC,OutC),
+    best_obj_group_pair(TestID, ExampleNum, _HowIO, GridIn, GridOut, InC, OutC), % individuate_pair(complete,GridIn,GridOut,InC,OutC),
     into_ilp_int(ExampleNum,ExampleID),
     assert_ilp(TestID,ExampleNum,liftcover_models,begin(model(ExampleID))),
     maplist(make_ilp_pred(TestID,ExampleNum,lhs),InC),
@@ -2510,18 +2518,19 @@ learn_ilp(TestID,ExampleNum,GridIn,GridOut):-
     assert_ilp(TestID,ExampleNum,liftcover_models,[]),
     assert_ilp(TestID,ExampleNum,liftcover_models,[]),
   !)).
+
 learn_ilp(TestID,ExampleNum,GridIn,GridOut):-  
  ExampleNum = (tst+_),!,
  must_det_ll((
    set_example_num(ExampleNum),
-   individuate_pair(complete,GridIn,GridOut,InC,OutC),
+   best_obj_group_pair(TestID, ExampleNum, _HowIO, GridIn, GridOut, InC, OutC), % individuate_pair(complete,GridIn,GridOut,InC,OutC),
    into_ilp_int(ExampleNum,ExampleID),
-   assert_ilp(TestID,ExampleNum,_,"/*"),
+   nop(assert_ilp(TestID,ExampleNum,_,"/*")),
    assert_ilp(TestID,ExampleNum,liftcover_models,begin(model(ExampleID))),
    maplist(make_ilp_pred(TestID,ExampleNum,lhs),InC),
    maplist(make_ilp_pred(TestID,ExampleNum,rhs),OutC),!,
    assert_ilp(TestID,ExampleNum,liftcover_models,end(model(ExampleID))),
-   assert_ilp(TestID,ExampleNum,_,"*/"))).
+   nop(assert_ilp(TestID,ExampleNum,_,"*/")))).
 
 into_ilp_int(Int,Int):- integer(Int),!.
 into_ilp_int(Example+Num,ExampleID):- % integer(Int).
@@ -2531,7 +2540,8 @@ assert_ilp(TestID,ExampleNum,File,Term):- ground(ExampleNum+File), clause_assert
 assert_ilp(TestID,ExampleNum,File,Term):- mpp(File=Term),!, 
   assert_if_new(is_for_ilp(TestID,ExampleNum,File,Term)),!.
 
-safe_oid(OID,OOID):- atomic_list_concat(['o',_Glyph,Iv,_TV,_UUID,_Trn,Num,IO],'_',OID),
+safe_oid(Obj,OOID):- obj_to_oid(Obj,OID),
+                     atomic_list_concat(['o',_Glyph,Iv,_TV,_UUID,_Trn,Num,IO],'_',OID),
                      atomic_list_concat(['obj',Num,Iv,IO],'_',OOID).
 
 
@@ -2543,11 +2553,10 @@ make_ilp_pred(TestID,Example+Num,LRSide,ObjIn):-
    obj_to_oid(Obj,OIDUS),
    safe_oid(OIDUS,OID),
    %id_shape(SID,LPs),next_to_32(LPs,Shape),   
-   rhs_obj_format(ArgNames),
+   hs_obj_format(LRSide,ArgNames),
    assert_ilp_object(TestID,ExampleNum,LRSide,Obj,OID,ArgNames))).
 
 
-rhs_obj_format([loc2D,rot2D,pen_color,rotSize2D(grav),vis2D,mass,iz(sid)]).
 
 into_2arg(_,_, V1,V2,A2):- V2==true,!, A2 = V1.
 into_2arg(_,_,_V1,V2,A2):- V2==false,!, A2 = V2.
@@ -2556,8 +2565,10 @@ into_2arg(N,_, V1,V2,A2):- into_hv(N,V1,V2,A2).
 into_hv(N,V1,V2,A2):- atom(N), !, A2=..[N,V1,V2].
 into_hv(N,V1,V2,A2):- A2=..[hv,N,V1,V2].
 
-ilp_object_props(Obj,Props,OID,LRhs,Named,V,Pred,Prop):-
-  must_det_ll(ilp_object_props_1(Obj,Props,OID,LRhs,Named,V,Pred,Prop)).
+%ilp_object_props(Obj,Props,OID,LRhs,N=Named,N=V,Pred,Prop):-!,
+%  ilp_object_props(Obj,Props,OID,LRhs,Named,V,Pred,Prop).
+ilp_object_props(Obj,Props,OID,LRhs,_=Named,V,Pred,Prop):-!, ilp_object_props(Obj,Props,OID,LRhs,Named,V,Pred,Prop).
+ilp_object_props(Obj,Props,OID,LRhs,Named,V,Pred,Prop):- must_det_ll(ilp_object_props_1(Obj,Props,OID,LRhs,Named,V,Pred,Prop)).
 
 ilp_object_props_1(_Obj,Props,OID,LRhs,iz(E),V,Pred,iz(P)):- append_term(E,V,P), member(iz(P),Props),!,
    functor(P,EF,_), atomic_list_concat([LRhs,'iz',EF],'_',EFIZ), Pred=..[EFIZ,OID,V].
@@ -2568,27 +2579,66 @@ ilp_object_props_1(_Obj,Props,OID,LRhs,(E),V,Pred,(P)):- E\=iz(_), append_term(E
    functor(P,EF,_), atomic_list_concat([LRhs,EF],'_',EFIZ), Pred=..[EFIZ,OID,V].
 ilp_object_props_1(_Obj,Props,OID,LRhs,(E),A2,Pred,(P)):- E\=iz(_), append_term(E,V1,P0), append_term(P0,V2,P), member((P),Props),!,
    functor(P,EF,_),atomic_list_concat([LRhs,EF],'_',EFIZ), Pred=..[EFIZ,OID,V1,V2],into_2arg(E,EF,V1,V2,A2).
-ilp_object_props_1(Obj,_Props,OID,LRhs,(E),V,Pred,Prop):- E\=iz(_), append_term(E,Obj,P0),append_term(P0,V,P), call(P),!,
+ilp_object_props_1(Obj,_Props,OID,LRhs,(E),V,Pred,Prop):- E\=iz(_), append_term(E,Obj,P0),append_term(P0,V,P), 
+  \+ missing_arity(P,0),call(P),!,
   functor(P,EF,_), atomic_list_concat([LRhs,EF],'_',EFIZ),
   append_term(E,OID,P1),append_term(P1,V,PredR),append_term(E,V,Prop),
   PredR=..[_|PredL], Pred=..[EFIZ|PredL].
+ilp_object_props_1(Obj,_Props,OID,LRhs,(E),VE,Pred,Prop):- E\=iz(_), append_term(E,Obj,P0),
+  between(2,5,Len),length(XY,Len),append_termlist(P0,XY,P), \+ missing_arity(P,0),call(P),!,
+  functor(P,EF,_), atomic_list_concat([LRhs,EF],'_',EFIZ),
+  VE=..[E|XY], Prop=..[E|XY],
+  Pred=..[EFIZ,OID|XY].
+
+
 
 %oid_to_lhs(OID,NewRef):- oid_to_lhs_hide(OID,NewRef),!.
 oid_to_lhs_hide(OID,NewRef):- 
  must_det_ll((
    into_obj(OID,Obj),
    indv_props_list(Obj,Props),
-   lhs_obj_format(Fmt),
+   hs_obj_format(lhs,Fmt),
    maplist(ilp_object_props(Obj,Props,OID,lhs),Fmt,_Args,_TypeSig,PropL),
    %writeq(NewRef=TypeSig),nl,
    %NewRef =.. [lhs|Args],!,
    NewRef = lhs_obj(PropL))).
 
-lhs_obj_format([loc2D,rot2D,pen,rotSize2D(grav),vis2D,mass,iz(sid)]).
+hs_obj_format(lhs,LObjFmt):- hs_obj_format(rhs,ObjFmt),append(ObjFmt,[child_c /*,sym_c,compressed_shapeid=cis,c2d,h_v_size=vis2D*/],LObjFmt).
+hs_obj_format(rhs,[rot2D,shapeid=gis,c2d,t2d]).
 
-%maplist(un_lhs(B),TypeSig,Prop)
 
+safe_obj_num_id(Obj,OOID):- obj_to_oid(Obj,OID),
+                     atomic_list_concat(['o',_Glyph,_Iv,_TV,_UUID,_Trn,Num,IO],'_',OID),
+                     pen(Obj,[cc(Color,_)|_]),
+                     loc2D(Obj,X,Y),                     
+                     se_loc(Obj,BX,BY),
+                     mass(Obj,M),
+                     atomic_list_concat([IO,Num,'_',Color,M,'_',X,'_',Y,'_',BX,'_',BY],'',OOID).
+
+
+c2d(I,cxy(X,Y)):- center2D(I,X,Y).
+l2d(I,nw_loc(X,Y)):- loc2D(I,X,Y).
+t2d(I,txy(X,Y)):- tip_loc(I,X,Y).
+%l2d2(I,se_loc(X2,Y2)):- se_loc(I,X2,Y2).
+sym_c(I,SC):-
+  Prop = sym_counts(S,C),
+  findall(S=C,(indv_props_list(I,Props),member(Prop,Props)),SC).
+
+child_c(I,R):- indv_props(I,links_count(contains,N))->(N)=R;R=no_child.
+gis(I,NormSID):- indv_props(I,iz(algo_sid(norm,NormSID))).
+cis(I,NormSID):- indv_props(I,iz(algo_sid(comp,NormSID))).
+gon(I,NOps):- grid_ops(I,norm,NormOps), rot2D(I,Rot),(select(Rot,NormOps,Ops)->true;NormOps=Ops),
+ renorm_ops(Ops,NOps).
+con(I,NOps):- grid_ops(I,comp,NormOps), rot2D(I,Rot),(select(Rot,NormOps,Ops)->true;NormOps=Ops),
+ renorm_ops(Ops,NOps).
 pen_color(Obj,Color):- (pen(Obj,[cc(Color,_)])->true;(pen(Obj,PenInfo),Color=pen(PenInfo))),!.
+
+
+renorm_ops(Ops,NOps):- \+ compound(Ops),!,NOps=Ops.
+renorm_ops(Ops,NOps):- is_list(Ops),!,maplist(renorm_ops,Ops,NOps).
+renorm_ops(and(L,Ops),Ops):- L==[],!.
+renorm_ops(c_r(copy_row_ntimes(R,T)),copy_column_ntimes(R,T)).
+renorm_ops(Ops,Ops).
 
 
 assert_ilp_object(TestID,ExampleNum,LRSide,Obj,OID,ArgNames):-
@@ -2599,7 +2649,9 @@ assert_ilp_object(TestID,ExampleNum,LRSide,Obj,OID,ArgNames):-
    if_t(LRSide==rhs, assert_ilp_typed(LRSide,TestID,ExampleNum,liftcover_models,rhs_peice(ExampleID,OID))),
    maplist(ilp_object_props(Obj,Props,OID,LRSide),ArgNames,Args,TypeSig,_),
    maplist(assert_ilp_typed(LRSide,TestID,ExampleNum,liftcover_models),TypeSig),
-   Side =..[LRSide,ExampleID|Args],
+   %Side =..[LRSide,ExampleID|Args],
+   safe_obj_num_id(Obj,ION),
+   Side =..[LRSide,ION|Args],
    if_t(LRSide==rhs, assert_ilp_typed(LRSide,TestID,ExampleNum,exs,pos(Side))),
    if_t(LRSide==lhs, assert_ilp_typed(LRSide,TestID,ExampleNum,bk,Side)))).
 
@@ -2651,9 +2703,11 @@ into_sarg(A-fg,A):-!.
 into_sarg(_-bg,bg):-!.
 into_sarg(A,A).
 
-dump_ilp_files:- dump_ilp_files(_).
-dump_ilp_files(S):-
+dump_ilp_files:- dump_ilp_files(_,_).
+dump_ilp_files(TestID,File):-
  must_det_ll((
+   ensure_test(TestID),
+   S = File,
    get_current_test_atom(TestAtom),
    if_t(var(S),sformat(S,'out/ilp/~w',[TestAtom])),
    make_directory_path(S),
@@ -2664,8 +2718,16 @@ dump_ilp_files(S):-
    write_ilp_file(TestID,S,input),!,
    write_ilp_file(TestID,S,foil_ex),!,
    write_ilp_file(TestID,S,liftcover_ex),!,
+   write_ilp_file(TestID,S,gpt),!,
    wdmsg(ls(S)),
-   ls(S))).
+   ls(S),
+   print_test(TestID),
+   bash_format('cat ./out/ilp/~w/gpt.pl',[TestAtom]))).
+
+for_gpt(A,B,C,D):- sub_term(E,C),compound(E),compound_name_arguments(E,F,Args),member(F,[lhs,rhs]),!,for_gpt(A,B,F,Args,D).
+%for_gpt(A,B,C,in_cmt(for_gpt(A,B,C))).
+for_gpt(_A,_B,F,Args,D):-  % \+ ((nth1(N,Args,black), N=<8),   (nth1(Nth,Args,Num),integer(Num), Nth>N, !, Num>25) ),
+  compound_name_arguments(D,F,Args).
 
 write_ilp_file(TestID,Dir,Bias):-
   sformat(S,'~w/~w.pl',[Dir,Bias]),
@@ -2680,6 +2742,7 @@ output_term(_,Nil):- var(Nil),!.
 output_term(_,Nil):- Nil==[],!,nl.
 output_term(_, (:- Nil)):- Nil==[],!,nl.
 output_term(_, (:- Nil)):- var(Nil),!.
+output_term(Out,Term):- string(Term),!, write(Out,Term).
 output_term(Out,Term):- \+ ground(Term),!, 
   \+ \+ (numbervars(Term,15,_,[singletons(true)]),!,output_term(Out,Term)).
 
@@ -2688,6 +2751,201 @@ output_term(Out,Term):- string(Term),!,format(Out,'~N~w~n',[Term]).
 output_term(Out, :- (Term in_cmt)):- format(Out,'~N% :- ~q. ~n',[Term]).
 output_term(Out,Term in_cmt):- format(Out,'~N% ~q. ~n',[Term]).
 output_term(Out,Term):- format(Out,'~N~q. ~n',[Term]).
+
+group_intro(TestID,Example+N,IO,S):-
+  N1 is N+1, 
+  (Example=trn->EI='Example';EI='Exam'),
+  (IO=in->DIR='input';DIR='output'),
+  kaggle_arc_io(TestID,Example+N,IO,Grid),grid_size(Grid,H,V),
+  sformat(S,'
+
+%  Objects of ~w ~w for ~w grid (1,1)-(~w,~w)',[EI,N1,DIR,H,V]).
+
+objectification_prompt(S):- 
+ with_output_to(string(S),
+ (write(
+'You are given a series of inputs and output pairs. 
+These are all in the form of a 2D array, representing a 2D grid, with values from 0-9. 
+The values are not representative of any ordinal ranking. 
+Input/output pairs may not reflect all possibilities, you are to infer the simplest possible relation making use of symmetry and invariance as much as possible.
+
+The input can be something like:
+> entire grid being the sandbox to manipulate
+> using a part of the grid (individual squares or portions of the grid) to depict instructions of how to do the task. Position and symmetry is very important.
+> using regions of similar value to depict area for answer of the task
+
+The output can be something like:
+> same output size as input after performing action
+> output one of the fixed predetermined patterns used to classify the input image
+> using output to show the ordering of objects, such as by size, height, width, position, value
+
+Each of the input-output relation can be done with one or more actions chained together, which could be something like (not exhaustive):
+- object view (defined as continuous squares connected horizontally, vertically and/or diagonally, separated by 0 values)
+> objects can be the of the same value, or different values combined together
+> objects may be hidden beneath other objects
+> rotating or shifting objects
+> changing value of object
+> objects can be manipulated and mapped to a different number of output squares
+> different objects may be manipulated differently based on context
+
+- pixel view
+> rotation / reflection symmetry
+> continuation of a pattern
+> changing values
+
+- segment view
+> combine two segments of the input into one single one based on a simple rule
+> rule can be certain values are prioritized over others, or combination of values into new ones
+
+Do the following:
+- What is the broad description of the input/output relation that holds for all input/output pairs?
+- What is the step by step description of the input/output relation that holds for all input/output pairs? 
+- Apply this description to the test input and find out the answer \'to_be_filled\'.'),
+  ensure_test(A),some_test_info(A,filename([File])),
+  read_file_to_string(File,String,[]),
+  split_string(String, "\s\t\n\r ", "\s\t\n\r ", L),
+  atomic_list_concat(L,'',PS),
+  write(PS))).
+
+
+pairification_propmpt(S):- ensure_test(A),
+sformat(S,
+'% =======================================
+
+Riddle ~w
+
+Always: 
+
+ * object(...) are objects on an input grid and object(...) are objects on an output grid
+ * Northwest corner of those grids are at nw_loc(1,1)
+ * You will always receive enough information to predict the object/8 of Exam 1. This means it is not possible that there might be additional transformation rules or exceptions not covered in the provided examples. 
+ * This riddle operates in a world defined by certain rules and relationships between objects on an input and output grid.  
+ * Input objects are often copied or a transformation is applied to the objects which modifies some of their properties.
+ * Relocation transformations will usually be relative to some input object
+
+Sometimes: 
+ * Each input group will contain an outlier object and so the output transformation rule likely involves a combination of properties in outliers combined with rest of input objects.
+ * New objects will make contact with grid edges
+
+We are going to create a depeandany mapping
+
+
+
+Create an up to three level deep dependancy tree of LHS/RHS objects that would show the order in which they would be deduced.
+The first level will be made of only RHS
+2nd Level will be made of LHS objects that are require to deduce the first level
+Next are 
+
+
+ ¦    +- object(trn_0,nw_loc(10,10),se_loc(10,10),sameR,blue,1,sid_11,[])
+
+Most RHS would be deduced by one or more LHS. Once a RHS is deduced it may be used deduce later RHSs.
+Show these corispondances.
+
+Some RHS objects can be deduced directly from one or more LHS objects (Some LHS objects will not be used)
+Some RHS objects can be deduced directly from one or more RHS objects (these objects are often closest together vs the previous were farther apart).
+Some RHS objects will be deduced from both.
+
+
+To create such a dependency chart, we must identify the objects on the left-hand side (LHS) that contribute to the creation of each right-hand side (RHS) object. 
+
+Based on the given examples you will give a comprehensive order deplicting the order of creating the RHS objects based on the provided transformations.
+
+* Direct Copy LHS to RHS
+* Copy LHS to RHS but change one property: location, color, orientation or shape
+* Copy RHS to RHS changing only location
+* Copy RHS to RHS changing only location and orientation
+* Copy LHS to RHS but change two properties: location, color, orientation or shape
+* Create a new RHS object combining properties from two objects
+* Create a new RHS object combining properties from three objects
+* Copy RHS to RHS but changing location but also change color or shape
+* Copy but change two properties: location, color or shape
+
+
+
+1. **ObjectID**: A unique identifier for each object that denotes color, size and center location.
+2. **Northwest corner location on grid**: The grid coordinates for the northwesternmost point of the object.
+3. **Southeast corner location on grid**: The grid coordinates for the southeasternmost point of the object.
+4. **Rotation**: The rotation of the object which can be no rotation (sameR), 90-degree rotation (rot90), or 180-degree rotation (rot180).
+5. **Color**: The color of the object.
+6. **Size**: The size of the object. 
+7. **Shape ID**: An identifier for the shape of the object.
+In the left-hand-side (lhs) facts can be longer and mean:
+8. **Child Count** 
+
+
+
+
+Title: ~w
+
+The provided facts represent transformations from an initial state (lhs) to a final state (rhs).
+These transformations might involve changes in color, rotation, and size of objects.
+
+Each fact describes an object in a 2-dimensional grid with the following properties:
+
+
+1. **ObjectID**: A unique identifier that denotes color, size, xy of NW corner, xy of SE corner
+2. **Rotation**:
+3. **Shape ID**: An identifier for the normalized shape of the object.
+4. **CenterXY**: Center of Mass
+5. **TipXY**: Uniquely distanced point farthest from center of Mass
+In the left-hand-side (lhs) facts can be longer and specialize the normalized shape
+
+
+```prolog
+',[A,A]).
+
+
+get_is_for_ilp(A,_,Gpt, D ):- Gpt==gpt,!, %t(d2abd087)=A,
+  kaggle_arc(A,ExampleNum,_,_),
+ (get_is_for_ilp(A,ExampleNum,gpt(in), D );get_is_for_ilp(A,ExampleNum,gpt(out), D )).
+
+
+get_is_for_ilp(_A,trn+0,gpt(in), (S) ):- objectification_prompt(S).
+get_is_for_ilp(_A,trn+0,gpt(in), (S) ):- pairification_propmpt(S).
+
+
+get_is_for_ilp(_,tst+0,gpt(in),(S) ):- sformat(S,'
+```
+
+I am looking for transformations based on the provided facts in the Prolog aboves.
+They are going to be ordered transformations in this order:
+
+direct_copy(object(LhsId), object(RhsId)).
+copy_lhs_change_one_property(object(LhsId), object(RhsId), property(Property,Value)).
+copy_rhs_with_location_change(object(OriginalRhsId), object(NewRhsId), location(Location)).
+copy_rhs_with_location_and_orientation_change(object(OriginalRhsId), object(NewRhsId), location(Location), orientation(Orientation)).
+copy_lhs_change_two_properties(object(LhsId), object(RhsId), property(Property1,Value), property(Property2,Value)).
+create_object_from_two_rhs_objects(object(RhsId1), object(RhsId2), object(NewRhsId), property(Property1,Value), property(Property2,Value)).
+create_object_from_three_rhs_objects(object(RhsId1), object(RhsId2), object(RhsId3), object(NewRhsId), property(Property1,Value), property(Property2,Value), property(Property3)).
+copy_rhs_with_location_and_other_change(object(OriginalRhsId), object(NewRhsId), location(Location), property(Property,Value)).
+copy_and_change_properties(object(OriginalId), object(NewId), [property(Property1,Value1),property(Property2,Value2)|...]).
+create_object_from_scratch(object(NewId), [property(Property1,Value1),property(Property2,Value2)|...]).
+
+
+For each example, List all possible pairings found in the transforms.
+
+Dont respond in natural langauge, instead, create prolog syntax that would denote those transforms.
+
+',[]).
+
+get_is_for_ilp(_,tst+_N,gpt(out),(S) ):- sformat(S,'
+
+Explain the transformation rules and then show the resulting object/8 of Exam 1 in a codeblock
+```prolog',[]).
+get_is_for_ilp(A,Example+N,gpt(IO), (S) ):- group_intro(A,Example+N,IO,S).
+get_is_for_ilp(_,tst+_N,gpt(out),(S) ):- sformat(S,'
+```
+
+Grade your response from:
+```prolog',[]).
+get_is_for_ilp(A,B,gpt(in), D ):- !, is_for_ilp(A,B,bk,C), for_gpt(A,B,C,D).
+get_is_for_ilp(A,B,gpt(out), D ):- B = (trn+_),!,is_for_ilp(A,B,exs,C),for_gpt(A,B,C,D).
+
+get_is_for_ilp(A,B,gpt(out), ( D )):- is_for_ilp(A,B,exs,C), for_gpt(A,B,C,D).
+get_is_for_ilp(_,tst+_N,gpt(out),(S) ):- sformat(S,'```
+if wrong, what rules did you miss?
+',[]).
 
 get_is_for_ilp(_,_,input, :-(D) ):- 
    member(D,
@@ -2745,6 +3003,7 @@ fold(trn_2,[trn_2]).
 
 ').
 
+
 get_is_for_ilp(_,_,liftcover_ex,D):-get_is_for_ilp(_,_,determination, D ).
 
 get_is_for_ilp(_,_,determination, D ):- 
@@ -2781,6 +3040,7 @@ get_is_for_ilp(A,B,input, D ):- ((D = (:-begin_in_pos));get_is_for_ilp(A,B,exs,D
 get_is_for_ilp(A,B,metagol_ex, D ):- get_is_for_ilp(A,B,bias,D).
 get_is_for_ilp(A,B,metagol_ex, D ):- get_is_for_ilp(A,B,bk,D).
 get_is_for_ilp(A,B,metagol_ex, D ):- get_is_for_ilp(A,B,exs,D).
+
 
 %get_is_for_ilp(A,B,liftcover_ex, D ):- get_is_for_ilp(A,B,input, D ).
 get_is_for_ilp(A,B,foil_ex, D ):- get_is_for_ilp(A,B,input, D ). 
@@ -2854,9 +3114,9 @@ get_is_for_ilp(_,_,bias,D):-
     %    ExampleID, OID,   X,      Y,Color,SH,SV,RotG,Size,Shape
  
     direction(rhs,(in,in,in,in,in,in,in,in,in,in)) in_cmt,
-    type(rhs,(state,loc2D,rot2D,color,vis2D,rotSize2D,nat900,shape)),
+    type(rhs,(state,center2D,rot2D,color,vis2D,rotSize2D,nat900,shape)),
     direction(lhs,(out,out,out,out,out,out,out,out,out,out)) in_cmt,
-    type(lhs,(state,loc2D,rot2D,color,vis2D,rotSize2D,nat900,shape)),
+    type(lhs,(state,center2D,rot2D,color,vis2D,rotSize2D,nat900,shape)),
 
     /*
     type(cenGX,(piece,nat30)), type(cenGY,(piece,nat30)),
@@ -2955,6 +3215,7 @@ get_is_for_ilp(A,B,determination, D ):- get_is_for_ilp(A,B,determination(4), D )
 get_is_for_ilp(A,B,liftcover_ex, D ):- get_is_for_ilp(A,B,bk, D ).
 get_is_for_ilp(A,B,liftcover_ex,D):- is_for_ilp(A,B,liftcover_models,D).
 get_is_for_ilp(A,B,C,D):- is_for_ilp(A,B,C,D).
+
 
 
 

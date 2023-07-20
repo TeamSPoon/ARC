@@ -97,7 +97,7 @@ test_cbox:- test_p2(cbox_pair(_TestID,_What)).
 quick_test_menu(test_cbox).
 
 
-:- set_test_cmd2(print_all_info_for_test).
+%:- set_test_cmd2(print_all_info_for_test).
 
 cbox_indivs:- 
   with_task_pairs(TestID,ExampleNum,I,O,cbox_pair(TestID,ExampleNum,I,O)).

@@ -51,8 +51,8 @@ dont_notice(global2G(_,_)).
 dont_notice(iz(symmetry_type(rollD, _))).
 dont_notice(iz(algo_sid(comp,sid_12))):-!,fail.
 dont_notice(\+ P):- !, dont_notice(P).
-dont_notice(sym_counts(_,N)):- number(N), N < 10.
-dont_notice(sym_counts(_,N)):- number(N), N < 100000000000000000.
+%dont_notice(sym_counts(_,N)):- number(N), N < 10.
+%dont_notice(sym_counts(_,N)):- number(N), N < 100000000000000000.
 dont_notice(Comp):- sub_var(comp, Comp).
 dont_notice(iz(algo_sid(comp, _))).
 dont_notice(iz(media(_))).
@@ -349,11 +349,12 @@ indv_options(Opt):-
  %no_repeats_var(Opt),
  member(Opt,
      [
-      i_opts(shapes(none), count_equ(NF), colors(each), dirs(diags_nsew), incl_bg(edge)),
+      
       %i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(edge)),
       %i_opts(shapes(none), count_equ(NF), colors(mono), dirs(diags_nsew), incl_bg(edge)),
       i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(edge)),
 
+      i_opts(shapes(none), count_equ(NF), colors(each), dirs(diags_nsew), incl_bg(edge)),
       %i_opts(shapes(none), count_equ(NF), colors(each), dirs(diags_nsew), incl_bg(false)),
       %i_opts(shapes(none), count_equ(NF), colors(each), dirs(nsew), incl_bg(false)), 
       %i_opts(shapes(none), count_equ(NF), colors(mono), dirs(diags_nsew), incl_bg(false)),
@@ -673,8 +674,9 @@ grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):-
        %include(is_fg_object, InC, FGObjs), length(FGObjs, CI),
        objs_to_spoints(InC, InPSS).
 grid_indv_version_lho(TestID, ExampleNum, Dir, CI, InPSS, HowIn, InC):- fail,
-     kaggle_arc_dir_io(TestID, ExampleNum, Dir, In0, Out0),
+     kaggle_arc_dir_io(TestID, ExampleNum, Dir, In0, Out00),
      duplicate_term(In0, In),
+     duplicate_term(Out00, Out0),
      at_least_once(get_each_ndividuator_extended(Dir, HowIn)),
      with_other_grid(Out0,must_det_ll((
        individuate_3(HowIn, In, InC),
@@ -694,6 +696,9 @@ get_each_ndividuator_extended(_, complete).
 %get_each_ndividuator_extended(_, i_pbox).
 %get_each_ndividuator_extended(_, simple(Opt)):-indv_options(Opt).
 %get_each_ndividuator_extended(Dir, HowIO):- get_each_ndividuator(Dir, HowIO).
+
+
+
 /*
 grid_indv_versions(TestID, ExampleNum, Dir, LHOInS):-
   findall(lho(CI, InPSS, HowIn, InC),
@@ -742,10 +747,21 @@ count_peers(CP, hi(HowIn, s(Sizes)), hi(N, HowIn, s(Sizes))):- findall_count(_, 
 */
 
 best_obj_group_pair(TestID, ExampleNum, HowIO, InC, OutC):-
-  NRVarI= io(InPSS, OutPSS),
   %indv_options(HowIn, HowOut),
   current_example_scope(TestID, ExampleNum),
   kaggle_arc(TestID, ExampleNum, I, O),
+  best_obj_group_pair(TestID, ExampleNum, HowIO, I, O,InC, OutC).
+
+best_obj_group_pair(TestID, ExampleNum, HowIO, I, O, InC, OutC):-
+ (best_obj_group_pair1(TestID, ExampleNum, HowIO, I, O, InC, OutC)
+  *->true; best_obj_group_pair2(TestID, ExampleNum, HowIO, I, O, InC, OutC)).
+
+best_obj_group_pair2(_TestID, _ExampleNum, HowIO, I, O, InC, OutC):-
+  (ignore((HowIO = in_out(IndvSMode, IndvSMode))), individuate_pair(IndvSMode,I,O,InC,OutC)).
+
+
+best_obj_group_pair1(TestID, ExampleNum, HowIO, I, O, InC, OutC):-
+ NRVarI= io(InPSS, OutPSS),
  once(name_the_pair(TestID,ExampleNum,I,O,PairName)),
  wdmsg(best_obj_group_pair(PairName)=howIO(HowIO)),
  \+ \+ ensure_now_tid_gids(I,TestID>ExampleNum*in,_),
@@ -755,8 +771,6 @@ best_obj_group_pair(TestID, ExampleNum, HowIO, InC, OutC):-
   grid_indv_versions(TestID, ExampleNum, in, LHOInS), (var(HowIO)->LHOInS\==[];true),
   grid_indv_versions(TestID, ExampleNum, out, LHOOutS), (var(HowIO)->LHOOutS\==[];true),
   no_repeats_var(NRVar))))), !,
-
-
   ((member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A=S, S>1, S=<43);
    (member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A<S, A>1, S=<43);
    (member(lho(A, InPSS, HowIn, InC), LHOInS), member(lho(S, OutPSS, HowOut, OutC), LHOOutS), A<S, A>1, S=<43);
@@ -1062,7 +1076,7 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   dash_chars, nl,
   must_det_ll((
   %noteable_propdiffs(Left, Right, SameProps, LL, R0),
-  maplist(arg(2),SetOfDiffs,SetOfDiffs23),maplist(arg(2),SetOfDiffs23,DiffProps2),maplist(arg(3),SetOfDiffs23,DiffProps),
+  maplist(arg(2),SetOfDiffs,SetOfDiffs23),maplist(arg(2),SetOfDiffs23,_DiffProps2),maplist(arg(3),SetOfDiffs23,DiffProps),
   maplist(arg(2),SetOfSames,SetOfSames23),maplist(arg(3),SetOfSames23,SameProps),
   SameProps\==[], % have to have something in common
   print_ss(cp_with_edit(MinObjs..MaxObjs,N, Min..Max, Nth), Left, Right),
@@ -1070,7 +1084,7 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
   pp_ilp(3, [sames=TypeOfSames, sameprops=SetOfSames]),
   into_lhs(Left,LHSOverSpec),
   maplist(find_relative_r(Info, Left, Right, PrevRules), DiffProps, NewRSet, PreConds, NewRules),
-  append_LR([SameProps,from(SetOfDiffs2),PreConds,LHSOverSpec], NewRLHS),
+  append_LR([SameProps,from(SetOfDiffs23),PreConds,LHSOverSpec], NewRLHS),
   append_LR(NewRules, NewRulesF),
   subst_2L_sometimes(DiffProps, NewRSet, Left, NewLeft),
   
@@ -1108,15 +1122,14 @@ calc_o_d_recursively(_VM, ActionGroupIn, Info, PrevRules, LHSObjs, RHSObjs,
       append_LR([ExtraRHS, PrevLeft, LHSObjs], RHSObjsX),
       %rtrace,
       must_det_ll((
-        n_closest(Right,NObjs,L,LeftOverNeeds,RHSObjsX,Results),
-        length(LeftOverNeeds,LONL),
+        n_closest(Right,NObjs,L,LeftOverNeeds,RHSObjsX,Results),        
         % into_lhs(Results,LHS),
         maplist(arg(1),Results,RHSide),
         maplist(get_type_prop(Right),LeftOverNeeds,FilledInNeeds2))),
       append_LR([RHSide,FilledInNeeds2],RuleNeeds),
 
       indv_link_props(Right,RuleRHS),
-      %LONL=<MadeupLenH,
+      %length(LeftOverNeeds,LONL),LONL=<MadeupLenH,
       Info = InfoOut,
       append_LR([iz(info(Info)),always(Results),RuleNeeds,Results],RuleLHS),
       append_LR([PrevRules,ac_unit(add_dependant_scenery(MinObjs..MaxObjs,NObjs,MadeUpLenL..MadeupLenH,Min..Max,RuleRHS),
@@ -1351,7 +1364,7 @@ starter_narratives0(_, ActionGroup):- generic_starter_narratives(ActionGroup).
 
 starter_narrative(t('25d487eb'), [
    perfect_copy(2..2, nth), % copy two objects perfectly
-   add_dependant_scenery(2..2, 2..4, MinObjs..MaxObjs, nth), % from two output objects, create one output object with up 2 to 4 made up props
+   add_dependant_scenery(2..2, 2..4, lowmin..himax, nth), % from two output objects, create one output object with up 2 to 4 made up props
    balanced_or_delete_leftovers(balanced(_), nth) ]). % there should not be any unprocessed input objects
 
 starter_narrative(v(e41c6fd3), [
@@ -1640,14 +1653,13 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
   ensure_scene_change_rules(TestID),
   print_object_dependancy(TestID),
   repress_some_output(print_scene_change_rules_if_different(solve_via_scene_change_rules, ac_listing, TestID)))),
+ solve_via_current_scene_change_rules(TestID,ExampleNum).
 
+solve_via_current_scene_change_rules(TestID,ExampleNum):-
+  banner_lines(blue, 4),
   kaggle_arc(TestID, ExampleNum, In, Expected),
   into_solid_grid(Expected, ExpectedOut),
-
   duplicate_term(In, InOrig), !,
-
-
- banner_lines(blue, 4),
  (((into_input_objects(TestID, ExampleNum, In, Objs, VM),
  dash_chars,
  print_ss(wqs(expected_answer(ExampleNum)), Objs, ExpectedOut),
@@ -1667,7 +1679,8 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
   (Errors == 0 ->  
    (nop((when_entire_suite(banner_lines(cyan,1),banner_lines(green,4)))),
     print_ss(wqs(solve_via_scene_change(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution),
-    print_scene_change_rules(rules_at_time_of_success(green),TestID),force_report_count(1))
+    locally(nb_setval(without_comment,t),print_scene_change_rules(rules_at_time_of_success(green),TestID)),
+    force_report_count(1))
     ;(banner_lines(red,10),!,
       %show_time_of_failure(TestID),
       banner_lines(red,10),
@@ -1679,13 +1692,15 @@ solve_via_scene_change_rules(TestID,ExampleNum):-
       print_grid(in,InOrig),
       print_ss(wqs(solve_via_scene_change(TestID,ExampleNum,errors=Errors)),ExpectedOut,OurSolution),
       banner_lines(red,10),
+      if_t(ExampleNum == tst+0, 
+       (ExampleNum2=trn+_, forall(kaggle_arc(TestID,ExampleNum2,_,_),solve_via_current_scene_change_rules(TestID,ExampleNum2)))),
       force_report_count_plus(-1),!,
       %when_entire_suite(print_test(TestID),true),
       banner_lines(red,1),!,fail,
       %if_t((findall(_,ac_rules(_,_,_,_),L), L == []), (get_scene_change_rules(TestID,pass2_rule_new,Rules),pp_ilp(Rules))),banner_lines(red,5),
       %print_object_dependancy(TestID),
       % only really fail for tests
-      (ExampleNum == tst+_) -> (!,fail); true)).
+      ((ExampleNum = tst+_) -> (!,fail); true))).
       
 
 resize_our_solution(PX,PY,OurSolution1,OurSolution):-
@@ -1723,6 +1738,7 @@ has_all_props(CanL,Obj):- maplist(inv_has_prop(Obj),CanL).
 score_all_props(CanL,Obj,Score):- maplist(inv_has_prop_score(Obj),CanL,ScoreL),sumlist(ScoreL,Score),!.
 
 assume_prop(P):- \+ compound(P), !, fail.
+assume_prop(\+ P):- !, assume_prop(P).
 assume_prop(P):- verbatum_unifiable(P), !, fail.
 assume_prop(P):- \+ \+ assume_prop1(P),!.
 assume_prop(P):- \+ \+ dont_notice(P),!.
@@ -1733,6 +1749,9 @@ assume_prop(P):- assume_prop_e(P).
 
 assume_prop_not_e(P):- assume_prop(P), !, \+ assume_prop_e(P).
 
+assume_prop_e(P):- \+ compound(P), !, fail.
+assume_prop_e(P):- verbatum_unifiable(P), !, fail.
+assume_prop_e(\+ P):- !, assume_prop_e(P).
 assume_prop_e(P):- get_current_test(TestID), \+ \+ peek_arc_trans_rule_db(TestID, _,marginalize_propwhen(_Why,when(_)), P),!.
 assume_prop_e(P):- get_current_test(TestID), peek_arc_trans_rule_db(TestID, _, assume_prop(_,_), P),!.
 assume_prop_e(P):- get_current_test(TestID), \+ \+ peek_arc_trans_rule_db(TestID, _,assume_prop(_,P),_).
@@ -1899,7 +1918,7 @@ apply_rules1(VM, _TestID, _ExampleNum, _, Rules, Obj, NewObj):-
   must_det_ll((override_object_1(VM, P, Obj, NewObj))),
   gset(VM.robjs) = [NewObj|VM.robjs],
   globalpoints(NewObj, GPoints),
-  print_ss(wqs([ar1(S)]), [Obj], print_grid(VM.h, VM.v, GPoints)), !.
+  print_ss(wqs([ar1(apply_rules1)]), [Obj], print_grid(VM.h, VM.v, GPoints)), !.
 
 
 apply_rules1(VM, _TestID, _ExampleNum, _Ctx, _Rules, Obj, NewObj):-

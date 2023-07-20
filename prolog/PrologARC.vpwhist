@@ -30,7 +30,7 @@ PrologARC.vpj=Release
   + ARC-Others
     + arc-dsl
   + arc_too
-  - ILP
+  + ILP
     + problog\.circleci
     + Anime_Studio_AnimAI\.github
       + Discussions
@@ -12717,7 +12717,7 @@ PrologARC.vpj=Release
         + css
       + faculty
         + css
-    - www.clpset.unipr.it
+    + www.clpset.unipr.it
       - SETLOG
         - APPLICATIONS
           + android
@@ -12746,7 +12746,7 @@ PrologARC.vpj=Release
         - setlog498-12f
         - setlog498-13b
         - setlog_4.9.8
-        - size
+        + size
           - size
     + www.cs.ccsu.edu
       + cit
@@ -21905,9 +21905,9 @@ PrologARC.vpj=Release
         + 10-802
           + fixed
         + postscript
-    + www.cs.unm.edu
-      + ~luger
-        + ai-final
+    - www.cs.unm.edu
+      - ~luger
+        - ai-final
           + code
             + ai-5th-code
               + contrib
@@ -21946,7 +21946,7 @@ PrologARC.vpj=Release
             + earleyparser
               + earleyparser
             + wordguess
-        + ai-final2
+        - ai-final2
           + JAVA
           + LISP
     + www.cs.utexas.edu
@@ -22090,7 +22090,7 @@ PrologARC.vpj=Release
             + images
       + pldoc
         + res
-    + yas
+    - yas
       + attic
         + BFPL
           + Prolog
@@ -22343,16 +22343,16 @@ PrologARC.vpj=Release
                 + Meta
                 + Repr
         + XML
-      + lib
-        + Haskell
+      - lib
+        - Haskell
           + Data
             + CPO
             + Generics
           + Text
             + Parsec
-        + Prolog
-          + generics
-      + samples
+        - Prolog
+          - generics
+      - samples
         + xcoupled\.settings
         + Haskell
         + obsolete
@@ -22371,8 +22371,8 @@ PrologARC.vpj=Release
               + xml
               + xsd
               + xslt
-      + tmp
-      + tools
+      - tmp
+      - tools
   - kaggle_arc
     + induction
       + acl1_1_tests
@@ -22389,7 +22389,7 @@ PrologARC.vpj=Release
     + secret_data
       + evaluation
       + solution
-  + shared
+  - shared
     + gojs\.codesandbox
     + dom-to-image\.github
     + html-to-image\.github
@@ -23633,8 +23633,8 @@ PrologARC.vpj=Release
     + js
     + muarc_cache
       + test_state
-    + muarc_output
-      + ilp
+    - muarc_output
+      - ilp
         + 00576224
         + 009d5c81
         + 00dbd492
@@ -23655,27 +23655,27 @@ PrologARC.vpj=Release
         + a61ba2ce
         + a61f2674
         + a79310a0
-        + b230c067
+        - b230c067
         + d2abd087
         + e41c6fd3
         + ea32f347
-        + f8b3ba0a
-        + save-a79310a0
-        + save-a79310a0-1
+        - f8b3ba0a
+        - save-a79310a0
+        - save-a79310a0-1
         + save-a79310a0-2
-        + save-a79310a0-3
+        - save-a79310a0-3
         + save-a79310a0-4
       + muarc_output_html
-      + riddles
-        + example_001
+      - riddles
+        - example_001
         + example_002
         + example_003
         + example_004
-        + example_005
-        + example_006
+        - example_005
+        - example_006
         + example_007
         + example_011
-        + example_012
+        - example_012
         + example_013
         + example_014
         + example_015
@@ -23686,278 +23686,41 @@ PrologARC.vpj=Release
       + images
     + tutorial_code
   + symbolic_ml
-scroll:146
+scroll:0
 [State]
-SCREEN: 2160 4096 2160 993 2155 3094 0 0 N 0 0 0 0 1675 2205
+SCREEN: 2160 4096 -2168 992 2174 3111 0 0 N 0 0 0 0 1694 2513
 CWD: \Program Files (x86)\SlickEdit\win
-BUFFER: BN="kaggle_arc\kaggle_arc_transrules.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=8 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.1425 CL=1 LE=0 CX=0 CY=8 WI=5 BI=25 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.cs.unm.edu\~luger\ai-final\code\PROLOG.depth.html"
-BI: MA=1 74 1  TABS=1 5  WWS=1 IWT=1 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=HTML	HM=0 MF=40 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=24 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.cs.unm.edu\~luger\ai-final\code\PROLOG.ebg.html"
-BI: MA=1 74 1  TABS=1 5  WWS=1 IWT=1 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=HTML	HM=0 MF=40 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.1445 CL=44 LE=0 CX=43 CY=15 WI=5 BI=23 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="kaggle_arc\kaggle_arc_explaination.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=8 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.55103 CL=36 LE=0 CX=35 CY=15 WI=5 BI=21 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="\Users\logicmoo\AppData\Local\Temp\Rar$DRa33092.22012\message_feedback.json"
-BI: MA=1 74 1  TABS=1 9  WWS=1 IWT=1 ST=0 IN=1 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Fundamental	HM=0 MF=8 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=20 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="kaggle_arc\kaggle_arc.pl"
+BUFFER: BN="kaggle_arc\out\ilp\d2abd087\gpt.pl"
 BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=0 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.32956 CL=58 LE=0 CX=57 CY=49 WI=5 BI=27 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="kaggle_arc\kaggle_arc_object.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.80901 CL=36 LE=0 CX=35 CY=27 WI=5 BI=5 HT=0 HN=0 HF=0 HC=4
+VIEW: LN=.3424 CL=68 LE=0 CX=67 CY=65 WI=5 BI=21 HT=0 HN=0 HF=0 HC=4
 BUFFER: BN="kaggle_arc\kaggle_arc_prior_groups.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=552 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.63347 CL=70 LE=0 CX=69 CY=52 WI=5 BI=22 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="kaggle_arc\kaggle_arc_simple.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=552 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.7734 CL=12 LE=0 CX=11 CY=77 WI=5 BI=32 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="kaggle_arc\kaggle_arc_uniqueness.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=552 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.63173 CL=1 LE=0 CX=0 CY=76 WI=5 BI=26 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\size\size\e001.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.11 CL=1 LE=0 CX=0 CY=1 WI=5 BI=35 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\size\size\e016.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=34 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\size\size\e010.pl"
 BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=0 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=36 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\size\size\e008.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=37 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog_4.9.8\setlog.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=38 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-11g\setlog.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=63 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-12f\setlog.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=58 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-12e\setlog.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=59 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-12e\size_solver.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=60 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-12e\setlog_rules.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=61 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog_4.9.8\setlog_rules.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=39 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog_4.9.8\size_solver.pl"
+VIEW: LN=.110867 CL=44 LE=0 CX=43 CY=71 WI=5 BI=20 HT=0 HN=0 HF=0 HC=4
+BUFFER: BN="kaggle_arc\out\ilp\b230c067\gpt.pl"
 BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=0 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=33 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog_4.9.8\setlog_tc.pl"
+VIEW: LN=.3104 CL=86 LE=15 CX=70 CY=56 WI=5 BI=23 HT=0 HN=0 HF=0 HC=4
+BUFFER: BN="kaggle_arc\out\ilp\ea32f347\gpt.pl"
 BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=40 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\setlog.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=42 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\size_solver.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=43 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\setlog_vcg.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=41 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\experimentsCP\tptp-rel\e003.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=0 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=45 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\experimentsCP\tptp-rel\e015.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=46 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\experimentsCP\ra\e005.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=47 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\doors.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=48 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\gears-po.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=49 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\gearsIntermediate.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=50 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\sensors.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=0 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=51 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\README"
-BI: MA=1 74 1  TABS=1 9  WWS=1 IWT=1 ST=0 IN=1 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Fundamental	HM=0 MF=512 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=52 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\lgs.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=54 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\setlog.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.301290 CL=45 LE=0 CX=44 CY=50 WI=5 BI=56 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\TTF\setlog480.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=57 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\propertyVerification-po.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=0 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=55 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\doorsIntermediate.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=32 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=53 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\setlog_rules.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=44 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\setlog_tc.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=62 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="kaggle_arc\kaggle_arc_howdiff.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=552 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=31 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="kaggle_arc\kaggle_arc_interpreter.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.25979 CL=47 LE=0 CX=46 CY=51 WI=5 BI=29 HT=0 HN=0 HF=0 HC=4
-WINDOW: 234 234 947 1477 -1 -1 N  WF=0 WT=40 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-12f\setlog.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=334 BI=58 HT=0 HN=0 HF=0 HC=4
-WINDOW: 260 260 947 1477 -1 -1 N  WF=0 WT=41 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-12e\setlog.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=336 BI=59 HT=0 HN=0 HF=0 HC=4
-WINDOW: 364 364 947 1477 -1 -1 N  WF=0 WT=45 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-11g\setlog.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=344 BI=63 HT=0 HN=0 HF=0 HC=4
-WINDOW: 442 442 947 1477 -1 -1 N  WF=0 WT=19 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog_4.9.8\setlog.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=13 BI=38 HT=0 HN=0 HF=0 HC=4
-WINDOW: 572 572 947 1477 -1 -1 N  WF=0 WT=24 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\size_solver.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=304 BI=43 HT=0 HN=0 HF=0 HC=4
-WINDOW: 338 338 947 1477 -1 -1 N  WF=0 WT=44 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\setlog_tc.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=342 BI=62 HT=0 HN=0 HF=0 HC=4
-WINDOW: 624 624 947 1477 -1 -1 N  WF=0 WT=26 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\setlog_rules.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=308 BI=44 HT=0 HN=0 HF=0 HC=4
-WINDOW: 312 312 947 1477 -1 -1 N  WF=0 WT=43 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-12e\setlog_rules.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=340 BI=61 HT=0 HN=0 HF=0 HC=4
-WINDOW: 286 286 947 1477 -1 -1 N  WF=0 WT=42 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-12e\size_solver.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=338 BI=60 HT=0 HN=0 HF=0 HC=4
-WINDOW: 208 208 947 1477 -1 -1 N  WF=0 WT=39 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\TTF\setlog480.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=332 BI=57 HT=0 HN=0 HF=0 HC=4
-WINDOW: 182 182 947 1477 -1 -1 N  WF=0 WT=38 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\setlog.pl"
-VIEW: LN=.301290 CL=45 LE=0 CX=44 CY=50 WI=330 BI=56 HT=0 HN=0 HF=0 HC=4
-WINDOW: 416 416 947 1477 -1 -1 N  WF=0 WT=18 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\size\size\e008.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=294 BI=37 HT=0 HN=0 HF=0 HC=4
-WINDOW: 390 390 947 1477 -1 -1 N  WF=0 WT=17 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\size\size\e010.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=292 BI=36 HT=0 HN=0 HF=0 HC=4
-WINDOW: 364 364 947 1477 -1 -1 N  WF=0 WT=16 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\size\size\e016.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=290 BI=34 HT=0 HN=0 HF=0 HC=4
-WINDOW: 338 338 947 1477 -1 -1 N  WF=0 WT=15 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\size\size\e001.pl"
-VIEW: LN=.11 CL=1 LE=0 CX=0 CY=1 WI=178 BI=35 HT=0 HN=0 HF=0 HC=4
-WINDOW: 52 52 1248 467 -1 -1 N  WF=0 WT=3 "Default Fixed Font,14,0,1"
-BUFFER: BN="kaggle_arc\kaggle_arc_uniqueness.pl"
-VIEW: LN=.63173 CL=1 LE=0 CX=0 CY=76 WI=134 BI=26 HT=0 HN=0 HF=0 HC=4
-WINDOW: 312 312 947 1477 -1 -1 N  WF=0 WT=14 "Default Fixed Font,14,0,1"
-BUFFER: BN="kaggle_arc\kaggle_arc_howdiff.pl"
-VIEW: LN=.35234 CL=36 LE=0 CX=35 CY=54 WI=167 BI=31 HT=0 HN=0 HF=0 HC=4
-WINDOW: 286 286 947 1477 -1 -1 N  WF=0 WT=13 "Default Fixed Font,14,0,1"
-BUFFER: BN="kaggle_arc\kaggle_arc_simple.pl"
-VIEW: LN=.7734 CL=12 LE=0 CX=11 CY=77 WI=190 BI=32 HT=0 HN=0 HF=0 HC=4
-WINDOW: 260 260 947 1477 -1 -1 N  WF=0 WT=12 "Default Fixed Font,14,0,1"
-BUFFER: BN="kaggle_arc\kaggle_arc_interpreter.pl"
-VIEW: LN=.26196 CL=41 LE=0 CX=40 CY=53 WI=172 BI=29 HT=0 HN=0 HF=0 HC=4
-WINDOW: 78 78 1248 467 -1 -1 N  WF=0 WT=4 "Default Fixed Font,14,0,1"
+VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=22 HT=0 HN=0 HF=0 HC=4
+WINDOW: 312 312 862 1681 -1 -1 N  WF=0 WT=6 "Default Fixed Font,14,0,1"
+BUFFER: BN="kaggle_arc\out\ilp\b230c067\gpt.pl"
+VIEW: LN=.3104 CL=86 LE=15 CX=70 CY=56 WI=127 BI=23 HT=0 HN=0 HF=0 HC=4
+WINDOW: 130 130 862 1681 -1 -1 N  WF=0 WT=2 "Default Fixed Font,14,0,1"
 BUFFER: BN="kaggle_arc\kaggle_arc_prior_groups.pl"
-VIEW: LN=.63347 CL=70 LE=0 CX=69 CY=52 WI=131 BI=22 HT=0 HN=0 HF=0 HC=4
-WINDOW: 234 234 947 1477 -1 -1 N  WF=0 WT=11 ",,,"
-BUFFER: BN="kaggle_arc\kaggle_arc_interpreter.pl"
-VIEW: LN=.25979 CL=47 LE=0 CX=46 CY=46 WI=186 BI=29 HT=0 HN=0 HF=0 HC=4
-WINDOW: 208 208 947 1477 -1 -1 N  WF=0 WT=10 "Default Fixed Font,14,0,1"
-BUFFER: BN="kaggle_arc\kaggle_arc_object.pl"
-VIEW: LN=.80901 CL=36 LE=0 CX=35 CY=27 WI=183 BI=5 HT=0 HN=0 HF=0 HC=4
-WINDOW: 182 182 947 1477 -1 -1 N  WF=0 WT=8 "Default Fixed Font,14,0,1"
-BUFFER: BN="kaggle_arc\kaggle_arc.pl"
-VIEW: LN=.32956 CL=58 LE=0 CX=57 CY=49 WI=181 BI=27 HT=0 HN=0 HF=0 HC=4
-WINDOW: 78 78 1248 467 -1 -1 N  WF=0 WT=9 "Default Fixed Font,14,0,1"
-BUFFER: BN="\Users\logicmoo\AppData\Local\Temp\Rar$DRa33092.22012\message_feedback.json"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=133 BI=20 HT=0 HN=0 HF=0 HC=4
-WINDOW: 156 156 1248 467 -1 -1 N  WF=0 WT=7 "Default Fixed Font,14,0,1"
-BUFFER: BN="kaggle_arc\kaggle_arc_explaination.pl"
-VIEW: LN=.55103 CL=36 LE=0 CX=35 CY=15 WI=132 BI=21 HT=0 HN=0 HF=0 HC=4
-WINDOW: 130 130 1248 467 -1 -1 N  WF=0 WT=6 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.cs.unm.edu\~luger\ai-final\code\PROLOG.ebg.html"
-VIEW: LN=.1445 CL=44 LE=0 CX=43 CY=15 WI=130 BI=23 HT=0 HN=0 HF=0 HC=4
-WINDOW: 104 104 1248 467 -1 -1 N  WF=0 WT=5 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.cs.unm.edu\~luger\ai-final\code\PROLOG.depth.html"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=129 BI=24 HT=0 HN=0 HF=0 HC=4
-WINDOW: 26 26 1248 467 -1 -1 N  WF=0 WT=2 "Default Fixed Font,14,0,1"
-BUFFER: BN="kaggle_arc\kaggle_arc_transrules.pl"
-VIEW: LN=.1425 CL=1 LE=0 CX=0 CY=8 WI=128 BI=25 HT=0 HN=0 HF=0 HC=4
-WINDOW: 130 130 947 1477 -1 -1 N  WF=0 WT=36 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\lgs.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=326 BI=54 HT=0 HN=0 HF=0 HC=4
-WINDOW: 156 156 947 1477 -1 -1 N  WF=0 WT=37 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\propertyVerification-po.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=328 BI=55 HT=0 HN=0 HF=0 HC=4
-WINDOW: 78 78 947 1477 -1 -1 N  WF=0 WT=34 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\README"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=322 BI=52 HT=0 HN=0 HF=0 HC=4
-WINDOW: 104 104 947 1477 -1 -1 N  WF=0 WT=35 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\doorsIntermediate.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=324 BI=53 HT=0 HN=0 HF=0 HC=4
-WINDOW: 52 52 947 1477 -1 -1 N  WF=0 WT=33 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\sensors.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=320 BI=51 HT=0 HN=0 HF=0 HC=4
-WINDOW: 26 26 947 1477 -1 -1 N  WF=0 WT=32 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\gearsIntermediate.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=318 BI=50 HT=0 HN=0 HF=0 HC=4
-WINDOW: 0 0 947 1477 -1 -1 N  WF=0 WT=31 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\gears-po.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=316 BI=49 HT=0 HN=0 HF=0 HC=4
-WINDOW: 728 728 947 1477 -1 -1 N  WF=0 WT=30 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\APPLICATIONS\lgs\doors.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=135 BI=48 HT=0 HN=0 HF=0 HC=4
-WINDOW: 702 702 947 1477 -1 -1 N  WF=0 WT=29 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\experimentsCP\ra\e005.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=314 BI=47 HT=0 HN=0 HF=0 HC=4
-WINDOW: 676 676 947 1477 -1 -1 N  WF=0 WT=28 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\experimentsCP\tptp-rel\e015.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=312 BI=46 HT=0 HN=0 HF=0 HC=4
-WINDOW: 650 650 947 1477 -1 -1 N  WF=0 WT=27 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\experimentsCP\tptp-rel\e003.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=310 BI=45 HT=0 HN=0 HF=0 HC=4
-WINDOW: 598 598 947 1477 -1 -1 N  WF=0 WT=25 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\setlog_vcg.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=306 BI=41 HT=0 HN=0 HF=0 HC=4
-WINDOW: 520 520 947 1477 -1 -1 N  WF=0 WT=22 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog_4.9.8\setlog_tc.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=300 BI=40 HT=0 HN=0 HF=0 HC=4
-WINDOW: 494 494 947 1477 -1 -1 N  WF=0 WT=21 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog_4.9.8\size_solver.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=298 BI=33 HT=0 HN=0 HF=0 HC=4
-WINDOW: 468 468 947 1477 -1 -1 N  WF=0 WT=20 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog_4.9.8\setlog_rules.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=296 BI=39 HT=0 HN=0 HF=0 HC=4
-WINDOW: 546 546 947 1477 -1 -1 M  WF=0 WT=23 "Default Fixed Font,14,0,1"
-BUFFER: BN="ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\setlog.pl"
-VIEW: LN=.16706 CL=8 LE=0 CX=7 CY=43 WI=302 BI=42 HT=0 HN=0 HF=0 HC=4
+VIEW: LN=.110867 CL=44 LE=0 CX=43 CY=71 WI=126 BI=20 HT=0 HN=0 HF=0 HC=4
+WINDOW: 234 234 862 1681 -1 -1 N  WF=0 WT=3 "Default Fixed Font,14,0,1"
+BUFFER: BN="kaggle_arc\out\ilp\d2abd087\gpt.pl"
+VIEW: LN=.3424 CL=68 LE=0 CX=67 CY=65 WI=125 BI=21 HT=0 HN=0 HF=0 HC=4
+WINDOW: 286 286 862 1681 -1 -1 M  WF=0 WT=5 "Default Fixed Font,14,0,1"
+BUFFER: BN="kaggle_arc\out\ilp\ea32f347\gpt.pl"
+VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=128 BI=22 HT=0 HN=0 HF=0 HC=4
 FILEHIST: 9
-ILP\www.clpset.unipr.it\SETLOG\setlog498-12e\setlog_rules.pl
-ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\setlog_rules.pl
-ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\setlog_tc.pl
-ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\size_solver.pl
-ILP\www.clpset.unipr.it\SETLOG\setlog_4.9.8\setlog.pl
-ILP\www.clpset.unipr.it\SETLOG\setlog498-11g\setlog.pl
-ILP\www.clpset.unipr.it\SETLOG\setlog498-12e\setlog.pl
-ILP\www.clpset.unipr.it\SETLOG\setlog498-12f\setlog.pl
-ILP\www.clpset.unipr.it\SETLOG\setlog498-13b\setlog.pl
+kaggle_arc\kaggle_arc_boards.pl
+kaggle_arc\kaggle_arc_individuation_cbox_dpg.pl
+kaggle_arc\kaggle_arc_individuation_cbox.pl
+kaggle_arc\kaggle_arc.pl
+kaggle_arc\kaggle_arc_test_iface.pl
+kaggle_arc\out\ilp\d2abd087\gpt.pl
+kaggle_arc\out\ilp\ea32f347\gpt.pl
+kaggle_arc\out\ilp\b230c067\gpt.pl
+kaggle_arc\kaggle_arc_prior_groups.pl

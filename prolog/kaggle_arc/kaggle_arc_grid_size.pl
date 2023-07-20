@@ -354,12 +354,16 @@ set_current_pair(I,O):-
   %luser_setval(output_grid,O),
   ensure_other_grid(I,O),
   %set_target_grid(O),
-  other_grid(I,OOO),nop((OOO=@=O)))),!.
+  other_grid(I,OOO),
+     nop((OOO=@=O)))),!.
 
 %current_pair_io(I,O):- fail, current_test_example(TestID,ExampleNum), ground(ExampleNum),!, kaggle_arc(TestID,ExampleNum,I,O).
 current_pair_io(I,O):-  
    current_test_example(TestID,ExampleNum), 
-   kaggle_arc(TestID,ExampleNum,I,O), set_current_pair(I,O), (ground(ExampleNum)->!;true).
+   kaggle_arc(TestID,ExampleNum,I0,O0),
+    duplicate_term(I0+O0, I1+O1),
+    duplicate_term(I1+O1, I+O),
+    set_current_pair(I1,O1), (ground(ExampleNum)->!;true).
 
 /*
 current_pair_io(I,O):- current_test_example(TestID,ExampleNum),

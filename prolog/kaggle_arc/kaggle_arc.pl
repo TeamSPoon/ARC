@@ -764,9 +764,7 @@ ansi_startup:-
 :- set_luser_default(no_individuator, f).
 :- set_luser_default(grid_size_only,true).
 %:- set_luser_default(cmd,test_easy).
-%:- set_luser_default(cmd,learn_ilp).
-:- set_luser_default(cmd,solve_via_scene_change).
-:- set_luser_default(cmd2,print_all_info_for_test).
+%:- set_luser_default(cmd2,print_all_info_for_test).
 %:- set_luser_default(cmd2,test_show_grid_objs).
 :- set_luser_default(use_individuated_cache,true).
 
@@ -985,7 +983,9 @@ create_group(dmiles_h,
   %set_current_test('08ed6ac7'),
   set_current_test('6e82a1ae'),
   set_test_suite(dmiles_fast),
-  set_current_test(Tst),  
+  set_current_test(Tst),
+  set_luser_default(cmd,learn_ilp),
+  set_luser_default(cmd2,solve_via_scene_change),
   %set_current_test('bd14c3bf'),
   !.
 
@@ -1012,4 +1012,9 @@ create_group(dmiles_h,
 
 % %:- initialization(load_from_main).
 % :- initialization(test_show_colors,after_load).
+:- set_luser_default(cmd,learn_ilp).
+:- set_luser_default(cmd2,solve_via_scene_change).
+
+:- initialization(create_builtin_sids).
+:- initialization(show_sids).
 

@@ -1209,26 +1209,346 @@ write_arc_db_temp_cache:-
 load_arc_db_temp_cache:-
   load_files('muarc_cache/arc_db_temp_cache',[qcompile(auto)]).
 
+% See https://tetris.wiki/Arika_Rotation_System  https://tetris.wiki/Super_Rotation_System
+% https://tetris.fandom.com/wiki/Nintendo_Rotation_System  https://tetris.fandom.com/wiki/SRS
 :- dynamic(is_shape_id_for/2).
-is_shape_id_for_init([hv(1,1)],sid_11).
-is_shape_id_for_init([hv(1,1),hv(2,1)],sid_12).
-is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1)],sid_13).
-is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1),hv(4,1)],sid_14).
+
+
+% Normal shapes
+tetris_name([[1, 1, _],
+             [1, 1, _],
+             [_, _, _]], 'Square').
+
+tetris_name([[1, 1, 1],
+             [_, _, _],
+             [_, _, _]], 'Line').
+
+tetris_name([[_, 1, _],
+             [1, 1, 1],
+             [_, _, _]], 'T').
+
+tetris_name([[1, _, _],
+             [1, 1, 1],
+             [_, _, _]], 'L').
+
+tetris_name([[_, _, 1],
+             [1, 1, 1],
+             [_, _, _]], 'J').
+
+tetris_name([[_, 1, 1],
+             [1, 1, _],
+             [_, _, _]], 'S').
+
+tetris_name([[1, 1, _],
+             [_, 1, 1],
+             [_, _, _]], 'Z').
+
+% Rotated shapes
+tetris_name([[_, _, 1],
+             [_, _, 1],
+             [_, _, 1]], 'Line_Rotated').
+
+tetris_name([[_, 1, _],
+             [_, 1, 1],
+             [_, 1, _]], 'T_Rotated').
+
+tetris_name([[_, _, 1],
+             [_, 1, 1],
+             [_, _, 1]], 'L_Rotated').
+
+tetris_name([[1, _, _],
+             [1, 1, _],
+             [1, _, _]], 'J_Rotated').
+
+tetris_name([[1, 1, _],
+             [_, 1, 1],
+             [_, _, _]], 'S_Rotated').
+
+tetris_name([[_, 1, 1],
+             [1, 1, _],
+             [_, _, _]], 'Z_Rotated').
+
+% Other variations
+tetris_name([[1, _, _],
+             [1, 1, 1],
+             [_, _, 1]], 'L_Mirrored').
+
+tetris_name([[_, _, 1],
+             [1, 1, 1],
+             [1, _, _]], 'J_Mirrored').
+
+tetris_name([[1, 1, _],
+             [_, 1, 1],
+             [_, _, 1]], 'Z_Flipped').
+
+tetris_name([[_, 1, 1],
+             [1, 1, _],
+             [1, _, _]], 'S_Flipped').
+
+tetris_name([[1, 1, 1],
+             [_, 1, _],
+             [_, _, _]], 'T_Stretched').
+
+% Additional rotations
+tetris_name([[1, 1],
+            [1, _],
+            [1, _]], 'L_270_Rotated').
+
+tetris_name([[_ ,1],
+            [_ ,1],
+            [1 ,1]], 'J_270_Rotated').
+
+tetris_name([[1, _],
+            [1, 1],
+            [_ ,1]], 'S_270_Rotated').
+
+tetris_name([[_ ,1],
+            [1 ,1],
+            [1 ,_]], 'Z_270_Rotated').
+
+tetris_name([[_ ,_ ,1],
+            [1 ,1 ,1]], 'T_270_Rotated').
+
+tetris_name([[_, 1],
+            [1 ,1]], 'Square_Mirrored').
+
+% 2x2 shapes
+
+tetris_name([[1, _],
+            [_, _]], 'Single_North_West').
+
+tetris_name([[_, 1],
+            [_, _]], 'Single_North_East').
+
+tetris_name([[_, _],
+            [1, _]], 'Single_South_West').
+
+tetris_name([[_, _],
+            [_, 1]], 'Single_South_East').
+
+tetris_name([[1, 1],
+            [_, _]], 'Double_North').
+
+tetris_name([[_, _],
+            [1, 1]], 'Double_South').
+
+tetris_name([[1, _],
+            [1, _]], 'Double_West').
+
+tetris_name([[_, 1],
+            [_, 1]], 'Double_East').
+
+tetris_name([[1, _],
+            [_, 1]], 'Diagonal_North_West_To_South_East').
+
+tetris_name([[_, 1],
+            [1, _]], 'Diagonal_North_East_To_South_West').
+
+tetris_name([[1, 1],
+            [1, _]], 'Triple_West_and_North').
+
+tetris_name([[1, 1],
+            [_, 1]], 'Triple_East_and_North').
+
+tetris_name([[1, _],
+            [1, 1]], 'Triple_West_and_South').
+
+tetris_name([[_, 1],
+            [1, 1]], 'Triple_East_and_South').
+
+
+
+tetris_name([[1, _, 1],
+             [_, _, _],
+             [1, _, 1]], 'Dice_Four').
+
+
+% 3x3 shapes
+tetris_name([[_, 1, _],
+            [1, 1, 1],
+            [_, _, _]], 'T').
+
+tetris_name([[1, _, _],
+            [1, 1, 1],
+            [_, _, _]], 'L').
+
+tetris_name([[_, _, 1],
+            [1, 1, 1],
+            [_, _, _]], 'J').
+
+tetris_name([[_, 1, 1],
+            [1, 1, _],
+            [_, _, _]], 'S').
+
+tetris_name([[1, 1, _],
+            [_, 1, 1],
+            [_, _, _]], 'Z').
+
+tetris_name([[1, 1, 1],
+            [1, _, _],
+            [1, _, _]], 'U').
+
+% 4x4 shapes
+tetris_name([[1, 1, 1, 1],
+            [_, _, _, 1],
+            [_, _, _, _],
+            [_, _, _, _]], 'L').
+
+tetris_name([[_, _, _, 1],
+            [1, 1, 1, 1],
+            [_, _, _, _],
+            [_, _, _, _]], 'J').
+
+tetris_name([[_, _, _, _],
+            [1, 1, 1, 1],
+            [_, _, _, _],
+            [_, _, _, _]], 'I').
+
+tetris_name([[1, 1, _, _],
+            [1, 1, _, _],
+            [_, _, _, _],
+            [_, _, _, _]], 'O').
+
+tetris_name([[_, _, 1, 1],
+            [_, _, 1, 1],
+            [_, _, _, _],
+            [_, _, _, _]], 'Mirrored_O').
+
+tetris_name([[1, 1, 1, 1],
+            [1, _, _, 1],
+            [_, _, _, _],
+            [_, _, _, _]], 'U').
+
+% 4x4 shapes
+tetris_name([[_, _, _, _],
+            [_, _, _, _],
+            [_, _, _, _],
+            [1, 1, 1, 1]], 'I').
+
+tetris_name([[_, _, _, _],
+            [_, _, _, _],
+            [_, _, 1, 1],
+            [_, _, 1, 1]], 'O').
+
+tetris_name([[_, _, _, _],
+            [_, _, 1, _],
+            [_, 1, 1, _],
+            [_, 1, _, _]], 'S').
+
+tetris_name([[_, _, _, _],
+            [_, 1, _, _],
+            [_, 1, 1, _],
+            [_, _, 1, _]], 'Z').
+
+tetris_name([[_, _, _, _],
+            [_, _, 1, _],
+            [_, _, 1, _],
+            [_, 1, 1, _]], 'J').
+
+tetris_name([[_, _, _, _],
+            [_, 1, _, _],
+            [_, 1, _, _],
+            [_, 1, 1, _]], 'L').
+
+tetris_name([[_, _, _, _],
+            [_, _, 1, _],
+            [_, 1, 1, 1],
+            [_, _, _, _]], 'T').
+
+tetris_name([[_, _, _, _],
+            [_, 1, 1, _],
+            [_, 1, _, _],
+            [_, 1, _, _]], 'T_Rotated').
+
+tetris_name([[_, _, _, _],
+            [_, _, _, _],
+            [1, 1, 1, 1],
+            [_, _, _, 1]], 'J_Rotated').
+
+tetris_name([[_, _, _, _],
+            [_, _, _, _],
+            [1, 1, 1, 1],
+            [1, _, _, _]], 'L_Rotated').
+
+tetris_name([[_, _, _, _],
+            [_, _, _, _],
+            [_, 1, 1, _],
+            [1, 1, _, _]], 'S_Rotated').
+
+tetris_name([[_, _, _, _],
+            [_, _, _, _],
+            [1, 1, _, _],
+            [_, 1, 1, _]], 'Z_Rotated').
+
+tetris_name([[_, _, _, _],
+            [_, _, _, _],
+            [_, 1, _, _],
+            [1, 1, 1, _]], 'T_270_Rotated').
+
+tetris_name([[_, _, _, _],
+            [_, _, _, _],
+            [_, _, 1, _],
+            [1, 1, 1, _]], 'T_180_Rotated').
+
+
+is_shape_id_for_init(Points,ID):-   
+  tetris_name([Row|Grid],Name),
+  must_det_ll((
+  length([Row|Grid],V), length(Row,H),
+
+  atomic_list_concat(['sid_tetris_',Name,'_',H,'x',V],'',ID),
+  localpoints(Grid,CP),cpoints_to_shapepoints(CP,Points))).
+
+is_shape_id_for_init([hv(1,1)],sid_1x1).
+is_shape_id_for_init([hv(1,1),hv(2,1)],sid_2x1).
+is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1)],sid_3x1).
+is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1),hv(4,1)],sid_4x1).
+
+is_shape_id_for_init([point_02_01,point_01_02,point_02_02,point_03_02,point_02_03],sid_plus_3x3).
+
+is_shape_id_for_init([point_02_01,point_01_02,point_03_02,point_02_03],sid_hollow_diamond_3x3).
 
 is_shape_id_for_init([],sid_0).
 
-is_shape_id_for_init([hv(1,1),hv(1,2)],sid_21).
-is_shape_id_for_init([hv(1,1),hv(2,1),hv(1,2),hv(2,2)],sid_22).
-is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1),hv(1,2),hv(2,2),hv(3,2),hv(1,3),hv(2,3),hv(3,3)],sid_33).
-is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1),hv(1,2),hv(3,2),hv(1,3),hv(2,3),hv(3,3)],sid_323).
+is_shape_id_for_init([point_01_01,point_02_03],sid_dice_2down_3x3).
+is_shape_id_for_init([point_01_03,point_03_01] ,sid_dice_2up_3x3).
+is_shape_id_for_init([hv(1,1),hv(1,2)],sid_1x2).
+is_shape_id_for_init([hv(1,1),hv(2,1),hv(1,2),hv(2,2)],sid_2x2).
+is_shape_id_for_init([point_02_01,point_01_02,point_02_02,point_03_02],sid_t180_3x2).
+is_shape_id_for_init([point_01_01,point_03_01,point_01_02,point_02_02,point_03_02],sid_u_3x2).
 
-assert_sid(Ps,ID):- my_maplist(hv_to_point,Ps,Points),assert_if_new(is_shape_id_for(Points,ID)).
+is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1),hv(1,2),hv(2,2),hv(3,2),hv(1,3),hv(2,3),hv(3,3)],sid_3x3).
+is_shape_id_for_init([hv(1,1),hv(2,1),hv(3,1),hv(1,2),hv(3,2),hv(1,3),hv(2,3),hv(3,3)],sid_hollow_3x3).
+is_shape_id_for_init([point_03_01,point_01_02,point_02_02,point_03_02,point_03_03],sid_T90_3x3).
+is_shape_id_for_init([point_02_01,point_02_02,point_01_03,point_02_03,point_03_03],sid_T180_3x3).
+is_shape_id_for_init([point_03_01,point_02_02,point_03_02,point_01_03,point_02_03,point_03_03],sid_RtTriagle_se_3x3).
+is_shape_id_for_init([point_01_01,point_01_02,point_02_02,point_01_03,point_02_03,point_03_03],sid_RtTriagle_sw_3x3).
+is_shape_id_for_init([point_03_01,point_02_02,point_03_02,point_04_02,point_01_03,point_02_03,point_03_03,point_04_03,point_05_03],sid_RtTriagle_north_5x3).
 
-hv_to_point(hv(H,V),Point):- hv_point(H,V,Point).
+is_shape_id_for_init([point_01_01,point_03_01,point_02_02,point_01_03,point_03_03],sid_X_3x3).
+is_shape_id_for_init([point_02_01,point_01_02,point_02_02,point_03_02,point_01_03,point_03_03],sid__3x3).
+
+
+
+assert_sid(Ps,ID):- my_maplist(hv_to_point,Ps,Points),retractall(is_shape_id_for(Points,_)),assert(is_shape_id_for(Points,ID)).
+
+hv_to_point(hv(H,V),Point):- nonvar(H),hv_point(H,V,Point),!.
+hv_to_point(Point,Point).
+
 create_builtin_sids:- forall(is_shape_id_for_init(Ps,ID),assert_sid(Ps,ID)).
+
+fake_sid(_Points, ID,FID):- atom(ID),atom_concat('sid_',_,ID),FID=ID,!.
+fake_sid( Points, ID,FID):- length(Points,Len),Len=<9,sformat(FID,'~q',[ID=Points]),!.
+fake_sid(_Points,ID,ID).
+
+show_sids:- forall(is_shape_id_for(Points,ID),(fake_sid(Points,ID,FID),print_grid(FID,Points))).
+
 
 :- include(kaggle_arc_footer).
 :- initialization(create_movements).
 :- initialization(create_points_plus).
-:- initialization(create_builtin_sids).
+%:- initialization(create_builtin_sids).
+
+
+
 

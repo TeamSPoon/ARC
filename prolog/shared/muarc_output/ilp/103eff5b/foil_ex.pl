@@ -141,6 +141,8 @@ right(hv(P,Q),hv(R,Q)):-size(S),P#<S,R#=P+1.
 left(hv(P,Q),hv(R,Q)):-P#>1,R#=P-1. 
 down(hv(P,Q),hv(P,R)):-size(S),Q#<S,R#=Q+1. 
 up(hv(P,Q),hv(P,R)):-Q#>1,R#=Q-1. 
+
+% given
 lhs(trn_0,hv(5,2),rot90,green,hv(2,1),hv(1,2),2,sid_12). 
 lhs(trn_0,hv(4,4),sameR,blue,hv(2,1),hv(2,1),2,sid_12). 
 lhs(trn_0,hv(3,3),rot90,red,hv(3,1),hv(1,3),3,sid_13). 
@@ -148,6 +150,17 @@ lhs(trn_0,hv(3,19),sameR,cyan,hv(2,2),hv(2,2),4,sid_22).
 lhs(trn_0,hv(3,13),rot180,cyan,hv(8,8),hv(8,8),32,s5515589). 
 lhs(trn_0,hv(6,3),sameR,yellow,hv(1,1),hv(1,1),1,sid_11). 
 lhs(trn_0,hv(6,5),sameR,yellow,hv(1,1),hv(1,1),1,sid_11). 
+
+% you may predict
+pos(rhs(trn_0,hv(7,19),sameR,yellow,hv(2,2),hv(2,2),4,sid_22)). 
+pos(rhs(trn_0,hv(3,19),sameR,yellow,hv(2,2),hv(2,2),4,sid_22)). 
+pos(rhs(trn_0,hv(5,15),rot90,blue,hv(4,2),hv(2,4),8,s13439039)). 
+pos(rhs(trn_0,hv(7,17),sameR,green,hv(4,2),hv(4,2),8,s13439039)). 
+pos(rhs(trn_0,hv(3,13),sameR,red,hv(6,2),hv(6,2),12,s10770502)). 
+pos(rhs(trn_0,hv(3,13),rot270,black,hv(8,8),hv(8,8),32,s10038528)). 
+
+
+% given
 lhs(trn_1,hv(5,4),rot90,green,hv(2,1),hv(1,2),2,sid_12). 
 lhs(trn_1,hv(2,17),sameR,cyan,hv(3,3),hv(3,3),9,sid_33). 
 lhs(trn_1,hv(2,11),sameR,cyan,hv(9,9),hv(9,9),45,s11309857). 
@@ -155,37 +168,28 @@ lhs(trn_1,hv(4,5),sameR,yellow,hv(1,1),hv(1,1),1,sid_11).
 lhs(trn_1,hv(4,6),sameR,red,hv(1,1),hv(1,1),1,sid_11). 
 lhs(trn_1,hv(6,4),sameR,blue,hv(1,1),hv(1,1),1,sid_11). 
 lhs(trn_1,hv(6,6),sameR,yellow,hv(1,1),hv(1,1),1,sid_11). 
-/*
-lhs(tst_0,hv(23,7),rot90,yellow,hv(2,1),hv(1,2),2,sid_12). 
-lhs(tst_0,hv(24,8),rot90,red,hv(2,1),hv(1,2),2,sid_12). 
-lhs(tst_0,hv(3,4),sameR,cyan,hv(4,4),hv(4,4),16,s4884971). 
-lhs(tst_0,hv(3,8),flipV,cyan,hv(12,8),hv(12,8),64,s6389904). 
-lhs(tst_0,hv(22,9),sameR,green,hv(1,1),hv(1,1),1,sid_11). 
-*/
-:-end_bg. 
-:-begin_in_pos. 
-pos(rhs(trn_0,hv(7,19),sameR,yellow,hv(2,2),hv(2,2),4,sid_22)). 
-pos(rhs(trn_0,hv(3,19),sameR,yellow,hv(2,2),hv(2,2),4,sid_22)). 
-pos(rhs(trn_0,hv(5,15),rot90,blue,hv(4,2),hv(2,4),8,s13439039)). 
-pos(rhs(trn_0,hv(7,17),sameR,green,hv(4,2),hv(4,2),8,s13439039)). 
-pos(rhs(trn_0,hv(3,13),sameR,red,hv(6,2),hv(6,2),12,s10770502)). 
-pos(rhs(trn_0,hv(3,13),rot270,black,hv(8,8),hv(8,8),32,s10038528)). 
+
+% you may predict
 pos(rhs(trn_1,hv(7,19),sameR,yellow,hv(2,2),hv(2,2),4,sid_22)). 
 pos(rhs(trn_1,hv(3,19),sameR,yellow,hv(2,2),hv(2,2),4,sid_22)). 
 pos(rhs(trn_1,hv(5,15),rot90,blue,hv(4,2),hv(2,4),8,s13439039)). 
 pos(rhs(trn_1,hv(7,17),sameR,green,hv(4,2),hv(4,2),8,s13439039)). 
 pos(rhs(trn_1,hv(3,13),sameR,red,hv(6,2),hv(6,2),12,s10770502)). 
 pos(rhs(trn_1,hv(3,13),rot270,black,hv(8,8),hv(8,8),32,s10038528)). 
-/*
+
+% given
+lhs(tst_0,hv(23,7),rot90,yellow,hv(2,1),hv(1,2),2,sid_12). 
+lhs(tst_0,hv(24,8),rot90,red,hv(2,1),hv(1,2),2,sid_12). 
+lhs(tst_0,hv(3,4),sameR,cyan,hv(4,4),hv(4,4),16,s4884971). 
+lhs(tst_0,hv(3,8),flipV,cyan,hv(12,8),hv(12,8),64,s6389904). 
+lhs(tst_0,hv(22,9),sameR,green,hv(1,1),hv(1,1),1,sid_11). 
+
+% what will you predict?
+
 pos(rhs(tst_0,hv(23,7),rot90,yellow,hv(2,1),hv(1,2),2,sid_12)). 
 pos(rhs(tst_0,hv(24,8),rot90,red,hv(2,1),hv(1,2),2,sid_12)). 
 pos(rhs(tst_0,hv(3,4),sameR,green,hv(4,4),hv(4,4),16,s4884971)). 
 pos(rhs(tst_0,hv(3,12),sameR,red,hv(8,4),hv(8,4),32,s13166158)). 
 pos(rhs(tst_0,hv(7,8),sameR,yellow,hv(8,4),hv(8,4),32,s13166158)). 
 pos(rhs(tst_0,hv(22,9),sameR,green,hv(1,1),hv(1,1),1,sid_11)). 
-*/
-:-end_in_pos. 
-/*
-*/
-/*
-*/
+

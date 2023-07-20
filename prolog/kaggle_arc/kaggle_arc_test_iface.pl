@@ -282,9 +282,8 @@ invoke_n_v(NV):- compound(NV),functor(NV,F,2), atom_length(F,1), F\=='>', F\=='+
 invoke_n_v(Char,TestAtom):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),set_current_test(TestID),!, do_web_menu_key(Char).
 invoke_n_v(TestAtom,Char):- nonvar(TestAtom), fix_test_name(TestAtom,TestID),is_valid_testname(TestID),set_current_test(TestID),!, do_web_menu_key(Char).
 
-/*
+invoke_arc_cmd(Key):- fix_test_name(Key,TestID),is_valid_testname(TestID),set_current_test(TestID),!, call_test_cmd.
 invoke_arc_cmd(Key):- once(dmsg(invoke_arc_cmd(Key))),fail.
-invoke_arc_cmd(Key):- fix_test_name(Key,TestID),is_valid_testname(TestID),set_current_test(TestID),!, do_menu_key(e).
 invoke_arc_cmd(Key):- invoke_n_v(Key),!,dmsg(invoke_n_v(Key)),!.
 invoke_arc_cmd(Key):- arc_atom_to_term(Key,Prolog,Vs),Vs==[], Prolog\=@=Key,!,invoke_arc_cmd(Prolog).
 invoke_arc_cmd(Key):- Key \= (_-_), \+ arc_sensical_term(Key),!.
@@ -292,7 +291,6 @@ invoke_arc_cmd(Goal):- \+ missing_arity(Goal,0),!,
   write('<pre style="color: white">'),
   weto(ignore(Goal)),
   write('</pre>'),!.
-*/
 invoke_arc_cmd(Key):- do_web_menu_key(Key).
 
 
@@ -321,15 +319,15 @@ do_menu_key(Key):- atom(Key), atom_length(Key,1), \+ menu_cmd1(_,Key,_,_),
    format('~N~n'), get_pair_mode(Mode), alt_pair_mode(Mode,Alt), !,
      with_pair_mode(Alt,do_menu_key(LowerKey)).
 
+do_menu_key(Name):- atom(Name), atom_length(Name,N), N>=3,do_menu_name(Name).
+
 %do_menu_key(Atom):- atom(Atom), atom_codes(Atom,Codes), once(Codes=[27|_];Codes=[_]),format("~N % Menu: '~w' ~q ~n",[Atom,Codes]),fail.
 do_menu_key(Text):- atom(Text),atom_concat(' ',Text,Text),Text\=='', !,do_menu_key(Text).
 do_menu_key(Text):- atom(Text),atom_concat(Text,' ',Text),Text\=='', !,do_menu_key(Text).
 do_menu_key(Text):- atom(Text),atom_concat(Text,'\r',Text),Text\=='', !,do_menu_key(Text).
 
 
-
 do_menu_key(OID):- atom(OID),oid_to_obj(OID,Obj),!,show_indiv(Obj).
-
 
 
 % refering to a Test Suite or Object
@@ -350,8 +348,6 @@ do_menu_key(Key):- \+ atom(Key), catch(text_to_string(Key,Str),_,fail),Key\==Str
 do_menu_key(Key):- atom(Key), arc_atom_to_term(Key,Term,Vs), nonvar(Term),
   Term\=@=Key, 
     locally(nb_setval('$variable_names',Vs), do_menu_key(Term)),!.
-
-do_menu_key(Name):- atom(Name), atom_length(Name,N), N>=3,do_menu_name(Name),show_selected_object.
 
 % Any Code object
 do_menu_key(Key):- % ls   foo
@@ -390,7 +386,6 @@ maybe_call_code(Term):-
 %nonvar(Term),
  % current_predicate(_,Term),
    \+ missing_arity(Term,0),
-   (atom(Term)->current_predicate(_,Term);true),
    asserta_new(xlisting_whook:offer_testcase(Term)),!,
    locally(nb_setval('$term',Term),
      locally(nb_setval('$user_term',Term), 
@@ -725,7 +720,7 @@ in_iface_file(P):-predicate_property(P,file(File)),atom_contains(File,iface).
 set_test_cmd(Mode):- \+ \+ dont_set_test_cmd(Mode),!.
 set_test_cmd(Mode):- into_test_cmd(Mode,Cmd),luser_setval('cmd',Cmd).
 
-call_test_cmd:- get_test_cmd(Mode),!,wdmsg(call_test_cmd(Mode)),call(Mode).
+call_test_cmd:- get_test_cmd(Mode),!,call(Mode).
 get_test_cmd(Mode):- luser_getval('cmd',Mode),callable(Mode)->true;arc_user_prop(global,'cmd',Mode).
 
 set_test_cmd2(Mode):- \+ \+ dont_set_test_cmd(Mode),!.
@@ -1246,7 +1241,7 @@ full_test_suite_list:-
  ((forall(nth_above(300,N,L,SuiteX),
   (%nl,%current_suite_testnames(SuiteX,_),
    print_menu_cmd1((format(' ~w:  ',[N]),
-   report_suite_test_count(SuiteX)),N),ignore((SuiteX==SuiteXC,write('   <<<<-------'))))))),!.
+   report_suite_test_count(SuiteX)),N),ignore((SuiteX==SuiteXC,write('   <<<<-------'))))))).
 
 report_suites:-  
  ensure_level_1_test_info,
@@ -1580,7 +1575,8 @@ tee_op(_):- no_tee_file,!.
 tee_op(G):- ignore(/*notrace*/(catch(call(G),E,u_dmsg(G=E)))).
 shell_op(G):- tee_op(G).
 
-my_shell_format(F,A):- shell_op((sformat(S,F,A), shell(S))).
+my_shell_format(F,A):- shell_op(bash_format(F,A)).
+bash_format(F,A):- sformat(S,F,A), shell(S).
 
 warn_skip(Goal):- nop(u_dmsg(warn_skip(Goal))).
 not_warn_skip(Goal):- u_dmsg(warn(Goal)),!,call(Goal),!.
@@ -1805,48 +1801,32 @@ print_single_pair_pt2(TestID,ExampleNum,In,Out):- is_cgi,!,
    TestAtom,navCmd((TestAtom)),ID2,Out,RightTitle))),!.
 
 print_single_pair_pt2(TestID,ExampleNum,In1,Out1):- 
-  \+ \+ print_single_pair_pt2a(TestID,ExampleNum,In1,Out1).
-
-print_single_pair_pt2a(TestID,ExampleNum,In1,Out1):- 
    test_id_atom(TestID,TestAtom),
    in_out_name(ExampleNum,NameIn0,NameOut),!,%easy_diff_idea(TestID,ExampleNum,In1,Out1,LIST),!,
   sformat(NameIn,'~w  "~w" ',[NameIn0,TestAtom]),
    format('~Ntestcase(~q,"\n',[TestID>ExampleNum]),
    call_cleanup(print_single_pair_pt3(TestID,ExampleNum,In1,NameIn,Out1,NameOut),write('").\n\n')),
-   check_print_outShouldBe(TestID,ExampleNum,Out1),
+   print_outShouldBe(TestID,ExampleNum,Out1),
    format('~N'),
    %ignore((grid_hint_swap(i-o,In,Out))),
    format('~N'),
    ignore(show_reduced_io_rarely(In1^Out1)),!.
 
-check_print_outShouldBe(TestID,ExampleNum,Out1):- 
- nop(( if_t(kaggle_arc(TestID,ExampleNum,_,OutShouldBe), 
+print_outShouldBe(TestID,ExampleNum,Out1):- 
+  if_t(kaggle_arc(TestID,ExampleNum,_,OutShouldBe), 
    ((if_t( (\+ is_grid(OutShouldBe); mass(OutShouldBe,0)), wdmsg((cant_tell_what_outShouldBe))),
      if_t(is_grid(OutShouldBe),
       if_t(Out1\=@=OutShouldBe, 
-         print_grid(outShouldBe,OutShouldBe)))))))).
+         print_grid(outShouldBe,OutShouldBe)))))).
 
 print_single_pair_pt3(TestID,ExampleNum, In1,NameIn,Out1,NameOut):-   
   \+ luser_getval('$grid_mode',informative_pairs), !, 
    print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut),
-   check_print_outShouldBe(TestID,ExampleNum,Out1).
+   print_outShouldBe(TestID,ExampleNum,Out1).
 
-print_single_pair_pt3(_TestID,_ExampleNum,In1,NameIn,Out1,NameOut):-    
+print_single_pair_pt3(TestID,ExampleNum,In1,NameIn,Out1,NameOut):-    
   %rot90(In1,In),rot90(Out1,Out),print_side_by_side(cyan,In,NameIn,_,Out,NameOut),
-/*
-  check_print_outShouldBe(TestID,ExampleNum,Out1),
-  call_for_common_pair(as_ngrid_3,In1,Out1,RIO1,ROI1,_),
-  nb_setval(alt_grid_dot,[]),
-  ignore(show_the_alt_grids_now(TestID,ExampleNum,RIO1,ROI1)),
-  nb_setval(alt_grid_dot,[]),
-   print_side_by_side(cyan,RIO1,ngrid(NameIn),_,ROI1,ngrid(NameOut)),
-  nb_setval(alt_grid_dot,[]),*/
-   print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut),
-  !.
-
-print_single_pair_pt3a(TestID,ExampleNum,In1,NameIn,Out1,NameOut):-    
-  %rot90(In1,In),rot90(Out1,Out),print_side_by_side(cyan,In,NameIn,_,Out,NameOut),
-  check_print_outShouldBe(TestID,ExampleNum,Out1),
+  print_outShouldBe(TestID,ExampleNum,Out1),
   call_for_common_pair(as_ngrid_3,In1,Out1,RIO1,ROI1,_),
   nb_setval(alt_grid_dot,[]),
   ignore(show_the_alt_grids_now(TestID,ExampleNum,RIO1,ROI1)),
@@ -1855,7 +1835,6 @@ print_single_pair_pt3a(TestID,ExampleNum,In1,NameIn,Out1,NameOut):-
   nb_setval(alt_grid_dot,[]),
    print_side_by_side(cyan,In1,NameIn,_,Out1,NameOut),
   !.
-
 
 show_the_alt_grids_now(_TestID,_ExampleNum,In,Out):-
   nb_setval(did_ss,In+Out),
@@ -1915,7 +1894,7 @@ solid_globalpoints(E,Ps):- is_grid(E),!,into_solid_grid(E,G),globalpoints(G,Ps),
    on_x_rtrace(print_ss(blur(Op,TestID,ExampleNum,XForms),RIO2,ROI2))))))).
 */
 print_ss_new(RIO,ROI,Title):- nb_current(did_ss,SS),SS=@=RIO+ROI,!,pp(next_same(Title)).
-print_ss_new(RIO,ROI,Title):- mass(RIO,M1),mass(ROI,M2),Mass is M1 + M2, Mass=0, !, pp(empty(Title)).
+print_ss_new(RIO,ROI,Title):- mass(RIO,M1),mass(ROI,M2),Mass is M1 + M2, Mass=0,!,pp(empty(Title)).
 print_ss_new(RIO1,ROI1,Title):-   
   call_for_common_pair(as_ngrid_3,RIO1,ROI1,RIO,ROI,_),
   print_ss(Title,RIO,ROI),!,nb_setval(did_ss,RIO1+ROI1).

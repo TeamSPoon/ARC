@@ -1001,6 +1001,7 @@ shape_id(Shape,ShapeID):- is_shape_id_for(Shape,ShapeID),!.
 shape_id(Shape,ShapeID):- term_hash(Shape,Hash), atomic_list_concat(['s',Hash],ShapeID), asserta(is_shape_id_for(Shape,ShapeID)).
 id_shape(ShapeID,Shape):- is_shape_id_for(Shape,ShapeID).
 
+
 % eqq
 
 :- dynamic(is_iv_for/2).
@@ -1992,17 +1993,65 @@ center2G(I,X,Y):- indv_props(I,center2G(X,Y)),!.
 center2G(I,X,Y):- indv_props(I,iz(cenGX(X))),indv_props(I,iz(cenGY(Y))),!.
 
 
+tip_loc(Obj,TX,TY):- 
+  center2D(Obj,CX,CY),
+  globalpoints(Obj,GPs),
+  maplist(add_neg_distances(CX,CY),GPs,Distances),
+  sort(Distances,Sorted),
+  remove_ties(Sorted,WithoutTies),
+  (WithoutTies==[]-> TX=CX,TY=CY ; (WithoutTies=[HV|_],center2D(HV,TX,TY))).
+
+add_neg_distances(X1,Y1,HVPoint,NDist-HVPoint):- center2D(HVPoint,X2,Y2),
+  NDist is ( -sqrt(abs(X1-X2)*abs(Y1-Y2))).
+
+remove_ties(X,X):- \+ compound(X),!.
+remove_ties([D1-_,D1-_|Sorted],WithoutTies):- !, 
+  my_partition(p1_arg(1,shall_count_as_same(D1)),Sorted,_,Rest),!,
+  remove_ties(Rest,WithoutTies).
+remove_ties([H|Rest],[H|WithoutTies]):- remove_ties(Rest,WithoutTies).
+
+se_loc(I,X2,Y2):- loc2D(I,X,Y),vis2D(I,H,V),X2 is X+H-1,Y2 is Y+V-1.
+
+
 % Calculate the center of mass of a list of points
+center2D(I,_X,_Y):- plain_var(I),!,fail. % TODO issue warning
 center2D(I,X,Y):- is_cpoint(I),!,I=(_-P),hv_point(X,Y,P),!.
+center2D(I,X,Y):- I=(_-P),!,center2D(P,X,Y),!.
 center2D(I,X,Y):- is_point(I),!,hv_point(X,Y,I),!.
 center2D(I,X,Y):- indv_props(I,center2D(XX,YY)),nonvar(XX),nonvar(YY),!,XX=X,YY=Y.
 center2D(I,X,Y):- is_grid(I), !, grid_size(I,H,V),X is floor(H/2),Y is floor(V/2).
 center2D([], _1000, _2000):-!,fail.
 center2D(I,X,Y):- \+ is_list(I),!, must_det_ll((globalpoints(I,Points),center2D(Points,XX,YY))),!,XX=X,YY=Y.
-center2D(Points, CenterX, CenterY) :- maplist(center2D,Points,X,Y),
-   length(Points,Count), sumlist(X,SumX),sumlist(Y,SumY),
-    Count > 0, % Ensure there's at least one point to avoid division by zero
-    CenterX is round(SumX / Count), CenterY is round(SumY / Count).
+center2D(Points, CenterX, CenterY) :- maplist(center2D,Points,XXs,YYs),
+   length(YYs,Count), average_of(XXs,Count,CenterX),average_of(YYs,Count,CenterY).
+
+average_of(List,Count,Average):- sumlist(List,Sum),Average is round(Sum / Count).
+
+
+middle2D(I,_X,_Y):- plain_var(I),!,fail. % TODO issue warning
+middle2D(I,X,Y):- is_cpoint(I),!,I=(_-P),hv_point(X,Y,P),!.
+middle2D(I,X,Y):- I=(_-P),!,middle2D(P,X,Y),!.
+middle2D(I,X,Y):- is_point(I),!,hv_point(X,Y,I),!.
+middle2D(I,X,Y):- indv_props(I,middle2D(XX,YY)),nonvar(XX),nonvar(YY),!,XX=X,YY=Y.
+middle2D(I,X,Y):- is_object(I),loc2D(I,X1,Y1),vis2D(I,H,V),!,X is X1+floor(H/2),Y is Y1+floor(V/2).
+middle2D(I,X,Y):- is_grid(I), !, grid_size(I,H,V),X is floor(H/2),Y is floor(V/2).
+middle2D([], _1000, _2000):-!,fail.
+middle2D(I,X,Y):- \+ is_list(I),!, must_det_ll((globalpoints(I,Points),middle2D(Points,XX,YY))),!,XX=X,YY=Y.
+middle2D(Points, MiddleX, MiddleY) :- maplist(middle2D,Points,XXs,YYs),
+   middle_of(XXs,MiddleX),middle_of(YYs,MiddleY).
+
+
+middle_of(List,Center):- 
+  list_min_max(List,MinX,MaxX), Center is round((MaxX-MinX)).
+
+list_min_max([X|Xs], MinX, MaxX) :- list_min_max(Xs, X, X, MinX, MaxX).
+list_min_max([], MinX, MaxX, MinX, MaxX):- !.
+list_min_max([X|Xs], CurrMin, CurrMax, MinX, MaxX) :- X @< CurrMin,!,
+  list_min_max(Xs, X, CurrMax, MinX, MaxX).
+list_min_max([X|Xs], CurrMin, CurrMax, MinX, MaxX) :- X @> CurrMax,!,
+  list_min_max(Xs, CurrMin, X, MinX, MaxX).
+list_min_max([_|Xs], CurrMin, CurrMax, MinX, MaxX) :-
+  list_min_max(Xs, CurrMin, CurrMax, MinX, MaxX).
 
 %center2D(I,X,Y):- indv_props(I,iz(cenXD(X))),indv_props(I,iz(cenYD(Y))),!.
 %center2G(Obj,CentX,CentY):- vis2D(Obj,H,V), loc2D(Obj,X,Y),CentX is X + floor(H/2),CentY is Y + floor(V/2).

@@ -27,7 +27,7 @@ cmatch(C,CD):- is_point(CD),!,compound(CD), arg(_,CD,E),cmatch(C,E),!.
 cmatch(is_colorish_var,CD):- !,var(CD),is_colorish(CD).
 cmatch(fg,CD):- !, CD\==wbg, is_fg_color(CD),!.
 cmatch(wbg,CD):- !,(CD==wbg;is_bg_color(CD)),!.
-cmatch(bg,CD):- !, (CD==black; is_bg_color(CD)),!.
+cmatch(bg,CD):- !, is_bg_color(CD),!.
 %cmatch(P,CD):- is_real_color(P),!, \+ P\==CD.
 cmatch(P,CD):- is_colorish(P),!, \+ P\=CD.
 cmatch(P,CD):- call(P,CD),!.
@@ -61,16 +61,17 @@ dif_color(_,_).
 % Color types
 % =============================
 is_fg_color(C):- C==black, !, fail,get_black(Black),!,Black\==black.
-is_fg_color(C):- is_bg_color(C),!,fail.
 is_fg_color(C):- attvar(C),!,get_attr(C,ci,fg(_)).
+is_fg_color(C):- is_bg_color(C),!,fail.
 is_fg_color(C):- is_color(C),!.
 %is_fg_color(C):- C == fg.
 
 %is_bg_color(BG):- plain_var(BG),!,fail.
 is_bg_color(BG):- var(BG),!,get_attr(BG,ci,bg(_)),!.
+is_bg_color(C):- C==black,!,fail.
 is_bg_color(C):- bg_sym(BG),C==BG,!.
 is_bg_color(wbg).
-is_bg_color('#104010').
+%is_bg_color('#104010').
 is_bg_color(C):- get_bgc(BG),C==BG,!.
 
 is_real_bg_color(C):- is_bg_color(C),is_real_color(C).
@@ -245,9 +246,9 @@ set_black(BGC):- luser_linkval(grid_black,BGC).
 
 :- export(get_black/1).
 :- decl_pt(get_black(color)).
-get_black(BGC):- !,BGC = black.
+%get_black(BGC):- !,BGC = black.
 get_black(BGC):- luser_getval(grid_black,BGC),!.
-get_black(black).
+get_black('#104011').
 :- nb_delete(grid_black).
 :- set_luser_default(grid_black,black).
 
