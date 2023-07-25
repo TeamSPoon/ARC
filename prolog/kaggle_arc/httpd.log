@@ -1190,3 +1190,17 @@ completed(3, 0.0034903000000000572, 0, 200, file('image/png','/opt/logicmoo_work
 /*Mon Jul 17 09:52:58 2023*/ request(4, 1689612778.863, [session('64b2-0e6c-507c-aad4.gitlab'),peer(ip(167,248,133,52)),method(get),request_uri('/favicon.ico'),path('/favicon.ico'),http_version(1-1),host('98.232.203.68'),port(1766),user_agent('Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)'),connection(close)]).
 completed(4, 0.004188999999999998, _7080, 500, file('text/html','/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/favicon.ico')).
 server(stopped, 1689632256).
+server(started, 1690144836).
+completed(0, 0.0105904, 0, 500, error("Socket error: Broken pipe")).
+/*Sun Jul 23 13:40:37 2023*/ request(1, 1690144837.488, [session('4371-de9a-5c2b-1b47.gitlab'),peer(ip(167,94,138,35)),method(get),request_uri(/),path(/),http_version(1-1),host('98.232.203.68'),port(1766)]).
+completed(1, 0.010560000000000014, 388, 301, moved('/swish/muarc/kaggle_arc_ui_html.html')).
+/*Sun Jul 23 13:40:37 2023*/ request(2, 1690144837.627, [session('bf31-b650-5641-a218.gitlab'),peer(ip(167,94,138,35)),method(get),request_uri(/),path(/),http_version(1-1),host('98.232.203.68'),port(1766),user_agent('Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)')]).
+completed(2, 0.003088399999999991, 131, 301, moved('/swish/muarc/kaggle_arc_ui_html.html')).
+completed(0, 0.0012200999999999462, 351, 400, error("Illegal HTTP request: PRI * HTTP/2.0 (in_http_request)")).
+/*Sun Jul 23 13:40:37 2023*/ request(3, 1690144837.897, [session('14ed-d2f0-4558-25f3.gitlab'),peer(ip(167,94,138,35)),method(get),request_uri('/swish/muarc/kaggle_arc_ui_html.html'),path('/swish/muarc/kaggle_arc_ui_html.html'),http_version(1-1),host('98.232.203.68'),port(1766),user_agent('Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)')]).
+completed(3, 0.0031920000000000837, 33255, 200, file('text/html','/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/kaggle_arc_ui_html.html')).
+completed(0, 0.00028839999999996646, 351, 400, error("Illegal HTTP request: PRI * HTTP/2.0 (in_http_request)")).
+/*Sun Jul 23 13:40:38 2023*/ request(4, 1690144838.224, [session('7a24-1591-843d-1549.gitlab'),peer(ip(167,94,138,35)),method(get),request_uri('/static/images/favicon.png?v=ab6cc8e66e2c76decf54d9c3fa2b90345ce2df6bfcd7b546450cf2ddcc5a6311d4a76feaff55c28512c1688bc017478e24a7af1c0949c1da366417b44d6cbcf3'),path('/static/images/favicon.png'),search([v=ab6cc8e66e2c76decf54d9c3fa2b90345ce2df6bfcd7b546450cf2ddcc5a6311d4a76feaff55c28512c1688bc017478e24a7af1c0949c1da366417b44d6cbcf3]),http_version(1-1),host('98.232.203.68'),port(1766),user_agent('Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)'),connection(close)]).
+completed(4, 0.0033428999999999265, 0, 200, file('image/png','/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/shared/static/images/favicon.png')).
+/*Sun Jul 23 13:40:38 2023*/ request(5, 1690144838.387, [session('135f-1228-090c-1551.gitlab'),peer(ip(167,94,138,35)),method(get),request_uri('/favicon.ico'),path('/favicon.ico'),http_version(1-1),host('98.232.203.68'),port(1766),user_agent('Mozilla/5.0 (compatible; CensysInspect/1.1; +https://about.censys.io/)'),connection(close)]).
+completed(5, 0.0030986000000000624, _7066, 500, file('text/html','/opt/logicmoo_workspace/packs_sys/logicmoo_agi/prolog/kaggle_arc/favicon.ico')).

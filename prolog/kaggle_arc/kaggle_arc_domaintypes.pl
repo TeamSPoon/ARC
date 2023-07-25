@@ -5,6 +5,11 @@
   This work may not be copied and used by anyone other than the author Douglas Miles
   unless permission or license is granted (contact at business@logicmoo.org)
 */
+
+:- if(current_module(trill)).
+:- set_prolog_flag_until_eof(trill_term_expansion,false).
+:- endif.
+
 :- include(kaggle_arc_header).
 
 :- ensure_loaded(kaggle_arc_typecheck).
@@ -60,28 +65,26 @@ dif_color(_,_).
 % =============================
 % Color types
 % =============================
-is_fg_color(C):- C==black, !, fail,get_black(Black),!,Black\==black.
+%is_fg_color(C):- C==black, !, fail,get_black(Black),!,Black\==black.
+is_fg_color(C):- C == fg,!.
+is_fg_color(C):- C == black, !, black_is_fg.
 is_fg_color(C):- attvar(C),!,get_attr(C,ci,fg(_)).
 is_fg_color(C):- is_bg_color(C),!,fail.
 is_fg_color(C):- is_color(C),!.
-%is_fg_color(C):- C == fg.
+
+is_real_bg_color(C):- is_bg_color(C),is_real_color(C).
 
 %is_bg_color(BG):- plain_var(BG),!,fail.
 is_bg_color(BG):- var(BG),!,get_attr(BG,ci,bg(_)),!.
-is_bg_color(C):- C==black,!,fail.
+is_bg_color(C):- C==black,!, \+ black_is_fg.
 is_bg_color(C):- bg_sym(BG),C==BG,!.
 is_bg_color(wbg).
 %is_bg_color('#104010').
 is_bg_color(C):- get_bgc(BG),C==BG,!.
 
-is_real_bg_color(C):- is_bg_color(C),is_real_color(C).
+is_fg_point_not_black(G):- G\==black, is_fg_point(G).
 
-is_black_or_bg(BG):- is_black(BG)-> true; is_bg_color(BG).
-%is_black_or_bg(0).
-
-:- decl_pt(helper,is_black(color)). 
-is_black(C):- get_black(B),!,C==B.
-
+black_is_fg:- fail.
 
 :- use_module(library(logicmoo/util_bb_frame)).
 set_fg_vars(Vars):-
@@ -246,12 +249,19 @@ set_black(BGC):- luser_linkval(grid_black,BGC).
 
 :- export(get_black/1).
 :- decl_pt(get_black(color)).
-%get_black(BGC):- !,BGC = black.
+get_black(BGC):- \+ black_is_fg, !,BGC = black.
 get_black(BGC):- luser_getval(grid_black,BGC),!.
 get_black('#104011').
 :- nb_delete(grid_black).
 :- set_luser_default(grid_black,black).
 
+
+
+is_black_or_bg(BG):- is_black(BG)-> true; is_bg_color(BG).
+%is_black_or_bg(0).
+
+:- decl_pt(helper,is_black(color)). 
+is_black(C):- get_black(B),!,C==B.
 
 is_color_no_bgc(X):- \+ is_bg_color(X), is_color(X).
 
@@ -754,4 +764,5 @@ scale_grid(1,_GrowthChart,Grid,Grid).
 enum_scale(1).
 
 :- include(kaggle_arc_footer).
+
 

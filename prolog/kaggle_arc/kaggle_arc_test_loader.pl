@@ -408,7 +408,7 @@ get_raw_input_outputs(TestID,ExampleNums,Ins,Outs):-
 kaggle_arc(TestID,ExampleNum,In,Out):- kaggle_arc_json(TestID,ExampleNum,In,OutM),
   check_output_grid(TestID,ExampleNum,In,OutM,Out).
 
-check_output_grid(TestID,ExampleNum,In,OutM,Out):- is_grid(OutM),Out=OutM.
+check_output_grid(_TestID,_ExampleNum,_In,OutM,Out):- is_grid(OutM),Out=OutM.
 
 /*kaggle_arc(TestID,ExampleNum,In,Out):- var(In),var(Out),!,
   kaggle_arc_raw(TestID,ExampleNum,In0,Out0),
@@ -460,406 +460,807 @@ not_disallow_test_out(tst+_, O,OO):- grid_size(O,H,V),make_grid(H,V,OO),mapgrid(
 
 tasks_split(ID,String):- split_string(String,",[] \n\r\t\s",",[] \n\r\t\s",L),member(S,L),atom_string(E,S),atom_id_e(E,ID).
 
-icu('007bbfb7', x + 3 ).
-icu('00d62c1b', x + 3 ).
-icu('017c7c7b', x + 33 ).
-icu('025d127b', x + 3 ).
-icu('045e512c', -1 ).
-icu('0520fde7', 3 ).
-icu('05269061', x + 3 ).
-icu('05f2a901', x + -1 ).
-icu('06df4c85', 3 ).
-icu('08ed6ac7', -1 ).
-icu('09629e4f', 3 ).
-icu('0962bcdd', 3 ).
-icu('0a938d79', -1 ).
-icu('0b148d64', 3 ).
-icu('0ca9ddb6', -1 ).
-icu('0d3d703e', -1 ).
-icu('0dfd9992', 3 ).
-icu('0e206a2e', -1 ).
-icu('10fcaaa3', -1 ).
-icu('11852cab', -1 ).
-icu('1190e5a7', 3 ).
-icu('137eaa0f', -1 ).
-icu('150deff5', -1 ).
-icu('178fcbfb', 3 ).
-icu('1a07d186', -1 ).
-icu('1b2d62fb', 3 ).
-icu('1b60fb0c', -1 ).
-icu('1bfc4729', 3 ).
-icu('1c786137', 3 ).
-icu('1caeab9d', -1 ).
-icu('1cf80156', 3 ).
-icu('1e0a9b12', 3 ).
-icu('1e32b0e9', 3 ).
-icu('1f0c79e5', 3 ).
-icu('1f642eb9', -1 ).
-icu('1f85a75f', 3 ).
-icu('1f876c06', 3 ).
-icu('1fad071e', 3 ).
-icu('2013d3e2', 3 ).
-icu('2204b7a8', 3 ).
-icu('22168020', 3 ).
-icu('22233c11', -1 ).
-icu('2281f1f4', 3 ).
-icu('228f6490', 3 ).
-icu('22eb0ac0', 3 ).
-icu('234bbc79', -1 ).
-icu('23581191', 23 ).
-icu('239be575', 3 ).
-icu('23b5c85d', 3 ).
-icu('253bf280', 3 ).
-icu('25d487eb', 3 ).
-icu('25d8a9c8', -1 ).
-icu('25ff71a9', 3 ).
-icu('264363fd', -1 ).
-icu('272f95fa', 3 ).
-icu('27a28665', -1 ).
-icu('28bf18c6', 3 ).
-icu('28e73c20', -1 ).
-icu('29623171', 3 ).
-icu('29c11459', -1 ).
-icu('29ec7d0e', 3 ).
-icu('2bcee788', 4 ).
-icu('2bee17df', 3 ).
-icu('2c608aff', -1 ).
-icu('2dc579da', 3 ).
-icu('2dd70a9a', -1 ).
-icu('2dee498d', 3 ).
-icu('31aa019c', 3 ).
-icu('321b1fc6', -1 ).
-icu('32597951', 3 ).
-icu('3345333e', -1 ).
-icu('3428a4f5', 3 ).
-icu('3618c87e', 3 ).
-icu('3631a71a', -1 ).
-icu('363442ee', -1 ).
-icu('36d67576', -1 ).
-icu('36fdfd69', -1 ).
-icu('3906de3d', 3 ).
-icu('39a8645d', -1 ).
-icu('39e1d7f9', -1 ).
-icu('3aa6fb7a', 3 ).
-icu('3ac3eb23', -1 ).
-icu('3af2c5a8', 3 ).
-icu('3bd67248', 3 ).
-icu('3bdb4ada', -1 ).
-icu('3befdf3e', -1 ).
-icu('3c9b0459', 3 ).
-icu('3de23699', -1 ).
-icu('3e980e27', -1 ).
-icu('3eda0437', -1 ).
-icu('3f7978a0', -1 ).
-icu('40853293', 3 ).
-icu('4093f84a', -1 ).
-icu('41e4d17e', -1 ).
-icu('4258a5f9', 3 ).
-icu('4290ef0e', -1 ).
-icu('42a50994', 3 ).
-icu('4347f46a', 3 ).
-icu('444801d8', 3 ).
-icu('445eab21', 3 ).
-icu('447fd412', -1 ).
-icu('44d8ac46', -1 ).
-icu('44f52bb0', 3 ).
-icu('4522001f', -1 ).
-icu('4612dd53', 23 ).
-icu('46442a0e', -1 ).
-icu('469497ad', -1 ).
-icu('46f33fce', -1 ).
-icu('47c1f68c', 3 ).
-icu('484b58aa', -1 ).
-icu('48d8fb45', 3 ).
-icu('4938f0c2', -1 ).
-icu('496994bd', 3 ).
-icu('49d1d64f', 3 ).
-icu('4be741c5', 3 ).
-icu('4c4377d9', 3 ).
-icu('4c5c2cf0', -1 ).
-icu('50846271', -1 ).
-icu('508bd3b6', -1 ).
-icu('50cb2852', 3 ).
-icu('5117e062', 3 ).
-icu('5168d44c', -1 ).
-icu('539a4f51', -1 ).
-icu('53b68214', 3 ).
-icu('543a7ed5', 3 ).
-icu('54d82841', 3 ).
-icu('54d9e175', -1 ).
-icu('5521c0d9', 4 ).
-icu('5582e5ca', 3 ).
-icu('5614dbcf', 3 ).
-icu('56dc2b01', 33 ).
-icu('56ff96f3', 3 ).
-icu('57aa92db', -1 ).
-icu('5ad4f10b', 3 ).
-icu('5bd6f4ac', 3 ).
-icu('5c0a986e', -1 ).
-icu('5c2c9af4', -1 ).
-icu('5daaa586', -1 ).
-icu('60b61512', -1 ).
-icu('6150a2bd', 3 ).
-icu('623ea044', 3 ).
-icu('62c24649', 3 ).
-icu('63613498', 3 ).
-icu('6430c8c4', 3 ).
-icu('6455b5f5', 3 ).
-icu('662c240a', 3 ).
-icu('67385a82', 3 ).
-icu('673ef223', -1 ).
-icu('6773b310', 4 ).
-icu('67a3c6ac', 3 ).
-icu('67a423a3', 23 ).
-icu('67e8384a', 3 ).
-icu('681b3aeb', 3 ).
-icu('6855a6e4', 23 ).
-icu('68b16354', 3 ).
-icu('694f12f3', 23 ).
-icu('6a1e5592', -1 ).
-icu('6aa20dc0', -1 ).
-icu('6b9890af', 3 ).
-icu('6c434453', 3 ).
-icu('6cdd2623', 3 ).
-icu('6cf79266', -1 ).
-icu('6d0160f0', -1 ).
-icu('6d0aefbc', 3 ).
-icu('6d58a25d', 3 ).
-icu('6d75e8bb', 3 ).
-icu('6e02f1e3', -1 ).
-icu('6e19193c', -1 ).
-icu('6e82a1ae', 33 ).
-icu('6ecd11f4', -1 ).
-icu('6f8cd79b', 3 ).
-icu('6fa7a44f', 3 ).
-icu('72322fa7', -1 ).
-icu('72ca375d', -1 ).
-icu('73251a56', 3 ).
-icu('7447852a', -1 ).
-icu('7468f01a', 3 ).
-icu('746b3537', 3 ).
-icu('74dd1130', 3 ).
-icu('75b8110e', 3 ).
-icu('760b3cac', 23 ).
-icu('776ffc46', -1 ).
-icu('77fdfe62', 4 ).
-icu('780d0b14', -1 ).
-icu('7837ac64', -1 ).
-icu('794b24be', -1 ).
-icu('7b6016b9', 3 ).
-icu('7b7f7511', -1 ).
-icu('7c008303', -1 ).
-icu('7ddcd7ec', 23 ).
-icu('7df24a62', -1 ).
-icu('7e0986d6', -1 ).
-icu('7f4411dc', -1 ).
-icu('7fe24cdd', -1 ).
-icu('80af3007', 3 ).
-icu('810b9b61', 3 ).
-icu('82819916', -1 ).
-icu('83302e8f', 3 ).
-icu('834ec97d', 4 ).
-icu('8403a5d5', -1 ).
-icu('846bdb03', -1 ).
-icu('855e0971', 4 ).
-icu('85c4e7cd', -1 ).
-icu('868de0fa', -1 ).
-icu('8731374e', -1 ).
-icu('88a10436', -1 ).
-icu('88a62173', 3 ).
-icu('890034e9', -1 ).
-icu('8a004b2b', -1 ).
-icu('8be77c9e', 3 ).
-icu('8d5021e8', 3 ).
-icu('8d510a79', 3 ).
-icu('8e1813be', 3 ).
-icu('8e5a5113', 3 ).
-icu('8eb1be9a', 3 ).
-icu('8efcae92', 3 ).
-icu('8f2ea7aa', 3 ).
-icu('90c28cc7', 3 ).
-icu('90f3ed37', -1 ).
-icu('913fb3ed', -1 ).
-icu('91413438', -1 ).
-icu('91714a58', -1 ).
-icu('9172f3a0', 3 ).
-icu('928ad970', 3 ).
-icu('93b581b8', -1 ).
-icu('941d9a10', -1 ).
-icu('94f9d214', 3 ).
-icu('952a094c', 3 ).
-icu('9565186b', 3 ).
-icu('95990924', -1 ).
-icu('963e52fc', 3 ).
-icu('97999447', -1 ).
-icu('97a05b5b', -1 ).
-icu('98cf29f8', 23 ).
-icu('995c5fa3', -1 ).
-icu('99b1bc43', 3 ).
-icu('99fa7670', 3 ).
-icu('9aec4887', -1 ).
-icu('9af7a82c', 4 ).
-icu('9d9215db', -1 ).
-icu('9dfd6313', 3 ).
-icu('9ecd008a', -1 ).
-icu('9edfc990', -1 ).
-icu('9f236235', 3 ).
-icu('a1570a43', 4 ).
-icu('a2fd1cf0', 3 ).
-icu('a3325580', -1 ).
-icu('a3df8b1e', -1 ).
-icu('a416b8f3', 3 ).
-icu('a48eeaf7', -1 ).
-icu('a5313dff', 3 ).
-icu('a5f85a15', -1 ).
-icu('a61ba2ce', -1 ).
-icu('a61f2674', -1 ).
-icu('a64e4611', -1 ).
-icu('a65b410d', 3 ).
-icu('a68b268e', 3 ).
-icu('a699fb00', 3 ).
-icu('a740d043', 3 ).
-icu('a78176bb', 23 ).
-icu('a79310a0', 4 ).
-icu('a85d4709', -1 ).
-icu('a87f7484', 3 ).
-icu('a8c38be5', -1 ).
-icu('a8d7556c', -1 ).
-icu('a9f96cdd', -1 ).
-icu('aabf363d', 3 ).
-icu('aba27056', -1 ).
-icu('ac0a08a4', 3 ).
-icu('ae3edfdc', 23 ).
-icu('ae4f1146', 3 ).
-icu('aedd82e4', -1 ).
-icu('af902bf9', 3 ).
-icu('b0c4d837', 23 ).
-icu('b190f7f5', 23 ).
-icu('b1948b0a', 3 ).
-icu('b230c067', -1 ).
-icu('b27ca6d3', -1 ).
-icu('b2862040', 3 ).
-icu('b527c5c6', -1 ).
-icu('b548a754', 3 ).
-icu('b60334d2', -1 ).
-icu('b6afb2da', 3 ).
-icu('b7249182', -1 ).
-icu('b775ac94', -1 ).
-icu('b782dc8a', 3 ).
-icu('b8825c91', 3 ).
-icu('b8cdaf2b', 4 ).
-icu('b91ae062', 3 ).
-icu('b94a9452', 3 ).
-icu('b9b7f026', -1 ).
-icu('ba26e723', 3 ).
-icu('ba97ae07', 3 ).
-icu('bb43febb', 3 ).
-icu('bbc9ae5d', 3 ).
-icu('bc1d5164', 3 ).
-icu('bd4472b8', -1 ).
-icu('bda2d7a6', -1 ).
-icu('bdad9b1f', -1 ).
-icu('be94b721', 3 ).
-icu('beb8660c', 4 ).
-icu('c0f76784', -1 ).
-icu('c1d99e64', 3 ).
-icu('c3e719e8', 3 ).
-icu('c3f564a4', 3 ).
-icu('c444b776', -1 ).
-icu('c59eb873', 3 ).
-icu('c8cbb738', -1 ).
-icu('c8f0f002', 3 ).
-icu('c909285e', x + -1 ).
-icu('c9e6f938', 3 ).
-icu('c9f8e694', 3 ).
-icu('caa06a1f', -1 ).
-icu('cbded52d', -1 ).
-icu('cce03e0d', 3 ).
-icu('cdecee7f', -1 ).
-icu('ce22a75a', 3 ).
-icu('ce4f8723', x + 3 ).
-icu('ce602527', 23 ).
-icu('ce9e57f2', 3 ).
-icu('cf98881b', 3 ).
-icu('d037b0a7', 3 ).
-icu('d06dbe63', -1 ).
-icu('d07ae81c', -1 ).
-icu('d0f5fe59', x + -1 ).
-icu('d10ecb37', 3 ).
-icu('d13f3404', 3 ).
-icu('d22278a0', -1 ).
-icu('d23f8c26', 3 ).
-icu('d2abd087', -1 ).
-icu('d364b489', -1 ).
-icu('d406998b', 23 ).
-icu('d43fd935', -1 ).
-icu('d4469b4b', 3 ).
-icu('d4a91cb9', 4 ).
-icu('d4f3cd78', -1 ).
-icu('d511f180', 3 ).
-icu('d5d6de2d', 3 ).
-icu('d631b094', 3 ).
-icu('d687bc17', 3 ).
-icu('d6ad076f', 3 ).
-icu('d89b689b', 3 ).
-icu('d8c310e9', -1 ).
-icu('d90796e8', -1 ).
-icu('d9f24cd1', -1 ).
-icu('d9fac9be', 3 ).
-icu('dae9d2b5', 3 ).
-icu('db3e9e38', 3 ).
-icu('db93a21d', -1 ).
-icu('dbc1a6ce', 3 ).
-icu('dc0a314f', -1 ).
-icu('dc1df850', 3 ).
-icu('dc433765', 3 ).
-icu('ddf7fa4f', 33 ).
-icu('de1cd16c', 3 ).
-icu('ded97339', 3 ).
-icu('e179c5f4', -1 ).
-icu('e21d9049', 3 ).
-icu('e26a3af2', -1 ).
-icu('e3497940', 3 ).
-icu('e40b9e2f', -1 ).
-icu('e48d4e1a', -1 ).
-icu('e5062a87', -1 ).
-icu('e509e548', -1 ).
-icu('e50d258f', -1 ).
-icu('e6721834', -1 ).
-icu('e73095fd', -1 ).
-icu('e76a88a6', -1 ).
-icu('e8593010', 3 ).
-icu('e8dc4411', -1 ).
-icu('e9614598', -1 ).
-icu('e98196ab', 3 ).
-icu('e9afcf9a', 3 ).
-icu('ea32f347', -1 ).
-icu('ea786f4a', 3 ).
-icu('eb281b96', 3 ).
-icu('eb5a1d5d', 3 ).
-icu('ec883f72', -1 ).
-icu('ecdecbb3', -1 ).
-icu('ed36ccf7', 3 ).
-icu('ef135b50', 3 ).
-icu('f15e1fac', -1 ).
-icu('f1cefba8', -1 ).
-icu('f25fbde4', 3 ).
-icu('f25ffba3', 3 ).
-icu('f2829549', 3 ).
-icu('f35d900a', 4 ).
-icu('f5b8619d', 3 ).
-icu('f76d97a5', 3 ).
-icu('f8a8fe49', 3 ).
-icu('f8b3ba0a', 3 ).
-icu('f8c80d96', 3 ).
-icu('f8ff0b80', -1 ).
-icu('f9012d9b', -1 ).
-icu('fafffa47', 3 ).
-icu('fcb5c309', 3 ).
-icu('fcc82909', -1 ).
-icu('feca6190', 3 ).
-icu('ff28f65a', -1 ).
-icu('ff805c23', -1 ).
+icu(evaluation,'00576224',fail).
+icu(evaluation,'009d5c81',fail).
+icu(evaluation,'00dbd492',fail).
+icu(evaluation,'03560426',fail).
+icu(evaluation,'05a7bcf2',fail).
+icu(evaluation,'0607ce86',fail).
+icu(evaluation,'0692e18c',pass).
+icu(evaluation,'070dd51e',pass).
+icu(evaluation,'08573cc6',fail).
+icu(evaluation,'0934a4d8',fail).
+icu(evaluation,'09c534e7',fail).
+icu(evaluation,'0a1d4ef5',fail).
+icu(evaluation,'0a2355a6',fail).
+icu(evaluation,'0b17323b',fail).
+icu(evaluation,'0bb8deee',pass). % depth 4
+icu(evaluation,'0becf7df',fail).
+icu(evaluation,'0c786b71',pass).
+icu(evaluation,'0c9aba6e',pass).
+icu(evaluation,'0d87d2a6',fail).
+icu(evaluation,'0e671a1a',fail).
+icu(evaluation,'0f63c0b9',pass).
+icu(evaluation,'103eff5b',fail).
+icu(evaluation,'11e1fe23',fail).
+icu(evaluation,'12422b43',fail).
+icu(evaluation,'12997ef3',pass).
+icu(evaluation,'12eac192',pass).
+icu(evaluation,'136b0064',fail).
+icu(evaluation,'13713586',fail).
+icu(evaluation,'137f0df0',pass).
+icu(evaluation,'140c817e',pass).
+icu(evaluation,'14754a24',fail).
+icu(evaluation,'15113be4',fail).
+icu(evaluation,'15663ba9',fail).
+icu(evaluation,'15696249',pass). % depth 2
+icu(evaluation,'16b78196',fail).
+icu(evaluation,'17b80ad2',pass).
+icu(evaluation,'17cae0c1',fail).
+icu(evaluation,'18419cfa',pass).
+icu(evaluation,'184a9768',fail).
+icu(evaluation,'195ba7dc',pass).
+icu(evaluation,'1990f7a8',fail).
+icu(evaluation,'19bb5feb',pass).
+icu(evaluation,'1a2e2828',pass).
+icu(evaluation,'1a6449f1',pass).
+icu(evaluation,'1acc24af',fail).
+icu(evaluation,'1c02dbbe',pass).
+icu(evaluation,'1c0d0a4b',pass).
+icu(evaluation,'1c56ad9f',fail).
+icu(evaluation,'1d0a4b61',pass).
+icu(evaluation,'1d398264',pass).
+icu(evaluation,'1da012fc',fail).
+icu(evaluation,'1e81d6f9',pass).
+icu(evaluation,'1e97544e',fail).
+icu(evaluation,'2037f2c7',fail).
+icu(evaluation,'2072aba6',pass).
+icu(evaluation,'20818e16',pass).
+icu(evaluation,'20981f0e',fail).
+icu(evaluation,'212895b5',fail).
+icu(evaluation,'21f83797',pass).
+icu(evaluation,'22a4bbc2',fail).
+icu(evaluation,'25094a63',fail).
+icu(evaluation,'2546ccf6',pass). % depth 4
+icu(evaluation,'256b0a75',fail).
+icu(evaluation,'2685904e',fail).
+icu(evaluation,'2697da3f',fail).
+icu(evaluation,'2753e76c',pass). % depth 4
+icu(evaluation,'27a77e38',pass).
+icu(evaluation,'27f8ce4f',pass).
+icu(evaluation,'281123b4',pass).
+icu(evaluation,'292dd178',fail).
+icu(evaluation,'29700607',fail).
+icu(evaluation,'2a5f8217',fail).
+icu(evaluation,'2b01abd0',fail).
+icu(evaluation,'2c0b0aff',pass). % depth 2
+icu(evaluation,'2c737e39',fail).
+icu(evaluation,'2f0c5170',fail).
+icu(evaluation,'310f3251',fail).
+icu(evaluation,'3194b014',pass).
+icu(evaluation,'319f2597',pass).
+icu(evaluation,'31adaf00',fail).
+icu(evaluation,'31d5ba1a',pass).
+icu(evaluation,'32e9702f',pass).
+icu(evaluation,'332efdb3',pass).
+icu(evaluation,'3391f8c0',fail).
+icu(evaluation,'33b52de3',fail).
+icu(evaluation,'3490cc26',fail).
+icu(evaluation,'34b99a2b',pass).
+icu(evaluation,'351d6448',fail).
+icu(evaluation,'358ba94e',pass).
+icu(evaluation,'37d3e8b2',fail).
+icu(evaluation,'3979b1a8',pass).
+icu(evaluation,'3a301edc',fail).
+icu(evaluation,'3b4c2228',pass).
+icu(evaluation,'3d31c5b3',pass).
+icu(evaluation,'3ed85e70',fail).
+icu(evaluation,'3ee1011a',fail).
+icu(evaluation,'3f23242b',fail). 
+icu(evaluation,'40f6cd08',fail).
+icu(evaluation,'414297c0',fail).
+icu(evaluation,'423a55dc',fail).
+icu(evaluation,'42918530',fail).
+icu(evaluation,'42a15761',fail).
+icu(evaluation,'4364c1c4',fail).
+icu(evaluation,'456873bc',fail).
+icu(evaluation,'45737921',pass). % depth 2
+icu(evaluation,'45bbe264',pass).
+icu(evaluation,'477d2879',fail).
+icu(evaluation,'47996f11',pass).
+icu(evaluation,'48131b3c',pass).
+icu(evaluation,'4852f2fa',pass).
+icu(evaluation,'48f8583b',pass).
+icu(evaluation,'4aab4007',pass).
+icu(evaluation,'4acc7107',fail).
+icu(evaluation,'4b6b68e5',fail).
+icu(evaluation,'4c177718',fail).
+icu(evaluation,'4cd1b7b2',pass).
+icu(evaluation,'4e45f183',fail).
+icu(evaluation,'4e469f39',fail).
+icu(evaluation,'4f537728',pass).
+icu(evaluation,'4ff4c9da',fail).
+icu(evaluation,'505fff84',fail).
+icu(evaluation,'506d28a5',pass).
+icu(evaluation,'50a16a69',pass).
+icu(evaluation,'50aad11f',pass). % depth 4
+icu(evaluation,'50f325b5',fail).
+icu(evaluation,'516b51b7',pass).
+icu(evaluation,'5207a7b5',fail).
+icu(evaluation,'5289ad53',fail).
+icu(evaluation,'52fd389e',fail).
+icu(evaluation,'54db823b',pass).
+icu(evaluation,'55059096',fail).
+icu(evaluation,'551d5bf1',fail).
+icu(evaluation,'55783887',fail).
+icu(evaluation,'575b1a71',fail).
+icu(evaluation,'5783df64',pass).
+icu(evaluation,'5833af48',pass). % depth 4
+icu(evaluation,'58743b76',fail).
+icu(evaluation,'58e15b12',fail).
+icu(evaluation,'59341089',pass).
+icu(evaluation,'5a5a2103',pass).
+icu(evaluation,'5af49b42',fail).
+icu(evaluation,'5b526a93',pass).
+icu(evaluation,'5b692c0f',fail).
+icu(evaluation,'5b6cbef5',pass).
+icu(evaluation,'5d2a5c43',pass).
+icu(evaluation,'5ffb2104',pass).
+icu(evaluation,'604001fa',fail).
+icu(evaluation,'60a26a3e',pass).
+icu(evaluation,'60c09cac',pass).
+icu(evaluation,'626c0bcc',fail).
+icu(evaluation,'62ab2642',pass). % depth 2
+icu(evaluation,'62b74c02',pass).
+icu(evaluation,'639f5a19',pass).
+icu(evaluation,'642248e4',fail).
+icu(evaluation,'642d658d',pass).
+icu(evaluation,'64a7c07e',fail).
+icu(evaluation,'66e6c45b',pass).
+icu(evaluation,'66f2d22f',pass).
+icu(evaluation,'67636eac',pass).
+icu(evaluation,'67b4a34d',fail).
+icu(evaluation,'67c52801',fail).
+icu(evaluation,'68b67ca3',pass).
+icu(evaluation,'692cd3b6',fail).
+icu(evaluation,'695367ec',pass).
+icu(evaluation,'696d4842',fail).
+icu(evaluation,'69889d6e',pass). % depth 4
+icu(evaluation,'6a11f6da',pass).
+icu(evaluation,'6ad5bdfd',fail).
+icu(evaluation,'6df30ad6',pass).
+icu(evaluation,'6ea4a07e',pass).
+icu(evaluation,'6f473927',pass).
+icu(evaluation,'7039b2d7',pass).
+icu(evaluation,'705a3229',fail).
+icu(evaluation,'712bf12e',fail).
+icu(evaluation,'72207abc',fail).
+icu(evaluation,'72a961c9',fail).
+icu(evaluation,'73182012',pass).
+icu(evaluation,'73c3b0d8',fail).
+icu(evaluation,'73ccf9c2',fail).
+icu(evaluation,'759f3fd3',fail).
+icu(evaluation,'762cd429',fail).
+icu(evaluation,'770cc55f',pass).
+icu(evaluation,'782b5218',pass).
+icu(evaluation,'79369cc6',fail).
+icu(evaluation,'7953d61e',pass).
+icu(evaluation,'79fb03f4',fail).
+icu(evaluation,'7bb29440',pass).
+icu(evaluation,'7c8af763',fail).
+icu(evaluation,'7c9b52a0',pass).
+icu(evaluation,'7d18a6fb',fail).
+icu(evaluation,'7d1f7ee8',pass).
+icu(evaluation,'7d419a02',fail).
+icu(evaluation,'7e02026e',fail).
+icu(evaluation,'7ee1c6ea',pass). 
+icu(evaluation,'817e6c09',fail).
+icu(evaluation,'81c0276b',pass).
+icu(evaluation,'833dafe3',pass).
+icu(evaluation,'845d6e51',fail).
+icu(evaluation,'84db8fc4',pass).
+icu(evaluation,'84f2aca1',fail).
+icu(evaluation,'8597cfd7',pass).
+icu(evaluation,'85b81ff1',fail).
+icu(evaluation,'85fa5666',fail).
+icu(evaluation,'8719f442',fail).
+icu(evaluation,'88207623',fail).
+icu(evaluation,'891232d6',fail).
+icu(evaluation,'896d5239',fail).
+icu(evaluation,'8a371977',pass).
+icu(evaluation,'8b28cd80',fail).
+icu(evaluation,'8ba14f53',pass).
+icu(evaluation,'8cb8642d',fail).
+icu(evaluation,'8dae5dfc',fail).
+icu(evaluation,'8e2edd66',pass).
+icu(evaluation,'8ee62060',pass).
+icu(evaluation,'8fbca751',fail).
+icu(evaluation,'90347967',fail).
+icu(evaluation,'903d1b4a',pass).
+icu(evaluation,'9110e3c5',pass). % depth 2
+icu(evaluation,'917bccba',pass).
+icu(evaluation,'929ab4e9',pass).
+icu(evaluation,'92e50de0',fail).
+icu(evaluation,'9356391f',fail).
+icu(evaluation,'93b4f4b3',fail).
+icu(evaluation,'93c31fbe',pass).
+icu(evaluation,'94133066',pass).
+icu(evaluation,'94414823',pass).
+icu(evaluation,'94be5b80',fail).
+icu(evaluation,'95a58926',pass).
+icu(evaluation,'963f59bc',fail).
+icu(evaluation,'96a8c0cd',fail).
+icu(evaluation,'97239e3d',fail).
+icu(evaluation,'9772c176',fail).
+icu(evaluation,'981571dc',pass).
+icu(evaluation,'992798f6',fail).
+icu(evaluation,'99306f82',fail).
+icu(evaluation,'9a4bb226',pass).
+icu(evaluation,'9b2a60aa',fail).
+icu(evaluation,'9b365c51',fail).
+icu(evaluation,'9b4c17c4',fail).
+icu(evaluation,'9bebae7a',fail).
+icu(evaluation,'9c1e755f',pass).
+icu(evaluation,'9c56f360',fail).
+icu(evaluation,'9caba7c3',fail).
+icu(evaluation,'9ddd00f0',fail).
+icu(evaluation,'9def23fe',pass).
+icu(evaluation,'9f27f097',pass). % depth 4
+icu(evaluation,'a04b2602',fail).
+icu(evaluation,'a096bf4d',fail).
+icu(evaluation,'a3f84088',fail).
+icu(evaluation,'a406ac07',pass).
+icu(evaluation,'a57f2f04',fail).
+icu(evaluation,'a59b95c0',pass).
+icu(evaluation,'a680ac02',pass).
+icu(evaluation,'a8610ef7',fail).
+icu(evaluation,'a934301b',pass). % depth 2
+icu(evaluation,'aa18de87',pass).
+icu(evaluation,'aa300dc3',fail).
+icu(evaluation,'aa4ec2a5',pass).
+icu(evaluation,'aab50785',fail).
+icu(evaluation,'ac0c5833',fail).
+icu(evaluation,'ac2e8ecf',fail).
+icu(evaluation,'ac3e2b04',fail).
+icu(evaluation,'ac605cbb',fail).
+icu(evaluation,'ad7e01d0',pass).
+icu(evaluation,'ae58858e',pass).
+icu(evaluation,'aee291af',fail).
+icu(evaluation,'af22c60d',pass).
+icu(evaluation,'af24b4cc',pass).
+icu(evaluation,'b0722778',fail).
+icu(evaluation,'b0f4d537',fail).
+icu(evaluation,'b15fca0b',fail).
+icu(evaluation,'b1fc8b8e',pass).
+icu(evaluation,'b20f7c8b',fail).
+icu(evaluation,'b457fec5',fail).
+icu(evaluation,'b4a43f3b',fail).
+icu(evaluation,'b7999b51',fail).
+icu(evaluation,'b7cb93ac',fail).
+icu(evaluation,'b7f8a4d8',pass).
+icu(evaluation,'b7fb29bc',fail).
+icu(evaluation,'b942fd60',fail).
+icu(evaluation,'b9630600',fail).
+icu(evaluation,'ba9d41b8',pass).
+icu(evaluation,'baf41dbf',fail).
+icu(evaluation,'bb52a14b',fail).
+icu(evaluation,'bbb1b8b6',pass).
+icu(evaluation,'bc4146bd',pass).
+icu(evaluation,'bcb3040b',fail).
+icu(evaluation,'bd14c3bf',fail).
+icu(evaluation,'be03b35f',pass).
+icu(evaluation,'bf32578f',pass).
+icu(evaluation,'bf699163',fail).
+icu(evaluation,'bf89d739',fail).
+icu(evaluation,'c074846d',fail).
+icu(evaluation,'c1990cce',fail).
+icu(evaluation,'c3202e5a',pass).
+icu(evaluation,'c35c1b4c',pass).
+icu(evaluation,'c48954c1',pass).
+icu(evaluation,'c62e2108',fail).
+icu(evaluation,'c64f1187',fail).
+icu(evaluation,'c658a4bd',fail).
+icu(evaluation,'c663677b',pass).
+icu(evaluation,'c6e1b8da',fail).
+icu(evaluation,'c7d4e6ad',pass).
+icu(evaluation,'c87289bb',fail).
+icu(evaluation,'c8b7cc0f',pass).
+icu(evaluation,'c92b942c',pass).
+icu(evaluation,'c97c0139',fail).
+icu(evaluation,'ca8de6ea',pass).
+icu(evaluation,'ca8f78db',pass).
+icu(evaluation,'cad67732',fail).
+icu(evaluation,'cb227835',fail).
+icu(evaluation,'ccd554ac',pass).
+icu(evaluation,'cd3c21df',pass).
+icu(evaluation,'ce039d91',pass).
+icu(evaluation,'ce8d95cc',pass).
+icu(evaluation,'cf133acc',pass).
+icu(evaluation,'cfb2ce5a',fail).
+icu(evaluation,'d017b73f',fail).
+icu(evaluation,'d19f7514',pass).
+icu(evaluation,'d282b262',fail).
+icu(evaluation,'d2acf2cb',fail).
+icu(evaluation,'d304284e',fail).
+icu(evaluation,'d37a1ef5',pass).
+icu(evaluation,'d47aa2ff',fail).
+icu(evaluation,'d492a647',pass).
+icu(evaluation,'d4b1c2b1',pass).
+icu(evaluation,'d4c90558',fail).
+icu(evaluation,'d56f2372',pass).
+icu(evaluation,'d5c634a2',fail).
+icu(evaluation,'d931c21c',fail).
+icu(evaluation,'d94c3b52',fail).
+icu(evaluation,'da2b0fe3',pass).
+icu(evaluation,'da515329',fail).
+icu(evaluation,'dc2aa30b',fail).
+icu(evaluation,'dc2e9a9d',fail).
+icu(evaluation,'dd2401ed',fail).
+icu(evaluation,'de493100',fail).
+icu(evaluation,'df8cc377',fail).
+icu(evaluation,'e0fb7511',pass).
+icu(evaluation,'e133d23d',pass).
+icu(evaluation,'e1baa8a4',pass).
+icu(evaluation,'e1d2900e',fail).
+icu(evaluation,'e2092e0c',fail).
+icu(evaluation,'e21a174a',fail).
+icu(evaluation,'e345f17b',pass).
+icu(evaluation,'e4075551',fail).
+icu(evaluation,'e41c6fd3',pass).
+icu(evaluation,'e57337a4',pass). % depth 4
+icu(evaluation,'e5790162',fail).
+icu(evaluation,'e5c44e8f',fail).
+icu(evaluation,'e619ca6e',fail).
+icu(evaluation,'e633a9e5',pass).
+icu(evaluation,'e66aafb8',fail).
+icu(evaluation,'e681b708',fail).
+icu(evaluation,'e69241bd',pass).
+icu(evaluation,'e6de6e8f',fail).
+icu(evaluation,'e74e1818',pass).
+icu(evaluation,'e760a62e',fail).
+icu(evaluation,'e7639916',pass).
+icu(evaluation,'e78887d1',fail).
+icu(evaluation,'e7a25a18',pass).
+icu(evaluation,'e7b06bea',fail).
+icu(evaluation,'e7dd8335',pass).
+icu(evaluation,'e872b94a',pass).
+icu(evaluation,'e88171ec',fail).
+icu(evaluation,'e95e3d8e',pass).
+icu(evaluation,'e99362f0',pass). % depth 4
+icu(evaluation,'e9ac8c9e',fail).
+icu(evaluation,'e9b4f6fc',fail).
+icu(evaluation,'e9bb6954',fail).
+icu(evaluation,'e9c9d9a1',pass).
+icu(evaluation,'ea959feb',pass).
+icu(evaluation,'ea9794b1',pass).
+icu(evaluation,'ecaa0ec1',pass).
+icu(evaluation,'ed74f2f2',fail).
+icu(evaluation,'ed98d772',pass).
+icu(evaluation,'ef26cbf6',pass).
+icu(evaluation,'f0afb749',pass).
+icu(evaluation,'f0df5ff0',pass).
+icu(evaluation,'f21745ec',fail).
+icu(evaluation,'f3b10344',fail).
+icu(evaluation,'f3cdc58f',fail).
+icu(evaluation,'f3e62deb',fail).
+icu(evaluation,'f4081712',fail).
+icu(evaluation,'f45f5ca7',fail).
+icu(evaluation,'f5aa3634',fail).
+icu(evaluation,'f5c89df1',fail).
+icu(evaluation,'f823c43c',pass).
+icu(evaluation,'f83cb3f6',pass).
+icu(evaluation,'f8be4b64',fail).
+icu(evaluation,'f9a67cb5',fail).
+icu(evaluation,'f9d67f8b',fail).
+icu(evaluation,'fafd9572',fail).
+icu(evaluation,'fb791726',pass).
+icu(evaluation,'fc754716',pass).
+icu(evaluation,'fd096ab6',fail).
+icu(evaluation,'fd4b2b02',fail).
+icu(evaluation,'fe9372f3',fail).
+icu(evaluation,'fea12743',fail).
+icu(evaluation,'ff72ca3e',fail).
+
+icu(training,'007bbfb7',pass).
+icu(training,'00d62c1b',pass).
+icu(training,'017c7c7b',pass).
+icu(training,'025d127b',pass).
+icu(training,'045e512c',fail).
+icu(training,'0520fde7',pass).
+icu(training,'05269061',pass).
+icu(training,'05f2a901',fail).
+icu(training,'06df4c85',pass).
+icu(training,'08ed6ac7',fail).
+icu(training,'09629e4f',pass).
+icu(training,'0962bcdd',pass).
+icu(training,'0a938d79',fail).
+icu(training,'0b148d64',pass).
+icu(training,'0ca9ddb6',fail).
+icu(training,'0d3d703e',fail).
+icu(training,'0dfd9992',pass).
+icu(training,'0e206a2e',fail).
+icu(training,'10fcaaa3',fail).
+icu(training,'11852cab',fail).
+icu(training,'1190e5a7',pass).
+icu(training,'137eaa0f',fail).
+icu(training,'150deff5',fail).
+icu(training,'178fcbfb',pass).
+icu(training,'1a07d186',fail).
+icu(training,'1b2d62fb',pass).
+icu(training,'1b60fb0c',fail).
+icu(training,'1bfc4729',pass).
+icu(training,'1c786137',pass).
+icu(training,'1caeab9d',fail).
+icu(training,'1cf80156',pass).
+icu(training,'1e0a9b12',pass).
+icu(training,'1e32b0e9',pass).
+icu(training,'1f0c79e5',pass).
+icu(training,'1f642eb9',fail).
+icu(training,'1f85a75f',pass).
+icu(training,'1f876c06',pass).
+icu(training,'1fad071e',pass).
+icu(training,'2013d3e2',pass).
+icu(training,'2204b7a8',pass).
+icu(training,'22168020',pass).
+icu(training,'22233c11',fail).
+icu(training,'2281f1f4',pass).
+icu(training,'228f6490',pass).
+icu(training,'22eb0ac0',pass).
+icu(training,'234bbc79',fail).
+icu(training,'23581191',pass). % depth 2
+icu(training,'239be575',pass).
+icu(training,'23b5c85d',pass).
+icu(training,'253bf280',pass).
+icu(training,'25d487eb',pass).
+icu(training,'25d8a9c8',fail).
+icu(training,'25ff71a9',pass).
+icu(training,'264363fd',fail).
+icu(training,'272f95fa',pass).
+icu(training,'27a28665',fail).
+icu(training,'28bf18c6',pass).
+icu(training,'28e73c20',fail).
+icu(training,'29623171',pass).
+icu(training,'29c11459',fail).
+icu(training,'29ec7d0e',pass).
+icu(training,'2bcee788',pass). % depth 4
+icu(training,'2bee17df',pass).
+icu(training,'2c608aff',fail).
+icu(training,'2dc579da',pass).
+icu(training,'2dd70a9a',fail).
+icu(training,'2dee498d',pass).
+icu(training,'31aa019c',pass).
+icu(training,'321b1fc6',fail).
+icu(training,'32597951',pass).
+icu(training,'3345333e',fail).
+icu(training,'3428a4f5',pass).
+icu(training,'3618c87e',pass).
+icu(training,'3631a71a',fail).
+icu(training,'363442ee',fail).
+icu(training,'36d67576',fail).
+icu(training,'36fdfd69',fail).
+icu(training,'3906de3d',pass).
+icu(training,'39a8645d',fail).
+icu(training,'39e1d7f9',fail).
+icu(training,'3aa6fb7a',pass).
+icu(training,'3ac3eb23',fail).
+icu(training,'3af2c5a8',pass).
+icu(training,'3bd67248',pass).
+icu(training,'3bdb4ada',fail).
+icu(training,'3befdf3e',fail).
+icu(training,'3c9b0459',pass).
+icu(training,'3de23699',fail).
+icu(training,'3e980e27',fail).
+icu(training,'3eda0437',fail).
+icu(training,'3f7978a0',fail). 
+icu(training,'40853293',pass).
+icu(training,'4093f84a',fail).
+icu(training,'41e4d17e',fail).
+icu(training,'4258a5f9',pass).
+icu(training,'4290ef0e',fail).
+icu(training,'42a50994',pass).
+icu(training,'4347f46a',pass).
+icu(training,'444801d8',pass).
+icu(training,'445eab21',pass).
+icu(training,'447fd412',fail).
+icu(training,'44d8ac46',fail).
+icu(training,'44f52bb0',pass).
+icu(training,'4522001f',fail).
+icu(training,'4612dd53',pass). % depth 2
+icu(training,'46442a0e',fail).
+icu(training,'469497ad',fail).
+icu(training,'46f33fce',fail).
+icu(training,'47c1f68c',pass).
+icu(training,'484b58aa',fail).
+icu(training,'48d8fb45',pass).
+icu(training,'4938f0c2',fail).
+icu(training,'496994bd',pass).
+icu(training,'49d1d64f',pass).
+icu(training,'4be741c5',pass).
+icu(training,'4c4377d9',pass).
+icu(training,'4c5c2cf0',fail).
+icu(training,'50846271',fail).
+icu(training,'508bd3b6',fail).
+icu(training,'50cb2852',pass).
+icu(training,'5117e062',pass).
+icu(training,'5168d44c',fail).
+icu(training,'539a4f51',fail).
+icu(training,'53b68214',pass).
+icu(training,'543a7ed5',pass).
+icu(training,'54d82841',pass).
+icu(training,'54d9e175',fail).
+icu(training,'5521c0d9',pass). % depth 4
+icu(training,'5582e5ca',pass).
+icu(training,'5614dbcf',pass).
+icu(training,'56dc2b01',pass).
+icu(training,'56ff96f3',pass).
+icu(training,'57aa92db',fail).
+icu(training,'5ad4f10b',pass).
+icu(training,'5bd6f4ac',pass).
+icu(training,'5c0a986e',fail).
+icu(training,'5c2c9af4',fail).
+icu(training,'5daaa586',fail).
+icu(training,'60b61512',fail).
+icu(training,'6150a2bd',pass).
+icu(training,'623ea044',pass).
+icu(training,'62c24649',pass).
+icu(training,'63613498',pass).
+icu(training,'6430c8c4',pass).
+icu(training,'6455b5f5',pass).
+icu(training,'662c240a',pass).
+icu(training,'67385a82',pass).
+icu(training,'673ef223',fail).
+icu(training,'6773b310',pass). % depth 4
+icu(training,'67a3c6ac',pass).
+icu(training,'67a423a3',pass). % depth 2
+icu(training,'67e8384a',pass).
+icu(training,'681b3aeb',pass).
+icu(training,'6855a6e4',pass). % depth 2
+icu(training,'68b16354',pass).
+icu(training,'694f12f3',pass). % depth 2
+icu(training,'6a1e5592',fail).
+icu(training,'6aa20dc0',fail).
+icu(training,'6b9890af',pass).
+icu(training,'6c434453',pass).
+icu(training,'6cdd2623',pass).
+icu(training,'6cf79266',fail).
+icu(training,'6d0160f0',fail).
+icu(training,'6d0aefbc',pass).
+icu(training,'6d58a25d',pass).
+icu(training,'6d75e8bb',pass).
+icu(training,'6e02f1e3',fail).
+icu(training,'6e19193c',fail).
+icu(training,'6e82a1ae',pass).
+icu(training,'6ecd11f4',fail).
+icu(training,'6f8cd79b',pass).
+icu(training,'6fa7a44f',pass).
+icu(training,'72322fa7',fail).
+icu(training,'72ca375d',fail).
+icu(training,'73251a56',pass).
+icu(training,'7447852a',fail).
+icu(training,'7468f01a',pass).
+icu(training,'746b3537',pass).
+icu(training,'74dd1130',pass).
+icu(training,'75b8110e',pass).
+icu(training,'760b3cac',pass). % depth 2
+icu(training,'776ffc46',fail).
+icu(training,'77fdfe62',pass). % depth 4
+icu(training,'780d0b14',fail).
+icu(training,'7837ac64',fail).
+icu(training,'794b24be',fail).
+icu(training,'7b6016b9',pass).
+icu(training,'7b7f7511',fail).
+icu(training,'7c008303',fail).
+icu(training,'7ddcd7ec',pass). % depth 2
+icu(training,'7df24a62',fail).
+icu(training,'7e0986d6',fail).
+icu(training,'7f4411dc',fail).
+icu(training,'7fe24cdd',fail).
+icu(training,'80af3007',pass).
+icu(training,'810b9b61',pass).
+icu(training,'82819916',fail).
+icu(training,'83302e8f',pass).
+icu(training,'834ec97d',pass). % depth 4
+icu(training,'8403a5d5',fail).
+icu(training,'846bdb03',fail).
+icu(training,'855e0971',pass). % depth 4
+icu(training,'85c4e7cd',fail).
+icu(training,'868de0fa',fail).
+icu(training,'8731374e',fail).
+icu(training,'88a10436',fail).
+icu(training,'88a62173',pass).
+icu(training,'890034e9',fail).
+icu(training,'8a004b2b',fail).
+icu(training,'8be77c9e',pass).
+icu(training,'8d5021e8',pass).
+icu(training,'8d510a79',pass).
+icu(training,'8e1813be',pass).
+icu(training,'8e5a5113',pass).
+icu(training,'8eb1be9a',pass).
+icu(training,'8efcae92',pass).
+icu(training,'8f2ea7aa',pass).
+icu(training,'90c28cc7',pass).
+icu(training,'90f3ed37',fail).
+icu(training,'913fb3ed',fail).
+icu(training,'91413438',fail).
+icu(training,'91714a58',fail).
+icu(training,'9172f3a0',pass).
+icu(training,'928ad970',pass).
+icu(training,'93b581b8',fail).
+icu(training,'941d9a10',fail).
+icu(training,'94f9d214',pass).
+icu(training,'952a094c',pass).
+icu(training,'9565186b',pass).
+icu(training,'95990924',fail).
+icu(training,'963e52fc',pass).
+icu(training,'97999447',fail).
+icu(training,'97a05b5b',fail).
+icu(training,'98cf29f8',pass). % depth 2
+icu(training,'995c5fa3',fail).
+icu(training,'99b1bc43',pass).
+icu(training,'99fa7670',pass).
+icu(training,'9aec4887',fail).
+icu(training,'9af7a82c',pass). % depth 4
+icu(training,'9d9215db',fail).
+icu(training,'9dfd6313',pass).
+icu(training,'9ecd008a',fail).
+icu(training,'9edfc990',fail).
+icu(training,'9f236235',pass).
+icu(training,'a1570a43',pass). % depth 4
+icu(training,'a2fd1cf0',pass).
+icu(training,'a3325580',fail).
+icu(training,'a3df8b1e',fail).
+icu(training,'a416b8f3',pass).
+icu(training,'a48eeaf7',fail).
+icu(training,'a5313dff',pass).
+icu(training,'a5f85a15',fail).
+icu(training,'a61ba2ce',fail).
+icu(training,'a61f2674',fail).
+icu(training,'a64e4611',fail).
+icu(training,'a65b410d',pass).
+icu(training,'a68b268e',pass).
+icu(training,'a699fb00',pass).
+icu(training,'a740d043',pass).
+icu(training,'a78176bb',pass). % depth 2
+icu(training,'a79310a0',pass). % depth 4
+icu(training,'a85d4709',fail).
+icu(training,'a87f7484',pass).
+icu(training,'a8c38be5',fail).
+icu(training,'a8d7556c',fail).
+icu(training,'a9f96cdd',fail).
+icu(training,'aabf363d',pass).
+icu(training,'aba27056',fail).
+icu(training,'ac0a08a4',pass).
+icu(training,'ae3edfdc',pass). % depth 2
+icu(training,'ae4f1146',pass).
+icu(training,'aedd82e4',fail).
+icu(training,'af902bf9',pass).
+icu(training,'b0c4d837',pass). % depth 2
+icu(training,'b190f7f5',pass). % depth 2
+icu(training,'b1948b0a',pass).
+icu(training,'b230c067',fail).
+icu(training,'b27ca6d3',fail).
+icu(training,'b2862040',pass).
+icu(training,'b527c5c6',fail).
+icu(training,'b548a754',pass).
+icu(training,'b60334d2',fail).
+icu(training,'b6afb2da',pass).
+icu(training,'b7249182',fail).
+icu(training,'b775ac94',fail).
+icu(training,'b782dc8a',pass).
+icu(training,'b8825c91',pass).
+icu(training,'b8cdaf2b',pass). % depth 4
+icu(training,'b91ae062',pass).
+icu(training,'b94a9452',pass).
+icu(training,'b9b7f026',fail).
+icu(training,'ba26e723',pass).
+icu(training,'ba97ae07',pass).
+icu(training,'bb43febb',pass).
+icu(training,'bbc9ae5d',pass).
+icu(training,'bc1d5164',pass).
+icu(training,'bd4472b8',fail).
+icu(training,'bda2d7a6',fail).
+icu(training,'bdad9b1f',fail).
+icu(training,'be94b721',pass).
+icu(training,'beb8660c',pass). % depth 4| 
+icu(training,'c0f76784',fail).
+icu(training,'c1d99e64',pass).
+icu(training,'c3e719e8',pass).
+icu(training,'c3f564a4',pass).
+icu(training,'c444b776',fail).
+icu(training,'c59eb873',pass).
+icu(training,'c8cbb738',fail).
+icu(training,'c8f0f002',pass).
+icu(training,'c909285e',fail).
+icu(training,'c9e6f938',pass).
+icu(training,'c9f8e694',pass).
+icu(training,'caa06a1f',fail).
+icu(training,'cbded52d',fail).
+icu(training,'cce03e0d',pass).
+icu(training,'cdecee7f',fail).
+icu(training,'ce22a75a',pass).
+icu(training,'ce4f8723',pass).
+icu(training,'ce602527',pass). % depth 2
+icu(training,'ce9e57f2',pass).
+icu(training,'cf98881b',pass).
+icu(training,'d037b0a7',pass).
+icu(training,'d06dbe63',fail).
+icu(training,'d07ae81c',fail).
+icu(training,'d0f5fe59',fail).
+icu(training,'d10ecb37',pass).
+icu(training,'d13f3404',pass).
+icu(training,'d22278a0',fail).
+icu(training,'d23f8c26',pass).
+icu(training,'d2abd087',fail).
+icu(training,'d364b489',fail).
+icu(training,'d406998b',pass). % depth 2
+icu(training,'d43fd935',fail).
+icu(training,'d4469b4b',pass).
+icu(training,'d4a91cb9',pass). % depth 4
+icu(training,'d4f3cd78',fail).
+icu(training,'d511f180',pass).
+icu(training,'d5d6de2d',pass).
+icu(training,'d631b094',pass).
+icu(training,'d687bc17',pass).
+icu(training,'d6ad076f',pass).
+icu(training,'d89b689b',pass).
+icu(training,'d8c310e9',fail).
+icu(training,'d90796e8',fail).
+icu(training,'d9f24cd1',fail).
+icu(training,'d9fac9be',pass).
+icu(training,'dae9d2b5',pass).
+icu(training,'db3e9e38',pass).
+icu(training,'db93a21d',fail).
+icu(training,'dbc1a6ce',pass).
+icu(training,'dc0a314f',fail).
+icu(training,'dc1df850',pass).
+icu(training,'dc433765',pass).
+icu(training,'ddf7fa4f',pass).
+icu(training,'de1cd16c',pass).
+icu(training,'ded97339',pass).
+icu(training,'e179c5f4',fail).
+icu(training,'e21d9049',pass).
+icu(training,'e26a3af2',fail).
+icu(training,'e3497940',pass).
+icu(training,'e40b9e2f',fail).
+icu(training,'e48d4e1a',fail).
+icu(training,'e5062a87',fail).
+icu(training,'e509e548',fail).
+icu(training,'e50d258f',fail).
+icu(training,'e6721834',fail).
+icu(training,'e73095fd',fail).
+icu(training,'e76a88a6',fail).
+icu(training,'e8593010',pass).
+icu(training,'e8dc4411',fail).
+icu(training,'e9614598',fail).
+icu(training,'e98196ab',pass).
+icu(training,'e9afcf9a',pass).
+icu(training,'ea32f347',fail).
+icu(training,'ea786f4a',pass).
+icu(training,'eb281b96',pass).
+icu(training,'eb5a1d5d',pass).
+icu(training,'ec883f72',fail).
+icu(training,'ecdecbb3',fail).
+icu(training,'ed36ccf7',pass).
+icu(training,'ef135b50',pass).
+icu(training,'f15e1fac',fail).
+icu(training,'f1cefba8',fail).
+icu(training,'f25fbde4',pass).
+icu(training,'f25ffba3',pass).
+icu(training,'f2829549',pass).
+icu(training,'f35d900a',pass). % depth 4
+icu(training,'f5b8619d',pass).
+icu(training,'f76d97a5',pass).
+icu(training,'f8a8fe49',pass).
+icu(training,'f8b3ba0a',pass).
+icu(training,'f8c80d96',pass).
+icu(training,'f8ff0b80',fail).
+icu(training,'f9012d9b',fail).
+icu(training,'fafffa47',pass).
+icu(training,'fcb5c309',pass).
+icu(training,'fcc82909',fail).
+icu(training,'feca6190',pass).
+icu(training,'ff28f65a',fail).
+icu(training,'ff805c23',fail).
 
 %Personally Created Training Tasks (16)
 suite_tag(dbigham_personal,'
@@ -1141,3 +1542,6 @@ e872b94a
 da2b0fe3
 e5790162
 27a77e38').
+
+
+

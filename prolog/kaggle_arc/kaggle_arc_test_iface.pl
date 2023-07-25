@@ -1,4 +1,4 @@
-f/*
+/*
   this is part of (H)MUARC  https://logicmoo.org/xwiki/bin/view/Main/ARC/
 
   This work may not be copied and used by anyone other than the author Douglas Miles
@@ -81,7 +81,7 @@ menu_cmd1(_,'t','       You may fully (t)rain from examples',(cls_z_make,fully_t
 menu_cmd1(_,'T',S,(switch_pair_mode)):- get_pair_mode(Mode),  \+ arc_html, 
   sformat(S,"                  or (T)rain Mode switches between: 'entire_suite','whole_test','single_pair' (currently: ~q)",[Mode]).
 menu_cmd1(i,'i','             See the (i)ndividuation correspondences in the input/outputs',(clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,t),print_individuals))).
-menu_cmd1(_,'I','                  or (I)ndividuate all',(clear_tee,cls_z_make,!,clear_test,locally(nb_setval(show_indiv,f),print_individuals))).
+menu_cmd1(_,'I','                  or (I)ndividuate all',(clear_tee,cls_z_make,!,force_clear_test_big_C,locally(nb_setval(show_indiv,f),print_individuals))).
 
 menu_cmd1(i,'o','                  or (o)bjects found in the input/outputs',                (clear_tee,cls_z_make,!,locally(nb_setval(show_indiv,t),ndividuator))).
 menu_cmd1(_,'u','                  or (u)se scene change solver between objects in the input/outputs',   (cls_z_make,!,ndividuator,ignore(solve_via_scene_change))).
@@ -121,7 +121,7 @@ menu_cmd1(r,'i','             Re-enter(i)nteractve mode.',(interact)).
 
 menu_cmd9(_,'m','recomple this progra(m),',(clear_tee,update_changes,threads)).
 menu_cmd9(_,'c','(c)lear the scrollback buffer,',(force_full_tee,really_cls)).
-menu_cmd9(_,'C','(C)lear cached test info,',(force_clear_test)).
+menu_cmd9(_,'C','(C)lean cached test state,',(force_clear_test_big_C)).
 menu_cmd9(_,'r','(r)un DSL code,',(call_dsl)).
 menu_cmd9(_,'Q','(Q)uit Menu,',true).
 menu_cmd9(_,'^q','(^q)uit to shell,',halt(4)). 
@@ -239,7 +239,7 @@ switch_test(TestID):- ppnl(['Switching to test: ',TestID]),set_current_test(Test
    catch((interact),'$aborted',fail))),!.
 */
 interact:-
-  list_of_tests(L), length(L,SelMax),!,write_menu('i'),interact(SelMax).
+  ((list_of_tests(L), length(L,SelMax),!,write_menu('i'))),interact(SelMax).
 /*interact:- list_of_tests(L), length(L,SelMax),!,
   repeat, 
     i_key(SelMax,Key),
@@ -250,10 +250,11 @@ interact:-
 
 interact(SelMax):- catch(interact0(SelMax),'$aborted',interact(SelMax)).
 interact0(_SelMax):- retract(wants_exit_menu),!.
-interact0(SelMax):- i_key(SelMax,Key),
-    writeq(Key),%flush_tee,
-    invoke_arc_cmd(Key),flush_tee,
-    interact0(SelMax).
+interact0(SelMax):- 
+    (( i_key(SelMax,Key), writeq(Key))),%flush_tee,
+    (tracing->(notrace,luser_setval(rtrace_arc,true));luser_setval(rtrace_arc,false)),
+    invoke_arc_cmd(Key),
+    ((flush_tee,interact0(SelMax))).
 
 i_key(SelMax,Key):-
   %get_single_char(Code), u_dmsg(code=Code), char_code(Key,Code),  put_char(Key), 
@@ -266,6 +267,7 @@ menu_goal(Goal):-
   (atom(Goal)-> \+ missing_arity(Goal, 0) ; true),
   pp(calling(Goal)),surely_menu_goal(Goal).
 
+surely_menu_goal(Goal):- luser_getval(rtrace_arc,true),!,rtrace(Goal).
 surely_menu_goal(Goal):-
   ignore(once((time(((catch(my_menu_call(Goal),'$aborted',fail))))*->!;(!,fail,atrace,arcST,rrtrace(Goal))))),!,
   clear_pending_input,!.
@@ -359,9 +361,10 @@ do_menu_key(Key):- atom(Key),atom_codes(Key,Codes),!,debuffer_atom_codes(Key,Cod
 do_menu_name(E):- list_of_indivizers(L),member(E,L),!, set_indivs_mode(E).
 do_menu_name(E):- list_of_pair_modes(L),member(E,L),!, set_pair_mode(E).
 do_menu_name(E):- test_suite_list(L),member(E,L),!, set_test_suite(E).
+do_menu_name(E):- is_shape_id_for(Points,E),!,print_grid(is_shape_id_for(E),Points).
 
 do_menu_number(N):- N>=300,N=<800,set_pair_mode(entire_suite),fail.
-do_menu_number(N):- N<800,do_test_number(N),!.
+do_menu_number(N):- N< 800,do_test_number(N),!.
 do_menu_number(N):- N>=800,N=<999,do_indivizer_number(N),!.
 
 debuffer_atom_codes(_Key,[27|Codes]):- append(Left,[27|More],Codes),
@@ -948,8 +951,10 @@ test_suite_name(dbigham_train_pass).
 test_suite_name(dbigham_personal).
 test_suite_name(dbigham_fail).
 test_suite_name(TS):- dir_test_suite_name(TS).
-test_suite_name(icecuber_pass).
-test_suite_name(icecuber_fail).
+test_suite_name(icecuber_pass_eval).
+test_suite_name(icecuber_pass_training).
+test_suite_name(icecuber_fail_eval).
+test_suite_name(icecuber_fail_training).
 test_suite_name(P1):- return_sorted(PS,test_suite_name_by_call(PS)),PS=P1.
 test_suite_name(Prop):- test_suite_marker(Prop).
 
@@ -1052,8 +1057,10 @@ test_suite_info_1(SuiteX,TestID):- muarc_tmp:cached_tests_hard(SuiteX,Set),membe
 test_suite_info_1(passed(SuiteX),TestID):- test_results(pass,SuiteX,TestID,_Info). 
 test_suite_info_1(failed(SuiteX),TestID):- test_results(fail,SuiteX,TestID,_Info). 
 %test_suite_info_1(SuiteX,TestID):- var(TestID), all_arc_test_name_unordered(TestID),test_suite_info(SuiteX,TestID).
-test_suite_info_1(icecuber_fail,TestID):- icu(Name,PF),PF == -1,atom_id_e(Name,TestID).
-test_suite_info_1(icecuber_pass,TestID):- icu(Name,PF),PF \== -1,atom_id_e(Name,TestID).
+test_suite_info_1(icecuber_pass_eval,TestID):- icu(evaluation,Name,pass),atom_id_e(Name,TestID).
+test_suite_info_1(icecuber_fail_eval,TestID):- icu(evaluation,Name,fail),atom_id_e(Name,TestID).
+test_suite_info_1(icecuber_pass_training,TestID):- icu(training,Name,pass),atom_id_e(Name,TestID).
+test_suite_info_1(icecuber_fail_training,TestID):- icu(training,Name,fail),atom_id_e(Name,TestID).
 test_suite_info_1(dbigham_fail,TestID):- all_arc_test_name_unordered(TestID),
    \+ test_suite_info(dbigham_train_core,TestID),
    \+ test_suite_info(dbigham_train_pass,TestID),
@@ -1609,6 +1616,21 @@ print_test_file_hints(TestID):-
   saveable_test_info(TestID,Info),
   my_maplist(print_ref,Info).
 
+
+abolish_dynamic(MFA):-
+  abolish(MFA),
+  dynamic(MFA).
+
+force_clear_test_big_C:- 
+ must_det_ll((
+  abolish_dynamic(arc_cache:trans_rule_db/4),
+  abolish_dynamic(is_hybrid_shape/4),
+  abolish_dynamic(is_why_grouped_g/4),
+  abolish_dynamic(cached_arc_test_property/4),
+  abolish_dynamic(arc_cache:individuated_cache/5),
+  abolish_dynamic(arc_test_property/4),!,
+  get_current_test(TestID),force_clear_test(TestID))).
+
 force_clear_test:- get_current_test(TestID),force_clear_test(TestID).
 force_clear_test(TestID):-
   ensure_test(TestID),
@@ -1727,9 +1749,9 @@ www_demo:- as_if_webui(demo).
 
 info(Info):- nonvar(Info),u_dmsg(Info).
 system:demo:- 
-  catch_log(reverse_suite),
+  ((catch_log(reverse_suite),
   update_changes,!,clear_tee,
-  begin_tee,print_test,interact.
+  begin_tee,print_test)),interact.
 
 :- export(demo/0).
 rat:- info("Run all tests"), run_all_tests.
@@ -2915,4 +2937,5 @@ for table in $tables; do
     # Export the table data to a CSV file
     psql -h $your_host -U $your_user -d $your_database -c "COPY $your_schema.$table TO STDOUT WITH (FORMAT csv, HEADER true)" > "csv_exports/$your_schema/${table}.csv"
 done
+
 

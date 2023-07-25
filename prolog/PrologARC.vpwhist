@@ -1,36 +1,25 @@
 [Global]
 CurrentProject=PrologARC.vpj
 [ProjectDates]
-PrologARC.vpj=20230705135126284
+PrologARC.vpj=20230725032550976
 [ActiveConfig]
 PrologARC.vpj=Release
 [TreeExpansion2]
 - PrologARC.vpj
   + ..\
   + shared\.devcontainer
-  + kaggle_arc\.history
-  + kaggle_arc_new\.history
   + kaggle_arc\.ipynb_checkpoints
-  + kaggle_arc_new\.ipynb_checkpoints
   + kaggle_arc\.notebook
     + tmp
-  + kaggle_arc_new\.notebook
-    + tmp
-  + kaggle_arc\.q_file_picker
-  + kaggle_arc_new\.q_file_picker
   + kaggle_arc\.unotes
-    + templates
-  + kaggle_arc_new\.unotes
     + templates
   + ILP\.vscode
   + kaggle_arc\.vs
   + kaggle_arc\.vscode
-  + kaggle_arc_new\.vs
-  + kaggle_arc_new\.vscode
   + ARC-Others
     + arc-dsl
   + arc_too
-  + ILP
+  - ILP
     + problog\.circleci
     + Anime_Studio_AnimAI\.github
       + Discussions
@@ -1316,7 +1305,7 @@ PrologARC.vpj=Release
       + web-ct
         + en
           + style
-      + ~markov
+      - ~markov
         + aiprograms
         + ccsu_courses
           + aiprograms
@@ -3238,7 +3227,7 @@ PrologARC.vpj=Release
       + lexical-data
       + scripts
       + tools
-    + hakank
+    - hakank
       + advent-of-code-2022
       + aimms
       + ampl
@@ -3283,7 +3272,7 @@ PrologARC.vpj=Release
       + pddl
       + perl
       + perl6
-      + picat
+      - picat
         + bus_scheduling_csplib
         + crossword3
         + nn_hakank
@@ -10560,7 +10549,7 @@ PrologARC.vpj=Release
       + src
         + grounder
           + pddl
-    + mooney
+    - mooney
       + abind
       + accel
       + backup
@@ -12718,18 +12707,18 @@ PrologARC.vpj=Release
       + faculty
         + css
     + www.clpset.unipr.it
-      - SETLOG
-        - APPLICATIONS
+      + SETLOG
+        + APPLICATIONS
           + android
           + blp
           + blp2
-          - lgs
+          + lgs
           + tokeneer
-          - TTF
+          + TTF
         + experimentsCP
-          - ra
+          + ra
           + tptp-boo
-          - tptp-rel
+          + tptp-rel
           + tptp-set
           + zmt
         + experimentsJAR
@@ -12741,13 +12730,13 @@ PrologARC.vpj=Release
           + zmt
         + SamplePrograms
         + setlog-intervals
-        - setlog498-11g
-        - setlog498-12e
-        - setlog498-12f
-        - setlog498-13b
-        - setlog_4.9.8
+        + setlog498-11g
+        + setlog498-12e
+        + setlog498-12f
+        + setlog498-13b
+        + setlog_4.9.8
         + size
-          - size
+          + size
     + www.cs.ccsu.edu
       + cit
       + ~neville
@@ -21905,9 +21894,9 @@ PrologARC.vpj=Release
         + 10-802
           + fixed
         + postscript
-    - www.cs.unm.edu
-      - ~luger
-        - ai-final
+    + www.cs.unm.edu
+      + ~luger
+        + ai-final
           + code
             + ai-5th-code
               + contrib
@@ -21946,7 +21935,7 @@ PrologARC.vpj=Release
             + earleyparser
               + earleyparser
             + wordguess
-        - ai-final2
+        + ai-final2
           + JAVA
           + LISP
     + www.cs.utexas.edu
@@ -22090,7 +22079,7 @@ PrologARC.vpj=Release
             + images
       + pldoc
         + res
-    - yas
+    + yas
       + attic
         + BFPL
           + Prolog
@@ -22343,16 +22332,16 @@ PrologARC.vpj=Release
                 + Meta
                 + Repr
         + XML
-      - lib
-        - Haskell
+      + lib
+        + Haskell
           + Data
             + CPO
             + Generics
           + Text
             + Parsec
-        - Prolog
-          - generics
-      - samples
+        + Prolog
+          + generics
+      + samples
         + xcoupled\.settings
         + Haskell
         + obsolete
@@ -22371,8 +22360,8 @@ PrologARC.vpj=Release
               + xml
               + xsd
               + xslt
-      - tmp
-      - tools
+      + tmp
+      + tools
   - kaggle_arc
     + induction
       + acl1_1_tests
@@ -22381,15 +22370,7 @@ PrologARC.vpj=Release
     + secret_data
       + evaluation
       + solution
-  + kaggle_arc_new
-    + induction
-      + acl1_1_tests
-      + acl1_2_tests
-      + m_acl_tests
-    + secret_data
-      + evaluation
-      + solution
-  - shared
+  + shared
     + gojs\.codesandbox
     + dom-to-image\.github
     + html-to-image\.github
@@ -23632,9 +23613,8 @@ PrologARC.vpj=Release
       + Pattern recognition _ Bongard, M. M. (Mikhail Moiseevich) _ Free Download, Borrow, and Streaming _ Internet Archive_files
     + js
     + muarc_cache
-      + test_state
-    - muarc_output
-      - ilp
+    + muarc_output
+      + ilp
         + 00576224
         + 009d5c81
         + 00dbd492
@@ -23655,27 +23635,27 @@ PrologARC.vpj=Release
         + a61ba2ce
         + a61f2674
         + a79310a0
-        - b230c067
+        + b230c067
         + d2abd087
         + e41c6fd3
         + ea32f347
-        - f8b3ba0a
-        - save-a79310a0
-        - save-a79310a0-1
+        + f8b3ba0a
+        + save-a79310a0
+        + save-a79310a0-1
         + save-a79310a0-2
-        - save-a79310a0-3
+        + save-a79310a0-3
         + save-a79310a0-4
       + muarc_output_html
-      - riddles
-        - example_001
+      + riddles
+        + example_001
         + example_002
         + example_003
         + example_004
-        - example_005
-        - example_006
+        + example_005
+        + example_006
         + example_007
         + example_011
-        - example_012
+        + example_012
         + example_013
         + example_014
         + example_015
@@ -23686,41 +23666,77 @@ PrologARC.vpj=Release
       + images
     + tutorial_code
   + symbolic_ml
-scroll:0
+scroll:187
 [State]
-SCREEN: 2160 4096 -2168 992 2174 3111 0 0 N 0 0 0 0 1694 2513
-CWD: \Program Files (x86)\SlickEdit\win
-BUFFER: BN="kaggle_arc\out\ilp\d2abd087\gpt.pl"
-BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=0 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.3424 CL=68 LE=0 CX=67 CY=65 WI=5 BI=21 HT=0 HN=0 HF=0 HC=4
+SCREEN: 2160 4096 -2168 992 2174 2790 0 0 N 0 0 0 0 1694 2192
+CWD: ..\..\logicmoo_opencog\MeTTa\Flybase\datalog
 BUFFER: BN="kaggle_arc\kaggle_arc_prior_groups.pl"
 BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=0 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.110867 CL=44 LE=0 CX=43 CY=71 WI=5 BI=20 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="kaggle_arc\out\ilp\b230c067\gpt.pl"
+VIEW: LN=.61245 CL=59 LE=18 CX=40 CY=101 WI=5 BI=9 HT=0 HN=0 HF=0 HC=4
+BUFFER: BN="kaggle_arc\kaggle_arc_test_iface.pl"
 BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=0 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.3104 CL=86 LE=15 CX=70 CY=56 WI=5 BI=23 HT=0 HN=0 HF=0 HC=4
-BUFFER: BN="kaggle_arc\out\ilp\ea32f347\gpt.pl"
+VIEW: LN=.127924 CL=54 LE=0 CX=53 CY=44 WI=5 BI=8 HT=0 HN=0 HF=0 HC=4
+BUFFER: BN="kaggle_arc\kaggle_arc_prolog_ebg.pl"
+BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=0 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
+VIEW: LN=.4243 CL=38 LE=0 CX=37 CY=101 WI=5 BI=25 HT=0 HN=0 HF=0 HC=4
+BUFFER: BN="kaggle_arc\kaggle_arc_explaination.pl"
+BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=0 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
+VIEW: LN=.4816 CL=31 LE=0 CX=30 CY=12 WI=5 BI=24 HT=0 HN=0 HF=0 HC=4
+BUFFER: BN="kaggle_arc\kaggle_arc_domaintypes.pl"
+BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=0 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
+VIEW: LN=.7407 CL=34 LE=0 CX=33 CY=44 WI=5 BI=5 HT=0 HN=0 HF=0 HC=4
+BUFFER: BN="kaggle_arc\kaggle_arc_uniqueness.pl"
 BI: MA=1 174 1  TABS=1 3  WWS=1 IWT=0 ST=0 IN=2 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Prolog	HM=0 MF=544 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=22 HT=0 HN=0 HF=0 HC=4
-WINDOW: 312 312 862 1681 -1 -1 N  WF=0 WT=6 "Default Fixed Font,14,0,1"
-BUFFER: BN="kaggle_arc\out\ilp\b230c067\gpt.pl"
-VIEW: LN=.3104 CL=86 LE=15 CX=70 CY=56 WI=127 BI=23 HT=0 HN=0 HF=0 HC=4
-WINDOW: 130 130 862 1681 -1 -1 N  WF=0 WT=2 "Default Fixed Font,14,0,1"
+VIEW: LN=.207018 CL=1 LE=0 CX=0 CY=67 WI=5 BI=7 HT=0 HN=0 HF=0 HC=4
+BUFFER: BN="ILP\hakank\picat\ebg_lift_movement_v3.pi"
+BI: MA=1 74 1  TABS=1 9  WWS=1 IWT=1 ST=0 IN=1 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Fundamental	HM=0 MF=512 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
+VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=6 HT=0 HN=0 HF=0 HC=4
+BUFFER: BN="ILP\hakank\picat\eliza.pi"
+BI: MA=1 74 1  TABS=1 9  WWS=1 IWT=1 ST=0 IN=1 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Fundamental	HM=0 MF=512 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
+VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=27 HT=0 HN=0 HF=0 HC=4
+BUFFER: BN="ILP\hakank\picat\ebg_v3.pi"
+BI: MA=1 74 1  TABS=1 9  WWS=1 IWT=1 ST=0 IN=1 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Fundamental	HM=0 MF=512 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
+VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=23 HT=0 HN=0 HF=0 HC=4
+BUFFER: BN="ILP\hakank\picat\ebg_gifts_v3.pi"
+BI: MA=1 74 1  TABS=1 9  WWS=1 IWT=1 ST=0 IN=1 BW=0 US=32000 RO=0 SE=1 SN=0 BIN=0 MN=Fundamental	HM=0 MF=512 TL=0 MLL=0 ASE=0 LNL=6 LCF=0 CAPS=0 E=0 ESBU2=-1
+VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=5 BI=26 HT=0 HN=0 HF=0 HC=4
+WINDOW: 390 390 966 1464 -1 -1 N  WF=0 WT=7 "Default Fixed Font,14,0,1"
+BUFFER: BN="ILP\hakank\picat\ebg_lift_movement_v3.pi"
+VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=269 BI=6 HT=0 HN=0 HF=0 HC=4
+WINDOW: 442 442 966 1464 -1 -1 N  WF=0 WT=10 "Default Fixed Font,14,0,1"
+BUFFER: BN="ILP\hakank\picat\ebg_gifts_v3.pi"
+VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=273 BI=26 HT=0 HN=0 HF=0 HC=4
+WINDOW: 416 416 966 1464 -1 -1 N  WF=0 WT=8 "Default Fixed Font,14,0,1"
+BUFFER: BN="ILP\hakank\picat\ebg_v3.pi"
+VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=271 BI=23 HT=0 HN=0 HF=0 HC=4
+WINDOW: 312 312 862 1681 -1 -1 N  WF=0 WT=2 "Default Fixed Font,14,0,1"
+BUFFER: BN="kaggle_arc\kaggle_arc_uniqueness.pl"
+VIEW: LN=.207018 CL=1 LE=0 CX=0 CY=67 WI=137 BI=7 HT=0 HN=0 HF=0 HC=4
+WINDOW: 364 364 862 1681 -1 -1 N  WF=0 WT=4 "Default Fixed Font,14,0,1"
+BUFFER: BN="kaggle_arc\kaggle_arc_domaintypes.pl"
+VIEW: LN=.7407 CL=34 LE=0 CX=33 CY=44 WI=133 BI=5 HT=0 HN=0 HF=0 HC=4
+WINDOW: 338 338 862 1681 -1 -1 N  WF=0 WT=3 "Default Fixed Font,14,0,1"
+BUFFER: BN="kaggle_arc\kaggle_arc_explaination.pl"
+VIEW: LN=.4816 CL=31 LE=0 CX=30 CY=12 WI=135 BI=24 HT=0 HN=0 HF=0 HC=4
+WINDOW: 104 104 526 2344 -1 -1 N  WF=0 WT=5 "Default Fixed Font,14,0,1"
+BUFFER: BN="kaggle_arc\kaggle_arc_prolog_ebg.pl"
+VIEW: LN=.4243 CL=38 LE=0 CX=37 CY=101 WI=136 BI=25 HT=0 HN=0 HF=0 HC=4
+WINDOW: 286 286 862 1681 -1 -1 N  WF=0 WT=9 "Default Fixed Font,14,0,1"
+BUFFER: BN="kaggle_arc\kaggle_arc_test_iface.pl"
+VIEW: LN=.127924 CL=54 LE=0 CX=53 CY=44 WI=13 BI=8 HT=0 HN=0 HF=0 HC=4
+WINDOW: 130 130 526 2344 -1 -1 N  WF=0 WT=6 "Default Fixed Font,14,0,1"
 BUFFER: BN="kaggle_arc\kaggle_arc_prior_groups.pl"
-VIEW: LN=.110867 CL=44 LE=0 CX=43 CY=71 WI=126 BI=20 HT=0 HN=0 HF=0 HC=4
-WINDOW: 234 234 862 1681 -1 -1 N  WF=0 WT=3 "Default Fixed Font,14,0,1"
-BUFFER: BN="kaggle_arc\out\ilp\d2abd087\gpt.pl"
-VIEW: LN=.3424 CL=68 LE=0 CX=67 CY=65 WI=125 BI=21 HT=0 HN=0 HF=0 HC=4
-WINDOW: 286 286 862 1681 -1 -1 M  WF=0 WT=5 "Default Fixed Font,14,0,1"
-BUFFER: BN="kaggle_arc\out\ilp\ea32f347\gpt.pl"
-VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=128 BI=22 HT=0 HN=0 HF=0 HC=4
+VIEW: LN=.61245 CL=59 LE=18 CX=40 CY=101 WI=176 BI=9 HT=0 HN=0 HF=0 HC=4
+WINDOW: 468 468 966 1464 -1 -1 M  WF=0 WT=1 "Default Fixed Font,14,0,1"
+BUFFER: BN="ILP\hakank\picat\eliza.pi"
+VIEW: LN=.0 CL=1 LE=0 CX=0 CY=0 WI=275 BI=27 HT=0 HN=0 HF=0 HC=4
 FILEHIST: 9
-kaggle_arc\kaggle_arc_boards.pl
-kaggle_arc\kaggle_arc_individuation_cbox_dpg.pl
-kaggle_arc\kaggle_arc_individuation_cbox.pl
-kaggle_arc\kaggle_arc.pl
-kaggle_arc\kaggle_arc_test_iface.pl
-kaggle_arc\out\ilp\d2abd087\gpt.pl
-kaggle_arc\out\ilp\ea32f347\gpt.pl
-kaggle_arc\out\ilp\b230c067\gpt.pl
+kaggle_arc\kaggle_arc_domaintypes.pl
+kaggle_arc\kaggle_arc_explaination.pl
+kaggle_arc\kaggle_arc_prolog_ebg.pl
 kaggle_arc\kaggle_arc_prior_groups.pl
+kaggle_arc\kaggle_arc_uniqueness.pl
+ILP\hakank\picat\ebg_v3.pi
+ILP\hakank\picat\ebg_gifts_v3.pi
+ILP\hakank\picat\ebg_lift_movement_v3.pi
+ILP\hakank\picat\eliza.pi

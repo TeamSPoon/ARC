@@ -129,6 +129,11 @@ add_extra_propz_l(ObjO,ObjO).
 
 make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):- 
   make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjM),
+  add_extra_propz(ObjM,ObjO),!.
+
+make_indiv_object_s(GID0,GridH,GridV,Overrides0,GPoints00,ObjO):- 
+  break,
+  make_indiv_object_s1(GID0,GridH,GridV,Overrides0,GPoints00,ObjM),
   add_extra_propz(ObjM,ObjO).
 
 :- style_check(+singleton).
@@ -533,12 +538,33 @@ make_indiv_object(VM,Overrides,GOPoints,NewObj):-
   nop(itrace))).
  %show_indiv_textinfo(NewObj),!.
 
+
+correct_color(CC,CI,C):- var(CC),!,CI=C.
+correct_color(CC,CI,C):- CC =@= CI,!,CI=C.
+correct_color(CC,CI,C):- CC==black,!,CI=C.
+correct_color(CC,CI,C):- CC==wbg,!,CI=C.
+correct_color(CC,CI,C):- sub_term(C,CC),is_color(C),CI\=@=C,!,nop(wdmsg(CI -> CC)).
+correct_color(CC,CI,C):- CI=C,!,wdmsg(CC => C).
+
+
+
+correct_wrong_points(RealGrid,[CI-GI|PointsI],[C-GI|Points]):-
+  hv_point(H,V,GI),hv_c_value(RealGrid,CC,H,V),
+  must_det_ll(correct_color(CC,CI,C)),
+  correct_wrong_points(RealGrid,PointsI,Points).
+correct_wrong_points(RealGrid,[CGI|PointsI],Points):-!,
+  dmsg(bad(CGI,in(RealGrid))),
+  correct_wrong_points(RealGrid,PointsI,Points).
+correct_wrong_points(_,CP,CP).
+
 make_indiv_object_real(VM,Overrides,GOPoints,NewObj):-
- 
- fix_global_offset(GOPoints,OPoints),
  must_det_ll((
+  fix_global_offset(GOPoints,OPoints),
   GOPoints\==[],
-  globalpoints_maybe_bg(OPoints,GPoints),
+  testid_name_num_io(VM.id,TestID,Example,Num,IO),
+  kaggle_arc_io(TestID,Example+Num,IO,RealGrid),
+  globalpoints_maybe_bg(OPoints,GIPoints),
+  correct_wrong_points(RealGrid,GIPoints,GPoints),
   sort_points(GPoints,Points),
   Objs = VM.objs,
   Orig = _,!,
@@ -811,7 +837,7 @@ with_objprops2(override,-E,List,NewList):-
     append(Left,Right,NewList),!.
 
 with_objprops2(override,Pos,List, List):- member(E,List),E=@=Pos,!.
-with_objprops2(override,Pos,List,NewList):- type_prop(reposition,Pos),
+with_objprops2(override,Pos,List,NewList):- type_prop(positioning,Pos),
   make_unifiable_u(Pos,UPos), member(UPos,List),!,
   must_det_ll((
    Obj = obj(List), globalpoints(Obj, OGPoints), 
@@ -1562,7 +1588,8 @@ object_localpoints(I,X):-
   indv_props_list(I,L), must_det_ll(object_l(localpoints(X),L)),!.
 
 object_l(P,[Obj|L]):- (is_group(L);is_object(Obj)),!,mapgroup(object_l(P),[Obj|L]).
-object_l(P,L):- stack_check(999), compound(P),functor(P,F,A),functor(PP,F,A), member(PP,L),!,P=PP.
+object_l(P,L):- stack_check(999_999), 
+  compound(P),functor(P,F,A),functor(PP,F,A), member(PP,L),!,P=PP.
 object_l(globalpoints(O),L):- object_l(loc2D(OH,OV),L),object_l(localpoints(LPoints),L),!, offset_points(OH,OV,LPoints,O).
 object_l(loc2D(OH,OV),L):-  
   member(iz(cenGX(CX)),L),member(iz(cenGY(CY)),L),member(iz(sizeGX(SX)),L),member(iz(sizeGY(SY)),L),
@@ -2183,7 +2210,7 @@ rebuild_from_globalpoints(VM,Obj,GPoints,NewObj):-
 
 
 is_prop_automatically_rebuilt(iz(birth(_))):-!,fail.
-is_prop_automatically_rebuilt(Prop):- type_prop(reposition,Prop),!.
+is_prop_automatically_rebuilt(Prop):- type_prop(positioning,Prop),!.
 is_prop_automatically_rebuilt(Prop):- sub_term(CP,Prop),(is_color(CP);is_ncpoint(CP)),!.
 is_prop_automatically_rebuilt(Prop):- compound(Prop),functor(Prop,F,_),(atom_contains(F,'color');atom_contains(F,'points')),!.
 is_prop_automatically_rebuilt(Prop):-

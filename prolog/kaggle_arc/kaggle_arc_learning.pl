@@ -1539,9 +1539,9 @@ get_nw_absAt(L,X,Y):- make_center2D(L,CX,CY),number(CX),number(CY), make_vis2D(L
 
 valid_xy(X,Y):- number(X),number(Y).
 
-rescale(TY,SY,GY,Y):- TY==SY,!,GY=Y.
-rescale(TY,SY,GY,Y):- Y is (TY/SY)*GY.
-g_to_d(L,GX,GY,X,Y):- member(globalG(SX,SY),L),member(grid_size(TX,TY),L),rescale(TX,SX,GX,X),rescale(TY,SY,GY,Y).
+sizing(TY,SY,GY,Y):- TY==SY,!,GY=Y.
+sizing(TY,SY,GY,Y):- Y is (TY/SY)*GY.
+g_to_d(L,GX,GY,X,Y):- member(globalG(SX,SY),L),member(grid_size(TX,TY),L),sizing(TX,SX,GX,X),sizing(TY,SY,GY,Y).
 g_to_d(_,X,Y,X,Y).
 
 make_loc2D(L,X,Y):- member(loc2D(X,Y),L),valid_xy(X,Y).

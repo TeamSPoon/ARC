@@ -837,64 +837,64 @@ not_giz(_).
 
 prop_type(P,T):- type_prop(T,P).
 
-prop_type_type(reposition).
-prop_type_type(rotate).
-prop_type_type(reshape).
-prop_type_type(rescale).
-prop_type_type(repaint).
-prop_type_type(reorder).
+prop_type_type(positioning).
+prop_type_type(orientation).
+prop_type_type(shaping).
+prop_type_type(sizing).
+prop_type_type(coloring).
+prop_type_type(ordering).
 
 
-prop_type_required(repaint).
-prop_type_required(reposition).
-prop_type_required(rotate).
-prop_type_required(reshape).
-prop_type_required(rescale).
-prop_type_not_required(reorder).
+prop_type_required(coloring).
+prop_type_required(positioning).
+prop_type_required(orientation).
+prop_type_required(shaping).
+prop_type_required(sizing).
+prop_type_not_required(ordering).
 
 
-type_prop(reposition,loc2D(_,_)).
-type_prop(reposition,center2G(_,_)).
-%type_prop(reposition,loc2G(_,_)).
-type_prop(reposition,iz(locX(_))).
-type_prop(reposition,iz(cenX(_))).
-type_prop(reposition,iz(locY(_))).
-type_prop(reposition,iz(cenY(_))).
-type_prop(reposition,edge(_,_)).
+type_prop(positioning,loc2D(_,_)).
+type_prop(positioning,center2G(_,_)).
+%type_prop(positioning,loc2G(_,_)).
+type_prop(positioning,iz(locX(_))).
+type_prop(positioning,iz(cenX(_))).
+type_prop(positioning,iz(locY(_))).
+type_prop(positioning,iz(cenY(_))).
+type_prop(positioning,edge(_,_)).
 %type_prop(rerelate,link(_,_)).
-type_prop(rotate,rotG(_)).
-type_prop(rotate,rot2D(_)).
-type_prop(rotate,rotSize2D(_,_,_)).
-type_prop(rescale,rotSize2D(grav,_,_)).
-type_prop(rescale,vis2D(_,_)).
-type_prop(rescale,iz(sizeGX(_))).
-type_prop(rescale,iz(sizeGY(_))).
-type_prop(rescale,rotSize2D(_,_,_)).
-%type_prop(rescale,mass(_)).
-%type_prop(rescale,cc(fg,_)).
-type_prop(rescale,grid_rep(norm,_)).
-type_prop(reshape,shape_rep(grav,_)).
-type_prop(reshape,iz(sid(_))).
-type_prop(reshape,iz(stype(_))).
-type_prop(reshape,iz(algo_sid(_, _))).
-type_prop(reshape,iz(filltype(_))).
-type_prop(reshape,iz(symmetry_type(_,_))).
-type_prop(reshape,grid_rep(norm,_)).
-type_prop(repaint,colors_cc(_)).
-type_prop(repaint,pen(_)).
-%type_prop(repaint,cc(_,_)).
-%type_prop(repaint,grid_rep(norm,_)).
+type_prop(orientation,rotG(_)).
+type_prop(orientation,rot2D(_)).
+type_prop(orientation,rotSize2D(_,_,_)).
+type_prop(sizing,rotSize2D(grav,_,_)).
+type_prop(sizing,vis2D(_,_)).
+type_prop(sizing,iz(sizeGX(_))).
+type_prop(sizing,iz(sizeGY(_))).
+type_prop(sizing,rotSize2D(_,_,_)).
+%type_prop(sizing,mass(_)).
+%type_prop(sizing,cc(fg,_)).
+type_prop(sizing,grid_rep(norm,_)).
+type_prop(shaping,shape_rep(grav,_)).
+type_prop(shaping,iz(sid(_))).
+type_prop(shaping,iz(stype(_))).
+type_prop(shaping,iz(algo_sid(_, _))).
+type_prop(shaping,iz(filltype(_))).
+type_prop(shaping,iz(symmetry_type(_,_))).
+type_prop(shaping,grid_rep(norm,_)).
+type_prop(coloring,colors_cc(_)).
+type_prop(coloring,pen(_)).
+%type_prop(coloring,cc(_,_)).
+%type_prop(coloring,grid_rep(norm,_)).
 
-type_prop(reorder,pg(_Peers,_OG,_Type,_Ord)).
-type_prop(reorder,link_count(_,_)).
-type_prop(reorder,occurs_in_links(_,_)).
+type_prop(ordering,pg(_Peers,_OG,_Type,_Ord)).
+type_prop(ordering,link_count(_,_)).
+type_prop(ordering,occurs_in_links(_,_)).
 
-changed_by(colorlesspoints,reshape).
+changed_by(colorlesspoints,shaping).
 changed_by(loc2D,move).
 changed_by(mass,grow).
 changed_by(localpoints,reshape_and_recolor).
-changed_by(rot2D,rotate).
-changed_by(colors_cc,repaint).
+changed_by(rot2D,orientation).
+changed_by(colors_cc,coloring).
 changed_by(vis2D,copy).
 
 link_prop_types(Loc,O1,O2,Ps):-
@@ -977,7 +977,7 @@ dislike_points(obj(I)):-!,dislike_points(I).
 dislike_points(I):- is_list(I),dislike_points1(L),forall(member(E,L),member(E,I)).
 
 %dislike_points1([iz(type(dot)),grid_size(H,V)]):- freeze(H, freeze(V, (HV is H * V, HV > 49))).
-dislike_points1([colors_cc([cc(BG, _)]),iz(reshape(polygon))]):- freeze(BG,is_black_or_bg(BG)).
+dislike_points1([colors_cc([cc(BG, _)]),iz(shaping(polygon))]):- freeze(BG,is_black_or_bg(BG)).
 
 
 uncomparable(_,Var):- var(Var),!.
@@ -1231,7 +1231,7 @@ sprop_of(sameO,colors_cc).
 sprop_of(moved,sameO).
 sprop_of(moved,loc2D).
 
-sprop_of(turned,rotate).
+sprop_of(turned,orientation).
 
 sprop_of(reshape_and_recolor,localpoints).
 
@@ -1399,10 +1399,10 @@ good_relation_between(DIR,OID1,OID2,Val):-
   \+ \+ member(Val,UseList).
 good_relation_between(DIR,OID1,OID2,Val):- relation_between(DIR,OID1,OID2,Val).
 
-oid_to_node(OID,_{oid:OID,name:OID,desc:Glyph,color:HTMLColor,reshape:circle,size:10}):- 
+oid_to_node(OID,_{oid:OID,name:OID,desc:Glyph,color:HTMLColor,shaping:circle,size:10}):- 
    oid_to_obj(OID,Obj),
    object_glyph(Obj,Glyph),object_glyph_colorz(Obj,[Color|_]),into_html_color(Color,HTMLColor),!.
-oid_to_node(OID,_{oid:OID,name:OID,reshape:circle,size:10}).
+oid_to_node(OID,_{oid:OID,name:OID,shaping:circle,size:10}).
 
 
 cmpable_value(V):- \+ compound(V),!,fail.

@@ -311,18 +311,22 @@ point_c_value(Point,C,Grid):-
   must_det_ll(( hv_point(H,V,Point),hv_c_value(Grid,C,H,V))).
 
 
-hv_cg_value(O,_Color,_H,_V):-  var(O),!,fail.
+hv_cg_value(O,_GC,_H,_V):- var(O),!,fail.
+hv_cg_value(ID,_C,_H,_V):- ID==[],!,fail.
 hv_cg_value(ID,C,H,V):- (var(H);var(V)),!, hv_point(H,V,_),hv_cg_value(ID,CC,H,V),CC=C.
-hv_cg_value(Grid,Color,H,V):- is_grid(Grid),!,nth1(V,Grid,Row),nth1(H,Row,Color).
-hv_cg_value(O,GN,H,V):- is_vm_map(O),O.objs\==[],!,hv_cg_value(O.objs,GN,H,V).
-hv_cg_value(O,GN,H,V):- is_vm_map(O),!,hv_cg_value(O.grid,GN,H,V).
-hv_cg_value(O,Color-GN,H,V):- is_object(O), hv_c_value(O,Color,H,V),obj_to_oid(O,GN),nonvar_or_ci(GN),!.
+hv_cg_value(O,G_C,H,V):- is_grid(O),!,nth1(V,O,Row),nth1(H,Row,G_C).
+hv_cg_value(O,G_C,H,V):- is_vm_map(O),O.objs\==[],!,hv_cg_value(O.objs,G_C,H,V).
+hv_cg_value(O,G_C,H,V):- is_vm_map(O),!,hv_cg_value(O.grid,G_C,H,V).
+%hv_cg_value(O,G-C,H,V):- is_object(O), globalpoints(O,GP),hv_c_value(GP,C,H,V),!,obj_to_oid(O,G).
+hv_cg_value(O,G_C,H,V):- is_object(O),!, hv_c_value(O,C,H,V), C\==bg, !, (atomic(C)-> (object_glyph(O,G),G_C=(G-C)) ; G_C=C).
+%hv_cg_value(O,G_C,H,V):- is_group(G), !, member(O,[G|Points]), hv_cg_value(O,G_C,H,V),nonvar(G_C).
+hv_cg_value([G|Points],G_C,H,V):- is_object_or_grid(G),!, nth1(N,[G|Points],O), hv_cg_value(O,C,H,V), C\==bg, !, (atomic(C)-> (nth2glyph(N,G),G_C=(G-C)) ; G_C=C).
+hv_cg_value([G|Points],G_C,H,V):- quietly(( is_list(Points), is_object_or_grid(G))), !, grid_color_and_glyph([G|Points],C,G,H,V),G_C=(C-G),!.
+hv_cg_value(Grid,G_C,H,V):- hv_c_value(Grid,G_C,H,V),!.
 
-hv_cg_value([G|Points],CN,H,V):- quietly(( is_list(Points), is_object_or_grid(G))), 
-   grid_color_and_glyph([G|Points],C,N,H,V),CN=(C-N),!.
 %hv_cg_value(O,CN,H,V):- (has_index(color_index);has_index(glyph_index)),
 %   grid_color_and_glyph(O,C,N,H,V),CN=(C-N),!.
-
+nth2glyph(N,G):- NN is N+4500,int2glyph(NN,G).
 
 %hv_cg_value(ID,C,H,V):- nonvar(H) -> (hv_point(H,V,HV),cmem(ID,HV,C)); (cmem(ID,HV,C),hv_point(H,V,HV)).
 
@@ -727,7 +731,7 @@ hv_cell(H,V,cell(H,V,'+',blue,fg,_,Point)):- hv_point(H,V,Point).
 %make_rows(LowX,MaxX,N,[Point|More]):- hv_point(LowX,N,Point),NextX is LowX+1, make_row(LowX,MaxX,N,More).
 
 
-%rotate(Grid,Rot,Grid2):- hv_to_grid(5,5,Points),
+%orientation(Grid,Rot,Grid2):- hv_to_grid(5,5,Points),
 
 grid_object_glyph_points(Grid,Type,Groups):-
   ensure_gid(Grid,GID),

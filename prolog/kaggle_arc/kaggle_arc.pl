@@ -160,28 +160,39 @@ ansi_main:- thread_self(main),nop(is_cgi),!.
 main_thread:- thread_self(main),!.
 if_thread_main(G):- main_thread->call(G);true.
 
-not_really_modified(['/opt/logicmoo_workspace/lib/swipl/library/prolog_xref.pl','/opt/logicmoo_workspace/lib/swipl/library/pldoc/doc_html.pl','/opt/logicmoo_workspace/lib/swipl/library/prolog_colour.pl']).
+not_really_modified(
+  ['/opt/logicmoo_workspace/lib/swipl/library/prolog_xref.pl','/opt/logicmoo_workspace/lib/swipl/library/pldoc/doc_html.pl',
+  '/opt/logicmoo_workspace/lib/swipl/library/prolog_colour.pl','/opt/logicmoo_workspace/lib/swipl/xpce/prolog/lib/pce.pl',
+  '/opt/logicmoo_workspace/lib/swipl/xpce/prolog/boot/pce_expand.pl','/opt/logicmoo_workspace/lib/swipl/xpce/prolog/boot/pce_pl.pl',
+  '/opt/logicmoo_workspace/lib/swipl/xpce/prolog/lib/swi_compatibility.pl','/opt/logicmoo_workspace/lib/swipl/xpce/prolog/boot/pce_principal.pl',
+  '/opt/logicmoo_workspace/lib/swipl/xpce/prolog/boot/pce_error.pl','/opt/logicmoo_workspace/lib/swipl/xpce/prolog/boot/pce_global.pl',
+  '/opt/logicmoo_workspace/lib/swipl/xpce/prolog/boot/pce_expansion.pl','/opt/logicmoo_workspace/lib/swipl/xpce/prolog/boot/pce_realise.pl',
+  '/opt/logicmoo_workspace/lib/swipl/xpce/prolog/boot/pce_goal_expansion.pl','/opt/logicmoo_workspace/lib/swipl/xpce/prolog/boot/pce_autoload.pl','/opt/logicmoo_workspace/lib/swipl/xpce/prolog/boot/pce_editor.pl','/opt/logicmoo_workspace/lib/swipl/xpce/prolog/boot/pce_keybinding.pl',
+  '/opt/logicmoo_workspace/lib/swipl/xpce/prolog/boot/pce_portray.pl','/opt/logicmoo_workspace/lib/swipl/xpce/prolog/lib/english/pce_messages.pl']).
 actually_modified_files(Files):- 
     findall(File, make:modified_file(File), Reload0),
     list_to_set(Reload0, Reload),
     not_really_modified(List),
     intersection(List,Reload,_,_,Files).
 
+reload_file1(File):- 
+  wdmsg(File),
+  make:reload_file(File).
 
 update_changes:- \+ thread_self(main),!.
 update_changes:- actually_modified_files(Reload),Reload==[],!.
+%update_changes:- !.
 update_changes:- 
     '$update_library_index',
-    findall(File, make:modified_file(File), Reload0),
+    actually_modified_files(Reload0),
     list_to_set(Reload0, Reload),
     forall(prolog:make_hook(before, Reload),true),
     notrace((ignore(update_changed_files1))),
     print_message(silent, make(reload(Reload))),
-    make:maplist(reload_file, Reload),
+    maplist(reload_file1, Reload),
     print_message(silent, make(done(Reload))),
     forall(prolog:make_hook(after, Reload),true),!.
 update_changes:- make,!.
-
 
 cls_z_make:- if_thread_main(notrace((ignore(cls_z),ignore(update_and_fail)))).
 clsmake:- if_thread_main(notrace(ignore((\+ is_detatched_thread, cls_z_make)))),!.
@@ -1017,4 +1028,4 @@ create_group(dmiles_h,
 
 :- initialization(create_builtin_sids).
 :- initialization(show_sids).
-
+%:- expand_file_name('../kaggle_arc_clover/*.pl',Files),maplist(ensure_loaded,Files).

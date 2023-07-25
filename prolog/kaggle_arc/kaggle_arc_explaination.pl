@@ -1230,10 +1230,16 @@ print_global_ngrid(OID):-
   (is_fg_object(Obj) -> ((into_global_ngrid(OID,Grid),print_grid(Grid)));  
    print_grid([Obj])).
 
+print_global_ngrid(WQS,OID):- 
+  into_obj(OID,Obj),
+  (is_fg_object(Obj) -> ((into_global_ngrid(OID,Grid),print_grid(WQS,Grid)));  
+   print_grid(WQS,[Obj])).
+
 into_global_ngrid(OID,print_grid(OID,FGGrid)):- 
    into_obj(OID,Obj),
    global_grid(Obj,Grid),into_solid_grid(Grid,SGrid),
    into_ngrid(SGrid,NGrid), mapgrid(no_ngrid_bg,NGrid,FGGrid).
+
 into_local_ngrid(OID,print_grid(OID,FGGrid)):- 
    into_obj(OID,Obj),
    object_grid(Obj,Grid),into_solid_grid(Grid,SGrid),

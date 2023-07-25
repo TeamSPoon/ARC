@@ -34,7 +34,7 @@ do_lazy_goals(Vars):-
   % Execute the ordered eager goals
   do_eager_goals(OrderedEagerOperationList).
 
-% Execute first Eager goal afterwords reorder if the rest of eagerness changes
+% Execute first Eager goal afterwords ordering if the rest of eagerness changes
 do_eager_goals([Eager|OperationList]):- !,
   % Execute the current eager goal
   immc(Eager),
@@ -534,15 +534,16 @@ grid_to_gid(Grid,GID):- grid_to_etid(Grid,ID),!,ensure_now_tid_gids(Grid,ID,GID)
 grid_to_gid(Grid,GID):- grid_to_tid(Grid,ID),!,ensure_now_tid_gids(Grid,ID,GID).
 
 ensure_now_tid_gids(Grid,ID,GID):- 
-  must_det_ll(((clause(tid_to_gids(ID,GID),true)*-> true ; term_to_oid(ID,GID)),
+  (clause(tid_to_gids(ID,GID),true)*-> true ; term_to_oid(ID,GID)),
   assert_grid_tid(Grid,ID),
-  assert_grid_gid(Grid,GID))),!.
+  assert_grid_gid(Grid,GID),!.
 
 % be03b35f
 
 was_grid_gid(G,GID):- current_predicate(gid_to_grid/2), call(call,gid_to_grid,GID,G),assertion(atom(GID)).
 was_grid_gid(Grid,GID):- atom(GID),oid_to_gridoid(GID,G),into_grid(G,GG),Grid=GG,assertz_if_new(gid_to_grid(GID,Grid)).
 was_grid_gid(Grid,GID):- is_grid_tid(Grid,GID),atom(GID),assertz_if_new(gid_to_grid(GID,Grid)).
+assert_grid_tid(Grid,GID):- atom(GID),!,asserta_new(gid_to_grid(GID,Grid)).
 assert_grid_tid(Grid,GID):- asserta_new(is_grid_tid(Grid,GID)),ignore((atom(GID),asserta_new(gid_to_grid(GID,Grid)))).
 assert_grid_gid(Grid,GID):- asserta_new(is_grid_tid(Grid,GID)),ignore((atom(GID),asserta_new(gid_to_grid(GID,Grid)))).
 assert_grid_oid(Grid,GID):- asserta_new(is_grid_tid(Grid,GID)),ignore((atom(GID),asserta_new(gid_to_grid(GID,Grid)))).
@@ -566,17 +567,18 @@ oid_to_gridoid(ID,G):- atom(ID),
 bad_cell(Var):- var(Var),fail.
 bad_cell(_-_).
 
-known_grid0(OID, Grid):- atom(OID),oid_to_gridoid(OID,Grid),!.
 known_grid0(ID,_):- var(ID),!,fail.
-known_grid0(ID,G):- was_grid_gid(G,ID),!.
 known_grid0(BC,_):- bad_cell(BC),!,fail.
 known_grid0(ID,G):- is_grid(ID),!,G=ID.
 known_grid0(ID,_):- is_list(ID),!,fail.
+known_grid0(OID, Grid):- atom(OID),oid_to_gridoid(OID,Grid),!.
 known_grid0(ID,_):- is_object(ID),!,fail.
 known_grid0(_,ID):- is_object(ID),!,fail.
 known_grid0(ID,G):- true,testid_name_num_io(ID,TestID,Trn,Num,IO),ExampleNum=Trn+Num,!,(kaggle_arc_io(TestID,ExampleNum,IO,G),deterministic(YN),true),(YN==true-> ! ; true).
 known_grid0(ID,G):- is_grid_tid(G,ID),!.
-known_grid0(ID,G):- true,fix_test_name(ID,Name,ExampleNum),!,(kaggle_arc_io(Name,ExampleNum,_IO,G),deterministic(YN),true), (YN==true-> ! ; true).
+known_grid0(ID,G):- was_grid_gid(G,ID),!.
+known_grid0(ID,G):- true,fix_test_name(ID,Name,ExampleNum),!,
+  (kaggle_arc_io(Name,ExampleNum,_IO,G),deterministic(YN),true), (YN==true-> ! ; true).
 known_grid0(ID,G):- learned_color_inner_shape(ID,magenta,BG,G,_),get_bgc(BG).
 known_grid0(ID,G):- compound(ID),ID=(_>(Trn+Num)*IO),!,fix_test_name(ID,Name,Trn+Num),!,(kaggle_arc_io(Name,Trn+Num,IO,G),deterministic(YN),true), (YN==true-> ! ; true).
 known_grid0(ID,G):- compound(ID),ID=(_>_),fix_test_name(ID,Name,ExampleNum),!,(kaggle_arc_io(Name,ExampleNum,_IO,G),deterministic(YN),true), (YN==true-> ! ; true).
@@ -661,7 +663,8 @@ makeup_gridname(Grid,TID):- get_current_test(TestID),
    format(atom(HH),'~w_~w_~w_~w',[Example,Num,subgrid,IO]),
    name_num_io_id(TestID,HH,F,IO,TID),
    assert_grid_tid(Grid,TID), nop(dumpST), 
-    (print_grid(no_name(TestID,TID),Grid)))),!.
+    (print_grid(no_name(TestID,TID),Grid)))),!,
+  break.
 
 incomplete(X,X).
 

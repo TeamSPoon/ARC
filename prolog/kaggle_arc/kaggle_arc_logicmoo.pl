@@ -73,7 +73,7 @@ vm_opts_some(Shapes,count_equ(NF),Mono,Nsew,IncludeBG,VM):-
   %filter_points(SegOptions,GPoints,Points),
   must_det_ll(once(color_masses(VM.h,VM.v,VM.start_points,GPoints,SegOptions,Segs))),
   gset(VM.lo_points) = [],
-  maplist(make_indiv_object(VM,[iz(birth(SegOptions))]),Segs,Objs),
+  maplist(make_indiv_object(VM,[iz(info(birth(SegOptions)))]),Segs,Objs),
   assumeAdded(VM,Objs),!.
 
 % =====================================================================
@@ -3328,7 +3328,7 @@ has_a_value(P):- make_unifiable_u(P, U), P\=@=U.
 how_are_different(O1, O2, PropSet):- 
   how_are_different(O1, O2, _TypeSet, PropSet).
 how_are_different(O1, O2, TypeSet,PropSet):-
-  findall(Type=Same, (prop_pairs2(O1, O2, Type, Same, _P),Same\==same, Type\==reorder), List),
+  findall(Type=Same, (prop_pairs2(O1, O2, Type, Same, _P),Same\==same, Type\==ordering), List),
   maplist(arg(1),List,TypeL), vsr_set(TypeL, TypeSet),
   vsr_set(List, PropSet).
 

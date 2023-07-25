@@ -490,6 +490,7 @@ i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,OUT):- OUT = [Size2
 
   found_box(VM,Grid,L_S,NSEW,FX,FY,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS, Which,FBWHY),
 
+  /*
   functor(FBWHY,F,_),
   solidSquares\==F, 
   dashedIBorder2\==F,dashedIBorder1\==F,dashedIBorder\==F,
@@ -500,6 +501,7 @@ i_pbox_l(SoFarI,SoFarOut,Grid,NSEW,XSG,Points,Points9,VM,L_S,OUT):- OUT = [Size2
   if_t(F==border_frame,sub_var(black,FBWHY)),
   if_t(F==framed_image,sub_var(black,FBWHY)),
   sub_var(black,FBWHY),
+  */
 
   once((which_partof_square(Which, OBJ,Find,Inside,Center, IsRim, OH, FX, OV, FY), grid_size(OBJ,HH,VV), \+ member(Rec,SoFarI))),
 
@@ -546,7 +548,7 @@ existingObject(VM,GOPoints):-
   member_ls(O,VM.objs),globalpoints_include_bg(O,Ps),
   GOPoints==Ps,!.
 
-  /*
+/*
 obj_gpoints(Grid,OBJ,OH,OV,GOPoints):-
    grid_size(OBJ,H,V),
    obj_gpoints(Grid,OBJ,OH,OV,H,V,GOPoints).
@@ -605,7 +607,7 @@ edge_or_center(center,C,List):- length(List,Len), Center is 1 + floor(Len/2),nth
   | T t   t T |
   | T t t t T |
   | T T T T T |
-   -----------
+   ¯¯¯¯¯¯¯¯¯¯¯
 */
 not_all_same(C,List):- \+ maplist(==(C),List).
 is_all_same(C,List):- maplist(=(C),List).
@@ -660,7 +662,7 @@ this_grid_is_multiple_of_other(CACHE):- fail,
 
 
 found_box(VM,Grid,L_S,NSEW,FX,FY,Find,Center,Inside,CACHE,XSG,H,V,CenterS,InsideS,FindS,IBorderS,OBorderS,   inside, sub_grid(Why)):-
-  
+  fail, 
   (H>2,V>2),
   CACHE.h=TGX,CACHE.v=TGY,CACHE.ogx=OGX,CACHE.ogy=OGY,
   is_sub_grid_object(VM,CACHE,FX,FY,H,V,TGX,TGY,OGX,OGY,Why).
@@ -784,3 +786,6 @@ wno_debugging(On,Goal):-
   call_cleanup(Goal,erase(Ref)).
    
 %:- include(kaggle_arc_individuation_pbox_2).
+
+:- expand_file_name('./*_pbox_mom.pl',Files),maplist(consult,Files). 
+

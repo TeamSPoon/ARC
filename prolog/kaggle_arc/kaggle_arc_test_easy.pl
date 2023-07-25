@@ -943,7 +943,7 @@ InputSquareAndOutputNotSquare 10 [
   [ '28bf18c6' ],  // replicate solitary single shape in 8x8 input 2 times into 3x6 output; all are different colors
   [ '6d0aefbc' ],  // mirror flip horizontally input square and append to input to the right (same as c9e6f938)
   [ '6fa7a44f' ],  // mirror flip vertically input square and append to input below (same as 8be77c9e)
-  [ '846bdb03' ],  // hard: rotate shape 180 degrees, surround with vertical bars, shrink grid to fit
+  [ '846bdb03' ],  // hard: orientation shape 180 degrees, surround with vertical bars, shrink grid to fit
   [ '8be77c9e' ],  // mirror flip vertically input square and append to input below (same as 6fa7a44f)
   [ 'c9e6f938' ],  // mirror flip horizontally input square and append to input to the right (same as 6d0aefbc)
   [ 'e98196ab' ],  // overlay bottom of input onto top, ignoring grey line in the middle (is there a separator)?

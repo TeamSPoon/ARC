@@ -649,7 +649,7 @@ extend_group_proplist(Grp,GrpO):- Grp==[],!,GrpO=[].
 extend_group_proplist(Grp,GrpO):- user:extend_group_proplist0(Grp,GrpO),!.
 extend_group_proplist(Grp,GrpO):- must_det_ll(( user:extend_group_proplist0(Grp,GrpM), group_prior_objs1(cuz,GrpM,GrpO))),!.
 
-%extend_group_member_proplist(Var,NewObj):- var(Var),!, enum_object(Var),extend_group_proplist(Var,NewObj).
+%extend_group_member_proplist_may_fail(Var,NewObj):- var(Var),!, enum_object(Var),extend_group_proplist(Var,NewObj).
 dont_extend_proplist(Grp):- \+ compound(Grp),!.
 dont_extend_proplist(Grp):- \+ ((sub_term(E,Grp),compound(E),E=oid(_))),!.
 dont_extend_proplist(Grp):- \+ \+ ((sub_term(E,Grp),compound(E),E=links_count(_,_))),!.
@@ -659,12 +659,15 @@ extend_group_proplist0(Grp,GrpO):-
    maplist(extend_group_member_proplist(Grp),Grp,GrpM),
            externalize_links(GrpM,GrpO))).
 
-extend_group_member_proplist(Grp,Props,OUTL):- is_list_of_prop_lists(Props),!,maplist(extend_group_member_proplist(Grp),Props,OUTL).
-extend_group_member_proplist(Grp,[obj(Obj)],[obj(OUT)]):- extend_group_member_proplist(Grp,Obj,OUT),!.
-extend_group_member_proplist(Grp,obj(Obj),obj(OUT)):-!, extend_group_member_proplist(Grp,Obj,OUT).
+extend_group_member_proplist(A,B,C):- extend_group_member_proplist_may_fail(A,B,C),!.
+extend_group_member_proplist(_,C,C).
 
-extend_group_member_proplist(_Grp,Props,OUTL):- is_obj_props(Props), length(Props,Len), Len==1,!,Props=OUTL.
-extend_group_member_proplist(Grp,Props,OUTL):- 
+extend_group_member_proplist_may_fail(Grp,Props,OUTL):- is_list_of_prop_lists(Props),!,maplist(extend_group_member_proplist_may_fail(Grp),Props,OUTL).
+extend_group_member_proplist_may_fail(Grp,[obj(Obj)],[obj(OUT)]):- extend_group_member_proplist_may_fail(Grp,Obj,OUT),!.
+extend_group_member_proplist_may_fail(Grp,obj(Obj),obj(OUT)):-!, extend_group_member_proplist_may_fail(Grp,Obj,OUT).
+
+extend_group_member_proplist_may_fail(_Grp,Props,OUTL):- is_obj_props(Props), length(Props,Len), Len==1,!,Props=OUTL.
+extend_group_member_proplist_may_fail(Grp,Props,OUTL):- 
   Obj = obj(Props),
   findall(P,extend_obj_prop(Grp,Obj,P),NewProps),
   flatten(NewProps,NewPropsF),
@@ -2488,6 +2491,7 @@ learn_ilp(TestID):-
   ensure_test(TestID),
   must_det_ll((
     ensure_test(TestID),
+    abolish_dynamic(is_for_ilp/4),
     %abolish(arc_test_properties/3), dynamic(arc_test_properties/3),
     %compile_and_save_hints(TestID),
     %individuate_all_pairs_from_hints(TestID),
@@ -2503,8 +2507,7 @@ learn_ilp(TestID):-
 
 
 
-:- abolish(is_for_ilp/4).
-:- dynamic(is_for_ilp/4).
+:- abolish_dynamic(is_for_ilp/4).
 learn_ilp(TestID,ExampleNum,GridIn,GridOut):-  
  ExampleNum = (trn+_),!,
   must_det_ll((
@@ -2604,8 +2607,7 @@ oid_to_lhs_hide(OID,NewRef):-
    NewRef = lhs_obj(PropL))).
 
 hs_obj_format(lhs,LObjFmt):- hs_obj_format(rhs,ObjFmt),append(ObjFmt,[child_c /*,sym_c,compressed_shapeid=cis,c2d,h_v_size=vis2D*/],LObjFmt).
-hs_obj_format(rhs,[rot2D,shapeid=gis,c2d,t2d]).
-
+hs_obj_format(rhs,[rot2D,shapeid=gis,c2d,t2d,pen_color]).
 
 safe_obj_num_id(Obj,OOID):- obj_to_oid(Obj,OID),
                      atomic_list_concat(['o',_Glyph,_Iv,_TV,_UUID,_Trn,Num,IO],'_',OID),
@@ -2613,8 +2615,9 @@ safe_obj_num_id(Obj,OOID):- obj_to_oid(Obj,OID),
                      loc2D(Obj,X,Y),                     
                      se_loc(Obj,BX,BY),
                      mass(Obj,M),
+  %object_glyph(Obj,Glyph),
+  %object_iv(Obj,IV),
                      atomic_list_concat([IO,Num,'_',Color,M,'_',X,'_',Y,'_',BX,'_',BY],'',OOID).
-
 
 c2d(I,cxy(X,Y)):- center2D(I,X,Y).
 l2d(I,nw_loc(X,Y)):- loc2D(I,X,Y).
@@ -2721,7 +2724,7 @@ dump_ilp_files(TestID,File):-
    write_ilp_file(TestID,S,gpt),!,
    wdmsg(ls(S)),
    ls(S),
-   print_test(TestID),
+   print_individuals(TestID),
    bash_format('cat ./out/ilp/~w/gpt.pl',[TestAtom]))).
 
 for_gpt(A,B,C,D):- sub_term(E,C),compound(E),compound_name_arguments(E,F,Args),member(F,[lhs,rhs]),!,for_gpt(A,B,F,Args,D).
@@ -2889,6 +2892,7 @@ Each fact describes an object in a 2-dimensional grid with the following propert
 3. **Shape ID**: An identifier for the normalized shape of the object.
 4. **CenterXY**: Center of Mass
 5. **TipXY**: Uniquely distanced point farthest from center of Mass
+6. **Colors**: All the colors of the object (not just the first)
 In the left-hand-side (lhs) facts can be longer and specialize the normalized shape
 
 

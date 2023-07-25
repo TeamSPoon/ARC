@@ -2020,6 +2020,7 @@ print_grid_ansi(SH,SV,EH,EV,GridII):- with_toplevel_pp(http,print_grid_html(SH,S
 is_real_user_output:-  stream_property(X,alias(user_output)),stream_property(X,file_no(1)).
 is_real_user_error:-  stream_property(X,alias(user_error)),stream_property(X,file_no(2)).
 
+
 print_grid_ansi_real(SH,SV,EH,EV,GridII):- make_bg_visible(GridII,GridI),
  must_det_ll((
   nl_if_needed, 
@@ -2290,14 +2291,14 @@ grid_dot(169).
 object_glyph(G,Glyph):- var(G),!,into_obj(G,O),object_glyph(O,Glyph).
 object_glyph([G|Rid],Glyph):- is_grid([G|Rid]),!,grid_dot(Dot),name(Glyph,[Dot]).
 object_glyph(obj(L),Glyph):- is_list(L),member(giz(glyph(Glyph)),L),!.
-object_glyph(obj(L),Glyph):- is_list(L),member(was_oid(OID),L),atom_chars(OID,[o,'_',Glyph|_]),!.
+object_glyph(obj(L),Glyph):- is_list(L),member(was_oid(OID),L),must_det_ll(atom_chars(OID,[o,'_',Glyph|_])),!.
 object_glyph(G,Glyph):- is_object(G),!,obj_iv(G,Iv), int2glyph(Iv,Glyph).
 object_glyph(G,Glyph):- nobject_glyph(G,Glyph).
 
 nobject_glyph(G,Glyph):- integer(G), between(0,9,G),atom_number(Glyph,G),!.
 nobject_glyph(G,Glyph):- plain_var(G),!,plain_var_glyph(G,Glyph).
 nobject_glyph(G,Glyph):- compound_var(G,N),!,nobject_glyph(N,Glyph).
-nobject_glyph(A,Glyph):- atom(A),atom_chars(A,Chars),last(Chars,Glyph),!.
+nobject_glyph(A,Glyph):- atom(A), A\=='',atom_chars(A,Chars),last(Chars,Glyph),!.
 nobject_glyph(G,Glyph):- term_to_atom(G,A),nobject_glyph(A,Glyph).
 
 int2glyph(GN2,Glyph):- int2glyph0(GN2,Glyph),!.%unwonk_ansi(Glyph).

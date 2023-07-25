@@ -722,7 +722,7 @@ idea_for(In,Out,IODCall):-  fail,
 %idea_for_data(inp-ogs_rotate(_,[rot2D(_P2)])).
 %idea_for_data(both-into_monogrid).
 */
-was_loose_ok(R):- \+ member(subst(_,_),R), \+ member(rotate(_),R), \+ member(into_monogrid(_),R).
+was_loose_ok(R):- \+ member(subst(_,_),R), \+ member(orientation(_),R), \+ member(into_monogrid(_),R).
 
 ogs_rotate(_Trig,[rot2D(P2)],I,O):- rotP2(P2),P2\==rollD,grid_call(P2,I,O),I\=@=O.
 
